@@ -28,6 +28,18 @@ function CheckNucleiSegmentation(varargin)
 close all
 
 
+%Find out which computer this is. That will determine the folder structure.
+[ret, name] = system('hostname');  
+if ret ~= 0,  
+   if ispc  
+      name = getenv('COMPUTERNAME');  
+   else  
+      name = getenv('HOSTNAME');  
+   end  
+end  
+name = lower(name); 
+
+
 %Load the folder information
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
     DetermineLocalFolders;

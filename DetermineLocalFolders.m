@@ -10,7 +10,7 @@ function [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
 %default Dropbox folder.
 
 if isempty(varargin)
-    warning('No Prefix defined. Will output default Dropbox folder')
+    %warning('No Prefix defined. Will output default Dropbox folder')
 end
 
 

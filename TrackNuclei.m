@@ -121,6 +121,9 @@ else
 
     %Re-run the tracking
     if exist('dataStructure')
+        %Edit the names in dataStructure to match the current folder setup
+        dataStructure.names=names;
+        
         [nuclei, centers, Dummy, dataStructure] = mainTracking(...
             names,'indMitosis',indMit,'embryoMask', embryo_mask,...
             'centers',centers,'dataStructure',dataStructure);
