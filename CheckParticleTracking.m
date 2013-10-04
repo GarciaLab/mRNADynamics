@@ -1053,7 +1053,7 @@ while (cc~=13)
             end
             
             
-           [Particles,schnitzcells,fad,fad2]=TrackmRNADynamicsV2(FilePrefix(1:end-1),...
+           [Particles,schnitzcells,fad,fad2]=TrackmRNADynamics(FilePrefix(1:end-1),...
                Threshold1,Threshold2); 
            %Check the FrameApproved field
             for i=1:length(Particles)
