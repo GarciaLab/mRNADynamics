@@ -57,6 +57,21 @@ end
     DetermineLocalFolders(Prefix);
 
 
+%What type of experiment are we dealing with? Get this out of
+%HGMovieDatabaseV2.xlsx
+
+[XLSNum,XLSTxt]=xlsread([DropboxFolder,filesep,'HGMovieDatabaseV2.xlsx']);
+ExperimentTypeColumn=find(strcmp(XLSTxt(1,:),'ExperimentType'));
+DataFolderColumn=find(strcmp(XLSTxt(1,:),'DataFolder'));
+
+Dashes=findstr(Prefix,'-');
+PrefixRow=find(strcmp(XLSTxt(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+ExperimentType=XLSTxt(PrefixRow,ExperimentTypeColumn);
+
+
+
+
+
 %Set the source folders
 Folder=[FISHPath,'\Analysis\',Prefix,'_\preanalysis\'];
 FileName=['CompactResults_',Prefix,'_.mat'];
@@ -438,9 +453,15 @@ for i=1:length(fad.channels)
     %If we do have the histone channel    
     else
         
-        [Particles,fad,fad2,schnitzcells]=AssignParticle2Nucleus(schnitzcells,Ellipses,Particles,fad,fad2,...
-                    i,PixelSize,SearchRadius);
-              
+        if strcmp(ExperimentType,'1spot')
+            [Particles,fad,fad2,schnitzcells]=AssignParticle2Nucleus(schnitzcells,Ellipses,Particles,fad,fad2,...
+                        i,PixelSize,SearchRadius);
+        elseif strcmp(ExperimentType,'2spot')
+             [Particles,fad,fad2,schnitzcells]=AssignParticle2Nucleus2S(schnitzcells,Ellipses,Particles,fad,fad2,...
+                        i,PixelSize,SearchRadius);
+        else
+            error('Experiment type in HGMovieDatabaseV2.xlsx not recognized')
+        end
         
     end
 end
@@ -449,7 +470,6 @@ end
 
 close(ParticlesFig)
 close(NucleiFig)
-
 
 
 if ~UseHistone
@@ -496,125 +516,129 @@ if ~UseHistone
     
 else
     
-    %if ~Retracking
-        %If we have the histone channel we now have the extra information of
-        %the nuclei. In this case we'll admit one particle per nucleus
-        %and we'll connect it to the closest particles within that nucleus
+    if strcmp(ExperimentType,'1spot')
 
-        %As a result we will scan through the nuclei trying to fill in any gaps
-        for i=1:length(Particles)
-            if ~isempty(Particles(i).Nucleus)
-                ParticleNuclei(i)=Particles(i).Nucleus;
-            else
-                ParticleNuclei(i)=0;
-            end
-        end
+    
+        %if ~Retracking
+            %If we have the histone channel we now have the extra information of
+            %the nuclei. In this case we'll admit one particle per nucleus
+            %and we'll connect it to the closest particles within that nucleus
 
-
-
-        h=waitbar(0,'Checking secondary threshold');
-        for i=1:length(schnitzcells)
-
-
-            waitbar(i/length(schnitzcells),h);
-
-            [i,length(schnitzcells)];
-
-            %See how many particles were detected within this nucleus
-            ParticlesInNucleus=find(ParticleNuclei==i);
-
-
-            for k=1:length(ParticlesInNucleus)
-                %If there is only one particle in that nucleus then this is
-                %relatively easy
-                CurrentParticle=ParticlesInNucleus(k);
-
-                %Flag to see whether we'll check this particle
-                CheckParticle=0;
-                if ~Retracking
-                    CheckParticle=1;
-                elseif ~Particles(CurrentParticle).Approved
-                    CheckParticle=1;
+            %As a result we will scan through the nuclei trying to fill in any gaps
+            for i=1:length(Particles)
+                if ~isempty(Particles(i).Nucleus)
+                    ParticleNuclei(i)=Particles(i).Nucleus;
+                else
+                    ParticleNuclei(i)=0;
                 end
-                 
+            end
 
 
-                if CheckParticle
-                    %Move forward in time
-                    CurrentParticleLength=length(Particles(CurrentParticle).Frame)-1;
-                    while (CurrentParticleLength<length(Particles(CurrentParticle).Frame))&...
-                            (Particles(CurrentParticle).Frame(end)<length(Ellipses))
-                        CurrentParticleLength=length(Particles(CurrentParticle).Frame);
-                        CurrentFrame=Particles(CurrentParticle).Frame(end);
 
-                        [fad,fad2,Particles] = ConnectToThresholdHistone(fad,fad2,Particles,...
-                            CurrentParticle,CurrentFrame,CurrentFrame+1,schnitzcells,Ellipses,SearchRadius,...
-                            PixelSize);
+            h=waitbar(0,'Checking secondary threshold');
+            for i=1:length(schnitzcells)
+
+
+                waitbar(i/length(schnitzcells),h);
+
+                [i,length(schnitzcells)];
+
+                %See how many particles were detected within this nucleus
+                ParticlesInNucleus=find(ParticleNuclei==i);
+
+
+                for k=1:length(ParticlesInNucleus)
+                    %If there is only one particle in that nucleus then this is
+                    %relatively easy
+                    CurrentParticle=ParticlesInNucleus(k);
+
+                    %Flag to see whether we'll check this particle
+                    CheckParticle=0;
+                    if ~Retracking
+                        CheckParticle=1;
+                    elseif ~Particles(CurrentParticle).Approved
+                        CheckParticle=1;
                     end
 
 
-                    %Move backwards in time
-                    CurrentParticleLength=length(Particles(CurrentParticle).Frame)-1;
-                    while (CurrentParticleLength<length(Particles(CurrentParticle).Frame))&...
-                            (Particles(CurrentParticle).Frame(1)>1)
-                        CurrentParticleLength=length(Particles(CurrentParticle).Frame);
-                        CurrentFrame=Particles(CurrentParticle).Frame(1);
 
-                        [fad,fad2,Particles] = ConnectToThresholdHistone(fad,fad2,Particles,...
-                            CurrentParticle,CurrentFrame,CurrentFrame-1,schnitzcells,Ellipses,SearchRadius,...
-                            PixelSize);
-                    end
+                    if CheckParticle
+                        %Move forward in time
+                        CurrentParticleLength=length(Particles(CurrentParticle).Frame)-1;
+                        while (CurrentParticleLength<length(Particles(CurrentParticle).Frame))&...
+                                (Particles(CurrentParticle).Frame(end)<length(Ellipses))
+                            CurrentParticleLength=length(Particles(CurrentParticle).Frame);
+                            CurrentFrame=Particles(CurrentParticle).Frame(end);
 
-
-                    %Fill in any gaps if there are any
-
-                    %Find which ones are the missing frames
-                    MissingFrames=Particles(CurrentParticle).Frame(1):Particles(CurrentParticle).Frame(end);
-                    MissingFrames=MissingFrames(~ismember(MissingFrames,Particles(CurrentParticle).Frame));
-
-                    if ~isempty(MissingFrames)            
-                        for j=1:length(MissingFrames)
                             [fad,fad2,Particles] = ConnectToThresholdHistone(fad,fad2,Particles,...
-                                CurrentParticle,[],MissingFrames(j),schnitzcells,Ellipses,SearchRadius,...
+                                CurrentParticle,CurrentFrame,CurrentFrame+1,schnitzcells,Ellipses,SearchRadius,...
                                 PixelSize);
+                        end
+
+
+                        %Move backwards in time
+                        CurrentParticleLength=length(Particles(CurrentParticle).Frame)-1;
+                        while (CurrentParticleLength<length(Particles(CurrentParticle).Frame))&...
+                                (Particles(CurrentParticle).Frame(1)>1)
+                            CurrentParticleLength=length(Particles(CurrentParticle).Frame);
+                            CurrentFrame=Particles(CurrentParticle).Frame(1);
+
+                            [fad,fad2,Particles] = ConnectToThresholdHistone(fad,fad2,Particles,...
+                                CurrentParticle,CurrentFrame,CurrentFrame-1,schnitzcells,Ellipses,SearchRadius,...
+                                PixelSize);
+                        end
+
+
+                        %Fill in any gaps if there are any
+
+                        %Find which ones are the missing frames
+                        MissingFrames=Particles(CurrentParticle).Frame(1):Particles(CurrentParticle).Frame(end);
+                        MissingFrames=MissingFrames(~ismember(MissingFrames,Particles(CurrentParticle).Frame));
+
+                        if ~isempty(MissingFrames)            
+                            for j=1:length(MissingFrames)
+                                [fad,fad2,Particles] = ConnectToThresholdHistone(fad,fad2,Particles,...
+                                    CurrentParticle,[],MissingFrames(j),schnitzcells,Ellipses,SearchRadius,...
+                                    PixelSize);
+                            end
                         end
                     end
                 end
-            end
 
 
-            %After the for loop, try to join particles in the same nucleus, but
-            %different frames. Do this only if not retracking.
-            if ~Retracking
-                if length(ParticlesInNucleus)>1
+                %After the for loop, try to join particles in the same nucleus, but
+                %different frames. Do this only if not retracking.
+                if ~Retracking
+                    if length(ParticlesInNucleus)>1
 
-                    PreviousParticleNucleiLength=length(ParticleNuclei)+1;
+                        PreviousParticleNucleiLength=length(ParticleNuclei)+1;
 
-                    while PreviousParticleNucleiLength>length(ParticleNuclei)
-                        PreviousParticleNucleiLength=length(ParticleNuclei);
-                        Particles=FillParticleGaps(ParticlesInNucleus,Particles);
-                        ParticleNuclei=[Particles.Nucleus];
-                        ParticlesInNucleus=find(ParticleNuclei==i);
+                        while PreviousParticleNucleiLength>length(ParticleNuclei)
+                            PreviousParticleNucleiLength=length(ParticleNuclei);
+                            Particles=FillParticleGaps(ParticlesInNucleus,Particles);
+                            ParticleNuclei=[Particles.Nucleus];
+                            ParticlesInNucleus=find(ParticleNuclei==i);
+                        end
                     end
                 end
+
+
+
+
             end
 
 
+            close(h)
+        %end    
 
-
-        end
         
-        
-        close(h)
-    %end    
+    end
     
-    
-    
-
     mkdir([OutputFolder,filesep])
 
     save([OutputFolder,'\Particles.mat'],'Particles','fad','fad2',...
         'Threshold1','Threshold2')
+    
 end
                     
 

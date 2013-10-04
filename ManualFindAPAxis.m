@@ -4,6 +4,12 @@ function [coordA,coordP,xShift,yShift]=ManualFindAPAxis(varargin)
 %1x. The inputs are optional. 1 tells the code to flip the AP axis. The
 %prefix can also be input.
 
+%a z: Move one image up and down
+%, .: Move one to the right and left
+%n m: Increase or decrease contrast
+%f: Flipped the images. This is useful if the 1x pictures weren't taken in
+%the right orientation.
+
 %xShift and yShift are the shifts used to stitch the images.
 %Load the folder information
 
@@ -195,6 +201,7 @@ DisplayRange(2)=max([max(max(left)),max(max(right))]);
 
 xo1=250;
 yo1=-50;
+Flipped=0;  %Flag indicating whether we've flipped the images
 EmbryoFigure=figure;
 cc=1;
 
@@ -243,13 +250,46 @@ while (cc~=13)
     elseif (ct~=0)&(cc=='r')
         DisplayRange(1)=min([min(min(left)),min(min(right))]);
         DisplayRange(2)=max([max(max(left)),max(max(right))]);
+        
+        
+    %Rotate images by 90 degrees and flip horizontally
+    elseif (ct~=0)&(cc=='f')
+        if Flipped==0
+            display('Swapping and rotating images')
+            
+            LeftTemp=imrotate(left,-90);
+            LeftTemp=flipdim(LeftTemp,2);
+            
+            RightTemp=imrotate(right,-90);
+            RightTemp=flipdim(RightTemp,2);
+            
+            right=LeftTemp;
+            left=RightTemp;
+      
+            Flipped=1;
+            
+        else
+            display('Images have been flipped already')
+        end
+        
+        
+        
+    
+    
     end
+    
 end
 
 [h, w] = size(left);
 imm2=imm1(:,1:2*w+1-xo1);
 
-
+%Rotate the image again if it was flipped
+if Flipped==1
+    imm2=flipdim(imm2,2);
+    imm2=imrotate(imm2,90);
+end
+    
+    
 APImage=imm2;
 xShift=xo1;
 yShift=yo1;

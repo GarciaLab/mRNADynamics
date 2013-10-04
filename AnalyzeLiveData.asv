@@ -68,9 +68,14 @@ FindAPAxisFullEmbryo(Prefix);
 %Tihs is meant for embryos consisting of two images for now
 ManualFindAPAxis(Prefix)
 
+%If the embryo was in a non-optimal position for stitching it's better to
+%rotate the images
+
 %Check the detection by going to the Dropbox folder.
 %If we need to find it manually run this
 CorrectAPAxis(Prefix)
+
+
 
 
 
@@ -91,11 +96,8 @@ TrackNuclei(Prefix)
 %Track the particles, the two numbers are Threshold1 and Threshold2
 TrackmRNADynamics(Prefix,40,40)
 
+
 CheckParticleTracking(Prefix)
-
-
-%Check the division times as a function of AP
-CheckDivisionTimes(Prefix)
 
 
 %% Done

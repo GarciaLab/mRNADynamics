@@ -1,4 +1,4 @@
-function [Particles,fad,fad2,schnitzcells]=AssignParticle2Nucleus(schnitzcells,Ellipses,Particles,fad,fad2,...
+function [Particles,fad,fad2,schnitzcells]=AssignParticle2Nucleus2S(schnitzcells,Ellipses,Particles,fad,fad2,...
     CurrentFrame,PixelSize,SearchRadius)
 
 
@@ -152,12 +152,15 @@ if ~isempty(NewParticlesX)
 
     for i=1:length(UniqueMinIndexNuclei)
         
-        %Find the particle that is assigned to this nucleus
-        ParticleToAssign=find(AssignedNuclei==UniqueMinIndexNuclei(i));
-
-        if ~isempty(ParticleToAssign)
+        %Find the particles that are assigned to this nucleus
+        ParticlesToAssign=find(AssignedNuclei==UniqueMinIndexNuclei(i));
+        %These are the particles that are assigned to the previous nuclei
+        
+        if ~isempty(ParticlesToAssign)
+            for l = 1:length(ParticlesToAssign)
+                ParticleToAssign = ParticlesToAssign(l);
             if ~sum(Particles(ParticleToAssign).Frame==CurrentFrame)
-                if ((sum(MinIndexNuclei==UniqueMinIndexNuclei(i)))==1)&(~isempty(ParticleToAssign))&...
+               if ((sum(MinIndexNuclei==UniqueMinIndexNuclei(i)))==1)&(~isempty(ParticleToAssign))&...
                         (MinValues(MinIndexNuclei==UniqueMinIndexNuclei(i)))<SearchRadius*PixelSize
                     %One particle is assigned to a previous one within a nucleus
 
@@ -168,20 +171,21 @@ if ~isempty(NewParticlesX)
                         UniqueMinIndexNuclei(i)))=0;
 
 
-                elseif (~isempty(ParticleToAssign))&...
-                        (sum(MinIndexNuclei==UniqueMinIndexNuclei(i))>1)
-                    %Two or more particles are assigned to the same previous
+               elseif (~isempty(ParticleToAssign))&...
+                        (sum(MinIndexNuclei==UniqueMinIndexNuclei(i))>=1)
+                    %one or more particles are assigned to the same previous
                     %nucleus.
 
 
-                    %Find the previous particle assigned to this nucleus
+                    %Find the previous particles assigned to this nucleus
                     PreviousParticleIndex=find(AssignedNuclei==UniqueMinIndexNuclei(i));
-
-                    %Get the last position of the previous particle
+                    
+                    %Get the last positions of the previous particles
+                    for k = 1:length(PreviousParticleIndex)
                     [PreviousParticlesX,PreviousParticlesY]=...
-                        fad2xyzFit(Particles(PreviousParticleIndex).Frame(end),fad, 'addMargin');
-                    PreviousParticleX=PreviousParticlesX(Particles(PreviousParticleIndex).Index(end));
-                    PreviousParticleY=PreviousParticlesY(Particles(PreviousParticleIndex).Index(end));
+                        fad2xyzFit(Particles(PreviousParticleIndex(k)).Frame(end),fad, 'addMargin');
+                    PreviousParticleX=PreviousParticlesX(Particles(PreviousParticleIndex(k)).Index(end));
+                    PreviousParticleY=PreviousParticlesY(Particles(PreviousParticleIndex(k)).Index(end));
 
                     MinFilter=find(MinIndexNuclei==UniqueMinIndexNuclei(i));
 
@@ -203,11 +207,13 @@ if ~isempty(NewParticlesX)
 
                     %This is the index of the particle found
                     if Distance(MinIndex)<SearchRadius*PixelSize
-                        Particles(PreviousParticleIndex).Frame(end+1)=CurrentFrame;
-                        Particles(PreviousParticleIndex).Index(end+1)=MinFilter(MinIndex);
+                        Particles(PreviousParticleIndex(k)).Frame(end+1)=CurrentFrame;
+                        Particles(PreviousParticleIndex(k)).Index(end+1)=MinFilter(MinIndex);
                         NewParticlesFlag(MinFilter(MinIndex))=0;
                     end
+                    end
                 end
+            end
             end
         end
     end
@@ -227,21 +233,24 @@ if ~isempty(NewParticlesX)
         %this if it becomes too annoying.
         AssignedNuclei=[];          %These keeps track of which nuclei have
                                     %already been assigned to particles
+        AssignedParticles=[];
         for j=1:length(Particles)
             AssignedNuclei=[AssignedNuclei,Particles(j).Nucleus];
+            %AssignedParticles=[AssignedParticles,Particles(j).Index(end)];
         end
 
 
         %Make sure this new particle doesn't get assigned to an
-        %already-assigned nucleus
-        if ~sum(AssignedNuclei==MinIndexNuclei(NewParticlesIndices(i)))
+        %already-assigned nucleus (Need to modify this to be okay for 2
+        %spots per nucleus)
+        if (sum(AssignedNuclei==MinIndexNuclei(NewParticlesIndices(i)))<=1)
             Particles(end+1).Frame=CurrentFrame;
             Particles(end).Index=NewParticlesIndices(i);
             Particles(end).Nucleus=MinIndexNuclei(NewParticlesIndices(i));
             if Retracking
                 Particles(end).Approved=0;
             end
-
+            
         %If the particle can't be put anywhere else then move it to
         %fad2. In order to do this we will create a list of the indices
         %that need to be moved. This is important so that we don't

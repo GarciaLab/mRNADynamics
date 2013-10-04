@@ -64,7 +64,12 @@ else
     
     PrefixRow=find(strcmp(XLSTxt(:,DataFolderColumn),[Prefix(1:10),'\',Prefix(12:end)])|...
         strcmp(XLSTxt(:,DataFolderColumn),[Prefix(1:10),'/',Prefix(12:end)]));
-
+    
+    if isempty(PrefixRow)
+        error('Data set information not found in HGMovieDatabaseV2.xlsx')
+    end
+    
+    
     if strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Albert+Hernan')
         DropboxString='DropboxAlbert';
     elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Jacques+Hernan')
