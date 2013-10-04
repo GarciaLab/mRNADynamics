@@ -160,18 +160,8 @@ if ~isempty(NewParticlesX)
             for l = 1:length(ParticlesToAssign)
                 ParticleToAssign = ParticlesToAssign(l);
             if ~sum(Particles(ParticleToAssign).Frame==CurrentFrame)
-               if ((sum(MinIndexNuclei==UniqueMinIndexNuclei(i)))==1)&(~isempty(ParticleToAssign))&...
-                        (MinValues(MinIndexNuclei==UniqueMinIndexNuclei(i)))<SearchRadius*PixelSize
-                    %One particle is assigned to a previous one within a nucleus
 
-                    Particles(ParticleToAssign).Frame(end+1)=CurrentFrame;
-                    Particles(ParticleToAssign).Index(end+1)=find(MinIndexNuclei==...
-                                    UniqueMinIndexNuclei(i));
-                    NewParticlesFlag(find(MinIndexNuclei==...
-                        UniqueMinIndexNuclei(i)))=0;
-
-
-               elseif (~isempty(ParticleToAssign))&...
+               if (~isempty(ParticleToAssign))&...
                         (sum(MinIndexNuclei==UniqueMinIndexNuclei(i))>=1)
                     %one or more particles are assigned to the same previous
                     %nucleus.
@@ -181,13 +171,19 @@ if ~isempty(NewParticlesX)
                     PreviousParticleIndex=find(AssignedNuclei==UniqueMinIndexNuclei(i));
                     
                     %Get the last positions of the previous particles
+                    clear MinDistance
+                    clear MinIndex
+                    
+                    MinDistance = inf(1,length(PreviousParticleIndex));
+                    MinIndex = zeros(1,length(PreviousParticleIndex));
+                    MinFilter=find(MinIndexNuclei==UniqueMinIndexNuclei(i));
+                    
                     for k = 1:length(PreviousParticleIndex)
                     [PreviousParticlesX,PreviousParticlesY]=...
                         fad2xyzFit(Particles(PreviousParticleIndex(k)).Frame(end),fad, 'addMargin');
                     PreviousParticleX=PreviousParticlesX(Particles(PreviousParticleIndex(k)).Index(end));
                     PreviousParticleY=PreviousParticlesY(Particles(PreviousParticleIndex(k)).Index(end));
 
-                    MinFilter=find(MinIndexNuclei==UniqueMinIndexNuclei(i));
 
                     NewNewParticlesX=NewParticlesX(MinFilter);
                     NewNewParticlesY=NewParticlesY(MinFilter);
@@ -203,18 +199,35 @@ if ~isempty(NewParticlesX)
                     end
                     %MinIndex tells us which one of the candidates is
                     %closer
-                    [MinValues2,MinIndex]=min(Distance');
-
-                    %This is the index of the particle found
-                    if Distance(MinIndex)<SearchRadius*PixelSize
-                        Particles(PreviousParticleIndex(k)).Frame(end+1)=CurrentFrame;
-                        Particles(PreviousParticleIndex(k)).Index(end+1)=MinFilter(MinIndex);
-                        NewParticlesFlag(MinFilter(MinIndex))=0;
+                    [MinDistance(k),MinIndex(k)]=min(Distance');
                     end
+                    
+                    %case where two particles are different
+                    if length(unique(MinFilter(MinIndex)))==length(MinFilter(MinIndex))
+                        for  k = 1:length(PreviousParticleIndex)
+                        %This is the index of the particle found
+                            if ((MinDistance(k))<SearchRadius*PixelSize)&...
+                                    ~sum(Particles(PreviousParticleIndex(k)).Frame(end)==CurrentFrame)
+                            Particles(PreviousParticleIndex(k)).Frame(end+1)=CurrentFrame;
+                            Particles(PreviousParticleIndex(k)).Index(end+1)=MinFilter(MinIndex(k));
+                            NewParticlesFlag(MinFilter(MinIndex(k)))=0;
+                            end
+                        end
+                        
+                    %case where they detected the same particle
+                    else
+                        [CloserDistance,CloserIndex]=min(MinDistance);
+                        %This is the index of the particle found
+                            if ((MinDistance(CloserIndex))<SearchRadius*PixelSize)&...
+                                    ~sum(Particles(PreviousParticleIndex(CloserIndex)).Frame(end)==CurrentFrame)
+                            Particles(PreviousParticleIndex(CloserIndex)).Frame(end+1)=CurrentFrame;
+                            Particles(PreviousParticleIndex(CloserIndex)).Index(end+1)=MinFilter(MinIndex(CloserIndex));
+                            NewParticlesFlag(MinFilter(MinIndex(CloserIndex)))=0;
+                            end  
                     end
                 end
             end
-            end
+        end
         end
     end
 
