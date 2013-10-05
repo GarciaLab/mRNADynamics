@@ -198,7 +198,7 @@ if ~NoAP
 
 
     if ~SkipAlignment&HistoneChannel
-        if Zoom~=16
+        if Zoom==4
             %Enlarge the 1x image so we can do the cross-correlation
             SurfImageResized=imresize(SurfImage,Zoom);
 
@@ -236,29 +236,9 @@ if ~NoAP
                 (CColumns-1)/2-ColumnsZoom/2:(CColumns-1)/2+ColumnsZoom/2)))
             saveas(gcf, [DropboxFolder,filesep,Prefix,'\APDetection\AlignmentCorrelation.tif']);
 
-
-
         else
-    %         error('Do this case')
-            %Enlarge the 1x image so we can do the cross-correlation
-            SurfImageResized=imresize(SurfImage,Zoom);
 
-    %         %Make the image smaller so that the cross-correlation doesn't take too
-    %         %long!
-    %         SizeCrop=3000;
-    % 
-    %         %Calculate the correlation matrix and find the maximum
-    %         C = normxcorr2(ZoomImage, SurfImageResized(SizeCrop:end-SizeCrop,...
-    %             SizeCrop:end-SizeCrop));
-    %         [Max2,MaxRows]=max(C);
-    %         [Dummy,MaxColumn]=max(Max2);
-    %         MaxRow=MaxRows(MaxColumn);
-    %         [CRows,CColumns]=size(C);
-    % 
-    %         ShiftRow=round((MaxRow-(CRows/2+1))/Zoom);
-    %         ShiftColumn=round((MaxColumn-(CColumns/2+1))/Zoom);
-
-            warning('No doing cross-correlation for AP finding. Instead just looking at the center')
+            warning('Not doing cross-correlation for AP finding. Instead just looking at the center')
 
             %Add this flag to do the alignment manually later on
             if (~ManualAlignmentDone)|(ManualAlignment)
@@ -266,6 +246,9 @@ if ~NoAP
                 ShiftColumn=0;
                 ShiftRow=0;
             end
+            
+            ShiftColumn=0;
+            ShiftRow=0;
 
         end
 
