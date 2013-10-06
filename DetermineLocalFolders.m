@@ -62,8 +62,19 @@ else
     DataFolderColumn=find(strcmp(XLSTxt(1,:),'DataFolder'));
     DropboxFolderColumn=find(strcmp(XLSTxt(1,:),'DropboxFolder'));
     
-    PrefixRow=find(strcmp(XLSTxt(:,DataFolderColumn),[Prefix(1:10),'\',Prefix(12:end)])|...
-        strcmp(XLSTxt(:,DataFolderColumn),[Prefix(1:10),'/',Prefix(12:end)]));
+    % Convert the prefix into the string used in the XLS file
+    Dashes = strfind(Prefix, '-');
+    PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
+        [Prefix(1:Dashes(3)-1), filesep, Prefix(Dashes(3)+1:end)]));
+    % ES 2013-10-06: Removing the hard-coding for selecting the date string
+    % in 'Prefix'. This is because I tend to put a letter after the date:
+    % '2013-10-06A', for instance, instead of '2013-10-06'. This allows me
+    % to use different flat field images for multiple movies acquired in
+    % one day, which is necessary because they might be imaged at different
+    % angles (something that my microscope supports).
+    
+    %PrefixRow=find(strcmp(XLSTxt(:,DataFolderColumn),[Prefix(1:10),'\',Prefix(12:end)])|...
+    %    strcmp(XLSTxt(:,DataFolderColumn),[Prefix(1:10),'/',Prefix(12:end)]));
     
     if isempty(PrefixRow)
         error('Data set information not found in MovieDatabase.xlsx')
@@ -74,6 +85,9 @@ else
         DropboxString='DropboxAlbert';
     elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Jacques+Hernan')
         DropboxString='DropboxJacques';
+    elseif strcmp(XLSTxt{PrefixRow, DropboxFolderColumn}, 'Default')
+        DropboxString = 'DropboxFolder';
+        % ES 2013-10-06
     else
         error('Dropbox folder for this type of experiment not found. Check MovieDatabase')
     end
