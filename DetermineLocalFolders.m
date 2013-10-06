@@ -6,7 +6,7 @@ function [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
 %This functions gives out the folder corresponding to each computer. If a
 %Prefix is also included it will give out the corresponding DropboxFolder
 %for the particular experiment. Otherwise it will give the default dropbox
-%folder. Regardless, it assumes that HGMovieDatabaseV2.xlsx is in the
+%folder. Regardless, it assumes that MovieDatabase.xlsx is in the
 %default Dropbox folder.
 
 if isempty(varargin)
@@ -57,7 +57,7 @@ else
     Prefix=varargin{1};
     
     %Figure the DropboxFolder corresponding to this
-    [XLSNum,XLSTxt]=xlsread([DefaultDropboxFolder,filesep,'HGMovieDatabaseV2.xlsx']);
+    [XLSNum,XLSTxt]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
 
     DataFolderColumn=find(strcmp(XLSTxt(1,:),'DataFolder'));
     DropboxFolderColumn=find(strcmp(XLSTxt(1,:),'DropboxFolder'));
@@ -66,7 +66,7 @@ else
         strcmp(XLSTxt(:,DataFolderColumn),[Prefix(1:10),'/',Prefix(12:end)]));
     
     if isempty(PrefixRow)
-        error('Data set information not found in HGMovieDatabaseV2.xlsx')
+        error('Data set information not found in MovieDatabase.xlsx')
     end
     
     
@@ -75,7 +75,7 @@ else
     elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Jacques+Hernan')
         DropboxString='DropboxJacques';
     else
-        error('Dropbox folder for this type of experiment not found. Check HGMovieDatabaseV2')
+        error('Dropbox folder for this type of experiment not found. Check MovieDatabase')
     end
     
     DropboxRow=find(strcmp(XLS(:,1),DropboxString));

@@ -58,9 +58,9 @@ end
 
 
 %What type of experiment are we dealing with? Get this out of
-%HGMovieDatabaseV2.xlsx
+%MovieDatabase.xlsx
 
-[XLSNum,XLSTxt]=xlsread([DropboxFolder,filesep,'HGMovieDatabaseV2.xlsx']);
+[XLSNum,XLSTxt]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
 ExperimentTypeColumn=find(strcmp(XLSTxt(1,:),'ExperimentType'));
 DataFolderColumn=find(strcmp(XLSTxt(1,:),'DataFolder'));
 
@@ -460,7 +460,7 @@ for i=1:length(fad.channels)
              [Particles,fad,fad2,schnitzcells]=AssignParticle2Nucleus2S(schnitzcells,Ellipses,Particles,fad,fad2,...
                         i,PixelSize,SearchRadius);
         else
-            error('Experiment type in HGMovieDatabaseV2.xlsx not recognized')
+            error('Experiment type in MovieDatabase.xlsx not recognized')
         end
         
     end

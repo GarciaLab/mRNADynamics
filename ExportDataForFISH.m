@@ -80,7 +80,7 @@ Prefix=[Folder((SlashPositions(end-1)+1):(SlashPositions(end)-1)),'-',...
     Folder((SlashPositions(end)+1):(end))];
 
 %Figure out what type of experiment we have
-[XLSNum,XLSTxt]=xlsread([DropboxFolder,filesep,'HGMovieDatabaseV2.xlsx']);
+[XLSNum,XLSTxt]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
 DataFolderColumn=find(strcmp(XLSTxt(1,:),'DataFolder'));
 ExperimentTypeColumn=find(strcmp(XLSTxt(1,:),'ExperimentType'));
 Channel1Column=find(strcmp(XLSTxt(1,:),'Channel1'));
