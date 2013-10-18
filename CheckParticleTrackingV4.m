@@ -176,7 +176,7 @@ end
 
 
 %Load the information about the nc from the XLS file
-[Num,Txt]=xlsread([DropboxFolder,'\HGMovieDatabase.xlsx']);
+[Num,Txt]=xlsread([DropboxFolder,'\MovieDatabase.xlsx']);
 XLSHeaders=Txt(1,:);
 Txt=Txt(2:end,:);
 
