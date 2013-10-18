@@ -1569,8 +1569,8 @@ while (cc~=13)
     elseif cc=='9'  %check for nuclear tracking consistencies. This is useful while we're
                     %  getting the code to work well.
         warning('This feature has been discontinued for now. Talk to HG.')
-%         [schnitzcells,Particles]=CheckSchnitzConsistency(schnitzcells,Particles,Ellipses);
-%         PreviousParticle=0;
+        [schnitzcells,Particles]=CheckSchnitzConsistency(schnitzcells,Particles,Ellipses);
+        PreviousParticle=0;
 
     end
         

@@ -51,7 +51,7 @@ cd([MS2CodePath])
 %We will keep the threshold low and then increase it after the fact.
 
 %For LSM settings
-Threshold=1400;   
+Threshold=1000;   
 
 %Now, do an analysis with an actual threshold
 cd([FISHPath,filesep,'Analysis'])
