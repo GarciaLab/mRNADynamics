@@ -79,6 +79,10 @@ ncs=ncs(ncs~=0);
 %determines mitosis
 indMit=[ncs'-2,ncs'+2];
 
+%Make sure no indices are negative. This could happen is the nuclear cycle
+%started at frame 1, for example.
+indMit(indMit<1)=1;
+
 
 %Make sure to edit getdefaultParameters.m to change the pixel size
 %parameters!!
