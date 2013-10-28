@@ -482,7 +482,9 @@ while (cc~=13)
         set(gcf,'MenuBar','none','ToolBar','none')
     else
         if strcmp('albert-pc',name(1:end-1))
-            set(gcf,'Position',[9         594        1106         451]);
+            set(gcf,'Position',[7   513   835   532]);
+            % halfscreen [7   513   835   532]
+            % fullscreen [9         594        1106         451]
         else
             set(gcf,'Position',[10   414   677   351]);
         end
@@ -682,7 +684,8 @@ while (cc~=13)
         end
         imshow(HisOverlayImage,'Border','Tight')
         if strcmp('albert-pc',name(1:end-1))
-            set(gcf,'Position',[8         110        1107         440])
+            set(gcf,'Position',[6    88   691   379])
+            %Fullscreen [8         110        1107         440]
         else
             set(gcf,'Position',[-7    60   691   311])
         end
@@ -868,7 +871,8 @@ while (cc~=13)
         imshow(SnippetOverlay,...
             [],'Border','Tight','InitialMagnification',1000)
         if strcmp('albert-pc',name(1:end-1))
-            set(gcf,'Position',[1133          46         395         319])
+            set(gcf,'Position',[861   834   303   152])
+            % fullscreen [1133          46         395         319]
         else
             set(gcf,'Position',[738    78   223   206])
         end
@@ -919,7 +923,8 @@ while (cc~=13)
             double(fad.channels(CurrentFrame).fits.z(CurrentParticleIndex)))
         title('Z profile')
         if strcmp('albert-pc',name(1:end-1))
-            set(gcf,'Position',[1547          44         363         322])
+            set(gcf,'Position',[857   518   308   215])
+            % fullscreen [1547          44         363         322]
         else
             set(gcf,'Position',[1029          56         216         234])
         end
@@ -946,7 +951,8 @@ while (cc~=13)
     xlabel('Frame')
     ylabel('Intensity')
     if strcmp('albert-pc',name(1:end-1))
-        set(gcf,'Position',[1135         471         776         515])
+        set(gcf,'Position',[716    88   439   321])
+        % fullscreen [1135         471         776         515]
     else
         set(gcf,'Position',[703   386   564   327])
     end
