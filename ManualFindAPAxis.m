@@ -287,12 +287,16 @@ imm2=imm1(:,1:2*w+1-xo1);
 if Flipped==1
     imm2=flipdim(imm2,2);
     imm2=imrotate(imm2,90);
+    xShift=-yo1;
+    yShift=-xo1;
+else
+    xShift=xo1;
+    yShift=yo1;
 end
     
     
 APImage=imm2;
-xShift=xo1;
-yShift=yo1;
+
 
  
 %Save it to the Dropbox folder

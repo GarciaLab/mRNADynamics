@@ -93,17 +93,7 @@ TrackmRNADynamics(Prefix,40,40)
 
 CheckParticleTracking(Prefix)
 
+CompileParticles(Prefix)
 
 %Check the division times as a function of AP
 CheckDivisionTimes(Prefix)
-
-
-%% Done
-
-
-CompileParticles(Prefix)
-
-
-
-
-    

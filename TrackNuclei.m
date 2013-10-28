@@ -13,7 +13,7 @@ function TrackNuclei(Prefix)
 
 %Determine division times
 %Load the information about the nc from the XLS file
-[Num,Txt]=xlsread([DefaultDropboxFolder,'\HGMovieDatabaseV2.xlsx']);
+[Num,Txt]=xlsread([DefaultDropboxFolder,'\MovieDatabase.xlsx']);
 XLSHeaders=Txt(1,:);
 Txt=Txt(2:end,:);
 
@@ -57,7 +57,7 @@ if strcmp(Txt(XLSEntry,Channel2Column),'His-RFP')
         CF=nan;
     end
 else
-    error('nc information not define in HGMovieDatabase.xlsx')
+    error('nc information not define in MovieDatabase.xlsx')
 end
 ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
 
@@ -78,6 +78,10 @@ ncs=ncs(ncs~=0);
 %Note that I'm adding a range of two frames frames before and after the
 %determines mitosis
 indMit=[ncs'-2,ncs'+2];
+
+%Make sure no indices are negative. This could happen is the nuclear cycle
+%started at frame 1, for example.
+indMit(indMit<1)=1;
 
 
 %Make sure to edit getdefaultParameters.m to change the pixel size

@@ -116,7 +116,7 @@ end
 
 
 %Load the information about the nc from the XLS file
-[Num,Txt]=xlsread([DefaultDropboxFolder,'\HGMovieDatabaseV2.xlsx']);
+[Num,Txt]=xlsread([DefaultDropboxFolder,'\MovieDatabase.xlsx']);
 XLSHeaders=Txt(1,:);
 Txt=Txt(2:end,:);
 
@@ -129,7 +129,7 @@ Dashes=findstr(FilePrefix(1:end-1),'-');
 
 
 %Load the information about the nc from the XLS file
-[Num,Txt]=xlsread([DefaultDropboxFolder,'\HGMovieDatabaseV2.xlsx']);
+[Num,Txt]=xlsread([DefaultDropboxFolder,'\MovieDatabase.xlsx']);
 XLSHeaders=Txt(1,:);
 Txt=Txt(2:end,:);
 
@@ -173,7 +173,7 @@ if strcmp(Txt(XLSEntry,Channel2Column),'His-RFP')
         CF=nan;
     end
 else
-    error('nc information not define in HGMovieDatabase.xlsx')
+    error('nc information not define in MovieDatabase.xlsx')
 end
 NewCyclePos=[nc9,nc10,nc11,nc12,nc13,nc14,CF];
 NewCyclePos=NewCyclePos(~(NewCyclePos==0));
