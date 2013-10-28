@@ -30,8 +30,8 @@ Margin=10;      %Pixels to get rid of at the left and margins
    end
    
    % x and y limits
-   x_min=280; x_max=450; %y_min=-40; y_max=40;
-   y_min=-50; y_max=50;
+   x_min=200; x_max=450; %y_min=-40; y_max=40;
+   y_min=-100; y_max=100;
    
    
 %Crop the images
