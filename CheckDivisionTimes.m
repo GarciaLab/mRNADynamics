@@ -8,36 +8,11 @@ close all
 %Find out which computer this is. That will determine the folder structure.
 %Information about about folders
 
-[Dummy,XLS]=xlsread('ComputerFolders.xlsx');
+% ES 2013-10-29: Required for multiple users to be able to analyze data on
+% one computer
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+    DetermineLocalFolders(varargin{1});
 
-%Find out which computer this is. That will determine the folder structure.
-[ret, name] = system('hostname');  
-if ret ~= 0,  
-   if ispc  
-      name = getenv('COMPUTERNAME');  
-   else  
-      name = getenv('HOSTNAME');  
-   end  
-end  
-name = lower(name); 
-
-
-%Find which computer we are dealing with:
-ComputerColumn=find(strcmp(XLS(1,:),name(1:end-1)));
-
-%Now load the corresponding folders
-SourceRow=find(strcmp(XLS(:,1),'SourcePath'));
-FISHRow=find(strcmp(XLS(:,1),'FISHPath'));
-DropboxRow=find(strcmp(XLS(:,1),'DropboxFolder'));
-SchnitzRow=find(strcmp(XLS(:,1),'SchnitzcellsFolder'));
-
-
-
-%Assign the folders
-SourcePath=XLS{SourceRow,ComputerColumn};
-FISHPath=XLS{FISHRow,ComputerColumn};
-DropboxFolder=XLS{DropboxRow,ComputerColumn};
-SchnitzcellsFolder=XLS{SchnitzRow,ComputerColumn};
 
 if ~isempty(varargin)
     Prefix=varargin{1};
