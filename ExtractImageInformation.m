@@ -8,10 +8,16 @@ FrameInfo.LinesPerFrame=str2num(ExtractInformationField(ImageInfo,'state.acq.lin
 FrameInfo.PixelsPerLine=str2num(ExtractInformationField(ImageInfo,'state.acq.pixelsPerLine='));
 FrameInfo.ZoomFactor=str2num(ExtractInformationField(ImageInfo,'state.acq.zoomFactor='));
 FrameInfo.Rotation=str2num(ExtractInformationField(ImageInfo,'state.acq.scanRotation='));
-FrameInfo.ScanAmplitudeX=str2num(ExtractInformationField(ImageInfo,'state.acq.scanAmplitudeX='));
-FrameInfo.ScanAmplitudeY=str2num(ExtractInformationField(ImageInfo,'state.acq.scanAmplitudeY='));
 
-
+% ES 2013-10-30: Compatibility with ScanImage 3.8
+ScanImageVersionS = ExtractInformationField(ImageInfo, 'state.software.version=');
+if strcmp(ScanImageVersionS, '3.5.1')
+    FrameInfo.ScanAmplitudeX=str2num(ExtractInformationField(ImageInfo,'state.acq.scanAmplitudeX='));
+    FrameInfo.ScanAmplitudeY=str2num(ExtractInformationField(ImageInfo,'state.acq.scanAmplitudeY='));
+elseif strcmp(ScanImageVersionS, '3.8')
+    FrameInfo.ScanAngleMultiplierFast=str2num(ExtractInformationField(ImageInfo,'state.acq.scanAngleMultiplierFast='));
+    FrameInfo.ScanAngleMultiplierSlow=str2num(ExtractInformationField(ImageInfo,'state.acq.scanAngleMultiplierSlow='));
+end
 
 %Time
 FrameInfo.TimeString=ExtractInformationField(ImageInfo,'state.internal.triggerTimeString=');

@@ -1,4 +1,4 @@
-function AddParticlePositionV2(varargin)
+function AddParticlePosition(varargin)
 
 %First parameter should be the prefix. The other parameters can be:
 %SkipAlignment
@@ -118,27 +118,12 @@ if ~NoAP
 
 
     %Figure out the zoom factor
-    Zoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
-    Zoom=str2num(Zoom);
-
-    if Zoom==4
-        Rows=256;
-        Columns=512;
-    elseif Zoom==8
-        Rows=256;
-        Columns=256;
-    elseif Zoom==16
-        Rows=128;
-        Columns=128;
-    else
-        error('Include zoom information in AddParticlePosition.m')
-    end
-
-
-
-
-
-
+    MovieZoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
+    MovieZoom=str2num(MovieZoom);
+    
+    % ES 2013-10-30: This is much more robust.
+    Rows = str2double(ExtractInformationField(ImageInfo(1), 'state.acq.linesPerFrame='));
+    Columns = str2double(ExtractInformationField(ImageInfo(1), 'state.acq.pixelsPerLine='));
 
     %Make a folder to store the images
     mkdir([DropboxFolder,filesep,Prefix,'\APDetection'])
@@ -165,31 +150,51 @@ if ~NoAP
     SurfName=D(find(~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
     SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\',SurfName],ChannelToLoad);   
 
+    % ES 2013-10-30: This allows the surface and midsagittal plane images
+    % to have a zoom factor other than 1. However, we have to assume that
+    % the surface and midsagittal plane half-embryo images were taken at
+    % the same zoom.
+    SurfInfo = imfinfo([SourcePath, filesep, Date, filesep, EmbryoName, filesep, '\FullEmbryo\', SurfName]);
+    SurfZoom = ExtractInformationField(SurfInfo(1), 'state.acq.zoomFactor=');
+    SurfZoom = str2double(SurfZoom);
+    SurfRows = str2double(ExtractInformationField(SurfInfo(1), 'state.acq.linesPerFrame='));
+    SurfColumns = str2double(ExtractInformationField(SurfInfo(1), 'state.acq.pixelsPerLine='));
+    
+    ZoomRatio = MovieZoom / SurfZoom;
 
-
-
+    
     if ~SkipAlignment&HistoneChannel
-        if Zoom==4
+        if ZoomRatio > 1 && ZoomRatio < 24 
+            % ES 2013-10-30: Originally, this said if Zoom == 4
+            
             %Enlarge the 1x image so we can do the cross-correlation
-            SurfImageResized=imresize(SurfImage,Zoom);
-
-            %Calculate the correlation marrix and find the maximum
+            ResizeFactor = max([Rows/SurfRows*ZoomRatio, Columns/SurfColumns*ZoomRatio]);
+            % ES 2013-10-30: the reason I have to define ResizeFactor
+            % differently from ZoomRatio is because you can't necessarily
+            % infer the microns-per-pixel resolution from the zoom alone:
+            % it also depends on the dimensions of the image. This may not
+            % work for all possible resolutions, though...
+            ZoomRatio = ResizeFactor;
+            SurfImageResized=imresize(SurfImage, ResizeFactor);
+            
+            %Calculate the correlation matrix and find the maximum
             C = normxcorr2(ZoomImage, SurfImageResized);
             [Max2,MaxRows]=max(C);
             [Dummy,MaxColumn]=max(Max2);
             MaxRow=MaxRows(MaxColumn);
             [CRows,CColumns]=size(C);
 
-            ShiftRow=round((MaxRow-(CRows/2+1))/Zoom);
-            ShiftColumn=round((MaxColumn-(CColumns/2+1))/Zoom);
+            ShiftRow=round((MaxRow-(CRows/2+1))/ZoomRatio);
+            ShiftColumn=round((MaxColumn-(CColumns/2+1))/ZoomRatio);
 
 
             %How well did we do with the alignment?
             [RowsResized,ColumnsResized]=size(SurfImageResized);
             [RowsZoom,ColumnsZoom]=size(ZoomImage);
 
-            SurfImageResizeZoom=SurfImageResized(RowsResized/2-RowsZoom/2+ShiftRow*Zoom:RowsResized/2+RowsZoom/2-1+ShiftRow*Zoom,...
-                ColumnsResized/2-ColumnsZoom/2+ShiftColumn*Zoom:ColumnsResized/2+ColumnsZoom/2-1+ShiftColumn*Zoom);
+            SurfImageResizeZoom=...
+                SurfImageResized(RowsResized/2-RowsZoom/2+ShiftRow*ZoomRatio:RowsResized/2+RowsZoom/2-1+ShiftRow*ZoomRatio,...
+                ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ZoomRatio:ColumnsResized/2+ColumnsZoom/2-1+ShiftColumn*ZoomRatio);
 
             ImOverlay=cat(3,mat2gray(SurfImageResizeZoom),...
                 +mat2gray(ZoomImage),zeros(size(SurfImageResizeZoom)));
@@ -261,17 +266,17 @@ if ~NoAP
             ImageCenter=[Rows1x/2,Columns1x/2];
 
             %This is for the full image
-            TopLeft=[ImageCenter(1)-Rows/Zoom/2-ShiftRow,...
-                Columns1x*3/2-xShift-Columns1x/Zoom/2-ShiftColumn];
+            TopLeft=[ImageCenter(1)-Rows/ZoomRatio/2-ShiftRow,...
+                Columns1x*3/2-xShift-Columns1x/ZoomRatio/2-ShiftColumn];
 
-            BottomRight=[ImageCenter(1)+Rows/Zoom/2-ShiftRow,...
-                Columns1x*3/2-xShift+Columns1x/Zoom/2-ShiftColumn];
+            BottomRight=[ImageCenter(1)+Rows/ZoomRatio/2-ShiftRow,...
+                Columns1x*3/2-xShift+Columns1x/ZoomRatio/2-ShiftColumn];
 
             %This is for the half image
-            TopLeftHalf=[ImageCenter(1)-Rows1x/Zoom/2+ShiftRow,...
-                ImageCenter(2)-Columns1x/Zoom/2+ShiftColumn];
-            BottomRightHalf=[ImageCenter(1)+Rows1x/Zoom/2+ShiftRow,...
-                ImageCenter(2)+Columns1x/Zoom/2+ShiftColumn];
+            TopLeftHalf=[ImageCenter(1)-Rows1x/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)-Columns1x/ZoomRatio/2+ShiftColumn];
+            BottomRightHalf=[ImageCenter(1)+Rows1x/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)+Columns1x/ZoomRatio/2+ShiftColumn];
 
             coordAHalf=coordA+[-Columns1x+xShift,0];
             coordPHalf=coordP+[-Columns1x+xShift,0];
@@ -284,23 +289,23 @@ if ~NoAP
 
 
             %This is for the full image
-            TopLeft=[ImageCenter(1)-Rows/Zoom/2+ShiftRow,...
-                ImageCenter(2)+Columns/Zoom/2+xShift/Zoom+ShiftColumn];
-            BottomRight=[ImageCenter(1)+Rows/Zoom/2+ShiftRow,...
-                ImageCenter(2)+Columns/Zoom*1.5+xShift/Zoom+ShiftColumn];
+            TopLeft=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)+Columns/ZoomRatio/2+xShift/ZoomRatio+ShiftColumn];
+            BottomRight=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)+Columns/ZoomRatio*1.5+xShift/ZoomRatio+ShiftColumn];
 
 
 
             %This is for the half image
-            TopLeftHalf=[ImageCenter(1)-Rows/Zoom/2+ShiftRow,...
-                ImageCenter(2)-Columns/Zoom/2+ShiftColumn];
-            BottomRightHalf=[ImageCenter(1)+Rows/Zoom/2+ShiftRow,...
-                ImageCenter(2)+Columns/Zoom/2+ShiftColumn];
+            TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn];
+            BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
 
 
 
-            coordAHalf=coordA+[-Columns/2+xShift/2/Zoom,0];
-            coordPHalf=coordP+[-Columns/2+xShift/2/Zoom,0];
+            coordAHalf=coordA+[-Columns/2+xShift/2/ZoomRatio,0];
+            coordPHalf=coordP+[-Columns/2+xShift/2/ZoomRatio,0];
 
        end
     elseif sum(~cellfun('isempty',strfind(lower({D.name}),'left'))&~cellfun('isempty',strfind(lower({D.name}),'surf')))
@@ -315,14 +320,14 @@ if ~NoAP
             ImageCenter=[Rows1x/2,Columns1x/2];
 
             %This is for the full image
-            TopLeft=[ImageCenter(1)-Rows/Zoom/2-yShift,ImageCenter(2)-Columns/Zoom/2];
-            BottomRight=[ImageCenter(1)+Rows/Zoom/2-yShift,ImageCenter(2)+Columns/Zoom/2];
+            TopLeft=[ImageCenter(1)-Rows/ZoomRatio/2-yShift,ImageCenter(2)-Columns/ZoomRatio/2];
+            BottomRight=[ImageCenter(1)+Rows/ZoomRatio/2-yShift,ImageCenter(2)+Columns/ZoomRatio/2];
 
             %This is for the half image
-            TopLeftHalf=[ImageCenter(1)-Rows/Zoom/2+ShiftRow,...
-                ImageCenter(2)-Columns/Zoom/2+ShiftColumn];
-            BottomRightHalf=[ImageCenter(1)+Rows/Zoom/2+ShiftRow,...
-                ImageCenter(2)+Columns/Zoom/2+ShiftColumn];
+            TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn];
+            BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
 
             coordAHalf=coordA+[0,yShift];
             coordPHalf=coordP+[0,yShift];
@@ -330,13 +335,13 @@ if ~NoAP
         else
 
             ImageCenter=[Rows1x/2,Columns1x/2];
-            TopLeft=[ImageCenter(1)-Rows/Zoom/2,ImageCenter(2)-Columns/Zoom/2];
-            BottomRight=[ImageCenter(1)+Rows/Zoom/2,ImageCenter(2)+Columns/Zoom/2];
+            TopLeft=[ImageCenter(1)-Rows/ZoomRatio/2,ImageCenter(2)-Columns/ZoomRatio/2];
+            BottomRight=[ImageCenter(1)+Rows/ZoomRatio/2,ImageCenter(2)+Columns/ZoomRatio/2];
 
-            TopLeftHalf=[ImageCenter(1)-Rows/Zoom/2+ShiftRow,...
-                ImageCenter(2)-Columns/Zoom/2+ShiftColumn];
-            BottomRightHalf=[ImageCenter(1)+Rows/Zoom/2+ShiftRow,...
-                ImageCenter(2)+Columns/Zoom/2+ShiftColumn];
+            TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn];
+            BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
 
             coordAHalf=coordA;
             coordPHalf=coordP;
@@ -356,20 +361,20 @@ if ~NoAP
 
 
         %This is for the full image
-        TopLeft=[ImageCenter(1)-Rows/Zoom/2-ShiftRow,...
-            Columns1x*3/2-xShift1-xShift2-Columns/Zoom/2-ShiftColumn];
+        TopLeft=[ImageCenter(1)-Rows/ZoomRatio/2-ShiftRow,...
+            Columns1x*3/2-xShift1-xShift2-Columns/ZoomRatio/2-ShiftColumn];
 
-        BottomRight=[ImageCenter(1)+Rows/Zoom/2-ShiftRow,...
-            Columns1x*3/2--xShift1-xShift2+Columns/Zoom/2-ShiftColumn];
+        BottomRight=[ImageCenter(1)+Rows/ZoomRatio/2-ShiftRow,...
+            Columns1x*3/2--xShift1-xShift2+Columns/ZoomRatio/2-ShiftColumn];
 
         %This is for the half image
-        TopLeftHalf=[ImageCenter(1)-Rows/Zoom/2+ShiftRow,...
-            ImageCenter(2)-Columns/Zoom/2+ShiftColumn];
-        BottomRightHalf=[ImageCenter(1)+Rows/Zoom/2+ShiftRow,...
-            ImageCenter(2)+Columns/Zoom/2+ShiftColumn];
+        TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
+            ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn];
+        BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
+            ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
 
-        coordAHalf=coordA+[-Columns+xShift1,0];
-        coordPHalf=coordP+[-Columns+xShift1,0];
+        coordAHalf=coordA+[-Columns1x+xShift1,0];
+        coordPHalf=coordP+[-Columns1x+xShift1,0];
 
 
 
@@ -395,16 +400,16 @@ if ~NoAP
         ImageCenter=[Rows1x/2,Columns1x/2];
 
         %This is for the full image
-        TopLeft=[ImageCenter(1)-Rows/Zoom/2,ImageCenter(2)-Columns/Zoom/2]...
+        TopLeft=[ImageCenter(1)-Rows/ZoomRatio/2,ImageCenter(2)-Columns/ZoomRatio/2]...
             -[yShift,xShift];
-        BottomRight=[ImageCenter(1)+Rows/Zoom/2,ImageCenter(2)+Columns/Zoom/2]...
+        BottomRight=[ImageCenter(1)+Rows/ZoomRatio/2,ImageCenter(2)+Columns/ZoomRatio/2]...
             -[yShift,xShift];
 
         %This is for the acquisition image
-        TopLeftHalf=[ImageCenter(1)-Rows/Zoom/2+ShiftRow,...
-            ImageCenter(2)-Columns/Zoom/2+ShiftColumn];
-        BottomRightHalf=[ImageCenter(1)+Rows/Zoom/2+ShiftRow,...
-            ImageCenter(2)+Columns/Zoom/2+ShiftColumn];
+        TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
+            ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn];
+        BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
+            ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
 
         coordAHalf=coordA+[xShift,yShift];
         coordPHalf=coordP+[xShift,yShift];
@@ -437,17 +442,17 @@ if ~NoAP
 
     %Did we already have information from manual alignment?
     if ManualAlignmentDone
-        TopLeftHalf=[ImageCenter(1)-Rows1x/Zoom/2+ShiftRow,...
-            ImageCenter(2)-Columns1x/Zoom/2+ShiftColumn];
-        BottomRightHalf=[ImageCenter(1)+Rows1x/Zoom/2+ShiftRow,...
-            ImageCenter(2)+Columns1x/Zoom/2+ShiftColumn];
+        TopLeftHalf=[ImageCenter(1)-Rows1x/ZoomRatio/2+ShiftRow,...
+            ImageCenter(2)-Columns1x/ZoomRatio/2+ShiftColumn];
+        BottomRightHalf=[ImageCenter(1)+Rows1x/ZoomRatio/2+ShiftRow,...
+            ImageCenter(2)+Columns1x/ZoomRatio/2+ShiftColumn];
     end
 
 
     %Did the user want to do manual alignment?
     if ManualAlignment
        [ShiftColumn,ShiftRow,TopLeftHalf,BottomRightHalf]=ManualAPCorrection(SurfImage,TopLeftHalf,BottomRightHalf,...
-           ShiftColumn,ShiftRow,coordAHalf,coordPHalf,Rows1x,Columns1x,Zoom);
+           ShiftColumn,ShiftRow,coordAHalf,coordPHalf,Rows1x,Columns1x,ZoomRatio);
     end
 
 
@@ -478,8 +483,8 @@ if ~NoAP
     %Matlab starts indexing from 1. However, as shown in the images below,
     %this doesn't make any real difference.   
 
-    coordAZoom=(coordAHalf-ImageCenter)*Zoom+[Columns/2,Rows/2]-[ShiftColumn,ShiftRow]*Zoom;
-    coordPZoom=(coordPHalf-ImageCenter)*Zoom+[Columns/2,Rows/2]-[ShiftColumn,ShiftRow]*Zoom;
+    coordAZoom=(coordAHalf-ImageCenter)*ZoomRatio+[Columns/2,Rows/2]-[ShiftColumn,ShiftRow]*ZoomRatio;
+    coordPZoom=(coordPHalf-ImageCenter)*ZoomRatio+[Columns/2,Rows/2]-[ShiftColumn,ShiftRow]*ZoomRatio;
 
 
     figure(3)
