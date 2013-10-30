@@ -153,10 +153,22 @@ if strcmp(FileMode,'TIF')
 
 
 
-    %Figure out how many repeats of each image were taken, if averaging was used
-    %and how many slices per stack we have
+    % ES 2013-10-30: ScanImage versions handle averaging differently.
+    ScanImageVersionS = ExtractInformationField(ImageInfo(1), 'state.software.version=');
+    
+    %Figure out how many repeats of each image were taken, if averaging was
+    %used and how many slices per stack we have
     NRepeats=str2num(ExtractInformationField(ImageInfo(1),'state.acq.numberOfFrames='));
-    AverageFlag=str2num(ExtractInformationField(ImageInfo(1),'state.acq.averaging='));
+    if strcmp(ScanImageVersionS(1:end-1), '3.5.1')
+        AverageFlag=str2num(ExtractInformationField(ImageInfo(1),'state.acq.averaging='));
+    elseif strcmp(ScanImageVersionS(1:end-1), '3.8')
+        NumAvgFramesSave=str2num(ExtractInformationField(ImageInfo(1),'state.acq.numAvgFramesSave='));
+        if NumAvgFramesSave > 1
+            AverageFlag = 1;
+        elseif NumAvgFramesSave == 1
+            AverageFlag = 0;
+        end
+    end
 
     if AverageFlag
         NImages = numel(ImageInfo);

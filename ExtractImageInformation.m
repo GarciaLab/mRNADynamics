@@ -11,10 +11,10 @@ FrameInfo.Rotation=str2num(ExtractInformationField(ImageInfo,'state.acq.scanRota
 
 % ES 2013-10-30: Compatibility with ScanImage 3.8
 ScanImageVersionS = ExtractInformationField(ImageInfo, 'state.software.version=');
-if strcmp(ScanImageVersionS, '3.5.1')
+if strcmp(ScanImageVersionS(1:end-1), '3.5.1')
     FrameInfo.ScanAmplitudeX=str2num(ExtractInformationField(ImageInfo,'state.acq.scanAmplitudeX='));
     FrameInfo.ScanAmplitudeY=str2num(ExtractInformationField(ImageInfo,'state.acq.scanAmplitudeY='));
-elseif strcmp(ScanImageVersionS, '3.8')
+elseif strcmp(ScanImageVersionS(1:end-1), '3.8')
     FrameInfo.ScanAngleMultiplierFast=str2num(ExtractInformationField(ImageInfo,'state.acq.scanAngleMultiplierFast='));
     FrameInfo.ScanAngleMultiplierSlow=str2num(ExtractInformationField(ImageInfo,'state.acq.scanAngleMultiplierSlow='));
 end
