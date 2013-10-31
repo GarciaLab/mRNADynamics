@@ -47,22 +47,6 @@ ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(1).nam
 Zoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
 Zoom=str2num(Zoom);
 
-if Zoom==4
-    Rows=256;
-    Columns=512;
-elseif Zoom==8
-    Rows=256;
-    Columns=256;
-elseif Zoom==16
-    Rows=128;
-    Columns=128;
-elseif Zoom==2
-    Rows=256;
-    Columns=256;
-else
-    error('Include zoom information in CheckDivisionTimes.m')
-end
-
 
 
 %Get the surface image in the zoomed case
