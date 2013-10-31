@@ -159,9 +159,9 @@ if strcmp(FileMode,'TIF')
     %Figure out how many repeats of each image were taken, if averaging was
     %used and how many slices per stack we have
     NRepeats=str2num(ExtractInformationField(ImageInfo(1),'state.acq.numberOfFrames='));
-    if strcmp(ScanImageVersionS(1:end-1), '3.5.1')
+    if strcmp(ScanImageVersionS(1:end-1), '3') % Referring to ScanImage 3.5.1
         AverageFlag=str2num(ExtractInformationField(ImageInfo(1),'state.acq.averaging='));
-    elseif strcmp(ScanImageVersionS(1:end-1), '3.8')
+    elseif strcmp(ScanImageVersionS(1:end-1), '3.8') % Referring to ScanImage 3.8
         NumAvgFramesSave=str2num(ExtractInformationField(ImageInfo(1),'state.acq.numAvgFramesSave='));
         if NumAvgFramesSave > 1
             AverageFlag = 1;
