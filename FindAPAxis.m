@@ -16,7 +16,7 @@ function [coordA,coordP,xShift,yShift]=FindAPAxis(varargin)
 for i=1:length(varargin)
     if isnumeric(varargin{i})
         if varargin{i}==1
-            FipAP=1;
+            FlipAP=1;
         end
     elseif ischar(varargin{i})
         Prefix=varargin{i};
