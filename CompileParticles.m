@@ -71,6 +71,22 @@ FilePrefix=[Prefix,'_'];
 
 
 
+%What type of experiment are we dealing with? Get this out of
+%MovieDatabase.xlsx
+
+[XLSNum,XLSTxt,XLSRaw]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
+ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
+ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
+
+DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
+Dashes=findstr(Preexitfix,'-');
+PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+
+ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
+ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
+
+
+
 %Load all the information
 load([DropboxFolder,filesep,Prefix,'\Particles.mat'])
 %Check that FrameInfo exists
