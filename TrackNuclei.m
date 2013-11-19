@@ -13,7 +13,7 @@ function TrackNuclei(Prefix)
 
 %Determine division times
 %Load the information about the nc from the XLS file
-[Num,Txt,XLSRaw]=xlsread([DefaultDropboxFolder,'\MovieDatabase.xlsx']);
+[Num,Txt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
 XLSHeaders=Txt(1,:);
 Txt=Txt(2:end,:);
 
@@ -47,7 +47,13 @@ if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
         [Date,'\BcdGFP-HisRFP']));
 else
     XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-        [Prefix(1:Dashes(3)-1),filesep,Prefix(Dashes(3)+1:end)]));
+        [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+    
+    if isempty(XLSEntry)
+    disp('%%%%%%%%%%%%%%%%%%%%%')
+    disp('Dateset could not be found. Check MovieDatabase.xlsx')
+    disp('%%%%%%%%%%%%%%%%%%%%%')
+    end
 end
 
 
@@ -127,7 +133,7 @@ else
     warning('Doing re-tracking. This code needs to be able to handle approved schnitz still')
   
     %Load the Ellipses and re-generate the centers
-    load([DropboxFolder,filesep,Prefix,'\Ellipses.mat'],'Ellipses')
+    load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
     %centers = updateCentersFromEllipses(Ellipses, centers);
     centers = updateCentersFromEllipses(Ellipses);
 

@@ -36,7 +36,6 @@ if isempty(ComputerColumn)
     disp('%%%%%%%%%%%%%%%%%%%%%')
     disp('Computer could not be found. Check host name or update ComputerFolders.xlsx')
     disp('%%%%%%%%%%%%%%%%%%%%%')
-else
 end
 
 
