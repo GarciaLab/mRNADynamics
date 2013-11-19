@@ -59,11 +59,18 @@ Folder=uigetdir(SourcePath,'Select folder with data');
 %combined into one.
 DTIF=dir([Folder,filesep,'*.tif']);
 DLSM=dir([Folder,filesep,'*.lsm']);
+DLIF=dir([Folder,filesep,'*.lif']);
 
 if (length(DTIF)>0)&(length(DLSM)==0)
-    display('2-photon @ Princeton data mode')
-    D=DTIF;
-    FileMode='TIF';
+    if length(DLIF)==0
+        display('2-photon @ Princeton data mode')
+        D=DTIF;
+        FileMode='TIF';
+    else
+        display('LIF export mode')
+        D=DTIF;
+        FileMode='LIFExport';
+    end
 elseif (length(DTIF)==0)&(length(DLSM)>0)
     display('LSM mode')
     D=DLSM;
@@ -445,6 +452,47 @@ elseif strcmp(FileMode,'LSM')
     Output{4}=['frames ',num2str(length(FrameInfo)),':1:',num2str(NSlices+2)];
     Output{5}=['suffix ???_z??'];
     %Output{6}=['flat FF'];
+    
+%LIFExport mode
+elseif strcmp(FileMode,'LIFExport')
+    
+    warning('Still need to add the FF information')
+    warning('All information about the images is being entered manually')
+    
+
+    %Determine the number of slices
+    NSlices=length(dir([Folder,filesep,D(1).name(1:end-11),'*ch00.tif']));
+    
+    %Determine the number of frames
+    NFrames=length(D)/NSlices;
+    
+    %Generate FrameInfo
+    FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
+        'NumberSlices',{},'ZStep',{},'FileMode',{},...
+        'PixelSize',{});
+    %Some that I'm not assigning: ZoomFactor, Rotation
+    for i=1:length(NFrames)
+        FrameInfo(i).LinesPerFrame=nan;
+        FrameInfo(i).PixelsPerLine=nan;
+        FrameInfo(i).NumberSlices=NSlices;
+        FrameInfo(i).FileMode='LIFExport';
+        FrameInfo(i).PixelSize=0.22;
+        FrameInfo(i).ZStep=0.5;
+        FrameInfo(i).Time=(i-1)*40;
+    end
+    
+    %Copy the data
+    m=1;
+    NSlices=FrameInfo(m).NumberSlices;
+    h=waitbar(0,'Extracting LIFExport images');
+    
+    %Do the histone channel, channel 02
+    
+    DHis=D([Folder,'\*_ch01.tif'])
+    
+    
+    
+    
 end
 
 

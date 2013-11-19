@@ -79,7 +79,7 @@ ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
 ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
 
 DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-Dashes=findstr(Preexitfix,'-');
+Dashes=findstr(Prefix,'-');
 PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
 
 ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
@@ -197,20 +197,23 @@ NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
 
 
 
-%Add the APPosition to Particles if they don't exist yet
-if (~isfield(Particles,'APpos'))|ForceAP
-    if HistoneChannel
-        AddParticlePosition(Prefix);
-       
-    %Do this if you want to skip the alignment step
-    %AddParticlePositionV2(Prefix,'SkipAlignment');
+%Add the APPosition to Particles if they don't exist yet. Do this only if
+%we took AP data. Otherwise just add XY.
+
+if strcmp(ExperimentAxis,'AP')
+    if (~isfield(Particles,'APpos'))|ForceAP
+        if HistoneChannel
+            AddParticlePosition(Prefix);
+        else
+            AddParticlePosition(Prefix,'SkipAlignment')
+        end
+
     else
-        AddParticlePosition(Prefix,'SkipAlignment')
-    end
-    
+        display('Using saved AP information')
+    end   
 else
-    display('Using saved AP information')
-end   
+    AddParticlePosition(Prefix,'NoAP');
+end
 
     
 load([DropboxFolder,filesep,Prefix,'\Particles.mat'])
@@ -221,7 +224,9 @@ end
 
 
 %Folders for reports
-mkdir([DropboxFolder,filesep,Prefix,'\APMovie'])
+if strcmp(ExperimentAxis,'AP')
+    mkdir([DropboxFolder,filesep,Prefix,'\APMovie'])
+end
 mkdir([DropboxFolder,filesep,Prefix,'\ParticleTraces'])
 mkdir([DropboxFolder,filesep,Prefix,'\TracesFluctuations'])
 mkdir([DropboxFolder,filesep,Prefix,'\Offset'])
@@ -266,7 +271,7 @@ if HistoneChannel
 end
 
 
-if HistoneChannel
+if HistoneChannel&strcmp(ExperimentAxis,'AP')
     %First, figure out the AP position of each of the nuclei.
 
     %Load the AP detection information
@@ -295,62 +300,70 @@ end
 
 
 %Get the actual time corresponding to each frame
-for j=1:length(FrameInfo)
-    ElapsedTime(j)=etime(datevec(FrameInfo(j).TimeString),datevec(FrameInfo(1).TimeString));
+if strcmp(FrameInfo(1).FileMode,'TIF')
+    for j=1:length(FrameInfo)
+        ElapsedTime(j)=etime(datevec(FrameInfo(j).TimeString),datevec(FrameInfo(1).TimeString));
+    end
+elseif strcmp(FrameInfo(1).FileMode,'LSM')
+    for j=1:length(FrameInfo)
+        ElapsedTime(j)=FrameInfo(j).Time-FrameInfo(1).Time;
+    end
+else
+    error('File mode not supported. Cannot extract time information. Include format in ExportDataForFISH.m')
 end
 ElapsedTime=ElapsedTime/60;     %Time is in minutes
     
+
 %Some parameters
 IntArea=109;        %Are of integration
 MinAPArea=12500;%700;    %Minimum area in pixels in order to consider an AP bin as valid.
 
-%Divide the image into AP bins
-APResolution=0.025;
-APbinID=0:APResolution:1;
 
-%Create an image for the different AP bins
-APPosImage=zeros(FrameInfo(1).LinesPerFrame,FrameInfo(1).PixelsPerLine);
-[Rows,Columns]=size(APPosImage);
+if strcmp(ExperimentAxis,'AP')
+    %Divide the image into AP bins
+    APResolution=0.025;
+    APbinID=0:APResolution:1;
 
-for i=1:Rows
-    for j=1:Columns
-        Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
-        Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
-        APPosition=Distance.*cos(Angle-APAngle);
-        APPosImage(i,j)=APPosition/APLength;
+    %Create an image for the different AP bins
+    APPosImage=zeros(FrameInfo(1).LinesPerFrame,FrameInfo(1).PixelsPerLine);
+    [Rows,Columns]=size(APPosImage);
+
+    for i=1:Rows
+        for j=1:Columns
+            Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
+            Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
+            APPosition=Distance.*cos(Angle-APAngle);
+            APPosImage(i,j)=APPosition/APLength;
+        end
+    end
+
+
+    APPosBinImage=zeros(size(APPosImage));
+    for i=1:(length(APbinID)-1)
+        FilteredMask=(APbinID(i)<=APPosImage)&(APbinID(i+1)>APPosImage);
+        APPosBinImage=APPosBinImage+FilteredMask*i;
+    end
+
+
+    %Calculate the area in pixels corresponding to each AP bin. We will use
+    %this to get rid of small AP bins in the image and also to calculate
+    %probabilities of nuclei being active.
+    for i=1:length(APbinID)
+        APbinArea(i)=sum(sum(APPosBinImage==i));
+
+        %Discard anything that is below MinAPArea
+        if APbinArea(i)<MinAPArea
+            APbinArea(i)=nan;
+        end
     end
 end
-
-
-APPosBinImage=zeros(size(APPosImage));
-for i=1:(length(APbinID)-1)
-    FilteredMask=(APbinID(i)<=APPosImage)&(APbinID(i+1)>APPosImage);
-    APPosBinImage=APPosBinImage+FilteredMask*i;
-end
-
-
-%Calculate the area in pixels corresponding to each AP bin. We will use
-%this to get rid of small AP bins in the image and also to calculate
-%probabilities of nuclei being active.
-for i=1:length(APbinID)
-    APbinArea(i)=sum(sum(APPosBinImage==i));
-
-    %Discard anything that is below MinAPArea
-    if APbinArea(i)<MinAPArea
-        APbinArea(i)=nan;
-    end
-end
-
 
 
 %Now get the particle information for those that were approved
 k=1;
 h=waitbar(0,'Compiling traces');
 for i=1:length(Particles)
-    
-    if i==207
-        1+1
-    end
+
       
     waitbar(i/length(Particles),h)
     if (Particles(i).Approved==1)
@@ -384,10 +397,13 @@ for i=1:length(Particles)
             AnalyzeThisParticle=0;
         end
         
+        
         %See if this particle is in one of the approved AP bins
-        CurrentAPbin=max(find(APbinID<mean(Particles(i).APpos(FrameFilter))));
-        if isnan(APbinArea(CurrentAPbin))
-            AnalyzeThisParticle=0;
+        if strcmp(ExperimentAxis,'AP')
+            CurrentAPbin=max(find(APbinID<mean(Particles(i).APpos(FrameFilter))));
+            if isnan(APbinArea(CurrentAPbin))
+                AnalyzeThisParticle=0;
+            end
         end
         
         
@@ -403,13 +419,20 @@ for i=1:length(Particles)
             CompiledParticles(k).xPos=Particles(i).xPos(FrameFilter);
             CompiledParticles(k).yPos=Particles(i).yPos(FrameFilter);
             
-            CompiledParticles(k).APpos=Particles(i).APpos(FrameFilter);
+            if strcmp(ExperimentAxis,'AP')
+                CompiledParticles(k).APpos=Particles(i).APpos(FrameFilter);
+                
+                %Determine the particles average and median AP position
+                CompiledParticles(k).MeanAP=mean(Particles(i).APpos(FrameFilter));
+                CompiledParticles(k).MedianAP=median(Particles(i).APpos(FrameFilter));
+            end
+            
             %If we have the histone channel we will actually replace the AP
             %position by the position of the nucleus where the particle was
             %found. If there is on nucleus (like when a particle survives
             %past the nuclear division) we will still use the actual particle
             %position.
-            if HistoneChannel
+            if HistoneChannel&strcmp(ExperimentAxis,'AP')
                 %Save the original particle position
                 CompiledParticles(k).APposParticle=CompiledParticles(k).APpos;                
                 
@@ -422,7 +445,6 @@ for i=1:length(Particles)
                     IndexToChange=find(CompiledParticles(k).Frame==FramesToCheck(j));
                     CompiledParticles(k).APPos(IndexToChange)=EllipsePos{FramesToCheck(j)}(EllipsesToCheck(j));
                 end
-                
             end
 
             %First frame it was detected at
@@ -430,11 +452,6 @@ for i=1:length(Particles)
 
             CompiledParticles(k).Approved=Particles(i).Approved;
             
-            %Determine the particles average and median AP position
-            CompiledParticles(k).MeanAP=mean(Particles(i).APpos(FrameFilter));
-            CompiledParticles(k).MedianAP=median(Particles(i).APpos(FrameFilter));
-
-
             %Copy the fit results if they are there
             if isfield(Particles,'Fit')
                 CompiledParticles(k).Fit=Particles(i).Fit;
@@ -628,7 +645,9 @@ for i=1:length(Particles)
                     set(BarHandle,'YTick',[])
                     BarHandle=cbfreeze(BarHandle);
                     ylabel(BarHandle,'Time')
-                    title(['Mean AP: ',num2str(CompiledParticles(k).MeanAP)])
+                    if strcmp(ExperimentAxis,'AP')
+                        title(['Mean AP: ',num2str(CompiledParticles(k).MeanAP)])
+                    end
                     drawnow
                 end
 
@@ -774,34 +793,18 @@ for i=1:length(CompiledParticles)
     end
 end
 
-% 
-% figure(2)
-% hold all
-% for i=1:length(CompiledParticles)
-%     if ncFilter(i,ncFilterID==13)
-%         plot(CompiledParticles(i).Frame,...
-%             CompiledParticles(i).Fluo,'-')
-%         hold on
-%         [i,max(CompiledParticles(i).Frame)]
-%     end
-% end
-% hold off
-% 
-% 
-
-
 
 
 %AP filters:
+if strcmp(ExperimentAxis,'AP')
+    %Divide the AP axis into boxes of a certain AP size. We'll see which
+    %particle falls where.
 
-%Divide the AP axis into boxes of a certain AP size. We'll see which
-%particle falls where.
-
-APFilter=logical(zeros(length(CompiledParticles),length(APbinID)));
-for i=1:length(CompiledParticles)
-    APFilter(i,max(find(APbinID<=CompiledParticles(i).MeanAP)))=1;
+    APFilter=logical(zeros(length(CompiledParticles),length(APbinID)));
+    for i=1:length(CompiledParticles)
+        APFilter(i,max(find(APbinID<=CompiledParticles(i).MeanAP)))=1;
+    end
 end
-
 
 
 %% Binning and averaging data
@@ -809,29 +812,30 @@ end
 %Get the data for the individual particles in a matrix that has the frame
 %number and the particle number as dimensions. Also, get a vector that
 %reports the mean AP position.
-[AllTracesVector,AllTracesAP]=AllTraces(FrameInfo,CompiledParticles);
+[AllTracesVector,AllTracesAP]=AllTraces(FrameInfo,CompiledParticles,'NoAP');
 
 
+if strcmp(ExperimentAxis,'AP')
+    %Mean plot for different AP positions
 
-%Mean plot for different AP positions
+    %Figure out the AP range to use
+    MinAPIndex=1;%min(find(sum(APFilter)));
+    MaxAPIndex=size(APFilter,2);%max(find(sum(APFilter)));
 
-%Figure out the AP range to use
-MinAPIndex=1;%min(find(sum(APFilter)));
-MaxAPIndex=size(APFilter,2);%max(find(sum(APFilter)));
-
-%Get the corresponding mean information
-k=1;
-for i=MinAPIndex:MaxAPIndex
-    [MeanVectorAPTemp,SDVectorAPTemp,NParticlesAPTemp]=AverageTraces(FrameInfo,...
-        CompiledParticles(APFilter(:,i)));
-    MeanVectorAPCell{k}=MeanVectorAPTemp';
-    SDVectorAPCell{k}=SDVectorAPTemp';
-    NParticlesAPCell{k}=NParticlesAPTemp';
-    k=k+1;
+    %Get the corresponding mean information
+    k=1;
+    for i=MinAPIndex:MaxAPIndex
+        [MeanVectorAPTemp,SDVectorAPTemp,NParticlesAPTemp]=AverageTraces(FrameInfo,...
+            CompiledParticles(APFilter(:,i)));
+        MeanVectorAPCell{k}=MeanVectorAPTemp';
+        SDVectorAPCell{k}=SDVectorAPTemp';
+        NParticlesAPCell{k}=NParticlesAPTemp';
+        k=k+1;
+    end
+    MeanVectorAP=cell2mat(MeanVectorAPCell);
+    SDVectorAP=cell2mat(SDVectorAPCell);
+    NParticlesAP=cell2mat(NParticlesAPCell);
 end
-MeanVectorAP=cell2mat(MeanVectorAPCell);
-SDVectorAP=cell2mat(SDVectorAPCell);
-NParticlesAP=cell2mat(NParticlesAPCell);
 
 
 %Calculate the mean for all of them
@@ -868,47 +872,46 @@ for j=1:length(CompiledParticles)
 end
 
 
-%Calculate the average slope over an AP window
+if strcmp(ExperimentAxis,'AP')
+    %Calculate the average slope over an AP window
+    MeanSlopeVectorAP=nan(size(MeanVectorAP));
+    SDSlopeVectorAP=nan(size(MeanVectorAP));
+    NSlopeAP=nan(size(MeanVectorAP));
 
 
-MeanSlopeVectorAP=nan(size(MeanVectorAP));
-SDSlopeVectorAP=nan(size(MeanVectorAP));
-NSlopeAP=nan(size(MeanVectorAP));
-
-
-APBins=find(sum(APFilter));
+    APBins=find(sum(APFilter));
 
 
 
-for j=1:length(APBins)
-    TraceCell=cell(length(ElapsedTime),1);
-    
-    ParticlesToAverage=find(APFilter(:,APBins(j)));
-    
-    for k=1:length(ParticlesToAverage)
-        
-        for m=1:length(CompiledParticles(ParticlesToAverage(k)).SlopeTrace)
-            
-            TraceCell{CompiledParticles(ParticlesToAverage(k)).Frame(m)}=...
-                [TraceCell{CompiledParticles(ParticlesToAverage(k)).Frame(m)},...
-                CompiledParticles(ParticlesToAverage(k)).SlopeTrace(m)];
+    for j=1:length(APBins)
+        TraceCell=cell(length(ElapsedTime),1);
+
+        ParticlesToAverage=find(APFilter(:,APBins(j)));
+
+        for k=1:length(ParticlesToAverage)
+
+            for m=1:length(CompiledParticles(ParticlesToAverage(k)).SlopeTrace)
+
+                TraceCell{CompiledParticles(ParticlesToAverage(k)).Frame(m)}=...
+                    [TraceCell{CompiledParticles(ParticlesToAverage(k)).Frame(m)},...
+                    CompiledParticles(ParticlesToAverage(k)).SlopeTrace(m)];
+            end
         end
+
+        %Get rid of the nan in certain time points
+        TraceCell=cellfun(@(x) x(~isnan(x)),TraceCell,'UniformOutput',false);
+
+
+
+        MeanTrace=cellfun(@mean,TraceCell,'UniformOutput',false);
+        SDTrace=cellfun(@std,TraceCell,'UniformOutput',false);
+        NParticlesTrace=cellfun(@length,TraceCell,'UniformOutput',false);
+
+        MeanSlopeVectorAP(:,APBins(j))=[MeanTrace{:}];
+        SDSlopeVectorAP(:,APBins(j))=[SDTrace{:}];
+        NSlopeAP(:,APBins(j))=[NParticlesTrace{:}];
     end
-    
-    %Get rid of the nan in certain time points
-    TraceCell=cellfun(@(x) x(~isnan(x)),TraceCell,'UniformOutput',false);
-    
-      
-    
-    MeanTrace=cellfun(@mean,TraceCell,'UniformOutput',false);
-    SDTrace=cellfun(@std,TraceCell,'UniformOutput',false);
-    NParticlesTrace=cellfun(@length,TraceCell,'UniformOutput',false);
-
-    MeanSlopeVectorAP(:,APBins(j))=[MeanTrace{:}];
-    SDSlopeVectorAP(:,APBins(j))=[SDTrace{:}];
-    NSlopeAP(:,APBins(j))=[NParticlesTrace{:}];
 end
-
 
 
 
@@ -960,7 +963,7 @@ end
 %% Information about the cytoplasm
 %If the nuclear masks are present then use them. Otherwise just calculate
 %the median of the images as a function of time
-if HistoneChannel
+if HistoneChannel&strcmp(ExperimentAxis,'AP')
     [MeanCyto,SDCyto,MedianCyto,MaxCyto]=GetCytoMCP(Prefix);
 else
     MeanCyto=[];
@@ -1086,50 +1089,51 @@ end
 
 
 
-%Look at the offset of each particle. Do they all look the same?
-
-figure(7)
-subplot(1,2,1)
-MaxAP=0;
-MinAP=inf;
-hold all
-for i=1:length(CompiledParticles)
-    if sum(CompiledParticles(i).Frame==MaxFrame(end-1))
-        MaxAP=max([CompiledParticles(i).MeanAP,MaxAP]);
-        MinAP=min([CompiledParticles(i).MeanAP,MinAP]);
-        FramePos=find(CompiledParticles(i).Frame==MaxFrame(end-1));
-        plot(CompiledParticles(i).MeanAP,CompiledParticles(i).Off(FramePos),'.k')
+%Look at the offset of each particle. Do they all look the same? This is
+%only for AP for now
+if strcmp(ExperimentAxis,'AP')
+    figure(7)
+    subplot(1,2,1)
+    MaxAP=0;
+    MinAP=inf;
+    hold all
+    for i=1:length(CompiledParticles)
+        if sum(CompiledParticles(i).Frame==MaxFrame(end-1))
+            MaxAP=max([CompiledParticles(i).MeanAP,MaxAP]);
+            MinAP=min([CompiledParticles(i).MeanAP,MinAP]);
+            FramePos=find(CompiledParticles(i).Frame==MaxFrame(end-1));
+            plot(CompiledParticles(i).MeanAP,CompiledParticles(i).Off(FramePos),'.k')
+        end
     end
-end
-hold off
-if MinAP<MaxAP
+    hold off
+    if MinAP<MaxAP
+        xlim([MinAP*0.8,MaxAP*1.2])
+    end
+    xlabel('AP position')
+    ylabel('Offset fluorescence')
+    title('Offset at maximum in nc13')
+    axis square
+
+    subplot(1,2,2)
+    MaxAP=0;
+    MinAP=inf;
+    hold all
+    for i=1:length(CompiledParticles)
+        if sum(CompiledParticles(i).Frame==MaxFrame(end))
+            MaxAP=max([CompiledParticles(i).MeanAP,MaxAP]);
+            MinAP=min([CompiledParticles(i).MeanAP,MinAP]);
+            FramePos=find(CompiledParticles(i).Frame==MaxFrame(end));
+            plot(CompiledParticles(i).MeanAP,CompiledParticles(i).Off(FramePos),'.k')
+        end
+    end
+    hold off
     xlim([MinAP*0.8,MaxAP*1.2])
+    xlabel('AP position')
+    ylabel('Offset fluorescence')
+    title('Offset at maximum in nc14')
+    axis square
+    saveas(gcf,[DropboxFolder,filesep,Prefix,'\Offset\OffsetVsAP.tif'])
 end
-xlabel('AP position')
-ylabel('Offset fluorescence')
-title('Offset at maximum in nc13')
-axis square
-
-subplot(1,2,2)
-MaxAP=0;
-MinAP=inf;
-hold all
-for i=1:length(CompiledParticles)
-    if sum(CompiledParticles(i).Frame==MaxFrame(end))
-        MaxAP=max([CompiledParticles(i).MeanAP,MaxAP]);
-        MinAP=min([CompiledParticles(i).MeanAP,MinAP]);
-        FramePos=find(CompiledParticles(i).Frame==MaxFrame(end));
-        plot(CompiledParticles(i).MeanAP,CompiledParticles(i).Off(FramePos),'.k')
-    end
-end
-hold off
-xlim([MinAP*0.8,MaxAP*1.2])
-xlabel('AP position')
-ylabel('Offset fluorescence')
-title('Offset at maximum in nc14')
-axis square
-saveas(gcf,[DropboxFolder,filesep,Prefix,'\Offset\OffsetVsAP.tif'])
-
 
 
 %Average over all time points
@@ -1349,27 +1353,28 @@ if HistoneChannel
 
 
     %First frame and AP position
-
-    figure(13)
-    clf
-    hold on
-    for i=1:length(CompiledParticles)
-        plot(CompiledParticles(i).MeanAP,....
-            ElapsedTime(CompiledParticles(i).FirstFrame)-...
-            ElapsedTime(nc14),'.k')
+    if strcmp(ExperimentAxis,'AP')
+        figure(13)
+        clf
+        hold on
+        for i=1:length(CompiledParticles)
+            plot(CompiledParticles(i).MeanAP,....
+                ElapsedTime(CompiledParticles(i).FirstFrame)-...
+                ElapsedTime(nc14),'.k')
+        end
+        hold off
+        box on
+        xlabel('AP position (x/L)')
+        ylabel('Particle first frame (min)')
+        ylim([0,ElapsedTime(nc14+20)-ElapsedTime(nc14)])
+        saveas(gcf,[DropboxFolder,filesep,Prefix,'\Various\FirstFrameVsAP.tif'])
     end
-    hold off
-    box on
-    xlabel('AP position (x/L)')
-    ylabel('Particle first frame (min)')
-    ylim([0,ElapsedTime(nc14+20)-ElapsedTime(nc14)])
-    saveas(gcf,[DropboxFolder,filesep,Prefix,'\Various\FirstFrameVsAP.tif'])
 end
 
 
 %% AP position of particle vs nucleus
 
-if HistoneChannel
+if HistoneChannel&strcmp(ExperimentAxis,'AP')
 
     %How different are the AP positions of the nuclei to the particles as a
     %function of time? Let's save the information about nuclear position in the
@@ -1421,7 +1426,7 @@ end
 %Create an image that is partitioned according to the AP bins. We will use
 %this to calculate the area per AP bin.
 
-if HistoneChannel
+if HistoneChannel&strcmp(ExperimentAxis,'AP')
 
     %I'll use the Ellipses structure to count nuclei. This is because
     %schnitzcells sometimes misses things at the edges.
@@ -1793,7 +1798,7 @@ end
 %a function of time. In order to make life easier I'll just export to a
 %folder. I can then load everything in ImageJ.
 
-if ~SkipMovie
+if ~SkipMovie&strcmp(ExperimentAxis,'AP')
     figure(17)
 
     MaxValue=max(max(MeanVectorAP));
@@ -1870,7 +1875,7 @@ end
 
 
 %% Save everything
-if HistoneChannel
+if HistoneChannel&strcmp(ExperimentAxis,'AP')
     save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
         'CompiledParticles','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
         'nc12','nc13','nc14','ncFilterID','ncFilter','APbinID','APFilter',...
@@ -1883,6 +1888,14 @@ if HistoneChannel
         'ParticleCountProbAP',...
         'EllipsesOnAP','TotalEllipsesAP',...
         'EllipsePos')
+elseif HistoneChannel&strcmp(ExperimentAxis,'DV')
+    save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
+        'CompiledParticles','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
+        'nc12','nc13','nc14','ncFilterID','ncFilter',...
+        'MeanVectorAll',...
+        'SDVectorAll','NParticlesAll','MaxFrame',...
+        'AllTracesVector','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
+        'MeanOffsetVector','SDOffsetVector','NOffsetParticles')
 else
     save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
         'CompiledParticles','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...

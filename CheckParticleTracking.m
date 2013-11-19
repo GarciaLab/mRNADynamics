@@ -194,49 +194,52 @@ end
 
 %Determine division times
 %Load the information about the nc from the XLS file
-[Num,Txt]=xlsread([DefaultDropboxFolder,'\MovieDatabase.xlsx']);
+[Num,Txt,XLSRaw]=xlsread([DefaultDropboxFolder,'\MovieDatabase.xlsx']);
 XLSHeaders=Txt(1,:);
 Txt=Txt(2:end,:);
 
-%Find the different columns.
-DataFolderColumn=find(strcmp(XLSHeaders,'DataFolder'));
-nc9Column=find(strcmp(XLSHeaders,'nc9'));
-nc10Column=find(strcmp(XLSHeaders,'nc10'));
-nc11Column=find(strcmp(XLSHeaders,'nc11'));
-nc12Column=find(strcmp(XLSHeaders,'nc12'));
-nc13Column=find(strcmp(XLSHeaders,'nc13'));
-nc14Column=find(strcmp(XLSHeaders,'nc14'));
-CFColumn=find(strcmp(XLSHeaders,'CF'));
-Channel2Column=find(strcmp(XLSHeaders,'Channel2'));
+ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
+ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
 
-%Convert the prefix into the string used in the XLS file
-Dashes=findstr(FilePrefix(1:end-1),'-');
+DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
+Dashes=findstr(FilePrefix,'-');
+PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[FilePrefix(1:Dashes(3)-1),'\',FilePrefix(Dashes(3)+1:end-1)]));
+
+ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
+ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
+
+%Find the different columns.
+DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
+nc9Column=find(strcmp(XLSRaw(1,:),'nc9'));
+nc10Column=find(strcmp(XLSRaw(1,:),'nc10'));
+nc11Column=find(strcmp(XLSRaw(1,:),'nc11'));
+nc12Column=find(strcmp(XLSRaw(1,:),'nc12'));
+nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
+nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
+CFColumn=find(strcmp(XLSRaw(1,:),'CF'));
+Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
+
 
 %Find the corresponding entry in the XLS file
 if (~isempty(findstr(FilePrefix,'Bcd')))&(isempty(findstr(FilePrefix,'BcdE1')))&...
         (isempty(findstr(FilePrefix(1:end-1),'NoBcd')))
-    XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
+    warning('This step in CheckParticleTracking will most likely have to be modified to work')
+    XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
         [Date,'\BcdGFP-HisRFP']));
 else
-    XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
+    XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
         [FilePrefix(1:Dashes(3)-1),filesep,FilePrefix(Dashes(3)+1:end-1)]));
 end
 
 
-if strcmp(Txt(XLSEntry,Channel2Column),'His-RFP')
-    nc9=Num(XLSEntry,nc9Column-6);
-    nc10=Num(XLSEntry,nc10Column-6);
-    nc11=Num(XLSEntry,nc11Column-6);
-    nc12=Num(XLSEntry,nc12Column-6);
-    nc13=Num(XLSEntry,nc13Column-6);
-    nc14=Num(XLSEntry,nc14Column-6);
-    %This is in case the last column for CF is all nan and is not part of
-    %the Num matrix
-    if size(Num,2)==CFColumn-6    
-        CF=Num(XLSEntry,CFColumn-6);
-    else
-        CF=nan;
-    end
+if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')
+    nc9=XLSRaw{XLSEntry,nc9Column};
+    nc10=XLSRaw{XLSEntry,nc10Column};
+    nc11=XLSRaw{XLSEntry,nc11Column};
+    nc12=XLSRaw{XLSEntry,nc12Column};
+    nc13=XLSRaw{XLSEntry,nc13Column};
+    nc14=XLSRaw{XLSEntry,nc14Column};
+    CF=XLSRaw{XLSEntry,CFColumn};
     
     
     for i=1:length(FrameInfo)

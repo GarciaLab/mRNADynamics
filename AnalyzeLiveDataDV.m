@@ -50,8 +50,7 @@ cd([MS2CodePath])
 
 %We will keep the threshold low and then increase it after the fact.
 
-%For LSM settings
-Threshold=1000;   
+Threshold=150;   
 
 %Now, do an analysis with an actual threshold
 cd([FISHPath,filesep,'Analysis'])
@@ -75,7 +74,7 @@ TrackNuclei(Prefix)
 %% check the nuclei tracking in this round.
 
 %Track the particles, the two numbers are Threshold1 and Threshold2
-TrackmRNADynamics(Prefix,2000,1400)
+TrackmRNADynamics(Prefix,130,130)
 
 
 CheckParticleTracking(Prefix)
