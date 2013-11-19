@@ -31,6 +31,15 @@ name = lower(name);
 %Find which computer we are dealing with:
 ComputerColumn=find(strcmp(XLS(1,:),name(1:end-1)));
 
+% Error when computer not found
+if isempty(ComputerColumn)
+    disp('%%%%%%%%%%%%%%%%%%%%%')
+    disp('Computer could not be found. Check host name or update ComputerFolders.xlsx')
+    disp('%%%%%%%%%%%%%%%%%%%%%')
+else
+end
+
+
 % ES 2013-10-27: queries user name if more than one user is defined for
 % this computer
 if length(ComputerColumn) > 1
