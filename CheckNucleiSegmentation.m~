@@ -135,8 +135,8 @@ if strcmp(Txt(XLSEntry,Channel2Column),'His-RFP')
     nc14=cell2mat(XLSRaw(XLSEntry,nc14Column));
     %This is in case the last column for CF is all nan and is not part of
     %the Num matrix
-    if ~isempty(CFColumn)    
-        CF=cell2mat(XLSRaw(XLSEntry,CFColumn));
+    if size(Num,2)==CFColumn-6    
+        CF=Num(XLSEntry,CFColumn-6);
     else
         CF=nan;
     end
