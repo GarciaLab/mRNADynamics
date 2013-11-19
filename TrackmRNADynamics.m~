@@ -81,7 +81,7 @@ OutputFolder=[DropboxFolder,filesep,Prefix];
 
 FilePrefix=FileName(16:end-4);
     
-DataFolder=[Folder,'..',filesep,'..',filesep,'..',filesep,'Data',filesep,FilePrefix(1:end-1)];
+DataFolder=[Folder,'..',filesep, '\..\..\Data\',FilePrefix(1:end-1)];
 
 
 %Determine the search radius based on the imaging conditions
@@ -93,8 +93,8 @@ SearchRadiusMicrons=2.5;       %Search radius in um
 
 %Check if we have FrameInfo otherwise try to get the information straight
 %from the file.
-if exist([OutputFolder,filesep,'FrameInfo.mat'])
-    load([OutputFolder,filesep,'FrameInfo.mat'])
+if exist([OutputFolder,'\FrameInfo.mat'])
+    load([OutputFolder,'\FrameInfo.mat'])
     
     %See if this came from the 2-photon
     if ~isfield(FrameInfo,'FileMode')
@@ -117,8 +117,8 @@ if exist([OutputFolder,filesep,'FrameInfo.mat'])
 else
     warning('No FrameInfo.mat detected. Trying to pull out magnification information from the TIF file')
 
-    DZoom=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*z*.tif']);
-    ImageInfo=imfinfo([FISHPath,filesep,'Data',filesep,Prefix,filesep,DZoom(1).name]);
+    DZoom=dir([FISHPath,'\Data\',Prefix,'\*z*.tif']);
+    ImageInfo=imfinfo([FISHPath,'\Data\',Prefix,filesep,DZoom(1).name]);
     PixelSize=1/ImageInfo.XResolution;
 end
     
@@ -128,9 +128,9 @@ SearchRadius=ceil(SearchRadiusMicrons/PixelSize);
 
 
 %Check if particle tracking has already been done on this dataset
-if exist([OutputFolder,filesep,'Particles.mat'])
+if exist([OutputFolder,'\Particles.mat'])
     %error('Trying to re-track particles. I need to work on this case')
-    load([OutputFolder,filesep,'Particles.mat'])
+    load([OutputFolder,'\Particles.mat'])
     if isfield(Particles,'Approved')
         Retracking=1;           %Flag for whether we are performing retracking
         
