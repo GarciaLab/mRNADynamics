@@ -511,7 +511,7 @@ if ~UseHistone
     
     mkdir([OutputFolder,filesep]);
 
-    save([OutputFolder,'\Particles.mat'],'Particles','fad','fad2');
+    save([OutputFolder,filesep,'Particles.mat'],'Particles','fad','fad2');
 
     
 else
@@ -636,7 +636,7 @@ else
     
     mkdir([OutputFolder,filesep])
 
-    save([OutputFolder,'\Particles.mat'],'Particles','fad','fad2',...
+    save([OutputFolder,filesep,'Particles.mat'],'Particles','fad','fad2',...
         'Threshold1','Threshold2')
     
 end
