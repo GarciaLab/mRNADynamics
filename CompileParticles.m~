@@ -1175,7 +1175,7 @@ xlabel('Frame')
 ylabel('Fluorescence (au)')
 xlim([0,length(MeanOffsetVector)*1.1])
 legend('Offset','Spots','Location','Best')
-saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Offset',filesep,'OffsetAndFluoTime.tif'])
+saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Offset\OffsetAndFluoTime.tif'])
 
 
 figure(9)
@@ -1191,7 +1191,7 @@ ylabel('Fluorescence (au)')
 xlim([0,length(MeanOffsetVector)*1.1])
 legend('Offset (displaced)','Spots','Location','Best')
 axis square
-saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Offset',filesep,'OffsetAndFluoTime-Displaced.tif'])
+saveas(gcf,[DropboxFolder,filesep,Prefix,'\Offset\OffsetAndFluoTime-Displaced.tif'])
 
 
 
@@ -1269,7 +1269,7 @@ if isfield(CompiledParticles,'Fit')
                 xlim([ElapsedTime(StartFrame),ElapsedTime(EndFrame)])
                 ylim([0,MaxFluo])
 
-                saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Fits',filesep,'Fit',iIndex(i,3),'-nc',...
+                saveas(gcf,[DropboxFolder,filesep,Prefix,'\Fits\Fit',iIndex(i,3),'-nc',...
                     num2str(CompiledParticles(i).nc),'.tif'])
             end
         end
@@ -1312,7 +1312,7 @@ if HistoneChannel
     xlabel('nc')
     ylabel('Frame')
     title('Division time set by eye vs. actual division times of nuclei')
-    saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Various',filesep,'DivisionTimes.tif'])
+    saveas(gcf,[DropboxFolder,filesep,Prefix,'\Various\DivisionTimes.tif'])
 
 
 
@@ -1346,7 +1346,7 @@ if HistoneChannel
     title('nc14')
     xlabel('Nuclear birth (frame)')
     ylabel('First particle frame')
-    saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Various',filesep,'DivisionVsFirstFrame.tif'])
+    saveas(gcf,[DropboxFolder,filesep,Prefix,'\Various\DivisionVsFirstFrame.tif'])
 
 
 
@@ -1367,7 +1367,7 @@ if HistoneChannel
         xlabel('AP position (x/L)')
         ylabel('Particle first frame (min)')
         ylim([0,ElapsedTime(nc14+20)-ElapsedTime(nc14)])
-        saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Various',filesep,'FirstFrameVsAP.tif'])
+        saveas(gcf,[DropboxFolder,filesep,Prefix,'\Various\FirstFrameVsAP.tif'])
     end
 end
 
@@ -1406,7 +1406,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
     box on
     xlabel('Frame')
     ylabel('AP difference between spot and nucleus (x/L)')
-    saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'APNucVsParticle.tif'])
+    saveas(gca,[DropboxFolder,filesep,Prefix,'\APDetection\APNucVsParticle.tif'])
 
 end
 
@@ -1553,7 +1553,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
         StandardFigure(PlotHandle,gca)
         xlim([0,ElapsedTime(end)])
         ylim([0,1.01])
-        saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsTimeVsAP.tif'])
+        saveas(gca,[DropboxFolder,filesep,Prefix,'\Probabilities\ProbVsTimeVsAP.tif'])
     end
 
 
@@ -1645,7 +1645,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
     %ylim([0,max(ParticleCountAP(1,:))*2*1.1])
     xlabel('AP position (x/L)')
     ylabel('Number of on nuclei per unit AP position')
-    saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsAP.tif'])
+    saveas(gca,[DropboxFolder,filesep,Prefix,'\Probabilities\ProbVsAP.tif'])
 
     
     %Use the alternative approach I used for the movies. We are oging to
@@ -1835,7 +1835,7 @@ if ~SkipMovie&strcmp(ExperimentAxis,'AP')
 
         StandardFigure(PlotHandle,gca)
 
-        saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'APMovie',filesep,iIndex(i,3),'.tif']);   
+        saveas(gcf,[DropboxFolder,filesep,Prefix,'\APMovie\',iIndex(i,3),'.tif']);   
     end
     
 end
