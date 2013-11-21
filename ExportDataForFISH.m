@@ -259,6 +259,7 @@ if strcmp(FileMode,'TIF')
         ImageInfo = imfinfo([Folder,filesep,D(i).name]);
         waitbar(i/length(D),h)
         FrameInfo(i)=ExtractImageInformation(ImageInfo(1));
+        FrameInfo(i).FileMode='TIF';
 
         %Check that we don't just want to calculate the TAG file
         if ~TAGOnly

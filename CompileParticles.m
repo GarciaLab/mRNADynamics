@@ -82,6 +82,11 @@ DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
 Dashes=findstr(Prefix,'-');
 PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
 
+if isempty(PrefixRow)
+    error('Entry not found in MovieDatabase.xlsx')
+end
+
+
 ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
 ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
 
@@ -300,18 +305,26 @@ end
 
 
 %Get the actual time corresponding to each frame
-if strcmp(FrameInfo(1).FileMode,'TIF')
+if isfield(FrameInfo,'FileMode')
+    if strcmp(FrameInfo(1).FileMode,'TIF')
+        for j=1:length(FrameInfo)
+            ElapsedTime(j)=etime(datevec(FrameInfo(j).TimeString),datevec(FrameInfo(1).TimeString));
+        end
+    elseif strcmp(FrameInfo(1).FileMode,'LSM')
+        for j=1:length(FrameInfo)
+            ElapsedTime(j)=FrameInfo(j).Time-FrameInfo(1).Time;
+        end
+    else
+        error('File mode not supported. Cannot extract time information. Include format in ExportDataForFISH.m')
+    end
+else
+    warning('No FileMode information found. Assuming that this is TIF from the 2-photon.')
     for j=1:length(FrameInfo)
         ElapsedTime(j)=etime(datevec(FrameInfo(j).TimeString),datevec(FrameInfo(1).TimeString));
     end
-elseif strcmp(FrameInfo(1).FileMode,'LSM')
-    for j=1:length(FrameInfo)
-        ElapsedTime(j)=FrameInfo(j).Time-FrameInfo(1).Time;
-    end
-else
-    error('File mode not supported. Cannot extract time information. Include format in ExportDataForFISH.m')
 end
-ElapsedTime=ElapsedTime/60;     %Time is in minutes
+    
+    ElapsedTime=ElapsedTime/60;     %Time is in minutes
     
 
 %Some parameters
@@ -661,7 +674,7 @@ for i=1:length(Particles)
                     yTrace=y(CompiledParticles(k).Index(j));
                     zTrace=z(CompiledParticles(k).Index(j));
 
-                    Image=imread([FISHPath,'\Data\',FilePrefix(1:end-1),filesep,...
+                    Image=imread([FISHPath,filesep,'Data',filesep,FilePrefix(1:end-1),filesep,...
                         FilePrefix,iIndex(CompiledParticles(k).Frame(j),3),'_z',iIndex(zTrace,2),'.tif']);
                     [ImRows,ImCols]=size(Image);
 
@@ -711,7 +724,7 @@ for i=1:length(Particles)
                 set(gcf,'Position',[1,41,1280,684])  
 
                 drawnow
-                saveas(gcf,[DropboxFolder,filesep,Prefix,'\ParticleTraces\',iIndex(k,3),...
+                saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'ParticleTraces',filesep,iIndex(k,3),...
                     '(',num2str(i),')-nc',...
                     num2str(CompiledParticles(k).nc),'.tif'])
                 close(2)
