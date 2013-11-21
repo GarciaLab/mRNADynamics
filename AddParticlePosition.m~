@@ -461,10 +461,10 @@ if ~NoAP
     plot([coordAHalf(1),coordPHalf(1)],[coordAHalf(2),coordPHalf(2)],'-b')
     plot([1],[1],'.y','MarkerSize',50)
     hold off
-    saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,HalfEmbryoArea.tif']);
+    saveas(gcf, [DropboxFolder,filesep,Prefix,'\APDetection\HalfEmbryoArea.tif']);
 
 
-    D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.tif']);
+    D=dir([SourcePath,filesep,Date,filesep,EmbryoName,'\*.tif']);
     ZoomImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(end).name],ChannelToLoad);
 
 
@@ -489,7 +489,7 @@ if ~NoAP
     plot([coordAZoom(1)+1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'--r')
     plot([coordAZoom(1)-1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'-.g')
     hold off
-    saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'ZoomedEmbryoAP.tif']);
+    saveas(gcf, [DropboxFolder,filesep,Prefix,'\APDetection\ZoomedEmbryoAP.tif']);
 
 
     %With AP coordinates in hand we can now determine the AP position of
@@ -540,7 +540,7 @@ if ~NoAP
     hold off
 
 
-    if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
+    if exist([DropboxFolder,filesep,Prefix,'\Particles.mat'])
         for i=1:length(Particles)
             %Angle between the x-axis and the particle using the A position as a
             %zero
@@ -558,15 +558,15 @@ if ~NoAP
     
     %Save AP detection information
     if exist('xShift')
-        save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
+        save([DropboxFolder,filesep,Prefix,'\APDetection.mat'],'coordA','coordP',...
             'xShift','yShift','coordAZoom','coordPZoom') 
     else
-        save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
+        save([DropboxFolder,filesep,Prefix,'\APDetection.mat'],'coordA','coordP',...
             'xShift1','yShift1','xShift2','yShift2','coordAZoom','coordPZoom') 
     end
 
     if ManualAlignment|ManualAlignmentDone
-        save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ManualAlignmentDone',...
+        save([DropboxFolder,filesep,Prefix,'\APDetection.mat'],'ManualAlignmentDone',...
             'ShiftColumn','ShiftRow','-append')
     end
     
@@ -577,12 +577,12 @@ end
 
 
 %Save particle information
-if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
+if exist([DropboxFolder,filesep,Prefix,'\Particles.mat'])
     if exist('Threshold1')
-        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','fad','fad2',...
+        save([DropboxFolder,filesep,Prefix,'\Particles.mat'],'Particles','fad','fad2',...
             'Threshold1','Threshold2');
     else
-        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','fad','fad2');
+        save([DropboxFolder,filesep,Prefix,'\Particles.mat'],'Particles','fad','fad2');
     end
 end
     
