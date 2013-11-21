@@ -197,7 +197,7 @@ if ~NoAP
 
             figure(4)
             imshow(ImOverlay)
-            saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentOverlay.tif']);
+            saveas(gcf, [DropboxFolder,filesep,Prefix,'APDetection\AlignmentOverlay.tif']);
 
 
 
@@ -205,7 +205,7 @@ if ~NoAP
             figure(5)
             contourf(abs(C((CRows-1)/2-RowsZoom/2:(CRows-1)/2+RowsZoom/2,...
                 (CColumns-1)/2-ColumnsZoom/2:(CColumns-1)/2+ColumnsZoom/2)))
-            saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentCorrelation.tif']);
+            saveas(gcf, [DropboxFolder,filesep,Prefix,'\APDetection\AlignmentCorrelation.tif']);
 
         else
 
@@ -243,7 +243,7 @@ if ~NoAP
 
         %Load the half image at the surface
         HalfNameSurf=D(find(sum(cellfun('isempty',strfind(lower({D.name}),'right'))&cellfun('isempty',strfind(lower({D.name}),'surf'))))).name;
-        HalfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,HalfName],ChannelToLoad);
+        HalfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\',HalfName],ChannelToLoad);
         [Rows1x,Columns1x]=size(HalfImage);
 
 
@@ -307,7 +307,7 @@ if ~NoAP
 
 
         HalfName=D(find(sum(~cellfun('isempty',strfind(lower({D.name}),'left'))&~cellfun('isempty',strfind(lower({D.name}),'surf'))))).name;
-        HalfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,HalfName],ChannelToLoad);
+        HalfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\',HalfName],ChannelToLoad);
         [Rows1x,Columns1x]=size(HalfImage);
 
         if yShift<0
