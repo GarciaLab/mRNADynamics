@@ -39,8 +39,8 @@ else
 end
 
 
-if exist([DropboxFolder,filesep,Prefix,'\Particles.mat'])
-    load([DropboxFolder,filesep,Prefix,'\Particles.mat'])
+if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
     %Now, get the particle positions (if they're not there already). Notice
     %that the code pulls out the position information from fad. This is because
     %of historical reasons mostly.
@@ -95,7 +95,7 @@ if ~NoAP
     EmbryoName=Prefix(Dashes(3)+1:end);
 
 
-    D=dir([SourcePath,filesep,Date,filesep,EmbryoName,'\*.tif']);
+    D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.tif']);
 
     %Get the information about the zoom
     ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(1).name]);
@@ -104,7 +104,7 @@ if ~NoAP
 
     %Get the information about the AP axis as well as the image shifts
     %used for the stitching of the two halves of the embryo
-    load([DropboxFolder,filesep,Prefix,'\APDetection.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
 
     %See if manual alignment was performed on this set. If so we'll skip the
     %automated alignment
@@ -141,29 +141,29 @@ if ~NoAP
 
 
     %Make a folder to store the images
-    mkdir([DropboxFolder,filesep,Prefix,'\APDetection'])
+    mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
 
     if HistoneChannel
         ChannelToLoad=2;
 
         %Get the surface image in the zoomed case
-        D=dir([FISHPath,'\Data\',Prefix,filesep,Prefix,'-His*.tif']);
-        ZoomImage=imread([FISHPath,'\Data\',Prefix,filesep,D(end-10).name]);
+        D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'-His*.tif']);
+        ZoomImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(end-10).name]);
 
 
     else
         ChannelToLoad=1;
 
         %Get the surface image in the zoomed case
-        D=dir([FISHPath,'\Data\',Prefix,filesep,Prefix,'*_z*.tif']);
-        ZoomImage=imread([FISHPath,'\Data\',Prefix,filesep,D(end-10).name],ChannelToLoad);
+        D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'*_z*.tif']);
+        ZoomImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(end-10).name],ChannelToLoad);
 
     end
 
     %Get the surface image in the 1x
-    D=dir([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\*.tif']);
+    D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.tif']);
     SurfName=D(find(~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
-    SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\',SurfName],ChannelToLoad);   
+    SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,SurfName],ChannelToLoad);   
 
 
 
@@ -197,7 +197,7 @@ if ~NoAP
 
             figure(4)
             imshow(ImOverlay)
-            saveas(gcf, [DropboxFolder,filesep,Prefix,'\APDetection\AlignmentOverlay.tif']);
+            saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentOverlay.tif']);
 
 
 
@@ -205,7 +205,7 @@ if ~NoAP
             figure(5)
             contourf(abs(C((CRows-1)/2-RowsZoom/2:(CRows-1)/2+RowsZoom/2,...
                 (CColumns-1)/2-ColumnsZoom/2:(CColumns-1)/2+ColumnsZoom/2)))
-            saveas(gcf, [DropboxFolder,filesep,Prefix,'\APDetection\AlignmentCorrelation.tif']);
+            saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentCorrelation.tif']);
 
         else
 
@@ -243,7 +243,7 @@ if ~NoAP
 
         %Load the half image at the surface
         HalfNameSurf=D(find(sum(cellfun('isempty',strfind(lower({D.name}),'right'))&cellfun('isempty',strfind(lower({D.name}),'surf'))))).name;
-        HalfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\',HalfName],ChannelToLoad);
+        HalfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,HalfName],ChannelToLoad);
         [Rows1x,Columns1x]=size(HalfImage);
 
 
@@ -307,7 +307,7 @@ if ~NoAP
 
 
         HalfName=D(find(sum(~cellfun('isempty',strfind(lower({D.name}),'left'))&~cellfun('isempty',strfind(lower({D.name}),'surf'))))).name;
-        HalfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\',HalfName],ChannelToLoad);
+        HalfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,HalfName],ChannelToLoad);
         [Rows1x,Columns1x]=size(HalfImage);
 
         if yShift<0

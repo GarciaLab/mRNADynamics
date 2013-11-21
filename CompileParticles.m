@@ -88,18 +88,18 @@ ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
 
 
 %Load all the information
-load([DropboxFolder,filesep,Prefix,'\Particles.mat'])
+load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
 %Check that FrameInfo exists
 if exist([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
     load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
 else
     warning('No FrameInfo.mat found. Trying to continue')
     %Adding frame information
-    DHis=dir([FISHPath,'\Data\',FilePrefix(1:end-1),'\*His*.tif']);
+    DHis=dir([FISHPath,filesep,'Data',filesep,FilePrefix(1:end-1),filesep,'*His*.tif']);
     FrameInfo(length(DHis)).nc=[];
     %Adding information
 
-    Dz=dir([FISHPath,'\Data\',FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'*001*.tif']);
+    Dz=dir([FISHPath,filesep,'Data',filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'*001*.tif']);
     NumberSlices=length(Dz)-1;
     
     for i=1:length(FrameInfo)
@@ -111,10 +111,10 @@ end
 
 %Delete the files in folder where we'll write again.
 if ~SkipTraces
-    delete([DropboxFolder,filesep,Prefix,'\ParticleTraces\*.*'])
+    delete([DropboxFolder,filesep,Prefix,filesep,'ParticleTraces',filesep,'*.*'])
 end
 if ~SkipFits
-    delete([DropboxFolder,filesep,Prefix,'\Fits\*.*'])
+    delete([DropboxFolder,filesep,Prefix,filesep,'Fits',filesep,'*.*'])
 end
 
 
@@ -132,7 +132,7 @@ end
 
 
 %Load the information about the nc from the XLS file
-[Num,Txt]=xlsread([DefaultDropboxFolder,'\MovieDatabase.xlsx']);
+[Num,Txt]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
 XLSHeaders=Txt(1,:);
 Txt=Txt(2:end,:);
 
@@ -145,7 +145,7 @@ Dashes=findstr(FilePrefix(1:end-1),'-');
 
 
 %Load the information about the nc from the XLS file
-[Num,Txt]=xlsread([DefaultDropboxFolder,'\MovieDatabase.xlsx']);
+[Num,Txt]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
 XLSHeaders=Txt(1,:);
 Txt=Txt(2:end,:);
 
@@ -170,7 +170,7 @@ if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
         [Date,'\BcdGFP-HisRFP']));
 else
     XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
-        [Prefix(1:Dashes(3)-1),filesep,Prefix(Dashes(3)+1:end)]));
+        [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
 end
 
 
@@ -216,23 +216,23 @@ else
 end
 
     
-load([DropboxFolder,filesep,Prefix,'\Particles.mat'])
+load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
 
 if HistoneChannel
-    load([DropboxFolder,filesep,Prefix,'\Ellipses.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'])
 end
 
 
 %Folders for reports
 if strcmp(ExperimentAxis,'AP')
-    mkdir([DropboxFolder,filesep,Prefix,'\APMovie'])
+    mkdir([DropboxFolder,filesep,Prefix,filesep,'APMovie'])
 end
-mkdir([DropboxFolder,filesep,Prefix,'\ParticleTraces'])
-mkdir([DropboxFolder,filesep,Prefix,'\TracesFluctuations'])
-mkdir([DropboxFolder,filesep,Prefix,'\Offset'])
-mkdir([DropboxFolder,filesep,Prefix,'\Fits'])
-mkdir([DropboxFolder,filesep,Prefix,'\Probabilities'])
-mkdir([DropboxFolder,filesep,Prefix,'\Various'])
+mkdir([DropboxFolder,filesep,Prefix,filesep,'ParticleTraces'])
+mkdir([DropboxFolder,filesep,Prefix,filesep,'TracesFluctuations'])
+mkdir([DropboxFolder,filesep,Prefix,filesep,'Offset'])
+mkdir([DropboxFolder,filesep,Prefix,filesep,'Fits'])
+mkdir([DropboxFolder,filesep,Prefix,filesep,'Probabilities'])
+mkdir([DropboxFolder,filesep,Prefix,filesep,'Various'])
 
 
 %% Put together CompiledParticles
@@ -275,7 +275,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
     %First, figure out the AP position of each of the nuclei.
 
     %Load the AP detection information
-    load([DropboxFolder,filesep,Prefix,'\APDetection.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
     %Angle between the x-axis and the AP-axis
     APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
     APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
@@ -974,7 +974,7 @@ else
     for i=1:length(FrameInfo)
         waitbar(i/length(FrameInfo),h)
         for j=1:FrameInfo(1).NumberSlices
-            Image(:,:,j)=imread([FISHPath,'\Data\',Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),'.tif']);
+            Image(:,:,j)=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),'.tif']);
         end
         ImageMax=max(Image,[],3);
         MedianCyto(i)=median(double(ImageMax(:)));
@@ -1060,7 +1060,7 @@ if ~SkipFluctuations
     ylim([-4500,4500])
     R = corrcoef(OffsetFluct,DataRawFluct);
     title(['Correlation: ',num2str(R(2,1))])
-    saveas(gcf,[DropboxFolder,filesep,Prefix,'\TracesFluctuations\Fluct-OffsetVsRawData.tif'])
+    saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'TracesFluctuations',filesep,'Fluct-OffsetVsRawData.tif'])
 
     figure(5)
     plot(OffsetFluct,DataOldFluct,'.k')
@@ -1071,7 +1071,7 @@ if ~SkipFluctuations
     ylim([-4500,4500])
     R = corrcoef(OffsetFluct,DataOldFluct)
     title(['Correlation: ',num2str(R(2,1))])
-    saveas(gcf,[DropboxFolder,filesep,Prefix,'\TracesFluctuations\Fluct-OffsetVsInstData.tif'])
+    saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'TracesFluctuations',filesep,'Fluct-OffsetVsInstData.tif'])
 
 
 
@@ -1084,7 +1084,7 @@ if ~SkipFluctuations
     ylim([-4500,4500])
     R = corrcoef(OffsetFluct,DataSplineFluct)
     title(['Correlation: ',num2str(R(2,1))])
-    saveas(gcf,[DropboxFolder,filesep,Prefix,'\TracesFluctuations\Fluct-OffsetVsSplineData.tif'])
+    saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'TracesFluctuations',filesep,'Fluct-OffsetVsSplineData.tif'])
 end
 
 
@@ -1132,7 +1132,7 @@ if strcmp(ExperimentAxis,'AP')
     ylabel('Offset fluorescence')
     title('Offset at maximum in nc14')
     axis square
-    saveas(gcf,[DropboxFolder,filesep,Prefix,'\Offset\OffsetVsAP.tif'])
+    saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Offset',filesep,'OffsetVsAP.tif'])
 end
 
 
@@ -1175,7 +1175,7 @@ xlabel('Frame')
 ylabel('Fluorescence (au)')
 xlim([0,length(MeanOffsetVector)*1.1])
 legend('Offset','Spots','Location','Best')
-saveas(gcf,[DropboxFolder,filesep,Prefix,'\Offset\OffsetAndFluoTime.tif'])
+saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Offset',filesep,'OffsetAndFluoTime.tif'])
 
 
 figure(9)
@@ -1191,7 +1191,7 @@ ylabel('Fluorescence (au)')
 xlim([0,length(MeanOffsetVector)*1.1])
 legend('Offset (displaced)','Spots','Location','Best')
 axis square
-saveas(gcf,[DropboxFolder,filesep,Prefix,'\Offset\OffsetAndFluoTime-Displaced.tif'])
+saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Offset',filesep,'OffsetAndFluoTime-Displaced.tif'])
 
 
 
@@ -1269,7 +1269,7 @@ if isfield(CompiledParticles,'Fit')
                 xlim([ElapsedTime(StartFrame),ElapsedTime(EndFrame)])
                 ylim([0,MaxFluo])
 
-                saveas(gcf,[DropboxFolder,filesep,Prefix,'\Fits\Fit',iIndex(i,3),'-nc',...
+                saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Fits',filesep,'Fit',iIndex(i,3),'-nc',...
                     num2str(CompiledParticles(i).nc),'.tif'])
             end
         end
@@ -1312,7 +1312,7 @@ if HistoneChannel
     xlabel('nc')
     ylabel('Frame')
     title('Division time set by eye vs. actual division times of nuclei')
-    saveas(gcf,[DropboxFolder,filesep,Prefix,'\Various\DivisionTimes.tif'])
+    saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Various',filesep,'DivisionTimes.tif'])
 
 
 
@@ -1346,7 +1346,7 @@ if HistoneChannel
     title('nc14')
     xlabel('Nuclear birth (frame)')
     ylabel('First particle frame')
-    saveas(gcf,[DropboxFolder,filesep,Prefix,'\Various\DivisionVsFirstFrame.tif'])
+    saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Various',filesep,'DivisionVsFirstFrame.tif'])
 
 
 
@@ -1367,7 +1367,7 @@ if HistoneChannel
         xlabel('AP position (x/L)')
         ylabel('Particle first frame (min)')
         ylim([0,ElapsedTime(nc14+20)-ElapsedTime(nc14)])
-        saveas(gcf,[DropboxFolder,filesep,Prefix,'\Various\FirstFrameVsAP.tif'])
+        saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Various',filesep,'FirstFrameVsAP.tif'])
     end
 end
 
@@ -1406,7 +1406,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
     box on
     xlabel('Frame')
     ylabel('AP difference between spot and nucleus (x/L)')
-    saveas(gca,[DropboxFolder,filesep,Prefix,'\APDetection\APNucVsParticle.tif'])
+    saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'APNucVsParticle.tif'])
 
 end
 
@@ -1553,7 +1553,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
         StandardFigure(PlotHandle,gca)
         xlim([0,ElapsedTime(end)])
         ylim([0,1.01])
-        saveas(gca,[DropboxFolder,filesep,Prefix,'\Probabilities\ProbVsTimeVsAP.tif'])
+        saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsTimeVsAP.tif'])
     end
 
 
@@ -1645,7 +1645,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
     %ylim([0,max(ParticleCountAP(1,:))*2*1.1])
     xlabel('AP position (x/L)')
     ylabel('Number of on nuclei per unit AP position')
-    saveas(gca,[DropboxFolder,filesep,Prefix,'\Probabilities\ProbVsAP.tif'])
+    saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsAP.tif'])
 
     
     %Use the alternative approach I used for the movies. We are oging to
@@ -1835,7 +1835,7 @@ if ~SkipMovie&strcmp(ExperimentAxis,'AP')
 
         StandardFigure(PlotHandle,gca)
 
-        saveas(gcf,[DropboxFolder,filesep,Prefix,'\APMovie\',iIndex(i,3),'.tif']);   
+        saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'APMovie',filesep,iIndex(i,3),'.tif']);   
     end
     
 end

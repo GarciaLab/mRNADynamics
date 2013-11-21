@@ -488,7 +488,7 @@ elseif strcmp(FileMode,'LIFExport')
     
     %Do the histone channel, channel 02
     
-    DHis=D([Folder,'\*_ch01.tif'])
+    DHis=D([Folder,filesep,'*_ch01.tif'])
     
     
     
@@ -509,6 +509,6 @@ fclose(fid);
 
 %Save the information about the various frames
 mkdir([DropboxFolder,filesep,Prefix])
-save([DropboxFolder,filesep,Prefix,'\FrameInfo.mat'],...
+save([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'],...
     'FrameInfo')
 
