@@ -1,4 +1,4 @@
-function AddParticlePositionV2(varargin)
+function AddParticlePosition(varargin)
 
 %First parameter should be the prefix. The other parameters can be:
 %SkipAlignment
