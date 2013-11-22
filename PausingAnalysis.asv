@@ -275,5 +275,26 @@ hold off
 xlim([0,45])
 
 
+Threshold=1E3;
+
+for i=1:length(DataSna)
+    NumberOn{i}=zeros(length(DataSna(i).ElapsedTime),1);
+    for Frame=DataSna(i).nc14:length(DataSna(i).ElapsedTime)
+        for j=length(DataSna(i).CompiledParticles)
+            if sum(DataSna(i).CompiledParticles(j).Frame==Frame)
+                if DataSna(i).CompiledParticles(j).Fluo(DataSna(i).CompiledParticles(j).Frame==Frame)>=...
+                        Threshold
+                    NumberOn{i}(Frame)=NumberOn{i}(Frame)+1;
+                end
+            end
+        end
+    end
+end
+                
+            
+plot(NumberOn{2})
+
+
+
 
 

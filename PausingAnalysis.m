@@ -275,5 +275,65 @@ hold off
 xlim([0,45])
 
 
+Threshold=0.5E4;
+
+figure(2)
+clf
+hold all
+for i=1:length(DataSna)
+    NumberOnSna{i}=zeros(length(DataSna(i).ElapsedTime),1);
+    for Frame=DataSna(i).nc14:length(DataSna(i).ElapsedTime)
+        for j=1:length(DataSna(i).CompiledParticles)
+            if sum(DataSna(i).CompiledParticles(j).Frame==Frame)
+                if DataSna(i).CompiledParticles(j).Fluo(DataSna(i).CompiledParticles(j).Frame==Frame)>=...
+                        Threshold
+                    NumberOnSna{i}(Frame)=NumberOnSna{i}(Frame)+1;
+                end
+            end
+        end
+    end
+    plot(DataSna(i).ElapsedTime-...
+        DataSna(i).ElapsedTime(DataSna(i).nc14),...
+        NumberOnSna{i}/max(NumberOnSna{i}),'.-')
+end
+for i=1:length(DataSog)
+    NumberOnSog{i}=zeros(length(DataSog(i).ElapsedTime),1);
+    for Frame=DataSog(i).nc14:length(DataSog(i).ElapsedTime)
+        for j=1:length(DataSog(i).CompiledParticles)
+            if sum(DataSog(i).CompiledParticles(j).Frame==Frame)
+                if DataSog(i).CompiledParticles(j).Fluo(DataSog(i).CompiledParticles(j).Frame==Frame)>=...
+                        Threshold
+                    NumberOnSog{i}(Frame)=NumberOnSog{i}(Frame)+1;
+                end
+            end
+        end
+    end
+    plot(DataSog(i).ElapsedTime-...
+        DataSog(i).ElapsedTime(DataSog(i).nc14),...
+        NumberOnSog{i}/max(NumberOnSog{i}),'o-')
+end
+for i=1:length(DataThs)
+    NumberOnThs{i}=zeros(length(DataThs(i).ElapsedTime),1);
+    for Frame=DataThs(i).nc14:length(DataThs(i).ElapsedTime)
+        for j=1:length(DataThs(i).CompiledParticles)
+            if sum(DataThs(i).CompiledParticles(j).Frame==Frame)
+                if DataThs(i).CompiledParticles(j).Fluo(DataThs(i).CompiledParticles(j).Frame==Frame)>=...
+                        Threshold
+                    NumberOnThs{i}(Frame)=NumberOnThs{i}(Frame)+1;
+                end
+            end
+        end
+    end
+    plot(DataThs(i).ElapsedTime-...
+        DataThs(i).ElapsedTime(DataThs(i).nc14),...
+        NumberOnThs{i}/max(NumberOnThs{i}),'s-')
+end
+hold off
+                
+            
+
+
+
+
 
 
