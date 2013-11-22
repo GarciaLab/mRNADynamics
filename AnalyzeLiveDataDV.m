@@ -50,7 +50,7 @@ cd([MS2CodePath])
 
 %We will keep the threshold low and then increase it after the fact.
 
-Threshold=90;   
+Threshold=1000;   
 
 %Now, do an analysis with an actual threshold
 cd([FISHPath,filesep,'Analysis'])
