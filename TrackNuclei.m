@@ -167,6 +167,6 @@ end
 %Save the information
 %Now save
 mkdir([DropboxFolder,filesep,Prefix])
-save([DropboxFolder,filesep,Prefix,'\Ellipses.mat'],'Ellipses')
+save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells')
 save([FISHPath,filesep,'Analysis',filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')

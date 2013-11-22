@@ -59,20 +59,20 @@ end
 
 
 %Set the source folders
-Folder=[FISHPath,'\Analysis\',Prefix,'_\preanalysis\'];
+Folder=[FISHPath,filesep,'Analysis',filesep,Prefix,'_',filesep,'preanalysis',filesep];
 FileName=['CompactResults_',Prefix,'_.mat'];
 
 %Set the destination folders
 OutputFolder=[DropboxFolder,filesep,Prefix];
 FilePrefix=FileName(16:end-4);
-DataFolder=[Folder,'..\..\..\Data\',FilePrefix(1:end-1)];
+DataFolder=[Folder,'..',filesep,'..',filesep,'..',filesep,'Data',filesep,FilePrefix(1:end-1)];
 
 
 %Find out how many frames we have
-D=dir([FISHPath,'\Data\',Prefix,'\*-His*.tif']);
+D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*-His*.tif']);
 if length(D)==0
     warning('The name format is a mess. I had to do this for KITP')
-    D=dir([FISHPath,'\Data\',Prefix,'\*_His*.tif']);
+    D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*_His*.tif']);
 end
 TotalFrames=length(D);
 
@@ -272,7 +272,7 @@ while (cc~=13)
         CurrentFrame=CurrentFrame-1;
         %DisplayRange=[min(min(HisImage)),max(max(HisImage))];
     elseif (ct~=0)&(cc=='s')
-        save([DropboxFolder,filesep,Prefix,'\Ellipses.mat'],'Ellipses')
+        save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
         display('Ellipses saved.')
     elseif (ct==0)&(strcmp(get(Overlay,'SelectionType'),'normal'))
         cc=1;
@@ -324,7 +324,7 @@ end
 
 
 
-save([DropboxFolder,filesep,Prefix,'\Ellipses.mat'],'Ellipses')
+save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 display('Ellipses saved.')
 
 
