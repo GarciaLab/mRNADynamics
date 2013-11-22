@@ -330,9 +330,73 @@ for i=1:length(DataThs)
 end
 hold off
                 
-            
+%%%%%%%% Cumulative Plot of Data
+
+ThsSort=[];
+
+for i=1:length(DataThs);
+ 
+    
+Ths(i).Time=DataThs(i).ElapsedTime-...
+DataThs(i).ElapsedTime(DataThs(i).nc14);
+
+Ths(i).Frac = DataThs(i).NParticlesAll/sum(DataThs(i).ncFilter(:,end));
+
+Ths(i).Sort=sort(Ths(i).Frac(find(Ths(i).Time>=0&Ths(i).Time<=40)));
+
+ThsSort=sort([ThsSort,Ths(i).Sort]);
+
+end
+
+ThsX = linspace(0,1,length(ThsSort));
 
 
+SnaSort=[];
+
+for i=1:length(DataSna);
+    
+Sna(i).Time=DataSna(i).ElapsedTime-...
+DataSna(i).ElapsedTime(DataSna(i).nc14);
+
+Sna(i).Frac = DataSna(i).NParticlesAll/sum(DataSna(i).ncFilter(:,end));
+
+Sna(i).Sort=sort(Sna(i).Frac(find(Sna(i).Time>=0&Sna(i).Time<=40)));
+
+SnaSort=sort([SnaSort,Sna(i).Sort]);
+
+end
+
+SnaX = linspace(0,1,length(SnaSort));
+
+SogSort=[];
+
+for i=1:length(DataSog);
+    
+Sog(i).Time=DataSog(i).ElapsedTime-...
+DataSog(i).ElapsedTime(DataSog(i).nc14);
+
+Sog(i).Frac = DataSog(i).NParticlesAll/sum(DataSog(i).ncFilter(:,end));
+
+Sog(i).Sort=sort(Sog(i).Frac(find(Sog(i).Time>=0&Sog(i).Time<=40)));
+
+SogSort=sort([SogSort,Sog(i).Sort]);
+
+end
+
+SogX = linspace(0,1,length(SogSort));
+
+
+figure
+hold on
+
+plot(SnaX,SnaSort,'r.')
+plot(SogX,SogSort,'g.')
+plot(ThsX,ThsSort,'b.')
+
+hold off
+
+
+%%%%%%%%%
 
 
 
