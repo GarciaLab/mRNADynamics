@@ -96,7 +96,7 @@ SearchRadiusMicrons=2.5;       %Search radius in um
 if exist([OutputFolder,filesep,'FrameInfo.mat'])
     load([OutputFolder,filesep,'FrameInfo.mat'])
     
-    %See if this came from the 2-photon
+    %See if this came from the 2-photon, which is the default
     if ~isfield(FrameInfo,'FileMode')
     
         if (FrameInfo(1).ZoomFactor==8)&(FrameInfo(1).PixelsPerLine==256)
@@ -111,6 +111,22 @@ if exist([OutputFolder,filesep,'FrameInfo.mat'])
             display('Warning: Imaging setting not defined. Using a pixel size of 0.22um')
             PixelSize=0.22;
         end
+        
+    %For data sets from the two photon with the actual TIF file mode
+    elseif strcmp(FrameInfo(end).FileMode,'TIF')
+         if (FrameInfo(1).ZoomFactor==8)&(FrameInfo(1).PixelsPerLine==256)
+            PixelSize=0.22;     %This is the pixel size in um for a zoom of 8.
+        elseif (FrameInfo(1).ZoomFactor==4)&...
+                (FrameInfo(1).PixelsPerLine==512)&...
+                (FrameInfo(1).ScanAmplitudeY==1)
+            PixelSize=0.22;
+        elseif (FrameInfo(1).ZoomFactor==16)&(FrameInfo(1).PixelsPerLine==128)
+            PixelSize=0.22;
+        else
+            display('Warning: Imaging setting not defined. Using a pixel size of 0.22um')
+            PixelSize=0.22;
+        end
+        
     elseif strcmp(FrameInfo(1).FileMode,'LSM')
         PixelSize=FrameInfo(1).PixelSize*1E6;
     end

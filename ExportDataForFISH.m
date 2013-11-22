@@ -259,7 +259,6 @@ if strcmp(FileMode,'TIF')
         ImageInfo = imfinfo([Folder,filesep,D(i).name]);
         waitbar(i/length(D),h)
         FrameInfo(i)=ExtractImageInformation(ImageInfo(1));
-        FrameInfo(i).FileMode='TIF';
 
         %Check that we don't just want to calculate the TAG file
         if ~TAGOnly
@@ -366,6 +365,13 @@ if strcmp(FileMode,'TIF')
             end
         end
     end
+    
+    %Add the information about the mode
+    for i=1:length(FrameInfo)
+        FrameInfo(i).FileMode='TIF';
+    end
+    
+    
     close(h)
     
     %TAG file information
