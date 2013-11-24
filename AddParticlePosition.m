@@ -515,7 +515,11 @@ if ~NoAP
         for j=1:Columns
             Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
             Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
+            if sign(Angle)==sign(APAngle)
             APPosition=Distance.*cos(Angle-APAngle);
+            else
+            APPosition=Distance.*cos(pi+Angle-APAngle);   
+            end
             APPosImage(i,j)=APPosition/APLength;
         end
     end
@@ -552,7 +556,11 @@ if ~NoAP
             Angles=atan((Particles(i).yPos-coordAZoom(2))./(Particles(i).xPos-coordAZoom(1)));
             %Distance between the points and the A point
             Distances=sqrt((coordAZoom(2)-Particles(i).yPos).^2+(coordAZoom(1)-Particles(i).xPos).^2);
+            if sign(Angles)==sign(APAngle)
             APPositions=Distances.*cos(Angles-APAngle);
+            else
+            APPositions=Distances.*cos(pi+Angles-APAngle);    
+            end
             Particles(i).APpos=APPositions/APLength;
         end
     end
