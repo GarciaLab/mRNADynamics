@@ -21,7 +21,7 @@ Delay=GeneLength/ElongationRate;    %Minutes for PolII to fall off after reachin
 
 %I'm giving just one data set so it knows whic Dropbox folder to use
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
-    DetermineLocalFolders('2013-10-01-SnaESnaP')     ;                             
+    DetermineLocalFolders('2013-10-01-SnaESnaP');                             
                                     
 
 
@@ -398,6 +398,28 @@ hold off
 
 %%%%%%%%%
 
+%%%%%% Auto Correlation
+figure
+hold on
 
+for i=1:length(DataSna)
+    for j=1:length(DataSna(i).CompiledParticles)
+        if DataSna(i).CompiledParticles(j).nc==14
+            
+            
+            plot(DataSna(i).ElapsedTime(DataSna(i).CompiledParticles(j).Frame)-...
+                DataSna(i).ElapsedTime(DataSna(i).nc14),...
+                DataSna(i).CompiledParticles(j).Fluo,'.-')
+            
+            %xcorr(x,y,'coeff')
+        end
+    end
+end
+
+hold off
+xlim([0,45])
+
+
+save_to_base(1)
 
 
