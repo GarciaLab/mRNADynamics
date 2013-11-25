@@ -403,45 +403,35 @@ hold off
 figure(7)
 clf
 hold all
-Counter=1;
-CounterMax=5;
-
 for i=1:length(DataSna)
     for j=1:length(DataSna(i).CompiledParticles)
-        if DataSna(i).CompiledParticles(j).nc==14 & Counter<=CounterMax
+        if DataSna(i).CompiledParticles(j).nc==14
             plot(DataSna(i).ElapsedTime(DataSna(i).CompiledParticles(j).Frame)-...
                 DataSna(i).ElapsedTime(DataSna(i).nc14),...
                 DataSna(i).CompiledParticles(j).Fluo,'.-')
-            Counter=Counter+1;
         end
     end
 end
 
-Counter=1;
 for i=1:length(DataSog)
     for j=1:length(DataSog(i).CompiledParticles)
-        if DataSog(i).CompiledParticles(j).nc==14 & Counter<=CounterMax
+        if DataSog(i).CompiledParticles(j).nc==14
             plot(DataSog(i).ElapsedTime(DataSog(i).CompiledParticles(j).Frame)-...
                 DataSog(i).ElapsedTime(DataSog(i).nc14),...
                 DataSog(i).CompiledParticles(j).Fluo,'o-','MarkerFaceColor','w')
-                   Counter=Counter+1;
         end
     end
 end
 
-Counter=1;
 for i=1:length(DataThs)
     for j=1:length(DataThs(i).CompiledParticles)
-        if DataThs(i).CompiledParticles(j).nc==14 & Counter<=CounterMax
+        if DataThs(i).CompiledParticles(j).nc==14
             plot(DataThs(i).ElapsedTime(DataThs(i).CompiledParticles(j).Frame)-...
                 DataThs(i).ElapsedTime(DataThs(i).nc14),...
                 DataThs(i).CompiledParticles(j).Fluo,'s-','MarkerFaceColor','w')
-                Counter=Counter+1;
         end
     end
 end
-hold off
-xlim([0,45])
-
+hold off   
 
 
