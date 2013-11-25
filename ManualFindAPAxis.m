@@ -108,7 +108,7 @@ if isempty(Zoom)
 end
 
 %Look for the file
-FFDir=dir([SourcePath,filesep,Date,'\FF',Zoom(1),'x*.*']);
+FFDir=dir([SourcePath,filesep,Date,'\FF',Zoom(1:end-1),'x*.*']);
 %If there's more than one match then ask for help
 if length(FFDir)==1
     FFFile=FFDir(1).name;
@@ -117,7 +117,7 @@ elseif isempty(FFDir)
     FFImage=ones(ImageInfo(1).Height,ImageInfo(1).Width);
     pause
 else
-    FFFile=uigetfile([Folder,'\..\FF',Zoom(1),'x*.*'],'Select flatfield file');
+    FFFile=uigetfile([Folder,'\..\FF',Zoom(1:end-1),'x*.*'],'Select flatfield file');
 end
 
 
