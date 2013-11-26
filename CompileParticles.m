@@ -79,11 +79,6 @@ ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
 ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
 
 DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-<<<<<<< HEAD
-Dashes=findstr(Preexitfix,'-');
-PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-
-=======
 Dashes=findstr(Prefix,'-');
 PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
 
@@ -92,7 +87,6 @@ if isempty(PrefixRow)
 end
 
 
->>>>>>> origin/HernanDev
 ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
 ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
 
