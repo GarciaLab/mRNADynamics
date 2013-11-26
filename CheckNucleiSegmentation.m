@@ -59,40 +59,51 @@ end
 
 
 %Set the source folders
-Folder=[FISHPath,'\Analysis\',Prefix,'_\preanalysis\'];
+Folder=[FISHPath,filesep,'Analysis',filesep,Prefix,'_',filesep,'preanalysis',filesep];
 FileName=['CompactResults_',Prefix,'_.mat'];
 
 %Set the destination folders
 OutputFolder=[DropboxFolder,filesep,Prefix];
 FilePrefix=FileName(16:end-4);
-DataFolder=[Folder,'..\..\..\Data\',FilePrefix(1:end-1)];
+DataFolder=[Folder,'..',filesep,'..',filesep,'..',filesep,'Data',filesep,FilePrefix(1:end-1)];
 
 
 %Find out how many frames we have
-D=dir([FISHPath,'\Data\',Prefix,'\*-His*.tif']);
+D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*-His*.tif']);
 if length(D)==0
     warning('The name format is a mess. I had to do this for KITP')
-    D=dir([FISHPath,'\Data\',Prefix,'\*_His*.tif']);
+    D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*_His*.tif']);
 end
 TotalFrames=length(D);
 
 
 
+%Determine division times
 %Load the information about the nc from the XLS file
-[Num,Txt]=xlsread([DefaultDropboxFolder,'\MovieDatabase.xlsx']);
+[Num,Txt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
 XLSHeaders=Txt(1,:);
 Txt=Txt(2:end,:);
 
+ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
+ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
+
+DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
+Dashes=findstr(Prefix,'-');
+PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+
+ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
+ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
+
 %Find the different columns.
-DataFolderColumn=find(strcmp(XLSHeaders,'DataFolder'));
-nc9Column=find(strcmp(XLSHeaders,'nc9'));
-nc10Column=find(strcmp(XLSHeaders,'nc10'));
-nc11Column=find(strcmp(XLSHeaders,'nc11'));
-nc12Column=find(strcmp(XLSHeaders,'nc12'));
-nc13Column=find(strcmp(XLSHeaders,'nc13'));
-nc14Column=find(strcmp(XLSHeaders,'nc14'));
-CFColumn=find(strcmp(XLSHeaders,'CF'));
-Channel2Column=find(strcmp(XLSHeaders,'Channel2'));
+DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
+nc9Column=find(strcmp(XLSRaw(1,:),'nc9'));
+nc10Column=find(strcmp(XLSRaw(1,:),'nc10'));
+nc11Column=find(strcmp(XLSRaw(1,:),'nc11'));
+nc12Column=find(strcmp(XLSRaw(1,:),'nc12'));
+nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
+nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
+CFColumn=find(strcmp(XLSRaw(1,:),'CF'));
+Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
 
 %Convert the prefix into the string used in the XLS file
 Dashes=findstr(Prefix,'-');
@@ -104,21 +115,28 @@ if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
         [Date,'\BcdGFP-HisRFP']));
 else
     XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
-        [Prefix(1:Dashes(3)-1),filesep,Prefix(Dashes(3)+1:end)]));
+        [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+    
+ if isempty(XLSEntry)
+    disp('%%%%%%%%%%%%%%%%%%%%%')
+    disp('Folder could not be found. Check movie database')
+    disp('%%%%%%%%%%%%%%%%%%%%%')
+end
+    
 end
 
 
 if strcmp(Txt(XLSEntry,Channel2Column),'His-RFP')
-    nc9=Num(XLSEntry,nc9Column-6);
-    nc10=Num(XLSEntry,nc10Column-6);
-    nc11=Num(XLSEntry,nc11Column-6);
-    nc12=Num(XLSEntry,nc12Column-6);
-    nc13=Num(XLSEntry,nc13Column-6);
-    nc14=Num(XLSEntry,nc14Column-6);
+    nc9=cell2mat(XLSRaw(XLSEntry,nc9Column));
+    nc10=cell2mat(XLSRaw(XLSEntry,nc10Column));
+    nc11=cell2mat(XLSRaw(XLSEntry,nc11Column));
+    nc12=cell2mat(XLSRaw(XLSEntry,nc12Column));
+    nc13=cell2mat(XLSRaw(XLSEntry,nc13Column));
+    nc14=cell2mat(XLSRaw(XLSEntry,nc14Column));
     %This is in case the last column for CF is all nan and is not part of
     %the Num matrix
-    if size(Num,2)==CFColumn-6    
-        CF=Num(XLSEntry,CFColumn-6);
+    if ~isempty(CFColumn)    
+        CF=cell2mat(XLSRaw(XLSEntry,CFColumn));
     else
         CF=nan;
     end
@@ -129,7 +147,7 @@ end
 
 
 %Get the nuclei segmentation data
-load([DropboxFolder,filesep,Prefix,'\Ellipses.mat']);
+load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat']);
 
 
 % 
@@ -152,16 +170,16 @@ load([DropboxFolder,filesep,Prefix,'\Ellipses.mat']);
 
 
 %Get the information about the Histone channel images
-D=dir([FISHPath,'\Data\',Prefix,'\*-His*.tif']);
+D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*-His*.tif']);
 if length(D)==0
     warning('The name format is a mess. I had to do this for KITP')
-    D=dir([FISHPath,'\Data\',Prefix,'\*_His*.tif']);
+    D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*_His*.tif']);
 end
 TotalFrames=length(D);
 
 
 %Get information about the image size
-HisImage=imread([FISHPath,'\Data\',Prefix,filesep,D(1).name]);
+HisImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(1).name]);
 [Rows,Cols]=size(HisImage);
 DisplayRange=[min(min(HisImage)),max(max(HisImage))];
 
@@ -209,7 +227,7 @@ cc=1;
 while (cc~=13)
     
     %Load the image
-    HisImage=imread([FISHPath,'\Data\',Prefix,filesep,D(CurrentFrame).name]);
+    HisImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(CurrentFrame).name]);
     
     
     %Get the information about the centroids
@@ -254,7 +272,7 @@ while (cc~=13)
         CurrentFrame=CurrentFrame-1;
         %DisplayRange=[min(min(HisImage)),max(max(HisImage))];
     elseif (ct~=0)&(cc=='s')
-        save([DropboxFolder,filesep,Prefix,'\Ellipses.mat'],'Ellipses')
+        save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
         display('Ellipses saved.')
     elseif (ct==0)&(strcmp(get(Overlay,'SelectionType'),'normal'))
         cc=1;
@@ -306,7 +324,7 @@ end
 
 
 
-save([DropboxFolder,filesep,Prefix,'\Ellipses.mat'],'Ellipses')
+save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 display('Ellipses saved.')
 
 

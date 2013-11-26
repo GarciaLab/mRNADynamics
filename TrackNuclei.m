@@ -13,20 +13,60 @@ function TrackNuclei(Prefix)
 
 %Determine division times
 %Load the information about the nc from the XLS file
-[Num,Txt]=xlsread([DefaultDropboxFolder,'\MovieDatabase.xlsx']);
+[Num,Txt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
 XLSHeaders=Txt(1,:);
 Txt=Txt(2:end,:);
 
+ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
+ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
+
+DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
+Dashes=findstr(Prefix,'-');
+PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+
+ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
+ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
+
 %Find the different columns.
-DataFolderColumn=find(strcmp(XLSHeaders,'DataFolder'));
-nc9Column=find(strcmp(XLSHeaders,'nc9'));
-nc10Column=find(strcmp(XLSHeaders,'nc10'));
-nc11Column=find(strcmp(XLSHeaders,'nc11'));
-nc12Column=find(strcmp(XLSHeaders,'nc12'));
-nc13Column=find(strcmp(XLSHeaders,'nc13'));
-nc14Column=find(strcmp(XLSHeaders,'nc14'));
-CFColumn=find(strcmp(XLSHeaders,'CF'));
-Channel2Column=find(strcmp(XLSHeaders,'Channel2'));
+DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
+nc9Column=find(strcmp(XLSRaw(1,:),'nc9'));
+nc10Column=find(strcmp(XLSRaw(1,:),'nc10'));
+nc11Column=find(strcmp(XLSRaw(1,:),'nc11'));
+nc12Column=find(strcmp(XLSRaw(1,:),'nc12'));
+nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
+nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
+CFColumn=find(strcmp(XLSRaw(1,:),'CF'));
+Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
+
+
+%Find the corresponding entry in the XLS file
+if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
+        (isempty(findstr(Prefix,'NoBcd')))
+    warning('This step in CheckParticleTracking will most likely have to be modified to work')
+    XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
+        [Date,'\BcdGFP-HisRFP']));
+else
+    XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
+        [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+    
+    if isempty(XLSEntry)
+    disp('%%%%%%%%%%%%%%%%%%%%%')
+    disp('Dateset could not be found. Check MovieDatabase.xlsx')
+    disp('%%%%%%%%%%%%%%%%%%%%%')
+    end
+end
+
+
+if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')
+    nc9=XLSRaw{XLSEntry,nc9Column};
+    nc10=XLSRaw{XLSEntry,nc10Column};
+    nc11=XLSRaw{XLSEntry,nc11Column};
+    nc12=XLSRaw{XLSEntry,nc12Column};
+    nc13=XLSRaw{XLSEntry,nc13Column};
+    nc14=XLSRaw{XLSEntry,nc14Column};
+    CF=XLSRaw{XLSEntry,CFColumn};
+end
+    
 
 %Convert the prefix into the string used in the XLS file
 Dashes=findstr(Prefix,'-');
@@ -39,25 +79,6 @@ if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
 else
     XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
         [Prefix(1:Dashes(3)-1),filesep,Prefix(Dashes(3)+1:end)]));
-end
-
-
-if strcmp(Txt(XLSEntry,Channel2Column),'His-RFP')
-    nc9=Num(XLSEntry,nc9Column-6);
-    nc10=Num(XLSEntry,nc10Column-6);
-    nc11=Num(XLSEntry,nc11Column-6);
-    nc12=Num(XLSEntry,nc12Column-6);
-    nc13=Num(XLSEntry,nc13Column-6);
-    nc14=Num(XLSEntry,nc14Column-6);
-    %This is in case the last column for CF is all nan and is not part of
-    %the Num matrix
-    if size(Num,2)==CFColumn-6    
-        CF=Num(XLSEntry,CFColumn-6);
-    else
-        CF=nan;
-    end
-else
-    error('nc information not define in MovieDatabase.xlsx')
 end
 ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
 
@@ -112,7 +133,7 @@ else
     warning('Doing re-tracking. This code needs to be able to handle approved schnitz still')
   
     %Load the Ellipses and re-generate the centers
-    load([DropboxFolder,filesep,Prefix,'\Ellipses.mat'],'Ellipses')
+    load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
     %centers = updateCentersFromEllipses(Ellipses, centers);
     centers = updateCentersFromEllipses(Ellipses);
 
@@ -146,6 +167,6 @@ end
 %Save the information
 %Now save
 mkdir([DropboxFolder,filesep,Prefix])
-save([DropboxFolder,filesep,Prefix,'\Ellipses.mat'],'Ellipses')
+save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells')
 save([FISHPath,filesep,'Analysis',filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')

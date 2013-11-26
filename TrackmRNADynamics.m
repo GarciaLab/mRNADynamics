@@ -73,7 +73,7 @@ ExperimentType=XLSTxt(PrefixRow,ExperimentTypeColumn);
 
 
 %Set the source folders
-Folder=[FISHPath,'\Analysis\',Prefix,'_\preanalysis\'];
+Folder=[FISHPath,filesep,'Analysis',filesep,Prefix,'_',filesep,'preanalysis',filesep];
 FileName=['CompactResults_',Prefix,'_.mat'];
 
 %Set the destination folders
@@ -81,7 +81,7 @@ OutputFolder=[DropboxFolder,filesep,Prefix];
 
 FilePrefix=FileName(16:end-4);
     
-DataFolder=[Folder,'..\..\..\Data\',FilePrefix(1:end-1)];
+DataFolder=[Folder,'..',filesep,'..',filesep,'..',filesep,'Data',filesep,FilePrefix(1:end-1)];
 
 
 %Determine the search radius based on the imaging conditions
@@ -93,10 +93,10 @@ SearchRadiusMicrons=2.5;       %Search radius in um
 
 %Check if we have FrameInfo otherwise try to get the information straight
 %from the file.
-if exist([OutputFolder,'\FrameInfo.mat'])
-    load([OutputFolder,'\FrameInfo.mat'])
+if exist([OutputFolder,filesep,'FrameInfo.mat'])
+    load([OutputFolder,filesep,'FrameInfo.mat'])
     
-    %See if this came from the 2-photon
+    %See if this came from the 2-photon, which is the default
     if ~isfield(FrameInfo,'FileMode')
     
         if (FrameInfo(1).ZoomFactor==8)&(FrameInfo(1).PixelsPerLine==256)
@@ -111,14 +111,30 @@ if exist([OutputFolder,'\FrameInfo.mat'])
             display('Warning: Imaging setting not defined. Using a pixel size of 0.22um')
             PixelSize=0.22;
         end
+        
+    %For data sets from the two photon with the actual TIF file mode
+    elseif strcmp(FrameInfo(end).FileMode,'TIF')
+         if (FrameInfo(1).ZoomFactor==8)&(FrameInfo(1).PixelsPerLine==256)
+            PixelSize=0.22;     %This is the pixel size in um for a zoom of 8.
+        elseif (FrameInfo(1).ZoomFactor==4)&...
+                (FrameInfo(1).PixelsPerLine==512)&...
+                (FrameInfo(1).ScanAmplitudeY==1)
+            PixelSize=0.22;
+        elseif (FrameInfo(1).ZoomFactor==16)&(FrameInfo(1).PixelsPerLine==128)
+            PixelSize=0.22;
+        else
+            display('Warning: Imaging setting not defined. Using a pixel size of 0.22um')
+            PixelSize=0.22;
+        end
+        
     elseif strcmp(FrameInfo(1).FileMode,'LSM')
         PixelSize=FrameInfo(1).PixelSize*1E6;
     end
 else
     warning('No FrameInfo.mat detected. Trying to pull out magnification information from the TIF file')
 
-    DZoom=dir([FISHPath,'\Data\',Prefix,'\*z*.tif']);
-    ImageInfo=imfinfo([FISHPath,'\Data\',Prefix,filesep,DZoom(1).name]);
+    DZoom=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*z*.tif']);
+    ImageInfo=imfinfo([FISHPath,filesep,'Data',filesep,Prefix,filesep,DZoom(1).name]);
     PixelSize=1/ImageInfo.XResolution;
 end
     
@@ -128,9 +144,9 @@ SearchRadius=ceil(SearchRadiusMicrons/PixelSize);
 
 
 %Check if particle tracking has already been done on this dataset
-if exist([OutputFolder,'\Particles.mat'])
+if exist([OutputFolder,filesep,'Particles.mat'])
     %error('Trying to re-track particles. I need to work on this case')
-    load([OutputFolder,'\Particles.mat'])
+    load([OutputFolder,filesep,'Particles.mat'])
     if isfield(Particles,'Approved')
         Retracking=1;           %Flag for whether we are performing retracking
         
@@ -511,7 +527,7 @@ if ~UseHistone
     
     mkdir([OutputFolder,filesep]);
 
-    save([OutputFolder,'\Particles.mat'],'Particles','fad','fad2');
+    save([OutputFolder,filesep,'Particles.mat'],'Particles','fad','fad2');
 
     
 else
@@ -636,7 +652,7 @@ else
     
     mkdir([OutputFolder,filesep])
 
-    save([OutputFolder,'\Particles.mat'],'Particles','fad','fad2',...
+    save([OutputFolder,filesep,'Particles.mat'],'Particles','fad','fad2',...
         'Threshold1','Threshold2')
     
 end
