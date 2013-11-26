@@ -320,11 +320,11 @@ end
 
 %Get the actual time corresponding to each frame
 if isfield(FrameInfo,'FileMode')
-    if strcmp(FrameInfo(1).FileMode,'TIF')
+    if strcmp(FrameInfo(end).FileMode,'TIF')
         for j=1:length(FrameInfo)
             ElapsedTime(j)=etime(datevec(FrameInfo(j).TimeString),datevec(FrameInfo(1).TimeString));
         end
-    elseif strcmp(FrameInfo(1).FileMode,'LSM')
+    elseif strcmp(FrameInfo(end).FileMode,'LSM')
         for j=1:length(FrameInfo)
             ElapsedTime(j)=FrameInfo(j).Time-FrameInfo(1).Time;
         end
