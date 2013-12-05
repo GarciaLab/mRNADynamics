@@ -87,7 +87,7 @@ CheckParticleTracking(Prefix)
 %% Done
 
 
-CompileParticles(Prefix)
+CompileParticles(Prefix,'ApproveAll')
 
 
 
