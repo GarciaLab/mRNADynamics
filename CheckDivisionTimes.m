@@ -97,20 +97,20 @@ end
 
 
 %Load the information about the nc from the XLS file
-[Num,Txt]=xlsread([DropboxFolder,'\MovieDatabase.xlsx']);
+[Num,Txt, XLSRaw]=xlsread([DropboxFolder,'\MovieDatabase.xlsx']);
 XLSHeaders=Txt(1,:);
 Txt=Txt(2:end,:);
 
 %Find the different columns.
-DataFolderColumn=find(strcmp(XLSHeaders,'DataFolder'));
-nc9Column=find(strcmp(XLSHeaders,'nc9'));
-nc10Column=find(strcmp(XLSHeaders,'nc10'));
-nc11Column=find(strcmp(XLSHeaders,'nc11'));
-nc12Column=find(strcmp(XLSHeaders,'nc12'));
-nc13Column=find(strcmp(XLSHeaders,'nc13'));
-nc14Column=find(strcmp(XLSHeaders,'nc14'));
-CFColumn=find(strcmp(XLSHeaders,'CF'));
-Channel2Column=find(strcmp(XLSHeaders,'Channel2'));
+DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
+nc9Column=find(strcmp(XLSRaw(1,:),'nc9'));
+nc10Column=find(strcmp(XLSRaw(1,:),'nc10'));
+nc11Column=find(strcmp(XLSRaw(1,:),'nc11'));
+nc12Column=find(strcmp(XLSRaw(1,:),'nc12'));
+nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
+nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
+CFColumn=find(strcmp(XLSRaw(1,:),'CF'));
+Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
 
 %Convert the prefix into the string used in the XLS file
 Dashes=findstr(Prefix,'-');
@@ -121,22 +121,22 @@ if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
     XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
         [Date,'\BcdGFP-HisRFP']));
 else
-    XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
+    XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
         [Prefix(1:Dashes(3)-1),filesep,Prefix(Dashes(3)+1:end)]));
 end
 
 
-if strcmp(Txt(XLSEntry,Channel2Column),'His-RFP')
-    nc9=Num(XLSEntry,nc9Column-6);
-    nc10=Num(XLSEntry,nc10Column-6);
-    nc11=Num(XLSEntry,nc11Column-6);
-    nc12=Num(XLSEntry,nc12Column-6);
-    nc13=Num(XLSEntry,nc13Column-6);
-    nc14=Num(XLSEntry,nc14Column-6);
+if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')
+    nc9=cell2mat(XLSRaw(XLSEntry,nc9Column));
+    nc10=cell2mat(XLSRaw(XLSEntry,nc10Column));
+    nc11=cell2mat(XLSRaw(XLSEntry,nc11Column));
+    nc12=cell2mat(XLSRaw(XLSEntry,nc12Column));
+    nc13=cell2mat(XLSRaw(XLSEntry,nc13Column));
+    nc14=cell2mat(XLSRaw(XLSEntry,nc14Column));
     %This is in case the last column for CF is all nan and is not part of
     %the Num matrix
-    if size(Num,2)==CFColumn-6    
-        CF=Num(XLSEntry,CFColumn-6);
+    if ~isempty(CFColumn)    
+        CF=cell2mat(XLSRaw(XLSEntry,CFColumn));
     else
         CF=nan;
     end

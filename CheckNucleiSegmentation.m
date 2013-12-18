@@ -111,10 +111,10 @@ Dashes=findstr(Prefix,'-');
 %Find the corresponding entry in the XLS file
 if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
         (isempty(findstr(Prefix,'NoBcd')))
-    XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
+    XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
         [Date,'\BcdGFP-HisRFP']));
 else
-    XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
+    XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
         [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
     
  if isempty(XLSEntry)
@@ -126,7 +126,7 @@ end
 end
 
 
-if strcmp(Txt(XLSEntry,Channel2Column),'His-RFP')
+if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')
     nc9=cell2mat(XLSRaw(XLSEntry,nc9Column));
     nc10=cell2mat(XLSRaw(XLSEntry,nc10Column));
     nc11=cell2mat(XLSRaw(XLSEntry,nc11Column));
