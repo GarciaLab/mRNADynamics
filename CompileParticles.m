@@ -80,6 +80,7 @@ ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
 
 DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
 <<<<<<< HEAD
+<<<<<<< HEAD
 Dashes=findstr(Preexitfix,'-');
 PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
 
@@ -87,12 +88,20 @@ PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Pref
 Dashes=findstr(Prefix,'-');
 PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
 
+=======
+Dashes=findstr(Prefix,'-');
+PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+
+>>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
 if isempty(PrefixRow)
     error('Entry not found in MovieDatabase.xlsx')
 end
 
 
+<<<<<<< HEAD
 >>>>>>> origin/HernanDev
+=======
+>>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
 ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
 ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
 
@@ -846,8 +855,15 @@ end
 %number and the particle number as dimensions. Also, get a vector that
 %reports the mean AP position.
 [AllTracesVector,AllTracesAP]=AllTraces(FrameInfo,CompiledParticles,'NoAP');
+<<<<<<< HEAD
+=======
 
+>>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
 
+if strcmp(ExperimentAxis,'AP')
+    %Mean plot for different AP positions
+
+<<<<<<< HEAD
 if strcmp(ExperimentAxis,'AP')
     %Mean plot for different AP positions
 
@@ -855,6 +871,12 @@ if strcmp(ExperimentAxis,'AP')
     MinAPIndex=1;%min(find(sum(APFilter)));
     MaxAPIndex=size(APFilter,2);%max(find(sum(APFilter)));
 
+=======
+    %Figure out the AP range to use
+    MinAPIndex=1;%min(find(sum(APFilter)));
+    MaxAPIndex=size(APFilter,2);%max(find(sum(APFilter)));
+
+>>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
     %Get the corresponding mean information
     k=1;
     for i=MinAPIndex:MaxAPIndex
@@ -933,7 +955,21 @@ if strcmp(ExperimentAxis,'AP')
 
         %Get rid of the nan in certain time points
         TraceCell=cellfun(@(x) x(~isnan(x)),TraceCell,'UniformOutput',false);
+<<<<<<< HEAD
+=======
 
+>>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
+
+
+        MeanTrace=cellfun(@mean,TraceCell,'UniformOutput',false);
+        SDTrace=cellfun(@std,TraceCell,'UniformOutput',false);
+        NParticlesTrace=cellfun(@length,TraceCell,'UniformOutput',false);
+
+        MeanSlopeVectorAP(:,APBins(j))=[MeanTrace{:}];
+        SDSlopeVectorAP(:,APBins(j))=[SDTrace{:}];
+        NSlopeAP(:,APBins(j))=[NParticlesTrace{:}];
+    end
+end
 
 
         MeanTrace=cellfun(@mean,TraceCell,'UniformOutput',false);

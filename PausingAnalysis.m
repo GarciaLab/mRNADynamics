@@ -518,3 +518,71 @@ xlim([0,45])
 
 
 
+<<<<<<< HEAD
+=======
+
+%% First Detection Times
+
+figure(8)
+clf
+hold all
+
+FirstPasageTimesSna=[];
+
+for i=1:length(DataSna)
+    for j=1:length(DataSna(i).CompiledParticles)
+        if DataSna(i).CompiledParticles(j).nc==14
+           
+            FirstPasageTimesSna=[FirstPasageTimesSna; DataSna(i).ElapsedTime(DataSna(i).CompiledParticles(j).FirstFrame)-...
+                DataSna(i).ElapsedTime(DataSna(i).nc14)];
+            
+        end
+    end
+end
+
+FirstPasageTimesSog=[];
+
+for i=1:length(DataSog)
+    for j=1:length(DataSog(i).CompiledParticles)
+        if DataSog(i).CompiledParticles(j).nc==14
+
+             FirstPasageTimesSog=[FirstPasageTimesSog; DataSog(i).ElapsedTime(DataSog(i).CompiledParticles(j).FirstFrame)-...
+                DataSog(i).ElapsedTime(DataSog(i).nc14)];
+            
+        end
+    end
+end
+
+
+FirstPasageTimesThs=[];
+
+ for i=1:length(DataThs)
+     for j=1:length(DataThs(i).CompiledParticles)
+         if DataThs(i).CompiledParticles(j).nc==14
+           
+          FirstPasageTimesThs=[FirstPasageTimesThs; DataThs(i).ElapsedTime(DataThs(i).CompiledParticles(j).FirstFrame)-...
+          DataThs(i).ElapsedTime(DataThs(i).nc14)];
+            
+             
+         end
+     end
+ end
+ 
+ xHist = [0:2:30];
+ 
+ NSna = hist(FirstPasageTimesSna,[0:2:30]);
+ NSog = hist(FirstPasageTimesSog,[0:2:30]);
+ NThs = hist(FirstPasageTimesThs,[0:2:30]);
+ 
+ plot(xHist(1:end-1),NSna(1:end-1)./sum(NSna(1:end-1)),'r');
+ plot(xHist(1:end-1),NSog(1:end-1)./sum(NSog(1:end-1)),'g');
+ plot(xHist(1:end-1),NThs(1:end-1)./sum(NThs(1:end-1)),'b');
+ 
+ ylabel('Scaled Histogram number of cells')
+ xlabel('Time at first expression in cc14')
+ hold off      
+
+save_to_base(1)
+
+
+>>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
