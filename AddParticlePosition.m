@@ -39,8 +39,8 @@ else
 end
 
 
-if exist([DropboxFolder,filesep,Prefix,'\Particles.mat'])
-    load([DropboxFolder,filesep,Prefix,'\Particles.mat'])
+if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
     %Now, get the particle positions (if they're not there already). Notice
     %that the code pulls out the position information from fad. This is because
     %of historical reasons mostly.
@@ -95,7 +95,7 @@ if ~NoAP
     EmbryoName=Prefix(Dashes(3)+1:end);
 
 
-    D=dir([SourcePath,filesep,Date,filesep,EmbryoName,'\*.tif']);
+    D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.tif']);
 
     %Get the information about the zoom
     ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(1).name]);
@@ -104,7 +104,7 @@ if ~NoAP
 
     %Get the information about the AP axis as well as the image shifts
     %used for the stitching of the two halves of the embryo
-    load([DropboxFolder,filesep,Prefix,'\APDetection.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
 
     %See if manual alignment was performed on this set. If so we'll skip the
     %automated alignment
@@ -126,29 +126,29 @@ if ~NoAP
     Columns = str2double(ExtractInformationField(ImageInfo(1), 'state.acq.pixelsPerLine='));
 
     %Make a folder to store the images
-    mkdir([DropboxFolder,filesep,Prefix,'\APDetection'])
+    mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
 
     if HistoneChannel
         ChannelToLoad=2;
 
         %Get the surface image in the zoomed case
-        D=dir([FISHPath,'\Data\',Prefix,filesep,Prefix,'-His*.tif']);
-        ZoomImage=imread([FISHPath,'\Data\',Prefix,filesep,D(end-10).name]);
+        D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'-His*.tif']);
+        ZoomImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(end-10).name]);
 
 
     else
         ChannelToLoad=1;
 
         %Get the surface image in the zoomed case
-        D=dir([FISHPath,'\Data\',Prefix,filesep,Prefix,'*_z*.tif']);
-        ZoomImage=imread([FISHPath,'\Data\',Prefix,filesep,D(end-10).name],ChannelToLoad);
+        D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'*_z*.tif']);
+        ZoomImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(end-10).name],ChannelToLoad);
 
     end
 
     %Get the surface image in the 1x
-    D=dir([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\*.tif']);
+    D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.tif']);
     SurfName=D(find(~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
-    SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\',SurfName],ChannelToLoad);   
+    SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,SurfName],ChannelToLoad);   
 
     % ES 2013-10-30: This allows the surface and midsagittal plane images
     % to have a zoom factor other than 1. However, we have to assume that
@@ -202,7 +202,7 @@ if ~NoAP
 
             figure(4)
             imshow(ImOverlay)
-            saveas(gcf, [DropboxFolder,filesep,Prefix,'\APDetection\AlignmentOverlay.tif']);
+            saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentOverlay.tif']);
 
 
 
@@ -210,7 +210,7 @@ if ~NoAP
             figure(5)
             contourf(abs(C((CRows-1)/2-RowsZoom/2:(CRows-1)/2+RowsZoom/2,...
                 (CColumns-1)/2-ColumnsZoom/2:(CColumns-1)/2+ColumnsZoom/2)))
-            saveas(gcf, [DropboxFolder,filesep,Prefix,'\APDetection\AlignmentCorrelation.tif']);
+            saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentCorrelation.tif']);
 
         else
 
@@ -248,7 +248,7 @@ if ~NoAP
 
         %Load the half image at the surface
         HalfNameSurf=D(find(sum(cellfun('isempty',strfind(lower({D.name}),'right'))&cellfun('isempty',strfind(lower({D.name}),'surf'))))).name;
-        HalfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\',HalfName],ChannelToLoad);
+        HalfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,HalfName],ChannelToLoad);
         [Rows1x,Columns1x]=size(HalfImage);
 
 
@@ -312,7 +312,7 @@ if ~NoAP
 
 
         HalfName=D(find(sum(~cellfun('isempty',strfind(lower({D.name}),'left'))&~cellfun('isempty',strfind(lower({D.name}),'surf'))))).name;
-        HalfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\',HalfName],ChannelToLoad);
+        HalfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,HalfName],ChannelToLoad);
         [Rows1x,Columns1x]=size(HalfImage);
 
         if yShift<0
@@ -352,7 +352,7 @@ if ~NoAP
     elseif sum(~cellfun('isempty',strfind(lower({D.name}),'center'))&~cellfun('isempty',strfind(lower({D.name}),'surf')))
 
         HalfName=D(find(sum(~cellfun('isempty',strfind(lower({D.name}),'center'))&~cellfun('isempty',strfind(lower({D.name}),'surf'))))).name;
-        HalfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\',HalfName],ChannelToLoad);
+        HalfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,HalfName],ChannelToLoad);
         [Rows1x,Columns1x]=size(HalfImage);
 
 
@@ -391,7 +391,7 @@ if ~NoAP
 
 
     %Plot the area where we imaged on top of the embryo
-    FullEmbryo=imread([DropboxFolder,filesep,Prefix,'\APDetection\FullEmbryo.tif']);
+    FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
 
 
     %Check if the embryo could actually fit in one of the images. If that's the
@@ -430,7 +430,7 @@ if ~NoAP
     plot(coordP(1),coordP(2),'.r','MarkerSize',30)
     plot([coordA(1),coordP(1)],[coordA(2),coordP(2)],'-b')
     hold off
-    saveas(gcf, [DropboxFolder,filesep,Prefix,'\APDetection\FullEmbryoArea.tif']);
+    saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoArea.tif']);
 
 
 
@@ -438,7 +438,7 @@ if ~NoAP
 
     %Now, compare it to the surface picture
     SurfName=D(find(~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
-    SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\',SurfName],ChannelToLoad);
+    SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,SurfName],ChannelToLoad);
 
     %Did we already have information from manual alignment?
     if ManualAlignmentDone
@@ -466,10 +466,10 @@ if ~NoAP
     plot([coordAHalf(1),coordPHalf(1)],[coordAHalf(2),coordPHalf(2)],'-b')
     plot([1],[1],'.y','MarkerSize',50)
     hold off
-    saveas(gcf, [DropboxFolder,filesep,Prefix,'\APDetection\HalfEmbryoArea.tif']);
+    saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,HalfEmbryoArea.tif']);
 
 
-    D=dir([SourcePath,filesep,Date,filesep,EmbryoName,'\*.tif']);
+    D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.tif']);
     ZoomImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(end).name],ChannelToLoad);
 
 
@@ -494,7 +494,7 @@ if ~NoAP
     plot([coordAZoom(1)+1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'--r')
     plot([coordAZoom(1)-1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'-.g')
     hold off
-    saveas(gcf, [DropboxFolder,filesep,Prefix,'\APDetection\ZoomedEmbryoAP.tif']);
+    saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'ZoomedEmbryoAP.tif']);
 
 
     %With AP coordinates in hand we can now determine the AP position of
@@ -549,7 +549,7 @@ if ~NoAP
     hold off
 
 
-    if exist([DropboxFolder,filesep,Prefix,'\Particles.mat'])
+    if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
         for i=1:length(Particles)
             %Angle between the x-axis and the particle using the A position as a
             %zero
@@ -571,15 +571,15 @@ if ~NoAP
     
     %Save AP detection information
     if exist('xShift')
-        save([DropboxFolder,filesep,Prefix,'\APDetection.mat'],'coordA','coordP',...
+        save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
             'xShift','yShift','coordAZoom','coordPZoom') 
     else
-        save([DropboxFolder,filesep,Prefix,'\APDetection.mat'],'coordA','coordP',...
+        save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
             'xShift1','yShift1','xShift2','yShift2','coordAZoom','coordPZoom') 
     end
 
     if ManualAlignment|ManualAlignmentDone
-        save([DropboxFolder,filesep,Prefix,'\APDetection.mat'],'ManualAlignmentDone',...
+        save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ManualAlignmentDone',...
             'ShiftColumn','ShiftRow','-append')
     end
     
@@ -590,12 +590,12 @@ end
 
 
 %Save particle information
-if exist([DropboxFolder,filesep,Prefix,'\Particles.mat'])
+if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
     if exist('Threshold1')
-        save([DropboxFolder,filesep,Prefix,'\Particles.mat'],'Particles','fad','fad2',...
+        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','fad','fad2',...
             'Threshold1','Threshold2');
     else
-        save([DropboxFolder,filesep,Prefix,'\Particles.mat'],'Particles','fad','fad2');
+        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','fad','fad2');
     end
 end
     
