@@ -50,11 +50,27 @@ cd([MS2CodePath])
 
 %We will keep the threshold low and then increase it after the fact.
 
+<<<<<<< HEAD
 %For LSM settings
 %Threshold=1000;   
 
 %For Princeton
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+Threshold=30;
+=======
+Threshold=90;   
+>>>>>>> origin/HernanDev
+=======
 Threshold=90;
+>>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
+=======
+Threshold=90;
+>>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
+=======
+Threshold=90;
+>>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
 
 %Now, do an analysis with an actual threshold
 cd([FISHPath,filesep,'Analysis'])
