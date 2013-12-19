@@ -82,6 +82,7 @@ DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 Dashes=findstr(Preexitfix,'-');
 PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
 
@@ -99,6 +100,11 @@ Dashes=findstr(Prefix,'-');
 PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
 
 >>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
+=======
+Dashes=findstr(Prefix,'-');
+PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+
+>>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
 if isempty(PrefixRow)
     error('Entry not found in MovieDatabase.xlsx')
 end
@@ -106,7 +112,10 @@ end
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> origin/HernanDev
+=======
+>>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
 =======
 >>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
 =======
@@ -374,11 +383,19 @@ if strcmp(ExperimentAxis,'AP')
     %Divide the image into AP bins
     APResolution=0.025;
     APbinID=0:APResolution:1;
+<<<<<<< HEAD
 
     %Create an image for the different AP bins
     APPosImage=zeros(FrameInfo(1).LinesPerFrame,FrameInfo(1).PixelsPerLine);
     [Rows,Columns]=size(APPosImage);
 
+=======
+
+    %Create an image for the different AP bins
+    APPosImage=zeros(FrameInfo(1).LinesPerFrame,FrameInfo(1).PixelsPerLine);
+    [Rows,Columns]=size(APPosImage);
+
+>>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
     for i=1:Rows
         for j=1:Columns
             Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
@@ -866,6 +883,7 @@ end
 [AllTracesVector,AllTracesAP]=AllTraces(FrameInfo,CompiledParticles,'NoAP');
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 >>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
@@ -878,6 +896,10 @@ if strcmp(ExperimentAxis,'AP')
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+=======
+
+
+>>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
 if strcmp(ExperimentAxis,'AP')
     %Mean plot for different AP positions
 
@@ -885,6 +907,7 @@ if strcmp(ExperimentAxis,'AP')
     MinAPIndex=1;%min(find(sum(APFilter)));
     MaxAPIndex=size(APFilter,2);%max(find(sum(APFilter)));
 
+<<<<<<< HEAD
 =======
 =======
 >>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
@@ -893,6 +916,8 @@ if strcmp(ExperimentAxis,'AP')
     MaxAPIndex=size(APFilter,2);%max(find(sum(APFilter)));
 
 <<<<<<< HEAD
+>>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
+=======
 >>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
 =======
 >>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
@@ -976,6 +1001,7 @@ if strcmp(ExperimentAxis,'AP')
         TraceCell=cellfun(@(x) x(~isnan(x)),TraceCell,'UniformOutput',false);
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 >>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
@@ -991,9 +1017,22 @@ if strcmp(ExperimentAxis,'AP')
     end
 end
 =======
+=======
 
 >>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
 
+>>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
+
+
+        MeanTrace=cellfun(@mean,TraceCell,'UniformOutput',false);
+        SDTrace=cellfun(@std,TraceCell,'UniformOutput',false);
+        NParticlesTrace=cellfun(@length,TraceCell,'UniformOutput',false);
+
+        MeanSlopeVectorAP(:,APBins(j))=[MeanTrace{:}];
+        SDSlopeVectorAP(:,APBins(j))=[SDTrace{:}];
+        NSlopeAP(:,APBins(j))=[NParticlesTrace{:}];
+    end
+end
 
         MeanTrace=cellfun(@mean,TraceCell,'UniformOutput',false);
         SDTrace=cellfun(@std,TraceCell,'UniformOutput',false);
