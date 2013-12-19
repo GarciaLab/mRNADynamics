@@ -519,7 +519,10 @@ xlim([0,45])
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
 
 %% First Detection Times
 
@@ -585,4 +588,7 @@ FirstPasageTimesThs=[];
 save_to_base(1)
 
 
+<<<<<<< HEAD
+>>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
+=======
 >>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
