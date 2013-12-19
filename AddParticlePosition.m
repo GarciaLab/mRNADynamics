@@ -466,7 +466,7 @@ if ~NoAP
     plot([coordAHalf(1),coordPHalf(1)],[coordAHalf(2),coordPHalf(2)],'-b')
     plot([1],[1],'.y','MarkerSize',50)
     hold off
-    saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,HalfEmbryoArea.tif']);
+    saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'HalfEmbryoArea.tif']);
 
 
     D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.tif']);
