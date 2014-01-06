@@ -1389,7 +1389,12 @@ if HistoneChannel
         box on
         xlabel('AP position (x/L)')
         ylabel('Particle first frame (min)')
-        ylim([0,ElapsedTime(nc14+20)-ElapsedTime(nc14)])
+        if length(ElapsedTime) > nc14+20
+            ylim([0,ElapsedTime(nc14+20)-ElapsedTime(nc14)])
+        else
+            ylim([0, ElapsedTime(end) - ElapsedTime(nc14)])
+        end
+        % ES 2014-01-05 Testing early-nc14-only movies
         saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Various',filesep,'FirstFrameVsAP.tif'])
     end
 end
