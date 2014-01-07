@@ -9,12 +9,26 @@ function PrefixListRCA = SeparateRawData
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
     DetermineLocalFolders;
 
-OrigPathS = uigetdir(SourcePath, 'Select folder with data to be split into multiple folders');
-DirD = dir([OrigPathS, filesep, '*.tif']);
-FileListRCA = {DirD.name};
-NumFiles = length(FileListRCA);
+OrigPathS = uigetdir(SourcePath, 'Select the folder (named after the imaged line) to be split into multiple folders');
+SlashPositionR = find(OrigPathS == filesep);
+LineFolderS = OrigPathS(SlashPositionR(end)+1 : end);
+%DateFolderS = OrigPathS(SlashPositionR(end-1) + 1 : SlashPositionR(end) - 1);
 
+% Identifying unique prefixes of file names
+DirD = dir([OrigPathS, filesep, '*.tif']);
+FileListSRCA = {DirD.name};
+NumFiles = length(FileListSRCA);
+AllEmbryoPrefixesSRCA = cell(1, NumFiles);
 for lFile = 1:NumFiles
+    UnderscorePositionR = find(FileListSRCA{lFile} == '_');
+    AllEmbryoPrefixesSRCA{lFile} = FileListSRCA{lFile}(1 : UnderscorePositionR(1)-1);
+end
+MoviePrefixSRCA = unique(AllEmbryoPrefixesSRCA{lFile});
+NumMovies = length(MoviePrefixSRCA);
+
+% Separate movie frames and low-zoom surface / midsagittal plane images
+% into separate folders
+for lMovie = 1:NumMovies
     
 end
 
