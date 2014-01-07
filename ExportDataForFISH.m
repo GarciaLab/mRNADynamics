@@ -38,11 +38,15 @@ MaxHistone=1000;    %Maximum intensity for the histone channel. Anything above
                 
 
 %Look at parameters
+PrefixOverrideFlag = 0;
 TAGOnly=0;
 for i=1:length(varargin)
     switch lower(varargin{i})
         case {'tagonly'}
             TAGOnly=1;
+        otherwise
+            Prefix = varargin{i};
+            PrefixOverrideFlag = 1;
     end
 end
 
@@ -52,7 +56,14 @@ end
     DetermineLocalFolders;
                     
 %Get the folder with the data
-Folder=uigetdir(SourcePath,'Select folder with data');
+if ~PrefixOverrideFlag
+    Folder=uigetdir(SourcePath,'Select folder with data');
+else
+    HyphenPositionR = find(Prefix == '-');
+    DateFolderS = Prefix(1 : HyphenPositionR(3)-1);
+    LineFolderS = Prefix(HyphenPositionR(3)+1 : end);
+    Folder = [SourcePath, filesep, DateFolderS, filesep, LineFolderS];
+end
 
 %Determine whether we're dealing with 2-photon data from Princeton or LSM
 %data. 2-photon data uses TIF files. In LSM mode multiple files will be
@@ -81,10 +92,12 @@ end
 
 
 %Get the information from the last two folders in the structure
-SlashPositions=strfind(Folder,filesep);
-
-Prefix=[Folder((SlashPositions(end-1)+1):(SlashPositions(end)-1)),'-',...
-    Folder((SlashPositions(end)+1):(end))];
+if ~PrefixOverrideFlag
+    SlashPositions=strfind(Folder,filesep);
+    
+    Prefix=[Folder((SlashPositions(end-1)+1):(SlashPositions(end)-1)),'-',...
+        Folder((SlashPositions(end)+1):(end))];
+end
 
 %Figure out what type of experiment we have
 [XLSNum,XLSTxt]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);

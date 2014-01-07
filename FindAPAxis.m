@@ -195,9 +195,15 @@ embMask = getEmbryoMask(APImage, 20);
 
 
 %This code came from Michael's code
+% ES 2014-01-07: I changed this to handle cases where the threshold is too
+% high but the embryo is still stitchable.
 CC=bwconncomp(embMask);
 if CC.NumObjects~=1
-    error('Failed to calculate embryo mask. Found more than one object in mask.');
+    disp('Failed to calculate embryo mask. Found more than one object in mask. Re-running with a lower threshold.');
+    embMask = GetEmbryoMaskWithThreshold(APImage, 20, 5);
+    if CC.NumObject~=1
+        error('Failed to calculate embryo mask. Found more than one object in mask. Script aborting.');
+    end
 end
     
 
