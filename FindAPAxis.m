@@ -202,7 +202,7 @@ if CC.NumObjects~=1
     disp('Failed to calculate embryo mask. Found more than one object in mask. Re-running with a lower threshold.');
     embMask = GetEmbryoMaskWithThreshold(APImage, 20, 5);
     CC = bwconncomp(embMask);
-    if CC.NumObject~=1
+    if CC.NumObjects~=1
         error('Failed to calculate embryo mask. Found more than one object in mask. Script aborting.');
     end
 end

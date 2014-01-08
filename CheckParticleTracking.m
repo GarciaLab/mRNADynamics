@@ -116,15 +116,6 @@ if length(varargin)>1
         end
     end
 end
-
-% ES 2014-01-07: Allows for the code to automatically accept defaults
-% without requiring user input
-if sum(ismember(varargin, 'AutoMode'))
-    AutoFlag = 1;
-else
-    AutoFlag = 0;
-end
-
     
 %%
 
@@ -987,12 +978,7 @@ while (cc~=13)
     
     figure(Overlay)
     ct=waitforbuttonpress;
-    if ~AutoFlag
-        cc=get(Overlay,'currentcharacter');
-    else
-        cc = 13;
-    end
-    % ES 2014-01-07
+    cc=get(Overlay,'currentcharacter');
     cm=get(gca,'CurrentPoint');
     
     if (cc=='.')&(CurrentFrame<length(fad.channels))
