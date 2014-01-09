@@ -133,7 +133,10 @@ if ~NoAP
 
         %Get the surface image in the zoomed case
         D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'-His*.tif']);
-        ZoomImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(end-10).name]);
+        ZoomImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(end).name]);
+        % ES 2014-01-08: Originally, this read the 11th-to-last entry of D
+        % instead of the last one. However, if you're stopping your movie
+        % soon after a mitosis this can be very problematic.
 
 
     else

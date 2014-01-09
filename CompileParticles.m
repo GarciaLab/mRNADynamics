@@ -1662,7 +1662,9 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
     ParticleCountProbAP(:,1)=ParticleCountAP(1,:)./mean(NEllipsesAP(nc12+5:nc13-5,:));
     ParticleCountProbAP(:,2)=ParticleCountAP(2,:)./mean(NEllipsesAP(nc13+5:nc14-5,:));
     ParticleCountProbAP(:,3)=ParticleCountAP(3,:)./...
-        mean(NEllipsesAP(nc14-5:length(FrameInfo)-5,:));
+        mean(NEllipsesAP(max(1,nc14-5):length(FrameInfo)-5,:));
+    % ES 2014-01-08: accounting for movies started fewer than 5 frames before
+    % mitosis 13
     
     figure(16)   
     plot(APbinID,ParticleCountProbAP(:,1),'.-b')
