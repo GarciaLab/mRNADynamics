@@ -70,7 +70,7 @@ end
 
 %See if we don't want the default AP orientation
 if ~exist('FlipAP', 'var')
-    if strfind(D(RightFileIndex).name,'PA') || strfind(D(LeftFileIndex).name,'PA')
+    if ~isempty(strfind(D(RightFileIndex).name,'PA')) || ~isempty(strfind(D(LeftFileIndex).name,'PA'))
         % ES 2014-01-11: originally this was "strcmp" and not "strfind",
         % but I don't think "strcmp" could work
         FlipAP=1;
