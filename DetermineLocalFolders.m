@@ -97,7 +97,9 @@ else
     end
     
     
-    if strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Albert+Hernan')
+    if strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Hernan')
+        DropboxString='DropboxHernan';
+    elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Albert+Hernan')
         DropboxString='DropboxAlbert';
     elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Jacques+Hernan')
         DropboxString='DropboxJacques';
