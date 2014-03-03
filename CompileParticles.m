@@ -74,7 +74,7 @@ FilePrefix=[Prefix,'_'];
 %What type of experiment are we dealing with? Get this out of
 %MovieDatabase.xlsx
 
-[XLSNum,XLSTxt,XLSRaw]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
+[XLSNum,XLSTxt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
 ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
 ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
 
@@ -860,25 +860,25 @@ if strcmp(ExperimentAxis,'AP')
     MeanVectorAP=cell2mat(MeanVectorAPCell);
     SDVectorAP=cell2mat(SDVectorAPCell);
     NParticlesAP=cell2mat(NParticlesAPCell);
-end
+    
+    
+    %Calculate the mean for all of them
+    [MeanVectorAll,SDVectorAll,NParticlesAll]=AverageTraces(FrameInfo,CompiledParticles);
+    %Now find the different maxima in each nc
 
-
-%Calculate the mean for all of them
-[MeanVectorAll,SDVectorAll,NParticlesAll]=AverageTraces(FrameInfo,CompiledParticles);
-%Now find the different maxima in each nc
-
-MaxFrame=[];
-for i=1:length(NewCyclePos)
-    if i==1
-        [Dummy,MaxIndex]=max(MeanVectorAll(1:NewCyclePos(1)));
-        MaxFrame=[MaxFrame,MaxIndex];
-    elseif i<=length(NewCyclePos)
-        [Dummy,MaxIndex]=max(MeanVectorAll(NewCyclePos(i-1):NewCyclePos(i)));
-        MaxFrame=[MaxFrame,NewCyclePos(i-1)+MaxIndex-1];
+    MaxFrame=[];
+    for i=1:length(NewCyclePos)
+        if i==1
+            [Dummy,MaxIndex]=max(MeanVectorAll(1:NewCyclePos(1)));
+            MaxFrame=[MaxFrame,MaxIndex];
+        elseif i<=length(NewCyclePos)
+            [Dummy,MaxIndex]=max(MeanVectorAll(NewCyclePos(i-1):NewCyclePos(i)));
+            MaxFrame=[MaxFrame,NewCyclePos(i-1)+MaxIndex-1];
+        end
     end
+    [Dummy,MaxIndex]=max(MeanVectorAll(NewCyclePos(i):end));
+    MaxFrame=[MaxFrame,NewCyclePos(i)+MaxIndex-1];
 end
-[Dummy,MaxIndex]=max(MeanVectorAll(NewCyclePos(i):end));
-MaxFrame=[MaxFrame,NewCyclePos(i)+MaxIndex-1];
 
 
 

@@ -89,7 +89,7 @@ TrackNuclei(Prefix)
 %% check the nuclei tracking in this round.
 
 %Track the particles, the two numbers are Threshold1 and Threshold2
-TrackmRNADynamics(Prefix,375,375)
+TrackmRNADynamics(Prefix,400,400)
 
 CheckParticleTracking(Prefix)
 
