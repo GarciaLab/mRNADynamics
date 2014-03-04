@@ -209,7 +209,7 @@ else
 end
 
 
-NewCyclePos=[nc9,nc10,nc11,nc12,nc13,nc14,CF];
+NewCyclePos=[nc9,nc10,nc11,nc12,nc13,nc14];
 NewCyclePos=NewCyclePos(~(NewCyclePos==0));
 NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
 
