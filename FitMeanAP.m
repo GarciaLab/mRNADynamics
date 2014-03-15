@@ -90,11 +90,7 @@ FrameWindow14=[nc14:length(ElapsedTime)];
 
 
 %Detect what type of data set we're dealing with so we can set the delay
-if ~isempty(findstr(Prefix,'X1')) && isempty(strfind(Prefix, 'JL'))
-    % ES 2014-03-11: All of my lines have "JL" in the name (unless they are
-    % Hernan's 5' WT P2 line or no-Bcd control), so this is a hack to force
-    % such lines to follow the "else" routine below.
-    
+if ~isempty(findstr(Prefix,'X1'))
     Delay=GeneLength5/ElongationRate;    %Minutes for PolII to fall off after reaching
                                         %the first MS2 site.
     display('Treating data set as 5''')
@@ -111,11 +107,7 @@ if ~isempty(findstr(Prefix,'X1')) && isempty(strfind(Prefix, 'JL'))
     Rate014=4E3;     %Rate per minute
     TimeStart014=5;
     TimeEnd014=1000;  
-elseif ~isempty(findstr(Prefix,'X2')) && isempty(strfind(Prefix, 'JL'))
-    % ES 2014-03-11: All of my lines have "JL" in the name (unless they are
-    % Hernan's 5' WT P2 line or no-Bcd control), so this is a hack to force
-    % such lines to follow the "else" routine below.
-    
+elseif ~isempty(findstr(Prefix,'X2'))
     Delay=GeneLength3/ElongationRate;
     display('Treating data set as 3''')
     
@@ -131,7 +123,7 @@ elseif ~isempty(findstr(Prefix,'X2')) && isempty(strfind(Prefix, 'JL'))
     TimeStart014=7.5;
     TimeEnd014=1000; 
 else
-    % ES 2013-10-14: my data should be directed to this case.
+    % ES 2013-10-14: I don't use X1 or X2 prefixes
     ResponseS = input('Type ''3'' for 3'' data or ''5'' for 5'' data: ', 's');
     if strcmp(ResponseS, '5')
         Delay=GeneLength5/ElongationRate;    %Minutes for PolII to fall off after reaching
