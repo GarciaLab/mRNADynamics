@@ -8,6 +8,10 @@ close all
 %Find out which computer this is. That will determine the folder structure.
 %Information about about folders
 
+%Figure out the default Dropbox folder
+[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+    DetermineLocalFolders;
+
 % ES 2013-10-29: Required for multiple users to be able to analyze data on
 % one computer
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
@@ -97,7 +101,7 @@ end
 
 
 %Load the information about the nc from the XLS file
-[Num,Txt, XLSRaw]=xlsread([DropboxFolder,'\MovieDatabase.xlsx']);
+[Num,Txt, XLSRaw]=xlsread([DefaultDropboxFolder,'\MovieDatabase.xlsx']);
 XLSHeaders=Txt(1,:);
 Txt=Txt(2:end,:);
 
