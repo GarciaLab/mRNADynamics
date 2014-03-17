@@ -85,15 +85,20 @@ TrackNuclei(Prefix)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%% Add particle positions and look at nc at a finer scale
+
+AddParticlePosition(Prefix)
+
+%Check the division times as a function of AP
+CheckDivisionTimes(Prefix)
+
+
 %% Track the particles and check the tracking. We also have the option to
 %% check the nuclei tracking in this round.
 
 %Track the particles, the two numbers are Threshold1 and Threshold2
-TrackmRNADynamics(Prefix,400,400)
+TrackmRNADynamics(Prefix,40,40)
 
 CheckParticleTracking(Prefix)
 
 CompileParticles(Prefix)
-
-%Check the division times as a function of AP
-CheckDivisionTimes(Prefix)
