@@ -163,6 +163,24 @@ if ~NoAP
     SurfRows = str2double(ExtractInformationField(SurfInfo(1), 'state.acq.linesPerFrame='));
     SurfColumns = str2double(ExtractInformationField(SurfInfo(1), 'state.acq.pixelsPerLine='));
     
+    
+    %If there is no zoom information on the surface image then look into
+    %the temp folder. This is because sometimes we edit images in ImageJ
+    %which leads to losing the zoom information.
+    if isnan(SurfZoom)
+        Dtemp=dir([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\temp\*.tif']);
+        LeftFileIndex=find(~cellfun('isempty',strfind(lower({Dtemp.name}),'left'))&...
+            cellfun('isempty',strfind(lower({Dtemp.name}),'surf')));
+        ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\temp',filesep,Dtemp(LeftFileIndex).name]);
+        SurfZoom=str2double(ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor='));
+        
+        
+        SurfRows=SurfInfo.Height;
+        SurfColumns=SurfInfo.Width;
+    end
+
+    
+    
     ZoomRatio = MovieZoom / SurfZoom;
 
     
@@ -490,6 +508,7 @@ if ~NoAP
     coordPZoom=(coordPHalf-ImageCenter)*ZoomRatio+[Columns/2,Rows/2]-[ShiftColumn,ShiftRow]*ZoomRatio;
 
 
+   
     figure(3)
     imshow(ZoomImage,[])
     hold on
