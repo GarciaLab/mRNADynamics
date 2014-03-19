@@ -213,25 +213,34 @@ if ~NoAP
             [RowsResized,ColumnsResized]=size(SurfImageResized);
             [RowsZoom,ColumnsZoom]=size(ZoomImage);
 
-            SurfImageResizeZoom=...
-                SurfImageResized(RowsResized/2-RowsZoom/2+ShiftRow*ZoomRatio:RowsResized/2+RowsZoom/2-1+ShiftRow*ZoomRatio,...
-                ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ZoomRatio:ColumnsResized/2+ColumnsZoom/2-1+ShiftColumn*ZoomRatio);
+            try
+            
+                SurfImageResizeZoom=...
+                    SurfImageResized(RowsResized/2-RowsZoom/2+ShiftRow*ZoomRatio:RowsResized/2+RowsZoom/2-1+ShiftRow*ZoomRatio,...
+                    ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ZoomRatio:ColumnsResized/2+ColumnsZoom/2-1+ShiftColumn*ZoomRatio);
 
-            ImOverlay=cat(3,mat2gray(SurfImageResizeZoom),...
-                +mat2gray(ZoomImage),zeros(size(SurfImageResizeZoom)));
-
-
-            figure(4)
-            imshow(ImOverlay)
-            saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentOverlay.tif']);
+                ImOverlay=cat(3,mat2gray(SurfImageResizeZoom),...
+                    +mat2gray(ZoomImage),zeros(size(SurfImageResizeZoom)));
 
 
+                figure(4)
+                imshow(ImOverlay)
+                saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentOverlay.tif']);
 
 
-            figure(5)
-            contourf(abs(C((CRows-1)/2-RowsZoom/2:(CRows-1)/2+RowsZoom/2,...
-                (CColumns-1)/2-ColumnsZoom/2:(CColumns-1)/2+ColumnsZoom/2)))
-            saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentCorrelation.tif']);
+
+
+                figure(5)
+                contourf(abs(C((CRows-1)/2-RowsZoom/2:(CRows-1)/2+RowsZoom/2,...
+                    (CColumns-1)/2-ColumnsZoom/2:(CColumns-1)/2+ColumnsZoom/2)))
+                saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentCorrelation.tif']);
+            catch
+                warning('Could not generate correlation image. Switching to manual alignment')
+                
+                ManualAlignment=1;
+                ShiftColumn=0;
+                ShiftRow=0;
+            end
 
         else
 
@@ -537,14 +546,13 @@ if ~NoAP
         for j=1:Columns
             Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
             Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
-            %HG to AL: I had to change this otherwise it wouldn't work with
-            %dataset Prefix = '2014-03-16-HbBACA', which I'll send you the
-            %information for.
-            %if sign(Angle)==sign(APAngle)
+            % If Angle lies in quadrant 1 or 4 (with A as the origin), this projection works
+            if j >= coordAZoom(1)
                 APPosition=Distance.*cos(Angle-APAngle);
-            %else
-                %APPosition=Distance.*cos(pi+Angle-APAngle);   
-            %end
+                % If Angle lies in quadrant 2 or 3, this projection works
+            else
+                APPosition=Distance.*cos(pi+Angle-APAngle);   
+            end
             APPosImage(i,j)=APPosition/APLength;
         end
     end
@@ -581,7 +589,7 @@ if ~NoAP
             Angles=atan((Particles(i).yPos-coordAZoom(2))./(Particles(i).xPos-coordAZoom(1)));
             %Distance between the points and the A point
             Distances=sqrt((coordAZoom(2)-Particles(i).yPos).^2+(coordAZoom(1)-Particles(i).xPos).^2);
-            if sign(Angles)==sign(APAngle)
+            if j >= coordAZoom(1)
             APPositions=Distances.*cos(Angles-APAngle);
             else
             APPositions=Distances.*cos(pi+Angles-APAngle);    
@@ -589,6 +597,7 @@ if ~NoAP
             Particles(i).APpos=APPositions/APLength;
         end
     end
+
 
 
 
