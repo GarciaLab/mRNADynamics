@@ -538,7 +538,7 @@ if ~NoAP
             Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
             Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
             %HG to AL: I had to change this otherwise it wouldn't work with
-            %dataset Prefix = '2014-03-18-HbBac_A', which I'll send you the
+            %dataset Prefix = '2014-03-16-HbBACA', which I'll send you the
             %information for.
             %if sign(Angle)==sign(APAngle)
                 APPosition=Distance.*cos(Angle-APAngle);
