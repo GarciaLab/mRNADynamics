@@ -78,7 +78,7 @@ else
     FrameWindow12=[];
 end
 %Some data sets won't have nc13 either
-if nc12>0
+if nc13>0
     FrameWindow13=[nc13:nc14];
 else
     FrameWindow13=[];
@@ -235,14 +235,24 @@ end
 
 
 
-         
+%Figure out which nc we can use
+if nc12
+    CurrentNC=12;
+    MinNC=12;       %We'll use this to keep track of the minimum nc
+elseif nc13
+    CurrentNC=13;
+    MinNC=13;
+elseif nc14
+    CurrentNC=14;
+    MinNC=14;
+else
+    error('There is a problem. Are the ncs defined?')
+end
 
 
 
 %Go through each AP bin
-
 FitFigure=figure;
-CurrentNC=12;
 i=min(find(sum(NParticlesAP)));
 cc=1;
 
@@ -554,7 +564,7 @@ while (cc~=13)
     %Switch NCs
     elseif (ct~=0)&(cc=='m')&CurrentNC<14
         CurrentNC=CurrentNC+1;
-    elseif (ct~=0)&(cc=='n')&CurrentNC>12
+    elseif (ct~=0)&(cc=='n')&CurrentNC>MinNC
         CurrentNC=CurrentNC-1;
         
         
