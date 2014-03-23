@@ -213,26 +213,39 @@ title('Average intensity')
 figure(3)
 clf
 hold all
+
+PlotHandle=[];
+PlotHandleForLegend=[];
+
 for i=1:length(DataSna)
-        plot(DataSna(i).ElapsedTime(DataSna(i).NParticlesAll>=MinParticles)-...
+        PlotHandle(end+1) = plot(DataSna(i).ElapsedTime(DataSna(i).NParticlesAll>=MinParticles)-...
             DataSna(i).ElapsedTime(DataSna(i).nc14),...
             DataSna(i).SDVectorAll(DataSna(i).NParticlesAll>=MinParticles)./...
-            DataSna(i).MeanVectorAll(DataSna(i).NParticlesAll>=MinParticles),'.-')
+            DataSna(i).MeanVectorAll(DataSna(i).NParticlesAll>=MinParticles),'.-');
 end
+
 for i=1:length(DataSog)
-        plot(DataSog(i).ElapsedTime(DataSog(i).NParticlesAll>=MinParticles)-...
+        PlotHandle(end+1) = plot(DataSog(i).ElapsedTime(DataSog(i).NParticlesAll>=MinParticles)-...
             DataSog(i).ElapsedTime(DataSog(i).nc14),...
             DataSog(i).SDVectorAll(DataSog(i).NParticlesAll>=MinParticles)./...
-            DataSog(i).MeanVectorAll(DataSog(i).NParticlesAll>=MinParticles),'o-')
+            DataSog(i).MeanVectorAll(DataSog(i).NParticlesAll>=MinParticles),'o-');
 end
+
 for i=1:length(DataThs)
-        plot(DataThs(i).ElapsedTime(DataThs(i).NParticlesAll>=MinParticles)-...
+        PlotHandle(end+1) = plot(DataThs(i).ElapsedTime(DataThs(i).NParticlesAll>=MinParticles)-...
             DataThs(i).ElapsedTime(DataThs(i).nc14),...
             DataThs(i).SDVectorAll(DataThs(i).NParticlesAll>=MinParticles)./...
-            DataThs(i).MeanVectorAll(DataThs(i).NParticlesAll>=MinParticles),'s-')
+            DataThs(i).MeanVectorAll(DataThs(i).NParticlesAll>=MinParticles),'s-');
 end
+
 hold off
+
+PlotHandleForLegend(end+1)=PlotHandle(end);
+
 xlim([0,60])
+legend(PlotHandleForLegend,'Sna','Sog','Ths','Location','SouthEast')
+box on
+StandardFigure(PlotHandle,gca)
 
 title('CV')
 
