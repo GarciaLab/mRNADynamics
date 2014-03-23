@@ -39,12 +39,12 @@ end
 
 
 %Load the compiled particles and the division information                                    
-load([DropboxFolder,filesep,Prefix,'\CompiledParticles.mat'])
+load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'])
 
 
 %Determine what type of file format we're using. This is important in terms
 %of the fluorescence units and steps
-load([DropboxFolder,filesep,Prefix,'\FrameInfo.mat'])
+load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
 
 if isfield(FrameInfo,'FileMode')
     FileMode=FrameInfo(1).FileMode;
