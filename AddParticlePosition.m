@@ -546,13 +546,7 @@ if ~NoAP
         for j=1:Columns
             Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
             Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
-            % If Angle lies in quadrant 1 or 4 (with A as the origin), this projection works
-            if j >= coordAZoom(1)
-                APPosition=Distance.*cos(Angle-APAngle);
-                % If Angle lies in quadrant 2 or 3, this projection works
-            else
-                APPosition=Distance.*cos(pi+Angle-APAngle);   
-            end
+            APPosition=Distance.*cos(Angle-APAngle);
             APPosImage(i,j)=APPosition/APLength;
         end
     end
@@ -584,16 +578,12 @@ if ~NoAP
 
     if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
         for i=1:length(Particles)
-            %Angle between the x-axis and the particle using the A position as a
-            %zero
+            %Angle between the x-axis and the particle using the A position
+            %as a zero
             Angles=atan((Particles(i).yPos-coordAZoom(2))./(Particles(i).xPos-coordAZoom(1)));
             %Distance between the points and the A point
             Distances=sqrt((coordAZoom(2)-Particles(i).yPos).^2+(coordAZoom(1)-Particles(i).xPos).^2);
-            if j >= coordAZoom(1)
             APPositions=Distances.*cos(Angles-APAngle);
-            else
-            APPositions=Distances.*cos(pi+Angles-APAngle);    
-            end
             Particles(i).APpos=APPositions/APLength;
         end
     end
