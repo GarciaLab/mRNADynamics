@@ -124,7 +124,7 @@ elseif ~isempty(findstr(Prefix,'X2'))
     TimeEnd014=1000; 
 else
     % ES 2013-10-14: I don't use X1 or X2 prefixes
-    if strcmp(StemLoopEnd, '5''')
+    if exist('StemLoopEnd', 'var') && strcmp(StemLoopEnd, '5''')
         Delay=GeneLength5/ElongationRate;    %Minutes for PolII to fall off after reaching
         %the first MS2 site.
         display('Treating data set as 5''')
@@ -140,7 +140,7 @@ else
         Rate014=4E3;     %Rate per minute
         TimeStart014=5;
         TimeEnd014=1000;
-    elseif strcmp(StemLoopEnd, '3''')
+    elseif exist('StemLoopEnd', 'var') && strcmp(StemLoopEnd, '3''')
         Delay=GeneLength3/ElongationRate;
         display('Treating data set as 3''')
         
