@@ -87,8 +87,14 @@ for i=1:Rows
 end
 
 
-%Bin the pixels along the AP axis
-APResolution=0.025;
+%Divide the image into AP bins. The size of the bin will depend on the
+%experiment
+if strfind(lower(Prefix),'eve')     %Eve2 experiments
+    APResolution=0.01;
+else                                %All other experiments
+    APResolution=0.025;
+end
+
 APbinID=0:APResolution:1;
 
 
