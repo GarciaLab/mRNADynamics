@@ -355,8 +355,14 @@ MinAPArea=12500;%700;    %Minimum area in pixels in order to consider an AP bin 
 
 
 if strcmp(ExperimentAxis,'AP')
-    %Divide the image into AP bins
-    APResolution=0.025;
+    %Divide the image into AP bins. The size of the bin will depend on the
+    %experiment
+    if strfind(lower(Prefix),'eve')     %Eve2 experiments
+        APResolution=0.01;
+    else                                %All other experiments
+        APResolution=0.025;
+    end
+       
     APbinID=0:APResolution:1;
 
     %Create an image for the different AP bins
@@ -387,7 +393,7 @@ if strcmp(ExperimentAxis,'AP')
         APbinArea(i)=sum(sum(APPosBinImage==i));
 
         %Discard anything that is below MinAPArea
-        if APbinArea(i)<MinAPArea
+        if APbinArea(i)<(MinAPArea/0.025*APResolution)
             APbinArea(i)=nan;
         end
     end

@@ -124,7 +124,8 @@ elseif ~isempty(findstr(Prefix,'X2'))
     TimeEnd014=1000; 
 else
     % ES 2013-10-14: I don't use X1 or X2 prefixes
-    if strcmp(StemLoopEnd, '5''')
+    ResponseS = input('Type ''3'' for 3'' data or ''5'' for 5'' data: ', 's');
+    if strcmp(ResponseS, '5')
         Delay=GeneLength5/ElongationRate;    %Minutes for PolII to fall off after reaching
         %the first MS2 site.
         display('Treating data set as 5''')
@@ -140,7 +141,7 @@ else
         Rate014=4E3;     %Rate per minute
         TimeStart014=5;
         TimeEnd014=1000;
-    elseif strcmp(StemLoopEnd, '3''')
+    elseif strcmp(ResponseS, '3')
         Delay=GeneLength3/ElongationRate;
         display('Treating data set as 3''')
         
@@ -156,7 +157,7 @@ else
         TimeStart014=7.5;
         TimeEnd014=1000;
     else
-        error('Could not recognize data type from the Prefix or from the value of StemLoopEnd in MovieDatabase.')
+        error('Could not recognize data type from the Prefix or user input')
     end
 end
 
