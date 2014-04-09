@@ -536,6 +536,11 @@ if ~NoAP
 
     %Angle between the x-axis and the AP-axis
     APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
+    if coordPZoom(1)-coordAZoom(1) < 0
+        APAngle = APAngle + pi;
+    end
+    % Correction for if APAngle is in quadrants II or III
+    
     APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
 
 
@@ -545,14 +550,13 @@ if ~NoAP
     for i=1:Rows
         for j=1:Columns
             Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
-            Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
-            % If Angle lies in quadrant 1 or 4 (with A as the origin), this projection works
-            if j >= coordAZoom(1)
-                APPosition=Distance.*cos(Angle-APAngle);
-                % If Angle lies in quadrant 2 or 3, this projection works
-            else
-                APPosition=Distance.*cos(pi+Angle-APAngle);   
+            if j-coordAZoom(1) < 0
+                Angle = Angle + pi;
             end
+            % Correction for if Angle is in quadrants II or III
+            
+            Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
+            APPosition=Distance.*cos(Angle-APAngle);
             APPosImage(i,j)=APPosition/APLength;
         end
     end
@@ -587,13 +591,14 @@ if ~NoAP
             %Angle between the x-axis and the particle using the A position as a
             %zero
             Angles=atan((Particles(i).yPos-coordAZoom(2))./(Particles(i).xPos-coordAZoom(1)));
+            if Particles(i).xPos-coordAZoom(1) < 0
+                Angles = Angles + pi;
+            end
+            % Correction for if Angles is in quadrants II or III
+            
             %Distance between the points and the A point
             Distances=sqrt((coordAZoom(2)-Particles(i).yPos).^2+(coordAZoom(1)-Particles(i).xPos).^2);
-            if j >= coordAZoom(1)
             APPositions=Distances.*cos(Angles-APAngle);
-            else
-            APPositions=Distances.*cos(pi+Angles-APAngle);    
-            end
             Particles(i).APpos=APPositions/APLength;
         end
     end
