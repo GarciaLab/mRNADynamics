@@ -10,10 +10,9 @@ function FitIndividualFluorescenceCurve(varargin)
 %- =: Change the amount of points in a trace
 %a z: Move the time point
 %s x: Move the rate up and down
+%SHIFT + a,z,s,x: Coarse move
 %f  : Fit this trace
-
-
-%b Switch between nc13 and nc14
+%b  : Switch between nc13 and nc14
 
 
 close all
