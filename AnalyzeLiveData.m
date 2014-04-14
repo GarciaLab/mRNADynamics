@@ -46,6 +46,8 @@ cd([MS2CodePath])
 
 %We will keep the threshold low and then increase it after the fact.
 
+pause
+
 %For power of 10mW
 Threshold=30;   
 
