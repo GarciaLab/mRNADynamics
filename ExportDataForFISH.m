@@ -141,6 +141,8 @@ ImageInfo = imfinfo([Folder,filesep,D(1).name]);
 %Do we have a second channel for Histone?
 if strcmp(Channel2,'His-RFP')
     HisChannel=1;
+else
+    HisChannel=0;
 end
 
 
