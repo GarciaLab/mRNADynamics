@@ -400,8 +400,7 @@ while cc~=13
     %Do the fit
     elseif (ct~=0)&&(cc=='f')
         x0=[FitResultsIndiv(i,nc-12).ManualTransitions,...
-            FitResultsIndiv(i,nc-12).ManualRates];
-        x0
+            FitResultsIndiv(i,nc-12).SingleRate];
         %Create lower and upper bounds for the rates
         x0Lower=zeros(size(x0));
         x0Upper=inf(size(x0));
@@ -409,13 +408,14 @@ while cc~=13
         options = optimset('MaxFunEvals',2000*length(x0),'MaxIter',5000);
         
         [xFit,resnorm,residual,exitflag,output,lambda,jacobian]=...
-            lsqnonlin(@(x) lsqnonlinFitIndividualFluorescenceCurve(ElapsedTime(CompiledParticles(ParticlesNC{nc-12}(i)).Frame)-...
+            lsqnonlin(@(x) lsqnonlinFitIndividualFluorescenceCurveConstrained(ElapsedTime(CompiledParticles(ParticlesNC{nc-12}(i)).Frame)-...
             ElapsedTime(eval(['nc',num2str(nc)])),...
-            CompiledParticles(ParticlesNC{nc-12}(i)).Fluo,Delay,FitResultsIndiv(i,nc-12).nSteps,x),x0,...
-            x0Lower,x0Upper,options);
+            CompiledParticles(ParticlesNC{nc-12}(i)).Fluo,Delay,...
+            FitResultsIndiv(i,nc-12).nSteps,FitResultsIndiv(i,nc-12).NActive,x),...
+            x0,x0Lower,x0Upper,options);
 
         FitResultsIndiv(i,nc-12).FittedTransitions=xFit(1:FitResultsIndiv(i,nc-12).nSteps);
-        FitResultsIndiv(i,nc-12).FittedRates=xFit(FitResultsIndiv(i,nc-12).nSteps+1:end);
+        FitResultsIndiv(i,nc-12).FittedRates=xFit(end)*FitResultsIndiv(i,nc-12).NActive;
         
         FitResultsIndiv(i,nc-12).Approved=1;
         
