@@ -1,4 +1,4 @@
-function chi2=lsqnonlinFitIndividualFluorescenceCurve(TimeData,FluoData,Delay,nSteps,x0)
+function chi2=lsqnonlinFitIndividualFluorescenceCurveConstrained(TimeData,FluoData,Delay,nSteps,NActive,x0)
 
 %Gives the chi square of the data to the fit form in order to do a fit with
 %lsqnonlin
@@ -6,7 +6,8 @@ function chi2=lsqnonlinFitIndividualFluorescenceCurve(TimeData,FluoData,Delay,nS
 %Starting conditions
 %nSteps=x0(1);
 Transitions0=x0(1:nSteps);
-Rates0=x0(1+nSteps:end);
+SingleRate0=x0(end);
+Rates0=NActive*SingleRate0;
 
 %Get the predicted shape
 [TimePrediction,FluoPrediction]=IndividualTrace(Transitions0,Rates0,Delay,max(TimeData));
