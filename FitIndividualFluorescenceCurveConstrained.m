@@ -1,4 +1,4 @@
-function FitIndividualFluorescenceCurve(varargin)
+function FitIndividualFluorescenceCurveConstrained(varargin)
 
 %This function performs fits to the single particle fluorescence as a
 %function of time of a particular dataset.
@@ -101,7 +101,10 @@ for j=1:length(ParticlesNC)
     for i=1:length(ParticlesNC{j})
             FitResultsIndiv(i,j).nSteps=1;
             FitResultsIndiv(i,j).ManualTransitions=4;
-            FitResultsIndiv(i,j).ManualRates=0.6E4;
+            FitResultsIndiv(i,j).SingleRate=0.6E4;
+            FitResultsIndiv(i,j).NActive=1;
+            FitResultsIndiv(i,j).ManualRates=FitResultsIndiv(i,j).SingleRate...
+                * FitResultsIndiv(i,j).NActive;
             FitResultsIndiv(i,j).Approved=0;
             FitResultsIndiv(i,j).CompiledParticle=ParticlesNC{j}(i);
             FitResultsIndiv(i,j).FittedTransitions=[];
@@ -109,8 +112,8 @@ for j=1:length(ParticlesNC)
 end
 
 %Load the fits if they exist
-if exist([DropboxFolder,filesep,Prefix,filesep,'IndividualFits.mat'])
-    load([DropboxFolder,filesep,Prefix,filesep,'IndividualFits.mat'])
+if exist([DropboxFolder,filesep,Prefix,filesep,'IndividualFitsConstrained.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'IndividualFitsConstrained.mat'])
 end
 
 
@@ -241,7 +244,11 @@ while cc~=13
     end
                 
     plot(xRange,Rate,'-r','LineWidth',4)
-    ylim([0,max(Rate)*1.1])
+    if max(Rate) == 0
+        ylim([0,10])
+    else
+        ylim([0,max(Rate)*1.1])
+    end
     hold off
     
     
@@ -306,13 +313,15 @@ while cc~=13
         FitResultsIndiv(i,nc-12).nSteps=FitResultsIndiv(i,nc-12).nSteps+1;
         FitResultsIndiv(i,nc-12).ManualTransitions(end+1)=...
             FitResultsIndiv(i,nc-12).ManualTransitions(end)+3;
-        FitResultsIndiv(i,nc-12).ManualRates(end+1)=0.6E4;
+        FitResultsIndiv(i,nc-12).NActive(end+1)=1;
+        FitResultsIndiv(i,nc-12).ManualRates(end+1)=FitResultsIndiv(i,nc-12).SingleRate;
         CurrentTransition=FitResultsIndiv(i,nc-12).nSteps;
         FitResultsIndiv(i,nc-12).Approved=0;
     elseif (ct~=0)&(cc=='-')
         if FitResultsIndiv(i,nc-12).nSteps>1
             FitResultsIndiv(i,nc-12).nSteps=FitResultsIndiv(i,nc-12).nSteps-1;
             FitResultsIndiv(i,nc-12).ManualTransitions=FitResultsIndiv(i,nc-12).ManualTransitions(1:end-1);
+            FitResultsIndiv(i,nc-12).NActive=FitResultsIndiv(i,nc-12).NActive(1:end-1);
             FitResultsIndiv(i,nc-12).ManualRates=FitResultsIndiv(i,nc-12).ManualRates(1:end-1);
             CurrentTransition=FitResultsIndiv(i,nc-12).nSteps;
             FitResultsIndiv(i,nc-12).Approved=0;
@@ -347,29 +356,51 @@ while cc~=13
         
     %Rate, fine resolution
     elseif (ct~=0)&(cc=='s')
-        FitResultsIndiv(i,nc-12).ManualRates(CurrentTransition)=...
-            FitResultsIndiv(i,nc-12).ManualRates(CurrentTransition)+200*ScaleFactor;
+        FitResultsIndiv(i,nc-12).SingleRate=...
+            FitResultsIndiv(i,nc-12).SingleRate+200*ScaleFactor;
+        FitResultsIndiv(i,nc-12).ManualRates=FitResultsIndiv(i,nc-12).SingleRate...
+            * FitResultsIndiv(i,nc-12).NActive;
         FitResultsIndiv(i,nc-12).Approved=0;
-    elseif (ct~=0)&(cc=='x')&(FitResultsIndiv(i,nc-12).ManualRates(CurrentTransition)>0)
-        FitResultsIndiv(i,nc-12).ManualRates(CurrentTransition)=...
-            FitResultsIndiv(i,nc-12).ManualRates(CurrentTransition)-200*ScaleFactor;
+    elseif (ct~=0)&(cc=='x')&(FitResultsIndiv(i,nc-12).SingleRate>0)
+        FitResultsIndiv(i,nc-12).SingleRate=...
+            FitResultsIndiv(i,nc-12).SingleRate-200*ScaleFactor;
+        FitResultsIndiv(i,nc-12).ManualRates=FitResultsIndiv(i,nc-12).SingleRate...
+            * FitResultsIndiv(i,nc-12).NActive;
         FitResultsIndiv(i,nc-12).Approved=0;
         
     %Rate, coarse resolution
     elseif (ct~=0)&(cc=='S')
-        FitResultsIndiv(i,nc-12).ManualRates(CurrentTransition)=...
-            FitResultsIndiv(i,nc-12).ManualRates(CurrentTransition)+2000*ScaleFactor;
+        FitResultsIndiv(i,nc-12).SingleRate=...
+            FitResultsIndiv(i,nc-12).SingleRate+2000*ScaleFactor;
+        FitResultsIndiv(i,nc-12).ManualRates=FitResultsIndiv(i,nc-12).SingleRate...
+            * FitResultsIndiv(i,nc-12).NActive;
         FitResultsIndiv(i,nc-12).Approved=0;
-    elseif (ct~=0)&(cc=='X')&(FitResultsIndiv(i,nc-12).ManualRates(CurrentTransition)>0)
-        FitResultsIndiv(i,nc-12).ManualRates(CurrentTransition)=...
-            FitResultsIndiv(i,nc-12).ManualRates(CurrentTransition)-2000*ScaleFactor;
+    elseif (ct~=0)&(cc=='X')&(FitResultsIndiv(i,nc-12).SingleRate>0)
+        FitResultsIndiv(i,nc-12).SingleRate=...
+            FitResultsIndiv(i,nc-12).SingleRate-2000*ScaleFactor;
+        FitResultsIndiv(i,nc-12).ManualRates=FitResultsIndiv(i,nc-12).SingleRate...
+            * FitResultsIndiv(i,nc-12).NActive;
+        FitResultsIndiv(i,nc-12).Approved=0;
+        
+    %NActive
+    elseif (ct~=0)&&(cc=='d')&&(FitResultsIndiv(i,nc-12).NActive(CurrentTransition)<2)
+        FitResultsIndiv(i,nc-12).NActive(CurrentTransition)=...
+            FitResultsIndiv(i,nc-12).NActive(CurrentTransition)+1;
+        FitResultsIndiv(i,nc-12).ManualRates=FitResultsIndiv(i,nc-12).SingleRate...
+            * FitResultsIndiv(i,nc-12).NActive;
+        FitResultsIndiv(i,nc-12).Approved=0;
+    elseif (ct~=0)&&(cc=='c')&&(FitResultsIndiv(i,nc-12).NActive(CurrentTransition)>0)
+        FitResultsIndiv(i,nc-12).NActive(CurrentTransition)=...
+            FitResultsIndiv(i,nc-12).NActive(CurrentTransition)-1;
+        FitResultsIndiv(i,nc-12).ManualRates=FitResultsIndiv(i,nc-12).SingleRate...
+            * FitResultsIndiv(i,nc-12).NActive;
         FitResultsIndiv(i,nc-12).Approved=0;
     
         
     %Do the fit
-    elseif (ct~=0)&(cc=='f')
+    elseif (ct~=0)&&(cc=='f')
         x0=[FitResultsIndiv(i,nc-12).ManualTransitions,...
-            FitResultsIndiv(i,nc-12).ManualRates];
+            FitResultsIndiv(i,nc-12).SingleRate];
         %Create lower and upper bounds for the rates
         x0Lower=zeros(size(x0));
         x0Upper=inf(size(x0));
@@ -377,13 +408,14 @@ while cc~=13
         options = optimset('MaxFunEvals',2000*length(x0),'MaxIter',5000);
         
         [xFit,resnorm,residual,exitflag,output,lambda,jacobian]=...
-            lsqnonlin(@(x) lsqnonlinFitIndividualFluorescenceCurve(ElapsedTime(CompiledParticles(ParticlesNC{nc-12}(i)).Frame)-...
+            lsqnonlin(@(x) lsqnonlinFitIndividualFluorescenceCurveConstrained(ElapsedTime(CompiledParticles(ParticlesNC{nc-12}(i)).Frame)-...
             ElapsedTime(eval(['nc',num2str(nc)])),...
-            CompiledParticles(ParticlesNC{nc-12}(i)).Fluo,Delay,FitResultsIndiv(i,nc-12).nSteps,x),x0,...
-            x0Lower,x0Upper,options);
+            CompiledParticles(ParticlesNC{nc-12}(i)).Fluo,Delay,...
+            FitResultsIndiv(i,nc-12).nSteps,FitResultsIndiv(i,nc-12).NActive,x),...
+            x0,x0Lower,x0Upper,options);
 
         FitResultsIndiv(i,nc-12).FittedTransitions=xFit(1:FitResultsIndiv(i,nc-12).nSteps);
-        FitResultsIndiv(i,nc-12).FittedRates=xFit(FitResultsIndiv(i,nc-12).nSteps+1:end);
+        FitResultsIndiv(i,nc-12).FittedRates=xFit(end)*FitResultsIndiv(i,nc-12).NActive;
         
         FitResultsIndiv(i,nc-12).Approved=1;
         
@@ -415,9 +447,9 @@ while cc~=13
     
     %Save results
     elseif (ct~=0)&(cc=='t')
-        save([DropboxFolder,filesep,Prefix,filesep,'IndividualFits.mat'],...
+        save([DropboxFolder,filesep,Prefix,filesep,'IndividualFitsConstrained.mat'],...
             'FitResultsIndiv')
-            display('IndividualFits.mat saved')
+            display('IndividualFitsConstrained.mat saved')
      
     %Switch ncs
     elseif (ct~=0)&(cc=='b')
@@ -454,6 +486,6 @@ while cc~=13
 end
 
             
-save([DropboxFolder,filesep,Prefix,filesep,'IndividualFits.mat'],...
+save([DropboxFolder,filesep,Prefix,filesep,'IndividualFitsConstrained.mat'],...
     'FitResultsIndiv')
-    display('IndividualFits.mat saved')
+    display('IndividualFitsConstrained.mat saved')
