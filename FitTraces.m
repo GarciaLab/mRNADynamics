@@ -23,7 +23,7 @@ Prefix='2014-03-01-SnaBAC_A';
 Data=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
 
 ParticleNum=187;
-ParticleNum=217;
+%ParticleNum=217;
 %ParticleNum=206;
 %ParticleNum=212;
 
