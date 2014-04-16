@@ -119,11 +119,15 @@ end
 StoreTP=[1,StoreTP-Offset,length(x)];
 
 TT=[];
+m=[];
+c=[];
 
 for i=1:length(StoreTP)-1
      
     [p,S] = polyfit(StoreTP(i):StoreTP(i+1)-1,y(StoreTP(i):StoreTP(i+1)-1),1);yfit = polyval(p,StoreTP(i):StoreTP(i+1)-1);
     TT=[TT,yfit];
+    m(i)=p(1);
+    c(i)=p(2);
 end
 
 plot(y)

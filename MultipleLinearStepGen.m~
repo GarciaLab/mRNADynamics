@@ -1,0 +1,13 @@
+function y=MultipleLinearStepGen(x,X,m,c);
+
+y=zeros(length(x),1);
+
+for i=1:length(x);
+    
+    index = find(X/x(i)>1,1,'first');
+    
+    y(i)=m(index)*(x(i))+c(index);
+end
+
+    
+    
