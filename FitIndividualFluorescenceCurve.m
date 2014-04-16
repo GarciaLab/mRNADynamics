@@ -248,8 +248,8 @@ while cc~=13
     %These are the fitted ones
     hold on
     if ~isempty(FitResultsIndiv(i,nc-12).FittedTransitions)
-        for j=0:FitResultsIndiv(i,nc-12).nSteps
-            if j<FitResultsIndiv(i,nc-12).nSteps
+        for j=0:length(FitResultsIndiv(i,nc-12).FittedTransitions)%nSteps
+            if j<length(FitResultsIndiv(i,nc-12).FittedTransitions)%nSteps
                 if j==0
                     xRange=linspace(0,FitResultsIndiv(i,nc-12).FittedTransitions(1));
                     Rate=ones(size(xRange))*0;
@@ -397,7 +397,7 @@ while cc~=13
         FitResultsIndiv(i,nc-12).FittedTransitions=AutoTransitions;
         FitResultsIndiv(i,nc-12).FittedRates=AutoRates;
         
-%         FitResultsIndiv(i,nc-12).Approved=1;
+        FitResultsIndiv(i,nc-12).Approved=1;
         
         
 %         

@@ -5,8 +5,9 @@ function chi2=lsqnonlinAutoFitFluorescenceCurve(TimeData,FluoData,FluoErr,Delay,
 
 %Starting conditions
 %nSteps=x0(1);
-Transitions(FitIdxs)=x0(1:nSteps);
-Rates(FitIdxs)=x0(1+nSteps:end);
+% Transitions(FitIdxs)=x0(1:nSteps);
+% Rates(FitIdxs)=x0(1+nSteps:end);
+Rates(FitIdxs)=x0;
 
 %Get the predicted shape
 [TimePrediction,FluoPrediction]=IndividualTrace(Transitions,Rates,Delay,max(TimeData)+1);
