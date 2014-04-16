@@ -14,18 +14,16 @@
 %%%%%%%%%%% Real Data %%%%%%%%
 
 
-if exist('C:\Users\bothma\Dropbox\MS2Pausing')>0;
-DropboxFolder='C:\Users\bothma\Dropbox\MS2Pausing';
-else
-DropboxFolder='/Users/bothma/Dropbox/MS2Pausing';
-%DropboxFolder='/Users/bothma/Dropbox/MS2AnalysisJB';
-end
-
 Prefix='2014-03-01-SnaBAC_A';
+
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+    DetermineLocalFolders(Prefix);
+
 
 Data=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
 
 ParticleNum=187;
+ParticleNum=217;
 %ParticleNum=206;
 %ParticleNum=212;
 
