@@ -102,7 +102,7 @@ for j=1:length(ParticlesNC)
             FitResultsIndiv(i,j).nSteps=1;
             FitResultsIndiv(i,j).ManualTransitions=4;
             FitResultsIndiv(i,j).SingleRate=0.6E4;
-            FitResultsIndiv(i,j).NActive=1;
+            FitResultsIndiv(i,j).NActive=2;
             FitResultsIndiv(i,j).ManualRates=FitResultsIndiv(i,j).SingleRate...
                 * FitResultsIndiv(i,j).NActive;
             FitResultsIndiv(i,j).Approved=0;
@@ -314,7 +314,8 @@ while cc~=13
         FitResultsIndiv(i,nc-12).ManualTransitions(end+1)=...
             FitResultsIndiv(i,nc-12).ManualTransitions(end)+3;
         FitResultsIndiv(i,nc-12).NActive(end+1)=1;
-        FitResultsIndiv(i,nc-12).ManualRates(end+1)=FitResultsIndiv(i,nc-12).SingleRate;
+        FitResultsIndiv(i,nc-12).ManualRates(end+1)=FitResultsIndiv(i,nc-12).SingleRate...
+            *FitResultsIndiv(i,nc-12).NActive(end);
         CurrentTransition=FitResultsIndiv(i,nc-12).nSteps;
         FitResultsIndiv(i,nc-12).Approved=0;
     elseif (ct~=0)&(cc=='-')
@@ -383,13 +384,13 @@ while cc~=13
         FitResultsIndiv(i,nc-12).Approved=0;
         
     %NActive
-    elseif (ct~=0)&&(cc=='d')&&(FitResultsIndiv(i,nc-12).NActive(CurrentTransition)<2)
+    elseif (ct~=0)&(cc=='d')&(FitResultsIndiv(i,nc-12).NActive(CurrentTransition)<2)
         FitResultsIndiv(i,nc-12).NActive(CurrentTransition)=...
             FitResultsIndiv(i,nc-12).NActive(CurrentTransition)+1;
         FitResultsIndiv(i,nc-12).ManualRates=FitResultsIndiv(i,nc-12).SingleRate...
             * FitResultsIndiv(i,nc-12).NActive;
         FitResultsIndiv(i,nc-12).Approved=0;
-    elseif (ct~=0)&&(cc=='c')&&(FitResultsIndiv(i,nc-12).NActive(CurrentTransition)>0)
+    elseif (ct~=0)&(cc=='c')&(FitResultsIndiv(i,nc-12).NActive(CurrentTransition)>0)
         FitResultsIndiv(i,nc-12).NActive(CurrentTransition)=...
             FitResultsIndiv(i,nc-12).NActive(CurrentTransition)-1;
         FitResultsIndiv(i,nc-12).ManualRates=FitResultsIndiv(i,nc-12).SingleRate...
@@ -398,7 +399,7 @@ while cc~=13
     
         
     %Do the fit
-    elseif (ct~=0)&&(cc=='f')
+    elseif (ct~=0)&(cc=='f')
         x0=[FitResultsIndiv(i,nc-12).ManualTransitions,...
             FitResultsIndiv(i,nc-12).SingleRate];
         %Create lower and upper bounds for the rates

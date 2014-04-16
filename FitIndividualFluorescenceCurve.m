@@ -387,6 +387,18 @@ while cc~=13
         
         FitResultsIndiv(i,nc-12).Approved=1;
         
+    %Auto Fit
+    elseif (ct~=0)&(cc=='g')
+        [AutoTransitions,AutoRates] = AutoFitFluorescenceCurve(ElapsedTime(CompiledParticles(ParticlesNC{nc-12}(i)).Frame)-...
+            ElapsedTime(eval(['nc',num2str(nc)])),...
+            CompiledParticles(ParticlesNC{nc-12}(i)).Fluo,...
+            CompiledParticles(ParticlesNC{nc-12}(i)).FluoError);
+
+        FitResultsIndiv(i,nc-12).FittedTransitions=AutoTransitions;
+        FitResultsIndiv(i,nc-12).FittedRates=AutoRates;
+        
+%         FitResultsIndiv(i,nc-12).Approved=1;
+        
         
 %         
 %                     FitResultsIndiv(i,CurrentNC-12).TimeStart=xFit(1);
