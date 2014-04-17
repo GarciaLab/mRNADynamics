@@ -56,6 +56,7 @@ while (cc~=13)
     
     imshow(imadjust(APImage))
     %imshow(APImage,DisplayRange)
+    
     axis image
     axis off
     title('Anterior (green), posterior (red); original')
