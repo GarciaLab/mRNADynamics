@@ -23,54 +23,43 @@ function AnalyzeLiveDataDV
 
 
 %Process the raw images from the microscopes so that they can be analyzed
-%by the FISH code.
-Prefix=ExportDataForFISH;
+% %by the FISH code.
+% Prefix=ExportDataForFISH;
 %Optional parameters:
 %TAGOnly: Generate the TAG file only
+
+Prefix = '2014-04-08-P2P_B';
+
 
 %Get the relevant folders now:
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
     DetermineLocalFolders(Prefix);
 
 
-%Start the matlab workers for the FISH analysis code
-try
-    matlabpool
-catch
-    display('matlabpool already running')
-end
-
-%First do an analysis without a threshold to generate the DoG images.
-cd([FISHPath,filesep,'Analysis'])
-analyzeShawnLibrary('fad',@(x)tagged(x,'id',[Prefix,'_']),'params_mRNADynamics',inf)
-cd([MS2CodePath])
+% %Start the matlab workers for the FISH analysis code
+% try
+%     matlabpool
+% catch
+%     display('matlabpool already running')
+% end
+% 
+% %First do an analysis without a threshold to generate the DoG images.
+% cd([FISHPath,filesep,'Analysis'])
+% analyzeShawnLibrary('fad',@(x)tagged(x,'id',[Prefix,'_']),'params_mRNADynamics',inf)
+% cd([MS2CodePath])
 
 
 %% Look at the dog-filtered images and decide on a threshold to use
+% 
+% %We will keep the threshold low and then increase it after the fact.
+% 
+% %For LSM settings
+ Threshold=250;   
+% 
+% %For Princeton
+% Threshold=90;
 
-%We will keep the threshold low and then increase it after the fact.
 
-<<<<<<< HEAD
-%For LSM settings
-%Threshold=1000;   
-
-%For Princeton
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-Threshold=30;
-=======
-Threshold=90;   
->>>>>>> origin/HernanDev
-=======
-Threshold=90;
->>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
-=======
-Threshold=90;
->>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
-=======
-Threshold=90;
->>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
 
 %Now, do an analysis with an actual threshold
 cd([FISHPath,filesep,'Analysis'])
@@ -94,7 +83,7 @@ TrackNuclei(Prefix)
 %% check the nuclei tracking in this round.
 
 %Track the particles, the two numbers are Threshold1 and Threshold2
-TrackmRNADynamics(Prefix,110,110)
+TrackmRNADynamics(Prefix,300,300)
 
 
 CheckParticleTracking(Prefix)

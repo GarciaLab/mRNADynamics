@@ -248,8 +248,8 @@ while cc~=13
     %These are the fitted ones
     hold on
     if ~isempty(FitResultsIndiv(i,nc-12).FittedTransitions)
-        for j=0:FitResultsIndiv(i,nc-12).nSteps
-            if j<FitResultsIndiv(i,nc-12).nSteps
+        for j=0:length(FitResultsIndiv(i,nc-12).FittedTransitions)%nSteps
+            if j<length(FitResultsIndiv(i,nc-12).FittedTransitions)%nSteps
                 if j==0
                     xRange=linspace(0,FitResultsIndiv(i,nc-12).FittedTransitions(1));
                     Rate=ones(size(xRange))*0;
@@ -384,6 +384,18 @@ while cc~=13
 
         FitResultsIndiv(i,nc-12).FittedTransitions=xFit(1:FitResultsIndiv(i,nc-12).nSteps);
         FitResultsIndiv(i,nc-12).FittedRates=xFit(FitResultsIndiv(i,nc-12).nSteps+1:end);
+        
+        FitResultsIndiv(i,nc-12).Approved=1;
+        
+    %Auto Fit
+    elseif (ct~=0)&(cc=='g')
+        [AutoTransitions,AutoRates] = AutoFitFluorescenceCurve(ElapsedTime(CompiledParticles(ParticlesNC{nc-12}(i)).Frame)-...
+            ElapsedTime(eval(['nc',num2str(nc)])),...
+            CompiledParticles(ParticlesNC{nc-12}(i)).Fluo,...
+            CompiledParticles(ParticlesNC{nc-12}(i)).FluoError);
+
+        FitResultsIndiv(i,nc-12).FittedTransitions=AutoTransitions;
+        FitResultsIndiv(i,nc-12).FittedRates=AutoRates;
         
         FitResultsIndiv(i,nc-12).Approved=1;
         
