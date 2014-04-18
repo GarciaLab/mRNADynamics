@@ -9,27 +9,34 @@ end
 
 FluoErr=double(FluoErr);
 
-Window = 8;
-TimeRes = mode(diff(Time));
+Window = 4;
+TimeRes = mean(diff(Time));
+TimeRes = 0.5;
 Delay=GeneLength/ElongationRate;
 MemoryLength=ceil(Delay/TimeRes);
 
-%Interpolate time to nice values
+% Should never set window above memory length
+if Window > MemoryLength
+    Window=MemoryLength;
+end
+
+% Interpolate time to nice values
 TimeOld=Time;
 Time=min(Time):TimeRes:max(Time);
 Fluo=interp1(TimeOld,Fluo,Time);
 
 % Find first point
 [~,FirstFluoIdx]=find(Fluo>0,1);
-MinIdx=max(1,FirstFluoIdx-MemoryLength);
-TransitionIdxs=MinIdx:2:FirstFluoIdx;
-Transitions=Time(TransitionIdxs);
-Rates=Fluo(FirstFluoIdx)/Delay * ones(size(TransitionIdxs));
+StartIdx=max(1,FirstFluoIdx-MemoryLength);
+% TransitionIdxs=StartIdx:FirstFluoIdx;
+Transitions=Time(StartIdx:FirstFluoIdx);
+Rates=Fluo(FirstFluoIdx)/Delay * ones(size(Transitions));
 
 % Find minimum rate to hit highest point in data
 LeastMaxRate=max(Fluo)/Delay;
 
-for i = FirstFluoIdx+2:2:length(Time)
+for i = FirstFluoIdx+1:length(Time)
+    i
     Transitions(end+1)=Time(i);
     Rates(end+1)=LeastMaxRate;
     % Index at start of window (or index 1 if we are near beginning of dataset)
@@ -48,8 +55,9 @@ for i = FirstFluoIdx+2:2:length(Time)
     nSteps=length(FitIdxs);
     
     % Decide which time values to evaluate chi2 against
-    TimeIn=Time(MinIdx:i);
-    FluoIn=Fluo(MinIdx:i);
+    MaxIdx=min(i+3,length(Time));
+    TimeIn=Time(MinIdx:MaxIdx);
+    FluoIn=Fluo(MinIdx:MaxIdx);
 
     options = optimset('MaxFunEvals',2000*length(x0),'MaxIter',5000);
 %     TimeIn
