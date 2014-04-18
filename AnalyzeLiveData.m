@@ -101,4 +101,4 @@ TrackmRNADynamics(Prefix,40,40)
 
 CheckParticleTracking(Prefix)
 
-CompileParticles(Prefix)
+CompileParticles(Prefix,'ApproveAll')
