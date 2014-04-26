@@ -1,7 +1,7 @@
 function AccumulationMovie(Prefix)
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Initial Setup to get folders %%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Initial Setup to get folder names etc %%%%%%%%%%%%%%%%%%%%%
 
 %Get the folders, including the default Dropbox one
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
@@ -83,10 +83,37 @@ else
 end
 ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Initial Setup %%%%%%%%%%%%%%%%%%%%%
-
-
-%Create the cell array with the names.
 D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*His*.tif']);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%% Take max nuclei and save in single structure
+
+
+MaxNuclei=struct;
+
+TotalTime=135;
+
+for ii=1:TotalTime
+    
+    
+    if ii<10
+        strii=['00', num2str(ii)];
+    elseif ii<100
+        strii=['0', num2str(ii)];
+    else
+        strii=[num2str(ii)];
+    end
+
+ name=[basefoldername,filename,strii]    
+            
+
+MaxNuclei.(['Time', num2str(ii)])= imread([name,'.tif']);
+
+end
+
+save([savefoldername,'MaxNuclei.mat'],'MaxNuclei');
+
+
 
 save_to_base(1)

@@ -83,10 +83,32 @@ else
 end
 ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
 
+D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*His*.tif']);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%Create the cell array with the names.
+%%%%%%%%%%% Part 1: Take max nuclei and save in single structure in Dat folder 
 
-D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*His*.tif']);
+MaxNuclei=struct;
+
+TotalTime=length(D);
+
+for i=1:TotalTime
+
+    if i<10
+        strii=['00', num2str(i)];
+    elseif i<100
+        strii=['0', num2str(i)];
+    else
+        strii=[num2str(i)];
+    end
+
+MaxNuclei.(['Time', num2str(i)])= imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(i).name]);
+
+end
+
+save([FISHPath,filesep,'Data',filesep,Prefix,filesep,'MaxNuclei.mat'],'MaxNuclei');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 save_to_base(1)
