@@ -85,9 +85,9 @@ ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
 
 D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*His*.tif']);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%% Part 1: Take max nuclei and save in single structure in Dat folder 
+%%%%%%%%%%% Part 1: Take max nuclei and save in single structure in Data
+%%%%%%%%%%% folder
 
 MaxNuclei=struct;
 
@@ -109,6 +109,59 @@ end
 
 save([FISHPath,filesep,'Data',filesep,Prefix,filesep,'MaxNuclei.mat'],'MaxNuclei');
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%% Part 2: Perform diff gaussian filtering to segment nuclei 
+
+% Figure out pixel size  
+
+    HyphenPositionR = find(Prefix == '-');
+    DateFolderS = Prefix(1 : HyphenPositionR(3)-1);
+    LineFolderS = Prefix(HyphenPositionR(3)+1 : end);
+    Folder = [SourcePath, filesep, DateFolderS, filesep, LineFolderS];
+
+
+DTIF=dir([Folder,filesep,'*.tif']);
+DLSM=dir([Folder,filesep,'*.lsm']);
+
+if (length(DTIF)>0)&(length(DLSM)==0)
+    
+        display('2-photon @ Princeton data mode')
+        DRaw=DTIF;
+        FileMode='TIF';
+        
+        info = imfinfo([Folder,filesep,DRaw(1).name]);
+        
+%PixelWidth = info(1).XResolution*2.54e-2;
+
+PixelWidth=220e-9 % Hack !
+%%%%%% not reading in directly from header, Xresolution field seems to give samevalue for all magnifications?
+        
+        
+elseif (length(DTIF)==0)&(length(DLSM)>0)
+    
+        display('LSM mode')
+        DRaw=DLSM;
+        FileMode='LSM';
+        
+load([Folder,filesep,DRaw(1).name(1:end-4)]);
+
+PixelWidth=Datas.LSM_info.VoxelSizeX
+
+    
+else
+    error('File type not recognized')
+end
+
+%%%%%%%%%%%%%%%%%% Use nuclei size and cc times to perform first pass filtering
 
 save_to_base(1)
+
+% OptimalRadius=[];
+% 
+% for i=1:TotalTime
+% OptimalRadius(i) = DetermineFilterRadius(MaxNuclei.(['Time', num2str(i)]),3,15,50,0.5,20,2);
+% end
+% 
+% OptimalRadius(isnan(OptimalRadius))=10;
+
+
+
