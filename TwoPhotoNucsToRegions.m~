@@ -1,0 +1,164 @@
+
+
+folder =  '/Users/bothma/Dropbox/HbMovies/2014-03-18-HbBac_A/MovieData/';
+
+    
+load([folder,'MaxNuclei.mat'],'MaxNuclei');
+
+load([folder,'LabelNucsCore.mat'],'LabelNucsCore');
+
+
+TotalTime = length(fieldnames(MaxNuclei))-1;
+
+
+
+
+ %%%% Correct double labeling
+
+ TotalTime=length(MaxNuclei.TimeMatrix);
+ 
+ NumNucs=[];
+
+for i=1:TotalTime
+    NumNucs=[unique(LabelNucsCore.(['Time', num2str(i)]).ImageZ(:)); NumNucs];
+end
+
+NumNucs=max(NumNucs)
+
+for i=1:TotalTime-1
+    
+    NumNucsi = max(LabelNucsCore.(['Time', num2str(i+1)]).Image(:)); % Number of nuclei in the i+1 th time
+    
+    [lengthh,widthh]=size(LabelNucsCore.Time1.Image);
+    
+    LabelNucsCore.(['Time', num2str(i+1)]).ImageZ=zeros(lengthh,widthh); % Start with empty matrix to populate
+    
+    NewIndex=zeros(NumNucsi,1);
+    
+    for j=1:NumNucsi          % Run loop over total number of nuclei in i+1 th time
+
+        
+        IndexOfjthNuc = LabelNucsCore.(['Time', num2str(i+1)]).RegionProps(j).PixelIdxList; % Linear index of jth nuc
+        MostCommonIndex = mode(nonzeros(LabelNucsCore.(['Time', num2str(i)]).ImageZ(IndexOfjthNuc))); % Most common index in jth nuclei in i th time
+        
+      
+        if MostCommonIndex>0 % If there was a nucleus in the i'th layer, same one in the i+1'th layer
+        
+        LabelNucsCore.(['Time', num2str(i+1)]).ImageZ(IndexOfjthNuc) = MostCommonIndex;
+        
+        NewIndex(j)=MostCommonIndex;
+        
+        else                 % If no nucleus in the i'th layer make new label
+            
+        LabelNucsCore.(['Time', num2str(i+1)]).ImageZ(IndexOfjthNuc) = NumNucs+1;
+        
+        NewIndex(j)=NumNucs+1;
+        
+        NumNucs=NumNucs+1;
+        
+        end
+    end
+        
+        
+        %%%%% See if there is a doubling up of indexes
+        
+        SortNewIndex=sort(NewIndex);
+        
+        IndexesDup = find((SortNewIndex-circshift(SortNewIndex,1))==0);
+        
+        ActualIndex=SortNewIndex(IndexesDup);
+        
+        
+        
+        if isempty(IndexesDup)
+        else
+            for ii=1:length(ActualIndex)
+                
+                Indicess = find(NewIndex==ActualIndex(ii));
+                
+                for iii=1:length(Indicess)
+                    
+                    LabelNucsCore.(['Time', num2str(i+1)]).ImageZ(LabelNucsCore.(['Time', num2str(i+1)]).RegionProps(Indicess(iii)).PixelIdxList) = NumNucs+1;
+                    
+                    NumNucs=NumNucs+1;
+                end
+            end
+            
+        end
+  
+end
+
+save([folder,'LabelNucsCore.mat'],'LabelNucsCore');
+
+ 
+%%%%%%%%%%% NucDilate %%%%%%%%%%%%%%
+
+    str='';
+
+if exist([folder,'LabNucDilate.mat'])>0
+    
+    str = input('LabNucDilate already exists, overwrite? (y/n):','s');
+    
+end
+    
+  if strcmp('y',str)|~(exist([folder,'LabNucDilate.mat']))
+    
+    for i=1:TotalTime
+
+        [lengthh,widthh]=size(MaxNuclei.Time1);
+        
+      LabNucDilate.(['Time', num2str(i)]).Image  = segmentnucleiExpandLive(MaxNuclei.(['Time', num2str(i)]),LabelNucsCore.(['Time', num2str(i)]).ImageZ,50,20,ones(lengthh,widthh),50,20,10);
+
+    end
+    
+          save([folder,'LabNucDilate.mat'],'LabNucDilate');
+        
+    else
+        disp('LabNucDilate already exists, loading file')
+        
+        load([folder,'LabNucDilate.mat'],'LabNucDilate');
+    end
+    
+    
+    NumNucs=[];
+
+for i=1:TotalTime
+    
+    NumNucs=[unique(LabelNucsCore.(['Time', num2str(i)]).ImageZ(:)); NumNucs];
+end
+
+
+NumNucs=max(NumNucs);
+
+ColorMa=colormap(jet(50+NumNucs));
+
+ColorMaRand=ColorMa(randperm(50+NumNucs),:);
+
+for i=1:TotalTime
+    
+    CM=label2rgb(LabNucDilate.(['Time', num2str(i)]).Image,ColorMaRand,[1,1,1]);
+    
+DI = cast(bsxfun(@times,double(CM)/(255),double(imadjust(MaxNuclei.(['Time', num2str(i)])))),class(MaxNuclei.(['Time', num2str(i)])));
+    
+imshow(DI);
+ pause(0.1)
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+
+
+% TotalTime=length(MaxNuclei.TimeMatrix);
+%
+% FR=[];
+% for i=1:TotalTime;
+%     FR(i) = OptimalFilterRadiusNuclearSeg(MaxNuclei.(['Time', num2str(i)]),3,15,100,0.5,20,0);
+%     i,
+% end
+% 
+% FR(isnan(FR))=10;
+%
+% LabelNucsCore = SegmentNucleiLiveFunction(folder,[],round(FR+2),round(8*FR));
