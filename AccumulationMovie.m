@@ -171,14 +171,126 @@ end
 % 
 % LabelNucsCore = SegmentNucleiLive([FISHPath,filesep,'Data',filesep,Prefix,filesep],[],OptimalRadius,round(6*OptimalRadius));
 
-%%%%%%%%%%%%%%%%%%%%%%%%%% Dilate Nuclei
+% %%%%%%%%%%%%%%%%%%%%%%%%%% Dilate Nuclei
+% 
+% DilateNucleiLive([FISHPath,filesep,'Data',filesep,Prefix,filesep])
+% 
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-DilateNucleiLive([FISHPath,filesep,'Data',filesep,Prefix,filesep])
+save_to_base(1)
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%% Make structure with intensity values
+ 
+    DataEve=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
+    
+    Schnitzcells=load([DropboxFolder,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat']);
+    
+    %Load Ellipses
+    Ellipses=load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat']);
+
+%Now add the extra information
+
+    DataEve.schnitzcells=Schnitzcells.schnitzcells;
+    DataEve.Ellipses=Ellipses.Ellipses;
+
+
+NN=length(DataEve.ElapsedTime);
+
+Blk = zeros(length(DataEve.CompiledParticles),NN);
+
+PosiX=zeros(length(DataEve.CompiledParticles),1);
+PosiY=zeros(length(DataEve.CompiledParticles),1);
+
+jj=1;
+
+    for j=1:length(DataEve.CompiledParticles)
+            
+            Blk(j,DataEve.CompiledParticles(j).Frame)=DataEve.CompiledParticles(j).Fluo;
+       
+            PosiX(j) = mean(DataEve.CompiledParticles(j).xPos);
+            PosiY(j) = mean(DataEve.CompiledParticles(j).yPos);
+
+    end
+
+    
+%%%%%%%%%%%%%%%%%%%%%%%%%% Make movie totalt hack
+
+load([FISHPath,filesep,'Data',filesep,Prefix,filesep,'LabNucDilate.mat']);
+
+  writerObj = VideoWriter([DropboxFolder,filesep,Prefix,filesep,'Eve2AccumulationMovie'],'Uncompressed AVI');
+        
+        writerObj.FrameRate = 7;
+        
+        open(writerObj);
+        
+
+        
+
+%%%%%%% First connect the dots to my nuclei %%%%%%
+
+NucSOFDots = [DataEve(1).CompiledParticles.Nucleus]';
+
+NuclearCellCycle = [DataEve(1).CompiledParticles.nc]';
+
+Dotsin14=find(NuclearCellCycle==14);
+
+HGDotstoJBNucs=zeros(length(Dotsin14),3);
+
+HGDotstoJBNucs(:,1)=Dotsin14;
+
+for i=1:length(Dotsin14)
+
+FrameToUse=DataEve.schnitzcells(DataEve(1).CompiledParticles(Dotsin14(i)).Nucleus).frames(round(end/2));
+row=DataEve.schnitzcells(DataEve(1).CompiledParticles(Dotsin14(i)).Nucleus).ceny(round(end/2));
+col=DataEve.schnitzcells(DataEve(1).CompiledParticles(Dotsin14(i)).Nucleus).cenx(round(end/2));
+
+HGDotstoJBNucs(i,2)=LabNucDilate.(['Time', num2str(FrameToUse)]).Image(row,col);
+
+if ~isempty(DataEve(1).CompiledParticles(Dotsin14(i)).TotalmRNA)
+HGDotstoJBNucs(i,3)=DataEve(1).CompiledParticles(Dotsin14(i)).TotalmRNA;
+else
+end
+
+end
+
+DisplayB=zeros(size(LabNucDilate.Time1.Image));
+      
+for TT=60:164;
+    
+    DisplayB=zeros(size(LabNucDilate.Time1.Image));
+
+for i=1:length(Dotsin14)
+    
+    Ind=find(LabNucDilate.(['Time', num2str(TT)]).Image==HGDotstoJBNucs(i,2));
+    
+    try
+        DisplayB(Ind)=sum(Blk(HGDotstoJBNucs(i,1),TT-10:TT));
+    catch
+    end
+
+end
+
+maxx=10^6;
+
+N=10000;
+
+DisplayBZ=round(DisplayB/maxx*N);
+
+DisplayBZ(1,1)=N;
 
 
 
 
+imshow(label2rgbBackdrop(DisplayBZ+1,'jet',[0,0,0],imadjust(im2double(MaxNuclei.(['Time', num2str(TT)])))));
+        
+           frame = getframe;
+        
+        writeVideo(writerObj,frame);
+        
+        clf
+    
+end
+
+    close(writerObj);
 
 
