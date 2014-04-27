@@ -13,6 +13,7 @@ function FitIndividualFluorescenceCurve(varargin)
 %SHIFT + a,z,s,x: Coarse move
 %f  : Fit this trace
 %b  : Switch between nc13 and nc14
+%g  : Auto-fit this trace
 
 
 close all
@@ -34,8 +35,6 @@ end
 %Get the actual folder using the Prefix
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
     DetermineLocalFolders(Prefix);
-
-
 
 %Load the compiled particles and the division information                                    
 load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'])
@@ -77,7 +76,8 @@ elseif  ~isempty(strfind(StemLoop,'X1'))
     GeneLength=5.296;       %Distance from the first MS2 site to the end of the
                         %TUB3'UTR in kb.
 else
-    error('The gene length has not been defined for this construct')
+%     error('The gene length has not been defined for this construct')
+    GeneLength=6.443;
 end
     
 
@@ -124,7 +124,7 @@ set(gcf,'Position',[630   226   560   420])
 i=1;
 cc=1;
 CurrentTransition=1;
-nc=13;
+nc=14;
 while cc~=13
     figure(FitFigure)
     clf
@@ -274,7 +274,9 @@ while cc~=13
         end
 
         plot(xRange,Rate,'-b','LineWidth',4)
-        ylim([0,max(Rate)*1.1])
+        if max(Rate)>0
+            ylim([0,max(Rate)*1.1])
+        end
         hold off
     end
     
@@ -389,7 +391,7 @@ while cc~=13
         
     %Auto Fit
     elseif (ct~=0)&(cc=='g')
-        [AutoTransitions,AutoRates] = AutoFitFluorescenceCurve3(ElapsedTime(CompiledParticles(ParticlesNC{nc-12}(i)).Frame)-...
+        [AutoTransitions,AutoRates] = AutoFitFluorescenceCurveLinear(ElapsedTime(CompiledParticles(ParticlesNC{nc-12}(i)).Frame)-...
             ElapsedTime(eval(['nc',num2str(nc)])),...
             CompiledParticles(ParticlesNC{nc-12}(i)).Fluo,...
             CompiledParticles(ParticlesNC{nc-12}(i)).FluoError);
