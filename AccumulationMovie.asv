@@ -151,35 +151,32 @@ else
     error('File type not recognized')
 end
 
-%%%%%%%%%%%%%%%%%% Use nuclei size and cc times to perform first pass filtering
-
-RadiidiffCell=round(PixelWidth/2e-7*[25,21,18,15,11,7]);
-
-OptimalRadius=ones(1,TotalTime);
-
-FirstDivis = find(ncs,1);
-
-ncsMOD = [ncs, TotalTime];
-
-OptimalRadius(1:ncs(FirstDivis)) = RadiidiffCell(FirstDivis-1);
-
-for i=FirstDivis:6
-    
-    OptimalRadius(ncsMOD(i)+1:ncsMOD(i+1)) = RadiidiffCell(i);
-end    
-
-LabelNucsCore = SegmentNucleiLiveFunction([FISHPath,filesep,'Data',filesep,Prefix,filesep],[],OptimalRadius,round(6*OptimalRadius));
-
-%%%%%%%%%%%%%%%%%% 
-
-
-% OptimalRadius=[];
+%%%%%%%%%%%%%%%%%% Use nuclei size and cc times to perform first pass
+%%%%%%%%%%%%%%%%%% filtering segmentation and rough tracking
 % 
-% for i=1:TotalTime
-% OptimalRadius(i) = DetermineFilterRadius(MaxNuclei.(['Time', num2str(i)]),3,15,50,0.5,20,2);
-% end
+% RadiidiffCell=round(PixelWidth/2e-7*[25,21,18,15,11,7]);
 % 
-% OptimalRadius(isnan(OptimalRadius))=10;
+% OptimalRadius=ones(1,TotalTime);
+% 
+% FirstDivis = find(ncs,1);
+% 
+% ncsMOD = [ncs, TotalTime];
+% 
+% OptimalRadius(1:ncs(FirstDivis)) = RadiidiffCell(FirstDivis-1);
+% 
+% for i=FirstDivis:6
+%     
+%     OptimalRadius(ncsMOD(i)+1:ncsMOD(i+1)) = RadiidiffCell(i);
+% end    
+% 
+% LabelNucsCore = SegmentNucleiLive([FISHPath,filesep,'Data',filesep,Prefix,filesep],[],OptimalRadius,round(6*OptimalRadius));
+
+%%%%%%%%%%%%%%%%%%%%%%%%%% Dilate Nuclei
+
+DilateNucleiLive([FISHPath,filesep,'Data',filesep,Prefix,filesep])
+
+%%%%%%%%%%%%
+
 
 
 
