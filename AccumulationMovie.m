@@ -132,8 +132,8 @@ if (length(DTIF)>0)&(length(DLSM)==0)
         
 %PixelWidth = info(1).XResolution*2.54e-2;
 
-PixelWidth=220e-9 % Hack !
-%%%%%% not reading in directly from header, Xresolution field seems to give samevalue for all magnifications?
+PixelWidth=200e-9 % Hack !
+%%%%%% not reading in directly from header, Xresolution field seems to give same value for all magnifications?
         
         
 elseif (length(DTIF)==0)&(length(DLSM)>0)
@@ -153,7 +153,27 @@ end
 
 %%%%%%%%%%%%%%%%%% Use nuclei size and cc times to perform first pass filtering
 
+RadiidiffCell=round(PixelWidth/2e-7*[25,21,18,15,11,7]);
+
+OptimalRadius=ones(1,TotalTime);
+
+FirstDivis = find(ncs,1);
+
+ncsMOD = [ncs, TotalTime];
+
+OptimalRadius(1:ncs(FirstDivis)) = RadiidiffCell(FirstDivis-1);
+
+for i=FirstDivis:6
+    
+    OptimalRadius(ncsMOD(i)+1:ncsMOD(i+1)) = RadiidiffCell(i);
+end    
+
 save_to_base(1)
+
+LabelNucsCore = SegmentNucleiLiveFunction([FISHPath,filesep,'Data',filesep,Prefix,filesep],[],OptimalRadius,round(6*OptimalRadius));
+
+
+
 
 % OptimalRadius=[];
 % 
