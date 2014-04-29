@@ -213,71 +213,7 @@ jj=1;
             PosiY(j) = mean(DataEve.CompiledParticles(j).yPos);
 
     end
-
-
-%%%%%%% Building structure with information on which nuclei are in which
-%%%%%%% frame and where they are
-
-NNuclei=length(DataEve(1).schnitzcells);
-NNParicles=length(DataEve(1).CompiledParticles);
-
-for j=1:NN
-    
-    NucIndex=[];
-    cenx=[];
-    ceny=[];
-    
-    for i=1:NNuclei
-
-        FramesNucIn = DataEve(1).schnitzcells(i).frames;
-        
-        FramesLoc = find(FramesNucIn==j);
-        
-        if isempty(FramesLoc)
-            
-        else
-            
-        NucIndex = [NucIndex;i];
-        cenx = [cenx; DataEve(1).schnitzcells(i).cenx(FramesLoc)];
-        ceny = [ceny; DataEve(1).schnitzcells(i).ceny(FramesLoc)];
-            
-            
-        end
-
-    end
-    
-    
-     NucRe(j).NucIndex=NucIndex;
-    NucRe(j).cenx=cenx;
-    NucRe(j).ceny=ceny;
-    
-    
-        NucOnIndex=[];
-    
-    for i=1:NNParicles
-
-        FramesParticIn = DataEve(1).CompiledParticles(i).Frame;
-        
-        FramesLoc = find(FramesParticIn==j);
-        
-        if isempty(FramesLoc)
-            
-        else
-            
-        NucOnIndex = [NucOnIndex;DataEve(1).CompiledParticles(i).Nucleus];
-
-        end
-
-    end
-
-    NucRe(j).NucOnIndex=NucOnIndex;
-
-    NucRe(j).NucIndex=NucIndex;
-    NucRe(j).cenx=cenx;
-    NucRe(j).ceny=ceny;
-    
-end     
-    
+%%%%%%%%%%%%%
 
 load([FISHPath,filesep,'Data',filesep,Prefix,filesep,'LabNucDilate.mat']);
 load([FISHPath,filesep,'Data',filesep,Prefix,filesep,'LabelNucsCore.mat']);
@@ -312,48 +248,34 @@ for i=1:length(NucSOFDots)
 end
 
 
-%%%%%%% Calculate the amount of cytoplasmic mRNA present
+%%%%%%% Estimate the amount of cytoplasmic mRNA present ( need to think
+%%%%%%% more about this)
+
+% 
+% Time = DataEve(1).ElapsedTime;
+% global halflife Blk NBlk Time
+% halflife=10;
+% Blkk=[];
+% for NBlk=1:length(NucSOFDots);
+%     [TOUT,YOUT] = ode45(@JacqmRNAHalfFunction2,Time,0);
+%     Blkk=[Blkk;YOUT'];
+% end
+%
+
+halflife=10;
 
 
+%%%%%%%%%%%%%%%%%%%%%%% Make movie %%%%%%%%%%%%%%%%%
 
-[TOUT,YOUT] = ode45(@JacqmRNAHalfFunction2,[1,TotalTime],0);
-        
+maxx=10^6; % Maximum value of fluorescence for movie
 
-
-function f = JacqmRNAHalfFunction2(t,y)
-
- global halflife
-
-
-halflife = 8;
-
- 
-lambda=log(2)/halflife;
-
-f=interpdata(t)-y*lambda;
-
-
-
-function g=interpdata(x)
-
-
-%g = spline(Curve.SnaEThsPX,Curve.SnaEThsP,x);
-g = spline(Curve.SnaEPnrPX,Curve.SnaEPnrP,x);
-%g = spline(Curve.SnaESnaPModSpliX,Curve.SnaESnaPModSpli,x);
-
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-save_to_base(1)
+N=10000; % Number of discrete 
 
 %  writerObj = VideoWriter([DropboxFolder,filesep,Prefix,filesep,'Eve2AccumulationMovie'],'Uncompressed AVI');
 %        writerObj.FrameRate = 7;
 %        open(writerObj);
 
-for TT=15:164;
+for TT=1:TotalTime;
      
      DisplayB=zeros(size(LabNucDilate.Time1.Image));
  
@@ -362,16 +284,12 @@ for TT=15:164;
      Ind=find(ismember(LabNucDilate.(['Time', num2str(TT)]).Image,HGDotstoJBNucs(i).JBNucs));
      
      try
-         DisplayB(Ind)=sum(Blk(i,TT-10:TT));
+         DisplayB(Ind)=Blkk(i,TT);
      catch
      end
  
  end
  
-maxx=10^6;
-
-N=10000;
-
 DisplayBZ=round(DisplayB/maxx*N);
 
 DisplayBZ(1,1)=N;
@@ -387,6 +305,7 @@ pause(0.1)
     
 end
 
+save_to_base(1)
 %    close(writerObj);
 
 
