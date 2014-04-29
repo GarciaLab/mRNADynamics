@@ -42,7 +42,7 @@ end
             
             I = MaxNuclei.(['Time', num2str(i)]); % Image to use to filter
             
-            NucCourseFiltT=segmentnucleiCore(I,SizeG(i),Radi(i),0); % Find cores of nuclei, maybe need to adjust size with time
+            NucCourseFiltT=segmentnucleiCoreLive(I,SizeG(i),Radi(i),0); % Find cores of nuclei, maybe need to adjust size with time
     
             NucCourseFiltT = bwmorph(NucCourseFiltT,'thicken',1);  % Add thickness                       
             

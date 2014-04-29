@@ -154,32 +154,28 @@ end
 %%%%%%%%%%%%%%%%%% Use nuclei size and cc times to perform first pass
 %%%%%%%%%%%%%%%%%% filtering segmentation and rough tracking
 % 
-% RadiidiffCell=round(PixelWidth/2e-7*[25,21,18,15,11,7]);
-% 
-% OptimalRadius=ones(1,TotalTime);
-% 
-% FirstDivis = find(ncs,1);
-% 
-% ncsMOD = [ncs, TotalTime];
-% 
-% OptimalRadius(1:ncs(FirstDivis)) = RadiidiffCell(FirstDivis-1);
-% 
-% for i=FirstDivis:6
-%     
-%     OptimalRadius(ncsMOD(i)+1:ncsMOD(i+1)) = RadiidiffCell(i);
-% end    
-% 
-% LabelNucsCore = SegmentNucleiLive([FISHPath,filesep,'Data',filesep,Prefix,filesep],[],OptimalRadius,round(6*OptimalRadius));
+RadiidiffCell=round(PixelWidth/2e-7*[25,21,18,15,11,7]);
+
+OptimalRadius=ones(1,TotalTime);
+
+FirstDivis = find(ncs,1);
+
+ncsMOD = [ncs, TotalTime];
+
+OptimalRadius(1:ncs(FirstDivis)) = RadiidiffCell(FirstDivis-1);
+
+for i=FirstDivis:6
+    
+    OptimalRadius(ncsMOD(i)+1:ncsMOD(i+1)) = RadiidiffCell(i);
+end    
+
+LabelNucsCore = SegmentNucleiLive([FISHPath,filesep,'Data',filesep,Prefix,filesep],[],OptimalRadius,round(6*OptimalRadius));
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%% Dilate Nuclei
 % 
-% DilateNucleiLive([FISHPath,filesep,'Data',filesep,Prefix,filesep])
+ DilateNucleiLive([FISHPath,filesep,'Data',filesep,Prefix,filesep])
 % 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-save_to_base(1)
-
-
 
 %%%%%%%%%%%%%%%%%%% Make structure with intensity values
  
