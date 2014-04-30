@@ -153,29 +153,29 @@ end
 
 %%%%%%%%%%%%%%%%%% Use nuclei size and cc times to perform first pass
 %%%%%%%%%%%%%%%%%% filtering segmentation and rough tracking
-% 
-% RadiidiffCell=round(PixelWidth/2e-7*[25,21,18,15,11,7]);
-% 
-% OptimalRadius=ones(1,TotalTime);
-% 
-% FirstDivis = find(ncs,1);
-% 
-% ncsMOD = [ncs, TotalTime];
-% 
-% OptimalRadius(1:ncs(FirstDivis)) = RadiidiffCell(FirstDivis-1);
-% 
-% for i=FirstDivis:6
-%     
-%     OptimalRadius(ncsMOD(i)+1:ncsMOD(i+1)) = RadiidiffCell(i);
-% end    
-%
-%LabelNucsCore = SegmentNucleiLive([FISHPath,filesep,'Data',filesep,Prefix,filesep],[],OptimalRadius,round(6*OptimalRadius));
 
-% %%%%%%%%%%%%%%%%%%%%%%%%%% Dilate Nuclei
-% 
-% DilateNucleiLive([FISHPath,filesep,'Data',filesep,Prefix,filesep])
-% 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+RadiidiffCell=round(PixelWidth/2e-7*[25,21,18,15,11,7]);
+
+OptimalRadius=ones(1,TotalTime);
+
+FirstDivis = find(ncs,1);
+
+ncsMOD = [ncs, TotalTime];
+
+OptimalRadius(1:ncs(FirstDivis)) = RadiidiffCell(FirstDivis-1);
+
+for i=FirstDivis:6
+    
+    OptimalRadius(ncsMOD(i)+1:ncsMOD(i+1)) = RadiidiffCell(i);
+end    
+
+LabelNucsCore = SegmentNucleiLive([FISHPath,filesep,'Data',filesep,Prefix,filesep],[],OptimalRadius,round(6*OptimalRadius));
+
+%%%%%%%%%%%%%%%%%%%%%%%%%% Dilate Nuclei
+
+DilateNucleiLive([FISHPath,filesep,'Data',filesep,Prefix,filesep])
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%% Make structure with intensity values
  
@@ -265,14 +265,13 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%% Make movie %%%%%%%%%%%%%%%%%
 
-maxx=10^6; % Maximum value of fluorescence for movie
+maxx=10^5; % Maximum value of fluorescence for movie
 
 N=10000; % Number of discrete steps
 
-%  writerObj = VideoWriter([DropboxFolder,filesep,Prefix,filesep,'Eve2AccumulationMovie'],'Uncompressed AVI');
-%        writerObj.FrameRate = 7;
-%        open(writerObj);
-
+  writerObj = VideoWriter([DropboxFolder,filesep,Prefix,filesep,Prefix,'-AccumulationMovie.avi']);
+        writerObj.FrameRate = 7;
+        open(writerObj);
 for TT=1:TotalTime;
      
      DisplayB=zeros(size(LabNucDilate.Time1.Image));
@@ -298,14 +297,14 @@ DisplayBZ(1,1)=N;
 imshow(label2rgbBackdropLive(DisplayBZ+1,'jet',[0,0,0],imadjust(im2double(MaxNuclei.(['Time', num2str(TT)])))));
 
 pause(0.1)
-%           frame = getframe;
+           frame = getframe;
         
-%        writeVideo(writerObj,frame);
+        writeVideo(writerObj,frame);
         
         clf
     
 end
 
-%    close(writerObj);
+    close(writerObj);
 
 
