@@ -57,7 +57,7 @@ end
 
 f=figure;
 
-imshow(label2rgbBackdrop((LabelNucsCore.(['Time', num2str(1)]).Image>0)+1,[1,0,0;0,1,0],[1,1,1],2*imadjust(MaxNuclei.(['Time', num2str(1)]))), 'Border','tight','InitialMagnification',100), maxwindow
+imshow(label2rgbBackdropLive((LabelNucsCore.(['Time', num2str(1)]).Image>0)+1,[1,0,0;0,1,0],[1,1,1],2*imadjust(MaxNuclei.(['Time', num2str(1)]))), 'Border','tight','InitialMagnification',100)
         
    but = 1;
    
@@ -83,7 +83,7 @@ imshow(label2rgbBackdrop((LabelNucsCore.(['Time', num2str(1)]).Image>0)+1,[1,0,0
            
            disp(['Image time', num2str(Nlayer)])
            
-           imshow(label2rgbBackdrop((LabelNucsCore.(['Time', num2str(Nlayer)]).Image>0)+1,[1,0,0;0,1,0],[1,1,1],2*imadjust(MaxNuclei.(['Time', num2str(Nlayer)]))), 'Border','tight','InitialMagnification',100), maxwindow
+           imshow(label2rgbBackdropLive((LabelNucsCore.(['Time', num2str(Nlayer)]).Image>0)+1,[1,0,0;0,1,0],[1,1,1],2*imadjust(MaxNuclei.(['Time', num2str(Nlayer)]))), 'Border','tight','InitialMagnification',100), 
             
 
         elseif but==31 % Down arrow
@@ -99,7 +99,7 @@ imshow(label2rgbBackdrop((LabelNucsCore.(['Time', num2str(1)]).Image>0)+1,[1,0,0
            
            disp(['Image time', num2str(Nlayer)])
 
-           imshow(label2rgbBackdrop((LabelNucsCore.(['Time', num2str(Nlayer)]).Image>0)+1,[1,0,0;0,1,0],[1,1,1],2*imadjust(MaxNuclei.(['Time', num2str(Nlayer)]))), 'Border','tight','InitialMagnification',100), maxwindow
+           imshow(label2rgbBackdropLive((LabelNucsCore.(['Time', num2str(Nlayer)]).Image>0)+1,[1,0,0;0,1,0],[1,1,1],2*imadjust(MaxNuclei.(['Time', num2str(Nlayer)]))), 'Border','tight','InitialMagnification',100), 
 
         elseif but==114 % r is pressed join nuclei that are selected
         
@@ -149,7 +149,7 @@ imshow(label2rgbBackdrop((LabelNucsCore.(['Time', num2str(1)]).Image>0)+1,[1,0,0
 
     BwFullKeep=BwKeep+BWSelect;
 
-    imshow(BwFullKeep,'Border','tight','InitialMagnification',100), maxwindow
+    imshow(BwFullKeep,'Border','tight','InitialMagnification',100), 
 
     LabelMatrix = bwlabeln(BwFullKeep);
 
@@ -181,7 +181,7 @@ imshow(label2rgbBackdrop((LabelNucsCore.(['Time', num2str(1)]).Image>0)+1,[1,0,0
 
     BwKeep=ismember(Lab,NucToKeep);
 
-    imshow(BwKeep,'Border','tight','InitialMagnification',100), maxwindow
+    imshow(BwKeep,'Border','tight','InitialMagnification',100), 
 
     LabelMatrix = bwlabeln(BwKeep);
 
@@ -203,7 +203,7 @@ imshow(label2rgbBackdrop((LabelNucsCore.(['Time', num2str(1)]).Image>0)+1,[1,0,0
                
              I = MaxNuclei.(['Time', num2str(Nlayer)]); % Image to use to filter
              
-             NucCourseFiltT=segmentnucleiCore(I,SizeG(Nlayer),Radi(Nlayer),0); % Find cores of nuclei, maybe need to adjust size with time
+             NucCourseFiltT=segmentnucleiCoreLive(I,SizeG(Nlayer),Radi(Nlayer),0); % Find cores of nuclei, maybe need to adjust size with time
     
             NucCourseFiltT = bwmorph(NucCourseFiltT,'thicken',1);  % Add thickness                       
             
@@ -212,7 +212,7 @@ imshow(label2rgbBackdrop((LabelNucsCore.(['Time', num2str(1)]).Image>0)+1,[1,0,0
             LabelNucsCore.(['Time', num2str(Nlayer)]).RegionProps=regionprops(LabelNucsCore.(['Time', num2str(Nlayer)]).Image,'PixelIdxList','Centroid'); % Linear indices
             
                
-            imshow(label2rgbBackdrop((LabelNucsCore.(['Time', num2str(Nlayer)]).Image>0)+1,[1,0,0;0,1,0],[1,1,1],2*imadjust(MaxNuclei.(['Time', num2str(Nlayer)]))), 'Border','tight','InitialMagnification',100), maxwindow               
+            imshow(label2rgbBackdropLive((LabelNucsCore.(['Time', num2str(Nlayer)]).Image>0)+1,[1,0,0;0,1,0],[1,1,1],2*imadjust(MaxNuclei.(['Time', num2str(Nlayer)]))), 'Border','tight','InitialMagnification',100),                
                     
            elseif strcmp(textholder,'i') %%%%% For changing size of filter
                
@@ -224,7 +224,7 @@ imshow(label2rgbBackdrop((LabelNucsCore.(['Time', num2str(1)]).Image>0)+1,[1,0,0
                
              I = MaxNuclei.(['Time', num2str(Nlayer)]); % Image to use to filter
              
-             NucCourseFiltT=segmentnucleiCore(I,SizeG(Nlayer),Radi(Nlayer),0); % Find cores of nuclei, maybe need to adjust size with time
+             NucCourseFiltT=segmentnucleiCoreLive(I,SizeG(Nlayer),Radi(Nlayer),0); % Find cores of nuclei, maybe need to adjust size with time
     
             NucCourseFiltT = bwmorph(NucCourseFiltT,'thicken',1);  % Add thickness                       
             
@@ -233,7 +233,7 @@ imshow(label2rgbBackdrop((LabelNucsCore.(['Time', num2str(1)]).Image>0)+1,[1,0,0
             LabelNucsCore.(['Time', num2str(Nlayer)]).RegionProps=regionprops(LabelNucsCore.(['Time', num2str(Nlayer)]).Image,'PixelIdxList','Centroid'); % Linear indices
             
                
-            imshow(label2rgbBackdrop((LabelNucsCore.(['Time', num2str(Nlayer)]).Image>0)+1,[1,0,0;0,1,0],[1,1,1],2*imadjust(MaxNuclei.(['Time', num2str(Nlayer)]))), 'Border','tight','InitialMagnification',100), maxwindow               
+            imshow(label2rgbBackdropLive((LabelNucsCore.(['Time', num2str(Nlayer)]).Image>0)+1,[1,0,0;0,1,0],[1,1,1],2*imadjust(MaxNuclei.(['Time', num2str(Nlayer)]))), 'Border','tight','InitialMagnification',100),                
 
             end
         end
