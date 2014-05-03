@@ -151,31 +151,31 @@ else
     error('File type not recognized')
 end
 
-%%%%%%%%%%%%%%%%%% Use nuclei size and cc times to perform first pass
-%%%%%%%%%%%%%%%%%% filtering segmentation and rough tracking
-
-RadiidiffCell=round(PixelWidth/2e-7*[25,21,18,15,11,7]);
-
-OptimalRadius=ones(1,TotalTime);
-
-FirstDivis = find(ncs,1);
-
-ncsMOD = [ncs, TotalTime];
-
-OptimalRadius(1:ncs(FirstDivis)) = RadiidiffCell(FirstDivis-1);
-
-for i=FirstDivis:6
-    
-    OptimalRadius(ncsMOD(i)+1:ncsMOD(i+1)) = RadiidiffCell(i);
-end    
-
-LabelNucsCore = SegmentNucleiLive([FISHPath,filesep,'Data',filesep,Prefix,filesep],[],OptimalRadius,round(6*OptimalRadius));
-
-%%%%%%%%%%%%%%%%%%%%%%%%%% Dilate Nuclei
-
-DilateNucleiLive([FISHPath,filesep,'Data',filesep,Prefix,filesep])
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %%%%%%%%%%%%%%%%%% Use nuclei size and cc times to perform first pass
+% %%%%%%%%%%%%%%%%%% filtering segmentation and rough tracking
+% 
+% RadiidiffCell=round(PixelWidth/2e-7*[25,21,18,15,11,7]);
+% 
+% OptimalRadius=ones(1,TotalTime);
+% 
+% FirstDivis = find(ncs,1);
+% 
+% ncsMOD = [ncs, TotalTime];
+% 
+% OptimalRadius(1:ncs(FirstDivis)) = RadiidiffCell(FirstDivis-1);
+% 
+% for i=FirstDivis:6
+%     
+%     OptimalRadius(ncsMOD(i)+1:ncsMOD(i+1)) = RadiidiffCell(i);
+% end    
+% 
+% LabelNucsCore = SegmentNucleiLive([FISHPath,filesep,'Data',filesep,Prefix,filesep],[],OptimalRadius,round(6*OptimalRadius));
+% 
+% %%%%%%%%%%%%%%%%%%%%%%%%%% Dilate Nuclei
+% 
+% DilateNucleiLive([FISHPath,filesep,'Data',filesep,Prefix,filesep])
+% 
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%% Make structure with intensity values
  
@@ -247,31 +247,32 @@ end
 %%%%%%% Estimate the amount of cytoplasmic mRNA present ( need to think
 %%%%%%% more about this)
 
-% 
-% Time = DataEve(1).ElapsedTime;
-% global halflife Blk NBlk Time
-% halflife=10;
-% Blkk=[];
-% for NBlk=1:length(NucSOFDots);
-%     [TOUT,YOUT] = ode45(@JacqmRNAHalfFunction2,Time,0);
-%     Blkk=[Blkk;YOUT'];
-% end
-%
 
- halflife=10;
+ halflife=5;
+ ElongationTime =4;
+ 
+ Time=DataEve.ElapsedTime;
+ 
+ Blkk=[];
+ options = odeset('NonNegative',1);
+ for NBlk=1:length(NucSOFDots);
+      [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Blk(NBlk,:),Time),Time,0,options);% Still need to apply shift
+      Blkk=[Blkk;YOUT'];
+ end
 
 
-
+halflife=10;
 
 %%%%%%%%%%%%%%%%%%%%%%% Make movie %%%%%%%%%%%%%%%%%
 
-maxx=10^5; % Maximum value of fluorescence for movie
+maxx=max(Blkk(:));
 
 N=10000; % Number of discrete steps
 
   writerObj = VideoWriter([DropboxFolder,filesep,Prefix,filesep,Prefix,'-AccumulationMovie.avi']);
         writerObj.FrameRate = 7;
         open(writerObj);
+        
 for TT=1:TotalTime;
      
      DisplayB=zeros(size(LabNucDilate.Time1.Image));
@@ -282,8 +283,7 @@ for TT=1:TotalTime;
      
      try
         
-         % DisplayB(Ind)=Blkk(i,TT);
-        DisplayB(Ind)=sum(Blk(i,TT-halflife:TT));
+          DisplayB(Ind)=Blkk(i,TT);
         
      catch
      end
@@ -296,7 +296,7 @@ DisplayBZ(1,1)=N;
 
 imshow(label2rgbBackdropLive(DisplayBZ+1,'jet',[0,0,0],imadjust(im2double(MaxNuclei.(['Time', num2str(TT)])))));
 
-pause(0.1)
+%pause(0.1)
            frame = getframe;
         
         writeVideo(writerObj,frame);
@@ -307,4 +307,7 @@ end
 
     close(writerObj);
 
+save([DropboxFolder,filesep,Prefix,filesep,'AccumulationData.mat'],'Blk','Blkk','HGDotstoJBNucs');
+
+    save_to_base(1)
 
