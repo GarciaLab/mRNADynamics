@@ -151,8 +151,8 @@ else
     error('File type not recognized')
 end
 
-%%%%%%%%%%%%%%%%%% Use nuclei size and cc times to perform first pass
-%%%%%%%%%%%%%%%%%% filtering segmentation and rough tracking
+% %%%%%%%%%%%%%%%%%% Use nuclei size and cc times to perform first pass
+% %%%%%%%%%%%%%%%%%% filtering segmentation and rough tracking
 % 
 % RadiidiffCell=round(PixelWidth/2e-7*[25,21,18,15,11,7]);
 % 
@@ -170,16 +170,12 @@ end
 % end    
 % 
 % LabelNucsCore = SegmentNucleiLive([FISHPath,filesep,'Data',filesep,Prefix,filesep],[],OptimalRadius,round(6*OptimalRadius));
-
+% 
 % %%%%%%%%%%%%%%%%%%%%%%%%%% Dilate Nuclei
 % 
 % DilateNucleiLive([FISHPath,filesep,'Data',filesep,Prefix,filesep])
 % 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-save_to_base(1)
-
-
 
 %%%%%%%%%%%%%%%%%%% Make structure with intensity values
  
@@ -213,94 +209,24 @@ jj=1;
             PosiY(j) = mean(DataEve.CompiledParticles(j).yPos);
 
     end
-
-
-%%%%%%% Building structure with information on which nuclei are in which
-%%%%%%% frame and where they are
-
-NNuclei=length(DataEve(1).schnitzcells);
-NNParicles=length(DataEve(1).CompiledParticles);
-
-for j=1:NN
-    
-    NucIndex=[];
-    cenx=[];
-    ceny=[];
-    
-    for i=1:NNuclei
-
-        FramesNucIn = DataEve(1).schnitzcells(i).frames;
-        
-        FramesLoc = find(FramesNucIn==j);
-        
-        if isempty(FramesLoc)
-            
-        else
-            
-        NucIndex = [NucIndex;i];
-        cenx = [cenx; DataEve(1).schnitzcells(i).cenx(FramesLoc)];
-        ceny = [ceny; DataEve(1).schnitzcells(i).ceny(FramesLoc)];
-            
-            
-        end
-
-    end
-    
-    
-     NucRe(j).NucIndex=NucIndex;
-    NucRe(j).cenx=cenx;
-    NucRe(j).ceny=ceny;
-    
-    
-        NucOnIndex=[];
-    
-    for i=1:NNParicles
-
-        FramesParticIn = DataEve(1).CompiledParticles(i).Frame;
-        
-        FramesLoc = find(FramesParticIn==j);
-        
-        if isempty(FramesLoc)
-            
-        else
-            
-        NucOnIndex = [NucOnIndex;DataEve(1).CompiledParticles(i).Nucleus];
-
-        end
-
-    end
-
-    NucRe(j).NucOnIndex=NucOnIndex;
-
-    NucRe(j).NucIndex=NucIndex;
-    NucRe(j).cenx=cenx;
-    NucRe(j).ceny=ceny;
-    
-end     
-    
-%%%%%%%%%%%%%%%%%%%%%%%%%% Make Movie Total Hack
+%%%%%%%%%%%%%
 
 load([FISHPath,filesep,'Data',filesep,Prefix,filesep,'LabNucDilate.mat']);
 load([FISHPath,filesep,'Data',filesep,Prefix,filesep,'LabelNucsCore.mat']);
 
-%  writerObj = VideoWriter([DropboxFolder,filesep,Prefix,filesep,'Eve2AccumulationMovie'],'Uncompressed AVI');
-%        writerObj.FrameRate = 7;
-%        open(writerObj);
+%%%%%%% First connect the HG Dots to JB nuclei %%%%%%
 
-%%%%%%% First connect the dots to my nuclei %%%%%%
-
-NucSOFDots = [DataEve(1).CompiledParticles.Nucleus]';
-
+NucSOFDots = [DataEve(1).CompiledParticles.Nucleus]'; % The nuclei of the different dots
 
 for i=1:length(NucSOFDots)
-    
+
     frames = DataEve(1).schnitzcells(NucSOFDots(i)).frames;
     cenx = DataEve(1).schnitzcells(NucSOFDots(i)).cenx;
     ceny = DataEve(1).schnitzcells(NucSOFDots(i)).ceny;
-    
+
     HGDotstoJBNucs(i).JBNucs=[];
     HGDotstoJBNucs(i).HGNuc=NucSOFDots(i);
-    
+
     for jj=1:length(frames)
         
         JacquesCentroids = cat(1,LabelNucsCore.(['Time',num2str(frames(jj))]).RegionProps.Centroid);
@@ -316,28 +242,38 @@ for i=1:length(NucSOFDots)
     end
     
 end
-    
-% for   
-%     
-% FrameToUse=DataEve.schnitzcells(DataEve(1).CompiledParticles(Dotsin14(i)).Nucleus).frames(round(end/2));
-% row=DataEve.schnitzcells(DataEve(1).CompiledParticles(Dotsin14(i)).Nucleus).ceny(round(end/2));
-% col=DataEve.schnitzcells(DataEve(1).CompiledParticles(Dotsin14(i)).Nucleus).cenx(round(end/2));
-% 
-% HGDotstoJBNucs(i,2)=LabNucDilate.(['Time', num2str(FrameToUse)]).Image(row,col);
-% 
-% if ~isempty(DataEve(1).CompiledParticles(Dotsin14(i)).TotalmRNA)
-% HGDotstoJBNucs(i,3)=DataEve(1).CompiledParticles(Dotsin14(i)).TotalmRNA;
-% else
-% end
-% 
-% end
-
-%DisplayB=zeros(size(LabNucDilate.Time1.Image));
-      
-save_to_base(1)
 
 
-for TT=15:164;
+%%%%%%% Estimate the amount of cytoplasmic mRNA present ( need to think
+%%%%%%% more about this)
+
+
+ halflife=5;
+ ElongationTime =4;
+ 
+ Time=DataEve.ElapsedTime;
+ 
+ Blkk=[];
+ options = odeset('NonNegative',1);
+ for NBlk=1:length(NucSOFDots);
+      [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Blk(NBlk,:),Time),Time,0,options);% Still need to apply shift
+      Blkk=[Blkk;YOUT'];
+ end
+
+
+halflife=10;
+
+%%%%%%%%%%%%%%%%%%%%%%% Make movie %%%%%%%%%%%%%%%%%
+
+maxx=max(Blkk(:));
+
+N=10000; % Number of discrete steps
+
+  writerObj = VideoWriter([DropboxFolder,filesep,Prefix,filesep,Prefix,'-AccumulationMovie.avi']);
+        writerObj.FrameRate = 7;
+        open(writerObj);
+        
+for TT=1:TotalTime;
      
      DisplayB=zeros(size(LabNucDilate.Time1.Image));
  
@@ -346,31 +282,32 @@ for TT=15:164;
      Ind=find(ismember(LabNucDilate.(['Time', num2str(TT)]).Image,HGDotstoJBNucs(i).JBNucs));
      
      try
-         DisplayB(Ind)=sum(Blk(i,TT-10:TT));
+        
+          DisplayB(Ind)=Blkk(i,TT);
+        
      catch
      end
  
  end
  
-maxx=10^6;
-
-N=10000;
-
 DisplayBZ=round(DisplayB/maxx*N);
 
 DisplayBZ(1,1)=N;
 
-imshow(label2rgbBackdrop(DisplayBZ+1,'jet',[0,0,0],imadjust(im2double(MaxNuclei.(['Time', num2str(TT)])))));
+imshow(label2rgbBackdropLive(DisplayBZ+1,'jet',[0,0,0],imadjust(im2double(MaxNuclei.(['Time', num2str(TT)])))));
 
-pause(0.1)
-%           frame = getframe;
+%pause(0.1)
+           frame = getframe;
         
-%        writeVideo(writerObj,frame);
+        writeVideo(writerObj,frame);
         
         clf
     
 end
 
-%    close(writerObj);
+    close(writerObj);
 
+save([DropboxFolder,filesep,Prefix,filesep,'AccumulationData.mat'],'Blk','Blkk','HGDotstoJBNucs');
+
+    save_to_base(1)
 
