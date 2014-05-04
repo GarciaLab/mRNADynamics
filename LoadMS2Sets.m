@@ -12,7 +12,7 @@ function Data=LoadMS2Sets(DataType)
     DetermineLocalFolders;
 
 %MS2Pausing folder:
-if strcmp(DataType,'hbBAC')
+if strcmp(DataType,'hbBAC')|strcmp(DataType,'Eve2')
     [SourcePath,FISHPath,DropboxFolderPausing,MS2CodePath,SchnitzcellsFolder]=...
         DetermineLocalFolders('2014-03-15-HbBACA');
     PausingXLSName='DataStatusPausing.xlsx';
@@ -69,6 +69,11 @@ for i=1:length(CompiledSets)
     %MeanFits(i)=load([DropboxFolderPausing,filesep,Prefix,filesep,'MeanFits.mat']);
     Schnitzcells(i)=load([DropboxFolderPausing,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat']);
     SetNames{i}=SetName;
+    
+    if exist([DropboxFolderPausing,filesep,Prefix,filesep,'FitIntegralResults.mat'])
+        IntegralFits(i)=load([DropboxFolderPausing,filesep,Prefix,filesep,'FitIntegralResults.mat']);
+    end
+    
     %Load Ellipses
     Ellipses(i)=load([DropboxFolderPausing,filesep,Prefix,filesep,'Ellipses.mat']);
     %Count ellipses
@@ -86,6 +91,11 @@ for i=1:length(Data)
     Data(i).SetName=SetNames{i};
     Data(i).APDivision=APDivisions(i).APDivision;
     %Data(i).MeanFits=MeanFits(i).FitResults;
+    
+    if exist('IntegralFits')
+        Data(i).IntegralFits=IntegralFits(i).FitResults;
+    end
+    
     Data(i).schnitzcells=Schnitzcells(i).schnitzcells;
     Data(i).Ellipses=Ellipses(i).Ellipses;
 end
