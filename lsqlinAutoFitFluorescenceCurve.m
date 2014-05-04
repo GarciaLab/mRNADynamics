@@ -1,4 +1,4 @@
-function [XOut,FOut,Chi2] = lsqlinAutoFitFluorescenceCurve(F,T,XPrevious,Memory,FErr)
+function [XOut,FOut,Chi2] = lsqlinAutoFitFluorescenceCurve(F,T,XPrevious,Delay,TimeRes,FErr)
 
 % F : Fluorescence values to fit
 % T : Allowed indices to vary rate
@@ -11,11 +11,17 @@ if nargin < 3
     XPrevious=0;
 end
 if nargin < 4
-    Memory=8;
+    Delay=4;
 end
 if nargin < 5
+    TimeRes=0.5;
+end
+if nargin < 6
     FErr=1;
 end
+Memory=floor(Delay/TimeRes);
+ExcessF=(Delay-(Memory*TimeRes))/TimeRes;
+% ExcessF=0;
 
 %%% CONDITION INPUTS
 % Check that no rates are to be set where we don't have data
@@ -36,7 +42,7 @@ end
 if size(XPrevious,2)>1
     XPrevious=XPrevious';
 end
-
+% XPrevious
 % If first T is greater than 1, assume the rates before are equal to the
 % last previous rate, and don't fit fluos there
 % NumToAdd=T(1)-1;
@@ -47,7 +53,7 @@ else
 end
 
 XPreviousAug=XPrevious;
-XPreviousAug(end+1:end+1+NumToAdd-1,1)=XPrevious(end);
+XPreviousAug(end+1:end+NumToAdd,1)=XPrevious(end);
 
 %%% FIT CALCULATIONS
 NF=length(F);
@@ -56,7 +62,7 @@ NPre=length(XPrevious);
 NPreAug=NPre+NumToAdd;
 
 %%% PREVIOUS CONTRIBUTION
-APre=ElongationMatrix(NPreAug+Memory-1,NPreAug);
+APre=ElongationMatrix(NPreAug+Memory,NPreAug,Memory,ExcessF);
 % Generate previous fluorescence from augmented XPrevious
 FPre=APre*XPreviousAug;
 % Cut off values of FPre that aren't in window
@@ -68,7 +74,7 @@ FFit(1:MaxIdx)=FFit(1:MaxIdx)-FPre(1:MaxIdx);
 
 %%% FITTING
 % Create elongation matrix
-A=ElongationMatrix(NF,NF);
+A=ElongationMatrix(NF,NF,Memory,ExcessF);
 % For fitting, cut off fluorescence before first free rate...
 FFit=FFit(1+NumToAdd:end,1);
 % AFitStep1=A(1+NumToAdd:end,1+NumToAdd:end);
@@ -87,6 +93,18 @@ end
 
 % Do the fit
 [XFitted,resnorm,residual]=lsqnonneg(AFit,FFit);
+% size(XFitted)
+% if isempty(AFit)
+%     XFitted=[];
+% else
+%     options=optimoptions(@lsqlin,'Algorithm','active-set');
+% %     size(FFit)
+% %     size(AFit)
+%     n=size(AFit,2);
+%     lb=zeros(n,1);
+%     [XFitted,resnorm,residual]=lsqlin(AFit,FFit,[],[],[],[],lb,[],[]);
+% %     [XFitted,resnorm,residual]=lsqlin(AFit,FFit,-eye(n,n),zeros(n,1),[],[],[],[],[],options);
+% end
 FFitted=AFit*XFitted;
 
 %%% OUTPUT FORMAT

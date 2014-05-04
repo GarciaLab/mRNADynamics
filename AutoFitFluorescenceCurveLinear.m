@@ -1,4 +1,4 @@
-function [TransitionTimes,Rates] = AutoFitFluorescenceCurveLinear(Time,Fluo,FluoErr,GeneLength,ElongationRate)
+function [TransitionTimes,Rates] = AutoFitFluorescenceCurveLinear(Time,Fluo,FluoErr,GeneLength,ElongationRate,MaxAllowedRate)
 
 if nargin<4
     GeneLength=6.443;
@@ -6,10 +6,13 @@ end
 if nargin<5
     ElongationRate=1.54;
 end
+if nargin<6
+    MaxAllowedRate=-1;
+end
 
 % Parameters
 TimeRes = 0.5;
-Window = 8;
+Window = 9;
 FluoErr=double(FluoErr);
 Delay=GeneLength/ElongationRate;
 Memory=floor(Delay/TimeRes);
@@ -22,21 +25,25 @@ TransitionIdxs=1:length(Fluo);
 Rates=zeros(size(TransitionIdxs));
 
 for i = 1:length(Fluo)-1
-    i
+    % Just a place for a conditional breakpoint
+%     if i==28
+%         abcdef=1;
+%     end
+
     % Decide which of the values in Transitions to vary
     MinFitIdx=i;
-    MaxFitIdx=min(i+Window,length(TransitionIdxs));
+    MaxFitIdx=min(i+Window-1,length(TransitionIdxs));
     N=MaxFitIdx-MinFitIdx+1;
     
     % Index at start of window (or index 1 if we are near beginning of dataset)
     MinDataIdx=i;
-    MaxDataIdx=min(i+Window,length(TransitionIdxs));
+    MaxDataIdx=min(i+Window-1,length(TransitionIdxs));
 
     % Decide which time values to evaluate for GOF
     FluoIn=Fluo(MinDataIdx:MaxDataIdx);
     
     % Previous values
-    PreIdx=max(1,i-Memory+1);
+    PreIdx=max(1,i-Memory);
     XPrevious=Rates(PreIdx:i-1)*TimeRes;
     
     % Initialize best
@@ -44,17 +51,16 @@ for i = 1:length(Fluo)-1
     BestComb = [];
     BestRates = [];
 
-    for NCombinations = 0:N-2
+    for NCombinations = 0:N-2%min(1,N-2)%N-2
         Combs = combnk(1:N, NCombinations);
         % Include the max term so that 0 combination works
         for CombIdx = 1:max(1,size(Combs,1))
             if NCombinations==0
                 FitIdxs=[];
-                [XOut,FOut,Chi2]=lsqlinAutoFitFluorescenceCurve(FluoIn,FitIdxs,XPrevious,Memory,FluoErr);
+                [XOut,FOut,Chi2]=lsqlinAutoFitFluorescenceCurve(FluoIn,FitIdxs,XPrevious,Delay,TimeRes,FluoErr);
             else
                 FitIdxs=Combs(CombIdx,:);
-                T=FitIdxs;
-                [XOut,FOut,Chi2]=lsqlinAutoFitFluorescenceCurve(FluoIn,T,XPrevious,Memory,FluoErr);
+                [XOut,FOut,Chi2]=lsqlinAutoFitFluorescenceCurve(FluoIn,FitIdxs,XPrevious,Delay,TimeRes,FluoErr);
             end
             FitRates=XOut/TimeRes;
 
@@ -64,17 +70,22 @@ for i = 1:length(Fluo)-1
 
             AIC = Chi2+2*NCombinations;
 %             GOF = AIC;
-%             GOF = AIC + 6*NCombinations;
+%             GOF = AIC + 4*NCombinations;
             GOF = AIC + 2*NCombinations*(NCombinations+1)/(N-NCombinations-1);
 %             GOF = Chi2/(N-NCombinations);
+%             GOF = Chi2;
             if GOF < BestGOF || BestGOF == -1
 %                 chi2
 %                 BestRates=SubIntoRates(Rates,FitIdxs,xFit,InitialIdx,InitialRate);
                 BestGOF=GOF;
                 BestRates=TempRates;
-                figure(5)
-                [PlotTime,PlotFluo]=IndividualTrace(TimeInterp(1:MaxFitIdx),2*BestRates(1:MaxFitIdx),Delay,80);
-                plot(PlotTime,PlotFluo);
+%                 figure(5)
+%                 clf;
+%                 hold on;
+%                 [PlotTime,PlotFluo]=IndividualTrace(TimeInterp(1:MaxFitIdx)-0.5,BestRates(1:MaxFitIdx),Delay,TimeInterp(MaxFitIdx));
+%                 plot(PlotTime,PlotFluo,'b');
+%                 plot(TimeInterp(MinFitIdx:MaxFitIdx),FOut,'r')
+%                 plot(TimeInterp(1:MaxFitIdx),Fluo(1:MaxFitIdx),'g')
             end
         end
     end
