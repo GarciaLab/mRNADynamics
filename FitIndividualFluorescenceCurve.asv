@@ -468,10 +468,8 @@ while cc~=13
     elseif (ct~=0)&(cc=='r')
         try
             JumpParticle=input('Select CompiledParticle to jump to: ');
-            if (JumpParticle>0)&(sum(ParticlesNC{nc-12}==JumpParticle))
-                i=find(ParticlesNC{nc-12}==JumpParticle);
-            else
-                display('CompiledParticle not present in this nc')
+            if (JumpParticle>0)&(JumpParticle<length(ParticlesNC{nc-12}))
+                i=JumpParticle;
             end
         end
         
