@@ -148,9 +148,10 @@ PixelWidth=Datas.LSM_info.VoxelSizeX
 
     
 else
-    error('File type not recognized')
+    PixelWidth=200e-9 % Hack !
+    %error('File type not recognized')
 end
-
+% 
 % %%%%%%%%%%%%%%%%%% Use nuclei size and cc times to perform first pass
 % %%%%%%%%%%%%%%%%%% filtering segmentation and rough tracking
 % 
@@ -174,8 +175,8 @@ end
 % %%%%%%%%%%%%%%%%%%%%%%%%%% Dilate Nuclei
 % 
 % DilateNucleiLive([FISHPath,filesep,'Data',filesep,Prefix,filesep])
-% 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%% Make structure with intensity values
  
@@ -248,7 +249,7 @@ end
 %%%%%%% more about this)
 
 
- halflife=5;
+ halflife=10;
  ElongationTime =4;
  
  Time=DataEve.ElapsedTime;
@@ -273,6 +274,8 @@ N=10000; % Number of discrete steps
         writerObj.FrameRate = 7;
         open(writerObj);
         
+DisplayBAll=struct;
+        
 for TT=1:TotalTime;
      
      DisplayB=zeros(size(LabNucDilate.Time1.Image));
@@ -294,6 +297,8 @@ DisplayBZ=round(DisplayB/maxx*N);
 
 DisplayBZ(1,1)=N;
 
+DisplayBAll.(['Time', num2str(TT)]) = DisplayBZ+1;
+
 imshow(label2rgbBackdropLive(DisplayBZ+1,'jet',[0,0,0],imadjust(im2double(MaxNuclei.(['Time', num2str(TT)])))));
 
 %pause(0.1)
@@ -307,6 +312,8 @@ end
 
     close(writerObj);
 
+save([FISHPath,filesep,'Data',filesep,Prefix,filesep,'DisplayBAll.mat'],'DisplayBAll');    
+    
 save([DropboxFolder,filesep,Prefix,filesep,'AccumulationData.mat'],'Blk','Blkk','HGDotstoJBNucs');
 
     save_to_base(1)
