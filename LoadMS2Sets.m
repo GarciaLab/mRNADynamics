@@ -74,6 +74,10 @@ for i=1:length(CompiledSets)
         IntegralFits(i)=load([DropboxFolderPausing,filesep,Prefix,filesep,'FitIntegralResults.mat']);
     end
     
+    if exist([DropboxFolderPausing,filesep,Prefix,filesep,'IndividualFits.mat'])
+        IndividualFits(i)=load([DropboxFolderPausing,filesep,Prefix,filesep,'IndividualFits.mat']);
+    end
+    
     %Load Ellipses
     Ellipses(i)=load([DropboxFolderPausing,filesep,Prefix,filesep,'Ellipses.mat']);
     %Count ellipses
@@ -96,6 +100,11 @@ for i=1:length(Data)
         Data(i).IntegralFits=IntegralFits(i).FitResults;
     end
     
+    if exist('IndividualFits')
+        Data(i).IndividualFits=IndividualFits(i).FitResultsIndiv;
+    end
+    
+   
     Data(i).schnitzcells=Schnitzcells(i).schnitzcells;
     Data(i).Ellipses=Ellipses(i).Ellipses;
 end

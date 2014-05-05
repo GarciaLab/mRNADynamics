@@ -461,6 +461,7 @@ while cc~=13
             JumpParticle=input('Select particle to jump to: ');
             if (JumpParticle>0)&(JumpParticle<length(ParticlesNC{nc-12}))
                 i=JumpParticle;
+                CurrentTransition=1;
             end
         end
         
@@ -470,6 +471,7 @@ while cc~=13
             JumpParticle=input('Select CompiledParticle to jump to: ');
             if (JumpParticle>0)&(sum(ParticlesNC{nc-12}==JumpParticle))
                 i=find(ParticlesNC{nc-12}==JumpParticle);
+                CurrentTransition=1;
             else
                 display('CompiledParticle not present in this nc')
             end
