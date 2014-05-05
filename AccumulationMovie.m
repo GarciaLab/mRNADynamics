@@ -270,7 +270,7 @@ maxx=max(Blkk(:));
 
 N=10000; % Number of discrete steps
 
-  writerObj = VideoWriter([DropboxFolder,filesep,Prefix,filesep,Prefix,'-AccumulationMovie.avi']);
+  writerObj = VideoWriter([DropboxFolder,filesep,Prefix,filesep,Prefix,'-AccumulationMovie.avi'],'Uncompressed AVI');
         writerObj.FrameRate = 7;
         open(writerObj);
         
