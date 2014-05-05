@@ -11,6 +11,7 @@ function [TimeNC14,MeanNC14,SENC14,MeanOnRatioNC14,SEOnRatioNC14]=...
 MinParticles=3;     %Minimum number of particles necessary in a bin for
                     %it to be considered
 MinTimePoints=5;    %Minimum number of time points for the interpolation
+MinEmbryos=2;       %Minimum number of embryos
                     
 %Some labels to use for plots
 Labels='k.r.g.b.y.c.m.ksrsgsbsyscsmskorogoboyocomok^r^g^b^y^c^m^';
@@ -376,9 +377,15 @@ for i=1:MaxTimeIndex
     if ~isempty(MeanTemp)
         %Now calculale the mean and SD. We need to be careful with the Nans!
         for j=1:size(MeanTemp,2)
-            MeanNC14(i,j)=mean(MeanTemp(~isnan(MeanTemp(:,j)),j));
-            SDNC14(i,j)=std(MeanTemp(~isnan(MeanTemp(:,j)),j));
-            SENC14(i,j)=std(MeanTemp(~isnan(MeanTemp(:,j)),j))/sqrt(sum(~isnan(MeanTemp(:,j))));
+            if sum(~isnan(MeanTemp(:,j)))>=MinEmbryos
+                MeanNC14(i,j)=mean(MeanTemp(~isnan(MeanTemp(:,j)),j));
+                SDNC14(i,j)=std(MeanTemp(~isnan(MeanTemp(:,j)),j));
+                SENC14(i,j)=std(MeanTemp(~isnan(MeanTemp(:,j)),j))/sqrt(sum(~isnan(MeanTemp(:,j))));
+            else
+                MeanNC14(i,j)=nan;
+                SDNC14(i,j)=nan;
+                SENC14(i,j)=nan;
+            end
         end
 
 
@@ -416,8 +423,13 @@ for i=1:MaxTimeIndex
     if ~isempty(MeanTemp)
         %Now calculale the mean and SD. We need to be careful with the Nans!
         for j=1:size(MeanTemp,2)
-            MeanOnRatioNC14(i,j)=mean(MeanTemp(~isnan(MeanTemp(:,j)),j));
-            SEOnRatioNC14(i,j)=std(MeanTemp(~isnan(MeanTemp(:,j)),j))/sqrt(sum(~isnan(MeanTemp(:,j))));
+            if sum(~isnan(MeanTemp(:,j)))>=MinEmbryos
+                MeanOnRatioNC14(i,j)=mean(MeanTemp(~isnan(MeanTemp(:,j)),j));
+                SEOnRatioNC14(i,j)=std(MeanTemp(~isnan(MeanTemp(:,j)),j))/sqrt(sum(~isnan(MeanTemp(:,j))));
+            else
+                MeanOnRatioNC14(i,j)=nan;
+                SEOnRatioNC14(i,j)=nan;
+            end
         end
 
 
