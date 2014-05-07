@@ -275,10 +275,12 @@ N=10000; % Number of discrete steps
         open(writerObj);
         
 DisplayBAll=struct;
+DisplayBOn=struct;
         
 for TT=1:TotalTime;
      
      DisplayB=zeros(size(LabNucDilate.Time1.Image));
+     DisplayBOnT=zeros(size(LabNucDilate.Time1.Image));
  
  for i=1:length(NucSOFDots)
      
@@ -287,6 +289,8 @@ for TT=1:TotalTime;
      try
         
           DisplayB(Ind)=Blkk(i,TT);
+          DisplayBOnT(Ind)=Blk(i,TT);
+          
         
      catch
      end
@@ -298,6 +302,7 @@ DisplayBZ=round(DisplayB/maxx*N);
 DisplayBZ(1,1)=N;
 
 DisplayBAll.(['Time', num2str(TT)]) = DisplayBZ+1;
+DisplayBOn.(['Time', num2str(TT)]) = DisplayBOnT;
 
 imshow(label2rgbBackdropLive(DisplayBZ+1,'jet',[0,0,0],imadjust(im2double(MaxNuclei.(['Time', num2str(TT)])))));
 
@@ -312,7 +317,7 @@ end
 
     close(writerObj);
 
-save([FISHPath,filesep,'Data',filesep,Prefix,filesep,'DisplayBAll.mat'],'DisplayBAll');    
+save([FISHPath,filesep,'Data',filesep,Prefix,filesep,'DisplayBAll.mat'],'DisplayBAll','DisplayBOn');    
     
 save([DropboxFolder,filesep,Prefix,filesep,'AccumulationData.mat'],'Blk','Blkk','HGDotstoJBNucs');
 
