@@ -96,23 +96,15 @@ for j=1:length(Data)
     
     %New version of integration. This is using the trapezoidal integration
     %now
-    m=1;
-    for i=Data(j).nc14:length(Data(j).ElapsedTime)
-        [TotalVectorAPNC14{j}(m,:),Dummy,TotalVectorONAPNC14{j}(m,:),Dummy]=...
+    
+    Data(j
+    
+    for i=1:length(TimeNC14)
+        [TotalVectorAPNC14{j}(i,:),Dummy,TotalVectorONAPNC14{j}(i,:),Dummy]=...
             IntegrateIndivSetTimeWindow(Data(j),MinParticles,...
-            14,[0,Data(j).ElapsedTime(i)-Data(j).ElapsedTime(Data(j).nc14)]);
-        m=m+1;
+            14,[TimeNC14(1),TimeNC14(i)]);
     end
-    
-    
-    figure(1)
-    plot(TotalVectorAPNC14{1})
-    
-    figure(2)
-    plot(TotalVectorONAPNC14{1})
- 
-    
-    1+1;
+        
     
 %     
 %     %Total fluorescence per AP for ALL nuclei. This is to calculate the
