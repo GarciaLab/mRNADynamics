@@ -223,10 +223,10 @@ end
  
  Time=DataEve.ElapsedTime;
  
- Blkk=zeros(length(NucSOFDots),length(Time)); % Matrix of length number of particles by number time points where the accumulated amount is calulated
+ Blkk=[]; % Matrix of length number of particles by number time points where the accumulated amount is calulated
  
- BlkkUB=zeros(length(NucSOFDots),length(Time)); % Matrix of length number of particles by number time points where the accumulated amount is calulated
- BlkkLB=zeros(length(NucSOFDots),length(Time)); % Matrix of length number of particles by number time points where the accumulated amount is calulated
+ BlkkUB=[]; % Matrix of length number of particles by number time points where the accumulated amount is calulated
+ BlkkLB=[]; % Matrix of length number of particles by number time points where the accumulated amount is calulated
  
  options = odeset('NonNegative',1);
  
@@ -234,28 +234,20 @@ end
  for NBlk=1:length(NucSOFDots);
      
       [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Blk(NBlk,:),Time),Time,0,options);
-      Blkk(NBlk,:)=YOUT';
+      Blkk=[Blkk;YOUT'];
       
       %%%%%%%%%%%%%% Lower bound for error
       Int=Blk(NBlk,:);
       Int=Int-DataEve.CompiledParticles(NBlk).FluoError;
       II=find(Int<0);
-      Int(II)=0;
+      Int(II)=Int(II)
       
+      [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Blk(NBlk,:),Time),Time,0,options);
+      Blkk=[Blkk;YOUT'];
       
-      [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Int,Time),Time,0,options);
-      BlkkLB(NBlk,:)=YOUT';
-      
-      %%%%%%%%%%%%%% Upper bound for error
-      Int=Blk(NBlk,:);
-      II=find(Int>0);
-      Int(II)=Int(II)+DataEve.CompiledParticles(NBlk).FluoError;
-      
-      [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Int,Time),Time,0,options);
-      BlkkUB(NBlk,:)=YOUT';
       
  end
 
- save([DropboxFolder,filesep,Prefix,filesep,'AccumulationData-',num2str(halflife),'min.mat'],'Blk','Blkk','BlkkUB','BlkkLB','HGDotstoJBNucs');
+ save([DropboxFolder,filesep,Prefix,filesep,'AccumulationData-',num2str(halflife),'min.mat'],'Blk','Blkk','HGDotstoJBNucs');
 
 
