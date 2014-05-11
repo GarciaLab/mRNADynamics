@@ -3,6 +3,7 @@ function LabelNucsCore=SegmentNucleiLive(folder,DivisionTimes,FilterRadius,Filte
   
  load([folder,'MaxNuclei.mat'],'MaxNuclei');
     
+ 
  TotalTime=length(fieldnames(MaxNuclei));  
 
 if exist([folder,'LabelNucsCore.mat'])>0
