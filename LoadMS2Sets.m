@@ -97,11 +97,15 @@ for i=1:length(Data)
     %Data(i).MeanFits=MeanFits(i).FitResults;
     
     if exist('IntegralFits')
-        Data(i).IntegralFits=IntegralFits(i).FitResults;
+        if i<=length(IntegralFits)
+            Data(i).IntegralFits=IntegralFits(i).FitResults;
+        end
     end
     
     if exist('IndividualFits')
-        Data(i).IndividualFits=IndividualFits(i).FitResultsIndiv;
+        if i<=length(IndividualFits)
+            Data(i).IndividualFits=IndividualFits(i).FitResultsIndiv;
+        end
     end
     
    

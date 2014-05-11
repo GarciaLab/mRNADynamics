@@ -105,11 +105,11 @@ for j=1:length(Data)
     end
     
     
-    figure(1)
-    plot(TotalVectorAPNC14{1})
-    
-    figure(2)
-    plot(TotalVectorONAPNC14{1})
+%     figure(1)
+%     plot(TotalVectorAPNC14{1})
+%     
+%     figure(2)
+%     plot(TotalVectorONAPNC14{1})
  
     
     1+1;
