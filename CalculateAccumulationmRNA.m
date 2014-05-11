@@ -1,4 +1,4 @@
-function CalculateAccumulationmRNA(Prefix)
+function CalculateAccumulationmRNA(Prefix,halflife)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% Initial Setup to get folder names etc %%%%%%%%%%%%%%%%%%%%%
 
@@ -219,8 +219,6 @@ end
 
 %%%%%%% Calculate the amount of Cytoplasmic mRNA present
 
- halflife=10;
- 
  ElongationTime=6.443/1.54;
  
  Time=DataEve.ElapsedTime;
