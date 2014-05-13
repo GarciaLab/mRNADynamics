@@ -128,50 +128,50 @@ end
 
 %% Compare traces
 
-%Single traces
-figure(1)
-clf
-hold all
-for i=1:length(DataSna)
-    for j=1:length(DataSna(i).CompiledParticles)
-        if DataSna(i).CompiledParticles(j).nc==14
-            plot(DataSna(i).ElapsedTime(DataSna(i).CompiledParticles(j).Frame)-...
-                DataSna(i).ElapsedTime(DataSna(i).nc14),...
-                DataSna(i).CompiledParticles(j).Fluo,'.-')
-            pause
-        end
-    end
-end
-for i=1:length(DataSog)
-    for j=1:length(DataSog(i).CompiledParticles)
-        if DataSog(i).CompiledParticles(j).nc==14
-            plot(DataSog(i).ElapsedTime(DataSog(i).CompiledParticles(j).Frame)-...
-                DataSog(i).ElapsedTime(DataSog(i).nc14),...
-                DataSog(i).CompiledParticles(j).Fluo,'o-','MarkerFaceColor','w')
-        end
-    end
-end
-
-figure(2)
-clf
-hold all
-for i=1:length(DataThs)
-    for j=1:length(DataThs(i).CompiledParticles)
-        if DataThs(i).CompiledParticles(j).nc==14
-            plot(DataThs(i).ElapsedTime(DataThs(i).CompiledParticles(j).Frame)-...
-                DataThs(i).ElapsedTime(DataThs(i).nc14),...
-                DataThs(i).CompiledParticles(j).Fluo,'s-','MarkerFaceColor','w')
-            pause
-        end
-    end
-end
-hold off      
-
-
+% %Single traces
+% figure(1)
+% clf
+% hold all
+% for i=1:length(DataSna)
+%     for j=1:length(DataSna(i).CompiledParticles)
+%         if DataSna(i).CompiledParticles(j).nc==14
+%             plot(DataSna(i).ElapsedTime(DataSna(i).CompiledParticles(j).Frame)-...
+%                 DataSna(i).ElapsedTime(DataSna(i).nc14),...
+%                 DataSna(i).CompiledParticles(j).Fluo,'.-')
+%         end
+%     end
+% end
+% for i=1:length(DataSog)
+%     for j=1:length(DataSog(i).CompiledParticles)
+%         if DataSog(i).CompiledParticles(j).nc==14
+%             plot(DataSog(i).ElapsedTime(DataSog(i).CompiledParticles(j).Frame)-...
+%                 DataSog(i).ElapsedTime(DataSog(i).nc14),...
+%                 DataSog(i).CompiledParticles(j).Fluo,'o-','MarkerFaceColor','w')
+%         end
+%     end
+% end
+% 
+% figure(2)
+% clf
+% hold all
+% for i=1:length(DataThs)
+%     for j=1:length(DataThs(i).CompiledParticles)
+%         if DataThs(i).CompiledParticles(j).nc==14
+%             plot(DataThs(i).ElapsedTime(DataThs(i).CompiledParticles(j).Frame)-...
+%                 DataThs(i).ElapsedTime(DataThs(i).nc14),...
+%                 DataThs(i).CompiledParticles(j).Fluo,'s-','MarkerFaceColor','w')
+%             
+%         end
+%     end
+% end
+% hold off      
+% 
+% 
 
 
 
 %Averages
+
 figure(2)
 clf
 hold all
@@ -207,32 +207,47 @@ legend(PlotHandleForLegend,'Sna','Sog','Ths','Location','SouthEast')
 box on
 StandardFigure(PlotHandle,gca)
 
+title('Average intensity')
 
 %CV
 figure(3)
 clf
 hold all
+
+PlotHandle=[];
+PlotHandleForLegend=[];
+
 for i=1:length(DataSna)
-        plot(DataSna(i).ElapsedTime(DataSna(i).NParticlesAll>=MinParticles)-...
+        PlotHandle(end+1) = plot(DataSna(i).ElapsedTime(DataSna(i).NParticlesAll>=MinParticles)-...
             DataSna(i).ElapsedTime(DataSna(i).nc14),...
             DataSna(i).SDVectorAll(DataSna(i).NParticlesAll>=MinParticles)./...
-            DataSna(i).MeanVectorAll(DataSna(i).NParticlesAll>=MinParticles),'.-')
+            DataSna(i).MeanVectorAll(DataSna(i).NParticlesAll>=MinParticles),'.-');
 end
+
 for i=1:length(DataSog)
-        plot(DataSog(i).ElapsedTime(DataSog(i).NParticlesAll>=MinParticles)-...
+        PlotHandle(end+1) = plot(DataSog(i).ElapsedTime(DataSog(i).NParticlesAll>=MinParticles)-...
             DataSog(i).ElapsedTime(DataSog(i).nc14),...
             DataSog(i).SDVectorAll(DataSog(i).NParticlesAll>=MinParticles)./...
-            DataSog(i).MeanVectorAll(DataSog(i).NParticlesAll>=MinParticles),'o-')
+            DataSog(i).MeanVectorAll(DataSog(i).NParticlesAll>=MinParticles),'o-');
 end
+
 for i=1:length(DataThs)
-        plot(DataThs(i).ElapsedTime(DataThs(i).NParticlesAll>=MinParticles)-...
+        PlotHandle(end+1) = plot(DataThs(i).ElapsedTime(DataThs(i).NParticlesAll>=MinParticles)-...
             DataThs(i).ElapsedTime(DataThs(i).nc14),...
             DataThs(i).SDVectorAll(DataThs(i).NParticlesAll>=MinParticles)./...
-            DataThs(i).MeanVectorAll(DataThs(i).NParticlesAll>=MinParticles),'s-')
+            DataThs(i).MeanVectorAll(DataThs(i).NParticlesAll>=MinParticles),'s-');
 end
-hold off
-xlim([0,60])
 
+hold off
+
+PlotHandleForLegend(end+1)=PlotHandle(end);
+
+xlim([0,60])
+legend(PlotHandleForLegend,'Sna','Sog','Ths','Location','SouthEast')
+box on
+StandardFigure(PlotHandle,gca)
+
+title('CV')
 
 
 %Fano
@@ -260,93 +275,95 @@ end
 hold off
 xlim([0,60])
 
+title('Fanno Factor')
+
 %% First frame
-
-
-for i=1:length(DataSna)
-    TimeStartSna{i}=[];
-    for j=1:length(DataSna(i).CompiledParticles)
-        if DataSna(i).CompiledParticles(j).nc==14
-            TimeStartSna{i}=[TimeStartSna{i},...
-                DataSna(i).ElapsedTime(DataSna(i).CompiledParticles(j).FirstFrame)-...
-                DataSna(i).ElapsedTime(DataSna(i).nc14)];
-        end
-    end
-end
-for i=1:length(DataSog)
-    TimeStartSog{i}=[];
-    for j=1:length(DataSog(i).CompiledParticles)
-        if DataSog(i).CompiledParticles(j).nc==14
-            TimeStartSog{i}=[TimeStartSog{i},...
-                DataSog(i).ElapsedTime(DataSog(i).CompiledParticles(j).FirstFrame)-...
-                DataSog(i).ElapsedTime(DataSog(i).nc14)];
-        end
-    end
-end
-for i=1:length(DataThs)
-    TimeStartThs{i}=[];
-    for j=1:length(DataThs(i).CompiledParticles)
-        if DataThs(i).CompiledParticles(j).nc==14
-            TimeStartThs{i}=[TimeStartThs{i},...
-                DataThs(i).ElapsedTime(DataThs(i).CompiledParticles(j).FirstFrame)-...
-                DataThs(i).ElapsedTime(DataThs(i).nc14)];
-        end
-    end
-end
-
-[nSna{1},xOut]=hist(TimeStartSna{1},[0:5:45]);
-for i=2:length(DataSna)
-    nSna{i}=hist(TimeStartSna{i},xOut);
-end
-for i=1:length(DataThs)
-    nThs{i}=hist(TimeStartThs{i},xOut);
-end
-for i=1:length(DataSog)
-    nSog{i}=hist(TimeStartSog{i},xOut);
-end
-
-figure(1)
-clf
-hold all
-for i=1:length(DataSna)
-    plot(xOut,nSna{i}/sum(nSna{i}),'.-')
-end
-for i=1:length(DataSog)
-    plot(xOut,nSog{i}/sum(nSog{i}),'o-')
-end
-for i=1:length(DataThs)
-    plot(xOut,nThs{i}/sum(nThs{i}),'s-')
-end
-hold off        
-        
+% 
+% 
+% for i=1:length(DataSna)
+%     TimeStartSna{i}=[];
+%     for j=1:length(DataSna(i).CompiledParticles)
+%         if DataSna(i).CompiledParticles(j).nc==14
+%             TimeStartSna{i}=[TimeStartSna{i},...
+%                 DataSna(i).ElapsedTime(DataSna(i).CompiledParticles(j).FirstFrame)-...
+%                 DataSna(i).ElapsedTime(DataSna(i).nc14)];
+%         end
+%     end
+% end
+% for i=1:length(DataSog)
+%     TimeStartSog{i}=[];
+%     for j=1:length(DataSog(i).CompiledParticles)
+%         if DataSog(i).CompiledParticles(j).nc==14
+%             TimeStartSog{i}=[TimeStartSog{i},...
+%                 DataSog(i).ElapsedTime(DataSog(i).CompiledParticles(j).FirstFrame)-...
+%                 DataSog(i).ElapsedTime(DataSog(i).nc14)];
+%         end
+%     end
+% end
+% for i=1:length(DataThs)
+%     TimeStartThs{i}=[];
+%     for j=1:length(DataThs(i).CompiledParticles)
+%         if DataThs(i).CompiledParticles(j).nc==14
+%             TimeStartThs{i}=[TimeStartThs{i},...
+%                 DataThs(i).ElapsedTime(DataThs(i).CompiledParticles(j).FirstFrame)-...
+%                 DataThs(i).ElapsedTime(DataThs(i).nc14)];
+%         end
+%     end
+% end
+% 
+% [nSna{1},xOut]=hist(TimeStartSna{1},[0:5:45]);
+% for i=2:length(DataSna)
+%     nSna{i}=hist(TimeStartSna{i},xOut);
+% end
+% for i=1:length(DataThs)
+%     nThs{i}=hist(TimeStartThs{i},xOut);
+% end
+% for i=1:length(DataSog)
+%     nSog{i}=hist(TimeStartSog{i},xOut);
+% end
+% 
+% figure(1)
+% clf
+% hold all
+% for i=1:length(DataSna)
+%     plot(xOut,nSna{i}/sum(nSna{i}),'.-')
+% end
+% for i=1:length(DataSog)
+%     plot(xOut,nSog{i}/sum(nSog{i}),'o-')
+% end
+% for i=1:length(DataThs)
+%     plot(xOut,nThs{i}/sum(nThs{i}),'s-')
+% end
+% hold off        
+%         
 
 
 
 %% Fraction of active nuclei
 
 
-
-figure(5)
-clf
-hold all
-for i=1:length(DataSna)
-        plot(DataSna(i).ElapsedTime-...
-            DataSna(i).ElapsedTime(DataSna(i).nc14),...
-            DataSna(i).NParticlesAll/sum(DataSna(i).ncFilter(:,end)),'.-')
-end
-for i=1:length(DataSog)
-        plot(DataSog(i).ElapsedTime-...
-            DataSog(i).ElapsedTime(DataSog(i).nc14),...
-            DataSog(i).NParticlesAll/sum(DataSog(i).ncFilter(:,end)),'o-')
-end
-for i=1:length(DataThs)
-        plot(DataThs(i).ElapsedTime-...
-            DataThs(i).ElapsedTime(DataThs(i).nc14),...
-            DataThs(i).NParticlesAll/sum(DataThs(i).ncFilter(:,end)),'s-')
-end
-hold off
-xlim([0,45])
-
+% 
+% figure(5)
+% clf
+% hold all
+% for i=1:length(DataSna)
+%         plot(DataSna(i).ElapsedTime-...
+%             DataSna(i).ElapsedTime(DataSna(i).nc14),...
+%             DataSna(i).NParticlesAll/sum(DataSna(i).ncFilter(:,end)),'.-')
+% end
+% for i=1:length(DataSog)
+%         plot(DataSog(i).ElapsedTime-...
+%             DataSog(i).ElapsedTime(DataSog(i).nc14),...
+%             DataSog(i).NParticlesAll/sum(DataSog(i).ncFilter(:,end)),'o-')
+% end
+% for i=1:length(DataThs)
+%         plot(DataThs(i).ElapsedTime-...
+%             DataThs(i).ElapsedTime(DataThs(i).nc14),...
+%             DataThs(i).NParticlesAll/sum(DataThs(i).ncFilter(:,end)),'s-')
+% end
+% hold off
+% xlim([0,45])
+% 
 
 % Threshold=0.5E4;
 % 
@@ -402,199 +419,180 @@ xlim([0,45])
 %         NumberOnThs{i}/max(NumberOnThs{i}),'s-')
 % end
 % hold off
-                
-%%%%%%%% Cumulative Plot of Data
-
-ThsSort=[];
-
-for i=1:length(DataThs);
- 
-    
-Ths(i).Time=DataThs(i).ElapsedTime-...
-DataThs(i).ElapsedTime(DataThs(i).nc14);
-
-Ths(i).Frac = DataThs(i).NParticlesAll/sum(DataThs(i).ncFilter(:,end));
-
-Ths(i).Sort=sort(Ths(i).Frac(find(Ths(i).Time>=0&Ths(i).Time<=40)));
-
-ThsSort=sort([ThsSort,Ths(i).Sort]);
-
-end
-
-ThsX = linspace(0,1,length(ThsSort));
-
-
-SnaSort=[];
-
-for i=1:length(DataSna);
-    
-Sna(i).Time=DataSna(i).ElapsedTime-...
-DataSna(i).ElapsedTime(DataSna(i).nc14);
-
-Sna(i).Frac = DataSna(i).NParticlesAll/sum(DataSna(i).ncFilter(:,end));
-
-Sna(i).Sort=sort(Sna(i).Frac(find(Sna(i).Time>=0&Sna(i).Time<=40)));
-
-SnaSort=sort([SnaSort,Sna(i).Sort]);
-
-end
-
-SnaX = linspace(0,1,length(SnaSort));
-
-SogSort=[];
-
-for i=1:length(DataSog);
-    
-Sog(i).Time=DataSog(i).ElapsedTime-...
-DataSog(i).ElapsedTime(DataSog(i).nc14);
-
-Sog(i).Frac = DataSog(i).NParticlesAll/sum(DataSog(i).ncFilter(:,end));
-
-Sog(i).Sort=sort(Sog(i).Frac(find(Sog(i).Time>=0&Sog(i).Time<=40)));
-
-SogSort=sort([SogSort,Sog(i).Sort]);
-
-end
-
-SogX = linspace(0,1,length(SogSort));
-
-
-figure(6)
-hold all
-
-plot(SnaX,SnaSort,'r.')
-plot(SogX,SogSort,'g.')
-plot(ThsX,ThsSort,'b.')
-
-hold off
+%                 
+% %%%%%%%% Cumulative Plot of Data
+% 
+% ThsSort=[];
+% 
+% for i=1:length(DataThs);
+%  
+%     
+% Ths(i).Time=DataThs(i).ElapsedTime-...
+% DataThs(i).ElapsedTime(DataThs(i).nc14);
+% 
+% Ths(i).Frac = DataThs(i).NParticlesAll/sum(DataThs(i).ncFilter(:,end));
+% 
+% Ths(i).Sort=sort(Ths(i).Frac(find(Ths(i).Time>=0&Ths(i).Time<=40)));
+% 
+% ThsSort=sort([ThsSort,Ths(i).Sort]);
+% 
+% end
+% 
+% ThsX = linspace(0,1,length(ThsSort));
+% 
+% 
+% SnaSort=[];
+% 
+% for i=1:length(DataSna);
+%     
+% Sna(i).Time=DataSna(i).ElapsedTime-...
+% DataSna(i).ElapsedTime(DataSna(i).nc14);
+% 
+% Sna(i).Frac = DataSna(i).NParticlesAll/sum(DataSna(i).ncFilter(:,end));
+% 
+% Sna(i).Sort=sort(Sna(i).Frac(find(Sna(i).Time>=0&Sna(i).Time<=40)));
+% 
+% SnaSort=sort([SnaSort,Sna(i).Sort]);
+% 
+% end
+% 
+% SnaX = linspace(0,1,length(SnaSort));
+% 
+% SogSort=[];
+% 
+% for i=1:length(DataSog);
+%     
+% Sog(i).Time=DataSog(i).ElapsedTime-...
+% DataSog(i).ElapsedTime(DataSog(i).nc14);
+% 
+% Sog(i).Frac = DataSog(i).NParticlesAll/sum(DataSog(i).ncFilter(:,end));
+% 
+% Sog(i).Sort=sort(Sog(i).Frac(find(Sog(i).Time>=0&Sog(i).Time<=40)));
+% 
+% SogSort=sort([SogSort,Sog(i).Sort]);
+% 
+% end
+% 
+% SogX = linspace(0,1,length(SogSort));
+% 
+% 
+% figure(6)
+% hold all
+% 
+% plot(SnaX,SnaSort,'r.')
+% plot(SogX,SogSort,'g.')
+% plot(ThsX,ThsSort,'b.')
+% 
+% hold off
 
 
 %%%%%%%%%
 
 % Single traces handful
+% 
+% figure(7)
+% clf
+% hold all
+% Counter=1;
+% CounterMax=5;
+% 
+% for i=1:length(DataSna)
+%     for j=1:length(DataSna(i).CompiledParticles)
+%         if DataSna(i).CompiledParticles(j).nc==14 & Counter<=CounterMax
+%             plot(DataSna(i).ElapsedTime(DataSna(i).CompiledParticles(j).Frame)-...
+%                 DataSna(i).ElapsedTime(DataSna(i).nc14),...
+%                 DataSna(i).CompiledParticles(j).Fluo,'.-')
+%             Counter=Counter+1;
+%         end
+%     end
+% end
+% 
+% Counter=1;
+% for i=1:length(DataSog)
+%     for j=1:length(DataSog(i).CompiledParticles)
+%         if DataSog(i).CompiledParticles(j).nc==14 & Counter<=CounterMax
+%             plot(DataSog(i).ElapsedTime(DataSog(i).CompiledParticles(j).Frame)-...
+%                 DataSog(i).ElapsedTime(DataSog(i).nc14),...
+%                 DataSog(i).CompiledParticles(j).Fluo,'o-','MarkerFaceColor','w')
+%                    Counter=Counter+1;
+%         end
+%     end
+% end
+% 
+% Counter=1;
+% for i=1:length(DataThs)
+%     for j=1:length(DataThs(i).CompiledParticles)
+%         if DataThs(i).CompiledParticles(j).nc==14 & Counter<=CounterMax
+%             plot(DataThs(i).ElapsedTime(DataThs(i).CompiledParticles(j).Frame)-...
+%                 DataThs(i).ElapsedTime(DataThs(i).nc14),...
+%                 DataThs(i).CompiledParticles(j).Fluo,'s-','MarkerFaceColor','w')
+%                 Counter=Counter+1;
+%         end
+%     end
+% end
+% hold off
+% xlim([0,45])
 
-figure(7)
-clf
-hold all
-Counter=1;
-CounterMax=5;
-
-for i=1:length(DataSna)
-    for j=1:length(DataSna(i).CompiledParticles)
-        if DataSna(i).CompiledParticles(j).nc==14 & Counter<=CounterMax
-            plot(DataSna(i).ElapsedTime(DataSna(i).CompiledParticles(j).Frame)-...
-                DataSna(i).ElapsedTime(DataSna(i).nc14),...
-                DataSna(i).CompiledParticles(j).Fluo,'.-')
-            Counter=Counter+1;
-        end
-    end
-end
-
-Counter=1;
-for i=1:length(DataSog)
-    for j=1:length(DataSog(i).CompiledParticles)
-        if DataSog(i).CompiledParticles(j).nc==14 & Counter<=CounterMax
-            plot(DataSog(i).ElapsedTime(DataSog(i).CompiledParticles(j).Frame)-...
-                DataSog(i).ElapsedTime(DataSog(i).nc14),...
-                DataSog(i).CompiledParticles(j).Fluo,'o-','MarkerFaceColor','w')
-                   Counter=Counter+1;
-        end
-    end
-end
-
-Counter=1;
-for i=1:length(DataThs)
-    for j=1:length(DataThs(i).CompiledParticles)
-        if DataThs(i).CompiledParticles(j).nc==14 & Counter<=CounterMax
-            plot(DataThs(i).ElapsedTime(DataThs(i).CompiledParticles(j).Frame)-...
-                DataThs(i).ElapsedTime(DataThs(i).nc14),...
-                DataThs(i).CompiledParticles(j).Fluo,'s-','MarkerFaceColor','w')
-                Counter=Counter+1;
-        end
-    end
-end
-hold off
-xlim([0,45])
-
-
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
-=======
->>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
-
-%% First Detection Times
-
-figure(8)
-clf
-hold all
-
-FirstPasageTimesSna=[];
-
-for i=1:length(DataSna)
-    for j=1:length(DataSna(i).CompiledParticles)
-        if DataSna(i).CompiledParticles(j).nc==14
-           
-            FirstPasageTimesSna=[FirstPasageTimesSna; DataSna(i).ElapsedTime(DataSna(i).CompiledParticles(j).FirstFrame)-...
-                DataSna(i).ElapsedTime(DataSna(i).nc14)];
-            
-        end
-    end
-end
-
-FirstPasageTimesSog=[];
-
-for i=1:length(DataSog)
-    for j=1:length(DataSog(i).CompiledParticles)
-        if DataSog(i).CompiledParticles(j).nc==14
-
-             FirstPasageTimesSog=[FirstPasageTimesSog; DataSog(i).ElapsedTime(DataSog(i).CompiledParticles(j).FirstFrame)-...
-                DataSog(i).ElapsedTime(DataSog(i).nc14)];
-            
-        end
-    end
-end
-
-
-FirstPasageTimesThs=[];
-
- for i=1:length(DataThs)
-     for j=1:length(DataThs(i).CompiledParticles)
-         if DataThs(i).CompiledParticles(j).nc==14
-           
-          FirstPasageTimesThs=[FirstPasageTimesThs; DataThs(i).ElapsedTime(DataThs(i).CompiledParticles(j).FirstFrame)-...
-          DataThs(i).ElapsedTime(DataThs(i).nc14)];
-            
-             
-         end
-     end
- end
- 
- xHist = [0:2:30];
- 
- NSna = hist(FirstPasageTimesSna,[0:2:30]);
- NSog = hist(FirstPasageTimesSog,[0:2:30]);
- NThs = hist(FirstPasageTimesThs,[0:2:30]);
- 
- plot(xHist(1:end-1),NSna(1:end-1)./sum(NSna(1:end-1)),'r');
- plot(xHist(1:end-1),NSog(1:end-1)./sum(NSog(1:end-1)),'g');
- plot(xHist(1:end-1),NThs(1:end-1)./sum(NThs(1:end-1)),'b');
- 
- ylabel('Scaled Histogram number of cells')
- xlabel('Time at first expression in cc14')
- hold off      
+% 
+% %% First Detection Times
+% 
+% figure(8)
+% clf
+% hold all
+% 
+% FirstPasageTimesSna=[];
+% 
+% for i=1:length(DataSna)
+%     for j=1:length(DataSna(i).CompiledParticles)
+%         if DataSna(i).CompiledParticles(j).nc==14
+%            
+%             FirstPasageTimesSna=[FirstPasageTimesSna; DataSna(i).ElapsedTime(DataSna(i).CompiledParticles(j).FirstFrame)-...
+%                 DataSna(i).ElapsedTime(DataSna(i).nc14)];
+%             
+%         end
+%     end
+% end
+% 
+% FirstPasageTimesSog=[];
+% 
+% for i=1:length(DataSog)
+%     for j=1:length(DataSog(i).CompiledParticles)
+%         if DataSog(i).CompiledParticles(j).nc==14
+% 
+%              FirstPasageTimesSog=[FirstPasageTimesSog; DataSog(i).ElapsedTime(DataSog(i).CompiledParticles(j).FirstFrame)-...
+%                 DataSog(i).ElapsedTime(DataSog(i).nc14)];
+%             
+%         end
+%     end
+% end
+% 
+% 
+% FirstPasageTimesThs=[];
+% 
+%  for i=1:length(DataThs)
+%      for j=1:length(DataThs(i).CompiledParticles)
+%          if DataThs(i).CompiledParticles(j).nc==14
+%            
+%           FirstPasageTimesThs=[FirstPasageTimesThs; DataThs(i).ElapsedTime(DataThs(i).CompiledParticles(j).FirstFrame)-...
+%           DataThs(i).ElapsedTime(DataThs(i).nc14)];
+%             
+%              
+%          end
+%      end
+%  end
+%  
+%  xHist = [0:2:30];
+%  
+%  NSna = hist(FirstPasageTimesSna,[0:2:30]);
+%  NSog = hist(FirstPasageTimesSog,[0:2:30]);
+%  NThs = hist(FirstPasageTimesThs,[0:2:30]);
+%  
+%  plot(xHist(1:end-1),NSna(1:end-1)./sum(NSna(1:end-1)),'r');
+%  plot(xHist(1:end-1),NSog(1:end-1)./sum(NSog(1:end-1)),'g');
+%  plot(xHist(1:end-1),NThs(1:end-1)./sum(NThs(1:end-1)),'b');
+%  
+%  ylabel('Scaled Histogram number of cells')
+%  xlabel('Time at first expression in cc14')
+%  hold off      
 
 save_to_base(1)
-
-
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
-=======
->>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd
-=======
->>>>>>> 929a0449d44ea230ae917b12cc3dc7af950f20dd

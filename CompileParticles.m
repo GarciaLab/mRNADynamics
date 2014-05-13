@@ -74,7 +74,7 @@ FilePrefix=[Prefix,'_'];
 %What type of experiment are we dealing with? Get this out of
 %MovieDatabase.xlsx
 
-[XLSNum,XLSTxt,XLSRaw]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
+[XLSNum,XLSTxt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
 ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
 ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
 
@@ -208,8 +208,17 @@ else
     error('nc information not define in MovieDatabase.xlsx')
 end
 
+% Read in which end the stem loops are at, if this information is available
+% (ES 2014-03-20)
+StemLoopEndColumn = find(strcmp(XLSRaw(1, :), 'StemLoopEnd'));
+if ~isempty(StemLoopEndColumn)
+    StemLoopEnd = XLSRaw{XLSEntry, StemLoopEndColumn};
+else
+    StemLoopEnd = '';
+end
 
-NewCyclePos=[nc9,nc10,nc11,nc12,nc13,nc14,CF];
+
+NewCyclePos=[nc9,nc10,nc11,nc12,nc13,nc14];
 NewCyclePos=NewCyclePos(~(NewCyclePos==0));
 NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
 
@@ -346,8 +355,14 @@ MinAPArea=12500;%700;    %Minimum area in pixels in order to consider an AP bin 
 
 
 if strcmp(ExperimentAxis,'AP')
-    %Divide the image into AP bins
-    APResolution=0.025;
+    %Divide the image into AP bins. The size of the bin will depend on the
+    %experiment
+    if strfind(lower(Prefix),'eve')     %Eve2 experiments
+        APResolution=0.01;
+    else                                %All other experiments
+        APResolution=0.025;
+    end
+       
     APbinID=0:APResolution:1;
 
     %Create an image for the different AP bins
@@ -378,7 +393,7 @@ if strcmp(ExperimentAxis,'AP')
         APbinArea(i)=sum(sum(APPosBinImage==i));
 
         %Discard anything that is below MinAPArea
-        if APbinArea(i)<MinAPArea
+        if APbinArea(i)<(MinAPArea/0.025*APResolution)
             APbinArea(i)=nan;
         end
     end
@@ -862,7 +877,6 @@ if strcmp(ExperimentAxis,'AP')
     NParticlesAP=cell2mat(NParticlesAPCell);
 end
 
-
 %Calculate the mean for all of them
 [MeanVectorAll,SDVectorAll,NParticlesAll]=AverageTraces(FrameInfo,CompiledParticles);
 %Now find the different maxima in each nc
@@ -879,8 +893,6 @@ for i=1:length(NewCyclePos)
 end
 [Dummy,MaxIndex]=max(MeanVectorAll(NewCyclePos(i):end));
 MaxFrame=[MaxFrame,NewCyclePos(i)+MaxIndex-1];
-
-
 
 
 
@@ -1185,37 +1197,37 @@ SDOffsetVector=[SDOffsetTrace{:}];
 NOffsetParticles=[NParticlesOffsetTrace{:}];
 
 
+if strcmp(ExperimentAxis,'AP')
+    figure(8)
+    IntArea=109;
+    errorbar(1:length(MeanOffsetVector),MeanOffsetVector*IntArea,...
+        SDOffsetVector*IntArea,'.-r')
+    hold on
+    errorbar(1:length(MeanVectorAll),MeanVectorAll,...
+        SDVectorAll,'.-k')
+    hold off
+    xlabel('Frame')
+    ylabel('Fluorescence (au)')
+    xlim([0,length(MeanOffsetVector)*1.1])
+    legend('Offset','Spots','Location','Best')
+    saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Offset',filesep,'OffsetAndFluoTime.tif'])
 
-figure(8)
-IntArea=109;
-errorbar(1:length(MeanOffsetVector),MeanOffsetVector*IntArea,...
-    SDOffsetVector*IntArea,'.-r')
-hold on
-errorbar(1:length(MeanVectorAll),MeanVectorAll,...
-    SDVectorAll,'.-k')
-hold off
-xlabel('Frame')
-ylabel('Fluorescence (au)')
-xlim([0,length(MeanOffsetVector)*1.1])
-legend('Offset','Spots','Location','Best')
-saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Offset',filesep,'OffsetAndFluoTime.tif'])
 
-
-figure(9)
-errorbar(1:length(MeanOffsetVector),MeanOffsetVector*IntArea-min(MeanOffsetVector*IntArea)+...
-    min(MeanVectorAll),...
-    SDOffsetVector*IntArea,'.-r')
-hold on
-errorbar(1:length(MeanVectorAll),MeanVectorAll,...
-    SDVectorAll,'.-k')
-hold off
-xlabel('Frame')
-ylabel('Fluorescence (au)')
-xlim([0,length(MeanOffsetVector)*1.1])
-legend('Offset (displaced)','Spots','Location','Best')
-axis square
-saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Offset',filesep,'OffsetAndFluoTime-Displaced.tif'])
-
+    figure(9)
+    errorbar(1:length(MeanOffsetVector),MeanOffsetVector*IntArea-min(MeanOffsetVector*IntArea)+...
+        min(MeanVectorAll),...
+        SDOffsetVector*IntArea,'.-r')
+    hold on
+    errorbar(1:length(MeanVectorAll),MeanVectorAll,...
+        SDVectorAll,'.-k')
+    hold off
+    xlabel('Frame')
+    ylabel('Fluorescence (au)')
+    xlim([0,length(MeanOffsetVector)*1.1])
+    legend('Offset (displaced)','Spots','Location','Best')
+    axis square
+    saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Offset',filesep,'OffsetAndFluoTime-Displaced.tif'])
+end
 
 
 
@@ -1908,7 +1920,7 @@ end
 if HistoneChannel&strcmp(ExperimentAxis,'AP')
     save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
         'CompiledParticles','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
-        'nc12','nc13','nc14','ncFilterID','ncFilter','APbinID','APFilter',...
+        'nc12','nc13','nc14','ncFilterID','StemLoopEnd','ncFilter','APbinID','APFilter',...
         'MeanVectorAP','SDVectorAP','NParticlesAP','MeanVectorAll',...
         'SDVectorAll','NParticlesAll','MaxFrame','MinAPIndex','MaxAPIndex',...
         'AllTracesVector','AllTracesAP','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
@@ -1921,7 +1933,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
 elseif HistoneChannel&strcmp(ExperimentAxis,'DV')
     save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
         'CompiledParticles','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
-        'nc12','nc13','nc14','ncFilterID','ncFilter',...
+        'nc12','nc13','nc14','StemLoopEnd','ncFilterID','ncFilter',...
         'MeanVectorAll',...
         'SDVectorAll','NParticlesAll','MaxFrame',...
         'AllTracesVector','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
@@ -1929,7 +1941,7 @@ elseif HistoneChannel&strcmp(ExperimentAxis,'DV')
 else
     save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
         'CompiledParticles','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
-        'nc12','nc13','nc14','ncFilterID','ncFilter','APbinID','APFilter',...
+        'nc12','nc13','nc14','StemLoopEnd','ncFilterID','ncFilter','APbinID','APFilter',...
         'MeanVectorAP','SDVectorAP','NParticlesAP','MeanVectorAll',...
         'SDVectorAll','NParticlesAll','MaxFrame','MinAPIndex','MaxAPIndex',...
         'AllTracesVector','AllTracesAP','MeanCyto','SDCyto','MedianCyto','MaxCyto',...

@@ -8,6 +8,10 @@ close all
 %Find out which computer this is. That will determine the folder structure.
 %Information about about folders
 
+%Figure out the default Dropbox folder
+[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+    DetermineLocalFolders;
+
 % ES 2013-10-29: Required for multiple users to be able to analyze data on
 % one computer
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
@@ -83,8 +87,14 @@ for i=1:Rows
 end
 
 
-%Bin the pixels along the AP axis
-APResolution=0.025;
+%Divide the image into AP bins. The size of the bin will depend on the
+%experiment
+if strfind(lower(Prefix),'eve')     %Eve2 experiments
+    APResolution=0.01;
+else                                %All other experiments
+    APResolution=0.025;
+end
+
 APbinID=0:APResolution:1;
 
 
@@ -97,7 +107,7 @@ end
 
 
 %Load the information about the nc from the XLS file
-[Num,Txt, XLSRaw]=xlsread([DropboxFolder,'\MovieDatabase.xlsx']);
+[Num,Txt, XLSRaw]=xlsread([DefaultDropboxFolder,'\MovieDatabase.xlsx']);
 XLSHeaders=Txt(1,:);
 Txt=Txt(2:end,:);
 

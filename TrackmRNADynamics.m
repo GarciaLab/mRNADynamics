@@ -59,8 +59,7 @@ end
 
 %What type of experiment are we dealing with? Get this out of
 %MovieDatabase.xlsx
-
-[XLSNum,XLSTxt]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
+[XLSNum,XLSTxt]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
 ExperimentTypeColumn=find(strcmp(XLSTxt(1,:),'ExperimentType'));
 DataFolderColumn=find(strcmp(XLSTxt(1,:),'DataFolder'));
 
@@ -162,6 +161,7 @@ if exist([OutputFolder,filesep,'Particles.mat'])
             Particles=NewParticles;
         else
             Particles=[];
+            Retracking=0;
         end
     else
         Retracking=0;

@@ -163,6 +163,24 @@ if ~NoAP
     SurfRows = str2double(ExtractInformationField(SurfInfo(1), 'state.acq.linesPerFrame='));
     SurfColumns = str2double(ExtractInformationField(SurfInfo(1), 'state.acq.pixelsPerLine='));
     
+    
+    %If there is no zoom information on the surface image then look into
+    %the temp folder. This is because sometimes we edit images in ImageJ
+    %which leads to losing the zoom information.
+    if isnan(SurfZoom)
+        Dtemp=dir([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\temp\*.tif']);
+        LeftFileIndex=find(~cellfun('isempty',strfind(lower({Dtemp.name}),'left'))&...
+            cellfun('isempty',strfind(lower({Dtemp.name}),'surf')));
+        ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\temp',filesep,Dtemp(LeftFileIndex).name]);
+        SurfZoom=str2double(ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor='));
+        
+        
+        SurfRows=SurfInfo.Height;
+        SurfColumns=SurfInfo.Width;
+    end
+
+    
+    
     ZoomRatio = MovieZoom / SurfZoom;
 
     
@@ -195,25 +213,34 @@ if ~NoAP
             [RowsResized,ColumnsResized]=size(SurfImageResized);
             [RowsZoom,ColumnsZoom]=size(ZoomImage);
 
-            SurfImageResizeZoom=...
-                SurfImageResized(RowsResized/2-RowsZoom/2+ShiftRow*ZoomRatio:RowsResized/2+RowsZoom/2-1+ShiftRow*ZoomRatio,...
-                ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ZoomRatio:ColumnsResized/2+ColumnsZoom/2-1+ShiftColumn*ZoomRatio);
+            try
+            
+                SurfImageResizeZoom=...
+                    SurfImageResized(RowsResized/2-RowsZoom/2+ShiftRow*ZoomRatio:RowsResized/2+RowsZoom/2-1+ShiftRow*ZoomRatio,...
+                    ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ZoomRatio:ColumnsResized/2+ColumnsZoom/2-1+ShiftColumn*ZoomRatio);
 
-            ImOverlay=cat(3,mat2gray(SurfImageResizeZoom),...
-                +mat2gray(ZoomImage),zeros(size(SurfImageResizeZoom)));
-
-
-            figure(4)
-            imshow(ImOverlay)
-            saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentOverlay.tif']);
+                ImOverlay=cat(3,mat2gray(SurfImageResizeZoom),...
+                    +mat2gray(ZoomImage),zeros(size(SurfImageResizeZoom)));
 
 
+                figure(4)
+                imshow(ImOverlay)
+                saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentOverlay.tif']);
 
 
-            figure(5)
-            contourf(abs(C((CRows-1)/2-RowsZoom/2:(CRows-1)/2+RowsZoom/2,...
-                (CColumns-1)/2-ColumnsZoom/2:(CColumns-1)/2+ColumnsZoom/2)))
-            saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentCorrelation.tif']);
+
+
+                figure(5)
+                contourf(abs(C((CRows-1)/2-RowsZoom/2:(CRows-1)/2+RowsZoom/2,...
+                    (CColumns-1)/2-ColumnsZoom/2:(CColumns-1)/2+ColumnsZoom/2)))
+                saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentCorrelation.tif']);
+            catch
+                warning('Could not generate correlation image. Switching to manual alignment')
+                
+                ManualAlignment=1;
+                ShiftColumn=0;
+                ShiftRow=0;
+            end
 
         else
 
@@ -490,6 +517,7 @@ if ~NoAP
     coordPZoom=(coordPHalf-ImageCenter)*ZoomRatio+[Columns/2,Rows/2]-[ShiftColumn,ShiftRow]*ZoomRatio;
 
 
+   
     figure(3)
     imshow(ZoomImage,[])
     hold on
@@ -508,6 +536,11 @@ if ~NoAP
 
     %Angle between the x-axis and the AP-axis
     APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
+    if coordPZoom(1)-coordAZoom(1) < 0
+        APAngle = APAngle + pi;
+    end
+    % Correction for if APAngle is in quadrants II or III
+    
     APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
 
 
@@ -517,19 +550,26 @@ if ~NoAP
     for i=1:Rows
         for j=1:Columns
             Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
-            Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
-            if sign(Angle)==sign(APAngle)
-            APPosition=Distance.*cos(Angle-APAngle);
-            else
-            APPosition=Distance.*cos(pi+Angle-APAngle);   
+            if j-coordAZoom(1) < 0
+                Angle = Angle + pi;
             end
+            % Correction for if Angle is in quadrants II or III
+            
+            Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
+            APPosition=Distance.*cos(Angle-APAngle);
             APPosImage(i,j)=APPosition/APLength;
         end
     end
 
 
-    %Bin the pixels along the AP axis
-    APResolution=0.025;
+    %Divide the image into AP bins. The size of the bin will depend on the
+    %experiment
+    if strfind(lower(Prefix),'eve')     %Eve2 experiments
+        APResolution=0.01;
+    else                                %All other experiments
+        APResolution=0.025;
+    end
+    
     APbinID=0:APResolution:1;
 
 
@@ -557,16 +597,18 @@ if ~NoAP
             %Angle between the x-axis and the particle using the A position as a
             %zero
             Angles=atan((Particles(i).yPos-coordAZoom(2))./(Particles(i).xPos-coordAZoom(1)));
+            if Particles(i).xPos-coordAZoom(1) < 0
+                Angles = Angles + pi;
+            end
+            % Correction for if Angles is in quadrants II or III
+            
             %Distance between the points and the A point
             Distances=sqrt((coordAZoom(2)-Particles(i).yPos).^2+(coordAZoom(1)-Particles(i).xPos).^2);
-            if sign(Angles)==sign(APAngle)
             APPositions=Distances.*cos(Angles-APAngle);
-            else
-            APPositions=Distances.*cos(pi+Angles-APAngle);    
-            end
             Particles(i).APpos=APPositions/APLength;
         end
     end
+
 
 
 

@@ -29,6 +29,10 @@ elseif strcmp(name(1:end-1),'albert-pc')
     SourcePath='C:\Users\Albert\Documents\Princeton\Gregor Lab\Data Analysis\LivemRNA\Analysis\MS2\MCPNoNLS+MS2';
     FISHPath='C:\Users\Albert\Documents\Princeton\Gregor Lab\Data Analysis\FISHDrosophila';
     DropboxFolder='C:\Users\Albert\Dropbox\LivemRNAData';
+elseif strcmp(name(1:end-1),'phy-tglab11')
+    SourcePath='Z:\LivemRNA\Analysis\MS2\MCPNoNLS+MS2';
+    FISHPath='Z:\FISHDrosophila';
+    DropboxFolder='C:\Users\bothma\Dropbox\LivemRNAData';
 else    
     error('Include the folders for this computer in the code')
 end

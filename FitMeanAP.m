@@ -78,7 +78,7 @@ else
     FrameWindow12=[];
 end
 %Some data sets won't have nc13 either
-if nc12>0
+if nc13>0
     FrameWindow13=[nc13:nc14];
 else
     FrameWindow13=[];
@@ -124,8 +124,7 @@ elseif ~isempty(findstr(Prefix,'X2'))
     TimeEnd014=1000; 
 else
     % ES 2013-10-14: I don't use X1 or X2 prefixes
-    ResponseS = input('Type ''3'' for 3'' data or ''5'' for 5'' data: ', 's');
-    if strcmp(ResponseS, '5')
+    if exist('StemLoopEnd', 'var') && strcmp(StemLoopEnd, '5''')
         Delay=GeneLength5/ElongationRate;    %Minutes for PolII to fall off after reaching
         %the first MS2 site.
         display('Treating data set as 5''')
@@ -141,7 +140,7 @@ else
         Rate014=4E3;     %Rate per minute
         TimeStart014=5;
         TimeEnd014=1000;
-    elseif strcmp(ResponseS, '3')
+    elseif exist('StemLoopEnd', 'var') && strcmp(StemLoopEnd, '3''')
         Delay=GeneLength3/ElongationRate;
         display('Treating data set as 3''')
         
@@ -157,7 +156,7 @@ else
         TimeStart014=7.5;
         TimeEnd014=1000;
     else
-        error('Could not recognize data type from the Prefix or user input')
+        error('Could not recognize data type from the Prefix or from the value of StemLoopEnd in MovieDatabase.')
     end
 end
 
@@ -235,14 +234,24 @@ end
 
 
 
-         
+%Figure out which nc we can use
+if nc12
+    CurrentNC=12;
+    MinNC=12;       %We'll use this to keep track of the minimum nc
+elseif nc13
+    CurrentNC=13;
+    MinNC=13;
+elseif nc14
+    CurrentNC=14;
+    MinNC=14;
+else
+    error('There is a problem. Are the ncs defined?')
+end
 
 
 
 %Go through each AP bin
-
 FitFigure=figure;
-CurrentNC=12;
 i=min(find(sum(NParticlesAP)));
 cc=1;
 
@@ -384,7 +393,7 @@ while (cc~=13)
                     legend(['tON=',num2str(FitResults(i,CurrentNC-11).TimeStart),' \pm ',num2str(FitResults(i,CurrentNC-11).SDTimeStart)],...
                         ['tOFF=',num2str(FitResults(i,CurrentNC-11).TimeEnd),' \pm ',num2str(FitResults(i,CurrentNC-11).SDTimeEnd)],...
                         ['Rate=',num2str(FitResults(i,CurrentNC-11).RateFit),' \pm ',num2str(FitResults(i,CurrentNC-11).SDRateFit)],...
-                        'Location','Best')
+                        'Location','SouthOutside')
                 end
             elseif CurrentNC==14
                 
@@ -451,7 +460,7 @@ while (cc~=13)
 
                     legend(['tON=',num2str(FitResults(i,CurrentNC-11).TimeStart),' \pm ',num2str(FitResults(i,CurrentNC-11).SDTimeStart)],...
                         ['Rate=',num2str(FitResults(i,CurrentNC-11).RateFit),' \pm ',num2str(FitResults(i,CurrentNC-11).SDRateFit)],...
-                        'Location','Best')
+                        'Location','SouthOutside')
                 end
             end
 
@@ -554,7 +563,7 @@ while (cc~=13)
     %Switch NCs
     elseif (ct~=0)&(cc=='m')&CurrentNC<14
         CurrentNC=CurrentNC+1;
-    elseif (ct~=0)&(cc=='n')&CurrentNC>12
+    elseif (ct~=0)&(cc=='n')&CurrentNC>MinNC
         CurrentNC=CurrentNC-1;
         
         
