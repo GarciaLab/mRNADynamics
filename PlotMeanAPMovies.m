@@ -1,5 +1,7 @@
 function [TimeNC14,MeanNC14,SENC14,MeanOnRatioNC14,SEOnRatioNC14,...
-    IntegralNC14,SEIntegralNC14,IntegralONNC14,SEIntegralONNC14]=...
+    IntegralNC14,SEIntegralNC14,IntegralONNC14,SEIntegralONNC14,...
+    TimeNC13,MeanNC13,SENC13,MeanOnRatioNC13,SEOnRatioNC13,...
+    IntegralNC13,SEIntegralNC13]=...
     PlotMeanAPMovies(Data,Label)
 
 %This function plots the mean AP profile of a data set for the maximum in
@@ -48,21 +50,26 @@ end
 nc13Resolution=min(nc13Resolution);
 nc14Resolution=min(nc14Resolution);
 
-%Figure out the time window
+%Figure out the time window nc14
 for i=1:length(Data)
     nc14Length(i)=Data(i).ElapsedTime(end)-Data(i).ElapsedTime(Data(i).nc14);
 end
 nc14Length=min(nc14Length);
-
 %All time points for nc14
 TimeNC14=0:nc14Resolution:nc14Length;
 
 
-for j=1:length(Data)
+%Figure out the time window nc13
+for i=1:length(Data)
+    nc13Length(i)=Data(i).ElapsedTime(Data(i).nc14)-Data(i).ElapsedTime(Data(i).nc13);
+end
+nc13Length=min(nc13Length);
+%All time points for nc13
+TimeNC13=0:nc13Resolution:nc13Length;
 
-    %Create the corresponding time vector for this set
-    TimeNC13{j}=Data(j).ElapsedTime(Data(j).nc13):...
-        nc13Resolution:Data(j).ElapsedTime(Data(j).nc14);
+
+
+for j=1:length(Data)
 
     %Get the AP vector related to each nc
     
@@ -96,6 +103,7 @@ for j=1:length(Data)
     
     %New version of integration. This is using the trapezoidal integration
     %now
+    %nc14
     m=1;
     for i=Data(j).nc14:length(Data(j).ElapsedTime)
         [TotalVectorAPNC14{j}(m,:),Dummy,TotalVectorONAPNC14{j}(m,:),Dummy]=...
@@ -105,49 +113,26 @@ for j=1:length(Data)
     end
     
     
+    %nc13
+    m=1;
+    for i=Data(j).nc13:Data(j).nc14
+        [TotalVectorAPNC13{j}(m,:),Dummy,TotalVectorONAPNC13{j}(m,:),Dummy]=...
+            IntegrateIndivSetTimeWindow(Data(j),MinParticles,...
+            13,[0,Data(j).ElapsedTime(i)-Data(j).ElapsedTime(Data(j).nc13)]);
+        m=m+1;
+    end
+    
 %     figure(1)
 %     plot(TotalVectorAPNC14{1})
 %     
 %     figure(2)
 %     plot(TotalVectorONAPNC14{1})
  
-    
-    1+1;
-    
-%     
-%     %Total fluorescence per AP for ALL nuclei. This is to calculate the
-%     %integral amount of mRNA produced per ALL nuclei
-%     Temp=Data(j).MeanVectorAP(Data(j).nc14:end,:).*...
-%         Data(j).NParticlesAP(Data(j).nc14:end,:);
-%     
-%     for i=1:size(Temp,1)
-%         Temp(i,:)=Temp(i,:)./median(Data(j).NEllipsesAP(Data(j).nc14:end,:));
-%     end
-% 
-%     %Get rid of NaN
-%     NanFilterTemp=isnan(Temp);
-%     Temp(NanFilterTemp)=0;
-%     Temp=cumsum(Temp);
-%     
-%     %Calculate the accumulation
-%     TotalVectorAPNC14{j}=Temp;
-% 
-%     
-%     %Total fluorescence per AP for ON nuclei. This is to calculate the
-%     %integral amount of mRNA produced per ON nuclei
-%     Temp=Data(j).MeanVectorAP(Data(j).nc14:end,:);
-% 
-%     %Get rid of NaN
-%     NanFilterTemp=isnan(Temp);
-%     Temp(NanFilterTemp)=0;
-%     Temp=cumsum(Temp);
-%     
-%     %Calculate the accumulation
-%     TotalVectorONAPNC14{j}=Temp;
-    
-    
+
+
     %Fraction of active nuclei vs. time
     OnRatioAPNC14{j}=Data(j).OnRatioAP(Data(j).nc14:end,:);
+    OnRatioAPNC13{j}=Data(j).OnRatioAP(Data(j).nc13:Data(j).nc14,:);
     
     
     %Interpolate each AP bin as a function of time
@@ -155,21 +140,80 @@ for j=1:length(Data)
     MeanOnRatioAPNC14Interp{j}=nan(length(TimeNC14),length(Data(j).APbinID));
     TotalVectorAPNC14Interp{j}=nan(length(TimeNC14),length(Data(j).APbinID));
     TotalVectorONAPNC14Interp{j}=nan(length(TimeNC14),length(Data(j).APbinID));
+    
+    MeanVectorAPNC13Interp{j}=nan(length(TimeNC13),length(Data(j).APbinID));
+    MeanOnRatioAPNC13Interp{j}=nan(length(TimeNC13),length(Data(j).APbinID));
+    TotalVectorAPNC13Interp{j}=nan(length(TimeNC13),length(Data(j).APbinID));
+    TotalVectorONAPNC13Interp{j}=nan(length(TimeNC13),length(Data(j).APbinID));
 
     for i=1:length(Data(j).APbinID)
         
         if sum(~isnan(MeanVectorAPNC13{j}(:,i)))>1
-            MeanVectorAPNC13Interp{j}(:,i)=pchip(Data(j).ElapsedTime(Data(j).nc13:Data(j).nc14),...
-                MeanVectorAPNC13{j}(:,i)',...
-                TimeNC13{j});
-            SDVectorAPNC13Interp{j}(:,i)=pchip(Data(j).ElapsedTime(Data(j).nc13:Data(j).nc14),...
-                SDVectorAPNC13{j}(:,i)',...
-                TimeNC13{j});
-            SEVectorAPNC13Interp{j}(:,i)=pchip(Data(j).ElapsedTime(Data(j).nc13:Data(j).nc14),...
-                SEVectorAPNC13{j}(:,i)',...
-                TimeNC13{j});
-         end
-        
+
+            TimeWindow=Data(j).ElapsedTime(Data(j).nc13:Data(j).nc14)-...
+                Data(j).ElapsedTime(Data(j).nc13);
+            
+            %Use only data points where we had MinParticles to calculate
+            %the mean
+            FilterTemp=NParticlesAPFilter(Data(j).nc13:Data(j).nc14,i);
+            
+            if sum(FilterTemp)>=MinTimePoints
+            
+                MeanVectorAPNC13Interp{j}(:,i)=pchip(TimeWindow(FilterTemp),...
+                    MeanVectorAPNC13{j}(FilterTemp,i)',...
+                    TimeNC13);
+
+                
+                %Check if there are enough statistics
+                if sum(~isnan(OnRatioAPNC13{j}(FilterTemp,i)))>=MinParticles
+                    MeanOnRatioAPNC13Interp{j}(:,i)=pchip(TimeWindow(FilterTemp),...
+                        OnRatioAPNC13{j}(FilterTemp,i)',...
+                        TimeNC13);
+                else
+                    MeanOnRatioAPNC13Interp{j}(:,i)=nan;
+                end
+
+                if sum(~isnan(TotalVectorAPNC13{j}(FilterTemp,i)))>=MinParticles
+                    TotalVectorAPNC13Interp{j}(:,i)=pchip(TimeWindow(FilterTemp),...
+                        TotalVectorAPNC13{j}(FilterTemp,i)',...
+                        TimeNC13);
+                else
+                    TotalVectorAPNC13Interp{j}(:,i)=nan;
+                end
+                
+                if sum(~isnan(TotalVectorONAPNC13{j}(FilterTemp,i)))>=MinParticles
+                    TotalVectorONAPNC13Interp{j}(:,i)=pchip(TimeWindow(FilterTemp),...
+                        TotalVectorONAPNC13{j}(FilterTemp,i)',...
+                        TimeNC13);
+                else
+                    TotalVectorONAPNC13Interp{j}(:,i)=nan;
+                end
+            
+                
+                MeanVectorAPNC13Interp{j}(TimeNC13<min(TimeWindow(FilterTemp)),i)=nan;
+                MeanVectorAPNC13Interp{j}(TimeNC13>max(TimeWindow(FilterTemp)),i)=nan;
+                
+                MeanOnRatioAPNC13Interp{j}(TimeNC13<min(TimeWindow(FilterTemp)),i)=nan;
+                MeanOnRatioAPNC13Interp{j}(TimeNC13>max(TimeWindow(FilterTemp)),i)=nan;
+                
+                %For the total amount produced I need 0 before the time
+                %window and the maximum after the time window
+                TotalVectorAPNC13Interp{j}(TimeNC13<min(TimeWindow(FilterTemp)),i)=0;
+                TotalVectorAPNC13Interp{j}(TimeNC13>max(TimeWindow(FilterTemp)),i)=...
+                    max(TotalVectorAPNC13Interp{j}(TimeNC13<max(TimeWindow(FilterTemp)),i));
+                
+                TotalVectorONAPNC13Interp{j}(TimeNC13<min(TimeWindow(FilterTemp)),i)=0;
+                TotalVectorONAPNC13Interp{j}(TimeNC13>max(TimeWindow(FilterTemp)),i)=...
+                    max(TotalVectorONAPNC13Interp{j}(TimeNC13<max(TimeWindow(FilterTemp)),i));
+            else
+                MeanVectorAPNC13Interp{j}(:,i)=nan;
+                MeanOnRatioAPNC13Interp{j}(:,i)=nan;
+                TotalVectorAPNC13Interp{j}(:,i)=nan;
+                TotalVectorONAPNC13Interp{j}(:,i)=nan;
+            end
+        end
+            
+       
         
         if sum(~isnan(MeanVectorAPNC14{j}(:,i)))>1
             
@@ -362,55 +406,162 @@ MovieFigure=figure;
 % end
 %     
 
-%% Movie of average
+%% Movie of averages
 
-%I removed this because the interpolation wasn't working well
+%nc13:
+
+MaxTimeIndex=length(TimeNC13);
+
+%Average fluorescence
+for i=1:MaxTimeIndex
+
+    figure(MovieFigure)
+    clf
+    
+    
+    %Populate a matrix with the values as a function of AP for this time
+    %point.
+    MeanTemp=[];
+    for j=1:length(Data)
+        if i<=size(MeanVectorAPNC13Interp{j},1)
+            MeanTemp=[MeanTemp;MeanVectorAPNC13Interp{j}(i,:)];
+        end
+    end
+    
+    if ~isempty(MeanTemp)
+        %Now calculale the mean and SD. We need to be careful with the Nans!
+        for j=1:size(MeanTemp,2)
+            if sum(~isnan(MeanTemp(:,j)))>=MinEmbryos
+                MeanNC13(i,j)=mean(MeanTemp(~isnan(MeanTemp(:,j)),j));
+                SDNC13(i,j)=std(MeanTemp(~isnan(MeanTemp(:,j)),j));
+                SENC13(i,j)=std(MeanTemp(~isnan(MeanTemp(:,j)),j))/sqrt(sum(~isnan(MeanTemp(:,j))));
+            else
+                MeanNC13(i,j)=nan;
+                SDNC13(i,j)=nan;
+                SENC13(i,j)=nan;
+            end
+        end
 
 
-%Plot the resulting traces for nc13 - Using Standard Deviation
-% [MaxTimeIndex,MaxTimeSet]=max(cellfun(@length,TimeNC13));
-% 
-% MovieFigure=figure;
-% for i=1:MaxTimeIndex
-% 
-%     clf
-%     PlotHandle=[];
-%     figure(MovieFigure)
-%     
-%     %Populate a matrix with the values as a function of AP for this time
-%     %point.
-%     MeanTemp=[];
-%     for j=1:length(Data)
-%         if i<=size(MeanVectorAPNC13Interp{j},1)
-%             MeanTemp=[MeanTemp;MeanVectorAPNC13Interp{j}(i,:)];
-%         end
-%     end
-%     
-%     %Now calculate the mean and SD. We need to be careful with the Nans!
-%     for j=1:size(MeanTemp,2)
-%         MeanNC13(i,j)=mean(MeanTemp(~isnan(MeanTemp(:,j)),j));
-%         SDNC13(i,j)=std(MeanTemp(~isnan(MeanTemp(:,j)),j));
-%     end
-%     
-%     PlotHandle=errorbar(Data(1).APbinID,MeanNC13(i,:),...
-%         SDNC13(i,:),'.-k');
-% 
-%     title(['nc13, ',num2str(TimeNC13{MaxTimeSet}(i)-TimeNC13{MaxTimeSet}(1)),' min'])
-%     ylim([0,MaxValue])
-%     xlim([0.1,0.8])
-%     set(gca,'XTick',[0.1:0.1:0.8])
-%     box on
-%     %drawnow
-%     StandardFigure(PlotHandle,gca)
-%     saveas(gcf,[DropboxFolder,'\Reports\APPlots\APMovies\APMovieMean',Label,'\nc13-',iIndex(i,3),'.tif'])
-% end
-%     
+       PlotHandle=errorbar(Data(1).APbinID,MeanNC13(i,:),...
+            SENC13(i,:),'.-k');
+        errorbar_tick(PlotHandle,0);
+        hold off
+        %title(['nc14, ',num2str(TimeNC14{MaxTimeSet}(i)-TimeNC14{MaxTimeSet}(1)),' min'])
+        ylim([0,1.5E4])
+        xlim([0.3,0.5])
+        set(gca,'XTick',[0.1:0.1:0.8])
+        box on
+        pause(0.1)
+        drawnow
+        %StandardFigure(PlotHandle,gca)
+        %saveas(gcf,[DropboxFolder,'\Reports\APPlots\APMovies\APMovieMean',Label,'\nc14-',iIndex(i,3),'.tif'])
+    end
+end
 
-%Plot the resulting traces for nc14  - Using Standard Error
-%[MaxTimeIndex,MaxTimeSet]=max(cellfun(@length,TimeNC14));
+
+%Ratio of on nuclei
+for i=1:MaxTimeIndex
+
+    figure(MovieFigure)
+    clf
+    
+    
+    %Populate a matrix with the values as a function of AP for this time
+    %point.
+    MeanTemp=[];
+    for j=1:length(Data)
+        if i<=size(OnRatioAPNC13{j},1)
+            MeanTemp=[MeanTemp;OnRatioAPNC13{j}(i,:)];
+        end
+    end
+    
+    if ~isempty(MeanTemp)
+        %Now calculale the mean and SD. We need to be careful with the Nans!
+        for j=1:size(MeanTemp,2)
+            if sum(~isnan(MeanTemp(:,j)))>=MinEmbryos
+                MeanOnRatioNC13(i,j)=mean(MeanTemp(~isnan(MeanTemp(:,j)),j));
+                SEOnRatioNC13(i,j)=std(MeanTemp(~isnan(MeanTemp(:,j)),j))/sqrt(sum(~isnan(MeanTemp(:,j))));
+            else
+                MeanOnRatioNC13(i,j)=nan;
+                SEOnRatioNC13(i,j)=nan;
+            end
+        end
+
+
+       PlotHandle=errorbar(Data(1).APbinID,MeanOnRatioNC13(i,:),...
+            SEOnRatioNC13(i,:),'.-k');
+        errorbar_tick(PlotHandle,0);
+        hold off
+        %title(['nc14, ',num2str(TimeNC14{MaxTimeSet}(i)-TimeNC14{MaxTimeSet}(1)),' min'])
+        ylim([0,1])
+        xlim([0.3,0.5])
+        set(gca,'XTick',[0.1:0.1:0.8])
+        box on
+        pause(0.1)
+        drawnow
+        %StandardFigure(PlotHandle,gca)
+        %saveas(gcf,[DropboxFolder,'\Reports\APPlots\APMovies\APMovieMean',Label,'\nc14-',iIndex(i,3),'.tif'])
+    end
+end
+
+
+%Plot the accumulation vs. time. This is the accumulation per ALL nuclei
+MaxValue=max(cellfun(@(x) max(max(x)),TotalVectorAPNC13Interp));
+for i=1:MaxTimeIndex
+    figure(MovieFigure)
+    clf
+    
+    
+    MeanTemp=[];
+    for j=1:length(Data)
+        if i<=size(TotalVectorAPNC13Interp{j},1)
+            MeanTemp=[MeanTemp;TotalVectorAPNC13Interp{j}(i,:)];
+        end
+    end
+    
+    if ~isempty(MeanTemp)
+        %Now calculale the mean and SD. We need to be careful with the Nans!
+        for j=1:size(MeanTemp,2)
+            if sum(~isnan(MeanTemp(:,j)))>=MinEmbryos
+                IntegralNC13(i,j)=mean(MeanTemp(~isnan(MeanTemp(:,j)),j));
+                SDIntegralNC13(i,j)=std(MeanTemp(~isnan(MeanTemp(:,j)),j));
+                SEIntegralNC13(i,j)=std(MeanTemp(~isnan(MeanTemp(:,j)),j))/sqrt(sum(~isnan(MeanTemp(:,j))));
+            else
+                IntegralNC13(i,j)=nan;
+                SDIntegralNC13(i,j)=nan;
+                SEIntegralNC13(i,j)=nan;
+            end
+        end
+
+
+       PlotHandle=errorbar(Data(1).APbinID,IntegralNC13(i,:),...
+            SEIntegralNC13(i,:),'.-k');
+        errorbar_tick(PlotHandle,0);
+        hold off
+        %title(['nc14, ',num2str(TimeNC14{MaxTimeSet}(i)-TimeNC14{MaxTimeSet}(1)),' min'])
+        ylim([0,MaxValue])
+        xlim([0.3,0.5])
+        
+        set(gca,'XTick',[0.1:0.1:0.8])
+        box on
+        pause(0.1)
+        drawnow
+        %StandardFigure(PlotHandle,gca)
+        %saveas(gcf,[DropboxFolder,'\Reports\APPlots\APMovies\APMovieMean',Label,'\nc14-',iIndex(i,3),'.tif'])
+    end
+end
+
+
+
+
+
+%nc14:
+
 
 MaxTimeIndex=length(TimeNC14);
 
+%Average fluorescence
 for i=1:MaxTimeIndex
 
     figure(MovieFigure)
@@ -458,6 +609,7 @@ for i=1:MaxTimeIndex
 end
     
 
+%Ratio of on nuclei
 for i=1:MaxTimeIndex
 
     figure(MovieFigure)
