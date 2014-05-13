@@ -4,7 +4,7 @@ function [Time,TotalFluo]=IndividualTrace(Transitions,Rates,Delay,MaxTime)
 %and rates
 
 % Only need to include times where events happen
-Time = [0, Transitions, Transitions+Delay, MaxTime];
+Time = [Transitions, Transitions+Delay, MaxTime];
 Time = sort(Time);
 % Ignore any events occuring after specified MaxTime
 Time(Time>MaxTime) = [];

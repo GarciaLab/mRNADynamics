@@ -76,8 +76,8 @@ elseif  ~isempty(strfind(StemLoop,'X1'))
     GeneLength=5.296;       %Distance from the first MS2 site to the end of the
                         %TUB3'UTR in kb.
 else
-%     error('The gene length has not been defined for this construct')
-    GeneLength=6.443;
+    error('The gene length has not been defined for this construct')
+%     GeneLength=6.443;
 end
     
 

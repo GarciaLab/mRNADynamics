@@ -1,9 +1,14 @@
 function [XOut,FOut,Chi2] = lsqlinAutoFitFluorescenceCurve(F,T,XPrevious,Delay,TimeRes,FErr)
-
+% lsqlinAutoFitFluorescenceCurve: Helper function for
+% AutoFitFluorescenceCurveLinear
+% Finds best fit using linear least squares, given fluorescence data and
+% a set of free rates (rates to vary)
+%
 % F : Fluorescence values to fit
-% T : Allowed indices to vary rate
-% Memory : Number of indices
-% XPrevious : Rates at previous times which will contribute to fluorescence
+% T : Indices of free rates (referenced to start of window)
+% XPrevious : Rates at times before window but within memory
+% Delay : Elongation time (in minutes, not indices)
+% TimeRes: Time between points
 % FErr : Fluorescence error
 
 %%% DEFAULT INPUTS
@@ -19,20 +24,22 @@ end
 if nargin < 6
     FErr=1;
 end
+% Memory : elongation time (in indices, rounded down)
 Memory=floor(Delay/TimeRes);
+% ExcessF : amount of fluorescence leaking into next time point after
+% Memory, as a fraction of full amount
 ExcessF=(Delay-(Memory*TimeRes))/TimeRes;
-% ExcessF=0;
 
 %%% CONDITION INPUTS
-% Check that no rates are to be set where we don't have data
+% Check that we have data at all times to fit
 if ~isempty(T) && T(end)>length(F)
-    disp('ERROR: Asked to set a rate at a time without fluorescence data')
+    disp('ERROR: Can only fit rates at times with fluo data')
 end
 % If XPrevious empty, assume 0
 if isempty(XPrevious)
     XPrevious=0;
 end
-% Fix dimensions
+% Force column vectors
 if size(T,2)>1
     T=T';
 end
@@ -42,32 +49,37 @@ end
 if size(XPrevious,2)>1
     XPrevious=XPrevious';
 end
-% XPrevious
-% If first T is greater than 1, assume the rates before are equal to the
-% last previous rate, and don't fit fluos there
-% NumToAdd=T(1)-1;
+
+%%% PREVIOUS RATES
+% Idea: if T(1) > 1, set rates for times [1,T(1)] to XPrevious(end)
+% If T empty, set all rates to XPrevious(end)
 if isempty(T)
     NumToAdd=length(F);
 else
     NumToAdd=T(1)-1;
 end
-
+% XPreviousAug : XPrevious, augmented with rates for times [1,T(1)]
 XPreviousAug=XPrevious;
 XPreviousAug(end+1:end+NumToAdd,1)=XPrevious(end);
 
 %%% FIT CALCULATIONS
+% NF : number of fluorescence values given
 NF=length(F);
+% NT : number of transitions
 NT=length(T);
+% NPre : number of rates given before window
 NPre=length(XPrevious);
+% NPreAug : number of rates before T(1)
 NPreAug=NPre+NumToAdd;
 
 %%% PREVIOUS CONTRIBUTION
+% Generate previous fluorescence from XPreviousAug
 APre=ElongationMatrix(NPreAug+Memory,NPreAug,Memory,ExcessF);
-% Generate previous fluorescence from augmented XPrevious
 FPre=APre*XPreviousAug;
 % Cut off values of FPre that aren't in window
 FPre=FPre(NPre+1:end);
-% This amount of fluorescence already accouted for, so subtract
+% Previous fluorescence already accouted for, so subtract from F before
+% fitting
 FFit=F;
 MaxIdx=min(length(FPre),length(FFit));
 FFit(1:MaxIdx)=FFit(1:MaxIdx)-FPre(1:MaxIdx);
@@ -75,11 +87,12 @@ FFit(1:MaxIdx)=FFit(1:MaxIdx)-FPre(1:MaxIdx);
 %%% FITTING
 % Create elongation matrix
 A=ElongationMatrix(NF,NF,Memory,ExcessF);
-% For fitting, cut off fluorescence before first free rate...
+% For fitting, cut off fluorescence before T(1)
 FFit=FFit(1+NumToAdd:end,1);
-% AFitStep1=A(1+NumToAdd:end,1+NumToAdd:end);
+% Step 1 because we will process more
 AFitStep1=A(1+NumToAdd:end,:);
-% ...and combine columns for constrained rates
+
+% Combine columns for constrained rates
 AFit=[];
 for i=1:NT
     MinCol=T(i);
@@ -93,6 +106,9 @@ end
 
 % Do the fit
 [XFitted,resnorm,residual]=lsqnonneg(AFit,FFit);
+FFitted=AFit*XFitted;
+
+% TEST CODE: trying to do constrained lsqlin fit (upper bound on rate)
 % size(XFitted)
 % if isempty(AFit)
 %     XFitted=[];
@@ -105,15 +121,16 @@ end
 %     [XFitted,resnorm,residual]=lsqlin(AFit,FFit,[],[],[],[],lb,[],[]);
 % %     [XFitted,resnorm,residual]=lsqlin(AFit,FFit,-eye(n,n),zeros(n,1),[],[],[],[],[],options);
 % end
-FFitted=AFit*XFitted;
+% FFitted=AFit*XFitted;
 
-%%% OUTPUT FORMAT
-% Pad rates with initial rate at start
+%%% PUT INTO OUTPUT FORMAT
+% Rates
+% Previous Rates
 XOut=zeros(NF,1);
 if NumToAdd>0
     XOut(1:NumToAdd)=XPrevious(end);
 end
-% Fill in other values of XOut
+% Fitted Rates
 for i=1:NT
     MinIdx=T(i);
     if i==NT
@@ -124,10 +141,11 @@ for i=1:NT
     XOut(MinIdx:MaxIdx)=XFitted(i);
 end
 
-% Pad fluo with zeros
+% Fluo
+% Fitted Fluo
 FOut=zeros(NF,1);
 FOut(1+NumToAdd:end)=FFitted;
-% Add in previous contribution
+% Previous Fluo
 MaxIdx=min(length(FPre),length(FOut));
 FOut(1:MaxIdx)=FOut(1:MaxIdx)+FPre(1:MaxIdx);
 
