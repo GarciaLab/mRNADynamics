@@ -2,14 +2,19 @@
 function LabelNucsCore=SegmentNucleiLive(folder,DivisionTimes,FilterRadius,FilterSize)
   
  load([folder,'MaxNuclei.mat'],'MaxNuclei');
-    
  
- TotalTime=length(fieldnames(MaxNuclei));  
-
-if exist([folder,'LabelNucsCore.mat'])>0
-
-     load([folder,'LabelNucsCore.mat']);
-end
+ FNames=fieldnames(MaxNuclei);
+ 
+ if strcmp(FNames(end),'TimeMatrix')
+ TotalTime=length(MaxNuclei.TimeMatrix);  
+ else
+  TotalTime=length(FNames);  
+ end
+%  
+% if exist([folder,'LabelNucsCore.mat'])>0
+% 
+%      load([folder,'LabelNucsCore.mat']);
+% end
  
  
 %%% Set up time dependent radius of filtering.
@@ -37,6 +42,7 @@ else
 end
 
 %%%%% Major filtering step
+
 
         for i=1:TotalTime % i is the global time index
             
@@ -70,6 +76,7 @@ imshow(label2rgbBackdropLive((LabelNucsCore.(['Time', num2str(1)]).Image>0)+1,[1
         
         figure(f)
         [xi,yi,but] = ginput(f);
+        
         
         if but==30 % Up arrow
             
@@ -121,6 +128,10 @@ imshow(label2rgbBackdropLive((LabelNucsCore.(['Time', num2str(1)]).Image>0)+1,[1
         elseif but == 105 % s is pressed split nuclei
             
             textholder='i';            
+        
+        elseif but == 99 % s is pressed split nuclei
+            
+            textholder='c';          
             
          elseif but==1 % Do something if left mouse button pressed
               
@@ -215,6 +226,37 @@ imshow(label2rgbBackdropLive((LabelNucsCore.(['Time', num2str(1)]).Image>0)+1,[1
                
             imshow(label2rgbBackdropLive((LabelNucsCore.(['Time', num2str(Nlayer)]).Image>0)+1,[1,0,0;0,1,0],[1,1,1],2*imadjust(MaxNuclei.(['Time', num2str(Nlayer)]))), 'Border','tight','InitialMagnification',100),                
                     
+           elseif strcmp(textholder,'c') %%%%% For changing radius of filter for many
+ 
+
+              str=input(['Input new radius, old is ', num2str(Radi(Nlayer)), ' :'],'s');
+              
+               str2=input(['Number of Frames to apply :'],'s');
+                    
+              NewRad=str2num(str);
+              NumFra=str2num(str2);
+              
+              Radi(Nlayer:Nlayer+NumFra)=NewRad;
+              
+               SizeG(Nlayer:Nlayer+NumFra)=round(6*NewRad);
+             
+               for kj=Nlayer:Nlayer+NumFra;
+              
+             I = MaxNuclei.(['Time', num2str(kj)]); % Image to use to filter
+             
+             NucCourseFiltT=segmentnucleiCoreLive(I,SizeG(kj),Radi(kj),0); % Find cores of nuclei, maybe need to adjust size with time
+    
+            NucCourseFiltT = bwmorph(NucCourseFiltT,'thicken',1);  % Add thickness                       
+            
+            LabelNucsCore.(['Time', num2str(kj)]).Image=bwlabel(NucCourseFiltT); % Label the obejcts
+            
+            LabelNucsCore.(['Time', num2str(kj)]).RegionProps=regionprops(LabelNucsCore.(['Time', num2str(kj)]).Image,'PixelIdxList','Centroid'); % Linear indices
+            
+               end
+               
+            imshow(label2rgbBackdropLive((LabelNucsCore.(['Time', num2str(Nlayer)]).Image>0)+1,[1,0,0;0,1,0],[1,1,1],2*imadjust(MaxNuclei.(['Time', num2str(Nlayer)]))), 'Border','tight','InitialMagnification',100),                
+                              
+            
            elseif strcmp(textholder,'i') %%%%% For changing size of filter
                
                  str=input(['Input new Size, old is ', num2str(SizeG(Nlayer)), ' :'],'s');
@@ -348,6 +390,6 @@ end
 
 %%%%
     
- save([folder,'LabelNucsCore.mat'],'LabelNucsCore','Radi','SizeG');    
+ save([folder,'LabelNucsCore.mat'],'LabelNucsCore','Radi','SizeG','-v7.3');    
  
         

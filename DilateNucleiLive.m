@@ -3,9 +3,14 @@ function DilateNucleiLive(folder)
 
     load([folder,'MaxNuclei.mat'],'MaxNuclei');
     load([folder,'LabelNucsCore.mat'],'LabelNucsCore');
-    
-    TotalTime = length(fieldnames(MaxNuclei));
  
+     FNames=fieldnames(MaxNuclei);
+ 
+ if strcmp(FNames(end),'TimeMatrix')
+ TotalTime=length(MaxNuclei.TimeMatrix);  
+ else
+  TotalTime=length(FNames);  
+ end
     
     str='';
 
@@ -15,24 +20,24 @@ if exist([folder,'LabNucDilate.mat'])>0
     
 end
     
-  if strcmp('y',str)|~(exist([folder,'LabNucDilate.mat']))
+if strcmp('y',str)|~(exist([folder,'LabNucDilate.mat']))
     
     for i=1:TotalTime
-
+        
         [lengthh,widthh]=size(MaxNuclei.Time1);
         
-      LabNucDilate.(['Time', num2str(i)]).Image  = segmentnucleiExpandLive(MaxNuclei.(['Time', num2str(i)]),LabelNucsCore.(['Time', num2str(i)]).ImageZ,50,20,ones(lengthh,widthh),50,20,10);
+        LabNucDilate.(['Time', num2str(i)]).Image  = segmentnucleiExpandLive(MaxNuclei.(['Time', num2str(i)]),LabelNucsCore.(['Time', num2str(i)]).ImageZ,50,20,ones(lengthh,widthh),50,20,10);
+        
+    end
+    
+    save([folder,'LabNucDilate.mat'],'LabNucDilate');
+    
+else
+    disp('LabNucDilate already exists, loading file')
+    
+    load([folder,'LabNucDilate.mat'],'LabNucDilate');
+end
 
-    end
-    
-          save([folder,'LabNucDilate.mat'],'LabNucDilate');
-        
-    else
-        disp('LabNucDilate already exists, loading file')
-        
-        load([folder,'LabNucDilate.mat'],'LabNucDilate');
-    end
-    
     
     NumNucs=[];
 
