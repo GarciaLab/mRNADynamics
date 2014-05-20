@@ -246,7 +246,7 @@ jj=1;
       %[TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Blk(NBlk,:),Time),Time,0,options);
       
       % Try finer interval
-      [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Blk(NBlk,:),Time,'spline'),[min(Time):increment:max(Time)],0,options);
+      [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Blk(NBlk,:),Time),[min(Time):increment:max(Time)],0,options);
       YOUT = interp1(TOUT,YOUT,Time,'spline');
       
       Blkk(NBlk,:)=YOUT';
