@@ -256,7 +256,7 @@ options = odeset('NonNegative',1,'RelTol',1e-5,'AbsTol',1e-4,'MaxStep',2);
       
       [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Int,Time),[min(Time):increment:max(Time)],0,options);
       YOUT = interp1(TOUT,YOUT,Time,'pchip');
-      Blkk(NBlk,:)=YOUT';
+      BlkkLB(NBlk,:)=YOUT';
       
       %%%%%%%%%%%%%% Upper bound for error
       Int=Blk(NBlk,:);
@@ -265,7 +265,7 @@ options = odeset('NonNegative',1,'RelTol',1e-5,'AbsTol',1e-4,'MaxStep',2);
     
       [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Int,Time),[min(Time):increment:max(Time)],0,options);
       YOUT = interp1(TOUT,YOUT,Time,'pchip');
-      Blkk(NBlk,:)=YOUT';
+      BlkkUB(NBlk,:)=YOUT';
       
   end
  
