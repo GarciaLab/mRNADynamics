@@ -219,6 +219,11 @@ jj=1;
 
 %%%%%%% Calculate the amount of Cytoplasmic mRNA present
 
+
+save_to_base(1)
+
+keyboard
+
  ElongationTime=6.443/1.54;
  
  Time=DataEve.ElapsedTime;
