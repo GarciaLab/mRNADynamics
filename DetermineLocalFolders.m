@@ -94,6 +94,8 @@ else
     
     if isempty(PrefixRow)
         error('Data set information not found in MovieDatabase.xlsx')
+    elseif length(PrefixRow)>1
+        error('Two data sets seem to have the same folder information. Check MovieDatabase.xlsx')
     end
     
     
