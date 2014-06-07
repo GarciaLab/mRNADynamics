@@ -114,10 +114,7 @@ end
 %Now add the SetName and APDivision information
 for i=1:length(Data)
     Data(i).SetName=SetNames{i};
-    
-    if exist('APDivisions')
-        Data(i).APDivision=APDivisions(i).APDivision;
-    end
+    Data(i).APDivision=APDivisions(i).APDivision;
     %Data(i).MeanFits=MeanFits(i).FitResults;
     
     if exist('IntegralFits')
