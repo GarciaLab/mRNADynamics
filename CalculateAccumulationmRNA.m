@@ -219,6 +219,11 @@ jj=1;
 
 %%%%%%% Calculate the amount of Cytoplasmic mRNA present
 
+
+save_to_base(1)
+
+keyboard
+
  ElongationTime=6.443/1.54;
  
  Time=DataEve.ElapsedTime;
@@ -228,11 +233,13 @@ jj=1;
  BlkkUB=zeros(length(NucSOFDots),length(Time)); % Matrix of length number of particles by number time points where the accumulated amount is calulated
  BlkkLB=zeros(length(NucSOFDots),length(Time)); % Matrix of length number of particles by number time points where the accumulated amount is calulated
  
- options = odeset('NonNegative',1);
+options = odeset('NonNegative',1,'RelTol',1e-5,'AbsTol',1e-4,'MaxStep',2);
  
  NumberHalflives=length(Halflife);
  
  AcumData=struct;
+ 
+ increment=0.01;
  
  for Nh=1:NumberHalflives;
  
@@ -240,7 +247,9 @@ jj=1;
  
  for NBlk=1:length(NucSOFDots);
      
-      [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Blk(NBlk,:),Time),Time,0,options);
+      % Try finer interval
+      [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Blk(NBlk,:),Time),[min(Time):increment:max(Time)],0,options);
+      YOUT = interp1(TOUT,YOUT,Time,'pchip');
       Blkk(NBlk,:)=YOUT';
       
       %%%%%%%%%%%%%% Lower bound for error
@@ -250,18 +259,20 @@ jj=1;
       Int(II)=0;
       
       
-      [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Int,Time),Time,0,options);
+      [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Int,Time),[min(Time):increment:max(Time)],0,options);
+      YOUT = interp1(TOUT,YOUT,Time,'pchip');
       BlkkLB(NBlk,:)=YOUT';
       
       %%%%%%%%%%%%%% Upper bound for error
       Int=Blk(NBlk,:);
       II=find(Int>0);
       Int(II)=Int(II)+DataEve.CompiledParticles(NBlk).FluoError;
-      
-      [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Int,Time),Time,0,options);
+    
+      [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Int,Time),[min(Time):increment:max(Time)],0,options);
+      YOUT = interp1(TOUT,YOUT,Time,'pchip');
       BlkkUB(NBlk,:)=YOUT';
       
- end
+  end
  
  
   AcumData(Nh).datasetname=Prefix;
@@ -283,6 +294,9 @@ jj=1;
   
   end
  end
-save([DropboxFolder,filesep,Prefix,filesep,'AccumulationData'],'AcumData');
 
-save_to_base(1)
+% save_to_base(1)
+ 
+ save([DropboxFolder,filesep,Prefix,filesep,'AccumulationData'],'AcumData');
+
+
