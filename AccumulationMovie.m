@@ -255,14 +255,16 @@ end
  Time=DataEve.ElapsedTime;
  
  Blkk=[];
- options = odeset('NonNegative',1);
- for NBlk=1:length(NucSOFDots);
-      [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Blk(NBlk,:),Time),Time,0,options);% Still need to apply shift
-      Blkk=[Blkk;YOUT'];
- end
+%  options = odeset('NonNegative',1);
+%  for NBlk=1:length(NucSOFDots);
+%       [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Blk(NBlk,:),Time),Time,0,options);% Still need to apply shift
+%       Blkk=[Blkk;YOUT'];
+%  end
+% 
+% 
+% halflife=10;
 
-
-halflife=10;
+Blkk=cumtrapz(Time,Blk,2);
 
 %%%%%%%%%%%%%%%%%%%%%%% Make movie %%%%%%%%%%%%%%%%%
 
@@ -270,7 +272,7 @@ maxx=max(Blkk(:));
 
 N=10000; % Number of discrete steps
 
-  writerObj = VideoWriter([DropboxFolder,filesep,Prefix,filesep,Prefix,'-AccumulationMovie.avi'],'Uncompressed AVI');
+  writerObj = VideoWriter(['AccumulationMovieInfHalflife.avi']);%,'Uncompressed AVI');
         writerObj.FrameRate = 7;
         open(writerObj);
         
@@ -318,8 +320,8 @@ end
     close(writerObj);
 
 save([FISHPath,filesep,'Data',filesep,Prefix,filesep,'DisplayBAll.mat'],'DisplayBAll','DisplayBOn');    
-    
+   % 
 save([DropboxFolder,filesep,Prefix,filesep,'AccumulationData.mat'],'Blk','Blkk','HGDotstoJBNucs');
 
-    save_to_base(1)
+%    save_to_base(1)
 
