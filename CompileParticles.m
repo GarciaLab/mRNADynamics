@@ -466,6 +466,16 @@ for i=1:length(Particles)
                 %Determine the particles average and median AP position
                 CompiledParticles(k).MeanAP=mean(Particles(i).APpos(FrameFilter));
                 CompiledParticles(k).MedianAP=median(Particles(i).APpos(FrameFilter));
+            elseif strcmp(ExperimentAxis,'DV')&isfield(Particles,'APpos')
+                %AP information:
+                CompiledParticles(k).APpos=Particles(i).APpos(FrameFilter);
+                CompiledParticles(k).MeanAP=mean(Particles(i).APpos(FrameFilter));
+                CompiledParticles(k).MedianAP=median(Particles(i).APpos(FrameFilter));
+                %DV information:
+                CompiledParticles(k).DVpos=Particles(i).DVpos(FrameFilter);
+                CompiledParticles(k).MeanDV=mean(Particles(i).DVpos(FrameFilter));
+                CompiledParticles(k).MedianDV=median(Particles(i).DVpos(FrameFilter));
+
             end
             
             %If we have the histone channel we will actually replace the AP
