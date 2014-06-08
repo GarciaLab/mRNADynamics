@@ -1,7 +1,9 @@
 function [TimeNC14,MeanNC14,SENC14,MeanOnRatioNC14,SEOnRatioNC14,...
     IntegralNC14,SEIntegralNC14,IntegralONNC14,SEIntegralONNC14,...
     TimeNC13,MeanNC13,SENC13,MeanOnRatioNC13,SEOnRatioNC13,...
-    IntegralNC13,SEIntegralNC13]=...
+    IntegralNC13,SEIntegralNC13,...
+    IntegralDegNC14,SEIntegralDegNC14,IntegralDegONNC14,SEIntegralDegONNC14,...
+    IntegralDegNC13,SEIntegralDegNC13,IntegralDegONNC13,SEIntegralDegONNC13]=...
     PlotMeanAPMovies(Data,Label)
 
 %This function plots the mean AP profile of a data set for the maximum in
@@ -17,12 +19,29 @@ MinParticles=3;     %Minimum number of particles necessary in a bin for
                     %it to be considered
 MinTimePoints=5;    %Minimum number of time points for the interpolation
 MinEmbryos=2;       %Minimum number of embryos
+                   
+
+HalfLifeForPlot=7;  %Half-life to extract from the calculated mRNA accumulation
+                    %by Jacques
+
+%What experiment are we dealing with? This si useful to figure out the
+%elongation time, for example.
+%WARNING: THIS IS NOW HARDWIRED
+ElongationTime=6.443/1.54;
+
+
+
                     
 %Some labels to use for plots
 Labels='k.r.g.b.y.c.m.ksrsgsbsyscsmskorogoboyocomok^r^g^b^y^c^m^';
                     
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
     DetermineLocalFolders(Data(1).SetName(11:end-1));
+
+
+
+
+
 
 %Create the folders we need and empty them if necessary
 
@@ -122,13 +141,100 @@ for j=1:length(Data)
         m=m+1;
     end
     
-%     figure(1)
-%     plot(TotalVectorAPNC14{1})
-%     
-%     figure(2)
-%     plot(TotalVectorONAPNC14{1})
- 
-
+    
+    %If the mRNA accumulation accounting for life times exists then load it
+	%and process it
+    if isfield(Data,'AccumulationData')
+        
+        %Get the grames
+        FramesNC13=Data(j).nc13:Data(j).nc14;
+        FramesNC14=Data(j).nc14:length(Data(j).ElapsedTime);
+        
+        %Initialize the vectors
+        AccumNC13{j}=nan(length(FramesNC13),length(Data(j).APbinID));
+        AccumNC13ON{j}=nan(length(FramesNC13),length(Data(j).APbinID));
+        AccumNC14{j}=nan(length(FramesNC13),length(Data(j).APbinID));
+        AccumNC14ON{j}=nan(length(FramesNC13),length(Data(j).APbinID));
+        
+            
+        %Find the right accumulation given the life time
+        IndexHalfLife=find([Data(j).AccumulationData.halflife]==HalfLifeForPlot);
+        
+        if isempty(IndexHalfLife)
+            error(['Half life not found for set ',Data(j).SetName])
+        end
+        
+        FilterNC13=Data(j).ncFilter(:,end-1);       
+        FilterNC14=Data(j).ncFilter(:,end);  
+        
+        %Extract the accumulated amount per ALL nuclei
+        %nc13
+        for k=1:length(FramesNC13)
+            for n=1:length(Data(j).APbinID)
+                
+                %Which particles are in this NC and AP bin?
+                ParticlesToCheck=find(FilterNC13&(Data(j).APFilter(:,n)));
+                
+                %Get the particles in this frame and AP bin
+                IntegralTemp=[];
+                
+                for m=1:length(ParticlesToCheck)
+                    if sum(Data(j).AccumulationData(IndexHalfLife).CompiledParticles(ParticlesToCheck(m)).Frames==FramesNC13(k))
+                        FrameIndex=...
+                            find(Data(j).AccumulationData(IndexHalfLife).CompiledParticles(ParticlesToCheck(m)).Frames==...
+                            FramesNC13(k));
+                        IntegralTemp=...
+                            [IntegralTemp,Data(j).AccumulationData(IndexHalfLife).CompiledParticles(m).mRNAacum(FrameIndex)];
+                    end
+                end
+                
+                
+                
+                if length(IntegralTemp)>=MinParticles
+                    
+                    AccumNC13{j}(k,n)=mean(IntegralTemp)*Data(j).EllipsesOnAP(n,end-1)/Data(j).TotalEllipsesAP(n,end-1);
+                    AccumNC13ON{j}(k,n)=mean(IntegralTemp);
+                end
+                
+            end
+            
+            
+            
+        end
+        
+        
+        %nc14
+        for k=1:length(FramesNC14)
+            for n=1:length(Data(j).APbinID)
+                
+                %Which particles are in this NC and AP bin?
+                ParticlesToCheck=find(FilterNC14&(Data(j).APFilter(:,n)));
+                
+                
+                %Get the particles in this frame and AP bin
+                IntegralTemp=[];
+                for m=1:length(ParticlesToCheck)
+                    if sum(Data(j).AccumulationData(IndexHalfLife).CompiledParticles(ParticlesToCheck(m)).Frames==FramesNC14(k))
+                        FrameIndex=...
+                            find(Data(j).AccumulationData(IndexHalfLife).CompiledParticles(ParticlesToCheck(m)).Frames==...
+                            FramesNC14(k));
+                        IntegralTemp=...
+                            [IntegralTemp,Data(j).AccumulationData(IndexHalfLife).CompiledParticles(ParticlesToCheck(m)).mRNAacum(FrameIndex)];
+                    end
+                end
+                
+                if length(IntegralTemp)>=MinParticles
+                    AccumNC14{j}(k,n)=mean(IntegralTemp)*Data(j).EllipsesOnAP(n,end)/Data(j).TotalEllipsesAP(n,end);
+                    AccumNC14ON{j}(k,n)=mean(IntegralTemp);
+                end
+                
+            end
+            
+            
+            
+        end
+    end   
+          
 
     %Fraction of active nuclei vs. time
     OnRatioAPNC14{j}=Data(j).OnRatioAP(Data(j).nc14:end,:);
@@ -140,11 +246,16 @@ for j=1:length(Data)
     MeanOnRatioAPNC14Interp{j}=nan(length(TimeNC14),length(Data(j).APbinID));
     TotalVectorAPNC14Interp{j}=nan(length(TimeNC14),length(Data(j).APbinID));
     TotalVectorONAPNC14Interp{j}=nan(length(TimeNC14),length(Data(j).APbinID));
+    AccumVectorAPNC14Interp{j}=nan(length(TimeNC14),length(Data(j).APbinID));
+    AccumVectorONAPNC14Interp{j}=nan(length(TimeNC14),length(Data(j).APbinID));
     
     MeanVectorAPNC13Interp{j}=nan(length(TimeNC13),length(Data(j).APbinID));
     MeanOnRatioAPNC13Interp{j}=nan(length(TimeNC13),length(Data(j).APbinID));
     TotalVectorAPNC13Interp{j}=nan(length(TimeNC13),length(Data(j).APbinID));
     TotalVectorONAPNC13Interp{j}=nan(length(TimeNC13),length(Data(j).APbinID));
+    AccumVectorAPNC13Interp{j}=nan(length(TimeNC13),length(Data(j).APbinID));
+    AccumVectorONAPNC13Interp{j}=nan(length(TimeNC13),length(Data(j).APbinID));
+    
 
     for i=1:length(Data(j).APbinID)
         
@@ -188,7 +299,24 @@ for j=1:length(Data)
                 else
                     TotalVectorONAPNC13Interp{j}(:,i)=nan;
                 end
+                
+                if sum(~isnan(AccumNC13{j}(FilterTemp,i)))>=MinParticles
+                    AccumVectorAPNC13Interp{j}(:,i)=pchip(TimeWindow(FilterTemp),...
+                        AccumNC13{j}(FilterTemp,i)',...
+                        TimeNC13);
+                else
+                    AccumVectorAPNC13Interp{j}(:,i)=nan;
+                end
             
+                
+                if sum(~isnan(AccumNC13ON{j}(FilterTemp,i)))>=MinParticles
+                    AccumVectorONAPNC13Interp{j}(:,i)=pchip(TimeWindow(FilterTemp),...
+                        AccumNC13ON{j}(FilterTemp,i)',...
+                        TimeNC13);
+                else
+                    AccumVectorONAPNC13Interp{j}(:,i)=nan;
+                end
+                
                 
                 MeanVectorAPNC13Interp{j}(TimeNC13<min(TimeWindow(FilterTemp)),i)=nan;
                 MeanVectorAPNC13Interp{j}(TimeNC13>max(TimeWindow(FilterTemp)),i)=nan;
@@ -205,11 +333,22 @@ for j=1:length(Data)
                 TotalVectorONAPNC13Interp{j}(TimeNC13<min(TimeWindow(FilterTemp)),i)=0;
                 TotalVectorONAPNC13Interp{j}(TimeNC13>max(TimeWindow(FilterTemp)),i)=...
                     max(TotalVectorONAPNC13Interp{j}(TimeNC13<max(TimeWindow(FilterTemp)),i));
+                
+                AccumVectorAPNC13Interp{j}(TimeNC13<min(TimeWindow(FilterTemp)-ElongationTime),i)=0;
+                AccumVectorAPNC13Interp{j}(TimeNC13>max(TimeWindow(FilterTemp)),i)=...
+                    max(AccumVectorAPNC13Interp{j}(TimeNC13<max(TimeWindow(FilterTemp)),i));
+                
+                AccumVectorONAPNC13Interp{j}(TimeNC13<min(TimeWindow(FilterTemp)-ElongationTime),i)=0;
+                AccumVectorONAPNC13Interp{j}(TimeNC13>max(TimeWindow(FilterTemp)),i)=...
+                    max(AccumVectorONAPNC13Interp{j}(TimeNC13<max(TimeWindow(FilterTemp)),i));
+                
             else
                 MeanVectorAPNC13Interp{j}(:,i)=nan;
                 MeanOnRatioAPNC13Interp{j}(:,i)=nan;
                 TotalVectorAPNC13Interp{j}(:,i)=nan;
                 TotalVectorONAPNC13Interp{j}(:,i)=nan;
+                AccumVectorAPNC13Interp{j}(:,i)=nan;
+                AccumVectorONAPNC13Interp{j}(:,i)=nan;
             end
         end
             
@@ -243,6 +382,13 @@ for j=1:length(Data)
                     TotalVectorONAPNC14{j}(FilterTemp,i)',...
                     TimeNC14);
                 
+                AccumVectorAPNC14Interp{j}(:,i)=pchip(TimeWindow(FilterTemp),...
+                    AccumNC14{j}(FilterTemp,i)',TimeNC14);
+                AccumVectorONAPNC14Interp{j}(:,i)=pchip(TimeWindow(FilterTemp),...
+                    AccumNC14ON{j}(FilterTemp,i)',TimeNC14);
+                
+                
+                
             
                 MeanVectorAPNC14Interp{j}(TimeNC14<min(TimeWindow(FilterTemp)),i)=nan;
                 MeanVectorAPNC14Interp{j}(TimeNC14>max(TimeWindow(FilterTemp)),i)=nan;
@@ -259,16 +405,28 @@ for j=1:length(Data)
                 TotalVectorONAPNC14Interp{j}(TimeNC14<min(TimeWindow(FilterTemp)),i)=0;
                 TotalVectorONAPNC14Interp{j}(TimeNC14>max(TimeWindow(FilterTemp)),i)=...
                     max(TotalVectorONAPNC14Interp{j}(TimeNC14<max(TimeWindow(FilterTemp)),i));
+                
+                AccumVectorAPNC14Interp{j}(TimeNC14<min(TimeWindow(FilterTemp)+ElongationTime),i)=0;
+                AccumVectorAPNC14Interp{j}(TimeNC14>max(TimeWindow(FilterTemp)),i)=...
+                    max(AccumVectorAPNC14Interp{j}(TimeNC14<max(TimeWindow(FilterTemp)),i));
+                
+                AccumVectorONAPNC14Interp{j}(TimeNC14<min(TimeWindow(FilterTemp)+ElongationTime),i)=0;
+                AccumVectorONAPNC14Interp{j}(TimeNC14>max(TimeWindow(FilterTemp)),i)=...
+                    max(AccumVectorONAPNC14Interp{j}(TimeNC14<max(TimeWindow(FilterTemp)),i));
+
             else
                 MeanVectorAPNC14Interp{j}(:,i)=nan;
                 MeanOnRatioAPNC14Interp{j}(:,i)=nan;
                 TotalVectorAPNC14Interp{j}(:,i)=nan;
                 TotalVectorONAPNC14Interp{j}(:,i)=nan;
+                AccumVectorAPNC14Interp{j}(:,i)=nan;
+                AccumVectorONAPNC14Interp{j}(:,i)=nan;
             end
         end
     end
 end
-      
+
+
 
 MovieFigure=figure;
 
@@ -557,8 +715,6 @@ end
 
 
 %nc14:
-
-
 MaxTimeIndex=length(TimeNC14);
 
 %Average fluorescence
@@ -750,3 +906,205 @@ for i=1:MaxTimeIndex
     end
 end
 
+
+%Accumulation accounting for degradation
+
+%Plot the accumulation+degradation vs. time. This is the accumulation per ALL nuclei
+MaxValue=max(cellfun(@(x) max(max(x)),AccumVectorAPNC14Interp));
+for i=1:MaxTimeIndex
+    figure(MovieFigure)
+    clf
+    
+    
+    MeanTemp=[];
+    for j=1:length(Data)
+        if i<=size(AccumVectorAPNC14Interp{j},1)
+            MeanTemp=[MeanTemp;AccumVectorAPNC14Interp{j}(i,:)];
+        end
+    end
+    
+    if ~isempty(MeanTemp)
+        %Now calculale the mean and SD. We need to be careful with the Nans!
+        for j=1:size(MeanTemp,2)
+            if sum(~isnan(MeanTemp(:,j)))>=MinEmbryos
+                IntegralDegNC14(i,j)=mean(MeanTemp(~isnan(MeanTemp(:,j)),j));
+                SDIntegralDegNC14(i,j)=std(MeanTemp(~isnan(MeanTemp(:,j)),j));
+                SEIntegralDegNC14(i,j)=std(MeanTemp(~isnan(MeanTemp(:,j)),j))/sqrt(sum(~isnan(MeanTemp(:,j))));
+            else
+                IntegralDegNC14(i,j)=nan;
+                SDIntegralDegNC14(i,j)=nan;
+                SEIntegralDegNC14(i,j)=nan;
+            end
+        end
+
+
+       PlotHandle=errorbar(Data(1).APbinID,IntegralDegNC14(i,:),...
+            SEIntegralDegNC14(i,:),'.-k');
+        errorbar_tick(PlotHandle,0);
+        hold off
+        %title(['nc14, ',num2str(TimeNC14{MaxTimeSet}(i)-TimeNC14{MaxTimeSet}(1)),' min'])
+        ylim([0,MaxValue])
+        xlim([0.3,0.5])
+        
+        title('Integral+Degradation ALL nuclei, nc14')
+        
+        set(gca,'XTick',[0.1:0.1:0.8])
+        box on
+        pause(0.1)
+        drawnow
+        %StandardFigure(PlotHandle,gca)
+        %saveas(gcf,[DropboxFolder,'\Reports\APPlots\APMovies\APMovieMean',Label,'\nc14-',iIndex(i,3),'.tif'])
+    end
+end
+
+
+MovieFigure2=figure;
+
+%Plot the accumulation vs. time. This is the accumulation per ON nuclei
+MaxValue=max(cellfun(@(x) max(max(x)),AccumVectorONAPNC14Interp));
+for i=1:MaxTimeIndex
+    figure(MovieFigure2)
+    clf
+    
+    
+    MeanTemp=[];
+    for j=1:length(Data)
+        if i<=size(AccumVectorONAPNC14Interp{j},1)
+            MeanTemp=[MeanTemp;AccumVectorONAPNC14Interp{j}(i,:)];
+        end
+    end
+    
+    if ~isempty(MeanTemp)
+        %Now calculale the mean and SD. We need to be careful with the Nans!
+        for j=1:size(MeanTemp,2)
+            if sum(~isnan(MeanTemp(:,j)))>=MinEmbryos
+                IntegralDegONNC14(i,j)=mean(MeanTemp(~isnan(MeanTemp(:,j)),j));
+                SDIntegralDegONNC14(i,j)=std(MeanTemp(~isnan(MeanTemp(:,j)),j));
+                SEIntegralDegONNC14(i,j)=std(MeanTemp(~isnan(MeanTemp(:,j)),j))/sqrt(sum(~isnan(MeanTemp(:,j))));
+            else
+                IntegralDegONNC14(i,j)=nan;
+                SDIntegralDegONNC14(i,j)=nan;
+                SEIntegralDegONNC14(i,j)=nan;
+            end
+        end
+
+
+       PlotHandle=errorbar(Data(1).APbinID,IntegralDegONNC14(i,:),...
+            SEIntegralDegONNC14(i,:),'.-k');
+        errorbar_tick(PlotHandle,0);
+        hold off
+        %title(['nc14, ',num2str(TimeNC14{MaxTimeSet}(i)-TimeNC14{MaxTimeSet}(1)),' min'])
+        ylim([0,MaxValue])
+        xlim([0.3,0.5])
+        
+        title('Integral+Degradation ON nuclei, nc14')
+        
+        set(gca,'XTick',[0.1:0.1:0.8])
+        box on
+        pause(0.1)
+        drawnow
+        %StandardFigure(PlotHandle,gca)
+        %saveas(gcf,[DropboxFolder,'\Reports\APPlots\APMovies\APMovieMean',Label,'\nc14-',iIndex(i,3),'.tif'])
+    end
+end
+
+
+
+%Plot the accumulation+degradation vs. time. This is the accumulation per ALL nuclei
+MaxValue=max(cellfun(@(x) max(max(x)),AccumVectorAPNC13Interp));
+for i=1:MaxTimeIndex
+    figure(MovieFigure)
+    clf
+    
+    
+    MeanTemp=[];
+    for j=1:length(Data)
+        if i<=size(AccumVectorAPNC13Interp{j},1)
+            MeanTemp=[MeanTemp;AccumVectorAPNC13Interp{j}(i,:)];
+        end
+    end
+    
+    if ~isempty(MeanTemp)
+        %Now calculale the mean and SD. We need to be careful with the Nans!
+        for j=1:size(MeanTemp,2)
+            if sum(~isnan(MeanTemp(:,j)))>=MinEmbryos
+                IntegralDegNC13(i,j)=mean(MeanTemp(~isnan(MeanTemp(:,j)),j));
+                SDIntegralDegNC13(i,j)=std(MeanTemp(~isnan(MeanTemp(:,j)),j));
+                SEIntegralDegNC13(i,j)=std(MeanTemp(~isnan(MeanTemp(:,j)),j))/sqrt(sum(~isnan(MeanTemp(:,j))));
+            else
+                IntegralDegNC13(i,j)=nan;
+                SDIntegralDegNC13(i,j)=nan;
+                SEIntegralDegNC13(i,j)=nan;
+            end
+        end
+
+
+       PlotHandle=errorbar(Data(1).APbinID,IntegralDegNC13(i,:),...
+            SEIntegralDegNC13(i,:),'.-k');
+        errorbar_tick(PlotHandle,0);
+        hold off
+        %title(['NC13, ',num2str(TimeNC13{MaxTimeSet}(i)-TimeNC13{MaxTimeSet}(1)),' min'])
+        ylim([0,MaxValue])
+        xlim([0.3,0.5])
+        
+        title('Integral+Degradation ALL nuclei, NC13')
+        
+        set(gca,'XTick',[0.1:0.1:0.8])
+        box on
+        pause(0.1)
+        drawnow
+        %StandardFigure(PlotHandle,gca)
+        %saveas(gcf,[DropboxFolder,'\Reports\APPlots\APMovies\APMovieMean',Label,'\NC13-',iIndex(i,3),'.tif'])
+    end
+end
+
+
+MovieFigure2=figure;
+
+%Plot the accumulation vs. time. This is the accumulation per ON nuclei
+MaxValue=max(cellfun(@(x) max(max(x)),AccumVectorONAPNC13Interp));
+for i=1:MaxTimeIndex
+    figure(MovieFigure2)
+    clf
+    
+    
+    MeanTemp=[];
+    for j=1:length(Data)
+        if i<=size(AccumVectorONAPNC13Interp{j},1)
+            MeanTemp=[MeanTemp;AccumVectorONAPNC13Interp{j}(i,:)];
+        end
+    end
+    
+    if ~isempty(MeanTemp)
+        %Now calculale the mean and SD. We need to be careful with the Nans!
+        for j=1:size(MeanTemp,2)
+            if sum(~isnan(MeanTemp(:,j)))>=MinEmbryos
+                IntegralDegONNC13(i,j)=mean(MeanTemp(~isnan(MeanTemp(:,j)),j));
+                SDIntegralDegONNC13(i,j)=std(MeanTemp(~isnan(MeanTemp(:,j)),j));
+                SEIntegralDegONNC13(i,j)=std(MeanTemp(~isnan(MeanTemp(:,j)),j))/sqrt(sum(~isnan(MeanTemp(:,j))));
+            else
+                IntegralDegONNC13(i,j)=nan;
+                SDIntegralDegONNC13(i,j)=nan;
+                SEIntegralDegONNC13(i,j)=nan;
+            end
+        end
+
+
+       PlotHandle=errorbar(Data(1).APbinID,IntegralDegONNC13(i,:),...
+            SEIntegralDegONNC13(i,:),'.-k');
+        errorbar_tick(PlotHandle,0);
+        hold off
+        %title(['NC13, ',num2str(TimeNC13{MaxTimeSet}(i)-TimeNC13{MaxTimeSet}(1)),' min'])
+        ylim([0,MaxValue])
+        xlim([0.3,0.5])
+        
+        title('Integral+Degradation ON nuclei, NC13')
+        
+        set(gca,'XTick',[0.1:0.1:0.8])
+        box on
+        pause(0.1)
+        drawnow
+        %StandardFigure(PlotHandle,gca)
+        %saveas(gcf,[DropboxFolder,'\Reports\APPlots\APMovies\APMovieMean',Label,'\NC13-',iIndex(i,3),'.tif'])
+    end
+end

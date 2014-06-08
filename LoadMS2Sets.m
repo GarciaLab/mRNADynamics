@@ -11,18 +11,29 @@ function Data=LoadMS2Sets(DataType)
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
     DetermineLocalFolders;
 
+<<<<<<< HEAD
 %MS2Pausing folder:
 if strcmp(DataType,'hbBAC')|strcmp(DataType,'Eve2')|strcmp(DataType,'SnaBAC')
     [SourcePath,FISHPath,DropboxFolderPausing,MS2CodePath,SchnitzcellsFolder]=...
+=======
+if strcmp(DataType,'hbBAC')|strcmp(DataType,'Eve2')|strcmp(DataType,'P2PPausing')
+    [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+>>>>>>> 58d6c7c634e45efec93c8b263183bbdab8e99c17
         DetermineLocalFolders('2014-03-15-HbBACA');
     PausingXLSName='DataStatusPausing.xlsx';
+elseif strcmp(DataType,'zld')
+    [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+        DetermineLocalFolders('2013-09-09-zld-X1');
+    PausingXLSName='DataStatus.xlsx';
+elseif strcmp(DataType,'MCP-GFP 5'' Data')
+    error('Take care of this')
 else
     error('Add this data type to the code')
 end
 
 
 
-[StatusNum,StatusTxt]=xlsread([DropboxFolderPausing,filesep,PausingXLSName],DataType);
+[StatusNum,StatusTxt]=xlsread([DropboxFolder,filesep,PausingXLSName],DataType);
 
 CompileRow=find(strcmp(StatusTxt(:,1),'AnalyzeLiveData Compile Particles'));
 CompiledSets=find(strcmp(StatusTxt(CompileRow,:),'READY')|strcmp(StatusTxt(CompileRow,:),'ApproveAll'));
@@ -41,10 +52,10 @@ for i=1:length(CompiledSets)
     %structures. This is because we might have data sets that have been
     %compiled using different versions of CompileParticles.m
     try
-        Data(i)=load([DropboxFolderPausing,filesep,Prefix,filesep,'CompiledParticles.mat']);
+        Data(i)=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
     catch
         %If this fails figure out what's the missing field
-        DataTemp=load([DropboxFolderPausing,filesep,Prefix,filesep,'CompiledParticles.mat']);
+        DataTemp=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
         
         FieldNamesData=fieldnames(Data);
         FieldNamesDataTemp=fieldnames(DataTemp);
@@ -64,28 +75,47 @@ for i=1:length(CompiledSets)
         end
     end
     
+<<<<<<< HEAD
     if exist([DropboxFolderPausing,filesep,Prefix,filesep,'APDivision.mat'])
         APDivisions(i)=load([DropboxFolderPausing,filesep,Prefix,filesep,'APDivision.mat']);
     end
+=======
+    if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'])
+        APDivisions(i)=load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat']);
+    else
+        warning('APDivisions.mat not found. This is a stupid way to check. Have the code check if this experiment is DV or AP instead')
+    end
+        
+>>>>>>> 58d6c7c634e45efec93c8b263183bbdab8e99c17
         
     %Fit results assuming the same slopes
-    %MeanFits(i)=load([DropboxFolderPausing,filesep,Prefix,filesep,'MeanFits.mat']);
-    Schnitzcells(i)=load([DropboxFolderPausing,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat']);
+    %MeanFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat']);
+    Schnitzcells(i)=load([DropboxFolder,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat']);
     SetNames{i}=SetName;
     
-    if exist([DropboxFolderPausing,filesep,Prefix,filesep,'FitIntegralResults.mat'])
-        IntegralFits(i)=load([DropboxFolderPausing,filesep,Prefix,filesep,'FitIntegralResults.mat']);
+    %Fit to the integrals
+    if exist([DropboxFolder,filesep,Prefix,filesep,'FitIntegralResults.mat'])
+        IntegralFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'FitIntegralResults.mat']);
     end
     
-    if exist([DropboxFolderPausing,filesep,Prefix,filesep,'IndividualFits.mat'])
-        IndividualFits(i)=load([DropboxFolderPausing,filesep,Prefix,filesep,'IndividualFits.mat']);
+   
+    %Fits to individual traces
+    if exist([DropboxFolder,filesep,Prefix,filesep,'IndividualFits.mat'])
+        IndividualFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'IndividualFits.mat']);
     end
+
+    %Integrated amount accounting from degradation. This is generated using
+    %Jacques' code
+    if exist([DropboxFolder,filesep,Prefix,filesep,'AccumulationData.mat'])
+        AccumulationData(i)=load([DropboxFolder,filesep,Prefix,filesep,'AccumulationData.mat']);
+    end
+    
     
     %Load Ellipses
-    Ellipses(i)=load([DropboxFolderPausing,filesep,Prefix,filesep,'Ellipses.mat']);
+    Ellipses(i)=load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat']);
     %Count ellipses
-    if exist([DropboxFolderPausing,filesep,Prefix,filesep,'CountEllipses.mat'])
-        CountEllipses(i)=load([DropboxFolderPausing,filesep,Prefix,filesep,'CountEllipses.mat']);
+    if exist([DropboxFolder,filesep,Prefix,filesep,'CountEllipses.mat'])
+        CountEllipses(i)=load([DropboxFolder,filesep,Prefix,filesep,'CountEllipses.mat']);
     else
         %This is not the smarter way to do this. It relies on having at the
         %end a set that has been analyzed
@@ -103,8 +133,14 @@ end
 for i=1:length(Data)
     Data(i).SetName=SetNames{i};
     
+<<<<<<< HEAD
     Data(i).APDivision=APDivisions(i).APDivision;
     
+=======
+    if exist('APDivisions')
+        Data(i).APDivision=APDivisions(i).APDivision;
+    end
+>>>>>>> 58d6c7c634e45efec93c8b263183bbdab8e99c17
     %Data(i).MeanFits=MeanFits(i).FitResults;
     
     if exist('IntegralFits')
@@ -116,6 +152,12 @@ for i=1:length(Data)
     if exist('IndividualFits')
         if i<=length(IndividualFits)
             Data(i).IndividualFits=IndividualFits(i).FitResultsIndiv;
+        end
+    end
+    
+    if exist('AccumulationData')
+        if i<=length(AccumulationData)
+            Data(i).AccumulationData=AccumulationData(i).AcumData;
         end
     end
     
