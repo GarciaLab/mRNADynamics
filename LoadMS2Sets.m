@@ -11,14 +11,9 @@ function Data=LoadMS2Sets(DataType)
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
     DetermineLocalFolders;
 
-<<<<<<< HEAD
 %MS2Pausing folder:
-if strcmp(DataType,'hbBAC')|strcmp(DataType,'Eve2')|strcmp(DataType,'SnaBAC')
-    [SourcePath,FISHPath,DropboxFolderPausing,MS2CodePath,SchnitzcellsFolder]=...
-=======
-if strcmp(DataType,'hbBAC')|strcmp(DataType,'Eve2')|strcmp(DataType,'P2PPausing')
+if strcmp(DataType,'hbBAC')|strcmp(DataType,'Eve2')|strcmp(DataType,'SnaBAC')|strcmp(DataType,'P2PPausing')
     [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
->>>>>>> 58d6c7c634e45efec93c8b263183bbdab8e99c17
         DetermineLocalFolders('2014-03-15-HbBACA');
     PausingXLSName='DataStatusPausing.xlsx';
 elseif strcmp(DataType,'zld')
@@ -75,19 +70,13 @@ for i=1:length(CompiledSets)
         end
     end
     
-<<<<<<< HEAD
-    if exist([DropboxFolderPausing,filesep,Prefix,filesep,'APDivision.mat'])
-        APDivisions(i)=load([DropboxFolderPausing,filesep,Prefix,filesep,'APDivision.mat']);
-    end
-=======
     if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'])
         APDivisions(i)=load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat']);
     else
         warning('APDivisions.mat not found. This is a stupid way to check. Have the code check if this experiment is DV or AP instead')
     end
         
->>>>>>> 58d6c7c634e45efec93c8b263183bbdab8e99c17
-        
+       
     %Fit results assuming the same slopes
     %MeanFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat']);
     Schnitzcells(i)=load([DropboxFolder,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat']);
@@ -133,15 +122,10 @@ end
 for i=1:length(Data)
     Data(i).SetName=SetNames{i};
     
-<<<<<<< HEAD
-    Data(i).APDivision=APDivisions(i).APDivision;
-    
-=======
     if exist('APDivisions')
         Data(i).APDivision=APDivisions(i).APDivision;
     end
->>>>>>> 58d6c7c634e45efec93c8b263183bbdab8e99c17
-    %Data(i).MeanFits=MeanFits(i).FitResults;
+    
     
     if exist('IntegralFits')
         if i<=length(IntegralFits)
