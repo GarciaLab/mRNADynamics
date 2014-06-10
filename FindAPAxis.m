@@ -50,14 +50,32 @@ EmbryoName=Prefix(Dashes(3)+1:end);
 
 D=dir([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\*.tif']);
    
+%Determine wether we're dealing with a left-right embryo or a top-bottom
+%one
+LeftRight=1;
+
+if ~isempty(strfind(lower(D(1).name),'bottom'))|~isempty(strfind(lower(D(1).name),'top'))
+    LeftRight=0;
+    error('The part of the code to do the automatic stitching on top/bottom embryos needs to be implemented')
+end
+
+
 
 %Find the right and left files that do not correspond to the surface image
-RightFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'right'))&...
-    cellfun('isempty',strfind(lower({D.name}),'surf')));
-LeftFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'left'))&...
-    cellfun('isempty',strfind(lower({D.name}),'surf')));
-
-
+if LeftRight
+    RightFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'right'))&...
+        cellfun('isempty',strfind(lower({D.name}),'surf')));
+    LeftFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'left'))&...
+        cellfun('isempty',strfind(lower({D.name}),'surf')));
+else
+    LeftFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'top'))&...
+        cellfun('isempty',strfind(lower({D.name}),'surf')));
+    RightFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'bottom'))&...
+        cellfun('isempty',strfind(lower({D.name}),'surf')));
+end
+    
+    
+    
 %See if there's a center image. This is for the case where we needed three
 %images to fit the whole embryo.
 CenterFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'center'))&...
@@ -117,7 +135,7 @@ end
 if isempty(CenterFileIndex)
     [APImage,xShift,yShift]=EmbryoStitchNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(LeftFileIndex).name],...
        [SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(RightFileIndex).name],...
-       [SourcePath,filesep,Date,filesep,FFFile]);
+       [SourcePath,filesep,Date,filesep,FFFile],[],[],~LeftRight);
 else
 %     [APImage1,xShift1,yShift1]=EmbryoStitch([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(LeftFileIndex).name],...
 %        [SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(CenterFileIndex).name],...

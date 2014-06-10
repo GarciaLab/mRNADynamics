@@ -1,4 +1,4 @@
-function CalculateAccumulationmRNA(Prefix,halflife)
+function CalculateAccumulationmRNA(Prefix,Halflife)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% Initial Setup to get folder names etc %%%%%%%%%%%%%%%%%%%%%
 
@@ -84,73 +84,73 @@ ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
 
 D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*His*.tif']);
 
-
-%%%%%%%%%%% Part 1: Take max nuclei and save in single structure in Data
-%%%%%%%%%%% folder
-
-MaxNuclei=struct;
-
-TotalTime=length(D);
-
-for i=1:TotalTime
-
-    if i<10
-        strii=['00', num2str(i)];
-    elseif i<100
-        strii=['0', num2str(i)];
-    else
-        strii=[num2str(i)];
-    end
-
-MaxNuclei.(['Time', num2str(i)])= imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(i).name]);
-
-end
-
-save([FISHPath,filesep,'Data',filesep,Prefix,filesep,'MaxNuclei.mat'],'MaxNuclei');
-
-%%%%%%%%% Part 2: Perform diff gaussian filtering to segment nuclei 
-
-% Figure out pixel size  
-
-    HyphenPositionR = find(Prefix == '-');
-    DateFolderS = Prefix(1 : HyphenPositionR(3)-1);
-    LineFolderS = Prefix(HyphenPositionR(3)+1 : end);
-    Folder = [SourcePath, filesep, DateFolderS, filesep, LineFolderS];
-
-
-DTIF=dir([Folder,filesep,'*.tif']);
-DLSM=dir([Folder,filesep,'*.lsm']);
-
-if (length(DTIF)>0)&(length(DLSM)==0)
-    
-        display('2-photon @ Princeton data mode')
-        DRaw=DTIF;
-        FileMode='TIF';
-        
-        info = imfinfo([Folder,filesep,DRaw(1).name]);
-        
-%PixelWidth = info(1).XResolution*2.54e-2;
-
-PixelWidth=200e-9 % Hack !
-%%%%%% not reading in directly from header, Xresolution field seems to give same value for all magnifications?
-        
-        
-elseif (length(DTIF)==0)&(length(DLSM)>0)
-    
-        display('LSM mode')
-        DRaw=DLSM;
-        FileMode='LSM';
-        
-load([Folder,filesep,DRaw(1).name(1:end-4)]);
-
-PixelWidth=Datas.LSM_info.VoxelSizeX;
-
-    
-else
-    PixelWidth=200e-9; % Hack !
-    %error('File type not recognized')
-end
-
+% 
+% %%%%%%%%%%% Part 1: Take max nuclei and save in single structure in Data
+% %%%%%%%%%%% folder
+% 
+% MaxNuclei=struct;
+% 
+% TotalTime=length(D);
+% 
+% for i=1:TotalTime
+% 
+%     if i<10
+%         strii=['00', num2str(i)];
+%     elseif i<100
+%         strii=['0', num2str(i)];
+%     else
+%         strii=[num2str(i)];
+%     end
+% 
+% MaxNuclei.(['Time', num2str(i)])= imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(i).name]);
+% 
+% end
+% 
+% save([FISHPath,filesep,'Data',filesep,Prefix,filesep,'MaxNuclei.mat'],'MaxNuclei');
+% 
+% %%%%%%%%% Part 2: Perform diff gaussian filtering to segment nuclei 
+% 
+% % Figure out pixel size  
+% 
+%     HyphenPositionR = find(Prefix == '-');
+%     DateFolderS = Prefix(1 : HyphenPositionR(3)-1);
+%     LineFolderS = Prefix(HyphenPositionR(3)+1 : end);
+%     Folder = [SourcePath, filesep, DateFolderS, filesep, LineFolderS];
+% 
+% 
+% DTIF=dir([Folder,filesep,'*.tif']);
+% DLSM=dir([Folder,filesep,'*.lsm']);
+% 
+% if (length(DTIF)>0)&(length(DLSM)==0)
+%     
+%         display('2-photon @ Princeton data mode')
+%         DRaw=DTIF;
+%         FileMode='TIF';
+%         
+%         info = imfinfo([Folder,filesep,DRaw(1).name]);
+%         
+% %PixelWidth = info(1).XResolution*2.54e-2;
+% 
+% PixelWidth=200e-9 % Hack !
+% %%%%%% not reading in directly from header, Xresolution field seems to give same value for all magnifications?
+%         
+%         
+% elseif (length(DTIF)==0)&(length(DLSM)>0)
+%     
+%         display('LSM mode')
+%         DRaw=DLSM;
+%         FileMode='LSM';
+%         
+% load([Folder,filesep,DRaw(1).name(1:end-4)]);
+% 
+% PixelWidth=Datas.LSM_info.VoxelSizeX;
+% 
+%     
+% else
+%     PixelWidth=200e-9; % Hack !
+%     %error('File type not recognized')
+% end
+% 
 %%%%%%%%%%%%%%%%%%% Make structure with intensity values
  
     DataEve=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
@@ -184,40 +184,45 @@ jj=1;
 
     end
 %%%%%%%%%%%%%
-
-load([FISHPath,filesep,'Data',filesep,Prefix,filesep,'LabNucDilate.mat']);
-load([FISHPath,filesep,'Data',filesep,Prefix,filesep,'LabelNucsCore.mat']);
-
-%%%%%%% First connect the HG particles to JB nuclei %%%%%%
-
-NucSOFDots = [DataEve(1).CompiledParticles.Nucleus]'; % The nuclei of the different particles
-
-for i=1:length(NucSOFDots)
-
-    frames = DataEve(1).schnitzcells(NucSOFDots(i)).frames;
-    cenx = DataEve(1).schnitzcells(NucSOFDots(i)).cenx;
-    ceny = DataEve(1).schnitzcells(NucSOFDots(i)).ceny;
-
-    HGDotstoJBNucs(i).JBNucs=[];
-    HGDotstoJBNucs(i).HGNuc=NucSOFDots(i);
-
-    for jj=1:length(frames)
-        
-        JacquesCentroids = cat(1,LabelNucsCore.(['Time',num2str(frames(jj))]).RegionProps.Centroid);
-        
-        [neighborIds neighborDistances] = kNearestNeighbors(JacquesCentroids, [cenx(jj), ceny(jj)], 1);
-        
-        JacquesLinearIndex1=LabelNucsCore.(['Time',num2str(frames(jj))]).RegionProps(neighborIds).PixelIdxList;
-        
-        JacquesIndex=unique(LabelNucsCore.(['Time',num2str(frames(jj))]).ImageZ(JacquesLinearIndex1));
-        
-        HGDotstoJBNucs(i).JBNucs=[HGDotstoJBNucs(i).JBNucs,JacquesIndex];
-        
-    end
-    
-end
+% 
+% load([FISHPath,filesep,'Data',filesep,Prefix,filesep,'LabNucDilate.mat']);
+% load([FISHPath,filesep,'Data',filesep,Prefix,filesep,'LabelNucsCore.mat']);
+% 
+% %%%%%%% First connect the HG particles to JB nuclei %%%%%%
+% 
+ NucSOFDots = [DataEve(1).CompiledParticles.Nucleus]'; % The nuclei of the different particles
+% 
+% for i=1:length(NucSOFDots)
+% 
+%     frames = DataEve(1).schnitzcells(NucSOFDots(i)).frames;
+%     cenx = DataEve(1).schnitzcells(NucSOFDots(i)).cenx;
+%     ceny = DataEve(1).schnitzcells(NucSOFDots(i)).ceny;
+% 
+%     HGDotstoJBNucs(i).JBNucs=[];
+%     HGDotstoJBNucs(i).HGNuc=NucSOFDots(i);
+% 
+%     for jj=1:length(frames)
+%         
+%         JacquesCentroids = cat(1,LabelNucsCore.(['Time',num2str(frames(jj))]).RegionProps.Centroid);
+%         
+%         [neighborIds neighborDistances] = kNearestNeighbors(JacquesCentroids, [cenx(jj), ceny(jj)], 1);
+%         
+%         JacquesLinearIndex1=LabelNucsCore.(['Time',num2str(frames(jj))]).RegionProps(neighborIds).PixelIdxList;
+%         
+%         JacquesIndex=unique(LabelNucsCore.(['Time',num2str(frames(jj))]).ImageZ(JacquesLinearIndex1));
+%         
+%         HGDotstoJBNucs(i).JBNucs=[HGDotstoJBNucs(i).JBNucs,JacquesIndex];
+%         
+%     end
+%     
+% end
 
 %%%%%%% Calculate the amount of Cytoplasmic mRNA present
+
+
+save_to_base(1)
+
+keyboard
 
  ElongationTime=6.443/1.54;
  
@@ -228,12 +233,23 @@ end
  BlkkUB=zeros(length(NucSOFDots),length(Time)); % Matrix of length number of particles by number time points where the accumulated amount is calulated
  BlkkLB=zeros(length(NucSOFDots),length(Time)); % Matrix of length number of particles by number time points where the accumulated amount is calulated
  
- options = odeset('NonNegative',1);
+options = odeset('NonNegative',1,'RelTol',1e-5,'AbsTol',1e-4,'MaxStep',2);
  
+ NumberHalflives=length(Halflife);
+ 
+ AcumData=struct;
+ 
+ increment=0.01;
+ 
+ for Nh=1:NumberHalflives;
+ 
+     halflife=Halflife(Nh);
  
  for NBlk=1:length(NucSOFDots);
      
-      [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Blk(NBlk,:),Time),Time,0,options);
+      % Try finer interval
+      [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Blk(NBlk,:),Time),[min(Time):increment:max(Time)],0,options);
+      YOUT = interp1(TOUT,YOUT,Time,'pchip');
       Blkk(NBlk,:)=YOUT';
       
       %%%%%%%%%%%%%% Lower bound for error
@@ -243,19 +259,44 @@ end
       Int(II)=0;
       
       
-      [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Int,Time),Time,0,options);
+      [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Int,Time),[min(Time):increment:max(Time)],0,options);
+      YOUT = interp1(TOUT,YOUT,Time,'pchip');
       BlkkLB(NBlk,:)=YOUT';
       
       %%%%%%%%%%%%%% Upper bound for error
       Int=Blk(NBlk,:);
       II=find(Int>0);
       Int(II)=Int(II)+DataEve.CompiledParticles(NBlk).FluoError;
-      
-      [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Int,Time),Time,0,options);
+    
+      [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Int,Time),[min(Time):increment:max(Time)],0,options);
+      YOUT = interp1(TOUT,YOUT,Time,'pchip');
       BlkkUB(NBlk,:)=YOUT';
       
+  end
+ 
+ 
+  AcumData(Nh).datasetname=Prefix;
+  AcumData(Nh).halflife=halflife;
+ 
+  for kk=1:length(NucSOFDots)
+      
+      mRNAacum = Blkk(kk,:);
+      mRNAacumLB = BlkkLB(kk,:);
+      mRNAacumUB = BlkkUB(kk,:);
+      
+      Frames = find(mRNAacum>0);
+      
+  AcumData(Nh).CompiledParticles(kk).mRNAacum=mRNAacum(Frames);
+  AcumData(Nh).CompiledParticles(kk).Frames=Frames;
+  AcumData(Nh).CompiledParticles(kk).mRNAacumLB=mRNAacumLB(Frames);  
+  AcumData(Nh).CompiledParticles(kk).mRNAacumUB=mRNAacumUB(Frames);
+
+  
+  end
  end
 
- save([DropboxFolder,filesep,Prefix,filesep,'AccumulationData-',num2str(halflife),'min.mat'],'Blk','Blkk','BlkkUB','BlkkLB','HGDotstoJBNucs');
+% save_to_base(1)
+ 
+ save([DropboxFolder,filesep,Prefix,filesep,'AccumulationData'],'AcumData');
 
 
