@@ -82,7 +82,7 @@ else
 end
 ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
 
-if length(isnan(ncs))==length(ncs)
+if length(find(isnan(ncs)))==length(ncs)
     error('Have the ncs been defined in MovieDatabase.XLSX?')
 end
 
