@@ -161,6 +161,7 @@ if exist([OutputFolder,filesep,'Particles.mat'])
             Particles=NewParticles;
         else
             Particles=[];
+            Retracking=0;
         end
     else
         Retracking=0;

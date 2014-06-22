@@ -148,9 +148,10 @@ PixelWidth=Datas.LSM_info.VoxelSizeX
 
     
 else
-    error('File type not recognized')
+    PixelWidth=200e-9 % Hack !
+    %error('File type not recognized')
 end
-
+% 
 % %%%%%%%%%%%%%%%%%% Use nuclei size and cc times to perform first pass
 % %%%%%%%%%%%%%%%%%% filtering segmentation and rough tracking
 % 
@@ -174,8 +175,8 @@ end
 % %%%%%%%%%%%%%%%%%%%%%%%%%% Dilate Nuclei
 % 
 % DilateNucleiLive([FISHPath,filesep,'Data',filesep,Prefix,filesep])
-% 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%% Make structure with intensity values
  
@@ -248,20 +249,22 @@ end
 %%%%%%% more about this)
 
 
- halflife=5;
+ halflife=10;
  ElongationTime =4;
  
  Time=DataEve.ElapsedTime;
  
  Blkk=[];
- options = odeset('NonNegative',1);
- for NBlk=1:length(NucSOFDots);
-      [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Blk(NBlk,:),Time),Time,0,options);% Still need to apply shift
-      Blkk=[Blkk;YOUT'];
- end
+%  options = odeset('NonNegative',1);
+%  for NBlk=1:length(NucSOFDots);
+%       [TOUT,YOUT] = ode45(@(t,y)NumericIntegrationmRNA(t,y,halflife,ElongationTime,Blk(NBlk,:),Time),Time,0,options);% Still need to apply shift
+%       Blkk=[Blkk;YOUT'];
+%  end
+% 
+% 
+% halflife=10;
 
-
-halflife=10;
+Blkk=cumtrapz(Time,Blk,2);
 
 %%%%%%%%%%%%%%%%%%%%%%% Make movie %%%%%%%%%%%%%%%%%
 
@@ -269,13 +272,17 @@ maxx=max(Blkk(:));
 
 N=10000; % Number of discrete steps
 
-  writerObj = VideoWriter([DropboxFolder,filesep,Prefix,filesep,Prefix,'-AccumulationMovie.avi']);
+  writerObj = VideoWriter(['AccumulationMovieInfHalflife.avi']);%,'Uncompressed AVI');
         writerObj.FrameRate = 7;
         open(writerObj);
+        
+DisplayBAll=struct;
+DisplayBOn=struct;
         
 for TT=1:TotalTime;
      
      DisplayB=zeros(size(LabNucDilate.Time1.Image));
+     DisplayBOnT=zeros(size(LabNucDilate.Time1.Image));
  
  for i=1:length(NucSOFDots)
      
@@ -284,6 +291,8 @@ for TT=1:TotalTime;
      try
         
           DisplayB(Ind)=Blkk(i,TT);
+          DisplayBOnT(Ind)=Blk(i,TT);
+          
         
      catch
      end
@@ -293,6 +302,9 @@ for TT=1:TotalTime;
 DisplayBZ=round(DisplayB/maxx*N);
 
 DisplayBZ(1,1)=N;
+
+DisplayBAll.(['Time', num2str(TT)]) = DisplayBZ+1;
+DisplayBOn.(['Time', num2str(TT)]) = DisplayBOnT;
 
 imshow(label2rgbBackdropLive(DisplayBZ+1,'jet',[0,0,0],imadjust(im2double(MaxNuclei.(['Time', num2str(TT)])))));
 
@@ -307,7 +319,9 @@ end
 
     close(writerObj);
 
+save([FISHPath,filesep,'Data',filesep,Prefix,filesep,'DisplayBAll.mat'],'DisplayBAll','DisplayBOn');    
+   % 
 save([DropboxFolder,filesep,Prefix,filesep,'AccumulationData.mat'],'Blk','Blkk','HGDotstoJBNucs');
 
-    save_to_base(1)
+%    save_to_base(1)
 

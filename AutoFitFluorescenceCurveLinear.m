@@ -1,90 +1,110 @@
-function [TransitionTimes,Rates] = AutoFitFluorescenceCurveLinear(Time,Fluo,FluoErr,GeneLength,ElongationRate)
+function [TransitionTimes,Rates] = AutoFitFluorescenceCurveLinear(Time,Fluo,FluoError,GeneLength,ElongationRate,MaxAllowedRate)
+% AutoFitFluorescenceCurveLinear: Fit a set of underlying rates of
+% initiation to given fluorescence data using the multi-rate fitting
+% algorithm.
+% Optimality is determined by minimizing the adjusted Akaike information
+% criteria in a sliding window
+%
+% Time : Time of input data
+% Fluo : Fluorescence of input data
+% FluoError : Uncertainty of fluorescence (a scalar, for now)
+% GeneLength : Length of the gene in bp
+% ElongationRate : Rate of elongation in bp/min
+% MaxAllowedRate : Maximum rate to use in fitting (CURRENTLY UNIMPLEMENTED)
 
+%%% DEFAULT INPUTS
 if nargin<4
     GeneLength=6.443;
 end
 if nargin<5
     ElongationRate=1.54;
 end
+if nargin<6
+    MaxAllowedRate=-1;
+end
 
 % Parameters
-TimeRes = 0.5;
-Window = 8;
-FluoErr=double(FluoErr);
-Delay=GeneLength/ElongationRate;
-Memory=floor(Delay/TimeRes);
+TimeRes = 0.5; % grid for rate changes
+Window = 9; % number of timesteps to look ahead while fitting current rate
+Delay=GeneLength/ElongationRate; % Elongation time (in minutes, not indices)
+Memory=floor(Delay/TimeRes); % Elongation time (in indices, rounded down)
 
-% Interpolate time to nice values
+FluoError=double(FluoError); % FluoError stored as single, needs to be double
+% Interpolate data to grid
 TimeInterp=Time(1):TimeRes:Time(end);
 Fluo=interp1(Time,Fluo,TimeInterp);
 
-TransitionIdxs=1:length(Fluo);
-Rates=zeros(size(TransitionIdxs));
+% Rates : list of all fitted rates so far
+Rates=zeros(size(TimeInterp));
 
 for i = 1:length(Fluo)-1
-    i
-    % Decide which of the values in Transitions to vary
+    % Window of rates to vary
     MinFitIdx=i;
-    MaxFitIdx=min(i+Window,length(TransitionIdxs));
+    MaxFitIdx=min(i+Window-1,length(TimeInterp));
     N=MaxFitIdx-MinFitIdx+1;
-    
-    % Index at start of window (or index 1 if we are near beginning of dataset)
-    MinDataIdx=i;
-    MaxDataIdx=min(i+Window,length(TransitionIdxs));
 
-    % Decide which time values to evaluate for GOF
-    FluoIn=Fluo(MinDataIdx:MaxDataIdx);
+    % Fit Fluo within window
+    FluoIn=Fluo(MinFitIdx:MaxFitIdx);
     
-    % Previous values
-    PreIdx=max(1,i-Memory+1);
+    % Account for previous rates within memory time
+    PreIdx=max(1,i-Memory);
+    % Convert rates to X
     XPrevious=Rates(PreIdx:i-1)*TimeRes;
     
-    % Initialize best
+    % Initialize best tracking
     BestGOF = -1;
     BestComb = [];
     BestRates = [];
 
-    for NCombinations = 0:N-2
-        Combs = combnk(1:N, NCombinations);
-        % Include the max term so that 0 combination works
+    % To use AICc, can have at most floor((N-2)/2) free rates
+    for NFree = 0:floor((N-2)/2)
+        Combs = combnk(1:N, NFree);
+        % The max term in the next line is necessary for NFree=0
         for CombIdx = 1:max(1,size(Combs,1))
-            if NCombinations==0
+            %%% Do the fit with these rates free
+            if NFree==0
                 FitIdxs=[];
-                [XOut,FOut,Chi2]=lsqlinAutoFitFluorescenceCurve(FluoIn,FitIdxs,XPrevious,Memory,FluoErr);
+                [XOut,FOut,Chi2]=lsqlinAutoFitFluorescenceCurve(FluoIn,FitIdxs,XPrevious,Delay,TimeRes,FluoError);
             else
                 FitIdxs=Combs(CombIdx,:);
-                T=FitIdxs;
-                [XOut,FOut,Chi2]=lsqlinAutoFitFluorescenceCurve(FluoIn,T,XPrevious,Memory,FluoErr);
+                [XOut,FOut,Chi2]=lsqlinAutoFitFluorescenceCurve(FluoIn,FitIdxs,XPrevious,Delay,TimeRes,FluoError);
             end
+            % Convert output X to rates
             FitRates=XOut/TimeRes;
 
-            % Evaluate chi2
+            % Sub fit rates into all rates
             TempRates=Rates;
             TempRates(MinFitIdx:MaxFitIdx)=FitRates;
 
-            AIC = Chi2+2*NCombinations;
-%             GOF = AIC;
-%             GOF = AIC + 6*NCombinations;
-            GOF = AIC + 2*NCombinations*(NCombinations+1)/(N-NCombinations-1);
-%             GOF = Chi2/(N-NCombinations);
+            %%% Calculate GOF
+            % Number of parameters = 2*NCombinations (1 for index, 1 for
+            % rate)
+            k = 2*NFree;
+            % Akaike information criterion
+            AIC = Chi2+2*k;
+            % Corrected AIC for finite sample size
+            AICc = AIC + 2*k*(k+1)/(N-k-1);
+            GOF = AICc;
             if GOF < BestGOF || BestGOF == -1
-%                 chi2
-%                 BestRates=SubIntoRates(Rates,FitIdxs,xFit,InitialIdx,InitialRate);
                 BestGOF=GOF;
                 BestRates=TempRates;
-                figure(5)
-                [PlotTime,PlotFluo]=IndividualTrace(TimeInterp(1:MaxFitIdx),2*BestRates(1:MaxFitIdx),Delay,80);
-                plot(PlotTime,PlotFluo);
+                % Plot fit in real time
+%                 figure(5)
+%                 clf;
+%                 hold on;
+%                 [PlotTime,PlotFluo]=IndividualTrace(TimeInterp(1:MaxFitIdx)-0.5,BestRates(1:MaxFitIdx),Delay,TimeInterp(MaxFitIdx));
+%                 plot(PlotTime,PlotFluo,'b');
+%                 plot(TimeInterp(MinFitIdx:MaxFitIdx),FOut,'r')
+%                 plot(TimeInterp(1:MaxFitIdx),Fluo(1:MaxFitIdx),'g')
             end
         end
     end
+    % Update Rates from BestRates
     Rates=BestRates;
 end
 
-% Make some adjustments due to assumptions that simplified calculations
-
-% Subtract TimeRes from TransitionTimes because we assumed Rate(i) had its
-% first finite value at Fluo(i), should be Fluo(i+1)
+% To simplify calculations, we had Rate(i) have its first finite value at
+% Fluo(i). Should be Fluo(i+1), so subtract TimeRes from Time
 TransitionTimes=TimeInterp-TimeRes;
 
 end

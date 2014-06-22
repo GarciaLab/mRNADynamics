@@ -1,38 +1,39 @@
 function [ImageOutput,xo1,yo1]=EmbryoStitchNoMargin(leftfilename,rightfilename,FFfilename,xo1,yo1)
 
-    %HG: Modified EmbryoStitch in order to get rid of the issues at the
-    %margins.
-    
+%HG: Modified EmbryoStitch in order to get rid of the issues at the
+%margins.
+
+
     
 %Parameters:
 Margin=10;      %Pixels to get rid of at the left and margins
     
 
-   % Read in flat field, filter, convert from uint16 to double
-   FF=imread(FFfilename);
-   FF=imfilter(double(FF), fspecial('disk', 30), 'replicate', 'same');
-   FF=FF/mean(FF(:));
-   FF=(FF-1)*1+1;
-   
-   
-   %See if we have a histone channel. It assumes that it's the second one
-   %if so.
-   ImInfo=imfinfo(leftfilename);
-   
-   if length(ImInfo)==2
-       % Read in left and right images
-       left=imread(leftfilename,2);
-       right=imread(rightfilename,2);
-   else
-       % Read in left and right images
-       left=imread(leftfilename);
-       right=imread(rightfilename);
-   end
-   
-   % x and y limits
-   x_min=200; x_max=450; %y_min=-40; y_max=40;
-   y_min=-100; y_max=100;
-   
+% Read in flat field, filter, convert from uint16 to double
+FF=imread(FFfilename);
+FF=imfilter(double(FF), fspecial('disk', 30), 'replicate', 'same');
+FF=FF/mean(FF(:));
+FF=(FF-1)*1+1;
+
+
+%See if we have a histone channel. It assumes that it's the second one
+%if so.
+ImInfo=imfinfo(leftfilename);
+
+if length(ImInfo)==2
+   % Read in left and right images
+   left=imread(leftfilename,2);
+   right=imread(rightfilename,2);
+else
+   % Read in left and right images
+   left=imread(leftfilename);
+   right=imread(rightfilename);
+end
+
+% x and y limits
+x_min=200; x_max=450; %y_min=-40; y_max=40;
+y_min=-100; y_max=100;
+
    
 %Crop the images
 FF=FF(Margin+1:end-Margin,Margin+1:end-Margin);
@@ -40,7 +41,7 @@ left=left(Margin+1:end-Margin,Margin+1:end-Margin);
 right=right(Margin+1:end-Margin,Margin+1:end-Margin);
    
 
-   % loop for what to do if there is no xo1 ??? or maybe solves for xo1 yo1
+% loop for what to do if there is no xo1 ??? or maybe solves for xo1 yo1
 if ~exist('xo1') || isempty(xo1)
         
      [Dummy, xo1 yo1]=autoStitch(left,right,y_min:1:y_max,x_min:1:x_max,1,[1 2]); 

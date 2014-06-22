@@ -466,6 +466,16 @@ for i=1:length(Particles)
                 %Determine the particles average and median AP position
                 CompiledParticles(k).MeanAP=mean(Particles(i).APpos(FrameFilter));
                 CompiledParticles(k).MedianAP=median(Particles(i).APpos(FrameFilter));
+            elseif strcmp(ExperimentAxis,'DV')&isfield(Particles,'APpos')
+                %AP information:
+                CompiledParticles(k).APpos=Particles(i).APpos(FrameFilter);
+                CompiledParticles(k).MeanAP=mean(Particles(i).APpos(FrameFilter));
+                CompiledParticles(k).MedianAP=median(Particles(i).APpos(FrameFilter));
+                %DV information:
+                CompiledParticles(k).DVpos=Particles(i).DVpos(FrameFilter);
+                CompiledParticles(k).MeanDV=mean(Particles(i).DVpos(FrameFilter));
+                CompiledParticles(k).MedianDV=median(Particles(i).DVpos(FrameFilter));
+
             end
             
             %If we have the histone channel we will actually replace the AP
@@ -1929,7 +1939,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
         'ParticleCountAP','APbinArea','OnRatioAP','NEllipsesAP',...
         'ParticleCountProbAP',...
         'EllipsesOnAP','TotalEllipsesAP',...
-        'EllipsePos')
+        'EllipsePos','EllipsesFilteredPos','FilteredParticlesPos')
 elseif HistoneChannel&strcmp(ExperimentAxis,'DV')
     save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
         'CompiledParticles','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...

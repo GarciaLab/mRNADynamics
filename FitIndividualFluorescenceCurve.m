@@ -76,8 +76,8 @@ elseif  ~isempty(strfind(StemLoop,'X1'))
     GeneLength=5.296;       %Distance from the first MS2 site to the end of the
                         %TUB3'UTR in kb.
 else
-%     error('The gene length has not been defined for this construct')
-    GeneLength=6.443;
+    error('The gene length has not been defined for this construct')
+%     GeneLength=6.443;
 end
     
 
@@ -191,11 +191,11 @@ while cc~=13
     %Do the title
     if isfield(CompiledParticles,'MeanAP')
         title(['nc',num2str(nc),' (',num2str(i),'/',num2str(length(ParticlesNC{nc-12})),...
-            '), Rate: ',num2str(FitResultsIndiv(i,nc-12).ManualRates(CurrentTransition)),...
+            ' , ',num2str(ParticlesNC{nc-12}(i)), '), Rate: ',num2str(FitResultsIndiv(i,nc-12).ManualRates(CurrentTransition)),...
             ', AP: ',num2str(CompiledParticles(ParticlesNC{nc-12}(i)).MeanAP)])
     else
         title(['nc',num2str(nc),' (',num2str(i),'/',num2str(length(ParticlesNC{nc-12})),...
-            '), Rate: ',num2str(FitResultsIndiv(i,nc-12).ManualRates(CurrentTransition)),...
+            ' , ',num2str(ParticlesNC{nc-12}(i)), '), Rate: ',num2str(FitResultsIndiv(i,nc-12).ManualRates(CurrentTransition)),...
             ', x: ',num2str(mean(CompiledParticles(ParticlesNC{nc-12}(i)).xPos))])
     end
         
@@ -455,14 +455,29 @@ while cc~=13
         keyboard
      
     
-    %Jump to a particle
+    %Jump to a particle according to internal index
     elseif (ct~=0)&(cc=='j')
         try
             JumpParticle=input('Select particle to jump to: ');
             if (JumpParticle>0)&(JumpParticle<length(ParticlesNC{nc-12}))
                 i=JumpParticle;
+                CurrentTransition=1;
             end
         end
+        
+    %Jump to a particle according to CompileParticleIndex
+    elseif (ct~=0)&(cc=='r')
+        try
+            JumpParticle=input('Select CompiledParticle to jump to: ');
+            if (JumpParticle>0)&(sum(ParticlesNC{nc-12}==JumpParticle))
+                i=find(ParticlesNC{nc-12}==JumpParticle);
+                CurrentTransition=1;
+            else
+                display('CompiledParticle not present in this nc')
+            end
+        end
+        
+        
     end
    
 end
