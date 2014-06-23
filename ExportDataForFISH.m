@@ -497,35 +497,143 @@ elseif strcmp(FileMode,'LIFExport')
     %Determine the number of slices
     NSlices=length(dir([Folder,filesep,D(1).name(1:end-11),'*ch00.tif']));
     
-    %Determine the number of frames
-    NFrames=length(D)/NSlices;
+    SeriesFiles = dir([Folder,filesep,'Series*Properties.xml']);
+    NSeries = length(SeriesFiles);
+    % Number of LUT images
+    N_LUT = length(dir([Folder,filesep,'Series*ch*LUT.tif']));
+    
+    %Determine the number of frames (subtract LUT), divide by both channels)
+    NFrames=(length(D)-N_LUT)/(2*NSlices);
     
     %Generate FrameInfo
     FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
         'NumberSlices',{},'ZStep',{},'FileMode',{},...
         'PixelSize',{});
     %Some that I'm not assigning: ZoomFactor, Rotation
-    for i=1:length(NFrames)
+    
+    %Extract time information from xml files
+    Frame_Times = zeros(1,NFrames*NSlices);
+    for i = 1:length(SeriesFiles)
+        xDoc = xmlread([Folder,filesep,SeriesFiles(i).name]);
+        TimeStampList = xDoc.getElementsByTagName('TimeStamp');
+        if i == 1
+            start_index = 0;
+        else
+        start_index = ceil((nnz(Frame_Times)+1)/42)*42+1;
+        end
+    for k = 0:TimeStampList.getLength-1
+    TimeStamp = TimeStampList.item(k);
+    Date = char(TimeStamp.getAttribute('Date'));
+    Time = char(TimeStamp.getAttribute('Time'));
+    Milli = char(TimeStamp.getAttribute('MiliSeconds'));
+    time_in_days = datenum(strcat(Date,'-',Time,'-',Milli),'dd/mm/yyyy-HH:MM:SS AM-FFF');
+    Frame_Times(start_index+k+1)=time_in_days*86400;
+    end
+    end
+    
+    First_Time=Frame_Times(1);
+    for i = 1:length(Frame_Times)
+        if Frame_Times(i)==0
+            Frame_Times(i) = 0;
+        else
+            Frame_Times(i) = Frame_Times(i)-First_Time;
+        end
+    end
+    
+    for i=1:NFrames
         FrameInfo(i).LinesPerFrame=nan;
         FrameInfo(i).PixelsPerLine=nan;
         FrameInfo(i).NumberSlices=NSlices;
         FrameInfo(i).FileMode='LIFExport';
         FrameInfo(i).PixelSize=0.22;
         FrameInfo(i).ZStep=0.5;
-        FrameInfo(i).Time=(i-1)*40;
+        % EDIT TIMESTAMP FROM XML RATHER THAN GUESSING 40
+        FrameInfo(i).Time=Frame_Times(1+NSlices*i);
     end
     
     %Copy the data
+    slice_num=1;
+    % absolute frame
     m=1;
-    NSlices=FrameInfo(m).NumberSlices;
+    % frame without blanks
+    n=1;
+    %records which frames were deleted for being blank
+    blank_frameindex = zeros(1,NFrames);
+    blank_frames = zeros(1,NFrames);
     h=waitbar(0,'Extracting LIFExport images');
+    for i = 1:length(D) 
+        if ~isempty(findstr(D(i).name,'_ch00'))
+            waitbar(i/length(D),h)
+            Image=uint16(double(imread([Folder,filesep,D(i).name])));
+            if max(Image(:))==0  
+             blank_frames(m) = blank_frames(m)+1;
+             blank_frameindex(m) = m;
+            if slice_num == NSlices
+                m=m+1;
+                slice_num = 1;
+            else
+                slice_num = slice_num+1;
+            end
+            elseif (max(Image(:))~=0)&&(blank_frames(m)==0)
+            NewName=[Prefix,'_',iIndex(n,3),'_z',iIndex(slice_num,2),'.tif'];
+            imwrite(Image,[OutputFolder,filesep,NewName]);
+            if slice_num == NSlices
+                m=m+1;
+                n=n+1;
+                slice_num = 1;
+            else
+                slice_num = slice_num+1;
+            end
+            end
+        end
+    end
+    close(h)
+    blank_frameindex(blank_frameindex==0) = [];
     
-    %Do the histone channel, channel 02
+    %Remove FrameInfo information for blank frames
+    FrameInfo(blank_frameindex)=[];
     
-    DHis=D([Folder,filesep,'*_ch01.tif'])
+    %Do the histone channel, channel 01
+    slice_num=1;
+    % absolute frame
+    m=1;
+    % frame without blanks
+    n=1;
+    h=waitbar(0,'Histone images');
+    for i = 1:length(D) 
+        if ~isempty(findstr(D(i).name,'_ch01'))
+            waitbar(i/length(D),h)
+            Hist(:,:,slice_num)=uint16(double(imread([Folder,filesep,D(i).name])));
+        if blank_frames(m)==0
+            if slice_num == NSlices
+                HisRFP=max(Hist,[],3);
+                imwrite(uint16(HisRFP),...
+                [OutputFolder,filesep,Prefix,'-His_',iIndex(n,3),'.tif'])
+                m=m+1;
+                n=n+1;
+                slice_num = 1;
+            else
+                slice_num = slice_num+1;
+            end
+        else
+            if slice_num == NSlices
+                m=m+1;
+                slice_num = 1;
+            else
+                slice_num = slice_num+1;
+            end
+        end
+        end
+    end
+    close(h)
     
-    
-    
+% TAG File Information
+    Output{1}=['id ',Prefix,'_'];
+    Output{2}='';
+    Output{3}='1';
+    Output{4}=['frames ',num2str(length(FrameInfo)),':1:',num2str(NSlices)];
+    Output{5}=['suffix ???_z??'];
+    %Output{6}=['flat FF'];
     
 end
 
