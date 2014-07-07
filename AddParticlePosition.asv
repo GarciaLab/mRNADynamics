@@ -262,9 +262,8 @@ if ~NoAP
         ShiftColumn=0;
     end
 
-%ManualAPCorrection(SurfImage,ZoomImage,C,ResizeFactor,ShiftRow,ShiftColumn)
-    
-    
+
+
     
     %Now figure out how the shift of the zoomed in and zoomed out surface
     %images translates to the whole embryo image (which is most of the
@@ -329,7 +328,7 @@ if ~NoAP
         %was correct.
         %What I found out is that the margin removal was causing issues. I
         %need to get back to it later.
-        %close all
+        close all
         
         %This one seems to coincide with what I get if I do the overlay in
         %ImageJ
@@ -450,7 +449,7 @@ if ~NoAP
         %was correct.
         %What I found out is that the margin removal was causing issues. I
         %need to get back to it later.
-        %close all
+        close all
         
         %This one seems to coincide with what I get if I do the overlay in
         %ImageJ
@@ -735,8 +734,6 @@ if ~NoAP
     %experiment
     if strfind(lower(Prefix),'eve')     %Eve2 experiments
         APResolution=0.01;
-    elseif strfind(lower(Prefix),'hbbac')     %hb BAC experiments
-        APResolution=0.015;
     else                                %All other experiments
         APResolution=0.025;
     end

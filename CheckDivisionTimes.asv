@@ -3,13 +3,6 @@ function CheckDivisionTimes(varargin)
 %The idea is to determine division times with a higher spatial resolution
 %by doing it per AP bin.
 
-%m n: Move between nuclear cycles
-%, .: Move between frames
-%Click: Division of clicked AP bin in current frame
-%r  : Reset the information for the current nuclear cycle
-%s  : Save the information
-
-
 close all
 
 %Find out which computer this is. That will determine the folder structure.
@@ -162,7 +155,8 @@ if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')
 else
     error('nc information not define in MovieDatabase.xlsx')
 end
-ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
+
+
 
 %Load the division information if it's already there
 if exist([DropboxFolder,filesep,Prefix,'\APDivision.mat'])
@@ -179,7 +173,7 @@ Overlay=figure;
 
 
 CurrentFrame=1;
-CurrentNC=min(find(ncs))+8;
+CurrentNC=13;
 
 cc=1;
 
@@ -260,7 +254,7 @@ while (cc~=13)
         
     %Reset the information
     elseif (ct~=0)&(cc=='r')
-        APDivision(CurrentNC,:)=0;
+        APDivision(:)=0
         
     %Save
     elseif (ct~=0)&(cc=='s')
@@ -272,10 +266,6 @@ while (cc~=13)
         if (cm(1,2)>0)&(cm(1,1)>0)&(cm(1,2)<=Rows)&(cm(1,1)<=Columns)
             APDivision(CurrentNC,APPosBinImage(round(cm(1,2)),round(cm(1,1))))=CurrentFrame;
         end
-        
-    %Debug mode
-    elseif (ct~=0)&(cc=='9')
-        keyboard;
     end
 end
 

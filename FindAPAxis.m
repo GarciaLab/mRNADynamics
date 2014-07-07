@@ -5,6 +5,15 @@ function [coordA,coordP,xShift,yShift]=FindAPAxis(varargin)
 %prefix can also be input.
 
 %xShift and yShift are the shifts used to stitch the images.
+%xShift is the displacement of the right image with respect to the left
+%image. Positive xShift moves the right image towards the left.
+%yShift is the displacement of the left image with respect to the right
+%image. Positive yShift moves the left image up.
+
+
+%Parameters
+Margin=0;
+
 %Load the folder information
 
 % ES 2013-10-29: Required for multiple users to be able to analyze data on
@@ -135,23 +144,15 @@ end
 if isempty(CenterFileIndex)
     [APImage,xShift,yShift]=EmbryoStitchNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(LeftFileIndex).name],...
        [SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(RightFileIndex).name],...
-       [SourcePath,filesep,Date,filesep,FFFile]);
+       [SourcePath,filesep,Date,filesep,FFFile],[],[],Margin);
 else
-%     [APImage1,xShift1,yShift1]=EmbryoStitch([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(LeftFileIndex).name],...
-%        [SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(CenterFileIndex).name],...
-%        [SourcePath,filesep,Date,filesep,FFFile]);
-%    
-%     [APImage2,xShift2,yShift2]=EmbryoStitch([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(CenterFileIndex).name],...
-%        [SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(RightFileIndex).name],...
-%        [SourcePath,filesep,Date,filesep,FFFile]);
-
     [APImage1,xShift1,yShift1]=EmbryoStitchNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(LeftFileIndex).name],...
        [SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(CenterFileIndex).name],...
-       [SourcePath,filesep,Date,filesep,FFFile]);
+       [SourcePath,filesep,Date,filesep,FFFile],[],[],Margin);
 
     [APImage2,xShift2,yShift2]=EmbryoStitchNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(CenterFileIndex).name],...
        [SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(RightFileIndex).name],...
-       [SourcePath,filesep,Date,filesep,FFFile]);
+       [SourcePath,filesep,Date,filesep,FFFile],[],[],Margin);
 
   
    
@@ -169,39 +170,37 @@ else
     FFImage=imfilter(FFImage,fspecial('gaussian',2*filtStd,filtStd),'symmetric');
     FFImage=imdivide(FFImage,double(max(FFImage(:))));
 
-   LeftImage=imdivide(double(LeftImage),FFImage);
-   CenterImage=imdivide(double(CenterImage),FFImage);
-   RightImage=imdivide(double(RightImage),FFImage);
+    LeftImage=imdivide(double(LeftImage),FFImage);
+    CenterImage=imdivide(double(CenterImage),FFImage);
+    RightImage=imdivide(double(RightImage),FFImage);
 
    
-   Margin=10;
+    %Stitch left and center together
+    [h, w] = size(LeftImage);
+    imm2 = zeros(h, 2*w);
 
-   %Stitch left and center together
-   [h, w] = size(LeftImage);
-   imm2 = zeros(h, 2*w);
-   
-   %imm2(:, 1:w) = LeftImage;
-   imm2(:, 1+Margin:w-Margin) = LeftImage(:,1+Margin:end-Margin);
-   
-   %imm2(:, w+1-xShift1:2*w-xShift1) = circshift(CenterImage(1:h, :), [yShift1, 0]);
-   
-   imm2(:, w+1-xShift1+Margin:2*w-xShift1-Margin) = circshift(CenterImage(1:h, 1+Margin:end-Margin), [yShift1, 0]);
+    %imm2(:, 1:w) = LeftImage;
+    imm2(:, 1+Margin:w-Margin) = LeftImage(:,1+Margin:end-Margin);
 
-   imm2=circshift(imm2(:,:),[-yShift1, 0]);
-   
-   
-   
-   %Stitch left+center with right
-   [h,w]=size(imm2);
-   [hRight,wRight]=size(RightImage);
-   
-   APImage = zeros(h, w+wRight);
-   APImage(:, 1:w)=imm2;
-   APImage(:, w+1-xShift2-xShift1+Margin:wRight+w-xShift2-xShift1-Margin) =...
+    %imm2(:, w+1-xShift1:2*w-xShift1) = circshift(CenterImage(1:h, :), [yShift1, 0]);
+
+    imm2(:, w+1-xShift1+Margin:2*w-xShift1-Margin) = circshift(CenterImage(1:h, 1+Margin:end-Margin), [yShift1, 0]);
+
+    imm2=circshift(imm2(:,:),[-yShift1, 0]);
+
+
+
+    %Stitch left+center with right
+    [h,w]=size(imm2);
+    [hRight,wRight]=size(RightImage);
+
+    APImage = zeros(h, w+wRight);
+    APImage(:, 1:w)=imm2;
+    APImage(:, w+1-xShift2-xShift1+Margin:wRight+w-xShift2-xShift1-Margin) =...
        circshift(RightImage(1:h,1+Margin:end-Margin), [yShift2, 0]);
-   
-   APImage=APImage(:,1:w+wRight+1-xShift2-xShift1);
-   
+
+    APImage=APImage(:,1:w+wRight+1-xShift2-xShift1);
+
   
 end    
     

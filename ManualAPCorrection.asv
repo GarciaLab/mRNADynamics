@@ -74,6 +74,8 @@ while (cc~=13)
     cc=get(FigureOverlay,'currentcharacter');
     cm=get(gca,'CurrentPoint');
     
+    
+
 
     %Move up/down + left/right
     if (ct~=0)&(cc=='.')
@@ -90,14 +92,8 @@ while (cc~=13)
         figure(FigureCorrelation)
         OldXLim=xlim;
         OldYLim=ylim;
-        xlim([OldXLim-CorrX]/2+CorrX)
-        ylim([OldYLim-CorrY]/2+CorrY)
-    elseif (ct~=0)&(cc=='-')
-        figure(FigureCorrelation)
-        OldXLim=xlim;
-        OldYLim=ylim;
-        xlim([OldXLim-CorrX]*2+CorrX)
-        ylim([OldYLim-CorrY]*2+CorrY)
+        
+        
     end
 end
 

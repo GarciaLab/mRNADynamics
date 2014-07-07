@@ -1,13 +1,12 @@
-function [ImageOutput,xo1,yo1]=EmbryoStitchNoMargin(leftfilename,rightfilename,FFfilename,xo1,yo1)
+function [ImageOutput,xo1,yo1]=EmbryoStitchNoMargin(leftfilename,rightfilename,FFfilename,xo1,yo1,Margin)
 
-%HG: Modified EmbryoStitch in order to get rid of the issues at the
-%margins.
-
+%How this works:
+%1) Crop the images by a margin. This is necessary because the two-photon
+%sometimes has issues at the edges in 1x zoom.
+%2) 
 
     
-%Parameters:
-Margin=10;      %Pixels to get rid of at the left and margins
-    
+   
 
 % Read in flat field, filter, convert from uint16 to double
 FF=imread(FFfilename);
@@ -44,7 +43,12 @@ right=right(Margin+1:end-Margin,Margin+1:end-Margin);
 % loop for what to do if there is no xo1 ??? or maybe solves for xo1 yo1
 if ~exist('xo1') || isempty(xo1)
         
+    try
      [Dummy, xo1 yo1]=autoStitch(left,right,y_min:1:y_max,x_min:1:x_max,1,[1 2]); 
+    catch
+        1+1
+    end
+     
      
      if (xo1-x_min)<2 || (x_max-xo1)<2 || sum([yo1-y_min y_max-yo1]<2)>=1
       %[Dummy, xo1 yo1]=autoStitch(left,right,-50:1:50,10:1:511,1,[1 2]);   
@@ -67,11 +71,11 @@ end
     imwhole=im2(:,1:2*w+1-xo1);
     
     %cropping
-    cr=10; % amount of right picture to crop away
+    cr=0; % amount of right picture to crop away
 
 
     
-    imwhole(y_max:h-y_max,w-xo1:w-xo1+10) = left(y_max+yo1:h-y_max+yo1,w-xo1:w-xo1+cr);
+    imwhole(y_max:h-y_max,w-xo1:w-xo1+cr) = left(y_max+yo1:h-y_max+yo1,w-xo1:w-xo1+cr);
     %imwhole=im2; 
     
     
@@ -82,7 +86,7 @@ end
    
     
     %Account for the Margin in the shift that is given
-    xo1=xo1+Margin*2;
+    xo1=xo1;%+Margin*2;     %HG on 2014/06/29
     
 end
 
@@ -110,7 +114,13 @@ function [imm2 xo1 yo1] = autoStitch(varargin)
     end
     
         %% stitch
+        try
     imm1 = imstitch(left,right, xo1, yo1,orientation);
+        catch
+            1+1;
+        end
+    
+    
     [h, w] = size(left);
      imm2=imm1(:,1:2*w+1-xo1);
     %  imm2=imm1;

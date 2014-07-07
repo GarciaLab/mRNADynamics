@@ -107,18 +107,19 @@ if isempty(Zoom)
     Zoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
 end
 
-%Look for the file
-FFDir=dir([SourcePath,filesep,Date,'\FF',Zoom(1:end-1),'x*.*']);
-%If there's more than one match then ask for help
-if length(FFDir)==1
-    FFFile=FFDir(1).name;
-elseif isempty(FFDir)
-    display('Warning, no flat field file found. Press any key to proceed without it');
-    FFImage=ones(ImageInfo(1).Height,ImageInfo(1).Width);
-    pause
-else
-    FFFile=uigetfile([Folder,'\..\FF',Zoom(1:end-1),'x*.*'],'Select flatfield file');
-end
+%This is not being used
+% %Look for the file
+% FFDir=dir([SourcePath,filesep,Date,'\FF',Zoom(1:end-1),'x*.*']);
+% %If there's more than one match then ask for help
+% if length(FFDir)==1
+%     FFFile=FFDir(1).name;
+% elseif isempty(FFDir)
+%     display('Warning, no flat field file found. Press any key to proceed without it');
+%     FFImage=ones(ImageInfo(1).Height,ImageInfo(1).Width);
+%     pause
+% else
+%     FFFile=uigetfile([Folder,'\..\FF',Zoom(1:end-1),'x*.*'],'Select flatfield file');
+% end
 
 
 
@@ -127,18 +128,18 @@ end
    
 leftfilename=[SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(LeftFileIndex).name];
 rightfilename=[SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(RightFileIndex).name];
-FFfilename=[SourcePath,filesep,Date,filesep,FFFile];
+%FFfilename=[SourcePath,filesep,Date,filesep,FFFile];
 
 %Parameters:
-Margin=10;      %Pixels to get rid of at the left and margins
+Margin=0;      %Pixels to get rid of at the left and margins
     
 
-% Read in flat field, filter, convert from uint16 to double
-FF=imread(FFfilename);
-FF=imfilter(double(FF), fspecial('disk', 30), 'replicate', 'same');
-FF=FF/mean(FF(:));
-FF=(FF-1)*1+1;
-   
+% % Read in flat field, filter, convert from uint16 to double
+% FF=imread(FFfilename);
+% FF=imfilter(double(FF), fspecial('disk', 30), 'replicate', 'same');
+% FF=FF/mean(FF(:));
+% FF=(FF-1)*1+1;
+%    
 
 
 
@@ -164,28 +165,29 @@ y_min=-50; y_max=50;
 
 
 %Crop the images
-FF=FF(Margin+1:end-Margin,Margin+1:end-Margin);
+%FF=FF(Margin+1:end-Margin,Margin+1:end-Margin);
 left=left(Margin+1:end-Margin,Margin+1:end-Margin);
 right=right(Margin+1:end-Margin,Margin+1:end-Margin);
    
-DisplayRange(1)=min([min(min(left)),min(min(right))]);
-DisplayRange(2)=max([max(max(left)),max(max(right))]);
-
-
-
 xo1=250;
 yo1=-50;
 Flipped=0;  %Flag indicating whether we've flipped the images
 EmbryoFigure=figure;
 cc=1;
 
+%Sitch the image and figure out the display range
+imm1 = imstitch(left,right, xo1, yo1,[1 2]);
+DisplayRange(1)=min(min(imadjust(mat2gray(imm1))));
+DisplayRange(2)=max(max(imadjust(mat2gray(imm1))));
+
+
 %Plot the image and overlay with the different particles found
 
 while (cc~=13)
     figure(EmbryoFigure)
     imm1 = imstitch(left,right, xo1, yo1,[1 2]);
-    imshow(imm1,DisplayRange)
-    title([num2str(xo1),'/',num2str(yo1)])
+    imshow(imadjust(mat2gray(imm1)),DisplayRange)
+    title([num2str(xo1+2*Margin),'/',num2str(yo1)])
     
     figure(EmbryoFigure)
     ct=waitforbuttonpress;
@@ -246,9 +248,9 @@ while (cc~=13)
             display('Images have been flipped already')
         end
         
-        
-        
-    
+    %Debug mode
+    elseif (ct~=0)&(cc=='9')
+        keyboard;
     
     end
     
@@ -263,8 +265,9 @@ if Flipped==1
     imm2=imrotate(imm2,90);
     xShift= w+yo1;
     yShift= -h+xo1;
+    warning('HG should check this case in AddParticlePosition, worry about accounting for the margin')
 else
-    xShift=xo1;
+    xShift=xo1+2*Margin;
     yShift=yo1;
 end
     
@@ -344,10 +347,10 @@ coordP = center + (rotMatrix * (coordP_rot-center_rot)')';
 %Save the AP and shift information
 if isempty(CenterFileIndex)
     save([DropboxFolder,filesep,Prefix,'\APDetection.mat'],'coordA','coordP',...
-        'xShift','yShift');
+        'xShift','yShift','Margin');
 else
     save([DropboxFolder,filesep,Prefix,'\APDetection.mat'],'coordA','coordP',...
-        'xShift1','yShift1','xShift2','yShift2');
+        'xShift1','yShift1','xShift2','yShift2','Margin');
 end
 
 
