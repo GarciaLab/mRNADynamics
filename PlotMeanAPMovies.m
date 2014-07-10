@@ -19,15 +19,22 @@ MinParticles=3;     %Minimum number of particles necessary in a bin for
                     %it to be considered
 MinTimePoints=5;    %Minimum number of time points for the interpolation
 MinEmbryos=2;       %Minimum number of embryos
-                   
+           
+ElongationRate=1.54;   %In kb/min
 
-HalfLifeForPlot=7;  %Half-life to extract from the calculated mRNA accumulation
-                    %by Jacques
 
-%What experiment are we dealing with? This si useful to figure out the
-%elongation time, for example.
-%WARNING: THIS IS NOW HARDWIRED
-ElongationTime=6.443/1.54;
+if findstr(lower(Data(1).SetName),'eve')
+    HalfLifeForPlot=7;  %Half-life to extract from the calculated mRNA accumulation
+                        %by Jacques
+    %What experiment are we dealing with? This is useful to figure out the
+    %elongation time, for example.
+    ElongationTime=6.443/ElongationRate;
+elseif findstr(lower(Data(1).SetName),'hbbac')
+    HalfLifeForPlot=1000;    %Infinite half-life for now
+    ElongationTime=6.443/ElongationRate;
+else
+    error('Add information for this construct')
+end
 
 
 

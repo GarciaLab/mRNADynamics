@@ -12,7 +12,8 @@ function Data=LoadMS2Sets(DataType)
     DetermineLocalFolders;
 
 %MS2Pausing folder:
-if strcmp(DataType,'hbBAC')|strcmp(DataType,'Eve2')|strcmp(DataType,'SnaBAC')|strcmp(DataType,'P2PPausing')
+if strcmp(DataType,'hbBAC')|strcmp(DataType,'Eve2')|strcmp(DataType,'SnaBAC')|strcmp(DataType,'P2PPausing')|...
+        strcmp(DataType,'hbNoPrimary')|strcmp(DataType,'kniBAC')
     [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
         DetermineLocalFolders('2014-03-15-HbBACA');
     PausingXLSName='DataStatusPausing.xlsx';
