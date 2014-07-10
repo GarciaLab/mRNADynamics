@@ -552,8 +552,8 @@ if ~NoAP
         
         
         HalfName=D(find(sum(~cellfun('isempty',strfind(lower({D.name}),'center'))&~cellfun('isempty',strfind(lower({D.name}),'surf'))))).name;
-        HalfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,HalfName],ChannelToLoad);
-        [Rows1x,Columns1x]=size(HalfImage);
+        HalfImageSurf=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,HalfName],ChannelToLoad);
+        [Rows1x,Columns1x]=size(HalfImageSurf);
 
 
         ImageCenter=[Rows1x/2,Columns1x/2];
