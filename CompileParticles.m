@@ -359,7 +359,9 @@ if strcmp(ExperimentAxis,'AP')
     %experiment
     if strfind(lower(Prefix),'eve')     %Eve2 experiments
         APResolution=0.01;
-    elseif strfind(lower(Prefix),'hbbac')     %hb BAC experiments
+    %hb or kni BAC experiments
+    elseif ~isempty(strfind(lower(Prefix),'hbbac'))|...
+            ~isempty(strfind(lower(Prefix),'knibac'))     
         APResolution=0.015;
     else                                %All other experiments
         APResolution=0.025;
