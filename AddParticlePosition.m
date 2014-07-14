@@ -312,17 +312,6 @@ if ~NoAP
         LeftMidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,LeftMidImageName],ChannelToLoad);
         RightMidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,RightMidImageName],ChannelToLoad);
         
-        %Stitch the full embryo and overlay with the surface image - This
-        %seems to work!
-        FullEmbryoStitch = mat2gray(imstitch(LeftMidImage,RightMidImage, xShift, yShift,[1 2]),[0,100]);
-        PatchedSurfImage=zeros(size(FullEmbryoStitch));
-        
-        PatchedSurfImage(:,...
-            Columns1x-xShift+1:2*Columns1x-xShift)=...
-            mat2gray(HalfImageSurf,[0,100]);
-       
-        OverlayFullEmbryoStitch=cat(3,PatchedSurfImage==1,FullEmbryoStitch==1,zeros(size(FullEmbryoStitch)));
-        
         
         %The code below is meant for troubleshooting. I basically used it
         %to figure out whether the alignment between the two half images
@@ -331,30 +320,44 @@ if ~NoAP
         %need to get back to it later.
         %close all
         
-        %This one seems to coincide with what I get if I do the overlay in
-        %ImageJ
-        figure(3)
-        imshow(OverlayFullEmbryoStitch)
-        
-        
-        
-        %Grab the FullEmbryo image and overlay it with the surface one
-        
-        PatchedMidImage=zeros(Rows1x*2,Columns1x*2);
-        PatchedSurfImage=zeros(Rows1x*2,Columns1x*2);
-        
-
-        
-        PatchedMidImage(Rows1x/2+1:size(FullEmbryo,1)+Rows1x/2,...
-            Columns1x/2+1:size(FullEmbryo,2)+Columns1x/2)=mat2gray(FullEmbryo,[0,100]);
-        PatchedSurfImage(Rows1x/2+1:Rows1x+Rows1x/2,...
-            Columns1x*3/2+1-xShift:Columns1x*3/2-xShift+Columns1x)=...
-            mat2gray(HalfImageSurf,[0,100]);
-        
-        OverlayFullEmbryo=cat(3,PatchedSurfImage==1,PatchedMidImage==1,zeros(Rows1x*2,Columns1x*2));
-        
-        figure(4)
-        imshow(OverlayFullEmbryo)
+%         %Stitch the full embryo and overlay with the surface image - This
+%         %seems to work!
+%         FullEmbryoStitch = mat2gray(imstitch(LeftMidImage,RightMidImage, xShift, yShift,[1 2]),[0,100]);
+%         PatchedSurfImage=zeros(size(FullEmbryoStitch));
+%         
+%         PatchedSurfImage(:,...
+%             Columns1x-xShift+1:2*Columns1x-xShift)=...
+%             mat2gray(HalfImageSurf,[0,100]);
+%        
+%         OverlayFullEmbryoStitch=cat(3,PatchedSurfImage==1,FullEmbryoStitch==1,zeros(size(FullEmbryoStitch)));
+%         
+%         
+%         
+%         
+%         %This one seems to coincide with what I get if I do the overlay in
+%         %ImageJ
+%         figure(3)
+%         imshow(OverlayFullEmbryoStitch)
+%         
+%         
+%         
+%         %Grab the FullEmbryo image and overlay it with the surface one
+%         
+%         PatchedMidImage=zeros(Rows1x*2,Columns1x*2);
+%         PatchedSurfImage=zeros(Rows1x*2,Columns1x*2);
+%         
+% 
+%         
+%         PatchedMidImage(Rows1x/2+1:size(FullEmbryo,1)+Rows1x/2,...
+%             Columns1x/2+1:size(FullEmbryo,2)+Columns1x/2)=mat2gray(FullEmbryo,[0,100]);
+%         PatchedSurfImage(Rows1x/2+1:Rows1x+Rows1x/2,...
+%             Columns1x*3/2+1-xShift:Columns1x*3/2-xShift+Columns1x)=...
+%             mat2gray(HalfImageSurf,[0,100]);
+%         
+%         OverlayFullEmbryo=cat(3,PatchedSurfImage==1,PatchedMidImage==1,zeros(Rows1x*2,Columns1x*2));
+%         
+%         figure(4)
+%         imshow(OverlayFullEmbryo)
  
         
         %This is for the half image
