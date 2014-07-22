@@ -565,10 +565,10 @@ if ~NoAP
 
         %This is for the full image
         TopLeft=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
-            Columns1x*3/2-xShift1-Columns/ZoomRatio/2+ShiftColumn];
+            Columns1x*3/2-xShift1-xShift2-Columns/ZoomRatio/2+ShiftColumn];
 
         BottomRight=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
-            Columns1x*3/2-xShift1+Columns/ZoomRatio/2+ShiftColumn];
+            Columns1x*3/2-xShift1-xShift2+Columns/ZoomRatio/2-ShiftColumn];
 
         %This is for the half image
         TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
