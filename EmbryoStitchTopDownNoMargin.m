@@ -1,9 +1,9 @@
-function [ImageOutput,xo1,yo1]=EmbryoStitchNoMargin(leftfilename,rightfilename,FFfilename,xo1,yo1,Margin)
+function [ImageOutput,xo1,yo1]=EmbryoStitchTopDownNoMargin(leftfilename,rightfilename,FFfilename,xo1,yo1,Margin)
 
-%How this works:
-%1) Crop the images by a margin. This is necessary because the two-photon
-%sometimes has issues at the edges in 1x zoom.
-
+%This function is based on EmbryoStitchNoMargin.m, but takes care of
+%embryos in a top-down orientation.
+%What we'll do is just rotate the images and go through the regular
+%left-right stitching.
 
     
    
@@ -29,6 +29,19 @@ else
    right=imread(rightfilename);
 end
 
+
+%Now rotate all images
+LeftTemp=imrotate(left,90);
+RightTemp=imrotate(right,90);
+FFTemp=imrotate(FF,90);
+
+left=LeftTemp;
+right=RightTemp;
+FF=FFTemp;
+
+
+
+
 % x and y limits
 x_min=200; x_max=450; %y_min=-40; y_max=40;
 y_min=-100; y_max=100;
@@ -42,7 +55,7 @@ right=right(Margin+1:end-Margin,Margin+1:end-Margin);
 
 % loop for what to do if there is no xo1 ??? or maybe solves for xo1 yo1
 if ~exist('xo1') || isempty(xo1)
-        
+         
     try
      [Dummy, xo1 yo1]=autoStitch(left,right,y_min:1:y_max,x_min:1:x_max,1,[1 2]); 
     catch
@@ -84,10 +97,13 @@ end
 %     imwrite(uint16(imwhole),filename,'compression','none');
     ImageOutput=uint16(imwhole);
    
+    ImageOutput=imrotate(ImageOutput,-90);
     
-    %Account for the Margin in the shift that is given
-    xo1=xo1;%+Margin*2;     %HG on 2014/06/29
+    xo1Temp=xo1;
+    yo1temp=yo1;
     
+    xo1=yo1temp;
+    yo1=xo1Temp;
 end
 
 function [imm2 xo1 yo1] = autoStitch(varargin)

@@ -96,11 +96,11 @@ if ~NoAP
 
     %See if manual alignment was performed on this set. If so we'll skip the
     %automated alignment
-    if exist('ManualAlignment')
-        display('Manual alignment results saved. Using them.')
-        ManualAlignmentDone=1;
-    else
-        ManualAlignmentDone=0;
+    if exist('ManualAlignmentDone')
+        if ManualAlignmentDone
+            display('Manual alignment results saved. Using them.')
+            ManualAlignment=1;
+        end
     end
 
     %Figure out the zoom factor
@@ -242,29 +242,30 @@ if ~NoAP
 
         else
 
-            warning('Not doing cross-correlation for AP finding. Instead just looking at the center')
+            warning('Not able to do the cross correlation. Switching to manual alignment mode.')
 
-            %Add this flag to do the alignment manually later on
-            if (~ManualAlignmentDone)|(ManualAlignment)
-                ManualAlignment=1;
-                ShiftColumn=0;
-                ShiftRow=0;
-            end
+            ManualAlignment=1;
             
             ShiftColumn=0;
             ShiftRow=0;
 
         end
-
-
-    elseif ~ManualAlignmentDone
-        ShiftRow=0;
-        ShiftColumn=0;
     end
-
-%ManualAPCorrection(SurfImage,ZoomImage,C,ResizeFactor,ShiftRow,ShiftColumn)
     
     
+    %See if we need the manual alignment
+    if ManualAlignment
+        
+        %See if we need to load the previous manual alignment results
+        if exist('ManualAlignmentDone')
+            if ManualAlignmentDone
+                load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
+            end
+        end
+        
+        [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ResizeFactor,ShiftRow,ShiftColumn)
+        ManualAlignmentDone=1;
+    end
     
     %Now figure out how the shift of the zoomed in and zoomed out surface
     %images translates to the whole embryo image (which is most of the
@@ -284,307 +285,404 @@ if ~NoAP
     %Patch the surface image to fit the full embryo image.
     PatchedSurfaceImage=zeros(size(FullEmbryo));
     
-    %The information from the stitching of the two images is as follows:
-    %xShift and yShift are the shifts used to stitch the images.
-    %xShift is the displacement of the right image with respect to the left
-    %image. Positive xShift moves the right image towards the left.
-    %yShift is the displacement of the left image with respect to the right
-    %image. Positive yShift moves the left image up. Note that if we're
-    %aligning images on the right we don't need to worry about this in
-    %terms of the overlap of the surface and mid images.
+
+    %Are we dealing with three images?
+    if ~isempty(findstr(lower(SurfName),'center'))
+        %Is this a left-right orientation or top-down?
+        if sum(~cellfun('isempty',strfind(lower({D.name}),'left'))&~cellfun('isempty',strfind(lower({D.name}),'right')))
+        
+            HalfName=D(find(sum(~cellfun('isempty',strfind(lower({D.name}),'center'))&~cellfun('isempty',strfind(lower({D.name}),'surf'))))).name;
+            HalfImageSurf=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,HalfName],ChannelToLoad);
+            [Rows1x,Columns1x]=size(HalfImageSurf);
+
+
+            ImageCenter=[Rows1x/2,Columns1x/2];
+
+
+
+            %This is for the full image
+            TopLeft=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
+                Columns1x*3/2-xShift1-Columns/ZoomRatio/2+ShiftColumn];
+
+            BottomRight=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
+                Columns1x*3/2-xShift1+Columns/ZoomRatio/2+ShiftColumn];
+
+            %This is for the half image
+            TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn];
+            BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
+
+            coordAHalf=coordA+[-Columns1x+xShift1,0];
+            coordPHalf=coordP+[-Columns1x+xShift1,0];
+
+        elseif sum(~cellfun('isempty',strfind(lower({D.name}),'top'))&~cellfun('isempty',strfind(lower({D.name}),'bottom')))
+        
+            HalfName=D(find(sum(~cellfun('isempty',strfind(lower({D.name}),'center'))&~cellfun('isempty',strfind(lower({D.name}),'surf'))))).name;
+            HalfImageSurf=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,HalfName],ChannelToLoad);
+            [Rows1x,Columns1x]=size(HalfImageSurf);
+
+
+            ImageCenter=[Rows1x/2,Columns1x/2];
+
+
+
+            %This is for the full image
+            TopLeft=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
+                Columns1x*3/2-xShift1-Columns/ZoomRatio/2+ShiftColumn];
+            BottomRight=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
+                Columns1x*3/2-xShift1+Columns/ZoomRatio/2+ShiftColumn];
+
+            %This is for the half image
+            TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn];
+            BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
+
+            coordAHalf=coordA+[-Columns1x+xShift1,0];
+            coordPHalf=coordP+[-Columns1x+xShift1,0];
+        end
     
-    
-    %If the zoomed in image coincides with the right zoomed out image
-    if sum(~cellfun('isempty',strfind(lower({D.name}),'right'))&~cellfun('isempty',strfind(lower({D.name}),'surf')))
-
-        %Load the half image at the midsaggital plane
-        %HalfName=D(find(sum(cellfun('isempty',strfind(lower({D.name}),'right'))&cellfun('isempty',strfind(lower({D.name}),'surf'))))).name;
-
-        %Load the half image at the surface
-        HalfNameSurf=D(find(~cellfun('isempty',strfind(lower({D.name}),'right'))&~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
-        HalfImageSurf=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,HalfNameSurf],ChannelToLoad);
-        [Rows1x,Columns1x]=size(HalfImageSurf);
-
-      
-  
-        LeftMidImageName=D(find(~cellfun('isempty',strfind(lower({D.name}),'left'))&cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
-        RightMidImageName=D(find(~cellfun('isempty',strfind(lower({D.name}),'right'))&cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
-        LeftMidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,LeftMidImageName],ChannelToLoad);
-        RightMidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,RightMidImageName],ChannelToLoad);
+    %Only two images:
+    %Are we dealing with a left-right orientation or with top-bottom?
+    elseif ~isempty(findstr(lower(SurfName),'top'))|~isempty(findstr(lower(SurfName),'bottom'))
+        %The information from the top-bottom stitching of the two images is as follows:
+        %xShift and yShift are the shifts used to stitch the images.
+        %yShift is the displacement of the bottom image with respect to the
+        %top image. Positive yShift moves the bottom image up.
+        %xShift is the displacement of the top image with respect to the right
+        %image. Positive xShift moves the top image to the right. Note that if we're
+        %aligning images on the bottom we don't need to worry about this in
+        %terms of the overlap of the surface and mid images.
         
+        %If the zoomed in image coincides with the bottom zoomed out image
+        if sum(~cellfun('isempty',strfind(lower({D.name}),'bottom'))&~cellfun('isempty',strfind(lower({D.name}),'surf')))
         
-        %The code below is meant for troubleshooting. I basically used it
-        %to figure out whether the alignment between the two half images
-        %was correct.
-        %What I found out is that the margin removal was causing issues. I
-        %need to get back to it later.
-        %close all
-        
-%         %Stitch the full embryo and overlay with the surface image - This
-%         %seems to work!
-%         FullEmbryoStitch = mat2gray(imstitch(LeftMidImage,RightMidImage, xShift, yShift,[1 2]),[0,100]);
-%         PatchedSurfImage=zeros(size(FullEmbryoStitch));
-%         
-%         PatchedSurfImage(:,...
-%             Columns1x-xShift+1:2*Columns1x-xShift)=...
-%             mat2gray(HalfImageSurf,[0,100]);
-%        
-%         OverlayFullEmbryoStitch=cat(3,PatchedSurfImage==1,FullEmbryoStitch==1,zeros(size(FullEmbryoStitch)));
-%         
-%         
-%         
-%         
-%         %This one seems to coincide with what I get if I do the overlay in
-%         %ImageJ
-%         figure(3)
-%         imshow(OverlayFullEmbryoStitch)
-%         
-%         
-%         
-%         %Grab the FullEmbryo image and overlay it with the surface one
-%         
-%         PatchedMidImage=zeros(Rows1x*2,Columns1x*2);
-%         PatchedSurfImage=zeros(Rows1x*2,Columns1x*2);
-%         
-% 
-%         
-%         PatchedMidImage(Rows1x/2+1:size(FullEmbryo,1)+Rows1x/2,...
-%             Columns1x/2+1:size(FullEmbryo,2)+Columns1x/2)=mat2gray(FullEmbryo,[0,100]);
-%         PatchedSurfImage(Rows1x/2+1:Rows1x+Rows1x/2,...
-%             Columns1x*3/2+1-xShift:Columns1x*3/2-xShift+Columns1x)=...
-%             mat2gray(HalfImageSurf,[0,100]);
-%         
-%         OverlayFullEmbryo=cat(3,PatchedSurfImage==1,PatchedMidImage==1,zeros(Rows1x*2,Columns1x*2));
-%         
-%         figure(4)
-%         imshow(OverlayFullEmbryo)
- 
-        
-        %This is for the half image
-        
-        %Get the imaging region
-        ImageCenter=[Rows1x/2,Columns1x/2];
-        %Imaged region mapped onto the zoomed out image
-        TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow+1,...
-            ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn+1];
-        BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
-            ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
-        %AP position mapped onto the zoomed out image
-        coordAHalf=coordA+[-Columns+xShift,0];
-        coordPHalf=coordP+[-Columns+xShift,0];
-
-
-        %Start by overlaying the zoom in figure on top of the zoom out
-        %figure. Also add the rectangle.
-        
-        %Create an overlay of the mask in zoom in and zoom out
-        NucMaskZoomInOverlay=zeros(size(SurfImage));
-        
-        NucMaskZoomInOverlay(TopLeftHalf(1):BottomRightHalf(1),TopLeftHalf(2):BottomRightHalf(2))=...
-                    imresize(NucMaskZoomIn,1/ZoomRatio);
-        
-        SurfOutMaskInOverlay=cat(3,imadjust(mat2gray(NucMaskZoomOut)),imadjust(mat2gray(NucMaskZoomInOverlay)),...
-            zeros(size(SurfImage)));
-           
-        
-        figure(5)
-        imshow(SurfOutMaskInOverlay)
-        hold on
-        rectangle('Position',[TopLeftHalf([2,1]),BottomRightHalf([2,1])-TopLeftHalf([2,1])],'EdgeColor','r')
-        plot(coordAHalf(1),coordAHalf(2),'.g','MarkerSize',30)
-        plot(coordPHalf(1),coordPHalf(2),'.r','MarkerSize',30)
-        plot([coordAHalf(1),coordPHalf(1)],[coordAHalf(2),coordPHalf(2)],'-b')
-        hold off
-        
-
-        %This is for the full image
-        
-        TopLeft=TopLeftHalf+[0,Columns1x-xShift];
-        BottomRight=BottomRightHalf+[0,Columns1x-xShift];
-        
-%         TopLeft=[size(FullEmbryo,1)-Rows1x/2-Rows/ZoomRatio/2+ShiftRow,...
-%             size(FullEmbryo,2)-Columns1x/2+Columns/ZoomRatio/2+xShift/ZoomRatio+ShiftColumn];
-%         BottomRight=[size(FullEmbryo,1)-Rows1x/2+Rows/ZoomRatio/2+ShiftRow,...
-%             size(FullEmbryo,2)-Columns1x/2+Columns/ZoomRatio*1.5+xShift/ZoomRatio+ShiftColumn];
-        
-        
-        figure(6)
-        imshow(imadjust(mat2gray(FullEmbryo)),'DisplayRange',[],'InitialMagnification',100)
-        hold on
-        rectangle('Position',[TopLeft([2,1]),BottomRight([2,1])-TopLeft([2,1])],'EdgeColor','r')
-        plot(coordA(1),coordA(2),'.g','MarkerSize',30)
-        plot(coordP(1),coordP(2),'.r','MarkerSize',30)
-        plot([coordA(1),coordP(1)],[coordA(2),coordP(2)],'-b')
-        hold off
-            
-
-    elseif sum(~cellfun('isempty',strfind(lower({D.name}),'left'))&~cellfun('isempty',strfind(lower({D.name}),'surf')))
-
-        %Load the half image at the midsaggital plane
-        %HalfName=D(find(sum(cellfun('isempty',strfind(lower({D.name}),'right'))&cellfun('isempty',strfind(lower({D.name}),'surf'))))).name;
-
-        %Load the half image at the surface
-        HalfNameSurf=D(find(~cellfun('isempty',strfind(lower({D.name}),'left'))&~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
-        HalfImageSurf=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,HalfNameSurf],ChannelToLoad);
-        [Rows1x,Columns1x]=size(HalfImageSurf);
-      
-  
-        LeftMidImageName=D(find(~cellfun('isempty',strfind(lower({D.name}),'left'))&cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
-        RightMidImageName=D(find(~cellfun('isempty',strfind(lower({D.name}),'right'))&cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
-        LeftMidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,LeftMidImageName],ChannelToLoad);
-        RightMidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,RightMidImageName],ChannelToLoad);
-        
-        %Stitch the full embryo and overlay with the surface image - This
-        %seems to work!
-        FullEmbryoStitch = mat2gray(imstitch(LeftMidImage,RightMidImage, xShift, yShift,[1 2]),[0,50]);
-        PatchedSurfImage=zeros(size(FullEmbryoStitch));
-        
-        PatchedSurfImage(:,...
-           1:Columns1x)=...
-            mat2gray(circshift(HalfImageSurf,[-yShift,0]),[0,50]);
        
-        
-        
-        OverlayFullEmbryoStitch=cat(3,PatchedSurfImage==1,FullEmbryoStitch==1,zeros(size(FullEmbryoStitch)));
-        
-        
-        %The code below is meant for troubleshooting. I basically used it
-        %to figure out whether the alignment between the two half images
-        %was correct.
-        %What I found out is that the margin removal was causing issues. I
-        %need to get back to it later.
-        %close all
-        
-        %This one seems to coincide with what I get if I do the overlay in
-        %ImageJ
-        figure(3)
-        imshow(OverlayFullEmbryoStitch)
-        
-        
-        
-        %Grab the FullEmbryo image and overlay it with the surface one
-        
-        PatchedMidImage=zeros(Rows1x*2,Columns1x*2);
-        PatchedSurfImage=zeros(Rows1x*2,Columns1x*2);
-        
+            %Load the half image at the surface
+            HalfNameSurf=D(find(~cellfun('isempty',strfind(lower({D.name}),'bottom'))&~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
+            HalfImageSurf=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,HalfNameSurf],ChannelToLoad);
+            [Rows1x,Columns1x]=size(HalfImageSurf);
 
-        
-        PatchedMidImage(Rows1x/2+1:size(FullEmbryo,1)+Rows1x/2,...
-            Columns1x/2+1:size(FullEmbryo,2)+Columns1x/2)=mat2gray(FullEmbryo,[0,50]);
-        PatchedSurfImage(Rows1x/2+1-yShift:Rows1x+Rows1x/2-yShift,...
-            Columns1x/2+1:Columns1x/2+Columns1x)=...
-            mat2gray(HalfImageSurf,[0,50]);
-        
-        OverlayFullEmbryo=cat(3,PatchedSurfImage==1,PatchedMidImage==1,zeros(Rows1x*2,Columns1x*2));
-        
-        figure(4)
-        imshow(OverlayFullEmbryo)
- 
-        
-        %This is for the half image
-        
-        %Get the imaging region
-        ImageCenter=[Rows1x/2,Columns1x/2];
-        %Imaged region mapped onto the zoomed out image
-        TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow+1,...
-            ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn+1];
-        BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
-            ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
-        
-%         TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+1,...
-%             ImageCenter(2)-Columns/ZoomRatio/2+1];
-%         BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2,...
-%             ImageCenter(2)+Columns/ZoomRatio/2];
-        
-        %AP position mapped onto the zoomed out image
-        coordAHalf=coordA+[0,yShift];
-        coordPHalf=coordP+[0,yShift];
+            TopMidImageName=D(find(~cellfun('isempty',strfind(lower({D.name}),'top'))&cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
+            BottomMidImageName=D(find(~cellfun('isempty',strfind(lower({D.name}),'bottom'))&cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
+            TopMidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,TopMidImageName],ChannelToLoad);
+            BottomMidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,BottomMidImageName],ChannelToLoad);
 
 
-        %Start by overlaying the zoom in figure on top of the zoom out
-        %figure. Also add the rectangle.
-        
-        %Create an overlay of the mask in zoom in and zoom out
-        NucMaskZoomInOverlay=zeros(size(SurfImage));
-        
-        NucMaskZoomInOverlay(TopLeftHalf(1):BottomRightHalf(1),TopLeftHalf(2):BottomRightHalf(2))=...
-                    imresize(NucMaskZoomIn,1/ZoomRatio);
-        
-        SurfOutMaskInOverlay=cat(3,imadjust(mat2gray(NucMaskZoomOut)),imadjust(mat2gray(NucMaskZoomInOverlay)),...
-            zeros(size(SurfImage)));
-           
-        
-        figure(5)
-        imshow(SurfOutMaskInOverlay)
-        hold on
-        rectangle('Position',[TopLeftHalf([2,1]),BottomRightHalf([2,1])-TopLeftHalf([2,1])],'EdgeColor','r')
-        plot(coordAHalf(1),coordAHalf(2),'.g','MarkerSize',30)
-        plot(coordPHalf(1),coordPHalf(2),'.r','MarkerSize',30)
-        plot([coordAHalf(1),coordPHalf(1)],[coordAHalf(2),coordPHalf(2)],'-b')
-        hold off
-        
+            %This is for the half image
+          
+            %Get the imaging region
+            ImageCenter=[Rows1x/2,Columns1x/2];
+            %Imaged region mapped onto the zoomed out image
+            TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow+1,...
+                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn+1];
+            BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
+            
+            %AP position mapped onto the zoomed out image. Careful, AP
+            %coordinates are defined (x,y).
+            coordAHalf=coordA+[0,-(Rows1x-yShift)];
+            coordPHalf=coordP+[0,-(Rows1x-yShift)];
+            
+            %This is for the full image
+            TopLeft=TopLeftHalf+[Rows1x-yShift,0];
+            BottomRight=BottomRightHalf+[Rows1x-yShift,0];
 
-        %This is for the full image
+    
+        elseif sum(~cellfun('isempty',strfind(lower({D.name}),'top'))&...
+                ~cellfun('isempty',strfind(lower({D.name}),'surf')))
+
+            %Load the half image at the midsaggital plane
+            %HalfName=D(find(sum(cellfun('isempty',strfind(lower({D.name}),'right'))&cellfun('isempty',strfind(lower({D.name}),'surf'))))).name;
+
+            %Load the half image at the surface
+            HalfNameSurf=D(find(~cellfun('isempty',strfind(lower({D.name}),'top'))&~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
+            HalfImageSurf=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,HalfNameSurf],ChannelToLoad);
+            [Rows1x,Columns1x]=size(HalfImageSurf);
+
+
+            TopMidImageName=D(find(~cellfun('isempty',strfind(lower({D.name}),'top'))&cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
+            BottomMidImageName=D(find(~cellfun('isempty',strfind(lower({D.name}),'bottom'))&cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
+            TopMidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,TopMidImageName],ChannelToLoad);
+            BottomMidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,BottomMidImageName],ChannelToLoad);
+
+            
+            %This is for the half image
+
+            %Get the imaging region
+            ImageCenter=[Rows1x/2,Columns1x/2];
+            %Imaged region mapped onto the zoomed out image
+            TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow+1,...
+                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn+1];
+            BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
+
+
+            %AP position mapped onto the zoomed out image
+            coordAHalf=coordA-[xShift,0];
+            coordPHalf=coordP-[xShift,0];
+
+
+            %This is for the full image
+
+            TopLeft=TopLeftHalf+[0,+xShift];
+            BottomRight=BottomRightHalf+[0,+xShift];
+
         
-        TopLeft=TopLeftHalf+[-yShift,0];
-        BottomRight=BottomRightHalf+[-yShift,0];
-        
-%         TopLeft=[size(FullEmbryo,1)-Rows1x/2-Rows/ZoomRatio/2+ShiftRow,...
-%             size(FullEmbryo,2)-Columns1x/2+Columns/ZoomRatio/2+xShift/ZoomRatio+ShiftColumn];
-%         BottomRight=[size(FullEmbryo,1)-Rows1x/2+Rows/ZoomRatio/2+ShiftRow,...
-%             size(FullEmbryo,2)-Columns1x/2+Columns/ZoomRatio*1.5+xShift/ZoomRatio+ShiftColumn];
-        
-        
-        figure(6)
-        imshow(imadjust(mat2gray(FullEmbryo)),'DisplayRange',[],'InitialMagnification',100)
-        hold on
-        rectangle('Position',[TopLeft([2,1]),BottomRight([2,1])-TopLeft([2,1])],'EdgeColor','r')
-        plot(coordA(1),coordA(2),'.g','MarkerSize',30)
-        plot(coordP(1),coordP(2),'.r','MarkerSize',30)
-        plot([coordA(1),coordP(1)],[coordA(2),coordP(2)],'-b')
-        hold off
+        end    
             
         
-        
-
-    %For the case where we needed to stitch three images
-    elseif sum(~cellfun('isempty',strfind(lower({D.name}),'center'))&~cellfun('isempty',strfind(lower({D.name}),'surf')))
-
-        
-        warning('Have HG check this case in the code')
-        
-        
-        HalfName=D(find(sum(~cellfun('isempty',strfind(lower({D.name}),'center'))&~cellfun('isempty',strfind(lower({D.name}),'surf'))))).name;
-        HalfImageSurf=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,HalfName],ChannelToLoad);
-        [Rows1x,Columns1x]=size(HalfImageSurf);
-
-
-        ImageCenter=[Rows1x/2,Columns1x/2];
-
-
-
-        %This is for the full image
-        TopLeft=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
-            Columns1x*3/2-xShift1-xShift2-Columns/ZoomRatio/2+ShiftColumn];
-
-        BottomRight=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
-            Columns1x*3/2-xShift1-xShift2+Columns/ZoomRatio/2-ShiftColumn];
-
-        %This is for the half image
-        TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
-            ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn];
-        BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
-            ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
-
-        coordAHalf=coordA+[-Columns1x+xShift1,0];
-        coordPHalf=coordP+[-Columns1x+xShift1,0];
-
-
-
-
-
+    
     else
-        error('Problem with the surface file (or its naming) in the source data folder "FullEmbryo"')
+        %The information from the left-right stitching of the two images is as follows:
+        %xShift and yShift are the shifts used to stitch the images.
+        %xShift is the displacement of the right image with respect to the left
+        %image. Positive xShift moves the right image towards the left.
+        %yShift is the displacement of the left image with respect to the right
+        %image. Positive yShift moves the left image up. Note that if we're
+        %aligning images on the right we don't need to worry about this in
+        %terms of the overlap of the surface and mid images.
+
+
+        %If the zoomed in image coincides with the right zoomed out image
+        if sum(~cellfun('isempty',strfind(lower({D.name}),'right'))&~cellfun('isempty',strfind(lower({D.name}),'surf')))
+
+            %Load the half image at the midsaggital plane
+            %HalfName=D(find(sum(cellfun('isempty',strfind(lower({D.name}),'right'))&cellfun('isempty',strfind(lower({D.name}),'surf'))))).name;
+
+            %Load the half image at the surface
+            HalfNameSurf=D(find(~cellfun('isempty',strfind(lower({D.name}),'right'))&~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
+            HalfImageSurf=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,HalfNameSurf],ChannelToLoad);
+            [Rows1x,Columns1x]=size(HalfImageSurf);
+
+
+
+            LeftMidImageName=D(find(~cellfun('isempty',strfind(lower({D.name}),'left'))&cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
+            RightMidImageName=D(find(~cellfun('isempty',strfind(lower({D.name}),'right'))&cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
+            LeftMidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,LeftMidImageName],ChannelToLoad);
+            RightMidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,RightMidImageName],ChannelToLoad);
+
+
+            %The code below is meant for troubleshooting. I basically used it
+            %to figure out whether the alignment between the two half images
+            %was correct.
+            %What I found out is that the margin removal was causing issues. I
+            %need to get back to it later.
+            %close all
+
+    %         %Stitch the full embryo and overlay with the surface image - This
+    %         %seems to work!
+    %         FullEmbryoStitch = mat2gray(imstitch(LeftMidImage,RightMidImage, xShift, yShift,[1 2]),[0,100]);
+    %         PatchedSurfImage=zeros(size(FullEmbryoStitch));
+    %         
+    %         PatchedSurfImage(:,...
+    %             Columns1x-xShift+1:2*Columns1x-xShift)=...
+    %             mat2gray(HalfImageSurf,[0,100]);
+    %        
+    %         OverlayFullEmbryoStitch=cat(3,PatchedSurfImage==1,FullEmbryoStitch==1,zeros(size(FullEmbryoStitch)));
+    %         
+    %         
+    %         
+    %         
+    %         %This one seems to coincide with what I get if I do the overlay in
+    %         %ImageJ
+    %         figure(3)
+    %         imshow(OverlayFullEmbryoStitch)
+    %         
+    %         
+    %         
+    %         %Grab the FullEmbryo image and overlay it with the surface one
+    %         
+    %         PatchedMidImage=zeros(Rows1x*2,Columns1x*2);
+    %         PatchedSurfImage=zeros(Rows1x*2,Columns1x*2);
+    %         
+    % 
+    %         
+    %         PatchedMidImage(Rows1x/2+1:size(FullEmbryo,1)+Rows1x/2,...
+    %             Columns1x/2+1:size(FullEmbryo,2)+Columns1x/2)=mat2gray(FullEmbryo,[0,100]);
+    %         PatchedSurfImage(Rows1x/2+1:Rows1x+Rows1x/2,...
+    %             Columns1x*3/2+1-xShift:Columns1x*3/2-xShift+Columns1x)=...
+    %             mat2gray(HalfImageSurf,[0,100]);
+    %         
+    %         OverlayFullEmbryo=cat(3,PatchedSurfImage==1,PatchedMidImage==1,zeros(Rows1x*2,Columns1x*2));
+    %         
+    %         figure(4)
+    %         imshow(OverlayFullEmbryo)
+
+
+            %This is for the half image
+
+            %Get the imaging region
+            ImageCenter=[Rows1x/2,Columns1x/2];
+            %Imaged region mapped onto the zoomed out image
+            TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow+1,...
+                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn+1];
+            BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
+            %AP position mapped onto the zoomed out image
+            coordAHalf=coordA+[-Columns+xShift,0];
+            coordPHalf=coordP+[-Columns+xShift,0];
+
+
+            %Start by overlaying the zoom in figure on top of the zoom out
+            %figure. Also add the rectangle.
+
+            %Create an overlay of the mask in zoom in and zoom out
+            NucMaskZoomInOverlay=zeros(size(SurfImage));
+
+            NucMaskZoomInOverlay(TopLeftHalf(1):BottomRightHalf(1),TopLeftHalf(2):BottomRightHalf(2))=...
+                        imresize(NucMaskZoomIn,1/ZoomRatio);
+
+            SurfOutMaskInOverlay=cat(3,imadjust(mat2gray(NucMaskZoomOut)),imadjust(mat2gray(NucMaskZoomInOverlay)),...
+                zeros(size(SurfImage)));
+
+
+            figure(5)
+            imshow(SurfOutMaskInOverlay)
+            hold on
+            rectangle('Position',[TopLeftHalf([2,1]),BottomRightHalf([2,1])-TopLeftHalf([2,1])],'EdgeColor','r')
+            plot(coordAHalf(1),coordAHalf(2),'.g','MarkerSize',30)
+            plot(coordPHalf(1),coordPHalf(2),'.r','MarkerSize',30)
+            plot([coordAHalf(1),coordPHalf(1)],[coordAHalf(2),coordPHalf(2)],'-b')
+            hold off
+
+
+            %This is for the full image
+
+            TopLeft=TopLeftHalf+[0,Columns1x-xShift];
+            BottomRight=BottomRightHalf+[0,Columns1x-xShift];
+
+            figure(6)
+            imshow(imadjust(mat2gray(FullEmbryo)),'DisplayRange',[],'InitialMagnification',100)
+            hold on
+            rectangle('Position',[TopLeft([2,1]),BottomRight([2,1])-TopLeft([2,1])],'EdgeColor','r')
+            plot(coordA(1),coordA(2),'.g','MarkerSize',30)
+            plot(coordP(1),coordP(2),'.r','MarkerSize',30)
+            plot([coordA(1),coordP(1)],[coordA(2),coordP(2)],'-b')
+            hold off
+
+
+        elseif sum(~cellfun('isempty',strfind(lower({D.name}),'left'))&...
+                ~cellfun('isempty',strfind(lower({D.name}),'surf')))
+
+            %Load the half image at the midsaggital plane
+            %HalfName=D(find(sum(cellfun('isempty',strfind(lower({D.name}),'right'))&cellfun('isempty',strfind(lower({D.name}),'surf'))))).name;
+
+            %Load the half image at the surface
+            HalfNameSurf=D(find(~cellfun('isempty',strfind(lower({D.name}),'left'))&~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
+            HalfImageSurf=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,HalfNameSurf],ChannelToLoad);
+            [Rows1x,Columns1x]=size(HalfImageSurf);
+
+
+            LeftMidImageName=D(find(~cellfun('isempty',strfind(lower({D.name}),'left'))&cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
+            RightMidImageName=D(find(~cellfun('isempty',strfind(lower({D.name}),'right'))&cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
+            LeftMidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,LeftMidImageName],ChannelToLoad);
+            RightMidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,RightMidImageName],ChannelToLoad);
+
+            %Stitch the full embryo and overlay with the surface image - This
+            %seems to work!
+            FullEmbryoStitch = mat2gray(imstitch(LeftMidImage,RightMidImage, xShift, yShift,[1 2]),[0,50]);
+            PatchedSurfImage=zeros(size(FullEmbryoStitch));
+
+            PatchedSurfImage(:,...
+               1:Columns1x)=...
+                mat2gray(circshift(HalfImageSurf,[-yShift,0]),[0,50]);
+
+
+
+            OverlayFullEmbryoStitch=cat(3,PatchedSurfImage==1,FullEmbryoStitch==1,zeros(size(FullEmbryoStitch)));
+
+
+            %The code below is meant for troubleshooting. I basically used it
+            %to figure out whether the alignment between the two half images
+            %was correct.
+            %What I found out is that the margin removal was causing issues. I
+            %need to get back to it later.
+            %close all
+
+            %This one seems to coincide with what I get if I do the overlay in
+            %ImageJ
+            figure(3)
+            imshow(OverlayFullEmbryoStitch)
+
+
+
+            %Grab the FullEmbryo image and overlay it with the surface one
+
+            PatchedMidImage=zeros(Rows1x*2,Columns1x*2);
+            PatchedSurfImage=zeros(Rows1x*2,Columns1x*2);
+
+
+
+            PatchedMidImage(Rows1x/2+1:size(FullEmbryo,1)+Rows1x/2,...
+                Columns1x/2+1:size(FullEmbryo,2)+Columns1x/2)=mat2gray(FullEmbryo,[0,50]);
+            PatchedSurfImage(Rows1x/2+1-yShift:Rows1x+Rows1x/2-yShift,...
+                Columns1x/2+1:Columns1x/2+Columns1x)=...
+                mat2gray(HalfImageSurf,[0,50]);
+
+            OverlayFullEmbryo=cat(3,PatchedSurfImage==1,PatchedMidImage==1,zeros(Rows1x*2,Columns1x*2));
+
+            figure(4)
+            imshow(OverlayFullEmbryo)
+
+
+            %This is for the half image
+
+            %Get the imaging region
+            ImageCenter=[Rows1x/2,Columns1x/2];
+            %Imaged region mapped onto the zoomed out image
+            TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow+1,...
+                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn+1];
+            BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
+
+
+            %AP position mapped onto the zoomed out image
+            coordAHalf=coordA+[0,yShift];
+            coordPHalf=coordP+[0,yShift];
+
+
+            %Start by overlaying the zoom in figure on top of the zoom out
+            %figure. Also add the rectangle.
+
+            %Create an overlay of the mask in zoom in and zoom out
+            NucMaskZoomInOverlay=zeros(size(SurfImage));
+
+            NucMaskZoomInOverlay(TopLeftHalf(1):BottomRightHalf(1),TopLeftHalf(2):BottomRightHalf(2))=...
+                        imresize(NucMaskZoomIn,1/ZoomRatio);
+
+            SurfOutMaskInOverlay=cat(3,imadjust(mat2gray(NucMaskZoomOut)),imadjust(mat2gray(NucMaskZoomInOverlay)),...
+                zeros(size(SurfImage)));
+
+
+            figure(5)
+            imshow(SurfOutMaskInOverlay)
+            hold on
+            rectangle('Position',[TopLeftHalf([2,1]),BottomRightHalf([2,1])-TopLeftHalf([2,1])],'EdgeColor','r')
+            plot(coordAHalf(1),coordAHalf(2),'.g','MarkerSize',30)
+            plot(coordPHalf(1),coordPHalf(2),'.r','MarkerSize',30)
+            plot([coordAHalf(1),coordPHalf(1)],[coordAHalf(2),coordPHalf(2)],'-b')
+            hold off
+
+
+            %This is for the full image
+
+            TopLeft=TopLeftHalf+[-yShift,0];
+            BottomRight=BottomRightHalf+[-yShift,0];
+
+            figure(6)
+            imshow(imadjust(mat2gray(FullEmbryo)),'DisplayRange',[],'InitialMagnification',100)
+            hold on
+            rectangle('Position',[TopLeft([2,1]),BottomRight([2,1])-TopLeft([2,1])],'EdgeColor','r')
+            plot(coordA(1),coordA(2),'.g','MarkerSize',30)
+            plot(coordP(1),coordP(2),'.r','MarkerSize',30)
+            plot([coordA(1),coordP(1)],[coordA(2),coordP(2)],'-b')
+            hold off
+
+        else
+            error('Problem with the surface file (or its naming) in the source data folder "FullEmbryo"')
+        end
     end
 
 
@@ -639,22 +737,14 @@ if ~NoAP
     SurfName=D(find(~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
     SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,SurfName],ChannelToLoad);
 
-    %Did we already have information from manual alignment?
-%     if ManualAlignmentDone
-%         TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
-%                 ImageCenter(2)-Columns1x/ZoomRatio/2+ShiftColumn];
-%         BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
-%             ImageCenter(2)+Columns1x/ZoomRatio/2+ShiftColumn];
+  
+%     
+%     
+%     %Did the user want to do manual alignment?
+%     if ManualAlignment
+%        [ShiftColumn,ShiftRow,TopLeftHalf,BottomRightHalf]=ManualAPCorrection(SurfImage,TopLeftHalf,BottomRightHalf,...
+%            ShiftColumn,ShiftRow,coordAHalf,coordPHalf,Rows1x,Columns1x,ZoomRatio);
 %     end
-
-    
-    
-    
-    %Did the user want to do manual alignment?
-    if ManualAlignment
-       [ShiftColumn,ShiftRow,TopLeftHalf,BottomRightHalf]=ManualAPCorrection(SurfImage,TopLeftHalf,BottomRightHalf,...
-           ShiftColumn,ShiftRow,coordAHalf,coordPHalf,Rows1x,Columns1x,ZoomRatio);
-    end
 
 
 
@@ -708,10 +798,11 @@ if ~NoAP
 
     %Angle between the x-axis and the AP-axis
     APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
+    %Correction for if APAngle is in quadrants II or III
     if coordPZoom(1)-coordAZoom(1) < 0
         APAngle = APAngle + pi;
     end
-    % Correction for if APAngle is in quadrants II or III
+    
     
     APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
 

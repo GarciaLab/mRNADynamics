@@ -78,10 +78,6 @@ load([DropboxFolder,filesep,Prefix,'\APDetection.mat'])
 
 %Angle between the x-axis and the AP-axis
 APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
-%Correction for if APAngle is in quadrants II or III
-if coordPZoom(1)-coordAZoom(1) < 0
-    APAngle = APAngle + pi;
-end
 APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
 
 
@@ -92,8 +88,10 @@ for i=1:Rows
     for j=1:Columns
         Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
         % Correction for if Angle is in quadrant II
-        if (j-coordAZoom(1) < 0)
+        if (j-coordAZoom(1) < 0)&(i-coordAZoom(2) > 0)
             Angle = Angle + pi;
+        % If we are in quadrant IV
+        elseif (j-coordAZoom(1) > 0)&(i-coordAZoom(2) < 0)
         end
         
 

@@ -283,11 +283,7 @@ while (cc~=13)
         set(gcf,'Position',[10    89   677   599]);
         set(gcf,'MenuBar','none','ToolBar','none')
     else
-        if strcmp('albert-pc',name(1:end-1))
-            set(gcf,'Position',[9         594        1106         451]);
-        else
-            set(gcf,'Position',[10   414   677   351]);
-        end
+        set(gcf,'Position',[10   414   677   351]);
         set(gcf,'MenuBar','none','ToolBar','none')
     end
     
@@ -383,11 +379,8 @@ while (cc~=13)
             HisOverlayImage=cat(3,mat2gray(ImageHis,double(DisplayRange))*2,mat2gray(Image),zeros(size(Image)));
         end
         imshow(HisOverlayImage,'Border','Tight')
-        if strcmp('albert-pc',name(1:end-1))
-            set(gcf,'Position',[8         110        1107         440])
-        else
-            set(gcf,'Position',[-7    60   691   311])
-        end
+
+        set(gcf,'Position',[-7    60   691   311])
         set(gcf,'MenuBar','none','ToolBar','none')
         
        

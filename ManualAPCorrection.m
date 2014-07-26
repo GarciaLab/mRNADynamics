@@ -84,6 +84,14 @@ while (cc~=13)
         ShiftRow=ShiftRow-1;
     elseif (ct~=0)&(cc=='z')
         ShiftRow=ShiftRow+1;
+    elseif (ct~=0)&(cc=='>')
+        ShiftColumn=ShiftColumn+10;
+    elseif (ct~=0)&(cc=='<')
+        ShiftColumn=ShiftColumn-10;
+    elseif (ct~=0)&(cc=='A')
+        ShiftRow=ShiftRow-10;
+    elseif (ct~=0)&(cc=='Z')
+        ShiftRow=ShiftRow+10;
     
     %Zoom in and out
     elseif (ct~=0)&(cc=='=')
@@ -98,6 +106,8 @@ while (cc~=13)
         OldYLim=ylim;
         xlim([OldXLim-CorrX]*2+CorrX)
         ylim([OldYLim-CorrY]*2+CorrY)
+    elseif (ct~=0)&(cc=='9')
+        keyboard
     end
 end
 

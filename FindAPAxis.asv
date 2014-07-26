@@ -282,20 +282,7 @@ else
            circshift(RightImage(1:h,1+Margin:end-Margin), [yShift2, 0]);
 
         APImage=APImage(:,1:w+wRight+1-xShift2-xShift1);
-        
-        %Rotate the image back
-        APImage=imrotate(APImage,-90);
-        
-        %Swap the shifts
-        yShift1Temp=yShift1;
-        yShift2Temp=yShift2;
-        xShift1Temp=xShift1;
-        xShift2Temp=xShift2;
-        
-        yShift1=xShift1Temp;
-        xShift1=yShift1Temp;
-        yShift2=xShift2Temp;
-        xShift2=yShift2Temp;
+
     end
         
 end

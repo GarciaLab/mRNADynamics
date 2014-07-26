@@ -7,8 +7,8 @@ function [coordA,coordP,xShift,yShift]=ManualFindAPAxis(varargin)
 %a z: Move one image up and down
 %, .: Move one to the right and left
 %n m: Increase or decrease contrast
-%s: Switch between left/center and center/left. This only works when having
-%three images
+%f: Flipped the images. This is useful if the 1x pictures weren't taken in
+%the right orientation.
 
 %xShift and yShift are the shifts used to stitch the images.
 
@@ -350,20 +350,16 @@ else
 
     APImage = zeros(h, w+wRight);
     APImage(:, 1:w)=imm2;
-    APImage(:, w+1-xo2-xo1+Margin:wRight+w-xo2-xo1-Margin) =...
-       circshift(right(1:h,1+Margin:end-Margin), [yo2, 0]);
+    APImage(:, w+1-xo2-xo1+Margin:wRight+w-xShift2-xShift1-Margin) =...
+       circshift(RightImage(1:h,1+Margin:end-Margin), [yShift2, 0]);
 
-    APImage=APImage(:,1:w+wRight+1-xo2-xo1);
+    APImage=APImage(:,1:w+wRight+1-xShift2-xShift1);
 
     %Rotate the image back
     APImage=imrotate(APImage,-90);
     
-    %Swap the shifts
-    yShift1=xo1;
-    xShift1=yo1;
-    yShift2=xo2;
-    xShift2=yo2;
     
+   
     
 end
 
