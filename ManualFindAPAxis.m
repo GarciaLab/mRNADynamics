@@ -305,11 +305,14 @@ while (cc~=13)
 end
 
 if ~ThreeImages
+    xo1=xoDisplay;
+    yo1=yoDisplay;    
+    
     [h, w] = size(left);
     imm2=imm1(:,1:2*w+1-xo1);
 
     %Rotate the image again if it was flipped
-    if ~LeftRight==1
+    if ~LeftRight
         imm2=imrotate(imm2,-90);
         xShift= yo1;
         yShift= xo1;
