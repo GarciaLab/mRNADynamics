@@ -27,6 +27,7 @@ function CheckNucleiSegmentation(varargin)
 
 close all
 
+%Flags
 
 %Find out which computer this is. That will determine the folder structure.
 [ret, name] = system('hostname');  
@@ -319,6 +320,7 @@ while (cc~=13)
         
     elseif (ct~=0)&(cc=='r')    %Reset the contrast
         DisplayRange=[min(min(HisImage)),max(max(HisImage))];
+   
     end
 end
 
@@ -326,7 +328,6 @@ end
 
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 display('Ellipses saved.')
-
 
 
 

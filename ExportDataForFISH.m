@@ -40,14 +40,20 @@ MaxHistone=1000;    %Maximum intensity for the histone channel. Anything above
 %Look at parameters
 PrefixOverrideFlag = 0;
 TAGOnly=0;
-for i=1:length(varargin)
-    switch lower(varargin{i})
-        case {'tagonly'}
+SkipFrames=[];
+k=1;
+while k<length(varargin)
+    if strcmp(lower(varargin{k}),'tagonly')
             TAGOnly=1;
-        otherwise
-            Prefix = varargin{i};
-            PrefixOverrideFlag = 1;
+    elseif strcmp(lower(varargin{k}),'skipframes')
+        SkipFrames=varargin{k+1};
+        k=k+1;
+        warning('SkipFrame mode.')
+    else
+        Prefix = varargin{k};
+        PrefixOverrideFlag = 1;
     end
+    k=k+1;
 end
 
                 
@@ -519,16 +525,16 @@ elseif strcmp(FileMode,'LIFExport')
         if i == 1
             start_index = 0;
         else
-        start_index = ceil((nnz(Frame_Times)+1)/42)*42+1;
+            start_index = ceil((nnz(Frame_Times)+1)/42)*42+1;
         end
-    for k = 0:TimeStampList.getLength-1
-    TimeStamp = TimeStampList.item(k);
-    Date = char(TimeStamp.getAttribute('Date'));
-    Time = char(TimeStamp.getAttribute('Time'));
-    Milli = char(TimeStamp.getAttribute('MiliSeconds'));
-    time_in_days = datenum(strcat(Date,'-',Time,'-',Milli),'dd/mm/yyyy-HH:MM:SS AM-FFF');
-    Frame_Times(start_index+k+1)=time_in_days*86400;
-    end
+        for k = 0:TimeStampList.getLength-1
+            TimeStamp = TimeStampList.item(k);
+            Date = char(TimeStamp.getAttribute('Date'));
+            Time = char(TimeStamp.getAttribute('Time'));
+            Milli = char(TimeStamp.getAttribute('MiliSeconds'));
+            time_in_days = datenum(strcat(Date,'-',Time,'-',Milli),'dd/mm/yyyy-HH:MM:SS AM-FFF');
+            Frame_Times(start_index+k+1)=time_in_days*86400;
+        end
     end
     
     First_Time=Frame_Times(1);
@@ -561,29 +567,32 @@ elseif strcmp(FileMode,'LIFExport')
     blank_frameindex = zeros(1,NFrames);
     blank_frames = zeros(1,NFrames);
     h=waitbar(0,'Extracting LIFExport images');
+    
+    
+    OriginalFrameCounter=1;
     for i = 1:length(D) 
         if ~isempty(findstr(D(i).name,'_ch00'))
             waitbar(i/length(D),h)
             Image=uint16(double(imread([Folder,filesep,D(i).name])));
             if max(Image(:))==0  
-             blank_frames(m) = blank_frames(m)+1;
-             blank_frameindex(m) = m;
-            if slice_num == NSlices
-                m=m+1;
-                slice_num = 1;
-            else
-                slice_num = slice_num+1;
-            end
+                blank_frames(m) = blank_frames(m)+1;
+                blank_frameindex(m) = m;
+                if slice_num == NSlices
+                    m=m+1;
+                    slice_num = 1;
+                else
+                    slice_num = slice_num+1;
+                end
             elseif (max(Image(:))~=0)&&(blank_frames(m)==0)
-            NewName=[Prefix,'_',iIndex(n,3),'_z',iIndex(slice_num,2),'.tif'];
-            imwrite(Image,[OutputFolder,filesep,NewName]);
-            if slice_num == NSlices
-                m=m+1;
-                n=n+1;
-                slice_num = 1;
-            else
-                slice_num = slice_num+1;
-            end
+                NewName=[Prefix,'_',iIndex(n,3),'_z',iIndex(slice_num,2),'.tif'];
+                imwrite(Image,[OutputFolder,filesep,NewName]);
+                if slice_num == NSlices
+                    m=m+1;
+                    n=n+1;
+                    slice_num = 1;
+                else
+                    slice_num = slice_num+1;
+                end
             end
         end
     end
@@ -604,30 +613,30 @@ elseif strcmp(FileMode,'LIFExport')
         if ~isempty(findstr(D(i).name,'_ch01'))
             waitbar(i/length(D),h)
             Hist(:,:,slice_num)=uint16(double(imread([Folder,filesep,D(i).name])));
-        if blank_frames(m)==0
-            if slice_num == NSlices
-                HisRFP=max(Hist,[],3);
-                imwrite(uint16(HisRFP),...
-                [OutputFolder,filesep,Prefix,'-His_',iIndex(n,3),'.tif'])
-                m=m+1;
-                n=n+1;
-                slice_num = 1;
+            if blank_frames(m)==0
+                if slice_num == NSlices
+                    HisRFP=max(Hist,[],3);
+                    imwrite(uint16(HisRFP),...
+                    [OutputFolder,filesep,Prefix,'-His_',iIndex(n,3),'.tif'])
+                    m=m+1;
+                    n=n+1;
+                    slice_num = 1;
+                else
+                    slice_num = slice_num+1;
+                end
             else
-                slice_num = slice_num+1;
+                if slice_num == NSlices
+                    m=m+1;
+                    slice_num = 1;
+                else
+                    slice_num = slice_num+1;
+                end
             end
-        else
-            if slice_num == NSlices
-                m=m+1;
-                slice_num = 1;
-            else
-                slice_num = slice_num+1;
-            end
-        end
         end
     end
     close(h)
     
-% TAG File Information
+    % TAG File Information
     Output{1}=['id ',Prefix,'_'];
     Output{2}='';
     Output{3}='1';
@@ -636,6 +645,58 @@ elseif strcmp(FileMode,'LIFExport')
     %Output{6}=['flat FF'];
     
 end
+
+
+%Skipping frames?
+if ~isempty(SkipFrames)
+    %Filter FrameInfo
+    FrameFilter=ones(size(FrameInfo));
+    FrameFilter(SkipFrames)=0;
+    FrameInfo=FrameInfo(logical(FrameFilter));
+    
+    
+    %Rename all Histone channel images
+    %Find all the Histone files
+    D=dir([OutputFolder,filesep,'*-His*.tif']);
+    %Delete the skipped files
+    for i=SkipFrames
+        delete([OutputFolder,filesep,D(i).name]);
+    end
+    %Rename all remaining files
+    D=dir([OutputFolder,filesep,'*-His*.tif']);
+    for i=1:length(D)
+        if ~strcmp([OutputFolder,filesep,D(i).name],...
+                [OutputFolder,filesep,D(i).name(1:end-7),iIndex(i,3),'.tif'])
+            movefile([OutputFolder,filesep,D(i).name],...
+                [OutputFolder,filesep,D(i).name(1:end-7),iIndex(i,3),'.tif'])
+        end
+    end
+    
+    %Rename all MCP channel images
+    %Find all the MCP files
+    D=dir([OutputFolder,filesep,'*_z01.tif']);
+    %Delete the skipped files
+    for i=SkipFrames
+        for j=1:NSlices
+            delete([OutputFolder,filesep,D(i).name(1:end-6),iIndex(j,2),'.tif'])
+        end
+    end
+    %Rename all remaining files
+    D=dir([OutputFolder,filesep,'*_z01.tif']);
+    for i=1:length(D)
+        if ~strcmp([OutputFolder,filesep,D(i).name],...
+                    [OutputFolder,filesep,D(i).name(1:end-11),iIndex(i,3),'_z01.tif'])
+            for j=1:NSlices
+                movefile([OutputFolder,filesep,D(i).name(1:end-6),iIndex(j,2),'.tif'],...
+                    [OutputFolder,filesep,D(i).name(1:end-11),iIndex(i,3),'_z',iIndex(j,2),'.tif'])
+            end
+        end
+    end
+    
+    %Redefine the output for the FISH code
+    Output{4}=['frames ',num2str(length(FrameInfo)),':1:',num2str(NSlices)];
+end
+
 
 
 %Create the TAG file for the FISH analysis code
