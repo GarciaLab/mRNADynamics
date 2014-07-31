@@ -108,6 +108,13 @@ indMit=[ncs'-2,ncs'+2];
 indMit(indMit<1)=1;
 
 
+%If indMit is empty this means that we didn't see any mitosis. Deal with
+%this by assigning the first frames to it
+if isempty(indMit)
+    indMit=[1,2];
+end
+
+
 %Make sure to edit getdefaultParameters.m to change the pixel size
 %parameters!!
 
