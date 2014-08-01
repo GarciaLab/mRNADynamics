@@ -128,6 +128,8 @@ if exist([OutputFolder,filesep,'FrameInfo.mat'])
         
     elseif strcmp(FrameInfo(1).FileMode,'LSM')
         PixelSize=FrameInfo(1).PixelSize*1E6;
+    elseif strcmp(FrameInfo(1).FileMode,'LIFExport')
+        PixelSize=FrameInfo(1).PixelSize*1E6;
     end
 else
     warning('No FrameInfo.mat detected. Trying to pull out magnification information from the TIF file')
