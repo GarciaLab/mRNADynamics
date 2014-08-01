@@ -542,6 +542,8 @@ for i=1:length(Particles)
                     else
                         CompiledParticles(k).PParticle=find(AssignedNuclei==schnitzcells(Particles(i).Nucleus).P);
                     end
+                else
+                    CompiledParticles(k).PParticle=[];
                 end
 
                 if ~isempty(schnitzcells(Particles(i).Nucleus).D)
@@ -550,6 +552,8 @@ for i=1:length(Particles)
                     else
                         CompiledParticles(k).DParticle=find(AssignedNuclei==schnitzcells(Particles(i).Nucleus).D);
                     end
+                else
+                    CompiledParticles(k).DParticle=[];
                 end
 
                 if ~isempty(schnitzcells(Particles(i).Nucleus).E)
@@ -558,6 +562,8 @@ for i=1:length(Particles)
                     else
                         CompiledParticles(k).EParticle=find(AssignedNuclei==schnitzcells(Particles(i).Nucleus).E);
                     end
+                else
+                    CompiledParticles(k).EParticle=[];
                 end
 
                 %Save information about the nucleus birth and death
@@ -906,7 +912,11 @@ for i=1:length(NewCyclePos)
     end
 end
 [Dummy,MaxIndex]=max(MeanVectorAll(NewCyclePos(i):end));
-MaxFrame=[MaxFrame,NewCyclePos(i)+MaxIndex-1];
+if ~isempty(NewCyclePos)        %Why is this empty sometimes?
+                                %I think this only occurs with suboptimal
+                                %data
+    MaxFrame=[MaxFrame,NewCyclePos(i)+MaxIndex-1];
+end
 
 
 
