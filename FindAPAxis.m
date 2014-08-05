@@ -115,16 +115,8 @@ ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',fi
 %Get the flat-field information
 
 %Figure out the zoom factor
-
-LSMF=0;
-try
 Zoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
-catch
-    Zoom=[];
-    LSMF=1;
-end
 
-if ~(LSMF)
 if isempty(Zoom)
     Dtemp=dir([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\temp\*.tif']);
     LeftFileIndex=find(~cellfun('isempty',strfind(lower({Dtemp.name}),'left'))&...
@@ -136,9 +128,6 @@ end
 %Look for the file
 FFDir=dir([SourcePath,filesep,Date,'\FF',Zoom(1:end-1),'x*.*']);
 %If there's more than one match then ask for help
-
-
-
 if length(FFDir)==1
     FFFile=FFDir(1).name;
 elseif isempty(FFDir)
@@ -149,15 +138,6 @@ else
     FFFile=uigetfile([Folder,'\..\FF',Zoom(1:end-1),'x*.*'],'Select flatfield file');
 end
 
-else
-        display('Warning, no flat field file found. Press any key to proceed without it');
-    FFImage=ones(ImageInfo(1).Height,ImageInfo(1).Width);
-    
-
-    imwrite(ones(2345,2345),[SourcePath,filesep,Date,'\FF.tif']);
-imwrite(ones(2345,2345),[SourcePath,filesep,Date,'\FF.tif'],'WriteMode','append');
-    
-end
 
 
 
