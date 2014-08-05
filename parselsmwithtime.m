@@ -67,6 +67,12 @@ TEMPDat.counterr=0;
 TEMPDat.pastposi=0;
 TEMPDat.rat=0;
 TEMPDat.std=0;
+TEMPDat.holdon=0;
+TEMPDat.lastswitch=0;
+
+TEMPDat.iicnt=1;
+
+
 
 if  isempty(findstr(filename,'.'))
     filename = [filename,'.tif'];
@@ -355,30 +361,63 @@ else
            entryvaltemp=entry.val;
            
            
-%            %%%%% Hack that tracks big changes to allow proper locations 
-%            %%%%% of planes to be specified for files larger then 4096 Mb.
-%            
-%            for i=1:length(entry.val)
-%            
-%           TEMPDat.rat= [TEMPDat.rat; TEMPDat.pastposi/entry.val(i)];
-%           TEMPDat.std= [TEMPDat.std;std(TEMPDat.rat)];
-%            
-%            if TEMPDat.pastposi/entry.val(i)>20*std(TEMPDat.rat)
-%                
-%                TEMPDat.counterr=TEMPDat.counterr+1;
-%            
-%            end
-%            
-%            entry.val(i)= entry.val(i)+TEMPDat.counterr*(2^32);
-%            
-%            TEMPDat.pastposi=entryvaltemp(i);
-%            
-%            end
-%            
-%            
-%            %%%%%%%%%%%%%%%%%%
-%            %%%%%%%%%%%%%%%%%%
-%         
+           %%%%% Hack that tracks big changes to allow proper locations 
+           %%%%% of planes to be specified for files larger then 4096 Mb.
+           
+           for i=1:length(entry.val)
+           
+          TEMPDat.rat= [TEMPDat.rat; TEMPDat.pastposi/entry.val(i)];
+          TEMPDat.std= [TEMPDat.std;std(TEMPDat.rat)];
+          TEMPDat.holdon = [TEMPDat.holdon;entry.val(i)];
+          TEMPDat.iicnt=TEMPDat.iicnt+1;
+       
+           
+           if TEMPDat.pastposi/entry.val(i)>20*std(TEMPDat.rat)
+               
+               if length(TEMPDat.lastswitch)==1;
+                   
+               TEMPDat.counterr=TEMPDat.counterr+1;
+           
+               entry.val(i)= entry.val(i)+TEMPDat.counterr*(2^32);
+               TEMPDat.pastposi=entryvaltemp(i);
+               TEMPDat.lastswitch=[TEMPDat.lastswitch;TEMPDat.iicnt];
+               
+               else
+                   
+                   if TEMPDat.iicnt-TEMPDat.lastswitch(end)<(TEMPDat.lastswitch(2)-TEMPDat.lastswitch(1))/2
+                       
+                   entry.val(i)= entry.val(i)+TEMPDat.counterr*(2^32);
+                   TEMPDat.pastposi=entryvaltemp(i);
+                   
+                   else
+                       
+               TEMPDat.counterr=TEMPDat.counterr+1;
+           
+               entry.val(i)= entry.val(i)+TEMPDat.counterr*(2^32);
+               TEMPDat.pastposi=entryvaltemp(i);
+               TEMPDat.lastswitch=[TEMPDat.lastswitch;TEMPDat.iicnt];
+                       
+                   end
+               end
+                   
+                   
+     
+               
+           else
+               
+           entry.val(i)= entry.val(i)+TEMPDat.counterr*(2^32);
+           TEMPDat.pastposi=entryvaltemp(i);
+           
+           end
+           
+           
+           end
+           
+           %save_to_base(1)
+           
+           %%%%%%%%%%%%%%%%%
+           %%%%%%%%%%%%%%%%%
+        
   else
 
            entry.val = fread(TIF.file, entry.cnt, entry.matlabType, TIF.BOS);
