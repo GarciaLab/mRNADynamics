@@ -42,7 +42,7 @@ PrefixOverrideFlag = 0;
 TAGOnly=0;
 SkipFrames=[];
 k=1;
-while k<length(varargin)
+while k<=length(varargin)
     if strcmp(lower(varargin{k}),'tagonly')
             TAGOnly=1;
     elseif strcmp(lower(varargin{k}),'skipframes')
