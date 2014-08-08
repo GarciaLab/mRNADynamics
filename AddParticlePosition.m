@@ -289,7 +289,7 @@ if ~NoAP
     %Are we dealing with three images?
     if ~isempty(findstr(lower(SurfName),'center'))
         %Is this a left-right orientation or top-down?
-        if sum(~cellfun('isempty',strfind(lower({D.name}),'left'))&~cellfun('isempty',strfind(lower({D.name}),'right')))
+        if sum(~cellfun('isempty',strfind(lower({D.name}),'left'))) && sum(~cellfun('isempty',strfind(lower({D.name}),'right')))
         
             HalfName=D(find(sum(~cellfun('isempty',strfind(lower({D.name}),'center'))&~cellfun('isempty',strfind(lower({D.name}),'surf'))))).name;
             HalfImageSurf=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,HalfName],ChannelToLoad);
@@ -314,7 +314,7 @@ if ~NoAP
             coordPHalf=coordP+[-Columns+xShift1,0];
             
             
-        elseif sum(~cellfun('isempty',strfind(lower({D.name}),'top')))&sum(~cellfun('isempty',strfind(lower({D.name}),'bottom')))
+        elseif sum(~cellfun('isempty',strfind(lower({D.name}),'top'))) && sum(~cellfun('isempty',strfind(lower({D.name}),'bottom')))
         
             HalfName=D(find(sum(~cellfun('isempty',strfind(lower({D.name}),'center'))&~cellfun('isempty',strfind(lower({D.name}),'surf'))))).name;
             HalfImageSurf=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,HalfName],ChannelToLoad);
