@@ -202,8 +202,8 @@ if ~NoAP
                 %Real image overlay
                 %Crop the zoomed out image to match the zoomed in one
                 SurfImageResizeZoom=...
-                    SurfImageResized(RowsResized/2-RowsZoom/2+ShiftRow*ZoomRatio:RowsResized/2+RowsZoom/2-1+ShiftRow*ZoomRatio,...
-                    ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ZoomRatio:ColumnsResized/2+ColumnsZoom/2-1+ShiftColumn*ZoomRatio);
+                    SurfImageResized(round(RowsResized/2-RowsZoom/2+ShiftRow*ZoomRatio):round(RowsResized/2+RowsZoom/2-1+ShiftRow*ZoomRatio),...
+                    round(ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ZoomRatio):round(ColumnsResized/2+ColumnsZoom/2-1+ShiftColumn*ZoomRatio));
                 ImOverlay=cat(3,mat2gray(SurfImageResizeZoom),...
                     +mat2gray(ZoomImage),zeros(size(SurfImageResizeZoom)));
 
@@ -211,8 +211,8 @@ if ~NoAP
                 NucMaskZoomOut=GetNuclearMask(SurfImage,2.5,0);
                 NucMaskZoomOutResized=imresize(NucMaskZoomOut, ResizeFactor);
                 NucMaskZoomOutResizedCropped=...
-                    NucMaskZoomOutResized(RowsResized/2-RowsZoom/2+ShiftRow*ZoomRatio:RowsResized/2+RowsZoom/2-1+ShiftRow*ZoomRatio,...
-                    ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ZoomRatio:ColumnsResized/2+ColumnsZoom/2-1+ShiftColumn*ZoomRatio);
+                    NucMaskZoomOutResized(round(RowsResized/2-RowsZoom/2+ShiftRow*ZoomRatio):round(RowsResized/2+RowsZoom/2-1+ShiftRow*ZoomRatio),...
+                    round(ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ZoomRatio):round(ColumnsResized/2+ColumnsZoom/2-1+ShiftColumn*ZoomRatio));
                 NucMaskZoomIn=GetNuclearMask(ZoomImage,8,2);
                 ImOverlayMask=cat(3,mat2gray(NucMaskZoomOutResizedCropped),...
                     +mat2gray(NucMaskZoomIn),zeros(size(NucMaskZoomOutResizedCropped)));
@@ -300,18 +300,18 @@ if ~NoAP
 
 
             %This is for the half image
-            TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow+1,...
-                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn+1];
-            BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
-                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
+            TopLeftHalf = round([ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow+1,...
+                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn+1]);
+            BottomRightHalf = round([ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn]);
            
             %This is for the full image
             TopLeft=TopLeftHalf+[0,Columns1x-xShift1];
             BottomRight=BottomRightHalf+[0,Columns1x-xShift1];
             
             %AP position mapped onto the zoomed out image
-            coordAHalf=coordA+[-Columns+xShift1,0];
-            coordPHalf=coordP+[-Columns+xShift1,0];
+            coordAHalf=coordA+[-Columns1x+xShift1,0];
+            coordPHalf=coordP+[-Columns1x+xShift1,0];
             
             
         elseif sum(~cellfun('isempty',strfind(lower({D.name}),'top'))) && sum(~cellfun('isempty',strfind(lower({D.name}),'bottom')))
@@ -323,10 +323,10 @@ if ~NoAP
             %Get the imaging region
             ImageCenter=[Rows1x/2,Columns1x/2];
             %Imaged region mapped onto the zoomed out image
-            TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow+1,...
-                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn+1];
-            BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
-                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
+            TopLeftHalf = round([ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow+1,...
+                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn+1]);
+            BottomRightHalf = round([ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn]);
             
             %AP position mapped onto the zoomed out image. Careful, AP
             %coordinates are defined (x,y).
@@ -371,10 +371,10 @@ if ~NoAP
             %Get the imaging region
             ImageCenter=[Rows1x/2,Columns1x/2];
             %Imaged region mapped onto the zoomed out image
-            TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow+1,...
-                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn+1];
-            BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
-                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
+            TopLeftHalf = round([ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow+1,...
+                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn+1]);
+            BottomRightHalf = round([ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn]);
             
             %AP position mapped onto the zoomed out image. Careful, AP
             %coordinates are defined (x,y).
@@ -409,10 +409,10 @@ if ~NoAP
             %Get the imaging region
             ImageCenter=[Rows1x/2,Columns1x/2];
             %Imaged region mapped onto the zoomed out image
-            TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow+1,...
-                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn+1];
-            BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
-                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
+            TopLeftHalf = round([ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow+1,...
+                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn+1]);
+            BottomRightHalf = round([ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn]);
 
 
             %AP position mapped onto the zoomed out image
@@ -516,13 +516,13 @@ if ~NoAP
             %Get the imaging region
             ImageCenter=[Rows1x/2,Columns1x/2];
             %Imaged region mapped onto the zoomed out image
-            TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow+1,...
-                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn+1];
-            BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
-                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
+            TopLeftHalf = round([ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow+1,...
+                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn+1]);
+            BottomRightHalf = round([ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn]);
             %AP position mapped onto the zoomed out image
-            coordAHalf=coordA+[-Columns+xShift,0];
-            coordPHalf=coordP+[-Columns+xShift,0];
+            coordAHalf=coordA+[-Columns1x+xShift,0];
+            coordPHalf=coordP+[-Columns1x+xShift,0];
 
 
             %Start by overlaying the zoom in figure on top of the zoom out
@@ -532,7 +532,8 @@ if ~NoAP
             NucMaskZoomInOverlay=zeros(size(SurfImage));
 
             NucMaskZoomInOverlay(TopLeftHalf(1):BottomRightHalf(1),TopLeftHalf(2):BottomRightHalf(2))=...
-                        imresize(NucMaskZoomIn,1/ZoomRatio);
+                        imresize(NucMaskZoomIn,...
+                        [length(TopLeftHalf(1):BottomRightHalf(1)), length(TopLeftHalf(2):BottomRightHalf(2))]);
 
             SurfOutMaskInOverlay=cat(3,imadjust(mat2gray(NucMaskZoomOut)),imadjust(mat2gray(NucMaskZoomInOverlay)),...
                 zeros(size(SurfImage)));
@@ -632,10 +633,10 @@ if ~NoAP
             %Get the imaging region
             ImageCenter=[Rows1x/2,Columns1x/2];
             %Imaged region mapped onto the zoomed out image
-            TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow+1,...
-                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn+1];
-            BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
-                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
+            TopLeftHalf = round([ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow+1,...
+                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn+1]);
+            BottomRightHalf = round([ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn]);
 
 
             %AP position mapped onto the zoomed out image
@@ -650,7 +651,8 @@ if ~NoAP
             NucMaskZoomInOverlay=zeros(size(SurfImage));
 
             NucMaskZoomInOverlay(TopLeftHalf(1):BottomRightHalf(1),TopLeftHalf(2):BottomRightHalf(2))=...
-                        imresize(NucMaskZoomIn,1/ZoomRatio);
+                        imresize(NucMaskZoomIn,...
+                        [length(TopLeftHalf(1):BottomRightHalf(1)), length(TopLeftHalf(2):BottomRightHalf(2))]);
 
             SurfOutMaskInOverlay=cat(3,imadjust(mat2gray(NucMaskZoomOut)),imadjust(mat2gray(NucMaskZoomInOverlay)),...
                 zeros(size(SurfImage)));
