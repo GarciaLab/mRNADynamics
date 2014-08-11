@@ -205,7 +205,21 @@ if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')
         CF=nan;
     end
 else
-    error('nc information not define in MovieDatabase.xlsx')
+    warning('Warning: lack of histone channel may result in strange behavior.');
+    
+    nc9=cell2mat(XLSRaw(XLSEntry,nc9Column));
+    nc10=cell2mat(XLSRaw(XLSEntry,nc10Column));
+    nc11=cell2mat(XLSRaw(XLSEntry,nc11Column));
+    nc12=cell2mat(XLSRaw(XLSEntry,nc12Column));
+    nc13=cell2mat(XLSRaw(XLSEntry,nc13Column));
+    nc14=cell2mat(XLSRaw(XLSEntry,nc14Column));
+    %This is in case the last column for CF is all nan and is not part of
+    %the Num matrix
+    if ~isempty(CFColumn)    
+        CF=cell2mat(XLSRaw(XLSEntry,CFColumn));
+    else
+        CF=nan;
+    end
 end
 
 % Read in which end the stem loops are at, if this information is available
