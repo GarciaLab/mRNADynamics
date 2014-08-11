@@ -126,7 +126,7 @@ if ~NoAP
 
         %Get the surface image in the zoomed case
         D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'*_z*.tif']);
-        ZoomImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(end-10).name],ChannelToLoad);
+        ZoomImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(end).name],ChannelToLoad);
     end
 
     %Get the zoomed out surface image and its dimensions from the FullEmbryo folder
