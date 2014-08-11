@@ -508,7 +508,7 @@ if ~UseHistone
             CurrentParticleLength=length(Particles(i).Frame);
             CurrentFrame=Particles(i).Frame(end);
 
-            [fad,fad2,Particles] = ConnectToThreshold2(fad,fad2,Particles,...
+            [fad,fad2,Particles] = ConnectToThreshold(fad,fad2,Particles,...
                 i,CurrentFrame,CurrentFrame+1,SearchRadius*0.5);
         end
 
@@ -521,7 +521,7 @@ if ~UseHistone
             
             %[2,CurrentFrame]
             
-            [fad,fad2,Particles] = ConnectToThreshold2(fad,fad2,Particles,...
+            [fad,fad2,Particles] = ConnectToThreshold(fad,fad2,Particles,...
                 i,CurrentFrame,CurrentFrame-1,SearchRadius*0.5);
         end
 
