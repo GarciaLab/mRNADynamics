@@ -158,23 +158,22 @@ if ~NoAP
    
     %Ratio between the two zoom levels
     ZoomRatio = MovieZoom / SurfZoom;
-
+    ResizeFactor = max([Rows/SurfRows*ZoomRatio, Columns/SurfColumns*ZoomRatio]);
+    % ES 2013-10-30: the reason I have to define ResizeFactor differently
+    % from ZoomRatio is because you can't necessarily infer the
+    % microns-per-pixel resolution from the zoom alone: it also depends on
+    % the dimensions of the image. This may not work for all possible
+    % resolutions, though...
+    ZoomRatio = ResizeFactor;
     
     %Do a correlation between the zoomed in and zoomed out surface images
     %to figure out the shift.
     
     
-    if ~SkipAlignment&HistoneChannel
+    if ~SkipAlignment && HistoneChannel
         if ZoomRatio > 1 && ZoomRatio < 24 
             
             %Enlarge the zoomed out image so we can do the cross-correlation
-            ResizeFactor = max([Rows/SurfRows*ZoomRatio, Columns/SurfColumns*ZoomRatio]);
-            % ES 2013-10-30: the reason I have to define ResizeFactor
-            % differently from ZoomRatio is because you can't necessarily
-            % infer the microns-per-pixel resolution from the zoom alone:
-            % it also depends on the dimensions of the image. This may not
-            % work for all possible resolutions, though...
-            ZoomRatio = ResizeFactor;
             SurfImageResized=imresize(SurfImage, ResizeFactor);
             
             %Calculate the correlation matrix and find the maximum
@@ -238,6 +237,8 @@ if ~NoAP
                 ManualAlignment=1;
                 ShiftColumn=0;
                 ShiftRow=0;
+                NucMaskZoomIn = false(size(ZoomImage));
+                NucMaskZoomOut = false(size(SurfImage));
             end
 
         else
@@ -245,11 +246,19 @@ if ~NoAP
             warning('Not able to do the cross correlation. Switching to manual alignment mode.')
 
             ManualAlignment=1;
-            
             ShiftColumn=0;
             ShiftRow=0;
-
+            NucMaskZoomIn = false(size(ZoomImage));
+            NucMaskZoomOut = false(size(SurfImage));
         end
+    elseif ~SkipAlignment && ~HistoneChannel
+        warning('Not able to do the cross correlation. Assuming no shift between surface-level and movie-level images.')
+        
+        ManualAlignment = 0;
+        ShiftColumn=0;
+        ShiftRow=0;
+        NucMaskZoomIn = false(size(ZoomImage));
+        NucMaskZoomOut = false(size(SurfImage));
     end
     
     
