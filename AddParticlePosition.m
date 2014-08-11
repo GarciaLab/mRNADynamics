@@ -251,7 +251,7 @@ if ~NoAP
             NucMaskZoomIn = false(size(ZoomImage));
             NucMaskZoomOut = false(size(SurfImage));
         end
-    elseif ~SkipAlignment && ~HistoneChannel
+    else
         warning('Not able to do the cross correlation. Assuming no shift between surface-level and movie-level images.')
         
         ManualAlignment = 0;
