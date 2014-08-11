@@ -502,22 +502,9 @@ elseif strcmp(FileMode,'LIFExport')
     
     %Figure out the different channels
     if ~isempty(strfind(Channel1{1},'MCP'))
-        FirstChannelString='00';
-    elseif  strfind(Channel1{1},'His')
-        FirstChannelString='01';
-    else
-        error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
-    end
     
-    if ~isempty(strfind(Channel2{1},'MCP'))
-        SecondChannelString='00';
-    elseif  strfind(Channel2{1},'His')
-        SecondChannelString='01';
-    else
-        error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
-    end
+    strfind(Channel1{1},'His')
     
-       
     
 
     %Determine the number of slices
@@ -591,7 +578,7 @@ elseif strcmp(FileMode,'LIFExport')
     
     OriginalFrameCounter=1;
     for i = 1:length(D) 
-        if ~isempty(findstr(D(i).name,['_ch',FirstChannelString]))
+        if ~isempty(findstr(D(i).name,'_ch00'))
             waitbar(i/length(D),h)
             Image=uint16(double(imread([Folder,filesep,D(i).name])));
             if max(Image(:))==0  
@@ -630,7 +617,7 @@ elseif strcmp(FileMode,'LIFExport')
     n=1;
     h=waitbar(0,'Histone images');
     for i = 1:length(D) 
-        if ~isempty(findstr(D(i).name,['_ch',SecondChannelString]))
+        if ~isempty(findstr(D(i).name,'_ch01'))
             waitbar(i/length(D),h)
             Hist(:,:,slice_num)=uint16(double(imread([Folder,filesep,D(i).name])));
             if blank_frames(m)==0
