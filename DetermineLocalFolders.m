@@ -105,6 +105,8 @@ else
         DropboxString='DropboxAlbert';
     elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Jacques+Hernan')
         DropboxString='DropboxJacques';
+    elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'HGLab')
+        DropboxString='DropboxHGLab';
     elseif strcmp(XLSTxt{PrefixRow, DropboxFolderColumn}, 'Default')
         DropboxString = 'DropboxFolder';
         % ES 2013-10-06
