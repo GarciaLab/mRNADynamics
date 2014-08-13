@@ -315,17 +315,16 @@ if HistoneChannel
     end
 end
 
-
-if HistoneChannel&strcmp(ExperimentAxis,'AP')
-    %First, figure out the AP position of each of the nuclei.
-
+%First, figure out the AP position of each of the nuclei.
+if strcmp(ExperimentAxis, 'AP')
     %Load the AP detection information
     load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
     %Angle between the x-axis and the AP-axis
     APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
     APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
+end
 
-
+if HistoneChannel&strcmp(ExperimentAxis,'AP')
     %The information in Ellipses is
     %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
     for i=1:length(Ellipses)
