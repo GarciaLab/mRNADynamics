@@ -36,6 +36,7 @@ nc12Column=find(strcmp(XLSRaw(1,:),'nc12'));
 nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
 nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
 CFColumn=find(strcmp(XLSRaw(1,:),'CF'));
+Channel1Column=find(strcmp(XLSRaw(1,:),'Channel1'));
 Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
 
 
@@ -57,7 +58,8 @@ else
 end
 
 
-if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')
+if (strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP'))|...
+        (strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP'))
     nc9=XLSRaw{XLSEntry,nc9Column};
     nc10=XLSRaw{XLSEntry,nc10Column};
     nc11=XLSRaw{XLSEntry,nc11Column};

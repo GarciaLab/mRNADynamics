@@ -578,7 +578,8 @@ elseif strcmp(FileMode,'LIFExport')
     end
     
     %Copy the data
-    slice_num=1;
+    slice_num=2;        %Note that we start from 2 because we need to have the
+                        %blanks below and above the stack
     % absolute frame
     m=1;
     % frame without blanks
@@ -597,19 +598,30 @@ elseif strcmp(FileMode,'LIFExport')
             if max(Image(:))==0  
                 blank_frames(m) = blank_frames(m)+1;
                 blank_frameindex(m) = m;
-                if slice_num == NSlices
+                if slice_num == (NSlices+1)
                     m=m+1;
-                    slice_num = 1;
+                    slice_num = 2;
                 else
                     slice_num = slice_num+1;
                 end
             elseif (max(Image(:))~=0)&&(blank_frames(m)==0)
+                
+                %If this is the first image in the stack also save the
+                %first and last blank images for FISH
+                if slice_num==2
+                    NewName=[Prefix,'_',iIndex(n,3),'_z',iIndex(1,2),'.tif'];
+                    imwrite(uint16(zeros(size(Image))),[OutputFolder,filesep,NewName]);
+                    
+                    NewName=[Prefix,'_',iIndex(n,3),'_z',iIndex(NSlices+2,2),'.tif'];
+                    imwrite(uint16(zeros(size(Image))),[OutputFolder,filesep,NewName]);
+                end
+
                 NewName=[Prefix,'_',iIndex(n,3),'_z',iIndex(slice_num,2),'.tif'];
                 imwrite(Image,[OutputFolder,filesep,NewName]);
-                if slice_num == NSlices
+                if slice_num == (NSlices+1)
                     m=m+1;
                     n=n+1;
-                    slice_num = 1;
+                    slice_num = 2;
                 else
                     slice_num = slice_num+1;
                 end
@@ -660,7 +672,7 @@ elseif strcmp(FileMode,'LIFExport')
     Output{1}=['id ',Prefix,'_'];
     Output{2}='';
     Output{3}='1';
-    Output{4}=['frames ',num2str(length(FrameInfo)),':1:',num2str(NSlices)];
+    Output{4}=['frames ',num2str(length(FrameInfo)),':1:',num2str(NSlices+2)];
     Output{5}=['suffix ???_z??'];
     %Output{6}=['flat FF'];
     
@@ -697,8 +709,9 @@ if ~isempty(SkipFrames)
     D=dir([OutputFolder,filesep,'*_z01.tif']);
     %Delete the skipped files
     for i=SkipFrames
-        for j=1:NSlices
-            delete([OutputFolder,filesep,D(i).name(1:end-6),iIndex(j,2),'.tif'])
+        D2=dir([OutputFolder,filesep,D(i).name(1:end-6),'*.tif'])
+        for j=1:length(D2)
+            delete([OutputFolder,filesep,D2(j).name])
         end
     end
     %Rename all remaining files
@@ -706,15 +719,16 @@ if ~isempty(SkipFrames)
     for i=1:length(D)
         if ~strcmp([OutputFolder,filesep,D(i).name],...
                     [OutputFolder,filesep,D(i).name(1:end-11),iIndex(i,3),'_z01.tif'])
-            for j=1:NSlices
-                movefile([OutputFolder,filesep,D(i).name(1:end-6),iIndex(j,2),'.tif'],...
-                    [OutputFolder,filesep,D(i).name(1:end-11),iIndex(i,3),'_z',iIndex(j,2),'.tif'])
+            D2=dir([OutputFolder,filesep,D(i).name(1:end-6),'*.tif']);
+            for j=1:length(D2)
+                movefile([OutputFolder,filesep,D2(j).name],...
+                    [OutputFolder,filesep,D2(j).name(1:end-11),iIndex(i,3),D2(j).name(end-7:end)])
             end
         end
     end
     
     %Redefine the output for the FISH code
-    Output{4}=['frames ',num2str(length(FrameInfo)),':1:',num2str(NSlices)];
+    Output{4}=['frames ',num2str(length(FrameInfo)),':1:',num2str(NSlices+2)];
 end
 
 
