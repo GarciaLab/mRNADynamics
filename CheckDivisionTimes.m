@@ -64,10 +64,10 @@ Zoom=str2num(Zoom);
 if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
         (isempty(findstr(Prefix,'NoBcd')))
     D=dir([SourcePath,filesep,Date,'\BcdGFP-HisRFP\AveragedData\*His_*.tif']);
-    ZoomImage=imread([SourcePath,filesep,Date,'\BcdGFP-HisRFP\AveragedData\',D(end-10).name]);
+    ZoomImage=imread([SourcePath,filesep,Date,'\BcdGFP-HisRFP\AveragedData\',D(end).name]);
 else
     D=dir([FISHPath,'\Data\',Prefix,filesep,Prefix,'-His*.tif']);
-    ZoomImage=imread([FISHPath,'\Data\',Prefix,filesep,D(end-10).name]);
+    ZoomImage=imread([FISHPath,'\Data\',Prefix,filesep,D(end).name]);
 end
 
 
