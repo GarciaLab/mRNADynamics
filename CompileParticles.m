@@ -253,7 +253,9 @@ if strcmp(ExperimentAxis,'AP')
 
     else
         display('Using saved AP information')
-    end   
+    end
+elseif strcmp(ExperimentAxis,'DV')&exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+    AddParticlePosition(Prefix);
 else
     AddParticlePosition(Prefix,'NoAP');
 end

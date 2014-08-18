@@ -523,10 +523,22 @@ elseif strcmp(FileMode,'LIFExport')
     %Determine the number of slices
     NSlices=length(dir([Folder,filesep,D(1).name(1:end-11),'*ch00.tif']));
     
+    %Do we have multiple series files?
     SeriesFiles = dir([Folder,filesep,'Series*Properties.xml']);
-    NSeries = length(SeriesFiles);
-    % Number of LUT images
-    N_LUT = length(dir([Folder,filesep,'Series*ch*LUT.tif']));
+    if length(SeriesFiles)>1
+        NSeries = length(SeriesFiles);
+        % Number of LUT images
+        N_LUT = length(dir([Folder,filesep,'Series*ch*LUT.tif']));
+    else
+        SeriesFiles = dir([Folder,filesep,'*Properties.xml']);
+        NSeries=1;
+        N_LUT = length(dir([Folder,filesep,'*ch*LUT.tif']));
+    end
+        
+        
+        
+    
+    
     
     %Determine the number of frames (subtract LUT), divide by both channels)
     NFrames=(length(D)-N_LUT)/(2*NSlices);
