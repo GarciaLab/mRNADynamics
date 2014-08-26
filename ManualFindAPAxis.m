@@ -358,14 +358,21 @@ else
 
     APImage=APImage(:,1:w+wRight+1-xo2-xo1);
 
-    %Rotate the image back
-    APImage=imrotate(APImage,-90);
-    
-    %Swap the shifts
-    yShift1=xo1;
-    xShift1=yo1;
-    yShift2=xo2;
-    xShift2=yo2;
+    if ~LeftRight
+        %Rotate the image back
+        APImage=imrotate(APImage,-90);
+
+        %Swap the shifts
+        yShift1=xo1;
+        xShift1=yo1;
+        yShift2=xo2;
+        xShift2=yo2;
+    else
+        yShift1=yo1;
+        xShift1=xo1;
+        yShift2=yo2;
+        xShift2=xo2;
+    end
     
     
 end
