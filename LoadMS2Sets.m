@@ -12,8 +12,10 @@ function Data=LoadMS2Sets(DataType)
     DetermineLocalFolders;
 
 %MS2Pausing folder:
-if strcmp(DataType,'hbBAC')|strcmp(DataType,'Eve2')|strcmp(DataType,'SnaBAC')|strcmp(DataType,'P2PPausing')|...
-        strcmp(DataType,'hbNoPrimary')|strcmp(DataType,'kniBAC')
+if strcmp(DataType,'hbBAC')|strcmp(DataType,'Eve2')|strcmp(DataType,'snaBAC')|...
+        strcmp(DataType,'snaBACNoPrimary')|strcmp(DataType,'snaBACNoShadow')|strcmp(DataType,'P2PPausing')|...
+        strcmp(DataType,'hbNoPrimary')|strcmp(DataType,'kniBAC')|strcmp(DataType,'hbNoShadow')|...
+        strcmp(DataType,'kniNoPrimary')|strcmp(DataType,'kniBAC')|strcmp(DataType,'kniNoShadow')
     [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
         DetermineLocalFolders('2014-03-15-HbBACA');
     PausingXLSName='DataStatusPausing.xlsx';
@@ -37,6 +39,7 @@ CompiledSets=find(strcmp(StatusTxt(CompileRow,:),'READY')|strcmp(StatusTxt(Compi
 clear SetNames
 clear APDivisions
 clear MeanFits
+clear MeanFitsUp
 clear Schnitzcells
 
 for i=1:length(CompiledSets)
@@ -100,6 +103,10 @@ for i=1:length(CompiledSets)
         AccumulationData(i)=load([DropboxFolder,filesep,Prefix,filesep,'AccumulationData.mat']);
     end
     
+    if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsUp.mat'])
+        MeanFitsUp(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsUp.mat']);
+    end
+    
     
     %Load Ellipses
     Ellipses(i)=load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat']);
@@ -146,6 +153,12 @@ for i=1:length(Data)
         end
     end
     
+    
+    if exist('MeanFitsUp')
+        if i<=length(MeanFitsUp)
+            Data(i).MeanFitsUp=MeanFitsUp(i).FitResults;
+        end
+    end
    
     Data(i).schnitzcells=Schnitzcells(i).schnitzcells;
     Data(i).Ellipses=Ellipses(i).Ellipses;
