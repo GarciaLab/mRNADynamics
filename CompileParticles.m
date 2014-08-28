@@ -1766,9 +1766,6 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
             %Check if the filtered ellipses had an associated particle
             EllipsesToCheck=find(EllipseFilter);
 
-
-
-
             for j=1:length(EllipsesToCheck)
                 %Find which AP bind we're in
                 CurrentAPbin=max(find(APbinID<EllipsePos{FrameToUse}(EllipsesToCheck(j))));
