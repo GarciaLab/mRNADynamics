@@ -42,7 +42,7 @@ end
 % ES 2013-10-27: queries user name if more than one user is defined for
 % this computer
 if length(ComputerColumn) > 1
-    [~, username] = system('echo %username%');
+    [Dummy, username] = system('echo %username%');
     UserRow = strcmp(XLS(:, 1), 'User Name');
     ComputerColumn = find(strcmp(XLS(UserRow, :), username(1:end-1)));
 end
