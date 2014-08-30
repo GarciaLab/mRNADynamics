@@ -157,8 +157,8 @@ else
     end
 
     % look for a settings file in the Raw Data folder.
-    if exist([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'-AcquisitionSettings.mat'],'file')
-        load([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'-AcquisitionSettings.mat']);
+    if exist([SourcePath,filesep,Prefix,'-AcquisitionSettings.mat'])
+        load([SourcePath,filesep,Prefix,'-AcquisitionSettings.mat']);
         fields = fieldnames(AcquisitionSettings);
         settingArguments = cell(1,2*length(fields));
         for i=1:length(fields)

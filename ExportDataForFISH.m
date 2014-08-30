@@ -77,12 +77,19 @@ end
 DTIF=dir([Folder,filesep,'*.tif']);
 DLSM=dir([Folder,filesep,'*.lsm']);
 DLIF=dir([Folder,filesep,'*.lif']);
+DLAT=dir([Folder,filesep,'..',filesep,'IsLatticeData.txt']);
 
 if (length(DTIF)>0)&(length(DLSM)==0)
     if length(DLIF)==0
-        display('2-photon @ Princeton data mode')
-        D=DTIF;
-        FileMode='TIF';
+        if length(DLAT)==0
+            display('2-photon @ Princeton data mode')
+            D=DTIF;
+            FileMode='TIF';
+        else
+            display('Lattice Light Sheet data mode')
+            D=DTIF;
+            FileMode='LAT';
+        end
     else
         display('LIF export mode')
         D=DTIF;
@@ -687,6 +694,9 @@ elseif strcmp(FileMode,'LIFExport')
     Output{4}=['frames ',num2str(length(FrameInfo)),':1:',num2str(NSlices+2)];
     Output{5}=['suffix ???_z??'];
     %Output{6}=['flat FF'];
+    
+elseif strcmp(FileMode, 'LAT')
+    [Output, FrameInfo] = ExportDataForFISH_Lattice(Prefix, D, Folder, OutputFolder, Channel1, Channel2, TAGOnly, ImageInfo);
     
 end
 
