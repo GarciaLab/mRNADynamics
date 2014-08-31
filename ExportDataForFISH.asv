@@ -780,16 +780,16 @@ elseif strcmp(FileMode,'LIFExport')
         %frame alltogether.
         
         DirCounter=1;
-        BlankFrames=[];
+        SkipFrames=[];
         CurrentFrame=1;
         h=waitbar(0,'Extracting LIFExport images');
         for i=1:NFrames
-            waitbar(i/NFrames,h)
+            
             
             %Get the names of the files for this frame
             Channel1Names={};
             Channel2Names={};
-            while (length(Channel1Names)<NSlices)|(length(Channel2Names)<NSlices)
+            for j=1:(NSlices*2)
                 if ~isempty(findstr(D(DirCounter).name,['_ch',FirstChannelString]))
                     Channel1Names{end+1}=D(DirCounter).name;
                 elseif ~isempty(findstr(D(DirCounter).name,['_ch',SecondChannelString]))
@@ -812,40 +812,163 @@ elseif strcmp(FileMode,'LIFExport')
                 
                 %Save this frame number so we can skip it later in
                 %FrameInfo.
-                BlankFrames(end+1)=i;
+                SkipFrames(end+1)=i;
 
             %If not, save the files
             else
                 %First, create the first and last frame blank frames for
                 %each channel
                 NewName=[Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(1,2),'_ch01.tif'];
-                imwrite(uint16(zeros(size(Channel1Images{1}))),[OutputFolder,filesep,NewName]);
+                imwrite(uint16(zeros(size(Image))),[OutputFolder,filesep,NewName]);
                 NewName=[Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(1,2),'_ch02.tif'];
-                imwrite(uint16(zeros(size(Channel1Images{1}))),[OutputFolder,filesep,NewName]);
+                imwrite(uint16(zeros(size(Image))),[OutputFolder,filesep,NewName]);
                 
                 NewName=[Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(NSlices+2,2),'_ch01.tif'];
-                imwrite(uint16(zeros(size(Channel1Images{1}))),[OutputFolder,filesep,NewName]);
+                imwrite(uint16(zeros(size(Image))),[OutputFolder,filesep,NewName]);
                 NewName=[Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(NSlices+2,2),'_ch02.tif'];
-                imwrite(uint16(zeros(size(Channel1Images{1}))),[OutputFolder,filesep,NewName]);
+                imwrite(uint16(zeros(size(Image))),[OutputFolder,filesep,NewName]);
 
                 %Now copy the actual images
                 for j=1:NSlices
                     NewName=[Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(j+1,2),'_ch01.tif'];
-                    imwrite(Channel1Images{j},[OutputFolder,filesep,NewName]);
+                    imwrite(Channel1Images{j},[OutputFolder,NewName]);
                     NewName=[Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(j+1,2),'_ch02.tif'];
-                    imwrite(Channel2Images{j},[OutputFolder,filesep,NewName]);
+                    imwrite(Channel2Images{j},[OutputFolder,NewName]);
                 end
                 
                 %Advance the CurrentFrame counter
                 CurrentFrame=CurrentFrame+1;
             end
-        end       
+                
+                
+        
+1+1;        
+        
+        
+        
+        
+        %Copy the data
+        slice_num=2;        %Note that we start from 2 because we need to have the
+                            %blanks below and above the stack
+        % absolute frame
+        m=1;
+        % frame without blanks
+        n=1;
+        %records which frames were deleted for being blank
+        blank_frameindex = zeros(1,NFrames);
+        blank_frames = zeros(1,NFrames);
+        h=waitbar(0,'Extracting LIFExport images');
 
+        
+        %Do the first channel: CP-GFP
+
+        for i = 1:length(D) 
+            if ~isempty(findstr(D(i).name,['_ch',FirstChannelString]))
+                
+                if n==54
+                    1+1
+                end
+                
+                
+                waitbar(i/length(D),h)
+                Image=uint16(double(imread([Folder,filesep,D(i).name])));
+                if max(Image(:))==0  
+                    blank_frames(m) = blank_frames(m)+1;
+                    blank_frameindex(m) = m;
+                    if slice_num == (NSlices+1)
+                        m=m+1;
+                        slice_num = 2;
+                    else
+                        slice_num = slice_num+1;
+                    end
+                elseif (max(Image(:))~=0)&&(blank_frames(m)==0)
+
+                    %If this is the first image in the stack also save the
+                    %first and last blank images for FISH
+                    if slice_num==2
+                        NewName=[Prefix,'_',iIndex(n,3),'_z',iIndex(1,2),'_ch01.tif'];
+                        imwrite(uint16(zeros(size(Image))),[OutputFolder,filesep,NewName]);
+
+                        NewName=[Prefix,'_',iIndex(n,3),'_z',iIndex(NSlices+2,2),'_ch01.tif'];
+                        imwrite(uint16(zeros(size(Image))),[OutputFolder,filesep,NewName]);
+                    end
+
+                    NewName=[Prefix,'_',iIndex(n,3),'_z',iIndex(slice_num,2),'_ch01.tif'];
+                    imwrite(Image,[OutputFolder,filesep,NewName]);
+                    if slice_num == (NSlices+1)
+                        m=m+1;
+                        n=n+1;
+                        slice_num = 2;
+                    else
+                        slice_num = slice_num+1;
+                    end
+                end
+            end
+        end
         close(h)
+        blank_frameindex(blank_frameindex==0) = [];
+
+        %Remove FrameInfo information for blank frames
+        FrameInfo(blank_frameindex)=[];
+
+
+        %Copy the data
+        slice_num=2;        %Note that we start from 2 because we need to have the
+                            %blanks below and above the stack
+        % absolute frame
+        m=1;
+        % frame without blanks
+        n=1;
+        %records which frames were deleted for being blank
+        blank_frameindex = zeros(1,NFrames);
+        blank_frames = zeros(1,NFrames);
+        h=waitbar(0,'Extracting LIFExport images');
+
+        %Do the second channel: CP-RFP
+
+        OriginalFrameCounter=1;
+        for i = 1:length(D) 
+            if ~isempty(findstr(D(i).name,['_ch',SecondChannelString]))
+                waitbar(i/length(D),h)
+                Image=uint16(double(imread([Folder,filesep,D(i).name])));
+                if max(Image(:))==0  
+                    blank_frames(m) = blank_frames(m)+1;
+                    blank_frameindex(m) = m;
+                    if slice_num == (NSlices+1)
+                        m=m+1;
+                        slice_num = 2;
+                    else
+                        slice_num = slice_num+1;
+                    end
+                elseif (max(Image(:))~=0)&&(blank_frames(m)==0)
+
+                    %If this is the first image in the stack also save the
+                    %first and last blank images for FISH
+                    if slice_num==2
+                        NewName=[Prefix,'_',iIndex(n,3),'_z',iIndex(1,2),'_ch02.tif'];
+                        imwrite(uint16(zeros(size(Image))),[OutputFolder,filesep,NewName]);
+
+                        NewName=[Prefix,'_',iIndex(n,3),'_z',iIndex(NSlices+2,2),'_ch02.tif'];
+                        imwrite(uint16(zeros(size(Image))),[OutputFolder,filesep,NewName]);
+                    end
+
+                    NewName=[Prefix,'_',iIndex(n,3),'_z',iIndex(slice_num,2),'_ch02.tif'];
+                    imwrite(Image,[OutputFolder,filesep,NewName]);
+                    if slice_num == (NSlices+1)
+                        m=m+1;
+                        n=n+1;
+                        slice_num = 2;
+                    else
+                        slice_num = slice_num+1;
+                    end
+                end
+            end
+        end
+        close(h)
+        blank_frameindex(blank_frameindex==0) = [];
+
         
-        %Remove FrameInfo information for skipped frames
-        FrameInfo(BlankFrames)=[];
-        
+
         % TAG File Information
         Output{1}=['id ',Prefix,'_'];
         Output{2}='';
@@ -853,7 +976,7 @@ elseif strcmp(FileMode,'LIFExport')
         Output{4}=['frames ',num2str(length(FrameInfo)),':1:',num2str(NSlices+2)];
         Output{5}=['suffix ???_z??_ch01'];
         Output{6}='';
-        Output{7}='2';
+        Output{7}='1';
         Output{8}=['frames ',num2str(length(FrameInfo)),':1:',num2str(NSlices+2)];
         Output{9}=['suffix ???_z??_ch02'];
         %Output{6}=['flat FF'];
