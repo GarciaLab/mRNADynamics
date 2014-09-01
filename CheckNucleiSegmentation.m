@@ -70,7 +70,7 @@ DataFolder=[Folder,'..',filesep,'..',filesep,'..',filesep,'Data',filesep,FilePre
 
 
 %Find out how many frames we have
-D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*-His*.tif']);
+D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*His*.tif']);
 if length(D)==0
     warning('The name format is a mess. I had to do this for KITP')
     D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*_His*.tif']);
@@ -129,7 +129,8 @@ end
 
 
 if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|...
-        strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP')
+        strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP')|...
+        (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-TagRFP(1)'))
     nc9=cell2mat(XLSRaw(XLSEntry,nc9Column));
     nc10=cell2mat(XLSRaw(XLSEntry,nc10Column));
     nc11=cell2mat(XLSRaw(XLSEntry,nc11Column));
@@ -176,7 +177,7 @@ load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat']);
 D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*-His*.tif']);
 if length(D)==0
     warning('The name format is a mess. I had to do this for KITP')
-    D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*_His*.tif']);
+    D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*His*.tif']);
 end
 TotalFrames=length(D);
 

@@ -1,4 +1,4 @@
-function AnalyzeLiveData
+function AnalyzeLiveDataTwoColors
 
 %This function does all the required data exporting and runs the FISH
 %analysis code
@@ -38,7 +38,7 @@ end
 
 %First do an analysis without a threshold to generate the DoG images.
 cd([FISHPath,filesep,'Analysis'])
-analyzeShawnLibrary('fad',@(x)tagged(x,'id',[Prefix,'_']),'params_mRNADynamics',inf)
+analyzeShawnLibrary('fad',@(x)tagged(x,'id',[Prefix,'_']),'params_mRNADynamics',[inf,inf])
 cd([MS2CodePath])
 
 
@@ -46,13 +46,29 @@ cd([MS2CodePath])
 
 %We will keep the threshold low and then increase it after the fact.
 
-%For power of 10mW
-Threshold=20;   
+ThresholdGFP=20;   
+ThresholdRFP=20;
 
 %Now, do an analysis with an actual threshold
 cd([FISHPath,filesep,'Analysis'])
-analyzeShawnLibrary('fad',@(x)tagged(x,'id',[Prefix,'_']),'params_mRNADynamics',Threshold)
+analyzeShawnLibrary('fad',@(x)tagged(x,'id',[Prefix,'_']),'params_mRNADynamics',...
+    [ThresholdGFP,ThresholdRFP])
 cd([MS2CodePath])
+
+
+%% Track the nuclei and check their segmentation
+
+%Use the red channel in order to generate a fake nuclear image
+GenerateFakeNuclei(Prefix)
+
+TrackNuclei(Prefix)
+
+%Check the segmentation
+CheckNucleiSegmentation(Prefix)
+%If segmentation was modified then we need to rerun the tracking
+TrackNuclei(Prefix)
+
+
 
 
 %% Find and check the AP axis
@@ -74,13 +90,6 @@ CorrectAPAxis(Prefix)
 
 
 
-%% Track the nuclei and check their segmentation
-TrackNuclei(Prefix)
-
-%Check the segmentation
-CheckNucleiSegmentation(Prefix)
-%If segmentation was modified then we need to rerun the tracking
-TrackNuclei(Prefix)
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
