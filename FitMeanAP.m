@@ -90,7 +90,7 @@ FrameWindow14=[nc14:length(ElapsedTime)];
 
 
 %Detect what type of data set we're dealing with so we can set the delay
-if ~isempty(findstr(Prefix,'X1'))
+if (~isempty(findstr(Prefix,'X1')))|(~isempty(findstr(Prefix,'P2P')))
     Delay=GeneLength5/ElongationRate;    %Minutes for PolII to fall off after reaching
                                         %the first MS2 site.
     display('Treating data set as 5''')
