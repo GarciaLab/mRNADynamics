@@ -82,7 +82,7 @@ for i=1:length(CompiledSets)
         
        
     %Fit results assuming the same slopes
-    %MeanFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat']);
+    MeanFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat']);
     Schnitzcells(i)=load([DropboxFolder,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat']);
     SetNames{i}=SetName;
     
@@ -150,6 +150,12 @@ for i=1:length(Data)
     if exist('AccumulationData')
         if i<=length(AccumulationData)
             Data(i).AccumulationData=AccumulationData(i).AcumData;
+        end
+    end
+    
+    if exist('MeanFits')
+        if i<=length(MeanFits)
+            Data(i).MeanFits=MeanFits(i).FitResults;
         end
     end
     
