@@ -19,7 +19,7 @@ if strcmp(DataType,'hbBAC')|strcmp(DataType,'Eve2')|strcmp(DataType,'snaBAC')|..
     [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
         DetermineLocalFolders('2014-03-15-HbBACA');
     PausingXLSName='DataStatusPausing.xlsx';
-elseif strcmp(DataType,'zld')
+elseif strcmp(DataType,'zld')|strcmp(DataType,'Shelby')
     [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
         DetermineLocalFolders('2013-09-09-zld-X1');
     PausingXLSName='DataStatus.xlsx';
