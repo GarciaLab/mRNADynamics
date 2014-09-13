@@ -122,7 +122,7 @@ Channel2Column=find(strcmp(XLSTxt(1,:),'Channel2'));
 % Convert the prefix into the string used in the XLS file
 Dashes = strfind(Prefix, '-');
 PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
-    [Prefix(1:Dashes(3)-1), filesep, Prefix(Dashes(3)+1:end)]));
+    [Prefix(1:Dashes(3)-1), '\', Prefix(Dashes(3)+1:end)]));
 % ES 2013-10-06: Removing the hard-coding for selecting the date string in
 % 'Prefix'. This is because I tend to put a letter after the date:
 % '2013-10-06A', for instance, instead of '2013-10-06'. This allows me to
