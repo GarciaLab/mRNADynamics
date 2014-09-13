@@ -82,7 +82,12 @@ for i=1:length(CompiledSets)
         
        
     %Fit results assuming the same slopes
-    MeanFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat']);
+    if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'])
+        MeanFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat']);
+    else
+        warning('MeanFits.mat not found. This is a stupid way to check. Have the code check if this experiment is DV or AP instead')
+    end
+    
     Schnitzcells(i)=load([DropboxFolder,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat']);
     SetNames{i}=SetName;
     
@@ -99,9 +104,9 @@ for i=1:length(CompiledSets)
 
     %Integrated amount accounting from degradation. This is generated using
     %Jacques' code
-    if exist([DropboxFolder,filesep,Prefix,filesep,'AccumulationData.mat'])
-        AccumulationData(i)=load([DropboxFolder,filesep,Prefix,filesep,'AccumulationData.mat']);
-    end
+%     if exist([DropboxFolder,filesep,Prefix,filesep,'AccumulationData.mat'])
+%         AccumulationData(i)=load([DropboxFolder,filesep,Prefix,filesep,'AccumulationData.mat']);
+%     end
     
     if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsUp.mat'])
         MeanFitsUp(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsUp.mat']);
