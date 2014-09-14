@@ -64,6 +64,7 @@ function CheckParticleTracking(varargin)
 %General:
 %t Show/hide particles from the second threshold
 %s Save the current Particles structure
+%x Save and exit
 %h Show non-approved particles yellow or dissapproved particles
 %y Input the frame/nc information again. This only works in the absence of
 %  the histone channel
@@ -445,7 +446,7 @@ if ForCompileAll
     cc=13;
 end
 
-while (cc~=13)
+while (cc~='x') 
     EllipseHandle=[];
     EllipseHandleYellow=[];
     EllipseHandleBlue=[];

@@ -16,6 +16,7 @@ function CheckNucleiSegmentation(varargin)
 %m  - Increase contrast
 %n  - Decrease contrast
 %r  - Reset contrast setting
+%x  - Exit and save
 
 
 %right click  - delete region
@@ -228,7 +229,7 @@ end
 CurrentFrame=1;
 cc=1;
 
-while (cc~=13)
+while (cc~='x')
     
     %Load the image
     HisImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(CurrentFrame).name]);
