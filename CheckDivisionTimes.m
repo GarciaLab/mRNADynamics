@@ -153,7 +153,7 @@ if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
         [Date,'\BcdGFP-HisRFP']));
 else
     XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-        [Prefix(1:Dashes(3)-1),filesep,Prefix(Dashes(3)+1:end)]));
+        [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
 end
 
 
