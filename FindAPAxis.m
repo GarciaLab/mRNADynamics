@@ -110,7 +110,7 @@ end
 %Get the necessary information to load the corresponding flat field image
 
 %Get the structure with the acquisition information
-ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep'FullEmbryo',filesep,D(LeftFileIndex).name]);
+ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(LeftFileIndex).name]);
 
 %Get the flat-field information
 

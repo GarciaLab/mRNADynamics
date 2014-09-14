@@ -30,17 +30,17 @@ if ~isempty(varargin)
     Prefix=varargin{1};
 else
     FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
-    Dashes=strfind(FolderTemp,'\');
+    Dashes=strfind(FolderTemp,filesep);
     Prefix=FolderTemp((Dashes(end)+1):end);
 end
 
 
 
 %Load the current AP detection data
-load([DropboxFolder,filesep,Prefix,'\APDetection.mat'])
+load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
 
 %Load the full embryo image
-APImage=imread([DropboxFolder,filesep,Prefix,'\APDetection\FullEmbryo.tif']);
+APImage=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
 
 
 
@@ -113,10 +113,10 @@ end
             
 %Save the information
 if exist('xShift')
-    save([DropboxFolder,filesep,Prefix,'\APDetection.mat'],'coordA','coordP',...
+    save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
         'xShift','yShift');
 else
-   save([DropboxFolder,filesep,Prefix,'\APDetection.mat'],'coordA','coordP',...
+   save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
         'xShift1','yShift1','xShift2','yShift2');
 end
     
@@ -131,6 +131,6 @@ hold on
 plot(coordA(1),coordA(2),'g.','MarkerSize',20);
 plot(coordP(1),coordP(2),'r.','MarkerSize',20);
 hold off
-saveas(gcf, [DropboxFolder,filesep,Prefix,'\APDetection\APEmbryo-Manual.tif']);
+saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'APEmbryo-Manual.tif']);
 close(diagFigure);
 
