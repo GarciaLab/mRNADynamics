@@ -165,7 +165,7 @@ if LeftRight
        %Now try to put everything together
        LeftImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(LeftFileIndex).name]);
        CenterImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(CenterFileIndex).name]);
-       RightImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(RightFileIndex).name]);
+       RightImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(RightFileIndex).name]);
 
        %Get the FF information
 
@@ -212,24 +212,24 @@ if LeftRight
 else
     if isempty(CenterFileIndex)
         [APImage,xShift,yShift]=...
-            EmbryoStitchTopDownNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(LeftFileIndex).name],...
-               [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(RightFileIndex).name],...
+            EmbryoStitchTopDownNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(LeftFileIndex).name],...
+               [SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(RightFileIndex).name],...
                [SourcePath,filesep,Date,filesep,FFFile],[],[],Margin);
     else
-        [APImage1,xShift1,yShift1]=EmbryoStitchTopDownNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(LeftFileIndex).name],...
-           [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(CenterFileIndex).name],...
+        [APImage1,xShift1,yShift1]=EmbryoStitchTopDownNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(LeftFileIndex).name],...
+           [SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(CenterFileIndex).name],...
            [SourcePath,filesep,Date,filesep,FFFile],[],[],Margin);
 
-        [APImage2,xShift2,yShift2]=EmbryoStitchTopDownNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(CenterFileIndex).name],...
-           [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(RightFileIndex).name],...
+        [APImage2,xShift2,yShift2]=EmbryoStitchTopDownNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(CenterFileIndex).name],...
+           [SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(RightFileIndex).name],...
            [SourcePath,filesep,Date,filesep,FFFile],[],[],Margin);
 
 
 
        %Now try to put everything together
-       LeftImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(LeftFileIndex).name]);
-       CenterImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(CenterFileIndex).name]);
-       RightImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(RightFileIndex).name]);
+       LeftImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(LeftFileIndex).name]);
+       CenterImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(CenterFileIndex).name]);
+       RightImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(RightFileIndex).name]);
 
        %Get the FF information
         %If it's there, load the image and smooth it with a Gaussian.
@@ -305,7 +305,7 @@ else
 end
    
 %Save it to the Dropbox folder
-imwrite(uint16(APImage),[DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif'],'compression','none');
+imwrite(uint16(APImage),[DropboxFolder,filesep,Prefix,'\APDetection\FullEmbryo.tif'],'compression','none');
 
 
 %Now, use them to find the embryo mask
@@ -374,10 +374,10 @@ coordP = center + (rotMatrix * (coordP_rot-center_rot)')';
 
 %Save the AP and shift information
 if isempty(CenterFileIndex)
-    save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
+    save([DropboxFolder,filesep,Prefix,'\APDetection.mat'],'coordA','coordP',...
         'xShift','yShift');
 else
-    save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
+    save([DropboxFolder,filesep,Prefix,'\APDetection.mat'],'coordA','coordP',...
         'xShift1','yShift1','xShift2','yShift2');
 end
 
@@ -395,7 +395,7 @@ plot(coordP_rot(1),coordP_rot(2),'r.','MarkerSize',20);
 plot([majorAxisBegin(1),majorAxisEnd(1)],[majorAxisBegin(2),majorAxisEnd(2)],'b-');
 plot([minorAxisBegin(1),minorAxisEnd(1)],[minorAxisBegin(2),minorAxisEnd(2)],'b-');
 hold off
-saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'APMask.tif']);
+saveas(gcf, [DropboxFolder,filesep,Prefix,'\APDetection\APMask.tif']);
 
 clf
 imagesc(APImage)
@@ -406,7 +406,7 @@ hold on
 plot(coordA(1),coordA(2),'g.','MarkerSize',20);
 plot(coordP(1),coordP(2),'r.','MarkerSize',20);
 hold off
-saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'APEmbryo.tif']);
+saveas(gcf, [DropboxFolder,filesep,Prefix,'\APDetection\APEmbryo.tif']);
 close(diagFigure);
 
 
