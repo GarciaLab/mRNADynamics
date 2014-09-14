@@ -14,6 +14,7 @@ function CorrectAPAxis(varargin)
 %s: Swap AP positions
 %right click: Delete the point that was clicked on
 %m: Manual stitching mode
+%x: Exit and save
 
 
 close all
@@ -51,7 +52,7 @@ DisplayRange=[min(min(APImage)),max(max(APImage))];
 
 %Now, do the correction
 cc=1;
-while (cc~=13)
+while (cc~='x')
 
     
     imshow(imadjust(APImage))
