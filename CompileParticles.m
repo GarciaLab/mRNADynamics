@@ -36,7 +36,7 @@ ApproveAll=0;
 
 if isempty(varargin)
     FolderTemp=uigetdir(DefaultDropboxFolder,'Select folder with data to analyze');
-    Dashes=strfind(FolderTemp,'\');
+    Dashes=strfind(FolderTemp,filesep);
     Prefix=FolderTemp((Dashes(end)+1):end);
 else
     Prefix=varargin{1};

@@ -18,7 +18,7 @@ close all
 Dashes=findstr(Prefix,'-');
 DataDate=Prefix(1:Dashes(3)-1);
 DataName=Prefix(Dashes(3)+1:end);
-D=dir([SourcePath,filesep,DataDate,filesep,DataName,'\*.tif']);
+D=dir([SourcePath,filesep,DataDate,filesep,DataName,filesep,'*.tif']);
 
 %Find out the image size
 FluoImage=imread([SourcePath,filesep,DataDate,filesep,DataName,filesep,D(1).name],1);
@@ -26,17 +26,17 @@ ImageSize=size(FluoImage);
 
 
 %How many slices do we have?
-ZSlices=length(dir([FISHPath,'\Data\',Prefix,filesep,Prefix,'_001_z*.tif']));
+ZSlices=length(dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'_001_z*.tif']));
 
 %Folder for report figures
-mkdir([DropboxFolder,filesep,Prefix,'\CytoFluo'])
+mkdir([DropboxFolder,filesep,Prefix,filesep,'CytoFluo'])
 
 
-if ~exist([FISHPath,'\Data\',Prefix,'\CytoImages.mat'])
+if ~exist([FISHPath,filesep,'Data',filesep,Prefix,filesep,'CytoImages.mat'])
 
     %Get the flat field and smooth it with a Gaussian.
-    FFDir=dir([FISHPath,'\Data\',Prefix,'\*FF.tif']);
-    FFImage=double(imread([FISHPath,'\Data\',Prefix,filesep,FFDir(1).name],1));
+    FFDir=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*FF.tif']);
+    FFImage=double(imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,FFDir(1).name],1));
     filtStd=30;         %This came from the FISH code.
     FFImage=imfilter(FFImage,fspecial('gaussian',2*filtStd,filtStd),'symmetric');
     FFImage=imdivide(FFImage,double(max(FFImage(:))));
@@ -45,7 +45,7 @@ if ~exist([FISHPath,'\Data\',Prefix,'\CytoImages.mat'])
 
 
     %Get the ellipses
-    load([DropboxFolder,filesep,Prefix,'\Ellipses.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'])
 
     for i=1:length(Ellipses)
         Ellipses{i}(:,7)=i-1;
@@ -87,7 +87,7 @@ if ~exist([FISHPath,'\Data\',Prefix,'\CytoImages.mat'])
         %this to account for the fact that we now have blank images at the
         %beginning and end of the stack
         for j=2:ZSlices-1
-            MCPImage(:,:,j-1)=double(imread([FISHPath,'\Data\',Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',...
+            MCPImage(:,:,j-1)=double(imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',...
                 iIndex(j,2),'.tif']));
             MCPImage(:,:,j-1)=imdivide(MCPImage(:,:,j-1),FFImage);
         end
@@ -103,11 +103,11 @@ if ~exist([FISHPath,'\Data\',Prefix,'\CytoImages.mat'])
     close(h)
 
     %Save to the FISH path so that we don't overwhelm the Dropbox folder!
-    save([FISHPath,'\Data\',Prefix,'\CytoImages.mat'],'MaxImage','MeanImage')
+    save([FISHPath,filesep,'Data',filesep,Prefix,filesep,'CytoImages.mat'],'MaxImage','MeanImage')
 else
     display('Using saved CytoImages.mat located in the FISH\Data folder.')
     
-    load([FISHPath,'\Data\',Prefix,'\CytoImages.mat']);
+    load([FISHPath,filesep,'Data',filesep,Prefix,filesep,'CytoImages.mat']);
 end
 
 %Get the information
@@ -133,7 +133,7 @@ end
 %Get profile information as a function of AP.
 
 %Get the AP information
-load([DropboxFolder,filesep,Prefix,'\APDetection.mat'])
+load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
     
 %Now, assign an AP value to each pixel
 
@@ -216,7 +216,7 @@ if length(APbins)>1
 else
     xlim([APbinID(APbins)*0.8,APbinID(APbins)*1.2])
 end
-saveas(gcf,[DropboxFolder,filesep,Prefix,'\CytoFluo\CytoFluoAPTime.tif'])
+saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'CytoFluo',filesep,'CytoFluoAPTime.tif'])
 
 
 figure(2)
@@ -235,7 +235,7 @@ if length(APbins)>1
 else
     xlim([APbinID(APbins)*0.8,APbinID(APbins)*1.2])
 end
-saveas(gcf,[DropboxFolder,filesep,Prefix,'\CytoFluo\CytoFluoAPTime-ErrorBars.tif'])
+saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'CytoFluo',filesep,'CytoFluoAPTime-ErrorBars.tif'])
 
 
 
@@ -248,4 +248,4 @@ figure(3)
 errorbar(1:length(Mean),Mean,SD,'.-k')
 xlabel('Frame')
 ylabel('Mean cyto fluorescence (\pm SD)')
-saveas(gcf,[DropboxFolder,filesep,Prefix,'\CytoFluo\CytoFluoTime.tif'])
+saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'CytoFluo',filesep,'CytoFluoTime.tif'])
