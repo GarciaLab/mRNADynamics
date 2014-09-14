@@ -8,6 +8,7 @@ function CheckDivisionTimes(varargin)
 %Click: Division of clicked AP bin in current frame
 %r  : Reset the information for the current nuclear cycle
 %s  : Save the information
+%x  : Save and quit
 
 
 close all
@@ -197,7 +198,7 @@ cc=1;
 
 
 
-while (cc~=13)
+while (cc~='x')
     
     figure(Overlay)
     
