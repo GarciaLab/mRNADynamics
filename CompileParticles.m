@@ -1203,7 +1203,11 @@ if strcmp(ExperimentAxis,'AP')
         end
     end
     hold off
-    xlim([MinAP*0.8,MaxAP*1.2])
+    if MinAP < Inf && MaxAP > 0
+        % ES 2014-09-12: This change is for cases in which no spots were
+        % detected during the final time point.
+        xlim([MinAP*0.8,MaxAP*1.2]);
+    end
     xlabel('AP position')
     ylabel('Offset fluorescence')
     title('Offset at maximum in nc14')
