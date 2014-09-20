@@ -61,12 +61,11 @@ Labels='k.r.g.b.y.c.m.ksrsgsbsyscsmskorogoboyocomok^r^g^b^y^c^m^';
 %Create the folders we need and empty them if necessary
 
 %Folder for report figures
-mkdir([DropboxFolder,'\Reports'])
-mkdir([DropboxFolder,'\Reports\APPlots\APMovies'])
-mkdir([DropboxFolder,'\Reports\APPlots\APMovies\APMovie',Label])
-mkdir([DropboxFolder,'\Reports\APPlots\APMovies\APMovie',Label,'SE'])
-mkdir([DropboxFolder,'\Reports\APPlots\APMovies\APMovieMean',Label])
-
+mkdir([DropboxFolder,filesep,'Reports'])
+mkdir([DropboxFolder,filesep,'Reports',filesep,'APPlots',filesep,'APMovies'])
+mkdir([DropboxFolder,filesep,'Reports',filesep,'APPlots',filesep,'APMovies',filesep,'APMovie',Label])
+mkdir([DropboxFolder,filesep,'Reports',filesep,'APPlots',filesep,'APMovies',filesep,'APMovie',Label,'SE'])
+mkdir([DropboxFolder,filesep,'Reports',filesep,'APPlots',filesep,'APMovies',filesep,'APMovieMean',Label])
 
 %Make a movie of all the different embryos as a function of time and AP.
 %We'll set a new zero of time at the beginning of each nc.
