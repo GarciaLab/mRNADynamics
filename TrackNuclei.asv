@@ -135,7 +135,7 @@ indMit(indMit<1)=1;
 if isnan(indMit(end,1))
     load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
     indMit(end,1)=length(FrameInfo)-1;
-    indMit(end,1)=length(FrameInfo);
+    indMit(end,2)=length(FrameInfo);
 end    
 
 %If indMit is empty this means that we didn't see any mitosis. Deal with
