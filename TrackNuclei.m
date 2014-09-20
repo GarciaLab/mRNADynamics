@@ -134,8 +134,8 @@ indMit(indMit<1)=1;
 %frame of the movie was nc14
 if isnan(indMit(end,1))
     load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
-    indMit(end,1)=length(FrameInfo)-1;
-    indMit(end,1)=length(FrameInfo);
+    indMit(end,1)=length(FrameInfo)-6;
+    indMit(end,2)=length(FrameInfo)-5;
 end    
 
 %If indMit is empty this means that we didn't see any mitosis. Deal with
