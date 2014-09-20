@@ -224,6 +224,29 @@ else
     end
 end
 
+
+%Do we need to convert any NaN chars into doubles?
+if strcmp(lower(nc14),'nan')
+    nc14=nan;
+end
+if strcmp(lower(nc13),'nan')
+    nc13=nan;
+end
+if strcmp(lower(nc12),'nan')
+    nc12=nan;
+end
+if strcmp(lower(nc11),'nan')
+    nc11=nan;
+end
+if strcmp(lower(nc10),'nan')
+    nc10=nan;
+end
+if strcmp(lower(nc9),'nan')
+    nc9=nan;
+end
+
+
+
 % Read in which end the stem loops are at, if this information is available
 % (ES 2014-03-20)
 StemLoopEndColumn = find(strcmp(XLSRaw(1, :), 'StemLoopEnd'));
@@ -1387,7 +1410,9 @@ if HistoneChannel
         end
     end
     hold off
-    ylim([nc13-5,nc14+5])
+    try
+        ylim([nc13-5,nc14+5])
+    end
     set(gca,'XTick',[13,14])
     xlabel('nc')
     ylabel('Frame')
