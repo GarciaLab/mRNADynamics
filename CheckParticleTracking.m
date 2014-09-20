@@ -434,16 +434,15 @@ cc=1;
 %See if we just want to save the data
 if ForCompileAll
     
-    % Create the approved field if it does not exist (ES 2014-01-08: I
-    % believe that this will allow the user to use ForCompileAll and still
-    % run CompilePartiles properly.)
+    % Create the approved field if it does not exist
     if ~isfield(Particles,'Approved')
         for i=1:length(Particles)
             Particles(i).Approved=0;
         end
     end    
     
-    cc=13;
+    cc='x';
+    % ES 2014-09-20: fixes broken ForCompileAll functionality.
 end
 
 while (cc~='x') 
