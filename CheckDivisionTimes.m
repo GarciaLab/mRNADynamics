@@ -179,6 +179,11 @@ ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
 %Load the division information if it's already there
 if exist([DropboxFolder,filesep,Prefix,'\APDivision.mat'])
     load([DropboxFolder,filesep,Prefix,'\APDivision.mat'])
+    
+    %Check if we changed the number of AP bins
+    if size(APDivision,2)~=length(APbinID)
+        APDivision=zeros(14,length(APbinID));
+    end
 else
     %Matrix where we'll store the information about the divisions
     APDivision=zeros(14,length(APbinID));
