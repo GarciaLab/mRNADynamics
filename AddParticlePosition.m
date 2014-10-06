@@ -33,7 +33,7 @@ if ~isempty(varargin)
     end
 else
     FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
-    Dashes=strfind(FolderTemp,'\');
+    Dashes=strfind(FolderTemp,filesep);
     Prefix=FolderTemp((Dashes(end)+1):end);
 end
 
@@ -134,7 +134,7 @@ if ~NoAP
     SurfName=D(find(~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
     SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,SurfName],ChannelToLoad);   
 
-    SurfInfo = imfinfo([SourcePath, filesep, Date, filesep, EmbryoName, filesep, '\FullEmbryo\', SurfName]);
+    SurfInfo = imfinfo([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo', filesep, SurfName]);
     SurfZoom = ExtractInformationField(SurfInfo(1), 'state.acq.zoomFactor=');
     SurfZoom = str2double(SurfZoom);
     
@@ -146,10 +146,11 @@ if ~NoAP
     %the temp folder. This is because sometimes we edit images in ImageJ
     %which leads to losing the zoom information.
     if isnan(SurfZoom)
-        Dtemp=dir([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\temp\*.tif']);
+        Dtemp=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'temp',filesep,'*.tif']);
         LeftFileIndex=find(~cellfun('isempty',strfind(lower({Dtemp.name}),'left'))&...
             cellfun('isempty',strfind(lower({Dtemp.name}),'surf')));
-        ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\temp',filesep,Dtemp(LeftFileIndex).name]);
+        ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,...
+            'temp',filesep,Dtemp(LeftFileIndex).name]);
         SurfZoom=str2double(ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor='));
          
         SurfRows=SurfInfo.Height;

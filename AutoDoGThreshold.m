@@ -22,8 +22,8 @@ XBinC = exp(LogXBinC);
 if ~exist('NC_R', 'var') || isempty(NC_R), NC_R = [12 13 14]; end
 % This is the list of which nuclear cycles to investigate
 if ~exist('XTickR', 'var') || isempty(XTickR)
-    XTickR = [10, 20, 30, 40, 50, 60, 70, 80, 90,...
-        100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
+    XTickR = [10, 12, 14, 16, 18, 20, 25, 30, 40, 50, 60, 70, 80, 90,...
+        100, 120, 140, 160, 180, 200, 250, 300, 400, 500, 600, 700, 800, 900, 1000];
 end
 % These are the spot brightnesses that the code will bin over.
 MaxDoGColorR = [0.5 0.5 1];

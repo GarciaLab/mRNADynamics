@@ -64,6 +64,7 @@ function CheckParticleTracking(varargin)
 %General:
 %t Show/hide particles from the second threshold
 %s Save the current Particles structure
+%x Save and exit
 %h Show non-approved particles yellow or dissapproved particles
 %y Input the frame/nc information again. This only works in the absence of
 %  the histone channel
@@ -433,19 +434,18 @@ cc=1;
 %See if we just want to save the data
 if ForCompileAll
     
-    % Create the approved field if it does not exist (ES 2014-01-08: I
-    % believe that this will allow the user to use ForCompileAll and still
-    % run CompilePartiles properly.)
+    % Create the approved field if it does not exist
     if ~isfield(Particles,'Approved')
         for i=1:length(Particles)
             Particles(i).Approved=0;
         end
     end    
     
-    cc=13;
+    cc='x';
+    % ES 2014-09-20: fixes broken ForCompileAll functionality.
 end
 
-while (cc~=13)
+while (cc~='x') 
     EllipseHandle=[];
     EllipseHandleYellow=[];
     EllipseHandleBlue=[];

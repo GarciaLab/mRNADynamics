@@ -69,7 +69,27 @@ if (strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP'))|...
     nc14=XLSRaw{XLSEntry,nc14Column};
     CF=XLSRaw{XLSEntry,CFColumn};
 end
-    
+
+%Do we need to convert any NaN chars into doubles?
+if strcmp(lower(nc14),'nan')
+    nc14=nan;
+end
+if strcmp(lower(nc13),'nan')
+    nc13=nan;
+end
+if strcmp(lower(nc12),'nan')
+    nc12=nan;
+end
+if strcmp(lower(nc11),'nan')
+    nc11=nan;
+end
+if strcmp(lower(nc10),'nan')
+    nc10=nan;
+end
+if strcmp(lower(nc9),'nan')
+    nc9=nan;
+end
+
 
 %Convert the prefix into the string used in the XLS file
 Dashes=findstr(Prefix,'-');
@@ -85,7 +105,7 @@ else
 end
 ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
 
-if length(find(isnan(ncs)))==length(ncs)
+if (length(find(isnan(ncs)))==length(ncs))|(length(ncs)<6)
     error('Have the ncs been defined in MovieDatabase.XLSX?')
 end
 
@@ -110,6 +130,13 @@ indMit=[ncs'-2,ncs'+2];
 %started at frame 1, for example.
 indMit(indMit<1)=1;
 
+%If we don't have nc14 we'll fool the code into thinking that the last
+%frame of the movie was nc14
+if isnan(indMit(end,1))
+    load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
+    indMit(end,1)=length(FrameInfo)-6;
+    indMit(end,2)=length(FrameInfo)-5;
+end    
 
 %If indMit is empty this means that we didn't see any mitosis. Deal with
 %this by assigning the first frames to it

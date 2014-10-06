@@ -34,18 +34,18 @@ end
    
 if ~exist('Prefix')
     FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
-    Dashes=strfind(FolderTemp,'\');
+    Dashes=strfind(FolderTemp,filesep);
     Prefix=FolderTemp((Dashes(end)+1):end);
 end
 
 %Create the output folder
-mkdir([DropboxFolder,filesep,Prefix,'\APDetection'])
+mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
 
 
 %See if we're dealing with a Bcd case
 if (~isempty(findstr(Prefix,'Bcd')))&...
         (isempty(findstr(Prefix,'BcdE1'))&(isempty(findstr(Prefix,'NoBcd'))))
-    SourcePath=[SourcePath,'\..\..\Bcd-GFP'];
+    SourcePath=[SourcePath,filesep,'..',filesep,'..',filesep,'Bcd-GFP'];
 end
 
 
@@ -57,7 +57,7 @@ Dashes=findstr(Prefix,'-');
 Date=Prefix(1:Dashes(3)-1);
 EmbryoName=Prefix(Dashes(3)+1:end);
 
-D=dir([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\*.tif']);
+D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.tif']);
    
 %Determine wether we're dealing with a left-right embryo or a top-bottom
 %one
@@ -110,7 +110,7 @@ end
 %Get the necessary information to load the corresponding flat field image
 
 %Get the structure with the acquisition information
-ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(LeftFileIndex).name]);
+ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(LeftFileIndex).name]);
 
 %Get the flat-field information
 
@@ -118,15 +118,16 @@ ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',fi
 Zoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
 
 if isempty(Zoom)
-    Dtemp=dir([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\temp\*.tif']);
+    Dtemp=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'temp',filesep,'*.tif']);
     LeftFileIndex=find(~cellfun('isempty',strfind(lower({Dtemp.name}),'left'))&...
         cellfun('isempty',strfind(lower({Dtemp.name}),'surf')));
-    ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\temp',filesep,Dtemp(LeftFileIndex).name]);
+    ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,...
+        'FullEmbryo',filesep,'temp',filesep,Dtemp(LeftFileIndex).name]);
     Zoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
 end
 
 %Look for the file
-FFDir=dir([SourcePath,filesep,Date,'\FF',Zoom(1:end-1),'x*.*']);
+FFDir=dir([SourcePath,filesep,Date,filesep,'FF',Zoom(1:end-1),'x*.*']);
 %If there's more than one match then ask for help
 if length(FFDir)==1
     FFFile=FFDir(1).name;
@@ -135,7 +136,7 @@ elseif isempty(FFDir)
     FFImage=ones(ImageInfo(1).Height,ImageInfo(1).Width);
     pause
 else
-    FFFile=uigetfile([Folder,'\..\FF',Zoom(1:end-1),'x*.*'],'Select flatfield file');
+    FFFile=uigetfile([Folder,filesep,'..',filesep,'FF',Zoom(1:end-1),'x*.*'],'Select flatfield file');
 end
 
 
@@ -144,24 +145,27 @@ end
 %Sticht the images
 if LeftRight
     if isempty(CenterFileIndex)
-        [APImage,xShift,yShift]=EmbryoStitchNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(LeftFileIndex).name],...
-           [SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(RightFileIndex).name],...
+        [APImage,xShift,yShift]=EmbryoStitchNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,...
+            filesep,'FullEmbryo',filesep,D(LeftFileIndex).name],...
+           [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(RightFileIndex).name],...
            [SourcePath,filesep,Date,filesep,FFFile],[],[],Margin);
     else
-        [APImage1,xShift1,yShift1]=EmbryoStitchNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(LeftFileIndex).name],...
-           [SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(CenterFileIndex).name],...
+        [APImage1,xShift1,yShift1]=EmbryoStitchNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,filesep,...
+            'FullEmbryo',filesep,D(LeftFileIndex).name],...
+           [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(CenterFileIndex).name],...
            [SourcePath,filesep,Date,filesep,FFFile],[],[],Margin);
 
-        [APImage2,xShift2,yShift2]=EmbryoStitchNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(CenterFileIndex).name],...
-           [SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(RightFileIndex).name],...
+        [APImage2,xShift2,yShift2]=EmbryoStitchNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,filesep,...
+            'FullEmbryo',filesep,D(CenterFileIndex).name],...
+           [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(RightFileIndex).name],...
            [SourcePath,filesep,Date,filesep,FFFile],[],[],Margin);
 
 
 
        %Now try to put everything together
-       LeftImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(LeftFileIndex).name]);
-       CenterImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(CenterFileIndex).name]);
-       RightImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(RightFileIndex).name]);
+       LeftImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(LeftFileIndex).name]);
+       CenterImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(CenterFileIndex).name]);
+       RightImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(RightFileIndex).name]);
 
        %Get the FF information
 
@@ -208,24 +212,24 @@ if LeftRight
 else
     if isempty(CenterFileIndex)
         [APImage,xShift,yShift]=...
-            EmbryoStitchTopDownNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(LeftFileIndex).name],...
-               [SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(RightFileIndex).name],...
+            EmbryoStitchTopDownNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(LeftFileIndex).name],...
+               [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(RightFileIndex).name],...
                [SourcePath,filesep,Date,filesep,FFFile],[],[],Margin);
     else
-        [APImage1,xShift1,yShift1]=EmbryoStitchTopDownNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(LeftFileIndex).name],...
-           [SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(CenterFileIndex).name],...
+        [APImage1,xShift1,yShift1]=EmbryoStitchTopDownNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(LeftFileIndex).name],...
+           [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(CenterFileIndex).name],...
            [SourcePath,filesep,Date,filesep,FFFile],[],[],Margin);
 
-        [APImage2,xShift2,yShift2]=EmbryoStitchTopDownNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(CenterFileIndex).name],...
-           [SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(RightFileIndex).name],...
+        [APImage2,xShift2,yShift2]=EmbryoStitchTopDownNoMargin([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(CenterFileIndex).name],...
+           [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(RightFileIndex).name],...
            [SourcePath,filesep,Date,filesep,FFFile],[],[],Margin);
 
 
 
        %Now try to put everything together
-       LeftImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(LeftFileIndex).name]);
-       CenterImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(CenterFileIndex).name]);
-       RightImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(RightFileIndex).name]);
+       LeftImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(LeftFileIndex).name]);
+       CenterImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(CenterFileIndex).name]);
+       RightImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(RightFileIndex).name]);
 
        %Get the FF information
         %If it's there, load the image and smooth it with a Gaussian.
@@ -301,7 +305,7 @@ else
 end
    
 %Save it to the Dropbox folder
-imwrite(uint16(APImage),[DropboxFolder,filesep,Prefix,'\APDetection\FullEmbryo.tif'],'compression','none');
+imwrite(uint16(APImage),[DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif'],'compression','none');
 
 
 %Now, use them to find the embryo mask
@@ -370,10 +374,10 @@ coordP = center + (rotMatrix * (coordP_rot-center_rot)')';
 
 %Save the AP and shift information
 if isempty(CenterFileIndex)
-    save([DropboxFolder,filesep,Prefix,'\APDetection.mat'],'coordA','coordP',...
+    save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
         'xShift','yShift');
 else
-    save([DropboxFolder,filesep,Prefix,'\APDetection.mat'],'coordA','coordP',...
+    save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
         'xShift1','yShift1','xShift2','yShift2');
 end
 
@@ -391,7 +395,7 @@ plot(coordP_rot(1),coordP_rot(2),'r.','MarkerSize',20);
 plot([majorAxisBegin(1),majorAxisEnd(1)],[majorAxisBegin(2),majorAxisEnd(2)],'b-');
 plot([minorAxisBegin(1),minorAxisEnd(1)],[minorAxisBegin(2),minorAxisEnd(2)],'b-');
 hold off
-saveas(gcf, [DropboxFolder,filesep,Prefix,'\APDetection\APMask.tif']);
+saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'APMask.tif']);
 
 clf
 imagesc(APImage)
@@ -402,7 +406,7 @@ hold on
 plot(coordA(1),coordA(2),'g.','MarkerSize',20);
 plot(coordP(1),coordP(2),'r.','MarkerSize',20);
 hold off
-saveas(gcf, [DropboxFolder,filesep,Prefix,'\APDetection\APEmbryo.tif']);
+saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'APEmbryo.tif']);
 close(diagFigure);
 
 

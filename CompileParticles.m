@@ -36,7 +36,7 @@ ApproveAll=0;
 
 if isempty(varargin)
     FolderTemp=uigetdir(DefaultDropboxFolder,'Select folder with data to analyze');
-    Dashes=strfind(FolderTemp,'\');
+    Dashes=strfind(FolderTemp,filesep);
     Prefix=FolderTemp((Dashes(end)+1):end);
 else
     Prefix=varargin{1};
@@ -223,6 +223,29 @@ else
         CF=nan;
     end
 end
+
+
+%Do we need to convert any NaN chars into doubles?
+if strcmp(lower(nc14),'nan')
+    nc14=nan;
+end
+if strcmp(lower(nc13),'nan')
+    nc13=nan;
+end
+if strcmp(lower(nc12),'nan')
+    nc12=nan;
+end
+if strcmp(lower(nc11),'nan')
+    nc11=nan;
+end
+if strcmp(lower(nc10),'nan')
+    nc10=nan;
+end
+if strcmp(lower(nc9),'nan')
+    nc9=nan;
+end
+
+
 
 % Read in which end the stem loops are at, if this information is available
 % (ES 2014-03-20)
@@ -1203,7 +1226,11 @@ if strcmp(ExperimentAxis,'AP')
         end
     end
     hold off
-    xlim([MinAP*0.8,MaxAP*1.2])
+    if MinAP < Inf && MaxAP > 0
+        % ES 2014-09-12: This change is for cases in which no spots were
+        % detected during the final time point.
+        xlim([MinAP*0.8,MaxAP*1.2]);
+    end
     xlabel('AP position')
     ylabel('Offset fluorescence')
     title('Offset at maximum in nc14')
@@ -1383,7 +1410,9 @@ if HistoneChannel
         end
     end
     hold off
-    ylim([nc13-5,nc14+5])
+    try
+        ylim([nc13-5,nc14+5])
+    end
     set(gca,'XTick',[13,14])
     xlabel('nc')
     ylabel('Frame')
