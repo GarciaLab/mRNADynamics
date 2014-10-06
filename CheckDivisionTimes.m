@@ -186,6 +186,9 @@ if exist([DropboxFolder,filesep,Prefix,'\APDivision.mat'])
 =======
 if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'])
     load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'])
+<<<<<<< HEAD
+>>>>>>> cbd4566dca0dafca0ebad9b57cf3e23478a5ca49
+=======
 >>>>>>> cbd4566dca0dafca0ebad9b57cf3e23478a5ca49
     %Check if we changed the number of AP bins
     if size(APDivision,2)~=length(APbinID)
