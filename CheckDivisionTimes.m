@@ -8,6 +8,7 @@ function CheckDivisionTimes(varargin)
 %Click: Division of clicked AP bin in current frame
 %r  : Reset the information for the current nuclear cycle
 %s  : Save the information
+%x  : Save and quit
 
 
 close all
@@ -30,7 +31,7 @@ if ~isempty(varargin)
                
 else
     FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
-    Dashes=strfind(FolderTemp,'\');
+    Dashes=strfind(FolderTemp,filesep);
     Prefix=FolderTemp((Dashes(end)+1):end);
 end
 
@@ -44,12 +45,12 @@ EmbryoName=Prefix(Dashes(3)+1:end);
 %See if we're dealing with a Bcd case
 if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
         (isempty(findstr(Prefix,'NoBcd')))
-    SourcePath=[SourcePath,'\..\..\Bcd-GFP'];
+    SourcePath=[SourcePath,filesep,'..',filesep,'..',filesep,'Bcd-GFP'];
 end
 
 
 
-D=dir([SourcePath,filesep,Date,filesep,EmbryoName,'\*.tif']);
+D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.tif']);
 
 %Get the information about the zoom
 ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(1).name]);
@@ -63,18 +64,18 @@ Zoom=str2num(Zoom);
 %Get the surface image in the zoomed case
 if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
         (isempty(findstr(Prefix,'NoBcd')))
-    D=dir([SourcePath,filesep,Date,'\BcdGFP-HisRFP\AveragedData\*His_*.tif']);
-    ZoomImage=imread([SourcePath,filesep,Date,'\BcdGFP-HisRFP\AveragedData\',D(end).name]);
+    D=dir([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,'*His_*.tif']);
+    ZoomImage=imread([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,D(end).name]);
 else
-    D=dir([FISHPath,'\Data\',Prefix,filesep,Prefix,'-His*.tif']);
-    ZoomImage=imread([FISHPath,'\Data\',Prefix,filesep,D(end).name]);
+    D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'-His*.tif']);
+    ZoomImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(end).name]);
 end
 
 
 
 %Get the information about the AP axis as well as the image shifts
 %used for the stitching of the two halves of the embryo
-load([DropboxFolder,filesep,Prefix,'\APDetection.mat'])
+load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
 
 %Angle between the x-axis and the AP-axis
 APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
@@ -130,7 +131,7 @@ end
 
 
 %Load the information about the nc from the XLS file
-[Num,Txt, XLSRaw]=xlsread([DefaultDropboxFolder,'\MovieDatabase.xlsx']);
+[Num,Txt, XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
 XLSHeaders=Txt(1,:);
 Txt=Txt(2:end,:);
 
@@ -155,7 +156,7 @@ if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
         [Date,'\BcdGFP-HisRFP']));
 else
     XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-        [Prefix(1:Dashes(3)-1),filesep,Prefix(Dashes(3)+1:end)]));
+        [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
 end
 
 
@@ -179,17 +180,8 @@ end
 ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
 
 %Load the division information if it's already there
-<<<<<<< HEAD
-if exist([DropboxFolder,filesep,Prefix,'\APDivision.mat'])
-    load([DropboxFolder,filesep,Prefix,'\APDivision.mat'])
-    
-=======
 if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'])
     load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'])
-<<<<<<< HEAD
->>>>>>> cbd4566dca0dafca0ebad9b57cf3e23478a5ca49
-=======
->>>>>>> cbd4566dca0dafca0ebad9b57cf3e23478a5ca49
     %Check if we changed the number of AP bins
     if size(APDivision,2)~=length(APbinID)
         APDivision=zeros(14,length(APbinID));
@@ -212,7 +204,7 @@ cc=1;
 
 
 
-while (cc~=13)
+while (cc~='x')
     
     figure(Overlay)
     
@@ -220,10 +212,10 @@ while (cc~=13)
     %Get the surface image in the zoomed case
     if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
             (isempty(findstr(Prefix,'NoBcd')))
-        HisImage=imread([SourcePath,filesep,Date,'\BcdGFP-HisRFP\AveragedData\',D(CurrentFrame).name]);
+        HisImage=imread([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,D(CurrentFrame).name]);
 
     else
-        HisImage=imread([FISHPath,'\Data\',Prefix,filesep,D(CurrentFrame).name]);
+        HisImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(CurrentFrame).name]);
     end
     
     
@@ -291,7 +283,7 @@ while (cc~=13)
         
     %Save
     elseif (ct~=0)&(cc=='s')
-        save([DropboxFolder,filesep,Prefix,'\APDivision.mat'],'APDivision')
+        save([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'APDivision')
         display('Data saved')
     %Select a time for division
     elseif (ct==0)&(strcmp(get(Overlay,'SelectionType'),'normal'))
@@ -307,6 +299,6 @@ while (cc~=13)
 end
 
 
-save([DropboxFolder,filesep,Prefix,'\APDivision.mat'],'APDivision')
+save([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'APDivision')
 display('Data saved')
 
