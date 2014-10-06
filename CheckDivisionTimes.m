@@ -109,9 +109,11 @@ end
 %experiment
 if strfind(lower(Prefix),'eve')     %Eve2 experiments
     APResolution=0.01;
-%hb or kni BAC experiments
-elseif ~isempty(strfind(lower(Prefix),'hbbac'))|...
-        ~isempty(strfind(lower(Prefix),'knibac'))  
+%hb BAC experiments
+elseif ~isempty(strfind(lower(Prefix),'hbbac'))
+    APResolution=0.01;
+%kni BAC experiments
+elseif ~isempty(strfind(lower(Prefix),'knibac'))  
     APResolution=0.015;
 else                                %All other experiments
     APResolution=0.025;
@@ -180,6 +182,10 @@ ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
 %Load the division information if it's already there
 if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'])
     load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'])
+    %Check if we changed the number of AP bins
+    if size(APDivision,2)~=length(APbinID)
+        APDivision=zeros(14,length(APbinID));
+    end
 else
     %Matrix where we'll store the information about the divisions
     APDivision=zeros(14,length(APbinID));
