@@ -44,7 +44,8 @@ mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
 
 %See if we're dealing with a Bcd case
 if (~isempty(findstr(Prefix,'Bcd')))&...
-        (isempty(findstr(Prefix,'BcdE1'))&(isempty(findstr(Prefix,'NoBcd'))))
+        (isempty(findstr(Prefix,'BcdE1'))&(isempty(findstr(Prefix,'NoBcd')))&...
+        isempty(findstr(Prefix,'Bcd1x')))
     SourcePath=[SourcePath,filesep,'..',filesep,'..',filesep,'Bcd-GFP'];
 end
 
