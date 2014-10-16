@@ -44,7 +44,7 @@ EmbryoName=Prefix(Dashes(3)+1:end);
 
 %See if we're dealing with a Bcd case
 if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
-        (isempty(findstr(Prefix,'NoBcd')))
+        (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
     SourcePath=[SourcePath,filesep,'..',filesep,'..',filesep,'Bcd-GFP'];
 end
 
@@ -63,7 +63,7 @@ Zoom=str2num(Zoom);
 
 %Get the surface image in the zoomed case
 if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
-        (isempty(findstr(Prefix,'NoBcd')))
+        (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
     D=dir([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,'*His_*.tif']);
     ZoomImage=imread([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,D(end).name]);
 else
@@ -151,7 +151,7 @@ Dashes=findstr(Prefix,'-');
 
 %Find the corresponding entry in the XLS file
 if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
-        (isempty(findstr(Prefix,'NoBcd')))
+        (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
     XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
         [Date,'\BcdGFP-HisRFP']));
 else
@@ -211,7 +211,7 @@ while (cc~='x')
     %Load the image
     %Get the surface image in the zoomed case
     if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
-            (isempty(findstr(Prefix,'NoBcd')))
+            (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
         HisImage=imread([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,D(CurrentFrame).name]);
 
     else

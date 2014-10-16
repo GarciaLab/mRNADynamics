@@ -224,7 +224,8 @@ Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
 
 %Find the corresponding entry in the XLS file
 if (~isempty(findstr(FilePrefix,'Bcd')))&(isempty(findstr(FilePrefix,'BcdE1')))&...
-        (isempty(findstr(FilePrefix(1:end-1),'NoBcd')))
+        (isempty(findstr(FilePrefix(1:end-1),'NoBcd')))&...
+        (isempty(findstr(FilePrefix(1:end-1),'Bcd1x')))
     warning('This step in CheckParticleTracking will most likely have to be modified to work')
     XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
         [Date,'\BcdGFP-HisRFP']));
