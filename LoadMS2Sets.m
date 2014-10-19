@@ -26,7 +26,7 @@ elseif strcmp(DataType,'zld')|strcmp(DataType,'Shelby')
     PausingXLSName='DataStatus.xlsx';
 elseif strcmp(DataType,'MCP-GFP 5'' 2-Spot')
     [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
-        DetermineLocalFolders('2014-06-29-MCP(2)-X1(2S)')
+        DetermineLocalFolders('2014-06-29-MCP(2)-X1(2S)');
     PausingXLSName='Data Status.xlsx';
 elseif strcmp(DataType,'MCP-GFP 5'' Data')
     error('Take care of this')
