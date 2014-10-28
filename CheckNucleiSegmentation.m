@@ -194,17 +194,17 @@ DisplayRange=[min(min(HisImage)),max(max(HisImage))];
 for i=1:length(D)
     if i<nc9
         nc(i)=8;
-    elseif (i>nc9)&(i<nc10)
+    elseif (i>=nc9)&(i<nc10)
         nc(i)=9;
-    elseif (i>nc10)&(i<nc11)
+    elseif (i>=nc10)&(i<nc11)
         nc(i)=10;
-    elseif (i>nc11)&(i<nc12)
+    elseif (i>=nc11)&(i<nc12)
         nc(i)=11;
-    elseif (i>nc12)&(i<nc13)
+    elseif (i>=nc12)&(i<nc13)
         nc(i)=12;
-    elseif (i>nc13)&(i<nc14)
+    elseif (i>=nc13)&(i<nc14)
         nc(i)=13;
-    elseif i>nc14
+    elseif i>=nc14
         nc(i)=14;
     end
 end
