@@ -130,6 +130,12 @@ indMit=[ncs'-2,ncs'+2];
 %started at frame 1, for example.
 indMit(indMit<1)=1;
 
+%Check whether nc14 occurred very close to the end of the movie. For those
+%frames we'll move the boundary for tracking purposes
+load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
+indMit(indMit>=length(FrameInfo))=indMit(indMit>=length(FrameInfo))-1;
+
+
 %If we don't have nc14 we'll fool the code into thinking that the last
 %frame of the movie was nc14
 if isnan(indMit(end,1))

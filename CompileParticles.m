@@ -343,7 +343,11 @@ if strcmp(ExperimentAxis, 'AP')
     %Load the AP detection information
     load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
     %Angle between the x-axis and the AP-axis
-    APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
+    try
+        APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
+    catch
+        error('coordPZoom not defined. Was AddParticlePosition.m run?')
+    end
     APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
 end
 
