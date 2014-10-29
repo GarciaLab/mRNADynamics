@@ -702,7 +702,7 @@ for i=1:MaxTimeIndex
             SENC13(i,:),'.-k');
         errorbar_tick(PlotHandle,0);
         hold off
-        ylim([0,2E4])
+        ylim([0,1.5E4])
         xlim([0,1])
         set(gca,'XTick',[0.1:0.1:0.8])
         box on
@@ -752,7 +752,7 @@ if TotalFluo
                 SETotalNC13(i,:),'.-k');
             errorbar_tick(PlotHandle,0);
             hold off
-            ylim([0,2E4])
+            ylim([0,1.5E4])
             xlim([0,1])
             set(gca,'XTick',[0.1:0.1:0.8])
             box on
@@ -807,7 +807,7 @@ for i=1:MaxTimeIndex
             SEAllNC13(i,:),'.-k');
         errorbar_tick(PlotHandle,0);
         hold off
-        ylim([0,2E4])
+        ylim([0,1.5E4])
         xlim([0,1])
         set(gca,'XTick',[0.1:0.1:0.8])
         box on
@@ -867,7 +867,7 @@ for i=1:MaxTimeIndex
         drawnow
         
         StandardFigure(PlotHandle,gca)
-        saveas(gcf,[DropboxFolder,filesep,'Reports',filesep,'APPlots',filesep,'APMovies',filesep,'APMovieMean',Label,filesep,'nc14-',iIndex(i,3),'.tif'])
+        saveas(gcf,[DropboxFolder,filesep,'Reports'filesep,'APPlots',filesep,'APMovies',filesep,'APMovieMean',Label,filesep,'nc14-',iIndex(i,3),'.tif'])
     end
 end
 
@@ -975,7 +975,7 @@ for i=1:MaxTimeIndex
         errorbar_tick(PlotHandle,0);
         hold off
         %title(['nc14, ',num2str(TimeNC14{MaxTimeSet}(i)-TimeNC14{MaxTimeSet}(1)),' min'])
-        ylim([0,2E4])
+        ylim([0,1.5E4])
         xlim([0.3,0.5])
         set(gca,'XTick',[0.1:0.1:0.8])
         box on
@@ -1026,7 +1026,7 @@ if TotalFluo
             errorbar_tick(PlotHandle,0);
             hold off
             %title(['nc14, ',num2str(TimeNC14{MaxTimeSet}(i)-TimeNC14{MaxTimeSet}(1)),' min'])
-            ylim([0,2E4])
+            ylim([0,1.5E4])
             xlim([0.3,0.5])
             set(gca,'XTick',[0.1:0.1:0.8])
             box on
@@ -1079,7 +1079,7 @@ for i=1:MaxTimeIndex
         errorbar_tick(PlotHandle,0);
         hold off
         %title(['nc14, ',num2str(TimeNC14{MaxTimeSet}(i)-TimeNC14{MaxTimeSet}(1)),' min'])
-        ylim([0,2E4])
+        ylim([0,1.5E4])
         xlim([0.3,0.5])
         set(gca,'XTick',[0.1:0.1:0.8])
         box on
@@ -1232,7 +1232,7 @@ for i=1:MaxTimeIndex
         drawnow
         
         StandardFigure(PlotHandle,gca)
-        saveas(gcf,[DropboxFolder,filesep,'Reports',filesep,'APPlots',filesep,'APMovies',filesep,'APMovieMean',Label,filesep,'nc14-',iIndex(i,3),'.tif'])
+        saveas(gcf,[DropboxFolder,filesep,'Reports'\APPlots\APMovies\APMovieMean',Label,'\nc14-',iIndex(i,3),'.tif'])
     end
 end
 
@@ -1283,9 +1283,8 @@ if exist('AccumVectorAPNC14Interp')
             box on
             pause(0.1)
             drawnow
-            
-            StandardFigure(PlotHandle,gca)
-            saveas(gcf,[DropboxFolder,filesep,'Reports',filesep,'APPlots',filesep,'APMovies',filesep,'APMovieMean',Label,filesep,'nc14-',iIndex(i,3),'.tif'])
+            %StandardFigure(PlotHandle,gca)
+            %saveas(gcf,[DropboxFolder,'\Reports\APPlots\APMovies\APMovieMean',Label,'\nc14-',iIndex(i,3),'.tif'])
         end
     end
 
@@ -1335,9 +1334,8 @@ if exist('AccumVectorAPNC14Interp')
             box on
             pause(0.1)
             drawnow
-            
-            StandardFigure(PlotHandle,gca)
-            saveas(gcf,[DropboxFolder,filesep,'Reports',filesep,'APPlots',filesep,'APMovies',filesep,'APMovieMean',Label,filesep,'nc14-',iIndex(i,3),'.tif'])
+            %StandardFigure(PlotHandle,gca)
+            %saveas(gcf,[DropboxFolder,'\Reports\APPlots\APMovies\APMovieMean',Label,'\nc14-',iIndex(i,3),'.tif'])
         end
     end
 
@@ -1386,8 +1384,8 @@ if exist('AccumVectorAPNC14Interp')
             box on
             pause(0.1)
             drawnow
-            StandardFigure(PlotHandle,gca)
-            saveas(gcf,[DropboxFolder,filesep,'Reports',filesep,'APPlots',filesep,'APMovies',filesep,'APMovieMean',Label,filesep,'NC13-',iIndex(i,3),'.tif'])
+            %StandardFigure(PlotHandle,gca)
+            %saveas(gcf,[DropboxFolder,'\Reports\APPlots\APMovies\APMovieMean',Label,'\NC13-',iIndex(i,3),'.tif'])
         end
     end
 
@@ -1437,9 +1435,8 @@ if exist('AccumVectorAPNC14Interp')
             box on
             pause(0.1)
             drawnow
-            
-            StandardFigure(PlotHandle,gca)
-              saveas(gcf,[DropboxFolder,filesep,'Reports',filesep,'APPlots',filesep,'APMovies',filesep,'APMovieMean',Label,filesep,'NC13-',iIndex(i,3),'.tif'])
+            %StandardFigure(PlotHandle,gca)
+            %saveas(gcf,[DropboxFolder,'\Reports\APPlots\APMovies\APMovieMean',Label,'\NC13-',iIndex(i,3),'.tif'])
         end
     end
 else
