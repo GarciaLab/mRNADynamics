@@ -122,7 +122,7 @@ for i=1:length(CompiledSets)
     Ellipses(i)=load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat']);
     % Load Particles
     load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat']);
-    ParticleTemp(i).Particles=Particles;
+    Data(i).Particles=Particles;
     %Count ellipses
     if exist([DropboxFolder,filesep,Prefix,filesep,'CountEllipses.mat'])
         CountEllipses(i)=load([DropboxFolder,filesep,Prefix,filesep,'CountEllipses.mat']);
@@ -181,6 +181,6 @@ for i=1:length(Data)
    
     Data(i).schnitzcells=Schnitzcells(i).schnitzcells;
     Data(i).Ellipses=Ellipses(i).Ellipses;
-    Data(i).Particles=ParticleTemp(i).Particles;
+    %Data(i).Particles=Particles(i).Particles;
 end
 
