@@ -1683,16 +1683,21 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
         
         %Sum the fluorescence values and divide by the number of ellipses
         for j=1:length(APbinID)
-            if ~isnan(APbinArea(j))
-                APFilterTemp=(APbinID(j)<=FilteredCompiledParticlesPos)&...
-                    (FilteredCompiledParticlesPos<APbinID(j+1));
+            APFilterTemp=(APbinID(j)<=FilteredCompiledParticlesPos)&...
+                (FilteredCompiledParticlesPos<APbinID(j+1));
 
-                MeanVectorAllAP(i,j)=sum(FluorescenceCompiledParticles(APFilterTemp))/NEllipsesAP(i,j);
-                SEVectorAllAP(i,j)=sqrt(sum((ErrorFluorescenceCompiledParticles(APFilterTemp)/NEllipsesAP(i,j)).^2));
-            end
-        end
+            MeanVectorAllAP(i,CurrentAPbin)=sum(FluorescenceCompiledParticles(APFilterTemp))/NEllipsesAP(i,j);
+            SEVectorAllAP(i,CurrentAPbin)=sqrt(sum((ErrorFluorescenceCompiledParticles(APFilterTemp)/NEllipsesAP(i,j)).^2));
+            
+        
+        
+        
     end
 
+
+    
+   
+    
     
     %Minimum number of nuclei to actually do the calculation
     MinNuclei=3;
@@ -2066,8 +2071,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
         'ParticleCountAP','APbinArea','OnRatioAP','NEllipsesAP',...
         'ParticleCountProbAP',...
         'EllipsesOnAP','TotalEllipsesAP',...
-        'EllipsePos','EllipsesFilteredPos','FilteredParticlesPos',...
-        'MeanVectorAllAP','SEVectorAllAP')
+        'EllipsePos','EllipsesFilteredPos','FilteredParticlesPos')
 elseif HistoneChannel&strcmp(ExperimentAxis,'DV')
     save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
         'CompiledParticles','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
