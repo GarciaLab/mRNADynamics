@@ -173,14 +173,8 @@ for j=1:length(Data)
             sqrt(Data(j).NParticlesAP(Data(j).nc13:Data(j).nc14,:));
     
         %Mean levels of ALL nuclei
-        MeanVectorAllAPNC13{end+1}=Data(j).MeanVectorAP(Data(j).nc13:Data(j).nc14,:).*...
-            Data(j).OnRatioAP(Data(j).nc13:Data(j).nc14,:);
-        SDVectorAllAPNC13{end+1}=Data(j).SDVectorAP(Data(j).nc13:Data(j).nc14,:).*...
-            Data(j).OnRatioAP(Data(j).nc13:Data(j).nc14,:);
-        SEVectorAllAPNC13{end+1}=Data(j).SDVectorAP(Data(j).nc13:Data(j).nc14,:).*...
-            Data(j).OnRatioAP(Data(j).nc13:Data(j).nc14,:)./...
-            sqrt(Data(j).NParticlesAP(Data(j).nc13:Data(j).nc14,:)./...
-            Data(j).OnRatioAP(Data(j).nc13:Data(j).nc14,:));
+        MeanVectorAllAPNC13{end+1}=Data(j).MeanVectorAllAP(Data(j).nc13:Data(j).nc14,:);
+        SEVectorAllAPNC13{end+1}=Data(j).SEVectorAllAP(Data(j).nc13:Data(j).nc14,:);
         
         if TotalFluo
             MeanVectorAPTotalNC13{end+1}=Data(j).TotalFluoPerCell(Data(j).nc13:Data(j).nc14,:);
@@ -191,9 +185,12 @@ for j=1:length(Data)
         SDVectorAPNC13{end}(~NParticlesAPFilterNC13)=nan;
         SEVectorAPNC13{end}(~NParticlesAPFilterNC13)=nan;
   
-        MeanVectorAllAPNC13{end}(~NParticlesAPFilterNC13)=nan;
-        SDVectorAllAPNC13{end}(~NParticlesAPFilterNC13)=nan;
-        SEVectorAllAPNC13{end}(~NParticlesAPFilterNC13)=nan;
+        %HG: I'm removing the requirement for a minimum number of particles
+        %here. This is for the mean fluorescence per ALL nuclei. We do this
+        %in order to be able to have zero fluroescence values.
+        
+        %MeanVectorAllAPNC13{end}(~NParticlesAPFilterNC13)=nan;
+        %SEVectorAllAPNC13{end}(~NParticlesAPFilterNC13)=nan;
         
         
         %New version of integration. This is using the trapezoidal integration
@@ -244,13 +241,17 @@ for j=1:length(Data)
 
 
                     %Check if there are enough statistics
-                    if sum(~isnan(MeanVectorAllAPNC13{end}(FilterTemp,i)))>=MinParticles
-                        MeanVectorAllAPNC13Interp{end}(:,i)=pchip(TimeWindow(FilterTemp),...
+                    MeanVectorAllAPNC13Interp{end}(:,i)=pchip(TimeWindow(FilterTemp),...
                             MeanVectorAllAPNC13{end}(FilterTemp,i)',...
                             TimeNC13);
-                    else
-                        MeanVectorAllAPNC13Interp{end}(:,i)=nan;
-                    end
+                    
+%                     if sum(~isnan(MeanVectorAllAPNC13{end}(FilterTemp,i)))>=MinParticles
+%                         MeanVectorAllAPNC13Interp{end}(:,i)=pchip(TimeWindow(FilterTemp),...
+%                             MeanVectorAllAPNC13{end}(FilterTemp,i)',...
+%                             TimeNC13);
+%                     else
+%                         MeanVectorAllAPNC13Interp{end}(:,i)=nan;
+%                     end
                     
                     if sum(~isnan(OnRatioAPNC13{end}(FilterTemp,i)))>=MinParticles
                         MeanOnRatioAPNC13Interp{end}(:,i)=pchip(TimeWindow(FilterTemp),...
@@ -334,17 +335,10 @@ for j=1:length(Data)
     if TotalFluo
         MeanVectorAPTotalNC14{j}=Data(j).TotalFluoPerCell(Data(j).nc14:end,:);
     end
-    
-    %Mean levels of ALL nuclei
-    MeanVectorAllAPNC14{j}=Data(j).MeanVectorAP(Data(j).nc14:end,:,:).*...
-        Data(j).OnRatioAP(Data(j).nc14:end,:,:);
-    SDVectorAllAPNC14{j}=Data(j).SDVectorAP(Data(j).nc14:end,:,:).*...
-        Data(j).OnRatioAP(Data(j).nc14:end,:,:);
-    SEVectorAllAPNC14{j}=Data(j).SDVectorAP(Data(j).nc14:end,:,:).*...
-        Data(j).OnRatioAP(Data(j).nc14:end,:,:)./...
-        sqrt(Data(j).NParticlesAP(Data(j).nc14:end,:,:)./...
-        Data(j).OnRatioAP(Data(j).nc14:end,:,:));
 
+    %Mean levels of ALL nuclei
+    MeanVectorAllAPNC14{j}=Data(j).MeanVectorAllAP(Data(j).nc14:end,:,:);
+    SEVectorAllAPNC14{j}=Data(j).SEVectorAllAP(Data(j).nc14:end,:,:);
     
     MeanVectorAPNC14{j}(~NParticlesAPFilterNC14)=nan;
     SDVectorAPNC14{j}(~NParticlesAPFilterNC14)=nan;
