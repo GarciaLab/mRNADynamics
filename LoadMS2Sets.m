@@ -11,7 +11,6 @@ function Data=LoadMS2Sets(DataType)
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
     DetermineLocalFolders;
 
-%MS2Pausing folder:
 if strcmp(DataType,'hbBAC')|strcmp(DataType,'Eve2')|strcmp(DataType,'snaBAC')|...
         strcmp(DataType,'snaBACNoPrimary')|strcmp(DataType,'snaBACNoShadow')|strcmp(DataType,'P2PPausing')|...
         strcmp(DataType,'hbNoPrimary')|strcmp(DataType,'kniBAC')|strcmp(DataType,'hbNoShadow')|...
@@ -20,7 +19,7 @@ if strcmp(DataType,'hbBAC')|strcmp(DataType,'Eve2')|strcmp(DataType,'snaBAC')|..
     [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
         DetermineLocalFolders('2014-03-15-HbBACA');
     PausingXLSName='DataStatusPausing.xlsx';
-elseif strcmp(DataType,'zld')|strcmp(DataType,'Shelby')
+elseif strcmp(DataType,'zld')|strcmp(DataType,'Shelby')|strcmp(DataType,'MCP-GFP 5'' Data')
     [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
         DetermineLocalFolders('2013-09-09-zld-X1');
     PausingXLSName='DataStatus.xlsx';
@@ -28,8 +27,8 @@ elseif strcmp(DataType,'MCP-GFP 5'' 2-Spot')
     [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
         DetermineLocalFolders('2014-06-29-MCP(2)-X1(2S)');
     PausingXLSName='Data Status.xlsx';
-elseif strcmp(DataType,'MCP-GFP 5'' Data')
-    error('Take care of this')
+% elseif strcmp(DataType,'MCP-GFP 5'' Data')
+%     error('Take care of this')
 else
     error('Add this data type to the code')
 end
