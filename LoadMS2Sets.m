@@ -132,10 +132,10 @@ for i=1:length(CompiledSets)
     end
 end
 
-%Pad the APDivisions in case we're missing it for some sets
-if length(APDivisions)<length(CompiledSets)
-    APDivisions(length(CompiledSets)).APDivision=[];
-end
+%%Pad the APDivisions in case we're missing it for some sets
+%if length(APDivisions)<length(CompiledSets)
+%    APDivisions(length(CompiledSets)).APDivision=[];
+%end
 
 
 %Now add the SetName and APDivision information
