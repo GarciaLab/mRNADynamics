@@ -17,8 +17,13 @@ for j = 1:nFrames
 if update_waitbar
     progress = findall(h_waitbar_segmentation,'type','patch');
     progress = get(progress,'XData');
-    progress = progress(2)/100;
-    waitbar((progress*numel(names)+1)/numel(names),h_waitbar_segmentation,['Segmentation progress : ' num2str((progress*numel(names)+1)) ' processed out of ' num2str(numel(names))])
+    try
+        progress = progress(2)/100;
+        waitbar((progress*numel(names)+1)/numel(names),h_waitbar_segmentation,['Segmentation progress : ' num2str((progress*numel(names)+1)) ' processed out of ' num2str(numel(names))])
+    catch
+        warning('There is a problem with calling waitbar. Is this something  with the Matlab version?')
+    end
+   
 end
 
 end
