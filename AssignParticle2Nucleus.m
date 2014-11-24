@@ -29,6 +29,8 @@ end
 %particle position is raw, not the one in the Particles and Nuclei
 %structures.
 [NewParticlesX,NewParticlesY]=fad2xyzFit(CurrentFrame,fad, 'addMargin');
+NewParticlesX=double(NewParticlesX);
+NewParticlesY=double(NewParticlesY);
 
 if ~isempty(NewParticlesX)
 
@@ -180,6 +182,9 @@ if ~isempty(NewParticlesX)
                     %Get the last position of the previous particle
                     [PreviousParticlesX,PreviousParticlesY]=...
                         fad2xyzFit(Particles(PreviousParticleIndex).Frame(end),fad, 'addMargin');
+                    PreviousParticleX=double(PreviousParticleX);
+                    PreviousParticleY=double(PreviousParticleY);
+                                        
                     PreviousParticleX=PreviousParticlesX(Particles(PreviousParticleIndex).Index(end));
                     PreviousParticleY=PreviousParticlesY(Particles(PreviousParticleIndex).Index(end));
 
