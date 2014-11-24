@@ -19,7 +19,7 @@ function [Particles,schnitzcells,fad,fad2]=TrackmRNADynamics(varargin)
 if isempty(varargin)
     %Folders
     FolderTemp=uigetdir(DefaultDropboxFolder,'Select folder with data to analyze');
-    Dashes=strfind(FolderTemp,'\');
+    Dashes=strfind(FolderTemp,filesep);
     Prefix=FolderTemp((Dashes(end)+1):end);
     
     %Thresholds
@@ -29,7 +29,7 @@ if isempty(varargin)
 elseif ~ischar(varargin{1})
     %Folders
     FolderTemp=uigetdir(DefaultDropboxFolder,'Select folder with data to analyze');
-    Dashes=strfind(FolderTemp,'\');
+    Dashes=strfind(FolderTemp,filesep);
     Prefix=FolderTemp((Dashes(end)+1):end);
     
     %Thresholds
@@ -68,6 +68,13 @@ DataFolderColumn=find(strcmp(XLSTxt(1,:),'DataFolder'));
 
 Dashes=findstr(Prefix,'-');
 PrefixRow=find(strcmp(XLSTxt(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+if isempty(PrefixRow)
+    PrefixRow=find(strcmp(XLSTxt(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
+    if isempty(PrefixRow)
+        error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
+    end
+end
+
 ExperimentType=XLSTxt(PrefixRow,ExperimentTypeColumn);
 
 
