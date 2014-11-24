@@ -169,7 +169,7 @@ Dashes=findstr(Prefix,'-');
 PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
 if isempty(PrefixRow)
     PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
-    if isemtpy(PrefixRow)
+    if isempty(PrefixRow)
         error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
     end
 end
@@ -299,8 +299,10 @@ if strcmp(ExperimentAxis,'AP')
     end
 elseif strcmp(ExperimentAxis,'DV')&exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
     AddParticlePosition(Prefix);
-else
+elseif strcmp(ExperimentAxis,'NoAP')
     AddParticlePosition(Prefix,'NoAP');
+else
+    error('Experiment axis not recognized in MovieDatabase.XLSX')
 end
 
     
