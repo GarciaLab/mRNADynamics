@@ -53,7 +53,7 @@ if size(XLS,2)>2
         ComputerColumn = find(strcmp(XLS(UserRow, :), username(1:end-1)));
     end
 else
-1    ComputerColumn=2;
+    ComputerColumn=2;
 end
 
 %Now load the corresponding folders
