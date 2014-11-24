@@ -182,8 +182,8 @@ if ~isempty(NewParticlesX)
                     %Get the last position of the previous particle
                     [PreviousParticlesX,PreviousParticlesY]=...
                         fad2xyzFit(Particles(PreviousParticleIndex).Frame(end),fad, 'addMargin');
-                    PreviousParticleX=double(PreviousParticleX);
-                    PreviousParticleY=double(PreviousParticleY);
+                    PreviousParticlesX=double(PreviousParticlesX);
+                    PreviousParticlesY=double(PreviousParticlesY);
                                         
                     PreviousParticleX=PreviousParticlesX(Particles(PreviousParticleIndex).Index(end));
                     PreviousParticleY=PreviousParticlesY(Particles(PreviousParticleIndex).Index(end));
