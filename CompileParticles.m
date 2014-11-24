@@ -81,7 +81,13 @@ ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
 DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
 Dashes=findstr(Prefix,'-');
 PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-
+    if isempty(PrefixRow)
+        PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
+        if isempty(PrefixRow)
+            error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
+        end
+    end
+        
 if isempty(PrefixRow)
     error('Entry not found in MovieDatabase.xlsx')
 end
@@ -161,6 +167,12 @@ ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
 DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
 Dashes=findstr(Prefix,'-');
 PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+if isempty(PrefixRow)
+    PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
+    if isemtpy(PrefixRow)
+        error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
+    end
+end
 
 ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
 ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
@@ -188,6 +200,14 @@ if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
 else
     XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
         [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+    if isempty(XLSEntry)
+        XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
+            [Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
+        if isempty(XLSEntry)
+            error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
+        end
+    end
+    
 end
 
 
