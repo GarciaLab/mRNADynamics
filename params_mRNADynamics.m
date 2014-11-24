@@ -7,6 +7,8 @@ params.shadowN=2;
 params.stopAfter='fits';
 params.saveCompactFadInPreanalysisMode=true;
 
+params.fit_prefitMode = FITMODE_ELLIPTICAL;
+
 params.useGUIprogressbar=false;
 params.paramID='preanalysis';
 params.ap_fullyAutomatic=true;
