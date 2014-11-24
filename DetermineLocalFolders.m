@@ -16,35 +16,44 @@ end
 
 [Dummy,XLS]=xlsread('ComputerFolders.xlsx');
 
-%Find out which computer this is. That will determine the folder structure.
-[ret, name] = system('hostname');  
-if ret ~= 0,  
-   if ispc  
-      name = getenv('COMPUTERNAME');  
-   else  
-      name = getenv('HOSTNAME');  
-   end  
-end  
-name = lower(name); 
+%Check if there's only one computer defined. If so, we'll just use the
+%second column. If not, ask for the computer name
+
+if size(XLS,2)>2
 
 
-%Find which computer we are dealing with:
-ComputerColumn=find(strcmp(XLS(1,:),name(1:end-1)));
+    %Find out which computer this is. That will determine the folder structure.
+    [ret, name] = system('hostname');  
+    if ret ~= 0,  
+       if ispc  
+          name = getenv('COMPUTERNAME');  
+       else  
+          name = getenv('HOSTNAME');  
+       end  
+    end  
+    name = lower(name); 
 
-% Error when computer not found
-if isempty(ComputerColumn)
-    disp('%%%%%%%%%%%%%%%%%%%%%')
-    disp('Computer could not be found. Check host name or update ComputerFolders.xlsx')
-    disp('%%%%%%%%%%%%%%%%%%%%%')
-end
+
+    %Find which computer we are dealing with:
+    ComputerColumn=find(strcmp(XLS(1,:),name(1:end-1)));
+
+    % Error when computer not found
+    if isempty(ComputerColumn)
+        disp('%%%%%%%%%%%%%%%%%%%%%')
+        disp('Computer could not be found. Check host name or update ComputerFolders.xlsx')
+        disp('%%%%%%%%%%%%%%%%%%%%%')
+    end
 
 
-% ES 2013-10-27: queries user name if more than one user is defined for
-% this computer
-if length(ComputerColumn) > 1
-    [Dummy, username] = system('echo %username%');
-    UserRow = strcmp(XLS(:, 1), 'User Name');
-    ComputerColumn = find(strcmp(XLS(UserRow, :), username(1:end-1)));
+    % ES 2013-10-27: queries user name if more than one user is defined for
+    % this computer
+    if length(ComputerColumn) > 1
+        [Dummy, username] = system('echo %username%');
+        UserRow = strcmp(XLS(:, 1), 'User Name');
+        ComputerColumn = find(strcmp(XLS(UserRow, :), username(1:end-1)));
+    end
+else
+1    ComputerColumn=2;
 end
 
 %Now load the corresponding folders
@@ -80,8 +89,19 @@ else
     
     % Convert the prefix into the string used in the XLS file
     Dashes = strfind(Prefix, '-');
+    
+    %We are making the prefix now indifferent about "\" vs "/"
     PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
         [Prefix(1:Dashes(3)-1), '\', Prefix(Dashes(3)+1:end)]));
+    if isempty(PrefixRow)    
+        PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
+            [Prefix(1:Dashes(3)-1), '/', Prefix(Dashes(3)+1:end)]));
+        if isempty(PrefixRow)
+            error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
+        end
+    end
+        
+        
     % ES 2013-10-06: Removing the hard-coding for selecting the date string
     % in 'Prefix'. This is because I tend to put a letter after the date:
     % '2013-10-06A', for instance, instead of '2013-10-06'. This allows me

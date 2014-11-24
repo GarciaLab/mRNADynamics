@@ -5,7 +5,9 @@ params.shadowN=2;
 
 %params.matlabWorkersToUse=2;        %Otherwise it tries with as many as the computer supports.
 params.stopAfter='fits';
-params.useGUIprogressbar=true;
+params.saveCompactFadInPreanalysisMode=true;
+
+params.useGUIprogressbar=false;
 params.paramID='preanalysis';
 params.ap_fullyAutomatic=true;
 params.usePreanalysis=false;

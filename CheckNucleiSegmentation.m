@@ -51,7 +51,7 @@ if ~isempty(varargin)
     Prefix=varargin{1};
 else
     FolderTemp=uigetdir(DefaultDropboxFolder,'Choose folder with files to analyze');
-    Dashes=strfind(FolderTemp,'\');
+    Dashes=strfind(FolderTemp,filesep);
     Prefix=FolderTemp((Dashes(end)+1):end);
 end
 
@@ -92,6 +92,13 @@ ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
 DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
 Dashes=findstr(Prefix,'-');
 PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+if isempty(PrefixRow)
+    PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
+    if isempty(PrefixRow)
+        error('Dateset could not be found. Check MovieDatabase.xlsx')
+    end
+end
+
 
 ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
 ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
@@ -120,11 +127,15 @@ else
     XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
         [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
     
- if isempty(XLSEntry)
-    disp('%%%%%%%%%%%%%%%%%%%%%')
-    disp('Folder could not be found. Check movie database')
-    disp('%%%%%%%%%%%%%%%%%%%%%')
-end
+    if isempty(XLSEntry)
+        XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
+            [Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
+        if isempty(XLSEntry)
+            disp('%%%%%%%%%%%%%%%%%%%%%')
+            error('Folder could not be found. Check movie database')
+            disp('%%%%%%%%%%%%%%%%%%%%%')
+        end
+    end
     
 end
 
