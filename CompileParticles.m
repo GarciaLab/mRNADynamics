@@ -772,10 +772,10 @@ for i=1:length(Particles)
                     set(gca, 'YDir', 'reverse')
                     BarHandle = colorbar;
                     set(BarHandle,'YTick',[])
-                    try 
+                    if ~isempty(cbfreeze(BarHandle)) 
                         BarHandle=cbfreeze(BarHandle);
-                    catch
-                        warning('Issue with cbfreeze.m. Skipping it.')
+                    else
+                        warning('Issue with cbfreeze.m. Skipping it. The color bar will not reflect time appropriately.')
                     end
                     ylabel(BarHandle,'Time')
                     if strcmp(ExperimentAxis,'AP')
