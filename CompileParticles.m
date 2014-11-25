@@ -772,7 +772,11 @@ for i=1:length(Particles)
                     set(gca, 'YDir', 'reverse')
                     BarHandle = colorbar;
                     set(BarHandle,'YTick',[])
-                    BarHandle=cbfreeze(BarHandle);
+                    try 
+                        BarHandle=cbfreeze(BarHandle);
+                    catch
+                        warning('Issue with cbfreeze.m. Skipping it.')
+                    end
                     ylabel(BarHandle,'Time')
                     if strcmp(ExperimentAxis,'AP')
                         title(['Mean AP: ',num2str(CompiledParticles(k).MeanAP)])
