@@ -311,19 +311,33 @@ imwrite(uint16(APImage),[DropboxFolder,filesep,Prefix,filesep,'APDetection',file
 
 %Now, use them to find the embryo mask
 embMask = getEmbryoMask(APImage, 20);
-
+CC=bwconncomp(embMask);
 
 %This code came from Michael's code
 % ES 2014-01-07: I changed this to handle cases where the threshold is too
 % high but the embryo is still stitchable.
-CC=bwconncomp(embMask);
 if CC.NumObjects~=1
     disp('Failed to calculate embryo mask. Found more than one object in mask. Re-running with a lower threshold.');
-    embMask = GetEmbryoMaskWithThreshold(APImage, 20, 5);
+    embMask = GetEmbryoMaskWithThreshold(APImage, 20, 0);
     CC = bwconncomp(embMask);
-    if CC.NumObjects~=1
-        error('Failed to calculate embryo mask. Found more than one object in mask. Script aborting.');
+end
+
+% Try dilating the image to connect regions of a weak and incomplete outer
+% membrane
+if CC.NumObjects ~= 1
+    DilatedBooleanAPImage = APImage>0;
+    NumDilations = 0;
+    while CC.NumObjects~=1 && NumDilations<5
+        DilatedBooleanAPImage = imdilate(DilatedBooleanAPImage, strel('disk', 1));
+        embMask = GetEmbryoMaskWithThreshold(DilatedBooleanAPImage, 20, 0);
+        CC = bwconncomp(embMask);
+        NumDilations = NumDilations+1;
     end
+end
+
+% If nothing works...
+if CC.NumObjects ~= 1
+    error('Failed to calculate embryo mask even after multiple image dilations. Script aborting.');
 end
     
 

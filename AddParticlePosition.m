@@ -126,7 +126,23 @@ if ~NoAP
 
         %Get the surface image in the zoomed case
         D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'*_z*.tif']);
-        ZoomImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(end).name],ChannelToLoad);
+        if ~isempty(D)
+            ZoomImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(end).name],ChannelToLoad);
+        else
+            % This might be the case, for instance, if you're just trying
+            % to find AP information about an image without using FISH
+            % code. In that case, just extract the nuclei from the last
+            % raw image.
+            D = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, '*.tif']);
+            ImageInfo = imfinfo([SourcePath, filesep, Date, filesep, EmbryoName, filesep, D(end).name]);
+            NumFramesAndSlices = length(ImageInfo)/2;
+            RawImage3M = NaN(Rows, Columns, NumFramesAndSlices);
+            for lImageIndex = 1:NumFramesAndSlices
+                RawImage3M(:, :, lImageIndex) = imread([SourcePath, filesep, Date, filesep, EmbryoName, filesep, D(end).name],...
+                    'Index', 2*(lImageIndex-1) + ChannelToLoad);
+            end
+            ZoomImage = max(RawImage3M, [], 3) / 255;
+        end
     end
 
     %Get the zoomed out surface image and its dimensions from the FullEmbryo folder
