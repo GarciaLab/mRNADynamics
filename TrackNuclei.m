@@ -49,7 +49,7 @@ Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
 
 %Find the corresponding entry in the XLS file
 if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
-        (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
+        (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))&(isempty(findstr(Prefix,'Bcd4x')))
     warning('This step in CheckParticleTracking will most likely have to be modified to work')
     XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
         [Date,'\BcdGFP-HisRFP']));
@@ -107,7 +107,7 @@ Dashes=findstr(Prefix,'-');
 
 %Find the corresponding entry in the XLS file
 if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
-        (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1')))
+        (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1')))&(isempty(findstr(Prefix,'Bcd4x')))
     XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
         [Date,'\BcdGFP-HisRFP']));
 else
