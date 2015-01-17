@@ -894,6 +894,10 @@ ncFilterID=[min(ncFilterID)-1,ncFilterID];
 
 
 %Create the filter
+if length(CompiledParticles)==0
+    error('No compiled particles found. Did you mean to run the code with ApproveAll?')
+end
+
 ncFilter=logical(zeros(length(CompiledParticles),length(ncFilterID)));
 for i=1:length(CompiledParticles)
     %Sometimes CompiledParticles(i).nc is empty. This is because of some

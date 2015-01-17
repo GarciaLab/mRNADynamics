@@ -157,6 +157,13 @@ if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
 else
     XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
         [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+    if isempty(XLSEntry)
+        XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
+        [Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
+        if isempty(XLSEntry)
+            error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
+        end
+    end
 end
 
 
@@ -175,7 +182,7 @@ if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')
         CF=nan;
     end
 else
-    error('nc information not define in MovieDatabase.xlsx')
+    error('nc information not defined in MovieDatabase.xlsx')
 end
 ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
 
