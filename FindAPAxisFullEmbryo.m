@@ -5,39 +5,9 @@ function [coordA,coordP,xShift,yShift]=FindAPAxisFullEmbryo(varargin)
 %to determine the shift and then find the AP axis.
 
 
-%Find out which computer this is. That will determine the folder structure.
-[ret, name] = system('hostname');  
-if ret ~= 0,  
-   if ispc  
-      name = getenv('COMPUTERNAME');  
-   else  
-      name = getenv('HOSTNAME');  
-   end  
-end  
-name = lower(name); 
-
-
-if strcmp(name(1:end-1),'phy-tglab2')
-    SourcePath='D:\Hernan\LivemRNA\Analysis\MS2\MCPNoNLS+MS2';
-    FISHPath='D:\Hernan\FISHDrosophila';
-    DropboxFolder='D:\Hernan\Dropbox\LivemRNAData';
-elseif strcmp(name(1:end-1),'hernanx200')
-    SourcePath='C:\Users\hgarcia\Documents\My Papers\LivemRNA\Analysis\MS2\MCPNoNLS+MS2';
-    FISHPath='C:\Users\hgarcia\Documents\My Papers\FISHDrosophila';
-    DropboxFolder='C:\Users\hgarcia\Documents\Dropbox\LivemRNAData';
-elseif strcmp(name(1:end-1),'albert-pc')
-    SourcePath='C:\Users\Albert\Documents\Princeton\Gregor Lab\Data Analysis\LivemRNA\Analysis\MS2\MCPNoNLS+MS2';
-    FISHPath='C:\Users\Albert\Documents\Princeton\Gregor Lab\Data Analysis\FISHDrosophila';
-    DropboxFolder='C:\Users\Albert\Dropbox\LivemRNAData';
-elseif strcmp(name(1:end-1),'phy-tglab11')
-    SourcePath='Z:\LivemRNA\Analysis\MS2\MCPNoNLS+MS2';
-    FISHPath='Z:\FISHDrosophila';
-    DropboxFolder='C:\Users\bothma\Dropbox\LivemRNAData';
-else    
-    error('Include the folders for this computer in the code')
-end
-
-
+%Load the folder information
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+    DetermineLocalFolders(varargin{1});
 
 
 for i=1:length(varargin)
@@ -52,7 +22,7 @@ end
    
 if ~exist('Prefix')
     FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
-    Dashes=strfind(FolderTemp,'\');
+    Dashes=strfind(FolderTemp,filesep);
     Prefix=FolderTemp((Dashes(end)+1):end);
 end
 
@@ -65,7 +35,7 @@ Dashes=findstr(Prefix,'-');
 Date=Prefix(1:Dashes(3)-1);
 EmbryoName=Prefix(Dashes(3)+1:end);
 
-D=dir([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo\*.tif']);
+D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.tif']);
    
 
 %Find the right and left files that do not correspond to the surface image
@@ -107,7 +77,8 @@ end
 %Get the necessary information to load the corresponding flat field image
 
 %Get the structure with the acquisition information
-ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(LeftFileIndex).name]);
+ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,...
+    'FullEmbryo',filesep,D(LeftFileIndex).name]);
 
 
 %Get the flat-field information
@@ -115,7 +86,7 @@ ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',fi
 %Figure out the zoom factor
 Zoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
 %Look for the file
-FFDir=dir([SourcePath,filesep,Date,'\FF',Zoom(1),'x*.*']);
+FFDir=dir([SourcePath,filesep,Date,filesep,'FF',Zoom(1),'x*.*']);
 %If there's more than one match then ask for help
 if length(FFDir)==1
     FFFile=FFDir(1).name;
@@ -124,15 +95,15 @@ elseif isempty(FFDir)
     FFImage=ones(ImageInfo(1).Height,ImageInfo(1).Width);
     pause
 else
-    FFFile=uigetfile([Folder,'\..\FF',Zoom(1),'x*.*'],'Select flatfield file');
+    FFFile=uigetfile([Folder,filesep,'..',filesep,'FF',Zoom(1),'x*.*'],'Select flatfield file');
 end
 
 
 %Now do the image correlation. We'll grab a small area around the middle of
 %the imaging field and correlate it to the larger, full embryo image.
 
-AcqImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(AcqImageIndex).name]);
-FullImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,'\FullEmbryo',filesep,D(FullImageIndex).name]);
+AcqImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(AcqImageIndex).name]);
+FullImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(FullImageIndex).name]);
 
 %Crop the imaging field by 50%
 [Rows,Columns]=size(AcqImage);
@@ -169,7 +140,7 @@ yShift=-ShiftRow;
 
 
 %Save it to the Dropbox folder
-imwrite(FullImage,[DropboxFolder,filesep,Prefix,'\FullEmbryo.tif'],'compression','none');
+imwrite(FullImage,[DropboxFolder,filesep,Prefix,filesep,'FullEmbryo.tif'],'compression','none');
 
 
 %Now, use them to find the embryo mask
@@ -230,7 +201,7 @@ coordA = center + (rotMatrix * (coordA_rot-center_rot)')';
 coordP = center + (rotMatrix * (coordP_rot-center_rot)')';
 
 %Save the AP and shift information
-save([DropboxFolder,filesep,Prefix,'\APDetection.mat'],'coordA','coordP',...
+save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
     'xShift','yShift');
 
 
@@ -247,7 +218,7 @@ plot(coordP_rot(1),coordP_rot(2),'r.','MarkerSize',20);
 plot([majorAxisBegin(1),majorAxisEnd(1)],[majorAxisBegin(2),majorAxisEnd(2)],'b-');
 plot([minorAxisBegin(1),minorAxisEnd(1)],[minorAxisBegin(2),minorAxisEnd(2)],'b-');
 hold off
-saveas(gcf, [DropboxFolder,filesep,Prefix,'\APMask.tif']);
+saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APMask.tif']);
 
 
 clf
@@ -259,7 +230,7 @@ hold on
 plot(coordA(1),coordA(2),'g.','MarkerSize',20);
 plot(coordP(1),coordP(2),'r.','MarkerSize',20);
 hold off
-saveas(gcf, [DropboxFolder,filesep,Prefix,'\APEmbryo.tif']);
+saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APEmbryo.tif']);
 close(diagFigure);
 
 
