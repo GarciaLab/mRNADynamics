@@ -81,11 +81,7 @@ if (strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP'))|...
     CF=XLSRaw{XLSEntry,CFColumn};
 end
 
-%This checks whether all ncs have been defined
-ncCheck=[nc9,nc10,nc11,nc12,nc13,nc14];
-if length(ncCheck)~=6
-    error('Check the nc frames in the MovieDatabase entry. Some might be missing')
-end
+%This checks whether 
 
 %Do we need to convert any NaN chars into doubles?
 if strcmp(lower(nc14),'nan')
