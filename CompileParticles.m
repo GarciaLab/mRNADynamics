@@ -334,7 +334,7 @@ if ApproveAll
     %it. This can occur if CheckParticleTracking is not run
     %first.
     if ~isfield(Particles,'Approved')
-        warning('HG: I have not tested this yet. Let me know if you run into provlems')
+        warning('HG: I have not tested this yet. Let me know if you run into problems')
         Particles.Approved=0;
     end
        
