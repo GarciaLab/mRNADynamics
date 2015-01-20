@@ -783,12 +783,17 @@ for i=1:length(Particles)
                     set(gca, 'YDir', 'reverse')
                     BarHandle = colorbar;
                     set(BarHandle,'YTick',[])
-                    if ~isempty(cbfreeze(BarHandle)) 
-                        BarHandle=cbfreeze(BarHandle);
-                    else
-                        warning('Issue with cbfreeze.m. Skipping it. The color bar will not reflect time appropriately.')
+                    try
+                        if ~isempty(cbfreeze(BarHandle)) 
+                            BarHandle=cbfreeze(BarHandle);
+                        else
+                            warning('Issue with cbfreeze.m. Skipping it. The color bar will not reflect time appropriately.')
+                        end
+                        ylabel(BarHandle,'Time')
+                    catch
+                        warning('Issue with cbfreeze.m. Skipping it. The color bar will not reflect time appropriately. This is an issue of Matlab 2014b.')
                     end
-                    ylabel(BarHandle,'Time')
+                    
                     if strcmp(ExperimentAxis,'AP')
                         title(['Mean AP: ',num2str(CompiledParticles(k).MeanAP)])
                     end
