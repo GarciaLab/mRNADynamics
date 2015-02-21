@@ -38,7 +38,7 @@ end
 
 %First do an analysis without a threshold to generate the DoG images.
 cd([FISHPath,filesep,'Analysis'])
-analyzeShawnLibrary('fad',@(x)tagged(x,'id',[Prefix,'_']),'params_mRNADynamics',inf)
+analyzeDataLibrary('fad',@(x)tagged(x,'id',[Prefix,'_']),'params_mRNADynamics',inf)
 cd([MS2CodePath])
 
 
@@ -47,11 +47,11 @@ cd([MS2CodePath])
 %We will keep the threshold low and then increase it after the fact.
 
 %For power of 10mW
-Threshold=30;   
+Threshold=20;   
 
 %Now, do an analysis with an actual threshold
 cd([FISHPath,filesep,'Analysis'])
-analyzeShawnLibrary('fad',@(x)tagged(x,'id',[Prefix,'_']),'params_mRNADynamics',Threshold)
+analyzeDataLibrary('fad',@(x)tagged(x,'id',[Prefix,'_']),'params_mRNADynamics',Threshold)
 cd([MS2CodePath])
 
 
