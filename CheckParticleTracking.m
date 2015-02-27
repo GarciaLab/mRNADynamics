@@ -1231,6 +1231,65 @@ while (cc~='x')
                 end
             end
         end
+        
+    elseif cc=='\' %Moves to clicked particle.
+        ConnectPosition=ginput(1);
+        if ~isempty(ConnectPosition)
+            %Find the closest particle
+            [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,fad,Particles);
+            display(['Clicked particle: ',num2str(ParticleOutput)]);
+            try
+                ParticleJump=ParticleOutput;
+            end
+            if (floor(ParticleJump)>0)&(ParticleJump<=length(Particles))
+                CurrentParticle=ParticleJump;
+                CurrentFrame=Particles(CurrentParticle).Frame(1);
+                ManualZFlag=0;
+            end
+            
+            if UseHistoneOverlay
+                %Find the closest nucleus
+                NewNuclei=ConnectPosition;
+
+                %Find which schnitz this corresponds to
+                SchnitzSuspect=[];
+                xPosSuspect=[];
+                yPosSuspect=[];
+                for j=1:length(schnitzcells)
+                    if sum(schnitzcells(j).frames-1==CurrentFrame)
+                        SchnitzSuspect=[SchnitzSuspect,j];
+                        xPosSuspect=[xPosSuspect,...
+                            schnitzcells(j).cenx(find((schnitzcells(j).frames)==CurrentFrame))];
+                        yPosSuspect=[yPosSuspect,...
+                            schnitzcells(j).ceny(find((schnitzcells(j).frames)==CurrentFrame))];
+                    end
+                end
+
+                %Find the closest one to the point where we clicked
+                Distance=sqrt((NewNuclei(1)-xPosSuspect).^2+(NewNuclei(2)-yPosSuspect).^2);
+                [MinValue,ClosestNucleusIndex]=min(Distance);
+
+                ClickedSchnitz=SchnitzSuspect(ClosestNucleusIndex);
+
+                %Now, find its associated particle
+                for i=1:length(Particles)
+                    if ~isempty(Particles(i).Nucleus)
+                        AssignedNuclei(i)=Particles(i).Nucleus;
+                    else
+                        AssignedNuclei(i)=nan;
+                    end
+                end
+                AssociatedParticle=find(AssignedNuclei==ClickedSchnitz);
+
+                if isempty(AssociatedParticle)
+                    display(['Nucleus ',num2str(ClickedSchnitz),' does not have an associated particle'])
+                else
+                    display(['Particle ',num2str(AssociatedParticle),' is associated with nucleus ',...
+                        num2str(ClickedSchnitz)])
+                end
+            end
+            
+        end    
     elseif cc=='1'  %Give the nucleus number in the schnitzcell segmentation structure. This
                     %only  works for troubleshooting and you need to be online and on the
                     %Princeton network/VPN for now.
