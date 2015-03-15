@@ -80,7 +80,9 @@ CurrentFolder=cd;
 cd('Tracking')
 path(cd,path);
 cd(CurrentFolder);
-
+%Folder up from mRNADynamics
+cd('..')
+path(cd,path);     
 cd(CurrentFolder);
 
 
