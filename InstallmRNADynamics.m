@@ -53,23 +53,31 @@ CurrentFolder=cd;
 cd(['..',filesep,'Data',filesep,'RawDynamicsData'])
 txt{3,end}=cd;
 cd(CurrentFolder)
+%Add PreProcessedData
+cd(['..',filesep,'Data',filesep,'PreProcessedData'])
+txt{4,end}=cd;
+cd(CurrentFolder)
 %Add ProcessedData
 cd(['..',filesep,'Data',filesep,'ProcessedData'])
-txt{4,end}=cd;
+txt{5,end}=cd;
 cd(CurrentFolder)
 %Add DynamicsResults
 cd(['..',filesep,'Data',filesep,'DynamicsResults'])
-txt{5,end}=cd;
+txt{6,end}=cd;
 cd(CurrentFolder)
 %Add MS2Code
-txt{6,end}=cd;
+txt{7,end}=cd;
 %Save the XLS file
 xlswrite(['..',filesep,'ComputerFolders.xlsx'],txt);
 
 
 %Copy MovieDatabase.XLSX
-copyfile(['InstallationFiles',filesep,'MovieDatabase.xlsx'],...
-    ['..',filesep,'Data',filesep,'DynamicsResults',filesep,'MovieDatabase.xlsx'])
+if ~exist(['..',filesep,'Data',filesep,'DynamicsResults',filesep,'MovieDatabase.xlsx'])
+    copyfile(['InstallationFiles',filesep,'MovieDatabase.xlsx'],...
+        ['..',filesep,'Data',filesep,'DynamicsResults',filesep,'MovieDatabase.xlsx'])
+else
+    warning('MovieDatabase.xlsx already exist, we are not overwriting.')
+end
 
 
 %Add the right folders to the path

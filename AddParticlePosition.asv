@@ -783,7 +783,7 @@ if ~NoAP
 
     %Check if the embryo could actually fit in one of the images. If that's the
     %case we need to shift the the AP poisitions and boxes.
-    if strcmp(FileMode,'TIF')
+    if strcmp(FileMode,TIF)
         if sum(size(HalfImageSurf)==size(FullEmbryo))==2
 
             warning('Have HG check this part of the code')
@@ -1002,12 +1002,9 @@ if ~NoAP
     if exist('xShift')
         save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
             'xShift','yShift','coordAZoom','coordPZoom') 
-    elseif  exist('xShift1')
-        save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
-            'xShift1','yShift1','xShift2','yShift2','coordAZoom','coordPZoom') 
     else
         save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
-            'coordAZoom','coordPZoom') 
+            'xShift1','yShift1','xShift2','yShift2','coordAZoom','coordPZoom') 
     end
 
     if ManualAlignment

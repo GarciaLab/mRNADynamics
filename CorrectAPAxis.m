@@ -23,7 +23,7 @@ close all
 
 % ES 2013-10-29: Required for multiple users to be able to analyze data on
 % one computer
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
     DetermineLocalFolders(varargin{1});
 
 
@@ -116,9 +116,11 @@ end
 if exist('xShift')
     save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
         'xShift','yShift');
-else
+elseif exist('xShift1')
    save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
         'xShift1','yShift1','xShift2','yShift2');
+else
+    save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP');
 end
     
 %Redo the diagnostic plots

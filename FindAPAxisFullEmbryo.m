@@ -6,7 +6,7 @@ function [coordA,coordP,xShift,yShift]=FindAPAxisFullEmbryo(varargin)
 
 
 %Load the folder information
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
     DetermineLocalFolders(varargin{1});
 
 
@@ -39,34 +39,31 @@ D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'
    
 
 %Find the right and left files that do not correspond to the surface image
-RightFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'right'))&...
-    cellfun('isempty',strfind(lower({D.name}),'surf')));
-LeftFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'left'))&...
-    cellfun('isempty',strfind(lower({D.name}),'surf')));
+MidFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'mid')));
 SurfaceFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'surf')));
 
 
-if (length(RightFileIndex)>1) | (length(LeftFileIndex)>1)
+if (length(MidFileIndex)>1) | (length(SurfaceFileIndex)>1)
     error('Too many left/right files in FullEmbryo folder')
 end
 
-%Determine which image has the full embryo. This corresponds to the one
-%that doesn't have surf in the name.
-if ~isempty(strfind(D(SurfaceFileIndex).name,'right'))
-    FullImageIndex=LeftFileIndex;
-    AcqImageIndex=RightFileIndex;
-elseif ~isempty(strfind(D(SurfaceFileIndex).name,'left'))
-    FullImageIndex=RightFileIndex;
-    AcqImageIndex=LeftFileIndex;
-else
-    error('Some image missing?')
-end
+% %Determine which image has the full embryo. This corresponds to the one
+% %that doesn't have surf in the name.
+% if ~isempty(strfind(D(SurfaceFileIndex).name,'right'))
+%     FullImageIndex=LeftFileIndex;
+%     AcqImageIndex=RightFileIndex;
+% elseif ~isempty(strfind(D(SurfaceFileIndex).name,'left'))
+%     FullImageIndex=RightFileIndex;
+%     AcqImageIndex=LeftFileIndex;
+% else
+%     error('Some image missing?')
+% end
 
 
 
 %See if we don't want the default AP orientation
 if ~exist('FlipAP')
-    if strcmp(D(RightFileIndex).name,'PA')|strcmp(D(LeftFileIndex).name,'PA')
+    if strcmp(D(MidFileIndex).name,'PA')|strcmp(D(SurfaceFileIndex).name,'PA')
         FlipAP=1;
     else
         FlipAP=0;
@@ -78,73 +75,84 @@ end
 
 %Get the structure with the acquisition information
 ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,...
-    'FullEmbryo',filesep,D(LeftFileIndex).name]);
+    'FullEmbryo',filesep,D(SurfaceFileIndex).name]);
 
 
 %Get the flat-field information
 
 %Figure out the zoom factor
 Zoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
-%Look for the file
-FFDir=dir([SourcePath,filesep,Date,filesep,'FF',Zoom(1),'x*.*']);
-%If there's more than one match then ask for help
-if length(FFDir)==1
-    FFFile=FFDir(1).name;
-elseif isempty(FFDir)
-    display('Warning, no flat field file found. Press any key to proceed without it');
-    FFImage=ones(ImageInfo(1).Height,ImageInfo(1).Width);
-    pause
+if ~isempty(Zoom)
+    %Look for the file
+    FFDir=dir([SourcePath,filesep,Date,filesep,'FF',Zoom(1),'x*.*']);
+    %If there's more than one match then ask for help
+    if length(FFDir)==1
+        FFFile=FFDir(1).name;
+    elseif isempty(FFDir)
+        display('Warning, no flat field file found. Press any key to proceed without it');
+        FFImage=ones(ImageInfo(1).Height,ImageInfo(1).Width);
+        pause
+    else
+        FFFile=uigetfile([Folder,filesep,'..',filesep,'FF',Zoom(1),'x*.*'],'Select flatfield file');
+    end
 else
-    FFFile=uigetfile([Folder,filesep,'..',filesep,'FF',Zoom(1),'x*.*'],'Select flatfield file');
+    warning('No zoom information found. Cannot process flat field.')
 end
-
 
 %Now do the image correlation. We'll grab a small area around the middle of
 %the imaging field and correlate it to the larger, full embryo image.
 
-AcqImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(AcqImageIndex).name]);
-FullImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(FullImageIndex).name]);
+% AcqImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(AcqImageIndex).name]);
+% FullImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(FullImageIndex).name]);
 
-%Crop the imaging field by 50%
-[Rows,Columns]=size(AcqImage);
-AcqImageCrop=AcqImage(Rows/4:Rows/4*3,Columns/4:Columns/4*3);
-
-%Calculate the correlation marrix and find the maximum
-C = normxcorr2(AcqImageCrop, FullImage);
-[Max2,MaxRows]=max(C);
-[Dummy,MaxColumn]=max(Max2);
-MaxRow=MaxRows(MaxColumn);
-
-[CRows,CColumns]=size(C);
-
-
-
-ShiftRow=MaxRow-(CRows/2+1);
-ShiftColumn=MaxColumn-(CColumns/2+1);
-
-%Create an overlay to make sure things make sense
-
-ImShifted=uint16(zeros(size(FullImage)));
-
-RowRange=(Rows/4:Rows/4*3)+ShiftRow;
-ColumnRange=(Columns/4:Columns/4*3)+ShiftColumn;
-
-ImShifted(RowRange,ColumnRange)=AcqImageCrop;
-
-figure(1)
-ImOverlay=cat(3,mat2gray(FullImage)+mat2gray(ImShifted),mat2gray(FullImage),mat2gray(FullImage));
-imshow(ImOverlay)
-
-xShift=-ShiftColumn;
-yShift=-ShiftRow;
+MidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(MidFileIndex).name],2);
+SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(SurfaceFileIndex).name],2);
+% 
+% %Crop the imaging field by 50%
+% [Rows,Columns]=size(AcqImage);
+% AcqImageCrop=AcqImage(Rows/4:Rows/4*3,Columns/4:Columns/4*3);
+% 
+% %Calculate the correlation marrix and find the maximum
+% C = normxcorr2(AcqImageCrop, FullImage);
+% [Max2,MaxRows]=max(C);
+% [Dummy,MaxColumn]=max(Max2);
+% MaxRow=MaxRows(MaxColumn);
+% 
+% [CRows,CColumns]=size(C);
+% 
+% 
+% 
+% ShiftRow=MaxRow-(CRows/2+1);
+% ShiftColumn=MaxColumn-(CColumns/2+1);
+% 
+% %Create an overlay to make sure things make sense
+% 
+% ImShifted=uint16(zeros(size(FullImage)));
+% 
+% RowRange=(Rows/4:Rows/4*3)+ShiftRow;
+% ColumnRange=(Columns/4:Columns/4*3)+ShiftColumn;
+% 
+% ImShifted(RowRange,ColumnRange)=AcqImageCrop;
+% 
+% figure(1)
+% ImOverlay=cat(3,mat2gray(FullImage)+mat2gray(ImShifted),mat2gray(FullImage),mat2gray(FullImage));
+% imshow(ImOverlay)
+% 
+% xShift=-ShiftColumn;
+% yShift=-ShiftRow;
+% 
+% 
+% %Save it to the Dropbox folder
+% imwrite(FullImage,[DropboxFolder,filesep,Prefix,filesep,'FullEmbryo.tif'],'compression','none');
+% 
 
 
 %Save it to the Dropbox folder
-imwrite(FullImage,[DropboxFolder,filesep,Prefix,filesep,'FullEmbryo.tif'],'compression','none');
-
+mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
+imwrite(uint16(MidImage),[DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif'],'compression','none');
 
 %Now, use them to find the embryo mask
-embMask = getEmbryoMask(FullImage, 20);
+embMask = getEmbryoMask(MidImage, 50);
 
 
 %This code came from Michael's code
@@ -201,8 +209,7 @@ coordA = center + (rotMatrix * (coordA_rot-center_rot)')';
 coordP = center + (rotMatrix * (coordP_rot-center_rot)')';
 
 %Save the AP and shift information
-save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
-    'xShift','yShift');
+save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP');
 
 
 
@@ -222,7 +229,7 @@ saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APMask.tif']);
 
 
 clf
-imagesc(FullImage)
+imagesc(MidImage)
 axis image
 axis off
 title('Anterior (green), posterior (red); original')

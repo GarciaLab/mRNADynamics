@@ -1,5 +1,6 @@
-function [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+function [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(varargin)
+
 
 
 
@@ -59,14 +60,15 @@ end
 %Now load the corresponding folders
 SourceRow=find(strcmp(XLS(:,1),'SourcePath'));
 FISHRow=find(strcmp(XLS(:,1),'FISHPath'));
-SchnitzRow=find(strcmp(XLS(:,1),'SchnitzcellsFolder'));
 MS2CodeRow=find(strcmp(XLS(:,1),'MS2CodePath'));
+PreProcRow=find(strcmp(XLS(:,1),'PreProcPath'));
+
 
 %Assign the folders
 SourcePath=XLS{SourceRow,ComputerColumn};
 FISHPath=XLS{FISHRow,ComputerColumn};
 MS2CodePath=XLS{MS2CodeRow,ComputerColumn};
-SchnitzcellsFolder=XLS{SchnitzRow,ComputerColumn};
+PreProcPath=XLS{PreProcRow,ComputerColumn};
 
 
 %Deal with Dropbox

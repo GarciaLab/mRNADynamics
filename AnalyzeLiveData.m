@@ -25,7 +25,7 @@ Prefix=ExportDataForFISH;
 %TAGOnly: Generate the TAG file only
 
 %Get the relevant folders now:
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
     DetermineLocalFolders(Prefix);
 
 
