@@ -1183,7 +1183,8 @@ while (cc~='x')
         end
     elseif cc=='p' %Identify a particle. It will also tell you the particle associated with
                    %  the clicked nucleus.
-        ConnectPosition=ginput(1);
+        [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'b', 'linewidth',1);
+        ConnectPosition = [ConnectPositionx,ConnectPositiony];
         if ~isempty(ConnectPosition)
             %Find the closest particle
             [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,fad,Particles);
@@ -1233,7 +1234,8 @@ while (cc~='x')
         end
         
     elseif cc=='\' %Moves to clicked particle.
-        ConnectPosition=ginput(1);
+        [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'b', 'linewidth',1);
+        ConnectPosition = [ConnectPositionx,ConnectPositiony];
         if ~isempty(ConnectPosition)
             %Find the closest particle
             [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,fad,Particles);

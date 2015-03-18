@@ -19,7 +19,7 @@ for i=1:length(varargin)
         Prefix=varargin{i};
     end
 end
-   
+
 if ~exist('Prefix')
     FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
     Dashes=strfind(FolderTemp,filesep);
@@ -36,7 +36,7 @@ Date=Prefix(1:Dashes(3)-1);
 EmbryoName=Prefix(Dashes(3)+1:end);
 
 D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.tif']);
-   
+
 
 %Find the right and left files that do not correspond to the surface image
 RightFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'right'))&...
@@ -73,7 +73,7 @@ if ~exist('FlipAP')
     end
 end
 
-    
+
 %Get the necessary information to load the corresponding flat field image
 
 %Get the structure with the acquisition information
@@ -95,7 +95,8 @@ elseif isempty(FFDir)
     FFImage=ones(ImageInfo(1).Height,ImageInfo(1).Width);
     pause
 else
-    FFFile=uigetfile([Folder,filesep,'..',filesep,'FF',Zoom(1),'x*.*'],'Select flatfield file');
+
+FFFile=uigetfile([Folder,filesep,'..',filesep,'FF',Zoom(1),'x*.*'],'Select flatfield file');
 end
 
 
@@ -103,7 +104,7 @@ end
 %the imaging field and correlate it to the larger, full embryo image.
 
 AcqImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(AcqImageIndex).name]);
-FullImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(FullImageIndex).name]);
+FullImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'Full Embryo',filesep,D(FullImageIndex).name]);
 
 %Crop the imaging field by 50%
 [Rows,Columns]=size(AcqImage);
@@ -152,10 +153,11 @@ CC=bwconncomp(embMask);
 if CC.NumObjects~=1
     error('Failed to calculate embryo mask. Found more than one object in mask.');
 end
-    
 
 
-% Rotate the mask to determine the AP axis as the extremal points of the mask
+
+% Rotate the mask to determine the AP axis as the extremal points of the
+mask
 Props=regionprops(CC,'Orientation');
 angle=Props.Orientation; % Angle is in DEGREES!
 
@@ -164,9 +166,9 @@ I_mask_rot=imrotate(embMask,-angle);
 rotMatrix = [cosd(angle) sind(angle)
             -sind(angle) cosd(angle)];
 
-        
+
 CC=bwconncomp(I_mask_rot);
-Props=regionprops(CC,'Centroid','MajorAxisLength', 'MinorAxisLength','Extrema');
+Props=regionprops(CC,'Centroid','MajorAxisLength','MinorAxisLength','Extrema');
 % After rotation, the major axis is aligned with x axis
 
 
@@ -232,6 +234,3 @@ plot(coordP(1),coordP(2),'r.','MarkerSize',20);
 hold off
 saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APEmbryo.tif']);
 close(diagFigure);
-
-
-
