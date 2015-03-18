@@ -421,11 +421,13 @@ ZSlices=FrameInfo(1).NumberSlices+2;   %Note that the blank slices are included
 CurrentZ=round(ZSlices/2);          
 ManualZFlag=0;
 CurrentParticle=1;
+pairParticle = 1;
 PreviousParticle=1;
 CurrentFrameWithinParticle=1;
 
 
 CurrentFrame=Particles(1).Frame(1);
+pairFrame = 1;
 
 
 DisplayRange=[];
@@ -438,6 +440,7 @@ Overlay=figure;
 SnippetFig=figure;
 ZProfileFig=figure;
 TraceFig=figure;
+DistFig=figure;
 
 if UseHistoneOverlay
     HisOverlayFig=figure;
@@ -486,7 +489,7 @@ while (cc~='x')
     xTrace=x(CurrentParticleIndex);
     yTrace=y(CurrentParticleIndex);
     
-    %These are the positions of all the approved and disapprooved particles
+    %These are the positions of all the approved and disapproved particles
     %Find the particles in this frame
     IndexApprovedParticles=[];
     for i=1:length(Particles)
@@ -574,7 +577,7 @@ while (cc~='x')
 %         hold off
         
         
-        %Show the ones that have been approved
+        %Show the nuclei that have been approved
         
         hold on
         schnitzCellNo=[];
@@ -593,6 +596,28 @@ while (cc~='x')
         
         
         hold off
+        
+         %Show the nuclei that have been conditionally approved
+        
+        hold on
+        schnitzCellNo=[];
+        for i=1:length(Particles)
+            if Particles(i).Approved==2
+                schnitzIndex=find((schnitzcells(Particles(i).Nucleus).frames)==CurrentFrame);
+                schnitzCellNo=[schnitzCellNo,schnitzcells(Particles(i).Nucleus).cellno(schnitzIndex)];
+            end
+        end
+        
+        EllipseHandleYellow=notEllipse(Ellipses{CurrentFrame}(schnitzCellNo,3),...
+            Ellipses{CurrentFrame}(schnitzCellNo,4),...
+            Ellipses{CurrentFrame}(schnitzCellNo,5),...
+            Ellipses{CurrentFrame}(schnitzCellNo,1)+1,...
+            Ellipses{CurrentFrame}(schnitzCellNo,2)+1,'y',50);
+        
+        
+        hold off
+        
+        
         
         
         %Show the corresponding nucleus
@@ -986,49 +1011,173 @@ while (cc~='x')
         end
     end
        
+
+%Pairwise distance calculator and plotter-------------------------------
+%--------------------------------------------------------------------------------------------------------------------------
+
+
        
+    pairParticle = 0;
+	for i=1:length(Particles)
+		if(Particles(CurrentParticle).Nucleus == Particles(i).Nucleus && i~=CurrentParticle)
+			pairParticle = i;
+        end
+    end
     
-    figure(TraceFig)
+    figure(DistFig)
     
-    %Only update the trace information if we have switched particles
+%     Only update the trace information if we have switched particles
     if (CurrentParticle~=PreviousParticle)|~exist('Amp')
         PreviousParticle=CurrentParticle;
         [Frames,Amp]=PlotParticleTrace(CurrentParticle,Particles,fad,FISHPath,FilePrefix);
+        [Frames2,Amp2]=PlotParticleTrace(pairParticle,Particles,fad,FISHPath,FilePrefix);
     end
-    plot(Frames(Particles(CurrentParticle).FrameApproved),Amp(Particles(CurrentParticle).FrameApproved),'.-k')
-    hold on
-    plot(Frames(~Particles(CurrentParticle).FrameApproved),Amp(~Particles(CurrentParticle).FrameApproved),'.r')
-    plot(Frames(Frames==CurrentFrame),Amp(Frames==CurrentFrame),'ob')
+    
+    xpos = [];
+    xpos2 = [];
+    ypos = [];
+    ypos2 = [];
+    distances = [];
+    alpha = 0;
+    beta = 0;
+    b = 0;
+    c = 0;
+    frpos = struct('frames', [], 'x', [], 'y', [] );
+    frpos = struct('frames', [], 'x', [], 'y', [] );
+    
+    for i=1:length(fad.channels)
+        a=fad2xyzFit(i,fad);
+        for j=1:length(Particles(CurrentParticle).Frame)
+            if i == Particles(CurrentParticle).Frame(j)
+               alpha = Particles(CurrentParticle).Frame(j); 
+               b= Particles(CurrentParticle).Index(j);
+               xpos = [xpos,a(1,b)];
+               ypos = [ypos,a(2,b)];
+               frpos.frames = Particles(CurrentParticle).Frame;
+               frpos.x = xpos;
+               frpos.y = ypos;
+            end
+        end
+        for j=1:length(Particles(pairParticle).Frame)
+            if i == Particles(pairParticle).Frame(j)
+               beta = Particles(pairParticle).Frame(j); 
+               c= Particles(pairParticle).Index(j);
+               xpos2 = [xpos2,a(1,c)];
+               ypos2 = [ypos2,a(2,c)];
+               frposp.frames = Particles(pairParticle).Frame;
+               frposp.x = xpos2;
+               frposp.y = ypos2;
+            end
+        end
+    end
+    
+    for i=1:length(frpos.frames)
+        for j = 1:length(frposp.frames)
+            if frpos.frames(i) == frposp.frames(j)
+                distances = [distances, sqrt((frpos.x(i) - frposp.x(j))^2 + (frpos.y(i) - frposp.y(j))^2)];
+            end
+        end
+    end
+    
+    f = intersect(frpos.frames, frposp.frames);
+    
+%     plotyy(f, distances,Frames(Particles(CurrentParticle).FrameApproved),Amp(Particles(CurrentParticle).FrameApproved),Frames2(Particles(pairParticle).FrameApproved),Amp2(Particles(pairParticle).FrameApproved))
+        [ax, h(1), h(2)] = plotyy(Frames(Particles(CurrentParticle).FrameApproved),Amp(Particles(CurrentParticle).FrameApproved),f, distances);
+
+        h(3) = line(Frames2(Particles(pairParticle).FrameApproved),Amp2(Particles(pairParticle).FrameApproved), 'Parent', ax(1), 'Color', 'g'); 
+        hold on
+        plot(ax(1),Frames(~Particles(CurrentParticle).FrameApproved),Amp(~Particles(CurrentParticle).FrameApproved),'.r')
+        plot(ax(1),Frames(Frames==CurrentFrame),Amp(Frames==CurrentFrame),'ob')
+        plot(ax(1),Frames2(~Particles(pairParticle).FrameApproved),Amp2(~Particles(pairParticle).FrameApproved),'.r')
+        plot(ax(1),Frames2(Frames==CurrentFrame),Amp2(Frames==pairFrame),'ob')
+    
+%       plot(Frames(~Particles(CurrentParticle).FrameApproved),distances(~Particles(CurrentParticle).FrameApproved),'or')
+%       plot(Frames(~Particles(pairParticle).FrameApproved),distances(~Particles(pairParticle).FrameApproved),'og')
+%     plot(Frames(Frames==CurrentFrame),Amp(Frames==CurrentFrame),'ob')
+    
+%     plot(Frames(~Particles(CurrentParticle).FrameApproved),distances,'.r')
+%     plot(f,distances(ismember(CurrentFrame,f)),'ob')
+%     plot(Frames(~Particles(pairParticle).FrameApproved),distances,'.r')
+%     plot(Frames(Frames==pairFrame),distances(Frames==pairFrame),'ob')
     hold off
-    try
-        xlim([min(Frames)-1,max(Frames)+1]);
-    catch
-    end
+%     try
+%         xlim([1,length(fad.channels)]);
+%         ylim([0,512])
+%     catch
+%     end
     xlabel('Frame')
-    ylabel('Intensity')
+    ylabel(ax(2),'Pairwise Distance (um)')
+    ylabel(ax(1), 'Intensity')
+    legend('Current Particle Intensity', 'Pairwise Distance', 'Pair Particle Intensity')
+%     legend(ax(2), 'Pairwise Distance')
     if strcmp('albert-pc',name(1:end-1))
         set(gcf,'Position',[716    88   439   321])
-        % fullscreen [1135         471         776         515]
+        fullscreen [1135         471         776         515]
     else
         set(gcf,'Position',[703   386   564   327])
     end
     
     FigureTitle=['Particle: ',num2str(CurrentParticle),'/',num2str(length(Particles)),...
-        ', Frame: ',num2str(CurrentFrame),'/',num2str(TotalFrames),...
+       'PairParticle: ',num2str(pairParticle),'/',num2str(length(Particles)),... 
+    ', Frame: ',num2str(CurrentFrame),'/',num2str(TotalFrames),...
         ', Z: ',num2str(CurrentZ),'/',num2str(ZSlices)];
     
-    if HideApprovedFlag==1
-        FigureTitle=[FigureTitle,', Showing non-flagged particles'];
-    elseif HideApprovedFlag==2
-        FigureTitle=[FigureTitle,', Showing disapproved particles'];
-    end
-    title(FigureTitle)
-    
+%     if HideApprovedFlag==1
+%         FigureTitle=[FigureTitle,', Showing non-flagged particles'];
+%     elseif HideApprovedFlag==2
+%         FigureTitle=[FigureTitle,', Showing disapproved particles'];
+%     end
+%     title(FigureTitle)   
     
 
-    
-    
-    
+%Shows intensity of current particle and its pair. Commented out to save screen real estate.-------------------------------
+%--------------------------------------------------------------------------------------------------------------------------
+
+
+
+%     figure(TraceFig)
+%     
+%     %Only update the trace information if we have switched particles
+%     if (CurrentParticle~=PreviousParticle)|~exist('Amp')
+%         PreviousParticle=CurrentParticle;
+%         [Frames,Amp]=PlotParticleTrace(CurrentParticle,Particles,fad,FISHPath,FilePrefix);
+% %         [Frames2,Amp2]=PlotParticleTrace(pairParticle,Particles,fad,FISHPath,FilePrefix);
+%     end
+%     plot(Frames(Particles(CurrentParticle).FrameApproved),Amp(Particles(CurrentParticle).FrameApproved),'.-k')
+%     hold on
+% %      plot(Frames2(Particles(pairParticle).FrameApproved),Amp2(Particles(pairParticle).FrameApproved),'.-g')
+%     plot(Frames(~Particles(CurrentParticle).FrameApproved),Amp(~Particles(CurrentParticle).FrameApproved),'.r')
+%     plot(Frames(Frames==CurrentFrame),Amp(Frames==CurrentFrame),'ob')
+% %      plot(Frames2(~Particles(pairParticle).FrameApproved),Amp2(~Particles(pairParticle).FrameApproved),'.r')
+% %     plot(Frames2(Frames==CurrentFrame),Amp2(Frames==CurrentFrame),'ob')
+%     hold off
+%     try
+%         xlim([min(Frames)-1,max(Frames)+1]);
+%     catch
+%     end
+%     xlabel('Frame')
+%     ylabel('Intensity')
+%     if strcmp('albert-pc',name(1:end-1))
+%         set(gcf,'Position',[716    88   439   321])
+%         % fullscreen [1135         471         776         515]
+%     else
+%         set(gcf,'Position',[703   386   564   327])
+%     end
+%     
+%     FigureTitle=['Particle: ',num2str(CurrentParticle),'/',num2str(length(Particles)),...
+%        'PairParticle: ',num2str(pairParticle),'/',num2str(length(Particles)),... 
+%     ', Frame: ',num2str(CurrentFrame),'/',num2str(TotalFrames),...
+%         ', Z: ',num2str(CurrentZ),'/',num2str(ZSlices)];
+%     
+%     if HideApprovedFlag==1
+%         FigureTitle=[FigureTitle,', Showing non-flagged particles'];
+%     elseif HideApprovedFlag==2
+%         FigureTitle=[FigureTitle,', Showing disapproved particles'];
+%     end
+% %     legend('CurrentParticle', 'Pair particle')
+%     title(FigureTitle)   
+%    
+
     figure(Overlay)
     ct=waitforbuttonpress;
     cc=get(Overlay,'currentcharacter');
@@ -1036,10 +1185,12 @@ while (cc~='x')
     
     if (cc=='.')&(CurrentFrame<length(fad.channels))
         CurrentFrame=CurrentFrame+1;
+        pairFrame = pairFrame+1;
         ManualZFlag=0;
         %DisplayRange=[];
     elseif (cc==',')&(CurrentFrame>1)
         CurrentFrame=CurrentFrame-1;
+        pairFrame = pairFrame-1;
         ManualZFlag=0;
         %DisplayRange=[];
     elseif (cc=='>')&(CurrentFrame+5<length(fad.channels))
@@ -1421,7 +1572,7 @@ while (cc~='x')
         else
             display('Cannot divide a trace at the first time point')
         end
-    elseif cc=='q'      %Approve a trace
+    elseif cc=='q'      %Approve a trace. 
         if Particles(CurrentParticle).Approved==1
             Particles(CurrentParticle).Approved=2;
         elseif Particles(CurrentParticle).Approved==0
@@ -1429,7 +1580,7 @@ while (cc~='x')
         elseif Particles(CurrentParticle).Approved==2
             Particles(CurrentParticle).Approved=0;
         end
-    elseif cc=='w'      %Disapproove a trace
+    elseif cc=='w'      %Disapprove a trace
         if Particles(CurrentParticle).Approved==-1
             Particles(CurrentParticle).Approved=0;
         else
@@ -1540,6 +1691,7 @@ while (cc~='x')
 %             CurrentFrame=Particles(CurrentParticle).Frame(1);
 %         end
         CurrentFrame=Particles(CurrentParticle).Frame(1);
+        pairFrame = Particles(pairParticle).Frame(1);
 
         
         ParticleToFollow=[];
@@ -1550,6 +1702,11 @@ while (cc~='x')
         Particles(CurrentParticle).FrameApproved(Particles(CurrentParticle).Frame==CurrentFrame)=...
             ~Particles(CurrentParticle).FrameApproved(Particles(CurrentParticle).Frame==CurrentFrame);
     
+    elseif cc=='`'
+        Particles(CurrentParticle).FrameApproved(Particles(CurrentParticle).Frame==CurrentFrame)=...
+            ~Particles(CurrentParticle).FrameApproved(Particles(CurrentParticle).Frame==CurrentFrame);
+        Particles(pairParticle).FrameApproved(Particles(pairParticle).Frame==pairFrame)=...
+            ~Particles(pairParticle).FrameApproved(Particles(pairParticle).Frame==pairFrame);
     
     
     %Schnitzcells specific
@@ -1709,7 +1866,6 @@ else
     save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2')            
 end
 display('Particles saved.')
-
 
 
 
