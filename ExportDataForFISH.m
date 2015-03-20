@@ -148,12 +148,11 @@ Channel2=XLSTxt(PrefixRow,Channel2Column);
 
 %Now that we know all of this, reload the folders taking into account the
 %new Dropbox one
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(Prefix);
 
 %Create the output folder
-OutputFolder=[FISHPath,filesep,'Data',filesep,...
-    Prefix];
+OutputFolder=[PreProcPath,filesep,Prefix];
 mkdir(OutputFolder)
 
 
@@ -574,7 +573,7 @@ elseif strcmp(FileMode,'LIFExport')
 
 
         %Determine the number of frames (subtract LUT), divide by both channels)
-        NFrames=(length(D)-N_LUT)/(2*NSlices);
+        NFrames=ceil((length(D)-N_LUT)/(2*NSlices));
 
         %Generate FrameInfo
         FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
@@ -893,7 +892,7 @@ elseif strcmp(FileMode,'LIFExport')
     else
         error('Experiment type not recognized. Check MovieDatabase.XLSX')
     end
-    close(h)
+%     close(h)
     
     % TAG File Information
     Output{1}=['id ',Prefix,'_'];

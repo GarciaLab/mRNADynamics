@@ -14,7 +14,6 @@ if isempty(varargin)
     %warning('No Prefix defined. Will output default Dropbox folder')
 end
 
-
 [Dummy,XLS]=xlsread('ComputerFolders.xlsx');
 
 %Check if there's only one computer defined. If so, we'll just use the
