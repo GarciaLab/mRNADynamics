@@ -43,7 +43,7 @@ name = lower(name);
 
 
 %Load the folder information
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
 
 
@@ -56,12 +56,12 @@ else
 end
 
 
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(Prefix);
 
 
 %Set the source folders
-Folder=[FISHPath,filesep,'Analysis',filesep,Prefix,'_',filesep,'preanalysis',filesep];
+Folder=[FISHPath,filesep,Prefix,'_',filesep,'preanalysis',filesep];
 FileName=['CompactResults_',Prefix,'_.mat'];
 
 %Set the destination folders
@@ -71,10 +71,10 @@ DataFolder=[Folder,'..',filesep,'..',filesep,'..',filesep,'Data',filesep,FilePre
 
 
 %Find out how many frames we have
-D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*His*.tif']);
+D=dir([PreProcPath,filesep,Prefix,filesep,'*His*.tif']);
 if length(D)==0
     warning('The name format is a mess. I had to do this for KITP')
-    D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*_His*.tif']);
+    D=dir([PreProcPath,filesep,Prefix,filesep,'*_His*.tif']);
 end
 TotalFrames=length(D);
 
@@ -186,16 +186,16 @@ load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat']);
 
 
 %Get the information about the Histone channel images
-D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*-His*.tif']);
+D=dir([PreProcPath,filesep,Prefix,filesep,'*-His*.tif']);
 if length(D)==0
     warning('The name format is a mess. I had to do this for KITP')
-    D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*His*.tif']);
+    D=dir([PreProcPath,filesep,Prefix,filesep,'*His*.tif']);
 end
 TotalFrames=length(D);
 
 
 %Get information about the image size
-HisImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(1).name]);
+HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(1).name]);
 [Rows,Cols]=size(HisImage);
 DisplayRange=[min(min(HisImage)),max(max(HisImage))];
 
@@ -243,7 +243,7 @@ cc=1;
 while (cc~='x')
     
     %Load the image
-    HisImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(CurrentFrame).name]);
+    HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(CurrentFrame).name]);
     
     
     %Get the information about the centroids

@@ -3,10 +3,10 @@ function TrackNuclei(Prefix)
 %This function is just a script that call Laurent's tracking code
 
 %Get the folders, including the default Dropbox one
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
 %Now get the actual DropboxFolder
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(Prefix);
 
 
@@ -130,9 +130,9 @@ end
 %into an independent function.
 
 %Create the cell array with the names.
-D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*His*.tif']);
+D=dir([PreProcPath,filesep,Prefix,filesep,'*His*.tif']);
 for i=1:length(D)
-    names{i}=[FISHPath,filesep,'Data',filesep,Prefix,filesep,D(i).name];
+    names{i}=[PreProcPath,filesep,Prefix,filesep,D(i).name];
 end
 
 
@@ -201,15 +201,15 @@ else
     centers = updateCentersFromEllipses(Ellipses);
 
     %Load the dataStructure to seed up retracking if it exists
-    if exist([FISHPath,filesep,'Analysis',filesep,Prefix,'_',filesep,'dataStructure.mat'])
-        load([FISHPath,filesep,'Analysis',filesep,Prefix,'_',filesep,'dataStructure.mat'])
-    elseif exist([FISHPath,filesep,'Analysis',filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'])
-        load([FISHPath,filesep,'Analysis',filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'])
+    if exist([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'])
+        load([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'])
+    elseif exist([FISHPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'])
+        load([FISHPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'])
     end
 
     % look for a settings file in the Raw Data folder.
-    if exist([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'-AcquisitionSettings.mat'],'file')
-        load([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'-AcquisitionSettings.mat']);
+    if exist([PreProcPath,filesep,Prefix,filesep,Prefix,'-AcquisitionSettings.mat'],'file')
+        load([PreProcPath,filesep,Prefix,filesep,Prefix,'-AcquisitionSettings.mat']);
         fields = fieldnames(AcquisitionSettings);
         settingArguments = cell(1,2*length(fields));
         for i=1:length(fields)
@@ -252,4 +252,4 @@ end
 mkdir([DropboxFolder,filesep,Prefix])
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells')
-save([FISHPath,filesep,'Analysis',filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
+save([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')

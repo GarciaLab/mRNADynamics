@@ -59,7 +59,7 @@ Date=Prefix(1:Dashes(3)-1);
 EmbryoName=Prefix(Dashes(3)+1:end);
 
 D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.tif']);
-   
+
 %Determine wether we're dealing with a left-right embryo or a top-bottom
 %one
 LeftRight=1;

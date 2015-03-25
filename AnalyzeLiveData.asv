@@ -47,7 +47,7 @@ cd([MS2CodePath])
 %We will keep the threshold low and then increase it after the fact.
 
 %For power of 10mW
-Threshold=1;   
+Threshold=4;   
 
 %Now, do an analysis with an actual threshold
 cd([FISHPath])

@@ -87,6 +87,9 @@ CurrentFolder=cd;
 %mRNADynamics\Tracking
 cd('Tracking')
 path(cd,path);
+%mRNADynamics\Tracking\subfunctions
+cd('subfunctions')
+path(cd,path);
 cd(CurrentFolder);
 %Folder up from mRNADynamics
 cd('..')

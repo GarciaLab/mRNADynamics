@@ -35,29 +35,6 @@ Dashes=findstr(Prefix,'-');
 Date=Prefix(1:Dashes(3)-1);
 EmbryoName=Prefix(Dashes(3)+1:end);
 
-%Figure out what type of experiment we have
-[XLSNum,XLSTxt]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
-DataFolderColumn=find(strcmp(XLSTxt(1,:),'DataFolder'));
-ExperimentTypeColumn=find(strcmp(XLSTxt(1,:),'ExperimentType'));
-Channel1Column=find(strcmp(XLSTxt(1,:),'Channel1'));
-Channel2Column=find(strcmp(XLSTxt(1,:),'Channel2'));
-
-% Convert the prefix into the string used in the XLS file
-Dashes = strfind(Prefix, '-');
-PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
-    [Prefix(1:Dashes(3)-1), '\', Prefix(Dashes(3)+1:end)]));
-if isempty(PrefixRow)
-    PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
-        [Prefix(1:Dashes(3)-1), '/', Prefix(Dashes(3)+1:end)]));
-    if isempty(PrefixRow)
-        error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-    end
-end
-
-ExperimentType=XLSTxt(PrefixRow,ExperimentTypeColumn);
-Channel1=XLSTxt(PrefixRow,Channel1Column);
-Channel2=XLSTxt(PrefixRow,Channel2Column);
-
 
 
 %Determine whether we're dealing with 2-photon data from Princeton or LSM
@@ -107,27 +84,8 @@ end
 if strcmp(FileMode,'TIF')
     MidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(MidFileIndex).name],2);
 elseif strcmp(FileMode,'LIFExport')
+    LIFMid=bfopen([Folder,filesep,'FF.lif']);
     
-    %Figure out the different channels
-    if ~isempty(strfind(Channel1{1},'MCP'))
-        MCPChannel=1;
-    elseif  strfind(Channel1{1},'His')
-        HisChannel=1;
-    else
-        error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
-    end
-
-    if ~isempty(strfind(Channel2{1},'MCP'))
-        MCPChannel=2;
-    elseif  strfind(Channel2{1},'His')
-        HisChannel=2;
-    else
-        error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
-    end
-    
-    
-    LIFMid=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(MidFileIndex).name]);
-    MidImage=LIFMid{1}{HisChannel,1};
 end
 
 
@@ -215,81 +173,76 @@ embMask = getEmbryoMask(MidImage, 50);
 
 
 %This code came from Michael's code
-diagFigure = figure;
 CC=bwconncomp(embMask);
 if CC.NumObjects~=1
-    warning('Failed to calculate embryo mask. Found more than one object in mask. Assigning arbitrary A and P positions.');
-    coordA=[1,1];
-    coordP=[1,1];
-else
-    
-    % Rotate the mask to determine the AP axis as the extremal points of the mask
-    Props=regionprops(CC,'Orientation');
-    angle=Props.Orientation; % Angle is in DEGREES!
-
-
-    I_mask_rot=imrotate(embMask,-angle);
-    rotMatrix = [cosd(angle) sind(angle)
-                -sind(angle) cosd(angle)];
-
-
-    CC=bwconncomp(I_mask_rot);
-    Props=regionprops(CC,'Centroid','MajorAxisLength', 'MinorAxisLength','Extrema');
-    % After rotation, the major axis is aligned with x axis
-
-
-
-    % for future diagnostic figures
-    majorAxisBegin = Props.Centroid + [Props.MajorAxisLength/2,0];
-    majorAxisEnd = Props.Centroid - [Props.MajorAxisLength/2,0];
-    minorAxisBegin = Props.Centroid + [0, Props.MinorAxisLength/2];
-    minorAxisEnd = Props.Centroid - [0, Props.MinorAxisLength/2];
-
-    ext=Props.Extrema;
-    coordP_rot=(ext(3,:)+ext(4,:))/2;
-    coordA_rot=(ext(7,:)+ext(8,:))/2;
-
-    if FlipAP
-        temp = coordA_rot;
-        coordA_rot = coordP_rot;
-        coordP_rot = temp;
-    end
-
-
-    % coordA and coordP are the coordinates on the rotated image
-    % We should rotate them back to the coordinates of the original picture
-    % Remember that rotation was performed about the center of the image
-
-    %coordinates of the center of the rotated image
-    center_rot = 1/2*[size(I_mask_rot,2) size(I_mask_rot,1)];
-    %coordinates of the center of the original image
-    center = 1/2*[size(embMask,2) size(embMask,1)];
-
-    coordA = center + (rotMatrix * (coordA_rot-center_rot)')';
-    coordP = center + (rotMatrix * (coordP_rot-center_rot)')';
-    
-    % Save diagnostic figures to check the quality of axis determination
-    imagesc(I_mask_rot);
-    colormap(gray);
-    axis image
-    title('Anterior (green), posterior (red); rotated')
-    hold on
-    plot(coordA_rot(1),coordA_rot(2),'g.','MarkerSize',20);
-    plot(coordP_rot(1),coordP_rot(2),'r.','MarkerSize',20);
-    plot([majorAxisBegin(1),majorAxisEnd(1)],[majorAxisBegin(2),majorAxisEnd(2)],'b-');
-    plot([minorAxisBegin(1),minorAxisEnd(1)],[minorAxisBegin(2),minorAxisEnd(2)],'b-');
-    hold off
-    saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APMask.tif']);
-
+    error('Failed to calculate embryo mask. Found more than one object in mask.');
 end
     
 
 
+% Rotate the mask to determine the AP axis as the extremal points of the mask
+Props=regionprops(CC,'Orientation');
+angle=Props.Orientation; % Angle is in DEGREES!
+
+
+I_mask_rot=imrotate(embMask,-angle);
+rotMatrix = [cosd(angle) sind(angle)
+            -sind(angle) cosd(angle)];
+
+        
+CC=bwconncomp(I_mask_rot);
+Props=regionprops(CC,'Centroid','MajorAxisLength', 'MinorAxisLength','Extrema');
+% After rotation, the major axis is aligned with x axis
+
+
+
+% for future diagnostic figures
+majorAxisBegin = Props.Centroid + [Props.MajorAxisLength/2,0];
+majorAxisEnd = Props.Centroid - [Props.MajorAxisLength/2,0];
+minorAxisBegin = Props.Centroid + [0, Props.MinorAxisLength/2];
+minorAxisEnd = Props.Centroid - [0, Props.MinorAxisLength/2];
+
+ext=Props.Extrema;
+coordP_rot=(ext(3,:)+ext(4,:))/2;
+coordA_rot=(ext(7,:)+ext(8,:))/2;
+
+if FlipAP
+    temp = coordA_rot;
+    coordA_rot = coordP_rot;
+    coordP_rot = temp;
+end
+
+
+% coordA and coordP are the coordinates on the rotated image
+% We should rotate them back to the coordinates of the original picture
+% Remember that rotation was performed about the center of the image
+
+%coordinates of the center of the rotated image
+center_rot = 1/2*[size(I_mask_rot,2) size(I_mask_rot,1)];
+%coordinates of the center of the original image
+center = 1/2*[size(embMask,2) size(embMask,1)];
+
+coordA = center + (rotMatrix * (coordA_rot-center_rot)')';
+coordP = center + (rotMatrix * (coordP_rot-center_rot)')';
 
 %Save the AP and shift information
 save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP');
 
 
+
+% Save diagnostic figures to check the quality of axis determination
+diagFigure = figure;
+imagesc(I_mask_rot);
+colormap(gray);
+axis image
+title('Anterior (green), posterior (red); rotated')
+hold on
+plot(coordA_rot(1),coordA_rot(2),'g.','MarkerSize',20);
+plot(coordP_rot(1),coordP_rot(2),'r.','MarkerSize',20);
+plot([majorAxisBegin(1),majorAxisEnd(1)],[majorAxisBegin(2),majorAxisEnd(2)],'b-');
+plot([minorAxisBegin(1),minorAxisEnd(1)],[minorAxisBegin(2),minorAxisEnd(2)],'b-');
+hold off
+saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APMask.tif']);
 
 
 clf

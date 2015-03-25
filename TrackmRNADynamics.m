@@ -10,7 +10,7 @@ function [Particles,schnitzcells,fad,fad2]=TrackmRNADynamics(varargin)
 %Approved field of the Particles structure.
 
 
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
 
 
@@ -56,7 +56,7 @@ end
 
 
 %Get the actual folder now that we have the Prefix
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(Prefix);
 
 
@@ -79,7 +79,7 @@ ExperimentType=XLSTxt(PrefixRow,ExperimentTypeColumn);
 
 
 %Set the source folders
-Folder=[FISHPath,filesep,'Analysis',filesep,Prefix,'_',filesep,'preanalysis',filesep];
+Folder=[FISHPath,filesep,Prefix,'_',filesep,'preanalysis',filesep];
 FileName=['CompactResults_',Prefix,'_.mat'];
 
 %Set the destination folders
@@ -141,8 +141,8 @@ if exist([OutputFolder,filesep,'FrameInfo.mat'])
 else
     warning('No FrameInfo.mat detected. Trying to pull out magnification information from the TIF file')
 
-    DZoom=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*z*.tif']);
-    ImageInfo=imfinfo([FISHPath,filesep,'Data',filesep,Prefix,filesep,DZoom(1).name]);
+    DZoom=dir([PreProcPath,filesep,Prefix,filesep,'*z*.tif']);
+    ImageInfo=imfinfo([PreProcPath,filesep,Prefix,filesep,DZoom(1).name]);
     PixelSize=1/ImageInfo.XResolution;
 end
     
@@ -285,7 +285,9 @@ if strcmp(ExperimentType,'1spot')|strcmp(ExperimentType,'2spot')
         CurrentFrame=i;
         [x,y]=fad2xyz(CurrentFrame,fad, 'addMargin'); 
         CurrentZ=3;     
-        Image=imread([DataFolder,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'.tif']);
+        Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'.tif']);
+        
+        
         imshow(Image,[])
         hold on
         plot(x,y,'or')
@@ -299,10 +301,10 @@ if strcmp(ExperimentType,'1spot')|strcmp(ExperimentType,'2spot')
         [x,y]=fad2xyz(CurrentFrame,fad, 'addMargin');
         if UseHistone
             try
-                Image=imread([DataFolder,filesep,FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,3),'.tif']);
+                Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,3),'.tif']);
             catch
                 try
-                    Image=imread([DataFolder,filesep,FilePrefix(1:end-1),'_His_',iIndex(CurrentFrame,3),'.tif']);
+                    Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix(1:end-1),'_His_',iIndex(CurrentFrame,3),'.tif']);
                 catch
                     Image=0;
                 end
@@ -324,6 +326,7 @@ if strcmp(ExperimentType,'1spot')|strcmp(ExperimentType,'2spot')
             hold off
             title(i)
         end
+        drawnow
 
 
 

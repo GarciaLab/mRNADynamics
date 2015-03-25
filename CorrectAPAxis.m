@@ -23,7 +23,7 @@ close all
 
 % ES 2013-10-29: Required for multiple users to be able to analyze data on
 % one computer
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath]=...
     DetermineLocalFolders(varargin{1});
 
 
@@ -80,10 +80,11 @@ while (cc~='x')
         coordA=[];
         coordP=[];
     elseif (ct~=0)&(cc=='a')	%Select anterior end
-        coordA=ginput(1);
-        
+        [coordAx,CoordAy]=ginputc(1,'Color',[1,1,1]);
+        coordA = [coordAx,CoordAy];        
     elseif (ct~=0)&(cc=='p')    %Select posterior end
-        coordP=ginput(1);
+        [coordPx,CoordPy]=ginputc(1,'Color',[1,1,1]);
+        coordP = [coordPx,CoordPy];
     elseif (ct~=0)&(cc=='.')    %Increase contrast
         DisplayRange(2)=DisplayRange(2)/2;
         

@@ -22,7 +22,7 @@ function CompileParticles(varargin)
 close all
 
 %Information about about folders
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
 
 %Look at the input parameters and use defaults if missing
@@ -66,7 +66,7 @@ end
 FilePrefix=[Prefix,'_'];
 
 %Now get the actual Dropbox folder
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(Prefix);
 
 
@@ -105,11 +105,11 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
 else
     warning('No FrameInfo.mat found. Trying to continue')
     %Adding frame information
-    DHis=dir([FISHPath,filesep,'Data',filesep,FilePrefix(1:end-1),filesep,'*His*.tif']);
+    DHis=dir([PreProcPath,filesep,FilePrefix(1:end-1),filesep,'*His*.tif']);
     FrameInfo(length(DHis)).nc=[];
     %Adding information
 
-    Dz=dir([FISHPath,filesep,'Data',filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'*001*.tif']);
+    Dz=dir([PreProcPath,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'*001*.tif']);
     NumberSlices=length(Dz)-1;
     
     for i=1:length(FrameInfo)
@@ -810,7 +810,7 @@ for i=1:length(Particles)
                     yTrace=y(CompiledParticles(k).Index(j));
                     zTrace=z(CompiledParticles(k).Index(j));
 
-                    Image=imread([FISHPath,filesep,'Data',filesep,FilePrefix(1:end-1),filesep,...
+                    Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                         FilePrefix,iIndex(CompiledParticles(k).Frame(j),3),'_z',iIndex(zTrace,2),'.tif']);
                     [ImRows,ImCols]=size(Image);
 
@@ -1125,7 +1125,7 @@ else
     for i=1:length(FrameInfo)
         waitbar(i/length(FrameInfo),h)
         for j=1:FrameInfo(1).NumberSlices
-            Image(:,:,j)=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),'.tif']);
+            Image(:,:,j)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),'.tif']);
         end
         ImageMax=max(Image,[],3);
         MedianCyto(i)=median(double(ImageMax(:)));

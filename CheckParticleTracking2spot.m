@@ -79,7 +79,7 @@ close all
 
 %% Information about about folders
 
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
 
 %Also get the computer name. We'll use this later
@@ -99,7 +99,7 @@ name = lower(name);
 if isempty(varargin)
     DataFolder=uigetdir(DefaultDropboxFolder,'Select data set to analyze');
 else
-    [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+    [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
         DetermineLocalFolders(varargin{1});
     DataFolder=[DropboxFolder,filesep,varargin{1}];
 end
@@ -124,7 +124,7 @@ end
 FilePrefix=[DataFolder(length(DropboxFolder)+2:end),'_'];
 
 %Now get the actual folders
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(FilePrefix(1:end-1));
 
 load([DataFolder,filesep,'Particles.mat'])
@@ -135,11 +135,11 @@ if exist([DataFolder,filesep,'FrameInfo.mat'])
 else
     warning('No FrameInfo.mat found. Trying to continue')
     %Adding frame information
-    DHis=dir([FISHPath,filesep,'Data',filesep,FilePrefix(1:end-1),filesep,'*His*.tif']);
+    DHis=dir([PreProcPath,filesep,FilePrefix(1:end-1),filesep,'*His*.tif']);
     FrameInfo(length(DHis)).nc=[];
     %Adding information
 
-    Dz=dir([FISHPath,filesep,'Data',filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'*001*.tif']);
+    Dz=dir([PreProcPath,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'*001*.tif']);
     NumberSlices=length(Dz)-1;
     
     for i=1:length(FrameInfo)
@@ -170,9 +170,9 @@ end
 
 %Check if we have the histone channel and we have done the nuclear
 %segmentation.
-if exist([FISHPath,filesep,'Data',filesep,FilePrefix(1:end-1),filesep,...
+if exist([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
         FilePrefix(1:end-1),'-His_',iIndex(1,3),'.tif'])|...
-        exist([FISHPath,filesep,'Data',filesep,FilePrefix(1:end-1),filesep,...
+        exist([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
         FilePrefix(1:end-1),'_His_',iIndex(1,3),'.tif'])
     load([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,'Ellipses.mat'])
     UseHistoneOverlay=1;
@@ -520,7 +520,7 @@ while (cc~='x')
     
     
     try
-        Image=imread([FISHPath,filesep,'Data',filesep,FilePrefix(1:end-1),filesep,...
+        Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
             FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'.tif']);
     catch
         display(['Warning: Could not load file: ',...
@@ -751,10 +751,10 @@ while (cc~='x')
         figure(HisOverlayFig)
         
         try
-            ImageHis=imread([FISHPath,filesep,'Data',filesep,FilePrefix(1:end-1),filesep,...
+            ImageHis=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                 FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,3),'.tif']);
         catch %Had to do this for KITP
-            ImageHis=imread([FISHPath,filesep,'Data',filesep,FilePrefix(1:end-1),filesep,...
+            ImageHis=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                 FilePrefix(1:end-1),'_His_',iIndex(CurrentFrame,3),'.tif']);
         end
 
