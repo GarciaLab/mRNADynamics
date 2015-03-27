@@ -153,6 +153,12 @@ if ~NoAP
         MovieZoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
         MovieZoom=str2num(MovieZoom);
     
+        
+        %Get the zoomed out surface image and its dimensions from the FullEmbryo folder
+        D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.tif']);
+        SurfName=D(find(~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
+        SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,SurfName],ChannelToLoad); 
+        
         %Get the size of the zoom image
         Rows = str2double(ExtractInformationField(ImageInfo(1), 'state.acq.linesPerFrame='));
         Columns = str2double(ExtractInformationField(ImageInfo(1), 'state.acq.pixelsPerLine='));
@@ -165,10 +171,7 @@ if ~NoAP
         SurfColumns = str2double(ExtractInformationField(SurfInfo(1), 'state.acq.pixelsPerLine='));
         
         
-        %Get the zoomed out surface image and its dimensions from the FullEmbryo folder
-        D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.tif']);
-        SurfName=D(find(~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
-        SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,SurfName],ChannelToLoad); 
+
         
         
         %Ratio between the two zoom levels
@@ -183,6 +186,9 @@ if ~NoAP
         
         
     elseif strcmp(FileMode,'LSM')|strcmp(FileMode,'LIFExport')
+
+        %This is so that the code doesn't freak out later
+        SurfName=[];
         
         %Figure out the different channels
         if ~isempty(strfind(Channel1{1},'MCP'))
@@ -214,13 +220,23 @@ if ~NoAP
         MetaFullEmbryo= ImageTemp{:, 4};
         PixelSizeFullEmbryo=str2num(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
         
-        if size(ImageTemp{1},1)==1
-            SurfImage=ImageTemp{1}{1,1};
+        %How many channels and slices do we have?
+        NChannels=MetaFullEmbryo.getChannelCount(0);
+        NSlices=str2num(MetaFullEmbryo.getPixelsSizeZ(0));
+        clear MaxTemp
+        if NChannels==1
+            %Do a maximum projections
+            for i=1:NSlices
+                MaxTemp(:,:,i)=ImageTemp{1}{i,1};
+            end
+            SurfImage=max(MaxTemp,[],3);
         else
             error('Implement the part where we choose a channel')
         end
         clear ImageTemp
                 
+        
+        
         %Zoom factor
         MovieZoom=PixelSizeFullEmbryo(1)/PixelSizeZoom(1);
         SurfZoom=1;     %We'll call the zoom of the full embryo image 1
@@ -317,7 +333,7 @@ if ~NoAP
         if ZoomRatio > 1 && ZoomRatio < 24 
             
             %Enlarge the zoomed out image so we can do the cross-correlation
-            SurfImageResized=imresize(SurfImage, ResizeFactor);
+            SurfImageResized=imresize(SurfImage, ZoomRatio);
             
             %Calculate the correlation matrix and find the maximum
             C = normxcorr2(ZoomImage, SurfImageResized);
@@ -351,7 +367,7 @@ if ~NoAP
 
                 %Nuclear mask overlay
                 NucMaskZoomOut=GetNuclearMask(SurfImage,2.5,0);
-                NucMaskZoomOutResized=imresize(NucMaskZoomOut, ResizeFactor);
+                NucMaskZoomOutResized=imresize(NucMaskZoomOut, ZoomRatio);
                 NucMaskZoomOutResizedCropped=...
                     NucMaskZoomOutResized(round(RowsResized/2-RowsZoom/2+ShiftRow*ZoomRatio):round(RowsResized/2+RowsZoom/2-1+ShiftRow*ZoomRatio),...
                     round(ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ZoomRatio):round(ColumnsResized/2+ColumnsZoom/2-1+ShiftColumn*ZoomRatio));
@@ -415,7 +431,7 @@ if ~NoAP
             end
         end
         
-        [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ResizeFactor,ShiftRow,ShiftColumn)
+        [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ZoomRatio,ShiftRow,ShiftColumn)
         ManualAlignmentDone=1;
     end
     
@@ -872,11 +888,11 @@ if ~NoAP
     else
         warning('Have HG check this part of the code')
 
-        ImageCenter=[Rows/2,Columns/2];
+        ImageCenter=[SurfRows/2,SurfColumns/2];
 
         %This is for the full image
-        TopLeft=[ImageCenter(1)-SurfRows/ZoomRatio/2,ImageCenter(2)-SurfColumns/ZoomRatio/2];
-        BottomRight=[ImageCenter(1)+SurfRows/ZoomRatio/2,ImageCenter(2)+SurfColumns/ZoomRatio/2];
+        TopLeft=[ImageCenter(1)-Rows/ZoomRatio/2,ImageCenter(2)-Columns/ZoomRatio/2];
+        BottomRight=[ImageCenter(1)+Rows/ZoomRatio/2,ImageCenter(2)+Columns/ZoomRatio/2];
 
         %This is for the acquisition image
         TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
@@ -903,10 +919,10 @@ if ~NoAP
 
     
 
-
-    %Now, compare it to the surface picture
-    SurfName=D(find(~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
-    SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,SurfName],ChannelToLoad);
+% 
+%     %Now, compare it to the surface picture
+%     SurfName=D(find(~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
+%     SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,SurfName],ChannelToLoad);
 
   
 %     

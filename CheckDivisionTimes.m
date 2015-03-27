@@ -52,12 +52,12 @@ end
 
 D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.tif']);
 
-%Get the information about the zoom
-ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(1).name]);
-
-%Figure out the zoom factor
-Zoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
-Zoom=str2num(Zoom);
+% %Get the information about the zoom
+% ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(1).name]);
+% 
+% %Figure out the zoom factor
+% Zoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
+% Zoom=str2num(Zoom);
 
 
 
@@ -144,6 +144,7 @@ nc12Column=find(strcmp(XLSRaw(1,:),'nc12'));
 nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
 nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
 CFColumn=find(strcmp(XLSRaw(1,:),'CF'));
+Channel1Column=find(strcmp(XLSRaw(1,:),'Channel1'));
 Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
 
 %Convert the prefix into the string used in the XLS file
@@ -167,7 +168,7 @@ else
 end
 
 
-if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')
+if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP')
     nc9=cell2mat(XLSRaw(XLSEntry,nc9Column));
     nc10=cell2mat(XLSRaw(XLSEntry,nc10Column));
     nc11=cell2mat(XLSRaw(XLSEntry,nc11Column));

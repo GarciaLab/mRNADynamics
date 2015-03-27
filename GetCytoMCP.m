@@ -10,8 +10,8 @@ close all
 
 % ES 2013-10-29: Required for multiple users to be able to analyze data on
 % one computer
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
-    DetermineLocalFolders(Prefix);
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
+    DetermineLocalFolders;
 
 
 %Get the folders corresponding to the prefix
@@ -26,17 +26,18 @@ ImageSize=size(FluoImage);
 
 
 %How many slices do we have?
-ZSlices=length(dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'_001_z*.tif']));
+ZSlices=length(dir([PreProcPath,filesep,Prefix,filesep,Prefix,'_001_z*.tif']));
 
 %Folder for report figures
 mkdir([DropboxFolder,filesep,Prefix,filesep,'CytoFluo'])
 
 
-if ~exist([FISHPath,filesep,'Data',filesep,Prefix,filesep,'CytoImages.mat'])
+if ~exist([PreProcPath,filesep,Prefix,filesep,'CytoImages.mat'])
 
     %Get the flat field and smooth it with a Gaussian.
-    FFDir=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*FF.tif']);
-    FFImage=double(imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,FFDir(1).name],1));
+    
+    FFDir=dir([PreProcPath,filesep,Prefix,filesep,'*FF.tif']);
+    FFImage=double(imread([PreProcPath,filesep,Prefix,filesep,FFDir(1).name],1));
     filtStd=30;         %This came from the FISH code.
     FFImage=imfilter(FFImage,fspecial('gaussian',2*filtStd,filtStd),'symmetric');
     FFImage=imdivide(FFImage,double(max(FFImage(:))));
@@ -87,7 +88,7 @@ if ~exist([FISHPath,filesep,'Data',filesep,Prefix,filesep,'CytoImages.mat'])
         %this to account for the fact that we now have blank images at the
         %beginning and end of the stack
         for j=2:ZSlices-1
-            MCPImage(:,:,j-1)=double(imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',...
+            MCPImage(:,:,j-1)=double(imread([PreProcPath,filesep,Prefix,filesep,filesep,Prefix,'_',iIndex(i,3),'_z',...
                 iIndex(j,2),'.tif']));
             MCPImage(:,:,j-1)=imdivide(MCPImage(:,:,j-1),FFImage);
         end
@@ -103,7 +104,7 @@ if ~exist([FISHPath,filesep,'Data',filesep,Prefix,filesep,'CytoImages.mat'])
     close(h)
 
     %Save to the FISH path so that we don't overwhelm the Dropbox folder!
-    save([FISHPath,filesep,'Data',filesep,Prefix,filesep,'CytoImages.mat'],'MaxImage','MeanImage')
+    save([PreProcPath,filesep,Prefix,filesep,'CytoImages.mat'],'MaxImage','MeanImage')
 else
     display('Using saved CytoImages.mat located in the FISH\Data folder.')
     

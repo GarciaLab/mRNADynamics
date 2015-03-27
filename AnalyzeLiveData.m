@@ -47,7 +47,7 @@ cd([MS2CodePath])
 %We will keep the threshold low and then increase it after the fact.
 
 %For power of 10mW
-Threshold=1;   
+Threshold=4;   
 
 %Now, do an analysis with an actual threshold
 cd([FISHPath])
@@ -97,7 +97,7 @@ CheckDivisionTimes(Prefix)
 %% check the nuclei tracking in this round.
 
 %Track the particles, the two numbers are Threshold1 and Threshold2
-TrackmRNADynamics(Prefix,6,6)
+TrackmRNADynamics(Prefix,5,5)
 
 CheckParticleTracking(Prefix)
 

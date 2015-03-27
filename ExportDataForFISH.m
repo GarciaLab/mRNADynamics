@@ -579,74 +579,30 @@ elseif strcmp(FileMode,'LIFExport')
         NPlanesCum_old = cumsum(NPlanes);
         NPlanes = NPlanes - NSlices*NChannels;
         NPlanesCum = cumsum(NPlanes);
-%         
-%         
-%         LIFMeta.getPlaneDeltaT(1,1)
-% 
-%         LIFMeta.getPlaneDeltaT(1)
-% 
-%         LIFMeta.getPlaneDeltaT(1,2)
-% 
-%         LIFMeta.getImageAcquisitionDate(8)
-%         
-%         %Determine the number of frames
-%         LIFMeta.get
-%         
-        %Determine the number of slices
-        %NSlices=length(dir([Folder,filesep,D(1).name(1:end-11),'*ch00.tif']));
-        
-%         
-%         
-%         %Do we have multiple series files?
-%         SeriesFiles = dir([Folder,filesep,'Series*Properties.xml']);
-%         if length(SeriesFiles)>1
-%             NSeries = length(SeriesFiles);
-%             % Number of LUT images
-%             N_LUT = length(dir([Folder,filesep,'Series*ch*LUT.tif']));
-%         else
-%             SeriesFiles = dir([Folder,filesep,'*Properties.xml']);
-%             NSeries=1;
-%             N_LUT = length(dir([Folder,filesep,'*ch*LUT.tif']));
-%         end
-% 
 
-% 
-%         %Determine the number of frames (subtract LUT), divide by both channels)
-%         NFrames=ceil((length(D)-N_LUT)/(2*NSlices));
 
         %Generate FrameInfo
         FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
             'NumberSlices',{},'ZStep',{},'FileMode',{},...
             'PixelSize',{});
-        %Some that I'm not assigning: ZoomFactor, Rotation
-
-%         %Extract time information from xml files
-%         Frame_Times = zeros(1,NFrames*NSlices);
-%         for i = 1:length(SeriesFiles)
-%             xDoc = xmlread([Folder,filesep,SeriesFiles(i).name]);
-%             TimeStampList = xDoc.getElementsByTagName('TimeStamp');
-%             if i == 1
-%                 start_index = 0;
-%             else
-%                 start_index = ceil((nnz(Frame_Times)+1)/42)*42+1;
-%             end
-%             for k = 0:TimeStampList.getLength-1
-%                 TimeStamp = TimeStampList.item(k);
-%                 Date = char(TimeStamp.getAttribute('Date'));
-%                 Time = char(TimeStamp.getAttribute('Time'));
-%                 Milli = char(TimeStamp.getAttribute('MiliSeconds'));
-%                 time_in_days = datenum(strcat(Date,'-',Time,'-',Milli),'dd/mm/yyyy-HH:MM:SS AM-FFF');
-%                 Frame_Times(start_index+k+1)=time_in_days*86400;
-%             end
-%         end
 
         
         %Extract time information from xml files
-        SeriesFiles = dir([Folder,filesep,'*Series*Properties.xml']);
+        XMLFolder=Folder;
+        SeriesFiles = dir([XMLFolder,filesep,'*Series*Properties.xml']);
+        if isempty(SeriesFiles)
+            XMLFolder=[Folder,filesep,'MetaData'];
+            SeriesFiles = dir([XMLFolder,filesep,'*Series*Properties.xml']);
+            if isempty(SeriesFiles)
+                error('XML MetaFiles could not be found. Did they get exported using the LAS software?')
+            end
+        end
+        
+        
         Frame_Times = zeros(1,sum(NFrames.*NSlices));
         m=1;
         for i = 1:NSeries
-            xDoc = xmlread([Folder,filesep,SeriesFiles(i).name]);
+            xDoc = xmlread([XMLFolder,filesep,SeriesFiles(i).name]);
             TimeStampList = xDoc.getElementsByTagName('TimeStamp');
             for k = 0:(NFrames(i)*NSlices(i)*NChannels)-1
                 TimeStamp = TimeStampList.item(k);
