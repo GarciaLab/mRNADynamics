@@ -108,20 +108,11 @@ if strcmp(FileMode,'TIF')
     MidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(MidFileIndex).name],2);
 elseif strcmp(FileMode,'LIFExport')
     
-    %Figure out the different channels
-    if ~isempty(strfind(Channel1{1},'MCP'))
-        MCPChannel=1;
-    elseif  strfind(Channel1{1},'His')
-        HisChannel=1;
-    else
-        error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
-    end
-
-    if ~isempty(strfind(Channel2{1},'MCP'))
-        MCPChannel=2;
-    elseif  strfind(Channel2{1},'His')
-        HisChannel=2;
-    else
+    %Figure out which channel to use
+    HisChannel=find(cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'mcherry'))|...
+        cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'his')));
+    
+    if isempty(HisChannel)
         error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
     end
     
