@@ -261,7 +261,7 @@ while (cc~='x')
             Ellipses{CurrentFrame}(i,2)+1)];
     end
     hold off
-    set(PlotHandle,'Color','r')
+    set(PlotHandle,'Color','r', 'Linewidth', 3)
     
      
 
