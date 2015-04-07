@@ -230,6 +230,16 @@ if ~NoAP
                 MaxTemp(:,:,i)=ImageTemp{1}{i,1};
             end
             SurfImage=max(MaxTemp,[],3);
+            Dashes=findstr(Prefix,'-');
+            Date=Prefix(1:Dashes(3)-1);
+            EmbryoName=Prefix(Dashes(3)+1:end);
+            xml_file_path = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, '*.xml']);
+            xml_file = xml_file_path(1).name;
+            xDoc = parseXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, xml_file]);
+            xml_path = xDoc.Children.Children(7).Children(2).Children(1).Children.Attributes;
+            alpha = str2double(xml_path(59).Value);
+            SurfImage = imrotate(SurfImage, -alpha);            %Calculate the correlation matrix and find the maximum
+
         else
             error('Implement the part where we choose a channel')
         end
@@ -245,9 +255,11 @@ if ~NoAP
         Columns = str2num(MetaZoom.getPixelsSizeX(0));
         Rows = str2num(MetaZoom.getPixelsSizeY(0));
         %Get the size of the full embryo image
-        SurfColumns=str2num(MetaFullEmbryo.getPixelsSizeX(0));
-        SurfRows=str2num(MetaFullEmbryo.getPixelsSizeY(0));
-        
+%         SurfColumns=str2num(MetaFullEmbryo.getPixelsSizeX(0));
+%         SurfRows=str2num(MetaFullEmbryo.getPixelsSizeY(0));
+        surf_size = size(SurfImage);
+        SurfColumns= surf_size(2);
+        SurfRows=surf_size(1);
    
         ZoomRatio = MovieZoom / SurfZoom;
         
@@ -334,8 +346,7 @@ if ~NoAP
             
             %Enlarge the zoomed out image so we can do the cross-correlation
             SurfImageResized=imresize(SurfImage, ZoomRatio);
-            
-            %Calculate the correlation matrix and find the maximum
+            %Get the zoomed rotation value from the XML metadata
             C = normxcorr2(ZoomImage, SurfImageResized);
             [Max2,MaxRows]=max(C);
             [Dummy,MaxColumn]=max(Max2);
