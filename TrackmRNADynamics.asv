@@ -1121,8 +1121,8 @@ elseif strcmp(ExperimentType,'2spot2color')
                         %Fill in any gaps if there are any
 
                         %Find which ones are the missing frames
-                        MissingFrames=Particles{ChN}(CurrentParticle).Frame(1):Particles{ChN}(CurrentParticle).Frame(end);
-                        MissingFrames=MissingFrames(~ismember(MissingFrames,Particles{ChN}(CurrentParticle).Frame));
+                        MissingFrames=Particles{ChN}(CurrentParticle).Frame(1):Particles{ChN(CurrentParticle).Frame(end);
+                        MissingFrames=MissingFrames(~ismember(MissingFrames,Particles(CurrentParticle).Frame));
 
                         if ~isempty(MissingFrames)            
                             for j=1:length(MissingFrames)

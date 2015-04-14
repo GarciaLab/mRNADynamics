@@ -80,8 +80,9 @@ while (cc~='x')
         coordA=[];
         coordP=[];
     elseif (ct~=0)&(cc=='a')	%Select anterior end
+        figure(APImageFig)
         [coordAx,CoordAy]=ginputc(1,'Color',[1,1,1]);
-        coordA = [coordAx,CoordAy];        
+        coordA = [coordAx,CoordAy];    
     elseif (ct~=0)&(cc=='p')    %Select posterior end
         [coordPx,CoordPy]=ginputc(1,'Color',[1,1,1]);
         coordP = [coordPx,CoordPy];

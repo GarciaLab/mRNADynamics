@@ -24,22 +24,8 @@ Prefix=ExportDataForFISH;
 %Optional parameters:
 %TAGOnly: Generate the TAG file only
 
-%Get the relevant folders now:
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
-    DetermineLocalFolders(Prefix);
-
-
-%Start the matlab workers for the FISH analysis code
-try
-    matlabpool
-catch
-    display('matlabpool already running')
-end
-
 %First do an analysis without a threshold to generate the DoG images.
-cd([FISHPath])
-analyzeDataLibrary('fad',@(x)tagged(x,'id',[Prefix,'_']),'params_mRNADynamics',inf)
-cd([MS2CodePath])
+RunFISHToolbox(Prefix)
 
 
 %% Look at the dog-filtered images and decide on a threshold to use
@@ -47,13 +33,10 @@ cd([MS2CodePath])
 %We will keep the threshold low and then increase it after the fact.
 
 %For power of 10mW
-Threshold=4;   
+Threshold=[4,3];   
 
 %Now, do an analysis with an actual threshold
-cd([FISHPath])
-analyzeDataLibrary('fad',@(x)tagged(x,'id',[Prefix,'_']),'params_mRNADynamics',Threshold)
-cd([MS2CodePath])
-
+RunFISHToolbox(Prefix,Threshold)
 
 %% Find and check the AP axis
 
@@ -97,6 +80,7 @@ CheckDivisionTimes(Prefix)
 %% check the nuclei tracking in this round.
 
 %Track the particles, the two numbers are Threshold1 and Threshold2
+%TrackmRNADynamics(Prefix,5,5,5,5) - For 2spots2colors
 TrackmRNADynamics(Prefix,5,5)
 
 CheckParticleTracking(Prefix)

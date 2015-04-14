@@ -223,25 +223,24 @@ if ~NoAP
         NChannels=MetaFullEmbryo.getChannelCount(0);
         NSlices=str2num(MetaFullEmbryo.getPixelsSizeZ(0));
         clear MaxTemp
-  
         %Do a maximum projections
         for i=HisChannel:NChannels:size(ImageTemp{1},1)
+            if ~InvertHis
                 MaxTemp(:,:,i)=ImageTemp{1}{i,1};
+            else
+                MaxTemp=ImageTemp{1}{HisChannel-1+round(NSlices/2)*NChannels-1,1}
+                
+                
+                
+                
+                
+                
         end
-        if InvertHis
-            SurfImage=MaxTemp(:,:,HisChannel-1+round(NSlices/2)*NChannels-1);
-        else
-            SurfImage=max(MaxTemp,[],3);
-        end
-        Dashes=findstr(Prefix,'-');
-        Date=Prefix(1:Dashes(3)-1);
-        EmbryoName=Prefix(Dashes(3)+1:end);
-        xml_file_path = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, '*.xml']);
-        xml_file = xml_file_path(1).name;
-        xDoc = parseXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, xml_file]);
-        xml_path = xDoc.Children.Children(7).Children(2).Children(1).Children.Attributes;
-        alpha = str2double(xml_path(59).Value);
-        SurfImage = imrotate(SurfImage, -alpha);            %Calculate the correlation matrix and find the maximum      
+        SurfImage=max(MaxTemp,[],3);
+        
+       
+        imshow(ImageTemp{1}{3,1},[])
+        
         clear ImageTemp
                 
         
@@ -256,11 +255,9 @@ if ~NoAP
         Columns = str2num(MetaZoom.getPixelsSizeX(0));
         Rows = str2num(MetaZoom.getPixelsSizeY(0));
         %Get the size of the full embryo image
-%         SurfColumns=str2num(MetaFullEmbryo.getPixelsSizeX(0));
-%         SurfRows=str2num(MetaFullEmbryo.getPixelsSizeY(0));
-        surf_size = size(SurfImage);
-        SurfColumns= surf_size(2);
-        SurfRows=surf_size(1);
+        SurfColumns=str2num(MetaFullEmbryo.getPixelsSizeX(0));
+        SurfRows=str2num(MetaFullEmbryo.getPixelsSizeY(0));
+        
    
         ZoomRatio = MovieZoom / SurfZoom;
         
@@ -347,7 +344,8 @@ if ~NoAP
             
             %Enlarge the zoomed out image so we can do the cross-correlation
             SurfImageResized=imresize(SurfImage, ZoomRatio);
-
+            
+            
             %Calculate the correlation matrix and find the maximum
             if InvertHis
                 warning('I still need to fix this part')
@@ -355,7 +353,6 @@ if ~NoAP
             else            
                 C = normxcorr2(ZoomImage, SurfImageResized);
             end
-
             [Max2,MaxRows]=max(C);
             [Dummy,MaxColumn]=max(Max2);
             MaxRow=MaxRows(MaxColumn);
