@@ -108,7 +108,7 @@ if ~exist([PreProcPath,filesep,Prefix,filesep,'CytoImages.mat'])
 else
     display('Using saved CytoImages.mat located in the FISH\Data folder.')
     
-    load([FISHPath,filesep,'Data',filesep,Prefix,filesep,'CytoImages.mat']);
+    load([PreProcPath,filesep,Prefix,filesep,'CytoImages.mat']);
 end
 
 %Get the information
@@ -157,7 +157,20 @@ end
 
 
 %Bin the pixels along the AP axis
-APResolution=0.025;
+[XLSNum,XLSTxt,XLSRaw]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
+DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
+Dashes=findstr(Prefix,'-');
+PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+    if isempty(PrefixRow)
+        PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
+        if isempty(PrefixRow)
+            error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
+        end
+    end
+APResolutionColumn = find(strcmp(XLSRaw(1,:),'APResolution'));
+APResolution = XLSRaw{PrefixRow,APResolutionColumn};
+%COMMENTED OUT SO THIS VALUE CAN BE FOUND IN EXCEL FILE- AR 4/14/15
+%APResolution=0.025;
 APbinID=0:APResolution:1;
 
 MeanAPProfile=nan(length(APbinID),size(MeanImage,3));

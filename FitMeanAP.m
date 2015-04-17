@@ -44,7 +44,7 @@ close all
 
 % ES 2013-10-29: Required for multiple users to be able to analyze data on
 % one computer
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(varargin{1});
 
 
@@ -90,7 +90,8 @@ FrameWindow14=[nc14:length(ElapsedTime)];
 
 
 %Detect what type of data set we're dealing with so we can set the delay
-if (~isempty(findstr(Prefix,'X1')))|(~isempty(findstr(Prefix,'P2P')))
+if (~isempty(findstr(Prefix,'X1')))|(~isempty(findstr(Prefix,'P2P')))|...
+        (~isempty(findstr(Prefix,'evePr')))
     Delay=GeneLength5/ElongationRate;    %Minutes for PolII to fall off after reaching
                                         %the first MS2 site.
     display('Treating data set as 5''')

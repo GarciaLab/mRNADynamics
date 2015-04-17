@@ -77,6 +77,7 @@ FilePrefix=[Prefix,'_'];
 [XLSNum,XLSTxt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
 ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
 ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
+APResolutionColumn = find(strcmp(XLSRaw(1,:),'APResolution'));
 
 DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
 Dashes=findstr(Prefix,'-');
@@ -94,6 +95,7 @@ end
 
 ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
 ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
+APResolution = XLSRaw{PrefixRow,APResolutionColumn};
 
 
 
@@ -432,19 +434,23 @@ MinAPArea=12500;%700;    %Minimum area in pixels in order to consider an AP bin 
 
 
 if strcmp(ExperimentAxis,'AP')
-    %Divide the image into AP bins. The size of the bin will depend on the
-    %experiment
-    if strfind(lower(Prefix),'eve')     %Eve2 experiments
-        APResolution=0.01;
-    %hb BAC experiments
-    elseif ~isempty(strfind(lower(Prefix),'hbbac'))
-        APResolution=0.01;
-    %kni BAC experiments
-    elseif ~isempty(strfind(lower(Prefix),'knibac'))  
-        APResolution=0.015;
-    else                                %All other experiments
-        APResolution=0.025;
-    end
+%COMMENTED OUT SO THIS VALUE CAN BE FOUND IN EXCEL FILE- AR 4/14/15
+%     %Divide the image into AP bins. The size of the bin will depend on the 
+%     %experiment
+%     if strfind(lower(Prefix),'evePr')
+%         APResolution=0.025;
+% elseif strfind(lower(Prefix),'eve')     %Eve2 experiments
+%         APResolution=0.01;
+%     %hb BAC experiments
+%     elseif ~isempty(strfind(lower(Prefix),'hbbac'))
+%         APResolution=0.01;
+%     %kni BAC experiments
+%     elseif ~isempty(strfind(lower(Prefix),'knibac'))  
+%         APResolution=0.015;
+%     else                                %All other experiments
+%         APResolution=0.025;
+%     end
+
        
     APbinID=0:APResolution:1;
 
