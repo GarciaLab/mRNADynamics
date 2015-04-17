@@ -40,18 +40,30 @@ end
 
 if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
     load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
+    
+    %Create the particle array. This is done so that we can support multiple
+    %channels. Also figure out the number of channels
+    if iscell(Particles)
+        NChannels=length(Particles);
+    else
+        Particles={Particles};
+        NChannels=1;
+    end
+    
     %Now, get the particle positions (if they're not there already). Notice
     %that the code pulls out the position information from fad. This is because
     %of historical reasons mostly.
-    for i=1:length(Particles)
-        for j=1:length(Particles(i).Frame)
-            [x,y]=fad2xyzFit(Particles(i).Frame(j),fad, 'addMargin'); 
-            Particles(i).xPos(j)=x(Particles(i).Index(j));
-            Particles(i).yPos(j)=y(Particles(i).Index(j));
+    for ChN=1:NChannels
+        for i=1:length(Particles{ChN})
+            for j=1:length(Particles{ChN}(i).Frame)
+                [x,y]=fad2xyzFit(Particles{ChN}(i).Frame(j),fad(ChN), 'addMargin'); 
+                Particles{ChN}(i).xPos(j)=x(Particles{ChN}(i).Index(j));
+                Particles{ChN}(i).yPos(j)=y(Particles{ChN}(i).Index(j));
+            end
         end
-    end
-    if isfield(Particles,'APpos')
-        warning('Particles.mat already has AP positions stored. They will be rewritten')
+        if isfield(Particles{ChN},'APpos')
+            warning('Particles.mat already has AP positions stored. They will be rewritten')
+        end
     end
 
 else
@@ -1069,25 +1081,27 @@ if ~NoAP
 
 
     if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
-        for i=1:length(Particles)
-            %Angle between the x-axis and the particle using the A position as a
-            %zero
-            Angles=atan((Particles(i).yPos-coordAZoom(2))./(Particles(i).xPos-coordAZoom(1)));
-            if Particles(i).xPos-coordAZoom(1) < 0
-                Angles = Angles + pi;
+        for ChN=1:NChannels
+            for i=1:length(Particles{ChN})
+                %Angle between the x-axis and the particle using the A position as a
+                %zero
+                Angles=atan((Particles{ChN}(i).yPos-coordAZoom(2))./(Particles{ChN}(i).xPos-coordAZoom(1)));
+                if Particles{ChN}(i).xPos-coordAZoom(1) < 0
+                    Angles = Angles + pi;
+                end
+                % Correction for if Angles is in quadrants II or III
+
+                %Distance between the points and the A point
+                Distances=sqrt((coordAZoom(2)-Particles{ChN}(i).yPos).^2+(coordAZoom(1)-Particles{ChN}(i).xPos).^2);
+                APPositions=Distances.*cos(Angles-APAngle);
+                Particles{ChN}(i).APpos=APPositions/APLength;
+
+                %Determine the distance perpendicular to the AP axis. This is a
+                %proxy for a DV axis.
+
+                Particles{ChN}(i).DVpos=Distances.*sin(Angles-APAngle);
+
             end
-            % Correction for if Angles is in quadrants II or III
-            
-            %Distance between the points and the A point
-            Distances=sqrt((coordAZoom(2)-Particles(i).yPos).^2+(coordAZoom(1)-Particles(i).xPos).^2);
-            APPositions=Distances.*cos(Angles-APAngle);
-            Particles(i).APpos=APPositions/APLength;
-            
-            %Determine the distance perpendicular to the AP axis. This is a
-            %proxy for a DV axis.
-            
-            Particles(i).DVpos=Distances.*sin(Angles-APAngle);
-            
         end
     end
 
@@ -1123,6 +1137,12 @@ end
 
 %Save particle information
 if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
+    
+    %Bring the one channel case back to the legacy setting
+    if NChannels==1
+        Particles=Particles{1};
+    end
+    
     if exist('Threshold1')
         save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','fad','fad2',...
             'Threshold1','Threshold2');

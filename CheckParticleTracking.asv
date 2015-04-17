@@ -371,7 +371,6 @@ CurrentParticle=1;
 PreviousParticle=1;
 CurrentFrameWithinParticle=1;
 CurrentChannel=1;
-PreviousChannel=CurrentChannel;
 
 
 CurrentFrame=Particles{1}(1).Frame(1);
@@ -508,8 +507,7 @@ while (cc~='x')
     
     set(gcf,'Name',['Particle: ',num2str(CurrentParticle),'/',num2str(length(Particles{CurrentChannel})),...
         ', Frame: ',num2str(CurrentFrame),'/',num2str(TotalFrames),...
-        ', Z: ',num2str(CurrentZ),'/',num2str(ZSlices),' nc: ', num2str(FrameInfo(CurrentFrame).nc),...
-        ', Ch: ',num2str(CurrentChannel)])
+        ', Z: ',num2str(CurrentZ),'/',num2str(ZSlices),' nc: ', num2str(FrameInfo(CurrentFrame).nc)])
     
     if UseSchnitz
         %Show all the nuclei
@@ -834,7 +832,7 @@ while (cc~='x')
     figure(TraceFig)
     
     %Only update the trace information if we have switched particles
-    if (CurrentParticle~=PreviousParticle)|~exist('Amp')|(CurrentChannel~=PreviousChannel)
+    if (CurrentParticle~=PreviousParticle)|~exist('Amp')
         PreviousParticle=CurrentParticle;
         [Frames,Amp]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},fad(CurrentChannel),FISHPath,FilePrefix);
     end
@@ -1283,13 +1281,6 @@ while (cc~='x')
         end    
         
     elseif cc=='s'
-        
-        %If we only have one channel bring Particles back to the legacy
-        %format without any cells
-        if NChannels>1
-            Particles=Particles{1};
-        end
-        
         save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo')
         if UseHistoneOverlay
             save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2')
@@ -1541,9 +1532,8 @@ while (cc~='x')
         end    
         
     elseif cc=='8'      %Switch channels
-        PreviousChannel=CurrentChannel;
         CurrentChannel=CurrentChannel+1;
-        if CurrentChannel>NChannels
+        if CurrentChannel<NChannels
             CurrentChannel=1;
         end
         
@@ -1562,14 +1552,6 @@ end
 
 
 save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo')
-
-
-%If we only have one channel bring Particles back to the legacy
-%format without any cells
-if NChannels==1
-    Particles=Particles{1};
-end
-
 
 if UseHistoneOverlay
     save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2')
