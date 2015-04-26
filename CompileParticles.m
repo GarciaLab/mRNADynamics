@@ -736,7 +736,7 @@ for ChN=1:NChannels
                         plot([ElapsedTime(CompiledParticles{ChN}(k).Frame)],SplineValues*IntArea,'-k')
                         title(['Particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{ChN}(k).nc),', Ch: ',num2str(ChN)])
                     else
-                        title(['Particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles(k).nc),', Ch: ',num2str(ChN),...
+                        title(['Particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{1}(k).nc),', Ch: ',num2str(ChN),...
                             ' - WARNING: No offset fit'])
                     end
                     hold off
@@ -843,7 +843,7 @@ for ChN=1:NChannels
 
                         if NChannels==1
                             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                                FilePrefix,iIndex(CompiledParticles(k).Frame(j),3),'_z',iIndex(zTrace,2),'.tif']);
+                                FilePrefix,iIndex(CompiledParticles{1}(k).Frame(j),3),'_z',iIndex(zTrace,2),'.tif']);
                         else
                             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                                 FilePrefix,iIndex(CompiledParticles{ChN}(k).Frame(j),3),'_z',iIndex(zTrace,2),...
@@ -954,7 +954,7 @@ for ChN=1:NChannels
     
     ncFilter=logical(zeros(length(CompiledParticles{ChN}),length(ncFilterID)));
     for i=1:length(CompiledParticles{ChN})
-        %Sometimes CompiledParticles(i).nc is empty. This is because of some
+        %Sometimes CompiledParticles{1}(i).nc is empty. This is because of some
         %problem with FrameInfo! In that case we'll pull the information out of
         %the XLS file.
         if ~isempty(CompiledParticles{ChN}(i).nc)
@@ -1218,39 +1218,39 @@ if NChannels==1
 
             try
                 %Deviation from offset with respect to spline
-                optFit = adaptiveSplineFit(double([ElapsedTime(CompiledParticles(FilteredParticles(j)).Frame)]),...
-                        double([CompiledParticles(FilteredParticles(j)).Off*IntArea]),5);
-                SplineValues=ppval(optFit,double([ElapsedTime(CompiledParticles(FilteredParticles(j)).Frame)]));    
+                optFit = adaptiveSplineFit(double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]),...
+                        double([CompiledParticles{1}(FilteredParticles(j)).Off*IntArea]),5);
+                SplineValues=ppval(optFit,double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]));    
 
 
 
                 %Deviation of the raw data, without background subtraction, with
                 %respect to a spline.
-                DataFitRaw = adaptiveSplineFit(double([ElapsedTime(CompiledParticles(FilteredParticles(j)).Frame)]),...
-                    double(CompiledParticles(FilteredParticles(j)).FluoRaw),10);
-                DataFitRawValues=ppval(DataFitRaw,double([ElapsedTime(CompiledParticles(FilteredParticles(j)).Frame)]));
+                DataFitRaw = adaptiveSplineFit(double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]),...
+                    double(CompiledParticles{1}(FilteredParticles(j)).FluoRaw),10);
+                DataFitRawValues=ppval(DataFitRaw,double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]));
 
 
                 %Deviation of the raw data minus the actual offset with respect to a
                 %spline
-                DataFitOld = adaptiveSplineFit(double([ElapsedTime(CompiledParticles(FilteredParticles(j)).Frame)]),...
-                    double(CompiledParticles(FilteredParticles(j)).FluoOld),10);
-                DataSplineValuesOld=ppval(DataFitOld,double([ElapsedTime(CompiledParticles(FilteredParticles(j)).Frame)]));
+                DataFitOld = adaptiveSplineFit(double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]),...
+                    double(CompiledParticles{1}(FilteredParticles(j)).FluoOld),10);
+                DataSplineValuesOld=ppval(DataFitOld,double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]));
 
 
 
                 %Deviation of the raw data minues the spline offset
-                DataFit = adaptiveSplineFit(double([ElapsedTime(CompiledParticles(FilteredParticles(j)).Frame)]),...
-                    double(CompiledParticles(FilteredParticles(j)).Fluo),10);
-                DataSplineValues=ppval(DataFit,double([ElapsedTime(CompiledParticles(FilteredParticles(j)).Frame)]));
+                DataFit = adaptiveSplineFit(double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]),...
+                    double(CompiledParticles{1}(FilteredParticles(j)).Fluo),10);
+                DataSplineValues=ppval(DataFit,double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]));
 
 
 
                 %Put all the data together for the plot
-                OffsetFluct=[OffsetFluct,CompiledParticles(FilteredParticles(j)).Off*IntArea-SplineValues];
-                DataRawFluct=[DataRawFluct,double(CompiledParticles(FilteredParticles(j)).FluoRaw)-DataFitRawValues];
-                DataOldFluct=[DataOldFluct,double(CompiledParticles(FilteredParticles(j)).FluoOld)-DataSplineValuesOld];
-                DataSplineFluct=[DataSplineFluct,double(CompiledParticles(FilteredParticles(j)).Fluo)-DataSplineValues];
+                OffsetFluct=[OffsetFluct,CompiledParticles{1}(FilteredParticles(j)).Off*IntArea-SplineValues];
+                DataRawFluct=[DataRawFluct,double(CompiledParticles{1}(FilteredParticles(j)).FluoRaw)-DataFitRawValues];
+                DataOldFluct=[DataOldFluct,double(CompiledParticles{1}(FilteredParticles(j)).FluoOld)-DataSplineValuesOld];
+                DataSplineFluct=[DataSplineFluct,double(CompiledParticles{1}(FilteredParticles(j)).Fluo)-DataSplineValues];
             end
         end
 
@@ -1303,12 +1303,12 @@ if NChannels==1
         MaxAP=0;
         MinAP=inf;
         hold all
-        for i=1:length(CompiledParticles)
-            if sum(CompiledParticles(i).Frame==MaxFrame(end-1))
-                MaxAP=max([CompiledParticles(i).MeanAP,MaxAP]);
-                MinAP=min([CompiledParticles(i).MeanAP,MinAP]);
-                FramePos=find(CompiledParticles(i).Frame==MaxFrame(end-1));
-                plot(CompiledParticles(i).MeanAP,CompiledParticles(i).Off(FramePos),'.k')
+        for i=1:length(CompiledParticles{1})
+            if sum(CompiledParticles{1}(i).Frame==MaxFrame{1}(end-1))
+                MaxAP=max([CompiledParticles{1}(i).MeanAP,MaxAP]);
+                MinAP=min([CompiledParticles{1}(i).MeanAP,MinAP]);
+                FramePos=find(CompiledParticles{1}(i).Frame==MaxFrame{1}(end-1));
+                plot(CompiledParticles{1}(i).MeanAP,CompiledParticles{1}(i).Off(FramePos),'.k')
             end
         end
         hold off
@@ -1325,11 +1325,11 @@ if NChannels==1
         MinAP=inf;
         hold all
         for i=1:length(CompiledParticles)
-            if sum(CompiledParticles(i).Frame==MaxFrame(end))
-                MaxAP=max([CompiledParticles(i).MeanAP,MaxAP]);
-                MinAP=min([CompiledParticles(i).MeanAP,MinAP]);
-                FramePos=find(CompiledParticles(i).Frame==MaxFrame(end));
-                plot(CompiledParticles(i).MeanAP,CompiledParticles(i).Off(FramePos),'.k')
+            if sum(CompiledParticles{1}(i).Frame==MaxFrame{1}(end))
+                MaxAP=max([CompiledParticles{1}(i).MeanAP,MaxAP]);
+                MinAP=min([CompiledParticles{1}(i).MeanAP,MinAP]);
+                FramePos=find(CompiledParticles{1}(i).Frame==MaxFrame{1}(end));
+                plot(CompiledParticles{1}(i).MeanAP,CompiledParticles{1}(i).Off(FramePos),'.k')
             end
         end
         hold off
@@ -1355,9 +1355,9 @@ if NChannels==1
 
 
     for i=1:length(CompiledParticles)
-        for j=1:length(CompiledParticles(i).Frame)
-            OffsetCell{CompiledParticles(i).Frame(j)}=[OffsetCell{CompiledParticles(i).Frame(j)},...
-                CompiledParticles(i).Off(j)];
+        for j=1:length(CompiledParticles{1}(i).Frame)
+            OffsetCell{CompiledParticles{1}(i).Frame(j)}=[OffsetCell{CompiledParticles{1}(i).Frame(j)},...
+                CompiledParticles{1}(i).Off(j)];
         end
     end
 
@@ -1378,8 +1378,8 @@ if NChannels==1
         errorbar(1:length(MeanOffsetVector),MeanOffsetVector*IntArea,...
             SDOffsetVector*IntArea,'.-r')
         hold on
-        errorbar(1:length(MeanVectorAll),MeanVectorAll,...
-            SDVectorAll,'.-k')
+        errorbar(1:length(MeanVectorAll{1}),MeanVectorAll{1},...
+            SDVectorAll{1},'.-k')
         hold off
         xlabel('Frame')
         ylabel('Fluorescence (au)')
@@ -1390,11 +1390,11 @@ if NChannels==1
 
         figure(9)
         errorbar(1:length(MeanOffsetVector),MeanOffsetVector*IntArea-min(MeanOffsetVector*IntArea)+...
-            min(MeanVectorAll),...
+            min(MeanVectorAll{1}),...
             SDOffsetVector*IntArea,'.-r')
         hold on
-        errorbar(1:length(MeanVectorAll),MeanVectorAll,...
-            SDVectorAll,'.-k')
+        errorbar(1:length(MeanVectorAll{1}),MeanVectorAll{1},...
+            SDVectorAll{1},'.-k')
         hold off
         xlabel('Frame')
         ylabel('Fluorescence (au)')
@@ -1485,7 +1485,7 @@ for ChN=1:NChannels
                     ylim([0,MaxFluo])
 
                     saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Fits',filesep,'Fit',iIndex(i,3),'-nc',...
-                        num2str(CompiledParticles(i).nc),'_ch',iIndex(ChN,2),'.tif'])
+                        num2str(CompiledParticles{1}(i).nc),'_ch',iIndex(ChN,2),'.tif'])
                 end
             end
         end
@@ -2154,19 +2154,19 @@ end
 % 
 % i=100
 % 
-% for j=1:length(CompiledParticles(i).Frame)
+% for j=1:length(CompiledParticles{1}(i).Frame)
 % 
-%     CurrentFrame=CompiledParticles(i).Frame(j);
-%     EllipsePos=find((schnitzcells(CompiledParticles(i).Nucleus).frames)==CurrentFrame);
-%     CurrentEllipse=Ellipses{CompiledParticles(i).Frame};
+%     CurrentFrame=CompiledParticles{1}(i).Frame(j);
+%     EllipsePos=find((schnitzcells(CompiledParticles{1}(i).Nucleus).frames)==CurrentFrame);
+%     CurrentEllipse=Ellipses{CompiledParticles{1}(i).Frame};
 %     CurrentEllipse=CurrentEllipse(EllipsePos,:);
 % 
-%     Position(j)=(CompiledParticles(i).xPos(j)-CurrentEllipse(1))^2+...
-%         (CompiledParticles(i).yPos(j)-CurrentEllipse(2))^2;
+%     Position(j)=(CompiledParticles{1}(i).xPos(j)-CurrentEllipse(1))^2+...
+%         (CompiledParticles{1}(i).yPos(j)-CurrentEllipse(2))^2;
 % end
 % 
 % figure(9)
-% plot(  Position ,CompiledParticles(i).Fluo,'.k')
+% plot(  Position ,CompiledParticles{1}(i).Fluo,'.k')
 %     
 %     
     

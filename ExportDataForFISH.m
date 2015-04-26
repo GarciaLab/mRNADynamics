@@ -58,7 +58,7 @@ end
 
                 
 %Figure out the initial folders. We'll update the Drobpox one later on in the code.
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath]=...
     DetermineLocalFolders;
                     
 %Get the folder with the data

@@ -121,9 +121,8 @@ elseif strcmp(FileMode,'LIFExport')
     MidImage=LIFMid{1}{HisChannel,1};
     xml_file_path = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, '*.xml']);
     xml_file = xml_file_path(1).name;
-    xDoc = parseXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, xml_file]);
-    xml_path = xDoc.Children.Children(7).Children(2).Children(1).Children.Attributes;
-    alpha = str2double(xml_path(59).Value);
+    xDoc = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, xml_file]);
+    alpha = str2double(evalin('base','rot'));
     MidImage = imrotate(MidImage, -alpha);
 end
 

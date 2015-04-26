@@ -250,9 +250,8 @@ if ~NoAP
         EmbryoName=Prefix(Dashes(3)+1:end);
         xml_file_path = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, '*.xml']);
         xml_file = xml_file_path(1).name;
-        xDoc = parseXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, xml_file]);
-        xml_path = xDoc.Children.Children(7).Children(2).Children(1).Children.Attributes;
-        alpha = str2double(xml_path(59).Value);
+        xDoc = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, xml_file]);
+        alpha = str2double(evalin('base','rot'));
         SurfImage = imrotate(SurfImage, -alpha);            %Calculate the correlation matrix and find the maximum      
         clear ImageTemp
                 
@@ -1041,6 +1040,7 @@ if ~NoAP
             APPosImage(i,j)=APPosition/APLength;
         end
     end
+    [XLSNum,XLSTxt,XLSRaw]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
     APResolutionColumn = find(strcmp(XLSRaw(1,:),'APResolution'));
     APResolution = XLSRaw{PrefixRow,APResolutionColumn};
 %COMMENTED OUT SO THIS VALUE CAN BE FOUND IN EXCEL FILE- AR 4/14/15
