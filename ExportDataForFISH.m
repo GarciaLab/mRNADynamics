@@ -511,22 +511,7 @@ elseif strcmp(FileMode,'LSM')
 %LIFExport mode
 elseif strcmp(FileMode,'LIFExport')
     
-    %Find the FF information
-	if exist([Folder,filesep,'FF.lif'])
-        LIFFF=bfopen([Folder,filesep,'FF.lif']);
-        %Find the channel with the highest counts
-        for i=1:size(LIFFF{1},1)
-            MaxValue(i)=max(max(LIFFF{1}{i,1}));
-        end
-        [Dummy,ChannleToUse]=max(MaxValue);
-        imwrite(LIFFF{1}{ChannleToUse,1},...
-            [OutputFolder,filesep,Prefix,'_FF.tif']);
-    else
-        warning('No flatfield found. Make sure it is names "FF.lif"')
-    end
 
-    
-    
     %What type of experiment do we have?
     if strcmp(ExperimentType,'1spot')
     
@@ -691,6 +676,52 @@ elseif strcmp(FileMode,'LIFExport')
         end
         close(h)
 
+        
+        %Find the FF information
+        
+        %The FF can be in the folder with the data or in the folder
+        %corresponding to the day.
+        D1=dir([Folder,filesep,'FF*.lif']);
+        D2=dir([Folder,filesep,'..',filesep,'FF*.lif']);
+        FFPaths={};
+        for i=1:length(D1)
+            FFPaths{end+1}=[Folder,filesep,D1(i).name];
+        end
+        for i=1:length(D2)
+            FFPaths{end+1}=[Folder,filesep,'..',filesep,D2(i).name];
+        end
+        
+        %Go through the FF files and see which one matches the pixel size
+        %and image pixel number
+        FFToUse=[];
+        for i=1:length(FFPaths)
+            LIFFF=bfopen(FFPaths{i});
+            LIFFFMeta = LIFFF{:, 4};
+            if (LIFFFMeta.getPixelsPhysicalSizeX(0)==LIFMeta.getPixelsPhysicalSizeX(0))&...
+                    (LIFFFMeta.getPixelsSizeY(0)==LIFMeta.getPixelsSizeY(0))&...
+                    (LIFFFMeta.getPixelsSizeX(0)==LIFMeta.getPixelsSizeX(0))
+                FFToUse=[FFToUse,i];
+            end
+        end
+        
+        if length(FFToUse)==2
+            error('Too many flat field images match the pixel and image size size')
+        elseif length(FFToUse)==0
+            warning('No flat field image found')
+            clear LIFFF
+        else
+            LIFFF=bfopen(FFPaths{FFToUse});
+            
+            %Find the channel with the highest counts
+            for i=1:size(LIFFF{1},1)
+                MaxValue(i)=max(max(LIFFF{1}{i,1}));
+            end
+            [Dummy,ChannleToUse]=max(MaxValue);
+            imwrite(LIFFF{1}{ChannleToUse,1},...
+                [OutputFolder,filesep,Prefix,'_FF.tif']);
+        end
+            
+        
 
         % TAG File Information
         Output{1}=['id ',Prefix,'_'];
@@ -702,7 +733,7 @@ elseif strcmp(FileMode,'LIFExport')
             Output{6}=['flat FF'];
         end
         
-    elseif strcmp(ExperimentType,'2spot')       %2 spots, 2 colors
+    elseif strcmp(ExperimentType,'2spot2color')       %2 spots, 2 colors
         
         %This mode is designed for MCP and PCP data. It doesn't support
         %histone for now. However, we'll use the red channel to generate a
@@ -817,6 +848,54 @@ elseif strcmp(FileMode,'LIFExport')
             FrameInfo(i).Time=InitialStackTime(i);
         end
         
+        
+        %Find the FF information
+        
+        %The FF can be in the folder with the data or in the folder
+        %corresponding to the day.
+        D1=dir([Folder,filesep,'FF*.lif']);
+        D2=dir([Folder,filesep,'..',filesep,'FF*.lif']);
+        FFPaths={};
+        for i=1:length(D1)
+            FFPaths{end+1}=[Folder,filesep,D1(i).name];
+        end
+        for i=1:length(D2)
+            FFPaths{end+1}=[Folder,filesep,'..',filesep,D2(i).name];
+        end
+        
+        %Go through the FF files and see which one matches the pixel size
+        %and image pixel number
+        FFToUse=[];
+        for i=1:length(FFPaths)
+            LIFFF=bfopen(FFPaths{i});
+            LIFFFMeta = LIFFF{:, 4};
+            if (LIFFFMeta.getPixelsPhysicalSizeX(0)==LIFMeta.getPixelsPhysicalSizeX(0))&...
+                    (LIFFFMeta.getPixelsSizeY(0)==LIFMeta.getPixelsSizeY(0))&...
+                    (LIFFFMeta.getPixelsSizeX(0)==LIFMeta.getPixelsSizeX(0))
+                FFToUse=[FFToUse,i];
+            end
+        end
+        
+        if length(FFToUse)==2
+            error('Too many flat field images match the pixel and image size size')
+        elseif length(FFToUse)==0
+            warning('No flat field image found')
+            clear LIFFF
+        else
+            LIFFF=bfopen(FFPaths{FFToUse});
+            
+            %Find the channel with the highest counts
+            for i=1:size(LIFFF{1},1)
+                MaxValue(i)=max(max(LIFFF{1}{i,1}));
+            end
+            [Dummy,ChannleToUse]=max(MaxValue);
+            FFImage=LIFFF{1}{ChannleToUse,1};
+            imwrite(FFImage,...
+                [OutputFolder,filesep,Prefix,'_FF.tif']);
+            
+            FF=imfilter(double(FFImage), fspecial('disk', 30), 'replicate', 'same');
+            FF=FF/mean(FF(:));
+        end
        
         %Copy the data
         h=waitbar(0,'Extracting LIFExport images');
@@ -868,12 +947,17 @@ elseif strcmp(FileMode,'LIFExport')
                     %We don't want to use all slices. Only the center ones
                     StackCenter=round((min(NSlices)-1)/2);
                     StackRange=[StackCenter-1:StackCenter+1];
-                    MaxProjection=max(imcomplement(HisSlices(:,:,StackRange)),[],3);
-                    MaxProjection=histeq(mat2gray(MaxProjection),ReferenceHist);
+                    MaxProjection=max(HisSlices(:,:,StackRange),[],3);
+
+                    %Flatten the field if possible
+                    if exist('LIFFF')
+                        MaxProjection=MaxProjection./FF;
+                    end
                     
-%                     DiskFilter=strel('disk',2);
-%                     FilterImage=imclose(InverseImage,DiskFilter);
-%                     imshow(imadjust(FilterImage))
+                    MaxProjection=imcomplement(MaxProjection);
+                    MaxProjection=histeq(mat2gray(MaxProjection),ReferenceHist);
+                   
+                    
                     
                     imwrite(MaxProjection,...
                         [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
@@ -889,7 +973,6 @@ elseif strcmp(FileMode,'LIFExport')
             end
         end
         close(h)
-
 
 
         % TAG File Information
@@ -913,15 +996,7 @@ elseif strcmp(FileMode,'LIFExport')
     else
         error('Experiment type not recognized. Check MovieDatabase.XLSX')
     end
-%     close(h)
-    
-%     % TAG File Information
-%     Output{1}=['id ',Prefix,'_'];
-%     Output{2}='';
-%     Output{3}='1';
-%     Output{4}=['frames ',num2str(length(FrameInfo)),':1:',num2str(min(NSlices)+2)];
-%     Output{5}=['suffix ???_z??'];
-%     %Output{6}=['flat FF'];
+
     
 elseif strcmp(FileMode, 'LAT')
     [Output, FrameInfo] = ExportDataForFISH_Lattice(Prefix, D, Folder, OutputFolder, Channel1, Channel2, TAGOnly, ImageInfo);

@@ -371,6 +371,7 @@ CurrentParticle=1;
 PreviousParticle=1;
 CurrentFrameWithinParticle=1;
 CurrentChannel=1;
+PreviousChannel=CurrentChannel;
 
 
 CurrentFrame=Particles{1}(1).Frame(1);
@@ -507,7 +508,8 @@ while (cc~='x')
     
     set(gcf,'Name',['Particle: ',num2str(CurrentParticle),'/',num2str(length(Particles{CurrentChannel})),...
         ', Frame: ',num2str(CurrentFrame),'/',num2str(TotalFrames),...
-        ', Z: ',num2str(CurrentZ),'/',num2str(ZSlices),' nc: ', num2str(FrameInfo(CurrentFrame).nc)])
+        ', Z: ',num2str(CurrentZ),'/',num2str(ZSlices),' nc: ', num2str(FrameInfo(CurrentFrame).nc),...
+        ', Ch: ',num2str(CurrentChannel)])
     
     if UseSchnitz
         %Show all the nuclei
@@ -670,7 +672,7 @@ while (cc~='x')
         if length(MinIndex)>1
             MinIndex=MinIndex(1);
         end
-        [xForZoom,yForZoom]=fad2xyzFit(Particles{CurrentChannel}(CurrentParticle).Frame(MinIndex),fad, 'addMargin'); 
+        [xForZoom,yForZoom]=fad2xyzFit(Particles{CurrentChannel}(CurrentParticle).Frame(MinIndex),fad(CurrentChannel), 'addMargin'); 
         xForZoom=xForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
         yForZoom=yForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
        
@@ -832,7 +834,7 @@ while (cc~='x')
     figure(TraceFig)
     
     %Only update the trace information if we have switched particles
-    if (CurrentParticle~=PreviousParticle)|~exist('Amp')
+    if (CurrentParticle~=PreviousParticle)|~exist('Amp')|(CurrentChannel~=PreviousChannel)
         PreviousParticle=CurrentParticle;
         [Frames,Amp]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},fad(CurrentChannel),FISHPath,FilePrefix);
     end
@@ -1118,7 +1120,7 @@ while (cc~='x')
 
                 %Now, find its associated particle
                 for i=1:length(Particles{CurrentChannel})
-                    if ~isempty(Particles(i).Nucleus)
+                    if ~isempty(Particles{CurrentChannel}(i).Nucleus)
                         AssignedNuclei(i)=Particles{CurrentChannel}(i).Nucleus;
                     else
                         AssignedNuclei(i)=nan;
@@ -1281,6 +1283,13 @@ while (cc~='x')
         end    
         
     elseif cc=='s'
+        
+        %If we only have one channel bring Particles back to the legacy
+        %format without any cells
+        if NChannels>1
+            Particles=Particles{1};
+        end
+        
         save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo')
         if UseHistoneOverlay
             save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2')
@@ -1532,9 +1541,28 @@ while (cc~='x')
         end    
         
     elseif cc=='8'      %Switch channels
+        PreviousChannel=CurrentChannel;
         CurrentChannel=CurrentChannel+1;
-        if CurrentChannel<NChannels
+        if CurrentChannel>NChannels
             CurrentChannel=1;
+        end
+        
+        %If a particle is associated with this same nucleus in the new
+        %channel then change to it
+        AssignedNucleusPreviousChannel=Particles{PreviousChannel}(CurrentParticle).Nucleus;
+        
+        %Now, find its associated particle
+        AssignedNucleusNewChannel=[];
+        for i=1:length(Particles{CurrentChannel})
+            if ~isempty(Particles{CurrentChannel}(i).Nucleus)
+                AssignedNucleusNewChannel(i)=Particles{CurrentChannel}(i).Nucleus;
+            else
+                AssignedNucleusNewChannel(i)=nan;
+            end
+        end
+        
+        if ~isempty(find(AssignedNucleusNewChannel==AssignedNucleusPreviousChannel))
+            CurrentParticle=find(AssignedNucleusNewChannel==AssignedNucleusPreviousChannel);
         end
         
         
@@ -1552,6 +1580,14 @@ end
 
 
 save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo')
+
+
+%If we only have one channel bring Particles back to the legacy
+%format without any cells
+if NChannels==1
+    Particles=Particles{1};
+end
+
 
 if UseHistoneOverlay
     save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2')

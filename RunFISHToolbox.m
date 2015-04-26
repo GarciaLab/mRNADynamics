@@ -32,7 +32,7 @@ ExperimentType=XLSTxt(PrefixRow,ExperimentTypeColumn);
 
 if strcmp(ExperimentType,'1spot')
     NChannels=1;
-elseif strcmp(ExperimentType,'2spot')
+elseif strcmp(ExperimentType,'2spot2color')
     NChannels=2;
 else
     error('Experiment type not recognized in MovieDatabase.XLSX')
