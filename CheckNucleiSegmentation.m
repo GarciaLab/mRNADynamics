@@ -12,11 +12,13 @@ function CheckNucleiSegmentation(varargin)
 %     overlap with the previous ones.
 %,  - Move a frame backwards
 %j  - Jump to a frame
+%d  - Delete all ellipses in the current frame
 %s  - Save current analysis
 %m  - Increase contrast
 %n  - Decrease contrast
 %r  - Reset contrast setting
 %x  - Exit and save
+%9  - Debug mode
 
 
 %right click  - delete region
@@ -301,7 +303,15 @@ while (cc~='x')
 
             %(x, y, a, b, theta, maxcontourvalue, time,
             %particle_id)
-            MeanRadius=mean((Ellipses{CurrentFrame}(:,3)+Ellipses{CurrentFrame}(:,4))/2);
+            if ~isempty(Ellipses{CurrentFrame})
+                MeanRadius=mean((Ellipses{CurrentFrame}(:,3)+Ellipses{CurrentFrame}(:,4))/2);
+            elseif ~isempty(Ellipses{CurrentFrame+1})
+                MeanRadius=mean((Ellipses{CurrentFrame+1}(:,3)+Ellipses{CurrentFrame+1}(:,4))/2);
+            elseif ~isempty(Ellipses{CurrentFrame-1})
+                MeanRadius=mean((Ellipses{CurrentFrame-1}(:,3)+Ellipses{CurrentFrame-1}(:,4))/2);
+            end
+                
+                
             Ellipses{CurrentFrame}(end+1,:)=...
                 [cm(1,1),cm(1,2),MeanRadius,MeanRadius,0,0,0,0];
         end
@@ -337,6 +347,12 @@ while (cc~='x')
         
     elseif (ct~=0)&(cc=='r')    %Reset the contrast
         DisplayRange=[min(min(HisImage)),max(max(HisImage))];
+        
+    elseif (ct~=0)&(cc=='d')    %Delete all ellipses in the current frame
+        Ellipses{CurrentFrame}=[];
+        
+    elseif (ct~=0)&(cc=='9')    %Debug mode
+        keyboard
    
     end
 end

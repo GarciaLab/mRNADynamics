@@ -23,7 +23,7 @@ mkdir(['..',filesep,'Data',filesep,'RawDynamicsData'])
 mkdir(['..',filesep,'Data',filesep,'DynamicsResults'])
 
 %Copy the files to the different folders:
-copyfile(['InstallationFiles',filesep,'ComputerFolders.xlsx'],...
+copyfile(['InstallationFiles',filesep,'InstallComputerFolders.xlsx'],...
     ['..',filesep,'ComputerFolders.xlsx'])
 
 %Edit ComputerFolders.XLSX
@@ -73,7 +73,7 @@ xlswrite(['..',filesep,'ComputerFolders.xlsx'],txt);
 
 %Copy MovieDatabase.XLSX
 if ~exist(['..',filesep,'Data',filesep,'DynamicsResults',filesep,'MovieDatabase.xlsx'])
-    copyfile(['InstallationFiles',filesep,'MovieDatabase.xlsx'],...
+    copyfile(['InstallationFiles',filesep,'InstallMovieDatabase.xlsx'],...
         ['..',filesep,'Data',filesep,'DynamicsResults',filesep,'MovieDatabase.xlsx'])
 else
     warning('MovieDatabase.xlsx already exist, we are not overwriting.')

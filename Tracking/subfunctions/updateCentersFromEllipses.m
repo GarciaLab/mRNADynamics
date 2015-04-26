@@ -73,12 +73,14 @@ if old_centers_provided
 else
     
     % Just copy the information from Ellipses
-    
+    % I should make this and the rest of the code be able to handle empty
+    % frames!
     for j = 1:nFrames
-        %centers{j} = Ellipses{j}(:,1:2);
-        
-        %HG - Modified
-        centers{j} = Ellipses{j}(:,[2,1]);
+        %if ~isempty(Ellipses{j})
+            centers{j} = Ellipses{j}(:,[2,1]);
+        %else
+        %    centers{j}=[];
+        %end
     end
     
     

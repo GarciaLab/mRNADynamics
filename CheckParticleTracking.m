@@ -501,7 +501,7 @@ while (cc~='x')
             % halfscreen [7   513   835   532]
             % fullscreen [9         594        1106         451]
         else
-            set(gcf,'Position',[10   414   677   351]);
+            set(gcf,'Position',[12   975   677   351]);
         end
         set(gcf,'MenuBar','none','ToolBar','none')
     end
@@ -672,7 +672,7 @@ while (cc~='x')
         if length(MinIndex)>1
             MinIndex=MinIndex(1);
         end
-        [xForZoom,yForZoom]=fad2xyzFit(Particles{CurrentChannel}(CurrentParticle).Frame(MinIndex),fad, 'addMargin'); 
+        [xForZoom,yForZoom]=fad2xyzFit(Particles{CurrentChannel}(CurrentParticle).Frame(MinIndex),fad(CurrentChannel), 'addMargin'); 
         xForZoom=xForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
         yForZoom=yForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
        
@@ -703,7 +703,7 @@ while (cc~='x')
             set(gcf,'Position',[6    88   691   379])
             %Fullscreen [8         110        1107         440]
         else
-            set(gcf,'Position',[-7    60   691   311])
+            set(gcf,'Position',[6   622   691   311])
         end
         set(gcf,'MenuBar','none','ToolBar','none')
         
@@ -743,7 +743,7 @@ while (cc~='x')
             if length(MinIndex)>1
                 MinIndex=MinIndex(1);
             end
-            [xForZoom,yForZoom]=fad2xyzFit(Particles{CurrentChannel}(CurrentParticle).Frame(MinIndex),fad, 'addMargin'); 
+            [xForZoom,yForZoom]=fad2xyzFit(Particles{CurrentChannel}(CurrentParticle).Frame(MinIndex),fad(CurrentChannel), 'addMargin'); 
             xForZoom=xForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
             yForZoom=yForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
 
@@ -773,7 +773,7 @@ while (cc~='x')
             set(gcf,'Position',[861   834   303   152])
             % fullscreen [1133          46         395         319]
         else
-            set(gcf,'Position',[738    78   223   206])
+            set(gcf,'Position',[760   499   223   206])
         end
         hold on
         SnippetX=(SnippetSize-1)/2+1-...
@@ -825,7 +825,7 @@ while (cc~='x')
             set(gcf,'Position',[857   518   308   215])
             % fullscreen [1547          44         363         322]
         else
-            set(gcf,'Position',[1029          56         216         234])
+            set(gcf,'Position',[1009         492         216         234])
         end
     end
        
@@ -853,7 +853,7 @@ while (cc~='x')
         set(gcf,'Position',[716    88   439   321])
         % fullscreen [1135         471         776         515]
     else
-        set(gcf,'Position',[703   386   564   327])
+        set(gcf,'Position',[709   948   564   327])
     end
     
     FigureTitle=['Particle: ',num2str(CurrentParticle),'/',num2str(length(Particles{CurrentChannel})),...
@@ -976,13 +976,13 @@ while (cc~='x')
             
             
             if ~isempty(ConnectPosition)
-                [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,fad,Particles{CurrentChannel});
+                [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,fad(CurrentChannel),Particles{CurrentChannel});
                %Check that the clicked particle doesn't exist in a previous
                 %frame, that there is no overlap of frames. If it does
                 %exist in a previous frame we will have to disconnect it.
                 if sum(Particles{CurrentChannel}(ParticleOutput).Frame<CurrentFrame)
                     %Disconnect the clicked particle
-                    Particles=SeparateParticleTraces(ParticleOutput,CurrentFrame,Particles{CurrentChannel});
+                    Particles{CurrentChannel}=SeparateParticleTraces(ParticleOutput,CurrentFrame,Particles{CurrentChannel});
                     ParticleOutput=ParticleOutput+1;
                 end
                     
@@ -1003,7 +1003,7 @@ while (cc~='x')
             
         else
             ConnectPosition=ginput(1);
-            [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,fad,Particles{CurrentChannel});
+            [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,fad(CurrentChannel),Particles{CurrentChannel});
             
             %If it's an independent particle swap it with the frame in the
             %current particle
@@ -1120,7 +1120,7 @@ while (cc~='x')
 
                 %Now, find its associated particle
                 for i=1:length(Particles{CurrentChannel})
-                    if ~isempty(Particles(i).Nucleus)
+                    if ~isempty(Particles{CurrentChannel}(i).Nucleus)
                         AssignedNuclei(i)=Particles{CurrentChannel}(i).Nucleus;
                     else
                         AssignedNuclei(i)=nan;
@@ -1286,7 +1286,7 @@ while (cc~='x')
         
         %If we only have one channel bring Particles back to the legacy
         %format without any cells
-        if NChannels>1
+        if NChannels==1
             Particles=Particles{1};
         end
         
@@ -1545,6 +1545,24 @@ while (cc~='x')
         CurrentChannel=CurrentChannel+1;
         if CurrentChannel>NChannels
             CurrentChannel=1;
+        end
+        
+        %If a particle is associated with this same nucleus in the new
+        %channel then change to it
+        AssignedNucleusPreviousChannel=Particles{PreviousChannel}(CurrentParticle).Nucleus;
+        
+        %Now, find its associated particle
+        AssignedNucleusNewChannel=[];
+        for i=1:length(Particles{CurrentChannel})
+            if ~isempty(Particles{CurrentChannel}(i).Nucleus)
+                AssignedNucleusNewChannel(i)=Particles{CurrentChannel}(i).Nucleus;
+            else
+                AssignedNucleusNewChannel(i)=nan;
+            end
+        end
+        
+        if ~isempty(find(AssignedNucleusNewChannel==AssignedNucleusPreviousChannel))
+            CurrentParticle=find(AssignedNucleusNewChannel==AssignedNucleusPreviousChannel);
         end
         
         
