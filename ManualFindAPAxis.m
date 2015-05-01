@@ -17,7 +17,7 @@ function [coordA,coordP,xShift,yShift]=ManualFindAPAxis(varargin)
 
 % ES 2013-10-29: Required for multiple users to be able to analyze data on
 % one computer
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(varargin{1});
 
 

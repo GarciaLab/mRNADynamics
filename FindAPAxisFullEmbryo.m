@@ -109,24 +109,44 @@ if strcmp(FileMode,'TIF')
 elseif strcmp(FileMode,'LIFExport')
     
     %Figure out which channel to use
-    HisChannel=find(cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'mcherry'))|...
-        cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'his')));
+    HisChannel=find(~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'mcherry'))|...
+        ~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'his')));
     
     if isempty(HisChannel)
         error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
     end
     
+    %Rotates the full embryo image to match the rotation of the zoomed
+    %time series
+    zoom_angle = 0;
+    full_embryo_angle = 0;
     
     LIFMid=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(MidFileIndex).name]);
     MidImage=LIFMid{1}{HisChannel,1};
-    xml_file_path = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, '*.xml']);
-    xml_file = xml_file_path(1).name;
-    xDoc = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, xml_file]);
-    alpha = str2double(evalin('base','rot'));
-    MidImage = imrotate(MidImage, -alpha);
+    
+    if isdir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData']) 
+        xml_file_path = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, '*.xml']);
+        xml_file = xml_file_path(1).name;
+        xDoc = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, xml_file]);
+        zoom_angle = str2double(evalin('base','rot'));
+    else 
+        warning('No time series metadata found.')
+    end
+    if isdir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo', filesep...
+            'MetaData'])     
+        xml_file_path2 = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo',...
+            filesep, 'MetaData', filesep,'*Mid*.xml']);
+        xml_file2 = xml_file_path2(1).name;
+        xDoc2 = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep,'FullEmbryo', filesep,...
+                'MetaData', filesep, xml_file2]);
+        full_embryo_angle = str2double(evalin('base','rot'));
+    else 
+        warning('No full embryo metadata found.')
+    end
+    
+    evalin('base','clear rot')
+    MidImage = imrotate(MidImage, -zoom_angle + full_embryo_angle);
 end
-
-
 
 %Get the necessary information to load the corresponding flat field image
 % 
