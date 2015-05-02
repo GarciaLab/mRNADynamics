@@ -274,6 +274,7 @@ if ~NoAP
             warning('No full embryo metadata found.')
         end
         
+        evalin('base','clear rot')
         SurfImage = imrotate(SurfImage, -zoom_angle + full_embryo_angle);
         clear ImageTemp
 
@@ -400,7 +401,22 @@ if ~NoAP
             %How well did we do with the alignment?
             [RowsResized,ColumnsResized]=size(SurfImageResized);
             [RowsZoom,ColumnsZoom]=size(ZoomImage);
+            
+            %See if we need the manual alignment
+            if ManualAlignment
+                %See if we need to load the previous manual alignment results
+                if exist('ManualAlignmentDone')
+                    if ManualAlignmentDone
+                        load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
+                    end
+                end
 
+                FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
+                [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ZoomRatio,ShiftRow,ShiftColumn,...
+                     FullEmbryo, ZoomRatio, SurfRows,Rows, Columns, coordA, coordP, SurfColumns);
+                ManualAlignmentDone=1;
+            end
+            
             try
                 %Make an overlay of the zoomed in and zoomed out real
                 %images as well as of a quickly segmented nuclear mask
@@ -467,24 +483,7 @@ if ~NoAP
         NucMaskZoomIn = false(size(ZoomImage));
         NucMaskZoomOut = false(size(SurfImage));
     end
-    
-    
-    %See if we need the manual alignment
-    if ManualAlignment
-        %See if we need to load the previous manual alignment results
-        if exist('ManualAlignmentDone')
-            if ManualAlignmentDone
-                load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
-            end
-        end
-        
-%       [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ZoomRatio,ShiftRow,ShiftColumn);
-        FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
-        [ShiftColumn,ShiftRow]=ManualAPCorrectionRectangle(SurfImage,ZoomImage,C,ZoomRatio,ShiftRow,ShiftColumn,...
-             FullEmbryo, ZoomRatio, SurfRows,Rows, Columns, coordA, coordP, SurfColumns);
-        ManualAlignmentDone=1;
-    end
-    
+   
     %Now figure out how the shift of the zoomed in and zoomed out surface
     %images translates to the whole embryo image (which is most of the
     %times stitched). This is necessary to figure out the AP position.
@@ -493,10 +492,7 @@ if ~NoAP
     %For full embryo images stitched out of two separate images, we need to
     %look at each case: the zoom in version being on the right or on the
     %left.
-    
-    %Load the full embryo image
-    FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
-    
+    %
     %We'll overlay the zoomed out surface and mid saggital images to check we got
     %things right.
 
