@@ -100,7 +100,7 @@ elseif (length(DTIF)==0)&(length(DLSM)>0)
     D=DLSM;
     FileMode='LSM';
 else
-    error('File type not recognized')
+    error('File type not recognized. For LIF files, were they exported to TIF?')
 end
 
 
