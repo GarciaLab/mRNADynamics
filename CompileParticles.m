@@ -12,7 +12,7 @@ function CompileParticles(varargin)
 %                   and offset
 %SkipFits - Don't do the fits
 %SkipMovie - Don't do the movie
-%SkipAll - Skip all htat can be skipped
+%SkipAll - Skip all that can be skipped
 %ApproveAll - Approves all particles. This is useful if we want to do a
 %             quick check of, for example, the AP profiles
 
@@ -68,8 +68,6 @@ FilePrefix=[Prefix,'_'];
 %Now get the actual Dropbox folder
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(Prefix);
-
-
 
 %What type of experiment are we dealing with? Get this out of
 %MovieDatabase.xlsx
@@ -1415,7 +1413,7 @@ for ChN=1:NChannels
 
     %Plot the results from fitting the individual traces. Notice that I'm
     %redoing the fits here using the range given by FrameRange. This is because
-    %the fluorescence values were calculated slightly differently sucht hat the
+    %the fluorescence values were calculated slightly differently such that the
     %offset could vary.
 
     if isfield(CompiledParticles{ChN},'Fit')
@@ -1858,7 +1856,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
 
 
         %Now I want to compute the probability of nuclei being on in at least one
-        %frame over the whole nc. This is a ltitle bit tricky because I haven't
+        %frame over the whole nc. This is a little bit tricky because I haven't
         %checked the tracking of the nuclei without particles. As a result, those
         %lineages are not complete and we could possibly overcount off nuclei if we
         %just looked at the schnitzcells we have right now. I'll fix this later,
@@ -1949,7 +1947,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
             iIndex(ChN,2),'.tif'])
 
 
-        %Use the alternative approach I used for the movies. We are oging to
+        %Use the alternative approach I used for the movies. We are going to
         %look at each nucleus towards the end of each nc and ask if they
         %correspond to an on or off particle in any frame previous to that one.
 
