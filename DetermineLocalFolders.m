@@ -135,6 +135,8 @@ else
         DropboxString='DropboxHeinrich';
     elseif strcmp(XLSTxt{PrefixRow, DropboxFolderColumn}, 'Default')
         DropboxString = 'DropboxFolder';
+    elseif strcmp(XLSTxt{PrefixRow, DropboxFolderColumn}, 'TwoColor')
+        DropboxString = 'DropboxTwoColor';
         % ES 2013-10-06
     else
         error('Dropbox folder for this type of experiment not found. Check MovieDatabase')

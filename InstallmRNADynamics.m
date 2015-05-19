@@ -70,7 +70,6 @@ txt{7,end}=cd;
 %Save the XLS file
 xlswrite(['..',filesep,'ComputerFolders.xlsx'],txt);
 
-
 %Copy MovieDatabase.XLSX
 if ~exist(['..',filesep,'Data',filesep,'DynamicsResults',filesep,'MovieDatabase.xlsx'])
     copyfile(['InstallationFiles',filesep,'InstallMovieDatabase.xlsx'],...
