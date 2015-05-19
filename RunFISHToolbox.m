@@ -52,7 +52,7 @@ end
 
 %Start the matlab workers for the FISH analysis code
 
-%Try only for MATLAB versions prior to 2015
+%Try matlabpool only for MATLAB versions prior to 2015
 year15 = datetime(2015,01,01);
 [v,d] = version;
 if d < year15
@@ -61,6 +61,12 @@ try
 catch
     display('matlabpool already running')
 end
+else
+try
+    parpool
+catch
+    display('matlabpool already running')
+end  
 end
 
 cd([FISHPath])
