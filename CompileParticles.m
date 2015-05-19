@@ -453,7 +453,7 @@ end
     
 
 %Some parameters
-IntArea=109;        %Are of integration
+IntArea=109;        %Area of integration
 MinAPArea=12500;%700;    %Minimum area in pixels in order to consider an AP bin as valid.
 
 

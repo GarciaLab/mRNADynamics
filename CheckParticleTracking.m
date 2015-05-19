@@ -436,7 +436,7 @@ while (cc~='x')
     xTrace=x(CurrentParticleIndex);
     yTrace=y(CurrentParticleIndex);
     
-    %These are the positions of all the approved and disapprooved particles
+    %These are the positions of all the approved and disapproved particles
     %Find the particles in this frame
     IndexApprovedParticles=[];
     for i=1:length(Particles{CurrentChannel})
@@ -493,7 +493,7 @@ while (cc~='x')
     plot(xDisapproved,yDisapproved,'^r')
     hold off
     if ~UseHistoneOverlay
-        set(gcf,'Position',[10    89   677   599]);
+        set(gcf,'Position', 'Normalized', [10    89   677   599]);
         set(gcf,'MenuBar','none','ToolBar','none')
     else
         if strcmp('albert-pc',name(1:end-1))
@@ -501,7 +501,7 @@ while (cc~='x')
             % halfscreen [7   513   835   532]
             % fullscreen [9         594        1106         451]
         else
-            set(gcf,'Position',[12   975   677   351]);
+            set(gcf,'units', 'normalized', 'position',[.1   .1   .4   .35]);
         end
         set(gcf,'MenuBar','none','ToolBar','none')
     end
@@ -703,7 +703,7 @@ while (cc~='x')
             set(gcf,'Position',[6    88   691   379])
             %Fullscreen [8         110        1107         440]
         else
-            set(gcf,'Position',[6   622   691   311])
+            set(gcf,'units', 'normalized', 'position',[.1   .55   .4   .35])
         end
         set(gcf,'MenuBar','none','ToolBar','none')
         
@@ -773,7 +773,7 @@ while (cc~='x')
             set(gcf,'Position',[861   834   303   152])
             % fullscreen [1133          46         395         319]
         else
-            set(gcf,'Position',[760   499   223   206])
+            set(gcf, 'units', 'normalized','Position',[.53 .1 .15 .3])
         end
         hold on
         SnippetX=(SnippetSize-1)/2+1-...
@@ -825,7 +825,7 @@ while (cc~='x')
             set(gcf,'Position',[857   518   308   215])
             % fullscreen [1547          44         363         322]
         else
-            set(gcf,'Position',[1009         492         216         234])
+            set(gcf, 'units', 'normalized', 'Position',[.7 .1 .15 .3])
         end
     end
        
@@ -840,20 +840,22 @@ while (cc~='x')
     end
     plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-k')
     hold on
-    plot(Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
-    plot(Frames(Frames==CurrentFrame),Amp(Frames==CurrentFrame),'ob')
+%     plot(Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
+%     plot(Frames(Frames==CurrentFrame),Amp(Frames==CurrentFrame),'ob')
     hold off
     try
         xlim([min(Frames)-1,max(Frames)+1]);
     catch
     end
-    xlabel('Frame')
-    ylabel('Intensity')
+    xlabel('Time (min)')
+    h = get(gca, 'xtick');
+    set(gca,'xticklabel',round(h*44.062/60))
+    ylabel('Intensity (A.U.)')
     if strcmp('albert-pc',name(1:end-1))
         set(gcf,'Position',[716    88   439   321])
         % fullscreen [1135         471         776         515]
     else
-        set(gcf,'Position',[709   948   564   327])
+        set(gcf, 'units', 'normalized', 'Position',[.53 .53   .3   .35])
     end
     
     FigureTitle=['Particle: ',num2str(CurrentParticle),'/',num2str(length(Particles{CurrentChannel})),...

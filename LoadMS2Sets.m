@@ -8,8 +8,10 @@ function Data=LoadMS2Sets(DataType)
 
 
 %Get some of the default folders
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
+
+PausingXLSName='DataStatus.xlsx';
 
 if strcmp(DataType,'hbBAC')|strcmp(DataType,'Eve2')|strcmp(DataType,'snaBAC')|...
         strcmp(DataType,'snaBACNoPrimary')|strcmp(DataType,'snaBACNoShadow')|strcmp(DataType,'P2PPausing')|...
@@ -31,12 +33,8 @@ elseif strcmp(DataType,'4 Bcd Sites 2-Spot')
     [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
         DetermineLocalFolders('2014-11-14-P2-B4-2S');
     PausingXLSName='Data Status.xlsx';
-elseif strcmp(DataType,'3A31')
-    [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
-        DetermineLocalFolders('2015-04-02-3A3-evePr');
-    PausingXLSName='DataStatus.xlsx';
-% elseif strcmp(DataType,'MCP-GFP 5'' Data')
-%     error('Take care of this')
+elseif strcmp(DataType,'MCP-GFP 5'' Data')
+    error('Take care of this')
 else
     error('Add this data type to the code')
 end

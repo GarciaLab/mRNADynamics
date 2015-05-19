@@ -206,8 +206,38 @@ if ~NoAP
         % resolutions, though...
         ZoomRatio = ResizeFactor;
         
+%     elseif strcmp(FileMode,'LSM') 
+%         
+%         D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lsm']);
+%         ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(1).name]);
+%         
+%         %Figure out the zoom factor
+%         MovieZoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
+%         MovieZoom=str2num(MovieZoom);
+%     
+%         
+%         %Get the zoomed out surface image and its dimensions from the FullEmbryo folder
+%         D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.tif']);
+%         SurfName=D(find(~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
+%         SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,SurfName],ChannelToLoad); 
+%         
+%         %Get the size of the zoom image
+%         Rows = str2double(ExtractInformationField(ImageInfo(1), 'state.acq.linesPerFrame='));
+%         Columns = str2double(ExtractInformationField(ImageInfo(1), 'state.acq.pixelsPerLine='));
+%         
+%         SurfInfo = imfinfo([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo', filesep, SurfName]);
+%         SurfZoom = ExtractInformationField(SurfInfo(1), 'state.acq.zoomFactor=');
+%         SurfZoom = str2double(SurfZoom);
+% 
+%         SurfRows = str2double(ExtractInformationField(SurfInfo(1), 'state.acq.linesPerFrame='));
+%         SurfColumns = str2double(ExtractInformationField(SurfInfo(1), 'state.acq.pixelsPerLine='));
+%         
+%         %Get the full embryo image
+%         FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
+%     
         
     elseif strcmp(FileMode,'LSM')|strcmp(FileMode,'LIFExport')
+%     elseif strcmp(FileMode,'LIFExport')
 
         %This is so that the code doesn't freak out later
         SurfName=[];

@@ -67,6 +67,13 @@ if exist([DropboxFolder,filesep,Prefix,'\APDivision.mat'])
 else
     error('Could not load APDivision.mat. Make sure to have done the manual check of division.')
 end
+
+%%
+%This section of code is for compiling multiple datasets. 
+load([DropboxFolder,filesep,Prefix,'\CompiledParticles.mat'])
+
+
+%%
                                     
  
 %Rough frame window to consider in the fits
