@@ -384,7 +384,7 @@ imwrite(uint16(APImage),[DropboxFolder,filesep,Prefix,'\APDetection\FullEmbryo.t
 
 
 %Now, use them to find the embryo mask
-embMask = getEmbryoMask(APImage, 20);
+embMask = getEmbryoMaskLive(APImage, 20);
 
 
 %This code came from Michael's code

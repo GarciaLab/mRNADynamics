@@ -4,11 +4,11 @@ function nucMask=GetNuclearMask(I,smoothing,imopenParam)
 %It creates a quick nuclear mask so we cna check alignments
 
 
-I_mask = getEmbryoMask(I, max(10*smoothing,10));
+I_mask = getEmbryoMaskLive(I, max(10*smoothing,10));
 
 % Restrict area of consideration to the inside of the embryo
 if isempty(I_mask)
-    I_mask = getEmbryoMask(I, max(10*smoothing,10));
+    I_mask = getEmbryoMaskLive(I, max(10*smoothing,10));
 end
 if sum(I_mask(:))/numel(I_mask)<0.1
     I_mask = true(size(I_mask));

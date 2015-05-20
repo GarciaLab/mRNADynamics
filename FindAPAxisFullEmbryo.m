@@ -227,7 +227,7 @@ mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
 imwrite(uint16(MidImage),[DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif'],'compression','none');
 
 %Now, use them to find the embryo mask
-embMask = getEmbryoMask(MidImage, 50);
+embMask = getEmbryoMaskLive(MidImage, 50);
 
 
 %This code came from Michael's code

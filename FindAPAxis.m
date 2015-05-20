@@ -310,7 +310,7 @@ imwrite(uint16(APImage),[DropboxFolder,filesep,Prefix,filesep,'APDetection',file
 
 
 %Now, use them to find the embryo mask
-embMask = getEmbryoMask(APImage, 20);
+embMask = getEmbryoMaskLive(APImage, 20);
 CC=bwconncomp(embMask);
 
 %This code came from Michael's code
@@ -318,7 +318,7 @@ CC=bwconncomp(embMask);
 % high but the embryo is still stitchable.
 if CC.NumObjects~=1
     disp('Failed to calculate embryo mask. Found more than one object in mask. Re-running with a lower threshold.');
-    embMask = GetEmbryoMaskWithThreshold(APImage, 20, 0);
+    embMask = getEmbryoMaskLiveWithThreshold(APImage, 20, 0);
     CC = bwconncomp(embMask);
 end
 

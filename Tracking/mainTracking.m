@@ -169,7 +169,7 @@ end
 waitbar(0.2,h_waitbar_initialization);
 
 if ~exist('embryoMask','var') || isempty(embryoMask)
-    embryoMask = getEmbryoMask(names);
+    embryoMask = getEmbryoMaskLive(names);
 end
 
 waitbar(0.3,h_waitbar_initialization)
