@@ -1,4 +1,4 @@
-function FitMeanAP(varargin)
+function FitMeanAPMultipleSets(DataType, minParticles, minTimePoints)
 
 %This function performs fits to the mean fluorescence as a function of time
 %of a particular dataset.
@@ -20,23 +20,15 @@ function FitMeanAP(varargin)
 
 
 %Parameters:
-MinParticles=2;     %Minimum number of particles in an AP bin
-MinTimePoints=5;    %Minimum number of time points where we'll have at least
+MinParticles=minParticles;     %Minimum number of particles in an AP bin
+MinTimePoints=minTimePoints;    %Minimum number of time points where we'll have at least
                     %the minimum number of particles.
 ElongationRate=1.54;    %In kb/minutes.
 GeneLength5=5.296;      %Distance from the first MS2 site to the end of the
                         %TUB3'UTR in kb for the 5' constrcut.
 GeneLength3=1.941;      %Distance from the first MS2 site to the end of the
                         %TUB3'UTR in kb for the 3' constrcut.                        
-
-                                    
-
-                                  
-                                    
-                                    
-                                    
-                                    
-                                    
+                                   
 close all
 
 %Find out which computer this is. That will determine the folder structure.
@@ -45,48 +37,54 @@ close all
 % ES 2013-10-29: Required for multiple users to be able to analyze data on
 % one computer
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders(varargin{1});
-
-
-if ~isempty(varargin)
-    Prefix=varargin{1};
+    DetermineLocalFolders;
+% 
+% 
+% if ~isempty(varargin)
+%     Prefix=varargin;
                
-else
-    FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
-    Dashes=strfind(FolderTemp,'\');
-    Prefix=FolderTemp((Dashes(end)+1):end);
-end
+
+FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze. If multiple sets, pick one.');
+Dashes=strfind(FolderTemp,'\');
+Prefix=FolderTemp((Dashes(end)+1):end);
 
 
-                                    
-%Load the complied particles and the division information                                    
-load([DropboxFolder,filesep,Prefix,'\CompiledParticles.mat'])
 
-if exist([DropboxFolder,filesep,Prefix,'\APDivision.mat'])
-    load([DropboxFolder,filesep,Prefix,'\APDivision.mat'])
-else
-    error('Could not load APDivision.mat. Make sure to have done the manual check of division.')
-end
-                                  
- 
+%COMMENTED OUT 5/19/2015 AR. NEED TO LOAD SEVERAL SETS VIA LOADMS2SETS
+
+% %Load the complied particles and the division information                                    
+% load([DropboxFolder,filesep,Prefix,'\CompiledParticles.mat'])
+% 
+% if exist([DropboxFolder,filesep,Prefix,'\APDivision.mat'])
+%     load([DropboxFolder,filesep,Prefix,'\APDivision.mat'])
+% else
+%     error('Could not load APDivision.mat. Make sure to have done the manual check of division.')
+% end         
+
+
+all_data = LoadMS2Sets(DataType);
+NParticleSums = []
+
 %Rough frame window to consider in the fits
 
+for k=1:length(all_data)
+    
 %Some data sets won't have nc12
-if nc12>0
-    FrameWindow12=[nc12:nc13];
+if all_data(k).nc12>0
+    FrameWindow12=[all_data(k).nc12:all_data(k).nc13];
 else
     FrameWindow12=[];
 end
 %Some data sets won't have nc13 either
-if nc13>0
-    FrameWindow13=[nc13:nc14];
+if all_data(k).nc13>0
+    FrameWindow13=[all_data(k).nc13:all_data(k).nc14];
 else
     FrameWindow13=[];
 end
 
 
 
-FrameWindow14=[nc14:length(ElapsedTime)];      
+FrameWindow14=[all_data(k).nc14:length(all_data(k).ElapsedTime)];      
 
 
 %Detect what type of data set we're dealing with so we can set the delay
@@ -169,29 +167,19 @@ end
 %disapproved the ones that did not have enough data points. Fit results has
 %is a structure with the fits corresponding to each AP position and nc13
 %or nc14
-if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'])
-    load([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat']);
-    if isempty(FitResults)
-        FitResults(length(APbinID),3).Rate0=[];
-    end
-else
-    FitResults(length(APbinID),3).Rate0=[];
-end
 
-
-
-
+FitResults(length(all_data(k).APbinID),3).Rate0=[];
 
 %Set default starting values for nc 13 and nc14
 %nc12
-for i=1:length(APbinID)
+for i=1:length(all_data(k).APbinID)
     if isempty(FitResults(i,1).Rate0)
         FitResults(i,1).Rate0=Rate012;    
         FitResults(i,1).TimeStart0=TimeStart012;
         FitResults(i,1).TimeEnd0=TimeEnd012;
         FitResults(i,1).FrameFilter=[];
         FitResults(i,1).FitFrameRange=[];
-        if sum(NParticlesAP(FrameWindow12,i)>=MinParticles)>=MinTimePoints
+        if sum(all_data(k).NParticlesAP(FrameWindow12,i)>=MinParticles)>=MinTimePoints
             FitResults(i,1).Approved=0;
         else
             FitResults(i,1).Approved=-1;
@@ -199,7 +187,7 @@ for i=1:length(APbinID)
     end
 end
 %nc13
-for i=1:length(APbinID)
+for i=1:length(all_data(k).APbinID)
     if isempty(FitResults(i,2).Rate0)
         FitResults(i,2).Rate0=Rate013;    
         FitResults(i,2).TimeStart0=TimeStart013;
@@ -207,7 +195,7 @@ for i=1:length(APbinID)
         FitResults(i,2).FrameFilter=[];
         FitResults(i,2).FitFrameRange=[];
         
-        if sum(NParticlesAP(FrameWindow13,i)>=MinParticles)>=MinTimePoints
+        if sum(all_data(k).NParticlesAP(FrameWindow13,i)>=MinParticles)>=MinTimePoints
             FitResults(i,2).Approved=0;
         else
             FitResults(i,2).Approved=-1;
@@ -216,14 +204,14 @@ for i=1:length(APbinID)
     end
 end
 %nc14
-for i=1:length(APbinID)
+for i=1:length(all_data(k).APbinID)
     if isempty(FitResults(i,3).Rate0)
         FitResults(i,3).Rate0=Rate014;    
         FitResults(i,3).TimeStart0=TimeStart014;
         FitResults(i,3).TimeEnd0=[];
         FitResults(i,3).FrameFilter=[];
         FitResults(i,3).FitFrameRange=[];        
-        if sum(NParticlesAP(FrameWindow14,i)>=MinParticles)>=MinTimePoints
+        if sum(all_data(k).NParticlesAP(FrameWindow14,i)>=MinParticles)>=MinTimePoints
             FitResults(i,3).Approved=0;
         else
             FitResults(i,3).Approved=-1;
@@ -232,18 +220,15 @@ for i=1:length(APbinID)
 end
 
 
-
-
-
 %Figure out which nc we can use
-if nc12
+if all_data(k).nc12
     CurrentNC=12;
     MinNC=12;       %We'll use this to keep track of the minimum nc
-elseif nc13
-    CurrentNC=13;
+elseif all_data(k).nc13
+    all_data(k).CurrentNC=13;
     MinNC=13;
 elseif nc14
-    CurrentNC=14;
+    all_data(k).CurrentNC=14;
     MinNC=14;
 else
     error('There is a problem. Are the ncs defined?')
@@ -253,7 +238,7 @@ end
 
 %Go through each AP bin
 FitFigure=figure;
-i=min(find(sum(NParticlesAP)));
+i=min(find(sum(all_data(k).NParticlesAP)));
 cc=1;
 
 while (cc~=13)
@@ -270,11 +255,11 @@ while (cc~=13)
     end
     
     
-    if APDivision(CurrentNC,i)
+    if all_data(k).APDivision(CurrentNC,i)
         if CurrentNC~=14
-            FrameWindow=APDivision(CurrentNC,i):APDivision(CurrentNC+1,i);
+            FrameWindow=all_data(k).APDivision(CurrentNC,i):all_data(k).APDivision(CurrentNC+1,i);
         else
-            FrameWindow=APDivision(CurrentNC,i):length(ElapsedTime);
+            FrameWindow=all_data(k).APDivision(CurrentNC,i):length(all_data(k).ElapsedTime);
         end
 
         %Check that we have the minimum number of particles for a minimum
@@ -339,8 +324,7 @@ while (cc~=13)
                 if ~isempty(TimeData(NanFilter))
 
                     [xFit,resnorm,residual,exitflag,output,lambda,jacobian]=...
-                        lsqnonlin(@(x) lsqnonlinFitFluorescenceCurve(TimeDataForFit(NanFilter)-...
-                        ElapsedTime(FrameWindow(1)),...
+                        lsqnonlin(@(x) lsqnonlinFitFluorescenceCurve(TimeDataForFit(NanFilter)-ElapsedTime(FrameWindow(1)),...
                         FluoDataForFit(NanFilter),Delay,...
                         ElapsedTime(FrameWindow(end))-ElapsedTime(FrameWindow(1)),x),x0);
 
@@ -354,9 +338,6 @@ while (cc~=13)
                     FitResults(i,CurrentNC-11).SDTimeStart=(FitResults(i,CurrentNC-11).CI(1,2)-FitResults(i,CurrentNC-11).CI(1,1))/2;
                     FitResults(i,CurrentNC-11).SDTimeEnd=(FitResults(i,CurrentNC-11).CI(2,2)-FitResults(i,CurrentNC-11).CI(2,1))/2;
                     FitResults(i,CurrentNC-11).SDRateFit=(FitResults(i,CurrentNC-11).CI(3,2)-FitResults(i,CurrentNC-11).CI(3,1))/2;
-
-
-
 
                     %Plot the results
                     %Get the corresponding fitted curve

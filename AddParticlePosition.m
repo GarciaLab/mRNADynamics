@@ -411,7 +411,7 @@ if ~NoAP
     %Do a correlation between the zoomed in and zoomed out surface images
     %to figure out the shift.
     
-    
+    FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
     if ~SkipAlignment && HistoneChannel
         if ZoomRatio > 1 && ZoomRatio < 24 
             
@@ -451,7 +451,6 @@ if ~NoAP
                     end
                 end
 
-                FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
                 [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ZoomRatio,ShiftRow,ShiftColumn,...
                      FullEmbryo, ZoomRatio, SurfRows,Rows, Columns, coordA, coordP, SurfColumns);
                 ManualAlignmentDone=1;

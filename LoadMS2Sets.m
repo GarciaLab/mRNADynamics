@@ -35,8 +35,8 @@ elseif strcmp(DataType,'4 Bcd Sites 2-Spot')
     PausingXLSName='Data Status.xlsx';
 elseif strcmp(DataType,'MCP-GFP 5'' Data')
     error('Take care of this')
-else
-    error('Add this data type to the code')
+% else
+%     error('Add this data type to the code')
 end
 
 

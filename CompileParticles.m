@@ -347,7 +347,7 @@ mkdir([DropboxFolder,filesep,Prefix,filesep,'Various'])
 
 %% Put together CompiledParticles
 
-
+CompiledParticles = {};
 %Approve all particles if the mode has been selected
 if ApproveAll
     for ChN=1:NChannels
@@ -945,7 +945,7 @@ ncFilterID=[min(ncFilterID)-1,ncFilterID];
 
 %Create the filter
 for ChN=1:NChannels
-    if length(CompiledParticles{ChN})==0
+    if isempty(CompiledParticles)==1
         error(['No compiled particles found in channel',num2str(ChN),'. Did you mean to run the code with ApproveAll?'])
     end
 
