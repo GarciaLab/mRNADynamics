@@ -48,154 +48,171 @@ FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze. If multi
 Dashes=strfind(FolderTemp,'\');
 Prefix=FolderTemp((Dashes(end)+1):end);
 
-
-
-%COMMENTED OUT 5/19/2015 AR. NEED TO LOAD SEVERAL SETS VIA LOADMS2SETS
-
-% %Load the complied particles and the division information                                    
-% load([DropboxFolder,filesep,Prefix,'\CompiledParticles.mat'])
-% 
-% if exist([DropboxFolder,filesep,Prefix,'\APDivision.mat'])
-%     load([DropboxFolder,filesep,Prefix,'\APDivision.mat'])
-% else
-%     error('Could not load APDivision.mat. Make sure to have done the manual check of division.')
-% end         
-
-
 all_data = LoadMS2Sets(DataType);
-NParticleSums = []
+MeanVectorAPTot = [];
+ElapsedTimeTot = [];
+NParticlesAPTot = [];
+SDVectorAPTot = [];
+OnRatioAPTot = [];
+FramesTot = [];
+APDivisionTot = 0*all_data(1).APDivision;
+t12 = [];
+t13 = [];
+t14 = [];
+for k=1:length(all_data)
+    APDivisionTot = APDivisionTot + all_data(k).APDivision+all_data(k).APDivision;
+    MeanVectorAPTot = vertcat(MeanVectorAPTot, all_data(k).MeanVectorAP);
+    ElapsedTimeTot = horzcat(ElapsedTimeTot, all_data(k).ElapsedTime);
+    NParticlesAPTot = vertcat(NParticlesAPTot,all_data(k).NParticlesAP);
+    SDVectorAPTot = vertcat(SDVectorAPTot,all_data(k).SDVectorAP);
+    OnRatioAPTot = vertcat(OnRatioAPTot,all_data(k).OnRatioAP);
+    t12 = [t12, all_data(k).ElapsedTime(all_data(k).nc12)];
+    t13 = [t13, all_data(k).ElapsedTime(all_data(k).nc13)];
+    t14 = [t14, all_data(k).ElapsedTime(all_data(k).nc14)];
+end
+tmins = [min(t12), min(t13), min(t14)];
+tminsindices = [find(ElapsedTimeTot == tmins(1)), find(tmins(2) == ElapsedTimeTot), find(tmins(3) == ElapsedTimeTot)];
 
 %Rough frame window to consider in the fits
 
 for k=1:length(all_data)
     
-%Some data sets won't have nc12
-if all_data(k).nc12>0
-    FrameWindow12=[all_data(k).nc12:all_data(k).nc13];
-else
-    FrameWindow12=[];
-end
-%Some data sets won't have nc13 either
-if all_data(k).nc13>0
-    FrameWindow13=[all_data(k).nc13:all_data(k).nc14];
-else
-    FrameWindow13=[];
-end
+    %Some data sets won't ha ve nc12
+    %% 'hu
+    if all_data(k).nc12>0
+        FrameWindow12{k}=[all_data(k).nc12:all_data(k).nc13];
+    else
+        FrameWindow12{k}=[];
+    end
+    %Some data sets won't have nc13 either
+    if all_data(k).nc13>0
+        FrameWindow13{k}=[all_data(k).nc13:all_data(k).nc14];
+    else
+        FrameWindow13{k}=[];
+    end
 
 
 
-FrameWindow14=[all_data(k).nc14:length(all_data(k).ElapsedTime)];      
+    FrameWindow14{k}=[all_data(k).nc14:length(all_data(k).ElapsedTime)];      
 
 
-%Detect what type of data set we're dealing with so we can set the delay
-if (~isempty(findstr(Prefix,'X1')))|(~isempty(findstr(Prefix,'P2P')))|...
-        (~isempty(findstr(Prefix,'evePr')))
-    Delay=GeneLength5/ElongationRate;    %Minutes for PolII to fall off after reaching
-                                        %the first MS2 site.
-    display('Treating data set as 5''')
-    
-    %Initial parameters for fits
-    Rate012=4E3;     %Rate per minute
-    TimeStart012=3;
-    TimeEnd012=7;
-
-    Rate013=4E3;     %Rate per minute
-    TimeStart013=5;
-    TimeEnd013=10;
-
-    Rate014=4E3;     %Rate per minute
-    TimeStart014=5;
-    TimeEnd014=1000;  
-elseif ~isempty(findstr(Prefix,'X2'))
-    Delay=GeneLength3/ElongationRate;
-    display('Treating data set as 3''')
-    
-    Rate012=4E3;     %Rate per minute
-    TimeStart012=3;
-    TimeEnd012=7;
-
-    Rate013=4E3;     %Rate per minute
-    TimeStart013=7.5;
-    TimeEnd013=10;
-
-    Rate014=4E3;     %Rate per minute
-    TimeStart014=7.5;
-    TimeEnd014=1000; 
-else
-    % ES 2013-10-14: I don't use X1 or X2 prefixes
-    if exist('StemLoopEnd', 'var') && strcmp(StemLoopEnd, '5''')
+    %Detect what type of data set we're dealing with so we can set the delay
+    if (~isempty(findstr(Prefix,'X1')))|(~isempty(findstr(Prefix,'P2P')))|...
+            (~isempty(findstr(Prefix,'evePr')))
         Delay=GeneLength5/ElongationRate;    %Minutes for PolII to fall off after reaching
-        %the first MS2 site.
+                                            %the first MS2 site.
         display('Treating data set as 5''')
-        
+
+        %Initial parameters for fits
         Rate012=4E3;     %Rate per minute
         TimeStart012=3;
         TimeEnd012=7;
-        
+
         Rate013=4E3;     %Rate per minute
         TimeStart013=5;
         TimeEnd013=10;
-        
+
         Rate014=4E3;     %Rate per minute
         TimeStart014=5;
-        TimeEnd014=1000;
-    elseif exist('StemLoopEnd', 'var') && strcmp(StemLoopEnd, '3''')
+        TimeEnd014=1000;  
+    elseif ~isempty(findstr(Prefix,'X2'))
         Delay=GeneLength3/ElongationRate;
         display('Treating data set as 3''')
-        
+
         Rate012=4E3;     %Rate per minute
         TimeStart012=3;
         TimeEnd012=7;
-        
+
         Rate013=4E3;     %Rate per minute
         TimeStart013=7.5;
         TimeEnd013=10;
-        
+
         Rate014=4E3;     %Rate per minute
         TimeStart014=7.5;
-        TimeEnd014=1000;
+        TimeEnd014=1000; 
     else
-        error('Could not recognize data type from the Prefix or from the value of StemLoopEnd in MovieDatabase.')
+        % ES 2013-10-14: I don't use X1 or X2 prefixes
+        if exist('StemLoopEnd', 'var') && strcmp(StemLoopEnd, '5''')
+            Delay=GeneLength5/ElongationRate;    %Minutes for PolII to fall off after reaching
+            %the first MS2 site.
+            display('Treating data set as 5''')
+
+            Rate012=4E3;     %Rate per minute
+            TimeStart012=3;
+            TimeEnd012=7;
+
+            Rate013=4E3;     %Rate per minute
+            TimeStart013=5;
+            TimeEnd013=10;
+
+            Rate014=4E3;     %Rate per minute
+            TimeStart014=5;
+            TimeEnd014=1000;
+        elseif exist('StemLoopEnd', 'var') && strcmp(StemLoopEnd, '3''')
+            Delay=GeneLength3/ElongationRate;
+            display('Treating data set as 3''')
+
+            Rate012=4E3;     %Rate per minute
+            TimeStart012=3;
+            TimeEnd012=7;
+
+            Rate013=4E3;     %Rate per minute
+            TimeStart013=7.5;
+            TimeEnd013=10;
+
+            Rate014=4E3;     %Rate per minute
+            TimeStart014=7.5;
+            TimeEnd014=1000;
+        else
+            error('Could not recognize data type from the Prefix or from the value of StemLoopEnd in MovieDatabase.')
+        end
     end
 end
 
 
-
-
-
 %Set the first guess for the parameters for each AP bin and also
-%disapproved the ones that did not have enough data points. Fit results has
-%is a structure with the fits corresponding to each AP position and nc13
+%disapproved the ones that did not have enough data points. FitResults
+%is a structure with the fits corresponding to each AP position at nc12, nc13
 %or nc14
 
-FitResults(length(all_data(k).APbinID),3).Rate0=[];
+%Going to assume all data sets have the same AP binning
+
+FitResults(length(all_data(1).APbinID),3).Rate0=[];
 
 %Set default starting values for nc 13 and nc14
 %nc12
-for i=1:length(all_data(k).APbinID)
+for i=1:length(all_data(1).APbinID)
     if isempty(FitResults(i,1).Rate0)
         FitResults(i,1).Rate0=Rate012;    
         FitResults(i,1).TimeStart0=TimeStart012;
         FitResults(i,1).TimeEnd0=TimeEnd012;
         FitResults(i,1).FrameFilter=[];
         FitResults(i,1).FitFrameRange=[];
-        if sum(all_data(k).NParticlesAP(FrameWindow12,i)>=MinParticles)>=MinTimePoints
+        p = 0*all_data(1).NParticlesAP(FrameWindow12{1}, i);
+        for k=1:length(all_data)
+            p = SumArrays( p ,all_data(k).NParticlesAP(FrameWindow12{k}, i));
+        end
+        if sum(p>=MinParticles)>=MinTimePoints
             FitResults(i,1).Approved=0;
         else
             FitResults(i,1).Approved=-1;
         end
     end
 end
+
 %nc13
-for i=1:length(all_data(k).APbinID)
+for i=1:length(all_data(1).APbinID)
     if isempty(FitResults(i,2).Rate0)
         FitResults(i,2).Rate0=Rate013;    
         FitResults(i,2).TimeStart0=TimeStart013;
         FitResults(i,2).TimeEnd0=TimeEnd013;
         FitResults(i,2).FrameFilter=[];
         FitResults(i,2).FitFrameRange=[];
-        
-        if sum(all_data(k).NParticlesAP(FrameWindow13,i)>=MinParticles)>=MinTimePoints
+        p = 0*all_data(1).NParticlesAP(FrameWindow13{1}, i);
+        for k=1:length(all_data)
+            p = SumArrays( p ,all_data(k).NParticlesAP(FrameWindow13{k}, i));
+        end
+        if sum(p>=MinParticles)>=MinTimePoints
             FitResults(i,2).Approved=0;
         else
             FitResults(i,2).Approved=-1;
@@ -211,7 +228,11 @@ for i=1:length(all_data(k).APbinID)
         FitResults(i,3).TimeEnd0=[];
         FitResults(i,3).FrameFilter=[];
         FitResults(i,3).FitFrameRange=[];        
-        if sum(all_data(k).NParticlesAP(FrameWindow14,i)>=MinParticles)>=MinTimePoints
+        p = 0*all_data(1).NParticlesAP(FrameWindow14{1}, i);
+        for k=1:length(all_data)
+            p = SumArrays( p ,all_data(k).NParticlesAP(FrameWindow14{k}, i));
+        end
+        if sum(p>=MinParticles)>=MinTimePoints
             FitResults(i,3).Approved=0;
         else
             FitResults(i,3).Approved=-1;
@@ -221,13 +242,13 @@ end
 
 
 %Figure out which nc we can use
-if all_data(k).nc12
+if any(all_data.nc12)
     CurrentNC=12;
     MinNC=12;       %We'll use this to keep track of the minimum nc
-elseif all_data(k).nc13
+elseif any(all_data.nc13)
     all_data(k).CurrentNC=13;
     MinNC=13;
-elseif nc14
+elseif any(all_data.nc14)
     all_data(k).CurrentNC=14;
     MinNC=14;
 else
@@ -238,7 +259,7 @@ end
 
 %Go through each AP bin
 FitFigure=figure;
-i=min(find(sum(all_data(k).NParticlesAP)));
+i=min(find(sum(NParticlesAPTot)));
 cc=1;
 
 while (cc~=13)
@@ -255,23 +276,24 @@ while (cc~=13)
     end
     
     
-    if all_data(k).APDivision(CurrentNC,i)
+%WILL NEED TO UPDATE THIS TO GET FRAME INFO FROM APDIVISIONS
+    if APDivisionTot(CurrentNC,i)
         if CurrentNC~=14
-            FrameWindow=all_data(k).APDivision(CurrentNC,i):all_data(k).APDivision(CurrentNC+1,i);
+            FrameWindow = tminsindices(CurrentNC-11):tminsindices(CurrentNC-11+1);
         else
-            FrameWindow=all_data(k).APDivision(CurrentNC,i):length(all_data(k).ElapsedTime);
+            FrameWindow=tminsindices(CurrentNC-11):length(ElapsedTimeTot);
         end
 
         %Check that we have the minimum number of particles for a minimum
         %amount of time
-        if (sum(NParticlesAP(FrameWindow,i)>=MinParticles)>=MinTimePoints)
+        if sum(NParticlesAPTot(FrameWindow, i)>=MinParticles)>=MinTimePoints
 
             %Extract the data for this range of frames
-            FluoData=MeanVectorAP(FrameWindow,i);
-            SDFluoData=SDVectorAP(FrameWindow,i);
-            NData=NParticlesAP(FrameWindow,i);
-            TimeData=ElapsedTime(FrameWindow);
-            OnRatioData=OnRatioAP(FrameWindow,i);
+            FluoData=MeanVectorAPTot(FrameWindow,i);
+            SDFluoData=SDVectorAPTot(FrameWindow,i);
+            NData=NParticlesAPTot(FrameWindow,i);
+            TimeData=ElapsedTimeTot(FrameWindow);
+            OnRatioData=OnRatioAPTot(FrameWindow,i);
 
             %Now filter them according the number of particles
             FrameFilter=NData>=MinParticles;
@@ -282,7 +304,9 @@ while (cc~=13)
             if isempty(FitResults(i,CurrentNC-11).FitFrameRange)
                 FitFrameRange=FrameWindow(FrameFilter);
                 if CurrentNC==14
-                    FitFrameRange=FitFrameRange((ElapsedTime(FitFrameRange)-ElapsedTime(APDivision(CurrentNC,i)))<12);
+                    %NEED TO CHANGE tminindices to something that depends
+                    %on apdivisions
+                    FitFrameRange=FitFrameRange((ElapsedTimeTot(FitFrameRange)-ElapsedTimeTot(tminsindices(CurrentNC-11)))<12);
                 end
                 FitResults(i,CurrentNC-11).FitFrameRange=FitFrameRange;
             else
@@ -324,9 +348,9 @@ while (cc~=13)
                 if ~isempty(TimeData(NanFilter))
 
                     [xFit,resnorm,residual,exitflag,output,lambda,jacobian]=...
-                        lsqnonlin(@(x) lsqnonlinFitFluorescenceCurve(TimeDataForFit(NanFilter)-ElapsedTime(FrameWindow(1)),...
+                        lsqnonlin(@(x) lsqnonlinFitFluorescenceCurve(TimeDataForFit(NanFilter)-ElapsedTimeTot(FrameWindow(1)),...
                         FluoDataForFit(NanFilter),Delay,...
-                        ElapsedTime(FrameWindow(end))-ElapsedTime(FrameWindow(1)),x),x0);
+                        ElapsedTimeTot(FrameWindow(end))-ElapsedTimeTot(FrameWindow(1)),x),x0);
 
                     FitResults(i,CurrentNC-11).TimeStart=xFit(1);
                     FitResults(i,CurrentNC-11).TimeEnd=xFit(2);
@@ -341,20 +365,20 @@ while (cc~=13)
 
                     %Plot the results
                     %Get the corresponding fitted curve
-                    [TimeFit,FluoFit]=FluorescenceCurve(ElapsedTime(FrameWindow(end))-...
-                        ElapsedTime(FrameWindow(1)),...
+                    [TimeFit,FluoFit]=FluorescenceCurve(ElapsedTimeTot(FrameWindow(end))-...
+                        ElapsedTimeTot(FrameWindow(1)),...
                         xFit(1),xFit(2),xFit(3),Delay);
                     %Plot all the data
-                    PlotHandle=errorbar(ElapsedTime(FrameWindow)-ElapsedTime(FrameWindow(1)),...
+                    PlotHandle=errorbar(ElapsedTimeTot(FrameWindow)-ElapsedTimeTot(FrameWindow(1)),...
                         MeanVectorAP(FrameWindow,i).*OnRatioAP(FrameWindow,i)/MaxOnRatio,...
                         SDVectorAP(FrameWindow,i)./...
                         sqrt(NParticlesAP(FrameWindow,i)).*OnRatioAP(FrameWindow,i)/MaxOnRatio,'.-k');
                     hold on
                     %Plot the data that could be used for the fit
-                    PlotHandle(end+1)=plot(ElapsedTime(FrameWindow(FrameFilter))-ElapsedTime(FrameWindow(1)),...
+                    PlotHandle(end+1)=plot(ElapsedTimeTot(FrameWindow(FrameFilter))-ElapsedTimeTot(FrameWindow(1)),...
                         FluoData,'or');
                     %Plot the data that was actually used for the fit
-                    PlotHandle(end+1)=plot(ElapsedTime(FitFrameRange)-ElapsedTime(FrameWindow(1)),...
+                    PlotHandle(end+1)=plot(ElapsedTimeTot(FitFrameRange)-ElapsedTimeTot(FrameWindow(1)),...
                         FluoData(ismember(FrameWindow(FrameFilter),FitFrameRange)),'or','MarkerFaceColor','r');
                     
                     %Plot the fit
@@ -365,9 +389,9 @@ while (cc~=13)
                     xlabel('Time into nc (min)')
                     
                     try
-                        ylim([0,max(MeanVectorAP(FrameWindow,i).*OnRatioAP(FrameWindow,i)/MaxOnRatio+...
+                        ylim([0,max(MeanVectorAPTot(FrameWindow,i).*OnRatioAPTot(FrameWindow,i)/MaxOnRatio+...
                             SDVectorAP(FrameWindow,i)./...
-                            sqrt(NParticlesAP(FrameWindow,i)).*OnRatioAP(FrameWindow,i)/MaxOnRatio)])
+                            sqrt(NParticlesAPTot(FrameWindow,i)).*OnRatioAPTot(FrameWindow,i)/MaxOnRatio)])
                     catch
                         display('Error in displaying the plot')
                     end
@@ -391,9 +415,9 @@ while (cc~=13)
 
                     [xFit,resnorm,residual,exitflag,output,lambda,jacobian]=...
                         lsqnonlin(@(x) lsqnonlinFitFluorescenceCurveNC14(TimeDataForFit(NanFilter)-...
-                        ElapsedTime(FrameWindow(1)),...
+                        ElapsedTimeTot(FrameWindow(1)),...
                         FluoDataForFit(NanFilter),Delay,...
-                        ElapsedTime(FrameWindow(end))-ElapsedTime(FrameWindow(1)),x),x0);
+                        ElapsedTimeTot(FrameWindow(end))-ElapsedTimeTot(FrameWindow(1)),x),x0);
 
                     FitResults(i,CurrentNC-11).TimeStart=xFit(1);
                     FitResults(i,CurrentNC-11).RateFit=xFit(2);
@@ -409,20 +433,20 @@ while (cc~=13)
 
                     %Plot the results
                     %Get the corresponding fitted curve
-                    [TimeFit,FluoFit]=FluorescenceCurve(ElapsedTime(FrameWindow(end))-...
-                        ElapsedTime(FrameWindow(1)),...
+                    [TimeFit,FluoFit]=FluorescenceCurve(ElapsedTimeTot(FrameWindow(end))-...
+                        ElapsedTimeTot(FrameWindow(1)),...
                         xFit(1),1000,xFit(2),Delay);
                     %Plot all the data
-                    PlotHandle=errorbar(ElapsedTime(FrameWindow)-ElapsedTime(FrameWindow(1)),...
-                        MeanVectorAP(FrameWindow,i).*OnRatioAP(FrameWindow,i)/MaxOnRatio,...
-                        SDVectorAP(FrameWindow,i)./...
-                        sqrt(NParticlesAP(FrameWindow,i)).*OnRatioAP(FrameWindow,i)/MaxOnRatio,'.-k');
+                    PlotHandle=errorbar(ElapsedTimeTot(FrameWindow)-ElapsedTimeTot(FrameWindow(1)),...
+                        MeanVectorAPTot(FrameWindow,i).*OnRatioAPTot(FrameWindow,i)/MaxOnRatio,...
+                        SDVectorAPTot(FrameWindow,i)./...
+                        sqrt(NParticlesAPTot(FrameWindow,i)).*OnRatioAPTot(FrameWindow,i)/MaxOnRatio,'.-k');
                     hold on
                     %Plot the data that could be used for the fit
-                    PlotHandle(end+1)=plot(ElapsedTime(FrameWindow(FrameFilter))-ElapsedTime(FrameWindow(1)),...
+                    PlotHandle(end+1)=plot(ElapsedTimeTot(FrameWindow(FrameFilter))-ElapsedTimeTot(FrameWindow(1)),...
                         FluoData,'or');
                     %Plot the data that was actually used for the fit
-                    PlotHandle(end+1)=plot(ElapsedTime(FitFrameRange)-ElapsedTime(FrameWindow(1)),...
+                    PlotHandle(end+1)=plot(ElapsedTimeTot(FitFrameRange)-ElapsedTimeTot(FrameWindow(1)),...
                         FluoData(ismember(FrameWindow(FrameFilter),FitFrameRange)),'or','MarkerFaceColor','r');
                     
                     %Plot the fit
@@ -433,9 +457,9 @@ while (cc~=13)
                     
                     
                     try
-                        ylim([0,max(MeanVectorAP(FrameWindow,i).*OnRatioAP(FrameWindow,i)/MaxOnRatio+...
-                            SDVectorAP(FrameWindow,i)./...
-                            sqrt(NParticlesAP(FrameWindow,i)).*OnRatioAP(FrameWindow,i)/MaxOnRatio)])
+                        ylim([0,max(MeanVectorAPTot(FrameWindow,i).*OnRatioAPTot(FrameWindow,i)/MaxOnRatio+...
+                            SDVectorAPTot(FrameWindow,i)./...
+                            sqrt(NParticlesAPTot(FrameWindow,i)).*OnRatioAPTot(FrameWindow,i)/MaxOnRatio)])
                     catch
                         display('Error in displaying the plot')
                     end
@@ -449,7 +473,7 @@ while (cc~=13)
         end
     end
     
-    title([num2str(APbinID(i)),' AP, TimeStart0=',num2str(FitResults(i,CurrentNC-11).TimeStart0),...
+    title([num2str(all_data(1).APbinID(i)),' AP, TimeStart0=',num2str(FitResults(i,CurrentNC-11).TimeStart0),...
         ', TimeEnd0=',num2str(FitResults(i,CurrentNC-11).TimeEnd0),', Rate=',num2str(FitResults(i,CurrentNC-11).Rate0),...
         ', nc',num2str(CurrentNC)])
     
@@ -471,7 +495,7 @@ while (cc~=13)
     cm=get(gca,'CurrentPoint');
     
     %Move between AP positions
-    if (ct~=0)&(cc=='.')&(i<length(APbinID))
+    if (ct~=0)&(cc=='.')&(i<length(all_data(1).APbinID))
         i=i+1;
     elseif (ct~=0)&(cc==',')&(i>1)
         i=i-1;
@@ -527,7 +551,7 @@ while (cc~=13)
     elseif (ct~=0)&(cc=='z')&(FitResults(i,CurrentNC-11).TimeStart0>1)
         FitResults(i,CurrentNC-11).TimeStart0=FitResults(i,CurrentNC-11).TimeStart0-1;
     %TimeEnd
-    elseif (ct~=0)&(cc=='s')&(FitResults(i,CurrentNC-11).TimeEnd0<ElapsedTime(FrameWindow(end))-ElapsedTime(FrameWindow(1)))
+    elseif (ct~=0)&(cc=='s')&(FitResults(i,CurrentNC-11).TimeEnd0<ElapsedTimeTot(FrameWindow(end))-ElapsedTimeTot(FrameWindow(1)))
         FitResults(i,CurrentNC-11).TimeEnd0=FitResults(i,CurrentNC-11).TimeEnd0+1;
     elseif (ct~=0)&(cc=='x')&(FitResults(i,CurrentNC-11).TimeEnd0>FitResults(i,CurrentNC-11).TimeStart0)
         FitResults(i,CurrentNC-11).TimeEnd0=FitResults(i,CurrentNC-11).TimeEnd0-1;

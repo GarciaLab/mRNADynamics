@@ -97,7 +97,7 @@ while (cc~=13)
     ImageCenter=[SurfRows/2 + ShiftRow,SurfColumns/2 + ShiftColumn];
     TopLeft=[ImageCenter(1)-Rows/ZoomRatio/2,ImageCenter(2)-Columns/ZoomRatio/2];
     BottomRight=[ImageCenter(1)+Rows/ZoomRatio/2,ImageCenter(2)+Columns/ZoomRatio/2];
-    imshow(imadjust(mat2gray(FullEmbryo)),'DisplayRange',[],'InitialMagnification',100)
+    imshow(imadjust(mat2gray(SurfImage)),'DisplayRange',[],'InitialMagnification',100)
     hold on
     rectangle('Position',[TopLeft([2,1]),BottomRight([2,1])-TopLeft([2,1])],'EdgeColor','r')
     plot(coordA(1),coordA(2),'.g','MarkerSize',30)
