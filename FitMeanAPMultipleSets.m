@@ -53,7 +53,6 @@ MeanVectorAPTot = [];
 ElapsedTimeTot = [];
 NParticlesAPTot = [];
 SDVectorAPTot = [];
-OnRatioAPTot = [];
 FramesTot = [];
 APDivisionTot = 0*all_data(1).APDivision;
 t12 = [];
@@ -65,7 +64,6 @@ for k=1:length(all_data)
     ElapsedTimeTot = horzcat(ElapsedTimeTot, all_data(k).ElapsedTime);
     NParticlesAPTot = vertcat(NParticlesAPTot,all_data(k).NParticlesAP);
     SDVectorAPTot = vertcat(SDVectorAPTot,all_data(k).SDVectorAP);
-    OnRatioAPTot = vertcat(OnRatioAPTot,all_data(k).OnRatioAP);
     t12 = [t12, all_data(k).ElapsedTime(all_data(k).nc12)];
     t13 = [t13, all_data(k).ElapsedTime(all_data(k).nc13)];
     t14 = [t14, all_data(k).ElapsedTime(all_data(k).nc14)];
@@ -293,7 +291,6 @@ while (cc~=13)
             SDFluoData=SDVectorAPTot(FrameWindow,i);
             NData=NParticlesAPTot(FrameWindow,i);
             TimeData=ElapsedTimeTot(FrameWindow);
-            OnRatioData=OnRatioAPTot(FrameWindow,i);
 
             %Now filter them according the number of particles
             FrameFilter=NData>=MinParticles;
@@ -316,23 +313,18 @@ while (cc~=13)
             %Filter the frames according to FitFrameRange
             FitFrameFilter=ismember(FrameWindow,FitFrameRange);
             
-            OnRatioDataForFit=OnRatioData(FitFrameFilter);
-            MaxOnRatioForFit=max(OnRatioData);
-            OnRatioDataForFit=OnRatioDataForFit/MaxOnRatioForFit;
 
-            FluoDataForFit=FluoData(FitFrameFilter).*OnRatioDataForFit;
-            SDFluoDataForFit=SDFluoData(FitFrameFilter).*OnRatioDataForFit;
+
+            FluoDataForFit=FluoData(FitFrameFilter);
+            SDFluoDataForFit=SDFluoData(FitFrameFilter);
             NDataForFit=NData(FitFrameFilter);
             TimeDataForFit=TimeData(FitFrameFilter);
             
 
-            %These is the maximum range of data for the fit
-            OnRatioData=OnRatioData(FrameFilter);
-            MaxOnRatio=max(OnRatioData);
-            OnRatioData=OnRatioData/MaxOnRatio;
 
-            FluoData=FluoData(FrameFilter).*OnRatioData;
-            SDFluoData=SDFluoData(FrameFilter).*OnRatioData;
+
+            FluoData=FluoData(FrameFilter);
+            SDFluoData=SDFluoData(FrameFilter);
             NData=NData(FrameFilter);
             TimeData=TimeData(FrameFilter);
 
@@ -370,9 +362,9 @@ while (cc~=13)
                         xFit(1),xFit(2),xFit(3),Delay);
                     %Plot all the data
                     PlotHandle=errorbar(ElapsedTimeTot(FrameWindow)-ElapsedTimeTot(FrameWindow(1)),...
-                        MeanVectorAP(FrameWindow,i).*OnRatioAP(FrameWindow,i)/MaxOnRatio,...
-                        SDVectorAP(FrameWindow,i)./...
-                        sqrt(NParticlesAP(FrameWindow,i)).*OnRatioAP(FrameWindow,i)/MaxOnRatio,'.-k');
+                        MeanVectorAPTot(FrameWindow,i),...
+                        SDVectorAPTot(FrameWindow,i)./...
+                        sqrt(NParticlesAPTot(FrameWindow,i)),'.-k');
                     hold on
                     %Plot the data that could be used for the fit
                     PlotHandle(end+1)=plot(ElapsedTimeTot(FrameWindow(FrameFilter))-ElapsedTimeTot(FrameWindow(1)),...
@@ -389,9 +381,9 @@ while (cc~=13)
                     xlabel('Time into nc (min)')
                     
                     try
-                        ylim([0,max(MeanVectorAPTot(FrameWindow,i).*OnRatioAPTot(FrameWindow,i)/MaxOnRatio+...
+                        ylim([0,max(MeanVectorAPTot(FrameWindow,i)+...
                             SDVectorAP(FrameWindow,i)./...
-                            sqrt(NParticlesAPTot(FrameWindow,i)).*OnRatioAPTot(FrameWindow,i)/MaxOnRatio)])
+                            sqrt(NParticlesAPTot(FrameWindow,i)))])
                     catch
                         display('Error in displaying the plot')
                     end
@@ -438,9 +430,9 @@ while (cc~=13)
                         xFit(1),1000,xFit(2),Delay);
                     %Plot all the data
                     PlotHandle=errorbar(ElapsedTimeTot(FrameWindow)-ElapsedTimeTot(FrameWindow(1)),...
-                        MeanVectorAPTot(FrameWindow,i).*OnRatioAPTot(FrameWindow,i)/MaxOnRatio,...
+                        MeanVectorAPTot(FrameWindow,i),...
                         SDVectorAPTot(FrameWindow,i)./...
-                        sqrt(NParticlesAPTot(FrameWindow,i)).*OnRatioAPTot(FrameWindow,i)/MaxOnRatio,'.-k');
+                        sqrt(NParticlesAPTot(FrameWindow,i)),'.-k');
                     hold on
                     %Plot the data that could be used for the fit
                     PlotHandle(end+1)=plot(ElapsedTimeTot(FrameWindow(FrameFilter))-ElapsedTimeTot(FrameWindow(1)),...
@@ -457,9 +449,9 @@ while (cc~=13)
                     
                     
                     try
-                        ylim([0,max(MeanVectorAPTot(FrameWindow,i).*OnRatioAPTot(FrameWindow,i)/MaxOnRatio+...
+                        ylim([0,max(MeanVectorAPTot(FrameWindow,i)+...
                             SDVectorAPTot(FrameWindow,i)./...
-                            sqrt(NParticlesAPTot(FrameWindow,i)).*OnRatioAPTot(FrameWindow,i)/MaxOnRatio)])
+                            sqrt(NParticlesAPTot(FrameWindow,i)))])
                     catch
                         display('Error in displaying the plot')
                     end
@@ -490,7 +482,11 @@ while (cc~=13)
     
     
     figure(FitFigure)
-    ct=waitforbuttonpress;
+    try
+        ct=waitforbuttonpress;
+    catch 
+        error('Fits not saved.');
+    end
     cc=get(FitFigure,'currentcharacter');
     cm=get(gca,'CurrentPoint');
     
