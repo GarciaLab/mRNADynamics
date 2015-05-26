@@ -92,8 +92,13 @@ path(cd,path);
 cd(CurrentFolder);
 %Folder up from mRNADynamics
 cd('..')
-path(cd,path);     
+path(cd,path);    
+%Data\DynamicsResults
+cd(['Data',filesep,'DynamicsResults'])
+path(cd,path)
 cd(CurrentFolder);
+
+
 
 
 
