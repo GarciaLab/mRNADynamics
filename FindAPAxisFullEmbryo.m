@@ -122,7 +122,10 @@ elseif strcmp(FileMode,'LIFExport')
     full_embryo_angle = 0;
     
     LIFMid=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(MidFileIndex).name]);
-    MidImage=LIFMid{1}{HisChannel,1};
+    %MidImage=LIFMid{1}{HisChannel,1};
+    %By looking at the last image we make sure we're avoiding the
+    %individual tiles if we're dealing with tile scan
+    MidImage=LIFMid{end,1}{HisChannel,1};
     
     if isdir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData']) 
         xml_file_path = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, '*.xml']);
