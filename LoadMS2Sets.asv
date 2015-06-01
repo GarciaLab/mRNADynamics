@@ -61,9 +61,9 @@ for i=1:length(CompiledSets)
     %structures. This is because we might have xls sets that have been
     %compiled using different versions of CompileParticles.m
     try
+        Data=orderfields(Data);
         DataTemp=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
-        DataTemp=orderfields(DataTemp);
-        Data(i)=DataTemp;
+        DataTemp=
     catch
         %If this fails figure out what's the missing field
         DataTemp=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
