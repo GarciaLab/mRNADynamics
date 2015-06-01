@@ -104,27 +104,6 @@ for j = 1:length(CP)
     end
 end
 
-ElapsedTimeTot = [];
-NParticlesAPTot = [];
-SDVectorAPTot = [];
-FramesTot = [];
-APDivisionTot = 0*data(1).APDivision;
-t12 = [];
-t13 = [];
-t14 = [];
-for k=1:length(data)
-    APDivisionTot = APDivisionTot + data(k).APDivision+data(k).APDivision;
-    ElapsedTimeTot = horzcat(ElapsedTimeTot, data(k).ElapsedTime);
-    NParticlesAPTot = vertcat(NParticlesAPTot,data(k).NParticlesAP);
-    SDVectorAPTot = vertcat(SDVectorAPTot,data(k).SDVectorAP);
-    t12 = [t12, data(k).ElapsedTime(data(k).nc12)];
-    t13 = [t13, data(k).ElapsedTime(data(k).nc13)];
-    t14 = [t14, data(k).ElapsedTime(data(k).nc14)];
-end
-tmins = [min(t12), min(t13), min(t14)];
-tminsindices = [find(ElapsedTimeTot == tmins(1)), find(tmins(2) == ElapsedTimeTot), find(tmins(3) == ElapsedTimeTot)];
-                        
- 
 %Rough frame window to consider in the fits
 
 %Some data sets won't have nc12
@@ -232,6 +211,14 @@ FitResults = cell(1,length(data));
 for i=1:length(FitResults)
     FitResults{i}.Rate0=[];
 end
+if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat']);
+    if isempty(FitResults)
+        FitResults(length(APbinID),3).Rate0=[];
+    end
+else
+    FitResults(length(APbinID),3).Rate0=[];
+end
 
 %Set default starting values for nc12, nc 13 and nc14
 
@@ -277,15 +264,15 @@ FitFigure=figure;
 i = 1; %iterates over particles
 j = 1; %iterates over datasets
 currentAPBin=1;
-for m=1:length(APbinID)
-    if abs(APbinID(m) - CP{j}(i).MeanAP) < APResolution
-        currentAPBin = m;
-    end
-end
 cc=1;
 
 while (cc~=13)
     
+    for m=1:length(APbinID)
+        if abs(APbinID(m) - CP{j}(i).MeanAP) < APResolution
+            currentAPBin = m;
+        end
+    end
     figure(FitFigure)
     clf
     
@@ -389,13 +376,13 @@ while (cc~=13)
                         data(j).ElapsedTime(FrameWindow(1)),...
                         xFit(1),xFit(2),xFit(3),Delay);
                     %Plot all the data
-                    PlotHandle=errorbar(data(j).ElapsedTime(FrameWindow)-data(j).ElapsedTime(FrameWindow(1)),...
+                    PlotHandle=plot(data(j).ElapsedTime(FrameWindow)-data(j).ElapsedTime(FrameWindow(1)),...
                         VectorAP(FrameWindow,currentAPBin),'.-k');
                     hold on
-                    %Plot the data that could be used for the fit
+%                     Plot the data that could be used for the fit
                     PlotHandle(end+1)=plot(data(j).ElapsedTime(FrameWindow)-data(j).ElapsedTime(FrameWindow(1)),...
                         FluoData,'or');
-                    %Plot the data that was actually used for the fit
+%                     Plot the data that was actually used for the fit
                     PlotHandle(end+1)=plot(data(j).ElapsedTime(FitFrameRange)-data(j).ElapsedTime(FrameWindow(1)),...
                         FluoData(ismember(FrameWindow,FitFrameRange)),'or','MarkerFaceColor','r');
                     
@@ -485,7 +472,7 @@ while (cc~=13)
         
     end
     
-    title(['Data Set = ',num2str(j),', ',num2str(data(j).APbinID(currentAPBin)),' AP, TimeStart0=',num2str(FitResults{j}(i,CurrentNC-11).TimeStart0),...
+    title(['Data Set = ',num2str(j),', ','Particle = ',num2str(i),'/',num2str(length(CP{j})),', ',num2str(data(j).APbinID(currentAPBin)),' AP, TimeStart0=',num2str(FitResults{j}(i,CurrentNC-11).TimeStart0),...
         ', TimeEnd0=',num2str(FitResults{j}(i,CurrentNC-11).TimeEnd0),', Rate=',num2str(FitResults{j}(i,CurrentNC-11).Rate0),...
         ', nc',num2str(CurrentNC)])
     
@@ -517,13 +504,13 @@ while (cc~=13)
         i=i-1;
     
     %Move between datasets
-    if (ct~=0)&(cc==']')&(j<length(data))
+    elseif (ct~=0)&(cc=='>')&(j<length(data))
         j=j+1;
         i=1;
-    elseif (ct~=0)&(cc=='[')&(j>1)
+    elseif (ct~=0)&(cc=='<')&(j>1)
         j=j-1;
         i=1;
-    end
+    
     
     
     %Approve, disapprove fit
@@ -549,8 +536,8 @@ while (cc~=13)
     elseif (ct~=0)&(cc=='k')&(length(FitResults{j}(i,CurrentNC-11).FitFrameRange)>2)
         FitResults{j}(i,CurrentNC-11).FitFrameRange=FitResults{j}(i,CurrentNC-11).FitFrameRange(1:end-1);
     elseif (ct~=0)&(cc=='l')
-        if ~isempty(find(~ismember(FrameWindow(FrameFilter),FitResults{j}(i,CurrentNC-11).FitFrameRange)))
-            FilteredFramesTemp=FrameWindow(FrameFilter);
+        if ~isempty(find(~ismember(FrameWindow,FitResults{j}(i,CurrentNC-11).FitFrameRange)))
+            FilteredFramesTemp=FrameWindow;
             FitResults{j}(i,CurrentNC-11).FitFrameRange(end+1)=...
                 FilteredFramesTemp(min(find(~ismember(FilteredFramesTemp,FitResults{j}(i,CurrentNC-11).FitFrameRange))));
         end
@@ -558,15 +545,15 @@ while (cc~=13)
     elseif (ct~=0)&(cc=='j')&(length(FitResults{j}(i,CurrentNC-11).FitFrameRange)>2)
         FitResults{j}(i,CurrentNC-11).FitFrameRange=FitResults{j}(i,CurrentNC-11).FitFrameRange(2:end);
     elseif (ct~=0)&(cc=='h')
-        if ~isempty(find(~ismember(FrameWindow(FrameFilter),FitResults{j}(i,CurrentNC-11).FitFrameRange)))
-            FilteredFramesTemp=FrameWindow(FrameFilter);
+        if ~isempty(find(~ismember(FrameWindow,FitResults{j}(i,CurrentNC-11).FitFrameRange)))
+            FilteredFramesTemp=FrameWindow;
             FitResults{j}(i,CurrentNC-11).FitFrameRange=...
                 [FilteredFramesTemp(max(find(~ismember(FilteredFramesTemp,FitResults{j}(i,CurrentNC-11).FitFrameRange)))),...
                 FitResults{j}(i,CurrentNC-11).FitFrameRange];
         end
     %Reset frame fit range
      elseif (ct~=0)&(cc=='r')   
-        FitResults{j}(i,CurrentNC-11).FitFrameRange=FrameWindow(FrameFilter);
+        FitResults{j}(i,CurrentNC-11).FitFrameRange=FrameWindow;
 
         
         

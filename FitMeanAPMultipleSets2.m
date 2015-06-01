@@ -207,9 +207,21 @@ end
 %is a structure with the fits corresponding to each AP position and nc13
 %or nc14
 
-FitResults = cell(1,length(data));
 for i=1:length(FitResults)
     FitResults{i}.Rate0=[];
+end
+if exist([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat']);
+    if isempty(FitResults)
+        for i=1:length(FitResults)
+            FitResults{i}.Rate0=[];
+        end
+    end
+else
+    FitResults = cell(1,length(data));
+    for i=1:length(FitResults)
+        FitResults{i}.Rate0=[];
+    end
 end
 
 %Set default starting values for nc12, nc 13 and nc14
@@ -368,13 +380,13 @@ while (cc~=13)
                         data(j).ElapsedTime(FrameWindow(1)),...
                         xFit(1),xFit(2),xFit(3),Delay);
                     %Plot all the data
-                    PlotHandle=errorbar(data(j).ElapsedTime(FrameWindow)-data(j).ElapsedTime(FrameWindow(1)),...
+                    PlotHandle=plot(data(j).ElapsedTime(FrameWindow)-data(j).ElapsedTime(FrameWindow(1)),...
                         VectorAP(FrameWindow,currentAPBin),'.-k');
                     hold on
-                    %Plot the data that could be used for the fit
+%                     Plot the data that could be used for the fit
                     PlotHandle(end+1)=plot(data(j).ElapsedTime(FrameWindow)-data(j).ElapsedTime(FrameWindow(1)),...
                         FluoData,'or');
-                    %Plot the data that was actually used for the fit
+%                     Plot the data that was actually used for the fit
                     PlotHandle(end+1)=plot(data(j).ElapsedTime(FitFrameRange)-data(j).ElapsedTime(FrameWindow(1)),...
                         FluoData(ismember(FrameWindow,FitFrameRange)),'or','MarkerFaceColor','r');
                     
