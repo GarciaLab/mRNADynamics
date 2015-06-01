@@ -207,17 +207,22 @@ end
 %is a structure with the fits corresponding to each AP position and nc13
 %or nc14
 
-FitResults = cell(1,length(data));
+FitResults
 for i=1:length(FitResults)
     FitResults{i}.Rate0=[];
 end
-if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'])
-    load([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat']);
+if exist([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat']);
     if isempty(FitResults)
-        FitResults(length(APbinID),3).Rate0=[];
+        for i=1:length(FitResults)
+            FitResults{i}.Rate0=[];
+        end
     end
 else
-    FitResults(length(APbinID),3).Rate0=[];
+    FitResults = cell(1,length(data));
+    for i=1:length(FitResults)
+        FitResults{i}.Rate0=[];
+    end
 end
 
 %Set default starting values for nc12, nc 13 and nc14

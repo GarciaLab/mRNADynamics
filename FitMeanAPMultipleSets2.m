@@ -207,6 +207,7 @@ end
 %is a structure with the fits corresponding to each AP position and nc13
 %or nc14
 
+FitResults = cell(1,length(data));
 for i=1:length(FitResults)
     FitResults{i}.Rate0=[];
 end
@@ -218,7 +219,6 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat'])
         end
     end
 else
-    FitResults = cell(1,length(data));
     for i=1:length(FitResults)
         FitResults{i}.Rate0=[];
     end
