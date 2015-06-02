@@ -14,6 +14,7 @@ function FitMeanAPMultipleSets2(DataType, minParticles, minTimePoints)
 
 %Moving around:
 %, .: Move in AP
+%<,>: Move between data sets
 %n,m: Move in nc
 %k,l: Change fit range from the right
 %h,j: Change fit range from the left
