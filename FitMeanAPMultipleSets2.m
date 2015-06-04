@@ -14,6 +14,7 @@ function FitMeanAPMultipleSets2(DataType, minParticles, minTimePoints)
 
 %Moving around:
 %, .: Move in AP
+%<,>: Move between data sets
 %n,m: Move in nc
 %k,l: Change fit range from the right
 %h,j: Change fit range from the left
@@ -134,30 +135,30 @@ if (~isempty(findstr(Prefix,'X1')))|(~isempty(findstr(Prefix,'P2P')))|...
     display('Treating data set as 5''')
     
     %Initial parameters for fits
-    Rate012=4E3;     %Rate per minute
+    Rate012=400;     %Rate per minute
     TimeStart012=3;
     TimeEnd012=7;
 
-    Rate013=4E3;     %Rate per minute
+    Rate013=400;     %Rate per minute
     TimeStart013=5;
     TimeEnd013=10;
 
-    Rate014=4E3;     %Rate per minute
+    Rate014=400;     %Rate per minute
     TimeStart014=5;
     TimeEnd014=1000;  
 elseif ~isempty(findstr(Prefix,'X2'))
     Delay=GeneLength3/ElongationRate;
     display('Treating data set as 3''')
     
-    Rate012=4E3;     %Rate per minute
+    Rate012=400;     %Rate per minute
     TimeStart012=3;
     TimeEnd012=7;
 
-    Rate013=4E3;     %Rate per minute
+    Rate013=400;     %Rate per minute
     TimeStart013=7.5;
     TimeEnd013=10;
 
-    Rate014=4E3;     %Rate per minute
+    Rate014=400;     %Rate per minute
     TimeStart014=7.5;
     TimeEnd014=1000; 
 else
@@ -167,30 +168,30 @@ else
         %the first MS2 site.
         display('Treating data set as 5''')
         
-        Rate012=4E3;     %Rate per minute
+        Rate012=400;     %Rate per minute
         TimeStart012=3;
         TimeEnd012=7;
         
-        Rate013=4E3;     %Rate per minute
+        Rate013=400;     %Rate per minute
         TimeStart013=5;
         TimeEnd013=10;
         
-        Rate014=4E3;     %Rate per minute
+        Rate014=400;     %Rate per minute
         TimeStart014=5;
         TimeEnd014=1000;
     elseif exist('StemLoopEnd', 'var') && strcmp(StemLoopEnd, '3''')
         Delay=GeneLength3/ElongationRate;
         display('Treating data set as 3''')
         
-        Rate012=4E3;     %Rate per minute
+        Rate012=400;     %Rate per minute
         TimeStart012=3;
         TimeEnd012=7;
         
-        Rate013=4E3;     %Rate per minute
+        Rate013=400;     %Rate per minute
         TimeStart013=7.5;
         TimeEnd013=10;
         
-        Rate014=4E3;     %Rate per minute
+        Rate014=400;     %Rate per minute
         TimeStart014=7.5;
         TimeEnd014=1000;
     else
@@ -207,6 +208,10 @@ end
 %is a structure with the fits corresponding to each AP position and nc13
 %or nc14
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/HernanDev
 if exist([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat'])
     load([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat']);
     if isempty(FitResults)
@@ -219,26 +224,24 @@ else
     for i=1:length(FitResults)
         FitResults{i}.Rate0=[];
     end
-end
-
-%Set default starting values for nc12, nc 13 and nc14
-
-for k = 1:3 %iterate over nuclear cycles
-    for j = 1:length(data) %iterate over data sets
-        for i=1:length(CP{j}) %iterate over particles
-            %if isempty(FitResults{j}(i,1).Rate0)
-                FitResults{j}(i,k).Rate0=Rate012;    
-                FitResults{j}(i,k).TimeStart0=TimeStart012;
-                FitResults{j}(i,k).TimeEnd0=TimeEnd012;
-                FitResults{j}(i,k).FrameFilter=[];
-                FitResults{j}(i,k).FitFrameRange=[];
-                FitResults{j}(i,k).Approved=0;
-                for m=1:length(APbinID)
-                    if abs(APbinID(m) - CP{j}(i).MeanAP) < APResolution
-                        FitResults{j}(i,k).APBin = m;
+    %Set default starting values for nc12, nc 13 and nc14
+    for k = 1:3 %iterate over nuclear cycles
+        for j = 1:length(data) %iterate over data sets
+            for i=1:length(CP{j}) %iterate over particles
+                %if isempty(FitResults{j}(i,1).Rate0)
+                    FitResults{j}(i,k).Rate0=Rate012;    
+                    FitResults{j}(i,k).TimeStart0=TimeStart012;
+                    FitResults{j}(i,k).TimeEnd0=TimeEnd012;
+                    FitResults{j}(i,k).FrameFilter=[];
+                    FitResults{j}(i,k).FitFrameRange=[];
+                    FitResults{j}(i,k).Approved=0;
+                    for m=1:length(APbinID)
+                        if abs(APbinID(m) - CP{j}(i).MeanAP) < APResolution
+                            FitResults{j}(i,k).APBin = m;
+                        end
                     end
-                end
-            %end
+                %end
+            end
         end
     end
 end
