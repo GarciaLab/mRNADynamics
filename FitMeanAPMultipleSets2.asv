@@ -208,10 +208,7 @@ end
 %is a structure with the fits corresponding to each AP position and nc13
 %or nc14
 
-FitResults = cell(1,length(data));
-for i=1:length(FitResults)
-    FitResults{i}.Rate0=[];
-end
+
 if exist([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat'])
     load([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat']);
     if isempty(FitResults)
@@ -220,29 +217,28 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat'])
         end
     end
 else
+    FitResults = cell(1,length(data));
     for i=1:length(FitResults)
         FitResults{i}.Rate0=[];
     end
-end
-
-%Set default starting values for nc12, nc 13 and nc14
-
-for k = 1:3 %iterate over nuclear cycles
-    for j = 1:length(data) %iterate over data sets
-        for i=1:length(CP{j}) %iterate over particles
-            %if isempty(FitResults{j}(i,1).Rate0)
-                FitResults{j}(i,k).Rate0=Rate012;    
-                FitResults{j}(i,k).TimeStart0=TimeStart012;
-                FitResults{j}(i,k).TimeEnd0=TimeEnd012;
-                FitResults{j}(i,k).FrameFilter=[];
-                FitResults{j}(i,k).FitFrameRange=[];
-                FitResults{j}(i,k).Approved=0;
-                for m=1:length(APbinID)
-                    if abs(APbinID(m) - CP{j}(i).MeanAP) < APResolution
-                        FitResults{j}(i,k).APBin = m;
+    %Set default starting values for nc12, nc 13 and nc14
+    for k = 1:3 %iterate over nuclear cycles
+        for j = 1:length(data) %iterate over data sets
+            for i=1:length(CP{j}) %iterate over particles
+                %if isempty(FitResults{j}(i,1).Rate0)
+                    FitResults{j}(i,k).Rate0=Rate012;    
+                    FitResults{j}(i,k).TimeStart0=TimeStart012;
+                    FitResults{j}(i,k).TimeEnd0=TimeEnd012;
+                    FitResults{j}(i,k).FrameFilter=[];
+                    FitResults{j}(i,k).FitFrameRange=[];
+                    FitResults{j}(i,k).Approved=0;
+                    for m=1:length(APbinID)
+                        if abs(APbinID(m) - CP{j}(i).MeanAP) < APResolution
+                            FitResults{j}(i,k).APBin = m;
+                        end
                     end
-                end
-            %end
+                %end
+            end
         end
     end
 end
@@ -593,6 +589,9 @@ while (cc~=13)
         
     %Save
     elseif (ct~=0)&(cc=='v')
+        save([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat'],...
+        'FitResults')
+        FitResults=F
         save([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat'],...
         'FitResults')
     display('FitResults.mat saved')
