@@ -208,10 +208,6 @@ end
 %is a structure with the fits corresponding to each AP position and nc13
 %or nc14
 
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/HernanDev
 if exist([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat'])
     load([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat']);
     if isempty(FitResults)
@@ -228,19 +224,17 @@ else
     for k = 1:3 %iterate over nuclear cycles
         for j = 1:length(data) %iterate over data sets
             for i=1:length(CP{j}) %iterate over particles
-                %if isempty(FitResults{j}(i,1).Rate0)
-                    FitResults{j}(i,k).Rate0=Rate012;    
-                    FitResults{j}(i,k).TimeStart0=TimeStart012;
-                    FitResults{j}(i,k).TimeEnd0=TimeEnd012;
-                    FitResults{j}(i,k).FrameFilter=[];
-                    FitResults{j}(i,k).FitFrameRange=[];
-                    FitResults{j}(i,k).Approved=0;
-                    for m=1:length(APbinID)
-                        if abs(APbinID(m) - CP{j}(i).MeanAP) < APResolution
-                            FitResults{j}(i,k).APBin = m;
-                        end
+                FitResults{j}(i,k).Rate0=Rate012;    
+                FitResults{j}(i,k).TimeStart0=TimeStart012;
+                FitResults{j}(i,k).TimeEnd0=TimeEnd012;
+                FitResults{j}(i,k).FrameFilter=[];
+                FitResults{j}(i,k).FitFrameRange=[];
+                FitResults{j}(i,k).Approved=0;
+                for m=1:length(APbinID)
+                    if abs(APbinID(m) - CP{j}(i).MeanAP) < APResolution
+                        FitResults{j}(i,k).APBin = m;
                     end
-                %end
+                end
             end
         end
     end
