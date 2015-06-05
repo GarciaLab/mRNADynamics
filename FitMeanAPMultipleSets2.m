@@ -208,12 +208,19 @@ end
 %is a structure with the fits corresponding to each AP position and nc13
 %or nc14
 
-
 if exist([DropboxFolder,filesep,Prefix,filesep,'FitResultsMultiple.mat'])
     load([DropboxFolder,filesep,Prefix,filesep,'FitResultsMultiple.mat']);
     if isempty(FitResultsMultiple)
         for i=1:length(FitResultsMultiple)
             FitResultsMultiple{i}.Rate0=[];
+        end
+    end
+end
+if exist([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat']);
+    if isempty(FitResults)
+        for i=1:length(FitResults)
+            FitResults{i}.Rate0=[];
         end
     end
 else
@@ -236,8 +243,17 @@ else
                         if abs(APbinID(m) - CP{j}(i).MeanAP) < APResolution
                             FitResultsMultiple{j}(i,k).APBin = m;
                         end
+                FitResults{j}(i,k).Rate0=Rate012;    
+                FitResults{j}(i,k).TimeStart0=TimeStart012;
+                FitResults{j}(i,k).TimeEnd0=TimeEnd012;
+                FitResults{j}(i,k).FrameFilter=[];
+                FitResults{j}(i,k).FitFrameRange=[];
+                FitResults{j}(i,k).Approved=0;
+                for m=1:length(APbinID)
+                    if abs(APbinID(m) - CP{j}(i).MeanAP) < APResolution
+                        FitResults{j}(i,k).APBin = m;
                     end
-                %end
+                end
             end
         end
     end

@@ -208,7 +208,14 @@ end
 %is a structure with the fits corresponding to each AP position and nc13
 %or nc14
 
-
+if exist([DropboxFolder,filesep,Prefix,filesep,'FitResultsMultiple.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'FitResultsMultiple.mat']);
+    if isempty(FitResultsMultiple)
+        for i=1:length(FitResultsMultiple)
+            FitResultsMultiple{i}.Rate0=[];
+        end
+    end
+end
 if exist([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat'])
     load([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat']);
     if isempty(FitResults)
@@ -217,27 +224,36 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat'])
         end
     end
 else
-    FitResults = cell(1,length(data));
-    for i=1:length(FitResults)
-        FitResults{i}.Rate0=[];
+    FitResultsMultiple = cell(1,length(data));
+    for i=1:length(FitResultsMultiple)
+        FitResultsMultiple{i}.Rate0=[];
     end
     %Set default starting values for nc12, nc 13 and nc14
     for k = 1:3 %iterate over nuclear cycles
         for j = 1:length(data) %iterate over data sets
             for i=1:length(CP{j}) %iterate over particles
-                %if isempty(FitResults{j}(i,1).Rate0)
-                    FitResults{j}(i,k).Rate0=Rate012;    
-                    FitResults{j}(i,k).TimeStart0=TimeStart012;
-                    FitResults{j}(i,k).TimeEnd0=TimeEnd012;
-                    FitResults{j}(i,k).FrameFilter=[];
-                    FitResults{j}(i,k).FitFrameRange=[];
-                    FitResults{j}(i,k).Approved=0;
+                %if isempty(FitResultsMultiple{j}(i,1).Rate0)
+                    FitResultsMultiple{j}(i,k).Rate0=Rate012;    
+                    FitResultsMultiple{j}(i,k).TimeStart0=TimeStart012;
+                    FitResultsMultiple{j}(i,k).TimeEnd0=TimeEnd012;
+                    FitResultsMultiple{j}(i,k).FrameFilter=[];
+                    FitResultsMultiple{j}(i,k).FitFrameRange=[];
+                    FitResultsMultiple{j}(i,k).Approved=0;
                     for m=1:length(APbinID)
                         if abs(APbinID(m) - CP{j}(i).MeanAP) < APResolution
-                            FitResults{j}(i,k).APBin = m;
+                            FitResultsMultiple{j}(i,k).APBin = m;
                         end
+                FitResults{j}(i,k).Rate0=Rate012;    
+                FitResults{j}(i,k).TimeStart0=TimeStart012;
+                FitResults{j}(i,k).TimeEnd0=TimeEnd012;
+                FitResults{j}(i,k).FrameFilter=[];
+                FitResults{j}(i,k).FitFrameRange=[];
+                FitResults{j}(i,k).Approved=0;
+                for m=1:length(APbinID)
+                    if abs(APbinID(m) - CP{j}(i).MeanAP) < APResolution
+                        FitResults{j}(i,k).APBin = m;
                     end
-                %end
+                end
             end
         end
     end
@@ -277,9 +293,9 @@ while (cc~=13)
     figure(FitFigure)
     clf
     
-    if FitResults{j}(i,CurrentNC-11).Approved==-1
+    if FitResultsMultiple{j}(i,CurrentNC-11).Approved==-1
         set(gcf,'Color','r')
-    elseif FitResults{j}(i,CurrentNC-11).Approved==1
+    elseif FitResultsMultiple{j}(i,CurrentNC-11).Approved==1
         set(gcf,'Color','g')
     else
         set(gcf,'Color','default')
@@ -316,14 +332,14 @@ while (cc~=13)
 
             %As an initial guess, use FrameFilter to determine the range of the
             %fit
-            if isempty(FitResults{j}(i,CurrentNC-11).FitFrameRange)
+            if isempty(FitResultsMultiple{j}(i,CurrentNC-11).FitFrameRange)
                 FitFrameRange=FrameWindow;
                 if CurrentNC==14
                     FitFrameRange=FitFrameRange((data(j).ElapsedTime(FitFrameRange)-data(j).ElapsedTime(data(j).APDivision(CurrentNC,currentAPBin)))<12);
                 end
-                FitResults{j}(i,CurrentNC-11).FitFrameRange=FitFrameRange;
+                FitResultsMultiple{j}(i,CurrentNC-11).FitFrameRange=FitFrameRange;
             else
-                FitFrameRange=FitResults{j}(i,CurrentNC-11).FitFrameRange;
+                FitFrameRange=FitResultsMultiple{j}(i,CurrentNC-11).FitFrameRange;
             end
 
             %Filter the frames according to FitFrameRange
@@ -342,7 +358,7 @@ while (cc~=13)
 
             if CurrentNC~=14
                 %Do the fit
-                x0=[FitResults{j}(i,CurrentNC-11).TimeStart0,FitResults{j}(i,CurrentNC-11).TimeEnd0,FitResults{j}(i,CurrentNC-11).Rate0];
+                x0=[FitResultsMultiple{j}(i,CurrentNC-11).TimeStart0,FitResultsMultiple{j}(i,CurrentNC-11).TimeEnd0,FitResultsMultiple{j}(i,CurrentNC-11).Rate0];
 
 
                 
@@ -357,16 +373,16 @@ while (cc~=13)
                         FluoDataForFit(NanFilter),Delay,...
                         data(j).ElapsedTime(FrameWindow(end))-data(j).ElapsedTime(FrameWindow(1)),x),x0);
 
-                    FitResults{j}(i,CurrentNC-11).TimeStart=xFit(1);
-                    FitResults{j}(i,CurrentNC-11).TimeEnd=xFit(2);
-                    FitResults{j}(i,CurrentNC-11).RateFit=xFit(3);
+                    FitResultsMultiple{j}(i,CurrentNC-11).TimeStart=xFit(1);
+                    FitResultsMultiple{j}(i,CurrentNC-11).TimeEnd=xFit(2);
+                    FitResultsMultiple{j}(i,CurrentNC-11).RateFit=xFit(3);
 
                     %Estimate an error bar out of the confidence intervals
-                    FitResults{j}(i,CurrentNC-11).CI=nlparci(xFit,residual,'jacobian',jacobian);
+                    FitResultsMultiple{j}(i,CurrentNC-11).CI=nlparci(xFit,residual,'jacobian',jacobian);
 
-                    FitResults{j}(i,CurrentNC-11).SDTimeStart=(FitResults{j}(i,CurrentNC-11).CI(1,2)-FitResults{j}(i,CurrentNC-11).CI(1,1))/2;
-                    FitResults{j}(i,CurrentNC-11).SDTimeEnd=(FitResults{j}(i,CurrentNC-11).CI(2,2)-FitResults{j}(i,CurrentNC-11).CI(2,1))/2;
-                    FitResults{j}(i,CurrentNC-11).SDRateFit=(FitResults{j}(i,CurrentNC-11).CI(3,2)-FitResults{j}(i,CurrentNC-11).CI(3,1))/2;
+                    FitResultsMultiple{j}(i,CurrentNC-11).SDTimeStart=(FitResultsMultiple{j}(i,CurrentNC-11).CI(1,2)-FitResultsMultiple{j}(i,CurrentNC-11).CI(1,1))/2;
+                    FitResultsMultiple{j}(i,CurrentNC-11).SDTimeEnd=(FitResultsMultiple{j}(i,CurrentNC-11).CI(2,2)-FitResultsMultiple{j}(i,CurrentNC-11).CI(2,1))/2;
+                    FitResultsMultiple{j}(i,CurrentNC-11).SDRateFit=(FitResultsMultiple{j}(i,CurrentNC-11).CI(3,2)-FitResultsMultiple{j}(i,CurrentNC-11).CI(3,1))/2;
 
 
 
@@ -400,15 +416,15 @@ while (cc~=13)
                         display('Error in displaying the plot')
                     end
 
-                    legend(['tON=',num2str(FitResults{j}(i,CurrentNC-11).TimeStart),' \pm ',num2str(FitResults{j}(i,CurrentNC-11).SDTimeStart)],...
-                        ['tOFF=',num2str(FitResults{j}(i,CurrentNC-11).TimeEnd),' \pm ',num2str(FitResults{j}(i,CurrentNC-11).SDTimeEnd)],...
-                        ['Rate=',num2str(FitResults{j}(i,CurrentNC-11).RateFit),' \pm ',num2str(FitResults{j}(i,CurrentNC-11).SDRateFit)],...
+                    legend(['tON=',num2str(FitResultsMultiple{j}(i,CurrentNC-11).TimeStart),' \pm ',num2str(FitResultsMultiple{j}(i,CurrentNC-11).SDTimeStart)],...
+                        ['tOFF=',num2str(FitResultsMultiple{j}(i,CurrentNC-11).TimeEnd),' \pm ',num2str(FitResultsMultiple{j}(i,CurrentNC-11).SDTimeEnd)],...
+                        ['Rate=',num2str(FitResultsMultiple{j}(i,CurrentNC-11).RateFit),' \pm ',num2str(FitResultsMultiple{j}(i,CurrentNC-11).SDRateFit)],...
                         'Location','SouthOutside')
                 end
             elseif CurrentNC==14
                 
                 %Do the fit
-                x0=[FitResults{j}(i,CurrentNC-11).TimeStart0,FitResults{j}(i,CurrentNC-11).Rate0];
+                x0=[FitResultsMultiple{j}(i,CurrentNC-11).TimeStart0,FitResultsMultiple{j}(i,CurrentNC-11).Rate0];
 
 
                 
@@ -423,14 +439,14 @@ while (cc~=13)
                         FluoDataForFit(NanFilter),Delay,...
                         data(j).ElapsedTime(FrameWindow(end))-data(j).ElapsedTime(FrameWindow(1)),x),x0);
 
-                    FitResults{j}(i,CurrentNC-11).TimeStart=xFit(1);
-                    FitResults{j}(i,CurrentNC-11).RateFit=xFit(2);
+                    FitResultsMultiple{j}(i,CurrentNC-11).TimeStart=xFit(1);
+                    FitResultsMultiple{j}(i,CurrentNC-11).RateFit=xFit(2);
 
                     %Estimate an error bar out of the confidence intervals
-                    FitResults{j}(i,CurrentNC-11).CI=nlparci(xFit,residual,'jacobian',jacobian);
+                    FitResultsMultiple{j}(i,CurrentNC-11).CI=nlparci(xFit,residual,'jacobian',jacobian);
 
-                    FitResults{j}(i,CurrentNC-11).SDTimeStart=(FitResults{j}(i,CurrentNC-11).CI(1,2)-FitResults{j}(i,CurrentNC-11).CI(1,1))/2;
-                    FitResults{j}(i,CurrentNC-11).SDRateFit=(FitResults{j}(i,CurrentNC-11).CI(2,2)-FitResults{j}(i,CurrentNC-11).CI(2,1))/2;
+                    FitResultsMultiple{j}(i,CurrentNC-11).SDTimeStart=(FitResultsMultiple{j}(i,CurrentNC-11).CI(1,2)-FitResultsMultiple{j}(i,CurrentNC-11).CI(1,1))/2;
+                    FitResultsMultiple{j}(i,CurrentNC-11).SDRateFit=(FitResultsMultiple{j}(i,CurrentNC-11).CI(2,2)-FitResultsMultiple{j}(i,CurrentNC-11).CI(2,1))/2;
 
 
 
@@ -464,8 +480,8 @@ while (cc~=13)
                         display('Error in displaying the plot')
                     end
 
-                    legend(['tON=',num2str(FitResults{j}(i,CurrentNC-11).TimeStart),' \pm ',num2str(FitResults{j}(i,CurrentNC-11).SDTimeStart)],...
-                        ['Rate=',num2str(FitResults{j}(i,CurrentNC-11).RateFit),' \pm ',num2str(FitResults{j}(i,CurrentNC-11).SDRateFit)],...
+                    legend(['tON=',num2str(FitResultsMultiple{j}(i,CurrentNC-11).TimeStart),' \pm ',num2str(FitResultsMultiple{j}(i,CurrentNC-11).SDTimeStart)],...
+                        ['Rate=',num2str(FitResultsMultiple{j}(i,CurrentNC-11).RateFit),' \pm ',num2str(FitResultsMultiple{j}(i,CurrentNC-11).SDRateFit)],...
                         'Location','SouthOutside')
                 end
             end
@@ -473,8 +489,8 @@ while (cc~=13)
         
     end
     
-    title(['Data Set = ',num2str(j),', ','Particle = ',num2str(i),'/',num2str(length(CP{j})),', ',num2str(data(j).APbinID(currentAPBin)),' AP, TimeStart0=',num2str(FitResults{j}(i,CurrentNC-11).TimeStart0),...
-        ', TimeEnd0=',num2str(FitResults{j}(i,CurrentNC-11).TimeEnd0),', Rate=',num2str(FitResults{j}(i,CurrentNC-11).Rate0),...
+    title(['Data Set = ',num2str(j),', ','Particle = ',num2str(i),'/',num2str(length(CP{j})),', ',num2str(data(j).APbinID(currentAPBin)),' AP, TimeStart0=',num2str(FitResultsMultiple{j}(i,CurrentNC-11).TimeStart0),...
+        ', TimeEnd0=',num2str(FitResultsMultiple{j}(i,CurrentNC-11).TimeEnd0),', Rate=',num2str(FitResultsMultiple{j}(i,CurrentNC-11).Rate0),...
         ', nc',num2str(CurrentNC)])
     
     
@@ -516,69 +532,69 @@ while (cc~=13)
     
     %Approve, disapprove fit
     elseif (ct~=0)&(cc=='q')
-        if FitResults{j}(i,CurrentNC-11).Approved==0
-            FitResults{j}(i,CurrentNC-11).Approved=1;
-        elseif FitResults{j}(i,CurrentNC-11).Approved==1
-            FitResults{j}(i,CurrentNC-11).Approved=0;
+        if FitResultsMultiple{j}(i,CurrentNC-11).Approved==0
+            FitResultsMultiple{j}(i,CurrentNC-11).Approved=1;
+        elseif FitResultsMultiple{j}(i,CurrentNC-11).Approved==1
+            FitResultsMultiple{j}(i,CurrentNC-11).Approved=0;
         end
 
     
     %Disapprove, disapprove fit
     elseif (ct~=0)&(cc=='w')
-        if FitResults{j}(i,CurrentNC-11).Approved==0
-            FitResults{j}(i,CurrentNC-11).Approved=-1;
-        elseif FitResults{j}(i,CurrentNC-11).Approved==-1
-            FitResults{j}(i,CurrentNC-11).Approved=0;
+        if FitResultsMultiple{j}(i,CurrentNC-11).Approved==0
+            FitResultsMultiple{j}(i,CurrentNC-11).Approved=-1;
+        elseif FitResultsMultiple{j}(i,CurrentNC-11).Approved==-1
+            FitResultsMultiple{j}(i,CurrentNC-11).Approved=0;
         end
   
     
         
     %Move right range of fit
-    elseif (ct~=0)&(cc=='k')&(length(FitResults{j}(i,CurrentNC-11).FitFrameRange)>2)
-        FitResults{j}(i,CurrentNC-11).FitFrameRange=FitResults{j}(i,CurrentNC-11).FitFrameRange(1:end-1);
+    elseif (ct~=0)&(cc=='k')&(length(FitResultsMultiple{j}(i,CurrentNC-11).FitFrameRange)>2)
+        FitResultsMultiple{j}(i,CurrentNC-11).FitFrameRange=FitResultsMultiple{j}(i,CurrentNC-11).FitFrameRange(1:end-1);
     elseif (ct~=0)&(cc=='l')
-        if ~isempty(find(~ismember(FrameWindow,FitResults{j}(i,CurrentNC-11).FitFrameRange)))
+        if ~isempty(find(~ismember(FrameWindow,FitResultsMultiple{j}(i,CurrentNC-11).FitFrameRange)))
             FilteredFramesTemp=FrameWindow;
-            FitResults{j}(i,CurrentNC-11).FitFrameRange(end+1)=...
-                FilteredFramesTemp(min(find(~ismember(FilteredFramesTemp,FitResults{j}(i,CurrentNC-11).FitFrameRange))));
+            FitResultsMultiple{j}(i,CurrentNC-11).FitFrameRange(end+1)=...
+                FilteredFramesTemp(min(find(~ismember(FilteredFramesTemp,FitResultsMultiple{j}(i,CurrentNC-11).FitFrameRange))));
         end
     %Move left range of fit
-    elseif (ct~=0)&(cc=='j')&(length(FitResults{j}(i,CurrentNC-11).FitFrameRange)>2)
-        FitResults{j}(i,CurrentNC-11).FitFrameRange=FitResults{j}(i,CurrentNC-11).FitFrameRange(2:end);
+    elseif (ct~=0)&(cc=='j')&(length(FitResultsMultiple{j}(i,CurrentNC-11).FitFrameRange)>2)
+        FitResultsMultiple{j}(i,CurrentNC-11).FitFrameRange=FitResultsMultiple{j}(i,CurrentNC-11).FitFrameRange(2:end);
     elseif (ct~=0)&(cc=='h')
-        if ~isempty(find(~ismember(FrameWindow,FitResults{j}(i,CurrentNC-11).FitFrameRange)))
+        if ~isempty(find(~ismember(FrameWindow,FitResultsMultiple{j}(i,CurrentNC-11).FitFrameRange)))
             FilteredFramesTemp=FrameWindow;
-            FitResults{j}(i,CurrentNC-11).FitFrameRange=...
-                [FilteredFramesTemp(max(find(~ismember(FilteredFramesTemp,FitResults{j}(i,CurrentNC-11).FitFrameRange)))),...
-                FitResults{j}(i,CurrentNC-11).FitFrameRange];
+            FitResultsMultiple{j}(i,CurrentNC-11).FitFrameRange=...
+                [FilteredFramesTemp(max(find(~ismember(FilteredFramesTemp,FitResultsMultiple{j}(i,CurrentNC-11).FitFrameRange)))),...
+                FitResultsMultiple{j}(i,CurrentNC-11).FitFrameRange];
         end
     %Reset frame fit range
      elseif (ct~=0)&(cc=='r')   
-        FitResults{j}(i,CurrentNC-11).FitFrameRange=FrameWindow;
+        FitResultsMultiple{j}(i,CurrentNC-11).FitFrameRange=FrameWindow;
 
         
         
     %Change the initial parameters
     %TimeStart
-    elseif (ct~=0)&(cc=='a')&((CurrentNC==14)|(CurrentNC~=14&FitResults{j}(i,CurrentNC-11).TimeStart0<FitResults{j}(i,CurrentNC-11).TimeEnd0))
-        FitResults{j}(i,CurrentNC-11).TimeStart0=FitResults{j}(i,CurrentNC-11).TimeStart0+1;
-    elseif (ct~=0)&(cc=='z')&(FitResults{j}(i,CurrentNC-11).TimeStart0>1)
-        FitResults{j}(i,CurrentNC-11).TimeStart0=FitResults{j}(i,CurrentNC-11).TimeStart0-1;
+    elseif (ct~=0)&(cc=='a')&((CurrentNC==14)|(CurrentNC~=14&FitResultsMultiple{j}(i,CurrentNC-11).TimeStart0<FitResultsMultiple{j}(i,CurrentNC-11).TimeEnd0))
+        FitResultsMultiple{j}(i,CurrentNC-11).TimeStart0=FitResultsMultiple{j}(i,CurrentNC-11).TimeStart0+1;
+    elseif (ct~=0)&(cc=='z')&(FitResultsMultiple{j}(i,CurrentNC-11).TimeStart0>1)
+        FitResultsMultiple{j}(i,CurrentNC-11).TimeStart0=FitResultsMultiple{j}(i,CurrentNC-11).TimeStart0-1;
     %TimeEnd
-    elseif (ct~=0)&(cc=='s')&(FitResults{j}(i,CurrentNC-11).TimeEnd0<data(j).ElapsedTime(FrameWindow(end))-data(j).ElapsedTime(FrameWindow(1)))
-        FitResults{j}(i,CurrentNC-11).TimeEnd0=FitResults{j}(i,CurrentNC-11).TimeEnd0+1;
-    elseif (ct~=0)&(cc=='x')&(FitResults{j}(i,CurrentNC-11).TimeEnd0>FitResults{j}(i,CurrentNC-11).TimeStart0)
-        FitResults{j}(i,CurrentNC-11).TimeEnd0=FitResults{j}(i,CurrentNC-11).TimeEnd0-1;
+    elseif (ct~=0)&(cc=='s')&(FitResultsMultiple{j}(i,CurrentNC-11).TimeEnd0<data(j).ElapsedTime(FrameWindow(end))-data(j).ElapsedTime(FrameWindow(1)))
+        FitResultsMultiple{j}(i,CurrentNC-11).TimeEnd0=FitResultsMultiple{j}(i,CurrentNC-11).TimeEnd0+1;
+    elseif (ct~=0)&(cc=='x')&(FitResultsMultiple{j}(i,CurrentNC-11).TimeEnd0>FitResultsMultiple{j}(i,CurrentNC-11).TimeStart0)
+        FitResultsMultiple{j}(i,CurrentNC-11).TimeEnd0=FitResultsMultiple{j}(i,CurrentNC-11).TimeEnd0-1;
     %Rate, fine
-    elseif (ct~=0)&(cc=='c')&(FitResults{j}(i,CurrentNC-11).Rate0>100)
-        FitResults{j}(i,CurrentNC-11).Rate0=FitResults{j}(i,CurrentNC-11).Rate0-100;
+    elseif (ct~=0)&(cc=='c')&(FitResultsMultiple{j}(i,CurrentNC-11).Rate0>100)
+        FitResultsMultiple{j}(i,CurrentNC-11).Rate0=FitResultsMultiple{j}(i,CurrentNC-11).Rate0-100;
     elseif (ct~=0)&(cc=='d')
-        FitResults{j}(i,CurrentNC-11).Rate0=FitResults{j}(i,CurrentNC-11).Rate0+100;    
+        FitResultsMultiple{j}(i,CurrentNC-11).Rate0=FitResultsMultiple{j}(i,CurrentNC-11).Rate0+100;    
     %Rate, coarse
-    elseif (ct~=0)&(cc=='C')&(FitResults{j}(i,CurrentNC-11).Rate0>100)
-        FitResults{j}(i,CurrentNC-11).Rate0=FitResults{j}(i,CurrentNC-11).Rate0-500;
+    elseif (ct~=0)&(cc=='C')&(FitResultsMultiple{j}(i,CurrentNC-11).Rate0>100)
+        FitResultsMultiple{j}(i,CurrentNC-11).Rate0=FitResultsMultiple{j}(i,CurrentNC-11).Rate0-500;
     elseif (ct~=0)&(cc=='D')
-        FitResults{j}(i,CurrentNC-11).Rate0=FitResults{j}(i,CurrentNC-11).Rate0+500; 
+        FitResultsMultiple{j}(i,CurrentNC-11).Rate0=FitResultsMultiple{j}(i,CurrentNC-11).Rate0+500; 
     
     %Switch NCs
     elseif (ct~=0)&(cc=='m')&CurrentNC<14
@@ -589,12 +605,9 @@ while (cc~=13)
         
     %Save
     elseif (ct~=0)&(cc=='v')
-        save([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat'],...
-        'FitResults')
-        FitResults=F
-        save([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat'],...
-        'FitResults')
-    display('FitResults.mat saved')
+        save([DropboxFolder,filesep,Prefix,filesep,'FitResultsMultiple.mat'],...
+        'FitResultsMultiple')
+    display('FitResultsMultiple.mat saved')
         
     %Debug mode
     elseif (ct~=0)&(cc=='9')
@@ -606,8 +619,8 @@ end
 
 
 %Save the information
-save([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat'],...
-    'FitResults')
-display('FitResults.mat saved')        
+save([DropboxFolder,filesep,Prefix,filesep,'FitResultsMultiple.mat'],...
+    'FitResultsMultipleFitResultsMultiple')
+display('FitResultsMultiple.mat saved')        
         
 close(FitFigure)
