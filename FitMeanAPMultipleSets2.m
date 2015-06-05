@@ -232,7 +232,6 @@ else
     for k = 1:3 %iterate over nuclear cycles
         for j = 1:length(data) %iterate over data sets
             for i=1:length(CP{j}) %iterate over particles
-                %if isempty(FitResultsMultiple{j}(i,1).Rate0)
                     FitResultsMultiple{j}(i,k).Rate0=Rate012;    
                     FitResultsMultiple{j}(i,k).TimeStart0=TimeStart012;
                     FitResultsMultiple{j}(i,k).TimeEnd0=TimeEnd012;
@@ -243,17 +242,7 @@ else
                         if abs(APbinID(m) - CP{j}(i).MeanAP) < APResolution
                             FitResultsMultiple{j}(i,k).APBin = m;
                         end
-                FitResults{j}(i,k).Rate0=Rate012;    
-                FitResults{j}(i,k).TimeStart0=TimeStart012;
-                FitResults{j}(i,k).TimeEnd0=TimeEnd012;
-                FitResults{j}(i,k).FrameFilter=[];
-                FitResults{j}(i,k).FitFrameRange=[];
-                FitResults{j}(i,k).Approved=0;
-                for m=1:length(APbinID)
-                    if abs(APbinID(m) - CP{j}(i).MeanAP) < APResolution
-                        FitResults{j}(i,k).APBin = m;
                     end
-                end
             end
         end
     end
