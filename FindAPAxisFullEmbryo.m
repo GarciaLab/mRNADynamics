@@ -126,8 +126,7 @@ elseif strcmp(FileMode,'LIFExport')
     %By looking at the last image we make sure we're avoiding the
     %individual tiles if we're dealing with tile scan
     MidImage=LIFMid{end,1}{HisChannel,1};
-    
-    if isdir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData']) 
+    if isdir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData'])
         xml_file_path = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, '*.xml']);
         xml_file = xml_file_path(1).name;
         xDoc = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, xml_file]);
@@ -140,9 +139,10 @@ elseif strcmp(FileMode,'LIFExport')
         xml_file_path2 = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo',...
             filesep, 'MetaData', filesep,'*Mid*.xml']);
         xml_file2 = xml_file_path2(1).name;
+        evalin('base','clear rot')
         xDoc2 = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep,'FullEmbryo', filesep,...
                 'MetaData', filesep, xml_file2]);
-        full_embryo_angle = str2double(evalin('base','rot'));
+%         full_embryo_angle = str2double(evalin('base','rot'));
     else 
         warning('No full embryo metadata found.')
     end

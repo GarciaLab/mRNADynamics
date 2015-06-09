@@ -314,7 +314,7 @@ if ~NoAP
             xml_file2 = xml_file_path2(1).name;
             xDoc2 = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep,'FullEmbryo', filesep,...
                     'MetaData', filesep, xml_file2]);
-            full_embryo_angle = str2double(evalin('base','rot'));
+%             full_embryo_angle = str2double(evalin('base','rot'));
         else 
             warning('No full embryo metadata found.')
         end

@@ -2,6 +2,7 @@ function theStruct = searchXML(filename)
 % Searches XML file for, currently, 'RotatorAngle' and save the variable to
 % the workspace as 'rot'
 % Modified by AR 4/25/2015
+evalin('base','clear rot')
 try
    tree = xmlread(filename);
 catch
@@ -57,6 +58,7 @@ function attributes = parseAttributes(theNode)
 % Create attributes structure.
 
 attributes = [];
+rot = [1];
 if theNode.hasAttributes
    theAttributes = theNode.getAttributes;
    numAttributes = theAttributes.getLength;
