@@ -15,8 +15,10 @@ function CompileParticles(varargin)
 %SkipAll - Skip all that can be skipped
 %ApproveAll - Approves all particles. This is useful if we want to do a
 %             quick check of, for example, the AP profiles
+%SetMinParticles - Set the threshold for the minimum number of particles per
+%               AP bin for compilation
 
-%This function puts togetether all the information we have about particles.
+%This function puts together all the information we have about particles.
 %Things we want in here are:
 
 close all
@@ -33,6 +35,7 @@ SkipFluctuations=0;  %Do not generate the plots of correlations of fluctuations 
 SkipFits=0;         %Do not generate the fit output (but still does the fit)
 SkipMovie=0;        %Do not generate the movie
 ApproveAll=0;
+MinParticles=4;
 
 if isempty(varargin)
     FolderTemp=uigetdir(DefaultDropboxFolder,'Select folder with data to analyze');
@@ -58,7 +61,9 @@ else
             SkipFits=1;
             SkipMovie=1;
         elseif strcmp(varargin{i},'ApproveAll')    
-            ApproveAll=1;            
+            ApproveAll=1;
+        elseif strcmp(varargin{i},'SetMinParticles')
+            MinParticles = input('Set minimum particle threshold:');
         end
     end
 
@@ -2101,8 +2106,11 @@ if ~SkipMovie&strcmp(ExperimentAxis,'AP')
         figure(17)
 
         MaxValue=max(max(MeanVectorAP{ChN}));
-
-        MinParticles=4;     %Minimum number of particles in a bin to take it seriously
+        
+%%% Commented out 6/9/15 by AR so that this value can be set by the user.
+%%% Default is still 4. 
+%         MinParticles=4;     %Minimum number of particles in a bin to take it seriously
+%%%
         NParticlesAPFilter=NParticlesAP{ChN}>=MinParticles;
 
         for i=1:length(FrameInfo)
