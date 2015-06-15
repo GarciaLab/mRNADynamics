@@ -130,15 +130,15 @@ else
         %the first MS2 site.
         display('Treating data set as 5''')
         
-        Rate012=4E3;     %Rate per minute
+        Rate012=500;     %Rate per minute
         TimeStart012=3;
         TimeEnd012=7;
         
-        Rate013=4E3;     %Rate per minute
+        Rate013=500;     %Rate per minute
         TimeStart013=5;
         TimeEnd013=10;
         
-        Rate014=4E3;     %Rate per minute
+        Rate014=500;     %Rate per minute
         TimeStart014=5;
         TimeEnd014=1000;
     elseif exist('StemLoopEnd', 'var') && strcmp(StemLoopEnd, '3''')
