@@ -841,13 +841,13 @@ while (cc~='x')
     plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-k')
     hold on
 %     plot(Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
-%     plot(Frames(Frames==CurrentFrame),Amp(Frames==CurrentFrame),'ob')
+     plot(Frames(Frames==CurrentFrame),Amp(Frames==CurrentFrame),'ob')
     hold off
     try
         xlim([min(Frames)-1,max(Frames)+1]);
     catch
     end
-    xlabel('Time (min)')
+    xlabel('Frames')
     h = get(gca, 'xtick');
     set(gca,'xticklabel',round(h*44.062/60))
     ylabel('Intensity (A.U.)')
