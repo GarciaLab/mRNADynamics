@@ -198,6 +198,7 @@ if strcmp(ExperimentType,'1spot')|strcmp(ExperimentType,'2spot')
             end
         else
             Retracking=0;
+            Particles=[];
         end
     else
         Particles=[];   %This is the structure where we'll be tracking all particles.

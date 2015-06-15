@@ -145,15 +145,15 @@ else
         Delay=GeneLength3/ElongationRate;
         display('Treating data set as 3''')
         
-        Rate012=4E3;     %Rate per minute
+        Rate012=500;     %Rate per minute
         TimeStart012=3;
         TimeEnd012=7;
         
-        Rate013=4E3;     %Rate per minute
+        Rate013=500;     %Rate per minute
         TimeStart013=7.5;
         TimeEnd013=10;
         
-        Rate014=4E3;     %Rate per minute
+        Rate014=500;     %Rate per minute
         TimeStart014=7.5;
         TimeEnd014=1000;
     else
