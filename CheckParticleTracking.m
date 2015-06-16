@@ -849,7 +849,7 @@ while (cc~='x')
     end
     xlabel('Frames')
     h = get(gca, 'xtick');
-    set(gca,'xticklabel',round(h*44.062/60))
+    set(gca,'xticklabel',h)%round(h*44.062/60))
     ylabel('Intensity (A.U.)')
     if strcmp('albert-pc',name(1:end-1))
         set(gcf,'Position',[716    88   439   321])
