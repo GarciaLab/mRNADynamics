@@ -19,8 +19,6 @@ ManualAlignment=0;
 NoAP=0;
 InvertHis=0;
 
-close all
-
 if ~isempty(varargin)
     Prefix=varargin{1};
     for i=2:length(varargin)
@@ -451,11 +449,11 @@ if ~NoAP
                     if ManualAlignmentDone
                         load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
                     end
-                else
-                    [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ZoomRatio,ShiftRow,ShiftColumn,...
-                        FullEmbryo, ZoomRatio, SurfRows,Rows, Columns, coordA, coordP, SurfColumns);
-                    ManualAlignmentDone=1;
                 end
+
+                [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ZoomRatio,ShiftRow,ShiftColumn,...
+                     FullEmbryo, ZoomRatio, SurfRows,Rows, Columns, coordA, coordP, SurfColumns);
+                ManualAlignmentDone=1;
             end
             
             try
@@ -690,7 +688,7 @@ if ~NoAP
             
         
     
-    else
+    elseif 
         %The information from the left-right stitching of the two images is as follows:
         %xShift and yShift are the shifts used to stitch the images.
         %xShift is the displacement of the right image with respect to the left
@@ -977,13 +975,12 @@ if ~NoAP
 
         end
     else
-        ImageCenter=[SurfRows/2 + ShiftRow,SurfColumns/2 + ShiftColumn];
-        
+        ImageCenter=[SurfRows/2,SurfColumns/2];
+
         %This is for the full image
         TopLeft=[ImageCenter(1)-Rows/ZoomRatio/2,ImageCenter(2)-Columns/ZoomRatio/2];
         BottomRight=[ImageCenter(1)+Rows/ZoomRatio/2,ImageCenter(2)+Columns/ZoomRatio/2];
-    
-     
+
         if strcmp(FileMode,'TIF')
             %This is for the acquisition image in 2-photon mode
             TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
@@ -1023,39 +1020,34 @@ if ~NoAP
         plot([1],[1],'.y','MarkerSize',50)
         hold off
         saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'HalfEmbryoArea.tif']);
-        
-        %We have the position of the anterior and posterior in the coordinates of the 
-        %field of view we took. Do the mapping of the imaging region with respect to the AP axis.
-
-        %Convert them to the corresponding zoom factor. In order to do this I
-        %need to measure A and P with respect to the center of the rectangle.
-        %Notice that there might be a +/-1 issue in the positioning given that
-        %Matlab starts indexing from 1. However, as shown in the images below,
-        %this doesn't make any real difference.   
-
-        coordAZoom=(coordAHalf-[TopLeftHalf(2),TopLeftHalf(1)])*ZoomRatio;
-        coordPZoom=(coordPHalf-[TopLeftHalf(2),TopLeftHalf(1)])*ZoomRatio;
     else
         figure(8)
         imshow(imadjust(SurfImage),'DisplayRange',[],'InitialMagnification',100)
         hold on
-        rectangle('Position',[TopLeft([2,1]),BottomRight([2,1])-TopLeft([2,1])],'EdgeColor','r')
+        rectangle('Position',[TopLeftHalf([2,1]),BottomRightHalf([2,1])-TopLeftHalf([2,1])],'EdgeColor','r')
         plot(coordA(1),coordA(2),'.g','MarkerSize',30)
         plot(coordP(1),coordP(2),'.r','MarkerSize',30)
-        plot([coordA(1),coordP(1)],[coordA(2),coordP(2)],'-b')
+        plot([coordAHalf(1),coordPHalf(1)],[coordAHalf(2),coordPHalf(2)],'-b')
         plot([1],[1],'.y','MarkerSize',50)
         hold off
         saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'HalfEmbryoArea.tif'])
-        
-        coordAZoom=(coordA-[TopLeft(2),TopLeft(1)])*ZoomRatio;
-        coordPZoom=(coordP-[TopLeft(2),TopLeft(1)])*ZoomRatio;
     end
     
 
  
     
 
-    
+    %We have the position of the anterior and posterior in the coordinates of the 
+    %field of view we took. Do the mapping of the imaging region with respect to the AP axis.
+
+    %Convert them to the corresponding zoom factor. In order to do this I
+    %need to measure A and P with respect to the center of the rectangle.
+    %Notice that there might be a +/-1 issue in the positioning given that
+    %Matlab starts indexing from 1. However, as shown in the images below,
+    %this doesn't make any real difference.   
+
+    coordAZoom=(coordAHalf-[TopLeftHalf(2),TopLeftHalf(1)])*ZoomRatio;
+    coordPZoom=(coordPHalf-[TopLeftHalf(2),TopLeftHalf(1)])*ZoomRatio;
     
     figure(9)
     imshow(imadjust(ZoomImage),[])

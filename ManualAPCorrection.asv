@@ -152,7 +152,12 @@ while (cc~=13)
         OldYLim=ylim;
         xlim([OldXLim-CorrX]/2+CorrX)
         ylim([OldYLim-CorrY]/2+CorrY)
-       
+        
+        figure(FigureRectangle)
+        OldXLim=xlim;
+        OldYLim=ylim;
+        xlim([OldXLim-CorrX]/2+CorrX)
+        ylim([OldYLim-CorrY]/2+CorrY)
         
     elseif (ct~=0)&(cc=='-')
         figure(FigureCorrelation)
@@ -160,7 +165,12 @@ while (cc~=13)
         OldYLim=ylim;
         xlim([OldXLim-CorrX]*2+CorrX)
         ylim([OldYLim-CorrY]*2+CorrY)
-       
+        
+        figure(FigureRectangle)
+        OldXLim=xlim;
+        OldYLim=ylim;
+        xlim([OldXLim-CorrX/2]*2+CorrX)
+        ylim([OldYLim-CorrY/2]*2+CorrY)
         
     elseif (ct~=0)&(cc=='x')
         cc=13;
