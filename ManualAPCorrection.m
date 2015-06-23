@@ -107,6 +107,7 @@ while (cc~=13)
     
     figure(FigureOverlay)
     ct=waitforbuttonpress;
+    %ct=1;
     cc=get(FigureOverlay,'currentcharacter');
     cm=get(gca,'CurrentPoint');
     
@@ -126,7 +127,7 @@ while (cc~=13)
         ShiftColumn=ShiftColumn-10;
     elseif (ct~=0)&(cc=='A')
         ShiftRow=ShiftRow-10;
-    elseif (ct~=0)&(cc=='Z')
+    elseif (ct~=0)&&(cc=='Z')
         ShiftRow=ShiftRow+10;
         
     %Turn channels on and off

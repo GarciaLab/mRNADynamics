@@ -1164,32 +1164,33 @@ end
 %If the nuclear masks are present then use them. Otherwise just calculate
 %the median of the images as a function of time
 
-if NChannels==1
 
-    if HistoneChannel&strcmp(ExperimentAxis,'AP')
-        [MeanCyto,SDCyto,MedianCyto,MaxCyto]=GetCytoMCP(Prefix);
-    else
-        MeanCyto=[];
-        SDCyto=[];
-        MaxCyto=[];
-
-        h=waitbar(0,'Calculating the median cyto intentisy');
-        for i=1:length(FrameInfo)
-            waitbar(i/length(FrameInfo),h)
-            for j=1:FrameInfo(1).NumberSlices
-                Image(:,:,j)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),'.tif']);
-            end
-            ImageMax=max(Image,[],3);
-            MedianCyto(i)=median(double(ImageMax(:)));
-        end
-        close(h)
-    end  
-else
+% if NChannels==1
+% 
+%     if HistoneChannel&strcmp(ExperimentAxis,'AP')
+%         [MeanCyto,SDCyto,MedianCyto,MaxCyto]=GetCytoMCP(Prefix);
+%     else
+%         MeanCyto=[];
+%         SDCyto=[];
+%         MaxCyto=[];
+% 
+%         h=waitbar(0,'Calculating the median cyto intentisy');
+%         for i=1:length(FrameInfo)
+%             waitbar(i/length(FrameInfo),h)
+%             for j=1:FrameInfo(1).NumberSlices
+%                 Image(:,:,j)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),'.tif']);
+%             end
+%             ImageMax=max(Image,[],3);
+%             MedianCyto(i)=median(double(ImageMax(:)));
+%         end
+%         close(h)
+%     end  
+% else
     MeanCyto=[];
     SDCyto=[];
     MaxCyto=[];
     MedianCyto=[];
-end
+% end
     
     
     

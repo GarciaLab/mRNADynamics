@@ -215,14 +215,6 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'FitResultsMultiple.mat'])
             FitResultsMultiple{i}.Rate0=[];
         end
     end
-end
-if exist([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat'])
-    load([DropboxFolder,filesep,Prefix,filesep,'FitResults.mat']);
-    if isempty(FitResults)
-        for i=1:length(FitResults)
-            FitResults{i}.Rate0=[];
-        end
-    end
 else
     FitResultsMultiple = cell(1,length(data));
     for i=1:length(FitResultsMultiple)
@@ -238,6 +230,14 @@ else
                     FitResultsMultiple{j}(i,k).FrameFilter=[];
                     FitResultsMultiple{j}(i,k).FitFrameRange=[];
                     FitResultsMultiple{j}(i,k).Approved=0;
+                    FitResultsMultiple{j}(i,k).APBin=0;
+                    FitResultsMultiple{j}(i,k).TimeStart=0;
+                    FitResultsMultiple{j}(i,k).TimeEnd=0;
+                    FitResultsMultiple{j}(i,k).RateFit=0;
+                    FitResultsMultiple{j}(i,k).CI=0;
+                    FitResultsMultiple{j}(i,k).SDTimeStart=0;
+                    FitResultsMultiple{j}(i,k).SDTimeEnd=0;
+                    FitResultsMultiple{j}(i,k).SDRateFit=0;
                     for m=1:length(APbinID)
                         if abs(APbinID(m) - CP{j}(i).MeanAP) < APResolution
                             FitResultsMultiple{j}(i,k).APBin = m;
@@ -249,18 +249,28 @@ else
 end
 
 %Figure out which nc we can use
-if any(data.nc12)
-    CurrentNC=12;
-    MinNC=12;       %We'll use this to keep track of the minimum nc
-elseif any(data.nc13)
-    CurrentNC=13;
-    MinNC=13;
-elseif any(data.nc14)
-    CurrentNC=14;
-    MinNC=14;
-else
+for i=1:length(data)
+    if data(i).nc14~=0
+        CurrentNC=14;
+        MinNC=14;       %We'll use this to keep track of the minimum nc
+    end
+end
+for i=1:length(data)
+    if data(i).nc13~=0
+        CurrentNC=13;
+        MinNC=13;
+    end
+end
+for i=1:length(data)
+    if data(i).nc12~=0
+        CurrentNC=12;
+        MinNC=12;
+    end
+end
+if exist('CurrentNC','var')==0
     error('There is a problem. Are the ncs defined?')
 end
+
 
 
 %%
