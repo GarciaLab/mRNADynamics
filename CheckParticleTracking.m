@@ -1300,6 +1300,10 @@ while (cc~='x')
             save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2')            
         end
         display('Particles saved.')
+        if NChannels==1
+            Particles={Particles};
+        end
+        
     elseif cc=='t'
         ShowThreshold2=~ShowThreshold2;
     elseif (cc=='y')&(~UseHistoneOverlay)
