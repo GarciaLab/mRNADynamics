@@ -54,6 +54,11 @@ else
 
 end
 
+%Save a backup of the threshold. We'll check that it didn't change if we're
+%doing retracking. This is definitely not an elegant solution
+Threshold1Backup=Threshold1;
+Threshold2Backup=Threshold2;
+
 
 %Get the actual folder now that we have the Prefix
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
@@ -94,6 +99,25 @@ DataFolder=[PreProcPath,filesep,FilePrefix(1:end-1)];
 SearchRadiusMicrons=2.5;       %Search radius in um
 
 
+
+%Check whether we're using the same threshold in the case of retracking
+if exist([OutputFolder,filesep,'Particles.mat'])
+    load([OutputFolder,filesep,'Particles.mat'],'Threshold1','Threshold2')
+        
+    if (~sum(Threshold1==Threshold1Backup)==length(Threshold1))&...
+        (~sum(Threshold2==Threshold2Backup)==length(Threshold2))
+            Answer=input('Thresholds changed, will delete previous tracking. Proceed? (y/n):','s');
+            if strcmp(lower(Answer),'y')
+                Threshold1=Threshold1Backup;
+                Threshold2=Threshold2Backup;
+                delete([OutputFolder,filesep,'Particles.mat'])
+            else
+                error('Cannot retrack if the threshold changed')
+            end
+  
+    end
+
+end
 
 %Load the information about this image
 
@@ -179,6 +203,7 @@ if strcmp(ExperimentType,'1spot')|strcmp(ExperimentType,'2spot')
 
         %error('Trying to re-track particles. I need to work on this case')
         load([OutputFolder,filesep,'Particles.mat'])
+
         if isfield(Particles,'Approved')
             Retracking=1;           %Flag for whether we are performing retracking
 
@@ -232,8 +257,7 @@ if strcmp(ExperimentType,'1spot')|strcmp(ExperimentType,'2spot')
                                                                 %detemine the
                                                                 %dimension of the
                                                                 %different elements
-                                                                %in the structure
-
+                                                                
             for j=1:length(Fields)
                 %In the end this seems to work, the fields that have higher
                 %dimensions are still devided well.
@@ -278,7 +302,6 @@ if strcmp(ExperimentType,'1spot')|strcmp(ExperimentType,'2spot')
 
     %Initially, only track particles that are above Threshold1
     for i=1:length(fad.channels)
-
 
 
         figure(ParticlesFig)
