@@ -960,10 +960,16 @@ while (cc~='x')
             else
                 save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2')            
             end
-            
+        display('Particles saved.')
+        if NChannels==1
+            Particles=Particles{1};
+        end
             
            [Particles,schnitzcells,fad,fad2]=TrackmRNADynamics(FilePrefix(1:end-1),...
                Threshold1,Threshold2); 
+        if NChannels==1
+            Particles={Particles};
+        end
            %Check the FrameApproved field
             for i=1:length(Particles{CurrentChannel})
                 if isempty(Particles{CurrentChannel}(i).FrameApproved)
