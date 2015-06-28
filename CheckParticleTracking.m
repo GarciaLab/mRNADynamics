@@ -109,16 +109,21 @@ end
 NoSort=0;
 %Flag to just save the data. This is good for CompileAll
 ForCompileAll=0;
+%Flag to plot only ellipses for current particle & save time
+SpeedMode = 0;
+
 if length(varargin)>1
     for i=2:length(varargin)
         if strcmp(varargin{i},'NoSort')
             NoSort=1;
         elseif strcmp(varargin{i},'ForCompileAll')
             ForCompileAll=1;
+        elseif strcmpi(varargin{i}, 'speedmode')
+            SpeedMode = 1;
         end
     end
 end
-    
+
 %%
 
 
@@ -327,7 +332,7 @@ end
 
 
 %Check if we have already determined nc
-if (~isfield(FrameInfo,'nc'))&(~UseHistoneOverlay)
+if (~isfield(FrameInfo,'nc'))&&(~UseHistoneOverlay)
     FrameInfo=DetermineNC(fad,Particles,FrameInfo);
 elseif UseSchnitz
     load([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'])
@@ -487,10 +492,14 @@ while (cc~='x')
     figure(Overlay)
     imshow(Image,[],'Border','Tight')
     hold on
-    plot(x,y,'or')
-    plot(xApproved,yApproved,'ob')
+    %Show all particles in regular mode
+    if ~SpeedMode
+        plot(x,y,'or')
+        plot(xApproved,yApproved,'ob')
+        plot(xDisapproved,yDisapproved,'^r')
+    end
+    %Always show current particle
     plot(xTrace,yTrace,'og')
-    plot(xDisapproved,yDisapproved,'^r')
     hold off
     if ~UseHistoneOverlay
         set(gcf,'Position', 'Normalized', [10    89   677   599]);
@@ -500,8 +509,8 @@ while (cc~='x')
             set(gcf,'Position',[7   513   835   532]);
             % halfscreen [7   513   835   532]
             % fullscreen [9         594        1106         451]
+        elseif strfind(name, 'robs')
         else
-            set(gcf,'units', 'normalized', 'position',[.1   .1   .4   .35]);
         end
         set(gcf,'MenuBar','none','ToolBar','none')
     end
@@ -512,48 +521,49 @@ while (cc~='x')
         ', Ch: ',num2str(CurrentChannel)])
     
     if UseSchnitz
-        %Show all the nuclei
-        hold on       
-        EllipseHandle=notEllipse(Ellipses{CurrentFrame}(:,3),...
-            Ellipses{CurrentFrame}(:,4),...
-            Ellipses{CurrentFrame}(:,5),...
-            Ellipses{CurrentFrame}(:,1)+1,...
-            Ellipses{CurrentFrame}(:,2)+1,'r',50);
-        hold off
+        %Show all the nuclei in regular mode
+        if ~SpeedMode
+            hold on
+            EllipseHandle=notEllipse(Ellipses{CurrentFrame}(:,3),...
+                Ellipses{CurrentFrame}(:,4),...
+                Ellipses{CurrentFrame}(:,5),...
+                Ellipses{CurrentFrame}(:,1)+1,...
+                Ellipses{CurrentFrame}(:,2)+1,'r',50);
+            hold off
             
-%         hold on
-%         [NEllipses,Dummy]=size(Ellipses{CurrentFrame});
-%         for i=1:NEllipses
-%             EllipseHandle=[EllipseHandle,ellipse(Ellipses{CurrentFrame}(i,3),...
-%                 Ellipses{CurrentFrame}(i,4),...
-%                 Ellipses{CurrentFrame}(i,5),...
-%                 Ellipses{CurrentFrame}(i,1)+1,...
-%                 Ellipses{CurrentFrame}(i,2)+1)];
-%         end
-%         set(EllipseHandle,'Color','r')
-%         hold off
-        
-        
-        %Show the ones that have been approved
-        
-        hold on
-        schnitzCellNo=[];
-        for i=1:length(Particles{CurrentChannel})
-            if Particles{CurrentChannel}(i).Approved==1
-                schnitzIndex=find((schnitzcells(Particles{CurrentChannel}(i).Nucleus).frames)==CurrentFrame);
-                schnitzCellNo=[schnitzCellNo,schnitzcells(Particles{CurrentChannel}(i).Nucleus).cellno(schnitzIndex)];
+            %         hold on
+            %         [NEllipses,Dummy]=size(Ellipses{CurrentFrame});
+            %         for i=1:NEllipses
+            %             EllipseHandle=[EllipseHandle,ellipse(Ellipses{CurrentFrame}(i,3),...
+            %                 Ellipses{CurrentFrame}(i,4),...
+            %                 Ellipses{CurrentFrame}(i,5),...
+            %                 Ellipses{CurrentFrame}(i,1)+1,...
+            %                 Ellipses{CurrentFrame}(i,2)+1)];
+            %         end
+            %         set(EllipseHandle,'Color','r')
+            %         hold off
+            
+            
+            %Show the ones that have been approved
+            
+            hold on
+            schnitzCellNo=[];
+            for i=1:length(Particles{CurrentChannel})
+                if Particles{CurrentChannel}(i).Approved==1
+                    schnitzIndex=find((schnitzcells(Particles{CurrentChannel}(i).Nucleus).frames)==CurrentFrame);
+                    schnitzCellNo=[schnitzCellNo,schnitzcells(Particles{CurrentChannel}(i).Nucleus).cellno(schnitzIndex)];
+                end
             end
+            
+            EllipseHandleBlue=notEllipse(Ellipses{CurrentFrame}(schnitzCellNo,3),...
+                Ellipses{CurrentFrame}(schnitzCellNo,4),...
+                Ellipses{CurrentFrame}(schnitzCellNo,5),...
+                Ellipses{CurrentFrame}(schnitzCellNo,1)+1,...
+                Ellipses{CurrentFrame}(schnitzCellNo,2)+1,'b',50);
+            
+            
+            hold off
         end
-        
-        EllipseHandleBlue=notEllipse(Ellipses{CurrentFrame}(schnitzCellNo,3),...
-            Ellipses{CurrentFrame}(schnitzCellNo,4),...
-            Ellipses{CurrentFrame}(schnitzCellNo,5),...
-            Ellipses{CurrentFrame}(schnitzCellNo,1)+1,...
-            Ellipses{CurrentFrame}(schnitzCellNo,2)+1,'b',50);
-        
-        
-        hold off
-        
         
         %Show the corresponding nucleus
         if ~isempty(Particles{CurrentChannel}(CurrentParticle).Nucleus)
@@ -702,15 +712,19 @@ while (cc~='x')
         if strcmp('albert-pc',name(1:end-1))
             set(gcf,'Position',[6    88   691   379])
             %Fullscreen [8         110        1107         440]
+        elseif strfind(name,'robs')
+            set(gcf,'units', 'normalized', 'position',[0, 0.7, .75, .3])
         else
-            set(gcf,'units', 'normalized', 'position',[.1   .55   .4   .35])
+            set(gcf,'units', 'normalized', 'position',[0.1, .55, .4, .35]);
         end
         set(gcf,'MenuBar','none','ToolBar','none')
         
        
         hold on
-        plot(x,y,'ow')
-        plot(xApproved,yApproved,'ob')
+        if ~SpeedMode
+            plot(x,y,'ow')
+            plot(xApproved,yApproved,'ob')
+        end
         plot(xTrace,yTrace,'og')
         hold off
         
@@ -772,8 +786,10 @@ while (cc~='x')
         if strcmp('albert-pc',name(1:end-1))
             set(gcf,'Position',[861   834   303   152])
             % fullscreen [1133          46         395         319]
+        elseif strfind(name, 'robs')
+            set(gcf, 'units', 'normalized','Position',[.75 0 .25 .25])
         else
-            set(gcf, 'units', 'normalized','Position',[.53 .1 .15 .3])
+            set(gcf,'units', 'normalized', 'position',[.53 .1 .15 .3]);
         end
         hold on
         SnippetX=(SnippetSize-1)/2+1-...
@@ -824,8 +840,10 @@ while (cc~='x')
         if strcmp('albert-pc',name(1:end-1))
             set(gcf,'Position',[857   518   308   215])
             % fullscreen [1547          44         363         322]
-        else
-            set(gcf, 'units', 'normalized', 'Position',[.7 .1 .15 .3])
+        elseif strfind(name, 'robs')
+            set(gcf, 'units', 'normalized', 'Position',[.75 .35 .25 .5])
+        else 
+            set(gcf,'units', 'normalized', 'position',[.7 .1 .15 .3]);
         end
     end
        
@@ -854,8 +872,8 @@ while (cc~='x')
     if strcmp('albert-pc',name(1:end-1))
         set(gcf,'Position',[716    88   439   321])
         % fullscreen [1135         471         776         515]
+    elseif strfind(name, 'robs')
     else
-        set(gcf, 'units', 'normalized', 'Position',[.53 .53   .3   .35])
     end
     
     FigureTitle=['Particle: ',num2str(CurrentParticle),'/',num2str(length(Particles{CurrentChannel})),...
@@ -1322,7 +1340,7 @@ while (cc~='x')
         elseif HideApprovedFlag==2
             HideApprovedFlag=0;
         end
-            
+
         %HideApprovedFlag=~HideApprovedFlag;
     elseif cc=='o'
         ZoomMode=~ZoomMode;        
@@ -1607,8 +1625,9 @@ if UseHistoneOverlay
 else
     save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2')            
 end
+close all
 display('Particles saved.')
-
+display(['(Left off at Particle #', num2str(CurrentParticle), ')'])
 
 
 
