@@ -145,10 +145,12 @@ Channel1=XLSTxt(PrefixRow,Channel1Column);
 Channel2=XLSTxt(PrefixRow,Channel2Column);
 
 
-if ~isempty(strfind(lower(Channel1{1}),'his'))
-    ChannelToLoad=1;
-elseif ~isempty(strfind(lower(Channel2{1}),'his'))
-    ChannelToLoad=2;
+ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
+    ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')));
+
+
+if sum(ChannelToLoadTemp)
+    ChannelToLoad=find(ChannelToLoadTemp);
 else
     error('No histone channel found. Was it defined in MovieDatabase.XLS?')
 end

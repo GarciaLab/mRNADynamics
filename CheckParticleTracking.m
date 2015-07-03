@@ -221,6 +221,15 @@ Txt=Txt(2:end,:);
 
 ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
 ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
+Channel1Column=find(strcmp(XLSRaw(1,:),'Channel1'));
+Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
+nc9Column=find(strcmp(XLSRaw(1,:),'nc9'));
+nc10Column=find(strcmp(XLSRaw(1,:),'nc10'));
+nc11Column=find(strcmp(XLSRaw(1,:),'nc11'));
+nc12Column=find(strcmp(XLSRaw(1,:),'nc12'));
+nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
+nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
+CFColumn=find(strcmp(XLSRaw(1,:),'CF'));
 
 DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
 Dashes=findstr(FilePrefix,'-');
@@ -235,18 +244,8 @@ end
 
 ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
 ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
-
-%Find the different columns.
-DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-nc9Column=find(strcmp(XLSRaw(1,:),'nc9'));
-nc10Column=find(strcmp(XLSRaw(1,:),'nc10'));
-nc11Column=find(strcmp(XLSRaw(1,:),'nc11'));
-nc12Column=find(strcmp(XLSRaw(1,:),'nc12'));
-nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
-nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
-CFColumn=find(strcmp(XLSRaw(1,:),'CF'));
-Channel1Column=find(strcmp(XLSRaw(1,:),'Channel1'));
-Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
+Channel1=XLSRaw(PrefixRow,Channel1Column);
+Channel2=XLSRaw(PrefixRow,Channel2Column);
 
 
 %Find the corresponding entry in the XLS file
@@ -471,7 +470,7 @@ while (cc~='x')
     end
     
     
-    if NChannels==1
+    if (NChannels==1)&(~strcmp(lower(ExperimentType),'inputoutput'))
         try
             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                 FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'.tif']);
@@ -479,6 +478,15 @@ while (cc~='x')
             display(['Warning: Could not load file: ',...
                 FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'.tif'])
         end
+    elseif (NChannels==1)&(strcmp(lower(ExperimentType),'inputoutput'))
+        OutputChannelTemp1=strfind({lower(Channel1{1}),lower(Channel2{1})},'mcp');
+        OutputChannelTemp2=strfind({lower(Channel1{1}),lower(Channel2{1})},'pcp');
+        OutputChannelTemp1=~cellfun(@isempty,OutputChannelTemp1);
+        OutputChannelTemp2=~cellfun(@isempty,OutputChannelTemp2);
+        OutputChannel=find(OutputChannelTemp1|OutputChannelTemp2);
+        
+        Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
+                FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch',iIndex(OutputChannel,2),'.tif']);
     else
         try
             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
