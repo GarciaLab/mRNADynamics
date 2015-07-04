@@ -147,10 +147,12 @@ Channel1=XLSTxt(PrefixRow,Channel1Column);
 Channel2=XLSTxt(PrefixRow,Channel2Column);
 
 
-if ~isempty(strfind(lower(Channel1{1}),'his'))
-    ChannelToLoad=1;
-elseif ~isempty(strfind(lower(Channel2{1}),'his'))
-    ChannelToLoad=2;
+ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
+    ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')));
+
+
+if sum(ChannelToLoadTemp)
+    ChannelToLoad=find(ChannelToLoadTemp);
 else
     error('No histone channel found. Was it defined in MovieDatabase.XLS?')
 end
@@ -279,8 +281,13 @@ if ~NoAP
         clear MaxTemp
   
         %Do a maximum projections
-        for i=HisChannel:NChannelsMeta:size(ImageTemp{1},1)
-                MaxTemp(:,:,i)=ImageTemp{1}{i,1};
+%         for i=HisChannel:NChannelsMeta:size(ImageTemp{1},1)
+%                 MaxTemp(:,:,i)=ImageTemp{1}{i,1};
+%         end
+        %By looking at the last image we make sure we're avoiding the
+        %individual tiles if we're dealing with tile scan
+        for i=HisChannel:NChannelsMeta:size(ImageTemp{end,1},1)
+                MaxTemp(:,:,i)=ImageTemp{end,1}{i,1};
         end
         if InvertHis
             SurfImage=MaxTemp(:,:,HisChannel-1+round(NSlices/2)*NChannelsMeta-1);
@@ -311,7 +318,7 @@ if ~NoAP
             xml_file2 = xml_file_path2(1).name;
             xDoc2 = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep,'FullEmbryo', filesep,...
                     'MetaData', filesep, xml_file2]);
-            full_embryo_angle = str2double(evalin('base','rot'));
+%             full_embryo_angle = str2double(evalin('base','rot'));
         else 
             warning('No full embryo metadata found.')
         end

@@ -109,16 +109,21 @@ end
 NoSort=0;
 %Flag to just save the data. This is good for CompileAll
 ForCompileAll=0;
+%Flag to plot only ellipses for current particle & save time
+SpeedMode = 0;
+
 if length(varargin)>1
     for i=2:length(varargin)
         if strcmp(varargin{i},'NoSort')
             NoSort=1;
         elseif strcmp(varargin{i},'ForCompileAll')
             ForCompileAll=1;
+        elseif strcmpi(varargin{i}, 'speedmode')
+            SpeedMode = 1;
         end
     end
 end
-    
+
 %%
 
 
@@ -216,6 +221,15 @@ Txt=Txt(2:end,:);
 
 ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
 ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
+Channel1Column=find(strcmp(XLSRaw(1,:),'Channel1'));
+Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
+nc9Column=find(strcmp(XLSRaw(1,:),'nc9'));
+nc10Column=find(strcmp(XLSRaw(1,:),'nc10'));
+nc11Column=find(strcmp(XLSRaw(1,:),'nc11'));
+nc12Column=find(strcmp(XLSRaw(1,:),'nc12'));
+nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
+nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
+CFColumn=find(strcmp(XLSRaw(1,:),'CF'));
 
 DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
 Dashes=findstr(FilePrefix,'-');
@@ -230,18 +244,8 @@ end
 
 ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
 ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
-
-%Find the different columns.
-DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-nc9Column=find(strcmp(XLSRaw(1,:),'nc9'));
-nc10Column=find(strcmp(XLSRaw(1,:),'nc10'));
-nc11Column=find(strcmp(XLSRaw(1,:),'nc11'));
-nc12Column=find(strcmp(XLSRaw(1,:),'nc12'));
-nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
-nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
-CFColumn=find(strcmp(XLSRaw(1,:),'CF'));
-Channel1Column=find(strcmp(XLSRaw(1,:),'Channel1'));
-Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
+Channel1=XLSRaw(PrefixRow,Channel1Column);
+Channel2=XLSRaw(PrefixRow,Channel2Column);
 
 
 %Find the corresponding entry in the XLS file
@@ -327,7 +331,7 @@ end
 
 
 %Check if we have already determined nc
-if (~isfield(FrameInfo,'nc'))&(~UseHistoneOverlay)
+if (~isfield(FrameInfo,'nc'))&&(~UseHistoneOverlay)
     FrameInfo=DetermineNC(fad,Particles,FrameInfo);
 elseif UseSchnitz
     load([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'])
@@ -383,14 +387,27 @@ ZoomMode=0;
 ZoomRange=50;
 
 
+
+
+
+
+
+
+
+
+%Determine the positions and size of the figures
+ScreenSize=get( 0, 'ScreenSize' );
+ScreenSize=ScreenSize(3:end);
+ScreenRows=ScreenSize(2);
+ScreenColumns=ScreenSize(1);
+%Define the windows
 Overlay=figure;
+if UseHistoneOverlay 
+    HisOverlayFig=figure;   
+end
+TraceFig=figure;
 SnippetFig=figure;
 ZProfileFig=figure;
-TraceFig=figure;
-
-if UseHistoneOverlay
-    HisOverlayFig=figure;
-end
 
 
 cc=1;
@@ -466,7 +483,7 @@ while (cc~='x')
     end
     
     
-    if NChannels==1
+    if (NChannels==1)&(~strcmp(lower(ExperimentType),'inputoutput'))
         try
             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                 FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'.tif']);
@@ -474,6 +491,15 @@ while (cc~='x')
             display(['Warning: Could not load file: ',...
                 FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'.tif'])
         end
+    elseif (NChannels==1)&(strcmp(lower(ExperimentType),'inputoutput'))
+        OutputChannelTemp1=strfind({lower(Channel1{1}),lower(Channel2{1})},'mcp');
+        OutputChannelTemp2=strfind({lower(Channel1{1}),lower(Channel2{1})},'pcp');
+        OutputChannelTemp1=~cellfun(@isempty,OutputChannelTemp1);
+        OutputChannelTemp2=~cellfun(@isempty,OutputChannelTemp2);
+        OutputChannel=find(OutputChannelTemp1|OutputChannelTemp2);
+        
+        Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
+                FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch',iIndex(OutputChannel,2),'.tif']);
     else
         try
             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
@@ -487,24 +513,16 @@ while (cc~='x')
     figure(Overlay)
     imshow(Image,[],'Border','Tight')
     hold on
-    plot(x,y,'or')
-    plot(xApproved,yApproved,'ob')
-    plot(xTrace,yTrace,'og')
-    plot(xDisapproved,yDisapproved,'^r')
-    hold off
-    if ~UseHistoneOverlay
-        set(gcf,'Position', 'Normalized', [10    89   677   599]);
-        set(gcf,'MenuBar','none','ToolBar','none')
-    else
-        if strcmp('albert-pc',name(1:end-1))
-            set(gcf,'Position',[7   513   835   532]);
-            % halfscreen [7   513   835   532]
-            % fullscreen [9         594        1106         451]
-        else
-            set(gcf,'units', 'normalized', 'position',[.1   .1   .4   .35]);
-        end
-        set(gcf,'MenuBar','none','ToolBar','none')
+    %Show all particles in regular mode
+    if ~SpeedMode
+        plot(x,y,'or')
+        plot(xApproved,yApproved,'ob')
+        plot(xDisapproved,yDisapproved,'^r')
     end
+    %Always show current particle
+    plot(xTrace,yTrace,'og')
+    hold off
+
     
     set(gcf,'Name',['Particle: ',num2str(CurrentParticle),'/',num2str(length(Particles{CurrentChannel})),...
         ', Frame: ',num2str(CurrentFrame),'/',num2str(TotalFrames),...
@@ -512,48 +530,49 @@ while (cc~='x')
         ', Ch: ',num2str(CurrentChannel)])
     
     if UseSchnitz
-        %Show all the nuclei
-        hold on       
-        EllipseHandle=notEllipse(Ellipses{CurrentFrame}(:,3),...
-            Ellipses{CurrentFrame}(:,4),...
-            Ellipses{CurrentFrame}(:,5),...
-            Ellipses{CurrentFrame}(:,1)+1,...
-            Ellipses{CurrentFrame}(:,2)+1,'r',50);
-        hold off
+        %Show all the nuclei in regular mode
+        if ~SpeedMode
+            hold on
+            EllipseHandle=notEllipse(Ellipses{CurrentFrame}(:,3),...
+                Ellipses{CurrentFrame}(:,4),...
+                Ellipses{CurrentFrame}(:,5),...
+                Ellipses{CurrentFrame}(:,1)+1,...
+                Ellipses{CurrentFrame}(:,2)+1,'r',50);
+            hold off
             
-%         hold on
-%         [NEllipses,Dummy]=size(Ellipses{CurrentFrame});
-%         for i=1:NEllipses
-%             EllipseHandle=[EllipseHandle,ellipse(Ellipses{CurrentFrame}(i,3),...
-%                 Ellipses{CurrentFrame}(i,4),...
-%                 Ellipses{CurrentFrame}(i,5),...
-%                 Ellipses{CurrentFrame}(i,1)+1,...
-%                 Ellipses{CurrentFrame}(i,2)+1)];
-%         end
-%         set(EllipseHandle,'Color','r')
-%         hold off
-        
-        
-        %Show the ones that have been approved
-        
-        hold on
-        schnitzCellNo=[];
-        for i=1:length(Particles{CurrentChannel})
-            if Particles{CurrentChannel}(i).Approved==1
-                schnitzIndex=find((schnitzcells(Particles{CurrentChannel}(i).Nucleus).frames)==CurrentFrame);
-                schnitzCellNo=[schnitzCellNo,schnitzcells(Particles{CurrentChannel}(i).Nucleus).cellno(schnitzIndex)];
+            %         hold on
+            %         [NEllipses,Dummy]=size(Ellipses{CurrentFrame});
+            %         for i=1:NEllipses
+            %             EllipseHandle=[EllipseHandle,ellipse(Ellipses{CurrentFrame}(i,3),...
+            %                 Ellipses{CurrentFrame}(i,4),...
+            %                 Ellipses{CurrentFrame}(i,5),...
+            %                 Ellipses{CurrentFrame}(i,1)+1,...
+            %                 Ellipses{CurrentFrame}(i,2)+1)];
+            %         end
+            %         set(EllipseHandle,'Color','r')
+            %         hold off
+            
+            
+            %Show the ones that have been approved
+            
+            hold on
+            schnitzCellNo=[];
+            for i=1:length(Particles{CurrentChannel})
+                if Particles{CurrentChannel}(i).Approved==1
+                    schnitzIndex=find((schnitzcells(Particles{CurrentChannel}(i).Nucleus).frames)==CurrentFrame);
+                    schnitzCellNo=[schnitzCellNo,schnitzcells(Particles{CurrentChannel}(i).Nucleus).cellno(schnitzIndex)];
+                end
             end
+            
+            EllipseHandleBlue=notEllipse(Ellipses{CurrentFrame}(schnitzCellNo,3),...
+                Ellipses{CurrentFrame}(schnitzCellNo,4),...
+                Ellipses{CurrentFrame}(schnitzCellNo,5),...
+                Ellipses{CurrentFrame}(schnitzCellNo,1)+1,...
+                Ellipses{CurrentFrame}(schnitzCellNo,2)+1,'b',50);
+            
+            
+            hold off
         end
-        
-        EllipseHandleBlue=notEllipse(Ellipses{CurrentFrame}(schnitzCellNo,3),...
-            Ellipses{CurrentFrame}(schnitzCellNo,4),...
-            Ellipses{CurrentFrame}(schnitzCellNo,5),...
-            Ellipses{CurrentFrame}(schnitzCellNo,1)+1,...
-            Ellipses{CurrentFrame}(schnitzCellNo,2)+1,'b',50);
-        
-        
-        hold off
-        
         
         %Show the corresponding nucleus
         if ~isempty(Particles{CurrentChannel}(CurrentParticle).Nucleus)
@@ -699,18 +718,13 @@ while (cc~='x')
             HisOverlayImage=cat(3,mat2gray(ImageHis,double(DisplayRange))*2,mat2gray(Image),zeros(size(Image)));
         end
         imshow(HisOverlayImage,'Border','Tight')
-        if strcmp('albert-pc',name(1:end-1))
-            set(gcf,'Position',[6    88   691   379])
-            %Fullscreen [8         110        1107         440]
-        else
-            set(gcf,'units', 'normalized', 'position',[.1   .55   .4   .35])
-        end
-        set(gcf,'MenuBar','none','ToolBar','none')
-        
+
        
         hold on
-        plot(x,y,'ow')
-        plot(xApproved,yApproved,'ob')
+        if ~SpeedMode
+            plot(x,y,'ow')
+            plot(xApproved,yApproved,'ob')
+        end
         plot(xTrace,yTrace,'og')
         hold off
         
@@ -769,12 +783,7 @@ while (cc~='x')
     
         imshow(SnippetOverlay,...
             [],'Border','Tight','InitialMagnification',1000)
-        if strcmp('albert-pc',name(1:end-1))
-            set(gcf,'Position',[861   834   303   152])
-            % fullscreen [1133          46         395         319]
-        else
-            set(gcf, 'units', 'normalized','Position',[.53 .1 .15 .3])
-        end
+
         hold on
         SnippetX=(SnippetSize-1)/2+1-...
             (single(fad(CurrentChannel).channels(CurrentFrame).fits.x(CurrentParticleIndex))-...
@@ -821,42 +830,73 @@ while (cc~='x')
         set(gca,'XTick',[1:length(ZProfile)]-MaxZ+...
             double(fad(CurrentChannel).channels(CurrentFrame).fits.z(CurrentParticleIndex)))
         title('Z profile')
-        if strcmp('albert-pc',name(1:end-1))
-            set(gcf,'Position',[857   518   308   215])
-            % fullscreen [1547          44         363         322]
-        else
-            set(gcf, 'units', 'normalized', 'Position',[.7 .1 .15 .3])
-        end
+
     end
        
        
     
     figure(TraceFig)
-    
-    %Only update the trace information if we have switched particles
-    if (CurrentParticle~=PreviousParticle)|~exist('Amp')|(CurrentChannel~=PreviousChannel)
-        PreviousParticle=CurrentParticle;
-        [Frames,Amp]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},fad(CurrentChannel),FISHPath,FilePrefix);
-    end
-    plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-k')
-    hold on
-%     plot(Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
-%     plot(Frames(Frames==CurrentFrame),Amp(Frames==CurrentFrame),'ob')
-    hold off
-    try
-        xlim([min(Frames)-1,max(Frames)+1]);
-    catch
-    end
-    xlabel('Time (min)')
-    h = get(gca, 'xtick');
-    set(gca,'xticklabel',round(h*44.062/60))
-    ylabel('Intensity (A.U.)')
-    if strcmp('albert-pc',name(1:end-1))
-        set(gcf,'Position',[716    88   439   321])
-        % fullscreen [1135         471         776         515]
+    if ~strcmp(lower(ExperimentType),'inputoutput')
+        %Only update the trace information if we have switched particles
+        if (CurrentParticle~=PreviousParticle)|~exist('Amp')|(CurrentChannel~=PreviousChannel)
+            PreviousParticle=CurrentParticle;
+            [Frames,Amp]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},fad(CurrentChannel),FISHPath,FilePrefix);
+        end
+        plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-k')
+        hold on
+        plot(Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
+        plot(Frames(Frames==CurrentFrame),Amp(Frames==CurrentFrame),'ob')
+        hold off
+        try
+            xlim([min(Frames)-1,max(Frames)+1]);
+        catch
+        end
+        xlabel('Frames')
+        h = get(gca, 'xtick');
+        set(gca,'xticklabel',h)
+        ylabel('Intensity (A.U.)')
     else
-        set(gcf, 'units', 'normalized', 'Position',[.53 .53   .3   .35])
+        %Only update the trace information if we have switched particles
+        if (CurrentParticle~=PreviousParticle)|~exist('Amp')|(CurrentChannel~=PreviousChannel)
+            clf
+            PreviousParticle=CurrentParticle;
+            [Frames,Amp]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},fad(CurrentChannel),FISHPath,FilePrefix);
+        end
+        
+        plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-k')
+        hold on
+        plot(Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
+        plot(Frames(Frames==CurrentFrame),Amp(Frames==CurrentFrame),'ob')
+        try
+            xlim([min(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames),max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames)])
+        catch
+        end
+        ax1=gca;
+        set(ax1,'XAxisLocation','Bottom')
+        set(ax1,'YAxisLocation','Left')
+        set(ax1,'Box','off')
+        set(ax1,'YColor','k','XColor','k')
+        ax2= axes('Position',get(ax1,'Position'),...
+                   'XAxisLocation','top',...
+                   'YAxisLocation','right',...
+                   'Color','none',...
+                   'Box','off',...
+                   'XColor','k','YColor','k');
+        hold on
+        plot(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames,...
+            max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).Fluo,[],2),'g.-')
+        hold off
+        try
+            xlim([min(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames),max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames)])
+        catch
+        end
+        xlabel('Frames')
+        h = get(gca, 'xtick');
+        set(gca,'xticklabel',h)
+        ylabel('Intensity (A.U.)')
+        
     end
+
     
     FigureTitle=['Particle: ',num2str(CurrentParticle),'/',num2str(length(Particles{CurrentChannel})),...
         ', Frame: ',num2str(CurrentFrame),'/',num2str(TotalFrames),...
@@ -870,6 +910,19 @@ while (cc~='x')
     title(FigureTitle)
     
     
+    %Define the windows
+    figure(Overlay)
+    set(gcf,'units', 'normalized', 'position',[0.01, .6, .33, .33]);
+    if UseHistoneOverlay 
+        figure(HisOverlayFig)
+        set(gcf,'units', 'normalized', 'position',[0.01, .2, .33, .33]);
+    end
+    figure(TraceFig);
+    set(gcf,'units', 'normalized', 'position',[0.35, .6, .2, .33]);
+    figure(SnippetFig);
+    set(gcf,'units', 'normalized', 'position',[0.35, .36, .2/2, .33/2]);
+    figure(ZProfileFig);
+    set(gcf,'units', 'normalized', 'position',[0.46, .36, .2/2, .33/2]);
 
     
     
@@ -960,10 +1013,16 @@ while (cc~='x')
             else
                 save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2')            
             end
-            
+        display('Particles saved.')
+        if NChannels==1
+            Particles=Particles{1};
+        end
             
            [Particles,schnitzcells,fad,fad2]=TrackmRNADynamics(FilePrefix(1:end-1),...
                Threshold1,Threshold2); 
+        if NChannels==1
+            Particles={Particles};
+        end
            %Check the FrameApproved field
             for i=1:length(Particles{CurrentChannel})
                 if isempty(Particles{CurrentChannel}(i).FrameApproved)
@@ -1300,6 +1359,10 @@ while (cc~='x')
             save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2')            
         end
         display('Particles saved.')
+        if NChannels==1
+            Particles={Particles};
+        end
+        
     elseif cc=='t'
         ShowThreshold2=~ShowThreshold2;
     elseif (cc=='y')&(~UseHistoneOverlay)
@@ -1312,7 +1375,7 @@ while (cc~='x')
         elseif HideApprovedFlag==2
             HideApprovedFlag=0;
         end
-            
+
         %HideApprovedFlag=~HideApprovedFlag;
     elseif cc=='o'
         ZoomMode=~ZoomMode;        
@@ -1570,12 +1633,6 @@ while (cc~='x')
         
     elseif cc=='0'      %Debugging mode
         keyboard;
-    elseif cc=='9'  %check for nuclear tracking consistencies. This is useful while we're
-                    %  getting the code to work well.
-        warning('This feature has been discontinued for now. Talk to HG.')
-        %[schnitzcells,Particles{CurrentChannel}]=CheckSchnitzConsistency(schnitzcells,Particles{CurrentChannel},Ellipses);
-        %PreviousParticle=0;
-
     end
         
 end
@@ -1597,8 +1654,9 @@ if UseHistoneOverlay
 else
     save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2')            
 end
+close all
 display('Particles saved.')
-
+display(['(Left off at Particle #', num2str(CurrentParticle), ')'])
 
 
 

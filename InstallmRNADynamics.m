@@ -3,6 +3,7 @@ function InstallmRNADynamics
 %This function creates all the required folders to run the FISHToolbox.
 %IMPORTANT: This needs to be run from the 'mRNADynamics' folder.
 
+warning('off','MATLAB:MKDIR:DirectoryExists')
 
 %Check that we are in the right folder
 D=dir('InstallmRNADynamics.m');
@@ -79,28 +80,76 @@ else
 end
 
 
-%Add the right folders to the path
+%Add the right folders to the path. This will be done as a startup file in
+%the user's folder
+
 %mRNADynamics
-path(cd,path);     
 CurrentFolder=cd;
 %mRNADynamics\Tracking
 cd('Tracking')
-path(cd,path);
+TrackingFolder=cd;
 %mRNADynamics\Tracking\subfunctions
 cd('subfunctions')
-path(cd,path);
+SubfunctionsFolder=cd;
 cd(CurrentFolder);
 %Folder up from mRNADynamics
 cd('..')
-path(cd,path);    
+mRNADynamicsParentFolder=cd;
 %Data\DynamicsResults
 cd(['Data',filesep,'DynamicsResults'])
-path(cd,path)
+DynamicsResultsFolder=cd;
 cd(CurrentFolder);
 
 
 
+Output{1}=['path(''',CurrentFolder,''',path);'];
+Output{2}=['path(''',TrackingFolder,''',path);'];
+Output{3}=['path(''',SubfunctionsFolder,''',path);'];
+Output{4}=['path(''',mRNADynamicsParentFolder,''',path);'];
+Output{5}=['path(''',DynamicsResultsFolder,''',path);'];
 
 
+%Create the startup.m file
+StartUpPath=userpath;
+%if ~exist([StartUpPath(1:end-1),filesep,'startup.m'])
+fid = fopen([StartUpPath(1:end-1),filesep,'startup.m'], 'a');
+
+for i=1:length(Output)
+    fprintf(fid, '%s \n', Output{i});
+end
+fclose(fid);
+    
+% else
+%     Answer=input('WARNING: startup.m already exist. Append, overwrite or cancel? (A/O/C): ','s')
+%     if strcmp(lower(Answer),'a')
+%         fid = fopen([StartUpPath(1:end-1),filesep,'startup.m'], 'a');
+%         for i=1:length(Output)
+%             fprintf(fid, '%s \n', Output{i});
+%         end
+%         fclose(fid);
+%     elseif strcmp(lower(Answer),'o')
+%         fid = fopen([StartUpPath(1:end-1),filesep,'startup.m'], 'wt');
+%         for i=1:length(Output)
+%             fprintf(fid, '%s \n', Output{i});
+%         end
+%         fclose(fid);
+%     end
+% end
+% 
+
+%I had to do this because it seems to take some time for the file to be
+%found by Matlab after creating it
+try
+    startup;
+catch
+    display('Run "startup" to finish the installation')
+end
+        
+
+warning('on','MATLAB:MKDIR:DirectoryExists')
+
+
+
+        
 
 

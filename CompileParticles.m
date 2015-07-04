@@ -1,8 +1,5 @@
 function CompileParticles(varargin)
 
-
-
-
 %Parameters:
 %First, the prefix.
 %There after:
@@ -15,8 +12,10 @@ function CompileParticles(varargin)
 %SkipAll - Skip all that can be skipped
 %ApproveAll - Approves all particles. This is useful if we want to do a
 %             quick check of, for example, the AP profiles
+%SetMinParticles - Set the threshold for the minimum number of particles per
+%               AP bin for compilation
 
-%This function puts togetether all the information we have about particles.
+%This function puts together all the information we have about particles.
 %Things we want in here are:
 
 close all
@@ -32,7 +31,8 @@ SkipTraces=0;   %Do not output the individual traces.
 SkipFluctuations=0;  %Do not generate the plots of correlations of fluctuations and offset
 SkipFits=0;         %Do not generate the fit output (but still does the fit)
 SkipMovie=0;        %Do not generate the movie
-ApproveAll=0;
+ApproveAll=0;       %Only use manually approved particles
+MinParticles=4;     %Require 4 particles per AP bin or else discard
 
 if isempty(varargin)
     FolderTemp=uigetdir(DefaultDropboxFolder,'Select folder with data to analyze');
@@ -58,7 +58,9 @@ else
             SkipFits=1;
             SkipMovie=1;
         elseif strcmp(varargin{i},'ApproveAll')    
-            ApproveAll=1;            
+            ApproveAll=1;
+        elseif strcmp(varargin{i},'SetMinParticles')
+            MinParticles = input('Set minimum particle threshold:');
         end
     end
 
@@ -157,7 +159,6 @@ XLSHeaders=Txt(1,:);
 Txt=Txt(2:end,:);
 
 %Find the different columns.
-DataFolderColumn=7;
 
 %Convert the prefix into the string used in the XLS file
 Dashes=findstr(FilePrefix(1:end-1),'-');
@@ -199,6 +200,10 @@ CFColumn=find(strcmp(XLSRaw(1,:),'CF'));
 Channel1Column=find(strcmp(XLSRaw(1,:),'Channel1'));
 Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
 
+%Get the information
+Channel1=XLSTxt(PrefixRow,Channel1Column);
+Channel2=XLSTxt(PrefixRow,Channel2Column);
+
 %Convert the prefix into the string used in the XLS file
 Dashes=findstr(Prefix,'-');
 
@@ -221,8 +226,8 @@ else
 end
 
 
-if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|...
-        strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP')
+if sum(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
+    ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')))
     nc9=cell2mat(XLSRaw(XLSEntry,nc9Column));
     nc10=cell2mat(XLSRaw(XLSEntry,nc10Column));
     nc11=cell2mat(XLSRaw(XLSEntry,nc11Column));
@@ -297,7 +302,7 @@ NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
 %we took AP data. Otherwise just add XY.
 
 if strcmp(ExperimentAxis,'AP')
-    if (~isfield(Particles,'APpos'))|ForceAP
+    if (~isfield(Particles{1},'APpos')) || ForceAP
         if HistoneChannel
             AddParticlePosition(Prefix);
         else
@@ -307,8 +312,10 @@ if strcmp(ExperimentAxis,'AP')
     else
         display('Using saved AP information')
     end
-elseif strcmp(ExperimentAxis,'DV')&exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+elseif strcmp(lower(ExperimentAxis),'dv')&exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
     AddParticlePosition(Prefix);
+elseif strcmp(lower(ExperimentAxis),'dv')
+    AddParticlePosition(Prefix,'NoAP');
 elseif strcmp(ExperimentAxis,'NoAP')
     AddParticlePosition(Prefix,'NoAP');
 else
@@ -449,7 +456,7 @@ else
     end
 end
     
-    ElapsedTime=ElapsedTime/60;     %Time is in minutes
+ElapsedTime=ElapsedTime/60;     %Time is in minutes
     
 
 %Some parameters
@@ -1159,32 +1166,33 @@ end
 %If the nuclear masks are present then use them. Otherwise just calculate
 %the median of the images as a function of time
 
-if NChannels==1
 
-    if HistoneChannel&strcmp(ExperimentAxis,'AP')
-        [MeanCyto,SDCyto,MedianCyto,MaxCyto]=GetCytoMCP(Prefix);
-    else
-        MeanCyto=[];
-        SDCyto=[];
-        MaxCyto=[];
-
-        h=waitbar(0,'Calculating the median cyto intentisy');
-        for i=1:length(FrameInfo)
-            waitbar(i/length(FrameInfo),h)
-            for j=1:FrameInfo(1).NumberSlices
-                Image(:,:,j)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),'.tif']);
-            end
-            ImageMax=max(Image,[],3);
-            MedianCyto(i)=median(double(ImageMax(:)));
-        end
-        close(h)
-    end  
-else
+% if NChannels==1
+% 
+%     if HistoneChannel&strcmp(ExperimentAxis,'AP')
+%         [MeanCyto,SDCyto,MedianCyto,MaxCyto]=GetCytoMCP(Prefix);
+%     else
+%         MeanCyto=[];
+%         SDCyto=[];
+%         MaxCyto=[];
+% 
+%         h=waitbar(0,'Calculating the median cyto intentisy');
+%         for i=1:length(FrameInfo)
+%             waitbar(i/length(FrameInfo),h)
+%             for j=1:FrameInfo(1).NumberSlices
+%                 Image(:,:,j)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),'.tif']);
+%             end
+%             ImageMax=max(Image,[],3);
+%             MedianCyto(i)=median(double(ImageMax(:)));
+%         end
+%         close(h)
+%     end  
+% else
     MeanCyto=[];
     SDCyto=[];
     MaxCyto=[];
     MedianCyto=[];
-end
+% end
     
     
     
@@ -2101,8 +2109,11 @@ if ~SkipMovie&strcmp(ExperimentAxis,'AP')
         figure(17)
 
         MaxValue=max(max(MeanVectorAP{ChN}));
-
-        MinParticles=4;     %Minimum number of particles in a bin to take it seriously
+        
+%%% Commented out 6/9/15 by AR so that this value can be set by the user.
+%%% Default is still 4. 
+%         MinParticles=4;     %Minimum number of particles in a bin to take it seriously
+%%%
         NParticlesAPFilter=NParticlesAP{ChN}>=MinParticles;
 
         for i=1:length(FrameInfo)
@@ -2167,7 +2178,15 @@ end
 % plot(  Position ,CompiledParticles{1}(i).Fluo,'.k')
 %     
 %     
-    
+   
+
+%% Input-output
+
+%Compile the nuclear fluorescence information if we have the appropriate
+%experiment type
+if strcmp(lower(ExperimentType),'inputoutput')
+    CompileNuclearProtein(Prefix)
+end
 
 
 

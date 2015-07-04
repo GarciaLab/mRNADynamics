@@ -5,18 +5,26 @@ function [coordA,coordP,xShift,yShift]=FindAPAxisFullEmbryo(varargin)
 %to determine the shift and then find the AP axis.
 
 
+%Parameters:
+%First, the prefix.
+%There after:
+%FlipAP- Switches anterior and posterior poles
+%CorrectAxis- Runs a correction script after automatic detection
+CorrectAxis = 0;
+
 %Load the folder information
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
     DetermineLocalFolders(varargin{1});
 
+Prefix=varargin{1};
 
-for i=1:length(varargin)
+for i=2:length(varargin)
     if isnumeric(varargin{i})
         if varargin{i}==1
             FlipAP=1;
         end
-    elseif ischar(varargin{i})
-        Prefix=varargin{i};
+    elseif strcmp(varargin{i},'CorrectAxis')
+        CorrectAxis = 1;
     end
 end
    
@@ -60,8 +68,8 @@ Channel2=XLSTxt(PrefixRow,Channel2Column);
 
 
 
-%Determine whether we're dealing with 2-photon data from Princeton or LSM
-%data. 2-photon data uses TIF files. In LSM mode multiple files will be
+%Determine whether we're dealing with 2-photon data from Princeton, LSM, or
+%LIF data. 2-photon data uses TIF files. In LSM mode multiple files will be
 %combined into one.
 DTIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.tif']);
 DLSM=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.lsm']);
@@ -85,24 +93,22 @@ else
 end
 
 
-%Find the right and left files that do not correspond to the surface image
+% Identify the midsagittal image
 MidFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'mid')));
 
-if (length(MidFileIndex)>1) %| (length(SurfaceFileIndex)>1)
-    error('Too many left/right files in FullEmbryo folder')
+if (length(MidFileIndex)>1)
+    error('Too many midsagittal files in FullEmbryo folder')
 end
 
 
 %See if we don't want the default AP orientation
 if ~exist('FlipAP')
-    if strcmp(D(MidFileIndex).name,'PA')%|strcmp(D(SurfaceFileIndex).name,'PA')
+    if strcmp(D(MidFileIndex).name,'PA')
         FlipAP=1;
     else
         FlipAP=0;
     end
 end
-
-    
 
 if strcmp(FileMode,'TIF')
     MidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(MidFileIndex).name],2);
@@ -122,9 +128,12 @@ elseif strcmp(FileMode,'LIFExport')
     full_embryo_angle = 0;
     
     LIFMid=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(MidFileIndex).name]);
-    MidImage=LIFMid{1}{HisChannel,1};
+    %MidImage=LIFMid{1}{HisChannel,1};
     
-    if isdir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData']) 
+    %By looking at the last image we make sure we're avoiding the
+    %individual tiles if we're dealing with tile scan
+    MidImage=LIFMid{end,1}{HisChannel,1};
+    if isdir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData'])
         xml_file_path = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, '*.xml']);
         xml_file = xml_file_path(1).name;
         xDoc = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, xml_file]);
@@ -137,9 +146,10 @@ elseif strcmp(FileMode,'LIFExport')
         xml_file_path2 = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo',...
             filesep, 'MetaData', filesep,'*Mid*.xml']);
         xml_file2 = xml_file_path2(1).name;
+        evalin('base','clear rot')
         xDoc2 = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep,'FullEmbryo', filesep,...
                 'MetaData', filesep, xml_file2]);
-        full_embryo_angle = str2double(evalin('base','rot'));
+%         full_embryo_angle = str2double(evalin('base','rot'));
     else 
         warning('No full embryo metadata found.')
     end
@@ -299,13 +309,8 @@ else
 
 end
     
-
-
-
 %Save the AP and shift information
 save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP');
-
-
 
 
 clf
@@ -320,5 +325,6 @@ hold off
 saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APEmbryo.tif']);
 close(diagFigure);
 
-
-
+if CorrectAxis
+    CorrectAPAxis(Prefix);
+end

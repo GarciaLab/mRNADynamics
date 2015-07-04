@@ -58,14 +58,15 @@ for i=1:length(CompiledSets)
     Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
     
     %Need to try this in case there's some incompatibility in terms of the
-    %structures. This is because we might have data sets that have been
+    %structures. This is because we might have xls sets that have been
     %compiled using different versions of CompileParticles.m
     try
-        Data(i)=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
+        DataTemp=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
+        DataTemp=orderfields(DataTemp);
+        Data(i)=DataTemp;
     catch
         %If this fails figure out what's the missing field
         DataTemp=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
-        
         FieldNamesData=fieldnames(Data);
         FieldNamesDataTemp=fieldnames(DataTemp);
         

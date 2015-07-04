@@ -8,9 +8,13 @@ function [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ResizeF
 %        ShiftColumn,ShiftRow,coordAHalf,coordPHalf,Rows,Columns,Zoom)
 
 %. - Move to the right
+%> - Move to the right further
 %, - Move to the left
+%< - Move to the left further
 %a - Move up
+%A - Move up further
 %z - Move down
+%Z - Move down further
 %x - Save and cancel
 
 
@@ -106,7 +110,9 @@ while (cc~=13)
     hold off
     
     figure(FigureOverlay)
-    ct=waitforbuttonpress;
+%     ct=waitforbuttonpress; AR 7/3/15- Want to see if commenting this out makes usage
+%     easier
+    ct=1;
     cc=get(FigureOverlay,'currentcharacter');
     cm=get(gca,'CurrentPoint');
     
@@ -121,10 +127,11 @@ while (cc~=13)
     elseif (ct~=0)&(cc=='z')
         ShiftRow=ShiftRow+1;
     elseif (ct~=0)&(cc=='>')
-        ShiftColumn=ShiftColumn+10;
+        ShiftColumn=ShiftColumn+50;
     elseif (ct~=0)&(cc=='<')
-        ShiftColumn=ShiftColumn-10;
+        ShiftColumn=ShiftColumn-50;
     elseif (ct~=0)&(cc=='A')
+<<<<<<< HEAD
         ShiftRow=ShiftRow-10;
     elseif (ct~=0)&(cc=='Z')
         ShiftRow=ShiftRow+10;
@@ -133,6 +140,11 @@ while (cc~=13)
         figure(FigureRectangle)
         [Positionx,Positiony]=ginputc(1,'color', 'b', 'linewidth',1);
         Position = [Positionx,Positiony];
+=======
+        ShiftRow=ShiftRow-50;
+    elseif (ct~=0)&&(cc=='Z')
+        ShiftRow=ShiftRow+50;
+>>>>>>> origin/HernanDev
         
         ShiftColumn=round(Position(1)-SurfColumns/2);
         ShiftRow=round(Position(2)-SurfRows/2);
