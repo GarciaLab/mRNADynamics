@@ -131,21 +131,14 @@ while (cc~=13)
     elseif (ct~=0)&(cc=='<')
         ShiftColumn=ShiftColumn-50;
     elseif (ct~=0)&(cc=='A')
-<<<<<<< HEAD
-        ShiftRow=ShiftRow-10;
+        ShiftRow=ShiftRow-50;
     elseif (ct~=0)&(cc=='Z')
-        ShiftRow=ShiftRow+10;
+        ShiftRow=ShiftRow+50;
     elseif (ct~=0)&(cc=='m')
         display('Select a location to center the alignment box')
         figure(FigureRectangle)
         [Positionx,Positiony]=ginputc(1,'color', 'b', 'linewidth',1);
         Position = [Positionx,Positiony];
-=======
-        ShiftRow=ShiftRow-50;
-    elseif (ct~=0)&&(cc=='Z')
-        ShiftRow=ShiftRow+50;
->>>>>>> origin/HernanDev
-        
         ShiftColumn=round(Position(1)-SurfColumns/2);
         ShiftRow=round(Position(2)-SurfRows/2);
         
