@@ -1,8 +1,5 @@
 function CompileParticles(varargin)
 
-
-
-
 %Parameters:
 %First, the prefix.
 %There after:
@@ -34,8 +31,8 @@ SkipTraces=0;   %Do not output the individual traces.
 SkipFluctuations=0;  %Do not generate the plots of correlations of fluctuations and offset
 SkipFits=0;         %Do not generate the fit output (but still does the fit)
 SkipMovie=0;        %Do not generate the movie
-ApproveAll=0;
-MinParticles=4;
+ApproveAll=0;       %Only use manually approved particles
+MinParticles=4;     %Require 4 particles per AP bin or else discard
 
 if isempty(varargin)
     FolderTemp=uigetdir(DefaultDropboxFolder,'Select folder with data to analyze');
@@ -305,7 +302,7 @@ NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
 %we took AP data. Otherwise just add XY.
 
 if strcmp(ExperimentAxis,'AP')
-    if (~isfield(Particles,'APpos'))|ForceAP
+    if (~isfield(Particles{1},'APpos')) || ForceAP
         if HistoneChannel
             AddParticlePosition(Prefix);
         else

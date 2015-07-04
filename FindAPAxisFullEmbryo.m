@@ -60,8 +60,8 @@ Channel2=XLSTxt(PrefixRow,Channel2Column);
 
 
 
-%Determine whether we're dealing with 2-photon data from Princeton or LSM
-%data. 2-photon data uses TIF files. In LSM mode multiple files will be
+%Determine whether we're dealing with 2-photon data from Princeton, LSM, or
+%LIF data. 2-photon data uses TIF files. In LSM mode multiple files will be
 %combined into one.
 DTIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.tif']);
 DLSM=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.lsm']);
@@ -85,24 +85,22 @@ else
 end
 
 
-%Find the right and left files that do not correspond to the surface image
+% Identify the midsagittal image
 MidFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'mid')));
 
-if (length(MidFileIndex)>1) %| (length(SurfaceFileIndex)>1)
-    error('Too many left/right files in FullEmbryo folder')
+if (length(MidFileIndex)>1)
+    error('Too many midsagittal files in FullEmbryo folder')
 end
 
 
 %See if we don't want the default AP orientation
 if ~exist('FlipAP')
-    if strcmp(D(MidFileIndex).name,'PA')%|strcmp(D(SurfaceFileIndex).name,'PA')
+    if strcmp(D(MidFileIndex).name,'PA')
         FlipAP=1;
     else
         FlipAP=0;
     end
 end
-
-    
 
 if strcmp(FileMode,'TIF')
     MidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(MidFileIndex).name],2);
@@ -123,6 +121,7 @@ elseif strcmp(FileMode,'LIFExport')
     
     LIFMid=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(MidFileIndex).name]);
     %MidImage=LIFMid{1}{HisChannel,1};
+    
     %By looking at the last image we make sure we're avoiding the
     %individual tiles if we're dealing with tile scan
     MidImage=LIFMid{end,1}{HisChannel,1};
@@ -302,13 +301,8 @@ else
 
 end
     
-
-
-
 %Save the AP and shift information
 save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP');
-
-
 
 
 clf
@@ -322,6 +316,3 @@ plot(coordP(1),coordP(2),'r.','MarkerSize',20);
 hold off
 saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APEmbryo.tif']);
 close(diagFigure);
-
-
-
