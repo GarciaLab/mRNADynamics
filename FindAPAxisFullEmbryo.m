@@ -5,18 +5,26 @@ function [coordA,coordP,xShift,yShift]=FindAPAxisFullEmbryo(varargin)
 %to determine the shift and then find the AP axis.
 
 
+%Parameters:
+%First, the prefix.
+%There after:
+%FlipAP- Switches anterior and posterior poles
+%CorrectAxis- Runs a correction script after automatic detection
+CorrectAxis = 0;
+
 %Load the folder information
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
     DetermineLocalFolders(varargin{1});
 
+Prefix=varargin{1};
 
-for i=1:length(varargin)
+for i=2:length(varargin)
     if isnumeric(varargin{i})
         if varargin{i}==1
             FlipAP=1;
         end
-    elseif ischar(varargin{i})
-        Prefix=varargin{i};
+    elseif strcmp(varargin{i},'CorrectAxis')
+        CorrectAxis = 1;
     end
 end
    
@@ -316,3 +324,7 @@ plot(coordP(1),coordP(2),'r.','MarkerSize',20);
 hold off
 saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APEmbryo.tif']);
 close(diagFigure);
+
+if CorrectAxis
+    CorrectAPAxis(Prefix);
+end
