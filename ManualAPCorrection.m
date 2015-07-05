@@ -151,7 +151,7 @@ while (cc~=13)
         
     
     %Zoom in and out
-    elseif (ct~=0)&(cc=='=')
+    elseif (ct~=0)&(cc=='=') %#ok<*AND2>
         figure(FigureCorrelation)
         OldXLim=xlim;
         OldYLim=ylim;

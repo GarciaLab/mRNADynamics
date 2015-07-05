@@ -10,6 +10,7 @@ function [coordA,coordP,xShift,yShift]=FindAPAxisFullEmbryo(varargin)
 %There after:
 %FlipAP- Switches anterior and posterior poles
 %CorrectAxis- Runs a correction script after automatic detection
+
 CorrectAxis = 0;
 
 %Load the folder information
@@ -149,7 +150,7 @@ elseif strcmp(FileMode,'LIFExport')
         evalin('base','clear rot')
         xDoc2 = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep,'FullEmbryo', filesep,...
                 'MetaData', filesep, xml_file2]);
-%         full_embryo_angle = str2double(evalin('base','rot'));
+         full_embryo_angle = str2double(evalin('base','rot'));
     else 
         warning('No full embryo metadata found.')
     end
