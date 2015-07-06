@@ -314,7 +314,7 @@ if ~NoAP
             xml_file2 = xml_file_path2(1).name;
             xDoc2 = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep,'FullEmbryo', filesep,...
                     'MetaData', filesep, xml_file2]);
-%             full_embryo_angle = str2double(evalin('base','rot'));
+             full_embryo_angle = str2double(evalin('base','rot'));
         else 
             warning('No full embryo metadata found.')
         end
@@ -352,7 +352,7 @@ if ~NoAP
     if exist('ManualAlignmentDone')
         if ManualAlignmentDone
             display('Manual alignment results saved. Using them.')
-            ManualAlignment=1;
+            %ManualAlignment=0;
         end
     end
 
@@ -446,16 +446,18 @@ if ~NoAP
             %How well did we do with the alignment?
             [RowsResized,ColumnsResized]=size(SurfImageResized);
             [RowsZoom,ColumnsZoom]=size(ZoomImage);
+
+            %If manual alignment was done before then load the results
+            if exist('ManualAlignmentDone')
+                if ManualAlignmentDone
+                    load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
+                end
+            end
+            
             
             %See if we need the manual alignment
             if ManualAlignment
                 %See if we need to load the previous manual alignment results
-                if exist('ManualAlignmentDone')
-                    if ManualAlignmentDone
-                        load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
-                    end
-                end
-
                 [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ZoomRatio,ShiftRow,ShiftColumn,...
                      FullEmbryo, ZoomRatio, SurfRows,Rows, Columns, coordA, coordP, SurfColumns);
                 ManualAlignmentDone=1;
@@ -980,19 +982,19 @@ if ~NoAP
 
         end
     else
-        warning('Have HG check this part of the code')
-
         ImageCenter=[SurfRows/2,SurfColumns/2];
-
-        %This is for the full image
-        TopLeft=[ImageCenter(1)-Rows/ZoomRatio/2,ImageCenter(2)-Columns/ZoomRatio/2];
-        BottomRight=[ImageCenter(1)+Rows/ZoomRatio/2,ImageCenter(2)+Columns/ZoomRatio/2];
 
         %This is for the acquisition image
         TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
             ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn];
         BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
             ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
+        
+        %HG: It's silly to be defining things using the Half coordinates. I
+        %need to do better here
+        TopLeft=TopLeftHalf;
+        BottomRight=BottomRightHalf;
+        
 
         coordAHalf=coordA;
         coordPHalf=coordP;
@@ -1008,26 +1010,6 @@ if ~NoAP
     plot([coordA(1),coordP(1)],[coordA(2),coordP(2)],'-b')
     hold off
     saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoArea.tif']);
-
-    
-
-    
-
-% 
-%     %Now, compare it to the surface picture
-%     SurfName=D(find(~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
-%     SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,SurfName],ChannelToLoad);
-
-  
-%     
-%     
-%     %Did the user want to do manual alignment?
-%     if ManualAlignment
-%        [ShiftColumn,ShiftRow,TopLeftHalf,BottomRightHalf]=ManualAPCorrection(SurfImage,TopLeftHalf,BottomRightHalf,...
-%            ShiftColumn,ShiftRow,coordAHalf,coordPHalf,Rows1x,Columns1x,ZoomRatio);
-%     end
-
-
 
     figure(8)
     imshow(imadjust(SurfImage),'DisplayRange',[],'InitialMagnification',100)
