@@ -82,7 +82,7 @@ CheckDivisionTimes(Prefix)
 
 %Track the particles, the two numbers are Threshold1 and Threshold2
 %TrackmRNADynamics(Prefix,5,5,5,5) - For 2spots2colors
-TrackmRNADynamics(Prefix,5,5)
+TrackmRNADynamics(Prefix,2,2)
 
 CheckParticleTracking(Prefix)
 

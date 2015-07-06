@@ -1,8 +1,5 @@
 function CompileParticles(varargin)
 
-
-
-
 %Parameters:
 %First, the prefix.
 %There after:
@@ -34,8 +31,8 @@ SkipTraces=0;   %Do not output the individual traces.
 SkipFluctuations=0;  %Do not generate the plots of correlations of fluctuations and offset
 SkipFits=0;         %Do not generate the fit output (but still does the fit)
 SkipMovie=0;        %Do not generate the movie
-ApproveAll=0;
-MinParticles=4;
+ApproveAll=0;       %Only use manually approved particles
+MinParticles=4;     %Require 4 particles per AP bin or else discard
 
 if isempty(varargin)
     FolderTemp=uigetdir(DefaultDropboxFolder,'Select folder with data to analyze');
@@ -162,7 +159,6 @@ XLSHeaders=Txt(1,:);
 Txt=Txt(2:end,:);
 
 %Find the different columns.
-DataFolderColumn=7;
 
 %Convert the prefix into the string used in the XLS file
 Dashes=findstr(FilePrefix(1:end-1),'-');
@@ -204,6 +200,10 @@ CFColumn=find(strcmp(XLSRaw(1,:),'CF'));
 Channel1Column=find(strcmp(XLSRaw(1,:),'Channel1'));
 Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
 
+%Get the information
+Channel1=XLSTxt(PrefixRow,Channel1Column);
+Channel2=XLSTxt(PrefixRow,Channel2Column);
+
 %Convert the prefix into the string used in the XLS file
 Dashes=findstr(Prefix,'-');
 
@@ -226,8 +226,8 @@ else
 end
 
 
-if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|...
-        strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP')
+if sum(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
+    ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')))
     nc9=cell2mat(XLSRaw(XLSEntry,nc9Column));
     nc10=cell2mat(XLSRaw(XLSEntry,nc10Column));
     nc11=cell2mat(XLSRaw(XLSEntry,nc11Column));
@@ -302,7 +302,7 @@ NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
 %we took AP data. Otherwise just add XY.
 
 if strcmp(ExperimentAxis,'AP')
-    if (~isfield(Particles,'APpos'))|ForceAP
+    if (~isfield(Particles{1},'APpos')) || ForceAP
         if HistoneChannel
             AddParticlePosition(Prefix);
         else
@@ -312,8 +312,10 @@ if strcmp(ExperimentAxis,'AP')
     else
         display('Using saved AP information')
     end
-elseif strcmp(ExperimentAxis,'DV')&exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+elseif strcmp(lower(ExperimentAxis),'dv')&exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
     AddParticlePosition(Prefix);
+elseif strcmp(lower(ExperimentAxis),'dv')
+    AddParticlePosition(Prefix,'NoAP');
 elseif strcmp(ExperimentAxis,'NoAP')
     AddParticlePosition(Prefix,'NoAP');
 else
@@ -454,7 +456,7 @@ else
     end
 end
     
-    ElapsedTime=ElapsedTime/60;     %Time is in minutes
+ElapsedTime=ElapsedTime/60;     %Time is in minutes
     
 
 %Some parameters
@@ -2176,7 +2178,15 @@ end
 % plot(  Position ,CompiledParticles{1}(i).Fluo,'.k')
 %     
 %     
-    
+   
+
+%% Input-output
+
+%Compile the nuclear fluorescence information if we have the appropriate
+%experiment type
+if strcmp(lower(ExperimentType),'inputoutput')
+    CompileNuclearProtein(Prefix)
+end
 
 
 

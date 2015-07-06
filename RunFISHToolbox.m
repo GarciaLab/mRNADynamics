@@ -36,6 +36,8 @@ elseif strcmp(ExperimentType,'2spot')
     NChannels=1;
 elseif strcmp(ExperimentType,'2spot2color')
     NChannels=2;
+elseif strcmp(ExperimentType,'inputoutput')
+    NChannels=1;
 else
     error('Experiment type not recognized in MovieDatabase.XLSX')
 end

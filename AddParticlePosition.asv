@@ -460,9 +460,21 @@ if ~NoAP
             %See if we need the manual alignment
             if ManualAlignment
                 %See if we need to load the previous manual alignment results
+<<<<<<< HEAD
                 [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ZoomRatio,ShiftRow,ShiftColumn,...
                      FullEmbryo, ZoomRatio, SurfRows,Rows, Columns, coordA, coordP, SurfColumns);
                 ManualAlignmentDone=1;
+=======
+                if exist('ManualAlignmentDone')
+                    if ManualAlignmentDone
+                        load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
+                    end
+                else
+                    [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ZoomRatio,ShiftRow,ShiftColumn,...
+                        FullEmbryo, ZoomRatio, SurfRows,Rows, Columns, coordA, coordP, SurfColumns);
+                    ManualAlignmentDone=1;
+                end
+>>>>>>> origin/HernanDev
             end
             
             try

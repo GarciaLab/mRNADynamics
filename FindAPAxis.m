@@ -18,7 +18,7 @@ Margin=0;
 
 % ES 2013-10-29: Required for multiple users to be able to analyze data on
 % one computer
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
     DetermineLocalFolders(varargin{1});
 
 
@@ -50,7 +50,7 @@ if (~isempty(findstr(Prefix,'Bcd')))&...
 end
 
 
-%If the AP axis hasn't been specified check if it was specificed in the
+%If the AP axis hasn't been specified check if it was specified in the
 %image names. Otherwise assume AP orientation
 
 %Find out the date it was taken

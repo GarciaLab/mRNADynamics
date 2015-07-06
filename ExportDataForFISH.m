@@ -995,9 +995,9 @@ elseif strcmp(FileMode,'LIFExport')
 
     elseif strcmp(lower(ExperimentType),'inputoutput')      %Input-output mode
         
-        %This mode is designed for MCP and PCP data. It doesn't support
-        %histone for now. However, we'll use the red channel to generate a
-        %fake histone channel
+        %This mode is designed for mRNA detection in a red channel that can
+        %be used to estimate the nuclei and a protein input channel such as
+        %Bicoid-GFP and Dorsal-Venus
         
         %Load the reference histogram for the fake histone channel
         load('ReferenceHist.mat')
@@ -1023,7 +1023,7 @@ elseif strcmp(FileMode,'LIFExport')
         end
 
         %Number of channels
-        NChannels=LIFMeta.getChannelCount(1);
+        NChannels=LIFMeta.getChannelCount(0);
         
         if NChannels~=2
             error('Only one channel found in the LIF file')
@@ -1046,10 +1046,10 @@ elseif strcmp(FileMode,'LIFExport')
         
         %Extract time information from xml files
         XMLFolder=Folder;
-        SeriesFiles = dir([XMLFolder,filesep,'*Series*Properties.xml']);
+        SeriesFiles = dir([XMLFolder,filesep,'*Properties.xml']);
         if isempty(SeriesFiles)
             XMLFolder=[Folder,filesep,'MetaData'];
-            SeriesFiles = dir([XMLFolder,filesep,'*Series*Properties.xml']);
+            SeriesFiles = dir([XMLFolder,filesep,'*Properties.xml']);
             if isempty(SeriesFiles)
                 error('XML MetaFiles could not be found. Did they get exported using the LAS software?')
             end
@@ -1099,12 +1099,12 @@ elseif strcmp(FileMode,'LIFExport')
 
         
         for i=1:sum(NFrames)
-            FrameInfo(i).LinesPerFrame=str2double(LIFMeta.getPixelsSizeY(1));
-            FrameInfo(i).PixelsPerLine=str2double(LIFMeta.getPixelsSizeX(1));
+            FrameInfo(i).LinesPerFrame=str2double(LIFMeta.getPixelsSizeY(0));
+            FrameInfo(i).PixelsPerLine=str2double(LIFMeta.getPixelsSizeX(0));
             FrameInfo(i).NumberSlices=min(NSlices);
             FrameInfo(i).FileMode='LIFExport';
-            FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(1));
-            FrameInfo(i).ZStep=str2double(LIFMeta.getPixelsPhysicalSizeZ(1));
+            FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(0));
+            FrameInfo(i).ZStep=str2double(LIFMeta.getPixelsPhysicalSizeZ(0));
             FrameInfo(i).Time=InitialStackTime(i);
         end
         
@@ -1159,6 +1159,20 @@ elseif strcmp(FileMode,'LIFExport')
        
         %Copy the data
         h=waitbar(0,'Extracting LIFExport images');
+        
+        %This mode assumes that one channel corresponds to the input and
+        %one to the output. The input will not be analyzed using FISH.
+        if (~isempty(strfind(lower(Channel2),'mcp')))&...
+                ~isempty(strfind(lower(Channel2),'pcp'))
+            OutputChannel=2;
+        elseif (~isempty(strfind(lower(Channel1),'mcp')))&...
+                ~isempty(strfind(lower(Channel1),'pcp'))
+            OutputChannel=1;
+        else
+            error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
+        end
+            
+        
         %Create a blank image
         BlankImage=uint16(zeros(size(LIFImages{1}{1,1})));
         
@@ -1241,20 +1255,11 @@ elseif strcmp(FileMode,'LIFExport')
         Output{2}='';
         Output{3}='1';
         Output{4}=['frames ',num2str(sum(NFrames)),':1:',num2str(min(NSlices)+2)];
-        Output{5}=['suffix ???_z??_ch01'];
+        Output{5}=['suffix ???_z??_ch',iIndex(OutputChannel,2)];
         if exist('LIFFF')
             Output{end+1}=['flat FF'];
-        end
-        Output{end+1}='';
-        Output{end+1}='2';
-        Output{end+1}=['frames ',num2str(sum(NFrames)),':1:',num2str(min(NSlices)+2)];
-        Output{end+1}=['suffix ???_z??_ch02'];
-        if exist('LIFFF')
-            Output{end+1}=['flat FF'];
-        end
-
-        
-    else
+        end      
+   else
         error('Experiment type not recognized. Check MovieDatabase.XLSX')
     end
 
