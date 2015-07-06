@@ -1,4 +1,4 @@
-function [MeanOnRatio,SEOnRatio]=NuclearOnRatio(Data,MinParticles,MinEmbryos,PixelsPerLine,LinesPerFrame)
+function [MeanOnRatio,SEOnRatio,OnRatio]=NuclearOnRatio(Data,MinParticles,MinEmbryos,PixelsPerLine,LinesPerFrame)
 
 %What's the fraction of active schnitzs in a frame 10 minutes into the nuclear cycle?
 OnRatio=nan(length(Data),length(Data(1).APbinID),2);
