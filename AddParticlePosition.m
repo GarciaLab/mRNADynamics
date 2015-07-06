@@ -984,7 +984,6 @@ if ~NoAP
 
         end
     else
-<<<<<<< HEAD
         ImageCenter=[SurfRows/2,SurfColumns/2];
 
         %This is for the acquisition image
@@ -1001,25 +1000,6 @@ if ~NoAP
 
         coordAHalf=coordA;
         coordPHalf=coordP;
-=======
-        ImageCenter=[SurfRows/2 + ShiftRow,SurfColumns/2 + ShiftColumn];
-        
-        %This is for the full image
-        TopLeft=[ImageCenter(1)-Rows/ZoomRatio/2,ImageCenter(2)-Columns/ZoomRatio/2];
-        BottomRight=[ImageCenter(1)+Rows/ZoomRatio/2,ImageCenter(2)+Columns/ZoomRatio/2];
-    
-     
-        if strcmp(FileMode,'TIF')
-            %This is for the acquisition image in 2-photon mode
-            TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
-                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn];
-            BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
-                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
-
-            coordAHalf=coordA;
-            coordPHalf=coordP;
-        end
->>>>>>> origin/HernanDev
     end
 
 
@@ -1033,19 +1013,17 @@ if ~NoAP
     hold off
     saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoArea.tif']);
 
-<<<<<<< HEAD
-    figure(8)
-    imshow(imadjust(SurfImage),'DisplayRange',[],'InitialMagnification',100)
-    hold on
-    rectangle('Position',[TopLeftHalf([2,1]),BottomRightHalf([2,1])-TopLeftHalf([2,1])],'EdgeColor','r')
-    plot(coordAHalf(1),coordAHalf(2),'.g','MarkerSize',30)
-    plot(coordPHalf(1),coordPHalf(2),'.r','MarkerSize',30)
-    plot([coordAHalf(1),coordPHalf(1)],[coordAHalf(2),coordPHalf(2)],'-b')
-    plot([1],[1],'.y','MarkerSize',50)
-    hold off
-    saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'HalfEmbryoArea.tif']);
-=======
-    
+%     figure(8)
+%     imshow(imadjust(SurfImage),'DisplayRange',[],'InitialMagnification',100)
+%     hold on
+%     rectangle('Position',[TopLeftHalf([2,1]),BottomRightHalf([2,1])-TopLeftHalf([2,1])],'EdgeColor','r')
+%     plot(coordAHalf(1),coordAHalf(2),'.g','MarkerSize',30)
+%     plot(coordPHalf(1),coordPHalf(2),'.r','MarkerSize',30)
+%     plot([coordAHalf(1),coordPHalf(1)],[coordAHalf(2),coordPHalf(2)],'-b')
+%     plot([1],[1],'.y','MarkerSize',50)
+%     hold off
+%     saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'HalfEmbryoArea.tif']);
+%     
 
     
 
@@ -1070,8 +1048,6 @@ if ~NoAP
         %Notice that there might be a +/-1 issue in the positioning given that
         %Matlab starts indexing from 1. However, as shown in the images below,
         %this doesn't make any real difference.   
->>>>>>> origin/HernanDev
-
         coordAZoom=(coordAHalf-[TopLeftHalf(2),TopLeftHalf(1)])*ZoomRatio;
         coordPZoom=(coordPHalf-[TopLeftHalf(2),TopLeftHalf(1)])*ZoomRatio;
     else
