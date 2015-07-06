@@ -110,8 +110,7 @@ while (cc~=13)
     hold off
     
     figure(FigureOverlay)
-%     ct=waitforbuttonpress; AR 7/3/15- Want to see if commenting this out makes usage
-%     easier
+    ct=waitforbuttonpress; 
     ct=1;
     cc=get(FigureOverlay,'currentcharacter');
     cm=get(gca,'CurrentPoint');

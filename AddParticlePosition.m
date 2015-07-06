@@ -281,9 +281,7 @@ if ~NoAP
         clear MaxTemp
   
         %Do a maximum projections
-%         for i=HisChannel:NChannelsMeta:size(ImageTemp{1},1)
-%                 MaxTemp(:,:,i)=ImageTemp{1}{i,1};
-%         end
+
         %By looking at the last image we make sure we're avoiding the
         %individual tiles if we're dealing with tile scan
         for i=HisChannel:NChannelsMeta:size(ImageTemp{end,1},1)
