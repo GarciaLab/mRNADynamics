@@ -53,17 +53,17 @@ if ~isempty(varargin)
                
 else
     FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
-    Dashes=strfind(FolderTemp,'\');
+    Dashes=strfind(FolderTemp,filesep);
     Prefix=FolderTemp((Dashes(end)+1):end);
 end
 
 
                                     
 %Load the complied particles and the division information                                    
-load([DropboxFolder,filesep,Prefix,'\CompiledParticles.mat'])
+load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'])
 
-if exist([DropboxFolder,filesep,Prefix,'\APDivision.mat'])
-    load([DropboxFolder,filesep,Prefix,'\APDivision.mat'])
+if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'])
 else
     error('Could not load APDivision.mat. Make sure to have done the manual check of division.')
 end
@@ -157,7 +157,24 @@ else
         TimeStart014=7.5;
         TimeEnd014=1000;
     else
-        error('Could not recognize data type from the Prefix or from the value of StemLoopEnd in MovieDatabase.')
+        %error('Could not recognize data type from the Prefix or from the value of StemLoopEnd in MovieDatabase.')
+        
+            Delay=GeneLength5/ElongationRate;    %Minutes for PolII to fall off after reaching
+                                        %the first MS2 site.
+    display('Treating data set as 5''')
+    
+    %Initial parameters for fits
+    Rate012=500;     %Rate per minute
+    TimeStart012=3;
+    TimeEnd012=7;
+
+    Rate013=500;     %Rate per minute
+    TimeStart013=5;
+    TimeEnd013=10;
+
+    Rate014=500;     %Rate per minute
+    TimeStart014=5;
+    TimeEnd014=1000;  
     end
 end
 
