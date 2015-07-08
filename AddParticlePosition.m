@@ -265,8 +265,9 @@ if ~NoAP
                 
         %Find the zoomed movie pixel size
         D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.',FileMode(1:3)]);
-        ImageTemp=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(end).name]);
-        MetaZoom = ImageTemp{:, 4};
+        %Load only the metadata from the zoomed images
+        MetaReader=bfGetReader([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(end).name]);
+        MetaZoom=MetaReader.getMetadataStore();
         PixelSizeZoom=str2num(MetaZoom.getPixelsPhysicalSizeX(0));
 
         %Find the full embryo pixel size and load the image
@@ -348,16 +349,6 @@ if ~NoAP
     %Get the information about the AP axis as well as the image shifts
     %used for the stitching of the two halves of the embryo
     load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
-
-    %See if manual alignment was performed on this set. If so we'll skip the
-    %automated alignment
-    if exist('ManualAlignmentDone')
-        if ManualAlignmentDone
-            display('Manual alignment results saved. Using them.')
-            %ManualAlignment=0;
-        end
-    end
-
     
 
     %Make a folder to store the images
@@ -452,6 +443,7 @@ if ~NoAP
             %If manual alignment was done before then load the results
             if exist('ManualAlignmentDone')
                 if ManualAlignmentDone
+                    display('Manual alignment results saved. Using them.')
                     load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
                 end
             end

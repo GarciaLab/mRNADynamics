@@ -76,7 +76,7 @@ DTIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filese
 DLSM=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.lsm']);
 DLIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.lif']);
 
-if (length(DTIF)>0)
+if (length(DTIF)>0)&(length(DLIF)==0)
     display('2-photon @ Princeton data mode')
     D=DTIF;
     FileMode='TIF';
