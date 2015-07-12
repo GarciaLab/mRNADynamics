@@ -87,3 +87,8 @@ TrackmRNADynamics(Prefix,2,2)
 CheckParticleTracking(Prefix)
 
 CompileParticles(Prefix,'ApproveAll')
+
+
+%% If there's only a nuclear signal then use
+
+CompileNuclearProtein(Prefix)

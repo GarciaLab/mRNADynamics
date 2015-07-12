@@ -8,9 +8,10 @@ function CheckNucleiSegmentation(varargin)
 
 %Usage:
 
-%.  - Move a frame forward and keep in the new frame only areas that
-%     overlap with the previous ones.
+%.  - Move a frame forward
 %,  - Move a frame backwards
+%>  - Move 5 frames forward
+%<  - Move 5 frames backwards
 %j  - Jump to a frame
 %d  - Delete all ellipses in the current frame
 %s  - Save current analysis
@@ -142,11 +143,11 @@ else
 end
 
 
-if (strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP'))|...
-        (strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP'))|...
-        (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-TagRFP(1)'))|...
-        (strcmp(XLSRaw(XLSEntry,Channel1Column),'MCP-mCherry(3)'))|...
-        (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-mCherry(3)'))
+% if (strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP'))|...
+%         (strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP'))|...
+%         (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-TagRFP(1)'))|...
+%         (strcmp(XLSRaw(XLSEntry,Channel1Column),'MCP-mCherry(3)'))|...
+%         (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-mCherry(3)'))
     nc9=cell2mat(XLSRaw(XLSEntry,nc9Column));
     nc10=cell2mat(XLSRaw(XLSEntry,nc10Column));
     nc11=cell2mat(XLSRaw(XLSEntry,nc11Column));
@@ -160,9 +161,9 @@ if (strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP'))|...
     else
         CF=nan;
     end
-else
-    error('nc information not define in MovieDatabase.xlsx')
-end
+% else
+%     error('nc information not define in MovieDatabase.xlsx')
+% end
 
 
 
@@ -224,22 +225,11 @@ for i=1:length(D)
     end
 end
 
+Overlay=figure;
+set(gcf,'units', 'normalized', 'position',[0.01, .55, .75, .33]);
 
-%Set the figure sizes for Albert or the other computers
-if strcmp(name(1:end-1),'albert-pc')
-    Overlay=figure;
-    set(gcf,'Position',[10         113        1376         872])
-
-    OriginalImage=figure;
-    set(gcf,'Position',[1398         659         512         326])
-else
-    Overlay=figure;
-    set(gcf,'Position',[6   603   676   342])
-
-    OriginalImage=figure;
-    set(gcf,'Position',[ 704   382   512   256])
-end
-
+OriginalImage=figure;
+set(gcf,'units', 'normalized', 'position',[0.01, .1, .75, .33]);
 
 CurrentFrame=1;
 cc=1;
@@ -255,7 +245,7 @@ while (cc~='x')
 
     
     figure(Overlay)
-    imshow(HisImage,DisplayRange,'Border','Loose')
+    imshow(HisImage,DisplayRange,'Border','Tight')
     hold on
     PlotHandle=[];
     for i=1:NCentroids
@@ -271,7 +261,8 @@ while (cc~='x')
 
     FigureTitle=['Frame: ',num2str(CurrentFrame),'/',num2str(TotalFrames),...
         ', nc: ',num2str(nc(CurrentFrame))];
-    title(FigureTitle)
+    set(gcf,'Name',FigureTitle)
+    %title(FigureTitle)
   
     
     figure(OriginalImage)
@@ -287,10 +278,12 @@ while (cc~='x')
 
     if (ct~=0)&(cc=='.')&(CurrentFrame<TotalFrames)
         CurrentFrame=CurrentFrame+1;
-        %DisplayRange=[min(min(HisImage)),max(max(HisImage))];
     elseif (ct~=0)&(cc==',')&(CurrentFrame>1)
         CurrentFrame=CurrentFrame-1;
-        %DisplayRange=[min(min(HisImage)),max(max(HisImage))];
+    elseif (ct~=0)&(cc=='>')&(CurrentFrame+5<TotalFrames)
+        CurrentFrame=CurrentFrame+5;
+    elseif (ct~=0)&(cc=='<')&(CurrentFrame-4>1)
+        CurrentFrame=CurrentFrame-5;
     elseif (ct~=0)&(cc=='s')
         save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
         display('Ellipses saved.')

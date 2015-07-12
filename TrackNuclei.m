@@ -66,12 +66,12 @@ if isempty(XLSEntry)
 end
 
 
-if (strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP'))|...
-        (strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP'))|...
-        (strcmp(XLSRaw(XLSEntry,Channel1Column),'MCP-TagRFP(1)'))|...
-        (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-TagRFP(1)'))|...
-        (strcmp(XLSRaw(XLSEntry,Channel1Column),'MCP-mCherry(3)'))|...
-        (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-mCherry(3)'))
+% if (strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP'))|...
+%         (strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP'))|...
+%         (strcmp(XLSRaw(XLSEntry,Channel1Column),'MCP-TagRFP(1)'))|...
+%         (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-TagRFP(1)'))|...
+%         (strcmp(XLSRaw(XLSEntry,Channel1Column),'MCP-mCherry(3)'))|...
+%         (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-mCherry(3)'))
     nc9=XLSRaw{XLSEntry,nc9Column};
     nc10=XLSRaw{XLSEntry,nc10Column};
     nc11=XLSRaw{XLSEntry,nc11Column};
@@ -79,7 +79,7 @@ if (strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP'))|...
     nc13=XLSRaw{XLSEntry,nc13Column};
     nc14=XLSRaw{XLSEntry,nc14Column};
     CF=XLSRaw{XLSEntry,CFColumn};
-end
+%end
 
 if ~exist('nc9')
     error('Cannot find nuclear cycle values. Were they defined in MovieDatabase.XLSX?')
@@ -262,8 +262,14 @@ end
 
 %Extract the nuclear fluorscence values if we're in the right experiment
 %type
-if strcmp(lower(ExperimentType),'inputoutput')
+if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'input')
     
+    if strcmp(lower(ExperimentType),'inputoutput')
+        InputChannelTemp=strfind({lower(Channel1{1}),lower(Channel2{1})},'dorsal');
+        InputChannelTemp=~cellfun(@isempty,InputChannelTemp);
+    elseif strcmp(lower(ExperimentType),'input')
+        InputChannelTemp=1;
+    end
     
     %Create the circle that we'll use as the mask
     IntegrationRadius=3;       %Radius of the integration region
@@ -271,8 +277,7 @@ if strcmp(lower(ExperimentType),'inputoutput')
     Circle=MidpointCircle(Circle,IntegrationRadius,1.5*IntegrationRadius+0.5,...
         1.5*IntegrationRadius+0.5,1);
     
-    InputChannelTemp=strfind({lower(Channel1{1}),lower(Channel2{1})},'dorsal');
-    InputChannelTemp=~cellfun(@isempty,InputChannelTemp);
+    
     if sum(InputChannelTemp)==1
         InputChannel=find(InputChannelTemp);
         %Extract the fluroescence of each schnitz at each time point
@@ -330,4 +335,7 @@ end
 mkdir([DropboxFolder,filesep,Prefix])
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells')
+if ~exist([FISHPath,filesep,Prefix,'_'])
+    mkdir([FISHPath,filesep,Prefix,'_'])
+end
 save([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
