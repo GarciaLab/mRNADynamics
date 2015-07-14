@@ -1,4 +1,4 @@
-function FitMeanAPMultipleSets2(DataType, minParticles, minTimePoints)
+function FitMeanAPMultipleSets(DataType, minParticles, minTimePoints)
 
 %This function performs fits to the mean fluorescence as a function of time
 %of a particular dataset.
@@ -136,8 +136,8 @@ if (~isempty(findstr(Prefix,'X1')))|(~isempty(findstr(Prefix,'P2P')))|...
     
     %Initial parameters for fits
     Rate012=400;     %Rate per minute
-    TimeStart012=4;
-    TimeEnd012=8;
+    TimeStart012=3;
+    TimeEnd012=7;
 
     Rate013=400;     %Rate per minute
     TimeStart013=5;
@@ -151,8 +151,8 @@ elseif ~isempty(findstr(Prefix,'X2'))
     display('Treating data set as 3''')
     
     Rate012=400;     %Rate per minute
-    TimeStart012=4;
-    TimeEnd012=8;
+    TimeStart012=3;
+    TimeEnd012=7;
 
     Rate013=400;     %Rate per minute
     TimeStart013=7.5;
@@ -169,8 +169,8 @@ else
         display('Treating data set as 5''')
         
         Rate012=400;     %Rate per minute
-        TimeStart012=4;
-        TimeEnd012=8;
+        TimeStart012=3;
+        TimeEnd012=7;
         
         Rate013=400;     %Rate per minute
         TimeStart013=5;
@@ -184,8 +184,8 @@ else
         display('Treating data set as 3''')
         
         Rate012=400;     %Rate per minute
-        TimeStart012=4;
-        TimeEnd012=8;
+        TimeStart012=3;
+        TimeEnd012=7;
         
         Rate013=400;     %Rate per minute
         TimeStart013=7.5;

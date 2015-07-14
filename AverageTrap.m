@@ -22,11 +22,15 @@ PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
 %Load the Fit Results                                  
 load([DropboxFolder,filesep,Prefix,'\FitResultsMultiple.mat']);
 TotalParticles=0;
+
+%Combine the Fit Results into one concatenation
 for dsn=1:length(FitResultsMultiple); %Data Set number = dsn
     if dsn >1
         FitResultsMultipleCombined=cat(1,FitResultsMultiple{1,1},FitResultsMultiple{1,dsn});
     end
 end
+
+
 FRC=FitResultsMultipleCombined; %Shortened the name of FitResultsMultipleCombined
 FRCShape=size(FRC); 
 NumberOfNCs=FRCShape(2);
@@ -78,9 +82,11 @@ for binnum=1:41;
 end
 
 %Save the Mean Trapezoids
-FitResults=MeanTraps
+FitResults=MeanTraps;
 save([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'],...
     'FitResults')
+save([DropboxFolder,filesep,Prefix,filesep,'FitResultsMultiple.mat'],...
+    'FitResultsMultiple')
 disp('I''ve taken the liberty of saving the results for you in the initial folder')
 pause(1)
 for i=1:(NumberOfFiles-1)
@@ -88,6 +94,8 @@ for i=1:(NumberOfFiles-1)
     Additional=uigetdir(DropboxFolder,'Please select another data set where I should save the results');
     save([Additional,filesep,'MeanFits.mat'],...
     'FitResults')
+    save([Additional,filesep,'FitResultsMultiple.mat'],...
+    'FitResultsMultiple')
     disp('Thank you, Sir')
 end
 TotalParticles
