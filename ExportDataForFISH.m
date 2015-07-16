@@ -1,6 +1,6 @@
 function Prefix=ExportDataForFISH(varargin)
 
-%This function grabs individual stacks taken by ScanImage and splits them in
+%This function grabs individual stacks and splits them in
 %multiple channels so that it can be analyzed by the FISH code.
 %It adds a blank image at the beginning and the end so that the code
 %doesn't discard columns that peak at the edges of the Z-stack. It also
@@ -658,8 +658,8 @@ elseif strcmp(FileMode,'LIFExport')
                     HisSlices(:,:,n)=LIFImages{i}{k,1};
                     n=n+1;
                 end
-                MaxProjection=max(HisSlices,[],3);
-                imwrite(uint16(MaxProjection),...
+                MedianProjection=median(HisSlices,3);
+                imwrite(uint16(MedianProjection),...
                             [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
                 m=m+1;
             end
@@ -937,19 +937,19 @@ elseif strcmp(FileMode,'LIFExport')
                     %We don't want to use all slices. Only the center ones
                     StackCenter=round((min(NSlices)-1)/2);
                     StackRange=[StackCenter-1:StackCenter+1];
-                    MaxProjection=max(HisSlices(:,:,StackRange),[],3);
+                    MedianProjection=median(HisSlices(:,:,StackRange),[],3);
 
                     %Flatten the field if possible
                     if exist('LIFFF')
-                        MaxProjection=MaxProjection./FF;
+                        MedianProjection=MedianProjection./FF;
                     end
                     
-                    MaxProjection=imcomplement(MaxProjection);
-                    MaxProjection=histeq(mat2gray(MaxProjection),ReferenceHist);
+                    MedianProjection=imcomplement(MedianProjection);
+                    MedianProjection=histeq(mat2gray(MedianProjection),ReferenceHist);
                    
                     
                     
-                    imwrite(MaxProjection,...
+                    imwrite(MedianProjection,...
                         [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
                             
                 end
@@ -1211,19 +1211,19 @@ elseif strcmp(FileMode,'LIFExport')
                     %We don't want to use all slices. Only the center ones
                     StackCenter=round((min(NSlices)-1)/2);
                     StackRange=[StackCenter-1:StackCenter+1];
-                    MaxProjection=max(HisSlices(:,:,StackRange),[],3);
+                    MedianProjection=median(HisSlices(:,:,StackRange),[],3);
 
                     %Flatten the field if possible
                     if exist('LIFFF')
-                        MaxProjection=MaxProjection./FF;
+                        MedianProjection=MedianProjection./FF;
                     end
                     
-                    MaxProjection=imcomplement(MaxProjection);
-                    MaxProjection=histeq(mat2gray(MaxProjection),ReferenceHist);
+                    MedianProjection=imcomplement(MedianProjection);
+                    MedianProjection=histeq(mat2gray(MedianProjection),ReferenceHist);
                    
                     
                     
-                    imwrite(MaxProjection,...
+                    imwrite(MedianProjection,...
                         [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
                             
                 end
@@ -1470,19 +1470,19 @@ elseif strcmp(FileMode,'LIFExport')
                     %We don't want to use all slices. Only the center ones
                     StackCenter=round((min(NSlices)-1)/2);
                     StackRange=[StackCenter-1:StackCenter+1];
-                    MaxProjection=max(HisSlices(:,:,StackRange),[],3);
+                    MedianProjection=median(HisSlices(:,:,StackRange),[],3);
 
                     %Flatten the field if possible
                     if exist('LIFFF')
-                        MaxProjection=MaxProjection./FF;
+                        MedianProjection=MedianProjection./FF;
                     end
                     
-                    %MaxProjection=imcomplement(MaxProjection);
-                    %MaxProjection=histeq(mat2gray(MaxProjection),ReferenceHist);
+                    %MedianProjection=imcomplement(MedianProjection);
+                    %MedianProjection=histeq(mat2gray(MedianProjection),ReferenceHist);
                    
                     
                     
-                    imwrite(uint16(MaxProjection),...
+                    imwrite(uint16(MedianProjection),...
                         [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
                    
                 else
