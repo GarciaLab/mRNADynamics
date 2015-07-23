@@ -1211,7 +1211,7 @@ elseif strcmp(FileMode,'LIFExport')
                     %We don't want to use all slices. Only the center ones
                     StackCenter=round((min(NSlices)-1)/2);
                     StackRange=[StackCenter-1:StackCenter+1];
-                    MedianProjection=median(HisSlices(:,:,StackRange),[],3);
+                    MedianProjection=median(HisSlices(:,:,StackRange),3);
 
                     %Flatten the field if possible
                     if exist('LIFFF')

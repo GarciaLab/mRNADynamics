@@ -71,6 +71,6 @@ catch
 end  
 end
 
-cd([FISHPath])
+%cd([FISHPath])%when it runs this line it cannot longer find 'params_mRNADynamics' in the new folder
 analyzeDataLibrary('fad',@(x)tagged(x,'id',[Prefix,'_']),'params_mRNADynamics',Thresholds)
 cd([MS2CodePath])
