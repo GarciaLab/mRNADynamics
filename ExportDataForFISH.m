@@ -695,7 +695,8 @@ elseif strcmp(FileMode,'LIFExport')
         end
         
         if length(FFToUse)==2
-            error('Too many flat field images match the pixel and image size size')
+            warning('Too many flat field images match the pixel and image size size')
+            FFToUse = uigetfile('Select which flat field image to use');
         elseif length(FFToUse)==0
             warning('No flat field image found')
             clear LIFFF
