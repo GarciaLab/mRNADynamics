@@ -1368,7 +1368,7 @@ if NChannels==1
     end
 
 
-    MeanOffsetTrace=cellfun(@mean,OffsetCell,'UniformOutput',false);
+    MeanOffsetTrace=cellfun(@nanmean,OffsetCell,'UniformOutput',false);
     SDOffsetTrace=cellfun(@std,OffsetCell,'UniformOutput',false);
     NParticlesOffsetTrace=cellfun(@length,OffsetCell,'UniformOutput',false);
 

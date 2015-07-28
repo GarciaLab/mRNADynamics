@@ -77,6 +77,7 @@ for i=1:length(CompiledSets)
             
             for j=1:length(FieldsToCopy)
                 DataTemp=rmfield(DataTemp,FieldsToCopy{j});
+                DataTemp=orderfields(DataTemp);
                 warning(['Getting rid of field ', FieldsToCopy{j}])
             end
             Data(i)=DataTemp;
