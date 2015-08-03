@@ -58,19 +58,20 @@ end
 year15 = datetime(2015,01,01);
 [v,d] = version;
 if d < year15
-try
-    matlabpool
-catch
-    display('matlabpool already running')
-end
+    try
+        matlabpool
+    catch
+        display('matlabpool already running')
+    end
+    
 else
-try
-    parpool
-catch
-    display('matlabpool already running')
-end  
+    try
+        parpool
+    catch
+        display('matlabpool already running')
+    end  
 end
 
-%cd([FISHPath])%when it runs this line it cannot longer find 'params_mRNADynamics' in the new folder
+cd([FISHPath])%when it runs this line it cannot longer find 'params_mRNADynamics' in the new folder
 analyzeDataLibrary('fad',@(x)tagged(x,'id',[Prefix,'_']),'params_mRNADynamics',Thresholds)
 cd([MS2CodePath])

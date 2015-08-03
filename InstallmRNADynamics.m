@@ -76,7 +76,7 @@ if ~exist(['..',filesep,'Data',filesep,'DynamicsResults',filesep,'MovieDatabase.
     copyfile(['InstallationFiles',filesep,'InstallMovieDatabase.xlsx'],...
         ['..',filesep,'Data',filesep,'DynamicsResults',filesep,'MovieDatabase.xlsx'])
 else
-    warning('MovieDatabase.xlsx already exist, we are not overwriting.')
+    warning('MovieDatabase.xlsx already exists, we are not overwriting.')
 end
 
 

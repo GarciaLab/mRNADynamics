@@ -265,7 +265,7 @@ if strcmp(ExperimentType,'1spot')|strcmp(ExperimentType,'2spot')
                                                                 
             for j=1:length(Fields)
                 %In the end this seems to work, the fields that have higher
-                %dimensions are still devided well.
+                %dimensions are still divided well.
                 if strcmp(Fields{j},'snippets')
                     Temp=getfield(fadTemp.channels(i).fits,Fields{j});
                     SnippetDimentions=size(Temp);
