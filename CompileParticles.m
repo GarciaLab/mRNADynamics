@@ -601,7 +601,6 @@ for ChN=1:NChannels
 
                 %First frame it was detected at
                 CompiledParticles{ChN}(k).FirstFrame=FirstFrame;
-
                 CompiledParticles{ChN}(k).Approved=Particles{ChN}(i).Approved;
 
                 %Copy the fit results if they are there
@@ -864,7 +863,7 @@ for ChN=1:NChannels
                             if sum((CurrentSchnitz.frames)==CompiledParticles{ChN}(k).Frame(j))==1
                                 hold on
                                 EllipseNumber=CurrentSchnitz.cellno(...
-                                    find((CurrentSchnitz.frames)==CompiledParticles{ChN}(k).Frame(j)));
+                                    (CurrentSchnitz.frames)==CompiledParticles{ChN}(k).Frame(j));
 
                                 CurrEllipse=Ellipses{CompiledParticles{ChN}(k).Frame(j)}(EllipseNumber,:);
 
@@ -2091,11 +2090,6 @@ if ~SkipMovie&strcmp(ExperimentAxis,'AP')
         figure(17)
 
         MaxValue=max(max(MeanVectorAP{ChN}));
-        
-%%% Commented out 6/9/15 by AR so that this value can be set by the user.
-%%% Default is still 4. 
-%         MinParticles=4;     %Minimum number of particles in a bin to take it seriously
-%%%
         NParticlesAPFilter=NParticlesAP{ChN}>=MinParticles;
 
         for i=1:length(FrameInfo)
