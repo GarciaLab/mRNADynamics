@@ -1,5 +1,8 @@
 function AddParticlePosition(varargin)
 
+%Locates particles from a zoomed-in movie within full embryo images using
+%spatial cross-correlation.
+%
 %First parameter should be the prefix. The other parameters can be:
 %SkipAlignment
 %ManualAlignment
@@ -76,7 +79,7 @@ end
 
 %See if we had any lineage/nuclear information
 D=dir([PreProcPath,filesep,Prefix,filesep,'*-His_*']);
-if length(D)>0
+if ~isempty(D)
     HistoneChannel=1;
 else
     HistoneChannel=0;
@@ -87,7 +90,7 @@ end
 %data. 2-photon data uses TIF files. In LSM mode multiple files will be
 %combined into one.
 %Find out the date it was taken
-Dashes=findstr(Prefix,'-');
+Dashes=strfind(Prefix,'-');
 Date=Prefix(1:Dashes(3)-1);
 EmbryoName=Prefix(Dashes(3)+1:end);
 
@@ -195,7 +198,7 @@ if ~NoAP
         SurfRows = str2double(ExtractInformationField(SurfInfo(1), 'state.acq.linesPerFrame='));
         SurfColumns = str2double(ExtractInformationField(SurfInfo(1), 'state.acq.pixelsPerLine='));
         
-        %Get the full emrbyo image
+        %Get the full embryo image
         FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
 
         

@@ -1278,7 +1278,7 @@ while (cc~='x')
             [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,fad(CurrentChannel),Particles{CurrentChannel});
             
             %Check that the clicked particle doesn't exist in a previous
-            %frame, that there is no overlap of frams.  Maybe I can have
+            %frame, that there is no overlap of frames.  Maybe I can have
             %those in a different color.
 
            
@@ -1302,21 +1302,14 @@ while (cc~='x')
                     %Check for consistency within schnitzcell 
                     [Particles{CurrentChannel},schnitzcells]=CheckSchnitzLineage(Particles{CurrentChannel},CurrentParticle,schnitzcells,CurrentFrame,...
                         Overlay);
-                end
-                
-                
-                
-                
-            end
-            
+                end  
+            end 
         else
             display('Cannnot connect to two particles!')
         end
-         
-         
-         
-         
-     elseif cc=='d'  %d Separate traces. The separated particle won't have a nucleus assigned!
+    
+     elseif cc=='d'  %d Separate traces at the current frame.
+         %The separated particle (the trace following current frame) won't have a nucleus assigned!
          PreviousParticle=0;
         %Check that the particle does actually exist in this frame
         if ~(Particles{CurrentChannel}(CurrentParticle).Frame(1)==CurrentFrame)
@@ -1336,7 +1329,7 @@ while (cc~='x')
         elseif Particles{CurrentChannel}(CurrentParticle).Approved==2
             Particles{CurrentChannel}(CurrentParticle).Approved=0;
         end
-    elseif cc=='w'      %Disapproove a trace
+    elseif cc=='w'      %Disapprove a trace
         if Particles{CurrentChannel}(CurrentParticle).Approved==-1
             Particles{CurrentChannel}(CurrentParticle).Approved=0;
         else
@@ -1436,7 +1429,7 @@ while (cc~='x')
         end
         
         
-        %Mode 2 - show dissapproved traces
+        %Mode 2 - show disapproved traces
         while ((HideApprovedFlag)==2)&(NextParticle>1)&...
                 ((Particles{CurrentChannel}(NextParticle).Approved==1)|(Particles{CurrentChannel}(NextParticle).Approved==2))
             NextParticle=NextParticle-1;

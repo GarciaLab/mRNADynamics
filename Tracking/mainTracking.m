@@ -1,6 +1,6 @@
 function [ nuclei, varargout ] = mainTracking( names, varargin)
 %MAINTRACKING Run the full segmentation and tracking of a movie.
-% Optionnally, call again with more arguments to enforce manual
+% Optionally, call again with more arguments to enforce manual
 % corrections.
 %
 %
@@ -36,7 +36,7 @@ function [ nuclei, varargout ] = mainTracking( names, varargin)
 %           the 'centers' output (see output n°2).
 %           - P : index of the parent of this nucleus in the nuclei
 %           structure.
-%           - D, E : indices of the daughters fo this nucleus in the nuclei
+%           - D, E : indices of the daughters for this nucleus in the nuclei
 %           structure.
 %
 %

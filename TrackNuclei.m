@@ -81,7 +81,7 @@ end
     CF=XLSRaw{XLSEntry,CFColumn};
 %end
 
-if ~exist('nc9')
+if ~exist('nc9','var')
     error('Cannot find nuclear cycle values. Were they defined in MovieDatabase.XLSX?')
 end
 
@@ -135,6 +135,7 @@ end
 
 %Create the cell array with the names.
 D=dir([PreProcPath,filesep,Prefix,filesep,'*His*.tif']);
+names = cell(length(D));
 for i=1:length(D)
     names{i}=[PreProcPath,filesep,Prefix,filesep,D(i).name];
 end
