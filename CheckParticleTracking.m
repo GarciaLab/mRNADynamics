@@ -3,13 +3,12 @@ function CheckParticleTracking(varargin)
 %The point of this function is to check the tracking of particles. The
 %logic of this function should be similar to schnitzcells: We want to be
 %able to correct both the segmentation and tracking.
-
+% 
 %V5: Modified to handle Laurent's schnitzcells
 %V4: Modified the code to use and correct the schnitzcells tracking
-
-
+% 
 %Usage:
-
+%
 %Frame specific:
 %. Move a frame forward
 %, Move a frame backwards
@@ -19,9 +18,9 @@ function CheckParticleTracking(varargin)
 %z Move down in z
 %j Jump to a specified frame
 %g,b Increase/decrease histone channel contrast
-
-
-
+% 
+% 
+% 
 %Particle specific:
 %m Move to the next particle
 %n Move to the previous particle,
@@ -39,8 +38,8 @@ function CheckParticleTracking(varargin)
 %i Move a particle detected with Threshold2 into the our structure and
 %  connect it to the current particle. This is a combination of "u" and
 %  "c".
-
-
+% 
+% 
 %Nuclear tracking specific:
 %l Split a nucleus and select one or two daughter nuclei or stop the
 %  lineage. Usage:
@@ -59,8 +58,8 @@ function CheckParticleTracking(varargin)
 %1 give the nucleus number in the schnitzcell segmentation structure. This
 %  only  works for troubleshooting and you need to be online and on the
 %  Princeton network/VPN for now.
-
-
+% 
+% 
 %General:
 %8 Change channels
 %t Show/hide particles from the second threshold

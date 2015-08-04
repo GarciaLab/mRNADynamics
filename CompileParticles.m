@@ -1,5 +1,7 @@
 function CompileParticles(varargin)
 
+%This function puts together all the information we have about particles.
+%
 %Parameters:
 %First, the prefix.
 %There after:
@@ -15,8 +17,6 @@ function CompileParticles(varargin)
 %SetMinParticles - Set the threshold for the minimum number of particles per
 %               AP bin for compilation
 
-%This function puts together all the information we have about particles.
-%Things we want in here are:
 
 close all
 
@@ -312,7 +312,7 @@ if strcmp(ExperimentAxis,'AP')
     else
         display('Using saved AP information')
     end
-elseif strcmp(lower(ExperimentAxis),'dv')&exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+elseif strcmp(lower(ExperimentAxis),'dv')& exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
     AddParticlePosition(Prefix);
 elseif strcmp(lower(ExperimentAxis),'dv')
     AddParticlePosition(Prefix,'NoAP');
@@ -465,26 +465,8 @@ MinAPArea=12500;%700;    %Minimum area in pixels in order to consider an AP bin 
 
 
 if strcmp(ExperimentAxis,'AP')
-%COMMENTED OUT SO THIS VALUE CAN BE FOUND IN EXCEL FILE- AR 4/14/15
-%     %Divide the image into AP bins. The size of the bin will depend on the 
-%     %experiment
-%     if strfind(lower(Prefix),'evePr')
-%         APResolution=0.025;
-% elseif strfind(lower(Prefix),'eve')     %Eve2 experiments
-%         APResolution=0.01;
-%     %hb BAC experiments
-%     elseif ~isempty(strfind(lower(Prefix),'hbbac'))
-%         APResolution=0.01;
-%     %kni BAC experiments
-%     elseif ~isempty(strfind(lower(Prefix),'knibac'))  
-%         APResolution=0.015;
-%     else                                %All other experiments
-%         APResolution=0.025;
-%     end
-
        
     APbinID=0:APResolution:1;
-
     %Create an image for the different AP bins
     APPosImage=zeros(FrameInfo(1).LinesPerFrame,FrameInfo(1).PixelsPerLine);
     [Rows,Columns]=size(APPosImage);
@@ -509,9 +491,9 @@ if strcmp(ExperimentAxis,'AP')
     %Calculate the area in pixels corresponding to each AP bin. We will use
     %this to get rid of small AP bins in the image and also to calculate
     %probabilities of nuclei being active.
+    APbinArea = zeros(length(APbinID));
     for i=1:length(APbinID)
         APbinArea(i)=sum(sum(APPosBinImage==i));
-
         %Discard anything that is below MinAPArea
         if APbinArea(i)<(MinAPArea/0.025*APResolution)
             APbinArea(i)=nan;
@@ -599,7 +581,7 @@ for ChN=1:NChannels
 
                 %If we have the histone channel we will actually replace the AP
                 %position by the position of the nucleus where the particle was
-                %found. If there is on nucleus (like when a particle survives
+                %found. If there is no nucleus (like when a particle survives
                 %past the nuclear division) we will still use the actual particle
                 %position.
                 if HistoneChannel&strcmp(ExperimentAxis,'AP')
@@ -628,7 +610,7 @@ for ChN=1:NChannels
                 end
 
 
-                %Extract information form fad about fluorescence and background
+                %Extract information from fad about fluorescence and background
                 [Frame,Amp,Off,Off2,Amp2,AmpOld,AmpRaw,Error,optFit1,FitType]=GetParticleTrace(k,CompiledParticles{ChN},fad(ChN));
                 CompiledParticles{ChN}(k).Fluo=Amp;
                 CompiledParticles{ChN}(k).Off=Off;
@@ -963,27 +945,27 @@ for ChN=1:NChannels
         %problem with FrameInfo! In that case we'll pull the information out of
         %the XLS file.
         if ~isempty(CompiledParticles{ChN}(i).nc)
-            ncFilter(i,find(CompiledParticles{ChN}(i).nc==ncFilterID))=logical(1);
+            ncFilter(i,find(CompiledParticles{ChN}(i).nc==ncFilterID))=true;
         else
             ncsFound=find(CompiledParticles{ChN}(i).Frame(1)>=[nc9,nc10,nc11,nc12,nc13,nc14]);
             if ncsFound(end)==1
                 CompiledParticles{ChN}(i).nc=9;
-                ncFilter{ChN}(i,ncFilterID==9)=logical(1);
+                ncFilter{ChN}(i,ncFilterID==9)=true;
             elseif ncsFound(end)==2
                 CompiledParticles{ChN}(i).nc=10;
-                ncFilter{ChN}(i,ncFilterID==10)=logical(1);
+                ncFilter{ChN}(i,ncFilterID==10)=true;
             elseif ncsFound(end)==3
                 CompiledParticles{ChN}(i).nc=11;
-                ncFilter{ChN}(i,ncFilterID==11)=logical(1);
+                ncFilter{ChN}(i,ncFilterID==11)=true;
             elseif ncsFound(end)==4
                 CompiledParticles{ChN}(i).nc=12;
-                ncFilter{ChN}(i,ncFilterID==12)=logical(1);
+                ncFilter{ChN}(i,ncFilterID==12)=true;
             elseif ncsFound(end)==5
                 CompiledParticles{ChN}(i).nc=13;
-                ncFilter{ChN}(i,ncFilterID==13)=logical(1);
+                ncFilter{ChN}(i,ncFilterID==13)=true;
             elseif ncsFound(end)==6
                 CompiledParticles{ChN}(i).nc=14;
-                ncFilter{ChN}(i,ncFilterID==14)=logical(1);
+                ncFilter{ChN}(i,ncFilterID==14)=true;
             end
 
         end
