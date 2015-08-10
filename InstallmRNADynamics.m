@@ -1,4 +1,4 @@
-function InstallmRNADynamics
+function txt=InstallmRNADynamics
 
 %This function creates all the required folders to run the FISHToolbox.
 %IMPORTANT: This needs to be run from the 'mRNADynamics' folder.
@@ -69,8 +69,18 @@ cd(CurrentFolder)
 %Add MS2Code
 txt{7,end}=cd;
 %Save the XLS file
-xlswrite(['..',filesep,'ComputerFolders.xlsx'],txt);
-
+if ispc
+    xlswrite(['..',filesep,'ComputerFolders.xlsx'],txt);
+else
+    display('Warning: Macs and Linux cannot generate the XLS files.')
+    display('(1) Re-run using "txt=InstallmRNADynamics".')
+    display('(2) Type "open txt".')
+    display('(3) Copy and paste the data into a new file in Excel.')
+    display('(4) Save as "ComputerFolder.xlsx" in folder "LivemRNAFISH.')
+end
+    
+    
+    
 %Copy MovieDatabase.XLSX
 if ~exist(['..',filesep,'Data',filesep,'DynamicsResults',filesep,'MovieDatabase.xlsx'])
     copyfile(['InstallationFiles',filesep,'InstallMovieDatabase.xlsx'],...
