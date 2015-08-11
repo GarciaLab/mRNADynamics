@@ -77,7 +77,7 @@ else
     display('(2) Type "open txt".')
     display('(3) Copy and paste the data into a new file in Excel.')
     display('(4) Get rid of all '' in the file.')
-    display('(5) Save as "ComputerFolder.xlsx" in folder "LivemRNAFISH.')
+    display('(5) Save as "ComputerFolders.xlsx" in folder "LivemRNAFISH.')
 end
     
     
