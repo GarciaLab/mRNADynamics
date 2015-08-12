@@ -55,8 +55,9 @@ end
 %Start the matlab workers for the FISH analysis code
 
 %Try matlabpool only for MATLAB versions prior to 2015
-year15 = datetime(2015,01,01);
+year15 = datenum(2015,01,01);
 [v,d] = version;
+d=datenum(d);
 if d < year15
     try
         matlabpool
