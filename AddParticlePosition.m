@@ -49,7 +49,7 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
     
     %Create the particle array. This is done so that we can support multiple
     %channels. Also figure out the number of channels
-    if iscell('Particles')
+    if iscell(Particles)
         NChannels=length(Particles);
     else
         Particles={Particles};

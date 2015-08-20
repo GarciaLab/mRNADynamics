@@ -1104,7 +1104,7 @@ while (cc~='x')
                 xPosSuspect=[];
                 yPosSuspect=[];
                 for j=1:length(schnitzcells)
-                    if sum(schnitzcells(j).frames-1==CurrentFrame)
+                    if sum(schnitzcells(j).frames==CurrentFrame)
                         SchnitzSuspect=[SchnitzSuspect,j];
                         xPosSuspect=[xPosSuspect,...
                             schnitzcells(j).cenx(find((schnitzcells(j).frames)==CurrentFrame))];
@@ -1483,7 +1483,7 @@ while (cc~='x')
                 xPosSuspect=[];
                 yPosSuspect=[];
                 for j=1:length(schnitzcells)
-                    if sum(schnitzcells(j).frames-1==CurrentFrame)
+                    if sum(schnitzcells(j).frames==CurrentFrame)
                         SchnitzSuspect=[SchnitzSuspect,j];
                         if (~isempty(schnitzcells(j).cenx(find((schnitzcells(j).frames)==CurrentFrame))))&...
                                 (~isempty(schnitzcells(j).ceny(find((schnitzcells(j).frames)==CurrentFrame))))
@@ -1522,7 +1522,8 @@ while (cc~='x')
                             CurrentParticle);
                 else
                     try
-                        [Particles{CurrentChannel},schnitzcells]=JoinSchnitz(Particles{CurrentChannel},schnitzcells,Particles(CurrentParticle).Nucleus,...  
+                        [Particles{CurrentChannel},schnitzcells]=...
+                            JoinSchnitz(Particles{CurrentChannel},schnitzcells,Particles{CurrentChannel}(CurrentParticle).Nucleus,...  
                             ClickedSchnitz,CurrentFrame);
                     catch
                         display('Error in JoinSchnitz')

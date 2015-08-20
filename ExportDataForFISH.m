@@ -442,158 +442,183 @@ elseif strcmp(FileMode,'LSM')
         elseif  strfind(Channel2{1},'His')
             HisChannel=2;
         else
-            error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
+            error('LSM Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
         end
 
-        %Load the file using BioFormats
-        for LSMIndex=1:length(DLSM)
-            NSeries=1;      %This is something I'll have to fix to support
-                            %multiple LSM files
+        %Generate FrameInfo
+        FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
+            'NumberSlices',{},'ZStep',{},'FileMode',{},...
+            'PixelSize',{});
+        
+        NSeries=length(DLSM);
+        Frame_Times=[];     %Store the frame information
+        m=1;        %Counter for number of frames
+        h=waitbar(0,'Extracting LSM images');
+        for LSMIndex=1:NSeries
+            waitbar(LSMIndex/NSeries,h);
+            %Load the file using BioFormats
             LSMImages=bfopen([Folder,filesep,DLSM(LSMIndex).name]);
             %Extract the metadata for each series
-            LSMMeta = LSMImages{:, 4};
+            LSMMeta = LSMImages{:, 4};      %OME Metadata
+            LSMMeta2 = LSMImages{:, 2};     %Original Metadata
+            
             %Figure out the number of slices in each series
-            NSlices=str2num(LSMMeta.getPixelsSizeZ(0));
+            NSlices(LSMIndex)=str2num(LSMMeta.getPixelsSizeZ(0));
             %Number of channels
-            NChannels=LSMMeta.getChannelCount(0);
+            NChannels(LSMIndex)=LSMMeta.getChannelCount(0);
             %Total number of planes acquired
-            NPlanes=LSMMeta.getPlaneCount(0);
+            NPlanes(LSMIndex)=LSMMeta.getPlaneCount(0);
             %Finally, use this information to determine the number of frames in
             %each series
-            NFrames=NPlanes/NSlices/NChannels;
+            NFrames(LSMIndex)=NPlanes(LSMIndex)/NSlices(LSMIndex)/NChannels(LSMIndex);
 
-            %Generate FrameInfo
-            FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
-                'NumberSlices',{},'ZStep',{},'FileMode',{},...
-                'PixelSize',{});
-
-            Frame_Times=nan(1,NPlanes);
-            for j=0:(NPlanes-1)
-                Frame_Times(j+1)=LSMMeta.getPlaneDeltaT(0,j);
+            
+            %First, get the starting time. This is not accessible in the
+            %OME format, so we need to pull it out from the original
+            %Metadata
+            if NFrames(LSMIndex)<10
+                NDigits=1;
+            elseif NFrames(LSMIndex)<100
+                NDigits=2;
+            elseif NFrames(LSMIndex)<1000
+                NDigits=3;
+            else
+                error('This program cannot support more than 1000 frames. This can be easily fixed')
             end
             
-
-
-            %Get the time stamp corresponding to the first slice of each
-            %Z-stack
-            m=1;
-            for j=1:(NSlices.*NChannels):sum(NPlanes)
-                InitialStackTime(m)=Frame_Times(j);
-                m=m+1;
+            %Get the starting time of this acquisition
+            StartingTime(LSMIndex) = LSMMeta2.get(['TimeStamp #',iIndex(1,NDigits)]);
+            %Now get the time for each frame. We start the timer at the first time point
+            %of the first data series.
+            for j=0:(NSlices(LSMIndex)*NChannels(LSMIndex)):(NPlanes(LSMIndex)-1)
+                if ~isempty(LSMMeta.getPlaneDeltaT(0,j))
+                    Frame_Times=[Frame_Times,...
+                        str2num(LSMMeta.getPlaneDeltaT(0,j))+...
+                        StartingTime(LSMIndex)-StartingTime(1)];
+                else  %If there's only one frame the DeltaT will be empty
+                    Frame_Times=[Frame_Times,...
+                        StartingTime(LSMIndex)-StartingTime(1)];
+                end
             end
 
-
-            for i=1:sum(NFrames)
+            %Save the information in FrameInfo
+            if LSMIndex==1
+                FrameRange=1:NFrames(LSMIndex);
+            else
+                FrameRange=NFrames(LSMIndex-1):NFrames(LSMIndex);
+            end
+                
+            for i=FrameRange
                 FrameInfo(i).LinesPerFrame=str2double(LSMMeta.getPixelsSizeY(0));
                 FrameInfo(i).PixelsPerLine=str2double(LSMMeta.getPixelsSizeX(0));
                 FrameInfo(i).NumberSlices=min(NSlices);
                 FrameInfo(i).FileMode='LIFExport';
                 FrameInfo(i).PixelSize=str2num(LSMMeta.getPixelsPhysicalSizeX(0));
                 FrameInfo(i).ZStep=str2double(LSMMeta.getPixelsPhysicalSizeZ(0));
-                FrameInfo(i).Time=InitialStackTime(i);
+                FrameInfo(i).Time=Frame_Times(i)/60;        %In minutes
             end
         
-
             %Copy the data
-            h=waitbar(0,'Extracting LSM images');
             %Create a blank image
             BlankImage=uint16(zeros(size(LSMImages{1}{1,1})));
-        
-            m=1;        %Counter for number of frames
-            for i=1:NSeries
-                waitbar(i/NSeries,h)
-                for j=1:NFrames(i) 
-                    %First do the MCP channel
-                    %Save the blank images at the beginning and end of the
-                    %stack
-                    NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'.tif'];
-                    imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                    NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),'.tif'];
-                    imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                    %Copy the rest of the images
-                    n=1;        %Counter for slices
-                    for k=((j-1)*NSlices(i)*NChannels+1+(MCPChannel-1)):NChannels:(j*NSlices(i))*NChannels
-                        if n<=min(NSlices)
-                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'.tif'];
-                            imwrite(LSMImages{i}{k,1},[OutputFolder,filesep,NewName]);
-                            n=n+1;
-                        end
-                    end
-
-                    %Now do His-RFP
-                    HisSlices=zeros([size(LSMImages{i}{1,1},1),size(LSMImages{i}{1,1},2),NSlices(i)]);
-                    n=1;
-                    for k=((j-1)*NSlices(i)*NChannels+1+(HisChannel-1)):NChannels:(j*NSlices(i))*NChannels
-                        HisSlices(:,:,n)=LSMImages{i}{k,1};
+            for j=1:NFrames(LSMIndex) 
+                %First do the MCP channel
+                %Save the blank images at the beginning and end of the
+                %stack
+                NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'.tif'];
+                imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+                NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),'.tif'];
+                imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+                %Copy the rest of the images
+                n=1;        %Counter for slices
+                for k=((j-1)*NSlices(LSMIndex)*NChannels(LSMIndex)+1+(MCPChannel-1)):...
+                        NChannels:(j*NSlices(LSMIndex))*NChannels
+                    if n<=min(NSlices)
+                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'.tif'];
+                        imwrite(LSMImages{1}{k,1},[OutputFolder,filesep,NewName]);
                         n=n+1;
                     end
-                    MedianProjection=median(HisSlices,3);
-                    imwrite(uint16(MedianProjection),...
-                                [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
-                    m=m+1;
                 end
-            end
-            close(h)
 
-
-            %Find the FF information
-
-            %The FF can be in the folder with the data or in the folder
-            %corresponding to the day.
-            D1=dir([Folder,filesep,'FF*.lif']);
-            D2=dir([Folder,filesep,'..',filesep,'FF*.lif']);
-            FFPaths={};
-            for i=1:length(D1)
-                FFPaths{end+1}=[Folder,filesep,D1(i).name];
-            end
-            for i=1:length(D2)
-                FFPaths{end+1}=[Folder,filesep,'..',filesep,D2(i).name];
-            end
-        
-            %Go through the FF files and see which one matches the pixel size
-            %and image pixel number
-            FFToUse=[];
-            for i=1:length(FFPaths)
-                LIFFF=bfopen(FFPaths{i});
-                LIFFFMeta = LIFFF{:, 4};
-                if (LIFFFMeta.getPixelsPhysicalSizeX(0)==LIFMeta.getPixelsPhysicalSizeX(0))&...
-                        (LIFFFMeta.getPixelsSizeY(0)==LIFMeta.getPixelsSizeY(0))&...
-                        (LIFFFMeta.getPixelsSizeX(0)==LIFMeta.getPixelsSizeX(0))
-                    FFToUse=[FFToUse,i];
+                %Now do His-RFP
+                HisSlices=zeros([size(LSMImages{1}{1,1},1),...
+                    size(LSMImages{1}{1,1},2),NSlices(LSMIndex)]);
+                n=1;
+                for k=((j-1)*NSlices(LSMIndex)*NChannels(LSMIndex)+1+(HisChannel-1)):...
+                        NChannels(LSMIndex):(j*NSlices(LSMIndex))*NChannels(LSMIndex)
+                    HisSlices(:,:,n)=LSMImages{1}{k,1};
+                    n=n+1;
                 end
-            end
-        
-            if length(FFToUse)> 1
-                warning('Too many flat field images match the pixel and image size size')
-                FFToUse = uigetfile('Select which flat field image to use');
-            elseif length(FFToUse)==0
-                warning('No flat field image found')
-                clear LIFFF
-            else
-                LSMFF=bfopen(FFPaths{FFToUse});
-
-                %Find the channel with the highest counts
-                for i=1:size(LSMFF{1},1)
-                    MaxValue(i)=max(max(LSMFF{1}{i,1}));
-                end
-                [Dummy,ChannleToUse]=max(MaxValue);
-                imwrite(LIFFF{1}{ChannleToUse,1},...
-                    [OutputFolder,filesep,Prefix,'_FF.tif']);
-            end
-            
-        
-
-            % TAG File Information
-            Output{1}=['id ',Prefix,'_'];
-            Output{2}='';
-            Output{3}='1';
-            Output{4}=['frames ',num2str(sum(NFrames)),':1:',num2str(min(NSlices)+2)];
-            Output{5}=['suffix ???_z??'];
-            if exist('LSMFF')
-                Output{6}=['flat FF'];
+                MedianProjection=median(HisSlices,3);
+                imwrite(uint16(MedianProjection),...
+                            [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
+                m=m+1;
             end
         end
+        close(h)
+
+
+        %Find the FF information
+
+        %The FF can be in the folder with the data or in the folder
+        %corresponding to the day.
+        D1=dir([Folder,filesep,'FF*.lif']);
+        D2=dir([Folder,filesep,'..',filesep,'FF*.lif']);
+        FFPaths={};
+        for i=1:length(D1)
+            FFPaths{end+1}=[Folder,filesep,D1(i).name];
+        end
+        for i=1:length(D2)
+            FFPaths{end+1}=[Folder,filesep,'..',filesep,D2(i).name];
+        end
+
+        %Go through the FF files and see which one matches the pixel size
+        %and image pixel number
+        FFToUse=[];
+        for i=1:length(FFPaths)
+            LSMFF=bfopen(FFPaths{i});
+            LSMFFMeta = LSMFF{:, 4};
+            if (LSMFFMeta.getPixelsPhysicalSizeX(0)==LSMFFMeta.getPixelsPhysicalSizeX(0))&...
+                    (LSMFFMeta.getPixelsSizeY(0)==LSMFFMeta.getPixelsSizeY(0))&...
+                    (LSMFFMeta.getPixelsSizeX(0)==LSMFFMeta.getPixelsSizeX(0))
+                FFToUse=[FFToUse,i];
+            end
+        end
+
+        if length(FFToUse)> 1
+            warning('Too many flat field images match the pixel and image size size')
+            FFToUse = uigetfile('Select which flat field image to use');
+        elseif length(FFToUse)==0
+            warning('No flat field image found')
+            clear LIFFF
+        else
+            LSMFF=bfopen(FFPaths{FFToUse});
+
+            %Find the channel with the highest counts
+            for i=1:size(LSMFF{1},1)
+                MaxValue(i)=max(max(LSMFF{1}{i,1}));
+            end
+            [Dummy,ChannleToUse]=max(MaxValue);
+            imwrite(LSMFF{1}{ChannleToUse,1},...
+                [OutputFolder,filesep,Prefix,'_FF.tif']);
+        end
+
+
+
+        % TAG File Information
+        Output{1}=['id ',Prefix,'_'];
+        Output{2}='';
+        Output{3}='1';
+        Output{4}=['frames ',num2str(sum(NFrames)),':1:',num2str(min(NSlices)+2)];
+        Output{5}=['suffix ???_z??'];
+        if exist('LSMFF')
+            Output{6}=['flat FF'];
+        end
+    else
+        error('Experiment type not supported for LSM format. Ask HG.')
     end
+    
+    
 %LIFExport mode
 elseif strcmp(FileMode,'LIFExport')
     
