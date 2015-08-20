@@ -782,25 +782,29 @@ elseif strcmp(ExperimentType,'2spot2color')
     %Check if particle tracking has already been done on this dataset
     if exist([OutputFolder,filesep,'Particles.mat'])
 
-        error('Trying to re-track particles. This is not yet supported for 2spot2color mode.')
+        %error('Trying to re-track particles. This is not yet supported for 2spot2color mode.')
         
         load([OutputFolder,filesep,'Particles.mat'])
-        if isfield(Particles,'Approved')
+        
+       
+        if isfield(Particles{1},'Approved')
             Retracking=1;           %Flag for whether we are performing retracking
 
             %Only keep the approved particles and start the tracking from there
-            k=1;
-            for i=1:length(Particles)
-                if Particles(i).Approved~=0
-                    NewParticles(k)=Particles(i);
-                    k=k+1;
+            for ChN=1:length(fadTemp)
+                k=1;
+                for i=1:length(Particles{ChN})
+                    if Particles{ChN}(i).Approved~=0
+                        NewParticles{ChN}(k)=Particles{ChN}(i);
+                        k=k+1;
+                    end
                 end
-            end
-            if exist('NewParticles')
-                Particles=NewParticles;
-            else
-                Particles=[];
-                Retracking=0;
+                if exist('NewParticles')
+                    Particles{ChN}=NewParticles{ChN};
+                else
+                    Particles{ChN}=[];
+                    Retracking=0;
+                end
             end
         else
             Retracking=0;
@@ -819,7 +823,6 @@ elseif strcmp(ExperimentType,'2spot2color')
     
     for ChN=1:length(fad)
         for i=1:length(fad(ChN).channels)
-
 
 
             figure(ParticlesFig)
