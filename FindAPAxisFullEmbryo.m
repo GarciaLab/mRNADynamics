@@ -86,7 +86,6 @@ elseif (length(DLIF)>0)
     FileMode='LIFExport';
 elseif (length(DLSM)>0)
     display('LSM mode')
-    error('Add support for LSM files')
     D=DLSM;
     FileMode='LSM';
 else
@@ -157,80 +156,41 @@ elseif strcmp(FileMode,'LIFExport')
     
     evalin('base','clear rot')
     MidImage = imrotate(MidImage, -zoom_angle + full_embryo_angle);
+elseif strcmp(FileMode,'LSM')
+    
+    %Figure out which channel to use
+    HisChannel=find(~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'mcherry'))|...
+        ~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'his')));
+    
+    if isempty(HisChannel)
+        error('LSM Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
+    end
+    
+    %Rotates the full embryo image to match the rotation of the zoomed
+    %time series
+    zoom_angle = 0;
+    full_embryo_angle = 0;
+    
+    LSMMid=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(MidFileIndex).name]);
+    LSMMeta=LSMMid{:,4};
+    LSMMeta2=LSMMid{:,2};
+    
+    %By looking at the last image we make sure we're avoiding the
+    %individual tiles if we're dealing with tile scan
+    MidImage=LSMMid{1}{HisChannel,1};
+    
+    %Figure out the rotation of the full embryo image
+    full_embryo_angle = LSMMeta2.get('Recording Rotation #1');
+    
+    %Figure out the rotation of the zoomed-in image
+    DLSMZoom=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lsm']);
+    LSMZoom=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,...
+        DLSMZoom(1).name]);
+    LSMMetaZoom2=LSMZoom{:,2};
+    zoom_angle=LSMMetaZoom2.get('Recording Rotation #1');
+
+    MidImage = imrotate(MidImage, -zoom_angle + full_embryo_angle);
 end
-
-%Get the necessary information to load the corresponding flat field image
-% 
-% %Get the structure with the acquisition information
-% ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,...
-%     'FullEmbryo',filesep,D(SurfaceFileIndex).name]);
-% 
-% 
-% %Get the flat-field information
-% 
-% %Figure out the zoom factor
-% Zoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
-% if ~isempty(Zoom)
-%     %Look for the file
-%     FFDir=dir([SourcePath,filesep,Date,filesep,'FF',Zoom(1),'x*.*']);
-%     %If there's more than one match then ask for help
-%     if length(FFDir)==1
-%         FFFile=FFDir(1).name;
-%     elseif isempty(FFDir)
-%         display('Warning, no flat field file found. Press any key to proceed without it');
-%         FFImage=ones(ImageInfo(1).Height,ImageInfo(1).Width);
-%         pause
-%     else
-%         FFFile=uigetfile([Folder,filesep,'..',filesep,'FF',Zoom(1),'x*.*'],'Select flatfield file');
-%     end
-% else
-%     warning('No zoom information found. Cannot process flat field.')
-% end
-% 
-% %Now do the image correlation. We'll grab a small area around the middle of
-% %the imaging field and correlate it to the larger, full embryo image.
-% 
-% % AcqImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(AcqImageIndex).name]);
-% % FullImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(FullImageIndex).name]);
-
-% 
-% %Crop the imaging field by 50%
-% [Rows,Columns]=size(AcqImage);
-% AcqImageCrop=AcqImage(Rows/4:Rows/4*3,Columns/4:Columns/4*3);
-% 
-% %Calculate the correlation marrix and find the maximum
-% C = normxcorr2(AcqImageCrop, FullImage);
-% [Max2,MaxRows]=max(C);
-% [Dummy,MaxColumn]=max(Max2);
-% MaxRow=MaxRows(MaxColumn);
-% 
-% [CRows,CColumns]=size(C);
-% 
-% 
-% 
-% ShiftRow=MaxRow-(CRows/2+1);
-% ShiftColumn=MaxColumn-(CColumns/2+1);
-% 
-% %Create an overlay to make sure things make sense
-% 
-% ImShifted=uint16(zeros(size(FullImage)));
-% 
-% RowRange=(Rows/4:Rows/4*3)+ShiftRow;
-% ColumnRange=(Columns/4:Columns/4*3)+ShiftColumn;
-% 
-% ImShifted(RowRange,ColumnRange)=AcqImageCrop;
-% 
-% figure(1)
-% ImOverlay=cat(3,mat2gray(FullImage)+mat2gray(ImShifted),mat2gray(FullImage),mat2gray(FullImage));
-% imshow(ImOverlay)
-% 
-% xShift=-ShiftColumn;
-% yShift=-ShiftRow;
-% 
-% 
-% %Save it to the Dropbox folder
-% imwrite(FullImage,[DropboxFolder,filesep,Prefix,filesep,'FullEmbryo.tif'],'compression','none');
-% 
 
 
 %Save it to the Dropbox folder

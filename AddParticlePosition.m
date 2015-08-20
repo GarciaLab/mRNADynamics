@@ -212,39 +212,8 @@ if ~NoAP
         % the dimensions of the image. This may not work for all possible
         % resolutions, though...
         ZoomRatio = ResizeFactor;
-        
-%     elseif strcmp(FileMode,'LSM') 
-%         
-%         D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lsm']);
-%         ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(1).name]);
-%         
-%         %Figure out the zoom factor
-%         MovieZoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
-%         MovieZoom=str2num(MovieZoom);
-%     
-%         
-%         %Get the zoomed out surface image and its dimensions from the FullEmbryo folder
-%         D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.tif']);
-%         SurfName=D(find(~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
-%         SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,SurfName],ChannelToLoad); 
-%         
-%         %Get the size of the zoom image
-%         Rows = str2double(ExtractInformationField(ImageInfo(1), 'state.acq.linesPerFrame='));
-%         Columns = str2double(ExtractInformationField(ImageInfo(1), 'state.acq.pixelsPerLine='));
-%         
-%         SurfInfo = imfinfo([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo', filesep, SurfName]);
-%         SurfZoom = ExtractInformationField(SurfInfo(1), 'state.acq.zoomFactor=');
-%         SurfZoom = str2double(SurfZoom);
-% 
-%         SurfRows = str2double(ExtractInformationField(SurfInfo(1), 'state.acq.linesPerFrame='));
-%         SurfColumns = str2double(ExtractInformationField(SurfInfo(1), 'state.acq.pixelsPerLine='));
-%         
-%         %Get the full embryo image
-%         FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
-%     
-        
+
     elseif strcmp(FileMode,'LSM')|strcmp(FileMode,'LIFExport')
-%     elseif strcmp(FileMode,'LIFExport')
 
         %This is so that the code doesn't freak out later
         SurfName=[];
@@ -305,27 +274,46 @@ if ~NoAP
         zoom_angle = 0;
         full_embryo_angle = 0;
 
-        if isdir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData']) 
-            xml_file_path = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, '*.xml']);
-            xml_file = xml_file_path(1).name;
-            xDoc = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, xml_file]);
-            zoom_angle = str2double(evalin('base','rot'));
-        else 
-            warning('No time series metadata found.')
+        if strcmp(FileMode,'LIFExport')
+            if isdir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData']) 
+                xml_file_path = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, '*.xml']);
+                xml_file = xml_file_path(1).name;
+                xDoc = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, xml_file]);
+                zoom_angle = str2double(evalin('base','rot'));
+            else 
+                warning('No time series metadata found.')
+            end
+            if isdir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo', filesep...
+                    'MetaData'])     
+                xml_file_path2 = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo',...
+                    filesep, 'MetaData', filesep,'*Surf*.xml']);
+                xml_file2 = xml_file_path2(1).name;
+                xDoc2 = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep,'FullEmbryo', filesep,...
+                        'MetaData', filesep, xml_file2]);
+                full_embryo_angle = str2double(evalin('base','rot'));
+            else 
+                warning('No full embryo metadata found.')
+            end
+
+            evalin('base','clear rot')
+        elseif strcmp(FileMode,'LSM')
+            LSMSurf=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(1).name]);
+            LSMMeta=LSMSurf{:,4};
+            LSMMeta2=LSMSurf{:,2};
+            
+            %Get the surface image
+            SurfImage=LSMSurf{1}{HisChannel,1};
+            %Figure out the rotation of the full embryo image
+            full_embryo_angle = LSMMeta2.get('Recording Rotation #1');
+            
+            %Figure out the rotation of the zoomed-in image
+            DLSMZoom=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lsm']);
+            LSMZoom=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,...
+                DLSMZoom(1).name]);
+            LSMMetaZoom2=LSMZoom{:,2};
+            zoom_angle=LSMMetaZoom2.get('Recording Rotation #1');
         end
-        if isdir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo', filesep...
-                'MetaData'])     
-            xml_file_path2 = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo',...
-                filesep, 'MetaData', filesep,'*Surf*.xml']);
-            xml_file2 = xml_file_path2(1).name;
-            xDoc2 = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep,'FullEmbryo', filesep,...
-                    'MetaData', filesep, xml_file2]);
-            full_embryo_angle = str2double(evalin('base','rot'));
-        else 
-            warning('No full embryo metadata found.')
-        end
-        
-        evalin('base','clear rot')
+            
         SurfImage = imrotate(SurfImage, -zoom_angle + full_embryo_angle);
         clear ImageTemp
 
@@ -363,7 +351,7 @@ if ~NoAP
         %Get the surface image in the zoomed case by looking at the last
         %frame of our movie
         DHis=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
-        ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis(end).name]);
+        ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis(end-1).name]);
     else
         ChannelToLoad=1;
 
