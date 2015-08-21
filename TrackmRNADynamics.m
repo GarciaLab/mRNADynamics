@@ -207,7 +207,7 @@ if strcmp(ExperimentType,'1spot')|strcmp(ExperimentType,'2spot')
 
         %error('Trying to re-track particles. I need to work on this case')
         load([OutputFolder,filesep,'Particles.mat'])
-            Particles=Particles(1);
+            Particles=Particles{1};
         
         if isfield(Particles,'Approved')
             Retracking=1;           %Flag for whether we are performing retracking
@@ -793,14 +793,15 @@ elseif strcmp(ExperimentType,'2spot2color')
             %Only keep the approved particles and start the tracking from there
             for ChN=1:length(fadTemp)
                 k=1;
+                clear NewParticles
                 for i=1:length(Particles{ChN})
                     if Particles{ChN}(i).Approved~=0
-                        NewParticles{ChN}(k)=Particles{ChN}(i);
+                        NewParticles(k)=Particles{ChN}(i);
                         k=k+1;
                     end
                 end
                 if exist('NewParticles')
-                    Particles{ChN}=NewParticles{ChN};
+                    Particles{ChN}=NewParticles;
                 else
                     Particles{ChN}=[];
                     Retracking=0;

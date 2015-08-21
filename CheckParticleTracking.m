@@ -169,14 +169,12 @@ end
 
 
 %Add FramesApproved where necessary
-if ~isfield(Particles{1},'FrameApproved')
-    for NCh=1:NChannels
+for NCh=1:NChannels
+    if ~isfield(Particles{NCh},'FrameApproved')
         for i=1:length(Particles{NCh})
             Particles{NCh}(i).FrameApproved=logical(ones(size(Particles{NCh}(i).Frame)));
         end
-    end
-else
-    for NCh=1:NChannels
+    else
         for i=1:length(Particles{NCh})
             if isempty(Particles{NCh}(i).FrameApproved)
                 Particles{NCh}(i).FrameApproved=logical(ones(size(Particles{NCh}(i).Frame)));
@@ -411,17 +409,19 @@ ZProfileFig=figure;
 
 cc=1;
 
+% Create the approved field if it does not exist
+for NCh=1:NChannels
+    if ~isfield(Particles{NCh},'Approved')
+        for i=1:length(Particles{NCh})
+            Particles{NCh}(i).Approved=0;
+        end
+    end
+end    
+    
+    
+
 %See if we just want to save the data
 if ForCompileAll
-    % Create the approved field if it does not exist
-    if ~isfield(Particles{1},'Approved')
-        for NCh=1:NChannels
-            for i=1:length(Particles{NCh})
-                Particles{NCh}(i).Approved=0;
-            end
-        end
-    end    
-    
     cc='x';
 end
 
@@ -1163,7 +1163,7 @@ while (cc~='x')
                 xPosSuspect=[];
                 yPosSuspect=[];
                 for j=1:length(schnitzcells)
-                    if sum(schnitzcells(j).frames-1==CurrentFrame)
+                    if sum(schnitzcells(j).frames==CurrentFrame)
                         SchnitzSuspect=[SchnitzSuspect,j];
                         xPosSuspect=[xPosSuspect,...
                             schnitzcells(j).cenx(find((schnitzcells(j).frames)==CurrentFrame))];
@@ -1544,6 +1544,14 @@ while (cc~='x')
             end
         end
         
+        %Check if there are any issues with cellno getting lost in the
+        %schnitz
+        for SchnitzN=1:length(schnitzcells)
+            if length(schnitzcells(SchnitzN).frames)~=length(schnitzcells(SchnitzN).cellno)
+                warning(['Problem with schnitz ',num2str(SchnitzN)])
+                keyboard
+            end
+        end
         
     elseif cc=='2' %2 set parent of current nucleus
         display('Select the mother nucleus or press enter to delete mother information')
