@@ -508,7 +508,7 @@ elseif strcmp(FileMode,'LSM')
             if LSMIndex==1
                 FrameRange=1:NFrames(LSMIndex);
             else
-                FrameRange=NFrames(LSMIndex-1):NFrames(LSMIndex);
+                FrameRange=(1:NFrames(LSMIndex))+length(FrameInfo);
             end
                 
             for i=FrameRange

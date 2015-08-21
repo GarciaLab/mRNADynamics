@@ -16,7 +16,7 @@ if schnitzcells(Particles(CurrentParticle).Nucleus).D~=0
 end
 
 
-if (~sum((schnitzcells(Particles(CurrentParticle).Nucleus).frames-1)==CurrentFrame))&...
+if (~sum((schnitzcells(Particles(CurrentParticle).Nucleus).frames)==CurrentFrame))&...
         ~sum((DaughterFrames-1)==CurrentFrame)
     display('Error with the nuclear tracking. Select corresponding nucleus')
     
@@ -29,12 +29,12 @@ if (~sum((schnitzcells(Particles(CurrentParticle).Nucleus).frames-1)==CurrentFra
     xPosSuspect=[];
     yPosSuspect=[];
     for i=1:length(schnitzcells)
-        if sum(schnitzcells(i).frames-1==CurrentFrame)
+        if sum(schnitzcells(i).frames==CurrentFrame)
             SchnitzSuspect=[SchnitzSuspect,i];
             xPosSuspect=[xPosSuspect,...
-                schnitzcells(i).cenx(find((schnitzcells(i).frames-1)==CurrentFrame))];
+                schnitzcells(i).cenx(find((schnitzcells(i).frames==CurrentFrame))];
             yPosSuspect=[yPosSuspect,...
-                schnitzcells(i).ceny(find((schnitzcells(i).frames-1)==CurrentFrame))];
+                schnitzcells(i).ceny(find((schnitzcells(i).frames)==CurrentFrame))];
         end
     end
     
