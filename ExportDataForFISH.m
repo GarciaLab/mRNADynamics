@@ -35,6 +35,7 @@ MaxShift=9;     %Maximum shift in pixels corresponding to image shift and
                 %alignment
 MaxHistone=1000;    %Maximum intensity for the histone channel. Anything above
                     %this will be capped.
+ProjectionType = 'median'; %Default setting for z-projection is median-based. This corrects for reflections but may fail on low intensity nuclei
                 
 
 %Look at parameters
@@ -49,6 +50,8 @@ while k<=length(varargin)
         SkipFrames=varargin{k+1};
         k=k+1;
         warning('SkipFrame mode.')
+    elseif strcmp(lower(varargin{k}),'maxprojection')
+        ProjectionType = 'maxprojection'
     else
         Prefix = varargin{k};
         PrefixOverrideFlag = 1;
@@ -779,8 +782,12 @@ elseif strcmp(FileMode,'LIFExport')
                     HisSlices(:,:,n)=LIFImages{i}{k,1};
                     n=n+1;
                 end
-                MedianProjection=median(HisSlices,3);
-                imwrite(uint16(MedianProjection),...
+                if strcmp(ProjectionType,'maxprojection')
+                    Projection=max(HisSlices,3);
+                else
+                    Projection=median(HisSlices,3);
+                end
+                imwrite(uint16(Projection),...
                             [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
                 m=m+1;
             end
@@ -1059,19 +1066,23 @@ elseif strcmp(FileMode,'LIFExport')
                     %We don't want to use all slices. Only the center ones
                     StackCenter=round((min(NSlices)-1)/2);
                     StackRange=[StackCenter-1:StackCenter+1];
-                    MedianProjection=median(HisSlices(:,:,StackRange),[],3);
+                    if strcmp(ProjectionType,'maxprojection')
+                        Projection=max(HisSlices(:,:,StackRange),[],3);
+                    else
+                        Projection=median(HisSlices(:,:,StackRange),[],3);
+                    end
 
                     %Flatten the field if possible
                     if exist('LIFFF')
-                        MedianProjection=MedianProjection./FF;
+                        Projection=Projection./FF;
                     end
                     
-                    MedianProjection=imcomplement(MedianProjection);
-                    MedianProjection=histeq(mat2gray(MedianProjection),ReferenceHist);
+                    Projection=imcomplement(Projection);
+                    Projection=histeq(mat2gray(Projection),ReferenceHist);
                    
                     
                     
-                    imwrite(MedianProjection,...
+                    imwrite(Projection,...
                         [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
                             
                 end
@@ -1333,19 +1344,24 @@ elseif strcmp(FileMode,'LIFExport')
                     %We don't want to use all slices. Only the center ones
                     StackCenter=round((min(NSlices)-1)/2);
                     StackRange=[StackCenter-1:StackCenter+1];
-                    MedianProjection=median(HisSlices(:,:,StackRange),3);
+                    
+                    if strcmp(ProjectionType,'maxprojection')
+                        Projection=max(HisSlices(:,:,StackRange),3);
+                    else    
+                        Projection=median(HisSlices(:,:,StackRange),3);
+                    end
 
                     %Flatten the field if possible
                     if exist('LIFFF')
-                        MedianProjection=MedianProjection./FF;
+                        Projection=Projection./FF;
                     end
                     
-                    MedianProjection=imcomplement(MedianProjection);
-                    MedianProjection=histeq(mat2gray(MedianProjection),ReferenceHist);
+                    Projection=imcomplement(Projection);
+                    Projection=histeq(mat2gray(Projection),ReferenceHist);
                    
                     
                     
-                    imwrite(MedianProjection,...
+                    imwrite(Projection,...
                         [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
                             
                 end
@@ -1592,19 +1608,24 @@ elseif strcmp(FileMode,'LIFExport')
                     %We don't want to use all slices. Only the center ones
                     StackCenter=round((min(NSlices)-1)/2);
                     StackRange=[StackCenter-1:StackCenter+1];
-                    MedianProjection=median(HisSlices(:,:,StackRange),[],3);
-
-                    %Flatten the field if possible
-                    if exist('LIFFF')
-                        MedianProjection=MedianProjection./FF;
+                    
+                    if strcmp(ProjectionType,'maxprojection')
+                        Projection=max(HisSlices(:,:,StackRange),[],3);
+                    else
+                        Projection=median(HisSlices(:,:,StackRange),[],3);
                     end
                     
-                    %MedianProjection=imcomplement(MedianProjection);
-                    %MedianProjection=histeq(mat2gray(MedianProjection),ReferenceHist);
+                    %Flatten the field if possible
+                    if exist('LIFFF')
+                        Projection=Projection./FF;
+                    end
+                    
+                    %Projection=imcomplement(Projection);
+                    %Projection=histeq(mat2gray(Projection),ReferenceHist);
                    
                     
                     
-                    imwrite(uint16(MedianProjection),...
+                    imwrite(uint16(Projection),...
                         [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
                    
                 else
