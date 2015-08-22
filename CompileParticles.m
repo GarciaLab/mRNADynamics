@@ -324,7 +324,6 @@ end
 
 %Reload Particles.mat
 load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
-
 %Create the particle array. This is done so that we can support multiple
 %channels. Also figure out the number of channels
 if iscell(Particles)
@@ -372,9 +371,6 @@ if ApproveAll
             %HistoneChannel mode
             if HistoneChannel
                 if ~isempty(Particles{ChN}(i).Nucleus)
-
-
-
                     %If a particle has been explicitly rejected then don't
                     %approve it!
                     if Particles{ChN}(i).Approved~=-1
@@ -473,7 +469,8 @@ if strcmp(ExperimentAxis,'AP')
 
     for i=1:Rows
         for j=1:Columns
-            Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
+            Angle=atan2((i-coordAZoom(2)),(j-coordAZoom(1)));
+            %Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
             Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
             APPosition=Distance.*cos(Angle-APAngle);
             APPosImage(i,j)=APPosition/APLength;

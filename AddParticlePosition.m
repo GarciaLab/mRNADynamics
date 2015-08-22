@@ -1089,7 +1089,8 @@ if ~NoAP
 
     for i=1:Rows
         for j=1:Columns
-            Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
+            %Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
+            Angle=atan2((i-coordAZoom(2)),(j-coordAZoom(1)));
             if j-coordAZoom(1) < 0
                 Angle = Angle + pi;
             end
