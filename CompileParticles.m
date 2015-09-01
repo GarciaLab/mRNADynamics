@@ -469,8 +469,13 @@ if strcmp(ExperimentAxis,'AP')
 
     for i=1:Rows
         for j=1:Columns
-            Angle=atan2((i-coordAZoom(2)),(j-coordAZoom(1)));
-            %Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
+            
+            try
+                Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
+            catch
+                Angle=atan2((i-coordAZoom(2)),(j-coordAZoom(1)));
+            end
+            
             Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
             APPosition=Distance.*cos(Angle-APAngle);
             APPosImage(i,j)=APPosition/APLength;
@@ -931,7 +936,7 @@ ncFilterID=[min(ncFilterID)-1,ncFilterID];
 %Create the filter
 for ChN=1:NChannels
     if isempty(CompiledParticles)==1
-        error(['No compiled particles found in channel',num2str(ChN),'. Did you mean to run the code with ApproveAll?'])
+        error(['No compiled particles found in channel ',num2str(ChN),'. Did you mean to run the code with ApproveAll?'])
     end
 
     
