@@ -783,7 +783,7 @@ elseif strcmp(FileMode,'LIFExport')
                     n=n+1;
                 end
                 if strcmp(ProjectionType,'maxprojection')
-                    Projection=max(HisSlices,3);
+                    Projection=max(HisSlices,[],3);
                 else
                     Projection=median(HisSlices,3);
                 end
