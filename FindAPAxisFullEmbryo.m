@@ -95,6 +95,7 @@ end
 
 % Identify the midsagittal image
 MidFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'mid')));
+SurfFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'surf')));
 
 if (length(MidFileIndex)>1)
     error('Too many midsagittal files in FullEmbryo folder')
@@ -128,11 +129,15 @@ elseif strcmp(FileMode,'LIFExport')
     full_embryo_angle = 0;
     
     LIFMid=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(MidFileIndex).name]);
-    %MidImage=LIFMid{1}{HisChannel,1};
-    
+    LIFSurf=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(SurfFileIndex).name]);
+
     %By looking at the last image we make sure we're avoiding the
     %individual tiles if we're dealing with tile scan
     MidImage=LIFMid{end,1}{HisChannel,1};
+    SurfImage=LIFSurf{end,1}{HisChannel,1};
+    if size(MidImage) ~= size(SurfImage)
+            MidImage = imresize(MidImage,length(SurfImage)/length(MidImage));
+    end
     if isdir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData'])
         xml_file_path = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, '*.xml']);
         xml_file = xml_file_path(1).name;

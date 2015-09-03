@@ -199,9 +199,7 @@ if ~NoAP
         SurfColumns = str2double(ExtractInformationField(SurfInfo(1), 'state.acq.pixelsPerLine='));
         
         %Get the full embryo image
-        FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
-
-        
+        FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);       
         
         %Ratio between the two zoom levels
         ZoomRatio = MovieZoom / SurfZoom;
@@ -253,7 +251,7 @@ if ~NoAP
         NSlices=str2num(MetaFullEmbryo.getPixelsSizeZ(0));
         clear MaxTemp
   
-        %Do a maximum projections
+        %Do a maximum projection
 
         %By looking at the last image we make sure we're avoiding the
         %individual tiles if we're dealing with tile scan
