@@ -1649,9 +1649,9 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
         %First, add the corresponding Ellipse number to each frame of the
         %particles. Also save the information in a cell array. This should make
         %searching easier.
+        clear ParticleNuclei
+        clear ParticleFrames
         for i=1:length(Particles{ChN})
-            clear ParticleNuclei
-            clear ParticleFrames
             if ~isempty(Particles{ChN}(i).Nucleus)
                 ParticleNuclei{i}=...
                     schnitzcells(Particles{ChN}(i).Nucleus).cellno(ismember(schnitzcells(Particles{ChN}(i).Nucleus).frames,...
