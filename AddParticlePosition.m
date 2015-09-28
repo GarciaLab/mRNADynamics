@@ -667,17 +667,9 @@ if ~NoAP
             %This is for the full image
 
             TopLeft=TopLeftHalf+[0,+xShift];
-            BottomRight=BottomRightHalf+[0,+xShift];
-
-            
-            
-            
-            
-        
+            BottomRight=BottomRightHalf+[0,+xShift]; 
         end    
-            
-        
-    
+             
     else
         %The information from the left-right stitching of the two images is as follows:
         %xShift and yShift are the shifts used to stitch the images.

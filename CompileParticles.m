@@ -493,14 +493,16 @@ if strcmp(ExperimentAxis,'AP')
     %Calculate the area in pixels corresponding to each AP bin. We will use
     %this to get rid of small AP bins in the image and also to calculate
     %probabilities of nuclei being active.
-    APbinArea = zeros(length(APbinID));
+    APbinArea = zeros(length(APbinID),1);
+    %Calculate ther areas of the AP bins
     for i=1:length(APbinID)
         APbinArea(i)=sum(sum(APPosBinImage==i));
-        %Discard anything that is below MinAPArea
-        if APbinArea(i)<(MinAPArea/0.025*APResolution)
-            APbinArea(i)=nan;
-        end
     end
+    %Get the median of the non-zero areas
+    MedianArea=median(APbinArea(APbinArea>0));
+    %Only keep the bins with an area of at least 70% of the median
+    APbinArea(APbinArea<MedianArea*0.7)=nan;
+    
 end
 
 
