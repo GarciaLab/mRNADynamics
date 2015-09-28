@@ -667,7 +667,7 @@ elseif strcmp(FileMode,'LIFExport')
         end
 
         %Number of channels
-        NChannels=LIFMeta.getChannelCount(1);
+        NChannels=LIFMeta.getChannelCount(0);
         
         %Finally, use this information to determine the number of frames in
         %each series
@@ -882,7 +882,7 @@ elseif strcmp(FileMode,'LIFExport')
         end
 
         %Number of channels
-        NChannels=LIFMeta.getChannelCount(1);
+        NChannels=LIFMeta.getChannelCount(0);
         
         if NChannels~=2
             error('Only one channel found in the LIF file')
@@ -1184,8 +1184,10 @@ elseif strcmp(FileMode,'LIFExport')
         for i = 1:NSeries
             xDoc = xmlread([XMLFolder,filesep,SeriesFiles(i).name]);
             TimeStampList = xDoc.getElementsByTagName('TimeStamp');
+            
             for k = 0:(NFrames(i)*NSlices(i)*NChannels)-1
                 TimeStamp = TimeStampList.item(k);
+                
                 Date = char(TimeStamp.getAttribute('Date'));
                 Time = char(TimeStamp.getAttribute('Time'));
                 Milli = char(TimeStamp.getAttribute('MiliSeconds'));
