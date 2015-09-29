@@ -266,8 +266,14 @@ end
 if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'input')
     
     if strcmp(lower(ExperimentType),'inputoutput')
-        InputChannelTemp=strfind({lower(Channel1{1}),lower(Channel2{1})},'dorsal');
-        InputChannelTemp=~cellfun(@isempty,InputChannelTemp);
+        InputChannelTemp=strfind({lower(Channel1{1}),lower(Channel2{1})},'mcp');
+        if isempty(InputChannelTemp)
+            InputChannelTemp=strfind({lower(Channel1{1}),lower(Channel2{1})},'pp7');
+                if isempty(InputChannelTemp)
+                    InputChannelTemp=strfind({lower(Channel1{1}),lower(Channel2{1})},'lambdan');
+                end    
+        end
+        InputChannelTemp=cellfun(@isempty,InputChannelTemp);
     elseif strcmp(lower(ExperimentType),'input')
         InputChannelTemp=1;
     end
