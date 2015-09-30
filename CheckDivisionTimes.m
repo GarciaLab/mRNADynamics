@@ -46,6 +46,10 @@ EmbryoName=Prefix(Dashes(3)+1:end);
 if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
         (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
     SourcePath=[SourcePath,filesep,'..',filesep,'..',filesep,'Bcd-GFP'];
+elseif (~isempty(findstr(Prefix,'Hb')))&(isempty(findstr(Prefix,'Hb-GFP')))&...
+        (isempty(findstr(Prefix,'nanobody')))&(isempty(findstr(Prefix,'mCherry')))
+    SourcePath=[SourcePath,filesep,'..',filesep,'..',filesep,'Hb-GFP'];
+    
 end
 
 
@@ -66,6 +70,10 @@ if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
         (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
     D=dir([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,'*His_*.tif']);
     ZoomImage=imread([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,D(end).name]);
+elseif (~isempty(findstr(Prefix,'Hb')))&(isempty(findstr(Prefix,'Hb-GFP')))&...
+        (isempty(findstr(Prefix,'nanobody')))&(isempty(findstr(Prefix,'mCherry')))
+    D=dir([SourcePath,filesep,Date,filesep,'HbGFP-MS2mCherry',filesep,'AveragedData',filesep,'*Hb_*.tif']);
+    ZoomImage=imread([SourcePath,filesep,Date,filesep,'HbGFP-MS2mCherry',filesep,'AveragedData',filesep,D(end).name]);
 else
     D=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
     ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,D(end).name]);
@@ -169,6 +177,10 @@ if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
         (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
     XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
         [Date,'\BcdGFP-HisRFP']));
+elseif (~isempty(findstr(Prefix,'Hb')))&(isempty(findstr(Prefix,'Hb-GFP')))&...
+        (isempty(findstr(Prefix,'MS2')))&(isempty(findstr(Prefix,'MS2-mCherry')))
+    XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
+        [Date,'\Hb-GFP-MS2-mCherry']));
 else
     XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
         [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
@@ -182,7 +194,7 @@ else
 end
 
 
-if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel2Column),'mCherry-MCP')
+if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel2Column),'mCherry-MCP')|strcmp(XLSRaw(XLSEntry,Channel2Column),'mCherry-MCP(3)')
     nc9=cell2mat(XLSRaw(XLSEntry,nc9Column));
     nc10=cell2mat(XLSRaw(XLSEntry,nc10Column));
     nc11=cell2mat(XLSRaw(XLSEntry,nc11Column));
@@ -235,7 +247,9 @@ while (cc~='x')
     if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
             (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
         HisImage=imread([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,D(CurrentFrame).name]);
-
+    elseif (~isempty(findstr(Prefix,'Hb')))&(isempty(findstr(Prefix,'Hb-GFP')))&...
+            (isempty(findstr(Prefix,'MS2')))&(isempty(findstr(Prefix,'MS2-mCherry')))
+        HisImage=imread([SourcePath,filesep,Date,filesep,'Hb-GFP-MS2-mCherry',filesep,'AveragedData',filesep,D(CurrentFrame).name]);
     else
         HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(CurrentFrame).name]);
     end
