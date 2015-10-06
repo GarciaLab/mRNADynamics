@@ -1,0 +1,718 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>PostAnalysis</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2015-08-25"><meta name="DC.source" content="PostAnalysis.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#3">Extract all data</a></li><li><a href="#4">Extract images and structures</a></li><li><a href="#5">Initialisation</a></li><li><a href="#6">Finding the ectogenic boundary</a></li><li><a href="#7">Midline</a></li><li><a href="#8">TwoSpot</a></li></ul></div><pre class="codeinput"><span class="keyword">function</span> [lrep, furrow]=PostAnalysis(Prefix,Direction)
+</pre><pre class="codeinput">Prefix=<span class="string">'2014-12-30-SogSha-hz'</span>;
+Direction=<span class="string">'d'</span>;
+<span class="comment">% Performs all the post analysis from an analysed data set. Run this from a</span>
+<span class="comment">% folder where you want to save all the data. Typically in your dropbox</span>
+<span class="comment">% folder under a different sub-folder</span>
+</pre><h2>Extract all data<a name="3"></a></h2><pre class="codeinput"><span class="comment">%Get the folders, including the default Dropbox one</span>
+[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=<span class="keyword">...</span>
+    DetermineLocalFolders;
+<span class="comment">%Now get the actual DropboxFolder</span>
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=<span class="keyword">...</span>
+    DetermineLocalFolders(Prefix);
+
+<span class="keyword">if</span> ~exist(<span class="string">'Direction'</span>,<span class="string">'var'</span>)
+    Direction=input(<span class="string">'No Direction of Repression was indicated. Please indicate a direction now (u for up, or d for down)'</span>);
+<span class="keyword">end</span>
+
+
+<span class="comment">%Determine division times</span>
+<span class="comment">%Load the information about the nc from the XLS file</span>
+[Num,Txt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,<span class="string">'MovieDatabase.xlsx'</span>]);
+XLSHeaders=Txt(1,:);
+Txt=Txt(2:end,:);
+
+ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),<span class="string">'ExperimentType'</span>));
+ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),<span class="string">'ExperimentAxis'</span>));
+
+DataFolderColumn=find(strcmp(XLSRaw(1,:),<span class="string">'DataFolder'</span>));
+Dashes=findstr(Prefix,<span class="string">'-'</span>);
+
+PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),<span class="string">'\'</span>,Prefix(Dashes(3)+1:end)]));
+<span class="keyword">if</span> isempty(PrefixRow)
+    PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),<span class="string">'/'</span>,Prefix(Dashes(3)+1:end)]));
+    <span class="keyword">if</span> isempty(PrefixRow)
+        error(<span class="string">'Could not find data set in MovieDatabase.XLSX. Check if it is defined there.'</span>)
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
+ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
+
+<span class="keyword">if</span> strcmp(ExperimentAxis,<span class="string">'AP'</span>)
+    error(<span class="string">'This seems to be an experiment on the AP axis. Either check your prefix or change the respective MovieDatabase entry'</span>);
+<span class="keyword">end</span>
+
+
+<span class="comment">%Find the different columns.</span>
+DataFolderColumn=find(strcmp(XLSRaw(1,:),<span class="string">'DataFolder'</span>));
+nc9Column=find(strcmp(XLSRaw(1,:),<span class="string">'nc9'</span>));
+nc10Column=find(strcmp(XLSRaw(1,:),<span class="string">'nc10'</span>));
+nc11Column=find(strcmp(XLSRaw(1,:),<span class="string">'nc11'</span>));
+nc12Column=find(strcmp(XLSRaw(1,:),<span class="string">'nc12'</span>));
+nc13Column=find(strcmp(XLSRaw(1,:),<span class="string">'nc13'</span>));
+nc14Column=find(strcmp(XLSRaw(1,:),<span class="string">'nc14'</span>));
+CFColumn=find(strcmp(XLSRaw(1,:),<span class="string">'CF'</span>));
+<span class="keyword">try</span>
+    FramesColumn=find(strcmp(XLSRaw(1,:),<span class="string">'frames'</span>));
+<span class="keyword">catch</span>
+    warning(<span class="string">'No. of frames is not defined in MovieDatabase. Length of Ellipses will be used. Define manually for best results'</span>);
+<span class="keyword">end</span>
+Channel1Column=find(strcmp(XLSRaw(1,:),<span class="string">'Channel1'</span>));
+Channel2Column=find(strcmp(XLSRaw(1,:),<span class="string">'Channel2'</span>));
+
+
+<span class="comment">%Find the corresponding entry in the XLS file</span>
+<span class="keyword">if</span> (~isempty(findstr(Prefix,<span class="string">'Bcd'</span>)))&amp;(isempty(findstr(Prefix,<span class="string">'BcdE1'</span>)))&amp;<span class="keyword">...</span>
+        (isempty(findstr(Prefix,<span class="string">'NoBcd'</span>)))&amp;(isempty(findstr(Prefix,<span class="string">'Bcd1x'</span>)))&amp;(isempty(findstr(Prefix,<span class="string">'Bcd4x'</span>)))
+    warning(<span class="string">'This step in CheckParticleTracking will most likely have to be modified to work'</span>)
+    XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),<span class="keyword">...</span>
+        [Date,<span class="string">'\BcdGFP-HisRFP'</span>]));
+<span class="keyword">else</span>
+    XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),<span class="keyword">...</span>
+        [Prefix(1:Dashes(3)-1),<span class="string">'\'</span>,Prefix(Dashes(3)+1:end)]));
+
+    <span class="keyword">if</span> isempty(XLSEntry)
+        XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),<span class="keyword">...</span>
+            [Prefix(1:Dashes(3)-1),<span class="string">'/'</span>,Prefix(Dashes(3)+1:end)]));
+        <span class="keyword">if</span> isempty(XLSEntry)
+            display(<span class="string">'%%%%%%%%%%%%%%%%%%%%%'</span>)
+            error(<span class="string">'Dateset could not be found. Check MovieDatabase.xlsx'</span>)
+            display(<span class="string">'%%%%%%%%%%%%%%%%%%%%%'</span>)
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="comment">% Extract Ellipses</span>
+<span class="keyword">try</span>
+    dummyEllipses=load([DropboxFolder,filesep,Prefix,filesep,<span class="string">'Ellipses.mat'</span>]);
+    Ellipses=dummyEllipses.Ellipses;
+<span class="keyword">catch</span>
+    error(<span class="string">'No Ellipses found!'</span>);
+<span class="keyword">end</span>
+
+nc9=XLSRaw{XLSEntry,nc9Column};
+nc10=XLSRaw{XLSEntry,nc10Column};
+nc11=XLSRaw{XLSEntry,nc11Column};
+nc12=XLSRaw{XLSEntry,nc12Column};
+nc13=XLSRaw{XLSEntry,nc13Column};
+nc14=XLSRaw{XLSEntry,nc14Column};
+cf=XLSRaw{XLSEntry,CFColumn};
+<span class="keyword">try</span>
+    frames=XLSRaw{XLSEntry,FramesColumn};
+<span class="keyword">catch</span>
+    frames=size(Ellipses,1);
+<span class="keyword">end</span>
+
+
+<span class="comment">%This checks whether all ncs have been defined</span>
+ncCheck=[nc9,nc10,nc11,nc12,nc13,nc14];
+<span class="keyword">if</span> length(ncCheck)~=6
+    error(<span class="string">'Check the nc frames in the MovieDatabase entry. Some might be missing'</span>)
+<span class="keyword">end</span>
+
+<span class="comment">%Do we need to convert any NaN chars into doubles?</span>
+<span class="keyword">if</span> strcmp(lower(nc14),<span class="string">'nan'</span>)
+    nc14=nan;
+<span class="keyword">end</span>
+<span class="keyword">if</span> strcmp(lower(nc13),<span class="string">'nan'</span>)
+    nc13=nan;
+<span class="keyword">end</span>
+<span class="keyword">if</span> strcmp(lower(nc12),<span class="string">'nan'</span>)
+    nc12=nan;
+<span class="keyword">end</span>
+<span class="keyword">if</span> strcmp(lower(nc11),<span class="string">'nan'</span>)
+    nc11=nan;
+<span class="keyword">end</span>
+<span class="keyword">if</span> strcmp(lower(nc10),<span class="string">'nan'</span>)
+    nc10=nan;
+<span class="keyword">end</span>
+<span class="keyword">if</span> strcmp(lower(nc9),<span class="string">'nan'</span>)
+    nc9=nan;
+<span class="keyword">end</span>
+<span class="keyword">if</span> strcmp(lower(cf),<span class="string">'nan'</span>)
+    cf=nan;
+<span class="keyword">end</span>
+
+<span class="comment">%Convert the prefix into the string used in the XLS file</span>
+Dashes=findstr(Prefix,<span class="string">'-'</span>);
+
+XLSEntry=find(strcmp(Txt(:,DataFolderColumn),<span class="keyword">...</span>
+    [Prefix(1:Dashes(3)-1),filesep,Prefix(Dashes(3)+1:end)]));
+
+ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
+
+<span class="keyword">if</span> (length(find(isnan(ncs)))==length(ncs))|(length(ncs)&lt;6)
+    error(<span class="string">'Have the ncs been defined in MovieDatabase.XLSX?'</span>)
+<span class="keyword">end</span>
+
+<span class="comment">%Now do the nuclear segmentation and lineage tracking. This should be put</span>
+<span class="comment">%into an independent function.</span>
+
+<span class="comment">%Create the cell array with the names.</span>
+D=dir([PreProcPath,filesep,Prefix,filesep,<span class="string">'*His*.tif'</span>]);
+<span class="keyword">for</span> i=1:length(D)
+    names{i}=[PreProcPath,filesep,Prefix,filesep,D(i).name];
+<span class="keyword">end</span>
+</pre><h2>Extract images and structures<a name="4"></a></h2><pre class="codeinput">DataFolder=[DropboxFolder,filesep,Prefix];
+FilePrefix=[DataFolder(length(DropboxFolder)+2:end),<span class="string">'_'</span>];
+
+<span class="comment">% Load the lineage files</span>
+<span class="keyword">try</span>
+    dummyLineage=load([DropboxFolder,filesep,Prefix,filesep,Prefix,<span class="string">'_lin.mat'</span>]);
+    schnitzcells=dummyLineage.schnitzcells;
+<span class="keyword">catch</span>
+    error(<span class="string">'Unable to load the lineage file. Cannot Proceed'</span>);
+<span class="keyword">end</span>
+
+<span class="comment">% Load the CompiledParticles</span>
+CompiledParticles=struct;
+FrameInfo=struct;
+cpexist=true; <span class="comment">% Does Compiled Particles Exist?</span>
+<span class="keyword">try</span>
+    dummyParticles=load([DropboxFolder,filesep,Prefix,filesep,<span class="string">'CompiledParticles.mat'</span>]);
+    CompiledParticles=dummyParticles.CompiledParticles;
+<span class="keyword">catch</span>
+    warning(<span class="string">'No Particles.mat found. No changes will be made to the Particles structure.'</span>);
+    cpexist=false;
+<span class="keyword">end</span>
+<span class="keyword">try</span>
+    dummyFrameInfo=load([DropboxFolder,filesep,Prefix,filesep,<span class="string">'FrameInfo.mat'</span>]);
+    FrameInfo=dummyFrameInfo.FrameInfo;
+<span class="keyword">catch</span>
+    error(<span class="string">'No Frame Info found!'</span>);
+<span class="keyword">end</span>
+
+
+dummyFrame=FrameInfo(1);
+dimy=dummyFrame.LinesPerFrame;
+dimx=dummyFrame.PixelsPerLine;
+</pre><h2>Initialisation<a name="5"></a></h2><pre class="codeinput">close <span class="string">all</span>;
+<span class="comment">% We first get all the required variables</span>
+<span class="keyword">if</span> Direction~=<span class="string">'u'</span> &amp;&amp; Direction~=<span class="string">'d'</span> &amp;&amp; Direction~=<span class="string">'b'</span>
+    warning(<span class="string">'The direction specified is not valid. We assume repression happens in the upward direction'</span>);
+    Direction=<span class="string">'u'</span>;   <span class="comment">% 'u' if repression happens in the upward direction and 'd'</span>
+    <span class="comment">% if repression happens in the downwards direction</span>
+<span class="keyword">end</span>
+<span class="keyword">if</span> isnan(cf)
+    cf=frames;
+<span class="keyword">end</span>
+mkdir([DropboxFolder,filesep,Prefix,filesep,<span class="string">'PostAnalyses'</span>]);
+cd([DropboxFolder,filesep,Prefix,filesep,<span class="string">'PostAnalyses'</span>]);
+</pre><pre class="codeoutput">Warning: Directory already exists. 
+</pre><h2>Finding the ectogenic boundary<a name="6"></a></h2><pre class="codeinput"><span class="keyword">if</span> cpexist
+    [ecto,expline,alltracesy,alltraces,er]=FindEctogenicBoundary(CompiledParticles,frames,Direction,nc12,dimy,dimx,cf);
+<span class="keyword">else</span>
+    warning(<span class="string">'No Compiled Particles found, so no Transciptional Boundary found'</span>);
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">Something is wrong, there are 2 frames with the same number 204, check particle 32 
+Something is wrong, there are 2 frames with the same number 207, check particle 32 
+Something is wrong, there are 2 frames with the same number 212, check particle 32 
+Something is wrong, there are 2 frames with the same number 239, check particle 46 
+Something is wrong, there are 2 frames with the same number 120, check particle 144 
+Something is wrong, there are 2 frames with the same number 121, check particle 144 
+Something is wrong, there are 2 frames with the same number 122, check particle 144 
+Something is wrong, there are 2 frames with the same number 123, check particle 144 
+Something is wrong, there are 2 frames with the same number 124, check particle 144 
+Something is wrong, there are 2 frames with the same number 125, check particle 144 
+Something is wrong, there are 2 frames with the same number 127, check particle 144 
+Something is wrong, there are 2 frames with the same number 129, check particle 144 
+Something is wrong, there are 2 frames with the same number 203, check particle 169 
+Something is wrong, there are 2 frames with the same number 204, check particle 169 
+Something is wrong, there are 2 frames with the same number 205, check particle 169 
+Something is wrong, there are 2 frames with the same number 310, check particle 230 
+Something is wrong, there are 2 frames with the same number 312, check particle 230 
+Something is wrong, there are 2 frames with the same number 324, check particle 230 
+Something is wrong, there are 2 frames with the same number 164, check particle 231 
+Something is wrong, there are 2 frames with the same number 165, check particle 231 
+Something is wrong, there are 2 frames with the same number 166, check particle 231 
+Something is wrong, there are 2 frames with the same number 167, check particle 231 
+Something is wrong, there are 2 frames with the same number 232, check particle 232 
+Something is wrong, there are 2 frames with the same number 241, check particle 234 
+Something is wrong, there are 2 frames with the same number 242, check particle 234 
+Something is wrong, there are 2 frames with the same number 244, check particle 234 
+Something is wrong, there are 2 frames with the same number 245, check particle 234 
+Something is wrong, there are 2 frames with the same number 307, check particle 234 
+Something is wrong, there are 2 frames with the same number 268, check particle 245 
+Something is wrong, there are 2 frames with the same number 193, check particle 246 
+Something is wrong, there are 2 frames with the same number 194, check particle 246 
+Something is wrong, there are 2 frames with the same number 195, check particle 246 
+Something is wrong, there are 2 frames with the same number 196, check particle 246 
+Something is wrong, there are 2 frames with the same number 197, check particle 246 
+Something is wrong, there are 2 frames with the same number 198, check particle 246 
+Something is wrong, there are 2 frames with the same number 199, check particle 246 
+Something is wrong, there are 2 frames with the same number 200, check particle 246 
+Something is wrong, there are 2 frames with the same number 201, check particle 246 
+Something is wrong, there are 2 frames with the same number 202, check particle 246 
+Something is wrong, there are 2 frames with the same number 203, check particle 246 
+Something is wrong, there are 2 frames with the same number 204, check particle 246 
+Something is wrong, there are 2 frames with the same number 205, check particle 246 
+Something is wrong, there are 2 frames with the same number 206, check particle 246 
+Something is wrong, there are 2 frames with the same number 207, check particle 246 
+Something is wrong, there are 2 frames with the same number 208, check particle 246 
+Something is wrong, there are 2 frames with the same number 209, check particle 246 
+Something is wrong, there are 2 frames with the same number 210, check particle 246 
+Something is wrong, there are 2 frames with the same number 243, check particle 259 
+Something is wrong, there are 2 frames with the same number 247, check particle 259 
+Something is wrong, there are 2 frames with the same number 238, check particle 309 
+Something is wrong, there are 2 frames with the same number 240, check particle 309 
+Something is wrong, there are 2 frames with the same number 242, check particle 309 
+Something is wrong, there are 2 frames with the same number 243, check particle 309 
+Something is wrong, there are 2 frames with the same number 244, check particle 309 
+Something is wrong, there are 2 frames with the same number 245, check particle 309 
+Something is wrong, there are 2 frames with the same number 246, check particle 309 
+Something is wrong, there are 2 frames with the same number 247, check particle 309 
+Something is wrong, there are 2 frames with the same number 248, check particle 309 
+Something is wrong, there are 2 frames with the same number 249, check particle 309 
+Something is wrong, there are 2 frames with the same number 250, check particle 309 
+Something is wrong, there are 2 frames with the same number 251, check particle 309 
+Something is wrong, there are 2 frames with the same number 252, check particle 309 
+Something is wrong, there are 2 frames with the same number 253, check particle 309 
+Something is wrong, there are 2 frames with the same number 254, check particle 309 
+Something is wrong, there are 2 frames with the same number 255, check particle 309 
+Something is wrong, there are 2 frames with the same number 277, check particle 318 
+Something is wrong, there are 2 frames with the same number 278, check particle 318 
+Something is wrong, there are 2 frames with the same number 169, check particle 322 
+Something is wrong, there are 2 frames with the same number 170, check particle 322 
+Something is wrong, there are 2 frames with the same number 171, check particle 322 
+Something is wrong, there are 2 frames with the same number 172, check particle 322 
+Something is wrong, there are 2 frames with the same number 173, check particle 322 
+Something is wrong, there are 2 frames with the same number 174, check particle 322 
+Something is wrong, there are 2 frames with the same number 175, check particle 322 
+Something is wrong, there are 2 frames with the same number 176, check particle 322 
+Something is wrong, there are 2 frames with the same number 177, check particle 322 
+Something is wrong, there are 2 frames with the same number 178, check particle 322 
+Something is wrong, there are 2 frames with the same number 179, check particle 322 
+Something is wrong, there are 2 frames with the same number 180, check particle 322 
+Something is wrong, there are 2 frames with the same number 181, check particle 322 
+Something is wrong, there are 2 frames with the same number 182, check particle 322 
+Something is wrong, there are 2 frames with the same number 183, check particle 322 
+Something is wrong, there are 2 frames with the same number 184, check particle 322 
+Something is wrong, there are 2 frames with the same number 185, check particle 322 
+Something is wrong, there are 2 frames with the same number 205, check particle 322 
+Something is wrong, there are 2 frames with the same number 206, check particle 322 
+Something is wrong, there are 2 frames with the same number 207, check particle 322 
+Something is wrong, there are 2 frames with the same number 208, check particle 322 
+Something is wrong, there are 2 frames with the same number 210, check particle 322 
+</pre><img vspace="5" hspace="5" src="PostAnalysis_01.png" alt=""> <img vspace="5" hspace="5" src="PostAnalysis_02.png" alt=""> <h2>Midline<a name="7"></a></h2><p>if ~isnan(cf)     %midlines=FindMidline(PreProcPath, Prefix, Ellipses, cf,dimx,ecto);     hold off;     figure;</p><pre>   % Plot the distance between the morphological feature, the ventral
+   % midline, and the transcriptional feature, the boundary between the
+   % mesoderm and the neurogenic ectoderm
+   numofframes=size(Ellipses,1);
+   plot(cf:numofframes, midlines(cf:frames)-expline(cf:frames)')
+   title('Distance between midline and Current Limit of Expression');
+   xlabel('Frames')
+   ylabel('Position along DV');
+   saveas(gcf,'midline_expr_dist.png');</pre><pre>   % plot(midlines(cf:frames)-ecto*ones(frames-cf+1,runs))
+   % title('Distance between Midline and Ectogenic Boundary')
+   % xlabel('Frames')
+   % ylabel('Position along DV');
+   % saveas(gcf,'midline_ecto_dist.png');
+   % hold off;</pre><pre>   diff=mean(midlines(cf:frames))-ecto(1);
+end</pre><pre class="codeinput"><span class="comment">%StatPlots(ecto,alltracesy,diff,numofframes,nc12,alltraces,Direction)</span>
+DummyPlots;
+</pre><img vspace="5" hspace="5" src="PostAnalysis_03.png" alt=""> <img vspace="5" hspace="5" src="PostAnalysis_04.png" alt=""> <img vspace="5" hspace="5" src="PostAnalysis_05.png" alt=""> <img vspace="5" hspace="5" src="PostAnalysis_06.png" alt=""> <img vspace="5" hspace="5" src="PostAnalysis_07.png" alt=""> <img vspace="5" hspace="5" src="PostAnalysis_08.png" alt=""> <h2>TwoSpot<a name="8"></a></h2><pre class="codeinput">combos=twospot(Prefix,Ellipses,schnitzcells,CompiledParticles,PreProcPath, nc14,nc12)
+save(<span class="string">'PostAnalysisWorkspace'</span>) <span class="comment">% save MATLAB workspace</span>
+</pre><pre class="codeoutput">The proportion of detected families is
+
+ans =
+
+    0.1577
+
+
+ans =
+
+    0.8904
+
+
+combos =
+
+     1     0     0
+     0     0     0
+     0     0     0
+     0     0     0
+     0     0     0
+     2     0     0
+     0     0     0
+     0     0     0
+     0     0     0
+     0     0     0
+     0     0     0
+     0     0     0
+     0     0     0
+     0     0     0
+     0     0     0
+     0     0     0
+     1     0     0
+     2     0     0
+     1     0     0
+     2     0     0
+     2     0     0
+     2     0     0
+     2     0     0
+     2     0     0
+     1     0     0
+     2     0     0
+     1     0     0
+     2     0     0
+     2     0     0
+     1     0     0
+     2     0     0
+     2     0     0
+     2     0     0
+     0     0     0
+     0     0     0
+     2     0     0
+     1     0     0
+     2     0     0
+     2     0     0
+     2     0     0
+     2     0     0
+     2     0     0
+     2     0     0
+     1     0     0
+     1     0     0
+     2     0     0
+     1     0     0
+     2     0     0
+     1     0     0
+     2     0     0
+     0     0     0
+     0     0     0
+     0     0     0
+     0     0     0
+     0     0     0
+     0     0     0
+     0     0     0
+     0     0     0
+     2     0     0
+     2     0     0
+     2     0     0
+     2     0     0
+     2     0     0
+     2     0     0
+     2     0     0
+     1     0     1
+     2     0     0
+     1     0     0
+     0     0     0
+     1     0     0
+     0     0     0
+     1     0     0
+     2     0     1
+
+</pre><img vspace="5" hspace="5" src="PostAnalysis_09.png" alt=""> <img vspace="5" hspace="5" src="PostAnalysis_10.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+
+function [lrep, furrow]=PostAnalysis(Prefix,Direction)
+Prefix='2014-12-30-SogSha-hz';
+Direction='d';
+% Performs all the post analysis from an analysed data set. Run this from a
+% folder where you want to save all the data. Typically in your dropbox
+% folder under a different sub-folder
+%% Extract all data
+%Get the folders, including the default Dropbox one
+[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
+    DetermineLocalFolders;
+%Now get the actual DropboxFolder
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
+    DetermineLocalFolders(Prefix);
+
+if ~exist('Direction','var')
+    Direction=input('No Direction of Repression was indicated. Please indicate a direction now (u for up, or d for down)');
+end
+
+
+%Determine division times
+%Load the information about the nc from the XLS file
+[Num,Txt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
+XLSHeaders=Txt(1,:);
+Txt=Txt(2:end,:);
+
+ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
+ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
+
+DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
+Dashes=findstr(Prefix,'-');
+
+PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+if isempty(PrefixRow)
+    PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
+    if isempty(PrefixRow)
+        error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
+    end
+end
+
+ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
+ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
+
+if strcmp(ExperimentAxis,'AP')
+    error('This seems to be an experiment on the AP axis. Either check your prefix or change the respective MovieDatabase entry');
+end
+
+
+%Find the different columns.
+DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
+nc9Column=find(strcmp(XLSRaw(1,:),'nc9'));
+nc10Column=find(strcmp(XLSRaw(1,:),'nc10'));
+nc11Column=find(strcmp(XLSRaw(1,:),'nc11'));
+nc12Column=find(strcmp(XLSRaw(1,:),'nc12'));
+nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
+nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
+CFColumn=find(strcmp(XLSRaw(1,:),'CF'));
+try
+    FramesColumn=find(strcmp(XLSRaw(1,:),'frames'));
+catch
+    warning('No. of frames is not defined in MovieDatabase. Length of Ellipses will be used. Define manually for best results');
+end
+Channel1Column=find(strcmp(XLSRaw(1,:),'Channel1'));
+Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
+
+
+%Find the corresponding entry in the XLS file
+if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
+        (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))&(isempty(findstr(Prefix,'Bcd4x')))
+    warning('This step in CheckParticleTracking will most likely have to be modified to work')
+    XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
+        [Date,'\BcdGFP-HisRFP']));
+else
+    XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
+        [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+    
+    if isempty(XLSEntry)
+        XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
+            [Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
+        if isempty(XLSEntry)
+            display('%%%%%%%%%%%%%%%%%%%%%')
+            error('Dateset could not be found. Check MovieDatabase.xlsx')
+            display('%%%%%%%%%%%%%%%%%%%%%')
+        end
+    end
+end
+
+% Extract Ellipses
+try
+    dummyEllipses=load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat']);
+    Ellipses=dummyEllipses.Ellipses;
+catch
+    error('No Ellipses found!');
+end
+
+nc9=XLSRaw{XLSEntry,nc9Column};
+nc10=XLSRaw{XLSEntry,nc10Column};
+nc11=XLSRaw{XLSEntry,nc11Column};
+nc12=XLSRaw{XLSEntry,nc12Column};
+nc13=XLSRaw{XLSEntry,nc13Column};
+nc14=XLSRaw{XLSEntry,nc14Column};
+cf=XLSRaw{XLSEntry,CFColumn};
+try
+    frames=XLSRaw{XLSEntry,FramesColumn};
+catch
+    frames=size(Ellipses,1);
+end
+
+
+%This checks whether all ncs have been defined
+ncCheck=[nc9,nc10,nc11,nc12,nc13,nc14];
+if length(ncCheck)~=6
+    error('Check the nc frames in the MovieDatabase entry. Some might be missing')
+end
+
+%Do we need to convert any NaN chars into doubles?
+if strcmp(lower(nc14),'nan')
+    nc14=nan;
+end
+if strcmp(lower(nc13),'nan')
+    nc13=nan;
+end
+if strcmp(lower(nc12),'nan')
+    nc12=nan;
+end
+if strcmp(lower(nc11),'nan')
+    nc11=nan;
+end
+if strcmp(lower(nc10),'nan')
+    nc10=nan;
+end
+if strcmp(lower(nc9),'nan')
+    nc9=nan;
+end
+if strcmp(lower(cf),'nan')
+    cf=nan;
+end
+
+%Convert the prefix into the string used in the XLS file
+Dashes=findstr(Prefix,'-');
+
+XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
+    [Prefix(1:Dashes(3)-1),filesep,Prefix(Dashes(3)+1:end)]));
+
+ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
+
+if (length(find(isnan(ncs)))==length(ncs))|(length(ncs)<6)
+    error('Have the ncs been defined in MovieDatabase.XLSX?')
+end
+
+%Now do the nuclear segmentation and lineage tracking. This should be put
+%into an independent function.
+
+%Create the cell array with the names.
+D=dir([PreProcPath,filesep,Prefix,filesep,'*His*.tif']);
+for i=1:length(D)
+    names{i}=[PreProcPath,filesep,Prefix,filesep,D(i).name];
+end
+
+%% Extract images and structures
+DataFolder=[DropboxFolder,filesep,Prefix];
+FilePrefix=[DataFolder(length(DropboxFolder)+2:end),'_'];
+
+% Load the lineage files
+try
+    dummyLineage=load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat']);
+    schnitzcells=dummyLineage.schnitzcells;
+catch
+    error('Unable to load the lineage file. Cannot Proceed');
+end
+
+% Load the CompiledParticles
+CompiledParticles=struct;
+FrameInfo=struct;
+cpexist=true; % Does Compiled Particles Exist?
+try
+    dummyParticles=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
+    CompiledParticles=dummyParticles.CompiledParticles;
+catch
+    warning('No Particles.mat found. No changes will be made to the Particles structure.');
+    cpexist=false;
+end
+try
+    dummyFrameInfo=load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']);
+    FrameInfo=dummyFrameInfo.FrameInfo;
+catch
+    error('No Frame Info found!');
+end
+
+
+dummyFrame=FrameInfo(1);
+dimy=dummyFrame.LinesPerFrame;
+dimx=dummyFrame.PixelsPerLine;
+
+%% Initialisation
+close all;
+% We first get all the required variables
+if Direction~='u' && Direction~='d' && Direction~='b'
+    warning('The direction specified is not valid. We assume repression happens in the upward direction');
+    Direction='u';   % 'u' if repression happens in the upward direction and 'd'
+    % if repression happens in the downwards direction
+end
+if isnan(cf)
+    cf=frames;
+end
+mkdir([DropboxFolder,filesep,Prefix,filesep,'PostAnalyses']);
+cd([DropboxFolder,filesep,Prefix,filesep,'PostAnalyses']);
+%% Finding the ectogenic boundary
+if cpexist
+    [ecto,expline,alltracesy,alltraces,er]=FindEctogenicBoundary(CompiledParticles,frames,Direction,nc12,dimy,dimx,cf);
+else
+    warning('No Compiled Particles found, so no Transciptional Boundary found');
+end
+
+%% Midline
+% if ~isnan(cf)
+%     %midlines=FindMidline(PreProcPath, Prefix, Ellipses, cf,dimx,ecto);
+%     hold off;
+%     figure;
+%     
+%     % Plot the distance between the morphological feature, the ventral
+%     % midline, and the transcriptional feature, the boundary between the
+%     % mesoderm and the neurogenic ectoderm
+%     numofframes=size(Ellipses,1);
+%     plot(cf:numofframes, midlines(cf:frames)-expline(cf:frames)')
+%     title('Distance between midline and Current Limit of Expression');
+%     xlabel('Frames')
+%     ylabel('Position along DV');
+%     saveas(gcf,'midline_expr_dist.png');
+%     
+%     % plot(midlines(cf:frames)-ecto*ones(frames-cf+1,runs))
+%     % title('Distance between Midline and Ectogenic Boundary')
+%     % xlabel('Frames')
+%     % ylabel('Position along DV');
+%     % saveas(gcf,'midline_ecto_dist.png');
+%     % hold off;
+%     
+%     diff=mean(midlines(cf:frames))-ecto(1);
+% end
+%StatPlots(ecto,alltracesy,diff,numofframes,nc12,alltraces,Direction)
+DummyPlots;
+%% TwoSpot
+combos=twospot(Prefix,Ellipses,schnitzcells,CompiledParticles,PreProcPath, nc14,nc12)
+save('PostAnalysisWorkspace') % save MATLAB workspace
+##### SOURCE END #####
+--></body></html>
