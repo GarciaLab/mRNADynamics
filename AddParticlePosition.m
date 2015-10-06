@@ -1123,7 +1123,8 @@ if ~NoAP
             for i=1:length(Particles{ChN})
                 %Angle between the x-axis and the particle using the A position as a
                 %zero
-                Angles=atan((Particles{ChN}(i).yPos-coordAZoom(2))./(Particles{ChN}(i).xPos-coordAZoom(1)));
+                Angles=atan2((Particles{ChN}(i).yPos-coordAZoom(2)),...
+                    (Particles{ChN}(i).xPos-coordAZoom(1)));
                 if Particles{ChN}(i).xPos-coordAZoom(1) < 0
                     Angles = Angles + pi;
                 end

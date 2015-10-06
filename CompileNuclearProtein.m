@@ -119,9 +119,9 @@ NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
 
 %Add the APPosition to Particles if they don't exist yet
 if (~isfield(schnitzcells,'APpos'))&(strcmp(lower(ExperimentAxis),'ap'))
-    error('This part of the code still needs to be implemented')
+    %error('This part of the code still needs to be implemented')
     AddNuclearPosition(Prefix)
-    %load([DropboxFolder,filesep,Prefix,'\Nuclei.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
 end
 
 
@@ -169,11 +169,13 @@ end
 %Now get the nuclear information for those that were approved
 NZSclices=size(schnitzcells(1).Fluo,2);
 
-CompiledNuclei(length(schnitzcells))=struct;
+%CompiledNuclei(length(schnitzcells))=struct;
 
 h=waitbar(0,'Compiling nuclear traces');
+k=1;
 for i=1:length(schnitzcells)
     
+
     waitbar(i/length(schnitzcells),h)
     
     if (schnitzcells(i).Approved==1)
@@ -191,28 +193,29 @@ for i=1:length(schnitzcells)
         if sum(FrameFilter)
         
             %Copy the filtered information
-            CompiledNuclei(i).P=schnitzcells(i).P;
-            CompiledNuclei(i).E=schnitzcells(i).E;
-            CompiledNuclei(i).D=schnitzcells(i).D;
-            CompiledNuclei(i).Frames=schnitzcells(i).frames(FrameFilter);
-            CompiledNuclei(i).xPos=schnitzcells(i).cenx(FrameFilter);
-            CompiledNuclei(i).yPos=schnitzcells(i).ceny(FrameFilter);
-            CompiledNuclei(i).Radius=schnitzcells(i).len(FrameFilter);
-            CompiledNuclei(i).cellno=schnitzcells(i).cellno(FrameFilter);
-            CompiledNuclei(i).nc=[];
+            CompiledNuclei(k).P=schnitzcells(i).P;
+            CompiledNuclei(k).E=schnitzcells(i).E;
+            CompiledNuclei(k).D=schnitzcells(i).D;
+            CompiledNuclei(k).Frames=schnitzcells(i).frames(FrameFilter);
+            CompiledNuclei(k).xPos=schnitzcells(i).cenx(FrameFilter);
+            CompiledNuclei(k).yPos=schnitzcells(i).ceny(FrameFilter);
+            CompiledNuclei(k).Radius=schnitzcells(i).len(FrameFilter);
+            CompiledNuclei(k).cellno=schnitzcells(i).cellno(FrameFilter);
+            CompiledNuclei(k).nc=[];
 
             
             if strcmp(lower(ExperimentAxis),'ap')
                 %Determine the particles average and median AP position
-                CompiledNuclei(i).MeanAP=mean(schnitzcells(i).APpos(FrameFilter));
-                CompiledNuclei(i).MedianAP=median(schnitzcells(i).APpos(FrameFilter));
+                CompiledNuclei(k).MeanAP=mean(schnitzcells(i).APpos(FrameFilter));
+                CompiledNuclei(k).MedianAP=median(schnitzcells(i).APpos(FrameFilter));
             end
 
 
             
             %Copy and extract the fluorescence information
-            CompiledNuclei(i).FluoMax=max(schnitzcells(i).Fluo(FrameFilter,:),[],2);
+            CompiledNuclei(k).FluoMax=max(schnitzcells(i).Fluo(FrameFilter,:),[],2);
 
+            k=k+1;
         end
     end
 end
