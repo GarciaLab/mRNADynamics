@@ -294,7 +294,7 @@ if strcmp(lower(ExperimentAxis),'ap')
     %Divide the AP axis into boxes of a certain AP size. We'll see which
     %particle falls where.
 
-    APResolution=0.025;
+    APResolution=APResolution;
     APbinID=0:APResolution:1;
 
     APFilter=logical(zeros(length(CompiledNuclei),length(APbinID)));

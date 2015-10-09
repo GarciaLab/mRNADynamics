@@ -5,7 +5,6 @@ function [MeanVector,SDVector,NParticles]=AverageTracesNuclei(FrameInfo,Nuclei)
 
 TraceCell=cell(length(FrameInfo),1);
 
-
 for i=1:length(Nuclei)
     for j=1:length(Nuclei(i).Frames)
         TraceCell{Nuclei(i).Frames(j)}=[TraceCell{Nuclei(i).Frames(j)},...
@@ -14,11 +13,25 @@ for i=1:length(Nuclei)
 end
 
 
-MeanTrace=cellfun(@mean,TraceCell,'UniformOutput',false);
-SDTrace=cellfun(@std,TraceCell,'UniformOutput',false);
-NParticlesTrace=cellfun(@length,TraceCell,'UniformOutput',false);
+%Average inside each element of TraceCell. I need to be careful with the
+%NaNs
 
-
-MeanVector=[MeanTrace{:}];
-SDVector=[SDTrace{:}];
-NParticles=[NParticlesTrace{:}];
+for i=1:length(TraceCell)
+    NanFilter=~isnan(TraceCell{i});
+    MeanVector(i)=mean(TraceCell{i}(NanFilter));
+    SDVector(i)=std(TraceCell{i}(NanFilter));
+    NParticles(i)=sum(NanFilter);
+end
+% 
+% 
+% cellfun(@isnan,TraceCell,'UniformOutput',false)
+% 
+% 
+% MeanTrace=cellfun(@mean,TraceCell,'UniformOutput',false);
+% SDTrace=cellfun(@std,TraceCell,'UniformOutput',false);
+% NParticlesTrace=cellfun(@length,TraceCell,'UniformOutput',false);
+% 
+% 
+% MeanVector=[MeanTrace{:}];
+% SDVector=[SDTrace{:}];
+% NParticles=[NParticlesTrace{:}];
