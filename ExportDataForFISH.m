@@ -627,7 +627,7 @@ elseif strcmp(FileMode,'LIFExport')
     
 
     %What type of experiment do we have?
-    if strcmp(ExperimentType,'1spot')
+    if strcmp(ExperimentType,'1spot') || strcmp(ExperimentType,'2spot') || strcmp(ExperimentType,'2spot1color')
     
         %Figure out the different channels
         if ~isempty(strfind(Channel1{1},'MCP'))

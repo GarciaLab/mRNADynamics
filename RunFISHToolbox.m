@@ -34,6 +34,8 @@ if strcmp(ExperimentType,'1spot')
     NChannels=1;
 elseif strcmp(ExperimentType,'2spot')
     NChannels=1;
+elseif strcmp(ExperimentType,'2spot1color')
+    NChannels=1;
 elseif strcmp(ExperimentType,'2spot2color')
     NChannels=2;
 elseif strcmp(ExperimentType,'inputoutput')
