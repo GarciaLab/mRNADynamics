@@ -629,23 +629,33 @@ elseif strcmp(FileMode,'LIFExport')
     %What type of experiment do we have?
     if strcmp(ExperimentType,'1spot') || strcmp(ExperimentType,'2spot') || strcmp(ExperimentType,'2spot1color')
     
+        
         %Figure out the different channels
-        if ~isempty(strfind(Channel1{1},'MCP'))
-            MCPChannel=1;
-        elseif  strfind(Channel1{1},'His')
-            HisChannel=1;
-        else
+        Channels={Channel1{1},Channel2{1}};
+        
+        %Coat protein channel
+        MCPChannel=find((~cellfun(@isempty,strfind(lower(Channels),'mcp')))|...
+            (~cellfun(@isempty,strfind(lower(Channels),'pcp')))|...
+            (~cellfun(@isempty,strfind(lower(Channels),'lambda'))));
+        if length(MCPChannel)>1
+            error('Two coat proteins found. Should this be in 2spot2color mode?')
+        elseif length(MCPChannel)==0    
             error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
         end
-
-        if ~isempty(strfind(Channel2{1},'MCP'))
-            MCPChannel=2;
-        elseif  strfind(Channel2{1},'His')
-            HisChannel=2;
-        else
-            error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
+        
+     
+        %Histone channel
+        HisChannel=find(~cellfun(@isempty,strfind(lower(Channels),'his')));
+        %Distinguish between not having histone, but having a dummy channel
+        if isempty(HisChannel)
+            if find(~cellfun(@isempty,strfind(lower(Channels),'dummy')))
+                HisChannel=0;%find(~cellfun(@isempty,strfind(lower(Channels),'dummy')));
+            else
+                HisChannel=0;
+                display('Could not find a histone channel. Proceeding without it.')
+            end
         end
-
+            
         
         %Load the file using BioFormats
         %Figure out which one is not the FF
@@ -776,19 +786,22 @@ elseif strcmp(FileMode,'LIFExport')
                 end
                 
                 %Now do His-RFP
-                HisSlices=zeros([size(LIFImages{i}{1,1},1),size(LIFImages{i}{1,1},2),NSlices(i)]);
-                n=1;
-                for k=((j-1)*NSlices(i)*NChannels+1+(HisChannel-1)):NChannels:(j*NSlices(i))*NChannels
-                    HisSlices(:,:,n)=LIFImages{i}{k,1};
-                    n=n+1;
+                if HisChannel
+                    HisSlices=zeros([size(LIFImages{i}{1,1},1),size(LIFImages{i}{1,1},2),NSlices(i)]);
+                    n=1;
+                    for k=((j-1)*NSlices(i)*NChannels+1+(HisChannel-1)):NChannels:(j*NSlices(i))*NChannels
+                        HisSlices(:,:,n)=LIFImages{i}{k,1};
+                        n=n+1;
+                    end
+                    if strcmp(ProjectionType,'maxprojection')
+                        Projection=max(HisSlices,[],3);
+                    else
+                        Projection=median(HisSlices,3);
+                    end
+                    imwrite(uint16(Projection),...
+                                [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
                 end
-                if strcmp(ProjectionType,'maxprojection')
-                    Projection=max(HisSlices,[],3);
-                else
-                    Projection=median(HisSlices,3);
-                end
-                imwrite(uint16(Projection),...
-                            [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
+                
                 m=m+1;
             end
         end
