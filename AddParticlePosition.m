@@ -145,30 +145,25 @@ if isempty(PrefixRow)
     end
 end
 
-ExperimentType=XLSTxt(PrefixRow,ExperimentTypeColumn);
-Channel1=XLSTxt(PrefixRow,Channel1Column);
-Channel2=XLSTxt(PrefixRow,Channel2Column);
 
 
-ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
-    ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')));
-
-
-if sum(ChannelToLoadTemp)
-    ChannelToLoad=find(ChannelToLoadTemp);
-else
-    error('No histone channel found. Was it defined in MovieDatabase.XLS?')
-end
-
-
-
-%Figure out how our field of view maps to the AP coordinates.
-
-%First, figure out how our field of view maps to the stitched embryo
-%image
-
-%Were the images taken on the left or right half of the embryo?
 if ~NoAP
+    
+    ExperimentType=XLSTxt(PrefixRow,ExperimentTypeColumn);
+    Channel1=XLSTxt(PrefixRow,Channel1Column);
+    Channel2=XLSTxt(PrefixRow,Channel2Column);
+
+
+    ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
+        ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')));
+
+
+    if sum(ChannelToLoadTemp)
+        ChannelToLoad=find(ChannelToLoadTemp);
+    else
+        error('No histone channel found. Was it defined in MovieDatabase.XLS?')
+    end
+
 
     %Get information about all images. This depends on the microsocpe used.
     

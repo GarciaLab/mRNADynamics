@@ -2230,7 +2230,7 @@ elseif HistoneChannel&strcmp(ExperimentAxis,'DV')
         'SDVectorAll','NParticlesAll','MaxFrame',...
         'AllTracesVector','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
         'MeanOffsetVector','SDOffsetVector','NOffsetParticles')
-elseif HistoneChannel&strcmp(ExperimentAxis,'NoAP')
+elseif strcmp(ExperimentAxis,'NoAP')%HistoneChannel&strcmp(ExperimentAxis,'NoAP')
     
     %If we have only one channel get rid of all the cells
     if NChannels==1
