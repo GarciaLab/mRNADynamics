@@ -1021,6 +1021,11 @@ for ChN=1:NChannels
 
     %Calculate the mean for all of them
     [MeanVectorAll{ChN},SDVectorAll{ChN},NParticlesAll{ChN}]=AverageTraces(FrameInfo,CompiledParticles{ChN});
+    
+    %Calculate the mean for only anterior particles
+    MeanVectorAPAnterior{ChN} = MeanVectorAP{ChN}(:,5:15); %Only average particles within window of 10% to 35%. Expression is relatively flat here.
+    MeanVectorAnterior{ChN} = nanmean(MeanVectorAPAnterior{ChN},2);
+
     %Now find the different maxima in each nc
 
     MaxFrame{ChN}=[];
@@ -2181,6 +2186,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
         SDVectorAP=SDVectorAP{1};
         NParticlesAP=NParticlesAP{1};
         MeanVectorAll=MeanVectorAll{1};
+        MeanVectorAnterior = MeanVectorAnterior{1};
         SDVectorAll=SDVectorAll{1};
         NParticlesAll=NParticlesAll{1};
         MaxFrame=MaxFrame{1};
@@ -2200,7 +2206,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
     save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
         'CompiledParticles','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
         'nc12','nc13','nc14','ncFilterID','StemLoopEnd','ncFilter','APbinID','APFilter',...
-        'MeanVectorAP','SDVectorAP','NParticlesAP','MeanVectorAll',...
+        'MeanVectorAP','SDVectorAP','NParticlesAP','MeanVectorAll','MeanVectorAnterior',...
         'SDVectorAll','NParticlesAll','MaxFrame','MinAPIndex','MaxAPIndex',...
         'AllTracesVector','AllTracesAP','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
         'MeanOffsetVector','SDOffsetVector','NOffsetParticles',...
