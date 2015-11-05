@@ -35,7 +35,7 @@ MaxShift=9;     %Maximum shift in pixels corresponding to image shift and
                 %alignment
 MaxHistone=1000;    %Maximum intensity for the histone channel. Anything above
                     %this will be capped.
-ProjectionType = 'max'; %Default setting for z-projection is maximum-based.This may fail when high intensity reflections are present
+ProjectionType = 'maxprojection'; %Default setting for z-projection is maximum-based.This may fail when high intensity reflections are present
                 
 
 %Look at parameters
