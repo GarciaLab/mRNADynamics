@@ -35,7 +35,7 @@ MaxShift=9;     %Maximum shift in pixels corresponding to image shift and
                 %alignment
 MaxHistone=1000;    %Maximum intensity for the histone channel. Anything above
                     %this will be capped.
-ProjectionType = 'median'; %Default setting for z-projection is median-based. This corrects for reflections but may fail on low intensity nuclei
+ProjectionType = 'max'; %Default setting for z-projection is maximum-based.This may fail when high intensity reflections are present
                 
 
 %Look at parameters
@@ -50,8 +50,8 @@ while k<=length(varargin)
         SkipFrames=varargin{k+1};
         k=k+1;
         warning('SkipFrame mode.')
-    elseif strcmp(lower(varargin{k}),'maxprojection')
-        ProjectionType = 'maxprojection'
+    elseif strcmp(lower(varargin{k}),'medianprojection')
+        ProjectionType = 'medianprojection';
     else
         Prefix = varargin{k};
         PrefixOverrideFlag = 1;
@@ -552,8 +552,8 @@ elseif strcmp(FileMode,'LSM')
                     HisSlices(:,:,n)=LSMImages{1}{k,1};
                     n=n+1;
                 end
-                MedianProjection=median(HisSlices,3);
-                imwrite(uint16(MedianProjection),...
+                Projection=median(HisSlices,3);
+                imwrite(uint16(Projection),...
                             [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
                 m=m+1;
             end
@@ -793,10 +793,10 @@ elseif strcmp(FileMode,'LIFExport')
                         HisSlices(:,:,n)=LIFImages{i}{k,1};
                         n=n+1;
                     end
-                    if strcmp(ProjectionType,'maxprojection')
-                        Projection=max(HisSlices,[],3);
-                    else
+                    if strcmp(ProjectionType,'medianprojection')
                         Projection=median(HisSlices,3);
+                    else
+                        Projection=max(HisSlices,[],3);
                     end
                     imwrite(uint16(Projection),...
                                 [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
@@ -1079,10 +1079,10 @@ elseif strcmp(FileMode,'LIFExport')
                     %We don't want to use all slices. Only the center ones
                     StackCenter=round((min(NSlices)-1)/2);
                     StackRange=[StackCenter-1:StackCenter+1];
-                    if strcmp(ProjectionType,'maxprojection')
-                        Projection=max(HisSlices(:,:,StackRange),[],3);
-                    else
+                    if strcmp(ProjectionType,'medianprojection')
                         Projection=median(HisSlices(:,:,StackRange),[],3);
+                    else
+                        Projection=max(HisSlices(:,:,StackRange),[],3);
                     end
 
                     %Flatten the field if possible
@@ -1360,10 +1360,10 @@ elseif strcmp(FileMode,'LIFExport')
                     StackCenter=round((min(NSlices)-1)/2);
                     StackRange=[StackCenter-1:StackCenter+1];
                     
-                    if strcmp(ProjectionType,'maxprojection')
-                        Projection=max(HisSlices(:,:,StackRange),3);
-                    else    
+                    if strcmp(ProjectionType,'medianprojection')
                         Projection=median(HisSlices(:,:,StackRange),3);
+                    else    
+                        Projection=max(HisSlices(:,:,StackRange),3);
                     end
 
                     %Flatten the field if possible
@@ -1624,10 +1624,10 @@ elseif strcmp(FileMode,'LIFExport')
                     StackCenter=round((min(NSlices)-1)/2);
                     StackRange=[StackCenter-1:StackCenter+1];
                     
-                    if strcmp(ProjectionType,'maxprojection')
-                        Projection=max(HisSlices(:,:,StackRange),[],3);
-                    else
+                    if strcmp(ProjectionType,'medianprojection')
                         Projection=median(HisSlices(:,:,StackRange),[],3);
+                    else
+                        Projection=max(HisSlices(:,:,StackRange),[],3);
                     end
                     
                     %Flatten the field if possible
