@@ -1202,7 +1202,7 @@ if NChannels==1
 
         OffsetFluct=[];
         DataRawFluct=[];
-        DataOldFluct=[];
+        %DataOldFluct=[];
         DataSplineFluct=[];
 
         for j=1:length(FilteredParticles)
@@ -1222,11 +1222,11 @@ if NChannels==1
                 DataFitRawValues=ppval(DataFitRaw,double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]));
 
 
-                %Deviation of the raw data minus the actual offset with respect to a
-                %spline
-                DataFitOld = adaptiveSplineFit(double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]),...
-                    double(CompiledParticles{1}(FilteredParticles(j)).FluoOld),10);
-                DataSplineValuesOld=ppval(DataFitOld,double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]));
+%                 %Deviation of the raw data minus the actual offset with respect to a
+%                 %spline
+%                 DataFitOld = adaptiveSplineFit(double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]),...
+%                     double(CompiledParticles{1}(FilteredParticles(j)).FluoOld),10);
+%                 DataSplineValuesOld=ppval(DataFitOld,double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]));
 
 
 
@@ -1240,7 +1240,7 @@ if NChannels==1
                 %Put all the data together for the plot
                 OffsetFluct=[OffsetFluct,CompiledParticles{1}(FilteredParticles(j)).Off*IntArea-SplineValues];
                 DataRawFluct=[DataRawFluct,double(CompiledParticles{1}(FilteredParticles(j)).FluoRaw)-DataFitRawValues];
-                DataOldFluct=[DataOldFluct,double(CompiledParticles{1}(FilteredParticles(j)).FluoOld)-DataSplineValuesOld];
+                %DataOldFluct=[DataOldFluct,double(CompiledParticles{1}(FilteredParticles(j)).FluoOld)-DataSplineValuesOld];
                 DataSplineFluct=[DataSplineFluct,double(CompiledParticles{1}(FilteredParticles(j)).Fluo)-DataSplineValues];
             end
         end
@@ -1259,16 +1259,16 @@ if NChannels==1
         title(['Correlation: ',num2str(R(2,1))])
         saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'TracesFluctuations',filesep,'Fluct-OffsetVsRawData.tif'])
 
-        figure(5)
-        plot(OffsetFluct,DataOldFluct,'.k')
-        xlabel('Offset fluctuation')
-        ylabel('Fluctuations with instantaneous offset subtraction')
-        axis square
-        xlim([-4500,4500])
-        ylim([-4500,4500])
-        R = corrcoef(OffsetFluct,DataOldFluct)
-        title(['Correlation: ',num2str(R(2,1))])
-        saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'TracesFluctuations',filesep,'Fluct-OffsetVsInstData.tif'])
+%         figure(5)
+%         plot(OffsetFluct,DataOldFluct,'.k')
+%         xlabel('Offset fluctuation')
+%         ylabel('Fluctuations with instantaneous offset subtraction')
+%         axis square
+%         xlim([-4500,4500])
+%         ylim([-4500,4500])
+%         R = corrcoef(OffsetFluct,DataOldFluct)
+%         title(['Correlation: ',num2str(R(2,1))])
+%         saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'TracesFluctuations',filesep,'Fluct-OffsetVsInstData.tif'])
 
 
 
