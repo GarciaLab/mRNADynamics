@@ -749,12 +749,19 @@ elseif strcmp(FileMode,'LIFExport')
 
         
         for i=1:sum(NFrames)
-            FrameInfo(i).LinesPerFrame=str2double(LIFMeta.getPixelsSizeY(1));
-            FrameInfo(i).PixelsPerLine=str2double(LIFMeta.getPixelsSizeX(1));
+            try 
+                FrameInfo(i).PixelsPerLine=str2double(LIFMeta.getPixelsSizeX(1));
+                FrameInfo(i).LinesPerFrame=str2double(LIFMeta.getPixelsSizeY(1));
+                FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(1));
+                FrameInfo(i).ZStep=str2double(LIFMeta.getPixelsPhysicalSizeZ(1));
+            catch
+                 FrameInfo(i).LinesPerFrame=str2double(LIFMeta.getPixelsSizeY(0));
+                 FrameInfo(i).PixelsPerLine=str2double(LIFMeta.getPixelsSizeX(0));
+                 FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(0));
+                 FrameInfo(i).ZStep=str2double(LIFMeta.getPixelsPhysicalSizeZ(0));
+            end 
             FrameInfo(i).NumberSlices=min(NSlices);
             FrameInfo(i).FileMode='LIFExport';
-            FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(1));
-            FrameInfo(i).ZStep=str2double(LIFMeta.getPixelsPhysicalSizeZ(1));
             FrameInfo(i).Time=InitialStackTime(i);
         end
         

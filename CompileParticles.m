@@ -1017,15 +1017,15 @@ for ChN=1:NChannels
         MeanVectorAP{ChN}=cell2mat(MeanVectorAPCell);
         SDVectorAP{ChN}=cell2mat(SDVectorAPCell);
         NParticlesAP{ChN}=cell2mat(NParticlesAPCell);
+        
+        %Calculate the mean for only anterior particles
+        MeanVectorAPAnterior{ChN} = MeanVectorAP{ChN}(:,5:15); %Only average particles within window of 10% to 35%. Expression is relatively flat here.
+        MeanVectorAnterior{ChN} = nanmean(MeanVectorAPAnterior{ChN},2);
     end
 
     %Calculate the mean for all of them
     [MeanVectorAll{ChN},SDVectorAll{ChN},NParticlesAll{ChN}]=AverageTraces(FrameInfo,CompiledParticles{ChN});
     
-    %Calculate the mean for only anterior particles
-    MeanVectorAPAnterior{ChN} = MeanVectorAP{ChN}(:,5:15); %Only average particles within window of 10% to 35%. Expression is relatively flat here.
-    MeanVectorAnterior{ChN} = nanmean(MeanVectorAPAnterior{ChN},2);
-
     %Now find the different maxima in each nc
 
     MaxFrame{ChN}=[];
