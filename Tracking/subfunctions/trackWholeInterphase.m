@@ -16,9 +16,11 @@ edgeClearance = getDefaultParameters('edge clearance')*nucleusDiameter/space_res
 img = imread(names{startingFrame});
 marginBeforeMitosis = ceil(getDefaultParameters('increased precision before mitosis')/time_resolution);
 marginAfterMitosis = ceil(getDefaultParameters('increased precision after mitosis')/time_resolution);
-
+%This looks like it decides to use existing data that was passed to it, and
+%if none was provided makes it itself. 
 if exist('xy','var') && ~isempty(xy)
     skip_segmentation = true;
+    %Seriously? XY versus xy?
     XY = xy(previousMitosisInd:nextMitosisInd);
 else
     skip_segmentation = false;
@@ -28,7 +30,8 @@ end
 if ~exist('shifts','var') || isempty(shifts)
     shifts = cell(totalNumberOfFrames-1,1);
 end
-
+%this startingFrame variable appears to be a holdover from an older version of the
+%code. This like invariably returns size(XY{1},1);
 numberOfNuclei = size(XY{startingFrame-previousMitosisInd+1},1);
 
 % initialize array
@@ -41,6 +44,12 @@ numberOfNuclei = size(XY{startingFrame-previousMitosisInd+1},1);
 %     
 % end
 
+
+%This might be the problem? Beyond using j vs jj as the iterating
+%variables. It seems like it says that if the nucleus at jj had the same
+%position index as it did at the start, the nuclei are the same. If there
+%is a similar structure in the mitosis code, this might account for some of
+%the errors
 ind = true(length(XY{startingFrame-previousMitosisInd+1}),1);
 nucleiIndices = nan(size(XY{1},1),1);
 for j = 1:size(XY{1},1);
