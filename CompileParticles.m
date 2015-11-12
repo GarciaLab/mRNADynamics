@@ -1350,7 +1350,7 @@ if NChannels==1
     OffsetCell=cell(length(FrameInfo),1);
 
 
-    for i=1:length(CompiledParticles)
+    for i=1:length(CompiledParticles{1})
         for j=1:length(CompiledParticles{1}(i).Frame)
             OffsetCell{CompiledParticles{1}(i).Frame(j)}=[OffsetCell{CompiledParticles{1}(i).Frame(j)},...
                 CompiledParticles{1}(i).Off(j)];
@@ -1359,7 +1359,7 @@ if NChannels==1
 
 
     MeanOffsetTrace=cellfun(@nanmean,OffsetCell,'UniformOutput',false);
-    SDOffsetTrace=cellfun(@std,OffsetCell,'UniformOutput',false);
+    SDOffsetTrace=cellfun(@nanstd,OffsetCell,'UniformOutput',false);
     NParticlesOffsetTrace=cellfun(@length,OffsetCell,'UniformOutput',false);
 
 

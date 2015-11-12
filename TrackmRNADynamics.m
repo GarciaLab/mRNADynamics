@@ -207,7 +207,10 @@ if strcmp(ExperimentType,'1spot')|strcmp(ExperimentType,'2spot')
 
         %error('Trying to re-track particles. I need to work on this case')
         load([OutputFolder,filesep,'Particles.mat'])
+        try
             Particles=Particles{1};
+        catch
+        end
         
         if isfield(Particles,'Approved')
             Retracking=1;           %Flag for whether we are performing retracking
