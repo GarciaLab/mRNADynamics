@@ -100,7 +100,11 @@ for i=1:length(CompiledSets)
         warning('MeanFits.mat not found. This is a stupid way to check. Have the code check if this experiment is DV or AP instead')
     end
     
-    Schnitzcells(i)=load([DropboxFolder,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat']);
+    try
+        Schnitzcells(i)=load([DropboxFolder,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat']);
+    catch
+        warning('_lin.mat not found.');
+    end
     SetNames{i}=SetName;
     
     %Fit to the integrals
@@ -126,7 +130,12 @@ for i=1:length(CompiledSets)
     
     
     %Load Ellipses
+    try
     Ellipses(i)=load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat']);
+    catch
+        warning('Ellipses.mat not found.')
+    end
+    
     % Load Particles
     load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat']);
     ParticleTemp(i).Particles=Particles;
@@ -185,9 +194,13 @@ for i=1:length(Data)
             Data(i).MeanFitsUp=MeanFitsUp(i).FitResults;
         end
     end
+   try
+       Data(i).schnitzcells=Schnitzcells(i).schnitzcells;
+       Data(i).Ellipses=Ellipses(i).Ellipses;
+   catch
+       warning('No schnitzcells or ellipses');
+   end
    
-    Data(i).schnitzcells=Schnitzcells(i).schnitzcells;
-    Data(i).Ellipses=Ellipses(i).Ellipses;
     Data(i).Particles=ParticleTemp(i).Particles;
 end
 
