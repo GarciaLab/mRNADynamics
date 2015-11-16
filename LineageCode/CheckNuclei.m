@@ -892,7 +892,7 @@ end
             
         
         set(gcf,'Name',['Current Frame: ',num2str(CurrentFrame)]);
-        imshow(ImageHis*2,'Border','Tight')
+        imshow(ImageHis*4,'Border','Tight')
         %    set(gcf,'units', 'normalized', 'position',[.1   .55   .4   .35])
         set(gcf,'MenuBar','none','ToolBar','none')
         
