@@ -202,6 +202,9 @@ for i=1:length(schnitzcells)
             CompiledNuclei(k).Radius=schnitzcells(i).len(FrameFilter);
             CompiledNuclei(k).cellno=schnitzcells(i).cellno(FrameFilter);
             CompiledNuclei(k).nc=[];
+            
+            %Save the information about the original schnitz
+            CompiledNuclei(k).schnitz=i;
 
             
             if strcmp(lower(ExperimentAxis),'ap')
