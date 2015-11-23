@@ -1037,21 +1037,60 @@ while (cc~='x')
             
             if ~isempty(ConnectPosition)
                 [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,fad(CurrentChannel),Particles{CurrentChannel});
-               %Check that the clicked particle doesn't exist in a previous
+               
+                
+                %Check that the clicked particle doesn't exist in a previous
                 %frame, that there is no overlap of frames. If it does
                 %exist in a previous frame we will have to disconnect it.
+                
+                
                 if sum(Particles{CurrentChannel}(ParticleOutput).Frame<CurrentFrame)
                     %Disconnect the clicked particle
                     Particles{CurrentChannel}=SeparateParticleTraces(ParticleOutput,CurrentFrame,Particles{CurrentChannel});
                     ParticleOutput=ParticleOutput+1;
+                    
+                    %If the current particle has an index larger than that
+                    %of the clicked particle (ParticleOutput) we also need to
+                    %move the index of the current Particle by one.
+                    if ParticleOutput<CurrentParticle
+                    	CurrentParticle=CurrentParticle+1;
+                    end
+                    
+                    
+                    
                 end
+                
+                
+                %Check that there is no overlap. If so, split current particle
+                overlap=0;
+                for i=1:length(Particles{CurrentChannel}(ParticleOutput).Frame)
+                    for j=1:length(Particles{CurrentChannel}(CurrentParticle).Frame)
+                        if Particles{CurrentChannel}(ParticleOutput).Frame(i)==Particles{CurrentChannel}(CurrentParticle).Frame(j)
+                            overlap=1;
+                        end
+                    end
+                end
+               
+                if overlap
+                    %Disconnect the clicked particle
+                    Particles{CurrentChannel}=SeparateParticleTraces(CurrentParticle,CurrentFrame,Particles{CurrentChannel});
+                    
+                    %If the clicked particle has an index larger than that
+                    %of the current particle we also need to
+                    %move the index of the clicked particle by one.
+                    if ParticleOutput>CurrentParticle
+                    	ParticleOutput=ParticleOutput+1;
+                    end
+                end
+                
+                
                     
                 Particles{CurrentChannel}=JoinParticleTraces(CurrentParticle,ParticleOutput,Particles{CurrentChannel});
-                %Do this in case the clicked particle comes before the current
-                %particle in the structure
-                if ParticleOutput<CurrentParticle
-                    CurrentParticle=ParticleOutput;
-                end
+                %Deals with the indexing changing because of the removal of
+                %the old particle.
+                 if ParticleOutput<CurrentParticle
+                     CurrentParticle=CurrentParticle-1;
+                 end
                 %Sort the frames within the particle. This is useful if we
                 %connected to a particle that came before.
                 [SortedFrame,Permutations]=sort(Particles{CurrentChannel}(CurrentParticle).Frame);
@@ -1290,8 +1329,11 @@ while (cc~='x')
                 if ParticleOutput<CurrentParticle
                     CurrentParticle=ParticleOutput;
                 end
+                %
                 %Sort the frames within the particle. This is useful if we
                 %connected to a particle that came before.
+                
+                %There is an error here, cell contents reference from a non-cell array object.
                 [SortedFrame,Permutations]=sort(Particles{CurrentChannel}(CurrentParticle).Frame);
                 Particles{CurrentChannel}(CurrentParticle).Frame=Particles{CurrentChannel}(CurrentParticle).Frame(Permutations);
                 Particles{CurrentChannel}(CurrentParticle).Index=Particles{CurrentChannel}(CurrentParticle).Index(Permutations);

@@ -15,9 +15,9 @@ function LineageFixer(varargin)
 %Window= The window around anaphase. Default is 4
 
 %Did you run this without parameters?
-if isEmpty(varargin)
-    error('Forgot Parameter. Run LineageFixer(Prefix) or LineageFixer(Prefix,window)')
-end
+%if isEmpty(varargin)
+ %   error('Forgot Parameter. Run LineageFixer(Prefix) or LineageFixer(Prefix,window)')
+%end
 %Prefix is first parameter
 Prefix=varargin{1};
 %Optional Window
