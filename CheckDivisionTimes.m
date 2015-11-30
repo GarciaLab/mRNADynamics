@@ -17,12 +17,12 @@ close all
 %Information about about folders
 
 %Figure out the default Dropbox folder
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
 
 % ES 2013-10-29: Required for multiple users to be able to analyze data on
 % one computer
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(varargin{1});
 
 
@@ -52,12 +52,12 @@ end
 
 D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.tif']);
 
-%Get the information about the zoom
-ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(1).name]);
-
-%Figure out the zoom factor
-Zoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
-Zoom=str2num(Zoom);
+% %Get the information about the zoom
+% ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(1).name]);
+% 
+% %Figure out the zoom factor
+% Zoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
+% Zoom=str2num(Zoom);
 
 
 
@@ -67,8 +67,8 @@ if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
     D=dir([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,'*His_*.tif']);
     ZoomImage=imread([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,D(end).name]);
 else
-    D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'-His*.tif']);
-    ZoomImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(end).name]);
+    D=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
+    ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,D(end).name]);
 end
 
 
@@ -104,20 +104,34 @@ for i=1:Rows
     end
 end
 
+[XLSNum,XLSTxt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
+DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
+Dashes=findstr(Prefix,'-');
+PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+    if isempty(PrefixRow)
+        PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
+        if isempty(PrefixRow)
+            error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
+        end
+    end
 
+
+APResolutionColumn = find(strcmp(XLSRaw(1,:),'APResolution'));
+APResolution = XLSRaw{PrefixRow,APResolutionColumn};
+%COMMENTED OUT SO THIS VALUE CAN BE FOUND IN EXCEL FILE- AR 4/14/15
 %Divide the image into AP bins. The size of the bin will depend on the
 %experiment
-if strfind(lower(Prefix),'eve')     %Eve2 experiments
-    APResolution=0.01;
-%hb BAC experiments
-elseif ~isempty(strfind(lower(Prefix),'hbbac'))
-    APResolution=0.01;
-%kni BAC experiments
-elseif ~isempty(strfind(lower(Prefix),'knibac'))  
-    APResolution=0.015;
-else                                %All other experiments
-    APResolution=0.025;
-end
+% if strfind(lower(Prefix),'eve')     %Eve2 experiments
+%     APResolution=0.01;
+% %hb BAC experiments
+% elseif ~isempty(strfind(lower(Prefix),'hbbac'))
+%     APResolution=0.01;
+% %kni BAC experiments
+% elseif ~isempty(strfind(lower(Prefix),'knibac'))  
+%     APResolution=0.015;
+% else                                %All other experiments
+%     APResolution=0.025;
+% end
 
 APbinID=0:APResolution:1;
 
@@ -144,6 +158,7 @@ nc12Column=find(strcmp(XLSRaw(1,:),'nc12'));
 nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
 nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
 CFColumn=find(strcmp(XLSRaw(1,:),'CF'));
+Channel1Column=find(strcmp(XLSRaw(1,:),'Channel1'));
 Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
 
 %Convert the prefix into the string used in the XLS file
@@ -167,7 +182,7 @@ else
 end
 
 
-if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')
+if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel2Column),'mCherry-MCP')
     nc9=cell2mat(XLSRaw(XLSEntry,nc9Column));
     nc10=cell2mat(XLSRaw(XLSEntry,nc10Column));
     nc11=cell2mat(XLSRaw(XLSEntry,nc11Column));
@@ -222,7 +237,7 @@ while (cc~='x')
         HisImage=imread([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,D(CurrentFrame).name]);
 
     else
-        HisImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(CurrentFrame).name]);
+        HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(CurrentFrame).name]);
     end
     
     

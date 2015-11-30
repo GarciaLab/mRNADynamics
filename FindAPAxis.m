@@ -18,7 +18,7 @@ Margin=0;
 
 % ES 2013-10-29: Required for multiple users to be able to analyze data on
 % one computer
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
     DetermineLocalFolders(varargin{1});
 
 
@@ -50,7 +50,7 @@ if (~isempty(findstr(Prefix,'Bcd')))&...
 end
 
 
-%If the AP axis hasn't been specified check if it was specificed in the
+%If the AP axis hasn't been specified check if it was specified in the
 %image names. Otherwise assume AP orientation
 
 %Find out the date it was taken
@@ -59,7 +59,7 @@ Date=Prefix(1:Dashes(3)-1);
 EmbryoName=Prefix(Dashes(3)+1:end);
 
 D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.tif']);
-   
+
 %Determine wether we're dealing with a left-right embryo or a top-bottom
 %one
 LeftRight=1;
@@ -310,7 +310,7 @@ imwrite(uint16(APImage),[DropboxFolder,filesep,Prefix,filesep,'APDetection',file
 
 
 %Now, use them to find the embryo mask
-embMask = getEmbryoMask(APImage, 20);
+embMask = getEmbryoMaskLive(APImage, 20);
 CC=bwconncomp(embMask);
 
 %This code came from Michael's code
@@ -318,7 +318,7 @@ CC=bwconncomp(embMask);
 % high but the embryo is still stitchable.
 if CC.NumObjects~=1
     disp('Failed to calculate embryo mask. Found more than one object in mask. Re-running with a lower threshold.');
-    embMask = GetEmbryoMaskWithThreshold(APImage, 20, 0);
+    embMask = getEmbryoMaskLiveWithThreshold(APImage, 20, 0);
     CC = bwconncomp(embMask);
 end
 

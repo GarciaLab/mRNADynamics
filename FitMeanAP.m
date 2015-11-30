@@ -44,7 +44,7 @@ close all
 
 % ES 2013-10-29: Required for multiple users to be able to analyze data on
 % one computer
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(varargin{1});
 
 
@@ -53,21 +53,21 @@ if ~isempty(varargin)
                
 else
     FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
-    Dashes=strfind(FolderTemp,'\');
+    Dashes=strfind(FolderTemp,filesep);
     Prefix=FolderTemp((Dashes(end)+1):end);
 end
 
 
                                     
 %Load the complied particles and the division information                                    
-load([DropboxFolder,filesep,Prefix,'\CompiledParticles.mat'])
+load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'])
 
-if exist([DropboxFolder,filesep,Prefix,'\APDivision.mat'])
-    load([DropboxFolder,filesep,Prefix,'\APDivision.mat'])
+if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'])
 else
     error('Could not load APDivision.mat. Make sure to have done the manual check of division.')
 end
-                                    
+                                  
  
 %Rough frame window to consider in the fits
 
@@ -90,36 +90,37 @@ FrameWindow14=[nc14:length(ElapsedTime)];
 
 
 %Detect what type of data set we're dealing with so we can set the delay
-if (~isempty(findstr(Prefix,'X1')))|(~isempty(findstr(Prefix,'P2P')))
+if (~isempty(findstr(Prefix,'X1')))|(~isempty(findstr(Prefix,'P2P')))|...
+        (~isempty(findstr(Prefix,'evePr')))
     Delay=GeneLength5/ElongationRate;    %Minutes for PolII to fall off after reaching
                                         %the first MS2 site.
     display('Treating data set as 5''')
     
     %Initial parameters for fits
-    Rate012=4E3;     %Rate per minute
+    Rate012=500;     %Rate per minute
     TimeStart012=3;
     TimeEnd012=7;
 
-    Rate013=4E3;     %Rate per minute
+    Rate013=500;     %Rate per minute
     TimeStart013=5;
     TimeEnd013=10;
 
-    Rate014=4E3;     %Rate per minute
+    Rate014=500;     %Rate per minute
     TimeStart014=5;
     TimeEnd014=1000;  
 elseif ~isempty(findstr(Prefix,'X2'))
     Delay=GeneLength3/ElongationRate;
     display('Treating data set as 3''')
     
-    Rate012=4E3;     %Rate per minute
+    Rate012=500;     %Rate per minute
     TimeStart012=3;
     TimeEnd012=7;
 
-    Rate013=4E3;     %Rate per minute
+    Rate013=500;     %Rate per minute
     TimeStart013=7.5;
     TimeEnd013=10;
 
-    Rate014=4E3;     %Rate per minute
+    Rate014=500;     %Rate per minute
     TimeStart014=7.5;
     TimeEnd014=1000; 
 else
@@ -129,34 +130,51 @@ else
         %the first MS2 site.
         display('Treating data set as 5''')
         
-        Rate012=4E3;     %Rate per minute
+        Rate012=500;     %Rate per minute
         TimeStart012=3;
         TimeEnd012=7;
         
-        Rate013=4E3;     %Rate per minute
+        Rate013=500;     %Rate per minute
         TimeStart013=5;
         TimeEnd013=10;
         
-        Rate014=4E3;     %Rate per minute
+        Rate014=500;     %Rate per minute
         TimeStart014=5;
         TimeEnd014=1000;
     elseif exist('StemLoopEnd', 'var') && strcmp(StemLoopEnd, '3''')
         Delay=GeneLength3/ElongationRate;
         display('Treating data set as 3''')
         
-        Rate012=4E3;     %Rate per minute
+        Rate012=500;     %Rate per minute
         TimeStart012=3;
         TimeEnd012=7;
         
-        Rate013=4E3;     %Rate per minute
+        Rate013=500;     %Rate per minute
         TimeStart013=7.5;
         TimeEnd013=10;
         
-        Rate014=4E3;     %Rate per minute
+        Rate014=500;     %Rate per minute
         TimeStart014=7.5;
         TimeEnd014=1000;
     else
-        error('Could not recognize data type from the Prefix or from the value of StemLoopEnd in MovieDatabase.')
+        %error('Could not recognize data type from the Prefix or from the value of StemLoopEnd in MovieDatabase.')
+        
+            Delay=GeneLength5/ElongationRate;    %Minutes for PolII to fall off after reaching
+                                        %the first MS2 site.
+    display('Treating data set as 5''')
+    
+    %Initial parameters for fits
+    Rate012=500;     %Rate per minute
+    TimeStart012=3;
+    TimeEnd012=7;
+
+    Rate013=500;     %Rate per minute
+    TimeStart013=5;
+    TimeEnd013=10;
+
+    Rate014=500;     %Rate per minute
+    TimeStart014=5;
+    TimeEnd014=1000;  
     end
 end
 
@@ -165,7 +183,7 @@ end
 
 
 %Set the first guess for the parameters for each AP bin and also
-%dissaproved the ones that did not have enough data points. Fit results has
+%disapproved the ones that did not have enough data points. Fit results has
 %is a structure with the fits corresponding to each AP position and nc13
 %or nc14
 if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'])
@@ -219,7 +237,7 @@ for i=1:length(APbinID)
     if isempty(FitResults(i,3).Rate0)
         FitResults(i,3).Rate0=Rate014;    
         FitResults(i,3).TimeStart0=TimeStart014;
-        FitResults(i,3).TimeEnd0=[];;
+        FitResults(i,3).TimeEnd0=[];
         FitResults(i,3).FrameFilter=[];
         FitResults(i,3).FitFrameRange=[];        
         if sum(NParticlesAP(FrameWindow14,i)>=MinParticles)>=MinTimePoints
@@ -252,7 +270,7 @@ end
 
 %Go through each AP bin
 FitFigure=figure;
-i=min(find(sum(NParticlesAP)));
+i=min(find(sum(NParticlesAP))); %index of the first AP bin that has a non-zero number of particles
 cc=1;
 
 while (cc~=13)
@@ -285,8 +303,7 @@ while (cc~=13)
             SDFluoData=SDVectorAP(FrameWindow,i);
             NData=NParticlesAP(FrameWindow,i);
             TimeData=ElapsedTime(FrameWindow);
-            OnRatioData=OnRatioAP(FrameWindow,i);
-
+          
             %Now filter them according the number of particles
             FrameFilter=NData>=MinParticles;
 
@@ -306,23 +323,17 @@ while (cc~=13)
             %Filter the frames according to FitFrameRange
             FitFrameFilter=ismember(FrameWindow,FitFrameRange);
             
-            OnRatioDataForFit=OnRatioData(FitFrameFilter);
-            MaxOnRatioForFit=max(OnRatioData);
-            OnRatioDataForFit=OnRatioDataForFit/MaxOnRatioForFit;
+           
 
-            FluoDataForFit=FluoData(FitFrameFilter).*OnRatioDataForFit;
-            SDFluoDataForFit=SDFluoData(FitFrameFilter).*OnRatioDataForFit;
+            FluoDataForFit=FluoData(FitFrameFilter);
+            SDFluoDataForFit=SDFluoData(FitFrameFilter);
             NDataForFit=NData(FitFrameFilter);
             TimeDataForFit=TimeData(FitFrameFilter);
             
 
-            %These is the maximum range of data for the fit
-            OnRatioData=OnRatioData(FrameFilter);
-            MaxOnRatio=max(OnRatioData);
-            OnRatioData=OnRatioData/MaxOnRatio;
 
-            FluoData=FluoData(FrameFilter).*OnRatioData;
-            SDFluoData=SDFluoData(FrameFilter).*OnRatioData;
+            FluoData=FluoData(FrameFilter);
+            SDFluoData=SDFluoData(FrameFilter);
             NData=NData(FrameFilter);
             TimeData=TimeData(FrameFilter);
 
@@ -364,9 +375,9 @@ while (cc~=13)
                         xFit(1),xFit(2),xFit(3),Delay);
                     %Plot all the data
                     PlotHandle=errorbar(ElapsedTime(FrameWindow)-ElapsedTime(FrameWindow(1)),...
-                        MeanVectorAP(FrameWindow,i).*OnRatioAP(FrameWindow,i)/MaxOnRatio,...
+                        MeanVectorAP(FrameWindow,i),...
                         SDVectorAP(FrameWindow,i)./...
-                        sqrt(NParticlesAP(FrameWindow,i)).*OnRatioAP(FrameWindow,i)/MaxOnRatio,'.-k');
+                        sqrt(NParticlesAP(FrameWindow,i)),'.-k');
                     hold on
                     %Plot the data that could be used for the fit
                     PlotHandle(end+1)=plot(ElapsedTime(FrameWindow(FrameFilter))-ElapsedTime(FrameWindow(1)),...
@@ -383,9 +394,9 @@ while (cc~=13)
                     xlabel('Time into nc (min)')
                     
                     try
-                        ylim([0,max(MeanVectorAP(FrameWindow,i).*OnRatioAP(FrameWindow,i)/MaxOnRatio+...
+                        ylim([0,max(MeanVectorAP(FrameWindow,i)+...
                             SDVectorAP(FrameWindow,i)./...
-                            sqrt(NParticlesAP(FrameWindow,i)).*OnRatioAP(FrameWindow,i)/MaxOnRatio)])
+                            sqrt(NParticlesAP(FrameWindow,i)))]);
                     catch
                         display('Error in displaying the plot')
                     end
@@ -432,9 +443,9 @@ while (cc~=13)
                         xFit(1),1000,xFit(2),Delay);
                     %Plot all the data
                     PlotHandle=errorbar(ElapsedTime(FrameWindow)-ElapsedTime(FrameWindow(1)),...
-                        MeanVectorAP(FrameWindow,i).*OnRatioAP(FrameWindow,i)/MaxOnRatio,...
+                        MeanVectorAP(FrameWindow,i),...
                         SDVectorAP(FrameWindow,i)./...
-                        sqrt(NParticlesAP(FrameWindow,i)).*OnRatioAP(FrameWindow,i)/MaxOnRatio,'.-k');
+                        sqrt(NParticlesAP(FrameWindow,i)),'.-k');
                     hold on
                     %Plot the data that could be used for the fit
                     PlotHandle(end+1)=plot(ElapsedTime(FrameWindow(FrameFilter))-ElapsedTime(FrameWindow(1)),...
@@ -451,9 +462,9 @@ while (cc~=13)
                     
                     
                     try
-                        ylim([0,max(MeanVectorAP(FrameWindow,i).*OnRatioAP(FrameWindow,i)/MaxOnRatio+...
+                        ylim([0,max(MeanVectorAP(FrameWindow,i)+...
                             SDVectorAP(FrameWindow,i)./...
-                            sqrt(NParticlesAP(FrameWindow,i)).*OnRatioAP(FrameWindow,i)/MaxOnRatio)])
+                            sqrt(NParticlesAP(FrameWindow,i)))])
                     catch
                         display('Error in displaying the plot')
                     end
@@ -484,7 +495,11 @@ while (cc~=13)
     
     
     figure(FitFigure)
-    ct=waitforbuttonpress;
+    try
+        ct=waitforbuttonpress;
+    catch
+        error('Fits not saved.');
+    end
     cc=get(FitFigure,'currentcharacter');
     cm=get(gca,'CurrentPoint');
     

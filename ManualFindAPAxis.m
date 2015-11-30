@@ -17,7 +17,7 @@ function [coordA,coordP,xShift,yShift]=ManualFindAPAxis(varargin)
 
 % ES 2013-10-29: Required for multiple users to be able to analyze data on
 % one computer
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(varargin{1});
 
 
@@ -384,7 +384,7 @@ imwrite(uint16(APImage),[DropboxFolder,filesep,Prefix,'\APDetection\FullEmbryo.t
 
 
 %Now, use them to find the embryo mask
-embMask = getEmbryoMask(APImage, 20);
+embMask = getEmbryoMaskLive(APImage, 20);
 
 
 %This code came from Michael's code

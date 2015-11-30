@@ -105,6 +105,6 @@ else
     Amp=AmpRaw-Off1Fit*sum(sum(fad.channels(Particles(CurrentParticle).Frame(i)).fits.maskUsedForTotalInt));
     
     
-    Off2Fit=mean(double(Off2));
+    Off2Fit=nanmean(double(Off2));
     Amp2=AmpRaw-Off2Fit*sum(sum(fad.channels(Particles(CurrentParticle).Frame(i)).fits.maskUsedForTotalInt));
 end

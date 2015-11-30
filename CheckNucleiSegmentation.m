@@ -8,15 +8,18 @@ function CheckNucleiSegmentation(varargin)
 
 %Usage:
 
-%.  - Move a frame forward and keep in the new frame only areas that
-%     overlap with the previous ones.
+%.  - Move a frame forward
 %,  - Move a frame backwards
+%>  - Move 5 frames forward
+%<  - Move 5 frames backwards
 %j  - Jump to a frame
+%d  - Delete all ellipses in the current frame
 %s  - Save current analysis
 %m  - Increase contrast
 %n  - Decrease contrast
 %r  - Reset contrast setting
 %x  - Exit and save
+%9  - Debug mode
 
 
 %right click  - delete region
@@ -43,7 +46,7 @@ name = lower(name);
 
 
 %Load the folder information
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
 
 
@@ -56,12 +59,12 @@ else
 end
 
 
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(Prefix);
 
 
 %Set the source folders
-Folder=[FISHPath,filesep,'Analysis',filesep,Prefix,'_',filesep,'preanalysis',filesep];
+Folder=[FISHPath,filesep,Prefix,'_',filesep,'preanalysis',filesep];
 FileName=['CompactResults_',Prefix,'_.mat'];
 
 %Set the destination folders
@@ -71,10 +74,10 @@ DataFolder=[Folder,'..',filesep,'..',filesep,'..',filesep,'Data',filesep,FilePre
 
 
 %Find out how many frames we have
-D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*His*.tif']);
+D=dir([PreProcPath,filesep,Prefix,filesep,'*His*.tif']);
 if length(D)==0
     warning('The name format is a mess. I had to do this for KITP')
-    D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*_His*.tif']);
+    D=dir([PreProcPath,filesep,Prefix,filesep,'*_His*.tif']);
 end
 TotalFrames=length(D);
 
@@ -140,9 +143,11 @@ else
 end
 
 
-if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|...
-        strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP')|...
-        (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-TagRFP(1)'))
+% if (strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP'))|...
+%         (strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP'))|...
+%         (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-TagRFP(1)'))|...
+%         (strcmp(XLSRaw(XLSEntry,Channel1Column),'MCP-mCherry(3)'))|...
+%         (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-mCherry(3)'))
     nc9=cell2mat(XLSRaw(XLSEntry,nc9Column));
     nc10=cell2mat(XLSRaw(XLSEntry,nc10Column));
     nc11=cell2mat(XLSRaw(XLSEntry,nc11Column));
@@ -156,9 +161,9 @@ if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|...
     else
         CF=nan;
     end
-else
-    error('nc information not define in MovieDatabase.xlsx')
-end
+% else
+%     error('nc information not define in MovieDatabase.xlsx')
+% end
 
 
 
@@ -186,16 +191,16 @@ load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat']);
 
 
 %Get the information about the Histone channel images
-D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*-His*.tif']);
+D=dir([PreProcPath,filesep,Prefix,filesep,'*-His*.tif']);
 if length(D)==0
     warning('The name format is a mess. I had to do this for KITP')
-    D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*His*.tif']);
+    D=dir([PreProcPath,filesep,Prefix,filesep,'*His*.tif']);
 end
 TotalFrames=length(D);
 
 
 %Get information about the image size
-HisImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(1).name]);
+HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(1).name]);
 [Rows,Cols]=size(HisImage);
 DisplayRange=[min(min(HisImage)),max(max(HisImage))];
 
@@ -220,22 +225,11 @@ for i=1:length(D)
     end
 end
 
+Overlay=figure;
+set(gcf,'units', 'normalized', 'position',[0.01, .55, .75, .33]);
 
-%Set the figure sizes for Albert or the other computers
-if strcmp(name(1:end-1),'albert-pc')
-    Overlay=figure;
-    set(gcf,'Position',[10         113        1376         872])
-
-    OriginalImage=figure;
-    set(gcf,'Position',[1398         659         512         326])
-else
-    Overlay=figure;
-    set(gcf,'Position',[6   603   676   342])
-
-    OriginalImage=figure;
-    set(gcf,'Position',[ 704   382   512   256])
-end
-
+OriginalImage=figure;
+set(gcf,'units', 'normalized', 'position',[0.01, .1, .75, .33]);
 
 CurrentFrame=1;
 cc=1;
@@ -243,7 +237,7 @@ cc=1;
 while (cc~='x')
     
     %Load the image
-    HisImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(CurrentFrame).name]);
+    HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(CurrentFrame).name]);
     
     
     %Get the information about the centroids
@@ -251,7 +245,7 @@ while (cc~='x')
 
     
     figure(Overlay)
-    imshow(HisImage,DisplayRange,'Border','Loose')
+    imshow(HisImage,DisplayRange,'Border','Tight')
     hold on
     PlotHandle=[];
     for i=1:NCentroids
@@ -261,13 +255,14 @@ while (cc~='x')
             Ellipses{CurrentFrame}(i,2)+1)];
     end
     hold off
-    set(PlotHandle,'Color','r')
+    set(PlotHandle,'Color','r', 'Linewidth', 3)
     
      
 
     FigureTitle=['Frame: ',num2str(CurrentFrame),'/',num2str(TotalFrames),...
         ', nc: ',num2str(nc(CurrentFrame))];
-    title(FigureTitle)
+    set(gcf,'Name',FigureTitle)
+    %title(FigureTitle)
   
     
     figure(OriginalImage)
@@ -283,10 +278,12 @@ while (cc~='x')
 
     if (ct~=0)&(cc=='.')&(CurrentFrame<TotalFrames)
         CurrentFrame=CurrentFrame+1;
-        %DisplayRange=[min(min(HisImage)),max(max(HisImage))];
     elseif (ct~=0)&(cc==',')&(CurrentFrame>1)
         CurrentFrame=CurrentFrame-1;
-        %DisplayRange=[min(min(HisImage)),max(max(HisImage))];
+    elseif (ct~=0)&(cc=='>')&(CurrentFrame+5<TotalFrames)
+        CurrentFrame=CurrentFrame+5;
+    elseif (ct~=0)&(cc=='<')&(CurrentFrame-4>1)
+        CurrentFrame=CurrentFrame-5;
     elseif (ct~=0)&(cc=='s')
         save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
         display('Ellipses saved.')
@@ -299,7 +296,15 @@ while (cc~='x')
 
             %(x, y, a, b, theta, maxcontourvalue, time,
             %particle_id)
-            MeanRadius=mean((Ellipses{CurrentFrame}(:,3)+Ellipses{CurrentFrame}(:,4))/2);
+            if ~isempty(Ellipses{CurrentFrame})
+                MeanRadius=mean((Ellipses{CurrentFrame}(:,3)+Ellipses{CurrentFrame}(:,4))/2);
+            elseif ~isempty(Ellipses{CurrentFrame+1})
+                MeanRadius=mean((Ellipses{CurrentFrame+1}(:,3)+Ellipses{CurrentFrame+1}(:,4))/2);
+            elseif ~isempty(Ellipses{CurrentFrame-1})
+                MeanRadius=mean((Ellipses{CurrentFrame-1}(:,3)+Ellipses{CurrentFrame-1}(:,4))/2);
+            end
+                
+                
             Ellipses{CurrentFrame}(end+1,:)=...
                 [cm(1,1),cm(1,2),MeanRadius,MeanRadius,0,0,0,0];
         end
@@ -335,6 +340,12 @@ while (cc~='x')
         
     elseif (ct~=0)&(cc=='r')    %Reset the contrast
         DisplayRange=[min(min(HisImage)),max(max(HisImage))];
+        
+    elseif (ct~=0)&(cc=='d')    %Delete all ellipses in the current frame
+        Ellipses{CurrentFrame}=[];
+        
+    elseif (ct~=0)&(cc=='9')    %Debug mode
+        keyboard
    
     end
 end

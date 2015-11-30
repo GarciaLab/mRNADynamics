@@ -1,6 +1,6 @@
 function [ nuclei, varargout ] = mainTracking( names, varargin)
 %MAINTRACKING Run the full segmentation and tracking of a movie.
-% Optionnally, call again with more arguments to enforce manual
+% Optionally, call again with more arguments to enforce manual
 % corrections.
 %
 %
@@ -36,7 +36,7 @@ function [ nuclei, varargout ] = mainTracking( names, varargin)
 %           the 'centers' output (see output n°2).
 %           - P : index of the parent of this nucleus in the nuclei
 %           structure.
-%           - D, E : indices of the daughters fo this nucleus in the nuclei
+%           - D, E : indices of the daughters for this nucleus in the nuclei
 %           structure.
 %
 %
@@ -169,7 +169,7 @@ end
 waitbar(0.2,h_waitbar_initialization);
 
 if ~exist('embryoMask','var') || isempty(embryoMask)
-    embryoMask = getEmbryoMask(names);
+    embryoMask = getEmbryoMaskLive(names);
 end
 
 waitbar(0.3,h_waitbar_initialization)
@@ -315,10 +315,40 @@ if ~exist('centers','var') || isempty(centers)
         end
         
     end
+    
+    
     close(h_waitbar_segmentation)
+    
+    %If the XY contains only one or zero nuclei then there's probably something
+    %wrong. In that case just copy the information from the previous good
+    %frame.
+    if sum(cellfun(@(x) size(x,1),xy)<2)
+        %Find the frames where we have issues
+        FramesToFix=find(cellfun(@(x) size(x,1),xy)<2);
+        for i=1:length(FramesToFix)
+            if FramesToFix(i)==1
+                FrameToCopy=1;
+                while sum(FramesToFix==NextFrameToCopy)
+                    FrameToCopy=FrameToCopy+1;
+                end
+            else
+                FrameToCopy=FramesToFix(i)-1;
+            end
+            xy{FramesToFix(i)}=xy{FrameToCopy};
+        end
+    end
+   
 else
     xy = centers;
 end
+
+
+
+
+
+
+
+
 % Initialize output
 numberOfNuclei = size(xy{1},1);
 totalNumberOfFrames = numel(names);
@@ -361,16 +391,22 @@ if firstFrameIsAnInterphase
 else
 	offset = 0;
 end
+%Define the frames in each phase. 
 for j = 1:numberOfPhases
+    %Gives the index of the most recent mitosis
     index = round((j+offset)/2);
     if phaseIsAMitosis(j)
+        %Frames are from the start to finish of mitosis
         breakUpsFrames(j,:) = indMitosis(index,:);
     else
+        %Frames are from the end of previous mitosis to the start of the next
+        %mitosis.
         breakUpsFrames(j,:) = [indMitosis(index,2) indMitosis(index+1,1)];
     end
 end
 indInterphases = find(~phaseIsAMitosis);
 diameters = zeros(numberOfPhases,1);
+
 if phaseIsAMitosis(end)
     nuclearCycle = 13;
     diameters(end) = 0.5*(getDefaultParameters('d13')+getDefaultParameters('d14'));
@@ -388,11 +424,11 @@ for j = numel(indInterphases):-1:1
     nuclearCycle = nuclearCycle-1;
 end
 for j = 1:numberOfPhases
+    %Sets the range of this phase based on the break up frames from above
+    %(again checking for index out of bounds errors in advance)
     first = max(breakUpsFrames(j,1),1);
     last = min(breakUpsFrames(j,2),numberOfFrames);
-    if phaseIsAMitosis(j)
-    
-        
+    if phaseIsAMitosis(j)       
         if firstFrameIsAnInterphase
             fprintf(['Processing mitosis between nuclear cycle ' num2str(nucCyc(0.5*j)) ' and ' num2str(nucCyc(0.5*j)+1) '... ']);
         else
@@ -412,7 +448,8 @@ for j = 1:numberOfPhases
         else
             fprintf(['Processing nuclear cycle ' num2str(nucCyc(0.5*j)) '... ']);
         end
-        
+        %This trackingStatingPoint(1) looks like it might be a magic number
+        %and does not appear to be used
         [nuclei, dummy, interpolatedShifts] = trackWholeInterphase(names,trackingStartingPoints(1),first,last,diameters(j), embryoMask, xy, mapping,nuclei, interpolatedShifts, h_waitbar_tracking);
         
         fprintf('Done!\n')

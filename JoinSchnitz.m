@@ -109,15 +109,15 @@ for i=1:length(Fields)
     else
         InfoSourceAll=getfield(schnitzcells(SourceSchnitz),Fields{i});
         
-        %I had to do this for the cases where len and ang are not the right
-        %length!
-        if (strcmp(Fields{i},'ang')|strcmp(Fields{i},'len'))&(length(InfoSourceAll)~=length(FrameFilterSource))
-            InfoSourceToExport=InfoSourceAll;
-            InfoSourceToKeep=[]
-        else
+%         %I had to do this for the cases where len and ang are not the right
+%         %length!
+%         if (strcmp(Fields{i},'ang')|strcmp(Fields{i},'len'))&(length(InfoSourceAll)~=length(FrameFilterSource))
+%             InfoSourceToExport=InfoSourceAll;
+%             InfoSourceToKeep=[]
+%         else
             InfoSourceToExport=InfoSourceAll(FrameFilterSource);
             InfoSourceToKeep=InfoSourceAll(~FrameFilterSource);
-        end
+        %end
       
         InfoTargetAll=getfield(schnitzcells(TargetSchnitz),Fields{i});
         InfoTargetToKeep=InfoTargetAll(FrameFilterTarget);
@@ -136,20 +136,26 @@ for i=1:length(Fields)
         end
            
         %Move the information from the source schnitz to the target
-        %schnitz. Notice that I'm doing a ridiculous try/catch becuase in
-        %the new schnitzcells version sometimes we have row vectors and
-        %sometimes we have column vectors.
-        try
+        %schnitz. I need to check wether I have a row or column vector
+        if (size(getfield(schnitzcells(TargetSchnitz),Fields{i}),1)==1)&...
+                (size(InfoSourceToExport,1)==1)
             schnitzcells(TargetSchnitz)=setfield(schnitzcells(TargetSchnitz),Fields{i},...
-                [getfield(schnitzcells(TargetSchnitz),Fields{i});InfoSourceToExport]);
-        catch
-            try
-                schnitzcells(TargetSchnitz)=setfield(schnitzcells(TargetSchnitz),Fields{i},...
-                    [getfield(schnitzcells(TargetSchnitz),Fields{i}),InfoSourceToExport]);
-            catch
-                error('The dimensions of the import/export information are not matched')
-            end
+                [getfield(schnitzcells(TargetSchnitz),Fields{i}),InfoSourceToExport]);        
+        elseif (size(getfield(schnitzcells(TargetSchnitz),Fields{i}),2)==1)&...
+                (size(InfoSourceToExport,2)==1)
+            schnitzcells(TargetSchnitz)=setfield(schnitzcells(TargetSchnitz),Fields{i},...
+                [getfield(schnitzcells(TargetSchnitz),Fields{i});InfoSourceToExport]);   
+        elseif (size(getfield(schnitzcells(TargetSchnitz),Fields{i}),1)==1)&...
+                (size(InfoSourceToExport,1)>1)  
+            schnitzcells(TargetSchnitz)=setfield(schnitzcells(TargetSchnitz),Fields{i},...
+                [getfield(schnitzcells(TargetSchnitz),Fields{i});InfoSourceToExport]); 
+        elseif (size(getfield(schnitzcells(TargetSchnitz),Fields{i}),1)>1)&...
+                (size(InfoSourceToExport,1)==1)     
+            schnitzcells(TargetSchnitz)=setfield(schnitzcells(TargetSchnitz),Fields{i},...
+                [getfield(schnitzcells(TargetSchnitz),Fields{i});InfoSourceToExport]); 
+            
         end
+            
         
     end
 end

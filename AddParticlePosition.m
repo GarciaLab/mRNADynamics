@@ -1,5 +1,8 @@
 function AddParticlePosition(varargin)
 
+%Locates particles from a zoomed-in movie within full embryo images using
+%spatial cross-correlation.
+%
 %First parameter should be the prefix. The other parameters can be:
 %SkipAlignment
 %ManualAlignment
@@ -10,13 +13,16 @@ function AddParticlePosition(varargin)
 
 
 %Get the relevant folders for this data set
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(varargin{1});
 
 
 SkipAlignment=0;
 ManualAlignment=0;
 NoAP=0;
+InvertHis=0;
+
+close all
 
 if ~isempty(varargin)
     Prefix=varargin{1};
@@ -40,18 +46,30 @@ end
 
 if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
     load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
+    
+    %Create the particle array. This is done so that we can support multiple
+    %channels. Also figure out the number of channels
+    if iscell(Particles)
+        NChannels=length(Particles);
+    else
+        Particles={Particles};
+        NChannels=1;
+    end
+    
     %Now, get the particle positions (if they're not there already). Notice
     %that the code pulls out the position information from fad. This is because
     %of historical reasons mostly.
-    for i=1:length(Particles)
-        for j=1:length(Particles(i).Frame)
-            [x,y]=fad2xyzFit(Particles(i).Frame(j),fad, 'addMargin'); 
-            Particles(i).xPos(j)=x(Particles(i).Index(j));
-            Particles(i).yPos(j)=y(Particles(i).Index(j));
+    for ChN=1:NChannels
+        for i=1:length(Particles{ChN})
+            for j=1:length(Particles{ChN}(i).Frame)
+                [x,y]=fad2xyzFit(Particles{ChN}(i).Frame(j),fad(ChN), 'addMargin'); 
+                Particles{ChN}(i).xPos(j)=x(Particles{ChN}(i).Index(j));
+                Particles{ChN}(i).yPos(j)=y(Particles{ChN}(i).Index(j));
+            end
         end
-    end
-    if isfield(Particles,'APpos')
-        warning('Particles.mat already has AP positions stored. They will be rewritten')
+        if isfield(Particles{ChN},'APpos')
+            warning('Particles.mat already has AP positions stored. They will be rewritten')
+        end
     end
 
 else
@@ -60,56 +78,262 @@ end
 
 
 %See if we had any lineage/nuclear information
-D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*-His_*']);
-if length(D)>0
+D=dir([PreProcPath,filesep,Prefix,filesep,'*-His_*']);
+if ~isempty(D)
     HistoneChannel=1;
 else
     HistoneChannel=0;
 end
 
 
+%Determine whether we're dealing with 2-photon data from Princeton or LSM
+%data. 2-photon data uses TIF files. In LSM mode multiple files will be
+%combined into one.
+%Find out the date it was taken
+Dashes=strfind(Prefix,'-');
+Date=Prefix(1:Dashes(3)-1);
+EmbryoName=Prefix(Dashes(3)+1:end);
+
+DTIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.tif']);
+DLSM=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lsm']);
+DLIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lif']);
+DLAT=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'IsLatticeData.txt']);
+
+if (length(DTIF)>0)&(length(DLSM)==0)
+    if length(DLIF)==0
+        if length(DLAT)==0
+            display('2-photon @ Princeton data mode')
+            D=DTIF;
+            FileMode='TIF';
+        else
+            display('Lattice Light Sheet data mode')
+            D=DTIF;
+            FileMode='LAT';
+        end
+    else
+        display('LIF export mode')
+        D=DTIF;
+        FileMode='LIFExport';
+    end
+elseif (length(DTIF)==0)&(length(DLSM)>0)
+    display('LSM mode')
+    D=DLSM;
+    FileMode='LSM';
+else
+    error('File type not recognized')
+end
 
 
-%Figure out how our field of view maps to the AP coordinates.
 
-%First, figure out how our field of view maps to the stitched embryo
-%image
 
-%Were the images taken on the left or right half of the embryo?
+%Figure out what type of experiment we have
+[XLSNum,XLSTxt]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
+DataFolderColumn=find(strcmp(XLSTxt(1,:),'DataFolder'));
+ExperimentTypeColumn=find(strcmp(XLSTxt(1,:),'ExperimentType'));
+Channel1Column=find(strcmp(XLSTxt(1,:),'Channel1'));
+Channel2Column=find(strcmp(XLSTxt(1,:),'Channel2'));
+
+% Convert the prefix into the string used in the XLS file
+Dashes = strfind(Prefix, '-');
+PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
+    [Prefix(1:Dashes(3)-1), '\', Prefix(Dashes(3)+1:end)]));
+if isempty(PrefixRow)
+    PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
+        [Prefix(1:Dashes(3)-1), '/', Prefix(Dashes(3)+1:end)]));
+    if isempty(PrefixRow)
+        error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
+    end
+end
+
+
+
 if ~NoAP
-
-    %Get information about all images
     
-    %Find out the date it was taken
-    Dashes=findstr(Prefix,'-');
-    Date=Prefix(1:Dashes(3)-1);
-    EmbryoName=Prefix(Dashes(3)+1:end);
+    ExperimentType=XLSTxt(PrefixRow,ExperimentTypeColumn);
+    Channel1=XLSTxt(PrefixRow,Channel1Column);
+    Channel2=XLSTxt(PrefixRow,Channel2Column);
 
-    D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.tif']);
 
+    ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
+        ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')));
+
+
+    if sum(ChannelToLoadTemp)
+        ChannelToLoad=find(ChannelToLoadTemp);
+    else
+        error('No histone channel found. Was it defined in MovieDatabase.XLS?')
+    end
+
+
+    %Get information about all images. This depends on the microsocpe used.
+    
     %Get the information about the zoom
-    ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(1).name]);
+    if strcmp(FileMode,'TIF')
+        D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.tif']);
+        ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(1).name]);
+        
+        %Figure out the zoom factor
+        MovieZoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
+        MovieZoom=str2num(MovieZoom);
+    
+        
+        %Get the zoomed out surface image and its dimensions from the FullEmbryo folder
+        D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.tif']);
+        SurfName=D(find(~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
+        SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,SurfName],ChannelToLoad); 
+        
+        %Get the size of the zoom image
+        Rows = str2double(ExtractInformationField(ImageInfo(1), 'state.acq.linesPerFrame='));
+        Columns = str2double(ExtractInformationField(ImageInfo(1), 'state.acq.pixelsPerLine='));
+        
+        SurfInfo = imfinfo([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo', filesep, SurfName]);
+        SurfZoom = ExtractInformationField(SurfInfo(1), 'state.acq.zoomFactor=');
+        SurfZoom = str2double(SurfZoom);
 
+        SurfRows = str2double(ExtractInformationField(SurfInfo(1), 'state.acq.linesPerFrame='));
+        SurfColumns = str2double(ExtractInformationField(SurfInfo(1), 'state.acq.pixelsPerLine='));
+        
+        %Get the full embryo image
+        FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);       
+        
+        %Ratio between the two zoom levels
+        ZoomRatio = MovieZoom / SurfZoom;
+        ResizeFactor = max([Rows/SurfRows*ZoomRatio, Columns/SurfColumns*ZoomRatio]);
+        % ES 2013-10-30: the reason I have to define ResizeFactor differently
+        % from ZoomRatio is because you can't necessarily infer the
+        % microns-per-pixel resolution from the zoom alone: it also depends on
+        % the dimensions of the image. This may not work for all possible
+        % resolutions, though...
+        ZoomRatio = ResizeFactor;
+
+    elseif strcmp(FileMode,'LSM')|strcmp(FileMode,'LIFExport')
+
+        %This is so that the code doesn't freak out later
+        SurfName=[];
+        
+        %Figure out the different channels
+        if  ~isempty(strfind(lower(Channel1{1}),'his'))
+            HisChannel=1;
+            InvertHis=0;
+        elseif ~isempty(strfind(lower(Channel1{1}),'mcherry'))
+            HisChannel=1;
+            InvertHis=1;
+        elseif ~isempty(strfind(lower(Channel2{1}),'his'))
+            HisChannel=2;
+            InvertHis=0;
+        elseif ~isempty(strfind(lower(Channel2{1}),'mcherry'))
+            HisChannel=2;
+            InvertHis=1;
+        else
+            error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
+        end
+                
+        %Find the zoomed movie pixel size
+        D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.',FileMode(1:3)]);
+        %Load only the metadata from the zoomed images
+        MetaReader=bfGetReader([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(end).name]);
+        MetaZoom=MetaReader.getMetadataStore();
+        PixelSizeZoom=str2num(MetaZoom.getPixelsPhysicalSizeX(0));
+
+        %Find the full embryo pixel size and load the image
+        D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*surf*.',FileMode(1:3)]);
+        ImageTemp=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(end).name]);
+        MetaFullEmbryo= ImageTemp{:, 4};
+        PixelSizeFullEmbryo=str2num(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
+        
+        %How many channels and slices do we have?
+        NChannelsMeta=MetaFullEmbryo.getChannelCount(0);
+        NSlices=str2num(MetaFullEmbryo.getPixelsSizeZ(0));
+        clear MaxTemp
+  
+        %Do a maximum projection
+
+        %By looking at the last image we make sure we're avoiding the
+        %individual tiles if we're dealing with tile scan
+        for i=HisChannel:NChannelsMeta:size(ImageTemp{end,1},1)
+                MaxTemp(:,:,i)=ImageTemp{end,1}{i,1};
+        end
+        if InvertHis
+            SurfImage=MaxTemp(:,:,HisChannel-1+round(NSlices/2)*NChannelsMeta-1);
+        else
+            SurfImage=max(MaxTemp,[],3);
+        end
+        Dashes=findstr(Prefix,'-');
+        Date=Prefix(1:Dashes(3)-1);
+        EmbryoName=Prefix(Dashes(3)+1:end);
+        
+        %Rotates the full embryo image to match the rotation of the zoomed
+        %time series
+        zoom_angle = 0;
+        full_embryo_angle = 0;
+
+        if strcmp(FileMode,'LIFExport')
+            if isdir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData']) 
+                xml_file_path = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, '*.xml']);
+                xml_file = xml_file_path(1).name;
+                xDoc = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, xml_file]);
+                zoom_angle = str2double(evalin('base','rot'));
+            else 
+                warning('No time series metadata found.')
+            end
+            if isdir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo', filesep...
+                    'MetaData'])     
+                xml_file_path2 = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo',...
+                    filesep, 'MetaData', filesep,'*Surf*.xml']);
+                xml_file2 = xml_file_path2(1).name;
+                xDoc2 = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep,'FullEmbryo', filesep,...
+                        'MetaData', filesep, xml_file2]);
+                full_embryo_angle = str2double(evalin('base','rot'));
+            else 
+                warning('No full embryo metadata found.')
+            end
+
+            evalin('base','clear rot')
+        elseif strcmp(FileMode,'LSM')
+            LSMSurf=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(1).name]);
+            LSMMeta=LSMSurf{:,4};
+            LSMMeta2=LSMSurf{:,2};
+            
+            %Get the surface image
+            SurfImage=LSMSurf{1}{HisChannel,1};
+            %Figure out the rotation of the full embryo image
+            full_embryo_angle = LSMMeta2.get('Recording Rotation #1');
+            
+            %Figure out the rotation of the zoomed-in image
+            DLSMZoom=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lsm']);
+            LSMZoom=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,...
+                DLSMZoom(1).name]);
+            LSMMetaZoom2=LSMZoom{:,2};
+            zoom_angle=LSMMetaZoom2.get('Recording Rotation #1');
+        end
+            
+        SurfImage = imrotate(SurfImage, -zoom_angle + full_embryo_angle);
+        clear ImageTemp
+
+        %Zoom factor
+        MovieZoom=PixelSizeFullEmbryo(1)/PixelSizeZoom(1);
+        SurfZoom=1;     %We'll call the zoom of the full embryo image 1
+        
+        %Get the size of the zoom image
+        Columns = str2num(MetaZoom.getPixelsSizeX(0));
+        Rows = str2num(MetaZoom.getPixelsSizeY(0));
+        %Get the size of the full embryo image
+%         SurfColumns=str2num(MetaFullEmbryo.getPixelsSizeX(0));
+%         SurfRows=str2num(MetaFullEmbryo.getPixelsSizeY(0));
+        surf_size = size(SurfImage);
+        SurfColumns= surf_size(2);
+        SurfRows=surf_size(1);
+   
+        ZoomRatio = MovieZoom / SurfZoom;
+        
+    end
+        
+    
+    
     %Get the information about the AP axis as well as the image shifts
     %used for the stitching of the two halves of the embryo
     load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
-
-    %See if manual alignment was performed on this set. If so we'll skip the
-    %automated alignment
-    if exist('ManualAlignmentDone')
-        if ManualAlignmentDone
-            display('Manual alignment results saved. Using them.')
-            ManualAlignment=1;
-        end
-    end
-
-    %Figure out the zoom factor
-    MovieZoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
-    MovieZoom=str2num(MovieZoom);
     
-    %Get the size of the zoom image
-    Rows = str2double(ExtractInformationField(ImageInfo(1), 'state.acq.linesPerFrame='));
-    Columns = str2double(ExtractInformationField(ImageInfo(1), 'state.acq.pixelsPerLine='));
 
     %Make a folder to store the images
     mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
@@ -119,44 +343,35 @@ if ~NoAP
 
         %Get the surface image in the zoomed case by looking at the last
         %frame of our movie
-        D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'-His*.tif']);
-        ZoomImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(end).name]);
+        DHis=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
+        ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis(end-1).name]);
     else
         ChannelToLoad=1;
 
         %Get the surface image in the zoomed case
-        D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'*_z*.tif']);
-        if ~isempty(D)
-            ZoomImage=imread([FISHPath,filesep,'Data',filesep,Prefix,filesep,D(end).name],ChannelToLoad);
+        DGFP=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'*_z*.tif']);
+        if ~isempty(DGFP)
+            ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DGFP(end).name],ChannelToLoad);
         else
             % This might be the case, for instance, if you're just trying
             % to find AP information about an image without using FISH
             % code. In that case, just extract the nuclei from the last
             % raw image.
-            D = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, '*.tif']);
-            ImageInfo = imfinfo([SourcePath, filesep, Date, filesep, EmbryoName, filesep, D(end).name]);
+            DGFP = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, '*.tif']);
+            ImageInfo = imfinfo([SourcePath, filesep, Date, filesep, EmbryoName, filesep, DGFP(end).name]);
             NumFramesAndSlices = length(ImageInfo)/2;
             RawImage3M = NaN(Rows, Columns, NumFramesAndSlices);
             for lImageIndex = 1:NumFramesAndSlices
-                RawImage3M(:, :, lImageIndex) = imread([SourcePath, filesep, Date, filesep, EmbryoName, filesep, D(end).name],...
+                RawImage3M(:, :, lImageIndex) = imread([SourcePath, filesep, Date, filesep, EmbryoName, filesep, DGFP(end).name],...
                     'Index', 2*(lImageIndex-1) + ChannelToLoad);
             end
             ZoomImage = max(RawImage3M, [], 3) / 255;
         end
     end
 
-    %Get the zoomed out surface image and its dimensions from the FullEmbryo folder
-    D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.tif']);
-    SurfName=D(find(~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
-    SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,SurfName],ChannelToLoad);   
+      
 
-    SurfInfo = imfinfo([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo', filesep, SurfName]);
-    SurfZoom = ExtractInformationField(SurfInfo(1), 'state.acq.zoomFactor=');
-    SurfZoom = str2double(SurfZoom);
-    
-    SurfRows = str2double(ExtractInformationField(SurfInfo(1), 'state.acq.linesPerFrame='));
-    SurfColumns = str2double(ExtractInformationField(SurfInfo(1), 'state.acq.pixelsPerLine='));
-    
+   
     
     %If there is no zoom information on the surface image then look into
     %the temp folder. This is because sometimes we edit images in ImageJ
@@ -173,28 +388,26 @@ if ~NoAP
         SurfColumns=SurfInfo.Width;
     end
    
-    %Ratio between the two zoom levels
-    ZoomRatio = MovieZoom / SurfZoom;
-    ResizeFactor = max([Rows/SurfRows*ZoomRatio, Columns/SurfColumns*ZoomRatio]);
-    % ES 2013-10-30: the reason I have to define ResizeFactor differently
-    % from ZoomRatio is because you can't necessarily infer the
-    % microns-per-pixel resolution from the zoom alone: it also depends on
-    % the dimensions of the image. This may not work for all possible
-    % resolutions, though...
-    ZoomRatio = ResizeFactor;
+    
     
     %Do a correlation between the zoomed in and zoomed out surface images
     %to figure out the shift.
     
-    
+    FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
     if ~SkipAlignment && HistoneChannel
         if ZoomRatio > 1 && ZoomRatio < 24 
             
             %Enlarge the zoomed out image so we can do the cross-correlation
-            SurfImageResized=imresize(SurfImage, ResizeFactor);
-            
+            SurfImageResized=imresize(SurfImage, ZoomRatio);
+
             %Calculate the correlation matrix and find the maximum
-            C = normxcorr2(ZoomImage, SurfImageResized);
+            if InvertHis
+                warning('I still need to fix this part')
+                C = normxcorr2(imcomplement(ZoomImage), SurfImageResized);
+            else            
+                C = normxcorr2(ZoomImage, SurfImageResized);
+            end
+
             [Max2,MaxRows]=max(C);
             [Dummy,MaxColumn]=max(Max2);
             MaxRow=MaxRows(MaxColumn);
@@ -211,6 +424,23 @@ if ~NoAP
             [RowsResized,ColumnsResized]=size(SurfImageResized);
             [RowsZoom,ColumnsZoom]=size(ZoomImage);
 
+            %If manual alignment was done before then load the results
+            if exist('ManualAlignmentDone')
+                if ManualAlignmentDone
+                    display('Manual alignment results saved. Using them.')
+                    load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
+                end
+            end
+            
+            
+            %See if we need the manual alignment
+            if ManualAlignment
+                %See if we need to load the previous manual alignment results
+                [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ZoomRatio,ShiftRow,ShiftColumn,...
+                     FullEmbryo, ZoomRatio, SurfRows,Rows, Columns, coordA, coordP, SurfColumns);
+                ManualAlignmentDone=1;
+            end
+            
             try
                 %Make an overlay of the zoomed in and zoomed out real
                 %images as well as of a quickly segmented nuclear mask
@@ -225,7 +455,7 @@ if ~NoAP
 
                 %Nuclear mask overlay
                 NucMaskZoomOut=GetNuclearMask(SurfImage,2.5,0);
-                NucMaskZoomOutResized=imresize(NucMaskZoomOut, ResizeFactor);
+                NucMaskZoomOutResized=imresize(NucMaskZoomOut, ZoomRatio);
                 NucMaskZoomOutResizedCropped=...
                     NucMaskZoomOutResized(round(RowsResized/2-RowsZoom/2+ShiftRow*ZoomRatio):round(RowsResized/2+RowsZoom/2-1+ShiftRow*ZoomRatio),...
                     round(ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ZoomRatio):round(ColumnsResized/2+ColumnsZoom/2-1+ShiftColumn*ZoomRatio));
@@ -277,22 +507,7 @@ if ~NoAP
         NucMaskZoomIn = false(size(ZoomImage));
         NucMaskZoomOut = false(size(SurfImage));
     end
-    
-    
-    %See if we need the manual alignment
-    if ManualAlignment
-        
-        %See if we need to load the previous manual alignment results
-        if exist('ManualAlignmentDone')
-            if ManualAlignmentDone
-                load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
-            end
-        end
-        
-        [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ResizeFactor,ShiftRow,ShiftColumn)
-        ManualAlignmentDone=1;
-    end
-    
+   
     %Now figure out how the shift of the zoomed in and zoomed out surface
     %images translates to the whole embryo image (which is most of the
     %times stitched). This is necessary to figure out the AP position.
@@ -301,12 +516,10 @@ if ~NoAP
     %For full embryo images stitched out of two separate images, we need to
     %look at each case: the zoom in version being on the right or on the
     %left.
-    
-    %Load the full embryo image
-    FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
-    
+    %
     %We'll overlay the zoomed out surface and mid saggital images to check we got
     %things right.
+
 
     %Patch the surface image to fit the full embryo image.
     PatchedSurfaceImage=zeros(size(FullEmbryo));
@@ -449,17 +662,9 @@ if ~NoAP
             %This is for the full image
 
             TopLeft=TopLeftHalf+[0,+xShift];
-            BottomRight=BottomRightHalf+[0,+xShift];
-
-            
-            
-            
-            
-        
+            BottomRight=BottomRightHalf+[0,+xShift]; 
         end    
-            
-        
-    
+             
     else
         %The information from the left-right stitching of the two images is as follows:
         %xShift and yShift are the shifts used to stitch the images.
@@ -709,7 +914,7 @@ if ~NoAP
             hold off
 
         else
-            error('Problem with the surface file (or its naming) in the source data folder "FullEmbryo"')
+            %error('Problem with the surface file (or its naming) in the source data folder "FullEmbryo"')
         end
     end
 
@@ -719,31 +924,51 @@ if ~NoAP
 
     %Check if the embryo could actually fit in one of the images. If that's the
     %case we need to shift the the AP poisitions and boxes.
-    if sum(size(HalfImageSurf)==size(FullEmbryo))==2
+    if strcmp(FileMode,'TIF')
         
-        warning('Have HG check this part of the code')
         
-        ImageCenter=[Rows1x/2,Columns1x/2];
+        
+        if sum(size(HalfImageSurf)==size(FullEmbryo))==2
 
-        %This is for the full image
-        TopLeft=[ImageCenter(1)-Rows/ZoomRatio/2,ImageCenter(2)-Columns/ZoomRatio/2]...
-            -[yShift,xShift];
-        BottomRight=[ImageCenter(1)+Rows/ZoomRatio/2,ImageCenter(2)+Columns/ZoomRatio/2]...
-            -[yShift,xShift];
+            warning('Have HG check this part of the code')
+
+            ImageCenter=[Rows1x/2,Columns1x/2];
+
+            %This is for the full image
+            TopLeft=[ImageCenter(1)-Rows/ZoomRatio/2,ImageCenter(2)-Columns/ZoomRatio/2]...
+                -[yShift,xShift];
+            BottomRight=[ImageCenter(1)+Rows/ZoomRatio/2,ImageCenter(2)+Columns/ZoomRatio/2]...
+                -[yShift,xShift];
+
+            %This is for the acquisition image
+            TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn];
+            BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
+                ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
+
+            coordAHalf=coordA+[xShift,yShift];
+            coordPHalf=coordP+[xShift,yShift];
+
+
+        end
+    else
+        ImageCenter=[SurfRows/2,SurfColumns/2];
 
         %This is for the acquisition image
         TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
             ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn];
         BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
             ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
+        
+        %HG: It's silly to be defining things using the Half coordinates. I
+        %need to do better here
+        TopLeft=TopLeftHalf;
+        BottomRight=BottomRightHalf;
+        
 
-        coordAHalf=coordA+[xShift,yShift];
-        coordPHalf=coordP+[xShift,yShift];
-
-
+        coordAHalf=coordA;
+        coordPHalf=coordP;
     end
-
-
 
 
     figure(7)
@@ -756,55 +981,64 @@ if ~NoAP
     hold off
     saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoArea.tif']);
 
+%     figure(8)
+%     imshow(imadjust(SurfImage),'DisplayRange',[],'InitialMagnification',100)
+%     hold on
+%     rectangle('Position',[TopLeftHalf([2,1]),BottomRightHalf([2,1])-TopLeftHalf([2,1])],'EdgeColor','r')
+%     plot(coordAHalf(1),coordAHalf(2),'.g','MarkerSize',30)
+%     plot(coordPHalf(1),coordPHalf(2),'.r','MarkerSize',30)
+%     plot([coordAHalf(1),coordPHalf(1)],[coordAHalf(2),coordPHalf(2)],'-b')
+%     plot([1],[1],'.y','MarkerSize',50)
+%     hold off
+%     saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'HalfEmbryoArea.tif']);
+%     
+
     
 
+
+    if strcmp(FileMode,'TIF')
+        figure(8)
+        imshow(imadjust(SurfImage),'DisplayRange',[],'InitialMagnification',100)
+        hold on
+        rectangle('Position',[TopLeftHalf([2,1]),BottomRightHalf([2,1])-TopLeftHalf([2,1])],'EdgeColor','r')
+        plot(coordAHalf(1),coordAHalf(2),'.g','MarkerSize',30)
+        plot(coordPHalf(1),coordPHalf(2),'.r','MarkerSize',30)
+        plot([coordAHalf(1),coordPHalf(1)],[coordAHalf(2),coordPHalf(2)],'-b')
+        plot([1],[1],'.y','MarkerSize',50)
+        hold off
+        saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'HalfEmbryoArea.tif']);
+        
+        %We have the position of the anterior and posterior in the coordinates of the 
+        %field of view we took. Do the mapping of the imaging region with respect to the AP axis.
+
+        %Convert them to the corresponding zoom factor. In order to do this I
+        %need to measure A and P with respect to the center of the rectangle.
+        %Notice that there might be a +/-1 issue in the positioning given that
+        %Matlab starts indexing from 1. However, as shown in the images below,
+        %this doesn't make any real difference.   
+        coordAZoom=(coordAHalf-[TopLeftHalf(2),TopLeftHalf(1)])*ZoomRatio;
+        coordPZoom=(coordPHalf-[TopLeftHalf(2),TopLeftHalf(1)])*ZoomRatio;
+    else
+        figure(8)
+        imshow(imadjust(SurfImage),'DisplayRange',[],'InitialMagnification',100)
+        hold on
+        rectangle('Position',[TopLeft([2,1]),BottomRight([2,1])-TopLeft([2,1])],'EdgeColor','r')
+        plot(coordA(1),coordA(2),'.g','MarkerSize',30)
+        plot(coordP(1),coordP(2),'.r','MarkerSize',30)
+        plot([coordA(1),coordP(1)],[coordA(2),coordP(2)],'-b')
+        plot([1],[1],'.y','MarkerSize',50)
+        hold off
+        saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'HalfEmbryoArea.tif'])
+        
+        coordAZoom=(coordA-[TopLeft(2),TopLeft(1)])*ZoomRatio;
+        coordPZoom=(coordP-[TopLeft(2),TopLeft(1)])*ZoomRatio;
+    end
     
-
-
-    %Now, compare it to the surface picture
-    SurfName=D(find(~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
-    SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,SurfName],ChannelToLoad);
-
-  
-%     
-%     
-%     %Did the user want to do manual alignment?
-%     if ManualAlignment
-%        [ShiftColumn,ShiftRow,TopLeftHalf,BottomRightHalf]=ManualAPCorrection(SurfImage,TopLeftHalf,BottomRightHalf,...
-%            ShiftColumn,ShiftRow,coordAHalf,coordPHalf,Rows1x,Columns1x,ZoomRatio);
-%     end
-
-
-
-    figure(8)
-    imshow(imadjust(SurfImage),'DisplayRange',[],'InitialMagnification',100)
-    hold on
-    rectangle('Position',[TopLeftHalf([2,1]),BottomRightHalf([2,1])-TopLeftHalf([2,1])],'EdgeColor','r')
-    plot(coordAHalf(1),coordAHalf(2),'.g','MarkerSize',30)
-    plot(coordPHalf(1),coordPHalf(2),'.r','MarkerSize',30)
-    plot([coordAHalf(1),coordPHalf(1)],[coordAHalf(2),coordPHalf(2)],'-b')
-    plot([1],[1],'.y','MarkerSize',50)
-    hold off
-    saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'HalfEmbryoArea.tif']);
-
 
  
     
 
-    %We have the position of the anterior and posterior in the coordinates of the 
-    %field of view we took. Do the mapping of the imaging region with respect to the AP axis.
-
-    %Convert them to the corresponding zoom factor. In order to do this I
-    %need to measure A and P with respect to the center of the rectangle.
-    %Notice that there might be a +/-1 issue in the positioning given that
-    %Matlab starts indexing from 1. However, as shown in the images below,
-    %this doesn't make any real difference.   
-
-%     coordAZoom=(coordAHalf-ImageCenter)*ZoomRatio+[Columns/2,Rows/2]-[ShiftColumn,ShiftRow]*ZoomRatio;
-%     coordPZoom=(coordPHalf-ImageCenter)*ZoomRatio+[Columns/2,Rows/2]-[ShiftColumn,ShiftRow]*ZoomRatio;
-
-    coordAZoom=(coordAHalf-[TopLeftHalf(2),TopLeftHalf(1)])*ZoomRatio;
-    coordPZoom=(coordPHalf-[TopLeftHalf(2),TopLeftHalf(1)])*ZoomRatio;
+    
     
     figure(9)
     imshow(imadjust(ZoomImage),[])
@@ -840,7 +1074,8 @@ if ~NoAP
 
     for i=1:Rows
         for j=1:Columns
-            Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
+            %Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
+            Angle=atan2((i-coordAZoom(2)),(j-coordAZoom(1)));
             if j-coordAZoom(1) < 0
                 Angle = Angle + pi;
             end
@@ -851,21 +1086,10 @@ if ~NoAP
             APPosImage(i,j)=APPosition/APLength;
         end
     end
+    [XLSNum,XLSTxt,XLSRaw]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
+    APResolutionColumn = find(strcmp(XLSRaw(1,:),'APResolution'));
+    APResolution = XLSRaw{PrefixRow,APResolutionColumn};
 
-
-    %Divide the image into AP bins. The size of the bin will depend on the
-    %experiment
-    if strfind(lower(Prefix),'eve')     %Eve2 experiments
-        APResolution=0.01;
-    %hb BAC experiments
-    elseif ~isempty(strfind(lower(Prefix),'hbbac'))
-        APResolution=0.01;
-    %kni BAC experiments
-    elseif ~isempty(strfind(lower(Prefix),'knibac'))  
-        APResolution=0.015;
-    else                                %All other experiments
-        APResolution=0.025;
-    end
     
     APbinID=0:APResolution:1;
 
@@ -890,25 +1114,28 @@ if ~NoAP
 
 
     if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
-        for i=1:length(Particles)
-            %Angle between the x-axis and the particle using the A position as a
-            %zero
-            Angles=atan((Particles(i).yPos-coordAZoom(2))./(Particles(i).xPos-coordAZoom(1)));
-            if Particles(i).xPos-coordAZoom(1) < 0
-                Angles = Angles + pi;
+        for ChN=1:NChannels
+            for i=1:length(Particles{ChN})
+                %Angle between the x-axis and the particle using the A position as a
+                %zero
+                Angles=atan2((Particles{ChN}(i).yPos-coordAZoom(2)),...
+                    (Particles{ChN}(i).xPos-coordAZoom(1)));
+                if Particles{ChN}(i).xPos-coordAZoom(1) < 0
+                    Angles = Angles + pi;
+                end
+                % Correction for if Angles is in quadrants II or III
+
+                %Distance between the points and the A point
+                Distances=sqrt((coordAZoom(2)-Particles{ChN}(i).yPos).^2+(coordAZoom(1)-Particles{ChN}(i).xPos).^2);
+                APPositions=Distances.*cos(Angles-APAngle);
+                Particles{ChN}(i).APpos=APPositions/APLength;
+
+                %Determine the distance perpendicular to the AP axis. This is a
+                %proxy for a DV axis.
+
+                Particles{ChN}(i).DVpos=Distances.*sin(Angles-APAngle);
+
             end
-            % Correction for if Angles is in quadrants II or III
-            
-            %Distance between the points and the A point
-            Distances=sqrt((coordAZoom(2)-Particles(i).yPos).^2+(coordAZoom(1)-Particles(i).xPos).^2);
-            APPositions=Distances.*cos(Angles-APAngle);
-            Particles(i).APpos=APPositions/APLength;
-            
-            %Determine the distance perpendicular to the AP axis. This is a
-            %proxy for a DV axis.
-            
-            Particles(i).DVpos=Distances.*sin(Angles-APAngle);
-            
         end
     end
 
@@ -921,9 +1148,12 @@ if ~NoAP
     if exist('xShift')
         save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
             'xShift','yShift','coordAZoom','coordPZoom') 
-    else
+    elseif  exist('xShift1')
         save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
             'xShift1','yShift1','xShift2','yShift2','coordAZoom','coordPZoom') 
+    else
+        save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
+            'coordAZoom','coordPZoom') 
     end
 
     if ManualAlignment
@@ -941,6 +1171,12 @@ end
 
 %Save particle information
 if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
+    
+    %Bring the one channel case back to the legacy setting
+    if NChannels==1
+        Particles=Particles{1};
+    end
+    
     if exist('Threshold1')
         save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','fad','fad2',...
             'Threshold1','Threshold2');

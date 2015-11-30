@@ -7,34 +7,36 @@ function Data=LoadMS2Sets(DataType)
 %and folders to use.
 
 
-%Get some of the default folder
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+%Get some of the default folders
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
+
+PausingXLSName='DataStatus.xlsx';
 
 if strcmp(DataType,'hbBAC')|strcmp(DataType,'Eve2')|strcmp(DataType,'snaBAC')|...
         strcmp(DataType,'snaBACNoPrimary')|strcmp(DataType,'snaBACNoShadow')|strcmp(DataType,'P2PPausing')|...
         strcmp(DataType,'hbNoPrimary')|strcmp(DataType,'kniBAC')|strcmp(DataType,'hbNoShadow')|...
         strcmp(DataType,'kniBACNoPrimary')|strcmp(DataType,'kniBAC')|strcmp(DataType,'kniBACNoShadow')|...
         strcmp(DataType,'snaNoPrimary')|strcmp(DataType,'snaNoShadow');
-    [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+    [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
         DetermineLocalFolders('2014-03-15-HbBACA');
     PausingXLSName='DataStatusPausing.xlsx';
 elseif strcmp(DataType,'zld')|strcmp(DataType,'Shelby')|strcmp(DataType,'MCP-GFP 5'' Data')
-    [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+    [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
         DetermineLocalFolders('2013-09-09-zld-X1');
     PausingXLSName='DataStatus.xlsx';
 elseif strcmp(DataType,'MCP-GFP 5'' 2-Spot')
-    [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+    [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
         DetermineLocalFolders('2014-06-29-MCP(2)-X1(2S)');
     PausingXLSName='Data Status.xlsx';
 elseif strcmp(DataType,'4 Bcd Sites 2-Spot')
-    [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+    [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
         DetermineLocalFolders('2014-11-14-P2-B4-2S');
     PausingXLSName='Data Status.xlsx';
-% elseif strcmp(DataType,'MCP-GFP 5'' Data')
-%     error('Take care of this')
-else
-    error('Add this data type to the code')
+elseif strcmp(DataType,'MCP-GFP 5'' Data')
+    error('Take care of this')
+% else
+%     error('Add this data type to the code')
 end
 
 
@@ -56,14 +58,15 @@ for i=1:length(CompiledSets)
     Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
     
     %Need to try this in case there's some incompatibility in terms of the
-    %structures. This is because we might have data sets that have been
+    %structures. This is because we might have xls sets that have been
     %compiled using different versions of CompileParticles.m
     try
-        Data(i)=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
+        DataTemp=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
+        DataTemp=orderfields(DataTemp);
+        Data(i)=DataTemp;
     catch
         %If this fails figure out what's the missing field
         DataTemp=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
-        
         FieldNamesData=fieldnames(Data);
         FieldNamesDataTemp=fieldnames(DataTemp);
         
@@ -74,6 +77,7 @@ for i=1:length(CompiledSets)
             
             for j=1:length(FieldsToCopy)
                 DataTemp=rmfield(DataTemp,FieldsToCopy{j});
+                DataTemp=orderfields(DataTemp);
                 warning(['Getting rid of field ', FieldsToCopy{j}])
             end
             Data(i)=DataTemp;
@@ -96,7 +100,11 @@ for i=1:length(CompiledSets)
         warning('MeanFits.mat not found. This is a stupid way to check. Have the code check if this experiment is DV or AP instead')
     end
     
-    Schnitzcells(i)=load([DropboxFolder,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat']);
+    try
+        Schnitzcells(i)=load([DropboxFolder,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat']);
+    catch
+        warning('_lin.mat not found.');
+    end
     SetNames{i}=SetName;
     
     %Fit to the integrals
@@ -122,7 +130,12 @@ for i=1:length(CompiledSets)
     
     
     %Load Ellipses
+    try
     Ellipses(i)=load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat']);
+    catch
+        warning('Ellipses.mat not found.')
+    end
+    
     % Load Particles
     load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat']);
     ParticleTemp(i).Particles=Particles;
@@ -181,9 +194,13 @@ for i=1:length(Data)
             Data(i).MeanFitsUp=MeanFitsUp(i).FitResults;
         end
     end
+   try
+       Data(i).schnitzcells=Schnitzcells(i).schnitzcells;
+       Data(i).Ellipses=Ellipses(i).Ellipses;
+   catch
+       warning('No schnitzcells or ellipses');
+   end
    
-    Data(i).schnitzcells=Schnitzcells(i).schnitzcells;
-    Data(i).Ellipses=Ellipses(i).Ellipses;
     Data(i).Particles=ParticleTemp(i).Particles;
 end
 

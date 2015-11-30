@@ -48,7 +48,8 @@ function [Output, FrameInfo] = ExportDataForFISH_Lattice(Prefix, D, Folder, Outp
     end
     % load dark count of sample images
     filtStd=30;         %This came from the FISH code.
-    FFImage=FFImage - uint16(mean(FFdarkImage(:))); % subtract dark counts.
+%    FFImage=FFImage - uint16(mean(FFdarkImage(:))); % subtract dark counts.
+    FFImage=FFImage - mean(FFdarkImage(:)); % subtract dark counts.
     FFImage=imfilter(FFImage,fspecial('gaussian',2*filtStd,filtStd),'symmetric');
     FFImage=imdivide(double(FFImage),double(max(FFImage(:))));
     % suppress data in regions where flatfield is less than flat field

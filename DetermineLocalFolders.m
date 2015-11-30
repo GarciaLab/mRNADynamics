@@ -1,5 +1,6 @@
-function [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+function [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(varargin)
+
 
 
 
@@ -13,11 +14,11 @@ if isempty(varargin)
     %warning('No Prefix defined. Will output default Dropbox folder')
 end
 
-
 [Dummy,XLS]=xlsread('ComputerFolders.xlsx');
 
 %Check if there's only one computer defined. If so, we'll just use the
 %second column. If not, ask for the computer name
+
 
 if size(XLS,2)>2
 
@@ -59,14 +60,15 @@ end
 %Now load the corresponding folders
 SourceRow=find(strcmp(XLS(:,1),'SourcePath'));
 FISHRow=find(strcmp(XLS(:,1),'FISHPath'));
-SchnitzRow=find(strcmp(XLS(:,1),'SchnitzcellsFolder'));
 MS2CodeRow=find(strcmp(XLS(:,1),'MS2CodePath'));
+PreProcRow=find(strcmp(XLS(:,1),'PreProcPath'));
+
 
 %Assign the folders
 SourcePath=XLS{SourceRow,ComputerColumn};
 FISHPath=XLS{FISHRow,ComputerColumn};
 MS2CodePath=XLS{MS2CodeRow,ComputerColumn};
-SchnitzcellsFolder=XLS{SchnitzRow,ComputerColumn};
+PreProcPath=XLS{PreProcRow,ComputerColumn};
 
 
 %Deal with Dropbox
@@ -133,6 +135,8 @@ else
         DropboxString='DropboxHeinrich';
     elseif strcmp(XLSTxt{PrefixRow, DropboxFolderColumn}, 'Default')
         DropboxString = 'DropboxFolder';
+    elseif strcmp(XLSTxt{PrefixRow, DropboxFolderColumn}, 'TwoColor')
+        DropboxString = 'DropboxTwoColor';
         % ES 2013-10-06
     else
         error('Dropbox folder for this type of experiment not found. Check MovieDatabase')

@@ -3,10 +3,10 @@ function TrackNuclei(Prefix)
 %This function is just a script that call Laurent's tracking code
 
 %Get the folders, including the default Dropbox one
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
 %Now get the actual DropboxFolder
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(Prefix);
 
 
@@ -19,6 +19,8 @@ Txt=Txt(2:end,:);
 
 ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
 ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
+Channel1Column=find(strcmp(XLSRaw(1,:),'Channel1'));
+Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
 
 DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
 Dashes=findstr(Prefix,'-');
@@ -33,6 +35,8 @@ end
 
 ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
 ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
+Channel1=XLSRaw(PrefixRow,Channel1Column);
+Channel2=XLSRaw(PrefixRow,Channel2Column);
 
 %Find the different columns.
 DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
@@ -48,30 +52,26 @@ Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
 
 
 %Find the corresponding entry in the XLS file
-if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
-        (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))&(isempty(findstr(Prefix,'Bcd4x')))
-    warning('This step in CheckParticleTracking will most likely have to be modified to work')
+XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
+    [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+
+if isempty(XLSEntry)
     XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-        [Date,'\BcdGFP-HisRFP']));
-else
-    XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-        [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-    
+        [Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
     if isempty(XLSEntry)
-        XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-            [Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
-        if isempty(XLSEntry)
-            disp('%%%%%%%%%%%%%%%%%%%%%')
-            error('Dateset could not be found. Check MovieDatabase.xlsx')
-            disp('%%%%%%%%%%%%%%%%%%%%%')
-        end
+        disp('%%%%%%%%%%%%%%%%%%%%%')
+        error('Dateset could not be found. Check MovieDatabase.xlsx')
+        disp('%%%%%%%%%%%%%%%%%%%%%')
     end
 end
 
 
-if (strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP'))|...
-        (strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP'))|...
-        (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-TagRFP(1)'))
+% if (strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP'))|...
+%         (strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP'))|...
+%         (strcmp(XLSRaw(XLSEntry,Channel1Column),'MCP-TagRFP(1)'))|...
+%         (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-TagRFP(1)'))|...
+%         (strcmp(XLSRaw(XLSEntry,Channel1Column),'MCP-mCherry(3)'))|...
+%         (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-mCherry(3)'))
     nc9=XLSRaw{XLSEntry,nc9Column};
     nc10=XLSRaw{XLSEntry,nc10Column};
     nc11=XLSRaw{XLSEntry,nc11Column};
@@ -79,6 +79,10 @@ if (strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP'))|...
     nc13=XLSRaw{XLSEntry,nc13Column};
     nc14=XLSRaw{XLSEntry,nc14Column};
     CF=XLSRaw{XLSEntry,CFColumn};
+%end
+
+if ~exist('nc9','var')
+    error('Cannot find nuclear cycle values. Were they defined in MovieDatabase.XLSX?')
 end
 
 %This checks whether all ncs have been defined
@@ -130,9 +134,10 @@ end
 %into an independent function.
 
 %Create the cell array with the names.
-D=dir([FISHPath,filesep,'Data',filesep,Prefix,filesep,'*His*.tif']);
+D=dir([PreProcPath,filesep,Prefix,filesep,'*His*.tif']);
+names = cell(length(D), 1);
 for i=1:length(D)
-    names{i}=[FISHPath,filesep,'Data',filesep,Prefix,filesep,D(i).name];
+    names{i}=[PreProcPath,filesep,Prefix,filesep,D(i).name];
 end
 
 
@@ -201,15 +206,15 @@ else
     centers = updateCentersFromEllipses(Ellipses);
 
     %Load the dataStructure to seed up retracking if it exists
-    if exist([FISHPath,filesep,'Analysis',filesep,Prefix,'_',filesep,'dataStructure.mat'])
-        load([FISHPath,filesep,'Analysis',filesep,Prefix,'_',filesep,'dataStructure.mat'])
-    elseif exist([FISHPath,filesep,'Analysis',filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'])
-        load([FISHPath,filesep,'Analysis',filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'])
+    if exist([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'])
+        load([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'])
+    elseif exist([FISHPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'])
+        load([FISHPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'])
     end
 
     % look for a settings file in the Raw Data folder.
-    if exist([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'-AcquisitionSettings.mat'],'file')
-        load([FISHPath,filesep,'Data',filesep,Prefix,filesep,Prefix,'-AcquisitionSettings.mat']);
+    if exist([PreProcPath,filesep,Prefix,filesep,Prefix,'-AcquisitionSettings.mat'],'file')
+        load([PreProcPath,filesep,Prefix,filesep,Prefix,'-AcquisitionSettings.mat']);
         fields = fieldnames(AcquisitionSettings);
         settingArguments = cell(1,2*length(fields));
         for i=1:length(fields)
@@ -247,9 +252,97 @@ else
     [schnitzcells] = convertNucleiToSchnitzcells(nuclei); 
 end
 
+%Add the radius information to the schnitz
+for i=1:length(schnitzcells)
+    for j=1:length(schnitzcells(i).frames)
+        schnitzcells(i).len(:)=...
+            mean(Ellipses{schnitzcells(i).frames(j)}(schnitzcells(i).cellno(j),3:4));
+    end
+end
+
+
+%Extract the nuclear fluorscence values if we're in the right experiment
+%type
+if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'input')
+    
+    if strcmp(lower(ExperimentType),'inputoutput')
+        InputChannelTemp=strfind({lower(Channel1{1}),lower(Channel2{1})},'mcp');
+        if isempty(InputChannelTemp)
+            InputChannelTemp=strfind({lower(Channel1{1}),lower(Channel2{1})},'pp7');
+                if isempty(InputChannelTemp)
+                    InputChannelTemp=strfind({lower(Channel1{1}),lower(Channel2{1})},'lambdan');
+                end    
+        end
+        InputChannelTemp=cellfun(@isempty,InputChannelTemp);
+    elseif strcmp(lower(ExperimentType),'input')
+        InputChannelTemp=1;
+    end
+    
+    %Create the circle that we'll use as the mask
+    IntegrationRadius=3;       %Radius of the integration region
+    Circle=logical(zeros(3*IntegrationRadius,3*IntegrationRadius));
+    Circle=MidpointCircle(Circle,IntegrationRadius,1.5*IntegrationRadius+0.5,...
+        1.5*IntegrationRadius+0.5,1);
+    
+    
+    if sum(InputChannelTemp)==1
+        InputChannel=find(InputChannelTemp);
+        %Extract the fluroescence of each schnitz at each time point
+        h=waitbar(0,'Extracting nuclear fluorescence');
+        for CurrentFrame=1:length(FrameInfo)
+            waitbar(CurrentFrame/length(FrameInfo),h);
+            
+            %Load the z-stack for this frame
+            for CurrentZ=1:(FrameInfo(1).NumberSlices+2)   %Note that I need to add the two extra slices manually
+                Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch',iIndex(InputChannel,2),'.tif']);
+            end
+            
+            for j=1:length(schnitzcells)
+                if sum(schnitzcells(j).frames==CurrentFrame)
+                    CurrentIndex=find(schnitzcells(j).frames==CurrentFrame);
+                    cenx=schnitzcells(j).cenx(CurrentIndex);
+                    ceny=schnitzcells(j).ceny(CurrentIndex);
+                    Radius=schnitzcells(j).len(CurrentIndex);
+
+                    %Check that the nuclear mask fits within the image
+                    if (cenx-Radius)>0&(cenx+Radius)<FrameInfo(1).PixelsPerLine&...
+                            (ceny-Radius)>0&(ceny+Radius)<FrameInfo(1).LinesPerFrame
+
+                        %Create a blank image we'll use to generate the mask
+                        Mask=logical(zeros(FrameInfo(1).LinesPerFrame,FrameInfo(1).PixelsPerLine));
+                        %Now, add the circle
+                        Mask(round(ceny)-(3*IntegrationRadius-1)/2:...
+                            round(ceny)+(3*IntegrationRadius-1)/2,...
+                            round(cenx)-(3*IntegrationRadius-1)/2:...
+                            round(cenx)+(3*IntegrationRadius-1)/2)=Circle;
+
+
+                        for CurrentZ=1:(FrameInfo(1).NumberSlices+2)
+                            schnitzcells(j).Fluo(CurrentIndex,CurrentZ)=sum(sum(immultiply(Image(:,:,CurrentZ),Mask)));
+                        end
+                            
+                    else  %If not assign NaN to the fluroescence
+                        schnitzcells(j).Fluo(CurrentIndex,1:(FrameInfo(1).NumberSlices+2))=nan;
+                    end
+                end
+            end
+        end
+        close(h)
+    elseif sum(InputChannelTemp)>1
+        error('More than one input channel found. This mode is not yet supported')
+    else
+        error('Input channel not recognized. Check correct definition in MovieDatabase.XLSX')
+    end
+end
+    
+
+
 %Save the information
 %Now save
 mkdir([DropboxFolder,filesep,Prefix])
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells')
-save([FISHPath,filesep,'Analysis',filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
+if ~exist([FISHPath,filesep,Prefix,'_'])
+    mkdir([FISHPath,filesep,Prefix,'_'])
+end
+save([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
