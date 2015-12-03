@@ -103,6 +103,11 @@ TrackingFolder=cd;
 cd('subfunctions')
 SubfunctionsFolder=cd;
 cd(CurrentFolder);
+%mRNADynamics\LineageCode
+cd(CurrentFolder)
+cd('LineageCode')
+LineageCodeFolder=cd;
+cd(CurrentFolder)
 %Folder up from mRNADynamics
 cd('..')
 mRNADynamicsParentFolder=cd;
@@ -118,6 +123,7 @@ Output{2}=['path(''',TrackingFolder,''',path);'];
 Output{3}=['path(''',SubfunctionsFolder,''',path);'];
 Output{4}=['path(''',mRNADynamicsParentFolder,''',path);'];
 Output{5}=['path(''',DynamicsResultsFolder,''',path);'];
+Output{6}=['path(''',LineageCodeFolder,''',path);'];
 
 
 %Create the startup.m file

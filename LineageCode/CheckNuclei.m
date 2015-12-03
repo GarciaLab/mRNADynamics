@@ -78,7 +78,8 @@ if (strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP'))||...
         (strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP'))||...
         (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-TagRFP(1)'))||...
         (strcmp(XLSRaw(XLSEntry,Channel1Column),'MCP-mCherry(3)'))||...
-        (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-mCherry(3)'))
+        (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-mCherry(3)'))||...
+        (strcmp(XLSRaw(XLSEntry,Channel2Column),'mCherry-MCP'))
     nc9=XLSRaw{XLSEntry,nc9Column};
     nc10=XLSRaw{XLSEntry,nc10Column};
     nc11=XLSRaw{XLSEntry,nc11Column};
@@ -892,7 +893,7 @@ end
             
         
         set(gcf,'Name',['Current Frame: ',num2str(CurrentFrame)]);
-        imshow(ImageHis*4,'Border','Tight')
+        imshow(ImageHis,'DisplayRange',[],'Border','Tight')
         %    set(gcf,'units', 'normalized', 'position',[.1   .55   .4   .35])
         set(gcf,'MenuBar','none','ToolBar','none')
         
