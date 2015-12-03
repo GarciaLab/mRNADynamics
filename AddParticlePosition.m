@@ -1120,9 +1120,7 @@ if ~NoAP
                 %zero
                 Angles=atan2((Particles{ChN}(i).yPos-coordAZoom(2)),...
                     (Particles{ChN}(i).xPos-coordAZoom(1)));
-                if Particles{ChN}(i).xPos-coordAZoom(1) < 0
-                    Angles = Angles + pi;
-                end
+
                 % Correction for if Angles is in quadrants II or III
 
                 %Distance between the points and the A point
