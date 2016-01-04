@@ -1370,7 +1370,7 @@ elseif strcmp(FileMode,'LIFExport')
                     if strcmp(ProjectionType,'medianprojection')
                         Projection=median(HisSlices(:,:,StackRange),3);
                     else    
-                        Projection=max(HisSlices(:,:,StackRange),3);
+                        Projection=max(HisSlices(:,:,StackRange),[],3);
                     end
 
                     %Flatten the field if possible
