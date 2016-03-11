@@ -181,10 +181,24 @@ ImageTemp=imread(names{1});
 embryo_mask=true(size(ImageTemp));
 clear ImageTemp
 
+
+  
+%Get information about the spatial and temporal resolution
+settingArguments{1}='time resolution';
+settingArguments{2}=median(diff([FrameInfo.Time]));     %Median separation between frames
+settingArguments{3}='space resolution';
+settingArguments{4}=FrameInfo(1).PixelSize;
+
+
+
+
 %Do the tracking for the first time
 if ~exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
+    
+    
     [nuclei, centers, Dummy, dataStructure] = ...
-        mainTracking(names,'indMitosis',indMit,'embryoMask', embryo_mask);
+        mainTracking(names,'indMitosis',indMit,'embryoMask', embryo_mask,...
+        settingArguments{:});
     % names is a cell array containing the names of all frames in the movie in order.
     % indMitosis is an nx2 array containing the first and last frame of mitosis in every row.
     % embryoMask is the possible mask of the embryo. If no embryo edge is visible,
