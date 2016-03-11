@@ -55,39 +55,44 @@ TimeEnd014=1000;
                                     
 close all
 
-%Find out which computer this is. That will determine the folder structure.
-%Information about about folders
+% 
+% %Find out which computer this is. That will determine the folder structure.
+% %Information about about folders
+% 
+% [Dummy,XLS]=xlsread('ComputerFolders.xlsx');
+% 
+% %Find out which computer this is. That will determine the folder structure.
+% [ret, name] = system('hostname');  
+% if ret ~= 0,  
+%    if ispc  
+%       name = getenv('COMPUTERNAME');  
+%    else  
+%       name = getenv('HOSTNAME');  
+%    end  
+% end  
+% name = lower(name); 
+% 
+% 
+% %Find which computer we are dealing with:
+% ComputerColumn=find(strcmp(XLS(1,:),name(1:end-1)));
+% 
+% %Now load the corresponding folders
+% SourceRow=find(strcmp(XLS(:,1),'SourcePath'));
+% FISHRow=find(strcmp(XLS(:,1),'FISHPath'));
+% DropboxRow=find(strcmp(XLS(:,1),'DropboxFolder'));
+% SchnitzRow=find(strcmp(XLS(:,1),'SchnitzcellsFolder'));
+% 
+% 
+% 
+% %Assign the folders
+% SourcePath=XLS{SourceRow,ComputerColumn};
+% FISHPath=XLS{FISHRow,ComputerColumn};
+% DropboxFolder=XLS{DropboxRow,ComputerColumn};
+% SchnitzcellsFolder=XLS{SchnitzRow,ComputerColumn};
 
-[Dummy,XLS]=xlsread('ComputerFolders.xlsx');
-
-%Find out which computer this is. That will determine the folder structure.
-[ret, name] = system('hostname');  
-if ret ~= 0,  
-   if ispc  
-      name = getenv('COMPUTERNAME');  
-   else  
-      name = getenv('HOSTNAME');  
-   end  
-end  
-name = lower(name); 
-
-
-%Find which computer we are dealing with:
-ComputerColumn=find(strcmp(XLS(1,:),name(1:end-1)));
-
-%Now load the corresponding folders
-SourceRow=find(strcmp(XLS(:,1),'SourcePath'));
-FISHRow=find(strcmp(XLS(:,1),'FISHPath'));
-DropboxRow=find(strcmp(XLS(:,1),'DropboxFolder'));
-SchnitzRow=find(strcmp(XLS(:,1),'SchnitzcellsFolder'));
-
-
-
-%Assign the folders
-SourcePath=XLS{SourceRow,ComputerColumn};
-FISHPath=XLS{FISHRow,ComputerColumn};
-DropboxFolder=XLS{DropboxRow,ComputerColumn};
-SchnitzcellsFolder=XLS{SchnitzRow,ComputerColumn};
+%Get the default folders
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
+    DetermineLocalFolders
 
 if ~isempty(varargin)
     Prefix=varargin{1};
@@ -98,8 +103,12 @@ else
     Prefix=FolderTemp((Dashes(end)+1):end);
 end
 
+%Get the relevant folders now:
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
+    DetermineLocalFolders(Prefix);
+        
 
-                                    
+
 %Load the complied particles and the division information                                    
 load([DropboxFolder,filesep,Prefix,'\CompiledParticles.mat'])
 
