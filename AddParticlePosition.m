@@ -240,6 +240,17 @@ if ~NoAP
         ImageTemp=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(end).name]);
         MetaFullEmbryo= ImageTemp{:, 4};
         PixelSizeFullEmbryo=str2num(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
+
+        %Check that the surface and midsaggital images have the same zoom
+        D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*mid*.',FileMode(1:3)]);
+        ImageTemp=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(end).name]);
+        MetaFullEmbryo= ImageTemp{:, 4};
+        PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
+
+        if PixelSizeFullEmbryo~=PixelSizeFullEmbryoMid
+            error('The surface and midsaggital images were not taken with the same pixel size')
+        end
+        
         
         %How many channels and slices do we have?
         NChannelsMeta=MetaFullEmbryo.getChannelCount(0);
