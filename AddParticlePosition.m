@@ -242,10 +242,10 @@ if ~NoAP
         PixelSizeFullEmbryo=str2num(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
 
         %Check that the surface and midsaggital images have the same zoom
-        D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*mid*.',FileMode(1:3)]);
-        ImageTemp=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(end).name]);
-        MetaFullEmbryo= ImageTemp{:, 4};
-        PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
+        D1=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*mid*.',FileMode(1:3)]);
+        ImageTemp1=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D1(end).name]);
+        MetaFullEmbryo1= ImageTemp1{:, 4};
+        PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX(0));
 
         if PixelSizeFullEmbryo~=PixelSizeFullEmbryoMid
             error('The surface and midsaggital images were not taken with the same pixel size')
@@ -438,8 +438,16 @@ if ~NoAP
             %If manual alignment was done before then load the results
             if exist('ManualAlignmentDone')
                 if ManualAlignmentDone
-                    display('Manual alignment results saved. Using them.')
-                    load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
+                    display('Manual alignment results saved.')
+                    Answer=input('Would you like to use them (y/n)?','s');
+                    if strcmp(lower(Answer),'y')
+                        load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
+                    elseif strcmp(lower(Answer),'n')
+                        display('Deleting manual alignment results')
+                        clear ManualAlignmentDone
+                    else
+                        error('Answer not recognized')
+                    end
                 end
             end
             
