@@ -163,10 +163,8 @@ if exist([OutputFolder,filesep,'FrameInfo.mat'])
         
     elseif strcmp(FrameInfo(1).FileMode,'LSM')
         PixelSize=FrameInfo(1).PixelSize*1E6;
-    elseif strcmp(FrameInfo(1).FileMode,'LIFExport')
+    elseif strcmp(FrameInfo(1).FileMode,'LIFExport') || strcmp(FrameInfo(1).FileMode,'LAT')
         PixelSize=FrameInfo(1).PixelSize;
-    elseif strcmp(FrameInfo(1).FileMode,'LAT')
-        PixelSize = FrameInfo(1).PixelSize;
     end
 else
     warning('No FrameInfo.mat detected. Trying to pull out magnification information from the TIF file')
@@ -177,9 +175,6 @@ else
 end
     
 SearchRadius=ceil(SearchRadiusMicrons/PixelSize);   
-
-
-
 
 
 %Check if we have tracked the lineages of the nuclei
