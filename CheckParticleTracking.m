@@ -25,12 +25,13 @@ function CheckParticleTracking(varargin)
 %m Move to the next particle
 %n Move to the previous particle,
 %k Jump to a specified particle
-%c Connect two particle traces
+%c Connect two existing particle traces. This will join the current
+%particle's trace to the clicked particle's trace. 
 %d Separate traces. If this is done on a particle with only one frame then
 %  it disconnects it from its nucleus.
 %q Cycle between approved status: green - approved; yellow - approved but
 %  with conditions (drift of nucleus, for example)
-%w Disapproove a trace
+%w Disapprove a trace
 %p Identify a particle. It will also tell you the particle associated with
 %  the clicked nucleus.
 %e Approve/Disapproove  a frame within a trace
