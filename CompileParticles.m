@@ -108,7 +108,10 @@ else
     warning('No FrameInfo.mat found. Trying to continue')
     %Adding frame information
     DHis=dir([PreProcPath,filesep,FilePrefix(1:end-1),filesep,'*His*.tif']);
-    FrameInfo(length(DHis)).nc=[];
+    if length(DHis) > 0
+        FrameInfo(length(DHis)).nc=[];
+    end
+    
     %Adding information
 
     Dz=dir([PreProcPath,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'*001*.tif']);
@@ -438,7 +441,7 @@ if isfield(FrameInfo,'FileMode')
         for j=1:length(FrameInfo)
             ElapsedTime(j)=etime(datevec(FrameInfo(j).TimeString),datevec(FrameInfo(1).TimeString));
         end
-    elseif strcmp(FrameInfo(end).FileMode,'LSM')|strcmp(FrameInfo(end).FileMode,'LIFExport')
+    elseif strcmp(FrameInfo(end).FileMode,'LSM')|strcmp(FrameInfo(end).FileMode,'LIFExport')|strcmp(FrameInfo(end).FileMode,'LAT')
         for j=1:length(FrameInfo)
             ElapsedTime(j)=FrameInfo(j).Time-FrameInfo(1).Time;
         end
@@ -514,21 +517,28 @@ for ChN=1:NChannels
         waitbar(i/length(Particles{ChN}),h)
         if (Particles{ChN}(i).Approved==1)
 
-
+            for NCh=1:NChannels
+                if ~isfield(Particles{NCh},'FrameApproved')
+                    for i=1:length(Particles{NCh})
+                        Particles{NCh}(i).FrameApproved=logical(ones(size(Particles{NCh}(i).Frame)));
+                    end
+                end
+            end
+            
             %Which frames were approved manually?
             FrameFilter=Particles{ChN}(i).FrameApproved;
             %What is the first frame that was found, regardless of the column
             %condition?
             FirstFrame=Particles{ChN}(i).Frame(min(find(Particles{ChN}(i).FrameApproved)));
-
-            %Check that for the remaining frames we got a good z-profile
-            for j=1:length(Particles{ChN}(i).Frame)
-                ZProfile=fad(ChN).channels(Particles{ChN}(i).Frame(j)).fits.shadowsDog{Particles{ChN}(i).Index(j)};
-                [Dummy,ZMax]=max(ZProfile);
-                if (ZMax==1)|(ZMax==length(ZProfile))
-                    FrameFilter(j)=0;
+            
+                %Check that for the remaining frames we got a good z-profile
+                for j=1:length(Particles{ChN}(i).Frame)
+                    ZProfile=fad(ChN).channels(Particles{ChN}(i).Frame(j)).fits.shadowsDog{Particles{ChN}(i).Index(j)};
+                    [Dummy,ZMax]=max(ZProfile);
+                    if (ZMax==1)|(ZMax==length(ZProfile))
+                        FrameFilter(j)=0;
+                    end
                 end
-            end
 
             %Should I only keep traces of a certain length? We also just keep
             %the ones that have a real schnitz associated with them
@@ -629,8 +639,10 @@ for ChN=1:NChannels
 
 
                 %Determine the nc where this particle was born
-                CompiledParticles{ChN}(k).nc=FrameInfo(CompiledParticles{ChN}(k).Frame(1)).nc;
-
+                try
+                    CompiledParticles{ChN}(k).nc=FrameInfo(CompiledParticles{ChN}(k).Frame(1)).nc;
+                catch
+                end
 
                 if HistoneChannel
                     CompiledParticles{ChN}(k).Nucleus=Particles{ChN}(i).Nucleus;
@@ -728,7 +740,10 @@ for ChN=1:NChannels
                         end
 
                         plot([ElapsedTime(CompiledParticles{ChN}(k).Frame)],SplineValues*IntArea,'-k')
-                        title(['Particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{ChN}(k).nc),', Ch: ',num2str(ChN)])
+                        try
+                            title(['Particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{ChN}(k).nc),', Ch: ',num2str(ChN)])
+                        catch
+                        end
                     else
                         title(['Particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{1}(k).nc),', Ch: ',num2str(ChN),...
                             ' - WARNING: No offset fit'])
@@ -918,69 +933,72 @@ close(h)
 
 %nc filters:
 
-%ncFilterID just tells you the identity of the different
-%filters stored in the cell ncFilter
-ncFilterID=[];
-if nc9~=0
-    ncFilterID=9;
-end
-if nc10~=0
-    ncFilterID=[ncFilterID,10];
-end
-if nc11~=0
-    ncFilterID=[ncFilterID,11];
-end
-if nc12~=0
-    ncFilterID=[ncFilterID,12];
-end
-if nc13~=0
-    ncFilterID=[ncFilterID,13];
-end
-if nc14~=0
-    ncFilterID=[ncFilterID,14];
-end
-%Add the first nc
-ncFilterID=[min(ncFilterID)-1,ncFilterID];
-
-
-%Create the filter
-for ChN=1:NChannels
-    if isempty(CompiledParticles)==1
-        error(['No compiled particles found in channel ',num2str(ChN),'. Did you mean to run the code with ApproveAll?'])
+if ~isnan(nc9)||~isnan(nc10)||~isnan(nc11)||~isnan(nc12)||~isnan(nc13)||~isnan(nc14)
+    %ncFilterID just tells you the identity of the different
+    %filters stored in the cell ncFilter
+    ncFilterID=[];
+    if nc9~=0
+        ncFilterID=9;
     end
+    if nc10~=0
+        ncFilterID=[ncFilterID,10];
+    end
+    if nc11~=0
+        ncFilterID=[ncFilterID,11];
+    end
+    if nc12~=0
+        ncFilterID=[ncFilterID,12];
+    end
+    if nc13~=0
+        ncFilterID=[ncFilterID,13];
+    end
+    if nc14~=0
+        ncFilterID=[ncFilterID,14];
+    end
+    %Add the first nc
+    ncFilterID=[min(ncFilterID)-1,ncFilterID];
 
-    
-    ncFilter=logical(zeros(length(CompiledParticles{ChN}),length(ncFilterID)));
-    for i=1:length(CompiledParticles{ChN})
-        %Sometimes CompiledParticles{1}(i).nc is empty. This is because of some
-        %problem with FrameInfo! In that case we'll pull the information out of
-        %the XLS file.
-        if ~isempty(CompiledParticles{ChN}(i).nc)
-            ncFilter(i,find(CompiledParticles{ChN}(i).nc==ncFilterID))=true;
-        else
-            ncsFound=find(CompiledParticles{ChN}(i).Frame(1)>=[nc9,nc10,nc11,nc12,nc13,nc14]);
-            if ncsFound(end)==1
-                CompiledParticles{ChN}(i).nc=9;
-                ncFilter{ChN}(i,ncFilterID==9)=true;
-            elseif ncsFound(end)==2
-                CompiledParticles{ChN}(i).nc=10;
-                ncFilter{ChN}(i,ncFilterID==10)=true;
-            elseif ncsFound(end)==3
-                CompiledParticles{ChN}(i).nc=11;
-                ncFilter{ChN}(i,ncFilterID==11)=true;
-            elseif ncsFound(end)==4
-                CompiledParticles{ChN}(i).nc=12;
-                ncFilter{ChN}(i,ncFilterID==12)=true;
-            elseif ncsFound(end)==5
-                CompiledParticles{ChN}(i).nc=13;
-                ncFilter{ChN}(i,ncFilterID==13)=true;
-            elseif ncsFound(end)==6
-                CompiledParticles{ChN}(i).nc=14;
-                ncFilter{ChN}(i,ncFilterID==14)=true;
-            end
 
+    %Create the filter
+    for ChN=1:NChannels
+        if isempty(CompiledParticles)==1
+            error(['No compiled particles found in channel ',num2str(ChN),'. Did you mean to run the code with ApproveAll?'])
         end
-    end
+
+
+        ncFilter=logical(zeros(length(CompiledParticles{ChN}),length(ncFilterID)));
+        for i=1:length(CompiledParticles{ChN})
+            %Sometimes CompiledParticles{1}(i).nc is empty. This is because of some
+            %problem with FrameInfo! In that case we'll pull the information out of
+            %the XLS file.
+            if ~isempty(CompiledParticles{ChN}(i).nc)
+                ncFilter(i,find(CompiledParticles{ChN}(i).nc==ncFilterID))=true;
+            else
+                ncsFound=find(CompiledParticles{ChN}(i).Frame(1)>=[nc9,nc10,nc11,nc12,nc13,nc14]);
+                if ncsFound(end)==1
+                    CompiledParticles{ChN}(i).nc=9;
+                    ncFilter{ChN}(i,ncFilterID==9)=true;
+                elseif ncsFound(end)==2
+                    CompiledParticles{ChN}(i).nc=10;
+                    ncFilter{ChN}(i,ncFilterID==10)=true;
+                elseif ncsFound(end)==3
+                    CompiledParticles{ChN}(i).nc=11;
+                    ncFilter{ChN}(i,ncFilterID==11)=true;
+                elseif ncsFound(end)==4
+                    CompiledParticles{ChN}(i).nc=12;
+                    ncFilter{ChN}(i,ncFilterID==12)=true;
+                elseif ncsFound(end)==5
+                    CompiledParticles{ChN}(i).nc=13;
+                    ncFilter{ChN}(i,ncFilterID==13)=true;
+                elseif ncsFound(end)==6
+                    CompiledParticles{ChN}(i).nc=14;
+                    ncFilter{ChN}(i,ncFilterID==14)=true;
+                end
+
+            end
+        end
+
+
 
 
 
@@ -994,7 +1012,9 @@ for ChN=1:NChannels
             APFilter{ChN}(i,max(find(APbinID<=CompiledParticles{ChN}(i).MeanAP)))=1;
         end
     end
+    end
 end
+
 
 
 %% Binning and averaging data
@@ -2259,14 +2279,23 @@ elseif strcmp(ExperimentAxis,'NoAP')%HistoneChannel&strcmp(ExperimentAxis,'NoAP'
         MaxFrame=MaxFrame{1};
         AllTracesVector=AllTracesVector{1};
     end
-    
-    save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
-        'CompiledParticles','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
-        'nc12','nc13','nc14','StemLoopEnd','ncFilterID','ncFilter',...
-        'MeanVectorAll',...
-        'SDVectorAll','NParticlesAll','MaxFrame',...
-        'AllTracesVector','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
-        'MeanOffsetVector','SDOffsetVector','NOffsetParticles')
+    try
+        save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
+            'CompiledParticles','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
+            'nc12','nc13','nc14','StemLoopEnd','ncFilterID','ncFilter',...
+            'MeanVectorAll',...
+            'SDVectorAll','NParticlesAll','MaxFrame',...
+            'AllTracesVector','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
+            'MeanOffsetVector','SDOffsetVector','NOffsetParticles')
+    catch
+        save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
+            'CompiledParticles','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
+            'nc12','nc13','nc14','StemLoopEnd',...
+            'MeanVectorAll',...
+            'SDVectorAll','NParticlesAll','MaxFrame',...
+            'AllTracesVector','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
+            'MeanOffsetVector','SDOffsetVector','NOffsetParticles')
+    end
 else
     
     %If we have only one channel get rid of all the cells
