@@ -451,15 +451,6 @@ if ~NoAP
                 end
             end
             
-            
-            %See if we need the manual alignment
-            if ManualAlignment
-                %See if we need to load the previous manual alignment results
-                [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ZoomRatio,ShiftRow,ShiftColumn,...
-                     FullEmbryo, ZoomRatio, SurfRows,Rows, Columns, coordA, coordP, SurfColumns);
-                ManualAlignmentDone=1;
-            end
-            
             try
                 %Make an overlay of the zoomed in and zoomed out real
                 %images as well as of a quickly segmented nuclear mask
@@ -517,6 +508,16 @@ if ~NoAP
             NucMaskZoomIn = false(size(ZoomImage));
             NucMaskZoomOut = false(size(SurfImage));
         end
+        
+        
+        %See if we need the manual alignment
+        if ManualAlignment
+            %See if we need to load the previous manual alignment results
+            [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ZoomRatio,ShiftRow,ShiftColumn,...
+                 FullEmbryo, ZoomRatio, SurfRows,Rows, Columns, coordA, coordP, SurfColumns);
+            ManualAlignmentDone=1;
+        end
+        
     else
         warning('Not able to do the cross correlation. Assuming no shift between surface-level and movie-level images.')
         
