@@ -96,31 +96,41 @@ if (~isempty(findstr(Prefix,'X1')))|(~isempty(findstr(Prefix,'P2P')))|...
                                         %the first MS2 site.
     display('Treating data set as 5''')
     
+    %Initial parameters for fits. We will estimate the maximum rate based on
+    %the elongation time and the maximum average fluorescence of the data set.
+    MaxRate=max(max(MeanVectorAP))/Delay;
+
+    
     %Initial parameters for fits
-    Rate012=500;     %Rate per minute
+    Rate012=MaxRate;     %Rate per minute
     TimeStart012=3;
     TimeEnd012=7;
 
-    Rate013=500;     %Rate per minute
+    Rate013=MaxRate;     %Rate per minute
     TimeStart013=5;
     TimeEnd013=10;
 
-    Rate014=500;     %Rate per minute
+    Rate014=MaxRate;     %Rate per minute
     TimeStart014=5;
     TimeEnd014=1000;  
 elseif ~isempty(findstr(Prefix,'X2'))
     Delay=GeneLength3/ElongationRate;
     display('Treating data set as 3''')
     
-    Rate012=500;     %Rate per minute
+    %Initial parameters for fits. We will estimate the maximum rate based on
+    %the elongation time and the maximum average fluorescence of the data set.
+    MaxRate=max(max(MeanVectorAP))/Delay;
+    
+    
+    Rate012=MaxRate;     %Rate per minute
     TimeStart012=3;
     TimeEnd012=7;
 
-    Rate013=500;     %Rate per minute
+    Rate013=MaxRate;     %Rate per minute
     TimeStart013=7.5;
     TimeEnd013=10;
 
-    Rate014=500;     %Rate per minute
+    Rate014=MaxRate;     %Rate per minute
     TimeStart014=7.5;
     TimeEnd014=1000; 
 else
@@ -130,51 +140,63 @@ else
         %the first MS2 site.
         display('Treating data set as 5''')
         
-        Rate012=500;     %Rate per minute
+        %Initial parameters for fits. We will estimate the maximum rate based on
+        %the elongation time and the maximum average fluorescence of the data set.
+        MaxRate=max(max(MeanVectorAP))/Delay;
+        
+        Rate012=MaxRate;     %Rate per minute
         TimeStart012=3;
         TimeEnd012=7;
         
-        Rate013=500;     %Rate per minute
+        Rate013=MaxRate;     %Rate per minute
         TimeStart013=5;
         TimeEnd013=10;
         
-        Rate014=500;     %Rate per minute
+        Rate014=MaxRate;     %Rate per minute
         TimeStart014=5;
         TimeEnd014=1000;
     elseif exist('StemLoopEnd', 'var') && strcmp(StemLoopEnd, '3''')
         Delay=GeneLength3/ElongationRate;
         display('Treating data set as 3''')
         
-        Rate012=500;     %Rate per minute
+        %Initial parameters for fits. We will estimate the maximum rate based on
+        %the elongation time and the maximum average fluorescence of the data set.
+        MaxRate=max(max(MeanVectorAP))/Delay;
+        
+        Rate012=MaxRate;     %Rate per minute
         TimeStart012=3;
         TimeEnd012=7;
         
-        Rate013=500;     %Rate per minute
+        Rate013=MaxRate;     %Rate per minute
         TimeStart013=7.5;
         TimeEnd013=10;
         
-        Rate014=500;     %Rate per minute
+        Rate014=MaxRate;     %Rate per minute
         TimeStart014=7.5;
         TimeEnd014=1000;
     else
         %error('Could not recognize data type from the Prefix or from the value of StemLoopEnd in MovieDatabase.')
         
-            Delay=GeneLength5/ElongationRate;    %Minutes for PolII to fall off after reaching
+        Delay=GeneLength5/ElongationRate;    %Minutes for PolII to fall off after reaching
                                         %the first MS2 site.
-    display('Treating data set as 5''')
-    
-    %Initial parameters for fits
-    Rate012=500;     %Rate per minute
-    TimeStart012=3;
-    TimeEnd012=7;
+        display('Treating data set as 5''')
+        
+        %Initial parameters for fits. We will estimate the maximum rate based on
+        %the elongation time and the maximum average fluorescence of the data set.
+        MaxRate=max(max(MeanVectorAP))/Delay;
 
-    Rate013=500;     %Rate per minute
-    TimeStart013=5;
-    TimeEnd013=10;
+        %Initial parameters for fits
+        Rate012=MaxRate;     %Rate per minute
+        TimeStart012=3;
+        TimeEnd012=7;
 
-    Rate014=500;     %Rate per minute
-    TimeStart014=5;
-    TimeEnd014=1000;  
+        Rate013=MaxRate;     %Rate per minute
+        TimeStart013=5;
+        TimeEnd013=10;
+
+        Rate014=MaxRate;     %Rate per minute
+        TimeStart014=5;
+        TimeEnd014=1000;  
     end
 end
 

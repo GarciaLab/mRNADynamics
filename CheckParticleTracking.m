@@ -911,17 +911,17 @@ while (cc~='x')
     
     %Define the windows
     figure(Overlay)
-    set(gcf,'units', 'normalized', 'position',[0.01, .6, .33, .33]);
+    set(gcf,'units', 'normalized', 'position',[0.01, .55, .33, .33]);
     if UseHistoneOverlay 
         figure(HisOverlayFig)
-        set(gcf,'units', 'normalized', 'position',[0.01, .2, .33, .33]);
+        set(gcf,'units', 'normalized', 'position',[0.01, 0.1, .33, .33]);
     end
     figure(TraceFig);
-    set(gcf,'units', 'normalized', 'position',[0.35, .6, .2, .33]);
+    set(gcf,'units', 'normalized', 'position',[0.35, 0.55, .2, .33]);
     figure(SnippetFig);
-    set(gcf,'units', 'normalized', 'position',[0.35, .36, .2/2, .33/2]);
+    set(gcf,'units', 'normalized', 'position',[0.35, 0.15, .2/2, .33/2]);
     figure(ZProfileFig);
-    set(gcf,'units', 'normalized', 'position',[0.46, .36, .2/2, .33/2]);
+    set(gcf,'units', 'normalized', 'position',[0.46, 0.15, .2/2, .33/2]);
 
     
     
