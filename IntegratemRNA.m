@@ -1,8 +1,7 @@
 function [TotalProd,TotalProdError,TotalProdN,...
     MeanTotalProd,SDTotalProd,SETotalProd]=IntegratemRNA(Data,MinParticles,MinEmbryos,varargin)
 
-%Calculates the total amount of mRNA produced per AP bin and per cycle,
-%normalized by the area of the AP bin.
+%Calculates the total amount of mRNA produced per nucleus in each AP bin
 %If an extra parameter 'IntegrateAll' is given then it does not distinguish
 %between AP positions
 
@@ -13,16 +12,11 @@ if ~isempty(varargin)
     end
 end
 
-
-
-%Figure out the earliest nuclear cycle in our dataset
-StartingNC=[];
+%Figure out the minimum starting NC
+StartNC=[];
 for i=1:length(Data)
-    StartingNC=min([StartingNC,min(Data(i).ncFilterID)]);
+    StartNC=min([StartNC,Data(i).ncFilterID]);
 end
-%We want to integrate starting from one cycle more than the one found
-%in StartingNC.
-StartingNC=StartingNC+1;
 
 
 if ~IntegrateAll
@@ -30,29 +24,37 @@ if ~IntegrateAll
     %Calculate the total production for each embryo
     TotalProd=nan(length(Data),length(Data(1).APbinID),14);
     TotalProdError=nan(length(Data),length(Data(1).APbinID),14);
-    TotalProdN=nan(length(Data),length(Data(1).APbinID),14);    
-    
-    for nc=StartingNC:14
+    TotalProdN=nan(length(Data),length(Data(1).APbinID),14);
+    for nc=StartNC:14
         for i=1:length(Data)
+            
             for j=1:length(Data(1).APbinID)
-                %Use only AP bins with enough area (those that do not have a
-                %NaN)
-                jMin=min(find(~isnan(Data(i).APbinArea)));
-                jMax=max(find(~isnan(Data(i).APbinArea)));
+                if Data(i).APDivision(nc,j)
+                    %Use only AP bins with enough area (those that do not have a
+                    %NaN)
+                    jMin=min(find(~isnan(Data(i).APbinArea)));
+                    jMax=max(find(~isnan(Data(i).APbinArea)));
 
-                if (j>=jMin)&(j<=jMax)
+                    if (j>=jMin)&(j<=jMax)
 
-                    ParticleFilter=Data(i).APFilter(:,j)&...
-                        Data(i).ncFilter(:,Data(i).ncFilterID==nc);
+                        if nc==14
+                           FrameRange=Data(i).APDivision(nc,j):length(Data(i).ElapsedTime);
+                        else
+                           FrameRange=Data(i).APDivision(nc,j):Data(i).APDivision(nc+1,j);
+                        end
 
-                    TotalProd(i,j,nc)=...
-                        sum([Data(i).CompiledParticles(ParticleFilter).TotalmRNA])/...
-                        Data(i).APbinArea(j);
-                    TotalProdError(i,j,nc)=...
-                        sqrt(sum([Data(i).CompiledParticles(ParticleFilter).TotalmRNAError].^2))/...
-                        Data(i).APbinArea(j);
-                    TotalProdN(i,j,nc)=...
-                        length([Data(i).CompiledParticles(ParticleFilter).TotalmRNA]);
+                        ParticleFilter=Data(i).APFilter(:,j)&...
+                            Data(i).ncFilter(:,Data(i).ncFilterID==nc);
+
+                        TotalProd(i,j,nc)=...
+                            sum([Data(i).CompiledParticles(ParticleFilter).TotalmRNA])/...
+                            mean(Data(i).NEllipsesAP(FrameRange,j));                        
+                        TotalProdError(i,j,nc)=...
+                            sqrt(sum([Data(i).CompiledParticles(ParticleFilter).TotalmRNAError].^2))/...
+                            mean(Data(i).NEllipsesAP(FrameRange,j));
+                        TotalProdN(i,j,nc)=...
+                            length([Data(i).CompiledParticles(ParticleFilter).TotalmRNA]);
+                    end
                 end
             end
         end
@@ -136,13 +138,22 @@ else
     TotalProd=nan(length(Data),14);
     TotalProdError=nan(length(Data),14);
     TotalProdN=nan(length(Data),14);
-    for nc=12:14
+    for nc=StartNC:14
         for i=1:length(Data)
             
             %Filter for all particles in the nc and in the AP bins I'm
             %going to use
             jMin=min(find(~isnan(Data(i).APbinArea)));
             jMax=max(find(~isnan(Data(i).APbinArea)));
+            
+            %Find the frame range for this nc
+            if nc==14
+               FrameRange=median(Data(i).APDivision(nc,jMin:jMax)):length(Data(i).ElapsedTime);
+            else
+               FrameRange=Data(i).APDivision(nc,jMin:jMax):Data(i).APDivision(nc+1,jMin:jMax);
+            end
+
+            
             
             ParticleFilter=...
                 sum(Data(i).APFilter(:,jMin:jMax),2)&Data(i).ncFilter(:,Data(i).ncFilterID==nc);
@@ -153,19 +164,21 @@ else
             TotalProdErrorTemp=[];
             for k=1:length(ParticlesToSum)
                 TotalProdTemp=[TotalProdTemp,...
-                    Data(i).CompiledParticles(ParticlesToSum(k)).TotalmRNA/...
-                    Data(i).APbinArea(find(Data(i).APFilter(ParticlesToSum(k),:)))];
+                    Data(i).CompiledParticles(ParticlesToSum(k)).TotalmRNA];
                 TotalProdErrorTemp=[TotalProdErrorTemp,...
-                    Data(i).CompiledParticles(ParticlesToSum(k)).TotalmRNAError/...
-                    Data(i).APbinArea(find(Data(i).APFilter(ParticlesToSum(k),:)))];
+                    Data(i).CompiledParticles(ParticlesToSum(k)).TotalmRNAError];
             end
             
-            TotalProd(i,nc)=sum(TotalProdTemp)/(jMax-jMin+1);
-            
-            TotalProdN(i,nc)=...
-                length(TotalProdTemp)/(jMax-jMin+1);
             
             
+            
+            
+            TotalProd(i,nc)=sum(TotalProdTemp)/...
+                    mean(sum(Data(i).NEllipsesAP(FrameRange,jMin:jMax),2));
+            
+            %I'm not sure this is useful
+            TotalProdN(i,nc)=nan;
+                %length(TotalProdTemp)/(jMax-jMin+1);
             
             TotalProdError(i,nc)=...
                 sqrt(sum(TotalProdErrorTemp.^2));
@@ -181,7 +194,7 @@ else
     SDTotalProd=nan(14,1);
     SETotalProd=nan(14,1);
     
-    for nc=12:14
+    for nc=StartNC:14
         nanFilter=~isnan(TotalProd(:,nc));
         
         if sum(nanFilter)>=MinEmbryos
