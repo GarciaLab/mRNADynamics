@@ -18,6 +18,11 @@ function FitMeanAPSymmetric(varargin)
 %k,l: Change fit range from the right
 %h,j: Change fit range from the left
 
+%Approve/Reject:
+% You need to approve or reject fits.
+% w: reject; q: approve. Enter saves MeanFits.mat.
+
+
 
 %Parameters:
 MinParticles=2;     %Minimum number of particles in an AP bin
