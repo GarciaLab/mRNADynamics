@@ -688,7 +688,7 @@ elseif strcmp(FileMode,'LIFExport')
         NPlanes = NPlanes - NSlices*NChannels;
 
 
-        %Generate FrameInfo
+        %Generate FrameInfof
         FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
             'NumberSlices',{},'ZStep',{},'FileMode',{},...
             'PixelSize',{});
@@ -1065,14 +1065,16 @@ elseif strcmp(FileMode,'LIFExport')
                 
                 %Make the fake Histone channel if mCherry is present
                 
-                if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))
+                if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))|...
+                        (~isempty(strfind(lower(Channel1{1}),'tagrfp')))|...
+                        (~isempty(strfind(lower(Channel2{1}),'tagrfp')))
                     
-                    if (~isempty(strfind(Channel1{1},'mCherry')))
+                    if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(lower(Channel1{1}),'tagrfp')))
                         RFPChannel=1;
-                    elseif (~isempty(strfind(Channel2{1},'mCherry')))
+                    elseif (~isempty(strfind(Channel2{1},'mCherry')))|(~isempty(strfind(lower(Channel2{1}),'tagrfp')))
                         RFPChannel=2;
                     else
-                        error('mCherry channel not found. Cannot generate the fake nuclear image')
+                        error('mCherry or TagRFP channel not found. Cannot generate the fake nuclear image')
                     end
                     
                     %Now do His-RFP
