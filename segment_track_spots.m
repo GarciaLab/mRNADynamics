@@ -109,7 +109,7 @@ neighb = 500 / pixelSize; %This should work for a first pass and shouldn't fail 
 thr = thresh; 
 dog_stack  = {}; 
 all_frames = {}; 
-for i = 1:num_frames-1 %Will change this to length(DTIF)-1 for full analysis
+for i = 1:num_frames-1 
     for j = 1:size(im_stack,2) %z-slices
         im = im_stack{i,j};
         %filterSize >> sigma 2 > sigma 1. these values should be good for a first pass.
@@ -118,7 +118,6 @@ for i = 1:num_frames-1 %Will change this to length(DTIF)-1 for full analysis
             dog_name = ['DOG_',Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),'.tif'];
             imwrite(uint16(dog_stack{i,j}), [OutputFolder1,filesep,dog_name])
         end
-        %commented out for speed
         dog = dog_stack{i,j}(10:end-10, 10:end-10);
         im = im(10:end-10, 10:end-10);
         if show_status
