@@ -76,14 +76,19 @@ for i=1:length(PlotHandle)
         if isempty(strmatch(get(PlotHandle(i),'Color'),'auto'))
             ChangeColor(PlotHandle(i),'Color')
         end
-
+        try
         if isempty(strmatch(get(PlotHandle(i),'MarkerEdgeColor'),'auto'))
             ChangeColor(PlotHandle(i),'MarkerEdgeColor')
         end
-
+        catch
+        end
+try
         if isempty(strmatch(get(PlotHandle(i),'MarkerFaceColor'),'auto'))
             ChangeColor(PlotHandle(i),'MarkerFaceColor')
         end
+catch
+end
+        
     end
 
 %     
