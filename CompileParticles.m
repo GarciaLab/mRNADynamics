@@ -459,8 +459,8 @@ ElapsedTime=ElapsedTime/60;     %Time is in minutes
     
 
 %Some parameters
-IntArea=109;        %Area of integration
-MinAPArea=12500;%700;    %Minimum area in pixels in order to consider an AP bin as valid.
+IntArea=500;%190        %Area of integration. AR 3/15/16: This should be recalculated in microns
+MinAPArea=12500;%700;    %Minimum area in pixels in order to consider an AP bin as valid. AR 3/15/16: This should be recalculated in microns
 
 
 if strcmp(ExperimentAxis,'AP')
@@ -532,13 +532,13 @@ for ChN=1:NChannels
             FirstFrame=Particles{ChN}(i).Frame(min(find(Particles{ChN}(i).FrameApproved)));
             
                 %Check that for the remaining frames we got a good z-profile
-                for j=1:length(Particles{ChN}(i).Frame)
-                    ZProfile=fad(ChN).channels(Particles{ChN}(i).Frame(j)).fits.shadowsDog{Particles{ChN}(i).Index(j)};
-                    [Dummy,ZMax]=max(ZProfile);
-                    if (ZMax==1)|(ZMax==length(ZProfile))
-                        FrameFilter(j)=0;
-                    end
-                end
+%                 for j=1:length(Particles{ChN}(i).Frame)
+%                     ZProfile=fad(ChN).channels(Particles{ChN}(i).Frame(j)).fits.shadowsDog{Particles{ChN}(i).Index(j)};
+%                     [Dummy,ZMax]=max(ZProfile);
+%                     if (ZMax==1)|(ZMax==length(ZProfile))
+%                         FrameFilter(j)=0;
+%                     end
+%                 end
 
             %Should I only keep traces of a certain length? We also just keep
             %the ones that have a real schnitz associated with them
@@ -574,6 +574,7 @@ for ChN=1:NChannels
                 CompiledParticles{ChN}(k).Index=Particles{ChN}(i).Index(FrameFilter);
                 CompiledParticles{ChN}(k).xPos=Particles{ChN}(i).xPos(FrameFilter);
                 CompiledParticles{ChN}(k).yPos=Particles{ChN}(i).yPos(FrameFilter);
+                CompiledParticles{ChN}(k).FrameApproved = Particles{ChN}(i).FrameApproved;
 
                 if strcmp(ExperimentAxis,'AP')
                     CompiledParticles{ChN}(k).APpos=Particles{ChN}(i).APpos(FrameFilter);
@@ -697,7 +698,7 @@ for ChN=1:NChannels
 
                     figure(2)
                     %Size of the snippet for each frame
-                    SnippetSize=31;
+                    SnippetSize=31; %AR 3/15/16: Why is this 31?
                     %Width of the screen
                     ScreenWidth=get( 0, 'ScreenSize' );
                     ScreenWidth=ScreenWidth(3);

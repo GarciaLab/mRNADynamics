@@ -81,7 +81,7 @@ end
 DTIF=dir([Folder,filesep,'*.tif']);
 DLSM=dir([Folder,filesep,'*.lsm']);
 DLIF=dir([Folder,filesep,'*.lif']);
-DLAT=dir([Folder,filesep,'..',filesep,'IsLatticeData.txt']);
+DLAT=dir([Folder,filesep,'*_Settings.txt']);
 
 if (length(DTIF)>0)&(isempty(DLSM))
     if length(DLIF)==0
@@ -734,9 +734,9 @@ elseif strcmp(FileMode, 'LAT')
         for i=1:NFrames
  
                 FrameInfo(i).PixelsPerLine=256; %to do: need to parse this (ROI line in the metadata text file)
-                FrameInfo(i).LinesPerFrame=256; % "
+                FrameInfo(i).LinesPerFrame=512; % "
                 %FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(1));
-                FrameInfo(i).ZStep = .1; %to do: need to parse from metadata (but only if the metadata is correct)
+                FrameInfo(i).ZStep = .5; %to do: need to parse from metadata (but only if the metadata is correct)
  
             FrameInfo(i).NumberSlices=min(NSlices);
             FrameInfo(i).FileMode='LAT';
@@ -758,14 +758,17 @@ elseif strcmp(FileMode, 'LAT')
                 %stack
                 NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(1,2),'.tif'];
                 imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(min(NSlices)+2,2),'.tif'];
+                NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(min(NSlices)*3+2,2),'.tif'];
                 imwrite(BlankImage,[OutputFolder,filesep,NewName]);
                 %Copy the rest of the images
-                
-                    for s = 1:NSlices
-                        NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(s+1,2),'.tif'];
+                z = 2;
+                for s = 1:NSlices
+%                     for r = 0:2
+                        NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(z,2),'.tif'];
                         imwrite(im_stack{j,s},[OutputFolder,filesep,NewName]);
-                    end
+                        z = z + 1;
+%                     end
+                end
                 
                 %Now do His-RFP
                 if HisChannel
