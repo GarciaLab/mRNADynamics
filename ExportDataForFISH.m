@@ -688,7 +688,7 @@ elseif strcmp(FileMode,'LIFExport')
         NPlanes = NPlanes - NSlices*NChannels;
 
 
-        %Generate FrameInfo
+        %Generate FrameInfof
         FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
             'NumberSlices',{},'ZStep',{},'FileMode',{},...
             'PixelSize',{});
@@ -713,14 +713,33 @@ elseif strcmp(FileMode,'LIFExport')
             TimeStampList = xDoc.getElementsByTagName('TimeStamp');
             for k = 0:(NFrames(i)*NSlices(i)*NChannels)-1
                 TimeStamp = TimeStampList.item(k);
-                Date = char(TimeStamp.getAttribute('Date'));
+                
                 Time = char(TimeStamp.getAttribute('Time'));
+                %Convert the time to 24 hour format
+                Time=datestr(Time,'HH:MM:SS');
+                
                 Milli = char(TimeStamp.getAttribute('MiliSeconds'));
-                time_in_days = datenum(strcat(Date,'-',Time,'-',Milli),'dd/mm/yyyy-HH:MM:SS AM-FFF');
-                Frame_Times(m)=time_in_days*86400;
+                time_in_days = datenum(strcat(Time,'-',Milli),'HH:MM:SS-FFF');
+                
+
+                %Note that I got rid of the date. It was causing weirdness
+                %when you jumped from one day to the next. We'll deal with
+                %that case below.
+                %Date = char(TimeStamp.getAttribute('Date'));                
+                %time_in_days = datenum(strcat(Date,'-',Time,'-',Milli),'dd/mm/yyyy-HH:MM:SS-FFF');
+                
+                Frame_Times(m)=time_in_days;        %This is in days
                 m=m+1;
             end
         end
+        
+        %If the data was taken over midnight, we need to find when the time
+        %stamp jumps
+        TimeJump=find(diff(Frame_Times)<0);
+        %At one day at the jump
+        Frame_Times(TimeJump+1:end)=Frame_Times(TimeJump+1:end)+1;
+        %Convert Frame_Times to seconds
+        Frame_Times=Frame_Times*86400;
         
         First_Time=Frame_Times(1);
         for i = 1:length(Frame_Times)
@@ -1065,14 +1084,16 @@ elseif strcmp(FileMode,'LIFExport')
                 
                 %Make the fake Histone channel if mCherry is present
                 
-                if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))
+                if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))|...
+                        (~isempty(strfind(lower(Channel1{1}),'tagrfp')))|...
+                        (~isempty(strfind(lower(Channel2{1}),'tagrfp')))
                     
-                    if (~isempty(strfind(Channel1{1},'mCherry')))
+                    if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(lower(Channel1{1}),'tagrfp')))
                         RFPChannel=1;
-                    elseif (~isempty(strfind(Channel2{1},'mCherry')))
+                    elseif (~isempty(strfind(Channel2{1},'mCherry')))|(~isempty(strfind(lower(Channel2{1}),'tagrfp')))
                         RFPChannel=2;
                     else
-                        error('mCherry channel not found. Cannot generate the fake nuclear image')
+                        error('mCherry or TagRFP channel not found. Cannot generate the fake nuclear image')
                     end
                     
                     %Now do His-RFP

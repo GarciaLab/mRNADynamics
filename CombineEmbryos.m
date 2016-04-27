@@ -1,14 +1,3 @@
-% function [TimeNC14,MeanNC14,SENC14,MeanAllNC14,SEAllNC14,...
-%     MeanOnRatioNC14,SEOnRatioNC14,...
-%     IntegralNC14,SEIntegralNC14,IntegralONNC14,SEIntegralONNC14,...
-%     TimeNC13,MeanNC13,SENC13,MeanAllNC13,SEAllNC13,MeanOnRatioNC13,SEOnRatioNC13,...
-%     IntegralNC13,SEIntegralNC13,...
-%     IntegralDegNC14,SEIntegralDegNC14,IntegralDegONNC14,SEIntegralDegONNC14,...
-%     IntegralDegNC13,SEIntegralDegNC13,IntegralDegONNC13,SEIntegralDegONNC13,...
-%     MeanTotalNC13,SETotalNC13,...
-%     MeanTotalNC14,SETotalNC14]=...
-%     PlotMeanAPMovies(Data,Label,MinEmbryos)
-
 function [TimeNC14,MeanNC14,SENC14,MeanAllNC14,SEAllNC14,...
     MeanOnRatioNC14,SEOnRatioNC14,...
     IntegralNC14,SEIntegralNC14,IntegralONNC14,SEIntegralONNC14,...
@@ -16,7 +5,7 @@ function [TimeNC14,MeanNC14,SENC14,MeanAllNC14,SEAllNC14,...
     IntegralNC13,SEIntegralNC13,...
     IntegralDegNC14,SEIntegralDegNC14,IntegralDegONNC14,SEIntegralDegONNC14,...
     IntegralDegNC13,SEIntegralDegNC13,IntegralDegONNC13,SEIntegralDegONNC13]=...
-    PlotMeanAPMovies(Data,Label,MinEmbryos)
+    CombineEmbryos(Data,Label,MinEmbryos)
 
 
 
@@ -64,7 +53,7 @@ end
 Labels='k.r.g.b.y.c.m.ksrsgsbsyscsmskorogoboyocomok^r^g^b^y^c^m^';
                     
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
-    DetermineLocalFolders(Data(1).SetName(11:end-1));
+    DetermineLocalFolders;%(Data(1).SetName(11:end-1));
 
 
 
@@ -697,7 +686,7 @@ for i=1:MaxTimeIndex
         errorbar_tick(PlotHandle,0);
         hold off
         ylim([0,2E4])
-        xlim([0,1])
+        xlim(APRange)
         set(gca,'XTick',[0.1:0.1:0.8])
         box on
         pause(0.1)
@@ -747,7 +736,7 @@ if TotalFluo
             errorbar_tick(PlotHandle,0);
             hold off
             ylim([0,2E4])
-            xlim([0,1])
+            xlim(APRange)
             set(gca,'XTick',[0.1:0.1:0.8])
             box on
             pause(0.1)
@@ -802,7 +791,7 @@ for i=1:MaxTimeIndex
         errorbar_tick(PlotHandle,0);
         hold off
         ylim([0,2E4])
-        xlim([0,1])
+        xlim(APRange)
         set(gca,'XTick',[0.1:0.1:0.8])
         box on
         pause(0.1)
@@ -854,7 +843,7 @@ for i=1:MaxTimeIndex
         hold off
         %title(['nc14, ',num2str(TimeNC14{MaxTimeSet}(i)-TimeNC14{MaxTimeSet}(1)),' min'])
         ylim([0,1])
-        xlim([0.3,0.5])
+        xlim(APRange)
         set(gca,'XTick',[0.1:0.1:0.8])
         box on
         pause(0.1)
@@ -909,7 +898,7 @@ if ~isempty(MaxValue)
             hold off
             %title(['nc14, ',num2str(TimeNC14{MaxTimeSet}(i)-TimeNC14{MaxTimeSet}(1)),' min'])
             %ylim([0,MaxValue])
-            xlim([0.3,0.5])
+            xlim(APRange)
 
             set(gca,'XTick',[0.1:0.1:0.8])
             box on
@@ -928,12 +917,24 @@ end
 
 
 
+%Figure out the AP range we want
+APMin=[];
+APMax=[];
+for i=1:length(Data)
+    APMin=min([APMin,Data(i).APbinID(~isnan(Data(i).APbinArea))]);
+    APMax=max([APMax,Data(i).APbinID(~isnan(Data(i).APbinArea))]);
+end
+APRange=[APMin,APMax];
 
 
 %nc14:
 MaxTimeIndex=length(TimeNC14);
 
 %Average fluorescence of ON nuclei
+
+%First, figure out the maximum range so we can generate nice plots
+Ymax=max(cellfun(@max,cellfun(@max,MeanVectorAPNC14Interp,'UniformOutput',false)));
+
 for i=1:MaxTimeIndex
 
     figure(MovieFigure)
@@ -969,8 +970,8 @@ for i=1:MaxTimeIndex
         errorbar_tick(PlotHandle,0);
         hold off
         %title(['nc14, ',num2str(TimeNC14{MaxTimeSet}(i)-TimeNC14{MaxTimeSet}(1)),' min'])
-        ylim([0,2E4])
-        xlim([0.3,0.5])
+        ylim([0,Ymax])
+        xlim(APRange)
         set(gca,'XTick',[0.1:0.1:0.8])
         box on
         pause(0.1)
@@ -984,6 +985,9 @@ end
 
 %Total fluorescence per all nuclei
 if TotalFluo
+    
+    %First, figure out the maximum range so we can generate nice plots
+    Ymax=max(cellfun(@max,cellfun(@max,MeanVectorAPTotalNC14Interp,'UniformOutput',false)));
     
     for i=1:MaxTimeIndex
 
@@ -1020,8 +1024,8 @@ if TotalFluo
             errorbar_tick(PlotHandle,0);
             hold off
             %title(['nc14, ',num2str(TimeNC14{MaxTimeSet}(i)-TimeNC14{MaxTimeSet}(1)),' min'])
-            ylim([0,2E4])
-            xlim([0.3,0.5])
+            ylim([0,Ymax])
+            xlim(APRange)
             set(gca,'XTick',[0.1:0.1:0.8])
             box on
             pause(0.1)
@@ -1038,6 +1042,10 @@ end
 
 
 %Average fluorescence of ALL nuclei
+
+%First, figure out the maximum range so we can generate nice plots
+Ymax=max(cellfun(@max,cellfun(@max,MeanVectorAllAPNC14Interp,'UniformOutput',false)));
+
 for i=1:MaxTimeIndex
 
     figure(MovieFigure)
@@ -1073,8 +1081,8 @@ for i=1:MaxTimeIndex
         errorbar_tick(PlotHandle,0);
         hold off
         %title(['nc14, ',num2str(TimeNC14{MaxTimeSet}(i)-TimeNC14{MaxTimeSet}(1)),' min'])
-        ylim([0,2E4])
-        xlim([0.3,0.5])
+        ylim([0,Ymax])
+        xlim(APRange)
         set(gca,'XTick',[0.1:0.1:0.8])
         box on
         pause(0.1)
@@ -1087,6 +1095,8 @@ end
     
 
 %Ratio of on nuclei
+
+
 for i=1:MaxTimeIndex
 
     figure(MovieFigure)
@@ -1121,7 +1131,7 @@ for i=1:MaxTimeIndex
         hold off
         %title(['nc14, ',num2str(TimeNC14{MaxTimeSet}(i)-TimeNC14{MaxTimeSet}(1)),' min'])
         ylim([0,1])
-        xlim([0.3,0.5])
+        xlim(APRange)
         set(gca,'XTick',[0.1:0.1:0.8])
         box on
         pause(0.1)
@@ -1168,7 +1178,7 @@ for i=1:MaxTimeIndex
         hold off
         %title(['nc14, ',num2str(TimeNC14{MaxTimeSet}(i)-TimeNC14{MaxTimeSet}(1)),' min'])
         ylim([0,MaxValue])
-        xlim([0.3,0.5])
+        xlim(APRange)
         
         set(gca,'XTick',[0.1:0.1:0.8])
         box on
@@ -1218,7 +1228,7 @@ for i=1:MaxTimeIndex
         hold off
         %title(['nc14, ',num2str(TimeNC14{MaxTimeSet}(i)-TimeNC14{MaxTimeSet}(1)),' min'])
         ylim([0,MaxValue])
-        xlim([0.3,0.5])
+        xlim(APRange)
         
         set(gca,'XTick',[0.1:0.1:0.8])
         box on
@@ -1269,7 +1279,7 @@ if exist('AccumVectorAPNC14Interp')
             hold off
             %title(['nc14, ',num2str(TimeNC14{MaxTimeSet}(i)-TimeNC14{MaxTimeSet}(1)),' min'])
             ylim([0,MaxValue])
-            xlim([0.3,0.5])
+            xlim(APRange)
 
             title('Integral+Degradation ALL nuclei, nc14')
 
@@ -1321,7 +1331,7 @@ if exist('AccumVectorAPNC14Interp')
             hold off
             %title(['nc14, ',num2str(TimeNC14{MaxTimeSet}(i)-TimeNC14{MaxTimeSet}(1)),' min'])
             ylim([0,MaxValue])
-            xlim([0.3,0.5])
+            xlim(APRange)
 
             title('Integral+Degradation ON nuclei, nc14')
 
@@ -1372,7 +1382,7 @@ if exist('AccumVectorAPNC14Interp')
             hold off
             %title(['NC13, ',num2str(TimeNC13{MaxTimeSet}(i)-TimeNC13{MaxTimeSet}(1)),' min'])
             ylim([0,MaxValue])
-            xlim([0.3,0.5])
+            xlim(APRange)
 
             title('Integral+Degradation ALL nuclei, NC13')
 
@@ -1423,7 +1433,7 @@ if exist('AccumVectorAPNC14Interp')
             hold off
             %title(['NC13, ',num2str(TimeNC13{MaxTimeSet}(i)-TimeNC13{MaxTimeSet}(1)),' min'])
             ylim([0,MaxValue])
-            xlim([0.3,0.5])
+            xlim(APRange)
 
             title('Integral+Degradation ON nuclei, NC13')
 
