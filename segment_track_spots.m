@@ -16,6 +16,8 @@ function segment_track_spots(Prefix, thresh, show_status,save_status, num_frames
 
 %%    
 %Get the relevant folders now:
+
+tic;
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(Prefix);
 
@@ -102,6 +104,7 @@ mkdir(OutputFolder2)
 %filterSize >> sigma 2 > sigma 1. these values should be good for a first
 %pass.
 pixelSize = 100; %nm
+% pixelSize = 200;
 sigma1 = 150 / pixelSize;
 sigma2 = 250 / pixelSize;
 filterSize = 1500 /pixelSize; 
@@ -128,6 +131,7 @@ for i = 1:num_frames-1
         [im_label, n_spots] = bwlabel(thrim); 
         temp_particles = {};
         rad = 600 / pixelSize; %500nm is roughly the size of a sister chromatid diffraction limited spot.
+%         rad = 500/pixelSize;
         for k = 1:n_spots
             [r,c] = find(im_label==k);
 
@@ -168,12 +172,41 @@ for i = 1:num_frames-1
 %                     end
 %                 catch
 %                 end
-                if cent_y - rad > 1 && cent_y - rad > 1 && cent_x - rad > 1 && cent_x - rad > 1 && cent_y + rad < size(im, 1) && cent_x + rad < size(im,2)
-                    snip = im(cent_y-rad:cent_y+rad, cent_x-rad: cent_x+rad);
+                if cent_y - rad > 1 && cent_x - rad > 1 && cent_y + rad < size(im, 1) && cent_x + rad < size(im,2)
+                    snip = im(cent_y-rad:cent_y+rad, cent_x-rad:cent_x+rad);
 %                      [f1, res1, f2, res2] = fitGausses(snip);
-                    [f1, res1] = fitGausses(snip,show_status);
-                    %Quality control.
-                    if f1(3) > rad+3 || f1(5) > rad+3
+
+                    % Set parameters to use as initial guess in the
+                    % fitting. For the lattice data, try NeighborhoodSize =
+                    % [9 9], MaxThreshold = 2000, WidthGuess = 5,
+                    % OFfsetGuess = 1000.
+                    
+                    NeighborhoodSize = [5 5];
+                    MaxThreshold = 30;
+                    WidthGuess = 1;
+                    OffsetGuess = 10;
+                    [f1, res1, residual, exitflag, output, lambda, jacobian] =  ...
+                        fitTwoGausses(snip, NeighborhoodSize, MaxThreshold, ...
+                        WidthGuess, OffsetGuess, show_status);
+                    
+                    ci = nlparci(f1,residual,'jacobian',jacobian);
+                    errors = zeros(1, length(f1));
+                    for ndx = 1:length(ci)
+                        errors(ndx) = abs((abs(ci(ndx, 1)) - abs(ci(ndx, 2)))/2);
+                    end
+                    rel_errors = abs(errors./f1);
+                    disp(rel_errors);
+                    
+                    % Quality control.
+                    % TO DO: make some quality control using the errors in
+                    % the fitting. Using any(rel_errors > 0.3) (for
+                    % example) is not the best thing to do, because
+                    % sometimes the second gaussian doesn't get a good fit
+                    % but the first one does, and the second one is good
+                    % enough to position its center.
+                    
+%                     if f1(3) > rad+3 || f1(5) > rad+3
+                    if 1
                         c_x = f1(2) - rad + cent_x;
                         c_y = f1(4) - rad + cent_y;
                         int_x = [round(c_x - f1(3)), round(c_x + f1(3))];
@@ -292,5 +325,5 @@ for i = 1:length(Particles)
         hold on
     end
 end
-
+t = toc
 end

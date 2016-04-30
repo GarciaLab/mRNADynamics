@@ -242,10 +242,10 @@ if ~NoAP
         PixelSizeFullEmbryo=str2num(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
 
         %Check that the surface and midsaggital images have the same zoom
-        D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*mid*.',FileMode(1:3)]);
-        ImageTemp=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(end).name]);
-        MetaFullEmbryo= ImageTemp{:, 4};
-        PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
+        D1=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*mid*.',FileMode(1:3)]);
+        ImageTemp1=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D1(end).name]);
+        MetaFullEmbryo1= ImageTemp1{:, 4};
+        PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX(0));
 
         if PixelSizeFullEmbryo~=PixelSizeFullEmbryoMid
             error('The surface and midsaggital images were not taken with the same pixel size')
@@ -438,18 +438,17 @@ if ~NoAP
             %If manual alignment was done before then load the results
             if exist('ManualAlignmentDone')
                 if ManualAlignmentDone
-                    display('Manual alignment results saved. Using them.')
-                    load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
+                    display('Manual alignment results saved.')
+                    Answer=input('Would you like to use them (y/n)?','s');
+                    if strcmp(lower(Answer),'y')
+                        load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
+                    elseif strcmp(lower(Answer),'n')
+                        display('Deleting manual alignment results')
+                        clear ManualAlignmentDone
+                    else
+                        error('Answer not recognized')
+                    end
                 end
-            end
-            
-            
-            %See if we need the manual alignment
-            if ManualAlignment
-                %See if we need to load the previous manual alignment results
-                [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ZoomRatio,ShiftRow,ShiftColumn,...
-                     FullEmbryo, ZoomRatio, SurfRows,Rows, Columns, coordA, coordP, SurfColumns);
-                ManualAlignmentDone=1;
             end
             
             try
@@ -509,6 +508,16 @@ if ~NoAP
             NucMaskZoomIn = false(size(ZoomImage));
             NucMaskZoomOut = false(size(SurfImage));
         end
+        
+        
+        %See if we need the manual alignment
+        if ManualAlignment
+            %See if we need to load the previous manual alignment results
+            [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ZoomRatio,ShiftRow,ShiftColumn,...
+                 FullEmbryo, ZoomRatio, SurfRows,Rows, Columns, coordA, coordP, SurfColumns);
+            ManualAlignmentDone=1;
+        end
+        
     else
         warning('Not able to do the cross correlation. Assuming no shift between surface-level and movie-level images.')
         
@@ -1067,14 +1076,8 @@ if ~NoAP
     %all particles. Look I my notes in "Calculating AP positions" in Notability
     %for details of the calculation.
 
-
-
     %Angle between the x-axis and the AP-axis
-    APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
-    %Correction for if APAngle is in quadrants II or III
-    if coordPZoom(1)-coordAZoom(1) < 0
-        APAngle = APAngle + pi;
-    end
+    APAngle=atan2((coordPZoom(2)-coordAZoom(2)),(coordPZoom(1)-coordAZoom(1)));
     
     
     APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
@@ -1085,12 +1088,7 @@ if ~NoAP
 
     for i=1:Rows
         for j=1:Columns
-            %Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
             Angle=atan2((i-coordAZoom(2)),(j-coordAZoom(1)));
-            if j-coordAZoom(1) < 0
-                Angle = Angle + pi;
-            end
-            % Correction for if Angle is in quadrants II or III
             
             Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
             APPosition=Distance.*cos(Angle-APAngle);
@@ -1131,10 +1129,6 @@ if ~NoAP
                 %zero
                 Angles=atan2((Particles{ChN}(i).yPos-coordAZoom(2)),...
                     (Particles{ChN}(i).xPos-coordAZoom(1)));
-                if Particles{ChN}(i).xPos-coordAZoom(1) < 0
-                    Angles = Angles + pi;
-                end
-                % Correction for if Angles is in quadrants II or III
 
                 %Distance between the points and the A point
                 Distances=sqrt((coordAZoom(2)-Particles{ChN}(i).yPos).^2+(coordAZoom(1)-Particles{ChN}(i).xPos).^2);
