@@ -1,6 +1,10 @@
 function [f1, res1, residual, exitflag, output, lambda, jacobian] = ...
     fitTwoGausses(snip, NeighborhoodSize, Threshold, WidthGuess, OffsetGuess, show)
 
+% Find local maxima in snip and use that information to decide if fitting
+% one or two gaussians. Also, use that information to define a reasonable 
+% initial guess for the fitting initial parameters.
+
 snip = double(snip);
 [y,x] = meshgrid(1:size(snip,2), 1:size(snip,1));
 

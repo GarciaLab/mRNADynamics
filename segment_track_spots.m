@@ -75,25 +75,65 @@ DLSM=dir([Folder,filesep,'*.lsm']);
 DLIF=dir([Folder,filesep,'*.lif']);
 DLAT=dir([Folder,filesep,'*_Settings.txt']);
 
+if (length(DTIF)>0)&(isempty(DLSM))
+    if length(DLIF)==0
+        if length(DLAT)==0
+            display('2-photon @ Princeton data mode')
+            FileMode='TIF';
+        else
+            display('Lattice Light Sheet data mode')
+            FileMode='LAT';
+        end
+    else
+        display('LIF export mode')
+        FileMode='LIFExport';
+    end
+elseif (length(DTIF)==0)&(length(DLSM)>0)
+    display('LSM mode')
+    FileMode='LSM';
+else
+    error('File type not recognized. For LIF files, were they exported to TIF?')
+end
+
 %%
 %Here I want to load each of the tifs and iterate through them, generating
 %dog images in each iteration
 
-if num_frames == 0
-    num_frames = length(DTIF);
-end
+% Load data generated with ExportDataForFISH
 
-%Load the data
 
-im_stack = {};
-for j = 1:num_frames-1 %For a full analysis, i'll run this to length(DTIF)
-    fname = [Folder, filesep, DTIF(j).name];
-    info = imfinfo(fname);
-    num_images = numel(info);
-    for i = 1:num_images
-        im_stack{j, i} = imread(fname, i, 'Info', info);
+if strcmp(FileMode,'LIFExport')
+    load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']);
+    im_stack = {};
+%     im_stack = cell(length(FrameInfo), FrameInfo(1).NumberSlices);
+
+    if num_frames == 0
+        num_frames = length(FrameInfo);
+    end
+    
+    for CurrentFrame = 1:num_frames
+        for CurrentZ = 1:FrameInfo(1).NumberSlices
+            im_stack{CurrentFrame,CurrentZ} = imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'.tif']);
+        end
+    end
+
+elseif strcmp(FileMode,'LAT')
+    im_stack = {};
+    
+    if num_frames == 0
+        num_frames = length(DTIF);
+    end
+    
+    for j = 1:num_frames-1 %For a full analysis, i'll run this to length(DTIF)
+        fname = [Folder, filesep, DTIF(j).name];
+        info = imfinfo(fname);
+        num_images = numel(info);
+        for i = 1:num_images
+            im_stack{j, i} = imread(fname, i, 'Info', info);
+        end
     end
 end
+
 OutputFolder1=[FISHPath,filesep,Prefix,'_',filesep,'MYCODEdogsMYCODE'];
 OutputFolder2=[FISHPath,filesep,Prefix,'_',filesep,'MYCODEsegsMYCODE'];
 
@@ -127,13 +167,13 @@ for i = 1:num_frames-1
             figure(1)
             imshow(im,[]);
         end
-        thrim = dog>thr;
+        thrim = dog > thr;
         [im_label, n_spots] = bwlabel(thrim); 
         temp_particles = {};
         rad = 600 / pixelSize; %500nm is roughly the size of a sister chromatid diffraction limited spot.
 %         rad = 500/pixelSize;
         for k = 1:n_spots
-            [r,c] = find(im_label==k);
+            [r,c] = find(im_label == k);
 
             %Find spot centroids in the actual image by hunting for absolute maxima in
             %neighborhoods around spots that were just located
@@ -198,7 +238,7 @@ for i = 1:num_frames-1
                     disp(rel_errors);
                     
                     % Quality control.
-                    % TO DO: make some quality control using the errors in
+                    % TODO: make some quality control using the errors in
                     % the fitting. Using any(rel_errors > 0.3) (for
                     % example) is not the best thing to do, because
                     % sometimes the second gaussian doesn't get a good fit
