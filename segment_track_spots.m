@@ -105,15 +105,13 @@ end
 if strcmp(FileMode,'LIFExport')
     load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']);
     im_stack = {};
-%     im_stack = cell(length(FrameInfo), FrameInfo(1).NumberSlices);
-
     if num_frames == 0
         num_frames = length(FrameInfo);
     end
     
-    for CurrentFrame = 1:num_frames
-        for CurrentZ = 1:FrameInfo(1).NumberSlices
-            im_stack{CurrentFrame,CurrentZ} = imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'.tif']);
+    for current_frame = 1:num_frames
+        for current_z = 1:FrameInfo(1).NumberSlices
+            im_stack{current_frame,current_z} = imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']);
         end
     end
 
@@ -152,16 +150,16 @@ neighb = 500 / pixelSize; %This should work for a first pass and shouldn't fail 
 thr = thresh; 
 dog_stack  = {}; 
 all_frames = {}; 
-for i = 1:num_frames-1 
-    for j = 1:size(im_stack,2) %z-slices
-        im = im_stack{i,j};
+for current_frame = 1:num_frames-1 
+    for current_z = 1:size(im_stack,2) %z-slices
+        im = im_stack{current_frame,current_z};
         %filterSize >> sigma 2 > sigma 1. these values should be good for a first pass.
-        dog_stack{i,j} = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
+        dog_stack{current_frame,current_z} = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
         if save_status
-            dog_name = ['DOG_',Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),'.tif'];
-            imwrite(uint16(dog_stack{i,j}), [OutputFolder1,filesep,dog_name])
+            dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
+            imwrite(uint16(dog_stack{current_frame,current_z}), [OutputFolder1,filesep,dog_name])
         end
-        dog = dog_stack{i,j}(10:end-10, 10:end-10);
+        dog = dog_stack{current_frame,current_z}(10:end-10, 10:end-10);
         im = im(10:end-10, 10:end-10);
         if show_status
             figure(1)
@@ -184,7 +182,8 @@ for i = 1:num_frames-1
             cent_intensity = 0;
             for o = 1:2*neighb
                 for p = 1:2*neighb
-                    if r(1) - neighb + o > 0 && c(1) - neighb + p > 0 && r(1) - neighb + o < size(im,1)  && c(1) - neighb + p < size(im,2)
+                    if r(1) - neighb + o > 0 && c(1) - neighb + p > 0 ... 
+                            && r(1) - neighb + o < size(im,1)  && c(1) - neighb + p < size(im,2)
                         possible_cent(o,p) = im(r(1)-neighb+o, c(1)-neighb+p);
                         pcentloc{o,p} = [r(1)-neighb+o, c(1)-neighb+p];
                     end
@@ -200,18 +199,7 @@ for i = 1:num_frames-1
                if show_status
                     ellipse(neighb/2,neighb/2,0,cent_y,cent_x,'r');
                end
-%                 try
-%                     %Fit a single 2D Gaussian
-%                     snip = im(cent_y-rad:cent_y+rad, cent_x-rad: cent_x+rad);
-%                     [f1, res1, f2, res2] = fitGausses(snip);
-%                     if res1/res2 > 1.5
-%                         temp_particles = [temp_particles,[f1(1), f1(2), f1(4), f1(5), 0]];
-%                     else
-%                         temp_particles = [temp_particles,[f2(1), f2(2), f2(4), f2(11), 0]];
-%                         temp_particles = [temp_particles,[f1(6), f1(7), f1(9), f1(11),1]];
-%                     end
-%                 catch
-%                 end
+
                 if cent_y - rad > 1 && cent_x - rad > 1 && cent_y + rad < size(im, 1) && cent_x + rad < size(im,2)
                     snip = im(cent_y-rad:cent_y+rad, cent_x-rad:cent_x+rad);
 %                      [f1, res1, f2, res2] = fitGausses(snip);
@@ -266,11 +254,11 @@ for i = 1:num_frames-1
                 end
             end
             if k == n_spots && save_status
-                seg_name = ['SEG_',Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),'.tif'];
+                seg_name = ['SEG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
                 saveas(gcf,[OutputFolder2,filesep,seg_name]);
             end
         end
-        all_frames{i,j} = temp_particles;
+        all_frames{current_frame,current_z} = temp_particles;
     end
 end
 
@@ -283,15 +271,15 @@ nframes = size(all_frames,1);
 nz = size(all_frames,2);
 for i = 1:nframes 
     for j = 1:nz 
-         for k = 1:length(all_frames{i,j}) %spots within particular image
-             if ~isempty(all_frames{i,j}{k})
-                 Particles(n).Intensity(1) = cell2mat(all_frames{i,j}{k}(1));
-                 Particles(n).x(1) = cell2mat(all_frames{i,j}{k}(2));
-                 Particles(n).y(1) = cell2mat(all_frames{i,j}{k}(3));
-                 Particles(n).Offset(1) = cell2mat(all_frames{i,j}{k}(4));
-%                  Particles(n).Sister(1) = all_frames{i,j}{k}(5);
-                 Particles(n).Snippet{1} = cell2mat(all_frames{i,j}{k}(5));
-                 Particles(n).Area{1} = cell2mat(all_frames{i,j}{k}(6));
+         for spot = 1:length(all_frames{i,j}) %spots within particular image
+             if ~isempty(all_frames{i,j}{spot})
+                 Particles(n).Intensity(1) = cell2mat(all_frames{i,j}{spot}(1));
+                 Particles(n).x(1) = cell2mat(all_frames{i,j}{spot}(2));
+                 Particles(n).y(1) = cell2mat(all_frames{i,j}{spot}(3));
+                 Particles(n).Offset(1) = cell2mat(all_frames{i,j}{spot}(4));
+%                  Particles(n).Sister(1) = all_frames{i,j}{spot}(5);
+                 Particles(n).Snippet{1} = cell2mat(all_frames{i,j}{spot}(5));
+                 Particles(n).Area{1} = cell2mat(all_frames{i,j}{spot}(6));
                  Particles(n).z(1) = j;
                  Particles(n).t(1) = i;
                  Particles(n).r = 0;
@@ -335,26 +323,26 @@ for i = 1:length(Particles)
     end
 end
 
-%time tracking
-changes = 1;
-while changes ~= 0
-    changes = 0;
-    for n = 1:length(Particles)-1 %particle of interest
-        for j = n+1:length(Particles) %particle to compare to
-            if Particles(n).t(end) == (Particles(j).t(end) -  1)
-                dist = sqrt( (Particles(n).x(end) - Particles(j).x(end))^2 + (Particles(n).y(end) - Particles(j).y(end))^2); 
-                if dist < neighb
-                    for m = 1:numel(fields)-1 %do not include fields 'r'
-                        Particles(n).(fields{m}) = [Particles(n).(fields{m}), Particles(j).(fields{m})];
-                    end
-                    Particles(j).r = 1;
-                    changes = changes + 1;
-                end
-            end
-        end
-    end
-Particles = Particles([Particles.r]~=1);
-end
+% %time tracking
+% changes = 1;
+% while changes ~= 0
+%     changes = 0;
+%     for n = 1:length(Particles)-1 %particle of interest
+%         for j = n+1:length(Particles) %particle to compare to
+%             if Particles(n).t(end) == (Particles(j).t(end) -  1)
+%                 dist = sqrt( (Particles(n).x(end) - Particles(j).x(end))^2 + (Particles(n).y(end) - Particles(j).y(end))^2); 
+%                 if dist < neighb
+%                     for m = 1:numel(fields)-1 %do not include fields 'r'
+%                         Particles(n).(fields{m}) = [Particles(n).(fields{m}), Particles(j).(fields{m})];
+%                     end
+%                     Particles(j).r = 1;
+%                     changes = changes + 1;
+%                 end
+%             end
+%         end
+%     end
+% Particles = Particles([Particles.r]~=1);
+% end
 
 mkdir([DropboxFolder,filesep,Prefix,filesep,'mycode']);
 save([DropboxFolder,filesep,Prefix,filesep,'mycode',filesep,'Particles.mat'], 'Particles');

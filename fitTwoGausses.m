@@ -5,6 +5,8 @@ function [f1, res1, residual, exitflag, output, lambda, jacobian] = ...
 % one or two gaussians. Also, use that information to define a reasonable 
 % initial guess for the fitting initial parameters.
 
+
+snip = CPsmooth(snip,'Gaussian Filter',1.3,0);
 snip = double(snip);
 [y,x] = meshgrid(1:size(snip,2), 1:size(snip,1));
 
