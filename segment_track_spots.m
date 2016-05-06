@@ -1,13 +1,17 @@
-function segment_track_spots(Prefix, thresh, show_status,save_status, num_frames)
+function segment_track_spots(Prefix, thresh, show_status, save_status, ...
+    track_status, num_frames)
 
-%show_status takes 0 or 1 depending on whether you want to display plots
-%and images
+% show_status takes 0 or 1 depending on whether you want to display plots
+% and images
 
-%save_status takes 0 or 1 depending on whether you want to save your files
+% save_status takes 0 or 1 depending on whether you want to save your files
 
-%num_frames for debugging should be kept at 5-20
+% track_status takes 0 or 1 depending on whether you want to make a time
+% tracking in addition to the segmentation.
 
-%thresh should be kept at ~90-200
+% num_frames for debugging should be kept at 5-20
+
+% thresh should be kept at ~90-200
 
 % try
 %     parpool;
@@ -210,7 +214,7 @@ for current_frame = 1:num_frames-1
                     % OFfsetGuess = 1000.
                     
                     NeighborhoodSize = [5 5];
-                    MaxThreshold = 30;
+                    MaxThreshold = 20;
                     WidthGuess = 1;
                     OffsetGuess = 10;
                     [f1, res1, residual, exitflag, output, lambda, jacobian] =  ...
@@ -323,26 +327,9 @@ for i = 1:length(Particles)
     end
 end
 
-% %time tracking
-% changes = 1;
-% while changes ~= 0
-%     changes = 0;
-%     for n = 1:length(Particles)-1 %particle of interest
-%         for j = n+1:length(Particles) %particle to compare to
-%             if Particles(n).t(end) == (Particles(j).t(end) -  1)
-%                 dist = sqrt( (Particles(n).x(end) - Particles(j).x(end))^2 + (Particles(n).y(end) - Particles(j).y(end))^2); 
-%                 if dist < neighb
-%                     for m = 1:numel(fields)-1 %do not include fields 'r'
-%                         Particles(n).(fields{m}) = [Particles(n).(fields{m}), Particles(j).(fields{m})];
-%                     end
-%                     Particles(j).r = 1;
-%                     changes = changes + 1;
-%                 end
-%             end
-%         end
-%     end
-% Particles = Particles([Particles.r]~=1);
-% end
+if track_status
+    Particles = track_spots(Particles, neighb);
+end
 
 mkdir([DropboxFolder,filesep,Prefix,filesep,'mycode']);
 save([DropboxFolder,filesep,Prefix,filesep,'mycode',filesep,'Particles.mat'], 'Particles');
@@ -353,5 +340,5 @@ for i = 1:length(Particles)
         hold on
     end
 end
+
 t = toc
-end
