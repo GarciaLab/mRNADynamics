@@ -128,12 +128,13 @@ mkdir(OutputFolder2)
 %DoG Stuff
 %filterSize >> sigma 2 > sigma 1. these values should be good for a first
 %pass.
-pixelSize = 100; %nm
+
+pixelSize = 200; %nm
 
 sigma1 = 150/pixelSize;
 sigma2 = 250/pixelSize;
 filterSize = round(1500/pixelSize); 
-neighb = 500 / pixelSize; %This should work for a first pass and shouldn't fail on sisters.
+neighb = round(500/pixelSize); %This should work for a first pass and shouldn't fail on sisters.
 thr = thresh; 
 dog_stack  = {}; 
 all_frames = {}; 
@@ -155,8 +156,8 @@ for current_frame = 1:num_frames-1
         thrim = dog > thr;
         [im_label, n_spots] = bwlabel(thrim); 
         temp_particles = {};
-        rad = 600 / pixelSize; %500nm is roughly the size of a sister chromatid diffraction limited spot.
-%         rad = 500/pixelSize;
+        rad = 500/pixelSize; %500nm is roughly the size of a sister chromatid diffraction limited spot.
+%         rad = 800/pixelSize;
         if n_spots ~= 0
             for k = 1:n_spots
                 temp_particles = fit_single_spot(k, im, im_label, neighb, ...

@@ -41,9 +41,9 @@ if ~isempty(possible_cent)
         % For confocal data, try NeighborhoodSize = 500, MaxThreshold = 20,
         % WidthGuess = 1, OFfsetGuess = 10.
 
-        NeighborhoodSize = 500; % nm
+        NeighborhoodSize = 1000; % nm
         NeighborhoodSize = NeighborhoodSize/pixelSize;
-        MaxThreshold = 30;
+        MaxThreshold = 20;
         WidthGuess = 1;
         OffsetGuess = 10;
         [f1, res1, residual, exitflag, output, lambda, jacobian] =  ...
