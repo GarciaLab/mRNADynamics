@@ -105,7 +105,6 @@ end
 
 % Load data generated with ExportDataForFISH
 
-
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']);
 im_stack = {};
 
@@ -156,22 +155,29 @@ for current_frame = 1:num_frames-1
         thrim = dog > thr;
         [im_label, n_spots] = bwlabel(thrim); 
         temp_particles = {};
-        rad = 500/pixelSize; %500nm is roughly the size of a sister chromatid diffraction limited spot.
-%         rad = 800/pixelSize;
+%         rad = 500/pixelSize; %500nm is roughly the size of a sister chromatid diffraction limited spot.
+        rad = 800/pixelSize;
+        temp_frames = {};
         if n_spots ~= 0
-            for k = 1:n_spots
-                temp_particles = fit_single_spot(k, im, im_label, neighb, ...
+            parfor k = 1:n_spots
+                temp_particles(k) = fit_single_spot(k, im, im_label, neighb, ...
                     rad, pixelSize, show_status);
-                all_frames{current_frame,current_z} = temp_particles;
                 if k == n_spots && save_status
                     seg_name = ['SEG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
                     saveas(gcf,[OutputFolder2,filesep,seg_name]);
                 end
             end
+            for k = 1:n_spots
+                if ~isempty(temp_particles{k})
+                    temp_frames = [temp_frames, temp_particles(k)];
+                end
+            end
+            all_frames{current_frame,current_z} = temp_frames;
         end
     end
 end
 
+t = toc
 %%
 
 clear im_stack
