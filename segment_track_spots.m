@@ -237,8 +237,12 @@ if track_status
     Particles = track_spots(Particles, neighb);
 end
 
+%Changing the name of the Particles structure for integration purposes
+
+Spots = Particles;
+
 mkdir([DropboxFolder,filesep,Prefix,filesep,'mycode']);
-save([DropboxFolder,filesep,Prefix,filesep,'mycode',filesep,'Particles.mat'], 'Particles');
+save([DropboxFolder,filesep,Prefix,filesep,'mycode',filesep,'Spots.mat'], 'Spots');
 for i = 1:length(Particles)
     if length(Particles(i).t) > 50
         plot(Particles(i).t, Particles(i).Intensity)
