@@ -156,7 +156,7 @@ for current_frame = 1:num_frames-1
         thrim = dog > thr;
         [im_label, n_spots] = bwlabel(thrim); 
         temp_particles = {};
-        rad = 1000/pixelSize; %500nm is roughly the size of a sister chromatid diffraction limited spot.
+        rad = 500/pixelSize; %500nm is roughly the size of a sister chromatid diffraction limited spot.
 %         rad = 800/pixelSize;
         if n_spots ~= 0
             for k = 1:n_spots
@@ -192,7 +192,7 @@ for i = 1:nframes
                  Particles(n).Area{1} = cell2mat(all_frames{i,j}{spot}(6));
                  Particles(n).z(1) = j;
                  Particles(n).t(1) = i;
-                 Particles(n).r = 0; %r is a flag for later row deletion
+                 Particles(n).r = 0;
                  n = n + 1;
              end
          end

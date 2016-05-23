@@ -36,16 +36,16 @@ if ~isempty(possible_cent)
         
         % Set parameters to use as initial guess in the fitting. For the 
         % lattice data, try NeighborhoodSize = 1000, MaxThreshold = 2000, 
-        % WidthGuess = 500, OffsetGuess = 1000.
+        % WidthGuess = 5, OFfsetGuess = 1000.
 
         % For confocal data, try NeighborhoodSize = 500, MaxThreshold = 20,
-        % WidthGuess = 100, OffsetGuess = 10.
+        % WidthGuess = 1, OFfsetGuess = 10.
 
         NeighborhoodSize = 1000; % nm
         NeighborhoodSize = NeighborhoodSize/pixelSize;
-        MaxThreshold = 2000; %photons
-        WidthGuess = 500 / pixelSize; %500 nm
-        OffsetGuess = 1000; %photons
+        MaxThreshold = 20;
+        WidthGuess = 1;
+        OffsetGuess = 10;
         [f1, res1, residual, exitflag, output, lambda, jacobian] =  ...
             fitTwoGausses(snip, NeighborhoodSize, MaxThreshold, ...
             WidthGuess, OffsetGuess, show_status);
@@ -68,30 +68,20 @@ if ~isempty(possible_cent)
 
 %                     if f1(3) > rad+3 || f1(5) > rad+3
         if 1
-            c_x = f1(2) - rad + cent_x; %center in actual image
-            c_y = f1(4) - rad + cent_y; %center in actual image
-            int_x = [round(c_x - f1(3)), round(c_x + f1(3))]; %integration bounds in x
-            int_y = [round(c_y - f1(5)), round(c_y + f1(5))]; %integration bounds in y
+            c_x = f1(2) - rad + cent_x;
+            c_y = f1(4) - rad + cent_y;
+            int_x = [round(c_x - f1(3)), round(c_x + f1(3))];
+            int_y = [round(c_y - f1(5)), round(c_y + f1(5))];
             area = (int_x(2) - int_x(1)) * (int_y(2) - int_y(1));
             fluor = 0;
-            variable_integration_area = 0;
-            if int_x(1) > 1 && int_y(1) > 1 && int_x(2) < size(im,2) && int_y(2) < size(im,1) && variable_integration_area
-                    for w = int_x(1):int_x(2)
-                        for v = int_y(1): int_y(2)
-                            fluor = fluor + double(im(v,w));
-                        end
-                    end
-            else 
-                if c_x-5> 1 && c_x-5 > 1 && c_x+5 < size(im,2) && c_y+5 < size(im,1)
-                    for w = round(c_x)-5:round(c_x)+5
-                        for v = round(c_y)-5:round(c_y)+5
-                            fluor = fluor + double(im(v,w));
-                        end
+            if int_x(1) > 1 && int_y(1) > 1 && int_x(2) < size(im,2) && int_y(2) < size(im,1)
+                for w = int_x(1):int_x(2)
+                    for v = int_y(1): int_y(2)
+                        fluor = fluor + double(im(v,w));
                     end
                 end
-            end
-            temp = {{fluor, c_x, c_y, f1(6), snip, area}};
-            temp_particles = [temp_particles,temp];
+                temp = {{fluor, c_x, c_y, f1(6), snip, area}};
+                temp_particles = [temp_particles,temp];
             end
         end
     end
