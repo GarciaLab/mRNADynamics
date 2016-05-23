@@ -72,7 +72,7 @@ if ~isempty(possible_cent)
             c_y = f1(4) - rad + cent_y;
             int_x = [round(c_x - f1(3)), round(c_x + f1(3))];
             int_y = [round(c_y - f1(5)), round(c_y + f1(5))];
-            area = (int_x(2) - int_x(1)) * (int_y(2) - int_y(1));
+            area = pi*f1(3)*f1(5); %in pixels
             fluor = 0;
             if int_x(1) > 1 && int_y(1) > 1 && int_x(2) < size(im,2) && int_y(2) < size(im,1)
                 for w = int_x(1):int_x(2)
@@ -80,7 +80,7 @@ if ~isempty(possible_cent)
                         fluor = fluor + double(im(v,w));
                     end
                 end
-                temp = {{fluor, c_x, c_y, f1(6), snip, area}};
+                temp = {{fluor, c_x, c_y, f1(6), snip, area, f1(3), f1(5),cent_y,cent_x}};
                 temp_particles = [temp_particles,temp];
             end
         end
