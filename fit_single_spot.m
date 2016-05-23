@@ -36,16 +36,16 @@ if ~isempty(possible_cent)
         
         % Set parameters to use as initial guess in the fitting. For the 
         % lattice data, try NeighborhoodSize = 1000, MaxThreshold = 2000, 
-        % WidthGuess = 5, OFfsetGuess = 1000.
+        % WidthGuess = 500, OFfsetGuess = 1000.
 
         % For confocal data, try NeighborhoodSize = 500, MaxThreshold = 20,
-        % WidthGuess = 1, OFfsetGuess = 10.
+        % WidthGuess = 100, OFfsetGuess = 10.
 
-        NeighborhoodSize = 1000; % nm
-        NeighborhoodSize = NeighborhoodSize/pixelSize;
-        MaxThreshold = 20;
-        WidthGuess = 1;
-        OffsetGuess = 10;
+
+        NeighborhoodSize = 1000/pixelSize; %nm
+        MaxThreshold = 20; %intensity
+        WidthGuess = 500 / pixelSize; %nm
+        OffsetGuess = 1000; %intensity
         [f1, res1, residual, exitflag, output, lambda, jacobian] =  ...
             fitTwoGausses(snip, NeighborhoodSize, MaxThreshold, ...
             WidthGuess, OffsetGuess, show_status);
