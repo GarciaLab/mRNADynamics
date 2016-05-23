@@ -233,13 +233,17 @@ for i = 1:length(Particles)
     end
 end
 
+%time tracking
+
 if track_status
     Particles = track_spots(Particles, neighb);
 end
 
-%Changing the name of the Particles structure for integration purposes
+%Changing the name of the Particles structure for code integration purposes
 
 Spots = Particles;
+
+%Save and plot
 
 mkdir([DropboxFolder,filesep,Prefix,filesep,'mycode']);
 save([DropboxFolder,filesep,Prefix,filesep,'mycode',filesep,'Spots.mat'], 'Spots');
