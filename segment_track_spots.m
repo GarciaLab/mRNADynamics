@@ -185,9 +185,9 @@ for i = 1:nframes
              if ~isempty(all_frames{i,j}{spot})
                  Particles(n).Intensity(1) = cell2mat(all_frames{i,j}{spot}(1));
                  Particles(n).x(1) = cell2mat(all_frames{i,j}{spot}(2));
-                 Particles(n).xDoG(1) = cell2mat(all_frames{i,j}{spot}(9));
-                 Particles(n).yDoG(1) = cell2mat(all_frames{i,j}{spot}(10));
                  Particles(n).y(1) = cell2mat(all_frames{i,j}{spot}(3));
+                 Particles(n).xDoG(1) = cell2mat(all_frames{i,j}{spot}(10));
+                 Particles(n).yDoG(1) = cell2mat(all_frames{i,j}{spot}(9));
                  Particles(n).Offset(1) = cell2mat(all_frames{i,j}{spot}(4));
 %                  Particles(n).Sister(1) = all_frames{i,j}{spot}(5);
                  Particles(n).Snippet{1} = cell2mat(all_frames{i,j}{spot}(5));
@@ -232,8 +232,12 @@ end
 %pick the brightest z-slice
 for i = 1:length(Particles)
     [~, max_index] = max(Particles(i).Intensity);
-    for j = 1:numel(fields)-2 %do not include fields 'r' or 't'
-        Particles(i).(fields{j}) = Particles(i).(fields{j})(max_index);
+    if track_status
+        for j = 1:numel(fields)-2 %do not include fields 'r' or 't'
+            Particles(i).(fields{j}) = Particles(i).(fields{j})(max_index);
+        end
+    else 
+        Particles(i).brightestZ = Particles(i).z(max_index);
     end
 end
 
