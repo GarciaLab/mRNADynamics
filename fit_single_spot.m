@@ -36,10 +36,10 @@ if ~isempty(possible_cent)
         
         % Set parameters to use as initial guess in the fitting. For the 
         % lattice data, try NeighborhoodSize = 1000, MaxThreshold = 2000, 
-        % WidthGuess = 500, OFfsetGuess = 1000.
+        % WidthGuess = 500, OffsetGuess = 1000.
 
         % For confocal data, try NeighborhoodSize = 500, MaxThreshold = 20,
-        % WidthGuess = 100, OFfsetGuess = 10.
+        % WidthGuess = 100, OffsetGuess = 10.
 
 
         NeighborhoodSize = 1000/pixelSize; %nm

@@ -131,10 +131,10 @@ mkdir(OutputFolder2)
 
 pixelSize = 200; %nm
 
-sigma1 = 150/pixelSize;
-sigma2 = 250/pixelSize;
-filterSize = round(1500/pixelSize); 
-neighb = round(500/pixelSize); %This should work for a first pass and shouldn't fail on sisters.
+sigma1 = 150 / pixelSize;
+sigma2 = 250 / pixelSize;
+filterSize = round(1500 / pixelSize); 
+neighb = round(500 / pixelSize); %This should work for a first pass and shouldn't fail on sisters.
 thr = thresh; 
 dog_stack  = {}; 
 all_frames = {}; 
@@ -233,15 +233,23 @@ for i = 1:length(Particles)
     end
 end
 
+%Create a final Spots structure to be fed into TrackmRNADynamics
+
+Spots = {};
+for i = 1:Particles(end).t
+    for j = 1:length(Particles)
+        if Particles(j).t == i
+            Spots{j,i} = Particles(j);
+        end
+    end
+end
+
+
 %time tracking
 
 if track_status
     Particles = track_spots(Particles, neighb);
 end
-
-%Changing the name of the Particles structure for code integration purposes
-
-Spots = Particles;
 
 %Save and plot
 
