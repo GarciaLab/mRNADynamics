@@ -1,4 +1,4 @@
-function [f1, res1, residual, exitflag, output, lambda, jacobian] = ...
+function [f1, GaussianIntensity, res1, residual, exitflag, output, lambda, jacobian] = ...
     fitTwoGausses(snip, NeighborhoodSize, Threshold, WidthGuess, OffsetGuess, show)
 
 % Find local maxima in snip and use that information to decide if fitting
@@ -48,6 +48,10 @@ else
     [f1, res1, residual, exitflag, output, lambda, jacobian] = lsqnonlin(singleGaussian, ...
         init_params,[0,0,0,0,0,0],[inf,inf,inf,inf,inf,inf]);
 end
+
+%Compute intensities by integrating over the Gaussian fit
+
+GaussianIntensity = sum(sum(singleGaussian(f1)+double(snip)-f1(end)));
 
 if show
     figure(2)

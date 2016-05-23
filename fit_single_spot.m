@@ -46,7 +46,7 @@ if ~isempty(possible_cent)
         MaxThreshold = 20; %intensity
         WidthGuess = 500 / pixelSize; %nm
         OffsetGuess = 1000; %intensity
-        [f1, res1, residual, exitflag, output, lambda, jacobian] =  ...
+        [f1, GaussianIntensity,res1, residual, exitflag, output, lambda, jacobian] =  ...
             fitTwoGausses(snip, NeighborhoodSize, MaxThreshold, ...
             WidthGuess, OffsetGuess, show_status);
 
@@ -70,17 +70,19 @@ if ~isempty(possible_cent)
         if 1
             c_x = f1(2) - rad + cent_x;
             c_y = f1(4) - rad + cent_y;
-            int_x = [round(c_x - f1(3)), round(c_x + f1(3))];
-            int_y = [round(c_y - f1(5)), round(c_y + f1(5))];
+%             int_x = [round(c_x - f1(3)), round(c_x + f1(3))];
+%             int_y = [round(c_y - f1(5)), round(c_y + f1(5))];
+            int_x = [round(c_x - 5), round(c_x + 5)];
+            int_y = [round(c_y - 5), round(c_y + 5)];
             area = pi*f1(3)*f1(5); %in pixels
-            fluor = 0;
+            fixedAreaIntensity = 0;
             if int_x(1) > 1 && int_y(1) > 1 && int_x(2) < size(im,2) && int_y(2) < size(im,1)
                 for w = int_x(1):int_x(2)
                     for v = int_y(1): int_y(2)
-                        fluor = fluor + double(im(v,w));
+                        fixedAreaIntensity = fixedAreaIntensity + double(im(v,w) - f1(end));
                     end
                 end
-                temp = {{fluor, c_x, c_y, f1(6), snip, area, f1(3), f1(5),cent_y,cent_x}};
+                temp = {{fixedAreaIntensity, c_x, c_y, f1(6), snip, area, f1(3), f1(5),cent_y,cent_x,GaussianIntensity ,inten}};
                 temp_particles = [temp_particles,temp];
             end
         end

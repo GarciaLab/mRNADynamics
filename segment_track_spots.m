@@ -40,7 +40,7 @@ if isempty(PrefixRow)
     PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
         [Prefix(1:Dashes(3)-1), '/', Prefix(Dashes(3)+1:end)]));
     if isempty(PrefixRow)
-        error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
+        error('Could not find data set in MovieDatabase.xlsx. Check if it is defined there.')
     end
 end
 
@@ -57,7 +57,7 @@ elseif strcmp(ExperimentType,'2spot2color')
 elseif strcmp(ExperimentType,'inputoutput')
     NChannels=1;
 else
-    error('Experiment type not recognized in MovieDatabase.XLSX')
+    error('Experiment type not recognized in MovieDatabase.xlsx')
 end
 
 if ~exist('Thresholds')
@@ -77,7 +77,7 @@ Folder = [SourcePath, filesep, DateFolderS, filesep, LineFolderS];
 DTIF=dir([Folder,filesep,'*.tif']);
 DLSM=dir([Folder,filesep,'*.lsm']);
 DLIF=dir([Folder,filesep,'*.lif']);
-DLAT=dir([Folder,filesep,'*_Settings.txt']);
+DLAT=dir([Folder,filesep,'*_Settings.framext']);
 
 if (length(DTIF)>0)&(isempty(DLSM))
     if length(DLIF)==0
@@ -144,7 +144,7 @@ for current_frame = 1:num_frames-1
         %filterSize >> sigma 2 > sigma 1. these values should be good for a first pass.
         dog_stack{current_frame,current_z} = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
         if save_status
-            dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
+            dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.frameif'];
             imwrite(uint16(dog_stack{current_frame,current_z}), [OutputFolder1,filesep,dog_name])
         end
         dog = dog_stack{current_frame,current_z}(10:end-10, 10:end-10);
@@ -164,7 +164,7 @@ for current_frame = 1:num_frames-1
                     rad, pixelSize, show_status);
                 all_frames{current_frame,current_z} = temp_particles;
                 if k == n_spots && save_status
-                    seg_name = ['SEG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
+                    seg_name = ['SEG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.frameif'];
                     saveas(gcf,[OutputFolder2,filesep,seg_name]);
                 end
             end
@@ -183,19 +183,21 @@ for i = 1:nframes
     for j = 1:nz 
          for spot = 1:length(all_frames{i,j}) %spots within particular image
              if ~isempty(all_frames{i,j}{spot})
-                 Particles(n).Intensity(1) = cell2mat(all_frames{i,j}{spot}(1));
-                 Particles(n).x(1) = cell2mat(all_frames{i,j}{spot}(2));
-                 Particles(n).y(1) = cell2mat(all_frames{i,j}{spot}(3));
+                 Particles(n).CentralIntensity(1) = cell2mat(all_frames{i,j}{spot}(12));
+                 Particles(n).FixedAreaIntensity(1) = cell2mat(all_frames{i,j}{spot}(1));
+                 Particles(n).GaussianIntensity(1) = cell2mat(all_frames{i,j}{spot}(11));
+                 Particles(n).xFit(1) = cell2mat(all_frames{i,j}{spot}(2));
+                 Particles(n).yFit(1) = cell2mat(all_frames{i,j}{spot}(3));
                  Particles(n).xDoG(1) = cell2mat(all_frames{i,j}{spot}(10));
                  Particles(n).yDoG(1) = cell2mat(all_frames{i,j}{spot}(9));
                  Particles(n).Offset(1) = cell2mat(all_frames{i,j}{spot}(4));
 %                  Particles(n).Sister(1) = all_frames{i,j}{spot}(5);
                  Particles(n).Snippet{1} = cell2mat(all_frames{i,j}{spot}(5));
                  Particles(n).Area{1} = cell2mat(all_frames{i,j}{spot}(6));
-                 Particles(n).xWidth{1} = cell2mat(all_frames{i,j}{spot}(7));
-                 Particles(n).yWidth{1} = cell2mat(all_frames{i,j}{spot}(8));
+                 Particles(n).xFitWidth{1} = cell2mat(all_frames{i,j}{spot}(7));
+                 Particles(n).yFitWidth{1} = cell2mat(all_frames{i,j}{spot}(8));
                  Particles(n).z(1) = j;
-                 Particles(n).t(1) = i;
+                 Particles(n).frame(1) = i;
                  Particles(n).r = 0;
                  n = n + 1;
              end
@@ -211,12 +213,12 @@ while changes ~= 0
     changes = 0;
     i = 1;
     for n = 1:nframes   
-        i = i + length(Particles([Particles.t] == (n - 1) ));
-        for j = i:i+length(Particles([Particles.t] == n)) - 1
-            for k = j+1:i+length(Particles([Particles.t] == n)) - 1
-                dist = sqrt( (Particles(j).x(end) - Particles(k).x(end))^2 + (Particles(j).y(end) - Particles(k).y(end))^2); 
+        i = i + length(Particles([Particles.frame] == (n - 1) ));
+        for j = i:i+length(Particles([Particles.frame] == n)) - 1
+            for k = j+1:i+length(Particles([Particles.frame] == n)) - 1
+                dist = sqrt( (Particles(j).xFit(end) - Particles(k).xFit(end))^2 + (Particles(j).yFit(end) - Particles(k).yFit(end))^2); 
                 if dist < neighb && Particles(j).z(end) ~= Particles(k).z(end)
-                    for m = 1:numel(fields)-2 %do not include fields 'r' or 't'
+                    for m = 1:numel(fields)-2 %do not include fields 'r' or 'frame'
                         Particles(j).(fields{m}) = [Particles(j).(fields{m}), Particles(k).(fields{m})];
                     end
                     Particles(k).r = 1;
@@ -231,9 +233,9 @@ end
 
 %pick the brightest z-slice
 for i = 1:length(Particles)
-    [~, max_index] = max(Particles(i).Intensity);
+    [~, max_index] = max(Particles(i).FixedAreaIntensity);
     if track_status
-        for j = 1:numel(fields)-2 %do not include fields 'r' or 't'
+        for j = 1:numel(fields)-2 %do not include fields 'r' or 'frame'
             Particles(i).(fields{j}) = Particles(i).(fields{j})(max_index);
         end
     else 
@@ -244,9 +246,9 @@ end
 %Create a final Spots structure to be fed into TrackmRNADynamics
 
 Spots = {};
-for i = 1:Particles(end).t
+for i = 1:Particles(end).frame
     for j = 1:length(Particles)
-        if Particles(j).t == i
+        if Particles(j).frame == i
             Spots{j,i} = Particles(j);
         end
     end
@@ -263,8 +265,8 @@ end
 mkdir([DropboxFolder,filesep,Prefix,filesep,'mycode']);
 save([DropboxFolder,filesep,Prefix,filesep,'mycode',filesep,'Spots.mat'], 'Spots');
 for i = 1:length(Particles)
-    if length(Particles(i).t) > 50
-        plot(Particles(i).t, Particles(i).Intensity)
+    if length(Particles(i).frame) > 50
+        plot(Particles(i).frame, Particles(i).FixedAreaIntensity)
         i
         hold on
     end
