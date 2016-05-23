@@ -185,11 +185,15 @@ for i = 1:nframes
              if ~isempty(all_frames{i,j}{spot})
                  Particles(n).Intensity(1) = cell2mat(all_frames{i,j}{spot}(1));
                  Particles(n).x(1) = cell2mat(all_frames{i,j}{spot}(2));
+                 Particles(n).xDoG(1) = cell2mat(all_frames{i,j}{spot}(9));
+                 Particles(n).yDoG(1) = cell2mat(all_frames{i,j}{spot}(10));
                  Particles(n).y(1) = cell2mat(all_frames{i,j}{spot}(3));
                  Particles(n).Offset(1) = cell2mat(all_frames{i,j}{spot}(4));
 %                  Particles(n).Sister(1) = all_frames{i,j}{spot}(5);
                  Particles(n).Snippet{1} = cell2mat(all_frames{i,j}{spot}(5));
                  Particles(n).Area{1} = cell2mat(all_frames{i,j}{spot}(6));
+                 Particles(n).xWidth{1} = cell2mat(all_frames{i,j}{spot}(7));
+                 Particles(n).yWidth{1} = cell2mat(all_frames{i,j}{spot}(8));
                  Particles(n).z(1) = j;
                  Particles(n).t(1) = i;
                  Particles(n).r = 0;
@@ -243,7 +247,6 @@ for i = 1:Particles(end).t
         end
     end
 end
-
 
 %time tracking
 
