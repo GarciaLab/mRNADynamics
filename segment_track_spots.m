@@ -160,7 +160,7 @@ for current_frame = 1:num_frames-1
         rad = 800/pixelSize;
         temp_frames = {};
         if n_spots ~= 0
-            for k = 1:n_spots
+            parfor k = 1:n_spots
                 temp_particles(k) = fit_single_spot(k, im, im_label, neighb, ...
                     rad, pixelSize, show_status);
                 if k == n_spots && save_status

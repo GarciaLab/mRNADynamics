@@ -58,13 +58,14 @@ if show
     figure(2)
     if size(centers,1) == 1
         surf(y, x, singleGaussian(f1) + double(snip));
-        title('single gaussian')
+        title('Single gaussian fitting')
     elseif size(centers,1) == 2
         surf(y, x, doubleGaussian(f1) + double(snip));
-        title('double gaussian')
+        title('Double gaussian fitting')
     end
     figure(3)
     imshow(imresize(snip,10),[]);
     figure(4)
     surf(y, x, double(snip));
+    title('Original data');
 end
