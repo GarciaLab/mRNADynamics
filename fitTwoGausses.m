@@ -56,6 +56,8 @@ elseif size(centers,1) == 2
     end
     rel_errors = abs(errors./double_fit);
     
+    % Keep only the gaussian closer to the center of the snippet.
+    
     snip_cent = size(snip)./2;
     gaussian1_cent = [double_fit(2), double_fit(4)];
     gaussian2_cent = [double_fit(7), double_fit(9)];
@@ -63,8 +65,6 @@ elseif size(centers,1) == 2
     dif2 = gaussian2_cent - snip_cent;
     distance1 = sqrt(sum(abs(dif1).^2,2));
     distance2 = sqrt(sum(abs(dif2).^2,2));
-    
-    % Keep only the gaussian closer to the center of the snippet.
     
     if distance1 < distance2
         fitting = double_fit(1:5);
