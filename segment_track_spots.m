@@ -144,7 +144,7 @@ for current_frame = 1:num_frames-1
         %filterSize >> sigma 2 > sigma 1. these values should be good for a first pass.
         dog_stack{current_frame,current_z} = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
         if save_status
-            dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.frameif'];
+            dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
             imwrite(uint16(dog_stack{current_frame,current_z}), [OutputFolder1,filesep,dog_name])
         end
         dog = dog_stack{current_frame,current_z}(10:end-10, 10:end-10);
@@ -156,18 +156,24 @@ for current_frame = 1:num_frames-1
         thrim = dog > thr;
         [im_label, n_spots] = bwlabel(thrim); 
         temp_particles = {};
-        rad = 500/pixelSize; %500nm is roughly the size of a sister chromatid diffraction limited spot.
-%         rad = 800/pixelSize;
+%         rad = 500/pixelSize; %500nm is roughly the size of a sister chromatid diffraction limited spot.
+        rad = 800/pixelSize;
+        temp_frames = {};
         if n_spots ~= 0
             for k = 1:n_spots
-                temp_particles = fit_single_spot(k, im, im_label, neighb, ...
+                temp_particles(k) = fit_single_spot(k, im, im_label, neighb, ...
                     rad, pixelSize, show_status);
-                all_frames{current_frame,current_z} = temp_particles;
                 if k == n_spots && save_status
-                    seg_name = ['SEG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.frameif'];
+                    seg_name = ['SEG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
                     saveas(gcf,[OutputFolder2,filesep,seg_name]);
                 end
             end
+            for k = 1:n_spots
+                if ~isempty(temp_particles{k})
+                    temp_frames = [temp_frames, temp_particles(k)];
+                end
+            end
+            all_frames{current_frame,current_z} = temp_frames;
         end
     end
 end

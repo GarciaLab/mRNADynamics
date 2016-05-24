@@ -1,4 +1,4 @@
-function [f1, GaussianIntensity, res1, residual, exitflag, output, lambda, jacobian] = ...
+function [f1, res1, residual, exitflag, output, lambda, jacobian, GaussianIntensity] = ...
     fitTwoGausses(snip, NeighborhoodSize, Threshold, WidthGuess, OffsetGuess, show)
 
 % Find local maxima in snip and use that information to decide if fitting
@@ -50,6 +50,7 @@ else
 end
 
 %Compute intensities by integrating over the Gaussian fit
+% TODO: consider the case with two gaussians here
 
 GaussianIntensity = sum(sum(singleGaussian(f1)+double(snip)-f1(end)));
 

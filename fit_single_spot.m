@@ -25,7 +25,7 @@ if ~isempty(possible_cent)
     cent_y = pcentloc{row,col}(1); 
     cent_x = pcentloc{row,col}(2);
    % temp_particles = [temp_particles,[0, cent_x, cent_y, 0, 0]];
-   temp_particles = {};
+%    temp_particles = {};
    if show_status
         ellipse(neighb/2,neighb/2,0,cent_y,cent_x,'r');
    end
@@ -38,15 +38,14 @@ if ~isempty(possible_cent)
         % lattice data, try NeighborhoodSize = 1000, MaxThreshold = 2000, 
         % WidthGuess = 500, OffsetGuess = 1000.
 
-        % For confocal data, try NeighborhoodSize = 500, MaxThreshold = 20,
-        % WidthGuess = 100, OffsetGuess = 10.
-
-
+        % For confocal data, try NeighborhoodSize = 1000, MaxThreshold = 20,
+        % WidthGuess = 200, OffsetGuess = 10.
+        
         NeighborhoodSize = 1000/pixelSize; %nm
         MaxThreshold = 20; %intensity
-        WidthGuess = 500 / pixelSize; %nm
-        OffsetGuess = 1000; %intensity
-        [f1, GaussianIntensity,res1, residual, exitflag, output, lambda, jacobian] =  ...
+        WidthGuess = 200 / pixelSize; %nm
+        OffsetGuess = 10; %intensity
+        [f1, res1, residual, exitflag, output, lambda, jacobian, GaussianIntensity] =  ...
             fitTwoGausses(snip, NeighborhoodSize, MaxThreshold, ...
             WidthGuess, OffsetGuess, show_status);
 
@@ -66,25 +65,55 @@ if ~isempty(possible_cent)
         % but the first one does, and the second one is good
         % enough to position its center.
 
-%                     if f1(3) > rad+3 || f1(5) > rad+3
-        if 1
+        if length(f1) == 6
             c_x = f1(2) - rad + cent_x;
             c_y = f1(4) - rad + cent_y;
 %             int_x = [round(c_x - f1(3)), round(c_x + f1(3))];
 %             int_y = [round(c_y - f1(5)), round(c_y + f1(5))];
             int_x = [round(c_x - 5), round(c_x + 5)];
             int_y = [round(c_y - 5), round(c_y + 5)];
-            area = pi*f1(3)*f1(5); %in pixels
-            fixedAreaIntensity = 0;
-            if int_x(1) > 1 && int_y(1) > 1 && int_x(2) < size(im,2) && int_y(2) < size(im,1)
-                for w = int_x(1):int_x(2)
-                    for v = int_y(1): int_y(2)
-                        fixedAreaIntensity = fixedAreaIntensity + double(im(v,w) - f1(end));
-                    end
-                end
-                temp = {{fixedAreaIntensity, c_x, c_y, f1(6), snip, area, f1(3), f1(5),cent_y,cent_x,GaussianIntensity ,inten}};
-                temp_particles = [temp_particles,temp];
+            sigma_x = f1(3);
+            sigma_y = f1(5);
+        else
+            snip_cent = size(snip)./2;
+            gaussian1_cent = [f1(2), f1(4)];
+            gaussian2_cent = [f1(7), f1(9)];
+            dif1 = gaussian1_cent - snip_cent;
+            dif2 = gaussian2_cent - snip_cent;
+            distance1 = sqrt(sum(abs(dif1).^2,2));
+            distance2 = sqrt(sum(abs(dif2).^2,2));
+            
+            if distance1 < distance2
+                c_x = f1(2) - rad + cent_x;
+                c_y = f1(4) - rad + cent_y;
+                int_x = [round(c_x - 5), round(c_x + 5)];
+                int_y = [round(c_y - 5), round(c_y + 5)];
+                sigma_x = f1(3);
+                sigma_y = f1(5);
+            else
+                c_x = f1(7) - rad + cent_x;
+                c_y = f1(9) - rad + cent_y;
+                int_x = [round(c_x - 5), round(c_x + 5)];
+                int_y = [round(c_y - 5), round(c_y + 5)];
+                sigma_x = fi(8);
+                sigma_y = f1(10);
             end
         end
-    end
+
+        area = pi*sigma_x*sigma_y; %in pixels
+        fixedAreaIntensity = 0;
+        if int_x(1) > 1 && int_y(1) > 1 && int_x(2) < size(im,2) && int_y(2) < size(im,1)
+            for w = int_x(1):int_x(2)
+                for v = int_y(1): int_y(2)
+                    fixedAreaIntensity = fixedAreaIntensity + double(im(v,w) - f1(end));
+                end
+            end
+            temp_particles = {{fixedAreaIntensity, c_x, c_y, f1(end), snip, ...
+                area, sigma_x, sigma_y, cent_y, cent_x, GaussianIntensity ,inten}};
+        else
+            temp_particles = {[]};
+        end
+   else
+       temp_particles = {[]};
+   end
 end
