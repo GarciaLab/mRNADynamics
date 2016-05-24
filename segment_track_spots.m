@@ -2,7 +2,8 @@ function segment_track_spots(Prefix, thresh, show_status, save_status, ...
     track_status, num_frames)
 
 % show_status takes 0 or 1 depending on whether you want to display plots
-% and images
+% and images. When using show_status = 1, change "parfor" by "for" in the
+% loop that goes over all spots
 
 % save_status takes 0 or 1 depending on whether you want to save your files
 
@@ -11,95 +12,21 @@ function segment_track_spots(Prefix, thresh, show_status, save_status, ...
 
 % num_frames for debugging should be kept at 5-20
 
-% thresh should be kept at ~90-200
+% thresh should be kept at ~90-200 for lattice data, and at ~5-10 for
+% confocal data.
 
 % try
 %     parpool;
 % catch
 % end
 
-%%    
-%Get the relevant folders now:
+%% 
 
 tic;
+
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(Prefix);
 
-%Figure out what type of experiment we have
-[XLSNum,XLSTxt]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
-DataFolderColumn=find(strcmp(XLSTxt(1,:),'DataFolder'));
-ExperimentTypeColumn=find(strcmp(XLSTxt(1,:),'ExperimentType'));
-Channel1Column=find(strcmp(XLSTxt(1,:),'Channel1'));
-Channel2Column=find(strcmp(XLSTxt(1,:),'Channel2'));
-
-% Convert the prefix into the string used in the XLS file
-Dashes = strfind(Prefix, '-');
-PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
-    [Prefix(1:Dashes(3)-1), '\', Prefix(Dashes(3)+1:end)]));
-if isempty(PrefixRow)
-    PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
-        [Prefix(1:Dashes(3)-1), '/', Prefix(Dashes(3)+1:end)]));
-    if isempty(PrefixRow)
-        error('Could not find data set in MovieDatabase.xlsx. Check if it is defined there.')
-    end
-end
-
-ExperimentType=XLSTxt(PrefixRow,ExperimentTypeColumn);
-
-if strcmp(ExperimentType,'1spot')
-    NChannels=1;
-elseif strcmp(ExperimentType,'2spot')
-    NChannels=1;
-elseif strcmp(ExperimentType,'2spot1color')
-    NChannels=1;
-elseif strcmp(ExperimentType,'2spot2color')
-    NChannels=2;
-elseif strcmp(ExperimentType,'inputoutput')
-    NChannels=1;
-else
-    error('Experiment type not recognized in MovieDatabase.xlsx')
-end
-
-if ~exist('Thresholds')
-    Thresholds=ones(1,NChannels)*inf;
-else
-    if length(Thresholds)~=NChannels
-        error('Number of channels in movie does not match number of thresholds input')
-    end
-end
-HyphenPositionR = find(Prefix == '-');
-DateFolderS = Prefix(1 : HyphenPositionR(3)-1);
-LineFolderS = Prefix(HyphenPositionR(3)+1 : end);
-Folder = [SourcePath, filesep, DateFolderS, filesep, LineFolderS];
-%Determine whether we're dealing with 2-photon data from Princeton or LSM
-%data. 2-photon data uses TIF files. In LSM mode multiple files will be
-%combined into one.
-DTIF=dir([Folder,filesep,'*.tif']);
-DLSM=dir([Folder,filesep,'*.lsm']);
-DLIF=dir([Folder,filesep,'*.lif']);
-DLAT=dir([Folder,filesep,'*_Settings.framext']);
-
-if (length(DTIF)>0)&(isempty(DLSM))
-    if length(DLIF)==0
-        if length(DLAT)==0
-            display('2-photon @ Princeton data mode')
-            FileMode='TIF';
-        else
-            display('Lattice Light Sheet data mode')
-            FileMode='LAT';
-        end
-    else
-        display('LIF export mode')
-        FileMode='LIFExport';
-    end
-elseif (length(DTIF)==0)&(length(DLSM)>0)
-    display('LSM mode')
-    FileMode='LSM';
-else
-    error('File type not recognized. For LIF files, were they exported to TIF?')
-end
-
-%%
 %Here I want to load each of the tifs and iterate through them, generating
 %dog images in each iteration
 
@@ -254,8 +181,10 @@ end
 Spots = [];
 for i = 1:Particles(end).frame
     frames = find([Particles.frame]==i);
-    for j = frames(1):frames(end)
-        Spots(i).Fits(j-frames(1)+1) = Particles(j);
+    if ~isempty(frames)
+        for j = frames(1):frames(end)
+            Spots(i).Fits(j-frames(1)+1) = Particles(j);
+        end
     end
 end
 
