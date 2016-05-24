@@ -251,12 +251,11 @@ end
 
 %Create a final Spots structure to be fed into TrackmRNADynamics
 
-Spots = {};
+Spots = [];
 for i = 1:Particles(end).frame
-    for j = 1:length(Particles)
-        if Particles(j).frame == i
-            Spots{j,i} = Particles(j);
-        end
+    frames = find([Particles.frame]==i);
+    for j = frames(1):frames(end)
+        Spots(i).Fits(j-frames(1)+1) = Particles(j);
     end
 end
 
