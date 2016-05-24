@@ -45,16 +45,10 @@ if ~isempty(possible_cent)
         MaxThreshold = 20; %intensity
         WidthGuess = 200 / pixelSize; %nm
         OffsetGuess = 10; %intensity
-        [f1, res1, residual, exitflag, output, lambda, jacobian, GaussianIntensity] =  ...
+        [fitting, rel_errors, GaussianIntensity] =  ...
             fitTwoGausses(snip, NeighborhoodSize, MaxThreshold, ...
             WidthGuess, OffsetGuess, show_status);
 
-        ci = nlparci(f1,residual,'jacobian',jacobian);
-        errors = zeros(1, length(f1));
-        for ndx = 1:length(ci)
-            errors(ndx) = abs((abs(ci(ndx, 1)) - abs(ci(ndx, 2)))/2);
-        end
-        rel_errors = abs(errors./f1);
         disp(rel_errors);
 
         % Quality control.
@@ -65,50 +59,24 @@ if ~isempty(possible_cent)
         % but the first one does, and the second one is good
         % enough to position its center.
 
-        if length(f1) == 6
-            c_x = f1(2) - rad + cent_x;
-            c_y = f1(4) - rad + cent_y;
-%             int_x = [round(c_x - f1(3)), round(c_x + f1(3))];
-%             int_y = [round(c_y - f1(5)), round(c_y + f1(5))];
-            int_x = [round(c_x - 5), round(c_x + 5)];
-            int_y = [round(c_y - 5), round(c_y + 5)];
-            sigma_x = f1(3);
-            sigma_y = f1(5);
-        else
-            snip_cent = size(snip)./2;
-            gaussian1_cent = [f1(2), f1(4)];
-            gaussian2_cent = [f1(7), f1(9)];
-            dif1 = gaussian1_cent - snip_cent;
-            dif2 = gaussian2_cent - snip_cent;
-            distance1 = sqrt(sum(abs(dif1).^2,2));
-            distance2 = sqrt(sum(abs(dif2).^2,2));
-            
-            if distance1 < distance2
-                c_x = f1(2) - rad + cent_x;
-                c_y = f1(4) - rad + cent_y;
-                int_x = [round(c_x - 5), round(c_x + 5)];
-                int_y = [round(c_y - 5), round(c_y + 5)];
-                sigma_x = f1(3);
-                sigma_y = f1(5);
-            else
-                c_x = f1(7) - rad + cent_x;
-                c_y = f1(9) - rad + cent_y;
-                int_x = [round(c_x - 5), round(c_x + 5)];
-                int_y = [round(c_y - 5), round(c_y + 5)];
-                sigma_x = fi(8);
-                sigma_y = f1(10);
-            end
-        end
+        c_x = fitting(2) - rad + cent_x;
+        c_y = fitting(4) - rad + cent_y;
+%         int_x = [round(c_x - fitting(3)), round(c_x + fitting(3))];
+%         int_y = [round(c_y - fitting(5)), round(c_y + fitting(5))];
+        int_x = [round(c_x - 5), round(c_x + 5)];
+        int_y = [round(c_y - 5), round(c_y + 5)];
+        sigma_x = fitting(3);
+        sigma_y = fitting(5);
 
         area = pi*sigma_x*sigma_y; %in pixels
         fixedAreaIntensity = 0;
         if int_x(1) > 1 && int_y(1) > 1 && int_x(2) < size(im,2) && int_y(2) < size(im,1)
             for w = int_x(1):int_x(2)
                 for v = int_y(1): int_y(2)
-                    fixedAreaIntensity = fixedAreaIntensity + double(im(v,w) - f1(end));
+                    fixedAreaIntensity = fixedAreaIntensity + double(im(v,w) - fitting(end));
                 end
             end
-            temp_particles = {{fixedAreaIntensity, c_x, c_y, f1(end), snip, ...
+            temp_particles = {{fixedAreaIntensity, c_x, c_y, fitting(end), snip, ...
                 area, sigma_x, sigma_y, cent_y, cent_x, GaussianIntensity ,inten}};
         else
             temp_particles = {[]};
