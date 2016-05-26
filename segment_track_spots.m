@@ -15,11 +15,6 @@ function segment_track_spots(Prefix, thresh, show_status, save_status, ...
 % thresh should be kept at ~90-200 for lattice data, and at ~5-10 for
 % confocal data.
 
-% try
-%     parpool;
-% catch
-% end
-
 %% 
 
 tic;
@@ -46,8 +41,8 @@ for current_frame = 1:num_frames
     end
 end
 
-OutputFolder1=[FISHPath,filesep,Prefix,'_',filesep,'MYCODEdogsMYCODE'];
-OutputFolder2=[FISHPath,filesep,Prefix,'_',filesep,'MYCODEsegsMYCODE'];
+OutputFolder1 = [FISHPath,filesep,Prefix,'_',filesep,'MYCODEdogsMYCODE'];
+OutputFolder2 = [FISHPath,filesep,Prefix,'_',filesep,'MYCODEsegsMYCODE'];
 
 mkdir(OutputFolder1)
 mkdir(OutputFolder2)
@@ -88,8 +83,8 @@ for current_frame = 1:num_frames-1
         temp_frames = {};
         if n_spots ~= 0
             parfor k = 1:n_spots
-                temp_particles(k) = fit_single_spot(k, im, im_label, neighb, ...
-                    rad, pixelSize, show_status);
+                temp_particles(k) = fit_single_spot(k, im, im_label, dog, ...
+                    neighb, rad, pixelSize, show_status);
                 if k == n_spots && save_status
                     seg_name = ['SEG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
                     saveas(gcf,[OutputFolder2,filesep,seg_name]);
@@ -119,6 +114,7 @@ for i = 1:nframes
                  Particles(n).CentralIntensity(1) = cell2mat(all_frames{i,j}{spot}(12));
                  Particles(n).FixedAreaIntensity(1) = cell2mat(all_frames{i,j}{spot}(1));
                  Particles(n).GaussianIntensity(1) = cell2mat(all_frames{i,j}{spot}(11));
+                 Particles(n).DOGIntensity(1) = cell2mat(all_frames{i,j}{spot}(13));
                  Particles(n).xFit(1) = cell2mat(all_frames{i,j}{spot}(2));
                  Particles(n).yFit(1) = cell2mat(all_frames{i,j}{spot}(3));
                  Particles(n).xDoG(1) = cell2mat(all_frames{i,j}{spot}(10));
