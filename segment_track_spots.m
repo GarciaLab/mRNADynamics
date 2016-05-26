@@ -51,7 +51,7 @@ mkdir(OutputFolder2)
 %filterSize >> sigma 2 > sigma 1. these values should be good for a first
 %pass.
 
-pixelSize = 200; %nm
+pixelSize = FrameInfo(1).PixelSize*1000; %nm
 
 sigma1 = 150 / pixelSize;
 sigma2 = 250 / pixelSize;
