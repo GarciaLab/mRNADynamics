@@ -42,7 +42,7 @@ if ~isempty(possible_cent)
         % WidthGuess = 200, OffsetGuess = 10.
         
         NeighborhoodSize = 1000/pixelSize; %nm
-        MaxThreshold = 50; %intensity
+        MaxThreshold = 30; %intensity
         WidthGuess = 200 / pixelSize; %nm
         OffsetGuess = 10; %intensity
         [fitting, rel_errors, GaussianIntensity] =  ...

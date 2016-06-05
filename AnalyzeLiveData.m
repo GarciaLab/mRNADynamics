@@ -27,7 +27,7 @@ Prefix=ExportDataForFISH;
 %First do an analysis without a threshold to generate the DoG images.
 %RunFISHToolbox(Prefix)
 
-segment_track_spots(Prefix, 30, 0, 1, 0, 0)
+segment_track_spots(Prefix, 7, 0, 1, 0, 0)
 
 
 %% Look at the dog-filtered images and decide on a threshold to use
@@ -84,7 +84,8 @@ CheckDivisionTimes(Prefix)
 
 %Track the particles, the two numbers are Threshold1 and Threshold2
 %TrackmRNADynamics(Prefix,5,5,5,5) - For 2spots2colors
-TrackmRNADynamics(Prefix,2,2)
+
+TrackmRNADynamics(Prefix,7,7)
 
 CheckParticleTracking(Prefix)
 

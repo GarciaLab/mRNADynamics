@@ -46,8 +46,8 @@ for current_frame = 1:num_frames
     end
 end
 
-OutputFolder1=[FISHPath,filesep,Prefix,'_',filesep,'MYCODEdogsMYCODE'];
-OutputFolder2=[FISHPath,filesep,Prefix,'_',filesep,'MYCODEsegsMYCODE'];
+OutputFolder1=[FISHPath,filesep,Prefix,'_',filesep,'dogs'];
+OutputFolder2=[FISHPath,filesep,Prefix,'_',filesep,'segs'];
 
 mkdir(OutputFolder1)
 mkdir(OutputFolder2)
@@ -196,8 +196,8 @@ end
 
 %Save and plot
 
-mkdir([DropboxFolder,filesep,Prefix,filesep,'mycode']);
-save([DropboxFolder,filesep,Prefix,filesep,'mycode',filesep,'Spots.mat'], 'Spots');
+mkdir([DropboxFolder,filesep,Prefix]);
+save([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots');
 for i = 1:length(Particles)
     if length(Particles(i).frame) > 50
         plot(Particles(i).frame, Particles(i).FixedAreaIntensity)

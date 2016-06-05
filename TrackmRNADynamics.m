@@ -235,64 +235,25 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
         Retracking=0;
     end
 
-    %Load the FISH files. Split fad into particles that are above Threshold1 and
-    %those between that threshold and Threshold2.
-
-    if ~exist('fad')
-        load([Folder,FileName])
-        fad=fishAnalysisData;
-        clear fishAnalysisData
-
-        fadTemp=fad;
-        clear fad
-        fad=fadTemp;
-        fad2=fadTemp;
-        for i=1:length(fadTemp.channels)
-            if sum(fadTemp.channels(i).fits.third) ~= 0
-                Filter1=fadTemp.channels(i).fits.third>Threshold1;
-                Filter2=(fadTemp.channels(i).fits.third<Threshold1)&...
-                    (fadTemp.channels(i).fits.third>Threshold2);
-                Fields=fieldnames(fadTemp.channels(i).fits);
-                NParticles=length(fadTemp.channels(i).fits.third);  %I'll use this to
-                                                                %detemine the
-                                                                %dimension of the
-                                                                %different elements
-            else
-                a = [];
-                for k = 1:length(fadTemp.channels(i).fits.shadowsDog)
-                    a(k) = min(fadTemp.channels(i).fits.shadowsDog{k});
-                end
-                Filter1=a>Threshold1;
-                Filter2=a<Threshold1 & a>Threshold2;
-                Fields=fieldnames(fadTemp.channels(i).fits);
-                NParticles=length(fadTemp.channels(i).fits.shadowsDog);
-            end
-            for j=1:length(Fields)
-                %In the end this seems to work, the fields that have higher
-                %dimensions are still divided well.
-                if strcmp(Fields{j},'snippets')
-                    Temp=getfield(fadTemp.channels(i).fits,Fields{j});
-                    SnippetDimentions=size(Temp);
-                    if length(SnippetDimentions)==3
-                        fad.channels(i).fits=setfield(fad.channels(i).fits,Fields{j},Temp(:,:,Filter1));
-                        fad2.channels(i).fits=setfield(fad2.channels(i).fits,Fields{j},Temp(:,:,Filter2));
-                    elseif length(SnippetDimentions)==2
-                        if Filter1
-                            fad.channels(i).fits=setfield(fad.channels(i).fits,Fields{j},Temp(:,:,Filter1));
-                        elseif Filter2
-                            fad2.channels(i).fits=setfield(fad2.channels(i).fits,Fields{j},Temp(:,:,Filter2));
-                        end
-                    end
-                elseif strcmp(Fields{j},'maskUsedForTotalInt')
-                    Temp=getfield(fadTemp.channels(i).fits,Fields{j});
-                    fad.channels(i).fits=setfield(fad.channels(i).fits,Fields{j},Temp);
-                    fad2.channels(i).fits=setfield(fad2.channels(i).fits,Fields{j},Temp); 
-                elseif length(getfield(fadTemp.channels(i).fits,Fields{j}))==NParticles
-                    Temp=getfield(fadTemp.channels(i).fits,Fields{j});
-                    fad.channels(i).fits=setfield(fad.channels(i).fits,Fields{j},Temp(Filter1));
-                    fad2.channels(i).fits=setfield(fad2.channels(i).fits,Fields{j},Temp(Filter2));
-                else
-                    error('Missing field when separating fad and fad2')
+    %First, generate a structure array with a flag that determines whether
+    %each spots is above Threshold1
+    
+    if ~exist('Spots')
+        load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'])
+        
+        %Determine the maximum number of spots in a given frame for the
+        %whole movie
+        MaxSpots=0;
+        for i=1:length(Spots)
+            MaxSpots=max([MaxSpots,length(Spots(i).Fits)]);
+        end
+        %This filter tells us whether a spots is above the threshold.
+        SpotFilter=nan(length(Spots),MaxSpots);
+        %Populate the filter
+        for i=1:length(Spots)
+            for j=1:length(Spots(i).Fits)
+                if sum(Spots(i).Fits(j).DOGIntensity>Threshold1)
+                    SpotFilter(i,j)=1;
                 end
             end
         end
@@ -303,28 +264,41 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
     NucleiFig=figure;
 
     %Initially, only track particles that are above Threshold1
-    for i=1:length(fad.channels)
-
+    for i=1:length(Spots)
 
         figure(ParticlesFig)
         set(gcf,'Position',[ 16   369   676   342])
+
+        %Get the filter for this frame
         CurrentFrame=i;
-        [x,y]=fad2xyz(CurrentFrame,fad, 'addMargin'); 
-        CurrentZ=3;     
+        CurrentFrameFilter=logical(SpotFilter(CurrentFrame,~isnan(SpotFilter(CurrentFrame,:))));
+        
+        %Get the positions of the spots in this frame
+        [x,y,z]=SpotsXYZ(Spots(CurrentFrame));
+        
+        %Z plane to be displayed. We use the median of all particles found
+        %in this frame
+        if ~isempty(Spots(CurrentFrame).Fits)
+            CurrentZ=round(median([Spots(CurrentFrame).Fits.brightestZ]));
+        else
+            CurrentZ=round(FrameInfo(1).NumberSlices/2);     
+        end
+            
+        %Load the corresponding mRNA image
         Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'.tif']);
         
-        
+        %TO-DO: Show spots above and below threshold differently
         imshow(Image,[])
         hold on
-        plot(x,y,'or')
+        plot(x(CurrentFrameFilter),y(CurrentFrameFilter),'or')
+        plot(x(~CurrentFrameFilter),y(~CurrentFrameFilter),'xr')
         hold off
         title(i)
-        set(gcf,'Name',['Frame: ',num2str(i),'/',num2str(length(fad.channels))])
+        set(gcf,'Name',['Frame: ',num2str(CurrentFrame),'/',num2str(length(Spots))])
 
         figure(NucleiFig)
         set(gcf,'Position',[ 728   373   512   256])
-        CurrentFrame=i;
-        [x,y]=fad2xyz(CurrentFrame,fad, 'addMargin');
+
         if UseHistone
             try
                 Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,3),'.tif']);
@@ -360,14 +334,16 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
 
         if ~UseHistone
             %Get the particles detected in the frame
-            if ~isempty(fad.channels(i).fits.x)
+            if ~isempty(x)
                 if isempty(Particles)
                     %Initialize the Particles structure if it doesn't exist yet
-                    for j=1:length(fad.channels(i).fits.x)
-                        Particles(j).Frame=i;
-                        Particles(j).Index=j;
-                        LastFrame(j)=i;
-                        Particles(j).Approved=0;
+                    for j=1:length(x)
+                        if CurrentFrameFilter(j)
+                            Particles(j).Frame=CurrentFrame;
+                            Particles(j).Index=j;
+                            LastFrame(j)=CurrentFrame;
+                            Particles(j).Approved=0;
+                        end
                     end
 
 
@@ -512,8 +488,8 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
                 [Particles,fad,fad2,schnitzcells]=AssignParticle2Nucleus(schnitzcells,Ellipses,Particles,fad,fad2,...
                             i,PixelSize,SearchRadius);
             elseif strcmp(ExperimentType,'2spot')
-                 [Particles,fad,fad2,schnitzcells]=AssignParticle2Nucleus2S(schnitzcells,Ellipses,Particles,fad,fad2,...
-                            i,PixelSize,SearchRadius);
+                 [Particles,SpotFilter,schnitzcells]=AssignParticle2Nucleus2S(schnitzcells,Ellipses,Particles,Spots,SpotFilter,...
+                            CurrentFrame,PixelSize,SearchRadius);
             else
                 error('Experiment type in MovieDatabase.xlsx not recognized')
             end
