@@ -1,5 +1,5 @@
 function temp_particles = fit_single_spot(k, im, im_label, dog, neighb, rad, ...
-    pixelSize, show_status)
+    pixelSize, show_status, f)
 
 [r,c] = find(im_label == k);
 
@@ -31,7 +31,8 @@ if ~isempty(possible_cent)
    % temp_particles = [temp_particles,[0, cent_x, cent_y, 0, 0]];
 %    temp_particles = {};
    if show_status
-        ellipse(neighb/2,neighb/2,0,cent_y,cent_x,'r');
+        set(0,'CurrentFigure', f);
+        ellipse(neighb/2,neighb/2,0,cent_x,cent_y,'r');
    end
 
    if cent_y - rad > 1 && cent_x - rad > 1 && cent_y + rad < size(im, 1) && cent_x + rad < size(im,2)

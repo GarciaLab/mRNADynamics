@@ -60,7 +60,7 @@ neighb = round(500 / pixelSize); %This should work for a first pass and shouldn'
 thr = thresh; 
 dog_stack  = {}; 
 all_frames = {}; 
-for current_frame = 1:num_frames-1 
+for current_frame = 1:num_frames
     for current_z = 1:size(im_stack,2) %z-slices
         im = im_stack{current_frame,current_z};
         %filterSize >> sigma 2 > sigma 1. these values should be good for a first pass.
@@ -72,7 +72,7 @@ for current_frame = 1:num_frames-1
         dog = dog_stack{current_frame,current_z}(10:end-10, 10:end-10);
         im = im(10:end-10, 10:end-10);
         if show_status
-            figure(1)
+            f = figure(1);
             imshow(im,[]);
         end
         thrim = dog > thr;
@@ -82,9 +82,9 @@ for current_frame = 1:num_frames-1
         rad = 800/pixelSize;
         temp_frames = {};
         if n_spots ~= 0
-            parfor k = 1:n_spots
+            for k = 1:n_spots
                 temp_particles(k) = fit_single_spot(k, im, im_label, dog, ...
-                    neighb, rad, pixelSize, show_status);
+                    neighb, rad, pixelSize, show_status, f);
                 if k == n_spots && save_status
                     seg_name = ['SEG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
                     saveas(gcf,[OutputFolder2,filesep,seg_name]);
