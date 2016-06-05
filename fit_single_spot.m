@@ -1,7 +1,11 @@
-function temp_particles = fit_single_spot(k, im, im_label, neighb, rad, ...
+function temp_particles = fit_single_spot(k, im, im_label, dog, neighb, rad, ...
     pixelSize, show_status)
 
 [r,c] = find(im_label == k);
+
+% Keep track of the maximum dog value
+
+max_dog = max(max(dog(r,c)));
 
 %Find spot centroids in the actual image by hunting for absolute maxima in
 %neighborhoods around spots that were just located
@@ -32,7 +36,6 @@ if ~isempty(possible_cent)
 
    if cent_y - rad > 1 && cent_x - rad > 1 && cent_y + rad < size(im, 1) && cent_x + rad < size(im,2)
        snip = im(cent_y-rad:cent_y+rad, cent_x-rad:cent_x+rad);
-%                      [f1, res1, f2, res2] = fitGausses(snip);
         
         % Set parameters to use as initial guess in the fitting. For the 
         % lattice data, try NeighborhoodSize = 1000, MaxThreshold = 2000, 
@@ -77,7 +80,7 @@ if ~isempty(possible_cent)
                 end
             end
             temp_particles = {{fixedAreaIntensity, c_x, c_y, fitting(end), snip, ...
-                area, sigma_x, sigma_y, cent_y, cent_x, GaussianIntensity ,inten}};
+                area, sigma_x, sigma_y, cent_y, cent_x, GaussianIntensity ,inten, max_dog}};
         else
             temp_particles = {[]};
         end
