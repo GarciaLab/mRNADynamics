@@ -69,8 +69,8 @@ for current_frame = 1:num_frames
             dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
             imwrite(uint16(dog_stack{current_frame,current_z}), [OutputFolder1,filesep,dog_name])
         end
-        dog = dog_stack{current_frame,current_z}(10:end-10, 10:end-10);
-        im = im(10:end-10, 10:end-10);
+        dog = dog_stack{current_frame,current_z};
+        im = im;
         if show_status
             f = figure(1);
             imshow(im,[]);
@@ -125,6 +125,7 @@ for i = 1:nframes
                  Particles(n).Area{1} = cell2mat(all_frames{i,j}{spot}(6));
                  Particles(n).xFitWidth{1} = cell2mat(all_frames{i,j}{spot}(7));
                  Particles(n).yFitWidth{1} = cell2mat(all_frames{i,j}{spot}(8));
+                 Particles(n).snippet_mask{1} = cell2mat(all_frames{i,j}{spot}(14));
                  Particles(n).z(1) = j;
                  Particles(n).frame(1) = i;
                  Particles(n).r = 0;

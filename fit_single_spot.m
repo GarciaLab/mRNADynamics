@@ -1,4 +1,4 @@
-function temp_particles = fit_single_spot(k, im, im_label, dog, neighb, rad, ...
+function temp_particles = fits_single_spot(k, im, im_label, dog, neighb, rad, ...
     pixelSize, show_status, f)
 
 [r,c] = find(im_label == k);
@@ -37,8 +37,8 @@ if ~isempty(possible_cent)
 
    if cent_y - rad > 1 && cent_x - rad > 1 && cent_y + rad < size(im, 1) && cent_x + rad < size(im,2)
        snip = im(cent_y-rad:cent_y+rad, cent_x-rad:cent_x+rad);
-        
-        % Set parameters to use as initial guess in the fitting. For the 
+       
+        % Set parameters to use as initial guess in the fits. For the 
         % lattice data, try NeighborhoodSize = 1000, MaxThreshold = 2000, 
         % WidthGuess = 500, OffsetGuess = 1000.
 
@@ -49,7 +49,7 @@ if ~isempty(possible_cent)
         MaxThreshold = 30; %intensity
         WidthGuess = 200 / pixelSize; %nm
         OffsetGuess = 10; %intensity
-        [fitting, rel_errors, GaussianIntensity] =  ...
+        [fits, rel_errors, GaussianIntensity] =  ...
             fitTwoGausses(snip, NeighborhoodSize, MaxThreshold, ...
             WidthGuess, OffsetGuess, show_status);
 
@@ -57,31 +57,41 @@ if ~isempty(possible_cent)
 
         % Quality control.
         % TODO: make some quality control using the errors in
-        % the fitting. Using any(rel_errors > 0.3) (for
+        % the fits. Using any(rel_errors > 0.3) (for
         % example) is not the best thing to do, because
         % sometimes the second gaussian doesn't get a good fit
         % but the first one does, and the second one is good
         % enough to position its center.
-
-        c_x = fitting(2) - rad + cent_x;
-        c_y = fitting(4) - rad + cent_y;
-%         int_x = [round(c_x - fitting(3)), round(c_x + fitting(3))];
-%         int_y = [round(c_y - fitting(5)), round(c_y + fitting(5))];
-        int_x = [round(c_x - 5), round(c_x + 5)];
-        int_y = [round(c_y - 5), round(c_y + 5)];
-        sigma_x = fitting(3);
-        sigma_y = fitting(5);
+        
+        integration_radius = round(1100/pixelSize); %nm
+        c_x = fits(2) - rad + cent_x;
+        c_y = fits(4) - rad + cent_y;
+        snip_mask = snip*0;
+        for i = 1:size(snip,1)
+            for j = 1:size(snip,2)
+                if i > fits(4) - integration_radius && i < fits(4) + integration_radius && j > fits(2) - integration_radius && j < fits(2) + integration_radius 
+                    snip_mask(i,j) = 1;
+                end
+            end
+        end
+        
+%         int_x = [round(c_x - fits(3)), round(c_x + fits(3))];
+%         int_y = [round(c_y - fits(5)), round(c_y + fits(5))];
+        int_x = [round(c_x - integration_radius), round(c_x + integration_radius)];
+        int_y = [round(c_y - integration_radius), round(c_y + integration_radius)];
+        sigma_x = fits(3);
+        sigma_y = fits(5);
 
         area = pi*sigma_x*sigma_y; %in pixels
         fixedAreaIntensity = 0;
         if int_x(1) > 1 && int_y(1) > 1 && int_x(2) < size(im,2) && int_y(2) < size(im,1)
             for w = int_x(1):int_x(2)
                 for v = int_y(1): int_y(2)
-                    fixedAreaIntensity = fixedAreaIntensity + double(im(v,w) - fitting(end));
+                    fixedAreaIntensity = fixedAreaIntensity + double(im(v,w) - fits(end));
                 end
             end
-            temp_particles = {{fixedAreaIntensity, c_x, c_y, fitting(end), snip, ...
-                area, sigma_x, sigma_y, cent_y, cent_x, GaussianIntensity ,inten, max_dog}};
+            temp_particles = {{fixedAreaIntensity, c_x, c_y, fits(end), snip, ...
+                area, sigma_x, sigma_y, cent_y, cent_x, GaussianIntensity ,inten, max_dog, snip_mask}};
         else
             temp_particles = {[]};
         end
