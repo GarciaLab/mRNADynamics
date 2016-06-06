@@ -30,7 +30,7 @@ if ~isempty(possible_cent)
     cent_x = pcentloc{row,col}(2);
    % temp_particles = [temp_particles,[0, cent_x, cent_y, 0, 0]];
 %    temp_particles = {};
-   if show_status
+   if show_status&~isempty(f)
         set(0,'CurrentFigure', f);
         ellipse(neighb/2,neighb/2,0,cent_x,cent_y,'r');
    end

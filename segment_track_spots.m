@@ -74,6 +74,8 @@ for current_frame = 1:num_frames
         if show_status
             f = figure(1);
             imshow(im,[]);
+        else
+            f=[];
         end
         thrim = dog > thr;
         [im_label, n_spots] = bwlabel(thrim); 

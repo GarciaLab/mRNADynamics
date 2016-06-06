@@ -134,6 +134,7 @@ FilePrefix=[DataFolder(length(DropboxFolder)+2:end),'_'];
     DetermineLocalFolders(FilePrefix(1:end-1));
 
 load([DataFolder,filesep,'Particles.mat'])
+load([DataFolder,filesep,'Spots.mat'])
 
 %Check that FrameInfo exists
 if exist([DataFolder,filesep,'FrameInfo.mat'])
@@ -165,6 +166,7 @@ if iscell(Particles)
     NChannels=length(Particles);
 else
     Particles={Particles};
+    Spots={Spots};
     NChannels=1;
 end
 
@@ -360,7 +362,7 @@ if ~NoSort
     end
 end
 
-TotalFrames=length(fad(NChannels).channels);
+TotalFrames=length(FrameInfo);
 
 
 %Some flags and initial parameters
@@ -437,7 +439,7 @@ while (cc~='x')
 
     
     %Get the coordinates taking the margins into account
-    [x,y]=fad2xyzFit(CurrentFrame,fad(CurrentChannel), 'addMargin'); 
+    [x,y,z]=SpotsXYZ(Spots{CurrentChannel}(CurrentFrame))
     
     %If the approved field does not exist create it
     if ~isfield(Particles{CurrentChannel},'Approved')
@@ -478,8 +480,7 @@ while (cc~='x')
     
     
     if (~isempty(xTrace))&(~ManualZFlag)
-        CurrentZ=...
-            fad(CurrentChannel).channels(CurrentFrame).fits.z(CurrentParticleIndex);
+        CurrentZ=z(CurrentParticleIndex);
         ManualZFlag=0;
     end
     
@@ -680,7 +681,7 @@ while (cc~='x')
     end
     
     if ShowThreshold2
-        [x2,y2]=fad2xyzFit(CurrentFrame,fad2(CurrentChannel), 'addMargin'); 
+        [x2,y2]=SpotsXYZ(Spots{CurrentChannel}(CurrentFrame));
         hold on
         plot(x2,y2,'sr')
         hold off
@@ -730,7 +731,7 @@ while (cc~='x')
         hold off
         
         if ShowThreshold2
-            [x2,y2]=fad2xyzFit(CurrentFrame,fad2(CurrentChannel), 'addMargin'); 
+            [x2,y2]=SpotsXYZ(Spots{CurrentChannel}(CurrentFrame))
             hold on
             plot(x2,y2,'sw')
             hold off
@@ -775,8 +776,9 @@ while (cc~='x')
     
     figure(SnippetFig)
     if (~isempty(xTrace))
-        
         CurrentSnippet=mat2gray(fad(CurrentChannel).channels(CurrentFrame).fits.snippets(:,:,CurrentParticleIndex));
+        
+        %HG: Waiting for AR to generate the masks
         IntegrationArea=bwperim(fad(CurrentChannel).channels(CurrentFrame).fits.maskUsedForTotalInt);
         SnippetOverlay=cat(3,IntegrationArea/2 + ...
             +CurrentSnippet,CurrentSnippet,CurrentSnippet);
@@ -1690,6 +1692,7 @@ save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo')
 %format without any cells
 if NChannels==1
     Particles=Particles{1};
+    Spots=Spots{1};
 end
 
 

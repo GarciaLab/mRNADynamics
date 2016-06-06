@@ -542,7 +542,7 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
 
         mkdir([OutputFolder,filesep]);
 
-        save([OutputFolder,filesep,'Particles.mat'],'Particles','fad','fad2',...
+        save([OutputFolder,filesep,'Particles.mat'],'Particles','SpotFilter',...
             'Threshold1','Threshold2');
 
 
@@ -668,7 +668,7 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
 
         mkdir([OutputFolder,filesep])
 
-        save([OutputFolder,filesep,'Particles.mat'],'Particles','fad','fad2',...
+        save([OutputFolder,filesep,'Particles.mat'],'Particles','SpotFilter',...
             'Threshold1','Threshold2')
 
     end
@@ -1043,7 +1043,7 @@ elseif strcmp(ExperimentType,'2spot2color')
 
         mkdir([OutputFolder,filesep]);
 
-        save([OutputFolder,filesep,'Particles.mat'],'Particles','fad','fad2',...
+        save([OutputFolder,filesep,'Particles.mat'],'Particles','SpotFilter',...
             'Threshold1','Threshold2');
 
 
@@ -1164,7 +1164,7 @@ elseif strcmp(ExperimentType,'2spot2color')
             
         mkdir([OutputFolder,filesep])
 
-        save([OutputFolder,filesep,'Particles.mat'],'Particles','fad','fad2',...
+        save([OutputFolder,filesep,'Particles.mat'],'Particles','SpotFilter',...
             'Threshold1','Threshold2')
 
     end
@@ -1532,7 +1532,7 @@ elseif strcmp(lower(ExperimentType),'inputoutput')
 
         mkdir([OutputFolder,filesep]);
 
-        save([OutputFolder,filesep,'Particles.mat'],'Particles','fad','fad2',...
+        save([OutputFolder,filesep,'Particles.mat'],'Particles','SpotFilter',...
             'Threshold1','Threshold2');
 
 
@@ -1658,7 +1658,7 @@ elseif strcmp(lower(ExperimentType),'inputoutput')
 
         mkdir([OutputFolder,filesep])
 
-        save([OutputFolder,filesep,'Particles.mat'],'Particles','fad','fad2',...
+        save([OutputFolder,filesep,'Particles.mat'],'Particles','SpotFilter',...
             'Threshold1','Threshold2')
 
     end    
