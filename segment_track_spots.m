@@ -1,5 +1,5 @@
 function segment_track_spots(Prefix, thresh, show_status, save_status, ...
-    track_status, num_frames)
+    track_status, num_frames, just_dog_status)
 
 % show_status takes 0 or 1 depending on whether you want to display plots
 % and images. When using show_status = 1, change "parfor" by "for" in the
@@ -14,6 +14,9 @@ function segment_track_spots(Prefix, thresh, show_status, save_status, ...
 
 % thresh should be kept at ~90-200 for lattice data, and at ~5-10 for
 % confocal data.
+
+% just_dog_status is 1 if you want to stop at producing DoG images and 1 if
+% you want to run through the rest of the script
 
 %% 
 
@@ -70,139 +73,144 @@ for current_frame = 1:num_frames
             imwrite(uint16(dog_stack{current_frame,current_z}), [OutputFolder1,filesep,dog_name])
         end
         dog = dog_stack{current_frame,current_z};
-        im = im;
-        if show_status
-            f = figure(1);
-            imshow(im,[]);
-        else
-            f=[];
+        if just_dog_status
+            imshow(dog,[]);
         end
-        thrim = dog > thr;
-        [im_label, n_spots] = bwlabel(thrim); 
-        temp_particles = {};
-%         rad = 500/pixelSize; %500nm is roughly the size of a sister chromatid diffraction limited spot.
-        rad = 2000/pixelSize;
-        temp_frames = {};
-        if n_spots ~= 0
-            for k = 1:n_spots
-                temp_particles(k) = fit_single_spot(k, im, im_label, dog, ...
-                    neighb, rad, pixelSize, show_status, f);
-                if k == n_spots && save_status
-                    seg_name = ['SEG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
-                    saveas(gcf,[OutputFolder2,filesep,seg_name]);
-                end
+        if ~just_dog_status
+            if show_status
+                f = figure(1);
+                imshow(im,[]);
+            else
+                f=[];
             end
-            for k = 1:n_spots
-                if ~isempty(temp_particles{k})
-                    temp_frames = [temp_frames, temp_particles(k)];
+            thrim = dog > thr;
+            [im_label, n_spots] = bwlabel(thrim); 
+            temp_particles = {};
+    %         rad = 500/pixelSize; %500nm is roughly the size of a sister chromatid diffraction limited spot.
+            rad = 2000/pixelSize;
+            temp_frames = {};
+            if n_spots ~= 0
+                for k = 1:n_spots
+                    temp_particles(k) = fit_single_spot(k, im, im_label, dog, ...
+                        neighb, rad, pixelSize, show_status, f);
+                    if k == n_spots && save_status
+                        seg_name = ['SEG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
+                        saveas(gcf,[OutputFolder2,filesep,seg_name]);
+                    end
                 end
+                for k = 1:n_spots
+                    if ~isempty(temp_particles{k})
+                        temp_frames = [temp_frames, temp_particles(k)];
+                    end
+                end
+                all_frames{current_frame,current_z} = temp_frames;
             end
-            all_frames{current_frame,current_z} = temp_frames;
         end
     end
 end
 
 %%
-
-clear im_stack
-clear dog_stack
-n = 1;
-nframes = size(all_frames,1);
-nz = size(all_frames,2);
-for i = 1:nframes 
-    for j = 1:nz 
-         for spot = 1:length(all_frames{i,j}) %spots within particular image
-             if ~isempty(all_frames{i,j}{spot})
-                 Particles(n).CentralIntensity(1) = cell2mat(all_frames{i,j}{spot}(12));
-                 Particles(n).FixedAreaIntensity(1) = cell2mat(all_frames{i,j}{spot}(1));
-                 Particles(n).GaussianIntensity(1) = cell2mat(all_frames{i,j}{spot}(11));
-                 Particles(n).DOGIntensity(1) = cell2mat(all_frames{i,j}{spot}(13));
-                 Particles(n).xFit(1) = cell2mat(all_frames{i,j}{spot}(2));
-                 Particles(n).yFit(1) = cell2mat(all_frames{i,j}{spot}(3));
-                 Particles(n).xDoG(1) = cell2mat(all_frames{i,j}{spot}(10));
-                 Particles(n).yDoG(1) = cell2mat(all_frames{i,j}{spot}(9));
-                 Particles(n).Offset(1) = cell2mat(all_frames{i,j}{spot}(4));
-%                  Particles(n).Sister(1) = all_frames{i,j}{spot}(5);
-                 Particles(n).Snippet{1} = cell2mat(all_frames{i,j}{spot}(5));
-                 Particles(n).Area{1} = cell2mat(all_frames{i,j}{spot}(6));
-                 Particles(n).xFitWidth{1} = cell2mat(all_frames{i,j}{spot}(7));
-                 Particles(n).yFitWidth{1} = cell2mat(all_frames{i,j}{spot}(8));
-                 Particles(n).snippet_mask{1} = cell2mat(all_frames{i,j}{spot}(14));
-                 Particles(n).z(1) = j;
-                 Particles(n).frame(1) = i;
-                 Particles(n).r = 0;
-                 n = n + 1;
+if ~just_dog_status
+    clear im_stack
+    clear dog_stack
+    n = 1;
+    nframes = size(all_frames,1);
+    nz = size(all_frames,2);
+    for i = 1:nframes 
+        for j = 1:nz 
+             for spot = 1:length(all_frames{i,j}) %spots within particular image
+                 if ~isempty(all_frames{i,j}{spot})
+                     Particles(n).CentralIntensity(1) = cell2mat(all_frames{i,j}{spot}(12));
+                     Particles(n).FixedAreaIntensity(1) = cell2mat(all_frames{i,j}{spot}(1));
+                     Particles(n).GaussianIntensity(1) = cell2mat(all_frames{i,j}{spot}(11));
+                     Particles(n).DOGIntensity(1) = cell2mat(all_frames{i,j}{spot}(13));
+                     Particles(n).xFit(1) = cell2mat(all_frames{i,j}{spot}(2));
+                     Particles(n).yFit(1) = cell2mat(all_frames{i,j}{spot}(3));
+                     Particles(n).xDoG(1) = cell2mat(all_frames{i,j}{spot}(10));
+                     Particles(n).yDoG(1) = cell2mat(all_frames{i,j}{spot}(9));
+                     Particles(n).Offset(1) = cell2mat(all_frames{i,j}{spot}(4));
+    %                  Particles(n).Sister(1) = all_frames{i,j}{spot}(5);
+                     Particles(n).Snippet{1} = cell2mat(all_frames{i,j}{spot}(5));
+                     Particles(n).Area{1} = cell2mat(all_frames{i,j}{spot}(6));
+                     Particles(n).xFitWidth{1} = cell2mat(all_frames{i,j}{spot}(7));
+                     Particles(n).yFitWidth{1} = cell2mat(all_frames{i,j}{spot}(8));
+                     Particles(n).snippet_mask{1} = cell2mat(all_frames{i,j}{spot}(14));
+                     Particles(n).z(1) = j;
+                     Particles(n).frame(1) = i;
+                     Particles(n).r = 0;
+                     n = n + 1;
+                 end
              end
-         end
+        end
     end
-end
 
-fields = fieldnames(Particles);
+    fields = fieldnames(Particles);
 
-% z tracking
-changes = 1;
-while changes ~= 0
-    changes = 0;
-    i = 1;
-    for n = 1:nframes   
-        i = i + length(Particles([Particles.frame] == (n - 1) ));
-        for j = i:i+length(Particles([Particles.frame] == n)) - 1
-            for k = j+1:i+length(Particles([Particles.frame] == n)) - 1
-                dist = sqrt( (Particles(j).xFit(end) - Particles(k).xFit(end))^2 + (Particles(j).yFit(end) - Particles(k).yFit(end))^2); 
-                if dist < neighb && Particles(j).z(end) ~= Particles(k).z(end)
-                    for m = 1:numel(fields)-2 %do not include fields 'r' or 'frame'
-                        Particles(j).(fields{m}) = [Particles(j).(fields{m}), Particles(k).(fields{m})];
+    % z tracking
+    changes = 1;
+    while changes ~= 0
+        changes = 0;
+        i = 1;
+        for n = 1:nframes   
+            i = i + length(Particles([Particles.frame] == (n - 1) ));
+            for j = i:i+length(Particles([Particles.frame] == n)) - 1
+                for k = j+1:i+length(Particles([Particles.frame] == n)) - 1
+                    dist = sqrt( (Particles(j).xFit(end) - Particles(k).xFit(end))^2 + (Particles(j).yFit(end) - Particles(k).yFit(end))^2); 
+                    if dist < neighb && Particles(j).z(end) ~= Particles(k).z(end)
+                        for m = 1:numel(fields)-2 %do not include fields 'r' or 'frame'
+                            Particles(j).(fields{m}) = [Particles(j).(fields{m}), Particles(k).(fields{m})];
+                        end
+                        Particles(k).r = 1;
+                        changes = changes + 1;
                     end
-                    Particles(k).r = 1;
-                    changes = changes + 1;
                 end
             end
         end
+        Particles = Particles([Particles.r]~=1);
     end
-    Particles = Particles([Particles.r]~=1);
-end
 
 
-%pick the brightest z-slice
-for i = 1:length(Particles)
-    [~, max_index] = max(Particles(i).FixedAreaIntensity);
+    %pick the brightest z-slice
+    for i = 1:length(Particles)
+        [~, max_index] = max(Particles(i).FixedAreaIntensity);
+        if track_status
+            for j = 1:numel(fields)-2 %do not include fields 'r' or 'frame'
+                Particles(i).(fields{j}) = Particles(i).(fields{j})(max_index);
+            end
+        else 
+            Particles(i).brightestZ = Particles(i).z(max_index);
+        end
+    end
+
+    %Create a final Spots structure to be fed into TrackmRNADynamics
+
+    Spots = [];
+    for i = 1:Particles(end).frame
+        frames = find([Particles.frame]==i);
+        if ~isempty(frames)
+            for j = frames(1):frames(end)
+                Spots(i).Fits(j-frames(1)+1) = Particles(j);
+            end
+        end
+    end
+
+    %time tracking
+
     if track_status
-        for j = 1:numel(fields)-2 %do not include fields 'r' or 'frame'
-            Particles(i).(fields{j}) = Particles(i).(fields{j})(max_index);
-        end
-    else 
-        Particles(i).brightestZ = Particles(i).z(max_index);
+        Particles = track_spots(Particles, neighb);
     end
-end
 
-%Create a final Spots structure to be fed into TrackmRNADynamics
+    %Save and plot
 
-Spots = [];
-for i = 1:Particles(end).frame
-    frames = find([Particles.frame]==i);
-    if ~isempty(frames)
-        for j = frames(1):frames(end)
-            Spots(i).Fits(j-frames(1)+1) = Particles(j);
-        end
-    end
-end
-
-%time tracking
-
-if track_status
-    Particles = track_spots(Particles, neighb);
-end
-
-%Save and plot
-
-mkdir([DropboxFolder,filesep,Prefix]);
-save([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots');
-for i = 1:length(Particles)
-    if length(Particles(i).frame) > 50
-        plot(Particles(i).frame, Particles(i).FixedAreaIntensity)
-        i
-        hold on
-    end
+    mkdir([DropboxFolder,filesep,Prefix]);
+    save([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots');
+    % for i = 1:length(Particles)
+    %     if length(Particles(i).frame) > 50
+    %         plot(Particles(i).frame, Particles(i).FixedAreaIntensity)
+    %         i
+    %         hold on
+    %     end
+    % end
 end
 
 t = toc
