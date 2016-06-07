@@ -1,9 +1,9 @@
-function [fitting, rel_errors, GaussianIntensity] = ...
-    fitTwoGausses(snip, NeighborhoodSize, Threshold, WidthGuess, OffsetGuess, show)
+function [fits, rel_errors, GaussianIntensity] = ...
+    fitTwoGausses(snip, NeighborhoodSize, Threshold, WidthGuess, OffsetGuess, show_status)
 
-% Find local maxima in snip and use that information to decide if fitting
+% Find local maxima in snip and use that information to decide if fits
 % one or two gaussians. Also, use that information to define a reasonable 
-% initial guess for the fitting initial parameters.
+% initial guess for the fits initial parameters.
 
 snip = CPsmooth(snip,'Gaussian Filter',1.3,0);
 snip = double(snip);
@@ -31,15 +31,15 @@ if size(centers,1) == 1
     init_params = [max(max(snip)), centers(1,2), WidthGuess, ... 
         centers(1,1), WidthGuess, OffsetGuess];
 
-    [fitting, res1, residual, exitflag, output, lambda, jacobian] = lsqnonlin(singleGaussian, ...
+    [fits, res1, residual, exitflag, output, lambda, jacobian] = lsqnonlin(singleGaussian, ...
         init_params,[0,0,0,0,0,0],[inf,inf,inf,inf,inf,inf]);
     
-    ci = nlparci(fitting,residual,'jacobian',jacobian);
-    errors = zeros(1, length(fitting));
+    ci = nlparci(fits,residual,'jacobian',jacobian);
+    errors = zeros(1, length(fits));
     for ndx = 1:length(ci)
         errors(ndx) = abs((abs(ci(ndx, 1)) - abs(ci(ndx, 2)))/2);
     end
-    rel_errors = abs(errors./fitting);
+    rel_errors = abs(errors./fits);
     
 elseif size(centers,1) == 2
     init_params = [max(max(snip)), centers(1,2), WidthGuess, centers(1,1), ...
@@ -67,44 +67,44 @@ elseif size(centers,1) == 2
     distance2 = sqrt(sum(abs(dif2).^2,2));
     
     if distance1 < distance2
-        fitting = double_fit(1:5);
-        fitting(6) = double_fit(end);
+        fits = double_fit(1:5);
+        fits(6) = double_fit(end);
     else
-        fitting = double_fit(6:end);
+        fits = double_fit(6:end);
     end
 else
     % TODO: I'm just making this so the script doesn't crash when it can't
     % find any maxima. But it's ugly and should be replaced with something
     % like assigning NaNs to all the return values.
     init_params = [2000, 10, 5, 10, 5,1000];
-    [fitting, res1, residual, exitflag, output, lambda, jacobian] = lsqnonlin(singleGaussian, ...
+    [fits, res1, residual, exitflag, output, lambda, jacobian] = lsqnonlin(singleGaussian, ...
         init_params,[0,0,0,0,0,0],[inf,inf,inf,inf,inf,inf]);
     
-    ci = nlparci(fitting,residual,'jacobian',jacobian);
-    errors = zeros(1, length(fitting));
+    ci = nlparci(fits,residual,'jacobian',jacobian);
+    errors = zeros(1, length(fits));
     for ndx = 1:length(ci)
         errors(ndx) = abs((abs(ci(ndx, 1)) - abs(ci(ndx, 2)))/2);
     end
-    rel_errors = abs(errors./fitting);
+    rel_errors = abs(errors./fits);
 end
 
 %Compute intensities by integrating over the Gaussian fit
 % TODO: consider the case with two gaussians here
 
-GaussianIntensity = sum(sum(singleGaussian(fitting) + double(snip) - fitting(end)));
+GaussianIntensity = sum(sum(singleGaussian(fits) + double(snip) - fits(end)));
 
-if show
+if show_status
     figure(2)
     if size(centers,1) == 1
-        surf(y, x, singleGaussian(fitting) + double(snip));
-        title('Single gaussian fitting')
+        surf(y, x, singleGaussian(fits) + double(snip));
+        title('Single gaussian fits')
     elseif size(centers,1) == 2
         surf(y, x, doubleGaussian(double_fit) + double(snip));
-        title('Double gaussian fitting')
+        title('Double gaussian fits')
     end
     figure(3)
     imshow(imresize(snip,10),[]);
     figure(4)
     surf(y, x, double(snip));
-    title('Original data');
+    title('Raw data');
 end
