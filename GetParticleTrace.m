@@ -1,32 +1,39 @@
-function [Frame,Amp,Off,Off2,Amp2,AmpOld,AmpRaw,Error,optFit1,FitType]=GetParticleTrace(CurrentParticle,Particles,fad)
+function [Frame,AmpIntegral,AmpGaussian,Offset,...
+    ErrorIntegral,ErrorGauss,optFit,FitType]=...
+    GetParticleTrace(CurrentParticle,Particles,Spots)
 
 %This function uses the total intensity mask to calculate the particles
 %intensity and subtracts the background obtained from the fit.
 
+%First, get the different intensity values corresponding to this particle.
 for i=1:length(Particles(CurrentParticle).Frame)
         Frame(i)=Particles(CurrentParticle).Frame(i);
-
-        Off(i)=fad.channels(Particles(CurrentParticle).Frame(i)).fits.off(Particles(CurrentParticle).Index(i));
-
-        Off2(i)=fad.channels(Particles(CurrentParticle).Frame(i)).fits.off2(Particles(CurrentParticle).Index(i));
-
-
-        AmpRaw(i)=sum(sum(double(immultiply(fad.channels(Particles(CurrentParticle).Frame(i)).fits.snippets(:,:,Particles(CurrentParticle).Index(i)),...
-            fad.channels(Particles(CurrentParticle).Frame(i)).fits.maskUsedForTotalInt))));
-
-
-        AmpOld(i)=sum(sum(double(immultiply(fad.channels(Particles(CurrentParticle).Frame(i)).fits.snippets(:,:,Particles(CurrentParticle).Index(i)),...
-            fad.channels(Particles(CurrentParticle).Frame(i)).fits.maskUsedForTotalInt))))-...
-            fad.channels(Particles(CurrentParticle).Frame(i)).fits.off(Particles(CurrentParticle).Index(i))*...
-            sum(sum(fad.channels(Particles(CurrentParticle).Frame(i)).fits.maskUsedForTotalInt));
+        
+        %Determine the brightest Z plane of this particle
+        zIndex=find(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).brightestZ==...
+            Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).z);
+        
+        %Offset obtained using Gaussian fitting.
+        Offset(i)=...
+            Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).Offset(zIndex);
+        %Intensity obtained by integrating over the area. This has
+        %magnitude already has the offset (obtained from the Gaussian fit)
+        %subtracted.
+        AmpIntegral(i)=...
+            Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).FixedAreaIntensity(zIndex);
+        %Intensity obtained by integrating over the Gaussian fit. This
+        %already has subtracted the offset.
+        AmpGaussian(i)=...
+            Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).GaussianIntensity(zIndex);
+        %Amplitude of the Gaussian fit. This is an intensity per pixel.
+        IntensityMaxGauss(i)=...
+            Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).CentralIntensity(zIndex);
 end
 
 
+%Do a spline fit to the offset and use it to estimate the error
 
-
-%Do a spline fit to the offset and use it to calculate the actual amplitude
-
-%If we have less the five data points just fit a line.
+%If we have more than five data points, we fit a spline.
 if length(Frame)>5
     FitType='spline';
     
@@ -36,75 +43,63 @@ if length(Frame)>5
     end
 
     try
-        optFit1 = adaptiveSplineFit(double(Frame),double(Off),nBreaks);
-        Off1Fit=ppval(optFit1,double(Frame));
+        optFit = adaptiveSplineFit(double(Frame),double(Offset),nBreaks);
+        OffsetFit=ppval(optFit,double(Frame));
 
         %Calculate the error in the offset
-        OffsetError=std(Off-Off1Fit);
+        OffsetError=std(Offset-OffsetFit);
 
-        Error=OffsetError*sqrt(2)*sum(sum(fad.channels(Particles(CurrentParticle).Frame(i)).fits.maskUsedForTotalInt));
-
-        for i=1:length(Frame)
-            Amp(i)=AmpRaw(i)-Off1Fit(i)*sum(sum(fad.channels(Particles(CurrentParticle).Frame(i)).fits.maskUsedForTotalInt));
-        end
+        %Now, estimate the error in the signal.
+        %For the Gaussian fit, we use the average area to get an overall
+        %error for the whole trace. We could also just define an error for
+        %each data point.
+        ErrorGauss=OffsetError*sqrt(2)*...
+            cellfun(@mean,Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).Area);
+        %For the Integral, we just use the area of the snippet, which is a
+        %constant for all time points.
+        ErrorIntegral=OffsetError*sqrt(2)*...
+            sum(sum(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).snippet_mask{1}));
     catch
-        Amp=double(AmpOld);
-        Error=std(Off)*sqrt(2)*sum(sum(fad.channels(Particles(CurrentParticle).Frame(i)).fits.maskUsedForTotalInt));
-        optFit1=[];
+        ErrorGauss=[];
+        ErrorIntegral=[];
+        optFit=[];
     end
-
-    try
-
-        optFit2 = adaptiveSplineFit(double(Frame),double(Off2),nBreaks);
-        Off2Fit=ppval(optFit2,double(Frame));
-
-
-        for i=1:length(Frame)
-            Amp2(i)=AmpRaw(i)-Off2Fit(i)*sum(sum(fad.channels(Particles(CurrentParticle).Frame(i)).fits.maskUsedForTotalInt));
-        end
-    catch
-        Amp2=[];
-    end
+    
+%If we have between 3 and five data points, we fit a line.
 elseif length(Frame)>2
+    error('HG: Adapt this')
+    
     FitType='line';
-    optFit1=polyfit(double(Frame),double(Off),1);
-    
+    optFit = polyfit(double(Frame),double(Offset),1);
 
     %Calculate the error in the offset
-    OffsetError=std(Off-polyval(optFit1,double(Frame)));
+    OffsetError=std(Offset-polyval(optFit,double(Frame)));
     
-    Error=OffsetError*sqrt(2)*sum(sum(fad.channels(Particles(CurrentParticle).Frame(i)).fits.maskUsedForTotalInt));
-
-    
-    optFit2=polyfit(double(Frame),double(Off2),1);
-    
-    
-    
-    i=1;
-    Amp=AmpRaw-polyval(optFit1,double(Frame))*sum(sum(fad.channels(Particles(CurrentParticle).Frame(i)).fits.maskUsedForTotalInt));
-    
-    
-    Amp2=AmpRaw-polyval(optFit2,double(Frame))*sum(sum(fad.channels(Particles(CurrentParticle).Frame(i)).fits.maskUsedForTotalInt));
-    
-    
-    
+%If we have less than 2 data points, we just take the mean.    
 else
+    error('HG: Adapt this')
     FitType='mean';
-    
-    
-    Off1Fit=mean(double(Off));
-    optFit1=Off1Fit;
-    
+  
+    OffFit=mean(double(Offset));
+    optFit=OffFit;
     
     %Calculate the error in the offset
-    OffsetError=std(Off-Off1Fit);
+    OffsetError=std(OffFit-optFit);
+end
 
-    Error=OffsetError*sqrt(2)*sum(sum(fad.channels(Particles(CurrentParticle).Frame(i)).fits.maskUsedForTotalInt));
-
-    i=1;
-    Amp=AmpRaw-Off1Fit*sum(sum(fad.channels(Particles(CurrentParticle).Frame(i)).fits.maskUsedForTotalInt));
-    
-    
-    Off2Fit=nanmean(double(Off2));
-    Amp2=AmpRaw-Off2Fit*sum(sum(fad.channels(Particles(CurrentParticle).Frame(i)).fits.maskUsedForTotalInt));
+if exist('OffsetError')
+    %Now, estimate the error in the signal.
+    %For the Gaussian fit, we use the average area to get an overall
+    %error for the whole trace. We could also just define an error for
+    %each data point.
+    ErrorGauss=OffsetError*sqrt(2)*...
+        cellfun(@mean,Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).Area);
+    %For the Integral, we just use the area of the snippet, which is a
+    %constant for all time points.
+    ErrorIntegral=OffsetError*sqrt(2)*...
+        sum(sum(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).snippet_mask{1}));
+else
+    ErrorGauss=[];
+    ErrorIntegral=[];
+    optFit=[];
 end
