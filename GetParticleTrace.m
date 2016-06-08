@@ -67,8 +67,7 @@ if length(Frame)>5
     
 %If we have between 3 and five data points, we fit a line.
 elseif length(Frame)>2
-    error('HG: Adapt this')
-    
+      
     FitType='line';
     optFit = polyfit(double(Frame),double(Offset),1);
 
