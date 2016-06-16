@@ -1,22 +1,17 @@
 function CompileNuclearProtein(varargin)
-%THis code gives me the input
-%varargin Variable length input argument list.
-%allows any number of arguments to a function.  The variable
-%varargin is a cell array containing the optional arguments to the
-%function.  varargin must be declared as the last input argument
-%and collects all the inputs from that point onwards.
 
 
 %This function will add fluorescence information to each schnitz.
 
 close all
 
-%gives the location of these 5 quantities.
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
+%Information about about folders
+[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
 
+
 %Look at the input parameter and use defaults if missing
-if isempty(varargin)% returns 1 if it is an empty array and 0 otherwise.an empty array has prod(size(X))==0
+if isempty(varargin)
     FolderTemp=uigetdir(DropboxFolder,'Select folder with data to analyze');
     Dashes=strfind(FolderTemp,'\');
     Prefix=FolderTemp((Dashes(end)+1):end);
@@ -40,7 +35,7 @@ load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
 %What type of experiment are we dealing with? Get this out of
 %MovieDatabase.xlsx
 
-[XLSNum,XLSTxt,XLSRaw]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
+[XLSNum,XLSTxt,XLSRaw]=xlsread('MovieDatabase.xlsx');
 %Find the different columns.
 DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
 nc9Column=find(strcmp(XLSRaw(1,:),'nc9'));
@@ -74,7 +69,9 @@ ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
 ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
 APResolution = XLSRaw{PrefixRow,APResolutionColumn};
 Channel1=XLSTxt(PrefixRow,Channel1Column);
-Channel2=XLSTxt(PrefixRow,Channel2Column)
+Channel2=XLSTxt(PrefixRow,Channel2Column);
+
+
 
 nc9=cell2mat(XLSRaw(PrefixRow,nc9Column));
 nc10=cell2mat(XLSRaw(PrefixRow,nc10Column));
@@ -133,13 +130,13 @@ end
 
 %Get the actual time corresponding to each frame
 if isfield(FrameInfo,'FileMode')
-    if strcmp(FrameInfo(1).FileMode,'TIF')%Is this a TIF file if not is it a LSM or LIFE Export
+    if strcmp(FrameInfo(1).FileMode,'TIF')
         for j=1:length(FrameInfo)
             ElapsedTime(j)=etime(datevec(FrameInfo(j).TimeString),datevec(FrameInfo(1).TimeString));
         end
-    elseif strcmp(FrameInfo(1).FileMode,'LSM')|strcmp(FrameInfo(1).FileMode,'LIFExport')%If it is a LIFEexport Sum over Fram e info
+    elseif strcmp(FrameInfo(1).FileMode,'LSM')|strcmp(FrameInfo(1).FileMode,'LIFExport')
         for j=1:length(FrameInfo)
-            ElapsedTime(j)=FrameInfo(j).Time-FrameInfo(1).Time;%Finds the elapsed time by subtracting each time point by the initial time point
+            ElapsedTime(j)=FrameInfo(j).Time-FrameInfo(1).Time;
         end
     else
         error('File mode not supported. Cannot extract time information. Include format in ExportDataForFISH.m')

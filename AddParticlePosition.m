@@ -153,10 +153,17 @@ if ~NoAP
     Channel1=XLSTxt(PrefixRow,Channel1Column);
     Channel2=XLSTxt(PrefixRow,Channel2Column);
 
-
-    ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
-        ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')));
-
+    %First, check whether we have Bcd-GFP and inverted histone
+    if ((~isempty(strfind(lower(Channel1),'bcd')))|...
+        (~isempty(strfind(lower(Channel2),'bcd'))))
+        warning('Using only Bcd-GFP to determine AP position')
+        ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd'))|...
+            ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd')));
+    else
+        ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
+            ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')));
+    end
+    
 
     if sum(ChannelToLoadTemp)
         ChannelToLoad=find(ChannelToLoadTemp);
@@ -180,7 +187,8 @@ if ~NoAP
         %Get the zoomed out surface image and its dimensions from the FullEmbryo folder
         D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.tif']);
         SurfName=D(find(~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
-        SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,SurfName],ChannelToLoad); 
+        SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,...
+            'FullEmbryo',filesep,SurfName],ChannelToLoad); 
         
         %Get the size of the zoom image
         Rows = str2double(ExtractInformationField(ImageInfo(1), 'state.acq.linesPerFrame='));
@@ -212,22 +220,33 @@ if ~NoAP
         SurfName=[];
         
         %Figure out the different channels
-        if  ~isempty(strfind(lower(Channel1{1}),'his'))
-            HisChannel=1;
+        
+        %If we have Bcd-GFP and inverted His, we will use Bcd-GFP for the
+        %alignment
+         if ((~isempty(strfind(lower(Channel1),'bcd')))|...
+            (~isempty(strfind(lower(Channel2),'bcd'))))
+            ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd'))|...
+                ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd')));
+            HisChannel=find(ChannelToLoad);
             InvertHis=0;
-        elseif ~isempty(strfind(lower(Channel1{1}),'mcherry'))
-            HisChannel=1;
-            InvertHis=1;
-        elseif ~isempty(strfind(lower(Channel2{1}),'his'))
-            HisChannel=2;
-            InvertHis=0;
-        elseif ~isempty(strfind(lower(Channel2{1}),'mcherry'))
-            HisChannel=2;
-            InvertHis=1;
-        else
-            error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
-        end
-                
+         else
+            if  ~isempty(strfind(lower(Channel1{1}),'his'))
+                HisChannel=1;
+                InvertHis=0;
+            elseif ~isempty(strfind(lower(Channel1{1}),'mcherry'))
+                HisChannel=1;
+                InvertHis=1;
+            elseif ~isempty(strfind(lower(Channel2{1}),'his'))
+                HisChannel=2;
+                InvertHis=0;
+            elseif ~isempty(strfind(lower(Channel2{1}),'mcherry'))
+                HisChannel=2;
+                InvertHis=1;
+            else
+                error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
+            end
+         end
+            
         %Find the zoomed movie pixel size
         D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.',FileMode(1:3)]);
         %Load only the metadata from the zoomed images
@@ -247,10 +266,13 @@ if ~NoAP
         MetaFullEmbryo1= ImageTemp1{:, 4};
         PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX(0));
 
-        if PixelSizeFullEmbryo~=PixelSizeFullEmbryoMid
+        %In principle, we would be comparing PixelSizeFullEmbryo==PixelSizeFullEmbryoMid
+        %However, some issues of machine precision made this not work
+        %sometimes.
+        if abs(PixelSizeFullEmbryo/PixelSizeFullEmbryoMid-1)>0.01
             error('The surface and midsaggital images were not taken with the same pixel size')
         end
-        
+               
         
         %How many channels and slices do we have?
         NChannelsMeta=MetaFullEmbryo.getChannelCount(0);
@@ -348,8 +370,34 @@ if ~NoAP
 
     %Make a folder to store the images
     mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
-
-    if HistoneChannel
+    
+    %Check whether we have Bcd-GFP. If so, we'll use it for the alignment
+    %if there is no histone.
+    if ((~isempty(strfind(lower(Channel1),'bcd')))|...
+            (~isempty(strfind(lower(Channel2),'bcd'))))&InvertHis
+        %Figure out which channel Bcd is in
+        if ~isempty(strfind(lower(Channel1),'bcd'))
+            BcdChannel=1;
+        else
+            BcdChannel=2;
+        end
+        
+        %Find the last frame     
+        DGFP=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'*_z*_ch',...
+            iIndex(BcdChannel,2),'.tif']);
+        %Now load all z planes in that frame
+        DGFP=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'_',...
+            DGFP(end).name(end-15:end-13),'*_z*_ch',...
+            iIndex(BcdChannel,2),'.tif']);
+        %Take the maximum projection
+        MaxTemp=[];
+        for i=1:length(DGFP)
+            MaxTemp(:,:,i)=imread([PreProcPath,filesep,Prefix,filesep,DGFP(i).name]);
+        end
+        ZoomImage=max(MaxTemp,[],3);
+        
+    %Otherwise, if there a histone channel
+    elseif HistoneChannel
         ChannelToLoad=2;
 
         %Get the surface image in the zoomed case by looking at the last
@@ -412,7 +460,10 @@ if ~NoAP
             SurfImageResized=imresize(SurfImage, ZoomRatio);
 
             %Calculate the correlation matrix and find the maximum
-            if InvertHis
+            if ((~isempty(strfind(lower(Channel1),'bcd')))|...
+                    (~isempty(strfind(lower(Channel2),'bcd'))))
+                C = normxcorr2(ZoomImage, SurfImageResized);
+            elseif InvertHis
                 warning('I still need to fix this part')
                 C = normxcorr2(imcomplement(ZoomImage), SurfImageResized);
             else            

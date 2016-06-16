@@ -34,7 +34,7 @@ SkipMovie=0;        %Do not generate the movie
 ApproveAll=0;       %Only use manually approved particles
 MinParticles=4;     %Require 4 particles per AP bin or else discard
 
-if isempty(varargin)
+if isempty(varargin)%looks for the folder to analyze
     FolderTemp=uigetdir(DefaultDropboxFolder,'Select folder with data to analyze');
     Dashes=strfind(FolderTemp,filesep);
     Prefix=FolderTemp((Dashes(end)+1):end);

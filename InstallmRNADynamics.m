@@ -127,8 +127,14 @@ Output{6}=['path(''',LineageCodeFolder,''',path);'];
 
 
 %Create the startup.m file
-StartUpPath=userpath;
-%if ~exist([StartUpPath(1:end-1),filesep,'startup.m'])
+StartUpPath=userpath; 
+if isempty(userpath)
+   display('Path for this specific user was not found. Please locate it in your documents folder.')
+   display('In Windows, got to "My Documents\Matlab"')
+   StartUpPath=uigetdir;
+   userpath(StartUpPath);
+end
+
 fid = fopen([StartUpPath(1:end-1),filesep,'startup.m'], 'a');
 
 for i=1:length(Output)

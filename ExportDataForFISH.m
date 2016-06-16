@@ -35,7 +35,8 @@ MaxShift=9;     %Maximum shift in pixels corresponding to image shift and
                 %alignment
 MaxHistone=1000;    %Maximum intensity for the histone channel. Anything above
                     %this will be capped.
-ProjectionType = 'maxprojection'; %Default setting for z-projection is maximum-based.This may fail when high intensity reflections are present
+ProjectionType = 'maxprojection'; %Default setting for z-projection is maximum-based.
+                                  %This may fail when high intensity reflections are present
                 
 
 %Look at parameters
@@ -1369,12 +1370,22 @@ elseif strcmp(FileMode,'LIFExport')
                     StackCenter=round((min(NSlices)-1)/2);
                     StackRange=[StackCenter-1:StackCenter+1];
                     
-                    if strcmp(ProjectionType,'medianprojection')
-                        Projection=median(HisSlices(:,:,StackRange),3);
-                    else    
-                        Projection=max(HisSlices(:,:,StackRange),3);
-                    end
+                    %HG on 04/19/2016. The lines below would lead to a
+                    %maximum projection. However, for the fake histone
+                    %channel the median projection is more appropriate to
+                    %get the nuclei contours. Are the commented lines
+                    %useful for anybody?
+                    Projection=median(HisSlices(:,:,StackRange),3);
+%                     if strcmp(ProjectionType,'medianprojection')
+%                         Projection=median(HisSlices(:,:,StackRange),3);
+%                     else    
+%                         Projection=max(HisSlices(:,:,StackRange),3);
+%                     end
 
+                    
+                    
+                    
+                    
                     %Flatten the field if possible
                     if exist('LIFFF')
                         Projection=Projection./FF;

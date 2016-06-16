@@ -174,7 +174,7 @@ else
         [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
     if isempty(XLSEntry)
         XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-        [Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
+            [Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
         if isempty(XLSEntry)
             error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
         end
@@ -182,7 +182,8 @@ else
 end
 
 
-if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel2Column),'mCherry-MCP')
+if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP')|...
+        strcmp(XLSRaw(XLSEntry,Channel2Column),'mCherry-MCP')|strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-mCherry')
     nc9=cell2mat(XLSRaw(XLSEntry,nc9Column));
     nc10=cell2mat(XLSRaw(XLSEntry,nc10Column));
     nc11=cell2mat(XLSRaw(XLSEntry,nc11Column));
