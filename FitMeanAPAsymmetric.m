@@ -8,14 +8,17 @@ function FitMeanAPAsymmetric(varargin)
 
 %This function performs fits to the mean fluorescence as a function of time
 %of a particular dataset.
-
+%OUTPUT: MeanFitsAsymmetric.mat
+%It gives you n columns each representing a nuclear cycle and m rows each
+%representing a bin number
 
 %Fitting:
 %a,z: On time
 %s,x: Off time
 %d,c: Rate, fine
 %D,C: Rate, coarse
-
+%q,w: approve or disapprove a fit
+%e: save
 %Moving around:
 %, .: Move in AP
 %n,m: Move in nc

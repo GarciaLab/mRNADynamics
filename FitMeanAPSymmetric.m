@@ -3,9 +3,15 @@ function FitMeanAPSymmetric(varargin)
 %This function performs fits to the mean fluorescence as a function of time
 %of a particular dataset.
 
+%varargin Variable length input argument list.
+%allows any number of arguments to a function.  The variable
+%varargin is a cell array containing the optional arguments to the
+%function.  varargin must be declared as the last input argument
+%and collects all the inputs from that point onwards.
+
 %2013/08/18: Changed this so it can automatically detect whether we are
 %dealing with a 5' or 3' data set
-
+%OUTPUT:MeanFits.mat
 %Fitting:
 %a,z: On time
 %s,x: Off time
@@ -22,7 +28,7 @@ function FitMeanAPSymmetric(varargin)
 % You need to approve or reject fits.
 % w: reject; q: approve. Enter saves MeanFits.mat.
 
-
+%SAVE: v
 
 %Parameters:
 MinParticles=2;     %Minimum number of particles in an AP bin
@@ -51,7 +57,7 @@ close all
 % one computer
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(varargin{1});
-
+%I dont think this part works. TG
 
 if ~isempty(varargin)
     Prefix=varargin{1};
