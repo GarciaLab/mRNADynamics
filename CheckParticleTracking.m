@@ -79,6 +79,10 @@ close all
 
 %% Information about about folders
 
+%Turn of some warnings
+warning('off','MATLAB:nargchk:deprecated');     %This is for nargchk
+
+%Get the folders
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
 
@@ -955,7 +959,9 @@ while (cc~='x')
         ManualZFlag=1;
     elseif cc=='j'
         try
-            iJump=input('Frame to jump to: ');
+            iJump= inputdlg('Frame to jump to:',...
+                'Move to frame');
+            iJump=str2num(iJump{1});           
         catch
             iJump=CurrentFrame;
         end
@@ -966,7 +972,10 @@ while (cc~='x')
         DisplayRange=[];
     elseif cc=='k'
         try
-            ParticleJump=input('Particle to jump to: ');
+            %ParticleJump=input('Particle to jump to: ');
+            ParticleJump = inputdlg('Particle to jump to:',...
+                'Move to particle');
+            ParticleJump=str2num(ParticleJump{1});
         catch
             ParticleJump=CurrentParticle;
         end
