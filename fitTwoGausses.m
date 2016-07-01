@@ -32,9 +32,9 @@ if size(centers,1) == 1
         centers(1,1), WidthGuess, OffsetGuess];
 
     [fits, res1, residual, exitflag, output, lambda, jacobian] = lsqnonlin(singleGaussian, ...
-        init_params,zeros(1,6),inf(1,6);
+        init_params,[0,0,0,0,0,0],[inf,inf,inf,inf,inf,inf]);
     
-    ci = nlparci(fits,residual,'jacobian',jacobian); %compute 95% confidence interval from the regression
+    ci = nlparci(fits,residual,'jacobian',jacobian);
     errors = zeros(1, length(fits));
     for ndx = 1:length(ci)
         errors(ndx) = abs((abs(ci(ndx, 1)) - abs(ci(ndx, 2)))/2);
@@ -47,7 +47,7 @@ elseif size(centers,1) == 2
         WidthGuess, OffsetGuess];
 
     [double_fit, res1, residual, exitflag, output, lambda, jacobian] = lsqnonlin(doubleGaussian, ...
-        init_params,zeros(1,11),inf(1,11));
+        init_params,[0,0,0,0,0,0,0,0,0,0,0],[inf,inf,inf,inf,inf,inf,inf,inf,inf,inf,inf]);
     
     ci = nlparci(double_fit,residual,'jacobian',jacobian);
     errors = zeros(1, length(double_fit));
@@ -78,7 +78,7 @@ else
     % like assigning NaNs to all the return values.
     init_params = [2000, 10, 5, 10, 5,1000];
     [fits, res1, residual, exitflag, output, lambda, jacobian] = lsqnonlin(singleGaussian, ...
-        init_params,zeros(1,6),inf(1,6));
+        init_params,[0,0,0,0,0,0],[inf,inf,inf,inf,inf,inf]);
     
     ci = nlparci(fits,residual,'jacobian',jacobian);
     errors = zeros(1, length(fits));
