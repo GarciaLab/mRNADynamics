@@ -12,6 +12,12 @@ snip = double(snip);
 singleGaussian = @(params) params(1).*exp((-1/2).*(((x-params(2))./params(3)).^2 ...
         + ((y-params(4))./params(5)).^2)) + params(6) - double(snip);
 
+% singleGaussian = @(params) params(1).*exp( -( ...
+%     -( (cos(params(7))^2 / 2*params(3)^2) + (sin(params(7))^2 / 2*params(5)^2) )*(x-params(2)).^2 ...
+%     -2*( (sin(2*params(7)) / 4*params(3)^2) + (sin(2*params(7)) / 4*params(5)^2)) * (x-params(2)).*(y-params(4))...
+%     + ( (sin(params(7))^2 / 2*params(3)^2) + (cos(params(7))^2 / 2*params(5)^2) ) *(y-params(4)).^2))...
+%     + params(6) - double(snip);
+    
 doubleGaussian = @(params) params(1).*exp((-1/2).*(((x-params(2))./params(3)).^2 ... 
         + ((y-params(4))./params(5)).^2)) ... 
         + params(6).*exp((-1/2).*(((x-params(7))./params(8)).^2  ...
@@ -29,7 +35,7 @@ centers = double(step(hLocalMax, snip));
 
 if size(centers,1) == 1
     init_params = [max(max(snip)), centers(1,2), WidthGuess, ... 
-        centers(1,1), WidthGuess, OffsetGuess];
+        centers(1,1), WidthGuess, OffsetGuess, 0];
 
     [fits, res1, residual, exitflag, output, lambda, jacobian] = lsqnonlin(singleGaussian, ...
         init_params,[0,0,0,0,0,0],[inf,inf,inf,inf,inf,inf]);
@@ -76,7 +82,7 @@ else
     % TODO: I'm just making this so the script doesn't crash when it can't
     % find any maxima. But it's ugly and should be replaced with something
     % like assigning NaNs to all the return values.
-    init_params = [2000, 10, 5, 10, 5,1000];
+    init_params = [2000, 10, 5, 10, 5,1000, 0];
     [fits, res1, residual, exitflag, output, lambda, jacobian] = lsqnonlin(singleGaussian, ...
         init_params,[0,0,0,0,0,0],[inf,inf,inf,inf,inf,inf]);
     
@@ -88,10 +94,11 @@ else
     rel_errors = abs(errors./fits);
 end
 
-%Compute intensities by integrating over the Gaussian fit
+%Compute intensities by integrating over the Gaussian fit. Offset
+%subtracted
 % TODO: consider the case with two gaussians here
 
-GaussianIntensity = sum(sum(singleGaussian(fits) + double(snip) - fits(end)));
+GaussianIntensity = sum(sum(singleGaussian(fits) + double(snip) - fits(6)));
 
 if show_status
     figure(2)

@@ -1,22 +1,57 @@
-function segment_track_spots(Prefix, thresh, show_status, save_status, ...
-    track_status, num_frames, just_dog_status)
+function segment_track_spots(Prefix,Threshold,varargin)
 
-% show_status takes 0 or 1 depending on whether you want to display plots
-% and images. When using show_status = 1, change "parfor" by "for" in the
-% loop that goes over all spots
+%Parameters:
+%Prefix: Prefix of the data set to analyze
+%Threshold: Threshold to be used. Should be kept at ~90-200 for lattice
+%           light-sheet data, and at ~5-10 for confocal data (Leica SP8).
+%           If left empty, then the code just generates the DoG files.
 
-% save_status takes 0 or 1 depending on whether you want to save your files
+%Options:
+%'ShowStatus':   If you want to display plots and images. When using
+%                show_status = 1, change "parfor" by "for" in the
+%                loop that goes over all spots. Default is no.
+%'TrackSpots':   Do you want to use this code to track the particles instead
+%                of using TrackmRNADynamics? Armando is working on this.
+%'Frames',N:     Run the code from frame 1 to frame N.
+
 
 % track_status takes 0 or 1 depending on whether you want to make a time
 % tracking in addition to the segmentation.
 
 % num_frames for debugging should be kept at 5-20
 
-% thresh should be kept at ~90-200 for lattice data, and at ~5-10 for
-% confocal data.
 
-% just_dog_status is 1 if you want to stop at producing DoG images and 1 if
-% you want to run through the rest of the script
+
+
+%Default options
+show_status=0;
+track_status=0;
+
+
+%If no threshold was specified, then just generate the DoG images
+if isempty(Threshold)
+    just_dog_status=1;
+else
+    just_dog_status=0;
+end
+
+
+
+for i=1:length(varargin)
+    if strcmp(varargin{i},'ShowStatus')
+        show_status=1;
+    elseif strcmp(varargin{i},'TrackSpots')
+        track_status=1;
+    elseif strcmp(varargin{i},'Frames')
+        if ~isnumeric(varargin{i+1})
+            error('Wrong input parameters. After ''Frames'' you should input the number of frames')
+        else
+            num_frames=varargin{i+1};
+        end
+    end
+end
+
+
 
 %% 
 
@@ -68,14 +103,17 @@ for current_frame = 1:num_frames
         im = im_stack{current_frame,current_z};
         %filterSize >> sigma 2 > sigma 1. these values should be good for a first pass.
         dog_stack{current_frame,current_z} = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
-        if save_status
-            dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
-            imwrite(uint16(dog_stack{current_frame,current_z}), [OutputFolder1,filesep,dog_name])
-        end
+
+        dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
+        imwrite(uint16(dog_stack{current_frame,current_z}), [OutputFolder1,filesep,dog_name])
+
+        
+        
         dog = dog_stack{current_frame,current_z};
         if just_dog_status
             imshow(dog,[]);
         end
+        
         if ~just_dog_status
             if show_status
                 f = figure(1);
@@ -90,14 +128,27 @@ for current_frame = 1:num_frames
             rad = 2000/pixelSize;
             temp_frames = {};
             if n_spots ~= 0
-                for k = 1:n_spots
-                    temp_particles(k) = fit_single_spot(k, im, im_label, dog, ...
-                        neighb, rad, pixelSize, show_status, f);
-                    if k == n_spots && save_status
-                        seg_name = ['SEG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
-                        saveas(gcf,[OutputFolder2,filesep,seg_name]);
+                
+                if ~show_status
+                    parfor k = 1:n_spots
+                        temp_particles(k) = fit_single_spot(k, im, im_label, dog, ...
+                            neighb, rad, pixelSize, show_status, f);
+                        if k == n_spots
+                            seg_name = ['SEG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
+                            saveas(gcf,[OutputFolder2,filesep,seg_name]);
+                        end
+                    end
+                else
+                    for k = 1:n_spots
+                        temp_particles(k) = fit_single_spot(k, im, im_label, dog, ...
+                            neighb, rad, pixelSize, show_status, f);
+                        if k == n_spots
+                            seg_name = ['SEG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
+                            saveas(gcf,[OutputFolder2,filesep,seg_name]);
+                        end
                     end
                 end
+                
                 for k = 1:n_spots
                     if ~isempty(temp_particles{k})
                         temp_frames = [temp_frames, temp_particles(k)];

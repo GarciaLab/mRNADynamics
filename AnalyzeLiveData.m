@@ -25,8 +25,10 @@ Prefix=ExportDataForFISH;
 %TAGOnly: Generate the TAG file only
 
 %First do an analysis without a threshold to generate the DoG images.
-%RunFISHToolbox(Prefix)
+segment_track_spots(Prefix,[])
 
+
+%Now, segment the particles using the threshold
 segment_track_spots(Prefix, 7, 0, 1, 0, 0)
 
 
