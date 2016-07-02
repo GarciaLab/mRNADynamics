@@ -4,8 +4,6 @@ function CheckParticleTracking(varargin)
 %logic of this function should be similar to schnitzcells: We want to be
 %able to correct both the segmentation and tracking.
 % 
-%V5: Modified to handle Laurent's schnitzcells
-%V4: Modified the code to use and correct the schnitzcells tracking
 % 
 %Usage:
 %
@@ -76,6 +74,10 @@ function CheckParticleTracking(varargin)
 %0 Enter debug mode to fix things manually
 
 close all
+
+
+%Turn off the warning about nargchk. 
+warning('off','MATLAB:nargchk:deprecated')
 
 
 %% Information about about folders
@@ -436,7 +438,7 @@ while (cc~='x')
 
     
     %Get the coordinates of all the spots in this frame
-    [x,y,z]=SpotsXYZ(Spots{CurrentChannel}(CurrentFrame))
+    [x,y,z]=SpotsXYZ(Spots{CurrentChannel}(CurrentFrame));
     
     %If the approved field does not exist create it
     if ~isfield(Particles{CurrentChannel},'Approved')
@@ -455,7 +457,10 @@ while (cc~='x')
     xTrace=x(CurrentParticleIndex);
     yTrace=y(CurrentParticleIndex);
     
-    %These are the positions of all the approved and disapproved particles
+    %These are the positions of all the approved, disapproved and
+    %unflagged particles
+    
+    %Approved particles
     IndexApprovedParticles=[];
     for i=1:length(Particles{CurrentChannel})
         if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&...
@@ -467,6 +472,7 @@ while (cc~='x')
     xApproved=x(IndexApprovedParticles);
     yApproved=y(IndexApprovedParticles);
 
+    %Disapproved particles
     IndexDisapprovedParticles=[];
     for i=1:length(Particles{CurrentChannel})
         if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&sum(Particles{CurrentChannel}(i).Approved==-1)
@@ -476,6 +482,21 @@ while (cc~='x')
     end
     xDisapproved=x(IndexDisapprovedParticles);
     yDisapproved=y(IndexDisapprovedParticles);
+    
+    
+    %Non-flagged particles
+    IndexNonFlaggedParticles=[];
+    for i=1:length(Particles{CurrentChannel})
+        if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&...
+                (sum(Particles{CurrentChannel}(i).Approved==-1)|sum(Particles{CurrentChannel}(i).Approved==1))
+            IndexNonFlaggedParticles=[IndexDisapprovedParticles,...
+                Particles{CurrentChannel}(i).Index(Particles{CurrentChannel}(i).Frame==CurrentFrame)];
+        end
+    end
+    xNonFlagged=x(IndexNonFlaggedParticles);
+    yNonFlagged=y(IndexNonFlaggedParticles);
+    
+    
     
     
     if (~isempty(xTrace))&(~ManualZFlag)
@@ -516,7 +537,7 @@ while (cc~='x')
     hold on
     %Show all particles in regular mode
     if ~SpeedMode
-        plot(x,y,'or')
+        plot(xNonFlagged,yNonFlagged,'or')
         plot(xApproved,yApproved,'ob')
         plot(xDisapproved,yDisapproved,'^r')
     end
@@ -721,7 +742,7 @@ while (cc~='x')
        
         hold on
         if ~SpeedMode
-            plot(x,y,'ow')
+            plot(xNonFlagged,yNonFlagged,'ow')
             plot(xApproved,yApproved,'ob')
         end
         plot(xTrace,yTrace,'og')
@@ -832,22 +853,22 @@ while (cc~='x')
             PreviousParticle=CurrentParticle;
             [Frames,AmpIntegral,AmpGaussian]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
         end
-        [AX,H1,H2]=plotyy(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-            AmpGaussian(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-            Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-            AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved));
-        set(H1,'Marker','.','Color','b','MarkerSize',10)
-        set(H2,'Marker','.','Color','g','MarkerSize',10)
+        
+        H1=plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+            AmpGaussian(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-b');
+
         hold on
+        H2=plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+            AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-g');
+        
+        
+
         plot(Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpGaussian(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
         plot(Frames(Frames==CurrentFrame),AmpGaussian(Frames==CurrentFrame),'ob')
         hold off
         
-%         plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpGaussian(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-k')
-%         hold on
-%         plot(Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpGaussian(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
-%         plot(Frames(Frames==CurrentFrame),AmpGaussian(Frames==CurrentFrame),'ob')
-%         hold off
+        legend([H1,H2],'Gaussian integral','Raw integral','Location','NorthWest')
+        
         try
             xlim([min(Frames)-1,max(Frames)+1]);
         catch
@@ -1132,8 +1153,8 @@ while (cc~='x')
         [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'b', 'linewidth',1);
         ConnectPosition = [ConnectPositionx,ConnectPositiony];
         if ~isempty(ConnectPosition)
-            %Find the closest particle
-            [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,fad(CurrentChannel),Particles{CurrentChannel});
+            %Find thef closest particle
+            [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
             display(['Clicked particle: ',num2str(ParticleOutput)]);
             
             if UseHistoneOverlay
@@ -1696,10 +1717,10 @@ end
 
 
 if UseHistoneOverlay
-    save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2')
+    save([DataFolder,filesep,'Particles.mat'],'Particles','Spots','SpotFilter','Threshold1','Threshold2')
     save([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'],'schnitzcells')
 else
-    save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2')            
+    save([DataFolder,filesep,'Particles.mat'],'Particles','Spots','SpotFilter','Threshold1','Threshold2')            
 end
 close all
 display('Particles saved.')

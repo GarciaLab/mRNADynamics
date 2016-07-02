@@ -410,6 +410,8 @@ if strcmp(FileMode,'TIF')
     %Add the information about the mode
     for i=1:length(FrameInfo)
         FrameInfo(i).FileMode='TIF';
+        %Add the PixelSize manually
+        FrameInfo(i).PixelSize=0.220;     %in um
     end
     
     

@@ -1,4 +1,4 @@
-function [fad,fad2,Particles] = ConnectToThresholdHistone(fad,fad2,Particles,...
+function [Spots,SpotFilter,Particles] = ConnectToThresholdHistone(Spots,SpotFilter,Particles,...
     CurrentParticle,CurrentFrame,TargetFrame,schnitzcells,Ellipses,SearchRadius,PixelSize)
 
 %V3: Changed to support Laurent's schnitzcells
@@ -9,7 +9,7 @@ function [fad,fad2,Particles] = ConnectToThresholdHistone(fad,fad2,Particles,...
 %First, see which nuclei the fad2 suspects are close to
 Particles2=[];
 
-%I'm telling AssignParticle2NucleusV3 to leave any unassigned particles in
+%I'm telling AssignParticle2Nucleus to leave any unassigned particles in
 %fad2 nevertheless. I hope this is not screwing up the indexing.
 [Particles2,fad2,Dummy]=AssignParticle2Nucleus(schnitzcells,Ellipses,Particles2,fad2,fad2,...
     TargetFrame,PixelSize,SearchRadius);

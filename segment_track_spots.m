@@ -26,9 +26,10 @@ function segment_track_spots(Prefix,Threshold,varargin)
 %Default options
 show_status=0;
 track_status=0;
-
+num_frames=0;
 
 %If no threshold was specified, then just generate the DoG images
+thresh=Threshold;
 if isempty(Threshold)
     just_dog_status=1;
 else
@@ -91,6 +92,8 @@ mkdir(OutputFolder2)
 
 pixelSize = FrameInfo(1).PixelSize*1000; %nm
 
+%HG to AR: Can you add an explanation of each one of these parameters?
+
 sigma1 = 150 / pixelSize;
 sigma2 = 250 / pixelSize;
 filterSize = round(1500 / pixelSize); 
@@ -98,7 +101,17 @@ neighb = round(500 / pixelSize); %This should work for a first pass and shouldn'
 thr = thresh; 
 dog_stack  = {}; 
 all_frames = {}; 
+
+if just_dog_status
+    h=waitbar(0,'Generating DoG images');
+else
+    h=waitbar(0,'Segmenting spots');
+end
+
 for current_frame = 1:num_frames
+    
+    waitbar(current_frame/num_frames,h)
+    
     for current_z = 1:size(im_stack,2) %z-slices
         im = im_stack{current_frame,current_z};
         %filterSize >> sigma 2 > sigma 1. these values should be good for a first pass.
@@ -110,7 +123,7 @@ for current_frame = 1:num_frames
         
         
         dog = dog_stack{current_frame,current_z};
-        if just_dog_status
+        if ~just_dog_status & show_status
             imshow(dog,[]);
         end
         
@@ -160,6 +173,8 @@ for current_frame = 1:num_frames
     end
 end
 
+close(h)
+
 %%
 if ~just_dog_status
     clear im_stack
@@ -167,7 +182,13 @@ if ~just_dog_status
     n = 1;
     nframes = size(all_frames,1);
     nz = size(all_frames,2);
+    
+    h=waitbar(0,'Saving particle information');
+    
     for i = 1:nframes 
+        
+        waitbar(i/nframes,h)
+        
         for j = 1:nz 
              for spot = 1:length(all_frames{i,j}) %spots within particular image
                  if ~isempty(all_frames{i,j}{spot})
@@ -194,6 +215,8 @@ if ~just_dog_status
              end
         end
     end
+    
+    close(h)
 
     fields = fieldnames(Particles);
 
@@ -202,7 +225,13 @@ if ~just_dog_status
     while changes ~= 0
         changes = 0;
         i = 1;
-        for n = 1:nframes   
+        
+        h=waitbar(0,'Finding z-columns');
+        
+        for n = 1:nframes  
+            
+            waitbar(n/nframes,h)
+            
             i = i + length(Particles([Particles.frame] == (n - 1) ));
             for j = i:i+length(Particles([Particles.frame] == n)) - 1
                 for k = j+1:i+length(Particles([Particles.frame] == n)) - 1
@@ -218,6 +247,8 @@ if ~just_dog_status
             end
         end
         Particles = Particles([Particles.r]~=1);
+        
+        close(h)
     end
 
 
@@ -233,8 +264,8 @@ if ~just_dog_status
         end
     end
 
-    %Create a final Spots structure to be fed into TrackmRNADynamics
-
+    
+    %Create a final Spots structure to be feed into TrackmRNADynamics
     Spots = [];
     for i = 1:Particles(end).frame
         frames = find([Particles.frame]==i);
@@ -245,8 +276,9 @@ if ~just_dog_status
         end
     end
 
+    
+    
     %time tracking
-
     if track_status
         Particles = track_spots(Particles, neighb);
     end
@@ -264,4 +296,6 @@ if ~just_dog_status
     % end
 end
 
-t = toc
+t = toc;
+
+display(['Elapsed time: ',num2str(t/60),' min'])

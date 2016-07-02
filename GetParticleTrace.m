@@ -42,28 +42,12 @@ if length(Frame)>5
         nBreaks=5;
     end
 
-    try
-        optFit = adaptiveSplineFit(double(Frame),double(Offset),nBreaks);
-        OffsetFit=ppval(optFit,double(Frame));
+    optFit = adaptiveSplineFit(double(Frame),double(Offset),nBreaks);
+    OffsetFit=ppval(optFit,double(Frame));
 
-        %Calculate the error in the offset
-        OffsetError=std(Offset-OffsetFit);
+    %Calculate the error in the offset
+    OffsetError=std(Offset-OffsetFit);
 
-        %Now, estimate the error in the signal.
-        %For the Gaussian fit, we use the average area to get an overall
-        %error for the whole trace. We could also just define an error for
-        %each data point.
-        ErrorGauss=OffsetError*sqrt(2)*...
-            cellfun(@mean,Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).Area);
-        %For the Integral, we just use the area of the snippet, which is a
-        %constant for all time points.
-        ErrorIntegral=OffsetError*sqrt(2)*...
-            sum(sum(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).snippet_mask{1}));
-    catch
-        ErrorGauss=[];
-        ErrorIntegral=[];
-        optFit=[];
-    end
     
 %If we have between 3 and five data points, we fit a line.
 elseif length(Frame)>2
@@ -76,14 +60,13 @@ elseif length(Frame)>2
     
 %If we have less than 2 data points, we just take the mean.    
 else
-    error('HG: Adapt this')
     FitType='mean';
   
     OffFit=mean(double(Offset));
     optFit=OffFit;
     
     %Calculate the error in the offset
-    OffsetError=std(OffFit-optFit);
+    OffsetError=std(OffFit);
 end
 
 if exist('OffsetError')

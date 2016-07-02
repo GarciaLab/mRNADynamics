@@ -1,11 +1,11 @@
-function [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,fad,Particles)
+function [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots,Particles)
 
 %Find the particle index of the particle the user clicked on
 
 
 
 %Find the closest particle and its index
-[x,y]=fad2xyzFit(CurrentFrame,fad, 'addMargin'); 
+[x,y]=SpotsXYZ(Spots(CurrentFrame));
 Distances=sqrt((x-ConnectPosition(1)).^2+(y-ConnectPosition(2)).^2);
 [Dummy,IndexOutput]=min(Distances);
 
