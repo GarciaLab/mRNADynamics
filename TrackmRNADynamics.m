@@ -353,9 +353,8 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
                 %need to make sure that they stay within the nuclei.
 
                     %Get the positions of the potentially new particles
-                    [NewParticlesX,NewParticlesY]=fad2xyz(i,fad, 'addMargin');
-                    NewParticlesZ=single(fad.channels(i).fits.z);
-
+                    [NewParticlesX,NewParticlesY]=SpotsXYZ(Spots(i));
+                    
                     NewParticlesFlag=ones(size(NewParticlesX));
 
 
@@ -379,7 +378,7 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
                         %Now, compare the positions of all of the old and new
                         %particles
                         clear Distance
-                        [PreviousParticlesX,PreviousParticlesY]=fad2xyz(i-1,fad, 'addMargin');
+                        [PreviousParticlesX,PreviousParticlesY]=SpotsXYZ(Spots(i-1));
 
                         for j=1:length(NewParticlesX)
                             Distance(j,:)=sqrt((NewParticlesX(j)*PixelSize-...
@@ -504,41 +503,47 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
 
 
     if ~UseHistone
+        
+        %HG on 07/03/2016: I'm commenting this out while we migrate to the
+        %new spot segmentation approach by Bruno and Armando. I don't think
+        %we need to have the two thresholds anymore.
+        
+        
         %Go through the particles we found and try to fill in the gaps with the
         %Threshold2 ones in fad2.
 
-        for i=1:length(Particles)
-
-            if i==199
-                1+1
-            end
-
-            %Move forward in time
-            CurrentParticleLength=length(Particles(i).Frame)-1;
-
-            while (CurrentParticleLength<length(Particles(i).Frame))&...
-                    (Particles(i).Frame(end)<length(fad.channels))
-                CurrentParticleLength=length(Particles(i).Frame);
-                CurrentFrame=Particles(i).Frame(end);
-
-                [fad,fad2,Particles] = ConnectToThreshold(fad,fad2,Particles,...
-                    i,CurrentFrame,CurrentFrame+1,SearchRadius*0.5);
-            end
-
-            %Move backward in time
-            CurrentParticleLength=length(Particles(i).Frame)-1;
-
-            while (CurrentParticleLength<length(Particles(i).Frame))&(Particles(i).Frame(1)>1)
-                CurrentParticleLength=length(Particles(i).Frame);
-                CurrentFrame=Particles(i).Frame(1);
-
-                %[2,CurrentFrame]
-
-                [fad,fad2,Particles] = ConnectToThreshold(fad,fad2,Particles,...
-                    i,CurrentFrame,CurrentFrame-1,SearchRadius*0.5);
-            end
-
-        end
+%         for i=1:length(Particles)
+% 
+%             if i==199
+%                 1+1
+%             end
+% 
+%             %Move forward in time
+%             CurrentParticleLength=length(Particles(i).Frame)-1;
+% 
+%             while (CurrentParticleLength<length(Particles(i).Frame))&...
+%                     (Particles(i).Frame(end)<length(FrameInfo))
+%                 CurrentParticleLength=length(Particles(i).Frame);
+%                 CurrentFrame=Particles(i).Frame(end);
+% 
+%                 [fad,fad2,Particles] = ConnectToThreshold(fad,fad2,Particles,...
+%                     i,CurrentFrame,CurrentFrame+1,SearchRadius*0.5);
+%             end
+% 
+%             %Move backward in time
+%             CurrentParticleLength=length(Particles(i).Frame)-1;
+% 
+%             while (CurrentParticleLength<length(Particles(i).Frame))&(Particles(i).Frame(1)>1)
+%                 CurrentParticleLength=length(Particles(i).Frame);
+%                 CurrentFrame=Particles(i).Frame(1);
+% 
+%                 %[2,CurrentFrame]
+% 
+%                 [fad,fad2,Particles] = ConnectToThreshold(fad,fad2,Particles,...
+%                     i,CurrentFrame,CurrentFrame-1,SearchRadius*0.5);
+%             end
+% 
+%         end
 
         mkdir([OutputFolder,filesep]);
 
