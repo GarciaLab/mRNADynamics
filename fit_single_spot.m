@@ -1,4 +1,4 @@
-function temp_particles = fits_single_spot(k, im, im_label, dog, neighb, rad, ...
+function temp_particles = fit_single_spot(k, im, im_label, dog, neighb, rad, ...
     pixelSize, show_status, f)
 
 [r,c] = find(im_label == k);
@@ -53,7 +53,7 @@ if ~isempty(possible_cent)
             fitTwoGausses(snip, NeighborhoodSize, MaxThreshold, ...
             WidthGuess, OffsetGuess, show_status);
 
-        disp(rel_errors);
+        %disp(rel_errors);
 
         % Quality control.
         % TODO: make some quality control using the errors in
