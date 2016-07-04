@@ -67,8 +67,7 @@ tic;
 
 
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']);
-im_stack = {};
-
+zSize = FrameInfo(1).NumberSlices;
 if num_frames == 0
     num_frames = length(FrameInfo);
 end
@@ -78,13 +77,6 @@ OutputFolder2=[FISHPath,filesep,Prefix,'_',filesep,'segs'];
 
 mkdir(OutputFolder1)
 mkdir(OutputFolder2)
-
-%AR 7/4/16: This is a VERY slow loop. Should optimize in future
-for current_frame = 1:num_frames
-    for current_z = 1:FrameInfo(1).NumberSlices
-        im_stack{current_frame,current_z} = imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']);
-    end
-end
 
 %%
 %DoG Stuff
@@ -125,9 +117,8 @@ for current_frame = 1:num_frames
     
     waitbar(current_frame/num_frames,h)
     
-    for current_z = 1:size(im_stack,2) %z-slices       
-        im = im_stack{current_frame,current_z};
-        
+    for current_z = 1:zSize      
+        im = imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']);
         if just_dog
             dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
             dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
@@ -185,8 +176,6 @@ close(h)
 
 %%
 if ~just_dog
-    clear im_stack
-    clear dog_stack
     n = 1;
     nframes = size(all_frames,1);
     nz = size(all_frames,2);
