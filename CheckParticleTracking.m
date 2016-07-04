@@ -1410,10 +1410,10 @@ while (cc~='x')
         
         save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo')
         if UseHistoneOverlay
-            save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2')
+            save([DataFolder,filesep,'Particles.mat'],'Particles','Spots', 'SpotFilter','Threshold1','Threshold2')
             save([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'],'schnitzcells')
         else
-            save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2')            
+            save([DataFolder,filesep,'Particles.mat'],'Particles','Spots','SpotFilter','Threshold1','Threshold2')            
         end
         display('Particles saved.')
         if NChannels==1
