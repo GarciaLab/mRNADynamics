@@ -73,6 +73,12 @@ if num_frames == 0
     num_frames = length(FrameInfo);
 end
 
+OutputFolder1=[FISHPath,filesep,Prefix,'_',filesep,'dogs'];
+OutputFolder2=[FISHPath,filesep,Prefix,'_',filesep,'segs'];
+
+mkdir(OutputFolder1)
+mkdir(OutputFolder2)
+
 %AR 7/4/16: This is a VERY slow loop. Should optimize in future
 for current_frame = 1:num_frames
     for current_z = 1:FrameInfo(1).NumberSlices
@@ -80,11 +86,6 @@ for current_frame = 1:num_frames
     end
 end
 
-OutputFolder1=[FISHPath,filesep,Prefix,'_',filesep,'dogs'];
-OutputFolder2=[FISHPath,filesep,Prefix,'_',filesep,'segs'];
-
-mkdir(OutputFolder1)
-mkdir(OutputFolder2)
 %%
 %DoG Stuff
 %filterSize >> sigma 2 > sigma 1
@@ -93,7 +94,8 @@ pixelSize = FrameInfo(1).PixelSize*1000; %nm
 
 %HG to AR: Can you add an explanation of each one of these parameters?
 
-%Initialize Difference of Gaussian filter parameters. 
+%Initialize Difference of Gaussian filter parameters. filterSize >> sigma2
+%> sigma1
 sigma1 = 150 / pixelSize; %width of narrower Gaussian
 sigma2 = 250 / pixelSize; % width of wider Gaussian
 filterSize = round(1500 / pixelSize); %size of square to be convolved with microscopy images
@@ -123,18 +125,18 @@ for current_frame = 1:num_frames
     
     waitbar(current_frame/num_frames,h)
     
-    for current_z = 1:size(im_stack,2) %z-slices
+    for current_z = 1:size(im_stack,2) %z-slices       
         im = im_stack{current_frame,current_z};
-        %filterSize >> sigma 2 > sigma 1. these values should be good for a first pass.
-        dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
-        dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
-        dog_stack{current_frame,current_z} = dog;
-        dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
-        imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
+        
         if just_dog
+            dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
+            dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
+            dog_stack{current_frame,current_z} = dog;
+            dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
+            imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
             imshow(dog,[]);
-        end
-        if ~just_dog
+        else
+            dog = imread([OutputFolder1, filesep,'DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']);
             if displayFigures
                 f = figure(1);
                 imshow(im,[]);
