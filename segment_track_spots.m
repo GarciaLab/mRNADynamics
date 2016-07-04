@@ -29,7 +29,6 @@ track_status=0;
 num_frames=0;
 
 %If no threshold was specified, then just generate the DoG images
-thresh=Threshold;
 if isempty(Threshold)
     just_dog=1;
 else
@@ -74,6 +73,7 @@ if num_frames == 0
     num_frames = length(FrameInfo);
 end
 
+%AR 7/4/16: This is a VERY slow loop. Should optimize in future
 for current_frame = 1:num_frames
     for current_z = 1:FrameInfo(1).NumberSlices
         im_stack{current_frame,current_z} = imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']);
@@ -87,18 +87,28 @@ mkdir(OutputFolder1)
 mkdir(OutputFolder2)
 %%
 %DoG Stuff
-%filterSize >> sigma 2 > sigma 1. these values should be good for a first
-%pass.
+%filterSize >> sigma 2 > sigma 1
 
 pixelSize = FrameInfo(1).PixelSize*1000; %nm
 
 %HG to AR: Can you add an explanation of each one of these parameters?
 
-sigma1 = 150 / pixelSize; 
-sigma2 = 250 / pixelSize;
-filterSize = round(1500 / pixelSize); 
-neighb = round(500 / pixelSize); %This should work for a first pass and shouldn't fail on sisters.
-thr = thresh; 
+%Initialize Difference of Gaussian filter parameters. 
+sigma1 = 150 / pixelSize; %width of narrower Gaussian
+sigma2 = 250 / pixelSize; % width of wider Gaussian
+filterSize = round(1500 / pixelSize); %size of square to be convolved with microscopy images
+
+%The spot finding algorithm first segments the image into regions that are
+%above the threshold. Then, it finds global maxima within these regions by searching in a region "neighb"
+%within the regions. 
+
+%AR 7/4/16: Currently unclear if it's better to limit "neighb" to
+%a diffraction-limited transcription spot or if it should encompass
+%both sister chromatids. 
+
+neighb = round(500 / pixelSize);
+
+
 dog_stack  = {}; 
 all_frames = {}; 
 
@@ -131,7 +141,7 @@ for current_frame = 1:num_frames
             else
                 f=[];
             end
-            thrim = dog > thr;
+            thrim = dog > Threshold;
             [im_label, n_spots] = bwlabel(thrim); 
             temp_particles = {};
     %         rad = 500/pixelSize; %500nm is roughly the size of a sister chromatid diffraction limited spot.

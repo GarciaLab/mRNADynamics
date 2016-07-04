@@ -7,7 +7,7 @@ function temp_particles = fit_single_spot(k, im, im_label, dog, neighb, rad, ...
 
 max_dog = max(max(dog(r,c)));
 
-%Find spot centroids in the actual image by hunting for absolute maxima in
+%Find spot centroids in the actual image by hunting for global maxima in
 %neighborhoods around spots that were just located
 
 possible_cent = [];
