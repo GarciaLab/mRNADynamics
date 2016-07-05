@@ -403,12 +403,6 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
                         %finding which ones are good candidates                    
                         UniqueMinima=unique(MinIndex);
 
-                        if i==31
-                            1+1;
-                        end
-
-
-
                         for j=1:length(UniqueMinima)
                             %If we have only one previous and one new particle
                             %the assignment is trivial
@@ -1665,7 +1659,6 @@ elseif strcmp(lower(ExperimentType),'inputoutput')
             'Threshold1','Threshold2')
 
     end    
-    
     
 else
     error('Experiment type in MovieDatabase.xlsx not recognized')    

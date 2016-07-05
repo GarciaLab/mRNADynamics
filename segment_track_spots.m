@@ -60,12 +60,6 @@ tic;
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(Prefix);
 
-%Here I want to load each of the tifs and iterate through them, generating
-%dog images in each iteration
-
-% Load data generated with ExportDataForFISH
-
-
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']);
 zSize = FrameInfo(1).NumberSlices;
 if num_frames == 0
@@ -80,7 +74,7 @@ mkdir(OutputFolder2)
 
 %%
 %DoG Stuff
-%filterSize >> sigma 2 > sigma 1
+
 
 pixelSize = FrameInfo(1).PixelSize*1000; %nm
 
@@ -103,7 +97,6 @@ filterSize = round(1500 / pixelSize); %size of square to be convolved with micro
 neighb = round(500 / pixelSize);
 
 
-dog_stack  = {}; 
 all_frames = {}; 
 
 if just_dog
@@ -122,7 +115,6 @@ for current_frame = 1:num_frames
         if just_dog
             dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
             dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
-            dog_stack{current_frame,current_z} = dog;
             dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
             imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
             imshow(dog,[]);
@@ -143,16 +135,12 @@ for current_frame = 1:num_frames
             if n_spots ~= 0
                 if ~displayFigures
                     parfor k = 1:n_spots
-                        temp_particles(k) = fit_single_spot(k, im, im_label, dog, ...
+                        temp_particles(k) = identifySpot(k, im, im_label, dog, ...
                             neighb, rad, pixelSize, displayFigures, f);
-                        if k == n_spots
-                            seg_name = ['SEG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
-                            saveas(gcf,[OutputFolder2,filesep,seg_name]);
-                        end
                     end
                 else
                     for k = 1:n_spots
-                        temp_particles(k) = fit_single_spot(k, im, im_label, dog, ...
+                        temp_particles(k) = identifySpot(k, im, im_label, dog, ...
                             neighb, rad, pixelSize, displayFigures, f);
                         if k == n_spots
                             seg_name = ['SEG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];

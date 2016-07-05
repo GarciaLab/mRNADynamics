@@ -1,5 +1,5 @@
 function [fits, rel_errors, GaussianIntensity] = ...
-    fitTwoGausses(snip, NeighborhoodSize, Threshold, WidthGuess, OffsetGuess, show_status)
+    fitGaussians(snip, NeighborhoodSize, Threshold, WidthGuess, OffsetGuess, show_status)
 
 % Find local maxima in snip and use that information to decide if fits
 % one or two gaussians. Also, use that information to define a reasonable 
