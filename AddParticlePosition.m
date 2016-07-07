@@ -154,8 +154,8 @@ if ~NoAP
     Channel2=XLSTxt(PrefixRow,Channel2Column);
 
     %First, check whether we have Bcd-GFP and inverted histone
-    if ((~isempty(strfind(lower(Channel1),'bcd')))|...
-        (~isempty(strfind(lower(Channel2),'bcd'))))
+    if ((~isempty(strfind(lower(Channel1{1}),'bcd')))|...
+        (~isempty(strfind(lower(Channel2{1}),'bcd'))))
         warning('Using only Bcd-GFP to determine AP position')
         ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd'))|...
             ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd')));
@@ -1240,7 +1240,3 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
         save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','fad','fad2');
     end
 end
-    
- 
-
-
