@@ -134,7 +134,7 @@ for current_frame = 1:num_frames
             [im_label, n_spots] = bwlabel(thrim); 
             temp_particles = {};
     %         rad = 500/pixelSize; %500nm is roughly the size of a sister chromatid diffraction limited spot.
-            rad = 2000/pixelSize;
+            rad = 1000/pixelSize;
             temp_frames = {};
             if n_spots ~= 0
                 if ~displayFigures
@@ -164,6 +164,7 @@ for current_frame = 1:num_frames
     end
 end
 
+close all;
 close(h)
 
 %%
@@ -243,7 +244,7 @@ if ~just_dog
 
     %pick the brightest z-slice
     for i = 1:length(Particles)
-        [~, max_index] = max(Particles(i).FixedAreaIntensity);
+        [~, max_index] = max(Particles(i).GaussianIntensity);
         if TrackSpots
             for j = 1:numel(fields)-2 %do not include fields 'r' or 'frame'
                 Particles(i).(fields{j}) = Particles(i).(fields{j})(max_index);
@@ -270,19 +271,21 @@ if ~just_dog
     %time tracking
     if TrackSpots
         Particles = track_spots(Particles, neighb);
+        save([DropboxFolder,filesep,Prefix,filesep,'Particles_AR.mat'], 'Particles');
+
     end
 
     %Save and plot
 
     mkdir([DropboxFolder,filesep,Prefix]);
     save([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots');
-    % for i = 1:length(Particles)
-    %     if length(Particles(i).frame) > 50
-    %         plot(Particles(i).frame, Particles(i).FixedAreaIntensity)
-    %         i
-    %         hold on
-    %     end
-    % end
+    for i = 1:length(Particles)
+        if length(Particles(i).frame) > 50
+            plot(Particles(i).frame, Particles(i).FixedAreaIntensity)
+            i
+            hold on
+        end
+    end
 end
 
 t = toc;

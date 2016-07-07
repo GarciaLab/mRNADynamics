@@ -88,7 +88,7 @@ if ~isempty(possible_cent)
         int_x = [round(c_x - integration_radius), round(c_x + integration_radius)];
         int_y = [round(c_y - integration_radius), round(c_y + integration_radius)];
         sigma_x = fits(3);
-        sigma_y = fits(5);
+        sigma_y = fits(3);
         sigma_x2 = fits(8);
         sigma_y2 = fits(10);
 
@@ -104,7 +104,9 @@ if ~isempty(possible_cent)
                 area, sigma_x, sigma_y, cent_y, cent_x, GaussianIntensity,inten,...
                 max_dog, snip_mask, sigma_x2, sigma_y2, fits(12)}};
         else
-            temp_particles = {[]};
+            temp_particles = {{fixedAreaIntensity, c_x, c_y, fits(11), snip, ...
+                area, sigma_x, sigma_y, cent_y, cent_x, GaussianIntensity,inten,...
+                max_dog, snip_mask, sigma_x2, sigma_y2, fits(12)}};
         end
    else
        temp_particles = {[]};
