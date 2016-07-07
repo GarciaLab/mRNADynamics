@@ -1,5 +1,5 @@
 function temp_particles = identifySpot(k, im, im_label, dog, neighb, rad, ...
-    pixelSize, show_status, f)
+    pixelSize, show_status, f,microscope)
 
 [r,c] = find(im_label == k);
 
@@ -12,8 +12,7 @@ max_dog = max(max(dog(r,c)));
 
 possible_cent = [];
 pcentloc = {};
-cent = [];
-cent_intensity = 0;
+
 for o = 1:2*neighb
     for p = 1:2*neighb
         if r(1) - neighb + o > 0 && c(1) - neighb + p > 0 ... 
@@ -31,7 +30,7 @@ if ~isempty(possible_cent)
    % temp_particles = [temp_particles,[0, cent_x, cent_y, 0, 0]];
 %    temp_particles = {};
    if show_status&~isempty(f)
-        set(0,'CurrentFigure', f);
+        set(0,'CurrentFigure', f);...
         ellipse(neighb/2,neighb/2,0,cent_x,cent_y,'r');
    end
 
@@ -41,14 +40,23 @@ if ~isempty(possible_cent)
         % Set parameters to use as initial guess in the fits. For the 
         % lattice data, try NeighborhoodSize = 1000, MaxThreshold = 2000, 
         % WidthGuess = 500, OffsetGuess = 1000.
-
-        % For confocal data, try NeighborhoodSize = 1000, MaxThreshold = 20,
-        % WidthGuess = 200, OffsetGuess = 10.
         
-        NeighborhoodSize = 1000/pixelSize; %nm
-        MaxThreshold = 30; %intensity
-        WidthGuess = 200 / pixelSize; %nm
-        OffsetGuess = 10; %intensity
+        if strcmp(microscope, 'LAT')
+            
+            NeighborhoodSize = 1000/pixelSize; %nm
+            MaxThreshold = 2000; %intensity
+            WidthGuess = 500 / pixelSize; %nm
+            OffsetGuess = 1000; %intensity
+            
+            % For confocal data, try NeighborhoodSize = 1000, MaxThreshold = 20,
+            % WidthGuess = 200, OffsetGuess = 10.
+        else 
+            NeighborhoodSize = 1000/pixelSize; %nm
+            MaxThreshold = 30; %intensity
+            WidthGuess = 200 / pixelSize; %nm
+            OffsetGuess = 10; %intensity
+        end
+        
         [fits, rel_errors, GaussianIntensity] =  ...
             fitGaussians(snip, NeighborhoodSize, MaxThreshold, ...
             WidthGuess, OffsetGuess, show_status);
@@ -81,17 +89,19 @@ if ~isempty(possible_cent)
         int_y = [round(c_y - integration_radius), round(c_y + integration_radius)];
         sigma_x = fits(3);
         sigma_y = fits(5);
+        sigma_x2 = fits(8);
+        sigma_y2 = fits(10);
 
         area = pi*sigma_x*sigma_y; %in pixels
         fixedAreaIntensity = 0;
         if int_x(1) > 1 && int_y(1) > 1 && int_x(2) < size(im,2) && int_y(2) < size(im,1)
             for w = int_x(1):int_x(2)
                 for v = int_y(1): int_y(2)
-                    fixedAreaIntensity = fixedAreaIntensity + double(im(v,w) - fits(end));
+                    fixedAreaIntensity = fixedAreaIntensity + double(im(v,w) - fits(11));
                 end
             end
-            temp_particles = {{fixedAreaIntensity, c_x, c_y, fits(end), snip, ...
-                area, sigma_x, sigma_y, cent_y, cent_x, GaussianIntensity ,inten, max_dog, snip_mask}};
+            temp_particles = {{fixedAreaIntensity, c_x, c_y, fits(11), snip, ...
+                area, sigma_x, sigma_y, cent_y, cent_x, GaussianIntensity,inten,...
         else
             temp_particles = {[]};
         end
