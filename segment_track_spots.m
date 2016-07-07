@@ -15,7 +15,7 @@ function segment_track_spots(Prefix,Threshold,varargin)
 %'Frames',N:     Run the code from frame 1 to frame N.
 
 
-% track_status takes 0 or 1 depending on whether you want to make a time
+% TrackSpots takes 0 or 1 depending on whether you want to make a time
 % tracking in addition to the segmentation.
 
 % num_frames for debugging should be kept at 5-20
@@ -25,7 +25,7 @@ function segment_track_spots(Prefix,Threshold,varargin)
 
 %Default options
 displayFigures=0;
-track_status=0;
+TrackSpots=0;
 num_frames=0;
 
 %If no threshold was specified, then just generate the DoG images
@@ -41,7 +41,7 @@ for i=1:length(varargin)
     if strcmp(varargin{i},'displayFigures')
         displayFigures=1;
     elseif strcmp(varargin{i},'TrackSpots')
-        track_status=1;
+        TrackSpots=1;
     elseif strcmp(varargin{i},'Frames')
         if ~isnumeric(varargin{i+1})
             error('Wrong input parameters. After ''Frames'' you should input the number of frames')
@@ -61,6 +61,7 @@ tic;
     DetermineLocalFolders(Prefix);
 
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']);
+microscope = FrameInfo(1).FileMode; 
 zSize = FrameInfo(1).NumberSlices;
 if num_frames == 0
     num_frames = length(FrameInfo);
@@ -94,7 +95,7 @@ filterSize = round(1500 / pixelSize); %size of square to be convolved with micro
 %a diffraction-limited transcription spot or if it should encompass
 %both sister chromatids. 
 
-neighb = round(500 / pixelSize);
+neighb = round(1000 / pixelSize);
 
 
 all_frames = {}; 
@@ -112,12 +113,15 @@ for current_frame = 1:num_frames
     
     for current_z = 1:zSize      
         im = imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %Generate difference of Gaussian images if no threshold was given
         if just_dog
             dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
             dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
             dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
             imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
-            imshow(dog,[]);
+            imshow(dog,[]);           
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%          
         else
             dog = imread([OutputFolder1, filesep,'DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']);
             if displayFigures
@@ -136,12 +140,12 @@ for current_frame = 1:num_frames
                 if ~displayFigures
                     parfor k = 1:n_spots
                         temp_particles(k) = identifySpot(k, im, im_label, dog, ...
-                            neighb, rad, pixelSize, displayFigures, f);
+                            neighb, rad, pixelSize, displayFigures, f, microscope);
                     end
                 else
                     for k = 1:n_spots
                         temp_particles(k) = identifySpot(k, im, im_label, dog, ...
-                            neighb, rad, pixelSize, displayFigures, f);
+                            neighb, rad, pixelSize, displayFigures, f, microscope);
                         if k == n_spots
                             seg_name = ['SEG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
                             saveas(gcf,[OutputFolder2,filesep,seg_name]);
@@ -186,7 +190,7 @@ if ~just_dog
                      Particles(n).xDoG(1) = cell2mat(all_frames{i,j}{spot}(10));
                      Particles(n).yDoG(1) = cell2mat(all_frames{i,j}{spot}(9));
                      Particles(n).Offset(1) = cell2mat(all_frames{i,j}{spot}(4));
-    %                  Particles(n).Sister(1) = all_frames{i,j}{spot}(5);
+                     Particles(n).SisterDistance(1) = all_frames{i,j}{spot}(15);
                      Particles(n).Snippet{1} = cell2mat(all_frames{i,j}{spot}(5));
                      Particles(n).Area{1} = cell2mat(all_frames{i,j}{spot}(6));
                      Particles(n).xFitWidth{1} = cell2mat(all_frames{i,j}{spot}(7));
@@ -240,7 +244,7 @@ if ~just_dog
     %pick the brightest z-slice
     for i = 1:length(Particles)
         [~, max_index] = max(Particles(i).FixedAreaIntensity);
-        if track_status
+        if TrackSpots
             for j = 1:numel(fields)-2 %do not include fields 'r' or 'frame'
                 Particles(i).(fields{j}) = Particles(i).(fields{j})(max_index);
             end
@@ -250,7 +254,7 @@ if ~just_dog
     end
 
     
-    %Create a final Spots structure to be feed into TrackmRNADynamics
+    %Create a final Spots structure to be fed into TrackmRNADynamics
     Spots = [];
     for i = 1:Particles(end).frame
         frames = find([Particles.frame]==i);
@@ -264,7 +268,7 @@ if ~just_dog
     
     
     %time tracking
-    if track_status
+    if TrackSpots
         Particles = track_spots(Particles, neighb);
     end
 

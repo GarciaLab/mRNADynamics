@@ -102,6 +102,7 @@ if ~isempty(possible_cent)
             end
             temp_particles = {{fixedAreaIntensity, c_x, c_y, fits(11), snip, ...
                 area, sigma_x, sigma_y, cent_y, cent_x, GaussianIntensity,inten,...
+                max_dog, snip_mask, sigma_x2, sigma_y2, fits(12)}};
         else
             temp_particles = {[]};
         end
