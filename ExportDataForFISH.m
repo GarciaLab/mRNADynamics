@@ -758,7 +758,7 @@ elseif strcmp(FileMode, 'LAT')
                 %stack
                 NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(1,2),'.tif'];
                 imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(min(NSlices)*3+2,2),'.tif'];
+                NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(min(NSlices)+2,2),'.tif'];
                 imwrite(BlankImage,[OutputFolder,filesep,NewName]);
                 %Copy the rest of the images
                 z = 2;
