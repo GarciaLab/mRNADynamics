@@ -223,8 +223,8 @@ if ~NoAP
         
         %If we have Bcd-GFP and inverted His, we will use Bcd-GFP for the
         %alignment
-         if ((~isempty(strfind(lower(Channel1),'bcd')))|...
-            (~isempty(strfind(lower(Channel2),'bcd'))))
+         if ((~isempty(strfind(lower(Channel1{1}),'bcd')))|...
+            (~isempty(strfind(lower(Channel2{1}),'bcd'))))
             ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd'))|...
                 ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd')));
             HisChannel=find(ChannelToLoad);
@@ -1240,3 +1240,7 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
         save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','fad','fad2');
     end
 end
+    
+ 
+
+
