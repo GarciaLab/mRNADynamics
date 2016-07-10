@@ -192,11 +192,15 @@ GaussianIntensity = sum(sum(doubleGaussian(fits) + double(snip) - fits(11)));
     if show_status
         figure(2)
         surf(y, x, doubleGaussian(double_fit) + double(snip));
-        title('Double gaussian fits')
+        title('Double Gaussian fits')
+        set(gcf,'units', 'normalized', 'position',[0.01, .55, .33, .33]);
         figure(3)
-        imshow(imresize(snip,10),[]);
+        snipBig = imresize(snip,10);
+        imshow(snipBig,[]);
+        set(gcf,'units', 'normalized', 'position',[0.65, .5, .2, .2])
         figure(4)
         surf(y, x, double(snip));
         title('Raw data');
+        set(gcf,'units', 'normalized', 'position',[.01, .1, .33, .33]);
     end
 end

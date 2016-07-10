@@ -50,42 +50,21 @@ for i=1:length(varargin)
         end
     end
 end
-
-
-
 %% 
-
 tic;
-
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(Prefix);
-
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']);
 microscope = FrameInfo(1).FileMode; 
 zSize = FrameInfo(1).NumberSlices;
 if num_frames == 0
     num_frames = length(FrameInfo);
 end
-
 OutputFolder1=[FISHPath,filesep,Prefix,'_',filesep,'dogs'];
 OutputFolder2=[FISHPath,filesep,Prefix,'_',filesep,'segs'];
-
 mkdir(OutputFolder1)
 mkdir(OutputFolder2)
-
 %%
-%DoG Stuff
-
-
-pixelSize = FrameInfo(1).PixelSize*1000; %nm
-
-%HG to AR: Can you add an explanation of each one of these parameters?
-
-%Initialize Difference of Gaussian filter parameters. filterSize >> sigma2
-%> sigma1
-sigma1 = 150 / pixelSize; %width of narrower Gaussian
-sigma2 = 250 / pixelSize; % width of wider Gaussian
-filterSize = round(1500 / pixelSize); %size of square to be convolved with microscopy images
 
 %The spot finding algorithm first segments the image into regions that are
 %above the threshold. Then, it finds global maxima within these regions by searching in a region "neighb"
@@ -94,35 +73,43 @@ filterSize = round(1500 / pixelSize); %size of square to be convolved with micro
 %AR 7/4/16: Currently unclear if it's better to limit "neighb" to
 %a diffraction-limited transcription spot or if it should encompass
 %both sister chromatids. 
-
+pixelSize = FrameInfo(1).PixelSize*1000; %nm
 neighb = round(1000 / pixelSize);
 
 
-all_frames = {}; 
-
-if just_dog
-    h=waitbar(0,'Generating DoG images');
-else
-    h=waitbar(0,'Segmenting spots');
-end
-
+all_frames = cell(num_frames, zSize);
 close all;
-for current_frame = 1:num_frames
-    
-    waitbar(current_frame/num_frames,h)
-    
-    for current_z = 1:zSize      
-        im = imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']);
+if just_dog
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %Generate difference of Gaussian images if no threshold was given
-        if just_dog
+%Generate difference of Gaussian images if no threshold was given
+    %Initialize Difference of Gaussian filter parameters. filterSize >> sigma2
+    %> sigma1
+    sigma1 = 150 / pixelSize; %width of narrower Gaussian
+    sigma2 = 250 / pixelSize; % width of wider Gaussian
+    filterSize = round(1500 / pixelSize); %size of square to be convolved with microscopy images
+    h=waitbar(0,'Generating DoG images');
+    for current_frame = 1:num_frames
+        waitbar(current_frame/num_frames,h);
+        parfor current_z = 1:zSize      
+            im = imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']);
             dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
             dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
             dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
             imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
-            imshow(dog,[]);           
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%          
-        else
+            if displayFigures
+                imshow(dog,[]);
+            end
+        end
+    end
+    close(h);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%     
+else
+    h=waitbar(0,'Segmenting spots');
+    for current_frame = 1:num_frames
+        w = waitbar(current_frame/num_frames,h)
+        set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1])
+        for current_z = 1:zSize      
+            im = imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']);
             dog = imread([OutputFolder1, filesep,'DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']);
             if displayFigures
                 f = figure(1);
@@ -132,10 +119,10 @@ for current_frame = 1:num_frames
             end
             thrim = dog > Threshold;
             [im_label, n_spots] = bwlabel(thrim); 
-            temp_particles = {};
+            temp_frames = {};
     %         rad = 500/pixelSize; %500nm is roughly the size of a sister chromatid diffraction limited spot.
             rad = 1000/pixelSize;
-            temp_frames = {};
+            temp_particles = cell(1, n_spots);
             if n_spots ~= 0
                 if ~displayFigures
                     parfor k = 1:n_spots
@@ -152,7 +139,7 @@ for current_frame = 1:num_frames
                         end
                     end
                 end
-                
+
                 for k = 1:n_spots
                     if ~isempty(temp_particles{k})
                         temp_frames = [temp_frames, temp_particles(k)];
@@ -162,23 +149,18 @@ for current_frame = 1:num_frames
             end
         end
     end
+    close all;
+    close(h)
 end
-
-close all;
-close(h)
 
 %%
 if ~just_dog
     n = 1;
     nframes = size(all_frames,1);
     nz = size(all_frames,2);
-    
     h=waitbar(0,'Saving particle information');
-    
     for i = 1:nframes 
-        
         waitbar(i/nframes,h)
-        
         for j = 1:nz 
              for spot = 1:length(all_frames{i,j}) %spots within particular image
                  if ~isempty(all_frames{i,j}{spot})
@@ -205,23 +187,18 @@ if ~just_dog
              end
         end
     end
-    
     close(h)
-
     fields = fieldnames(Particles);
-
+    
     % z tracking
     changes = 1;
     while changes ~= 0
         changes = 0;
-        i = 1;
-        
+        i = 1; 
         h=waitbar(0,'Finding z-columns');
-        
+        neighb = 3000 / pixelSize;
         for n = 1:nframes  
-            
             waitbar(n/nframes,h)
-            
             i = i + length(Particles([Particles.frame] == (n - 1) ));
             for j = i:i+length(Particles([Particles.frame] == n)) - 1
                 for k = j+1:i+length(Particles([Particles.frame] == n)) - 1
@@ -237,10 +214,8 @@ if ~just_dog
             end
         end
         Particles = Particles([Particles.r]~=1);
-        
         close(h)
     end
-
 
     %pick the brightest z-slice
     for i = 1:length(Particles)
@@ -253,8 +228,7 @@ if ~just_dog
             Particles(i).brightestZ = Particles(i).z(max_index);
         end
     end
-
-    
+ 
     %Create a final Spots structure to be fed into TrackmRNADynamics
     Spots = [];
     for i = 1:Particles(end).frame
@@ -266,9 +240,8 @@ if ~just_dog
         end
     end
 
-    
-    
     %time tracking
+    neighb = 3000 / pixelSize;
     if TrackSpots
         Particles = track_spots(Particles, neighb);
         save([DropboxFolder,filesep,Prefix,filesep,'Particles_AR.mat'], 'Particles');
@@ -276,18 +249,25 @@ if ~just_dog
     end
 
     %Save and plot
-
     mkdir([DropboxFolder,filesep,Prefix]);
     save([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots');
     for i = 1:length(Particles)
-        if length(Particles(i).frame) > 50
-            plot(Particles(i).frame, Particles(i).FixedAreaIntensity)
+        if length(Particles(i).frame) > 70
+            plot(Particles(i).frame, Particles(i).GaussianIntensity)
             i
             hold on
         end
     end
+    MeanVectorAll = NaN(1, nframes);
+    for i = 1:length(Spots)
+        for j = 1:length(Spots(i).Fits)
+            MeanVectorAll(i) = 0;
+            MeanVectorAll(i) = MeanVectorAll(i) + Spots(i).Fits(j).GaussianIntensity;
+        end
+        MeanVectorAll(i) = MeanVectorAll(i) / length(Spots(i).Fits);
+    end
+    
 end
 
 t = toc;
-
 display(['Elapsed time: ',num2str(t/60),' min'])

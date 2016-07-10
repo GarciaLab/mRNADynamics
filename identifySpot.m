@@ -29,7 +29,7 @@ if ~isempty(possible_cent)
     cent_x = pcentloc{row,col}(2);
    % temp_particles = [temp_particles,[0, cent_x, cent_y, 0, 0]];
 %    temp_particles = {};
-   if show_status&~isempty(f)
+   if show_status && ~isempty(f)
         set(0,'CurrentFigure', f);...
         ellipse(neighb/2,neighb/2,0,cent_x,cent_y,'r');
    end
@@ -94,21 +94,23 @@ if ~isempty(possible_cent)
 
         area = pi*sigma_x*sigma_y; %in pixels
         fixedAreaIntensity = 0;
-        if int_x(1) > 1 && int_y(1) > 1 && int_x(2) < size(im,2) && int_y(2) < size(im,1)
-            for w = int_x(1):int_x(2)
-                for v = int_y(1): int_y(2)
-                    fixedAreaIntensity = fixedAreaIntensity + double(im(v,w) - fits(11));
+        
+        if ~(sigma_x2 <= 0 || sigma_x <= 0 || sigma_x > 2000/pixelSize || sigma_y > 2000/pixelSize...
+                || sigma_x2 > 2000/pixelSize || sigma_y2 > 2000/pixelSize || GaussianIntensity == 0)
+            
+            if int_x(1) > 1 && int_y(1) > 1 && int_x(2) < size(im,2) && int_y(2) < size(im,1)
+                for w = int_x(1):int_x(2)
+                    for v = int_y(1): int_y(2)
+                        fixedAreaIntensity = fixedAreaIntensity + double(im(v,w) - fits(11));
+                    end
                 end
             end
             temp_particles = {{fixedAreaIntensity, c_x, c_y, fits(11), snip, ...
                 area, sigma_x, sigma_y, cent_y, cent_x, GaussianIntensity,inten,...
                 max_dog, snip_mask, sigma_x2, sigma_y2, fits(12)}};
         else
-            temp_particles = {{fixedAreaIntensity, c_x, c_y, fits(11), snip, ...
-                area, sigma_x, sigma_y, cent_y, cent_x, GaussianIntensity,inten,...
-                max_dog, snip_mask, sigma_x2, sigma_y2, fits(12)}};
+            temp_particles = {[]};
         end
-   else
-       temp_particles = {[]};
    end
+end
 end
