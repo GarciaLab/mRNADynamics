@@ -199,19 +199,13 @@ else
     UseHistoneOverlay=0;
 end
 
-
 %Check that we have the nuclear tracking done using schnitzcells
 if exist([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'])
     UseSchnitz=1;
 else
     UseSchnitz=0;
 end
-    
-
-
-
-
-
+   
 %Determine division times
 %Load the information about the nc from the XLS file
 [Num,Txt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
@@ -325,10 +319,6 @@ else
     end
 end
 
-
-
-
-
 %Check if we have already determined nc
 if (~isfield(FrameInfo,'nc'))&&(~UseHistoneOverlay)
     %FrameInfo=DetermineNC(fad,Particles,FrameInfo);  AR 3/14/16: This
@@ -376,24 +366,10 @@ PreviousParticle=1;
 CurrentFrameWithinParticle=1;
 CurrentChannel=1;
 PreviousChannel=CurrentChannel;
-
-
 CurrentFrame=Particles{1}(1).Frame(1);
-
-
 DisplayRange=[];
-
 ZoomMode=0;
 ZoomRange=50;
-
-
-
-
-
-
-
-
-
 
 %Determine the positions and size of the figures
 ScreenSize=get( 0, 'ScreenSize' );
@@ -421,13 +397,10 @@ for NCh=1:NChannels
     end
 end    
     
-    
-
 %See if we just want to save the data
 if ForCompileAll
     cc='x';
 end
-
 
 while (cc~='x') 
     EllipseHandle=[];
@@ -483,7 +456,6 @@ while (cc~='x')
     xDisapproved=x(IndexDisapprovedParticles);
     yDisapproved=y(IndexDisapprovedParticles);
     
-    
     %Non-flagged particles
     IndexNonFlaggedParticles=[];
     for i=1:length(Particles{CurrentChannel})
@@ -496,15 +468,12 @@ while (cc~='x')
     xNonFlagged=x(IndexNonFlaggedParticles);
     yNonFlagged=y(IndexNonFlaggedParticles);
     
-    
-    
-    
+
     if (~isempty(xTrace))&(~ManualZFlag)
         CurrentZ=z(CurrentParticleIndex);
         ManualZFlag=0;
     end
-    
-    
+        
     if (NChannels==1)&(~strcmp(lower(ExperimentType),'inputoutput'))
         try
             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
@@ -954,7 +923,7 @@ while (cc~='x')
     cc=get(Overlay,'currentcharacter');
     cm=get(gca,'CurrentPoint');
     
-    if (cc=='.')&(CurrentFrame<length(FrameInfo))
+    if (cc=='.')&(CurrentFrame<length({Spots{1}.Fits}))
         CurrentFrame=CurrentFrame+1;
         ManualZFlag=0;
         %DisplayRange=[];
@@ -962,7 +931,7 @@ while (cc~='x')
         CurrentFrame=CurrentFrame-1;
         ManualZFlag=0;
         %DisplayRange=[];
-    elseif (cc=='>')&(CurrentFrame+5<length(FrameInfo))
+    elseif (cc=='>')&(CurrentFrame+5<length({Spots{1}.Fits}))
         CurrentFrame=CurrentFrame+5;
         ManualZFlag=0;
         %DisplayRange=[];
@@ -982,7 +951,7 @@ while (cc~='x')
         catch
             iJump=CurrentFrame;
         end
-        if (floor(iJump)>0)&(iJump<length(FrameInfo))
+        if (floor(iJump)>0)&(iJump<length({Spots{1}.Fits}))
             CurrentFrame=iJump;
             ManualZFlag=0;
         end
@@ -1205,7 +1174,7 @@ while (cc~='x')
         ConnectPosition = [ConnectPositionx,ConnectPositiony];
         if ~isempty(ConnectPosition)
             %Find the closest particle
-            [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,fad,Particles{CurrentChannel});
+            [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
             display(['Clicked particle: ',num2str(ParticleOutput)]);
             try
                 ParticleJump=ParticleOutput;

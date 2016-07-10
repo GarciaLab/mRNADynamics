@@ -13,16 +13,9 @@ function segment_track_spots(Prefix,Threshold,varargin)
 %'TrackSpots':   Do you want to use this code to track the particles instead
 %                of using TrackmRNADynamics? Armando is working on this.
 %'Frames',N:     Run the code from frame 1 to frame N.
-
-
 % TrackSpots takes 0 or 1 depending on whether you want to make a time
 % tracking in addition to the segmentation.
-
 % num_frames for debugging should be kept at 5-20
-
-
-
-
 %Default options
 displayFigures=0;
 TrackSpots=0;
@@ -34,8 +27,6 @@ if isempty(Threshold)
 else
     just_dog=0;
 end
-
-
 
 for i=1:length(varargin)
     if strcmp(varargin{i},'displayFigures')
@@ -106,8 +97,8 @@ if just_dog
 else
     h=waitbar(0,'Segmenting spots');
     for current_frame = 1:num_frames
-        w = waitbar(current_frame/num_frames,h)
-        set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1])
+        w = waitbar(current_frame/num_frames,h);
+        set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
         for current_z = 1:zSize      
             im = imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']);
             dog = imread([OutputFolder1, filesep,'DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']);
@@ -231,7 +222,7 @@ if ~just_dog
  
     %Create a final Spots structure to be fed into TrackmRNADynamics
     Spots = [];
-    for i = 1:Particles(end).frame
+    parfor i = 1:num_frames
         frames = find([Particles.frame]==i);
         if ~isempty(frames)
             for j = frames(1):frames(end)
@@ -245,27 +236,26 @@ if ~just_dog
     if TrackSpots
         Particles = track_spots(Particles, neighb);
         save([DropboxFolder,filesep,Prefix,filesep,'Particles_AR.mat'], 'Particles');
-
+        for i = 1:length(Particles)
+            if length(Particles(i).frame) > 70
+                plot(Particles(i).frame, Particles(i).GaussianIntensity)
+                i
+                hold on
+            end
+        end
+        MeanVectorAll = NaN(1, nframes);
+        for i = 1:length(Spots)
+            for j = 1:length(Spots(i).Fits)
+                MeanVectorAll(i) = 0;
+                MeanVectorAll(i) = MeanVectorAll(i) + Spots(i).Fits(j).GaussianIntensity(Spots(i).Fits(j).brightestZ);
+            end
+            MeanVectorAll(i) = MeanVectorAll(i) / length(Spots(i).Fits);
+        end
     end
 
     %Save and plot
     mkdir([DropboxFolder,filesep,Prefix]);
     save([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots');
-    for i = 1:length(Particles)
-        if length(Particles(i).frame) > 70
-            plot(Particles(i).frame, Particles(i).GaussianIntensity)
-            i
-            hold on
-        end
-    end
-    MeanVectorAll = NaN(1, nframes);
-    for i = 1:length(Spots)
-        for j = 1:length(Spots(i).Fits)
-            MeanVectorAll(i) = 0;
-            MeanVectorAll(i) = MeanVectorAll(i) + Spots(i).Fits(j).GaussianIntensity;
-        end
-        MeanVectorAll(i) = MeanVectorAll(i) / length(Spots(i).Fits);
-    end
     
 end
 
