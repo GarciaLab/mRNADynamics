@@ -65,6 +65,12 @@ else
     end
 
 end
+
+if ~(SkipTraces || SkipFluctuations || SkipFits || SkipMovie) 
+    msgbox('Plot display not currently supported. Please use option "SkipAll"');
+    error('Plot display not currently supported. Please use option "SkipAll"'); %AR 7/10/16: Plot display is currently buggy. Will fix in future release.
+end
+        
 FilePrefix=[Prefix,'_'];
 
 %Now get the actual Dropbox folder

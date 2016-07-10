@@ -100,7 +100,7 @@ DataFolder=[PreProcPath,filesep,FilePrefix(1:end-1)];
 
 
 %Determine the search radius based on the imaging conditions
-SearchRadiusMicrons=2.5;       %Search radius in um
+SearchRadiusMicrons=3;       %Search radius in um
 
 
 

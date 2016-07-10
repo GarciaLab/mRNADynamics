@@ -1,4 +1,4 @@
-function segment_track_spots(Prefix,Threshold,varargin)
+function segmentSpots(Prefix,Threshold,varargin)
 
 %Parameters:
 %Prefix: Prefix of the data set to analyze
@@ -11,16 +11,17 @@ function segment_track_spots(Prefix,Threshold,varargin)
 %                displayFigures = 1, change "parfor" by "for" in the
 %                loop that goes over all spots. Default is no.
 %'TrackSpots':   Do you want to use this code to track the particles instead
-%                of using TrackmRNADynamics? Armando is working on this.
+%                of using TrackmRNADynamics?
 %'Frames',N:     Run the code from frame 1 to frame N.
+
 % TrackSpots takes 0 or 1 depending on whether you want to make a time
 % tracking in addition to the segmentation.
 % num_frames for debugging should be kept at 5-20
+
 %Default options
 displayFigures=0;
 TrackSpots=0;
 num_frames=0;
-
 %If no threshold was specified, then just generate the DoG images
 if isempty(Threshold)
     just_dog=1;
@@ -52,9 +53,7 @@ if num_frames == 0
     num_frames = length(FrameInfo);
 end
 OutputFolder1=[FISHPath,filesep,Prefix,'_',filesep,'dogs'];
-OutputFolder2=[FISHPath,filesep,Prefix,'_',filesep,'segs'];
 mkdir(OutputFolder1)
-mkdir(OutputFolder2)
 %%
 
 %The spot finding algorithm first segments the image into regions that are
@@ -67,9 +66,8 @@ mkdir(OutputFolder2)
 pixelSize = FrameInfo(1).PixelSize*1000; %nm
 neighb = round(1000 / pixelSize);
 
-
 all_frames = cell(num_frames, zSize);
-close all;
+close all force;
 if just_dog
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Generate difference of Gaussian images if no threshold was given
@@ -119,7 +117,6 @@ else
             thrim = dog > Threshold;
             [im_label, n_spots] = bwlabel(thrim); 
             temp_frames = {};
-    %         rad = 500/pixelSize; %500nm is roughly the size of a sister chromatid diffraction limited spot.
             rad = 1000/pixelSize;
             temp_particles = cell(1, n_spots);
             if n_spots ~= 0
@@ -132,10 +129,6 @@ else
                     for k = 1:n_spots
                             temp_particles(k) = identifySpot(k, im, im_label, dog, ...
                                 neighb, rad, pixelSize, displayFigures, f, microscope);
-                        if k == n_spots
-                            seg_name = ['SEG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
-                            saveas(gcf,[OutputFolder2,filesep,seg_name]);
-                        end
                     end
                 end
 
@@ -148,7 +141,7 @@ else
             end
         end
     end
-    close all;
+    close all force;
     close(h)
 end
 
@@ -237,7 +230,10 @@ if ~just_dog
         end
     end
 
-    %time tracking
+    %AR 7/10/16: Optional time tracking using track_spots script. Also
+    %makes some potentially useful plots. This was originally here to have
+    %a single, fully integrated script before this segmentation was worked
+    %into the rest of the pipeline.
     neighb = 3000 / pixelSize;
     if TrackSpots
         Particles = track_spots(Particles, neighb);
@@ -259,7 +255,7 @@ if ~just_dog
         end
     end
 
-    %Save and plot
+
     mkdir([DropboxFolder,filesep,Prefix]);
     save([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots');
     
