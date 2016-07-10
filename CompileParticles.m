@@ -101,6 +101,7 @@ APResolution = XLSRaw{PrefixRow,APResolutionColumn};
 
 %Load all the information
 load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
+load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'])
 %Check that FrameInfo exists
 if exist([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
     load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
@@ -624,20 +625,14 @@ for ChN=1:NChannels
                 end
 
 
-                %Extract information from fad about fluorescence and background
-                [Frame,Amp,Off,Off2,Amp2,AmpOld,AmpRaw,Error,optFit1,FitType]=GetParticleTrace(k,CompiledParticles{ChN},fad(ChN));
-                CompiledParticles{ChN}(k).Fluo=Amp;
+                %Extract information from Spots about fluorescence and background
+                [Frame,AmpIntegral,AmpGaussian,Off,...
+                 ErrorIntegral,ErrorGauss,optFit1,FitType] = GetParticleTrace(k,CompiledParticles{ChN},Spots);
+                CompiledParticles{ChN}(k).Fluo=AmpGaussian;
                 CompiledParticles{ChN}(k).Off=Off;
-                %CompiledParticles{ChN}(k).Off2=Off2;
-                %CompiledParticles{ChN}(k).Fluo2=Amp2;
-                %CompiledParticles{ChN}(k).FluoOld=AmpOld;
-                CompiledParticles{ChN}(k).FluoRaw=AmpRaw;
-                CompiledParticles{ChN}(k).FluoError=Error;
+                CompiledParticles{ChN}(k).FluoError=ErrorGauss;
                 CompiledParticles{ChN}(k).optFit1=optFit1;
                 CompiledParticles{ChN}(k).FitType=FitType;
-
-
-
 
                 %Determine the nc where this particle was born
                 try
@@ -846,7 +841,7 @@ for ChN=1:NChannels
                     for j=1:NFrames
                         subplot(TotalRows,NCols,(TotalRows-NRows)*NCols+j)
 
-                        [x,y,z]=fad2xyzFit(CompiledParticles{ChN}(k).Frame(j),fad(ChN), 'addMargin'); 
+                        [x,y,z]=SpotsXYZ(Spots(j)); 
                         xTrace=x(CompiledParticles{ChN}(k).Index(j));
                         yTrace=y(CompiledParticles{ChN}(k).Index(j));
                         zTrace=z(CompiledParticles{ChN}(k).Index(j));

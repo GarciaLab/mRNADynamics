@@ -81,14 +81,22 @@ if just_dog
     h=waitbar(0,'Generating DoG images');
     for current_frame = 1:num_frames
         waitbar(current_frame/num_frames,h);
-        parfor current_z = 1:zSize      
-            im = imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']);
-            dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
-            dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
-            dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
-            imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
-            if displayFigures
+        if displayFigures
+            for current_z = 1:zSize      
+                im = imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']);
+                dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
+                dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
+                dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
+                imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
                 imshow(dog,[]);
+            end
+        else 
+            parfor current_z = 1:zSize      
+                im = imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']);
+                dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
+                dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
+                dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
+                imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
             end
         end
     end
@@ -117,13 +125,13 @@ else
             if n_spots ~= 0
                 if ~displayFigures
                     parfor k = 1:n_spots
-                        temp_particles(k) = identifySpot(k, im, im_label, dog, ...
-                            neighb, rad, pixelSize, displayFigures, f, microscope);
+                            temp_particles(k) = identifySpot(k, im, im_label, dog, ...
+                                neighb, rad, pixelSize, displayFigures, f, microscope);
                     end
                 else
                     for k = 1:n_spots
-                        temp_particles(k) = identifySpot(k, im, im_label, dog, ...
-                            neighb, rad, pixelSize, displayFigures, f, microscope);
+                            temp_particles(k) = identifySpot(k, im, im_label, dog, ...
+                                neighb, rad, pixelSize, displayFigures, f, microscope);
                         if k == n_spots
                             seg_name = ['SEG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
                             saveas(gcf,[OutputFolder2,filesep,seg_name]);
@@ -147,12 +155,10 @@ end
 %%
 if ~just_dog
     n = 1;
-    nframes = size(all_frames,1);
-    nz = size(all_frames,2);
     h=waitbar(0,'Saving particle information');
-    for i = 1:nframes 
-        waitbar(i/nframes,h)
-        for j = 1:nz 
+    for i = 1:num_frames 
+        waitbar(i/num_frames,h)
+        for j = 1:zSize 
              for spot = 1:length(all_frames{i,j}) %spots within particular image
                  if ~isempty(all_frames{i,j}{spot})
                      Particles(n).CentralIntensity(1) = cell2mat(all_frames{i,j}{spot}(12));
@@ -188,8 +194,8 @@ if ~just_dog
         i = 1; 
         h=waitbar(0,'Finding z-columns');
         neighb = 3000 / pixelSize;
-        for n = 1:nframes  
-            waitbar(n/nframes,h)
+        for n = 1:num_frames  
+            waitbar(n/num_frames,h)
             i = i + length(Particles([Particles.frame] == (n - 1) ));
             for j = i:i+length(Particles([Particles.frame] == n)) - 1
                 for k = j+1:i+length(Particles([Particles.frame] == n)) - 1
@@ -243,7 +249,7 @@ if ~just_dog
                 hold on
             end
         end
-        MeanVectorAll = NaN(1, nframes);
+        MeanVectorAll = NaN(1, num_frames);
         for i = 1:length(Spots)
             for j = 1:length(Spots(i).Fits)
                 MeanVectorAll(i) = 0;

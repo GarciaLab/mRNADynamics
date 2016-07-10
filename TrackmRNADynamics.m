@@ -247,7 +247,7 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
         for i=1:length(Spots)
             MaxSpots=max([MaxSpots,length(Spots(i).Fits)]);
         end
-        %This filter tells us whether a spots is above the threshold.
+        %This filter tells us whether a spot is above the threshold.
         SpotFilter=nan(length(Spots),MaxSpots);
         %Populate the filter
         for i=1:length(Spots)
@@ -264,10 +264,10 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
     NucleiFig=figure;
 
     %Initially, only track particles that are above Threshold1
-    for i=1:length(Spots)
+    for i=1:length(Spots) %iterate over all frames
 
         figure(ParticlesFig)
-        set(gcf,'Position',[ 16   369   676   342])
+        set(gcf,'units', 'normalized', 'position',[0.01, .55, .33, .33]);
 
         %Get the filter for this frame
         CurrentFrame=i;
@@ -297,7 +297,7 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
         set(gcf,'Name',['Frame: ',num2str(CurrentFrame),'/',num2str(length(Spots))])
 
         figure(NucleiFig)
-        set(gcf,'Position',[ 728   373   512   256])
+        set(gcf,'units', 'normalized', 'position',[0.65, .5, .2, .2])
 
         if UseHistone
             try
@@ -349,15 +349,12 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
 
                 else
                 %If we already have recorded particles, we need to compare
-                %them to the new ones found and try to assign them. We also
-                %need to make sure that they stay within the nuclei.
+                %them to the new ones found and try to assign them.
 
                     %Get the positions of the potentially new particles
                     [NewParticlesX,NewParticlesY]=SpotsXYZ(Spots(i));
                     
                     NewParticlesFlag=ones(size(NewParticlesX));
-
-
 
                     %Get a list of the particles that existed in the previous
                     %frame
@@ -374,7 +371,7 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
 
                     PreviousParticles=find(FilterPreviousFrame);
 
-                    if (~isempty(PreviousParticlesIndex))&(sum((PreviousParticlesIndex)))
+                    if (~isempty(PreviousParticlesIndex))&&(sum((PreviousParticlesIndex)))
                         %Now, compare the positions of all of the old and new
                         %particles
                         clear Distance
@@ -489,13 +486,9 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
 
         end
     end
-
-
-
     close(ParticlesFig)
     close(NucleiFig)
-
-
+    
     if ~UseHistone
         
         %HG on 07/03/2016: I'm commenting this out while we migrate to the
@@ -1323,12 +1316,7 @@ elseif strcmp(lower(ExperimentType),'inputoutput')
             title(i)
         end
         drawnow
-
-
-
-
-
-
+        
         %If we don't have nuclear tracking then track the particles based on
         %proximity
 
@@ -1578,8 +1566,6 @@ elseif strcmp(lower(ExperimentType),'inputoutput')
                         elseif ~Particles(CurrentParticle).Approved
                             CheckParticle=1;
                         end
-
-
 
                         if CheckParticle
                             %Move forward in time

@@ -246,20 +246,8 @@ if ~isempty(NewParticlesX)
         end
     end
 
-    %Now move the remaining particles from fad to fad2
-    if ~isempty(IndexToMove)
-        
+    if ~isempty(IndexToMove)     
         SpotFilter(CurrentFrame,IndexToMove)=0;
-%         %Since we got rid of particles in fad we need to shift the
-%         %index entry for the remaining particles accordingly
-%         for i=1:length(Particles)
-%             if sum(Particles(i).Frame==CurrentFrame)
-%                 Particles(i).Index(Particles(i).Frame==CurrentFrame)=...
-%                     Particles(i).Index(Particles(i).Frame==CurrentFrame)-...
-%                     sum(NewParticlesIndices(IndexToMove)<Particles(i).Index(Particles(i).Frame==CurrentFrame));
-%             end
-%         end
-
     end
 
 

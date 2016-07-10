@@ -744,12 +744,7 @@ while (cc~='x')
             ylim([yForZoom-ZoomRange/2,yForZoom+ZoomRange/2])
         end
     end
-    
-    
 
-    
-    
-    
     figure(SnippetFig)
     if (~isempty(xTrace))
         %Determine the z index to be plotted. This corresponds to the

@@ -60,9 +60,18 @@ function temp_particles = identifySpot(k, im, im_label, dog, neighb, rad, ...
             [fits, rel_errors, GaussianIntensity] =  ...
                 fitGaussians(snip, NeighborhoodSize, MaxThreshold, ...
                 WidthGuess, OffsetGuess, show_status);
-
+            int_x = [round(c_x - integration_radius), round(c_x + integration_radius)];
+            int_y = [round(c_y - integration_radius), round(c_y + integration_radius)];
+            sigma_x = fits(3);
+            sigma_y = fits(3);
+            sigma_x2 = fits(8);
+            sigma_y2 = fits(10);
+            area = pi*sigma_x*sigma_y; %in pixels
+            fixedAreaIntensity = 0;
+            integration_radius = round(fits(3)); %nm
+            c_x = fits(2) - rad + cent_x;
+            c_y = fits(4) - rad + cent_y;
             %disp(rel_errors);
-
             % Quality control.
             % TODO: make some quality control using the errors in
             % the fits. Using any(rel_errors > 0.3) (for
@@ -70,10 +79,6 @@ function temp_particles = identifySpot(k, im, im_label, dog, neighb, rad, ...
             % sometimes the second gaussian doesn't get a good fit
             % but the first one does, and the second one is good
             % enough to position its center.
-
-            integration_radius = round(1100/pixelSize); %nm
-            c_x = fits(2) - rad + cent_x;
-            c_y = fits(4) - rad + cent_y;
             snip_mask = snip*0;
             for i = 1:size(snip,1)
                 for j = 1:size(snip,2)
@@ -82,7 +87,6 @@ function temp_particles = identifySpot(k, im, im_label, dog, neighb, rad, ...
                     end
                 end
             end
-
     %         int_x = [round(c_x - fits(3)), round(c_x + fits(3))];
     %         int_y = [round(c_y - fits(5)), round(c_y + fits(5))];
             int_x = [round(c_x - integration_radius), round(c_x + integration_radius)];
@@ -91,8 +95,7 @@ function temp_particles = identifySpot(k, im, im_label, dog, neighb, rad, ...
             sigma_y = fits(3);
             sigma_x2 = fits(8);
             sigma_y2 = fits(10);
-
-            area = pi*sigma_x*sigma_y; %in pixels
+            area = pi*sigma_x^2; %in pixels
             fixedAreaIntensity = 0;
 
             if ~(sigma_x2 <= 0 || sigma_x <= 0 || sigma_x > 2000/pixelSize || sigma_y > 2000/pixelSize...
@@ -111,6 +114,10 @@ function temp_particles = identifySpot(k, im, im_label, dog, neighb, rad, ...
             else
                 temp_particles = {[]};
             end
+       else 
+           temp_particles = {[]};
        end
+    else 
+        temp_particles = {[]};
     end
 end

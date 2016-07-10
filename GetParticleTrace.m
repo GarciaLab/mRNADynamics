@@ -75,7 +75,7 @@ if exist('OffsetError')
     %error for the whole trace. We could also just define an error for
     %each data point.
     ErrorGauss=OffsetError*sqrt(2)*...
-        cellfun(@mean,Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).Area);
+        mean(cell2mat(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).Area));
     %For the Integral, we just use the area of the snippet, which is a
     %constant for all time points.
     ErrorIntegral=OffsetError*sqrt(2)*...

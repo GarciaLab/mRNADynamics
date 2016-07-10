@@ -46,7 +46,8 @@ end
 
 if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
     load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
-    
+    load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'])
+
     %Create the particle array. This is done so that we can support multiple
     %channels. Also figure out the number of channels
     if iscell(Particles)
@@ -56,13 +57,11 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
         NChannels=1;
     end
     
-    %Now, get the particle positions (if they're not there already). Notice
-    %that the code pulls out the position information from fad. This is because
-    %of historical reasons mostly.
+    %Now, get the particle positions (if they're not there already).
     for ChN=1:NChannels
         for i=1:length(Particles{ChN})
             for j=1:length(Particles{ChN}(i).Frame)
-                [x,y]=fad2xyzFit(Particles{ChN}(i).Frame(j),fad(ChN), 'addMargin'); 
+                [x,y,z]=SpotsXYZ(Spots(Particles{ChN}(i).Frame(j))); 
                 Particles{ChN}(i).xPos(j)=x(Particles{ChN}(i).Index(j));
                 Particles{ChN}(i).yPos(j)=y(Particles{ChN}(i).Index(j));
             end
@@ -93,11 +92,10 @@ end
 Dashes=strfind(Prefix,'-');
 Date=Prefix(1:Dashes(3)-1);
 EmbryoName=Prefix(Dashes(3)+1:end);
-
 DTIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.tif']);
 DLSM=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lsm']);
 DLIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lif']);
-DLAT=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'IsLatticeData.txt']);
+DLAT=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*_Settings.txt']);
 
 if (length(DTIF)>0)&(length(DLSM)==0)
     if length(DLIF)==0
@@ -1183,10 +1181,10 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
     end
     
     if exist('Threshold1')
-        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','fad','fad2',...
+        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles',...
             'Threshold1','Threshold2');
     else
-        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','fad','fad2');
+        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles');
     end
 end
     
