@@ -32,7 +32,7 @@ function CheckParticleTracking(varargin)
 %w Disapprove a trace
 %p Identify a particle. It will also tell you the particle associated with
 %  the clicked nucleus.
-%e Approve/Disapproove  a frame within a trace
+%e Approve/Disapprove  a frame within a trace
 %u Move a particle detected with Threshold2 into the our structure.
 %i Move a particle detected with Threshold2 into the our structure and
 %  connect it to the current particle. This is a combination of "u" and

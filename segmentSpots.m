@@ -7,9 +7,8 @@ function segmentSpots(Prefix,Threshold,varargin)
 %           If left empty, then the code just generates the DoG files.
 
 %Options:
-%'displayFigures':   If you want to display plots and images. When using
-%                displayFigures = 1, change "parfor" by "for" in the
-%                loop that goes over all spots. Default is no.
+%'displayFigures':   If you want to display plots and images.
+%                
 %'TrackSpots':   Do you want to use this code to track the particles instead
 %                of using TrackmRNADynamics?
 %'Frames',N:     Run the code from frame 1 to frame N.
@@ -141,8 +140,8 @@ else
             end
         end
     end
-    close all force;
     close(h)
+    close all force;
 end
 
 %%
@@ -238,27 +237,11 @@ if ~just_dog
     if TrackSpots
         Particles = track_spots(Particles, neighb);
         save([DropboxFolder,filesep,Prefix,filesep,'Particles_AR.mat'], 'Particles');
-        for i = 1:length(Particles)
-            if length(Particles(i).frame) > 70
-                plot(Particles(i).frame, Particles(i).GaussianIntensity)
-                i
-                hold on
-            end
-        end
-        MeanVectorAll = NaN(1, num_frames);
-        for i = 1:length(Spots)
-            for j = 1:length(Spots(i).Fits)
-                MeanVectorAll(i) = 0;
-                MeanVectorAll(i) = MeanVectorAll(i) + Spots(i).Fits(j).GaussianIntensity(Spots(i).Fits(j).brightestZ);
-            end
-            MeanVectorAll(i) = MeanVectorAll(i) / length(Spots(i).Fits);
-        end
     end
 
-
     mkdir([DropboxFolder,filesep,Prefix]);
-    save([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots');
-    
+    save([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots');    
+
 end
 
 t = toc;
