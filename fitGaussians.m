@@ -40,10 +40,15 @@ singleGaussian = @(params) params(1).*exp((-1/2).*(((x-params(2))./params(3)).^2
     
 %For now I want to assume circular Gaussians. Only 9 free parameters! so
 % easy
+% doubleGaussian = @(params) params(1).*exp((-1/2).*(((x-params(2))./params(3)).^2 ... 
+%         + ((y-params(4))./params(3)).^2)) ... 
+%         + params(6).*exp((-1/2).*(((x-params(7))./params(8)).^2  ...
+%         + ((y-params(9))./params(8)).^2))+ params(11) - double(snip);
+
 doubleGaussian = @(params) params(1).*exp((-1/2).*(((x-params(2))./params(3)).^2 ... 
         + ((y-params(4))./params(3)).^2)) ... 
-        + params(6).*exp((-1/2).*(((x-params(7))./params(8)).^2  ...
-        + ((y-params(9))./params(8)).^2))+ params(11) - double(snip);
+        + params(5).*exp((-1/2).*(((x-params(6))./params(7)).^2  ...
+        + ((y-params(8))./params(7)).^2))+ params(9) - double(snip);
     
 NeighborhoodSize = 2*floor(NeighborhoodSize/2) + 1;
     
@@ -67,7 +72,7 @@ else
 end
 
     [double_fit, res1, residual, exitflag, output, lambda, jacobian] = lsqnonlin(doubleGaussian, ...
-        init_params,zeros(1,11),inf(1,11));
+        init_params,zeros(1,9),inf(1,9));
     
     ci = nlparci(double_fit,residual,'jacobian',jacobian);
     errors = zeros(1, length(double_fit));
@@ -78,7 +83,7 @@ end
         
     snip_cent = size(snip)./2;
     gaussian1_cent = [double_fit(2), double_fit(4)];
-    gaussian2_cent = [double_fit(7), double_fit(9)];
+    gaussian2_cent = [double_fit(6), double_fit(8)];
     dif1 = gaussian1_cent - snip_cent;
     dif2 = gaussian2_cent - snip_cent;
     distance1 = sqrt(sum(abs(dif1).^2,2));
@@ -88,7 +93,7 @@ end
 
         fits = double_fit; 
         %find the distance between sister chromatids 
-        sister_chromatid_distance = sqrt((fits(2)-fits(8))^2 + (fits(4) - fits(10))^2); % in pixels
+        sister_chromatid_distance = sqrt((fits(2)-fits(6))^2 + (fits(4) - fits(8))^2); % in pixels
         fits(end+1) = sister_chromatid_distance;
 
 
@@ -173,7 +178,7 @@ end
 
 % GaussianIntensity = sum(sum(singleGaussian(fits) + double(snip) - fits(6)));
 
-GaussianIntensity = sum(sum(doubleGaussian(fits) + double(snip) - fits(11)));
+GaussianIntensity = sum(sum(doubleGaussian(fits) + double(snip) - fits(9)));
 % 
 % if show_status
 %     figure(2)

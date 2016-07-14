@@ -62,12 +62,12 @@ function temp_particles = identifySpot(k, im, im_label, dog, neighb, rad, ...
                 WidthGuess, OffsetGuess, show_status);
             sigma_x = fits(3);
             sigma_y = fits(3);
-            sigma_x2 = fits(8);
-            sigma_y2 = fits(10);
-            area = pi*(2*sigma_x)^2; %in pixels
+            sigma_x2 = fits(7);
+            sigma_y2 = fits(7);
+            area = pi*(2*sigma_x^2)^2; %in pixels. this is two widths away from peak
             fixedAreaIntensity = 0;
-            integration_radius = round(sigma_x*2); %nm
-            c_x = fits(2) - rad + cent_x;
+            integration_radius = round(sigma_x*2); %AR 7/14/16: this is only the area of one of the spots. I need to correct this to calculate the area of both. 
+            c_x = fits(2) - rad + cent_x; %AR 7/14/16: same deal as line above
             c_y = fits(4) - rad + cent_y;
             int_x = [round(c_x - integration_radius), round(c_x + integration_radius)];
             int_y = [round(c_y - integration_radius), round(c_y + integration_radius)];    
@@ -92,18 +92,19 @@ function temp_particles = identifySpot(k, im, im_label, dog, neighb, rad, ...
             end
 
             if ~(sigma_x2 <= 0 || sigma_x <= 0 || sigma_x > 2000/pixelSize || sigma_y > 2000/pixelSize...
-                    || sigma_x2 > 2000/pixelSize || sigma_y2 > 2000/pixelSize || GaussianIntensity == 0)
+                    || sigma_x2 > 2000/pixelSize || sigma_y2 > 2000/pixelSize...
+                    || GaussianIntensity == 0)
 
                 if int_x(1) > 1 && int_y(1) > 1 && int_x(2) < size(im,2) && int_y(2) < size(im,1)
                     for w = int_x(1):int_x(2)
                         for v = int_y(1): int_y(2)
-                            fixedAreaIntensity = fixedAreaIntensity + double(im(v,w) - fits(11));
+                            fixedAreaIntensity = fixedAreaIntensity + double(im(v,w) - fits(end-1));
                         end
                     end
                 end
-                temp_particles = {{fixedAreaIntensity, c_x, c_y, fits(11), snip, ...
+                temp_particles = {{fixedAreaIntensity, c_x, c_y, fits(end-1), snip, ...
                     area, sigma_x, sigma_y, cent_y, cent_x, GaussianIntensity,inten,...
-                    max_dog, snip_mask, sigma_x2, sigma_y2, fits(12)}};
+                    max_dog, snip_mask, sigma_x2, sigma_y2, fits(end), rel_errors}};
             else
                 temp_particles = {[]};
             end

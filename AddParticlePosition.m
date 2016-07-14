@@ -163,7 +163,7 @@ if ~NoAP
     end
 
 
-    %Get information about all images. This depends on the microsocpe used.
+    %Get information about all images. This depends on the microscope used.
     
     %Get the information about the zoom
     if strcmp(FileMode,'TIF')
@@ -245,9 +245,9 @@ if ~NoAP
         MetaFullEmbryo1= ImageTemp1{:, 4};
         PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX(0));
 
-        if PixelSizeFullEmbryo~=PixelSizeFullEmbryoMid
-            error('The surface and midsaggital images were not taken with the same pixel size')
-        end
+%         if PixelSizeFullEmbryo~=PixelSizeFullEmbryoMid
+%             error('The surface and midsaggital images were not taken with the same pixel size')
+%         end
         
         
         %How many channels and slices do we have?

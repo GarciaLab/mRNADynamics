@@ -1055,6 +1055,7 @@ for ChN=1:NChannels
         catch
             %That didn't work
         end
+        
     end
 
     %Calculate the mean for all of them
@@ -1743,6 +1744,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
         %Fluorescence per all of nuclei
         MeanVectorAllAP{ChN}=nan(length(Ellipses),length(APbinID));
         SEVectorAllAP{ChN}=nan(length(Ellipses),length(APbinID));
+        
 
 
 
@@ -2163,7 +2165,6 @@ if ~SkipMovie&strcmp(ExperimentAxis,'AP')
             end
 
             StandardFigure(PlotHandle,gca)
-
             saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'APMovie',filesep,iIndex(i,3),'_ch',iIndex(ChN,2),'.tif']);   
         end
     end
@@ -2235,6 +2236,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
         EllipsesOnAP=EllipsesOnAP{1};
         MeanVectorAllAP=MeanVectorAllAP{1};
         SEVectorAllAP=SEVectorAllAP{1};    
+        SNR = MeanVectorAll ./ (SDVectorAll*109); %AR 7/12/16: Rough estimate. Should do better.
     end
     
     save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
@@ -2249,7 +2251,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
         'ParticleCountProbAP',...
         'EllipsesOnAP','TotalEllipsesAP',...
         'EllipsePos','EllipsesFilteredPos','FilteredParticlesPos',...
-        'MeanVectorAllAP','SEVectorAllAP')
+        'MeanVectorAllAP','SEVectorAllAP', 'Prefix');
 elseif HistoneChannel&strcmp(ExperimentAxis,'DV')
     
     %If we have only one channel get rid of all the cells
@@ -2269,7 +2271,7 @@ elseif HistoneChannel&strcmp(ExperimentAxis,'DV')
         'MeanVectorAll',...
         'SDVectorAll','NParticlesAll','MaxFrame',...
         'AllTracesVector','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
-        'MeanOffsetVector','SDOffsetVector','NOffsetParticles')
+        'MeanOffsetVector','SDOffsetVector','NOffsetParticles', 'Prefix')
 elseif strcmp(ExperimentAxis,'NoAP')%HistoneChannel&strcmp(ExperimentAxis,'NoAP')
     
     %If we have only one channel get rid of all the cells
@@ -2296,7 +2298,7 @@ elseif strcmp(ExperimentAxis,'NoAP')%HistoneChannel&strcmp(ExperimentAxis,'NoAP'
             'MeanVectorAll',...
             'SDVectorAll','NParticlesAll','MaxFrame',...
             'AllTracesVector','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
-            'MeanOffsetVector','SDOffsetVector','NOffsetParticles')
+            'MeanOffsetVector','SDOffsetVector','NOffsetParticles', 'Prefix')
     end
 else
     
@@ -2331,6 +2333,6 @@ else
         'SDVectorAll','NParticlesAll','MaxFrame','MinAPIndex','MaxAPIndex',...
         'AllTracesVector','AllTracesAP','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
         'MeanOffsetVector','SDOffsetVector','NOffsetParticles',...
-        'MeanSlopeVectorAP','SDSlopeVectorAP','NSlopeAP')
+        'MeanSlopeVectorAP','SDSlopeVectorAP','NSlopeAP', 'Prefix')
 end
 
