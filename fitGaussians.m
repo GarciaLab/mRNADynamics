@@ -1,4 +1,4 @@
-function [fits, rel_errors, GaussianIntensity] = ...
+function [fits, rel_errors, ci, GaussianIntensity] = ...
     fitGaussians(snip, NeighborhoodSize, Threshold, WidthGuess, OffsetGuess, show_status)
 
 % Find local maxima in snip and use that information to decide if fits
@@ -7,7 +7,7 @@ function [fits, rel_errors, GaussianIntensity] = ...
 
 % snip = CPsmooth(snip,'Gaussian Filter',1.3,0); %AR 7/6/16: Not sure this
 % is needed.
-snip = double(snip);
+snip = double(snip)
 [y,x] = meshgrid(1:size(snip,2), 1:size(snip,1));
 
 singleGaussian = @(params) params(1).*exp((-1/2).*(((x-params(2))./params(3)).^2 ...

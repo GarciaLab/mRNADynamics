@@ -57,7 +57,7 @@ function temp_particles = identifySpot(k, im, im_label, dog, neighb, rad, ...
                 OffsetGuess = 10; %intensity
             end
 
-            [fits, rel_errors, GaussianIntensity] =  ...
+            [fits, rel_errors, ci, GaussianIntensity] =  ...
                 fitGaussians(snip, NeighborhoodSize, MaxThreshold, ...
                 WidthGuess, OffsetGuess, show_status);
             sigma_x = fits(3);
@@ -66,7 +66,7 @@ function temp_particles = identifySpot(k, im, im_label, dog, neighb, rad, ...
             sigma_y2 = fits(7);
             area = pi*(2*sigma_x^2)^2; %in pixels. this is two widths away from peak
             fixedAreaIntensity = 0;
-            integration_radius = round(sigma_x*2); %AR 7/14/16: this is only the area of one of the spots. I need to correct this to calculate the area of both. 
+            integration_radius = 5; %integrate 100 pixels around the spot
             c_x = fits(2) - rad + cent_x; %AR 7/14/16: same deal as line above
             c_y = fits(4) - rad + cent_y;
             int_x = [round(c_x - integration_radius), round(c_x + integration_radius)];
@@ -104,7 +104,7 @@ function temp_particles = identifySpot(k, im, im_label, dog, neighb, rad, ...
                 end
                 temp_particles = {{fixedAreaIntensity, c_x, c_y, fits(end-1), snip, ...
                     area, sigma_x, sigma_y, cent_y, cent_x, GaussianIntensity,inten,...
-                    max_dog, snip_mask, sigma_x2, sigma_y2, fits(end), rel_errors}};
+                    max_dog, snip_mask, sigma_x2, sigma_y2, fits(end), rel_errors, ci}};
             else
                 temp_particles = {[]};
             end

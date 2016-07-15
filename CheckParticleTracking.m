@@ -113,6 +113,8 @@ NoSort=0;
 ForCompileAll=0;
 %Flag to plot only ellipses for current particle & save time
 SpeedMode = 0;
+%Decide whether you want to do sister chromatid analysis
+SisterMode = 0;
 
 if length(varargin)>1
     for i=2:length(varargin)
@@ -122,12 +124,13 @@ if length(varargin)>1
             ForCompileAll=1;
         elseif strcmpi(varargin{i}, 'speedmode')
             SpeedMode = 1;
+        elseif strcmpi(varargin{i}, 'sistermode')
+            SisterMode = 1;
         end
     end
 end
 
 %%
-
 
 FilePrefix=[DataFolder(length(DropboxFolder)+2:end),'_'];
 
@@ -384,6 +387,9 @@ end
 TraceFig=figure;
 SnippetFig=figure;
 ZProfileFig=figure;
+SisterFig=figure;
+SisterFig2 = figure;
+SisterFig3 = figure;
 
 
 cc=1;
@@ -744,7 +750,18 @@ while (cc~='x')
             ylim([yForZoom-ZoomRange/2,yForZoom+ZoomRange/2])
         end
     end
-
+    
+    %AR 7/14/16: Need to fill in the details.
+    figure(SisterFig)
+    %plot sister 1 versus time
+    hold on
+    %plot sister 2 versus time
+    figure(SisterFig2)
+    %plot distance versus intensity
+    figure(SisterFig3)
+    %plot distance versus time
+    
+    
     figure(SnippetFig)
     if (~isempty(xTrace))
         %Determine the z index to be plotted. This corresponds to the

@@ -444,6 +444,7 @@ if ~NoAP
                         display('Deleting manual alignment results')
                         clear ManualAlignmentDone
                     else
+                        msgbox('Error: Answer not recognized');
                         error('Answer not recognized')
                     end
                 end
@@ -1187,6 +1188,7 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
         save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles');
     end
 end
+close all force;
     
  
 

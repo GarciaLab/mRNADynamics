@@ -157,6 +157,7 @@ if ~just_dog
                      Particles(n).FixedAreaIntensity(1) = cell2mat(all_frames{i,j}{spot}(1));
                      Particles(n).GaussianIntensity(1) = cell2mat(all_frames{i,j}{spot}(11));
                      Particles(n).DOGIntensity(1) = cell2mat(all_frames{i,j}{spot}(13));
+                     Particles(n).ConfidenceIntervals(1) = cell2mat(all_frames{i,j}{spot}(16));
                      Particles(n).xFit(1) = cell2mat(all_frames{i,j}{spot}(2));
                      Particles(n).yFit(1) = cell2mat(all_frames{i,j}{spot}(3));
                      Particles(n).xDoG(1) = cell2mat(all_frames{i,j}{spot}(10));
