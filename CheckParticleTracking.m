@@ -387,9 +387,11 @@ end
 TraceFig=figure;
 SnippetFig=figure;
 ZProfileFig=figure;
-SisterFig=figure;
-SisterFig2 = figure;
-SisterFig3 = figure;
+% SisterFig=figure;
+% SisterFig2 = figure;
+% SisterFig3 = figure;
+Gaussian = figure;
+RawData = figure;
 
 
 cc=1;
@@ -751,15 +753,15 @@ while (cc~='x')
         end
     end
     
-    %AR 7/14/16: Need to fill in the details.
-    figure(SisterFig)
-    %plot sister 1 versus time
-    hold on
-    %plot sister 2 versus time
-    figure(SisterFig2)
-    %plot distance versus intensity
-    figure(SisterFig3)
-    %plot distance versus time
+%     %AR 7/14/16: Need to fill in the details.
+%     figure(SisterFig)
+%     %plot sister 1 versus time
+%     hold on
+%     %plot sister 2 versus time
+%     figure(SisterFig2)
+%     %plot distance versus intensity
+%     figure(SisterFig3)
+%     %plot distance versus time
     
     
     figure(SnippetFig)
@@ -801,7 +803,36 @@ while (cc~='x')
         imshow(zeros(SnippetSize))
     end
     
-    
+    figure(Gaussian)
+    if (~isempty(xTrace))
+         %Determine the z index to be plotted. This corresponds to the
+            %brightest DoG value
+        MaxZIndex=find(...
+                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
+                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ);
+
+            %Get the snippet and the mask, and overlay them
+        codomain=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).rawSpot{MaxZIndex};
+        snip = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).Snippet{MaxZIndex};
+        gauss = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{MaxZIndex};
+        surf(codomain{1}, codomain{2}, gauss + double(snip));
+        title('Double Gaussian fits')
+        set(gcf,'units', 'normalized', 'position',[.60, .7, .2, .2]);
+      
+        
+        figure(RawData)
+         %Determine the z index to be plotted. This corresponds to the
+            %brightest DoG value
+        MaxZIndex=find(...
+                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
+                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ);
+        surf(codomain{1}, codomain{2}, snip)
+        title('Raw data');
+        set(gcf,'units', 'normalized', 'position',[.60, .3, .2, .2]);
+
+    end
+
+        
     figure(ZProfileFig)
     if (~isempty(xTrace))
         %Determine the z index to be plotted. This corresponds to the

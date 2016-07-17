@@ -32,6 +32,3 @@ for i=1:length(TraceCell)
         ErrorVarVector(i)=std(bootstrp(100,@var,TraceCell{i}));
     end
 end
-
-
-

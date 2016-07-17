@@ -844,7 +844,7 @@ elseif strcmp(FileMode,'LIFExport')
                         if exist('LIFFF')
                             Projection=Projection./FF;
                         end
-                        if ~strcmpi(ExperimentType, 'inputoutput')
+                        if strcmpi(ExperimentType, 'inputoutput')
                             Projection=imcomplement(Projection);
                             Projection=histeq(mat2gray(Projection),ReferenceHist);
                         end

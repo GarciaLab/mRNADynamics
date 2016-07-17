@@ -1,4 +1,4 @@
-function [fits, rel_errors, ci, GaussianIntensity] = ...
+function [fits, rel_errors, ci, GaussianIntensity, f2, f4] = ...
     fitGaussians(snip, NeighborhoodSize, Threshold, WidthGuess, OffsetGuess, show_status)
 
 % Find local maxima in snip and use that information to decide if fits
@@ -7,7 +7,7 @@ function [fits, rel_errors, ci, GaussianIntensity] = ...
 
 % snip = CPsmooth(snip,'Gaussian Filter',1.3,0); %AR 7/6/16: Not sure this
 % is needed.
-snip = double(snip)
+snip = double(snip);
 [y,x] = meshgrid(1:size(snip,2), 1:size(snip,1));
 
 singleGaussian = @(params) params(1).*exp((-1/2).*(((x-params(2))./params(3)).^2 ...
@@ -194,8 +194,10 @@ GaussianIntensity = sum(sum(doubleGaussian(fits) + double(snip) - fits(9)));
 %     figure(4)
 %     surf(y, x, double(snip));
 %     title('Raw data');
+f2 = doubleGaussian(double_fit);
+f4 = {y, x};
     if show_status
-        figure(2)
+        figure(2);
         surf(y, x, doubleGaussian(double_fit) + double(snip));
         title('Double Gaussian fits')
         set(gcf,'units', 'normalized', 'position',[0.01, .55, .33, .33]);
@@ -203,7 +205,7 @@ GaussianIntensity = sum(sum(doubleGaussian(fits) + double(snip) - fits(9)));
         snipBig = imresize(snip,30);
         set(gcf,'units', 'normalized', 'position',[0.65, .5, .2, .2])
         imshow(snipBig,[]);
-        figure(4)
+        figure(4);
         surf(y, x, double(snip));
         title('Raw data');
         set(gcf,'units', 'normalized', 'position',[.01, .1, .33, .33]);
