@@ -982,10 +982,10 @@ while (cc~='x')
         CurrentFrame=CurrentFrame-5;
         ManualZFlag=0;
         %DisplayRange=[];
-    elseif (cc=='a')&(CurrentZ<ZSlices)
+    elseif (cc=='a')&(CurrentZ<ZSlices) %AR 7/17/16: This does not currently update snippet or surface plots.
         CurrentZ=CurrentZ+1;
         ManualZFlag=1;
-    elseif (cc=='z')&(CurrentZ>1)
+    elseif (cc=='z')&(CurrentZ>1) %AR 7/17/16: This does not currently update snippet or surface plots.
         CurrentZ=CurrentZ-1;
         ManualZFlag=1;
     elseif cc=='j'
