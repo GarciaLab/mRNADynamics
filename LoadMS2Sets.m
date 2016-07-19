@@ -82,7 +82,11 @@ for i=1:length(CompiledSets)
             end
             Data(i)=DataTemp;
         else
-            error('Need to take care of these other cases')
+            FieldsToCopy = FieldNamesData(~ismember(FieldNamesData,FieldNamesDataTemp));
+            for j=1:length(FieldsToCopy)
+                DataTemp.(FieldsToCopy{j}) = {};               
+                DataTemp=orderfields(DataTemp);
+            end
         end
     end
     
