@@ -350,7 +350,6 @@ if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'inp
 end
     
 
-
 %Save the information
 %Now save
 mkdir([DropboxFolder,filesep,Prefix])
@@ -360,3 +359,8 @@ if ~exist([FISHPath,filesep,Prefix,'_'])
     mkdir([FISHPath,filesep,Prefix,'_'])
 end
 save([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
+
+
+%Stitch the schnitzcells using Simon's code
+StitchSchnitz(Prefix)
+

@@ -57,13 +57,15 @@ Thresholds = [1.05:0.05:1.75]; %this number indicates how many radii make two ti
 
 %set stitching information
 for j=1:length(schnitzcells)
-schnitzcells(j).Valid = 1; %assume all are OK
-schnitzcells(j).StitchedTo = []; %to know to which schnitz this one was pasted to
-schnitzcells(j).StitchedFrom = []; %to know what original schnitz were pasted to this one to form the final one
+    schnitzcells(j).Valid = 1; %assume all are OK
+    schnitzcells(j).StitchedTo = []; %to know to which schnitz this one was pasted to
+    schnitzcells(j).StitchedFrom = []; %to know what original schnitz were pasted to this one to form the final one
 end
 
 %% /|\/|\/|\/|\/|\ Start MEGA loop /|\/|\/|\/|\/|\/|\  
+h=waitbar(0,'Stitching broken schnitzs');
 for i=1:length(Thresholds)
+    waitbar(i/length(Thresholds),h);
     %length(schnitzcells) for debugging
     threshold = Thresholds(i)
     Rule = 1;
@@ -111,10 +113,16 @@ for i=1:length(Thresholds)
                         schnitzcells(s1).ceny = [schnitzcells(s1).ceny schnitzcells(s2).ceny]; %
                         schnitzcells(s1).len = [schnitzcells(s1).len schnitzcells(s2).len]; %
                         schnitzcells(s1).cellno = [schnitzcells(s1).cellno schnitzcells(s2).cellno]; %
-                        schnitzcells(s1).Fluo = [schnitzcells(s1).Fluo;schnitzcells(s2).Fluo]; %  
                         schnitzcells(s1).P = [schnitzcells(s1).P schnitzcells(s2).P];
                         schnitzcells(s1).D = [schnitzcells(s1).D schnitzcells(s2).D]; 
                         schnitzcells(s1).E = [schnitzcells(s1).E schnitzcells(s2).E];
+                        
+                        %The Fluo field is only present in input-output
+                        %function mode
+                        if isfield(schnitzcells,'Fluo')
+                            schnitzcells(s1).Fluo = [schnitzcells(s1).Fluo;schnitzcells(s2).Fluo]; %  
+                        end
+                        
                     end
                 end
             end
@@ -136,33 +144,41 @@ for i=1:length(Thresholds)
                 schnitzcells2(index).ceny = schnitzcells(s).ceny;
                 schnitzcells2(index).len = schnitzcells(s).len;
                 schnitzcells2(index).cellno = schnitzcells(s).cellno;
-                schnitzcells2(index).Fluo = schnitzcells(s).Fluo;
+                
+                %The Fluo field is only present in input-output
+                %function mode
+                if isfield(schnitzcells,'Fluo')
+                    schnitzcells2(index).Fluo = schnitzcells(s).Fluo;
+                end
+                
                 index = index+1;
             end
         end
-    schnitzcells = schnitzcells2; %replace original by schnitzcells2
-    clear schnitzcells2
-    'schnitz replaced'
-    %save new schnitzcells
-    save([Prefix '_lin.mat'],'schnitzcells')
-    %'schnitz saved' %(for debugging)
-    %clear workspace to start over
-    clear schnitzcells
-    %'schnitz cleared' %(for debugging)
-    %load newest version
-    load ([Prefix '_lin.mat'])
-    %'schnitz loaded' %(for debugging)
-    %reset stitching information
-    for k=1:length(schnitzcells)
-        schnitzcells(k).Valid = 1; %assume all are OK
-        schnitzcells(k).StitchedTo = []; %to know to which schnitz this one was pasted to
-        schnitzcells(k).StitchedFrom = []; %to know what original schnitz were pasted to this one to form the final one
-    end
+        
+        schnitzcells = schnitzcells2; %replace original by schnitzcells2
+        clear schnitzcells2
+        'schnitz replaced'
+        %save new schnitzcells
+        save([Prefix '_lin.mat'],'schnitzcells')
+        %'schnitz saved' %(for debugging)
+        %clear workspace to start over
+        clear schnitzcells
+        %'schnitz cleared' %(for debugging)
+        %load newest version
+        load ([Prefix '_lin.mat'])
+        %'schnitz loaded' %(for debugging)
+        %reset stitching information
+        for k=1:length(schnitzcells)
+            schnitzcells(k).Valid = 1; %assume all are OK
+            schnitzcells(k).StitchedTo = []; %to know to which schnitz this one was pasted to
+            schnitzcells(k).StitchedFrom = []; %to know what original schnitz were pasted to this one to form the final one
+        end
     end 
     %threshold %(for debugging)
 end
+close(h)
 
-save([Prefix '_lin.mat'],'schnitzcells')
+save([DropboxFolder,filesep,Prefix,filesep,Prefix '_lin.mat'],'schnitzcells')
 
 
 %% Accesory code to check nuclear traces
