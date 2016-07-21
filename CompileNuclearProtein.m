@@ -152,6 +152,8 @@ else
 end
     
 
+ElapsedTime=ElapsedTime/60;     %Time is in minutes
+
 %If there is no Approved field then create it
 if ~isfield(schnitzcells,'Approved')
     for i=1:length(schnitzcells)
