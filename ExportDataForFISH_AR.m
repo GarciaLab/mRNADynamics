@@ -825,7 +825,7 @@ elseif strcmp(FileMode,'LIFExport')
                         HisSlices(:,:,n)=LIFImages{i}{k,1};
                         n=n+1;
                     end
-                    if histoneChannel
+                    if fiducialChannel
                         if strcmp(ProjectionType,'medianprojection')
                             Projection=median(HisSlices,3);
                         else
@@ -844,7 +844,7 @@ elseif strcmp(FileMode,'LIFExport')
                         if exist('LIFFF')
                             Projection=Projection./FF;
                         end
-                        if ~strcmpi(ExperimentType, 'inputoutput')
+                        if strcmpi(ExperimentType, 'inputoutput')
                             Projection=imcomplement(Projection);
                             Projection=histeq(mat2gray(Projection),ReferenceHist);
                         end
