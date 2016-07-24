@@ -350,7 +350,7 @@ if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'inp
 
 % END OF FORMER TRACKNUCLEI /\.\.\ START SIMON'S CODE
 %**********     ELIMINATE OVERLAPPING ELLIPSES. 
-%When two ellipses overlapp it eliminates
+%When two ellipses overlap it eliminates
 %both and creates a new one in the middle.
 MarkColumn = 8; %this column does not contain data. We will use it to mark which ellipses we've looped trhough already.
 %This mark also allows one not to consider twice ellipses that were already

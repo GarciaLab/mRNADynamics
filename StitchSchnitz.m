@@ -70,9 +70,19 @@ for i=9:14
     if ncFrame>0
         %Find the lower end of the time window
         Indices=find(ElapsedTime-(ElapsedTime(ncFrame)-TimeWindow)>0);
-        StartFrame=Indices(1)-1;
+        if isempty(Indices)
+            StartFrame=[];
+        else
+            StartFrame=Indices(1)-1;
+        end
+       
         Indices=find(ElapsedTime-(ElapsedTime(ncFrame)+TimeWindow)>0);
-        EndFrame=Indices(1)+1;
+        if isempty(Indices)
+            EndFrame=[];
+        else
+            EndFrame=Indices(1)+1;
+        end
+        
         FrameFilter(StartFrame:EndFrame)=false;
     end
 end
@@ -252,13 +262,13 @@ for i=1:length(Thresholds)
         clear schnitzcells2
         display('schnitz replaced')
         %save new schnitzcells
-        save([Prefix '_lin.mat'],'schnitzcells')
+        %save([Prefix '_lin.mat'],'schnitzcells')
         %'schnitz saved' %(for debugging)
         %clear workspace to start over
-        clear schnitzcells
+        %clear schnitzcells
         %'schnitz cleared' %(for debugging)
         %load newest version
-        load ([Prefix '_lin.mat'])
+        %load ([Prefix '_lin.mat'])
         %'schnitz loaded' %(for debugging)
         %reset stitching information
         for k=1:length(schnitzcells)
@@ -271,7 +281,7 @@ for i=1:length(Thresholds)
 end
 close(h)
 
-%save([DropboxFolder,filesep,Prefix,filesep,Prefix '_lin.mat'],'schnitzcells')
+save([DropboxFolder,filesep,Prefix,filesep,Prefix '_lin.mat'],'schnitzcells')
 
 
 %% Accesory code to check nuclear traces
