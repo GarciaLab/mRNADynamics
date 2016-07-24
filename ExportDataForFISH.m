@@ -658,45 +658,48 @@ elseif strcmp(FileMode, 'LAT')
             end
         end
             
-        
         %Load the data
         im_stack = {};
+        his_stack = [];
+        mcp_stack = {};
         for j = 1:length(DTIF)
             fname = [Folder, filesep, DTIF(j).name];
             info = imfinfo(fname);
             num_images = numel(info);
             for i = 1:num_images
                 im_stack{j, i} = imread(fname, i, 'Info', info);
-            end
+                if ~isempty(strfind(fname, 'CamA'))
+                    his_stack{j,i} = imread(fname, i, 'Info', info);
+                    his_array(j,i, :, :) = imread(fname, i, 'Info', info);
+                elseif ~isempty(strfind(fname, 'CamB'))
+                    mcp_stack{j-size(his_stack, 1),i} = imread(fname, i, 'Info', info);
+                else
+                    error('How many channels are there supposed to be? Something is off with the file names');
+                end 
+            end     
         end
+        
         %Extract the metadata for each series
-
         NSeries=1; %Will always be true for lattice mode.
+        NSlices=size(mcp_stack,2);
+        NPlanes=numel(mcp_stack);
 
-        %Figure out the number of slices in each series
-        for i=1:NSeries
-            NSlices(i)=size(im_stack,2);
+        %Number of channels %TO DO:  when we start using histone
+        if ~isempty(his_stack) && ~isempty(mcp_stack)
+            NChannels=2;
+        else 
+            NChannels=1;
         end
-
-        %Number of planes per series
-        for i=1:NSeries
-            NPlanes(i)=numel(im_stack);
-        end
-
-        %Number of channels %TO DO: Change when we start using histone
-        NChannels=1;
         
         %Finally, use this information to determine the number of frames in
         %each series
-        NFrames=size(im_stack,1);
+        NFrames=size(mcp_stack,1);
+        
         %Get rid of the last frame as it is always incomplete because
         %that's when we stopped it
         NFrames=NFrames-1;
-        for i = 1:NSeries
-            
-                    NPlanes(i) = NPlanes(i) - NSlices(i)*NChannels;
-        end
-
+        NPlanes = NPlanes - NSlices;
+        
         %Generate FrameInfo
         FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
             'NumberSlices',{},'ZStep',{},'FileMode',{},...
@@ -708,37 +711,25 @@ elseif strcmp(FileMode, 'LAT')
         metastring = fscanf(metaID,'%s');
         tok = strsplit(metastring,{'Cycle(s):','Cycle(Hz'});
         timestep = str2double(tok{2});
-        
-        
-        Frame_Times = zeros(1,NFrames*NSlices(1));
+               
+        Frame_Times = zeros(1,NFrames*NSlices);
         for i = 1:length(Frame_Times)
             Frame_Times(i) = i*timestep;
         end
-       
-        
+               
         %Get the time stamp corresponding to the first slice of each
         %Z-stack
-        m=1;
-        for i=1:NSeries
-            if i==1
-                StartIndex=1;
-            else
-                StartIndex=sum(NPlanes(1:i-1))+1;
-            end
-            for j=StartIndex:(NSlices(i).*NChannels):sum(NPlanes(1:i))
-                InitialStackTime(m)=Frame_Times(j);
-                m=m+1;
-            end
+        m = 1;
+        for j=1:NPlanes/NFrames:NPlanes           
+            InitialStackTime(m)=Frame_Times(j);
+            m = m+1;
         end
-
-        
+       
         for i=1:NFrames
- 
-                FrameInfo(i).PixelsPerLine=256; %to do: need to parse this (ROI line in the metadata text file)
-                FrameInfo(i).LinesPerFrame=512; % "
-                %FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(1));
-                FrameInfo(i).ZStep = .5; %to do: need to parse from metadata (but only if the metadata is correct)
- 
+            FrameInfo(i).PixelsPerLine=256; %to do: need to parse this (ROI line in the metadata text file)
+            FrameInfo(i).LinesPerFrame=512; % "
+            %FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(1));
+            FrameInfo(i).ZStep = .5; %to do: need to parse from metadata (but only if the metadata is correct)
             FrameInfo(i).NumberSlices=min(NSlices);
             FrameInfo(i).FileMode='LAT';
             FrameInfo(i).Time=InitialStackTime(i);
@@ -748,49 +739,46 @@ elseif strcmp(FileMode, 'LAT')
         %Copy the data
         h=waitbar(0,'Extracting Lattice images');
         %Create a blank image
-        BlankImage=uint16(zeros(size(im_stack{1,1})));
-        
+        BlankImage=uint16(zeros(size(mcp_stack{1,1})));
+        %Now do His-RFP
+        m = 1;
+        if HisChannel
+            for j = 1:NFrames
+                ims = squeeze(his_array(j, :, :, :));
+                if strcmp(ProjectionType,'medianprojection')
+                    Projection=squeeze(median(ims,1));
+                else
+                    Projection=squeeze(max(ims,[],1));
+                end
+                imwrite(uint16(Projection),...
+                [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
+            m = m + 1;
+            end
+        end
         m=1;        %Counter for number of frames
-        for i=1:NSeries
-            waitbar(i/NSeries,h)
-            for j=1:NFrames(i)
+            for j=1:NFrames
+                
                 %First do the MCP channel
                 %Save the blank images at the beginning and end of the
                 %stack
                 NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(1,2),'.tif'];
                 imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(min(NSlices)*3+2,2),'.tif'];
+                NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(NSlices+2,2),'.tif'];
                 imwrite(BlankImage,[OutputFolder,filesep,NewName]);
                 %Copy the rest of the images
                 z = 2;
                 for s = 1:NSlices
 %                     for r = 0:2
                         NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(z,2),'.tif'];
-                        imwrite(im_stack{j,s},[OutputFolder,filesep,NewName]);
+                        imwrite(mcp_stack{j,s},[OutputFolder,filesep,NewName]);
                         z = z + 1;
 %                     end
                 end
                 
-                %Now do His-RFP
-                if HisChannel
-                    HisSlices=zeros([size(LIFImages{i}{1,1},1),size(LIFImages{i}{1,1},2),NSlices(i)]);
-                    n=1;
-                    for k=((j-1)*NSlices(i)*NChannels+1+(HisChannel-1)):NChannels:(j*NSlices(i))*NChannels
-                        HisSlices(:,:,n)=LIFImages{i}{k,1};
-                        n=n+1;
-                    end
-                    if strcmp(ProjectionType,'medianprojection')
-                        Projection=median(HisSlices,3);
-                    else
-                        Projection=max(HisSlices,[],3);
-                    end
-                    imwrite(uint16(Projection),...
-                                [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
-                end
+                
                 
                 m=m+1;
             end
-        end
         close(h)
         
         %Find the FF information
@@ -852,8 +840,7 @@ elseif strcmp(FileMode, 'LAT')
 
 %LIFExport mode
 elseif strcmp(FileMode,'LIFExport')
-    
-
+   
     %What type of experiment do we have?
     if strcmp(ExperimentType,'1spot') || strcmp(ExperimentType,'2spot') || strcmp(ExperimentType,'2spot1color')
     
@@ -1894,10 +1881,6 @@ elseif strcmp(FileMode,'LIFExport')
         error('Experiment type not recognized. Check MovieDatabase.XLSX')
     end
 
-    
-% elseif strcmp(FileMode, 'LAT')
-%     [Output, FrameInfo] = ExportDataForFISH_Lattice(Prefix, D, Folder, OutputFolder, Channel1, Channel2, TAGOnly, ImageInfo);
-%     
 end
 
 
