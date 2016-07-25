@@ -756,85 +756,31 @@ elseif strcmp(FileMode, 'LAT')
             end
         end
         m=1;        %Counter for number of frames
-            for j=1:NFrames
-                
-                %First do the MCP channel
-                %Save the blank images at the beginning and end of the
-                %stack
-                NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(1,2),'.tif'];
-                imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(NSlices+2,2),'.tif'];
-                imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                %Copy the rest of the images
-                z = 2;
-                for s = 1:NSlices
-%                     for r = 0:2
-                        NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(z,2),'.tif'];
-                        imwrite(mcp_stack{j,s},[OutputFolder,filesep,NewName]);
-                        z = z + 1;
-%                     end
-                end
-                
-                
-                
-                m=m+1;
+        for j=1:NFrames
+            %First do the MCP channel
+            %Save the blank images at the beginning and end of the
+            %stack
+            NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(1,2),'.tif'];
+            imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+            NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(NSlices+2,2),'.tif'];
+            imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+            %Copy the rest of the images
+            z = 2;
+            for s = 1:NSlices
+                NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(z,2),'.tif'];
+                imwrite(mcp_stack{j,s},[OutputFolder,filesep,NewName]);
+                z = z + 1;
             end
+            m=m+1;
+        end
         close(h)
-        
-        %Find the FF information
-        
-        %The FF can be in the folder with the data or in the folder
-        %corresponding to the day.
-        D1=dir([Folder,filesep,'FF*.lif']);
-        D2=dir([Folder,filesep,'..',filesep,'FF*.lif']);
-        FFPaths={};
-        for i=1:length(D1)
-            FFPaths{end+1}=[Folder,filesep,D1(i).name];
-        end
-        for i=1:length(D2)
-            FFPaths{end+1}=[Folder,filesep,'..',filesep,D2(i).name];
-        end
-        
-        %Go through the FF files and see which one matches the pixel size
-        %and image pixel number
-        FFToUse=[];
-        for i=1:length(FFPaths)
-            LIFFF=bfopen(FFPaths{i});
-            LIFFFMeta = LIFFF{:, 4};
-            if (LIFFFMeta.getPixelsPhysicalSizeX(0)==LIFMeta.getPixelsPhysicalSizeX(0))&...
-                    (LIFFFMeta.getPixelsSizeY(0)==LIFMeta.getPixelsSizeY(0))&...
-                    (LIFFFMeta.getPixelsSizeX(0)==LIFMeta.getPixelsSizeX(0))
-                FFToUse=[FFToUse,i];
-            end
-        end
-        
-        if length(FFToUse)> 1
-            warning('Too many flat field images match the pixel and image size size')
-            FFToUse = uigetfile('Select which flat field image to use');
-        elseif length(FFToUse)==0
-            warning('No flat field image found')
-            clear LIFFF
-        else
-            LIFFF=bfopen(FFPaths{FFToUse});
-            
-            %Find the channel with the highest counts
-            for i=1:size(LIFFF{1},1)
-                MaxValue(i)=max(max(LIFFF{1}{i,1}));
-            end
-            [Dummy,ChannleToUse]=max(MaxValue);
-            imwrite(LIFFF{1}{ChannleToUse,1},...
-                [OutputFolder,filesep,Prefix,'_FF.tif']);
-        end
                   
         % TAG File Information
         Output{1}=['id ',Prefix,'_'];
         Output{2}='';
         Output{3}='1';
-        Output{4}=['frames ',num2str(sum(NFrames)),':1:',num2str(min(NSlices)+2)];
+        Output{4}=['frames ',num2str(NFrames),':1:',num2str(NSlices+2)];
         Output{5}=['suffix ???_z??'];
-        if exist('LIFFF')
-            Output{6}=['flat FF'];
-        end
 
 %% 
 
