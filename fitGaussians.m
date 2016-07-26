@@ -179,6 +179,7 @@ end
 % GaussianIntensity = sum(sum(singleGaussian(fits) + double(snip) - fits(6)));
 
 GaussianIntensity = sum(sum(doubleGaussian(fits) + double(snip) - fits(end-1)));
+AmpIntegral = sum(sum(double(snip) - fits(end-1)));
 % 
 % if show_status
 %     figure(2)
