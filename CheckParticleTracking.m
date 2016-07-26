@@ -873,8 +873,6 @@ while (cc~='x')
         H2=plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
             AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-g');
         
-        
-
         plot(Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpGaussian(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
         plot(Frames(Frames==CurrentFrame),AmpGaussian(Frames==CurrentFrame),'ob')
         hold off
