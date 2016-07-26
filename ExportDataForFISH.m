@@ -860,7 +860,10 @@ elseif strcmp(FileMode,'LIFExport')
                         for k=firstImage:NChannels:lastImage
                             if n<=min(NSlices)
                                 NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'_ch',iIndex(q,2),'.tif'];
-                                imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
+                                if strcmpi(ExperimentType, '1spot') && q == coatChannel
+                                else  
+                                    imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
+                                end
                                 n=n+1;
                             end
                         end
