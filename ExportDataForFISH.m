@@ -1,6 +1,6 @@
-function Prefix=ExportDataForFISH(varargin)
+function Prefix=ExportDataForFISH_AR(varargin)
 
-%This function grabs individual stacks and splits them in
+%This function grabs individual z-stacks and splits them in
 %multiple channels so that it can be analyzed by the FISH code.
 %It adds a blank image at the beginning and the end so that the code
 %doesn't discard columns that peak at the edges of the Z-stack. It also
@@ -18,12 +18,12 @@ function Prefix=ExportDataForFISH(varargin)
 
 %Where do things go?
 %
-%1) The original raw data: D:\Hernan\LivemRNA\Analysis
+%1) The original raw data: RawDynamics Folder
 %2) The data processed such that it can be analyzed by the FISH code:
-%   D:\Hernan\FISHDrosophila\Data
-%3) The data analyzed by the FISH code: D:\Hernan\FISHDrosophila\Analysis
+%   the PreProcessedData Folder
+%3) The data analyzed by the FISH code: ProcessedData folder
 %4) The resulting structures from the particle tracking:
-%   D:\Hernan\Dropbox\LivemRNAData
+%   DynamicsResults folder
 %
 %The idea of (4) being in Dropbox is that I don't need to be synchronizing
 %the part related to the manual analysis.
@@ -35,7 +35,8 @@ MaxShift=9;     %Maximum shift in pixels corresponding to image shift and
                 %alignment
 MaxHistone=1000;    %Maximum intensity for the histone channel. Anything above
                     %this will be capped.
-ProjectionType = 'maxprojection'; %Default setting for z-projection is maximum-based.This may fail when high intensity reflections are present
+ProjectionType = 'maxprojection'; %Default setting for z-projection is maximum-based...
+                    %This may fail when high intensity reflections are present
                 
 
 %Look at parameters
@@ -59,20 +60,9 @@ while k<=length(varargin)
     k=k+1;
 end
 
-                
-%Figure out the initial folders. We'll update the Drobpox one later on in the code.
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath]=...
-    DetermineLocalFolders;
-                    
-%Get the folder with the data
-if ~PrefixOverrideFlag
-    Folder=uigetdir(SourcePath,'Select folder with data');
-else
-    HyphenPositionR = find(Prefix == '-');
-    DateFolderS = Prefix(1 : HyphenPositionR(3)-1);
-    LineFolderS = Prefix(HyphenPositionR(3)+1 : end);
-    Folder = [SourcePath, filesep, DateFolderS, filesep, LineFolderS];
-end
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
+    Folder, Prefix, ExperimentType, Channel1, Channel2,OutputFolder...
+    ] = readMovieDatabase(PrefixOverrideFlag);
 
 %Determine whether we're dealing with 2-photon data from Princeton or LSM
 %data. 2-photon data uses TIF files. In LSM mode multiple files will be
@@ -80,7 +70,7 @@ end
 DTIF=dir([Folder,filesep,'*.tif']);
 DLSM=dir([Folder,filesep,'*.lsm']);
 DLIF=dir([Folder,filesep,'*.lif']);
-DLAT=dir([Folder,filesep,'*_Settings.txt']);
+DLAT=dir([Folder,filesep,'..',filesep,'IsLatticeData.txt']);
 
 if (length(DTIF)>0)&(isempty(DLSM))
     if length(DLIF)==0
@@ -106,51 +96,19 @@ else
     error('File type not recognized. For LIF files, were they exported to TIF?')
 end
 
-
-%Get the information from the last two folders in the structure
-if ~PrefixOverrideFlag
-    SlashPositions=strfind(Folder,filesep);
-    
-    Prefix=[Folder((SlashPositions(end-1)+1):(SlashPositions(end)-1)),'-',...
-        Folder((SlashPositions(end)+1):(end))];
-end
-
-%Figure out what type of experiment we have
-[XLSNum,XLSTxt]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
-DataFolderColumn=find(strcmp(XLSTxt(1,:),'DataFolder'));
-ExperimentTypeColumn=find(strcmp(XLSTxt(1,:),'ExperimentType'));
-Channel1Column=find(strcmp(XLSTxt(1,:),'Channel1'));
-Channel2Column=find(strcmp(XLSTxt(1,:),'Channel2'));
-
-% Convert the prefix into the string used in the XLS file
-Dashes = strfind(Prefix, '-');
-PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
-    [Prefix(1:Dashes(3)-1), '\', Prefix(Dashes(3)+1:end)]));
-if isempty(PrefixRow)
-    PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
-        [Prefix(1:Dashes(3)-1), '/', Prefix(Dashes(3)+1:end)]));
-    if isempty(PrefixRow)
-        error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-    end
-end
-
-ExperimentType=XLSTxt(PrefixRow,ExperimentTypeColumn);
-Channel1=XLSTxt(PrefixRow,Channel1Column);
-Channel2=XLSTxt(PrefixRow,Channel2Column);
-
-%Now that we know all of this, reload the folders taking into account the
-%new Dropbox one
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders(Prefix);
-
 %Create the output folder
 OutputFolder=[PreProcPath,filesep,Prefix];
 mkdir(OutputFolder)
 
+%Generate FrameInfo
+
+FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
+    'NumberSlices',{},'ZStep',{},'FileMode',{},...
+    'PixelSize',{});
 
 %Get the structure with the acquisition information
 ImageInfo = imfinfo([Folder,filesep,D(1).name]);
-
+%%
 if strcmp(FileMode,'TIF')
 
     
@@ -410,8 +368,6 @@ if strcmp(FileMode,'TIF')
     %Add the information about the mode
     for i=1:length(FrameInfo)
         FrameInfo(i).FileMode='TIF';
-        %Add the PixelSize manually
-        FrameInfo(i).PixelSize=0.220;     %in um
     end
     
     
@@ -425,6 +381,8 @@ if strcmp(FileMode,'TIF')
     Output{5}=['suffix ???_z??'];
     Output{6}=['flat FF'];
     
+
+%% 
 %LSM mode
 elseif strcmp(FileMode,'LSM')
     
@@ -435,26 +393,21 @@ elseif strcmp(FileMode,'LSM')
     
         %Figure out the different channels
         if ~isempty(strfind(Channel1{1},'MCP'))
-            MCPChannel=1;
+            coatChannel=1;
         elseif  strfind(Channel1{1},'His')
-            HisChannel=1;
+            histoneChannel=1;
         else
             error('LSM Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
         end
 
         if ~isempty(strfind(Channel2{1},'MCP'))
-            MCPChannel=2;
+            coatChannel=2;
         elseif  strfind(Channel2{1},'His')
-            HisChannel=2;
+            histoneChannel=2;
         else
             error('LSM Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
         end
-
-        %Generate FrameInfo
-        FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
-            'NumberSlices',{},'ZStep',{},'FileMode',{},...
-            'PixelSize',{});
-        
+        fiducialChannel=histoneChannel;
         NSeries=length(DLSM);
         Frame_Times=[];     %Store the frame information
         m=1;        %Counter for number of frames
@@ -517,7 +470,7 @@ elseif strcmp(FileMode,'LSM')
                 FrameInfo(i).LinesPerFrame=str2double(LSMMeta.getPixelsSizeY(0));
                 FrameInfo(i).PixelsPerLine=str2double(LSMMeta.getPixelsSizeX(0));
                 FrameInfo(i).NumberSlices=min(NSlices);
-                FrameInfo(i).FileMode='LIFExport';
+                FrameInfo(i).FileMode='LSMExport';
                 FrameInfo(i).PixelSize=str2num(LSMMeta.getPixelsPhysicalSizeX(0));
                 FrameInfo(i).ZStep=str2double(LSMMeta.getPixelsPhysicalSizeZ(0));
                 FrameInfo(i).Time=Frame_Times(i)/60;        %In minutes
@@ -527,7 +480,7 @@ elseif strcmp(FileMode,'LSM')
             %Create a blank image
             BlankImage=uint16(zeros(size(LSMImages{1}{1,1})));
             for j=1:NFrames(LSMIndex) 
-                %First do the MCP channel
+                %First do the coat protein channel
                 %Save the blank images at the beginning and end of the
                 %stack
                 NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'.tif'];
@@ -536,7 +489,7 @@ elseif strcmp(FileMode,'LSM')
                 imwrite(BlankImage,[OutputFolder,filesep,NewName]);
                 %Copy the rest of the images
                 n=1;        %Counter for slices
-                for k=((j-1)*NSlices(LSMIndex)*NChannels(LSMIndex)+1+(MCPChannel-1)):...
+                for k=((j-1)*NSlices(LSMIndex)*NChannels(LSMIndex)+1+(coatChannel-1)):...
                         NChannels:(j*NSlices(LSMIndex))*NChannels
                     if n<=min(NSlices)
                         NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'.tif'];
@@ -549,7 +502,7 @@ elseif strcmp(FileMode,'LSM')
                 HisSlices=zeros([size(LSMImages{1}{1,1},1),...
                     size(LSMImages{1}{1,1},2),NSlices(LSMIndex)]);
                 n=1;
-                for k=((j-1)*NSlices(LSMIndex)*NChannels(LSMIndex)+1+(HisChannel-1)):...
+                for k=((j-1)*NSlices(LSMIndex)*NChannels(LSMIndex)+1+(fiducialChannel-1)):...
                         NChannels(LSMIndex):(j*NSlices(LSMIndex))*NChannels(LSMIndex)
                     HisSlices(:,:,n)=LSMImages{1}{k,1};
                     n=n+1;
@@ -562,9 +515,8 @@ elseif strcmp(FileMode,'LSM')
         end
         close(h)
 
-
         %Find the FF information
-
+        
         %The FF can be in the folder with the data or in the folder
         %corresponding to the day.
         D1=dir([Folder,filesep,'FF*.lif']);
@@ -603,12 +555,10 @@ elseif strcmp(FileMode,'LSM')
             for i=1:size(LSMFF{1},1)
                 MaxValue(i)=max(max(LSMFF{1}{i,1}));
             end
-            [Dummy,ChannleToUse]=max(MaxValue);
-            imwrite(LSMFF{1}{ChannleToUse,1},...
+            [Dummy,ChannelToUse]=max(MaxValue);
+            imwrite(LSMFF{1}{ChannelToUse,1},...
                 [OutputFolder,filesep,Prefix,'_FF.tif']);
         end
-
-
 
         % TAG File Information
         Output{1}=['id ',Prefix,'_'];
@@ -623,201 +573,22 @@ elseif strcmp(FileMode,'LSM')
         error('Experiment type not supported for LSM format. Ask HG.')
     end
     
-elseif strcmp(FileMode, 'LAT')
-      
-    %Do we have a second channel for Histone?
-    if strcmp(Channel2,'His-RFP')
-        HisChannel=1;
-    else
-        HisChannel=0;
-    end
     
-    %Figure out the different channels
-        Channels={Channel1{1},Channel2{1}};
-        
-        %Coat protein channel
-        MCPChannel=find((~cellfun(@isempty,strfind(lower(Channels),'mcp')))|...
-            (~cellfun(@isempty,strfind(lower(Channels),'pcp')))|...
-            (~cellfun(@isempty,strfind(lower(Channels),'lambda'))));
-        if length(MCPChannel)>1
-            error('Two coat proteins found. Should this be in 2spot2color mode?')
-        elseif length(MCPChannel)==0    
-            error('LAT Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
-        end
-        
-     
-        %Histone channel
-        HisChannel=find(~cellfun(@isempty,strfind(lower(Channels),'his')));
-        %Distinguish between not having histone, but having a dummy channel
-        if isempty(HisChannel)
-            if find(~cellfun(@isempty,strfind(lower(Channels),'dummy')))
-                HisChannel=0;%find(~cellfun(@isempty,strfind(lower(Channels),'dummy')));
-            else
-                HisChannel=0;
-                display('Could not find a histone channel. Proceeding without it.')
-            end
-        end
-            
-        %Load the data
-        im_stack = {};
-        his_stack = [];
-        mcp_stack = {};
-        for j = 1:length(DTIF)
-            fname = [Folder, filesep, DTIF(j).name];
-            info = imfinfo(fname);
-            num_images = numel(info);
-            for i = 1:num_images
-                im_stack{j, i} = imread(fname, i, 'Info', info);
-                if ~isempty(strfind(fname, 'CamA'))
-                    his_stack{j,i} = imread(fname, i, 'Info', info);
-                    his_array(j,i, :, :) = imread(fname, i, 'Info', info);
-                elseif ~isempty(strfind(fname, 'CamB'))
-                    mcp_stack{j-size(his_stack, 1),i} = imread(fname, i, 'Info', info);
-                else
-                    error('How many channels are there supposed to be? Something is off with the file names');
-                end 
-            end     
-        end
-        
-        %Extract the metadata for each series
-        NSeries=1; %Will always be true for lattice mode.
-        NSlices=size(mcp_stack,2);
-        NPlanes=numel(mcp_stack);
-
-        %Number of channels %TO DO:  when we start using histone
-        if ~isempty(his_stack) && ~isempty(mcp_stack)
-            NChannels=2;
-        else 
-            NChannels=1;
-        end
-        
-        %Finally, use this information to determine the number of frames in
-        %each series
-        NFrames=size(mcp_stack,1);
-        
-        %Get rid of the last frame as it is always incomplete because
-        %that's when we stopped it
-        NFrames=NFrames-1;
-        NPlanes = NPlanes - NSlices;
-        
-        %Generate FrameInfo
-        FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
-            'NumberSlices',{},'ZStep',{},'FileMode',{},...
-            'PixelSize',{});
-        
-        %Extract time information from text metadata file
-        
-        metaID = fopen([Folder, filesep, DLAT.name]);
-        metastring = fscanf(metaID,'%s');
-        tok = strsplit(metastring,{'Cycle(s):','Cycle(Hz'});
-        timestep = str2double(tok{2});
-               
-        Frame_Times = zeros(1,NFrames*NSlices);
-        for i = 1:length(Frame_Times)
-            Frame_Times(i) = i*timestep;
-        end
-               
-        %Get the time stamp corresponding to the first slice of each
-        %Z-stack
-        m = 1;
-        for j=1:NPlanes/NFrames:NPlanes           
-            InitialStackTime(m)=Frame_Times(j);
-            m = m+1;
-        end
-       
-        for i=1:NFrames
-            FrameInfo(i).PixelsPerLine=256; %to do: need to parse this (ROI line in the metadata text file)
-            FrameInfo(i).LinesPerFrame=512; % "
-            %FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(1));
-            FrameInfo(i).ZStep = .5; %to do: need to parse from metadata (but only if the metadata is correct)
-            FrameInfo(i).NumberSlices=min(NSlices);
-            FrameInfo(i).FileMode='LAT';
-            FrameInfo(i).Time=InitialStackTime(i);
-            FrameInfo(i).PixelSize = .1; %should parse this from metadata if it gets included
-        end
-              
-        %Copy the data
-        h=waitbar(0,'Extracting Lattice images');
-        %Create a blank image
-        BlankImage=uint16(zeros(size(mcp_stack{1,1})));
-        %Now do His-RFP
-        m = 1;
-        if HisChannel
-            for j = 1:NFrames
-                ims = squeeze(his_array(j, :, :, :));
-                if strcmp(ProjectionType,'medianprojection')
-                    Projection=squeeze(median(ims,1));
-                else
-                    Projection=squeeze(max(ims,[],1));
-                end
-                imwrite(uint16(Projection),...
-                [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
-            m = m + 1;
-            end
-        end
-        m=1;        %Counter for number of frames
-        for j=1:NFrames
-            %First do the MCP channel
-            %Save the blank images at the beginning and end of the
-            %stack
-            NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(1,2),'.tif'];
-            imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-            NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(NSlices+2,2),'.tif'];
-            imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-            %Copy the rest of the images
-            z = 2;
-            for s = 1:NSlices
-                NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(z,2),'.tif'];
-                imwrite(mcp_stack{j,s},[OutputFolder,filesep,NewName]);
-                z = z + 1;
-            end
-            m=m+1;
-        end
-        close(h)
-                  
-        % TAG File Information
-        Output{1}=['id ',Prefix,'_'];
-        Output{2}='';
-        Output{3}='1';
-        Output{4}=['frames ',num2str(NFrames),':1:',num2str(NSlices+2)];
-        Output{5}=['suffix ???_z??'];
-
-%% 
-
+    %% 
 %LIFExport mode
 elseif strcmp(FileMode,'LIFExport')
-   
-    %What type of experiment do we have?
-    if strcmp(ExperimentType,'1spot') || strcmp(ExperimentType,'2spot') || strcmp(ExperimentType,'2spot1color')
     
-        
-        %Figure out the different channels
-        Channels={Channel1{1},Channel2{1}};
-        
-        %Coat protein channel
-        MCPChannel=find((~cellfun(@isempty,strfind(lower(Channels),'mcp')))|...
-            (~cellfun(@isempty,strfind(lower(Channels),'pcp')))|...
-            (~cellfun(@isempty,strfind(lower(Channels),'lambda'))));
-        if length(MCPChannel)>1
-            error('Two coat proteins found. Should this be in 2spot2color mode?')
-        elseif length(MCPChannel)==0    
-            error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
-        end
-        
-     
-        %Histone channel
-        HisChannel=find(~cellfun(@isempty,strfind(lower(Channels),'his')));
-        %Distinguish between not having histone, but having a dummy channel
-        if isempty(HisChannel)
-            if find(~cellfun(@isempty,strfind(lower(Channels),'dummy')))
-                HisChannel=0;%find(~cellfun(@isempty,strfind(lower(Channels),'dummy')));
-            else
-                HisChannel=0;
-                display('Could not find a histone channel. Proceeding without it.')
+    %Extract time information from xml files
+        XMLFolder=Folder;
+        SeriesFiles = dir([XMLFolder,filesep,'*Series*Properties.xml']);
+        if isempty(SeriesFiles)
+            XMLFolder=[Folder,filesep,'MetaData'];
+            SeriesFiles = dir([XMLFolder,filesep,'*Series*Properties.xml']);
+            if isempty(SeriesFiles)
+                error('XML MetaFiles could not be found. Did they get exported using the LAS software?')
             end
         end
-            
-        
+ 
         %Load the file using BioFormats
         %Figure out which one is not the FF
         LIFIndex=find(cellfun(@isempty,strfind({DLIF.name},'FF')));
@@ -839,34 +610,14 @@ elseif strcmp(FileMode,'LIFExport')
 
         %Number of channels
         NChannels=LIFMeta.getChannelCount(0);
-        
+
         %Finally, use this information to determine the number of frames in
         %each series
         NFrames=NPlanes./NSlices/NChannels;
         %Get rid of the last frame as it is always incomplete because
         %that's when we stopped it
         NFrames=NFrames-1;
-        NPlanes = NPlanes - NSlices*NChannels;
-
-
-        %Generate FrameInfo
-        FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
-            'NumberSlices',{},'ZStep',{},'FileMode',{},...
-            'PixelSize',{});
-
-        
-        %Extract time information from xml files
-        XMLFolder=Folder;
-        SeriesFiles = dir([XMLFolder,filesep,'*Series*Properties.xml']);
-        if isempty(SeriesFiles)
-            XMLFolder=[Folder,filesep,'MetaData'];
-            SeriesFiles = dir([XMLFolder,filesep,'*Series*Properties.xml']);
-            if isempty(SeriesFiles)
-                error('XML MetaFiles could not be found. Did they get exported using the LAS software?')
-            end
-        end
-        
-        
+        NPlanes = NPlanes - NSlices*NChannels;      
         Frame_Times = zeros(1,sum(NFrames.*NSlices));
         m=1;
         for i = 1:NSeries
@@ -891,8 +642,7 @@ elseif strcmp(FileMode,'LIFExport')
                 Frame_Times(i) = Frame_Times(i)-First_Time;
             end
         end
-       
-        
+
         %Get the time stamp corresponding to the first slice of each
         %Z-stack
         m=1;
@@ -908,74 +658,15 @@ elseif strcmp(FileMode,'LIFExport')
             end
         end
 
-        
         for i=1:sum(NFrames)
-            try 
-                FrameInfo(i).PixelsPerLine=str2double(LIFMeta.getPixelsSizeX(1));
-                FrameInfo(i).LinesPerFrame=str2double(LIFMeta.getPixelsSizeY(1));
-                FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(1));
-                FrameInfo(i).ZStep=str2double(LIFMeta.getPixelsPhysicalSizeZ(1));
-            catch
-                 FrameInfo(i).LinesPerFrame=str2double(LIFMeta.getPixelsSizeY(0));
-                 FrameInfo(i).PixelsPerLine=str2double(LIFMeta.getPixelsSizeX(0));
-                 FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(0));
-                 FrameInfo(i).ZStep=str2double(LIFMeta.getPixelsPhysicalSizeZ(0));
-            end 
+            FrameInfo(i).LinesPerFrame=str2double(LIFMeta.getPixelsSizeY(0));
+            FrameInfo(i).PixelsPerLine=str2double(LIFMeta.getPixelsSizeX(0));
             FrameInfo(i).NumberSlices=min(NSlices);
             FrameInfo(i).FileMode='LIFExport';
+            FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(0));
+            FrameInfo(i).ZStep=str2double(LIFMeta.getPixelsPhysicalSizeZ(0));
             FrameInfo(i).Time=InitialStackTime(i);
         end
-        
-       
-        %Copy the data
-        h=waitbar(0,'Extracting LIFExport images');
-        %Create a blank image
-        BlankImage=uint16(zeros(size(LIFImages{1}{1,1})));
-        
-        m=1;        %Counter for number of frames
-        for i=1:NSeries
-            waitbar(i/NSeries,h)
-            for j=1:NFrames(i) 
-                %First do the MCP channel
-                %Save the blank images at the beginning and end of the
-                %stack
-                NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'.tif'];
-                imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),'.tif'];
-                imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                %Copy the rest of the images
-                n=1;        %Counter for slices
-                for k=((j-1)*NSlices(i)*NChannels+1+(MCPChannel-1)):NChannels:(j*NSlices(i))*NChannels
-                    if n<=min(NSlices)
-                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'.tif'];
-                        imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
-                        n=n+1;
-                    end
-                end
-                
-                %Now do His-RFP
-                if HisChannel
-                    HisSlices=zeros([size(LIFImages{i}{1,1},1),size(LIFImages{i}{1,1},2),NSlices(i)]);
-                    n=1;
-                    for k=((j-1)*NSlices(i)*NChannels+1+(HisChannel-1)):NChannels:(j*NSlices(i))*NChannels
-                        HisSlices(:,:,n)=LIFImages{i}{k,1};
-                        n=n+1;
-                    end
-                    if strcmp(ProjectionType,'medianprojection')
-                        Projection=median(HisSlices,3);
-                    else
-                        Projection=max(HisSlices,[],3);
-                    end
-                    imwrite(uint16(Projection),...
-                                [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
-                end
-                
-                m=m+1;
-            end
-        end
-        close(h)
-
-        
         %Find the FF information
         
         %The FF can be in the folder with the data or in the folder
@@ -1006,7 +697,7 @@ elseif strcmp(FileMode,'LIFExport')
         if length(FFToUse)> 1
             warning('Too many flat field images match the pixel and image size size')
             FFToUse = uigetfile('Select which flat field image to use');
-        elseif length(FFToUse)==0
+        elseif isempty(FFToUse)
             warning('No flat field image found')
             clear LIFFF
         else
@@ -1016,13 +707,162 @@ elseif strcmp(FileMode,'LIFExport')
             for i=1:size(LIFFF{1},1)
                 MaxValue(i)=max(max(LIFFF{1}{i,1}));
             end
-            [Dummy,ChannleToUse]=max(MaxValue);
-            imwrite(LIFFF{1}{ChannleToUse,1},...
+            [~,ChannelToUse]=max(MaxValue);
+            imwrite(LIFFF{1}{ChannelToUse,1},...
                 [OutputFolder,filesep,Prefix,'_FF.tif']);
         end
-            
         
+        if strcmpi(ExperimentType,'1spot') || strcmp(ExperimentType,'2spot') || strcmp(ExperimentType,'2spot1color')
+            %Figure out the different channels
+            Channels={Channel1{1},Channel2{1}};
+            %Coat protein channel
+            coatChannel=find((~cellfun(@isempty,strfind(lower(Channels),'mcp')))|...
+                (~cellfun(@isempty,strfind(lower(Channels),'pcp')))|...
+                (~cellfun(@isempty,strfind(lower(Channels),'lambda'))));
+            if length(coatChannel)>1
+                error('Two coat proteins found. Should this be in 2spot2color mode?')
+            elseif isempty(coatChannel)    
+                error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
+            end
 
+            %Histone channel
+            histoneChannel=find(~cellfun(@isempty,strfind(lower(Channels),'his')));
+            fiducialChannel = histoneChannel;
+            %Distinguish between not having histone, but having a dummy channel
+            if isempty(fiducialChannel)
+                if find(~cellfun(@isempty,strfind(lower(Channels),'dummy')))
+                    fiducialChannel=0;
+                else
+                    fiducialChannel=0;
+                    display('Could not find a histone channel. Proceeding without it.')
+                end
+            end
+        elseif strcmpi(ExperimentType,'2spot2color')       %2 spots, 2 colors
+            load('ReferenceHist.mat')
+            if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))
+                if (~isempty(strfind(Channel1{1},'mCherry')))
+                    fiducialChannel=1;
+                elseif (~isempty(strfind(Channel2{1},'mCherry')))
+                    fiducialChannel=2;
+                else
+                    error('mCherry channel not found. Cannot generate the fake nuclear image')
+                end
+            end
+        
+        elseif strcmpi(ExperimentType,'input')        %Protein input mode
+            %This mode assumes that one channel corresponds to the input and
+            %that there is no second channel or, at the most, there is a
+            %histone channel
+            if ~isempty(strfind(lower(Channel2{1}),'his'))
+                fiducialChannel=2;
+                inputProteinChannel=1;
+            elseif ~isempty(strfind(lower(Channel1{1}),'his'))
+                fiducialChannel=1;
+                inputProteinChannel=2;
+            else
+                fiducialChannel=0;
+                inputProteinChannel=1;
+                warning('No histone channel found. Finding nuclei using the protein input channel.')
+            end
+        elseif strcmpi(ExperimentType, 'inputoutput')
+            if (~isempty(strfind(lower(Channel2),'mcp')))&...
+                    ~isempty(strfind(lower(Channel2),'pcp'))
+                coatChannel=2;
+            elseif (~isempty(strfind(lower(Channel1),'mcp')))&...
+                    ~isempty(strfind(lower(Channel1),'pcp'))
+                coatChannel=1;
+            else
+                error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
+            end
+            if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))
+                if (~isempty(strfind(Channel1{1},'mCherry')))
+                    fiducialChannel=1;
+                    histoneChannel=1;
+                elseif (~isempty(strfind(Channel2{1},'mCherry')))
+                    fiducialChannel=2;
+                    histoneChannel=2;
+                else
+                    error('mCherry channel not found. Cannot generate the fake nuclear image')
+                end
+            end
+        else
+            error('Experiment type not recognized. Check MovieDatabase.xlsx')
+        end
+        %Copy the data
+        h=waitbar(0,'Extracting LIFExport images');
+        %Create a blank image
+        BlankImage=uint16(zeros(size(LIFImages{1}{1,1})));
+        m=1;        %Counter for number of frames
+        %Load the reference histogram for the fake histone channel
+        load('ReferenceHist.mat')
+        for i=1:NSeries
+            waitbar(i/NSeries,h)
+            for j=1:NFrames(i) 
+                if ~strcmpi(ExperimentType, 'input')
+                    for q=1:NChannels
+                        %Save the blank images at the beginning and end of the
+                        %stack
+                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'_ch',iIndex(q,2),'.tif'];
+                        imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),'_ch',iIndex(q,2),'.tif'];
+                        imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+                        %Copy the rest of the images
+                        n=1;        %Counter for slices
+                        firstImage = (j-1)*NSlices(i)*NChannels+1+(q-1);
+                        lastImage = j*NSlices(i)*NChannels;
+                        for k=firstImage:NChannels:lastImage
+                            if n<=min(NSlices)
+                                NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'_ch',iIndex(q,2),'.tif'];
+                                if ~strcmpi(ExperimentType, '1spot') && q == coatChannel
+                                    imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
+                                end
+                                n=n+1;
+                            end
+                        end
+                    end
+                end
+                %Now copy nuclear tracking images
+                if fiducialChannel
+                    HisSlices=zeros([size(LIFImages{i}{1,1},1),size(LIFImages{i}{1,1},2),NSlices(i)]);
+                    n=1;
+                    firstImage = (j-1)*NSlices(i)*NChannels+1+(fiducialChannel-1);
+                    lastImage = j*NSlices(i)*NChannels;
+                    for k = firstImage:NChannels:lastImage
+                        HisSlices(:,:,n)=LIFImages{i}{k,1};
+                        n=n+1;
+                    end
+                    if histoneChannel
+                        if strcmp(ProjectionType,'medianprojection')
+                            Projection=median(HisSlices,3);
+                        else
+                            Projection=max(HisSlices,[],3);
+                        end
+                        if strcmpi(ExperimentType, 'inputoutput')
+                            Projection=imcomplement(Projection);
+                            Projection=histeq(mat2gray(Projection),ReferenceHist);
+                        end
+                    else 
+                        %We don't want to use all slices. Only the center ones
+                        StackCenter=round((min(NSlices)-1)/2);
+                        StackRange=[StackCenter-1:StackCenter+1];
+                        if strcmp(ProjectionType,'medianprojection')
+                            Projection=median(HisSlices(:,:,StackRange),[],3);
+                        else
+                            Projection=max(HisSlices(:,:,StackRange),[],3);
+                        end
+                        %Flatten the field if possible
+                        if exist('LIFFF')
+                            Projection=Projection./FF;
+                        end
+                    end
+                    imwrite(uint16(Projection),...
+                    [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
+                end
+            m=m+1;
+            end
+        end
+        close(h)
+        
         % TAG File Information
         Output{1}=['id ',Prefix,'_'];
         Output{2}='';
@@ -1032,804 +872,19 @@ elseif strcmp(FileMode,'LIFExport')
         if exist('LIFFF')
             Output{6}=['flat FF'];
         end
-        
-    elseif strcmp(ExperimentType,'2spot2color')       %2 spots, 2 colors
-        
-        %This mode is designed for MCP and PCP data. It doesn't support
-        %histone for now. However, we'll use the red channel to generate a
-        %fake histone channel
-        
-        %Load the reference histogram for the fake histone channel
-        load('ReferenceHist.mat')
-
-        
-        %Load the file using BioFormats
-        %Figure out which one is not the FF
-        LIFIndex=find(cellfun(@isempty,strfind({DLIF.name},'FF')));
-        %Load the data, this might cause problems with really large sets
-        LIFImages=bfopen([Folder,filesep,DLIF(LIFIndex).name]);
-        %Extract the metadata for each series
-        LIFMeta = LIFImages{:, 4};
-        NSeries=LIFMeta.getImageCount();
-
-        %Figure out the number of slices in each series
-        for i=1:NSeries
-            NSlices(i)=str2num(LIFMeta.getPixelsSizeZ(i-1));
-        end
-
-        %Number of planes per series
-        for i=1:NSeries
-            NPlanes(i)=LIFMeta.getPlaneCount(i-1);
-        end
-
-        %Number of channels
-        NChannels=LIFMeta.getChannelCount(0);
-        
-        if NChannels~=2
-            error('Only one channel found in the LIF file')
-        end
-        
-        %Finally, use this information to determine the number of frames in
-        %each series
-        NFrames=NPlanes./NSlices/NChannels;
-        %Get rid of the last frame as it is always incomplete because
-        %that's when we stopped it
-        NFrames=NFrames-1;
-        NPlanes = NPlanes - NSlices*NChannels;
-
-
-        %Generate FrameInfo
-        FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
-            'NumberSlices',{},'ZStep',{},'FileMode',{},...
-            'PixelSize',{});
-
-        
-        %Extract time information from xml files
-        XMLFolder=Folder;
-        SeriesFiles = dir([XMLFolder,filesep,'*Series*Properties.xml']);
-        if isempty(SeriesFiles)
-            XMLFolder=[Folder,filesep,'MetaData'];
-            SeriesFiles = dir([XMLFolder,filesep,'*Series*Properties.xml']);
-            if isempty(SeriesFiles)
-                error('XML MetaFiles could not be found. Did they get exported using the LAS software?')
+        if strcmp(ExperimentType, '2spot2color')
+            Output{end+1}='';
+            Output{end+1}='2';
+            Output{end+1}=['frames ',num2str(sum(NFrames)),':1:',num2str(min(NSlices)+2)];
+            Output{end+1}=['suffix ???_z??_ch02'];
+            if exist('LIFFF')
+                Output{end+1}=['flat FF'];
             end
         end
         
-        
-        Frame_Times = zeros(1,sum(NFrames.*NSlices));
-        m=1;
-        for i = 1:NSeries
-            xDoc = xmlread([XMLFolder,filesep,SeriesFiles(i).name]);
-            TimeStampList = xDoc.getElementsByTagName('TimeStamp');
-            for k = 0:(NFrames(i)*NSlices(i)*NChannels)-1
-                TimeStamp = TimeStampList.item(k);
-                Date = char(TimeStamp.getAttribute('Date'));
-                Time = char(TimeStamp.getAttribute('Time'));
-                Milli = char(TimeStamp.getAttribute('MiliSeconds'));
-                time_in_days = datenum(strcat(Date,'-',Time,'-',Milli),'dd/mm/yyyy-HH:MM:SS AM-FFF');
-                Frame_Times(m)=time_in_days*86400;
-                m=m+1;
-            end
-        end
-        
-        First_Time=Frame_Times(1);
-        for i = 1:length(Frame_Times)
-            if Frame_Times(i)==0
-                Frame_Times(i) = 0;
-            else
-                Frame_Times(i) = Frame_Times(i)-First_Time;
-            end
-        end
-       
-        
-        %Get the time stamp corresponding to the first slice of each
-        %Z-stack
-        m=1;
-        for i=1:NSeries
-            if i==1
-                StartIndex=1;
-            else
-                StartIndex=sum(NPlanes(1:i-1))+1;
-            end
-            for j=StartIndex:(NSlices(i).*NChannels):sum(NPlanes(1:i))
-                InitialStackTime(m)=Frame_Times(j);
-                m=m+1;
-            end
-        end
-
-        
-        for i=1:sum(NFrames)
-            FrameInfo(i).LinesPerFrame=str2double(LIFMeta.getPixelsSizeY(1));
-            FrameInfo(i).PixelsPerLine=str2double(LIFMeta.getPixelsSizeX(1));
-            FrameInfo(i).NumberSlices=min(NSlices);
-            FrameInfo(i).FileMode='LIFExport';
-            FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(1));
-            FrameInfo(i).ZStep=str2double(LIFMeta.getPixelsPhysicalSizeZ(1));
-            FrameInfo(i).Time=InitialStackTime(i);
-        end
-        
-        
-        %Find the FF information
-        
-        %The FF can be in the folder with the data or in the folder
-        %corresponding to the day.
-        D1=dir([Folder,filesep,'FF*.lif']);
-        D2=dir([Folder,filesep,'..',filesep,'FF*.lif']);
-        FFPaths={};
-        for i=1:length(D1)
-            FFPaths{end+1}=[Folder,filesep,D1(i).name];
-        end
-        for i=1:length(D2)
-            FFPaths{end+1}=[Folder,filesep,'..',filesep,D2(i).name];
-        end
-        
-        %Go through the FF files and see which one matches the pixel size
-        %and image pixel number
-        FFToUse=[];
-        for i=1:length(FFPaths)
-            LIFFF=bfopen(FFPaths{i});
-            LIFFFMeta = LIFFF{:, 4};
-            if (LIFFFMeta.getPixelsPhysicalSizeX(0)==LIFMeta.getPixelsPhysicalSizeX(0))&...
-                    (LIFFFMeta.getPixelsSizeY(0)==LIFMeta.getPixelsSizeY(0))&...
-                    (LIFFFMeta.getPixelsSizeX(0)==LIFMeta.getPixelsSizeX(0))
-                FFToUse=[FFToUse,i];
-            end
-        end
-        
-        if length(FFToUse)==2
-            error('Too many flat field images match the pixel and image size size')
-        elseif length(FFToUse)==0
-            warning('No flat field image found')
-            clear LIFFF
-        else
-            LIFFF=bfopen(FFPaths{FFToUse});
-            
-            %Find the channel with the highest counts
-            for i=1:size(LIFFF{1},1)
-                MaxValue(i)=max(max(LIFFF{1}{i,1}));
-            end
-            [Dummy,ChannleToUse]=max(MaxValue);
-            FFImage=LIFFF{1}{ChannleToUse,1};
-            imwrite(FFImage,...
-                [OutputFolder,filesep,Prefix,'_FF.tif']);
-            
-            FF=imfilter(double(FFImage), fspecial('disk', 30), 'replicate', 'same');
-            FF=FF/mean(FF(:));
-        end
-       
-        %Copy the data
-        h=waitbar(0,'Extracting LIFExport images');
-        %Create a blank image
-        BlankImage=uint16(zeros(size(LIFImages{1}{1,1})));
-        
-        m=1;        %Counter for number of frames
-        for i=1:NSeries
-            waitbar(i/NSeries,h)
-            for j=1:NFrames(i) 
-                for q=1:NChannels
-                    %Save the blank images at the beginning and end of the
-                    %stack
-                    NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'_ch',iIndex(q,2),'.tif'];
-                    imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                    NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),'_ch',iIndex(q,2),'.tif'];
-                    imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                    %Copy the rest of the images
-                    n=1;        %Counter for slices
-                    for k=((j-1)*NSlices(i)*NChannels+1+(q-1)):NChannels:(j*NSlices(i))*NChannels
-                        if n<=min(NSlices)
-                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'_ch',iIndex(q,2),'.tif'];
-                            imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
-                            n=n+1;
-                        end
-                    end
-                end
-                
-                %Make the fake Histone channel if mCherry is present
-                
-                if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))
-                    
-                    if (~isempty(strfind(Channel1{1},'mCherry')))
-                        RFPChannel=1;
-                    elseif (~isempty(strfind(Channel2{1},'mCherry')))
-                        RFPChannel=2;
-                    else
-                        error('mCherry channel not found. Cannot generate the fake nuclear image')
-                    end
-                    
-                    %Now do His-RFP
-                    HisSlices=zeros([size(LIFImages{i}{1,1},1),size(LIFImages{i}{1,1},2),NSlices(i)]);
-                    n=1;
-                    for k=((j-1)*NSlices(i)*NChannels+1+(RFPChannel-1)):NChannels:(j*NSlices(i))*NChannels
-                        HisSlices(:,:,n)=LIFImages{i}{k,1};
-                        n=n+1;
-                    end
-                    
-                    %We don't want to use all slices. Only the center ones
-                    StackCenter=round((min(NSlices)-1)/2);
-                    StackRange=[StackCenter-1:StackCenter+1];
-                    if strcmp(ProjectionType,'medianprojection')
-                        Projection=median(HisSlices(:,:,StackRange),[],3);
-                    else
-                        Projection=max(HisSlices(:,:,StackRange),[],3);
-                    end
-
-                    %Flatten the field if possible
-                    if exist('LIFFF')
-                        Projection=Projection./FF;
-                    end
-                    
-                    Projection=imcomplement(Projection);
-                    Projection=histeq(mat2gray(Projection),ReferenceHist);
-                   
-                    
-                    
-                    imwrite(Projection,...
-                        [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
-                            
-                end
-                    
-             
-                
-                m=m+1;
-                
-                
-                
-            end
-            
-        end
-        close(h)
-
-
-        % TAG File Information
-        Output{1}=['id ',Prefix,'_'];
-        Output{2}='';
-        Output{3}='1';
-        Output{4}=['frames ',num2str(sum(NFrames)),':1:',num2str(min(NSlices)+2)];
-        Output{5}=['suffix ???_z??_ch01'];
-        if exist('LIFFF')
-            Output{end+1}=['flat FF'];
-        end
-        Output{end+1}='';
-        Output{end+1}='2';
-        Output{end+1}=['frames ',num2str(sum(NFrames)),':1:',num2str(min(NSlices)+2)];
-        Output{end+1}=['suffix ???_z??_ch02'];
-        if exist('LIFFF')
-            Output{end+1}=['flat FF'];
-        end
-
-    elseif strcmp(lower(ExperimentType),'inputoutput')      %Input-output mode
-        
-        %This mode is designed for mRNA detection in a red channel that can
-        %be used to estimate the nuclei and a protein input channel such as
-        %Bicoid-GFP and Dorsal-Venus
-        
-        %Load the reference histogram for the fake histone channel
-        load('ReferenceHist.mat')
-
-        
-        %Load the file using BioFormats
-        %Figure out which one is not the FF
-        LIFIndex=find(cellfun(@isempty,strfind({DLIF.name},'FF')));
-        %Load the data, this might cause problems with really large sets
-        LIFImages=bfopen([Folder,filesep,DLIF(LIFIndex).name]);
-        %Extract the metadata for each series
-        LIFMeta = LIFImages{:, 4};
-        NSeries=LIFMeta.getImageCount();
-
-        %Figure out the number of slices in each series
-        for i=1:NSeries
-            NSlices(i)=str2num(LIFMeta.getPixelsSizeZ(i-1));
-        end
-
-        %Number of planes per series
-        for i=1:NSeries
-            NPlanes(i)=LIFMeta.getPlaneCount(i-1);
-        end
-
-        %Number of channels
-        NChannels=LIFMeta.getChannelCount(0);
-        
-        if NChannels~=2
-            error('Only one channel found in the LIF file')
-        end
-        
-        %Finally, use this information to determine the number of frames in
-        %each series
-        NFrames=NPlanes./NSlices/NChannels;
-        %Get rid of the last frame as it is always incomplete because
-        %that's when we stopped it
-        NFrames=NFrames-1;
-        NPlanes = NPlanes - NSlices*NChannels;
-
-
-        %Generate FrameInfo
-        FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
-            'NumberSlices',{},'ZStep',{},'FileMode',{},...
-            'PixelSize',{});
-
-        
-        %Extract time information from xml files
-        XMLFolder=Folder;
-        SeriesFiles = dir([XMLFolder,filesep,'*Properties.xml']);
-        if isempty(SeriesFiles)
-            XMLFolder=[Folder,filesep,'MetaData'];
-            SeriesFiles = dir([XMLFolder,filesep,'*Properties.xml']);
-            if isempty(SeriesFiles)
-                error('XML MetaFiles could not be found. Did they get exported using the LAS software?')
-            end
-        end
-        
-        
-        Frame_Times = zeros(1,sum(NFrames.*NSlices));
-        m=1;
-        for i = 1:NSeries
-            xDoc = xmlread([XMLFolder,filesep,SeriesFiles(i).name]);
-            TimeStampList = xDoc.getElementsByTagName('TimeStamp');
-            
-            for k = 0:(NFrames(i)*NSlices(i)*NChannels)-1
-                TimeStamp = TimeStampList.item(k);
-                
-                Date = char(TimeStamp.getAttribute('Date'));
-                Time = char(TimeStamp.getAttribute('Time'));
-                Milli = char(TimeStamp.getAttribute('MiliSeconds'));
-                time_in_days = datenum(strcat(Date,'-',Time,'-',Milli),'dd/mm/yyyy-HH:MM:SS AM-FFF');
-                Frame_Times(m)=time_in_days*86400;
-                m=m+1;
-            end
-        end
-        
-        First_Time=Frame_Times(1);
-        for i = 1:length(Frame_Times)
-            if Frame_Times(i)==0
-                Frame_Times(i) = 0;
-            else
-                Frame_Times(i) = Frame_Times(i)-First_Time;
-            end
-        end
-       
-        
-        %Get the time stamp corresponding to the first slice of each
-        %Z-stack
-        m=1;
-        for i=1:NSeries
-            if i==1
-                StartIndex=1;
-            else
-                StartIndex=sum(NPlanes(1:i-1))+1;
-            end
-            for j=StartIndex:(NSlices(i).*NChannels):sum(NPlanes(1:i))
-                InitialStackTime(m)=Frame_Times(j);
-                m=m+1;
-            end
-        end
-
-        
-        for i=1:sum(NFrames)
-            FrameInfo(i).LinesPerFrame=str2double(LIFMeta.getPixelsSizeY(0));
-            FrameInfo(i).PixelsPerLine=str2double(LIFMeta.getPixelsSizeX(0));
-            FrameInfo(i).NumberSlices=min(NSlices);
-            FrameInfo(i).FileMode='LIFExport';
-            FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(0));
-            FrameInfo(i).ZStep=str2double(LIFMeta.getPixelsPhysicalSizeZ(0));
-            FrameInfo(i).Time=InitialStackTime(i);
-        end
-        
-        
-        %Find the FF information
-        
-        %The FF can be in the folder with the data or in the folder
-        %corresponding to the day.
-        D1=dir([Folder,filesep,'FF*.lif']);
-        D2=dir([Folder,filesep,'..',filesep,'FF*.lif']);
-        FFPaths={};
-        for i=1:length(D1)
-            FFPaths{end+1}=[Folder,filesep,D1(i).name];
-        end
-        for i=1:length(D2)
-            FFPaths{end+1}=[Folder,filesep,'..',filesep,D2(i).name];
-        end
-        
-        %Go through the FF files and see which one matches the pixel size
-        %and image pixel number
-        FFToUse=[];
-        for i=1:length(FFPaths)
-            LIFFF=bfopen(FFPaths{i});
-            LIFFFMeta = LIFFF{:, 4};
-            if (LIFFFMeta.getPixelsPhysicalSizeX(0)==LIFMeta.getPixelsPhysicalSizeX(0))&...
-                    (LIFFFMeta.getPixelsSizeY(0)==LIFMeta.getPixelsSizeY(0))&...
-                    (LIFFFMeta.getPixelsSizeX(0)==LIFMeta.getPixelsSizeX(0))
-                FFToUse=[FFToUse,i];
-            end
-        end
-        
-        if length(FFToUse)==2
-            error('Too many flat field images match the pixel and image size size')
-        elseif length(FFToUse)==0
-            warning('No flat field image found')
-            clear LIFFF
-        else
-            LIFFF=bfopen(FFPaths{FFToUse});
-            
-            %Find the channel with the highest counts
-            for i=1:size(LIFFF{1},1)
-                MaxValue(i)=max(max(LIFFF{1}{i,1}));
-            end
-            [Dummy,ChannleToUse]=max(MaxValue);
-            FFImage=LIFFF{1}{ChannleToUse,1};
-            imwrite(FFImage,...
-                [OutputFolder,filesep,Prefix,'_FF.tif']);
-            
-            FF=imfilter(double(FFImage), fspecial('disk', 30), 'replicate', 'same');
-            FF=FF/mean(FF(:));
-        end
-       
-        %Copy the data
-        h=waitbar(0,'Extracting LIFExport images');
-        
-        %This mode assumes that one channel corresponds to the input and
-        %one to the output. The input will not be analyzed using FISH.
-        if (~isempty(strfind(lower(Channel2),'mcp')))&...
-                ~isempty(strfind(lower(Channel2),'pcp'))
-            OutputChannel=2;
-        elseif (~isempty(strfind(lower(Channel1),'mcp')))&...
-                ~isempty(strfind(lower(Channel1),'pcp'))
-            OutputChannel=1;
-        else
-            error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
-        end
-            
-        
-        %Create a blank image
-        BlankImage=uint16(zeros(size(LIFImages{1}{1,1})));
-        
-        m=1;        %Counter for number of frames
-        for i=1:NSeries
-            waitbar(i/NSeries,h)
-            for j=1:NFrames(i) 
-                for q=1:NChannels
-                    %Save the blank images at the beginning and end of the
-                    %stack
-                    NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'_ch',iIndex(q,2),'.tif'];
-                    imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                    NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),'_ch',iIndex(q,2),'.tif'];
-                    imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                    %Copy the rest of the images
-                    n=1;        %Counter for slices
-                    for k=((j-1)*NSlices(i)*NChannels+1+(q-1)):NChannels:(j*NSlices(i))*NChannels
-                        if n<=min(NSlices)
-                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'_ch',iIndex(q,2),'.tif'];
-                            imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
-                            n=n+1;
-                        end
-                    end
-                end
-                
-                %Make the fake Histone channel if mCherry is present
-                
-                if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))
-                    
-                    if (~isempty(strfind(Channel1{1},'mCherry')))
-                        RFPChannel=1;
-                    elseif (~isempty(strfind(Channel2{1},'mCherry')))
-                        RFPChannel=2;
-                    else
-                        error('mCherry channel not found. Cannot generate the fake nuclear image')
-                    end
-                    
-                    %Now do His-RFP
-                    HisSlices=zeros([size(LIFImages{i}{1,1},1),size(LIFImages{i}{1,1},2),NSlices(i)]);
-                    n=1;
-                    for k=((j-1)*NSlices(i)*NChannels+1+(RFPChannel-1)):NChannels:(j*NSlices(i))*NChannels
-                        HisSlices(:,:,n)=LIFImages{i}{k,1};
-                        n=n+1;
-                    end
-                    
-                    %We don't want to use all slices. Only the center ones
-                    StackCenter=round((min(NSlices)-1)/2);
-                    StackRange=[StackCenter-1:StackCenter+1];
-                    
-                    if strcmp(ProjectionType,'medianprojection')
-                        Projection=median(HisSlices(:,:,StackRange),3);
-                    else    
-                        Projection=max(HisSlices(:,:,StackRange),3);
-                    end
-
-                    %Flatten the field if possible
-                    if exist('LIFFF')
-                        Projection=Projection./FF;
-                    end
-                    
-                    Projection=imcomplement(Projection);
-                    Projection=histeq(mat2gray(Projection),ReferenceHist);
-                   
-                    
-                    
-                    imwrite(Projection,...
-                        [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
-                            
-                end
-                    
-             
-                
-                m=m+1;
-                
-                
-                
-            end
-            
-        end
-        close(h)
-
-
-        % TAG File Information
-        Output{1}=['id ',Prefix,'_'];
-        Output{2}='';
-        Output{3}='1';
-        Output{4}=['frames ',num2str(sum(NFrames)),':1:',num2str(min(NSlices)+2)];
-        Output{5}=['suffix ???_z??_ch',iIndex(OutputChannel,2)];
-        if exist('LIFFF')
-            Output{end+1}=['flat FF'];
-        end
-    elseif strcmp(lower(ExperimentType),'input')        %Protein input mode
-        
-        %Load the file using BioFormats
-        %Figure out which one is not the FF
-        LIFIndex=find(cellfun(@isempty,strfind({DLIF.name},'FF')));
-        %Load the data, this might cause problems with really large sets
-        LIFImages=bfopen([Folder,filesep,DLIF(LIFIndex).name]);
-        %Extract the metadata for each series
-        LIFMeta = LIFImages{:, 4};
-        NSeries=LIFMeta.getImageCount();
-
-        %Figure out the number of slices in each series
-        for i=1:NSeries
-            NSlices(i)=str2num(LIFMeta.getPixelsSizeZ(i-1));
-        end
-
-        %Number of planes per series
-        for i=1:NSeries
-            NPlanes(i)=LIFMeta.getPlaneCount(i-1);
-        end
-
-        %Number of channels
-        NChannels=LIFMeta.getChannelCount(0);
-        
-        
-        %Finally, use this information to determine the number of frames in
-        %each series
-        NFrames=NPlanes./NSlices/NChannels;
-        %Get rid of the last frame as it is always incomplete because
-        %that's when we stopped it
-        NFrames=NFrames-1;
-        NPlanes = NPlanes - NSlices*NChannels;
-
-
-        %Generate FrameInfo
-        FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
-            'NumberSlices',{},'ZStep',{},'FileMode',{},...
-            'PixelSize',{});
-
-        
-        %Extract time information from xml files
-        XMLFolder=Folder;
-        SeriesFiles = dir([XMLFolder,filesep,'*Properties.xml']);
-        if isempty(SeriesFiles)
-            XMLFolder=[Folder,filesep,'MetaData'];
-            SeriesFiles = dir([XMLFolder,filesep,'*Properties.xml']);
-            if isempty(SeriesFiles)
-                error('XML MetaFiles could not be found. Did they get exported using the LAS software?')
-            end
-        end
-        
-        
-        Frame_Times = zeros(1,sum(NFrames.*NSlices));
-        m=1;
-        for i = 1:NSeries
-            xDoc = xmlread([XMLFolder,filesep,SeriesFiles(i).name]);
-            TimeStampList = xDoc.getElementsByTagName('TimeStamp');
-            for k = 0:(NFrames(i)*NSlices(i)*NChannels)-1
-                TimeStamp = TimeStampList.item(k);
-                Date = char(TimeStamp.getAttribute('Date'));
-                Time = char(TimeStamp.getAttribute('Time'));
-                Milli = char(TimeStamp.getAttribute('MiliSeconds'));
-                time_in_days = datenum(strcat(Date,'-',Time,'-',Milli),'dd/mm/yyyy-HH:MM:SS AM-FFF');
-                Frame_Times(m)=time_in_days*86400;
-                m=m+1;
-            end
-        end
-        
-        First_Time=Frame_Times(1);
-        for i = 1:length(Frame_Times)
-            if Frame_Times(i)==0
-                Frame_Times(i) = 0;
-            else
-                Frame_Times(i) = Frame_Times(i)-First_Time;
-            end
-        end
-       
-        
-        %Get the time stamp corresponding to the first slice of each
-        %Z-stack
-        m=1;
-        for i=1:NSeries
-            if i==1
-                StartIndex=1;
-            else
-                StartIndex=sum(NPlanes(1:i-1))+1;
-            end
-            for j=StartIndex:(NSlices(i).*NChannels):sum(NPlanes(1:i))
-                InitialStackTime(m)=Frame_Times(j);
-                m=m+1;
-            end
-        end
-
-        
-        for i=1:sum(NFrames)
-            FrameInfo(i).LinesPerFrame=str2double(LIFMeta.getPixelsSizeY(0));
-            FrameInfo(i).PixelsPerLine=str2double(LIFMeta.getPixelsSizeX(0));
-            FrameInfo(i).NumberSlices=min(NSlices);
-            FrameInfo(i).FileMode='LIFExport';
-            FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(0));
-            FrameInfo(i).ZStep=str2double(LIFMeta.getPixelsPhysicalSizeZ(0));
-            FrameInfo(i).Time=InitialStackTime(i);
-        end
-        
-        
-        %Find the FF information
-        
-        %The FF can be in the folder with the data or in the folder
-        %corresponding to the day.
-        D1=dir([Folder,filesep,'FF*.lif']);
-        D2=dir([Folder,filesep,'..',filesep,'FF*.lif']);
-        FFPaths={};
-        for i=1:length(D1)
-            FFPaths{end+1}=[Folder,filesep,D1(i).name];
-        end
-        for i=1:length(D2)
-            FFPaths{end+1}=[Folder,filesep,'..',filesep,D2(i).name];
-        end
-        
-        %Go through the FF files and see which one matches the pixel size
-        %and image pixel number
-        FFToUse=[];
-        for i=1:length(FFPaths)
-            LIFFF=bfopen(FFPaths{i});
-            LIFFFMeta = LIFFF{:, 4};
-            if (LIFFFMeta.getPixelsPhysicalSizeX(0)==LIFMeta.getPixelsPhysicalSizeX(0))&...
-                    (LIFFFMeta.getPixelsSizeY(0)==LIFMeta.getPixelsSizeY(0))&...
-                    (LIFFFMeta.getPixelsSizeX(0)==LIFMeta.getPixelsSizeX(0))
-                FFToUse=[FFToUse,i];
-            end
-        end
-        
-        if length(FFToUse)==2
-            error('Too many flat field images match the pixel and image size size')
-        elseif length(FFToUse)==0
-            warning('No flat field image found')
-            clear LIFFF
-        else
-            LIFFF=bfopen(FFPaths{FFToUse});
-            
-            %Find the channel with the highest counts
-            for i=1:size(LIFFF{1},1)
-                MaxValue(i)=max(max(LIFFF{1}{i,1}));
-            end
-            [Dummy,ChannleToUse]=max(MaxValue);
-            FFImage=LIFFF{1}{ChannleToUse,1};
-            imwrite(FFImage,...
-                [OutputFolder,filesep,Prefix,'_FF.tif']);
-            
-            FF=imfilter(double(FFImage), fspecial('disk', 30), 'replicate', 'same');
-            FF=FF/mean(FF(:));
-        end
-       
-        %Copy the data
-        h=waitbar(0,'Extracting LIFExport images');
-        
-        %This mode assumes that one channel corresponds to the input and
-        %that there is no second channel or, at the most, there is a
-        %histone channel
-        if (~isempty(strfind(lower(Channel2{1}),'his')))&...
-                ~isempty(strfind(lower(Channel2{1}),'his'))
-            HisChannel=2;
-            ProteinChannel=1;
-        elseif (~isempty(strfind(lower(Channel1{1}),'his')))&...
-                ~isempty(strfind(lower(Channel1{1}),'his'))
-            HisChannel=1;
-            ProteinChannel=2;
-        else
-            HisChannel=0;
-            ProteinChannel=1;
-            warning('No histone channel found. Finding nuclei using the protein input channel.')
-        end
-            
-        
-        %Create a blank image
-        BlankImage=uint16(zeros(size(LIFImages{1}{1,1})));
-        
-        %Protein signal channel        
-        m=1;        %Counter for number of frames
-        for i=1:NSeries
-            waitbar(i/NSeries,h)
-            for j=1:NFrames(i) 
-                for q=1:NChannels
-                    %Save the blank images at the beginning and end of the
-                    %stack
-                    NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'_ch',iIndex(q,2),'.tif'];
-                    imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                    NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),'_ch',iIndex(q,2),'.tif'];
-                    imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                    %Copy the rest of the images
-                    n=1;        %Counter for slices
-                    for k=((j-1)*NSlices(i)*NChannels+1+(q-1)):NChannels:(j*NSlices(i))*NChannels
-                        if n<=min(NSlices)
-                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'_ch',iIndex(q,2),'.tif'];
-                            imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
-                            n=n+1;
-                        end
-                    end
-                end
-                
-                %Nuclear channel
-                
-                %If there is no Histone channel make it using the signal
-                %one
-                if HisChannel==0
-                    
-                    if NChannels~=1
-                        error('HG add support for multiple protein channels')
-                    end
-                    
-                    %Create the fake histone channel 
-                    HisSlices=zeros([size(LIFImages{i}{1,1},1),size(LIFImages{i}{1,1},2),NSlices(i)]);
-                    n=1;
-                    for k=((j-1)*NSlices(i)*NChannels+1):NChannels:(j*NSlices(i))*NChannels
-                        HisSlices(:,:,n)=LIFImages{i}{k,1};
-                        n=n+1;
-                    end
-                    
-                    %We don't want to use all slices. Only the center ones
-                    StackCenter=round((min(NSlices)-1)/2);
-                    StackRange=[StackCenter-1:StackCenter+1];
-                    
-                    if strcmp(ProjectionType,'medianprojection')
-                        Projection=median(HisSlices(:,:,StackRange),[],3);
-                    else
-                        Projection=max(HisSlices(:,:,StackRange),[],3);
-                    end
-                    
-                    %Flatten the field if possible
-                    if exist('LIFFF')
-                        Projection=Projection./FF;
-                    end
-                    
-                    %Projection=imcomplement(Projection);
-                    %Projection=histeq(mat2gray(Projection),ReferenceHist);
-                   
-                    
-                    
-                    imwrite(uint16(Projection),...
-                        [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
-                   
-                else
-                    error('HG needs to write this part of the code')
-                end
-                    
-                m=m+1;
-            end
-            
-        end
-        close(h)
-
-
-              
-    else
-        error('Experiment type not recognized. Check MovieDatabase.XLSX')
-    end
-
+elseif strcmp(FileMode, 'LAT')
+    [Output, FrameInfo] = ExportDataForFISH_Lattice(Prefix, D, Folder, OutputFolder, Channel1, Channel2, TAGOnly, ImageInfo); 
 end
-
-
 
 %Skipping frames?
 if ~isempty(SkipFrames)
@@ -1837,7 +892,6 @@ if ~isempty(SkipFrames)
     FrameFilter=ones(size(FrameInfo));
     FrameFilter(SkipFrames)=0;
     FrameInfo=FrameInfo(logical(FrameFilter));
-    
     
     %Rename all Histone channel images
     %Find all the Histone files
@@ -1856,12 +910,12 @@ if ~isempty(SkipFrames)
         end
     end
     
-    %Rename all MCP channel images
-    %Find all the MCP files
+    %Rename all coat protein channel images
+    %Find all the coat protein files
     D=dir([OutputFolder,filesep,'*_z01.tif']);
     %Delete the skipped files
     for i=SkipFrames
-        D2=dir([OutputFolder,filesep,D(i).name(1:end-6),'*.tif'])
+        D2=dir([OutputFolder,filesep,D(i).name(1:end-6),'*.tif']);
         for j=1:length(D2)
             delete([OutputFolder,filesep,D2(j).name])
         end
@@ -1883,17 +937,12 @@ if ~isempty(SkipFrames)
     Output{4}=['frames ',num2str(length(FrameInfo)),':1:',num2str(NSlices+2)];
 end
 
-
-
 %Create the TAG file for the FISH analysis code
 if exist('Output')
     fid = fopen([OutputFolder,filesep,Prefix,'.tag'], 'wt');
-
     for i=1:length(Output)
         fprintf(fid, '%s \n', Output{i});
     end
-
-
     fclose(fid);
 end
 
