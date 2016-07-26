@@ -66,7 +66,7 @@ function temp_particles = identifySpot(k, im, im_label, dog, neighb, rad, ...
             sigma_y2 = fits(7);
             area = pi*(2*sigma_x^2)^2; %in pixels. this is two widths away from peak
             fixedAreaIntensity = 0;
-            integration_radius = 5; %integrate 100 pixels around the spot
+            integration_radius = 5; %integrate 121 pixels around the spot
             c_x = fits(2) - rad + cent_x; %AR 7/14/16: same deal as line above
             c_y = fits(4) - rad + cent_y;
             int_x = [round(c_x - integration_radius), round(c_x + integration_radius)];
@@ -98,7 +98,7 @@ function temp_particles = identifySpot(k, im, im_label, dog, neighb, rad, ...
                 if int_x(1) > 1 && int_y(1) > 1 && int_x(2) < size(im,2) && int_y(2) < size(im,1)
                     for w = int_x(1):int_x(2)
                         for v = int_y(1): int_y(2)
-                            fixedAreaIntensity = fixedAreaIntensity + double(im(v,w) - fits(end-1));
+                            fixedAreaIntensity = fixedAreaIntensity + double(im(v,w)) - fits(end-1);
                         end
                     end
                 end
