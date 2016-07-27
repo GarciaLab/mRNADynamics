@@ -59,16 +59,16 @@ centers = double(step(hLocalMax, snip));
 
 if size(centers,1)== 2
     init_params = [max(max(snip)), centers(1,2), WidthGuess, centers(1,1), ...
-            WidthGuess, max(max(snip)), centers(2,2), WidthGuess, centers(2,1), ...
-            WidthGuess, OffsetGuess];
+            max(max(snip)), centers(2,2), WidthGuess, centers(2,1), ...
+            OffsetGuess];
 elseif size(centers, 1) == 1
     init_params = [max(max(snip)), centers(1,2), WidthGuess, centers(1,1), ...
-            WidthGuess, max(max(snip)), centers(1,2), WidthGuess, centers(1,1), ...
-            WidthGuess, OffsetGuess];
+            max(max(snip)), centers(1,2), WidthGuess, centers(1,1), ...
+            OffsetGuess];
 else
     init_params = [max(max(snip)), round(size(snip,1)/2), WidthGuess, round(size(snip,1)/2), ...
-            WidthGuess, max(max(snip)), round(size(snip,1)/2), WidthGuess, round(size(snip,1)/2), ...
-            WidthGuess, OffsetGuess];
+            max(max(snip)), round(size(snip,1)/2), WidthGuess, round(size(snip,1)/2), ...
+            OffsetGuess];
 end
 
     [double_fit, res1, residual, exitflag, output, lambda, jacobian] = lsqnonlin(doubleGaussian, ...
@@ -178,8 +178,8 @@ end
 
 % GaussianIntensity = sum(sum(singleGaussian(fits) + double(snip) - fits(6)));
 
-GaussianIntensity = sum(sum(doubleGaussian(fits) + double(snip) - fits(end-1)));
-AmpIntegral = sum(sum(double(snip) - fits(end-1)));
+GaussianIntensity = sum(sum(doubleGaussian(double_fit) + double(snip) - double_fit(end)));
+AmpIntegral = sum(sum(double(snip) - double_fit(end)));
 % 
 % if show_status
 %     figure(2)
