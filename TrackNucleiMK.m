@@ -1,8 +1,8 @@
 function TrackNuclei(Prefix)
 
 %This function is just a script that call Laurent's tracking code
-%Maryam's addition is try/catch statement to deal with no division into
-%cycle 14--> define as Nan
+%Maryam edits: added if/else statement starting on line 95 to adjust for 
+%the case when the embryo never divides into cycle 14.
 
 %Get the folders, including the default Dropbox one
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
@@ -87,15 +87,19 @@ if ~exist('nc9','var')
     error('Cannot find nuclear cycle values. Were they defined in MovieDatabase.XLSX?')
 end
 
-try
-    %This checks whether all ncs have been defined
-    ncCheck=[nc9,nc10,nc11,nc12,nc13,nc14];
-    if length(ncCheck)~=6
+%This checks whether all ncs have been defined
+ncCheck=[nc9,nc10,nc11,nc12,nc13,nc14];
+
+if isempty(find(isnan(ncCheck)))==1 && length(ncCheck)~=6
+    error('Check the nc frames in the MovieDatabase entry. Some might be missing')
+elseif isempty(find(isnan(ncCheck)))==0 && length(ncCheck~=6)
+        display('nc frame(s) contain NaN')
         error('Check the nc frames in the MovieDatabase entry. Some might be missing')
-    end
-catch
+elseif isempty(find(isnan(ncCheck)))==0
+        display('nc frame(s) contain NaN')
 end
 
+    
 %Do we need to convert any NaN chars into doubles?
 if strcmp(lower(nc14),'nan')
     nc14=nan;

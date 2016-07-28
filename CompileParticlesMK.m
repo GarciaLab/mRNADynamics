@@ -1,7 +1,7 @@
 function CompileParticles(varargin)
 
 %This function puts together all the information we have about particles.
-%Maryam edits: added try/catch statements starting on lines 1611 and on
+%Maryam edits: added if/else statements starting on lines 1611 and on
 %lines 1973 to adjust for the case when the embryo never divides into cycle
 %14.
 %
@@ -1611,19 +1611,21 @@ for ChN=1:NChannels
             figure(13)
             clf
             hold on
-            try
-                for i=1:length(CompiledParticles{ChN})
-                    plot(CompiledParticles{ChN}(i).MeanAP,....
-                        ElapsedTime(CompiledParticles{ChN}(i).FirstFrame)-...
-                        ElapsedTime(nc14),'.k')
-                end
-            catch 
+            
+            if isnan(nc14)==1;
                 for i=1:length(CompiledParticles{ChN})
                     plot(CompiledParticles{ChN}(i).MeanAP,....
                         ElapsedTime(CompiledParticles{ChN}(i).FirstFrame)-...
                         ElapsedTime(nc13),'.k')
                 end
+            else
+                for i=1:length(CompiledParticles{ChN})
+                    plot(CompiledParticles{ChN}(i).MeanAP,....
+                        ElapsedTime(CompiledParticles{ChN}(i).FirstFrame)-...
+                        ElapsedTime(nc14),'.k')
+                end
             end
+            
             hold off
             box on
             xlabel('AP position (x/L)')
@@ -1970,11 +1972,13 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
         %in each nc. Note that we look at a reduced range within the nc to
         %reduce variability in counting at mitosis.
         ParticleCountProbAP{ChN}(:,1)=ParticleCountAP{ChN}(1,:)./mean(NEllipsesAP(nc12+5:nc13-5,:));
-        try
+        
+        if isnan(nc14)==1
+            ParticleCountProbAP{ChN}(:,2)=NaN(41,1);
+        else
             ParticleCountProbAP{ChN}(:,2)=ParticleCountAP{ChN}(2,:)./mean(NEllipsesAP(nc13+5:nc14-5,:));
-        catch
-            ParticleCountProbAP{ChN}(:,2)=zeros(41,1);
         end
+ 
         ParticleCountProbAP{ChN}(:,3)=ParticleCountAP{ChN}(3,:)./...
             mean(NEllipsesAP(max(1,nc14-5):length(FrameInfo)-5,:));
         % ES 2014-01-08: accounting for movies started fewer than 5 frames before
