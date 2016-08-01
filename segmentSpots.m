@@ -12,6 +12,7 @@ function segmentSpots(Prefix,Threshold,varargin)
 %'TrackSpots':   Do you want to use this code to track the particles instead
 %                of using TrackmRNADynamics?
 %'Frames',N:     Run the code from frame 1 to frame N.
+%'Shadows':   Ensure that we caught the spots in focus or else discard
 
 % TrackSpots takes 0 or 1 depending on whether you want to make a time
 % tracking in addition to the segmentation.
@@ -21,6 +22,7 @@ function segmentSpots(Prefix,Threshold,varargin)
 displayFigures=0;
 TrackSpots=0;
 num_frames=0;
+Shadows = 0;
 %If no threshold was specified, then just generate the DoG images
 if isempty(Threshold)
     just_dog=1;
@@ -33,6 +35,8 @@ for i=1:length(varargin)
         displayFigures=1;
     elseif strcmp(varargin{i},'TrackSpots')
         TrackSpots=1;
+    elseif strcmpi(varargin{i}, 'Shadows')
+        Shadows = 1;
     elseif strcmp(varargin{i},'Frames')
         if ~isnumeric(varargin{i+1})
             error('Wrong input parameters. After ''Frames'' you should input the number of frames')
@@ -41,7 +45,7 @@ for i=1:length(varargin)
         end
     end
 end
-%% 
+%%
 tic;
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(Prefix);
@@ -116,7 +120,7 @@ else
             thrim = dog > Threshold;
             [im_label, n_spots] = bwlabel(thrim); 
             temp_frames = {};
-            rad = 1000/pixelSize;
+            rad = 2000/pixelSize;
             temp_particles = cell(1, n_spots);
             if n_spots ~= 0
                 if ~displayFigures
@@ -173,6 +177,7 @@ if ~just_dog
                      Particles(n).rawSpot{1} = raw{1};
                      Particles(n).gaussSpot{1} = cell2mat(all_frames{i,j}{spot}(20));
                      Particles(n).z(1) = j;
+                     Particles(n).discardThis = 0;
                      Particles(n).frame(1) = i;
                      Particles(n).r = 0;
                      n = n + 1;
@@ -219,6 +224,10 @@ if ~just_dog
             end
         else 
             Particles(i).brightestZ = Particles(i).z(max_index);
+            if Shadows && Particles(i).brightestZ == min(Particles(i).z)...
+               || Particles(i).brightestZ == max(Particles(i).z)
+                Particles(i).discardThis = 1;
+            end  
         end
     end
  
@@ -228,10 +237,24 @@ if ~just_dog
         frames = find([Particles.frame]==i);
         if ~isempty(frames)
             for j = frames(1):frames(end)
-                Spots(i).Fits(j-frames(1)+1) = Particles(j);
+                if ~Particles(j).discardThis
+                    Spots(i).Fits(j-frames(1)+1) = Particles(j);
+                end
             end
         end
     end
+    
+    %Clean up Spots
+    Spots2 = struct('Fits', []);        
+    for i = 1:length(Spots)
+        Spots2(i).Fits = [];
+        for j = 1:length(Spots(i).Fits)
+            if ~isempty(Spots(i).Fits(j).CentralIntensity)
+                Spots2(i).Fits = [Spots2(i).Fits, Spots(i).Fits(j)];
+            end
+        end
+    end
+    Spots = Spots2;
 
     %AR 7/10/16: Optional time tracking using track_spots script. Also
     %makes some potentially useful plots. This was originally here to have
@@ -250,3 +273,6 @@ end
 
 t = toc;
 display(['Elapsed time: ',num2str(t/60),' min'])
+display(['Detected spots: ',num2str(length(Spots))])
+poolobj = gcp('nocreate');
+delete(poolobj);

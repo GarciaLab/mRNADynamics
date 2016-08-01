@@ -66,7 +66,7 @@ function temp_particles = identifySpot(k, im, im_label, dog, neighb, rad, ...
             sigma_y2 = fits(7);
             area = pi*(2*sigma_x^2)^2; %in pixels. this is two widths away from peak
             fixedAreaIntensity = 0;
-            integration_radius = 5; %integrate 121 pixels around the spot
+            integration_radius = 6; %integrate 121 pixels around the spot
             c_x = fits(2) - rad + cent_x; %AR 7/14/16: same deal as line above
             c_y = fits(4) - rad + cent_y;
             int_x = [round(c_x - integration_radius), round(c_x + integration_radius)];
@@ -82,14 +82,24 @@ function temp_particles = identifySpot(k, im, im_label, dog, neighb, rad, ...
             % sometimes the second gaussian doesn't get a good fit
             % but the first one does, and the second one is good
             % enough to position its center.
-            snip_mask = snip*0;
+%             snip_mask = snip*0;
+            snip_mask = snip;
             for i = 1:size(snip,1)
                 for j = 1:size(snip,2)
-                    if i > fits(4) - integration_radius && i < fits(4) + integration_radius && j > fits(2) - integration_radius && j < fits(2) + integration_radius 
-                        snip_mask(i,j) = 1;
+                    d = floor ( sqrt( (j - floor(size(snip,1)/2))^2 + (i - floor(size(snip,2)/2))^2 ) );
+                    if d >= integration_radius
+                        snip_mask(i, j) = 0;
                     end
                 end
             end
+            
+%             for i = 1:size(snip,1)
+%                 for j = 1:size(snip,2)
+%                     if i > fits(4) - integration_radius && i < fits(4) + integration_radius && j > fits(2) - integration_radius && j < fits(2) + integration_radius 
+%                         snip_mask(i,j) = 1;
+%                     end
+%                 end
+%             end
 
             if ~(sigma_x2 <= 0 || sigma_x <= 0 || sigma_x > 2000/pixelSize || sigma_y > 2000/pixelSize...
                     || sigma_x2 > 2000/pixelSize || sigma_y2 > 2000/pixelSize...
@@ -103,6 +113,7 @@ function temp_particles = identifySpot(k, im, im_label, dog, neighb, rad, ...
                     end
                 end
                 fixedAreaIntensity = AmpIntegral;
+                fixedAreaIntensity = sum(sum(snip_mask)) - fits(end-1)*sum(sum(snip_mask~=0));
                 temp_particles = {{fixedAreaIntensity, c_x, c_y, fits(end-1), snip, ...
                     area, sigma_x, sigma_y, cent_y, cent_x, GaussianIntensity,inten,...
                     max_dog, snip_mask, sigma_x2, sigma_y2, fits(end), rel_errors, ci, f2, f4}};

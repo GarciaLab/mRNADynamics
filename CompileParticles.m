@@ -32,7 +32,7 @@ SkipFluctuations=0;  %Do not generate the plots of correlations of fluctuations 
 SkipFits=0;         %Do not generate the fit output (but still does the fit)
 SkipMovie=0;        %Do not generate the movie
 ApproveAll=0;       %Only use manually approved particles
-MinParticles=4;     %Require 4 particles per AP bin or else discard
+MinParticles=1;     %Require MinParticles particles per AP bin or else discard
 
 if isempty(varargin)
     FolderTemp=uigetdir(DefaultDropboxFolder,'Select folder with data to analyze');
@@ -538,7 +538,7 @@ for ChN=1:NChannels
             %condition?
             FirstFrame=Particles{ChN}(i).Frame(min(find(Particles{ChN}(i).FrameApproved)));
             
-                %Check that for the remaining frames we got a good z-profile
+%                 Check that for the remaining frames we got a good z-profile
 %                 for j=1:length(Particles{ChN}(i).Frame)
 %                     ZProfile=fad(ChN).channels(Particles{ChN}(i).Frame(j)).fits.shadowsDog{Particles{ChN}(i).Index(j)};
 %                     [Dummy,ZMax]=max(ZProfile);
@@ -635,6 +635,7 @@ for ChN=1:NChannels
                 [Frame,AmpIntegral,AmpGaussian,Off,...
                  ErrorIntegral,ErrorGauss,optFit1,FitType] = GetParticleTrace(k,CompiledParticles{ChN},Spots);
                 CompiledParticles{ChN}(k).Fluo= AmpGaussian;
+                CompiledParticles{ChN}(k).FluoIntegral = AmpGaussian;
                 CompiledParticles{ChN}(k).FluoIntegral = AmpIntegral;
                 CompiledParticles{ChN}(k).Off=Off;
                 CompiledParticles{ChN}(k).FluoError=ErrorGauss;
