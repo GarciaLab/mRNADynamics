@@ -1,5 +1,8 @@
 function StandardFigure(PlotHandle,AxisHandle,varargin)
 
+%This is useful sometimes
+drawnow
+
 %Make it such that it can identify things like '-o'.
 
 %Figure out the journal option in varargin
@@ -73,14 +76,19 @@ for i=1:length(PlotHandle)
         if isempty(strmatch(get(PlotHandle(i),'Color'),'auto'))
             ChangeColor(PlotHandle(i),'Color')
         end
-
+        try
         if isempty(strmatch(get(PlotHandle(i),'MarkerEdgeColor'),'auto'))
             ChangeColor(PlotHandle(i),'MarkerEdgeColor')
         end
-
+        catch
+        end
+try
         if isempty(strmatch(get(PlotHandle(i),'MarkerFaceColor'),'auto'))
             ChangeColor(PlotHandle(i),'MarkerFaceColor')
         end
+catch
+end
+        
     end
 
 %     
@@ -181,8 +189,12 @@ end
 %     'TickLength',[0.02,0.05])
 
 
-%Change the color of the axes
-try ChangeColor(AxisHandle,'XColor')
-end
-try ChangeColor(AxisHandle,'YColor')
-end
+
+% %Change the color of the axes
+% try ChangeColor(AxisHandle,'XColor')
+% end
+% try ChangeColor(AxisHandle,'YColor')
+% end
+
+
+set(AxisHandle,'XColor','k','YColor','k','ZColor','k')

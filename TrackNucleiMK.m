@@ -1,6 +1,8 @@
 function TrackNuclei(Prefix)
 
 %This function is just a script that call Laurent's tracking code
+%Maryam edits: added if/else statement starting on line 95 to adjust for 
+%the case when the embryo never divides into cycle 14.
 
 %Get the folders, including the default Dropbox one
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
@@ -87,10 +89,17 @@ end
 
 %This checks whether all ncs have been defined
 ncCheck=[nc9,nc10,nc11,nc12,nc13,nc14];
-if length(ncCheck)~=6
+
+if isempty(find(isnan(ncCheck)))==1 && length(ncCheck)~=6
     error('Check the nc frames in the MovieDatabase entry. Some might be missing')
+elseif isempty(find(isnan(ncCheck)))==0 && length(ncCheck~=6)
+        display('nc frame(s) contain NaN')
+        error('Check the nc frames in the MovieDatabase entry. Some might be missing')
+elseif isempty(find(isnan(ncCheck)))==0
+        display('nc frame(s) contain NaN')
 end
 
+    
 %Do we need to convert any NaN chars into doubles?
 if strcmp(lower(nc14),'nan')
     nc14=nan;
@@ -350,6 +359,7 @@ if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'inp
 end
     
 
+
 %Save the information
 %Now save
 mkdir([DropboxFolder,filesep,Prefix])
@@ -359,8 +369,3 @@ if ~exist([FISHPath,filesep,Prefix,'_'])
     mkdir([FISHPath,filesep,Prefix,'_'])
 end
 save([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
-
-
-%Stitch the schnitzcells using Simon's code
-StitchSchnitz(Prefix)
-

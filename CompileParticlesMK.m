@@ -1,6 +1,9 @@
 function CompileParticles(varargin)
 
 %This function puts together all the information we have about particles.
+%Maryam edits: added if/else statements starting on lines 1611 and on
+%lines 1973 to adjust for the case when the embryo never divides into cycle
+%14.
 %
 %Parameters:
 %First, the prefix.
@@ -441,8 +444,7 @@ if isfield(FrameInfo,'FileMode')
         for j=1:length(FrameInfo)
             ElapsedTime(j)=etime(datevec(FrameInfo(j).TimeString),datevec(FrameInfo(1).TimeString));
         end
-    elseif strcmp(FrameInfo(end).FileMode,'LSM')|strcmp(FrameInfo(end).FileMode,'LSMExport')|...
-            strcmp(FrameInfo(end).FileMode,'LIFExport')|strcmp(FrameInfo(end).FileMode,'LAT')
+    elseif strcmp(FrameInfo(end).FileMode,'LSM')|strcmp(FrameInfo(end).FileMode,'LIFExport')|strcmp(FrameInfo(end).FileMode,'LAT')
         for j=1:length(FrameInfo)
             ElapsedTime(j)=FrameInfo(j).Time-FrameInfo(1).Time;
         end
@@ -1609,11 +1611,21 @@ for ChN=1:NChannels
             figure(13)
             clf
             hold on
-            for i=1:length(CompiledParticles{ChN})
-                plot(CompiledParticles{ChN}(i).MeanAP,....
-                    ElapsedTime(CompiledParticles{ChN}(i).FirstFrame)-...
-                    ElapsedTime(nc14),'.k')
+            
+            if isnan(nc14)==1;
+                for i=1:length(CompiledParticles{ChN})
+                    plot(CompiledParticles{ChN}(i).MeanAP,....
+                        ElapsedTime(CompiledParticles{ChN}(i).FirstFrame)-...
+                        ElapsedTime(nc13),'.k')
+                end
+            else
+                for i=1:length(CompiledParticles{ChN})
+                    plot(CompiledParticles{ChN}(i).MeanAP,....
+                        ElapsedTime(CompiledParticles{ChN}(i).FirstFrame)-...
+                        ElapsedTime(nc14),'.k')
+                end
             end
+            
             hold off
             box on
             xlabel('AP position (x/L)')
@@ -1960,7 +1972,13 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
         %in each nc. Note that we look at a reduced range within the nc to
         %reduce variability in counting at mitosis.
         ParticleCountProbAP{ChN}(:,1)=ParticleCountAP{ChN}(1,:)./mean(NEllipsesAP(nc12+5:nc13-5,:));
-        ParticleCountProbAP{ChN}(:,2)=ParticleCountAP{ChN}(2,:)./mean(NEllipsesAP(nc13+5:nc14-5,:));
+        
+        if isnan(nc14)==1
+            ParticleCountProbAP{ChN}(:,2)=NaN(41,1);
+        else
+            ParticleCountProbAP{ChN}(:,2)=ParticleCountAP{ChN}(2,:)./mean(NEllipsesAP(nc13+5:nc14-5,:));
+        end
+ 
         ParticleCountProbAP{ChN}(:,3)=ParticleCountAP{ChN}(3,:)./...
             mean(NEllipsesAP(max(1,nc14-5):length(FrameInfo)-5,:));
         % ES 2014-01-08: accounting for movies started fewer than 5 frames before

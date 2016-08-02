@@ -11,8 +11,9 @@ AllTracesAP=zeros(length(Nuclei),1);
 for i=1:length(Nuclei)
     for j=1:length(Nuclei(i).Frames)
         AllTracesVector(Nuclei(i).Frames(j),i)=...
-            Nuclei(i).FluoMax(Nuclei(i).Frames==Nuclei(i).Frames(j));
+     Nuclei(i).FluoMax(Nuclei(i).Frames==Nuclei(i).Frames(j));
+     AllTracesAP(i)= Nuclei(i).MeanAP;
     end
-    AllTracesAP(i)=Nuclei(i).MeanAP;
+   
 end
 

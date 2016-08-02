@@ -60,7 +60,7 @@ end
 load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
 
 if isfield(schnitzcells,'APpos')
-    warning('Particles.mat already has AP positions stored.')
+    warning([Prefix,'_lin.mat already has AP positions stored.'])
 end
 
 
@@ -80,43 +80,8 @@ ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis(end-1).name]);
 %for details of the calculation.
 
 %Angle between the x-axis and the AP-axis
-APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
-%Correction for if APAngle is in quadrants II or III
-if coordPZoom(1)-coordAZoom(1) < 0
-    APAngle = APAngle + pi;
-end
+APAngle=atan2((coordPZoom(2)-coordAZoom(2)),(coordPZoom(1)-coordAZoom(1)));
 APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
-
-% APPosImage=zeros(size(ZoomImage));
-% [Rows,Columns]=size(ZoomImage);
-% 
-% for i=1:Rows
-%     for j=1:Columns
-%         %Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
-%         Angle=atan2((i-coordAZoom(2)),(j-coordAZoom(1)));
-%         if j-coordAZoom(1) < 0
-%             Angle = Angle + pi;
-%         end
-%         % Correction for if Angle is in quadrants II or III
-% 
-%         Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
-%         APPosition=Distance.*cos(Angle-APAngle);
-%         APPosImage(i,j)=APPosition/APLength;
-%     end
-% end
-% APResolutionColumn = find(strcmp(XLSRaw(1,:),'APResolution'));
-% APResolution = XLSRaw{PrefixRow,APResolutionColumn};
-% 
-% %Make an AP binned image
-% APbinID=0:APResolution:1;
-% APPosBinImage=zeros(size(APPosImage));
-% for i=1:(length(APbinID)-1)
-%     FilteredMask=(APbinID(i)<=APPosImage)&(APbinID(i+1)>APPosImage);
-% 
-%     APPosBinImage=APPosBinImage+FilteredMask*i;
-% end
-% ZoomOverlay=cat(3,mat2gray(ZoomImage)/2+mat2gray(APPosBinImage)/2,...
-%     mat2gray(ZoomImage)/2,mat2gray(ZoomImage)/2);
 
 
 
@@ -125,11 +90,9 @@ for i=1:length(schnitzcells)
     %zero
     Angles=atan2((schnitzcells(i).ceny-coordAZoom(2)),...
         (schnitzcells(i).cenx-coordAZoom(1)));
-    if schnitzcells(i).cenx-coordAZoom(1) < 0
-        Angles = Angles + pi;
-    end
-    % Correction for if Angles is in quadrants II or III
-
+%     if schnitzcells(i).cenx-coordAZoom(1) < 0
+%         Angles = Angles + pi;
+%     end
     %Distance between the points and the A point
     Distances=sqrt((coordAZoom(2)-schnitzcells(i).ceny).^2+(coordAZoom(1)-schnitzcells(i).cenx).^2);
     APPositions=Distances.*cos(Angles-APAngle);

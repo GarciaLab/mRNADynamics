@@ -153,10 +153,17 @@ if ~NoAP
     Channel1=XLSTxt(PrefixRow,Channel1Column);
     Channel2=XLSTxt(PrefixRow,Channel2Column);
 
-
-    ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
-        ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')));
-
+    %First, check whether we have Bcd-GFP and inverted histone
+    if ((~isempty(strfind(lower(Channel1{1}),'bcd')))|...
+        (~isempty(strfind(lower(Channel2{1}),'bcd'))))
+        warning('Using only Bcd-GFP to determine AP position')
+        ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd'))|...
+            ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd')));
+    else
+        ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
+            ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')));
+    end
+    
 
     if sum(ChannelToLoadTemp)
         ChannelToLoad=find(ChannelToLoadTemp);
@@ -180,7 +187,8 @@ if ~NoAP
         %Get the zoomed out surface image and its dimensions from the FullEmbryo folder
         D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.tif']);
         SurfName=D(find(~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
-        SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,SurfName],ChannelToLoad); 
+        SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,...
+            'FullEmbryo',filesep,SurfName],ChannelToLoad); 
         
         %Get the size of the zoom image
         Rows = str2double(ExtractInformationField(ImageInfo(1), 'state.acq.linesPerFrame='));
@@ -212,22 +220,33 @@ if ~NoAP
         SurfName=[];
         
         %Figure out the different channels
-        if  ~isempty(strfind(lower(Channel1{1}),'his'))
-            HisChannel=1;
+        
+        %If we have Bcd-GFP and inverted His, we will use Bcd-GFP for the
+        %alignment
+         if ((~isempty(strfind(lower(Channel1{1}),'bcd')))|...
+            (~isempty(strfind(lower(Channel2{1}),'bcd'))))
+            ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd'))|...
+                ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd')));
+            HisChannel=find(ChannelToLoad);
             InvertHis=0;
-        elseif ~isempty(strfind(lower(Channel1{1}),'mcherry'))
-            HisChannel=1;
-            InvertHis=1;
-        elseif ~isempty(strfind(lower(Channel2{1}),'his'))
-            HisChannel=2;
-            InvertHis=0;
-        elseif ~isempty(strfind(lower(Channel2{1}),'mcherry'))
-            HisChannel=2;
-            InvertHis=1;
-        else
-            error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
-        end
-                
+         else
+            if  ~isempty(strfind(lower(Channel1{1}),'his'))
+                HisChannel=1;
+                InvertHis=0;
+            elseif ~isempty(strfind(lower(Channel1{1}),'mcherry'))
+                HisChannel=1;
+                InvertHis=1;
+            elseif ~isempty(strfind(lower(Channel2{1}),'his'))
+                HisChannel=2;
+                InvertHis=0;
+            elseif ~isempty(strfind(lower(Channel2{1}),'mcherry'))
+                HisChannel=2;
+                InvertHis=1;
+            else
+                error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
+            end
+         end
+            
         %Find the zoomed movie pixel size
         D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.',FileMode(1:3)]);
         %Load only the metadata from the zoomed images
@@ -240,6 +259,20 @@ if ~NoAP
         ImageTemp=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(end).name]);
         MetaFullEmbryo= ImageTemp{:, 4};
         PixelSizeFullEmbryo=str2num(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
+
+        %Check that the surface and midsaggital images have the same zoom
+        D1=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*mid*.',FileMode(1:3)]);
+        ImageTemp1=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D1(end).name]);
+        MetaFullEmbryo1= ImageTemp1{:, 4};
+        PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX(0));
+
+        %In principle, we would be comparing PixelSizeFullEmbryo==PixelSizeFullEmbryoMid
+        %However, some issues of machine precision made this not work
+        %sometimes.
+        if abs(PixelSizeFullEmbryo/PixelSizeFullEmbryoMid-1)>0.01
+            error('The surface and midsaggital images were not taken with the same pixel size')
+        end
+               
         
         %How many channels and slices do we have?
         NChannelsMeta=MetaFullEmbryo.getChannelCount(0);
@@ -337,8 +370,34 @@ if ~NoAP
 
     %Make a folder to store the images
     mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
-
-    if HistoneChannel
+    
+    %Check whether we have Bcd-GFP. If so, we'll use it for the alignment
+    %if there is no histone.
+    if ((~isempty(strfind(lower(Channel1),'bcd')))|...
+            (~isempty(strfind(lower(Channel2),'bcd'))))&InvertHis
+        %Figure out which channel Bcd is in
+        if ~isempty(strfind(lower(Channel1),'bcd'))
+            BcdChannel=1;
+        else
+            BcdChannel=2;
+        end
+        
+        %Find the last frame     
+        DGFP=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'*_z*_ch',...
+            iIndex(BcdChannel,2),'.tif']);
+        %Now load all z planes in that frame
+        DGFP=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'_',...
+            DGFP(end).name(end-15:end-13),'*_z*_ch',...
+            iIndex(BcdChannel,2),'.tif']);
+        %Take the maximum projection
+        MaxTemp=[];
+        for i=1:length(DGFP)
+            MaxTemp(:,:,i)=imread([PreProcPath,filesep,Prefix,filesep,DGFP(i).name]);
+        end
+        ZoomImage=max(MaxTemp,[],3);
+        
+    %Otherwise, if there a histone channel
+    elseif HistoneChannel
         ChannelToLoad=2;
 
         %Get the surface image in the zoomed case by looking at the last
@@ -401,7 +460,10 @@ if ~NoAP
             SurfImageResized=imresize(SurfImage, ZoomRatio);
 
             %Calculate the correlation matrix and find the maximum
-            if InvertHis
+            if ((~isempty(strfind(lower(Channel1),'bcd')))|...
+                    (~isempty(strfind(lower(Channel2),'bcd'))))
+                C = normxcorr2(ZoomImage, SurfImageResized);
+            elseif InvertHis
                 warning('I still need to fix this part')
                 C = normxcorr2(imcomplement(ZoomImage), SurfImageResized);
             else            
@@ -427,18 +489,17 @@ if ~NoAP
             %If manual alignment was done before then load the results
             if exist('ManualAlignmentDone')
                 if ManualAlignmentDone
-                    display('Manual alignment results saved. Using them.')
-                    load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
+                    display('Manual alignment results saved.')
+                    Answer=input('Would you like to use them (y/n)?','s');
+                    if strcmp(lower(Answer),'y')
+                        load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
+                    elseif strcmp(lower(Answer),'n')
+                        display('Deleting manual alignment results')
+                        clear ManualAlignmentDone
+                    else
+                        error('Answer not recognized')
+                    end
                 end
-            end
-            
-            
-            %See if we need the manual alignment
-            if ManualAlignment
-                %See if we need to load the previous manual alignment results
-                [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ZoomRatio,ShiftRow,ShiftColumn,...
-                     FullEmbryo, ZoomRatio, SurfRows,Rows, Columns, coordA, coordP, SurfColumns);
-                ManualAlignmentDone=1;
             end
             
             try
@@ -498,6 +559,16 @@ if ~NoAP
             NucMaskZoomIn = false(size(ZoomImage));
             NucMaskZoomOut = false(size(SurfImage));
         end
+        
+        
+        %See if we need the manual alignment
+        if ManualAlignment
+            %See if we need to load the previous manual alignment results
+            [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ZoomRatio,ShiftRow,ShiftColumn,...
+                 FullEmbryo, ZoomRatio, SurfRows,Rows, Columns, coordA, coordP, SurfColumns);
+            ManualAlignmentDone=1;
+        end
+        
     else
         warning('Not able to do the cross correlation. Assuming no shift between surface-level and movie-level images.')
         
@@ -1056,14 +1127,8 @@ if ~NoAP
     %all particles. Look I my notes in "Calculating AP positions" in Notability
     %for details of the calculation.
 
-
-
     %Angle between the x-axis and the AP-axis
-    APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
-    %Correction for if APAngle is in quadrants II or III
-    if coordPZoom(1)-coordAZoom(1) < 0
-        APAngle = APAngle + pi;
-    end
+    APAngle=atan2((coordPZoom(2)-coordAZoom(2)),(coordPZoom(1)-coordAZoom(1)));
     
     
     APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
@@ -1074,12 +1139,7 @@ if ~NoAP
 
     for i=1:Rows
         for j=1:Columns
-            %Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
             Angle=atan2((i-coordAZoom(2)),(j-coordAZoom(1)));
-            if j-coordAZoom(1) < 0
-                Angle = Angle + pi;
-            end
-            % Correction for if Angle is in quadrants II or III
             
             Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
             APPosition=Distance.*cos(Angle-APAngle);
@@ -1120,8 +1180,11 @@ if ~NoAP
                 %zero
                 Angles=atan2((Particles{ChN}(i).yPos-coordAZoom(2)),...
                     (Particles{ChN}(i).xPos-coordAZoom(1)));
+<<<<<<< HEAD
 
                 % Correction for if Angles is in quadrants II or III
+=======
+>>>>>>> origin/master
 
                 %Distance between the points and the A point
                 Distances=sqrt((coordAZoom(2)-Particles{ChN}(i).yPos).^2+(coordAZoom(1)-Particles{ChN}(i).xPos).^2);

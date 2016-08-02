@@ -1,4 +1,4 @@
-function TrackNuclei(Prefix)
+function TrackNuclei_SA(Prefix)
 
 %This function is just a script that call Laurent's tracking code
 
@@ -181,24 +181,10 @@ ImageTemp=imread(names{1});
 embryo_mask=true(size(ImageTemp));
 clear ImageTemp
 
-
-  
-%Get information about the spatial and temporal resolution
-settingArguments{1}='time resolution';
-settingArguments{2}=median(diff([FrameInfo.Time]));     %Median separation between frames
-settingArguments{3}='space resolution';
-settingArguments{4}=FrameInfo(1).PixelSize;
-
-
-
-
 %Do the tracking for the first time
 if ~exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
-    
-    
     [nuclei, centers, Dummy, dataStructure] = ...
-        mainTracking(names,'indMitosis',indMit,'embryoMask', embryo_mask,...
-        settingArguments{:});
+        mainTracking(names,'indMitosis',indMit,'embryoMask', embryo_mask);
     % names is a cell array containing the names of all frames in the movie in order.
     % indMitosis is an nx2 array containing the first and last frame of mitosis in every row.
     % embryoMask is the possible mask of the embryo. If no embryo edge is visible,
@@ -207,6 +193,7 @@ if ~exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
     % Convert the results to compatible structures and save them
     %Put circles on the nuclei
     [Ellipses] = putCirclesOnNuclei(centers,names,indMit);
+
     %Convert nuclei structure into schnitzcell structure
     [schnitzcells] = convertNucleiToSchnitzcells(nuclei); 
 else
@@ -275,6 +262,9 @@ for i=1:length(schnitzcells)
 end
 
 
+
+%########/////// NUCLEAR FLUO \\\\\\########
+
 %Extract the nuclear fluorscence values if we're in the right experiment
 %type
 if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'input')
@@ -292,7 +282,7 @@ if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'inp
         InputChannelTemp=1;
     end
     
-    %Create the circle that we'll use as the mask
+    %Create the circle that we'll use as the mask. why 3?
     IntegrationRadius=3;       %Radius of the integration region
     Circle=logical(zeros(3*IntegrationRadius,3*IntegrationRadius));
     Circle=MidpointCircle(Circle,IntegrationRadius,1.5*IntegrationRadius+0.5,...
@@ -312,25 +302,33 @@ if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'inp
             end
             
             for j=1:length(schnitzcells)
+               %j,CurrentFrame
                 if sum(schnitzcells(j).frames==CurrentFrame)
                     CurrentIndex=find(schnitzcells(j).frames==CurrentFrame);
                     cenx=schnitzcells(j).cenx(CurrentIndex);
                     ceny=schnitzcells(j).ceny(CurrentIndex);
                     Radius=schnitzcells(j).len(CurrentIndex);
-
+                    
                     %Check that the nuclear mask fits within the image
-                    if (cenx-Radius)>0&(cenx+Radius)<FrameInfo(1).PixelsPerLine&...
-                            (ceny-Radius)>0&(ceny+Radius)<FrameInfo(1).LinesPerFrame
+                    %this is, that the nucleus is not touching the border.
+                    %but the mask is 'IntegrationRadius' pixels wide. Let's
+                    %use that instead of radius.
+                    ArbitraryValue = (3*IntegrationRadius-1)/2;
+                    if round(cenx-ArbitraryValue)>0&&(cenx+ArbitraryValue)<FrameInfo(1).PixelsPerLine&&...
+                            round(ceny-ArbitraryValue)>0&&(ceny+ArbitraryValue)<FrameInfo(1).LinesPerFrame
 
                         %Create a blank image we'll use to generate the mask
                         Mask=logical(zeros(FrameInfo(1).LinesPerFrame,FrameInfo(1).PixelsPerLine));
-                        %Now, add the circle
+                        %Now, add the circle...again, why is this 3 here??
+%                         if ceny==0
+%                             ceny=1;
+%                         end
+%                         if cenx==0
+%                             cenx==1
                         Mask(round(ceny)-(3*IntegrationRadius-1)/2:...
                             round(ceny)+(3*IntegrationRadius-1)/2,...
                             round(cenx)-(3*IntegrationRadius-1)/2:...
                             round(cenx)+(3*IntegrationRadius-1)/2)=Circle;
-
-
                         for CurrentZ=1:(FrameInfo(1).NumberSlices+2)
                             schnitzcells(j).Fluo(CurrentIndex,CurrentZ)=sum(sum(immultiply(Image(:,:,CurrentZ),Mask)));
                         end
@@ -347,8 +345,50 @@ if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'inp
     else
         error('Input channel not recognized. Check correct definition in MovieDatabase.XLSX')
     end
-end
     
+
+
+% END OF FORMER TRACKNUCLEI /\.\.\ START SIMON'S CODE
+%**********     ELIMINATE OVERLAPPING ELLIPSES. 
+%When two ellipses overlap it eliminates
+%both and creates a new one in the middle.
+MarkColumn = 8; %this column does not contain data. We will use it to mark which ellipses we've looped trhough already.
+%This mark also allows one not to consider twice ellipses that were already
+%processed.
+[frames,dummy] = size(Ellipses);
+for fr = 1:frames %loop through movie frames
+    FrameEllipses = Ellipses{fr};
+    [EllipseNumber, dummy] = size(FrameEllipses);
+    EllipseSize = FrameEllipses(1,3);
+    for elp = 1:EllipseNumber %loop trhough ellipses
+        XPosition = FrameEllipses(elp,1); %get positional info
+        YPosition = FrameEllipses(elp,2);
+        for elp2 = 1:EllipseNumber %cycle through rest of ellipses to make all pairwise comparisons
+            XPosition2 = FrameEllipses(elp2,1); %get position
+            YPosition2 = FrameEllipses(elp2,2);
+            Distance = pdist([XPosition,YPosition;XPosition2,YPosition2],'euclidean');
+            %check if ellipses overlap
+            if Distance > 0.0 && Distance < EllipseSize*1.4 &&...
+                    Ellipses{fr}(elp,MarkColumn)~= 1
+               %Command display for debugging
+               %display('overlapping ellipse found')
+               %[fr, elp, elp2]
+               XPosition = floor(XPosition);
+               XPosition2 = floor(XPosition2);
+               YPosition = floor(YPosition);
+               YPosition2 = floor(YPosition2);
+               Ellipses{fr}(elp,1) = mean(XPosition,XPosition2); %replace outer loop ellipse by a new one in the middle of the overlapping ones
+               Ellipses{fr}(elp,2) = mean(YPosition,YPosition2);
+               Ellipses{fr}(elp2,MarkColumn) = 1; %mark inner loop ellipse for future deletion
+            end
+        end
+    end
+end
+
+    %Ellipse destruction!
+    for fr = 1:frames
+        Ellipses{fr}(any(ismember(Ellipses{fr}(:,MarkColumn),1),2),:) = [];
+    end
 
 %Save the information
 %Now save
@@ -359,8 +399,5 @@ if ~exist([FISHPath,filesep,Prefix,'_'])
     mkdir([FISHPath,filesep,Prefix,'_'])
 end
 save([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
-
-
-%Stitch the schnitzcells using Simon's code
-StitchSchnitz(Prefix)
+end
 

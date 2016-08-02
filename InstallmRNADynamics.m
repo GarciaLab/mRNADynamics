@@ -103,6 +103,11 @@ TrackingFolder=cd;
 cd('subfunctions')
 SubfunctionsFolder=cd;
 cd(CurrentFolder);
+%mRNADynamics\LineageCode
+cd(CurrentFolder)
+cd('LineageCode')
+LineageCodeFolder=cd;
+cd(CurrentFolder)
 %Folder up from mRNADynamics
 cd('..')
 mRNADynamicsParentFolder=cd;
@@ -118,11 +123,18 @@ Output{2}=['path(''',TrackingFolder,''',path);'];
 Output{3}=['path(''',SubfunctionsFolder,''',path);'];
 Output{4}=['path(''',mRNADynamicsParentFolder,''',path);'];
 Output{5}=['path(''',DynamicsResultsFolder,''',path);'];
+Output{6}=['path(''',LineageCodeFolder,''',path);'];
 
 
 %Create the startup.m file
-StartUpPath=userpath;
-%if ~exist([StartUpPath(1:end-1),filesep,'startup.m'])
+StartUpPath=userpath; 
+if isempty(userpath)
+   display('Path for this specific user was not found. Please locate it in your documents folder.')
+   display('In Windows, got to "My Documents\Matlab"')
+   StartUpPath=uigetdir;
+   userpath(StartUpPath);
+end
+
 fid = fopen([StartUpPath(1:end-1),filesep,'startup.m'], 'a');
 
 for i=1:length(Output)

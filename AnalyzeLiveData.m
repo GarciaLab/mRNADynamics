@@ -34,7 +34,7 @@ RunFISHToolbox(Prefix)
 
 %For power of 10mW
 %Threshold=[2,2];   
-Threshold=2;
+Threshold=4;
 
 %Now, do an analysis with an actual threshold
 RunFISHToolbox(Prefix,Threshold)

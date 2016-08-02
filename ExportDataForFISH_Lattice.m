@@ -97,7 +97,7 @@ function [Output, FrameInfo] = ExportDataForFISH_Lattice(Prefix, D, Folder, Outp
     % for deskewing later
     zStep = MyFrameInfo.ZStep;
     xStep = 0.104; % nm TODO: have the software generate a better metadata that includes this and read it
-    angle = 31.8*pi/180;
+    angle = 31.8*pi/180; %angle between stage and bessel beam lattice
     shiftX = zStep/xStep *cos(angle);
     BufferImageDeskew = uint16(zeros(length(BufferImageNoDeskew(:,1)), length(BufferImageNoDeskew(1,:))+round(shiftX*length(ImageInfo))));
     HisImage = BufferImageDeskew;

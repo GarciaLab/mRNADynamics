@@ -53,8 +53,10 @@ if size(XLS,2)>2
         UserRow = strcmp(XLS(:, 1), 'User Name');
         ComputerColumn = find(strcmp(XLS(UserRow, :), username(1:end-1)));
     end
-else
+elseif size(XLS,2)==2
     ComputerColumn=2;
+else
+    error('Cannot find folders in LivemRNA\ComputerFolders.xlsx. Were all steps followed in InstallmRNADynamics.m?')
 end
 
 %Now load the corresponding folders

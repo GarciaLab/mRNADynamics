@@ -353,7 +353,7 @@ end
 
 
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
-display('Ellipses saved.')
+display('Ellipses saved. Remember to re-run TrackNuclei if you made changes.')
 
 
 

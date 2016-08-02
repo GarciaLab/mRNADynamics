@@ -1,8 +1,7 @@
 function [TotalProd,TotalProdError,TotalProdN,...
     MeanTotalProd,SDTotalProd,SETotalProd]=IntegratemRNA(Data,MinParticles,MinEmbryos,varargin)
 
-%Calculates the total amount of mRNA produced per ALL nuclei (ON and OFF)
-%in each AP bin.
+%Calculates the total amount of mRNA produced per nucleus in each AP bin
 %If an extra parameter 'IntegrateAll' is given then it does not distinguish
 %between AP positions
 
@@ -13,6 +12,12 @@ if ~isempty(varargin)
     end
 end
 
+%Figure out the minimum starting NC
+StartNC=[];
+for i=1:length(Data)
+    StartNC=min([StartNC,Data(i).ncFilterID]);
+end
+
 
 if ~IntegrateAll
 
@@ -20,10 +25,10 @@ if ~IntegrateAll
     TotalProd=nan(length(Data),length(Data(1).APbinID),14);
     TotalProdError=nan(length(Data),length(Data(1).APbinID),14);
     TotalProdN=nan(length(Data),length(Data(1).APbinID),14);
-    for nc=12:14
+    for nc=StartNC:14
         for i=1:length(Data)
             
-            for j=1:length(Data(i).APbinID)
+            for j=1:length(Data(1).APbinID)
                 if Data(i).APDivision(nc,j)
                     %Use only AP bins with enough area (those that do not have a
                     %NaN)
@@ -42,14 +47,13 @@ if ~IntegrateAll
                             Data(i).ncFilter(:,Data(i).ncFilterID==nc);
 
                         TotalProd(i,j,nc)=...
-                            mean([Data(i).CompiledParticles(ParticleFilter).TotalmRNA])*...
-                            Data(i).EllipsesOnAP(j,nc-11)/Data(i).TotalEllipsesAP(j,nc-11);
+                            sum([Data(i).CompiledParticles(ParticleFilter).TotalmRNA])/...
+                            mean(Data(i).NEllipsesAP(FrameRange,j));                        
                         TotalProdError(i,j,nc)=...
-                            sqrt(sum([Data(i).CompiledParticles(ParticleFilter).TotalmRNAError].^2))*...
-                            Data(i).EllipsesOnAP(j,nc-11)/Data(i).TotalEllipsesAP(j,nc-11);
-                         TotalProdN(i,j,nc)=...
+                            sqrt(sum([Data(i).CompiledParticles(ParticleFilter).TotalmRNAError].^2))/...
+                            mean(Data(i).NEllipsesAP(FrameRange,j));
+                        TotalProdN(i,j,nc)=...
                             length([Data(i).CompiledParticles(ParticleFilter).TotalmRNA]);
-                        
                     end
                 end
             end
@@ -134,7 +138,7 @@ else
     TotalProd=nan(length(Data),14);
     TotalProdError=nan(length(Data),14);
     TotalProdN=nan(length(Data),14);
-    for nc=12:14
+    for nc=StartNC:14
         for i=1:length(Data)
             
             %Filter for all particles in the nc and in the AP bins I'm
@@ -190,7 +194,7 @@ else
     SDTotalProd=nan(14,1);
     SETotalProd=nan(14,1);
     
-    for nc=12:14
+    for nc=StartNC:14
         nanFilter=~isnan(TotalProd(:,nc));
         
         if sum(nanFilter)>=MinEmbryos

@@ -161,9 +161,9 @@ if exist([OutputFolder,filesep,'FrameInfo.mat'])
             PixelSize=0.22;
         end
         
-    elseif strcmp(FrameInfo(1).FileMode,'LSM')
-        PixelSize=FrameInfo(1).PixelSize*1E6;
-    elseif strcmp(FrameInfo(1).FileMode,'LIFExport')
+    elseif strcmp(FrameInfo(1).FileMode,'LSM')|strcmp(FrameInfo(1).FileMode,'LSMExport')
+        PixelSize=FrameInfo(1).PixelSize;
+    elseif strcmp(FrameInfo(1).FileMode,'LIFExport') || strcmp(FrameInfo(1).FileMode,'LAT')
         PixelSize=FrameInfo(1).PixelSize;
     end
 else
@@ -175,9 +175,6 @@ else
 end
     
 SearchRadius=ceil(SearchRadiusMicrons/PixelSize);   
-
-
-
 
 
 %Check if we have tracked the lineages of the nuclei
@@ -200,7 +197,7 @@ end
 
 
 %Single color mode
-if strcmp(ExperimentType,'1spot')|strcmp(ExperimentType,'2spot')
+if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
 
     %Check if particle tracking has already been done on this dataset
     if exist([OutputFolder,filesep,'Particles.mat'])
@@ -238,10 +235,6 @@ if strcmp(ExperimentType,'1spot')|strcmp(ExperimentType,'2spot')
         Retracking=0;
     end
 
-
-
-
-
     %Load the FISH files. Split fad into particles that are above Threshold1 and
     %those between that threshold and Threshold2.
 
@@ -255,17 +248,25 @@ if strcmp(ExperimentType,'1spot')|strcmp(ExperimentType,'2spot')
         fad=fadTemp;
         fad2=fadTemp;
         for i=1:length(fadTemp.channels)
-
-
-            Filter1=fadTemp.channels(i).fits.third>Threshold1;
-            Filter2=(fadTemp.channels(i).fits.third<Threshold1)&...
-                (fadTemp.channels(i).fits.third>Threshold2);
-            Fields=fieldnames(fadTemp.channels(i).fits);
-            NParticles=length(fadTemp.channels(i).fits.third);  %I'll use this to
+            if sum(fadTemp.channels(i).fits.third) ~= 0
+                Filter1=fadTemp.channels(i).fits.third>Threshold1;
+                Filter2=(fadTemp.channels(i).fits.third<Threshold1)&...
+                    (fadTemp.channels(i).fits.third>Threshold2);
+                Fields=fieldnames(fadTemp.channels(i).fits);
+                NParticles=length(fadTemp.channels(i).fits.third);  %I'll use this to
                                                                 %detemine the
                                                                 %dimension of the
                                                                 %different elements
-                                                                
+            else
+                a = [];
+                for k = 1:length(fadTemp.channels(i).fits.shadowsDog)
+                    a(k) = min(fadTemp.channels(i).fits.shadowsDog{k});
+                end
+                Filter1=a>Threshold1;
+                Filter2=a<Threshold1 & a>Threshold2;
+                Fields=fieldnames(fadTemp.channels(i).fits);
+                NParticles=length(fadTemp.channels(i).fits.shadowsDog);
+            end
             for j=1:length(Fields)
                 %In the end this seems to work, the fields that have higher
                 %dimensions are still divided well.
@@ -296,13 +297,6 @@ if strcmp(ExperimentType,'1spot')|strcmp(ExperimentType,'2spot')
             end
         end
     end
-
-
-
-
-
-
-
 
     %Start by numbering the particles found
     ParticlesFig=figure;
@@ -359,10 +353,6 @@ if strcmp(ExperimentType,'1spot')|strcmp(ExperimentType,'2spot')
             title(i)
         end
         drawnow
-
-
-
-
 
 
         %If we don't have nuclear tracking then track the particles based on
@@ -1239,9 +1229,6 @@ elseif strcmp(lower(ExperimentType),'inputoutput')
     end
 
 
-
-
-
     %Load the FISH files. Split fad into particles that are above Threshold1 and
     %those between that threshold and Threshold2.
 
@@ -1296,13 +1283,6 @@ elseif strcmp(lower(ExperimentType),'inputoutput')
             end
         end
     end
-
-
-
-
-
-
-
 
     %Start by numbering the particles found
     ParticlesFig=figure;

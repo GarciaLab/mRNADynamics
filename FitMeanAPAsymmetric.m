@@ -1,4 +1,4 @@
-function FitMeanAPV2(varargin)
+function FitMeanAPAsymmetric(varargin)
 
 %V2, separate the rate of turning on and rate of turning off. I found that
 %the off slope is higher than on suggesting mitotic repression.
@@ -8,14 +8,17 @@ function FitMeanAPV2(varargin)
 
 %This function performs fits to the mean fluorescence as a function of time
 %of a particular dataset.
-
+%OUTPUT: MeanFitsAsymmetric.mat
+%It gives you n columns each representing a nuclear cycle and m rows each
+%representing a bin number
 
 %Fitting:
 %a,z: On time
 %s,x: Off time
 %d,c: Rate, fine
 %D,C: Rate, coarse
-
+%q,w: approve or disapprove a fit
+%e: save
 %Moving around:
 %, .: Move in AP
 %n,m: Move in nc
@@ -34,60 +37,12 @@ Delay=GeneLength/ElongationRate;    %Minutes for PolII to fall off after reachin
                                     %the first MS2 site.
 
                                     
-
-%Initial parameters for fits
-
-Rate012=4E3;     %Rate per minute
-TimeStart012=3;
-TimeEnd012=7;
-
-Rate013=4E3;     %Rate per minute
-TimeStart013=5;
-TimeEnd013=10;
-
-Rate014=4E3;     %Rate per minute
-TimeStart014=5;
-TimeEnd014=1000;                                    
-                                    
-                                    
-                                    
-                                    
-                                    
 close all
 
-%Find out which computer this is. That will determine the folder structure.
-%Information about about folders
 
-[Dummy,XLS]=xlsread('ComputerFolders.xlsx');
-
-%Find out which computer this is. That will determine the folder structure.
-[ret, name] = system('hostname');  
-if ret ~= 0,  
-   if ispc  
-      name = getenv('COMPUTERNAME');  
-   else  
-      name = getenv('HOSTNAME');  
-   end  
-end  
-name = lower(name); 
-
-
-%Find which computer we are dealing with:
-ComputerColumn=find(strcmp(XLS(1,:),name(1:end-1)));
-
-%Now load the corresponding folders
-SourceRow=find(strcmp(XLS(:,1),'SourcePath'));
-FISHRow=find(strcmp(XLS(:,1),'FISHPath'));
-DropboxRow=find(strcmp(XLS(:,1),'DropboxFolder'));
-SchnitzRow=find(strcmp(XLS(:,1),'SchnitzcellsFolder'));
-
-
-
-%Assign the folders
-SourcePath=XLS{SourceRow,ComputerColumn};
-FISHPath=XLS{FISHRow,ComputerColumn};
-DropboxFolder=XLS{DropboxRow,ComputerColumn};
-SchnitzcellsFolder=XLS{SchnitzRow,ComputerColumn};
+%Get the default folders
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
+    DetermineLocalFolders;
 
 if ~isempty(varargin)
     Prefix=varargin{1};
@@ -98,8 +53,12 @@ else
     Prefix=FolderTemp((Dashes(end)+1):end);
 end
 
+%Get the relevant folders now:
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
+    DetermineLocalFolders(Prefix);
+        
 
-                                    
+
 %Load the complied particles and the division information                                    
 load([DropboxFolder,filesep,Prefix,'\CompiledParticles.mat'])
 
@@ -108,7 +67,26 @@ if exist([DropboxFolder,filesep,Prefix,'\APDivision.mat'])
 else
     error('Could not load APDivision.mat. Make sure to have done the manual check of division.')
 end
-                                    
+
+
+%Initial parameters for fits. We will estimate the maximum rate based on
+%the elongation time and the maximum average fluorescence of the data set.
+MaxRate=max(max(MeanVectorAP))/Delay;
+
+Rate012=MaxRate;     %Rate per minute
+TimeStart012=3;
+TimeEnd012=7;
+
+Rate013=MaxRate;     %Rate per minute
+TimeStart013=5;
+TimeEnd013=10;
+
+Rate014=MaxRate;     %Rate per minute
+TimeStart014=5;
+TimeEnd014=1000;                                    
+                           
+
+
  
 %Rough frame window to consider in the fits
 
@@ -344,7 +322,7 @@ while (cc~=13)
                         display('Error in displaying the plot')
                     end
 
-                    legend(PlotHandle([2,2,2,2]),['tON=',num2str(FitResults(i,CurrentNC-11).TimeStart),' \pm ',num2str(FitResults(i,CurrentNC-11).SDTimeStart)],...
+                    legend(PlotHandle,['tON=',num2str(FitResults(i,CurrentNC-11).TimeStart),' \pm ',num2str(FitResults(i,CurrentNC-11).SDTimeStart)],...
                         ['tOFF=',num2str(FitResults(i,CurrentNC-11).TimeEnd),' \pm ',num2str(FitResults(i,CurrentNC-11).SDTimeEnd)],...
                         ['Rate=',num2str(FitResults(i,CurrentNC-11).RateFit),' \pm ',num2str(FitResults(i,CurrentNC-11).SDRateFit)],...
                         ['RateOff=',num2str(FitResults(i,CurrentNC-11).RateOffFit),' \pm ',num2str(FitResults(i,CurrentNC-11).SDRateOffFit)],...
@@ -415,7 +393,7 @@ while (cc~=13)
                         display('Error in displaying the plot')
                     end
 
-                    legend(PlotHandle([2,2,2,2]),['tON=',num2str(FitResults(i,CurrentNC-11).TimeStart),' \pm ',num2str(FitResults(i,CurrentNC-11).SDTimeStart)],...
+                    legend(PlotHandle,['tON=',num2str(FitResults(i,CurrentNC-11).TimeStart),' \pm ',num2str(FitResults(i,CurrentNC-11).SDTimeStart)],...
                         ['Rate=',num2str(FitResults(i,CurrentNC-11).RateFit),' \pm ',num2str(FitResults(i,CurrentNC-11).SDRateFit)],...
                         ['RateOff=',num2str(FitResults(i,CurrentNC-11).RateOffFit),' \pm ',num2str(FitResults(i,CurrentNC-11).SDRateOffFit)],...
                         'Location','Best')
@@ -425,8 +403,8 @@ while (cc~=13)
         end
     end
     
-    title([num2str(APbinID(i)),' AP, TimeStart0=',num2str(FitResults(i,CurrentNC-11).TimeStart0),...
-        ', TimeEnd0=',num2str(FitResults(i,CurrentNC-11).TimeEnd0),', Rate=',num2str(FitResults(i,CurrentNC-11).Rate0),...
+    title([num2str(APbinID(i)),' AP, tStart0=',num2str(FitResults(i,CurrentNC-11).TimeStart0),...
+        ', tEnd0=',num2str(FitResults(i,CurrentNC-11).TimeEnd0),', Rate=',num2str(FitResults(i,CurrentNC-11).Rate0),...
         ', RateOff=',num2str(FitResults(i,CurrentNC-11).RateOff0),', nc',num2str(CurrentNC)])
     
     
@@ -538,9 +516,9 @@ while (cc~=13)
         
     %Save
     elseif (ct~=0)&(cc=='e')
-        save([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV2.mat'],...
+        save([DropboxFolder,filesep,Prefix,filesep,'MeanFitsAsymmetric.mat'],...
         'FitResults')
-    display('MeanFitsV2.mat saved')
+    display('MeanFitsAsymmetric.mat saved')
         
     %Debug mode
     elseif (ct~=0)&(cc=='9')

@@ -188,8 +188,10 @@ if ~exist('interpolatedShifts','var') || isempty(interpolatedShifts)
     interpolatedShifts = cell(size(mapping));
 end
 
-% Get default parameters.
+% Get default parameters
 time_resolution = getDefaultParameters('time resolution');
+space_resolution = getDefaultParameters('space resolution');
+
 numberOfFrames = numel(names);
 %margin = ceil(getDefaultParameters('margin mitosis')/time_resolution);
 
