@@ -122,7 +122,6 @@ else
                 ffcell = bfopen([PreProcPath, filesep, Prefix, filesep, 'FF.lif']);
                 ffim = double(ffcell{1,1}{1,1});
                 ffim = CPsmooth(ffim,'Gaussian Filter',256,0);
-                imshow(ffim,[])
                 ffim = ffim./max(ffim);
                 im = im./ffim;
             catch
