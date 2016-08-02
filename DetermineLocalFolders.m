@@ -1,9 +1,6 @@
 function [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(varargin)
 
-
-
-
 %This functions gives out the folder corresponding to each computer. If a
 %Prefix is also included it will give out the corresponding DropboxFolder
 %for the particular experiment. Otherwise it will give the default dropbox
