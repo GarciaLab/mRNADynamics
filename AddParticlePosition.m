@@ -1180,11 +1180,11 @@ if ~NoAP
                 %zero
                 Angles=atan2((Particles{ChN}(i).yPos-coordAZoom(2)),...
                     (Particles{ChN}(i).xPos-coordAZoom(1)));
-<<<<<<< HEAD
+%<<<<<<< HEAD
 
                 % Correction for if Angles is in quadrants II or III
-=======
->>>>>>> origin/master
+%=======
+%>>>>>>> origin/master
 
                 %Distance between the points and the A point
                 Distances=sqrt((coordAZoom(2)-Particles{ChN}(i).yPos).^2+(coordAZoom(1)-Particles{ChN}(i).xPos).^2);
