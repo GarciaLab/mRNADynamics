@@ -625,7 +625,6 @@ elseif strcmp(FileMode,'LSM')
     end
     
     
-    %% 
 %LIFExport mode
 elseif strcmp(FileMode,'LIFExport')
     
@@ -837,6 +836,8 @@ elseif strcmp(FileMode,'LIFExport')
         else
             error('Experiment type not recognized. Check MovieDatabase.xlsx')
         end
+        
+        
         %Copy the data
         h=waitbar(0,'Extracting LIFExport images');
         %Create a blank image
@@ -869,6 +870,7 @@ elseif strcmp(FileMode,'LIFExport')
                         end
                     end
                 end
+                
                 %Now copy nuclear tracking images
                 if fiducialChannel
                     HisSlices=zeros([size(LIFImages{i}{1,1},1),size(LIFImages{i}{1,1},2),NSlices(i)]);
@@ -910,6 +912,31 @@ elseif strcmp(FileMode,'LIFExport')
             end
         end
         close(h)
+        
+        %Create alternate nuclear channels to do even more tracking only if
+        %we have Dl-Venus. We'll make a maximum projection as well as an
+        %image version where the mean is subtracted to bring up both bright
+        %and dark nuclei.
+        1+1;
+        
+        %This came from Simon's code
+        
+        % % Re-write histone channel
+        % DlFrames = [1:length(D)];
+        % Zstacks = 23;
+        % MidZ = ceil(Zstacks/2);
+        % MidZ = [MidZ-2,MidZ+2];
+        % for fr = 1:(length(D)/Zstacks);
+        %     frame = num2str(fr);
+        %     Venus = mean(FrameZ(:,:,fr,(MidZ(1):MidZ(2))),4);
+        %     NormV = Venus - min(Venus(:));
+        %     NormV = NormV ./ max(NormV(:));
+        %     Name = H(fr).name;
+        %     Name = ([PreProcPath,filesep,Prefix,filesep,Name]);
+        %     imwrite(NormV,Name);
+        % end
+
+        
         
         % TAG File Information
         Output{1}=['id ',Prefix,'_'];
