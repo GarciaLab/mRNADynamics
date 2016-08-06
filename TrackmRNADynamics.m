@@ -302,6 +302,18 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
     ParticlesFig=figure;
     NucleiFig=figure;
 
+    
+    %See how  many frames we have and adjust the index size of the files to
+    %load accordingly
+    if length(FrameInfo)<1E3
+        NDigits=3;
+    elseif length(FrameInfo)<1E4
+        NDigits=4;
+    else
+        error('No more than 10,000 frames supported. Change this in the code')
+    end
+    
+    
     %Initially, only track particles that are above Threshold1
     for i=1:length(fad.channels)
 
@@ -311,7 +323,7 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
         CurrentFrame=i;
         [x,y]=fad2xyz(CurrentFrame,fad, 'addMargin'); 
         CurrentZ=3;     
-        Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'.tif']);
+        Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);
         
         
         imshow(Image,[])
@@ -327,10 +339,10 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
         [x,y]=fad2xyz(CurrentFrame,fad, 'addMargin');
         if UseHistone
             try
-                Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,3),'.tif']);
+                Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,NDigits),'.tif']);
             catch
                 try
-                    Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix(1:end-1),'_His_',iIndex(CurrentFrame,3),'.tif']);
+                    Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix(1:end-1),'_His_',iIndex(CurrentFrame,NDigits),'.tif']);
                 catch
                     Image=0;
                 end
@@ -824,7 +836,7 @@ elseif strcmp(ExperimentType,'2spot2color')
             CurrentFrame=i;
             [x,y]=fad2xyz(CurrentFrame,fad(ChN), 'addMargin'); 
             CurrentZ=3;     
-            Image=imread([DataFolder,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),...
+            Image=imread([DataFolder,filesep,FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),...
                 '_ch',iIndex(ChN,2),'.tif']);
             imshow(Image,[])
             hold on
@@ -838,10 +850,10 @@ elseif strcmp(ExperimentType,'2spot2color')
             CurrentFrame=i;
             [x,y]=fad2xyz(CurrentFrame,fad(ChN), 'addMargin');
             if UseHistone
-                if exist([DataFolder,filesep,FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,3),'.tif'])
-                    Image=imread([DataFolder,filesep,FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,3),'.tif']);
-                elseif exist([DataFolder,filesep,FilePrefix(1:end-1),'_',iIndex(CurrentFrame,3),'_FakeHis.tif'])
-                    Image=imread([DataFolder,filesep,FilePrefix(1:end-1),'_',iIndex(CurrentFrame,3),'_FakeHis.tif']);
+                if exist([DataFolder,filesep,FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,NDigits),'.tif'])
+                    Image=imread([DataFolder,filesep,FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,NDigits),'.tif']);
+                elseif exist([DataFolder,filesep,FilePrefix(1:end-1),'_',iIndex(CurrentFrame,NDigits),'_FakeHis.tif'])
+                    Image=imread([DataFolder,filesep,FilePrefix(1:end-1),'_',iIndex(CurrentFrame,NDigits),'_FakeHis.tif']);
                 else
                     Image=0;
                 end
@@ -1308,7 +1320,7 @@ elseif strcmp(lower(ExperimentType),'inputoutput')
         CurrentFrame=i;
         [x,y]=fad2xyz(CurrentFrame,fad, 'addMargin'); 
         CurrentZ=3;     
-        Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch',iIndex(SpotChannel,2),'.tif']);
+        Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'_ch',iIndex(SpotChannel,2),'.tif']);
         
         
         imshow(Image,[])
@@ -1324,10 +1336,10 @@ elseif strcmp(lower(ExperimentType),'inputoutput')
         [x,y]=fad2xyz(CurrentFrame,fad, 'addMargin');
         if UseHistone
             try
-                Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,3),'.tif']);
+                Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,NDigits),'.tif']);
             catch
                 try
-                    Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix(1:end-1),'_His_',iIndex(CurrentFrame,3),'.tif']);
+                    Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix(1:end-1),'_His_',iIndex(CurrentFrame,NDigits),'.tif']);
                 catch
                     Image=0;
                 end

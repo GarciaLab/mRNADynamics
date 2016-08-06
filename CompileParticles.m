@@ -124,6 +124,21 @@ else
 end
 
 
+
+%See how  many frames we have and adjust the index size of the files to
+%load accordingly
+if length(FrameInfo)<1E3
+    NDigits=3;
+elseif length(FrameInfo)<1E4
+    NDigits=4;
+else
+    error('No more than 10,000 frames supported. Change this in the code')
+end
+
+
+
+
+
 %Create the particle array. This is done so that we can support multiple
 %channels. Also figure out the number of channels
 if iscell(Particles)
@@ -853,15 +868,12 @@ for ChN=1:NChannels
                         zTrace=z(CompiledParticles{ChN}(k).Index(j));
 
                         if NChannels==1
-%                             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-%                                 FilePrefix,iIndex(CompiledParticles{ChN}(k).Frame(j),3),'_z',iIndex(zTrace,2),...
-%                                 '_ch',iIndex(ChN,2),'.tif']);
                             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                                FilePrefix,iIndex(CompiledParticles{ChN}(k).Frame(j),3),'_z',iIndex(zTrace,2),...
+                                FilePrefix,iIndex(CompiledParticles{ChN}(k).Frame(j),NDigits),'_z',iIndex(zTrace,2),...
                                 '.tif']);
                         else
                             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                                FilePrefix,iIndex(CompiledParticles{ChN}(k).Frame(j),3),'_z',iIndex(zTrace,2),...
+                                FilePrefix,iIndex(CompiledParticles{ChN}(k).Frame(j),NDigits),'_z',iIndex(zTrace,2),...
                                 '_ch',iIndex(ChN,2),'.tif']);
                         end
                         [ImRows,ImCols]=size(Image);
@@ -912,7 +924,7 @@ for ChN=1:NChannels
                     set(gcf,'Position',[1,41,1280,684])  
 
                     drawnow
-                    saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'ParticleTraces',filesep,iIndex(k,3),...
+                    saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'ParticleTraces',filesep,iIndex(k,NDigits),...
                         '(',num2str(i),')-nc',...
                         num2str(CompiledParticles{ChN}(k).nc),'_ch',iIndex(ChN,2),'.tif'])
                     close(2)
@@ -1189,6 +1201,8 @@ end
 %% Information about the cytoplasm
 %If the nuclear masks are present then use them. Otherwise just calculate
 %the median of the images as a function of time
+
+%HG on 8/6/16: Why was this commented out? Did I do this?
 
 
 % if NChannels==1

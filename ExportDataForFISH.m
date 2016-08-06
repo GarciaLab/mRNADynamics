@@ -667,6 +667,18 @@ elseif strcmp(FileMode,'LIFExport')
         %Get rid of the last frame as it is always incomplete because
         %that's when we stopped it
         NFrames=NFrames-1;
+        
+        
+         %Get the information about the number of frames
+        if sum(NFrames)<1000     %The default is three digits
+            NDigits=3;
+        elseif sum(NFrames)<1E4
+            NDigits=4;
+        else
+            error('This program cannot support more than 1000 frames. This can be easily fixed')
+        end
+            
+        
         NPlanes = NPlanes - NSlices*NChannels;      
         Frame_Times = zeros(1,sum(NFrames.*NSlices));
         m=1;
@@ -852,9 +864,9 @@ elseif strcmp(FileMode,'LIFExport')
                         %stack
                         if strcmpi(ExperimentType, '1spot') && q ~= coatChannel
                         else
-                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'.tif'];
+                            NewName=[Prefix,'_',iIndex(m,NDigits),'_z',iIndex(1,2),'.tif'];
                             imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),'.tif'];
+                            NewName=[Prefix,'_',iIndex(m,NDigits),'_z',iIndex(min(NSlices)+2,2),'.tif'];
                             imwrite(BlankImage,[OutputFolder,filesep,NewName]);
                             %Copy the rest of the images
                             n=1;        %Counter for slices
@@ -862,7 +874,7 @@ elseif strcmp(FileMode,'LIFExport')
                             lastImage = j*NSlices(i)*NChannels;
                             for k=firstImage:NChannels:lastImage
                                 if n<=min(NSlices)
-                                    NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'.tif'];
+                                    NewName=[Prefix,'_',iIndex(m,NDigits),'_z',iIndex(n+1,2),'.tif'];
                                     imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
                                     n=n+1;
                                 end
@@ -906,7 +918,7 @@ elseif strcmp(FileMode,'LIFExport')
                         end
                     end
                     imwrite(uint16(Projection),...
-                    [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
+                    [OutputFolder,filesep,Prefix,'-His_',iIndex(m,NDigits),'.tif']);
                 end
             m=m+1;
             end
@@ -943,18 +955,39 @@ elseif strcmp(FileMode,'LIFExport')
         Output{2}='';
         Output{3}='1';
         Output{4}=['frames ',num2str(sum(NFrames)),':1:',num2str(min(NSlices)+2)];
-        Output{5}=['suffix ???_z??'];
+        if NDigits==1
+            Output{5}=['suffix ?_z??'];
+        elseif NDigits==2
+            Output{5}=['suffix ??_z??'];
+        elseif NDigits==3
+            Output{5}=['suffix ???_z??'];
+        elseif NDigits==4
+            Output{5}=['suffix ????_z??'];
+        else
+            error('Need to add support for >10^4 images')
+        end
         if exist('LIFFF')
             Output{6}=['flat FF'];
         end
         if strcmp(ExperimentType, '2spot2color')
+            warning('The TAG file might not be calling channel 1 images properly')
+            
             Output{end+1}='';
             Output{end+1}='2';
             Output{end+1}=['frames ',num2str(sum(NFrames)),':1:',num2str(min(NSlices)+2)];
-            Output{end+1}=['suffix ???_z??_ch02'];
-            if exist('LIFFF')
-                Output{end+1}=['flat FF'];
+            
+            if NDigits==1
+                Output{end+1}=['suffix ?_z??_ch02'];
+            elseif NDigits==2
+                Output{end+1}=['suffix ??_z??_ch02'];
+            elseif NDigits==3
+                Output{end+1}=['suffix ???_z??_ch02'];
+            elseif NDigits==4
+                Output{end+1}=['suffix ????_z??_ch02'];
+            else
+                error('Need to add support for >10^4 images')
             end
+            
         end
         
 elseif strcmp(FileMode, 'LAT')
@@ -979,9 +1012,9 @@ if ~isempty(SkipFrames)
     D=dir([OutputFolder,filesep,'*-His*.tif']);
     for i=1:length(D)
         if ~strcmp([OutputFolder,filesep,D(i).name],...
-                [OutputFolder,filesep,D(i).name(1:end-7),iIndex(i,3),'.tif'])
+                [OutputFolder,filesep,D(i).name(1:end-7),iIndex(i,NDigits),'.tif'])
             movefile([OutputFolder,filesep,D(i).name],...
-                [OutputFolder,filesep,D(i).name(1:end-7),iIndex(i,3),'.tif'])
+                [OutputFolder,filesep,D(i).name(1:end-7),iIndex(i,NDigits),'.tif'])
         end
     end
     
@@ -999,11 +1032,11 @@ if ~isempty(SkipFrames)
     D=dir([OutputFolder,filesep,'*_z01.tif']);
     for i=1:length(D)
         if ~strcmp([OutputFolder,filesep,D(i).name],...
-                    [OutputFolder,filesep,D(i).name(1:end-11),iIndex(i,3),'_z01.tif'])
+                    [OutputFolder,filesep,D(i).name(1:end-11),iIndex(i,NDigits),'_z01.tif'])
             D2=dir([OutputFolder,filesep,D(i).name(1:end-6),'*.tif']);
             for j=1:length(D2)
                 movefile([OutputFolder,filesep,D2(j).name],...
-                    [OutputFolder,filesep,D2(j).name(1:end-11),iIndex(i,3),D2(j).name(end-7:end)])
+                    [OutputFolder,filesep,D2(j).name(1:end-11),iIndex(i,NDigits),D2(j).name(end-7:end)])
             end
         end
     end

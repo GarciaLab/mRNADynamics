@@ -74,6 +74,11 @@ for i=9:14
             StartFrame=[];
         else
             StartFrame=Indices(1)-1;
+            %This checkes whether the time window is larger than the time
+            %since the movie started.
+            if StartFrame==0
+                StartFrame=1
+            end
         end
        
         Indices=find(ElapsedTime-(ElapsedTime(ncFrame)+TimeWindow)>0);
