@@ -57,6 +57,16 @@ if num_frames == 0
 end
 OutputFolder1=[FISHPath,filesep,Prefix,'_',filesep,'dogs'];
 mkdir(OutputFolder1)
+doFF = 1;
+try
+    ffcell = bfopen([PreProcPath, filesep, Prefix, filesep, 'FF.lif']);
+    ffim = double(ffcell{1,1}{1,1});
+    ffim = CPsmooth(ffim,'Gaussian Filter',256,0);
+    ffim = ffim/max(max(ffim));
+catch
+    display('Warning: Will not apply FF correction');
+    doFF = 0;
+end
 %%
 
 %The spot finding algorithm first segments the image into regions that are
@@ -84,7 +94,7 @@ if just_dog
         waitbar(current_frame/num_frames,h);
         if displayFigures
             for current_z = 1:zSize      
-                im = imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']);
+                im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']));
                 dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
                 dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
                 dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
@@ -109,8 +119,8 @@ else
         w = waitbar(current_frame/num_frames,h);
         set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
         for current_z = 1:zSize      
-            im = imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']);
-            dog = imread([OutputFolder1, filesep,'DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']);
+            im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']));
+            dog = double(imread([OutputFolder1, filesep,'DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']));
             if displayFigures
                 f = figure(1);
                 imshow(im,[]);
@@ -118,14 +128,8 @@ else
                 f=[];
             end
             %apply flatfield correction
-            try
-                ffcell = bfopen([PreProcPath, filesep, Prefix, filesep, 'FF.lif']);
-                ffim = double(ffcell{1,1}{1,1});
-                ffim = CPsmooth(ffim,'Gaussian Filter',256,0);
-                ffim = ffim./max(ffim);
+            if doFF
                 im = im./ffim;
-            catch
-                display('Warning: Did not apply FF correction');
             end
             %
             thrim = dog > Threshold;
@@ -238,6 +242,7 @@ if ~just_dog
             if Shadows && Particles(i).brightestZ == min(Particles(i).z)...
                || Particles(i).brightestZ == max(Particles(i).z)
                 Particles(i).discardThis = 1;
+                Particles(i).noIntensityAnalysis = 1;
             end  
         end
     end
@@ -260,7 +265,7 @@ if ~just_dog
     for i = 1:length(Spots)
         Spots2(i).Fits = [];
         for j = 1:length(Spots(i).Fits)
-            if ~isempty(Spots(i).Fits(j).CentralIntensity)
+            if ~isempty(Spots(i).Fits(j).z)
                 Spots2(i).Fits = [Spots2(i).Fits, Spots(i).Fits(j)];
             end
         end

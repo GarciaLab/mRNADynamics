@@ -7,6 +7,11 @@ function [Frame,AmpIntegral,AmpGaussian,Offset,...
 
 %First, get the different intensity values corresponding to this particle.
 for i=1:length(Particles(CurrentParticle).Frame)
+        try
+            noIntensityFlag = Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).noIntensityAnalysis;
+        catch
+            noIntensityFlag = 1;
+        end
         Frame(i)=Particles(CurrentParticle).Frame(i);
         
         %Determine the brightest Z plane of this particle

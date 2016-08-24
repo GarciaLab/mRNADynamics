@@ -71,8 +71,12 @@ else
             OffsetGuess];
 end
 
+    lsqOptions=optimset('Display','none',... %Inherited these options from Mikhail Tikhonov's FISH analysis
+    'maxfunevals',1000,...
+    'maxiter',10000);
+
     [double_fit, res1, residual, exitflag, output, lambda, jacobian] = lsqnonlin(doubleGaussian, ...
-        init_params,zeros(1,9),inf(1,9));
+        init_params,zeros(1,9),inf(1,9), lsqOptions);
     
     ci = nlparci(double_fit,residual,'jacobian',jacobian);
     errors = zeros(1, length(double_fit));
@@ -89,14 +93,10 @@ end
     distance1 = sqrt(sum(abs(dif1).^2,2));
     distance2 = sqrt(sum(abs(dif2).^2,2));
     
-    
-
-        fits = double_fit; 
-        %find the distance between sister chromatids 
-        sister_chromatid_distance = sqrt((fits(2)-fits(6))^2 + (fits(4) - fits(8))^2); % in pixels
-        fits(end+1) = sister_chromatid_distance;
-
-
+    fits = double_fit; 
+    %find the distance between sister chromatids 
+    sister_chromatid_distance = sqrt((fits(2)-fits(6))^2 + (fits(4) - fits(8))^2); % in pixels
+    fits(end+1) = sister_chromatid_distance;
 
 %AR 7/6/2016: Why is this necessary? We already found local maxima in the
 %identifySpot script. And it appears the algorithm is the same.
