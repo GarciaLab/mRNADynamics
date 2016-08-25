@@ -5,7 +5,8 @@ function [Frames,AmpIntegral,AmpGaussian]=PlotParticleTrace(CurrentParticle,Part
 %V2: Removed the ImageSnippet for now. I was running into the borders of
 %the image.
 
-[Frame,AmpIntegral,AmpGaussian]=GetParticleTrace(CurrentParticle,Particles,Spots);
+[Frame,AmpIntegral,AmpGaussian,~,~,~,~,~,...
+    noIntensityFlag]=GetParticleTrace(CurrentParticle,Particles,Spots);
 Frames=Particles(CurrentParticle).Frame;
 Indexes=Particles(CurrentParticle).Index;
 

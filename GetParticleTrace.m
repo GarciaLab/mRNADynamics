@@ -1,5 +1,5 @@
 function [Frame,AmpIntegral,AmpGaussian,Offset,...
-    ErrorIntegral,ErrorGauss,optFit,FitType]=...
+    ErrorIntegral,ErrorGauss,optFit,FitType,noIntensityFlag]=...
     GetParticleTrace(CurrentParticle,Particles,Spots)
 
 %This function uses the total intensity mask to calculate the particles
@@ -37,7 +37,6 @@ end
 
 
 %Do a spline fit to the offset and use it to estimate the error
-
 %If we have more than five data points, we fit a spline.
 if length(Frame)>5
     FitType='spline';
