@@ -1183,9 +1183,9 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
     
     if exist('Threshold1')
         save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles',...
-            'Threshold1','Threshold2');
+            'Threshold1','Threshold2', 'SpotFilter');
     else
-        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles');
+        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','SpotFilter');
     end
 end
 close all force;

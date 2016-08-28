@@ -203,8 +203,8 @@ f4 = {y, x};
         title('Double Gaussian fits')
         set(gcf,'units', 'normalized', 'position',[0.01, .55, .33, .33]);
         figure(3)
-        snipBig = imresize(snip,30);
-        set(gcf,'units', 'normalized', 'position',[0.65, .5, .2, .2])
+        snipBig = imresize(snip,10);
+        set(gcf,'units', 'normalized', 'position',[0.4, .2, .1, .1])
         imshow(snipBig,[]);
         figure(4);
         surf(y, x, double(snip));

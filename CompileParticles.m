@@ -17,7 +17,6 @@ function CompileParticles(varargin)
 %SetMinParticles - Set the threshold for the minimum number of particles per
 %               AP bin for compilation
 
-
 close all
 
 %Information about about folders

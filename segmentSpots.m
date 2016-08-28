@@ -135,7 +135,7 @@ else
             thrim = dog > Threshold;
             [im_label, n_spots] = bwlabel(thrim); 
             temp_frames = {};
-            rad = 2000/pixelSize;
+            rad = 1300/pixelSize;
             temp_particles = cell(1, n_spots);
             if n_spots ~= 0
                 if ~displayFigures
@@ -237,7 +237,7 @@ if ~just_dog
             for j = 1:numel(fields)-2 %do not include fields 'r' or 'frame'
                 Particles(i).(fields{j}) = Particles(i).(fields{j})(max_index);
             end
-        else 
+        else
             Particles(i).brightestZ = Particles(i).z(max_index);
             if Shadows && Particles(i).brightestZ == min(Particles(i).z)...
                || Particles(i).brightestZ == max(Particles(i).z)
@@ -265,8 +265,15 @@ if ~just_dog
     for i = 1:length(Spots)
         Spots2(i).Fits = [];
         for j = 1:length(Spots(i).Fits)
-            if ~isempty(Spots(i).Fits(j).z)
-                Spots2(i).Fits = [Spots2(i).Fits, Spots(i).Fits(j)];
+            if j~=1
+                if ~isempty(Spots(i).Fits(j).z)...
+                        && ~isequal(Spots(i).Fits(j).CentralIntensity,Spots(i).Fits(j-1).CentralIntensity)
+                        Spots2(i).Fits = [Spots2(i).Fits, Spots(i).Fits(j)];                    
+                end
+            else
+                if ~isempty(Spots(i).Fits(j).z)                        
+                    Spots2(i).Fits = [Spots2(i).Fits, Spots(i).Fits(j)];
+                end
             end
         end
     end
