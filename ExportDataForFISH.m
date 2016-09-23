@@ -69,10 +69,11 @@ end
 %combined into one.
 DTIF=dir([Folder,filesep,'*.tif']);
 DLSM=dir([Folder,filesep,'*.lsm']);
+DCZI=dir([Folder,filesep,'*.czi']);
 DLIF=dir([Folder,filesep,'*.lif']);
 DLAT=dir([Folder,filesep,'..',filesep,'IsLatticeData.txt']);
 
-if (length(DTIF)>0)&(isempty(DLSM))
+if (length(DTIF)>0)&(isempty(DLSM))&(isempty(DCZI))
     if length(DLIF)==0
         if length(DLAT)==0
             display('2-photon @ Princeton data mode')
@@ -92,6 +93,10 @@ elseif (length(DTIF)==0)&(length(DLSM)>0)
     display('LSM mode')
     D=DLSM;
     FileMode='LSM';
+elseif (length(DTIF)==0)&(length(DCZI)>0)
+    display('LSM (CZI) mode')
+    D=DCZI;
+    FileMode='LSM';
 else
     error('File type not recognized. For LIF files, were they exported to TIF?')
 end
@@ -106,11 +111,11 @@ FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
     'NumberSlices',{},'ZStep',{},'FileMode',{},...
     'PixelSize',{});
 
-%Get the structure with the acquisition information
-ImageInfo = imfinfo([Folder,filesep,D(1).name]);
-%%
+
 if strcmp(FileMode,'TIF')
 
+    %Get the structure with the acquisition information
+    ImageInfo = imfinfo([Folder,filesep,D(1).name]);
     
     %Do we have a second channel for Histone?
     if strcmp(Channel2,'His-RFP')
@@ -408,7 +413,7 @@ elseif strcmp(FileMode,'LSM')
             error('LSM Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
         end
         fiducialChannel=histoneChannel;
-        NSeries=length(DLSM);
+        NSeries=length(D);
         Frame_Times=[];     %Store the frame information
         
         %m=1;        %Counter for number of frames
@@ -418,7 +423,7 @@ elseif strcmp(FileMode,'LSM')
         for LSMIndex=1:NSeries
             waitbar(LSMIndex/NSeries,h);
             %Load the file using BioFormats
-            LSMImages=bfopen([Folder,filesep,DLSM(LSMIndex).name]);
+            LSMImages=bfopen([Folder,filesep,D(LSMIndex).name]);
             %Extract the metadata for each series
             LSMMeta = LSMImages{:, 4};      %OME Metadata
             LSMMeta2 = LSMImages{:, 2};     %Original Metadata
@@ -448,13 +453,29 @@ elseif strcmp(FileMode,'LSM')
             end
             
             %Get the starting time of this acquisition
-            StartingTime(LSMIndex) = LSMMeta2.get(['TimeStamp #',iIndex(1,NDigits)]);
+            %This is different if I have an LSM or CZI file
+            if ~isempty(DLSM)
+                StartingTime(LSMIndex) = LSMMeta2.get(['TimeStamp #',iIndex(1,NDigits)]);
+            elseif ~isempty(DCZI)
+                TimeStampString=LSMMeta2.get('Global Information|Image|T|StartTime #1');
+                TimeStampStrings{LSMIndex}=TimeStampString;
+                %Get the number of days since 1/1/0000
+                TimeStamp=datetime(TimeStampString(1:19),'InputFormat','yyyy-MM-dd''T''HH:mm:ss');
+                %Get the milliseconds, note that we're not using them!
+                MilliSeconds=TimeStamp(21:end-1);
+                %Convert the time to seconds. We're ignoring the seconds.
+                StartingTime(LSMIndex)=datenum(TimeStamp)*24*60*60;
+            else
+                error('Wrong file format. The code should not have gotten this far.')
+            end
+
+            
             %Now get the time for each frame. We start the timer at the first time point
             %of the first data series.
             for j=0:(NSlices(LSMIndex)*NChannels(LSMIndex)):(NPlanes(LSMIndex)-1)
                 if ~isempty(LSMMeta.getPlaneDeltaT(0,j))
                     Frame_Times=[Frame_Times,...
-                        str2num(LSMMeta.getPlaneDeltaT(0,j))+...
+                        str2num(LSMMeta.getPlaneDeltaT(0,j).value)+...
                         StartingTime(LSMIndex)-StartingTime(1)];
                 else  %If there's only one frame the DeltaT will be empty
                     Frame_Times=[Frame_Times,...
