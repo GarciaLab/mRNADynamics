@@ -2,6 +2,8 @@ function CompareArmandoMichael
 
 %Compare the tracking of particles between Armando and Michael's code
 
+%% Load both datasets
+
 %Information about about folders
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
@@ -17,3 +19,42 @@ MData=load([DropboxFolder,filesep,MDataPrefix,filesep,'Particles.mat']);
 %Load the CompiledParticles
 ACompiled=load([DropboxFolder,filesep,ADataPrefix,filesep,'CompiledParticles.mat']);
 MCompiled=load([DropboxFolder,filesep,MDataPrefix,filesep,'CompiledParticles.mat']);
+
+%% Compare the means
+
+figure(1)
+plot(ACompiled.ElapsedTime,ACompiled.MeanVectorAP(:,11)','-k')
+hold on
+plot(MCompiled.ElapsedTime,MCompiled.MeanVectorAP(:,11)','-r')
+hold off
+legend('Armando','Michael')
+
+
+%% Look at individual particles
+
+%Compare a given particle in nc14
+
+%First, find a good particle in Michael's data set
+MParticle=50;
+MCompiled.CompiledParticles(MParticle)
+
+%Find the corresponding particle in Armando's code by looking at the
+%associated nucleus
+AParticle=find([ACompiled.CompiledParticles.Nucleus]==...
+    MCompiled.CompiledParticles(MParticle).Nucleus);
+
+
+%Find the missing frames
+
+
+plot(ACompiled.CompiledParticles(AParticle).Frame,...
+    ACompiled.CompiledParticles(AParticle).Fluo,'.-k')
+hold on
+plot(MCompiled.CompiledParticles(MParticle).Frame,...
+    MCompiled.CompiledParticles(MParticle).Fluo,'.-r')
+hold off
+
+
+
+
+
