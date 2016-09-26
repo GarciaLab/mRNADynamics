@@ -591,8 +591,11 @@ elseif strcmp(FileMode,'LSM')
         
         %The FF can be in the folder with the data or in the folder
         %corresponding to the day.
-        D1=dir([Folder,filesep,'FF*.lif']);
-        D2=dir([Folder,filesep,'..',filesep,'FF*.lif']);
+        D1=dir([Folder,filesep,'FF*.lsm']);
+        D1=[D1,dir([Folder,filesep,'FF*.czi'])];
+        D2=dir([Folder,filesep,'..',filesep,'FF*.lsm']);
+        D2=[D2,dir([Folder,filesep,'..',filesep,'FF*.lif'])];
+
         FFPaths={};
         for i=1:length(D1)
             FFPaths{end+1}=[Folder,filesep,D1(i).name];
