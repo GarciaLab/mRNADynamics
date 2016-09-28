@@ -60,7 +60,19 @@ OutputFolder1=[FISHPath,filesep,Prefix,'_',filesep,'dogs'];
 mkdir(OutputFolder1)
 doFF = 1;
 try
-    ffcell = bfopen([PreProcPath, filesep, Prefix, filesep, 'FF.lif']);
+    dashes = 0;
+    for i = 1:length(Prefix)
+            if Prefix(i) == '-'
+                dashes = dashes+1;
+            end
+            if dashes == 3
+                date = Prefix(1:i-1);
+                remainder = Prefix(i+1:end);
+                break;
+            end
+    end
+    rawfolder = [SourcePath, filesep, date, filesep, remainder];
+    ffcell = bfopen([rawfolder, filesep, 'FF.lif']);
     ffim = double(ffcell{1,1}{1,1});
     ffim = CPsmooth(ffim,'Gaussian Filter',256,0);
     ffim = ffim/max(max(ffim));
@@ -123,10 +135,10 @@ else
             im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']));
             dog = double(imread([OutputFolder1, filesep,'DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']));
             if displayFigures
-                f = figure(1);
+                fig = figure(1);
                 imshow(dog,[]);
             else
-                f=[];
+                fig=[];
             end
             %apply flatfield correction
             if doFF
@@ -147,12 +159,12 @@ else
                 if ~displayFigures
                     parfor k = 1:n_spots
                             temp_particles(k) = identifySpot(k, im, im_label, dog, ...
-                                neighborhood, rad, pixelSize, displayFigures, f, microscope);
+                                neighborhood, rad, pixelSize, displayFigures, fig, microscope);
                     end
                 else
                     for k = 1:n_spots
                             temp_particles(k) = identifySpot(k, im, im_label, dog, ...
-                                neighborhood, rad, pixelSize, displayFigures, f, microscope);
+                                neighborhood, rad, pixelSize, displayFigures, fig, microscope);
                     end
                 end
 
