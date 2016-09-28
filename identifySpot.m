@@ -1,78 +1,79 @@
-function temp_particles = identifySpot(k, im, im_label, dog, neighb, rad, ...
-    pixelSize, show_status, f,microscope)
+function temp_particles = identifySpot(particle_index, image, image_label, dog_image, distance_to_neighbor, snippet_size, ...
+    pixelSize, show_status, figure, microscope)
 
-    [r,c] = find(im_label == k);
+    %This function locates a transcriptional locus (the k'th locus in an image)
+    %and assigns a Gaussian
+    %to it. It returns a structure containing properties of the
+    %transcriptional locus such as the intensity, size, position, etc.
+    
+    %Arguments: This requires an image, its difference of gaussians image,
+    %as well as some properties of the recording. 
 
-    % Keep track of the maximum dog value
-
-    max_dog = max(max(dog(r,c)));
-
+    
+    
     %Find spot centroids in the actual image by hunting for global maxima in
     %neighborhoods around spots that were just located
 
-    possible_cent = [];
-    pcentloc = {};
-
-    for o = 1:2*neighb
-        for p = 1:2*neighb
-            if r(1) - neighb + o > 0 && c(1) - neighb + p > 0 ... 
-                    && r(1) - neighb + o < size(im,1)  && c(1) - neighb + p < size(im,2)
-                possible_cent(o,p) = im(r(1)-neighb+o, c(1)-neighb+p);
-                pcentloc{o,p} = [r(1)-neighb+o, c(1)-neighb+p];
+    possible_centroid = [];
+    possible_centroid_location = {};
+    [k_row, k_column] = find(image_label == particle_index); %the position of the k'th locus in the image
+    row = k_row(1);
+    col = k_column(1);
+    for i = 1:2*distance_to_neighbor
+        for j = 1:2*distance_to_neighbor
+            if row - distance_to_neighbor + i > 0 && col - distance_to_neighbor + j > 0 ... 
+                    && row - distance_to_neighbor + i < size(image,1)  && col - distance_to_neighbor + j < size(image,2)
+                possible_centroid(i,j) = image(row-distance_to_neighbor+i, col-distance_to_neighbor+j);
+                possible_centroid_location{i,j} = [row-distance_to_neighbor+i, col-distance_to_neighbor+j];
             end
         end
     end
-    if ~isempty(possible_cent)
-        [inten, index] = max(possible_cent(:));
-        [row, col] = ind2sub(size(possible_cent),index);
-        cent_y = pcentloc{row,col}(1); 
-        cent_x = pcentloc{row,col}(2);
-       % temp_particles = [temp_particles,[0, cent_x, cent_y, 0, 0]];
-    %    temp_particles = {};
-       if show_status && ~isempty(f)
-            set(0,'CurrentFigure', f);...
-            ellipse(neighb/2,neighb/2,0,cent_x,cent_y,'r');
-       end
+    clear row;
+    clear col;
+    
+    %Compute some preliminary properties of the located spots
+    
+    if ~isempty(possible_centroid)
+        [intensity, centroid_index] = max(possible_centroid(:));
+        [row, col] = ind2sub(size(possible_centroid),centroid_index);
+        centroid_y = possible_centroid_location{row,col}(1); 
+        centroid_x = possible_centroid_location{row,col}(2);
+       
+        if show_status && ~isempty(figure)
+            set(0,'CurrentFigure', figure);...
+            ellipse(distance_to_neighbor/2,distance_to_neighbor/2,0,centroid_x,centroid_y,'r');
+        end
 
-       if cent_y - rad > 1 && cent_x - rad > 1 && cent_y + rad < size(im, 1) && cent_x + rad < size(im,2)
-           snip = im(cent_y-rad:cent_y+rad, cent_x-rad:cent_x+rad);
+       %Now, we'll calculate Gaussian fits 
+       if centroid_y - snippet_size > 1 && centroid_x - snippet_size > 1 && centroid_y + snippet_size < size(image, 1) && centroid_x + snippet_size < size(image,2)
+           snippet = image(centroid_y-snippet_size:centroid_y+snippet_size, centroid_x-snippet_size:centroid_x+snippet_size);
 
-            % Set parameters to use as initial guess in the fits. For the 
-            % lattice data, try NeighborhoodSize = 1000, MaxThreshold = 2000, 
-            % WidthGuess = 500, OffsetGuess = 1000.
-
+            % Set parameters to use as initial guess in the fits. 
             if strcmp(microscope, 'LAT')
+                neighborhood_Size = 1000/pixelSize; %nm
+                maxThreshold = 2000; %intensity
+                widthGuess = 500 / pixelSize; %nm
+                offsetGuess = 1000; %intensity
 
-                NeighborhoodSize = 1000/pixelSize; %nm
-                MaxThreshold = 2000; %intensity
-                WidthGuess = 500 / pixelSize; %nm
-                OffsetGuess = 1000; %intensity
-
-                % For confocal data, try NeighborhoodSize = 1000, MaxThreshold = 20,
-                % WidthGuess = 200, OffsetGuess = 10.
+            % Confocal Leica SP8 Data
             else 
-                NeighborhoodSize = 1000/pixelSize; %nm
-                MaxThreshold = 30; %intensity
-                WidthGuess = 200 / pixelSize; %nm
-                OffsetGuess = 10; %intensity
+                neighborhood_Size = 1000/pixelSize; %nm
+                maxThreshold = 30; %intensity
+                widthGuess = 200 / pixelSize; %nm
+                offsetGuess = 10; %intensity
             end
 
-            [fits, rel_errors, ci, GaussianIntensity, f2, f4, AmpIntegral] =  ...
-                fitGaussians(snip, NeighborhoodSize, MaxThreshold, ...
-                WidthGuess, OffsetGuess, show_status);
+            [fits, relative_errors, confidence_intervals, gaussianIntensity, gaussian, mesh] =  ...
+                fitGaussians(snippet, neighborhood_Size, maxThreshold, ...
+                widthGuess, offsetGuess, show_status);
             sigma_x = fits(3);
             sigma_y = fits(3);
             sigma_x2 = fits(7);
             sigma_y2 = fits(7);
             area = pi*(2*sigma_x^2)^2; %in pixels. this is two widths away from peak
-            fixedAreaIntensity = 0;
             integration_radius = 6; %integrate 121 pixels around the spot
-            c_x = fits(2) - rad + cent_x; %AR 7/14/16: same deal as line above
-            c_y = fits(4) - rad + cent_y;
-            int_x = [round(c_x - integration_radius), round(c_x + integration_radius)];
-            int_y = [round(c_y - integration_radius), round(c_y + integration_radius)];    
-    %         int_x = [round(c_x - fits(3)), round(c_x + fits(3))];
-    %         int_y = [round(c_y - fits(5)), round(c_y + fits(5))];
+            spot_x = fits(2) - snippet_size + centroid_x; %AR 7/14/16: same deal as line above
+            spot_y = fits(4) - snippet_size + centroid_y;    
 
             %disp(rel_errors);
             % Quality control.
@@ -82,41 +83,23 @@ function temp_particles = identifySpot(k, im, im_label, dog, neighb, rad, ...
             % sometimes the second gaussian doesn't get a good fit
             % but the first one does, and the second one is good
             % enough to position its center.
-%             snip_mask = snip*0;
-            snip_mask = snip;
-            for i = 1:size(snip,1)
-                for j = 1:size(snip,2)
-                    d = floor ( sqrt( (j - floor(size(snip,1)/2))^2 + (i - floor(size(snip,2)/2))^2 ) );
+            
+            snippet_mask = snippet;
+            for i = 1:size(snippet,1)
+                for j = 1:size(snippet,2)
+                    d = floor ( sqrt( (j - floor(size(snippet,1)/2))^2 + (i - floor(size(snippet,2)/2))^2 ) );
                     if d >= integration_radius
-                        snip_mask(i, j) = 0;
+                        snippet_mask(i, j) = 0;
                     end
                 end
             end
-            
-%             for i = 1:size(snip,1)
-%                 for j = 1:size(snip,2)
-%                     if i > fits(4) - integration_radius && i < fits(4) + integration_radius && j > fits(2) - integration_radius && j < fits(2) + integration_radius 
-%                         snip_mask(i,j) = 1;
-%                     end
-%                 end
-%             end
-
-            if ~(sigma_x2 <= 0 || sigma_x <= 0 || sigma_x > 2000/pixelSize || sigma_y > 2000/pixelSize...
-                    || sigma_x2 > 2000/pixelSize || sigma_y2 > 2000/pixelSize...
-                    || GaussianIntensity == 0)
-
-                if int_x(1) > 1 && int_y(1) > 1 && int_x(2) < size(im,2) && int_y(2) < size(im,1)
-                    for w = int_x(1):int_x(2)
-                        for v = int_y(1): int_y(2)
-                            fixedAreaIntensity = fixedAreaIntensity + double(im(v,w)) - fits(end-1);
-                        end
-                    end
-                end
-                fixedAreaIntensity = AmpIntegral;
-                fixedAreaIntensity = sum(sum(snip_mask)) - fits(end-1)*sum(sum(snip_mask~=0));
-                temp_particles = {{fixedAreaIntensity, c_x, c_y, fits(end-1), snip, ...
-                    area, sigma_x, sigma_y, cent_y, cent_x, GaussianIntensity,inten,...
-                    max_dog, snip_mask, sigma_x2, sigma_y2, fits(end), rel_errors, ci, f2, f4}};
+                       
+            if 1   
+                fixedAreaIntensity = sum(sum(snippet_mask)) - fits(end-1)*sum(sum(snippet_mask~=0));
+                max_dog = max(max(dog_image(k_row,k_column)));
+                temp_particles = {{fixedAreaIntensity, spot_x, spot_y, fits(end-1), snippet, ...
+                    area, sigma_x, sigma_y, centroid_y, centroid_x, gaussianIntensity,intensity,...
+                    max_dog, snippet_mask, sigma_x2, sigma_y2, fits(end), relative_errors, confidence_intervals, gaussian, mesh}};
             else
                 temp_particles = {[]};
             end

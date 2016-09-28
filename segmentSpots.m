@@ -12,7 +12,8 @@ function segmentSpots(Prefix,Threshold,varargin)
 %'TrackSpots':   Do you want to use this code to track the particles instead
 %                of using TrackmRNADynamics?
 %'Frames',N:     Run the code from frame 1 to frame N.
-%'Shadows':   Ensure that we caught the spots in focus or else discard
+%'NoShadows':   Ensure that we caught the spots in focus or else discard.
+%               
 
 % TrackSpots takes 0 or 1 depending on whether you want to make a time
 % tracking in addition to the segmentation.
@@ -22,7 +23,7 @@ function segmentSpots(Prefix,Threshold,varargin)
 displayFigures=0;
 TrackSpots=0;
 num_frames=0;
-Shadows = 0;
+Shadows = 1;
 %If no threshold was specified, then just generate the DoG images
 if isempty(Threshold)
     just_dog=1;
@@ -35,8 +36,8 @@ for i=1:length(varargin)
         displayFigures=1;
     elseif strcmp(varargin{i},'TrackSpots')
         TrackSpots=1;
-    elseif strcmpi(varargin{i}, 'Shadows')
-        Shadows = 1;
+    elseif strcmpi(varargin{i}, 'NoShadows')
+        Shadows = 0;
     elseif strcmp(varargin{i},'Frames')
         if ~isnumeric(varargin{i+1})
             error('Wrong input parameters. After ''Frames'' you should input the number of frames')
@@ -73,11 +74,11 @@ end
 %above the threshold. Then, it finds global maxima within these regions by searching in a region "neighb"
 %within the regions. 
 
-%AR 7/4/16: Currently unclear if it's better to limit "neighb" to
+%AR 7/4/16: Currently unclear if it's better to limit "neighborhood" to
 %a diffraction-limited transcription spot or if it should encompass
 %both sister chromatids. 
 pixelSize = FrameInfo(1).PixelSize*1000; %nm
-neighb = round(1000 / pixelSize);
+neighborhood = round(1500 / pixelSize);
 
 all_frames = cell(num_frames, zSize);
 close all force;
@@ -123,7 +124,7 @@ else
             dog = double(imread([OutputFolder1, filesep,'DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']));
             if displayFigures
                 f = figure(1);
-                imshow(im,[]);
+                imshow(dog,[]);
             else
                 f=[];
             end
@@ -135,18 +136,23 @@ else
             thrim = dog > Threshold;
             [im_label, n_spots] = bwlabel(thrim); 
             temp_frames = {};
-            rad = 1300/pixelSize;
+            rad = 1500/pixelSize;
             temp_particles = cell(1, n_spots);
+            hLocalMax = vision.LocalMaximaFinder;
+            hLocalMax.NeighborhoodSize = [neighborhood, neighborhood];
+            hLocalMax.Threshold = Threshold;
+            centers = double(step(hLocalMax, dog));  
+            centers;
             if n_spots ~= 0
                 if ~displayFigures
                     parfor k = 1:n_spots
                             temp_particles(k) = identifySpot(k, im, im_label, dog, ...
-                                neighb, rad, pixelSize, displayFigures, f, microscope);
+                                neighborhood, rad, pixelSize, displayFigures, f, microscope);
                     end
                 else
                     for k = 1:n_spots
                             temp_particles(k) = identifySpot(k, im, im_label, dog, ...
-                                neighb, rad, pixelSize, displayFigures, f, microscope);
+                                neighborhood, rad, pixelSize, displayFigures, f, microscope);
                     end
                 end
 
@@ -209,14 +215,14 @@ if ~just_dog
         changes = 0;
         i = 1; 
         h=waitbar(0,'Finding z-columns');
-        neighb = 3000 / pixelSize;
+        neighborhood = 3000 / pixelSize;
         for n = 1:num_frames  
             waitbar(n/num_frames,h)
             i = i + length(Particles([Particles.frame] == (n - 1) ));
             for j = i:i+length(Particles([Particles.frame] == n)) - 1
                 for k = j+1:i+length(Particles([Particles.frame] == n)) - 1
                     dist = sqrt( (Particles(j).xFit(end) - Particles(k).xFit(end))^2 + (Particles(j).yFit(end) - Particles(k).yFit(end))^2); 
-                    if dist < neighb && Particles(j).z(end) ~= Particles(k).z(end)
+                    if dist < neighborhood && Particles(j).z(end) ~= Particles(k).z(end)
                         for m = 1:numel(fields)-2 %do not include fields 'r' or 'frame'
                             Particles(j).(fields{m}) = [Particles(j).(fields{m}), Particles(k).(fields{m})];
                         end
@@ -232,7 +238,7 @@ if ~just_dog
 
     %pick the brightest z-slice
     for i = 1:length(Particles)
-        [~, max_index] = max(Particles(i).GaussianIntensity);
+        [~, max_index] = max(Particles(i).FixedAreaIntensity);
         if TrackSpots
             for j = 1:numel(fields)-2 %do not include fields 'r' or 'frame'
                 Particles(i).(fields{j}) = Particles(i).(fields{j})(max_index);
@@ -283,9 +289,9 @@ if ~just_dog
     %makes some potentially useful plots. This was originally here to have
     %a single, fully integrated script before this segmentation was worked
     %into the rest of the pipeline.
-    neighb = 3000 / pixelSize;
+    neighborhood = 3000 / pixelSize;
     if TrackSpots
-        Particles = track_spots(Particles, neighb);
+        Particles = track_spots(Particles, neighborhood);
         save([DropboxFolder,filesep,Prefix,filesep,'Particles_AR.mat'], 'Particles');
     end
 

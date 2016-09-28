@@ -634,7 +634,7 @@ for ChN=1:NChannels
                 [Frame,AmpIntegral,AmpGaussian,Off,...
                  ErrorIntegral,ErrorGauss,optFit1, FitType, noIntensityFlag]...
                  = GetParticleTrace(k,CompiledParticles{ChN},Spots);
-                CompiledParticles{ChN}(k).Fluo= AmpGaussian;
+                CompiledParticles{ChN}(k).Fluo= AmpIntegral;
                 CompiledParticles{ChN}(k).FluoIntegral = AmpGaussian;
                 CompiledParticles{ChN}(k).FluoIntegral = AmpIntegral;
                 CompiledParticles{ChN}(k).Off=Off;
