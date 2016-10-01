@@ -231,19 +231,30 @@ if ~NoAP
         %Load only the metadata from the zoomed images
         MetaReader=bfGetReader([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(end).name]);
         MetaZoom=MetaReader.getMetadataStore();
-        PixelSizeZoom=str2num(MetaZoom.getPixelsPhysicalSizeX(0).value);
-
+        try
+            PixelSizeZoom=str2num(MetaZoom.getPixelsPhysicalSizeX(0).value);
+        catch 
+            PixelSizeZoom=str2num(MetaZoom.getPixelsPhysicalSizeX(0));
+        end
         %Find the full embryo pixel size and load the image
         D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*surf*.',FileMode(1:3)]);
         ImageTemp=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(end).name]);
         MetaFullEmbryo= ImageTemp{:, 4};
-        PixelSizeFullEmbryo=str2num(MetaFullEmbryo.getPixelsPhysicalSizeX(0).value);
+        try
+            PixelSizeFullEmbryo=str2num(MetaFullEmbryo.getPixelsPhysicalSizeX(0).value);
+        catch 
+            PixelSizeFullEmbryo=str2num(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
+        end
 
         %Check that the surface and midsaggital images have the same zoom
         D1=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*mid*.',FileMode(1:3)]);
         ImageTemp1=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D1(end).name]);
         MetaFullEmbryo1= ImageTemp1{:, 4};
-        PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX(0));
+        try
+            PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX(0));
+        catch 
+            PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX);
+        end
 
 %         if PixelSizeFullEmbryo~=PixelSizeFullEmbryoMid
 %             error('The surface and midsaggital images were not taken with the same pixel size')

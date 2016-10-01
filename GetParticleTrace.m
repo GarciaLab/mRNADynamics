@@ -35,7 +35,6 @@ for i=1:length(Particles(CurrentParticle).Frame)
             Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).CentralIntensity(zIndex);
 end
 
-
 %Do a spline fit to the offset and use it to estimate the error
 %If we have more than five data points, we fit a spline.
 if length(Frame)>5

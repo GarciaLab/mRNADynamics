@@ -64,7 +64,7 @@ function CheckParticleTracking(varargin)
 %t Show/hide particles from the second threshold
 %s Save the current Particles structure
 %x Save and exit
-%h Show non-approved particles yellow or dissapproved particles
+%h Show non-approved particles yellow or dissapproved particlesz
 %y Input the frame/nc information again. This only works in the absence of
 %  the histone channel
 %r Reorder the particles according to initial frame
@@ -324,8 +324,7 @@ end
 
 %Check if we have already determined nc
 if (~isfield(FrameInfo,'nc'))&&(~UseHistoneOverlay)
-    %FrameInfo=DetermineNC(fad,Particles,FrameInfo);  AR 3/14/16: This
-    %script seems to have disappeared. 
+
 elseif UseSchnitz
     load([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'])
     
@@ -842,7 +841,7 @@ while (cc~='x')
             Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ);
         
         %Get the z DoG profile
-        ZProfile=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).DOGIntensity;
+        ZProfile=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).FixedAreaIntensity;
         MaxZ=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ;
         
         plot(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z,...
@@ -850,14 +849,9 @@ while (cc~='x')
         hold on
         plot(CurrentZ,ZProfile(MaxZIndex),'ob')
         hold off
-%         set(gca,'XTick',[1:length(ZProfile)]-MaxZ+...
-%             double(fad(CurrentChannel).channels(CurrentFrame).fits.z(CurrentParticleIndex)))
         title('Z profile')
-
     end
        
-       
-    
     figure(TraceFig)
     if ~strcmp(lower(ExperimentType),'inputoutput')
         %Only update the trace information if we have switched particles

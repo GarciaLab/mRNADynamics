@@ -90,8 +90,10 @@ end
 %a diffraction-limited transcription spot or if it should encompass
 %both sister chromatids. 
 pixelSize = FrameInfo(1).PixelSize*1000; %nm
-neighborhood = round(1500 / pixelSize);
+neighborhood = round(1500 / pixelSize); %nm
+snippet_size = 1500/pixelSize; % nm
 
+           
 all_frames = cell(num_frames, zSize);
 close all force;
 if just_dog
@@ -145,26 +147,21 @@ else
                 im = im./ffim;
             end
             %
-            thrim = dog > Threshold;
-            [im_label, n_spots] = bwlabel(thrim); 
+            im_thresh = dog > Threshold;
+            [im_label, n_spots] = bwlabel(im_thresh); 
             temp_frames = {};
-            rad = 1500/pixelSize;
             temp_particles = cell(1, n_spots);
-            hLocalMax = vision.LocalMaximaFinder;
-            hLocalMax.NeighborhoodSize = [neighborhood, neighborhood];
-            hLocalMax.Threshold = Threshold;
-            centers = double(step(hLocalMax, dog));  
-            centers;
+            
             if n_spots ~= 0
                 if ~displayFigures
                     parfor k = 1:n_spots
                             temp_particles(k) = identifySpot(k, im, im_label, dog, ...
-                                neighborhood, rad, pixelSize, displayFigures, fig, microscope);
+                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope);
                     end
                 else
                     for k = 1:n_spots
                             temp_particles(k) = identifySpot(k, im, im_label, dog, ...
-                                neighborhood, rad, pixelSize, displayFigures, fig, microscope);
+                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope);
                     end
                 end
 

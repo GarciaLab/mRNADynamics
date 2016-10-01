@@ -85,14 +85,39 @@ function temp_particles = identifySpot(particle_index, image, image_label, dog_i
             % enough to position its center.
             
             snippet_mask = snippet;
-            for i = 1:size(snippet,1)
-                for j = 1:size(snippet,2)
-                    d = floor ( sqrt( (j - floor(size(snippet,1)/2))^2 + (i - floor(size(snippet,2)/2))^2 ) );
-                    if d >= integration_radius
+            for i = floor(size(snippet,1)/2):size(snippet,1)
+                for j = floor(size(snippet,2)/2):size(snippet,2)
+                    d = sqrt( (j - size(snippet,1)/2)^2 + (i - size(snippet,2)/2)^2) ;
+                    if d > integration_radius
                         snippet_mask(i, j) = 0;
-                    end
+                    end 
                 end
             end
+            for i = 1:floor(size(snippet,1)/2)
+                for j = floor(size(snippet,2)/2):size(snippet,2)
+                    d = sqrt( (j - size(snippet,1)/2)^2 + (i - size(snippet,2)/2)^2) ;
+                    if d > integration_radius
+                        snippet_mask(i, j) = 0;
+                    end 
+                end
+            end
+            for i = 1:floor(size(snippet,1)/2)
+                for j = 1:floor(size(snippet,2)/2)
+                    d = sqrt( (j - size(snippet,1)/2)^2 + (i - size(snippet,2)/2)^2) ;
+                    if d > integration_radius
+                        snippet_mask(i, j) = 0;
+                    end 
+                end
+            end
+            for i = floor(size(snippet,1)/2):size(snippet,1)
+                for j = 1:floor(size(snippet,2)/2)
+                    d = sqrt( (j - size(snippet,1)/2)^2 + (i - size(snippet,2)/2)^2) ;
+                    if d > integration_radius
+                        snippet_mask(i, j) = 0;         
+                    end 
+                end
+            end
+           
                        
             if 1   
                 fixedAreaIntensity = sum(sum(snippet_mask)) - fits(end-1)*sum(sum(snippet_mask~=0));
