@@ -387,7 +387,7 @@ if strcmp(FileMode,'TIF')
     Output{6}=['flat FF'];
     
 
-%% 
+
 %LSM mode
 elseif strcmp(FileMode,'LSM')
     
@@ -437,7 +437,16 @@ elseif strcmp(FileMode,'LSM')
             %Finally, use this information to determine the number of frames in
             %each series
             NFrames(LSMIndex)=NPlanes(LSMIndex)/NSlices(LSMIndex)/NChannels(LSMIndex);
-
+            
+            %Check that the acquisition wasn't stopped before the end of a
+            %cycle. If that is the case, some images in the last frame will
+            %be blank and we need to remove them.
+            if sum(sum(LSMImages{1}{end,1}))==0
+                %Reduce the number of frames by one
+                NFrames(LSMIndex)=NFrames(LSMIndex)-1;
+                %Reduce the number of planes by NChannels*NSlices
+                NPlanes(LSMIndex)=NPlanes(LSMIndex)-NChannels(LSMIndex)*NSlices(LSMIndex);
+            end
             
             %First, get the starting time. This is not accessible in the
             %OME format, so we need to pull it out from the original
@@ -509,44 +518,6 @@ elseif strcmp(FileMode,'LSM')
             %Size of images for generating blank images inside the loop
             Rows=size(LSMImages{1,1},1);
             Columns=size(LSMImages{1,1},2);
-            
-            
-            %HG: I can't get this to work. I think it has issues with
-            %memory. I should write something that loads each image one at
-            %a time in each iteration of the loo.
-            
-%             parfor j=1:length(FrameRange)%NFrames(LSMIndex) 
-%                 %First do the coat protein channel
-%                 %Save the blank images at the beginning and end of the
-%                 %stack
-%                 NewName=[Prefix,'_',iIndex(FrameRange(j),3),'_z',iIndex(1,2),'.tif'];
-%                 imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-%                 NewName=[Prefix,'_',iIndex(FrameRange(j),3),'_z',iIndex(min(NSlices)+2,2),'.tif'];
-%                 imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-%                 %Copy the rest of the images
-%                 n=1;        %Counter for slices
-%                 for k=((j-1)*NSlices(LSMIndex)*NChannels(LSMIndex)+1+(coatChannel-1)):...
-%                         NChannels:(j*NSlices(LSMIndex))*NChannels
-%                     if n<=min(NSlices)
-%                         NewName=[Prefix,'_',iIndex(FrameRange(j),3),'_z',iIndex(n+1,2),'.tif'];
-%                         imwrite(LSMImages{k,1},[OutputFolder,filesep,NewName]);
-%                         n=n+1;
-%                     end
-%                 end
-% 
-%                 %Now do His-RFP
-%                 HisSlices=zeros([Rows,Columns,NSlices(LSMIndex)]);
-%                 n=1;
-%                 for k=((j-1)*NSlices(LSMIndex)*NChannels(LSMIndex)+1+(fiducialChannel-1)):...
-%                         NChannels(LSMIndex):(j*NSlices(LSMIndex))*NChannels(LSMIndex)
-%                     HisSlices(:,:,n)=LSMImages{k,1};
-%                     n=n+1;
-%                 end
-%                 Projection=median(HisSlices,3);
-%                 imwrite(uint16(Projection),...
-%                             [OutputFolder,filesep,Prefix,'-His_',iIndex(FrameRange(j),3),'.tif']);
-%                 %m=m+1;
-%             end
             
             
              for j=1:length(FrameRange)%NFrames(LSMIndex) 
