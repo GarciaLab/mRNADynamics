@@ -425,18 +425,21 @@ elseif strcmp(FileMode, 'LAT')
             fname = [Folder, filesep, DTIF(j).name];
             info = imfinfo(fname);
             num_images = numel(info);
-            for i = 1:num_images
-                im_stack{j, i} = imread(fname, i, 'Info', info);
-                if ~isempty(strfind(fname, 'CamA'))
-                    his_stack{j,i} = imread(fname, i, 'Info', info);
-                    his_array(j,i, :, :) = imread(fname, i, 'Info', info);
-                elseif ~isempty(strfind(fname, 'CamB'))
-                    mcp_stack{j-size(his_stack, 1),i} = imread(fname, i, 'Info', info);
-                else
-                    error('How many channels are there supposed to be? Something is off with the file names');
-                end 
-            end     
-        end
+            if HisChannel
+                for i = 1:num_images
+                    im_stack{j, i} = imread(fname, i, 'Info', info);
+                    if ~isempty(strfind(fname, 'CamA'))
+                        his_stack{j,i} = imread(fname, i, 'Info', info);
+                        his_array(j,i, :, :) = imread(fname, i, 'Info', info);
+                    elseif ~isempty(strfind(fname, 'CamB'))
+                        mcp_stack{j-size(his_stack, 1),i} = imread(fname, i, 'Info', info);
+                    else
+                        error('Something is wrong with your channels. Please doublecheck moviedatabase')
+                    end 
+                end
+            else
+                mcp_stack = im_stack;
+            end
         
         %Extract the metadata for each series
         NSeries=1; %Will always be true for lattice mode.
