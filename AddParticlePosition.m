@@ -96,6 +96,7 @@ EmbryoName=Prefix(Dashes(3)+1:end);
 
 DTIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.tif']);
 DLSM=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lsm']);
+DCZI=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.czi']);
 DLIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lif']);
 DLAT=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'IsLatticeData.txt']);
 
@@ -119,6 +120,10 @@ elseif (length(DTIF)==0)&(length(DLSM)>0)
     display('LSM mode')
     D=DLSM;
     FileMode='LSM';
+elseif (length(DTIF)==0)&(length(DCZI)>0)
+    display('CZI mode')
+    D=DLSM;
+    FileMode='CZI';    
 else
     error('File type not recognized')
 end
@@ -214,7 +219,7 @@ if ~NoAP
         % resolutions, though...
         ZoomRatio = ResizeFactor;
 
-    elseif strcmp(FileMode,'LSM')|strcmp(FileMode,'LIFExport')
+    elseif strcmp(FileMode,'LSM')|strcmp(FileMode,'CZI')|strcmp(FileMode,'LIFExport')
 
         %This is so that the code doesn't freak out later
         SurfName=[];
@@ -249,22 +254,23 @@ if ~NoAP
             
         %Find the zoomed movie pixel size
         D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.',FileMode(1:3)]);
+                    
         %Load only the metadata from the zoomed images
         MetaReader=bfGetReader([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(end).name]);
         MetaZoom=MetaReader.getMetadataStore();
-        PixelSizeZoom=str2num(MetaZoom.getPixelsPhysicalSizeX(0));
+        PixelSizeZoom=str2num(MetaZoom.getPixelsPhysicalSizeX(0).value);
 
         %Find the full embryo pixel size and load the image
         D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*surf*.',FileMode(1:3)]);
         ImageTemp=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(end).name]);
         MetaFullEmbryo= ImageTemp{:, 4};
-        PixelSizeFullEmbryo=str2num(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
+        PixelSizeFullEmbryo=str2num(MetaFullEmbryo.getPixelsPhysicalSizeX(0).value);
 
         %Check that the surface and midsaggital images have the same zoom
         D1=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*mid*.',FileMode(1:3)]);
         ImageTemp1=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D1(end).name]);
         MetaFullEmbryo1= ImageTemp1{:, 4};
-        PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX(0));
+        PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX(0).value);
 
         %In principle, we would be comparing PixelSizeFullEmbryo==PixelSizeFullEmbryoMid
         %However, some issues of machine precision made this not work
@@ -322,22 +328,37 @@ if ~NoAP
             end
 
             evalin('base','clear rot')
-        elseif strcmp(FileMode,'LSM')
+        elseif strcmp(FileMode,'LSM')|strcmp(FileMode,'CZI')
             LSMSurf=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(1).name]);
             LSMMeta=LSMSurf{:,4};
             LSMMeta2=LSMSurf{:,2};
             
             %Get the surface image
-            SurfImage=LSMSurf{1}{HisChannel,1};
-            %Figure out the rotation of the full embryo image
-            full_embryo_angle = LSMMeta2.get('Recording Rotation #1');
+            %SurfImage=LSMSurf{1}{HisChannel,1};
             
-            %Figure out the rotation of the zoomed-in image
-            DLSMZoom=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lsm']);
-            LSMZoom=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,...
-                DLSMZoom(1).name]);
-            LSMMetaZoom2=LSMZoom{:,2};
-            zoom_angle=LSMMetaZoom2.get('Recording Rotation #1');
+            %Get the metadata about rotation. This will depend on whether
+            %we have a LSM or CZI file
+            if strcmp(FileMode,'LSM')
+                %Figure out the rotation of the full embryo image
+                full_embryo_angle = LSMMeta2.get('Recording Rotation #1');
+
+                %Figure out the rotation of the zoomed-in image
+                DLSMZoom=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lsm']);
+                LSMZoom=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,...
+                    DLSMZoom(1).name]);
+                LSMMetaZoom2=LSMZoom{:,2};
+                zoom_angle=LSMMetaZoom2.get('Recording Rotation #1');
+            elseif strcmp(FileMode,'CZI')
+                %Figure out the rotation of the full embryo image
+                full_embryo_angle=str2num(LSMMeta2.get('Global HardwareSetting|ParameterCollection|RoiRotation #1'));
+                
+                %Figure out the rotation of the zoomed-in image
+                DLSMZoom=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.czi']);
+                LSMZoom=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,...
+                    DLSMZoom(1).name]);
+                LSMMetaZoom2=LSMZoom{:,2};
+                zoom_angle=str2num(LSMMetaZoom2.get('Global HardwareSetting|ParameterCollection|RoiRotation #1'));
+            end
         end
             
         SurfImage = imrotate(SurfImage, -zoom_angle + full_embryo_angle);
@@ -454,7 +475,7 @@ if ~NoAP
     
     FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
     if ~SkipAlignment && HistoneChannel
-        if ZoomRatio > 1 && ZoomRatio < 24 
+        if ZoomRatio < 24  %ZoomRatio > 1 && ZoomRatio < 24 
             
             %Enlarge the zoomed out image so we can do the cross-correlation
             SurfImageResized=imresize(SurfImage, ZoomRatio);

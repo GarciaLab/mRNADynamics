@@ -74,6 +74,7 @@ Channel2=XLSTxt(PrefixRow,Channel2Column);
 %combined into one.
 DTIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.tif']);
 DLSM=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.lsm']);
+DCZI=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.czi']);
 DLIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.lif']);
 
 if (length(DTIF)>0)&(length(DLIF)==0)
@@ -84,9 +85,9 @@ elseif (length(DLIF)>0)
     display('LIF export mode')
     D=DLIF;
     FileMode='LIFExport';
-elseif (length(DLSM)>0)
+elseif (length(DLSM)>0)|(length(DCZI)>0)
     display('LSM mode')
-    D=DLSM;
+    D=[DLSM,DCZI];
     FileMode='LSM';
 else
     error('File type not recognized')
@@ -180,19 +181,40 @@ elseif strcmp(FileMode,'LSM')
     LSMMeta=LSMMid{:,4};
     LSMMeta2=LSMMid{:,2};
     
-    %By looking at the last image we make sure we're avoiding the
-    %individual tiles if we're dealing with tile scan
-    MidImage=LSMMid{1}{HisChannel,1};
+    %The first image in a tile scane on a size scope seems to be the one
+    %that preserves pixel size.
+    %individual tiles if we're dealing with tile scan. Also, in CZI files,
+    %this seems to ensure a high-contrast image as well.
+    MidImage=LSMMid{end,1}{HisChannel,:};
     
     %Figure out the rotation of the full embryo image
+    %This works for LSM files
     full_embryo_angle = LSMMeta2.get('Recording Rotation #1');
+    %If full_embryo_angle is empty, chances are we have a CZI file
+    if isempty(full_embryo_angle)
+        full_embryo_angle=str2num(LSMMeta2.get('Global HardwareSetting|ParameterCollection|RoiRotation #1'));
+    else
+        error('Could not extract rotation of FullEmbryo images')
+    end
     
-    %Figure out the rotation of the zoomed-in image
+    
+    %Figure out the rotation of the zoomed-in image. We need to check for
+    %both LSM and CZI files.
     DLSMZoom=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lsm']);
+    DLSMZoom=[DLSMZoom,...
+        dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.czi'])];
     LSMZoom=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,...
         DLSMZoom(1).name]);
     LSMMetaZoom2=LSMZoom{:,2};
+    
+    %This works for LSM files
     zoom_angle=LSMMetaZoom2.get('Recording Rotation #1');
+    %If full_embryo_angle is empty, chances are we have a CZI file
+    if isempty(zoom_angle)
+        zoom_angle=str2num(LSMMetaZoom2.get('Global HardwareSetting|ParameterCollection|RoiRotation #1'));
+    else
+        error('Could not extract rotation of FullEmbryo images')
+    end
 
     MidImage = imrotate(MidImage, -zoom_angle + full_embryo_angle);
 end
