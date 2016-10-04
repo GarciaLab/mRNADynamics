@@ -91,7 +91,7 @@ end
 %both sister chromatids. 
 pixelSize = FrameInfo(1).PixelSize*1000; %nm
 neighborhood = round(1500 / pixelSize); %nm
-snippet_size = 1500/pixelSize; % nm
+snippet_size = 2*(floor(2000/(2*pixelSize))) + 1; % nm. note that this is forced to be odd
 
            
 all_frames = cell(num_frames, zSize);

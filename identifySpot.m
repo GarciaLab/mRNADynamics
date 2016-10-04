@@ -83,40 +83,53 @@ function temp_particles = identifySpot(particle_index, image, image_label, dog_i
             % sometimes the second gaussian doesn't get a good fit
             % but the first one does, and the second one is good
             % enough to position its center.
+            %% 
             
             snippet_mask = snippet;
-            for i = floor(size(snippet,1)/2):size(snippet,1)
+            for i = round(size(snippet,1)/2):size(snippet,1)
                 for j = floor(size(snippet,2)/2):size(snippet,2)
                     d = sqrt( (j - size(snippet,1)/2)^2 + (i - size(snippet,2)/2)^2) ;
                     if d > integration_radius
                         snippet_mask(i, j) = 0;
-                    end 
+                        imshow(imresize(snippet_mask, 10), [])
+                        drawnow
+                        
+                    end
                 end
             end
-            for i = 1:floor(size(snippet,1)/2)
-                for j = floor(size(snippet,2)/2):size(snippet,2)
+            for i = 1:ceil(size(snippet,1)/2)
+                for j = ceil(size(snippet,2)/2):size(snippet,2)
                     d = sqrt( (j - size(snippet,1)/2)^2 + (i - size(snippet,2)/2)^2) ;
                     if d > integration_radius
                         snippet_mask(i, j) = 0;
+                        imshow(imresize(snippet_mask, 10), [])
+                        drawnow
                     end 
                 end
             end
-            for i = 1:floor(size(snippet,1)/2)
-                for j = 1:floor(size(snippet,2)/2)
+            for i = 1:ceil(size(snippet,1)/2)
+                for j = 1:ceil(size(snippet,2)/2)
                     d = sqrt( (j - size(snippet,1)/2)^2 + (i - size(snippet,2)/2)^2) ;
                     if d > integration_radius
                         snippet_mask(i, j) = 0;
+                        imshow(imresize(snippet_mask, 10), [])
+                        drawnow
                     end 
                 end
             end
-            for i = floor(size(snippet,1)/2):size(snippet,1)
-                for j = 1:floor(size(snippet,2)/2)
+            for i = ceil(size(snippet,1)/2):size(snippet,1)
+                for j = 1:ceil(size(snippet,2)/2)
                     d = sqrt( (j - size(snippet,1)/2)^2 + (i - size(snippet,2)/2)^2) ;
                     if d > integration_radius
-                        snippet_mask(i, j) = 0;         
+                        snippet_mask(i, j) = 0;     
+                        imshow(imresize(snippet_mask, 10), [])
+                        drawnow
                     end 
                 end
-            end
+            end 
+            %% 
+            close all
+            imshow(imresize(snippet_mask, 10), [])
            
                        
             if 1   
