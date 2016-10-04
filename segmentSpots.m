@@ -25,10 +25,14 @@ TrackSpots=0;
 num_frames=0;
 Shadows = 1;
 %If no threshold was specified, then just generate the DoG images
-if isempty(Threshold)
-    just_dog=1;
-else
-    just_dog=0;
+try
+    if isempty(Threshold)
+        just_dog=1;
+    else
+        just_dog=0;
+    end
+catch
+    error('Please pass the argument "[]" to generate DoG images')
 end
 
 for i=1:length(varargin)
@@ -311,6 +315,8 @@ end
 
 t = toc;
 display(['Elapsed time: ',num2str(t/60),' min'])
-display(['Detected spots: ',num2str(length(Spots))])
+if ~just_dog
+    display(['Detected spots: ',num2str(length(Spots))])
+end
 poolobj = gcp('nocreate');
 delete(poolobj);
