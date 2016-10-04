@@ -440,6 +440,7 @@ elseif strcmp(FileMode, 'LAT')
             else
                 mcp_stack = im_stack;
             end
+        end
         
         %Extract the metadata for each series
         NSeries=1; %Will always be true for lattice mode.
