@@ -83,55 +83,17 @@ function temp_particles = identifySpot(particle_index, image, image_label, dog_i
             % sometimes the second gaussian doesn't get a good fit
             % but the first one does, and the second one is good
             % enough to position its center.
-            %% 
             
             snippet_mask = snippet;
-            for i = round(size(snippet,1)/2):size(snippet,1)
-                for j = floor(size(snippet,2)/2):size(snippet,2)
-                    d = sqrt( (j - size(snippet,1)/2)^2 + (i - size(snippet,2)/2)^2) ;
-                    if d > integration_radius
+            for i = 1:size(snippet, 1)
+                for j = 1:size(snippet,2)
+                    d = sqrt( (j - (size(snippet,1)+1)/2)^2 + (i - (size(snippet,2)+1)/2)^2) ;
+                    if d >= integration_radius
                         snippet_mask(i, j) = 0;
-                        imshow(imresize(snippet_mask, 10), [])
-                        drawnow
-                        
-                    end
-                end
-            end
-            for i = 1:ceil(size(snippet,1)/2)
-                for j = ceil(size(snippet,2)/2):size(snippet,2)
-                    d = sqrt( (j - size(snippet,1)/2)^2 + (i - size(snippet,2)/2)^2) ;
-                    if d > integration_radius
-                        snippet_mask(i, j) = 0;
-                        imshow(imresize(snippet_mask, 10), [])
-                        drawnow
                     end 
                 end
             end
-            for i = 1:ceil(size(snippet,1)/2)
-                for j = 1:ceil(size(snippet,2)/2)
-                    d = sqrt( (j - size(snippet,1)/2)^2 + (i - size(snippet,2)/2)^2) ;
-                    if d > integration_radius
-                        snippet_mask(i, j) = 0;
-                        imshow(imresize(snippet_mask, 10), [])
-                        drawnow
-                    end 
-                end
-            end
-            for i = ceil(size(snippet,1)/2):size(snippet,1)
-                for j = 1:ceil(size(snippet,2)/2)
-                    d = sqrt( (j - size(snippet,1)/2)^2 + (i - size(snippet,2)/2)^2) ;
-                    if d > integration_radius
-                        snippet_mask(i, j) = 0;     
-                        imshow(imresize(snippet_mask, 10), [])
-                        drawnow
-                    end 
-                end
-            end 
-            %% 
-            close all
-            imshow(imresize(snippet_mask, 10), [])
-           
-                       
+                                  
             if 1   
                 fixedAreaIntensity = sum(sum(snippet_mask)) - fits(end-1)*sum(sum(snippet_mask~=0));
                 max_dog = max(max(dog_image(k_row,k_column)));
