@@ -31,7 +31,8 @@ SkipFluctuations=0;  %Do not generate the plots of correlations of fluctuations 
 SkipFits=0;         %Do not generate the fit output (but still does the fit)
 SkipMovie=0;        %Do not generate the movie
 ApproveAll=0;       %Only use manually approved particles
-MinParticles=1;     %Require MinParticles particles per AP bin or else discard
+MinParticles=4;     %Require MinParticles particles per AP bin or else discard
+minTime = 1;        %AR: wanted stringent rejection of particles based on trace length
 
 if isempty(varargin)
     FolderTemp=uigetdir(DefaultDropboxFolder,'Select folder with data to analyze');
@@ -556,6 +557,8 @@ for ChN=1:NChannels
                     AnalyzeThisParticle=0;
                 end
             elseif ~(sum(FrameFilter)>0)
+                AnalyzeThisParticle=0;
+            elseif length(Particles{ChN}(i)) <  minTime
                 AnalyzeThisParticle=0;
             end
 

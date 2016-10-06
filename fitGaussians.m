@@ -9,9 +9,9 @@ function [fits, relative_errors, confidence_intervals, GaussianIntensity, gaussi
 snippet = double(snippet);
 [mesh_y,mesh_x] = meshgrid(1:size(snippet,2), 1:size(snippet,1));
 
-singleGaussian = @(params) params(1).*exp((-1/2).*(((mesh_x-params(2))./params(3)).^2 ...
-        + ((mesh_y-params(4))./params(5)).^2)) + params(6) - double(snippet);
-    
+% singleGaussian = @(params) params(1).*exp((-1/2).*(((mesh_x-params(2))./params(3)).^2 ...
+%         + ((mesh_y-params(4))./params(5)).^2)) + params(6) - double(snippet);
+%     
 %Single and double Gaussians with the full range of parameter space,
 %including an angular parameter
 

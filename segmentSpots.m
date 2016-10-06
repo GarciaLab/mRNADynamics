@@ -160,12 +160,12 @@ else
                 if ~displayFigures
                     parfor k = 1:n_spots
                             temp_particles(k) = identifySpot(k, im, im_label, dog, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope);
+                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, Threshold);
                     end
                 else
                     for k = 1:n_spots
                             temp_particles(k) = identifySpot(k, im, im_label, dog, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope);
+                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, Threshold);
                     end
                 end
 
@@ -186,30 +186,30 @@ end
 if ~just_dog
     n = 1;
     h=waitbar(0,'Saving particle information');
-    for i = 1:num_frames 
+    for i = 1:num_frames  
         waitbar(i/num_frames,h)
         for j = 1:zSize 
              for spot = 1:length(all_frames{i,j}) %spots within particular image
                  if ~isempty(all_frames{i,j}{spot})
-                     Particles(n).CentralIntensity(1) = cell2mat(all_frames{i,j}{spot}(12));
                      Particles(n).FixedAreaIntensity(1) = cell2mat(all_frames{i,j}{spot}(1));
-                     Particles(n).GaussianIntensity(1) = cell2mat(all_frames{i,j}{spot}(11));
-                     Particles(n).DOGIntensity(1) = cell2mat(all_frames{i,j}{spot}(13));
-                     Particles(n).ConfidenceIntervals{1} = cell2mat(all_frames{i,j}{spot}(19));
                      Particles(n).xFit(1) = cell2mat(all_frames{i,j}{spot}(2));
                      Particles(n).yFit(1) = cell2mat(all_frames{i,j}{spot}(3));
-                     Particles(n).xDoG(1) = cell2mat(all_frames{i,j}{spot}(10));
-                     Particles(n).yDoG(1) = cell2mat(all_frames{i,j}{spot}(9));
                      Particles(n).Offset(1) = cell2mat(all_frames{i,j}{spot}(4));
-                     Particles(n).SisterDistance(1) = cell2mat(all_frames{i,j}{spot}(17));
                      Particles(n).Snippet{1} = cell2mat(all_frames{i,j}{spot}(5));
                      Particles(n).Area{1} = cell2mat(all_frames{i,j}{spot}(6));
                      Particles(n).xFitWidth{1} = cell2mat(all_frames{i,j}{spot}(7));
                      Particles(n).yFitWidth{1} = cell2mat(all_frames{i,j}{spot}(8));
+                     Particles(n).yDoG(1) = cell2mat(all_frames{i,j}{spot}(9));
+                     Particles(n).xDoG(1) = cell2mat(all_frames{i,j}{spot}(10));
+                     Particles(n).GaussianIntensity(1) = cell2mat(all_frames{i,j}{spot}(11));                     
+                     Particles(n).CentralIntensity(1) = cell2mat(all_frames{i,j}{spot}(12));
+                     Particles(n).DOGIntensity(1) = cell2mat(all_frames{i,j}{spot}(13));
                      Particles(n).snippet_mask{1} = cell2mat(all_frames{i,j}{spot}(14));
+                     Particles(n).SisterDistance(1) = cell2mat(all_frames{i,j}{spot}(17));
+                     Particles(n).ConfidenceIntervals{1} = cell2mat(all_frames{i,j}{spot}(19));          
+                     Particles(n).gaussSpot{1} = cell2mat(all_frames{i,j}{spot}(20));
                      raw = all_frames{i,j}{spot}(21);
                      Particles(n).rawSpot{1} = raw{1};
-                     Particles(n).gaussSpot{1} = cell2mat(all_frames{i,j}{spot}(20));
                      Particles(n).z(1) = j;
                      Particles(n).discardThis = 0;
                      Particles(n).frame(1) = i;
@@ -318,5 +318,8 @@ display(['Elapsed time: ',num2str(t/60),' min'])
 if ~just_dog
     display(['Detected spots: ',num2str(length(Spots))])
 end
-poolobj = gcp('nocreate');
-delete(poolobj);
+try
+    poolobj = gcp('nocreate');
+    delete(poolobj);
+catch
+end

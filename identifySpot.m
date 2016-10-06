@@ -1,5 +1,5 @@
 function temp_particles = identifySpot(particle_index, image, image_label, dog_image, distance_to_neighbor, snippet_size, ...
-    pixelSize, show_status, figure, microscope)
+    pixelSize, show_status, figure, microscope, threshold)
 
     %This function locates a transcriptional locus (the k'th locus in an image)
     %and assigns a Gaussian
@@ -32,7 +32,7 @@ function temp_particles = identifySpot(particle_index, image, image_label, dog_i
     clear col;
     
     %Compute some preliminary properties of the located spots
-    
+    temp_particles = {[]};
     if ~isempty(possible_centroid)
         [intensity, centroid_index] = max(possible_centroid(:));
         [row, col] = ind2sub(size(possible_centroid),centroid_index);
@@ -46,32 +46,33 @@ function temp_particles = identifySpot(particle_index, image, image_label, dog_i
 
        %Now, we'll calculate Gaussian fits 
        if centroid_y - snippet_size > 1 && centroid_x - snippet_size > 1 && centroid_y + snippet_size < size(image, 1) && centroid_x + snippet_size < size(image,2)
+           
            snippet = image(centroid_y-snippet_size:centroid_y+snippet_size, centroid_x-snippet_size:centroid_x+snippet_size);
 
             % Set parameters to use as initial guess in the fits. 
             if strcmp(microscope, 'LAT')
-                neighborhood_Size = 1000/pixelSize; %nm
+                neighborhood_Size = 2000/pixelSize; %nm
                 maxThreshold = 2000; %intensity
                 widthGuess = 500 / pixelSize; %nm
                 offsetGuess = 1000; %intensity
 
             % Confocal Leica SP8 Data
             else 
-                neighborhood_Size = 1000/pixelSize; %nm
+                neighborhood_Size = 2000/pixelSize; %nm
                 maxThreshold = 30; %intensity
                 widthGuess = 200 / pixelSize; %nm
-                offsetGuess = 10; %intensity
+                offsetGuess = 30; %intensity
             end
 
             [fits, relative_errors, confidence_intervals, gaussianIntensity, gaussian, mesh] =  ...
-                fitGaussians(snippet, neighborhood_Size, maxThreshold, ...
+                fitGaussians(snippet, neighborhood_Size, threshold, ...
                 widthGuess, offsetGuess, show_status);
             sigma_x = fits(3);
             sigma_y = fits(3);
             sigma_x2 = fits(7);
             sigma_y2 = fits(7);
             area = pi*(2*sigma_x^2)^2; %in pixels. this is two widths away from peak
-            integration_radius = 6; %integrate 121 pixels around the spot
+            integration_radius = 6; %integrate 109 pixels around the spot
             spot_x = fits(2) - snippet_size + centroid_x; %AR 7/14/16: same deal as line above
             spot_y = fits(4) - snippet_size + centroid_y;    
 
@@ -100,13 +101,7 @@ function temp_particles = identifySpot(particle_index, image, image_label, dog_i
                 temp_particles = {{fixedAreaIntensity, spot_x, spot_y, fits(end-1), snippet, ...
                     area, sigma_x, sigma_y, centroid_y, centroid_x, gaussianIntensity,intensity,...
                     max_dog, snippet_mask, sigma_x2, sigma_y2, fits(end), relative_errors, confidence_intervals, gaussian, mesh}};
-            else
-                temp_particles = {[]};
             end
-       else 
-           temp_particles = {[]};
        end
-    else 
-        temp_particles = {[]};
     end
 end

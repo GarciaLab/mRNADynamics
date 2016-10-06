@@ -475,7 +475,6 @@ while (cc~='x')
     xNonFlagged=x(IndexNonFlaggedParticles);
     yNonFlagged=y(IndexNonFlaggedParticles);
     
-
     if (~isempty(xTrace))&(~ManualZFlag)
         CurrentZ=z(CurrentParticleIndex);
         ManualZFlag=0;
@@ -770,14 +769,18 @@ while (cc~='x')
         MaxZIndex=find(...
             Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
             Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ);
+         CurrentZIndex=find(...
+                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
+                CurrentZ);
+     
         
         %Get the snippet and the mask, and overlay them
         CurrentSnippet=mat2gray(...
-            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).Snippet{MaxZIndex});
+            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).Snippet{CurrentZIndex});
         SnippetSize=size(CurrentSnippet,1);        
         
         IntegrationArea=bwperim(...
-            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).snippet_mask{MaxZIndex});
+            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).snippet_mask{CurrentZIndex});
         SnippetOverlay=cat(3,IntegrationArea/2 + ...
             +CurrentSnippet,CurrentSnippet,CurrentSnippet);
     
@@ -787,11 +790,11 @@ while (cc~='x')
         hold on
         
         SnippetX=(SnippetSize-1)/2+1-...
-            (Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xDoG(MaxZIndex)-...
-            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xFit(MaxZIndex));
+            (Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xDoG(CurrentZIndex)-...
+            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xFit(CurrentZIndex));
         SnippetY=(SnippetSize-1)/2+1-...
-            (Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yDoG(MaxZIndex)-...
-            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yFit(MaxZIndex));
+            (Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yDoG(CurrentZIndex)-...
+            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yFit(CurrentZIndex));
         warning('HG needs to fix this after new commit from AR')
 %         PlotHandle=ellipse(fad(CurrentChannel).channels(CurrentFrame).fits.r_max(CurrentParticleIndex),...
 %             fad(CurrentChannel).channels(CurrentFrame).fits.r_min(CurrentParticleIndex),...
@@ -809,11 +812,13 @@ while (cc~='x')
         MaxZIndex=find(...
                 Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
                 Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ);
-
+            CurrentZIndex=find(...
+                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
+                CurrentZ);
             %Get the snippet and the mask, and overlay them
-        codomain=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).rawSpot{MaxZIndex};
-        snip = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).Snippet{MaxZIndex};
-        gauss = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{MaxZIndex};
+        codomain=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).rawSpot{CurrentZIndex};
+        snip = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).Snippet{CurrentZIndex};
+        gauss = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{CurrentZIndex};
         surf(codomain{1}, codomain{2}, gauss + double(snip));
         title('Double Gaussian fits')
         set(gcf,'units', 'normalized', 'position',[.60, .7, .2, .2]);
@@ -839,7 +844,9 @@ while (cc~='x')
         MaxZIndex=find(...
             Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
             Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ);
-        
+       CurrentZIndex=find(...
+                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
+                CurrentZ); 
         %Get the z DoG profile
         ZProfile=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).FixedAreaIntensity;
         MaxZ=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ;
@@ -847,7 +854,7 @@ while (cc~='x')
         plot(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z,...
             ZProfile,'.-k');
         hold on
-        plot(CurrentZ,ZProfile(MaxZIndex),'ob')
+        plot(CurrentZ,ZProfile(CurrentZIndex),'ob')
         hold off
         title('Z profile')
     end
