@@ -45,6 +45,12 @@ G = imfilter(filteredImg,fspecial('disk',3),'symmetric');
 ind = find(maxima>0);
 [xm,ym] = ind2sub(size(maxima),ind);
 
+%Check whether anything was found in this image. If nothing is found,
+%this is usually the result of an empty frame
+if isempty(xm)|isempty(ym)
+   error(['No nuclei found in frame ',num2str(frameNumber),'. Check that that frame is not blank.']) 
+end
+
 try
     [v,dummy] = voronoin([xm ym]);
 catch

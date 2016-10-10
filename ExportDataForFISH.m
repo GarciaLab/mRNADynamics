@@ -69,10 +69,11 @@ end
 %combined into one.
 DTIF=dir([Folder,filesep,'*.tif']);
 DLSM=dir([Folder,filesep,'*.lsm']);
+DCZI=dir([Folder,filesep,'*.czi']);
 DLIF=dir([Folder,filesep,'*.lif']);
 DLAT=dir([Folder,filesep,'..',filesep,'IsLatticeData.txt']);
 
-if (length(DTIF)>0)&(isempty(DLSM))
+if (length(DTIF)>0)&(isempty(DLSM))&(isempty(DCZI))
     if length(DLIF)==0
         if length(DLAT)==0
             display('2-photon @ Princeton data mode')
@@ -92,6 +93,10 @@ elseif (length(DTIF)==0)&(length(DLSM)>0)
     display('LSM mode')
     D=DLSM;
     FileMode='LSM';
+elseif (length(DTIF)==0)&(length(DCZI)>0)
+    display('LSM (CZI) mode')
+    D=DCZI;
+    FileMode='LSM';
 else
     error('File type not recognized. For LIF files, were they exported to TIF?')
 end
@@ -106,11 +111,11 @@ FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
     'NumberSlices',{},'ZStep',{},'FileMode',{},...
     'PixelSize',{});
 
-%Get the structure with the acquisition information
-ImageInfo = imfinfo([Folder,filesep,D(1).name]);
-%%
+
 if strcmp(FileMode,'TIF')
 
+    %Get the structure with the acquisition information
+    ImageInfo = imfinfo([Folder,filesep,D(1).name]);
     
     %Do we have a second channel for Histone?
     if strcmp(Channel2,'His-RFP')
@@ -382,7 +387,7 @@ if strcmp(FileMode,'TIF')
     Output{6}=['flat FF'];
     
 
-%% 
+
 %LSM mode
 elseif strcmp(FileMode,'LSM')
     
@@ -408,7 +413,7 @@ elseif strcmp(FileMode,'LSM')
             error('LSM Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
         end
         fiducialChannel=histoneChannel;
-        NSeries=length(DLSM);
+        NSeries=length(D);
         Frame_Times=[];     %Store the frame information
         
         %m=1;        %Counter for number of frames
@@ -418,7 +423,7 @@ elseif strcmp(FileMode,'LSM')
         for LSMIndex=1:NSeries
             waitbar(LSMIndex/NSeries,h);
             %Load the file using BioFormats
-            LSMImages=bfopen([Folder,filesep,DLSM(LSMIndex).name]);
+            LSMImages=bfopen([Folder,filesep,D(LSMIndex).name]);
             %Extract the metadata for each series
             LSMMeta = LSMImages{:, 4};      %OME Metadata
             LSMMeta2 = LSMImages{:, 2};     %Original Metadata
@@ -432,7 +437,16 @@ elseif strcmp(FileMode,'LSM')
             %Finally, use this information to determine the number of frames in
             %each series
             NFrames(LSMIndex)=NPlanes(LSMIndex)/NSlices(LSMIndex)/NChannels(LSMIndex);
-
+            
+            %Check that the acquisition wasn't stopped before the end of a
+            %cycle. If that is the case, some images in the last frame will
+            %be blank and we need to remove them.
+            if sum(sum(LSMImages{1}{end,1}))==0
+                %Reduce the number of frames by one
+                NFrames(LSMIndex)=NFrames(LSMIndex)-1;
+                %Reduce the number of planes by NChannels*NSlices
+                NPlanes(LSMIndex)=NPlanes(LSMIndex)-NChannels(LSMIndex)*NSlices(LSMIndex);
+            end
             
             %First, get the starting time. This is not accessible in the
             %OME format, so we need to pull it out from the original
@@ -448,13 +462,29 @@ elseif strcmp(FileMode,'LSM')
             end
             
             %Get the starting time of this acquisition
-            StartingTime(LSMIndex) = LSMMeta2.get(['TimeStamp #',iIndex(1,NDigits)]);
+            %This is different if I have an LSM or CZI file
+            if ~isempty(DLSM)
+                StartingTime(LSMIndex) = LSMMeta2.get(['TimeStamp #',iIndex(1,NDigits)]);
+            elseif ~isempty(DCZI)
+                TimeStampString=LSMMeta2.get('Global Information|Image|T|StartTime #1');
+                TimeStampStrings{LSMIndex}=TimeStampString;
+                %Get the number of days since 1/1/0000
+                TimeStamp=datetime(TimeStampString(1:19),'InputFormat','yyyy-MM-dd''T''HH:mm:ss');
+                %Get the milliseconds, note that we're not using them!
+                MilliSeconds=TimeStamp(21:end-1);
+                %Convert the time to seconds. We're ignoring the seconds.
+                StartingTime(LSMIndex)=datenum(TimeStamp)*24*60*60;
+            else
+                error('Wrong file format. The code should not have gotten this far.')
+            end
+
+            
             %Now get the time for each frame. We start the timer at the first time point
             %of the first data series.
             for j=0:(NSlices(LSMIndex)*NChannels(LSMIndex)):(NPlanes(LSMIndex)-1)
                 if ~isempty(LSMMeta.getPlaneDeltaT(0,j))
                     Frame_Times=[Frame_Times,...
-                        str2num(LSMMeta.getPlaneDeltaT(0,j))+...
+                        str2num(LSMMeta.getPlaneDeltaT(0,j).value)+...
                         StartingTime(LSMIndex)-StartingTime(1)];
                 else  %If there's only one frame the DeltaT will be empty
                     Frame_Times=[Frame_Times,...
@@ -474,8 +504,8 @@ elseif strcmp(FileMode,'LSM')
                 FrameInfo(i).PixelsPerLine=str2double(LSMMeta.getPixelsSizeX(0));
                 FrameInfo(i).NumberSlices=min(NSlices);
                 FrameInfo(i).FileMode='LSMExport';
-                FrameInfo(i).PixelSize=str2num(LSMMeta.getPixelsPhysicalSizeX(0));
-                FrameInfo(i).ZStep=str2double(LSMMeta.getPixelsPhysicalSizeZ(0));
+                FrameInfo(i).PixelSize=str2num(LSMMeta.getPixelsPhysicalSizeX(0).value);
+                FrameInfo(i).ZStep=str2double(LSMMeta.getPixelsPhysicalSizeZ(0).value);
                 FrameInfo(i).Time=Frame_Times(i);        %In seconds
             end
         
@@ -488,44 +518,6 @@ elseif strcmp(FileMode,'LSM')
             %Size of images for generating blank images inside the loop
             Rows=size(LSMImages{1,1},1);
             Columns=size(LSMImages{1,1},2);
-            
-            
-            %HG: I can't get this to work. I think it has issues with
-            %memory. I should write something that loads each image one at
-            %a time in each iteration of the loo.
-            
-%             parfor j=1:length(FrameRange)%NFrames(LSMIndex) 
-%                 %First do the coat protein channel
-%                 %Save the blank images at the beginning and end of the
-%                 %stack
-%                 NewName=[Prefix,'_',iIndex(FrameRange(j),3),'_z',iIndex(1,2),'.tif'];
-%                 imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-%                 NewName=[Prefix,'_',iIndex(FrameRange(j),3),'_z',iIndex(min(NSlices)+2,2),'.tif'];
-%                 imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-%                 %Copy the rest of the images
-%                 n=1;        %Counter for slices
-%                 for k=((j-1)*NSlices(LSMIndex)*NChannels(LSMIndex)+1+(coatChannel-1)):...
-%                         NChannels:(j*NSlices(LSMIndex))*NChannels
-%                     if n<=min(NSlices)
-%                         NewName=[Prefix,'_',iIndex(FrameRange(j),3),'_z',iIndex(n+1,2),'.tif'];
-%                         imwrite(LSMImages{k,1},[OutputFolder,filesep,NewName]);
-%                         n=n+1;
-%                     end
-%                 end
-% 
-%                 %Now do His-RFP
-%                 HisSlices=zeros([Rows,Columns,NSlices(LSMIndex)]);
-%                 n=1;
-%                 for k=((j-1)*NSlices(LSMIndex)*NChannels(LSMIndex)+1+(fiducialChannel-1)):...
-%                         NChannels(LSMIndex):(j*NSlices(LSMIndex))*NChannels(LSMIndex)
-%                     HisSlices(:,:,n)=LSMImages{k,1};
-%                     n=n+1;
-%                 end
-%                 Projection=median(HisSlices,3);
-%                 imwrite(uint16(Projection),...
-%                             [OutputFolder,filesep,Prefix,'-His_',iIndex(FrameRange(j),3),'.tif']);
-%                 %m=m+1;
-%             end
             
             
              for j=1:length(FrameRange)%NFrames(LSMIndex) 
@@ -570,8 +562,11 @@ elseif strcmp(FileMode,'LSM')
         
         %The FF can be in the folder with the data or in the folder
         %corresponding to the day.
-        D1=dir([Folder,filesep,'FF*.lif']);
-        D2=dir([Folder,filesep,'..',filesep,'FF*.lif']);
+        D1=dir([Folder,filesep,'FF*.lsm']);
+        D1=[D1,dir([Folder,filesep,'FF*.czi'])];
+        D2=dir([Folder,filesep,'..',filesep,'FF*.lsm']);
+        D2=[D2,dir([Folder,filesep,'..',filesep,'FF*.lif'])];
+
         FFPaths={};
         for i=1:length(D1)
             FFPaths{end+1}=[Folder,filesep,D1(i).name];
@@ -725,8 +720,8 @@ elseif strcmp(FileMode,'LIFExport')
             FrameInfo(i).PixelsPerLine=str2double(LIFMeta.getPixelsSizeX(0));
             FrameInfo(i).NumberSlices=min(NSlices);
             FrameInfo(i).FileMode='LIFExport';
-            FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(0));
-            FrameInfo(i).ZStep=str2double(LIFMeta.getPixelsPhysicalSizeZ(0));
+            FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(0).value);
+            FrameInfo(i).ZStep=str2double(LIFMeta.getPixelsPhysicalSizeZ(0).value);
             FrameInfo(i).Time=InitialStackTime(i);
         end
         %Find the FF information
