@@ -66,7 +66,7 @@ function temp_particles = identifySpot(particle_index, image, image_label, dog_i
             
             chisq = [];
             fitstruct = struct();
-            steps = 1:50:400;
+            steps = round(1/pixelSize):round(50/pixelSize):round(800/pixelSize);
             for i = 1:length(steps)
                 [fits, relative_errors, residual, confidence_intervals, gaussianIntensity, gaussian, mesh] =  ...
                     fitGaussians(snippet, neighborhood_Size, maxThreshold, ...

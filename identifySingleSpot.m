@@ -1,4 +1,4 @@
-function temp_particles = identifySpot(particle_index, image, image_label, dog_image, distance_to_neighbor, snippet_size, ...
+function temp_particles = identifySingleSpot(particle_index, image, image_label, dog_image, distance_to_neighbor, snippet_size, ...
     pixelSize, show_status, figure, microscope, threshold)
 
     %This function locates a transcriptional locus (the k'th locus in an image)
@@ -66,10 +66,11 @@ function temp_particles = identifySpot(particle_index, image, image_label, dog_i
             
             chisq = [];
             fitstruct = struct();
-            steps = 1:50:400;
+            %steps = round(1/pixelSize):round(50/pixelSize):round(400/pixelSize);
+            steps = 200/pixelSize:200/pixelSize;
             for i = 1:length(steps)
                 [fits, relative_errors, residual, confidence_intervals, gaussianIntensity, gaussian, mesh] =  ...
-                    fitGaussians(snippet, neighborhood_Size, maxThreshold, ...
+                    fitSingleGaussian(snippet, neighborhood_Size, maxThreshold, ...
                     steps(i), offsetGuess, show_status);
                 fitstruct(i).fits = fits;
                 fitstruct(i).relative_errors = relative_errors;
@@ -91,10 +92,9 @@ function temp_particles = identifySpot(particle_index, image, image_label, dog_i
             
             
             sigma_x = fits(3);
-            sigma_y = fits(3);
-            sigma_x2 = fits(7);
-            sigma_y2 = fits(7);
-            area = pi*(2*sigma_x^2)^2; %in pixels. this is two widths away from peak
+            sigma_y = fits(5);
+
+            area = pi*sigma_x*sigma_y; %in pixels. this is two widths away from peak
             integration_radius = 6; %integrate 109 pixels around the spot
             spot_x = fits(2) - snippet_size + centroid_x; %AR 7/14/16: same deal as line above
             spot_y = fits(4) - snippet_size + centroid_y;    
@@ -117,13 +117,19 @@ function temp_particles = identifySpot(particle_index, image, image_label, dog_i
                     end 
                 end
             end
-                                  
-            if 1   %here is the place to introduce quality control
-                fixedAreaIntensity = sum(sum(snippet_mask)) - fits(end-1)*sum(sum(snippet_mask~=0));
+            
+            sigma_x2 = 0;
+            sigma_y2 = 0;
+            sister_chromatid_distance = fits(end);
+            fixedAreaIntensity = sum(sum(snippet_mask)) - fits(end-1)*sum(sum(snippet_mask~=0));
+            
+            if  .1<sigma_x && sigma_x<(450/pixelSize) && .1<sigma_y && sigma_y<(450/pixelSize)   %here is the place to introduce quality control
                 max_dog = max(max(dog_image(k_row,k_column)));
                 temp_particles = {{fixedAreaIntensity, spot_x, spot_y, fits(end-1), snippet, ...
                     area, sigma_x, sigma_y, centroid_y, centroid_x, gaussianIntensity,intensity,...
-                    max_dog, snippet_mask, sigma_x2, sigma_y2, fits(end), relative_errors, confidence_intervals, gaussian, mesh}};
+                    max_dog, snippet_mask, sigma_x2, sigma_y2, sister_chromatid_distance, relative_errors, confidence_intervals, gaussian, mesh}};
+            else
+                temp_particles = {{}};
             end
        end
     end

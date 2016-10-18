@@ -159,12 +159,12 @@ else
             if n_spots ~= 0
                 if ~displayFigures
                     parfor k = 1:n_spots
-                            temp_particles(k) = identifySpot(k, im, im_label, dog, ...
+                            temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
                                 neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, Threshold);
                     end
                 else
                     for k = 1:n_spots
-                            temp_particles(k) = identifySpot(k, im, im_label, dog, ...
+                            temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
                                 neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, Threshold);
                     end
                 end
