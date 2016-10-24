@@ -1,4 +1,4 @@
-function segmentSpots(Prefix,Threshold,varargin)
+function t = segmentSpots(Prefix,Threshold,varargin)
 
 %Parameters:
 %Prefix: Prefix of the data set to analyze
@@ -94,8 +94,8 @@ end
 %a diffraction-limited transcription spot or if it should encompass
 %both sister chromatids. 
 pixelSize = FrameInfo(1).PixelSize*1000; %nm
-neighborhood = round(1500 / pixelSize); %nm
-snippet_size = 2*(floor(2000/(2*pixelSize))) + 1; % nm. note that this is forced to be odd
+neighborhood = round(1300 / pixelSize); %nm
+snippet_size = 2*(floor(1300/(2*pixelSize))) + 1; % nm. note that this is forced to be odd
 
            
 all_frames = cell(num_frames, zSize);
@@ -105,41 +105,45 @@ if just_dog
 %Generate difference of Gaussian images if no threshold was given
     %Initialize Difference of Gaussian filter parameters. filterSize >> sigma2
     %> sigma1
-    sigma1 = 150 / pixelSize; %width of narrower Gaussian
-    sigma2 = 250 / pixelSize; % width of wider Gaussian
-    filterSize = round(1500 / pixelSize); %size of square to be convolved with microscopy images
+    sigma1 = 320 / pixelSize; %width of narrower Gaussian
+    sigma2 = 42000 / pixelSize; % width of wider Gaussian
+    filterSize = round(2000 / pixelSize); %size of square to be convolved with microscopy images
     h=waitbar(0,'Generating DoG images');
     for current_frame = 1:num_frames
         waitbar(current_frame/num_frames,h);
         if displayFigures
-            for current_z = 1:zSize      
-                im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']));
+            for i = 1:zSize      
+                im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
                 dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
                 dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
-                dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
+                dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif'];
                 imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
                 imshow(dog,[]);
+%                 im_thresh = dog > Threshold;
+%                 [im_label, n_spots] = bwlabel(im_thresh); 
+%                 imwrite(uint16(im_label), [FISHPath,filesep,Prefix,'_',filesep,'imlabel', 'imlabel_',dog_name])         
+%           
             end
         else 
-            parfor current_z = 1:zSize      
-                im = imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']);
+            parfor i = 1:zSize      
+                im = imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']);
                 dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
                 dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
-                dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif'];
+                dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif'];
                 imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
             end
         end
     end
     close(h);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%     
+%%%%%%%%%%%%%%%%%%%%%%z%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%     
 else
     h=waitbar(0,'Segmenting spots');
     for current_frame = 1:num_frames
         w = waitbar(current_frame/num_frames,h);
         set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
-        for current_z = 1:zSize      
-            im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']));
-            dog = double(imread([OutputFolder1, filesep,'DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(current_z,2),'.tif']));
+        for i = 1:zSize      
+            im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
+            dog = double(imread([OutputFolder1, filesep,'DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
             if displayFigures
                 fig = figure(1);
                 imshow(dog,[]);
@@ -153,6 +157,7 @@ else
             %
             im_thresh = dog > Threshold;
             [im_label, n_spots] = bwlabel(im_thresh); 
+
             temp_frames = {};
             temp_particles = cell(1, n_spots);
             
@@ -174,7 +179,7 @@ else
                         temp_frames = [temp_frames, temp_particles(k)];
                     end
                 end
-                all_frames{current_frame,current_z} = temp_frames;
+                all_frames{current_frame,i} = temp_frames;
             end
         end
     end
@@ -228,7 +233,7 @@ if ~just_dog
         changes = 0;
         i = 1; 
         h=waitbar(0,'Finding z-columns');
-        neighborhood = 3000 / pixelSize;
+        neighborhood = 1000 / pixelSize;
         for n = 1:num_frames  
             waitbar(n/num_frames,h)
             i = i + length(Particles([Particles.frame] == (n - 1) ));
@@ -251,7 +256,7 @@ if ~just_dog
 
     %pick the brightest z-slice
     for i = 1:length(Particles)
-        [~, max_index] = max(Particles(i).FixedAreaIntensity);
+        [~, max_index] = max(Particles(i).CentralIntensity);
         if TrackSpots
             for j = 1:numel(fields)-2 %do not include fields 'r' or 'frame'
                 Particles(i).(fields{j}) = Particles(i).(fields{j})(max_index);

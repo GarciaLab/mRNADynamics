@@ -290,8 +290,8 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
         %TO-DO: Show spots above and below threshold differently
         imshow(Image,[])
         hold on
-        plot(x(CurrentFrameFilter),y(CurrentFrameFilter),'or')
-        plot(x(~CurrentFrameFilter),y(~CurrentFrameFilter),'xr')
+        plot(x(CurrentFrameFilter),y(CurrentFrameFilter),'or', 'MarkerSize', 20)
+        plot(x(~CurrentFrameFilter),y(~CurrentFrameFilter),'ow', 'MarkerSize', 20)
         hold off
         title(i)
         set(gcf,'Name',['Frame: ',num2str(CurrentFrame),'/',num2str(length(Spots))])

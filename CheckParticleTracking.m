@@ -419,6 +419,7 @@ while (cc~='x')
     
     %Get the coordinates of all the spots in this frame
     [x,y,z]=SpotsXYZ(Spots{CurrentChannel}(CurrentFrame));
+   
     
     %If the approved field does not exist create it
     if ~isfield(Particles{CurrentChannel},'Approved')
@@ -515,6 +516,7 @@ while (cc~='x')
         plot(xNonFlagged,yNonFlagged,'or')
         plot(xApproved,yApproved,'ob')
         plot(xDisapproved,yDisapproved,'^r')
+        plot(x, y, 'sw')
     end
     %Always show current particle
     plot(xTrace,yTrace,'og')
@@ -675,7 +677,7 @@ while (cc~='x')
         
         hold on
         plot(x2,y2,'sr')
-        hold off
+         hold off
     end
     
     if ZoomMode
@@ -761,7 +763,7 @@ while (cc~='x')
 %     figure(SisterFig3)
 %     %plot distance versus time
     
-    
+    try
     figure(SnippetFig)
     if (~isempty(xTrace))
         %Determine the z index to be plotted. This corresponds to the
@@ -775,6 +777,7 @@ while (cc~='x')
      
         
         %Get the snippet and the mask, and overlay them
+
         CurrentSnippet=mat2gray(...
             Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).Snippet{CurrentZIndex});
         SnippetSize=size(CurrentSnippet,1);        
@@ -848,7 +851,7 @@ while (cc~='x')
                 Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
                 CurrentZ); 
         %Get the z DoG profile
-        ZProfile=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).FixedAreaIntensity;
+        ZProfile=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity;
         MaxZ=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ;
         
         plot(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z,...
@@ -858,7 +861,8 @@ while (cc~='x')
         hold off
         title('Z profile')
     end
-       
+    catch
+    end
     figure(TraceFig)
     if ~strcmp(lower(ExperimentType),'inputoutput')
         %Only update the trace information if we have switched particles
