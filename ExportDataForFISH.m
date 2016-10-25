@@ -720,8 +720,8 @@ elseif strcmp(FileMode,'LIFExport')
             FrameInfo(i).PixelsPerLine=str2double(LIFMeta.getPixelsSizeX(0));
             FrameInfo(i).NumberSlices=min(NSlices);
             FrameInfo(i).FileMode='LIFExport';
-            FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(0).value);
-            FrameInfo(i).ZStep=str2double(LIFMeta.getPixelsPhysicalSizeZ(0).value);
+            FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(0));
+            FrameInfo(i).ZStep=str2double(LIFMeta.getPixelsPhysicalSizeZ(0));
             FrameInfo(i).Time=InitialStackTime(i);
         end
         %Find the FF information
