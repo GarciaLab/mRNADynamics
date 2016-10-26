@@ -1,4 +1,4 @@
-function t = segmentSpots(Prefix,Threshold,varargin)
+function segmentSpots(Prefix,Threshold,varargin)
 
 %Parameters:
 %Prefix: Prefix of the data set to analyze
@@ -105,7 +105,7 @@ if just_dog
 %Generate difference of Gaussian images if no threshold was given
     %Initialize Difference of Gaussian filter parameters. filterSize >> sigma2
     %> sigma1
-    sigma1 = 320 / pixelSize; %width of narrower Gaussian
+    sigma1 = pixelSize / pixelSize; %width of narrower Gaussian
     sigma2 = 42000 / pixelSize; % width of wider Gaussian
     filterSize = round(2000 / pixelSize); %size of square to be convolved with microscopy images
     h=waitbar(0,'Generating DoG images');
@@ -119,10 +119,6 @@ if just_dog
                 dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif'];
                 imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
                 imshow(dog,[]);
-%                 im_thresh = dog > Threshold;
-%                 [im_label, n_spots] = bwlabel(im_thresh); 
-%                 imwrite(uint16(im_label), [FISHPath,filesep,Prefix,'_',filesep,'imlabel', 'imlabel_',dog_name])         
-%           
             end
         else 
             parfor i = 1:zSize      
@@ -155,7 +151,7 @@ else
                 im = im./ffim;
             end
             %
-            im_thresh = dog > Threshold;
+            im_thresh = dog >= Threshold;
             [im_label, n_spots] = bwlabel(im_thresh); 
 
             temp_frames = {};

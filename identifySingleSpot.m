@@ -123,8 +123,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             sister_chromatid_distance = fits(end);
             fixedAreaIntensity = sum(sum(snippet_mask)) - fits(end-1)*sum(sum(snippet_mask~=0));
             
-            if 1
-            %if  .1<sigma_x && sigma_x<(600/pixelSize) && .1<sigma_y && sigma_y<(600/pixelSize)   %here is the place to introduce quality control
+            if  .1<sigma_x && sigma_x<(600/pixelSize) && .1<sigma_y && sigma_y<(600/pixelSize)   %here is the place to introduce quality control
                 max_dog = max(max(dog_image(k_row,k_column)));
                 temp_particles = {{fixedAreaIntensity, spot_x, spot_y, fits(end-1), snippet, ...
                     area, sigma_x, sigma_y, centroid_y, centroid_x, gaussianIntensity,intensity,...

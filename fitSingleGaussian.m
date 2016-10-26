@@ -23,9 +23,13 @@ hLocalMax = vision.LocalMaximaFinder;
 hLocalMax.NeighborhoodSize = [neighborhoodSize, neighborhoodSize];
 hLocalMax.Threshold = threshold;
 centers = double(step(hLocalMax, snippet));    
-
-initial_parameters = [max(max(snippet)), centers(1,2), widthGuess, centers(1,1), ...
+if ~isempty(centers)
+    initial_parameters = [max(max(snippet)), centers(1,2), widthGuess, centers(1,1), ...
         widthGuess,offsetGuess, 0];
+else
+    initial_parameters = [max(max(snippet)), round(length(snippet)/2), widthGuess, round(length(snippet)/2), ...
+        widthGuess,offsetGuess, 0];
+end
 lsqOptions=optimset('Display','none',... %Inherited these options from Mikhail Tikhonov's FISH analysis
 'maxfunevals',10000,...
 'maxiter',10000); 
