@@ -100,7 +100,7 @@ DataFolder=[PreProcPath,filesep,FilePrefix(1:end-1)];
 
 
 %Determine the search radius based on the imaging conditions
-SearchRadiusMicrons=2.5;       %Search radius in um
+SearchRadiusMicrons=3;       %Search radius in um
 
 
 
@@ -235,64 +235,25 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
         Retracking=0;
     end
 
-    %Load the FISH files. Split fad into particles that are above Threshold1 and
-    %those between that threshold and Threshold2.
-
-    if ~exist('fad')
-        load([Folder,FileName])
-        fad=fishAnalysisData;
-        clear fishAnalysisData
-
-        fadTemp=fad;
-        clear fad
-        fad=fadTemp;
-        fad2=fadTemp;
-        for i=1:length(fadTemp.channels)
-            if sum(fadTemp.channels(i).fits.third) ~= 0
-                Filter1=fadTemp.channels(i).fits.third>Threshold1;
-                Filter2=(fadTemp.channels(i).fits.third<Threshold1)&...
-                    (fadTemp.channels(i).fits.third>Threshold2);
-                Fields=fieldnames(fadTemp.channels(i).fits);
-                NParticles=length(fadTemp.channels(i).fits.third);  %I'll use this to
-                                                                %detemine the
-                                                                %dimension of the
-                                                                %different elements
-            else
-                a = [];
-                for k = 1:length(fadTemp.channels(i).fits.shadowsDog)
-                    a(k) = min(fadTemp.channels(i).fits.shadowsDog{k});
-                end
-                Filter1=a>Threshold1;
-                Filter2=a<Threshold1 & a>Threshold2;
-                Fields=fieldnames(fadTemp.channels(i).fits);
-                NParticles=length(fadTemp.channels(i).fits.shadowsDog);
-            end
-            for j=1:length(Fields)
-                %In the end this seems to work, the fields that have higher
-                %dimensions are still divided well.
-                if strcmp(Fields{j},'snippets')
-                    Temp=getfield(fadTemp.channels(i).fits,Fields{j});
-                    SnippetDimentions=size(Temp);
-                    if length(SnippetDimentions)==3
-                        fad.channels(i).fits=setfield(fad.channels(i).fits,Fields{j},Temp(:,:,Filter1));
-                        fad2.channels(i).fits=setfield(fad2.channels(i).fits,Fields{j},Temp(:,:,Filter2));
-                    elseif length(SnippetDimentions)==2
-                        if Filter1
-                            fad.channels(i).fits=setfield(fad.channels(i).fits,Fields{j},Temp(:,:,Filter1));
-                        elseif Filter2
-                            fad2.channels(i).fits=setfield(fad2.channels(i).fits,Fields{j},Temp(:,:,Filter2));
-                        end
-                    end
-                elseif strcmp(Fields{j},'maskUsedForTotalInt')
-                    Temp=getfield(fadTemp.channels(i).fits,Fields{j});
-                    fad.channels(i).fits=setfield(fad.channels(i).fits,Fields{j},Temp);
-                    fad2.channels(i).fits=setfield(fad2.channels(i).fits,Fields{j},Temp); 
-                elseif length(getfield(fadTemp.channels(i).fits,Fields{j}))==NParticles
-                    Temp=getfield(fadTemp.channels(i).fits,Fields{j});
-                    fad.channels(i).fits=setfield(fad.channels(i).fits,Fields{j},Temp(Filter1));
-                    fad2.channels(i).fits=setfield(fad2.channels(i).fits,Fields{j},Temp(Filter2));
-                else
-                    error('Missing field when separating fad and fad2')
+    %First, generate a structure array with a flag that determines whether
+    %each spots is above Threshold1
+    
+    if ~exist('Spots')
+        load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'])
+        
+        %Determine the maximum number of spots in a given frame for the
+        %whole movie
+        MaxSpots=0;
+        for i=1:length(Spots)
+            MaxSpots=max([MaxSpots,length(Spots(i).Fits)]);
+        end
+        %This filter tells us whether a spot is above the threshold.
+        SpotFilter=nan(length(Spots),MaxSpots);
+        %Populate the filter
+        for i=1:length(Spots)
+            for j=1:length(Spots(i).Fits)
+                if sum(Spots(i).Fits(j).DOGIntensity>Threshold1)
+                    SpotFilter(i,j)=1;
                 end
             end
         end
@@ -315,28 +276,43 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
     
     
     %Initially, only track particles that are above Threshold1
-    for i=1:length(fad.channels)
-
+    for i=1:length(Spots) %iterate over all frames
 
         figure(ParticlesFig)
-        set(gcf,'Position',[ 16   369   676   342])
+        set(gcf,'units', 'normalized', 'position',[0.01, .55, .33, .33]);
+
+        %Get the filter for this frame
         CurrentFrame=i;
-        [x,y]=fad2xyz(CurrentFrame,fad, 'addMargin'); 
-        CurrentZ=3;     
-        Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);
+                Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);
+
+        CurrentFrameFilter=logical(SpotFilter(CurrentFrame,~isnan(SpotFilter(CurrentFrame,:))));
         
+        %Get the positions of the spots in this frame
+        [x,y,z]=SpotsXYZ(Spots(CurrentFrame));
         
+        %Z plane to be displayed. We use the median of all particles found
+        %in this frame
+        if ~isempty(Spots(CurrentFrame).Fits)
+            CurrentZ=round(median([Spots(CurrentFrame).Fits.brightestZ]));
+        else
+            CurrentZ=round(FrameInfo(1).NumberSlices/2);     
+        end
+            
+        %Load the corresponding mRNA image
+        Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'.tif']);
+        
+        %TO-DO: Show spots above and below threshold differently
         imshow(Image,[])
         hold on
-        plot(x,y,'or')
+        plot(x(CurrentFrameFilter),y(CurrentFrameFilter),'or', 'MarkerSize', 20)
+        plot(x(~CurrentFrameFilter),y(~CurrentFrameFilter),'ow', 'MarkerSize', 20)
         hold off
         title(i)
-        set(gcf,'Name',['Frame: ',num2str(i),'/',num2str(length(fad.channels))])
+        set(gcf,'Name',['Frame: ',num2str(CurrentFrame),'/',num2str(length(Spots))])
 
         figure(NucleiFig)
-        set(gcf,'Position',[ 728   373   512   256])
-        CurrentFrame=i;
-        [x,y]=fad2xyz(CurrentFrame,fad, 'addMargin');
+        set(gcf,'units', 'normalized', 'position',[0.65, .5, .2, .2])
+
         if UseHistone
             try
                 Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,NDigits),'.tif']);
@@ -372,29 +348,27 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
 
         if ~UseHistone
             %Get the particles detected in the frame
-            if ~isempty(fad.channels(i).fits.x)
+            if ~isempty(x)
                 if isempty(Particles)
                     %Initialize the Particles structure if it doesn't exist yet
-                    for j=1:length(fad.channels(i).fits.x)
-                        Particles(j).Frame=i;
-                        Particles(j).Index=j;
-                        LastFrame(j)=i;
-                        Particles(j).Approved=0;
+                    for j=1:length(x)
+                        if CurrentFrameFilter(j)
+                            Particles(j).Frame=CurrentFrame;
+                            Particles(j).Index=j;
+                            LastFrame(j)=CurrentFrame;
+                            Particles(j).Approved=0;
+                        end
                     end
 
 
                 else
                 %If we already have recorded particles, we need to compare
-                %them to the new ones found and try to assign them. We also
-                %need to make sure that they stay within the nuclei.
+                %them to the new ones found and try to assign them.
 
                     %Get the positions of the potentially new particles
-                    [NewParticlesX,NewParticlesY]=fad2xyz(i,fad, 'addMargin');
-                    NewParticlesZ=single(fad.channels(i).fits.z);
-
+                    [NewParticlesX,NewParticlesY]=SpotsXYZ(Spots(i));
+                    
                     NewParticlesFlag=ones(size(NewParticlesX));
-
-
 
                     %Get a list of the particles that existed in the previous
                     %frame
@@ -411,11 +385,11 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
 
                     PreviousParticles=find(FilterPreviousFrame);
 
-                    if (~isempty(PreviousParticlesIndex))&(sum((PreviousParticlesIndex)))
+                    if (~isempty(PreviousParticlesIndex))&&(sum((PreviousParticlesIndex)))
                         %Now, compare the positions of all of the old and new
                         %particles
                         clear Distance
-                        [PreviousParticlesX,PreviousParticlesY]=fad2xyz(i-1,fad, 'addMargin');
+                        [PreviousParticlesX,PreviousParticlesY]=SpotsXYZ(Spots(i-1));
 
                         for j=1:length(NewParticlesX)
                             Distance(j,:)=sqrt((NewParticlesX(j)*PixelSize-...
@@ -439,12 +413,6 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
                         %These indices refer to the old particles. We're
                         %finding which ones are good candidates                    
                         UniqueMinima=unique(MinIndex);
-
-                        if i==31
-                            1+1;
-                        end
-
-
 
                         for j=1:length(UniqueMinima)
                             %If we have only one previous and one new particle
@@ -521,64 +489,66 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
         else
 
             if strcmp(ExperimentType,'1spot')
-                [Particles,fad,fad2,schnitzcells]=AssignParticle2Nucleus(schnitzcells,Ellipses,Particles,fad,fad2,...
-                            i,PixelSize,SearchRadius);
+                [Particles,SpotFilter,schnitzcells]=AssignParticle2Nucleus(schnitzcells,Ellipses,Particles,Spots,SpotFilter,...
+                            CurrentFrame,PixelSize,SearchRadius);
             elseif strcmp(ExperimentType,'2spot')
-                 [Particles,fad,fad2,schnitzcells]=AssignParticle2Nucleus2S(schnitzcells,Ellipses,Particles,fad,fad2,...
-                            i,PixelSize,SearchRadius);
+                 [Particles,SpotFilter,schnitzcells]=AssignParticle2Nucleus2S(schnitzcells,Ellipses,Particles,Spots,SpotFilter,...
+                            CurrentFrame,PixelSize,SearchRadius);
             else
                 error('Experiment type in MovieDatabase.xlsx not recognized')
             end
 
         end
     end
-
-
-
     close(ParticlesFig)
     close(NucleiFig)
-
-
+    
     if ~UseHistone
+        
+        %HG on 07/03/2016: I'm commenting this out while we migrate to the
+        %new spot segmentation approach by Bruno and Armando. I don't think
+        %we need to have the two thresholds anymore.
+        
+        
         %Go through the particles we found and try to fill in the gaps with the
         %Threshold2 ones in fad2.
 
-        for i=1:length(Particles)
-
-            if i==199
-                1+1
-            end
-
-            %Move forward in time
-            CurrentParticleLength=length(Particles(i).Frame)-1;
-
-            while (CurrentParticleLength<length(Particles(i).Frame))&...
-                    (Particles(i).Frame(end)<length(fad.channels))
-                CurrentParticleLength=length(Particles(i).Frame);
-                CurrentFrame=Particles(i).Frame(end);
-
-                [fad,fad2,Particles] = ConnectToThreshold(fad,fad2,Particles,...
-                    i,CurrentFrame,CurrentFrame+1,SearchRadius*0.5);
-            end
-
-            %Move backward in time
-            CurrentParticleLength=length(Particles(i).Frame)-1;
-
-            while (CurrentParticleLength<length(Particles(i).Frame))&(Particles(i).Frame(1)>1)
-                CurrentParticleLength=length(Particles(i).Frame);
-                CurrentFrame=Particles(i).Frame(1);
-
-                %[2,CurrentFrame]
-
-                [fad,fad2,Particles] = ConnectToThreshold(fad,fad2,Particles,...
-                    i,CurrentFrame,CurrentFrame-1,SearchRadius*0.5);
-            end
-
-        end
+%         for i=1:length(Particles)
+% 
+%             if i==199
+%                 1+1
+%             end
+% 
+%             %Move forward in time
+%             CurrentParticleLength=length(Particles(i).Frame)-1;
+% 
+%             while (CurrentParticleLength<length(Particles(i).Frame))&...
+%                     (Particles(i).Frame(end)<length(FrameInfo))
+%                 CurrentParticleLength=length(Particles(i).Frame);
+%                 CurrentFrame=Particles(i).Frame(end);
+% 
+%                 [fad,fad2,Particles] = ConnectToThreshold(fad,fad2,Particles,...
+%                     i,CurrentFrame,CurrentFrame+1,SearchRadius*0.5);
+%             end
+% 
+%             %Move backward in time
+%             CurrentParticleLength=length(Particles(i).Frame)-1;
+% 
+%             while (CurrentParticleLength<length(Particles(i).Frame))&(Particles(i).Frame(1)>1)
+%                 CurrentParticleLength=length(Particles(i).Frame);
+%                 CurrentFrame=Particles(i).Frame(1);
+% 
+%                 %[2,CurrentFrame]
+% 
+%                 [fad,fad2,Particles] = ConnectToThreshold(fad,fad2,Particles,...
+%                     i,CurrentFrame,CurrentFrame-1,SearchRadius*0.5);
+%             end
+% 
+%         end
 
         mkdir([OutputFolder,filesep]);
 
-        save([OutputFolder,filesep,'Particles.mat'],'Particles','fad','fad2',...
+        save([OutputFolder,filesep,'Particles.mat'],'Particles','SpotFilter',...
             'Threshold1','Threshold2');
 
 
@@ -586,125 +556,123 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
 
         if strcmp(ExperimentType,'1spot')
 
+            %If we have the histone channel we now have the extra information of
+            %the nuclei. In this case we'll admit one particle per nucleus
+            %and we'll connect it to the closest particles within that nucleus
+            
+            %HG on 07/02/2016: I'm commenting this out for the new tracking
+            %from Armando.
 
-            %if ~Retracking
-                %If we have the histone channel we now have the extra information of
-                %the nuclei. In this case we'll admit one particle per nucleus
-                %and we'll connect it to the closest particles within that nucleus
-
-                %As a result we will scan through the nuclei trying to fill in any gaps
-                for i=1:length(Particles)
-                    if ~isempty(Particles(i).Nucleus)
-                        ParticleNuclei(i)=Particles(i).Nucleus;
-                    else
-                        ParticleNuclei(i)=0;
-                    end
-                end
-
-
-
-                h=waitbar(0,'Checking secondary threshold');
-                for i=1:length(schnitzcells)
-
-
-                    waitbar(i/length(schnitzcells),h);
-
-                    [i,length(schnitzcells)];
-
-                    %See how many particles were detected within this nucleus
-                    ParticlesInNucleus=find(ParticleNuclei==i);
-
-
-                    for k=1:length(ParticlesInNucleus)
-                        %If there is only one particle in that nucleus then this is
-                        %relatively easy
-                        CurrentParticle=ParticlesInNucleus(k);
-
-                        %Flag to see whether we'll check this particle
-                        CheckParticle=0;
-                        if ~Retracking
-                            CheckParticle=1;
-                        elseif ~Particles(CurrentParticle).Approved
-                            CheckParticle=1;
-                        end
-
-
-
-                        if CheckParticle
-                            %Move forward in time
-                            CurrentParticleLength=length(Particles(CurrentParticle).Frame)-1;
-                            while (CurrentParticleLength<length(Particles(CurrentParticle).Frame))&...
-                                    (Particles(CurrentParticle).Frame(end)<length(Ellipses))
-                                CurrentParticleLength=length(Particles(CurrentParticle).Frame);
-                                CurrentFrame=Particles(CurrentParticle).Frame(end);
-
-                                [fad,fad2,Particles] = ConnectToThresholdHistone(fad,fad2,Particles,...
-                                    CurrentParticle,CurrentFrame,CurrentFrame+1,schnitzcells,Ellipses,SearchRadius,...
-                                    PixelSize);
-                            end
-
-
-                            %Move backwards in time
-                            CurrentParticleLength=length(Particles(CurrentParticle).Frame)-1;
-                            while (CurrentParticleLength<length(Particles(CurrentParticle).Frame))&...
-                                    (Particles(CurrentParticle).Frame(1)>1)
-                                CurrentParticleLength=length(Particles(CurrentParticle).Frame);
-                                CurrentFrame=Particles(CurrentParticle).Frame(1);
-
-                                [fad,fad2,Particles] = ConnectToThresholdHistone(fad,fad2,Particles,...
-                                    CurrentParticle,CurrentFrame,CurrentFrame-1,schnitzcells,Ellipses,SearchRadius,...
-                                    PixelSize);
-                            end
-
-
-                            %Fill in any gaps if there are any
-
-                            %Find which ones are the missing frames
-                            MissingFrames=Particles(CurrentParticle).Frame(1):Particles(CurrentParticle).Frame(end);
-                            MissingFrames=MissingFrames(~ismember(MissingFrames,Particles(CurrentParticle).Frame));
-
-                            if ~isempty(MissingFrames)            
-                                for j=1:length(MissingFrames)
-                                    [fad,fad2,Particles] = ConnectToThresholdHistone(fad,fad2,Particles,...
-                                        CurrentParticle,[],MissingFrames(j),schnitzcells,Ellipses,SearchRadius,...
-                                        PixelSize);
-                                end
-                            end
-                        end
-                    end
-
-
-                    %After the for loop, try to join particles in the same nucleus, but
-                    %different frames. Do this only if not retracking.
-                    if ~Retracking
-                        if length(ParticlesInNucleus)>1
-
-                            PreviousParticleNucleiLength=length(ParticleNuclei)+1;
-
-                            while PreviousParticleNucleiLength>length(ParticleNuclei)
-                                PreviousParticleNucleiLength=length(ParticleNuclei);
-                                Particles=FillParticleGaps(ParticlesInNucleus,Particles);
-                                ParticleNuclei=[Particles.Nucleus];
-                                ParticlesInNucleus=find(ParticleNuclei==i);
-                            end
-                        end
-                    end
-
-
-
-
-                end
-
-
-                close(h)
-            %end    
+%             %As a result we will scan through the nuclei trying to fill in any gaps
+%             for i=1:length(Particles)
+%                 if ~isempty(Particles(i).Nucleus)
+%                     ParticleNuclei(i)=Particles(i).Nucleus;
+%                 else
+%                     ParticleNuclei(i)=0;
+%                 end
+%             end
+% 
+% 
+% 
+%             h=waitbar(0,'Checking secondary threshold');
+%             for i=1:length(schnitzcells)
+% 
+% 
+%                 waitbar(i/length(schnitzcells),h);
+% 
+%                 [i,length(schnitzcells)];
+% 
+%                 %See how many particles were detected within this nucleus
+%                 ParticlesInNucleus=find(ParticleNuclei==i);
+% 
+% 
+%                 for k=1:length(ParticlesInNucleus)
+%                     %If there is only one particle in that nucleus then this is
+%                     %relatively easy
+%                     CurrentParticle=ParticlesInNucleus(k);
+% 
+%                     %Flag to see whether we'll check this particle
+%                     CheckParticle=0;
+%                     if ~Retracking
+%                         CheckParticle=1;
+%                     elseif ~Particles(CurrentParticle).Approved
+%                         CheckParticle=1;
+%                     end
+% 
+% 
+% 
+%                     if CheckParticle
+%                         %Move forward in time
+%                         CurrentParticleLength=length(Particles(CurrentParticle).Frame)-1;
+%                         while (CurrentParticleLength<length(Particles(CurrentParticle).Frame))&...
+%                                 (Particles(CurrentParticle).Frame(end)<length(Ellipses))
+%                             CurrentParticleLength=length(Particles(CurrentParticle).Frame);
+%                             CurrentFrame=Particles(CurrentParticle).Frame(end);
+% 
+%                             [Spots,SpotFilter,Particles] = ConnectToThresholdHistone(Spots,SpotFilter,Particles,...
+%                                 CurrentParticle,CurrentFrame,CurrentFrame+1,schnitzcells,Ellipses,SearchRadius,...
+%                                 PixelSize);
+%                         end
+% 
+% 
+%                         %Move backwards in time
+%                         CurrentParticleLength=length(Particles(CurrentParticle).Frame)-1;
+%                         while (CurrentParticleLength<length(Particles(CurrentParticle).Frame))&...
+%                                 (Particles(CurrentParticle).Frame(1)>1)
+%                             CurrentParticleLength=length(Particles(CurrentParticle).Frame);
+%                             CurrentFrame=Particles(CurrentParticle).Frame(1);
+% 
+%                             [fad,fad2,Particles] = ConnectToThresholdHistone(fad,fad2,Particles,...
+%                                 CurrentParticle,CurrentFrame,CurrentFrame-1,schnitzcells,Ellipses,SearchRadius,...
+%                                 PixelSize);
+%                         end
+% 
+% 
+%                         %Fill in any gaps if there are any
+% 
+%                         %Find which ones are the missing frames
+%                         MissingFrames=Particles(CurrentParticle).Frame(1):Particles(CurrentParticle).Frame(end);
+%                         MissingFrames=MissingFrames(~ismember(MissingFrames,Particles(CurrentParticle).Frame));
+% 
+%                         if ~isempty(MissingFrames)            
+%                             for j=1:length(MissingFrames)
+%                                 [fad,fad2,Particles] = ConnectToThresholdHistone(fad,fad2,Particles,...
+%                                     CurrentParticle,[],MissingFrames(j),schnitzcells,Ellipses,SearchRadius,...
+%                                     PixelSize);
+%                             end
+%                         end
+%                     end
+%                 end
+% 
+% 
+%                 %After the for loop, try to join particles in the same nucleus, but
+%                 %different frames. Do this only if not retracking.
+%                 if ~Retracking
+%                     if length(ParticlesInNucleus)>1
+% 
+%                         PreviousParticleNucleiLength=length(ParticleNuclei)+1;
+% 
+%                         while PreviousParticleNucleiLength>length(ParticleNuclei)
+%                             PreviousParticleNucleiLength=length(ParticleNuclei);
+%                             Particles=FillParticleGaps(ParticlesInNucleus,Particles);
+%                             ParticleNuclei=[Particles.Nucleus];
+%                             ParticlesInNucleus=find(ParticleNuclei==i);
+%                         end
+%                     end
+%                 end
+% 
+% 
+% 
+% 
+%             end
 
 
+%             close(h)
         end
 
         mkdir([OutputFolder,filesep])
 
-        save([OutputFolder,filesep,'Particles.mat'],'Particles','fad','fad2',...
+        save([OutputFolder,filesep,'Particles.mat'],'Particles','Spots','SpotFilter',...
             'Threshold1','Threshold2')
 
     end
@@ -1079,7 +1047,7 @@ elseif strcmp(ExperimentType,'2spot2color')
 
         mkdir([OutputFolder,filesep]);
 
-        save([OutputFolder,filesep,'Particles.mat'],'Particles','fad','fad2',...
+        save([OutputFolder,filesep,'Particles.mat'],'Particles','SpotFilter',...
             'Threshold1','Threshold2');
 
 
@@ -1200,7 +1168,7 @@ elseif strcmp(ExperimentType,'2spot2color')
             
         mkdir([OutputFolder,filesep])
 
-        save([OutputFolder,filesep,'Particles.mat'],'Particles','fad','fad2',...
+        save([OutputFolder,filesep,'Particles.mat'],'Particles','SpotFilter',...
             'Threshold1','Threshold2')
 
     end
@@ -1362,12 +1330,7 @@ elseif strcmp(lower(ExperimentType),'inputoutput')
             title(i)
         end
         drawnow
-
-
-
-
-
-
+        
         %If we don't have nuclear tracking then track the particles based on
         %proximity
 
@@ -1568,7 +1531,7 @@ elseif strcmp(lower(ExperimentType),'inputoutput')
 
         mkdir([OutputFolder,filesep]);
 
-        save([OutputFolder,filesep,'Particles.mat'],'Particles','fad','fad2',...
+        save([OutputFolder,filesep,'Particles.mat'],'Particles','SpotFilter',...
             'Threshold1','Threshold2');
 
 
@@ -1617,8 +1580,6 @@ elseif strcmp(lower(ExperimentType),'inputoutput')
                         elseif ~Particles(CurrentParticle).Approved
                             CheckParticle=1;
                         end
-
-
 
                         if CheckParticle
                             %Move forward in time
@@ -1694,11 +1655,10 @@ elseif strcmp(lower(ExperimentType),'inputoutput')
 
         mkdir([OutputFolder,filesep])
 
-        save([OutputFolder,filesep,'Particles.mat'],'Particles','fad','fad2',...
+        save([OutputFolder,filesep,'Particles.mat'],'Particles','SpotFilter',...
             'Threshold1','Threshold2')
 
     end    
-    
     
 else
     error('Experiment type in MovieDatabase.xlsx not recognized')    

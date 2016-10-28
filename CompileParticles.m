@@ -17,7 +17,6 @@ function CompileParticles(varargin)
 %SetMinParticles - Set the threshold for the minimum number of particles per
 %               AP bin for compilation
 
-
 close all
 
 %Information about about folders
@@ -32,7 +31,8 @@ SkipFluctuations=0;  %Do not generate the plots of correlations of fluctuations 
 SkipFits=0;         %Do not generate the fit output (but still does the fit)
 SkipMovie=0;        %Do not generate the movie
 ApproveAll=0;       %Only use manually approved particles
-MinParticles=4;     %Require 4 particles per AP bin or else discard
+MinParticles=4;     %Require MinParticles particles per AP bin or else discard
+minTime = 1;        %AR: wanted stringent rejection of particles based on trace length
 
 if isempty(varargin)%looks for the folder to analyze
     FolderTemp=uigetdir(DefaultDropboxFolder,'Select folder with data to analyze');
@@ -65,6 +65,12 @@ else
     end
 
 end
+
+if ~(SkipTraces || SkipFluctuations || SkipFits || SkipMovie) 
+    msgbox('Plot display not currently supported. Please use option "SkipAll"');
+    error('Plot display not currently supported. Please use option "SkipAll"'); %AR 7/10/16: Plot display is currently buggy. Will fix in future release.
+end
+        
 FilePrefix=[Prefix,'_'];
 
 %Now get the actual Dropbox folder
@@ -101,6 +107,7 @@ APResolution = XLSRaw{PrefixRow,APResolutionColumn};
 
 %Load all the information
 load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
+load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'])
 %Check that FrameInfo exists
 if exist([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
     load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
@@ -567,6 +574,8 @@ for ChN=1:NChannels
                 end
             elseif ~(sum(FrameFilter)>0)
                 AnalyzeThisParticle=0;
+            elseif length(Particles{ChN}(i)) <  minTime
+                AnalyzeThisParticle=0;
             end
 
 
@@ -640,20 +649,19 @@ for ChN=1:NChannels
                 end
 
 
-                %Extract information from fad about fluorescence and background
-                [Frame,Amp,Off,Off2,Amp2,AmpOld,AmpRaw,Error,optFit1,FitType]=GetParticleTrace(k,CompiledParticles{ChN},fad(ChN));
-                CompiledParticles{ChN}(k).Fluo=Amp;
+                %Extract information from Spots about fluorescence and background
+                [Frame,AmpIntegral,AmpGaussian,Off,...
+                 ErrorIntegral,ErrorGauss,optFit1, FitType, noIntensityFlag]...
+                 = GetParticleTrace(k,CompiledParticles{ChN},Spots);
+                CompiledParticles{ChN}(k).Fluo= AmpIntegral;
+                CompiledParticles{ChN}(k).FluoIntegral = AmpGaussian;
+                CompiledParticles{ChN}(k).FluoIntegral = AmpIntegral;
                 CompiledParticles{ChN}(k).Off=Off;
-                %CompiledParticles{ChN}(k).Off2=Off2;
-                %CompiledParticles{ChN}(k).Fluo2=Amp2;
-                %CompiledParticles{ChN}(k).FluoOld=AmpOld;
-                CompiledParticles{ChN}(k).FluoRaw=AmpRaw;
-                CompiledParticles{ChN}(k).FluoError=Error;
+                CompiledParticles{ChN}(k).FluoError=ErrorGauss;
                 CompiledParticles{ChN}(k).optFit1=optFit1;
                 CompiledParticles{ChN}(k).FitType=FitType;
-
-
-
+                CompiledParticles{ChN}(k).noIntensityFlag = noIntensityFlag;
+                
 
                 %Determine the nc where this particle was born
                 try
@@ -862,7 +870,7 @@ for ChN=1:NChannels
                     for j=1:NFrames
                         subplot(TotalRows,NCols,(TotalRows-NRows)*NCols+j)
 
-                        [x,y,z]=fad2xyzFit(CompiledParticles{ChN}(k).Frame(j),fad(ChN), 'addMargin'); 
+                        [x,y,z]=SpotsXYZ(Spots(j)); 
                         xTrace=x(CompiledParticles{ChN}(k).Index(j));
                         yTrace=y(CompiledParticles{ChN}(k).Index(j));
                         zTrace=z(CompiledParticles{ChN}(k).Index(j));
@@ -1067,6 +1075,7 @@ for ChN=1:NChannels
         catch
             %That didn't work
         end
+        
     end
 
     %Calculate the mean for all of them
@@ -1757,6 +1766,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
         %Fluorescence per all of nuclei
         MeanVectorAllAP{ChN}=nan(length(Ellipses),length(APbinID));
         SEVectorAllAP{ChN}=nan(length(Ellipses),length(APbinID));
+        
 
 
 
@@ -2177,7 +2187,6 @@ if ~SkipMovie&strcmp(ExperimentAxis,'AP')
             end
 
             StandardFigure(PlotHandle,gca)
-
             saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'APMovie',filesep,iIndex(i,3),'_ch',iIndex(ChN,2),'.tif']);   
         end
     end
@@ -2249,6 +2258,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
         EllipsesOnAP=EllipsesOnAP{1};
         MeanVectorAllAP=MeanVectorAllAP{1};
         SEVectorAllAP=SEVectorAllAP{1};    
+        SNR = MeanVectorAll ./ (SDVectorAll*109); %AR 7/12/16: Rough estimate. Should do better.
     end
     
     save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
@@ -2263,7 +2273,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
         'ParticleCountProbAP',...
         'EllipsesOnAP','TotalEllipsesAP',...
         'EllipsePos','EllipsesFilteredPos','FilteredParticlesPos',...
-        'MeanVectorAllAP','SEVectorAllAP')
+        'MeanVectorAllAP','SEVectorAllAP', 'Prefix');
 elseif HistoneChannel&strcmp(ExperimentAxis,'DV')
     
     %If we have only one channel get rid of all the cells
@@ -2283,7 +2293,7 @@ elseif HistoneChannel&strcmp(ExperimentAxis,'DV')
         'MeanVectorAll',...
         'SDVectorAll','NParticlesAll','MaxFrame',...
         'AllTracesVector','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
-        'MeanOffsetVector','SDOffsetVector','NOffsetParticles')
+        'MeanOffsetVector','SDOffsetVector','NOffsetParticles', 'Prefix')
 elseif strcmp(ExperimentAxis,'NoAP')%HistoneChannel&strcmp(ExperimentAxis,'NoAP')
     
     %If we have only one channel get rid of all the cells
@@ -2310,7 +2320,7 @@ elseif strcmp(ExperimentAxis,'NoAP')%HistoneChannel&strcmp(ExperimentAxis,'NoAP'
             'MeanVectorAll',...
             'SDVectorAll','NParticlesAll','MaxFrame',...
             'AllTracesVector','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
-            'MeanOffsetVector','SDOffsetVector','NOffsetParticles')
+            'MeanOffsetVector','SDOffsetVector','NOffsetParticles', 'Prefix')
     end
 else
     
@@ -2345,6 +2355,6 @@ else
         'SDVectorAll','NParticlesAll','MaxFrame','MinAPIndex','MaxAPIndex',...
         'AllTracesVector','AllTracesAP','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
         'MeanOffsetVector','SDOffsetVector','NOffsetParticles',...
-        'MeanSlopeVectorAP','SDSlopeVectorAP','NSlopeAP')
+        'MeanSlopeVectorAP','SDSlopeVectorAP','NSlopeAP', 'Prefix')
 end
 

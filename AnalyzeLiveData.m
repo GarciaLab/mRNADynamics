@@ -21,23 +21,18 @@ function AnalyzeLiveData
 %Process the raw images from the microscopes so that they can be analyzed
 %by the FISH code.
 Prefix=ExportDataForFISH;
-%Optional parameters:
-%TAGOnly: Generate the TAG file only
 
 %First do an analysis without a threshold to generate the DoG images.
-RunFISHToolbox(Prefix)
+segmentSpots(Prefix,[])
 
 
 %% Look at the dog-filtered images and decide on a threshold to use
 
 %We will keep the threshold low and then increase it after the fact.
 
-%For power of 10mW
-%Threshold=[2,2];   
-Threshold=4;
+%Now, segment the particles using the threshold
+segmentSpots(Prefix, 8)
 
-%Now, do an analysis with an actual threshold
-RunFISHToolbox(Prefix,Threshold)
 
 %% Find and check the AP axis
 
@@ -82,7 +77,8 @@ CheckDivisionTimes(Prefix)
 
 %Track the particles, the two numbers are Threshold1 and Threshold2
 %TrackmRNADynamics(Prefix,5,5,5,5) - For 2spots2colors
-TrackmRNADynamics(Prefix,2,2)
+
+TrackmRNADynamics(Prefix,8,8)
 
 CheckParticleTracking(Prefix)
 

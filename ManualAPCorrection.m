@@ -110,7 +110,7 @@ while (cc~=13)
     hold off
     
     figure(FigureOverlay)
-    ct=waitforbuttonpress; 
+    ct = waitforbuttonpress;
     ct=1;
     cc=get(FigureOverlay,'currentcharacter');
     cm=get(gca,'CurrentPoint');
@@ -176,6 +176,3 @@ end
 close(FigureOverlay)
 close(FigureRectangle)
 close(FigureRealOverlay)
-
-
-

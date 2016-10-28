@@ -1,4 +1,5 @@
-function [Particles,fad,fad2,schnitzcells]=AssignParticle2Nucleus(schnitzcells,Ellipses,Particles,fad,fad2,...
+function [Particles,SpotFilter,schnitzcells]=AssignParticle2Nucleus(...
+    schnitzcells,Ellipses,Particles,Spots,SpotFilter,...
     CurrentFrame,PixelSize,SearchRadius)
 
 
@@ -28,9 +29,7 @@ end
 %Get the particles and nuclei positions. The order of both the nuclei and
 %particle position is raw, not the one in the Particles and Nuclei
 %structures.
-[NewParticlesX,NewParticlesY]=fad2xyzFit(CurrentFrame,fad, 'addMargin');
-NewParticlesX=double(NewParticlesX);
-NewParticlesY=double(NewParticlesY);
+[NewParticlesX,NewParticlesY]=SpotsXYZ(Spots(CurrentFrame));
 
 if ~isempty(NewParticlesX)
 
@@ -53,10 +52,7 @@ if ~isempty(NewParticlesX)
             (NewParticlesY(j)*PixelSize-...
             NewNucleiY*PixelSize).^2);
     end
-    %MinIndex is a row vector. The position in MinIndex
-    %corresponds to each particle. The value at that
-    %position corresponds to the closest nucleus.
-    
+        
     %If retracking make the distance for the particles that have been
     %approved infinite.
     if Retracking
@@ -70,6 +66,9 @@ if ~isempty(NewParticlesX)
         end
     end
     
+    %MinIndex is a row vector. The position in MinIndex
+    %corresponds to each particle. The value at that
+    %position corresponds to the closest nucleus.
     [MinValues,MinIndex]=min(Distance');
     
     if Retracking
@@ -83,16 +82,8 @@ if ~isempty(NewParticlesX)
     MinIndexNuclei=zeros(size(MinIndex));
     for i=1:length(MinIndex)
         for j=1:length(schnitzcells)
-            %I'm not sure this is a good idea, but this is to take care of
-            %schnitzses that are inconsistent in their number of cellno
-            %entries
-            try
-                if schnitzcells(j).cellno(schnitzcells(j).frames==(CurrentFrame))==MinIndex(i)
-                    MinIndexNuclei(i)=j;
-                end
-            catch
-                display('Nuclear problem')
-                %error('What is going on here?')
+            if schnitzcells(j).cellno(schnitzcells(j).frames==(CurrentFrame))==MinIndex(i)
+                MinIndexNuclei(i)=j;
             end
         end
         if MinIndex(i)==inf
@@ -132,8 +123,8 @@ if ~isempty(NewParticlesX)
     %1) One particle is assigned to a previous one within a nucleus
     %2) If there are multiple particles closest to a nucleus we pick
     %the closest/brightest one. As a result, there can only be on
-    %particle per nucleus. The particles not assigned will be moved to
-    %fad2.
+    %particle per nucleus. The particles not assigned will disapproved
+    %by flagging them in SpotsFilter.
 
 
     AssignedNuclei=[];
@@ -181,10 +172,8 @@ if ~isempty(NewParticlesX)
 
                     %Get the last position of the previous particle
                     [PreviousParticlesX,PreviousParticlesY]=...
-                        fad2xyzFit(Particles(PreviousParticleIndex).Frame(end),fad, 'addMargin');
-                    PreviousParticlesX=double(PreviousParticlesX);
-                    PreviousParticlesY=double(PreviousParticlesY);
-                                        
+                        SpotsXYZ(Spots(Particles(PreviousParticleIndex).Frame(end)));
+                                                        
                     PreviousParticleX=PreviousParticlesX(Particles(PreviousParticleIndex).Index(end));
                     PreviousParticleY=PreviousParticlesY(Particles(PreviousParticleIndex).Index(end));
 
@@ -221,7 +210,8 @@ if ~isempty(NewParticlesX)
     %Assign the particles that correspond to a new nucleus
     NewParticlesIndices=find(NewParticlesFlag==1);
 
-    %Indices of the particles that need to be moved from fad to fad2
+    %Indices of the particles that won't be assigned to a nucleus and
+    %therefor need to be disapproved by flagging them in SpotFilter
     IndexToMove=[];
 
     for i=1:length(NewParticlesIndices)
@@ -256,36 +246,9 @@ if ~isempty(NewParticlesX)
         end
     end
 
-    %Now move the remaining particles from fad to fad2
-    if ~isempty(IndexToMove)
-        [fad,fad2]=...
-            TransferParticleBack(CurrentFrame,NewParticlesIndices(IndexToMove),fad,fad2);
-
-        %Since we got rid of particles in fad we need to shift the
-        %index entry for the remaining particles accordingly
-        for i=1:length(Particles)
-            if sum(Particles(i).Frame==CurrentFrame)
-                Particles(i).Index(Particles(i).Frame==CurrentFrame)=...
-                    Particles(i).Index(Particles(i).Frame==CurrentFrame)-...
-                    sum(NewParticlesIndices(IndexToMove)<Particles(i).Index(Particles(i).Frame==CurrentFrame));
-            end
-        end
-
-
-
-
-
+    if ~isempty(IndexToMove)     
+        SpotFilter(CurrentFrame,IndexToMove)=0;
     end
 
 
 end
-
-
-
-
-
-
-
-
-
-

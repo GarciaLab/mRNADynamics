@@ -4,8 +4,6 @@ function CheckParticleTracking(varargin)
 %logic of this function should be similar to schnitzcells: We want to be
 %able to correct both the segmentation and tracking.
 % 
-%V5: Modified to handle Laurent's schnitzcells
-%V4: Modified the code to use and correct the schnitzcells tracking
 % 
 %Usage:
 %
@@ -34,7 +32,7 @@ function CheckParticleTracking(varargin)
 %w Disapprove a trace
 %p Identify a particle. It will also tell you the particle associated with
 %  the clicked nucleus.
-%e Approve/Disapproove  a frame within a trace
+%e Approve/Disapprove  a frame within a trace
 %u Move a particle detected with Threshold2 into the our structure.
 %i Move a particle detected with Threshold2 into the our structure and
 %  connect it to the current particle. This is a combination of "u" and
@@ -66,7 +64,7 @@ function CheckParticleTracking(varargin)
 %t Show/hide particles from the second threshold
 %s Save the current Particles structure
 %x Save and exit
-%h Show non-approved particles yellow or dissapproved particles
+%h Show non-approved particles yellow or dissapproved particlesz
 %y Input the frame/nc information again. This only works in the absence of
 %  the histone channel
 %r Reorder the particles according to initial frame
@@ -76,6 +74,10 @@ function CheckParticleTracking(varargin)
 %0 Enter debug mode to fix things manually
 
 close all
+
+
+%Turn off the warning about nargchk. 
+warning('off','MATLAB:nargchk:deprecated')
 
 
 %% Information about about folders
@@ -115,6 +117,8 @@ NoSort=0;
 ForCompileAll=0;
 %Flag to plot only ellipses for current particle & save time
 SpeedMode = 0;
+%Decide whether you want to do sister chromatid analysis
+SisterMode = 0;
 
 if length(varargin)>1
     for i=2:length(varargin)
@@ -124,12 +128,13 @@ if length(varargin)>1
             ForCompileAll=1;
         elseif strcmpi(varargin{i}, 'speedmode')
             SpeedMode = 1;
+        elseif strcmpi(varargin{i}, 'sistermode')
+            SisterMode = 1;
         end
     end
 end
 
 %%
-
 
 FilePrefix=[DataFolder(length(DropboxFolder)+2:end),'_'];
 
@@ -138,6 +143,7 @@ FilePrefix=[DataFolder(length(DropboxFolder)+2:end),'_'];
     DetermineLocalFolders(FilePrefix(1:end-1));
 
 load([DataFolder,filesep,'Particles.mat'])
+load([DataFolder,filesep,'Spots.mat'])
 
 %Check that FrameInfo exists
 if exist([DataFolder,filesep,'FrameInfo.mat'])
@@ -181,6 +187,8 @@ if iscell(Particles)
     NChannels=length(Particles);
 else
     Particles={Particles};
+    Spots={Spots};
+    SpotFilter={SpotFilter};
     NChannels=1;
 end
 
@@ -214,19 +222,13 @@ else
     UseHistoneOverlay=0;
 end
 
-
 %Check that we have the nuclear tracking done using schnitzcells
 if exist([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'])
     UseSchnitz=1;
 else
     UseSchnitz=0;
 end
-    
-
-
-
-
-
+   
 %Determine division times
 %Load the information about the nc from the XLS file
 [Num,Txt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
@@ -340,14 +342,11 @@ else
     end
 end
 
-
-
-
-
 %Check if we have already determined nc
 if (~isfield(FrameInfo,'nc'))&&(~UseHistoneOverlay)
     %FrameInfo=DetermineNC(fad,Particles,FrameInfo);  AR 3/14/16: This
     %script seems to have disappeared. 
+
 elseif UseSchnitz
     load([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'])
     
@@ -376,7 +375,7 @@ if ~NoSort
     end
 end
 
-TotalFrames=length(fad(NChannels).channels);
+TotalFrames=length(FrameInfo);
 
 
 %Some flags and initial parameters
@@ -391,24 +390,10 @@ PreviousParticle=1;
 CurrentFrameWithinParticle=1;
 CurrentChannel=1;
 PreviousChannel=CurrentChannel;
-
-
 CurrentFrame=Particles{1}(1).Frame(1);
-
-
 DisplayRange=[];
-
 ZoomMode=0;
 ZoomRange=50;
-
-
-
-
-
-
-
-
-
 
 %Determine the positions and size of the figures
 ScreenSize=get( 0, 'ScreenSize' );
@@ -423,6 +408,11 @@ end
 TraceFig=figure;
 SnippetFig=figure;
 ZProfileFig=figure;
+% SisterFig=figure;
+% SisterFig2 = figure;
+% SisterFig3 = figure;
+Gaussian = figure;
+RawData = figure;
 
 
 cc=1;
@@ -436,13 +426,10 @@ for NCh=1:NChannels
     end
 end    
     
-    
-
 %See if we just want to save the data
 if ForCompileAll
     cc='x';
 end
-
 
 while (cc~='x') 
     EllipseHandle=[];
@@ -452,8 +439,9 @@ while (cc~='x')
     EllipseHandleGreen=[];
 
     
-    %Get the coordinates taking the margins into account
-    [x,y]=fad2xyzFit(CurrentFrame,fad(CurrentChannel), 'addMargin'); 
+    %Get the coordinates of all the spots in this frame
+    [x,y,z]=SpotsXYZ(Spots{CurrentChannel}(CurrentFrame));
+   
     
     %If the approved field does not exist create it
     if ~isfield(Particles{CurrentChannel},'Approved')
@@ -464,17 +452,22 @@ while (cc~='x')
     ApprovedParticles=[Particles{CurrentChannel}.Approved];
     
     %Pull out the right particle if it exists in this frame
-    CurrentParticleIndex=Particles{CurrentChannel}(CurrentParticle).Index(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame);
+    CurrentParticleIndex=...
+        Particles{CurrentChannel}(CurrentParticle).Index(Particles{CurrentChannel}(CurrentParticle).Frame==...
+        CurrentFrame);
     
     %This is the position of the current particle
     xTrace=x(CurrentParticleIndex);
     yTrace=y(CurrentParticleIndex);
     
-    %These are the positions of all the approved and disapproved particles
-    %Find the particles in this frame
+    %These are the positions of all the approved, disapproved and
+    %unflagged particles
+    
+    %Approved particles
     IndexApprovedParticles=[];
     for i=1:length(Particles{CurrentChannel})
-        if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&sum(Particles{CurrentChannel}(i).Approved==1)
+        if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&...
+                sum(Particles{CurrentChannel}(i).Approved==1)
             IndexApprovedParticles=[IndexApprovedParticles,...
                 Particles{CurrentChannel}(i).Index(Particles{CurrentChannel}(i).Frame==CurrentFrame)];
         end
@@ -482,6 +475,7 @@ while (cc~='x')
     xApproved=x(IndexApprovedParticles);
     yApproved=y(IndexApprovedParticles);
 
+    %Disapproved particles
     IndexDisapprovedParticles=[];
     for i=1:length(Particles{CurrentChannel})
         if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&sum(Particles{CurrentChannel}(i).Approved==-1)
@@ -492,14 +486,23 @@ while (cc~='x')
     xDisapproved=x(IndexDisapprovedParticles);
     yDisapproved=y(IndexDisapprovedParticles);
     
+    %Non-flagged particles
+    IndexNonFlaggedParticles=[];
+    for i=1:length(Particles{CurrentChannel})
+        if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&...
+                (sum(Particles{CurrentChannel}(i).Approved==-1)|sum(Particles{CurrentChannel}(i).Approved==1))
+            IndexNonFlaggedParticles=[IndexDisapprovedParticles,...
+                Particles{CurrentChannel}(i).Index(Particles{CurrentChannel}(i).Frame==CurrentFrame)];
+        end
+    end
+    xNonFlagged=x(IndexNonFlaggedParticles);
+    yNonFlagged=y(IndexNonFlaggedParticles);
     
     if (~isempty(xTrace))&(~ManualZFlag)
-        CurrentZ=...
-            fad(CurrentChannel).channels(CurrentFrame).fits.z(CurrentParticleIndex);
+        CurrentZ=z(CurrentParticleIndex);
         ManualZFlag=0;
     end
-    
-    
+        
     if (NChannels==1)&(~strcmp(lower(ExperimentType),'inputoutput'))
         try
             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
@@ -532,9 +535,10 @@ while (cc~='x')
     hold on
     %Show all particles in regular mode
     if ~SpeedMode
-        plot(x,y,'or')
+        plot(xNonFlagged,yNonFlagged,'or')
         plot(xApproved,yApproved,'ob')
         plot(xDisapproved,yDisapproved,'^r')
+        plot(x, y, 'sw')
     end
     %Always show current particle
     plot(xTrace,yTrace,'og')
@@ -556,18 +560,6 @@ while (cc~='x')
                 Ellipses{CurrentFrame}(:,1)+1,...
                 Ellipses{CurrentFrame}(:,2)+1,'r',50);
             hold off
-            
-            %         hold on
-            %         [NEllipses,Dummy]=size(Ellipses{CurrentFrame});
-            %         for i=1:NEllipses
-            %             EllipseHandle=[EllipseHandle,ellipse(Ellipses{CurrentFrame}(i,3),...
-            %                 Ellipses{CurrentFrame}(i,4),...
-            %                 Ellipses{CurrentFrame}(i,5),...
-            %                 Ellipses{CurrentFrame}(i,1)+1,...
-            %                 Ellipses{CurrentFrame}(i,2)+1)];
-            %         end
-            %         set(EllipseHandle,'Color','r')
-            %         hold off
             
             
             %Show the ones that have been approved
@@ -695,11 +687,19 @@ while (cc~='x')
         set(gcf,'Color','default')
     end
     
+    %Show the particles that were under threshold 2.
     if ShowThreshold2
-        [x2,y2]=fad2xyzFit(CurrentFrame,fad2(CurrentChannel), 'addMargin'); 
+        %Get the positions of all the spots in this frame
+        [x2,y2]=SpotsXYZ(Spots{CurrentChannel}(CurrentFrame));
+        %Filter those that were under threshold 2.
+        CurrentSpotFilter=...
+            ~logical(SpotFilter{CurrentChannel}(CurrentFrame,~isnan(SpotFilter{CurrentChannel}(CurrentFrame,:))));
+        x2=x2(CurrentSpotFilter);
+        y2=y2(CurrentSpotFilter);
+        
         hold on
         plot(x2,y2,'sr')
-        hold off
+         hold off
     end
     
     if ZoomMode
@@ -708,7 +708,9 @@ while (cc~='x')
         if length(MinIndex)>1
             MinIndex=MinIndex(1);
         end
-        [xForZoom,yForZoom]=fad2xyzFit(Particles{CurrentChannel}(CurrentParticle).Frame(MinIndex),fad(CurrentChannel), 'addMargin'); 
+        [xForZoom,yForZoom]=...
+            SpotsXYZ(Spots{CurrentChannel}(Particles{CurrentChannel}(CurrentParticle).Frame(MinIndex)));
+        
         xForZoom=xForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
         yForZoom=yForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
        
@@ -739,14 +741,13 @@ while (cc~='x')
        
         hold on
         if ~SpeedMode
-            plot(x,y,'ow')
+            plot(xNonFlagged,yNonFlagged,'ow')
             plot(xApproved,yApproved,'ob')
         end
         plot(xTrace,yTrace,'og')
         hold off
         
         if ShowThreshold2
-            [x2,y2]=fad2xyzFit(CurrentFrame,fad2(CurrentChannel), 'addMargin'); 
             hold on
             plot(x2,y2,'sw')
             hold off
@@ -769,101 +770,142 @@ while (cc~='x')
             ' Ch: ',num2str(CurrentChannel)])
         
         if ZoomMode
-            %Find the closest frame
-            [Dummy,MinIndex]=min((Particles{CurrentChannel}(CurrentParticle).Frame-CurrentFrame).^2);
-            if length(MinIndex)>1
-                MinIndex=MinIndex(1);
-            end
-            [xForZoom,yForZoom]=fad2xyzFit(Particles{CurrentChannel}(CurrentParticle).Frame(MinIndex),fad(CurrentChannel), 'addMargin'); 
-            xForZoom=xForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
-            yForZoom=yForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
-
-
             xlim([xForZoom-ZoomRange,xForZoom+ZoomRange])
             ylim([yForZoom-ZoomRange/2,yForZoom+ZoomRange/2])
         end
     end
     
+%     %AR 7/14/16: Need to fill in the details.
+%     figure(SisterFig)
+%     %plot sister 1 versus time
+%     hold on
+%     %plot sister 2 versus time
+%     figure(SisterFig2)
+%     %plot distance versus intensity
+%     figure(SisterFig3)
+%     %plot distance versus time
     
-
-    
-    
-    
+    try
     figure(SnippetFig)
     if (~isempty(xTrace))
+        %Determine the z index to be plotted. This corresponds to the
+        %brightest DoG value
+        MaxZIndex=find(...
+            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
+            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ);
+         CurrentZIndex=find(...
+                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
+                CurrentZ);
+     
         
-        CurrentSnippet=mat2gray(fad(CurrentChannel).channels(CurrentFrame).fits.snippets(:,:,CurrentParticleIndex));
-        IntegrationArea=bwperim(fad(CurrentChannel).channels(CurrentFrame).fits.maskUsedForTotalInt);
+        %Get the snippet and the mask, and overlay them
+
+        CurrentSnippet=mat2gray(...
+            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).Snippet{CurrentZIndex});
+        SnippetSize=size(CurrentSnippet,1);        
+        
+        IntegrationArea=bwperim(...
+            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).snippet_mask{CurrentZIndex});
         SnippetOverlay=cat(3,IntegrationArea/2 + ...
             +CurrentSnippet,CurrentSnippet,CurrentSnippet);
-        
     
         imshow(SnippetOverlay,...
             [],'Border','Tight','InitialMagnification',1000)
 
         hold on
+        
         SnippetX=(SnippetSize-1)/2+1-...
-            (single(fad(CurrentChannel).channels(CurrentFrame).fits.x(CurrentParticleIndex))-...
-            fad(CurrentChannel).channels(CurrentFrame).fits.x_fit(CurrentParticleIndex));
+            (Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xDoG(CurrentZIndex)-...
+            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xFit(CurrentZIndex));
         SnippetY=(SnippetSize-1)/2+1-...
-            (single(fad(CurrentChannel).channels(CurrentFrame).fits.y(CurrentParticleIndex))-...
-            fad(CurrentChannel).channels(CurrentFrame).fits.y_fit(CurrentParticleIndex));
-        PlotHandle=ellipse(fad(CurrentChannel).channels(CurrentFrame).fits.r_max(CurrentParticleIndex),...
-            fad(CurrentChannel).channels(CurrentFrame).fits.r_min(CurrentParticleIndex),...
-            fad(CurrentChannel).channels(CurrentFrame).fits.theta(CurrentParticleIndex),SnippetX,SnippetY,'g');
-        set(PlotHandle,'LineWidth',2.5)
+            (Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yDoG(CurrentZIndex)-...
+            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yFit(CurrentZIndex));
+        warning('HG needs to fix this after new commit from AR')
+%         PlotHandle=ellipse(fad(CurrentChannel).channels(CurrentFrame).fits.r_max(CurrentParticleIndex),...
+%             fad(CurrentChannel).channels(CurrentFrame).fits.r_min(CurrentParticleIndex),...
+%             fad(CurrentChannel).channels(CurrentFrame).fits.theta(CurrentParticleIndex),SnippetX,SnippetY,'g');
+%         set(PlotHandle,'LineWidth',2.5)
         hold off
     else
         imshow(zeros(SnippetSize))
     end
     
-    
-    
-    
-    figure(ZProfileFig)
+    figure(Gaussian)
     if (~isempty(xTrace))
-        ZProfile=fad(CurrentChannel).channels(CurrentFrame).fits.shadowsDog{CurrentParticleIndex};
-        ZProfileRaw=fad(CurrentChannel).channels(CurrentFrame).fits.shadowsRaw{CurrentParticleIndex};
-
-        [Dummy,MaxZ]=max(ZProfile);
-        [Dummy,MaxZRaw]=max(ZProfileRaw);
+         %Determine the z index to be plotted. This corresponds to the
+            %brightest DoG value
+        MaxZIndex=find(...
+                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
+                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ);
+            CurrentZIndex=find(...
+                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
+                CurrentZ);
+            %Get the snippet and the mask, and overlay them
+        codomain=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).rawSpot{CurrentZIndex};
+        snip = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).Snippet{CurrentZIndex};
+        gauss = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{CurrentZIndex};
+        surf(codomain{1}, codomain{2}, gauss + double(snip));
+        title('Double Gaussian fits')
+        set(gcf,'units', 'normalized', 'position',[.60, .7, .2, .2]);
+      
         
-        plot([1:length(ZProfile)]-MaxZ+...
-            double(fad(CurrentChannel).channels(CurrentFrame).fits.z(CurrentParticleIndex)),...
-            ZProfile,'.-k');
-        
-        
-%         [Axis,Plot1,Plot2]=plotyy([1:length(ZProfile)]-MaxZ+...
-%             double(fad.channels(CurrentFrame).fits.z(CurrentParticleIndex)),...
-%             ZProfile,...
-%             [1:length(ZProfile)]-MaxZ+...
-%             double(fad.channels(CurrentFrame).fits.z(CurrentParticleIndex)),...
-%             ZProfileRaw);
-        hold on
-        plot(CurrentZ,ZProfile(MaxZ),'ob')
-        hold off
-        
-        
-        set(gca,'XTick',[1:length(ZProfile)]-MaxZ+...
-            double(fad(CurrentChannel).channels(CurrentFrame).fits.z(CurrentParticleIndex)))
-        title('Z profile')
+        figure(RawData)
+         %Determine the z index to be plotted. This corresponds to the
+            %brightest DoG value
+        MaxZIndex=find(...
+                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
+                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ);
+        surf(codomain{1}, codomain{2}, snip)
+        title('Raw data');
+        set(gcf,'units', 'normalized', 'position',[.60, .3, .2, .2]);
 
     end
-       
-       
-    
+
+        
+    figure(ZProfileFig)
+    if (~isempty(xTrace))
+        %Determine the z index to be plotted. This corresponds to the
+        %brightest DoG value
+        MaxZIndex=find(...
+            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
+            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ);
+       CurrentZIndex=find(...
+                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
+                CurrentZ); 
+        %Get the z DoG profile
+        ZProfile=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity;
+        MaxZ=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ;
+        
+        plot(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z,...
+            ZProfile,'.-k');
+        hold on
+        plot(CurrentZ,ZProfile(CurrentZIndex),'ob')
+        hold off
+        title('Z profile')
+    end
+    catch
+    end
     figure(TraceFig)
     if ~strcmp(lower(ExperimentType),'inputoutput')
         %Only update the trace information if we have switched particles
-        if (CurrentParticle~=PreviousParticle)|~exist('Amp')|(CurrentChannel~=PreviousChannel)
+        if (CurrentParticle~=PreviousParticle)|~exist('AmpGaussian')|(CurrentChannel~=PreviousChannel)
             PreviousParticle=CurrentParticle;
-            [Frames,Amp]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},fad(CurrentChannel),FISHPath,FilePrefix);
+            [Frames,AmpIntegral,AmpGaussian]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
         end
-        plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-k')
+        
+        H1=plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+            AmpGaussian(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-b');
+
         hold on
-        plot(Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
-        plot(Frames(Frames==CurrentFrame),Amp(Frames==CurrentFrame),'ob')
+        H2=plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+            AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-g');
+        
+        plot(Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpGaussian(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
+        plot(Frames(Frames==CurrentFrame),AmpGaussian(Frames==CurrentFrame),'ob')
         hold off
+        
+        legend([H1,H2],'Gaussian integral','Raw integral','Location','NorthWest')
+        
         try
             xlim([min(Frames)-1,max(Frames)+1]);
         catch
@@ -949,7 +991,7 @@ while (cc~='x')
     cc=get(Overlay,'currentcharacter');
     cm=get(gca,'CurrentPoint');
     
-    if (cc=='.')&(CurrentFrame<length(fad(CurrentChannel).channels))
+    if (cc=='.')&(CurrentFrame<length({Spots{1}.Fits}))
         CurrentFrame=CurrentFrame+1;
         ManualZFlag=0;
         %DisplayRange=[];
@@ -957,7 +999,7 @@ while (cc~='x')
         CurrentFrame=CurrentFrame-1;
         ManualZFlag=0;
         %DisplayRange=[];
-    elseif (cc=='>')&(CurrentFrame+5<length(fad(CurrentChannel).channels))
+    elseif (cc=='>')&(CurrentFrame+5<length({Spots{1}.Fits}))
         CurrentFrame=CurrentFrame+5;
         ManualZFlag=0;
         %DisplayRange=[];
@@ -965,10 +1007,10 @@ while (cc~='x')
         CurrentFrame=CurrentFrame-5;
         ManualZFlag=0;
         %DisplayRange=[];
-    elseif (cc=='a')&(CurrentZ<ZSlices)
+    elseif (cc=='a')&(CurrentZ<ZSlices) %AR 7/17/16: This does not currently update snippet or surface plots.
         CurrentZ=CurrentZ+1;
         ManualZFlag=1;
-    elseif (cc=='z')&(CurrentZ>1)
+    elseif (cc=='z')&(CurrentZ>1) %AR 7/17/16: This does not currently update snippet or surface plots.
         CurrentZ=CurrentZ-1;
         ManualZFlag=1;
     elseif cc=='j'
@@ -979,7 +1021,7 @@ while (cc~='x')
         catch
             iJump=CurrentFrame;
         end
-        if (floor(iJump)>0)&(iJump<length(fad(CurrentChannel).channels))
+        if (floor(iJump)>0)&(iJump<length({Spots{1}.Fits}))
             CurrentFrame=iJump;
             ManualZFlag=0;
         end
@@ -1153,8 +1195,8 @@ while (cc~='x')
         [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'b', 'linewidth',1);
         ConnectPosition = [ConnectPositionx,ConnectPositiony];
         if ~isempty(ConnectPosition)
-            %Find the closest particle
-            [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,fad(CurrentChannel),Particles{CurrentChannel});
+            %Find thef closest particle
+            [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
             display(['Clicked particle: ',num2str(ParticleOutput)]);
             
             if UseHistoneOverlay
@@ -1205,7 +1247,7 @@ while (cc~='x')
         ConnectPosition = [ConnectPositionx,ConnectPositiony];
         if ~isempty(ConnectPosition)
             %Find the closest particle
-            [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,fad,Particles{CurrentChannel});
+            [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
             display(['Clicked particle: ',num2str(ParticleOutput)]);
             try
                 ParticleJump=ParticleOutput;
@@ -1355,10 +1397,10 @@ while (cc~='x')
         
         save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo')
         if UseHistoneOverlay
-            save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2')
+            save([DataFolder,filesep,'Particles.mat'],'Particles','Spots', 'SpotFilter','Threshold1','Threshold2')
             save([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'],'schnitzcells')
         else
-            save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2')            
+            save([DataFolder,filesep,'Particles.mat'],'Particles','Spots','SpotFilter','Threshold1','Threshold2')            
         end
         display('Particles saved.')
         if NChannels==1
@@ -1656,14 +1698,16 @@ save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo')
 %format without any cells
 if NChannels==1
     Particles=Particles{1};
+    Spots=Spots{1};
+    SpotFilter=SpotFilter{1};
 end
 
 
 if UseHistoneOverlay
-    save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2')
+    save([DataFolder,filesep,'Particles.mat'],'Particles','Spots','SpotFilter','Threshold1','Threshold2')
     save([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'],'schnitzcells')
 else
-    save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2')            
+    save([DataFolder,filesep,'Particles.mat'],'Particles','Spots','SpotFilter','Threshold1','Threshold2')            
 end
 close all
 display('Particles saved.')

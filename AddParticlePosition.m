@@ -46,7 +46,8 @@ end
 
 if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
     load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
-    
+    load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'])
+
     %Create the particle array. This is done so that we can support multiple
     %channels. Also figure out the number of channels
     if iscell(Particles)
@@ -56,13 +57,11 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
         NChannels=1;
     end
     
-    %Now, get the particle positions (if they're not there already). Notice
-    %that the code pulls out the position information from fad. This is because
-    %of historical reasons mostly.
+    %Now, get the particle positions (if they're not there already).
     for ChN=1:NChannels
         for i=1:length(Particles{ChN})
             for j=1:length(Particles{ChN}(i).Frame)
-                [x,y]=fad2xyzFit(Particles{ChN}(i).Frame(j),fad(ChN), 'addMargin'); 
+                [x,y,z]=SpotsXYZ(Spots(Particles{ChN}(i).Frame(j))); 
                 Particles{ChN}(i).xPos(j)=x(Particles{ChN}(i).Index(j));
                 Particles{ChN}(i).yPos(j)=y(Particles{ChN}(i).Index(j));
             end
@@ -93,12 +92,11 @@ end
 Dashes=strfind(Prefix,'-');
 Date=Prefix(1:Dashes(3)-1);
 EmbryoName=Prefix(Dashes(3)+1:end);
-
 DTIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.tif']);
 DLSM=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lsm']);
 DCZI=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.czi']);
 DLIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lif']);
-DLAT=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'IsLatticeData.txt']);
+DLAT=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*_Settings.txt']);
 
 if (length(DTIF)>0)&(length(DLSM)==0)
     if length(DLIF)==0
@@ -177,7 +175,7 @@ if ~NoAP
     end
 
 
-    %Get information about all images. This depends on the microsocpe used.
+    %Get information about all images. This depends on the microscope used.
     
     %Get the information about the zoom
     if strcmp(FileMode,'TIF')
@@ -258,13 +256,21 @@ if ~NoAP
         %Load only the metadata from the zoomed images
         MetaReader=bfGetReader([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(end).name]);
         MetaZoom=MetaReader.getMetadataStore();
-        PixelSizeZoom=str2num(MetaZoom.getPixelsPhysicalSizeX(0));
-
+        try
+            PixelSizeZoom=str2num(MetaZoom.getPixelsPhysicalSizeX(0).value);
+        catch 
+            PixelSizeZoom=str2num(MetaZoom.getPixelsPhysicalSizeX(0));
+        end
         %Find the full embryo pixel size and load the image
         D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*surf*.',FileMode(1:3)]);
         ImageTemp=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(end).name]);
         MetaFullEmbryo= ImageTemp{:, 4};
         PixelSizeFullEmbryo=str2num(MetaFullEmbryo.getPixelsPhysicalSizeX(0) );
+        try
+            PixelSizeFullEmbryo=str2num(MetaFullEmbryo.getPixelsPhysicalSizeX(0).value);
+        catch 
+            PixelSizeFullEmbryo=str2num(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
+        end
 
         %Check that the surface and midsaggital images have the same zoom
         D1=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*mid*.',FileMode(1:3)]);
@@ -279,6 +285,16 @@ if ~NoAP
             error('The surface and midsaggital images were not taken with the same pixel size')
         end
                
+        try
+            PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX(0));
+        catch 
+            PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX);
+        end
+
+%         if PixelSizeFullEmbryo~=PixelSizeFullEmbryoMid
+%             error('The surface and midsaggital images were not taken with the same pixel size')
+%         end
+        
         
         %How many channels and slices do we have?
         NChannelsMeta=MetaFullEmbryo.getChannelCount(0);
@@ -518,6 +534,7 @@ if ~NoAP
                         display('Deleting manual alignment results')
                         clear ManualAlignmentDone
                     else
+                        msgbox('Error: Answer not recognized');
                         error('Answer not recognized')
                     end
                 end
@@ -1201,11 +1218,6 @@ if ~NoAP
                 %zero
                 Angles=atan2((Particles{ChN}(i).yPos-coordAZoom(2)),...
                     (Particles{ChN}(i).xPos-coordAZoom(1)));
-%<<<<<<< HEAD
-
-                % Correction for if Angles is in quadrants II or III
-%=======
-%>>>>>>> origin/master
 
                 %Distance between the points and the A point
                 Distances=sqrt((coordAZoom(2)-Particles{ChN}(i).yPos).^2+(coordAZoom(1)-Particles{ChN}(i).xPos).^2);
@@ -1260,12 +1272,13 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
     end
     
     if exist('Threshold1')
-        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','fad','fad2',...
-            'Threshold1','Threshold2');
+        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles',...
+            'Threshold1','Threshold2', 'SpotFilter');
     else
-        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','fad','fad2');
+        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','SpotFilter');
     end
 end
+close all force;
     
  
 

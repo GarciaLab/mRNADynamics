@@ -11,8 +11,13 @@ TraceCell=cell(length(FrameInfo),1);
 
 for i=1:length(Particles)
     for j=1:length(Particles(i).Frame)
+        try
+            noIntensityFlag = Particles(i).noIntensityFlag(j);
+        catch
+            noIntensityFlag = 1;
+        end
         TraceCell{Particles(i).Frame(j)}=[TraceCell{Particles(i).Frame(j)},...
-            Particles(i).Fluo(j)];
+            Particles(i).Fluo(j).*noIntensityFlag];
     end
 end
 
@@ -32,6 +37,3 @@ for i=1:length(TraceCell)
         ErrorVarVector(i)=std(bootstrp(100,@var,TraceCell{i}));
     end
 end
-
-
-
