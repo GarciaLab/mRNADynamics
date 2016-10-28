@@ -134,11 +134,3 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
        end
     end
 end
-
-% imshow(image, [])
-% ellipse(distance_to_neighbor/2,distance_to_neighbor/2,0,spot_x,spot_y,'r');
-% imshow(snippet,[])
-% ellipse(5,5,0,fits(2),fits(4),'r');
-
-
-

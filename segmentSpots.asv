@@ -81,18 +81,16 @@ try
     datedir= dir(datefolder);
     rawdir = dir(rawfolder);
     if ~isempty(strfind([datedir.name], 'FF'))
-        ffcell = bfopen([datefolder, filesep, 'FF.lif']);
-    elseif ~isempty(strfind([rawdir.name], 'FF'))
         ffcell = bfopen([rawfolder, filesep, 'FF.lif']);
-    else 
-        display('Warning: Will not apply FF correction');
-        doFF = 0;
-    end
-    if doFF
         ffim = double(ffcell{1,1}{1,1});
         ffim = CPsmooth(ffim,'Gaussian Filter',256,0);
         ffim = ffim/max(max(ffim));
-    end
+    elseif ~isempty(strfind([rawdir.name], 'FF'))
+        ffcell = bfopen([datefolder, filesep, 'FF.lif']);
+    else 
+    ffim = double(ffcell{1,1}{1,1});
+    ffim = CPsmooth(ffim,'Gaussian Filter',256,0);
+    ffim = ffim/max(max(ffim));
 catch
     display('Warning: Will not apply FF correction');
     doFF = 0;
@@ -317,7 +315,7 @@ if ~just_dog
     neighborhood = 3000 / pixelSize;
     if TrackSpots
         Particles = track_spots(Particles, neighborhood);
-        save([DropboxFolder,filesep,Prefix,filesep,'Particles_SS.mat'], 'Particles');
+        save([DropboxFolder,filesep,Prefix,filesep,'Particles_AR.mat'], 'Particles');
     end
 
     mkdir([DropboxFolder,filesep,Prefix]);
