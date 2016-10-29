@@ -283,7 +283,6 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
 
         %Get the filter for this frame
         CurrentFrame=i;
-                Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);
 
         CurrentFrameFilter=logical(SpotFilter(CurrentFrame,~isnan(SpotFilter(CurrentFrame,:))));
         

@@ -97,6 +97,7 @@ catch
     display('Warning: Will not apply FF correction');
     doFF = 0;
 end
+clear rawdir;
 %%
 
 %The spot finding algorithm first segments the image into regions that are
