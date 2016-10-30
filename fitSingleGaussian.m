@@ -3,6 +3,8 @@ function [fits, relative_errors, residual, confidence_intervals, GaussianIntensi
 
 % Fit Gaussians to the given locus within a snippet
 
+warning('off','MATLAB:singularMatrix')
+
 snippet = double(snippet);
 [mesh_y,mesh_x] = meshgrid(1:size(snippet,2), 1:size(snippet,1));
 
@@ -44,7 +46,7 @@ for i = 1:length(confidence_intervals)
 end
 relative_errors = abs(errors./single_fit);
 
-snip_cent = size(snippet)/2;
+% snip_cent = size(snippet)/2;
 fits = single_fit; 
 GaussianIntensity = sum(sum(singleGaussian(single_fit) + double(snippet) - single_fit(6)));
 

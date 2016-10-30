@@ -53,7 +53,6 @@ for i=1:length(varargin)
 end
 %%
 tic;
-
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(Prefix);
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']);
@@ -245,10 +244,10 @@ if ~just_dog
         neighborhood = 1300 / pixelSize;
         for n = 1:num_frames  
             waitbar(n/num_frames,h)
-            l = length(Particles([Particles.frame] == n));
+            l = length(Particles([Particles.frame]);
             i = i + length(Particles([Particles.frame] == (n - 1) ));
-            for j = i:i+l-1
-                for k = j+1:i+l-1
+            for j = i:i+length(Particles([Particles.frame] == n)) - 1
+                for k = j+1:i+length(Particles([Particles.frame] == n)) - 1
                     dist = sqrt( (Particles(j).xFit(end) - Particles(k).xFit(end))^2 + (Particles(j).yFit(end) - Particles(k).yFit(end))^2); 
                     if dist < neighborhood && Particles(j).z(end) ~= Particles(k).z(end)
                         for m = 1:numel(fields)-2 %do not include fields 'r' or 'frame'
