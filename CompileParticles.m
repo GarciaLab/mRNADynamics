@@ -1688,13 +1688,12 @@ end
 %% Probability of being on
 
 %I'm going to measure the probability of a nucleus having detectable
-%expressiona as a function of time and AP. In order to do this I'll use
+%expression as a function of time and AP. In order to do this I'll use
 %Particles that have both the Approved flag set to 1 and 2. However, I'll
 %also check that the nuclei are not too close to the edges.
 
 %NOTE: I need a way to go back and check the nuclei that weren't on. Maybe
 %I should move this to Check particles
-
 
 %Create an image that is partitioned according to the AP bins. We will use
 %this to calculate the area per AP bin.
