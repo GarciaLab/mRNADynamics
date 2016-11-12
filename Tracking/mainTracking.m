@@ -324,9 +324,9 @@ if ~exist('centers','var') || isempty(centers)
     %If the XY contains only one or zero nuclei then there's probably something
     %wrong. In that case just copy the information from the previous good
     %frame.
-    if sum(cellfun(@(x) size(x,1),xy)<2)
+    if sum(cellfun(@(x) size(x,1),xy)<0)
         %Find the frames where we have issues
-        FramesToFix=find(cellfun(@(x) size(x,1),xy)<2);
+        FramesToFix=find(cellfun(@(x) size(x,1),xy)<0);
         for i=1:length(FramesToFix)
             if FramesToFix(i)==1
                 FrameToCopy=1;

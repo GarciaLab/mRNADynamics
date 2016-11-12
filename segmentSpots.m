@@ -282,14 +282,20 @@ if ~just_dog
     end
  
     %Create a final Spots structure to be fed into TrackmRNADynamics
-    Spots = [];
-    parfor i = 1:num_frames
+    Spots = [];            
+    fields = fieldnames(Particles);
+    num_fields = length(fields);
+    for i = 1:num_frames
         frames = find([Particles.frame]==i);
         if ~isempty(frames)
             for j = frames(1):frames(end)
                 if ~Particles(j).discardThis
                     Spots(i).Fits(j-frames(1)+1) = Particles(j);
                 end
+            end
+        else 
+            for l = 1:num_fields
+                Spots(i).Fits.(fields{l}) = [];
             end
         end
     end
