@@ -1,9 +1,17 @@
-function [fad,fad2,Particles]=...
-    TransferParticle(fad,Framefad2,Particlefad,fad2,Framefad,...
-    Indexfad2,Particles)
+function [SpotFilter,Particles]=...
+    TransferParticle(Spots,SpotFilter,Particles,CurrentFrame,IndexOutput);
 
-%This function moves a particle from the structure fad2 to fad. It
-%also updates the Particles structure.
+
+% [fad,fad2,Particles]=...
+%     TransferParticle(fad,Framefad2,Particlefad,fad2,Framefad,...
+%     Indexfad2,Particles)
+
+%This function approves a spot that wasn't originally and creates a
+%particle or adds it to the CurrentParticle.
+
+%First, approve the particle
+SpotsFilter
+
 
 %If Particlefad is empty it adds the particle from fad2 to fad and at
 %the end of Particles.
