@@ -3,11 +3,26 @@ function FitMeanAPSymmetric(varargin)
 %This function performs fits to the mean fluorescence as a function of time
 %of a particular dataset.
 
-%varargin Variable length input argument list.
-%allows any number of arguments to a function.  The variable
-%varargin is a cell array containing the optional arguments to the
-%function.  varargin must be declared as the last input argument
-%and collects all the inputs from that point onwards.
+%MT, 2016-11-0: This function now provides the option to fit a single 
+%dataset or to combine multiple datasets and fit the resulting dataset.
+%Multiple datasets are combined by calling CombineMultipleEmbryos and the
+%resulting dataset is fit by this script just like a single dataset.
+%OPTIONAL INPUT: varargin{1} = Prefix
+%                varargin{2} = 'multiple'
+%                               Include string, 'multiple', if you need to 
+%                               combine multiple embryos before fitting the
+%                               data with mean. If you are fitting a single
+%                               embryo dataset, do not include.
+%                varargin{3} =  DataType
+%                               If you include the 'multiple' parameter,
+%                               you need to include the DataType
+%                               of the embryo datasets you wish to analyze.
+%                               DataType is the name of the tab in the
+%                               DataStatus Excel file, which should include
+%                               all the information for the datasets you 
+%                               want to combine.
+%NB: If you do not enter a Prefix, but enter 'multiple' and a DataType, the
+%code is still able to handle this type of input.
 
 %2013/08/18: Changed this so it can automatically detect whether we are
 %dealing with a 5' or 3' data set
@@ -40,13 +55,9 @@ GeneLength5=5.296;      %Distance from the first MS2 site to the end of the
 GeneLength3=1.941;      %Distance from the first MS2 site to the end of the
                         %TUB3'UTR in kb for the 3' constrcut.                        
 
-                                    
-
-                                  
-                                    
-                                    
-                                    
-                                    
+MultipleEmbryos = 0;    %Keeps track of whether or not multiple embryos 
+                        %need to be combined before performing the fits
+                                                                   
                                     
 close all
 
@@ -56,27 +67,94 @@ close all
 % ES 2013-10-29: Required for multiple users to be able to analyze data on
 % one computer
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders(varargin{1});
+    DetermineLocalFolders;
 %I dont think this part works. TG
 
 if ~isempty(varargin)
-    Prefix=varargin{1};
-               
+    %MT, 2016-11-4
+    %Determine if multiple embryos need to be combined
+    
+    %Case where 'multiple' is indicated, but neither Prefix nor DataType is
+    %provided
+    if length(varargin) == 1
+        if strcmp(varargin{1},'multiple')
+            FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
+            Dashes=strfind(FolderTemp,filesep);
+            Prefix=FolderTemp((Dashes(end)+1):end);
+            
+            MultipleEmbryos = 1;
+            
+            prompt = 'You''ve indicated that you have multiple embryos you need to combine,\nbut have not included a DataType.\nPlease review documentation and enter the appropriate string:';
+            userInput = input(prompt, 's');
+            if isempty(userInput)
+                error('You did not provide a DataType, which is required to combine multiple embryos. Please review documentation and re-run the function with the appropriate input parameters.');
+            else
+                DataType = strtrim(userInput);
+            end
+        %Case where Prefix is provided for a single embryo
+        else
+            Prefix = varargin{1};
+        end
+    elseif length(varargin) == 2
+        %Case where Prefix is not provided, but 'multiple' and DataType are
+        if strcmp(varargin{1},'multiple')
+            FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
+            Dashes=strfind(FolderTemp,filesep);
+            Prefix=FolderTemp((Dashes(end)+1):end);
+            MultipleEmbryos = 1;
+        %Case where Prefix is provided and 'multiple' is indicated, but no
+        %DataType is provided
+        elseif strcmp(varargin{2},'multiple')
+            Prefix = varargin{1};
+            MultipleEmbryos = 1;
+            
+            prompt = 'You''ve indicated that you have multiple embryos you need to combine, \nbut have not included a DataType. \nPlease review documentation and enter the appropriate string:';
+            userInput = input(prompt, 's');
+            if isempty(userInput)
+                error('You did not provide a DataType, which is required to combine multiple embryos. Please review documentation and re-run the function with the appropriate input parameters.');
+            else
+                DataType = strtrim(userInput);
+            end
+        end
+    elseif length(varargin) == 3
+        %Case where Prefix is provided, 'multiple' is indicated, and 
+        %DataType is provided
+        if strcmp(varargin{2},'multiple')
+            Prefix = varargin{1};
+            MultipleEmbryos = 1;
+            DataType = varargin{3};
+        end
+    end          
 else
     FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
     Dashes=strfind(FolderTemp,filesep);
     Prefix=FolderTemp((Dashes(end)+1):end);
 end
 
+%Run CombineMultipleEmbryos if required
+if MultipleEmbryos
+    CombineMultipleEmbryos(DataType, Prefix)
+    disp('Embryos successfully combined')
+end
 
                                     
-%Load the complied particles and the division information                                    
-load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'])
+%Load the complied particles and the division information
+if MultipleEmbryos
+    load([DropboxFolder,filesep,DataType,'_Combined_CompiledParticles.mat'])
 
-if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'])
-    load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'])
+    if exist([DropboxFolder,filesep,DataType,'_Combined_APDivision.mat'])
+        load([DropboxFolder,filesep,DataType,'_Combined_APDivision.mat'])
+    else
+        error('Could not load Combined_APDivision.mat. Make sure to have done the manual check of division.')
+    end
 else
-    error('Could not load APDivision.mat. Make sure to have done the manual check of division.')
+    load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'])
+    
+    if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'])
+        load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'])
+    else
+        error('Could not load APDivision.mat. Make sure to have done the manual check of division.')
+    end
 end
                                   
  
@@ -219,14 +297,26 @@ end
 %disapproved the ones that did not have enough data points. Fit results has
 %is a structure with the fits corresponding to each AP position and nc13
 %or nc14
-if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'])
-    load([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat']);
-    if isempty(FitResults)
+if MultipleEmbryos
+    if exist([DropboxFolder,filesep,DataType,'_Combined_MeanFits.mat'])
+        load([DropboxFolder,filesep,DataType,'_Combined_MeanFits.mat']);
+        if isempty(FitResults)
+            FitResults(length(APbinID),3).Rate0=[];
+        end
+    else
         FitResults(length(APbinID),3).Rate0=[];
     end
 else
-    FitResults(length(APbinID),3).Rate0=[];
+    if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'])
+        load([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat']);
+        if isempty(FitResults)
+            FitResults(length(APbinID),3).Rate0=[];
+        end
+    else
+        FitResults(length(APbinID),3).Rate0=[];
+    end
 end
+
 
 
 
@@ -617,9 +707,15 @@ while (cc~=13)
         
     %Save
     elseif (ct~=0)&(cc=='v')
-        save([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'],...
-        'FitResults')
-    display('MeanFits.mat saved')
+        if MultipleEmbryos
+            save([DropboxFolder,filesep,DataType,'_Combined_MeanFits.mat'],...
+                'FitResults')
+            display('DataType_Combined_MeanFits.mat saved')
+        else
+            save([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'],...
+                'FitResults')
+            display('MeanFits.mat saved')
+        end
         
     %Debug mode
     elseif (ct~=0)&(cc=='9')
@@ -631,8 +727,14 @@ end
 
 
 %Save the information
-save([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'],...
-    'FitResults')
-display('MeanFits.mat saved')        
-        
+if MultipleEmbryos
+    save([DropboxFolder,filesep,DataType,'_Combined_MeanFits.mat'],...
+        'FitResults')
+    display('DataType_Combined_MeanFits.mat saved')
+else
+    save([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'],...
+        'FitResults')
+    display('MeanFits.mat saved')        
+end
+
 close(FitFigure)
