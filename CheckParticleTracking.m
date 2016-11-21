@@ -486,11 +486,12 @@ while (cc~='x')
     xDisapproved=x(IndexDisapprovedParticles);
     yDisapproved=y(IndexDisapprovedParticles);
     
-    %Non-flagged particles
+    %Non-flagged particles (these are particles that have not been
+    %processed)
     IndexNonFlaggedParticles=[];
     for i=1:length(Particles{CurrentChannel})
         if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&...
-                (sum(Particles{CurrentChannel}(i).Approved==-1)|sum(Particles{CurrentChannel}(i).Approved==1))
+                ~(sum(Particles{CurrentChannel}(i).Approved==-1)|sum(Particles{CurrentChannel}(i).Approved==1))
             IndexNonFlaggedParticles=[IndexDisapprovedParticles,...
                 Particles{CurrentChannel}(i).Index(Particles{CurrentChannel}(i).Frame==CurrentFrame)];
         end
@@ -538,7 +539,7 @@ while (cc~='x')
         plot(xNonFlagged,yNonFlagged,'or')
         plot(xApproved,yApproved,'ob')
         plot(xDisapproved,yDisapproved,'^r')
-        plot(x, y, 'sw')
+        %plot(x, y, 'sw')
     end
     %Always show current particle
     plot(xTrace,yTrace,'og')
@@ -1104,7 +1105,7 @@ while (cc~='x')
             
             
             if ~isempty(ConnectPosition)
-                [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,fad(CurrentChannel),Particles{CurrentChannel});
+                [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
                
                 
                 %Check that the clicked particle doesn't exist in a previous
@@ -1170,7 +1171,7 @@ while (cc~='x')
             
         else
             ConnectPosition=ginput(1);
-            [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,fad(CurrentChannel),Particles{CurrentChannel});
+            [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
             
             %If it's an independent particle swap it with the frame in the
             %current particle
