@@ -22,7 +22,7 @@ mkdir(['..',filesep,'Data',filesep,'RawDynamicsData'])
 %DynamicsResults is the old DropboxFolder
 mkdir(['..',filesep,'Data',filesep,'DynamicsResults'])
 
-%Copy the files to the different folders:
+%Copy the files to the different foflders:
 copyfile(['InstallationFiles',filesep,'InstallComputerFolders.xlsx'],...
     ['..',filesep,'ComputerFolders.xlsx'])
 
@@ -98,6 +98,7 @@ CurrentFolder=cd;
 %PreProcessedFolder
 cd(['..', filesep, 'Data',filesep,'PreProcessedData']);
 PreProcessedFolder=cd;
+cd(CurrentFolder)
 %mRNADynamics\Tracking
 cd('Tracking')
 TrackingFolder=cd;
