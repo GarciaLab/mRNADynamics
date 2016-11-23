@@ -14,7 +14,7 @@ end
 
 mkdir(['..',filesep,'Data'])
 mkdir(['..',filesep,'Data',filesep,'PreProcessedData'])
-mkdir(['..',filesep, 'Data', 'ProcessedData'])
+mkdir(['..',filesep, 'Data', filesep, 'ProcessedData'])
 
 %Create the different folders we need
 %RawDynamicsData is the old RawData folder
