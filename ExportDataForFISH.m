@@ -12,8 +12,7 @@ function Prefix=ExportDataForFISH(varargin)
 
 %Note:
 %Flatfield image: We assume there is no background of fluorescence / dark
-%current. I should check this. Maybe do a dark count reading for every time
-%I take data?
+%current.
 
 
 %Where do things go?

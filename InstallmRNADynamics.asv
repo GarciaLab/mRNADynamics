@@ -95,9 +95,6 @@ end
 
 %mRNADynamics
 CurrentFolder=cd;
-%PreProcessedFolder
-cd(['..', filesep, 'Data',filesep,'PreProcessedData']);
-PreProcessedFolder=cd;
 %mRNADynamics\Tracking
 cd('Tracking')
 TrackingFolder=cd;
@@ -118,13 +115,17 @@ cd(['Data',filesep,'DynamicsResults'])
 DynamicsResultsFolder=cd;
 cd(CurrentFolder);
 
-Output{1}=['path(''',PreProcessedFolder,''',path);'];
-Output{2}=['path(''',CurrentFolder,''',path);'];
-Output{3}=['path(''',TrackingFolder,''',path);'];
-Output{4}=['path(''',SubfunctionsFolder,''',path);'];
-Output{5}=['path(''',mRNADynamicsParentFolder,''',path);'];
-Output{6}=['path(''',DynamicsResultsFolder,''',path);'];
-Output{7}=['path(''',LineageCodeFolder,''',path);'];
+PreProcessedfolder= 
+
+Output{1}=['path(''',CurrentFolder,''',path);'];
+Output{2}=['path(''',UserFolder,''',path);'];
+Output{3}=['path(''',PreProcessedFolder,''',path);'];
+Output{4}=['path(''',CurrentFolder,''',path);'];
+Output{5}=['path(''',TrackingFolder,''',path);'];
+Output{6}=['path(''',SubfunctionsFolder,''',path);'];
+Output{7}=['path(''',mRNADynamicsParentFolder,''',path);'];
+Output{8}=['path(''',DynamicsResultsFolder,''',path);'];
+Output{9}=['path(''',LineageCodeFolder,''',path);'];
 
 
 %Create the startup.m file
