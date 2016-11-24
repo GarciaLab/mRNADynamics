@@ -275,7 +275,7 @@ for i=1:length(schnitzcells)
 end
 
 
-%Extract the nuclear fluorscence values if we're in the right experiment
+%Extract the nuclear fluorescence values if we're in the right experiment
 %type
 if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'input')
     
