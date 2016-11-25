@@ -1013,9 +1013,9 @@ elseif strcmp(FileMode,'LIFExport')
                                 q==coatChannel
                             %Save the blank images at the beginning and end of the
                             %stack
-                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'ch_',iIndex(2, 2),'.tif'];
+                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'_ch',iIndex(2, 2),'.tif'];
                             imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),'ch_',iIndex(2, 2),'.tif'];
+                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),'_ch',iIndex(2, 2),'.tif'];
                             imwrite(BlankImage,[OutputFolder,filesep,NewName]);
                             %Copy the rest of the images
                             n=1;        %Counter for slices
@@ -1023,7 +1023,7 @@ elseif strcmp(FileMode,'LIFExport')
                             lastImage = j*NSlices(i)*NChannels;
                             for k=firstImage:NChannels:lastImage
                                 if n<=min(NSlices)
-                                    NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'ch_',iIndex(2, 2),'.tif'];
+                                    NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'_ch',iIndex(2, 2),'.tif'];
                                        imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
                                     n=n+1;
                                 end
@@ -1031,9 +1031,9 @@ elseif strcmp(FileMode,'LIFExport')
                         elseif strcmpi(ExperimentType, 'inputoutput')
                             %Save the blank images at the beginning and end of the
                             %stack
-                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'ch_',iIndex(q, 2),'.tif'];
+                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'_ch',iIndex(q, 2),'.tif'];
                             imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),'ch_',iIndex(q, 2),'.tif'];
+                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),'_ch',iIndex(q, 2),'.tif'];
                             imwrite(BlankImage,[OutputFolder,filesep,NewName]);
                             %Copy the rest of the images
                             n=1;        %Counter for slices
@@ -1041,7 +1041,7 @@ elseif strcmp(FileMode,'LIFExport')
                             lastImage = j*NSlices(i)*NChannels;
                             for k=firstImage:NChannels:lastImage
                                 if n<=min(NSlices)
-                                    NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'ch_',iIndex(q, 2),'.tif'];
+                                    NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'_ch',iIndex(q, 2),'.tif'];
                                        imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
                                     n=n+1;
                                 end
