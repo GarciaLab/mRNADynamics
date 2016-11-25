@@ -578,7 +578,9 @@ while (cc~='x')
                 Ellipses{CurrentFrame}(schnitzCellNo,4),...
                 Ellipses{CurrentFrame}(schnitzCellNo,5),...
                 Ellipses{CurrentFrame}(schnitzCellNo,1)+1,...
-                Ellipses{CurrentFrame}(schnitzCellNo,2)+1,'b',50);                       
+                Ellipses{CurrentFrame}(schnitzCellNo,2)+1,'b',50);
+            
+            
             hold off
         end
         

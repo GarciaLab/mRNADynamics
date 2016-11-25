@@ -298,7 +298,7 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
         end
             
         %Load the corresponding mRNA image
-        Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch','02','.tif']);
+        Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch','.tif']);
         
         %TO-DO: Show spots above and below threshold differently
         imshow(Image,[])
