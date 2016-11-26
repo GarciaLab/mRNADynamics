@@ -1,6 +1,20 @@
-function TrackNuclei(Prefix)
+function TrackNuclei(Prefix,varargin)
 
 %This function is just a script that call Laurent's tracking code
+
+%Options:
+%StitchSchnitz: Run the schnitzcells fixing code by Simon
+
+SkipStitchSchnitz=1;
+if ~isempty(varargin)
+    if strcmpi(varargin{1},'stitchschnitz')
+        SkipStitchSchnitz=0;
+    else
+        error('Input parameter not recognized')
+    end
+end
+
+
 
 %Get the folders, including the default Dropbox one
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
@@ -362,5 +376,8 @@ save([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
 
 
 %Stitch the schnitzcells using Simon's code
-StitchSchnitz(Prefix)
+if ~SkipStitchSchnitz
+    display('Skipping StitchSchnitz')
+    StitchSchnitz(Prefix)
+end
 

@@ -8,6 +8,8 @@ function Prefix=ExportDataForFISH(varargin)
 
 %Options:
 %TAGOnly: Generates only the tag file
+%medianprojection: Uses a median projection in the nuclear channel rather
+%                  than the default maximum projection
 
 
 %Note:
