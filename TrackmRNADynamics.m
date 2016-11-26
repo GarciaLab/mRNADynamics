@@ -14,7 +14,6 @@ function [Particles,schnitzcells,fad,fad2]=TrackmRNADynamics(varargin)
     DetermineLocalFolders;
 
 
-
 %Look at the input parameter and use defaults if missing
 if isempty(varargin)
     %Folders
@@ -64,6 +63,8 @@ Threshold2Backup=Threshold2;
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(Prefix);
 
+[~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
+    readMovieDatabase(Prefix);
 
 %What type of experiment are we dealing with? Get this out of
 %MovieDatabase.xlsx
@@ -298,8 +299,11 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
         end
             
         %Load the corresponding mRNA image
-        Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch','02','.tif']);
-        
+        if strcmpi(ExperimentType, 'inputoutput')
+            Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch','02','.tif']);
+        else
+            Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'.tif']);
+        end
         %TO-DO: Show spots above and below threshold differently
         imshow(Image,[])
         hold on

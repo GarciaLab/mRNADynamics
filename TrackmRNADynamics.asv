@@ -12,8 +12,8 @@ function [Particles,schnitzcells,fad,fad2]=TrackmRNADynamics(varargin)
 
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
-
-
+[~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
+    readMovieDatabase(Prefix);
 
 %Look at the input parameter and use defaults if missing
 if isempty(varargin)
@@ -298,7 +298,7 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
         end
             
         %Load the corresponding mRNA image
-        Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch','.tif']);
+        Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch','02','.tif']);
         
         %TO-DO: Show spots above and below threshold differently
         imshow(Image,[])

@@ -9,6 +9,8 @@ function [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
 %Get the folder with the data
 if ~PrefixOverrideFlag
     Folder=uigetdir(SourcePath,'Select folder with data');
+else 
+    Folder = '';
 end
 
 %Get the information from the last two folders in the structure
@@ -17,6 +19,8 @@ if ~PrefixOverrideFlag
     
     Prefix=[Folder((SlashPositions(end-1)+1):(SlashPositions(end)-1)),'-',...
         Folder((SlashPositions(end)+1):(end))];
+else 
+    Prefix = PrefixOverrideFlag;
 end
 
 %What type of experiment are we dealing with? Get this out of

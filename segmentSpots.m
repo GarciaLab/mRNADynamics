@@ -53,9 +53,12 @@ for i=1:length(varargin)
 end
 %%
 tic;
+[~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
+    readMovieDatabase(Prefix);
 
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(Prefix);
+
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']);
 microscope = FrameInfo(1).FileMode; 
 zSize = FrameInfo(1).NumberSlices;
@@ -125,8 +128,12 @@ if just_dog
     for current_frame = 1:num_frames
         waitbar(current_frame/num_frames,h);
         if displayFigures
-            for i = 1:zSize      
-                im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'_ch02','.tif']));
+            for i = 1:zSize
+                if strcmpi(ExperimentType,'inputoutput')
+                    im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'_ch02','.tif']));
+                else
+                    im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
+                end
                 dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
                 dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
                 dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif'];
@@ -135,7 +142,11 @@ if just_dog
             end
         else 
             parfor i = 1:zSize    
-                im = imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'_ch02','.tif']);
+                if strcmpi(ExperimentType,'inputoutput')
+                    im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'_ch02','.tif']));
+                else
+                    im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
+                end
                 dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
                 dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
                 dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif'];
@@ -150,8 +161,12 @@ else
     for current_frame = 1:num_frames
         w = waitbar(current_frame/num_frames,h);
         set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
-        for i = 1:zSize      
-            im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'_ch02','.tif']));
+        for i = 1:zSize   
+            if strcmpi(ExperimentType, 'inputoutput')
+                im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'_ch02','.tif']));
+            else
+                im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
+            end
             dog = double(imread([OutputFolder1, filesep,'DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
             if displayFigures
                 fig = figure(1);
