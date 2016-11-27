@@ -510,7 +510,7 @@ while (cc~='x')
                 FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);
         catch
             display(['Warning: Could not load file: ',...
-                FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif'])
+                FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'*.tif'])
         end
     elseif (NChannels==1)&(strcmp(lower(ExperimentType),'inputoutput'))
         OutputChannelTemp1=strfind({lower(Channel1{1}),lower(Channel2{1})},'mcp');
