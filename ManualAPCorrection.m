@@ -17,13 +17,14 @@ function [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ResizeF
 %Z - Move down further
 %x - Save and cancel
 
-
 %Make an overlay of the zoomed in and zoomed out real
 %images as well as of a quickly segmented nuclear mask
 
+%Close existing images
+close all
+
 %Information about the correlation image
 [CRows,CColumns]=size(C);
-
 
 %Resize the zoom out
 ZoomOutResized=imresize(SurfImage, ResizeFactor);
@@ -37,22 +38,29 @@ NucMaskZoomIn=GetNuclearMask(ZoomImage,8,2);
 [RowsResized,ColumnsResized]=size(NucMaskZoomOutResized);
 [RowsZoom,ColumnsZoom]=size(ZoomImage);
 
+%Determine the positions and size of the figures, and create the figures
+ScreenSize=get( 0, 'ScreenSize' );
+ScreenSize=ScreenSize(3:end);
+ScreenRows=ScreenSize(2);
+ScreenColumns=ScreenSize(1);
+
 FigureCorrelation=figure;
-set(gcf,'Position',[709   263   560   420])
+set(gcf,'units', 'normalized', 'position',[0.4, 0.2, 0.3, 0.2]);
 contourf(abs(C))
 ylim([(CRows-1)/2-RowsZoom,(CRows-1)/2+RowsZoom])
 xlim([(CColumns-1)/2-ColumnsZoom,(CColumns-1)/2+ColumnsZoom])
 PlotHandle=[];
 
 FigureRealOverlay=figure;
-set(gcf,'Position',[22  -212   682   347])
+set(gcf,'units', 'normalized', 'position',[0.05, 0.2, 0.3, 0.3]);
 
 FigureOverlay=figure;
-set(gcf,'Position',[15   324   676   342])
+set(gcf,'units', 'normalized', 'position',[0.05, 0.6, 0.3, 0.3]);
+
 cc=1;
 
 FigureRectangle=figure;
-% set(gcf,'Position',[115   424   776   442])
+set(gcf,'units', 'normalized', 'position',[0.4, 0.5, 0.3, 0.4]);
 
 
 %Default flags
@@ -72,7 +80,8 @@ while (cc~=13)
     PlotHandle=plot(CorrX,CorrY,...
         'or','MarkerSize',10);
     hold off
-  
+    set(gcf,'units', 'normalized', 'position',[0.4, 0.2, 0.3, 0.2]);
+
    
     
     %Crop the zoomed out nuclear mask
@@ -92,10 +101,14 @@ while (cc~=13)
     figure(FigureOverlay)
     imshow(ImOverlayMask)
     set(gcf,'name',['ShiftRow: ',num2str(ShiftRow),'. ShiftColumn:',num2str(ShiftColumn),'.'])
+    set(gcf,'units', 'normalized', 'position',[0.05, 0.6, 0.3, 0.3]);
+
 
     
     figure(FigureRealOverlay)
     imshow(ImOverlay)
+    set(gcf,'units', 'normalized', 'position',[0.05, 0.2, 0.3, 0.3]);
+
     
     figure(FigureRectangle)
     ImageCenter=[SurfRows/2 + ShiftRow,SurfColumns/2 + ShiftColumn];
@@ -108,8 +121,11 @@ while (cc~=13)
     plot(coordP(1),coordP(2),'.r','MarkerSize',30)
     plot([coordA(1),coordP(1)],[coordA(2),coordP(2)],'-b')
     hold off
+    set(gcf,'units', 'normalized', 'position',[0.4, 0.5, 0.3, 0.4]);
+
     
     figure(FigureOverlay)
+    drawnow
     ct = waitforbuttonpress;
     ct=1;
     cc=get(FigureOverlay,'currentcharacter');
