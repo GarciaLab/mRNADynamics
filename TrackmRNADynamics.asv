@@ -14,6 +14,7 @@ function [Particles,schnitzcells,fad,fad2]=TrackmRNADynamics(varargin)
     DetermineLocalFolders;
 
 
+
 %Look at the input parameter and use defaults if missing
 if isempty(varargin)
     %Folders
@@ -63,8 +64,6 @@ Threshold2Backup=Threshold2;
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(Prefix);
 
-[~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
-    readMovieDatabase(Prefix);
 
 %What type of experiment are we dealing with? Get this out of
 %MovieDatabase.xlsx
@@ -255,8 +254,6 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
             for j=1:length(Spots(i).Fits)
                 if sum(Spots(i).Fits(j).DOGIntensity>Threshold1)
                     SpotFilter(i,j)=1;
-                else
-                    SpotFilter(i,j)=0;
                 end
             end
         end
@@ -290,7 +287,7 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
         CurrentFrameFilter=logical(SpotFilter(CurrentFrame,~isnan(SpotFilter(CurrentFrame,:))));
         
         %Get the positions of the spots in this frame
-        [x,y,~]=SpotsXYZ(Spots(CurrentFrame));
+        [x,y,z]=SpotsXYZ(Spots(CurrentFrame));
         
         %Z plane to be displayed. We use the median of all particles found
         %in this frame
@@ -301,11 +298,8 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
         end
             
         %Load the corresponding mRNA image
-        if strcmpi(ExperimentType, 'inputoutput')
-            Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch','02','.tif']);
-        else
-            Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'.tif']);
-        end
+        Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'.tif']);
+        
         %TO-DO: Show spots above and below threshold differently
         imshow(Image,[])
         hold on
@@ -356,13 +350,12 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
             if ~isempty(x)
                 if isempty(Particles)
                     %Initialize the Particles structure if it doesn't exist yet
-                    %LastFrame=zeros(size(x)); %HG: What does LastFrame keep track of?
                     for j=1:length(x)
                         if CurrentFrameFilter(j)
                             Particles(j).Frame=CurrentFrame;
                             Particles(j).Index=j;
+                            LastFrame(j)=CurrentFrame;
                             Particles(j).Approved=0;
-                            %LastFrame(j)=CurrentFrame;
                         end
                     end
 
@@ -406,11 +399,6 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
                         %The rows of distance correspond to the new particles.
                         %The columns correspond to their distance to the old
                         %particles.
-                        
-                        %For particles in the previous frame that were not
-                        %used for tracking, set their distance to infinity
-                        Distance(:,~FilterPreviousFrame)=inf;                        
-                        
                         %MinIndex is a row vector. The element position
                         %correspond to the new particle and the value within it
                         %correspond to the old particle that it's closest to.
@@ -436,7 +424,7 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
                                 NewParticlesFlag(1)=0;
                                 LastFrame(PreviousParticles)=i;
 
-                            %If we have only one previous particle, MinIndex points at
+                            %If we have only one previous particle MinIndex points at
                             %the new particle that is closest to it    
                             elseif (length(PreviousParticles)==1)&(MinValues<SearchRadius)
                                 Particles(PreviousParticles).Frame(end+1)=i;
@@ -683,7 +671,7 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
 
         mkdir([OutputFolder,filesep])
 
-        save([OutputFolder,filesep,'Particles.mat'],'Particles','SpotFilter',...
+        save([OutputFolder,filesep,'Particles.mat'],'Particles','Spots','SpotFilter',...
             'Threshold1','Threshold2')
 
     end
