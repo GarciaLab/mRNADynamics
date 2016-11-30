@@ -101,17 +101,6 @@ else
             error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
         end
     end
-        
-        
-    % ES 2013-10-06: Removing the hard-coding for selecting the date string
-    % in 'Prefix'. This is because I tend to put a letter after the date:
-    % '2013-10-06A', for instance, instead of '2013-10-06'. This allows me
-    % to use different flat field images for multiple movies acquired in
-    % one day, which is necessary because they might be imaged at different
-    % angles (something that my microscope supports).
-    
-    %PrefixRow=find(strcmp(XLSTxt(:,DataFolderColumn),[Prefix(1:10),'\',Prefix(12:end)])|...
-    %    strcmp(XLSTxt(:,DataFolderColumn),[Prefix(1:10),'/',Prefix(12:end)]));
     
     if isempty(PrefixRow)
         error('Data set information not found in MovieDatabase.xlsx')
@@ -120,31 +109,38 @@ else
     end
     
     
-    if strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Hernan')
-        DropboxString='DropboxHernan';
-    elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Albert+Hernan')
-        DropboxString='DropboxAlbert';
-    elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Albert+Emilia')
-        DropboxString='DropboxEmilia';
-    elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Jacques+Hernan')
-        DropboxString='DropboxJacques';
-    elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'HGLab')
-        DropboxString='DropboxHGLab';
-    elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Heinrich')
-        DropboxString='DropboxHeinrich';
-    elseif strcmp(XLSTxt{PrefixRow, DropboxFolderColumn}, 'Default')
-        DropboxString = 'DropboxFolder';
-    elseif strcmp(XLSTxt{PrefixRow, DropboxFolderColumn}, 'TwoColor')
-        DropboxString = 'DropboxTwoColor';
-        % ES 2013-10-06
-    else
-        error('Dropbox folder for this type of experiment not found. Check MovieDatabase')
-    end
+    DropboxString=XLSTxt{PrefixRow,DropboxFolderColumn};
+    
+%HG: I'm getting rid of the hardcoding of dropbox folders.
+%     if strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Hernan')
+%         DropboxString='DropboxHernan';
+%     elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Albert+Hernan')
+%         DropboxString='DropboxAlbert';
+%     elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Albert+Emilia')
+%         DropboxString='DropboxEmilia';
+%     elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Jacques+Hernan')
+%         DropboxString='DropboxJacques';
+%     elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'HGLab')
+%         DropboxString='DropboxHGLab';
+%     elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Heinrich')
+%         DropboxString='DropboxHeinrich';
+%     elseif strcmp(XLSTxt{PrefixRow, DropboxFolderColumn}, 'Default')
+%         DropboxString = 'DropboxFolder';
+%     elseif strcmp(XLSTxt{PrefixRow, DropboxFolderColumn}, 'TwoColor')
+%         DropboxString = 'DropboxTwoColor';
+%         % ES 2013-10-06
+%     else
+%         error('Dropbox folder for this type of experiment not found. Check MovieDatabase')
+%     end
     
     DropboxRow=find(strcmp(XLS(:,1),DropboxString));
 end
     
+if isempty(DropboxRow)
+    error('Dropbox folder for this type of experiment not found. Check MovieDatabase')
+end
 
-DropboxFolder=XLS{DropboxRow,ComputerColumn};    
+DropboxFolder=XLS{DropboxRow,ComputerColumn};  
+
     
     
