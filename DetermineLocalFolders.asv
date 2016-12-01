@@ -134,12 +134,8 @@ else
 %     end
     
 
-    %We can use the string "Default" or "DropboxFolder" for the default
+    %We can use the string "Default" or "DropboxDefault" for the default
     %Dropbox folder
-    if strcmpi(DropboxString,'default')
-        DropboxString='DropboxFolder';
-    end
-    
 
     DropboxRow=find(strcmp(XLS(:,1),DropboxString));
 end
