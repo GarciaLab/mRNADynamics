@@ -342,6 +342,10 @@ else
     end
 end
 
+save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo') %this is here so that a user will still get an updated
+%frameinfo.mat even if they abort checkparticletracking without saving (to
+%prevent issues with compileparticles)
+
 %Check if we have already determined nc
 if (~isfield(FrameInfo,'nc'))&&(~UseHistoneOverlay)
     %FrameInfo=DetermineNC(fad,Particles,FrameInfo);  AR 3/14/16: This
