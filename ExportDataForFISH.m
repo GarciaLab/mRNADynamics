@@ -965,14 +965,19 @@ elseif strcmp(FileMode,'LIFExport')
             if ~isempty(strfind(lower(Channel2{1}),'his'))
                 fiducialChannel=2;
                 inputProteinChannel=1;
+                coatChannel=0;
             elseif ~isempty(strfind(lower(Channel1{1}),'his'))
                 fiducialChannel=1;
                 inputProteinChannel=2;
+                coatChannel=0;
             else
-                fiducialChannel=0;
                 inputProteinChannel=1;
+                fiducialChannel=1;      %We're assuming we can use the protein channel for segmentatino
+                coatChannel=0;
+                histoneChannel=1;
                 warning('No histone channel found. Finding nuclei using the protein input channel.')
             end
+            
         elseif strcmpi(ExperimentType, 'inputoutput')
             if (~isempty(strfind(lower(Channel2),'mcp')))&...
                     ~isempty(strfind(lower(Channel2),'pcp'))
@@ -1007,48 +1012,65 @@ elseif strcmp(FileMode,'LIFExport')
         for i=1:NSeries
             waitbar(i/NSeries,h)
             for j=1:NFrames(i) 
-                if ~strcmpi(ExperimentType, 'input')
-                    for q=1:NChannels
-                        if (strcmpi(ExperimentType,'1spot') ||...
-                                strcmp(ExperimentType,'2spot') ||...
-                                strcmp(ExperimentType,'2spot1color')) && ...
-                                q==coatChannel
-                            %Save the blank images at the beginning and end of the
-                            %stack
-                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'.tif'];
-                            imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),'.tif'];
-                            imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                            %Copy the rest of the images
-                            n=1;        %Counter for slices
-                            firstImage = (j-1)*NSlices(i)*NChannels+1+(q-1);
-                            lastImage = j*NSlices(i)*NChannels;
-                            for k=firstImage:NChannels:lastImage
-                                if n<=min(NSlices)
-                                    NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'.tif'];
-                                       imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
-                                    n=n+1;
-                                end
-                            end
-                        elseif strcmpi(ExperimentType, 'inputoutput')
-                            %Save the blank images at the beginning and end of the
-                            %stack
-                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'_ch',iIndex(q, 2),'.tif'];
-                            imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),'_ch',iIndex(q, 2),'.tif'];
-                            imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                            %Copy the rest of the images
-                            n=1;        %Counter for slices
-                            firstImage = (j-1)*NSlices(i)*NChannels+1+(q-1);
-                            lastImage = j*NSlices(i)*NChannels;
-                            for k=firstImage:NChannels:lastImage
-                                if n<=min(NSlices)
-                                    NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'_ch',iIndex(q, 2),'.tif'];
-                                       imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
-                                    n=n+1;
-                                end
+                for q=1:NChannels
+                    if (strcmpi(ExperimentType,'1spot') ||...
+                            strcmp(ExperimentType,'2spot') ||...
+                            strcmp(ExperimentType,'2spot1color')) && ...
+                            q==coatChannel
+                        %Save the blank images at the beginning and end of the
+                        %stack
+                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'.tif'];
+                        imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),'.tif'];
+                        imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+                        %Copy the rest of the images
+                        n=1;        %Counter for slices
+                        firstImage = (j-1)*NSlices(i)*NChannels+1+(q-1);
+                        lastImage = j*NSlices(i)*NChannels;
+                        for k=firstImage:NChannels:lastImage
+                            if n<=min(NSlices)
+                                NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'.tif'];
+                                   imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
+                                n=n+1;
                             end
                         end
+                    elseif strcmpi(ExperimentType, 'inputoutput')
+                        %Save the blank images at the beginning and end of the
+                        %stack
+                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'_ch',iIndex(q, 2),'.tif'];
+                        imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),'_ch',iIndex(q, 2),'.tif'];
+                        imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+                        %Copy the rest of the images
+                        n=1;        %Counter for slices
+                        firstImage = (j-1)*NSlices(i)*NChannels+1+(q-1);
+                        lastImage = j*NSlices(i)*NChannels;
+                        for k=firstImage:NChannels:lastImage
+                            if n<=min(NSlices)
+                                NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'_ch',iIndex(q, 2),'.tif'];
+                                   imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
+                                n=n+1;
+                            end
+                        end
+                    elseif strcmpi(ExperimentType, 'input')&q==inputProteinChannel
+                        %Save the blank images at the beginning and end of the
+                        %stack
+                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'.tif'];
+                        imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),'.tif'];
+                        imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+                        %Copy the rest of the images
+                        n=1;        %Counter for slices
+                        firstImage = (j-1)*NSlices(i)*NChannels+1+(q-1);
+                        lastImage = j*NSlices(i)*NChannels;
+                        for k=firstImage:NChannels:lastImage
+                            if n<=min(NSlices)
+                                NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'.tif'];
+                                   imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
+                                n=n+1;
+                            end
+                        end
+
                     end
                 end
                 %Now copy nuclear tracking images

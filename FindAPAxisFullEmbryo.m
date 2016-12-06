@@ -14,6 +14,8 @@ function [coordA,coordP,xShift,yShift]=FindAPAxisFullEmbryo(varargin)
 CorrectAxis = 0;
 
 %Load the folder information
+[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath]=...
+    DetermineLocalFolders;
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
     DetermineLocalFolders(varargin{1});
 
@@ -45,7 +47,7 @@ Date=Prefix(1:Dashes(3)-1);
 EmbryoName=Prefix(Dashes(3)+1:end);
 
 %Figure out what type of experiment we have
-[XLSNum,XLSTxt]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
+[XLSNum,XLSTxt]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
 DataFolderColumn=find(strcmp(XLSTxt(1,:),'DataFolder'));
 ExperimentTypeColumn=find(strcmp(XLSTxt(1,:),'ExperimentType'));
 Channel1Column=find(strcmp(XLSTxt(1,:),'Channel1'));

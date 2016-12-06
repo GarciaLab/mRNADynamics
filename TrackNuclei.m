@@ -130,14 +130,20 @@ end
 Dashes=findstr(Prefix,'-');
 
 %Find the corresponding entry in the XLS file
-if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
-        (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1')))&(isempty(findstr(Prefix,'Bcd4x')))
-    XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
-        [Date,'\BcdGFP-HisRFP']));
-else
-    XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
+XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
         [Prefix(1:Dashes(3)-1),filesep,Prefix(Dashes(3)+1:end)]));
-end
+
+%HG: Did we actually need these cases down here?
+% if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
+%         (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1')))&(isempty(findstr(Prefix,'Bcd4x')))
+%     XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
+%         [Date,'\BcdGFP-HisRFP']));
+% else
+%     XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
+%         [Prefix(1:Dashes(3)-1),filesep,Prefix(Dashes(3)+1:end)]));
+% end
+
+
 ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
 
 if (length(find(isnan(ncs)))==length(ncs))|(length(ncs)<6)
@@ -322,7 +328,12 @@ if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'inp
             
             %Load the z-stack for this frame
             for CurrentZ=1:(FrameInfo(1).NumberSlices+2)   %Note that I need to add the two extra slices manually
-                Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch',iIndex(InputChannel,2),'.tif']);
+                if strcmp(lower(ExperimentType),'inputoutput')
+                    Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch',iIndex(InputChannel,2),'.tif']);
+                elseif strcmp(lower(ExperimentType),'input')
+                    Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'.tif']);
+                end
+                
             end
             
             for j=1:length(schnitzcells)

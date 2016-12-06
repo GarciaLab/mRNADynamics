@@ -13,6 +13,8 @@ function AddParticlePosition(varargin)
 
 
 %Get the relevant folders for this data set
+[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
+    DetermineLocalFolders;
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(varargin{1});
 
@@ -130,7 +132,7 @@ end
 
 
 %Figure out what type of experiment we have
-[XLSNum,XLSTxt]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
+[XLSNum,XLSTxt]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
 DataFolderColumn=find(strcmp(XLSTxt(1,:),'DataFolder'));
 ExperimentTypeColumn=find(strcmp(XLSTxt(1,:),'ExperimentType'));
 Channel1Column=find(strcmp(XLSTxt(1,:),'Channel1'));
@@ -1184,7 +1186,7 @@ if ~NoAP
             APPosImage(i,j)=APPosition/APLength;
         end
     end
-    [XLSNum,XLSTxt,XLSRaw]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
+    [XLSNum,XLSTxt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
     APResolutionColumn = find(strcmp(XLSRaw(1,:),'APResolution'));
     APResolution = XLSRaw{PrefixRow,APResolutionColumn};
 

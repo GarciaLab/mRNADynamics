@@ -25,6 +25,8 @@ else
 end
 FilePrefix=[Prefix,'_'];
 
+[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
+    DetermineLocalFolders;
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(Prefix);
 
@@ -40,7 +42,7 @@ load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
 %What type of experiment are we dealing with? Get this out of
 %MovieDatabase.xlsx
 
-[XLSNum,XLSTxt,XLSRaw]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
+[XLSNum,XLSTxt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
 %Find the different columns.
 DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
 nc9Column=find(strcmp(XLSRaw(1,:),'nc9'));

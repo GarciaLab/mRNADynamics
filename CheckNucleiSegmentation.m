@@ -122,25 +122,26 @@ Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
 Dashes=findstr(Prefix,'-');
 
 %Find the corresponding entry in the XLS file
-if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
-        (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
+%HG: Note that I got rid of this:
+% if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
+%         (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
+%     XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
+%         [Date,'\BcdGFP-HisRFP']));
+% else
+XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
+    [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+
+if isempty(XLSEntry)
     XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-        [Date,'\BcdGFP-HisRFP']));
-else
-    XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-        [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-    
+        [Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
     if isempty(XLSEntry)
-        XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-            [Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
-        if isempty(XLSEntry)
-            disp('%%%%%%%%%%%%%%%%%%%%%')
-            error('Folder could not be found. Check movie database')
-            disp('%%%%%%%%%%%%%%%%%%%%%')
-        end
+        disp('%%%%%%%%%%%%%%%%%%%%%')
+        error('Folder could not be found. Check movie database')
+        disp('%%%%%%%%%%%%%%%%%%%%%')
     end
-    
 end
+    
+%end
 
 
 % if (strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP'))|...
