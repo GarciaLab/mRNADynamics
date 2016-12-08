@@ -212,7 +212,7 @@ else
 end
 
 %%
-%Create a useful structure that can be fed into pipeline
+%Create a useful structure that can be fed to
 if ~just_dog
     n = 1;
     h=waitbar(0,'Saving particle information');
@@ -252,7 +252,7 @@ if ~just_dog
     close(h)
     fields = fieldnames(Particles);
     
-    %z-tracking
+    % z tracking
     changes = 1;
     while changes ~= 0
         changes = 0;
@@ -316,7 +316,7 @@ if ~just_dog
         end
     end
     
-    %Clean up Spots to remove empty rows
+    %Clean up Spots
     Spots2 = struct('Fits', []);        
     for i = 1:length(Spots)
         Spots2(i).Fits = [];

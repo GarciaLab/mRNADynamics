@@ -1,7 +1,7 @@
 function temp_particles = identifySingleSpot(particle_index, image, image_label, dog_image, distance_to_neighbor, snippet_size, ...
     pixelSize, show_status, figure, microscope, threshold)
 
-    %This function locates a transcriptional locus (the k'th locus in an image)
+    %This is a subfunction for 'segmentSpots' that locates a transcriptional locus (the k'th locus in an image)
     %and assigns a Gaussian
     %to it. It returns a structure containing properties of the
     %transcriptional locus such as the intensity, size, position, etc.
@@ -11,9 +11,10 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
 
     
     
+    
+    
     %Find spot centroids in the actual image by hunting for global maxima in
     %neighborhoods around spots that were just located
-
     possible_centroid = [];
     possible_centroid_location = {};
     [k_row, k_column] = find(image_label == particle_index); %the position of the k'th locus in the image
