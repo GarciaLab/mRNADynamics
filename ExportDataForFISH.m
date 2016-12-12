@@ -966,13 +966,15 @@ elseif strcmp(FileMode,'LIFExport')
                 fiducialChannel=2;
                 inputProteinChannel=1;
                 coatChannel=0;
+                histoneChannel=2;
             elseif ~isempty(strfind(lower(Channel1{1}),'his'))
                 fiducialChannel=1;
                 inputProteinChannel=2;
                 coatChannel=0;
+                histoneChannel=1;
             else
                 inputProteinChannel=1;
-                fiducialChannel=1;      %We're assuming we can use the protein channel for segmentatino
+                fiducialChannel=1;      %We're assuming we can use the protein channel for segmentation
                 coatChannel=0;
                 histoneChannel=1;
                 warning('No histone channel found. Finding nuclei using the protein input channel.')

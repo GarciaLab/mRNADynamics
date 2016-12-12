@@ -295,6 +295,18 @@ for i=1:length(schnitzcells)
 end
 
 
+%Save everything at this point. It will be overwritten later, but it's
+%useful for debugging purposes if there's a bug in the code below.
+mkdir([DropboxFolder,filesep,Prefix])
+save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
+save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells')
+if ~exist([FISHPath,filesep,Prefix,'_'])
+    mkdir([FISHPath,filesep,Prefix,'_'])
+end
+save([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
+
+
+
 %Extract the nuclear fluorescence values if we're in the right experiment
 %type
 if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'input')
