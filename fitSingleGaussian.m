@@ -19,7 +19,7 @@ singleGaussian = @(params) (params(1).*...
         )))...
     + params(6) - double(snippet);
 
-neighborhoodSize = 2*floor(neighborhoodSize/2) + 1;
+neighborhoodSize = 2*floor(neighborhoodSize/2) + 1; %notice that this is forced to be odd
     
 hLocalMax = vision.LocalMaximaFinder;
 hLocalMax.NeighborhoodSize = [neighborhoodSize, neighborhoodSize];
