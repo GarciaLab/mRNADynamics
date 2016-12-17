@@ -65,40 +65,18 @@ if num_frames == 0
 end
 OutputFolder1=[FISHPath,filesep,Prefix,'_',filesep,'dogs'];
 mkdir(OutputFolder1)
+
+%Load flat-field
 doFF = 1;
 try
-    dashes = 0;
-    for i = 1:length(Prefix)
-            if Prefix(i) == '-'
-                dashes = dashes+1;
-            end
-            if dashes == 3
-                date = Prefix(1:i-1);
-                remainder = Prefix(i+1:end);
-                break;
-            end
-    end
-    datefolder = [SourcePath, filesep, date];
-    rawfolder = [datefolder,filesep, remainder];
-    datedir= dir(datefolder);
-    rawdir = dir(rawfolder);
-    if ~isempty(strfind([datedir.name], 'FF'))
-        ffcell = bfopen([datefolder, filesep, 'FF.lif']);
-    elseif ~isempty(strfind([rawdir.name], 'FF'))
-        ffcell = bfopen([rawfolder, filesep, 'FF.lif']);
-    else 
-        display('Warning: Will not apply FF correction');
-        doFF = 0;
-    end
-    if doFF
-        ffim = double(ffcell{1,1}{1,1});
-        ffim = CPsmooth(ffim,'Gaussian Filter',256,0);
-        ffim = ffim/max(max(ffim));
-    end
+    ffim = imread([PreProcPath, filesep, Prefix, filesep,Prefix,'_FF.tif']);
+    ffim = CPsmooth(ffim,'Gaussian Filter',256,0);
+    ffim = double(ffim/max(max(ffim)));
 catch
-    display('Warning: Will not apply FF correction');
+    warning('Will not apply flat field correction');
     doFF = 0;
 end
+
 clear rawdir;
 %%
 

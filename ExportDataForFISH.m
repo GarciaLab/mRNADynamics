@@ -876,10 +876,10 @@ elseif strcmp(FileMode,'LIFExport')
             FrameInfo(i).ZStep=str2double(LIFMeta.getPixelsPhysicalSizeZ(0));
             FrameInfo(i).Time=InitialStackTime(i);
         end
-        %Find the FF information
+        %Find the flat field (FF) information
         
-        %The FF can be in the folder with the data or in the folder
-        %corresponding to the day.
+        %The flat field image can be in the folder with the data or in the folder
+        %corresponding to the date.
         D1=dir([Folder,filesep,'FF*.lif']);
         D2=dir([Folder,filesep,'..',filesep,'FF*.lif']);
         FFPaths={};

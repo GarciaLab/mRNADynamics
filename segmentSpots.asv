@@ -67,21 +67,8 @@ OutputFolder1=[FISHPath,filesep,Prefix,'_',filesep,'dogs'];
 mkdir(OutputFolder1)
 doFF = 1;
 try
-    dashes = 0;
-    for i = 1:length(Prefix)
-            if Prefix(i) == '-'
-                dashes = dashes+1;
-            end
-            if dashes == 3
-                date = Prefix(1:i-1);
-                remainder = Prefix(i+1:end);
-                break;
-            end
-    end
-    datefolder = [SourcePath, filesep, date];
-    rawfolder = [datefolder,filesep, remainder];
-    datedir= dir(datefolder);
-    rawdir = dir(rawfolder);
+    ffim = D:\Data\Armando\livemRNA\Data\PreProcessedData\2016-10-18-1A3+5-evePr_7\2016-10-18-1A3+5-evePr_7_FF.tif
+    ffim = Drop
     if ~isempty(strfind([datedir.name], 'FF'))
         ffcell = bfopen([datefolder, filesep, 'FF.lif']);
     elseif ~isempty(strfind([rawdir.name], 'FF'))
@@ -212,7 +199,7 @@ else
 end
 
 %%
-%Create a useful structure that can be fed to
+%Create a useful structure that can be fed into pipeline
 if ~just_dog
     n = 1;
     h=waitbar(0,'Saving particle information');
@@ -252,7 +239,7 @@ if ~just_dog
     close(h)
     fields = fieldnames(Particles);
     
-    % z tracking
+    %z-tracking
     changes = 1;
     while changes ~= 0
         changes = 0;
@@ -316,7 +303,7 @@ if ~just_dog
         end
     end
     
-    %Clean up Spots
+    %Clean up Spots to remove empty rows
     Spots2 = struct('Fits', []);        
     for i = 1:length(Spots)
         Spots2(i).Fits = [];

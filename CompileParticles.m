@@ -654,7 +654,6 @@ for ChN=1:NChannels
                  ErrorIntegral,ErrorGauss,optFit1, FitType, noIntensityFlag]...
                  = GetParticleTrace(k,CompiledParticles{ChN},Spots);
                 CompiledParticles{ChN}(k).Fluo= AmpIntegral;
-                CompiledParticles{ChN}(k).FluoIntegral = AmpGaussian;
                 CompiledParticles{ChN}(k).FluoIntegral = AmpIntegral;
                 CompiledParticles{ChN}(k).Off=Off;
                 CompiledParticles{ChN}(k).FluoError=ErrorGauss;
@@ -662,7 +661,7 @@ for ChN=1:NChannels
                 CompiledParticles{ChN}(k).FitType=FitType;
                 CompiledParticles{ChN}(k).noIntensityFlag = noIntensityFlag;
                 
-
+                
                 %Determine the nc where this particle was born
                 try
                     CompiledParticles{ChN}(k).nc=FrameInfo(CompiledParticles{ChN}(k).Frame(1)).nc;
@@ -1070,7 +1069,7 @@ for ChN=1:NChannels
         
         %Calculate the mean for only anterior particles
         try
-        MeanVectorAPAnterior{ChN} = MeanVectorAP{ChN}(:,5:15); %Only average particles within window of 10% to 35%. Expression is relatively flat here.
+        MeanVectorAPAnterior{ChN} = MeanVectorAP{ChN}(:,5:15); %Only average particles within window of 10% to 35% w/ 2.5% AP resolution. P2P expression is relatively flat here.
         MeanVectorAnterior{ChN} = nanmean(MeanVectorAPAnterior{ChN},2);
         catch
             %That didn't work

@@ -40,11 +40,6 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
         centroid_y = possible_centroid_location{row,col}(1); 
         centroid_x = possible_centroid_location{row,col}(2);
        
-        if show_status && ~isempty(figure)
-            set(0,'CurrentFigure', figure);...
-            ellipse(distance_to_neighbor/2,distance_to_neighbor/2,0,centroid_x,centroid_y,'r');
-        end
-
        %Now, we'll calculate Gaussian fits 
        if centroid_y - snippet_size > 1 && centroid_x - snippet_size > 1 && centroid_y + snippet_size < size(image, 1) && centroid_x + snippet_size < size(image,2)
            
@@ -97,9 +92,14 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
 
             area = pi*sigma_x*sigma_y; %in pixels. this is two widths away from peak
             integration_radius = 6; %integrate 109 pixels around the spot
-            spot_x = fits(2) - snippet_size + centroid_x; %AR 7/14/16: same deal as line above
+            spot_x = fits(2) - snippet_size + centroid_x; %final reported spot position
             spot_y = fits(4) - snippet_size + centroid_y;    
-
+            
+            if show_status && ~isempty(figure)
+                set(0,'CurrentFigure', figure);...
+                ellipse(distance_to_neighbor/2,distance_to_neighbor/2,0,spot_x,spot_y,'r');       
+            end
+            
             %disp(rel_errors);
             % Quality control.
             % TODO: make some quality control using the errors in
