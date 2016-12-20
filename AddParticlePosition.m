@@ -523,7 +523,7 @@ if ~NoAP
             if exist('ManualAlignmentDone')
                 if ManualAlignmentDone
                     display('Manual alignment results saved.')
-                    Answer=input('Would you like to use them (y/n)?','s');
+                    Answer=input('Would you like to use them (y/n)? ','s');
                     if strcmp(lower(Answer),'y')
                         load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
                     elseif strcmp(lower(Answer),'n')
@@ -1235,24 +1235,28 @@ if ~NoAP
     
     
     %Save AP detection information
+    
+    %Default set of variables to save
+    VariablesToSave={'coordA','coordP','coordAZoom','coordPZoom'};
+    %Information about shifts    
     if exist('xShift')
-        save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
-            'xShift','yShift','coordAZoom','coordPZoom') 
+        VariablesToSave={VariablesToSave{:},'xShift','yShift'};
     elseif  exist('xShift1')
-        save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
-            'xShift1','yShift1','xShift2','yShift2','coordAZoom','coordPZoom') 
-    else
-        save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
-            'coordAZoom','coordPZoom') 
+        VariablesToSave={VariablesToSave{:},'xShift1','yShift1',...
+            'xShift2','yShift2'};
     end
-
-    if ManualAlignment
-        if ManualAlignmentDone
-            save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ManualAlignmentDone',...
-                'ShiftColumn','ShiftRow','-append')
-        end
+    %Rotation information
+    if exist('zoom_angle')
+        ImageRotation=zoom_angle;
+        VariablesToSave={VariablesToSave{:},'ImageRotation'};
     end
     
+    save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],VariablesToSave{:}) 
+
+    if ManualAlignmentDone
+        save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ManualAlignmentDone',...
+            'ShiftColumn','ShiftRow','-append')
+    end
 
 end
 
