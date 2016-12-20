@@ -230,7 +230,7 @@ if exist('Data')&exist('DataNuclei')
     end
 elseif (~exist('Data'))&exist('DataNuclei')
     Data=DataNuclei;
-else
+elseif  (~exist('Data'))&(~exist('DataNuclei'))
     error('No CompiledParticles found. Check DynamicsResults folder as well as DataStatus.XLSX.')
 end
     
