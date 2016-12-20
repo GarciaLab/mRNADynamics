@@ -7,6 +7,8 @@ function Data=LoadMS2Sets(DataType)
 %and folders to use.
 
 %Get some of the default folders
+[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
+    DetermineLocalFolders;
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
 
@@ -54,6 +56,69 @@ clear MeanFits
 clear MeanFitsUp
 clear Schnitzcells
 
+
+
+%Check the consistency between all the data acquired and analyzed in terms
+%of ExperimentType, ExperimentAxis, and APResolution. Get this out of
+%MovieDatabase.xlsx
+[XLSNum,XLSTxt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
+ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
+ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
+APResolutionColumn = find(strcmp(XLSRaw(1,:),'APResolution'));
+DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
+
+ExperimentType=[];
+ExperimentAxis=[];
+APResolution=[];
+
+PrefixRow=find(strcmp(StatusTxt(:,1),'Prefix:'));
+for i=1:length(CompiledSets)
+    SetName=StatusTxt{PrefixRow,CompiledSets(i)};
+    Quotes=strfind(SetName,'''');
+    Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
+
+    Dashes=findstr(Prefix,'-');
+    PrefixRowMovieDatabase=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+        if isempty(PrefixRowMovieDatabase)
+            PrefixRowMovieDatabase=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
+            if isempty(PrefixRowMovieDatabase)
+                error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
+            end
+        end
+    if isempty(PrefixRowMovieDatabase)
+        error('Entry not found in MovieDatabase.xlsx')
+    end
+    
+    %Load and check the experiment details consistency
+    if ~isempty(ExperimentType)
+        if ~strcmp(ExperimentType,XLSRaw{PrefixRowMovieDatabase,ExperimentTypeColumn})
+           error('Inconsistent experiment types found among the data sets.') 
+        end
+    else
+        ExperimentType=XLSRaw{PrefixRowMovieDatabase,ExperimentTypeColumn};
+    end
+    if ~isempty(ExperimentAxis)
+        if ~strcmp(ExperimentAxis,XLSRaw{PrefixRowMovieDatabase,ExperimentAxisColumn})
+           error('Inconsistent experiment axis found among the data sets.') 
+        end
+    else
+        ExperimentAxis=XLSRaw{PrefixRowMovieDatabase,ExperimentAxisColumn};
+    end
+    if ~isempty(APResolution)
+        if APResolution~=XLSRaw{PrefixRowMovieDatabase,APResolutionColumn}
+           error('Inconsistent axis resolution found among the data sets.') 
+        end
+    else
+        APResolution = XLSRaw{PrefixRowMovieDatabase,APResolutionColumn};
+    end
+    
+    
+    
+end
+
+
+
+
 %Find and load the different prefixes
 PrefixRow=find(strcmp(StatusTxt(:,1),'Prefix:'));
 for i=1:length(CompiledSets)
@@ -62,7 +127,11 @@ for i=1:length(CompiledSets)
     Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
     
     
-    %Load CompiledParticles if it exists
+    %Load CompiledParticles if it exists. This constitutes the main part of
+    %the Data output. However, we will later add more information to this
+    %structure as well as use it to check the consistency of the analysis
+    %performed with the different data sets.
+    
     if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'])
         %Need to try this in case there's some incompatibility in terms of the
         %structures. This is because we might have xls sets that have been
@@ -72,6 +141,7 @@ for i=1:length(CompiledSets)
             DataTemp=orderfields(DataTemp);
             Data(i)=DataTemp;
         catch
+            error('Incompatible analysis in the data sets. Re-check this part of the code.')
             %If this fails figure out what's the missing field
             DataTemp=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
             FieldNamesData=fieldnames(Data);
@@ -97,6 +167,21 @@ for i=1:length(CompiledSets)
             end
         end
 
+        
+        %Load information about the rotation of the zoomed-in image.
+        if exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+            APDetection=load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat']);
+            try
+                ImageRotation(i)=APDetection.ImageRotation;
+            catch
+                error('Image rotation information not found in APDetection.mat. Rerun AddParticlePosition.m')
+            end
+        elseif strcmpi(ExperimentAxis,'ap')|strcmpi(ExperimentAxis,'dv')
+            error(['APDetection.mat not found despite this experiment being on the ',ExperimentAxis,' axis'])
+        end
+        
+        
+        
         if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'])
             APDivisions(i)=load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat']);
         else
@@ -173,6 +258,11 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'])
     for i=1:length(Data)
         Data(i).SetName=SetNames{i};
 
+        if exist('ImageRotation')
+            Data(i).ImageRotation=ImageRotation(i);
+        end
+        
+        
         if exist('APDivisions')
             Data(i).APDivision=APDivisions(i).APDivision;
         end
