@@ -58,8 +58,8 @@ tic;
     DetermineLocalFolders(Prefix);
 
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']);
-microscope = FrameInfo(1).FileMode; 
-zSize = FrameInfo(1).NumberSlices;
+microscope = FrameInfo(1).FileMode;
+zSize = FrameInfo(1).NumberSlices + 2;
 if num_frames == 0
     num_frames = length(FrameInfo);
 end
