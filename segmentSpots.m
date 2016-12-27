@@ -286,6 +286,13 @@ if ~just_dog
                 if ~Particles(j).discardThis
                     Spots(i).Fits(j-frames(1)+1) = Particles(j);
                 end
+                %Sometimes, all spots are discarded in a frame. In that
+                %case, create an empty Spots entry in that frame.
+                if length(Spots)<i
+                    for l = 1:num_fields
+                        Spots(i).Fits.(fields{l}) = [];
+                    end
+                end
             end
         else 
             for l = 1:num_fields

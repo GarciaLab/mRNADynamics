@@ -675,7 +675,7 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
 
         mkdir([OutputFolder,filesep])
 
-        save([OutputFolder,filesep,'Particles.mat'],'Particles','Spots','SpotFilter',...
+        save([OutputFolder,filesep,'Particles.mat'],'Particles','SpotFilter',...
             'Threshold1','Threshold2')
 
     end
