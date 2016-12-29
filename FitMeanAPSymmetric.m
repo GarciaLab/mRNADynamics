@@ -68,7 +68,7 @@ close all
 % one computer
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
-%I dont think this part works. TG
+
 
 if ~isempty(varargin)
     %MT, 2016-11-4
@@ -130,6 +130,10 @@ else
     Dashes=strfind(FolderTemp,filesep);
     Prefix=FolderTemp((Dashes(end)+1):end);
 end
+
+
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
+    DetermineLocalFolders(Prefix);
 
 %Run CombineMultipleEmbryos if required
 if MultipleEmbryos
