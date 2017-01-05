@@ -49,7 +49,7 @@ relative_errors = abs(errors./single_fit);
 fits = single_fit; 
 GaussianIntensity = sum(sum(singleGaussian(single_fit) + double(snippet) - single_fit(6)));
 
-%Display
+%D
 gaussian = singleGaussian(single_fit);
 mesh = {mesh_y, mesh_x};
 

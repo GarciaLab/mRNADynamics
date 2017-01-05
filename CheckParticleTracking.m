@@ -844,11 +844,11 @@ while (cc~='x')
                 Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
                 CurrentZ);
             %Get the snippet and the mask, and overlay them
-        codomain=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).rawSpot{CurrentZIndex};
+        domain=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).rawSpot{CurrentZIndex};
         snip = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).Snippet{CurrentZIndex};
         gauss = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{CurrentZIndex};
-        surf(codomain{1}, codomain{2}, gauss + double(snip));
-        title('Double Gaussian fits')
+        surf(domain{1}, domain{2}, gauss + double(snip));
+        title('Gaussian fit')
         set(gcf,'units', 'normalized', 'position',[.60, .7, .2, .2]);
       
         
@@ -858,7 +858,7 @@ while (cc~='x')
         MaxZIndex=find(...
                 Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
                 Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ);
-        surf(codomain{1}, codomain{2}, snip)
+        surf(domain{1}, domain{2}, snip)
         title('Raw data');
         set(gcf,'units', 'normalized', 'position',[.60, .3, .2, .2]);
 
