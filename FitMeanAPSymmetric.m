@@ -68,7 +68,7 @@ close all
 % one computer
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
-%I dont think this part works. TG
+
 
 if ~isempty(varargin)
     %MT, 2016-11-4
@@ -130,6 +130,10 @@ else
     Dashes=strfind(FolderTemp,filesep);
     Prefix=FolderTemp((Dashes(end)+1):end);
 end
+
+
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
+    DetermineLocalFolders(Prefix);
 
 %Run CombineMultipleEmbryos if required
 if MultipleEmbryos
@@ -416,6 +420,10 @@ while (cc~=13)
         else
             FrameWindow=APDivision(CurrentNC,i):length(ElapsedTime);
         end
+        
+        if isempty(FrameWindow)
+            error('There might be a problem with the division times. Check in CheckDivisionTimes.m')
+        end
 
         %Check that we have the minimum number of particles for a minimum
         %amount of time
@@ -654,20 +662,30 @@ while (cc~=13)
     %Move right range of fit
     elseif (ct~=0)&(cc=='k')&(length(FitResults(i,CurrentNC-11).FitFrameRange)>2)
         FitResults(i,CurrentNC-11).FitFrameRange=FitResults(i,CurrentNC-11).FitFrameRange(1:end-1);
+    elseif (ct~=0)&(cc=='K')&(length(FitResults(i,CurrentNC-11).FitFrameRange)>6)
+        FitResults(i,CurrentNC-11).FitFrameRange=FitResults(i,CurrentNC-11).FitFrameRange(1:end-5);
     elseif (ct~=0)&(cc=='l')
         if ~isempty(find(~ismember(FrameWindow(FrameFilter),FitResults(i,CurrentNC-11).FitFrameRange)))
             FilteredFramesTemp=FrameWindow(FrameFilter);
+            %HG added
+            FilteredFramesTemp=FilteredFramesTemp(~ismember(FilteredFramesTemp,FitResults(i,CurrentNC-11).FitFrameRange));
             FitResults(i,CurrentNC-11).FitFrameRange(end+1)=...
-                FilteredFramesTemp(min(find(~ismember(FilteredFramesTemp,FitResults(i,CurrentNC-11).FitFrameRange))));
+                min(FilteredFramesTemp(FilteredFramesTemp>max(FitResults(i,CurrentNC-11).FitFrameRange)));
+            %HG removed            
+%             FitResults(i,CurrentNC-11).FitFrameRange(end+1)=...
+%                 FilteredFramesTemp(min(find(~ismember(FilteredFramesTemp,FitResults(i,CurrentNC-11).FitFrameRange))));
         end
     %Move left range of fit
     elseif (ct~=0)&(cc=='j')&(length(FitResults(i,CurrentNC-11).FitFrameRange)>2)
         FitResults(i,CurrentNC-11).FitFrameRange=FitResults(i,CurrentNC-11).FitFrameRange(2:end);
+    elseif (ct~=0)&(cc=='J')&(length(FitResults(i,CurrentNC-11).FitFrameRange)>6)
+        FitResults(i,CurrentNC-11).FitFrameRange=FitResults(i,CurrentNC-11).FitFrameRange(6:end);
     elseif (ct~=0)&(cc=='h')
         if ~isempty(find(~ismember(FrameWindow(FrameFilter),FitResults(i,CurrentNC-11).FitFrameRange)))
             FilteredFramesTemp=FrameWindow(FrameFilter);
+            %Modified HG
             FitResults(i,CurrentNC-11).FitFrameRange=...
-                [FilteredFramesTemp(max(find(~ismember(FilteredFramesTemp,FitResults(i,CurrentNC-11).FitFrameRange)))),...
+                [max(FilteredFramesTemp(FilteredFramesTemp<min(FitResults(i,CurrentNC-11).FitFrameRange))),...
                 FitResults(i,CurrentNC-11).FitFrameRange];
         end
     %Reset frame fit range

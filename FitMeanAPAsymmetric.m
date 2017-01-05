@@ -235,6 +235,9 @@ while (cc~=13)
             %Filter the frames according to FitFrameRange
             FitFrameFilter=ismember(FrameWindow,FitFrameRange);
             
+            
+            %HG: Removing the OnRatioFit stuff here. I'm not too happy
+            %about it.
             OnRatioDataForFit=OnRatioData(FitFrameFilter);
             MaxOnRatioForFit=max(OnRatioData);
             OnRatioDataForFit=OnRatioDataForFit/MaxOnRatioForFit;

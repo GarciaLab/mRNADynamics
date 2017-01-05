@@ -1253,9 +1253,11 @@ if ~NoAP
     
     save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],VariablesToSave{:}) 
 
-    if ManualAlignmentDone
-        save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ManualAlignmentDone',...
-            'ShiftColumn','ShiftRow','-append')
+    if exist('ManualAlignmentDone')
+        if ManualAlignmentDone
+            save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ManualAlignmentDone',...
+                'ShiftColumn','ShiftRow','-append')
+        end
     end
 
 end
