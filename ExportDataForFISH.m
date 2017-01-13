@@ -917,13 +917,18 @@ elseif strcmp(FileMode,'LIFExport')
         
         if length(FFToUse)> 1
             warning('Too many flat field images match the pixel and image size size')
-            FFToUse = uigetfile('Select which flat field image to use');
+            [FFFile,FFPath] =...
+                uigetfile([Folder,filesep,'*.lif'],'Select which flat field image to use');
+            LIFFF=bfopen([FFPath,FFFile]);
         elseif isempty(FFToUse)
             warning('No flat field image found')
             clear LIFFF
         else
             LIFFF=bfopen(FFPaths{FFToUse});
-            
+        end
+
+        %If a flatfield image was found, process it
+        if exist('LIFFF')
             %Find the channel with the highest counts
             for i=1:size(LIFFF{1},1)
                 MaxValue(i)=max(max(LIFFF{1}{i,1}));
