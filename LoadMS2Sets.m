@@ -47,8 +47,13 @@ D=dir([DropboxFolder,filesep,'DataStatus.*']);
 
 
 %Which data sets are approved?
-CompileRow=find(strcmp(StatusTxt(:,1),'AnalyzeLiveData Compile Particles'));
+CompileRow=find(strcmp(StatusTxt(:,1),'AnalyzeLiveData Compile Particles')|...
+    strcmp(StatusTxt(:,1),'CompileParticles'));
 CompiledSets=find(strcmp(StatusTxt(CompileRow,:),'READY')|strcmp(StatusTxt(CompileRow,:),'ApproveAll'));
+
+if isempty(CompiledSets)
+    error('No ApproveAll or READY sets found')
+end
 
 clear SetNames
 clear APDivisions
