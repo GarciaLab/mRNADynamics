@@ -124,7 +124,10 @@ NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
 
 %Add the APPosition to Particles if they don't exist yet
 if (~isfield(schnitzcells,'APpos'))&(strcmp(lower(ExperimentAxis),'ap'))
-    %error('This part of the code still needs to be implemented')
+    %First, run this to get the alignment between the zoom-in and zoom-out
+    %images:
+    AddParticlePosition(Prefix)
+    %Now, add the nuclear position
     AddNuclearPosition(Prefix)
     load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
 end

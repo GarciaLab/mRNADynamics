@@ -53,7 +53,12 @@ D=dir([DropboxFolder,filesep,'DataStatus.*']);
 [StatusNum,StatusTxt]=xlsread([DropboxFolder,filesep,D(1).name],DataType);
 
 
-CompileRow=find(strcmp(StatusTxt(:,1),'AnalyzeLiveData Compile Particles'));
+CompileRow=find(strcmp(StatusTxt(:,1),'AnalyzeLiveData Compile Particles')|...
+    strcmp(StatusTxt(:,1),'CompileParticles'));
+if isempty(CompileRow)
+    error('CompileParicles row not found')
+end
+
 CompiledSets=find(strcmp(StatusTxt(CompileRow,:),'READY')|...
     strcmp(StatusTxt(CompileRow,:),'ApproveAll'));
 

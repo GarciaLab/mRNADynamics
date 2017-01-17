@@ -536,15 +536,35 @@ if ~NoAP
                 end
             end
             
+            %If we can, we'll crop the surface image to center the overlay 
+            %on the area of acquisition. If not, we'll just show both images 
+            %without cropping.
+            
+            if ((round(RowsResized/2-RowsZoom/2+ShiftRow*ZoomRatio))>0)&...
+                    (round(RowsResized/2+RowsZoom/2-1+ShiftRow*ZoomRatio)<=RowsResized)&...
+                    (round(ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ZoomRatio)>0)&...
+                    (round(ColumnsResized/2+ColumnsZoom/2-1+ShiftColumn*ZoomRatio)<=ColumnsResized)
+                RowsResizedRange=...
+                    round(RowsResized/2-RowsZoom/2+ShiftRow*ZoomRatio):...
+                    round(RowsResized/2+RowsZoom/2-1+ShiftRow*ZoomRatio);
+                ColumnsResizedRange=...
+                    round(ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ZoomRatio):...
+                    round(ColumnsResized/2+ColumnsZoom/2-1+ShiftColumn*ZoomRatio);
+            else
+                RowsResizedRange=1:RowsResized;
+                ColumnsResizedRange=1:ColumnsResized;
+            end
+                    
+            
+            %Make an overlay of the zoomed in and zoomed out real
+            %images as well as of a quickly segmented nuclear mask. If this
+            %fails, we'll swtich to ManualAlignment.
+            
             try
-                %Make an overlay of the zoomed in and zoomed out real
-                %images as well as of a quickly segmented nuclear mask
-                
                 %Real image overlay
                 %Crop the zoomed out image to match the zoomed in one
                 SurfImageResizeZoom=...
-                    SurfImageResized(round(RowsResized/2-RowsZoom/2+ShiftRow*ZoomRatio):round(RowsResized/2+RowsZoom/2-1+ShiftRow*ZoomRatio),...
-                    round(ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ZoomRatio):round(ColumnsResized/2+ColumnsZoom/2-1+ShiftColumn*ZoomRatio));
+                    SurfImageResized(RowsResizedRange,ColumnsResizedRange);
                 ImOverlay=cat(3,mat2gray(SurfImageResizeZoom),...
                     +mat2gray(ZoomImage),zeros(size(SurfImageResizeZoom)));
 
@@ -552,8 +572,7 @@ if ~NoAP
                 NucMaskZoomOut=GetNuclearMask(SurfImage,2.5,0);
                 NucMaskZoomOutResized=imresize(NucMaskZoomOut, ZoomRatio);
                 NucMaskZoomOutResizedCropped=...
-                    NucMaskZoomOutResized(round(RowsResized/2-RowsZoom/2+ShiftRow*ZoomRatio):round(RowsResized/2+RowsZoom/2-1+ShiftRow*ZoomRatio),...
-                    round(ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ZoomRatio):round(ColumnsResized/2+ColumnsZoom/2-1+ShiftColumn*ZoomRatio));
+                    NucMaskZoomOutResized(RowsResizedRange,ColumnsResizedRange);
                 NucMaskZoomIn=GetNuclearMask(ZoomImage,8,2);
                 ImOverlayMask=cat(3,mat2gray(NucMaskZoomOutResizedCropped),...
                     +mat2gray(NucMaskZoomIn),zeros(size(NucMaskZoomOutResizedCropped)));
@@ -570,8 +589,10 @@ if ~NoAP
 
                 %Show the correlation image, but crop it a little bit
                 figure(2)
-                contourf(abs(C((CRows-1)/2-RowsZoom:(CRows-1)/2+RowsZoom,...
-                    (CColumns-1)/2-ColumnsZoom:(CColumns-1)/2+ColumnsZoom)))
+                %HG: Note that I changed the ranges here by two pixels at
+                %least.
+                contourf(abs(C(((CRows+1)/2-RowsZoom+1):(CRows-1)/2+RowsZoom,...
+                    ((CColumns+1)/2-ColumnsZoom+1):(CColumns-1)/2+ColumnsZoom)))
                 saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentCorrelation.tif']);
             catch
                 warning('Could not generate correlation image. Switching to manual alignment')
