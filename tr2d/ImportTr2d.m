@@ -1,21 +1,21 @@
-function ImportTr2d(Prefix,ObjectFile,TrackFile)
-
-ObjectFile='tr2d_objects.csv';
-TrackFile='tr2d_tracks.csv';
+function ImportTr2d(Prefix)
 
 %This function grabs the data exported by tr2d and saves it into the
 %corresponding Prefix in the format of Ellipses and lineages.
-
-%To do: How does tr2d know where to save the files?
 
 %Get folder and movie length information for Prefix
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(Prefix);
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
+%File names with exported information from tr2d
+ObjectFile='tr2d_objects.csv';
+TrackFile='tr2d_tracks.csv';
+tr2dExportFolder=[PreProcPath,filesep,Prefix,filesep,'tr2dProject',filesep,...
+    'mRNADynamicsExport',filesep];
 
 %Load the tr2d files
-Objects=csvread(ObjectFile,2,0);    %Read starting at the second row
-Tracks=csvread(TrackFile,2,0);
+Objects=csvread([tr2dExportFolder,ObjectFile],2,0);    %Read starting at the second row
+Tracks=csvread([tr2dExportFolder,TrackFile],2,0);
 
 %Create the Ellipses structure. The format is:
 %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
@@ -26,7 +26,7 @@ Tracks=csvread(TrackFile,2,0);
 %Note that we're mapping Area in tr2d to maxcontourvalue in Ellipses. We
 %were not using the latter at all in the code.
 
-Ellipses=cell(length(FrameInfo));
+Ellipses=cell(length(FrameInfo),1);
 for i=1:length(FrameInfo)
     %Find all objects in this frame
     FrameFilter=(Objects(:,1)==i-1);
