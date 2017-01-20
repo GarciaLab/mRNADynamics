@@ -2,24 +2,26 @@ function StartTr2d(Prefix)
 
 %Grab the folder associated with this Prefix
 [RawDynamicsData,ProcessedData,DynamicsResults,MS2CodePath,PreProcessedData]=...
-    DetermineLocalFolders(Prefix)
+    DetermineLocalFolders(Prefix);
 
 %Create a folder for the tr2d project inside PreProcessedData
-mkdir([PreProcessedData,filesep,Prefix,filesep,'tr2dProject'])
+mkdir([PreProcessedData,filesep,Prefix,filesep,'tr2dProject']);
 %Create a folder inside the tr2d one for the exported segmentation and
 %tracking
 mkdir([PreProcessedData,filesep,Prefix,filesep,'tr2dProject',filesep,...
-    'mRNADynamicsExport'])
+    'mRNADynamicsExport']);
 
 
 %We need to convert the TIF sequence into a TIFF stack
 %Make sure a TIF stack doesn't exist already
 CreateStack=1;
-if exist([PreProcessedData,filesep,Prefix,filesep,'tr2dProject',...
-        filesep,'RAW.tiff'])
+filenameRaw = [PreProcessedData,filesep,Prefix,filesep,'tr2dProject',filesep,'RAW.tif'];
+if exist( filenameRaw )
     Answer=input('Nuclear data has already been exported for tr2d. Do you want to export again? (Y/n)','s');
-    if ~strcmpi(Answer,'n')
+    if strcmpi(Answer,'n')
         CreateStack=0;
+    else
+        delete(filenameRaw);
     end
 end
 
@@ -29,8 +31,7 @@ if CreateStack
     for i=1:length(D)
         Image=imread([PreProcessedData,filesep,Prefix,filesep,...
             D(i).name]);
-        imwrite(Image,[PreProcessedData,filesep,Prefix,filesep,'tr2dProject',...
-            filesep,'RAW.tif'],'WriteMode','append')
+        imwrite(Image,filenameRaw,'WriteMode','append')
     end
 end
 
@@ -49,6 +50,21 @@ csvwrite([PreProcessedData,filesep,Prefix,filesep,'tr2dProject',...
 %%%%%%%
 %RUN TR2D
 %%%%%%%%
+% Check if IJM is started already and start if it is not
+try
+    %this is just some function that can only be called if IJM is set up
+    IJM.getIdentifier() 
+catch
+    addpath('e:/Fiji.app/scripts') % Update for your ImageJ installation
+    ImageJ                         % Initialize IJM and MIJ
+end
+% Start tr2d
+MIJ.run('Tr2d 0.2.2-SNAP');
+params = javaArray('java.lang.String', 1);
+params(1) = java.lang.String(['-p ',PreProcessedData,filesep,Prefix,filesep,'tr2dProject'])
+tr2d = com.indago.tr2d.app.garcia.Tr2dApplication()
+.main(params)
+MIJ.exit()
 
 %Check that we have the tr2d results and import them
 if exist([PreProcessedData,filesep,Prefix,filesep,'tr2dProject',filesep,...
