@@ -112,11 +112,11 @@ FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
     'NumberSlices',{},'ZStep',{},'FileMode',{},...
     'PixelSize',{});
 
-%Get the structure with the acquisition information
-ImageInfo = imfinfo([Folder,filesep,D(1).name]);
-%%
+
 if strcmp(FileMode,'TIF')
 
+    %Get the structure with the acquisition information
+    ImageInfo = imfinfo([Folder,filesep,D(1).name]);
     
     %Do we have a second channel for Histone?
     if strcmp(Channel2,'His-RFP')
@@ -550,9 +550,8 @@ elseif strcmp(FileMode, 'LAT')
         Output{3}='1';
         Output{4}=['frames ',num2str(NFrames),':1:',num2str(NSlices+2)];
         Output{5}=['suffix ???_z??'];
-%%
-    %% 
-%LSM mode
+
+        %LSM mode
 elseif strcmp(FileMode,'LSM')
     
     warning('Still need to add the FF information')
@@ -641,15 +640,35 @@ elseif strcmp(FileMode,'LSM')
             else
                 error('Wrong file format. The code should not have gotten this far.')
             end
-
+            
+            
+            %There seems to be some ambiguity with how information is being
+            %pulled out of the metadata. This might be due to BioFormats
+            %versioning. We'll check which case we have to provide
+            %compatibility for both types of outcome. Whether we get the
+            %"value" field or not is determined by the ValueField flag.
+            ValueField=1;
+            try
+                LSMMeta.getPlaneDeltaT(0,0).value
+            catch
+                ValueField=0;
+            end
+            
+            
             
             %Now get the time for each frame. We start the timer at the first time point
             %of the first data series.
             for j=0:(NSlices(LSMIndex)*NChannels(LSMIndex)):(NPlanes(LSMIndex)-1)
                 if ~isempty(LSMMeta.getPlaneDeltaT(0,j))
-                    Frame_Times=[Frame_Times,...
-                        str2num(LSMMeta.getPlaneDeltaT(0,j).value)+...
-                        StartingTime(LSMIndex)-StartingTime(1)];
+                    if ValueField                    
+                        Frame_Times=[Frame_Times,...
+                            str2num(LSMMeta.getPlaneDeltaT(0,j).value)+...
+                            StartingTime(LSMIndex)-StartingTime(1)];
+                    else
+                        Frame_Times=[Frame_Times,...
+                            str2num(LSMMeta.getPlaneDeltaT(0,j))+...
+                            StartingTime(LSMIndex)-StartingTime(1)];
+                    end
                 else  %If there's only one frame the DeltaT will be empty
                     Frame_Times=[Frame_Times,...
                         StartingTime(LSMIndex)-StartingTime(1)];
@@ -668,8 +687,13 @@ elseif strcmp(FileMode,'LSM')
                 FrameInfo(i).PixelsPerLine=str2double(LSMMeta.getPixelsSizeX(0));
                 FrameInfo(i).NumberSlices=min(NSlices);
                 FrameInfo(i).FileMode='LSMExport';
-                FrameInfo(i).PixelSize=str2num(LSMMeta.getPixelsPhysicalSizeX(0).value);
-                FrameInfo(i).ZStep=str2double(LSMMeta.getPixelsPhysicalSizeZ(0).value);
+                if ValueField
+                    FrameInfo(i).PixelSize=str2num(LSMMeta.getPixelsPhysicalSizeX(0).value);
+                    FrameInfo(i).ZStep=str2double(LSMMeta.getPixelsPhysicalSizeZ(0).value);
+                else
+                    FrameInfo(i).PixelSize=str2num(LSMMeta.getPixelsPhysicalSizeX(0));
+                    FrameInfo(i).ZStep=str2double(LSMMeta.getPixelsPhysicalSizeZ(0));
+                end
                 FrameInfo(i).Time=Frame_Times(i);        %In seconds
             end
         
@@ -783,7 +807,6 @@ elseif strcmp(FileMode,'LSM')
         error('Experiment type not supported for LSM format. Ask HG.')
     end
     
-    %%
 %LIFExport mode
 elseif strcmp(FileMode,'LIFExport')
     
