@@ -107,7 +107,6 @@ OutputFolder=[PreProcPath,filesep,Prefix];
 mkdir(OutputFolder)
 
 %Generate FrameInfo
-
 FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
     'NumberSlices',{},'ZStep',{},'FileMode',{},...
     'PixelSize',{});
@@ -259,10 +258,21 @@ if strcmp(FileMode,'TIF')
         h=waitbar(0,'Aligning images and copying to FISH folder');
     end
 
+    
+    %FrameInfo was defined above for the Leica and Zeiss modes. Here,
+    %I'm going to clear it and go with the original definition. I might
+    %have to go back to ExtractImageInformation and change a few things
+    %though.
+    clear FrameInfo
+    
     for i=1:length(D)
         Suffix{i}=[iIndex(i,3),'_z??'];
         ImageInfo = imfinfo([Folder,filesep,D(i).name]);
         waitbar(i/length(D),h)
+        
+        
+        
+        
         FrameInfo(i)=ExtractImageInformation(ImageInfo(1));
 
         %Check that we don't just want to calculate the TAG file
@@ -370,6 +380,15 @@ if strcmp(FileMode,'TIF')
             end
         end
     end
+    
+    
+
+    %Get the actual time corresponding to each frame in seconds and add it to
+    %FrameInfo
+    for i=1:length(FrameInfo)
+        FrameInfo(i).Time=etime(datevec(FrameInfo(i).TimeString),datevec(FrameInfo(1).TimeString));
+    end
+    
     
     %Add the information about the mode
     for i=1:length(FrameInfo)
