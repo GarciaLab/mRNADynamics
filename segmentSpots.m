@@ -352,12 +352,12 @@ if ~just_dog
     if exist([DropboxFolder,filesep,Prefix,filesep,'log.mat'])
         load([DropboxFolder,filesep,Prefix,filesep,'log.mat'])
         log(end+1).Date = date;
-        log(end+1).runTime = t/60; %min
-        log(end+1).falsePositives = falsePositives;
-        log(end+1).totalCircles = detectedCircles;
-        log(end+1).totalBalls = detectedBalls;
-        log(end+1).avgZSize = detectedCircles/detectedBalls;
-        log(end+1).Threshold = Threshold;
+        log(end).runTime = t/60; %min
+        log(end).falsePositives = falsePositives;
+        log(end).totalCircles = detectedCircles;
+        log(end).totalBalls = detectedBalls;
+        log(end).avgZSize = detectedCircles/detectedBalls;
+        log(end).Threshold = Threshold;
     else
         log = struct();
         log(1).Date = date;
