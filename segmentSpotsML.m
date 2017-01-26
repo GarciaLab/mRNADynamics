@@ -307,7 +307,7 @@ if ~just_dog
     end
     
     %Clean up Spots to remove empty rows
-    Spots2 = struct('Fits', []);        
+    Spots2 = struct('Fits', []);
     for i = 1:length(Spots)
         Spots2(i).Fits = [];
         for j = 1:length(Spots(i).Fits)
@@ -344,19 +344,33 @@ t = toc;
 display(['Elapsed time: ',num2str(t/60),' min'])
 
 if ~just_dog
-    display(['Detected spots: ',num2str(length(Spots))])
+    detectedCircles = 0;
+    detectedBalls = 0;
+    for i = 1:length(Spots)
+        for j = 1:length(Spots(i).Fits)
+            detectedCircles = detectedCircles + length(Spots(i).Fits(j).z);
+            detectedBalls = detectedBalls + 1;
+        end
+    end
+    display(['Detected spots: ',num2str(detectedCircles)])
     if exist([DropboxFolder,filesep,Prefix,filesep,'log.mat'])
         load([DropboxFolder,filesep,Prefix,filesep,'log.mat'])
         log(end+1).Date = date;
-        log(end+1).runTime = t;
-        log(end+1).numSpots = length(Spots);
-        log(end+1).falsePos = falsePositives;
+        log(end+1).runTime = t/60; %min
+        log(end+1).falsePositives = falsePositives;
+        log(end+1).totalCircles = detectedCircles;
+        log(end+1).totalBalls = detectedBalls;
+        log(end+1).avgZSize = detectedCircles/detectedBalls;
+        log(end+1).Threshold = Threshold;
     else
         log = struct();
         log(1).Date = date;
-        log(1).runTime = t;
-        log(1).numSpots = length(Spots);
-        log(1).falsePos = falsePositives; 
+        log(1).runTime = t/60; %min
+        log(1).falsePositives = falsePositives;
+        log(1).totalCircles = detectedCircles;
+        log(1).totalBalls = detectedBalls;
+        log(1).avgZSize = detectedCircles/detectedBalls;
+        log(1).Threshold = Threshold;
     end
     save([DropboxFolder,filesep,Prefix,filesep,'log.mat'], 'log');
 end

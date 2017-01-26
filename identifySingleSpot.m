@@ -9,10 +9,6 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
     %Arguments: This requires an image, its difference of gaussians image,
     %as well as some properties of the recording. 
 
-    
-    
-    
-    
     %Find spot centroids in the actual image by hunting for global maxima in
     %neighborhoods around spots that were just located
     possible_centroid = [];
