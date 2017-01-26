@@ -576,6 +576,24 @@ elseif strcmp(FileMode,'LSM')
         else
             error('LSM Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
         end
+        
+        %In case MCP-mCherry usage, we need to make a fake Histone channel
+        %based on MCP images (imcomplement etc.)
+        if ~(strfind(Channel1{1},'His')|strfind(Channel2{1},'His'))
+            if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))
+                if (~isempty(strfind(Channel1{1},'mCherry')))
+                    fiducialChannel=1;
+                    histoneChannel=1;
+                elseif (~isempty(strfind(Channel2{1},'mCherry')))
+                    fiducialChannel=2;
+                    histoneChannel=2;
+                else
+                    error('mCherry channel not found. Cannot generate the fake nuclear image')
+                end
+            end
+        end
+        %%Changed by YJ(2017.1.19, for MCP-mCherry
+        
         fiducialChannel=histoneChannel;
         NSeries=length(D);
         Frame_Times=[];     %Store the frame information
@@ -1108,8 +1126,9 @@ elseif strcmp(FileMode,'LIFExport')
                         else
                             Projection=max(HisSlices,[],3);
                         end
-                        if strcmpi(ExperimentType, 'inputoutput')
+                        if strcmpi(ExperimentType, 'inputoutput')|strcmpi(ExperimentType, '1spot')
                             if (~isempty(strfind(Channel1{1}, 'NLS')))|(~isempty(strfind(Channel2{1}, 'NLS')))
+                                
                             else
                                 Projection=imcomplement(Projection);                            
                             end
