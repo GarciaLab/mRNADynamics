@@ -257,7 +257,7 @@ if ~just_dog
         Particles = Particles([Particles.r]~=1);
         close(h)
     end
-    falsePositives = 0;
+
     %pick the brightest z-slice
     for i = 1:length(Particles)
         [~, max_index] = max(Particles(i).CentralIntensity);
@@ -346,14 +346,12 @@ if ~just_dog
         log(end+1).runTime = t;
         log(end+1).numSpots = length(Spots);
         log(end+1).falsePos = falsePositives;
-        log(end+1).Threshold = Threshold;
     else
         log = struct();
         log(1).Date = date;
         log(1).runTime = t;
         log(1).numSpots = length(Spots);
         log(1).falsePos = falsePositives; 
-        log(1).Threshold = Threshold;
     end
     save([DropboxFolder,filesep,Prefix,filesep,'log.mat'], 'log');
 end

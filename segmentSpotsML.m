@@ -1,4 +1,4 @@
-function segmentSpots(Prefix,Threshold,varargin)
+function segmentSpots(Prefix,Threshold,ijm,mij,varargin)
 
 %Parameters:
 %Prefix: Prefix of the data set to analyze
@@ -100,37 +100,36 @@ if just_dog
     sigma1 = pixelSize / pixelSize; %width of narrower Gaussian
     sigma2 = 42000 / pixelSize; % width of wider Gaussian
     filterSize = round(2000 / pixelSize); %size of square to be convolved with microscopy images
-    h=waitbar(0,'Generating DoG images');
-    for current_frame = 1:num_frames
-        waitbar(current_frame/num_frames,h);
-        if displayFigures
-            for i = 1:zSize
-                if strcmpi(ExperimentType,'inputoutput')
-                    im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'_ch02','.tif']));
-                else
-                    im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
-                end
-                dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
-                dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
-                dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif'];
-                imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
-                imshow(dog,[]);
-            end
-        else 
-            parfor i = 1:zSize    
-                if strcmpi(ExperimentType,'inputoutput')
-                    im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'_ch02','.tif']));
-                else
-                    im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
-                end
-                dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
-                dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
-                dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif'];
-                imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
-            end
-        end
+    zim = [];
+for current_frame = 1:num_frames
+    for i = 1:zSize
+        zim(:,:,i) = double(imread([PreProcPath,filesep,Prefix, filesep, Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
     end
-    close(h);
+    mkdir([PreProcPath,filesep,Prefix,filesep,'stacks']);
+    name = [PreProcPath,filesep,Prefix,filesep,'stacks', filesep, iIndex(current_frame,3),'.tif'];
+    imwrite(uint16(zim(:,:,1)), name);
+    for k = 2:size(zim,3)
+        imwrite(uint16(zim(:,:,k)), name, 'WriteMode', 'append');
+    end
+    mij.run('Trainable Weka Segmentation 3D', ['open=',name]);
+    pause(20);
+    trainableSegmentation.Weka_Segmentation.loadClassifier('C:\\Users\\ArmandoReimer\\Desktop\\weca\\vasa_first_movie_3dmachine\\classifier.model');
+    trainableSegmentation.Weka_Segmentation.getProbability();
+    ijm.getDatasetAs('probmaps')
+    p = evalin('base', 'probmaps');
+    p2 = [];
+    for m = 1:2:46
+        p2(:,:,ceil(m/2)) =  p(:,:,m); %the even images in the original array are negatives of the odds
+    end
+    p2 = permute(p2, [2 1 3]);
+    p2 = p2*10000;
+    for i = 1:size(p2, 3)      
+        p_name = ['prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif'];
+        imwrite(uint16(p2(:,:,i)), [OutputFolder1,filesep,p_name])
+    end
+    MIJ.run('Close All');
+end
+    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Segment transcriptional loci
 else
@@ -144,7 +143,7 @@ else
             else
                 im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
             end
-            dog = double(imread([OutputFolder1, filesep,'DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
+            dog = double(imread([OutputFolder1, filesep,'prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
             if displayFigures
                 fig = figure(1);
                 imshow(dog,[]);
@@ -163,13 +162,18 @@ else
 
             temp_frames = {};
             temp_particles = cell(1, n_spots);
-            
+            if current_frame == 19
+                1;
+            end
             if n_spots ~= 0
                 if ~displayFigures
                     parfor k = 1:n_spots
+                        try
                             temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
                                 neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, Threshold);
-                    end
+                        catch
+                        end
+                        end
                 else
                     for k = 1:n_spots
                             temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
@@ -338,6 +342,7 @@ end
 
 t = toc;
 display(['Elapsed time: ',num2str(t/60),' min'])
+
 if ~just_dog
     display(['Detected spots: ',num2str(length(Spots))])
     if exist([DropboxFolder,filesep,Prefix,filesep,'log.mat'])
@@ -346,14 +351,12 @@ if ~just_dog
         log(end+1).runTime = t;
         log(end+1).numSpots = length(Spots);
         log(end+1).falsePos = falsePositives;
-        log(end+1).Threshold = Threshold;
     else
         log = struct();
         log(1).Date = date;
         log(1).runTime = t;
         log(1).numSpots = length(Spots);
         log(1).falsePos = falsePositives; 
-        log(1).Threshold = Threshold;
     end
     save([DropboxFolder,filesep,Prefix,filesep,'log.mat'], 'log');
 end

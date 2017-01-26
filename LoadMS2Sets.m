@@ -3,7 +3,7 @@ function Data=LoadMS2Sets(DataType)
 %Loads all data sets of a certain type and outputs them into the structure
 %Data
 
-%DataType is the tab in the XLS file. The code figures out which XLS file
+%DataType is the tab in the XLS file "DataStatus". The code figures out which XLS file
 %and folders to use.
 
 %Get some of the default folders
@@ -173,17 +173,17 @@ for i=1:length(CompiledSets)
         end
 
         
-        %Load information about the rotation of the zoomed-in image.
-        if exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
-            APDetection=load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat']);
-            try
-                ImageRotation(i)=APDetection.ImageRotation;
-            catch
-                error('Image rotation information not found in APDetection.mat. Rerun AddParticlePosition.m')
-            end
-        elseif strcmpi(ExperimentAxis,'ap')|strcmpi(ExperimentAxis,'dv')
-            error(['APDetection.mat not found despite this experiment being on the ',ExperimentAxis,' axis'])
-        end
+%         %Load information about the rotation of the zoomed-in image.
+%         if exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+%             APDetection=load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat']);
+%             try
+%                 ImageRotation(i)=APDetection.ImageRotation;
+%             catch
+%                 error('Image rotation information not found in APDetection.mat. Rerun AddParticlePosition.m')
+%             end
+%         elseif strcmpi(ExperimentAxis,'ap')|strcmpi(ExperimentAxis,'dv')
+%             error(['APDetection.mat not found despite this experiment being on the ',ExperimentAxis,' axis'])
+%         end
         
         
         
