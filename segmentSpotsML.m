@@ -1,4 +1,4 @@
-function segmentSpots(Prefix,Threshold,ijm,mij,varargin)
+function segmentSpots(Prefix,Threshold,varargin)
 
 %Parameters:
 %Prefix: Prefix of the data set to analyze
@@ -51,6 +51,7 @@ catch
 end
 %%
 tic;
+
 [~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
     readMovieDatabase(Prefix);
 
@@ -101,6 +102,15 @@ if just_dog
     sigma2 = 42000 / pixelSize; % width of wider Gaussian
     filterSize = round(2000 / pixelSize); %size of square to be convolved with microscopy images
     zim = [];
+    try
+    %this is just some function that can only be called if IJM is set up
+    IJM.getIdentifier() 
+    catch
+        addpath('e:/Fiji.app/scripts') % Update for your ImageJ installation
+        ImageJ                         % Initialize IJM and MIJ
+    end
+    evalin('base', 'IJM')
+    evalin('base', 'MIJ')
 for current_frame = 1:num_frames
     for i = 1:zSize
         zim(:,:,i) = double(imread([PreProcPath,filesep,Prefix, filesep, Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
@@ -144,12 +154,12 @@ else
                 im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
             end
             dog = double(imread([OutputFolder1, filesep,'prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
-            if displayFigures
-                fig = figure(1);
-                imshow(dog,[]);
-            else
-                fig=[];
-            end
+%             if displayFigures
+%                 fig = figure(1);
+%                 imshow(dog,[]);
+%             else
+%                 fig=[];
+%             end
             %apply flatfield correction
             if doFF && sum(size(im)==size(ffim))
                 im = im./ffim;
@@ -159,7 +169,17 @@ else
             %
             im_thresh = dog >= Threshold;
             [im_label, n_spots] = bwlabel(im_thresh); 
+            se = strel('square', 2);
+            im_label = imdilate(im_label, se); %thresholding from this classified probability map can produce non-contiguous, spurious spots. This fixes that and hopefully does not combine real spots from different nuclei
+            
 
+            if displayFigures
+                fig = figure(1);
+                imshow(im_label);
+            else 
+                fig = [];
+            end
+                           
             temp_frames = {};
             temp_particles = cell(1, n_spots);
             if current_frame == 19
@@ -170,14 +190,14 @@ else
                     parfor k = 1:n_spots
                         try
                             temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, Threshold);
+                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
                         catch
                         end
-                        end
+                    end
                 else
                     for k = 1:n_spots
                             temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, Threshold);
+                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
                     end
                 end
                 for k = 1:n_spots

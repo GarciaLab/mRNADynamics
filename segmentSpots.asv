@@ -167,13 +167,13 @@ else
             if n_spots ~= 0
                 if ~displayFigures
                     parfor k = 1:n_spots
-                            temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, Threshold);
+                        temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
+                            neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
                     end
                 else
                     for k = 1:n_spots
-                            temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, Threshold);
+                        temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
+                            neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
                     end
                 end
                 for k = 1:n_spots
@@ -191,7 +191,7 @@ end
 
 %%
 %Create a useful structure that can be fed into pipeline
-if ~just_dog
+ if ~just_dog
     n = 1;
     h=waitbar(0,'Saving particle information');
     for i = 1:num_frames  
@@ -229,15 +229,15 @@ if ~just_dog
     end
     close(h)
     fields = fieldnames(Particles);
-    
+    c
     %z-tracking
     changes = 1;
     while changes ~= 0
         changes = 0;
-        i = 1; 
+        i = 1;
         h=waitbar(0,'Finding z-columns');
         neighborhood = 1300 / pixelSize;
-        for n = 1:num_frames  
+        for n = 1:num_frames
             waitbar(n/num_frames,h)
             l = length(Particles([Particles.frame] == n));
             i = i + length(Particles([Particles.frame] == (n - 1) ));
@@ -257,7 +257,7 @@ if ~just_dog
         Particles = Particles([Particles.r]~=1);
         close(h)
     end
-
+    falsePositives = 0;
     %pick the brightest z-slice
     for i = 1:length(Particles)
         [~, max_index] = max(Particles(i).CentralIntensity);
@@ -338,20 +338,35 @@ end
 
 t = toc;
 display(['Elapsed time: ',num2str(t/60),' min'])
+
 if ~just_dog
-    display(['Detected spots: ',num2str(length(Spots))])
+    detectedCircles = 0;
+    detectedBalls = 0;
+    for i = 1:length(Spots)
+        for j = 1:length(Spots(i).Fits)
+            detectedCircles = detectedCircles + length(Spots(i).Fits(j).z);
+            detectedBalls = detectedBalls + 1;
+        end
+    end
+    display(['Detected spots: ',num2str(detectedCircles)])
     if exist([DropboxFolder,filesep,Prefix,filesep,'log.mat'])
         load([DropboxFolder,filesep,Prefix,filesep,'log.mat'])
         log(end+1).Date = date;
-        log(end+1).runTime = t;
-        log(end+1).numSpots = length(Spots);
-        log(end+1).falsePos = falsePositives;
+        log(end).runTime = t/60; %min
+        log(end).falsePositives = falsePositives;
+        log(end).totalCircles = detectedCircles;
+        log(end).totalBalls = detectedBalls;
+        log(end).avgZSize = detectedCircles/detectedBalls;
+        log(end).Threshold = Threshold;
     else
         log = struct();
         log(1).Date = date;
-        log(1).runTime = t;
-        log(1).numSpots = length(Spots);
-        log(1).falsePos = falsePositives; 
+        log(1).runTime = t/60; %min
+        log(1).falsePositives = falsePositives;
+        log(1).totalCircles = detectedCircles;
+        log(1).totalBalls = detectedBalls;
+        log(1).avgZSize = detectedCircles/detectedBalls;
+        log(1).Threshold = Threshold;
     end
     save([DropboxFolder,filesep,Prefix,filesep,'log.mat'], 'log');
 end

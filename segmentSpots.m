@@ -167,13 +167,13 @@ else
             if n_spots ~= 0
                 if ~displayFigures
                     parfor k = 1:n_spots
-                            temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, Threshold);
+                        temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
+                            neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
                     end
                 else
                     for k = 1:n_spots
-                            temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, Threshold);
+                        temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
+                            neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
                     end
                 end
                 for k = 1:n_spots
@@ -191,7 +191,7 @@ end
 
 %%
 %Create a useful structure that can be fed into pipeline
-if ~just_dog
+ if ~just_dog
     n = 1;
     h=waitbar(0,'Saving particle information');
     for i = 1:num_frames  
@@ -205,7 +205,7 @@ if ~just_dog
                      Particles(n).Offset(1) = cell2mat(all_frames{i,j}{spot}(4));
                      Particles(n).Snippet{1} = cell2mat(all_frames{i,j}{spot}(5));
                      Particles(n).Area{1} = cell2mat(all_frames{i,j}{spot}(6));
-                     Particles(n).xFitWidth{1} = cell2mat(all_frames{i,j}{spot}(7));
+                     Particles(n).xFzitWidth{1} = cell2mat(all_frames{i,j}{spot}(7));
                      Particles(n).yFitWidth{1} = cell2mat(all_frames{i,j}{spot}(8));
                      Particles(n).yDoG(1) = cell2mat(all_frames{i,j}{spot}(9));
                      Particles(n).xDoG(1) = cell2mat(all_frames{i,j}{spot}(10));
@@ -229,15 +229,15 @@ if ~just_dog
     end
     close(h)
     fields = fieldnames(Particles);
-    
+
     %z-tracking
     changes = 1;
     while changes ~= 0
         changes = 0;
-        i = 1; 
+        i = 1;
         h=waitbar(0,'Finding z-columns');
         neighborhood = 1300 / pixelSize;
-        for n = 1:num_frames  
+        for n = 1:num_frames
             waitbar(n/num_frames,h)
             l = length(Particles([Particles.frame] == n));
             i = i + length(Particles([Particles.frame] == (n - 1) ));

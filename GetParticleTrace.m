@@ -81,8 +81,8 @@ if exist('OffsetError')
         mean(cell2mat(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).Area));
     %For the Integral, we just use the area of the snippet, which is a
     %constant for all time points.
-    ErrorIntegral=OffsetError*sqrt(2)*...
-        sum(sum(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).snippet_mask{1}));
+    ErrorIntegral=OffsetError*sqrt(2)*109;
+%         sum(sum(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).snippet_mask{1}));
 else
     ErrorGauss=[];
     ErrorIntegral=[];

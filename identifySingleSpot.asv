@@ -140,11 +140,13 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
                     area, sigma_x, sigma_y, centroid_y, centroid_x, gaussianIntensity,intensity,...
                     max_dog, snippet_mask, sigma_x2, sigma_y2, sister_chromatid_distance, relative_errors, confidence_intervals, gaussian, mesh}};
             else
-
+                1
                 temp_particles = {{}};
             end
-
+       else
+           2
        end
-
+    else 
+        3
     end
 end
