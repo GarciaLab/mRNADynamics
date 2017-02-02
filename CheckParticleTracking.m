@@ -859,6 +859,8 @@ while (cc~='x')
         surf(domain{1}, domain{2}, gauss + double(snip));
         title('Gaussian fit')
         set(gcf,'units', 'normalized', 'position',[.60, .7, .2, .2]);
+        zlimit = max(max(snip));
+        zlim([0, zlimit]);
       
         
         figure(RawData)
@@ -870,7 +872,7 @@ while (cc~='x')
         surf(domain{1}, domain{2}, snip)
         title('Raw data');
         set(gcf,'units', 'normalized', 'position',[.60, .3, .2, .2]);
-
+        zlim([0, zlimit]);
     end
 
         
