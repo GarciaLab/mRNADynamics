@@ -17,3 +17,15 @@ end
 %Now, get rid of the clicked particle
 Particles=Particles([1:ClickedParticle-1,ClickedParticle+1:end]);
 
+%Deals with the indexing changing because of the removal of
+%the old particle.
+ if ClickedParticle<OriginalParticle
+     OriginalParticle=OriginalParticle-1;
+ end
+
+%Sort the frames within the particle. This is useful if we
+%connected to a particle that came before.
+[SortedFrame,Permutations]=sort(Particles(OriginalParticle).Frame);
+Particles(OriginalParticle).Frame=Particles(OriginalParticle).Frame(Permutations);
+Particles(OriginalParticle).Index=Particles(OriginalParticle).Index(Permutations);
+Particles(OriginalParticle).FrameApproved=Particles(OriginalParticle).FrameApproved(Permutations);    
