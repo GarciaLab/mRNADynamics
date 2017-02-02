@@ -1039,9 +1039,15 @@ while (cc~='x')
         %DisplayRange=[];
     elseif (cc=='''')&(CurrentFrame<length({Spots{1}.Fits})) %Move to the next skipped frame
                                                              %within the particle
-        %Get the frames that are skipped within this particle
-        SkippedFrames=Particles{CurrentChannel}(CurrentParticle).Frame(...
-            find(diff(Particles{CurrentChannel}(CurrentParticle).Frame)>1))+1;
+        
+        %This is the total frame range possible for this particle. Note
+        %that we could still want to add spots at the beginning or end of
+        %this range.
+        FrameRange=Particles{CurrentChannel}(CurrentParticle).Frame(1):...
+            Particles{CurrentChannel}(CurrentParticle).Frame(end);
+        %Frames in FrameRange that were not in this particle.
+        SkippedFrames=FrameRange(~ismember(FrameRange,...
+            Particles{CurrentChannel}(CurrentParticle).Frame));
         %Find the next skipped frame and set it up
         CurrentFrame=min(SkippedFrames(SkippedFrames>CurrentFrame));
         
@@ -1051,10 +1057,16 @@ while (cc~='x')
             CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(end)
         end
     elseif (cc==';')&(CurrentFrame>1) %Move to the previous skipped frame
-                                                             %within the particle
-        %Get the frames that are skipped within this particle
-        SkippedFrames=Particles{CurrentChannel}(CurrentParticle).Frame(...
-            find(diff(Particles{CurrentChannel}(CurrentParticle).Frame)>1))+1;
+                                      %within the particle
+                                      
+        %This is the total frame range possible for this particle. Note
+        %that we could still want to add spots at the beginning or end of
+        %this range.
+        FrameRange=Particles{CurrentChannel}(CurrentParticle).Frame(1):...
+            Particles{CurrentChannel}(CurrentParticle).Frame(end);
+        %Frames in FrameRange that were not in this particle.
+        SkippedFrames=FrameRange(~ismember(FrameRange,...
+            Particles{CurrentChannel}(CurrentParticle).Frame));
         %Find the next skipped frame and set it up
         CurrentFrame=max(SkippedFrames(SkippedFrames<CurrentFrame));
         
@@ -1885,13 +1897,15 @@ end
 
 save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo')
 
-%Save DoGs
-for current_frame = 1:num_frames
-    for i = 1:zSize   
-        dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif'];
-        imwrite(uint16(dog(:,:,i,current_frame)), [OutputFolder1,filesep,dog_name]);
-    end
-end
+
+%HG to AR on 02/02/2017: Do we need this?
+% %Save DoGs
+% for current_frame = 1:num_frames
+%     for i = 1:zSize   
+%         dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif'];
+%         imwrite(uint16(dog(:,:,i,current_frame)), [OutputFolder1,filesep,dog_name]);
+%     end
+% end
 
 
 %If we only have one channel bring Particles back to the legacy
