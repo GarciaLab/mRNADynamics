@@ -859,7 +859,7 @@ while (cc~='x')
         surf(domain{1}, domain{2}, gauss + double(snip));
         title('Gaussian fit')
         set(gcf,'units', 'normalized', 'position',[.60, .7, .2, .2]);
-        zlimit = max(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity);
+        zlimit = max(Spots{1}.Fits(CurrentFrame).
         zlim([0, zlimit]);
       
         
