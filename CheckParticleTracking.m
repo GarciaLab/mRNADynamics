@@ -8,14 +8,12 @@ function CheckParticleTracking(varargin)
 %Usage:
 %
 %Frame specific:
-%. Move a frame forward
-%, Move a frame backwards
-%> Move five frames forward
-%, Move five frames backwards
-%a Move up in Z
-%z Move down in z
+%. , Move a frame forward/backward
+%> < Move five frames forward/backward
+%; ' Move to the next empty frame within a particle
+%a z Move up/down in Z
 %j Jump to a specified frame
-%g,b Increase/decrease histone channel contrast
+%g b Increase/decrease histone channel contrast
 % 
 % 
 % 
@@ -25,7 +23,7 @@ function CheckParticleTracking(varargin)
 %k Jump to a specified particle by inputting particle number
 %\ Jump to a specified particle by clicking
 %c Connect two existing particle traces. This will join the current
-%particle's trace to the clicked particle's trace. 
+%  particle's trace to the clicked particle's trace. 
 %d Separate traces. If this is done on a particle with only one frame then
 %  it disconnects it from its nucleus.
 %q Cycle between approved status: green - approved; yellow - approved but
@@ -38,6 +36,9 @@ function CheckParticleTracking(varargin)
 %i Move a particle detected with Threshold2 into the our structure and
 %  connect it to the current particle. This is a combination of "u" and
 %  "c".
+%[ Add a spot that was not recognized originally by segmentSpots to the
+%  current particle. Note that the command forces ZoomMode. To toggle, use
+%  'o'.
 % 
 % 
 %Nuclear tracking specific:
@@ -392,10 +393,10 @@ TotalFrames=length(FrameInfo);
 
 
 %Some flags and initial parameters
-ShowThreshold2=1;
+ShowThreshold2=0;                    %Whether to show particles below the threshold
 HideApprovedFlag=0;
 ParticleToFollow=[];
-ZSlices=FrameInfo(1).NumberSlices+2;   %Note that the blank slices are included
+ZSlices=FrameInfo(1).NumberSlices+2; %Note that the blank slices are included
 CurrentZ=round(ZSlices/2);          
 ManualZFlag=0;
 CurrentParticle=1;
@@ -443,6 +444,12 @@ end
 if ForCompileAll
     cc='x';
 end
+
+
+%This flag allows the code to directly pass a command without waiting for
+%the user to press a key or click on the figure
+SkipWaitForButtonPress=[];
+
 
 while (cc~='x') 
     EllipseHandle=[];
@@ -1004,30 +1011,62 @@ while (cc~='x')
     
     
     figure(Overlay)
-    ct=waitforbuttonpress;
-    cc=get(Overlay,'currentcharacter');
-    cm=get(gca,'CurrentPoint');
+    if isempty(SkipWaitForButtonPress)
+        ct=waitforbuttonpress;
+        cc=get(Overlay,'currentcharacter');
+        cm=get(gca,'CurrentPoint');
+    else
+        cc=SkipWaitForButtonPress;
+        SkipWaitForButtonPress=[];
+    end
+        
     
-    if (cc=='.')&(CurrentFrame<length({Spots{1}.Fits}))
+    if (cc=='.')&(CurrentFrame<length({Spots{1}.Fits})) %Move forward one frame
         CurrentFrame=CurrentFrame+1;
         ManualZFlag=0;
         %DisplayRange=[];
-    elseif (cc==',')&(CurrentFrame>1)
+    elseif (cc==',')&(CurrentFrame>1) %Move backward one frame
         CurrentFrame=CurrentFrame-1;
         ManualZFlag=0;
         %DisplayRange=[];
-    elseif (cc=='>')&(CurrentFrame+5<length({Spots{1}.Fits}))
+    elseif (cc=='>')&(CurrentFrame+5<length({Spots{1}.Fits})) %Move forward five frames
         CurrentFrame=CurrentFrame+5;
         ManualZFlag=0;
         %DisplayRange=[];
-    elseif (cc=='<')&(CurrentFrame-5>1)
+    elseif (cc=='<')&(CurrentFrame-5>1) %Move backward five frames
         CurrentFrame=CurrentFrame-5;
         ManualZFlag=0;
         %DisplayRange=[];
-    elseif (cc=='a')&(CurrentZ<ZSlices) %AR 7/17/16: This does not currently update snippet or surface plots.
+    elseif (cc=='''')&(CurrentFrame<length({Spots{1}.Fits})) %Move to the next skipped frame
+                                                             %within the particle
+        %Get the frames that are skipped within this particle
+        SkippedFrames=Particles{CurrentChannel}(CurrentParticle).Frame(...
+            find(diff(Particles{CurrentChannel}(CurrentParticle).Frame)>1))+1;
+        %Find the next skipped frame and set it up
+        CurrentFrame=min(SkippedFrames(SkippedFrames>CurrentFrame));
+        
+        %If there is no next empty frame, jump to the last frame of this
+        %particle
+        if isempty(CurrentFrame)
+            CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(end)
+        end
+    elseif (cc==';')&(CurrentFrame>1) %Move to the previous skipped frame
+                                                             %within the particle
+        %Get the frames that are skipped within this particle
+        SkippedFrames=Particles{CurrentChannel}(CurrentParticle).Frame(...
+            find(diff(Particles{CurrentChannel}(CurrentParticle).Frame)>1))+1;
+        %Find the next skipped frame and set it up
+        CurrentFrame=max(SkippedFrames(SkippedFrames<CurrentFrame));
+        
+        %If there is no next empty frame, jump to the last frame of this
+        %particle
+        if isempty(CurrentFrame)
+            CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(1)
+        end
+    elseif (cc=='a')&(CurrentZ<ZSlices) %Move up in Z
         CurrentZ=CurrentZ+1;
         ManualZFlag=1;
-    elseif (cc=='z')&(CurrentZ>1) %AR 7/17/16: This does not currently update snippet or surface plots.
+    elseif (cc=='z')&(CurrentZ>1) %Move down in Z
         CurrentZ=CurrentZ-1;
         ManualZFlag=1;
     elseif cc=='j'
@@ -1074,7 +1113,8 @@ while (cc~='x')
         %Check that we're in zoom mode. If not, set it up.
         if ~ZoomMode
             ZoomMode=~ZoomMode;
-            display('You need to be in Zoom Mode to do this. You can switch using ''o''. Run the ''['' command again.')
+            SkipWaitForButtonPress='[';
+            %display('You need to be in Zoom Mode to do this. You can switch using ''o''. Run the ''['' command again.')
         else
             %Click on the region we're going to fit in order to find a new
             %spot and add that spot to the current particle
@@ -1197,14 +1237,14 @@ while (cc~='x')
         
         
 
-    elseif cc==']' %Remove particle from dog images. Afterwards, re-run segmentation and tracking
-        [ConnectPositiony,ConnectPositionx]=ginputc(1,'color', 'r', 'linewidth',1);
-        ConnectPositionx = round(ConnectPositionx);
-        ConnectPositiony = round(ConnectPositiony);
-        dog(ConnectPositionx-1:ConnectPositionx+1, ConnectPositiony-1:ConnectPositiony+1, CurrentZ, CurrentFrame)...
-        = 0;
-        plot(ConnectPositionx, ConnectPositiony, 'xw');
-        display('Good to go, boss')
+%     elseif cc==']' %Remove particle from dog images. Afterwards, re-run segmentation and tracking
+%         [ConnectPositiony,ConnectPositionx]=ginputc(1,'color', 'r', 'linewidth',1);
+%         ConnectPositionx = round(ConnectPositionx);
+%         ConnectPositiony = round(ConnectPositiony);
+%         dog(ConnectPositionx-1:ConnectPositionx+1, ConnectPositiony-1:ConnectPositiony+1, CurrentZ, CurrentFrame)...
+%         = 0;
+%         plot(ConnectPositionx, ConnectPositiony, 'xw');
+%         display('Good to go, boss')
 
     elseif cc=='r'
         %Order particles by the earliest frame they appear at. This makes the
