@@ -183,7 +183,7 @@ elseif strcmp(FileMode,'LSM')
     LSMMeta=LSMMid{:,4};
     LSMMeta2=LSMMid{:,2};
     
-    %The first image in a tile scane on a size scope seems to be the one
+    %The first image in a tile scan on a Zeiss scope seems to be the one
     %that preserves pixel size.
     %individual tiles if we're dealing with tile scan. Also, in CZI files,
     %this seems to ensure a high-contrast image as well.
