@@ -1918,10 +1918,12 @@ end
 
 
 if UseHistoneOverlay
-    save([DataFolder,filesep,'Particles.mat'],'Particles','Spots','SpotFilter','Threshold1','Threshold2')
+    save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2')
+    save([DataFolder,filesep,'Spots.mat'],'Spots')
     save([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'],'schnitzcells')
 else
-    save([DataFolder,filesep,'Particles.mat'],'Particles','Spots','SpotFilter','Threshold1','Threshold2')            
+    save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2')            
+    save([DataFolder,filesep,'Spots.mat'],'Spots')
 end
 close all
 display('Particles saved.')
