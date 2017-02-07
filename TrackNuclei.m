@@ -154,7 +154,7 @@ end
 %into an independent function.
 
 %Create the cell array with the names.
-D=dir([PreProcPath,filesep,Prefix,filesep,'*His*.tif']);
+D=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'*His*.tif']);
 names = cell(length(D), 1);
 for i=1:length(D)
     names{i}=[PreProcPath,filesep,Prefix,filesep,D(i).name];
