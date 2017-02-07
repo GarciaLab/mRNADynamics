@@ -1,5 +1,5 @@
 function temp_particles = identifySingleSpot(particle_index, image, image_label, dog_image, distance_to_neighbor, snippet_size, ...
-    pixelSize, show_status, figure, microscope, threshold)
+    pixelSize, show_status, figure, microscope, addition)
 
     %This is a subfunction for 'segmentSpots' that locates a transcriptional locus (the k'th locus in an image)
     %and assigns a Gaussian
@@ -9,17 +9,21 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
     %Arguments: This requires an image, its difference of gaussians image,
     %as well as some properties of the recording. 
 
-    
-    
-    
-    
     %Find spot centroids in the actual image by hunting for global maxima in
     %neighborhoods around spots that were just located
     possible_centroid = [];
     possible_centroid_location = {};
-    [k_row, k_column] = find(image_label == particle_index); %the position of the k'th locus in the image
-    row = k_row(1);
-    col = k_column(1);
+    if ~addition(1)
+        [k_row, k_column] = find(image_label == particle_index); %the position of the k'th locus in the image
+        row = k_row(1);
+        col = k_column(1);
+    else 
+        row = addition(3);
+        col = addition(2);
+        k_row = row;
+        k_column = col;
+        
+    end
     for i = 1:2*distance_to_neighbor
         for j = 1:2*distance_to_neighbor
             if row - distance_to_neighbor + i > 0 && col - distance_to_neighbor + j > 0 ... 
@@ -40,6 +44,11 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
         centroid_y = possible_centroid_location{row,col}(1); 
         centroid_x = possible_centroid_location{row,col}(2);
        
+        if addition(1) && ~(centroid_y - snippet_size > 1 && centroid_x - snippet_size > 1 && centroid_y + snippet_size < size(image, 1) && centroid_x + snippet_size < size(image,2))    
+            centroid_y = k_row;
+            centroid_x = k_column;
+        end
+        
        %Now, we'll calculate Gaussian fits 
        if centroid_y - snippet_size > 1 && centroid_x - snippet_size > 1 && centroid_y + snippet_size < size(image, 1) && centroid_x + snippet_size < size(image,2)
            
@@ -90,7 +99,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             sigma_x = fits(3);
             sigma_y = fits(5);
 
-            area = pi*sigma_x*sigma_y; %in pixels. this is two widths away from peak
+            area = pi*sigma_x*sigma_y; %in pixels. this is one width away from peak
             integration_radius = 6; %integrate 109 pixels around the spot
             spot_x = fits(2) - snippet_size + centroid_x; %final reported spot position
             spot_y = fits(4) - snippet_size + centroid_y;    
@@ -124,14 +133,18 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             sister_chromatid_distance = fits(end);
             fixedAreaIntensity = sum(sum(snippet_mask)) - fits(end-1)*sum(sum(snippet_mask~=0));
             
-            if  .1<sigma_x && sigma_x<(600/pixelSize) && .1<sigma_y && sigma_y<(600/pixelSize)   %here is the place to introduce quality control
+            if  .1<sigma_x && sigma_x<(600/pixelSize) && .1<sigma_y && sigma_y<(600/pixelSize)...
+                    || addition(1) %here is the place to introduce quality control
                 max_dog = max(max(dog_image(k_row,k_column)));
                 temp_particles = {{fixedAreaIntensity, spot_x, spot_y, fits(end-1), snippet, ...
                     area, sigma_x, sigma_y, centroid_y, centroid_x, gaussianIntensity,intensity,...
                     max_dog, snippet_mask, sigma_x2, sigma_y2, sister_chromatid_distance, relative_errors, confidence_intervals, gaussian, mesh}};
             else
+
                 temp_particles = {{}};
             end
+
        end
+
     end
 end

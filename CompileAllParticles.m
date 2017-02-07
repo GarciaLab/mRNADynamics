@@ -10,39 +10,55 @@ function CompileAllParticles(DataType,varargin)
 %                   and offset
 
 
-%% Folders
+%DataType is the tab in the XLS file. The code figures out which XLS file
+%and folders to use.
 
-%Get some of the default folder
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
+%Get some of the default folders
+[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
+    DetermineLocalFolders;
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
 
-if strcmp(DataType,'hbBAC')|strcmp(DataType,'Eve2')|strcmp(DataType,'snaBAC')|...
-        strcmp(DataType,'snaBACNoPrimary')|strcmp(DataType,'snaBACNoShadow')|strcmp(DataType,'P2PPausing')|...
-        strcmp(DataType,'hbNoPrimary')|strcmp(DataType,'hbNoShadow')|...
-        strcmp(DataType,'kniBACNoPrimary')|strcmp(DataType,'kniBAC')|strcmp(DataType,'kniBACNoShadow')
-    [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
-        DetermineLocalFolders('2014-03-15-HbBACA');
-    XLSName='DataStatusPausing.xlsx';
-elseif strcmp(DataType,'zld')|strcmp(DataType,'Shelby')
-    [SourcePath,FISHPath,DropboxFolder,MS2CodePath,SchnitzcellsFolder]=...
-        DetermineLocalFolders('2013-09-09-zld-X1');
-    XLSName='DataStatus.xlsx';
-elseif strcmp(DataType,'MCP-GFP 5'' Data')
-    error('Take care of this')
-else
-    error('Add this data type to the code')
+%Now, get a list of all possible other Dropbox folders
+[Dummy,XLS]=xlsread([MS2CodePath,filesep,'..',filesep,'ComputerFolders.XLSX']);
+DropboxRows=find(~cellfun(@isempty,strfind(XLS(:,1),'Dropbox')));
+DropboxFolders=XLS(DropboxRows,2);
+
+%Look in DataStatus.XLSX in each DropboxFolder and find the tab given by
+%the input variable DataType.
+DataStatusToCheck=[];
+for i=1:length(DropboxFolders)
+    DDataStatus=dir([DropboxFolders{i},filesep,'DataStatus.*']);
+    if length(DDataStatus)>1
+        error(['More than one DataStatus.XLS found in folder ',DropboxFolders{i}])
+    elseif length(DDataStatus)==1
+        [Dummy,Sheets] = xlsfinfo([DropboxFolders{i},filesep,DDataStatus(1).name]);
+        FindSheets=strcmpi(Sheets,lower(DataType));
+        if sum(FindSheets)==1
+            DataStatusToCheck=[DataStatusToCheck,i];
+        end
+    end
+end
+%Check that there aren't two DataStatus files with the same tab name
+if length(DataStatusToCheck)>1
+    error(['More than one DataStatus.XLSX found with a tab named ',DataType])
+elseif length(DataStatusToCheck)==0
+    error(['No DataStatus.XLSX found with a tab named ',DataType])
 end
 
+%Redefine the DropboxFolder according to the DataStatus.XLSX we'll use
+DropboxFolder=DropboxFolders{DataStatusToCheck};
+%Now, load the DataStatus.XLSX
+D=dir([DropboxFolder,filesep,'DataStatus.*']);
+[StatusNum,StatusTxt]=xlsread([DropboxFolder,filesep,D(1).name],DataType);
 
 
+CompileRow=find(strcmp(StatusTxt(:,1),'AnalyzeLiveData Compile Particles')|...
+    strcmp(StatusTxt(:,1),'CompileParticles'));
+if isempty(CompileRow)
+    error('CompileParicles row not found')
+end
 
-%% Compile each data set
-
-
-%Get the XLS info
-[StatusNum,StatusTxt]=xlsread([DropboxFolder,filesep,XLSName],DataType);
-
-CompileRow=find(strcmp(StatusTxt(:,1),'AnalyzeLiveData Compile Particles'));
 CompiledSets=find(strcmp(StatusTxt(CompileRow,:),'READY')|...
     strcmp(StatusTxt(CompileRow,:),'ApproveAll'));
 

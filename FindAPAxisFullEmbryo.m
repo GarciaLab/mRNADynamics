@@ -183,11 +183,16 @@ elseif strcmp(FileMode,'LSM')
     LSMMeta=LSMMid{:,4};
     LSMMeta2=LSMMid{:,2};
     
-    %The first image in a tile scane on a size scope seems to be the one
-    %that preserves pixel size.
+    %Look for the image with the largest size. In this way, we avoid
+    %loading individual tiles in the case of a tile scan.
+    for i=1:size(LSMMid,1)
+        SizesImages(i)=size(LSMMid{i,1}{1,1},1);
+    end
+    [~,ImageCellToUse]=max(SizesImages);
+    
     %individual tiles if we're dealing with tile scan. Also, in CZI files,
     %this seems to ensure a high-contrast image as well.
-    MidImage=LSMMid{end,1}{HisChannel,:};
+    MidImage=LSMMid{ImageCellToUse,1}{HisChannel,:};
     
     %Figure out the rotation of the full embryo image
     %This works for LSM files

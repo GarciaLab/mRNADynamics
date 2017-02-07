@@ -51,6 +51,7 @@ catch
 end
 %%
 tic;
+
 [~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
     readMovieDatabase(Prefix);
 
@@ -100,37 +101,45 @@ if just_dog
     sigma1 = pixelSize / pixelSize; %width of narrower Gaussian
     sigma2 = 42000 / pixelSize; % width of wider Gaussian
     filterSize = round(2000 / pixelSize); %size of square to be convolved with microscopy images
-    h=waitbar(0,'Generating DoG images');
-    for current_frame = 1:num_frames
-        waitbar(current_frame/num_frames,h);
-        if displayFigures
-            for i = 1:zSize
-                if strcmpi(ExperimentType,'inputoutput')
-                    im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'_ch02','.tif']));
-                else
-                    im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
-                end
-                dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
-                dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
-                dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif'];
-                imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
-                imshow(dog,[]);
-            end
-        else 
-            parfor i = 1:zSize    
-                if strcmpi(ExperimentType,'inputoutput')
-                    im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'_ch02','.tif']));
-                else
-                    im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
-                end
-                dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
-                dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
-                dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif'];
-                imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
-            end
-        end
+    zim = [];
+    try
+    %this is just some function that can only be called if IJM is set up
+    IJM.getIdentifier() 
+    catch
+        addpath('e:/Fiji.app/scripts') % Update for your ImageJ installation
+        ImageJ                         % Initialize IJM and MIJ
     end
-    close(h);
+    evalin('base', 'IJM')
+    evalin('base', 'MIJ')
+for current_frame = 1:num_frames
+    for i = 1:zSize
+        zim(:,:,i) = double(imread([PreProcPath,filesep,Prefix, filesep, Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
+    end
+    mkdir([PreProcPath,filesep,Prefix,filesep,'stacks']);
+    name = [PreProcPath,filesep,Prefix,filesep,'stacks', filesep, iIndex(current_frame,3),'.tif'];
+    imwrite(uint16(zim(:,:,1)), name);
+    for k = 2:size(zim,3)
+        imwrite(uint16(zim(:,:,k)), name, 'WriteMode', 'append');
+    end
+    mij.run('Trainable Weka Segmentation 3D', ['open=',name]);
+    pause(20);
+    trainableSegmentation.Weka_Segmentation.loadClassifier('C:\\Users\\ArmandoReimer\\Desktop\\weca\\vasa_first_movie_3dmachine\\classifier.model');
+    trainableSegmentation.Weka_Segmentation.getProbability();
+    ijm.getDatasetAs('probmaps')
+    p = evalin('base', 'probmaps');
+    p2 = [];
+    for m = 1:2:46
+        p2(:,:,ceil(m/2)) =  p(:,:,m); %the even images in the original array are negatives of the odds
+    end
+    p2 = permute(p2, [2 1 3]);
+    p2 = p2*10000;
+    for i = 1:size(p2, 3)      
+        p_name = ['prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif'];
+        imwrite(uint16(p2(:,:,i)), [OutputFolder1,filesep,p_name])
+    end
+    MIJ.run('Close All');
+end
+    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Segment transcriptional loci
 else
@@ -144,13 +153,13 @@ else
             else
                 im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
             end
-            dog = double(imread([OutputFolder1, filesep,'DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
-            if displayFigures
-                fig = figure(1);
-                imshow(dog,[]);
-            else
-                fig=[];
-            end
+            dog = double(imread([OutputFolder1, filesep,'prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
+%             if displayFigures
+%                 fig = figure(1);
+%                 imshow(dog,[]);
+%             else
+%                 fig=[];
+%             end
             %apply flatfield correction
             if doFF && sum(size(im)==size(ffim))
                 im = im./ffim;
@@ -160,20 +169,35 @@ else
             %
             im_thresh = dog >= Threshold;
             [im_label, n_spots] = bwlabel(im_thresh); 
+            se = strel('square', 2);
+            im_label = imdilate(im_label, se); %thresholding from this classified probability map can produce non-contiguous, spurious spots. This fixes that and hopefully does not combine real spots from different nuclei
+            
 
+            if displayFigures
+                fig = figure(1);
+                imshow(im_label);
+            else 
+                fig = [];
+            end
+                           
             temp_frames = {};
             temp_particles = cell(1, n_spots);
-            
+            if current_frame == 19
+                1;
+            end
             if n_spots ~= 0
                 if ~displayFigures
                     parfor k = 1:n_spots
-                        temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                            neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
+                        try
+                            temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
+                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
+                        catch
+                        end
                     end
                 else
                     for k = 1:n_spots
-                        temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                            neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
+                            temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
+                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
                     end
                 end
                 for k = 1:n_spots
@@ -191,7 +215,7 @@ end
 
 %%
 %Create a useful structure that can be fed into pipeline
- if ~just_dog
+if ~just_dog
     n = 1;
     h=waitbar(0,'Saving particle information');
     for i = 1:num_frames  
@@ -205,7 +229,7 @@ end
                      Particles(n).Offset(1) = cell2mat(all_frames{i,j}{spot}(4));
                      Particles(n).Snippet{1} = cell2mat(all_frames{i,j}{spot}(5));
                      Particles(n).Area{1} = cell2mat(all_frames{i,j}{spot}(6));
-                     Particles(n).xFzitWidth{1} = cell2mat(all_frames{i,j}{spot}(7));
+                     Particles(n).xFitWidth{1} = cell2mat(all_frames{i,j}{spot}(7));
                      Particles(n).yFitWidth{1} = cell2mat(all_frames{i,j}{spot}(8));
                      Particles(n).yDoG(1) = cell2mat(all_frames{i,j}{spot}(9));
                      Particles(n).xDoG(1) = cell2mat(all_frames{i,j}{spot}(10));
@@ -229,15 +253,15 @@ end
     end
     close(h)
     fields = fieldnames(Particles);
-
+    
     %z-tracking
     changes = 1;
     while changes ~= 0
         changes = 0;
-        i = 1;
+        i = 1; 
         h=waitbar(0,'Finding z-columns');
         neighborhood = 1300 / pixelSize;
-        for n = 1:num_frames
+        for n = 1:num_frames  
             waitbar(n/num_frames,h)
             l = length(Particles([Particles.frame] == n));
             i = i + length(Particles([Particles.frame] == (n - 1) ));
@@ -303,7 +327,7 @@ end
     end
     
     %Clean up Spots to remove empty rows
-    Spots2 = struct('Fits', []);        
+    Spots2 = struct('Fits', []);
     for i = 1:length(Spots)
         Spots2(i).Fits = [];
         for j = 1:length(Spots(i).Fits)

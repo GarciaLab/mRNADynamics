@@ -255,6 +255,8 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
             for j=1:length(Spots(i).Fits)
                 if sum(Spots(i).Fits(j).DOGIntensity>Threshold1)
                     SpotFilter(i,j)=1;
+                else
+                    SpotFilter(i,j)=0;
                 end
             end
         end
@@ -354,12 +356,13 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
             if ~isempty(x)
                 if isempty(Particles)
                     %Initialize the Particles structure if it doesn't exist yet
+                    %LastFrame=zeros(size(x)); %HG: What does LastFrame keep track of?
                     for j=1:length(x)
                         if CurrentFrameFilter(j)
                             Particles(j).Frame=CurrentFrame;
                             Particles(j).Index=j;
-                            LastFrame(j)=CurrentFrame;
                             Particles(j).Approved=0;
+                            %LastFrame(j)=CurrentFrame;
                         end
                     end
 
@@ -403,6 +406,11 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
                         %The rows of distance correspond to the new particles.
                         %The columns correspond to their distance to the old
                         %particles.
+                        
+                        %For particles in the previous frame that were not
+                        %used for tracking, set their distance to infinity
+                        Distance(:,~FilterPreviousFrame)=inf;                        
+                        
                         %MinIndex is a row vector. The element position
                         %correspond to the new particle and the value within it
                         %correspond to the old particle that it's closest to.
@@ -428,7 +436,7 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
                                 NewParticlesFlag(1)=0;
                                 LastFrame(PreviousParticles)=i;
 
-                            %If we have only one previous particle MinIndex points at
+                            %If we have only one previous particle, MinIndex points at
                             %the new particle that is closest to it    
                             elseif (length(PreviousParticles)==1)&(MinValues<SearchRadius)
                                 Particles(PreviousParticles).Frame(end+1)=i;

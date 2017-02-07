@@ -9,6 +9,9 @@ FrameInfo.PixelsPerLine=str2num(ExtractInformationField(ImageInfo,'state.acq.pix
 FrameInfo.ZoomFactor=str2num(ExtractInformationField(ImageInfo,'state.acq.zoomFactor='));
 FrameInfo.Rotation=str2num(ExtractInformationField(ImageInfo,'state.acq.scanRotation='));
 
+%This is a standard in our data
+FrameInfo.PixelSize=0.210;       %in um
+
 % ES 2013-10-30: Compatibility with ScanImage 3.8
 ScanImageVersionS = ExtractInformationField(ImageInfo, 'state.software.version=');
 if strcmp(ScanImageVersionS(1:end-1), '3') % Referring to ScanImage 3.5.1

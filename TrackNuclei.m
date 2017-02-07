@@ -205,7 +205,7 @@ clear ImageTemp
   
 %Get information about the spatial and temporal resolution
 settingArguments{1}='time resolution';
-settingArguments{2}=median(diff([FrameInfo.Time]));     %Median separation between frames
+settingArguments{2}=median(diff([FrameInfo.Time]));     %Median separation between frames (in seconds)
 settingArguments{3}='space resolution';
 settingArguments{4}=FrameInfo(1).PixelSize;
 
