@@ -577,22 +577,6 @@ elseif strcmp(FileMode,'LSM')
             error('LSM Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
         end
         
-        %In case MCP-mCherry usage, we need to make a fake Histone channel
-        %based on MCP images (imcomplement etc.)
-        if ~(strfind(Channel1{1},'His')|strfind(Channel2{1},'His'))
-            if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))
-                if (~isempty(strfind(Channel1{1},'mCherry')))
-                    fiducialChannel=1;
-                    histoneChannel=1;
-                elseif (~isempty(strfind(Channel2{1},'mCherry')))
-                    fiducialChannel=2;
-                    histoneChannel=2;
-                else
-                    error('mCherry channel not found. Cannot generate the fake nuclear image')
-                end
-            end
-        end
-        %%Changed by YJ(2017.1.19, for MCP-mCherry
         
         fiducialChannel=histoneChannel;
         NSeries=length(D);
@@ -981,6 +965,24 @@ elseif strcmp(FileMode,'LIFExport')
                     display('Could not find a histone channel. Proceeding without it.')
                 end
             end
+            
+            %In case MCP-mCherry usage, we need to make a fake Histone channel
+        %based on MCP images (imcomplement etc.)
+            if (isempty(strfind(Channel1{1},'His')))&(isempty(strfind(Channel2{1},'His')))
+                if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))
+                    if (~isempty(strfind(Channel1{1},'mCherry')))
+                        fiducialChannel=1;
+                        histoneChannel=1;
+                    elseif (~isempty(strfind(Channel2{1},'mCherry')))
+                        fiducialChannel=2;
+                        histoneChannel=2;
+                    else
+                        error('mCherry channel not found. Cannot generate the fake nuclear image')
+                    end
+                end
+            end
+        %%Changed by YJ(2017.1.19, for MCP-mCherry
+            
         elseif strcmpi(ExperimentType,'2spot2color')       %2 spots, 2 colors
             load('ReferenceHist.mat')
             if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))
