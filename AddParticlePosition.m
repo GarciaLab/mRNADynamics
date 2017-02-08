@@ -421,8 +421,8 @@ if ~NoAP
     
     %Check whether we have Bcd-GFP. If so, we'll use it for the alignment
     %if there is no histone.
-    if ((~isempty(strfind(lower(Channel1),'bcd')))|...
-            (~isempty(strfind(lower(Channel2),'bcd'))))&InvertHis
+    if ((~isempty(cell2mat(strfind(lower(Channel1),'bcd'))))|...
+            (~isempty(cell2mat(strfind(lower(Channel2),'bcd')))))&InvertHis
         %Figure out which channel Bcd is in
         if ~isempty(strfind(lower(Channel1),'bcd'))
             BcdChannel=1;
