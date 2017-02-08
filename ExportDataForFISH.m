@@ -1163,12 +1163,18 @@ elseif strcmp(FileMode,'LIFExport')
                         else
                             Projection=max(HisSlices,[],3);
                         end
-                        if strcmpi(ExperimentType, 'inputoutput')
-                            if (~isempty(strfind(Channel1{1}, 'NLS')))|(~isempty(strfind(Channel2{1}, 'NLS')))
-                            else
-                                Projection=imcomplement(Projection);                            
+                        
+                        %Think about the case when there is no His channel,
+                        %and it is inputoutput mode or 1spot mode.
+                        %(MCP-mCherry)
+                        if (isempty(strfind(Channel1{1}, 'His')))&&(isempty(strfind(Channel2{1}, 'His')))
+                            if strcmpi(ExperimentType, 'inputoutput')|strcmpi(ExperimentType, '1spot')
+                                if (~isempty(strfind(Channel1{1}, 'NLS')))|(~isempty(strfind(Channel2{1}, 'NLS')))
+                                else
+                                    Projection=imcomplement(Projection);                            
+                                end
+                                Projection=histeq(mat2gray(Projection),ReferenceHist);
                             end
-                            Projection=histeq(mat2gray(Projection),ReferenceHist);
                         end
                     else 
                         %We don't want to use all slices. Only the center ones
