@@ -278,8 +278,15 @@ if ~NoAP
         D1=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*mid*.',FileMode(1:3)]);
         ImageTemp1=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D1(end).name]);
         MetaFullEmbryo1= ImageTemp1{:, 4};
-        PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX(0) );
+        
+        %This if for BioFormats backwards compatibility
+        if ~isempty(str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX(0)))
+            PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX(0));
+        else
+            PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX(0).value);
+        end
 
+                
         %In principle, we would be comparing PixelSizeFullEmbryo==PixelSizeFullEmbryoMid
         %However, some issues of machine precision made this not work
         %sometimes.
@@ -287,14 +294,14 @@ if ~NoAP
             error('The surface and midsaggital images were not taken with the same pixel size')
         end
         
-        
-        %AR: Odd bioformats feature. Not sure why these formats are different
-        %sometimes.
-        try
-            PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX(0));
-        catch 
-            PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX);
-        end
+%         
+%         %AR: Odd bioformats feature. Not sure why these formats are different
+%         %sometimes.
+%         try
+%             PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX(0));
+%         catch 
+%             PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX);
+%         end
 
                 
         %How many channels and slices do we have?
@@ -304,10 +311,18 @@ if ~NoAP
   
         %Do a maximum projection
 
+        %Look for the image with the largest size. In this way, we avoid
+        %loading individual tiles in the case of a tile scan.
+        for i=1:size(ImageTemp,1)
+            SizesImages(i)=size(ImageTemp{i,1}{1,1},1);
+        end
+        [~,ImageCellToUse]=max(SizesImages);
+            
+        
         %By looking at the last image we make sure we're avoiding the
         %individual tiles if we're dealing with tile scan
-        for i=HisChannel:NChannelsMeta:size(ImageTemp{end,1},1)
-                MaxTemp(:,:,i)=ImageTemp{end,1}{i,1};
+        for i=HisChannel:NChannelsMeta:size(ImageTemp{ImageCellToUse,1},1)
+                MaxTemp(:,:,i)=ImageTemp{ImageCellToUse,1}{i,1};
         end
         if InvertHis
             SurfImage=MaxTemp(:,:,HisChannel-1+round(NSlices/2)*NChannelsMeta-1);
@@ -406,8 +421,8 @@ if ~NoAP
     
     %Check whether we have Bcd-GFP. If so, we'll use it for the alignment
     %if there is no histone.
-    if ((~isempty(strfind(lower(Channel1),'bcd')))|...
-            (~isempty(strfind(lower(Channel2),'bcd'))))&InvertHis
+    if ((~isempty(cell2mat(strfind(lower(Channel1),'bcd'))))|...
+            (~isempty(cell2mat(strfind(lower(Channel2),'bcd')))))&InvertHis
         %Figure out which channel Bcd is in
         if ~isempty(strfind(lower(Channel1),'bcd'))
             BcdChannel=1;
@@ -486,6 +501,8 @@ if ~NoAP
     %to figure out the shift.
     
     FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
+   
+    
     if ~SkipAlignment && HistoneChannel
         if ZoomRatio < 24  %ZoomRatio > 1 && ZoomRatio < 24 
             
@@ -647,8 +664,8 @@ if ~NoAP
     %things right.
 
 
-    %Patch the surface image to fit the full embryo image.
-    PatchedSurfaceImage=zeros(size(FullEmbryo));
+   
+    
     
 
     %Are we dealing with three images?
@@ -1080,7 +1097,7 @@ if ~NoAP
     else
         ImageCenter=[SurfRows/2,SurfColumns/2];
 
-        %This is for the acquisition image
+        %This is for the acquisition/zoom image
         TopLeftHalf=[ImageCenter(1)-Rows/ZoomRatio/2+ShiftRow,...
             ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn];
         BottomRightHalf=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...

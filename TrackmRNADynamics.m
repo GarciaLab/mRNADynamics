@@ -255,6 +255,8 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
             for j=1:length(Spots(i).Fits)
                 if sum(Spots(i).Fits(j).DOGIntensity>Threshold1)
                     SpotFilter(i,j)=1;
+                else
+                    SpotFilter(i,j)=0;
                 end
             end
         end
@@ -354,12 +356,13 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
             if ~isempty(x)
                 if isempty(Particles)
                     %Initialize the Particles structure if it doesn't exist yet
+                    %LastFrame=zeros(size(x)); %HG: What does LastFrame keep track of?
                     for j=1:length(x)
                         if CurrentFrameFilter(j)
                             Particles(j).Frame=CurrentFrame;
                             Particles(j).Index=j;
-                            LastFrame(j)=CurrentFrame;
                             Particles(j).Approved=0;
+                            %LastFrame(j)=CurrentFrame;
                         end
                     end
 
@@ -403,6 +406,11 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
                         %The rows of distance correspond to the new particles.
                         %The columns correspond to their distance to the old
                         %particles.
+                        
+                        %For particles in the previous frame that were not
+                        %used for tracking, set their distance to infinity
+                        Distance(:,~FilterPreviousFrame)=inf;                        
+                        
                         %MinIndex is a row vector. The element position
                         %correspond to the new particle and the value within it
                         %correspond to the old particle that it's closest to.
@@ -428,7 +436,7 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
                                 NewParticlesFlag(1)=0;
                                 LastFrame(PreviousParticles)=i;
 
-                            %If we have only one previous particle MinIndex points at
+                            %If we have only one previous particle, MinIndex points at
                             %the new particle that is closest to it    
                             elseif (length(PreviousParticles)==1)&(MinValues<SearchRadius)
                                 Particles(PreviousParticles).Frame(end+1)=i;
@@ -1211,57 +1219,28 @@ elseif strcmp(lower(ExperimentType),'inputoutput')
         Retracking=0;
     end
 
+%(YJ.11/28/2016)From here, I've copied the code from above (1color) to use Spots.mat
+%instead of preanalysis/Compact..... 
 
-    %Load the FISH files. Split fad into particles that are above Threshold1 and
-    %those between that threshold and Threshold2.
-
-    if ~exist('fad')
-        load([Folder,FileName])
-        fad=fishAnalysisData;
-        clear fishAnalysisData
-
-        fadTemp=fad;
-        clear fad
-        fad=fadTemp;
-        fad2=fadTemp;
-        for i=1:length(fadTemp.channels)
-
-
-            Filter1=fadTemp.channels(i).fits.third>Threshold1;
-            Filter2=(fadTemp.channels(i).fits.third<Threshold1)&...
-                (fadTemp.channels(i).fits.third>Threshold2);
-            Fields=fieldnames(fadTemp.channels(i).fits);
-            NParticles=length(fadTemp.channels(i).fits.third);  %I'll use this to
-                                                                %detemine the
-                                                                %dimension of the
-                                                                %different elements
-                                                                
-            for j=1:length(Fields)
-                %In the end this seems to work, the fields that have higher
-                %dimensions are still devided well.
-                if strcmp(Fields{j},'snippets')
-                    Temp=getfield(fadTemp.channels(i).fits,Fields{j});
-                    SnippetDimentions=size(Temp);
-                    if length(SnippetDimentions)==3
-                        fad.channels(i).fits=setfield(fad.channels(i).fits,Fields{j},Temp(:,:,Filter1));
-                        fad2.channels(i).fits=setfield(fad2.channels(i).fits,Fields{j},Temp(:,:,Filter2));
-                    elseif length(SnippetDimentions)==2
-                        if Filter1
-                            fad.channels(i).fits=setfield(fad.channels(i).fits,Fields{j},Temp(:,:,Filter1));
-                        elseif Filter2
-                            fad2.channels(i).fits=setfield(fad2.channels(i).fits,Fields{j},Temp(:,:,Filter2));
-                        end
-                    end
-                elseif strcmp(Fields{j},'maskUsedForTotalInt')
-                    Temp=getfield(fadTemp.channels(i).fits,Fields{j});
-                    fad.channels(i).fits=setfield(fad.channels(i).fits,Fields{j},Temp);
-                    fad2.channels(i).fits=setfield(fad2.channels(i).fits,Fields{j},Temp); 
-                elseif length(getfield(fadTemp.channels(i).fits,Fields{j}))==NParticles
-                    Temp=getfield(fadTemp.channels(i).fits,Fields{j});
-                    fad.channels(i).fits=setfield(fad.channels(i).fits,Fields{j},Temp(Filter1));
-                    fad2.channels(i).fits=setfield(fad2.channels(i).fits,Fields{j},Temp(Filter2));
-                else
-                    error('Missing field when separating fad and fad2')
+%First, generate a structure array with a flag that determines whether
+    %each spots is above Threshold1
+    
+    if ~exist('Spots')
+        load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'])
+        
+        %Determine the maximum number of spots in a given frame for the
+        %whole movie
+        MaxSpots=0;
+        for i=1:length(Spots)
+            MaxSpots=max([MaxSpots,length(Spots(i).Fits)]);
+        end
+        %This filter tells us whether a spot is above the threshold.
+        SpotFilter=nan(length(Spots),MaxSpots);
+        %Populate the filter
+        for i=1:length(Spots)
+            for j=1:length(Spots(i).Fits)
+                if sum(Spots(i).Fits(j).DOGIntensity>Threshold1)
+                    SpotFilter(i,j)=1;
                 end
             end
         end
@@ -1272,39 +1251,59 @@ elseif strcmp(lower(ExperimentType),'inputoutput')
     NucleiFig=figure;
 
     
-    %Figure out which channel has the spots
-    if ~isempty(strfind(lower(Channel1{1}),'mcp'))|~isempty(strfind(lower(Channel1{1}),'pcp'))
-        SpotChannel=1;
-    elseif ~isempty(strfind(lower(Channel2{1}),'mcp'))|~isempty(strfind(lower(Channel2{1}),'pcp'))
-        SpotChannel=2;
+    %See how  many frames we have and adjust the index size of the files to
+    %load accordingly
+    if length(FrameInfo)<1E3
+        NDigits=3;
+    elseif length(FrameInfo)<1E4
+        NDigits=4;
     else
-        error('Could not identify spot channel in MovieDatabase.xlsx. Are they named using "MCP" or "PCP"?')
+        error('No more than 10,000 frames supported. Change this in the code')
     end
     
     
     %Initially, only track particles that are above Threshold1
-    for i=1:length(fad.channels)
-
+    for i=1:length(Spots) %iterate over all frames
 
         figure(ParticlesFig)
-        set(gcf,'Position',[ 16   369   676   342])
+        set(gcf,'units', 'normalized', 'position',[0.01, .55, .33, .33]);
+
+        %Get the filter for this frame
         CurrentFrame=i;
-        [x,y]=fad2xyz(CurrentFrame,fad, 'addMargin'); 
-        CurrentZ=3;     
-        Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'_ch',iIndex(SpotChannel,2),'.tif']);
+
+        CurrentFrameFilter=logical(SpotFilter(CurrentFrame,~isnan(SpotFilter(CurrentFrame,:))));
         
+        %Get the positions of the spots in this frame
+        [x,y,z]=SpotsXYZ(Spots(CurrentFrame));
         
+        %Z plane to be displayed. We use the median of all particles found
+        %in this frame
+        if ~isempty(Spots(CurrentFrame).Fits)
+            CurrentZ=round(median([Spots(CurrentFrame).Fits.brightestZ]));
+        else
+            CurrentZ=round(FrameInfo(1).NumberSlices/2);     
+        end
+            
+        %Load the corresponding mRNA image  (Assigned channel # according
+        %to the name
+        if ~isempty(strfind(lower(Channel1{1}),'mcp'))|~isempty(strfind(lower(Channel1{1}),'pcp'))
+            Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch01','.tif']);
+        else 
+            Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch02','.tif']);
+        end
+        
+        %TO-DO: Show spots above and below threshold differently
         imshow(Image,[])
         hold on
-        plot(x,y,'or')
+        plot(x(CurrentFrameFilter),y(CurrentFrameFilter),'or', 'MarkerSize', 20)
+        plot(x(~CurrentFrameFilter),y(~CurrentFrameFilter),'ow', 'MarkerSize', 20)
         hold off
         title(i)
-        set(gcf,'Name',['Frame: ',num2str(i),'/',num2str(length(fad.channels))])
+        set(gcf,'Name',['Frame: ',num2str(CurrentFrame),'/',num2str(length(Spots))])
 
         figure(NucleiFig)
-        set(gcf,'Position',[ 728   373   512   256])
-        CurrentFrame=i;
-        [x,y]=fad2xyz(CurrentFrame,fad, 'addMargin');
+        set(gcf,'units', 'normalized', 'position',[0.65, .5, .2, .2])
+
         if UseHistone
             try
                 Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,NDigits),'.tif']);
@@ -1333,35 +1332,34 @@ elseif strcmp(lower(ExperimentType),'inputoutput')
             title(i)
         end
         drawnow
-        
+
+
         %If we don't have nuclear tracking then track the particles based on
         %proximity
 
         if ~UseHistone
             %Get the particles detected in the frame
-            if ~isempty(fad.channels(i).fits.x)
+            if ~isempty(x)
                 if isempty(Particles)
                     %Initialize the Particles structure if it doesn't exist yet
-                    for j=1:length(fad.channels(i).fits.x)
-                        Particles(j).Frame=i;
-                        Particles(j).Index=j;
-                        LastFrame(j)=i;
-                        Particles(j).Approved=0;
+                    for j=1:length(x)
+                        if CurrentFrameFilter(j)
+                            Particles(j).Frame=CurrentFrame;
+                            Particles(j).Index=j;
+                            LastFrame(j)=CurrentFrame;
+                            Particles(j).Approved=0;
+                        end
                     end
 
 
                 else
                 %If we already have recorded particles, we need to compare
-                %them to the new ones found and try to assign them. We also
-                %need to make sure that they stay within the nuclei.
+                %them to the new ones found and try to assign them.
 
                     %Get the positions of the potentially new particles
-                    [NewParticlesX,NewParticlesY]=fad2xyz(i,fad, 'addMargin');
-                    NewParticlesZ=single(fad.channels(i).fits.z);
-
+                    [NewParticlesX,NewParticlesY]=SpotsXYZ(Spots(i));
+                    
                     NewParticlesFlag=ones(size(NewParticlesX));
-
-
 
                     %Get a list of the particles that existed in the previous
                     %frame
@@ -1378,11 +1376,11 @@ elseif strcmp(lower(ExperimentType),'inputoutput')
 
                     PreviousParticles=find(FilterPreviousFrame);
 
-                    if (~isempty(PreviousParticlesIndex))&(sum((PreviousParticlesIndex)))
+                    if (~isempty(PreviousParticlesIndex))&&(sum((PreviousParticlesIndex)))
                         %Now, compare the positions of all of the old and new
                         %particles
                         clear Distance
-                        [PreviousParticlesX,PreviousParticlesY]=fad2xyz(i-1,fad, 'addMargin');
+                        [PreviousParticlesX,PreviousParticlesY]=SpotsXYZ(Spots(i-1));
 
                         for j=1:length(NewParticlesX)
                             Distance(j,:)=sqrt((NewParticlesX(j)*PixelSize-...
@@ -1406,12 +1404,6 @@ elseif strcmp(lower(ExperimentType),'inputoutput')
                         %These indices refer to the old particles. We're
                         %finding which ones are good candidates                    
                         UniqueMinima=unique(MinIndex);
-
-                        if i==31
-                            1+1;
-                        end
-
-
 
                         for j=1:length(UniqueMinima)
                             %If we have only one previous and one new particle
@@ -1486,14 +1478,309 @@ elseif strcmp(lower(ExperimentType),'inputoutput')
 
         %If we do have the histone channel    
         else
-            [Particles,fad,fad2,schnitzcells]=AssignParticle2Nucleus(schnitzcells,Ellipses,Particles,fad,fad2,...
-                i,PixelSize,SearchRadius);
+
+            if strcmp(ExperimentType,'1spot')
+                [Particles,SpotFilter,schnitzcells]=AssignParticle2Nucleus(schnitzcells,Ellipses,Particles,Spots,SpotFilter,...
+                            CurrentFrame,PixelSize,SearchRadius);
+            elseif strcmp(ExperimentType,'2spot')
+                 [Particles,SpotFilter,schnitzcells]=AssignParticle2Nucleus2S(schnitzcells,Ellipses,Particles,Spots,SpotFilter,...
+                            CurrentFrame,PixelSize,SearchRadius);
+            elseif strcmp(ExperimentType,'inputoutput')
+                 [Particles,SpotFilter,schnitzcells]=AssignParticle2Nucleus(schnitzcells,Ellipses,Particles,Spots,SpotFilter,...
+                            CurrentFrame,PixelSize,SearchRadius);
+            else
+                error('Experiment type in MovieDatabase.xlsx not recognized')
+            end
+
         end
     end
-
     close(ParticlesFig)
     close(NucleiFig)
 
+
+%(YJ.11/28/2016, I am commenting out these below, because they are from the old code using FISHToolbox, which makes preanalysis/Compact....)
+%     %Load the FISH files. Split fad into particles that are above Threshold1 and
+%     %those between that threshold and Threshold2.
+% 
+%     if ~exist('fad')
+%         load([Folder,FileName])
+%         fad=fishAnalysisData;
+%         clear fishAnalysisData
+% 
+%         fadTemp=fad;
+%         clear fad
+%         fad=fadTemp;
+%         fad2=fadTemp;
+%         for i=1:length(fadTemp.channels)
+% 
+% 
+%             Filter1=fadTemp.channels(i).fits.third>Threshold1;
+%             Filter2=(fadTemp.channels(i).fits.third<Threshold1)&...
+%                 (fadTemp.channels(i).fits.third>Threshold2);
+%             Fields=fieldnames(fadTemp.channels(i).fits);
+%             NParticles=length(fadTemp.channels(i).fits.third);  %I'll use this to
+%                                                                 %detemine the
+%                                                                 %dimension of the
+%                                                                 %different elements
+%                                                                 
+%             for j=1:length(Fields)
+%                 %In the end this seems to work, the fields that have higher
+%                 %dimensions are still devided well.
+%                 if strcmp(Fields{j},'snippets')
+%                     Temp=getfield(fadTemp.channels(i).fits,Fields{j});
+%                     SnippetDimentions=size(Temp);
+%                     if length(SnippetDimentions)==3
+%                         fad.channels(i).fits=setfield(fad.channels(i).fits,Fields{j},Temp(:,:,Filter1));
+%                         fad2.channels(i).fits=setfield(fad2.channels(i).fits,Fields{j},Temp(:,:,Filter2));
+%                     elseif length(SnippetDimentions)==2
+%                         if Filter1
+%                             fad.channels(i).fits=setfield(fad.channels(i).fits,Fields{j},Temp(:,:,Filter1));
+%                         elseif Filter2
+%                             fad2.channels(i).fits=setfield(fad2.channels(i).fits,Fields{j},Temp(:,:,Filter2));
+%                         end
+%                     end
+%                 elseif strcmp(Fields{j},'maskUsedForTotalInt')
+%                     Temp=getfield(fadTemp.channels(i).fits,Fields{j});
+%                     fad.channels(i).fits=setfield(fad.channels(i).fits,Fields{j},Temp);
+%                     fad2.channels(i).fits=setfield(fad2.channels(i).fits,Fields{j},Temp); 
+%                 elseif length(getfield(fadTemp.channels(i).fits,Fields{j}))==NParticles
+%                     Temp=getfield(fadTemp.channels(i).fits,Fields{j});
+%                     fad.channels(i).fits=setfield(fad.channels(i).fits,Fields{j},Temp(Filter1));
+%                     fad2.channels(i).fits=setfield(fad2.channels(i).fits,Fields{j},Temp(Filter2));
+%                 else
+%                     error('Missing field when separating fad and fad2')
+%                 end
+%             end
+%         end
+%     end
+
+%     %Start by numbering the particles found
+%     ParticlesFig=figure;
+%     NucleiFig=figure;
+% 
+%     
+%     %Figure out which channel has the spots
+%     if ~isempty(strfind(lower(Channel1{1}),'mcp'))|~isempty(strfind(lower(Channel1{1}),'pcp'))
+%         SpotChannel=1;
+%     elseif ~isempty(strfind(lower(Channel2{1}),'mcp'))|~isempty(strfind(lower(Channel2{1}),'pcp'))
+%         SpotChannel=2;
+%     else
+%         error('Could not identify spot channel in MovieDatabase.xlsx. Are they named using "MCP" or "PCP"?')
+%     end
+    
+    
+%     %Initially, only track particles that are above Threshold1
+%     for i=1:length(fad.channels)
+% 
+% 
+%         figure(ParticlesFig)
+%         set(gcf,'Position',[ 16   369   676   342])
+%         CurrentFrame=i;
+%         [x,y]=fad2xyz(CurrentFrame,fad, 'addMargin'); 
+%         CurrentZ=3;     
+%         Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'_ch',iIndex(SpotChannel,2),'.tif']);
+%         
+%         
+%         imshow(Image,[])
+%         hold on
+%         plot(x,y,'or')
+%         hold off
+%         title(i)
+%         set(gcf,'Name',['Frame: ',num2str(i),'/',num2str(length(fad.channels))])
+% 
+%         figure(NucleiFig)
+%         set(gcf,'Position',[ 728   373   512   256])
+%         CurrentFrame=i;
+%         [x,y]=fad2xyz(CurrentFrame,fad, 'addMargin');
+%         if UseHistone
+%             try
+%                 Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,NDigits),'.tif']);
+%             catch
+%                 try
+%                     Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix(1:end-1),'_His_',iIndex(CurrentFrame,NDigits),'.tif']);
+%                 catch
+%                     Image=0;
+%                 end
+%             end
+%             imshow(Image,[],'Border','Tight')
+%             hold on
+%             PlotHandle=[];
+%             [NEllipses,Dummy]=size(Ellipses{CurrentFrame});
+%             for j=1:NEllipses
+%                 PlotHandle=[PlotHandle,ellipse(Ellipses{CurrentFrame}(j,3),...
+%                     Ellipses{CurrentFrame}(j,4),...
+%                     Ellipses{CurrentFrame}(j,5),Ellipses{CurrentFrame}(j,1)+1,...
+%                     Ellipses{CurrentFrame}(j,2)+1)];
+%                     text(Ellipses{CurrentFrame}(j,1)+1,...
+%                         Ellipses{CurrentFrame}(j,2)+1,num2str(j),'BackgroundColor',[.7 .9 .7]);
+% 
+%             end
+%             set(PlotHandle,'Color','r')
+%             hold off
+%             title(i)
+%         end
+%         drawnow
+%         
+%         %If we don't have nuclear tracking then track the particles based on
+%         %proximity
+% 
+%         if ~UseHistone
+%             %Get the particles detected in the frame
+%             if ~isempty(fad.channels(i).fits.x)
+%                 if isempty(Particles)
+%                     %Initialize the Particles structure if it doesn't exist yet
+%                     for j=1:length(fad.channels(i).fits.x)
+%                         Particles(j).Frame=i;
+%                         Particles(j).Index=j;
+%                         LastFrame(j)=i;
+%                         Particles(j).Approved=0;
+%                     end
+% 
+% 
+%                 else
+%                 %If we already have recorded particles, we need to compare
+%                 %them to the new ones found and try to assign them. We also
+%                 %need to make sure that they stay within the nuclei.
+% 
+%                     %Get the positions of the potentially new particles
+%                     [NewParticlesX,NewParticlesY]=fad2xyz(i,fad, 'addMargin');
+%                     NewParticlesZ=single(fad.channels(i).fits.z);
+% 
+%                     NewParticlesFlag=ones(size(NewParticlesX));
+% 
+% 
+% 
+%                     %Get a list of the particles that existed in the previous
+%                     %frame
+% 
+%                     FilterPreviousFrame=(LastFrame==(i-1));
+% 
+%                     PreviousParticlesIndex=[];
+%                     for j=1:length(FilterPreviousFrame)
+%                         if FilterPreviousFrame(j)
+%                             PreviousParticlesIndex=...
+%                                 [PreviousParticlesIndex,Particles(j).Index(end)];
+%                         end
+%                     end
+% 
+%                     PreviousParticles=find(FilterPreviousFrame);
+% 
+%                     if (~isempty(PreviousParticlesIndex))&(sum((PreviousParticlesIndex)))
+%                         %Now, compare the positions of all of the old and new
+%                         %particles
+%                         clear Distance
+%                         [PreviousParticlesX,PreviousParticlesY]=fad2xyz(i-1,fad, 'addMargin');
+% 
+%                         for j=1:length(NewParticlesX)
+%                             Distance(j,:)=sqrt((NewParticlesX(j)*PixelSize-...
+%                                 PreviousParticlesX*PixelSize).^2+...
+%                                 (NewParticlesY(j)*PixelSize-...
+%                                 PreviousParticlesY*PixelSize).^2);
+%                         end
+%                         %The rows of distance correspond to the new particles.
+%                         %The columns correspond to their distance to the old
+%                         %particles.
+%                         %MinIndex is a row vector. The element position
+%                         %correspond to the new particle and the value within it
+%                         %correspond to the old particle that it's closest to.
+%                         [MinValues,MinIndex]=min(Distance');
+% 
+%                         %Now, use the information to figure out if we're dealing
+%                         %with an old or a new particle. This will be based on who's
+%                         %closest and if that distance is smaller than the threshold
+%                         %given above in the parameters.
+% 
+%                         %These indices refer to the old particles. We're
+%                         %finding which ones are good candidates                    
+%                         UniqueMinima=unique(MinIndex);
+% 
+%                         if i==31
+%                             1+1;
+%                         end
+% 
+% 
+% 
+%                         for j=1:length(UniqueMinima)
+%                             %If we have only one previous and one new particle
+%                             %the assignment is trivial
+%                             if (length(PreviousParticles)==1)&(length(NewParticlesX)==1)&...
+%                                     (MinValues<SearchRadius)
+%                                 Particles(PreviousParticles).Frame(end+1)=i;
+%                                 Particles(PreviousParticles).Index(end+1)=...
+%                                         1;    
+%                                 NewParticlesFlag(1)=0;
+%                                 LastFrame(PreviousParticles)=i;
+% 
+%                             %If we have only one previous particle MinIndex points at
+%                             %the new particle that is closest to it    
+%                             elseif (length(PreviousParticles)==1)&(MinValues<SearchRadius)
+%                                 Particles(PreviousParticles).Frame(end+1)=i;
+%                                 Particles(PreviousParticles).Index(end+1)=MinIndex;
+%                                 NewParticlesFlag(MinIndex)=0;
+%                                 LastFrame(PreviousParticles)=i;
+% 
+%                             %If there is only one new particle that a previous
+%                             %particle is closest to
+%                             elseif (sum(MinIndex==UniqueMinima(j))==1)
+%                                 if MinValues(find(MinIndex==UniqueMinima(j)))<(SearchRadius)
+%                                     Particles(PreviousParticles(PreviousParticlesIndex==UniqueMinima(j))).Frame(end+1)=i;
+%                                     Particles(PreviousParticles(PreviousParticlesIndex==UniqueMinima(j))).Index(end+1)=...
+%                                         find(MinIndex==UniqueMinima(j));
+%                                     NewParticlesFlag(find(MinIndex==UniqueMinima(j)))=0;
+%                                     LastFrame(PreviousParticles(PreviousParticlesIndex==UniqueMinima(j)))=i;
+%                                 end
+% 
+%                             %If there are many new particles that are close to a previous one.    
+%                             else
+%                                 MinFilter=find(MinIndex==UniqueMinima(j));
+%                                 MinValues2=MinValues(MinFilter);
+%                                 [MinMinValue2,MinIndex2]=min(MinValues2);
+% 
+%                                 if MinMinValue2<(SearchRadius)
+%                                     ClosestParticle=MinFilter(MinIndex2);
+% 
+%                                     %This is just in case there are two
+%                                     %previous particles at the exact same
+%                                     %distance
+%                                     if length(ClosestParticle)>1
+%                                         ClosestParticle=ClosestParticle(1);
+%                                     end
+% 
+%                                     Particles(PreviousParticles(PreviousParticlesIndex==UniqueMinima(j))).Frame(end+1)=i;
+%                                     Particles(PreviousParticles(PreviousParticlesIndex==UniqueMinima(j))).Index(end+1)=...
+%                                         ClosestParticle;
+%                                     NewParticlesFlag(ClosestParticle)=0;
+% 
+%                                     LastFrame(PreviousParticles(PreviousParticlesIndex==UniqueMinima(j)))=i;
+%                                 end
+%                             end
+%                         end
+%                     end
+% 
+%                     %Finally, see which particles weren't assigned and add them
+%                     %to the structure
+%                     NewParticles=find(NewParticlesFlag);
+%                     for j=1:length(NewParticles)
+%                         TotalParticles=length(Particles);
+%                         Particles(TotalParticles+1).Frame=i;
+%                         Particles(TotalParticles+1).Index=...
+%                                      NewParticles(j);
+%                         LastFrame(TotalParticles+1)=i;
+%                         Particles(TotalParticles+1).Approved=0;
+%                     end
+%                 end
+%             end
+% 
+%         %If we do have the histone channel    
+%         else
+%             [Particles,fad,fad2,schnitzcells]=AssignParticle2Nucleus(schnitzcells,Ellipses,Particles,fad,fad2,...
+%                 i,PixelSize,SearchRadius);
+%         end
+%     end
+% 
+%     close(ParticlesFig)
+%     close(NucleiFig)
+%Commented out by YJ(11/28/2016)
 
     if ~UseHistone
         %Go through the particles we found and try to fill in the gaps with the

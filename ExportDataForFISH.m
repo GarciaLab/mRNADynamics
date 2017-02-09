@@ -914,8 +914,14 @@ elseif strcmp(FileMode,'LIFExport')
             FrameInfo(i).PixelsPerLine=str2double(LIFMeta.getPixelsSizeX(0));
             FrameInfo(i).NumberSlices=min(NSlices);
             FrameInfo(i).FileMode='LIFExport';
-            FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(0));
-            FrameInfo(i).ZStep=str2double(LIFMeta.getPixelsPhysicalSizeZ(0));
+            %This is to allow for backwards compatibility with BioFormats
+            if ~isempty(str2num(LIFMeta.getPixelsPhysicalSizeX(0)))
+                FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(0));
+                FrameInfo(i).ZStep=str2double(LIFMeta.getPixelsPhysicalSizeZ(0));
+            else
+                FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(0).value);
+                FrameInfo(i).ZStep=str2double(LIFMeta.getPixelsPhysicalSizeZ(0).value);
+            end
             FrameInfo(i).Time=InitialStackTime(i);
         end
         %Find the flat field (FF) information
@@ -938,19 +944,26 @@ elseif strcmp(FileMode,'LIFExport')
         for i=1:length(FFPaths)
             LIFFF=bfopen(FFPaths{i});
             LIFFFMeta = LIFFF{:, 4};
+            
             %Check whether the number of pixels and pixel sizes match
-            if (LIFFFMeta.getPixelsPhysicalSizeX(0)==LIFMeta.getPixelsPhysicalSizeX(0))&...
-                    (LIFFFMeta.getPixelsSizeY(0)==LIFMeta.getPixelsSizeY(0))&...
-                    (LIFFFMeta.getPixelsSizeX(0)==LIFMeta.getPixelsSizeX(0))
+            if (str2num(LIFFFMeta.getPixelsPhysicalSizeX(0).value)==...
+                    str2num(LIFMeta.getPixelsPhysicalSizeX(0).value))&...
+                    (str2num(LIFFFMeta.getPixelsSizeY(0))==...
+                    str2num(LIFMeta.getPixelsSizeY(0)))&...
+                    (str2num(LIFFFMeta.getPixelsSizeX(0))==...
+                    str2num(LIFMeta.getPixelsSizeX(0)))
                 FFToUse=[FFToUse,i];
             %Sometimes, the number of pixels is right, but there's a slight
             %difference in the zoom factor. If the difference is less than
             %1%, then include it anyway
-            elseif ~(LIFFFMeta.getPixelsPhysicalSizeX(0)==LIFMeta.getPixelsPhysicalSizeX(0))&...
-                    ((LIFFFMeta.getPixelsSizeY(0)==LIFMeta.getPixelsSizeY(0))&...
-                    (LIFFFMeta.getPixelsSizeX(0)==LIFMeta.getPixelsSizeX(0)))
-                if abs(1-str2num(LIFFFMeta.getPixelsPhysicalSizeX(0))/...
-                        str2num(LIFMeta.getPixelsPhysicalSizeX(0)))<0.01
+            elseif ~(str2num(LIFFFMeta.getPixelsPhysicalSizeX(0).value)==...
+                    str2num(LIFMeta.getPixelsPhysicalSizeX(0).value))&...
+                    (str2num(LIFFFMeta.getPixelsSizeY(0))==...
+                    str2num(LIFMeta.getPixelsSizeY(0)))&...
+                    (str2num(LIFFFMeta.getPixelsSizeX(0))==...
+                    str2num(LIFMeta.getPixelsSizeX(0)))
+                if abs(1-str2num(LIFFFMeta.getPixelsPhysicalSizeX(0).value)/...
+                        str2num(LIFMeta.getPixelsPhysicalSizeX(0).value))<0.01
                     warning('Same image size found for data and flat field, but a zoom difference smaller than 1%. Using FF image anyway.')
                     FFToUse=[FFToUse,i];
                 end
@@ -1150,12 +1163,18 @@ elseif strcmp(FileMode,'LIFExport')
                         else
                             Projection=max(HisSlices,[],3);
                         end
-                        if strcmpi(ExperimentType, 'inputoutput')
-                            if (~isempty(strfind(Channel1{1}, 'NLS')))|(~isempty(strfind(Channel2{1}, 'NLS')))
-                            else
-                                Projection=imcomplement(Projection);                            
+                        
+                        %Think about the case when there is no His channel,
+                        %and it is inputoutput mode or 1spot mode.
+                        %(MCP-mCherry)
+                        if (isempty(strfind(Channel1{1}, 'His')))&&(isempty(strfind(Channel2{1}, 'His')))
+                            if strcmpi(ExperimentType, 'inputoutput')|strcmpi(ExperimentType, '1spot')
+                                if (~isempty(strfind(Channel1{1}, 'NLS')))|(~isempty(strfind(Channel2{1}, 'NLS')))
+                                else
+                                    Projection=imcomplement(Projection);                            
+                                end
+                                Projection=histeq(mat2gray(Projection),ReferenceHist);
                             end
-                            Projection=histeq(mat2gray(Projection),ReferenceHist);
                         end
                     else 
                         %We don't want to use all slices. Only the center ones
