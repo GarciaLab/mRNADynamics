@@ -1,4 +1,4 @@
-function segmentSpots(Prefix,Threshold,varargin)
+function segmentSpotsML(Prefix,Threshold,varargin)
 
 %Parameters:
 %Prefix: Prefix of the data set to analyze
@@ -168,23 +168,22 @@ else
             end
             %
             im_thresh = dog >= Threshold;
+%             se = strel('square', 4);
+%             im_thresh = imdilate(im_thresh, se); %thresholding from this classified probability map can produce non-contiguous, spurious spots. This fixes that and hopefully does not combine real spots from different nuclei
+            im_thresh = imgaussfilt(uint8(im_thresh)*255, 1);
+            im_thresh = im_thresh>0;
             [im_label, n_spots] = bwlabel(im_thresh); 
-            se = strel('square', 2);
-            im_label = imdilate(im_label, se); %thresholding from this classified probability map can produce non-contiguous, spurious spots. This fixes that and hopefully does not combine real spots from different nuclei
-            
-
+              
             if displayFigures
                 fig = figure(1);
-                imshow(im_label);
+                imshow(im_thresh,[]);
             else 
                 fig = [];
             end
                            
             temp_frames = {};
             temp_particles = cell(1, n_spots);
-            if current_frame == 19
-                1;
-            end
+
             if n_spots ~= 0
                 if ~displayFigures
                     parfor k = 1:n_spots
@@ -215,7 +214,7 @@ end
 
 %%
 %Create a useful structure that can be fed into pipeline
-if ~just_dog
+if ~just_dog 
     n = 1;
     h=waitbar(0,'Saving particle information');
     for i = 1:num_frames  
@@ -260,7 +259,7 @@ if ~just_dog
         changes = 0;
         i = 1; 
         h=waitbar(0,'Finding z-columns');
-        neighborhood = 1300 / pixelSize;
+        neighborhood = 1700 / pixelSize;
         for n = 1:num_frames  
             waitbar(n/num_frames,h)
             l = length(Particles([Particles.frame] == n));
