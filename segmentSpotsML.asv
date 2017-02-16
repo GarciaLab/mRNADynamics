@@ -96,21 +96,21 @@ close all force;
 if just_dog
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Generate difference of Gaussian images if no threshold was given.
-    %Initialize Difference of Gaussian filter parameters. filterSize >> sigma2
-    %> sigma1
-    sigma1 = pixelSize / pixelSize; %width of narrower Gaussian
-    sigma2 = 42000 / pixelSize; % width of wider Gaussian
-    filterSize = round(2000 / pixelSize); %size of square to be convolved with microscopy images
-    zim = [];
-    try
+%Initialize Difference of Gaussian filter parameters. filterSize >> sigma2
+%> sigma1
+sigma1 = pixelSize / pixelSize; %width of narrower Gaussian
+sigma2 = 42000 / pixelSize; % width of wider Gaussian
+filterSize = round(2000 / pixelSize); %size of square to be convolved with microscopy images
+zim = [];
+try
     %this is just some function that can only be called if IJM is set up
     IJM.getIdentifier() 
-    catch
-        addpath('e:/Fiji.app/scripts') % Update for your ImageJ installation
-        ImageJ                         % Initialize IJM and MIJ
-    end
-    evalin('base', 'IJM')
-    evalin('base', 'MIJ')
+catch
+    addpath('e:/Fiji.app/scripts') % Update for your ImageJ installation
+    ImageJ                         % Initialize IJM and MIJ
+end
+evalin('base', 'IJM')
+evalin('base', 'MIJ')
 for current_frame = 1:num_frames
     for i = 1:zSize
         zim(:,:,i) = double(imread([PreProcPath,filesep,Prefix, filesep, Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
@@ -139,7 +139,7 @@ for current_frame = 1:num_frames
     end
     MIJ.run('Close All');
 end
-    
+   
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Segment transcriptional loci
 else
@@ -154,12 +154,12 @@ else
                 im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
             end
             dog = double(imread([OutputFolder1, filesep,'prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
-%             if displayFigures
-%                 fig = figure(1);
-%                 imshow(dog,[]);
-%             else
-%                 fig=[];
-%             end
+            if displayFigures
+                fig = figure(1);
+                imshow(dog,[]);
+            else
+                fig=[];
+            end
             %apply flatfield correction
             if doFF && sum(size(im)==size(ffim))
                 im = im./ffim;
@@ -170,16 +170,15 @@ else
             im_thresh = dog >= Threshold;
             se = strel('square', 3);
             im_thresh = imdilate(im_thresh, se); %thresholding from this classified probability map can produce non-contiguous, spurious spots. This fixes that and hopefully does not combine real spots from different nuclei
-%             im_thresh = imgaussfilt(uint8(im_thresh)*255, 1);
             im_thresh = im_thresh>0;
             [im_label, n_spots] = bwlabel(im_thresh); 
-              
-            if displayFigures
-                fig = figure(1);
-                imshow(im_thresh,[]);
-            else 
-                fig = [];
-            end
+%               
+%             if displayFigures
+%                 fig = figure(1);
+%                 imshow(im_thresh,[]);
+%             else 
+%                 fig = [];
+%             end
                            
             temp_frames = {};
             temp_particles = cell(1, n_spots);
@@ -296,8 +295,8 @@ if ~just_dog
                     Particles(i).discardThis = 1;
                     Particles(i).noIntensityAnalysis = 1;
                     falsePositives = falsePositives + 1;
-                elseif Particles(i).z(max_index -1) ~= (Particles.brightestZ-1) ...
-                    || Particles(i).z(max_index +1) ~= Particles.brightestZ +1
+                elseif Particles(i).z(max_index -1) ~= Particles(i).brightestZ-1 ...
+                    || Particles(i).z(max_index +1) ~= Particles(i).brightestZ +1
                     Particles(i).discardThis = 1;
                     Particles(i).noIntensityAnalysis = 1;
                     falsePositives = falsePositives + 1;                  
@@ -363,7 +362,6 @@ if ~just_dog
 
     mkdir([DropboxFolder,filesep,Prefix]);
     save([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots');    
-
 end
 
 t = toc;

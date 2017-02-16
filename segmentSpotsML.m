@@ -96,21 +96,21 @@ close all force;
 if just_dog
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Generate difference of Gaussian images if no threshold was given.
-    %Initialize Difference of Gaussian filter parameters. filterSize >> sigma2
-    %> sigma1
-    sigma1 = pixelSize / pixelSize; %width of narrower Gaussian
-    sigma2 = 42000 / pixelSize; % width of wider Gaussian
-    filterSize = round(2000 / pixelSize); %size of square to be convolved with microscopy images
-    zim = [];
-    try
+%Initialize Difference of Gaussian filter parameters. filterSize >> sigma2
+%> sigma1
+sigma1 = pixelSize / pixelSize; %width of narrower Gaussian
+sigma2 = 42000 / pixelSize; % width of wider Gaussian
+filterSize = round(2000 / pixelSize); %size of square to be convolved with microscopy images
+zim = [];
+try
     %this is just some function that can only be called if IJM is set up
     IJM.getIdentifier() 
-    catch
-        addpath('e:/Fiji.app/scripts') % Update for your ImageJ installation
-        ImageJ                         % Initialize IJM and MIJ
-    end
-    evalin('base', 'IJM')
-    evalin('base', 'MIJ')
+catch
+    addpath('e:/Fiji.app/scripts') % Update for your ImageJ installation
+    ImageJ                         % Initialize IJM and MIJ
+end
+evalin('base', 'IJM')
+evalin('base', 'MIJ')
 for current_frame = 1:num_frames
     for i = 1:zSize
         zim(:,:,i) = double(imread([PreProcPath,filesep,Prefix, filesep, Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
@@ -123,7 +123,7 @@ for current_frame = 1:num_frames
     end
     mij.run('Trainable Weka Segmentation 3D', ['open=',name]);
     pause(20);
-    trainableSegmentation.Weka_Segmentation.loadClassifier('C:\\Users\\ArmandoReimer\\Desktop\\weca\\vasa_first_movie_3dmachine\\classifier.model');
+    trainableSegmentation.Weka_Segmentation.loadClassifier([MS2CodePath, filesep, 'classifier.model']);
     trainableSegmentation.Weka_Segmentation.getProbability();
     ijm.getDatasetAs('probmaps')
     p = evalin('base', 'probmaps');
@@ -139,7 +139,7 @@ for current_frame = 1:num_frames
     end
     MIJ.run('Close All');
 end
-    
+   
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Segment transcriptional loci
 else
@@ -362,7 +362,6 @@ if ~just_dog
 
     mkdir([DropboxFolder,filesep,Prefix]);
     save([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots');    
-
 end
 
 t = toc;
