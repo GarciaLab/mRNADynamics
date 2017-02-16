@@ -280,13 +280,14 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
     
     %Initially, only track particles that are above Threshold1
     for i=1:length(Spots) %iterate over all frames
-
+        %I should probably not have both i and CurrentFrame here
+        CurrentFrame=i;
+        
+        
         figure(ParticlesFig)
         set(gcf,'units', 'normalized', 'position',[0.01, .55, .33, .33]);
 
         %Get the filter for this frame
-        CurrentFrame=i;
-
         CurrentFrameFilter=logical(SpotFilter(CurrentFrame,~isnan(SpotFilter(CurrentFrame,:))));
         
         %Get the positions of the spots in this frame
@@ -359,140 +360,335 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
                     %LastFrame=zeros(size(x)); %HG: What does LastFrame keep track of?
                     for j=1:length(x)
                         if CurrentFrameFilter(j)
-                            Particles(j).Frame=CurrentFrame;
-                            Particles(j).Index=j;
-                            Particles(j).Approved=0;
+                            Particles(end+1).Frame=CurrentFrame;
+                            Particles(end).Index=j;
+                            Particles(end).Approved=0;
                             %LastFrame(j)=CurrentFrame;
                         end
                     end
 
 
                 else
-                %If we already have recorded particles, we need to compare
-                %them to the new ones found and try to assign them.
+                    %If we already have recorded particles, we need to compare
+                    %them to the new ones found and try to assign them.
 
-                    %Get the positions of the potentially new particles
-                    [NewParticlesX,NewParticlesY]=SpotsXYZ(Spots(i));
                     
-                    NewParticlesFlag=ones(size(NewParticlesX));
+                    %Find the approved spots in this frame
+                    ApprovedSpots=find(SpotFilter(CurrentFrame,~isnan(SpotFilter(CurrentFrame,:))));
+                    
+                    %Get the positions of ALL spots (approved and
+                    %disapproved)
+                    [NewSpotsX,NewSpotsY]=SpotsXYZ(Spots(CurrentFrame));
+                    %Filter for the approved spots
+                    NewSpotsX=NewSpotsX(ApprovedSpots);
+                    NewSpotsY=NewSpotsY(ApprovedSpots);
 
-                    %Get a list of the particles that existed in the previous
-                    %frame
-
-                    FilterPreviousFrame=(LastFrame==(i-1));
-
-                    PreviousParticlesIndex=[];
-                    for j=1:length(FilterPreviousFrame)
-                        if FilterPreviousFrame(j)
-                            PreviousParticlesIndex=...
-                                [PreviousParticlesIndex,Particles(j).Index(end)];
+                    
+                    %Get a list of the particles that were present in
+                    %the previous frame and of their positions.
+                    PreviousFrameParticles=[];
+                    xPreviousFrameParticles=[];
+                    yPreviousFrameParticles=[];
+                    [PreviousSpotsX,PreviousSpotsY]=SpotsXYZ(Spots(CurrentFrame-1));
+                    for j=1:length(Particles)
+                        if Particles(j).Frame(end)==(CurrentFrame-1)
+                            PreviousFrameParticles=[PreviousFrameParticles,j];
+                            PreviousFrameIndex=Particles(j).Index(end);
+                            xPreviousFrameParticles=[xPreviousFrameParticles,...
+                                PreviousSpotsX(PreviousFrameIndex)];
+                            yPreviousFrameParticles=[yPreviousFrameParticles,...
+                                PreviousSpotsY(PreviousFrameIndex)];
                         end
                     end
 
-                    PreviousParticles=find(FilterPreviousFrame);
-
-                    if (~isempty(PreviousParticlesIndex))&&(sum((PreviousParticlesIndex)))
-                        %Now, compare the positions of all of the old and new
-                        %particles
+                    %If there were particles present in the previous frame,
+                    %then we find their distances to the spots present in
+                    %the current frame. Otherwise, we create new particles
+                    %for each new spot.
+                    %We keep track of which spots goes to a new or old
+                    %particle using the NewParticle array.
+                    NewParticleFlag=true(size(ApprovedSpots));
+                    
+                    
+                    if ~isempty(PreviousFrameParticles)
+                        %Get the distances between the spots in this frame
+                        %and those within the particles in the previous
+                        %frame
                         clear Distance
-                        [PreviousParticlesX,PreviousParticlesY]=SpotsXYZ(Spots(i-1));
-
-                        for j=1:length(NewParticlesX)
-                            Distance(j,:)=sqrt((NewParticlesX(j)*PixelSize-...
-                                PreviousParticlesX*PixelSize).^2+...
-                                (NewParticlesY(j)*PixelSize-...
-                                PreviousParticlesY*PixelSize).^2);
+                        %The rows of Distance correspond to the new spots.
+                        %The columns correspond to the particles present in
+                        %the previous frame. Each element is the distance.
+                        for j=1:length(NewSpotsX)
+                            Distance(j,:)=sqrt((NewSpotsX(j)*PixelSize-...
+                                xPreviousFrameParticles*PixelSize).^2+...
+                                (NewSpotsY(j)*PixelSize-...
+                                yPreviousFrameParticles*PixelSize).^2);
                         end
-                        %The rows of distance correspond to the new particles.
-                        %The columns correspond to their distance to the old
-                        %particles.
                         
-                        %For particles in the previous frame that were not
-                        %used for tracking, set their distance to infinity
-                        Distance(:,~FilterPreviousFrame)=inf;                        
+                        %We want to make sure there is only one match of
+                        %new spot to previous particle. To make this
+                        %possible, we'll go through each column in the
+                        %matrix Distance and set all pairwise distances
+                        %that are not the minimum one to infinity.
+                        for j=1:length(PreviousFrameParticles)
+                            DistanceFilter=false(size(Distance(:,j)));
+                            [DistMinValue,DistMindIndex]=min(Distance(:,j));
+                            DistanceFilter(DistMindIndex)=true;
+                            Distance(~DistanceFilter,j)=inf;
+                        end
                         
                         %MinIndex is a row vector. The element position
-                        %correspond to the new particle and the value within it
-                        %correspond to the old particle that it's closest to.
+                        %correspond to the new spot and the value within it
+                        %correspond to the previous particle that it's
+                        %closest to.
                         [MinValues,MinIndex]=min(Distance');
-
-                        %Now, use the information to figure out if we're dealing
-                        %with an old or a new particle. This will be based on who's
+                        %Note that inf can be a distance as well. In those
+                        %cases, turn MinIndex to 0.
+                        MinIndex(MinValues==inf)=0;
+                        %Now, check that the distances are smaller than
+                        %SearchRadius
+                        MinIndex(~(MinValues<SearchRadius))=0;
+                        
+                        %Assign the new spots to their
+                        %corresponding particles.
+                        for j=1:length(MinIndex)
+                            if MinIndex(j)>0
+                                Particles(PreviousFrameParticles(MinIndex(j))).Frame(end+1)=CurrentFrame;
+                                Particles(PreviousFrameParticles(MinIndex(j))).Index(end+1)=ApprovedSpots(j);
+                                %We don't want this new spot to generate a
+                                %new particle further below
+                                NewParticleFlag(j)=false;
+                            end
+                        end
+                        
+%                         
+%                         
+%                         
+%                         
+%                         
+%                         %Go through new previous particle in the Distance
+%                         %matrix and set 
+%                         
+%                         Distance(:,16)
+%                         
+%                         
+%                         %Note that two or more new spots could be closest
+%                         %to the same previous particle. I want to rank
+%                         %these by distance so that, within the search
+%                         %radius SearchRadius, I assign as many new spots
+%                         %as possible to previous particles.
+%                         
+%                         %Number of unique matches to previous particles found.
+%                         %These indices refer to the old Particles inside
+%                         %PreviousFrameParticles. 
+%                         UniqueMinima=unique(MinIndex);
+%                         %Go through each UniqueMinima and find who's actually closest
+%                         for j=1:length(UniqueMinima)
+%                             %Do multiple particles map to this new spot?
+%                             if sum(MinIndex==UniqueMinima(j))>1
+%                                 %If multiple spots are closest to the
+%                                 %particle given by UniqueMinima(j), then
+%                                 %find the closest one
+%                                 ClosestDistance=min(MinValues(MinIndex==UniqueMinima(j)));
+%                                 
+%                                 %Sometimes, two different spots can be at
+%                                 %the same distance from a previous
+%                                 %particle. If so, we just keep the first
+%                                 %one in the vector.
+%                                 find(MinValues(MinIndex==UniqueMinima(j))==ClosestDistance)
+%                                
+%                             else
+%                                 error('does anything go here?')
+%                                 
+%                             end
+%        
+%                         end
+%                             
+                        
+                        
+                        
+                        
+                        %Now, use the information to figure out if we're
+                        %continuing the tracking of an already existing
+                        %particle or whether we need to start a new
+                        %particle. This will be based on who's
                         %closest and if that distance is smaller than the threshold
                         %given above in the parameters.
 
-                        %These indices refer to the old particles. We're
-                        %finding which ones are good candidates                    
-                        UniqueMinima=unique(MinIndex);
-
-                        for j=1:length(UniqueMinima)
-                            %If we have only one previous and one new particle
-                            %the assignment is trivial
-                            if (length(PreviousParticles)==1)&(length(NewParticlesX)==1)&...
-                                    (MinValues<SearchRadius)
-                                Particles(PreviousParticles).Frame(end+1)=i;
-                                Particles(PreviousParticles).Index(end+1)=...
-                                        1;    
-                                NewParticlesFlag(1)=0;
-                                LastFrame(PreviousParticles)=i;
-
-                            %If we have only one previous particle, MinIndex points at
-                            %the new particle that is closest to it    
-                            elseif (length(PreviousParticles)==1)&(MinValues<SearchRadius)
-                                Particles(PreviousParticles).Frame(end+1)=i;
-                                Particles(PreviousParticles).Index(end+1)=MinIndex;
-                                NewParticlesFlag(MinIndex)=0;
-                                LastFrame(PreviousParticles)=i;
-
-                            %If there is only one new particle that a previous
-                            %particle is closest to
-                            elseif (sum(MinIndex==UniqueMinima(j))==1)
-                                if MinValues(find(MinIndex==UniqueMinima(j)))<(SearchRadius)
-                                    Particles(PreviousParticles(PreviousParticlesIndex==UniqueMinima(j))).Frame(end+1)=i;
-                                    Particles(PreviousParticles(PreviousParticlesIndex==UniqueMinima(j))).Index(end+1)=...
-                                        find(MinIndex==UniqueMinima(j));
-                                    NewParticlesFlag(find(MinIndex==UniqueMinima(j)))=0;
-                                    LastFrame(PreviousParticles(PreviousParticlesIndex==UniqueMinima(j)))=i;
-                                end
-
-                            %If there are many new particles that are close to a previous one.    
-                            else
-                                MinFilter=find(MinIndex==UniqueMinima(j));
-                                MinValues2=MinValues(MinFilter);
-                                [MinMinValue2,MinIndex2]=min(MinValues2);
-
-                                if MinMinValue2<(SearchRadius)
-                                    ClosestParticle=MinFilter(MinIndex2);
-
-                                    %This is just in case there are two
-                                    %previous particles at the exact same
-                                    %distance
-                                    if length(ClosestParticle)>1
-                                        ClosestParticle=ClosestParticle(1);
-                                    end
-
-                                    Particles(PreviousParticles(PreviousParticlesIndex==UniqueMinima(j))).Frame(end+1)=i;
-                                    Particles(PreviousParticles(PreviousParticlesIndex==UniqueMinima(j))).Index(end+1)=...
-                                        ClosestParticle;
-                                    NewParticlesFlag(ClosestParticle)=0;
-
-                                    LastFrame(PreviousParticles(PreviousParticlesIndex==UniqueMinima(j)))=i;
-                                end
-                            end
-                        end
+%                         %These indices refer to the old Particles inside
+%                         %PreviousFrameParticles. We're
+%                         %finding which ones are good candidates.
+%                         UniqueMinima=unique(MinIndex);
+%                         
+%                         
+%                         SearchRadius
+                        
                     end
-
-                    %Finally, see which particles weren't assigned and add them
-                    %to the structure
-                    NewParticles=find(NewParticlesFlag);
+                    
+                    
+                    %See which spots weren't assigned and add them
+                    %to the structure as new particles
+                    NewParticles=find(NewParticleFlag);
                     for j=1:length(NewParticles)
                         TotalParticles=length(Particles);
-                        Particles(TotalParticles+1).Frame=i;
+                        Particles(TotalParticles+1).Frame=CurrentFrame;
                         Particles(TotalParticles+1).Index=...
-                                     NewParticles(j);
-                        LastFrame(TotalParticles+1)=i;
+                                     ApprovedSpots(NewParticles(j));
                         Particles(TotalParticles+1).Approved=0;
                     end
+                        
+                    
+        
+                    
+                    
+%                     %This filter will be used later to create new particles
+%                     %based on unasigned spots.
+%                     NewParticlesFlag=CurrentFrameFilter;
+%                     
+%                     %Get the filter for the spots in the previous frame
+%                     PreviousFrameFilter=logical(SpotFilter(CurrentFrame,~isnan(SpotFilter(CurrentFrame-1,:))));
+%                 
+%                     %Get the positions of the potentially new particles
+%                     [NewSpotsX,NewSpotsY]=SpotsXYZ(Spots(i));
+%                     
+%                     %HG,NewSpotsFlag=ones(size(NewSpotsX));
+% 
+%                     %Get a list of the indices of the spots within particles
+%                     %in the previous frame and of the corresponding
+%                     %particles.
+%                     PreviousSpotsIndex=[];
+%                     PreviousParticles=[];
+%                     for j=1:length(Particles)
+%                         if sum(Particles(j).Frame==(CurrentFrame-1))
+%                             PreviousSpotsIndex=[PreviousSpotsIndex,...
+%                                 Particles(j).Index(Particles(j).Frame==(CurrentFrame-1))];
+%                             PreviousParticles=[PreviousParticles,j];
+%                         end
+%                     end
+                    
+%HG,
+%                     FilterPreviousFrame=(LastFrame==(i-1));
+% 
+%                     PreviousSpotsIndex=[];
+%                     for j=1:length(FilterPreviousFrame)
+%                         if FilterPreviousFrame(j)
+%                             PreviousSpotsIndex=...
+%                                 [PreviousSpotsIndex,Particles(j).Index(end)];
+%                         end
+%                     end
+%
+%                    PreviousParticles=find(FilterPreviousFrame);
+
+%                     if (~isempty(PreviousSpotsIndex))%HG,&(sum((PreviousParticlesIndex)))
+%                         %Now, compare the positions of all of the old and new
+%                         %particles
+%                         clear Distance
+%                         [PreviousSpotsX,PreviousSpotsY]=...
+%                             SpotsXYZ(Spots(CurrentFrame-1));
+% 
+%                         for j=1:length(NewSpotsX)
+%                             Distance(j,:)=sqrt((NewSpotsX(j)*PixelSize-...
+%                                 PreviousSpotsX*PixelSize).^2+...
+%                                 (NewSpotsY(j)*PixelSize-...
+%                                 PreviousSpotsY*PixelSize).^2);
+%                         end
+%                         %The rows of distance correspond to the new spots.
+%                         %The columns correspond to their distance to the old
+%                         %spots.
+%                         
+%                         %For spots in the previous frame that were not
+%                         %used for tracking, set their distance to infinity
+%                         Distance(:,~PreviousFrameFilter)=inf;                        
+%                         
+%                         %MinIndex is a row vector. The element position
+%                         %correspond to the new spot and the value within it
+%                         %correspond to the old spot that it's closest to.
+%                         [MinValues,MinIndex]=min(Distance');
+% 
+%                         %Now, use the information to figure out if we're
+%                         %continuing the tracking of an already existing
+%                         %particle or whether we need to start a new
+%                         %particle. This will be based on who's
+%                         %closest and if that distance is smaller than the threshold
+%                         %given above in the parameters.
+% 
+%                         %These indices refer to the old spots. We're
+%                         %finding which ones are good candidates                    
+%                         UniqueMinima=unique(MinIndex);
+%                         
+%                         %UniqueMinima moves over the old spots
+%                         for j=1:length(UniqueMinima)
+%                             %If we have only one previous and one new particle
+%                             %the assignment is trivial
+%                             if (length(PreviousParticles)==1)&(length(NewParticlesX)==1)&...
+%                                     (MinValues<SearchRadius)
+%                                 Particles(PreviousParticles).Frame(end+1)=i;
+%                                 Particles(PreviousParticles).Index(end+1)=...
+%                                         1;    
+%                                 NewParticlesFlag(1)=0;
+%                                 LastFrame(PreviousParticles)=i;
+% 
+%                             %If we have only one previous particle, MinIndex points at
+%                             %the new particle that is closest to it    
+%                             elseif (length(PreviousParticles)==1)&(MinValues<SearchRadius)
+%                                 Particles(PreviousParticles).Frame(end+1)=i;
+%                                 Particles(PreviousParticles).Index(end+1)=MinIndex;
+%                                 NewParticlesFlag(MinIndex)=0;
+%                                 LastFrame(PreviousParticles)=i;
+% 
+%                             %If there is only one new particle that a previous
+%                             %particle is closest to
+%                             elseif (sum(MinIndex==UniqueMinima(j))==1)
+%                                 if MinValues(find(MinIndex==UniqueMinima(j)))<(SearchRadius)
+%                                     Particles(PreviousParticles(PreviousParticlesIndex==UniqueMinima(j))).Frame(end+1)=i;
+%                                     Particles(PreviousParticles(PreviousParticlesIndex==UniqueMinima(j))).Index(end+1)=...
+%                                         find(MinIndex==UniqueMinima(j));
+%                                     NewParticlesFlag(find(MinIndex==UniqueMinima(j)))=0;
+%                                     LastFrame(PreviousParticles(PreviousParticlesIndex==UniqueMinima(j)))=i;
+%                                 end
+% 
+%                             %If there are many new spots that are close to a previous particle.    
+%                             else
+%                                 MinFilter=find(MinIndex==UniqueMinima(j));
+%                                 MinValues2=MinValues(MinFilter);
+%                                 [MinMinValue2,MinIndex2]=min(MinValues2);
+% 
+%                                 if MinMinValue2<(SearchRadius)
+%                                     ClosestSpot=MinFilter(MinIndex2);
+% 
+%                                     %This is just in case there are two
+%                                     %previous particles at the exact same
+%                                     %distance from the new spot
+%                                     if length(ClosestSpot)>1
+%                                         ClosestSpot=ClosestSpot(1);
+%                                     end
+%                                     
+%                                     %Find which particle this closest spot
+%                                     %corresponds to.
+%                                     PreviousParticleIndex=PreviousParticles(find(PreviousSpotsIndex==ClosestSpot));
+% 
+%                                     %Add the new values to this particle
+%                                     Particles(PreviousParticleIndex).Frame(end+1)=CurrentFrame;
+%                                     Particles(PreviousParticleIndex).Index(end+1)=...
+%                                         ClosestSpot;
+%                                     NewParticlesFlag(ClosestSpot)=0;
+% 
+%     
+%                                     
+% %HG,                                    
+% %                                     %Add the new values to this particle
+% %                                     Particles(PreviousParticles(PreviousParticlesIndex==UniqueMinima(j))).Frame(end+1)=i;
+% %                                     Particles(PreviousParticles(PreviousParticlesIndex==UniqueMinima(j))).Index(end+1)=...
+% %                                         ClosestParticle;
+% %                                     NewParticlesFlag(ClosestParticle)=0;
+% % 
+% %                                     LastFrame(PreviousParticles(PreviousParticlesIndex==UniqueMinima(j)))=i;
+%                                 end
+%                             end
+%                         end
+%                     end
+
+                  
                 end
             end
 

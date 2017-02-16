@@ -398,13 +398,13 @@ if strcmp(FileMode,'TIF')
     
     close(h)
     
-    %TAG file information
-    Output{1}=['id ',Prefix,'_'];
-    Output{2}='';
-    Output{3}='1';
-    Output{4}=['frames ',num2str(length(FrameInfo)),':1:',num2str(NImagesForTAG+2)];
-    Output{5}=['suffix ???_z??'];
-    Output{6}=['flat FF'];
+%     %TAG file information
+%     Output{1}=['id ',Prefix,'_'];
+%     Output{2}='';
+%     Output{3}='1';
+%     Output{4}=['frames ',num2str(length(FrameInfo)),':1:',num2str(NImagesForTAG+2)];
+%     Output{5}=['suffix ???_z??'];
+%     Output{6}=['flat FF'];
     
 
 elseif strcmp(FileMode, 'LAT')
@@ -563,12 +563,12 @@ elseif strcmp(FileMode, 'LAT')
         end
         close(h)
                   
-        % TAG File Information
-        Output{1}=['id ',Prefix,'_'];
-        Output{2}='';
-        Output{3}='1';
-        Output{4}=['frames ',num2str(NFrames),':1:',num2str(NSlices+2)];
-        Output{5}=['suffix ???_z??'];
+%         % TAG File Information
+%         Output{1}=['id ',Prefix,'_'];
+%         Output{2}='';
+%         Output{3}='1';
+%         Output{4}=['frames ',num2str(NFrames),':1:',num2str(NSlices+2)];
+%         Output{5}=['suffix ???_z??'];
 
         %LSM mode
 elseif strcmp(FileMode,'LSM')
@@ -813,15 +813,15 @@ elseif strcmp(FileMode,'LSM')
                 [OutputFolder,filesep,Prefix,'_FF.tif']);
         end
 
-        % TAG File Information
-        Output{1}=['id ',Prefix,'_'];
-        Output{2}='';
-        Output{3}='1';
-        Output{4}=['frames ',num2str(sum(NFrames)),':1:',num2str(min(NSlices)+2)];
-        Output{5}=['suffix ???_z??'];
-        if exist('LSMFF')
-            Output{6}=['flat FF'];
-        end
+%         % TAG File Information
+%         Output{1}=['id ',Prefix,'_'];
+%         Output{2}='';
+%         Output{3}='1';
+%         Output{4}=['frames ',num2str(sum(NFrames)),':1:',num2str(min(NSlices)+2)];
+%         Output{5}=['suffix ???_z??'];
+%         if exist('LSMFF')
+%             Output{6}=['flat FF'];
+%         end
     else
         error('Experiment type not supported for LSM format. Ask HG.')
     end
@@ -1192,24 +1192,24 @@ elseif strcmp(FileMode,'LIFExport')
         end
         close(h)
         
-        % TAG File Information
-        Output{1}=['id ',Prefix,'_'];
-        Output{2}='';
-        Output{3}='1';
-        Output{4}=['frames ',num2str(sum(NFrames)),':1:',num2str(min(NSlices)+2)];
-        Output{5}=['suffix ???_z??'];
-        if exist('LIFFF')
-            Output{6}=['flat FF'];
-        end
-        if strcmp(ExperimentType, '2spot2color')
-            Output{end+1}='';
-            Output{end+1}='2';
-            Output{end+1}=['frames ',num2str(sum(NFrames)),':1:',num2str(min(NSlices)+2)];
-            Output{end+1}=['suffix ???_z??_ch02'];
-            if exist('LIFFF')
-                Output{end+1}=['flat FF'];
-            end
-        end
+%         % TAG File Information
+%         Output{1}=['id ',Prefix,'_'];
+%         Output{2}='';
+%         Output{3}='1';
+%         Output{4}=['frames ',num2str(sum(NFrames)),':1:',num2str(min(NSlices)+2)];
+%         Output{5}=['suffix ???_z??'];
+%         if exist('LIFFF')
+%             Output{6}=['flat FF'];
+%         end
+%         if strcmp(ExperimentType, '2spot2color')
+%             Output{end+1}='';
+%             Output{end+1}='2';
+%             Output{end+1}=['frames ',num2str(sum(NFrames)),':1:',num2str(min(NSlices)+2)];
+%             Output{end+1}=['suffix ???_z??_ch02'];
+%             if exist('LIFFF')
+%                 Output{end+1}=['flat FF'];
+%             end
+%         end
         
 elseif strcmp(FileMode, 'LAT')
     [Output, FrameInfo] = ExportDataForFISH_Lattice(Prefix, D, Folder, OutputFolder, Channel1, Channel2, TAGOnly, ImageInfo); 
@@ -1262,18 +1262,18 @@ if ~isempty(SkipFrames)
         end
     end
     
-    %Redefine the output for the FISH code
-    Output{4}=['frames ',num2str(length(FrameInfo)),':1:',num2str(NSlices+2)];
+%     %Redefine the output for the FISH code
+%     Output{4}=['frames ',num2str(length(FrameInfo)),':1:',num2str(NSlices+2)];
 end
 
-%Create the TAG file for the FISH analysis code
-if exist('Output')
-    fid = fopen([OutputFolder,filesep,Prefix,'.tag'], 'wt');
-    for i=1:length(Output)
-        fprintf(fid, '%s \n', Output{i});
-    end
-    fclose(fid);
-end
+% %Create the TAG file for the FISH analysis code
+% if exist('Output')
+%     fid = fopen([OutputFolder,filesep,Prefix,'.tag'], 'wt');
+%     for i=1:length(Output)
+%         fprintf(fid, '%s \n', Output{i});
+%     end
+%     fclose(fid);
+% end
 
 %Save the information about the various frames
 mkdir([DropboxFolder,filesep,Prefix])
