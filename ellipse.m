@@ -143,7 +143,7 @@ for k=1:maxk
 %  x=radm*cos(the)*co-si*radn*sin(the)+xpos;
 %  y=radm*cos(the)*si+co*radn*sin(the)+ypos;
   h(k)=line(radm*cos(the)*co-si*radn*sin(the)+xpos,radm*cos(the)*si+co*radn*sin(the)+ypos);
-  set(h(k),'color',C(rem(k-1,size(C,1))+1,:));
+  set(h(k),'color',C(rem(k-1,size(C,1))+1,:), 'LineWidth', 1.5);
 
 end;
 
