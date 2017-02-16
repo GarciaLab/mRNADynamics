@@ -106,11 +106,11 @@ try
     %this is just some function that can only be called if IJM is set up
     IJM.getIdentifier() 
 catch
-    addpath('e:/Fiji.app/scripts') % Update for your ImageJ installation
-    ImageJ                         % Initialize IJM and MIJ
+    addpath([filesep,'Fiji.app',filesep,'scripts']) % Update for your ImageJ installation
+    ImageJ               % Initialize IJM and MIJ
 end
-evalin('base', 'IJM')
-evalin('base', 'MIJ')
+ijm = evalin('base', 'IJM');
+mij = evalin('base', 'MIJ');
 for current_frame = 1:num_frames
     for i = 1:zSize
         zim(:,:,i) = double(imread([PreProcPath,filesep,Prefix, filesep, Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
