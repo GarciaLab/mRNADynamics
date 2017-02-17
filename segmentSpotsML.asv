@@ -123,7 +123,7 @@ for current_frame = 1:num_frames
     end
     mij.run('Trainable Weka Segmentation 3D', ['open=',name]);
     pause(20);
-    trainableSegmentation.Weka_Segmentation.loadClassifier([MS2CodePath, filesep, 'classifier.model']);
+    trainableSegmentation.Weka_Segmentation.loadClassifier('C:\\Users\\ArmandoReimer\\Desktop\\weca\\vasa_first_movie_3dmachine\\classifier.model');
     trainableSegmentation.Weka_Segmentation.getProbability();
     ijm.getDatasetAs('probmaps')
     p = evalin('base', 'probmaps');

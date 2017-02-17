@@ -943,7 +943,8 @@ while (cc~='x')
         if (CurrentParticle~=PreviousParticle)|~exist('Amp')|(CurrentChannel~=PreviousChannel)
             clf
             PreviousParticle=CurrentParticle;
-            [Frames,Amp]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},fad(CurrentChannel),FISHPath,FilePrefix);
+            %[Frames,AmpIntegral,AmpGaussian]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
+            [Frames,Amp]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
         end
         
         plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-k')
