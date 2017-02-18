@@ -266,13 +266,20 @@ end
                 Particles(i).(fields{j}) = Particles(i).(fields{j})(max_index);
             end
         else
-            Particles(i).brightestZ = Particles(i).z(max_index);
-            if Shadows && Particles(i).brightestZ == min(Particles(i).z)...
-               || Particles(i).brightestZ == max(Particles(i).z)
-                Particles(i).discardThis = 1;
-                Particles(i).noIntensityAnalysis = 1;
-                falsePositives = falsePositives + 1;
-            end  
+            Particles(i).brightestZ = Particles(i).z(max_index);       
+            if Shadows
+                if  Particles(i).brightestZ == Particles(i).z(end) ||...
+                    Particles(i).brightestZ == Particles(i).z(1)                                
+                    Particles(i).discardThis = 1;
+                    Particles(i).noIntensityAnalysis = 1;
+                    falsePositives = falsePositives + 1;
+                elseif Particles(i).z(max_index -1) ~= Particles(i).brightestZ-1 ...
+                    || Particles(i).z(max_index +1) ~= Particles(i).brightestZ +1
+                    Particles(i).discardThis = 1;
+                    Particles(i).noIntensityAnalysis = 1;
+                    falsePositives = falsePositives + 1;                  
+                end
+            end
         end
     end
  
