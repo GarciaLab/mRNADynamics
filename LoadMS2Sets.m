@@ -48,7 +48,8 @@ D=dir([DropboxFolder,filesep,'DataStatus.*']);
 
 %Which data sets are approved?
 CompileRow=find(strcmp(StatusTxt(:,1),'AnalyzeLiveData Compile Particles')|...
-    strcmp(StatusTxt(:,1),'CompileParticles'));
+    strcmp(StatusTxt(:,1),'CompileParticles')|...
+    strcmp(StatusTxt(:,1),'CompileNuclearProtein'));
 CompiledSets=find(strcmp(StatusTxt(CompileRow,:),'READY')|strcmp(StatusTxt(CompileRow,:),'ApproveAll'));
 
 if isempty(CompiledSets)
@@ -198,7 +199,8 @@ for i=1:length(CompiledSets)
         if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'])
             MeanFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat']);
         else
-            warning('MeanFits.mat not found. This is a stupid way to check. Have the code check if this experiment is DV or AP instead')
+            warning(['MeanFits.mat not found for ',Prefix,...
+                '. This is a stupid way to check. Have the code check if this experiment is DV or AP instead.'])
         end
 
         try
