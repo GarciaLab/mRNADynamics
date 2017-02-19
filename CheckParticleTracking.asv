@@ -1269,9 +1269,9 @@ while (cc~='x')
     elseif cc=='`'
         %Approve all particles not disapproved. Useful if you want to do particle
         %retracking.       
-        for i=1:length(Particles{CurrentChannel})
-            if Particles{CurrentChannel}(i).Approved ~= -1
-                Particles{CurrentChannel}(i).Approved = true;
+        for i=1:length(Particles)
+            if Particles(i).Approved ~= -1
+                Particles(i).Approved = true;
             end
         end
         display('Approved all particles not disapproved')
