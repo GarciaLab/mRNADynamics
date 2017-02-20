@@ -436,27 +436,53 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
                         %The columns correspond to their distance to the old
                         %particles.
 
-                        %MinIndex is a row vector. The element position
-                        %correspond to the new spot and the value within it
-                        %correspond to the previous particle that it's
-                        %closest to.
-                        [MinValues,MinIndex]=min(Distance');
-                        %Note that inf can be a distance as well. In those
-                        %cases, turn MinIndex to 0.
-                        MinIndex(MinValues==inf)=0;
-                        %Now, check that the distances are smaller than
-                        %SearchRadius
-                        MinIndex(~(MinValues<SearchRadius))=0;
                         
-                        %Assign the new spots to their
-                        %corresponding particles.
-                        for j=1:length(MinIndex)
-                            if MinIndex(j)>0
-                                Particles(PreviousFrameParticles(MinIndex(j))).Frame(end+1)=CurrentFrame;
-                                Particles(PreviousFrameParticles(MinIndex(j))).Index(end+1)=ApprovedSpots(j);
+                        %The followign tracking works well if we have more
+                        %than one previous particle. If not, we need to be
+                        %more careful.
+                        if (size(Distance,2)>1)
+                            %MinIndex is a row vector. The element position
+                            %correspond to the new spot and the value within it
+                            %correspond to the previous particle that it's
+                            %closest to.
+                            [MinValues,MinIndex]=min(Distance');
+                            %Note that inf can be a distance as well. In those
+                            %cases, turn MinIndex to 0.
+                            MinIndex(MinValues==inf)=0;
+                            %Now, check that the distances are smaller than
+                            %SearchRadius
+                            MinIndex(~(MinValues<SearchRadius))=0;
+
+                            %Assign the new spots to their
+                            %corresponding particles.
+                            if sum(MinIndex)
+                                for j=1:length(MinIndex)
+                                    if MinIndex(j)>0
+                                        Particles(PreviousFrameParticles(MinIndex(j))).Frame(end+1)=CurrentFrame;
+                                        Particles(PreviousFrameParticles(MinIndex(j))).Index(end+1)=ApprovedSpots(j);
+                                        %We don't want this new spot to generate a
+                                        %new particle further below
+                                        NewParticleFlag(j)=false;
+                                    end
+                                end
+                            end
+                        else
+                            %Find the new spot that is closest to the one
+                            %previous particle
+                            [MinValues,MinIndex]=min(Distance);
+                            %Note that inf can be a distance as well. In those
+                            %cases, turn MinIndex to 0.
+                            MinIndex(MinValues==inf)=0;
+                            %Now, check that the distances are smaller than
+                            %SearchRadius
+                            MinIndex(~(MinValues<SearchRadius))=0;
+                            
+                            if sum(MinIndex)
+                                Particles(PreviousFrameParticles).Frame(end+1)=CurrentFrame;
+                                Particles(PreviousFrameParticles).Index(end+1)=MinIndex;
                                 %We don't want this new spot to generate a
                                 %new particle further below
-                                NewParticleFlag(j)=false;
+                                NewParticleFlag(MinIndex)=false;
                             end
                         end
                     end
