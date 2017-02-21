@@ -5,6 +5,15 @@ function CheckParticleTracking(varargin)
 %able to correct both the segmentation and tracking.
 % 
 % 
+
+
+% New commands added by Armando. Need to be integrated in the manual below.
+% 1. Zoom anywhere button ' + '
+% 2. New particles can be created without associated traces if in zoom
+% anywhere mode from 1
+
+
+
 %Usage:
 %
 %Frame specific:
@@ -19,19 +28,24 @@ function CheckParticleTracking(varargin)
 % 
 %Particle specific:
 %m Move to the next particle
-%n Move to the previous particle,
+%n Move to the previous particle
 %k Jump to a specified particle by inputting particle number
 %\ Jump to a specified particle by clicking
 %c Connect two existing particle traces. This will join the current
 %  particle's trace to the clicked particle's trace. 
-%d Separate traces. If this is done on a particle with only one frame then
+%d Separate traces forward. A new particle is created at the current frame
+%  and this particle is disconnected from the current nucleus. If this is
+%  done on a particle with only one frame then
 %  it disconnects it from its nucleus.
+
+%Disconnect backwards??
+
 %q Cycle between approved status: green - approved; yellow - approved but
 %  with conditions (drift of nucleus, for example)
 %w Disapprove a trace
 %p Identify a particle. It will also tell you the particle associated with
 %  the clicked nucleus.
-%e Approve/Disapprove  a frame within a trace
+%e Approve/Disapprove a frame within a trace
 %u Move a particle detected with Threshold2 into the our structure.
 %i Move a particle detected with Threshold2 into the our structure and
 %  connect it to the current particle. This is a combination of "u" and
@@ -54,11 +68,6 @@ function CheckParticleTracking(varargin)
 %2 set parent of current nucleus
 %p Find the particle associated with the clicked nucleus. It will also tell
 %  you the closest particle associated you clicked on.
-%9 check for nuclear tracking consistencies. This is useful while we're
-%  getting the code to work well.
-%1 give the nucleus number in the schnitzcell segmentation structure. This
-%  only  works for troubleshooting and you need to be online and on the
-%  Princeton network/VPN for now.
 % 
 % 
 %General:
@@ -1341,15 +1350,15 @@ while (cc~='x')
 
         end
         
-    elseif cc=='`'
-        %Approve all particles not disapproved. Useful if you want to do particle
-        %retracking.       
-        for i=1:length(Particles{CurrentChannel})
-            if Particles{CurrentChannel}(i).Approved ~= -1
-                Particles{CurrentChannel}(i).Approved = true;
-            end
-        end
-        display('Approved all particles not disapproved')
+%     elseif cc=='`'
+%         %Approve all particles not disapproved. Useful if you want to do particle
+%         %retracking.       
+%         for i=1:length(Particles{CurrentChannel})
+%             if Particles{CurrentChannel}(i).Approved ~= -1
+%                 Particles{CurrentChannel}(i).Approved = true;
+%             end
+%         end
+%         display('Approved all particles not disapproved')
 
     elseif cc=='r'
         %Order particles by the earliest frame they appear at. This makes the
@@ -1653,7 +1662,7 @@ while (cc~='x')
             display('Cannnot connect to two particles!')
         end
     
-     elseif cc=='d'  %d Separate traces at the current frame.
+     elseif cc=='d'  %d Separate traces forward at the current frame.
          %The separated particle (the trace following current frame) won't have a nucleus assigned!
          PreviousParticle=0;
         %Check that the particle does actually exist in this frame
@@ -1666,6 +1675,24 @@ while (cc~='x')
         else
             display('Cannot divide a trace at the first time point')
         end
+        
+    elseif cc=='v'  %d Separate traces forward at the current frame.
+         %The separated particle (the trace following current frame) won't have a nucleus assigned!
+         PreviousParticle=0;
+        %Check that the particle does actually exist in this frame
+        if ~(Particles{CurrentChannel}(CurrentParticle).Frame(1)==CurrentFrame)
+            if sum(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame)
+                Particles{CurrentChannel}=SeparateParticleTraces(CurrentParticle,CurrentFrame,Particles{CurrentChannel});
+            end
+        elseif length(Particles{CurrentChannel}(CurrentParticle).Frame)==1
+            Particles{CurrentChannel}(CurrentParticle).Nucleus=[];
+        else
+            display('Cannot divide a trace at the first time point')
+        end        
+        
+        
+        
+        
     elseif cc=='q'      %Approve a trace
         if Particles{CurrentChannel}(CurrentParticle).Approved==1
             Particles{CurrentChannel}(CurrentParticle).Approved=2;

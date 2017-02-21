@@ -62,14 +62,14 @@ D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.tif']);
 
 
 %Get the surface image in the zoomed case
-if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
-        (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
-    D=dir([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,'*His_*.tif']);
-    ZoomImage=imread([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,D(end).name]);
-else
+% if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
+%         (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
+%     D=dir([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,'*His_*.tif']);
+%     ZoomImage=imread([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,D(end).name]);
+% else
     D=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
     ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,D(end).name]);
-end
+%end
 
 
 
@@ -165,11 +165,11 @@ Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
 Dashes=findstr(Prefix,'-');
 
 %Find the corresponding entry in the XLS file
-if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
-        (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
-    XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
-        [Date,'\BcdGFP-HisRFP']));
-else
+% if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
+%         (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
+%     XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
+%         [Date,'\BcdGFP-HisRFP']));
+% else
     XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
         [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
     if isempty(XLSEntry)
@@ -179,7 +179,7 @@ else
             error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
         end
     end
-end
+%end
 
 
 if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP')|...
@@ -233,13 +233,13 @@ while (cc~='x')
     
     %Load the image
     %Get the surface image in the zoomed case
-    if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
-            (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
-        HisImage=imread([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,D(CurrentFrame).name]);
-
-    else
+%     if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
+%             (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
+%         HisImage=imread([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,D(CurrentFrame).name]);
+% 
+%     else
         HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(CurrentFrame).name]);
-    end
+    %end
     
     
     

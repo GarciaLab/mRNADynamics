@@ -80,20 +80,14 @@ if isempty(XLSEntry)
 end
 
 
-% if (strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP'))|...
-%         (strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP'))|...
-%         (strcmp(XLSRaw(XLSEntry,Channel1Column),'MCP-TagRFP(1)'))|...
-%         (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-TagRFP(1)'))|...
-%         (strcmp(XLSRaw(XLSEntry,Channel1Column),'MCP-mCherry(3)'))|...
-%         (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-mCherry(3)'))
-    nc9=XLSRaw{XLSEntry,nc9Column};
-    nc10=XLSRaw{XLSEntry,nc10Column};
-    nc11=XLSRaw{XLSEntry,nc11Column};
-    nc12=XLSRaw{XLSEntry,nc12Column};
-    nc13=XLSRaw{XLSEntry,nc13Column};
-    nc14=XLSRaw{XLSEntry,nc14Column};
-    CF=XLSRaw{XLSEntry,CFColumn};
-%end
+nc9=XLSRaw{XLSEntry,nc9Column};
+nc10=XLSRaw{XLSEntry,nc10Column};
+nc11=XLSRaw{XLSEntry,nc11Column};
+nc12=XLSRaw{XLSEntry,nc12Column};
+nc13=XLSRaw{XLSEntry,nc13Column};
+nc14=XLSRaw{XLSEntry,nc14Column};
+CF=XLSRaw{XLSEntry,CFColumn};
+
 
 if ~exist('nc9','var')
     error('Cannot find nuclear cycle values. Were they defined in MovieDatabase.XLSX?')
@@ -154,7 +148,7 @@ end
 %into an independent function.
 
 %Create the cell array with the names.
-D=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'*His*.tif']);
+D=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His_*.tif']);
 names = cell(length(D), 1);
 for i=1:length(D)
     names{i}=[PreProcPath,filesep,Prefix,filesep,D(i).name];

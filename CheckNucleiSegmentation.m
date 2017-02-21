@@ -74,11 +74,7 @@ DataFolder=[Folder,'..',filesep,'..',filesep,'..',filesep,'Data',filesep,FilePre
 
 
 %Find out how many frames we have
-D=dir([PreProcPath,filesep,Prefix,filesep,'*His*.tif']);
-if length(D)==0
-    warning('The name format is a mess. I had to do this for KITP')
-    D=dir([PreProcPath,filesep,Prefix,filesep,'*_His*.tif']);
-end
+D=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His_*.tif']);
 TotalFrames=length(D);
 
 
@@ -192,11 +188,7 @@ load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat']);
 
 
 %Get the information about the Histone channel images
-D=dir([PreProcPath,filesep,Prefix,filesep,'*-His*.tif']);
-if length(D)==0
-    warning('The name format is a mess. I had to do this for KITP')
-    D=dir([PreProcPath,filesep,Prefix,filesep,'*His*.tif']);
-end
+D=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His_*.tif']);
 TotalFrames=length(D);
 
 
