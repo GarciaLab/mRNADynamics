@@ -1714,8 +1714,10 @@ while (cc~='x')
         %format without any cells
         if NChannels==1
             Particles=Particles{1};
+            Spots=Spots{1};
+            SpotFilter=SpotFilter{1};
         end
-        
+
         
         
         save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo')
