@@ -1732,6 +1732,8 @@ while (cc~='x')
         display('Particles saved.')
         if NChannels==1
             Particles={Particles};
+            Spots = {Spots};
+            SpotFilter = {SpotFilter};           
         end
         
     elseif cc=='t'
