@@ -212,6 +212,7 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
         
         if isfield(Particles,'Approved')
             Retracking=1;           %Flag for whether we are performing retracking
+            display('Performing retracking')
 
             %Only keep the approved particles and start the tracking from there
             k=1;
