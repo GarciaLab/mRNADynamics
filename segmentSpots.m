@@ -144,7 +144,11 @@ else
             else
                 im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
             end
-            dog = double(imread([OutputFolder1, filesep,'DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
+            try
+                dog = double(imread([OutputFolder1, filesep,'DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
+            catch
+                error('Please re-run with threshold ''[]'' to create DoG files')
+            end
             if displayFigures
                 fig = figure(1);
                 imshow(dog,[]);

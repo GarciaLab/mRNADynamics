@@ -1182,8 +1182,12 @@ while (cc~='x')
                     if ~isempty(temp_particles{i})
                         %Copy the information stored on temp_particles into the
                         %Spots structure
-                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity(i)=...
-                            temp_particles{i}{1}{1};
+                        try
+                            Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity(i)=...
+                                temp_particles{i}{1}{1};
+                        catch
+                            error('This spot might be too close to the image boundary');
+                        end
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFit(i)=...
                             temp_particles{i}{1}{2};
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yFit(i)=...
@@ -1714,8 +1718,10 @@ while (cc~='x')
         %format without any cells
         if NChannels==1
             Particles=Particles{1};
+            Spots=Spots{1};
+            SpotFilter=SpotFilter{1};
         end
-        
+
         
         
         save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo')
@@ -1730,6 +1736,8 @@ while (cc~='x')
         display('Particles saved.')
         if NChannels==1
             Particles={Particles};
+            Spots = {Spots};
+            SpotFilter = {SpotFilter};           
         end
         
     elseif cc=='t'
@@ -1747,16 +1755,24 @@ while (cc~='x')
 
         %HideApprovedFlag=~HideApprovedFlag;
     elseif cc=='o'
-        ZoomMode=~ZoomMode;
+        if ~GlobalZoomMode
+            ZoomMode=~ZoomMode;
+        else
+            display('Try again after exiting global zoom mode by hitting ''+''') 
+        end
     
     elseif cc=='+'
-        if ~GlobalZoomMode
-            [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'r', 'linewidth',1);
-            xForZoom = round(ConnectPositionx);
-            yForZoom = round(ConnectPositiony);
+        if ~ZoomMode
+            if ~GlobalZoomMode
+                [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'r', 'linewidth',1);
+                xForZoom = round(ConnectPositionx);
+                yForZoom = round(ConnectPositiony);
+            else
+            end
+            GlobalZoomMode =~ GlobalZoomMode;
         else
+            display('Try again after exiting zoom mode by hitting ''o''')
         end
-        GlobalZoomMode =~ GlobalZoomMode;
     
     elseif (cc=='m')&(CurrentParticle<length(Particles{CurrentChannel}))
         
