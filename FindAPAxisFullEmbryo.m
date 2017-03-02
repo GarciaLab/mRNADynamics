@@ -122,6 +122,12 @@ elseif strcmp(FileMode,'LIFExport')
     HisChannel=find(~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'mcherry'))|...
         ~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'his')));
     
+    %If this channel is empty, we can check whether there is Bcd-GFP, for
+    %example
+    if isempty(HisChannel)
+        HisChannel=find(~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'bcd-gfp')));
+    end    
+    
     if isempty(HisChannel)
         error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
     end

@@ -319,7 +319,8 @@ if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'inp
     end
     
     %Create the circle that we'll use as the mask
-    IntegrationRadius=3;       %Radius of the integration region
+    IntegrationRadius=2;       %Radius of the integration region in um
+    IntegrationRadius=floor(IntegrationRadius/FrameInfo(1).PixelSize); %Radius of the integration in pixels
     Circle=logical(zeros(3*IntegrationRadius,3*IntegrationRadius));
     Circle=MidpointCircle(Circle,IntegrationRadius,1.5*IntegrationRadius+0.5,...
         1.5*IntegrationRadius+0.5,1);

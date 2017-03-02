@@ -42,7 +42,7 @@ inverse_mapping = zeros(size(nextNucleiXY,1),1);
 
 %% 3. Update the position to correct for the shift
 currentNucleiShiftedXY = zeros(size(nucleiFrame1));
-for j = 1:length(nucleiFrame1)
+for j = 1:size(nucleiFrame1,1)%length(nucleiFrame1)
     currentNucleiShiftedXY(j,:) = nucleiFrame1(j,:) + [vx(round(nucleiFrame1(j,1)),round(nucleiFrame1(j,2))), vy(round(nucleiFrame1(j,1)),round(nucleiFrame1(j,2)))];
     %Modified by HG - I think the callout to the information in vx was
     %transposed
