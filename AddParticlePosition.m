@@ -1318,7 +1318,7 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
         save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','SpotFilter');
     end
 end
-close all force;
+%close all force;
     
  
 
