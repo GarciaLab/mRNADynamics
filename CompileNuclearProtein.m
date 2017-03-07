@@ -235,7 +235,7 @@ end
 close(h)     
 
 
-%% Create filters
+%% Create AP and nc filters
 
 %nc filters:
 
@@ -299,8 +299,6 @@ end
 
 
 
-
-
 if strcmp(lower(ExperimentAxis),'ap')
     %AP filters:
 
@@ -319,10 +317,32 @@ end
 
 
 
+%% Information about the cytoplasmic fluroescence
+%If the nuclear masks are present then use them. Otherwise just calculate
+%the median of the images as a function of time
+
+if strcmp(ExperimentAxis,'AP')
+    [MeanCyto,SDCyto,MedianCyto,MaxCyto,...
+        MeanCytoAPProfile,SDCytoAPProfile,SECytoAPProfile]=GetCytoMCP(Prefix);
+else
+    MeanCyto=[];
+    SDCyto=[];
+    MaxCyto=[];
+
+    h=waitbar(0,'Calculating the median cyto intentisy');
+    for i=1:length(FrameInfo)
+        waitbar(i/length(FrameInfo),h)
+        for j=1:FrameInfo(1).NumberSlices
+            Image(:,:,j)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),'.tif']);
+        end
+        ImageMax=max(Image,[],3);
+        MedianCyto(i)=median(double(ImageMax(:)));
+    end
+    close(h)
+end  
+
 
 %% Binning and averaging data
-
-
 
 
 if strcmp(lower(ExperimentAxis),'ap')
@@ -385,12 +405,15 @@ if strcmp(lower(ExperimentAxis),'ap')
         'nc12','nc13','nc14','ncFilterID','ncFilter','APbinID','APFilter',...
         'MeanVectorAP','SDVectorAP','NParticlesAP','MeanVectorAll',...
         'SDVectorAll','NParticlesAll','MaxFrame','MinAPIndex','MaxAPIndex',...
-        'AllTracesVector','AllTracesAP')
+        'AllTracesVector','AllTracesAP',...
+        'MeanCyto','SDCyto','MedianCyto','MaxCyto',...
+        'MeanCytoAPProfile','SDCytoAPProfile','SECytoAPProfile')
 else
     save([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],...
         'CompiledNuclei','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
         'nc12','nc13','nc14','ncFilterID','ncFilter','MeanVectorAll',...
-        'SDVectorAll','NParticlesAll','MaxFrame')
+        'SDVectorAll','NParticlesAll','MaxFrame',...
+        'MeanCyto','SDCyto','MedianCyto','MaxCyto')
 end
 
 

@@ -1,60 +1,55 @@
-function [Mean,SD,Median,Max]=GetCytoMCP(Prefix)
+function [Mean,SD,Median,Max,...
+    MeanAPProfile,SDAPProfile,SEAPProfile]=GetCytoMCP(Prefix)
+
+
 
 
 %Are the observed differences in offset related to the total amount of
-%MCP-GFP the mother deposited in the embryo?
+%fluorescent protein that the mother deposited in the embryo?
 
-close all
+%close all
 
-% Folders
-
-% ES 2013-10-29: Required for multiple users to be able to analyze data on
-% one computer
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
+%Get the folders
+[SourcePath,ProcPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
+[SourcePath,ProcPath,DropboxFolder,MS2CodePath,PreProcPath]=...
+    DetermineLocalFolders(Prefix);
 
-
-%Get the folders corresponding to the prefix
-Dashes=findstr(Prefix,'-');
-DataDate=Prefix(1:Dashes(3)-1);
-DataName=Prefix(Dashes(3)+1:end);
-D=dir([SourcePath,filesep,DataDate,filesep,DataName,filesep,'*.tif']);
+%Load FrameInfo
+load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
 
 %Find out the image size
-FluoImage=imread([SourcePath,filesep,DataDate,filesep,DataName,filesep,D(1).name],1);
-ImageSize=size(FluoImage);
-
-
+ImageSize=[FrameInfo(1).LinesPerFrame,FrameInfo(1).PixelsPerLine];
 %How many slices do we have?
-ZSlices=length(dir([PreProcPath,filesep,Prefix,filesep,Prefix,'_001_z*.tif']));
+ZSlices=FrameInfo(1).NumberSlices;
 
 %Folder for report figures
 mkdir([DropboxFolder,filesep,Prefix,filesep,'CytoFluo'])
 
 
-if ~exist([PreProcPath,filesep,Prefix,filesep,'CytoImages.mat'])
+if ~exist([ProcPath,filesep,Prefix,filesep,'CytoImages.mat'])
 
     %Get the flat field and smooth it with a Gaussian.
     
     FFDir=dir([PreProcPath,filesep,Prefix,filesep,'*FF.tif']);
-    FFImage=double(imread([PreProcPath,filesep,Prefix,filesep,FFDir(1).name],1));
-    filtStd=30;         %This came from the FISH code.
-    FFImage=imfilter(FFImage,fspecial('gaussian',2*filtStd,filtStd),'symmetric');
-    FFImage=imdivide(FFImage,double(max(FFImage(:))));
-
-
-
+    if ~isempty(FFDir)
+        FFImage=double(imread([PreProcPath,filesep,Prefix,filesep,FFDir(1).name],1));
+        filtStd=30;         %This came from the FISH code, in pixels.
+        FFImage=imfilter(FFImage,fspecial('gaussian',2*filtStd,filtStd),'symmetric');
+        FFImage=imdivide(FFImage,double(max(FFImage(:))));
+    else
+        warning('No flat field found')
+        FFImage=ones(ImageSize);
+    end
+    
 
     %Get the ellipses
     load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'])
-
-    for i=1:length(Ellipses)
-        Ellipses{i}(:,7)=i-1;
-    end
-
-    %This is the structuring element we will use to dilate the mask
-    StrucElement=strel('disk',10);
-
+ 
+    %This is the structuring element we will use to dilate the mask. 1.5um
+    %might be a good choice.
+    SESize=round(1.5/FrameInfo(1).PixelSize);
+    StrucElement=strel('disk',SESize);
 
     h=waitbar(0,'Calculating the maximum projection');
     for i=1:length(Ellipses)
@@ -104,11 +99,11 @@ if ~exist([PreProcPath,filesep,Prefix,filesep,'CytoImages.mat'])
     close(h)
 
     %Save to the FISH path so that we don't overwhelm the Dropbox folder!
-    save([PreProcPath,filesep,Prefix,filesep,'CytoImages.mat'],'MaxImage','MeanImage')
+    save([ProcPath,filesep,Prefix,'_',filesep,'CytoImages.mat'],'MaxImage','MeanImage')
 else
-    display('Using saved CytoImages.mat located in the FISH\Data folder.')
+    display('Using saved CytoImages.mat located in the PreProcessed folder.')
     
-    load([PreProcPath,filesep,Prefix,filesep,'CytoImages.mat']);
+    load([ProcPath,filesep,Prefix,filesep,'CytoImages.mat']);
 end
 
 %Get the information
@@ -139,15 +134,16 @@ load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
 %Now, assign an AP value to each pixel
 
 %Angle between the x-axis and the AP-axis
-APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
+APAngle=atan2((coordPZoom(2)-coordAZoom(2)),(coordPZoom(1)-coordAZoom(1)));
 APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
 
-APPosImage=zeros(size(FluoImage));
-[Rows,Cols]=size(FluoImage);
+APPosImage=zeros(ImageSize);
+Rows=ImageSize(1);
+Cols=ImageSize(2);
 
 for i=1:Rows
     for j=1:Cols
-        Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
+        Angle=atan2((i-coordAZoom(2)),(j-coordAZoom(1)));
         Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
         APPosition=Distance.*cos(Angle-APAngle);
         APPosImage(i,j)=APPosition/APLength;
@@ -157,7 +153,7 @@ end
 
 
 %Bin the pixels along the AP axis
-[XLSNum,XLSTxt,XLSRaw]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
+[XLSNum,XLSTxt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
 DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
 Dashes=findstr(Prefix,'-');
 PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
@@ -169,8 +165,6 @@ PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Pref
     end
 APResolutionColumn = find(strcmp(XLSRaw(1,:),'APResolution'));
 APResolution = XLSRaw{PrefixRow,APResolutionColumn};
-%COMMENTED OUT SO THIS VALUE CAN BE FOUND IN EXCEL FILE- AR 4/14/15
-%APResolution=0.025;
 APbinID=0:APResolution:1;
 
 MeanAPProfile=nan(length(APbinID),size(MeanImage,3));
