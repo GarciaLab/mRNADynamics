@@ -206,6 +206,16 @@ if ~NoAP
         SurfRows = str2double(ExtractInformationField(SurfInfo(1), 'state.acq.linesPerFrame='));
         SurfColumns = str2double(ExtractInformationField(SurfInfo(1), 'state.acq.pixelsPerLine='));
         
+        %HG: I had to add this for some surface images that were edited
+        %with ImageJ and lost their metadata. Note that I'm hardcoding the
+        %zoom of the low magnification images.
+        if isnan(SurfRows)
+            SurfRows=SurfInfo(1).Height;
+            SurfColumns=SurfInfo(1).Width;
+            SurfZoom=1;            
+        end
+        
+        
         %Get the full embryo image
         FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);       
         
