@@ -77,8 +77,14 @@ D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.tif']);
 %used for the stitching of the two halves of the embryo
 load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
 
+if ~exist(coordPZoom)
+    warning('AddParticlePosition should have been run first. Running it now.')
+    AddParticlePosition(Prefix, 'ManualAlignment')
+    load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+end
+
 %Angle between the x-axis and the AP-axis
-APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
+FAPAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
 %Correction for if APAngle is in quadrants II or III
 if coordPZoom(1)-coordAZoom(1) < 0
     APAngle = APAngle + pi;
