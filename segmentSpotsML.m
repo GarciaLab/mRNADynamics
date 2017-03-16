@@ -102,6 +102,7 @@ sigma1 = pixelSize / pixelSize; %width of narrower Gaussian
 sigma2 = 42000 / pixelSize; % width of wider Gaussian
 filterSize = round(2000 / pixelSize); %size of square to be convolved with microscopy images
 zim = [];
+evalin('base', 'clear probmaps');
 try
     %this is just some function that can only be called if IJM is set up
     IJM.getIdentifier() 
@@ -111,6 +112,7 @@ catch
 end
 ijm = evalin('base', 'IJM');
 mij = evalin('base', 'MIJ');
+zSize2 = zSize*2;
 for current_frame = 1:num_frames
     for i = 1:zSize
         zim(:,:,i) = double(imread([PreProcPath,filesep,Prefix, filesep, Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
@@ -128,16 +130,15 @@ for current_frame = 1:num_frames
     ijm.getDatasetAs('probmaps')
     p = evalin('base', 'probmaps');
     p2 = [];
-    for m = 1:2:46
+    for m = 1:2:zSize2
         p2(:,:,ceil(m/2)) =  p(:,:,m); %the even images in the original array are negatives of the odds
     end
-    p2 = permute(p2, [2 1 3]);
-    p2 = p2*10000;
+    p2 = permute(p2, [2 1 3]) * 10000;
     for i = 1:size(p2, 3)      
         p_name = ['prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif'];
         imwrite(uint16(p2(:,:,i)), [OutputFolder1,filesep,p_name])
     end
-    MIJ.run('Close All');
+    mij.run('Close All');
 end
    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
