@@ -15,28 +15,37 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 %                frames. It's suggested to run 5-20 frames for debugging.
 %'NoShadows':    Spots without valid (peaked) z-profiles are normally
 %                discarded. This option overrides that.
+%'OneShadow':    This option throws out spots with z-profiles that don't
+%                have at least two contiguous slices. More stringent than
+%                NoShadows. 
 %               
 
 %Default options
 displayFigures=0;
 TrackSpots=0;
 num_frames=0;
-Shadows = 2;
-
+num_shadows = 2;
+    
 for i=1:length(varargin)
     if strcmp(varargin{i},'displayFigures')
         displayFigures=1;
     elseif strcmp(varargin{i},'TrackSpots')
         TrackSpots=1;
-    elseif strcmpi(varargin{i}, 'NoShadows')
-        Shadows = 0;
-    elseif strcmpi(varargin{i}, 'OneShadow')
-        Shadows = 1;
     elseif strcmp(varargin{i},'Frames')
         if ~isnumeric(varargin{i+1})
             error('Wrong input parameters. After ''Frames'' you should input the number of frames')
         else
             num_frames=varargin{i+1};
+        end
+    elseif strcmp(varargin{i},'Shadows')
+        if ~isnumeric(varargin{i+1}) || varargin{i+1} > 2
+            error('Wrong input parameters. After ''Shadows'' you should input number of shadows (0, 1 or 2)')
+        else
+            num_shadows=varargin{i+1};
+        end
+    else
+        if ~isnumeric(varargin{i})
+            error('Input parameters not recognized. Check spelling and case.')
         end
     end
 end
@@ -105,6 +114,17 @@ sigma2 = 42000 / pixelSize; % width of wider Gaussian
 filterSize = round(2000 / pixelSize); %size of square to be convolved with microscopy images
 zim = [];
 evalin('base', 'clear probmaps');
+
+version -java;
+javaver = ans;
+if ~strcmp('Java 1.8.0_66-b18 with Oracle Corporation Java HotSpot(TM) 64-Bit Server VM mixed mode', javaver)
+    error('Java version incorrect. Rerun InstallmRNADynamics or check environment variables')
+end
+heapsize = java.lang.Runtime.getRuntime.maxMemory;
+if heapsize<1E10 
+    error('Please increase your Java heap memory allocation to at least 10GB (Preferences -> General -> Java Heap Memory.');
+end
+
 try
     %this is just some function that can only be called if IJM is set up
     IJM.getIdentifier() 
@@ -115,7 +135,10 @@ end
 ijm = evalin('base', 'IJM');
 mij = evalin('base', 'MIJ');
 zSize2 = zSize*2;
+h=waitbar(0,'Running Weca Classifier');
 for current_frame = 1:num_frames
+    w = waitbar(current_frame/num_frames,h);
+    set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
     for i = 1:zSize
         zim(:,:,i) = double(imread([PreProcPath,filesep,Prefix, filesep, Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
     end
@@ -142,7 +165,7 @@ for current_frame = 1:num_frames
     end
     mij.run('Close All');
 end
-   
+close(h);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Segment transcriptional loci
 else
@@ -292,7 +315,7 @@ if ~just_dog
             end
         else
         Particles(i).brightestZ = Particles(i).z(max_index);       
-            if Shadows == 1
+            if num_shadows == 1
                 if length(Particles(i).z) <= 1
                         Particles(i).discardThis = 1;
                         Particles(i).noIntensityAnalysis = 1;
@@ -315,7 +338,7 @@ if ~just_dog
                     Particles(i).noIntensityAnalysis = 1;
                     falsePositives = falsePositives + 1;
                 end
-            elseif Shadows == 2
+            elseif num_shadows == 2
                 if  Particles(i).brightestZ == Particles(i).z(end) ||...
                     Particles(i).brightestZ == Particles(i).z(1)                                
                     Particles(i).discardThis = 1;
