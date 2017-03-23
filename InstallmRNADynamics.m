@@ -22,9 +22,13 @@ mkdir(['..',filesep,'Data',filesep,'RawDynamicsData'])
 %DynamicsResults is the old DropboxFolder
 mkdir(['..',filesep,'Data',filesep,'DynamicsResults'])
 
-%Copy the files to the different foflders:
-copyfile(['InstallationFiles',filesep,'InstallComputerFolders.xlsx'],...
+%Copy the files to the different folders:
+if ~exist(['..',filesep,'ComputerFolders.xlsx'])
+    copyfile(['InstallationFiles',filesep,'InstallComputerFolders.xlsx'],...
     ['..',filesep,'ComputerFolders.xlsx'])
+else
+    warning('ComputerFolders.xlsx already exists. Not overwriting.')
+end
 
 %Edit ComputerFolders.XLSX
 [num,txt]=xlsread(['..',filesep,'ComputerFolders.xlsx']);
@@ -143,7 +147,20 @@ for i=1:length(Output)
     fprintf(fid, '%s \n', Output{i});
 end
 fclose(fid);
-    
+
+%Switch Matlab over to the Java release from the FIJI packaged with this
+%repository
+if ispc
+    [status,~] = dos(['setx MATLAB_JAVA ',DynamicsResultsFolder,'\Fiji.app\java\win64\jdk1.8.0_66\jre']);
+    if status
+        warning('Something went wrong setting Java environment variable. Talk to Armando.')
+    end
+else    
+    warning(['Please note that Weka integration is not supported outside of Windows. ',...
+            'Talk to Armando if you need this.'])
+end
+
+
 % else
 %     Answer=input('WARNING: startup.m already exist. Append, overwrite or cancel? (A/O/C): ','s')
 %     if strcmp(lower(Answer),'a')
@@ -172,9 +189,3 @@ end
         
 
 warning('on','MATLAB:MKDIR:DirectoryExists')
-
-
-
-        
-
-

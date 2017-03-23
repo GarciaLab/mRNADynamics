@@ -3,8 +3,6 @@ function [fits, relative_errors, residual, confidence_intervals, GaussianIntensi
 
 % Fit Gaussians to the given locus within a snippet
 
-% snippet = CPsmooth(snippet,'Gaussian Filter',1.3,0); %AR 7/6/16: Not sure this
-% is needed.
 
 snippet = double(snippet);
 [mesh_y,mesh_x] = meshgrid(1:size(snippet,2), 1:size(snippet,1));
@@ -30,7 +28,7 @@ snippet = double(snippet);
 %     + ( (sin(params(13))^2 / 2*params(8)^2) + (cos(params(13))^2 / 2*params(10)^2) ) *(y-params(9)).^2))...
 %     + params(11) - double(snip);
 
-%Double elliptical Gaussian with the elliptical axes parallel to the x-axis
+%Double elliptical Gaussian with one of the elliptical axes parallel to the x-axis
 
 % doubleGaussian = @(params) params(1).*exp((-1/2).*(((x-params(2))./params(3)).^2 ... 
 %         + ((y-params(4))./params(5)).^2)) ... 
