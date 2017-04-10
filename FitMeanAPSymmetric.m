@@ -63,9 +63,6 @@ close all
 
 %Find out which computer this is. That will determine the folder structure.
 %Information about about folders
-
-% ES 2013-10-29: Required for multiple users to be able to analyze data on
-% one computer
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
 
