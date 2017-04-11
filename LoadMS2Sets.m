@@ -129,9 +129,9 @@ end
 PrefixRow=find(strcmp(StatusTxt(:,1),'Prefix:'));
 for i=1:length(CompiledSets)
     SetName=StatusTxt{PrefixRow,CompiledSets(i)};
+    SetNames{i}=SetName;
     Quotes=strfind(SetName,'''');
     Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
-    
     
     %Load CompiledParticles if it exists. This constitutes the main part of
     %the Data output. However, we will later add more information to this
@@ -208,7 +208,7 @@ for i=1:length(CompiledSets)
         catch
             warning('_lin.mat not found.');
         end
-        SetNames{i}=SetName;
+        
 
         %Fit to the integrals
         if exist([DropboxFolder,filesep,Prefix,filesep,'FitIntegralResults.mat'])
@@ -269,11 +269,9 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'])
             Data(i).ImageRotation=ImageRotation(i);
         end
         
-        
         if exist('APDivisions')
             Data(i).APDivision=APDivisions(i).APDivision;
         end
-
 
         if exist('IntegralFits')
             if i<=length(IntegralFits)
@@ -299,8 +297,7 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'])
             end
         end
 
-
-        if exist('MeanFitsUp')
+       if exist('MeanFitsUp')
             if i<=length(MeanFitsUp)
                 Data(i).MeanFitsUp=MeanFitsUp(i).FitResults;
             end
@@ -313,9 +310,17 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'])
        end
 
         Data(i).Particles=ParticleTemp(i).Particles;
-
     end
 end
+
+% Add information to DataNuclei if it exists
+if exist('DataNuclei')
+    for i=1:length(DataNuclei)
+        DataNuclei(i).SetName=SetNames{i};
+    end
+end
+
+
 
 %If we have both particles and nuclei, then combine everything
 if exist('Data')&exist('DataNuclei')
