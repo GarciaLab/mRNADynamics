@@ -1,4 +1,4 @@
-function CompileAllParticles(DataType,varargin)
+function CompileAllDataSets(DataType,varargin)
 
 %Compiles all the data sets with the "READY" or "ApproveAll" labels on the XLS file.
 %A DataType pointing to the relevant XLS spreadsheet needs to be included.

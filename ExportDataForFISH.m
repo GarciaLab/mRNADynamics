@@ -3,11 +3,9 @@ function Prefix=ExportDataForFISH(varargin)
 %This function grabs individual z-stacks and splits them in
 %multiple channels so that it can be analyzed by the FISH code.
 %It adds a blank image at the beginning and the end so that the code
-%doesn't discard columns that peak at the edges of the Z-stack. It also
-%generates a TAG file with lots of channels. One for each time point.
+%doesn't discard columns that peak at the edges of the Z-stack. 
 
 %Options:
-%TAGOnly: Generates only the tag file
 %medianprojection: Uses a median projection in the nuclear channel rather
 %                  than the default maximum projection
 
@@ -42,13 +40,10 @@ ProjectionType = 'maxprojection'; %Default setting for z-projection is maximum-b
 
 %Look at parameters
 PrefixOverrideFlag = 0;
-TAGOnly=0;
 SkipFrames=[];
 k=1;
 while k<=length(varargin)
-    if strcmp(lower(varargin{k}),'tagonly')
-            TAGOnly=1;
-    elseif strcmp(lower(varargin{k}),'skipframes')
+    if strcmp(lower(varargin{k}),'skipframes')
         SkipFrames=varargin{k+1};
         k=k+1;
         warning('SkipFrame mode.')
@@ -112,6 +107,19 @@ FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
     'PixelSize',{});
 
 
+%Extract channel information
+%This information will be stored in FrameInfo for use by subsequent parts
+%of the code. Note, however, that the channels are also exctracted in this
+%code for each data type. I should integrate this.
+
+
+
+1+1;
+
+Channel1
+Channel2
+
+
 if strcmp(FileMode,'TIF')
 
     %Get the structure with the acquisition information
@@ -151,7 +159,6 @@ if strcmp(FileMode,'TIF')
     end
 
 
-
     % ES 2013-10-30: ScanImage versions handle averaging differently.
     ScanImageVersionS = ExtractInformationField(ImageInfo(1), 'state.software.version=');
     
@@ -183,14 +190,12 @@ if strcmp(FileMode,'TIF')
         jChannel1=1:NRepeats:numel(ImageInfo);
         kChannel1=1:NRepeats;
         lChannel1=2:NRepeats;
-        NImagesForTAG=NImages;
     else
         %If there is a second channel for histone we will still use the
         %alignment information from the first channel.
         jChannel1=1:NRepeats*2:numel(ImageInfo);
         kChannel1=1:2:NRepeats*2;
         lChannel1=2:2:NRepeats*2;
-        NImagesForTAG=NImages/2;
     end
 
 
@@ -198,59 +203,53 @@ if strcmp(FileMode,'TIF')
     %If the images were not averaged we will want to align them and average
     %them ourselves.
 
-    %Check that we didn't just want to generate the TAG file
-    if ~TAGOnly
-        if ~AverageFlag
-            h=waitbar(0,'Finding shifts for individual images');
-            for i=1:length(D)     
-                waitbar(i/length(D),h)
+    if ~AverageFlag
+        h=waitbar(0,'Finding shifts for individual images');
+        for i=1:length(D)     
+            waitbar(i/length(D),h)
 
 
-                for j=jChannel1
-                    l=1;
-                    for k=kChannel1
-                       Image(:,:,l)=imread([Folder,filesep,D(i).name],j+k-1);
+            for j=jChannel1
+                l=1;
+                for k=kChannel1
+                   Image(:,:,l)=imread([Folder,filesep,D(i).name],j+k-1);
 
-                        %Make the images smaller to allow for the shifts
-                        ImageSmall(:,:,l)=Image(MaxShift+1:(end-MaxShift),...
-                            MaxShift+1:(end-MaxShift),l);
-                        l=l+1;
-                    end
-
-                    for k=2:NRepeats
-                        for xShift=-(MaxShift-1)/2:(MaxShift-1)/2
-                            for yShift=-(MaxShift-1)/2:(MaxShift-1)/2
-                                %Create a shifted image. Notice that we always
-                                %align with respect to the first image. This should
-                                %be fine but could be improved to "track" the
-                                %shift.
-                                clear ShiftedImageSmall
-                                ShiftedImageSmall(:,:)=...
-                                    Image((1+MaxShift+yShift):(end-MaxShift+yShift),...
-                                    (1+MaxShift+xShift):(end-MaxShift+xShift),k);
-
-                                    cc=corrcoef(double(ImageSmall(:,:,1)),...
-                                        double(ShiftedImageSmall));
-
-                                    CorrMatrix(yShift+(MaxShift-1)/2+1,...
-                                        xShift+(MaxShift-1)/2+1)=cc(1,2);
-                            end
-                        end
-                        [RowAlign ColAlign]=find(CorrMatrix==max(max(CorrMatrix)));
-
-                        xShiftImages(i,j,k-1)=ColAlign-(MaxShift-1)/2-1;
-                        yShiftImages(i,j,k-1)=RowAlign-(MaxShift-1)/2-1;
-                    end
+                    %Make the images smaller to allow for the shifts
+                    ImageSmall(:,:,l)=Image(MaxShift+1:(end-MaxShift),...
+                        MaxShift+1:(end-MaxShift),l);
+                    l=l+1;
                 end
 
+                for k=2:NRepeats
+                    for xShift=-(MaxShift-1)/2:(MaxShift-1)/2
+                        for yShift=-(MaxShift-1)/2:(MaxShift-1)/2
+                            %Create a shifted image. Notice that we always
+                            %align with respect to the first image. This should
+                            %be fine but could be improved to "track" the
+                            %shift.
+                            clear ShiftedImageSmall
+                            ShiftedImageSmall(:,:)=...
+                                Image((1+MaxShift+yShift):(end-MaxShift+yShift),...
+                                (1+MaxShift+xShift):(end-MaxShift+xShift),k);
 
+                                cc=corrcoef(double(ImageSmall(:,:,1)),...
+                                    double(ShiftedImageSmall));
+
+                                CorrMatrix(yShift+(MaxShift-1)/2+1,...
+                                    xShift+(MaxShift-1)/2+1)=cc(1,2);
+                        end
+                    end
+                    [RowAlign ColAlign]=find(CorrMatrix==max(max(CorrMatrix)));
+
+                    xShiftImages(i,j,k-1)=ColAlign-(MaxShift-1)/2-1;
+                    yShiftImages(i,j,k-1)=RowAlign-(MaxShift-1)/2-1;
+                end
             end
-            close(h)
+
+
         end
+        close(h)
     end
-
-
-
 
     if AverageFlag
         h=waitbar(0,'Copying to FISH folder');
@@ -275,108 +274,99 @@ if strcmp(FileMode,'TIF')
         
         FrameInfo(i)=ExtractImageInformation(ImageInfo(1));
 
-        %Check that we don't just want to calculate the TAG file
-        if ~TAGOnly
-        %If AverageFlag we just need to separate the images. Otherwise we'll do
-        %the alignment and averaging.
-            if AverageFlag
-                error('Change the code to leave a blank image at the beginning and end of the stack')
+    %If AverageFlag we just need to separate the images. Otherwise we'll do
+    %the alignment and averaging.
+        if AverageFlag
+            error('Change the code to leave a blank image at the beginning and end of the stack')
 
 
-                l=1;
-                for j=jChannel1
-                    %Image=uint16(double(imread([Folder,filesep,D(i).name],j))./FFImage);
-                    Image=uint16(double(imread([Folder,filesep,D(i).name],j)));
+            l=1;
+            for j=jChannel1
+                %Image=uint16(double(imread([Folder,filesep,D(i).name],j))./FFImage);
+                Image=uint16(double(imread([Folder,filesep,D(i).name],j)));
 
-                    NewName=[Prefix,'_',iIndex(i,3),'_z',...
-                        iIndex(l,2),'.tif'];
-                    imwrite(Image,[OutputFolder,filesep,NewName]);
+                NewName=[Prefix,'_',iIndex(i,3),'_z',...
+                    iIndex(l,2),'.tif'];
+                imwrite(Image,[OutputFolder,filesep,NewName]);
 
-                    %Also copy the histone channel if it's present
-                    if HisChannel
-                        ImageHistone(:,:,l)=imread([Folder,filesep,D(i).name],j+1);
-                    end
-
-                    l=l+1;
-
+                %Also copy the histone channel if it's present
+                if HisChannel
+                    ImageHistone(:,:,l)=imread([Folder,filesep,D(i).name],j+1);
                 end
-                NewName=[Prefix,'-His_',iIndex(i,3),'.tif'];
 
-                %Get the maximum projection and cap the highest brightness pixles
-                MaxHistoneImage=max(ImageHistone,3);
-                MaxHistoneImage(MaxHistoneImage>MaxHistone)=MaxHistone;
+                l=l+1;
 
-                imwrite(MaxHistoneImage,[OutputFolder,filesep,NewName]);
-            else
-                l=1;
+            end
+            NewName=[Prefix,'-His_',iIndex(i,3),'.tif'];
 
-                %Use the size information of this image to calculate create a
-                %blank image for the beginning and end of the stack.
-                BlankImage=uint16(zeros(ImageInfo(1).Height,ImageInfo(1).Width));
-                %Save the first image
+            %Get the maximum projection and cap the highest brightness pixles
+            MaxHistoneImage=max(ImageHistone,3);
+            MaxHistoneImage(MaxHistoneImage>MaxHistone)=MaxHistone;
+
+            imwrite(MaxHistoneImage,[OutputFolder,filesep,NewName]);
+        else
+            l=1;
+
+            %Use the size information of this image to calculate create a
+            %blank image for the beginning and end of the stack.
+            BlankImage=uint16(zeros(ImageInfo(1).Height,ImageInfo(1).Width));
+            %Save the first image
+            NewName=[Prefix,'_',iIndex(i,3),'_z',...
+                iIndex(1,2),'.tif'];
+            imwrite(BlankImage,[OutputFolder,filesep,NewName],...
+                'Compression','none');
+            %Save the last image
+            NewName=[Prefix,'_',iIndex(i,3),'_z',...
+                iIndex(length(jChannel1)+2,2),'.tif'];
+            imwrite(BlankImage,[OutputFolder,filesep,NewName],...
+                'Compression','none');
+
+
+
+            for j=jChannel1
+                %Load the first image. We're not shifting this one
+                ImageForAvg(:,:,1)=double(imread([Folder,filesep,D(i).name],j));
+
+                %Now shift and average the actual images
+                m=2;
+                for k=kChannel1(2:end)
+                    ImageForAvg(:,:,m)=double(imread([Folder,filesep,D(i).name],j+k-1));
+                    ImageForAvg(:,:,m)=ShiftImage(ImageForAvg(:,:,m),...
+                        xShiftImages(i,j,m-1),yShiftImages(i,j,m-1));
+                    m=m+1;
+                end
+                Image=uint16(mean(ImageForAvg,3));  
                 NewName=[Prefix,'_',iIndex(i,3),'_z',...
-                    iIndex(1,2),'.tif'];
-                imwrite(BlankImage,[OutputFolder,filesep,NewName],...
-                    'Compression','none');
-                %Save the last image
-                NewName=[Prefix,'_',iIndex(i,3),'_z',...
-                    iIndex(length(jChannel1)+2,2),'.tif'];
-                imwrite(BlankImage,[OutputFolder,filesep,NewName],...
-                    'Compression','none');
+                    iIndex(l+1,2),'.tif'];
+                imwrite(Image,[OutputFolder,filesep,NewName]);
 
-
-
-                for j=jChannel1
-                    %Load the first image. We're not shifting this one
-                    ImageForAvg(:,:,1)=double(imread([Folder,filesep,D(i).name],j));
-
-
-
-
-                    %Now shift and average the actual images
+                %Align the histone channel
+                if HisChannel
+                    ImageForAvg(:,:,1)=imread([Folder,filesep,D(i).name],j+1);
                     m=2;
                     for k=kChannel1(2:end)
-                        ImageForAvg(:,:,m)=double(imread([Folder,filesep,D(i).name],j+k-1));
+                        ImageForAvg(:,:,m)=imread([Folder,filesep,D(i).name],j+k);
                         ImageForAvg(:,:,m)=ShiftImage(ImageForAvg(:,:,m),...
                             xShiftImages(i,j,m-1),yShiftImages(i,j,m-1));
                         m=m+1;
                     end
-                    Image=uint16(mean(ImageForAvg,3));  
-                    NewName=[Prefix,'_',iIndex(i,3),'_z',...
-                        iIndex(l+1,2),'.tif'];
-                    imwrite(Image,[OutputFolder,filesep,NewName]);
+                    ImageHistone(:,:,l)=uint16(mean(ImageForAvg,3));
 
-                    %Align the histone channel
-                    if HisChannel
-
-                        ImageForAvg(:,:,1)=imread([Folder,filesep,D(i).name],j+1);
-                        m=2;
-                        for k=kChannel1(2:end)
-                            ImageForAvg(:,:,m)=imread([Folder,filesep,D(i).name],j+k);
-                            ImageForAvg(:,:,m)=ShiftImage(ImageForAvg(:,:,m),...
-                                xShiftImages(i,j,m-1),yShiftImages(i,j,m-1));
-                            m=m+1;
-                        end
-                        ImageHistone(:,:,l)=uint16(mean(ImageForAvg,3));
-
-                    end
-
-
-
-                    l=l+1;
                 end
 
 
 
-                if HisChannel
-                    ImageHistoneMax=uint16(max(ImageHistone,[],3));
+                l=l+1;
+            end
 
-                    %Cap the highest brightness pixles
-                    ImageHistoneMax(ImageHistoneMax>MaxHistone)=MaxHistone;
+            if HisChannel
+                ImageHistoneMax=uint16(max(ImageHistone,[],3));
 
-                    NewName=[Prefix,'-His_',iIndex(i,3),'.tif'];
-                    imwrite(ImageHistoneMax,[OutputFolder,filesep,NewName]);
-                end
+                %Cap the highest brightness pixles
+                ImageHistoneMax(ImageHistoneMax>MaxHistone)=MaxHistone;
+
+                NewName=[Prefix,'-His_',iIndex(i,3),'.tif'];
+                imwrite(ImageHistoneMax,[OutputFolder,filesep,NewName]);
             end
         end
     end
@@ -397,15 +387,6 @@ if strcmp(FileMode,'TIF')
     
     
     close(h)
-    
-%     %TAG file information
-%     Output{1}=['id ',Prefix,'_'];
-%     Output{2}='';
-%     Output{3}='1';
-%     Output{4}=['frames ',num2str(length(FrameInfo)),':1:',num2str(NImagesForTAG+2)];
-%     Output{5}=['suffix ???_z??'];
-%     Output{6}=['flat FF'];
-    
 
 elseif strcmp(FileMode, 'LAT')
       
@@ -563,14 +544,7 @@ elseif strcmp(FileMode, 'LAT')
         end
         close(h)
                   
-%         % TAG File Information
-%         Output{1}=['id ',Prefix,'_'];
-%         Output{2}='';
-%         Output{3}='1';
-%         Output{4}=['frames ',num2str(NFrames),':1:',num2str(NSlices+2)];
-%         Output{5}=['suffix ???_z??'];
-
-        %LSM mode
+%LSM mode
 elseif strcmp(FileMode,'LSM')
     
     warning('Still need to add the FF information')
@@ -812,16 +786,6 @@ elseif strcmp(FileMode,'LSM')
             imwrite(LSMFF{1}{ChannelToUse,1},...
                 [OutputFolder,filesep,Prefix,'_FF.tif']);
         end
-
-%         % TAG File Information
-%         Output{1}=['id ',Prefix,'_'];
-%         Output{2}='';
-%         Output{3}='1';
-%         Output{4}=['frames ',num2str(sum(NFrames)),':1:',num2str(min(NSlices)+2)];
-%         Output{5}=['suffix ???_z??'];
-%         if exist('LSMFF')
-%             Output{6}=['flat FF'];
-%         end
     else
         error('Experiment type not supported for LSM format. Ask HG.')
     end
@@ -1223,25 +1187,6 @@ elseif strcmp(FileMode,'LIFExport')
         end
         close(h)
         
-%         % TAG File Information
-%         Output{1}=['id ',Prefix,'_'];
-%         Output{2}='';
-%         Output{3}='1';
-%         Output{4}=['frames ',num2str(sum(NFrames)),':1:',num2str(min(NSlices)+2)];
-%         Output{5}=['suffix ???_z??'];
-%         if exist('LIFFF')
-%             Output{6}=['flat FF'];
-%         end
-%         if strcmp(ExperimentType, '2spot2color')
-%             Output{end+1}='';
-%             Output{end+1}='2';
-%             Output{end+1}=['frames ',num2str(sum(NFrames)),':1:',num2str(min(NSlices)+2)];
-%             Output{end+1}=['suffix ???_z??_ch02'];
-%             if exist('LIFFF')
-%                 Output{end+1}=['flat FF'];
-%             end
-%         end
-        
 elseif strcmp(FileMode, 'LAT')
     [Output, FrameInfo] = ExportDataForFISH_Lattice(Prefix, D, Folder, OutputFolder, Channel1, Channel2, TAGOnly, ImageInfo); 
 end
@@ -1292,19 +1237,8 @@ if ~isempty(SkipFrames)
             end
         end
     end
-    
-%     %Redefine the output for the FISH code
-%     Output{4}=['frames ',num2str(length(FrameInfo)),':1:',num2str(NSlices+2)];
 end
 
-% %Create the TAG file for the FISH analysis code
-% if exist('Output')
-%     fid = fopen([OutputFolder,filesep,Prefix,'.tag'], 'wt');
-%     for i=1:length(Output)
-%         fprintf(fid, '%s \n', Output{i});
-%     end
-%     fclose(fid);
-% end
 
 %Save the information about the various frames
 mkdir([DropboxFolder,filesep,Prefix])

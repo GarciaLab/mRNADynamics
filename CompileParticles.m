@@ -79,7 +79,12 @@ FilePrefix=[Prefix,'_'];
 
 %What type of experiment are we dealing with? Get this out of
 %MovieDatabase.xlsx
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
+    Folder, Prefix, ExperimentType, Channel1, Channel2,OutputFolder...
+    ] = readMovieDatabase(PrefixOverrideFlag);
 
+%Note that some of this information is redundant given what we get out of
+%readMovieDatabase above. We'll have to integrate this better.
 [XLSNum,XLSTxt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
 ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
 ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));

@@ -345,10 +345,14 @@ if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'inp
         %Number of z-slices
         NumberSlices=FrameInfo(1).NumberSlices;
         
-        h=waitbar(0,'Extracting nuclear fluorescence');
+        %h=waitbar(0,'Extracting nuclear fluorescence');
         for CurrentFrame=1:length(FrameInfo)
-           
-            waitbar(CurrentFrame/length(FrameInfo),h);
+            
+            FieldNames=fieldnames(schnitzcells)
+            
+            output=struct(FieldNames)
+            
+            %waitbar(CurrentFrame/length(FrameInfo),h);
             
             %Initialize the image
             Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices+2);
@@ -365,13 +369,9 @@ if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'inp
             
             TotalSchnitz=length(schnitzcells);
             
-            parfor j=1:TotalSchnitz
+            for j=1:TotalSchnitz
                 
-                %HG: Note that I'm calling a function here so that I can
-                %debug the parfor loop above. Ideally, I would have 
-                %parfor loop over images, not schnitzes within an image.
-                %However, I couldn't quite figure out how to do that.
-                schnitzcells(j)=ExtractNuclearFluorescence(schnitzcells(j),...
+                output(j)=ExtractNuclearFluorescence(schnitzcells(j),...
                     CurrentFrame,...
                     Image,LinesPerFrame,PixelsPerLine,NumberSlices,Circle,IntegrationRadius);
               
