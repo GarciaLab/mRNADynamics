@@ -151,7 +151,7 @@ fclose(fid);
 %Switch Matlab over to the Java release from the FIJI packaged with this
 %repository
 if ispc
-    [status,~] = dos(['setx MATLAB_JAVA ',DynamicsResultsFolder,'\Fiji.app\java\win64\jdk1.8.0_66\jre']);
+    [status,~] = dos(['setx MATLAB_JAVA ',mRNADynamicsParentFolder,'\mRNADynamics\Fiji.app\java\win64\jdk1.8.0_66\jre']);
     if status
         warning('Something went wrong setting Java environment variable. Talk to Armando.')
     end
