@@ -17,11 +17,11 @@ mkdir([PreProcessedData,filesep,Prefix,filesep,'tr2dProject',filesep,...
 CreateStack=1;
 filenameRaw = [PreProcessedData,filesep,Prefix,filesep,'tr2dProject',filesep,'RAW.tif'];
 if exist( filenameRaw )
-    Answer=input('Nuclear data has already been exported for tr2d. Do you want to export again? (Y/n)','s');
-    if strcmpi(Answer,'n')
-        CreateStack=0;
-    else
+    Answer=input('Nuclear data has already been exported for tr2d. Do you want to export again? (y/N)','s');
+    if strcmpi(Answer,'y')
         delete(filenameRaw);
+    else
+        CreateStack=0;
     end
 end
 
@@ -51,20 +51,24 @@ csvwrite([PreProcessedData,filesep,Prefix,filesep,'tr2dProject',...
 %RUN TR2D
 %%%%%%%%
 % Check if IJM is started already and start if it is not
-try
-    %this is just some function that can only be called if IJM is set up
-    IJM.getIdentifier() 
-catch
-    addpath('e:/Fiji.app/scripts') % Update for your ImageJ installation
-    ImageJ                         % Initialize IJM and MIJ
-end
+% try
+%     %this is just some function that can only be called if IJM is set up
+%     IJM.getIdentifier() 
+% catch
+%     addpath('e:/Fiji.app/scripts') % Update for your ImageJ installation
+%     ImageJ                         % Initialize IJM and MIJ
+% end
 % Start tr2d
-MIJ.run('Tr2d 0.2.2-SNAP');
-params = javaArray('java.lang.String', 1);
-params(1) = java.lang.String(['-p ',PreProcessedData,filesep,Prefix,filesep,'tr2dProject'])
-tr2d = com.indago.tr2d.app.garcia.Tr2dApplication()
-.main(params)
-MIJ.exit()
+%MIJ.run('Tr2d 0.2.2-SNAP');
+%params = javaArray('java.lang.String', 1);
+%params(1) = java.lang.String(['-p ',PreProcessedData,filesep,Prefix,filesep,'tr2dProject'])
+%tr2d = com.indago.tr2d.app.garcia.Tr2dApplication()
+%tr2d.main(params)
+%MIJ.exit()
+jar = 'C:\Users\jug\LivemRNA\mRNADynamics\tr2d\tr2d-assembly-0.1.0-SNAPSHOT.jar';
+projectPath = [PreProcessedData,filesep,Prefix,filesep,'tr2dProject'];
+exportPath = [projectPath,filesep,'mRNADynamicsExport'];
+system(['java -jar ', jar, ' -p ', projectPath, ' -e ', exportPath]);
 
 %Check that we have the tr2d results and import them
 if exist([PreProcessedData,filesep,Prefix,filesep,'tr2dProject',filesep,...
