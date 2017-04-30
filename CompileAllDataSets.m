@@ -3,6 +3,10 @@ function CompileAllDataSets(DataType,varargin)
 %Compiles all the data sets with the "READY" or "ApproveAll" labels on the XLS file.
 %A DataType pointing to the relevant XLS spreadsheet needs to be included.
 
+%NOTE: This doesn't work with input/output. It only works with either spot
+%or nuclear datasets.
+
+
 %Parameters:
 %ForceAP  -  Force AP detection even if it's there already.
 %SkipTraces - Don't output the individual traces
@@ -52,35 +56,73 @@ DropboxFolder=DropboxFolders{DataStatusToCheck};
 D=dir([DropboxFolder,filesep,'DataStatus.*']);
 [StatusNum,StatusTxt]=xlsread([DropboxFolder,filesep,D(1).name],DataType);
 
+%Find the row for the Prefix
+PrefixRow=find(strcmp(StatusTxt(:,1),'Prefix:'));
 
-CompileRow=find(strcmp(StatusTxt(:,1),'AnalyzeLiveData Compile Particles')|...
+%Find the rows for the CompileParticles or CompileNuclearProtein flags
+CompileParticlesRow=find(strcmp(StatusTxt(:,1),'AnalyzeLiveData Compile Particles')|...
     strcmp(StatusTxt(:,1),'CompileParticles'));
-if isempty(CompileRow)
-    error('CompileParicles row not found')
+CompileNucleiRow=find(strcmp(StatusTxt(:,1),'CompileNuclearProtein'));
+
+if isempty(CompileParticlesRow)&isempty(CompileNucleiRow)
+    error('CompileParicles or CompileNuclei rows not found')
 end
 
-CompiledSets=find(strcmp(StatusTxt(CompileRow,:),'READY')|...
-    strcmp(StatusTxt(CompileRow,:),'ApproveAll'));
 
-for i=1:length(CompiledSets)
-    display(['Compiling set ',num2str(i),' of ',num2str(length(CompiledSets))])
-    SetName=StatusTxt{6,CompiledSets(i)};
-    Quotes=strfind(SetName,'''');
-    Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
-    
-    if isempty(varargin)
-       CompileParticles(Prefix)
-    else
-        InputArgument=[];
-        for j=1:length(varargin)
-            InputArgument=[InputArgument,'''',varargin{j},''', '];
+if ~isempty(CompileParticlesRow)
+    CompileRow=CompileParticlesRow;
+
+    CompiledSets=find(strcmp(StatusTxt(CompileRow,:),'READY')|...
+        strcmp(StatusTxt(CompileRow,:),'ApproveAll'));
+
+    for i=1:length(CompiledSets)
+        display(['Compiling set ',num2str(i),' of ',num2str(length(CompiledSets))])
+        SetName=StatusTxt{PrefixRow,CompiledSets(i)};
+        Quotes=strfind(SetName,'''');
+        Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
+
+        if isempty(varargin)
+           CompileParticles(Prefix)
+        else
+            InputArgument=[];
+            for j=1:length(varargin)
+                InputArgument=[InputArgument,'''',varargin{j},''', '];
+            end
+            InputArgument=InputArgument(1:end-2);
+
+
+            eval(['CompileParticles(Prefix,',InputArgument,');'])
         end
-        InputArgument=InputArgument(1:end-2);
-            
-        
-        eval(['CompileParticles(Prefix,',InputArgument,');'])
     end
+elseif ~isempty(CompileNucleiRow)
+    CompileRow=CompileNucleiRow;
+
+    CompiledSets=find(strcmp(StatusTxt(CompileRow,:),'READY')|...
+        strcmp(StatusTxt(CompileRow,:),'ApproveAll'));
+
+    for i=1:length(CompiledSets)
+        display(['Compiling set ',num2str(i),' of ',num2str(length(CompiledSets))])
+        SetName=StatusTxt{PrefixRow,CompiledSets(i)};
+        Quotes=strfind(SetName,'''');
+        Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
         
-   
+        
+        %First redo the nuclear tracking to ensure we got the right
+        %fluorescence measurement
+        TrackNuclei(Prefix);
+        
+        %Finally, compile the nuclei
+        if isempty(varargin)
+           CompileNuclearProtein(Prefix)
+        else
+            InputArgument=[];
+            for j=1:length(varargin)
+                InputArgument=[InputArgument,'''',varargin{j},''', '];
+            end
+            InputArgument=InputArgument(1:end-2);
+
+
+            eval(['CompileNuclearProtein(Prefix,',InputArgument,');'])
+        end
+    end
 end
- 
