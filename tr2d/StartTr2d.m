@@ -65,7 +65,7 @@ csvwrite([PreProcessedData,filesep,Prefix,filesep,'tr2dProject',...
 %tr2d = com.indago.tr2d.app.garcia.Tr2dApplication()
 %tr2d.main(params)
 %MIJ.exit()
-jar = 'C:\Users\jug\LivemRNA\mRNADynamics\tr2d\tr2d-assembly-0.1.0-SNAPSHOT.jar';
+jar = 'D:\Data\Simon\LivemRNA\mRNADynamics\tr2d\tr2d.jar';
 projectPath = [PreProcessedData,filesep,Prefix,filesep,'tr2dProject'];
 exportPath = [projectPath,filesep,'mRNADynamicsExport'];
 system(['java -jar ', jar, ' -p ', projectPath, ' -e ', exportPath]);
