@@ -1,5 +1,5 @@
 function temp_particles = identifySingleSpot(particle_index, image, image_label, dog_image, distance_to_neighbor, snippet_size, ...
-    pixelSize, show_status, figure, microscope, addition)
+    pixelSize, show_status, fg, microscope, addition)
 
     %This is a subfunction for 'segmentSpots' that locates a transcriptional locus (the k'th locus in an image)
     %and assigns a Gaussian
@@ -104,9 +104,10 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             spot_x = fits(2) - snippet_size + centroid_x; %final reported spot position
             spot_y = fits(4) - snippet_size + centroid_y;    
             
-            if show_status && ~isempty(figure)
-                set(0,'CurrentFigure', figure);...
-                ellipse(distance_to_neighbor/2,distance_to_neighbor/2,0,spot_x,spot_y,'r');       
+            if show_status && ~isempty(fg)
+                figure(fg)
+                ellipse(distance_to_neighbor/2,distance_to_neighbor/2,0,spot_x,spot_y,'r');
+                pause(.1) %Ellipses won't be plotted correctly without this pause.
             end
             
             %disp(rel_errors);

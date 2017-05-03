@@ -1,4 +1,4 @@
-function segmentSpotsML(Prefix,Threshold,varargin)
+function segmentSpotsSC(Prefix,Threshold,varargin)
 
 %Parameters:
 %Prefix: Prefix of the data set to analyze
@@ -15,37 +15,26 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 %                frames. It's suggested to run 5-20 frames for debugging.
 %'NoShadows':    Spots without valid (peaked) z-profiles are normally
 %                discarded. This option overrides that.
-%'OneShadow':    This option throws out spots with z-profiles that don't
-%                have at least two contiguous slices. More stringent than
-%                NoShadows. 
 %               
 
 %Default options
 displayFigures=0;
 TrackSpots=0;
 num_frames=0;
-num_shadows = 2;
-    
+Shadows = 1;
+
 for i=1:length(varargin)
     if strcmp(varargin{i},'displayFigures')
         displayFigures=1;
     elseif strcmp(varargin{i},'TrackSpots')
         TrackSpots=1;
+    elseif strcmpi(varargin{i}, 'NoShadows')
+        Shadows = 0;
     elseif strcmp(varargin{i},'Frames')
         if ~isnumeric(varargin{i+1})
             error('Wrong input parameters. After ''Frames'' you should input the number of frames')
         else
             num_frames=varargin{i+1};
-        end
-    elseif strcmp(varargin{i},'Shadows')
-        if ~isnumeric(varargin{i+1}) || varargin{i+1} > 2
-            error('Wrong input parameters. After ''Shadows'' you should input number of shadows (0, 1 or 2)')
-        else
-            num_shadows=varargin{i+1};
-        end
-    else
-        if ~isnumeric(varargin{i})
-            error('Input parameters not recognized. Check spelling and case.')
         end
     end
 end
@@ -62,7 +51,6 @@ catch
 end
 %%
 tic;
-
 [~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
     readMovieDatabase(Prefix);
 
@@ -76,7 +64,9 @@ if num_frames == 0
     num_frames = length(FrameInfo);
 end
 OutputFolder1=[FISHPath,filesep,Prefix,'_',filesep,'dogs'];
-mkdir(OutputFolder1)
+if ~exist(OutputFolder1,'dir')
+    mkdir(OutputFolder1)
+end
 
 %Load flat-field
 doFF = 1;
@@ -106,25 +96,20 @@ all_frames = cell(num_frames, zSize);
 close all force;
 if just_dog
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Generate difference of Gaussian images if no threshold was given.
-%Initialize Difference of Gaussian filter parameters. filterSize >> sigma2
-%> sigma1
-sigma1 = pixelSize / pixelSize; %width of narrower Gaussian
-sigma2 = 42000 / pixelSize; % width of wider Gaussian
-filterSize = round(2000 / pixelSize); %size of square to be convolved with microscopy images
+%Generate probability maps of likely transcriptional loci
+
 zim = [];
 evalin('base', 'clear probmaps');
 
 version -java;
 javaver = ans;
 if ~strcmp('Java 1.8.0_66-b18 with Oracle Corporation Java HotSpot(TM) 64-Bit Server VM mixed mode', javaver)
-    error('Java version incorrect. Rerun InstallmRNADynamics or check environment variables')
+    error('Java version incorrect. Re-run InstallmRNADynamics or check environment variables')
 end
-
 heapsize = java.lang.Runtime.getRuntime.maxMemory;
 if heapsize<1E9 
-    error('Please increase your 
-
+    error('Please increase your Java heap memory allocation to at least 10GB (Home -> Preferences -> General -> Java Heap Memory.');
+end
 
 try
     %this is just some function that can only be called if IJM is set up
@@ -136,14 +121,16 @@ end
 ijm = evalin('base', 'IJM');
 mij = evalin('base', 'MIJ');
 zSize2 = zSize*2;
-h=waitbar(0,'Running Weca Classifier');
+h=waitbar(0,'Running Weka Classifier');
 for current_frame = 1:num_frames
     w = waitbar(current_frame/num_frames,h);
     set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
     for i = 1:zSize
         zim(:,:,i) = double(imread([PreProcPath,filesep,Prefix, filesep, Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
     end
-    mkdir([PreProcPath,filesep,Prefix,filesep,'stacks']);
+    if ~exist([PreProcPath,filesep,Prefix,filesep,'stacks'], 'dir')
+        mkdir([PreProcPath,filesep,Prefix,filesep,'stacks']);
+    end
     name = [PreProcPath,filesep,Prefix,filesep,'stacks', filesep, iIndex(current_frame,3),'.tif'];
     imwrite(uint16(zim(:,:,1)), name);
     for k = 2:size(zim,3)
@@ -160,14 +147,18 @@ for current_frame = 1:num_frames
         p2(:,:,ceil(m/2)) =  p(:,:,m); %the even images in the original array are negatives of the odds
     end
     p2 = permute(p2, [2 1 3]) * 10000;
-    for i = 1:size(p2, 3)      
+    for i = 2:size(p2, 3)-1      
         p_name = ['prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif'];
         imwrite(uint16(p2(:,:,i)), [OutputFolder1,filesep,p_name])
     end
+    p_name_1 = ['prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(1,2),'.tif'];
+    imwrite(uint16(p2(:,:,1).*0), [OutputFolder1,filesep,p_name_1]);
+    p_name_end = ['prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(size(p2,3),2),'.tif'];
+    imwrite(uint16(p2(:,:,1).*0), [OutputFolder1,filesep,p_name_end]);
+    
     mij.run('Close All');
 end
 close(h);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Segment transcriptional loci
 else
     h=waitbar(0,'Segmenting spots');
@@ -208,25 +199,22 @@ else
 %             end
                            
             temp_frames = {};
-            temp_particles = cell(1, n_spots);
 
             if n_spots ~= 0
                 if ~displayFigures
                     parfor k = 1:n_spots
-                        try
-                            temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
-                        catch
-                        end
+                        temp_particles(k) = identifySpot(k, im, im_label, dog, ...
+                            neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
                     end
                 else
                     for k = 1:n_spots
-                            temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
-                    end
+                        title(['Frame: ', num2str(current_frame), ', z-plane: ', num2str(i), ', Spot: ', num2str(k)])
+                        temp_particles(k) = identifySpot(k, im, im_label, dog, ...
+                            neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
+                    end                   
                 end
                 for k = 1:n_spots
-                    if ~isempty(temp_particles{k})
+                    if ~isempty([temp_particles(k)])
                         temp_frames = [temp_frames, temp_particles(k)];
                     end
                 end
@@ -240,32 +228,42 @@ end
 
 %%
 %Create a useful structure that can be fed into pipeline
-if ~just_dog 
+ if ~just_dog
     n = 1;
     h=waitbar(0,'Saving particle information');
     for i = 1:num_frames  
         waitbar(i/num_frames,h)
         for j = 1:zSize 
-             for spot = 1:length(all_frames{i,j}) %spots within particular image
-                 if ~isempty(all_frames{i,j}{spot})
-                     Particles(n).FixedAreaIntensity(1) = cell2mat(all_frames{i,j}{spot}(1));
-                     Particles(n).xFit(1) = cell2mat(all_frames{i,j}{spot}(2));
-                     Particles(n).yFit(1) = cell2mat(all_frames{i,j}{spot}(3));
-                     Particles(n).Offset(1) = cell2mat(all_frames{i,j}{spot}(4));
-                     Particles(n).Snippet{1} = cell2mat(all_frames{i,j}{spot}(5));
-                     Particles(n).Area{1} = cell2mat(all_frames{i,j}{spot}(6));
-                     Particles(n).xFitWidth{1} = cell2mat(all_frames{i,j}{spot}(7));
-                     Particles(n).yFitWidth{1} = cell2mat(all_frames{i,j}{spot}(8));
-                     Particles(n).yDoG(1) = cell2mat(all_frames{i,j}{spot}(9));
-                     Particles(n).xDoG(1) = cell2mat(all_frames{i,j}{spot}(10));
-                     Particles(n).GaussianIntensity(1) = cell2mat(all_frames{i,j}{spot}(11));                     
-                     Particles(n).CentralIntensity(1) = cell2mat(all_frames{i,j}{spot}(12));
-                     Particles(n).DOGIntensity(1) = cell2mat(all_frames{i,j}{spot}(13));
-                     Particles(n).snippet_mask{1} = cell2mat(all_frames{i,j}{spot}(14));
-                     Particles(n).SisterDistance(1) = cell2mat(all_frames{i,j}{spot}(17));
-                     Particles(n).ConfidenceIntervals{1} = cell2mat(all_frames{i,j}{spot}(19));          
-                     Particles(n).gaussSpot{1} = cell2mat(all_frames{i,j}{spot}(20));
-                     raw = all_frames{i,j}{spot}(21);
+             n_spots = length(all_frames{i,j});
+             for spot = 1:n_spots 
+                 if ~isempty(all_frames{i,j}{spot}.fixedAreaIntensity)
+                     s = all_frames{i,j}{spot};
+                     Particles(n).FixedAreaIntensity(1) = s.fixedAreaIntensity;
+                     Particles(n).xFit(1) = s.xFit;
+                     Particles(n).yFit(1) = s.yFit;
+                     Particles(n).Offset(1) = s.Offset;
+                     Particles(n).Snippet{1} = s.Snippet;
+                     Particles(n).Area{1} = s.Area;
+                     Particles(n).xFitWidth{1} = s.xFitWidth;
+                     Particles(n).yFitWidth{1} = s.yFitWidth;
+                     Particles(n).yDoG(1) = s.centroidY;
+                     Particles(n).xDoG(1) = s.centroidX;
+                     Particles(n).GaussianIntensity(1) = s.GaussianIntensity;                     
+                     Particles(n).CentralIntensity(1) = s.CentralIntensity;
+                     Particles(n).DOGIntensity(1) = s.DOGIntensity;
+                     Particles(n).snippet_mask{1} = s.snippet_mask;
+                     Particles(n).ConfidenceIntervals{1} = s.ConfidenceIntervals;          
+                     Particles(n).gaussSpot{1} = s.gaussSpot;
+                     raw = s.mesh; 
+                     Particles(n).xFitWidth{1} = s.xFitWidth;
+                     Particles(n).yFitWidth{1} = s.yFitWidth;
+                     Particles(n).eccentricity = s.eccentricity;
+                     Particles(n).sistersXWidth{1} = s.sistersXWidth2;
+                     Particles(n).sistersYWidth{1} = s.sistersYWidth2;
+                     Particles(n).sisterX{1} = s.sistersXPos2; 
+                     Particles(n).sisterY{1} = s.sistersYPos2;
+                     Particles(n).sisterSeparation{1} = s.sisterSeparation2;
+                     Particles(n).sisterAmps{1} = s.sisterAmps;
                      Particles(n).rawSpot{1} = raw{1};
                      Particles(n).z(1) = j;
                      Particles(n).discardThis = 0;
@@ -278,12 +276,12 @@ if ~just_dog
     end
     close(h)
     fields = fieldnames(Particles);
-    
+
     %z-tracking
     changes = 1;
     while changes ~= 0
         changes = 0;
-        i = 1; 
+        i = 1;
         h=waitbar(0,'Finding z-columns');
         neighborhood = 1300 / pixelSize;
         for n = 1:num_frames
@@ -315,31 +313,8 @@ if ~just_dog
                 Particles(i).(fields{j}) = Particles(i).(fields{j})(max_index);
             end
         else
-        Particles(i).brightestZ = Particles(i).z(max_index);       
-            if num_shadows == 1
-                if length(Particles(i).z) <= 1
-                        Particles(i).discardThis = 1;
-                        Particles(i).noIntensityAnalysis = 1;
-                        falsePositives = falsePositives + 1;
-                elseif  Particles(i).brightestZ == Particles(i).z(end)
-                    if Particles(i).z(max_index -1) ~= Particles(i).brightestZ-1
-                        Particles(i).discardThis = 1;
-                        Particles(i).noIntensityAnalysis = 1;
-                        falsePositives = falsePositives + 1;
-                    end
-                elseif Particles(i).brightestZ == Particles(i).z(1)
-                    if Particles(i).z(max_index+1) ~= Particles(i).brightestZ+1
-                        Particles(i).discardThis = 1;
-                        Particles(i).noIntensityAnalysis = 1;
-                        falsePositives = falsePositives + 1;
-                    end
-                elseif Particles(i).z(max_index -1) ~= Particles(i).brightestZ-1 ...
-                    && Particles(i).z(max_index +1) ~= Particles(i).brightestZ +1
-                    Particles(i).discardThis = 1;
-                    Particles(i).noIntensityAnalysis = 1;
-                    falsePositives = falsePositives + 1;
-                end
-            elseif num_shadows == 2
+            Particles(i).brightestZ = Particles(i).z(max_index);       
+            if Shadows
                 if  Particles(i).brightestZ == Particles(i).z(end) ||...
                     Particles(i).brightestZ == Particles(i).z(1)                                
                     Particles(i).discardThis = 1;
@@ -381,8 +356,8 @@ if ~just_dog
         end
     end
     
-    %Clean up Spots to remove empty rows
-    Spots2 = struct('Fits', []);
+    %Clean up Spots to remove empty rows and unneeded fields
+    Spots2 = struct('Fits', []);        
     for i = 1:length(Spots)
         Spots2(i).Fits = [];
         for j = 1:length(Spots(i).Fits)
@@ -398,7 +373,15 @@ if ~just_dog
             end
         end
     end
-    Spots = Spots2;
+    for i = 1:length(Spots2)
+        if isstruct(Spots2(i).Fits)
+            Spots(i).Fits = rmfield(Spots2(i).Fits, 'r');
+            Spots(i).Fits = rmfield(Spots(i).Fits, 'discardThis');
+        else
+            Spots(i).Fits = [];
+        end
+    end
+    
  
     %AR 7/10/16: Optional time tracking using track_spots script. Also
     %makes some potentially useful plots. This was originally here to have
@@ -406,12 +389,13 @@ if ~just_dog
     %into the rest of the pipeline.
     neighborhood = 3000 / pixelSize;
     if TrackSpots
-        Particles = track_spots(Particles, neighborhood);
+        Particles = track_spots(Particles, neighborhood, num_frames);
         save([DropboxFolder,filesep,Prefix,filesep,'Particles_SS.mat'], 'Particles');
     end
 
     mkdir([DropboxFolder,filesep,Prefix]);
     save([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots');    
+
 end
 
 t = toc;

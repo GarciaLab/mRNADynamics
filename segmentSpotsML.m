@@ -2,8 +2,9 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 
 %Parameters:
 %Prefix: Prefix of the data set to analyze
-%Threshold: Threshold to be used. Should be kept at ~90-200 for lattice
-%           light-sheet data, and at ~5-10 for confocal data (Leica SP8).
+%Threshold: Threshold to be used. This should almost always be 5000 for >50%
+%           probability decisions. If left as '[]', this generates
+%           probability maps.
 %           If left empty, then the code just generates the DoG files.
 
 %Options:
@@ -13,12 +14,10 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 %                of using TrackmRNADynamics? 
 %'Frames',N:     Run the code from frame 1 to frame N. Defaults to all
 %                frames. It's suggested to run 5-20 frames for debugging.
-%'NoShadows':    Spots without valid (peaked) z-profiles are normally
-%                discarded. This option overrides that.
-%'OneShadow':    This option throws out spots with z-profiles that don't
-%                have at least two contiguous slices. More stringent than
-%                NoShadows. 
-%               
+%'Shadows':    	 This option should be followed by 0, 1 or 2. This
+%                specifies the number of requisite z-planes above and/or below the
+%                brightest plane for a spot to have to pass quality control. 
+            
 
 %Default options
 displayFigures=0;
@@ -106,23 +105,19 @@ all_frames = cell(num_frames, zSize);
 close all force;
 if just_dog
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Generate difference of Gaussian images if no threshold was given.
-%Initialize Difference of Gaussian filter parameters. filterSize >> sigma2
-%> sigma1
-sigma1 = pixelSize / pixelSize; %width of narrower Gaussian
-sigma2 = 42000 / pixelSize; % width of wider Gaussian
-filterSize = round(2000 / pixelSize); %size of square to be convolved with microscopy images
+%Generate probability maps of likely transcriptional loci
+
 zim = [];
 evalin('base', 'clear probmaps');
 
 version -java;
 javaver = ans;
 if ~strcmp('Java 1.8.0_66-b18 with Oracle Corporation Java HotSpot(TM) 64-Bit Server VM mixed mode', javaver)
-    error('Java version incorrect. Rerun InstallmRNADynamics or check environment variables')
+    error('Java version incorrect. Re-run InstallmRNADynamics or check environment variables')
 end
 heapsize = java.lang.Runtime.getRuntime.maxMemory;
 if heapsize<1E10 
-    error('Please increase your Java heap memory allocation to at least 10GB (Preferences -> General -> Java Heap Memory.');
+    error('Please increase your Java heap memory allocation to at least 10GB (Home -> Preferences -> General -> Java Heap Memory.');
 end
 
 try
@@ -135,7 +130,7 @@ end
 ijm = evalin('base', 'IJM');
 mij = evalin('base', 'MIJ');
 zSize2 = zSize*2;
-h=waitbar(0,'Running Weca Classifier');
+h=waitbar(0,'Running Weka Classifier');
 for current_frame = 1:num_frames
     w = waitbar(current_frame/num_frames,h);
     set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
@@ -397,7 +392,14 @@ if ~just_dog
             end
         end
     end
-    Spots = Spots2;
+    for i = 1:length(Spots2)
+        if isstruct(Spots2(i).Fits)
+            Spots(i).Fits = rmfield(Spots2(i).Fits, 'r');
+            Spots(i).Fits = rmfield(Spots(i).Fits, 'discardThis');
+        else
+            Spots(i).Fits = [];
+        end
+    end
  
     %AR 7/10/16: Optional time tracking using track_spots script. Also
     %makes some potentially useful plots. This was originally here to have

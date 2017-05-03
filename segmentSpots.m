@@ -209,7 +209,7 @@ end
                      Particles(n).Offset(1) = cell2mat(all_frames{i,j}{spot}(4));
                      Particles(n).Snippet{1} = cell2mat(all_frames{i,j}{spot}(5));
                      Particles(n).Area{1} = cell2mat(all_frames{i,j}{spot}(6));
-                     Particles(n).xFzitWidth{1} = cell2mat(all_frames{i,j}{spot}(7));
+                     Particles(n).xFitWidth{1} = cell2mat(all_frames{i,j}{spot}(7));
                      Particles(n).yFitWidth{1} = cell2mat(all_frames{i,j}{spot}(8));
                      Particles(n).yDoG(1) = cell2mat(all_frames{i,j}{spot}(9));
                      Particles(n).xDoG(1) = cell2mat(all_frames{i,j}{spot}(10));
@@ -330,7 +330,14 @@ end
             end
         end
     end
-    Spots = Spots2;
+    for i = 1:length(Spots2)
+        if isstruct(Spots2(i).Fits)
+            Spots(i).Fits = rmfield(Spots2(i).Fits, 'r');
+            Spots(i).Fits = rmfield(Spots(i).Fits, 'discardThis');
+        else
+            Spots(i).Fits = [];
+        end
+    end
  
     %AR 7/10/16: Optional time tracking using track_spots script. Also
     %makes some potentially useful plots. This was originally here to have
@@ -338,7 +345,7 @@ end
     %into the rest of the pipeline.
     neighborhood = 3000 / pixelSize;
     if TrackSpots
-        Particles = track_spots(Particles, neighborhood);
+        Particles = track_spots(Particles, neighborhood, num_frames);
         save([DropboxFolder,filesep,Prefix,filesep,'Particles_SS.mat'], 'Particles');
     end
 

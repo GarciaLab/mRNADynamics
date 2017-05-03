@@ -1,4 +1,4 @@
-function Particles = track_spots(Particles, neighb)
+function Particles = track_spots(Particles, Spots, neighb, num_frames)
 
 % time tracking
 
@@ -26,16 +26,15 @@ end
     for i = 1:length(Particles)
         if length(Particles(i).frame) > 70
             plot(Particles(i).frame, Particles(i).GaussianIntensity)
-            i
             hold on
         end
     end
-    MeanVectorAll = NaN(1, num_frames);
-    for i = 1:length(Spots)
-        for j = 1:length(Spots(i).Fits)
-            MeanVectorAll(i) = 0;
-            MeanVectorAll(i) = MeanVectorAll(i) + Spots(i).Fits(j).GaussianIntensity(Spots(i).Fits(j).brightestZ);
-        end
-        MeanVectorAll(i) = MeanVectorAll(i) / length(Spots(i).Fits);
-    end
+%     MeanVectorAll = NaN(1, num_frames);
+%     for i = 1:length(Spots)
+%         for j = 1:length(Spots(i).Fits)
+%             MeanVectorAll(i) = 0;
+%             MeanVectorAll(i) = MeanVectorAll(i) + Spots(i).Fits(j).GaussianIntensity(Spots(i).Fits(j).brightestZ);
+%         end
+%         MeanVectorAll(i) = MeanVectorAll(i) / length(Spots(i).Fits);
+%     end
 end
