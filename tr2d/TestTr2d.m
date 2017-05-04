@@ -1,4 +1,5 @@
-jar = 'C:\Users\jug\LivemRNA\mRNADynamics\tr2d\tr2d.jar';
+scriptPath = fileparts(mfilename('fullpath'));
+jar = fullfile(scriptPath, 'tr2d.jar');
 projectPath = 'C:\Users\jug\LivemRNA\Data\PreProcessedData\2015-05-31-89B8-3-P2P\tr2dProject';
 exportPath = 'C:\Users\jug\LivemRNA\Data\PreProcessedData\2015-05-31-89B8-3-P2P\tr2dProject\mRNADynamicsExport';
 
