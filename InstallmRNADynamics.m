@@ -22,12 +22,14 @@ mkdir(['..',filesep,'Data',filesep,'RawDynamicsData'])
 %DynamicsResults is the old DropboxFolder
 mkdir(['..',filesep,'Data',filesep,'DynamicsResults'])
 
+cflag = 0; %ComputerFolders.xlsx has not been made yet.
 %Copy the files to the different folders:
 if ~exist(['..',filesep,'ComputerFolders.xlsx'])
     copyfile(['InstallationFiles',filesep,'InstallComputerFolders.xlsx'],...
     ['..',filesep,'ComputerFolders.xlsx'])
 else
     warning('ComputerFolders.xlsx already exists. Not overwriting.')
+    cflag = 1;
 end
 
 %Edit ComputerFolders.XLSX
@@ -72,7 +74,7 @@ cd(CurrentFolder)
 %Add MS2Code
 txt{7,end}=cd;
 %Save the XLS file
-if ispc
+if ispc && ~cflag
     xlswrite(['..',filesep,'ComputerFolders.xlsx'],txt);
 else
     display('Warning: Macs and Linux cannot generate the XLS files.')
