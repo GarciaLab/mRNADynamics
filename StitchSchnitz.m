@@ -122,7 +122,7 @@ h=waitbar(0,'Stitching broken schnitzs');
 for i=1:length(Thresholds)
     waitbar(i/length(Thresholds),h);
     %length(schnitzcells) for debugging
-    threshold = Thresholds(i)
+    threshold = Thresholds(i);
     Rule = 1;
   
     while Rule
@@ -195,7 +195,7 @@ for i=1:length(Thresholds)
         %create new schnitzcells struct using only valid schnitz from former one
         ImpostorSchnitz = find ([schnitzcells.Valid] == 0);
         if isempty(ImpostorSchnitz)
-            Rule = 0 %finish the while loop if can't find more. Continue with next threshold
+            Rule = 0; %finish the while loop if can't find more. Continue with next threshold
         end
         
         %Create a new schnitzcells structure. We'll get rid of the
@@ -265,7 +265,6 @@ for i=1:length(Thresholds)
         
         schnitzcells = schnitzcells2; %replace original by schnitzcells2
         clear schnitzcells2
-        display('schnitz replaced')
         %save new schnitzcells
         %save([Prefix '_lin.mat'],'schnitzcells')
         %'schnitz saved' %(for debugging)
