@@ -24,6 +24,7 @@ displayFigures=0;
 TrackSpots=0;
 num_frames=0;
 num_shadows = 2;
+initial_frame = 1;
     
 for i=1:length(varargin)
     if strcmp(varargin{i},'displayFigures')
@@ -41,6 +42,12 @@ for i=1:length(varargin)
             error('Wrong input parameters. After ''Shadows'' you should input number of shadows (0, 1 or 2)')
         else
             num_shadows=varargin{i+1};
+        end
+    elseif strcmp(varargin{i}, 'InitialFrame')
+         if ~isnumeric(varargin{i+1}) || varargin{i+1} < 1
+            error('Wrong input parameter for initial frame.')
+        else
+            initial_frame=varargin{i+1};
         end
     else
         if ~isnumeric(varargin{i})
@@ -169,8 +176,8 @@ close(h);
 %Segment transcriptional loci
 else
     h=waitbar(0,'Segmenting spots');
-    for current_frame = 1:num_frames
-        w = waitbar(current_frame/num_frames,h);
+    for current_frame = initial_frame:num_frames
+        w = waitbar(current_frame/(num_frames-initial_frame),h);
         set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
         for i = 1:zSize   
             if strcmpi(ExperimentType, 'inputoutput')
@@ -241,8 +248,8 @@ end
 if ~just_dog 
     n = 1;
     h=waitbar(0,'Saving particle information');
-    for i = 1:num_frames  
-        waitbar(i/num_frames,h)
+    for i = initial_frame:num_frames  
+        waitbar(i/(num_frames-initial_frame),h)
         for j = 1:zSize 
              for spot = 1:length(all_frames{i,j}) %spots within particular image
                  if ~isempty(all_frames{i,j}{spot})
@@ -284,8 +291,8 @@ if ~just_dog
         i = 1; 
         h=waitbar(0,'Finding z-columns');
         neighborhood = 1300 / pixelSize;
-        for n = 1:num_frames
-            waitbar(n/num_frames,h)
+        for n = initial_frame:num_frames
+            waitbar(n/(num_frames-initial_frame),h)
             l = length(Particles([Particles.frame] == n));
             i = i + length(Particles([Particles.frame] == (n - 1) ));
             for j = i:i+l-1
@@ -357,7 +364,7 @@ if ~just_dog
     Spots = [];            
     fields = fieldnames(Particles);
     num_fields = length(fields);
-    for i = 1:num_frames
+    for i = initial_frame:num_frames
         frames = find([Particles.frame]==i);
         if ~isempty(frames)
             for j = frames(1):frames(end)
