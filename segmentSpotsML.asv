@@ -14,7 +14,7 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 %                of using TrackmRNADynamics?
 %'InitialFrame', N: Run the code from frame N to last frame. Defaults to first
 %                frame.
-%'LastFrame', M:     Run the code from initial frame to frame N. Defaults to all
+%'LastFrame', M:     Run the code from initial frame to frame M. Defaults to all
 %                frames. It's suggested to run 5-20 frames for debugging.
 %'Shadows':    	 This option should be followed by 0, 1 or 2. This
 %                specifies the number of requisite z-planes above and/or below the
@@ -33,7 +33,7 @@ for i=1:length(varargin)
         displayFigures=1;
     elseif strcmp(varargin{i},'TrackSpots')
         TrackSpots=1;
-    elseif strcmp(varargin{i},'Frames')
+    elseif strcmp(varargin{i},'LastFrame')
         if ~isnumeric(varargin{i+1})
             error('Wrong input parameters. After ''Frames'' you should input the number of frames')
         else
@@ -198,7 +198,7 @@ else
             if doFF && sum(size(im)==size(ffim))
                 im = im./ffim;
             else
-%                 warning('Not applying flat-field correction to MS2 channel')
+                warning('Not applying flat-field correction to MS2 channel')
             end
             %
             im_thresh = dog >= Threshold;
@@ -218,20 +218,18 @@ else
             temp_particles = cell(1, n_spots);
 
             if n_spots ~= 0
-                if ~displayFigures
-                    
+                if ~displayFigures                    
                     parfor k = 1:n_spots
                         try
                             temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
+                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, im_thresh);
                         catch 
-                            display([current_frame, ' ', i, ' ', k])
                         end
                     end
                 else
                     for k = 1:n_spots
                             temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, k);
+                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, im_thresh);
                     end
                 end
                 for k = 1:n_spots
@@ -328,7 +326,6 @@ if ~just_dog
             if num_shadows == 1
                 if length(Particles(i).z) <= 1
                         Particles(i).discardThis = 1;
-                        'threw this out'
                         Particles(i).noIntensityAnalysis = 1;
                         falsePositives = falsePositives + 1;
                 elseif  Particles(i).brightestZ == Particles(i).z(end)

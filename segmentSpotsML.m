@@ -206,6 +206,7 @@ else
             im_thresh = imdilate(im_thresh, se); %thresholding from this classified probability map can produce non-contiguous, spurious spots. This fixes that and hopefully does not combine real spots from different nuclei
             im_thresh = im_thresh>0;
             [im_label, n_spots] = bwlabel(im_thresh); 
+            centroids = regionprops(im_thresh, 'centroid');
 %               
 %             if displayFigures
 %                 fig = figure(1);
@@ -221,15 +222,17 @@ else
                 if ~displayFigures                    
                     parfor k = 1:n_spots
                         try
+                            centroid = round(centroids(k).Centroid);
                             temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
+                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid);
                         catch 
                         end
                     end
                 else
                     for k = 1:n_spots
-                            temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
+                        centroid = round(centroids(k).Centroid);    
+                        temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
+                            neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid);
                     end
                 end
                 for k = 1:n_spots

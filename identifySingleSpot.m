@@ -1,5 +1,5 @@
 function temp_particles = identifySingleSpot(particle_index, image, image_label, dog_image, distance_to_neighbor, snippet_size, ...
-    pixelSize, show_status, fg, microscope, addition)
+    pixelSize, show_status, fg, microscope, addition, centroid)
 
     %This is a subfunction for 'segmentSpots' that locates a transcriptional locus (the k'th locus in an image)
     %and assigns a Gaussian
@@ -47,7 +47,12 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
         if addition(1) && ~(centroid_y - snippet_size > 1 && centroid_x - snippet_size > 1 && centroid_y + snippet_size < size(image, 1) && centroid_x + snippet_size < size(image,2))    
             centroid_y = k_row;
             centroid_x = k_column;
+        elseif ~addition(1)
+            centroid_x = centroid(1);
+            centroid_y = centroid(2);            
         end
+        
+        
         
        %Now, we'll calculate Gaussian fits 
        if centroid_y - snippet_size > 1 && centroid_x - snippet_size > 1 && centroid_y + snippet_size < size(image, 1) && centroid_x + snippet_size < size(image,2)
@@ -106,8 +111,13 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             
             if show_status && ~isempty(fg)
                 figure(fg)
+                ellipse(distance_to_neighbor/2,distance_to_neighbor/2,0,centroid_x, centroid_y,'r');
+                pause(.1) %Ellipses won't be plotted correctly without this pause.
+                figure(5)
+                imshow(image,[])
                 ellipse(distance_to_neighbor/2,distance_to_neighbor/2,0,spot_x,spot_y,'r');
                 pause(.1) %Ellipses won't be plotted correctly without this pause.
+                
             end
             
             %disp(rel_errors);
@@ -133,6 +143,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             sigma_y2 = 0;
             sister_chromatid_distance = fits(end);
             fixedAreaIntensity = sum(sum(snippet_mask)) - fits(end-1)*sum(sum(snippet_mask~=0));
+
             
             if  .1<sigma_x && sigma_x<(600/pixelSize) && .1<sigma_y && sigma_y<(600/pixelSize)...
                     || addition(1) %here is the place to introduce quality control
