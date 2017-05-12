@@ -11,8 +11,10 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 %'displayFigures':   If you want to display plots and images.
 %                
 %'TrackSpots':   Do you want to use this code to track the particles instead
-%                of using TrackmRNADynamics? 
-%'Frames',N:     Run the code from frame 1 to frame N. Defaults to all
+%                of using TrackmRNADynamics?
+%'InitialFrame', N: Run the code from frame N to last frame. Defaults to first
+%                frame.
+%'LastFrame', M:     Run the code from initial frame to frame M. Defaults to all
 %                frames. It's suggested to run 5-20 frames for debugging.
 %'Shadows':    	 This option should be followed by 0, 1 or 2. This
 %                specifies the number of requisite z-planes above and/or below the
@@ -31,7 +33,7 @@ for i=1:length(varargin)
         displayFigures=1;
     elseif strcmp(varargin{i},'TrackSpots')
         TrackSpots=1;
-    elseif strcmp(varargin{i},'Frames')
+    elseif strcmp(varargin{i},'LastFrame')
         if ~isnumeric(varargin{i+1})
             error('Wrong input parameters. After ''Frames'' you should input the number of frames')
         else
@@ -216,12 +218,12 @@ else
             temp_particles = cell(1, n_spots);
 
             if n_spots ~= 0
-                if ~displayFigures
+                if ~displayFigures                    
                     parfor k = 1:n_spots
                         try
                             temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
                                 neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
-                        catch
+                        catch 
                         end
                     end
                 else
