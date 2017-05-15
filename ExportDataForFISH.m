@@ -1101,9 +1101,11 @@ elseif strcmp(FileMode,'LIFExport')
                         %Save the blank images at the beginning and end of the
                         %stack
                         NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'_ch',iIndex(q, 2),'.tif'];
-                        imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+                        imwrite(BlankImage,[OutputFolder,filesep,Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'.tif']);
+                        imwrite(BlankImage,[OutputFolder,filesep,NewName]); 
                         NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),'_ch',iIndex(q, 2),'.tif'];
                         imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+                        imwrite(BlankImage,[OutputFolder,filesep,Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),'.tif']);
                         %Copy the rest of the images
                         n=1;        %Counter for slices
                         firstImage = (j-1)*NSlices(i)*NChannels+1+(q-1);
@@ -1111,7 +1113,11 @@ elseif strcmp(FileMode,'LIFExport')
                         for k=firstImage:NChannels:lastImage
                             if n<=min(NSlices)
                                 NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'_ch',iIndex(q, 2),'.tif'];
+                               imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
+                               if q==coatChannel
+                                   NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'.tif'];
                                    imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
+                               end
                                 n=n+1;
                             end
                         end
@@ -1150,7 +1156,9 @@ elseif strcmp(FileMode,'LIFExport')
                         if strcmp(ProjectionType,'medianprojection')
                             Projection=median(HisSlices,3);
                         else
-                            Projection=max(HisSlices,[],3);
+                            StackCenter=round((min(NSlices)-1)/2);
+                            StackRange=[StackCenter:StackCenter+3];
+                            Projection=max(HisSlices(:,:,StackRange), [],3); % Maybe change the number of slices for projection
                         end
                         
                         %Think about the case when there is no His channel,
@@ -1179,7 +1187,7 @@ elseif strcmp(FileMode,'LIFExport')
                             Projection=Projection./FF;
                         end
                     end
-                    imwrite(uint16(Projection),...
+                    imwrite(double(Projection),...
                     [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
                 end
             m=m+1;

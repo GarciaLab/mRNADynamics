@@ -198,7 +198,7 @@ end
 
 
 %Single color mode
-if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
+if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')||strcmp(ExperimentType,'inputoutput')
 
     %Check if particle tracking has already been done on this dataset
     if exist([OutputFolder,filesep,'Particles.mat'])
@@ -509,7 +509,7 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
         %If we do have the histone channel    
         else
 
-            if strcmp(ExperimentType,'1spot')
+            if strcmp(ExperimentType,'1spot') || strcmp(ExperimentType,'inputoutput')
                 [Particles,SpotFilter,schnitzcells]=AssignParticle2Nucleus(schnitzcells,Ellipses,Particles,Spots,SpotFilter,...
                             CurrentFrame,PixelSize,SearchRadius);
             elseif strcmp(ExperimentType,'2spot')
@@ -1195,7 +1195,8 @@ elseif strcmp(ExperimentType,'2spot2color')
     end
     
     
-elseif strcmp(lower(ExperimentType),'inputoutput')
+% elseif strcmp(lower(ExperimentType),'inputoutput')
+elseif strcmp(lower(ExperimentType), 'notathing') %placeholder so this else statement is not entered
 
     %Check if particle tracking has already been done on this dataset
     if exist([OutputFolder,filesep,'Particles.mat'])

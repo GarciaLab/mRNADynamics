@@ -85,7 +85,7 @@ APResolution = XLSRaw{PrefixRow,APResolutionColumn};
 %load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
 %load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'])
 %load([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'])
-load([DropboxFolder,filesep,Prefix,filesep,[Prefix '_lin.mat']])
+%load([DropboxFolder,filesep,Prefix,filesep,[Prefix '_lin.mat']])
 
 %Check that FrameInfo exists
 if exist([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
@@ -150,7 +150,7 @@ h = waitbar(0,'Please wait...stacking Dl-Venus channel');
 for frm=1:max([D.Frame])
    for img = 1:length(D)
        if D(img).Frame == frm & D(img).Channel == '1'
-           Image = imread(D(img).name);
+           Image = imread([PreProcPath, '\', Prefix, '\', D(img).name]);
            FrameZ(:,:,frm,D(img).Zpos)=Image;
        end
    end
