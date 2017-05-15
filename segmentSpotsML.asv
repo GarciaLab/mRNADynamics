@@ -11,8 +11,10 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 %'displayFigures':   If you want to display plots and images.
 %                
 %'TrackSpots':   Do you want to use this code to track the particles instead
-%                of using TrackmRNADynamics? 
-%'Frames',N:     Run the code from frame 1 to frame N. Defaults to all
+%                of using TrackmRNADynamics?
+%'InitialFrame', N: Run the code from frame N to last frame. Defaults to first
+%                frame.
+%'LastFrame', M:     Run the code from initial frame to frame M. Defaults to all
 %                frames. It's suggested to run 5-20 frames for debugging.
 %'Shadows':    	 This option should be followed by 0, 1 or 2. This
 %                specifies the number of requisite z-planes above and/or below the
@@ -24,13 +26,14 @@ displayFigures=0;
 TrackSpots=0;
 num_frames=0;
 num_shadows = 2;
+initial_frame = 1;
     
 for i=1:length(varargin)
     if strcmp(varargin{i},'displayFigures')
         displayFigures=1;
     elseif strcmp(varargin{i},'TrackSpots')
         TrackSpots=1;
-    elseif strcmp(varargin{i},'Frames')
+    elseif strcmp(varargin{i},'LastFrame')
         if ~isnumeric(varargin{i+1})
             error('Wrong input parameters. After ''Frames'' you should input the number of frames')
         else
@@ -41,6 +44,12 @@ for i=1:length(varargin)
             error('Wrong input parameters. After ''Shadows'' you should input number of shadows (0, 1 or 2)')
         else
             num_shadows=varargin{i+1};
+        end
+    elseif strcmp(varargin{i}, 'InitialFrame')
+         if ~isnumeric(varargin{i+1}) || varargin{i+1} < 1
+            error('Wrong input parameter for initial frame.')
+        else
+            initial_frame=varargin{i+1};
         end
     else
         if ~isnumeric(varargin{i})
@@ -159,7 +168,6 @@ for current_frame = 1:num_frames
     end
     p2 = permute(p2, [2 1 3]) * 10000;
     for i = 1:size(p2, 3)
-        
         p_name = ['prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif'];
         imwrite(uint16(p2(:,:,i)), [OutputFolder1,filesep,p_name])
     end
@@ -170,8 +178,8 @@ close(h);
 %Segment transcriptional loci
 else
     h=waitbar(0,'Segmenting spots');
-    for current_frame = 1:num_frames
-        w = waitbar(current_frame/num_frames,h);
+    for current_frame = initial_frame:num_frames
+        w = waitbar(current_frame/(num_frames-initial_frame),h);
         set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
         for i = 1:zSize   
             if strcmpi(ExperimentType, 'inputoutput')
@@ -210,18 +218,18 @@ else
             temp_particles = cell(1, n_spots);
 
             if n_spots ~= 0
-                if ~displayFigures
+                if ~displayFigures                    
                     parfor k = 1:n_spots
                         try
                             temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
-                        catch
+                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, im_thresh);
+                        catch 
                         end
                     end
                 else
                     for k = 1:n_spots
                             temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
+                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, im_thresh);
                     end
                 end
                 for k = 1:n_spots
@@ -242,8 +250,8 @@ end
 if ~just_dog 
     n = 1;
     h=waitbar(0,'Saving particle information');
-    for i = 1:num_frames  
-        waitbar(i/num_frames,h)
+    for i = initial_frame:num_frames  
+        waitbar(i/(num_frames-initial_frame),h)
         for j = 1:zSize 
              for spot = 1:length(all_frames{i,j}) %spots within particular image
                  if ~isempty(all_frames{i,j}{spot})
@@ -285,8 +293,8 @@ if ~just_dog
         i = 1; 
         h=waitbar(0,'Finding z-columns');
         neighborhood = 1300 / pixelSize;
-        for n = 1:num_frames
-            waitbar(n/num_frames,h)
+        for n = initial_frame:num_frames
+            waitbar(n/(num_frames-initial_frame),h)
             l = length(Particles([Particles.frame] == n));
             i = i + length(Particles([Particles.frame] == (n - 1) ));
             for j = i:i+l-1
@@ -358,7 +366,7 @@ if ~just_dog
     Spots = [];            
     fields = fieldnames(Particles);
     num_fields = length(fields);
-    for i = 1:num_frames
+    for i = initial_frame:num_frames
         frames = find([Particles.frame]==i);
         if ~isempty(frames)
             for j = frames(1):frames(end)

@@ -81,7 +81,7 @@ FilePrefix=[Prefix,'_'];
 %MovieDatabase.xlsx
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
     Folder, Prefix, ExperimentType, Channel1, Channel2,OutputFolder...
-    ] = readMovieDatabase(PrefixOverrideFlag);
+    ] = readMovieDatabase(Prefix)%OverrideFlag);
 
 %Note that some of this information is redundant given what we get out of
 %readMovieDatabase above. We'll have to integrate this better.

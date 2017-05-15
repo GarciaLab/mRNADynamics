@@ -11,8 +11,10 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 %'displayFigures':   If you want to display plots and images.
 %                
 %'TrackSpots':   Do you want to use this code to track the particles instead
-%                of using TrackmRNADynamics? 
-%'Frames',N:     Run the code from frame 1 to frame N. Defaults to all
+%                of using TrackmRNADynamics?
+%'InitialFrame', N: Run the code from frame N to last frame. Defaults to first
+%                frame.
+%'LastFrame', M:     Run the code from initial frame to frame M. Defaults to all
 %                frames. It's suggested to run 5-20 frames for debugging.
 %'Shadows':    	 This option should be followed by 0, 1 or 2. This
 %                specifies the number of requisite z-planes above and/or below the
@@ -24,13 +26,14 @@ displayFigures=0;
 TrackSpots=0;
 num_frames=0;
 num_shadows = 2;
+initial_frame = 1;
     
 for i=1:length(varargin)
     if strcmp(varargin{i},'displayFigures')
         displayFigures=1;
     elseif strcmp(varargin{i},'TrackSpots')
         TrackSpots=1;
-    elseif strcmp(varargin{i},'Frames')
+    elseif strcmp(varargin{i},'LastFrame')
         if ~isnumeric(varargin{i+1})
             error('Wrong input parameters. After ''Frames'' you should input the number of frames')
         else
@@ -41,6 +44,12 @@ for i=1:length(varargin)
             error('Wrong input parameters. After ''Shadows'' you should input number of shadows (0, 1 or 2)')
         else
             num_shadows=varargin{i+1};
+        end
+    elseif strcmp(varargin{i}, 'InitialFrame')
+         if ~isnumeric(varargin{i+1}) || varargin{i+1} < 1
+            error('Wrong input parameter for initial frame.')
+        else
+            initial_frame=varargin{i+1};
         end
     else
         if ~isnumeric(varargin{i})
@@ -169,8 +178,8 @@ close(h);
 %Segment transcriptional loci
 else
     h=waitbar(0,'Segmenting spots');
-    for current_frame = 1:num_frames
-        w = waitbar(current_frame/num_frames,h);
+    for current_frame = initial_frame:num_frames
+        w = waitbar(current_frame/(num_frames-initial_frame),h);
         set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
         for i = 1:zSize   
             if strcmpi(ExperimentType, 'inputoutput')
@@ -197,6 +206,7 @@ else
             im_thresh = imdilate(im_thresh, se); %thresholding from this classified probability map can produce non-contiguous, spurious spots. This fixes that and hopefully does not combine real spots from different nuclei
             im_thresh = im_thresh>0;
             [im_label, n_spots] = bwlabel(im_thresh); 
+            centroids = regionprops(im_thresh, 'centroid');
 %               
 %             if displayFigures
 %                 fig = figure(1);
@@ -209,18 +219,20 @@ else
             temp_particles = cell(1, n_spots);
 
             if n_spots ~= 0
-                if ~displayFigures
+                if ~displayFigures                    
                     parfor k = 1:n_spots
                         try
+                            centroid = round(centroids(k).Centroid);
                             temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
-                        catch
+                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid);
+                        catch 
                         end
                     end
                 else
                     for k = 1:n_spots
-                            temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
+                        centroid = round(centroids(k).Centroid);    
+                        temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
+                            neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid);
                     end
                 end
                 for k = 1:n_spots
@@ -241,8 +253,8 @@ end
 if ~just_dog 
     n = 1;
     h=waitbar(0,'Saving particle information');
-    for i = 1:num_frames  
-        waitbar(i/num_frames,h)
+    for i = initial_frame:num_frames  
+        waitbar(i/(num_frames-initial_frame),h)
         for j = 1:zSize 
              for spot = 1:length(all_frames{i,j}) %spots within particular image
                  if ~isempty(all_frames{i,j}{spot})
@@ -284,8 +296,8 @@ if ~just_dog
         i = 1; 
         h=waitbar(0,'Finding z-columns');
         neighborhood = 1300 / pixelSize;
-        for n = 1:num_frames
-            waitbar(n/num_frames,h)
+        for n = initial_frame:num_frames
+            waitbar(n/(num_frames-initial_frame),h)
             l = length(Particles([Particles.frame] == n));
             i = i + length(Particles([Particles.frame] == (n - 1) ));
             for j = i:i+l-1
@@ -357,7 +369,7 @@ if ~just_dog
     Spots = [];            
     fields = fieldnames(Particles);
     num_fields = length(fields);
-    for i = 1:num_frames
+    for i = initial_frame:num_frames
         frames = find([Particles.frame]==i);
         if ~isempty(frames)
             for j = frames(1):frames(end)
