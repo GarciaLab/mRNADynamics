@@ -1,4 +1,4 @@
-function [Particles,schnitzcells,fad,fad2]=TrackmRNADynamics(varargin)
+function [Particles,schnitzcells]=TrackmRNADynamics(varargin)
 
 %This function sets up particle tracking using the FISH analysis code. If
 %nuclei have been tracked it uses that information for the particle
@@ -509,15 +509,29 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
         %If we do have the histone channel    
         else
 
-            if strcmp(ExperimentType,'1spot')
-                [Particles,SpotFilter,schnitzcells]=AssignParticle2Nucleus(schnitzcells,Ellipses,Particles,Spots,SpotFilter,...
-                            CurrentFrame,PixelSize,SearchRadius);
-            elseif strcmp(ExperimentType,'2spot')
-                 [Particles,SpotFilter,schnitzcells]=AssignParticle2Nucleus2S(schnitzcells,Ellipses,Particles,Spots,SpotFilter,...
-                            CurrentFrame,PixelSize,SearchRadius);
+            if strcmp(ExperimentType,'1spot')|strcmp(ExperimentType,'2spot')
+                
+                if strcmp(ExperimentType,'1spot')
+                    SpotsPerNucleus=1;
+                elseif strcmp(ExperimentType,'2spot')
+                    SpotsPerNucleus=2;
+                end
+                
+                [Particles,SpotFilter,schnitzcells]=AssignParticle2NucleusV2(schnitzcells,Ellipses,Particles,Spots,SpotFilter,...
+                            CurrentFrame,PixelSize,SearchRadius,SpotsPerNucleus);
             else
                 error('Experiment type in MovieDatabase.xlsx not recognized')
             end
+            
+%             if strcmp(ExperimentType,'1spot')
+%                 [Particles,SpotFilter,schnitzcells]=AssignParticle2Nucleus(schnitzcells,Ellipses,Particles,Spots,SpotFilter,...
+%                             CurrentFrame,PixelSize,SearchRadius);
+%             elseif strcmp(ExperimentType,'2spot')
+%                  [Particles,SpotFilter,schnitzcells]=AssignParticle2Nucleus2S(schnitzcells,Ellipses,Particles,Spots,SpotFilter,...
+%                             CurrentFrame,PixelSize,SearchRadius);
+%             else
+%                 error('Experiment type in MovieDatabase.xlsx not recognized')
+%             end
 
         end
     end

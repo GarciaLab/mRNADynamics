@@ -3,15 +3,8 @@ function [Particles,SpotFilter,schnitzcells]=AssignParticle2Nucleus(...
     CurrentFrame,PixelSize,SearchRadius)
 
 
-%Find which nuclei each of these new particles is closest to.
-
-%V4: Changed to support Laurent's version of schnitzcells and ellipses
-%V3: I changed this to be more of an assignment based on the schnitzcells
-%tracking.
-%V2: I changed this to only detect one particle per nucleus. If there are
-%many found it keeps the closest one to the previous particle. Maybe I
-%should add some condition related to brightness.
-
+%Find which nuclei each of these new particles is closest to. This code
+%enforces one particle per nucleus.
 
 %Assign each particle to a nucleus
 

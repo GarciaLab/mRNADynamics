@@ -1,15 +1,9 @@
-function [Particles,SpotFilter,schnitzcells]=AssignParticle2Nucleus2S(schnitzcells,Ellipses,Particles,Spots,SpotFilter,...
+function [Particles,SpotFilter,schnitzcells]=AssignParticle2Nucleus2S(...
+    schnitzcells,Ellipses,Particles,Spots,SpotFilter,...
     CurrentFrame,PixelSize,SearchRadius)
 
-%Find which nuclei each of these new particles is closest to.
-
-%V4: Changed to support Laurent's version of schnitzcells and ellipses
-%V3: I changed this to be more of an assignment based on the schnitzcells
-%tracking.
-%V2: I changed this to only detect one particle per nucleus. If there are
-%many found it keeps the closest one to the previous particle. Maybe I
-%should add some condition related to brightness.
-
+%Find which nuclei each of these new particles is closest to. This code
+%supports up to two particles per nucleus.
 
 %Assign each particle to a nucleus
 
@@ -21,6 +15,8 @@ if isfield(Particles,'Approved')
 else
     Retracking=0;
     SearchRadius=inf;
+    SearchRadiusTwoSpot=2;      %In um. This is the distance used to track
+                                %two spots within the same nucleus.
 end
 
 
@@ -50,9 +46,17 @@ if ~isempty(NewParticlesX)
             (NewParticlesY(j)*PixelSize-...
             NewNucleiY*PixelSize).^2);
     end
-    %MinIndex is a row vector. The position in MinIndex
-    %corresponds to each particle. The value at that
-    %position corresponds to the closest nucleus.
+
+    %If a particle already exists in this frame, then take it out of the
+    %pool for consideration.
+    for i=1:length(Particles)
+        %Find which approved particles are in this frame
+        if sum(Particles(i).Frame==CurrentFrame)
+            %Make the distance infinite
+            Distance(Particles(i).Index(find(Particles(i).Frame==CurrentFrame)),:)=inf;
+        end
+    end
+    
     
     %If retracking make the distance for the particles that have been
     %approved infinite.
@@ -67,6 +71,9 @@ if ~isempty(NewParticlesX)
         end
     end
     
+    %MinIndex is a row vector. The position in MinIndex
+    %corresponds to each particle. The value at that
+    %position corresponds to the closest ellipse.
     [MinValues,MinIndex]=min(Distance');
     
     if Retracking
@@ -74,22 +81,14 @@ if ~isempty(NewParticlesX)
     end
 
 
-    %Find the schnitz corresponding to MinIndex in the schnitzcell structure.
+    %Find the schnitz corresponding to the ellipse given by MinIndex.
     %MinIndexNuclei now refers to the identities used in the schnitzcells
     %structure.
     MinIndexNuclei=zeros(size(MinIndex));
     for i=1:length(MinIndex)
         for j=1:length(schnitzcells)
-            %I'm not sure this is a good idea, but this is to take care of
-            %schnitzses that are inconsistent in their number of cellno
-            %entries
-            try
-                if schnitzcells(j).cellno(schnitzcells(j).frames==(CurrentFrame))==MinIndex(i)
-                    MinIndexNuclei(i)=j;
-                end
-            catch
-                display('Nuclear problem')
-                %error('What is going on here?')
+            if schnitzcells(j).cellno(schnitzcells(j).frames==(CurrentFrame))==MinIndex(i)
+                MinIndexNuclei(i)=j;
             end
         end
         if MinIndex(i)==inf
@@ -97,7 +96,7 @@ if ~isempty(NewParticlesX)
         end
     end
 
-    %Sometimes a nucleus is not in schintzcells. This is probably because
+    %Sometimes a nucleus is not in schnitzcells. This is probably because
     %of the user having deleted it manually. In that case, re-create the
     %schnitz.
     
@@ -129,10 +128,8 @@ if ~isempty(NewParticlesX)
     %1) One particle is assigned to a previous one within a nucleus
     %2) If there are multiple particles closest to a nucleus we pick
     %the closest/brightest one. As a result, there can only be on
-    %particle per nucleus. The particles not assigned will moved filtered
-    %using SpotFilter.
-
-
+    %particle per nucleus. The particles not assigned will disapproved
+    %by flagging them in SpotsFilter.
     AssignedNuclei=[];
     for i=1:length(Particles)
         if ~isempty(Particles(i).Nucleus)
@@ -142,95 +139,141 @@ if ~isempty(NewParticlesX)
         end
     end
 
-
     
-    %Find the nuclei in the current frame that were closest to the
+    %Find the schnitz in the current frame that were closest to the
     %particles found.
     UniqueMinIndexNuclei=unique(MinIndexNuclei);
 
-
     for i=1:length(UniqueMinIndexNuclei)
         
-        %Find the particles that are assigned to this nucleus
-        ParticlesToAssign=find(AssignedNuclei==UniqueMinIndexNuclei(i));
-        %These are the particles that are assigned to the previous nuclei
-        
-        if ~isempty(ParticlesToAssign)
-            for l = 1:length(ParticlesToAssign)
-                ParticleToAssign = ParticlesToAssign(l);
-                if ~sum(Particles(ParticleToAssign).Frame==CurrentFrame)
+        %Find the particle that is assigned to this nucleus
+        ParticleToAssign=find(AssignedNuclei==UniqueMinIndexNuclei(i));
 
-                   if (~isempty(ParticleToAssign))&...
-                            (sum(MinIndexNuclei==UniqueMinIndexNuclei(i))>=1)
-                        %one or more particles are assigned to the same previous
-                        %nucleus.
+        if ~isempty(ParticleToAssign)
+        %HG: I removed the following if-statement because I now check above
+        %whether particles were arelady assigned to this frame and modify
+        %the Distance matrix accordingly
+        %if ~sum(Particles(ParticleToAssign).Frame==CurrentFrame)
+            if ((sum(MinIndexNuclei==UniqueMinIndexNuclei(i)))==1)&...
+                    (MinValues(MinIndexNuclei==UniqueMinIndexNuclei(i)))<SearchRadius*PixelSize
+                %One particle is assigned to a previous one within a
+                %nucleus.
+
+                Particles(ParticleToAssign).Frame(end+1)=CurrentFrame;
+                Particles(ParticleToAssign).Index(end+1)=find(MinIndexNuclei==...
+                                UniqueMinIndexNuclei(i));
+                NewParticlesFlag(find(MinIndexNuclei==...
+                    UniqueMinIndexNuclei(i)))=0;
 
 
-                        %Find the previous particles assigned to this nucleus
-                        PreviousParticleIndex=find(AssignedNuclei==UniqueMinIndexNuclei(i));
+            elseif sum(MinIndexNuclei==UniqueMinIndexNuclei(i))==2
+                %Two particles are assigned to the same previous
+                %nucleus. We need to find which new spot
+                %is closer to which previous particle.
 
-                        %Get the last positions of the previous particles
-                        clear MinDistance
-                        clear MinIndex
+                %Find the previous particles assigned to this nucleus
+                PreviousParticleIndex=find(AssignedNuclei==UniqueMinIndexNuclei(i));
 
-                        MinDistance = inf(1,length(PreviousParticleIndex));
-                        MinIndex = zeros(1,length(PreviousParticleIndex));
-                        MinFilter=find(MinIndexNuclei==UniqueMinIndexNuclei(i));
+                if length(PreviousParticleIndex)==2
+                    1+1
+                end
 
-                        for k = 1:length(PreviousParticleIndex)
-                            [PreviousParticlesX,PreviousParticlesY]=...
-                                SpotsXYZ(Spots(Particles(PreviousParticleIndex(k)).Frame(end)));
+                %Calculate the distances between the spots on this frame and the
+                %particles in the previous frame
+                
+                %Get the position of all particles in the previous frame
+                [PreviousParticlesX,PreviousParticlesY]=...
+                    SpotsXYZ(Spots(Particles(PreviousParticleIndex(end)).Frame(end)));
+                %Filter for the particles in the previous frame that are
+                %closer to the new spots in the current frame
+                PreviousParticleX=[];
+                PreviousParticleY=[];
+                for j=1:length(PreviousParticleIndex)
+                    PreviousParticleX(j)=PreviousParticlesX(Particles(PreviousParticleIndex(j)).Index(end));
+                    PreviousParticleY(j)=PreviousParticlesY(Particles(PreviousParticleIndex(j)).Index(end));
+                end
+                %Get the two new spots we're going to compare to
+                %the previous particles
+                MinFilter=find(MinIndexNuclei==UniqueMinIndexNuclei(i));
 
-                            PreviousParticleX=PreviousParticlesX(Particles(PreviousParticleIndex(k)).Index(end));
-                            PreviousParticleY=PreviousParticlesY(Particles(PreviousParticleIndex(k)).Index(end));
+                NewNewParticlesX=NewParticlesX(MinFilter);
+                NewNewParticlesY=NewParticlesY(MinFilter);
 
-                            NewNewParticlesX=NewParticlesX(MinFilter);
-                            NewNewParticlesY=NewParticlesY(MinFilter);
+                clear Distance              
+                for j=1:length(NewNewParticlesX)
+                    Distance(j,:)=sqrt((NewNewParticlesX(j)*PixelSize-...
+                        PreviousParticleX'*PixelSize).^2+...
+                        (NewNewParticlesY(j)*PixelSize-...
+                        PreviousParticleY'*PixelSize).^2);
+                end
+                %MinIndex2Spots is a row vector. The position in MinIndex2Spots
+                %corresponds to each new spot. The value at that
+                %position corresponds to the closest previous particle.
+                [MinValues2Spots,MinIndex2Spots]=min(Distance');
 
-                            %Calculate their distances
-                            clear Distance
-
-                            for j=1:length(NewNewParticlesX)
-                                Distance(j,:)=sqrt((NewNewParticlesX(j)*PixelSize-...
-                                    PreviousParticleX*PixelSize).^2+...
-                                    (NewNewParticlesY(j)*PixelSize-...
-                                    PreviousParticleY*PixelSize).^2);
-                            end
-                            %Bring the distance of the particles not allowed by
-                            %SpotFilter to infinity
-                            SpotFilter(CurrentFrame,:);     %HG: Do I need this?
-
-                            %MinIndex tells us which one of the candidates is
-                            %closer
-                            [MinDistance(k),MinIndex(k)]=min(Distance');
-                        end
-
-                        %Case where two particles are different
-                        if length(unique(MinFilter(MinIndex)))==length(MinFilter(MinIndex))
-                            for  k = 1:length(PreviousParticleIndex)
-                            %This is the index of the particle found
-                                if ((MinDistance(k))<SearchRadius*PixelSize)&...
-                                        ~sum(Particles(PreviousParticleIndex(k)).Frame(end)==CurrentFrame)
-                                    Particles(PreviousParticleIndex(k)).Frame(end+1)=CurrentFrame;
-                                    Particles(PreviousParticleIndex(k)).Index(end+1)=MinFilter(MinIndex(k));
-                                    NewParticlesFlag(MinFilter(MinIndex(k)))=0;
-                                end
-                            end
-
-                        %case where they detected the same particle
-                        else
-                            [CloserDistance,CloserIndex]=min(MinDistance);
-                            %This is the index of the particle found
-                                if ((MinDistance(CloserIndex))<SearchRadius*PixelSize)&...
-                                        ~sum(Particles(PreviousParticleIndex(CloserIndex)).Frame(end)==CurrentFrame)
-                                    Particles(PreviousParticleIndex(CloserIndex)).Frame(end+1)=CurrentFrame;
-                                    Particles(PreviousParticleIndex(CloserIndex)).Index(end+1)=MinFilter(MinIndex(CloserIndex));
-                                    NewParticlesFlag(MinFilter(MinIndex(CloserIndex)))=0;
-                                end  
-                        end
+                if length(unique(MinIndex2Spots))~=length(MinIndex2Spots)
+                   error('HG should check this case') 
+                end
+                
+                %Go through each distance, make sure that it's within the
+                %search radius, and assign the new spots to the previous
+                %particles.
+                for j=1:length(MinIndex2Spots)
+                    if MinValues2Spots(j)<SearchRadiusTwoSpot
+                        Particles(PreviousParticleIndex(MinIndex2Spots(j))).Frame(end+1)=CurrentFrame;
+                        Particles(PreviousParticleIndex(MinIndex2Spots(j))).Index(end+1)=MinFilter(j);
+                        NewParticlesFlag(MinFilter(j))=0;
                     end
                 end
+%                 
+%                 
+%                 
+%                 for j=1:length(PreviousParticleIndex)
+%                     %Get the last position of the previous particle
+%                     [PreviousParticlesX,PreviousParticlesY]=...
+%                         SpotsXYZ(Spots(Particles(PreviousParticleIndex(j)).Frame(end)));
+%                     PreviousParticleX=PreviousParticlesX(Particles(PreviousParticleIndex(j)).Index(end));
+%                     PreviousParticleY=PreviousParticlesY(Particles(PreviousParticleIndex(j)).Index(end));
+% 
+%                     %Get the two new spots we're going to compare to
+%                     %the previous particles
+%                     MinFilter=find(MinIndexNuclei==UniqueMinIndexNuclei(i));
+%                     MinFilter=MinFilter;
+% 
+%                     NewNewParticlesX=NewParticlesX(MinFilter);
+%                     NewNewParticlesY=NewParticlesY(MinFilter);
+% 
+%                     %Calculate their distances
+%                     clear Distance
+% 
+%                     for k=1:length(NewNewParticlesX)
+%                         Distance(k,:)=sqrt((NewNewParticlesX(k)*PixelSize-...
+%                             PreviousParticleX*PixelSize).^2+...
+%                             (NewNewParticlesY(k)*PixelSize-...
+%                             PreviousParticleY*PixelSize).^2);
+%                     end
+%                     %If the minimum particle has already been assigned,
+%                     %then I need to set its distance to infinity
+%                     Distance(find(NewParticlesFlag(MinFilter)==0))=inf;
+%                     %MinIndex tells us which one of the candidates is
+%                     %closer
+%                     [MinValues2,MinIndex]=min(Distance');
+% 
+%                     %This is the index of the particle found
+%                     if Distance(MinIndex)<SearchRadius*PixelSize
+%                         Particles(PreviousParticleIndex).Frame(end+1)=CurrentFrame;
+%                         Particles(PreviousParticleIndex).Index(end+1)=MinFilter(MinIndex);
+%                         NewParticlesFlag(MinFilter(MinIndex))=0;
+%                     end
+%                 end
+
+            elseif (~isempty(ParticleToAssign))&...
+                (sum(MinIndexNuclei==UniqueMinIndexNuclei(i))>2)
+
+                warning('HG still needs to check this')
+
             end
+            %end
         end
     end
 
@@ -238,29 +281,27 @@ if ~isempty(NewParticlesX)
     %Assign the particles that correspond to a new nucleus
     NewParticlesIndices=find(NewParticlesFlag==1);
 
-    %Indices of the particles that need to be filtered out using
-    %SpotFilter.
+    %Indices of the particles that won't be assigned to a nucleus and
+    %therefor need to be disapproved by flagging them in SpotFilter
     IndexToMove=[];
 
     for i=1:length(NewParticlesIndices)
 
         %Recalculate the assigned nuclei. This is useful in case two
-        %new particles are close to a given new nucleus. Right now it
-        %will assign the first particle found. I might have to change
-        %this if it becomes too annoying.
+        %new particles are closed to a given new nucleus. 
         AssignedNuclei=[];          %These keeps track of which nuclei have
                                     %already been assigned to particles
-        AssignedParticles=[];
         for j=1:length(Particles)
             AssignedNuclei=[AssignedNuclei,Particles(j).Nucleus];
-            %AssignedParticles=[AssignedParticles,Particles(j).Index(end)];
         end
 
 
-        %Make sure this new particle doesn't get assigned to an
-        %already-assigned nucleus (Need to modify this to be okay for 2
-        %spots per nucleus)
-        if (sum(AssignedNuclei==MinIndexNuclei(NewParticlesIndices(i)))<=1)
+        %Is this spot close to an already-assigned nucleus?
+        
+        %If the spot is close to an unassigned nucleus, or if the nucleus
+        %already has one other assigned particle, then create a new
+        %particle.
+        if sum(AssignedNuclei==MinIndexNuclei(NewParticlesIndices(i)))<2
             Particles(end+1).Frame=CurrentFrame;
             Particles(end).Index=NewParticlesIndices(i);
             Particles(end).Nucleus=MinIndexNuclei(NewParticlesIndices(i));
@@ -268,34 +309,16 @@ if ~isempty(NewParticlesX)
                 Particles(end).Approved=0;
             end
             
-        %If the particle can't be put anywhere else then move it to
-        %fad2. In order to do this we will create a list of the indices
-        %that need to be moved. This is important so that we don't
-        %lose track of anything.
+        %If the particle can't be put anywhere else then move it out of the
+        %pool by taking it out of SpotFilter. This is important so that we 
+        %can bring it back if necessary
         else
             IndexToMove=[IndexToMove,i];
         end
     end
 
-    %Now use the SpotFilter array to stop considering the particles that were not assigned
-    if ~isempty(IndexToMove)
-        
+    if ~isempty(IndexToMove)     
         SpotFilter(CurrentFrame,IndexToMove)=0;
-
-        %Since we got rid of particles in fad we need to shift the
-        %index entry for the remaining particles accordingly
-        for i=1:length(Particles)
-            if sum(Particles(i).Frame==CurrentFrame)
-                Particles(i).Index(Particles(i).Frame==CurrentFrame)=...
-                    Particles(i).Index(Particles(i).Frame==CurrentFrame)-...
-                    sum(NewParticlesIndices(IndexToMove)<Particles(i).Index(Particles(i).Frame==CurrentFrame));
-            end
-        end
-
-
-
-
-
     end
 
 
