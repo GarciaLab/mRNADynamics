@@ -872,7 +872,10 @@ elseif strcmp(FileMode,'LIFExport')
             FrameInfo(i).PixelsPerLine=str2double(LIFMeta.getPixelsSizeX(0));
             FrameInfo(i).NumberSlices=min(NSlices);
             FrameInfo(i).FileMode='LIFExport';
-            FrameInfo(i).PixelSize=str2num(LIFMeta.getPixelsPhysicalSizeX(0));
+            FrameInfo(i).PixelSize = str2num(LIFMeta.getPixelsPhysicalSizeX(0));
+            if isempty(FrameInfo(i).PixelSize)
+                FrameInfo(i).PixelSize = double(LIFMeta.getPixelsPhysicalSizeX(0).value);
+            end
             FrameInfo(i).ZStep=str2double(LIFMeta.getPixelsPhysicalSizeZ(0));
             FrameInfo(i).Time=InitialStackTime(i);
         end
@@ -1106,7 +1109,9 @@ elseif strcmp(FileMode,'LIFExport')
                         if strcmp(ProjectionType,'medianprojection')
                             Projection=median(HisSlices,3);
                         else
-                            Projection=max(HisSlices,[],3);
+                            StackCenter=round((min(NSlices)-1)/2);
+                            StackRange=[StackCenter-1:StackCenter+1];
+                            Projection=max(HisSlices(:,:,StackRange),[],3);
                         end
                         if strcmpi(ExperimentType, 'inputoutput')
                             if (~isempty(strfind(Channel1{1}, 'NLS')))|(~isempty(strfind(Channel2{1}, 'NLS')))
@@ -1129,7 +1134,7 @@ elseif strcmp(FileMode,'LIFExport')
                             Projection=Projection./FF;
                         end
                     end
-                    imwrite(uint16(Projection),...
+                    imwrite(uint16(10000*Projection),...
                     [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
                 end
             m=m+1;

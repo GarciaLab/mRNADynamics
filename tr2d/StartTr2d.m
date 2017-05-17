@@ -42,7 +42,7 @@ PixelSize=FrameInfo(1).PixelSize;
 TimeStamps=[FrameInfo.Time];
 %Save the information as CSV
 CSVOutput(2,:)=TimeStamps;
-CSVOutput(1,1)=PixelSize;
+SCSVOutput(1,1)=PixelSize;
 csvwrite([PreProcessedData,filesep,Prefix,filesep,'tr2dProject',...
     filesep,'mRNADynamics.csv'],CSVOutput);
 
