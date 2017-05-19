@@ -133,7 +133,7 @@ try
     %this is just some function that can only be called if IJM is set up
     IJM.getIdentifier() 
 catch
-    addpath([filesep,'Fiji.app',filesep,'scripts']) % Update for your ImageJ installation
+    addpath([MS2CodePath, filesep,'Fiji.app',filesep,'scripts']) % Update for your ImageJ installation
     ImageJ               % Initialize IJM and MIJ
 end
 ijm = evalin('base', 'IJM');
