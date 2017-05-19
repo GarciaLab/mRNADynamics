@@ -64,36 +64,46 @@ ElapsedTime=[FrameInfo.Time]/60;        %In minutes
 %FrameFilter will tell us whether we want to be fixing schnitzs in a given
 %frame or not.
 FrameFilter=true(size(ElapsedTime));
-for i=9:14
-	%Get the frame for this nc
-    ncFrame=eval(['nc',num2str(i)]);
-    if ncFrame>0
-        %Find the lower end of the time window
-        Indices=find(ElapsedTime-(ElapsedTime(ncFrame)-TimeWindow)>0);
-        if isempty(Indices)
-            StartFrame=[];
-        else
-            StartFrame=Indices(1)-1;
-            %This checkes whether the time window is larger than the time
-            %since the movie started.
-            if StartFrame==0
-                StartFrame=1
-            end
-        end
-       
-        Indices=find(ElapsedTime-(ElapsedTime(ncFrame)+TimeWindow)>0);
-        if isempty(Indices)
-            EndFrame=[];
-        else
-            EndFrame=Indices(1)+1;
-        end
-        
-        FrameFilter(StartFrame:EndFrame)=false;
-    end
+
+
+%for i=9:14
+%	Get the frame for this nc
+%    ncFrame=eval(['nc',num2str(i)]);
+%    if ncFrame>0
+%        %Find the lower end of the time window
+%        Indices=find(ElapsedTime-(ElapsedTime(ncFrame)-TimeWindow)>0);
+%        if isempty(Indices)
+%            %StartFrame=[];
+%        else
+%            StartFrame=Indices(1)-1;
+%            %This checkes whether the time window is larger than the time
+%            %since the movie started.
+%            if StartFrame==0
+%                StartFrame=1
+%            end
+%        end
+%       
+%        Indices=find(ElapsedTime-(ElapsedTime(ncFrame)+TimeWindow)>0);
+%        if isempty(Indices)
+%            EndFrame=[];
+%        else
+%            EndFrame=Indices(1)+1;
+%        end
+%        
+%        FrameFilter(StartFrame:EndFrame)=false;
+%    end
+%end
+   
+
+% Along the Frames 
+for i =1:length(Ellipses)
+    % Get the number of ellipses in the frame i
+    Ellipse = size(Ellipses{i});
+    if Ellipse(1) == 2
+        % if only two ellipses so the frame is too close of mitosis 
+        FrameFilter(i) = 0;
+    end 
 end
-    
-
-
 
 %Start the stitching
 [Frames,Dummy] = size(Ellipses); %how many frames do we have?
