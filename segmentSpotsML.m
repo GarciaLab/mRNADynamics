@@ -116,6 +116,7 @@ if just_dog
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Generate probability maps of likely transcriptional loci
 
+[classifier,classifier_path]=uigetfile([MS2CodePath, filesep, 'classifiers', filesep, '*.model']);
 zim = [];
 evalin('base', 'clear probmaps');
 
@@ -158,7 +159,7 @@ for current_frame = 1:num_frames
     end
     mij.run('Trainable Weka Segmentation 3D', ['open=',name]);
     pause(20);
-    trainableSegmentation.Weka_Segmentation.loadClassifier([MS2CodePath, filesep, 'classifier.model']);
+    trainableSegmentation.Weka_Segmentation.loadClassifier([classifier_path, classifier]);
     trainableSegmentation.Weka_Segmentation.getProbability();
     ijm.getDatasetAs('probmaps')
     p = evalin('base', 'probmaps');
@@ -224,7 +225,7 @@ else
                         try
                             centroid = round(centroids(k).Centroid);
                             temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid);
+                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, 'ML');
                         catch 
                         end
                     end
@@ -232,7 +233,7 @@ else
                     for k = 1:n_spots
                         centroid = round(centroids(k).Centroid);    
                         temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                            neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid);
+                            neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, 'ML');
                     end
                 end
                 for k = 1:n_spots

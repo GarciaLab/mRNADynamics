@@ -1,5 +1,5 @@
 function temp_particles = identifySingleSpot(particle_index, image, image_label, dog_image, distance_to_neighbor, snippet_size, ...
-    pixelSize, show_status, fg, microscope, addition, centroid)
+    pixelSize, show_status, fg, microscope, addition, centroid, ml_string)
 
     %This is a subfunction for 'segmentSpots' that locates a transcriptional locus (the k'th locus in an image)
     %and assigns a Gaussian
@@ -8,6 +8,11 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
     
     %Arguments: This requires an image, its difference of gaussians image,
     %as well as some properties of the recording. 
+    
+    ML = 0;
+    if strcmp(ml_string, 'ML')
+        ML = 1;
+    end
 
     %Find spot centroids in the actual image by hunting for global maxima in
     %neighborhoods around spots that were just located
@@ -28,7 +33,11 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
         for j = 1:2*distance_to_neighbor
             if row - distance_to_neighbor + i > 0 && col - distance_to_neighbor + j > 0 ... 
                     && row - distance_to_neighbor + i < size(image,1)  && col - distance_to_neighbor + j < size(image,2)
-                possible_centroid(i,j) = dog_image(row-distance_to_neighbor+i, col-distance_to_neighbor+j);
+                if ML
+                    possible_centroid(i,j) = dog(row-distance_to_neighbor+i, col-distance_to_neighbor+j);
+                else
+                    possible_centroid(i,j) = image(row-distance_to_neighbor+i, col-distance_to_neighbor+j);        
+                end
                 possible_centroid_location{i,j} = [row-distance_to_neighbor+i, col-distance_to_neighbor+j];
             end
         end
@@ -48,8 +57,10 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             centroid_y = k_row;
             centroid_x = k_column;
         elseif ~addition(1)
-            centroid_x = centroid(1);
-            centroid_y = centroid(2);            
+            if ML
+                centroid_x = centroid(1);
+                centroid_y = centroid(2);
+            end
         end
         
         

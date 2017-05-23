@@ -158,12 +158,12 @@ else
             %apply flatfield correction
             if doFF && sum(size(im)==size(ffim))
                 im = im./ffim;
-            else
-                warning('Not applying flat-field correction to MS2 channel')
             end
             %
             im_thresh = dog >= Threshold;
             [im_label, n_spots] = bwlabel(im_thresh); 
+            centroids = regionprops(im_thresh, 'centroid');
+
 
             temp_frames = {};
             temp_particles = cell(1, n_spots);
@@ -171,13 +171,15 @@ else
             if n_spots ~= 0
                 if ~displayFigures
                     parfor k = 1:n_spots
+                        centroid = round(centroids(k).Centroid);
                         temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                            neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
+                            neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, '');
                     end
                 else
                     for k = 1:n_spots
+                        centroid = round(centroids(k).Centroid);
                         temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                            neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0);
+                            neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, '');
                     end
                 end
                 for k = 1:n_spots

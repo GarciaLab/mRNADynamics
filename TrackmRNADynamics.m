@@ -517,7 +517,7 @@ if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
                     SpotsPerNucleus=2;
                 end
                 
-                [Particles,SpotFilter,schnitzcells]=AssignParticle2NucleusV2(schnitzcells,Ellipses,Particles,Spots,SpotFilter,...
+                [Particles,SpotFilter,schnitzcells]=AssignParticle2Nucleus(schnitzcells,Ellipses,Particles,Spots,SpotFilter,...
                             CurrentFrame,PixelSize,SearchRadius,SpotsPerNucleus);
             else
                 error('Experiment type in MovieDatabase.xlsx not recognized')

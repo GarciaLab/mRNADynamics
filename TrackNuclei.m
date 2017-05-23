@@ -305,6 +305,8 @@ save([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
 %type
 if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'input')
     
+    
+    %Parse the channel information for the different experiment types
     if strcmp(lower(ExperimentType),'inputoutput')
         InputChannelTemp=strfind({lower(Channel1{1}),lower(Channel2{1})},'mcp');
         if isempty(InputChannelTemp)
@@ -315,8 +317,23 @@ if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'inp
         end
         InputChannelTemp=cellfun(@isempty,InputChannelTemp);
     elseif strcmp(lower(ExperimentType),'input')
-        InputChannelTemp=1;
+        %Parse the information from the different channels
+        Channels={Channel1{1},Channel2{1}};
+
+        %Histone channel.
+        histoneChannel=find(~cellfun(@isempty,strfind(lower(Channels),'his')));
+        if isempty(histoneChannel)
+            histoneChannel=0;
+        end
+
+        %Input channels
+        InputChannel=~cellfun(@isempty,Channels);
+        if histoneChannel
+            InputChannel(histoneChannel)=0;
+        end
+        InputChannel=find(InputChannel);
     end
+    
     
     %Create the circle that we'll use as the mask
     IntegrationRadius=2;       %Radius of the integration region in um
@@ -334,10 +351,10 @@ if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'inp
     schnitzcells(1).Mask=[];
     
     
-    if sum(InputChannelTemp)==1
-        InputChannel=find(InputChannelTemp);
-        
-        %Extract the fluroescence of each schnitz at each time point
+    if sum(InputChannel)
+                
+        %Extract the fluroescence of each schnitz, for each channel,
+        %at each time point
 
         %Get the image dimensions
         PixelsPerLine=FrameInfo(1).PixelsPerLine;
@@ -345,78 +362,43 @@ if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'inp
         %Number of z-slices
         NumberSlices=FrameInfo(1).NumberSlices;
         
-        h=waitbar(0,'Extracting nuclear fluorescence');
-        for CurrentFrame=1:length(FrameInfo)
-           
-            waitbar(CurrentFrame/length(FrameInfo),h);
-            
-            %Initialize the image
-            Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices+2);
-            
-            %Load the z-stack for this frame
-            for CurrentZ=1:(NumberSlices+2)   %Note that I need to add the two extra slices manually
-                if strcmp(lower(ExperimentType),'inputoutput')
-                    Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch',iIndex(InputChannel,2),'.tif']);
-                elseif strcmp(lower(ExperimentType),'input')
-                    Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'.tif']);
+        for ChN=1:length(InputChannel)
+        
+            h=waitbar(0,['Extracting nuclear fluorescence for channel ',num2str(ChN)]);
+            for CurrentFrame=1:length(FrameInfo)
+
+                waitbar(CurrentFrame/length(FrameInfo),h);
+
+                %Initialize the image
+                Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices+2);
+
+                %Load the z-stack for this frame
+                for CurrentZ=1:(NumberSlices+2)   %Note that I need to add the two extra slices manually
+                    if strcmp(lower(ExperimentType),'inputoutput')
+                        Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch',iIndex(InputChannel,2),'.tif']);
+                    elseif strcmp(lower(ExperimentType),'input')&(length(InputChannel))==1
+                        Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'.tif']);
+                    elseif strcmp(lower(ExperimentType),'input')&(length(InputChannel))>1
+                        Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch',iIndex(InputChannel(ChN),2),'.tif']);
+                    end
+
                 end
-                
+
+                TotalSchnitz=length(schnitzcells);
+
+                parfor j=1:TotalSchnitz
+
+                    %HG: Note that I'm calling a function here so that I can
+                    %debug the parfor loop above. Ideally, I would have 
+                    %parfor loop over images, not schnitzes within an image.
+                    %However, I couldn't quite figure out how to do that.
+                    schnitzcells(j)=ExtractNuclearFluorescence(schnitzcells(j),...
+                        CurrentFrame,...
+                        Image,LinesPerFrame,PixelsPerLine,NumberSlices,Circle,IntegrationRadius,ChN);
+                end
             end
-            
-            TotalSchnitz=length(schnitzcells);
-            
-            parfor j=1:TotalSchnitz
-                
-                %HG: Note that I'm calling a function here so that I can
-                %debug the parfor loop above. Ideally, I would have 
-                %parfor loop over images, not schnitzes within an image.
-                %However, I couldn't quite figure out how to do that.
-                schnitzcells(j)=ExtractNuclearFluorescence(schnitzcells(j),...
-                    CurrentFrame,...
-                    Image,LinesPerFrame,PixelsPerLine,NumberSlices,Circle,IntegrationRadius);
-              
-                
-%                 %Create a blank image we'll use to generate the mask
-%                 Mask=logical(zeros(LinesPerFrame,PixelsPerLine));
-%                 
-%                 %Get the fluorescence over the mask
-%                 if sum(schnitzcells(j).frames==CurrentFrame)
-%                     CurrentIndex=find(schnitzcells(j).frames==CurrentFrame);
-%                     cenx=schnitzcells(j).cenx(CurrentIndex);
-%                     ceny=schnitzcells(j).ceny(CurrentIndex);
-%                     Radius=schnitzcells(j).len(CurrentIndex);
-%                     
-%                     %Check that the nucleus and the nuclear mask fit within the image
-%                     if ((cenx-Radius)>0&(cenx+Radius)<PixelsPerLine&...
-%                             (ceny-Radius)>0&(ceny+Radius)<LinesPerFrame)&...
-%                             ((round(cenx)-(3*IntegrationRadius-1)/2)>0&...
-%                             (round(cenx)+(3*IntegrationRadius-1)/2)<PixelsPerLine&...
-%                             (round(ceny)-(3*IntegrationRadius-1)/2)>0&...
-%                             (round(ceny)+(3*IntegrationRadius-1)/2)<LinesPerFrame)
-%                         
-%                         %Now, add the circle
-%                         Mask(round(ceny)-(3*IntegrationRadius-1)/2:...
-%                             round(ceny)+(3*IntegrationRadius-1)/2,...
-%                             round(cenx)-(3*IntegrationRadius-1)/2:...
-%                             round(cenx)+(3*IntegrationRadius-1)/2)=Circle;
-% 
-%                         %Save the mask we're going to use
-%                         schnitzcells(j).Mask=Circle;
-%                         
-% 
-%                         for CurrentZ=1:(NumberSlices+2)
-%                             schnitzcells(j).Fluo(CurrentIndex,CurrentZ)=sum(sum(immultiply(Image(:,:,CurrentZ),Mask)));
-%                         end
-%                             
-%                     else  %If not assign NaN to the fluroescence
-%                         schnitzcells(j).Fluo(CurrentIndex,1:(NumberSlices+2))=nan;
-%                     end
-%                 end
-            end
+        close(h)    
         end
-        close(h)
-    elseif sum(InputChannelTemp)>1
-        error('More than one input channel found. This mode is not yet supported')
     else
         error('Input channel not recognized. Check correct definition in MovieDatabase.XLSX')
     end
