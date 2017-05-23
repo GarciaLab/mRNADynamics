@@ -1015,27 +1015,64 @@ elseif strcmp(FileMode,'LIFExport')
             end
         
         elseif strcmpi(ExperimentType,'input')        %Protein input mode
-            %This mode assumes that one channel corresponds to the input and
-            %that there is no second channel or, at the most, there is a
-            %histone channel
-            if ~isempty(strfind(lower(Channel2{1}),'his'))
-                fiducialChannel=2;
-                inputProteinChannel=1;
-                coatChannel=0;
-                histoneChannel=2;
-            elseif ~isempty(strfind(lower(Channel1{1}),'his'))
-                fiducialChannel=1;
-                inputProteinChannel=2;
-                coatChannel=0;
-                histoneChannel=1;
+            %This mode assumes that at least one channel corresponds to the input.
+            %It also check whetehr the second channel is histone. If there is
+            %no histone channel it creates a fake channel using one of the
+            %inputs.
+            
+            %Parse the information from the different channels
+            Channels={Channel1{1},Channel2{1}};
+            
+            %We have no coat protein here.
+            coatChannel=0;
+            
+            %Histone channel.
+            histoneChannel=find(~cellfun(@isempty,strfind(lower(Channels),'his')));
+            if isempty(histoneChannel)
+                histoneChannel=0;
             else
-                inputProteinChannel=1;
-                fiducialChannel=1;      %We're assuming we can use the protein channel for segmentation
-                coatChannel=0;
-                histoneChannel=1;
+                fiducialChannel=histoneChannel;
+            end
+
+            %Input channels
+            inputProteinChannel=~cellfun(@isempty,Channels);
+            if histoneChannel
+                inputProteinChannel(histoneChannel)=0;
+            else
+                %If there was no histone channel, we need to choose which
+                %input channel to use as our fiducial channel. We'll use
+                %the first channel for now. We can try to be smarted about
+                %this later on.
                 warning('No histone channel found. Finding nuclei using the protein input channel.')
+                fiducialChannel=1;                
+            end
+            inputProteinChannel=find(inputProteinChannel);
+            
+            %Save the information about the number of channels in FrameInfo
+            for i=1:length(FrameInfo)
+                FrameInfo(i).NChInput=length(inputProteinChannel);
             end
             
+%             
+%             
+%             if ~isempty(strfind(lower(Channel2{1}),'his'))
+%                 fiducialChannel=2;
+%                 inputProteinChannel=1;
+%                 coatChannel=0;
+%                 histoneChannel=2;
+%             elseif ~isempty(strfind(lower(Channel1{1}),'his'))
+%                 fiducialChannel=1;
+%                 inputProteinChannel=2;
+%                 coatChannel=0;
+%                 histoneChannel=1;
+%             else
+%                 inputProteinChannel=1;
+%                 fiducialChannel=1;      %We're assuming we can use the protein channel for segmentation
+%                 coatChannel=0;
+%                 histoneChannel=1;
+%                 warning('No histone channel found. Finding nuclei using the protein input channel.')
+%             end
+%             
         elseif strcmpi(ExperimentType, 'inputoutput')
             if (~isempty(strfind(lower(Channel2),'mcp')))&...
                     ~isempty(strfind(lower(Channel2),'pcp'))
@@ -1110,12 +1147,18 @@ elseif strcmp(FileMode,'LIFExport')
                                 n=n+1;
                             end
                         end
-                    elseif strcmpi(ExperimentType, 'input')&q==inputProteinChannel
+                    elseif strcmpi(ExperimentType, 'input')&sum(q==inputProteinChannel)
+                        %Are we dealing with one or two channels?
+                        if length(inputProteinChannel)==1
+                            NameSuffix=[];
+                        else
+                            NameSuffix=['_ch',iIndex(q,2)];
+                        end
                         %Save the blank images at the beginning and end of the
                         %stack
-                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'.tif'];
+                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),NameSuffix,'.tif'];
                         imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),'.tif'];
+                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),NameSuffix,'.tif'];
                         imwrite(BlankImage,[OutputFolder,filesep,NewName]);
                         %Copy the rest of the images
                         n=1;        %Counter for slices
@@ -1123,12 +1166,12 @@ elseif strcmp(FileMode,'LIFExport')
                         lastImage = j*NSlices(i)*NChannels;
                         for k=firstImage:NChannels:lastImage
                             if n<=min(NSlices)
-                                NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'.tif'];
+                                NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),NameSuffix,'.tif'];
                                    imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
                                 n=n+1;
                             end
                         end
-
+                        
                     end
                 end
                 %Now copy nuclear tracking images
@@ -1172,13 +1215,15 @@ elseif strcmp(FileMode,'LIFExport')
                         else
                             Projection=max(HisSlices(:,:,StackRange),[],3);
                         end
-                        %Flatten the field if possible
-                        if exist('LIFFF')
-                            Projection=Projection./FF;
-                        end
+                        %HG on 05/17/2017: Was this necessary? I removed
+                        %it.
+%                         %Flatten the field if possible
+%                         if exist('LIFFF')
+%                             Projection=Projection./FF;
+%                         end
                     end
-                    imwrite(double(Projection),...
-                    [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
+                    imwrite(uint16(Projection),...
+                        [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
                 end
             m=m+1;
             end

@@ -1,10 +1,15 @@
 function schnitzcells=ExtractNuclearFluorescence(schnitzcells,CurrentFrame,...
-    Image,LinesPerFrame,PixelsPerLine,NumberSlices,Circle,IntegrationRadius)
+    Image,LinesPerFrame,PixelsPerLine,NumberSlices,Circle,IntegrationRadius,Channel)
 
 
 %Find the schnitzs in the current image and extract the corresponding
 %fluorescence values. This function used to exist inside TrackNuclei, but I
 %had to make it independent so that I could use parfor loops.
+
+%If no Channel is specified, then use only channel one
+if ~exist('Channel')
+    Channel=1;
+end
 
 
 %Create a blank image we'll use to generate the mask
@@ -36,10 +41,10 @@ if sum(schnitzcells.frames==CurrentFrame)
 
 
         for CurrentZ=1:(NumberSlices+2)
-            schnitzcells.Fluo(CurrentIndex,CurrentZ)=sum(sum(immultiply(Image(:,:,CurrentZ),Mask)));
+            schnitzcells.Fluo(CurrentIndex,CurrentZ,Channel)=sum(sum(immultiply(Image(:,:,CurrentZ),Mask)));
         end
 
     else  %If not assign NaN to the fluroescence
-        schnitzcells.Fluo(CurrentIndex,1:(NumberSlices+2))=nan;
+        schnitzcells.Fluo(CurrentIndex,1:(NumberSlices+2),Channel)=nan;
     end
 end

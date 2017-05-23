@@ -38,6 +38,14 @@ load([DropboxFolder,filesep,Prefix,'\Ellipses.mat'])
 load([DropboxFolder,filesep,Prefix,'\FrameInfo.mat'])
 load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
 
+%See if FrameInfo has information about the number of input channels. This
+%is not fully implemented yet. If no information is found, then assume we
+%have only one input channel.
+if isfield(FrameInfo,'NChInput')
+    NChannels=FrameInfo(1).NChInput;
+else
+    NChannels=1;
+end
 
 %What type of experiment are we dealing with? Get this out of
 %MovieDatabase.xlsx
@@ -81,7 +89,7 @@ ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
 ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
 APResolution = XLSRaw{PrefixRow,APResolutionColumn};
 Channel1=XLSTxt(PrefixRow,Channel1Column);
-Channel2=XLSTxt(PrefixRow,Channel2Column)
+Channel2=XLSTxt(PrefixRow,Channel2Column);
 
 nc9=cell2mat(XLSRaw(PrefixRow,nc9Column));
 nc10=cell2mat(XLSRaw(PrefixRow,nc10Column));
@@ -228,11 +236,14 @@ for i=1:length(schnitzcells)
                 CompiledNuclei(k).MedianAP=median(schnitzcells(i).APpos(FrameFilter));
             end
 
-
-            
             %Copy and extract the fluorescence information
-            CompiledNuclei(k).FluoMax=max(schnitzcells(i).Fluo(FrameFilter,:),[],2);
-
+            CompiledNuclei(k).FluoMax=squeeze(max(schnitzcells(i).Fluo(FrameFilter,:,:),[],2));
+            %If there was only one time point and multiple channels,
+            %squeeze can lead to a weird shape of the matrix
+            if (NChannels>1)&(size(CompiledNuclei(k).FluoMax,2)==1)
+                CompiledNuclei(k).FluoMax=CompiledNuclei(k).FluoMax';                
+            end
+            
             k=k+1;
         end
     end
@@ -368,15 +379,50 @@ if strcmp(lower(ExperimentAxis),'ap')
     k=1;
     for i=MinAPIndex:MaxAPIndex
         [MeanVectorAPTemp,SDVectorAPTemp,NParticlesAPTemp]=AverageTracesNuclei(FrameInfo,...
-            CompiledNuclei(APFilter(:,i)));
+            CompiledNuclei(APFilter(:,i)),NChannels);
         MeanVectorAPCell{k}=MeanVectorAPTemp';
         SDVectorAPCell{k}=SDVectorAPTemp';
         NParticlesAPCell{k}=NParticlesAPTemp';
         k=k+1;
     end
-    MeanVectorAP=cell2mat(MeanVectorAPCell);
-    SDVectorAP=cell2mat(SDVectorAPCell);
-    NParticlesAP=cell2mat(NParticlesAPCell);
+%     MeanVectorAP=cell2mat(MeanVectorAPCell);
+%     SDVectorAP=cell2mat(SDVectorAPCell);
+%     NParticlesAP=cell2mat(NParticlesAPCell);
+    
+    %Turn the information into useful structures
+    if NChannels>1
+        for j=1:NChannels
+            for i=MinAPIndex:MaxAPIndex
+                MeanVectorAPCell2{j,i}=MeanVectorAPCell{i}{j};
+                SDVectorAPCell2{j,i}=SDVectorAPCell{i}{j};
+                NParticlesAPCell2{j,i}=NParticlesAPCell{i}{j};
+            end
+        end
+        
+        for j=1:NChannels
+            MeanVectorAP{j}=cell2mat({MeanVectorAPCell2{j,:}}')';
+            SDVectorAP{j}=cell2mat({SDVectorAPCell2{j,:}}')';;
+            NParticlesAP{j}=cell2mat({NParticlesAPCell2{j,:}}')';;
+        end
+    else
+        for i=MinAPIndex:MaxAPIndex
+            MeanVectorAPCell2{j,i}=MeanVectorAPCell{i};
+            SDVectorAPCell2{j,i}=SDVectorAPCell{i};
+            NParticlesAPCell2{j,i}=NParticlesAPCell{i};
+        end
+        
+        MeanVectorAP=cell2mat(MeanVectorAPCell2);
+        SDVectorAP=cell2mat(SDVectorAPCell2);
+        NParticlesAP=cell2mat(NParticlesAPCell2);;
+    end
+    
+%     if NChannels==1
+%         MeanVectorAP=MeanVectorAP{1};
+%         SDVectorAP=SDVectorAP{1};
+%         NParticlesAP=NParticlesAP{1};
+%     end
+
+    
 end
     
 

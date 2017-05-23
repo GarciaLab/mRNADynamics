@@ -35,7 +35,11 @@ if ~exist([ProcPath,filesep,Prefix,filesep,'CytoImages.mat'])
     FFDir=dir([PreProcPath,filesep,Prefix,filesep,'*FF.tif']);
     if ~isempty(FFDir)
         for ChN=1:NChannels
-            FFImage{ChN}=double(imread([PreProcPath,filesep,Prefix,filesep,FFDir(1).name],ChN));
+            try
+                FFImage{ChN}=double(imread([PreProcPath,filesep,Prefix,filesep,FFDir(1).name],ChN));
+            catch
+                FFImage{ChN}=double(imread([PreProcPath,filesep,Prefix,filesep,FFDir(1).name],1));
+            end
             filtStd=30;         %This came from the FISH code, in pixels.
             FFImage{ChN}=imfilter(FFImage{ChN},fspecial('gaussian',2*filtStd,filtStd),'symmetric');
             FFImage{ChN}=imdivide(FFImage{ChN},double(max(FFImage{ChN}(:))));
