@@ -28,7 +28,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
         for j = 1:2*distance_to_neighbor
             if row - distance_to_neighbor + i > 0 && col - distance_to_neighbor + j > 0 ... 
                     && row - distance_to_neighbor + i < size(image,1)  && col - distance_to_neighbor + j < size(image,2)
-                possible_centroid(i,j) = dog_image(row-distance_to_neighbor+i, col-distance_to_neighbor+j);
+                possible_centroid(i,j) = image(row-distance_to_neighbor+i, col-distance_to_neighbor+j);
                 possible_centroid_location{i,j} = [row-distance_to_neighbor+i, col-distance_to_neighbor+j];
             end
         end
@@ -48,8 +48,8 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             centroid_y = k_row;
             centroid_x = k_column;
         elseif ~addition(1)
-            centroid_x = centroid(1);
-            centroid_y = centroid(2);            
+%             centroid_x = centroid(1);
+%             centroid_y = centroid(2);            
         end
         
         
