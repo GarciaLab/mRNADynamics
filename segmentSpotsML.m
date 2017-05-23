@@ -190,7 +190,7 @@ else
             dog = double(imread([OutputFolder1, filesep,'prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
             if displayFigures
                 fig = figure(1);
-                imshow(dog,[]);
+                imshow(im,[]);
             else
                 fig=[];
             end
