@@ -173,13 +173,13 @@ else
                     parfor k = 1:n_spots
                         centroid = round(centroids(k).Centroid);
                         temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                            neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid);
+                            neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, '');
                     end
                 else
                     for k = 1:n_spots
                         centroid = round(centroids(k).Centroid);
                         temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                            neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid);
+                            neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, '');
                     end
                 end
                 for k = 1:n_spots

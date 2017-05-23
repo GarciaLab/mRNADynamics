@@ -60,6 +60,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             if ML
                 centroid_x = centroid(1);
                 centroid_y = centroid(2);
+            else 
             end
         end
         
