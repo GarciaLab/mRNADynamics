@@ -34,7 +34,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             if row - distance_to_neighbor + i > 0 && col - distance_to_neighbor + j > 0 ... 
                     && row - distance_to_neighbor + i < size(image,1)  && col - distance_to_neighbor + j < size(image,2)
                 if ML
-                    possible_centroid(i,j) = dog(row-distance_to_neighbor+i, col-distance_to_neighbor+j);
+                    possible_centroid(i,j) = dog_image(row-distance_to_neighbor+i, col-distance_to_neighbor+j);
                 else
                     possible_centroid(i,j) = image(row-distance_to_neighbor+i, col-distance_to_neighbor+j);        
                 end
