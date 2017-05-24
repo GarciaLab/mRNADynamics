@@ -1188,10 +1188,7 @@ elseif strcmp(FileMode,'LIFExport')
                         if strcmp(ProjectionType,'medianprojection')
                             Projection=median(HisSlices,3);
                         else
-%                            Projection=max(HisSlices,[],3);
-                        StackCenter=round((min(NSlices)-1)/2);
-                        StackRange=[StackCenter-1:StackCenter+1];
-                        Projection = max(HisSlices(:,:,StackRange,[],3));
+                            Projection=max(HisSlices,[],3);
                         end
                         
                         %Think about the case when there is no His channel,
@@ -1223,7 +1220,7 @@ elseif strcmp(FileMode,'LIFExport')
 %                         end
                     end
                     imwrite(uint16(Projection),...
-                        [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
+                    [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
                 end
             m=m+1;
             end

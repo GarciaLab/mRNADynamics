@@ -116,6 +116,7 @@ if just_dog
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Generate probability maps of likely transcriptional loci
 
+[classifier,classifier_path]=uigetfile([MS2CodePath, filesep, 'classifiers', filesep, '*.model']);
 zim = [];
 evalin('base', 'clear probmaps');
 
@@ -158,7 +159,7 @@ for current_frame = 1:num_frames
     end
     mij.run('Trainable Weka Segmentation 3D', ['open=',name]);
     pause(20);
-    trainableSegmentation.Weka_Segmentation.loadClassifier([MS2CodePath, filesep, 'classifier.model']);
+    trainableSegmentation.Weka_Segmentation.loadClassifier([classifier_path, classifier]);
     trainableSegmentation.Weka_Segmentation.getProbability();
     ijm.getDatasetAs('probmaps')
     p = evalin('base', 'probmaps');
@@ -190,7 +191,7 @@ else
             dog = double(imread([OutputFolder1, filesep,'prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
             if displayFigures
                 fig = figure(1);
-                imshow(dog,[]);
+                imshow(im,[]);
             else
                 fig=[];
             end

@@ -34,7 +34,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             if row - distance_to_neighbor + i > 0 && col - distance_to_neighbor + j > 0 ... 
                     && row - distance_to_neighbor + i < size(image,1)  && col - distance_to_neighbor + j < size(image,2)
                 if ML
-                    possible_centroid(i,j) = dog(row-distance_to_neighbor+i, col-distance_to_neighbor+j);
+                    possible_centroid(i,j) = dog_image(row-distance_to_neighbor+i, col-distance_to_neighbor+j);
                 else
                     possible_centroid(i,j) = image(row-distance_to_neighbor+i, col-distance_to_neighbor+j);        
                 end
@@ -124,10 +124,10 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
                 figure(fg)
                 ellipse(distance_to_neighbor/2,distance_to_neighbor/2,0,centroid_x, centroid_y,'r');
                 pause(.1) %Ellipses won't be plotted correctly without this pause.
-                figure(5)
-                imshow(image,[])
-                ellipse(distance_to_neighbor/2,distance_to_neighbor/2,0,spot_x,spot_y,'r');
-                pause(.1) %Ellipses won't be plotted correctly without this pause.
+                %figure(5)
+                %imshow(image,[])
+                %ellipse(distance_to_neighbor/2,distance_to_neighbor/2,0,spot_x,spot_y,'r');
+                %pause(.1) %Ellipses won't be plotted correctly without this pause.
                 
             end
             
