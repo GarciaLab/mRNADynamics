@@ -9,6 +9,10 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 
 %Options:
 %'displayFigures':   If you want to display plots and images.
+%'Tifs':         When running this script without a threshold to generate
+%                probability maps, use this option to instead only generate
+%                the TIF stacks necessary for doing Weka classification. 
+%                Recommended to run this before making a new classifier.
 %                
 %'TrackSpots':   Do you want to use this code to track the particles instead
 %                of using TrackmRNADynamics?
@@ -27,10 +31,13 @@ TrackSpots=0;
 num_frames=0;
 num_shadows = 2;
 initial_frame = 1;
+just_tifs = 0;
     
 for i=1:length(varargin)
     if strcmp(varargin{i},'displayFigures')
         displayFigures=1;
+    elseif strcmp(varargin{i}, 'Tifs')
+        just_tifs = 1;
     elseif strcmp(varargin{i},'TrackSpots')
         TrackSpots=1;
     elseif strcmp(varargin{i},'LastFrame')
@@ -116,31 +123,38 @@ if just_dog
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Generate probability maps of likely transcriptional loci
 
-[classifier,classifier_path]=uigetfile([MS2CodePath, filesep, 'classifiers', filesep, '*.model']);
+stackspath = [PreProcPath,filesep,Prefix,filesep,'stacks'];
+mkdir(stackspath);
 zim = [];
-evalin('base', 'clear probmaps');
+if ~just_tifs
+    [classifier,classifier_path]=uigetfile([MS2CodePath, filesep, 'classifiers', filesep, '*.model']);
+    evalin('base', 'clear probmaps');
 
-version -java;
-javaver = ans;
-if ~strcmp('Java 1.8.0_66-b18 with Oracle Corporation Java HotSpot(TM) 64-Bit Server VM mixed mode', javaver)
-    error('Java version incorrect. Re-run InstallmRNADynamics or check environment variables')
-end
-heapsize = java.lang.Runtime.getRuntime.maxMemory;
-if heapsize<1E10 
-    error('Please increase your Java heap memory allocation to at least 10GB (Home -> Preferences -> General -> Java Heap Memory.');
-end
+    version -java;
+    javaver = ans;
+    if ~strcmp('Java 1.8.0_66-b18 with Oracle Corporation Java HotSpot(TM) 64-Bit Server VM mixed mode', javaver)
+        error('Java version incorrect. Re-run InstallmRNADynamics or check environment variables')
+    end
+    heapsize = java.lang.Runtime.getRuntime.maxMemory;
+    if heapsize<1E10 
+        error('Please increase your Java heap memory allocation to at least 10GB (Home -> Preferences -> General -> Java Heap Memory.');
+    end
 
-try
-    %this is just some function that can only be called if IJM is set up
-    IJM.getIdentifier() 
-catch
-    addpath([MS2CodePath,filesep,'Fiji.app',filesep,'scripts']) % Update for your ImageJ installation
-    ImageJ               % Initialize IJM and MIJ
+    try
+        %this is just some function that can only be called if IJM is set up
+        IJM.getIdentifier() 
+    catch
+        addpath([MS2CodePath,filesep,'Fiji.app',filesep,'scripts']) % Update for your ImageJ installation
+        ImageJ               % Initialize IJM and MIJ
+    end
+    ijm = evalin('base', 'IJM');
+    mij = evalin('base', 'MIJ');
+    zSize2 = zSize*2;
+    h=waitbar(0,'Running Weka Classifier');
+else 
+    h = waitbar(0, 'Making .tif stacks for Weka classification');
 end
-ijm = evalin('base', 'IJM');
-mij = evalin('base', 'MIJ');
-zSize2 = zSize*2;
-h=waitbar(0,'Running Weka Classifier');
+%Make requisite TIF stacks for classification
 for current_frame = 1:num_frames
     w = waitbar(current_frame/num_frames,h);
     set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
@@ -151,28 +165,33 @@ for current_frame = 1:num_frames
             zim(:,:,i) = double(imread([PreProcPath,filesep,Prefix, filesep, Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));    
         end
     end
-    mkdir([PreProcPath,filesep,Prefix,filesep,'stacks']);
-    name = [PreProcPath,filesep,Prefix,filesep,'stacks', filesep, iIndex(current_frame,3),'.tif'];
-    imwrite(uint16(zim(:,:,1)), name);
-    for k = 2:size(zim,3)
-        imwrite(uint16(zim(:,:,k)), name, 'WriteMode', 'append');
+    name = [stackspath, filesep, iIndex(current_frame,3),'.tif'];
+    %Don't write new stacks if they're already made.
+    if length(dir([stackspath, filesep, '*.tif'])) ~= num_frames
+        imwrite(uint16(zim(:,:,1)), name);
+        for k = 2:size(zim,3)
+            imwrite(uint16(zim(:,:,k)), name, 'WriteMode', 'append');
+        end
     end
-    mij.run('Trainable Weka Segmentation 3D', ['open=',name]);
-    pause(20);
-    trainableSegmentation.Weka_Segmentation.loadClassifier([classifier_path, classifier]);
-    trainableSegmentation.Weka_Segmentation.getProbability();
-    ijm.getDatasetAs('probmaps')
-    p = evalin('base', 'probmaps');
-    p2 = [];
-    for m = 1:2:zSize2
-        p2(:,:,ceil(m/2)) =  p(:,:,m); %the even images in the original array are negatives of the odds
+    %Do the classification with Weka in Fiji
+    if ~just_tifs
+        mij.run('Trainable Weka Segmentation 3D', ['open=',name]);
+        pause(20);
+        trainableSegmentation.Weka_Segmentation.loadClassifier([classifier_path, classifier]);
+        trainableSegmentation.Weka_Segmentation.getProbability();
+        ijm.getDatasetAs('probmaps')
+        p = evalin('base', 'probmaps');
+        p2 = [];
+        for m = 1:2:zSize2
+            p2(:,:,ceil(m/2)) =  p(:,:,m); %the even images in the original array are negatives of the odds
+        end
+        p2 = permute(p2, [2 1 3]) * 10000;
+        for i = 1:size(p2, 3)
+            p_name = ['prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif'];
+            imwrite(uint16(p2(:,:,i)), [OutputFolder1,filesep,p_name])
+        end
+        mij.run('Close All');
     end
-    p2 = permute(p2, [2 1 3]) * 10000;
-    for i = 1:size(p2, 3)
-        p_name = ['prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif'];
-        imwrite(uint16(p2(:,:,i)), [OutputFolder1,filesep,p_name])
-    end
-    mij.run('Close All');
 end
 close(h);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
