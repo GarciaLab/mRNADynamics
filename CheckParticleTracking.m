@@ -13,7 +13,6 @@ function CheckParticleTracking(varargin)
 % anywhere mode from 1
 
 
-
 %Usage:
 %
 %Frame specific:
@@ -1175,7 +1174,7 @@ while (cc~='x')
                     neighborhood = round(1300 / pixelSize); %nm
                     %Get the information about the spot on this z-slice
                     temp_particles{i} = identifySingleSpot(k, spotsIm, im_label, dog, neighborhood, snippet_size, ...
-                        pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony]);
+                        pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [], '' );
                 end
                 
                 for i = 1:ZSlices
@@ -1254,7 +1253,7 @@ while (cc~='x')
 %                     neighborhood = round(1300 / pixelSize); %nm
 %                     %Get the information about the spot on this z-slice
 %                     temp_particles = identifySingleSpot(k, spotsIm, im_label, dog, neighborhood, snippet_size, ...
-%                         pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony]);
+%                         pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [], '');
 %                     if ~isempty(temp_particles{1})
 %                         %Copy the information stored on temp_particles into the
 %                         %Spots structure
