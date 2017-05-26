@@ -155,7 +155,7 @@ else
     h = waitbar(0, 'Making .tif stacks for Weka classification');
 end
 %Make requisite TIF stacks for classification
-for current_frame = 1:num_frames
+for current_frame = initial_frame:num_frames
     w = waitbar(current_frame/num_frames,h);
     set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
     for i = 1:zSize
@@ -176,7 +176,7 @@ for current_frame = 1:num_frames
     %Do the classification with Weka in Fiji
     if ~just_tifs
         mij.run('Trainable Weka Segmentation 3D', ['open=',name]);
-        pause(20);
+        pause(10);
         trainableSegmentation.Weka_Segmentation.loadClassifier([classifier_path, classifier]);
         trainableSegmentation.Weka_Segmentation.getProbability();
         ijm.getDatasetAs('probmaps')
@@ -454,6 +454,19 @@ end
 t = toc;
 display(['Elapsed time: ',num2str(t/60),' min'])
 
+logpath = [DropboxFolder,filesep,Prefix,filesep,'log.mat'];
+if exist(logpath)
+    load(logpath);
+else
+    log = struct();
+end
+log(end+1).Date = date;
+log(end).runTime = t/60; %min
+log(end).InitialFrame = initial_frame;
+log(end).LastFrame = num_frames;
+log(end).NFrames = num_frames - initial_frame + 1;
+log(end).TimePerFrame = (t/60)/(num_frames-initial_frame + 1);
+
 if ~just_dog
     detectedCircles = 0;
     detectedBalls = 0;
@@ -464,29 +477,21 @@ if ~just_dog
         end
     end
     display(['Detected spots: ',num2str(detectedCircles)])
-    if exist([DropboxFolder,filesep,Prefix,filesep,'log.mat'])
-        load([DropboxFolder,filesep,Prefix,filesep,'log.mat'])
-        log(end+1).Date = date;
-        log(end).runTime = t/60; %min
-        log(end).falsePositives = falsePositives;
-        log(end).totalCircles = detectedCircles;
-        log(end).totalBalls = detectedBalls;
-        log(end).avgZSize = detectedCircles/detectedBalls;
-        log(end).Threshold = Threshold;
-    else
-        log = struct();
-        log(1).Date = date;
-        log(1).runTime = t/60; %min
-        log(1).falsePositives = falsePositives;
-        log(1).totalCircles = detectedCircles;
-        log(1).totalBalls = detectedBalls;
-        log(1).avgZSize = detectedCircles/detectedBalls;
-        log(1).Threshold = Threshold;
+    log(end).falsePositives = falsePositives;
+    log(end).totalCircles = detectedCircles;
+    log(end).totalBalls = detectedBalls;
+    log(end).avgZSize = detectedCircles/detectedBalls;
+    log(end).Threshold = Threshold;
+    if isfield(log, 'Classifier')
+        log(end).Classifier = log(end-1).Classifier;
     end
-    save([DropboxFolder,filesep,Prefix,filesep,'log.mat'], 'log');
+else     
+    log(end).Classifier = classifier;     
 end
+save(logpath, 'log');
 try
     poolobj = gcp('nocreate');
     delete(poolobj);
 catch
+    %fails if the parallel pool has timed out.
 end
