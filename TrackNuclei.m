@@ -316,6 +316,8 @@ if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'inp
                 end    
         end
         InputChannelTemp=cellfun(@isempty,InputChannelTemp);
+        InputChannel = find(InputChannelTemp);
+        
     elseif strcmp(lower(ExperimentType),'input')
         %Parse the information from the different channels
         Channels={Channel1{1},Channel2{1}};
