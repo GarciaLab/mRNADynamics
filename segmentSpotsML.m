@@ -453,45 +453,46 @@ end
 
 t = toc;
 display(['Elapsed time: ',num2str(t/60),' min'])
+if ~just_tifs
+    logpath = [DropboxFolder,filesep,Prefix,filesep,'log.mat'];
+    if exist(logpath)
+        load(logpath);
+    else
+        log = struct();
+    end
+    log(end+1).Date = date;
+    log(end).runTime = t/60; %min
+    log(end).InitialFrame = initial_frame;
+    log(end).LastFrame = num_frames;
+    log(end).NFrames = num_frames - initial_frame + 1;
+    log(end).TimePerFrame = (t/60)/(num_frames-initial_frame + 1);
 
-logpath = [DropboxFolder,filesep,Prefix,filesep,'log.mat'];
-if exist(logpath)
-    load(logpath);
-else
-    log = struct();
-end
-log(end+1).Date = date;
-log(end).runTime = t/60; %min
-log(end).InitialFrame = initial_frame;
-log(end).LastFrame = num_frames;
-log(end).NFrames = num_frames - initial_frame + 1;
-log(end).TimePerFrame = (t/60)/(num_frames-initial_frame + 1);
-
-if ~just_dog
-    detectedCircles = 0;
-    detectedBalls = 0;
-    for i = 1:length(Spots)
-        for j = 1:length(Spots(i).Fits)
-            detectedCircles = detectedCircles + length(Spots(i).Fits(j).z);
-            detectedBalls = detectedBalls + 1;
+    if ~just_dog
+        detectedCircles = 0;
+        detectedBalls = 0;
+        for i = 1:length(Spots)
+            for j = 1:length(Spots(i).Fits)
+                detectedCircles = detectedCircles + length(Spots(i).Fits(j).z);
+                detectedBalls = detectedBalls + 1;
+            end
         end
+        display(['Detected spots: ',num2str(detectedCircles)])
+        log(end).falsePositives = falsePositives;
+        log(end).totalCircles = detectedCircles;
+        log(end).totalBalls = detectedBalls;
+        log(end).avgZSize = detectedCircles/detectedBalls;
+        log(end).Threshold = Threshold;
+        if isfield(log, 'Classifier')
+            log(end).Classifier = log(end-1).Classifier;
+        end
+    else     
+        log(end).Classifier = classifier;     
     end
-    display(['Detected spots: ',num2str(detectedCircles)])
-    log(end).falsePositives = falsePositives;
-    log(end).totalCircles = detectedCircles;
-    log(end).totalBalls = detectedBalls;
-    log(end).avgZSize = detectedCircles/detectedBalls;
-    log(end).Threshold = Threshold;
-    if isfield(log, 'Classifier')
-        log(end).Classifier = log(end-1).Classifier;
+    save(logpath, 'log');
+    try
+        poolobj = gcp('nocreate');
+        delete(poolobj);
+    catch
+        %fails if the parallel pool has timed out.
     end
-else     
-    log(end).Classifier = classifier;     
-end
-save(logpath, 'log');
-try
-    poolobj = gcp('nocreate');
-    delete(poolobj);
-catch
-    %fails if the parallel pool has timed out.
 end
