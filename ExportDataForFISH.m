@@ -1198,9 +1198,19 @@ elseif strcmp(FileMode,'LIFExport')
                             if strcmpi(ExperimentType, 'inputoutput')|strcmpi(ExperimentType, '1spot')
                                 if (~isempty(strfind(Channel1{1}, 'NLS')))|(~isempty(strfind(Channel2{1}, 'NLS')))
                                 else
+                                    %We don't want to use all slices. Only the center ones
+                                    StackCenter=round((min(NSlices)-1)/2);
+                                    StackRange=[StackCenter-1:StackCenter+1];
+                                    if strcmp(ProjectionType,'medianprojection')
+                                        Projection=median(HisSlices(:,:,StackRange),[],3);
+                                    else
+                                        Projection=max(HisSlices(:,:,StackRange),[],3);
+                                    end
+                                    %invert images to make nuclei bright
                                     Projection=imcomplement(Projection);                            
                                 end
                                 Projection=histeq(mat2gray(Projection),ReferenceHist);
+                                Projection = Projection*10000;
                             end
                         end
                     else 
@@ -1212,15 +1222,12 @@ elseif strcmp(FileMode,'LIFExport')
                         else
                             Projection=max(HisSlices(:,:,StackRange),[],3);
                         end
-                        %HG on 05/17/2017: Was this necessary? I removed
-                        %it.
-%                         %Flatten the field if possible
-%                         if exist('LIFFF')
-%                             Projection=Projection./FF;
-%                         end
                     end
+ 
                     imwrite(uint16(Projection),...
                     [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
+
+                    
                 end
             m=m+1;
             end
