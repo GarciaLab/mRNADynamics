@@ -1,10 +1,24 @@
 function Data=LoadMS2Sets(DataType)
-
+%Data = LoadMS2Sets(DataType)
+%
+%DESCRIPTION
 %Loads all data sets of a certain type and outputs them into the structure
 %Data
-
-%DataType is the tab in the XLS file "DataStatus". The code figures out which XLS file
-%and folders to use.
+%
+%PARAMETERS
+%DataType: This is a string that is identical to the name of the tab in
+%dataStatus.xlsx that you wish to analyze.
+%
+%OPTIONS
+%No options
+%
+%OUTPUT
+%Returns the Data structure containing all of the relevant datasets from your
+%DataType tab in dataStatus.xlsx
+%
+%Author (contact): Hernan Garcia (hgarcia@berkeley.edu)
+%Created: Unknown
+%Last Updated: Unknown
 
 %Get some of the default folders
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
