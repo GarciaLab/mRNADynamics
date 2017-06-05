@@ -32,6 +32,9 @@ function segmentSpotsTemp(Prefix,Threshold,varargin)
 %                discarded. This option overrides that.
 %[Any other options you may have]
 %
+%CONTROLS
+%[For interactive scripts with keyboard controls]
+%
 %OUTPUT
 %[Any output that your script provides with a description of what it is. If 
 %applicable, please note where this output is saved.]
