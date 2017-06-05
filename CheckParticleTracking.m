@@ -3,9 +3,15 @@ function CheckParticleTracking(varargin)
 %The point of this function is to check the tracking of particles. The
 %logic of this function should be similar to schnitzcells: We want to be
 %able to correct both the segmentation and tracking.
-% 
-% 
 
+%Parameters:
+%Prefix: Prefix of the data set to analyze
+%NoSort : Flag to sort or not particles according to their starting frame
+%ForCompileAll : Flag to just save the data. This is good for CompileAll
+%speedmode : Flag to plot only ellipses for current particle & save time
+%sistermode : Decide whether you want to do sister chromatid analysis
+%Justnc13 : Only look at particles that show up in nc13 
+    % Currently this only starts at nc13...not restrict you to nc13 Added by Emma 
 
 % New commands added by Armando. Need to be integrated in the manual below.
 % 1. Zoom anywhere button ' + '
@@ -417,6 +423,18 @@ DisplayRange=[];
 ZoomMode=0;
 GlobalZoomMode=0;
 ZoomRange=50;
+
+% Changing the intial frames and particle if justNC13
+if justNC13
+    nc13Frame = cell2mat(XLSRaw(XLSEntry,nc13Column));
+    nc14Frame = cell2mat(XLSRaw(XLSEntry,nc14Column));
+    particlesInRange = particlesWithinFrames(Prefix,Particles,nc13Frame,nc14Frame);
+    CurrentParticle = particlesInRange(1);
+    PreviousParticle = particlesInRange(1);
+    CurrentFrameWithinParticle = 1; 
+    CurrentFrame = Particles{1}(CurrentParticle).Frame(1);
+    disp('I have made justNC13 conditions')
+end
 
 %Determine the positions and size of the figures
 ScreenSize=get( 0, 'ScreenSize' );
@@ -1007,7 +1025,6 @@ while (cc~='x')
         FigureTitle=[FigureTitle,', Showing disapproved particles'];
     end
     title(FigureTitle)
-    
     
     %Define the windows
     figure(Overlay)
