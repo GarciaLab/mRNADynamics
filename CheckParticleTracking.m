@@ -11,7 +11,8 @@ function CheckParticleTracking(varargin)
 %speedmode : Flag to plot only ellipses for current particle & save time
 %sistermode : Decide whether you want to do sister chromatid analysis
 %Justnc13 : Only look at particles that show up in nc13 
-    % Currently this only starts at nc13...not restrict you to nc13 Added by Emma 
+    % Currently this only starts at nc13...not restrict you to nc13 Added by Emma
+    % Also, this option shows you the max projection. 
 
 % New commands added by Armando. Need to be integrated in the manual below.
 % 1. Zoom anywhere button ' + '
@@ -132,6 +133,8 @@ ForCompileAll=0;
 SpeedMode = 0;
 %Decide whether you want to do sister chromatid analysis
 SisterMode = 0;
+%Decide whether you want to only see nc13
+justNC13 = 0;
 
 Prefix = varargin{1};
 if length(varargin)>1
@@ -144,6 +147,8 @@ if length(varargin)>1
             SpeedMode = 1;
         elseif strcmpi(varargin{i}, 'sistermode')
             SisterMode = 1;
+        elseif strcmpi(varargin{i}, 'Justnc13')
+            justNC13 = 1;
         end
     end
 end
@@ -433,14 +438,8 @@ if justNC13
     PreviousParticle = particlesInRange(1);
     CurrentFrameWithinParticle = 1; 
     CurrentFrame = Particles{1}(CurrentParticle).Frame(1);
-    disp('I have made justNC13 conditions')
 end
 
-%Determine the positions and size of the figures
-ScreenSize=get( 0, 'ScreenSize' );
-ScreenSize=ScreenSize(3:end);
-ScreenRows=ScreenSize(2);
-ScreenColumns=ScreenSize(1);
 %Define the windows
 Overlay=figure;
 if UseHistoneOverlay 
@@ -551,15 +550,18 @@ while (cc~='x')
         ManualZFlag=0;
     end
         
-    if (NChannels==1)&(~strcmp(lower(ExperimentType),'inputoutput'))
+    if (NChannels==1)&&(~strcmp(lower(ExperimentType),'inputoutput'))
         try
-            Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);
+            if ~justNC13
+                Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
+                    FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);
+            else
+            end
         catch
-            display(['Warning: Could not load file: ',...
+            disp(['Warning: Could not load file: ',...
                 FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif'])
         end
-    elseif (NChannels==1)&(strcmp(lower(ExperimentType),'inputoutput'))
+    elseif (NChannels==1)&&(strcmp(lower(ExperimentType),'inputoutput'))
         OutputChannelTemp1=strfind({lower(Channel1{1}),lower(Channel2{1})},'mcp');
         OutputChannelTemp2=strfind({lower(Channel1{1}),lower(Channel2{1})},'pcp');
         OutputChannelTemp1=~cellfun(@isempty,OutputChannelTemp1);
@@ -1039,9 +1041,6 @@ while (cc~='x')
     set(gcf,'units', 'normalized', 'position',[0.35, 0.15, .2/2, .33/2]);
     figure(ZProfileFig);
     set(gcf,'units', 'normalized', 'position',[0.46, 0.15, .2/2, .33/2]);
-
-    
-    
     
     figure(Overlay)
     if isempty(SkipWaitForButtonPress)
@@ -1157,17 +1156,16 @@ while (cc~='x')
         
         %Check that we're in zoom mode. If not, set it up.
         if ~(ZoomMode || GlobalZoomMode)
-            ZoomMode=~ZoomMode;
             SkipWaitForButtonPress='[';
-            display('You need to be in Zoom Mode to do this. You can switch using ''o''. Run the ''['' command again.')
+            disp('You need to be in Zoom Mode to do this. You can switch using ''o'' or ''+''. Run the ''['' command again.')
         else
             %Click on the region we're going to fit in order to find a new
             %spot and add that spot to the current particle
             
             %Check that this particle doesn't already have a spot assigned
             %in this frame
-            if sum(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame)
-                warning('There is a spot assigned to this partcicle in this frame already.')
+            if sum(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame) &&  ~GlobalZoomMode
+                warning('There is a spot assigned to this particle in this frame already.')
             else
                 [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'r', 'linewidth',1);
                 ConnectPositionx = round(ConnectPositionx);
@@ -1253,78 +1251,6 @@ while (cc~='x')
                     end
                 end
                 
-                
-                
-%                 for i = 1:ZSlices
-%                     spotsIm=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-%                          FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i,2),'.tif']);  
-%                     Threshold = min(min(spotsIm));
-%                     dog = spotsIm;
-%                     im_thresh = dog >= Threshold;
-%                     [im_label, ~] = bwlabel(im_thresh);
-%                     microscope = FrameInfo(1).FileMode;
-%                     show_status = 0;
-%                     fig = [];
-%                     k = 1; %This is supposed to be the index for the partiles in an image.
-%                            %However, this image only contains one particle
-%                     neighborhood = round(1300 / pixelSize); %nm
-%                     %Get the information about the spot on this z-slice
-%                     temp_particles = identifySingleSpot(k, spotsIm, im_label, dog, neighborhood, snippet_size, ...
-%                         pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [], '');
-%                     if ~isempty(temp_particles{1})
-%                         %Copy the information stored on temp_particles into the
-%                         %Spots structure
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity(i)=...
-%                             temp_particles{1}{1};
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFit(i)=...
-%                             temp_particles{1}{2};
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yFit(i)=...
-%                             temp_particles{1}{3};
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Offset(i)=...
-%                             temp_particles{1}{4};
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Snippet{i}=...
-%                             temp_particles{1}{5};
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Area(i)=...
-%                             temp_particles{1}{6};
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFitWidth(i)=...
-%                             temp_particles{1}{7};
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yFitWidth(i)=...
-%                             temp_particles{1}{8};
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yDoG(i)=...
-%                             temp_particles{1}{9};
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xDoG(i)=...
-%                             temp_particles{1}{10};
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).GaussianIntensity(i)=...
-%                             temp_particles{1}{11};
-%                         Spots{1}(CurrentFrame).Fits(SpotsIndex).CentralIntensity(i)=...
-%                             temp_particles{1}{12};
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).DOGIntensity(i)=...
-%                             temp_particles{1}{13};
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).snippet_mask{i}=...
-%                             temp_particles{1}{14};
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).SisterDistance(i)=... 
-%                             temp_particles{1}{17};
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).ConfidenceIntervals{i}=...
-%                             temp_particles{1}{19};
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).gaussSpot{i}=...
-%                             temp_particles{1}{20};
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).rawSpot{i}=...
-%                             temp_particles{1}{21};
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).z(i)=...
-%                             i;
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).discardThis=...
-%                             0;
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).frame=...
-%                             CurrentFrame;
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).r=...
-%                             0;
-%                     else
-%                         display('No spot added. Did you click too close to the image boundary?')
-%                         breakflag = 1;
-%                         break
-%                     end
-%                 end
-
                 if ~breakflag
                     %Find the maximum Z-plane
                     [~, max_index] = max(Spots{1}(CurrentFrame).Fits(SpotsIndex).CentralIntensity);
