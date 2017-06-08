@@ -1,5 +1,6 @@
-%%                             DetermineFilterRadius.m
-%
+function OptimalRadius = DetermineFilterRadius(NucEven,StartRadius,EndRadius,NumberRadiusPoints,scalingfactor,numberhistogrampoints,Offset)
+% OptimalRadius = DetermineFilterRadius(NucEven,StartRadius,EndRadius,
+%           NumberRadiusPoints,scalingfactor,numberhistogrampoints,Offset)
 %
 % Overview:
 %
@@ -31,9 +32,6 @@
 %
 % Comments:
 %
-
-function OptimalRadius = DetermineFilterRadius(NucEven,StartRadius,EndRadius,NumberRadiusPoints,scalingfactor,numberhistogrampoints,Offset)
-
 troubleshooting = 0;
 
 [ro,co]=size(NucEven);                                              % Resizing of the image to speed up calculations
