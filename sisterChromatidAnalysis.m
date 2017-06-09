@@ -1,3 +1,26 @@
+% sisterChromatidAnalysis.m
+%
+% DESCRIPTION
+% Plots the analysis for sister chromatid data sets.
+%
+% PARAMETERS
+% None
+%
+% OPTIONS
+% None
+%
+% CONTROLS
+% None
+%
+% OUTPUT
+% Figures showing sister chromatid visibility.
+%
+% Author (contact): Armando Reimer?? (areimer@berkeley.edu)
+% Created: Unknown
+% Last Updated: Unknown
+%
+% Commented by: Meghan Turner (meghan_turner@berkeley.edu)
+
 load 'D:\Data\Armando\livemRNA\Data\Dropbox\DynamicsResults\2015-05-31-89B8-3-P2P\Spots.mat'
 load 'D:\Data\Armando\livemRNA\Data\Dropbox\DynamicsResults\2015-05-31-89B8-3-P2P\FrameInfo.mat'
 % uiopen
