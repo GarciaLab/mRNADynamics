@@ -1,7 +1,30 @@
 function RunFISHToolbox(Prefix,Thresholds)
+% RunFISHToolbox(Prefix,Thresholds)
+%
+% DESCRIPTION
+% This function runs the FISH Toolbox steps on our live mRNA data.
+%
+% PARAMETERS
+% Prefix: Prefix of the data set to analyze
+% Threshold: Threshold to be used. Should be kept at ~90-200 for lattice
+%           light-sheet data, and at ~5-10 for confocal data (Leica SP8).
+%           If left empty, then the code just generates the DoG files.
+%
+% OPTIONS
+% None
+%
+% CONTROLS
+% None
+%
+% OUTPUT
+% None
+%
+% Author (contact): Unknown
+% Created: Unknown
+% Last Updated: Unknown
+%
+% Commented by: Meghan Turner (meghan_turner@berkeley.edu), 6/8/17
 
-%This function runs the FISH Toolbox steps on our live mRNA data. If not
-%threshold is provided it runs it in DoG mode for all channels.
 
 
 
