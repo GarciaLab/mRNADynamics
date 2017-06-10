@@ -144,6 +144,16 @@ if isempty(userpath)
 end
 
 fid = fopen([StartUpPath(1:end-1),filesep,'startup.m'], 'a');
+errmsg = '';
+if fid < 0
+    fid = fopen([StartUpPath,filesep,'startup.m'], 'a');
+end
+while fid < 0 
+   disp(errmsg);
+   disp('Please find your user''s Matlab folder. Maybe "My Documents\Matlab" on Windows?')
+   d = uigetdir;
+   [fid,errmsg] = fopen(d);
+end
 
 for i=1:length(Output)
     fprintf(fid, '%s \n', Output{i});
