@@ -77,12 +77,14 @@ txt{7,end}=cd;
 if ispc && ~cflag
     xlswrite(['..',filesep,'ComputerFolders.xlsx'],txt);
 else
-    display('Warning: Macs and Linux cannot generate the XLS files.')
-    display('(1) Re-run using "txt=InstallmRNADynamics".')
-    display('(2) Type "open txt".')
-    display('(3) Copy and paste the data into a new file in Excel.')
-    display('(4) Get rid of all '' in the file.')
-    display('(5) Save as "ComputerFolders.xlsx" in folder "LivemRNAFISH.')
+    if ~cflag
+        display('Warning: Macs and Linux cannot generate the XLS files.')
+        display('(1) Re-run using "txt=InstallmRNADynamics".')
+        display('(2) Type "open txt".')
+        display('(3) Copy and paste the data into a new file in Excel.')
+        display('(4) Get rid of all '' in the file.')
+        display('(5) Save as "ComputerFolders.xlsx" in folder "LivemRNAFISH.')
+    end
 end
     
     
@@ -126,12 +128,13 @@ DynamicsResultsFolder=cd;
 cd(CurrentFolder);
 
 Output{1}=['path(''',PreProcessedFolder,''',path);'];
-Output{2}=['path(''',CurrentFolder,''',path);'];
-Output{3}=['path(''',TrackingFolder,''',path);'];
-Output{4}=['path(''',SubfunctionsFolder,''',path);'];
-Output{5}=['path(''',mRNADynamicsParentFolder,''',path);'];
-Output{6}=['path(''',DynamicsResultsFolder,''',path);'];
-Output{7}=['path(''',LineageCodeFolder,''',path);'];
+Output{2}=['path(''',mRNADynamicsParentFolder,''',path);'];
+Output{3}=['path(''',CurrentFolder,''',path);'];
+Output{4}=['path(''',LineageCodeFolder,''',path);'];
+Output{5}=['path(''',SubfunctionsFolder,''',path);'];
+Output{6}=['addpath(genpath(''',CurrentFolder,filesep,'dependencies''))'];
+Output{7}=['addpath(genpath(''',CurrentFolder,filesep,'deprecated''))'];
+Output{8}=['path(''',DynamicsResultsFolder,''',path);'];
 
 
 %Create the startup.m file
@@ -192,12 +195,13 @@ end
 % 
 
 %I had to do this because it seems to take some time for the file to be
-%found by Matlab after creating it
-try
-    startup;
-catch
-    display('Run "startup" to finish the installation')
-end
+%found by Matlab after creating it. AR: This seems to happen more often
+%than not. I haven't found a function to bail out 
+%the script if it hangs, so I'm defaulting to having the user run startup manually. 
+% try
+%     startup;
+% catch
+    msgbox('Run "startup" from the command line or restart Matlab to finish the installation')
+% end
         
-
 warning('on','MATLAB:MKDIR:DirectoryExists')
