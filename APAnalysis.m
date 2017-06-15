@@ -154,4 +154,15 @@ function APAnalysis(dataset, controlset)
     xlabel('Fraction EL')
     ylabel('Fraction on corrected')
     standardizeFigure(gca, lgd3)
+    
+   %Plotting the time projection(s) 
+   for i = 1:nsets
+       figure()
+       stringTemp = Prefix{i};
+       currentPrefix = stringTemp(11:length(stringTemp)-1);
+       [maxTProj, medianTProj] = timeProjection(currentPrefix,'Justnc13');
+       imshow(maxTProj,[0 80],'Border','Tight')
+       title(Prefix{i})
+   end
+   
 end

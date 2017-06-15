@@ -1,6 +1,6 @@
-function [maxProj, medianProj] = projections(Prefix, CurrentFrame, ZSlices, NDigits)
+function [maxProj, medianProj] = zProjections(Prefix, CurrentFrame, ZSlices, NDigits)
 % This function will return the max and median projection of the frame
-% (along the z axis). It must be given Prefic, CurrentFrame, TotalFrames,
+% (along the z axis). It must be given Prefix, CurrentFrame,
 % ZSlixes, NDigits (which are all variables from CheckParticleTracking). 
 
 Images = []; % This is to store all the z stacks into one 3D matrix. 

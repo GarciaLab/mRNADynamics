@@ -556,6 +556,7 @@ while (cc~='x')
                 Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                     FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);
             else
+                [Image, medianProjection] = zProjections(Prefix, CurrentFrame, ZSlices, NDigits);
             end
         catch
             disp(['Warning: Could not load file: ',...
@@ -581,7 +582,7 @@ while (cc~='x')
     end
 
     figure(Overlay)
-    imshow(Image,[],'Border','Tight')
+    imshow(Image,[0 80],'Border','Tight')
     hold on
     %Show all particles in regular mode
     if ~SpeedMode
