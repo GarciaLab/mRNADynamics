@@ -1,21 +1,41 @@
 function CompileParticles(varargin)
-
-%This function puts together all the information we have about particles.
+% CompileParticles(varargin)
 %
-%Parameters:
-%First, the prefix.
-%There after:
-%ForceAP  -  Force AP detection even if it's there already.
-%SkipTraces - Don't output the individual traces.
-%SkipFluctuations - Don't generate the plots of the correlation of signal
-%                   and offset
-%SkipFits - Don't do the fits
-%SkipMovie - Don't do the movie
-%SkipAll - Skip all that can be skipped
-%ApproveAll - Approves all particles. This is useful if we want to do a
+% DESCRIPTION
+% This function puts together all the information we have about particles.
+%
+% ARGUMENTS:
+% Prefix: Prefix of the data set to analyze
+%
+% OPTIONS
+%
+% 'ForceAP': Force AP detection even if it's there already.
+%
+% 'SkipTraces': Don't output the individual traces.
+%
+% 'SkipFluctuations': Don't generate the plots of the correlation of signal
+%                   and offset.
+%
+% 'SkipFits': Don't do the fits
+%
+% 'SkipMovie': Don't do the movie
+%
+% 'SkipAll': Skip all that can be skipped
+%
+% 'ApproveAll': Approves all particles. This is useful if we want to do a
 %             quick check of, for example, the AP profiles
-%SetMinParticles - Set the threshold for the minimum number of particles per
+%
+% 'MinParticles', N: Set the threshold for the minimum number of particles (N) per
 %               AP bin for compilation
+%
+% 'MinTime', M: %Require particles to exist for time M or else discard 
+%
+%
+% Author (contact): Hernan Garcia (hggarcia@berkeley.edu)
+% Created: 
+% Last Updated: 6/14/17 (AR)
+%
+% Commented by: Hernan Garcia (hggarcia@berkeley.edu)
 
 close all
 
@@ -24,15 +44,15 @@ close all
     DetermineLocalFolders;
 
 %Look at the input parameters and use defaults if missing
-%Prefix=[];
+Prefix='';
 ForceAP=0;      %Force AP detection even if it's already there
 SkipTraces=0;   %Do not output the individual traces.
 SkipFluctuations=0;  %Do not generate the plots of correlations of fluctuations and offset
 SkipFits=0;         %Do not generate the fit output (but still does the fit)
 SkipMovie=0;        %Do not generate the movie
 ApproveAll=0;       %Only use manually approved particles
-MinParticles=4;     %Require MinParticles particles per AP bin or else discard
-minTime = 1;        %AR: wanted stringent rejection of particles based on trace length
+MinParticles=4;     
+minTime = 1;        
 
 if isempty(varargin)%looks for the folder to analyze
     FolderTemp=uigetdir(DefaultDropboxFolder,'Select folder with data to analyze');
@@ -40,7 +60,6 @@ if isempty(varargin)%looks for the folder to analyze
     Prefix=FolderTemp((Dashes(end)+1):end);
 else
     Prefix=varargin{1};
-
     for i=2:length(varargin)
         if strcmp(varargin{i},'ForceAP')
             ForceAP=1;
@@ -59,8 +78,18 @@ else
             SkipMovie=1;
         elseif strcmp(varargin{i},'ApproveAll')    
             ApproveAll=1;
-        elseif strcmp(varargin{i},'SetMinParticles')
-            MinParticles = input('Set minimum particle threshold:');
+        elseif strcmp(varargin{i},'MinParticles')
+            if ~isnumeric(varargin{i+1})
+                error('Wrong input parameters. After ''MinParticles'' you should input the desired minimum number of particles per approved AP bin')
+            else
+                MinParticles=varargin{i+1};
+            end
+        elseif strcmp(varargin{i},'MinTime')
+            if ~isnumeric(varargin{i+1})
+                error('Wrong input parameters. After ''MinTime'' you should input the desired minimum number of frames per particle.')
+            else
+                minTime=varargin{i+1};
+            end
         end
     end
 
@@ -436,7 +465,7 @@ if strcmp(ExperimentAxis, 'AP')
     load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
     %Angle between the x-axis and the AP-axis
     try
-        APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
+        APAngle=atan2((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
     catch
         error('coordPZoom not defined. Was AddParticlePosition.m run?')
     end
@@ -451,7 +480,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
 
             %Angle between the x-axis and the particle using the A position as a
             %zero
-            Angles=atan((Ellipses{i}(j,2)-coordAZoom(2))./(Ellipses{i}(j,1)-coordAZoom(1)));
+            Angles=atan2((Ellipses{i}(j,2)-coordAZoom(2))./(Ellipses{i}(j,1)-coordAZoom(1)));
 
             %Distance between the points and the A point
             Distances=sqrt((coordAZoom(2)-Ellipses{i}(j,2)).^2+(coordAZoom(1)-Ellipses{i}(j,1)).^2);
@@ -500,13 +529,7 @@ if strcmp(ExperimentAxis,'AP')
 
     for i=1:Rows
         for j=1:Columns
-            
-            try
-                Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
-            catch
-                Angle=atan2((i-coordAZoom(2)),(j-coordAZoom(1)));
-            end
-            
+            Angle=atan2((i-coordAZoom(2)),(j-coordAZoom(1)));         
             Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
             APPosition=Distance.*cos(Angle-APAngle);
             APPosImage(i,j)=APPosition/APLength;
