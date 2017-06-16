@@ -5,7 +5,7 @@ function segmentSpotsSC(Prefix,Threshold,varargin)
 %Threshold: Threshold to be used. Should be kept at ~90-200 for lattice
 %           light-sheet data, and at ~5-10 for confocal data (Leica SP8).
 %           If left empty, then the code just generates the DoG files.
-
+%
 %Options:
 %'displayFigures':   If you want to display plots and images.
 %                

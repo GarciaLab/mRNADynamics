@@ -6,7 +6,7 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 %           probability decisions. If left as '[]', this generates
 %           probability maps.
 %           If left empty, then the code just generates the DoG files.
-
+%
 %Options:
 %'displayFigures':   If you want to display plots and images.
 %'Tifs':         When running this script without a threshold to generate
