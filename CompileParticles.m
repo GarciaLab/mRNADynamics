@@ -2252,8 +2252,10 @@ end
 %% Input-output
 
 %Compile the nuclear fluorescence information if we have the appropriate
-%experiment type
-if strcmp(lower(ExperimentType),'inputoutput')
+%experiment type and axis
+%Simon: This script is not required for Dl-Venus experiments in DV so I
+%added the ExperimentAxis condition.
+if strcmp(lower(ExperimentType),'inputoutput') && strcmp(lower(ExperimentAxis),'ap')
     CompileNuclearProtein(Prefix)
 end
 
