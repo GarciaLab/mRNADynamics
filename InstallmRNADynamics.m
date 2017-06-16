@@ -130,11 +130,12 @@ cd(CurrentFolder);
 Output{1}=['path(''',PreProcessedFolder,''',path);'];
 Output{2}=['path(''',mRNADynamicsParentFolder,''',path);'];
 Output{3}=['path(''',CurrentFolder,''',path);'];
-Output{4}=['path(''',LineageCodeFolder,''',path);'];
-Output{5}=['path(''',SubfunctionsFolder,''',path);'];
-Output{6}=['addpath(genpath(''',CurrentFolder,filesep,'dependencies''))'];
-Output{7}=['addpath(genpath(''',CurrentFolder,filesep,'deprecated''))'];
-Output{8}=['path(''',DynamicsResultsFolder,''',path);'];
+Output{4}=['path(''',TrackingFolder,''',path);'];
+Output{5}=['path(''',LineageCodeFolder,''',path);'];
+Output{6}=['path(''',SubfunctionsFolder,''',path);'];
+Output{7}=['addpath(genpath(''',CurrentFolder,filesep,'dependencies''))'];
+Output{8}=['addpath(genpath(''',CurrentFolder,filesep,'deprecated''))'];
+Output{9}=['path(''',DynamicsResultsFolder,''',path);'];
 
 
 %Create the startup.m file
