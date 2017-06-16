@@ -95,10 +95,10 @@ else
 
 end
 
-if ~(SkipTraces || SkipFluctuations || SkipFits || SkipMovie) 
-    msgbox('Plot display not currently supported. Please use option "SkipAll"');
-    error('Plot display not currently supported. Please use option "SkipAll"'); %AR 7/10/16: Plot display is currently buggy. Will fix in future release.
-end
+% if ~(SkipTraces || SkipFluctuations || SkipFits || SkipMovie) 
+%     msgbox('Plot display not currently supported. Please use option "SkipAll"');
+%     error('Plot display not currently supported. Please use option "SkipAll"'); %AR 7/10/16: Plot display is currently buggy. Will fix in future release.
+% end
         
 FilePrefix=[Prefix,'_'];
 
@@ -465,14 +465,14 @@ if strcmp(ExperimentAxis, 'AP')
     load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
     %Angle between the x-axis and the AP-axis
     try
-        APAngle=atan2((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
+        APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
     catch
         error('coordPZoom not defined. Was AddParticlePosition.m run?')
     end
     APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
 end
 
-if HistoneChannel&strcmp(ExperimentAxis,'AP')
+if HistoneChannel&&strcmp(ExperimentAxis,'AP')
     %The information in Ellipses is
     %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
     for i=1:length(Ellipses)
@@ -480,7 +480,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
 
             %Angle between the x-axis and the particle using the A position as a
             %zero
-            Angles=atan2((Ellipses{i}(j,2)-coordAZoom(2))./(Ellipses{i}(j,1)-coordAZoom(1)));
+            Angles=atan((Ellipses{i}(j,2)-coordAZoom(2))./(Ellipses{i}(j,1)-coordAZoom(1)));
 
             %Distance between the points and the A point
             Distances=sqrt((coordAZoom(2)-Ellipses{i}(j,2)).^2+(coordAZoom(1)-Ellipses{i}(j,1)).^2);
@@ -529,7 +529,11 @@ if strcmp(ExperimentAxis,'AP')
 
     for i=1:Rows
         for j=1:Columns
-            Angle=atan2((i-coordAZoom(2)),(j-coordAZoom(1)));         
+             try
+                Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
+            catch
+                Angle=atan2((i-coordAZoom(2)),(j-coordAZoom(1)));
+            end         
             Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
             APPosition=Distance.*cos(Angle-APAngle);
             APPosImage(i,j)=APPosition/APLength;
