@@ -1025,15 +1025,18 @@ if ~isnan(nc9)||~isnan(nc10)||~isnan(nc11)||~isnan(nc12)||~isnan(nc13)||~isnan(n
             %Sometimes CompiledParticles{1}(i).nc is empty. This is because of some
             %problem with FrameInfo! In that case we'll pull the information out of
             %the XLS file.
-            if isfield(CompiledParticles{ChN}(i), 'nc')
+            if ~isfield(CompiledParticles{ChN}(i), 'nc')
+                CompiledParticles{ChN}(i).nc = [];
+            end
+            if ~isempty(CompiledParticles{ChN}(i).nc)
                 ncFilter(i,find(CompiledParticles{ChN}(i).nc==ncFilterID))=true;
             else
                 ncsFound=find(CompiledParticles{ChN}(i).Frame(1)>=[nc9,nc10,nc11,nc12,nc13,nc14]);
                 if ncsFound(end)==1
-                    CompiledParticles(i).nc=9;
+                    CompiledParticles{ChN}(i).nc=9;
                     ncFilter(i,ncFilterID==9)=true;
                 elseif ncsFound(end)==2
-                    CompiledParticles(i).nc=10;
+                    CompiledParticles{ChN}(i).nc=10;
                     ncFilter(i,ncFilterID==10)=true;
                 elseif ncsFound(end)==3
                     CompiledParticles{ChN}(i).nc=11;
@@ -1042,10 +1045,10 @@ if ~isnan(nc9)||~isnan(nc10)||~isnan(nc11)||~isnan(nc12)||~isnan(nc13)||~isnan(n
                     CompiledParticles{ChN}(i).nc=12;
                     ncFilter(i,ncFilterID==12)=true;
                 elseif ncsFound(end)==5
-                    CompiledParticles(i).nc=13;
+                    CompiledParticles{ChN}(i).nc=13;
                     ncFilter(i,ncFilterID==13)=true;
                 elseif ncsFound(end)==6
-                    CompiledParticles(i).nc=14;
+                    CompiledParticles{ChN}(i).nc=14;
                     ncFilter(i,ncFilterID==14)=true;
                 end
 
