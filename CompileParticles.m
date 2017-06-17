@@ -110,7 +110,7 @@ FilePrefix=[Prefix,'_'];
 %MovieDatabase.xlsx
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
     Folder, Prefix, ExperimentType, Channel1, Channel2,OutputFolder...
-    ] = readMovieDatabase(Prefix)%OverrideFlag);
+    ] = readMovieDatabase(Prefix);%OverrideFlag)
 
 %Note that some of this information is redundant given what we get out of
 %readMovieDatabase above. We'll have to integrate this better.
@@ -1019,33 +1019,37 @@ if ~isnan(nc9)||~isnan(nc10)||~isnan(nc11)||~isnan(nc12)||~isnan(nc13)||~isnan(n
         end
 
 
-        ncFilter=logical(zeros(length(CompiledParticles{ChN}),length(ncFilterID)));
+        ncFilter=logical(zeros(length(CompiledParticles{ChN})...
+            ,length(ncFilterID))); %AR 6/16/17: I think multi-channel data might require this to be a cell? Something for the future.
         for i=1:length(CompiledParticles{ChN})
             %Sometimes CompiledParticles{1}(i).nc is empty. This is because of some
             %problem with FrameInfo! In that case we'll pull the information out of
             %the XLS file.
+            if ~isfield(CompiledParticles{ChN}(i), 'nc')
+                CompiledParticles{ChN}(i).nc = [];
+            end
             if ~isempty(CompiledParticles{ChN}(i).nc)
                 ncFilter(i,find(CompiledParticles{ChN}(i).nc==ncFilterID))=true;
             else
                 ncsFound=find(CompiledParticles{ChN}(i).Frame(1)>=[nc9,nc10,nc11,nc12,nc13,nc14]);
                 if ncsFound(end)==1
                     CompiledParticles{ChN}(i).nc=9;
-                    ncFilter{ChN}(i,ncFilterID==9)=true;
+                    ncFilter(i,ncFilterID==9)=true;
                 elseif ncsFound(end)==2
                     CompiledParticles{ChN}(i).nc=10;
-                    ncFilter{ChN}(i,ncFilterID==10)=true;
+                    ncFilter(i,ncFilterID==10)=true;
                 elseif ncsFound(end)==3
                     CompiledParticles{ChN}(i).nc=11;
-                    ncFilter{ChN}(i,ncFilterID==11)=true;
+                    ncFilter(i,ncFilterID==11)=true;
                 elseif ncsFound(end)==4
                     CompiledParticles{ChN}(i).nc=12;
-                    ncFilter{ChN}(i,ncFilterID==12)=true;
+                    ncFilter(i,ncFilterID==12)=true;
                 elseif ncsFound(end)==5
                     CompiledParticles{ChN}(i).nc=13;
-                    ncFilter{ChN}(i,ncFilterID==13)=true;
+                    ncFilter(i,ncFilterID==13)=true;
                 elseif ncsFound(end)==6
                     CompiledParticles{ChN}(i).nc=14;
-                    ncFilter{ChN}(i,ncFilterID==14)=true;
+                    ncFilter(i,ncFilterID==14)=true;
                 end
 
             end
