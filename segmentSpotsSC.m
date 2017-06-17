@@ -1,21 +1,36 @@
 function segmentSpotsSC(Prefix,Threshold,varargin)
-
-%Parameters:
-%Prefix: Prefix of the data set to analyze
-%Threshold: Threshold to be used. Should be kept at ~90-200 for lattice
+% segmentSpotsSC(Prefix, Threshold, [Options])
+%
+% DESCRIPTION
+% Identify and segment individual transcription spots. This will replace
+% both segmentSpots and segmentSpotsML in a future release.
+%
+% ARGUMENTS
+% Prefix: Prefix of the data set to analyze
+% Threshold: Threshold to be used. Should be kept at ~90-200 for lattice
 %           light-sheet data, and at ~5-10 for confocal data (Leica SP8).
 %           If left empty, then the code just generates the DoG files.
+% [Options]: See below.
 %
-%Options:
-%'displayFigures':   If you want to display plots and images.
+% OPTIONS
+% 'displayFigures':   If you want to display plots and images.
 %                
-%'TrackSpots':   Do you want to use this code to track the particles instead
+% 'TrackSpots':   Do you want to use this code to track the particles instead
 %                of using TrackmRNADynamics? 
-%'Frames',N:     Run the code from frame 1 to frame N. Defaults to all
+% 'Frames',N:     Run the code from frame 1 to frame N. Defaults to all
 %                frames. It's suggested to run 5-20 frames for debugging.
-%'NoShadows':    Spots without valid (peaked) z-profiles are normally
+% 'NoShadows':    Spots without valid (peaked) z-profiles are normally
 %                discarded. This option overrides that.
 %               
+% OUTPUT
+% 'Spots':  A structure array with a list of detected transcriptional loci
+% in each frame and their properties.
+%
+% Author (contact): Armando Reimer (areimer@berkeley.edu)
+% Created: 01/01/2016
+% Last Updated: 12/31/2016
+%
+% Documented by: Armando Reimer (areimer@berkeley.edu)           
 
 %Default options
 displayFigures=0;

@@ -1,13 +1,24 @@
 function tp = identifySpot(particle_index, image, image_label, dog_image, distance_to_neighbor, snippet_size, ...
     pixelSize, show_status, fg, microscope, addition)
-
-    %This is a subfunction for 'segmentSpots' that locates a transcriptional locus (the k'th locus in an image)
-    %and assigns a Gaussian
-    %to it. It returns a structure containing properties of the
-    %transcriptional locus such as the intensity, size, position, etc.
-    
-    %Arguments: This requires an image, its difference of gaussians image,
-    %as well as some properties of the recording. 
+% identifySpot(awholelot)
+%
+% DESCRIPTION
+% This is a subfunction for 'segmentSpots' that locates a transcriptional locus (the k'th locus in an image)
+% and assigns a Gaussian to it.
+% This will likely replace identifySingleSpot in a future release.
+%
+% ARGUMENTS
+% This is a massive list that, honestly, just needs to be refactored. (AR)
+%
+% OUTPUT
+% tp:  Returns a structure containing properties of the
+%                 transcriptional locus such as the intensity, size, position, etc.
+%
+% Author (contact): Armando Reimer (areimer@berkeley.edu)
+% Created: 01/01/2016
+% Last Updated: 12/31/2016
+%
+% Documented by: Armando Reimer (areimer@berkeley.edu)
 
     %Find spot centroids in the actual image by hunting for global maxima in
     %neighborhoods around spots that were just located

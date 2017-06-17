@@ -11,7 +11,7 @@ function segmentSpotsTemp(Prefix,Threshold,varargin)
 % description as short or long as you feel is necessary to communicate the
 % purpose of the script/function.]
 %
-% PARAMETERS
+% ARGUMENTS
 % Prefix: Prefix of the data set to analyze
 % Threshold: Threshold to be used. Should be kept at ~90-200 for lattice
 %           light-sheet data, and at ~5-10 for confocal data (Leica SP8).
@@ -39,11 +39,11 @@ function segmentSpotsTemp(Prefix,Threshold,varargin)
 % [Any output that your script provides with a description of what it is. If 
 % applicable, please note where this output is saved.]
 %
-% Author (contact): Armando Reimer (areimer@berkeley.edu [Could also be slack])
+% Author (contact): Armando Reimer (areimer@berkeley.edu)
 % Created: 01/01/2016
 % Last Updated: 12/31/2016
 %
-% Commented by: Meghan Turner (meghan_turner@berkeley.edu)
+% Documented by: Meghan Turner (meghan_turner@berkeley.edu)
 
 %[Leave at least one blank line (without a comment symbol) before beginning
 %any additonal commenting or beginning the code. Everything contained in
