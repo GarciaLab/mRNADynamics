@@ -4,11 +4,10 @@ function CompileParticles(varargin)
 % DESCRIPTION
 % This function puts together all the information we have about particles.
 %
-% ARGUMENTS:
+% ARGUMENTS
 % Prefix: Prefix of the data set to analyze
 %
 % OPTIONS
-%
 % 'ForceAP': Force AP detection even if it's there already.
 %
 % 'SkipTraces': Don't output the individual traces.
@@ -40,7 +39,7 @@ function CompileParticles(varargin)
 close all
 
 %Information about about folders
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
+[~,~,DefaultDropboxFolder,~,~]=...
     DetermineLocalFolders;
 
 %Look at the input parameters and use defaults if missing
@@ -94,27 +93,17 @@ else
     end
 
 end
-
-% if ~(SkipTraces || SkipFluctuations || SkipFits || SkipMovie) 
-%     msgbox('Plot display not currently supported. Please use option "SkipAll"');
-%     error('Plot display not currently supported. Please use option "SkipAll"'); %AR 7/10/16: Plot display is currently buggy. Will fix in future release.
-% end
-        
+      
 FilePrefix=[Prefix,'_'];
-
-%Now get the actual Dropbox folder
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders(Prefix);
 
 %What type of experiment are we dealing with? Get this out of
 %MovieDatabase.xlsx
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
-    Folder, Prefix, ExperimentType, Channel1, Channel2,OutputFolder...
-    ] = readMovieDatabase(Prefix);%OverrideFlag)
+[~,~,DropboxFolder,~, PreProcPath,...
+    ~, ~, ~, ~, ~,~] = readMovieDatabase(Prefix);
 
 %Note that some of this information is redundant given what we get out of
 %readMovieDatabase above. We'll have to integrate this better.
-[XLSNum,XLSTxt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
+[~,XLSTxt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
 ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
 ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
 APResolutionColumn = find(strcmp(XLSRaw(1,:),'APResolution'));
@@ -149,7 +138,7 @@ else
     warning('No FrameInfo.mat found. Trying to continue')
     %Adding frame information
     DHis=dir([PreProcPath,filesep,FilePrefix(1:end-1),filesep,'*His*.tif']);
-    if length(DHis) > 0
+    if ~isempty(DHis)
         FrameInfo(length(DHis)).nc=[];
     end
     
@@ -205,7 +194,7 @@ if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
     load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
     HistoneChannel=1;
 else
-    display('No lineage / nuclear information found. Proceeding without it.');
+    disp('No lineage / nuclear information found. Proceeding without it.');
     HistoneChannel=0;
 end
 
@@ -213,7 +202,7 @@ end
 
 
 %Load the information about the nc from the XLS file
-[Num,Txt]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
+[~,Txt]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
 XLSHeaders=Txt(1,:);
 Txt=Txt(2:end,:);
 
@@ -227,7 +216,7 @@ Dashes=findstr(FilePrefix(1:end-1),'-');
 %Determine division times
 %Load the information about the nc from the XLS file
 
-[Num,Txt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
+[~,Txt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
 XLSHeaders=Txt(1,:);
 Txt=Txt(2:end,:);
 
@@ -320,22 +309,22 @@ end
 
 
 %Do we need to convert any NaN chars into doubles?
-if strcmp(lower(nc14),'nan')
+if strcmpi(nc14,'nan')
     nc14=nan;
 end
-if strcmp(lower(nc13),'nan')
+if strcmpi(nc13,'nan')
     nc13=nan;
 end
-if strcmp(lower(nc12),'nan')
+if strcmpi(nc12,'nan')
     nc12=nan;
 end
-if strcmp(lower(nc11),'nan')
+if strcmpi(nc11,'nan')
     nc11=nan;
 end
-if strcmp(lower(nc10),'nan')
+if strcmpi(nc10,'nan')
     nc10=nan;
 end
-if strcmp(lower(nc9),'nan')
+if strcmpi(nc9,'nan')
     nc9=nan;
 end
 
@@ -373,7 +362,7 @@ if strcmp(ExperimentAxis,'AP')
     end
 elseif strcmp(lower(ExperimentAxis),'dv')& exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
     AddParticlePosition(Prefix);
-elseif strcmp(lower(ExperimentAxis),'dv')
+elseif strcmpi(ExperimentAxis,'dv')
     AddParticlePosition(Prefix,'NoAP');
 elseif strcmp(ExperimentAxis,'NoAP')
     AddParticlePosition(Prefix,'NoAP');
@@ -399,6 +388,7 @@ end
 
 
 %Folders for reports
+warning('off', 'MATLAB:MKDIR:DirectoryExists');
 if strcmp(ExperimentAxis,'AP')
     mkdir([DropboxFolder,filesep,Prefix,filesep,'APMovie'])
 end
@@ -407,7 +397,7 @@ mkdir([DropboxFolder,filesep,Prefix,filesep,'TracesFluctuations'])
 mkdir([DropboxFolder,filesep,Prefix,filesep,'Offset'])
 mkdir([DropboxFolder,filesep,Prefix,filesep,'Fits'])
 mkdir([DropboxFolder,filesep,Prefix,filesep,'Probabilities'])
-mkdir([DropboxFolder,filesep,Prefix,filesep,'Various'])
+mkdir([DropboxFolder,filesep,Prefix,filesep,'Various']);
 
 
 %% Put together CompiledParticles
@@ -464,9 +454,9 @@ if strcmp(ExperimentAxis, 'AP')
     %Load the AP detection information
     load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
     %Angle between the x-axis and the AP-axis
-    try
+    if exist('coordPZoom', 'var')
         APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
-    catch
+    else
         error('coordPZoom not defined. Was AddParticlePosition.m run?')
     end
     APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
@@ -497,8 +487,8 @@ if isfield(FrameInfo,'FileMode')
         for j=1:length(FrameInfo)
             ElapsedTime(j)=etime(datevec(FrameInfo(j).TimeString),datevec(FrameInfo(1).TimeString));
         end
-    elseif strcmp(FrameInfo(end).FileMode,'LSM')|strcmp(FrameInfo(end).FileMode,'LSMExport')|...
-            strcmp(FrameInfo(end).FileMode,'LIFExport')|strcmp(FrameInfo(end).FileMode,'LAT')
+    elseif strcmp(FrameInfo(end).FileMode,'LSM')||strcmp(FrameInfo(end).FileMode,'LSMExport')||...
+            strcmp(FrameInfo(end).FileMode,'LIFExport')||strcmp(FrameInfo(end).FileMode,'LAT')
         for j=1:length(FrameInfo)
             ElapsedTime(j)=FrameInfo(j).Time-FrameInfo(1).Time;
         end
@@ -685,7 +675,7 @@ for ChN=1:NChannels
                 [Frame,AmpIntegral,AmpGaussian,Off,...
                  ErrorIntegral,ErrorGauss,optFit1, FitType, noIntensityFlag]...
                  = GetParticleTrace(k,CompiledParticles{ChN},Spots);
-                 CompiledParticles{ChN}(k).Fluo= AmpIntegral;
+                CompiledParticles{ChN}(k).Fluo= AmpIntegral;
                 CompiledParticles{ChN}(k).FluoIntegral = AmpIntegral;
                 CompiledParticles{ChN}(k).Off=Off;
                 CompiledParticles{ChN}(k).FluoError=ErrorIntegral;
@@ -748,9 +738,76 @@ for ChN=1:NChannels
 
 
                 %Plot and save this trace together with its offset value
-
+                
                 if ~SkipTraces     
+                    if ~isnan(nc9)||~isnan(nc10)||~isnan(nc11)||~isnan(nc12)||~isnan(nc13)||~isnan(nc14)
+                        %ncFilterID just tells you the identity of the different
+                        %filters stored in the cell ncFilter
+                        ncFilterID=[];
+                        if nc9~=0
+                            ncFilterID=9;
+                        end
+                        if nc10~=0
+                            ncFilterID=[ncFilterID,10];
+                        end
+                        if nc11~=0
+                            ncFilterID=[ncFilterID,11];
+                        end
+                        if nc12~=0
+                            ncFilterID=[ncFilterID,12];
+                        end
+                        if nc13~=0
+                            ncFilterID=[ncFilterID,13];
+                        end
+                        if nc14~=0
+                            ncFilterID=[ncFilterID,14];
+                        end
+                        %Add the first nc
+                        ncFilterID=[min(ncFilterID)-1,ncFilterID];
 
+
+                        %Create the filter
+                        for ChN=1:NChannels
+                            if isempty(CompiledParticles)==1
+                                error(['No compiled particles found in channel ',num2str(ChN),'. Did you mean to run the code with ApproveAll?'])
+                            end
+                            ncFilter=logical(zeros(length(CompiledParticles{ChN})...
+                                ,length(ncFilterID))); %AR 6/16/17: I think multi-channel data might require this to be a cell? Something for the future.
+                            for i=1:length(CompiledParticles{ChN})
+                                %Sometimes CompiledParticles{1}(i).nc is empty. This is because of some
+                                %problem with FrameInfo! In that case we'll pull the information out of
+                                %the XLS file.
+                                if ~isfield(CompiledParticles{ChN}(i), 'nc')
+                                    CompiledParticles{ChN}(i).nc = [];
+                                end
+                                if ~isempty(CompiledParticles{ChN}(i).nc)
+                                    ncFilter(i,find(CompiledParticles{ChN}(i).nc==ncFilterID))=true;
+                                else
+                                    ncsFound=find(CompiledParticles{ChN}(i).Frame(1)>=[nc9,nc10,nc11,nc12,nc13,nc14]);
+                                    if ncsFound(end)==1
+                                        CompiledParticles{ChN}(i).nc=9;
+                                        ncFilter(i,ncFilterID==9)=true;
+                                    elseif ncsFound(end)==2
+                                        CompiledParticles{ChN}(i).nc=10;
+                                        ncFilter(i,ncFilterID==10)=true;
+                                    elseif ncsFound(end)==3
+                                        CompiledParticles{ChN}(i).nc=11;
+                                        ncFilter(i,ncFilterID==11)=true;
+                                    elseif ncsFound(end)==4
+                                        CompiledParticles{ChN}(i).nc=12;
+                                        ncFilter(i,ncFilterID==12)=true;
+                                    elseif ncsFound(end)==5
+                                        CompiledParticles{ChN}(i).nc=13;
+                                        ncFilter(i,ncFilterID==13)=true;
+                                    elseif ncsFound(end)==6
+                                        CompiledParticles{ChN}(i).nc=14;
+                                        ncFilter(i,ncFilterID==14)=true;
+                                    end
+                                end
+                            end
+                        end
+                    end
+               
                     figure(2)
                     %Size of the snippet for each frame
                     SnippetSize=31; %AR 3/15/16: Why is this 31?
@@ -879,17 +936,20 @@ for ChN=1:NChannels
                         set(gca, 'YDir', 'reverse')
                         BarHandle = colorbar;
                         set(BarHandle,'YTick',[])
-                        try
-                            if ~isempty(cbfreeze(BarHandle)) 
-                                BarHandle=cbfreeze(BarHandle);
-                            else
-                                warning('Issue with cbfreeze.m. Skipping it. The color bar will not reflect time appropriately.')
-                            end
-                            ylabel(BarHandle,'Time')
-                        catch
-                            warning('Issue with cbfreeze.m. Skipping it. The color bar will not reflect time appropriately. This is an issue of Matlab 2014b.')
-                        end
-
+                        
+%%%%%AR 6/16/17: This still doesn't work in 2017. We need to find a
+%%%%%replacement.
+%                         try
+%                             if ~isempty(cbfreeze(BarHandle)) 
+%                                 BarHandle=cbfreeze(BarHandle);
+%                             else
+%                                 warning('Issue with cbfreeze.m. Skipping it. The color bar will not reflect time appropriately.')
+%                             end
+%                             ylabel(BarHandle,'Time')
+%                         catch
+%                             warning('Issue with cbfreeze.m. Skipping it. The color bar will not reflect time appropriately. This is an issue of Matlab 2014b.')
+%                         end
+%%%%%%%%%%%%%%%%
                         if strcmp(ExperimentAxis,'AP')
                             title(['Mean AP: ',num2str(CompiledParticles{ChN}(k).MeanAP)])
                         end
@@ -900,11 +960,13 @@ for ChN=1:NChannels
                     %Snippets
                     for j=1:NFrames
                         subplot(TotalRows,NCols,(TotalRows-NRows)*NCols+j)
-
-                        [x,y,z]=SpotsXYZ(Spots(j)); 
-                        xTrace=x(CompiledParticles{ChN}(k).Index(j));
-                        yTrace=y(CompiledParticles{ChN}(k).Index(j));
-                        zTrace=z(CompiledParticles{ChN}(k).Index(j));
+                        spotFrame = CompiledParticles{ChN}(k).Frame(j);
+                        [x,y,z]=SpotsXYZ(Spots(spotFrame)); 
+                        if ~isempty(x)
+                            xTrace=x(CompiledParticles{ChN}(k).Index(j));
+                            yTrace=y(CompiledParticles{ChN}(k).Index(j));
+                            zTrace=z(CompiledParticles{ChN}(k).Index(j));
+                        
 
                         if NChannels==1
                             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
@@ -958,7 +1020,7 @@ for ChN=1:NChannels
                             end
                         end
 
-
+                        end
                     end
                     set(gcf,'Position',[1,41,1280,684])  
 
@@ -1105,8 +1167,8 @@ for ChN=1:NChannels
         
         %Calculate the mean for only anterior particles
         try
-        MeanVectorAPAnterior{ChN} = MeanVectorAP{ChN}(:,5:15); %Only average particles within window of 10% to 35% w/ 2.5% AP resolution. P2P expression is relatively flat here.
-        MeanVectorAnterior{ChN} = nanmean(MeanVectorAPAnterior{ChN},2);
+            MeanVectorAPAnterior{ChN} = MeanVectorAP{ChN}(:,5:15); %Only average particles within window of 10% to 35% w/ 2.5% AP resolution. P2P expression is relatively flat here.
+            MeanVectorAnterior{ChN} = nanmean(MeanVectorAPAnterior{ChN},2);
         catch
             %That didn't work
         end
@@ -1121,14 +1183,14 @@ for ChN=1:NChannels
     MaxFrame{ChN}=[];
     for i=1:length(NewCyclePos)
         if i==1
-            [Dummy,MaxIndex]=max(MeanVectorAll{ChN}(1:NewCyclePos(1)));
+            [~,MaxIndex]=max(MeanVectorAll{ChN}(1:NewCyclePos(1)));
             MaxFrame{ChN}=[MaxFrame{ChN},MaxIndex];
         elseif i<=length(NewCyclePos)
-            [Dummy,MaxIndex]=max(MeanVectorAll{ChN}(NewCyclePos(i-1):NewCyclePos(i)));
+            [~,MaxIndex]=max(MeanVectorAll{ChN}(NewCyclePos(i-1):NewCyclePos(i)));
             MaxFrame{ChN}=[MaxFrame{ChN},NewCyclePos(i-1)+MaxIndex-1];
         end
     end
-    [Dummy,MaxIndex]=max(MeanVectorAll{ChN}(NewCyclePos(i):end));
+    [~,MaxIndex]=max(MeanVectorAll{ChN}(NewCyclePos(i):end));
     if ~isempty(NewCyclePos)        %Why is this empty sometimes?
                                     %I think this only occurs with suboptimal
                                     %data
@@ -1376,7 +1438,7 @@ if NChannels==1
         axis square
         xlim([-4500,4500])
         ylim([-4500,4500])
-        R = corrcoef(OffsetFluct,DataSplineFluct)
+        R = corrcoef(OffsetFluct,DataSplineFluct);
         title(['Correlation: ',num2str(R(2,1))])
         saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'TracesFluctuations',filesep,'Fluct-OffsetVsSplineData.tif'])
     end
@@ -1599,7 +1661,7 @@ for ChN=1:NChannels
         plot(xRange,ones(size(xRange))*nc14,'-k')
         hold on
         for i=1:length(CompiledParticles{ChN})
-            if (CompiledParticles{ChN}(i).nc==14)&(CompiledParticles{ChN}(i).PParticle>0)
+            if (CompiledParticles{ChN}(i).nc==14)&(CompiledParticles{ChN}(i).PParticle>0) %#ok<*AND2>
                 plot(14*(1+(rand(1)-0.5)/100),CompiledParticles{ChN}(i).NucStart,'.k')
             end
         end
@@ -1690,7 +1752,7 @@ end
 
 %% AP position of particle vs nucleus
 
-if HistoneChannel&strcmp(ExperimentAxis,'AP')
+if HistoneChannel&&strcmp(ExperimentAxis,'AP')
 
     for ChN=1:NChannels
         %How different are the AP positions of the nuclei to the particles as a
@@ -1743,7 +1805,7 @@ end
 %Create an image that is partitioned according to the AP bins. We will use
 %this to calculate the area per AP bin.
 
-if HistoneChannel&strcmp(ExperimentAxis,'AP')
+if HistoneChannel&&strcmp(ExperimentAxis,'AP')
 
     for ChN=1:NChannels
         %I'll use the Ellipses structure to count nuclei. This is because
@@ -2033,7 +2095,8 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
         hold off
         %ylim([0,max(ParticleCountAP(1,:))*2*1.1])
         xlabel('AP position (x/L)')
-        ylabel('Number of on nuclei per unit AP position')
+        ylabel('Active nuclei')
+        title('Number active nuclei')
         saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsAP_ch',...
             iIndex(ChN,2),'.tif'])
 
@@ -2173,6 +2236,10 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
         plot(APbinID,EllipsesOnAP{ChN}(:,2)./TotalEllipsesAP(:,2),'.-k')
         plot(APbinID,EllipsesOnAP{ChN}(:,3)./TotalEllipsesAP(:,3),'.-r')
         hold off
+        title('Fraction active nuclei')
+        xlabel('AP (x/L)')
+        ylabel('Fraction')
+        legend('nc12', 'nc13', 'nc14')
     end
 end
 
@@ -2185,7 +2252,7 @@ end
 %a function of time. In order to make life easier I'll just export to a
 %folder. I can then load everything in ImageJ.
 
-if ~SkipMovie&strcmp(ExperimentAxis,'AP')
+if ~SkipMovie&&strcmp(ExperimentAxis,'AP')
     
     for ChN=1:NChannels
 
@@ -2331,7 +2398,7 @@ elseif HistoneChannel&strcmp(ExperimentAxis,'DV')
         'SDVectorAll','NParticlesAll','MaxFrame',...
         'AllTracesVector','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
         'MeanOffsetVector','SDOffsetVector','NOffsetParticles', 'Prefix')
-elseif strcmp(ExperimentAxis,'NoAP')%HistoneChannel&strcmp(ExperimentAxis,'NoAP')
+elseif strcmp(ExperimentAxis,'NoAP')
     
     %If we have only one channel get rid of all the cells
     if NChannels==1
@@ -2394,4 +2461,3 @@ else
         'MeanOffsetVector','SDOffsetVector','NOffsetParticles',...
         'MeanSlopeVectorAP','SDSlopeVectorAP','NSlopeAP', 'Prefix')
 end
-
