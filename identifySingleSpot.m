@@ -1,14 +1,25 @@
 function temp_particles = identifySingleSpot(particle_index, image, image_label, dog_image, distance_to_neighbor, snippet_size, ...
     pixelSize, show_status, fg, microscope, addition, centroid, ml_string)
+% identifySingleSpot(awholelot)
+%
+% DESCRIPTION
+% This is a subfunction for 'segmentSpots' that locates a transcriptional locus (the k'th locus in an image)
+% and assigns a Gaussian to it. In a future release, this will be replaced
+% by identifySpot.
+%
+% ARGUMENTS
+% This is a massive list that, honestly, just needs to be refactored. (AR)
+%
+% OUTPUT
+% tempParticles:  Returns a structure containing properties of the
+%                 transcriptional locus such as the intensity, size, position, etc.
+%
+% Author (contact): Armando Reimer (areimer@berkeley.edu)
+% Created: 01/01/2016
+% Last Updated: 12/31/2016
+%
+% Documented by: Armando Reimer (areimer@berkeley.edu)
 
-    %This is a subfunction for 'segmentSpots' that locates a transcriptional locus (the k'th locus in an image)
-    %and assigns a Gaussian
-    %to it. It returns a structure containing properties of the
-    %transcriptional locus such as the intensity, size, position, etc.
-    
-    %Arguments: This requires an image, its difference of gaussians image,
-    %as well as some properties of the recording. 
-    
     ML = 0;
     if strcmp(ml_string, 'ML')
         ML = 1;

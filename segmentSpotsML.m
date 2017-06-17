@@ -1,29 +1,43 @@
 function segmentSpotsML(Prefix,Threshold,varargin)
-
-%Parameters:
-%Prefix: Prefix of the data set to analyze
-%Threshold: Threshold to be used. This should almost always be 5000 for >50%
-%           probability decisions. If left as '[]', this generates
-%           probability maps.
-%           If left empty, then the code just generates the DoG files.
+% segmentSpotsML(Prefix, Threshold, [Options])
 %
-%Options:
-%'displayFigures':   If you want to display plots and images.
-%'Tifs':         When running this script without a threshold to generate
+% DESCRIPTION
+% Identify and segment individual transcription spots. 
+%
+% ARGUMENTS
+% Prefix: Prefix of the data set to analyze
+% Threshold: Threshold to be used. Should be kept at ~90-200 for lattice
+%           light-sheet data, and at ~5-10 for confocal data (Leica SP8).
+%           If left empty, then the code just generates the DoG files.
+% [Options]: See below.
+%
+% OPTIONS
+% 'displayFigures':   If you want to display plots and images.
+% 'Tifs':         When running this script without a threshold to generate
 %                probability maps, use this option to instead only generate
 %                the TIF stacks necessary for doing Weka classification. 
 %                Recommended to run this before making a new classifier.
 %                
-%'TrackSpots':   Do you want to use this code to track the particles instead
+% 'TrackSpots':   Do you want to use this code to track the particles instead
 %                of using TrackmRNADynamics?
-%'InitialFrame', N: Run the code from frame N to last frame. Defaults to first
+% 'InitialFrame', N: Run the code from frame N to last frame. Defaults to first
 %                frame.
-%'LastFrame', M:     Run the code from initial frame to frame M. Defaults to all
+% 'LastFrame', M:     Run the code from initial frame to frame M. Defaults to all
 %                frames. It's suggested to run 5-20 frames for debugging.
-%'Shadows':    	 This option should be followed by 0, 1 or 2. This
+% 'Shadows':    	 This option should be followed by 0, 1 or 2. This
 %                specifies the number of requisite z-planes above and/or below the
 %                brightest plane for a spot to have to pass quality control. 
-            
+%               
+% OUTPUT
+% 'Spots':  A structure array with a list of detected transcriptional loci
+% in each frame and their properties.
+%
+% Author (contact): Armando Reimer (areimer@berkeley.edu)
+% Created: 01/01/2016
+% Last Updated: 12/31/2016
+%
+% Documented by: Armando Reimer (areimer@berkeley.edu)
+
 
 %Default options
 displayFigures=0;

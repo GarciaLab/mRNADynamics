@@ -5,7 +5,8 @@ function CompileParticles(varargin)
 % This function puts together all the information we have about particles.
 %
 % ARGUMENTS
-% Prefix: Prefix of the data set to analyze
+% varargin: A cell in which the first element is the prefix string of the data set
+%           to analyze. Subsequent elements can be the options below.
 %
 % OPTIONS
 % 'ForceAP': Force AP detection even if it's there already.
@@ -32,9 +33,9 @@ function CompileParticles(varargin)
 %
 % Author (contact): Hernan Garcia (hggarcia@berkeley.edu)
 % Created: 
-% Last Updated: 6/14/17 (AR)
+% Last Updated: 6/17/17 (AR)
 %
-% Commented by: Hernan Garcia (hggarcia@berkeley.edu)
+% Documented by: Hernan Garcia (hggarcia@berkeley.edu)
 
 close all
 
