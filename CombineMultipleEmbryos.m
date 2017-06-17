@@ -1,12 +1,27 @@
 function CombineMultipleEmbryos(DataType, PrefixName)
-
-%This function combines multiple embryos into a single embryo that can be
-%passed to FitMeanAPSymmetric just like a normal embryo. It primarily
-%combines nc13 data, but if the start of nc12 was caught, it can combine
-%nc12 data as well.
-%Author: Meghan Turner
-%Created: 10/3/2016
-%Updated: 10/26/2016
+% CombineMultipleEmbryos(DataType,Prefix)
+%
+% DESCRIPTION
+% This function combines multiple embryos into a single embryo that can be
+% passed to FitMeanAPSymmetric just like a normal embryo. It primarily
+% combines nc13 data, but if the start of nc12 was caught, it can combine
+% nc12 data as well.
+%
+% PARAMETERS
+% DataType: This is a string that is identical to the name of the tab in
+% dataStatus.xlsx that you wish to analyze.
+% Prefix: Prefix of the data set to analyze
+%
+% OUTPUT
+% Minimum required variables for FitMeanAP (nc12, nc13, nc14, NParticlesAP,
+ %MeanVectorsAP, SDVectorAP, ElapsedTime, APDivision) corresponding to the
+ %embryos combined
+%
+% Author (contact): Meghan Turner (meghan_turner@berkeley.edu [Could also be slack])
+% Created: 01/01/2016
+% Last Updated: 12/31/2016
+%
+% Commented by: Simon Alamos (simon.alamos@berkeley.edu)
 
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;

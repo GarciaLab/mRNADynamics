@@ -49,7 +49,7 @@ nc14=XLSRaw{PrefixRow,nc14Column};
 
 %%
 if exist([DropboxFolder,filesep,Prefix,filesep,'SortedNuclei.mat'])||0
-    'Re-running SortNuclei, former results will be deleted'
+    display('Re-running SortNuclei, former results will be deleted')
     cd ([DropboxFolder,filesep,Prefix])
     delete 'SortedNuclei.mat'
 end
@@ -97,7 +97,6 @@ EffectiveNCs = [max(find(MitoticFrames(:,1)==0)):5]; %find out which NCs we have
 
 for s = 1:length(schnitzcells) %go over all schnitz
     for nc = EffectiveNCs   %all sorting is done nc-wise. This can handle from nc10-nc14  
-        nc
         %info about the sorting frame
         Mitosis = MitoticTimes(nc,1); %get the absolute time at which mitosis occurs
         SortTime = Mitosis + FiduciaryTime(nc); %Absolute fiduciary time in seconds
