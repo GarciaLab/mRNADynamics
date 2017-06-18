@@ -1,68 +1,71 @@
-function CheckParticleTracking(varargin)
-
-%The point of this function is to check the tracking of particles. The
-%logic of this function should be similar to schnitzcells: We want to be
-%able to correct both the segmentation and tracking.
-
-%Parameters:
-%Prefix: Prefix of the data set to analyze
-%NoSort : Flag to sort or not particles according to their starting frame
-%ForCompileAll : Flag to just save the data. This is good for CompileAll
-%speedmode : Flag to plot only ellipses for current particle & save time
-%sistermode : Decide whether you want to do sister chromatid analysis
-%Justnc13 : Only look at particles that show up in nc13 
+function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(varargin)
+% function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(varargin)
+%
+% DESCRIPTION
+% The point of this function is to check the tracking of particles. The
+% logic of this function should be similar to schnitzcells: We want to be
+% able to correct both the segmentation and tracking.
+%
+% ARGUMENTS
+% Prefix: Prefix of the data set to analyze
+%
+% OPTIONS
+% NoSort : Flag to sort or not particles according to their starting frame
+% ForCompileAll : Flag to just save the data. This is good for CompileAll
+% speedmode : Flag to plot only ellipses for current particle & save time
+% sistermode : Decide whether you want to do sister chromatid analysis
+% Justnc13 : Only look at particles that show up in nc13 
     % Currently this only starts at nc13...not restrict you to nc13 Added by Emma
     % Also, this option shows you the max projection. 
-
+%
 % New commands added by Armando. Need to be integrated in the manual below.
 % 1. Zoom anywhere button ' + '
 % 2. New particles can be created without associated traces if in zoom
 % anywhere mode from 1
-
-
-%Usage:
 %
-%Frame specific:
-%. , Move a frame forward/backward
-%> < Move five frames forward/backward
-%; ' Move to the next empty frame within a particle
-%a z Move up/down in Z
-%j Jump to a specified frame
-%g b Increase/decrease histone channel contrast
+%
+% CONTROLS
+% Frame specific:
+% . , Move a frame forward/backward
+% > < Move five frames forward/backward
+% ; ' Move to the next empty frame within a particle
+% a z Move up/down in Z
+% j Jump to a specified frame
+% g b Increase/decrease histone channel contrast
 % 
 % 
 % 
-%Particle specific:
-%m Move to the next particle
-%n Move to the previous particle
-%k Jump to a specified particle by inputting particle number
-%\ Jump to a specified particle by clicking
-%c Connect two existing particle traces. This will join the current
+% Particle specific:
+% m Move to the next particle
+% n Move to the previous particle
+% k Jump to a specified particle by inputting particle number
+% \ Jump to a specified particle by clicking
+% c Connect two existing particle traces. This will join the current
 %  particle's trace to the clicked particle's trace. 
-%d Separate traces forward. A new particle is created at the current frame
+% d Separate traces forward. A new particle is created at the current frame
 %  and this particle is disconnected from the current nucleus. If this is
 %  done on a particle with only one frame then
 %  it disconnects it from its nucleus.
 
-%Disconnect backwards??
+% Disconnect backwards??
 
-%q Cycle between approved status: green - approved; yellow - approved but
+% q Cycle between approved status: green - approved; yellow - approved but
 %  with conditions (drift of nucleus, for example)
-%w Disapprove a trace
-%p Identify a particle. It will also tell you the particle associated with
+% w Disapprove a trace
+% p Identify a particle. It will also tell you the particle associated with
 %  the clicked nucleus.
-%e Approve/Disapprove a frame within a trace
-%u Move a particle detected with Threshold2 into the our structure.
-%i Move a particle detected with Threshold2 into the our structure and
+% e Approve/Disapprove a frame within a trace
+% u Move a particle detected with Threshold2 into the our structure.
+% i Move a particle detected with Threshold2 into the our structure and
 %  connect it to the current particle. This is a combination of "u" and
 %  "c".
-%[ Add a spot that was not recognized originally by segmentSpots to the
+% [ Add a spot that was not recognized originally by segmentSpots to the
 %  current particle. Note that the command forces ZoomMode. To toggle, use
 %  'o'.
 % 
 % 
-%Nuclear tracking specific:
-%l Split a nucleus and select one or two daughter nuclei or stop the
+% Nuclear tracking specific:
+% l Split a nucleus and select one or two daughter nuclei or stop the
 %  lineage. Usage:
 %       Click on one new nucleus + ENTER: Continue the schnitz with that nucleus.
 %       Click on the current nucleus + ENTER: Split the schnitz. This time
@@ -71,29 +74,38 @@ function CheckParticleTracking(varargin)
 %       nuclei.
 %       Click on the same nucleus twice: Split the current nucleus, but
 %       with only one daughter nucleus.
-%2 set parent of current nucleus
-%p Find the particle associated with the clicked nucleus. It will also tell
+% 2 set parent of current nucleus
+% p Find the particle associated with the clicked nucleus. It will also tell
 %  you the closest particle associated you clicked on.
 % 
 % 
-%General:
-%8 Change channels
-%t Show/hide particles from the second threshold
-%s Save the current Particles structure
-%x Save and exit
-%h Show non-approved particles yellow or dissapproved particlesz
-%y Input the frame/nc information again. This only works in the absence of
+% General:
+% 8 Change channels
+% t Show/hide particles from the second threshold
+% s Save the current Particles structure
+% x Save and exit
+% h Show non-approved particles yellow or dissapproved particlesz
+% y Input the frame/nc information again. This only works in the absence of
 %  the histone channel
-%r Reorder the particles according to initial frame
-%f Redo tracking. It only gets done on the non-approved particles.
-%o Zoom in/out around the particle's first frame.
-%-/= Change the zoom factor when in zoom mode.
-%0 Enter debug mode to fix things manually
+% r Reorder the particles according to initial frame
+% f Redo tracking. It only gets done on the non-approved particles.
+% o Zoom in/out around the particle's first frame.
+% -/= Change the zoom factor when in zoom mode.
+% 0 Enter debug mode to fix things manually
+%
+% OUTPUT
+% Particles: A modified Particles
+% Spots: A modified Spots
+% SpotFilter: A modified SpotFilter
+% schnitzcells: A modified schnitzcells
+%
+% Author (contact): Hernan Garcia (hgarcia@berkeley.edu)
+% Created: Unknown
+% Last Updated: 2017
 
 close all
 
 
-%Turn off the warning about nargchk. 
 warning('off','MATLAB:nargchk:deprecated')
 
 

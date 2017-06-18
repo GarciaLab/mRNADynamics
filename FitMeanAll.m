@@ -1,29 +1,44 @@
-function FitMeanAll(varargin)
-
+function FitResults = FitMeanAll(varargin)
+%function FitResults = FitMeanAll(varargin)
+%
+%DESCRIPTION
 %This function performs fits to the mean fluorescence as a function of time
 %of a particular dataset.
 %It performs the fit by averaging over all traces. This is useful for the
 %NoBcd controls
-
-
-%Some things I need to do:
-%-Align the different traces according to APdivisions and not to the regular
-% nc times specified in the XLS spreadsheet
-%-Do something to account for the on ratio as I do in the case of the
-% single AP bins
-
-
-
-%Fitting:
+%
+%ARGUMENTS
+%varargin: This should be a string containing the prefix for this dataset.
+%
+%OPTIONS
+%No options
+%
+%CONTROLS
+%%Fitting:
 %a,z: On time
 %s,x: Off time
 %d,c: Rate, fine
 %D,C: Rate, coarse
-
+%
 %Moving around:
 %n,m: Move in nc
 %k,l: Change fit range from the right
 %h,j: Change fit range from the left
+%
+%OUTPUT
+%FitResults: A structure containing fitted rates, on times, and off times for
+%average traces. This is saved in MeanFits.mat
+%
+%Author (contact): Hernan Garcia (hgarcia@berkeley.edu)
+%Created: Unknown
+%Last Updated: Unknown
+%
+%
+%Some things I (HG) need to do:
+%-Align the different traces according to APdivisions and not to the regular
+% nc times specified in the XLS spreadsheet
+%-Do something to account for the on ratio as I do in the case of the
+% single AP bins
 
 
 %Parameters:

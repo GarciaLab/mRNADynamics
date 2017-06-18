@@ -1,4 +1,5 @@
-%%                              label2rgbBackdropLive.m
+% function colorimage = label2rgbBackdropLive(labelmat,colormap,backgroundcolor,image,varagin)
+%
 % Overview:
 %
 % Code that labels different regions of a bw image in different colors. The
@@ -25,7 +26,7 @@
 %
 % colorimage - Color image
 %
-% Comments:
+% Comments: Author- Jacques Bothma
 %
 %
 

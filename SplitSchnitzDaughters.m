@@ -1,12 +1,30 @@
 function [Particles,schnitzcells]=SplitSchnitzDaughters(Particles,schnitzcells,...
     SplitFrame,SourceSchnitz,DaughterSchnitz1,DaughterSchnitz2)
-
-%This function splits a schnitzcell and associates it with daughter nuclei.
-%If DaughterSchnitz2 is 0 then we only associate it with one.
-%SplitFrame is the frame at which the new nuclei have already started.
-
-%V2: Updated to support Laurent's schnitzcells
-
+% function [Particles,schnitzcells]=SplitSchnitzDaughters(Particles,schnitzcells,...
+%   SplitFrame,SourceSchnitz,DaughterSchnitz1,DaughterSchnitz2)
+%
+% DESCRIPTION
+% This function splits a schnitzcell and associates it with daughter
+% nuclei. Typically, this is a subfunction for CheckParticleTracking
+%
+% ARGUMENTS
+% Particles: The particles structure created by TrackmRNADynamics and
+% located in Particles.mat
+% schnitzcells: The list of segmented nuclei with lineages created by
+% TrackNuclei and stored in _lin.mat
+% SplitFrame: The frame at which the new nuclei have already started.
+% SourceSchnitz: The mother schnitz to be split into two daughters
+% DaughterSchnitz1: One of the chosen daughter schnitzs
+% DaughterSchnitz2: If DaughterSchnitz2 is 0 then we only associate it with one.
+%
+% OUTPUT
+% Particles: A modified Particles
+% schnitzcells: A modified schnitzcells
+%
+% Author (contact): Hernan Garcia (hgarcia@berkeley.edu)
+% Created: Unknown
+% Last Updated: V2: Updated to support Laurent's schnitzcells
+%
 
 %Check if we are splitting a schnitz and creating daughter schnitzes
 if (SourceSchnitz==DaughterSchnitz1)|(SourceSchnitz==DaughterSchnitz2)

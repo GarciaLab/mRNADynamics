@@ -1,7 +1,25 @@
 function [Time,TotalFluo]=IndividualTrace(Transitions,Rates,Delay,MaxTime)
+% [Time,TotalFluo]=IndividualTrace(Transitions,Rates,Delay,MaxTime)
+%
+% DESCRIPTION
+% This function generates an individual trace given times for rate change
+% and rates. 
+%
+% ARGUMENTS
+% Transitions: List of time points when bursts happen. 
+% Rates: List of rates during each burst (between transitions)
+% Delay: Usually Delay=GeneLength/ElongationRate. Minutes for PolII to fall off after reaching
+%        the first loops site.
+% MaxTime: Ignore any events occuring after specified MaxTime
+%
+% OUTPUT
+% Time: Time points for the trace
+% TotalFluo: Corresponding fluorescence values
+%
+% Author (contact): Hernan Garcia (hggarcia@berkeley.edu)
+% Created: 
+% Last Updated: 
 
-%This function generates an individual trace given times for rate change
-%and rates
 
 % Only need to include times where events happen
 Time = [Transitions, Transitions+Delay, MaxTime];
