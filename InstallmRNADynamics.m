@@ -1,8 +1,20 @@
 function txt=InstallmRNADynamics
-
-%This function creates all the required folders to run the MS2 movie
-%analysis pipeline.
-%IMPORTANT: This needs to be run from the 'mRNADynamics' folder.
+% function txt=InstallmRNADynamics
+%
+% DESCRIPTION
+% This function creates all the required folders to run the MS2 movie
+% analysis pipeline. IMPORTANT: This needs to be run from the 'mRNADynamics' folder.
+%
+% ARGUMENTS
+% None.
+%
+% OUTPUT
+% txt: A cell containing information within ComputerFolders.xlsx 
+%
+% %Author (contact): Hernan Garcia (hgarcia@berkeley.edu)
+% Created: Unknown
+% Last Updated: 6/19/17
+%
 
 warning('off','MATLAB:MKDIR:DirectoryExists')
 
