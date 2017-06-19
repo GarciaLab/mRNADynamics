@@ -31,6 +31,7 @@ function segmentSpots(Prefix,Threshold,varargin)
 %
 % Documented by: Armando Reimer (areimer@berkeley.edu)
 
+warning('off','MATLAB:MKDIR:DirectoryExists');
 
 %Default options
 displayFigures=0;
@@ -79,7 +80,7 @@ if num_frames == 0
     num_frames = length(FrameInfo);
 end
 OutputFolder1=[FISHPath,filesep,Prefix,'_',filesep,'dogs'];
-mkdir(OutputFolder1)
+mkdir(OutputFolder1) 
 
 %Load flat-field
 doFF = 1;

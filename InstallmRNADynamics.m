@@ -47,10 +47,10 @@ name = lower(name);
 txt{1,end+1}=name;
 %Find out the username
 if isunix
-    [Dummy, user_name] = system('whoami'); % exists on every unix that I know of
+    [~, user_name] = system('whoami'); % exists on every unix that I know of
     % on my mac, isunix == 1
 elseif ispc
-    [Dummy, user_name] = system('echo %USERDOMAIN%\%USERNAME%'); % Not as familiar with windows,
+    [~, user_name] = system('echo %USERDOMAIN%\%USERNAME%'); % Not as familiar with windows,
                             % found it on the net elsewhere, you might want to verify
 end
 txt{2,end}=user_name;
@@ -78,12 +78,12 @@ if ispc && ~cflag
     xlswrite(['..',filesep,'ComputerFolders.xlsx'],txt);
 else
     if ~cflag
-        display('Warning: Macs and Linux cannot generate the XLS files.')
-        display('(1) Re-run using "txt=InstallmRNADynamics".')
-        display('(2) Type "open txt".')
-        display('(3) Copy and paste the data into a new file in Excel.')
-        display('(4) Get rid of all '' in the file.')
-        display('(5) Save as "ComputerFolders.xlsx" in folder "LivemRNAFISH.')
+        disp('Warning: Macs and Linux cannot generate the XLS files.')
+        disp('(1) Re-run using "txt=InstallmRNADynamics".')
+        disp('(2) Type "open txt".')
+        disp('(3) Copy and paste the data into a new file in Excel.')
+        disp('(4) Get rid of all '' in the file.')
+        disp('(5) Save as "ComputerFolders.xlsx" in folder "LivemRNAFISH.')
     end
 end
     
@@ -128,14 +128,17 @@ DynamicsResultsFolder=cd;
 cd(CurrentFolder);
 
 Output{1}=['path(''',PreProcessedFolder,''',path);'];
-Output{2}=['path(''',mRNADynamicsParentFolder,''',path);'];
-Output{3}=['path(''',CurrentFolder,''',path);'];
-Output{4}=['path(''',TrackingFolder,''',path);'];
-Output{5}=['path(''',LineageCodeFolder,''',path);'];
-Output{6}=['path(''',SubfunctionsFolder,''',path);'];
-Output{7}=['addpath(genpath(''',CurrentFolder,filesep,'dependencies''))'];
+Output{2}=['addpath(genpath(''',CurrentFolder,filesep,'dependencies''))'];
+Output{3}=['path(''',mRNADynamicsParentFolder,''',path);'];
+Output{4}=['path(''',CurrentFolder,''',path);'];
+Output{5}=['path(''',TrackingFolder,''',path);'];
+Output{6}=['path(''',LineageCodeFolder,''',path);'];
+Output{7}=['path(''',SubfunctionsFolder,''',path);'];
 Output{8}=['addpath(genpath(''',CurrentFolder,filesep,'deprecated''))'];
 Output{9}=['path(''',DynamicsResultsFolder,''',path);'];
+Output{10}=['addpath(genpath(''',CurrentFolder,filesep,'testClasses''))'];
+
+
 
 
 %Create the startup.m file

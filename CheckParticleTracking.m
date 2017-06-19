@@ -112,27 +112,25 @@ warning('off','MATLAB:nargchk:deprecated')
 %% Information about about folders
 
 %Get the folders
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
+[~,~,DefaultDropboxFolder,~,~]=...
     DetermineLocalFolders;
 
 %Also get the computer name. We'll use this later
 
 %Find out which computer this is. That will determine the folder structure.
 [ret, name] = system('hostname');  
-if ret ~= 0,  
+if ret ~= 0 
    if ispc  
-      name = getenv('COMPUTERNAME');  
+      name = lower(getenv('COMPUTERNAME'));  
    else  
-      name = getenv('HOSTNAME');  
+      name = lower(getenv('HOSTNAME'));  
    end  
 end  
-name = lower(name); 
-
 
 if isempty(varargin)
     DataFolder=uigetdir(DefaultDropboxFolder,'Select data set to analyze');
 else
-    [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
+    [~,~,DropboxFolder,~,~]=...
         DetermineLocalFolders(varargin{1});
     DataFolder=[DropboxFolder,filesep,varargin{1}];
 end
@@ -170,7 +168,7 @@ end
 FilePrefix=[DataFolder(length(DropboxFolder)+2:end),'_'];
 
 %Now get the actual folders
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
+[~,~,DropboxFolder,~,PreProcPath]=...
     DetermineLocalFolders(FilePrefix(1:end-1));
 
 load([DataFolder,filesep,'Particles.mat'])
@@ -262,11 +260,11 @@ end
    
 %Determine division times
 %Load the information about the nc from the XLS file
-[Num,Txt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
+[~,Txt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
 XLSHeaders=Txt(1,:);
 Txt=Txt(2:end,:);
 
-ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
+ExperimentTypeColumn= strcmp(XLSRaw(1,:),'ExperimentType');
 ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
 Channel1Column=find(strcmp(XLSRaw(1,:),'Channel1'));
 Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
@@ -414,7 +412,7 @@ if ~NoSort
         for i=1:length(Particles{ChN})
             FirstFrame(i)=Particles{ChN}(i).Frame(1);
         end
-        [Dummy,Permutations]=sort(FirstFrame);
+        [~,Permutations]=sort(FirstFrame);
         Particles{ChN}=Particles{ChN}(Permutations);
         clear FirstFrame
     end
