@@ -14,7 +14,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % ForCompileAll : Flag to just save the data. This is good for CompileAll
 % speedmode : Flag to plot only ellipses for current particle & save time
 % sistermode : Decide whether you want to do sister chromatid analysis
-% Justnc13 : Only look at particles that show up in nc13 
+% justnc13 : Only look at particles that show up in nc13 
     % Currently this only starts at nc13...not restrict you to nc13 Added by Emma
     % Also, this option shows you the max projection. 
 %
@@ -92,6 +92,8 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % o Zoom in/out around the particle's first frame.
 % -/= Change the zoom factor when in zoom mode.
 % 0 Enter debug mode to fix things manually
+% ~ Switch figure 1 from a single plane image to a z or time
+% max-projection. Useful for estimating the fraction of active spots.
 %
 % OUTPUT
 % Particles: A modified Particles
@@ -159,7 +161,7 @@ if length(varargin)>1
             SpeedMode = 1;
         elseif strcmpi(varargin{i}, 'sistermode')
             SisterMode = 1;
-        elseif strcmpi(varargin{i}, 'Justnc13')
+        elseif strcmpi(varargin{i}, 'justnc13')
             justNC13 = 1;
         end
     end
@@ -579,7 +581,7 @@ while (cc~='x')
             elseif strcmp(projectionMode,'Max Z and Time')
                 if isempty(storedTimeProjection)
                     if justNC13
-                        [Image, ~] = timeProjection(Prefix,'Justnc13');
+                        [Image, ~] = timeProjection(Prefix,'justnc13');
                         storedTimeProjection = Image;
                     else
                         [Image, ~] = timeProjection(Prefix);

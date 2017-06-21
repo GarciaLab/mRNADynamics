@@ -5,20 +5,20 @@ function [maxTProj, medianTProj] = timeProjection(Prefix,varargin)
 
 %Parameters:
 %Prefix: Prefix of the data set to analyze
-%Justnc13 : Only look at particles that show up in nc13 
+%justnc13 : Only look at particles that show up in nc13 
 
 %% Checking Varargin
 justNC13 = 0;
 if length(varargin)
     for i=1:length(varargin)
-        if strcmpi(varargin{i}, 'Justnc13')
+        if strcmpi(varargin{i}, 'justnc13')
             justNC13 = 1;
         end
     end
 end
 
 %% Information about the Folders and Frames
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
+[~,~,DropboxFolder,~,~]=...
     DetermineLocalFolders(Prefix);
 DataFolder=[DropboxFolder,filesep,Prefix];
 FilePrefix=[DataFolder(length(DropboxFolder)+2:end),'_'];
@@ -30,7 +30,7 @@ else
 end 
 
 TotalFrames = length(FrameInfo);
-ZSlices = FrameInfo(1).NumberSlices + 2;%Note: Blank slides are included
+ZSlices = FrameInfo(1).NumberSlices + 2; %Note: Blank slides are included
 
 if TotalFrames < 1E3
     NDigits = 3;
@@ -90,7 +90,7 @@ end
 %% Time Projections
 % Taking the max and median with respect to the time axis (3) 
 maxTProj = max(maxZProjs,[],3);
-medianTProj = median(medianZProjs,3);
+medianTProj = max(medianZProjs,3);
 % figure(3)
 % imshow(maxTProj,[0 80])
 end
