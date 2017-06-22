@@ -581,7 +581,7 @@ while (cc~='x')
             elseif strcmp(projectionMode,'Max Z and Time')
                 if isempty(storedTimeProjection)
                     if justNC13
-                        [Image, ~] = timeProjection(Prefix,'justnc13');
+                        [Image, ~] = timeProjection(Prefix,13);
                         storedTimeProjection = Image;
                     else
                         [Image, ~] = timeProjection(Prefix);

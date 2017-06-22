@@ -1,44 +1,79 @@
-function [maxTProj, medianTProj] = timeProjection(Prefix,varargin)
-% This function will return the max and median time projection of the movie.
-% It will make TotalFrames, ZSlixes and NDigits 
-%(which are all variables from CheckParticleTracking). 
+function desiredTimeProjection = timeProjection(Prefix,varargin)
+% timeProjection(Prefix, [Options])
+%
+% DESCRIPTION
+% This function will calculate the max time projection of the movie.
+% By default it will make the max time projection using the max z
+% projections.
+%
+% ARGUEMENTS
+% Prefix: Prefix of the data set to analyze
+% 
+% OPTIONS
+% 'median': Make the max time projection usin the median z projections
+% 'nc', NC: Choose which nc will be inluded in the timeProjection where NC
+%           must be a number or a vector of two numbers (the range of nc that
+%           will be included). 
+%           (Ex. NC = [12 14] will include nc12, nc13 and nc14)
+% OUTPUT
+% This will return the max time projection made from either the 
+% max z projections or median z projections.
+%
+% Author (contact): Emma Luu (emma_luu@berkeley.edu)
+% Created: 06/16/2017
+% Last Updated: 06/22/2017
+%
+% Documented by: Emma Luu (emma_luu@berkeley.edu)
 
-%Parameters:
-%Prefix: Prefix of the data set to analyze
-%justnc13 : Only look at particles that show up in nc13 
 
 %% Checking Varargin
-justNC13 = 0;
+useMedian = 0;
+ncRange = 0;
 if length(varargin)
+    
     for i=1:length(varargin)
-        if strcmpi(varargin{i}, 'justnc13')
-            justNC13 = 1;
+        if strcmpi(varargin{i}, 'median')
+            useMedian = 1;
+        end
+        
+        if strcmpi(varargin{i},'nc') % checking for the desired nc range
+            ncRange = 1;
+            if length((varargin{i+1})) == 2
+                disp('here')
+                startNC = ['nc' num2str(varargin{i+1}(1))];
+                endNC = ['nc' num2str(varargin{i+1}(2) +1)];% Not including the next nc
+            else
+                startNC = ['nc' num2str(varargin{i+1})]; 
+                endNC = ['nc' num2str(varargin{i+1} + 1)]; % Not including the next nc
+            end
         end
     end
 end
 
-%% Information about the Folders and Frames
+%% Information about the Folders and Frames 
+% Define and make them here instead of passing these from CheckParticleTracking
+
 [~,~,DropboxFolder,~,~]=...
     DetermineLocalFolders(Prefix);
 DataFolder=[DropboxFolder,filesep,Prefix];
 FilePrefix=[DataFolder(length(DropboxFolder)+2:end),'_'];
 
 if exist([DataFolder, filesep, 'FrameInfo.mat'])
-    load([DataFolder, filesep, 'FrameInfo.mat'])
+    load([DataFolder, filesep, 'FrameInfo.mat']);
 else
     error('noFrameInfo.mat found')
-end 
+end
 
-TotalFrames = length(FrameInfo);
-ZSlices = FrameInfo(1).NumberSlices + 2; %Note: Blank slides are included
+totalFrames = length(FrameInfo);
+zSlices = FrameInfo(1).NumberSlices + 2; %Note: Blank slides are included
 
-if TotalFrames < 1E3
+if totalFrames < 1E3
     NDigits = 3;
-elseif TotalFrames < 1E4
+elseif totalFrames < 1E4
     NDigits = 4;
 end
 
-if justNC13
+if ncRange
     %Find the corresponding entry in the XLS file    
     [~,~,XLSRaw]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
     DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
@@ -62,35 +97,46 @@ if justNC13
         end
     end
     
-    %Getting nc13 frame information
-    nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
-    nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
-    nc13Frame = cell2mat(XLSRaw(XLSEntry,nc13Column));
-    nc14Frame = cell2mat(XLSRaw(XLSEntry,nc14Column));
-    frameRange = nc13Frame : nc14Frame; %Only doing projections for nc13
+    %Getting nc range frame information
+    disp(startNC)
+    disp(endNC)
+    ncStartColumn=find(strcmp(XLSRaw(1,:),startNC));
+    ncStartFrame = cell2mat(XLSRaw(XLSEntry,ncStartColumn));
+    
+    if ncStartFrame == 0
+        ncStartFrame = 1;
+    end
+    
+    %(6/22) EL: Not sure how to better handle this sitatuion
+    if strcmp('nc15',endNC) 
+        ncEndFrame = totalFrames;
+    else
+        % Find the first frame of the next nc and make the previous frame 
+        % the last frame looked at
+        ncEndColumn=find(strcmp(XLSRaw(1,:),endNC));
+        ncEndFrame = cell2mat(XLSRaw(XLSEntry,ncEndColumn))-1; 
+    end
+    frameRange = ncStartFrame : ncEndFrame; % desired frame range
 else
-    frameRange = 1:TotalFrames; % doing projections using all frames
+    frameRange = 1:totalFrames; % doing projections using all frames
 end
 
 %% Z Projections
 % The variables below will store the max and median Z projections 
-maxZProjs = [];
-medianZProjs = [];
+desiredZProjs = zeros(FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSlices);
 for CurrentFrame = frameRange
-    [maxZProjs(:,:,CurrentFrame), medianZProjs(:,:,CurrentFrame)]= ...
-        zProjections(Prefix, CurrentFrame, ZSlices, NDigits);
-%     figure(1)
-%     imshow(maxZProjs(:,:,CurrentFrame),[0 80],'Border','Tight')
-%     figure(2)
-%     imshow(medianZProjs(:,:,CurrentFrame),[],'Border','Tight')
-%     drawnow
-%     disp(CurrentFrame)
+    if useMedian
+        [~,desiredZProjs(:,:,CurrentFrame)] = ...
+            zProjections(Prefix, CurrentFrame, zSlices, NDigits);
+    else
+        [desiredZProjs(:,:,CurrentFrame),~]= ...
+            zProjections(Prefix, CurrentFrame, zSlices, NDigits);
+    end
 end
 
 %% Time Projections
 % Taking the max and median with respect to the time axis (3) 
-maxTProj = max(maxZProjs,[],3);
-medianTProj = max(medianZProjs,3);
-% figure(3)
-% imshow(maxTProj,[0 80])
+desiredTimeProjection = max(desiredZProjs,[],3);
+figure(3)
+imshow(desiredTimeProjection,[0 80]);
 end
