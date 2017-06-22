@@ -1156,9 +1156,39 @@ elseif strcmp(FileMode,'LIFExport')
                         if strcmp(ProjectionType,'medianprojection')
                             Projection=median(HisSlices,3);
                         else
-                            StackCenter=round((min(NSlices)-1)/2);
-                            StackRange=[StackCenter:StackCenter+3];
-                            Projection=max(HisSlices(:,:,StackRange), [],3); % Maybe change the number of slices for projection
+                            if strcmpi(ExperimentType, 'inputoutput')
+                                %What type of experiment are we dealing with? Get this out of
+                                %MovieDatabase.xlsx
+
+                                [XLSNum,XLSTxt,XLSRaw]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
+                                ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
+
+                                DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
+                                Dashes=findstr(Prefix,'-');
+                                PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
+                                    if isempty(PrefixRow)
+                                        PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
+                                        if isempty(PrefixRow)
+                                            error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
+                                        end
+                                    end
+
+                                if isempty(PrefixRow)
+                                    error('Entry not found in MovieDatabase.xlsx')
+                                end
+                                ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
+                              
+                                if strcmpi(ExperimentAxis, 'DV')
+                                    StackCenter=round((min(NSlices)-1)/2);
+                                    StackRange=[StackCenter:StackCenter+3];
+                                    Projection=max(HisSlices(:,:,StackRange), [],3); % Maybe change the number of slices for projection
+                                    
+                                else
+                                    Projection=max(HisSlices,[],3);
+                                end
+                            else
+                               Projection=max(HisSlices,[],3);
+                            end 
                         end
                         
                         %Think about the case when there is no His channel,
@@ -1177,6 +1207,8 @@ elseif strcmp(FileMode,'LIFExport')
                         %We don't want to use all slices. Only the center ones
                         StackCenter=round((min(NSlices)-1)/2);
                         StackRange=[StackCenter-1:StackCenter+1];
+      
+                        
                         if strcmp(ProjectionType,'medianprojection')
                             Projection=median(HisSlices(:,:,StackRange),[],3);
                         else
@@ -1187,8 +1219,18 @@ elseif strcmp(FileMode,'LIFExport')
                             Projection=Projection./FF;
                         end
                     end
-                    imwrite(double(Projection),...
-                    [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
+                    if strcmpi(ExperimentType, 'inputoutput')
+                        if strcmpi(ExperimentAxis, 'DV')
+                            imwrite(uint16(65535 * Projection),...
+                            [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
+                        else
+                            imwrite(uint16(Projection),...
+                            [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
+                        end
+                    else
+                       imwrite(uint16(Projection),...
+                            [OutputFolder,filesep,Prefix,'-His_',iIndex(m,3),'.tif']);
+                    end     
                 end
             m=m+1;
             end
