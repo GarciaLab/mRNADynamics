@@ -26,25 +26,26 @@ else
     Prefix=varargin{1};
 
     for i=2:length(varargin)
-        if strcmp(varargin{i},'ForceAP')
-            ForceAP=1;
-        elseif strcmp(varargin{i},'SkipTraces')
-            SkipTraces=1;
-        elseif strcmp(varargin{i},'SkipFluctuations')
-            SkipFluctuations=1;
-        elseif strcmp(varargin{i},'SkipFits')    
-            SkipFits=1;
-        elseif strcmp(varargin{i},'SkipMovie')    
-            SkipMovie=1;
-        elseif strcmp(varargin{i},'SkipAll')        
-            SkipTraces=1;
-            SkipFluctuations=1;
-            SkipFits=1;
-            SkipMovie=1;
-        elseif strcmp(varargin{i},'ApproveAll')    
-            ApproveAll=1;
-        elseif strcmp(varargin{i},'SetMinParticles')
-            MinParticles = input('Set minimum particle threshold:');
+        if strcmp(varargin{i},'InvertChannel')
+            display('The inverted dl channel will be used')
+            Invert=1;
+%         elseif strcmp(varargin{i},'SkipTraces')
+%             SkipTraces=1;
+%         elseif strcmp(varargin{i},'SkipFluctuations')
+%             SkipFluctuations=1;
+%         elseif strcmp(varargin{i},'SkipFits')    
+%             SkipFits=1;
+%         elseif strcmp(varargin{i},'SkipMovie')    
+%             SkipMovie=1;
+%         elseif strcmp(varargin{i},'SkipAll')        
+%             SkipTraces=1;
+%             SkipFluctuations=1;
+%             SkipFits=1;
+%             SkipMovie=1;
+%         elseif strcmp(varargin{i},'ApproveAll')    
+%             ApproveAll=1;
+%         elseif strcmp(varargin{i},'SetMinParticles')
+%             MinParticles = input('Set minimum particle threshold:');
         end
     end
 
@@ -85,7 +86,7 @@ APResolution = XLSRaw{PrefixRow,APResolutionColumn};
 %load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
 %load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'])
 %load([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'])
-load([DropboxFolder,filesep,Prefix,filesep,[Prefix '_lin.mat']])
+%load([DropboxFolder,filesep,Prefix,filesep,[Prefix '_lin.mat']])
 
 %Check that FrameInfo exists
 if exist([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
@@ -151,6 +152,9 @@ for frm=1:max([D.Frame])
    for img = 1:length(D)
        if D(img).Frame == frm & D(img).Channel == '1'
            Image = imread(D(img).name);
+           if Invert
+               Image = imcomplement(Image);
+           end
            FrameZ(:,:,frm,D(img).Zpos)=Image;
        end
    end
