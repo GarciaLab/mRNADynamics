@@ -3,6 +3,7 @@ function TrackDlNuclei (varargin)
 %the mCherry channel.
 %Pending: Make the function automatically save the former His channel in a
 %folder called 'OriginalHis' within the PreProcessedData/Prefix folder
+% Use option 'InvertChannel' to use the inverted dorsal channel.
 
 %Information about about folders
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
