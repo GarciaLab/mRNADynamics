@@ -1,4 +1,4 @@
-function particlesIndexes = particlesWithinFrames(Prefix, particles, firstFrame,lastFrame)
+function particlesIndexes = particlesWithinFrames(Prefix, firstFrame,lastFrame)
 % particlesWithinFrames(Prefix, Particles, firstFrame, lastFrame)
 %
 % DESCRIPTION
@@ -25,14 +25,14 @@ function particlesIndexes = particlesWithinFrames(Prefix, particles, firstFrame,
     DetermineLocalFolders(Prefix);
 DataFolder=[DropboxFolder,filesep,Prefix];
 load([DataFolder,filesep,'Particles.mat']);
-particlesSize = size(particles);
+particlesSize = size(Particles);
 
 particlesIndexes = [];
 for i = 1:particlesSize(2)
-    frameArraySize = size(particles(i).Frame); % Might need to use Particles{CurrentChannel}(i).Frame
+    frameArraySize = size(Particles(i).Frame); % Might need to use Particles{CurrentChannel}(i).Frame
     inRange = 0;
     for k = 1: frameArraySize(2)
-        currentFrame = particles(i).Frame(k);
+        currentFrame = Particles(i).Frame(k);
         if currentFrame >= firstFrame && currentFrame <= lastFrame
             inRange = 1;
         end
