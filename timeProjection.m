@@ -8,7 +8,8 @@ function desiredTimeProjection = timeProjection(Prefix,varargin)
 %
 % ARGUEMENTS
 % Prefix: Prefix of the data set to analyze
-% 
+% DropboxFolder: Dropbox Folder the data set is in
+%
 % OPTIONS
 % 'median': Make the max time projection usin the median z projections
 % 'nc', NC: Choose which nc will be inluded in the timeProjection where NC
@@ -27,6 +28,7 @@ function desiredTimeProjection = timeProjection(Prefix,varargin)
 
 
 %% Checking Varargin
+h = waitbar(0,'Checking Varargin');
 useMedian = 0;
 ncRange = 0;
 if length(varargin)
@@ -39,7 +41,6 @@ if length(varargin)
         if strcmpi(varargin{i},'nc') % checking for the desired nc range
             ncRange = 1;
             if length((varargin{i+1})) == 2
-                disp('here')
                 startNC = ['nc' num2str(varargin{i+1}(1))];
                 endNC = ['nc' num2str(varargin{i+1}(2) +1)];% Not including the next nc
             else
@@ -52,9 +53,9 @@ end
 
 %% Information about the Folders and Frames 
 % Define and make them here instead of passing these from CheckParticleTracking
-
-[~,~,DropboxFolder,~,~]=...
-    DetermineLocalFolders(Prefix);
+waitbar(0,h,'Getting Relevant Folder Information');
+[~,~,DropboxFolder,~,~]= DetermineLocalFolders(Prefix);
+[~,~,DefaultDropboxFolder,~,~]= DetermineLocalFolders;
 DataFolder=[DropboxFolder,filesep,Prefix];
 FilePrefix=[DataFolder(length(DropboxFolder)+2:end),'_'];
 
@@ -75,7 +76,7 @@ end
 
 if ncRange
     %Find the corresponding entry in the XLS file    
-    [~,~,XLSRaw]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
+    [~,~,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
     DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
     Dashes=findstr(FilePrefix,'-');
 
@@ -98,8 +99,6 @@ if ncRange
     end
     
     %Getting nc range frame information
-    disp(startNC)
-    disp(endNC)
     ncStartColumn=find(strcmp(XLSRaw(1,:),startNC));
     ncStartFrame = cell2mat(XLSRaw(XLSEntry,ncStartColumn));
     
@@ -123,20 +122,28 @@ end
 
 %% Z Projections
 % The variables below will store the max and median Z projections 
+waitbar(0,h,'Starting Z Projections');
 desiredZProjs = zeros(FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSlices);
-for CurrentFrame = frameRange
-    if useMedian
+framesCompleted = 0;
+if useMedian
+    for CurrentFrame = frameRange
         [~,desiredZProjs(:,:,CurrentFrame)] = ...
             zProjections(Prefix, CurrentFrame, zSlices, NDigits);
-    else
+        framesCompleted = 1 + framesCompleted;
+        waitbar(framesCompleted/length(frameRange),h,'Making Z Median Projections');
+    end
+else
+    for CurrentFrame = frameRange
         [desiredZProjs(:,:,CurrentFrame),~]= ...
             zProjections(Prefix, CurrentFrame, zSlices, NDigits);
+        framesCompleted = 1 + framesCompleted;
+        waitbar(framesCompleted/length(frameRange),h,'Making Z Max Projections');
     end
 end
-
 %% Time Projections
 % Taking the max and median with respect to the time axis (3) 
 desiredTimeProjection = max(desiredZProjs,[],3);
-figure(3)
-imshow(desiredTimeProjection,[0 80]);
+% figure(3)
+% imshow(desiredTimeProjection,[0 80]);
+close(h)
 end
