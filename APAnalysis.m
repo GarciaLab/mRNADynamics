@@ -30,8 +30,10 @@ function APAnalysis(dataset, controlset)
 %
 %To do:  1) Allow control set to be optional. 
 %        2) Save graphs somewhere automatically 
+%        3) Fix stde error bars
  
     warning('off', 'MATLAB:handle_graphics:exceptions:SceneNode')
+    close all force
     
     data0 = LoadMS2Sets(controlset);
     data = LoadMS2Sets(dataset);
@@ -49,6 +51,7 @@ function APAnalysis(dataset, controlset)
     for j = 1:nsets
         Prefix{j} = data(j).SetName;
         fluo = data(j).MeanVectorAP;
+        fluo2 = fluo;
         fluo(isnan(fluo)) = 0;
         for i = 1:size(fluo,2)
             cum(j,i) = trapz(data(j).ElapsedTime,fluo(:,i));
@@ -61,7 +64,6 @@ function APAnalysis(dataset, controlset)
 
     cummean = zeros(1,len);
     cumstd = zeros(1,len);
-    cumsum = zeros(1,len);
     for i = 1:length(cum)
         cummean(1, i) = nanmean(cum(:,i));
         cumstd(1, i) = nanstd(cum(:,i));
@@ -81,6 +83,7 @@ function APAnalysis(dataset, controlset)
         hold on
     end
     errorbar(ap, cummean, cumstde, 'LineWidth', 5, 'DisplayName', 'Mean $\pm$ std. error')
+
     hold off
     lgd1 = legend('show');
     set(lgd1, 'Interpreter', 'Latex')
@@ -240,10 +243,10 @@ function APAnalysis(dataset, controlset)
 
         %not sure why the linear fit results were bad. gonna try nonlinear
         fv7 = @(constants) constants(1)*Bcd(8:end)./(Bcd(8:end)+constants(2)) - fmean(8:end); %Unitless fraction active nuclei
-        initParams = [1, .3];  
+        initParams = [.5, .3];  
         lsqOptions=optimset('Display','none','maxfunevals',10000,'maxiter',10000);
         [fit, res1, residual, exitflag, output, ~, jacobian] = lsqnonlin(fv7, ...
-            initParams,[1,.9],[Inf,120]);
+            initParams,[0,.9],[1,120]);
         r_nonlin = fit(1)
         KD_nonlin = fit(2)
         fFitNonLinearBicoid = r_nonlin*(Bcd./(Bcd+KD_nonlin));    
@@ -254,13 +257,14 @@ function APAnalysis(dataset, controlset)
         xlabel('Bcd (nM)')  
         ylabel('Fraction Active')
         figure()
-        plot(ap,fFitNonLinearAP)
+        plot(ap,fFitNonLinearAP, 'LineWidth', 5)
         title('v7 nonlinear fit')
         xlabel('Fraction EL')  
         ylabel('Fraction Active')
         hold on
-        plot(ap, fmean)
+        plot(ap, fmean, 'LineWidth', 5)
         legend('fit', 'data')
+        standardizeFigure(gca, legend('show'))
 
     else
         figure()
