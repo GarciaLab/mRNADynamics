@@ -20,6 +20,8 @@ function segmentSpots(Prefix,Threshold,varargin)
 %                frames. It's suggested to run 5-20 frames for debugging.
 % 'NoShadows':    Spots without valid (peaked) z-profiles are normally
 %                discarded. This option overrides that.
+% 'CustomSigmas': Prompts you to enter your custom sigmas to do DoG
+%                 filtering with
 %               
 % OUTPUT
 % 'Spots':  A structure array with a list of detected transcriptional loci
@@ -38,6 +40,7 @@ displayFigures=0;
 TrackSpots=0;
 num_frames=0;
 Shadows = 1;
+CustomSigmas = 0;
 
 for i=1:length(varargin)
     if strcmp(varargin{i},'displayFigures')
@@ -46,6 +49,8 @@ for i=1:length(varargin)
         TrackSpots=1;
     elseif strcmpi(varargin{i}, 'NoShadows')
         Shadows = 0;
+    elseif strcmpi(varargin{i}, 'CustomSigmas')
+        CustomSigmas = 1;
     elseif strcmp(varargin{i},'Frames')
         if ~isnumeric(varargin{i+1})
             error('Wrong input parameters. After ''Frames'' you should input the number of frames')
@@ -111,10 +116,22 @@ close all force;
 if just_dog
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Generate difference of Gaussian images if no threshold was given.
+    %If CustomSigma is desired, prompts for the sigma1 and sigma2 values
+    if CustomSigmas
+        prompt = {'Enter Sigma1 (Note: Sigma1<Sigma2):','Enter Sigma2:'};
+        dlg_title = 'Input';
+        num_lines = 1;
+        defaultans = {'1','200'};
+        answer = inputdlg(prompt,dlg_title,num_lines,defaultans);
+        sigma1 = str2num(answer{1,1});
+        sigma2 = str2num(answer{2,1});
+    else
     %Initialize Difference of Gaussian filter parameters. filterSize >> sigma2
     %> sigma1
     sigma1 = pixelSize / pixelSize; %width of narrower Gaussian
     sigma2 = 42000 / pixelSize; % width of wider Gaussian
+    end
+    
     filterSize = round(2000 / pixelSize); %size of square to be convolved with microscopy images
     h=waitbar(0,'Generating DoG images');
     for current_frame = 1:num_frames
