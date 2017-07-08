@@ -32,7 +32,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % a z Move up/down in Z
 % j Jump to a specified frame
 % g b Increase/decrease histone channel contrast
-% 
+% !   Change the contranst in gfp channel
 % 
 % 
 % Particle specific:
@@ -442,18 +442,21 @@ DisplayRange=[];
 ZoomMode=0;
 GlobalZoomMode=0;
 ZoomRange=50;
+minContrast = 0; % Default contrast settings for gfp channel
+maxContrast = 80;
 
 % Changing the intial frames and particle if justNC13
 if justNC13
     nc13Frame = cell2mat(XLSRaw(XLSEntry,nc13Column));
     nc14Frame = cell2mat(XLSRaw(XLSEntry,nc14Column));
-    particlesInRange = particlesWithinFrames(Prefix,Particles,nc13Frame,nc14Frame);
+    particlesInRange = particlesWithinFrames(Prefix,nc13Frame,nc14Frame);
     CurrentParticle = particlesInRange(1);
     PreviousParticle = particlesInRange(1);
     CurrentFrame = Particles{1}(CurrentParticle).Frame(1);
     disp('Implementing justNC13')
     disp(['nc13 : ' num2str(nc13Frame)])
     disp(['Particles in range: ' num2str(particlesInRange)])
+    disp(['Number of Particles: ' num2str(length(particlesInRange))])
 end
 
 %Define the windows
@@ -567,7 +570,6 @@ while (cc~='x')
     end
         
     if (NChannels==1)&&(~strcmp(lower(ExperimentType),'inputoutput'))
-        try
 %             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
 %                 FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);\
             disp(['projectionMode : ' projectionMode])
@@ -581,10 +583,10 @@ while (cc~='x')
             elseif strcmp(projectionMode,'Max Z and Time')
                 if isempty(storedTimeProjection)
                     if justNC13
-                        [Image, ~] = timeProjection(Prefix,13);
+                        Image = timeProjection(Prefix,DropboxFolder,'nc',13);
                         storedTimeProjection = Image;
                     else
-                        [Image, ~] = timeProjection(Prefix);
+                        Image = timeProjection(Prefix,DropboxFolder);
                         storedTimeProjection = Image;
                     end
                 else
@@ -592,10 +594,9 @@ while (cc~='x')
                 end
             end
             
-        catch
-            disp(['Warning: Could not load file: ',...
-                FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif'])
-        end
+        
+%             disp(['Warning: Could not load file: ',...
+%                 FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif'])
     elseif (NChannels==1)&&(strcmp(lower(ExperimentType),'inputoutput'))
         OutputChannelTemp1=strfind({lower(Channel1{1}),lower(Channel2{1})},'mcp');
         OutputChannelTemp2=strfind({lower(Channel1{1}),lower(Channel2{1})},'pcp');
@@ -616,7 +617,7 @@ while (cc~='x')
     end
 
     figure(Overlay)
-    imshow(Image,[0 80],'Border','Tight')
+    imshow(Image,[minContrast maxContrast],'Border','Tight')
     hold on
     %Show all particles in regular mode
     if ~SpeedMode
@@ -2016,7 +2017,16 @@ while (cc~='x')
     
     elseif cc=='~'      %Switch projection mode
         projectionMode = chooseProjection;
-        
+    
+    elseif cc=='!' % changing contrast 
+        prompt = {'Enter minimum:','Enter maximum :'};
+        dlg_title = 'Changing Contrast in GFP Channel';
+        num_lines = 1;
+        defaultans = {num2str(minContrast),num2str(maxContrast)};
+        userInput = inputdlg(prompt,dlg_title,num_lines,defaultans);
+        tempUserInput = str2double(userInput);
+        minContrast = tempUserInput(1);
+        maxContrast = tempUserInput(2);
     elseif cc=='0'      %Debugging mode
         keyboard;
     end
