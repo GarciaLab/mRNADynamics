@@ -51,6 +51,11 @@ ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
 ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
 Channel1=XLSRaw(PrefixRow,Channel1Column);
 Channel2=XLSRaw(PrefixRow,Channel2Column);
+%If Channel2 was left empty, it would contain a NaN, which will cause
+%problems below. In that case, replace it by an empty string.
+if isnan(Channel2{1})
+    Channel2{1}='';
+end
 
 %Find the different columns.
 DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
@@ -411,7 +416,10 @@ end
 %Now save
 mkdir([DropboxFolder,filesep,Prefix])
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
-save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells')
+%Change the name of the Circle variable to make it more understandble when
+%loaded independently
+IntegrationArea=Circle;
+save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells','IntegrationArea')
 if ~exist([FISHPath,filesep,Prefix,'_'])
     mkdir([FISHPath,filesep,Prefix,'_'])
 end
