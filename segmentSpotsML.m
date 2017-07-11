@@ -231,8 +231,6 @@ else
             %apply flatfield correction
             if doFF && sum(size(im)==size(ffim))
                 im = im./ffim;
-            else
-                warning('Not applying flat-field correction to MS2 channel')
             end
             %
             im_thresh = dog >= Threshold;
