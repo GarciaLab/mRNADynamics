@@ -3,8 +3,6 @@ function AddNuclearPosition(varargin)
 %V2: Changed this function to use a correlation in order to center the
 %images.
 
-
-
 %Get the relevant folders for this data set
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;

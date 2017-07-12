@@ -33,6 +33,10 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
         [k_row, k_column] = find(image_label == particle_index); %the position of the k'th locus in the image
         row = k_row(1);
         col = k_column(1);
+%         if ML
+%             row = centroid(1);
+%             col = centroid(2);
+%         end
     else 
         row = addition(3);
         col = addition(2);
@@ -45,7 +49,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             if row - distance_to_neighbor + i > 0 && col - distance_to_neighbor + j > 0 ... 
                     && row - distance_to_neighbor + i < size(image,1)  && col - distance_to_neighbor + j < size(image,2)
                 if ML
-                    possible_centroid(i,j) = dog_image(row-distance_to_neighbor+i, col-distance_to_neighbor+j);
+                    possible_centroid(i,j) = image(row-distance_to_neighbor+i, col-distance_to_neighbor+j);
                 else
                     possible_centroid(i,j) = image(row-distance_to_neighbor+i, col-distance_to_neighbor+j);        
                 end
@@ -68,10 +72,10 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             centroid_y = k_row;
             centroid_x = k_column;
         elseif ~addition(1)
-            if ML
-                centroid_x = centroid(1);
-                centroid_y = centroid(2);
-            end
+%             if ML
+%                 centroid_x = centroid(1);
+%                 centroid_y = centroid(2);
+%             end
         end
         
         

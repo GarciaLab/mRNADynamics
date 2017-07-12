@@ -88,14 +88,14 @@ function APAnalysis(dataset, controlset)
     errorbar(ap, cummean, cumstde, 'LineWidth', 5, 'DisplayName', 'Mean $\pm$ std. error')
 
     hold off
-    lgd1 = legend('show');
+    legend('show');
     set(lgd1, 'Interpreter', 'Latex')
     xlim([.1, .8])
     ylim([0, max([cummean+abs(cumstde), cum(:)']).*1.1 ])
     title('Total average nuclear intensity across AP')
     xlabel('Fraction EL')
     ylabel('Intensity (A.U.)')
-    standardizeFigure(gca, lgd1)
+    standardizeFigure(gca, legend('show'))
     
     %Control fraction on
     figure()
@@ -118,14 +118,14 @@ function APAnalysis(dataset, controlset)
     fstde = sqrt(g2./n - fmean.^2) ./ sqrt(n);
     errorbar(ap, fmean, fstde, 'LineWidth', 5, 'DisplayName', 'Mean $\pm$ std. error')
     hold off
-    lgd2 = legend('show');
+    legend('show');
     set(lgd2, 'Interpreter', 'Latex')
     xlim([.1, .8])
     ylim([0, 1.3])
     title('Fraction On Control')
     xlabel('Fraction EL')
     ylabel('Fraction on')
-    standardizeFigure(gca, lgd2)
+    standardizeFigure(gca, legend('show'))
     
     %Experiment fraction on
     figure()
@@ -148,14 +148,14 @@ function APAnalysis(dataset, controlset)
     fstde = sqrt(g2./n - fmean.^2) ./ sqrt(n);
     errorbar(ap, fmean, fstde, 'LineWidth', 5, 'DisplayName', 'Mean $\pm$ std. error')
     hold off
-    lgd2 = legend('show');
+    legend('show');
     set(lgd2, 'Interpreter', 'Latex')
     xlim([.1, .8])
     ylim([0, 1.3])
     title('Fraction On')
     xlabel('Fraction EL')
     ylabel('Fraction on')
-    standardizeFigure(gca, lgd2)
+    standardizeFigure(gca, legend('show'))
     
     %This figure will correct fraction on from the experiment using the negative control's  fraction on. 
     figure()

@@ -54,47 +54,6 @@ load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
 
 %% /|\/|\/|\/|\ Setup stuff /|\/|\/|\/|\
 
-
-%Window in minutes around a mitosis where we won't be trying to fix the
-%tracking. This is done to avoid screwing up the lineage tracking over
-%mother and daughter nuclei.
-TimeWindow=3;
-%Create a set of frames where the fixing of tracking won't be allowed.
-ElapsedTime=[FrameInfo.Time]/60;        %In minutes
-%FrameFilter will tell us whether we want to be fixing schnitzs in a given
-%frame or not.
-FrameFilter=true(size(ElapsedTime));
-for i=9:14
-	%Get the frame for this nc
-    ncFrame=eval(['nc',num2str(i)]);
-    if ncFrame>0
-        %Find the lower end of the time window
-        Indices=find(ElapsedTime-(ElapsedTime(ncFrame)-TimeWindow)>0);
-        if isempty(Indices)
-            StartFrame=[];
-        else
-            StartFrame=Indices(1)-1;
-            %This checkes whether the time window is larger than the time
-            %since the movie started.
-            if StartFrame==0
-                StartFrame=1
-            end
-        end
-       
-        Indices=find(ElapsedTime-(ElapsedTime(ncFrame)+TimeWindow)>0);
-        if isempty(Indices)
-            EndFrame=[];
-        else
-            EndFrame=Indices(1)+1;
-        end
-        
-        FrameFilter(StartFrame:EndFrame)=false;
-    end
-end
-    
-
-
-
 %Start the stitching
 [Frames,Dummy] = size(Ellipses); %how many frames do we have?
 Radii = []; %a vector of length = frames that will contain ellipse radius per frame
@@ -107,7 +66,8 @@ for fr = 1:Frames
     Radii = [Radii Radius];
 end
 
-Thresholds = [1.05:0.05:1.75]; %this number indicates how many radii make two time-contiguous ellipses the same one
+Thresholds = [1.05:0.05:1.75]; %this number indicates how many radii of distance...
+%make two time-contiguous ellipses the same one
 
 
 %set stitching information
@@ -117,10 +77,13 @@ for j=1:length(schnitzcells)
     schnitzcells(j).StitchedFrom = []; %to know what original schnitz were pasted to this one to form the final one
 end
 
-%% /|\/|\/|\/|\/|\ Start MEGA loop /|\/|\/|\/|\/|\/|\  
+%% /|\/|\/|\/|\/|\ Start stitching loop /|\/|\/|\/|\/|\/|\  
 h=waitbar(0,'Stitching broken schnitzs');
+
 for i=1:length(Thresholds)
+    
     waitbar(i/length(Thresholds),h);
+    display (['Trying threshold', num2str(Thresholds(i))]);
     %length(schnitzcells) for debugging
     threshold = Thresholds(i);
     Rule = 1;
@@ -128,68 +91,59 @@ for i=1:length(Thresholds)
     while Rule
         for s1 = 1:length(schnitzcells) %outer loop. 
             %get schnitz basic time/space info
-            Frames = schnitzcells(s1).frames;
+            Frames1 = schnitzcells(s1).frames;
             XPos1 = schnitzcells(s1).cenx;
             YPos1 = schnitzcells(s1).ceny;
 
             %get the numbers we care about: the extremes.
-            FirstFrame1 = Frames(1);
-            LastFrame1 = Frames(end);
+            FirstFrame1 = Frames1(1);
+            LastFrame1 = Frames1(end);
             InitialPosition1 = [XPos1(1),YPos1(1)] ;
             FinalPosition1 = [XPos1(end),YPos1(end)];
             Radius = Radii(LastFrame1);
 
-            %Only proceed to check the other schnitzs if this schnitz does
-            %not overlap with the frames excluded in FrameFilter.
-            if FrameFilter(FirstFrame1)&FrameFilter(LastFrame1)
-                for s2 = 1:length(schnitzcells) %inner loop to make all pairwise comparisons
-                    %[s1, s2]
-                    %get schnitz basic time/space info
-                    Frames2 = schnitzcells(s2).frames;
-                    XPos2 = schnitzcells(s2).cenx;
-                    YPos2 = schnitzcells(s2).ceny;
+            for s2 = 1:length(schnitzcells) %inner loop to make all pairwise comparisons
+                %[s1, s2]
+                %get schnitz basic time/space info
+                Frames2 = schnitzcells(s2).frames;
+                XPos2 = schnitzcells(s2).cenx;
+                YPos2 = schnitzcells(s2).ceny;
 
-                    %get the numbers we care about: the extremes.
-                    FirstFrame2 = Frames2(1);
-                    LastFrame2 = Frames2(end);
-                    
-                    %Only proceed to check the other schnitzs if this schnitz does
-                    %not overlap with the frames excluded in FrameFilter.
-                    if FrameFilter(FirstFrame2)&FrameFilter(LastFrame2)
-                    
-                        InitialPosition2 = [XPos2(1),YPos2(1)] ;
-                        FinalPosition2 = [XPos2(end),YPos2(end)];
+                %get the numbers we care about: the extremes.
+                FirstFrame2 = Frames2(1);
+                LastFrame2 = Frames2(end);
 
-                        %compare schnitz s1 and s2
-                        if schnitzcells(s1).Valid == 1
-                            if LastFrame1+1 == FirstFrame2 && ...
-                                    pdist([FinalPosition1;InitialPosition2],'euclidean') < Radius*(threshold)
-                                display('overlapping schnitz found')
-                                schnitzcells(s2).Valid = 0; %mark so we don't consider it in the future
-                                schnitzcells(s2).StitchedTo = [schnitzcells(s2).StitchedTo s1];
+                    InitialPosition2 = [XPos2(1),YPos2(1)] ;
+                    FinalPosition2 = [XPos2(end),YPos2(end)];
 
-                                %paste info
-                                schnitzcells(s1).StitchedFrom = [schnitzcells(s1).StitchedFrom s2];
-                                schnitzcells(s1).frames = [schnitzcells(s1).frames ; schnitzcells(s2).frames]; %stitch frames
-                                schnitzcells(s1).cenx = [schnitzcells(s1).cenx schnitzcells(s2).cenx]; %
-                                schnitzcells(s1).ceny = [schnitzcells(s1).ceny schnitzcells(s2).ceny]; %
-                                schnitzcells(s1).len = [schnitzcells(s1).len schnitzcells(s2).len]; %
-                                schnitzcells(s1).cellno = [schnitzcells(s1).cellno schnitzcells(s2).cellno]; %
-                                schnitzcells(s1).P = [schnitzcells(s1).P schnitzcells(s2).P];
-                                schnitzcells(s1).D = [schnitzcells(s1).D schnitzcells(s2).D]; 
-                                schnitzcells(s1).E = [schnitzcells(s1).E schnitzcells(s2).E];
+                %compare schnitz s1 and s2
+                if schnitzcells(s1).Valid == 1
+                    if LastFrame1+1 == FirstFrame2 && ...
+                            pdist([FinalPosition1;InitialPosition2],'euclidean') < Radius*(threshold)
+                        % display('overlapping schnitz found')
+                        schnitzcells(s2).Valid = 0; %mark so we don't consider it in the future
+                        schnitzcells(s2).StitchedTo = [schnitzcells(s2).StitchedTo s1];
 
-                                %The Fluo field is only present in input-output
-                                %function mode
-                                if isfield(schnitzcells,'Fluo')
-                                    schnitzcells(s1).Fluo = [schnitzcells(s1).Fluo;schnitzcells(s2).Fluo]; %  
-                                end
+                        %paste info
+                        schnitzcells(s1).StitchedFrom = [schnitzcells(s1).StitchedFrom s2];
+                        schnitzcells(s1).frames = [Frames1 ; Frames2]; %stitch frames
+                        schnitzcells(s1).cenx = [schnitzcells(s1).cenx schnitzcells(s2).cenx]; %
+                        schnitzcells(s1).ceny = [schnitzcells(s1).ceny schnitzcells(s2).ceny]; %
+                        schnitzcells(s1).len = [schnitzcells(s1).len schnitzcells(s2).len]; %
+                        schnitzcells(s1).cellno = [schnitzcells(s1).cellno schnitzcells(s2).cellno]; %
+                        schnitzcells(s1).P = [schnitzcells(s1).P schnitzcells(s2).P];
+                        schnitzcells(s1).D = [schnitzcells(s1).D schnitzcells(s2).D]; 
+                        schnitzcells(s1).E = [schnitzcells(s1).E schnitzcells(s2).E];
 
-                            end
+                        %The Fluo field is only present in input-output
+                        %function mode
+                        if isfield(schnitzcells,'Fluo')
+                            schnitzcells(s1).Fluo = [schnitzcells(s1).Fluo;schnitzcells(s2).Fluo]; %  
                         end
+
                     end
                 end
-            end
+            end        
         end
         %kill impostor schnitz forever
         %create new schnitzcells struct using only valid schnitz from former one
@@ -239,42 +193,8 @@ for i=1:length(Thresholds)
             ImpostorSchnitz=ImpostorSchnitz-1;
         end
         
-%         
-%         
-%         index = 1;
-%         for s = 1:length(schnitzcells) %create new schnitzcells struct called schnitzcells2
-%             if schnitzcells(s).Valid == 1
-%                 schnitzcells2(index).P = schnitzcells(s).P;
-%                 schnitzcells2(index).E = schnitzcells(s).E;
-%                 schnitzcells2(index).D = schnitzcells(s).D;
-%                 schnitzcells2(index).frames = schnitzcells(s).frames;
-%                 schnitzcells2(index).cenx = schnitzcells(s).cenx;
-%                 schnitzcells2(index).ceny = schnitzcells(s).ceny;
-%                 schnitzcells2(index).len = schnitzcells(s).len;
-%                 schnitzcells2(index).cellno = schnitzcells(s).cellno;
-%                 
-%                 %The Fluo field is only present in input-output
-%                 %function mode
-%                 if isfield(schnitzcells,'Fluo')
-%                     schnitzcells2(index).Fluo = schnitzcells(s).Fluo;
-%                 end
-%                 
-%                 index = index+1;
-%             end
-%         end
-        
         schnitzcells = schnitzcells2; %replace original by schnitzcells2
         clear schnitzcells2
-        %save new schnitzcells
-        %save([Prefix '_lin.mat'],'schnitzcells')
-        %'schnitz saved' %(for debugging)
-        %clear workspace to start over
-        %clear schnitzcells
-        %'schnitz cleared' %(for debugging)
-        %load newest version
-        %load ([Prefix '_lin.mat'])
-        %'schnitz loaded' %(for debugging)
-        %reset stitching information
         for k=1:length(schnitzcells)
             schnitzcells(k).Valid = 1; %assume all are OK
             schnitzcells(k).StitchedTo = []; %to know to which schnitz this one was pasted to

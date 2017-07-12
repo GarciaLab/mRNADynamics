@@ -110,15 +110,17 @@ if ~exist([ProcPath,filesep,Prefix,filesep,'CytoImages.mat'])
             %Find the maximum and the mean
             MaxImageTemp=max(MCPImage,[],3);
             MeanImageTemp=mean(MCPImage,3);
+            MedianImageTemp=median(MCPImage,3);
 
             MaxImage{ChN}(:,:,i)=immultiply(MaxImageTemp,Mask);
             MeanImage{ChN}(:,:,i)=immultiply(MeanImageTemp,Mask);
+            MedianImage{ChN}(:,:,i)=immultiply(MedianImageTemp,Mask);
         end
     end
     close(h)
 
     %Save to the FISH path so that we don't overwhelm the Dropbox folder!
-    save([ProcPath,filesep,Prefix,'_',filesep,'CytoImages.mat'],'MaxImage','MeanImage')
+    save([ProcPath,filesep,Prefix,'_',filesep,'CytoImages.mat'],'MaxImage','MeanImage','MedianImage')
 else
     display('Using saved CytoImages.mat located in the PreProcessed folder.')
 
@@ -210,7 +212,6 @@ for ChN=1:NChannels
 
                 %Check that we will have enough statistics
                 if sum(sum(FilteredMeanImage>0))>10
-
                     MeanAPProfile{ChN}(i,j)=mean(FilteredMeanImage(FilteredMeanImage>0));
                     SDAPProfile{ChN}(i,j)=std(FilteredMeanImage(FilteredMeanImage>0));
                     SEAPProfile{ChN}(i,j)=std(FilteredMeanImage(FilteredMeanImage>0))/...
