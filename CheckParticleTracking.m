@@ -92,8 +92,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % o Zoom in/out around the particle's first frame.
 % -/= Change the zoom factor when in zoom mode.
 % 0 Enter debug mode to fix things manually
-% ~ Switch figure 1 from a single plane image to a z or time
-% max-projection. Useful for estimating the fraction of active spots.
+% ~ Switch figure 1 from a single plane image to a z or time projection. 
 %
 % OUTPUT
 % Particles: A modified Particles
@@ -577,9 +576,9 @@ while (cc~='x')
                 Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                     FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);
             elseif strcmp(projectionMode,'Max Z')
-                [Image,~] = zProjections(Prefix, CurrentFrame, ZSlices, NDigits);
+                [Image,~] = zProjections(Prefix, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
             elseif strcmp(projectionMode,'Median Z')
-                [~,Image] = zProjections(Prefix, CurrentFrame, ZSlices, NDigits);
+                [~,Image] = zProjections(Prefix, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
             elseif strcmp(projectionMode,'Max Z and Time')
                 if isempty(storedTimeProjection)
                     if justNC13

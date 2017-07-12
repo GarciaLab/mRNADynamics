@@ -1,41 +1,52 @@
-function desiredTimeProjection = timeProjection(Prefix,varargin)
+function desiredProjection = timeProjection(Prefix,varargin)
 % timeProjection(Prefix, [Options])
 %
 % DESCRIPTION
-% This function will calculate the max time projection of the movie.
+% This function can calculate the max time projection of the movie.
 % By default it will make the max time projection using the max z
-% projections.
+% projections. There is an option to only return either the max or median z
+% projection of all the frames.
 %
 % ARGUEMENTS
 % Prefix: Prefix of the data set to analyze
-% DropboxFolder: Dropbox Folder the data set is in
 %
 % OPTIONS
-% 'median': Make the max time projection usin the median z projections
+% 'medianTimeProjection': Make the max time projection usin the median z projections
 % 'nc', NC: Choose which nc will be inluded in the timeProjection where NC
 %           must be a number or a vector of two numbers (the range of nc that
 %           will be included). 
 %           (Ex. NC = [12 14] will include nc12, nc13 and nc14)
+% 'onlyMaxZProjections': Only makes max Z projections for all frames
+% 'onlyMedianZProjections': Only makes median Z projections for all frames
+% 
 % OUTPUT
-% This will return the max time projection made from either the 
-% max z projections or median z projections.
+% By default, this will return the max time projection made from the 
+% max z projections. It can also make the max time projection using median 
+% z projections. It can also return only the max or median projection of
+% all frames.
 %
 % Author (contact): Emma Luu (emma_luu@berkeley.edu)
 % Created: 06/16/2017
-% Last Updated: 06/22/2017
-%
+% Last Updated: 07/10/2017
+% 
 % Documented by: Emma Luu (emma_luu@berkeley.edu)
 
 
 %% Checking Varargin
 h = waitbar(0,'Checking Varargin');
-useMedian = 0;
-ncRange = 0;
+useMedian = 0; % Indicates whether to use median z projection for time projection
+ncRange = 0; % Indicates whether to only do projection for a certain nc range
+maxZOnly = 0; % Indicates whether to only make max Z projections
+medianZOnly = 0; % Indicates whether to only make median Z projections
+
 if length(varargin)
-    
     for i=1:length(varargin)
-        if strcmpi(varargin{i}, 'median')
+        if strcmpi(varargin{i}, 'medianTimeProjection')
             useMedian = 1;
+        elseif strcmpi(varargin{i}, 'onlyMaxZProjections')
+            maxZOnly = 1;
+        elseif strcmpi(varargin{i}, 'onlyMedianZProjections')
+            medianZOnly = 1;
         end
         
         if strcmpi(varargin{i},'nc') % checking for the desired nc range
@@ -49,12 +60,14 @@ if length(varargin)
             end
         end
     end
+else
+    error('You did not give any inputs. You need to at least give the prefix.')
 end
 
 %% Information about the Folders and Frames 
 % Define and make them here instead of passing these from CheckParticleTracking
 waitbar(0,h,'Getting Relevant Folder Information');
-[~,~,DropboxFolder,~,~]= DetermineLocalFolders(Prefix);
+[~,~,DropboxFolder,~,PreProcPath]= DetermineLocalFolders(Prefix);
 [~,~,DefaultDropboxFolder,~,~]= DetermineLocalFolders;
 DataFolder=[DropboxFolder,filesep,Prefix];
 FilePrefix=[DataFolder(length(DropboxFolder)+2:end),'_'];
@@ -125,25 +138,32 @@ end
 waitbar(0,h,'Starting Z Projections');
 desiredZProjs = zeros(FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSlices);
 framesCompleted = 0;
-if useMedian
+if useMedian || medianZOnly
     for CurrentFrame = frameRange
         [~,desiredZProjs(:,:,CurrentFrame)] = ...
-            zProjections(Prefix, CurrentFrame, zSlices, NDigits);
+            zProjections(Prefix, CurrentFrame, zSlices, NDigits,DropboxFolder,PreProcPath);
         framesCompleted = 1 + framesCompleted;
         waitbar(framesCompleted/length(frameRange),h,'Making Z Median Projections');
     end
 else
     for CurrentFrame = frameRange
         [desiredZProjs(:,:,CurrentFrame),~]= ...
-            zProjections(Prefix, CurrentFrame, zSlices, NDigits);
+            zProjections(Prefix, CurrentFrame, zSlices, NDigits,DropboxFolder,PreProcPath);
         framesCompleted = 1 + framesCompleted;
+%         plot(desiredZProjs(:,:,CurrentFrame))
+%         title(['Frame: ' num2str(CurrentFrame)])
         waitbar(framesCompleted/length(frameRange),h,'Making Z Max Projections');
     end
 end
 %% Time Projections
 % Taking the max and median with respect to the time axis (3) 
-desiredTimeProjection = max(desiredZProjs,[],3);
-% figure(3)
-% imshow(desiredTimeProjection,[0 80]);
+
+if maxZOnly || medianZOnly
+    desiredProjection = desiredZProjs;
+else
+    desiredProjection = max(desiredZProjs,[],3);
+end
+% figure()
+% imshow(desiredTimeProjection,[0 80])
 close(h)
 end
