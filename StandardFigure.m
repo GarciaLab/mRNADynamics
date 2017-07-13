@@ -65,26 +65,26 @@ for i=1:length(PlotHandle)
     %Color section
   
     if strcmp(get(PlotHandle(i),'Type'),'hggroup')
-        try ChangeColor(PlotHandle(i),'FaceColor')
+        try ChangeColorPBoC2(PlotHandle(i),'FaceColor')
         end
-        try ChangeColor(PlotHandle(i),'Color')
+        try ChangeColorPBoC2(PlotHandle(i),'Color')
         end
     elseif strcmp(get(PlotHandle(i),'Type'),'errorbarseries')
         
     else
         %Why do I have this auto thingy?
         if isempty(strmatch(get(PlotHandle(i),'Color'),'auto'))
-            ChangeColor(PlotHandle(i),'Color')
+            ChangeColorPBoC2(PlotHandle(i),'Color')
         end
         try
         if isempty(strmatch(get(PlotHandle(i),'MarkerEdgeColor'),'auto'))
-            ChangeColor(PlotHandle(i),'MarkerEdgeColor')
+            ChangeColorPBoC2(PlotHandle(i),'MarkerEdgeColor')
         end
         catch
         end
 try
         if isempty(strmatch(get(PlotHandle(i),'MarkerFaceColor'),'auto'))
-            ChangeColor(PlotHandle(i),'MarkerFaceColor')
+            ChangeColorPBoC2(PlotHandle(i),'MarkerFaceColor')
         end
 catch
 end
@@ -191,9 +191,9 @@ end
 
 
 % %Change the color of the axes
-% try ChangeColor(AxisHandle,'XColor')
+% try ChangeColorPBoC2(AxisHandle,'XColor')
 % end
-% try ChangeColor(AxisHandle,'YColor')
+% try ChangeColorPBoC2(AxisHandle,'YColor')
 % end
 
 
