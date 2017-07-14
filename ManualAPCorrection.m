@@ -129,7 +129,7 @@ while (cc~=13)
     ct = waitforbuttonpress;
     ct=1;
     cc=get(FigureOverlay,'currentcharacter');
-    cm=get(gca,'CurrentPoint');
+    %cm=get(gca,'CurrentPoint');
     
 
     %Move up/down + left/right
@@ -137,17 +137,17 @@ while (cc~=13)
         ShiftColumn=ShiftColumn+1;
     elseif (ct~=0)&(cc==',')
         ShiftColumn=ShiftColumn-1;
-    elseif (ct~=0)&(cc=='a')
-        ShiftRow=ShiftRow-1;
     elseif (ct~=0)&(cc=='z')
+        ShiftRow=ShiftRow-1;
+    elseif (ct~=0)&(cc=='a')
         ShiftRow=ShiftRow+1;
     elseif (ct~=0)&(cc=='>')
         ShiftColumn=ShiftColumn+50;
     elseif (ct~=0)&(cc=='<')
         ShiftColumn=ShiftColumn-50;
-    elseif (ct~=0)&(cc=='A')
-        ShiftRow=ShiftRow-50;
     elseif (ct~=0)&(cc=='Z')
+        ShiftRow=ShiftRow-50;
+    elseif (ct~=0)&(cc=='A')
         ShiftRow=ShiftRow+50;
     elseif (ct~=0)&(cc=='m')
         display('Select a location to center the alignment box')
