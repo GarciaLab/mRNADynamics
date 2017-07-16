@@ -1,5 +1,5 @@
-function [maxProj, medianProj] = zProjections(Prefix, currentFrame, zSlices, nDigits)
-% zProjections(Prefix, currentFrame, zSlices, nDigits)
+function [maxProj, medianProj] = zProjections(Prefix, currentFrame, zSlices, nDigits,DropboxFolder,PreProcPath)
+% zProjections(Prefix, currentFrame, zSlices, nDigits,DropboxFolder,PreProcPath)
 %
 % DESCRIPTION
 % This function will calculate the max time projection of the movie.
@@ -13,6 +13,8 @@ function [maxProj, medianProj] = zProjections(Prefix, currentFrame, zSlices, nDi
 %          1:zSlices)
 % nDigits: This is 3 or 4 depending on whether totalFrames < 1E3 or 1E4
 %          respectively.
+% DropboxFolder: Dropbox folder path
+% PreProcPath: Preprocessed data path
 %
 % OPTIONS
 % none
@@ -27,8 +29,8 @@ function [maxProj, medianProj] = zProjections(Prefix, currentFrame, zSlices, nDi
 % Documented by: Emma Luu (emma_luu@berkeley.edu)
 
 %% Information about the Folders and Frames 
-[~,~,DropboxFolder,~,PreProcPath]=...
-    DetermineLocalFolders(Prefix);
+% [~,~,DropboxFolder,~,PreProcPath]=...
+%     DetermineLocalFolders(Prefix);
 DataFolder=[DropboxFolder,filesep,Prefix];
 load([DataFolder, filesep, 'FrameInfo.mat']);
 FilePrefix=[DataFolder(length(DropboxFolder)+2:end),'_'];
