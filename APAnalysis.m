@@ -56,8 +56,6 @@ function APAnalysis(dataset, controlset)
         for i = 1:size(fluo,2)
             cum(j,i) = trapz(data(j).ElapsedTime,fluo(:,i));
         end
-        referenceNaNs = data(j).EllipsesOnAP(:,2)./data(j).TotalEllipsesAP(:,2);
-        cum(j,isnan(referenceNaNs)) = NaN;
     end
     
     for j = 1:nsets0
@@ -69,16 +67,15 @@ function APAnalysis(dataset, controlset)
     for i = 1:length(cum)
         cummean(1, i) = nanmean(cum(:,i));
         cumstd(1, i) = nanstd(cum(:,i));
-%         if ~cummean(i)
-%             cummean(i) = NaN;
-%         end
-%          if ~cumstd(i)
-%             cumstd(i) = NaN;
-%          end
+        if ~cummean(i)
+            cummean(i) = NaN;
+        end
+         if ~cumstd(i)
+            cumstd(i) = NaN;
+         end
          cumstde(i) = cumstd(i) /  sqrt(sum(cum(:,i) ~= 0));
     end
-    
-    %Plotting Total average nuclear intensity across AP
+
     figure()
     clf('reset')
     for i = 1:nsets
@@ -96,6 +93,7 @@ function APAnalysis(dataset, controlset)
     xlabel('Fraction EL')
     ylabel('Intensity (A.U.)')
     standardizeFigure(gca, legend('show'))
+    
     
     %Control fraction on
     figure()
@@ -156,6 +154,7 @@ function APAnalysis(dataset, controlset)
     xlabel('Fraction EL')
     ylabel('Fraction on')
     standardizeFigure(gca, legend('show'))
+    
     
     %This figure will correct fraction on from the experiment using the negative control's  fraction on. 
     figure()
