@@ -95,6 +95,7 @@ function APAnalysis(dataset, controlset)
     standardizeFigure(gca, legend('show'))
     
     
+    
     %Control fraction on
     figure()
     clf('reset')
@@ -154,6 +155,7 @@ function APAnalysis(dataset, controlset)
     xlabel('Fraction EL')
     ylabel('Fraction on')
     standardizeFigure(gca, legend('show'))
+    
     
     
     %This figure will correct fraction on from the experiment using the negative control's  fraction on. 
