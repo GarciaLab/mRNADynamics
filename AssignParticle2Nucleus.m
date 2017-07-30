@@ -2,11 +2,6 @@ function [Particles,SpotFilter,schnitzcells]=AssignParticle2Nucleus(...
     schnitzcells,Ellipses,Particles,Spots,SpotFilter,...
     CurrentFrame,PixelSize,SearchRadius,SpotsPerNucleus)
 
-
-
-
-
-
 %Find the N closest particles to each nucleus. N is determined by
 %ExperimentType (1spot, 2spots). If N>1, then the code also uses the spot
 %position for tracking.
@@ -69,83 +64,10 @@ if ~isempty(NewSpotsX)
         end
     end
     
-%     %Set any distances that are larger than SearchRadius to infinity
-%     Distance(Distance>SearchRadius)=inf;    
-    
     %MinIndex is a row vector. The position in MinIndex
     %corresponds to each spot. The value at that
     %position corresponds to the closest ellipse.
     [MinValues,MinIndex]=min(Distance');
-    
-%     %Allow only the closest SpotsPerNucleus spots to be close to each
-%     %Ellipse.
-%     %Find the unique Ellipses
-%     UniqueEllipses=unique(MinIndex);
-%     %Check how many spots are associated with each UniqueEllipse. If there
-%     %are more than SpotsPerNucleus spots closest to a given Ellipse, we'll
-%     %set their distances to infinity and recalculate MinValues and
-%     %MinIndex.
-%     
-%     %How many spots are closest to a nucleus?
-%     NSpotsPerNucleusCurrent=zeros(size(UniqueEllipses));
-%     for j=1:length(UniqueEllipses)
-%         NSpotsPerNucleusCurrent(j)=sum(MinIndex==UniqueEllipses(j));
-%     end
-%     
-%     MinValues(MinIndex==17)
-%     
-%     for j=1:length(UniqueEllipses)
-%         if sum(MinIndex==UniqueEllipses(j))>SpotsPerNucleus
-%             %Find the indices of teh Spots that are closest to this Ellipse
-%             %from MinIndex.
-%             ClosestSpots=find(MinIndex==UniqueEllipses(j));
-%             %Sort the Spots according to their distance to the Ellipse.
-%             [SortedValues,SortedIndices]=sort(MinValues(MinIndex==UniqueEllipses(j)));
-%             %Set the distance of the remaining Spots to this Ellipse to
-%             %infinity
-%             Distance(ClosestSpots(SortedIndices(SpotsPerNucleus+1:end)),UniqueEllipses(j))=inf;
-%         end
-%     end
-%     
-%     %Recalculate MinValues and MinIndex in case we made some changes in the
-%     %for-loop above.
-%     [MinValues,MinIndex]=min(Distance');
-%     %Recalculate the unique ellipses
-%     UniqueEllipses=unique(MinIndex);
-%     %Recalculate the number of spots closest to each nucleus
-%     NSpotsPerNucleusCurrent=zeros(size(UniqueEllipses));
-%     for j=1:length(UniqueEllipses)
-%         NSpotsPerNucleusCurrent(j)=sum(MinIndex==UniqueEllipses(j));
-%     end
-%     
-%     
-%     
-%     while sum(NSpotsPerNucleusCurrent>SpotsPerNucleus)
-%         for j=1:length(UniqueEllipses)
-%             if sum(MinIndex==UniqueEllipses(j))>SpotsPerNucleus
-%                 %Find the indices of teh Spots that are closest to this Ellipse
-%                 %from MinIndex.
-%                 ClosestSpots=find(MinIndex==UniqueEllipses(j));
-%                 %Sort the Spots according to their distance to the Ellipse.
-%                 [SortedValues,SortedIndices]=sort(MinValues(MinIndex==UniqueEllipses(j)));
-%                 %Set the distance of the remaining Spots to this Ellipse to
-%                 %infinity
-%                 Distance(ClosestSpots(SortedIndices(SpotsPerNucleus+1:end)),UniqueEllipses(j))=inf;
-%             end
-%         end
-%         %Recalculate MinValues and MinIndex in case we made some changes in the
-%         %for-loop above.
-%         [MinValues,MinIndex]=min(Distance');
-%         %Recalculate the unique ellipses
-%         UniqueEllipses=unique(MinIndex);
-%         %Recalculate the number of spots closest to each nucleus
-%         NSpotsPerNucleusCurrent=zeros(size(UniqueEllipses));
-%         for j=1:length(UniqueEllipses)
-%             NSpotsPerNucleusCurrent(j)=sum(MinIndex==UniqueEllipses(j));
-%         end
-%     end
-%         
-        
                
     %If retracking, set the distance of the already assigned spots to
     %infinity
@@ -185,13 +107,7 @@ if ~isempty(NewSpotsX)
     %Find the schnitz that were closest to the spots found in this frame.
     UniqueMinIndexSchnitz=unique(MinIndexSchnitz);
 
-    
-    %For debugging
-    if CurrentFrame==2
-        1+1;
-    end
-    
-    
+        
     
     for i=1:length(UniqueMinIndexSchnitz)
         
@@ -289,145 +205,6 @@ if ~isempty(NewSpotsX)
                     SpotToParticleIndices(MinIndexParticles);
                 NewParticlesFlag(SpotToParticleIndices(MinIndexParticles))=0;
             end
-            
-%             
-%             
-%             for j=1:length(UniqueMinIndexParticles)
-%                 if sum(MinIndexParticles==UniqueMinIndexParticles(j))>1
-%                     %Find the indices of teh Spots that are closest to this Ellipse
-%                     %from MinIndex.
-%                     ClosestSpots=find(MinIndexParticles==UniqueMinIndexParticles(j));
-%                     %Sort the Spots according to their distance to the Ellipse.
-%                     [SortedValues,SortedIndices]=...
-%                         sort(MinValuesParticles(MinIndexParticles==UniqueMinIndexParticles(j)));
-%                     %Set the distance of the remaining Spots to this Ellipse to
-%                     %infinity
-%                     DistanceParticles(ClosestSpots(SortedIndices(2:end)),UniqueMinIndexParticles(j))=inf;
-%                 end
-%             end
-
-%             
-%             
-%             
-%             %I need to keep doing this until            
-%             if length(UniqueMinIndexParticles)<length(MinIndexParticles)
-%                 for j=1:length(UniqueMinIndexParticles)
-%                     %Check whether more than one spot is matched to the same
-%                     %particle.
-%                     if sum(MinIndexParticles==UniqueMinIndexParticles(j))>1
-%                         [Dummy,SortOrder]=...
-%                             sort(MinValuesParticles(MinIndexParticles==UniqueMinIndexParticles(j)));
-%                         DistanceParticles(SortOrder(2:end),UniqueMinIndexParticles(j))=inf;
-%                     end
-%                 end
-%                 [MinValuesParticles,MinIndexParticles]=min(DistanceParticles');
-%                 UniqueMinIndexParticles=unique(MinIndexParticles);
-%             end
-            
-%             
-%             %I need to keep doing this until            
-%             while length(UniqueMinIndexParticles)<length(MinIndexParticles)
-%                 for j=1:length(UniqueMinIndexParticles)
-%                     %Check whether more than one spot is matched to the same
-%                     %particle.
-%                     if sum(MinIndexParticles==UniqueMinIndexParticles(j))>1
-%                         [Dummy,SortOrder]=...
-%                             sort(MinValuesParticles(MinIndexParticles==UniqueMinIndexParticles(j)));
-%                         DistanceParticles(SortOrder(2:end),UniqueMinIndexParticles(j))=inf;
-%                     end
-%                 end
-%                 [MinValuesParticles,MinIndexParticles]=min(DistanceParticles');
-%                 UniqueMinIndexParticles=unique(MinIndexParticles);
-%             end
-%             
-%             
-% 
-%             %Assign the spots to their corresponding particles. I need to
-%             %consider the case where there was only one previous particle.
-%             if length(ParticleToAssign)>1
-%                 %If we have more than one previous particle, I can make use
-%                 %of the matrix Distance, of MinValuesParticles, and
-%                 %MinIndexParticles.
-%                 for j=1:length(MinIndexParticles)
-%                     %Which particle does this spot go to?
-%                     CurrentParticleToAssign=ParticleToAssign(MinIndexParticles(j));
-%                     %Copy the information onto this particle
-%                     Particles(CurrentParticleToAssign).Frame(end+1)=CurrentFrame;
-%                     Particles(CurrentParticleToAssign).Index(end+1)=SpotToParticleIndices(j);
-%                     NewParticlesFlag(SpotToParticleIndices(j))=0;
-%                 end
-%             else
-%                 %If we have only one previous particle, I need to be more
-%                 %careful about the values MinIndexParticles and MinValuesParticles.
-%                 
-%                 %Which particle does this spot go to?
-%                 CurrentParticleToAssign=ParticleToAssign;
-%                 %Copy the information onto this particle
-%                 Particles(CurrentParticleToAssign).Frame(end+1)=CurrentFrame;
-%                 Particles(CurrentParticleToAssign).Index(end+1)=...
-%                     SpotToParticleIndices(MinIndexParticles);
-%                 NewParticlesFlag(SpotToParticleIndices(MinIndexParticles))=0;
-%             end
-% 
-% 
-%             
-            
-            
-                        
-%             if ~sum(Particles(ParticleToAssign).Frame==CurrentFrame)
-%                 if ((sum(MinIndexSchnitz==UniqueMinIndexSchnitz(i)))==1)&(~isempty(ParticleToAssign))&...
-%                         (MinValues(MinIndexSchnitz==UniqueMinIndexSchnitz(i)))<SearchRadius*PixelSize
-%                     %One particle is assigned to a previous one within a nucleus
-% 
-%                     Particles(ParticleToAssign).Frame(end+1)=CurrentFrame;
-%                     Particles(ParticleToAssign).Index(end+1)=find(MinIndexSchnitz==...
-%                                     UniqueMinIndexSchnitz(i));
-%                     NewParticlesFlag(find(MinIndexSchnitz==...
-%                         UniqueMinIndexSchnitz(i)))=0;
-% 
-% 
-%                 elseif (~isempty(ParticleToAssign))&...
-%                         (sum(MinIndexSchnitz==UniqueMinIndexSchnitz(i))>1)
-%                     %Two or more particles are assigned to the same previous
-%                     %nucleus.
-% 
-% 
-%                     %Find the previous particle assigned to this nucleus
-%                     PreviousParticleIndex=find(AssignedNuclei==UniqueMinIndexNuclei(i));
-% 
-%                     %Get the last position of the previous particle
-%                     [PreviousParticlesX,PreviousParticlesY]=...
-%                         SpotsXYZ(Spots(Particles(PreviousParticleIndex).Frame(end)));
-%                                                         
-%                     PreviousParticleX=PreviousParticlesX(Particles(PreviousParticleIndex).Index(end));
-%                     PreviousParticleY=PreviousParticlesY(Particles(PreviousParticleIndex).Index(end));
-% 
-%                     MinFilter=find(MinIndexNuclei==UniqueMinIndexNuclei(i));
-% 
-%                     NewNewSpotsX=NewSpotsX(MinFilter);
-%                     NewNewSpotsY=NewSpotsY(MinFilter);
-% 
-%                     %Calculate their distances
-%                     clear Distance
-% 
-%                     for j=1:length(NewNewSpotsX)
-%                         Distance(j,:)=sqrt((NewNewSpotsX(j)*PixelSize-...
-%                             PreviousParticleX*PixelSize).^2+...
-%                             (NewNewSpotsY(j)*PixelSize-...
-%                             PreviousParticleY*PixelSize).^2);
-%                     end
-%                     %MinIndex tells us which one of the candidates is
-%                     %closer
-%                     [MinValues2,MinIndex]=min(Distance');
-% 
-%                     %This is the index of the particle found
-%                     if Distance(MinIndex)<SearchRadius*PixelSize
-%                         Particles(PreviousParticleIndex).Frame(end+1)=CurrentFrame;
-%                         Particles(PreviousParticleIndex).Index(end+1)=MinFilter(MinIndex);
-%                         NewParticlesFlag(MinFilter(MinIndex))=0;
-%                     end
-%                 end
-%             end
         end
     end
 
@@ -441,20 +218,24 @@ if ~isempty(NewSpotsX)
 
     for i=1:length(NewParticlesIndices)
 
-        %Recalculate the assigned nuclei. This is useful in case two
-        %new particles are closed to a given new nucleus. Right now it
+        %Recalculate the assigned nuclei in this frame. Note that this is different
+        %from AssignedSchnitz in the sense that it asks how many Particles exist in
+        %this frame associated with a given Schnitz. 
+        %This is useful in case two new particles are closed to a given new nucleus. Right now it
         %will assign the first particle found. I might have to change
         %this if it becomes too annoying.
-        AssignedSchnitz=[];         %These keeps track of which nuclei have
+        AssignedSchnitzCurrentFrame=[];         %These keeps track of which nuclei have
                                     %already been assigned to particles
         for j=1:length(Particles)
-            AssignedSchnitz=[AssignedSchnitz,Particles(j).Nucleus];
+            if sum(Particles(j).Frame==CurrentFrame)
+                AssignedSchnitzCurrentFrame=[AssignedSchnitzCurrentFrame,Particles(j).Nucleus];
+            end
         end
 
 
         %Make sure the total number of particles assigned to this schnitz
         %is not higher than SpotsPerNucleus
-        if sum(AssignedSchnitz==MinIndexSchnitz(NewParticlesIndices(i)))<SpotsPerNucleus
+        if sum(AssignedSchnitzCurrentFrame==MinIndexSchnitz(NewParticlesIndices(i)))<SpotsPerNucleus
             Particles(end+1).Frame=CurrentFrame;
             Particles(end).Index=NewParticlesIndices(i);
             Particles(end).Nucleus=MinIndexSchnitz(NewParticlesIndices(i));
