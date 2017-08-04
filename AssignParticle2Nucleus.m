@@ -111,14 +111,26 @@ if ~isempty(NewSpotsX)
     
     for i=1:length(UniqueMinIndexSchnitz)
         
-        %Find the particles that are already assigned to this schnitz
+        if (CurrentFrame==12)&(UniqueMinIndexSchnitz(i)==15)
+            1+1
+        end
+        
+        
+        %Find the particles that are assigned to this schnitz
         ParticleToAssign=find(AssignedSchnitz==UniqueMinIndexSchnitz(i));
 
         %Are there any particles in previous frames that are assigned to
         %this schnitz? If not, we move on and define the current spots as
         %new particles.
         if ~isempty(ParticleToAssign)
-            %Spots I need to locate to this schnitz
+            
+            %HG: For debugging
+            if length(ParticleToAssign)>2
+                1+1
+            end
+            
+            
+            %Find the spots I need to locate to this schnitz
             SpotToParticleIndices=find(MinIndexSchnitz==UniqueMinIndexSchnitz(i));
             %Get the spots' XY positions
             SpotToParticleX=NewSpotsX(SpotToParticleIndices);
@@ -141,70 +153,157 @@ if ~isempty(NewSpotsX)
             %Calculate the distance of the Spots to the Particles
             %within this schnitz.
 
+            
 
-            %Calculate the distances between the spots on this frame and the
-            %ellipses
-            clear DistanceParticles
-
-            for j=1:length(SpotToParticleX)
-                DistanceParticles(j,:)=sqrt((SpotToParticleX(j)*PixelSize-...
-                    PreviousParticlesX*PixelSize).^2+...
-                    (SpotToParticleY(j)*PixelSize-...
-                    PreviousParticlesY*PixelSize).^2);
+            
+            %Get the spots that are the nearest neighbors to
+            %each the previous particles
+            [NewSpotToAssign,DistancesToNewSpots] =...
+                knnsearch([SpotToParticleX;SpotToParticleY]'*PixelSize,...
+                [PreviousParticlesX;PreviousParticlesY]'*PixelSize,...
+                'K',SpotsPerNucleus);
+            %Each row in NewSpotToAssign corresponds to the previous
+            %particles. The index within that row tells us which new spot
+            %it is closest to. Subsequent columns go beyond the nearest
+            %neighbor, and tell us about higher-order neighbors.
+            
+%             %If the number of spots less than SpotsPerNucleus, then the
+%             %code doesn't generate the 2nd and higher order nearest
+%             %neighbors. In that case, pad the results from knnsearch.
+%             if size(DistancesToNewSpots,2)<SpotsPerNucleus
+%                 DistancesToNewSpots=padarray(DistancesToNewSpots,[0,SpotsPerNucleus-size(DistancesToNewSpots,2)],'post');
+%                 NewSpotToAssign=padarray(NewSpotToAssign,[0,SpotsPerNucleus-size(NewSpotToAssign,2)],'post');
+%                 DistancesToNewSpots(DistancesToNewSpots==0)=nan;
+%                 NewSpotToAssign(NewSpotToAssign==0)=nan;
+%             end
+            
+            
+            %Sometimes, two or more new spots are nearest to the same particle. We want to make
+            %sure that the farther one gets assigned to the next most appropriate
+            %particle.
+            %I'll go though each unique set of indices in each column of
+            %NewSpotToAssign (which correspond to the new spots).
+            for j=1:size(NewSpotToAssign,2)
+                %Find the indices that are repeated in this column. This means that we
+                %have multiple new spots assigned to the previous particle.
+                UniqueNewSpotIndices=unique(NewSpotToAssign(:,j));
+                for k=1:length(UniqueNewSpotIndices)
+                    %Find the positions in this column that correspond to the multiply
+                    %assigned new spots
+                    Positions=find(NewSpotToAssign(:,j)==UniqueNewSpotIndices(k));
+                    %Find the minimum distance, and set the other ones to infinity
+                    [~,MinIndexPositions]=min(DistancesToNewSpots(Positions,j));
+                    DistancesToNewSpots(Positions(~ismember(Positions,Positions(MinIndexPositions))),j)=inf;
+                    %Also, set the distance to this spot with respect to
+                    %the other particles to infinity.
+                    DistancesToNewSpots(Positions(ismember(Positions,Positions(MinIndexPositions))),j+1:end)=inf;
+                end
             end
-            %MinIndexParticles is a row vector. The position in MinIndex
-            %corresponds to each spot. The value at that
-            %position corresponds to the closest particle. Note that this
-            %is not true if we have only one particle
-            [MinValuesParticles,MinIndexParticles]=min(DistanceParticles');
+            %Now, we can remake the assignment list and the distances
+            [DistancesToNewSpots,NewSpotToAssignIndices]=min(DistancesToNewSpots,[],2);
+            clear NewSpotToAssignTemp
+            for j=1:length(NewSpotToAssignIndices)
+                NewSpotToAssignTemp(j)=NewSpotToAssign(j,NewSpotToAssignIndices(j));
+            end
+            NewSpotToAssign=NewSpotToAssignTemp';
+            
+%             %Old Version:
+%             %Assign the new spots to the previous particles
+%             for j=1:length(ParticleToAssign)
+%                 if ~isinf(DistancesToNewSpots(j))
+%                     SpotIndexToCopy=SpotToParticleIndices(NewSpotToAssign(j));
+%                     %Finally, copy the information onto this particle.
+%                     Particles(ParticleToAssign(j)).Index(end+1)=SpotIndexToCopy;
+%                     Particles(ParticleToAssign(j)).Frame(end+1)=CurrentFrame;
+%                     %Remove this spot from the pool so that it doesn't get
+%                     %assigned to a new particle at the end of the code
+%                     NewParticlesFlag(SpotIndexToCopy)=0;
+%                 end
+%             end
             
             
-            %Sometimes the two or more new Spots are closer to the same
-            %previous Particle. In that case, only keep the closest
-            %Spot-Particle pair and set the distance of the other spots to
-            %the same particle to infinity.
-            UniqueMinIndexParticles=unique(MinIndexParticles);
-            
-                        
-            %Assign the spots to their corresponding particles. I need to
-            %consider the case where there was only one previous particle.
-            if length(ParticleToAssign)>1
-                %If we have more than one previous particle, I can make use
-                %of the matrix Distance, of MinValuesParticles, and
-                %MinIndexParticles.
-                for j=1:length(UniqueMinIndexParticles)
-                    %Which particle does this spot go to?
-                    CurrentParticleToAssign=ParticleToAssign(UniqueMinIndexParticles(j));
-                    %Which spot needs to be copied onto this particle? I
-                    %need to consider that I might have more than one spot
-                    %that could be assigned to a particle. In this case,
-                    %I'll use distance.
-
-                    if sum(MinIndexParticles==UniqueMinIndexParticles(j))==1
-                        SpotIndexToCopy=SpotToParticleIndices(find(MinIndexParticles==UniqueMinIndexParticles(j)));
-                    else
-                        [Dummy,SortOrder]=sort(MinValuesParticles(MinIndexParticles==UniqueMinIndexParticles(j)));
-                        SpotIndicesTemp=SpotToParticleIndices(MinIndexParticles==UniqueMinIndexParticles(j));
-                        SpotIndexToCopy=SpotIndicesTemp(SortOrder(1));
-                    end
-                    
+            %Assign the new spots to their corresponding particles
+            for j=1:length(ParticleToAssign)
+                if ~isinf(DistancesToNewSpots(j))
+                    SpotIndexToCopy=SpotToParticleIndices(NewSpotToAssign(j));
                     %Finally, copy the information onto this particle.
-                    Particles(CurrentParticleToAssign).Index(end+1)=SpotIndexToCopy;
-                    Particles(CurrentParticleToAssign).Frame(end+1)=CurrentFrame;
+                    Particles(ParticleToAssign(j)).Index(end+1)=SpotIndexToCopy;
+                    Particles(ParticleToAssign(j)).Frame(end+1)=CurrentFrame;
+                    %Remove this spot from the pool so that it doesn't get
+                    %assigned to a new particle at the end of the code
                     NewParticlesFlag(SpotIndexToCopy)=0;
                 end
-            else
-                %If we have only one previous particle, I need to be more
-                %careful about the values MinIndexParticles and MinValuesParticles.
-                
-                %Which particle does this spot go to?
-                CurrentParticleToAssign=ParticleToAssign;
-                %Copy the information onto this particle
-                Particles(CurrentParticleToAssign).Frame(end+1)=CurrentFrame;
-                Particles(CurrentParticleToAssign).Index(end+1)=...
-                    SpotToParticleIndices(MinIndexParticles);
-                NewParticlesFlag(SpotToParticleIndices(MinIndexParticles))=0;
             end
+            
+            
+
+%             [MinValuesParticles,MinIndexParticles]=SortDistances([SpotToParticleX;SpotToParticleY]',...
+%                ,PixelSize)
+
+%             
+%             %Calculate the distances between the spots on this frame and the
+%             %ellipses
+%             clear DistanceParticles
+% 
+%             for j=1:length(SpotToParticleX)
+%                 DistanceParticles(j,:)=sqrt((SpotToParticleX(j)*PixelSize-...
+%                     PreviousParticlesX*PixelSize).^2+...
+%                     (SpotToParticleY(j)*PixelSize-...
+%                     PreviousParticlesY*PixelSize).^2);
+%             end
+%             %MinIndexParticles is a row vector. The position in MinIndex
+%             %corresponds to each spot. The value at that
+%             %position corresponds to the closest particle. Note that this
+%             %is not true if we have only one particle
+%             [MinValuesParticles,MinIndexParticles]=min(DistanceParticles');
+%             
+%             
+%             %Sometimes the two or more new Spots are closer to the same
+%             %previous Particle. In that case, only keep the closest
+%             %Spot-Particle pair and set the distance of the other spots to
+%             %the same particle to infinity.
+%             UniqueMinIndexParticles=unique(MinIndexParticles);
+%             
+%                         
+%             %Assign the spots to their corresponding particles. I need to
+%             %consider the case where there was only one previous particle.
+%             if length(ParticleToAssign)>1
+%                 %If we have more than one previous particle, I can make use
+%                 %of the matrix Distance, of MinValuesParticles, and
+%                 %MinIndexParticles.
+%                 for j=1:length(UniqueMinIndexParticles)
+%                     %Which particle does this spot go to?
+%                     CurrentParticleToAssign=ParticleToAssign(UniqueMinIndexParticles(j));
+%                     %Which spot needs to be copied onto this particle? I
+%                     %need to consider that I might have more than one spot
+%                     %that could be assigned to a particle. In this case,
+%                     %I'll use distance.
+% 
+%                     if sum(MinIndexParticles==UniqueMinIndexParticles(j))==1
+%                         SpotIndexToCopy=SpotToParticleIndices(find(MinIndexParticles==UniqueMinIndexParticles(j)));
+%                     else
+%                         [Dummy,SortOrder]=sort(MinValuesParticles(MinIndexParticles==UniqueMinIndexParticles(j)));
+%                         SpotIndicesTemp=SpotToParticleIndices(MinIndexParticles==UniqueMinIndexParticles(j));
+%                         SpotIndexToCopy=SpotIndicesTemp(SortOrder(1));
+%                     end
+%                     
+%                     %Finally, copy the information onto this particle.
+%                     Particles(CurrentParticleToAssign).Index(end+1)=SpotIndexToCopy;
+%                     Particles(CurrentParticleToAssign).Frame(end+1)=CurrentFrame;
+%                     NewParticlesFlag(SpotIndexToCopy)=0;
+%                 end
+%             else
+%                 %If we have only one previous particle, I need to be more
+%                 %careful about the values MinIndexParticles and MinValuesParticles.
+%                 
+%                 %Which particle does this spot go to?
+%                 CurrentParticleToAssign=ParticleToAssign;
+%                 %Copy the information onto this particle
+%                 Particles(CurrentParticleToAssign).Frame(end+1)=CurrentFrame;
+%                 Particles(CurrentParticleToAssign).Index(end+1)=...
+%                     SpotToParticleIndices(MinIndexParticles);
+%                 NewParticlesFlag(SpotToParticleIndices(MinIndexParticles))=0;
+%             end
         end
     end
 
@@ -216,6 +315,7 @@ if ~isempty(NewSpotsX)
     %therefor need to be disapproved by flagging them in SpotFilter
     IndexToMove=[];
 
+   
     for i=1:length(NewParticlesIndices)
 
         %Recalculate the assigned nuclei in this frame. Note that this is different
@@ -242,9 +342,9 @@ if ~isempty(NewSpotsX)
             if Retracking
                 Particles(end).Approved=0;
             end
-
-        %If the spot cannot be assigned to a particle and schnitz, then we'll
-        %take the spot out using SpotFilter.
+        else
+            %If the spot cannot be assigned to a particle and schnitz, then we'll
+            %take the spot out using SpotFilter.
             IndexToMove=[IndexToMove,i];
         end
     end
