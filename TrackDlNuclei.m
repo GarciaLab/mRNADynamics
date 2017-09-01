@@ -19,17 +19,18 @@ SkipMovie=0;        %Do not generate the movie
 ApproveAll=0;       %Only use manually approved particles
 MinParticles=4;     %Require 4 particles per AP bin or else discard
 
-if isempty(varargin)
-    FolderTemp=uigetdir(DefaultDropboxFolder,'Select folder with data to analyze');
-    Dashes=strfind(FolderTemp,filesep);
-    Prefix=FolderTemp((Dashes(end)+1):end);
-else
-    Prefix=varargin{1};
+% if isempty(varargin)
+%     FolderTemp=uigetdir(DefaultDropboxFolder,'Select folder with data to analyze');
+%     Dashes=strfind(FolderTemp,filesep);
+%     Prefix=FolderTemp((Dashes(end)+1):end);
+Prefix=varargin{1};
 
-    for i=2:length(varargin)
-        if strcmp(varargin{i},'InvertChannel')
-            display('The inverted dl channel will be used')
-            Invert=1;
+for i=1:length(varargin)
+    if strcmp(varargin{i},'InvertChannel')
+        display('The inverted dl channel will be used')
+        Invert=1;
+    else
+        Invert = 0;
 %         elseif strcmp(varargin{i},'SkipTraces')
 %             SkipTraces=1;
 %         elseif strcmp(varargin{i},'SkipFluctuations')
@@ -47,10 +48,9 @@ else
 %             ApproveAll=1;
 %         elseif strcmp(varargin{i},'SetMinParticles')
 %             MinParticles = input('Set minimum particle threshold:');
-        end
     end
-
 end
+
 FilePrefix=[Prefix,'_'];
 
 %Now get the actual Dropbox folder

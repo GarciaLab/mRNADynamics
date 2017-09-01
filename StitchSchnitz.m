@@ -131,9 +131,9 @@ for i=1:length(Thresholds)
                         schnitzcells(s1).ceny = [schnitzcells(s1).ceny schnitzcells(s2).ceny]; %
                         schnitzcells(s1).len = [schnitzcells(s1).len schnitzcells(s2).len]; %
                         schnitzcells(s1).cellno = [schnitzcells(s1).cellno schnitzcells(s2).cellno]; %
-                        schnitzcells(s1).P = [schnitzcells(s1).P schnitzcells(s2).P];
-                        schnitzcells(s1).D = [schnitzcells(s1).D schnitzcells(s2).D]; 
-                        schnitzcells(s1).E = [schnitzcells(s1).E schnitzcells(s2).E];
+                        %schnitzcells(s1).P = [schnitzcells(s1).P schnitzcells(s2).P];
+                        %schnitzcells(s1).D = [schnitzcells(s1).D schnitzcells(s2).D]; 
+                        %schnitzcells(s1).E = [schnitzcells(s1).E schnitzcells(s2).E];
 
                         %The Fluo field is only present in input-output
                         %function mode

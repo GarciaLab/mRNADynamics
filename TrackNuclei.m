@@ -416,10 +416,16 @@ end
 %Now save
 mkdir([DropboxFolder,filesep,Prefix])
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
-%Change the name of the Circle variable to make it more understandble when
-%loaded independently
-IntegrationArea=Circle;
-save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells','IntegrationArea')
+
+if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'input')
+    %Change the name of the Circle variable to make it more understandble when
+    %loaded independently
+    IntegrationArea=Circle;
+    save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells','IntegrationArea')
+else
+    save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells')
+end
+
 if ~exist([FISHPath,filesep,Prefix,'_'])
     mkdir([FISHPath,filesep,Prefix,'_'])
 end
