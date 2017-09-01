@@ -1,4 +1,4 @@
-function arff = makeArff(Prefix, groundTruth)
+function arff = makeArff(Prefix)
 % makeArff(groundTruth)
 %
 % DESCRIPTION
@@ -8,8 +8,6 @@ function arff = makeArff(Prefix, groundTruth)
 % ARGUMENTS
 % 'Prefix': Useful for getting pixel information from FrameInfo not
 %           present in the 'groundTruth' structure.
-% 'groundTruth': An binary image containing ground truth pixel identity for
-% each z-slice of each frame.
 %
 % OPTIONS
 % None.
@@ -31,7 +29,8 @@ frameInfo = frameInfo.FrameInfo;
 rows = frameInfo(1).LinesPerFrame;
 cols = frameInfo(1).PixelsPerLine;
 zSlices = frameInfo(1).NumberSlices;
-numFrames = length(frameInfo);
+Spots = load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat']);
+numFrames = length(Spots.Spots);
 
 %Reading in the filters from a file that happens to contain all of them.
 in_path = 'C:\Users\ArmandoReimer\Desktop\GermLineCloneP2P All filters data.arff';
@@ -41,10 +40,16 @@ filters = filters(2:end-1);
 numFilters = length(filters);
 
 for i = 1:numFrames
-    im = [PreProcPath,filesep,'stacks', filesep, iIndex(i,3),'.tif'];
-    groundTruth = [FISHPath,filesep,Prefix, filesep, 'binary_masks', filesep, 'binary_stack_',Prefix,'_',iIndex(i,3),'.tif'];
+    imPath= [PreProcPath,filesep,Prefix,filesep,'stacks', filesep, iIndex(i,3),'.tif'];
+    truthPath = [FISHPath,filesep,Prefix,'_', filesep, 'binary_masks', filesep, 'binary_stack_',Prefix,'_',iIndex(i,3),'.tiff'];
+    im = zeros(rows,cols,zSlices);
+    groundTruth = zeros(rows,cols,zSlices);
+    for j = 1:zSlices
+        im(:,:,j) = imread(imPath, j);
+        groundTruth(:,:,j) = imread(truthPath, j);
+    end
     if i==1
-        fCell = [{'original'; im},{'class', groundTruth}];
+        fCell = [{'original'; im},{'class'; groundTruth}];
         for o = 1:numFilters
             filterName = filters{o};
             filterType = regexp(filterName,'\D*(?=_\d)', 'match');

@@ -89,9 +89,9 @@ for t = 1:f_max
     end
     %Write labeled stack to Tif 
     d = floor(log10(t));
-    imwrite(uint16(zStack_binary{1}), [BinaryPath '/' 'binary_stack_' Prefix '_' zero_string(d+1:digits) num2str(t) '.tiff']);
+    imwrite(uint16(zStack_binary{1}), [BinaryPath '/' 'binary_stack_' Prefix '_',iIndex(t,3),'.tiff']);
     for z = 2:length(zStack_binary)
-        imwrite(uint16(zStack_binary{z}), [BinaryPath '/' 'binary_stack_' Prefix '_' zero_string(d+1:digits) num2str(t) '.tiff'], 'WriteMode', 'append');
+        imwrite(uint16(zStack_binary{z}), [BinaryPath '/' 'binary_stack_' Prefix '_',iIndex(t,3),'.tiff'], 'WriteMode', 'append');
     end
     if WriteWeights
         %Write weights (Just testing for now)
