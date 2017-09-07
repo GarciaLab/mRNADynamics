@@ -1336,134 +1336,158 @@ elseif strcmp(FileMode,'DSPIN')
     %%Thus endeth the excel file reading section.
     
     
-    if strcmp(FileMode, 'DSPIN')        %Nikon spinning disk with .nd file mode   CS *NB* the variable names are all different. sorry! will fix later
-        
-        NSeries = length(DSPIN);
-        FrameTimes = cell(NSeries,1);
-        TimeDiff = zeros(NSeries,1);
-        TimeVector = [];
-        TimeDiff2 = zeros(NSeries,1);
-        
-        %Deal with ordering of files if more than 9 series in the
-        %acquisition (so 1, 2, .... 10 .  rather than 1, 10, 2...)
-        fileName = cell(1,length(DSPIN));
-        
-        for ii = 1:length(DSPIN)
-            fileName{ii} = DSPIN(ii).name;
+    
+    %Get the flat-field information
+    FFDir = dir([SourcePath, filesep, Prefix(1:10), filesep,  'FF*.tif']);
+    
+    if length(FFDir)==1
+        DSPINFF = bfopen([SourcePath, filesep, Prefix(1:10), filesep, FFDir(1).name]);
+    elseif isempty(FFDir)
+        display('Error: no flat field file found, proceeding with it.');
+    else
+        DSPINFF = uigetfile([SourcePath, filesep, Prefix(1:10)],'Select flatfield file');
+    end
+    
+    if exist('DSPINFF')
+        FF = DSPINFF{1}{1,1};
+    
+        %Find the channel with the highest counts (CS this will be the coat protein channel that we care about)
+        for iFrame=1:size(DSPINFF{1},1)
+            MaxValue(iFrame)=max(max(DSPINFF{1}{iFrame,1}));
         end
+        [~,ChannelToUse]=max(MaxValue);
+        imwrite(DSPINFF{1}{ChannelToUse,1},[OutputFolder,filesep,Prefix,'_FF.tif']);
+    end
         
-        fileNameSort = natsort(fileName);          %need to have natsort function downloaded from matlab central fileexchange and in mRNADynamics folder
-        
-        %This first for loop is to load the data & metadata from each series and to generate the overall time vector
-        for iSeries = 1:NSeries
-            
-            %Load the data
-            DSPINdata(iSeries,:) = bfopen([Folder, filesep, char(fileNameSort(iSeries))]);
-            DSPINimages{iSeries,:} = DSPINdata{iSeries,1}(:,1);
-            DSPINmeta(iSeries) = DSPINdata{iSeries,4};                             % load the OME metadata
-            DSPINmeta2(iSeries) = DSPINdata{iSeries,2};           % metadata useful for time vector
-            
-            NSlices = str2double(DSPINmeta(iSeries).getPixelsSizeZ(0));      % # of z slices
-            NChannels = DSPINmeta(iSeries).getChannelCount(0);
-            NPlanes(iSeries) = DSPINmeta(iSeries).getPlaneCount(0);                   % # planes (individual files in this series) for calculating #time points
-            NTimePoints(iSeries) = NPlanes(iSeries)/NSlices/NChannels;
-            
-            %Get the time-from-start-of-SERIES for each timepoint in the series
-            FrameIncrement = NSlices.*NChannels;   %increment to step through to get the time-from-start for each timepoint
-            TimeFromStart = zeros(1,NTimePoints(iSeries));
-            for iTP = 2:NTimePoints(iSeries)
-                try
-                TimeFromStart(iTP) = str2double(DSPINmeta(iSeries).getPlaneDeltaT(0,(FrameIncrement*(iTP-1))).value);
-                catch
-                TimeFromStart(iTP) = str2double(DSPINmeta(iSeries).getPlaneDeltaT(0,(FrameIncrement*(iTP-1))));
-                end
-            end
-            
-            FrameTimes{iSeries} = TimeFromStart./60;       %time from start of iSeries that first z of channel1 at each timepoint is taken, in minutes
-            
-            %Get global start time of the series
-            temp = DSPINmeta2(iSeries).get(['timestamp #', iIndex(1,1)]);        
-            try
-                temp = datevec(temp, 'yyyymmdd HH:MM:SS.FFF');
-            catch
-                temp = datevec(temp, 'yyyy-mm-ddTHH:MM:SS.FFF');
-            end
-            SeriesStartTime(iSeries,:) = temp;       
-            
-            %Find the difference in global time between it and the previous series
-            %(except for the first series, which has no previous one) 
-            if iSeries==1
-                TimeDiff2 = 0;
-            elseif iSeries>1
-                TimeDiff(iSeries) = (etime(SeriesStartTime(iSeries,:), SeriesStartTime(iSeries-1,:)))./60;    %time diff (mins) between start of one series and the next
-                TimeDiff2(iSeries) = TimeDiff(iSeries)+TimeDiff2(iSeries-1);        %converted into time since start of movie
-            end
-            
-            %Add the difference in global time to the time-from-start-of-series in
-            %each case
-            
-            temp2 = FrameTimes{iSeries} + TimeDiff2(iSeries);
-            TimeVector = [TimeVector, temp2];     %This is the full time vector of time since the start of the movie for each timepoint
-            
-            clear TimeFromStart temp temp2        
        
-        end
-            
-            
-            
-         %This second for loop is to write the images to new files in the PreprocessedData folder
-            disp('Extracting Images')
-            %Create a blank image
-            
-            BlankImage=uint16(zeros(size(DSPINdata{1}{1,1})));       
-            tp = 1; %counter for timepoints to enable daisy-chaining of timepoint numbers across all series
+    NSeries = length(DSPIN);
+    FrameTimes = cell(NSeries,1);
+    TimeDiff = zeros(NSeries,1);
+    TimeVector = [];
+    TimeDiff2 = zeros(NSeries,1);
 
-            for iSeries = 1:NSeries
-                
-                disp(['Series ', num2str(iSeries)])
-                
-                for iTP = 1:NTimePoints(iSeries)             %for each timepoint in this series
-                 
-                    %For the coat protein channel, save  blank images at the beginning and end of the stack (i.e. slice 1 and slice NSlices+2)
-                    NewName=[Prefix,'_',iIndex((iTP+(tp-1)),3),'_z',iIndex(1,2),'.tif'];                % this business with (tp-1) is to daisy chain the timepoint numbering of the images across all series         
-                    imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                    NewName=[Prefix,'_',iIndex((iTP+(tp-1)),3),'_z',iIndex(NSlices+2,2),'.tif'];
-                    imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                        
-                    %Copy the coat protein images into the intervening-numbered files
-                    n=1;        %Counter for slices
-                    firstImage = (iTP-1)*FrameIncrement+1;      %index of first z slice in the timepoint to find the file
-                    lastImage = (iTP-1)*FrameIncrement+NSlices; %index of last z slice in the timepoint to find the file
-                    
-                    for ii = firstImage:lastImage      
-                        NewName=[Prefix,'_',iIndex(iTP+(tp-1),3),'_z',iIndex(n+1,2),'.tif'];      %n+1 to not overwrite initial blank image
-                        imwrite(DSPINimages{iSeries}{ii},[OutputFolder,filesep,NewName]);
-                        n = n+1;
-                    end
-  
-                    %Get the His slices for this timepoint
-                    m = 1;      %Counter for slices
-                    firstHisImage = (iTP-1)*FrameIncrement+(NSlices+1);
-                    lastHisImage = (iTP-1)*FrameIncrement+(2*NSlices);
-                        
-                    for iSlice = firstHisImage:lastHisImage                    %takes each slice of the current His channel and puts it in HisSlices
-                        HisSlices(:,:,m)=DSPINimages{iSeries}{iSlice};
-                        m = m+1;
-                    end
-                    
-                    %Make a projection of the stack of images for the timepoint
-                    Projection=max(HisSlices,[],3);            %CS: use max projection to improve segmentation unless encounter issue below.
-                    %Projection=median(HisSlices,3);           %median projection avoids issue of occasional bright reflective top/bottom slices.
+    %Deal with ordering of files if more than 9 series in the
+    %acquisition (so 1, 2, .... 10 .  rather than 1, 10, 2...)
+    fileName = cell(1,length(DSPIN));
+
+    for ii = 1:length(DSPIN)
+        fileName{ii} = DSPIN(ii).name;
+    end
+
+    fileNameSort = natsort(fileName);          %need to have natsort function downloaded from matlab central fileexchange and in mRNADynamics folder
+
+    %This first for loop is to load the data & metadata from each series and to generate the overall time vector
+    for iSeries = 1:NSeries
+
+        %Load the data
+        DSPINdata(iSeries,:) = bfopen([Folder, filesep, char(fileNameSort(iSeries))]);
+        DSPINimages{iSeries,:} = DSPINdata{iSeries,1}(:,1);
+        DSPINmeta(iSeries) = DSPINdata{iSeries,4};                             % load the OME metadata
+        DSPINmeta2(iSeries) = DSPINdata{iSeries,2};           % metadata useful for time vector
+
+        NSlices = str2double(DSPINmeta(iSeries).getPixelsSizeZ(0));      % # of z slices
+        NChannels = DSPINmeta(iSeries).getChannelCount(0);
+        NPlanes(iSeries) = DSPINmeta(iSeries).getPlaneCount(0);                   % # planes (individual files in this series) for calculating #time points
+        NTimePoints(iSeries) = NPlanes(iSeries)/NSlices/NChannels;
+
+        %Get the time-from-start-of-SERIES for each timepoint in the series
+        FrameIncrement = NSlices.*NChannels;   %increment to step through to get the time-from-start for each timepoint
+        TimeFromStart = zeros(1,NTimePoints(iSeries));
+        for iTP = 2:NTimePoints(iSeries)
+            try
+                TimeFromStart(iTP) = str2double(DSPINmeta(iSeries).getPlaneDeltaT(0,(FrameIncrement*(iTP-1))).value);
+            catch
+                TimeFromStart(iTP) = str2double(DSPINmeta(iSeries).getPlaneDeltaT(0,(FrameIncrement*(iTP-1))));
+            end
+        end
+
+        FrameTimes{iSeries} = TimeFromStart./60;       %time from start of iSeries that first z of channel1 at each timepoint is taken, in minutes
+
+        %Get global start time of the series
+        temp = DSPINmeta2(iSeries).get(['timestamp #', iIndex(1,1)]);        
+        try
+            temp = datevec(temp, 'yyyymmdd HH:MM:SS.FFF');
+        catch
+            temp = datevec(temp, 'yyyy-mm-ddTHH:MM:SS.FFF');
+        end
+        SeriesStartTime(iSeries,:) = temp;       
+
+        %Find the difference in global time between it and the previous series
+        %(except for the first series, which has no previous one) 
+        if iSeries==1
+            TimeDiff2 = 0;
+        elseif iSeries>1
+            TimeDiff(iSeries) = (etime(SeriesStartTime(iSeries,:), SeriesStartTime(iSeries-1,:)))./60;    %time diff (mins) between start of one series and the next
+            TimeDiff2(iSeries) = TimeDiff(iSeries)+TimeDiff2(iSeries-1);        %converted into time since start of movie
+        end
+
+        %Add the difference in global time to the time-from-start-of-series in
+        %each case
+
+        temp2 = FrameTimes{iSeries} + TimeDiff2(iSeries);
+        TimeVector = [TimeVector, temp2];     %This is the full time vector of time since the start of the movie for each timepoint
+
+        clear TimeFromStart temp temp2        
+
+    end
             
-                    %Write the projection to a file
-                    NewName = [Prefix,'-His_',iIndex(iTP+(tp-1),3),'.tif'];
-                    imwrite(uint16(Projection),[OutputFolder,filesep,NewName]);
-             
-                end
-                
-                tp = tp + NTimePoints(iSeries);
-                
-            end  
+    %This second for loop is to write the images to new files in the PreprocessedData folder
+    disp('Extracting Images')
+    %Create a blank image
+
+    BlankImage=uint16(zeros(size(DSPINdata{1}{1,1})));       
+    tp = 1; %counter for timepoints to enable daisy-chaining of timepoint numbers across all series
+
+    for iSeries = 1:NSeries
+
+        disp(['Series ', num2str(iSeries)])
+
+        for iTP = 1:NTimePoints(iSeries)             %for each timepoint in this series
+
+            if (iTP+(tp-1))==192
+                1+1
+            end
+            
+            %For the coat protein channel, save  blank images at the beginning and end of the stack (i.e. slice 1 and slice NSlices+2)
+            NewName=[Prefix,'_',iIndex((iTP+(tp-1)),3),'_z',iIndex(1,2),'.tif'];                % this business with (tp-1) is to daisy chain the timepoint numbering of the images across all series         
+            imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+            NewName=[Prefix,'_',iIndex((iTP+(tp-1)),3),'_z',iIndex(NSlices+2,2),'.tif'];
+            imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+
+            %Copy the coat protein images into the intervening-numbered files
+            n=1;        %Counter for slices
+            firstImage = (iTP-1)*FrameIncrement+1;      %index of first z slice in the timepoint to find the file
+            lastImage = (iTP-1)*FrameIncrement+NSlices; %index of last z slice in the timepoint to find the file
+
+            for ii = firstImage:lastImage      
+                NewName=[Prefix,'_',iIndex(iTP+(tp-1),3),'_z',iIndex(n+1,2),'.tif'];      %n+1 to not overwrite initial blank image
+                imwrite(DSPINimages{iSeries}{ii},[OutputFolder,filesep,NewName]);
+                n = n+1;
+            end
+
+            %Get the His slices for this timepoint
+            m = 1;      %Counter for slices
+            firstHisImage = (iTP-1)*FrameIncrement+(NSlices+1);
+            lastHisImage = (iTP-1)*FrameIncrement+(2*NSlices);
+
+            for iSlice = firstHisImage:lastHisImage                    %takes each slice of the current His channel and puts it in HisSlices
+                HisSlices(:,:,m)=DSPINimages{iSeries}{iSlice};
+                m = m+1;
+            end
+
+            %Make a projection of the stack of images for the timepoint
+            Projection=max(HisSlices,[],3);            %CS: use max projection to improve segmentation unless encounter issue below.
+            %Projection=median(HisSlices,3);           %median projection avoids issue of occasional bright reflective top/bottom slices.
+
+            %Write the projection to a file
+            NewName = [Prefix,'-His_',iIndex(iTP+(tp-1),3),'.tif'];
+            imwrite(uint16(Projection),[OutputFolder,filesep,NewName]);
+
+        end
+
+        tp = tp + NTimePoints(iSeries);
+
+    end  
         
         %Save relevant information in FrameInfo structure. Atm the
         %naming conventions are slightly different. Fix later.
@@ -1502,8 +1526,7 @@ elseif strcmp(FileMode,'DSPIN')
         mkdir([DropboxFolder,filesep,Prefix])
         save([DropboxFolder,filesep,Prefix,filesep,'bfMetaData.mat'],...
             'zPositionX','zPositionY','PixelSizeZoom','zImageSizeXpix','zImageSizeYpix')
-    end
-    
+  
 end
 
 %Skipping frames?
