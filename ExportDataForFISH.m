@@ -1443,11 +1443,7 @@ elseif strcmp(FileMode,'DSPIN')
         disp(['Series ', num2str(iSeries)])
 
         for iTP = 1:NTimePoints(iSeries)             %for each timepoint in this series
-
-            if (iTP+(tp-1))==192
-                1+1
-            end
-            
+           
             %For the coat protein channel, save  blank images at the beginning and end of the stack (i.e. slice 1 and slice NSlices+2)
             NewName=[Prefix,'_',iIndex((iTP+(tp-1)),3),'_z',iIndex(1,2),'.tif'];                % this business with (tp-1) is to daisy chain the timepoint numbering of the images across all series         
             imwrite(BlankImage,[OutputFolder,filesep,NewName]);
@@ -1479,6 +1475,27 @@ elseif strcmp(FileMode,'DSPIN')
             Projection=max(HisSlices,[],3);            %CS: use max projection to improve segmentation unless encounter issue below.
             %Projection=median(HisSlices,3);           %median projection avoids issue of occasional bright reflective top/bottom slices.
 
+            %There's some bug in BioFormats for Windows that loads some
+            %histone frames as blank. I have no clue where this is coming
+            %from, but we should send a report to them. In the meantime, if
+            %this happens, we'll use the histone from the previous frame.
+            if max(max(Projection))==0
+                warning(['Could not load Histone channel in frame ',...
+                    num2str(iTP),' of series ',num2str(iSeries),...
+                    '. Proceeding by copying the histone image from the previous frame. Send a report of this bug to BioFormats!'])
+                %Get the His slices for the previous timepoint
+                m = 1;      %Counter for slices
+                firstHisImage = (iTP-2)*FrameIncrement+(NSlices+1);
+                lastHisImage = (iTP-2)*FrameIncrement+(2*NSlices);
+
+                for iSlice = firstHisImage:lastHisImage                    %takes each slice of the current His channel and puts it in HisSlices
+                    HisSlices(:,:,m)=DSPINimages{iSeries}{iSlice};
+                    m = m+1;
+                end
+                
+                Projection=max(HisSlices,[],3);            %CS: use max projection to improve segmentation unless encounter issue below.
+            end
+            
             %Write the projection to a file
             NewName = [Prefix,'-His_',iIndex(iTP+(tp-1),3),'.tif'];
             imwrite(uint16(Projection),[OutputFolder,filesep,NewName]);

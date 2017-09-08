@@ -164,7 +164,7 @@ if exist([OutputFolder,filesep,'FrameInfo.mat'])
         
     elseif strcmp(FrameInfo(1).FileMode,'LSM')|strcmp(FrameInfo(1).FileMode,'LSMExport')
         PixelSize=FrameInfo(1).PixelSize;
-    elseif strcmp(FrameInfo(1).FileMode,'LIFExport') || strcmp(FrameInfo(1).FileMode,'LAT')
+    elseif strcmp(FrameInfo(1).FileMode,'LIFExport') || strcmp(FrameInfo(1).FileMode,'LAT') || strcmp(FrameInfo(1).FileMode,'DSPIN')  %CS20170907
         PixelSize=FrameInfo(1).PixelSize;
     end
 else

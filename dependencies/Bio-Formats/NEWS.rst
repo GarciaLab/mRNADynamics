@@ -1,6 +1,323 @@
 Version history
 ===============
 
+5.7.0 (2017 September 4)
+------------------------
+
+File format fixes and improvements:
+
+* Imaris HDF
+   - fixed resolution problems in which dimensions and resolution order were incorrectly 
+     calculated (thanks to Eliana Andreica)
+* Nikon NIS-Elements ND2
+   - fixed a bug in offset calculation when native chunk map is being used
+* MetaMorph
+   - corrected delta T and position Z values for multi-channel images when channels are 
+     split across multiple files
+* Amnis FlowSight
+   - better handling of exceptions in isThisType method (thanks to Claire McQuin)
+* PicoQuant Bin
+   - better handling of exceptions in isThisType method (thanks to Claire McQuin)
+
+Bug fixes and improvements:
+
+* reviewed and corrected URLs throughout the Bio-Formats source code
+* updated Bio-Formats Macro Extensions list with a missing function
+* added a new option in Bio-Formats plugins to configure the slice label display using patterns
+
+Documentation improvements:
+
+* added new format page for :doc:`OMERO Pyramid</formats/omero-pyramid>`
+* updated the developer page for :doc:`Working with whole slide images</developers/wsi>`
+* added new page for configuring options in :doc:`Bio-Formats plugins</users/imagej/options>`
+* updated documentation sidebar to enable navigation of previous versions
+
+5.6.0 (2017 August 14)
+----------------------
+
+File format fixes and improvements:
+
+* Zeiss CZI
+   - added support for images from Elyra PALM system
+   - prevented a potential infinite loop when a scene with a pyramid is missing
+* cellSens VSI
+   - a new option has been added to throw an exception rather than logging a 
+     warning if .ets file is missing. The option, ``cellsens.fail_on_missing_ets``,
+     can be used via the MetadataOptions API, as a parameter in the command 
+     line tools or via the Bio-Formats configuration dialog in ImageJ
+* MetaMorph Stack (STK)
+   - fixed an error with HCS style datasets always returning the first plane 
+     regardless of the requested index
+   - updated to use stage labels starting with ``Scan`` to detect when a whole plate 
+     is saved in a single .stk file
+   - fixed a bug for ``ArrayIndexOutOfBoundsException`` when an image contains 
+     a single Z plane
+* Gatan Digital Micrograph
+   - added support for Z stacks and ROIs
+   - fixed several bugs in tag parsing
+* PerkinElmer Operetta
+   - ensure TIFF files exist before reading
+* JPEG
+   - support added for images with more than ``Integer.MAX_VALUE`` pixels
+
+Bug fixes and improvements:
+
+* JPEGTileDecoder
+   - class now implements AutoCloseable to prevent resource leaks
+* Bio-Formats Plugin
+   - improved performance when using options to concatenate multiple series together
+* TiffSaver
+   - made performance improvements to prevent the writing of a new IFD for each tile, 
+     resulting in significant file size reductions for images with a large quantity of tiles
+
+Documentation improvements:
+
+* updated website and URL links for new `OME Website <https://www.openmicroscopy.org>`_ website
+* added missing :doc:`Andor SIF</formats/andor-sif>` to supported formats page
+* added a new page :doc:`Working with whole slide images</developers/wsi>` outlining the API support 
+  for pyramids/resolutions
+* fixed broken documentation links for external resources which are no longer available
+* updated the style of Sphinx documentation
+
+Component architecture changes/decoupling:
+
+* decoupled image encoding and decoding routines to the new
+  `ome/ome-codecs GitHub repository <https://github.com/ome/ome-codecs>`_
+  and consumed as 'org.openmicroscopy:ome-codecs' artifact from Maven Central
+* removed components/forks/jai - decoupled to the new
+  `ome/ome-jai GitHub repository <https://github.com/ome/ome-jai>`_
+  and consumed as part of 'org.openmicroscopy:ome-jai' artifact from Maven Central
+* replaced components/formats-api/codecs classes with wrappers around 'org.openmicroscopy:ome-codecs'
+* replaced components/formats-bsd/codecs classes with wrappers around 'org.openmicroscopy:ome-codecs'
+
+Updated build system:
+
+* ant now removes the build files of the bundles during 'clean' to prevent a mix of dependencies
+
+5.5.3 (2017 July 5)
+-------------------
+
+File format fixes and improvements:
+
+* Zeiss CZI
+   - fix to store Bézier ROIs as polygons, using the control points for the set 
+     of Bézier curves to form an approximation of the ROI
+   - improved parsing of stage positions in metadata
+   - improved parsing of detector gain values
+   - removed OME-XML validation errors by fixing potential for duplicate detector IDs
+   - removed invalid XML failures for Modulo label elements
+   - time increment metadata now populated on ``Pixels`` element
+   - fix to deal with consecutive empty planes in a series (thanks to Nicholas Trahearn)
+* DICOM
+   - no longer allow core metadata to be modified when determining if files belong to a 
+     DICOM dataset
+* Nikon NIS-Elements ND2
+   - fixed calculation for scanline padding
+* Kodak BIP
+   - stricter file type checking enforced by no longer relying only on the file suffix
+* MINC MRI
+   - improved parsing of metadata by correcting units for physical sizes, pixel type and 
+     capturing XYZ plane positions in OME-XML
+* Bio-Rad Gel
+   - fixed the width of pixel data offset field
+* DeltaVision
+   - improved accuracy of format detection checking for input streams
+* Andor SIF
+   - fixed support for cropped images by parsing bounding box of the stored image
+
+Documentation improvements:
+
+* Olympus cellSens VSI updated to include list of available specifications
+
+5.5.2 (2017 June 15)
+--------------------
+
+File format fixes and improvements:
+
+* Olympus FluoView FV1000
+   - fix for ``java.lang.ArrayIndexOutOfBoundsException`` caused by filter names
+     of "---" (thanks to Stefan Helfrich)
+   - refactored channel metadata population and increased usage of ``DataTools`` utility functions
+* Zeiss CZI
+   - fixed detection of Z line scans that caused incorrect dimensions in certain filesets
+   - improved exception handling of truncated/invalid files 
+* Veeco AFM
+   - fixed reading of tiled images
+* Hamamatsu ndpi
+   - prevented potential memory leak by ensuring all ``TiffParser`` 
+     streams are closed
+
+Bug fixes:
+
+* OMEXMLServiceImpl
+   - improved exception handling to deal with potential ``java.lang.NullPointerException`` 
+     when unable to locate OME-XML version while attempting to transform to the latest version
+
+Documentation improvements:
+
+* updated documentation to be compatible with the latest version of Sphinx 1.6
+* fixed the usage/references of the option markup in documentation
+* fixed the table in the Micro-Manager user page
+* updated metadata ratings for supported formats
+
+Updated build system:
+
+* OME-Model version bump
+   - the ome-model component has been updated to 5.5.4 which includes improvements to 
+     performance, documentation and the C++ model implementation
+
+5.5.1 (2017 May 25)
+-------------------
+
+File format improvements:
+
+* CellH5
+   - fix for ``HDF5SymbolTableException`` when recycling an IFormatReader to reopen 
+     another CellH5 file
+   - bug fix related to opening of subsets of CellH5 files, namely 
+     ``openBytes(r, no, x, y, w, h)`` for y>0
+* Zeiss CZI
+   - fix pyramid resolution indexing for pyramids of different depths
+   - fix for incorrect channel names and colors
+* Zeiss AxioVision ZVI
+   - correct parsing of epoch for Zeiss TIFF and Zeiss ZVI
+
+Bug fixes:
+
+* Command line tools 
+   - fix for ``java.lang. NegativeArraySizeException`` caused by incorrect dimensions 
+     when using showinf via command line with options set to autoscale and crop
+* Format tools 
+   - fix for ``java.lang. IndexOutOfBoundsException`` when using ``getFilename`` with an 
+     image containing multiple samples per pixel channels and a single effective channel
+
+Updated build system:
+
+* Autogen jobs
+   - fix for ``gen-meta-support`` to locate available ``org.openmicroscopy:ome-xml`` 
+     sources from the Maven repository following the decoupling of the model components
+* FileHandleTest
+   - exclude JHDF5 native libraries from ``FileHandleTest`` to enable CellH5 files to be 
+     included in daily tests
+
+Documentation improvements:
+
+* added a new example file for reading and writing of XZ and YZ orthogonal planes
+
+5.5.0 (2017 May 8)
+------------------
+
+New file formats:
+
+* Olympus OIR
+   - added support for :doc:`Olympus .oir </formats/olympus-oir>` data  (funded by a 
+     partnership between Glencoe Software and OLYMPUS EUROPA SE & Co. KG)
+* PerkinElmer Columbus
+   - added support for :doc:`PerkinElmer Columbus </formats/perkinelmer-columbus>` data
+
+File format improvements:
+
+* Andor Bio-Imaging Division (ABD) TIFF
+   - fixed acquisition date format from ``MM/dd/yyyy`` to ``dd/MM/yyyy``
+* Nikon NIS-Elements ND2
+   - corrected logic used to determined ``PixelType`` by parsing uiBpc tags
+* Hamamatsu ndpi
+   - improved handling of channels in  NDPIS datasets (thanks to Manuel Stritt)
+* Imspector OBF
+   - fix for ``SAXParseException`` when description field in metadata is empty
+
+Documentation improvements:
+
+* added links to public sample files for Cellomics
+* added links to public sample files for InCell 3000
+
+5.4.1 (2017 April 13)
+---------------------
+
+File format improvements:
+
+* MIAS (Maia Scientific)
+   - added a fix for a possible exception when image files are not found under 
+     channel-specific subdirectories
+* BD Pathway
+   - added fix to check if ``Experiment.exp`` is a directory or an experiment file
+* Imspector OBF
+   - enabled forward compatibility for future versions, as the OBF format is backwards 
+     compatible (thanks to Bjoern Thiel)
+
+Documentation improvements:
+
+* updated external homepage link for FocalPoint
+* removed Imago from list of visualization and analysis applications as it is no
+  longer available from the Mayachitra website
+* added links to public sample files for Hamamatsu NDPI and Hamamatsu VMS
+* listed OpenSlide as available software for supported formats
+* added a new developer page detailing in-memory reading and writing
+* updated the Bio-Formats API versioning policy, which now follows strict 
+  semantic versioning
+* a new options page has been added, detailing the usage of configurable format-specific 
+  options for readers and writers. Links to the available options are also included under 
+  the relevant supported formats
+
+5.4.0 (2017 March 21)
+---------------------
+
+File format improvements:
+
+* DICOM
+   - added support for DICOMDIR files, which allow multiple DICOM files in a 
+     single directory to be opened as a single dataset
+   - plane position values for values X, Y and Z are now being set in OME-XML
+   - correctly read the physical size X and Y values based on the available 
+     `specification <http://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_10.7.html#sect_10.7.1.3>`_
+* Nikon NIS-Elements ND2
+   - performance improvements based on reading chunkmap. Processing of the
+     chunkmap can be disabled via the MetadataOptions API using the boolean
+     option ``nativend2.chunkmap``. For ImageJ users this option can be
+     accessed via a checkbox in the Nikon ND2 section of the Bio-Formats
+     configuration dialog
+     :menuselection:`Plugins --> Bio-Formats --> Bio-Formats Plugins Configuration` (thanks to Christian Sachs)
+* OME-TIFF
+   - added an option to save an OME-TIFF dataset as a binary TIFF and
+     companion XML. This can be used via the bfconvert command line tool by
+     setting the value of option ``ometiff.companion`` to the name of the
+     companion file to use. For example ``bfconvert -option ometiff.companion
+     outputFile.companion.ome inputFile.tiff outputFile.ome.tiff``
+* CellVoyager
+   - metadata fixes specifically the naming of plates. Additional refactoring
+     of the reader for general maintainability
+* Gatan Digital Micrograph
+   - previously missing Image-Instrument reference has been added to OME-XML
+* TiffSaver
+   - ensure open resources are closed under all possible scenarios
+* Zeiss CZI
+   - improved performance of large uncompressed images. When tiles from a
+     large uncompressed image with no internal tiling are requested, only the
+     specific tile specified in the call to ``openBytes`` is read from disk,
+     instead of the entire image being read and then copied
+* Zeiss AxioVision ZVI (Zeiss Vision Image)
+   - ensure that the ``bitsPerPixel`` field is always set to match the final
+     pixel type, and populate any channel colors that were parsed in the
+     metadata. The bits per pixel update should only affect ``uint16`` or 
+     ``int16`` files where the acquisition bit depth is not a multiple of 8, 
+     and the RGB channel count is greater than 1
+
+Updated build system:
+
+* updated dependency for NetCDF to 4.3.22
+* updated copyright headers from 2016 to 2017 and reviewed and fixed any incorrect 
+  header descriptions
+* documentation has been migrated to use ``.rst`` file format for Sphinx files
+* reviewed and cleaned up warnings such as unused variables and imports
+* added CellVoyager datasets to automated testing via continuous integration
+* unified the semantics for creating temporary directories within unit tests
+
+Documentation improvements:
+
+* fixed link for PerkinElmer UltraVIEW system
+* fixed links for NIfTI public specification and data sets
+* available software for Hamamatsu ndpi has been updated from NDP.view to NDP.view2
+
 5.3.4 (2017 February 21)
 ------------------------
 
@@ -820,7 +1137,7 @@ Java bug fixes:
 
 * Improvements to performance with network file systems
 * Improvements to developer documentation
-* Initial version of `native C++ implementation <http://www.openmicroscopy.org/site/support/bio-formats5.1/developers/cpp/overview.html>`__
+* Initial version of native C++ implementation
 * Improved support for opening and saving ROI data with ImageJ
 * Added support for :doc:`CellH5 </formats/cellh5>` data (thanks to Christoph Sommer)
 * Added support for :doc:`Perkin Elmer Nuance </formats/perkinelmer-nuance>` data (thanks to Lee Kamentsky)
