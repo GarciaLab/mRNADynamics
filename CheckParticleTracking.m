@@ -186,14 +186,11 @@ else
     DHis=dir([PreProcPath,filesep,FilePrefix(1:end-1),filesep,'*His*.tif']);
     FrameInfo(length(DHis)).nc=[];
     %Adding information
-
-    Dz=dir([PreProcPath,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'*001*.tif']);
+   Dz=dir([PreProcPath,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'*001*.tif']);
     NumberSlices=length(Dz)-1;
-    
     for i=1:length(FrameInfo)
         FrameInfo(i).NumberSlices=NumberSlices;
     end
-    
 end
 
 
@@ -441,8 +438,19 @@ DisplayRange=[];
 ZoomMode=0;
 GlobalZoomMode=0;
 ZoomRange=50;
-minContrast = 0; % Default contrast settings for gfp channel
-maxContrast = 80;
+
+%Set up the default contrast settings for the MCP channel depending on the
+%microscope that was used used
+if strcmpi(FrameInfo(1).FileMode,'dspin')
+    %For spinning disk, we set the contrast to the maximum and minimum
+    minContrast=[];
+    maxContrast=[];
+else
+    %For all other microscopes, we have a default. HG is not sure this will
+    %actually work well beyond Leica SP8.
+    minContrast = 0; % Default contrast settings for gfp channel
+    maxContrast = 80;
+end
 
 % Changing the intial frames and particle if justNC13
 if justNC13

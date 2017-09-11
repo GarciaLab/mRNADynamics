@@ -1520,7 +1520,8 @@ elseif strcmp(FileMode,'DSPIN')
                 FrameInfo(iFrame).PixelSize = str2num(DSPINmeta(1).getPixelsPhysicalSizeX(0));
                 FrameInfo(iFrame).ZStep = str2double(DSPINmeta(1).getPixelsPhysicalSizeZ(0));
             end
-            FrameInfo(iFrame).Time = TimeVector(iFrame);      %CS this reports time from start of first acquisition
+            %HG: This should be in minutes. I made the appropriate change.
+            FrameInfo(iFrame).Time = TimeVector(iFrame)*60;      %CS: this reports time from start of first acquisition
         end
         
         % Extract parameters needed later in addParticlePosition
