@@ -78,8 +78,9 @@ DTIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filese
 DLSM=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.lsm']);
 DCZI=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.czi']);
 DLIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.lif']);
+DSPIN=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.nd']);     %Nikon spinning disk . CS20170911
 
-if (length(DTIF)>0)&(length(DLIF)==0)
+if (length(DTIF)>0)&(length(DLIF)==0)&(length(DSPIN)==0)        %CS20170911
     display('2-photon @ Princeton data mode')
     D=DTIF;
     FileMode='TIF';
@@ -91,6 +92,10 @@ elseif (length(DLSM)>0)|(length(DCZI)>0)
     display('LSM mode')
     D=[DLSM,DCZI];
     FileMode='LSM';
+elseif (length(DSPIN)>0)        %CS20170911
+    display('Nikon spinning disk mode with .nd files')
+    D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo', filesep,'*.nd']);     %spinning disk with .nd output files
+    FileMode='DSPIN';
 else
     error('File type not recognized')
 end
@@ -100,19 +105,27 @@ end
 MidFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'mid')));
 SurfFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'surf')));
 
-if (length(MidFileIndex)>1)
+if (length(MidFileIndex)>1)&strcmp(FileMode, ~'DSPIN')
     error('Too many midsagittal files in FullEmbryo folder')
 end
 
 
+
 %See if we don't want the default AP orientation
 if ~exist('FlipAP')
-    if strcmp(D(MidFileIndex).name,'PA')
-        FlipAP=1;
-    else
+    if strcmp(FileMode, 'TIF')||strcmp(FileMode, 'LIFExport')||strcmp(FileMode, 'LSM')
+        if strcmp(D(MidFileIndex).name,'PA')
+            FlipAP=1;
+        else
+            FlipAP=0;
+        end
+    end
+    if strcmp(FileMode,'DSPIN')     %CS20170912
         FlipAP=0;
     end
 end
+
+
 
 if strcmp(FileMode,'TIF')
     MidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(MidFileIndex).name],2);
@@ -230,6 +243,135 @@ elseif strcmp(FileMode,'LSM')
     end
 
     MidImage = imrotate(MidImage, -zoom_angle + full_embryo_angle);
+    
+elseif strcmp(FileMode, 'DSPIN')        %CS20170911 This is really long-winded atm! Need to simplify.
+    %Find and open the mid-saggistal .nd files in the FullEmbryo folder
+    if find(~cellfun('isempty',strfind({D.name},'ANT_mid')))>0
+        SurfFileIndexAnt = find(~cellfun('isempty',strfind({D.name},'ANT_mid')));
+        SurfFileIndexPost = find(~cellfun('isempty',strfind({D.name},'POST_mid')));
+        
+        SurfImageAnt = bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(SurfFileIndexAnt).name]);
+        SurfAntMeta = SurfImageAnt{4};
+        
+        SurfImagePost = bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(SurfFileIndexPost).name]);
+        SurfPostMeta = SurfImagePost{4};
+        
+    else
+        error('FullEmbryo images mislabeled? Should be of form ANT_mid, POST_mid, ANT_surf, POST_surf')
+    end
+   
+    %Get some useful parameters
+    try
+        NSlices = SurfAntMeta.getPixelsSizeZ(0).getValue();
+        NChannels = SurfAntMeta.getPixelsSizeC(0).getValue();
+        PizelSize = SurfAntMeta.getPixelsPhysicalSizeX(0).getValue();
+    catch
+        NSlices = str2double(SurfAntMeta.getPixelsSizeZ(0));
+        NChannels = str2double(SurfAntMeta.getPixelsSizeC(0));
+        PizelSize = str2double(SurfAntMeta.getPixelsPhysicalSizeX(0).value);%Size in microns of one pixel. NB for some of the OME metadata you need to add .value on end to get it out
+    end
+    
+    %Figure out which channel to use (His channel)
+    HisChannel=find(~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'mcherry'))|...
+        ~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'his')));
+    
+    %Get the stack of images in the histone channel for ANT and POST images and do a maximum projection
+    temp = SurfImageAnt{1}(:,2);
+    IndexAntPost = find(~cellfun('isempty',strfind({temp{1:end}},['C=', num2str(HisChannel), '/', num2str(NChannels)])));
+    AntImStack = SurfImageAnt{1}(IndexAntPost, 1);
+    PostImStack = SurfImagePost{1}(IndexAntPost, 1);
+    
+    %Max Project His channel for ANT and POST images
+    for i = 1:NSlices
+        AntImStack2(:,:,i) = AntImStack{i};
+        PostImStack2(:,:,i) = PostImStack{i};
+    end
+    AntMaxProj = max(AntImStack2, [], 3); 
+    PostMaxProj = max(PostImStack2, [], 3);
+    
+    %Write these to files because EmbryoStitchNoMargin (which will stitch them together) wants it that way
+    imwrite(AntMaxProj, [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'AntMaxProj.tif']); 
+    imwrite(PostMaxProj, [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'PostMaxProj.tif']); 
+    
+    %While at it, EmbryoStitchNoMargin also needs a flatfield. I don't take
+    %one at this magnification, so make it up
+    FFImage = ones(512,672); %make this automatically find the size later
+    imwrite(FFImage, [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'FF20x.tif']);
+    Margin = 0;
+
+    %Define inputs to EmbryoStitchNoMargin, which will stitch the ANT and POST files together and record the xShift and yShift needed to do so
+    FFFile=[SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'FF20x.tif'];  
+    LeftImageFile = [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'AntMaxProj.tif'];
+    RightImageFile = [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'PostMaxProj.tif']; 
+    
+    if FlipAP==0    %If FlipAP not specified in input, assume Anterior image on Left and Posterior on Right. 
+        [APImage,xShift,yShift]=EmbryoStitchNoMargin(LeftImageFile,RightImageFile, FFFile, [], [], Margin);
+    else          %Otherwise assume the opposite. 
+        [APImage,xShift,yShift]=EmbryoStitchNoMargin(RightImageFile, LeftImageFile, FFFile, [], [], Margin);
+    end
+    
+    %Rename for use later in code
+    MidImage = APImage; 
+    
+    
+    %While we're at it, AddParticlePosition also needs the surface embryo,
+    %so generate a stiched together max projection of the ANT and POST
+    %surface images as well. 
+    if find(~cellfun('isempty',strfind({D.name},'ANT_surf')))>0
+        SurfFileIndexAnt = find(~cellfun('isempty',strfind({D.name},'ANT_surf.nd')));
+        SurfFileIndexPost = find(~cellfun('isempty',strfind({D.name},'POST_surf.nd')));
+        SurfImageAnt = bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(SurfFileIndexAnt).name]);
+        SurfAntMeta = SurfImageAnt{4};
+        SurfImagePost = bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(SurfFileIndexPost).name]);
+        SurfPostMeta = SurfImagePost{4};   
+    else
+        error('FullEmbryo images mislabeled? Should be of form ANT_mid, POST_mid, ANT_surf, POST_surf')
+    end
+   
+    %Get some useful parameters
+    try
+        NSlices = SurfAntMeta.getPixelsSizeZ(0).getValue();
+        NChannels = SurfAntMeta.getPixelsSizeC(0).getValue();
+        PizelSize = SurfAntMeta.getPixelsPhysicalSizeX(0).getValue();
+    catch
+        NSlices = str2double(SurfAntMeta.getPixelsSizeZ(0));
+        NChannels = str2double(SurfAntMeta.getPixelsSizeC(0));
+        PizelSize = str2double(SurfAntMeta.getPixelsPhysicalSizeX(0).value);%Size in microns of one pixel. NB for some of the OME metadata you need to add .value on end to get it out
+    end
+    
+    %Get the stack of images in the histone channel for ANT and POST images and do a maximum projection
+    temp = SurfImageAnt{1}(:,2);
+    IndexAntPost = find(~cellfun('isempty',strfind({temp{1:end}},['C=', num2str(HisChannel), '/', num2str(NChannels)])));
+    AntImStack = SurfImageAnt{1}(IndexAntPost, 1);
+    PostImStack = SurfImagePost{1}(IndexAntPost, 1);
+    
+    %Max Project His channel for ANT and POST images
+    for i = 1:NSlices
+        AntImStack2(:,:,i) = AntImStack{i};
+        PostImStack2(:,:,i) = PostImStack{i};
+    end
+    AntMaxProj = max(AntImStack2, [], 3); 
+    PostMaxProj = max(PostImStack2, [], 3);
+    
+    %Write these to files because EmbryoStitchNoMargin (which will stitch them together) wants it that way
+    %The FlatField has already been written, above
+    imwrite(AntMaxProj, [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'AntMaxProj.tif']); 
+    imwrite(PostMaxProj, [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'PostMaxProj.tif']); 
+
+    %Define inputs to EmbryoStitchNoMargin, which will stitch the ANT and POST files together and record the xShift and yShift needed to do so
+    LeftImageFile = [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'AntMaxProj.tif'];
+    RightImageFile = [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'PostMaxProj.tif']; 
+    
+    if FlipAP==0    %If FlipAP not specified in input, assume Anterior image on Left and Posterior on Right. 
+        [APImage,xShift,yShift]=EmbryoStitchNoMargin(LeftImageFile,RightImageFile, FFFile, [], [], Margin);
+    else          %Otherwise assume the opposite. 
+        [APImage,xShift,yShift]=EmbryoStitchNoMargin(RightImageFile, LeftImageFile, FFFile, [], [], Margin);
+    end
+    
+    %Rename for use later in code
+    SurfImage = APImage; 
+    imwrite(uint16(SurfImage),[DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoSurf.tif'],'compression','none');
+    
 end
 
 
