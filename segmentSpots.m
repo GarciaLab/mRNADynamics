@@ -399,7 +399,7 @@ end
     end
 
     mkdir([DropboxFolder,filesep,Prefix]);
-    save([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots');    
+    save([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots','-v7.3');    
 
 end
 
