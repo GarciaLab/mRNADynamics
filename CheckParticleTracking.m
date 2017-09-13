@@ -1710,11 +1710,11 @@ while (cc~='x')
         save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo')
         if UseHistoneOverlay
             save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2')
-            save([DataFolder,filesep,'Spots.mat'],'Spots')
+            save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3') %CS20170912 necessary for saving Spots.mat if >2GB
             save([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'],'schnitzcells')
         else
             save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2')            
-            save([DataFolder,filesep,'Spots.mat'],'Spots')
+            save([DataFolder,filesep,'Spots.mat'],'Spots','-v7.3') %CS20170912 necessary for saving Spots.mat if >2GB
         end
         display('Particles saved.')
         if NChannels==1
@@ -2065,11 +2065,11 @@ end
 
 if UseHistoneOverlay
     save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2')
-    save([DataFolder,filesep,'Spots.mat'],'Spots')
+    save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3') %CS20170912 necessary for saving Spots.mat if >2GB)
     save([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'],'schnitzcells')
 else
     save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2')            
-    save([DataFolder,filesep,'Spots.mat'],'Spots')
+    save([DataFolder,filesep,'Spots.mat'],'Spots','-v7.3') %CS20170912 necessary for saving Spots.mat if >2GB)
 end
 close all
 display('Particles saved.')
