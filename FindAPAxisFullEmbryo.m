@@ -312,7 +312,8 @@ elseif strcmp(FileMode, 'DSPIN')        %CS20170911 This is really long-winded a
     
     %Rename for use later in code
     MidImage = APImage; 
-    
+    %Display image to check it's stitched correctly
+    imshow(imadjust(mat2gray(MidImage,[0 65535])),'DisplayRange',[],'InitialMagnification',100);
     
     %While we're at it, AddParticlePosition also needs the surface embryo,
     %so generate a stiched together max projection of the ANT and POST
@@ -370,7 +371,6 @@ elseif strcmp(FileMode, 'DSPIN')        %CS20170911 This is really long-winded a
     
     %Rename for use later in code
     SurfImage = APImage; 
-    imwrite(uint16(SurfImage),[DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoSurf.tif'],'compression','none');
     
 end
 
@@ -378,6 +378,7 @@ end
 %Save it to the Dropbox folder
 mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
 imwrite(uint16(MidImage),[DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif'],'compression','none');
+imwrite(uint16(SurfImage),[DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoSurf.tif'],'compression','none');
 
 %Now, use them to find the embryo mask
 embMask = getEmbryoMaskLive(MidImage, 50);
