@@ -186,14 +186,11 @@ else
     DHis=dir([PreProcPath,filesep,FilePrefix(1:end-1),filesep,'*His*.tif']);
     FrameInfo(length(DHis)).nc=[];
     %Adding information
-
-    Dz=dir([PreProcPath,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'*001*.tif']);
+   Dz=dir([PreProcPath,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'*001*.tif']);
     NumberSlices=length(Dz)-1;
-    
     for i=1:length(FrameInfo)
         FrameInfo(i).NumberSlices=NumberSlices;
     end
-    
 end
 
 
@@ -441,8 +438,19 @@ DisplayRange=[];
 ZoomMode=0;
 GlobalZoomMode=0;
 ZoomRange=50;
-minContrast = 0; % Default contrast settings for gfp channel
-maxContrast = 80;
+
+%Set up the default contrast settings for the MCP channel depending on the
+%microscope that was used used
+if strcmpi(FrameInfo(1).FileMode,'dspin')
+    %For spinning disk, we set the contrast to the maximum and minimum
+    minContrast=[];
+    maxContrast=[];
+else
+    %For all other microscopes, we have a default. HG is not sure this will
+    %actually work well beyond Leica SP8.
+    minContrast = 0; % Default contrast settings for gfp channel
+    maxContrast = 80;
+end
 
 % Changing the intial frames and particle if justNC13
 if justNC13
@@ -1702,11 +1710,11 @@ while (cc~='x')
         save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo')
         if UseHistoneOverlay
             save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2')
-            save([DataFolder,filesep,'Spots.mat'],'Spots')
+            save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3') %CS20170912 necessary for saving Spots.mat if >2GB
             save([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'],'schnitzcells')
         else
             save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2')            
-            save([DataFolder,filesep,'Spots.mat'],'Spots')
+            save([DataFolder,filesep,'Spots.mat'],'Spots','-v7.3') %CS20170912 necessary for saving Spots.mat if >2GB
         end
         display('Particles saved.')
         if NChannels==1
@@ -2057,11 +2065,11 @@ end
 
 if UseHistoneOverlay
     save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2')
-    save([DataFolder,filesep,'Spots.mat'],'Spots')
+    save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3') %CS20170912 necessary for saving Spots.mat if >2GB)
     save([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'],'schnitzcells')
 else
     save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2')            
-    save([DataFolder,filesep,'Spots.mat'],'Spots')
+    save([DataFolder,filesep,'Spots.mat'],'Spots','-v7.3') %CS20170912 necessary for saving Spots.mat if >2GB)
 end
 close all
 display('Particles saved.')
