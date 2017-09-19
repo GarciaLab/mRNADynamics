@@ -18,10 +18,12 @@ function segmentSpots(Prefix,Threshold,varargin)
 %                of using TrackmRNADynamics? 
 % 'Frames',N:     Run the code from frame 1 to frame N. Defaults to all
 %                frames. It's suggested to run 5-20 frames for debugging.
-% 'NoShadows':    Spots without valid (peaked) z-profiles are normally
-%                discarded. This option overrides that.
 % 'CustomSigmas': Prompts you to enter your custom sigmas to do DoG
 %                 filtering with
+% 'Shadows':    	 This option should be followed by 0, 1 or 2. This
+%                specifies the number of requisite z-planes above and/or below the
+%                brightest plane for a spot to have to pass quality control. 
+
 %               
 % OUTPUT
 % 'Spots':  A structure array with a list of detected transcriptional loci
@@ -39,7 +41,7 @@ warning('off','MATLAB:MKDIR:DirectoryExists');
 displayFigures=0;
 TrackSpots=0;
 num_frames=0;
-Shadows = 1;
+num_shadows = 2;
 CustomSigmas = 0;
 
 for i=1:length(varargin)
@@ -47,8 +49,12 @@ for i=1:length(varargin)
         displayFigures=1;
     elseif strcmp(varargin{i},'TrackSpots')
         TrackSpots=1;
-    elseif strcmpi(varargin{i}, 'NoShadows')
-        Shadows = 0;
+    elseif strcmp(varargin{i},'Shadows')
+        if ~isnumeric(varargin{i+1}) || varargin{i+1} > 2
+            error('Wrong input parameters. After ''Shadows'' you should input number of shadows (0, 1 or 2)')
+        else
+            num_shadows=varargin{i+1};
+        end
     elseif strcmpi(varargin{i}, 'CustomSigmas')
         CustomSigmas = 1;
     elseif strcmp(varargin{i},'Frames')
@@ -305,8 +311,31 @@ end
                 Particles(i).(fields{j}) = Particles(i).(fields{j})(max_index);
             end
         else
-            Particles(i).brightestZ = Particles(i).z(max_index);       
-            if Shadows
+        Particles(i).brightestZ = Particles(i).z(max_index);       
+            if num_shadows == 1
+                if length(Particles(i).z) <= 1
+                        Particles(i).discardThis = 1;
+                        Particles(i).noIntensityAnalysis = 1;
+                        falsePositives = falsePositives + 1;
+                elseif  Particles(i).brightestZ == Particles(i).z(end)
+                    if Particles(i).z(max_index -1) ~= Particles(i).brightestZ-1
+                        Particles(i).discardThis = 1;
+                        Particles(i).noIntensityAnalysis = 1;
+                        falsePositives = falsePositives + 1;
+                    end
+                elseif Particles(i).brightestZ == Particles(i).z(1)
+                    if Particles(i).z(max_index+1) ~= Particles(i).brightestZ+1
+                        Particles(i).discardThis = 1;
+                        Particles(i).noIntensityAnalysis = 1;
+                        falsePositives = falsePositives + 1;
+                    end
+                elseif Particles(i).z(max_index -1) ~= Particles(i).brightestZ-1 ...
+                    && Particles(i).z(max_index +1) ~= Particles(i).brightestZ +1
+                    Particles(i).discardThis = 1;
+                    Particles(i).noIntensityAnalysis = 1;
+                    falsePositives = falsePositives + 1;
+                end
+            elseif num_shadows == 2
                 if  Particles(i).brightestZ == Particles(i).z(end) ||...
                     Particles(i).brightestZ == Particles(i).z(1)                                
                     Particles(i).discardThis = 1;

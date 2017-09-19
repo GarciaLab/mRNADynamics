@@ -398,7 +398,7 @@ if ~just_dog
     end
  
     %Create a final Spots structure to be fed into TrackmRNADynamics
-    Spots = [];            
+    Spots = [];
     fields = fieldnames(Particles);
     num_fields = length(fields);
     for i = initial_frame:num_frames
