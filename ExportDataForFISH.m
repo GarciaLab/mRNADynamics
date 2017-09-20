@@ -1013,11 +1013,14 @@ elseif strcmp(FileMode,'LIFExport')
             end
         elseif strcmpi(ExperimentType,'2spot2color')       %2 spots, 2 colors
             load('ReferenceHist.mat')
+
             if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))
                 if (~isempty(strfind(Channel1{1},'mCherry')))
                     fiducialChannel=1;
+                    histoneChannel=1;
                 elseif (~isempty(strfind(Channel2{1},'mCherry')))
                     fiducialChannel=2;
+                    histoneChannel=2;
                 else
                     error('mCherry channel not found. Cannot generate the fake nuclear image')
                 end
@@ -1061,7 +1064,7 @@ elseif strcmp(FileMode,'LIFExport')
             for i=1:length(FrameInfo)
                 FrameInfo(i).NChInput=length(inputProteinChannel);
             end
-            
+                        
 %             
 %             
 %             if ~isempty(strfind(lower(Channel2{1}),'his'))
@@ -1156,6 +1159,44 @@ elseif strcmp(FileMode,'LIFExport')
                                 n=n+1;
                             end
                         end
+                    elseif strcmpi(ExperimentType,'2spot2color')
+                        NameSuffix=['_ch',iIndex(q,2)];
+
+                        %Save the blank images at the beginning and end of the
+                        %stack
+                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),NameSuffix,'.tif'];
+                        imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),NameSuffix,'.tif'];
+                        imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+                        %Copy the rest of the images
+                        n=1;        %Counter for slices
+                        firstImage = (j-1)*NSlices(i)*NChannels+1+(q-1);
+                        lastImage = j*NSlices(i)*NChannels;
+                        for k=firstImage:NChannels:lastImage
+                            if n<=min(NSlices)
+                                NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),NameSuffix,'.tif'];
+                                   imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
+                                n=n+1;
+                            end
+                        end
+                    elseif strcmpi(ExperimentType, 'inputoutput')
+                        %Save the blank images at the beginning and end of the
+                        %stack
+                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),'_ch',iIndex(q, 2),'.tif'];
+                        imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),'_ch',iIndex(q, 2),'.tif'];
+                        imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+                        %Copy the rest of the images
+                        n=1;        %Counter for slices
+                        firstImage = (j-1)*NSlices(i)*NChannels+1+(q-1);
+                        lastImage = j*NSlices(i)*NChannels;
+                        for k=firstImage:NChannels:lastImage
+                            if n<=min(NSlices)
+                                NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),'_ch',iIndex(q, 2),'.tif'];
+                                   imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
+                                n=n+1;
+                            end
+                        end
                     elseif strcmpi(ExperimentType, 'input')&sum(q==inputProteinChannel)
                         %Are we dealing with one or two channels?
                         if length(inputProteinChannel)==1
@@ -1201,15 +1242,15 @@ elseif strcmp(FileMode,'LIFExport')
                         end
                         
                         %Think about the case when there is no His channel,
-                        %and it is inputoutput mode or 1spot mode.
+                        %and it is inputoutput mode or 1spot mode or 2spot2color.
                         %(MCP-mCherry)
                         if (isempty(strfind(Channel1{1}, 'His')))&&(isempty(strfind(Channel2{1}, 'His')))
-                            if strcmpi(ExperimentType, 'inputoutput')|strcmpi(ExperimentType, '1spot')
+                            if strcmpi(ExperimentType, 'inputoutput')|strcmpi(ExperimentType, '1spot')|strcmpi(ExperimentType,'2spot2color')
                                 if (~isempty(strfind(Channel1{1}, 'NLS')))|(~isempty(strfind(Channel2{1}, 'NLS')))
                                 else
                                     %We don't want to use all slices. Only the center ones
                                     StackCenter=round((min(NSlices)-1)/2);
-                                    StackRange=[StackCenter-1:StackCenter+1];
+                                    StackRange=StackCenter-1:StackCenter+1;
                                     if strcmp(ProjectionType,'medianprojection')
                                         Projection=median(HisSlices(:,:,StackRange),[],3);
                                     else
