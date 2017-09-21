@@ -63,13 +63,15 @@ for i=1:length(PlotHandle)
     end
 
     %Color section
-  
     if strcmp(get(PlotHandle(i),'Type'),'hggroup')
         try ChangeColorPBoC2(PlotHandle(i),'FaceColor')
         end
         try ChangeColorPBoC2(PlotHandle(i),'Color')
         end
     elseif strcmp(get(PlotHandle(i),'Type'),'errorbarseries')
+        
+    elseif strcmp(get(PlotHandle(i),'Type'),'histogram')
+        ChangeColorPBoC2(PlotHandle(i),'FaceColor')
         
     else
         %Why do I have this auto thingy?
