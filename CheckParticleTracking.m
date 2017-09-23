@@ -313,7 +313,8 @@ else
 end
 
 
-if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'Hb-GFP')|strcmp(XLSRaw(XLSEntry,Channel2Column),'Hb-GFP')
+if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
+    %strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'Hb-GFP')|strcmp(XLSRaw(XLSEntry,Channel2Column),'Hb-GFP')
     nc9=XLSRaw{XLSEntry,nc9Column};
     nc10=XLSRaw{XLSEntry,nc10Column};
     nc11=XLSRaw{XLSEntry,nc11Column};
@@ -577,8 +578,6 @@ while (cc~='x')
     end
         
     if (NChannels==1)&&(~strcmp(lower(ExperimentType),'inputoutput'))
-%             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-%                 FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);\
             disp(['projectionMode : ' projectionMode])
             if strcmp(projectionMode,'None (Default)')
                 Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
@@ -600,10 +599,11 @@ while (cc~='x')
                     Image = storedTimeProjection;
                 end
             end
-            
-        
-%             disp(['Warning: Could not load file: ',...
-%                 FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif'])
+
+    elseif (NChannels>1)&&(~strcmp(lower(ExperimentType),'inputoutput'))
+        Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
+            FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),...
+            '_ch',iIndex(CurrentChannel,2),'.tif']);
     elseif (NChannels==1)&&(strcmp(lower(ExperimentType),'inputoutput'))
         OutputChannelTemp1=strfind({lower(Channel1{1}),lower(Channel2{1})},'mcp');
         OutputChannelTemp2=strfind({lower(Channel1{1}),lower(Channel2{1})},'pcp');
@@ -614,6 +614,7 @@ while (cc~='x')
         Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                 FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'_ch',iIndex(OutputChannel,2),'.tif']);
     else
+        warning('ExperimentType and/or channel not supported. Attempting to proceed')
         try
             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                     FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);

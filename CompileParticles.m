@@ -176,6 +176,8 @@ if iscell(Particles)
     NChannels=length(Particles);
 else
     Particles={Particles};
+    Spots={Spots};
+    SpotFilter={SpotFilter};
     NChannels=1;
 end
 
@@ -675,7 +677,7 @@ for ChN=1:NChannels
                 %Extract information from Spots about fluorescence and background
                 [Frame,AmpIntegral,AmpGaussian,Off,...
                  ErrorIntegral,ErrorGauss,optFit1, FitType, noIntensityFlag]...
-                 = GetParticleTrace(k,CompiledParticles{ChN},Spots);
+                 = GetParticleTrace(k,CompiledParticles{ChN},Spots{ChN});
                 CompiledParticles{ChN}(k).Fluo= AmpIntegral;
                 CompiledParticles{ChN}(k).FluoIntegral = AmpIntegral;
                 CompiledParticles{ChN}(k).Off=Off;
