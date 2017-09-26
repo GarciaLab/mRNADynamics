@@ -972,60 +972,38 @@ for ChN=1:NChannels
                             xTrace=x(CompiledParticles{ChN}(k).Index(j));
                             yTrace=y(CompiledParticles{ChN}(k).Index(j));
                             zTrace=z(CompiledParticles{ChN}(k).Index(j));
-                        
-
-                        if NChannels==1
-                            Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                                FilePrefix,iIndex(CompiledParticles{ChN}(k).Frame(j),NDigits),'_z',iIndex(zTrace,2),...
-                                '.tif']);
-                        else
                             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                                 FilePrefix,iIndex(CompiledParticles{ChN}(k).Frame(j),NDigits),'_z',iIndex(zTrace,2),...
                                 '_ch',iIndex(ChN,2),'.tif']);
-                        end
-                        [ImRows,ImCols]=size(Image);
-
-                        ImageSnippet=zeros(SnippetSize,SnippetSize);
-
-
-
-                        yRange=round(yTrace)+[-(SnippetSize-1)/2:(SnippetSize-1)/2];
-                        yFilter=(yRange>0)&(yRange<=ImRows);
-
-
-                        xRange=round(xTrace)+[-(SnippetSize-1)/2:(SnippetSize-1)/2];
-                        xFilter=(xRange>0)&(xRange<=ImCols);
-
-
-
-                        ImageSnippet(yFilter,xFilter)=Image(yRange(yFilter),...
-                            xRange(xFilter));
-
-                        imshow(ImageSnippet,[],'Border','Tight','InitialMagnification',200)
-                        set(gca, 'Position', get(gca, 'OuterPosition') - ...
-                            get(gca, 'TightInset') * [-1 0 1 0; 0 -1 0 1; 0 0 1 0; 0 0 0 1]);
-
-                        if HistoneChannel
-                            %Plot the corresponding nucleus
-                            CurrentSchnitz=schnitzcells(CompiledParticles{ChN}(k).Nucleus);
-                            if sum((CurrentSchnitz.frames)==CompiledParticles{ChN}(k).Frame(j))==1
-                                hold on
-                                EllipseNumber=CurrentSchnitz.cellno(...
-                                    (CurrentSchnitz.frames)==CompiledParticles{ChN}(k).Frame(j));
-
-                                CurrEllipse=Ellipses{CompiledParticles{ChN}(k).Frame(j)}(EllipseNumber,:);
-
-                                EllipseHandle=ellipse(CurrEllipse(3),...
-                                    CurrEllipse(4),...
-                                    CurrEllipse(5),...
-                                    CurrEllipse(1)-xTrace+(SnippetSize-1)/2,...
-                                    CurrEllipse(2)-yTrace+(SnippetSize-1)/2);
-                                %set(EllipseHandle,'color',ColorTime(j,:))
-                                set(EllipseHandle,'color','g')
-                                hold off
+                            [ImRows,ImCols]=size(Image);
+                            ImageSnippet=zeros(SnippetSize,SnippetSize);
+                            yRange=round(yTrace)+[-(SnippetSize-1)/2:(SnippetSize-1)/2];
+                            yFilter=(yRange>0)&(yRange<=ImRows);
+                            xRange=round(xTrace)+[-(SnippetSize-1)/2:(SnippetSize-1)/2];
+                            xFilter=(xRange>0)&(xRange<=ImCols);
+                            ImageSnippet(yFilter,xFilter)=Image(yRange(yFilter),...
+                                xRange(xFilter));
+                            imshow(ImageSnippet,[],'Border','Tight','InitialMagnification',200)
+                            set(gca, 'Position', get(gca, 'OuterPosition') - ...
+                                get(gca, 'TightInset') * [-1 0 1 0; 0 -1 0 1; 0 0 1 0; 0 0 0 1]);
+                            if HistoneChannel
+                                %Plot the corresponding nucleus
+                                CurrentSchnitz=schnitzcells(CompiledParticles{ChN}(k).Nucleus);
+                                if sum((CurrentSchnitz.frames)==CompiledParticles{ChN}(k).Frame(j))==1
+                                    hold on
+                                    EllipseNumber=CurrentSchnitz.cellno(...
+                                        (CurrentSchnitz.frames)==CompiledParticles{ChN}(k).Frame(j));
+                                    CurrEllipse=Ellipses{CompiledParticles{ChN}(k).Frame(j)}(EllipseNumber,:);
+                                    EllipseHandle=ellipse(CurrEllipse(3),...
+                                        CurrEllipse(4),...
+                                        CurrEllipse(5),...
+                                        CurrEllipse(1)-xTrace+(SnippetSize-1)/2,...
+                                        CurrEllipse(2)-yTrace+(SnippetSize-1)/2);
+                                    %set(EllipseHandle,'color',ColorTime(j,:))
+                                    set(EllipseHandle,'color','g')
+                                    hold off
+                                end
                             end
-                        end
-
                         end
                     end
                     set(gcf,'Position',[1,41,1280,684])  
@@ -2005,7 +1983,7 @@ if HistoneChannel&&strcmp(ExperimentAxis,'AP')
             h = colorbar;
             caxis([APbinID(MinAPIndexProb),APbinID(MaxAPIndexProb)])
             ylabel(h,'AP Position (x/L)')
-           % StandardFigure(PlotHandle,gca)
+            StandardFigure(PlotHandle,gca)
             xlim([0,ElapsedTime(end)])
             ylim([0,1.01])
             saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsTimeVsAP.tif'])
