@@ -1145,7 +1145,6 @@ elseif strcmp(FileMode,'LIFExport')
                     elseif strcmpi(ExperimentType, 'inputoutput')
                         %Save the blank images at the beginning and end of the
                         %stack
-                        NameSuffix=['_ch',iIndex(q,2)];
                         NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),NameSuffix,'.tif'];
                         imwrite(BlankImage,[OutputFolder,filesep,NewName]);
                         NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),NameSuffix,'.tif'];
