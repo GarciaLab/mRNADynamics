@@ -770,12 +770,15 @@ for ChN=1:NChannels
 
 
                         %Create the filter
-                        for ChN=1:NChannels
+                       % for ChN=1:NChannels
+                            
                             if isempty(CompiledParticles)==1
                                 error(['No compiled particles found in channel ',num2str(ChN),'. Did you mean to run the code with ApproveAll?'])
                             end
+
                             ncFilter=logical(zeros(length(CompiledParticles{ChN})...
                                 ,length(ncFilterID))); %AR 6/16/17: I think multi-channel data might require this to be a cell? Something for the future.
+                            
                             for i=1:length(CompiledParticles{ChN})
                                 %Sometimes CompiledParticles{1}(i).nc is empty. This is because of some
                                 %problem with FrameInfo! In that case we'll pull the information out of
@@ -808,7 +811,7 @@ for ChN=1:NChannels
                                     end
                                 end
                             end
-                        end
+                        %end
                     end
                
                     figure(2)
@@ -964,7 +967,7 @@ for ChN=1:NChannels
                     for j=1:NFrames
                         subplot(TotalRows,NCols,(TotalRows-NRows)*NCols+j)
                         spotFrame = CompiledParticles{ChN}(k).Frame(j);
-                        [x,y,z]=SpotsXYZ(Spots(spotFrame)); 
+                        [x,y,z]=SpotsXYZ(Spots{ChN}(spotFrame)); 
                         if ~isempty(x)
                             xTrace=x(CompiledParticles{ChN}(k).Index(j));
                             yTrace=y(CompiledParticles{ChN}(k).Index(j));
