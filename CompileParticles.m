@@ -2002,7 +2002,7 @@ if HistoneChannel&&strcmp(ExperimentAxis,'AP')
             h = colorbar;
             caxis([APbinID(MinAPIndexProb),APbinID(MaxAPIndexProb)])
             ylabel(h,'AP Position (x/L)')
-            StandardFigure(PlotHandle,gca)
+           % StandardFigure(PlotHandle,gca)
             xlim([0,ElapsedTime(end)])
             ylim([0,1.01])
             saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsTimeVsAP.tif'])

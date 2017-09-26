@@ -335,14 +335,7 @@ if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
             %Load the corresponding mRNA image. Check whether we have multiple
             %channels saved or not.
             D=dir([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'*.tif']);
-            if length(D)==1     %We do not have multiple channels saved explicitly
-                Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'.tif']);
-            elseif length(D)==2
-                Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch',iIndex(SpotsChannel(Channel),2),'.tif']);
-            else
-                error('More than two channels not currently supported')
-            end
-
+            Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch',iIndex(SpotsChannel(Channel),2),'.tif']);
             %TO-DO: Show spots above and below threshold differently
             imshow(Image,[])
             hold on
