@@ -581,7 +581,7 @@ while (cc~='x')
             disp(['projectionMode : ' projectionMode])
             if strcmp(projectionMode,'None (Default)')
                 Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                    FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);
+                    FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'_ch',iIndex(CurrentChannel,2),'.tif']);
             elseif strcmp(projectionMode,'Max Z')
                 [Image,~] = zProjections(Prefix, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
             elseif strcmp(projectionMode,'Median Z')

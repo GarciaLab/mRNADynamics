@@ -424,6 +424,11 @@ else
             Particles = track_spots(Particles, neighborhood, numFrames);
             save([DropboxFolder,filesep,Prefix,filesep,'Particles_SS.mat'], 'Particles');
         end
+        %If we only have one channel, then convert Spots to a
+        %standard structure.
+        if nCh==1
+           Spots=Spots{1};
+        end
 
         mkdir([DropboxFolder,filesep,Prefix]);
         save([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots','-v7.3');    
@@ -436,10 +441,19 @@ else
     if ~justDoG
         detectedCircles = 0;
         detectedBalls = 0;
-        for i = 1:length(Spots{q})
-            for j = 1:length(Spots{q}(i).Fits)
-                detectedCircles = detectedCircles + length(Spots{q}(i).Fits(j).z);
-                detectedBalls = detectedBalls + 1;
+        if iscell(Spots)
+            for i = 1:length(Spots{q})
+                for j = 1:length(Spots{q}(i).Fits)
+                    detectedCircles = detectedCircles + length(Spots{q}(i).Fits(j).z);
+                    detectedBalls = detectedBalls + 1;
+                end
+            end
+        else
+            for i = 1:length(Spots)
+                for j = 1:length(Spots(i).Fits)
+                    detectedCircles = detectedCircles + length(Spots(i).Fits(j).z);
+                    detectedBalls = detectedBalls + 1;
+                end
             end
         end
         display(['Detected spots: ',num2str(detectedCircles)])
