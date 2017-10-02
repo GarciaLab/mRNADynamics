@@ -149,10 +149,10 @@ if justDoG
         sigma1 = str2num(answer{1,1});
         sigma2 = str2num(answer{2,1});
     else
-    %Initialize Difference of Gaussian filter parameters. filterSize >> sigma2
-    %> sigma1
-    sigma1 = pixelSize / pixelSize; %width of narrower Gaussian
-    sigma2 = 42000 / pixelSize; % width of wider Gaussian
+        %Initialize Difference of Gaussian filter parameters. filterSize >> sigma2
+        %> sigma1
+        sigma1 = pixelSize / pixelSize; %width of narrower Gaussian
+        sigma2 = 42000 / pixelSize; % width of wider Gaussian
     end
     
     filterSize = round(2000 / pixelSize); %size of square to be convolved with microscopy images

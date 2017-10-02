@@ -345,11 +345,12 @@ else
     SDCyto=[];
     MaxCyto=[];
 
+    nameSuffix=['_ch',iIndex(2,2)]; %assuming input channel is channel two. obviously this is going to be wrong in general.
     h=waitbar(0,'Calculating the median cyto intentisy');
     for i=1:length(FrameInfo)
         waitbar(i/length(FrameInfo),h)
         for j=1:FrameInfo(1).NumberSlices
-            Image(:,:,j)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),'.tif']);
+            Image(:,:,j)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),nameSuffix,'.tif']);
         end
         ImageMax=max(Image,[],3);
         MedianCyto(i)=median(double(ImageMax(:)));
@@ -413,7 +414,7 @@ if strcmp(lower(ExperimentAxis),'ap')
         
         MeanVectorAP=cell2mat(MeanVectorAPCell2);
         SDVectorAP=cell2mat(SDVectorAPCell2);
-        NParticlesAP=cell2mat(NParticlesAPCell2);;
+        NParticlesAP=cell2mat(NParticlesAPCell2);
     end
     
 %     if NChannels==1

@@ -1013,7 +1013,6 @@ elseif strcmp(FileMode,'LIFExport')
             end
         elseif strcmpi(ExperimentType,'2spot2color')       %2 spots, 2 colors
             load('ReferenceHist.mat')
-
             if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))
                 if (~isempty(strfind(Channel1{1},'mCherry')))
                     fiducialChannel=1;
@@ -1028,7 +1027,7 @@ elseif strcmp(FileMode,'LIFExport')
         
         elseif strcmpi(ExperimentType,'input')        %Protein input mode
             %This mode assumes that at least one channel corresponds to the input.
-            %It also check whetehr the second channel is histone. If there is
+            %It also check whether the second channel is histone. If there is
             %no histone channel it creates a fake channel using one of the
             %inputs.
             
@@ -1199,12 +1198,7 @@ elseif strcmp(FileMode,'LIFExport')
                             end
                         end
                     elseif strcmpi(ExperimentType, 'input')&sum(q==inputProteinChannel)
-                        %Are we dealing with one or two channels?
-                        if length(inputProteinChannel)==1
-                            NameSuffix=[];
-                        else
-                            NameSuffix=['_ch',iIndex(q,2)];
-                        end
+                        NameSuffix=['_ch',iIndex(q,2)];
                         %Save the blank images at the beginning and end of the
                         %stack
                         NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),NameSuffix,'.tif'];

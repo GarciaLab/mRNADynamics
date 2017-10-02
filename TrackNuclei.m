@@ -380,11 +380,13 @@ if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'inp
                 Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices+2);
 
                 %Load the z-stack for this frame
+            %    nameSuffix=['_ch',iIndex(q,2)];
+
                 for CurrentZ=1:(NumberSlices+2)   %Note that I need to add the two extra slices manually
                     if strcmp(lower(ExperimentType),'inputoutput')
                         Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch',iIndex(InputChannel,2),'.tif']);
                     elseif strcmp(lower(ExperimentType),'input')&(length(InputChannel))==1
-                        Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'.tif']);
+                        Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch',iIndex(InputChannel,2),'.tif']);
                     elseif strcmp(lower(ExperimentType),'input')&(length(InputChannel))>1
                         Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch',iIndex(InputChannel(ChN),2),'.tif']);
                     end
