@@ -24,6 +24,7 @@ function txt = InstallmRNADynamics
   DYNAMICS_RESULTS_PATH = createDataSubDir('DynamicsResults') %(old DropboxFolder)
   MS2CODE_PATH = mRNADynamicsPath
 
+  createFoldersConfig_CSV()
   txt = createComputerFoldersConfig()
       
   createMovieDatabaseFile()
@@ -72,6 +73,26 @@ function txt = InstallmRNADynamics
     movieDatabaseFile = [DYNAMICS_RESULTS_PATH, filesep, 'MovieDatabase.xlsx']
 
     copyFileIfNotExists(movieDatabaseInstallationFile, movieDatabaseFile)
+  end
+
+  function createFoldersConfig_CSV()
+    configFile = [ROOT_PATH, filesep, 'ComputerFolders.csv']
+    if exist(configFile)
+      %warning([configFile, ' already exists. Not overwriting.'])
+      %return %config file already exists - do nothing
+    end
+
+    contents = {
+      'Computer Name', getComputerName();
+      'User Name', getUserName();
+      'SourcePath', RAW_DYNAMICS_DATA_PATH;
+      'PreProcPath', PREPROCESSED_DATA_PATH;
+      'FISHPath', PROCESSED_DATA_PATH;
+      'DropboxFolder', DYNAMICS_RESULTS_PATH;
+      'MS2CodePath', MS2CODE_PATH
+    }
+
+    cell2csv(configFile, contents)
   end
 
   function txt = createComputerFoldersConfig()
@@ -154,6 +175,8 @@ function userName = getUserName
       % (Not as familiar with windows,
       % found it on the net elsewhere, you might want to verify)
   end
+
+  userName = strrep(userName, sprintf('\n'),'');
 end
 
 function computerName = getComputerName
@@ -166,7 +189,8 @@ function computerName = getComputerName
         computerName = getenv('HOSTNAME');  
      end  
   end  
-  computerName = lower(computerName);
+
+  computerName = strrep(lower(computerName), sprintf('\n'),'');
 end
 
 function writeStartupFile(contents)
