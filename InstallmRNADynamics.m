@@ -7,148 +7,146 @@
 % Author (contact): Hernan Garcia (hgarcia@berkeley.edu)
 function txt = InstallmRNADynamics
   warning('off','MATLAB:MKDIR:DirectoryExists')
-  
-  %make sure we are in the right folder
-  while ~strfind(pwd, 'mRNADynamics')
-      warning('This script must be run from the ''mRNADynamics'' directory.')
-      cd(uigetdir);
-  end
 
+  ensureRightFolder()
   mRNADynamicsPath = pwd
 
   cd('..')
-  rootPath = pwd
+  ROOT_PATH = pwd
   cd(mRNADynamicsPath)
 
   disp(['mRNADynamics absolute path is ', mRNADynamicsPath])
-  disp(['root directory absolute path is ', rootPath])
-
-  % configuration paths
-  DATA_PATH = [rootPath, filesep, 'Data']
-  PREPROCESSED_DATA_PATH = [DATA_PATH, filesep, 'PreProcessedData']
-  PROCESSED_DATA_PATH = [DATA_PATH, filesep, 'ProcessedData']
-  RAW_DYNAMICS_DATA_PATH = [DATA_PATH, filesep, 'RawDynamicsData']
-  DYNAMICS_RESULTS_PATH = [DATA_PATH, filesep, 'DynamicsResults']
-
-  INSTALLATION_FILES_DIR = 'InstallationFiles'
-  INSTALL_COMPUTER_FOLDERS_PATH = [INSTALLATION_FILES_DIR, filesep, 'InstallComputerFolders.xlsx']
-  COMPUTER_FOLDERS_PATH = [rootPath, filesep, 'ComputerFolders.xlsx']
-  INSTALL_MOVIE_DATABASE_PATH = [INSTALLATION_FILES_DIR, filesep, 'InstallMovieDatabase.xlsx']
-  MOVIE_DATABASE_PATH = [DYNAMICS_RESULTS_PATH, filesep, 'MovieDatabase.xlsx']
-
+  disp(['root directory absolute path is ', ROOT_PATH])
+  
+  PREPROCESSED_DATA_PATH = createDataSubDir('PreProcessedData')
+  PROCESSED_DATA_PATH = createDataSubDir('ProcessedData')
+  RAW_DYNAMICS_DATA_PATH = createDataSubDir('RawDynamicsData') %(old RawData folder)
+  DYNAMICS_RESULTS_PATH = createDataSubDir('DynamicsResults') %(old DropboxFolder)
   MS2CODE_PATH = mRNADynamicsPath
 
-  mkdir(DATA_PATH)
-  mkdir(PREPROCESSED_DATA_PATH)
-  mkdir(PROCESSED_DATA_PATH)
-  mkdir(RAW_DYNAMICS_DATA_PATH) %(old RawData folder)
-  mkdir(DYNAMICS_RESULTS_PATH) %(old DropboxFolder)
+  createComputerFoldersConfig()
+      
+  createMovieDatabaseFile()
 
-  cflag = 0; %ComputerFolders.xlsx has not been made yet.
-  %Copy the files to the different folders:
-  if ~exist(COMPUTER_FOLDERS_PATH)
-      copyfile(INSTALL_COMPUTER_FOLDERS_PATH, COMPUTER_FOLDERS_PATH)
-  else
-      warning([COMPUTER_FOLDERS_PATH, ' already exists. Not overwriting.'])
-      cflag = 1;
+  createStartupFile()
+
+  setJavaHomeEnvironmentVariable()
+
+  msgbox('Run "startup" from the command line or restart Matlab to finish the installation')
+          
+  warning('on','MATLAB:MKDIR:DirectoryExists')
+
+  %%
+  %% nested sub-functions
+  %%
+
+  function subDirPath = createDataSubDir(subDirName)
+    dataPath = [ROOT_PATH, filesep, 'Data']
+    if ~exist(dataPath)
+      mkdir(dataPath)
+    end
+
+    subDirPath = [dataPath, filesep, subDirName]
+    mkdir(subDirPath)
   end
 
-  %Edit ComputerFolders.XLSX
-  [num,txt] = xlsread(COMPUTER_FOLDERS_PATH);
+  function ensureRightFolder()
+    while ~strfind(pwd, 'mRNADynamics')
+      warning('This script must be run from the ''mRNADynamics'' directory.')
+      cd(uigetdir);
+    end
+  end
 
-  txt{1, end+1} = getComputerName();
-  txt{2, end} = getUserName();
-  txt{3, end} = RAW_DYNAMICS_DATA_PATH;
-  txt{4, end} = PREPROCESSED_DATA_PATH;
-  txt{5, end} = PROCESSED_DATA_PATH;
-  txt{6, end} = DYNAMICS_RESULTS_PATH;
-  txt{7, end} = MS2CODE_PATH;
+  function copied = copyFileIfNotExists(fromPath, toPath)
+    if ~exist(toPath)
+        copyfile(fromPath, toPath)
+        copied = true
+    else
+        warning([toPath, ' already exists. Not overwriting.'])
+        copied = false
+    end
+  end
 
-  %Save the XLS file
-  if ispc && ~cflag
-      xlswrite(COMPUTER_FOLDERS_PATH, txt);
-  else
-      if ~cflag
+  function createMovieDatabaseFile()
+    movieDatabaseInstallationFile = ['InstallationFiles', filesep, 'InstallMovieDatabase.xlsx']
+    movieDatabaseFile = [DYNAMICS_RESULTS_PATH, filesep, 'MovieDatabase.xlsx']
+
+    copyFileIfNotExists(movieDatabaseInstallationFile, movieDatabaseFile)
+  end
+
+  function createComputerFoldersConfig()
+    computerFoldersInstallationFile = ['InstallationFiles', filesep, 'InstallComputerFolders.xlsx']
+    computerFoldersFile = [ROOT_PATH, filesep, 'ComputerFolders.xlsx']
+
+    blankConfigCreated = copyFileIfNotExists(computerFoldersInstallationFile, computerFoldersFile)
+    
+    if ispc && blankConfigCreated
+      %Save the XLS file - only windows supported for now
+      writeConfigFile(computerFoldersFile)
+    else
+        if blankConfigCreated
           disp('Warning: Macs and Linux cannot generate the XLS files.')
           disp('(1) Re-run using "txt=InstallmRNADynamics".')
           disp('(2) Type "open txt".')
           disp('(3) Copy and paste the data into a new file in Excel.')
           disp('(4) Get rid of all '' in the file.')
-          disp('(5) Save as "ComputerFolders.xlsx" in folder "LivemRNAFISH.')
-      end
-  end
-      
-  %Copy MovieDatabase.XLSX
-  if ~exist(MOVIE_DATABASE_PATH)
-      copyfile(INSTALL_MOVIE_DATABASE_PATH, MOVIE_DATABASE_PATH)
-  else
-      warning([MOVIE_DATABASE_PATH, ' already exists. Not overwriting.'])
+          disp('(5) Save as "ComputerFolders.xlsx" in folder "LivemRNAFISH".')
+        end
+    end
   end
 
-  %Add the right folders to the path. This will be done as a startup file in
-  %the user's folder
+  function writeConfigFile(filePath)
+    [num,txt] = xlsread(filePath);
 
-  DependenciesFolder = [mRNADynamicsPath, filesep, 'dependencies']
-  DeprecatedFolder = [mRNADynamicsPath, filesep, 'deprecated']
-  TestClassesFolder = [mRNADynamicsPath, filesep, 'testClasses']
-  TrackingFolder = [mRNADynamicsPath, filesep, 'Tracking'];
-  SubfunctionsFolder = [TrackingFolder, filesep, 'subfunctions'];
-  LineageCodeFolder = [mRNADynamicsPath, filesep, 'LineageCode'];
+    txt{1, end+1} = getComputerName();
+    txt{2, end} = getUserName();
+    txt{3, end} = RAW_DYNAMICS_DATA_PATH;
+    txt{4, end} = PREPROCESSED_DATA_PATH;
+    txt{5, end} = PROCESSED_DATA_PATH;
+    txt{6, end} = DYNAMICS_RESULTS_PATH;
+    txt{7, end} = MS2CODE_PATH;
+    
+    xlswrite(filePath, txt);
+  end
+  
+  function createStartupFile()
+    % Add the right folders to the path.
+    % This will be done as a startup file in the user's folder
 
-  Output{1} = ['path(''', PREPROCESSED_DATA_PATH, ''',path);'];
-  Output{2} = ['addpath(genpath(''', DependenciesFolder, '''))'];
-  Output{3} = ['path(''', rootPath, ''',path);'];
-  Output{4} = ['path(''', mRNADynamicsPath, ''',path);'];
-  Output{5} = ['path(''', TrackingFolder, ''',path);'];
-  Output{6} = ['path(''', LineageCodeFolder, ''',path);'];
-  Output{7} = ['path(''', SubfunctionsFolder, ''',path);'];
-  Output{8} = ['addpath(genpath(''', DeprecatedFolder, '''))'];
-  Output{9} = ['path(''', DYNAMICS_RESULTS_PATH, ''',path);'];
-  Output{10} = ['addpath(genpath(''', TestClassesFolder, '''))'];
+    DependenciesFolder = [mRNADynamicsPath, filesep, 'dependencies']
+    DeprecatedFolder = [mRNADynamicsPath, filesep, 'deprecated']
+    TestClassesFolder = [mRNADynamicsPath, filesep, 'testClasses']
+    TrackingFolder = [mRNADynamicsPath, filesep, 'Tracking'];
+    SubfunctionsFolder = [TrackingFolder, filesep, 'subfunctions'];
+    LineageCodeFolder = [mRNADynamicsPath, filesep, 'LineageCode'];
 
-  disp(['Will create startup.m with this contents: ', Output])
+    Output{1} = ['path(''', PREPROCESSED_DATA_PATH, ''',path);'];
+    Output{2} = ['addpath(genpath(''', DependenciesFolder, '''))'];
+    Output{3} = ['path(''', ROOT_PATH, ''',path);'];
+    Output{4} = ['path(''', mRNADynamicsPath, ''',path);'];
+    Output{5} = ['path(''', TrackingFolder, ''',path);'];
+    Output{6} = ['path(''', LineageCodeFolder, ''',path);'];
+    Output{7} = ['path(''', SubfunctionsFolder, ''',path);'];
+    Output{8} = ['addpath(genpath(''', DeprecatedFolder, '''))'];
+    Output{9} = ['path(''', DYNAMICS_RESULTS_PATH, ''',path);'];
+    Output{10} = ['addpath(genpath(''', TestClassesFolder, '''))'];
 
-  %Create the startup.m file
-  StartUpPath = userpath; 
-  if isempty(userpath)
-     display('Path for this specific user was not found. Please locate it in your documents folder.')
-     display('In Windows, got to "My Documents\Matlab"')
-     StartUpPath = uigetdir;
-     userpath(StartUpPath);
+    writeStartupFile(Output);
   end
 
-  fid = fopen([StartUpPath(1:end-1),filesep,'startup.m'], 'a');
-  errmsg = '';
-  if fid < 0
-      fid = fopen([StartUpPath,filesep,'startup.m'], 'a');
+  function setJavaHomeEnvironmentVariable()
+    %Switch Matlab over to the Java release from the FIJI packaged with this
+    %repository
+    if ispc
+        [status,~] = dos(['setx MATLAB_JAVA ',ROOT_PATH,'\mRNADynamics\Fiji.app\java\win64\jdk1.8.0_66\jre']);
+        if status
+            warning('Something went wrong setting Java environment variable. Talk to Armando.')
+        end
+    else    
+        warning(['Please note that Weka integration is not supported outside of Windows. ',
+                'Talk to Armando if you need this.'])
+    end
   end
-  while fid < 0 
-     disp(errmsg);
-     disp('Please find your user''s Matlab folder. Maybe "My Documents\Matlab" on Windows?')
-     d = uigetdir;
-     [fid,errmsg] = fopen(d);
-  end
-
-  for i=1:length(Output)
-      fprintf(fid, '%s \n', Output{i});
-  end
-  fclose(fid);
-
-  %Switch Matlab over to the Java release from the FIJI packaged with this
-  %repository
-  if ispc
-      [status,~] = dos(['setx MATLAB_JAVA ',mRNADynamicsParentFolder,'\mRNADynamics\Fiji.app\java\win64\jdk1.8.0_66\jre']);
-      if status
-          warning('Something went wrong setting Java environment variable. Talk to Armando.')
-      end
-  else    
-      warning(['Please note that Weka integration is not supported outside of Windows. ',...
-              'Talk to Armando if you need this.'])
-  end
-
-  msgbox('Run "startup" from the command line or restart Matlab to finish the installation')
-          
-  warning('on','MATLAB:MKDIR:DirectoryExists')
 end
 
 function userName = getUserName
@@ -174,4 +172,35 @@ function computerName = getComputerName
      end  
   end  
   computerName = lower(computerName);
+end
+
+function writeStartupFile(contents)
+  disp(['Will create startup.m with this contents: ', contents])
+
+  %Create the startup.m file
+  StartUpPath = userpath; 
+  if isempty(userpath)
+     display('Path for this specific user was not found. Please locate it in your documents folder.')
+     display('In Windows, got to "My Documents\Matlab"')
+     StartUpPath = uigetdir;
+     userpath(StartUpPath);
+  end
+
+  disp([StartUpPath(1:end-1),filesep,'startup.m']);
+  fid = fopen([StartUpPath(1:end-1),filesep,'startup.m'], 'w');
+  errmsg = '';
+  if fid < 0
+      fid = fopen([StartUpPath,filesep,'startup.m'], 'w');
+  end
+  while fid < 0 
+     disp(errmsg);
+     disp('Please find your user''s Matlab folder. Maybe "My Documents\Matlab" on Windows?')
+     d = uigetdir;
+     [fid,errmsg] = fopen(d);
+  end
+
+  for i=1:length(contents)
+      fprintf(fid, '%s \n', contents{i});
+  end
+  fclose(fid);
 end
