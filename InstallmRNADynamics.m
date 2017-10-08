@@ -24,7 +24,7 @@ function txt = InstallmRNADynamics
   DYNAMICS_RESULTS_PATH = createDataSubDir('DynamicsResults') %(old DropboxFolder)
   MS2CODE_PATH = mRNADynamicsPath
 
-  createComputerFoldersConfig()
+  txt = createComputerFoldersConfig()
       
   createMovieDatabaseFile()
 
@@ -74,15 +74,24 @@ function txt = InstallmRNADynamics
     copyFileIfNotExists(movieDatabaseInstallationFile, movieDatabaseFile)
   end
 
-  function createComputerFoldersConfig()
+  function txt = createComputerFoldersConfig()
     computerFoldersInstallationFile = ['InstallationFiles', filesep, 'InstallComputerFolders.xlsx']
     computerFoldersFile = [ROOT_PATH, filesep, 'ComputerFolders.xlsx']
 
     blankConfigCreated = copyFileIfNotExists(computerFoldersInstallationFile, computerFoldersFile)
     
+    [num,txt] = xlsread(computerFoldersFile);
+    txt{1, end+1} = getComputerName();
+    txt{2, end} = getUserName();
+    txt{3, end} = RAW_DYNAMICS_DATA_PATH;
+    txt{4, end} = PREPROCESSED_DATA_PATH;
+    txt{5, end} = PROCESSED_DATA_PATH;
+    txt{6, end} = DYNAMICS_RESULTS_PATH;
+    txt{7, end} = MS2CODE_PATH;
+
     if ispc && blankConfigCreated
       %Save the XLS file - only windows supported for now
-      writeConfigFile(computerFoldersFile)
+       xlswrite(computerFoldersFile, txt);
     else
         if blankConfigCreated
           disp('Warning: Macs and Linux cannot generate the XLS files.')
@@ -95,20 +104,6 @@ function txt = InstallmRNADynamics
     end
   end
 
-  function writeConfigFile(filePath)
-    [num,txt] = xlsread(filePath);
-
-    txt{1, end+1} = getComputerName();
-    txt{2, end} = getUserName();
-    txt{3, end} = RAW_DYNAMICS_DATA_PATH;
-    txt{4, end} = PREPROCESSED_DATA_PATH;
-    txt{5, end} = PROCESSED_DATA_PATH;
-    txt{6, end} = DYNAMICS_RESULTS_PATH;
-    txt{7, end} = MS2CODE_PATH;
-    
-    xlswrite(filePath, txt);
-  end
-  
   function createStartupFile()
     % Add the right folders to the path.
     % This will be done as a startup file in the user's folder
