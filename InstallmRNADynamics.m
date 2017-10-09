@@ -83,8 +83,8 @@ function txt = InstallmRNADynamics
     end
 
     contents = {
-      'Computer Name', getComputerName();
-      'User Name', getUserName();
+      '"Computer Name"', getComputerName();
+      '"User Name"', getUserName();
       'SourcePath', RAW_DYNAMICS_DATA_PATH;
       'PreProcPath', PREPROCESSED_DATA_PATH;
       'FISHPath', PROCESSED_DATA_PATH;

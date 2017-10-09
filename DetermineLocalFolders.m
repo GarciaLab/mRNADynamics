@@ -1,6 +1,33 @@
 function [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(varargin)
 
+%% Refactor in progress
+%% TO-DO: do we want to keep support for mulitple columns for multiple computers?
+%$ I guess not....
+
+CONFIG_CSV_PATH = ['..', filesep, 'ComputerFolders.csv']
+if exist(CONFIG_CSV_PATH)
+  disp('Using new CSV configuration file')
+  configValues = textscan(fopen(CONFIG_CSV_PATH),'%s', 'delimiter', ','){1}
+
+  
+  SourcePath = getConfigValue(configValues, 'SourcePath')
+  FISHPath = getConfigValue(configValues, 'FISHPath')
+  DropboxFolder = getConfigValue(configValues, 'DropboxFolder')
+  MS2CodePath = getConfigValue(configValues, 'MS2CodePath')
+  PreProcPath = getConfigValue(configValues, 'PreProcPath')
+
+  function value = getConfigValue(configuration, propertyName)
+    indexArray = strfind(configuration, propertyName)
+    propertyLabelIndex = find(not(cellfun('isempty', indexArray)));
+
+    value = configValues{propertyLabelIndex + 1}
+  end
+
+  %% TO-DO deal with the "mutiple dropbox folders" case, still figuring this out.
+  return
+end
+
 %This functions gives out the folder corresponding to each computer. If a
 %Prefix is also included it will give out the corresponding DropboxFolder
 %for the particular experiment. Otherwise it will give the default dropbox
@@ -150,5 +177,5 @@ end
 
 DropboxFolder=XLS{DropboxRow,ComputerColumn};  
 
-    
+end
     
