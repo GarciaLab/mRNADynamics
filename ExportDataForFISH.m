@@ -1210,7 +1210,7 @@ elseif strcmp(FileMode,'LIFExport')
                     elseif strcmpi(ExperimentType, 'input')&&sum(q==inputProteinChannel)
                         %Are we dealing with one or two channels?
                         if length(inputProteinChannel)==1
-                            NameSuffix=[];
+                            NameSuffix=['_ch',iIndex(q,2)];
                         else
                             NameSuffix=['_ch',iIndex(q,2)];
                         end
