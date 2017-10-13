@@ -41,10 +41,10 @@ function f = filterImage(im, filterType, sigmas)
         case 'Difference_of_Gaussian'
             filterSize2 = rad*s2;
             if dim==2
-                imDoG{s1, s2} = imgaussfilt(im, s1) - imgaussfilt(im, s2);
-                f = padarray(imDoG{s1, s2}(filterSize2:end-filterSize2-1, filterSize2:end-filterSize2-1), [filterSize2,filterSize2]);
+                f{s1, s2} = imgaussfilt(im, s1) - imgaussfilt(im, s2);
+                f = padarray(f{s1, s2}(filterSize2:end-filterSize2-1, filterSize2:end-filterSize2-1), [filterSize2,filterSize2]);
             elseif dim == 3
-                imDoG{s1, s2} = imgaussfilt3(im, s1) - imgaussfilt3(im, s2);
+                f{s1, s2} = imgaussfilt3(im, s1) - imgaussfilt3(im, s2);
             end
         case 'Laplacian'
             if dim==2
@@ -113,7 +113,7 @@ function f = filterImage(im, filterType, sigmas)
                 m = size(im, 2);
                 n = size(im, 3);
                 f = zeros(l,m,n);
-                parfor p = 1:l
+                for p = 1:l
                     for q = 1:m
                         for r = 1:n
                             S = [S11(p,q,r), S12(p,q,r), S13(p,q,r);...
@@ -170,7 +170,7 @@ function f = filterImage(im, filterType, sigmas)
                 m = size(im, 2);
                 n = size(im, 3);
                 f = zeros(l,m,n);
-                parfor p = 1:l
+                for p = 1:l
                     for q = 1:m
                         for r = 1:n
                             S = [S11(p,q,r), S12(p,q,r), S13(p,q,r);...
@@ -185,25 +185,29 @@ function f = filterImage(im, filterType, sigmas)
             if dim==2
                 f = colfilt(im,[s s],'sliding',@median);
             elseif dim==3
-                f = ordfilt3(im, 'med', filterSize); 
+%                 f = ordfilt3(im, 'med', filterSize); %i need to rewrite
+%                 this algorithm because it doesn't work
             end
         case 'Maximum'
             if dim==2
                 f = colfilt(im,[s s],'sliding',@max);
             elseif dim==3
-                f = ordfilt3(im, 'max', filterSize);
+%                 f = ordfilt3(im, 'max', filterSize); %i need to rewrite
+%                 this algorithm because it doesn't work
             end
         case 'Variance'
             if dim==2
                 f = colfilt(im,[s s],'sliding',@var);
             elseif dim==3
-                 f = ordfilt3(im, 'var', filterSize); %not sure 'var' is actually an allowed parameter
+%                  f = ordfilt3(im, 'var', filterSize); %i need to rewrite
+%                 this algorithm because it doesn't work
             end
         case 'Minimum'
             if dim==2
                 f = colfilt(im,[s s],'sliding',@min);
             elseif dim==3
-%                  f = ordfilt3(im, 'min', filterSize); 
+%                  f = ordfilt3(im, 'min', filterSize); %i need to rewrite
+%                 this algorithm because it doesn't work
             end
         case 'Hessian_smallest'
             if dim==2
@@ -246,7 +250,7 @@ function f = filterImage(im, filterType, sigmas)
                 m = size(im, 2);
                 n = size(im, 3);
                 f = zeros(l,m,n);
-                parfor p = 1:l
+                for p = 1:l
                     for q = 1:m
                         for r = 1:n
                             H = [H11(p, q, r), H12(p, q, r), H13(p, q, r);...
@@ -298,7 +302,7 @@ function f = filterImage(im, filterType, sigmas)
                 m = size(im, 2);
                 n = size(im, 3);
                 f = zeros(l,m,n);
-                parfor p = 1:l
+                for p = 1:l
                     for q = 1:m
                         for r = 1:n
                             H = [H11(p, q, r), H12(p, q, r), H13(p, q, r);...

@@ -1,5 +1,5 @@
-function arff = makeArff(Prefix)
-% makeArff(groundTruth)
+function arff = makeArff(Prefix,varargin)
+% makeArff(Prefix)
 %
 % DESCRIPTION
 % Takes ground truth spot/pixel data curated from CheckParticleTracking and
@@ -10,7 +10,8 @@ function arff = makeArff(Prefix)
 %           present in the 'groundTruth' structure.
 %
 % OPTIONS
-% None.
+% 'numFrames': Optionally only take pixels from the first numFrames frames
+% of the movie. Useful for debugging. 
 %               
 % OUTPUT
 % 'arff': An arff-like matrix that can be fed into Weka after being saved as
@@ -31,6 +32,13 @@ cols = frameInfo(1).PixelsPerLine;
 zSlices = frameInfo(1).NumberSlices;
 Spots = load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat']);
 numFrames = length(Spots.Spots);
+
+%Read in optional parameters
+for i=1:length(varargin)
+    if strcmp(varargin{i},'numFrames')
+        numFrames = varargin{i+1};
+    end
+end
 
 %Reading in the filters from a file that happens to contain all of them.
 in_path = 'C:\Users\ArmandoReimer\Desktop\GermLineCloneP2P All filters data.arff';
@@ -56,8 +64,10 @@ for i = 1:numFrames
             filterType = filterType{1};
             sigmas = regexp(filterName,'(?<=_)\d(?=.)','match'); 
             if ~strcmp(filterName, 'original') && ~strcmp(filterName, 'class')
-                f = filterImage(im, filterType, sigmas);      
-                fCell = [fCell, {filterName; f}];
+                f = filterImage(im, filterType, sigmas); 
+                if ~isempty(f)
+                    fCell = [fCell, {filterName; f}];
+                end
             end
         end
     else
@@ -70,9 +80,13 @@ for i = 1:numFrames
                 f = filterImage(im, filterType, sigmas);      
                 [~,x] = find(strcmp(fCell,'filterName'));
                 if x==1
-                    fCell{end+1, x} = f; 
+                    if ~isempty(f)
+                        fCell{end+1, x} = f; 
+                    end
                 else
-                    fCell{end, x} = f; 
+                    if ~isempty(f)
+                        fCell{end, x} = f; 
+                    end
                 end                   
             end
         end
@@ -81,12 +95,26 @@ for i = 1:numFrames
     for p = 1:fCellLength
         arff{1, p} = fCell{1, p};
     end
-    n = 2;
-    for k = 1:rows
-        for m = 1:cols
-            for p = 1:fCellLength
-                arff{n,p} = fCell{2, p}(k,m);                    
-                n = n + 1;
+%     n = 2;
+    for p = 1:fCellLength
+        num_sigmas = 1;
+        stack = fCell{2,p};
+        stack_temp = {};
+        if iscell(stack)
+            num_sigmas = length(stack);
+        else
+            stack_temp{1} = stack;
+            stack = stack_temp;
+        end
+        for q = 1:num_sigmas
+            if ~isempty(stack)
+%                 for k = 1:rows
+%                     for m = 1:cols
+                        arff{end+1:end+1+rows,p} = stack{q}(:);  
+%                           arff{end+1,p} = stack{q}(k,m);
+%                         n = n + 1;
+%                     end
+%                 end
             end
         end
     end
