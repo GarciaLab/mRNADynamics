@@ -344,8 +344,12 @@ else
     MeanCyto=[];
     SDCyto=[];
     MaxCyto=[];
-
-    nameSuffix=['_ch',iIndex(2,2)]; %assuming input channel is channel two. obviously this is going to be wrong in general.
+    if (~isempty(strfind(Channel1{1}, 'Bcd')))
+        nameSuffix=['_ch',iIndex(1,2)];
+    else
+        nameSuffix=['_ch',iIndex(2,2)]; %assuming input channel is channel two. obviously this is going to be wrong in general.
+    end
+    
     h=waitbar(0,'Calculating the median cyto intentisy');
     for i=1:length(FrameInfo)
         waitbar(i/length(FrameInfo),h)

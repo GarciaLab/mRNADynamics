@@ -96,12 +96,17 @@ if ~exist([ProcPath,filesep,Prefix,filesep,'CytoImages.mat'])
             for j=2:ZSlices-1
                 %I need to do this because the naming convention can be
                 %different when I have only one channel.
-                if NChannels>1
-                    FileName=[Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),...
-                        '_ch',iIndex(ChN,2),'.tif'];
-                else
-                    FileName=[Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),'.tif'];
-                end
+%                 if NChannels>1
+%                     FileName=[Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),...
+%                         '_ch',iIndex(ChN,2),'.tif'];
+%                 else
+%                     FileName=[Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),'.tif'];
+%                 end
+                % YJK : Now, since I changed the ExportDataForFISH so that it will export
+                % the data as ch01 even in case there is only one channel (protein) ( this
+                % change was for the TrackNuclei), we don't need this separation.
+                FileName=[Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),...
+                         '_ch',iIndex(ChN,2),'.tif'];
                
                 MCPImage(:,:,j-1)=double(imread([PreProcPath,filesep,Prefix,filesep,filesep,FileName]));
                 MCPImage(:,:,j-1)=imdivide(MCPImage(:,:,j-1),FFImage{ChN});
