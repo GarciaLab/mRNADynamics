@@ -5,25 +5,13 @@ CONFIG_CSV_PATH = ['..', filesep, 'ComputerFolders.csv']
 
 if exist(CONFIG_CSV_PATH)
   disp('Using new CSV configuration file')
-  configValues = textscan(fopen(CONFIG_CSV_PATH),'%s', 'delimiter', ','){1};
+  configValues = openCSVFile(CONFIG_CSV_PATH);
 
   SourcePath = getConfigValue(configValues, 'SourcePath')
   FISHPath = getConfigValue(configValues, 'FISHPath')
   DropboxFolder = getConfigValue(configValues, 'DropboxFolder')
   MS2CodePath = getConfigValue(configValues, 'MS2CodePath')
   PreProcPath = getConfigValue(configValues, 'PreProcPath')
-
-  function value = getConfigValue(configuration, propertyName)
-    indexArray = strfind(configuration, propertyName);
-    propertyLabelIndex = find(not(cellfun('isempty', indexArray)));
-
-    if isempty(propertyLabelIndex)
-      error(['Property ''', propertyName, ''' not found in configuration. ',...
-        'Check ComputerFolders and/or MovieDatabase.'])
-    end
-
-    value = configValues{propertyLabelIndex + 1};
-  end
 
   if isempty(varargin)
     warning('No Prefix specified. Using default Dropbox folder')
@@ -38,36 +26,10 @@ if exist(CONFIG_CSV_PATH)
     % but we enforce this in the error msg for simplicity
   end
 
-  %% TO-DO migrate MovieDatabase from Excel to CSV as well.
-  [XLSNum,XLSTxt] = xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
+  dropboxFolderName = getDropboxFolderFromMovieDatabase(...
+    [DropboxFolder,filesep,'MovieDatabase.xlsx'], Prefix);
 
-  DataFolderColumn = find(strcmp(XLSTxt(1,:),'DataFolder'));
-  DropboxFolderColumn = find(strcmp(XLSTxt(1,:),'DropboxFolder'));
-
-  % we build a regex from the specified prefix,
-  % in the form "10characters-slashOrBackslash-restOfThePrefix"
-  % this enables support for prefixes using either '\' or '/' as separator
-  % also, "10characters" at the beginning is usually "yyyy-mm-dd",
-  % but it could be anything else
-  prefixRegex = ['^', Prefix(1:10), '[\\\\/]', Prefix(12:end), '$'];
-  regexMatches = regexp(XLSTxt(:, DataFolderColumn), prefixRegex);
-
-  PrefixRow = find(~cellfun(@isempty, regexMatches));
-
-  if isempty(PrefixRow) 
-    error(['Data set "', Prefix, '" not found in MovieDatabase.xlsx'])
-  elseif length(PrefixRow) > 1
-    error(['Rows ', sprintf('%d, ', PrefixRow), 'seem to have the same folder information. CheckMovieDatabase.xlsx'])
-  end
-
-  DropboxFolderName = XLSTxt{PrefixRow, DropboxFolderColumn};
-
-  %We can use the string "Default" or "DropboxFolder" for the default Dropbox folder
-  if strcmpi(DropboxFolderName, 'default')
-    DropboxFolderName = 'DropboxFolder';
-  end
-
-  DropboxFolder = getConfigValue(configValues, DropboxFolderName)
+  DropboxFolder = getConfigValue(configValues, dropboxFolderName)
 
   return
 end
@@ -203,4 +165,53 @@ end
 DropboxFolder=XLS{DropboxRow,ComputerColumn};  
 
 end
-    
+
+%%
+% Private functions
+%% 
+function value = getConfigValue(configuration, propertyName)
+  indexArray = strfind(configuration, propertyName);
+  propertyLabelIndex = find(not(cellfun('isempty', indexArray)));
+
+  if isempty(propertyLabelIndex)
+    error(['Property ''', propertyName, ''' not found in configuration. ',...
+      'Check ComputerFolders and/or MovieDatabase.'])
+  end
+
+  value = configuration{propertyLabelIndex + 1};
+end
+
+function csv = openCSVFile(filePath)
+  csv = textscan(fopen(filePath),'%s', 'delimiter', ','){1};
+end
+
+function dropboxFolderName = getDropboxFolderFromMovieDatabase(movieDatabasePath, prefix)
+   %% TO-DO migrate MovieDatabase from Excel to CSV as well.
+  [XLSNum,XLSTxt] = xlsread(movieDatabasePath);
+
+  DataFolderColumn = find(strcmp(XLSTxt(1,:),'DataFolder'));
+  DropboxFolderColumn = find(strcmp(XLSTxt(1,:),'DropboxFolder'));
+
+  % we build a regex from the specified prefix,
+  % in the form "10characters-slashOrBackslash-restOfThePrefix"
+  % this enables support for prefixes using either '\' or '/' as separator
+  % also, "10characters" at the beginning is usually "yyyy-mm-dd",
+  % but it could be anything else
+  prefixRegex = ['^', prefix(1:10), '[\\\\/]', prefix(12:end), '$'];
+  regexMatches = regexp(XLSTxt(:, DataFolderColumn), prefixRegex);
+
+  PrefixRow = find(~cellfun(@isempty, regexMatches));
+
+  if isempty(PrefixRow) 
+    error(['Data set "', prefix, '" not found in MovieDatabase.xlsx'])
+  elseif length(PrefixRow) > 1
+    error(['Rows ', sprintf('%d, ', PrefixRow), 'seem to have the same folder information. CheckMovieDatabase.xlsx'])
+  end
+
+  dropboxFolderName = XLSTxt{PrefixRow, DropboxFolderColumn};
+
+  %We can use the string "Default" or "DropboxFolder" for the default Dropbox folder
+  if strcmpi(dropboxFolderName, 'default')
+    dropboxFolderName = 'DropboxFolder';
+  end
+end
