@@ -3,7 +3,7 @@ function [SourcePath, FISHPath, DropboxFolder, MS2CodePath, PreProcPath] =...
 
 CONFIG_CSV_PATH = ['..', filesep, 'ComputerFolders.csv']
 
-if exist(CONFIG_CSV_PATH)
+if exist(CONFIG_CSV_PATH, 'file')
   disp('Using new CSV configuration file')
   configValues = openCSVFile(CONFIG_CSV_PATH);
 
@@ -26,8 +26,16 @@ if exist(CONFIG_CSV_PATH)
     % but we enforce this in the error msg for simplicity
   end
 
-  dropboxFolderName = getDropboxFolderFromMovieDatabase(...
-    [DropboxFolder,filesep,'MovieDatabase.xlsx'], Prefix);
+  MOVIE_DATABASE_CSV_PATH = [DropboxFolder,filesep,'MovieDatabase.csv'];
+  if exist(MOVIE_DATABASE_CSV_PATH, 'file')
+    disp(['Using new CSV MovieDatabase file: ', MOVIE_DATABASE_CSV_PATH])
+    dropboxFolderName = getDropboxFolderFromMovieDatabase_CSV(...
+      MOVIE_DATABASE_CSV_PATH, Prefix);
+  else
+    % fallback to legacy XLS format
+    dropboxFolderName = getDropboxFolderFromMovieDatabase(...
+      [DropboxFolder,filesep,'MovieDatabase.xlsx'], Prefix);
+  end
 
   DropboxFolder = getConfigValue(configValues, dropboxFolderName)
 
@@ -214,4 +222,7 @@ function dropboxFolderName = getDropboxFolderFromMovieDatabase(movieDatabasePath
   if strcmpi(dropboxFolderName, 'default')
     dropboxFolderName = 'DropboxFolder';
   end
+end
+
+function dropboxFolderName = getDropboxFolderFromMovieDatabase_CSV(movieDatabasePath, prefix)
 end
