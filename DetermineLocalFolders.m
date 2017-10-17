@@ -1,16 +1,12 @@
-function [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
+function [SourcePath, FISHPath, DropboxFolder, MS2CodePath, PreProcPath] =...
     DetermineLocalFolders(varargin)
 
-%% Refactor in progress
-%% TO-DO: do we want to keep support for mulitple columns for multiple computers?
-%$ I guess not....
-
 CONFIG_CSV_PATH = ['..', filesep, 'ComputerFolders.csv']
+
 if exist(CONFIG_CSV_PATH)
   disp('Using new CSV configuration file')
-  configValues = textscan(fopen(CONFIG_CSV_PATH),'%s', 'delimiter', ','){1}
+  configValues = textscan(fopen(CONFIG_CSV_PATH),'%s', 'delimiter', ','){1};
 
-  
   SourcePath = getConfigValue(configValues, 'SourcePath')
   FISHPath = getConfigValue(configValues, 'FISHPath')
   DropboxFolder = getConfigValue(configValues, 'DropboxFolder')
@@ -18,15 +14,67 @@ if exist(CONFIG_CSV_PATH)
   PreProcPath = getConfigValue(configValues, 'PreProcPath')
 
   function value = getConfigValue(configuration, propertyName)
-    indexArray = strfind(configuration, propertyName)
+    indexArray = strfind(configuration, propertyName);
     propertyLabelIndex = find(not(cellfun('isempty', indexArray)));
 
-    value = configValues{propertyLabelIndex + 1}
+    if isempty(propertyLabelIndex)
+      error(['Property ''', propertyName, ''' not found in configuration. ',...
+        'Check ComputerFolders and/or MovieDatabase.'])
+    end
+
+    value = configValues{propertyLabelIndex + 1};
   end
 
-  %% TO-DO deal with the "mutiple dropbox folders" case, still figuring this out.
+  if isempty(varargin)
+    warning('No Prefix specified. Using default Dropbox folder')
+    return
+  end
+  
+  %% We need to look for the dropbox folder specified by the provided prefix
+  Prefix = varargin{1};
+  if isempty(regexp(Prefix, '^.{10}[\\\\/].*$'))
+    error(['Prefix "', Prefix, '" does not match "yyyy-mm-dd/name". Please change it accordingly.'])
+    % any 10 characters will work, not only yyyy-mm-dd,
+    % but we enforce this in the error msg for simplicity
+  end
+
+  %% TO-DO migrate MovieDatabase from Excel to CSV as well.
+  [XLSNum,XLSTxt] = xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
+
+  DataFolderColumn = find(strcmp(XLSTxt(1,:),'DataFolder'));
+  DropboxFolderColumn = find(strcmp(XLSTxt(1,:),'DropboxFolder'));
+
+  % we build a regex from the specified prefix,
+  % in the form "10characters-slashOrBackslash-restOfThePrefix"
+  % this enables support for prefixes using either '\' or '/' as separator
+  % also, "10characters" at the beginning is usually "yyyy-mm-dd",
+  % but it could be anything else
+  prefixRegex = ['^', Prefix(1:10), '[\\\\/]', Prefix(12:end), '$'];
+  regexMatches = regexp(XLSTxt(:, DataFolderColumn), prefixRegex);
+
+  PrefixRow = find(~cellfun(@isempty, regexMatches));
+
+  if isempty(PrefixRow) 
+    error(['Data set "', Prefix, '" not found in MovieDatabase.xlsx'])
+  elseif length(PrefixRow) > 1
+    error(['Rows ', sprintf('%d, ', PrefixRow), 'seem to have the same folder information. CheckMovieDatabase.xlsx'])
+  end
+
+  DropboxFolderName = XLSTxt{PrefixRow, DropboxFolderColumn};
+
+  %We can use the string "Default" or "DropboxFolder" for the default Dropbox folder
+  if strcmpi(DropboxFolderName, 'default')
+    DropboxFolderName = 'DropboxFolder';
+  end
+
+  DropboxFolder = getConfigValue(configValues, DropboxFolderName)
+
   return
 end
+
+%%
+% Legacy xls support starts here - for backwards compatibility only
+%%
 
 %This functions gives out the folder corresponding to each computer. If a
 %Prefix is also included it will give out the corresponding DropboxFolder
@@ -138,29 +186,6 @@ else
     
     DropboxString=XLSTxt{PrefixRow,DropboxFolderColumn};
     
-%HG: I'm getting rid of the hardcoding of dropbox folders.
-%     if strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Hernan')
-%         DropboxString='DropboxHernan';
-%     elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Albert+Hernan')
-%         DropboxString='DropboxAlbert';
-%     elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Albert+Emilia')
-%         DropboxString='DropboxEmilia';
-%     elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Jacques+Hernan')
-%         DropboxString='DropboxJacques';
-%     elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'HGLab')
-%         DropboxString='DropboxHGLab';
-%     elseif strcmp(XLSTxt{PrefixRow,DropboxFolderColumn},'Heinrich')
-%         DropboxString='DropboxHeinrich';
-%     elseif strcmp(XLSTxt{PrefixRow, DropboxFolderColumn}, 'Default')
-%         DropboxString = 'DropboxFolder';
-%     elseif strcmp(XLSTxt{PrefixRow, DropboxFolderColumn}, 'TwoColor')
-%         DropboxString = 'DropboxTwoColor';
-%         % ES 2013-10-06
-%     else
-%         error('Dropbox folder for this type of experiment not found. Check MovieDatabase')
-%     end
-    
-
     %We can use the string "Default" or "DropboxFolder" for the default
     %Dropbox folder
     if strcmpi(DropboxString,'default')
