@@ -41,7 +41,7 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 
 %Default options
 displayFigures=0;
-TrackSpots{q}=0;
+TrackSpots=0;
 num_frames=0;
 num_shadows = 2;
 initial_frame = 1;
@@ -52,8 +52,8 @@ for i=1:length(varargin)
         displayFigures=1;
     elseif strcmp(varargin{i}, 'Tifs')
         just_tifs = 1;
-    elseif strcmp(varargin{i},'TrackSpots{q}')
-        TrackSpots{q}=1;
+    elseif strcmp(varargin{i},'TrackSpots')
+        TrackSpots=1;
     elseif strcmp(varargin{i},'LastFrame')
         if ~isnumeric(varargin{i+1})
             error('Wrong input parameters. After ''Frames'' you should input the number of frames')
@@ -180,14 +180,14 @@ for q = 1:nCh
         w = waitbar(current_frame/num_frames,h);
         set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
         for i = 1:zSize
-            zim(:,:,i) = double(imread([PreProcPath,filesep,Prefix, filesep, Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']));    
+            zim(:,:,i) = imread([PreProcPath,filesep,Prefix, filesep, Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']);    
         end
         name = [stackspath, filesep, iIndex(current_frame,3), nameSuffix,'.tif'];
         %Don't write new stacks if they're already made.
         if length(dir([stackspath, filesep, '*.tif'])) ~= num_frames
-            imwrite(uint16(zim(:,:,1)), name);
+            imwrite(uint8(zim(:,:,1)), name);
             for k = 2:size(zim,3)
-                imwrite(uint16(zim(:,:,k)), name, 'WriteMode', 'append');
+                imwrite(uint8(zim(:,:,k)), name, 'WriteMode', 'append');
             end
         end
         %Do the classification with Weka in Fiji
@@ -205,7 +205,7 @@ for q = 1:nCh
             p2 = permute(p2, [2 1 3]) * 10000;
             for i = 1:size(p2, 3)
                 p_name = ['prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif'];
-                imwrite(int32(p2(:,:,i)), [OutputFolder1,filesep,p_name])
+                imwrite(uint16(p2(:,:,i)), [OutputFolder1,filesep,p_name]) %AR 10/17/2017: This cast may lose substantial amounts of precision. needs to be checked                
             end
             mij.run('Close All');
         end
@@ -217,7 +217,7 @@ end
 else
     for q=1:nCh
         nameSuffix = ['_ch',iIndex(q,2)];
-        h=waitbar(0,'Segmenting Spots{q}');
+        h=waitbar(0,'Segmenting Spots');
         for current_frame = initial_frame:num_frames
             w = waitbar(current_frame/(num_frames-initial_frame),h);
             set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
@@ -232,7 +232,7 @@ else
                 end
                 %apply flatfield correction
                 if doFF && sum(size(im)==size(ffim))
-                    im = im./ffim;
+                    im = im.*ffim;
                 end
                 %
                 im_thresh = dog >= Threshold;
@@ -354,7 +354,7 @@ else
         %pick the brightest z-slice
         for i = 1:length(Particles)
             [~, max_index] = max(Particles(i).CentralIntensity);
-            if TrackSpots{q}
+            if TrackSpots
                 for j = 1:numel(fields)-2 %do not include fields 'r' or 'frame'
                     Particles(i).(fields{j}) = Particles(i).(fields{j})(max_index);
                 end
@@ -456,7 +456,7 @@ else
         %a single, fully integrated script before this segmentation was worked
         %into the rest of the pipeline.
         neighborhood = 3000 / pixelSize;
-        if TrackSpots{q}
+        if TrackSpots
             Particles = track_Spots(Particles, neighborhood);
             save([DropboxFolder,filesep,Prefix,filesep,'Particles_SS.mat'], 'Particles');
         end
