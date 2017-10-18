@@ -1,4 +1,6 @@
 function arff = makeArff(Prefix,varargin)
+
+%fCell = evalin('base', 'fCell'); %for debugging the arffmaking
 % makeArff(Prefix)
 %
 % DESCRIPTION
@@ -46,19 +48,20 @@ fin = fileread(in_path);
 filters = regexp(fin,'(?<=@attribute )\S*(?= )', 'match');
 filters = filters(2:end-1);
 numFilters = length(filters);
-
+arfftemp = []; 
 for i = 1:numFrames
     imPath= [PreProcPath,filesep,Prefix,filesep,'stacks', filesep, iIndex(i,3),'.tif'];
     truthPath = [FISHPath,filesep,Prefix,'_', filesep, 'binary_masks', filesep, 'binary_stack_',Prefix,'_',iIndex(i,3),'.tiff'];
     im = zeros(rows,cols,zSlices);
     groundTruth = zeros(rows,cols,zSlices);
-    for j = 1:zSlices
-        im(:,:,j) = imread(imPath, j);
-        groundTruth(:,:,j) = imread(truthPath, j);
+    for j = 2:zSlices+1 %we don't want the top and bottom slices
+        im(:,:,j-1) = imread(imPath, j);
+        groundTruth(:,:,j-1) = imread(truthPath, j);
     end
     if i==1
         fCell = [{'original'; im},{'class'; groundTruth}];
-        for o = 1:numFilters
+%         parfor o = 1:numFilters
+for o = 1:numFilters
             filterName = filters{o};
             filterType = regexp(filterName,'\D*(?=_\d)', 'match');
             filterType = filterType{1};
@@ -69,7 +72,8 @@ for i = 1:numFrames
                     fCell = [fCell, {filterName; f}];
                 end
             end
-        end
+end
+        fNames = fCell(1,:);
     else
         for o = 1:numFilters
             filterName = filters{o};
@@ -77,48 +81,39 @@ for i = 1:numFrames
             filterType = filterType{1};
             sigmas = regexp(filterName,'(?<=_)\d(?=.)','match'); 
             if ~strcmp(filterName, 'original') && ~strcmp(filterName, 'class')
-                f = filterImage(im, filterType, sigmas);      
-                [~,x] = find(strcmp(fCell,'filterName'));
-                if x==1
-                    if ~isempty(f)
-                        fCell{end+1, x} = f; 
-                    end
-                else
-                    if ~isempty(f)
-                        fCell{end, x} = f; 
-                    end
-                end                   
+                f = filterImage(im, filterType, sigmas);    
+                ind = strcmp(fNames, filterName);
+                if ~isempty(f)         
+                    fCell{end+1, ind} = f; 
+                end
             end
         end
     end
+    
+    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+%%    
     fCellLength = size(fCell,2);
     for p = 1:fCellLength
         arff{1, p} = fCell{1, p};
     end
 %     n = 2;
-    for p = 1:fCellLength
-        num_sigmas = 1;
+
+   for p = 1:fCellLength
         stack = fCell{2,p};
-        stack_temp = {};
-        if iscell(stack)
-            num_sigmas = length(stack);
-        else
-            stack_temp{1} = stack;
-            stack = stack_temp;
-        end
-        for q = 1:num_sigmas
-            if ~isempty(stack)
+%                      if ~isempty(stack)
 %                 for k = 1:rows
 %                     for m = 1:cols
-                        arff{end+1:end+1+rows,p} = stack{q}(:);  
+%                         arff{end+1:end+1+rows+cols+zSlices,p} = stack(:); 
+%                            arff{:,p} = [arff{:,p}, stack(:)'];
+                        arfftemp(:,p) = stack(:)'; 
 %                           arff{end+1,p} = stack{q}(k,m);
 %                         n = n + 1;
 %                     end
 %                 end
-            end
-        end
+%             end
     end
 end
-
-T = cell2table(arff);
-writetable(T,[DropboxFolder,filesep,Prefix,filesep, Prefix,'.arff'])
+csvwrite('C:\Users\ArmandoReimer\Desktop\arffout.arff', arfftemp);
+% T = cell2table(arffcell, 'VariableNames', arff);
+% writetable(T,[DropboxFolder,filesep,Prefix,filesep, Prefix,'.arff'])
