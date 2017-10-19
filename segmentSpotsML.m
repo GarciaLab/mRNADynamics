@@ -197,15 +197,15 @@ for q = 1:nCh
             trainableSegmentation.Weka_Segmentation.loadClassifier([classifier_path, classifier]);
             trainableSegmentation.Weka_Segmentation.getProbability();
             ijm.getDatasetAs('probmaps')
-            p = evalin('base', 'probmaps');
-            p2 = [];
+            pMapTemp = evalin('base', 'probmaps');
+            pMap = [];
             for m = 1:2:zSize2
-                p2(:,:,ceil(m/2)) =  p(:,:,m); %the even images in the original array are negatives of the odds
+                pMap(:,:,ceil(m/2)) =  pMapTemp(:,:,m); %the even images in the original array are negatives of the odds
             end
-            p2 = permute(p2, [2 1 3]) * 10000;
-            for i = 1:size(p2, 3)
+            pMap = permute(pMap, [2 1 3]) * 100; %multiplying so this can be cast to uint8
+            for i = 1:size(pMap, 3)
                 p_name = ['prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif'];
-                imwrite(uint16(p2(:,:,i)), [OutputFolder1,filesep,p_name]) %AR 10/17/2017: This cast may lose substantial amounts of precision. needs to be checked                
+                imwrite(uint8(pMap(:,:,i)), [OutputFolder1,filesep,p_name]) %AR 10/17/2017: This cast may lose substantial amounts of precision. needs to be checked                
             end
             mij.run('Close All');
         end
@@ -223,7 +223,7 @@ else
             set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
             for i = 1:zSize   
                 im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']));
-                dog = double(imread([OutputFolder1, filesep,'prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']));
+                pMap = double(imread([OutputFolder1, filesep,'prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']));
                 if displayFigures
                     fig = figure(1);
                     imshow(im,[]);
@@ -235,7 +235,7 @@ else
                     im = im.*ffim;
                 end
                 %
-                im_thresh = dog >= Threshold;
+                im_thresh = pMap >= Threshold;
                 se = strel('square', 3);
                 im_thresh = imdilate(im_thresh, se); %thresholding from this classified probability map can produce non-contiguous, spurious Spots{q}. This fixes that and hopefully does not combine real Spots{q} from different nuclei
                 im_thresh = im_thresh>0;
@@ -257,7 +257,7 @@ else
                         parfor k = 1:n_Spots
                             try
                                 centroid = round(centroids(k).Centroid);
-                                temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
+                                temp_particles(k) = identifySingleSpot(k, im, im_label, pMap, ...
                                     neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, 'ML');
                             catch 
                             end
@@ -265,7 +265,7 @@ else
                     else
                         for k = 1:n_Spots
                             centroid = round(centroids(k).Centroid);    
-                            temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
+                            temp_particles(k) = identifySingleSpot(k, im, im_label, pMap, ...
                                 neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, 'ML');
                         end
                     end
@@ -425,7 +425,7 @@ else
             end
         end
 
-        %Clean up Spots{q} to remove empty rows
+        %Clean up Spots to remove empty rows
         Dots{q} = struct('Fits', []);
         for i = 1:length(Spots{q})
             Dots{q}(i).Fits = [];

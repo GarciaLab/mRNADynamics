@@ -188,6 +188,7 @@ function fint = filterImage(im, filterType, sigmas)
             elseif dim==3
 %                 f = ordfilt3(im, 'med', filterSize); %i need to rewrite
 %                 this algorithm because it doesn't work
+                f = im;
             end
         case 'Maximum'
             if dim==2
@@ -195,6 +196,7 @@ function fint = filterImage(im, filterType, sigmas)
             elseif dim==3
 %                 f = ordfilt3(im, 'max', filterSize); %i need to rewrite
 %                 this algorithm because it doesn't work
+                f = im;
             end
         case 'Variance'
             if dim==2
@@ -202,6 +204,7 @@ function fint = filterImage(im, filterType, sigmas)
             elseif dim==3
 %                  f = ordfilt3(im, 'var', filterSize); %i need to rewrite
 %                 this algorithm because it doesn't work
+                f = im;
             end
         case 'Minimum'
             if dim==2
@@ -209,6 +212,7 @@ function fint = filterImage(im, filterType, sigmas)
             elseif dim==3
 %                  f = ordfilt3(im, 'min', filterSize); %i need to rewrite
 %                 this algorithm because it doesn't work
+                f = im;                       
             end
         case 'Hessian_smallest'
             if dim==2
