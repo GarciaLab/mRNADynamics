@@ -504,7 +504,9 @@ end
 SkipWaitForButtonPress=[];
 
 
-while (cc~='x') 
+while (cc~='x')
+    
+    nameSuffix=['_ch',iIndex(CurrentChannel,2)];
     EllipseHandle=[];
     EllipseHandleYellow=[];
     EllipseHandleBlue=[];
@@ -581,7 +583,7 @@ while (cc~='x')
             disp(['projectionMode : ' projectionMode])
             if strcmp(projectionMode,'None (Default)')
                 Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                    FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'_ch',iIndex(CurrentChannel,2),'.tif']);
+                    FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
             elseif strcmp(projectionMode,'Max Z')
                 [Image,~] = zProjections(Prefix, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
             elseif strcmp(projectionMode,'Median Z')
@@ -603,7 +605,7 @@ while (cc~='x')
     elseif (NChannels>1)&&(~strcmp(lower(ExperimentType),'inputoutput'))
         Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
             FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),...
-            '_ch',iIndex(CurrentChannel,2),'.tif']);
+            nameSuffix,'.tif']);
     elseif (NChannels==1)&&(strcmp(lower(ExperimentType),'inputoutput'))
         OutputChannelTemp1=strfind({lower(Channel1{1}),lower(Channel2{1})},'mcp');
         OutputChannelTemp2=strfind({lower(Channel1{1}),lower(Channel2{1})},'pcp');
@@ -620,7 +622,7 @@ while (cc~='x')
                     FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);
         catch
             display(['Warning: Could not load file: ',...
-                FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'_ch',iIndex(CurrentChannel,2),'.tif']);
+                FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
         end
     end
 
@@ -1218,7 +1220,7 @@ while (cc~='x')
                 breakflag = 0;
                 parfor i = 1:ZSlices
                     spotsIm=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                         FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i,2),'.tif']);  
+                         FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i,2),nameSuffix,'.tif']);  
                     Threshold = min(min(spotsIm));
                     dog = spotsIm;
                     im_thresh = dog >= Threshold;
@@ -2005,22 +2007,31 @@ while (cc~='x')
             CurrentChannel=1;
         end
         
-        %If a particle is associated with this same nucleus in the new
-        %channel then change to it
-        AssignedNucleusPreviousChannel=Particles{PreviousChannel}(CurrentParticle).Nucleus;
-        
-        %Now, find its associated particle
-        AssignedNucleusNewChannel=[];
-        for i=1:length(Particles{CurrentChannel})
-            if ~isempty(Particles{CurrentChannel}(i).Nucleus)
-                AssignedNucleusNewChannel(i)=Particles{CurrentChannel}(i).Nucleus;
-            else
-                AssignedNucleusNewChannel(i)=nan;
+        %Do we have a histone channel? If so, we can find the particle in
+        %the next channel corresponding to this nucleus.
+        if UseHistoneOverlay
+            %If a particle is associated with this same nucleus in the new
+            %channel then change to it
+            AssignedNucleusPreviousChannel=Particles{PreviousChannel}(CurrentParticle).Nucleus;
+
+            %Now, find its associated particle
+            AssignedNucleusNewChannel=[];
+            for i=1:length(Particles{CurrentChannel})
+                if ~isempty(Particles{CurrentChannel}(i).Nucleus)
+                    AssignedNucleusNewChannel(i)=Particles{CurrentChannel}(i).Nucleus;
+                else
+                    AssignedNucleusNewChannel(i)=nan;
+                end
             end
-        end
+
+            if ~isempty(find(AssignedNucleusNewChannel==AssignedNucleusPreviousChannel))
+                CurrentParticle=find(AssignedNucleusNewChannel==AssignedNucleusPreviousChannel);
+            end
         
-        if ~isempty(find(AssignedNucleusNewChannel==AssignedNucleusPreviousChannel))
-            CurrentParticle=find(AssignedNucleusNewChannel==AssignedNucleusPreviousChannel);
+        %If we don't have a histone channel, go for the same particle
+        %number in the new channel or for the last particle
+        elseif length(Particles{CurrentChannel})<CurrentParticle
+            CurrentParticle=length(Particles{CurrentChannel});
         end
     
     elseif cc=='~'      %Switch projection mode

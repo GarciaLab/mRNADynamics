@@ -1013,8 +1013,10 @@ elseif strcmp(FileMode,'LIFExport')
             end
         elseif strcmpi(ExperimentType,'2spot2color')       %2 spots, 2 colors
             load('ReferenceHist.mat')
+            fiducialChannel=0;
+            histoneChannel=0;
 
-            if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))
+            if (~isempty(strfind(Channel1{1},'mCherry')))||(~isempty(strfind(Channel2{1},'mCherry')))
                 if (~isempty(strfind(Channel1{1},'mCherry')))
                     fiducialChannel=1;
                     histoneChannel=1;
@@ -1022,13 +1024,13 @@ elseif strcmp(FileMode,'LIFExport')
                     fiducialChannel=2;
                     histoneChannel=2;
                 else
-                    error('mCherry channel not found. Cannot generate the fake nuclear image')
+                    warning('mCherry channel not found. Cannot generate the fake nuclear image');
                 end
             end
         
         elseif strcmpi(ExperimentType,'input')        %Protein input mode
             %This mode assumes that at least one channel corresponds to the input.
-            %It also check whetehr the second channel is histone. If there is
+            %It also check whether the second channel is histone. If there is
             %no histone channel it creates a fake channel using one of the
             %inputs.
             
