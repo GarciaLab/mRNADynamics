@@ -7,7 +7,6 @@ function G = gauss3D(sigma)
     z = x;
     sigma = 3;
     [x_, y_,z_] = meshgrid(x,y,z);
-    A = 1/sqrt(2*pi*sigma^2)^3;
-    G = A*exp(-x_.^2/(2*sigma^2) + -y_.^2/(2*sigma^2) + -z_.^2/(2*sigma^2));
-    
+    A = (1/(sigma*sqrt(2*pi)))^3;
+    G = A*exp((1/2)*(-(x_.^2)/(2*sigma^2) - (y_.^2)/(2*sigma^2) - (z_.^2)/(2*sigma^2)));
 end

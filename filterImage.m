@@ -1,8 +1,9 @@
-function f = filterImage(im, filterType, sigmas)
+function fint = filterImage(im, filterType, sigmas)
 
     dim = length(size(im));
     rad = 3; %rule of thumb is kernel size is 3x the Gaussian sigma
     f = [];
+    fint = [];
     
     im = double(im);
     
@@ -41,10 +42,10 @@ function f = filterImage(im, filterType, sigmas)
         case 'Difference_of_Gaussian'
             filterSize2 = rad*s2;
             if dim==2
-                f{s1, s2} = imgaussfilt(im, s1) - imgaussfilt(im, s2);
-                f = padarray(f{s1, s2}(filterSize2:end-filterSize2-1, filterSize2:end-filterSize2-1), [filterSize2,filterSize2]);
+                f = imgaussfilt(im, s1) - imgaussfilt(im, s2);
+                f = padarray(f(filterSize2:end-filterSize2-1, filterSize2:end-filterSize2-1), [filterSize2,filterSize2]);
             elseif dim == 3
-                f{s1, s2} = imgaussfilt3(im, s1) - imgaussfilt3(im, s2);
+                f = imgaussfilt3(im, s1) - imgaussfilt3(im, s2);
             end
         case 'Laplacian'
             if dim==2
@@ -65,7 +66,7 @@ function f = filterImage(im, filterType, sigmas)
             elseif dim == 3
                 h = ones(filterSize, filterSize, filterSize);
                 h = h./sum(sum(sum(h)));
-                f = fastConv3D(im, h);
+                f = fastConv3D(h, im);
             end
         case 'Structure_smallest'
             if dim==2
@@ -92,7 +93,7 @@ function f = filterImage(im, filterType, sigmas)
             elseif dim==3
                 filterSize2 = rad*s1;
                 G1 = gauss3D(s1);
-                G = fastConv3D(im, G1);
+                G = fastConv3D(G1, im);
                 [Gx,Gy,Gz] = gradient(G);   
                 %Compute Gaussian partial derivatives
                 Dx = fastConv3D(Gx,im);
@@ -113,7 +114,7 @@ function f = filterImage(im, filterType, sigmas)
                 m = size(im, 2);
                 n = size(im, 3);
                 f = zeros(l,m,n);
-                for p = 1:l
+                parfor p = 1:l
                     for q = 1:m
                         for r = 1:n
                             S = [S11(p,q,r), S12(p,q,r), S13(p,q,r);...
@@ -149,7 +150,7 @@ function f = filterImage(im, filterType, sigmas)
             elseif dim==3
                 filterSize2 = rad*s1;
                 G1 = gauss3D(s1);
-                G = fastConv3D(im, G1);
+                G = fastConv3D(G1, im);
                 [Gx,Gy,Gz] = gradient(G);   
                 %Compute Gaussian partial derivatives
                 Dx = fastConv3D(Gx,im);
@@ -170,7 +171,7 @@ function f = filterImage(im, filterType, sigmas)
                 m = size(im, 2);
                 n = size(im, 3);
                 f = zeros(l,m,n);
-                for p = 1:l
+                parfor p = 1:l
                     for q = 1:m
                         for r = 1:n
                             S = [S11(p,q,r), S12(p,q,r), S13(p,q,r);...
@@ -187,6 +188,7 @@ function f = filterImage(im, filterType, sigmas)
             elseif dim==3
 %                 f = ordfilt3(im, 'med', filterSize); %i need to rewrite
 %                 this algorithm because it doesn't work
+                f = im;
             end
         case 'Maximum'
             if dim==2
@@ -194,6 +196,7 @@ function f = filterImage(im, filterType, sigmas)
             elseif dim==3
 %                 f = ordfilt3(im, 'max', filterSize); %i need to rewrite
 %                 this algorithm because it doesn't work
+                f = im;
             end
         case 'Variance'
             if dim==2
@@ -201,6 +204,7 @@ function f = filterImage(im, filterType, sigmas)
             elseif dim==3
 %                  f = ordfilt3(im, 'var', filterSize); %i need to rewrite
 %                 this algorithm because it doesn't work
+                f = im;
             end
         case 'Minimum'
             if dim==2
@@ -208,6 +212,7 @@ function f = filterImage(im, filterType, sigmas)
             elseif dim==3
 %                  f = ordfilt3(im, 'min', filterSize); %i need to rewrite
 %                 this algorithm because it doesn't work
+                f = im;                       
             end
         case 'Hessian_smallest'
             if dim==2
@@ -250,7 +255,7 @@ function f = filterImage(im, filterType, sigmas)
                 m = size(im, 2);
                 n = size(im, 3);
                 f = zeros(l,m,n);
-                for p = 1:l
+                parfor p = 1:l
                     for q = 1:m
                         for r = 1:n
                             H = [H11(p, q, r), H12(p, q, r), H13(p, q, r);...
@@ -302,7 +307,7 @@ function f = filterImage(im, filterType, sigmas)
                 m = size(im, 2);
                 n = size(im, 3);
                 f = zeros(l,m,n);
-                for p = 1:l
+                parfor p = 1:l
                     for q = 1:m
                         for r = 1:n
                             H = [H11(p, q, r), H12(p, q, r), H13(p, q, r);...
@@ -316,4 +321,17 @@ function f = filterImage(im, filterType, sigmas)
         otherwise
             %do nothing
     end
+    
+    if ~isempty(f)
+        %feature rescaling
+        fmin = min(min(min(f)));
+        fmax = max(max(max(f)));
+        fprime = (f - fmin)./(fmax - fmin);
+
+        %reduce precision and recast for memory and speed
+        ndigits = ceil(abs(log(std(fprime(:)))));
+        fround = round(fprime, ndigits);
+        fint = int16(fround*10^ndigits);
+    end
+    
 end
