@@ -66,21 +66,27 @@ for t = 1:f_max
         %Iterate through z slices within a spot
         for z = 1:length(spot.z)
             zPos = spot.z(z);
-            xPos = spot.xFit(z);
-            yPos = spot.yFit(z);
+            xPos = spot.xDoG(z);
+            yPos = spot.yDoG(z);
+            
             %set width of spot
-            xTol = n_sigma*spot.xFitWidth{z};
-            yTol= n_sigma*spot.yFitWidth{z};
+            if iscell(spot.xFitWidth)
+                spot.xFitWidth = cell2mat(spot.xFitWidth);
+                spot.yFitWidth = cell2mat(spot.yFitWidth);
+            end
+            xTol = n_sigma*spot.xFitWidth(z);
+            yTol= n_sigma*spot.yFitWidth(z);
+            
             % Generate 2D array with radial distances from current spot            
             R_array = (X_mesh - floor(xPos)).^2 / xTol^2 + (Y_mesh - floor(yPos)).^2 / yTol^2;            
-            % Add spot region to appropriate z slice for time point
+            % Add spot region to appropriate z-slice for time point
             spot_slice = zStack_binary{zPos}; 
             % At a minumum add the pixel in which the spot is centered
             spot_slice(floor(yPos),floor(xPos)) = 1;
-            % Now add proximate pixes
+            % Now add proximate pixels
             spot_slice(R_array <=1) = 1; 
             zStack_binary{zPos} = spot_slice;
-            %Addproximity score
+            %Add proximity score
             r_slice = zStack_potential{zPos}; 
             r_slice = r_slice + R_array.^.5; 
             r_slice(spot_slice == 1) = 0;
@@ -89,9 +95,9 @@ for t = 1:f_max
     end
     %Write labeled stack to Tif 
     d = floor(log10(t));
-    imwrite(uint16(zStack_binary{1}), [BinaryPath '/' 'binary_stack_' Prefix '_' zero_string(d+1:digits) num2str(t) '.tiff']);
+    imwrite(uint16(zStack_binary{1}), [BinaryPath '/' 'binary_stack_' Prefix '_',iIndex(t,3),'.tiff']);
     for z = 2:length(zStack_binary)
-        imwrite(uint16(zStack_binary{z}), [BinaryPath '/' 'binary_stack_' Prefix '_' zero_string(d+1:digits) num2str(t) '.tiff'], 'WriteMode', 'append');
+        imwrite(uint16(zStack_binary{z}), [BinaryPath '/' 'binary_stack_' Prefix '_',iIndex(t,3),'.tiff'], 'WriteMode', 'append');
     end
     if WriteWeights
         %Write weights (Just testing for now)

@@ -79,6 +79,7 @@ if ischar(ord)
         case 'max'
         case 'min'
         case 'med'
+        case 'var' %line added by AR 7/27/13
         otherwise
             error('Invalid ord parameter');
     end
@@ -102,7 +103,7 @@ p = 0;%variable storing the number of elements in V0 which have been processed. 
 %get the amount of free contiguous system memory:
 M = feature('memstats');
 
-f=0.4;
+f=.05;
 M=M*f; %do not use all contiguous memory (additional memory is needed, for example, for sorting the within the window)
 %The factor f=0.4 is a good choice, but can be modified: 0<f<=1. Smaller
 %values have the effect of processing smaller sub-blocks (which looses

@@ -177,6 +177,8 @@ if iscell(Particles)
     NChannels=length(Particles);
 else
     Particles={Particles};
+    Spots={Spots};
+    SpotFilter={SpotFilter};
     NChannels=1;
 end
 
@@ -676,7 +678,7 @@ for ChN=1:NChannels
                 %Extract information from Spots about fluorescence and background
                 [Frame,AmpIntegral,AmpGaussian,Off,...
                  ErrorIntegral,ErrorGauss,optFit1, FitType, noIntensityFlag]...
-                 = GetParticleTrace(k,CompiledParticles{ChN},Spots);
+                 = GetParticleTrace(k,CompiledParticles{ChN},Spots{ChN});
                 CompiledParticles{ChN}(k).Fluo= AmpIntegral;
                 CompiledParticles{ChN}(k).FluoIntegral = AmpIntegral;
                 CompiledParticles{ChN}(k).Off=Off;
@@ -769,12 +771,15 @@ for ChN=1:NChannels
 
 
                         %Create the filter
-                        for ChN=1:NChannels
+                       % for ChN=1:NChannels
+                            
                             if isempty(CompiledParticles)==1
                                 error(['No compiled particles found in channel ',num2str(ChN),'. Did you mean to run the code with ApproveAll?'])
                             end
+
                             ncFilter=logical(zeros(length(CompiledParticles{ChN})...
                                 ,length(ncFilterID))); %AR 6/16/17: I think multi-channel data might require this to be a cell? Something for the future.
+                            
                             for i=1:length(CompiledParticles{ChN})
                                 %Sometimes CompiledParticles{1}(i).nc is empty. This is because of some
                                 %problem with FrameInfo! In that case we'll pull the information out of
@@ -807,7 +812,7 @@ for ChN=1:NChannels
                                     end
                                 end
                             end
-                        end
+                        %end
                     end
                
                     figure(2)
@@ -963,65 +968,43 @@ for ChN=1:NChannels
                     for j=1:NFrames
                         subplot(TotalRows,NCols,(TotalRows-NRows)*NCols+j)
                         spotFrame = CompiledParticles{ChN}(k).Frame(j);
-                        [x,y,z]=SpotsXYZ(Spots(spotFrame)); 
+                        [x,y,z]=SpotsXYZ(Spots{ChN}(spotFrame)); 
                         if ~isempty(x)
                             xTrace=x(CompiledParticles{ChN}(k).Index(j));
                             yTrace=y(CompiledParticles{ChN}(k).Index(j));
                             zTrace=z(CompiledParticles{ChN}(k).Index(j));
-                        
-
-                        if NChannels==1
-                            Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                                FilePrefix,iIndex(CompiledParticles{ChN}(k).Frame(j),NDigits),'_z',iIndex(zTrace,2),...
-                                '.tif']);
-                        else
                             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                                 FilePrefix,iIndex(CompiledParticles{ChN}(k).Frame(j),NDigits),'_z',iIndex(zTrace,2),...
                                 '_ch',iIndex(ChN,2),'.tif']);
-                        end
-                        [ImRows,ImCols]=size(Image);
-
-                        ImageSnippet=zeros(SnippetSize,SnippetSize);
-
-
-
-                        yRange=round(yTrace)+[-(SnippetSize-1)/2:(SnippetSize-1)/2];
-                        yFilter=(yRange>0)&(yRange<=ImRows);
-
-
-                        xRange=round(xTrace)+[-(SnippetSize-1)/2:(SnippetSize-1)/2];
-                        xFilter=(xRange>0)&(xRange<=ImCols);
-
-
-
-                        ImageSnippet(yFilter,xFilter)=Image(yRange(yFilter),...
-                            xRange(xFilter));
-
-                        imshow(ImageSnippet,[],'Border','Tight','InitialMagnification',200)
-                        set(gca, 'Position', get(gca, 'OuterPosition') - ...
-                            get(gca, 'TightInset') * [-1 0 1 0; 0 -1 0 1; 0 0 1 0; 0 0 0 1]);
-
-                        if HistoneChannel
-                            %Plot the corresponding nucleus
-                            CurrentSchnitz=schnitzcells(CompiledParticles{ChN}(k).Nucleus);
-                            if sum((CurrentSchnitz.frames)==CompiledParticles{ChN}(k).Frame(j))==1
-                                hold on
-                                EllipseNumber=CurrentSchnitz.cellno(...
-                                    (CurrentSchnitz.frames)==CompiledParticles{ChN}(k).Frame(j));
-
-                                CurrEllipse=Ellipses{CompiledParticles{ChN}(k).Frame(j)}(EllipseNumber,:);
-
-                                EllipseHandle=ellipse(CurrEllipse(3),...
-                                    CurrEllipse(4),...
-                                    CurrEllipse(5),...
-                                    CurrEllipse(1)-xTrace+(SnippetSize-1)/2,...
-                                    CurrEllipse(2)-yTrace+(SnippetSize-1)/2);
-                                %set(EllipseHandle,'color',ColorTime(j,:))
-                                set(EllipseHandle,'color','g')
-                                hold off
+                            [ImRows,ImCols]=size(Image);
+                            ImageSnippet=zeros(SnippetSize,SnippetSize);
+                            yRange=round(yTrace)+[-(SnippetSize-1)/2:(SnippetSize-1)/2];
+                            yFilter=(yRange>0)&(yRange<=ImRows);
+                            xRange=round(xTrace)+[-(SnippetSize-1)/2:(SnippetSize-1)/2];
+                            xFilter=(xRange>0)&(xRange<=ImCols);
+                            ImageSnippet(yFilter,xFilter)=Image(yRange(yFilter),...
+                                xRange(xFilter));
+                            imshow(ImageSnippet,[],'Border','Tight','InitialMagnification',200)
+                            set(gca, 'Position', get(gca, 'OuterPosition') - ...
+                                get(gca, 'TightInset') * [-1 0 1 0; 0 -1 0 1; 0 0 1 0; 0 0 0 1]);
+                            if HistoneChannel
+                                %Plot the corresponding nucleus
+                                CurrentSchnitz=schnitzcells(CompiledParticles{ChN}(k).Nucleus);
+                                if sum((CurrentSchnitz.frames)==CompiledParticles{ChN}(k).Frame(j))==1
+                                    hold on
+                                    EllipseNumber=CurrentSchnitz.cellno(...
+                                        (CurrentSchnitz.frames)==CompiledParticles{ChN}(k).Frame(j));
+                                    CurrEllipse=Ellipses{CompiledParticles{ChN}(k).Frame(j)}(EllipseNumber,:);
+                                    EllipseHandle=ellipse(CurrEllipse(3),...
+                                        CurrEllipse(4),...
+                                        CurrEllipse(5),...
+                                        CurrEllipse(1)-xTrace+(SnippetSize-1)/2,...
+                                        CurrEllipse(2)-yTrace+(SnippetSize-1)/2);
+                                    %set(EllipseHandle,'color',ColorTime(j,:))
+                                    set(EllipseHandle,'color','g')
+                                    hold off
+                                end
                             end
-                        end
-
                         end
                     end
                     set(gcf,'Position',[1,41,1280,684])  

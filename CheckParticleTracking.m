@@ -195,14 +195,11 @@ else
     DHis=dir([PreProcPath,filesep,FilePrefix(1:end-1),filesep,'*His*.tif']);
     FrameInfo(length(DHis)).nc=[];
     %Adding information
-
-    Dz=dir([PreProcPath,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'*001*.tif']);
+   Dz=dir([PreProcPath,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'*001*.tif']);
     NumberSlices=length(Dz)-1;
-    
     for i=1:length(FrameInfo)
         FrameInfo(i).NumberSlices=NumberSlices;
     end
-    
 end
 
 
@@ -325,7 +322,8 @@ else
 end
 
 
-if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'Hb-GFP')|strcmp(XLSRaw(XLSEntry,Channel2Column),'Hb-GFP')
+if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
+    %strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'Hb-GFP')|strcmp(XLSRaw(XLSEntry,Channel2Column),'Hb-GFP')
     nc9=XLSRaw{XLSEntry,nc9Column};
     nc10=XLSRaw{XLSEntry,nc10Column};
     nc11=XLSRaw{XLSEntry,nc11Column};
@@ -450,8 +448,19 @@ DisplayRange=[];
 ZoomMode=0;
 GlobalZoomMode=0;
 ZoomRange=50;
-minContrast = 0; % Default contrast settings for gfp channel
-maxContrast = 80;
+
+%Set up the default contrast settings for the MCP channel depending on the
+%microscope that was used used
+if strcmpi(FrameInfo(1).FileMode,'dspin')
+    %For spinning disk, we set the contrast to the maximum and minimum
+    minContrast=[];
+    maxContrast=[];
+else
+    %For all other microscopes, we have a default. HG is not sure this will
+    %actually work well beyond Leica SP8.
+    minContrast = 0; % Default contrast settings for gfp channel
+    maxContrast = 80;
+end
 
 % Changing the intial frames and particle if justNC13
 if ncRange
@@ -515,7 +524,9 @@ end
 SkipWaitForButtonPress=[];
 
 
-while (cc~='x') 
+while (cc~='x')
+    
+    nameSuffix=['_ch',iIndex(CurrentChannel,2)];
     EllipseHandle=[];
     EllipseHandleYellow=[];
     EllipseHandleBlue=[];
@@ -589,12 +600,10 @@ while (cc~='x')
     end
         
     if (NChannels==1)&&(~strcmp(lower(ExperimentType),'inputoutput'))
-%             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-%                 FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);\
             disp(['projectionMode : ' projectionMode])
             if strcmp(projectionMode,'None (Default)')
                 Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                    FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);
+                    FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
             elseif strcmp(projectionMode,'Max Z')
                 [Image,~] = zProjections(Prefix, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
             elseif strcmp(projectionMode,'Median Z')
@@ -612,10 +621,11 @@ while (cc~='x')
                     Image = storedTimeProjection;
                 end
             end
-            
-        
-%             disp(['Warning: Could not load file: ',...
-%                 FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif'])
+
+    elseif (NChannels>1)&&(~strcmp(lower(ExperimentType),'inputoutput'))
+        Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
+            FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),...
+            nameSuffix,'.tif']);
     elseif (NChannels==1)&&(strcmp(lower(ExperimentType),'inputoutput'))
         OutputChannelTemp1=strfind({lower(Channel1{1}),lower(Channel2{1})},'mcp');
         OutputChannelTemp2=strfind({lower(Channel1{1}),lower(Channel2{1})},'pcp');
@@ -626,12 +636,13 @@ while (cc~='x')
         Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                 FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'_ch',iIndex(OutputChannel,2),'.tif']);
     else
+        warning('ExperimentType and/or channel not supported. Attempting to proceed')
         try
             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                     FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);
         catch
             display(['Warning: Could not load file: ',...
-                FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'_ch',iIndex(CurrentChannel,2),'.tif']);
+                FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
         end
     end
 
@@ -1228,7 +1239,7 @@ while (cc~='x')
                 breakflag = 0;
                 parfor i = 1:ZSlices
                     spotsIm=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                         FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i,2),'.tif']);  
+                         FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i,2),nameSuffix,'.tif']);  
                     Threshold = min(min(spotsIm));
                     dog = spotsIm;
                     im_thresh = dog >= Threshold;
@@ -1721,11 +1732,11 @@ while (cc~='x')
         save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo')
         if UseHistoneOverlay
             save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2')
-            save([DataFolder,filesep,'Spots.mat'],'Spots')
+            save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3') %CS20170912 necessary for saving Spots.mat if >2GB
             save([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'],'schnitzcells')
         else
             save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2')            
-            save([DataFolder,filesep,'Spots.mat'],'Spots')
+            save([DataFolder,filesep,'Spots.mat'],'Spots','-v7.3') %CS20170912 necessary for saving Spots.mat if >2GB
         end
         display('Particles saved.')
         if NChannels==1
@@ -2015,22 +2026,31 @@ while (cc~='x')
             CurrentChannel=1;
         end
         
-        %If a particle is associated with this same nucleus in the new
-        %channel then change to it
-        AssignedNucleusPreviousChannel=Particles{PreviousChannel}(CurrentParticle).Nucleus;
-        
-        %Now, find its associated particle
-        AssignedNucleusNewChannel=[];
-        for i=1:length(Particles{CurrentChannel})
-            if ~isempty(Particles{CurrentChannel}(i).Nucleus)
-                AssignedNucleusNewChannel(i)=Particles{CurrentChannel}(i).Nucleus;
-            else
-                AssignedNucleusNewChannel(i)=nan;
+        %Do we have a histone channel? If so, we can find the particle in
+        %the next channel corresponding to this nucleus.
+        if UseHistoneOverlay
+            %If a particle is associated with this same nucleus in the new
+            %channel then change to it
+            AssignedNucleusPreviousChannel=Particles{PreviousChannel}(CurrentParticle).Nucleus;
+
+            %Now, find its associated particle
+            AssignedNucleusNewChannel=[];
+            for i=1:length(Particles{CurrentChannel})
+                if ~isempty(Particles{CurrentChannel}(i).Nucleus)
+                    AssignedNucleusNewChannel(i)=Particles{CurrentChannel}(i).Nucleus;
+                else
+                    AssignedNucleusNewChannel(i)=nan;
+                end
             end
-        end
+
+            if ~isempty(find(AssignedNucleusNewChannel==AssignedNucleusPreviousChannel))
+                CurrentParticle=find(AssignedNucleusNewChannel==AssignedNucleusPreviousChannel);
+            end
         
-        if ~isempty(find(AssignedNucleusNewChannel==AssignedNucleusPreviousChannel))
-            CurrentParticle=find(AssignedNucleusNewChannel==AssignedNucleusPreviousChannel);
+        %If we don't have a histone channel, go for the same particle
+        %number in the new channel or for the last particle
+        elseif length(Particles{CurrentChannel})<CurrentParticle
+            CurrentParticle=length(Particles{CurrentChannel});
         end
     
     elseif cc=='~'      %Switch projection mode
@@ -2076,11 +2096,11 @@ end
 
 if UseHistoneOverlay
     save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2')
-    save([DataFolder,filesep,'Spots.mat'],'Spots')
+    save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3') %CS20170912 necessary for saving Spots.mat if >2GB)
     save([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'],'schnitzcells')
 else
     save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2')            
-    save([DataFolder,filesep,'Spots.mat'],'Spots')
+    save([DataFolder,filesep,'Spots.mat'],'Spots','-v7.3') %CS20170912 necessary for saving Spots.mat if >2GB)
 end
 close all
 display('Particles saved.')
