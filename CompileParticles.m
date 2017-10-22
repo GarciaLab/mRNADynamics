@@ -114,36 +114,15 @@ end
       
 FilePrefix=[Prefix,'_'];
 
-%What type of experiment are we dealing with? Get this out of
-%MovieDatabase.xlsx
+%What type of experiment are we dealing with? Get this out of MovieDatabase
 [~,~,DropboxFolder,~, PreProcPath,...
     ~, ~, ~, ~, ~,~] = readMovieDatabase(Prefix);
 
-%Note that some of this information is redundant given what we get out of
-%readMovieDatabase above. We'll have to integrate this better.
-[~,XLSTxt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
-ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
-APResolutionColumn = find(strcmp(XLSRaw(1,:),'APResolution'));
 
-DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-Dashes=findstr(Prefix,'-');
-PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-    if isempty(PrefixRow)
-        PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
-        if isempty(PrefixRow)
-            error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-        end
-    end
-        
-if isempty(PrefixRow)
-    error('Entry not found in MovieDatabase.xlsx')
-end
-
-ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
-ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
-APResolution = XLSRaw{PrefixRow,APResolutionColumn};
-
+% refactor in progress, we should replace readMovieDatabase with getExperimentDataFromMovieDatabase
+[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoopEnd, APResolution,...
+Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
 
 
 %Load all the information
@@ -217,112 +196,12 @@ else
 end
 
 
-
-
-%Load the information about the nc from the XLS file
-[~,Txt]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-XLSHeaders=Txt(1,:);
-Txt=Txt(2:end,:);
-
-%Find the different columns.
-
-%Convert the prefix into the string used in the XLS file
-Dashes=findstr(FilePrefix(1:end-1),'-');
-
-
-
-%Determine division times
-%Load the information about the nc from the XLS file
-
-[~,Txt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-XLSHeaders=Txt(1,:);
-Txt=Txt(2:end,:);
-
-ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
-ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
-
-DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-Dashes=findstr(Prefix,'-');
-PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-if isempty(PrefixRow)
-    PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
-    if isempty(PrefixRow)
-        error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-    end
-end
-
-ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
-ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
-
-%Find the different columns.
-DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-nc9Column=find(strcmp(XLSRaw(1,:),'nc9'));
-nc10Column=find(strcmp(XLSRaw(1,:),'nc10'));
-nc11Column=find(strcmp(XLSRaw(1,:),'nc11'));
-nc12Column=find(strcmp(XLSRaw(1,:),'nc12'));
-nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
-nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
-CFColumn=find(strcmp(XLSRaw(1,:),'CF'));
-Channel1Column=find(strcmp(XLSRaw(1,:),'Channel1'));
-Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
-
-%Get the information
-Channel1=XLSTxt(PrefixRow,Channel1Column);
-Channel2=XLSTxt(PrefixRow,Channel2Column);
-
-%Convert the prefix into the string used in the XLS file
-Dashes=findstr(Prefix,'-');
-
-%Find the corresponding entry in the XLS file
-if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
-        (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))&(~isempty(findstr(Prefix,'HisRFP')))
-    XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
-        [Date,'\BcdGFP-HisRFP']));
-else
-    XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-        [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-    if isempty(XLSEntry)
-        XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-            [Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
-        if isempty(XLSEntry)
-            error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-        end
-    end
-    
-end
-
-
 if sum(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
     ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')))
-    nc9=cell2mat(XLSRaw(XLSEntry,nc9Column));
-    nc10=cell2mat(XLSRaw(XLSEntry,nc10Column));
-    nc11=cell2mat(XLSRaw(XLSEntry,nc11Column));
-    nc12=cell2mat(XLSRaw(XLSEntry,nc12Column));
-    nc13=cell2mat(XLSRaw(XLSEntry,nc13Column));
-    nc14=cell2mat(XLSRaw(XLSEntry,nc14Column));
-    %This is in case the last column for CF is all nan and is not part of
-    %the Num matrix
-    if ~isempty(CFColumn)    
-        CF=cell2mat(XLSRaw(XLSEntry,CFColumn));
-    else
-        CF=nan;
-    end
+
+% nothing to do, we already have ncs from abobe. refactor this if.
 else
     warning('Warning: lack of histone channel may result in strange behavior.');
-    
-    nc9=cell2mat(XLSRaw(XLSEntry,nc9Column));
-    nc10=cell2mat(XLSRaw(XLSEntry,nc10Column));
-    nc11=cell2mat(XLSRaw(XLSEntry,nc11Column));
-    nc12=cell2mat(XLSRaw(XLSEntry,nc12Column));
-    nc13=cell2mat(XLSRaw(XLSEntry,nc13Column));
-    nc14=cell2mat(XLSRaw(XLSEntry,nc14Column));
-    %This is in case the last column for CF is all nan and is not part of
-    %the Num matrix
-    if ~isempty(CFColumn)    
-        CF=cell2mat(XLSRaw(XLSEntry,CFColumn));
-    else
-        CF=nan;
-    end
 end
 
 
@@ -348,15 +227,15 @@ end
 
 
 
-% Read in which end the stem loops are at, if this information is available
-% (ES 2014-03-20)
-StemLoopEndColumn = find(strcmp(XLSRaw(1, :), 'StemLoopEnd'));
-if ~isempty(StemLoopEndColumn)
-    StemLoopEnd = XLSRaw{XLSEntry, StemLoopEndColumn};
-else
-    StemLoopEnd = '';
-end
-
+% % Read in which end the stem loops are at, if this information is available
+% % (ES 2014-03-20)
+% StemLoopEndColumn = find(strcmp(XLSRaw(1, :), 'StemLoopEnd'));
+% if ~isempty(StemLoopEndColumn)
+%     StemLoopEnd = XLSRaw{XLSEntry, StemLoopEndColumn};
+% else
+%     StemLoopEnd = '';
+% end
+% 
 
 NewCyclePos=[nc9,nc10,nc11,nc12,nc13,nc14];
 NewCyclePos=NewCyclePos(~(NewCyclePos==0));
@@ -382,7 +261,7 @@ elseif strcmpi(ExperimentAxis,'dv') && exist([DropboxFolder,filesep,Prefix,files
 elseif strcmpi(ExperimentAxis,'dv') || strcmpi(ExperimentAxis,'NoAP')
     AddParticlePosition(Prefix,'NoAP');
 else
-    error('Experiment axis not recognized in MovieDatabase.XLSX')
+    error('Experiment axis not recognized in MovieDatabase')
 end
 
 %Reload Particles.mat

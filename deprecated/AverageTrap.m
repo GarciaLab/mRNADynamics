@@ -13,11 +13,6 @@ pause(.5)
 Dashes=strfind(FolderTemp,'\');
 Prefix=FolderTemp((Dashes(end)+1):end);
 Dashes2 = strfind(Prefix, '-');
-[XLSNum,XLSTxt,XLSRaw]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
-DataFolderColumn=find(strcmp(XLSTxt(1,:),'DataFolder'));
-PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
-    [Prefix(1:Dashes2(3)-1), '\', Prefix(Dashes2(3)+1:end)]));
-
                                     
 %Load the Fit Results                                  
 load([DropboxFolder,filesep,Prefix,'\FitResultsMultiple.mat']);

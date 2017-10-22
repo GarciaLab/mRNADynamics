@@ -46,15 +46,9 @@ end
 
 
 %Figure out the gene length. 
-[XLSNum,XLSTxt]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-DataFolderColumn=find(strcmp(XLSTxt(1,:),'DataFolder'));
-StemLoopColumn=find(strcmp(XLSTxt(1,:),'StemLoop'));
-
-% Convert the prefix into the string used in the XLS file
-Dashes = strfind(Prefix, '-');
-PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
-    [Prefix(1:Dashes(3)-1), filesep, Prefix(Dashes(3)+1:end)]));
-StemLoop=XLSTxt(PrefixRow,StemLoopColumn);
+[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
+Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
 
 %Distance from the first MS2 site to the end of the 3' UTR
 if ~isempty(strfind(StemLoop,'Eve'))
