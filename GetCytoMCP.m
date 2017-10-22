@@ -8,10 +8,8 @@ function [Mean,SD,Median,Max,...
 %fluorescent protein that the mother deposited in the embryo?
 
 %Get the folders
-[SourcePath,ProcPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders;
-[SourcePath,ProcPath,DropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders(Prefix);
+[SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, SchnitzcellsFolder,...
+configValues, movieDatabasePath] = DetermineAllLocalFolders(Prefix);
 
 %Load FrameInfo
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
@@ -182,18 +180,10 @@ end
 
 
 %Bin the pixels along the AP axis
-[XLSNum,XLSTxt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-Dashes=findstr(Prefix,'-');
-PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-    if isempty(PrefixRow)
-        PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
-        if isempty(PrefixRow)
-            error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-        end
-    end
-APResolutionColumn = find(strcmp(XLSRaw(1,:),'APResolution'));
-APResolution = XLSRaw{PrefixRow,APResolutionColumn};
+[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
+Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
+
 APbinID=0:APResolution:1;
 
 

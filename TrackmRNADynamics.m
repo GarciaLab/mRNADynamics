@@ -64,27 +64,10 @@ Threshold2Backup=Threshold2;
 [~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
     readMovieDatabase(Prefix);
 
-%What type of experiment are we dealing with? Get this out of
-%MovieDatabase.xlsx
-[XLSNum,XLSTxt]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-ExperimentTypeColumn=find(strcmp(XLSTxt(1,:),'ExperimentType'));
-DataFolderColumn=find(strcmp(XLSTxt(1,:),'DataFolder'));
-Channel1Column=find(strcmp(XLSTxt(1,:),'Channel1'));
-Channel2Column=find(strcmp(XLSTxt(1,:),'Channel2'));
-
-
-Dashes=findstr(Prefix,'-');
-PrefixRow=find(strcmp(XLSTxt(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-if isempty(PrefixRow)
-    PrefixRow=find(strcmp(XLSTxt(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
-    if isempty(PrefixRow)
-        error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-    end
-end
-
-ExperimentType=XLSTxt(PrefixRow,ExperimentTypeColumn);
-Channel1=XLSTxt(PrefixRow,Channel1Column);
-Channel2=XLSTxt(PrefixRow,Channel2Column);
+%What type of experiment are we dealing with? Get this out of MovieDatabase
+[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
+Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
 
 %Set the source folders
 Folder=[FISHPath,filesep,Prefix,'_',filesep,'preanalysis',filesep];
@@ -557,7 +540,7 @@ if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
     close(ParticlesFig)
     close(NucleiFig)
 else
-    error('Experiment type in MovieDatabase.xlsx not recognized')    
+    error('Experiment type in MovieDatabase not recognized')    
 end
 
 %If we only have one channel, then convert SpotFilter and Particles to a
