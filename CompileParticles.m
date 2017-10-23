@@ -260,7 +260,7 @@ Dashes=findstr(Prefix,'-');
 
 %Find the corresponding entry in the XLS file
 if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
-        (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
+        (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))&(~isempty(findstr(Prefix,'HisRFP')))
     XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
         [Date,'\BcdGFP-HisRFP']));
 else
