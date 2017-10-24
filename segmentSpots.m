@@ -149,10 +149,10 @@ if justDoG
         sigma1 = str2num(answer{1,1});
         sigma2 = str2num(answer{2,1});
     else
-    %Initialize Difference of Gaussian filter parameters. filterSize >> sigma2
-    %> sigma1
-    sigma1 = pixelSize / pixelSize; %width of narrower Gaussian
-    sigma2 = 42000 / pixelSize; % width of wider Gaussian
+        %Initialize Difference of Gaussian filter parameters. filterSize >> sigma2
+        %> sigma1
+        sigma1 = pixelSize / pixelSize; %width of narrower Gaussian
+        sigma2 = 42000 / pixelSize; % width of wider Gaussian
     end
     
     filterSize = round(2000 / pixelSize); %size of square to be convolved with microscopy images
@@ -390,25 +390,25 @@ else
         end
 
         %Clean up Spots to remove empty rows
-        Spots2{q} = struct('Fits', []);        
+        Dots{q} = struct('Fits', []);        
         for i = 1:length(Spots{q})
-            Spots2{q}(i).Fits = [];
+            Dots{q}(i).Fits = [];
             for j = 1:length(Spots{q}(i).Fits)
                 if j~=1
                     if ~isempty(Spots{q}(i).Fits(j).z)...
                             && ~isequal(Spots{q}(i).Fits(j).CentralIntensity,Spots{q}(i).Fits(j-1).CentralIntensity)
-                            Spots2{q}(i).Fits = [Spots2{q}(i).Fits, Spots{q}(i).Fits(j)];                    
+                            Dots{q}(i).Fits = [Dots{q}(i).Fits, Spots{q}(i).Fits(j)];                    
                     end
                 else
                     if ~isempty(Spots{q}(i).Fits(j).z)                        
-                        Spots2{q}(i).Fits = [Spots2{q}(i).Fits, Spots{q}(i).Fits(j)];
+                        Dots{q}(i).Fits = [Dots{q}(i).Fits, Spots{q}(i).Fits(j)];
                     end
                 end
             end
         end
-        for i = 1:length(Spots2{q})
-            if isstruct(Spots2{q}(i).Fits)
-                Spots{q}(i).Fits = rmfield(Spots2{q}(i).Fits, 'r');
+        for i = 1:length(Dots{q})
+            if isstruct(Dots{q}(i).Fits)
+                Spots{q}(i).Fits = rmfield(Dots{q}(i).Fits, 'r');
                 Spots{q}(i).Fits = rmfield(Spots{q}(i).Fits, 'discardThis');
             else
                 Spots{q}(i).Fits = [];

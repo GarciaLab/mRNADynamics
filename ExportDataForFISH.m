@@ -1013,22 +1013,24 @@ elseif strcmp(FileMode,'LIFExport')
             end
         elseif strcmpi(ExperimentType,'2spot2color')       %2 spots, 2 colors
             load('ReferenceHist.mat')
+            fiducialChannel=0;
+            histoneChannel=0;
 
-            if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))
+            if (~isempty(strfind(Channel1{1},'mCherry')))||(~isempty(strfind(Channel2{1},'mCherry')))
                 if (~isempty(strfind(Channel1{1},'mCherry')))
                     fiducialChannel=1;
                     histoneChannel=1;
-                elseif (~isempty(strfind(Channel2{1},'mCherry')))
+                elseif (~isempty(strfind(Channel2{1},'NLSmCherry')))
                     fiducialChannel=2;
                     histoneChannel=2;
                 else
-                    error('mCherry channel not found. Cannot generate the fake nuclear image')
+                    warning('mCherry channel not found. Cannot generate the fake nuclear image');
                 end
             end
         
         elseif strcmpi(ExperimentType,'input')        %Protein input mode
             %This mode assumes that at least one channel corresponds to the input.
-            %It also check whetehr the second channel is histone. If there is
+            %It also check whether the second channel is histone. If there is
             %no histone channel it creates a fake channel using one of the
             %inputs.
             
@@ -1142,9 +1144,11 @@ elseif strcmp(FileMode,'LIFExport')
                                 n=n+1;
                             end
                         end
-                    elseif strcmpi(ExperimentType, 'inputoutput')
+                    elseif strcmpi(ExperimentType, 'inputoutput')&&...
+                            q==coatChannel
                         %Save the blank images at the beginning and end of the
                         %stack
+                        NameSuffix=['_ch',iIndex(q,2)];
                         NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),NameSuffix,'.tif'];
                         imwrite(BlankImage,[OutputFolder,filesep,NewName]);
                         NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),NameSuffix,'.tif'];
@@ -1153,9 +1157,12 @@ elseif strcmp(FileMode,'LIFExport')
                         n=1;        %Counter for slices
                         firstImage = (j-1)*NSlices(i)*NChannels+1+(q-1);
                         lastImage = j*NSlices(i)*NChannels;
+                        
+                        %YJ : Save the Spot channel to channel1
+                        TempNameSuffix = ['_ch',iIndex(q-1,2)];
                         for k=firstImage:NChannels:lastImage
                             if n<=min(NSlices)
-                                NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),NameSuffix,'.tif'];
+                                NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),TempNameSuffix,'.tif'];
                                    imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
                                 n=n+1;
                             end
@@ -1183,6 +1190,7 @@ elseif strcmp(FileMode,'LIFExport')
                     elseif strcmpi(ExperimentType, 'inputoutput')
                         %Save the blank images at the beginning and end of the
                         %stack
+                        NameSuffix=['_ch',iIndex(q,2)];
                         NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),NameSuffix,'.tif'];
                         imwrite(BlankImage,[OutputFolder,filesep,NewName]);
                         NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),NameSuffix,'.tif'];
@@ -1191,17 +1199,20 @@ elseif strcmp(FileMode,'LIFExport')
                         n=1;        %Counter for slices
                         firstImage = (j-1)*NSlices(i)*NChannels+1+(q-1);
                         lastImage = j*NSlices(i)*NChannels;
+                        
+                        %YJ : Save the protein channel to channel2
+                        TempNameSuffix = ['_ch',iIndex(q+1,2)];
                         for k=firstImage:NChannels:lastImage
                             if n<=min(NSlices)
-                                NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),NameSuffix,'.tif'];
+                                NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),TempNameSuffix,'.tif'];
                                    imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
                                 n=n+1;
                             end
                         end
-                    elseif strcmpi(ExperimentType, 'input')&sum(q==inputProteinChannel)
+                    elseif strcmpi(ExperimentType, 'input')&&sum(q==inputProteinChannel)
                         %Are we dealing with one or two channels?
                         if length(inputProteinChannel)==1
-                            NameSuffix=[];
+                            NameSuffix=['_ch',iIndex(q,2)];
                         else
                             NameSuffix=['_ch',iIndex(q,2)];
                         end
@@ -1221,18 +1232,19 @@ elseif strcmp(FileMode,'LIFExport')
                                    imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
                                 n=n+1;
                             end
-                        end
-                        
+                        end             
                     end
                 end
                 %Now copy nuclear tracking images
                 if fiducialChannel
                     HisSlices=zeros([size(LIFImages{i}{1,1},1),size(LIFImages{i}{1,1},2),NSlices(i)]);
+                    otherSlices = HisSlices;
                     n=1;
                     firstImage = (j-1)*NSlices(i)*NChannels+1+(fiducialChannel-1);
                     lastImage = j*NSlices(i)*NChannels;
                     for k = firstImage:NChannels:lastImage
                         HisSlices(:,:,n)=LIFImages{i}{k,1};
+                        otherSlices(:,:,n) = LIFImages{i}{k+1,1};
                         n=n+1;
                     end
                     if histoneChannel
@@ -1246,8 +1258,9 @@ elseif strcmp(FileMode,'LIFExport')
                         %and it is inputoutput mode or 1spot mode or 2spot2color.
                         %(MCP-mCherry)
                         if (isempty(strfind(Channel1{1}, 'His')))&&(isempty(strfind(Channel2{1}, 'His')))
-                            if strcmpi(ExperimentType, 'inputoutput')|strcmpi(ExperimentType, '1spot')|strcmpi(ExperimentType,'2spot2color')
+                            if strcmpi(ExperimentType, 'inputoutput')|strcmpi(ExperimentType, '1spot')|strcmpi(ExperimentType,'2spot2color')|strcmpi(ExperimentType,'input')
                                 if (~isempty(strfind(Channel1{1}, 'NLS')))|(~isempty(strfind(Channel2{1}, 'NLS')))
+                                    %don't invert with NLS-MCP-mCherry
                                 else
                                     %We don't want to use all slices. Only the center ones
                                     StackCenter=round((min(NSlices)-1)/2);
@@ -1267,12 +1280,15 @@ elseif strcmp(FileMode,'LIFExport')
                     else 
                         %We don't want to use all slices. Only the center ones
                         StackCenter=round((min(NSlices)-1)/2);
-                        StackRange=[StackCenter-1:StackCenter+1];
+                        StackRange=StackCenter-1:StackCenter+1;
                         if strcmp(ProjectionType,'medianprojection')
-                            Projection=median(HisSlices(:,:,StackRange),[],3);
+                            Projection=median(HisSlices(:,:,StackRange),3);
+                            otherProjection=median(otherSlices(:,:,StackRange),3);
                         else
                             Projection=max(HisSlices(:,:,StackRange),[],3);
+                            otherProjection=max(otherSlices(:,:,StackRange),[],3);
                         end
+                        Projection = Projection + otherProjection;
                     end
  
                     imwrite(uint16(Projection),...
