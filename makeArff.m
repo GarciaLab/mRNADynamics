@@ -49,7 +49,7 @@ fin = fileread(in_path);
 filters = regexp(fin,'(?<=@attribute )\S*(?= )', 'match');
 filters = filters(2:end-1);
 numFilters = length(filters);
-arfftemp = []; 
+arfftemp = zeros(stackSize*(numFilters+2)*numFrames,numFilters+2);
 for i = 1:numFrames
     imPath= [PreProcPath,filesep,Prefix,filesep,'stacks', filesep, iIndex(i,3),'.tif'];
     truthPath = [FISHPath,filesep,Prefix,'_', filesep, 'binary_masks', filesep, 'binary_stack_',Prefix,'_',iIndex(i,3),'.tiff'];
@@ -61,6 +61,8 @@ for i = 1:numFrames
     end
     if i==1
         fCell = [{'original'; im},{'class'; groundTruth}];
+        arfftemp(1:stackSize, 1) = im(:)';
+        arfftemp(1:stackSize, 2) = groundTruth(:)';
 %         parfor o = 1:numFilters
         for o = 1:numFilters
             filterName = filters{o};
@@ -73,7 +75,7 @@ for i = 1:numFrames
                 %i still need to figure out how to define
                 %lastnonzeroentry and filterIndex
                 fCell = [fCell, {filterName; f}];
-            end           
+            end
         end
         fNames = fCell(1,:);
     else
