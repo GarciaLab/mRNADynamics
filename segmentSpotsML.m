@@ -177,7 +177,7 @@ end
 for q = 1:nCh
     nameSuffix= ['_ch',iIndex(q,2)];
     for current_frame = initial_frame:num_frames
-        w = waitbar(current_frame/num_frames,h);
+        w = waitbar(current_frame/num_frames);
         set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
         for i = 1:zSize
             zim(:,:,i) = imread([PreProcPath,filesep,Prefix, filesep, Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']);    
@@ -210,7 +210,7 @@ for q = 1:nCh
             mij.run('Close All');
         end
     end
-    close(h);
+    close(w);
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Segment transcriptional loci
@@ -235,7 +235,7 @@ else
                     im = im.*ffim;
                 end
                 %
-                im_thresh = pMap >= Threshold;
+                im_thresh = pMap >= Threshold(q);
                 se = strel('square', 3);
                 im_thresh = imdilate(im_thresh, se); %thresholding from this classified probability map can produce non-contiguous, spurious Spots{q}. This fixes that and hopefully does not combine real Spots{q} from different nuclei
                 im_thresh = im_thresh>0;
@@ -321,7 +321,10 @@ else
             end
         end
         close(h)
-        fields = fieldnames(Particles);
+        try
+            fields = fieldnames(Particles);
+        catch 
+            error('No spots found, probably. Did you want spots? Try something else.')
 
         %z-tracking
         changes = 1;
