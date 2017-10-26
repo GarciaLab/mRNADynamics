@@ -296,7 +296,7 @@ Channel2=XLSRaw(PrefixRow,Channel2Column);
 %Find the corresponding entry in the XLS file
 if (~isempty(findstr(FilePrefix,'Bcd')))&(isempty(findstr(FilePrefix,'BcdE1')))&...
         (isempty(findstr(FilePrefix(1:end-1),'NoBcd')))&...
-        (isempty(findstr(FilePrefix(1:end-1),'Bcd1x')))
+        (isempty(findstr(FilePrefix(1:end-1),'Bcd1x')))&(~isempty(findstr(FilePrefix,'HisRFP')))
     warning('This step in CheckParticleTracking will most likely have to be modified to work')
     XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
         [Date,'\BcdGFP-HisRFP']));
@@ -313,7 +313,8 @@ else
 end
 
 
-if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'Hb-GFP')|strcmp(XLSRaw(XLSEntry,Channel2Column),'Hb-GFP')
+if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
+    %strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'Hb-GFP')|strcmp(XLSRaw(XLSEntry,Channel2Column),'Hb-GFP')
     nc9=XLSRaw{XLSEntry,nc9Column};
     nc10=XLSRaw{XLSEntry,nc10Column};
     nc11=XLSRaw{XLSEntry,nc11Column};
@@ -503,7 +504,9 @@ end
 SkipWaitForButtonPress=[];
 
 
-while (cc~='x') 
+while (cc~='x')
+    
+    nameSuffix=['_ch',iIndex(CurrentChannel,2)];
     EllipseHandle=[];
     EllipseHandleYellow=[];
     EllipseHandleBlue=[];
@@ -577,12 +580,10 @@ while (cc~='x')
     end
         
     if (NChannels==1)&&(~strcmp(lower(ExperimentType),'inputoutput'))
-%             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-%                 FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);\
             disp(['projectionMode : ' projectionMode])
             if strcmp(projectionMode,'None (Default)')
                 Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                    FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);
+                    FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
             elseif strcmp(projectionMode,'Max Z')
                 [Image,~] = zProjections(Prefix, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
             elseif strcmp(projectionMode,'Median Z')
@@ -600,10 +601,11 @@ while (cc~='x')
                     Image = storedTimeProjection;
                 end
             end
-            
-        
-%             disp(['Warning: Could not load file: ',...
-%                 FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif'])
+
+    elseif (NChannels>1)&&(~strcmp(lower(ExperimentType),'inputoutput'))
+        Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
+            FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),...
+            nameSuffix,'.tif']);
     elseif (NChannels==1)&&(strcmp(lower(ExperimentType),'inputoutput'))
         OutputChannelTemp1=strfind({lower(Channel1{1}),lower(Channel2{1})},'mcp');
         OutputChannelTemp2=strfind({lower(Channel1{1}),lower(Channel2{1})},'pcp');
@@ -614,12 +616,13 @@ while (cc~='x')
         Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                 FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'_ch',iIndex(OutputChannel,2),'.tif']);
     else
+        warning('ExperimentType and/or channel not supported. Attempting to proceed')
         try
             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                     FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);
         catch
             display(['Warning: Could not load file: ',...
-                FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'_ch',iIndex(CurrentChannel,2),'.tif']);
+                FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
         end
     end
 
@@ -1213,11 +1216,11 @@ while (cc~='x')
                 ConnectPositiony = round(ConnectPositiony);
                 pixelSize = FrameInfo(1).PixelSize*1000; %nm
                 snippet_size = 2*(floor(1300/(2*pixelSize))) + 1; % nm. note that this is forced to be odd
-                SpotsIndex = length(Spots{1}(CurrentFrame).Fits)+1;
+                SpotsIndex = length(Spots{CurrentChannel}(CurrentFrame).Fits)+1;
                 breakflag = 0;
                 parfor i = 1:ZSlices
                     spotsIm=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                         FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i,2),'.tif']);  
+                         FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i,2),nameSuffix,'.tif']);  
                     Threshold = min(min(spotsIm));
                     dog = spotsIm;
                     im_thresh = dog >= Threshold;
@@ -1251,11 +1254,11 @@ while (cc~='x')
                             temp_particles{i}{1}{4};
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Snippet{i}=...
                             temp_particles{i}{1}{5};
-                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Area(i)=...
+                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Area{i}=...
                             temp_particles{i}{1}{6};
-                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFitWidth(i)=...
+                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFitWidth{i}=...
                             temp_particles{i}{1}{7};
-                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yFitWidth(i)=...
+                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yFitWidth{i}=...
                             temp_particles{i}{1}{8};
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yDoG(i)=...
                             temp_particles{i}{1}{9};
@@ -1263,7 +1266,7 @@ while (cc~='x')
                             temp_particles{i}{1}{10};
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).GaussianIntensity(i)=...
                             temp_particles{i}{1}{11};
-                        Spots{1}(CurrentFrame).Fits(SpotsIndex).CentralIntensity(i)=...
+                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).CentralIntensity(i)=...
                             temp_particles{i}{1}{12};
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).DOGIntensity(i)=...
                             temp_particles{i}{1}{13};
@@ -1294,7 +1297,7 @@ while (cc~='x')
                 
                 if ~breakflag
                     %Find the maximum Z-plane
-                    [~, max_index] = max(Spots{1}(CurrentFrame).Fits(SpotsIndex).CentralIntensity);
+                    [~, max_index] = max(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).CentralIntensity);
                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).brightestZ = Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).z(max_index);
 
                     %Add this to SpotFilter, which tells the code that this spot is
@@ -2004,22 +2007,31 @@ while (cc~='x')
             CurrentChannel=1;
         end
         
-        %If a particle is associated with this same nucleus in the new
-        %channel then change to it
-        AssignedNucleusPreviousChannel=Particles{PreviousChannel}(CurrentParticle).Nucleus;
-        
-        %Now, find its associated particle
-        AssignedNucleusNewChannel=[];
-        for i=1:length(Particles{CurrentChannel})
-            if ~isempty(Particles{CurrentChannel}(i).Nucleus)
-                AssignedNucleusNewChannel(i)=Particles{CurrentChannel}(i).Nucleus;
-            else
-                AssignedNucleusNewChannel(i)=nan;
+        %Do we have a histone channel? If so, we can find the particle in
+        %the next channel corresponding to this nucleus.
+        if UseHistoneOverlay
+            %If a particle is associated with this same nucleus in the new
+            %channel then change to it
+            AssignedNucleusPreviousChannel=Particles{PreviousChannel}(CurrentParticle).Nucleus;
+
+            %Now, find its associated particle
+            AssignedNucleusNewChannel=[];
+            for i=1:length(Particles{CurrentChannel})
+                if ~isempty(Particles{CurrentChannel}(i).Nucleus)
+                    AssignedNucleusNewChannel(i)=Particles{CurrentChannel}(i).Nucleus;
+                else
+                    AssignedNucleusNewChannel(i)=nan;
+                end
             end
-        end
+
+            if ~isempty(find(AssignedNucleusNewChannel==AssignedNucleusPreviousChannel))
+                CurrentParticle=find(AssignedNucleusNewChannel==AssignedNucleusPreviousChannel);
+            end
         
-        if ~isempty(find(AssignedNucleusNewChannel==AssignedNucleusPreviousChannel))
-            CurrentParticle=find(AssignedNucleusNewChannel==AssignedNucleusPreviousChannel);
+        %If we don't have a histone channel, go for the same particle
+        %number in the new channel or for the last particle
+        elseif length(Particles{CurrentChannel})<CurrentParticle
+            CurrentParticle=length(Particles{CurrentChannel});
         end
     
     elseif cc=='~'      %Switch projection mode

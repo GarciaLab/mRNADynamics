@@ -4,8 +4,6 @@ function [Particles,schnitzcells]=TrackmRNADynamics(varargin)
 %nuclei have been tracked it uses that information for the particle
 %tracking.
 
-%V3 integrated it with Laurent's code
-
 %To do: The no-histone part of the code doesn't take into account the
 %Approved field of the Particles structure.
 
@@ -337,13 +335,7 @@ if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
             %Load the corresponding mRNA image. Check whether we have multiple
             %channels saved or not.
             D=dir([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'*.tif']);
-            if length(D)==1     %We do not have multiple channels saved explicitly
-                Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'.tif']);
-            elseif length(D)==2
-                Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch',iIndex(SpotsChannel(Channel),2),'.tif']);
-            else
-                error('More than two channels not currently supported')
-            end
+            Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch',iIndex(SpotsChannel(Channel),2),'.tif']);
 
             %TO-DO: Show spots above and below threshold differently
             imshow(Image,[])
@@ -500,6 +492,7 @@ if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
                                         if MinIndex(j)>0
                                             Particles(PreviousFrameParticles(MinIndex(j))).Frame(end+1)=CurrentFrame;
                                             Particles(PreviousFrameParticles(MinIndex(j))).Index(end+1)=ApprovedSpots(j);
+
                                             %We don't want this new spot to generate a
                                             %new particle further below
                                             NewParticleFlag(j)=false;
@@ -1543,6 +1536,13 @@ if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
 % %     end    
 else
     error('Experiment type in MovieDatabase.xlsx not recognized')    
+end
+
+%If we only have one channel, then convert SpotFilter and Particles to a
+%standard structure.
+if NCh==1
+   SpotFilter=SpotFilter{1};
+   Particles=Particles{1};
 end
 
 mkdir([OutputFolder,filesep]);
