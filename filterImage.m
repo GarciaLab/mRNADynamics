@@ -33,7 +33,9 @@ function fint = filterImage(im, filterType, sigmas)
         end
     end
 
-    switch filterType        
+    switch filterType  
+        case 'Identity'
+            f=im;
         case 'Gaussian_blur'
             if dim == 2
                 f = imgaussfilt(im,s);
@@ -201,7 +203,7 @@ function fint = filterImage(im, filterType, sigmas)
         case 'Maximum'
             if dim==2
                 f = imgaussfilt(im,s);
-                se = strel('disk',ceil(filterSize/2))
+                se = strel('disk',ceil(filterSize/2));
                 f = imdilate(f,se);
 %                 f = ordfilt2(f,(filterSize*filterSize),ones(filterSize,filterSize));
 %                 f = imgaussfilt(f,s);
@@ -222,7 +224,8 @@ function fint = filterImage(im, filterType, sigmas)
         case 'Minimum'
             if dim==2
                 f = imgaussfilt(im,s);
-                f = colfilt(f,1,ones(filterSize,filterSize));
+                se = strel('disk',ceil(filterSize/2))
+                f = imerode(f,se);
             elseif dim==3
 %                  f = ordfilt3(im, 'min', filterSize); %i need to rewrite
 %                 this algorithm because it doesn't work
