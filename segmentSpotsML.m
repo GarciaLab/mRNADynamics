@@ -2,7 +2,7 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 % segmentSpotsML(Prefix, Threshold, [Options])
 %
 % DESCRIPTION
-% Identify and segment individual transcription Spots{q}. 
+% Identify and segment individual transcription Spots. 
 %
 % ARGUMENTS
 % Prefix: Prefix of the data set to analyze
@@ -185,9 +185,9 @@ for q = 1:nCh
         name = [stackspath, filesep, iIndex(current_frame,3), nameSuffix,'.tif'];
         %Don't write new stacks if they're already made.
         if length(dir([stackspath, filesep, '*.tif'])) ~= num_frames
-            imwrite(uint8(zim(:,:,1)), name);
+            imwrite(uint16(zim(:,:,1)), name);
             for k = 2:size(zim,3)
-                imwrite(uint8(zim(:,:,k)), name, 'WriteMode', 'append');
+                imwrite(uint16(zim(:,:,k)), name, 'WriteMode', 'append');
             end
         end
         %Do the classification with Weka in Fiji
@@ -202,10 +202,10 @@ for q = 1:nCh
             for m = 1:2:zSize2
                 pMap(:,:,ceil(m/2)) =  pMapTemp(:,:,m); %the even images in the original array are negatives of the odds
             end
-            pMap = permute(pMap, [2 1 3]) * 100; %multiplying so this can be cast to uint8
+            pMap = permute(pMap, [2 1 3]) * 100; %multiplying so this can be cast to uint16
             for i = 1:size(pMap, 3)
                 p_name = ['prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif'];
-                imwrite(uint8(pMap(:,:,i)), [OutputFolder1,filesep,p_name]) %AR 10/17/2017: This cast may lose substantial amounts of precision. needs to be checked                
+                imwrite(uint16(pMap(:,:,i)), [OutputFolder1,filesep,p_name]) %AR 10/17/2017: This cast may lose substantial amounts of precision. needs to be checked                
             end
             mij.run('Close All');
         end
