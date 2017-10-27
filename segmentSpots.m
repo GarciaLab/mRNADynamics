@@ -31,7 +31,7 @@ function segmentSpots(Prefix,Threshold,varargin)
 %               'Gaussian_blur'             'Median'
 %               'Edges'                     'Maximum'
 %               'Laplacian'                 'Minimum'
-%               'Mean'                      'Variance'
+%               'Mean'                      'Std'
 %               'Hessian_largest'           'Hessian_smallest'
 %               [DEFAULT] 'Difference_of_Gaussian' (2 sigmas) [DEFAULT]
 %               'Structure_largest' (2 sigmas)
@@ -194,10 +194,10 @@ if justDoG
     end   
     
     for q = 1:nCh
-        h=waitbar(0,'Generating DoG images');
+%         h=waitbar(0,'Generating DoG images');
         nameSuffix=['_ch',iIndex(q,2)];
         for current_frame = 1:numFrames
-            waitbar(current_frame/numFrames,h);
+%             waitbar(current_frame/numFrames,h);
             if displayFigures
                 for i = 1:zSize
                     im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']));
@@ -215,36 +215,9 @@ if justDoG
                 end
             end
         end
-        close(h);
+%         close(h);
     end 
     
-%     filterSize = round(2000 / pixelSize); %size of square to be convolved with microscopy images
-%     for q = 1:nCh
-%         h=waitbar(0,'Generating DoG images');
-%         nameSuffix=['_ch',iIndex(q,2)];
-%         for current_frame = 1:numFrames
-%             waitbar(current_frame/numFrames,h);
-%             if displayFigures
-%                 for i = 1:zSize
-%                     im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']));
-%                     dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
-%                     dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
-%                     dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif'];
-%                     imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
-%                     imshow(dog,[]);
-%                 end
-%             else 
-%                 parfor i = 1:zSize    
-%                     im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']));
-%                     dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
-%                     dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
-%                     dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif'];
-%                     imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
-%                 end
-%             end
-%         end
-%         close(h);
-%     end 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %Segment transcriptional loci
 else       

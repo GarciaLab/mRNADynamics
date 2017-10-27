@@ -191,7 +191,8 @@ function fint = filterImage(im, filterType, sigmas)
             end
         case 'Median'
             if dim==2
-                f = colfilt(im,[s s],'sliding',@median);
+                f = imgaussfilt(im,s);
+                f = ordfilt2(f,ceil(filterSize*filterSize/2),ones(filterSize,filterSize));
             elseif dim==3
 %                 f = ordfilt3(im, 'med', filterSize); %i need to rewrite
 %                 this algorithm because it doesn't work
@@ -199,7 +200,11 @@ function fint = filterImage(im, filterType, sigmas)
             end
         case 'Maximum'
             if dim==2
-                f = colfilt(im,[s s],'sliding',@max);
+                f = imgaussfilt(im,s);
+                se = strel('disk',ceil(filterSize/2))
+                f = imdilate(f,se);
+%                 f = ordfilt2(f,(filterSize*filterSize),ones(filterSize,filterSize));
+%                 f = imgaussfilt(f,s);
             elseif dim==3
 %                 f = ordfilt3(im, 'max', filterSize); %i need to rewrite
 %                 this algorithm because it doesn't work
@@ -207,7 +212,8 @@ function fint = filterImage(im, filterType, sigmas)
             end
         case 'Variance'
             if dim==2
-                f = colfilt(im,[s s],'sliding',@var);
+                f = imgaussfilt(im,s);
+                f = colfilt(f,[filterSize filterSize],'sliding',@variance);
             elseif dim==3
 %                  f = ordfilt3(im, 'var', filterSize); %i need to rewrite
 %                 this algorithm because it doesn't work
@@ -215,7 +221,17 @@ function fint = filterImage(im, filterType, sigmas)
             end
         case 'Minimum'
             if dim==2
-                f = colfilt(im,[s s],'sliding',@min);
+                f = imgaussfilt(im,s);
+                f = colfilt(f,1,ones(filterSize,filterSize));
+            elseif dim==3
+%                  f = ordfilt3(im, 'min', filterSize); %i need to rewrite
+%                 this algorithm because it doesn't work
+                f = im;                       
+            end
+        case 'Std'
+            if dim==2
+                f = imgaussfilt(im,s);
+                f = stdfilt(f);
             elseif dim==3
 %                  f = ordfilt3(im, 'min', filterSize); %i need to rewrite
 %                 this algorithm because it doesn't work
