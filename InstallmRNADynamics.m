@@ -162,6 +162,12 @@ if isempty(userpath)
    userpath(StartUpPath);
 end
 
+%set up the static java path
+pd = prefdir;
+jfid = fopen([pd, filesep, 'javaclasspath.txt'], 'w+');
+fprintf(jfid, '%s','D:\bioformats_package.jar');
+fclose(jfid);
+
 fid = fopen([StartUpPath(1:end-1),filesep,'startup.m'], 'a');
 errmsg = '';
 if fid < 0

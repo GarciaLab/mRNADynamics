@@ -84,7 +84,7 @@ function [result] = bfopen(id, varargin)
 %     1. If you use bfopen within a loop, it saves on overhead
 %        to avoid calling the javaaddpath command repeatedly.
 %     2. Calling 'javaaddpath' may erase certain global parameters.
-autoloadBioFormats = 1;
+autoloadBioFormats = 0;
 
 % Toggle the stitchFiles flag to control grouping of similarly
 % named files into a single dataset based on file numbering.
