@@ -7,15 +7,22 @@ function fint = filterImage(im, filterType, sigmas)
     
     im = double(im);
     
+    %convert string sigmas to doubles
+    if ischar(sigmas{1})
+        for i=1:length(sigmas)
+            sigmas{i}=str2double(sigmas{i});
+        end
+    end
+    
     q = length(sigmas);
     switch q        
         case 0
             %do nothing
         case 1
-            s = str2double(sigmas{1});
+            s = sigmas{1};
         case 2
-            s1 = str2double(sigmas{1});
-            s2 = str2double(sigmas{2});
+            s1 = sigmas{1};
+            s2 = sigmas{2};
         otherwise
             s = str2double(sigmas{end});            
     end
@@ -322,7 +329,7 @@ function fint = filterImage(im, filterType, sigmas)
             %do nothing
     end
     
-    if ~isempty(f)
+    if ~isempty(f) && sum(f(:)) ~= 0
         %feature rescaling
         fmin = min(min(min(f)));
         fmax = max(max(max(f)));
@@ -332,6 +339,8 @@ function fint = filterImage(im, filterType, sigmas)
         ndigits = ceil(abs(log(std(fprime(:)))));
         fround = round(fprime, ndigits);
         fint = int16(fround*10^ndigits);
+    else
+        fint = f;
     end
     
 end

@@ -18,12 +18,24 @@ function segmentSpots(Prefix,Threshold,varargin)
 %                of using TrackmRNADynamics? 
 % 'Frames',N:     Run the code from frame 1 to frame N. Defaults to all
 %                frames. It's suggested to run 5-20 frames for debugging.
-% 'CustomSigmas': Prompts you to enter your custom sigmas to do DoG
+% 'customSigmas': Prompts you to enter your custom sigmas to do DoG
 %                 filtering with
 % 'Shadows':    	 This option should be followed by 0, 1 or 2. This
 %                specifies the number of requisite z-planes above and/or below the
 %                brightest plane for a spot to have to pass quality control. 
-
+% 'customFilters': Choose which filter to use to segment the image. Name
+%                  should be a string, followed by a cell with your filter
+%                  or filters
+%                 ex. segmentSpots(Prefix,[],'customFilter','Structure_largest',{1,8})
+%           Filter Options:
+%               'Gaussian_blur'             'Median'
+%               'Edges'                     'Maximum'
+%               'Laplacian'                 'Minimum'
+%               'Mean'                      'Variance'
+%               'Hessian_largest'           'Hessian_smallest'
+%               [DEFAULT] 'Difference_of_Gaussian' (2 sigmas) [DEFAULT]
+%               'Structure_largest' (2 sigmas)
+%               'Structure_smallest' (2 sigmas)
 %               
 % OUTPUT
 % 'Spots':  A structure array with a list of detected transcriptional loci
@@ -43,6 +55,8 @@ trackSpots=0;
 numFrames=0;
 numShadows = 2;
 customSigmas = 0;
+customFilter = 0;
+filterType = 'Difference_of_Gaussian';
 
 for i=1:length(varargin)
     if strcmp(varargin{i},'displayFigures')
@@ -55,13 +69,36 @@ for i=1:length(varargin)
         else
             numShadows=varargin{i+1};
         end
-    elseif strcmpi(varargin{i}, 'CustomSigmas')
+    elseif strcmpi(varargin{i}, 'customSigmas')
         customSigmas = 1;
     elseif strcmp(varargin{i},'Frames')
         if ~isnumeric(varargin{i+1})
             error('Wrong input parameters. After ''Frames'' you should input the number of frames')
         else
             numFrames=varargin{i+1};
+        end
+    elseif strcmp(varargin{i},'customFilter')
+        customFilter = 1;
+        try
+            filterType = varargin{i+1}
+        catch
+            warning('Entered filter not recognized. Defaulting to DoG')
+        end
+        if iscell(varargin{i+2})
+            sigmas = varargin{i+2};
+            if strcmp(filterType,'Difference_of_Gaussian') || ...
+                    strcmp(filterType,'Structure_largest') || ...
+                    strcmp(filterType,'Structure_smallest')
+                if length(sigmas) ~= 2
+                    error('DoG and Structure filters require two sigma values e.g.{lower_sigma,higher_sigma}')
+                end
+            else
+                if length(sigmas) ~= 1
+                    error('All filters besides DoG and Structure require only 1 sigma value')
+                end
+            end
+        else
+            error('Entered sigma(s) not recognized. Make sure the sigma(s) are entered as numbers in a cell {}')
         end
     end
 end
@@ -148,14 +185,14 @@ if justDoG
         answer = inputdlg(prompt,dlg_title,num_lines,defaultans);
         sigma1 = str2num(answer{1,1});
         sigma2 = str2num(answer{2,1});
-    else
+    elseif ~customFilter
         %Initialize Difference of Gaussian filter parameters. filterSize >> sigma2
         %> sigma1
         sigma1 = pixelSize / pixelSize; %width of narrower Gaussian
-        sigma2 = 42000 / pixelSize; % width of wider Gaussian
-    end
+        sigma2 = round(42000 / pixelSize); % width of wider Gaussian
+        sigmas = {sigma1,sigma2};
+    end   
     
-    filterSize = round(2000 / pixelSize); %size of square to be convolved with microscopy images
     for q = 1:nCh
         h=waitbar(0,'Generating DoG images');
         nameSuffix=['_ch',iIndex(q,2)];
@@ -164,8 +201,7 @@ if justDoG
             if displayFigures
                 for i = 1:zSize
                     im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']));
-                    dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
-                    dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
+                    dog = filterImage(im,filterType,sigmas);
                     dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif'];
                     imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
                     imshow(dog,[]);
@@ -173,8 +209,7 @@ if justDoG
             else 
                 parfor i = 1:zSize    
                     im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']));
-                    dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
-                    dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
+                    dog = filterImage(im,filterType,sigmas);
                     dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif'];
                     imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
                 end
@@ -182,6 +217,34 @@ if justDoG
         end
         close(h);
     end 
+    
+%     filterSize = round(2000 / pixelSize); %size of square to be convolved with microscopy images
+%     for q = 1:nCh
+%         h=waitbar(0,'Generating DoG images');
+%         nameSuffix=['_ch',iIndex(q,2)];
+%         for current_frame = 1:numFrames
+%             waitbar(current_frame/numFrames,h);
+%             if displayFigures
+%                 for i = 1:zSize
+%                     im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']));
+%                     dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
+%                     dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
+%                     dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif'];
+%                     imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
+%                     imshow(dog,[]);
+%                 end
+%             else 
+%                 parfor i = 1:zSize    
+%                     im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']));
+%                     dog = conv2(single(im), single(fspecial('gaussian',filterSize, sigma1) - fspecial('gaussian',filterSize, sigma2)),'same');
+%                     dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
+%                     dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif'];
+%                     imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
+%                 end
+%             end
+%         end
+%         close(h);
+%     end 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %Segment transcriptional loci
 else       
