@@ -7,15 +7,22 @@ function fint = filterImage(im, filterType, sigmas)
     
     im = double(im);
     
+    %convert string sigmas to doubles
+    if ischar(sigmas{1})
+        for i=1:length(sigmas)
+            sigmas{i}=str2double(sigmas{i});
+        end
+    end
+    
     q = length(sigmas);
     switch q        
         case 0
             %do nothing
         case 1
-            s = str2double(sigmas{1});
+            s = sigmas{1};
         case 2
-            s1 = str2double(sigmas{1});
-            s2 = str2double(sigmas{2});
+            s1 = sigmas{1};
+            s2 = sigmas{2};
         otherwise
             s = str2double(sigmas{end});            
     end
@@ -184,7 +191,8 @@ function fint = filterImage(im, filterType, sigmas)
             end
         case 'Median'
             if dim==2
-                f = colfilt(im,[s s],'sliding',@median);
+                f = imgaussfilt(im,s);
+                f = ordfilt2(f,ceil(filterSize*filterSize/2),ones(filterSize,filterSize));
             elseif dim==3
 %                 f = ordfilt3(im, 'med', filterSize); %i need to rewrite
 %                 this algorithm because it doesn't work
@@ -192,7 +200,11 @@ function fint = filterImage(im, filterType, sigmas)
             end
         case 'Maximum'
             if dim==2
-                f = colfilt(im,[s s],'sliding',@max);
+                f = imgaussfilt(im,s);
+                se = strel('disk',ceil(filterSize/2))
+                f = imdilate(f,se);
+%                 f = ordfilt2(f,(filterSize*filterSize),ones(filterSize,filterSize));
+%                 f = imgaussfilt(f,s);
             elseif dim==3
 %                 f = ordfilt3(im, 'max', filterSize); %i need to rewrite
 %                 this algorithm because it doesn't work
@@ -200,7 +212,8 @@ function fint = filterImage(im, filterType, sigmas)
             end
         case 'Variance'
             if dim==2
-                f = colfilt(im,[s s],'sliding',@var);
+                f = imgaussfilt(im,s);
+                f = colfilt(f,[filterSize filterSize],'sliding',@variance);
             elseif dim==3
 %                  f = ordfilt3(im, 'var', filterSize); %i need to rewrite
 %                 this algorithm because it doesn't work
@@ -208,7 +221,17 @@ function fint = filterImage(im, filterType, sigmas)
             end
         case 'Minimum'
             if dim==2
-                f = colfilt(im,[s s],'sliding',@min);
+                f = imgaussfilt(im,s);
+                f = colfilt(f,1,ones(filterSize,filterSize));
+            elseif dim==3
+%                  f = ordfilt3(im, 'min', filterSize); %i need to rewrite
+%                 this algorithm because it doesn't work
+                f = im;                       
+            end
+        case 'Std'
+            if dim==2
+                f = imgaussfilt(im,s);
+                f = stdfilt(f);
             elseif dim==3
 %                  f = ordfilt3(im, 'min', filterSize); %i need to rewrite
 %                 this algorithm because it doesn't work
@@ -322,7 +345,7 @@ function fint = filterImage(im, filterType, sigmas)
             %do nothing
     end
     
-    if ~isempty(f)
+    if ~isempty(f) && sum(f(:)) ~= 0
         %feature rescaling
         fmin = min(min(min(f)));
         fmax = max(max(max(f)));
@@ -332,6 +355,8 @@ function fint = filterImage(im, filterType, sigmas)
         ndigits = ceil(abs(log(std(fprime(:)))));
         fround = round(fprime, ndigits);
         fint = int16(fround*10^ndigits);
+    else
+        fint = f;
     end
     
 end

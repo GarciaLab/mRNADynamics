@@ -336,6 +336,7 @@ if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
             %channels saved or not.
             D=dir([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'*.tif']);
             Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch',iIndex(SpotsChannel(Channel),2),'.tif']);
+
             %TO-DO: Show spots above and below threshold differently
             imshow(Image,[])
             hold on
@@ -489,8 +490,9 @@ if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
                                 if sum(MinIndex)
                                     for j=1:length(MinIndex)
                                         if MinIndex(j)>0
-                                            Particles{Channel}(PreviousFrameParticles(MinIndex(j))).Frame(end+1)=CurrentFrame;
-                                            Particles{Channel}(PreviousFrameParticles(MinIndex(j))).Index(end+1)=ApprovedSpots(j);
+                                            Particles(PreviousFrameParticles(MinIndex(j))).Frame(end+1)=CurrentFrame;
+                                            Particles(PreviousFrameParticles(MinIndex(j))).Index(end+1)=ApprovedSpots(j);
+
                                             %We don't want this new spot to generate a
                                             %new particle further below
                                             NewParticleFlag(j)=false;
@@ -509,8 +511,8 @@ if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
                                 MinIndex(~(MinValues<SearchRadius))=0;
 
                                 if sum(MinIndex)
-                                    Particles{Channel}(PreviousFrameParticles).Frame(end+1)=CurrentFrame;
-                                    Particles{Channel}(PreviousFrameParticles).Index(end+1)=MinIndex;
+                                    Particles(PreviousFrameParticles).Frame(end+1)=CurrentFrame;
+                                    Particles(PreviousFrameParticles).Index(end+1)=MinIndex;
                                     %We don't want this new spot to generate a
                                     %new particle further below
                                     NewParticleFlag(MinIndex)=false;
