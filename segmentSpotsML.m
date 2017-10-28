@@ -159,13 +159,7 @@ if ~just_tifs
         error('Please increase your Java heap memory allocation to at least 10GB (Home -> Preferences -> General -> Java Heap Memory.');
     end
 
-    try
-        %this is just some function that can only be called if IJM is set up
-        IJM.getIdentifier() 
-    catch
-        addpath([MS2CodePath,filesep,'Fiji.app',filesep,'scripts']) % Update for your ImageJ installation
-        ImageJ               % Initialize IJM and MIJ
-    end
+    ImageJ               % Initialize IJM and MIJ
     ijm = evalin('base', 'IJM');
     mij = evalin('base', 'MIJ');
     zSize2 = zSize*2;

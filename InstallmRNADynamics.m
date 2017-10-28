@@ -139,8 +139,9 @@ cd(['Data',filesep,'DynamicsResults'])
 DynamicsResultsFolder=cd;
 cd(CurrentFolder);
 
-Output{1}=['path(''',PreProcessedFolder,''',path);'];
-Output{2}=['addpath(genpath(''',CurrentFolder,filesep,'dependencies''))'];
+
+Output{2}=['path(''',PreProcessedFolder,''',path);'];
+Output{11}=['addpath(genpath(''',CurrentFolder,filesep,'dependencies''))'];
 Output{3}=['path(''',mRNADynamicsParentFolder,''',path);'];
 Output{4}=['path(''',CurrentFolder,''',path);'];
 Output{5}=['path(''',TrackingFolder,''',path);'];
@@ -149,6 +150,7 @@ Output{7}=['path(''',SubfunctionsFolder,''',path);'];
 Output{8}=['addpath(genpath(''',CurrentFolder,filesep,'deprecated''))'];
 Output{9}=['path(''',DynamicsResultsFolder,''',path);'];
 Output{10}=['addpath(genpath(''',CurrentFolder,filesep,'testClasses''))'];
+Output{1}=['addpath(genpath(''',CurrentFolder,filesep,'Fiji.app',filesep,'scripts''))'];
 
 
 
@@ -162,22 +164,16 @@ if isempty(userpath)
    userpath(StartUpPath);
 end
 
-%set up the static java path
-pd = prefdir;
-jfid = fopen([pd, filesep, 'javaclasspath.txt'], 'w+');
-fprintf(jfid, '%s','D:\bioformats_package.jar');
-fclose(jfid);
-
-fid = fopen([StartUpPath(1:end-1),filesep,'startup.m'], 'a');
+fid = fopen([StartUpPath(1:end-1),filesep,'startup.m'], 'w');
 errmsg = '';
 if fid < 0
-    fid = fopen([StartUpPath,filesep,'startup.m'], 'a');
+    fid = fopen([StartUpPath,filesep,'startup.m'], 'w');
 end
 while fid < 0 
    disp(errmsg);
    disp('Please find your user''s Matlab folder. Maybe "My Documents\Matlab" on Windows?')
    d = uigetdir;
-   [fid,errmsg] = fopen(d);
+   [fid,errmsg] = fopen(d, 'w');
 end
 
 for i=1:length(Output)
