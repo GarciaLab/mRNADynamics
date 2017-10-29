@@ -40,11 +40,6 @@ function txt = InstallmRNADynamics
   %%
   %% nested sub-functions
   %%
-  function safeString = toSafeWindowsString(aPath)
-    % replaces any '\' with '/', since MATLAB hand handle '/' in Windows Paths as well,
-    % so we don't need to handle linux or windows paths differently
-    safeString = strrep(aPath, '\', '/');
-  end
 
   function subDirPath = createDataSubDir(subDirName)
     dataPath = [ROOT_PATH, '/Data'];
@@ -170,6 +165,12 @@ function txt = InstallmRNADynamics
                 'Talk to Armando if you need this.']);
     end
   end
+end
+
+function safeString = toSafeWindowsString(aPath)
+  % replaces any '\' with '/', since MATLAB hand handle '/' in Windows Paths as well,
+  % so we don't need to handle linux or windows paths differently
+  safeString = strrep(aPath, '\', '/');
 end
 
 function userName = getUserName
