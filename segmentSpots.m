@@ -191,6 +191,7 @@ if justDoG
         sigma1 = pixelSize / pixelSize; %width of narrower Gaussian
         sigma2 = round(42000 / pixelSize); % width of wider Gaussian
         sigmas = {sigma1,sigma2};
+        filterSize = round(2000/pixelSize); %2um was empirically determined to be optimal.
     end   
     
     for q = 1:nCh
@@ -201,7 +202,7 @@ if justDoG
             if displayFigures
                 for i = 1:zSize
                     im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']));
-                    dog = filterImage(im,filterType,sigmas);
+                    dog = filterImage(im,filterType,sigmas, filterSize);
                     dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif'];
                     imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
                     imshow(dog,[]);
@@ -209,7 +210,7 @@ if justDoG
             else 
                 parfor i = 1:zSize    
                     im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']));
-                    dog = filterImage(im,filterType,sigmas);
+                    dog = filterImage(im,filterType,sigmas, filterSize);
                     dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif'];
                     imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
                 end

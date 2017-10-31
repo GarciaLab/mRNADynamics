@@ -1,4 +1,4 @@
-function fint = filterImage(im, filterType, sigmas)
+function fint = filterImage(im, filterType, sigmas, customSize)
 
     dim = length(size(im));
     rad = 3; %rule of thumb is kernel size is 3x the Gaussian sigma
@@ -32,6 +32,10 @@ function fint = filterImage(im, filterType, sigmas)
             filterSize = filterSize + 1;
         end
     end
+    
+    if ~isempty(customSize)
+        filterSize = customSize;
+    end
 
     switch filterType  
         case 'Identity'
@@ -49,12 +53,10 @@ function fint = filterImage(im, filterType, sigmas)
                 f = canny(im, s);
             end
         case 'Difference_of_Gaussian'
-            filterSize2 = rad*s2;
             if dim==2
-                f = imgaussfilt(im, s1) - imgaussfilt(im, s2);
-                f = padarray(f(filterSize2:end-filterSize2-1, filterSize2:end-filterSize2-1), [filterSize2,filterSize2]);
+                f = conv2(im, fspecial('gaussian',filterSize, s1) - fspecial('gaussian',filterSize, s2),'same');
             elseif dim == 3
-                f = imgaussfilt3(im, s1) - imgaussfilt3(im, s2);
+                f = imgaussfilt3(im, s1) - imgaussfilt3(im, s2); %imgaussfilt is horrible. please replace with fastconv3d. 
             end
         case 'Laplacian'
             if dim==2
@@ -348,18 +350,18 @@ function fint = filterImage(im, filterType, sigmas)
             %do nothing
     end
     
-    if ~isempty(f) && sum(f(:)) ~= 0
-        %feature rescaling
-        fmin = min(min(min(f)));
-        fmax = max(max(max(f)));
-        fprime = (f - fmin)./(fmax - fmin);
-
-        %reduce precision and recast for memory and speed
-        ndigits = ceil(abs(log(std(fprime(:)))));
-        fround = round(fprime, ndigits);
-        fint = int16(fround*10^ndigits);
-    else
+%     if ~isempty(f) && sum(f(:)) ~= 0
+%         %feature rescaling
+%         fmin = min(min(min(f)));
+%         fmax = max(max(max(f)));
+%         fprime = (f - fmin)./(fmax - fmin);
+% 
+%         %reduce precision and recast for memory and speed
+%         ndigits = ceil(abs(log(std(fprime(:)))));
+%         fround = round(fprime, ndigits);
+%         fint = int16(fround*10^ndigits);
+%     else
         fint = f;
-    end
+%     end
     
 end
