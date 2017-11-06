@@ -6,8 +6,7 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 %
 % ARGUMENTS
 % Prefix: Prefix of the data set to analyze
-% Threshold: Threshold to be used. Should be kept at ~90-200 for lattice
-%           light-sheet data, and at ~5-10 for confocal data (Leica SP8).
+% Threshold: Threshold to be used. Should be kept at 5000 always.
 %           If left empty, then the code just generates the DoG files.
 % [Options]: See below.
 %
@@ -203,10 +202,10 @@ for q = 1:nCh
             for m = 1:2:zSize2
                 pMap(:,:,ceil(m/2)) =  pMapTemp(:,:,m); %the even images in the original array are negatives of the odds
             end
-            pMap = permute(pMap, [2 1 3]) * 100; %multiplying so this can be cast to uint16
+            pMap = permute(pMap, [2 1 3]) * 10000; %multiplying so this can be cast to uint16
             for i = 1:size(pMap, 3)
                 p_name = ['prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif'];
-                imwrite(uint16(pMap(:,:,i)), [OutputFolder1,filesep,p_name]) %AR 10/17/2017: This cast may lose substantial amounts of precision. needs to be checked                
+                imwrite(uint16(pMap(:,:,i)), [OutputFolder1,filesep,p_name])               
             end
             mij.run('Close All');
         end
@@ -322,11 +321,13 @@ else
             end
         end
         close(h)
+        
         try
             fields = fieldnames(Particles);
         catch 
             error('No spots found, probably. Did you want spots? Try something else.')
-
+        end
+        
         %z-tracking
         changes = 1;
         while changes ~= 0
