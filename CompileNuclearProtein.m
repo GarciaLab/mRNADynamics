@@ -287,7 +287,7 @@ if ROI==1
             CompiledNuclei_ROI(t)=CompiledNuclei(NucleiIndex);
             t=t+1;
         elseif nanmean(CompiledNuclei(NucleiIndex).yPos) > ROI2
-            CompiledNuclei_nonROI{ChN}(s)=CompiledNuclei(NucleiIndex);
+            CompiledNuclei_nonROI(s)=CompiledNuclei(NucleiIndex);
             s=s+1;
         end
     end
@@ -372,7 +372,7 @@ if strcmp(lower(ExperimentAxis),'ap')
     if ROI==1
         %Define two APFilters for ROI and non-ROI respectively
         APFilter_ROI=logical(zeros(length(CompiledNuclei_ROI),length(APbinID)));
-        APFilter_nonROI=logical(zeros(length(CompiledNuclei_nonROI{ChN}),length(APbinID)));
+        APFilter_nonROI=logical(zeros(length(CompiledNuclei_nonROI),length(APbinID)));
         APFilter=logical(zeros(length(CompiledNuclei),length(APbinID)));
 
         for i=1:length(CompiledNuclei)
@@ -446,7 +446,7 @@ if strcmp(lower(ExperimentAxis),'ap')
         k=1;
         for i=MinAPIndex:MaxAPIndex
             [MeanVectorAPTemp_ROI,SDVectorAPTemp_ROI,NParticlesAPTemp_ROI]=AverageTracesNuclei(FrameInfo,...
-                CompiledNuclei_ROI(APFilter(:,i)),NChannels);
+                CompiledNuclei_ROI(APFilter_ROI(:,i)),NChannels);
             MeanVectorAPCell_ROI{k}=MeanVectorAPTemp_ROI';
             SDVectorAPCell_ROI{k}=SDVectorAPTemp_ROI';
             NParticlesAPCell_ROI{k}=NParticlesAPTemp_ROI';
@@ -488,7 +488,7 @@ if strcmp(lower(ExperimentAxis),'ap')
         k=1;
         for i=MinAPIndex:MaxAPIndex
             [MeanVectorAPTemp_nonROI,SDVectorAPTemp_nonROI,NParticlesAPTemp_nonROI]=AverageTracesNuclei(FrameInfo,...
-                CompiledNuclei_nonROI(APFilter(:,i)),NChannels);
+                CompiledNuclei_nonROI(APFilter_nonROI(:,i)),NChannels);
             MeanVectorAPCell_nonROI{k}=MeanVectorAPTemp_nonROI';
             SDVectorAPCell_nonROI{k}=SDVectorAPTemp_nonROI';
             NParticlesAPCell_nonROI{k}=NParticlesAPTemp_nonROI';
