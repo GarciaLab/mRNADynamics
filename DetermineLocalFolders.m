@@ -18,10 +18,13 @@ if exist(CONFIG_CSV_PATH, 'file')
     return
   end
   
+  PREFIX_SEPARATOR = '[\\\\/-]';
+  PREFIX_REGEX = ['^.{10}', PREFIX_SEPARATOR, '.*$'];
+
   %% We need to look for the dropbox folder specified by the provided prefix
   Prefix = varargin{1};
-  if isempty(regexp(Prefix, '^.{10}[\\\\/].*$'))
-    error(['Prefix "', Prefix, '" does not match "yyyy-mm-dd/name". Please change it accordingly.'])
+  if isempty(regexp(Prefix, PREFIX_REGEX))
+    error(['Prefix "', Prefix, '" does not match "yyyy-mm-dd[/\\-]name". Please change it accordingly.'])
     % any 10 characters will work, not only yyyy-mm-dd,
     % but we enforce this in the error msg for simplicity
   end
@@ -34,7 +37,7 @@ if exist(CONFIG_CSV_PATH, 'file')
   else
     % fallback to legacy XLS format
     dropboxFolderName = getDropboxFolderFromMovieDatabase(...
-      [DropboxFolder,filesep,'MovieDatabase.xlsx'], Prefix);
+      [DropboxFolder,filesep,'MovieDatabase.xlsx'], Prefix, PREFIX_SEPARATOR);
   end
 
   DropboxFolder = getConfigValue(configValues, dropboxFolderName)
@@ -194,7 +197,7 @@ function csv = openCSVFile(filePath)
   csv = csvCell{1};
 end
 
-function dropboxFolderName = getDropboxFolderFromMovieDatabase(movieDatabasePath, prefix)
+function dropboxFolderName = getDropboxFolderFromMovieDatabase(movieDatabasePath, prefix, PREFIX_SEPARATOR)
    %% TO-DO migrate MovieDatabase from Excel to CSV as well.
   [XLSNum,XLSTxt] = xlsread(movieDatabasePath);
 
@@ -203,10 +206,10 @@ function dropboxFolderName = getDropboxFolderFromMovieDatabase(movieDatabasePath
 
   % we build a regex from the specified prefix,
   % in the form "10characters-slashOrBackslash-restOfThePrefix"
-  % this enables support for prefixes using either '\' or '/' as separator
+  % this enables support for prefixes using either '\', '-' or '/' as separator
   % also, "10characters" at the beginning is usually "yyyy-mm-dd",
   % but it could be anything else
-  prefixRegex = ['^', prefix(1:10), '[\\\\/]', prefix(12:end), '$'];
+  prefixRegex = ['^', prefix(1:10), PREFIX_SEPARATOR, prefix(12:end), '$'];
   regexMatches = regexp(XLSTxt(:, DataFolderColumn), prefixRegex);
 
   PrefixRow = find(~cellfun(@isempty, regexMatches));

@@ -56,7 +56,7 @@ function fint = filterImage(im, filterType, sigmas, customSize)
             if dim==2
                 f = conv2(im, fspecial('gaussian',filterSize, s1) - fspecial('gaussian',filterSize, s2),'same');
             elseif dim == 3
-                f = imgaussfilt3(im, s1) - imgaussfilt3(im, s2); %imgaussfilt is horrible. please replace with fastconv3d. 
+                 f = fastConv3D(gauss3D(s1) - gauss3D(s2), im);
             end
         case 'Laplacian'
             if dim==2
@@ -81,28 +81,24 @@ function fint = filterImage(im, filterType, sigmas, customSize)
             end
         case 'Structure_smallest'
             if dim==2
-                filterSize2 = rad*s1;
-                G=fspecial('gauss',[round(filterSize2), round(filterSize2)], s1); 
+                G=fspecial('gauss',[filterSize, filterSize], s1); 
                 [Gx,Gy] = gradient(G);   
                 %Compute Gaussian partial derivatives
-                Dx = conv2(Gx,im);
-                Dy = conv2(Gy, im);                        
+                Dx = conv2(im, Gx,'same');
+                Dy = conv2(im, Gy, 'same');
                 %Smooth elements of the structure tensor
-                S11 = conv2(G, Dx.^2);
-                S12 = conv2(G, Dx.*Dy);
+                S11 = conv2(Dx.^2,G,'same');
+                S12 = conv2(Dx.*Dy,G,'same');
                 S21 = S12;
-                S22 = conv2(G, Dy.^2);
+                S22 = conv2(Dy.^2,G,'same');
                 %Make eigenimages from the structure tensors
                 for p = 1:size(im, 1)
                     for q = 1:size(im, 2)
-                        S = [S11(p, q), S12(p, q); S21(p, q), S22(p,q)];
-                        lambdas = eig(S);
-                        lambdaMin = min(lambdas);
-                        f(p,q) = lambdaMin;
+                        S = [S11(p, q), S12(p, q); S21(p, q), S22(p,q)]; 
+                        f(p,q) = min(eig(S));
                     end
                 end
             elseif dim==3
-                filterSize2 = rad*s1;
                 G1 = gauss3D(s1);
                 G = fastConv3D(G1, im);
                 [Gx,Gy,Gz] = gradient(G);   
@@ -138,28 +134,24 @@ function fint = filterImage(im, filterType, sigmas, customSize)
             end
         case 'Structure_largest'
             if dim==2
-                filterSize2 = rad*s1;
-                G=fspecial('gauss',[round(filterSize2), round(filterSize2)], s1); 
+                G=fspecial('gauss',[filterSize, filterSize], s1); 
                 [Gx,Gy] = gradient(G);              
                 %Compute Gaussian partial derivatives
-                Dx = conv2(Gx,im);
-                Dy = conv2(Gy, im);                        
+                Dx = conv2(im,Gx,'same');
+                Dy = conv2(im,Gy,'same');                        
                 %Smooth elements of the structure tensor
-                S11 = conv2(G, Dx.^2);
-                S12 = conv2(G, Dx.*Dy);
+                S11 = conv2(Dx.^2,G,'same');
+                S12 = conv2(Dx.*Dy,G,'same');
                 S21 = S12;
-                S22 = conv2(G, Dy.^2);
+                S22 = conv2(Dy.^2,'same');
                 %Make eigenimages from the structure tensors
                 for p = 1:size(im, 1)
                     for q = 1:size(im, 2)
                         S = [S11(p, q), S12(p, q); S21(p, q), S22(p,q)];
-                        lambdas = eig(S);
-                        lambdaMax = max(lambdas);
-                        f(p,q) = lambdaMax;
+                        f(p,q) = max(eig(S));
                     end
                 end
             elseif dim==3
-                filterSize2 = rad*s1;
                 G1 = gauss3D(s1);
                 G = fastConv3D(G1, im);
                 [Gx,Gy,Gz] = gradient(G);   
@@ -226,7 +218,7 @@ function fint = filterImage(im, filterType, sigmas, customSize)
         case 'Minimum'
             if dim==2
                 f = imgaussfilt(im,s);
-                se = strel('disk',ceil(filterSize/2))
+                se = strel('disk',ceil(filterSize/2));
                 f = imerode(f,se);
             elseif dim==3
 %                  f = ordfilt3(im, 'min', filterSize); %i need to rewrite
@@ -244,22 +236,20 @@ function fint = filterImage(im, filterType, sigmas, customSize)
             end
         case 'Hessian_smallest'
             if dim==2
-                G=fspecial('gauss',[round(filterSize), round(filterSize)], s); 
+                G=fspecial('gauss',[filterSize, filterSize], s); 
                 [Gx,Gy] = gradient(G);
                 [Gxx, Gxy] = gradient(Gx);
                 [Gyy, ~] = gradient(Gy);
                 %Compute elements of the Hessian matrix
-                H11 = conv2(Gxx, im);
-                H12 = conv2(Gxy, im);
+                H11 = conv2(im,Gxx,'same');
+                H12 = conv2(im,Gxy,'same');
                 H21 = H12;
-                H22 = conv2(Gyy, im);
+                H22 = conv2(im,Gyy,'same');
                 %Make eigenimages from the Hessian
                 for p = 1:size(im, 1)
                     for q = 1:size(im, 2)
                         H = [H11(p, q), H12(p, q); H21(p, q), H22(p,q)];
-                        lambdas = eig(H);
-                        lambdaMin = min(lambdas);
-                        f(p,q) = lambdaMin;
+                        f(p,q) = min(eig(H));
                     end
                 end
             elseif dim ==3
@@ -296,22 +286,20 @@ function fint = filterImage(im, filterType, sigmas, customSize)
             end
         case 'Hessian_largest'
             if dim==2 
-                G=fspecial('gauss',[round(filterSize), round(filterSize)], s); 
+                G=fspecial('gauss',[filterSize, filterSize], s); 
                 [Gx,Gy] = gradient(G);
                 [Gxx, Gxy] = gradient(Gx);
                 [Gyy, ~] = gradient(Gy);
                 %Compute elements of the Hessian matrix
-                H11 = conv2(Gxx, im);
-                H12 = conv2(Gxy, im);
+                H11 = conv2(im,Gxx,'same');
+                H12 = conv2(im,Gxy,'same');
                 H21 = H12;
-                H22 = conv2(Gyy, im);
+                H22 = conv2(im,Gyy,'same');
                 %Make eigenimages from the Hessian
                 for p = 1:size(im, 1)
                     for q = 1:size(im, 2)
                         H = [H11(p, q), H12(p, q); H21(p, q), H22(p,q)];
-                        lambdas = eig(H);
-                        lambdaMax = max(lambdas);
-                        f(p,q) = lambdaMax;
+                        f(p,q) = max(eig(H));
                     end
                 end
             elseif dim==3
@@ -349,6 +337,9 @@ function fint = filterImage(im, filterType, sigmas, customSize)
         otherwise
             %do nothing
     end
+  
+    %this ended up altering the image in some circumstances, so it's
+    %disabled for now. 
     
 %     if ~isempty(f) && sum(f(:)) ~= 0
 %         %feature rescaling
