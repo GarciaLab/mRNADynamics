@@ -709,16 +709,18 @@ elseif strcmp(FileMode,'LSM')
                 %First do the coat protein channel
                 %Save the blank images at the beginning and end of the
                 %stack
-                NewName=[Prefix,'_',iIndex(FrameRange(j),3),'_z',iIndex(1,2),'.tif'];
+                NameSuffix=['_ch',iIndex(coatChannel,2)];
+                
+                NewName=[Prefix,'_',iIndex(FrameRange(j),3),'_z',iIndex(1,2),NameSuffix,'.tif'];
                 imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                NewName=[Prefix,'_',iIndex(FrameRange(j),3),'_z',iIndex(min(NSlices)+2,2),'.tif'];
+                NewName=[Prefix,'_',iIndex(FrameRange(j),3),'_z',iIndex(min(NSlices)+2,2),NameSuffix,'.tif'];
                 imwrite(BlankImage,[OutputFolder,filesep,NewName]);
                 %Copy the rest of the images
                 n=1;        %Counter for slices
                 for k=((j-1)*NSlices(LSMIndex)*NChannels(LSMIndex)+1+(coatChannel-1)):...
                         NChannels:(j*NSlices(LSMIndex))*NChannels
                     if n<=min(NSlices)
-                        NewName=[Prefix,'_',iIndex(FrameRange(j),3),'_z',iIndex(n+1,2),'.tif'];
+                        NewName=[Prefix,'_',iIndex(FrameRange(j),3),'_z',iIndex(n+1,2),NameSuffix,'.tif'];
                         imwrite(LSMImages{k,1},[OutputFolder,filesep,NewName]);
                         n=n+1;
                     end
