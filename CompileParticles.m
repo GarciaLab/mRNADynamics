@@ -30,6 +30,12 @@ function CompileParticles(varargin)
 %
 % 'MinTime', M: %Require particles to exist for time M or else discard 
 %
+% 'ROI', ROI1, ROI2: For Region of Interest (ROI) data. Assume that the ROI is top half of the imaging window.
+%           Note that the origin is the left top of the image. 
+%           ROI1 and ROI2 are the y-position of the ROI rectangle. ROI1 is the
+%           lower boundary of ROI and ROI2 is the upper boundary of non-ROI
+%           since there is almost always scattering in the middle
+%
 %
 % Author (contact): Hernan Garcia (hggarcia@berkeley.edu)
 % Created: 
@@ -52,7 +58,8 @@ SkipFits=0;         %Do not generate the fit output (but still does the fit)
 SkipMovie=0;        %Do not generate the movie
 ApproveAll=0;       %Only use manually approved particles
 MinParticles=4;     
-minTime = 1;        
+minTime = 1;
+ROI=0; % No ROI
 
 if isempty(varargin)%looks for the folder to analyze
     FolderTemp=uigetdir(DefaultDropboxFolder,'Select folder with data to analyze');
@@ -90,6 +97,14 @@ else
                 error('Wrong input parameters. After ''MinTime'' you should input the desired minimum number of frames per particle.')
             else
                 minTime=varargin{i+1};
+            end
+        elseif strcmp(varargin{i},'ROI')
+            ROI = 1;
+            if ~isnumeric(varargin{i+1})|~isnumeric(varargin{i+2})
+                error('Wrong input parameters. After ''ROI'' you should input the y-threshold of ROI ')
+            else
+                ROI1=varargin{i+1};
+                ROI2=varargin{i+2};
             end
         end
     end
@@ -1027,9 +1042,33 @@ close(h)
 
 
 
+%% ROI option 
+% This option is separating the CompiledParticles defined above into
+% CompiledParticles_ROI and COmpiledParticles_nonROI
+% written by YJK on 10/24/2017
+for ChN=1:NChannels
+    if ROI==1 
+        % separate the CompileParticles into CompiledParticles_ROI and
+        % CompiledParticles_nonROI using Threshold
+        t=1;
+        s=1;
 
-
+        % Use the ROI1 and ROI2 to split the Particles
+        for ParticleIndex=1:length(CompiledParticles{ChN})
+            if nanmean(CompiledParticles{ChN}(ParticleIndex).yPos) < ROI1
+                CompiledParticles_ROI{ChN}(t)=CompiledParticles{ChN}(ParticleIndex);
+                t=t+1;
+            elseif nanmean(CompiledParticles{ChN}(ParticleIndex).yPos) > ROI2
+                CompiledParticles_nonROI{ChN}(s)=CompiledParticles{ChN}(ParticleIndex);
+                s=s+1;
+            end
+        end
+    end
+end
 %% Create filters
+
+% APFilter needs to be changed for ROI option, so that we can have two
+% filters for each CompiledParticles (ROI and nonROI) (YJK on 10/24/2017)
 
 %nc filters:
 
@@ -1106,22 +1145,48 @@ if ~isnan(nc9)||~isnan(nc10)||~isnan(nc11)||~isnan(nc12)||~isnan(nc13)||~isnan(n
 
 
 
-    %AP filters:
-    if strcmp(ExperimentAxis,'AP')
-        %Divide the AP axis into boxes of a certain AP size. We'll see which
-        %particle falls where.
+        %AP filters:
+        if strcmp(ExperimentAxis,'AP')
+            %Divide the AP axis into boxes of a certain AP size. We'll see which
+                %particle falls where.
 
-        APFilter{ChN}=logical(zeros(length(CompiledParticles{ChN}),length(APbinID)));
-        for i=1:length(CompiledParticles{ChN})
-            APFilter{ChN}(i,max(find(APbinID<=CompiledParticles{ChN}(i).MeanAP)))=1;
+
+            if ROI==1
+                %Define two APFilters for ROI and non-ROI respectively
+                APFilter_ROI{ChN}=logical(zeros(length(CompiledParticles_ROI{ChN}),length(APbinID)));
+                APFilter_nonROI{ChN}=logical(zeros(length(CompiledParticles_nonROI{ChN}),length(APbinID)));
+                APFilter{ChN}=logical(zeros(length(CompiledParticles{ChN}),length(APbinID)));
+                
+                for i=1:length(CompiledParticles{ChN})
+                    APFilter{ChN}(i,max(find(APbinID<=CompiledParticles{ChN}(i).MeanAP)))=1;
+                end
+                
+                for i=1:length(CompiledParticles_ROI{ChN})
+                    APFilter_ROI{ChN}(i,max(find(APbinID<=CompiledParticles_ROI{ChN}(i).MeanAP)))=1;
+                end
+
+                for i=1:length(CompiledParticles_nonROI{ChN})
+                    APFilter_nonROI{ChN}(i,max(find(APbinID<=CompiledParticles_nonROI{ChN}(i).MeanAP)))=1;
+                end
+
+            else
+                APFilter{ChN}=logical(zeros(length(CompiledParticles{ChN}),length(APbinID)));
+                for i=1:length(CompiledParticles{ChN})
+                    APFilter{ChN}(i,max(find(APbinID<=CompiledParticles{ChN}(i).MeanAP)))=1;
+                end
+            end
         end
-    end
     end
 end
 
 
 
-%% Binning and averaging data
+%% Binning and averaging data 
+
+% Here I need to think about how to bin ROI and non-ROI particles. 
+% One way is having a function that splits the CompiledParticles into CompiledParticles_ROI
+% and CompiledParticles_nonROI according to its y-position (Threshold). Then, pass them through
+% the AverageTraces (YJK on 10/22/2017)
 
 for ChN=1:NChannels
     %Get the data for the individual particles in a matrix that has the frame
@@ -1135,7 +1200,46 @@ for ChN=1:NChannels
         %Figure out the AP range to use
         MinAPIndex=1;%min(find(sum(APFilter)));
         MaxAPIndex=size(APFilter{ChN},2);%max(find(sum(APFilter)));
+        
+        if ROI==1 
+            
+            %Get the corresponding mean information (ROI, CompiledParticles_ROI)
+            k=1;
+            for i=MinAPIndex:MaxAPIndex
+                [MeanVectorAPTemp_ROI,SDVectorAPTemp_ROI,NParticlesAPTemp_ROI]=AverageTraces(FrameInfo,...
+                    CompiledParticles_ROI{ChN}(APFilter_ROI{ChN}(:,i)));
+                MeanVectorAPCell_ROI{k}=MeanVectorAPTemp_ROI';
+                SDVectorAPCell_ROI{k}=SDVectorAPTemp_ROI';
+                NParticlesAPCell_ROI{k}=NParticlesAPTemp_ROI';
+                k=k+1;
+            end
+            MeanVectorAP_ROI{ChN}=cell2mat(MeanVectorAPCell_ROI);
+            SDVectorAP_ROI{ChN}=cell2mat(SDVectorAPCell_ROI);
+            NParticlesAP_ROI{ChN}=cell2mat(NParticlesAPCell_ROI);
 
+            % Get the corresponding mean information 
+            %(nonROI, CompiledParticles_nonROI -> save all in MeanVectorAP as we normally do)
+            k=1;
+            for i=MinAPIndex:MaxAPIndex
+                [MeanVectorAPTemp,SDVectorAPTemp,NParticlesAPTemp]=AverageTraces(FrameInfo,...
+                    CompiledParticles_nonROI{ChN}(APFilter_nonROI{ChN}(:,i)));
+                MeanVectorAPCell{k}=MeanVectorAPTemp';
+                SDVectorAPCell{k}=SDVectorAPTemp';
+                NParticlesAPCell{k}=NParticlesAPTemp';
+                k=k+1;
+            end
+            MeanVectorAP{ChN}=cell2mat(MeanVectorAPCell);
+            SDVectorAP{ChN}=cell2mat(SDVectorAPCell);
+            NParticlesAP{ChN}=cell2mat(NParticlesAPCell);
+            %Calculate the mean for only anterior particles
+            try
+                MeanVectorAPAnterior{ChN} = MeanVectorAP{ChN}(:,5:15); %Only average particles within window of 10% to 35% w/ 2.5% AP resolution. P2P expression is relatively flat here.
+                MeanVectorAnterior{ChN} = nanmean(MeanVectorAPAnterior{ChN},2);
+            catch
+                %That didn't work
+            end
+            
+        else % This is the case which we don't use ROI option
         %Get the corresponding mean information
         k=1;
         for i=MinAPIndex:MaxAPIndex
@@ -1158,6 +1262,7 @@ for ChN=1:NChannels
             %That didn't work
         end
         
+        end
     end
 
     %Calculate the mean for all of them
@@ -2315,8 +2420,15 @@ end
 %experiment type and axis
 %Simon: This script is not required for Dl-Venus experiments in DV so I
 %added the ExperimentAxis condition.
+% ROI option added (YJK on 10/27/2017) : 
+% When the data is acquired in ROI mode, I added the ROI option, 
+% two thresholds to be incorporated into CompileNuclearProtein
 if strcmp(lower(ExperimentType),'inputoutput') && strcmp(lower(ExperimentAxis),'ap')
-    CompileNuclearProtein(Prefix)
+    if ~ROI
+        CompileNuclearProtein(Prefix)
+    elseif ROI==1
+        CompileNuclearProtein(Prefix,'ROI',ROI1,ROI2)
+    end
 end
 
 
@@ -2350,7 +2462,8 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
         SNR = MeanVectorAll ./ (SDVectorAll*109); %AR 7/12/16: Rough estimate. Should do better.
     end
     
-    save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
+    if ROI
+        save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
         'CompiledParticles','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
         'nc12','nc13','nc14','ncFilterID','StemLoopEnd','ncFilter','APbinID','APFilter',...
         'MeanVectorAP','SDVectorAP','NParticlesAP','MeanVectorAll','MeanVectorAnterior',...
@@ -2362,7 +2475,23 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
         'ParticleCountProbAP',...
         'EllipsesOnAP','TotalEllipsesAP',...
         'EllipsePos','EllipsesFilteredPos','FilteredParticlesPos',...
-        'MeanVectorAllAP','SEVectorAllAP', 'Prefix');
+        'MeanVectorAllAP','SEVectorAllAP', 'Prefix',...
+        'MeanVectorAP_ROI','SDVectorAP_ROI','NParticlesAP_ROI');
+    else
+        save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
+            'CompiledParticles','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
+            'nc12','nc13','nc14','ncFilterID','StemLoopEnd','ncFilter','APbinID','APFilter',...
+            'MeanVectorAP','SDVectorAP','NParticlesAP','MeanVectorAll','MeanVectorAnterior',...
+            'SDVectorAll','NParticlesAll','MaxFrame','MinAPIndex','MaxAPIndex',...
+            'AllTracesVector','AllTracesAP','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
+            'MeanOffsetVector','SDOffsetVector','NOffsetParticles',...
+            'MeanSlopeVectorAP','SDSlopeVectorAP','NSlopeAP',...
+            'ParticleCountAP','APbinArea','OnRatioAP','NEllipsesAP',...
+            'ParticleCountProbAP',...
+            'EllipsesOnAP','TotalEllipsesAP',...
+            'EllipsePos','EllipsesFilteredPos','FilteredParticlesPos',...
+            'MeanVectorAllAP','SEVectorAllAP', 'Prefix');
+    end
 elseif HistoneChannel&strcmp(ExperimentAxis,'DV')
     
     %If we have only one channel get rid of all the cells
