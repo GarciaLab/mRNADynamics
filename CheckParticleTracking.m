@@ -14,7 +14,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % ForCompileAll : Flag to just save the data. This is good for CompileAll
 % speedmode : Flag to plot only ellipses for current particle & save time
 % sistermode : Decide whether you want to do sister chromatid analysis
-% justnc13 : Only look at particles that show up in nc13 
+% nc, NC : Only look at particles that show up in nc13 
     % Currently this only starts at nc13...not restrict you to nc13 Added by Emma
     % Also, this option shows you the max projection. 
 %
@@ -145,7 +145,7 @@ SpeedMode = 0;
 %Decide whether you want to do sister chromatid analysis
 SisterMode = 0;
 %Decide whether you want to only see nc13
-justNC13 = 0;
+ncRange = 0;
 % This is for the projection mode
 projectionMode = 'None (Default)';
 
@@ -160,8 +160,17 @@ if length(varargin)>1
             SpeedMode = 1;
         elseif strcmpi(varargin{i}, 'sistermode')
             SisterMode = 1;
-        elseif strcmpi(varargin{i}, 'justnc13')
-            justNC13 = 1;
+        elseif strcmpi(varargin{i},'nc') % checking for the desired nc range
+            ncRange = 1;
+            NC = varargin{i+1};
+            % startNC and endNC will be the varibale names that have the start of the nc(s) of interest
+            if length((varargin{i+1})) == 2
+                startNC = ['nc' num2str(varargin{i+1}(1))];
+                endNC = ['nc' num2str(varargin{i+1}(2) +1)];% Not including the next nc
+            else
+                startNC = ['nc' num2str(varargin{i+1})]; 
+                endNC = ['nc' num2str(varargin{i+1} + 1)]; % Not including the next nc
+            end
         end
     end
 end
@@ -454,15 +463,26 @@ else
 end
 
 % Changing the intial frames and particle if justNC13
-if justNC13
-    nc13Frame = cell2mat(XLSRaw(XLSEntry,nc13Column));
-    nc14Frame = cell2mat(XLSRaw(XLSEntry,nc14Column));
-    particlesInRange = particlesWithinFrames(Prefix,nc13Frame,nc14Frame);
+if ncRange
+    
+    if strcmp('nc15',endNC) 
+        lastNCFrame = TotalFrames;
+    else
+        lastNCFrame = eval(endNC)-1; % This will not include the 1st frame of the next NC
+    end
+    firstNCFrame = eval(startNC);
+    particlesInRange = particlesWithinFrames(Prefix,firstNCFrame,lastNCFrame);
     CurrentParticle = particlesInRange(1);
-    PreviousParticle = particlesInRange(1);
     CurrentFrame = Particles{1}(CurrentParticle).Frame(1);
-    disp('Implementing justNC13')
-    disp(['nc13 : ' num2str(nc13Frame)])
+%     ncRangeFigure = figure();
+%     set(gcf,'units', 'normalized', 'position',[0.35, 0.55, .2, .33])
+%     uicontrol('Parent', ncRangeFigure, 'Style', 'text','String','Implementing justNC13','Units','normalized', 'Position', [0.25 0.5 0.5 0.35])
+%     uicontrol('Parent', ncRangeFigure, 'Style', 'text','String',['nc13 : ' num2str(firstNCFrame)],'Units','normalized', 'Position', [0.25 0.40 0.5 0.35])
+%     uicontrol('Parent', ncRangeFigure, 'Style', 'text','String',['Number of Particles: ' num2str(length(particlesInRange))],'Units','normalized','Position', [0.25 0.30 0.5 0.35])
+%     uicontrol('Parent', ncRangeFigure, 'Style', 'text','String',['Particles in range: ' num2str(particlesInRange)],'Units','normalized','Position', [0.25 0.20 0.5 0.35])
+    disp(['nc range: ' num2str(NC)])
+    disp(['start frame: ' num2str(firstNCFrame)])
+    disp(['end frame: ' num2str(lastNCFrame)])
     disp(['Particles in range: ' num2str(particlesInRange)])
     disp(['Number of Particles: ' num2str(length(particlesInRange))])
 end
@@ -530,8 +550,8 @@ while (cc~='x')
     CurrentParticleIndex=...
         Particles{CurrentChannel}(CurrentParticle).Index(Particles{CurrentChannel}(CurrentParticle).Frame==...
         CurrentFrame);
-    
     %This is the position of the current particle
+    disp(CurrentParticleIndex)
     xTrace=x(CurrentParticleIndex);
     yTrace=y(CurrentParticleIndex);
     
@@ -590,8 +610,8 @@ while (cc~='x')
                 [~,Image] = zProjections(Prefix, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
             elseif strcmp(projectionMode,'Max Z and Time')
                 if isempty(storedTimeProjection)
-                    if justNC13
-                        Image = timeProjection(Prefix,DropboxFolder,'nc',13);
+                    if ncRange
+                        Image = timeProjection(Prefix,DropboxFolder,'nc',NC);
                         storedTimeProjection = Image;
                     else
                         Image = timeProjection(Prefix,DropboxFolder);
@@ -819,7 +839,6 @@ while (cc~='x')
    
     if UseHistoneOverlay
         figure(HisOverlayFig)
-        
         try
             ImageHis=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                 FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,NDigits),'.tif']);
@@ -1074,7 +1093,7 @@ while (cc~='x')
     
     %Define the windows
     figure(Overlay)
-    set(gcf,'units', 'normalized', 'position',[0.01, .55, .33, .33]);
+%     set(gcf,'units', 'normalized', 'position',[0.01, .55, .33, .33]);
     if UseHistoneOverlay 
         figure(HisOverlayFig)
         set(gcf,'units', 'normalized', 'position',[0.01, 0.1, .33, .33]);

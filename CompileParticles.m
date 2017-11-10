@@ -85,6 +85,7 @@ else
             SkipMovie=1;
         elseif strcmp(varargin{i},'ApproveAll')    
             ApproveAll=1;
+            disp('Approved')
         elseif strcmp(varargin{i},'MinParticles')
             if ~isnumeric(varargin{i+1})
                 error('Wrong input parameters. After ''MinParticles'' you should input the desired minimum number of particles per approved AP bin')
@@ -2320,10 +2321,10 @@ if HistoneChannel&&strcmp(ExperimentAxis,'AP')
         end
 
         figure(17)
-        plot(APbinID,EllipsesOnAP{ChN}(:,1)./TotalEllipsesAP(:,1),'.-b')
+        plot(APbinID,EllipsesOnAP{ChN}(:,1)./TotalEllipsesAP(:,1),'.-b') % fraction on nc 12
         hold on
-        plot(APbinID,EllipsesOnAP{ChN}(:,2)./TotalEllipsesAP(:,2),'.-k')
-        plot(APbinID,EllipsesOnAP{ChN}(:,3)./TotalEllipsesAP(:,3),'.-r')
+        plot(APbinID,EllipsesOnAP{ChN}(:,2)./TotalEllipsesAP(:,2),'.-k') % fraction on nc 13
+        plot(APbinID,EllipsesOnAP{ChN}(:,3)./TotalEllipsesAP(:,3),'.-r') % fraction on nc 14
         hold off
         title('Fraction active nuclei')
         xlabel('AP (x/L)')
