@@ -605,16 +605,16 @@ while (cc~='x')
                 Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                     FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
             elseif strcmp(projectionMode,'Max Z')
-                [Image,~] = zProjections(Prefix, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
+                [Image,~] = zProjections(Prefix, CurrentChannel, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
             elseif strcmp(projectionMode,'Median Z')
-                [~,Image] = zProjections(Prefix, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
+                [~,Image] = zProjections(Prefix, CurrentChannel, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
             elseif strcmp(projectionMode,'Max Z and Time')
                 if isempty(storedTimeProjection)
                     if ncRange
-                        Image = timeProjection(Prefix,DropboxFolder,'nc',NC);
+                        Image = timeProjection(Prefix, CurrentChannel,'nc',NC);
                         storedTimeProjection = Image;
                     else
-                        Image = timeProjection(Prefix,DropboxFolder);
+                        Image = timeProjection(Prefix, CurrentChannel);
                         storedTimeProjection = Image;
                     end
                 else

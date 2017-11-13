@@ -1,5 +1,5 @@
-function desiredProjection = timeProjection(Prefix,varargin)
-% timeProjection(Prefix, [Options])
+function desiredProjection = timeProjection(Prefix,currentChannel,varargin)
+% timeProjection(Prefix, currentChannel, [Options])
 %
 % DESCRIPTION
 % This function can calculate the max time projection of the movie.
@@ -9,6 +9,8 @@ function desiredProjection = timeProjection(Prefix,varargin)
 %
 % ARGUEMENTS
 % Prefix: Prefix of the data set to analyze
+% currentChannel: The current channel of the spots. It is assumed that this
+%                 is a number value.
 %
 % OPTIONS
 % 'medianTimeProjection': Make the max time projection usin the median z projections
@@ -27,7 +29,7 @@ function desiredProjection = timeProjection(Prefix,varargin)
 %
 % Author (contact): Emma Luu (emma_luu@berkeley.edu)
 % Created: 06/16/2017
-% Last Updated: 07/10/2017
+% Last Updated: 11/12/2017
 % 
 % Documented by: Emma Luu (emma_luu@berkeley.edu)
 
@@ -141,14 +143,14 @@ framesCompleted = 0;
 if useMedian || medianZOnly
     for CurrentFrame = frameRange
         [~,desiredZProjs(:,:,CurrentFrame)] = ...
-            zProjections(Prefix, CurrentFrame, zSlices, NDigits,DropboxFolder,PreProcPath);
+            zProjections(Prefix, currentChannel, CurrentFrame, zSlices, NDigits,DropboxFolder,PreProcPath);
         framesCompleted = 1 + framesCompleted;
         waitbar(framesCompleted/length(frameRange),h,'Making Z Median Projections');
     end
 else
     for CurrentFrame = frameRange
         [desiredZProjs(:,:,CurrentFrame),~]= ...
-            zProjections(Prefix, CurrentFrame, zSlices, NDigits,DropboxFolder,PreProcPath);
+            zProjections(Prefix, currentChannel, CurrentFrame, zSlices, NDigits,DropboxFolder,PreProcPath);
         framesCompleted = 1 + framesCompleted;
 %         plot(desiredZProjs(:,:,CurrentFrame))
 %         title(['Frame: ' num2str(CurrentFrame)])

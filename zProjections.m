@@ -1,4 +1,4 @@
-function [maxProj, medianProj] = zProjections(Prefix, currentFrame, zSlices, nDigits,DropboxFolder,PreProcPath)
+function [maxProj, medianProj] = zProjections(Prefix, currentChannel, currentFrame, zSlices, nDigits,DropboxFolder,PreProcPath)
 % zProjections(Prefix, currentFrame, zSlices, nDigits,DropboxFolder,PreProcPath)
 %
 % DESCRIPTION
@@ -8,6 +8,8 @@ function [maxProj, medianProj] = zProjections(Prefix, currentFrame, zSlices, nDi
 %
 % ARGUEMENTS
 % Prefix: Prefix of the data set to analyze
+% currentChannel: The current channel of the spots. It is assumed that this
+%                 is a number value.
 % currentFrame: The index of the z stack for the projection
 % zSlices: The number of zSlices in the stack (currentZ goes from
 %          1:zSlices)
@@ -24,7 +26,7 @@ function [maxProj, medianProj] = zProjections(Prefix, currentFrame, zSlices, nDi
 %
 % Author (contact): Emma Luu (emma_luu@berkeley.edu)
 % Created: 06/06/2017
-% Last Updated: 06/22/2017
+% Last Updated: 11/12/2017
 %
 % Documented by: Emma Luu (emma_luu@berkeley.edu)
 
@@ -41,7 +43,7 @@ Images =zeros(FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSlices);
 
 for currentZ = 1:zSlices
     Images(:,:,currentZ) = imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-        FilePrefix,iIndex(currentFrame,nDigits),'_z',iIndex(currentZ,2),'.tif']);
+        FilePrefix,iIndex(currentFrame,nDigits),'_z',iIndex(currentZ,2),'_ch0', num2str(currentChannel) ,'.tif']);
 end
 maxProj = max(Images,[],3);
 medianProj = median(Images,3);
