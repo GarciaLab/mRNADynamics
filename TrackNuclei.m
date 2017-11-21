@@ -403,7 +403,7 @@ if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'inp
                     %However, I couldn't quite figure out how to do that.
                     schnitzcells(j)=ExtractNuclearFluorescence(schnitzcells(j),...
                         CurrentFrame,...
-                        Image,LinesPerFrame,PixelsPerLine,NumberSlices,Circle,IntegrationRadius,ChN);
+                        Image,LinesPerFrame,PixelsPerLine,NumberSlices,Circle,IntegrationRadius,InputChannel(ChN));
                 end
             end
         close(h)    

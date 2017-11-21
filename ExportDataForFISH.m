@@ -1150,29 +1150,6 @@ elseif strcmp(FileMode,'LIFExport')
                                 n=n+1;
                             end
                         end
-                    elseif strcmpi(ExperimentType, 'inputoutput')&&...
-                            q==coatChannel
-                        %Save the blank images at the beginning and end of the
-                        %stack
-                        NameSuffix=['_ch',iIndex(q,2)];
-                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),NameSuffix,'.tif'];
-                        imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),NameSuffix,'.tif'];
-                        imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                        %Copy the rest of the images
-                        n=1;        %Counter for slices
-                        firstImage = (j-1)*NSlices(i)*NChannels+1+(q-1);
-                        lastImage = j*NSlices(i)*NChannels;
-                        
-                        %YJ : Save the Spot channel to channel1
-                        TempNameSuffix = ['_ch',iIndex(q-1,2)];
-                        for k=firstImage:NChannels:lastImage
-                            if n<=min(NSlices)
-                                NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),TempNameSuffix,'.tif'];
-                                   imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
-                                n=n+1;
-                            end
-                        end
                     elseif strcmpi(ExperimentType,'2spot2color')
                         NameSuffix=['_ch',iIndex(q,2)];
 
@@ -1193,28 +1170,55 @@ elseif strcmp(FileMode,'LIFExport')
                                 n=n+1;
                             end
                         end
+                    %input-output mode
                     elseif strcmpi(ExperimentType, 'inputoutput')
-                        %Save the blank images at the beginning and end of the
-                        %stack
-                        NameSuffix=['_ch',iIndex(q,2)];
-                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),NameSuffix,'.tif'];
-                        imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                        NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),NameSuffix,'.tif'];
-                        imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-                        %Copy the rest of the images
-                        n=1;        %Counter for slices
-                        firstImage = (j-1)*NSlices(i)*NChannels+1+(q-1);
-                        lastImage = j*NSlices(i)*NChannels;
-                        
-                        %YJ : Save the protein channel to channel2
-                        TempNameSuffix = ['_ch',iIndex(q+1,2)];
-                        for k=firstImage:NChannels:lastImage
-                            if n<=min(NSlices)
-                                NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),TempNameSuffix,'.tif'];
-                                   imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
-                                n=n+1;
+                        %are we dealing with the coat channel?
+                        if q==coatChannel
+                            %Save the blank images at the beginning and end of the
+                            %stack
+                            NameSuffix=['_ch',iIndex(q,2)];
+                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),NameSuffix,'.tif'];
+                            imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),NameSuffix,'.tif'];
+                            imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+                            %Copy the rest of the images
+                            n=1;        %Counter for slices
+                            firstImage = (j-1)*NSlices(i)*NChannels+1+(q-1);
+                            lastImage = j*NSlices(i)*NChannels;
+
+                            TempNameSuffix = ['_ch',iIndex(q,2)];
+                            for k=firstImage:NChannels:lastImage
+                                if n<=min(NSlices)
+                                    NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),TempNameSuffix,'.tif'];
+                                       imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
+                                    n=n+1;
+                                end
+                            end
+                            
+                        %This is for the input channel    
+                        else
+                            %Save the blank images at the beginning and end of the
+                            %stack
+                            NameSuffix=['_ch',iIndex(q,2)];
+                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(1,2),NameSuffix,'.tif'];
+                            imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+                            NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(min(NSlices)+2,2),NameSuffix,'.tif'];
+                            imwrite(BlankImage,[OutputFolder,filesep,NewName]);
+                            %Copy the rest of the images
+                            n=1;        %Counter for slices
+                            firstImage = (j-1)*NSlices(i)*NChannels+1+(q-1);
+                            lastImage = j*NSlices(i)*NChannels;
+
+                            TempNameSuffix = ['_ch',iIndex(q,2)];
+                            for k=firstImage:NChannels:lastImage
+                                if n<=min(NSlices)
+                                    NewName=[Prefix,'_',iIndex(m,3),'_z',iIndex(n+1,2),TempNameSuffix,'.tif'];
+                                       imwrite(LIFImages{i}{k,1},[OutputFolder,filesep,NewName]);
+                                    n=n+1;
+                                end
                             end
                         end
+                           
                     elseif strcmpi(ExperimentType, 'input')&&sum(q==inputProteinChannel)
                         %Are we dealing with one or two channels?
                         if length(inputProteinChannel)==1
