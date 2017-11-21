@@ -141,20 +141,22 @@ if just_dog
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Generate probability maps of likely transcriptional loci
 
-stackspath = [PreProcPath,filesep,Prefix,filesep,'stacks'];
-mkdir(stackspath);
-zim = [];
-if ~just_tifs
-    [classifier,classifier_path]=uigetfile([MS2CodePath, filesep, 'classifiers', filesep, '*.model']);
+stacksPath = [PreProcPath,filesep,Prefix,filesep,'stacks', ];
+mkdir(stacksPath);
+rawStackArray = [];
+if ~just_tifs    
+    [classifierPathCh1,classifierFolder]=uigetfile([MS2CodePath, filesep, 'classifiers', filesep, '*.model']);
+    if nCh==2
+      [classifierPathCh2,~]=uigetfile([MS2CodePath, filesep, 'classifiers', filesep, '*.model']); 
+    end
     evalin('base', 'clear probmaps');
-
     version -java;
     javaver = ans;
     if ~strcmp('Java 1.8.0_66-b18 with Oracle Corporation Java HotSpot(TM) 64-Bit Server VM mixed mode', javaver)
         error('Java version incorrect. Re-run InstallmRNADynamics or check environment variables')
     end
-    heapsize = java.lang.Runtime.getRuntime.maxMemory;
-    if heapsize<1E10 
+    heapSize = java.lang.Runtime.getRuntime.maxMemory;
+    if heapSize<1E10 
         error('Please increase your Java heap memory allocation to at least 10GB (Home -> Preferences -> General -> Java Heap Memory.');
     end
     
@@ -180,21 +182,31 @@ for q = 1:nCh
         w = waitbar(current_frame/num_frames);
         set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
         for i = 1:zSize
-            zim(:,:,i) = imread([PreProcPath,filesep,Prefix, filesep, Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']);    
+            rawStackArray(:,:,i) = imread([PreProcPath,filesep,Prefix, filesep, Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']);    
         end
-        name = [stackspath, filesep, iIndex(current_frame,3), nameSuffix,'.tif'];
+        rawStackName = [stacksPath, filesep, iIndex(current_frame,3), nameSuffix,'.tif'];
         %Don't write new stacks if they're already made.
-        if length(dir([stackspath, filesep, '*.tif'])) ~= num_frames
-            imwrite(uint16(zim(:,:,1)), name);
-            for k = 2:size(zim,3)
-                imwrite(uint16(zim(:,:,k)), name, 'WriteMode', 'append');
+        if length(dir([stacksPath, filesep, '*.tif'])) ~= num_frames
+            imwrite(uint16(rawStackArray(:,:,1)), rawStackName);
+            for k = 2:size(rawStackArray,3)
+                imwrite(uint16(rawStackArray(:,:,k)), rawStackName, 'WriteMode', 'append');
             end
         end
         %Do the classification with Weka in Fiji
         if ~just_tifs
-            mij.run('Trainable Weka Segmentation 3D', ['open=',name]);
+            mij.run('Trainable Weka Segmentation 3D', ['open=',rawStackName]);
             pause(10);
-            trainableSegmentation.Weka_Segmentation.loadClassifier([classifier_path, classifier]);
+            if q==1
+                trainableSegmentation.Weka_Segmentation.loadClassifier([classifierFolder, classifierPathCh1]);
+            elseif q==2
+                trainableSegmentation.Weka_Segmentation.loadClassifier([classifierFolder, classifierPathCh2]);
+            else
+                error(['This pipeline does not support',...
+                    'more than two spot channels. If you''re actually',...
+                    'trying to segment 3 or more channels, talk to Armando to',...
+                    'get this implemented. Otherwise you''ve reached an error.',...
+                    'Check your data. This is probably not a bug in the code.']);
+            end
             trainableSegmentation.Weka_Segmentation.getProbability();
             ijm.getDatasetAs('probmaps')
             pMapTemp = evalin('base', 'probmaps');
@@ -521,7 +533,7 @@ else
                 log(end).Classifier = log(end-1).Classifier;
             end
         else     
-            log(end).Classifier = classifier;     
+            log(end).Classifier = classifierPathCh1;     
         end
         save(logpath, 'log');
     end
