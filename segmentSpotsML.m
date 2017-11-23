@@ -177,7 +177,23 @@ else
 end
 %Make requisite TIF stacks for classification
 for q = 1:nCh
-    nameSuffix= ['_ch',iIndex(q,2)];
+    % Inputoutput datatype can have channel2 as spot channel
+    if strcmp(lower(ExperimentType),'inputoutput')
+        if (~isempty(strfind(lower(Channel2),'mcp')))&...
+                ~isempty(strfind(lower(Channel2),'pcp'))
+            coatChannel=2;
+        elseif (~isempty(strfind(lower(Channel1),'mcp')))&...
+                ~isempty(strfind(lower(Channel1),'pcp'))
+            coatChannel=1;
+        else
+            error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
+        end
+        q=coatChannel;
+        nameSuffix= ['_ch',iIndex(q,2)];
+    else
+        nameSuffix= ['_ch',iIndex(q,2)];
+    end
+    
     for current_frame = initial_frame:num_frames
         w = waitbar(current_frame/num_frames);
         set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
@@ -228,7 +244,23 @@ end
 %Segment transcriptional loci
 else
     for q=1:nCh
-        nameSuffix = ['_ch',iIndex(q,2)];
+        % Inputoutput datatype can have channel2 as spot channel
+        if strcmp(lower(ExperimentType),'inputoutput')
+            if (~isempty(strfind(lower(Channel2),'mcp')))&...
+                    ~isempty(strfind(lower(Channel2),'pcp'))
+                coatChannel=2;
+            elseif (~isempty(strfind(lower(Channel1),'mcp')))&...
+                    ~isempty(strfind(lower(Channel1),'pcp'))
+                coatChannel=1;
+            else
+                error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
+            end
+            q=coatChannel;
+            nameSuffix= ['_ch',iIndex(q,2)];
+        else
+            nameSuffix = ['_ch',iIndex(q,2)];
+        end
+        
         h=waitbar(0,'Segmenting Spots');
         for current_frame = initial_frame:num_frames
             w = waitbar(current_frame/(num_frames-initial_frame),h);
