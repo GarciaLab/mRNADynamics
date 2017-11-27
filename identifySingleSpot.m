@@ -62,7 +62,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
     
     %Compute some preliminary properties of the located spots
     temp_particles = {[]};
-    if ~isempty(possible_centroid)
+    if ~isempty(possible_centroid) && sum(sum(possible_centroid)) ~= 0
         [intensity, centroid_index] = max(possible_centroid(:));
         [row, col] = ind2sub(size(possible_centroid),centroid_index);
         centroid_y = possible_centroid_location{row,col}(1); 
