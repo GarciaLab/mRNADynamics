@@ -212,7 +212,7 @@ for q = 1:nCh
         if ~just_tifs
             mij.run('Trainable Weka Segmentation 3D', ['open=',rawStackName]);
             pause(10);
-            if q==1
+            if q==1 | strcmp(lower(ExperimentType),'inputoutput')
                 trainableSegmentation.Weka_Segmentation.loadClassifier([classifierFolder, classifierPathCh1]);
             elseif q==2
                 trainableSegmentation.Weka_Segmentation.loadClassifier([classifierFolder, classifierPathCh2]);
