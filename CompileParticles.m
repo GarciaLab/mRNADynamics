@@ -2460,6 +2460,11 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
         MeanVectorAllAP=MeanVectorAllAP{1};
         SEVectorAllAP=SEVectorAllAP{1};    
         SNR = MeanVectorAll ./ (SDVectorAll*109); %AR 7/12/16: Rough estimate. Should do better.
+        if ROI
+            MeanVectorAP_ROI=MeanVectorAP_ROI{1};
+            SDVectorAP_ROI=SDVectorAP_ROI{1};
+            NParticlesAP_ROI=NParticlesAP_ROI{1};
+        end
     end
     
     if ROI
