@@ -188,8 +188,8 @@ for q = 1:nCh
         else
             error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
         end
-        q=coatChannel;
-        nameSuffix= ['_ch',iIndex(q,2)];
+        
+        nameSuffix= ['_ch',iIndex(coatChannel,2)];
     else
         nameSuffix= ['_ch',iIndex(q,2)];
     end
@@ -255,8 +255,8 @@ else
             else
                 error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
             end
-            q=coatChannel;
-            nameSuffix= ['_ch',iIndex(q,2)];
+            
+            nameSuffix= ['_ch',iIndex(coatChannel,2)];
         else
             nameSuffix = ['_ch',iIndex(q,2)];
         end
