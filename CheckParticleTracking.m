@@ -1115,7 +1115,7 @@ while (cc~='x')
     end
         
     
-    if (cc=='.')&(CurrentFrame<length({Spots{1}.Fits})) %Move forward one frame
+    if cc=='.' && CurrentFrame < length({Spots{1}.Fits}) %Move forward one frame
         CurrentFrame=CurrentFrame+1;
         ManualZFlag=0;
         %DisplayRange=[];

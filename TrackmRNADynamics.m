@@ -280,6 +280,9 @@ if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
                     length(Spots{Channel}(i).Fits)]);
             end
             %This filter tells us whether a spot is above the threshold.
+            if ~iscell(SpotFilter)
+                SpotFilter = {SpotFilter};
+            end
             SpotFilter{Channel}=nan(length(Spots{Channel}),MaxSpots{Channel});
             %Populate the filter
             for i=1:length(Spots{Channel})
