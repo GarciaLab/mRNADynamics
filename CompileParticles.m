@@ -26,9 +26,10 @@ function CompileParticles(varargin)
 %             quick check of, for example, the AP profiles
 %
 % 'MinParticles', N: Set the threshold for the minimum number of particles (N) per
-%               AP bin for compilation
+%               AP bin for compilation. Default is 4. 
 %
-% 'MinTime', M: %Require particles to exist for time M or else discard 
+% 'MinTime', M: %Require particles to exist for time M or else discard.
+%               Default is 1.
 %
 % 'ROI', ROI1, ROI2: For Region of Interest (ROI) data. Assume that the ROI is top half of the imaging window.
 %           Note that the origin is the left top of the image. 
@@ -621,11 +622,16 @@ for ChN=1:NChannels
 
 
             %See if this particle is in one of the approved AP bins
-            if strcmp(ExperimentAxis,'AP')
-                CurrentAPbin=max(find(APbinID<mean(Particles{ChN}(i).APpos(FrameFilter))));
-                if isnan(APbinArea(CurrentAPbin))
-                    AnalyzeThisParticle=0;
+            try
+                if strcmp(ExperimentAxis,'AP')
+                    CurrentAPbin=max(find(APbinID<mean(Particles{ChN}(i).APpos(FrameFilter))));
+                    if isnan(APbinArea(CurrentAPbin))
+                        AnalyzeThisParticle=0;
+                    end
                 end
+            catch
+                error(['You probably need to re-run AddParticlePosition again. If that',... 
+                'doesn''t fix things, talk to HG.'])
             end
 
 
@@ -1101,7 +1107,8 @@ if ~isnan(nc9)||~isnan(nc10)||~isnan(nc11)||~isnan(nc12)||~isnan(nc13)||~isnan(n
     %Create the filter
     for ChN=1:NChannels
         if isempty(CompiledParticles)==1
-            error(['No compiled particles found in channel ',num2str(ChN),'. Did you mean to run the code with ApproveAll?'])
+            error(['No compiled particles found in channel ',num2str(ChN),'. Did you mean to run the code with ApproveAll?',...
+                'Also try running CheckParticleTracking again and saving the results. If that doesn''t work and you think there should be particles, talk to HG.'])
         end
 
 
