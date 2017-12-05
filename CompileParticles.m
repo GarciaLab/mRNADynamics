@@ -2194,6 +2194,7 @@ if HistoneChannel&&strcmp(ExperimentAxis,'AP')
         xlabel('AP position (x/L)')
         ylabel('Active nuclei')
         title('Number active nuclei')
+        legend('nc12', 'nc13', 'nc14')
         saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsAP_ch',...
             iIndex(ChN,2),'.tif'])
 
