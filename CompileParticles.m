@@ -837,6 +837,9 @@ for ChN=1:NChannels
                     end
                
                     figure(2)
+                    left_color = [213,108,85]/255;
+                    right_color = [0, 0, 0]/255;
+                    set(gcf,'defaultAxesColorOrder',[left_color; right_color]);
                     %Size of the snippet for each frame
                     SnippetSize=31; %AR 3/15/16: Why is this 31?
                     %Width of the screen
@@ -860,14 +863,16 @@ for ChN=1:NChannels
                     FilterMatrix=zeros((TotalRows-NRows),NCols);
                     FilterMatrix(:,1:ceil(NCols/2))=1;
                     subplot(TotalRows,NCols,find(FilterMatrix'))
-
+                    
+                    yyaxis left
                     errorbar(ElapsedTime(CompiledParticles{ChN}(k).Frame),...
                         CompiledParticles{ChN}(k).Fluo,ones(size(CompiledParticles{ChN}(k).Fluo))*...
                         CompiledParticles{ChN}(k).FluoError,...
                         '.-r');
+                    ylabel('fluorescence (au)')
                     hold on
 
-
+                    yyaxis right
                     plot(ElapsedTime(CompiledParticles{ChN}(k).Frame),...
                         CompiledParticles{ChN}(k).Off*IntArea,'.-g');
                     if ~isempty(CompiledParticles{ChN}(k).optFit1)
@@ -880,23 +885,22 @@ for ChN=1:NChannels
                             SplineValues=polyval(CompiledParticles{ChN}(k).optFit1,CompiledParticles{ChN}(k).Frame);     
                         end
 
-                        plot([ElapsedTime(CompiledParticles{ChN}(k).Frame)],SplineValues*IntArea,'-k')
+                        yyaxis right
+                        plot(ElapsedTime(CompiledParticles{ChN}(k).Frame),SplineValues*IntArea,'-b')
                         try
-                            title(['Particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{ChN}(k).nc),', Ch: ',num2str(ChN)])
+                            title(['particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{ChN}(k).nc),', Ch: ',num2str(ChN)])
                         catch
                         end
                     else
-                        title(['Particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{1}(k).nc),', Ch: ',num2str(ChN),...
+                        title(['particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{1}(k).nc),', Ch: ',num2str(ChN),...
                             ' - WARNING: No offset fit'])
                     end
                     hold off
-                    %legend({'Particle','Offset','Offset fit'},'Location','Best')
-                    xlabel('Time (min)')
-                    ylabel('Fluorescence (au)')
+                    legend({'Particle','Offset','Offset fit'},'Location','Best')
+                    xlabel('time (min)')
                     axis square
                     set(gca, 'Position', get(gca, 'OuterPosition') - ...
                         get(gca, 'TightInset') * [-1 0 1 0; 0 -1 0 1; 0 0 1 0; 0 0 0 1]);
-
                     drawnow
 
 
