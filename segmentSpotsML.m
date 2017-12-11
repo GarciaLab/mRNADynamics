@@ -91,6 +91,8 @@ end
 %%
 tic;
 
+parpool(6);
+
 [~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
     readMovieDatabase(Prefix);
 

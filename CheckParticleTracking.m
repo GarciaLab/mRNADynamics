@@ -600,7 +600,6 @@ while (cc~='x')
     end
         
     if (NChannels==1)&&(~strcmp(lower(ExperimentType),'inputoutput'))
-            disp(['projectionMode : ' projectionMode])
             if strcmp(projectionMode,'None (Default)')
                 Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                     FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
@@ -1116,7 +1115,7 @@ while (cc~='x')
     end
         
     
-    if (cc=='.')&(CurrentFrame<length({Spots{1}.Fits})) %Move forward one frame
+    if cc=='.' && CurrentFrame < length({Spots{1}.Fits}) %Move forward one frame
         CurrentFrame=CurrentFrame+1;
         ManualZFlag=0;
         %DisplayRange=[];
@@ -1237,7 +1236,7 @@ while (cc~='x')
                 snippet_size = 2*(floor(1300/(2*pixelSize))) + 1; % nm. note that this is forced to be odd
                 SpotsIndex = length(Spots{CurrentChannel}(CurrentFrame).Fits)+1;
                 breakflag = 0;
-                parfor i = 1:ZSlices
+                parfor i = 2:ZSlices-1
                     spotsIm=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                          FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i,2),nameSuffix,'.tif']);  
                     Threshold = min(min(spotsIm));
@@ -1255,7 +1254,7 @@ while (cc~='x')
                         pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [], '' );
                 end
                 
-                for i = 1:ZSlices
+                for i = 2:ZSlices-1
                     if ~isempty(temp_particles{i})
                         %Copy the information stored on temp_particles into the
                         %Spots structure
@@ -1356,7 +1355,7 @@ while (cc~='x')
                         end
                         
                     else
-                        display('No spot added. Did you click too close to the image boundary?')
+                        disp('No spot added. Did you click too close to the image boundary?')
                         breakflag = 1;
                         break
                     end
@@ -1393,14 +1392,14 @@ while (cc~='x')
                         JoinParticleTraces(CurrentParticle,...
                         length(Particles{CurrentChannel}),Particles{CurrentChannel});
                     else
-                        display('Re-run TrackmRNADynamics to associate this particle with a nucleus and trace.')
+                        disp('Re-run TrackmRNADynamics to associate this particle with a nucleus and trace.')
                     end
 
                     %Finally, force the code to recalculate the fluorescence trace
                     %for this particle
                     PreviousParticle=0;
 
-                    display('Spot addded to the current particle.')
+                    disp('Spot addded to the current particle.')
                 end
 
             end
@@ -1864,13 +1863,14 @@ while (cc~='x')
         msg = Particles{CurrentChannel}(CurrentParticle).Frame(find(diff(Particles{CurrentChannel}(CurrentParticle).Frame)>1));
         
         if ~isempty(msg)
-            display('Missing frames:')
-            msg        
+%             display('Missing frames:') %AR 12/3/17- Not sure what this
+%             message is trying to say, so I am silencing it for now. 
+%             msg        
         else 
             %do nothing
         end
             
-    elseif (cc=='n')&(CurrentParticle>1)
+    elseif (cc=='n')&&(CurrentParticle>1)
         Approved=(find([Particles{CurrentChannel}.Approved]));
         %NotApproved=(find(~[Particles.Approved]));
         
@@ -1879,8 +1879,8 @@ while (cc~='x')
         
         
         %Mode 1 - show non-flagged traces
-        while (HideApprovedFlag)==1&(NextParticle>1)&...
-                ((Particles{CurrentChannel}(NextParticle).Approved==1)|(Particles{CurrentChannel}(NextParticle).Approved==-1)|...
+        while (HideApprovedFlag)==1 && (NextParticle>1) &&...
+                ((Particles{CurrentChannel}(NextParticle).Approved==1) || (Particles{CurrentChannel}(NextParticle).Approved==-1) ||...
                 (Particles{CurrentChannel}(NextParticle).Approved==2))
             NextParticle=NextParticle-1;
             if NextParticle<1
@@ -2103,6 +2103,7 @@ while (cc~='x')
     
     elseif cc=='~'      %Switch projection mode
         projectionMode = chooseProjection;
+        disp(['projectionMode : ' projectionMode])
     
     elseif cc=='!' % changing contrast 
         prompt = {'Enter minimum:','Enter maximum :'};

@@ -26,9 +26,10 @@ function CompileParticles(varargin)
 %             quick check of, for example, the AP profiles
 %
 % 'MinParticles', N: Set the threshold for the minimum number of particles (N) per
-%               AP bin for compilation
+%               AP bin for compilation. Default is 4. 
 %
-% 'MinTime', M: %Require particles to exist for time M or else discard 
+% 'MinTime', M: %Require particles to exist for time M or else discard.
+%               Default is 1.
 %
 % 'ROI', ROI1, ROI2: For Region of Interest (ROI) data. Assume that the ROI is top half of the imaging window.
 %           Note that the origin is the left top of the image. 
@@ -621,11 +622,16 @@ for ChN=1:NChannels
 
 
             %See if this particle is in one of the approved AP bins
-            if strcmp(ExperimentAxis,'AP')
-                CurrentAPbin=max(find(APbinID<mean(Particles{ChN}(i).APpos(FrameFilter))));
-                if isnan(APbinArea(CurrentAPbin))
-                    AnalyzeThisParticle=0;
+            try
+                if strcmp(ExperimentAxis,'AP')
+                    CurrentAPbin=max(find(APbinID<mean(Particles{ChN}(i).APpos(FrameFilter))));
+                    if isnan(APbinArea(CurrentAPbin))
+                        AnalyzeThisParticle=0;
+                    end
                 end
+            catch
+                error(['You probably need to re-run AddParticlePosition again. If that',... 
+                'doesn''t fix things, talk to HG.'])
             end
 
 
@@ -831,6 +837,9 @@ for ChN=1:NChannels
                     end
                
                     figure(2)
+                    left_color = [213,108,85]/255;
+                    right_color = [0, 0, 0]/255;
+                    set(gcf,'defaultAxesColorOrder',[left_color; right_color]);
                     %Size of the snippet for each frame
                     SnippetSize=31; %AR 3/15/16: Why is this 31?
                     %Width of the screen
@@ -854,14 +863,16 @@ for ChN=1:NChannels
                     FilterMatrix=zeros((TotalRows-NRows),NCols);
                     FilterMatrix(:,1:ceil(NCols/2))=1;
                     subplot(TotalRows,NCols,find(FilterMatrix'))
-
+                    
+                    yyaxis left
                     errorbar(ElapsedTime(CompiledParticles{ChN}(k).Frame),...
                         CompiledParticles{ChN}(k).Fluo,ones(size(CompiledParticles{ChN}(k).Fluo))*...
                         CompiledParticles{ChN}(k).FluoError,...
                         '.-r');
+                    ylabel('fluorescence (au)')
                     hold on
 
-
+                    yyaxis right
                     plot(ElapsedTime(CompiledParticles{ChN}(k).Frame),...
                         CompiledParticles{ChN}(k).Off*IntArea,'.-g');
                     if ~isempty(CompiledParticles{ChN}(k).optFit1)
@@ -874,23 +885,22 @@ for ChN=1:NChannels
                             SplineValues=polyval(CompiledParticles{ChN}(k).optFit1,CompiledParticles{ChN}(k).Frame);     
                         end
 
-                        plot([ElapsedTime(CompiledParticles{ChN}(k).Frame)],SplineValues*IntArea,'-k')
+                        yyaxis right
+                        plot(ElapsedTime(CompiledParticles{ChN}(k).Frame),SplineValues*IntArea,'-b')
                         try
-                            title(['Particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{ChN}(k).nc),', Ch: ',num2str(ChN)])
+                            title(['particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{ChN}(k).nc),', Ch: ',num2str(ChN)])
                         catch
                         end
                     else
-                        title(['Particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{1}(k).nc),', Ch: ',num2str(ChN),...
+                        title(['particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{1}(k).nc),', Ch: ',num2str(ChN),...
                             ' - WARNING: No offset fit'])
                     end
                     hold off
-                    %legend({'Particle','Offset','Offset fit'},'Location','Best')
-                    xlabel('Time (min)')
-                    ylabel('Fluorescence (au)')
+                    legend({'Particle','Offset','Offset fit'},'Location','Best')
+                    xlabel('time (min)')
                     axis square
                     set(gca, 'Position', get(gca, 'OuterPosition') - ...
                         get(gca, 'TightInset') * [-1 0 1 0; 0 -1 0 1; 0 0 1 0; 0 0 0 1]);
-
                     drawnow
 
 
@@ -1101,7 +1111,8 @@ if ~isnan(nc9)||~isnan(nc10)||~isnan(nc11)||~isnan(nc12)||~isnan(nc13)||~isnan(n
     %Create the filter
     for ChN=1:NChannels
         if isempty(CompiledParticles)==1
-            error(['No compiled particles found in channel ',num2str(ChN),'. Did you mean to run the code with ApproveAll?'])
+            error(['No compiled particles found in channel ',num2str(ChN),'. Did you mean to run the code with ApproveAll?',...
+                'Also try running CheckParticleTracking again and saving the results. If that doesn''t work and you think there should be particles, talk to HG.'])
         end
 
 
@@ -2187,6 +2198,7 @@ if HistoneChannel&&strcmp(ExperimentAxis,'AP')
         xlabel('AP position (x/L)')
         ylabel('Active nuclei')
         title('Number active nuclei')
+        legend('nc12', 'nc13', 'nc14')
         saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsAP_ch',...
             iIndex(ChN,2),'.tif'])
 

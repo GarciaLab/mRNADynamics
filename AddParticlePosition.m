@@ -540,7 +540,7 @@ if ~NoAP
     
     
     if ~SkipAlignment && HistoneChannel
-        if ZoomRatio < 24  %ZoomRatio > 1 && ZoomRatio < 24
+        if ZoomRatio < 24  %ZoomRatio > 1 && ZoomRatio < 24. AR 12/4/17- where did this number come from
             
             %Enlarge the zoomed out image so we can do the cross-correlation
             SurfImageResized=imresize(SurfImage, ZoomRatio);

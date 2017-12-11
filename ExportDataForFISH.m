@@ -43,11 +43,11 @@ PrefixOverrideFlag = 0;
 SkipFrames=[];
 k=1;
 while k<=length(varargin)
-    if strcmp(lower(varargin{k}),'skipframes')
+    if strcmpi(varargin{k},'skipframes')
         SkipFrames=varargin{k+1};
         k=k+1;
         warning('SkipFrame mode.')
-    elseif strcmp(lower(varargin{k}),'medianprojection')
+    elseif strcmpi(varargin{k},'medianprojection')
         ProjectionType = 'medianprojection';
     else
         Prefix = varargin{k};
@@ -71,40 +71,40 @@ DLAT=dir([Folder,filesep,'*_Settings.txt']);
 DSPIN=dir([Folder,filesep,'*.nd']);     %Nikon spinning disk
 DND2=dir([Folder,filesep,'*.nd2']);    %Nikon point scanner .nd2 files
 
-if length(DTIF)>0 & isempty(DLSM) & isempty(DCZI) & isempty(DSPIN)
-    if length(DLIF)==0
-        if length(DLAT)==0
-            display('2-photon @ Princeton data mode')
+if ~isempty(DTIF) && isempty(DLSM) && isempty(DCZI) && isempty(DSPIN)
+    if isempty(DLIF)
+        if isempty(DLAT)
+            disp('2-photon @ Princeton data mode')
             D=DTIF;
             FileMode='TIF';
         else
-            display('Lattice Light Sheet data mode')
+            disp('Lattice Light Sheet data mode')
             D=DTIF;
             FileMode='LAT';
         end
     else
-        display('LIF export mode')
+        disp('LIF export mode')
         D=DTIF;
         FileMode='LIFExport';
     end
-elseif (length(DTIF)==0)&(length(DLSM)>0)
-    display('LSM mode')
+elseif isempty(DTIF) && ~isempty(DLSM)
+    disp('LSM mode')
     D=DLSM;
     FileMode='LSM';
-elseif (length(DTIF)==0)&(length(DCZI)>0)
-    display('LSM (CZI) mode')
+elseif isempty(DTIF) && ~isempty(DCZI)
+    disp('LSM (CZI) mode')
     D=DCZI;
     FileMode='LSM';
-elseif (length(DSPIN)>0)
-    display('Nikon spinning disk mode with .nd files')
+elseif ~isempty(DSPIN)
+    disp('Nikon spinning disk mode with .nd files')
     D=dir([Folder,filesep,'*.tif']);     %spinning disk with .nd output files
     if isempty(D)
         error('No TIF files found')
     end
     FileMode = 'DSPIN';
-elseif exist('DND2')
-    display('Nikon LSM Mode')
-    D=dir([Folder,filesep,'*.nd2'])
+elseif ~isempty(DND2)
+    disp('Nikon LSM Mode');
+    D=dir([Folder,filesep,'*.nd2']);
     FileMode='DND2';               
 else
     error('File type not recognized. For LIF files, were they exported to TIF?')
@@ -128,7 +128,7 @@ FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
 
 
 
-if strcmp(FileMode,'TIF')&(~strcmp(FileMode,'DSPIN'))
+if strcmp(FileMode,'TIF') && ~strcmp(FileMode,'DSPIN')
 
     %Get the structure with the acquisition information
     ImageInfo = imfinfo([Folder,filesep,D(1).name]);
@@ -153,7 +153,7 @@ if strcmp(FileMode,'TIF')&(~strcmp(FileMode,'DSPIN'))
     if length(FFDir)==1
         FFFile=FFDir(1).name;
     elseif isempty(FFDir)
-        display('Warning, no flat field file found. Press any key to proceed without it');
+        disp('Warning, no flat field file found. Press any key to proceed without it');
         FFImage=ones(ImageInfo(1).Height,ImageInfo(1).Width);
         pause
     else
