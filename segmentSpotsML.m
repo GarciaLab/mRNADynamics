@@ -399,7 +399,9 @@ else
             Particles = Particles([Particles.r]~=1);
             close(h)
         end
+        
         falsePositives = 0;
+        
         %pick the brightest z-slice
         for i = 1:length(Particles)
             [~, max_index] = max(Particles(i).CentralIntensity);
@@ -408,7 +410,8 @@ else
                     Particles(i).(fields{j}) = Particles(i).(fields{j})(max_index);
                 end
             else
-            Particles(i).brightestZ = Particles(i).z(max_index);       
+                
+                Particles(i).brightestZ = Particles(i).z(max_index);
                 if num_shadows == 1
                     if length(Particles(i).z) <= 1
                             Particles(i).discardThis = 1;
