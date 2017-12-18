@@ -62,8 +62,6 @@ if length(varargin)
             end
         end
     end
-else
-    error('You did not give any inputs. You need to at least give the prefix.')
 end
 
 %% Information about the Folders and Frames 

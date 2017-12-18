@@ -75,7 +75,7 @@ for i=1:length(PlotHandle)
         
     else
         %Why do I have this auto thingy?
-        if isempty(strmatch(get(PlotHandle(i),'Color'),'auto'))
+        if isempty(strmatch(get(PlotHandle(i),'MarkerFaceColor'),'auto'))
             ChangeColorPBoC2(PlotHandle(i),'Color')
         end
         try
@@ -193,10 +193,8 @@ end
 
 
 % %Change the color of the axes
-% try ChangeColorPBoC2(AxisHandle,'XColor')
-% end
-% try ChangeColorPBoC2(AxisHandle,'YColor')
-% end
+try ChangeColorPBoC2(AxisHandle,'XColor'); end
+try ChangeColorPBoC2(AxisHandle,'YColor'); end
 
 
 set(AxisHandle,'XColor','k','YColor','k','ZColor','k')
