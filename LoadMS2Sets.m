@@ -210,11 +210,13 @@ for i=1:length(CompiledSets)
 
 
         %Fit results assuming the same slopes
-        if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'])
+        if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'],'file')
             MeanFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat']);
         else
-            warning(['MeanFits.mat not found for ',Prefix,...
-                '. This is a stupid way to check. Have the code check if this experiment is DV or AP instead.'])
+            %Commented out by AR 12/11/17 since this comment seems
+            %outdated.
+%             warning(['MeanFits.mat not found for ',Prefix,...
+%                 '. This is a stupid way to check. Have the code check if this experiment is DV or AP instead.'])
         end
 
         try

@@ -116,7 +116,7 @@ function mapPatserResults(path)
     ylabel('orientation')
     xlabel('location')
     backslashes = strfind(path,'\');
-    title({path(backslashes(length(backslashes))+1:length(path)-4), ['cut off score: ' num2str(cutOffScore)]},'Interpreter','none')
+    title(path(backslashes(length(backslashes))+1:length(path)-4),'Interpreter','none')
     h = colorbar;
     h.Limits = [cutOffScore ceil(max(values))];
     

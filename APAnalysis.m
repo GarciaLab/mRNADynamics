@@ -1,5 +1,5 @@
 function APAnalysis(dataset, varargin)
-%APAnalysis(dataset, controlset)
+%APAnalysis(dataset, options)
 %
 %DESCRIPTION
 %Performs analyses on AP profiles generated from time traces of enhancer
@@ -39,12 +39,15 @@ function APAnalysis(dataset, varargin)
 %% 
     control = '';
     nc = 2;
+    justMeans = 0;
 
     for i=1:length(varargin)
         if strcmpi(varargin{i},'control')
             control = varargin{i+1};
         elseif strcmpi(varargin{i},'nc')
             nc = varargin{i+1} - 11; %Because in the CompiledParticles, nc12 is indexed as 1, nc13 as 2, etc.
+        elseif strcmpi(varargin{i}, 'justMeans')
+            justMeans = 1;
         end
     end
         
@@ -65,7 +68,11 @@ function APAnalysis(dataset, varargin)
     %Do some analysis and plotting of treatment data
     cum = zeros(0,numAPBins);
     for dataSet = 1:nSets
-        Prefix{dataSet} = data(dataSet).SetName;
+        try
+            Prefix{dataSet} = data(dataSet).SetName;
+        catch 
+            Prefix{dataSet} = ['data set: ',int2str(dataSet)];
+        end
         d = data(dataSet);
         lastFrame = length(d.ElapsedTime);
         if nc==1
@@ -77,6 +84,9 @@ function APAnalysis(dataset, varargin)
         elseif nc==3
             to = d.nc14;
             tf = lastFrame;
+        end
+        if to == 0
+            to = 1; %to fix an indexing issue 
         end
         fluo = d.MeanVectorAP(to:tf ,:);
         fluo2 = fluo;
@@ -100,23 +110,26 @@ function APAnalysis(dataset, varargin)
     end
     figure(1)
     clf('reset')
-    for dataSet = 1:nSets
-        s = scatter(ap, cum(dataSet, :), 100, 'k', 'filled', 'DisplayName', Prefix{dataSet});
-        hold on
+    if ~justMeans
+        for dataSet = 1:nSets
+            s = scatter(ap, cum(dataSet, :), 100, 'k', 'filled', 'DisplayName', Prefix{dataSet});
+            hold on
+        end
     end
     if nSets > 1
-        e = errorbar(ap, cummean, cumstde, 'DisplayName', 'Mean $\pm$ std. error');
+        e = errorbar(ap, cummean, cumstde, 'DisplayName', 'mean $\pm$ std. error');
     end
         
     hold off
     lgd1 = legend('show');
     set(lgd1, 'Interpreter', 'Latex');
-%     xlim([0, 1])
-%     ylim([0, max([cummean+abs(cumstde), cum(:)']).*1.1 ])
-    title({'total average nuclear intensity across';['anterior-posterior axis, nuclear cycle',num2str(nc+11)]});
+    xlim([0, 1])
+    ylim([0, max([cummean+abs(cumstde), cum(:)']).*1.1 ])
+    title({'total average nuclear intensity across';['anterior-posterior axis, nuclear cycle ',num2str(nc+11)]});
     xlabel('fraction embryo length');
-    ylabel('intensity (a.u.))');
-    standardizeFigure(gca, legend('show'), 'scatter', s, 'red');
+    ylabel('intensity (a.u.)');
+    standardizeFigure(gca, legend('show'), 'red');
+    e.Color = [213,108,85]/255;
     
     %% 
     %Experiment fraction on
@@ -132,14 +145,16 @@ function APAnalysis(dataset, varargin)
         g = g + nonanf;
         g2 = g2 + nonanf.^2; 
         n = ~isnan(f) + n;
-        s = scatter(ap, f, 100, 'k', 'filled', 'DisplayName', Prefix{dataSet});
-        hold on
+        if ~justMeans
+            s = scatter(ap, f, 100, 'k', 'filled', 'DisplayName', Prefix{dataSet});
+            hold on
+        end
     end
     n(~n) = 1;
     fmean = g./n;
     fstde = sqrt(g2./n - fmean.^2) ./ sqrt(n);
     if nSets > 1
-        e = errorbar(ap, fmean, fstde,'DisplayName', 'Mean $\pm$ std. error');
+        e = errorbar(ap, fmean, fstde,'DisplayName', 'mean $\pm$ std. error');
     end
         
     hold off
@@ -147,10 +162,11 @@ function APAnalysis(dataset, varargin)
     set(lgd2, 'Interpreter', 'Latex');
 %     xlim([.1, .8])
 %     ylim([0, 1.3])
-    title(['fraction of actively transcring nuclei, nuclear cycle',num2str(nc+11)]);
+    title(['fraction of actively transcribing nuclei, nuclear cycle ',num2str(nc+11)]);
     xlabel('fraction embryo length');
     ylabel('fraction on');
-    standardizeFigure(gca, legend('show'), 'scatter', s, 'red');
+    standardizeFigure(gca, legend('show'),'red');
+    e.Color = [213,108,85]/255;
     
     
     %% 
@@ -175,7 +191,7 @@ function APAnalysis(dataset, varargin)
     fmean = g./n;
     fstde = sqrt(g2./n - fmean.^2) ./ sqrt(n);
     if nSets > 1
-        e = errorbar(ap, fmean, fstde,'DisplayName', 'Mean $\pm$ std. error');
+        e = errorbar(ap, fmean, fstde,'DisplayName', 'mean $\pm$ std. error');
     end
         
     hold off
@@ -183,7 +199,7 @@ function APAnalysis(dataset, varargin)
     set(lgd2, 'Interpreter', 'Latex');
 %     xlim([.1, .8])
 %     ylim([0, 1.3])
-    title(['numer of actively transcring nuclei, nuclear cycle',num2str(nc+11)]);
+    title(['numer of actively transcring nuclei, nuclear cycle ',num2str(nc+11)]);
     xlabel('fraction embryo length');
     ylabel('number on');
     standardizeFigure(gca, legend('show'), 'scatter', s, 'red');    
