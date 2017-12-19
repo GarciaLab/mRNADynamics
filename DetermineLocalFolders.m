@@ -1,7 +1,7 @@
 function [SourcePath, FISHPath, DropboxFolder, MS2CodePath, PreProcPath] =...
     DetermineLocalFolders(varargin)
 
-CONFIG_CSV_PATH = ['..', filesep, 'ComputerFolders.csv'];
+CONFIG_CSV_PATH = ['..', filesep, 'ComputerFolders.xlsx'];
 
 if exist(CONFIG_CSV_PATH, 'file')
   disp('Using new CSV configuration file')
@@ -30,6 +30,7 @@ if exist(CONFIG_CSV_PATH, 'file')
   end
 
   MOVIE_DATABASE_CSV_PATH = [DropboxFolder,filesep,'MovieDatabase.csv'];
+  
   if exist(MOVIE_DATABASE_CSV_PATH, 'file')
     disp(['Using new CSV MovieDatabase file: ', MOVIE_DATABASE_CSV_PATH])
     dropboxFolderName = getDropboxFolderFromMovieDatabase_CSV(...
