@@ -114,6 +114,10 @@ catch
 end
 %%
 tic;
+
+parpool(6);
+
+
 [~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
     readMovieDatabase(Prefix);
 
@@ -196,7 +200,22 @@ if justDoG
     
     for q = 1:nCh
 %         h=waitbar(0,'Generating DoG images');
-        nameSuffix=['_ch',iIndex(q,2)];
+        if strcmp(lower(ExperimentType),'inputoutput')
+            if (~isempty(strfind(lower(Channel2),'mcp')))&...
+                    ~isempty(strfind(lower(Channel2),'pcp'))
+                coatChannel=2;
+            elseif (~isempty(strfind(lower(Channel1),'mcp')))&...
+                    ~isempty(strfind(lower(Channel1),'pcp'))
+                coatChannel=1;
+            else
+                error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
+            end
+            q=coatChannel;
+            nameSuffix= ['_ch',iIndex(q,2)];
+        else
+            nameSuffix = ['_ch',iIndex(q,2)];
+        end
+        
         for current_frame = 1:numFrames
 %             waitbar(current_frame/numFrames,h);
             if displayFigures
@@ -224,7 +243,22 @@ if justDoG
 else       
     thresh = Threshold; %copy so we can change the value of Threshold for each channel iteration
     for q = 1:nCh
-        nameSuffix=['_ch',iIndex(q,2)];
+        if strcmp(lower(ExperimentType),'inputoutput')
+            if (~isempty(strfind(lower(Channel2),'mcp')))&...
+                    ~isempty(strfind(lower(Channel2),'pcp'))
+                coatChannel=2;
+            elseif (~isempty(strfind(lower(Channel1),'mcp')))&...
+                    ~isempty(strfind(lower(Channel1),'pcp'))
+                coatChannel=1;
+            else
+                error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
+            end
+            q=coatChannel;
+            nameSuffix= ['_ch',iIndex(q,2)];
+        else
+            nameSuffix = ['_ch',iIndex(q,2)];
+        end
+        
         h=waitbar(0,'Segmenting spots');
         Threshold = thresh(q);
         for current_frame = 1:numFrames

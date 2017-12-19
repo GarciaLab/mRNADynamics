@@ -91,6 +91,8 @@ end
 %%
 tic;
 
+parpool(6);
+
 [~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
     readMovieDatabase(Prefix);
 
@@ -177,7 +179,23 @@ else
 end
 %Make requisite TIF stacks for classification
 for q = 1:nCh
-    nameSuffix= ['_ch',iIndex(q,2)];
+    % Inputoutput datatype can have channel2 as spot channel
+    if strcmp(lower(ExperimentType),'inputoutput')
+        if (~isempty(strfind(lower(Channel2),'mcp')))&...
+                ~isempty(strfind(lower(Channel2),'pcp'))
+            coatChannel=2;
+        elseif (~isempty(strfind(lower(Channel1),'mcp')))&...
+                ~isempty(strfind(lower(Channel1),'pcp'))
+            coatChannel=1;
+        else
+            error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
+        end
+        
+        nameSuffix= ['_ch',iIndex(coatChannel,2)];
+    else
+        nameSuffix= ['_ch',iIndex(q,2)];
+    end
+    
     for current_frame = initial_frame:num_frames
         w = waitbar(current_frame/num_frames);
         set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
@@ -196,7 +214,7 @@ for q = 1:nCh
         if ~just_tifs
             mij.run('Trainable Weka Segmentation 3D', ['open=',rawStackName]);
             pause(10);
-            if q==1
+            if q==1 | strcmp(lower(ExperimentType),'inputoutput')
                 trainableSegmentation.Weka_Segmentation.loadClassifier([classifierFolder, classifierPathCh1]);
             elseif q==2
                 trainableSegmentation.Weka_Segmentation.loadClassifier([classifierFolder, classifierPathCh2]);
@@ -228,7 +246,23 @@ end
 %Segment transcriptional loci
 else
     for q=1:nCh
-        nameSuffix = ['_ch',iIndex(q,2)];
+        % Inputoutput datatype can have channel2 as spot channel
+        if strcmp(lower(ExperimentType),'inputoutput')
+            if (~isempty(strfind(lower(Channel2),'mcp')))&...
+                    ~isempty(strfind(lower(Channel2),'pcp'))
+                coatChannel=2;
+            elseif (~isempty(strfind(lower(Channel1),'mcp')))&...
+                    ~isempty(strfind(lower(Channel1),'pcp'))
+                coatChannel=1;
+            else
+                error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
+            end
+            
+            nameSuffix= ['_ch',iIndex(coatChannel,2)];
+        else
+            nameSuffix = ['_ch',iIndex(q,2)];
+        end
+        
         h=waitbar(0,'Segmenting Spots');
         for current_frame = initial_frame:num_frames
             w = waitbar(current_frame/(num_frames-initial_frame),h);
@@ -367,7 +401,9 @@ else
             Particles = Particles([Particles.r]~=1);
             close(h)
         end
+        
         falsePositives = 0;
+        
         %pick the brightest z-slice
         for i = 1:length(Particles)
             [~, max_index] = max(Particles(i).CentralIntensity);
@@ -376,7 +412,8 @@ else
                     Particles(i).(fields{j}) = Particles(i).(fields{j})(max_index);
                 end
             else
-            Particles(i).brightestZ = Particles(i).z(max_index);       
+                
+                Particles(i).brightestZ = Particles(i).z(max_index);
                 if num_shadows == 1
                     if length(Particles(i).z) <= 1
                             Particles(i).discardThis = 1;
