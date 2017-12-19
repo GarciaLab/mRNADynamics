@@ -95,9 +95,7 @@ function mapPatserResults(path)
     ylabel('scores')
     backslashes = strfind(path,'\');
     title(path(backslashes(length(backslashes))+1:length(path)-4),'Interpreter','none')
-    try
-        standardizeFigure(ax, [], 'bar', b, 'red');
-    end
+    standardizeFigure(ax, [], 'bar', b, 'red');
 
     
     figure(2)%,'units','normalized','outerposition',[0 0 1 1]);
@@ -146,11 +144,9 @@ function mapPatserResults(path)
         
         text(complementLocation(i)-arrowAdjustment,arrowPosition(1+mod(i,2)),arrow{1+mod(i,2)},'Interpreter','latex');
         text(complementLocation(i),wordPosition(1+mod(i,2)),strcat(tf(complementSiteIndices(i))) ,'Rotation',rotation(1+mod(i,2)),'Interpreter','none');
-    end
+    end 
     
-    try
-        standardizeFigure(ax, [], 'axeslinewidth', 1);
-    end
+    standardizeFigure(ax, [], 'axeslinewidth', 1);
     ax.XGrid = 'on';
     ax.XMinorGrid = 'on';
     
