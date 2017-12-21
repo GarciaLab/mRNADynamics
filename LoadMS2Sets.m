@@ -161,7 +161,7 @@ for i=1:length(CompiledSets)
             DataTemp=orderfields(DataTemp);
             Data(i)=DataTemp;
         catch
-            error('Incompatible analysis in the data sets. Re-check this part of the code.')
+            warning('Incompatible analysis in the data sets. Re-check this part of the code.')
             %If this fails figure out what's the missing field
             DataTemp=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
             FieldNamesData=fieldnames(Data);
