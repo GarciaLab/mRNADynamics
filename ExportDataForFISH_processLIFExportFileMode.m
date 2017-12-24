@@ -213,6 +213,19 @@ function ExportDataForFISH_processLIFExportFileMode(Prefix, Folder, DLIF, Projec
               display('Could not find a histone channel. Proceeding without it.')
           end
       end
+
+      % MCP-mCherry as a fake histone channel
+      if (~isempty(strfind(Channel1{1},'mCherry')))||(~isempty(strfind(Channel2{1},'mCherry')))
+          if (~isempty(strfind(Channel1{1},'mCherry')))
+              fiducialChannel=1;
+              histoneChannel=1;
+          elseif (~isempty(strfind(Channel2{1},'NLSmCherry')))
+              fiducialChannel=2;
+              histoneChannel=2;
+          else
+              warning('mCherry channel not found. Cannot generate the fake nuclear image');
+          end
+      end
   elseif strcmpi(ExperimentType,'2spot2color')       %2 spots, 2 colors
       load('ReferenceHist.mat')
       fiducialChannel=0;
