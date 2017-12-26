@@ -202,7 +202,6 @@ else
     end
 end
 
-
 %See how  many frames we have and adjust the index size of the files to
 %load accordingly
 if length(FrameInfo)<1E3
@@ -336,15 +335,15 @@ if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
     for i=1:length(FrameInfo)
         if i<nc9
             FrameInfo(i).nc=8;
-        elseif (i>=nc9)&(i<nc10)
+        elseif (i>=nc9)&&(i<nc10)
             FrameInfo(i).nc=9;
-        elseif (i>=nc10)&(i<nc11)
+        elseif (i>=nc10)&&(i<nc11)
             FrameInfo(i).nc=10;
-        elseif (i>=nc11)&(i<=nc12)
+        elseif (i>=nc11)&&(i<=nc12)
             FrameInfo(i).nc=11;
-        elseif (i>=nc12)&(i<=nc13)
+        elseif (i>=nc12)&&(i<=nc13)
             FrameInfo(i).nc=12;
-        elseif (i>=nc13)&(i<=nc14)
+        elseif (i>=nc13)&&(i<=nc14)
             FrameInfo(i).nc=13;
         elseif i>=nc14
             FrameInfo(i).nc=14;
@@ -365,15 +364,15 @@ else
     for i=1:length(FrameInfo)
         if i<nc9
             FrameInfo(i).nc=8;
-        elseif (i>=nc9)&(i<nc10)
+        elseif (i>=nc9)&&(i<nc10)
             FrameInfo(i).nc=9;
-        elseif (i>=nc10)&(i<nc11)
+        elseif (i>=nc10)&&(i<nc11)
             FrameInfo(i).nc=10;
-        elseif (i>=nc11)&(i<=nc12)
+        elseif (i>=nc11)&&(i<=nc12)
             FrameInfo(i).nc=11;
-        elseif (i>=nc12)&(i<=nc13)
+        elseif (i>=nc12)&&(i<=nc13)
             FrameInfo(i).nc=12;
-        elseif (i>=nc13)&(i<=nc14)
+        elseif (i>=nc13)&&(i<=nc14)
             FrameInfo(i).nc=13;
         elseif i>=nc14
             FrameInfo(i).nc=14;
@@ -448,6 +447,7 @@ DisplayRange=[];
 ZoomMode=0;
 GlobalZoomMode=0;
 ZoomRange=50;
+nameSuffix=''
 
 %Set up the default contrast settings for the MCP channel depending on the
 %microscope that was used used
@@ -526,7 +526,16 @@ SkipWaitForButtonPress=[];
 
 while (cc~='x')
     
-    nameSuffix=['_ch',iIndex(CurrentChannel,2)];
+    if NChannels==1
+        if contains(Channel1{1}, 'MCP') || contains(Channel1{1}, 'PCP')
+            nameSuffix=['_ch',iIndex(1,2)];
+        elseif contains(Channel2{1}, 'MCP') || contains(Channel2{1}, 'PCP')
+            nameSuffix=['_ch',iIndex(2,2)];
+        end
+    else
+        error('This script currently doesn''t support 2 spot 2 color. Talk to Armando or Hernan to make this happen. No duct tape please.'); %AR 12/23/17
+    end
+    
     EllipseHandle=[];
     EllipseHandleYellow=[];
     EllipseHandleBlue=[];
@@ -599,7 +608,7 @@ while (cc~='x')
         ManualZFlag=0;
     end
         
-    if (NChannels==1)&&(~strcmp(lower(ExperimentType),'inputoutput'))
+    if NChannels==1
             if strcmp(projectionMode,'None (Default)')
                 Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                     FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
