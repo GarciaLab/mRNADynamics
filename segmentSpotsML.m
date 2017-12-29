@@ -91,7 +91,8 @@ end
 %%
 tic;
 
-parpool(6);
+maxWorkers = 6;
+parpool(maxWorkers); %6 is the number of cores the Garcia lab server can reasonably handle per user.
 
 [~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
     readMovieDatabase(Prefix);
@@ -214,7 +215,7 @@ for q = 1:nCh
         if ~just_tifs
             mij.run('Trainable Weka Segmentation 3D', ['open=',rawStackName]);
             pause(10);
-            if q==1 | strcmp(lower(ExperimentType),'inputoutput')
+            if q==1 || strcmpi(ExperimentType,'inputoutput')
                 trainableSegmentation.Weka_Segmentation.loadClassifier([classifierFolder, classifierPathCh1]);
             elseif q==2
                 trainableSegmentation.Weka_Segmentation.loadClassifier([classifierFolder, classifierPathCh2]);
@@ -247,12 +248,12 @@ end
 else
     for q=1:nCh
         % Inputoutput datatype can have channel2 as spot channel
-        if strcmp(lower(ExperimentType),'inputoutput')
-            if (~isempty(strfind(lower(Channel2),'mcp')))&...
-                    ~isempty(strfind(lower(Channel2),'pcp'))
+        if strcmpi(ExperimentType,'inputoutput')
+            if  contains(Channel2,'mcp', 'IgnoreCase', true) &&...
+                    contains(Channel2,'pcp','IgnoreCase',true)
                 coatChannel=2;
-            elseif (~isempty(strfind(lower(Channel1),'mcp')))&...
-                    ~isempty(strfind(lower(Channel1),'pcp'))
+            elseif  contains(Channel1,'mcp', 'IgnoreCase', true) &&...
+                    contains(Channel1,'pcp','IgnoreCase',true)
                 coatChannel=1;
             else
                 error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
@@ -509,7 +510,7 @@ else
         neighborhood = 3000 / pixelSize;
         if TrackSpots
             Particles = track_Spots(Particles, neighborhood);
-            save([DropboxFolder,filesep,Prefix,filesep,'Particles_SS.mat'], 'Particles');
+            save([DropboxFolder,filesep,Prefix,filesep,'Particles_SS.mat'], 'Particles', '-v7.3');
         end
         
         %If we only have one channel, then convert Spots{q} to a
@@ -520,15 +521,15 @@ else
 
 
         mkdir([DropboxFolder,filesep,Prefix]);
-        save([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots');    
+        save([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots', '-v7.3');    
     end
 
     t = toc;
-    display(['Elapsed time: ',num2str(t/60),' min'])
+   disp ['Elapsed time: ',num2str(t/60),' min']
     if ~just_tifs
-        logpath = [DropboxFolder,filesep,Prefix,filesep,'log.mat'];
-        if exist(logpath)
-            load(logpath);
+        logFile = [DropboxFolder,filesep,Prefix,filesep,'log.mat', '-v7.3'];
+        if exist(logFile, 'file')
+            load(logFile);
         else
             log = struct();
         end
@@ -569,7 +570,7 @@ else
         else     
             log(end).Classifier = classifierPathCh1;     
         end
-        save(logpath, 'log');
+        save(logFile, 'log');
     end
     try
         poolobj = gcp('nocreate');

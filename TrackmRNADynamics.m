@@ -1553,4 +1553,4 @@ end
 mkdir([OutputFolder,filesep]);
 
 save([OutputFolder,filesep,'Particles.mat'],'Particles','SpotFilter',...
-    'Threshold1','Threshold2');
+    'Threshold1','Threshold2', '-v7.3');
