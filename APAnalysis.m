@@ -202,7 +202,7 @@ function APAnalysis(dataset, varargin)
     title(['numer of actively transcring nuclei, nuclear cycle ',num2str(nc+11)]);
     xlabel('fraction embryo length');
     ylabel('number on');
-    standardizeFigure(gca, legend('show'), 'scatter', s, 'red');    
+    standardizeFigure(gca, legend('show'), 'red');    
   
 %%
     analyzeContiguity(d);
@@ -233,19 +233,19 @@ function plotWindowTimings(movie)
     title('on times')
     xlabel('on time (frames)')
     ylabel('counts')
-    standardizeFigure(gca, [], 'bar', h, 'red')
+    standardizeFigure(gca, [], 'red')
     subplot(1, 3, 2)
     h = histogram(offTimes);
     title('off times')
     xlabel('off time (frames)')
     ylabel('counts')
-    standardizeFigure(gca, [], 'bar', h, 'red')
+    standardizeFigure(gca, [], 'red')
     subplot(1, 3, 3)
     h = histogram(duration);
     title('duration')
     xlabel('duration of transcription (frames)')
     ylabel('counts')
-    standardizeFigure(gca, [], 'bar', h, 'red')
+    standardizeFigure(gca, [], 'red')
 
 
 end
@@ -290,25 +290,25 @@ function analyzeContiguity(movie)
     title({'contiguity of traces relative to';' trace length weighted by'; 'length of gaps'});
     xlabel('contiguity metric')
     ylabel('counts')
-    standardizeFigure(gca, [], 'bar', h, 'red')
+    standardizeFigure(gca, [], 'red')
     subplot(2, 2, 2)
     h = histogram(contiguityLong);
     title({'contiguity of traces > 1 frame';'relative to trace length';'weighted by lengths of gaps'});
     xlabel('contiguity metric')
     ylabel('counts')
-    standardizeFigure(gca, [], 'bar', h, 'red')
+    standardizeFigure(gca, [], 'red')
     subplot(2, 2, 3)
     h = histogram(contiguity2);
     title({'contiguity of traces';'relative to trace length'});
     xlabel('contiguity metric')
     ylabel('counts')
-    standardizeFigure(gca, [], 'bar', h, 'red')
+    standardizeFigure(gca, [], 'red')
     subplot(2, 2, 4)
     h = histogram(contiguity2Long);
     title({'contiguity of traces > 1 frame';' relative to trace length'});
     xlabel('contiguity metric')
     ylabel('counts')
-    standardizeFigure(gca, [], 'bar', h, 'red')
+    standardizeFigure(gca, [], 'red')
     
 end
 

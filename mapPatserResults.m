@@ -95,7 +95,7 @@ function mapPatserResults(path)
     ylabel('scores')
     backslashes = strfind(path,'\');
     title(path(backslashes(length(backslashes))+1:length(path)-4),'Interpreter','none')
-    standardizeFigure(ax, [], 'bar', b, 'red');
+    standardizeFigure(ax, [], 'red');
 
     
     figure(2)%,'units','normalized','outerposition',[0 0 1 1]);
