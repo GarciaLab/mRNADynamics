@@ -14,6 +14,9 @@ function CompileNuclearProtein(varargin)
 % Note. The main change is in the 'APbin filter' and 'binning and
 % averaging' part of the code.
 
+% Default values for Options
+ROI=0; % No ROI, as a default
+
 %This function will add fluorescence information to each schnitz.
 
 close all
@@ -40,6 +43,8 @@ else
                 ROI1=varargin{i+1};
                 ROI2=varargin{i+2};
             end
+        else
+            ROI = 0;
         end
     end
 end
