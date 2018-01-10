@@ -201,7 +201,7 @@ if justDoG
         %Initialize Difference of Gaussian filter parameters. filterSize >> sigma2
         %> sigma1
         sigma1 = pixelSize / pixelSize; %width of narrower Gaussian
-        sigma2 = round(42000 / pixelSize); % width of wider Gaussian
+        sigma2 = round(42000 / pixelSize); % width of wider Gaussian. AR 1/10/18: what is this number.
         sigmas = {sigma1,sigma2};
         filterSize = round(2000/pixelSize); %2um was empirically determined to be optimal.
     end   
