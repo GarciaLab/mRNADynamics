@@ -118,6 +118,18 @@ if strcmpi(ExperimentType, '2spot2color')
     nCh = 2;
 end
 
+if strcmpi(ExperimentType,'inputoutput')
+    if  contains(Channel2,'mcp', 'IgnoreCase', true) ||...
+            contains(Channel2,'pcp','IgnoreCase',true)
+        coatChannel=2;
+    elseif  contains(Channel1,'mcp', 'IgnoreCase', true) ||...
+            contains(Channel1,'pcp','IgnoreCase',true)
+        coatChannel=1;
+    else
+        error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
+    end
+end
+            
 %Load and apply flat-field correction
 doFF = 1;
 try
@@ -184,18 +196,8 @@ else
 end
 %Make requisite TIF stacks for classification
 for q = 1:nCh
-    % Inputoutput datatype can have channel2 as spot channel
-    if strcmp(lower(ExperimentType),'inputoutput')
-        if (~isempty(strfind(lower(Channel2),'mcp')))&...
-                ~isempty(strfind(lower(Channel2),'pcp'))
-            coatChannel=2;
-        elseif (~isempty(strfind(lower(Channel1),'mcp')))&...
-                ~isempty(strfind(lower(Channel1),'pcp'))
-            coatChannel=1;
-        else
-            error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
-        end
-        
+
+    if strcmpi(ExperimentType,'inputoutput')               
         nameSuffix= ['_ch',iIndex(coatChannel,2)];
     else
         nameSuffix= ['_ch',iIndex(q,2)];
@@ -251,18 +253,8 @@ end
 %Segment transcriptional loci
 else
     for q=1:nCh
-        % Inputoutput datatype can have channel2 as spot channel
-        if strcmpi(ExperimentType,'inputoutput')
-            if  contains(Channel2,'mcp', 'IgnoreCase', true) &&...
-                    contains(Channel2,'pcp','IgnoreCase',true)
-                coatChannel=2;
-            elseif  contains(Channel1,'mcp', 'IgnoreCase', true) &&...
-                    contains(Channel1,'pcp','IgnoreCase',true)
-                coatChannel=1;
-            else
-                error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
-            end
-            
+
+        if strcmpi(ExperimentType,'inputoutput')            
             nameSuffix= ['_ch',iIndex(coatChannel,2)];
         else
             nameSuffix = ['_ch',iIndex(q,2)];
