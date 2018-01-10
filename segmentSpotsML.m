@@ -95,6 +95,10 @@ maxWorkers = 6;
 try
     parpool(maxWorkers);  % 6 is the number of cores the Garcia lab server can reasonably handle per user at present.
 catch
+    try
+        parpool; %in case there aren't enough cores on the computer 
+    catch
+    end
     %parpool throws an error if there's a pool already running. 
 end
     

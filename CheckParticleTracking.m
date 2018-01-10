@@ -15,8 +15,8 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % speedmode : Flag to plot only ellipses for current particle & save time
 % sistermode : Decide whether you want to do sister chromatid analysis
 % nc, NC : Only look at particles that show up in nc13 
-    % Currently this only starts at nc13...not restrict you to nc13 Added by Emma
-    % Also, this option shows you the max projection. 
+%    % Currently this only starts at nc13...not restrict you to nc13 Added by Emma
+%    % Also, this option shows you the max projection. 
 %
 % New commands added by Armando. Need to be integrated in the manual below.
 % 1. Zoom anywhere button ' + '
@@ -46,9 +46,9 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 %  and this particle is disconnected from the current nucleus. If this is
 %  done on a particle with only one frame then
 %  it disconnects it from its nucleus.
-
+%
 % Disconnect backwards??
-
+%
 % q Cycle between approved status: green - approved; yellow - approved but
 %  with conditions (drift of nucleus, for example)
 % w Disapprove a trace

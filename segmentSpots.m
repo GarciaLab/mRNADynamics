@@ -80,7 +80,7 @@ for i=1:length(varargin)
     elseif strcmp(varargin{i},'customFilter')
         customFilter = 1;
         try
-            filterType = varargin{i+1}
+            filterType = varargin{i+1};
         catch
             warning('Entered filter not recognized. Defaulting to DoG')
         end
@@ -115,8 +115,16 @@ end
 %%
 tic;
 
-parpool(6);
-
+maxWorkers = 6;
+try
+    parpool(maxWorkers);  % 6 is the number of cores the Garcia lab server can reasonably handle per user at present.
+catch
+    try
+        parpool; %in case there aren't enough cores on the computer 
+    catch
+    end
+    %parpool throws an error if there's a pool already running. 
+end
 
 [~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
     readMovieDatabase(Prefix);
