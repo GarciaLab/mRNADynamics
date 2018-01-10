@@ -33,7 +33,7 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 %
 % Author (contact): Armando Reimer (areimer@berkeley.edu)
 % Created: 01/01/2016
-% Last Updated: 12/31/2016
+% Last Updated: 12/31/2017
 %
 % Documented by: Armando Reimer (areimer@berkeley.edu)
 
@@ -92,8 +92,12 @@ end
 tic;
 
 maxWorkers = 6;
-parpool(maxWorkers); %6 is the number of cores the Garcia lab server can reasonably handle per user.
-
+try
+    parpool(maxWorkers);  % 6 is the number of cores the Garcia lab server can reasonably handle per user at present.
+catch
+    %parpool throws an error if there's a pool already running. 
+end
+    
 [~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
     readMovieDatabase(Prefix);
 
