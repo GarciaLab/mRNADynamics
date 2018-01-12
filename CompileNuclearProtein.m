@@ -448,6 +448,7 @@ if strcmp(lower(ExperimentAxis),'ap')
     MaxAPIndex=size(APFilter,2);%max(find(sum(APFilter)));
     
     if ROI==1 
+        % Mean values for ROI region
         k=1;
         for i=MinAPIndex:MaxAPIndex
             [MeanVectorAPTemp_ROI,SDVectorAPTemp_ROI,NParticlesAPTemp_ROI]=AverageTracesNuclei(FrameInfo,...
@@ -457,9 +458,6 @@ if strcmp(lower(ExperimentAxis),'ap')
             NParticlesAPCell_ROI{k}=NParticlesAPTemp_ROI';
             k=k+1;
         end
-    %     MeanVectorAP=cell2mat(MeanVectorAPCell);
-    %     SDVectorAP=cell2mat(SDVectorAPCell);
-    %     NParticlesAP=cell2mat(NParticlesAPCell);
 
         %Turn the information into useful structures
         if NChannels>1
@@ -489,7 +487,7 @@ if strcmp(lower(ExperimentAxis),'ap')
         end
 
 %       Get the corresponding mean information 
-%      (nonROI, CompiledParticles_nonROI -> save all in MeanVectorAP as we normally do)
+%      (nonROI, CompiledParticles_nonROI)
         k=1;
         for i=MinAPIndex:MaxAPIndex
             [MeanVectorAPTemp_nonROI,SDVectorAPTemp_nonROI,NParticlesAPTemp_nonROI]=AverageTracesNuclei(FrameInfo,...
@@ -499,9 +497,6 @@ if strcmp(lower(ExperimentAxis),'ap')
             NParticlesAPCell_nonROI{k}=NParticlesAPTemp_nonROI';
             k=k+1;
         end
-    %     MeanVectorAP=cell2mat(MeanVectorAPCell);
-    %     SDVectorAP=cell2mat(SDVectorAPCell);
-    %     NParticlesAP=cell2mat(NParticlesAPCell);
 
         %Turn the information into useful structures
         if NChannels>1
@@ -514,9 +509,9 @@ if strcmp(lower(ExperimentAxis),'ap')
             end
 
             for j=1:NChannels
-                MeanVectorAP{j}=cell2mat({MeanVectorAPCell2_nonROI{j,:}}')';
-                SDVectorAP{j}=cell2mat({SDVectorAPCell2_nonROI{j,:}}')';;
-                NParticlesAP{j}=cell2mat({NParticlesAPCell2_nonROI{j,:}}')';;
+                MeanVectorAP_nonROI{j}=cell2mat({MeanVectorAPCell2_nonROI{j,:}}')';
+                SDVectorAP_nonROI{j}=cell2mat({SDVectorAPCell2_nonROI{j,:}}')';;
+                NParticlesAP_nonROI{j}=cell2mat({NParticlesAPCell2_nonROI{j,:}}')';;
             end
         else
             for i=MinAPIndex:MaxAPIndex
@@ -525,9 +520,47 @@ if strcmp(lower(ExperimentAxis),'ap')
                 NParticlesAPCell2_nonROI{j,i}=NParticlesAPCell_nonROI{i};
             end
 
-                MeanVectorAP=cell2mat(MeanVectorAPCell2_nonROI);
-                SDVectorAP=cell2mat(SDVectorAPCell2_nonROI);
-                NParticlesAP=cell2mat(NParticlesAPCell2_nonROI);
+                MeanVectorAP_nonROI=cell2mat(MeanVectorAPCell2_nonROI);
+                SDVectorAP_nonROI=cell2mat(SDVectorAPCell2_nonROI);
+                NParticlesAP_nonROI=cell2mat(NParticlesAPCell2_nonROI);
+        end
+        
+        %Get the corresponding mean information (for all nuclei, both ROI and non-ROI)
+        k=1;
+        for i=MinAPIndex:MaxAPIndex
+            [MeanVectorAPTemp,SDVectorAPTemp,NParticlesAPTemp]=AverageTracesNuclei(FrameInfo,...
+                CompiledNuclei(APFilter(:,i)),NChannels);
+            MeanVectorAPCell{k}=MeanVectorAPTemp';
+            SDVectorAPCell{k}=SDVectorAPTemp';
+            NParticlesAPCell{k}=NParticlesAPTemp';
+            k=k+1;
+        end
+
+        %Turn the information into useful structures
+        if NChannels>1
+            for j=1:NChannels
+                for i=MinAPIndex:MaxAPIndex
+                    MeanVectorAPCell2{j,i}=MeanVectorAPCell{i}{j};
+                    SDVectorAPCell2{j,i}=SDVectorAPCell{i}{j};
+                    NParticlesAPCell2{j,i}=NParticlesAPCell{i}{j};
+                end
+            end
+
+            for j=1:NChannels
+                MeanVectorAP{j}=cell2mat({MeanVectorAPCell2{j,:}}')';
+                SDVectorAP{j}=cell2mat({SDVectorAPCell2{j,:}}')';;
+                NParticlesAP{j}=cell2mat({NParticlesAPCell2{j,:}}')';;
+            end
+        else
+            for i=MinAPIndex:MaxAPIndex
+                MeanVectorAPCell2{j,i}=MeanVectorAPCell{i};
+                SDVectorAPCell2{j,i}=SDVectorAPCell{i};
+                NParticlesAPCell2{j,i}=NParticlesAPCell{i};
+            end
+
+            MeanVectorAP=cell2mat(MeanVectorAPCell2);
+            SDVectorAP=cell2mat(SDVectorAPCell2);
+            NParticlesAP=cell2mat(NParticlesAPCell2);
         end
 
     else % This is the case which we don't use ROI option
@@ -535,16 +568,13 @@ if strcmp(lower(ExperimentAxis),'ap')
         %Get the corresponding mean information
         k=1;
         for i=MinAPIndex:MaxAPIndex
-            [MeanVectorAPTemp_ROI,SDVectorAPTemp_ROI,NParticlesAPTemp_ROI]=AverageTracesNuclei(FrameInfo,...
+            [MeanVectorAPTemp,SDVectorAPTemp,NParticlesAPTemp]=AverageTracesNuclei(FrameInfo,...
                 CompiledNuclei(APFilter(:,i)),NChannels);
-            MeanVectorAPCell{k}=MeanVectorAPTemp_ROI';
-            SDVectorAPCell{k}=SDVectorAPTemp_ROI';
-            NParticlesAPCell{k}=NParticlesAPTemp_ROI';
+            MeanVectorAPCell{k}=MeanVectorAPTemp';
+            SDVectorAPCell{k}=SDVectorAPTemp';
+            NParticlesAPCell{k}=NParticlesAPTemp';
             k=k+1;
         end
-    %     MeanVectorAP=cell2mat(MeanVectorAPCell);
-    %     SDVectorAP=cell2mat(SDVectorAPCell);
-    %     NParticlesAP=cell2mat(NParticlesAPCell);
 
         %Turn the information into useful structures
         if NChannels>1
@@ -558,27 +588,20 @@ if strcmp(lower(ExperimentAxis),'ap')
 
             for j=1:NChannels
                 MeanVectorAP{j}=cell2mat({MeanVectorAPCell2{j,:}}')';
-                SDVectorAP{j}=cell2mat({SDVectorAPCell2_nonROI{j,:}}')';;
-                NParticlesAP{j}=cell2mat({NParticlesAPCell2_nonROI{j,:}}')';;
+                SDVectorAP{j}=cell2mat({SDVectorAPCell2{j,:}}')';;
+                NParticlesAP{j}=cell2mat({NParticlesAPCell2{j,:}}')';;
             end
         else
             for i=MinAPIndex:MaxAPIndex
                 MeanVectorAPCell2{j,i}=MeanVectorAPCell{i};
-                SDVectorAPCell2_nonROI{j,i}=SDVectorAPCell{i};
-                NParticlesAPCell2_nonROI{j,i}=NParticlesAPCell{i};
+                SDVectorAPCell2{j,i}=SDVectorAPCell{i};
+                NParticlesAPCell2{j,i}=NParticlesAPCell{i};
             end
 
             MeanVectorAP=cell2mat(MeanVectorAPCell2);
-            SDVectorAP=cell2mat(SDVectorAPCell2_nonROI);
-            NParticlesAP=cell2mat(NParticlesAPCell2_nonROI);
+            SDVectorAP=cell2mat(SDVectorAPCell2);
+            NParticlesAP=cell2mat(NParticlesAPCell2);
         end
-
-    %     if NChannels==1
-    %         MeanVectorAP=MeanVectorAP{1};
-    %         SDVectorAP=SDVectorAP{1};
-    %         NParticlesAP=NParticlesAP{1};
-    %     end
-
     end
 end
     
@@ -620,6 +643,7 @@ if strcmp(lower(ExperimentAxis),'ap')
             'MeanCyto','SDCyto','MedianCyto','MaxCyto',...
             'MeanCytoAPProfile','SDCytoAPProfile','SECytoAPProfile',...
             'MeanVectorAP_ROI','SDVectorAP_ROI','NParticlesAP_ROI',...
+            'MeanVectorAP_nonROI','SDVectorAP_nonROI','NParticlesAP_nonROI',...
             'CompiledNuclei_ROI','CompiledNuclei_nonROI')%,...
             %'IntegrationArea')
     else 
