@@ -18,12 +18,6 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 %    % Currently this only starts at nc13...not restrict you to nc13 Added by Emma
 %    % Also, this option shows you the max projection. 
 %
-% New commands added by Armando. Need to be integrated in the manual below.
-% 1. Zoom anywhere button ' + '
-% 2. New particles can be created without associated traces if in zoom
-% anywhere mode from 1
-%
-%
 % CONTROLS
 % Frame specific:
 % . , Move a frame forward/backward
@@ -60,8 +54,10 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 %  connect it to the current particle. This is a combination of "u" and
 %  "c".
 % [ Add a spot that was not recognized originally by segmentSpots to the
-%  current particle. Note that the command forces ZoomMode. To toggle, use
-%  'o'.
+% 	current particle. Note that the command forces ZoomMode. To toggle, use
+%   'o' or '+' depending on whether you're adding to an existing trace or creating a new
+%    trace, respectively.
+% 
 % 
 % 
 % Nuclear tracking specific:
@@ -90,6 +86,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % r Reorder the particles according to initial frame
 % f Redo tracking. It only gets done on the non-approved particles.
 % o Zoom in/out around the particle's first frame.
+% + Zoom anywhere button. Click with the mouse after hitting this. 
 % -/= Change the zoom factor when in zoom mode.
 % 0 Enter debug mode to fix things manually
 % ~ Switch figure 1 from a single plane image to a z or time projection. 
@@ -101,8 +98,8 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % schnitzcells: A modified schnitzcells
 %
 % Author (contact): Hernan Garcia (hgarcia@berkeley.edu)
-% Created: Unknown
-% Last Updated: 2017
+% Created: 
+% Last Updated: 1/13/2018
 
 close all
 
@@ -323,7 +320,7 @@ else
 end
 
 
-if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
+if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file')
     %strcmpi(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|strcmpi(XLSRaw(XLSEntry,Channel1Column),'His-RFP')|strcmpi(XLSRaw(XLSEntry,Channel1Column),'Hb-GFP')|strcmpi(XLSRaw(XLSEntry,Channel2Column),'Hb-GFP')
     nc9=XLSRaw{XLSEntry,nc9Column};
     nc10=XLSRaw{XLSEntry,nc10Column};
@@ -674,11 +671,13 @@ while (cc~='x')
     end
 
     figure(Overlay)
-    imshow(Image,[minContrast maxContrast],'Border','Tight')
+%     imshow(Image,[minContrast maxContrast],'Border','Tight') %AR
+%     1/13/2018 this contrast setting does not work for dim particles.
+    imshow(Image,[],'Border','Tight')
     hold on
     %Show all particles in regular mode
     if ~SpeedMode
-        plot(xNonFlagged,yNonFlagged,'or')
+        plot(xNonFlagged,yNonFlagged,'ow')
         plot(xApproved,yApproved,'ob')
         plot(xDisapproved,yDisapproved,'^r')
         %plot(x, y, 'sw')
@@ -875,11 +874,11 @@ while (cc~='x')
         end
 
         if isempty(DisplayRange)
-            HisOverlayImage=cat(3,mat2gray(ImageHis)*2,mat2gray(Image),zeros(size(Image)));
+            HisOverlayImage=cat(3,mat2gray(ImageHis),mat2gray(Image),zeros(size(Image)));
         else
-            HisOverlayImage=cat(3,mat2gray(ImageHis,double(DisplayRange))*2,mat2gray(Image),zeros(size(Image)));
+            HisOverlayImage=cat(3,mat2gray(ImageHis,double(DisplayRange)),mat2gray(Image),zeros(size(Image)));
         end
-        imshow(HisOverlayImage,'Border','Tight')
+        imshow(HisOverlayImage,[],'Border','Tight')
 
        
         hold on
@@ -1100,9 +1099,9 @@ while (cc~='x')
     figure(TraceFig);
     set(gcf,'units', 'normalized', 'position',[0.35, 0.55, .2, .33]);
     figure(SnippetFig);
-    set(gcf,'units', 'normalized', 'position',[0.35, 0.15, .2/2, .33/2]);
+    set(gcf,'units', 'normalized', 'position',[0.355, 0.15, .2/2, .33/2]);
     figure(ZProfileFig);
-    set(gcf,'units', 'normalized', 'position',[0.46, 0.15, .2/2, .33/2]);
+    set(gcf,'units', 'normalized', 'position',[0.47, 0.15, .2/2, .33/2]);
     
     figure(Overlay)
     if isempty(SkipWaitForButtonPress)
