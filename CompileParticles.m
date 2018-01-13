@@ -101,7 +101,7 @@ else
             end
         elseif strcmp(varargin{i},'ROI')
             ROI = 1;
-            if ~isnumeric(varargin{i+1})|~isnumeric(varargin{i+2})
+            if ~isnumeric(varargin{i+1})||~isnumeric(varargin{i+2})
                 error('Wrong input parameters. After ''ROI'' you should input the y-threshold of ROI ')
             else
                 ROI1=varargin{i+1};
@@ -150,7 +150,7 @@ APResolution = XLSRaw{PrefixRow,APResolutionColumn};
 load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
 load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'])
 %Check that FrameInfo exists
-if exist([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
+if exist([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'file')
     load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
 else
     warning('No FrameInfo.mat found. Trying to continue')
@@ -165,7 +165,8 @@ else
     Dz=dir([PreProcPath,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'*001*.tif']);
     NumberSlices=length(Dz)-1;
     
-    for i=1:length(FrameInfo)
+    numFrames = length(FrameInfo);
+    for i=1:numFrames
         FrameInfo(i).NumberSlices=NumberSlices;
     end
     
@@ -175,17 +176,13 @@ end
 
 %See how  many frames we have and adjust the index size of the files to
 %load accordingly
-if length(FrameInfo)<1E3
+if numFrames<1E3
     NDigits=3;
-elseif length(FrameInfo)<1E4
+elseif numFrames<1E4
     NDigits=4;
 else
-    error('No more than 10,000 frames supported. Change this in the code')
+    error('No more than 10,000 frames currently supported.')
 end
-
-
-
-
 
 %Create the particle array. This is done so that we can support multiple
 %channels. Also figure out the number of channels
@@ -210,7 +207,7 @@ end
 
 
 %See if we had any lineage/nuclear information
-if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
+if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file')
     load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
     HistoneChannel=1;
 else
@@ -369,22 +366,19 @@ NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
 %Add the APPosition to Particles if they don't exist yet. Do this only if
 %we took AP data. Otherwise just add XY.
 
-if strcmp(ExperimentAxis,'AP')
+if strcmpi(ExperimentAxis,'AP')
     if (~isfield(Particles{1},'APpos')) || ForceAP
         if HistoneChannel
             AddParticlePosition(Prefix);
         else
             AddParticlePosition(Prefix,'SkipAlignment')
         end
-
     else
-        display('Using saved AP information')
+        disp('Using saved AP information')
     end
-elseif strcmp(lower(ExperimentAxis),'dv')& exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+elseif strcmpi(ExperimentAxis,'dv') && exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'file')
     AddParticlePosition(Prefix);
-elseif strcmpi(ExperimentAxis,'dv')
-    AddParticlePosition(Prefix,'NoAP');
-elseif strcmp(ExperimentAxis,'NoAP')
+elseif strcmpi(ExperimentAxis,'dv') || strcmpi(ExperimentAxis,'NoAP')
     AddParticlePosition(Prefix,'NoAP');
 else
     error('Experiment axis not recognized in MovieDatabase.XLSX')
@@ -409,7 +403,7 @@ end
 
 %Folders for reports
 warning('off', 'MATLAB:MKDIR:DirectoryExists');
-if strcmp(ExperimentAxis,'AP')
+if strcmpi(ExperimentAxis,'AP')
     mkdir([DropboxFolder,filesep,Prefix,filesep,'APMovie'])
 end
 mkdir([DropboxFolder,filesep,Prefix,filesep,'ParticleTraces'])
@@ -470,7 +464,7 @@ end
 
 
 %First, figure out the AP position of each of the nuclei.
-if strcmp(ExperimentAxis, 'AP')
+if strcmpi(ExperimentAxis, 'AP')
     %Load the AP detection information
     load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
     %Angle between the x-axis and the AP-axis
@@ -482,7 +476,7 @@ if strcmp(ExperimentAxis, 'AP')
     APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
 end
 
-if HistoneChannel&&strcmp(ExperimentAxis,'AP')
+if HistoneChannel&&strcmpi(ExperimentAxis,'AP')
     %The information in Ellipses is
     %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
     for i=1:length(Ellipses)
@@ -504,12 +498,12 @@ end
 %Get the actual time corresponding to each frame
 if isfield(FrameInfo,'FileMode')
     if strcmp(FrameInfo(end).FileMode,'TIF')
-        for j=1:length(FrameInfo)
+        for j=1:numFrames
             ElapsedTime(j)=etime(datevec(FrameInfo(j).TimeString),datevec(FrameInfo(1).TimeString));
         end
     elseif strcmp(FrameInfo(end).FileMode,'LSM')||strcmp(FrameInfo(end).FileMode,'LSMExport')||...
             strcmp(FrameInfo(end).FileMode,'LIFExport')||strcmp(FrameInfo(end).FileMode,'LAT')
-        for j=1:length(FrameInfo)
+        for j=1:numFrames
             ElapsedTime(j)=FrameInfo(j).Time-FrameInfo(1).Time;
         end
     else
@@ -517,7 +511,7 @@ if isfield(FrameInfo,'FileMode')
     end
 else
     warning('No FileMode information found. Assuming that this is TIF from the 2-photon.')
-    for j=1:length(FrameInfo)
+    for j=1:numFrames
         ElapsedTime(j)=etime(datevec(FrameInfo(j).TimeString),datevec(FrameInfo(1).TimeString));
     end
 end
@@ -530,7 +524,7 @@ IntArea=500;%190        %Area of integration. AR 3/15/16: This should be recalcu
 MinAPArea=12500;%700;    %Minimum area in pixels in order to consider an AP bin as valid. AR 3/15/16: This should be recalculated in microns
 
 
-if strcmp(ExperimentAxis,'AP')
+if strcmpi(ExperimentAxis,'AP')
        
     APbinID=0:APResolution:1;
     %Create an image for the different AP bins
@@ -585,7 +579,7 @@ for ChN=1:NChannels
             for NCh=1:NChannels
                 if ~isfield(Particles{NCh},'FrameApproved')
                     for i=1:length(Particles{NCh})
-                        Particles{NCh}(i).FrameApproved=logical(ones(size(Particles{NCh}(i).Frame)));
+                        Particles{NCh}(i).FrameApproved=true(size(Particles{NCh}(i).Frame));
                     end
                 end
             end
@@ -623,7 +617,7 @@ for ChN=1:NChannels
 
             %See if this particle is in one of the approved AP bins
             try
-                if strcmp(ExperimentAxis,'AP')
+                if strcmpi(ExperimentAxis,'AP')
                     CurrentAPbin=max(find(APbinID<mean(Particles{ChN}(i).APpos(FrameFilter))));
                     if isnan(APbinArea(CurrentAPbin))
                         AnalyzeThisParticle=0;
@@ -648,13 +642,13 @@ for ChN=1:NChannels
                 CompiledParticles{ChN}(k).yPos=Particles{ChN}(i).yPos(FrameFilter);
                 CompiledParticles{ChN}(k).FrameApproved = Particles{ChN}(i).FrameApproved;
 
-                if strcmp(ExperimentAxis,'AP')
+                if strcmpi(ExperimentAxis,'AP')
                     CompiledParticles{ChN}(k).APpos=Particles{ChN}(i).APpos(FrameFilter);
 
                     %Determine the particles average and median AP position
                     CompiledParticles{ChN}(k).MeanAP=mean(Particles{ChN}(i).APpos(FrameFilter));
                     CompiledParticles{ChN}(k).MedianAP=median(Particles{ChN}(i).APpos(FrameFilter));
-                elseif strcmp(ExperimentAxis,'DV')&isfield(Particles,'APpos')
+                elseif strcmpi(ExperimentAxis,'DV')&isfield(Particles,'APpos')
                     %AP information:
                     CompiledParticles{ChN}(k).APpos=Particles{ChN}(i).APpos(FrameFilter);
                     CompiledParticles{ChN}(k).MeanAP=mean(Particles{ChN}(i).APpos(FrameFilter));
@@ -671,7 +665,7 @@ for ChN=1:NChannels
                 %found. If there is no nucleus (like when a particle survives
                 %past the nuclear division) we will still use the actual particle
                 %position.
-                if HistoneChannel&strcmp(ExperimentAxis,'AP')
+                if HistoneChannel&strcmpi(ExperimentAxis,'AP')
                     %Save the original particle position
                     CompiledParticles{ChN}(k).APposParticle=CompiledParticles{ChN}(k).APpos;                
 
@@ -798,8 +792,8 @@ for ChN=1:NChannels
                                 error(['No compiled particles found in channel ',num2str(ChN),'. Did you mean to run the code with ApproveAll?'])
                             end
 
-                            ncFilter=logical(zeros(length(CompiledParticles{ChN})...
-                                ,length(ncFilterID))); %AR 6/16/17: I think multi-channel data might require this to be a cell? Something for the future.
+                            ncFilter=false(length(CompiledParticles{ChN})...
+                                ,length(ncFilterID)); %AR 6/16/17: I think multi-channel data might require this to be a cell? Something for the future.
                             
                             for i=1:length(CompiledParticles{ChN})
                                 %Sometimes CompiledParticles{1}(i).nc is empty. This is because of some
@@ -982,7 +976,7 @@ for ChN=1:NChannels
 %                             warning('Issue with cbfreeze.m. Skipping it. The color bar will not reflect time appropriately. This is an issue of Matlab 2014b.')
 %                         end
 %%%%%%%%%%%%%%%%
-                        if strcmp(ExperimentAxis,'AP')
+                        if strcmpi(ExperimentAxis,'AP')
                             title(['Mean AP: ',num2str(CompiledParticles{ChN}(k).MeanAP)])
                         end
                         drawnow
@@ -1057,7 +1051,7 @@ close(h)
 % CompiledParticles_ROI and COmpiledParticles_nonROI
 % written by YJK on 10/24/2017
 for ChN=1:NChannels
-    if ROI==1 
+    if ROI
         % separate the CompileParticles into CompiledParticles_ROI and
         % CompiledParticles_nonROI using the Threshold (y position)
         t=1;
@@ -1116,8 +1110,8 @@ if ~isnan(nc9)||~isnan(nc10)||~isnan(nc11)||~isnan(nc12)||~isnan(nc13)||~isnan(n
         end
 
 
-        ncFilter=logical(zeros(length(CompiledParticles{ChN})...
-            ,length(ncFilterID))); %AR 6/16/17: I think multi-channel data might require this to be a cell? Something for the future.
+        ncFilter=false(length(CompiledParticles{ChN})...
+            ,length(ncFilterID)); %AR 6/16/17: I think multi-channel data might require this to be a cell? Something for the future.
         for i=1:length(CompiledParticles{ChN})
             %Sometimes CompiledParticles{1}(i).nc is empty. This is because of some
             %problem with FrameInfo! In that case we'll pull the information out of
@@ -1157,16 +1151,16 @@ if ~isnan(nc9)||~isnan(nc10)||~isnan(nc11)||~isnan(nc12)||~isnan(nc13)||~isnan(n
 
 
         %AP filters:
-        if strcmp(ExperimentAxis,'AP')
+        if strcmpi(ExperimentAxis,'AP')
             %Divide the AP axis into boxes of a certain AP size. We'll see which
                 %particle falls where.
 
 
             if ROI==1
                 %Define two APFilters for ROI and non-ROI respectively
-                APFilter_ROI{ChN}=logical(zeros(length(CompiledParticles_ROI{ChN}),length(APbinID)));
-                APFilter_nonROI{ChN}=logical(zeros(length(CompiledParticles_nonROI{ChN}),length(APbinID)));
-                APFilter{ChN}=logical(zeros(length(CompiledParticles{ChN}),length(APbinID)));
+                APFilter_ROI{ChN}=false(length(CompiledParticles_ROI{ChN}),length(APbinID));
+                APFilter_nonROI{ChN}=false(length(CompiledParticles_nonROI{ChN}),length(APbinID));
+                APFilter{ChN}=false(length(CompiledParticles{ChN}),length(APbinID));
                 
                 for i=1:length(CompiledParticles{ChN})
                     APFilter{ChN}(i,max(find(APbinID<=CompiledParticles{ChN}(i).MeanAP)))=1;
@@ -1205,14 +1199,14 @@ for ChN=1:NChannels
     %reports the mean AP position.
     [AllTracesVector{ChN},AllTracesAP{ChN}]=AllTraces(FrameInfo,CompiledParticles{ChN},'NoAP');
 
-    if strcmp(ExperimentAxis,'AP')
+    if strcmpi(ExperimentAxis,'AP')
         %Mean plot for different AP positions
 
         %Figure out the AP range to use
         MinAPIndex=1;%min(find(sum(APFilter)));
         MaxAPIndex=size(APFilter{ChN},2);%max(find(sum(APFilter)));
         
-        if ROI==1 
+        if ROI
             
             %Get the corresponding mean information (ROI, CompiledParticles_ROI)
             k=1;
@@ -1319,7 +1313,7 @@ end
 
 
 %% Instantaneous rate of change
-FrameWindow=5;
+FrameWindow=5; %AR 1/12/18 where did this number come from?
 
 for ChN=1:NChannels
     %Calculate the derivative as a function of time for each particle
@@ -1331,7 +1325,7 @@ for ChN=1:NChannels
     end
 
 
-    if strcmp(ExperimentAxis,'AP')
+    if strcmpi(ExperimentAxis,'AP')
         %Calculate the average slope over an AP window
         MeanSlopeVectorAP{ChN}=nan(size(MeanVectorAP{ChN}));
         SDSlopeVectorAP{ChN}=nan(size(MeanVectorAP{ChN}));
@@ -1430,7 +1424,7 @@ end
 
 % if NChannels==1
 % 
-%     if HistoneChannel&strcmp(ExperimentAxis,'AP')
+%     if HistoneChannel&strcmpi(ExperimentAxis,'AP')
 %         [MeanCyto,SDCyto,MedianCyto,MaxCyto]=GetCytoMCP(Prefix);
 %     else
 %         MeanCyto=[];
@@ -1438,8 +1432,8 @@ end
 %         MaxCyto=[];
 % 
 %         h=waitbar(0,'Calculating the median cyto intentisy');
-%         for i=1:length(FrameInfo)
-%             waitbar(i/length(FrameInfo),h)
+%         for i=1:numFrames
+%             waitbar(i/numFrames,h)
 %             for j=1:FrameInfo(1).NumberSlices
 %                 Image(:,:,j)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),'.tif']);
 %             end
@@ -1471,7 +1465,7 @@ if NChannels==1
 
     if ~SkipFluctuations
 
-        IntArea=109;
+        IntArea=109; %AR 1/12/18 where did this number come from?
 
 
         FilteredParticles=find(ncFilter(:,end)|ncFilter(:,end-1));
@@ -1521,16 +1515,16 @@ if NChannels==1
             end
         end
 
-
-        xRange=linspace(-4500,4500);
+        lim = 4500; %AR 1/12/18 why 4500?
+        xRange=linspace(-lim,lim); 
 
         figure(4)
         plot(OffsetFluct,DataRawFluct,'.k')
         xlabel('Offset fluctuation')
         ylabel('Fluctuations in raw data')
         axis square
-        xlim([-4500,4500])
-        ylim([-4500,4500])
+        xlim([-lim,lim])
+        ylim([-lim,lim])
         R = corrcoef(OffsetFluct,DataRawFluct);
         title(['Correlation: ',num2str(R(2,1))])
         saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'TracesFluctuations',filesep,'Fluct-OffsetVsRawData.tif'])
@@ -1540,8 +1534,8 @@ if NChannels==1
 %         xlabel('Offset fluctuation')
 %         ylabel('Fluctuations with instantaneous offset subtraction')
 %         axis square
-%         xlim([-4500,4500])
-%         ylim([-4500,4500])
+%         xlim([-lim,lim])
+%         ylim([-lim,lim])
 %         R = corrcoef(OffsetFluct,DataOldFluct)
 %         title(['Correlation: ',num2str(R(2,1))])
 %         saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'TracesFluctuations',filesep,'Fluct-OffsetVsInstData.tif'])
@@ -1553,8 +1547,8 @@ if NChannels==1
         xlabel('Offset fluctuation')
         ylabel('Fluctuations with spline offset subtraction')
         axis square
-        xlim([-4500,4500])
-        ylim([-4500,4500])
+        xlim([-lim,lim])
+        ylim([-lim,lim])
         R = corrcoef(OffsetFluct,DataSplineFluct);
         title(['Correlation: ',num2str(R(2,1))])
         saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'TracesFluctuations',filesep,'Fluct-OffsetVsSplineData.tif'])
@@ -1564,7 +1558,7 @@ if NChannels==1
 
     %Look at the offset of each particle. Do they all look the same? This is
     %only for AP for now
-    if strcmp(ExperimentAxis,'AP')
+    if strcmpi(ExperimentAxis,'AP')
         figure(7)
         subplot(1,2,1)
         MaxAP=0;
@@ -1618,7 +1612,7 @@ if NChannels==1
     %Average and SD over each time point. In order to do this we'll generate a
     %cell array with all the values for a given time point
 
-    OffsetCell=cell(length(FrameInfo),1);
+    OffsetCell=cell(numFrames,1);
 
 
     for i=1:length(CompiledParticles{1})
@@ -1639,7 +1633,7 @@ if NChannels==1
     NOffsetParticles=[NParticlesOffsetTrace{:}];
 
 
-    if strcmp(ExperimentAxis,'AP')
+    if strcmpi(ExperimentAxis,'AP')
         figure(8)
         IntArea=109;
         errorbar(1:length(MeanOffsetVector),MeanOffsetVector*IntArea,...
@@ -1842,7 +1836,7 @@ for ChN=1:NChannels
 
 
         %First frame and AP position
-        if strcmp(ExperimentAxis,'AP')
+        if strcmpi(ExperimentAxis,'AP')
             figure(13)
             clf
             hold on
@@ -1869,7 +1863,7 @@ end
 
 %% AP position of particle vs nucleus
 
-if HistoneChannel&&strcmp(ExperimentAxis,'AP')
+if HistoneChannel&&strcmpi(ExperimentAxis,'AP')
 
     for ChN=1:NChannels
         %How different are the AP positions of the nuclei to the particles as a
@@ -1922,7 +1916,7 @@ end
 %Create an image that is partitioned according to the AP bins. We will use
 %this to calculate the area per AP bin.
 
-if HistoneChannel&&strcmp(ExperimentAxis,'AP')
+if HistoneChannel&&strcmpi(ExperimentAxis,'AP')
 
     for ChN=1:NChannels
         %I'll use the Ellipses structure to count nuclei. This is because
@@ -1967,7 +1961,7 @@ if HistoneChannel&&strcmp(ExperimentAxis,'AP')
         end
 
 
-        EdgeWidth=10;
+        EdgeWidth=10; %AR 1/12/18 why 10?
         %For each frame find the number of ellipses that are outside of an area
         %delimited from the edge of the image.
         %The information in Ellipses is
@@ -2146,7 +2140,7 @@ if HistoneChannel&&strcmp(ExperimentAxis,'AP')
         try
             for i=1:length(Particles{ChN})
                 %See if the particle has either the flag 1 or 2
-                if (Particles{ChN}(i).Approved==1)|(Particles{ChN}(i).Approved==2)
+                if (Particles{ChN}(i).Approved==1)||(Particles{ChN}(i).Approved==2)
 
                     %Determine the nc so we can add to the right position of ParticleCountAP
                     if (FrameInfo(min(Particles{ChN}(i).Frame(Particles{ChN}(i).FrameApproved))).nc)>=12
@@ -2200,7 +2194,7 @@ if HistoneChannel&&strcmp(ExperimentAxis,'AP')
         ParticleCountProbAP{ChN}(:,1)=ParticleCountAP{ChN}(1,:)./mean(NEllipsesAP(nc12+5:nc13-5,:));
         ParticleCountProbAP{ChN}(:,2)=ParticleCountAP{ChN}(2,:)./mean(NEllipsesAP(nc13+5:nc14-5,:));
         ParticleCountProbAP{ChN}(:,3)=ParticleCountAP{ChN}(3,:)./...
-            mean(NEllipsesAP(max(1,nc14-5):length(FrameInfo)-5,:));
+            mean(NEllipsesAP(max(1,nc14-5):numFrames-5,:));
         % ES 2014-01-08: accounting for movies started fewer than 5 frames before
         % mitosis 13
 
@@ -2235,7 +2229,7 @@ if HistoneChannel&&strcmp(ExperimentAxis,'AP')
 
             %Figure out which frame we'll look at
             if nc==14
-                FrameToUse=length(FrameInfo)-FramesBack;
+                FrameToUse=numFrames-FramesBack;
             else
                 FrameToUse=eval(['nc',num2str(nc+1)])-FramesBack;
             end
@@ -2370,7 +2364,7 @@ end
 %a function of time. In order to make life easier I'll just export to a
 %folder. I can then load everything in ImageJ.
 
-if ~SkipMovie&&strcmp(ExperimentAxis,'AP')
+if ~SkipMovie&&strcmpi(ExperimentAxis,'AP')
     
     for ChN=1:NChannels
 
@@ -2379,7 +2373,7 @@ if ~SkipMovie&&strcmp(ExperimentAxis,'AP')
         MaxValue=max(max(MeanVectorAP{ChN}));
         NParticlesAPFilter=NParticlesAP{ChN}>=MinParticles;
 
-        for i=1:length(FrameInfo)
+        for i=1:numFrames
             PlotHandle=errorbar(APbinID(NParticlesAPFilter(i,:)),...
                 MeanVectorAP{ChN}(i,NParticlesAPFilter(i,:)),SDVectorAP{ChN}(i,NParticlesAPFilter(i,:)),'.-k');
             hold on
@@ -2451,10 +2445,10 @@ end
 % ROI option added (YJK on 10/27/2017) : 
 % When the data is acquired in ROI mode, I added the ROI option, 
 % two thresholds to be incorporated into CompileNuclearProtein
-if strcmp(lower(ExperimentType),'inputoutput') && strcmp(lower(ExperimentAxis),'ap')
+if strcmpi(ExperimentType,'inputoutput') && strcmpi(ExperimentAxis,'ap')
     if ~ROI
         CompileNuclearProtein(Prefix)
-    elseif ROI==1
+    else
         CompileNuclearProtein(Prefix,'ROI',ROI1,ROI2)
     end
 end
@@ -2462,7 +2456,7 @@ end
 
 
 %% Save everything
-if HistoneChannel&strcmp(ExperimentAxis,'AP')
+if HistoneChannel&&strcmpi(ExperimentAxis,'AP')
 
     %If we have only one channel get rid of all the cells
     if NChannels==1
@@ -2526,7 +2520,7 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
             'EllipsePos','EllipsesFilteredPos','FilteredParticlesPos',...
             'MeanVectorAllAP','SEVectorAllAP', 'Prefix', '-v7.3');
     end
-elseif HistoneChannel&strcmp(ExperimentAxis,'DV')
+elseif HistoneChannel&&strcmpi(ExperimentAxis,'DV')
     
     %If we have only one channel get rid of all the cells
     if NChannels==1
@@ -2546,7 +2540,7 @@ elseif HistoneChannel&strcmp(ExperimentAxis,'DV')
         'SDVectorAll','NParticlesAll','MaxFrame',...
         'AllTracesVector','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
         'MeanOffsetVector','SDOffsetVector','NOffsetParticles', 'Prefix', '-v7.3')
-elseif strcmp(ExperimentAxis,'NoAP')
+elseif strcmpi(ExperimentAxis,'NoAP')
     
     %If we have only one channel get rid of all the cells
     if NChannels==1
