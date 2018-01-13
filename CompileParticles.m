@@ -1059,7 +1059,7 @@ close(h)
 for ChN=1:NChannels
     if ROI==1 
         % separate the CompileParticles into CompiledParticles_ROI and
-        % CompiledParticles_nonROI using Threshold
+        % CompiledParticles_nonROI using the Threshold (y position)
         t=1;
         s=1;
 
@@ -1229,11 +1229,26 @@ for ChN=1:NChannels
             NParticlesAP_ROI{ChN}=cell2mat(NParticlesAPCell_ROI);
 
             % Get the corresponding mean information 
-            %(nonROI, CompiledParticles_nonROI -> save all in MeanVectorAP as we normally do)
+            %(nonROI, CompiledParticles_nonROI -> save all in MeanVectorAP_nonROI
+            k=1;
+            for i=MinAPIndex:MaxAPIndex
+                [MeanVectorAPTemp_nonROI,SDVectorAPTemp_nonROI,NParticlesAPTemp_nonROI]=AverageTraces(FrameInfo,...
+                    CompiledParticles_nonROI{ChN}(APFilter_nonROI{ChN}(:,i)));
+                MeanVectorAPCell_nonROI{k}=MeanVectorAPTemp_nonROI';
+                SDVectorAPCell_nonROI{k}=SDVectorAPTemp_nonROI';
+                NParticlesAPCell_nonROI{k}=NParticlesAPTemp_nonROI';
+                k=k+1;
+            end
+            MeanVectorAP_nonROI{ChN}=cell2mat(MeanVectorAPCell_nonROI);
+            SDVectorAP_nonROI{ChN}=cell2mat(SDVectorAPCell_nonROI);
+            NParticlesAP_nonROI{ChN}=cell2mat(NParticlesAPCell_nonROI);
+            
+            % Get the mean information for all of the CompiledParticles
+            % (Save this in MeanVectorAP)
             k=1;
             for i=MinAPIndex:MaxAPIndex
                 [MeanVectorAPTemp,SDVectorAPTemp,NParticlesAPTemp]=AverageTraces(FrameInfo,...
-                    CompiledParticles_nonROI{ChN}(APFilter_nonROI{ChN}(:,i)));
+                    CompiledParticles{ChN}(APFilter{ChN}(:,i)));
                 MeanVectorAPCell{k}=MeanVectorAPTemp';
                 SDVectorAPCell{k}=SDVectorAPTemp';
                 NParticlesAPCell{k}=NParticlesAPTemp';
@@ -1242,6 +1257,7 @@ for ChN=1:NChannels
             MeanVectorAP{ChN}=cell2mat(MeanVectorAPCell);
             SDVectorAP{ChN}=cell2mat(SDVectorAPCell);
             NParticlesAP{ChN}=cell2mat(NParticlesAPCell);
+            
             %Calculate the mean for only anterior particles
             try
                 MeanVectorAPAnterior{ChN} = MeanVectorAP{ChN}(:,5:15); %Only average particles within window of 10% to 35% w/ 2.5% AP resolution. P2P expression is relatively flat here.
@@ -2493,7 +2509,8 @@ if HistoneChannel&strcmp(ExperimentAxis,'AP')
         'EllipsesOnAP','TotalEllipsesAP',...
         'EllipsePos','EllipsesFilteredPos','FilteredParticlesPos',...
         'MeanVectorAllAP','SEVectorAllAP', 'Prefix',...
-        'MeanVectorAP_ROI','SDVectorAP_ROI','NParticlesAP_ROI', '-v7.3');
+        'MeanVectorAP_ROI','SDVectorAP_ROI','NParticlesAP_ROI',...
+        'MeanVectorAP_nonROI','SDVectorAP_nonROI','NParticlesAP_nonROI','-v7.3');
     else
         save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
             'CompiledParticles','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...

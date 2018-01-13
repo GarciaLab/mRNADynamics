@@ -3,8 +3,9 @@ function standardizeFigure(ax, legend, varargin)
     color = [0 0 0];
     axesLineWidth = 5;
     fig = gcf;
-   dataObj = get(ax, 'Children');
-   dataType = get(dataObj, 'Type');
+    dataObj = get(ax, 'Children');
+    dataType = get(dataObj, 'Type');
+    legendSize = 20;
     
     for i = 1:length(varargin)
        if strcmpi(varargin{i}, 'axeslinewidth')
@@ -19,11 +20,13 @@ function standardizeFigure(ax, legend, varargin)
             color = [208,109,171]/255;
         elseif strcmpi(varargin{i}, 'lightblue')
             color = [115,142,193]/255;
+       elseif strcmpi(varargin{i}, 'legendFontSize')
+            legendSize = varargin{i+1};
         end
     end
     
     if ~isempty(legend)
-        legend.FontSize = 30;
+        legend.FontSize = legendSize;
         legend.Box = 'off';
     end
  
