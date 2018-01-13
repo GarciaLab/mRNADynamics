@@ -155,6 +155,7 @@ clear rawdir;
 
 pixelSize = FrameInfo(1).PixelSize*1000; %nm
 neighborhood = round(1300 / pixelSize); %nm
+neighborhoodZ = neighborhood; %nm
 snippet_size = 2*(floor(1300/(2*pixelSize))) + 1; % nm. note that this is forced to be odd
 
            
@@ -381,7 +382,6 @@ else
             changes = 0;
             i = 1; 
             h=waitbar(0,'Finding z-columns');
-            neighborhood = 1300 / pixelSize;
             for n = initial_frame:num_frames
                 waitbar(n/(num_frames-initial_frame),h)
                 l = length(Particles([Particles.frame] == n));
@@ -389,7 +389,7 @@ else
                 for j = i:i+l-1
                     for k = j+1:i+l-1
                         dist = sqrt( (Particles(j).xFit(end) - Particles(k).xFit(end))^2 + (Particles(j).yFit(end) - Particles(k).yFit(end))^2); 
-                        if dist < neighborhood && Particles(j).z(end) ~= Particles(k).z(end)
+                        if dist < neighborhoodZ && Particles(j).z(end) ~= Particles(k).z(end)
                             for m = 1:numel(fields)-2 %do not include fields 'r' or 'frame'
                                 Particles(j).(fields{m}) = [Particles(j).(fields{m}), Particles(k).(fields{m})];
                             end
@@ -507,9 +507,9 @@ else
         %makes some potentially useful plots. This was originally here to have
         %a single, fully integrated script before this segmentation was worked
         %into the rest of the pipeline.
-        neighborhood = 3000 / pixelSize;
+        neighborhoodTracking = round(3000 / pixelSize);
         if TrackSpots
-            Particles = track_Spots(Particles, neighborhood);
+            Particles = track_Spots(Particles, neighborhoodTracking);
             save([DropboxFolder,filesep,Prefix,filesep,'Particles_SS.mat'], 'Particles', '-v7.3');
         end
         
