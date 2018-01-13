@@ -527,7 +527,7 @@ else
     t = toc;
    disp ['Elapsed time: ',num2str(t/60),' min']
     if ~just_tifs
-        logFile = [DropboxFolder,filesep,Prefix,filesep,'log.mat', '-v7.3'];
+        logFile = [DropboxFolder,filesep,Prefix,filesep,'log.mat'];
         if exist(logFile, 'file')
             load(logFile);
         else
@@ -570,7 +570,7 @@ else
         else     
             log(end).Classifier = classifierPathCh1;     
         end
-        save(logFile, 'log');
+        save(logFile, 'log', '-v7.3');
     end
     try
         poolobj = gcp('nocreate');

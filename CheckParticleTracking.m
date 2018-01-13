@@ -152,9 +152,9 @@ projectionMode = 'None (Default)';
 Prefix = varargin{1};
 if length(varargin)>1
     for i=2:length(varargin)
-        if strcmp(varargin{i},'NoSort')
+        if strcmpi(varargin{i},'NoSort')
             NoSort=1;
-        elseif strcmp(varargin{i},'ForCompileAll')
+        elseif strcmpi(varargin{i},'ForCompileAll')
             ForCompileAll=1;
         elseif strcmpi(varargin{i}, 'speedmode')
             SpeedMode = 1;
@@ -187,7 +187,7 @@ load([DataFolder,filesep,'Particles.mat'])
 load([DataFolder,filesep,'Spots.mat'])
 
 %Check that FrameInfo exists
-if exist([DataFolder,filesep,'FrameInfo.mat'])
+if exist([DataFolder,filesep,'FrameInfo.mat'], 'file')
     load([DataFolder,filesep,'FrameInfo.mat'])
 else
     warning('No FrameInfo.mat found. Trying to continue')
@@ -197,16 +197,18 @@ else
     %Adding information
    Dz=dir([PreProcPath,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'*001*.tif']);
     NumberSlices=length(Dz)-1;
-    for i=1:length(FrameInfo)
+    for i=1:numFrames
         FrameInfo(i).NumberSlices=NumberSlices;
     end
 end
 
+numFrames =length(FrameInfo);
+
 %See how  many frames we have and adjust the index size of the files to
 %load accordingly
-if length(FrameInfo)<1E3
+if numFrames<1E3
     NDigits=3;
-elseif length(FrameInfo)<1E4
+elseif numFrames<1E4
     NDigits=4;
 else
     error('No more than 10,000 frames supported. Change this in the code')
@@ -234,12 +236,12 @@ end
 for NCh=1:NChannels
     if ~isfield(Particles{NCh},'FrameApproved')
         for i=1:length(Particles{NCh})
-            Particles{NCh}(i).FrameApproved=logical(ones(size(Particles{NCh}(i).Frame)));
+            Particles{NCh}(i).FrameApproved=true(size(Particles{NCh}(i).Frame));
         end
     else
         for i=1:length(Particles{NCh})
             if isempty(Particles{NCh}(i).FrameApproved)
-                Particles{NCh}(i).FrameApproved=logical(ones(size(Particles{NCh}(i).Frame)));
+                Particles{NCh}(i).FrameApproved=true(size(Particles{NCh}(i).Frame));
             end
         end
     end
@@ -250,9 +252,9 @@ end
 %Check if we have the histone channel and we have done the nuclear
 %segmentation.
 if exist([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-        FilePrefix(1:end-1),'-His_',iIndex(1,NDigits),'.tif'])|...
+        FilePrefix(1:end-1),'-His_',iIndex(1,NDigits),'.tif'], 'file')||...
         exist([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-        FilePrefix(1:end-1),'_His_',iIndex(1,NDigits),'.tif'])
+        FilePrefix(1:end-1),'_His_',iIndex(1,NDigits),'.tif'], 'file')
     load([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,'Ellipses.mat'])
     UseHistoneOverlay=1;
 else
@@ -260,7 +262,7 @@ else
 end
 
 %Check that we have the nuclear tracking done using schnitzcells
-if exist([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'])
+if exist([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'], 'file')
     UseSchnitz=1;
 else
     UseSchnitz=0;
@@ -272,23 +274,23 @@ end
 XLSHeaders=Txt(1,:);
 Txt=Txt(2:end,:);
 
-ExperimentTypeColumn= strcmp(XLSRaw(1,:),'ExperimentType');
-ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
-Channel1Column=find(strcmp(XLSRaw(1,:),'Channel1'));
-Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
-nc9Column=find(strcmp(XLSRaw(1,:),'nc9'));
-nc10Column=find(strcmp(XLSRaw(1,:),'nc10'));
-nc11Column=find(strcmp(XLSRaw(1,:),'nc11'));
-nc12Column=find(strcmp(XLSRaw(1,:),'nc12'));
-nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
-nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
-CFColumn=find(strcmp(XLSRaw(1,:),'CF'));
+ExperimentTypeColumn= strcmpi(XLSRaw(1,:),'ExperimentType');
+ExperimentAxisColumn=find(strcmpi(XLSRaw(1,:),'ExperimentAxis'));
+Channel1Column=find(strcmpi(XLSRaw(1,:),'Channel1'));
+Channel2Column=find(strcmpi(XLSRaw(1,:),'Channel2'));
+nc9Column=find(strcmpi(XLSRaw(1,:),'nc9'));
+nc10Column=find(strcmpi(XLSRaw(1,:),'nc10'));
+nc11Column=find(strcmpi(XLSRaw(1,:),'nc11'));
+nc12Column=find(strcmpi(XLSRaw(1,:),'nc12'));
+nc13Column=find(strcmpi(XLSRaw(1,:),'nc13'));
+nc14Column=find(strcmpi(XLSRaw(1,:),'nc14'));
+CFColumn=find(strcmpi(XLSRaw(1,:),'CF'));
 
-DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
+DataFolderColumn=find(strcmpi(XLSRaw(1,:),'DataFolder'));
 Dashes=findstr(FilePrefix,'-');
-PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[FilePrefix(1:Dashes(3)-1),'\',FilePrefix(Dashes(3)+1:end-1)]));
+PrefixRow=find(strcmpi(XLSRaw(:,DataFolderColumn),[FilePrefix(1:Dashes(3)-1),'\',FilePrefix(Dashes(3)+1:end-1)]));
 if isempty(PrefixRow)
-    PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[FilePrefix(1:Dashes(3)-1),'/',FilePrefix(Dashes(3)+1:end-1)]));
+    PrefixRow=find(strcmpi(XLSRaw(:,DataFolderColumn),[FilePrefix(1:Dashes(3)-1),'/',FilePrefix(Dashes(3)+1:end-1)]));
     if isempty(PrefixRow)
         error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
     end
@@ -302,17 +304,17 @@ Channel2=XLSRaw(PrefixRow,Channel2Column);
 
 
 %Find the corresponding entry in the XLS file
-if (~isempty(findstr(FilePrefix,'Bcd')))&(isempty(findstr(FilePrefix,'BcdE1')))&...
-        (isempty(findstr(FilePrefix(1:end-1),'NoBcd')))&...
-        (isempty(findstr(FilePrefix(1:end-1),'Bcd1x')))&(~isempty(findstr(FilePrefix,'HisRFP')))
+if (~isempty(findstr(FilePrefix,'Bcd')))&&(isempty(findstr(FilePrefix,'BcdE1')))&&...
+        (isempty(findstr(FilePrefix(1:end-1),'NoBcd')))&&...
+        (isempty(findstr(FilePrefix(1:end-1),'Bcd1x')))&&(~isempty(findstr(FilePrefix,'HisRFP')))
     warning('This step in CheckParticleTracking will most likely have to be modified to work')
-    XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
+    XLSEntry=find(strcmpi(XLSRaw(:,DataFolderColumn),...
         [Date,'\BcdGFP-HisRFP']));
 else
-    XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
+    XLSEntry=find(strcmpi(XLSRaw(:,DataFolderColumn),...
         [FilePrefix(1:Dashes(3)-1),'\',FilePrefix(Dashes(3)+1:end-1)]));
     if isempty(XLSEntry)
-        XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
+        XLSEntry=find(strcmpi(XLSRaw(:,DataFolderColumn),...
             [FilePrefix(1:Dashes(3)-1),'/',FilePrefix(Dashes(3)+1:end-1)]));
         if isempty(XLSEntry)
             error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
@@ -322,7 +324,7 @@ end
 
 
 if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
-    %strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'Hb-GFP')|strcmp(XLSRaw(XLSEntry,Channel2Column),'Hb-GFP')
+    %strcmpi(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|strcmpi(XLSRaw(XLSEntry,Channel1Column),'His-RFP')|strcmpi(XLSRaw(XLSEntry,Channel1Column),'Hb-GFP')|strcmpi(XLSRaw(XLSEntry,Channel2Column),'Hb-GFP')
     nc9=XLSRaw{XLSEntry,nc9Column};
     nc10=XLSRaw{XLSEntry,nc10Column};
     nc11=XLSRaw{XLSEntry,nc11Column};
@@ -332,7 +334,7 @@ if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
     CF=XLSRaw{XLSEntry,CFColumn};
     
     
-    for i=1:length(FrameInfo)
+    for i=1:numFrames
         if i<nc9
             FrameInfo(i).nc=8;
         elseif (i>=nc9)&&(i<nc10)
@@ -361,7 +363,7 @@ else
     CF=XLSRaw{XLSEntry,CFColumn};
     
     
-    for i=1:length(FrameInfo)
+    for i=1:numFrames
         if i<nc9
             FrameInfo(i).nc=8;
         elseif (i>=nc9)&&(i<nc10)
@@ -405,7 +407,7 @@ end
 
 % %Load the DoG images. Necessary for particle addition/subtraction
 % dog = [];
-% num_frames = length(FrameInfo);
+% num_frames = numFrames;
 % zSize = FrameInfo(1).NumberSlices + 2;
 % OutputFolder1=[FISHPath,filesep,Prefix,'_',filesep,'dogs'];
 % for current_frame = 1:num_frames
@@ -427,9 +429,6 @@ if ~NoSort
     end
 end
 
-TotalFrames=length(FrameInfo);
-
-
 %Some flags and initial parameters
 ShowThreshold2=0;                    %Whether to show particles below the threshold
 HideApprovedFlag=0;
@@ -447,7 +446,7 @@ DisplayRange=[];
 ZoomMode=0;
 GlobalZoomMode=0;
 ZoomRange=50;
-nameSuffix=''
+nameSuffix='';
 
 %Set up the default contrast settings for the MCP channel depending on the
 %microscope that was used used
@@ -465,8 +464,8 @@ end
 % Changing the intial frames and particle if justNC13
 if ncRange
     
-    if strcmp('nc15',endNC) 
-        lastNCFrame = TotalFrames;
+    if strcmpi('nc15',endNC) 
+        lastNCFrame = numFrames;
     else
         lastNCFrame = eval(endNC)-1; % This will not include the 1st frame of the next NC
     end
@@ -542,14 +541,14 @@ while (cc~='x')
     EllipseHandleWhite=[];
     EllipseHandleGreen=[];
 
+    numParticles = length(Particles{CurrentChannel});
     
     %Get the coordinates of all the spots in this frame
     [x,y,z]=SpotsXYZ(Spots{CurrentChannel}(CurrentFrame));
    
-    
     %If the approved field does not exist create it
     if ~isfield(Particles{CurrentChannel},'Approved')
-        for i=1:length(Particles{CurrentChannel})
+        for i=1:numParticles
             Particles{CurrentChannel}(i).Approved=0;
         end
     end
@@ -560,7 +559,6 @@ while (cc~='x')
         Particles{CurrentChannel}(CurrentParticle).Index(Particles{CurrentChannel}(CurrentParticle).Frame==...
         CurrentFrame);
     %This is the position of the current particle
-    disp(CurrentParticleIndex)
     xTrace=x(CurrentParticleIndex);
     yTrace=y(CurrentParticleIndex);
     
@@ -569,8 +567,8 @@ while (cc~='x')
     
     %Approved particles
     IndexApprovedParticles=[];
-    for i=1:length(Particles{CurrentChannel})
-        if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&...
+    for i=1:numParticles
+        if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&&...
                 sum(Particles{CurrentChannel}(i).Approved==1)
             IndexApprovedParticles=[IndexApprovedParticles,...
                 Particles{CurrentChannel}(i).Index(Particles{CurrentChannel}(i).Frame==CurrentFrame)];
@@ -581,8 +579,8 @@ while (cc~='x')
 
     %Disapproved particles
     IndexDisapprovedParticles=[];
-    for i=1:length(Particles{CurrentChannel})
-        if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&sum(Particles{CurrentChannel}(i).Approved==-1)
+    for i=1:numParticles
+        if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&&sum(Particles{CurrentChannel}(i).Approved==-1)
             IndexDisapprovedParticles=[IndexDisapprovedParticles,...
                 Particles{CurrentChannel}(i).Index(Particles{CurrentChannel}(i).Frame==CurrentFrame)];
         end
@@ -593,9 +591,9 @@ while (cc~='x')
     %Non-flagged particles (these are particles that have not been
     %processed)
     IndexNonFlaggedParticles=[];
-    for i=1:length(Particles{CurrentChannel})
-        if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&...
-                ~(sum(Particles{CurrentChannel}(i).Approved==-1)|sum(Particles{CurrentChannel}(i).Approved==1))
+    for i=1:numParticles
+        if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&&...
+                ~(sum(Particles{CurrentChannel}(i).Approved==-1)||sum(Particles{CurrentChannel}(i).Approved==1))
             IndexNonFlaggedParticles=[IndexNonFlaggedParticles,...
                 Particles{CurrentChannel}(i).Index(Particles{CurrentChannel}(i).Frame==CurrentFrame)];
         end
@@ -603,20 +601,20 @@ while (cc~='x')
     xNonFlagged=x(IndexNonFlaggedParticles);
     yNonFlagged=y(IndexNonFlaggedParticles);
     
-    if (~isempty(xTrace))&(~ManualZFlag)
+    if (~isempty(xTrace))&&(~ManualZFlag)
         CurrentZ=z(CurrentParticleIndex);
         ManualZFlag=0;
     end
         
-    if NChannels==1&&(~strcmp(lower(ExperimentType),'inputoutput'))
-            if strcmp(projectionMode,'None (Default)')
+    if NChannels==1&&(~strcmpi(ExperimentType,'inputoutput'))
+            if strcmpi(projectionMode,'None (Default)')
                 Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                     FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
-            elseif strcmp(projectionMode,'Max Z')
+            elseif strcmpi(projectionMode,'Max Z')
                 [Image,~] = zProjections(Prefix, CurrentChannel, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
-            elseif strcmp(projectionMode,'Median Z')
+            elseif strcmpi(projectionMode,'Median Z')
                 [~,Image] = zProjections(Prefix, CurrentChannel, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
-            elseif strcmp(projectionMode,'Max Z and Time')
+            elseif strcmpi(projectionMode,'Max Z and Time')
                 if isempty(storedTimeProjection)
                     if ncRange
                         Image = timeProjection(Prefix, CurrentChannel,'nc',NC);
@@ -630,11 +628,11 @@ while (cc~='x')
                 end
             end
 
-    elseif (NChannels>1)&&(~strcmp(lower(ExperimentType),'inputoutput'))
+    elseif (NChannels>1)&&(~strcmpi(ExperimentType,'inputoutput'))
         Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
             FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),...
             nameSuffix,'.tif']);
-    elseif (NChannels==1)&&(strcmp(lower(ExperimentType),'inputoutput'))
+    elseif (NChannels==1)&&(strcmpi(ExperimentType,'inputoutput'))
         OutputChannelTemp1=strfind({lower(Channel1{1}),lower(Channel2{1})},'mcp');
         OutputChannelTemp2=strfind({lower(Channel1{1}),lower(Channel2{1})},'pcp');
         OutputChannelTemp1=~cellfun(@isempty,OutputChannelTemp1);
@@ -642,14 +640,14 @@ while (cc~='x')
         OutputChannel=find(OutputChannelTemp1|OutputChannelTemp2);
         
         % Z-projection mode support (YJK, 2017/12/27)
-        if strcmp(projectionMode,'None (Default)')
+        if strcmpi(projectionMode,'None (Default)')
                 Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                     FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'_ch',iIndex(OutputChannel,2),'.tif']);
-            elseif strcmp(projectionMode,'Max Z')
+            elseif strcmpi(projectionMode,'Max Z')
                 [Image,~] = zProjections(Prefix, OutputChannel, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
-            elseif strcmp(projectionMode,'Median Z')
+            elseif strcmpi(projectionMode,'Median Z')
                 [~,Image] = zProjections(Prefix, OutputChannel, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
-            elseif strcmp(projectionMode,'Max Z and Time')
+            elseif strcmpi(projectionMode,'Max Z and Time')
                 if isempty(storedTimeProjection)
                     if ncRange
                         Image = timeProjection(Prefix, OutputChannel,'nc',NC);
@@ -670,7 +668,7 @@ while (cc~='x')
             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                     FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);
         catch
-            display(['Warning: Could not load file: ',...
+            disp(['Warning: Could not load file: ',...
                 FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
         end
     end
@@ -690,8 +688,8 @@ while (cc~='x')
     hold off
 
     if isfield(FrameInfo, 'nc')
-    set(gcf,'Name',['Particle: ',num2str(CurrentParticle),'/',num2str(length(Particles{CurrentChannel})),...
-        ', Frame: ',num2str(CurrentFrame),'/',num2str(TotalFrames),...
+    set(gcf,'Name',['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles),...
+        ', Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),...
         ', Z: ',num2str(CurrentZ),'/',num2str(ZSlices),' nc: ', num2str(FrameInfo(CurrentFrame).nc),...
         ', Ch: ',num2str(CurrentChannel)])
     end
@@ -711,7 +709,7 @@ while (cc~='x')
             
             hold on
             schnitzCellNo=[];
-            for i=1:length(Particles{CurrentChannel})
+            for i=1:numParticles
                 if Particles{CurrentChannel}(i).Approved==1
                     schnitzIndex=find((schnitzcells(Particles{CurrentChannel}(i).Nucleus).frames)==CurrentFrame);
                     schnitzCellNo=[schnitzCellNo,schnitzcells(Particles{CurrentChannel}(i).Nucleus).cellno(schnitzIndex)];
@@ -845,7 +843,7 @@ while (cc~='x')
     
     if ZoomMode
         %Find the closest frame
-        [Dummy,MinIndex]=min((Particles{CurrentChannel}(CurrentParticle).Frame-CurrentFrame).^2);
+        [~,MinIndex]=min((Particles{CurrentChannel}(CurrentParticle).Frame-CurrentFrame).^2);
         if length(MinIndex)>1
             MinIndex=MinIndex(1);
         end
@@ -909,8 +907,8 @@ while (cc~='x')
             
         end
     
-        set(gcf,'Name',['Particle: ',num2str(CurrentParticle),'/',num2str(length(Particles{CurrentChannel})),...
-            ', Frame: ',num2str(CurrentFrame),'/',num2str(TotalFrames),...
+        set(gcf,'Name',['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles),...
+            ', Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),...
             ', Z: ',num2str(CurrentZ),'/',num2str(ZSlices),' nc: ', num2str(FrameInfo(CurrentFrame).nc),...
             ' Ch: ',num2str(CurrentChannel)])
         
@@ -931,7 +929,6 @@ while (cc~='x')
 %     figure(SisterFig3)
 %     %plot distance versus time
     
-    try
     figure(SnippetFig)
     if (~isempty(xTrace))
         %Determine the z index to be plotted. This corresponds to the
@@ -1031,87 +1028,60 @@ while (cc~='x')
         hold off
         title('Z profile')
     end
-    catch
-    end
-    figure(TraceFig)
-    if ~strcmp(lower(ExperimentType),'inputoutput')
-        %Only update the trace information if we have switched particles
-        if (CurrentParticle~=PreviousParticle)|~exist('AmpGaussian')|(CurrentChannel~=PreviousChannel)
-            PreviousParticle=CurrentParticle;
-            [Frames,AmpIntegral,AmpGaussian]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
-        end
-        
-        H1=plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-            AmpGaussian(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-b');
 
+    figure(TraceFig)
+    if ~strcmpi(ExperimentType,'inputoutput')
+        %Only update the trace information if we have switched particles
+        if (CurrentParticle~=PreviousParticle)||~exist('AmpIntegral', 'var')||(CurrentChannel~=PreviousChannel)
+            PreviousParticle=CurrentParticle;
+            [Frames,AmpIntegral,~]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
+        end       
+       
+        plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+            AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-k');           
         hold on
-        H2=plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-            AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-g');
-        
-        plot(Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpGaussian(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
-        plot(Frames(Frames==CurrentFrame),AmpGaussian(Frames==CurrentFrame),'ob')
+        plot(Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
+        plot(Frames(Frames==CurrentFrame),AmpIntegral(Frames==CurrentFrame),'ob');
         hold off
-        
-        legend([H1,H2],'Gaussian integral','Raw integral','Location','NorthWest')
-        
         try
             xlim([min(Frames)-1,max(Frames)+1]);
         catch
+%             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
         end
-        xlabel('Frames')
-        
-        %HG on 11/11/2016: What were the two lines below for? I think they
-        %led to weirdness in the x-axis labeling.
-        %h = get(gca, 'xtick');
-        %set(gca,'xticklabel',h)
-        ylabel('Intensity (A.U.)')
-    else
+        xlabel('frame')        
+        ylabel('integrated intensity (a.u.)')
+    elseif strcmpi(ExperimentType, 'inputoutput')
         %Only update the trace information if we have switched particles
-        if (CurrentParticle~=PreviousParticle)|~exist('Amp')|(CurrentChannel~=PreviousChannel)
-            clf
+        if (CurrentParticle~=PreviousParticle)||~exist('Amp', 'var')||(CurrentChannel~=PreviousChannel)
             PreviousParticle=CurrentParticle;
-            %[Frames,AmpIntegral,AmpGaussian]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
             [Frames,Amp]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
         end
+        %we'll plot the spot intensity first on the left axis.
+        yyaxis left
+        plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-b')
+        xlabel('frame')
+        ylabel('transcript intensity (a.u.)')     
         
-        plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-k')
+        %now we'll plot the input protein intensity on the right-hand axis.
+        yyaxis right
+        plot(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames,...
+            max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).Fluo,[],2),'r.-')      
+         try
+            xlim([min(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames),max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames)])
+        catch
+%             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
+         end
+        ylabel('input protein intensity (a.u.)');
         hold on
         plot(Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
         plot(Frames(Frames==CurrentFrame),Amp(Frames==CurrentFrame),'ob')
-        try
-            xlim([min(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames),max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames)])
-        catch
-        end
-        ax1=gca;
-        set(ax1,'XAxisLocation','Bottom')
-        set(ax1,'YAxisLocation','Left')
-        set(ax1,'Box','off')
-        set(ax1,'YColor','k','XColor','k')
-        ax2= axes('Position',get(ax1,'Position'),...
-                   'XAxisLocation','top',...
-                   'YAxisLocation','right',...
-                   'Color','none',...
-                   'Box','off',...
-                   'XColor','k','YColor','k');
-        hold on
-        plot(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames,...
-            max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).Fluo,[],2),'g.-')
         hold off
-        try
-            xlim([min(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames),max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames)])
-        catch
-        end
-        xlabel('Frames')
-        h = get(gca, 'xtick');
-        set(gca,'xticklabel',h)
-        ylabel('Intensity (A.U.)')
-        
     end
 
     
-    FigureTitle=['Particle: ',num2str(CurrentParticle),'/',num2str(length(Particles{CurrentChannel})),...
-        ', Frame: ',num2str(CurrentFrame),'/',num2str(TotalFrames),...
-        ', Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)];
+    FigureTitle={['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles),...
+        ', Frame: ',num2str(CurrentFrame),'/',num2str(numFrames)],...
+        ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)]};
     
     if HideApprovedFlag==1
         FigureTitle=[FigureTitle,', Showing non-flagged particles'];
@@ -1122,7 +1092,7 @@ while (cc~='x')
     
     %Define the windows
     figure(Overlay)
-%     set(gcf,'units', 'normalized', 'position',[0.01, .55, .33, .33]);
+    set(gcf,'units', 'normalized', 'position',[0.01, .55, .33, .33]);
     if UseHistoneOverlay 
         figure(HisOverlayFig)
         set(gcf,'units', 'normalized', 'position',[0.01, 0.1, .33, .33]);
@@ -1145,7 +1115,7 @@ while (cc~='x')
     end
         
     
-    if cc=='.' && CurrentFrame < length({Spots{1}.Fits}) %Move forward one frame
+    if cc=='.' & (CurrentFrame < length({Spots{1}.Fits})) %Move forward one frame
         CurrentFrame=CurrentFrame+1;
         ManualZFlag=0;
         %DisplayRange=[];
@@ -1213,7 +1183,7 @@ while (cc~='x')
         catch
             iJump=CurrentFrame;
         end
-        if (floor(iJump)>0)&(iJump<length({Spots{1}.Fits}))
+        if (floor(iJump)>0)&&(iJump<length({Spots{1}.Fits}))
             CurrentFrame=iJump;
             ManualZFlag=0;
         end
@@ -1223,11 +1193,11 @@ while (cc~='x')
             %ParticleJump=input('Particle to jump to: ');
             ParticleJump = inputdlg('Particle to jump to:',...
                 'Move to particle');
-            ParticleJump=str2num(ParticleJump{1});
+            ParticleJump=str2double(ParticleJump{1});
         catch
             ParticleJump=CurrentParticle;
         end
-        if (floor(ParticleJump)>0)&(ParticleJump<=length(Particles{CurrentChannel}))
+        if (floor(ParticleJump)>0)&(ParticleJump<=numParticles)
             CurrentParticle=ParticleJump;
             CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(1);
             ManualZFlag=0;
@@ -1420,7 +1390,7 @@ while (cc~='x')
                     if ~GlobalZoomMode
                         Particles{CurrentChannel}=...
                         JoinParticleTraces(CurrentParticle,...
-                        length(Particles{CurrentChannel}),Particles{CurrentChannel});
+                        numParticles,Particles{CurrentChannel});
                     else
                         disp('Re-run TrackmRNADynamics to associate this particle with a nucleus and trace.')
                     end
@@ -1435,30 +1405,19 @@ while (cc~='x')
             end
 
         end
-        
-%     elseif cc=='`'
-%         %Approve all particles not disapproved. Useful if you want to do particle
-%         %retracking.       
-%         for i=1:length(Particles{CurrentChannel})
-%             if Particles{CurrentChannel}(i).Approved ~= -1
-%                 Particles{CurrentChannel}(i).Approved = true;
-%             end
-%         end
-%         display('Approved all particles not disapproved')
 
     elseif cc=='r'
         %Order particles by the earliest frame they appear at. This makes the
         %tracking a lot easier!
         clear FirstFrame
-        for i=1:length(Particles{CurrentChannel})
+        for i=1:numParticles
             FirstFrame(i)=Particles{CurrentChannel}(i).Frame(1);
         end
-        [Dummy,Permutations]=sort(FirstFrame);
+        [~,Permutations]=sort(FirstFrame);
         Particles{CurrentChannel}=Particles{CurrentChannel}(Permutations);
         
     elseif cc=='f'
-        Answer=input('Are you sure you want to redo the tracking?  (y/n) ','s');
-        Answer=lower(Answer);
+        Answer=lower(input('Are you sure you want to redo the tracking?  (y/n) ','s'));
         if Answer=='y'
             warning('HG: Not clear that this feature will work with the multiple channels')
             
@@ -1470,7 +1429,7 @@ while (cc~='x')
             else
                 save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2', '-v7.3')            
             end
-        display('Particles saved.')
+        disp('Particles saved.')
         if NChannels==1
             Particles=Particles{1};
         end
@@ -1481,9 +1440,9 @@ while (cc~='x')
             Particles={Particles};
         end
            %Check the FrameApproved field
-            for i=1:length(Particles{CurrentChannel})
+            for i=1:numParticles
                 if isempty(Particles{CurrentChannel}(i).FrameApproved)
-                    Particles{CurrentChannel}(i).FrameApproved=logical(ones(size(Particles{CurrentChannel}(i).Frame)));
+                    Particles{CurrentChannel}(i).FrameApproved=true(size(Particles{CurrentChannel}(i).Frame));
                 end
             end
         end
@@ -1560,7 +1519,7 @@ while (cc~='x')
             
             %If it's an independent particle swap it with the frame in the
             %current particle
-            if (length(Particles{CurrentChannel}(ParticleOutput).Frame)==1)&...
+            if (length(Particles{CurrentChannel}(ParticleOutput).Frame)==1)&&...
                     (sum(Particles{CurrentChannel}(ParticleOutput).Frame==CurrentFrame)==1)
                 
                 ParticleTemp=Particles{CurrentChannel}(ParticleOutput);
@@ -1574,7 +1533,7 @@ while (cc~='x')
                     ParticleTemp.Index;
                 Particles{CurrentChannel}(CurrentParticle).FrameApproved(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame)=1;
             else
-                display('Cannnot connect to two particles!')
+                disp('Cannnot connect to two particles!')
             end
             
             
@@ -1586,7 +1545,7 @@ while (cc~='x')
         if ~isempty(ConnectPosition)
             %Find thef closest particle
             [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
-            display(['Clicked particle: ',num2str(ParticleOutput)]);
+            disp(['Clicked particle: ',num2str(ParticleOutput)]);
             
             if UseHistoneOverlay
                 %Find the closest nucleus
@@ -1613,7 +1572,7 @@ while (cc~='x')
                 ClickedSchnitz=SchnitzSuspect(ClosestNucleusIndex);
 
                 %Now, find its associated particle
-                for i=1:length(Particles{CurrentChannel})
+                for i=1:numParticles
                     if ~isempty(Particles{CurrentChannel}(i).Nucleus)
                         AssignedNuclei(i)=Particles{CurrentChannel}(i).Nucleus;
                     else
@@ -1623,9 +1582,9 @@ while (cc~='x')
                 AssociatedParticle=find(AssignedNuclei==ClickedSchnitz);
 
                 if isempty(AssociatedParticle)
-                    display(['Nucleus ',num2str(ClickedSchnitz),' does not have an associated particle'])
+                    disp(['Nucleus ',num2str(ClickedSchnitz),' does not have an associated particle'])
                 else
-                    display(['Particle ',num2str(AssociatedParticle),' is associate with nucleus ',...
+                    disp(['Particle ',num2str(AssociatedParticle),' is associate with nucleus ',...
                         num2str(ClickedSchnitz)])
                 end
             end
@@ -1637,11 +1596,11 @@ while (cc~='x')
         if ~isempty(ConnectPosition)
             %Find the closest particle
             [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
-            display(['Clicked particle: ',num2str(ParticleOutput)]);
+            disp(['Clicked particle: ',num2str(ParticleOutput)]);
             try
                 ParticleJump=ParticleOutput;
             end
-            if (floor(ParticleJump)>0)&(ParticleJump<=length(Particles{CurrentChannel}))
+            if (floor(ParticleJump)>0)&&(ParticleJump<=numParticles)
                 CurrentParticle=ParticleJump;
                 CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(1);
                 ManualZFlag=0;
@@ -1672,7 +1631,7 @@ while (cc~='x')
                 ClickedSchnitz=SchnitzSuspect(ClosestNucleusIndex);
 
                 %Now, find its associated particle
-                for i=1:length(Particles{CurrentChannel})
+                for i=1:numParticles
                     if ~isempty(Particles{CurrentChannel}(i).Nucleus)
                         AssignedNuclei(i)=Particles{CurrentChannel}(i).Nucleus;
                     else
@@ -1682,9 +1641,9 @@ while (cc~='x')
                 AssociatedParticle=find(AssignedNuclei==ClickedSchnitz);
 
                 if isempty(AssociatedParticle)
-                    display(['Nucleus ',num2str(ClickedSchnitz),' does not have an associated particle'])
+                    disp(['Nucleus ',num2str(ClickedSchnitz),' does not have an associated particle'])
                 else
-                    display(['Particle ',num2str(AssociatedParticle),' is associated with nucleus ',...
+                    disp(['Particle ',num2str(AssociatedParticle),' is associated with nucleus ',...
                         num2str(ClickedSchnitz)])
                 end
             end
@@ -1720,7 +1679,7 @@ while (cc~='x')
 
            
             if sum(Particles{CurrentChannel}(ParticleOutput).Frame<CurrentFrame)
-                display(['Target particle (',num2str(ParticleOutput),') is already in a previous frame!']);
+                disp(['Target particle (',num2str(ParticleOutput),') is already in a previous frame!']);
             else
                 Particles=JoinParticleTraces(CurrentParticle,ParticleOutput,Particles{CurrentChannel});
                 %Do this in case the clicked particle comes before the current
@@ -1745,7 +1704,7 @@ while (cc~='x')
                 end  
             end 
         else
-            display('Cannnot connect to two particles!')
+            disp('Cannnot connect to two particles!')
         end
     
      elseif cc=='d'  %d Separate traces forward at the current frame.
@@ -1759,7 +1718,7 @@ while (cc~='x')
         elseif length(Particles{CurrentChannel}(CurrentParticle).Frame)==1
             Particles{CurrentChannel}(CurrentParticle).Nucleus=[];
         else
-            display('Cannot divide a trace at the first time point')
+            disp('Cannot divide a trace at the first time point')
         end
         
     elseif cc=='v'  %d Separate traces forward at the current frame.
@@ -1773,7 +1732,7 @@ while (cc~='x')
         elseif length(Particles{CurrentChannel}(CurrentParticle).Frame)==1
             Particles{CurrentChannel}(CurrentParticle).Nucleus=[];
         else
-            display('Cannot divide a trace at the first time point')
+            disp('Cannot divide a trace at the first time point')
         end        
         
         
@@ -1815,7 +1774,7 @@ while (cc~='x')
             save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2', '-v7.3')            
             save([DataFolder,filesep,'Spots.mat'],'Spots','-v7.3') %CS20170912 necessary for saving Spots.mat if >2GB
         end
-        display('Particles saved.')
+        disp('Particles saved.')
         if NChannels==1
             Particles={Particles};
             Spots = {Spots};
@@ -1824,7 +1783,7 @@ while (cc~='x')
         
     elseif cc=='t'
         ShowThreshold2=~ShowThreshold2;
-    elseif (cc=='y')&(~UseHistoneOverlay)
+    elseif (cc=='y')&&(~UseHistoneOverlay)
             FrameInfo=DetermineNC(fad,Particles{CurrentChannel},FrameInfo);
     elseif cc=='h'
         if HideApprovedFlag==0
@@ -1840,7 +1799,7 @@ while (cc~='x')
         if ~GlobalZoomMode
             ZoomMode=~ZoomMode;
         else
-            display('Try again after exiting global zoom mode by hitting ''+''') 
+            disp('Try again after exiting global zoom mode by hitting ''+''') 
         end
     
     elseif cc=='+'
@@ -1853,28 +1812,28 @@ while (cc~='x')
             end
             GlobalZoomMode =~ GlobalZoomMode;
         else
-            display('Try again after exiting zoom mode by hitting ''o''')
+            disp('Try again after exiting zoom mode by hitting ''o''')
         end
     
-    elseif (cc=='m')&(CurrentParticle<length(Particles{CurrentChannel}))
+    elseif (cc=='m')&&(CurrentParticle<numParticles)
         
         NextParticle=CurrentParticle+1;
         
-        if NextParticle>length(Particles{CurrentChannel})
-            NextParticle=length(Particles{CurrentChannel});
+        if NextParticle>numParticles
+            NextParticle=numParticles;
         end
         
         
         %Mode 1 - skip approved or flagged traces
-        while (HideApprovedFlag)==1&(NextParticle<length(Particles{CurrentChannel}))&...
-                ((Particles{CurrentChannel}(NextParticle).Approved==1)|(Particles{CurrentChannel}(NextParticle).Approved==-1)|...
+        while (HideApprovedFlag)==1&&(NextParticle<numParticles)&&...
+                ((Particles{CurrentChannel}(NextParticle).Approved==1)||(Particles{CurrentChannel}(NextParticle).Approved==-1)||...
                 (Particles{CurrentChannel}(NextParticle).Approved==2))
                 NextParticle=NextParticle+1;
         end
         
         %Mode 2 - skip approved traces
-        while ((HideApprovedFlag)==2)&(NextParticle<length(Particles{CurrentChannel}))&...
-                ((Particles{CurrentChannel}(NextParticle).Approved==1)|(Particles{CurrentChannel}(NextParticle).Approved==2))
+        while ((HideApprovedFlag)==2)&&(NextParticle<numParticles)&&...
+                ((Particles{CurrentChannel}(NextParticle).Approved==1)||(Particles{CurrentChannel}(NextParticle).Approved==2))
                 NextParticle=NextParticle+1;
         end
         
@@ -1893,7 +1852,7 @@ while (cc~='x')
         msg = Particles{CurrentChannel}(CurrentParticle).Frame(find(diff(Particles{CurrentChannel}(CurrentParticle).Frame)>1));
         
         if ~isempty(msg)
-%             display('Missing frames:') %AR 12/3/17- Not sure what this
+%             disp('Missing frames:') %AR 12/3/17- Not sure what this
 %             message is trying to say, so I am silencing it for now. 
 %             msg        
         else 
@@ -1920,8 +1879,8 @@ while (cc~='x')
         
         
         %Mode 2 - show disapproved traces
-        while ((HideApprovedFlag)==2)&(NextParticle>1)&...
-                ((Particles{CurrentChannel}(NextParticle).Approved==1)|(Particles{CurrentChannel}(NextParticle).Approved==2))
+        while ((HideApprovedFlag)==2)&&(NextParticle>1)&&...
+                ((Particles{CurrentChannel}(NextParticle).Approved==1)||(Particles{CurrentChannel}(NextParticle).Approved==2))
             NextParticle=NextParticle-1;
             if NextParticle<1
                 NextParticle=1;
@@ -1958,13 +1917,13 @@ while (cc~='x')
     elseif cc=='l' %Split a nucleus and select one or two daughter cells or stop the lineage
         PreviousParticle=0;
         
-        display('Select one/two daughter nuclei and press ENTER or just press ENTER to terminate lineage')
+        disp('Select one/two daughter nuclei and press ENTER or just press ENTER to terminate lineage')
         NewNuclei=ginput(2);
         
         if isempty(NewNuclei)
             warning('Write the disconnect schnitz part')
         else
-            [NClicks,Dummy]=size(NewNuclei);
+            [NClicks,~]=size(NewNuclei);
         
             ClickedSchnitz=[];
             %Find the nuclei/schnitz that we clicked on
@@ -2017,7 +1976,7 @@ while (cc~='x')
                             JoinSchnitz(Particles{CurrentChannel},schnitzcells,Particles{CurrentChannel}(CurrentParticle).Nucleus,...  
                             ClickedSchnitz,CurrentFrame);
                     catch
-                        display('Error in JoinSchnitz')
+                        disp('Error in JoinSchnitz')
                     end
                 end
             elseif length(ClickedSchnitz)==2
@@ -2045,13 +2004,13 @@ while (cc~='x')
         end
         
     elseif cc=='2' %2 set parent of current nucleus
-        display('Select the mother nucleus or press enter to delete mother information')
+        disp('Select the mother nucleus or press enter to delete mother information')
         NewNuclei=ginput(1);
         
         if isempty(NewNuclei)
             error('Write the disconnect schnitz part')
         else
-            [NClicks,Dummy]=size(NewNuclei);
+            [NClicks,~]=size(NewNuclei);
         
             ClickedSchnitz=[];
             %Find the nuclei/schnitz that we clicked on
@@ -2092,7 +2051,7 @@ while (cc~='x')
             if length(ClickedSchnitz)==1
                 schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).P=ClickedSchnitz;
 
-            elseif length(ClickedSchnitz)==0
+            elseif isempty(ClickedSchnitz)
                 schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).P=0;
             end                
         end    
@@ -2113,7 +2072,7 @@ while (cc~='x')
 
             %Now, find its associated particle
             AssignedNucleusNewChannel=[];
-            for i=1:length(Particles{CurrentChannel})
+            for i=1:numParticles
                 if ~isempty(Particles{CurrentChannel}(i).Nucleus)
                     AssignedNucleusNewChannel(i)=Particles{CurrentChannel}(i).Nucleus;
                 else
@@ -2127,8 +2086,8 @@ while (cc~='x')
         
         %If we don't have a histone channel, go for the same particle
         %number in the new channel or for the last particle
-        elseif length(Particles{CurrentChannel})<CurrentParticle
-            CurrentParticle=length(Particles{CurrentChannel});
+        elseif numParticles<CurrentParticle
+            CurrentParticle=numParticles;
         end
     
     elseif cc=='~'      %Switch projection mode
@@ -2153,17 +2112,6 @@ end
 
 save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo')
 
-
-%HG to AR on 02/02/2017: Do we need this?
-% %Save DoGs
-% for current_frame = 1:num_frames
-%     for i = 1:zSize   
-%         dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif'];
-%         imwrite(uint16(dog(:,:,i,current_frame)), [OutputFolder1,filesep,dog_name]);
-%     end
-% end
-
-
 %If we only have one channel bring Particles back to the legacy
 %format without any cells
 if NChannels==1
@@ -2175,20 +2123,15 @@ end
 
 if UseHistoneOverlay
     save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2', '-v7.3')
-    save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3') %CS20170912 necessary for saving Spots.mat if >2GB)
+    save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3') 
     save([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'],'schnitzcells')
 else
     save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2', '-v7.3')            
-    save([DataFolder,filesep,'Spots.mat'],'Spots','-v7.3') %CS20170912 necessary for saving Spots.mat if >2GB)
+    save([DataFolder,filesep,'Spots.mat'],'Spots','-v7.3')
 end
 close all
-display('Particles saved.')
-display(['(Left off at Particle #', num2str(CurrentParticle), ')'])
-
-
-
-
-
+disp('Particles saved.')
+disp(['(Left off at Particle #', num2str(CurrentParticle), ')'])
 %% Extra stuff that is useful in debug mode
 
 %Reset approve status of all approved particles in a certain nc
@@ -2196,7 +2139,7 @@ display(['(Left off at Particle #', num2str(CurrentParticle), ')'])
 % 
 % %Determine the start and end frame of the nc
 % if nc==14
-%     display('Do this')
+%     disp('Do this')
 % else
 %     eval(['ncStart=nc',num2str(nc),';']);
 %     eval(['ncEnd=nc',num2str(nc+1),';']);
