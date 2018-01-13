@@ -5,6 +5,9 @@ function standardizeFigure(ax, legend, varargin)
     fig = gcf;
     dataObj = get(ax, 'Children');
     dataType = get(dataObj, 'Type');
+    if ~iscell(dataType)
+        dataType = {dataType};
+    end
     legendSize = 20;
     
     for i = 1:length(varargin)

@@ -29,17 +29,18 @@ function APAnalysis(dataset, varargin)
 %Last Updated: 7/5/17
 %
 %To do: 
-%        1) Save graphs somewhere automatically 
+%        1) Set figure names for better saving. probably prefix-fignumber
 %        2) Fix stde error bars
 %        3) Separate out graphs into functions
 %        4) Put control stuff in another script or subfunctions
 %        5) Make zeros in cumulative graph actually all zeros
 %        6) Make sure integration periods are consistent with APDiv times
-%         7) Make duration graphs subfunction
+%        7) Make duration graphs subfunction
 %% 
     control = '';
     nc = 2;
     justMeans = 0;
+    savePath = '';
 
     for i=1:length(varargin)
         if strcmpi(varargin{i},'control')
@@ -48,6 +49,8 @@ function APAnalysis(dataset, varargin)
             nc = varargin{i+1} - 11; %Because in the CompiledParticles, nc12 is indexed as 1, nc13 as 2, etc.
         elseif strcmpi(varargin{i}, 'justMeans')
             justMeans = 1;
+        elseif strcmpi(varargin{i}, 'savePath')
+            savePath = varargin{i+1};
         end
     end
         
@@ -207,6 +210,17 @@ function APAnalysis(dataset, varargin)
 %%
     analyzeContiguity(d);
     plotWindowTimings(d);
+    %saving every figure
+    if ~isempty(savePath)
+        FigList = findobj(allchild(0), 'flat', 'Type', 'figure');
+        for iFig = 1:length(FigList)
+          FigHandle = FigList(iFig);
+          FigName   = get(FigHandle, 'Name');
+          savefig(FigHandle, [savePath,filesep, num2str(iFig), '.fig']);
+          saveas(FigHandle, [savePath,filesep, num2str(iFig), '.png']);
+%             saveas(FigHandle, fullfile(savePath, num2str(i)FigName, '.png'));
+        end
+    end
 
 end
 %%

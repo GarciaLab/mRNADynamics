@@ -17,8 +17,8 @@ function Data=LoadMS2Sets(DataType)
 %DataType tab in dataStatus.xlsx
 %
 %Author (contact): Hernan Garcia (hgarcia@berkeley.edu)
-%Created: Unknown
-%Last Updated: Unknown
+%Created: 
+%Last Updated: 1/13/2018. AR 
 
 %Get some of the default folders
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
@@ -40,7 +40,7 @@ for i=1:length(DropboxFolders)
         error(['More than one DataStatus.XLS found in folder ',DropboxFolders{i}])
     elseif length(DDataStatus)==1
         [Dummy,Sheets] = xlsfinfo([DropboxFolders{i},filesep,DDataStatus(1).name]);
-        FindSheets=strcmpi(Sheets,lower(DataType));
+        FindSheets=strcmpi(Sheets,DataType);
         if sum(FindSheets)==1
             DataStatusToCheck=[DataStatusToCheck,i];
         end
@@ -49,7 +49,7 @@ end
 %Check that there aren't two DataStatus files with the same tab name
 if length(DataStatusToCheck)>1
     error(['More than one DataStatus.XLSX found with a tab named ',DataType])
-elseif length(DataStatusToCheck)==0
+elseif isempty(DataStatusToCheck)
     error(['No DataStatus.XLSX found with a tab named ',DataType])
 end
 
@@ -152,7 +152,7 @@ for i=1:length(CompiledSets)
     %structure as well as use it to check the consistency of the analysis
     %performed with the different data sets.
     
-    if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'])
+    if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],'file')
         %Need to try this in case there's some incompatibility in terms of the
         %structures. This is because we might have xls sets that have been
         %compiled using different versions of CompileParticles.m
@@ -202,7 +202,7 @@ for i=1:length(CompiledSets)
         
         
         
-        if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'])
+        if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'file')
             APDivisions(i)=load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat']);
         else
             warning('APDivisions.mat not found. This is a stupid way to check. Have the code check if this experiment is DV or AP instead')
@@ -227,13 +227,13 @@ for i=1:length(CompiledSets)
         
 
         %Fit to the integrals
-        if exist([DropboxFolder,filesep,Prefix,filesep,'FitIntegralResults.mat'])
+        if exist([DropboxFolder,filesep,Prefix,filesep,'FitIntegralResults.mat'],'file')
             IntegralFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'FitIntegralResults.mat']);
         end
 
 
         %Fits to individual traces
-        if exist([DropboxFolder,filesep,Prefix,filesep,'IndividualFits.mat'])
+        if exist([DropboxFolder,filesep,Prefix,filesep,'IndividualFits.mat'],'file')
             IndividualFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'IndividualFits.mat']);
         end
 
@@ -243,14 +243,14 @@ for i=1:length(CompiledSets)
     %         AccumulationData(i)=load([DropboxFolder,filesep,Prefix,filesep,'AccumulationData.mat']);
     %     end
 
-        if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsUp.mat'])
+        if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsUp.mat'],'file')
             MeanFitsUp(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsUp.mat']);
         end
 
 
         %Load Ellipses
         try
-        Ellipses(i)=load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat']);
+            Ellipses(i)=load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat']);
         catch
             warning('Ellipses.mat not found.')
         end
@@ -259,7 +259,7 @@ for i=1:length(CompiledSets)
         load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat']);
         ParticleTemp(i).Particles=Particles;
         %Count ellipses
-        if exist([DropboxFolder,filesep,Prefix,filesep,'CountEllipses.mat'])
+        if exist([DropboxFolder,filesep,Prefix,filesep,'CountEllipses.mat'],'file')
             CountEllipses(i)=load([DropboxFolder,filesep,Prefix,filesep,'CountEllipses.mat']);
         else
             %This is not the smarter way to do this. It relies on having at the
@@ -270,50 +270,50 @@ for i=1:length(CompiledSets)
     
     
     %Load CompiledNuclei if it exists
-    if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'])
+    if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],'file')
         DataNuclei(i)=load([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat']);
     end
 end
 
 
 %Now add the SetName and APDivision information
-if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'])
+if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],'file')
     for i=1:length(Data)
         Data(i).SetName=SetNames{i};
 
-        if exist('ImageRotation')
+        if exist('ImageRotation','var')
             Data(i).ImageRotation=ImageRotation(i);
         end
         
-        if exist('APDivisions')
+        if exist('APDivisions','var')
             Data(i).APDivision=APDivisions(i).APDivision;
         end
 
-        if exist('IntegralFits')
+        if exist('IntegralFits','var')
             if i<=length(IntegralFits)
                 Data(i).IntegralFits=IntegralFits(i).FitResults;
             end
         end
 
-        if exist('IndividualFits')
+        if exist('IndividualFits','var')
             if i<=length(IndividualFits)
                 Data(i).IndividualFits=IndividualFits(i).FitResultsIndiv;
             end
         end
 
-        if exist('AccumulationData')
+        if exist('AccumulationData','var')
             if i<=length(AccumulationData)
                 Data(i).AccumulationData=AccumulationData(i).AcumData;
             end
         end
 
-        if exist('MeanFits')
+        if exist('MeanFits','var')
             if i<=length(MeanFits)
                 Data(i).MeanFits=MeanFits(i).FitResults;
             end
         end
 
-       if exist('MeanFitsUp')
+       if exist('MeanFitsUp','var')
             if i<=length(MeanFitsUp)
                 Data(i).MeanFitsUp=MeanFitsUp(i).FitResults;
             end
@@ -330,7 +330,7 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'])
 end
 
 % Add information to DataNuclei if it exists
-if exist('DataNuclei')
+if exist('DataNuclei','var')
     for i=1:length(DataNuclei)
         DataNuclei(i).SetName=SetNames{i};
     end
@@ -339,16 +339,16 @@ end
 
 
 %If we have both particles and nuclei, then combine everything
-if exist('Data')&exist('DataNuclei')
+if exist('Data','var')&&exist('DataNuclei','var')
     DataTemp=Data;
     clear Data
     for i=1:length(DataTemp)
         Data(i).Particles=DataTemp(i);
         Data(i).Nuclei=DataNuclei(i);
     end
-elseif (~exist('Data'))&exist('DataNuclei')
+elseif (~exist('Data', 'var'))&&exist('DataNuclei', 'var')
     Data=DataNuclei;
-elseif  (~exist('Data'))&(~exist('DataNuclei'))
+elseif  (~exist('Data','var'))&&(~exist('DataNuclei','var'))
     error('No CompiledParticles found. Check DynamicsResults folder as well as DataStatus.XLSX.')
 end
     
