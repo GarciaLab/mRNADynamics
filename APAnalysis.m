@@ -26,10 +26,9 @@ function APAnalysis(dataset, varargin)
 %
 %Author (contact): Armando Reimer (areimer@berkeley.edu)
 %Created: 6/3/2017
-%Last Updated: 7/5/17
+%Last Updated: 1/13/18
 %
-%To do: 
-%        1) Set figure names for better saving. probably prefix-fignumber
+%To do:   
 %        2) Fix stde error bars
 %        3) Separate out graphs into functions
 %        4) Put control stuff in another script or subfunctions
@@ -111,11 +110,10 @@ function APAnalysis(dataset, varargin)
          end
          cumstde(APBin) = cumstd(APBin) /  sqrt(sum(cum(:,APBin) ~= 0));
     end
-    figure(1)
-    clf('reset')
+    figure('Name', 'intensity')
     if ~justMeans
         for dataSet = 1:nSets
-            s = scatter(ap, cum(dataSet, :), 100, 'k', 'filled', 'DisplayName', Prefix{dataSet});
+            plot(ap,cum(dataSet,:),'-o','DisplayName',Prefix{dataSet});
             hold on
         end
     end
@@ -136,8 +134,7 @@ function APAnalysis(dataset, varargin)
     
     %% 
     %Experiment fraction on
-    figure(2)
-    clf('reset')
+    figure('Name', 'fraction')
     g = zeros(numAPBins, 1);
     g2 = zeros(numAPBins, 1);
     n = zeros(numAPBins, 1);
@@ -149,7 +146,7 @@ function APAnalysis(dataset, varargin)
         g2 = g2 + nonanf.^2; 
         n = ~isnan(f) + n;
         if ~justMeans
-            s = scatter(ap, f, 100, 'k', 'filled', 'DisplayName', Prefix{dataSet});
+            plot(ap,f,'-o','DisplayName',Prefix{dataSet});
             hold on
         end
     end
@@ -163,8 +160,8 @@ function APAnalysis(dataset, varargin)
     hold off
     lgd2 = legend('show');
     set(lgd2, 'Interpreter', 'Latex');
-%     xlim([.1, .8])
-%     ylim([0, 1.3])
+    xlim([.1, .8])
+    ylim([0, 1.1])
     title(['fraction of actively transcribing nuclei, nuclear cycle ',num2str(nc+11)]);
     xlabel('fraction embryo length');
     ylabel('fraction on');
@@ -175,8 +172,7 @@ function APAnalysis(dataset, varargin)
     %% 
  
     %Experiment number on
-    figure(3)
-    clf('reset')
+    figure('Name', 'number_spots')
     g = zeros(numAPBins, 1);
     g2 = zeros(numAPBins, 1);
     n = zeros(numAPBins, 1);
@@ -187,21 +183,21 @@ function APAnalysis(dataset, varargin)
         g = g + nonanf;
         g2 = g2 + nonanf.^2; 
         n = ~isnan(f) + n;
-        s = scatter(ap, f,100, 'k', 'filled', 'DisplayName', Prefix{dataSet});
+        plot(ap, f, '-o','DisplayName', Prefix{dataSet});
         hold on
     end
     n(~n) = 1;
     fmean = g./n;
     fstde = sqrt(g2./n - fmean.^2) ./ sqrt(n);
     if nSets > 1
-        e = errorbar(ap, fmean, fstde,'DisplayName', 'mean $\pm$ std. error');
+        errorbar(ap, fmean, fstde,'DisplayName', 'mean $\pm$ std. error');
     end
         
     hold off
     lgd2 = legend('show');
     set(lgd2, 'Interpreter', 'Latex');
-%     xlim([.1, .8])
-%     ylim([0, 1.3])
+    xlim([.1, .8])
+    ylim([0, max(f)*1.1])
     title(['numer of actively transcring nuclei, nuclear cycle ',num2str(nc+11)]);
     xlabel('fraction embryo length');
     ylabel('number on');
@@ -214,11 +210,10 @@ function APAnalysis(dataset, varargin)
     if ~isempty(savePath)
         FigList = findobj(allchild(0), 'flat', 'Type', 'figure');
         for iFig = 1:length(FigList)
-          FigHandle = FigList(iFig);
-          FigName   = get(FigHandle, 'Name');
-          savefig(FigHandle, [savePath,filesep, num2str(iFig), '.fig']);
-          saveas(FigHandle, [savePath,filesep, num2str(iFig), '.png']);
-%             saveas(FigHandle, fullfile(savePath, num2str(i)FigName, '.png'));
+              FigHandle = FigList(iFig);
+              FigName   = [date, '_', dataset, '_', get(FigHandle, 'Name')];
+              savefig(FigHandle, [savePath,filesep, FigName, '.fig']);
+              saveas(FigHandle, [savePath,filesep, FigName, '.png']);
         end
     end
 
@@ -241,7 +236,7 @@ function plotWindowTimings(movie)
         duration(i) = frames(end) - frames(1);
     end
     
-    figure()
+    figure('Name', 'contiguity1')
     subplot(1, 3, 1)
     h = histogram(onTimes);
     title('on times')
@@ -298,7 +293,7 @@ function analyzeContiguity(movie)
        end
     end
 
-    figure()
+    figure('Name', 'contiguity2')
     subplot(2, 2, 1)
     h = histogram(contiguity);
     title({'contiguity of traces relative to';' trace length weighted by'; 'length of gaps'});

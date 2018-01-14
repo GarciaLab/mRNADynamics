@@ -41,7 +41,12 @@ function standardizeFigure(ax, legend, varargin)
             dataObj(i).LineStyle = 'none';
             dataObj(i).FaceColor = color;
         elseif strcmpi(dataType{i}, 'line')
-            set(dataObj(i),'LineWidth',5)
+            dataObj(i).LineWidth = 5;
+            dataObj(i).Color = color;
+            dataObj(i).Marker = '.';
+            dataObj(i).MarkerFaceColor = color;
+            dataObj(i).MarkerEdgeColor = color;
+            dataObj(i).MarkerSize = 30;
         end
     end
     
