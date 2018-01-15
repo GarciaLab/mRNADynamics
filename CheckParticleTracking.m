@@ -440,6 +440,7 @@ CurrentChannel=1;
 PreviousChannel=CurrentChannel;
 CurrentFrame=Particles{1}(1).Frame(1);
 DisplayRange=[];
+DisplayRangeSpot=[];
 ZoomMode=0;
 GlobalZoomMode=0;
 ZoomRange=50;
@@ -673,7 +674,7 @@ while (cc~='x')
     figure(Overlay)
 %     imshow(Image,[minContrast maxContrast],'Border','Tight') %AR
 %     1/13/2018 this contrast setting does not work for dim particles.
-    imshow(Image,[],'Border','Tight')
+    imshow(Image,DisplayRangeSpot,'Border','Tight')
     hold on
     %Show all particles in regular mode
     if ~SpeedMode
@@ -2093,15 +2094,14 @@ while (cc~='x')
         projectionMode = chooseProjection;
         disp(['projectionMode : ' projectionMode])
     
-    elseif cc=='!' % changing contrast 
-        prompt = {'Enter minimum:','Enter maximum :'};
-        dlg_title = 'Changing Contrast in GFP Channel';
-        num_lines = 1;
-        defaultans = {num2str(minContrast),num2str(maxContrast)};
-        userInput = inputdlg(prompt,dlg_title,num_lines,defaultans);
-        tempUserInput = str2double(userInput);
-        minContrast = tempUserInput(1);
-        maxContrast = tempUserInput(2);
+    elseif cc=='!' %Increase contrast in the Overlay figure 
+       if isempty(DisplayRangeSpot)
+            DisplayRangeSpot=[min(min(Image)),max(max(Image))/1.5];
+        else
+            DisplayRangeSpot=[DisplayRangeSpot(1),DisplayRangeSpot(2)/1.5];
+       end
+    elseif cc=='@'      %Decrease spot channel contrast
+        DisplayRangeSpot=[min(min(Image)),max(max(Image))*1.5];
     elseif cc=='0'      %Debugging mode
         keyboard;
     end
