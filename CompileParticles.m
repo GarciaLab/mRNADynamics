@@ -152,7 +152,6 @@ load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'])
 %Check that FrameInfo exists
 if exist([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'file')
     load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
-    numFrames = length(FrameInfo);
 else
     warning('No FrameInfo.mat found. Trying to continue')
     %Adding frame information
