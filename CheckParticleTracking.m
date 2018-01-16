@@ -49,10 +49,11 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % p Identify a particle. It will also tell you the particle associated with
 %  the clicked nucleus.
 % e Approve/Disapprove a frame within a trace
-% u Move a particle detected with Threshold2 into the our structure.
+% u Move a particle detected with Threshold2 into the our structure. 
 % i Move a particle detected with Threshold2 into the our structure and
 %  connect it to the current particle. This is a combination of "u" and
-%  "c".
+%  "c". %AR 1/15/18: This is currently deprecated. Talk to HG if you need
+%  this function.
 % [ Add a spot that was not recognized originally by segmentSpots to the
 % 	current particle. Note that the command forces ZoomMode. To toggle, use
 %   'o' or '+' depending on whether you're adding to an existing trace or creating a new
@@ -601,6 +602,9 @@ while (cc~='x')
     
     if (~isempty(xTrace))&&(~ManualZFlag)
         CurrentZ=z(CurrentParticleIndex);
+        CurrentZIndex=find(...
+                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
+                CurrentZ);
         ManualZFlag=0;
     end
         
@@ -928,21 +932,22 @@ while (cc~='x')
 %     %plot distance versus intensity
 %     figure(SisterFig3)
 %     %plot distance versus time
-    
-    figure(SnippetFig)
-    if (~isempty(xTrace))
-        %Determine the z index to be plotted. This corresponds to the
-        %brightest DoG value
+    if ~isempty(xTrace)
         MaxZIndex=find(...
             Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
             Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ);
-         CurrentZIndex=find(...
-                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
-                CurrentZ);
-     
-        
+        CurrentZIndex=find(...
+            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
+            CurrentZ);
+        if isempty(CurrentZIndex)
+            warning('This particle has a gap in its z-profile. This is highly suspect.');
+        end
+    end
+    
+    figure(SnippetFig)
+    if  ~isempty(xTrace) && ~isempty(CurrentZIndex)  
         %Get the snippet and the mask, and overlay them
-
+        
         CurrentSnippet=mat2gray(...
             Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).Snippet{CurrentZIndex});
         SnippetSize=size(CurrentSnippet,1);        
@@ -963,60 +968,37 @@ while (cc~='x')
         SnippetY=(SnippetSize-1)/2+1-...
             (Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yDoG(CurrentZIndex)-...
             Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yFit(CurrentZIndex));
-        %warning('HG needs to fix this after new commit from AR')
-%         PlotHandle=ellipse(fad(CurrentChannel).channels(CurrentFrame).fits.r_max(CurrentParticleIndex),...
-%             fad(CurrentChannel).channels(CurrentFrame).fits.r_min(CurrentParticleIndex),...
-%             fad(CurrentChannel).channels(CurrentFrame).fits.theta(CurrentParticleIndex),SnippetX,SnippetY,'g');
-%         set(PlotHandle,'LineWidth',2.5)
         hold off
     else
         imshow(zeros(SnippetSize))
     end
-    
-    figure(Gaussian)
-    if (~isempty(xTrace))
-         %Determine the z index to be plotted. This corresponds to the
-            %brightest DoG value
-        MaxZIndex=find(...
-                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
-                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ);
-            CurrentZIndex=find(...
-                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
-                CurrentZ);
+    if ~isempty(xTrace) && ~isempty(CurrentZIndex)
+        figure(Gaussian)
             %Get the snippet and the mask, and overlay them
-        domain=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).rawSpot{CurrentZIndex};
-        snip = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).Snippet{CurrentZIndex};
-        gauss = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{CurrentZIndex};
-        surf(domain{1}, domain{2}, gauss + double(snip));
-        title('Gaussian fit')
-        set(gcf,'units', 'normalized', 'position',[.60, .7, .2, .2]);
-        zlimit = max(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity);
-        zlim([0, zlimit]);
-      
-        
+            domain=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).rawSpot{CurrentZIndex};
+            snip = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).Snippet{CurrentZIndex};
+            gauss = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{CurrentZIndex};
+            surf(domain{1}, domain{2}, gauss + double(snip));
+            title('Gaussian fit')
+            set(gcf,'units', 'normalized', 'position',[.60, .7, .2, .2]);
+            zlimit = max(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity);
+            zlim([0, zlimit]);        
         figure(RawData)
-         %Determine the z index to be plotted. This corresponds to the
-            %brightest DoG value
-        MaxZIndex=find(...
-                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
-                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ);
-        surf(domain{1}, domain{2}, snip)
-        title('Raw data');
-        set(gcf,'units', 'normalized', 'position',[.60, .3, .2, .2]);
-        zlim([0, zlimit]);
+            surf(domain{1}, domain{2}, snip)
+            title('Raw data');
+            set(gcf,'units', 'normalized', 'position',[.60, .3, .2, .2]);
+            zlim([0, zlimit]);
+    else
+        figure(Gaussian)
+        clf;
+        figure(RawData)
+        clf;
     end
 
         
     figure(ZProfileFig)
-    if (~isempty(xTrace))
-        %Determine the z index to be plotted. This corresponds to the
-        %brightest DoG value
-        MaxZIndex=find(...
-            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
-            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ);
-       CurrentZIndex=find(...
-                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
-                CurrentZ); 
+    if ~isempty(xTrace)
+
         %Get the z DoG profile
         ZProfile=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity;
         MaxZ=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ;
@@ -1024,7 +1006,11 @@ while (cc~='x')
         plot(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z,...
             ZProfile,'.-k');
         hold on
-        plot(CurrentZ,ZProfile(CurrentZIndex),'ob')
+        if ~isempty(CurrentZIndex)
+            plot(CurrentZ,ZProfile(CurrentZIndex),'ob')
+        else
+            plot(CurrentZ,CurrentZ,'or')
+        end
         hold off
         title('Z profile')
     end
@@ -1214,6 +1200,69 @@ while (cc~='x')
     elseif cc=='b'      %Decrease histone channel contrast
         DisplayRange=[min(min(ImageHis)),max(max(ImageHis))*1.5];
     
+    elseif cc=='#' %remove a spot from Spots and erase its frame in Particles
+        %Check that we're in zoom mode. If not, set it up.
+        if ~(ZoomMode || GlobalZoomMode)
+            SkipWaitForButtonPress='#';
+            disp('You need to be in Zoom Mode to do this. You can switch using ''o'' or ''+''. Run the ''['' command again.')
+        else           
+            %delete from particles
+            del = 0;
+            choice = questdlg('Are you sure you want to delete this spot? This can''t be undone.', ...
+                'decision time', ...
+                'delete spot','cancel','cancel.');
+            switch choice
+                case 'delete spot'
+                    disp 'Spot deleted.'
+                    del = 1;
+                case 'cancel'
+                    del = 0;
+            end
+            
+            if del
+                %this part deletes from the particles structure
+                ind = Particles{CurrentChannel}(CurrentParticle).Index(CurrentFrameWithinParticle);
+
+                particleFields = fieldnames(Particles{CurrentChannel});
+                for i = 1:numel(particleFields)
+                    Particles{CurrentChannel}(CurrentParticle).(particleFields{i})(CurrentFrameWithinParticle) = [];
+                end
+                %now we need to changes the index field of every particle that
+                %has a spot in this frame. 
+                for i=1:length(Particles{CurrentChannel})
+                    for j = 1:length(Particles{CurrentChannel}(i).Frame)
+                        if Particles{CurrentChannel}(i).Frame(j) == CurrentFrame
+                            if Particles{CurrentChannel}(i).Index(j) > ind
+                                Particles{CurrentChannel}(i).Index(j) = Particles{CurrentChannel}(i).Index(j) - 1;
+                            end
+                        end
+                    end
+                end
+                %and this part deletes from the spots structure.
+                CurrentSpot = CurrentParticleIndex; %renaming this to make it clear what it actually is
+                Spots{CurrentChannel}(CurrentFrame).Fits(CurrentSpot)= [];
+                %now delete from spotfilter
+               spotRow = SpotFilter{CurrentChannel}(CurrentFrame,:);
+               spotRow(CurrentSpot) = [];
+               spotRow(end+1) = NaN;
+               SpotFilter{CurrentChannel}(CurrentFrame,:) = spotRow;
+                 %switch to another particle just to avoid any potential weirdness with
+                %checkparticletracking refreshing. 
+                NextParticle=CurrentParticle+1;
+                if NextParticle>numParticles
+                    NextParticle=CurrentParticle-2;
+                end
+                disp 'Deleted particle and spot successfully.'
+            end
+        end
+    
+    %note to ar: a potentially simpler version of this button deletes
+    %particle frame but not spot. implement that with a different button.
+    
+    %this code will break if you delete the only frame of a particle. make
+    %special case here. 
+    %
+          
     elseif cc=='[' %Add particle and all of its shadows to Spots.
         
         %Check that we're in zoom mode. If not, set it up.
@@ -1367,9 +1416,8 @@ while (cc~='x')
                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).brightestZ = Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).z(max_index);
 
                     %Add this to SpotFilter, which tells the code that this spot is
-                    %above the threshold. First, I need to check whether the
-                    %dimensions of SpotFilter need to be altered. If so, I need to
-                    %pad it with NaNs
+                    %above the threshold. First, check whether the
+                    %dimensions of SpotFilter need to be altered. If so, pad it with NaNs
                     if size(SpotFilter{CurrentChannel},2)>SpotsIndex
                         SpotFilter{CurrentChannel}(CurrentFrame,SpotsIndex)=1;
                     else
@@ -1543,7 +1591,7 @@ while (cc~='x')
         [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'b', 'linewidth',1);
         ConnectPosition = [ConnectPositionx,ConnectPositiony];
         if ~isempty(ConnectPosition)
-            %Find thef closest particle
+            %Find the closest particle
             [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
             disp(['Clicked particle: ',num2str(ParticleOutput)]);
             
@@ -1658,54 +1706,57 @@ while (cc~='x')
                 ClickedSpot,Particles{CurrentChannel},CurrentFrame)
          end
     elseif cc=='i'
-        PreviousParticle=0;
-         [x2,y2]=fad2xyzFit(CurrentFrame,fad2(CurrentChannel), 'addMargin'); 
-         if ~isempty(x2)
-            fad2Position=ginput(1);
-            if (~isempty(fad2Position))
-                [fad(CurrentChannel),fad2(CurrentChannel),Particles{CurrentChannel}]=...
-                    Integratefad2Particle(fad(CurrentChannel),fad2(CurrentChannel),fad2Position,Particles{CurrentChannel},CurrentFrame);
-            end
-         end
+%         PreviousParticle=0;
+%          [x2,y2]=fad2xyzFit(CurrentFrame,fad2(CurrentChannel), 'addMargin'); 
+%          if ~isempty(x2)
+%             fad2Position=ginput(1);
+%             if (~isempty(fad2Position))
+%                 [fad(CurrentChannel),fad2(CurrentChannel),Particles{CurrentChannel}]=...
+%                     Integratefad2Particle(fad(CurrentChannel),fad2(CurrentChannel),fad2Position,Particles{CurrentChannel},CurrentFrame);
+%             end
+%          end
 
          
-         if (~sum(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame))&(~isempty(fad2Position))
-            ConnectPosition=fad2Position;
-            [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,fad(CurrentChannel),Particles{CurrentChannel});
-            
-            %Check that the clicked particle doesn't exist in a previous
-            %frame, that there is no overlap of frames.  Maybe I can have
-            %those in a different color.
+%          if (~sum(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame))&(~isempty(fad2Position))
+%             ConnectPosition=fad2Position;
+%             [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,fad(CurrentChannel),Particles{CurrentChannel});
+%             
+%             %Check that the clicked particle doesn't exist in a previous
+%             %frame, that there is no overlap of frames.  Maybe I can have
+%             %those in a different color.
+% 
+%            
+%             if sum(Particles{CurrentChannel}(ParticleOutput).Frame<CurrentFrame)
+%                 disp(['Target particle (',num2str(ParticleOutput),') is already in a previous frame!']);
+%             else
+%                 Particles=JoinParticleTraces(CurrentParticle,ParticleOutput,Particles{CurrentChannel});
+%                 %Do this in case the clicked particle comes before the current
+%                 %particle in the structure
+%                 if ParticleOutput<CurrentParticle
+%                     CurrentParticle=ParticleOutput;
+%                 end
+%                 %
+%                 %Sort the frames within the particle. This is useful if we
+%                 %connected to a particle that came before.
+%                 
+%                 %There is an error here, cell contents reference from a non-cell array object.
+%                 [SortedFrame,Permutations]=sort(Particles{CurrentChannel}(CurrentParticle).Frame);
+%                 Particles{CurrentChannel}(CurrentParticle).Frame=Particles{CurrentChannel}(CurrentParticle).Frame(Permutations);
+%                 Particles{CurrentChannel}(CurrentParticle).Index=Particles{CurrentChannel}(CurrentParticle).Index(Permutations);
+%                 Particles{CurrentChannel}(CurrentParticle).FrameApproved=Particles{CurrentChannel}(CurrentParticle).FrameApproved(Permutations);
+%                 
+%                 if UseHistoneOverlay
+%                     %Check for consistency within schnitzcell 
+%                     [Particles{CurrentChannel},schnitzcells]=CheckSchnitzLineage(Particles{CurrentChannel},CurrentParticle,schnitzcells,CurrentFrame,...
+%                         Overlay);
+%                 end  
+%             end 
+%         else
+%             disp('Cannnot connect to two particles!')
+%         end
 
-           
-            if sum(Particles{CurrentChannel}(ParticleOutput).Frame<CurrentFrame)
-                disp(['Target particle (',num2str(ParticleOutput),') is already in a previous frame!']);
-            else
-                Particles=JoinParticleTraces(CurrentParticle,ParticleOutput,Particles{CurrentChannel});
-                %Do this in case the clicked particle comes before the current
-                %particle in the structure
-                if ParticleOutput<CurrentParticle
-                    CurrentParticle=ParticleOutput;
-                end
-                %
-                %Sort the frames within the particle. This is useful if we
-                %connected to a particle that came before.
-                
-                %There is an error here, cell contents reference from a non-cell array object.
-                [SortedFrame,Permutations]=sort(Particles{CurrentChannel}(CurrentParticle).Frame);
-                Particles{CurrentChannel}(CurrentParticle).Frame=Particles{CurrentChannel}(CurrentParticle).Frame(Permutations);
-                Particles{CurrentChannel}(CurrentParticle).Index=Particles{CurrentChannel}(CurrentParticle).Index(Permutations);
-                Particles{CurrentChannel}(CurrentParticle).FrameApproved=Particles{CurrentChannel}(CurrentParticle).FrameApproved(Permutations);
-                
-                if UseHistoneOverlay
-                    %Check for consistency within schnitzcell 
-                    [Particles{CurrentChannel},schnitzcells]=CheckSchnitzLineage(Particles{CurrentChannel},CurrentParticle,schnitzcells,CurrentFrame,...
-                        Overlay);
-                end  
-            end 
-        else
-            disp('Cannnot connect to two particles!')
-        end
+        warning(' AR 1/15/18: This is currently deprecated. Talk to HG if you need this function.')
+
     
      elseif cc=='d'  %d Separate traces forward at the current frame.
          %The separated particle (the trace following current frame) won't have a nucleus assigned!

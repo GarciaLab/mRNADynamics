@@ -165,12 +165,13 @@ else
     Dz=dir([PreProcPath,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'*001*.tif']);
     NumberSlices=length(Dz)-1;
     
-    numFrames = length(FrameInfo);
     for i=1:numFrames
         FrameInfo(i).NumberSlices=NumberSlices;
     end
     
 end
+
+numFrames = length(FrameInfo);
 
 
 
