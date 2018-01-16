@@ -1001,17 +1001,23 @@ while (cc~='x')
         end
         xlabel('frame')        
         ylabel('integrated intensity (a.u.)')
-    elseif strcmpi(ExperimentType, 'inputoutput')
+    else
         %Only update the trace information if we have switched particles
         if (CurrentParticle~=PreviousParticle)||~exist('Amp', 'var')||(CurrentChannel~=PreviousChannel)
             PreviousParticle=CurrentParticle;
             [Frames,Amp]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
         end
+        clf('reset');
         %we'll plot the spot intensity first on the left axis.
         yyaxis left
+        hold on
         plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-b')
         xlabel('frame')
         ylabel('transcript intensity (a.u.)')     
+        plot(Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.k')
+        plot(Frames(Frames==CurrentFrame),Amp(Frames==CurrentFrame),'ob')
+        hold off
+
         
         %now we'll plot the input protein intensity on the right-hand axis.
         yyaxis right
@@ -1025,13 +1031,12 @@ while (cc~='x')
         ylabel('input protein intensity (a.u.)');
         hold on
         plot(Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
-        plot(Frames(Frames==CurrentFrame),Amp(Frames==CurrentFrame),'ob')
         hold off
     end
 
     
     FigureTitle={['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles),...
-        ', Frame: ',num2str(CurrentFrame),'/',num2str(numFrames)],...
+        ', Frame: ',num2str(CurrentFrame),'/',num2str(numFrames), ' (nc',num2str(FrameInfo(CurrentFrame).nc),')'],...
         ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)]};
     
     if HideApprovedFlag==1
@@ -1099,7 +1104,7 @@ while (cc~='x')
         %If there is no next empty frame, jump to the last frame of this
         %particle
         if isempty(CurrentFrame)
-            CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(end)
+            CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(end);
         end
     elseif (cc==';')&(CurrentFrame>1) %Move to the previous skipped frame
                                       %within the particle
@@ -1118,7 +1123,7 @@ while (cc~='x')
         %If there is no next empty frame, jump to the last frame of this
         %particle
         if isempty(CurrentFrame)
-            CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(1)
+            CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(1);
         end
     elseif (cc=='a')&(CurrentZ<ZSlices) %Move up in Z
         CurrentZ=CurrentZ+1;
@@ -1141,14 +1146,13 @@ while (cc~='x')
         DisplayRange=[];
     elseif cc=='k'
         try
-            %ParticleJump=input('Particle to jump to: ');
             ParticleJump = inputdlg('Particle to jump to:',...
                 'Move to particle');
             ParticleJump=str2double(ParticleJump{1});
         catch
             ParticleJump=CurrentParticle;
         end
-        if (floor(ParticleJump)>0)&(ParticleJump<=numParticles)
+        if floor(ParticleJump)>0 && ParticleJump<=numParticles
             CurrentParticle=ParticleJump;
             CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(1);
             ManualZFlag=0;
@@ -1169,40 +1173,44 @@ while (cc~='x')
         %Check that we're in zoom mode. If not, set it up.
         if ~(ZoomMode || GlobalZoomMode)
             SkipWaitForButtonPress='#';
-            disp('You need to be in Zoom Mode to do this. You can switch using ''o'' or ''+''. Run the ''['' command again.')
+            disp('You need to be in Zoom Mode to do this. You can switch using ''o'' or ''+''. Run the ''#'' command again.')
         else           
             %delete from particles
             del = 0;
             choice = questdlg('Are you sure you want to delete this spot? This can''t be undone.', ...
-                'decision time', ...
-                'delete spot','cancel','cancel.');
+                '', 'Delete spot','Cancel','Cancel');
             switch choice
-                case 'delete spot'
-                    disp 'Spot deleted.'
+                case 'Delete spot'
+                    disp 'Deleting spot.'
                     del = 1;
-                case 'cancel'
+                case 'Cancel'
+                    disp 'Spot deletion cancelled.'
                     del = 0;
             end
             
             if del
-                %this part deletes from the particles structure
                 ind = Particles{CurrentChannel}(CurrentParticle).Index(CurrentFrameWithinParticle);
-
-                particleFields = fieldnames(Particles{CurrentChannel});
-                for i = 1:numel(particleFields)
-                    Particles{CurrentChannel}(CurrentParticle).(particleFields{i})(CurrentFrameWithinParticle) = [];
+                lastFrame = length(Particles{CurrentChannel}(CurrentParticle).Frame) == 1;
+                if lastFrame
+                    Particles{CurrentChannel}(CurrentParticle) = [];
+                    numParticles = numParticles - 1;
+                else
+                    particleFields = fieldnames(Particles{CurrentChannel});
+                    for i = 1:numel(particleFields)
+                        Particles{CurrentChannel}(CurrentParticle).(particleFields{i})(CurrentFrameWithinParticle) = [];
+                    end
                 end
-                %now we need to changes the index field of every particle that
-                %has a spot in this frame. 
-                for i=1:length(Particles{CurrentChannel})
-                    for j = 1:length(Particles{CurrentChannel}(i).Frame)
-                        if Particles{CurrentChannel}(i).Frame(j) == CurrentFrame
-                            if Particles{CurrentChannel}(i).Index(j) > ind
-                                Particles{CurrentChannel}(i).Index(j) = Particles{CurrentChannel}(i).Index(j) - 1;
+                    %and this part changes the the index of other particles
+                    %in the frame. 
+                    for i=1:length(Particles{CurrentChannel})
+                        for j = 1:length(Particles{CurrentChannel}(i).Frame)
+                            if Particles{CurrentChannel}(i).Frame(j) == CurrentFrame
+                                if Particles{CurrentChannel}(i).Index(j) > ind
+                                    Particles{CurrentChannel}(i).Index(j) = Particles{CurrentChannel}(i).Index(j) - 1;
+                                end
                             end
                         end
                     end
-                end
                 %and this part deletes from the spots structure.
                 CurrentSpot = CurrentParticleIndex; %renaming this to make it clear what it actually is
                 Spots{CurrentChannel}(CurrentFrame).Fits(CurrentSpot)= [];
@@ -1211,23 +1219,28 @@ while (cc~='x')
                spotRow(CurrentSpot) = [];
                spotRow(end+1) = NaN;
                SpotFilter{CurrentChannel}(CurrentFrame,:) = spotRow;
-                 %switch to another particle just to avoid any potential weirdness with
-                %checkparticletracking refreshing. 
-                NextParticle=CurrentParticle+1;
-                if NextParticle>numParticles
-                    NextParticle=CurrentParticle-2;
+                if lastFrame
+                    %switch to another particle just to avoid any potential weirdness with
+                    %checkparticletracking refreshing. simpler version of the
+                    %'m' button
+                    NextParticle = CurrentParticle+1;
+                    if NextParticle>numParticles
+                        NextParticle=NextParticle-2; %go backwards one particle if the deleted particle was the last. 
+                    end
+                    CurrentParticle=NextParticle;
+                    CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(1);
+                    ParticleToFollow=[];
+                    DisplayRange=[];
+                    disp 'Spot deleted successfully.'
                 end
-                disp 'Deleted particle and spot successfully.'
             end
+            ZoomMode=0;
+            GlobalZoomMode=0;
         end
     
-    %note to ar: a potentially simpler version of this button deletes
-    %particle frame but not spot. implement that with a different button.
-    
-    %this code will break if you delete the only frame of a particle. make
-    %special case here. 
-    %
-          
+%     note to ar: a potentially simpler version of this button deletes
+%     particle frame but not spot. implement that with a different button.
+%           
     elseif cc=='[' %Add particle and all of its shadows to Spots.
         
         %Check that we're in zoom mode. If not, set it up.
@@ -1397,6 +1410,7 @@ while (cc~='x')
                         TransferParticle(Spots{CurrentChannel},...
                         SpotFilter{CurrentChannel},Particles{CurrentChannel},...
                         CurrentFrame,SpotsIndex);
+                    numParticles = numParticles + 1;
 
                     %Connect this particle to the CurrentParticle. This is
                     %the equivalent of running the 'c' command. 
@@ -1680,8 +1694,8 @@ while (cc~='x')
 %                     Integratefad2Particle(fad(CurrentChannel),fad2(CurrentChannel),fad2Position,Particles{CurrentChannel},CurrentFrame);
 %             end
 %          end
-
-         
+% 
+%          
 %          if (~sum(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame))&(~isempty(fad2Position))
 %             ConnectPosition=fad2Position;
 %             [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,fad(CurrentChannel),Particles{CurrentChannel});
