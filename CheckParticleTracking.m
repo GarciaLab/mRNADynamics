@@ -526,8 +526,10 @@ while (cc~='x')
     if NChannels==1
         if contains(Channel1{1}, 'MCP') || contains(Channel1{1}, 'PCP')
             nameSuffix=['_ch',iIndex(1,2)];
+            coatChannel = 1;
         elseif contains(Channel2{1}, 'MCP') || contains(Channel2{1}, 'PCP')
             nameSuffix=['_ch',iIndex(2,2)];
+            coatChannel = 2;
         end
     else
         error('This script currently doesn''t support 2 spot 2 color. Talk to Armando or Hernan to make this happen. No duct tape please.'); %AR 12/23/17
@@ -604,18 +606,18 @@ while (cc~='x')
         ManualZFlag=0;
     end
         
-    if NChannels==1&&(~strcmpi(ExperimentType,'inputoutput'))
+    if NChannels==1 % inputoutput mode can also be in this case, changed CurrentChannel to the coatChannel (YJK : 1/15/2018)
             if strcmpi(projectionMode,'None (Default)')
                 Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                     FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
             elseif strcmpi(projectionMode,'Max Z')
-                [Image,~] = zProjections(Prefix, CurrentChannel, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
+                [Image,~] = zProjections(Prefix, coatChannel, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
             elseif strcmpi(projectionMode,'Median Z')
-                [~,Image] = zProjections(Prefix, CurrentChannel, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
+                [~,Image] = zProjections(Prefix, coatChannel, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
             elseif strcmpi(projectionMode,'Max Z and Time')
                 if isempty(storedTimeProjection)
                     if ncRange
-                        Image = timeProjection(Prefix, CurrentChannel,'nc',NC);
+                        Image = timeProjection(Prefix, coatChannel,'nc',NC);
                         storedTimeProjection = Image;
                     else
                         Image = timeProjection(Prefix, CurrentChannel);
@@ -630,36 +632,6 @@ while (cc~='x')
         Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
             FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),...
             nameSuffix,'.tif']);
-    elseif (NChannels==1)&&(strcmpi(ExperimentType,'inputoutput'))
-        OutputChannelTemp1=strfind({lower(Channel1{1}),lower(Channel2{1})},'mcp');
-        OutputChannelTemp2=strfind({lower(Channel1{1}),lower(Channel2{1})},'pcp');
-        OutputChannelTemp1=~cellfun(@isempty,OutputChannelTemp1);
-        OutputChannelTemp2=~cellfun(@isempty,OutputChannelTemp2);
-        OutputChannel=find(OutputChannelTemp1|OutputChannelTemp2);
-        
-        % Z-projection mode support (YJK, 2017/12/27)
-        if strcmpi(projectionMode,'None (Default)')
-                Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                    FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'_ch',iIndex(OutputChannel,2),'.tif']);
-            elseif strcmpi(projectionMode,'Max Z')
-                [Image,~] = zProjections(Prefix, OutputChannel, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
-            elseif strcmpi(projectionMode,'Median Z')
-                [~,Image] = zProjections(Prefix, OutputChannel, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
-            elseif strcmpi(projectionMode,'Max Z and Time')
-                if isempty(storedTimeProjection)
-                    if ncRange
-                        Image = timeProjection(Prefix, OutputChannel,'nc',NC);
-                        storedTimeProjection = Image;
-                    else
-                        Image = timeProjection(Prefix, OutputChannel);
-                        storedTimeProjection = Image;
-                    end
-                else
-                    Image = storedTimeProjection;
-                end
-            end
-%         Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-%                 FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'_ch',iIndex(OutputChannel,2),'.tif']);
     else
         warning('ExperimentType and/or channel not supported. Attempting to proceed')
         try
