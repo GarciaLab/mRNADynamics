@@ -40,13 +40,16 @@ function standardizeFigure(ax, legend, varargin)
         elseif strcmpi(dataType{i}, 'bar') || strcmpi(dataType{i}, 'histogram')
             dataObj(i).LineStyle = 'none';
             dataObj(i).FaceColor = color;
-        elseif strcmpi(dataType{i}, 'line')
+        elseif strcmpi(dataType{i}, 'line') || strcmpi(dataType{i}, 'errorbar')
             dataObj(i).LineWidth = 5;
             dataObj(i).Color = color;
             dataObj(i).Marker = '.';
             dataObj(i).MarkerFaceColor = color;
             dataObj(i).MarkerEdgeColor = color;
             dataObj(i).MarkerSize = 30;
+            if strcmpi(dataType{i}, 'errorbar')
+                %insert errorbar specific things here.
+            end
         end
     end
     

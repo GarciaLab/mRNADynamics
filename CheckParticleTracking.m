@@ -607,42 +607,35 @@ while (cc~='x')
     end
         
     if NChannels==1 % inputoutput mode can also be in this case, changed CurrentChannel to the coatChannel (YJK : 1/15/2018)
-            if strcmpi(projectionMode,'None (Default)')
-                Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                    FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
-            elseif strcmpi(projectionMode,'Max Z')
-                [Image,~] = zProjections(Prefix, coatChannel, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
-            elseif strcmpi(projectionMode,'Median Z')
-                [~,Image] = zProjections(Prefix, coatChannel, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
-            elseif strcmpi(projectionMode,'Max Z and Time')
-                if isempty(storedTimeProjection)
-                    if ncRange
-                        Image = timeProjection(Prefix, coatChannel,'nc',NC);
-                        storedTimeProjection = Image;
-                    else
-                        Image = timeProjection(Prefix, CurrentChannel);
-                        storedTimeProjection = Image;
-                    end
+        if strcmpi(projectionMode,'None (Default)')
+            Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
+                FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
+        elseif strcmpi(projectionMode,'Max Z')
+            [Image,~] = zProjections(Prefix, coatChannel, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
+        elseif strcmpi(projectionMode,'Median Z')
+            [~,Image] = zProjections(Prefix, coatChannel, CurrentFrame, ZSlices, NDigits,DropboxFolder,PreProcPath);
+        elseif strcmpi(projectionMode,'Max Z and Time')
+            if isempty(storedTimeProjection)
+                if ncRange
+                    Image = timeProjection(Prefix, coatChannel,'nc',NC);
+                    storedTimeProjection = Image;
                 else
-                    Image = storedTimeProjection;
+                    Image = timeProjection(Prefix, CurrentChannel);
+                    storedTimeProjection = Image;
                 end
+            else
+                Image = storedTimeProjection;
             end
+        end
 
-    elseif (NChannels>1)&&(~strcmpi(ExperimentType,'inputoutput'))
+    elseif NChannels>1
         Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
             FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),...
             nameSuffix,'.tif']);
     else
-        warning('ExperimentType and/or channel not supported. Attempting to proceed')
-        try
-            Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                    FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),'.tif']);
-        catch
-            disp(['Warning: Could not load file: ',...
-                FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
-        end
+        error('ExperimentType and/or channel not supported.')          
     end
-
+    
     figure(Overlay)
 %     imshow(Image,[minContrast maxContrast],'Border','Tight') %AR
 %     1/13/2018 this contrast setting does not work for dim particles.
