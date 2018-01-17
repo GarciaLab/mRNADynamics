@@ -350,7 +350,7 @@ if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file')
         end
     end
 else
-    warning('Warning: no histone channel may result in strange behavior.');
+    warning('No nuclear marker channel may result in strange behavior.');
     
     nc9=XLSRaw{XLSEntry,nc9Column};
     nc10=XLSRaw{XLSEntry,nc10Column};
@@ -779,7 +779,9 @@ while (cc~='x')
             end
             
         else
-            warning('Warning: This particle does not have an associated nucleus')
+            if UseHistoneOverlay
+                warning('This particle does not have an associated nucleus.');
+            end
         end  
     end
     
@@ -905,7 +907,9 @@ while (cc~='x')
             Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
             CurrentZ);
         if isempty(CurrentZIndex)
-            warning('This particle has a gap in its z-profile. This is highly suspect.');
+%             warning('This particle has a gap in its z-profile. This is
+%             highly suspect.'); %this if statement should only happen
+%             between two spots, not past the PSF boundaries
         end
     end
     
@@ -1035,8 +1039,8 @@ while (cc~='x')
     end
 
     
-    FigureTitle={['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles),...
-        ', Frame: ',num2str(CurrentFrame),'/',num2str(numFrames), ' (nc',num2str(FrameInfo(CurrentFrame).nc),')'],...
+    FigureTitle={['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)],...
+        ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames), ' (nc',num2str(FrameInfo(CurrentFrame).nc),')'],...
         ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)]};
     
     if HideApprovedFlag==1
@@ -1811,7 +1815,7 @@ while (cc~='x')
         
     elseif cc=='t'
         ShowThreshold2=~ShowThreshold2;
-    elseif (cc=='y')&&(~UseHistoneOverlay)
+    elseif (cc=='y')&(~UseHistoneOverlay)
             FrameInfo=DetermineNC(fad,Particles{CurrentChannel},FrameInfo);
     elseif cc=='h'
         if HideApprovedFlag==0
@@ -1843,7 +1847,7 @@ while (cc~='x')
             disp('Try again after exiting zoom mode by hitting ''o''')
         end
     
-    elseif (cc=='m')&&(CurrentParticle<numParticles)
+    elseif (cc=='m')&(CurrentParticle<numParticles)
         
         NextParticle=CurrentParticle+1;
         
@@ -1887,7 +1891,7 @@ while (cc~='x')
             %do nothing
         end
             
-    elseif (cc=='n')&&(CurrentParticle>1)
+    elseif (cc=='n')&(CurrentParticle>1)
         Approved=(find([Particles{CurrentChannel}.Approved]));
         %NotApproved=(find(~[Particles.Approved]));
         
