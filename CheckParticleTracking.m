@@ -1172,7 +1172,7 @@ while (cc~='x')
     elseif cc=='#' %remove a spot from Spots and erase its frame in Particles
         %Check that we're in zoom mode. If not, set it up.
         if ~(ZoomMode || GlobalZoomMode)
-            SkipWaitForButtonPress='#';
+%             SkipWaitForButtonPress='#';
             disp('You need to be in Zoom Mode to do this. You can switch using ''o'' or ''+''. Run the ''#'' command again.')
         else           
             %delete from particles
@@ -1245,7 +1245,7 @@ while (cc~='x')
         
         %Check that we're in zoom mode. If not, set it up.
         if ~(ZoomMode || GlobalZoomMode)
-            SkipWaitForButtonPress='[';
+%             SkipWaitForButtonPress='[';
             disp('You need to be in Zoom Mode to do this. You can switch using ''o'' or ''+''. Run the ''['' command again.')
         else
             %Click on the region we're going to fit in order to find a new
