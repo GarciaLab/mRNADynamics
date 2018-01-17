@@ -495,8 +495,8 @@ if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
                                 if sum(MinIndex)
                                     for j=1:length(MinIndex)
                                         if MinIndex(j)>0
-                                            Particles(PreviousFrameParticles(MinIndex(j))).Frame(end+1)=CurrentFrame;
-                                            Particles(PreviousFrameParticles(MinIndex(j))).Index(end+1)=ApprovedSpots(j);
+                                            Particles{Channel}(PreviousFrameParticles(MinIndex(j))).Frame(end+1)=CurrentFrame;
+                                            Particles{Channel}(PreviousFrameParticles(MinIndex(j))).Index(end+1)=ApprovedSpots(j);
 
                                             %We don't want this new spot to generate a
                                             %new particle further below
@@ -516,8 +516,8 @@ if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
                                 MinIndex(~(MinValues<SearchRadius))=0;
 
                                 if sum(MinIndex)
-                                    Particles(PreviousFrameParticles).Frame(end+1)=CurrentFrame;
-                                    Particles(PreviousFrameParticles).Index(end+1)=MinIndex;
+                                    Particles{Channel}(PreviousFrameParticles).Frame(end+1)=CurrentFrame;
+                                    Particles{Channel}(PreviousFrameParticles).Index(end+1)=MinIndex;
                                     %We don't want this new spot to generate a
                                     %new particle further below
                                     NewParticleFlag(MinIndex)=false;
