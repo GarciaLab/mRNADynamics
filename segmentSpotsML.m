@@ -33,7 +33,7 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 %
 % Author (contact): Armando Reimer (areimer@berkeley.edu)
 % Created: 01/01/2016
-% Last Updated: 12/31/2016
+% Last Updated: 12/31/2017
 %
 % Documented by: Armando Reimer (areimer@berkeley.edu)
 
@@ -92,15 +92,16 @@ end
 tic;
 
 maxWorkers = 6;
-p = gcp('nocreate');
-if isempty(p)
-    parpool(maxWorkers); %6 is the number of cores the Garcia lab server can reasonably handle per user.
-elseif p.NumWorkers ~= maxWorkers
-    delete(gcp('nocreate'));
-    parpool(maxWorkers);
+try
+    parpool(maxWorkers);  % 6 is the number of cores the Garcia lab server can reasonably handle per user at present.
+catch
+    try
+        parpool; %in case there aren't enough cores on the computer 
+    catch
+    end
+    %parpool throws an error if there's a pool already running. 
 end
-
-
+    
 [~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
     readMovieDatabase(Prefix);
 
@@ -121,6 +122,18 @@ if strcmpi(ExperimentType, '2spot2color')
     nCh = 2;
 end
 
+if strcmpi(ExperimentType,'inputoutput')
+    if  contains(Channel2,'mcp', 'IgnoreCase', true) ||...
+            contains(Channel2,'pcp','IgnoreCase',true)
+        coatChannel=2;
+    elseif  contains(Channel1,'mcp', 'IgnoreCase', true) ||...
+            contains(Channel1,'pcp','IgnoreCase',true)
+        coatChannel=1;
+    else
+        error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
+    end
+end
+            
 %Load and apply flat-field correction
 doFF = 1;
 try
@@ -142,6 +155,7 @@ clear rawdir;
 
 pixelSize = FrameInfo(1).PixelSize*1000; %nm
 neighborhood = round(1300 / pixelSize); %nm
+neighborhoodZ = neighborhood; %nm
 snippet_size = 2*(floor(1300/(2*pixelSize))) + 1; % nm. note that this is forced to be odd
 
            
@@ -187,22 +201,11 @@ else
 end
 %Make requisite TIF stacks for classification
 for q = 1:nCh
-    % Inputoutput datatype can have channel2 as spot channel
-    if strcmp(lower(ExperimentType),'inputoutput')
-        if (~isempty(strfind(lower(Channel2),'mcp')))&...
-                ~isempty(strfind(lower(Channel2),'pcp'))
-            coatChannel=2;
-        elseif (~isempty(strfind(lower(Channel1),'mcp')))&...
-                ~isempty(strfind(lower(Channel1),'pcp'))
-            coatChannel=1;
-        else
-            error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
-        end
-        
+
+    if strcmpi(ExperimentType,'inputoutput')               
         nameSuffix= ['_ch',iIndex(coatChannel,2)];
     else
         nameSuffix= ['_ch',iIndex(q,2)];
-%         nameSuffix = '';
     end
     
     for current_frame = initial_frame:num_frames
@@ -255,18 +258,8 @@ end
 %Segment transcriptional loci
 else
     for q=1:nCh
-        % Inputoutput datatype can have channel2 as spot channel
-        if strcmpi(ExperimentType,'inputoutput')
-            if  contains(Channel2,'mcp', 'IgnoreCase', true) &&...
-                    contains(Channel2,'pcp','IgnoreCase',true)
-                coatChannel=2;
-            elseif  contains(Channel1,'mcp', 'IgnoreCase', true) &&...
-                    contains(Channel1,'pcp','IgnoreCase',true)
-                coatChannel=1;
-            else
-                error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
-            end
-            
+
+        if strcmpi(ExperimentType,'inputoutput')            
             nameSuffix= ['_ch',iIndex(coatChannel,2)];
         else
             nameSuffix = ['_ch',iIndex(q,2)];
@@ -389,7 +382,6 @@ else
             changes = 0;
             i = 1; 
             h=waitbar(0,'Finding z-columns');
-            neighborhood = 1300 / pixelSize;
             for n = initial_frame:num_frames
                 waitbar(n/(num_frames-initial_frame),h)
                 l = length(Particles([Particles.frame] == n));
@@ -397,7 +389,7 @@ else
                 for j = i:i+l-1
                     for k = j+1:i+l-1
                         dist = sqrt( (Particles(j).xFit(end) - Particles(k).xFit(end))^2 + (Particles(j).yFit(end) - Particles(k).yFit(end))^2); 
-                        if dist < neighborhood && Particles(j).z(end) ~= Particles(k).z(end)
+                        if dist < neighborhoodZ && Particles(j).z(end) ~= Particles(k).z(end)
                             for m = 1:numel(fields)-2 %do not include fields 'r' or 'frame'
                                 Particles(j).(fields{m}) = [Particles(j).(fields{m}), Particles(k).(fields{m})];
                             end
@@ -515,9 +507,9 @@ else
         %makes some potentially useful plots. This was originally here to have
         %a single, fully integrated script before this segmentation was worked
         %into the rest of the pipeline.
-        neighborhood = 3000 / pixelSize;
+        neighborhoodTracking = round(3000 / pixelSize);
         if TrackSpots
-            Particles = track_Spots(Particles, neighborhood);
+            Particles = track_Spots(Particles, neighborhoodTracking);
             save([DropboxFolder,filesep,Prefix,filesep,'Particles_SS.mat'], 'Particles', '-v7.3');
         end
         
@@ -533,9 +525,9 @@ else
     end
 
     t = toc;
-   disp ['Elapsed time: ',num2str(t/60),' min']
+   disp(['Elapsed time: ',num2str(t/60),' min'])
     if ~just_tifs
-        logFile = [DropboxFolder,filesep,Prefix,filesep,'log.mat', '-v7.3'];
+        logFile = [DropboxFolder,filesep,Prefix,filesep,'log.mat'];
         if exist(logFile, 'file')
             load(logFile);
         else
@@ -578,7 +570,7 @@ else
         else     
             log(end).Classifier = classifierPathCh1;     
         end
-        save(logFile, 'log');
+        save(logFile, 'log', '-v7.3');
     end
     try
         poolobj = gcp('nocreate');

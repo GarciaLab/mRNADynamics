@@ -1,41 +1,55 @@
 function standardizeFigure(ax, legend, varargin)
     
-    color = [0 0 0];
+    color(1,:) = [0 0 0];
     axesLineWidth = 5;
     fig = gcf;
-   dataObj = get(ax, 'Children');
-   dataType = get(dataObj, 'Type');
+    dataObj = get(ax, 'Children');
+    dataType = get(dataObj, 'Type');
+    if ~iscell(dataType)
+        dataType = {dataType};
+    end
+    legendSize = 20;
     
     for i = 1:length(varargin)
        if strcmpi(varargin{i}, 'axeslinewidth')
             axesLineWidth = varargin{i+1};            
         elseif strcmpi(varargin{i}, 'red')
-            color = [213,108,85]/255;
+            color(i,:) = [213,108,85]/255;
         elseif strcmpi(varargin{i}, 'yellow')
-            color = [234,194,100]/255;
+            color(i,:) = [234,194,100]/255;
         elseif strcmpi(varargin{i}, 'cyan')
-            color = [108,188,233]/255;
+            color(i,:) = [108,188,233]/255;
         elseif strcmpi(varargin{i}, 'magenta')
-            color = [208,109,171]/255;
+            color(i,:) = [208,109,171]/255;
         elseif strcmpi(varargin{i}, 'lightblue')
-            color = [115,142,193]/255;
+            color(i,:) = [115,142,193]/255;
+       elseif strcmpi(varargin{i}, 'legendFontSize')
+            legendSize = varargin{i+1};
         end
     end
     
     if ~isempty(legend)
-        legend.FontSize = 30;
+        legend.FontSize = legendSize;
         legend.Box = 'off';
     end
  
     for i = 1:length(dataObj)
         if strcmpi(dataType{i}, 'scatter')
-            dataObj(i).MarkerFaceColor = color;
-            dataObj(i).MarkerEdgeColor = color;
+            dataObj(i).MarkerFaceColor = color(i,:);
+            dataObj(i).MarkerEdgeColor = color(i,:);
         elseif strcmpi(dataType{i}, 'bar') || strcmpi(dataType{i}, 'histogram')
             dataObj(i).LineStyle = 'none';
-            dataObj(i).FaceColor = color;
-        elseif strcmpi(dataType{i}, 'line')
-            set(dataObj(i),'LineWidth',5)
+            dataObj(i).FaceColor = color(i,:);
+        elseif strcmpi(dataType{i}, 'line') || strcmpi(dataType{i}, 'errorbar')
+            dataObj(i).LineWidth = 5;
+            dataObj(i).Color = color(i,:);
+            dataObj(i).Marker = '.';
+            dataObj(i).MarkerFaceColor = color(i,:);
+            dataObj(i).MarkerEdgeColor = color(i,:);
+            dataObj(i).MarkerSize = 30;
+            if strcmpi(dataType{i}, 'errorbar')
+                %insert errorbar specific things here.
+            end
         end
     end
     

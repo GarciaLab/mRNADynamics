@@ -1,5 +1,5 @@
 function CompileNuclearProtein(varargin)
-%THis code gives me the input
+%This code gives me the input
 %varargin Variable length input argument list.
 %allows any number of arguments to a function.  The variable
 %varargin is a cell array containing the optional arguments to the
@@ -37,14 +37,12 @@ else
         % ComileParticls (YJK : on 10/27/2017)
         if strcmp(varargin{i},'ROI')
             ROI = 1;
-            if ~isnumeric(varargin{i+1})|~isnumeric(varargin{i+2})
+            if ~isnumeric(varargin{i+1})||~isnumeric(varargin{i+2})
                 error('Wrong input parameters. After ''ROI'' you should input the y-threshold of ROI ')
             else
                 ROI1=varargin{i+1};
                 ROI2=varargin{i+2};
             end
-        else
-            ROI = 0;
         end
     end
 end
@@ -62,6 +60,8 @@ FilePrefix=[Prefix,'_'];
 load([DropboxFolder,filesep,Prefix,'\Ellipses.mat'])
 load([DropboxFolder,filesep,Prefix,'\FrameInfo.mat'])
 load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
+
+numFrames = length(FrameInfo);
 
 %See if FrameInfo has information about the number of input channels. This
 %is not fully implemented yet. If no information is found, then assume we
@@ -134,22 +134,22 @@ end
 
 
 %Do we need to convert any NaN chars into doubles?
-if strcmp(lower(nc14),'nan')
+if strcmpi(nc14,'nan')
     nc14=nan;
 end
-if strcmp(lower(nc13),'nan')
+if strcmpi(nc13,'nan')
     nc13=nan;
 end
-if strcmp(lower(nc12),'nan')
+if strcmpi(nc12,'nan')
     nc12=nan;
 end
-if strcmp(lower(nc11),'nan')
+if strcmpi(nc11,'nan')
     nc11=nan;
 end
-if strcmp(lower(nc10),'nan')
+if strcmpi(nc10,'nan')
     nc10=nan;
 end
-if strcmp(lower(nc9),'nan')
+if strcmpi(nc9,'nan')
     nc9=nan;
 end
 
@@ -161,7 +161,7 @@ NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
 
 
 %Add the APPosition to Particles if they don't exist yet
-if (~isfield(schnitzcells,'APpos'))&(strcmp(lower(ExperimentAxis),'ap'))
+if (~isfield(schnitzcells,'APpos'))&&(strcmpi(ExperimentAxis,'ap'))
     %First, run this to get the alignment between the zoom-in and zoom-out
     %images:
     AddParticlePosition(Prefix)
@@ -177,11 +177,11 @@ end
 %Get the actual time corresponding to each frame
 if isfield(FrameInfo,'FileMode')
     if strcmp(FrameInfo(1).FileMode,'TIF')%Is this a TIF file if not is it a LSM or LIFE Export
-        for j=1:length(FrameInfo)
+        for j=1:numFrames
             ElapsedTime(j)=etime(datevec(FrameInfo(j).TimeString),datevec(FrameInfo(1).TimeString));
         end
-    elseif strcmp(FrameInfo(1).FileMode,'LSM')|strcmp(FrameInfo(1).FileMode,'LIFExport')%If it is a LIFEexport Sum over Fram e info
-        for j=1:length(FrameInfo)
+    elseif strcmp(FrameInfo(1).FileMode,'LSM')||strcmp(FrameInfo(1).FileMode,'LIFExport')%If it is a LIFEexport Sum over Fram e info
+        for j=1:numFrames
             ElapsedTime(j)=FrameInfo(j).Time-FrameInfo(1).Time;%Finds the elapsed time by subtracting each time point by the initial time point
         end
     else
@@ -189,7 +189,7 @@ if isfield(FrameInfo,'FileMode')
     end
 else
     warning('No FileMode information found. Assuming that this is TIF from the 2-photon.')
-    for j=1:length(FrameInfo)
+    for j=1:numFrames
         ElapsedTime(j)=etime(datevec(FrameInfo(j).TimeString),datevec(FrameInfo(1).TimeString));
     end
 end
@@ -200,14 +200,14 @@ ElapsedTime=ElapsedTime/60;     %Time is in minutes
 %If there is no Approved field then create it
 if ~isfield(schnitzcells,'Approved')
     for i=1:length(schnitzcells)
-        schnitzcells(i).Approved=logical(1);
+        schnitzcells(i).Approved=true;
     end
 end
 
 %If there is no FrameApproved field then create it
 if ~isfield(schnitzcells,'FrameApproved')
     for i=1:length(schnitzcells)
-        schnitzcells(i).FrameApproved=logical(ones(size(schnitzcells(i).frames)));
+        schnitzcells(i).FrameApproved=true(size(schnitzcells(i).frames));
     end
 end
 
@@ -233,7 +233,7 @@ for i=1:length(schnitzcells)
         %Check that for the remaining frames we got a good z-profile
         for j=1:length(schnitzcells(i).frames)
             [MaxValue,MaxPos]=max(schnitzcells(i).Fluo(j,:));
-            if (MaxPos==2)|(MaxPos==NZSclices-1)
+            if (MaxPos==2)||(MaxPos==NZSclices-1)
                 FrameFilter(j)=0;
             end
         end
@@ -255,7 +255,7 @@ for i=1:length(schnitzcells)
             CompiledNuclei(k).schnitz=i;
 
             
-            if strcmp(lower(ExperimentAxis),'ap')
+            if strcmpi(ExperimentAxis,'ap')
                 %Determine the particles average and median AP position
                 CompiledNuclei(k).MeanAP=mean(schnitzcells(i).APpos(FrameFilter));
                 CompiledNuclei(k).MedianAP=median(schnitzcells(i).APpos(FrameFilter));
@@ -265,7 +265,7 @@ for i=1:length(schnitzcells)
             CompiledNuclei(k).FluoMax=squeeze(max(schnitzcells(i).Fluo(FrameFilter,:,:),[],2));
             %If there was only one time point and multiple channels,
             %squeeze can lead to a weird shape of the matrix
-            if (NChannels>1)&(size(CompiledNuclei(k).FluoMax,2)==1)
+            if (NChannels>1)&&(size(CompiledNuclei(k).FluoMax,2)==1)
                 CompiledNuclei(k).FluoMax=CompiledNuclei(k).FluoMax';                
             end
             
@@ -280,7 +280,7 @@ close(h)
 % CompiledNuclei_ROI and COmpiledNuclei_nonROI
 % written by YJK on 10/27/2017
 
-if ROI==1 
+if ROI
     % separate the CompiledNuclei into CompiledNuclei_ROI and
     % Particles_nonROI using Threshold
     t=1;
@@ -329,32 +329,32 @@ ncFilterID=[min(ncFilterID)-1,ncFilterID];
 
 
 %Create the filter
-ncFilter=logical(zeros(length(CompiledNuclei),length(ncFilterID)));
+ncFilter=false(length(CompiledNuclei),length(ncFilterID));
 for i=1:length(CompiledNuclei)
     if ~isempty(CompiledNuclei(i).Frames)
     
         if ~isempty(CompiledNuclei(i).nc)
-            ncFilter(i,find(CompiledNuclei(i).nc==ncFilterID))=logical(1);
+            ncFilter(i,find(CompiledNuclei(i).nc==ncFilterID))=true;
         else
             ncsFound=find(CompiledNuclei(i).Frames(1)>=[nc9,nc10,nc11,nc12,nc13,nc14]);
             if ncsFound(end)==1
                 CompiledNuclei(i).nc=9;
-                ncFilter(i,ncFilterID==9)=logical(1);
+                ncFilter(i,ncFilterID==9)=true;
             elseif ncsFound(end)==2
                 CompiledNuclei(i).nc=10;
-                ncFilter(i,ncFilterID==10)=logical(1);
+                ncFilter(i,ncFilterID==10)=true;
             elseif ncsFound(end)==3
                 CompiledNuclei(i).nc=11;
-                ncFilter(i,ncFilterID==11)=logical(1);
+                ncFilter(i,ncFilterID==11)=true;
             elseif ncsFound(end)==4
                 CompiledNuclei(i).nc=12;
-                ncFilter(i,ncFilterID==12)=logical(1);
+                ncFilter(i,ncFilterID==12)=true;
             elseif ncsFound(end)==5
                 CompiledNuclei(i).nc=13;
-                ncFilter(i,ncFilterID==13)=logical(1);
+                ncFilter(i,ncFilterID==13)=true;
             elseif ncsFound(end)==6
                 CompiledNuclei(i).nc=14;
-                ncFilter(i,ncFilterID==14)=logical(1);
+                ncFilter(i,ncFilterID==14)=true;
             end
 
         end
@@ -363,7 +363,7 @@ end
 
 
 
-if strcmp(lower(ExperimentAxis),'ap')
+if strcmpi(ExperimentAxis,'ap')
     %AP filters:
 
     %Divide the AP axis into boxes of a certain AP size. We'll see which
@@ -372,13 +372,13 @@ if strcmp(lower(ExperimentAxis),'ap')
     APResolution=APResolution;
     APbinID=0:APResolution:1;
 
-    APFilter=logical(zeros(length(CompiledNuclei),length(APbinID)));
+    APFilter=false(length(CompiledNuclei),length(APbinID));
     
     if ROI==1
         %Define two APFilters for ROI and non-ROI respectively
-        APFilter_ROI=logical(zeros(length(CompiledNuclei_ROI),length(APbinID)));
-        APFilter_nonROI=logical(zeros(length(CompiledNuclei_nonROI),length(APbinID)));
-        APFilter=logical(zeros(length(CompiledNuclei),length(APbinID)));
+        APFilter_ROI=false(length(CompiledNuclei_ROI),length(APbinID));
+        APFilter_nonROI=false(length(CompiledNuclei_nonROI),length(APbinID));
+        APFilter=false(length(CompiledNuclei),length(APbinID));
 
         for i=1:length(CompiledNuclei)
             APFilter(i,max(find(APbinID<=CompiledNuclei(i).MeanAP)))=1;
@@ -418,8 +418,8 @@ else
     end
     
     h=waitbar(0,'Calculating the median cyto intentisy');
-    for i=1:length(FrameInfo)
-        waitbar(i/length(FrameInfo),h)
+    for i=1:numFrames
+        waitbar(i/numFrames,h)
         for j=1:FrameInfo(1).NumberSlices
             Image(:,:,j)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),nameSuffix,'.tif']);
         end
@@ -433,7 +433,7 @@ end
 %% Binning and averaging data
 
 
-if strcmp(lower(ExperimentAxis),'ap')
+if strcmpi(ExperimentAxis,'ap')
 
    
     %Get the data for the individual particles in a matrix that has the frame
@@ -447,7 +447,8 @@ if strcmp(lower(ExperimentAxis),'ap')
     MinAPIndex=1;%min(find(sum(APFilter)));
     MaxAPIndex=size(APFilter,2);%max(find(sum(APFilter)));
     
-    if ROI==1 
+    if ROI
+        % Mean values for ROI region
         k=1;
         for i=MinAPIndex:MaxAPIndex
             [MeanVectorAPTemp_ROI,SDVectorAPTemp_ROI,NParticlesAPTemp_ROI]=AverageTracesNuclei(FrameInfo,...
@@ -457,9 +458,6 @@ if strcmp(lower(ExperimentAxis),'ap')
             NParticlesAPCell_ROI{k}=NParticlesAPTemp_ROI';
             k=k+1;
         end
-    %     MeanVectorAP=cell2mat(MeanVectorAPCell);
-    %     SDVectorAP=cell2mat(SDVectorAPCell);
-    %     NParticlesAP=cell2mat(NParticlesAPCell);
 
         %Turn the information into useful structures
         if NChannels>1
@@ -489,7 +487,7 @@ if strcmp(lower(ExperimentAxis),'ap')
         end
 
 %       Get the corresponding mean information 
-%      (nonROI, CompiledParticles_nonROI -> save all in MeanVectorAP as we normally do)
+%      (nonROI, CompiledParticles_nonROI)
         k=1;
         for i=MinAPIndex:MaxAPIndex
             [MeanVectorAPTemp_nonROI,SDVectorAPTemp_nonROI,NParticlesAPTemp_nonROI]=AverageTracesNuclei(FrameInfo,...
@@ -499,9 +497,6 @@ if strcmp(lower(ExperimentAxis),'ap')
             NParticlesAPCell_nonROI{k}=NParticlesAPTemp_nonROI';
             k=k+1;
         end
-    %     MeanVectorAP=cell2mat(MeanVectorAPCell);
-    %     SDVectorAP=cell2mat(SDVectorAPCell);
-    %     NParticlesAP=cell2mat(NParticlesAPCell);
 
         %Turn the information into useful structures
         if NChannels>1
@@ -514,9 +509,9 @@ if strcmp(lower(ExperimentAxis),'ap')
             end
 
             for j=1:NChannels
-                MeanVectorAP{j}=cell2mat({MeanVectorAPCell2_nonROI{j,:}}')';
-                SDVectorAP{j}=cell2mat({SDVectorAPCell2_nonROI{j,:}}')';;
-                NParticlesAP{j}=cell2mat({NParticlesAPCell2_nonROI{j,:}}')';;
+                MeanVectorAP_nonROI{j}=cell2mat({MeanVectorAPCell2_nonROI{j,:}}')';
+                SDVectorAP_nonROI{j}=cell2mat({SDVectorAPCell2_nonROI{j,:}}')';;
+                NParticlesAP_nonROI{j}=cell2mat({NParticlesAPCell2_nonROI{j,:}}')';;
             end
         else
             for i=MinAPIndex:MaxAPIndex
@@ -525,9 +520,47 @@ if strcmp(lower(ExperimentAxis),'ap')
                 NParticlesAPCell2_nonROI{j,i}=NParticlesAPCell_nonROI{i};
             end
 
-                MeanVectorAP=cell2mat(MeanVectorAPCell2_nonROI);
-                SDVectorAP=cell2mat(SDVectorAPCell2_nonROI);
-                NParticlesAP=cell2mat(NParticlesAPCell2_nonROI);
+                MeanVectorAP_nonROI=cell2mat(MeanVectorAPCell2_nonROI);
+                SDVectorAP_nonROI=cell2mat(SDVectorAPCell2_nonROI);
+                NParticlesAP_nonROI=cell2mat(NParticlesAPCell2_nonROI);
+        end
+        
+        %Get the corresponding mean information (for all nuclei, both ROI and non-ROI)
+        k=1;
+        for i=MinAPIndex:MaxAPIndex
+            [MeanVectorAPTemp,SDVectorAPTemp,NParticlesAPTemp]=AverageTracesNuclei(FrameInfo,...
+                CompiledNuclei(APFilter(:,i)),NChannels);
+            MeanVectorAPCell{k}=MeanVectorAPTemp';
+            SDVectorAPCell{k}=SDVectorAPTemp';
+            NParticlesAPCell{k}=NParticlesAPTemp';
+            k=k+1;
+        end
+
+        %Turn the information into useful structures
+        if NChannels>1
+            for j=1:NChannels
+                for i=MinAPIndex:MaxAPIndex
+                    MeanVectorAPCell2{j,i}=MeanVectorAPCell{i}{j};
+                    SDVectorAPCell2{j,i}=SDVectorAPCell{i}{j};
+                    NParticlesAPCell2{j,i}=NParticlesAPCell{i}{j};
+                end
+            end
+
+            for j=1:NChannels
+                MeanVectorAP{j}=cell2mat({MeanVectorAPCell2{j,:}}')';
+                SDVectorAP{j}=cell2mat({SDVectorAPCell2{j,:}}')';;
+                NParticlesAP{j}=cell2mat({NParticlesAPCell2{j,:}}')';;
+            end
+        else
+            for i=MinAPIndex:MaxAPIndex
+                MeanVectorAPCell2{j,i}=MeanVectorAPCell{i};
+                SDVectorAPCell2{j,i}=SDVectorAPCell{i};
+                NParticlesAPCell2{j,i}=NParticlesAPCell{i};
+            end
+
+            MeanVectorAP=cell2mat(MeanVectorAPCell2);
+            SDVectorAP=cell2mat(SDVectorAPCell2);
+            NParticlesAP=cell2mat(NParticlesAPCell2);
         end
 
     else % This is the case which we don't use ROI option
@@ -535,16 +568,13 @@ if strcmp(lower(ExperimentAxis),'ap')
         %Get the corresponding mean information
         k=1;
         for i=MinAPIndex:MaxAPIndex
-            [MeanVectorAPTemp_ROI,SDVectorAPTemp_ROI,NParticlesAPTemp_ROI]=AverageTracesNuclei(FrameInfo,...
+            [MeanVectorAPTemp,SDVectorAPTemp,NParticlesAPTemp]=AverageTracesNuclei(FrameInfo,...
                 CompiledNuclei(APFilter(:,i)),NChannels);
-            MeanVectorAPCell{k}=MeanVectorAPTemp_ROI';
-            SDVectorAPCell{k}=SDVectorAPTemp_ROI';
-            NParticlesAPCell{k}=NParticlesAPTemp_ROI';
+            MeanVectorAPCell{k}=MeanVectorAPTemp';
+            SDVectorAPCell{k}=SDVectorAPTemp';
+            NParticlesAPCell{k}=NParticlesAPTemp';
             k=k+1;
         end
-    %     MeanVectorAP=cell2mat(MeanVectorAPCell);
-    %     SDVectorAP=cell2mat(SDVectorAPCell);
-    %     NParticlesAP=cell2mat(NParticlesAPCell);
 
         %Turn the information into useful structures
         if NChannels>1
@@ -558,27 +588,20 @@ if strcmp(lower(ExperimentAxis),'ap')
 
             for j=1:NChannels
                 MeanVectorAP{j}=cell2mat({MeanVectorAPCell2{j,:}}')';
-                SDVectorAP{j}=cell2mat({SDVectorAPCell2_nonROI{j,:}}')';;
-                NParticlesAP{j}=cell2mat({NParticlesAPCell2_nonROI{j,:}}')';;
+                SDVectorAP{j}=cell2mat({SDVectorAPCell2{j,:}}')';;
+                NParticlesAP{j}=cell2mat({NParticlesAPCell2{j,:}}')';;
             end
         else
             for i=MinAPIndex:MaxAPIndex
                 MeanVectorAPCell2{j,i}=MeanVectorAPCell{i};
-                SDVectorAPCell2_nonROI{j,i}=SDVectorAPCell{i};
-                NParticlesAPCell2_nonROI{j,i}=NParticlesAPCell{i};
+                SDVectorAPCell2{j,i}=SDVectorAPCell{i};
+                NParticlesAPCell2{j,i}=NParticlesAPCell{i};
             end
 
             MeanVectorAP=cell2mat(MeanVectorAPCell2);
-            SDVectorAP=cell2mat(SDVectorAPCell2_nonROI);
-            NParticlesAP=cell2mat(NParticlesAPCell2_nonROI);
+            SDVectorAP=cell2mat(SDVectorAPCell2);
+            NParticlesAP=cell2mat(NParticlesAPCell2);
         end
-
-    %     if NChannels==1
-    %         MeanVectorAP=MeanVectorAP{1};
-    %         SDVectorAP=SDVectorAP{1};
-    %         NParticlesAP=NParticlesAP{1};
-    %     end
-
     end
 end
     
@@ -590,14 +613,14 @@ end
 MaxFrame=[];
 for i=1:length(NewCyclePos)
     if i==1
-        [Dummy,MaxIndex]=max(MeanVectorAll(1:NewCyclePos(1)));
+        [~,MaxIndex]=max(MeanVectorAll(1:NewCyclePos(1)));
         MaxFrame=[MaxFrame,MaxIndex];
     elseif i<=length(NewCyclePos)
-        [Dummy,MaxIndex]=max(MeanVectorAll(NewCyclePos(i-1):NewCyclePos(i)));
+        [~,MaxIndex]=max(MeanVectorAll(NewCyclePos(i-1):NewCyclePos(i)));
         MaxFrame=[MaxFrame,NewCyclePos(i-1)+MaxIndex-1];
     end
 end
-[Dummy,MaxIndex]=max(MeanVectorAll(NewCyclePos(i):end));
+[~,MaxIndex]=max(MeanVectorAll(NewCyclePos(i):end));
 MaxFrame=[MaxFrame,NewCyclePos(i)+MaxIndex-1];
 
 
@@ -607,7 +630,7 @@ MaxFrame=[MaxFrame,NewCyclePos(i)+MaxIndex-1];
 %% Save everything
 
 
-if strcmp(lower(ExperimentAxis),'ap')
+if strcmpi(ExperimentAxis,'ap')
     
     % consider ROI option
     if ROI
@@ -620,7 +643,8 @@ if strcmp(lower(ExperimentAxis),'ap')
             'MeanCyto','SDCyto','MedianCyto','MaxCyto',...
             'MeanCytoAPProfile','SDCytoAPProfile','SECytoAPProfile',...
             'MeanVectorAP_ROI','SDVectorAP_ROI','NParticlesAP_ROI',...
-            'CompiledNuclei_ROI','CompiledNuclei_nonROI')%,...
+            'MeanVectorAP_nonROI','SDVectorAP_nonROI','NParticlesAP_nonROI',...
+            'CompiledNuclei_ROI','CompiledNuclei_nonROI', '-v7.3')%,...
             %'IntegrationArea')
     else 
         save([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],...
@@ -630,7 +654,7 @@ if strcmp(lower(ExperimentAxis),'ap')
             'SDVectorAll','NParticlesAll','MaxFrame','MinAPIndex','MaxAPIndex',...
             'AllTracesVector','AllTracesAP',...
             'MeanCyto','SDCyto','MedianCyto','MaxCyto',...
-            'MeanCytoAPProfile','SDCytoAPProfile','SECytoAPProfile')%,...
+            'MeanCytoAPProfile','SDCytoAPProfile','SECytoAPProfile', '-v7.3')%,...
             %'IntegrationArea')
     end
 else
@@ -638,10 +662,10 @@ else
         'CompiledNuclei','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
         'nc12','nc13','nc14','ncFilterID','ncFilter','MeanVectorAll',...
         'SDVectorAll','NParticlesAll','MaxFrame',...
-        'MeanCyto','SDCyto','MedianCyto','MaxCyto','IntegrationArea')
+        'MeanCyto','SDCyto','MedianCyto','MaxCyto','IntegrationArea', '-v7.3')
 end
 
 
-save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells')
+save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v7.3')
 
 

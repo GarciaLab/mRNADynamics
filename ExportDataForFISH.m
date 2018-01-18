@@ -143,7 +143,11 @@ if strcmp(FileMode,'TIF') && ~strcmp(FileMode,'DSPIN')
     
     %Get the flat-field information
     %Figure out the zoom factor
-    Zoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
+    try
+        Zoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
+    catch
+        error('Are you trying to use LIF mode but don''t have the .lif in your folder?')
+    end
     %Look for the file
     FFDir=dir([Folder,filesep,'..',filesep,'*FF',Zoom(1:end-1),'x*.*']);
 

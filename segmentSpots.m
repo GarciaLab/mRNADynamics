@@ -80,7 +80,7 @@ for i=1:length(varargin)
     elseif strcmp(varargin{i},'customFilter')
         customFilter = 1;
         try
-            filterType = varargin{i+1}
+            filterType = varargin{i+1};
         catch
             warning('Entered filter not recognized. Defaulting to DoG')
         end
@@ -115,8 +115,16 @@ end
 %%
 tic;
 
-parpool(6);
-
+maxWorkers = 6;
+try
+    parpool(maxWorkers);  % 6 is the number of cores the Garcia lab server can reasonably handle per user at present.
+catch
+    try
+        parpool; %in case there aren't enough cores on the computer 
+    catch
+    end
+    %parpool throws an error if there's a pool already running. 
+end
 
 [~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
     readMovieDatabase(Prefix);
@@ -177,6 +185,21 @@ snippet_size = 2*(floor(1300/(2*pixelSize))) + 1; % nm. note that this is forced
            
 all_frames = cell(numFrames, zSize);
 close all force;
+
+% Support for inputoutput mode (since the coatChannel might not be
+    % channel1 in inputoutput ExperimentType (YJK : 1/11/2018)
+    if strcmpi(ExperimentType,'inputoutput')
+        if  contains(Channel2,'mcp', 'IgnoreCase', true) ||...
+                contains(Channel2,'pcp','IgnoreCase',true)
+            coatChannel=2;
+        elseif  contains(Channel1,'mcp', 'IgnoreCase', true) ||...
+                contains(Channel1,'pcp','IgnoreCase',true)
+            coatChannel=1;
+        else
+            error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
+        end
+    end
+
 if justDoG
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Generate difference of Gaussian images if no threshold was given.
@@ -193,25 +216,16 @@ if justDoG
         %Initialize Difference of Gaussian filter parameters. filterSize >> sigma2
         %> sigma1
         sigma1 = pixelSize / pixelSize; %width of narrower Gaussian
-        sigma2 = round(42000 / pixelSize); % width of wider Gaussian
+        sigma2 = round(42000 / pixelSize); % width of wider Gaussian. AR 1/10/18: what is this number.
         sigmas = {sigma1,sigma2};
         filterSize = round(2000/pixelSize); %2um was empirically determined to be optimal.
     end   
     
+     
     for q = 1:nCh
 %         h=waitbar(0,'Generating DoG images');
-        if strcmp(lower(ExperimentType),'inputoutput')
-            if (~isempty(strfind(lower(Channel2),'mcp')))&...
-                    ~isempty(strfind(lower(Channel2),'pcp'))
-                coatChannel=2;
-            elseif (~isempty(strfind(lower(Channel1),'mcp')))&...
-                    ~isempty(strfind(lower(Channel1),'pcp'))
-                coatChannel=1;
-            else
-                error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
-            end
-            q=coatChannel;
-            nameSuffix= ['_ch',iIndex(q,2)];
+        if strcmpi(ExperimentType,'inputoutput')
+            nameSuffix= ['_ch',iIndex(coatChannel,2)];
         else
             nameSuffix = ['_ch',iIndex(q,2)];
         end
@@ -243,18 +257,8 @@ if justDoG
 else       
     thresh = Threshold; %copy so we can change the value of Threshold for each channel iteration
     for q = 1:nCh
-        if strcmp(lower(ExperimentType),'inputoutput')
-            if (~isempty(strfind(lower(Channel2),'mcp')))&...
-                    ~isempty(strfind(lower(Channel2),'pcp'))
-                coatChannel=2;
-            elseif (~isempty(strfind(lower(Channel1),'mcp')))&...
-                    ~isempty(strfind(lower(Channel1),'pcp'))
-                coatChannel=1;
-            else
-                error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
-            end
-            q=coatChannel;
-            nameSuffix= ['_ch',iIndex(q,2)];
+        if strcmpi(ExperimentType,'inputoutput')
+            nameSuffix= ['_ch',iIndex(coatChannel,2)];
         else
             nameSuffix = ['_ch',iIndex(q,2)];
         end

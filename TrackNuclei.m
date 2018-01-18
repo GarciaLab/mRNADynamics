@@ -105,22 +105,22 @@ if length(ncCheck)~=6
 end
 
 %Do we need to convert any NaN chars into doubles?
-if strcmp(lower(nc14),'nan')
+if strcmpi(nc14,'nan')
     nc14=nan;
 end
-if strcmp(lower(nc13),'nan')
+if strcmpi(nc13,'nan')
     nc13=nan;
 end
-if strcmp(lower(nc12),'nan')
+if strcmpi(nc12,'nan')
     nc12=nan;
 end
-if strcmp(lower(nc11),'nan')
+if strcmpi(nc11,'nan')
     nc11=nan;
 end
-if strcmp(lower(nc10),'nan')
+if strcmpi(nc10,'nan')
     nc10=nan;
 end
-if strcmp(lower(nc9),'nan')
+if strcmpi(nc9,'nan')
     nc9=nan;
 end
 
@@ -145,7 +145,7 @@ XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
 
 ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
 
-if (length(find(isnan(ncs)))==length(ncs))|(length(ncs)<6)
+if (length(find(isnan(ncs)))==length(ncs))||(length(ncs)<6)
     error('Have the ncs been defined in MovieDatabase.XLSX?')
 end
 
@@ -174,15 +174,16 @@ indMit(indMit<1)=1;
 %Check whether nc14 occurred very close to the end of the movie. For those
 %frames we'll move the boundary for tracking purposes
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
-indMit(indMit>=length(FrameInfo))=indMit(indMit>=length(FrameInfo))-2;
+numFrames = length(FrameInfo);
+indMit(indMit>=numFrames)=indMit(indMit>=numFrames)-2;
 
 
 %If we don't have nc14 we'll fool the code into thinking that the last
 %frame of the movie was nc14
 if isnan(indMit(end,1))
     load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
-    indMit(end,1)=length(FrameInfo)-6;
-    indMit(end,2)=length(FrameInfo)-5;
+    indMit(end,1)=numFrames-6;
+    indMit(end,2)=numFrames-5;
 end    
 
 %If indMit is empty this means that we didn't see any mitosis. Deal with
@@ -212,7 +213,7 @@ settingArguments{4}=FrameInfo(1).PixelSize;
 
 
 %Do the tracking for the first time
-if ~exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
+if ~exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file')
     
     
     [nuclei, centers, Dummy, dataStructure] = ...
@@ -230,8 +231,8 @@ if ~exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
     [schnitzcells] = convertNucleiToSchnitzcells(nuclei); 
 else
     %Do re-tracking
-    display('Re-tracking...')
-    warning('Doing re-tracking. This code needs to be able to handle approved schnitz still')
+    disp 'Re-tracking...'
+    warning('Re-tracking.') %This code needs to be able to handle approved schnitz still
   
     %Load the Ellipses and re-generate the centers
     load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
@@ -239,9 +240,9 @@ else
     centers = updateCentersFromEllipses(Ellipses);
 
     %Load the dataStructure to seed up retracking if it exists
-    if exist([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'])
+    if exist([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'], 'file')
         load([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'])
-    elseif exist([FISHPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'])
+    elseif exist([FISHPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'], 'file')
         load([FISHPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'])
     end
 
@@ -266,7 +267,7 @@ else
     
     
     %Re-run the tracking
-    if exist('dataStructure')
+    if exist('dataStructure', 'var')
         %Edit the names in dataStructure to match the current folder setup
         dataStructure.names=names;
         
@@ -299,7 +300,7 @@ end
 mkdir([DropboxFolder,filesep,Prefix])
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells')
-if ~exist([FISHPath,filesep,Prefix,'_'])
+if ~exist([FISHPath,filesep,Prefix,'_'], 'dir')
     mkdir([FISHPath,filesep,Prefix,'_'])
 end
 save([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
@@ -308,11 +309,11 @@ save([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
 
 %Extract the nuclear fluorescence values if we're in the right experiment
 %type
-if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'input')
+if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
     
     
     %Parse the channel information for the different experiment types
-    if strcmp(lower(ExperimentType),'inputoutput')
+    if strcmpi(ExperimentType,'inputoutput')
         InputChannelTemp=strfind({lower(Channel1{1}),lower(Channel2{1})},'mcp');
         if isempty(InputChannelTemp)
             InputChannelTemp=strfind({lower(Channel1{1}),lower(Channel2{1})},'pp7');
@@ -323,7 +324,7 @@ if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'inp
         InputChannelTemp=cellfun(@isempty,InputChannelTemp);
         InputChannel = find(InputChannelTemp);
         
-    elseif strcmp(lower(ExperimentType),'input')
+    elseif strcmpi(ExperimentType,'input')
         %Parse the information from the different channels
         Channels={Channel1{1},Channel2{1}};
 
@@ -348,7 +349,7 @@ if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'inp
     if ~mod(IntegrationRadius,2)
         IntegrationRadius=IntegrationRadius+1;
     end
-    Circle=logical(zeros(3*IntegrationRadius,3*IntegrationRadius));
+    Circle=false(3*IntegrationRadius,3*IntegrationRadius);
     Circle=MidpointCircle(Circle,IntegrationRadius,1.5*IntegrationRadius+0.5,...
         1.5*IntegrationRadius+0.5,1);
     
@@ -363,37 +364,45 @@ if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'inp
         %Extract the fluroescence of each schnitz, for each channel,
         %at each time point
 
+        TotalSchnitz=length(schnitzcells);
+         
         %Get the image dimensions
         PixelsPerLine=FrameInfo(1).PixelsPerLine;
         LinesPerFrame=FrameInfo(1).LinesPerFrame;
         %Number of z-slices
         NumberSlices=FrameInfo(1).NumberSlices;
+        NumberSlices2 = NumberSlices + 2;
+        
+        %Initialize blank images
+        Mask=false(LinesPerFrame,PixelsPerLine);
+        Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2); 
+
         
         for ChN=1:length(InputChannel)
         
             h=waitbar(0,['Extracting nuclear fluorescence for channel ',num2str(ChN)]);
-            for CurrentFrame=1:length(FrameInfo)
-
-                waitbar(CurrentFrame/length(FrameInfo),h);
-
-                %Initialize the image
-                Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices+2);
-
-                %Load the z-stack for this frame
-            %    nameSuffix=['_ch',iIndex(q,2)];
-
-                for CurrentZ=1:(NumberSlices+2)   %Note that I need to add the two extra slices manually
-                    if strcmp(lower(ExperimentType),'inputoutput')
-                        Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch',iIndex(InputChannel,2),'.tif']);
-                    elseif strcmp(lower(ExperimentType),'input')&(length(InputChannel))==1
-                        Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch',iIndex(InputChannel,2),'.tif']);
-                    elseif strcmp(lower(ExperimentType),'input')&(length(InputChannel))>1
-                        Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch',iIndex(InputChannel(ChN),2),'.tif']);
-                    end
-
+            
+                if strcmpi(ExperimentType,'inputoutput') || (strcmpi(ExperimentType,'input')&&(length(InputChannel))==1)
+                    nameSuffix=['_ch',iIndex(InputChannel,2)];
+                elseif strcmpi(ExperimentType,'input')&&(length(InputChannel))>1
+                    nameSuffix=['_ch',iIndex(InputChannel(ChN),2)];
+                else
+                    error('Not sure what happened here. Talk to YJK or SA.')
                 end
+                
+            for CurrentFrame=1:numFrames
 
-                TotalSchnitz=length(schnitzcells);
+                waitbar(CurrentFrame/numFrames,h);
+% 
+%                 %Initialize the image
+%                 Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2)
+%                 %AR 1/12/18 moved this outside the for loops
+                
+                %Load the z-stack for this frame
+
+                for CurrentZ=1:NumberSlices2   %Note that I need to add the two extra slices manually
+                         Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
+                end
 
                 parfor j=1:TotalSchnitz
 
@@ -403,10 +412,10 @@ if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'inp
                     %However, I couldn't quite figure out how to do that.
                     schnitzcells(j)=ExtractNuclearFluorescence(schnitzcells(j),...
                         CurrentFrame,...
-                        Image,LinesPerFrame,PixelsPerLine,NumberSlices,Circle,IntegrationRadius,InputChannel(ChN));
+                        Image,LinesPerFrame,PixelsPerLine,NumberSlices2,Circle,IntegrationRadius,InputChannel(ChN));
                 end
             end
-        close(h)    
+        close(h)
         end
     else
         error('Input channel not recognized. Check correct definition in MovieDatabase.XLSX')
@@ -419,8 +428,8 @@ end
 mkdir([DropboxFolder,filesep,Prefix])
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 
-if strcmp(lower(ExperimentType),'inputoutput')|strcmp(lower(ExperimentType),'input')
-    %Change the name of the Circle variable to make it more understandble when
+if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
+    %Change the name of the Circle variable to make it more understandable when
     %loaded independently
     IntegrationArea=Circle;
     save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells','IntegrationArea')
@@ -428,7 +437,7 @@ else
     save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells')
 end
 
-if ~exist([FISHPath,filesep,Prefix,'_'])
+if ~exist([FISHPath,filesep,Prefix,'_'], 'dir')
     mkdir([FISHPath,filesep,Prefix,'_'])
 end
 save([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
@@ -436,7 +445,7 @@ save([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
 
 %Stitch the schnitzcells using Simon's code
 if ~SkipStitchSchnitz
-    display('Skipping StitchSchnitz')
+    disp 'Skipping StitchSchnitz'
     StitchSchnitz(Prefix)
 end
 

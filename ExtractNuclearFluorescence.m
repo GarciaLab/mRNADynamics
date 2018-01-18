@@ -1,5 +1,5 @@
 function schnitzcells=ExtractNuclearFluorescence(schnitzcells,CurrentFrame,...
-    Image,LinesPerFrame,PixelsPerLine,NumberSlices,Circle,IntegrationRadius,Channel)
+    Image,LinesPerFrame,PixelsPerLine,NumberSlices2,Circle,IntegrationRadius,Channel)
 
 
 %Find the schnitzs in the current image and extract the corresponding
@@ -7,13 +7,13 @@ function schnitzcells=ExtractNuclearFluorescence(schnitzcells,CurrentFrame,...
 %had to make it independent so that I could use parfor loops.
 
 %If no Channel is specified, then use only channel one
-if ~exist('Channel')
+if ~exist('Channel', 'var')
     Channel=1;
 end
 
 
 %Create a blank image we'll use to generate the mask
-Mask=logical(zeros(LinesPerFrame,PixelsPerLine));
+Mask=zeros(LinesPerFrame,PixelsPerLine);
 
 %Get the fluorescence over the mask
 if sum(schnitzcells.frames==CurrentFrame)
@@ -23,11 +23,11 @@ if sum(schnitzcells.frames==CurrentFrame)
     Radius=schnitzcells.len(CurrentIndex);
 
     %Check that the nucleus and the nuclear mask fit within the image
-    if ((cenx-Radius)>0&(cenx+Radius)<PixelsPerLine&...
-            (ceny-Radius)>0&(ceny+Radius)<LinesPerFrame)&...
-            ((round(cenx)-(3*IntegrationRadius-1)/2)>0&...
-            (round(cenx)+(3*IntegrationRadius-1)/2)<PixelsPerLine&...
-            (round(ceny)-(3*IntegrationRadius-1)/2)>0&...
+    if ((cenx-Radius)>0&&(cenx+Radius)<PixelsPerLine&&...
+            (ceny-Radius)>0&&(ceny+Radius)<LinesPerFrame)&&...
+            ((round(cenx)-(3*IntegrationRadius-1)/2)>0&&...
+            (round(cenx)+(3*IntegrationRadius-1)/2)<PixelsPerLine&&...
+            (round(ceny)-(3*IntegrationRadius-1)/2)>0&&...
             (round(ceny)+(3*IntegrationRadius-1)/2)<LinesPerFrame)
 
         %Now, add the circle
@@ -36,15 +36,10 @@ if sum(schnitzcells.frames==CurrentFrame)
             round(cenx)-(3*IntegrationRadius-1)/2:...
             round(cenx)+(3*IntegrationRadius-1)/2)=Circle;
 
-        %Save the mask we're going to use
         schnitzcells.Mask=Circle;
-
-
-        for CurrentZ=1:(NumberSlices+2)
-            schnitzcells.Fluo(CurrentIndex,CurrentZ,Channel)=sum(sum(immultiply(Image(:,:,CurrentZ),Mask)));
-        end
-
+        schnitzcells.Fluo(CurrentIndex,:,Channel)=sum(sum(Image(:,:,:).*Mask));
+        
     else  %If not assign NaN to the fluroescence
-        schnitzcells.Fluo(CurrentIndex,1:(NumberSlices+2),Channel)=nan;
+        schnitzcells.Fluo(CurrentIndex,1:NumberSlices2,Channel)=nan;
     end
 end
