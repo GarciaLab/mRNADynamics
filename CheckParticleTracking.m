@@ -987,7 +987,7 @@ while (cc~='x')
     figure(TraceFig)
     if ~strcmpi(ExperimentType,'inputoutput')
         %Only update the trace information if we have switched particles
-        if (CurrentParticle~=PreviousParticle)||~exist('AmpIntegral', 'var')||(CurrentChannel~=PreviousChannel)
+        if (CurrentParticle~=PreviousParticle)||~exist('AmpIntegral', 'var')||(CurrentChannel~=PreviousChannel) 
             PreviousParticle=CurrentParticle;
             [Frames,AmpIntegral,~]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
         end       
@@ -1139,7 +1139,7 @@ while (cc~='x')
         try
             iJump= inputdlg('Frame to jump to:',...
                 'Move to frame');
-            iJump=str2num(iJump{1});           
+            iJump=str2double(iJump{1});           
         catch
             iJump=CurrentFrame;
         end
@@ -1193,14 +1193,16 @@ while (cc~='x')
             
             if del
                 ind = Particles{CurrentChannel}(CurrentParticle).Index(CurrentFrameWithinParticle);
-                lastFrame = length(Particles{CurrentChannel}(CurrentParticle).Frame) == 1;
-                if lastFrame
+                onlyFrame = length(Particles{CurrentChannel}(CurrentParticle).Frame) == 1;
+                if onlyFrame
                     Particles{CurrentChannel}(CurrentParticle) = [];
                     numParticles = numParticles - 1;
                 else
                     particleFields = fieldnames(Particles{CurrentChannel});
                     for i = 1:numel(particleFields)
-                        Particles{CurrentChannel}(CurrentParticle).(particleFields{i})(CurrentFrameWithinParticle) = [];
+                        if ~strcmpi(particleFields{i},'Nucleus') && ~strcmpi(particleFields{i},'Approved')
+                            Particles{CurrentChannel}(CurrentParticle).(particleFields{i})(CurrentFrameWithinParticle) = [];
+                        end
                     end
                 end
                     %and this part changes the the index of other particles
@@ -1221,8 +1223,12 @@ while (cc~='x')
                spotRow = SpotFilter{CurrentChannel}(CurrentFrame,:);
                spotRow(CurrentSpot) = [];
                spotRow(end+1) = NaN;
-               SpotFilter{CurrentChannel}(CurrentFrame,:) = spotRow;
-                if lastFrame
+               try
+                SpotFilter{CurrentChannel}(CurrentFrame,:) = spotRow;
+               catch
+                   error('There probably wasn''t a spot in the frame you were trying to delete.')
+               end
+                if onlyFrame
                     %switch to another particle just to avoid any potential weirdness with
                     %checkparticletracking refreshing. simpler version of the
                     %'m' button
@@ -1234,7 +1240,7 @@ while (cc~='x')
                     CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(1);
                     ParticleToFollow=[];
                     DisplayRange=[];
-                    disp 'Spot deleted successfully.'
+                    disp 'Spot deleted successfully. Trace figures will refresh after switching particles.' 
                 end
             end
             ZoomMode=0;
