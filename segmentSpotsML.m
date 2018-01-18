@@ -92,7 +92,14 @@ end
 tic;
 
 maxWorkers = 6;
-parpool(maxWorkers); %6 is the number of cores the Garcia lab server can reasonably handle per user.
+p = gcp('nocreate');
+if isempty(p)
+    parpool(maxWorkers); %6 is the number of cores the Garcia lab server can reasonably handle per user.
+elseif p.NumWorkers ~= maxWorkers
+    delete(gcp('nocreate'));
+    parpool(maxWorkers);
+end
+
 
 [~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
     readMovieDatabase(Prefix);
@@ -195,6 +202,7 @@ for q = 1:nCh
         nameSuffix= ['_ch',iIndex(coatChannel,2)];
     else
         nameSuffix= ['_ch',iIndex(q,2)];
+%         nameSuffix = '';
     end
     
     for current_frame = initial_frame:num_frames
