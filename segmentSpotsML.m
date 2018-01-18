@@ -92,14 +92,12 @@ end
 tic;
 
 maxWorkers = 6;
-try
-    parpool(maxWorkers);  % 6 is the number of cores the Garcia lab server can reasonably handle per user at present.
-catch
-    try
-        parpool; %in case there aren't enough cores on the computer 
-    catch
-    end
-    %parpool throws an error if there's a pool already running. 
+p = gcp('nocreate');
+if isempty(p)
+    parpool(maxWorkers); %6 is the number of cores the Garcia lab server can reasonably handle per user.
+elseif p.NumWorkers > maxWorkers
+    delete(gcp('nocreate')); % if pool with too many workers, delete and restart
+    parpool(maxWorkers);
 end
     
 [~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
