@@ -525,7 +525,7 @@ else
     end
 
     t = toc;
-   disp ['Elapsed time: ',num2str(t/60),' min']
+   disp(['Elapsed time: ',num2str(t/60),' min'])
     if ~just_tifs
         logFile = [DropboxFolder,filesep,Prefix,filesep,'log.mat'];
         if exist(logFile, 'file')
