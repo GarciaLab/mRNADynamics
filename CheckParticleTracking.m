@@ -1264,179 +1264,190 @@ while (cc~='x')
             if sum(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame) &&  ~GlobalZoomMode
                 warning('There is a spot assigned to this particle in this frame already.')
             else
+                
                 [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'r', 'linewidth',1);
                 ConnectPositionx = round(ConnectPositionx);
                 ConnectPositiony = round(ConnectPositiony);
+                
                 pixelSize = FrameInfo(1).PixelSize*1000; %nm
+                LinesPerFrame = FrameInfo(1).LinesPerFrame;
+                PixelsPerLine = FrameInfo(1).PixelsPerLine;
                 snippet_size = 2*(floor(1300/(2*pixelSize))) + 1; % nm. note that this is forced to be odd
-                SpotsIndex = length(Spots{CurrentChannel}(CurrentFrame).Fits)+1;
-                breakflag = 0;
-                parfor i = 2:ZSlices-1
-                    spotsIm=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                         FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i,2),nameSuffix,'.tif']);  
-                    Threshold = min(min(spotsIm));
-                    dog = spotsIm;
-                    im_thresh = dog >= Threshold;
-                    [im_label, ~] = bwlabel(im_thresh);
-                    microscope = FrameInfo(1).FileMode;
-                    show_status = 0;
-                    fig = [];
-                    k = 1; %This is supposed to be the index for the partiles in an image.
-                           %However, this image only contains one particle
-                    neighborhood = round(1300 / pixelSize); %nm
-                    %Get the information about the spot on this z-slice
-                    temp_particles{i} = identifySingleSpot(k, spotsIm, im_label, dog, neighborhood, snippet_size, ...
-                        pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [], '' );
-                end
                 
-                for i = 2:ZSlices-1
-                    if ~isempty(temp_particles{i})
-                        %Copy the information stored on temp_particles into the
-                        %Spots structure
-                        try
-                            if ~isempty(temp_particles{i}{1})
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity(i)=...
-                                    temp_particles{i}{1}{1};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFit(i)=...
-                                    temp_particles{i}{1}{2};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yFit(i)=...
-                                    temp_particles{i}{1}{3};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Offset(i)=...
-                                    temp_particles{i}{1}{4};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Snippet{i}=...
-                                    temp_particles{i}{1}{5};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Area{i}=...
-                                    temp_particles{i}{1}{6};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFitWidth{i}=...
-                                    temp_particles{i}{1}{7};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yFitWidth{i}=...
-                                    temp_particles{i}{1}{8};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yDoG(i)=...
-                                    temp_particles{i}{1}{9};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xDoG(i)=...
-                                    temp_particles{i}{1}{10};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).GaussianIntensity(i)=...
-                                    temp_particles{i}{1}{11};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).CentralIntensity(i)=...
-                                    temp_particles{i}{1}{12};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).DOGIntensity(i)=...
-                                    temp_particles{i}{1}{13};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).snippet_mask{i}=...
-                                    temp_particles{i}{1}{14};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).SisterDistance(i)=... 
-                                    temp_particles{i}{1}{17};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).ConfidenceIntervals{i}=...
-                                    temp_particles{i}{1}{19};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).gaussSpot{i}=...
-                                    temp_particles{i}{1}{20};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).rawSpot{i}=...
-                                    temp_particles{i}{1}{21};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).z(i)=...
-                                    i;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).discardThis=...
-                                    0;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).frame=...
-                                    CurrentFrame;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).r=...
-                                    0;
-                            else
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity(i)=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFit(i)=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yFit(i)=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Offset(i)=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Snippet{i}=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Area{i}=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFitWidth{i}=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yFitWidth{i}=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yDoG(i)=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xDoG(i)=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).GaussianIntensity(i)=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).CentralIntensity(i)=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).DOGIntensity(i)=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).snippet_mask{i}=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).SisterDistance(i)=... 
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).ConfidenceIntervals{i}=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).gaussSpot{i}=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).rawSpot{i}=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).z(i)=...
-                                    i;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).discardThis=...
-                                    0;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).frame=...
-                                    CurrentFrame;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).r=...
-                                    0;    
+                % check that the clicked particle isn't too close to the
+                % edge of the frame
+                if (ConnectPositionx > snippet_size/2) && (ConnectPositionx + snippet_size/2 < PixelsPerLine)...
+                        && (ConnectPositiony > snippet_size/2) && (ConnectPositiony + snippet_size/2 < LinesPerFrame)
+                    SpotsIndex = length(Spots{CurrentChannel}(CurrentFrame).Fits)+1;
+                    breakflag = 0;
+                    parfor i = 2:ZSlices-1
+                        spotsIm=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
+                             FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i,2),nameSuffix,'.tif']);  
+                        Threshold = min(min(spotsIm));
+                        dog = spotsIm;
+                        im_thresh = dog >= Threshold;
+                        [im_label, ~] = bwlabel(im_thresh);
+                        microscope = FrameInfo(1).FileMode;
+                        show_status = 0;
+                        fig = [];
+                        k = 1; %This is supposed to be the index for the partiles in an image.
+                               %However, this image only contains one particle
+                        neighborhood = round(1300 / pixelSize); %nm
+                        %Get the information about the spot on this z-slice
+                        temp_particles{i} = identifySingleSpot(k, spotsIm, im_label, dog, neighborhood, snippet_size, ...
+                            pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [], '' );
+                    end
+
+                    for i = 2:ZSlices-1
+                        if ~isempty(temp_particles{i})
+                            %Copy the information stored on temp_particles into the
+                            %Spots structure
+                            try
+                                if ~isempty(temp_particles{i}{1})
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity(i)=...
+                                        temp_particles{i}{1}{1};
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFit(i)=...
+                                        temp_particles{i}{1}{2};
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yFit(i)=...
+                                        temp_particles{i}{1}{3};
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Offset(i)=...
+                                        temp_particles{i}{1}{4};
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Snippet{i}=...
+                                        temp_particles{i}{1}{5};
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Area{i}=...
+                                        temp_particles{i}{1}{6};
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFitWidth{i}=...
+                                        temp_particles{i}{1}{7};
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yFitWidth{i}=...
+                                        temp_particles{i}{1}{8};
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yDoG(i)=...
+                                        temp_particles{i}{1}{9};
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xDoG(i)=...
+                                        temp_particles{i}{1}{10};
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).GaussianIntensity(i)=...
+                                        temp_particles{i}{1}{11};
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).CentralIntensity(i)=...
+                                        temp_particles{i}{1}{12};
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).DOGIntensity(i)=...
+                                        temp_particles{i}{1}{13};
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).snippet_mask{i}=...
+                                        temp_particles{i}{1}{14};
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).SisterDistance(i)=... 
+                                        temp_particles{i}{1}{17};
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).ConfidenceIntervals{i}=...
+                                        temp_particles{i}{1}{19};
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).gaussSpot{i}=...
+                                        temp_particles{i}{1}{20};
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).rawSpot{i}=...
+                                        temp_particles{i}{1}{21};
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).z(i)=...
+                                        i;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).discardThis=...
+                                        0;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).frame=...
+                                        CurrentFrame;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).r=...
+                                        0;
+                                else
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity(i)=...
+                                        nan;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFit(i)=...
+                                        nan;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yFit(i)=...
+                                        nan;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Offset(i)=...
+                                        nan;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Snippet{i}=...
+                                        nan;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Area{i}=...
+                                        nan;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFitWidth{i}=...
+                                        nan;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yFitWidth{i}=...
+                                        nan;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yDoG(i)=...
+                                        nan;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xDoG(i)=...
+                                        nan;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).GaussianIntensity(i)=...
+                                        nan;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).CentralIntensity(i)=...
+                                        nan;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).DOGIntensity(i)=...
+                                        nan;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).snippet_mask{i}=...
+                                        nan;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).SisterDistance(i)=... 
+                                        nan;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).ConfidenceIntervals{i}=...
+                                        nan;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).gaussSpot{i}=...
+                                        nan;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).rawSpot{i}=...
+                                        nan;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).z(i)=...
+                                        i;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).discardThis=...
+                                        0;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).frame=...
+                                        CurrentFrame;
+                                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).r=...
+                                        0;    
+                                end
+                            catch
+                                error('This spot might be too close to the image boundary');
                             end
-                        catch
-                            error('This spot might be too close to the image boundary');
+
+                        else
+                            disp('No spot added. Did you click too close to the image boundary?')
+                            breakflag = 1;
+                            break
                         end
-                        
-                    else
-                        disp('No spot added. Did you click too close to the image boundary?')
-                        breakflag = 1;
-                        break
                     end
+
+                    if ~breakflag
+                        %Find the maximum Z-plane
+                        [~, max_index] = max(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).CentralIntensity);
+                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).brightestZ = Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).z(max_index);
+
+                        %Add this to SpotFilter, which tells the code that this spot is
+                        %above the threshold. First, check whether the
+                        %dimensions of SpotFilter need to be altered. If so, pad it with NaNs
+                        if size(SpotFilter{CurrentChannel},2)>SpotsIndex
+                            SpotFilter{CurrentChannel}(CurrentFrame,SpotsIndex)=1;
+                        else
+                            %Pad with NaNs
+                            SpotFilter{CurrentChannel}(:,end:SpotsIndex)=NaN;
+                            SpotFilter{CurrentChannel}(CurrentFrame,SpotsIndex)=1;                
+                        end
+
+                        %Turn this spot into a new particle. This is the equivalent of
+                        %the 'u' command.
+                        [SpotFilter{CurrentChannel},Particles{CurrentChannel}]=...
+                            TransferParticle(Spots{CurrentChannel},...
+                            SpotFilter{CurrentChannel},Particles{CurrentChannel},...
+                            CurrentFrame,SpotsIndex);
+                        numParticles = numParticles + 1;
+
+                        %Connect this particle to the CurrentParticle. This is
+                        %the equivalent of running the 'c' command. 
+                        if ~GlobalZoomMode
+                            Particles{CurrentChannel}=...
+                            JoinParticleTraces(CurrentParticle,...
+                            numParticles,Particles{CurrentChannel});
+                        else
+                            disp('Re-run TrackmRNADynamics to associate this particle with a nucleus and trace.')
+                        end
+
+                        %Finally, force the code to recalculate the fluorescence trace
+                        %for this particle
+                        PreviousParticle=0;
+
+                        disp('Spot addded to the current particle.')
+                    end
+                else 
+                    warning('You clicked too close to the edge. A spot can''t be added here.');
                 end
-                
-                if ~breakflag
-                    %Find the maximum Z-plane
-                    [~, max_index] = max(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).CentralIntensity);
-                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).brightestZ = Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).z(max_index);
-
-                    %Add this to SpotFilter, which tells the code that this spot is
-                    %above the threshold. First, check whether the
-                    %dimensions of SpotFilter need to be altered. If so, pad it with NaNs
-                    if size(SpotFilter{CurrentChannel},2)>SpotsIndex
-                        SpotFilter{CurrentChannel}(CurrentFrame,SpotsIndex)=1;
-                    else
-                        %Pad with NaNs
-                        SpotFilter{CurrentChannel}(:,end:SpotsIndex)=NaN;
-                        SpotFilter{CurrentChannel}(CurrentFrame,SpotsIndex)=1;                
-                    end
-
-                    %Turn this spot into a new particle. This is the equivalent of
-                    %the 'u' command.
-                    [SpotFilter{CurrentChannel},Particles{CurrentChannel}]=...
-                        TransferParticle(Spots{CurrentChannel},...
-                        SpotFilter{CurrentChannel},Particles{CurrentChannel},...
-                        CurrentFrame,SpotsIndex);
-                    numParticles = numParticles + 1;
-
-                    %Connect this particle to the CurrentParticle. This is
-                    %the equivalent of running the 'c' command. 
-                    if ~GlobalZoomMode
-                        Particles{CurrentChannel}=...
-                        JoinParticleTraces(CurrentParticle,...
-                        numParticles,Particles{CurrentChannel});
-                    else
-                        disp('Re-run TrackmRNADynamics to associate this particle with a nucleus and trace.')
-                    end
-
-                    %Finally, force the code to recalculate the fluorescence trace
-                    %for this particle
-                    PreviousParticle=0;
-
-                    disp('Spot addded to the current particle.')
-                end
-
             end
 
         end
