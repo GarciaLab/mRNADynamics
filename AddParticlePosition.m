@@ -167,9 +167,15 @@ if ~NoAP
     %First, check whether we have Bcd-GFP and inverted histone
     if ((~isempty(strfind(lower(Channel1{1}),'bcd')))|...
             (~isempty(strfind(lower(Channel2{1}),'bcd'))))
+        if ((~isempty(strfind(lower(Channel1{1}),'his')))|...
+            (~isempty(strfind(lower(Channel2{1}),'his'))))
+        ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
+            ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')));
+        else
         warning('Using only Bcd-GFP to determine AP position')
         ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd'))|...
             ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd')));
+        end
     else
         ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
             ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')));
@@ -246,10 +252,24 @@ if ~NoAP
         %alignment
         if ((~isempty(strfind(lower(Channel1{1}),'bcd')))|...
                 (~isempty(strfind(lower(Channel2{1}),'bcd'))))
-            ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd'))|...
-                ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd')));
-            HisChannel=find(ChannelToLoad);
-            InvertHis=0;
+            if  ~isempty(strfind(lower(Channel1{1}),'his'))
+                HisChannel=1;
+                InvertHis=0;
+            elseif ~isempty(strfind(lower(Channel1{1}),'mcherry'))
+                HisChannel=1;
+                InvertHis=1;
+            elseif ~isempty(strfind(lower(Channel2{1}),'his'))
+                HisChannel=2;
+                InvertHis=0;
+            elseif ~isempty(strfind(lower(Channel2{1}),'mcherry'))
+                HisChannel=2;
+                InvertHis=1;
+            else
+                ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd'))|...
+                    ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd')));
+                HisChannel=find(ChannelToLoad);
+                InvertHis=0;
+            end
         else
             if  ~isempty(strfind(lower(Channel1{1}),'his'))
                 HisChannel=1;
