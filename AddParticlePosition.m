@@ -241,7 +241,7 @@ if ~NoAP
         % resolutions, though...
         ZoomRatio = ResizeFactor;
         
-    elseif strcmp(FileMode,'LSM')|strcmp(FileMode,'CZI')|strcmp(FileMode,'LIFExport')|strcmp(FileMode, 'DSPIN')     %CS20170912
+    elseif strcmp(FileMode,'LSM')||strcmp(FileMode,'CZI')||strcmp(FileMode,'LIFExport')||strcmp(FileMode, 'DSPIN')     %CS20170912
         
         %This is so that the code doesn't freak out later
         SurfName=[];
@@ -250,18 +250,18 @@ if ~NoAP
         
         %If we have Bcd-GFP and inverted His, we will use Bcd-GFP for the
         %alignment
-        if ((~isempty(strfind(lower(Channel1{1}),'bcd')))|...
-                (~isempty(strfind(lower(Channel2{1}),'bcd'))))
-            if  ~isempty(strfind(lower(Channel1{1}),'his'))
+        if ((contains(lower(Channel1{1}),'bcd'))||...
+                (contains(lower(Channel2{1}),'bcd')))
+            if  contains(lower(Channel1{1}),'his')
                 HisChannel=1;
                 InvertHis=0;
-            elseif ~isempty(strfind(lower(Channel1{1}),'mcherry'))
+            elseif contains(lower(Channel1{1}),'mcherry')
                 HisChannel=1;
                 InvertHis=1;
-            elseif ~isempty(strfind(lower(Channel2{1}),'his'))
+            elseif contains(lower(Channel2{1}),'his')
                 HisChannel=2;
                 InvertHis=0;
-            elseif ~isempty(strfind(lower(Channel2{1}),'mcherry'))
+            elseif contains(lower(Channel2{1}),'mcherry')
                 HisChannel=2;
                 InvertHis=1;
             else
@@ -271,16 +271,16 @@ if ~NoAP
                 InvertHis=0;
             end
         else
-            if  ~isempty(strfind(lower(Channel1{1}),'his'))
+            if contains(lower(Channel1{1}),'his')
                 HisChannel=1;
                 InvertHis=0;
-            elseif ~isempty(strfind(lower(Channel1{1}),'mcherry'))
+            elseif contains(lower(Channel1{1}),'mcherry')
                 HisChannel=1;
                 InvertHis=1;
-            elseif ~isempty(strfind(lower(Channel2{1}),'his'))
+            elseif contains(lower(Channel2{1}),'his')
                 HisChannel=2;
                 InvertHis=0;
-            elseif ~isempty(strfind(lower(Channel2{1}),'mcherry'))
+            elseif contains(lower(Channel2{1}),'mcherry')
                 HisChannel=2;
                 InvertHis=1;
             else
@@ -299,9 +299,9 @@ if ~NoAP
         MetaReader=bfGetReader([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(end).name]);
         MetaZoom=MetaReader.getMetadataStore();
         try
-            PixelSizeZoom=str2num(MetaZoom.getPixelsPhysicalSizeX(0).value);
+            PixelSizeZoom=str2double(MetaZoom.getPixelsPhysicalSizeX(0).value);
         catch
-            PixelSizeZoom=str2num(MetaZoom.getPixelsPhysicalSizeX(0));
+            PixelSizeZoom=str2double(MetaZoom.getPixelsPhysicalSizeX(0));
         end
         
         %Find the full embryo pixel size and load the image
@@ -312,11 +312,11 @@ if ~NoAP
         
         ImageTemp=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(end).name]);
         MetaFullEmbryo= ImageTemp{:, 4};
-        PixelSizeFullEmbryo=str2num(MetaFullEmbryo.getPixelsPhysicalSizeX(0) );
+        PixelSizeFullEmbryo=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0) );
         try
-            PixelSizeFullEmbryo=str2num(MetaFullEmbryo.getPixelsPhysicalSizeX(0).value);
+            PixelSizeFullEmbryo=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0).value);
         catch
-            PixelSizeFullEmbryo=str2num(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
+            PixelSizeFullEmbryo=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
         end
         
         %Check that the surface and midsaggital images have the same zoom
@@ -328,10 +328,10 @@ if ~NoAP
         MetaFullEmbryo1= ImageTemp1{:, 4};
         
         %This if for BioFormats backwards compatibility
-        if ~isempty(str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX(0)))
-            PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX(0));
+        if ~isempty(str2double(MetaFullEmbryo1.getPixelsPhysicalSizeX(0)))
+            PixelSizeFullEmbryoMid=str2double(MetaFullEmbryo1.getPixelsPhysicalSizeX(0));
         else
-            PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX(0).value);
+            PixelSizeFullEmbryoMid=str2double(MetaFullEmbryo1.getPixelsPhysicalSizeX(0).value);
         end
         
         
@@ -354,7 +354,7 @@ if ~NoAP
         
         %How many channels and slices do we have?
         NChannelsMeta=MetaFullEmbryo.getChannelCount(0);
-        NSlices=str2num(MetaFullEmbryo.getPixelsSizeZ(0));
+        NSlices=str2double(MetaFullEmbryo.getPixelsSizeZ(0));
         clear MaxTemp
         
         %Do a maximum projection
