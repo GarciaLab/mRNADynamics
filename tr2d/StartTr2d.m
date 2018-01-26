@@ -69,8 +69,11 @@ scriptPath = fileparts(mfilename('fullpath'));
 jar = fullfile(scriptPath, 'tr2d.jar');
 projectPath = [PreProcessedData,filesep,Prefix,filesep,'tr2dProject'];
 exportPath = [projectPath,filesep,'mRNADynamicsExport'];
-system(['java -jar ', jar, ' -p ', projectPath, ' -e ', exportPath]);
-
+[status,cmdout] = system(['java -jar ', jar, ' -p ', projectPath, ' -e ', exportPath]);
+disp(cmdout);
+if status 
+    error('Couldn''t call java from the Windows command prompt successfully. Check paths, etc.')
+end
 %Check that we have the tr2d results and import them
 if exist([PreProcessedData,filesep,Prefix,filesep,'tr2dProject',filesep,...
     'mRNADynamicsExport',filesep,'tr2d_objects.csv'], 'file')&&...
@@ -79,13 +82,5 @@ if exist([PreProcessedData,filesep,Prefix,filesep,'tr2dProject',filesep,...
 
     ImportTr2d(Prefix)
 else
-    error('No tr2d results found, did you export?')    
+    error('No tr2d results found, did you export?')
 end
-
-
-
-
-
-
-
-
