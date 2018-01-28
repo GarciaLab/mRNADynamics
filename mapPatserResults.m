@@ -98,14 +98,14 @@ title(path(backslashes(length(backslashes))+1:length(path)-4),'Interpreter','non
 standardizeFigure(ax, [], 'red');
 
 
-figure(2) % Sites versus Position
+figure(2); % Sites versus Position
 clf
 hold on
 % sorting by location for graph
 [location,siteIndices] = sortLocations(location,siteIndices);
 [complementLocation,complementSiteIndices] = sortLocations(complementLocation,complementSiteIndices);
 
-orientationAxisAdjustment = [-0.5 0.5];
+orientationAxisAdjustment = [-1 1]*(1/8);
 orientationAxisShift = repmat(orientationAxisAdjustment,1,...
     max(length(location),length(complementLocation)));%Alternating for increased visibility
 markerSize = 36*5; % Default = 36
@@ -166,14 +166,25 @@ ax.XMinorGrid = 'on';
 hold off
 
 %% Saving Compiled Information
-%     fileName = [path(1:backslashes(length(backslashes))) 'condensedPatserResult_' path(backslashes(length(backslashes))+1:length(path))];
-%     fileID = fopen(fileName,'w');
-%     for i = 1:length(values)
-%         fprintf(fileID,'%6s %12s\n','x','exp(x)');
-%     end
-%
-%     fclose(fileID);
+textFileName = 'CondensedResults.txt';
 
+%Saving the condensed results in the same location as the given path.
+fileName = [path(1:length(path)-4) textFileName]; 
+fileID = fopen(fileName,'w');
+fprintf(fileID, 'Forward Direction:\r\n');
+fprintf(fileID, '%16s %9s %10s \r\n','Transcription F.', 'Score', 'Location');
+for i = 1:length(location)
+   fprintf(fileID, '%16s %9g %10g\r\n', char(tf(siteIndices(i))),...
+       values(siteIndices(i)),location(i));
+end
+
+fprintf(fileID, '\r\nReverse Direction:\r\n');
+fprintf(fileID, '%16s %9s %10s \r\n','Transcription F.', 'Score', 'Location');
+for i = 1:length(complementLocation)
+   fprintf(fileID, '%16s %9g %10g\r\n', char(tf(complementSiteIndices(i))),...
+       values(complementSiteIndices(i)),complementLocation(i));
+end
+fclose(fileID);
 
 
 
