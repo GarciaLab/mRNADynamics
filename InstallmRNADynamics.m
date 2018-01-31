@@ -136,6 +136,7 @@ function txt = InstallmRNADynamics
     TrackingFolder = [mRNADynamicsPath, '/Tracking'];
     SubfunctionsFolder = [TrackingFolder, '/subfunctions'];
     LineageCodeFolder = [mRNADynamicsPath, '/LineageCode'];
+    tr2dFolder = [mRNADynamicsPath, '/tr2d'];
 
     Output{1} = ['addpath(genpath(''', mRNADynamicsPath, '/Fiji.app/scripts''))'];
     Output{2} = ['path(''', PREPROCESSED_DATA_PATH, ''',path);'];
@@ -148,6 +149,7 @@ function txt = InstallmRNADynamics
     Output{9} = ['path(''', DYNAMICS_RESULTS_PATH, ''',path);'];
     Output{10} = ['addpath(genpath(''', TestClassesFolder, '''))'];
     Output{11} = ['addpath(genpath(''', DependenciesFolder, '''))'];
+    Output{12} = ['addpath(genpath(''',  tr2dFolder, '''))'];
 
     writeStartupFile(Output);
   end
@@ -208,8 +210,8 @@ function writeStartupFile(contents)
   %Create the startup.m file
   StartUpPath = userpath; 
   if isempty(userpath)
-     display('Path for this specific user was not found. Please locate it in your documents folder.');
-     display('In Windows, got to "My Documents\Matlab"');
+     disp('Path for this specific user was not found. Please locate it in your documents folder.');
+     disp('In Windows, got to "My Documents\Matlab"');
      StartUpPath = uigetdir;
      userpath(StartUpPath);
   end
