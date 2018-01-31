@@ -1,4 +1,4 @@
-function [Frame,AmpIntegral,AmpGaussian,Offset,...
+function [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
     ErrorIntegral,ErrorGauss,optFit,FitType,noIntensityFlag]=...
     GetParticleTrace(CurrentParticle,Particles,Spots)
 
@@ -33,6 +33,20 @@ for i=1:length(Particles(CurrentParticle).Frame)
         %Amplitude of the Gaussian fit. This is an intensity per pixel.
         IntensityMaxGauss(i)=...
             Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).CentralIntensity(zIndex);
+        %Check to see it multi-slice integration was performed for this set
+        fields = fieldnames(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)));
+        if ~isempty(find(strcmp('FixedAreaIntensity3',fields)))
+            AmpIntegral3(i)=...
+            Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).FixedAreaIntensity3;
+        else
+            AmpIntegral3(i)= NaN;
+        end
+        if ~isempty(find(strcmp('FixedAreaIntensity5',fields)))
+            AmpIntegral5(i)=...
+            Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).FixedAreaIntensity5;
+        else
+            AmpIntegral5(i)= NaN;
+        end
 end
 
 %Do a spline fit to the offset and use it to estimate the error

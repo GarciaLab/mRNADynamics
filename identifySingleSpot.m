@@ -176,8 +176,8 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
                 max_dog = max(max(dog_image(k_row,k_column)));
                 temp_particles = {{fixedAreaIntensity, spot_x, spot_y, fits(end-1), snippet, ...
                     area, sigma_x, sigma_y, centroid_y, centroid_x, gaussianIntensity,intensity,...
-                    max_dog, snippet_mask, sigma_x2, sigma_y2, sister_chromatid_distance, relative_errors, confidence_intervals, gaussian, mesh}};
-            else
+                    max_dog, snippet_mask, sigma_x2, sigma_y2, sister_chromatid_distance, relative_errors, confidence_intervals, gaussian, mesh,fits}};
+            else                
                 temp_particles = {{}};   
             end
 
