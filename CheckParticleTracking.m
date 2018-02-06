@@ -546,7 +546,7 @@ while (cc~='x')
     
     %Get the coordinates of all the spots in this frame
     [x,y,z]=SpotsXYZ(Spots{CurrentChannel}(CurrentFrame));
-   
+        
     %If the approved field does not exist create it
     if ~isfield(Particles{CurrentChannel},'Approved')
         for i=1:numParticles
@@ -912,6 +912,10 @@ while (cc~='x')
 %             between two spots, not past the PSF boundaries
         end
     end
+    
+    %Check to see if spots structure contains multi-slice fields
+    multi_slice_flag = isfield(Spots{CurrentChannel}(CurrentFrame).Fits...
+        (CurrentParticleIndex),'IntegralZ');
     
     figure(SnippetFig)
     if  ~isempty(xTrace) && ~isempty(CurrentZIndex)  
@@ -1503,13 +1507,16 @@ while (cc~='x')
                         % if there are insufficient slices, these metrics will register as NaNs
                         RawIntegral3 = mean(z_raw_values(ismember(z_grid,CentralZ-1:CentralZ+1)));
                         RawIntegral5 = mean(z_raw_values(ismember(z_grid,CentralZ-2:CentralZ+2)));
-                        
-                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity3 = RawIntegral3;
-                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity5 = RawIntegral5;
+                        if multi_slice_flag
+                            Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity3 = RawIntegral3;
+                            Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity5 = RawIntegral5;
+                            Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).IntegralZ = IntegralZ_flag; 
+                            Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).snippet_size = snippet_size;
+                        end
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).brightestZ = CentralZ;
-                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).IntegralZ = IntegralZ_flag; 
-                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).snippet_size = snippet_size;
-                                                                        
+%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).r = NaN;
+%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).discardThis = 0;
+%                                                                         
                         %Add this to SpotFilter, which tells the code that this spot is
                         %above the threshold. First, check whether the
                         %dimensions of SpotFilter need to be altered. If so, pad it with NaNs

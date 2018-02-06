@@ -7,6 +7,7 @@ FISHPath = 'D:\Data\Nick\LivemRNA\LivemRNAFISH\';
 load([DropboxFolder,filesep,Prefix,'\Spots.mat'])
 load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
 load([DropboxFolder,filesep,Prefix,'\Ellipses.mat'])
+load([DropboxFolder,filesep,Prefix,'\FrameInfo.mat'])
 %%
 %%%Project Path 
 data_path = 'D:\Data\Nick\projects\hmmm\dat\mHMMeve2_weka_inf_2018_01_23\';
@@ -19,6 +20,8 @@ end
 snippet_size = 21;
 train = 1;
 classify = 0;
+pixel_size = FrameInfo.PixelSize;
+z_step_size = FrameInfo.ZStep;
 % ---------- Load Snippets on the fly to generate classifications --------%
 if train
     particle_frames = [Particles.Frame];
@@ -36,16 +39,16 @@ if train
         load(sister_name);
         PrefixList = sister_struct.PrefixList;
         IDvec = sister_struct.IDvec;
-        SetID = find(strcmp(Prefix,PrefixList)); % check to see if project is already in struct
+        setID = find(strcmp(Prefix,PrefixList)); % check to see if project is already in struct
         particle_labels = sister_struct.particle_labels;
-        if isempty(SetID)
+        if isempty(setID)
             disp('Current set not found in PefixList. Adding')
             sister_struct.PrefixList = [PrefixList{:} {Prefix}];
-            SetID = length(PrefixList);
-            sister_struct.IDvec = [IDvec SetID];            
+            setID = length(PrefixList);
+            sister_struct.IDvec = [IDvec setID];            
         end
-        labeled_nc = particle_labels([particle_labels.SetID]==SetID).Nucleus;
-        labeled_frames = particle_labels([particle_labels.SetID]==SetID).Frame;
+        labeled_nc = particle_labels([particle_labels.setID]==setID).Nucleus;
+        labeled_frames = particle_labels([particle_labels.setID]==setID).Frame;
     else % if no pre-existing file, generate one
         disp('No sister data set detected. New one will be generated')
         sister_struct.IDvec = [1];
@@ -65,12 +68,16 @@ if train
     cm = jet(64);
     for i = shuffled_vec
         index = shuffled_vec(i);
+        si = strfind(Prefix,'_');
+        setID = Prefix(si(end)+1:end);
         % create temp struct
         temp = struct;
-        temp.SetID = SetID;
+        temp.setID = setID;
         temp.selection_index = index;                
         Frame = particle_frames(index);
+        ParticleID = particle_id(index);
         temp.Frame = Frame;
+        temp.ParticleID = ParticleID;
         ParticleIndex = index;
         temp.ParticleIndex = ParticleIndex;
         SpotIndex = particle_indices(index);
@@ -167,87 +174,63 @@ if train
     sister_struct.particle_labels = particle_labels;
 end    
 save(sister_name,'sister_struct')
-% %% Movie of trace duration
-% 
-% [px, py] = meshgrid(1:512,1:256); % reference coordinate grid
-% Frames = CompiledParticles(trace_id).Frame; % get frames for relevant particle
-% FrameRange = min(CompiledParticles(trace_id).Frame):max(CompiledParticles(trace_id).Frame);
-% Time = ElapsedTime(FrameRange); 
-% Fluo = CompiledParticles(trace_id).Fluo;
-% x_pt = CompiledParticles(trace_id).xPos; % particle x position
-% y_pt = CompiledParticles(trace_id).yPos; % particle y position
-% FluoInterp = interp1(ElapsedTime(Frames),Fluo,Time); % Interpolate to fill gaps
-% x_pt = interp1(ElapsedTime(Frames),x_pt,Time); % Interpolate to fill gaps
-% y_pt = interp1(ElapsedTime(Frames),y_pt,Time); % Interpolate to fill gaps
-% start = min(FrameRange);
-% Time = Time - ElapsedTime(nc14);
-% % Display Params
-% x_size = 20; % x dimension in pixels
-% y_size = 20; % y dimension in pixels
-% zoomFactor = 1; % Factor by which to expand image
-% radius = 4;
-% 
-% iter = 0;
-% for CurrentFrame = FrameRange 
-%     iter = iter + 1;
-%     % Get Nucleus Info    
-%     CurrentEllipse=...
-%         schnitzcells(CompiledParticles(trace_id).Nucleus).cellno(...
-%         schnitzcells(CompiledParticles(trace_id).Nucleus).frames==...
-%         CurrentFrame);
-%     x_nc =  Ellipses{CurrentFrame}(CurrentEllipse,1)+1; % x position of nucleus
-%     y_nc =  Ellipses{CurrentFrame}(CurrentEllipse,2)+1; % y position of nucleus
-%     % Draw a Circle Around Spot
-%     circle_mat = zeros(256,512);
-%     xp = x_pt(iter);
-%     yp = y_pt(iter);
-%     y_dist = abs(py - yp);
-%     x_dist = abs(px - xp);
-%     r_mat = round(sqrt(x_dist.^2 + y_dist.^2));
-%     circle_mat(r_mat==radius) = .7; 
-% %     circle_mat(r_mat<radius) = .2; 
-%     %Make a maximum projection of the mRNA channel
-%     D=dir([FISHPath,'\Data\PreProcessedData\',Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z*.tif']);
-%     % Do not load the first and last frame as they are black
-%     ImageTemp=[];
-%     for i=2:(length(D)-1)
-%         ImageTemp(:,:,i-1)=imread([FISHPath,'\Data\PreProcessedData\',Prefix,filesep,D(i).name]);
-%     end
-%     mRNAImage=max(ImageTemp,[],3); % Max project    
-%     mRNAImage = mat2gray(mRNAImage);
-%     %Load the corresponding histone image
-%     HistoneImage=imread([FISHPath,'\Data\PreProcessedData\',Prefix,filesep,...
-%         Prefix,'-His_',iIndex(CurrentFrame,3),'.tif']);        
-%     
-%     %Overlay all channels
-%     MCPChannel=mat2gray(mRNAImage);
-%     HistoneChannel=mat2gray(HistoneImage);    
-%     BlueChannel  = mat2gray(circle_mat,[0,1]);
-%     ImOverlay=cat(3,HistoneChannel,MCPChannel,BlueChannel);
-% 
-%     ImCropped = ImOverlay(max(1,y_nc-y_size):min(256,y_nc+y_size),...
-%                 max(1,x_nc-x_size):min(512,x_nc+x_size),:);
-%     ImCropped = repelem(ImCropped,zoomFactor,zoomFactor); % Blow it up a bit...     
-%     OverlayFig = figure(1);
-%     OverlayFig.Position = [0 0 1024 512];%('Visible','off');
-%     OverlayFig.Visible = 'off';
-%     clf
-%     subplot(1,2,1);
-%     imshow(ImCropped)   
-%     
-%     text(1,2*y_size*zoomFactor,[iIndex(round(ElapsedTime(CurrentFrame)-ElapsedTime(nc14)),2),...
-%         ' min'],'Color','k','FontSize',10,'BackgroundColor',[1,1,1,.5])    
-%     
-%     subplot(1,2,2);
-%     hold on
-%     plot(Time(1:(CurrentFrame-start+1)),FluoInterp(1:(CurrentFrame-start+1)),'LineWidth',2,'Color','black');
-%     scatter(Time(CurrentFrame-start+1),FluoInterp(CurrentFrame-start+1),50,'black','filled')
-%     axis([0 1.2*Time(end) 0 1.2*max(FluoInterp)])
-%     xlabel('time (min)')
-%     ylabel('AU')
-% %     pause(.05)
-%     zs = '000';
-%     f_string = [zs(1:3-length(num2str(CurrentFrame))) num2str(CurrentFrame)];
-%     saveas(figure(1),[OutPath 'Trace_' num2str(trace_id) '_Frame_' ...
-%         num2str(CurrentFrame) '.tiff'],'tiff');
-% end 
+
+%% Use Classified Images to Train Simple Classifier
+load(sister_name)
+particle_labels = sister_struct.particle_labels;
+% generate relevant statistics for each particle
+for i = 1:length(particle_labels)
+    Frame = particle_labels(i).Frame;
+    brightestZ = particle_labels(i).brightestZ;
+    xSpot = particle_labels(i).x;
+    ySpot = particle_labels(i).y;
+    zSpot = particle_labels(i).z;    
+    % first load image
+    D=dir([FISHPath,'\Data\PreProcessedData\',Prefix,filesep,Prefix,'_',iIndex(Frame,3),'_z*.tif']);
+    % Do not load the first and last frame as they are black    
+    ImageTemp=[];    
+    for j=2:(length(D)-1)        
+        ImageTemp(:,:,j-1)=imread([FISHPath,'\Data\PreProcessedData\',Prefix,filesep,D(j).name]);                    
+    end
+    [X1,X2,X3] = meshgrid(1:snippet_size,1:snippet_size,1:snippet_size);
+
+    for n = 1:n_sim
+        snippet = zeros(snippet_size,snippet_size,snippet_size);
+        n_spots = 2 - round(rand());
+        for s = 1:n_spots       
+            mu = [randsample(mean_r:snippet_size-mean_r,1),randsample(mean_r:snippet_size-mean_r,1), randsample(mean_r:snippet_size-mean_r,1)]; 
+            xr = mean_r - sigma_r*norminv(rand()*lower_r);  
+            yr = mean_r - sigma_r*norminv(rand()*lower_r); 
+            zr = mean_r - sigma_r*norminv(rand()*lower_r); 
+            F = mvnpdf([X1(:) X2(:) X3(:)],mu,[xr,yr,zr]);
+            F = reshape(F,snippet_size,snippet_size,snippet_size);
+            f = mean_f - sigma_f*norminv(rand()*lower_f);        
+            snippet = snippet + (1/n_spots)*f*F;        
+        end
+        x_center  = sum((1:snippet_size).*sum(sum(snippet),3))/sum(snippet(:));
+        y_center  = sum((1:snippet_size).*reshape(sum(sum(snippet,2),3),1,[]))/sum(snippet(:));
+        z_center  = sum((1:snippet_size).*reshape(sum(sum(snippet,1),2),1,[]))/sum(snippet(:));
+    %     r_sq_mat = (X1-x_center).^2 + (X2 - y_center).^2;
+        r_sq_mat = (X1-x_center).^2 + (X2 - y_center).^2 + (X3 - z_center).^2;
+        moment2 = [moment2 sum(sum(sum(r_sq_mat.*snippet)))/sum(snippet(:))];
+        com_register = [com_register {[x_center,y_center]}];
+        snippet_register{n} = snippet;
+        spot_counts = [spot_counts n_spots];
+    end
+
+    mc = jet(64);
+
+    metric_fig = figure;
+    hold on
+    g_size = ceil(max(moment2)/100);
+    grid = 0:g_size:ceil(max(moment2));
+    s1 = histc(moment2(spot_counts==1),grid);
+    s1 = s1/sum(s1);
+    s2 = histc(moment2(spot_counts==2),grid);
+    s2 = s2/sum(s2);
+    bar(grid,s1,'FaceColor',cm(15,:),'BarWidth',1,'FaceAlpha',.5,'EdgeAlpha',0);
+    bar(grid,s2,'FaceColor',cm(30,:),'BarWidth',1,'FaceAlpha',.5,'EdgeAlpha',0);
+
+end
+    
+    

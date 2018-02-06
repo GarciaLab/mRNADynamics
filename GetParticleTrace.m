@@ -35,16 +35,18 @@ for i=1:length(Particles(CurrentParticle).Frame)
             Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).CentralIntensity(zIndex);
         %Check to see it multi-slice integration was performed for this set
         fields = fieldnames(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)));
-        if ~isempty(find(strcmp('FixedAreaIntensity3',fields)))
+%         if ~isempty(find(strcmp('FixedAreaIntensity3',fields)))
+        try
             AmpIntegral3(i)=...
             Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).FixedAreaIntensity3;
-        else
+        catch
             AmpIntegral3(i)= NaN;
         end
-        if ~isempty(find(strcmp('FixedAreaIntensity5',fields)))
+%         if ~isempty(find(strcmp('FixedAreaIntensity5',fields)))
+        try
             AmpIntegral5(i)=...
             Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).FixedAreaIntensity5;
-        else
+        catch
             AmpIntegral5(i)= NaN;
         end
 end
