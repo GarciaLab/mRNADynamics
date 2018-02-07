@@ -826,7 +826,11 @@ elseif strcmp(FileMode,'LIFExport')
         LIFImages=bfopen([Folder,filesep,DLIF(LIFIndex).name]);
         %Extract the metadata for each series
         LIFMeta = LIFImages{:, 4};
-        NSeries=LIFMeta.getImageCount()-1;                
+%         NSeries=LIFMeta.getImageCount(); %AR 2/4/2018 Not sure why this subtracts one, but it causes an error when there's only one series.
+%         if NSeries == 0
+%             NSeries = LIFMeta.getImageCount();
+%         end
+        NSeries = LIFMeta.getImageCount();
         %Figure out the number of slices in each series
         NSlices = [];
         for i=1:NSeries
