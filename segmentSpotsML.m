@@ -26,6 +26,8 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 % 'Shadows':    	 This option should be followed by 0, 1 or 2. This
 %                specifies the number of requisite z-planes above and/or below the
 %                brightest plane for a spot to have to pass quality control. 
+% 'IntegralZ':  Establish center slice at position that maximizes raw fluo integral 
+%               across sliding 3 z-slice window.
 %               
 % OUTPUT
 % 'Spots':  A structure array with a list of detected transcriptional loci
@@ -45,7 +47,8 @@ num_frames=0;
 num_shadows = 2;
 initial_frame = 1;
 just_tifs = 0;
-    
+use_integral_center = 0;
+
 for i=1:length(varargin)
     if strcmp(varargin{i},'displayFigures')
         displayFigures=1;
@@ -71,7 +74,9 @@ for i=1:length(varargin)
         else
             initial_frame=varargin{i+1};
         end
-    else
+    elseif strcmp(varargin{i}, 'IntegralZ')
+        use_integral_center = 1;      
+    else 
         if ~isnumeric(varargin{i})
             error('Input parameters not recognized. Check spelling and case.')
         end
@@ -226,6 +231,7 @@ for q = 1:nCh
             pause(10);
             if q==1 || strcmpi(ExperimentType,'inputoutput')
                 trainableSegmentation.Weka_Segmentation.loadClassifier([classifierFolder, classifierPathCh1]);
+%                 call("trainableSegmentation.Weka_Segmentation.loadClassifier", "D:\Data\Nick\LivemRNA\LivemRNAFISH\mRNADynamics\classifiers\nl_eve2_v7.model");
             elseif q==2
                 trainableSegmentation.Weka_Segmentation.loadClassifier([classifierFolder, classifierPathCh2]);
             else
@@ -342,21 +348,22 @@ else
                          Particles(n).xFit(1) = cell2mat(all_frames{i,j}{spot}(2));
                          Particles(n).yFit(1) = cell2mat(all_frames{i,j}{spot}(3));
                          Particles(n).Offset(1) = cell2mat(all_frames{i,j}{spot}(4));
-                         Particles(n).Snippet{1} = cell2mat(all_frames{i,j}{spot}(5));
-                         Particles(n).Area{1} = cell2mat(all_frames{i,j}{spot}(6));
-                         Particles(n).xFitWidth{1} = cell2mat(all_frames{i,j}{spot}(7));
-                         Particles(n).yFitWidth{1} = cell2mat(all_frames{i,j}{spot}(8));
+%                          Particles(n).Snippet{1} = cell2mat(all_frames{i,j}{spot}(5));
+%                          Particles(n).Area(1) = cell2mat(all_frames{i,j}{spot}(6));
+%                          Particles(n).xFitWidth(1) = cell2mat(all_frames{i,j}{spot}(7));
+%                          Particles(n).yFitWidth(1) = cell2mat(all_frames{i,j}{spot}(8));
                          Particles(n).yDoG(1) = cell2mat(all_frames{i,j}{spot}(9));
                          Particles(n).xDoG(1) = cell2mat(all_frames{i,j}{spot}(10));
                          Particles(n).GaussianIntensity(1) = cell2mat(all_frames{i,j}{spot}(11));                     
                          Particles(n).CentralIntensity(1) = cell2mat(all_frames{i,j}{spot}(12));
                          Particles(n).DOGIntensity(1) = cell2mat(all_frames{i,j}{spot}(13));
-                         Particles(n).snippet_mask{1} = cell2mat(all_frames{i,j}{spot}(14));
-                         Particles(n).SisterDistance(1) = cell2mat(all_frames{i,j}{spot}(17));
+%                          Particles(n).snippet_mask{1} = cell2mat(all_frames{i,j}{spot}(14));
+%                          Particles(n).SisterDistance(1) = cell2mat(all_frames{i,j}{spot}(17));
                          Particles(n).ConfidenceIntervals{1} = cell2mat(all_frames{i,j}{spot}(19));          
-                         Particles(n).gaussSpot{1} = cell2mat(all_frames{i,j}{spot}(20));
+%                          Particles(n).gaussSpot{1} = cell2mat(all_frames{i,j}{spot}(20));
                          raw = all_frames{i,j}{spot}(21);
-                         Particles(n).rawSpot{1} = raw{1};
+                         Particles(n).gaussParams = all_frames{i,j}{spot}(22);
+%                          Particles(n).rawSpot{1} = raw{1};
                          Particles(n).z(1) = j;
                          Particles(n).discardThis = 0;
                          Particles(n).frame(1) = i;
@@ -403,54 +410,59 @@ else
         falsePositives = 0;
         %pick the brightest z-slice
         for i = 1:length(Particles)
-            [~, max_index] = max(Particles(i).CentralIntensity);
+            z_vec = [Particles(i).z]; %convenience vector
+            %pull intensity value from particle snippets
+            RawIntensityVec = [Particles(i).FixedAreaIntensity];            
+            CentralIntensityVec = [Particles(i).CentralIntensity]; 
+            %find slice with brightest pixel
+            [~, MaxIndexCentral] = max(CentralIntensityVec);            
+            % calculate concenience vectors
+            z_grid = min(z_vec):max(z_vec);
+            z_raw_values = NaN(size(z_grid));            
+            z_raw_values(ismember(z_grid,z_vec)) = RawIntensityVec;
+            if ~use_integral_center                
+                CentralZ = z_vec(MaxIndexCentral); 
+                ZStackIndex = MaxIndexCentral;
+            else
+                % Convolve with gaussian filter to find "best" center
+                g = [-1 0 1];
+                gaussFilter = exp(-g .^ 2 / (2 ));
+                RawRefVec = conv(gaussFilter,z_raw_values);
+                RawRefVec = RawRefVec(2:end-1);
+                RawRefVec(1) = NaN;
+                RawRefVec(end) = NaN;
+                RawRefVec = RawRefVec(ismember(z_grid,z_vec));
+                [~, MaxIndexIntegral] = max(RawRefVec);
+                CentralZ = z_vec(MaxIndexIntegral);               
+                ZStackIndex = MaxIndexIntegral;
+            end            
+            % if there are insufficient slices, these metrics will register as NaNs
+            RawIntegral3 = mean(z_raw_values(ismember(z_grid,CentralZ-1:CentralZ+1)));
+            RawIntegral5 = mean(z_raw_values(ismember(z_grid,CentralZ-2:CentralZ+2)));
+
+            Particles(i).FixedAreaIntensity3 = RawIntegral3;
+            Particles(i).FixedAreaIntensity5 = RawIntegral5;
+            Particles(i).brightestZ = CentralZ;
+            Particles(i).IntegralZ = use_integral_center; 
+            Particles(i).snippet_size = snippet_size;
+            %use convolution kernel to look for shadows
+            z_raw_binary = ~isnan(z_raw_values);
+            z_shadow_vec = conv(z_raw_binary,[1 1 1],'same');
+            z_shadow_vec = z_shadow_vec(ismember(z_grid,z_vec)); 
+            n_shadows = z_shadow_vec(ZStackIndex)-1;
             if TrackSpots
                 for j = 1:numel(fields)-2 %do not include fields 'r' or 'frame'
-                    Particles(i).(fields{j}) = Particles(i).(fields{j})(max_index);
+                    Particles(i).(fields{j}) = Particles(i).(fields{j})(MaxIntegralCentral);
                 end
-            else
-            Particles(i).brightestZ = Particles(i).z(max_index);       
-                if num_shadows == 1
-                    if length(Particles(i).z) <= 1
-                            Particles(i).discardThis = 1;
-                            Particles(i).noIntensityAnalysis = 1;
-                            falsePositives = falsePositives + 1;
-                    elseif  Particles(i).brightestZ == Particles(i).z(end)
-                        if Particles(i).z(max_index -1) ~= Particles(i).brightestZ-1
-                            Particles(i).discardThis = 1;
-                            Particles(i).noIntensityAnalysis = 1;
-                            falsePositives = falsePositives + 1;
-                        end
-                    elseif Particles(i).brightestZ == Particles(i).z(1)
-                        if Particles(i).z(max_index+1) ~= Particles(i).brightestZ+1
-                            Particles(i).discardThis = 1;
-                            Particles(i).noIntensityAnalysis = 1;
-                            falsePositives = falsePositives + 1;
-                        end
-                    elseif Particles(i).z(max_index -1) ~= Particles(i).brightestZ-1 ...
-                        && Particles(i).z(max_index +1) ~= Particles(i).brightestZ +1
-                        Particles(i).discardThis = 1;
-                        Particles(i).noIntensityAnalysis = 1;
-                        falsePositives = falsePositives + 1;
-                    end
-                elseif num_shadows == 2
-                    if  Particles(i).brightestZ == Particles(i).z(end) ||...
-                        Particles(i).brightestZ == Particles(i).z(1)                                
-                        Particles(i).discardThis = 1;
-                        Particles(i).noIntensityAnalysis = 1;
-                        falsePositives = falsePositives + 1;
-                    elseif Particles(i).z(max_index -1) ~= Particles(i).brightestZ-1 ...
-                        || Particles(i).z(max_index +1) ~= Particles(i).brightestZ +1
-                        Particles(i).discardThis = 1;
-                        Particles(i).noIntensityAnalysis = 1;
-                        falsePositives = falsePositives + 1;                  
-                    end
-                end
+            elseif n_shadows < num_shadows                                         
+                Particles(i).discardThis = 1;
+%                 Particles(i).noIntensityAnalysis = 1;
+                falsePositives = falsePositives + 1;                                    
             end
         end
 
         %Create a final Spots structure to be fed into TrackmRNADynamics
-        Spots{q} = [];
+        Spots{q} = [];        
         fields = fieldnames(Particles);
         num_fields = length(fields);
         for i = initial_frame:num_frames
@@ -459,19 +471,20 @@ else
                 for j = frames(1):frames(end)
                     if ~Particles(j).discardThis
                         Spots{q}(i).Fits(j-frames(1)+1) = Particles(j);
+%                         Spots{q}(i).gaussSpot = [];                        
                     end
                     %Sometimes, all Spots are discarded in a frame. In that
                     %case, create an empty Spots entry in that frame.
                     if length(Spots{q})<i
                         for l = 1:num_fields
-                            Spots{q}(i).Fits.(fields{l}) = [];
-                        end
+                            Spots{q}(i).Fits.(fields{l}) = [];                            
+                        end                   
                     end
                 end
             else 
                 for l = 1:num_fields
                     Spots{q}(i).Fits.(fields{l}) = [];
-                end
+                end                
             end
         end
 

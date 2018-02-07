@@ -559,7 +559,8 @@ elseif strcmp(FileMode, 'LAT')
 %LSM mode
 elseif strcmp(FileMode,'LSM')
     
-    warning('Still need to add the FF information')
+%     warning('Still need to add the FF information') NL: I think this
+%     warning is out-dated
     
     %What type of experiment do we have?
     if strcmp(ExperimentType,'1spot') || strcmp(ExperimentType,'2spot') || strcmp(ExperimentType,'2spot1color')
@@ -760,7 +761,7 @@ elseif strcmp(FileMode,'LSM')
         D1=dir([Folder,filesep,'FF*.lsm']);
         D1=[D1,dir([Folder,filesep,'FF*.czi'])];
         D2=dir([Folder,filesep,'..',filesep,'FF*.lsm']);
-        D2=[D2,dir([Folder,filesep,'..',filesep,'FF*.lif'])];
+        D2=[D2,dir([Folder,filesep,'..',filesep,'FF*.czi'])];
 
         FFPaths={};
         for i=1:length(D1)
@@ -825,14 +826,15 @@ elseif strcmp(FileMode,'LIFExport')
         LIFImages=bfopen([Folder,filesep,DLIF(LIFIndex).name]);
         %Extract the metadata for each series
         LIFMeta = LIFImages{:, 4};
-        NSeries=LIFMeta.getImageCount();
-
+        NSeries=LIFMeta.getImageCount()-1;                
         %Figure out the number of slices in each series
+        NSlices = [];
         for i=1:NSeries
             NSlices(i)=str2num(LIFMeta.getPixelsSizeZ(i-1));
         end
 
         %Number of planes per series
+        NPlanes = [];
         for i=1:NSeries
             NPlanes(i)=LIFMeta.getPlaneCount(i-1);
         end
@@ -841,13 +843,14 @@ elseif strcmp(FileMode,'LIFExport')
         NChannels=LIFMeta.getChannelCount(0);
 
         %Finally, use this information to determine the number of frames in
-        %each series
+        %each series        
         NFrames=NPlanes./NSlices/NChannels;
         %Get rid of the last frame as it is always incomplete because
         %that's when we stopped it
         NFrames=NFrames-1;
         NPlanes = NPlanes - NSlices*NChannels;      
         Frame_Times = zeros(1,sum(NFrames.*NSlices));
+%         Frame_Times = [];
         m=1;
         for i = 1:NSeries
             xDoc = xmlread([XMLFolder,filesep,SeriesFiles(i).name]);
