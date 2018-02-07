@@ -199,7 +199,8 @@ else
         FrameInfo(i).NumberSlices=NumberSlices;
     end
 end
-
+xSize = FrameInfo(1).PixelsPerLine;
+ySize = FrameInfo(1).LinesPerFrame;
 numFrames =length(FrameInfo);
 
 %See how  many frames we have and adjust the index size of the files to
@@ -929,12 +930,15 @@ while (cc~='x')
         else
             snippet_size = 7;
         end
+        if isempty(snippet_size)
+                snippet_size = 7;
+        end
 %         CurrentSnippet=mat2gray(...
 %             Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).Snippet{CurrentZIndex});
         
 %         snippet_size = 15;        
-        CurrentSnippet = FullSlice(max(1,ySpot-snippet_size):min(256,ySpot+snippet_size),...
-                                max(1,xSpot-snippet_size):min(512,xSpot+snippet_size));
+        CurrentSnippet = FullSlice(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
+                                max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size));
         imSnippet = mat2gray(CurrentSnippet);
         SnippetEdge=size(CurrentSnippet,1);     
         IntegrationRadius = 6; % this appears to be hard-coded into IdentifySingleSpot
@@ -980,8 +984,13 @@ while (cc~='x')
 %             domain=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).rawSpot{CurrentZIndex};
 %             snip = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).Snippet{CurrentZIndex};
             if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex),'gaussParams')
-                gaussParams = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussParams{CurrentZIndex};
-                gauss = singleGaussian(gaussParams);
+                gaussParams = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussParams;
+                if ~isempty(gaussParams)
+                    gaussParams= gaussParams{CurrentZIndex};
+                    gauss = singleGaussian(gaussParams);
+                else
+                    gauss = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{CurrentZIndex};
+                end
             elseif isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex), 'gaussSpot')
                 gauss = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{CurrentZIndex};
             else
