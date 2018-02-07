@@ -518,6 +518,26 @@ if ForCompileAll
 end
 
 
+%Figure out channel-specific information
+if NChannels==1
+    if contains(Channel1{1}, 'MCP') || contains(Channel1{1}, 'PCP')
+        nameSuffix=['_ch',iIndex(1,2)];
+        coatChannel = 1;
+    elseif contains(Channel2{1}, 'MCP') || contains(Channel2{1}, 'PCP')
+        nameSuffix=['_ch',iIndex(2,2)];
+        coatChannel = 2;
+    end
+elseif strcmpi(ExperimentType,'2spot2color')
+        %We are assuming that channels 1 and 2 are assigned to coat
+        %proteins. We should do a better job with this.
+        coatChannels = [1,2];
+        coatChannel=coatChannels(1);
+else
+    error('Experiment type not recognized')
+end
+
+
+
 %This flag allows the code to directly pass a command without waiting for
 %the user to press a key or click on the figure
 SkipWaitForButtonPress=[];
@@ -525,16 +545,9 @@ SkipWaitForButtonPress=[];
 
 while (cc~='x')
     
-    if NChannels==1
-        if contains(Channel1{1}, 'MCP') || contains(Channel1{1}, 'PCP')
-            nameSuffix=['_ch',iIndex(1,2)];
-            coatChannel = 1;
-        elseif contains(Channel2{1}, 'MCP') || contains(Channel2{1}, 'PCP')
-            nameSuffix=['_ch',iIndex(2,2)];
-            coatChannel = 2;
-        end
-    else
-        error('This script currently doesn''t support 2 spot 2 color. Talk to Armando or Hernan to make this happen. No duct tape please.'); %AR 12/23/17
+    %Update the name suffic
+    if strcmpi(ExperimentType,'2spot2color')
+        nameSuffix=['_ch',iIndex(coatChannel,2)];
     end
     
     EllipseHandle=[];
@@ -2235,12 +2248,16 @@ while (cc~='x')
             end                
         end    
         
-    elseif cc=='8'      %Switch channels
+    elseif (cc=='8')&(NChannels>1)      %Switch channels
+        %Update the channel number
         PreviousChannel=CurrentChannel;
         CurrentChannel=CurrentChannel+1;
         if CurrentChannel>NChannels
             CurrentChannel=1;
         end
+        
+        %Update the coatChannel
+        coatChannel=coatChannels(CurrentChannel);
         
         %Do we have a histone channel? If so, we can find the particle in
         %the next channel corresponding to this nucleus.
