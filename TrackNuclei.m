@@ -98,12 +98,6 @@ if ~exist('nc9','var')
     error('Cannot find nuclear cycle values. Were they defined in MovieDatabase.XLSX?')
 end
 
-%This checks whether all ncs have been defined
-ncCheck=[nc9,nc10,nc11,nc12,nc13,nc14];
-if length(ncCheck)~=6
-    error('Check the nc frames in the MovieDatabase entry. Some might be missing')
-end
-
 %Do we need to convert any NaN chars into doubles?
 if strcmpi(nc14,'nan')
     nc14=nan;
@@ -124,6 +118,11 @@ if strcmpi(nc9,'nan')
     nc9=nan;
 end
 
+%This checks whether all ncs have been defined
+ncCheck=[nc9,nc10,nc11,nc12,nc13,nc14];
+if length(ncCheck)~=6
+    error('Check the nc frames in the MovieDatabase entry. Some might be missing')
+end
 
 %Convert the prefix into the string used in the XLS file
 Dashes=findstr(Prefix,'-');
