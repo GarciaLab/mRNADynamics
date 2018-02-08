@@ -160,7 +160,12 @@ for s = 1:numSeries
         end
         if ~isempty(colorMaps{s, i})
             newMap = colorMaps{s, i};
-            m = newMap(row, col) < 0;
+%             m = newMap(row, col) < 0;           original line.        %AR 2/7/18 
+            try%AR 2/7/18
+                 m = newMap(row, col) < 0;%AR 2/7/18
+            catch%AR 2/7/18
+                error('Restart Matlab before running this again. -AR')  %AR 2/7/18
+            end%AR 2/7/18
             newMap(m) = newMap(m) + bppMax;
             colorMaps{s, i} = newMap / (bppMax - 1);
         end
