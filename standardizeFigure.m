@@ -1,6 +1,15 @@
 function standardizeFigure(ax, legend, varargin)
     
+    colorDict = struct();
+    colorDict.red = [213,108,85]/255;
+    colorDict.yellow = [234,194,100]/255;
+    colorDict.cyan = [108,188,233]/255;
+    colorDict.magenta = [208,109,171]/255;
+    colorDict.lightBlue = [115,142,193]/255;
+    colorDictFields = fields(colorDict);
+    
     color(1,:) = [0 0 0];
+
     axesLineWidth = 5;
     fig = gcf;
     dataObj = get(ax, 'Children');
@@ -42,10 +51,10 @@ function standardizeFigure(ax, legend, varargin)
             dataObj(i).FaceColor = color(i,:);
         elseif strcmpi(dataType{i}, 'line') || strcmpi(dataType{i}, 'errorbar')
             dataObj(i).LineWidth = 5;
-            dataObj(i).Color = color(i,:);
+            dataObj(i).Color = colorDict.(colorDictFields{i});
             dataObj(i).Marker = '.';
-            dataObj(i).MarkerFaceColor = color(i,:);
-            dataObj(i).MarkerEdgeColor = color(i,:);
+            dataObj(i).MarkerFaceColor = colorDict.(colorDictFields{i});
+            dataObj(i).MarkerEdgeColor = colorDict.(colorDictFields{i});
             dataObj(i).MarkerSize = 30;
             if strcmpi(dataType{i}, 'errorbar')
                 %insert errorbar specific things here.

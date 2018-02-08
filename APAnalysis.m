@@ -29,12 +29,12 @@ function APAnalysis(dataset, varargin)
 %Last Updated: 1/13/18
 %
 %To do:   
-%        2) Fix stde error bars
 %        3) Separate out graphs into functions
 %        4) Put control stuff in another script or subfunctions
-%        5) Make zeros in cumulative graph actually all zeros
+%        5) Make zeros in cumulative graph actually all zeros. PRIORITY
 %        6) Make sure integration periods are consistent with APDiv times
 %        7) Make duration graphs subfunction
+%        8) Add ability to plot multiple data sets on same graphs. loop?
 %% 
     control = '';
     nc = 2;
@@ -197,7 +197,10 @@ function APAnalysis(dataset, varargin)
     lgd2 = legend('show');
     set(lgd2, 'Interpreter', 'Latex');
     xlim([.1, .8])
-    ylim([0, max(f)*1.1])
+    if max(f) ~= 0
+     ylim([0, max(f)*1.1]);
+    else
+    end
     title(['numer of actively transcring nuclei, nuclear cycle ',num2str(nc+11)]);
     xlabel('fraction embryo length');
     ylabel('number on');
@@ -236,7 +239,7 @@ function plotWindowTimings(movie)
         duration(i) = frames(end) - frames(1);
     end
     
-    figure('Name', 'contiguity1')
+    figure('Name', 'timings')
     subplot(1, 3, 1)
     h = histogram(onTimes);
     title('on times')
@@ -293,7 +296,7 @@ function analyzeContiguity(movie)
        end
     end
 
-    figure('Name', 'contiguity2')
+    figure('Name', 'contiguity')
     subplot(2, 2, 1)
     h = histogram(contiguity);
     title({'contiguity of traces relative to';' trace length weighted by'; 'length of gaps'});
