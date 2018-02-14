@@ -179,13 +179,19 @@ end
 
 
 %Single color mode and 2spot2color mode
+%(MT, 2018-02-11) Added support for lattice imaging, maybe temporary -
+%FIX LATER
 if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
-        strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'2spot2color')
+        strcmpi(ExperimentType,'inputoutput')||...
+        strcmpi(ExperimentType,'2spot2color')||...
+        strcmpi(ExperimentType,'lattice')
 
     %Figure out which channel has the spots
     if strcmp(ExperimentType,'1spot')||strcmp(ExperimentType,'2spot')
         SpotsChannel=1;
-    elseif strcmp(ExperimentType,'inputoutput')
+    %(MT, 2018-02-11) Added support for lattice imaging, maybe temporary -
+    %FIX LATER
+    elseif strcmp(ExperimentType,'inputoutput') || strcmp(ExperimentType,'lattice')
         SpotsChannel=find(~cellfun(@isempty,strfind(lower([Channel1,Channel2]),'mcp'))|...
             ~cellfun(@isempty,strfind(lower([Channel1,Channel2]),'pcp')));
         if length(SpotsChannel)>1
@@ -524,8 +530,12 @@ if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
 
             %If we do have the histone channel    
             else
-                if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'inputoutput')||...
-                        strcmpi(ExperimentType,'2spot2color')
+                %(MT, 2018-02-11) Added support for lattice imaging, 
+                %maybe temporary - FIX LATER
+                if strcmpi(ExperimentType,'1spot')||...
+                        strcmpi(ExperimentType,'inputoutput')||...
+                        strcmpi(ExperimentType,'2spot2color')||...
+                        strcmpi(ExperimentType,'lattice')
                     SpotsPerNucleus=1;
                 elseif strcmp(ExperimentType,'2spot')
                     SpotsPerNucleus=2;
