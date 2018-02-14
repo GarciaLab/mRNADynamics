@@ -434,32 +434,72 @@ elseif strcmp(FileMode, 'LAT')
             display('Could not find a histone channel. Proceeding without it.')
         end
     end
+    
+    %Figure out the different channels
+    %MT, 2018-02-11: Yes, this is redundant, but it's a temporary thing -
+    %FIX LATER
+    coatChannel = 0;
+    histoneChannel = 0;
+    if ~isempty(strfind(Channel1{1},'MCP'))
+        coatChannel=1;
+    elseif  strfind(Channel1{1},'His')
+        histoneChannel=1;
+    else
+        error('LAT Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
+    end
 
+    if ~isempty(strfind(Channel2{1},'MCP'))
+        coatChannel=2;
+    elseif  strfind(Channel2{1},'His')
+        histoneChannel=2;
+    else
+        error('LAT Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
+    end
+    
     %Load the data
     im_stack = {};
     his_stack = [];
     mcp_stack = {};
+    his_channel = 0;        %Keep track of whether data is his or mcp
+    mcp_channel = 0;
+    warning('While analyzing Lattice data, assuming Channel1 field in MovieDatabase.xlsx references CamA, and Channel2 references CamB.')
+    h=waitbar(0,'Separating CamA/CamB into His and MCP Channels');
     for j = 1:length(DTIF)
+        waitbar(j/length(DTIF),h)
         fname = [Folder, filesep, DTIF(j).name];
+        if contains(fname, 'CamA')
+            if histoneChannel == 1
+                his_channel = 1;
+                mcp_channel = 0;
+            else
+                his_channel = 0;
+                mcp_channel = 1;
+            end
+        elseif contains(fname,'CamB')
+            if histoneChannel == 2
+                his_channel = 1;
+                mcp_channel = 0;
+            else
+                his_channel = 0;
+                mcp_channel = 1;
+            end
+        end   
         info = imfinfo(fname);
         num_images = numel(info);
-        if HisChannel
-            for i = 1:num_images
-                im_stack{j, i} = imread(fname, i, 'Info', info);
-                if ~isempty(strfind(fname, 'CamA'))
-                    his_stack{j,i} = imread(fname, i, 'Info', info);
-                    his_array(j,i, :, :) = imread(fname, i, 'Info', info);
-                elseif ~isempty(strfind(fname, 'CamB'))
-                    mcp_stack{j-size(his_stack, 1),i} = imread(fname, i, 'Info', info);
-                else
-                    error('Something is wrong with your channels. Please doublecheck moviedatabase')
-                end 
+        for i = 1:num_images
+            im_stack{j, i} = imread(fname, i, 'Info', info);
+            if his_channel && ~mcp_channel
+                his_stack{j,i} = imread(fname, i, 'Info', info);
+                his_array(j,i, :, :) = imread(fname, i, 'Info', info);
+            elseif ~his_channel && mcp_channel
+                mcp_stack{j-size(his_stack, 1),i} = imread(fname, i, 'Info', info);
+            else
+                error('Something is wrong with your channels. Please doublecheck moviedatabase')
             end
-        else
-            mcp_stack = im_stack;
         end
     end
-
+    close(h)
+    
     %Extract the metadata for each series
     NSeries=1; %Will always be true for lattice mode.
     NSlices=size(mcp_stack,2);
@@ -541,14 +581,16 @@ elseif strcmp(FileMode, 'LAT')
         %First do the MCP channel
         %Save the blank images at the beginning and end of the
         %stack
-        NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(1,2),'.tif'];
+        NameSuffix=['_ch',iIndex(coatChannel,2)];
+        
+        NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(1,2),NameSuffix,'.tif'];
         imwrite(BlankImage,[OutputFolder,filesep,NewName]);
-        NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(NSlices+2,2),'.tif'];
+        NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(NSlices+2,2),NameSuffix,'.tif'];
         imwrite(BlankImage,[OutputFolder,filesep,NewName]);
         %Copy the rest of the images
         z = 2;
         for s = 1:NSlices
-            NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(z,2),'.tif'];
+            NewName=[Prefix,'_',iIndex(j,3),'_z',iIndex(z,2),NameSuffix,'.tif'];
             imwrite(mcp_stack{j,s},[OutputFolder,filesep,NewName]);
             z = z + 1;
         end
