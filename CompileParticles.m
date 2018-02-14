@@ -641,7 +641,8 @@ for ChN=1:NChannels
                 CompiledParticles{ChN}(k).Index=Particles{ChN}(i).Index(FrameFilter);
                 CompiledParticles{ChN}(k).xPos=Particles{ChN}(i).xPos(FrameFilter);
                 CompiledParticles{ChN}(k).yPos=Particles{ChN}(i).yPos(FrameFilter);
-                CompiledParticles{ChN}(k).DVpos=Particles{ChN}(i).DVpos(FrameFilter);
+                %(MT, 2018-02-11) Hacky fix to get lattice to run - FIX LATER
+                %CompiledParticles{ChN}(k).DVpos=Particles{ChN}(i).DVpos(FrameFilter);
                 CompiledParticles{ChN}(k).FrameApproved = Particles{ChN}(i).FrameApproved;
 
                 if strcmpi(ExperimentAxis,'AP')
