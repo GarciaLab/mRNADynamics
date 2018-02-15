@@ -417,7 +417,7 @@ mkdir([DropboxFolder,filesep,Prefix,filesep,'Various']);
 
 %% Put together CompiledParticles
 
-CompiledParticles = {};
+CompiledParticles = cell(NChannels,1);
 %Approve all particles if the mode has been selected
 if ApproveAll
     for ChN=1:NChannels
@@ -1107,82 +1107,77 @@ if ~isnan(nc9)||~isnan(nc10)||~isnan(nc11)||~isnan(nc12)||~isnan(nc13)||~isnan(n
     ncFilterID=[min(ncFilterID)-1,ncFilterID];
 
 
-    %Create the filter
+    %Create the filters for the CompiledParticles
     for ChN=1:NChannels
-        if isempty(CompiledParticles)==1
-            error(['No compiled particles found in channel ',num2str(ChN),'. Did you mean to run the code with ApproveAll?',...
+        if isempty(CompiledParticles{ChN})
+            warning(['No compiled particles found in channel ',num2str(ChN),'. Did you mean to run the code with ApproveAll?',...
                 'Also try running CheckParticleTracking again and saving the results. If that doesn''t work and you think there should be particles, talk to HG.'])
-        end
-
-
-        ncFilter=false(length(CompiledParticles{ChN})...
+        else
+            ncFilter=false(length(CompiledParticles{ChN})...
             ,length(ncFilterID)); %AR 6/16/17: I think multi-channel data might require this to be a cell? Something for the future.
-        for i=1:length(CompiledParticles{ChN})
-            %Sometimes CompiledParticles{1}(i).nc is empty. This is because of some
-            %problem with FrameInfo! In that case we'll pull the information out of
-            %the XLS file.
-            if ~isfield(CompiledParticles{ChN}(i), 'nc')
-                CompiledParticles{ChN}(i).nc = [];
+            for i=1:length(CompiledParticles{ChN})
+                %Sometimes CompiledParticles{1}(i).nc is empty. This is because of some
+                %problem with FrameInfo! In that case we'll pull the information out of
+                %the XLS file.
+                if ~isfield(CompiledParticles{ChN}(i), 'nc')
+                    CompiledParticles{ChN}(i).nc = [];
+                end
+                if ~isempty(CompiledParticles{ChN}(i).nc)
+                    ncFilter(i,find(CompiledParticles{ChN}(i).nc==ncFilterID))=true;
+                else
+                    ncsFound=find(CompiledParticles{ChN}(i).Frame(1)>=[nc9,nc10,nc11,nc12,nc13,nc14]);
+                    if ncsFound(end)==1
+                        CompiledParticles{ChN}(i).nc=9;
+                        ncFilter(i,ncFilterID==9)=true;
+                    elseif ncsFound(end)==2
+                        CompiledParticles{ChN}(i).nc=10;
+                        ncFilter(i,ncFilterID==10)=true;
+                    elseif ncsFound(end)==3
+                        CompiledParticles{ChN}(i).nc=11;
+                        ncFilter(i,ncFilterID==11)=true;
+                    elseif ncsFound(end)==4
+                        CompiledParticles{ChN}(i).nc=12;
+                        ncFilter(i,ncFilterID==12)=true;
+                    elseif ncsFound(end)==5
+                        CompiledParticles{ChN}(i).nc=13;
+                        ncFilter(i,ncFilterID==13)=true;
+                    elseif ncsFound(end)==6
+                        CompiledParticles{ChN}(i).nc=14;
+                        ncFilter(i,ncFilterID==14)=true;
+                    end
+
+                end
             end
-            if ~isempty(CompiledParticles{ChN}(i).nc)
-                ncFilter(i,find(CompiledParticles{ChN}(i).nc==ncFilterID))=true;
-            else
-                ncsFound=find(CompiledParticles{ChN}(i).Frame(1)>=[nc9,nc10,nc11,nc12,nc13,nc14]);
-                if ncsFound(end)==1
-                    CompiledParticles{ChN}(i).nc=9;
-                    ncFilter(i,ncFilterID==9)=true;
-                elseif ncsFound(end)==2
-                    CompiledParticles{ChN}(i).nc=10;
-                    ncFilter(i,ncFilterID==10)=true;
-                elseif ncsFound(end)==3
-                    CompiledParticles{ChN}(i).nc=11;
-                    ncFilter(i,ncFilterID==11)=true;
-                elseif ncsFound(end)==4
-                    CompiledParticles{ChN}(i).nc=12;
-                    ncFilter(i,ncFilterID==12)=true;
-                elseif ncsFound(end)==5
-                    CompiledParticles{ChN}(i).nc=13;
-                    ncFilter(i,ncFilterID==13)=true;
-                elseif ncsFound(end)==6
-                    CompiledParticles{ChN}(i).nc=14;
-                    ncFilter(i,ncFilterID==14)=true;
-                end
 
-            end
-        end
+            %AP filters:
+            if strcmpi(ExperimentAxis,'AP')
+                %Divide the AP axis into boxes of a certain AP size. We'll see which
+                    %particle falls where.
 
 
+                if ROI==1
+                    %Define two APFilters for ROI and non-ROI respectively
+                    APFilter_ROI{ChN}=false(length(CompiledParticles_ROI{ChN}),length(APbinID));
+                    APFilter_nonROI{ChN}=false(length(CompiledParticles_nonROI{ChN}),length(APbinID));
+                    APFilter{ChN}=false(length(CompiledParticles{ChN}),length(APbinID));
 
+                    for i=1:length(CompiledParticles{ChN})
+                        APFilter{ChN}(i,max(find(APbinID<=CompiledParticles{ChN}(i).MeanAP)))=1;
+                    end
 
+                    for i=1:length(CompiledParticles_ROI{ChN})
+                        APFilter_ROI{ChN}(i,max(find(APbinID<=CompiledParticles_ROI{ChN}(i).MeanAP)))=1;
+                    end
 
-        %AP filters:
-        if strcmpi(ExperimentAxis,'AP')
-            %Divide the AP axis into boxes of a certain AP size. We'll see which
-                %particle falls where.
+                    for i=1:length(CompiledParticles_nonROI{ChN})
+                        APFilter_nonROI{ChN}(i,max(find(APbinID<=CompiledParticles_nonROI{ChN}(i).MeanAP)))=1;
+                    end
 
-
-            if ROI==1
-                %Define two APFilters for ROI and non-ROI respectively
-                APFilter_ROI{ChN}=false(length(CompiledParticles_ROI{ChN}),length(APbinID));
-                APFilter_nonROI{ChN}=false(length(CompiledParticles_nonROI{ChN}),length(APbinID));
-                APFilter{ChN}=false(length(CompiledParticles{ChN}),length(APbinID));
-                
-                for i=1:length(CompiledParticles{ChN})
-                    APFilter{ChN}(i,max(find(APbinID<=CompiledParticles{ChN}(i).MeanAP)))=1;
-                end
-                
-                for i=1:length(CompiledParticles_ROI{ChN})
-                    APFilter_ROI{ChN}(i,max(find(APbinID<=CompiledParticles_ROI{ChN}(i).MeanAP)))=1;
-                end
-
-                for i=1:length(CompiledParticles_nonROI{ChN})
-                    APFilter_nonROI{ChN}(i,max(find(APbinID<=CompiledParticles_nonROI{ChN}(i).MeanAP)))=1;
-                end
-
-            else
-                APFilter{ChN}=logical(zeros(length(CompiledParticles{ChN}),length(APbinID)));
-                for i=1:length(CompiledParticles{ChN})
-                    APFilter{ChN}(i,max(find(APbinID<=CompiledParticles{ChN}(i).MeanAP)))=1;
+                else
+                    APFilter{ChN}=logical(zeros(length(CompiledParticles{ChN}),length(APbinID)));
+                    for i=1:length(CompiledParticles{ChN})
+                        APFilter{ChN}(i,max(find(APbinID<=CompiledParticles{ChN}(i).MeanAP)))=1;
+                    end
                 end
             end
         end
@@ -1199,51 +1194,76 @@ end
 % the AverageTraces (YJK on 10/22/2017)
 
 for ChN=1:NChannels
-    %Get the data for the individual particles in a matrix that has the frame
-    %number and the particle number as dimensions. Also, get a vector that
-    %reports the mean AP position.
-    [AllTracesVector{ChN},AllTracesAP{ChN}]=AllTraces(FrameInfo,CompiledParticles{ChN},'NoAP');
+    if ~isempty(CompiledParticles{ChN})
+    
+        %Get the data for the individual particles in a matrix that has the frame
+        %number and the particle number as dimensions. Also, get a vector that
+        %reports the mean AP position.
+        [AllTracesVector{ChN},AllTracesAP{ChN}]=AllTraces(FrameInfo,CompiledParticles{ChN},'NoAP');
 
-    if strcmpi(ExperimentAxis,'AP')
-        %Mean plot for different AP positions
+        if strcmpi(ExperimentAxis,'AP')
+            %Mean plot for different AP positions
 
-        %Figure out the AP range to use
-        MinAPIndex=1;%min(find(sum(APFilter)));
-        MaxAPIndex=size(APFilter{ChN},2);%max(find(sum(APFilter)));
-        
-        if ROI
-            
-            %Get the corresponding mean information (ROI, CompiledParticles_ROI)
-            k=1;
-            for i=MinAPIndex:MaxAPIndex
-                [MeanVectorAPTemp_ROI,SDVectorAPTemp_ROI,NParticlesAPTemp_ROI]=AverageTraces(FrameInfo,...
-                    CompiledParticles_ROI{ChN}(APFilter_ROI{ChN}(:,i)));
-                MeanVectorAPCell_ROI{k}=MeanVectorAPTemp_ROI';
-                SDVectorAPCell_ROI{k}=SDVectorAPTemp_ROI';
-                NParticlesAPCell_ROI{k}=NParticlesAPTemp_ROI';
-                k=k+1;
-            end
-            MeanVectorAP_ROI{ChN}=cell2mat(MeanVectorAPCell_ROI);
-            SDVectorAP_ROI{ChN}=cell2mat(SDVectorAPCell_ROI);
-            NParticlesAP_ROI{ChN}=cell2mat(NParticlesAPCell_ROI);
+            %Figure out the AP range to use
+            MinAPIndex=1;%min(find(sum(APFilter)));
+            MaxAPIndex=size(APFilter{ChN},2);%max(find(sum(APFilter)));
 
-            % Get the corresponding mean information 
-            %(nonROI, CompiledParticles_nonROI -> save all in MeanVectorAP_nonROI
-            k=1;
-            for i=MinAPIndex:MaxAPIndex
-                [MeanVectorAPTemp_nonROI,SDVectorAPTemp_nonROI,NParticlesAPTemp_nonROI]=AverageTraces(FrameInfo,...
-                    CompiledParticles_nonROI{ChN}(APFilter_nonROI{ChN}(:,i)));
-                MeanVectorAPCell_nonROI{k}=MeanVectorAPTemp_nonROI';
-                SDVectorAPCell_nonROI{k}=SDVectorAPTemp_nonROI';
-                NParticlesAPCell_nonROI{k}=NParticlesAPTemp_nonROI';
-                k=k+1;
-            end
-            MeanVectorAP_nonROI=cell2mat(MeanVectorAPCell_nonROI);
-            SDVectorAP_nonROI=cell2mat(SDVectorAPCell_nonROI);
-            NParticlesAP_nonROI=cell2mat(NParticlesAPCell_nonROI);
-            
-            % Get the mean information for all of the CompiledParticles
-            % (Save this in MeanVectorAP)
+            if ROI
+
+                %Get the corresponding mean information (ROI, CompiledParticles_ROI)
+                k=1;
+                for i=MinAPIndex:MaxAPIndex
+                    [MeanVectorAPTemp_ROI,SDVectorAPTemp_ROI,NParticlesAPTemp_ROI]=AverageTraces(FrameInfo,...
+                        CompiledParticles_ROI{ChN}(APFilter_ROI{ChN}(:,i)));
+                    MeanVectorAPCell_ROI{k}=MeanVectorAPTemp_ROI';
+                    SDVectorAPCell_ROI{k}=SDVectorAPTemp_ROI';
+                    NParticlesAPCell_ROI{k}=NParticlesAPTemp_ROI';
+                    k=k+1;
+                end
+                MeanVectorAP_ROI{ChN}=cell2mat(MeanVectorAPCell_ROI);
+                SDVectorAP_ROI{ChN}=cell2mat(SDVectorAPCell_ROI);
+                NParticlesAP_ROI{ChN}=cell2mat(NParticlesAPCell_ROI);
+
+                % Get the corresponding mean information 
+                %(nonROI, CompiledParticles_nonROI -> save all in MeanVectorAP_nonROI
+                k=1;
+                for i=MinAPIndex:MaxAPIndex
+                    [MeanVectorAPTemp_nonROI,SDVectorAPTemp_nonROI,NParticlesAPTemp_nonROI]=AverageTraces(FrameInfo,...
+                        CompiledParticles_nonROI{ChN}(APFilter_nonROI{ChN}(:,i)));
+                    MeanVectorAPCell_nonROI{k}=MeanVectorAPTemp_nonROI';
+                    SDVectorAPCell_nonROI{k}=SDVectorAPTemp_nonROI';
+                    NParticlesAPCell_nonROI{k}=NParticlesAPTemp_nonROI';
+                    k=k+1;
+                end
+                MeanVectorAP_nonROI=cell2mat(MeanVectorAPCell_nonROI);
+                SDVectorAP_nonROI=cell2mat(SDVectorAPCell_nonROI);
+                NParticlesAP_nonROI=cell2mat(NParticlesAPCell_nonROI);
+
+                % Get the mean information for all of the CompiledParticles
+                % (Save this in MeanVectorAP)
+                k=1;
+                for i=MinAPIndex:MaxAPIndex
+                    [MeanVectorAPTemp,SDVectorAPTemp,NParticlesAPTemp]=AverageTraces(FrameInfo,...
+                        CompiledParticles{ChN}(APFilter{ChN}(:,i)));
+                    MeanVectorAPCell{k}=MeanVectorAPTemp';
+                    SDVectorAPCell{k}=SDVectorAPTemp';
+                    NParticlesAPCell{k}=NParticlesAPTemp';
+                    k=k+1;
+                end
+                MeanVectorAP{ChN}=cell2mat(MeanVectorAPCell);
+                SDVectorAP{ChN}=cell2mat(SDVectorAPCell);
+                NParticlesAP{ChN}=cell2mat(NParticlesAPCell);
+
+                %Calculate the mean for only anterior particles
+                try
+                    MeanVectorAPAnterior{ChN} = MeanVectorAP{ChN}(:,5:15); %Only average particles within window of 10% to 35% w/ 2.5% AP resolution. P2P expression is relatively flat here.
+                    MeanVectorAnterior{ChN} = nanmean(MeanVectorAPAnterior{ChN},2);
+                catch
+                    %That didn't work
+                end
+
+            else % This is the case which we don't use ROI option
+            %Get the corresponding mean information
             k=1;
             for i=MinAPIndex:MaxAPIndex
                 [MeanVectorAPTemp,SDVectorAPTemp,NParticlesAPTemp]=AverageTraces(FrameInfo,...
@@ -1256,7 +1276,7 @@ for ChN=1:NChannels
             MeanVectorAP{ChN}=cell2mat(MeanVectorAPCell);
             SDVectorAP{ChN}=cell2mat(SDVectorAPCell);
             NParticlesAP{ChN}=cell2mat(NParticlesAPCell);
-            
+
             %Calculate the mean for only anterior particles
             try
                 MeanVectorAPAnterior{ChN} = MeanVectorAP{ChN}(:,5:15); %Only average particles within window of 10% to 35% w/ 2.5% AP resolution. P2P expression is relatively flat here.
@@ -1264,53 +1284,31 @@ for ChN=1:NChannels
             catch
                 %That didn't work
             end
-            
-        else % This is the case which we don't use ROI option
-        %Get the corresponding mean information
-        k=1;
-        for i=MinAPIndex:MaxAPIndex
-            [MeanVectorAPTemp,SDVectorAPTemp,NParticlesAPTemp]=AverageTraces(FrameInfo,...
-                CompiledParticles{ChN}(APFilter{ChN}(:,i)));
-            MeanVectorAPCell{k}=MeanVectorAPTemp';
-            SDVectorAPCell{k}=SDVectorAPTemp';
-            NParticlesAPCell{k}=NParticlesAPTemp';
-            k=k+1;
-        end
-        MeanVectorAP{ChN}=cell2mat(MeanVectorAPCell);
-        SDVectorAP{ChN}=cell2mat(SDVectorAPCell);
-        NParticlesAP{ChN}=cell2mat(NParticlesAPCell);
-        
-        %Calculate the mean for only anterior particles
-        try
-            MeanVectorAPAnterior{ChN} = MeanVectorAP{ChN}(:,5:15); %Only average particles within window of 10% to 35% w/ 2.5% AP resolution. P2P expression is relatively flat here.
-            MeanVectorAnterior{ChN} = nanmean(MeanVectorAPAnterior{ChN},2);
-        catch
-            %That didn't work
-        end
-        
-        end
-    end
 
-    %Calculate the mean for all of them
-    [MeanVectorAll{ChN},SDVectorAll{ChN},NParticlesAll{ChN}]=AverageTraces(FrameInfo,CompiledParticles{ChN});
-    
-    %Now find the different maxima in each nc
-
-    MaxFrame{ChN}=[];
-    for i=1:length(NewCyclePos)
-        if i==1
-            [~,MaxIndex]=max(MeanVectorAll{ChN}(1:NewCyclePos(1)));
-            MaxFrame{ChN}=[MaxFrame{ChN},MaxIndex];
-        elseif i<=length(NewCyclePos)
-            [~,MaxIndex]=max(MeanVectorAll{ChN}(NewCyclePos(i-1):NewCyclePos(i)));
-            MaxFrame{ChN}=[MaxFrame{ChN},NewCyclePos(i-1)+MaxIndex-1];
+            end
         end
-    end
-    [~,MaxIndex]=max(MeanVectorAll{ChN}(NewCyclePos(i):end));
-    if ~isempty(NewCyclePos)        %Why is this empty sometimes?
-                                    %I think this only occurs with suboptimal
-                                    %data
-        MaxFrame{ChN}=[MaxFrame{ChN},NewCyclePos(i)+MaxIndex-1];
+
+        %Calculate the mean for all of them
+        [MeanVectorAll{ChN},SDVectorAll{ChN},NParticlesAll{ChN}]=AverageTraces(FrameInfo,CompiledParticles{ChN});
+
+        %Now find the different maxima in each nc
+
+        MaxFrame{ChN}=[];
+        for i=1:length(NewCyclePos)
+            if i==1
+                [~,MaxIndex]=max(MeanVectorAll{ChN}(1:NewCyclePos(1)));
+                MaxFrame{ChN}=[MaxFrame{ChN},MaxIndex];
+            elseif i<=length(NewCyclePos)
+                [~,MaxIndex]=max(MeanVectorAll{ChN}(NewCyclePos(i-1):NewCyclePos(i)));
+                MaxFrame{ChN}=[MaxFrame{ChN},NewCyclePos(i-1)+MaxIndex-1];
+            end
+        end
+        [~,MaxIndex]=max(MeanVectorAll{ChN}(NewCyclePos(i):end));
+        if ~isempty(NewCyclePos)        %Why is this empty sometimes?
+                                        %I think this only occurs with suboptimal
+                                        %data
+            MaxFrame{ChN}=[MaxFrame{ChN},NewCyclePos(i)+MaxIndex-1];
+        end
     end
 end
 
@@ -1321,51 +1319,54 @@ end
 FrameWindow=5; %AR 1/12/18 where did this number come from?
 
 for ChN=1:NChannels
-    %Calculate the derivative as a function of time for each particle
-    for j=1:length(CompiledParticles{ChN})
-        [CompiledParticles{ChN}(j).SlopeTrace,...
-            CompiledParticles{ChN}(j).SDSlopeTrace]=...
-            TraceDerivative(CompiledParticles{ChN}(j),...
-            ElapsedTime,FrameWindow);
-    end
+    if ~isempty(CompiledParticles{ChN})
+    
+        %Calculate the derivative as a function of time for each particle
+        for j=1:length(CompiledParticles{ChN})
+            [CompiledParticles{ChN}(j).SlopeTrace,...
+                CompiledParticles{ChN}(j).SDSlopeTrace]=...
+                TraceDerivative(CompiledParticles{ChN}(j),...
+                ElapsedTime,FrameWindow);
+        end
 
 
-    if strcmpi(ExperimentAxis,'AP')
-        %Calculate the average slope over an AP window
-        MeanSlopeVectorAP{ChN}=nan(size(MeanVectorAP{ChN}));
-        SDSlopeVectorAP{ChN}=nan(size(MeanVectorAP{ChN}));
-        NSlopeAP{ChN}=nan(size(MeanVectorAP{ChN}));
+        if strcmpi(ExperimentAxis,'AP')
+            %Calculate the average slope over an AP window
+            MeanSlopeVectorAP{ChN}=nan(size(MeanVectorAP{ChN}));
+            SDSlopeVectorAP{ChN}=nan(size(MeanVectorAP{ChN}));
+            NSlopeAP{ChN}=nan(size(MeanVectorAP{ChN}));
 
 
-        APBins=find(sum(APFilter{ChN}));
+            APBins=find(sum(APFilter{ChN}));
 
 
 
-        for j=1:length(APBins)
-            TraceCell=cell(length(ElapsedTime),1);
+            for j=1:length(APBins)
+                TraceCell=cell(length(ElapsedTime),1);
 
-            ParticlesToAverage=find(APFilter{ChN}(:,APBins(j)));
+                ParticlesToAverage=find(APFilter{ChN}(:,APBins(j)));
 
-            for k=1:length(ParticlesToAverage)
+                for k=1:length(ParticlesToAverage)
 
-                for m=1:length(CompiledParticles{ChN}(ParticlesToAverage(k)).SlopeTrace)
+                    for m=1:length(CompiledParticles{ChN}(ParticlesToAverage(k)).SlopeTrace)
 
-                    TraceCell{CompiledParticles{ChN}(ParticlesToAverage(k)).Frame(m)}=...
-                        [TraceCell{CompiledParticles{ChN}(ParticlesToAverage(k)).Frame(m)},...
-                        CompiledParticles{ChN}(ParticlesToAverage(k)).SlopeTrace(m)];
+                        TraceCell{CompiledParticles{ChN}(ParticlesToAverage(k)).Frame(m)}=...
+                            [TraceCell{CompiledParticles{ChN}(ParticlesToAverage(k)).Frame(m)},...
+                            CompiledParticles{ChN}(ParticlesToAverage(k)).SlopeTrace(m)];
+                    end
                 end
+
+                %Get rid of the nan in certain time points
+                TraceCell=cellfun(@(x) x(~isnan(x)),TraceCell,'UniformOutput',false);
+
+                MeanTrace=cellfun(@mean,TraceCell,'UniformOutput',false);
+                SDTrace=cellfun(@std,TraceCell,'UniformOutput',false);
+                NParticlesTrace=cellfun(@length,TraceCell,'UniformOutput',false);
+
+                MeanSlopeVectorAP{ChN}(:,APBins(j))=[MeanTrace{:}];
+                SDSlopeVectorAP{ChN}(:,APBins(j))=[SDTrace{:}];
+                NSlopeAP{ChN}(:,APBins(j))=[NParticlesTrace{:}];
             end
-
-            %Get rid of the nan in certain time points
-            TraceCell=cellfun(@(x) x(~isnan(x)),TraceCell,'UniformOutput',false);
-
-            MeanTrace=cellfun(@mean,TraceCell,'UniformOutput',false);
-            SDTrace=cellfun(@std,TraceCell,'UniformOutput',false);
-            NParticlesTrace=cellfun(@length,TraceCell,'UniformOutput',false);
-
-            MeanSlopeVectorAP{ChN}(:,APBins(j))=[MeanTrace{:}];
-            SDSlopeVectorAP{ChN}(:,APBins(j))=[SDTrace{:}];
-            NSlopeAP{ChN}(:,APBins(j))=[NParticlesTrace{:}];
         end
     end
 end
@@ -1460,7 +1461,7 @@ end
 %% Offset and fluctuations
 
 if NChannels==1
-
+    
     %Is there a correlation between the fluctuations coming from the offset and
     %those observed in the traces? In order to figure this out I'll fit the
     %nc13 and nc14 intensity data with splines and compute the deviations with
@@ -1563,118 +1564,119 @@ if NChannels==1
 
     %Look at the offset of each particle. Do they all look the same? This is
     %only for AP for now
-    if strcmpi(ExperimentAxis,'AP')
-        figure(7)
-        subplot(1,2,1)
-        MaxAP=0;
-        MinAP=inf;
-        hold all
+    if ~isempty(CompiledParticles{1})
+        if strcmpi(ExperimentAxis,'AP')
+            figure(7)
+            subplot(1,2,1)
+            MaxAP=0;
+            MinAP=inf;
+            hold all
+            for i=1:length(CompiledParticles{1})
+                if sum(CompiledParticles{1}(i).Frame==MaxFrame{1}(end-1))
+                    MaxAP=max([CompiledParticles{1}(i).MeanAP,MaxAP]);
+                    MinAP=min([CompiledParticles{1}(i).MeanAP,MinAP]);
+                    FramePos=find(CompiledParticles{1}(i).Frame==MaxFrame{1}(end-1));
+                    plot(CompiledParticles{1}(i).MeanAP,CompiledParticles{1}(i).Off(FramePos),'.k')
+                end
+            end
+            hold off
+            if MinAP<MaxAP
+                xlim([MinAP*0.8,MaxAP*1.2])
+            end
+            xlabel('AP position')
+            ylabel('Offset fluorescence')
+            title('Offset at maximum in nc13')
+            axis square
+
+            subplot(1,2,2)
+            MaxAP=0;
+            MinAP=inf;
+            hold all
+            for i=1:length(CompiledParticles)
+                if sum(CompiledParticles{1}(i).Frame==MaxFrame{1}(end))
+                    MaxAP=max([CompiledParticles{1}(i).MeanAP,MaxAP]);
+                    MinAP=min([CompiledParticles{1}(i).MeanAP,MinAP]);
+                    FramePos=find(CompiledParticles{1}(i).Frame==MaxFrame{1}(end));
+                    plot(CompiledParticles{1}(i).MeanAP,CompiledParticles{1}(i).Off(FramePos),'.k')
+                end
+            end
+            hold off
+            if MinAP < Inf && MaxAP > 0
+                % ES 2014-09-12: This change is for cases in which no spots were
+                % detected during the final time point.
+                xlim([MinAP*0.8,MaxAP*1.2]);
+            end
+            xlabel('AP position')
+            ylabel('Offset fluorescence')
+            title('Offset at maximum in nc14')
+            axis square
+            saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Offset',filesep,'OffsetVsAP.tif'])
+        end
+
+        %Average over all time points
+
+        %Average and SD over each time point. In order to do this we'll generate a
+        %cell array with all the values for a given time point
+
+        OffsetCell=cell(numFrames,1);
+
+
         for i=1:length(CompiledParticles{1})
-            if sum(CompiledParticles{1}(i).Frame==MaxFrame{1}(end-1))
-                MaxAP=max([CompiledParticles{1}(i).MeanAP,MaxAP]);
-                MinAP=min([CompiledParticles{1}(i).MeanAP,MinAP]);
-                FramePos=find(CompiledParticles{1}(i).Frame==MaxFrame{1}(end-1));
-                plot(CompiledParticles{1}(i).MeanAP,CompiledParticles{1}(i).Off(FramePos),'.k')
+            for j=1:length(CompiledParticles{1}(i).Frame)
+                OffsetCell{CompiledParticles{1}(i).Frame(j)}=[OffsetCell{CompiledParticles{1}(i).Frame(j)},...
+                    CompiledParticles{1}(i).Off(j)];
             end
         end
-        hold off
-        if MinAP<MaxAP
-            xlim([MinAP*0.8,MaxAP*1.2])
-        end
-        xlabel('AP position')
-        ylabel('Offset fluorescence')
-        title('Offset at maximum in nc13')
-        axis square
 
-        subplot(1,2,2)
-        MaxAP=0;
-        MinAP=inf;
-        hold all
-        for i=1:length(CompiledParticles)
-            if sum(CompiledParticles{1}(i).Frame==MaxFrame{1}(end))
-                MaxAP=max([CompiledParticles{1}(i).MeanAP,MaxAP]);
-                MinAP=min([CompiledParticles{1}(i).MeanAP,MinAP]);
-                FramePos=find(CompiledParticles{1}(i).Frame==MaxFrame{1}(end));
-                plot(CompiledParticles{1}(i).MeanAP,CompiledParticles{1}(i).Off(FramePos),'.k')
-            end
+
+        MeanOffsetTrace=cellfun(@nanmean,OffsetCell,'UniformOutput',false);
+        SDOffsetTrace=cellfun(@nanstd,OffsetCell,'UniformOutput',false);
+        NParticlesOffsetTrace=cellfun(@length,OffsetCell,'UniformOutput',false);
+
+
+        MeanOffsetVector=[MeanOffsetTrace{:}];
+        SDOffsetVector=[SDOffsetTrace{:}];
+        NOffsetParticles=[NParticlesOffsetTrace{:}];
+
+
+        if strcmpi(ExperimentAxis,'AP')
+            figure(8)
+            IntArea=109;
+            errorbar(1:length(MeanOffsetVector),MeanOffsetVector*IntArea,...
+                SDOffsetVector*IntArea,'.-r')
+            hold on
+            errorbar(1:length(MeanVectorAll{1}),MeanVectorAll{1},...
+                SDVectorAll{1},'.-k')
+            hold off
+            xlabel('Frame')
+            ylabel('Fluorescence (au)')
+            xlim([0,length(MeanOffsetVector)*1.1])
+            legend('Offset','Spots','Location','Best')
+            saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Offset',filesep,'OffsetAndFluoTime.tif'])
+
+
+            figure(9)
+            errorbar(1:length(MeanOffsetVector),MeanOffsetVector*IntArea-min(MeanOffsetVector*IntArea)+...
+                min(MeanVectorAll{1}),...
+                SDOffsetVector*IntArea,'.-r')
+            hold on
+            errorbar(1:length(MeanVectorAll{1}),MeanVectorAll{1},...
+                SDVectorAll{1},'.-k')
+            hold off
+            xlabel('Frame')
+            ylabel('Fluorescence (au)')
+            xlim([0,length(MeanOffsetVector)*1.1])
+            legend('Offset (displaced)','Spots','Location','Best')
+            axis square
+            saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Offset',filesep,'OffsetAndFluoTime-Displaced.tif'])
         end
-        hold off
-        if MinAP < Inf && MaxAP > 0
-            % ES 2014-09-12: This change is for cases in which no spots were
-            % detected during the final time point.
-            xlim([MinAP*0.8,MaxAP*1.2]);
-        end
-        xlabel('AP position')
-        ylabel('Offset fluorescence')
-        title('Offset at maximum in nc14')
-        axis square
-        saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Offset',filesep,'OffsetVsAP.tif'])
+    else
+        MeanOffsetVector=[];
+        SDOffsetVector=[];
+        NOffsetParticles=[];
     end
-
-
-    %Average over all time points
-
-    %Average and SD over each time point. In order to do this we'll generate a
-    %cell array with all the values for a given time point
-
-    OffsetCell=cell(numFrames,1);
-
-
-    for i=1:length(CompiledParticles{1})
-        for j=1:length(CompiledParticles{1}(i).Frame)
-            OffsetCell{CompiledParticles{1}(i).Frame(j)}=[OffsetCell{CompiledParticles{1}(i).Frame(j)},...
-                CompiledParticles{1}(i).Off(j)];
-        end
-    end
-
-
-    MeanOffsetTrace=cellfun(@nanmean,OffsetCell,'UniformOutput',false);
-    SDOffsetTrace=cellfun(@nanstd,OffsetCell,'UniformOutput',false);
-    NParticlesOffsetTrace=cellfun(@length,OffsetCell,'UniformOutput',false);
-
-
-    MeanOffsetVector=[MeanOffsetTrace{:}];
-    SDOffsetVector=[SDOffsetTrace{:}];
-    NOffsetParticles=[NParticlesOffsetTrace{:}];
-
-
-    if strcmpi(ExperimentAxis,'AP')
-        figure(8)
-        IntArea=109;
-        errorbar(1:length(MeanOffsetVector),MeanOffsetVector*IntArea,...
-            SDOffsetVector*IntArea,'.-r')
-        hold on
-        errorbar(1:length(MeanVectorAll{1}),MeanVectorAll{1},...
-            SDVectorAll{1},'.-k')
-        hold off
-        xlabel('Frame')
-        ylabel('Fluorescence (au)')
-        xlim([0,length(MeanOffsetVector)*1.1])
-        legend('Offset','Spots','Location','Best')
-        saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Offset',filesep,'OffsetAndFluoTime.tif'])
-
-
-        figure(9)
-        errorbar(1:length(MeanOffsetVector),MeanOffsetVector*IntArea-min(MeanOffsetVector*IntArea)+...
-            min(MeanVectorAll{1}),...
-            SDOffsetVector*IntArea,'.-r')
-        hold on
-        errorbar(1:length(MeanVectorAll{1}),MeanVectorAll{1},...
-            SDVectorAll{1},'.-k')
-        hold off
-        xlabel('Frame')
-        ylabel('Fluorescence (au)')
-        xlim([0,length(MeanOffsetVector)*1.1])
-        legend('Offset (displaced)','Spots','Location','Best')
-        axis square
-        saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Offset',filesep,'OffsetAndFluoTime-Displaced.tif'])
-    end
-else
-    MeanOffsetVector=[];
-    SDOffsetVector=[];
-    NOffsetParticles=[];
 end
-
+    
 %% Rate of mRNA production
 
 for ChN=1:NChannels
@@ -1923,301 +1925,308 @@ end
 
 if HistoneChannel&&strcmpi(ExperimentAxis,'AP')
 
+    EdgeWidth=10; %AR 1/12/18 why 10?
+    
     for ChN=1:NChannels
-        %I'll use the Ellipses structure to count nuclei. This is because
-        %schnitzcells sometimes misses things at the edges.
+
+        if ~isempty(Particles{ChN})
+
+            %I'll use the Ellipses structure to count nuclei. This is because
+            %schnitzcells sometimes misses things at the edges.
 
 
-        %First, add the corresponding Ellipse number to each frame of the
-        %particles. Also save the information in a cell array. This should make
-        %searching easier.
-        clear ParticleNuclei
-        clear ParticleFrames
-        for i=1:length(Particles{ChN})
-            if ~isempty(Particles{ChN}(i).Nucleus)
-                ParticleNuclei{i}=...
-                    schnitzcells(Particles{ChN}(i).Nucleus).cellno(ismember(schnitzcells(Particles{ChN}(i).Nucleus).frames,...
-                    Particles{ChN}(i).Frame));
-                ParticleFrames{i}=...
-                    schnitzcells(Particles{ChN}(i).Nucleus).frames(ismember(schnitzcells(Particles{ChN}(i).Nucleus).frames,...
-                    Particles{ChN}(i).Frame));
-            else
-                ParticleNuclei{i}=[];
-                ParticleFrames{i}=[];
+            %First, add the corresponding Ellipse number to each frame of the
+            %particles. Also save the information in a cell array. This should make
+            %searching easier.
+            clear ParticleNuclei
+            clear ParticleFrames
+            for i=1:length(Particles{ChN})
+                if ~isempty(Particles{ChN}(i).Nucleus)
+                    ParticleNuclei{i}=...
+                        schnitzcells(Particles{ChN}(i).Nucleus).cellno(ismember(schnitzcells(Particles{ChN}(i).Nucleus).frames,...
+                        Particles{ChN}(i).Frame));
+                    ParticleFrames{i}=...
+                        schnitzcells(Particles{ChN}(i).Nucleus).frames(ismember(schnitzcells(Particles{ChN}(i).Nucleus).frames,...
+                        Particles{ChN}(i).Frame));
+                else
+                    ParticleNuclei{i}=[];
+                    ParticleFrames{i}=[];
+                end
             end
-        end
 
-        %Do the analogous for CompiledParticles. We'll use this to estimate
-        %fluorescence per ALL nuclei
-        for i=1:length(CompiledParticles{ChN})
+            %Do the analogous for CompiledParticles. We'll use this to estimate
+            %fluorescence per ALL nuclei
             clear CompiledParticleNuclei
             clear CompiledParticleFrames
-            if ~isempty(Particles{ChN}(i).Nucleus)
-                CompiledParticleNuclei{i}=...
-                    schnitzcells(CompiledParticles{ChN}(i).Nucleus).cellno(ismember(schnitzcells(CompiledParticles{ChN}(i).Nucleus).frames,...
-                    CompiledParticles{ChN}(i).Frame));
-                CompiledParticleFrames{i}=...
-                    schnitzcells(CompiledParticles{ChN}(i).Nucleus).frames(ismember(schnitzcells(CompiledParticles{ChN}(i).Nucleus).frames,...
-                    CompiledParticles{ChN}(i).Frame));
-            else
-                CompiledParticleNuclei{i}=[];
-                CompiledParticleFrames{i}=[];
-            end
-        end
-
-
-        EdgeWidth=10; %AR 1/12/18 why 10?
-        %For each frame find the number of ellipses that are outside of an area
-        %delimited from the edge of the image.
-        %The information in Ellipses is
-        %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
-
-        %Initialize matrices where we will store the information of number of
-        %particles vs. AP vs. time
-        NEllipsesAP=zeros(length(Ellipses),length(APbinID));
-        NParticlesEllipsesAP{ChN}=zeros(length(Ellipses),length(APbinID));
-        %Fluorescence per all of nuclei
-        MeanVectorAllAP{ChN}=nan(length(Ellipses),length(APbinID));
-        SEVectorAllAP{ChN}=nan(length(Ellipses),length(APbinID));
-        
-
-
-
-        for i=1:length(Ellipses)
-            CurrentEllipses=Ellipses{i};
-
-            Radius=max(CurrentEllipses(:,3:4)')';
-
-            EllipseFilter=(CurrentEllipses(:,1)-Radius-EdgeWidth>0)&...
-                (CurrentEllipses(:,2)-Radius-EdgeWidth>0)&...
-                (CurrentEllipses(:,1)+Radius+EdgeWidth<FrameInfo(1).PixelsPerLine)&...
-                (CurrentEllipses(:,2)+Radius+EdgeWidth<FrameInfo(1).LinesPerFrame);
-
-
-            %Figure out which particles are in this frame and have an approved
-            %flag of 1 or 2. Note that we haven't yet checked if their
-            %corresponding Ellipses have been approved.
-            CurrentParticlesIndex=cellfun(@(x) find(x==i),ParticleFrames,...
-                'UniformOutput',false);
-            CurrentParticlesFilter=~cellfun(@isempty,CurrentParticlesIndex);
-            ParticlesToCheck=find(CurrentParticlesFilter);
-
-
-            %Find which of the particles in this frame are related to filtered
-            %ellipses and save their corresonding AP information.
-
-            FilteredParticlesPos=[];
-            for j=1:length(ParticlesToCheck)
-                if EllipseFilter(ParticleNuclei{ParticlesToCheck(j)}(CurrentParticlesIndex{ParticlesToCheck(j)}))&...
-                        (Particles{ChN}(ParticlesToCheck(j)).Approved==1 | Particles{ChN}(ParticlesToCheck(j)).Approved==2)
-                    FilteredParticlesPos=[FilteredParticlesPos,...
-                        EllipsePos{i}(ParticleNuclei{ParticlesToCheck(j)}(CurrentParticlesIndex{ParticlesToCheck(j)}))];
+            for i=1:length(CompiledParticles{ChN})
+                if ~isempty(Particles{ChN}(i).Nucleus)
+                    CompiledParticleNuclei{i}=...
+                        schnitzcells(CompiledParticles{ChN}(i).Nucleus).cellno(ismember(schnitzcells(CompiledParticles{ChN}(i).Nucleus).frames,...
+                        CompiledParticles{ChN}(i).Frame));
+                    CompiledParticleFrames{i}=...
+                        schnitzcells(CompiledParticles{ChN}(i).Nucleus).frames(ismember(schnitzcells(CompiledParticles{ChN}(i).Nucleus).frames,...
+                        CompiledParticles{ChN}(i).Frame));
+                else
+                    CompiledParticleNuclei{i}=[];
+                    CompiledParticleFrames{i}=[];
                 end
             end
 
-            %Count the number of filtered ellipses per AP bin
-            EllipsesFilteredPos{i}=EllipsePos{i}(EllipseFilter);
-            for j=1:length(EllipsesFilteredPos{i})
-                NEllipsesAP(i,max(find(APbinID<=EllipsesFilteredPos{i}(j))))=...
-                    NEllipsesAP(i,max(find(APbinID<=EllipsesFilteredPos{i}(j))))+1;
-            end
+
+
+            %For each frame find the number of ellipses that are outside of an area
+            %delimited from the edge of the image.
+            %The information in Ellipses is
+            %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
+
+            %Initialize matrices where we will store the information of number of
+            %particles vs. AP vs. time
+            NEllipsesAP=zeros(length(Ellipses),length(APbinID));
+            NParticlesEllipsesAP{ChN}=zeros(length(Ellipses),length(APbinID));
+            %Fluorescence per all of nuclei
+            MeanVectorAllAP{ChN}=nan(length(Ellipses),length(APbinID));
+            SEVectorAllAP{ChN}=nan(length(Ellipses),length(APbinID));
 
 
 
-            %Count the number of filtered particles per AP bin.
-            for j=1:length(FilteredParticlesPos)
-                NParticlesEllipsesAP{ChN}(i,max(find(APbinID<=FilteredParticlesPos(j))))=...
-                    NParticlesEllipsesAP{ChN}(i,max(find(APbinID<=FilteredParticlesPos(j))))+1;
-            end
+
+            for i=1:length(Ellipses)
+                CurrentEllipses=Ellipses{i};
+
+                Radius=max(CurrentEllipses(:,3:4)')';
+
+                EllipseFilter=(CurrentEllipses(:,1)-Radius-EdgeWidth>0)&...
+                    (CurrentEllipses(:,2)-Radius-EdgeWidth>0)&...
+                    (CurrentEllipses(:,1)+Radius+EdgeWidth<FrameInfo(1).PixelsPerLine)&...
+                    (CurrentEllipses(:,2)+Radius+EdgeWidth<FrameInfo(1).LinesPerFrame);
+
+
+                %Figure out which particles are in this frame and have an approved
+                %flag of 1 or 2. Note that we haven't yet checked if their
+                %corresponding Ellipses have been approved.
+                CurrentParticlesIndex=cellfun(@(x) find(x==i),ParticleFrames,...
+                    'UniformOutput',false);
+                CurrentParticlesFilter=~cellfun(@isempty,CurrentParticlesIndex);
+                ParticlesToCheck=find(CurrentParticlesFilter);
+
+
+                %Find which of the particles in this frame are related to filtered
+                %ellipses and save their corresonding AP information.
+
+                FilteredParticlesPos=[];
+                for j=1:length(ParticlesToCheck)
+                    if EllipseFilter(ParticleNuclei{ParticlesToCheck(j)}(CurrentParticlesIndex{ParticlesToCheck(j)}))&...
+                            (Particles{ChN}(ParticlesToCheck(j)).Approved==1 | Particles{ChN}(ParticlesToCheck(j)).Approved==2)
+                        FilteredParticlesPos=[FilteredParticlesPos,...
+                            EllipsePos{i}(ParticleNuclei{ParticlesToCheck(j)}(CurrentParticlesIndex{ParticlesToCheck(j)}))];
+                    end
+                end
+
+                %Count the number of filtered ellipses per AP bin
+                EllipsesFilteredPos{i}=EllipsePos{i}(EllipseFilter);
+                for j=1:length(EllipsesFilteredPos{i})
+                    NEllipsesAP(i,max(find(APbinID<=EllipsesFilteredPos{i}(j))))=...
+                        NEllipsesAP(i,max(find(APbinID<=EllipsesFilteredPos{i}(j))))+1;
+                end
+
+
+
+                %Count the number of filtered particles per AP bin.
+                for j=1:length(FilteredParticlesPos)
+                    NParticlesEllipsesAP{ChN}(i,max(find(APbinID<=FilteredParticlesPos(j))))=...
+                        NParticlesEllipsesAP{ChN}(i,max(find(APbinID<=FilteredParticlesPos(j))))+1;
+                end
 
 
 
 
-            EllipsesFiltered{ChN}{i}=Ellipses{i}(EllipseFilter,:);
+                EllipsesFiltered{ChN}{i}=Ellipses{i}(EllipseFilter,:);
 
-            NEllipsesFiltered{ChN}(i)=sum(EllipseFilter);
+                NEllipsesFiltered{ChN}(i)=sum(EllipseFilter);
 
 
-            %Calculate the fluorescence per ellipse. Here we'll draw the fluorescence from
-            %CompiledParticles just to make sure that everything has been
-            %quantified correctly.
-            CurrentCompiledParticlesIndex=cellfun(@(x) find(x==i),CompiledParticleFrames,...
-                'UniformOutput',false);
-            CurrentCompiledParticlesFilter=~cellfun(@isempty,CurrentCompiledParticlesIndex);
-            CompiledParticlesToCheck=find(CurrentCompiledParticlesFilter);
+                %Calculate the fluorescence per ellipse. Here we'll draw the fluorescence from
+                %CompiledParticles just to make sure that everything has been
+                %quantified correctly.
+                CurrentCompiledParticlesIndex=cellfun(@(x) find(x==i),CompiledParticleFrames,...
+                    'UniformOutput',false);
+                CurrentCompiledParticlesFilter=~cellfun(@isempty,CurrentCompiledParticlesIndex);
+                CompiledParticlesToCheck=find(CurrentCompiledParticlesFilter);
 
-            %Find the fluorescence of each set of particles and the AP
-            %positions of their Ellipses
-            FluorescenceCompiledParticles=[];
-            ErrorFluorescenceCompiledParticles=[];
-            FilteredCompiledParticlesPos=[];
-            for j=1:length(CompiledParticlesToCheck)
-                if EllipseFilter(CompiledParticleNuclei{CompiledParticlesToCheck(j)}(CurrentCompiledParticlesIndex{CompiledParticlesToCheck(j)}))&...
-                        (CompiledParticles{ChN}(CompiledParticlesToCheck(j)).Approved==1 | CompiledParticles{ChN}(CompiledParticlesToCheck(j)).Approved==2)
-                    FilteredCompiledParticlesPos=[FilteredCompiledParticlesPos,...
-                        EllipsePos{i}(CompiledParticleNuclei{CompiledParticlesToCheck(j)}(CurrentCompiledParticlesIndex{CompiledParticlesToCheck(j)}))];
+                %Find the fluorescence of each set of particles and the AP
+                %positions of their Ellipses
+                FluorescenceCompiledParticles=[];
+                ErrorFluorescenceCompiledParticles=[];
+                FilteredCompiledParticlesPos=[];
+                for j=1:length(CompiledParticlesToCheck)
+                    if EllipseFilter(CompiledParticleNuclei{CompiledParticlesToCheck(j)}(CurrentCompiledParticlesIndex{CompiledParticlesToCheck(j)}))&...
+                            (CompiledParticles{ChN}(CompiledParticlesToCheck(j)).Approved==1 | CompiledParticles{ChN}(CompiledParticlesToCheck(j)).Approved==2)
+                        FilteredCompiledParticlesPos=[FilteredCompiledParticlesPos,...
+                            EllipsePos{i}(CompiledParticleNuclei{CompiledParticlesToCheck(j)}(CurrentCompiledParticlesIndex{CompiledParticlesToCheck(j)}))];
 
-                    FluorescenceCompiledParticles=[FluorescenceCompiledParticles,...
-                        CompiledParticles{ChN}(CompiledParticlesToCheck(j)).Fluo(...
-                            CurrentCompiledParticlesIndex{CompiledParticlesToCheck(j)})];
+                        FluorescenceCompiledParticles=[FluorescenceCompiledParticles,...
+                            CompiledParticles{ChN}(CompiledParticlesToCheck(j)).Fluo(...
+                                CurrentCompiledParticlesIndex{CompiledParticlesToCheck(j)})];
 
-                    ErrorFluorescenceCompiledParticles=[ErrorFluorescenceCompiledParticles,...
-                        CompiledParticles{ChN}(CompiledParticlesToCheck(j)).FluoError];
+                        ErrorFluorescenceCompiledParticles=[ErrorFluorescenceCompiledParticles,...
+                            CompiledParticles{ChN}(CompiledParticlesToCheck(j)).FluoError];
+                    end
+                end
+
+                %Sum the fluorescence values and divide by the number of ellipses
+                for j=1:length(APbinID)
+                    if ~isnan(APbinArea(j))
+                        APFilterTemp=(APbinID(j)<=FilteredCompiledParticlesPos)&...
+                            (FilteredCompiledParticlesPos<APbinID(j+1));
+
+                        MeanVectorAllAP{ChN}(i,j)=sum(FluorescenceCompiledParticles(APFilterTemp))/NEllipsesAP(i,j);
+                        SEVectorAllAP{ChN}(i,j)=sqrt(sum((ErrorFluorescenceCompiledParticles(APFilterTemp)/NEllipsesAP(i,j)).^2));
+                    end
                 end
             end
 
-            %Sum the fluorescence values and divide by the number of ellipses
-            for j=1:length(APbinID)
-                if ~isnan(APbinArea(j))
-                    APFilterTemp=(APbinID(j)<=FilteredCompiledParticlesPos)&...
-                        (FilteredCompiledParticlesPos<APbinID(j+1));
 
-                    MeanVectorAllAP{ChN}(i,j)=sum(FluorescenceCompiledParticles(APFilterTemp))/NEllipsesAP(i,j);
-                    SEVectorAllAP{ChN}(i,j)=sqrt(sum((ErrorFluorescenceCompiledParticles(APFilterTemp)/NEllipsesAP(i,j)).^2));
-                end
+            %Minimum number of nuclei to actually do the calculation
+            MinNuclei=3;
+            MinAPIndexProb=min(find(sum(NEllipsesAP>=MinNuclei)));
+            MaxAPIndexProb=max(find(sum(NEllipsesAP>=MinNuclei)));
+
+            MinNucleiFilter=NEllipsesAP>=MinNuclei;
+
+            %Calculate the ratio
+            OnRatioAP{ChN}=NParticlesEllipsesAP{ChN}./NEllipsesAP;
+            %Filter out the elements that correspond to a number of nuclei below our
+            %limit of MinNuclei
+            OnRatioAP{ChN}(~MinNucleiFilter)=nan;
+            OnRatioAP{ChN}=reshape(OnRatioAP{ChN},size(MinNucleiFilter));
+
+
+            if MaxAPIndexProb>MinAPIndexProb
+                colormap(jet(128));
+                cmap=colormap;
+
+                Color=cmap(round((APbinID(MinAPIndexProb:MaxAPIndexProb)-...
+                    APbinID(MinAPIndexProb))/...
+                    (APbinID(MaxAPIndexProb)-APbinID(MinAPIndexProb))*127)+1,:);
+                figure(15)
+                clf
+                PlotHandle=[];
+                hold on
+    %             for j=MinAPIndexProb:MaxAPIndexProb
+    %                 PlotHandle=[PlotHandle,...
+    %                     plot(ElapsedTime,OnRatioAP{ChN}(:,j),'color',Color(j-MinAPIndexProb+1,:))];
+    %             end
+                hold off
+                xlabel('Time (min)')
+                ylabel('Fraction of on nuclei')
+                h = colorbar;
+                caxis([APbinID(MinAPIndexProb),APbinID(MaxAPIndexProb)])
+                ylabel(h,'AP Position (x/L)')
+                StandardFigure(PlotHandle,gca)
+                xlim([0,ElapsedTime(end)])
+                ylim([0,1.01])
+                saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsTimeVsAP.tif'])
             end
-        end
-
-
-        %Minimum number of nuclei to actually do the calculation
-        MinNuclei=3;
-        MinAPIndexProb=min(find(sum(NEllipsesAP>=MinNuclei)));
-        MaxAPIndexProb=max(find(sum(NEllipsesAP>=MinNuclei)));
-
-        MinNucleiFilter=NEllipsesAP>=MinNuclei;
-
-        %Calculate the ratio
-        OnRatioAP{ChN}=NParticlesEllipsesAP{ChN}./NEllipsesAP;
-        %Filter out the elements that correspond to a number of nuclei below our
-        %limit of MinNuclei
-        OnRatioAP{ChN}(~MinNucleiFilter)=nan;
-        OnRatioAP{ChN}=reshape(OnRatioAP{ChN},size(MinNucleiFilter));
-
-
-        if MaxAPIndexProb>MinAPIndexProb
-            colormap(jet(128));
-            cmap=colormap;
-
-            Color=cmap(round((APbinID(MinAPIndexProb:MaxAPIndexProb)-...
-                APbinID(MinAPIndexProb))/...
-                (APbinID(MaxAPIndexProb)-APbinID(MinAPIndexProb))*127)+1,:);
-            figure(15)
-            clf
-            PlotHandle=[];
-            hold on
-%             for j=MinAPIndexProb:MaxAPIndexProb
-%                 PlotHandle=[PlotHandle,...
-%                     plot(ElapsedTime,OnRatioAP{ChN}(:,j),'color',Color(j-MinAPIndexProb+1,:))];
-%             end
-            hold off
-            xlabel('Time (min)')
-            ylabel('Fraction of on nuclei')
-            h = colorbar;
-            caxis([APbinID(MinAPIndexProb),APbinID(MaxAPIndexProb)])
-            ylabel(h,'AP Position (x/L)')
-            StandardFigure(PlotHandle,gca)
-            xlim([0,ElapsedTime(end)])
-            ylim([0,1.01])
-            saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsTimeVsAP.tif'])
-        end
 
 
 
 
-        %Now I want to compute the probability of nuclei being on in at least one
-        %frame over the whole nc. This is a little bit tricky because I haven't
-        %checked the tracking of the nuclei without particles. As a result, those
-        %lineages are not complete and we could possibly overcount off nuclei if we
-        %just looked at the schnitzcells we have right now. I'll fix this later,
-        %but for now I'm going calculate the number of on nuclei per AP bin, where
-        %I'll actually check how much area corresponds to that AP bin.
+            %Now I want to compute the probability of nuclei being on in at least one
+            %frame over the whole nc. This is a little bit tricky because I haven't
+            %checked the tracking of the nuclei without particles. As a result, those
+            %lineages are not complete and we could possibly overcount off nuclei if we
+            %just looked at the schnitzcells we have right now. I'll fix this later,
+            %but for now I'm going calculate the number of on nuclei per AP bin, where
+            %I'll actually check how much area corresponds to that AP bin.
 
 
 
 
 
-        %What's the probability of a nucleus being on for at least one frame in an nc?
-        %This will be an array with rows for nc13 and nc14 and columns
-        %corresponding to each AP bin.
-        %This only works if we trust the tracking within one nc
-        ParticleCountAP{ChN}=zeros(3,length(APbinID));
+            %What's the probability of a nucleus being on for at least one frame in an nc?
+            %This will be an array with rows for nc13 and nc14 and columns
+            %corresponding to each AP bin.
+            %This only works if we trust the tracking within one nc
+            ParticleCountAP{ChN}=zeros(3,length(APbinID));
 
-        try
-            for i=1:length(Particles{ChN})
-                %See if the particle has either the flag 1 or 2
-                if (Particles{ChN}(i).Approved==1)||(Particles{ChN}(i).Approved==2)
+            try
+                for i=1:length(Particles{ChN})
+                    %See if the particle has either the flag 1 or 2
+                    if (Particles{ChN}(i).Approved==1)||(Particles{ChN}(i).Approved==2)
 
-                    %Determine the nc so we can add to the right position of ParticleCountAP
-                    if (FrameInfo(min(Particles{ChN}(i).Frame(Particles{ChN}(i).FrameApproved))).nc)>=12
-                        CurrentNC=FrameInfo(min(Particles{ChN}(i).Frame(Particles{ChN}(i).FrameApproved))).nc;
+                        %Determine the nc so we can add to the right position of ParticleCountAP
+                        if (FrameInfo(min(Particles{ChN}(i).Frame(Particles{ChN}(i).FrameApproved))).nc)>=12
+                            CurrentNC=FrameInfo(min(Particles{ChN}(i).Frame(Particles{ChN}(i).FrameApproved))).nc;
 
-                        %Now determine the AP bin this particle is on. We'll use
-                        %the nucleus positioning. Also, in order to count it we
-                        %need to make sure that it fulfills the same criteria we
-                        %used to count NEllipsesAP
-                        EllipseAPPosTemp=[];
-                        EllipsePosXTemp=[];
-                        EllipsePosYTemp=[];
-                        RadiusTemp=[];
-                        xPosTemp=[];
-                        yPosTemp=[];
-                        for j=1:length(schnitzcells(Particles{ChN}(i).Nucleus).frames)
-                            CurrentEllipse=Ellipses{schnitzcells(Particles{ChN}(i).Nucleus).frames(j)}(schnitzcells(Particles{ChN}(i).Nucleus).cellno(j),:);
-                            RadiusTemp=[RadiusTemp,max(CurrentEllipse(3:4))];
+                            %Now determine the AP bin this particle is on. We'll use
+                            %the nucleus positioning. Also, in order to count it we
+                            %need to make sure that it fulfills the same criteria we
+                            %used to count NEllipsesAP
+                            EllipseAPPosTemp=[];
+                            EllipsePosXTemp=[];
+                            EllipsePosYTemp=[];
+                            RadiusTemp=[];
+                            xPosTemp=[];
+                            yPosTemp=[];
+                            for j=1:length(schnitzcells(Particles{ChN}(i).Nucleus).frames)
+                                CurrentEllipse=Ellipses{schnitzcells(Particles{ChN}(i).Nucleus).frames(j)}(schnitzcells(Particles{ChN}(i).Nucleus).cellno(j),:);
+                                RadiusTemp=[RadiusTemp,max(CurrentEllipse(3:4))];
 
-                            %Determine the AP position
-                            EllipseAPPosTemp=[EllipseAPPosTemp,...
-                                EllipsePos{schnitzcells(Particles{ChN}(i).Nucleus).frames(j)}(schnitzcells(Particles{ChN}(i).Nucleus).cellno(j))];
+                                %Determine the AP position
+                                EllipseAPPosTemp=[EllipseAPPosTemp,...
+                                    EllipsePos{schnitzcells(Particles{ChN}(i).Nucleus).frames(j)}(schnitzcells(Particles{ChN}(i).Nucleus).cellno(j))];
 
-                            %Determine the x and y positions
-                            xPosTemp=[xPosTemp,CurrentEllipse(1)];
-                            yPosTemp=[yPosTemp,CurrentEllipse(2)];
-                        end
+                                %Determine the x and y positions
+                                xPosTemp=[xPosTemp,CurrentEllipse(1)];
+                                yPosTemp=[yPosTemp,CurrentEllipse(2)];
+                            end
 
-                        %Make sure that this nucleus was inside the limits at all
-                        %points
+                            %Make sure that this nucleus was inside the limits at all
+                            %points
 
-                        if sum((xPosTemp-RadiusTemp-EdgeWidth>0)&...
-                            (yPosTemp-RadiusTemp-EdgeWidth>0)&...
-                            (xPosTemp+RadiusTemp+EdgeWidth<FrameInfo(1).PixelsPerLine)&...
-                            (yPosTemp+RadiusTemp+EdgeWidth<FrameInfo(1).LinesPerFrame))==...
-                            length(xPosTemp)
+                            if sum((xPosTemp-RadiusTemp-EdgeWidth>0)&...
+                                (yPosTemp-RadiusTemp-EdgeWidth>0)&...
+                                (xPosTemp+RadiusTemp+EdgeWidth<FrameInfo(1).PixelsPerLine)&...
+                                (yPosTemp+RadiusTemp+EdgeWidth<FrameInfo(1).LinesPerFrame))==...
+                                length(xPosTemp)
 
-                            MeanAP=mean(EllipseAPPosTemp);
+                                MeanAP=mean(EllipseAPPosTemp);
 
-                            ParticleCountAP{ChN}(CurrentNC-11,max(find(APbinID<=MeanAP)))=...
-                                ParticleCountAP{ChN}(CurrentNC-11,max(find(APbinID<=MeanAP)))+1;
+                                ParticleCountAP{ChN}(CurrentNC-11,max(find(APbinID<=MeanAP)))=...
+                                    ParticleCountAP{ChN}(CurrentNC-11,max(find(APbinID<=MeanAP)))+1;
+                            end
                         end
                     end
                 end
             end
+
+            %Calculate the probability using the mean number of nuclei per AP bin
+            %in each nc. Note that we look at a reduced range within the nc to
+            %reduce variability in counting at mitosis.
+            ParticleCountProbAP{ChN}(:,1)=ParticleCountAP{ChN}(1,:)./mean(NEllipsesAP(nc12+5:nc13-5,:));
+            ParticleCountProbAP{ChN}(:,2)=ParticleCountAP{ChN}(2,:)./mean(NEllipsesAP(nc13+5:nc14-5,:));
+            ParticleCountProbAP{ChN}(:,3)=ParticleCountAP{ChN}(3,:)./...
+                mean(NEllipsesAP(max(1,nc14-5):numFrames-5,:));
+            % ES 2014-01-08: accounting for movies started fewer than 5 frames before
+            % mitosis 13
+
+            figure(16)   
+            plot(APbinID,ParticleCountProbAP{ChN}(:,1),'.-b')
+            hold on
+            plot(APbinID,ParticleCountProbAP{ChN}(:,2),'.-k')
+            plot(APbinID,ParticleCountProbAP{ChN}(:,3),'.-r')
+            hold off
+            %ylim([0,max(ParticleCountAP(1,:))*2*1.1])
+            xlabel('AP position (x/L)')
+            ylabel('Active nuclei')
+            title('Number active nuclei')
+            legend('nc12', 'nc13', 'nc14')
+            saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsAP_ch',...
+                iIndex(ChN,2),'.tif'])
+
         end
-
-        %Calculate the probability using the mean number of nuclei per AP bin
-        %in each nc. Note that we look at a reduced range within the nc to
-        %reduce variability in counting at mitosis.
-        ParticleCountProbAP{ChN}(:,1)=ParticleCountAP{ChN}(1,:)./mean(NEllipsesAP(nc12+5:nc13-5,:));
-        ParticleCountProbAP{ChN}(:,2)=ParticleCountAP{ChN}(2,:)./mean(NEllipsesAP(nc13+5:nc14-5,:));
-        ParticleCountProbAP{ChN}(:,3)=ParticleCountAP{ChN}(3,:)./...
-            mean(NEllipsesAP(max(1,nc14-5):numFrames-5,:));
-        % ES 2014-01-08: accounting for movies started fewer than 5 frames before
-        % mitosis 13
-
-        figure(16)   
-        plot(APbinID,ParticleCountProbAP{ChN}(:,1),'.-b')
-        hold on
-        plot(APbinID,ParticleCountProbAP{ChN}(:,2),'.-k')
-        plot(APbinID,ParticleCountProbAP{ChN}(:,3),'.-r')
-        hold off
-        %ylim([0,max(ParticleCountAP(1,:))*2*1.1])
-        xlabel('AP position (x/L)')
-        ylabel('Active nuclei')
-        title('Number active nuclei')
-        legend('nc12', 'nc13', 'nc14')
-        saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsAP_ch',...
-            iIndex(ChN,2),'.tif'])
-
-
+        
+        
         %Use the alternative approach I used for the movies. We are going to
         %look at each nucleus towards the end of each nc and ask if they
         %correspond to an on or off particle in any frame previous to that one.
@@ -2461,10 +2470,45 @@ end
 
 
 %% Save everything
-if HistoneChannel&&strcmpi(ExperimentAxis,'AP')
 
+%Now save all the information
+if HistoneChannel&&strcmpi(ExperimentAxis,'AP')
+    
     %If we have only one channel get rid of all the cells
     if NChannels==1
+        
+        %If we had an empty Particles structure, we need ot make some empty
+        %variables. If this code was written in a smarter way, this assignment
+        %would have happened inside the code itself.
+        if isempty(Particles{1})
+            APFilter=cell(NChannels);
+            MeanVectorAP=cell(NChannels);
+            SDVectorAP=cell(NChannels);
+            NParticlesAP=cell(NChannels);
+            MeanVectorAll=cell(NChannels);
+            MeanVectorAnterior = cell(NChannels);
+            SDVectorAll=cell(NChannels);
+            NParticlesAll=cell(NChannels);
+            MaxFrame=cell(NChannels);
+            AllTracesVector=cell(NChannels);
+            AllTracesAP=cell(NChannels);
+            MeanSlopeVectorAP=cell(NChannels);
+            SDSlopeVectorAP=cell(NChannels);
+            NSlopeAP=cell(NChannels);
+            ParticleCountAP=cell(NChannels);
+            OnRatioAP=cell(NChannels);
+            ParticleCountProbAP=cell(NChannels);
+            MeanVectorAllAP=cell(NChannels);
+            SEVectorAllAP=cell(NChannels);
+            ncFilter=[];
+            MinAPIndex=[];
+            MaxAPIndex=[];
+            NEllipsesAP=[];
+            EllipsesFilteredPos=[];
+            FilteredParticlesPos=[];
+        end
+        
+        
         CompiledParticles=CompiledParticles{1};
         APFilter=APFilter{1};
         MeanVectorAP=MeanVectorAP{1};
@@ -2480,7 +2524,7 @@ if HistoneChannel&&strcmpi(ExperimentAxis,'AP')
         MeanSlopeVectorAP=MeanSlopeVectorAP{1};
         SDSlopeVectorAP=SDSlopeVectorAP{1};
         NSlopeAP=NSlopeAP{1};
-        ParticleCountAP={1};
+        ParticleCountAP=ParticleCountAP{1};
         OnRatioAP=OnRatioAP{1};
         ParticleCountProbAP=ParticleCountProbAP{1};
         EllipsesOnAP=EllipsesOnAP{1};
