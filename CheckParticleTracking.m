@@ -254,8 +254,15 @@ if exist([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
         FilePrefix(1:end-1),'-His_',iIndex(1,NDigits),'.tif'], 'file')||...
         exist([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
         FilePrefix(1:end-1),'_His_',iIndex(1,NDigits),'.tif'], 'file')
-    load([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,'Ellipses.mat'])
-    UseHistoneOverlay=1;
+    %(MT, 2018-02-11) Added support for lattice imaging with bad histone 
+    %channel, maybe temporary - FIX LATER
+    if exist([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,'Ellipses.mat'])
+        load([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,'Ellipses.mat'])
+        UseHistoneOverlay=1;
+    else
+        warning('Ellipses.mat does not exist. Proceeding as though there is no Histone channel. If you expect a Histone channel, there is something wrong.')
+        UseHistoneOverlay=0;
+    end
 else
     UseHistoneOverlay=0;
 end
@@ -933,13 +940,18 @@ while (cc~='x')
     
     figure(SnippetFig)
     if  ~isempty(xTrace) && ~isempty(CurrentZIndex)  
-        %Get the snippet and the mask, and overlay them        
+        %Get the snippet and the mask, and overlay them  
+        %(MT, 2018-02-12): lattice data could use this, changed CurrentChannel to coatChannel 
         FullSlice=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3)...
-            ,'_z' iIndex(CurrentZ,2) '_ch' iIndex(CurrentChannel,2) '.tif']);
+            ,'_z' iIndex(CurrentZ,2) '_ch' iIndex(coatChannel,2) '.tif']);
         xSpot = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xDoG(CurrentZIndex);
         ySpot = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yDoG(CurrentZIndex);
         if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex), 'snippet_size')
             snippet_size = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).snippet_size;
+        %(MT, 2018-02-12): Hacky fix to get this to run with lattice data -
+        %FIX LATER
+        elseif strcmpi(ExperimentType,'lattice')
+            snippet_size = 13;
         else
             snippet_size = 7;
         end
@@ -1122,10 +1134,17 @@ while (cc~='x')
         hold off
     end
 
-    
-    FigureTitle={['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)],...
-        ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames), ' (nc',num2str(FrameInfo(CurrentFrame).nc),')'],...
-        ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)]};
+    %(MT, 2018-02-11) Added support for lattice imaging, maybe 
+    %temporary - FIX LATER
+    if strcmpi(ExperimentType,'lattice')
+        FigureTitle={['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)],...
+            ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),')'],...
+            ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)]};
+    else
+        FigureTitle={['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)],...
+            ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames), ' (nc',num2str(FrameInfo(CurrentFrame).nc),')'],...
+            ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)]};
+    end
     
     if HideApprovedFlag==1
         FigureTitle=[FigureTitle,', Showing non-flagged particles'];
