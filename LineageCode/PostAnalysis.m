@@ -5,11 +5,8 @@ function [lrep, furrow]=PostAnalysis(Prefix,Direction,delay)
 % folder under a different sub-folder
 %% Extract all data
 %Get the folders, including the default Dropbox one
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders;
-%Now get the actual DropboxFolder
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders(Prefix);
+[SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
+configValues, movieDatabasePath] = DetermineAllLocalFolders(Prefix);
 
 if ~exist('Direction','var')
     Direction=input('No Direction of Repression was indicated. Please indicate a direction now (u for up, or d for down)');
@@ -17,70 +14,20 @@ end
 
 
 %Determine division times
-%Load the information about the nc from the XLS file
-[Num,Txt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-XLSHeaders=Txt(1,:);
-Txt=Txt(2:end,:);
-
-ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
-ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
-
-DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-Dashes=findstr(Prefix,'-');
-
-PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-if isempty(PrefixRow)
-    PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
-    if isempty(PrefixRow)
-        error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-    end
-end
-
-ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
-ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
+%Load the information about the nc from moviedatabase file
+[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
+Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
 
 if strcmp(ExperimentAxis,'AP')
     error('This seems to be an experiment on the AP axis. Either check your prefix or change the respective MovieDatabase entry');
 end
 
 
-%Find the different columns.
-DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-nc9Column=find(strcmp(XLSRaw(1,:),'nc9'));
-nc10Column=find(strcmp(XLSRaw(1,:),'nc10'));
-nc11Column=find(strcmp(XLSRaw(1,:),'nc11'));
-nc12Column=find(strcmp(XLSRaw(1,:),'nc12'));
-nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
-nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
-CFColumn=find(strcmp(XLSRaw(1,:),'CF'));
-try
-    FramesColumn=find(strcmp(XLSRaw(1,:),'frames'));
-catch
-    warning('No. of frames is not defined in MovieDatabase. Length of Ellipses will be used. Define manually for best results');
-end
-Channel1Column=find(strcmp(XLSRaw(1,:),'Channel1'));
-Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
-
-
-%Find the corresponding entry in the XLS file
+%Find the corresponding entry in moviedatabase file
 if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
         (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))&(isempty(findstr(Prefix,'Bcd4x')))
     warning('This step in CheckParticleTracking will most likely have to be modified to work')
-    XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-        [Date,'\BcdGFP-HisRFP']));
-else
-    XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-        [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-    
-    if isempty(XLSEntry)
-        XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-            [Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
-        if isempty(XLSEntry)
-            display('%%%%%%%%%%%%%%%%%%%%%')
-            error('Dateset could not be found. Check MovieDatabase.xlsx')
-            display('%%%%%%%%%%%%%%%%%%%%%')
-        end
-    end
 end
 
 % Extract Ellipses
@@ -91,18 +38,7 @@ catch
     error('No Ellipses found!');
 end
 
-nc9=XLSRaw{XLSEntry,nc9Column};
-nc10=XLSRaw{XLSEntry,nc10Column};
-nc11=XLSRaw{XLSEntry,nc11Column};
-nc12=XLSRaw{XLSEntry,nc12Column};
-nc13=XLSRaw{XLSEntry,nc13Column};
-nc14=XLSRaw{XLSEntry,nc14Column};
-cf=XLSRaw{XLSEntry,CFColumn};
-try
-    frames=XLSRaw{XLSEntry,FramesColumn};
-catch
-    frames=size(Ellipses,1);
-end
+frames=size(Ellipses,1);
 
 
 %This checks whether all ncs have been defined
@@ -134,16 +70,10 @@ if strcmp(lower(cf),'nan')
     cf=nan;
 end
 
-%Convert the prefix into the string used in the XLS file
-Dashes=findstr(Prefix,'-');
-
-XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
-    [Prefix(1:Dashes(3)-1),filesep,Prefix(Dashes(3)+1:end)]));
-
 ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
 
 if (length(find(isnan(ncs)))==length(ncs))|(length(ncs)<6)
-    error('Have the ncs been defined in MovieDatabase.XLSX?')
+    error('Have the ncs been defined in MovieDatabase?')
 end
 
 %Now do the nuclear segmentation and lineage tracking. This should be put

@@ -14,10 +14,8 @@ function [coordA,coordP,xShift,yShift]=FindAPAxisFullEmbryo(varargin)
 CorrectAxis = 0;
 
 %Load the folder information
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath]=...
-    DetermineLocalFolders;
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
-    DetermineLocalFolders(varargin{1});
+[SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
+configValues, movieDatabasePath] = DetermineAllLocalFolders(varargin{1});
 
 Prefix=varargin{1};
 
@@ -46,30 +44,10 @@ Dashes=findstr(Prefix,'-');
 Date=Prefix(1:Dashes(3)-1);
 EmbryoName=Prefix(Dashes(3)+1:end);
 
-%Figure out what type of experiment we have
-[XLSNum,XLSTxt]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-DataFolderColumn=find(strcmp(XLSTxt(1,:),'DataFolder'));
-ExperimentTypeColumn=find(strcmp(XLSTxt(1,:),'ExperimentType'));
-Channel1Column=find(strcmp(XLSTxt(1,:),'Channel1'));
-Channel2Column=find(strcmp(XLSTxt(1,:),'Channel2'));
-
-% Convert the prefix into the string used in the XLS file
-Dashes = strfind(Prefix, '-');
-PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
-    [Prefix(1:Dashes(3)-1), '\', Prefix(Dashes(3)+1:end)]));
-if isempty(PrefixRow)
-    PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
-        [Prefix(1:Dashes(3)-1), '/', Prefix(Dashes(3)+1:end)]));
-    if isempty(PrefixRow)
-        error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-    end
-end
-
-ExperimentType=XLSTxt(PrefixRow,ExperimentTypeColumn);
-Channel1=XLSTxt(PrefixRow,Channel1Column);
-Channel2=XLSTxt(PrefixRow,Channel2Column);
-
-
+%Figure out what type of experiment we have. Note: we name the var "DateFromDateColumn" to avoid shadowing previously defined "Date" var.
+[DateFromDateColumn, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
+Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
 
 %Determine whether we're dealing with 2-photon data from Princeton, LSM, or
 %LIF data. 2-photon data uses TIF files. In LSM mode multiple files will be

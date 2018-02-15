@@ -29,23 +29,9 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
 end
 
 %get frames of each mitosis
-[XLSNum,XLSTxt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-nc10Column=find(strcmp(XLSRaw(1,:),'nc10'));
-nc11Column=find(strcmp(XLSRaw(1,:),'nc11'));
-nc12Column= strcmp(XLSRaw(1,:),'nc12');
-nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
-nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
-
-DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-Dashes=findstr(Prefix,'-');
-PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-
-% get the mitotic frames from the MovieDatabase excel
-nc10=XLSRaw{PrefixRow,nc10Column};
-nc11=XLSRaw{PrefixRow,nc11Column};
-nc12=XLSRaw{PrefixRow,nc12Column};
-nc13=XLSRaw{PrefixRow,nc13Column};
-nc14=XLSRaw{PrefixRow,nc14Column};
+[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
+Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
 
 %%
 if exist([DropboxFolder,filesep,Prefix,filesep,'SortedNuclei.mat'])||0

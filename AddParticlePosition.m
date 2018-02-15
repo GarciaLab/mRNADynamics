@@ -13,10 +13,8 @@ function AddParticlePosition(varargin)
 
 
 %Get the relevant folders for this data set
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders;
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders(varargin{1});
+[SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
+configValues, movieDatabasePath] = DetermineAllLocalFolders(varargin{1});
 
 
 SkipAlignment=0;
@@ -138,31 +136,12 @@ end
 
 
 %Figure out what type of experiment we have
-[XLSNum,XLSTxt]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-DataFolderColumn=find(strcmp(XLSTxt(1,:),'DataFolder'));
-ExperimentTypeColumn=find(strcmp(XLSTxt(1,:),'ExperimentType'));
-Channel1Column=find(strcmp(XLSTxt(1,:),'Channel1'));
-Channel2Column=find(strcmp(XLSTxt(1,:),'Channel2'));
-
-% Convert the prefix into the string used in the XLS file
-Dashes = strfind(Prefix, '-');
-PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
-    [Prefix(1:Dashes(3)-1), '\', Prefix(Dashes(3)+1:end)]));
-if isempty(PrefixRow)
-    PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
-        [Prefix(1:Dashes(3)-1), '/', Prefix(Dashes(3)+1:end)]));
-    if isempty(PrefixRow)
-        error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-    end
-end
-
+[DateFromDateColumn, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
+Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
 
 
 if ~NoAP
-    
-    ExperimentType=XLSTxt(PrefixRow,ExperimentTypeColumn);
-    Channel1=XLSTxt(PrefixRow,Channel1Column);
-    Channel2=XLSTxt(PrefixRow,Channel2Column);
     
     %First, check whether we have Bcd-GFP and inverted histone
     if ((~isempty(strfind(lower(Channel1{1}),'bcd')))|...
@@ -185,7 +164,7 @@ if ~NoAP
     if sum(ChannelToLoadTemp)
         ChannelToLoad=find(ChannelToLoadTemp);
     else
-        error('No histone channel found. Was it defined in MovieDatabase.XLS?')
+        error('No histone channel found. Was it defined in MovieDatabase?')
     end
     
     
@@ -284,7 +263,7 @@ if ~NoAP
                 HisChannel=2;
                 InvertHis=1;
             else
-                error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
+                error('LIF Mode error: Channel name not recognized. Check MovieDatabase.')
             end
         end
         
@@ -1274,10 +1253,7 @@ if ~NoAP
             APPosImage(i,j)=APPosition/APLength;
         end
     end
-    [XLSNum,XLSTxt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-    APResolutionColumn = find(strcmp(XLSRaw(1,:),'APResolution'));
-    APResolution = XLSRaw{PrefixRow,APResolutionColumn};
-    
+
     
     APbinID=0:APResolution:1;
     

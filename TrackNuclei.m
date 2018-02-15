@@ -17,85 +17,25 @@ end
 
 
 %Get the folders, including the default Dropbox one
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders;
-%Now get the actual DropboxFolder
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders(Prefix);
+[SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
+configValues, movieDatabasePath] = DetermineAllLocalFolders(Prefix);
 
 
 
 %Determine division times
-%Load the information about the nc from the XLS file
-[Num,Txt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-XLSHeaders=Txt(1,:);
-Txt=Txt(2:end,:);
+%Load the information about the nc from moviedatabase file
+[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
+Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
 
-ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
-ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
-Channel1Column=find(strcmp(XLSRaw(1,:),'Channel1'));
-Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
-
-DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-Dashes=findstr(Prefix,'-');
-
-PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-if isempty(PrefixRow)
-    PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
-    if isempty(PrefixRow)
-        error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-    end
-end
-
-ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
-ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
-Channel1=XLSRaw(PrefixRow,Channel1Column);
-Channel2=XLSRaw(PrefixRow,Channel2Column);
 %If Channel2 was left empty, it would contain a NaN, which will cause
 %problems below. In that case, replace it by an empty string.
 if isnan(Channel2{1})
     Channel2{1}='';
 end
 
-%Find the different columns.
-DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-nc9Column=find(strcmp(XLSRaw(1,:),'nc9'));
-nc10Column=find(strcmp(XLSRaw(1,:),'nc10'));
-nc11Column=find(strcmp(XLSRaw(1,:),'nc11'));
-nc12Column=find(strcmp(XLSRaw(1,:),'nc12'));
-nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
-nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
-CFColumn=find(strcmp(XLSRaw(1,:),'CF'));
-Channel1Column=find(strcmp(XLSRaw(1,:),'Channel1'));
-Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
-
-
-%Find the corresponding entry in the XLS file
-XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-    [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-
-if isempty(XLSEntry)
-    XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-        [Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
-    if isempty(XLSEntry)
-        disp('%%%%%%%%%%%%%%%%%%%%%')
-        error('Dateset could not be found. Check MovieDatabase.xlsx')
-        disp('%%%%%%%%%%%%%%%%%%%%%')
-    end
-end
-
-
-nc9=XLSRaw{XLSEntry,nc9Column};
-nc10=XLSRaw{XLSEntry,nc10Column};
-nc11=XLSRaw{XLSEntry,nc11Column};
-nc12=XLSRaw{XLSEntry,nc12Column};
-nc13=XLSRaw{XLSEntry,nc13Column};
-nc14=XLSRaw{XLSEntry,nc14Column};
-CF=XLSRaw{XLSEntry,CFColumn};
-
-
 if ~exist('nc9','var')
-    error('Cannot find nuclear cycle values. Were they defined in MovieDatabase.XLSX?')
+    error('Cannot find nuclear cycle values. Were they defined in MovieDatabase?')
 end
 
 %Do we need to convert any NaN chars into doubles?
@@ -124,28 +64,10 @@ if length(ncCheck)~=6
     error('Check the nc frames in the MovieDatabase entry. Some might be missing')
 end
 
-%Convert the prefix into the string used in the XLS file
-Dashes=findstr(Prefix,'-');
-
-%Find the corresponding entry in the XLS file
-XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
-        [Prefix(1:Dashes(3)-1),filesep,Prefix(Dashes(3)+1:end)]));
-
-%HG: Did we actually need these cases down here?
-% if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
-%         (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1')))&(isempty(findstr(Prefix,'Bcd4x')))
-%     XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
-%         [Date,'\BcdGFP-HisRFP']));
-% else
-%     XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
-%         [Prefix(1:Dashes(3)-1),filesep,Prefix(Dashes(3)+1:end)]));
-% end
-
-
 ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
 
 if (length(find(isnan(ncs)))==length(ncs))||(length(ncs)<6)
-    error('Have the ncs been defined in MovieDatabase.XLSX?')
+    error('Have the ncs been defined in MovieDatabase?')
 end
 
 %Now do the nuclear segmentation and lineage tracking. This should be put
@@ -417,7 +339,7 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
         close(h)
         end
     else
-        error('Input channel not recognized. Check correct definition in MovieDatabase.XLSX')
+        error('Input channel not recognized. Check correct definition in MovieDatabase')
     end
 end
     

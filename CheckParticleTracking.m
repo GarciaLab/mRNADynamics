@@ -273,72 +273,13 @@ if exist([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),
 else
     UseSchnitz=0;
 end
-   
-%Determine division times
-%Load the information about the nc from the XLS file
-[~,Txt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-XLSHeaders=Txt(1,:);
-Txt=Txt(2:end,:);
 
-ExperimentTypeColumn= strcmpi(XLSRaw(1,:),'ExperimentType');
-ExperimentAxisColumn=find(strcmpi(XLSRaw(1,:),'ExperimentAxis'));
-Channel1Column=find(strcmpi(XLSRaw(1,:),'Channel1'));
-Channel2Column=find(strcmpi(XLSRaw(1,:),'Channel2'));
-nc9Column=find(strcmpi(XLSRaw(1,:),'nc9'));
-nc10Column=find(strcmpi(XLSRaw(1,:),'nc10'));
-nc11Column=find(strcmpi(XLSRaw(1,:),'nc11'));
-nc12Column=find(strcmpi(XLSRaw(1,:),'nc12'));
-nc13Column=find(strcmpi(XLSRaw(1,:),'nc13'));
-nc14Column=find(strcmpi(XLSRaw(1,:),'nc14'));
-CFColumn=find(strcmpi(XLSRaw(1,:),'CF'));
-
-DataFolderColumn=find(strcmpi(XLSRaw(1,:),'DataFolder'));
-Dashes=findstr(FilePrefix,'-');
-PrefixRow=find(strcmpi(XLSRaw(:,DataFolderColumn),[FilePrefix(1:Dashes(3)-1),'\',FilePrefix(Dashes(3)+1:end-1)]));
-if isempty(PrefixRow)
-    PrefixRow=find(strcmpi(XLSRaw(:,DataFolderColumn),[FilePrefix(1:Dashes(3)-1),'/',FilePrefix(Dashes(3)+1:end-1)]));
-    if isempty(PrefixRow)
-        error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-    end
-end
-
-
-ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
-ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
-Channel1=XLSRaw(PrefixRow,Channel1Column);
-Channel2=XLSRaw(PrefixRow,Channel2Column);
-
-
-%Find the corresponding entry in the XLS file
-if (~isempty(findstr(FilePrefix,'Bcd')))&&(isempty(findstr(FilePrefix,'BcdE1')))&&...
-        (isempty(findstr(FilePrefix(1:end-1),'NoBcd')))&&...
-        (isempty(findstr(FilePrefix(1:end-1),'Bcd1x')))&&(~isempty(findstr(FilePrefix,'HisRFP')))
-    warning('This step in CheckParticleTracking will most likely have to be modified to work')
-    XLSEntry=find(strcmpi(XLSRaw(:,DataFolderColumn),...
-        [Date,'\BcdGFP-HisRFP']));
-else
-    XLSEntry=find(strcmpi(XLSRaw(:,DataFolderColumn),...
-        [FilePrefix(1:Dashes(3)-1),'\',FilePrefix(Dashes(3)+1:end-1)]));
-    if isempty(XLSEntry)
-        XLSEntry=find(strcmpi(XLSRaw(:,DataFolderColumn),...
-            [FilePrefix(1:Dashes(3)-1),'/',FilePrefix(Dashes(3)+1:end-1)]));
-        if isempty(XLSEntry)
-            error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-        end
-    end
-end
-
+% we name the variable DataFolderColumnValue to avoid shadowing previously defined DataFolder var, which is actually a subfolder inside dropbox
+[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
+Channel1, Channel2, Objective, Power, DataFolderColumnValue, DropboxFolderName, Comments,...
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
 
 if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file')
-    %strcmpi(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|strcmpi(XLSRaw(XLSEntry,Channel1Column),'His-RFP')|strcmpi(XLSRaw(XLSEntry,Channel1Column),'Hb-GFP')|strcmpi(XLSRaw(XLSEntry,Channel2Column),'Hb-GFP')
-    nc9=XLSRaw{XLSEntry,nc9Column};
-    nc10=XLSRaw{XLSEntry,nc10Column};
-    nc11=XLSRaw{XLSEntry,nc11Column};
-    nc12=XLSRaw{XLSEntry,nc12Column};
-    nc13=XLSRaw{XLSEntry,nc13Column};
-    nc14=XLSRaw{XLSEntry,nc14Column};
-    CF=XLSRaw{XLSEntry,CFColumn};
-    
     
     for i=1:numFrames
         if i<nc9
@@ -359,15 +300,6 @@ if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file')
     end
 else
     warning('No nuclear marker channel may result in strange behavior.');
-    
-    nc9=XLSRaw{XLSEntry,nc9Column};
-    nc10=XLSRaw{XLSEntry,nc10Column};
-    nc11=XLSRaw{XLSEntry,nc11Column};
-    nc12=XLSRaw{XLSEntry,nc12Column};
-    nc13=XLSRaw{XLSEntry,nc13Column};
-    nc14=XLSRaw{XLSEntry,nc14Column};
-    CF=XLSRaw{XLSEntry,CFColumn};
-    
     
     for i=1:numFrames
         if i<nc9

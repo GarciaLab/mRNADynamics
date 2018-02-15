@@ -16,14 +16,8 @@ close all
 %Find out which computer this is. That will determine the folder structure.
 %Information about about folders
 
-%Figure out the default Dropbox folder
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders;
-
-% ES 2013-10-29: Required for multiple users to be able to analyze data on
-% one computer
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders(varargin{1});
+[SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
+configValues, movieDatabasePath] = DetermineAllLocalFolders(varargin{1});
 
 
 if ~isempty(varargin)
@@ -110,34 +104,11 @@ for i=1:Rows
     end
 end
 
-[XLSNum,XLSTxt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-Dashes=findstr(Prefix,'-');
-PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-    if isempty(PrefixRow)
-        PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
-        if isempty(PrefixRow)
-            error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-        end
-    end
+[DateFromDateColumn, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
+Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
 
-
-APResolutionColumn = find(strcmp(XLSRaw(1,:),'APResolution'));
-APResolution = XLSRaw{PrefixRow,APResolutionColumn};
-%COMMENTED OUT SO THIS VALUE CAN BE FOUND IN EXCEL FILE- AR 4/14/15
-%Divide the image into AP bins. The size of the bin will depend on the
-%experiment
-% if strfind(lower(Prefix),'eve')     %Eve2 experiments
-%     APResolution=0.01;
-% %hb BAC experiments
-% elseif ~isempty(strfind(lower(Prefix),'hbbac'))
-%     APResolution=0.01;
-% %kni BAC experiments
-% elseif ~isempty(strfind(lower(Prefix),'knibac'))  
-%     APResolution=0.015;
-% else                                %All other experiments
-%     APResolution=0.025;
-% end
+ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
 
 APbinID=0:APResolution:1;
 
@@ -149,64 +120,6 @@ for i=1:(length(APbinID)-1)
     APPosBinImage=APPosBinImage+FilteredMask*i;
 end
 
-
-%Load the information about the nc from the XLS file
-[Num,Txt, XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-XLSHeaders=Txt(1,:);
-Txt=Txt(2:end,:);
-
-%Find the different columns.
-DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-nc9Column=find(strcmp(XLSRaw(1,:),'nc9'));
-nc10Column=find(strcmp(XLSRaw(1,:),'nc10'));
-nc11Column=find(strcmp(XLSRaw(1,:),'nc11'));
-nc12Column=find(strcmp(XLSRaw(1,:),'nc12'));
-nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
-nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
-CFColumn=find(strcmp(XLSRaw(1,:),'CF'));
-Channel1Column=find(strcmp(XLSRaw(1,:),'Channel1'));
-Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
-
-%Convert the prefix into the string used in the XLS file
-Dashes=findstr(Prefix,'-');
-
-%Find the corresponding entry in the XLS file
-% if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
-%         (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
-%     XLSEntry=find(strcmp(Txt(:,DataFolderColumn),...
-%         [Date,'\BcdGFP-HisRFP']));
-% else
-    XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-        [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-    if isempty(XLSEntry)
-        XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-            [Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
-        if isempty(XLSEntry)
-            error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-        end
-    end
-%end
-
-
-if strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP')|strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP')|...
-        strcmp(XLSRaw(XLSEntry,Channel2Column),'mCherry-MCP')|strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-mCherry')|strcmp(XLSRaw(XLSEntry,Channel2Column),'NLS-mCherry-MCP(3)')
-    nc9=cell2mat(XLSRaw(XLSEntry,nc9Column));
-    nc10=cell2mat(XLSRaw(XLSEntry,nc10Column));
-    nc11=cell2mat(XLSRaw(XLSEntry,nc11Column));
-    nc12=cell2mat(XLSRaw(XLSEntry,nc12Column));
-    nc13=cell2mat(XLSRaw(XLSEntry,nc13Column));
-    nc14=cell2mat(XLSRaw(XLSEntry,nc14Column));
-    %This is in case the last column for CF is all nan and is not part of
-    %the Num matrix
-    if ~isempty(CFColumn)    
-        CF=cell2mat(XLSRaw(XLSEntry,CFColumn));
-    else
-        CF=nan;
-    end
-else
-    error('nc information not defined in MovieDatabase.xlsx')
-end
-ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
 
 %Load the division information if it's already there
 if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'])

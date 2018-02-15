@@ -419,7 +419,7 @@ elseif strcmp(FileMode, 'LAT')
     if length(MCPChannel)>1
         error('Two coat proteins found. Should this be in 2spot2color mode?')
     elseif length(MCPChannel)==0    
-        error('LAT Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
+        error('LAT Mode error: Channel name not recognized. Check MovieDatabase')
     end
         
      
@@ -613,7 +613,7 @@ elseif strcmp(FileMode,'LSM')
         elseif  strfind(Channel1{1},'His')
             histoneChannel=1;
         else
-            error('LSM Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
+            error('LSM Mode error: Channel name not recognized. Check MovieDatabase')
         end
 
         if ~isempty(strfind(Channel2{1},'MCP'))
@@ -621,7 +621,7 @@ elseif strcmp(FileMode,'LSM')
         elseif  strfind(Channel2{1},'His')
             histoneChannel=2;
         else
-            error('LSM Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
+            error('LSM Mode error: Channel name not recognized. Check MovieDatabase')
         end
         fiducialChannel=histoneChannel;
         NSeries=length(D);
@@ -1055,7 +1055,7 @@ elseif strcmp(FileMode,'LIFExport')
             if length(coatChannel)>1
                 error('Two coat proteins found. Should this be in 2spot2color mode?')
             elseif isempty(coatChannel)    
-                error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
+                error('LIF Mode error: Channel name not recognized. Check MovieDatabase')
             end
 
             %Histone channel
@@ -1167,7 +1167,7 @@ elseif strcmp(FileMode,'LIFExport')
                     ~isempty(strfind(lower(Channel1),'pcp'))
                 coatChannel=1;
             else
-                error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
+                error('No MCP or PCP channel detected. Check MovieDatabase')
             end
             if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))
                 if (~isempty(strfind(Channel1{1},'mCherry')))
@@ -1181,7 +1181,7 @@ elseif strcmp(FileMode,'LIFExport')
                 end
             end
         else
-            error('Experiment type not recognized. Check MovieDatabase.xlsx')
+            error('Experiment type not recognized. Check MovieDatabase')
         end
         %Copy the data
         h=waitbar(0,'Extracting LIFExport images');
@@ -1398,7 +1398,7 @@ elseif strcmp(FileMode,'DSPIN')||strcmp(FileMode,'DND2')
         if length(coatChannel)>1
             error('Two coat proteins found. Should this be in 2spot2color mode?')
         elseif isempty(coatChannel)
-            error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
+            error('LIF Mode error: Channel name not recognized. Check MovieDatabase')
         end
         
         %Histone channel
@@ -1450,7 +1450,7 @@ elseif strcmp(FileMode,'DSPIN')||strcmp(FileMode,'DND2')
                 ~isempty(strfind(lower(Channel1),'pcp'))
             coatChannel=1;
         else
-            error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
+            error('No MCP or PCP channel detected. Check MovieDatabase')
         end
         
         if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))
@@ -1465,7 +1465,7 @@ elseif strcmp(FileMode,'DSPIN')||strcmp(FileMode,'DND2')
             end
         end
     else
-        error('Experiment type not recognized. Check MovieDatabase.xlsx')
+        error('Experiment type not recognized. Check MovieDatabase')
     end
     %%Thus endeth the excel file reading section.
     

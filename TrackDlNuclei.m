@@ -57,31 +57,11 @@ FilePrefix=[Prefix,'_'];
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders(Prefix);
 
-%What type of experiment are we dealing with? Get this out of
-%MovieDatabase.xlsx
+%What type of experiment are we dealing with? Get this out of MovieDatabase
 
-[XLSNum,XLSTxt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
-ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
-APResolutionColumn = find(strcmp(XLSRaw(1,:),'APResolution'));
-
-DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-Dashes=findstr(Prefix,'-');
-PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-    if isempty(PrefixRow)
-        PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
-        if isempty(PrefixRow)
-            error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-        end
-    end
-        
-if isempty(PrefixRow)
-    error('Entry not found in MovieDatabase.xlsx')
-end
-
-ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
-ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
-APResolution = XLSRaw{PrefixRow,APResolutionColumn};
+[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
+Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
 
 %//////////////     Load all the information      ///////////////////
 %load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
@@ -177,96 +157,3 @@ for fr = 1:(length(D)/Zstacks);
     Name = ([PreProcPath,filesep,Prefix,filesep,Name]);
     imwrite(NormV,Name);
 end
-
-
-
-
-
-
-
-
-% %%
-% %Or we can try to have an automated way to do it
-% %Get the relevant folders now:
-% [SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
-%     DetermineLocalFolders(Prefix);
-% %Figure out what type of experiment we have
-% [XLSNum,XLSTxt]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
-% 
-% nc10Column=find(strcmp(XLSTxt(1,:),'nc10'));
-% nc11Column=find(strcmp(XLSTxt(1,:),'nc11'));
-% nc12Column=find(strcmp(XLSTxt(1,:),'nc12'));
-% nc13Column=find(strcmp(XLSTxt(1,:),'nc13'));
-% nc14Column=find(strcmp(XLSTxt(1,:),'nc14'));
-% DataFolderColumn=find(strcmp(XLSTxt(1,:),'DataFolder'));
-% 
-% % Convert the prefix into the string used in the XLS file
-% Dashes = strfind(Prefix, '-');
-% PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
-%     [Prefix(1:Dashes(3)-1), '\', Prefix(Dashes(3)+1:end)]));
-% if isempty(PrefixRow)
-%     PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
-%         [Prefix(1:Dashes(3)-1), '/', Prefix(Dashes(3)+1:end)]));
-%     if isempty(PrefixRow)
-%         error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-%     end
-% end
-% 
-% nc10 = XLSNum(PrefixRow,10);
-% nc11 = XLSNum(PrefixRow,11);
-% nc12 = XLSNum(PrefixRow,12);
-% nc13 = XLSNum(PrefixRow,13);
-% nc14 = XLSNum(PrefixRow,14);
-% 
-% 
-% NCs = [nc10 nc11 nc12 nc13 nc14]
-% NCs = NCs(NCs>0);
-% MitosisFrames=[];
-% for i=1:length(NCs)
-%     MitosisFrames=[MitosisFrames NCs(i)-13:NCs(i)+16]
-% end
-% MitosisFrames(MitosisFrames<=0)=1;
-% %%
-%Show results
-% for fr = ManualMitFrames2
-%     frame = num2str(fr)%for labels
-%     
-%     subplot(3,1,1)
-%     Venus = mean(FrameZ(:,:,fr,(8:12)),4);
-%     imshow(Venus,[]);
-%     title(['Dorsal-Venus channel , Frame' frame])
-% 
-%     
-%     subplot(3,1,2)
-%     Name = H(fr).name;
-%     Hist = imread(Name);
-%     imshow(Hist,[])
-%     title(['Fake Histone (mCherry) channel , Frame' frame])
-%     
-%     subplot(3,1,3)
-%     Venus2 = (uint8(Venus))*30; %multiply to match His intensity range
-%     VenusHist(:,:,2)=Hist;    
-%     VenusHist(:,:,1)=Venus2;
-%     MaxVenusHist = max(VenusHist,[],3); 
-%     imshow(MaxVenusHist,[])
-%     title(['Combined channel, Frame:' frame])
-%     
-%     imwrite(MaxVenusHist,Name)
-%     pause(0.1)
-% end
-% 
-% 
-% % 
-% % %%
-% % %Visualize our new His channel
-% % for fr = 1:length(H)
-% %     frame = num2str(fr)%for labels
-% %     Name = H(fr).name;
-% %     Hist = imread(Name);
-% %     subplot(1,1,1)
-% %     imshow(Hist,[]);
-% %     title(['Combined channel, Frame:' frame])
-% %     pause(0.1)
-% %     
-% % end
-
