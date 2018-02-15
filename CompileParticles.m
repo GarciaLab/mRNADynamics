@@ -128,6 +128,14 @@ nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Pref
 %Load all the information
 load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
 load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'])
+
+if isempty(Particles)
+    SkipTraces=1;
+    SkipFluctuations=1;
+    SkipFits=1;
+    SkipMovie=1;
+end
+
 %Check that FrameInfo exists
 if exist([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'file')
     load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
