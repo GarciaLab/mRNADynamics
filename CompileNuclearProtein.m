@@ -262,7 +262,7 @@ for i=1:length(schnitzcells)
             end
 
             %Copy and extract the fluorescence information
-            CompiledNuclei(k).FluoMax=squeeze(max(schnitzcells(i).Fluo(FrameFilter,:,:),[],2));
+            CompiledNuclei(k).FluoMax=squeeze(max(schnitzcells(i).Fluo(FrameFilter,(3:21),:),[],2));
             %If there was only one time point and multiple channels,
             %squeeze can lead to a weird shape of the matrix
             if (NChannels>1)&&(size(CompiledNuclei(k).FluoMax,2)==1)

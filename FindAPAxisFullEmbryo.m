@@ -156,7 +156,7 @@ elseif strcmp(FileMode,'LIFExport')
     %By looking at the last image we make sure we're avoiding the
     %individual tiles if we're dealing with tile scan
     MidImage=LIFMid{end,1}{HisChannel,1};
-    SurfImage=LIFSurf{end,1}{HisChannel,1};
+    SurfImage=LIFSurf{end,1}{1,1};
     if size(MidImage) ~= size(SurfImage)
             MidImage = imresize(MidImage,length(SurfImage)/length(MidImage));
     end

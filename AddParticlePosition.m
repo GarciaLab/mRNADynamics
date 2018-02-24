@@ -369,7 +369,7 @@ if ~NoAP
         
         %By looking at the last image we make sure we're avoiding the
         %individual tiles if we're dealing with tile scan
-        for i=HisChannel:NChannelsMeta:size(ImageTemp{ImageCellToUse,1},1)
+        for i=1%HisChannel:NChannelsMeta:size(ImageTemp{ImageCellToUse,1},1)
             MaxTemp(:,:,i)=ImageTemp{ImageCellToUse,1}{i,1};
         end
         if InvertHis
