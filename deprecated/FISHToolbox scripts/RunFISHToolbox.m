@@ -33,25 +33,9 @@ function RunFISHToolbox(Prefix,Thresholds)
     DetermineLocalFolders(Prefix);
 
 %Figure out what type of experiment we have
-[XLSNum,XLSTxt]=xlsread([DropboxFolder,filesep,'MovieDatabase.xlsx']);
-DataFolderColumn=find(strcmp(XLSTxt(1,:),'DataFolder'));
-ExperimentTypeColumn=find(strcmp(XLSTxt(1,:),'ExperimentType'));
-Channel1Column=find(strcmp(XLSTxt(1,:),'Channel1'));
-Channel2Column=find(strcmp(XLSTxt(1,:),'Channel2'));
-
-% Convert the prefix into the string used in the XLS file
-Dashes = strfind(Prefix, '-');
-PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
-    [Prefix(1:Dashes(3)-1), '\', Prefix(Dashes(3)+1:end)]));
-if isempty(PrefixRow)
-    PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
-        [Prefix(1:Dashes(3)-1), '/', Prefix(Dashes(3)+1:end)]));
-    if isempty(PrefixRow)
-        error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-    end
-end
-
-ExperimentType=XLSTxt(PrefixRow,ExperimentTypeColumn);
+[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
+Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
 
 if strcmp(ExperimentType,'1spot')
     NChannels=1;
@@ -64,7 +48,7 @@ elseif strcmp(ExperimentType,'2spot2color')
 elseif strcmp(ExperimentType,'inputoutput')
     NChannels=1;
 else
-    error('Experiment type not recognized in MovieDatabase.XLSX')
+    error('Experiment type not recognized in MovieDatabase')
 end
 
 if ~exist('Thresholds')

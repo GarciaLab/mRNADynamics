@@ -5,42 +5,17 @@ function StitchSchnitz(varargin)
 
 
 %Information about about folders
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders;
-Prefix=varargin{1};
+Prefix = varargin{1};
+
+[SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
+configValues, movieDatabasePath] = DetermineAllLocalFolders(Prefix);
+
 FilePrefix=[Prefix,'_'];
-%Now get the actual Dropbox folder
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders(Prefix);
-[XLSNum,XLSTxt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
 
-%Get information about the movie
-DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-Dashes=findstr(Prefix,'-');
-PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-if isempty(PrefixRow)
-    PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
-    if isempty(PrefixRow)
-        error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-    end
-end
-        
-if isempty(PrefixRow)
-    error('Entry not found in MovieDatabase.xlsx')
-end
 
-nc9Column=find(strcmp(XLSRaw(1,:),'nc9'));
-nc10Column=find(strcmp(XLSRaw(1,:),'nc10'));
-nc11Column=find(strcmp(XLSRaw(1,:),'nc11'));
-nc12Column=find(strcmp(XLSRaw(1,:),'nc12'));
-nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
-nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
-nc9=XLSRaw{PrefixRow,nc9Column};
-nc10=XLSRaw{PrefixRow,nc10Column};
-nc11=XLSRaw{PrefixRow,nc11Column};
-nc12=XLSRaw{PrefixRow,nc12Column};
-nc13=XLSRaw{PrefixRow,nc13Column};
-nc14=XLSRaw{PrefixRow,nc14Column};
+[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
+Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
 
 ncVector=[0,0,0,0,0,0,0,0,nc9,nc10,nc11,nc12,nc13,nc14];
 

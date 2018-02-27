@@ -79,112 +79,12 @@ TotalFrames=length(D);
 
 
 
-%Determine division times
-%Load the information about the nc from the XLS file
-[Num,Txt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-XLSHeaders=Txt(1,:);
-Txt=Txt(2:end,:);
-
-ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
-ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
-
-DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-Dashes=findstr(Prefix,'-');
-PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-if isempty(PrefixRow)
-    PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
-    if isempty(PrefixRow)
-        error('Dateset could not be found. Check MovieDatabase.xlsx')
-    end
-end
-
-
-ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
-ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
-
-%Find the different columns.
-DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-nc9Column=find(strcmp(XLSRaw(1,:),'nc9'));
-nc10Column=find(strcmp(XLSRaw(1,:),'nc10'));
-nc11Column=find(strcmp(XLSRaw(1,:),'nc11'));
-nc12Column=find(strcmp(XLSRaw(1,:),'nc12'));
-nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
-nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
-CFColumn=find(strcmp(XLSRaw(1,:),'CF'));
-Channel1Column=find(strcmp(XLSRaw(1,:),'Channel1'));
-Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
-
-%Convert the prefix into the string used in the XLS file
-Dashes=findstr(Prefix,'-');
-
-%Find the corresponding entry in the XLS file
-%HG: Note that I got rid of this:
-% if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
-%         (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
-%     XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-%         [Date,'\BcdGFP-HisRFP']));
-% else
-XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-    [Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-
-if isempty(XLSEntry)
-    XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-        [Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
-    if isempty(XLSEntry)
-        disp('%%%%%%%%%%%%%%%%%%%%%')
-        error('Folder could not be found. Check movie database')
-        disp('%%%%%%%%%%%%%%%%%%%%%')
-    end
-end
-    
-%end
-
-
-% if (strcmp(XLSRaw(XLSEntry,Channel2Column),'His-RFP'))|...
-%         (strcmp(XLSRaw(XLSEntry,Channel1Column),'His-RFP'))|...
-%         (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-TagRFP(1)'))|...
-%         (strcmp(XLSRaw(XLSEntry,Channel1Column),'MCP-mCherry(3)'))|...
-%         (strcmp(XLSRaw(XLSEntry,Channel2Column),'MCP-mCherry(3)'))
-    nc9=cell2mat(XLSRaw(XLSEntry,nc9Column));
-    nc10=cell2mat(XLSRaw(XLSEntry,nc10Column));
-    nc11=cell2mat(XLSRaw(XLSEntry,nc11Column));
-    nc12=cell2mat(XLSRaw(XLSEntry,nc12Column));
-    nc13=cell2mat(XLSRaw(XLSEntry,nc13Column));
-    nc14=cell2mat(XLSRaw(XLSEntry,nc14Column));
-    %This is in case the last column for CF is all nan and is not part of
-    %the Num matrix
-    if ~isempty(CFColumn)    
-        CF=cell2mat(XLSRaw(XLSEntry,CFColumn));
-    else
-        CF=nan;
-    end
-% else
-%     error('nc information not define in MovieDatabase.xlsx')
-% end
-
-
+[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
+Channel1, Channel2, Objective, Power, DataFolderFromDataColumn, DropboxFolderName, Comments,...
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
 
 %Get the nuclei segmentation data
 load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat']);
-
-
-% 
-% 
-% 
-% %Compare the results
-% Image=imread([FISHPath,'\Data\',Prefix,filesep,Prefix,'-His_',iIndex(nc14+15,3),'.tif']);
-% figure(1)
-% imshow(Image,[])
-% hold on
-% PlotHandle=[];
-% for i=1:length(Ellipses)
-%     PlotHandle=[PlotHandle,ellipse(Ellipses(i,3),Ellipses(i,4),...
-%         Ellipses(i,5),Ellipses(i,1)+1,Ellipses(i,2)+1)];
-% end
-% hold off
-% set(PlotHandle,'Color','r')
-        
-
 
 
 %Get the information about the Histone channel images

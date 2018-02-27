@@ -23,7 +23,7 @@ function xy = segmentFrames(names,firstFrame,lastFrame,nucleusDiameter, embryoMa
                 progress = progress(2)/100;
                 waitbar((progress*numel(names)+1)/numel(names),h_waitbar_segmentation,['Segmentation progress : ' num2str((progress*numel(names)+1)) ' processed out of ' num2str(numel(names))])
             catch
-                warning('There is a problem with calling waitbar. Is this something with the Matlab version?')
+%                 warning('There is a problem with calling waitbar. Is this something with the Matlab version?')
             end
         end
     end

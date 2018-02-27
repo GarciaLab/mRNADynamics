@@ -187,18 +187,20 @@ all_frames = cell(numFrames, zSize);
 close all force;
 
 % Support for inputoutput mode (since the coatChannel might not be
-    % channel1 in inputoutput ExperimentType (YJK : 1/11/2018)
-    if strcmpi(ExperimentType,'inputoutput')
-        if  contains(Channel2,'mcp', 'IgnoreCase', true) ||...
-                contains(Channel2,'pcp','IgnoreCase',true)
-            coatChannel=2;
-        elseif  contains(Channel1,'mcp', 'IgnoreCase', true) ||...
-                contains(Channel1,'pcp','IgnoreCase',true)
-            coatChannel=1;
-        else
-            error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
-        end
+% channel1 in inputoutput ExperimentType (YJK : 1/11/2018)
+%(MT, 2018-02-11) Added support for lattice imaging, maybe temporary -
+%FIX LATER
+if strcmpi(ExperimentType,'inputoutput') || strcmpi(ExperimentType,'lattice')
+    if  contains(Channel2,'mcp', 'IgnoreCase', true) ||...
+            contains(Channel2,'pcp','IgnoreCase',true)
+        coatChannel=2;
+    elseif  contains(Channel1,'mcp', 'IgnoreCase', true) ||...
+            contains(Channel1,'pcp','IgnoreCase',true)
+        coatChannel=1;
+    else
+        error('No MCP or PCP channel detected. Check MovieDatabase.XLSX')
     end
+end
 
 if justDoG
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -224,7 +226,9 @@ if justDoG
      
     for q = 1:nCh
 %         h=waitbar(0,'Generating DoG images');
-        if strcmpi(ExperimentType,'inputoutput')
+        %(MT, 2018-02-11) Added support for lattice imaging, maybe 
+        %temporary - FIX LATER
+        if strcmpi(ExperimentType,'inputoutput') || strcmpi(ExperimentType,'lattice')
             nameSuffix= ['_ch',iIndex(coatChannel,2)];
         else
             nameSuffix = ['_ch',iIndex(q,2)];
@@ -257,7 +261,9 @@ if justDoG
 else       
     thresh = Threshold; %copy so we can change the value of Threshold for each channel iteration
     for q = 1:nCh
-        if strcmpi(ExperimentType,'inputoutput')
+        %(MT, 2018-02-11) Added support for lattice imaging, maybe 
+        %temporary - FIX LATER
+        if strcmpi(ExperimentType,'inputoutput') ||  strcmpi(ExperimentType,'lattice')
             nameSuffix= ['_ch',iIndex(coatChannel,2)];
         else
             nameSuffix = ['_ch',iIndex(q,2)];

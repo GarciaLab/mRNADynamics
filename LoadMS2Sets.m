@@ -21,15 +21,14 @@ function Data=LoadMS2Sets(DataType)
 %Last Updated: 1/13/2018. AR 
 
 %Get some of the default folders
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
+[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath, configValues]=...
     DetermineLocalFolders;
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath, configValues]=...
     DetermineLocalFolders;
 
 %Now, get a list of all possible other Dropbox folders
-[Dummy,XLS]=xlsread([MS2CodePath,filesep,'..',filesep,'ComputerFolders.XLSX']);
-DropboxRows=find(~cellfun(@isempty,strfind(XLS(:,1),'Dropbox')));
-DropboxFolders=XLS(DropboxRows,2);
+DropboxRows=find(~cellfun(@isempty,strfind(configValues(:,1),'Dropbox')));
+DropboxFolders=configValues(DropboxRows,2);
 
 %Look in DataStatus.XLSX in each DropboxFolder and find the tab given by
 %the input variable DataType.
@@ -80,13 +79,7 @@ clear Schnitzcells
 
 %Check the consistency between all the data acquired and analyzed in terms
 %of ExperimentType, ExperimentAxis, and APResolution. Get this out of
-%MovieDatabase.xlsx
-[XLSNum,XLSTxt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
-ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
-APResolutionColumn = find(strcmp(XLSRaw(1,:),'APResolution'));
-DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-
+%MovieDatabase
 ExperimentType=[];
 ExperimentAxis=[];
 APResolution=[];
@@ -97,43 +90,31 @@ for i=1:length(CompiledSets)
     Quotes=strfind(SetName,'''');
     Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
 
-    Dashes=findstr(Prefix,'-');
-    PrefixRowMovieDatabase=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-        if isempty(PrefixRowMovieDatabase)
-            PrefixRowMovieDatabase=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
-            if isempty(PrefixRowMovieDatabase)
-                error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-            end
-        end
-    if isempty(PrefixRowMovieDatabase)
-        error('Entry not found in MovieDatabase.xlsx')
-    end
+    [~, ExperimentTypeFromDatabase, ExperimentAxisFromDatabase, ~, ~, APResolutionFromDatabase, ~,...
+    ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
     
     %Load and check the experiment details consistency
     if ~isempty(ExperimentType)
-        if ~strcmp(ExperimentType,XLSRaw{PrefixRowMovieDatabase,ExperimentTypeColumn})
+        if ~strcmp(ExperimentType, ExperimentTypeFromDatabase)
            error('Inconsistent experiment types found among the data sets.') 
         end
     else
-        ExperimentType=XLSRaw{PrefixRowMovieDatabase,ExperimentTypeColumn};
+        ExperimentType = ExperimentTypeFromDatabase;
     end
     if ~isempty(ExperimentAxis)
-        if ~strcmp(ExperimentAxis,XLSRaw{PrefixRowMovieDatabase,ExperimentAxisColumn})
+        if ~strcmp(ExperimentAxis, ExperimentAxisFromDatabase)
            error('Inconsistent experiment axis found among the data sets.') 
         end
     else
-        ExperimentAxis=XLSRaw{PrefixRowMovieDatabase,ExperimentAxisColumn};
+        ExperimentAxis = ExperimentAxisFromDatabase;
     end
     if ~isempty(APResolution)
-        if APResolution~=XLSRaw{PrefixRowMovieDatabase,APResolutionColumn}
+        if APResolution ~= APResolutionFromDatabase
            error('Inconsistent axis resolution found among the data sets.') 
         end
     else
-        APResolution = XLSRaw{PrefixRowMovieDatabase,APResolutionColumn};
+        APResolution = APResolutionFromDatabase;
     end
-    
-    
-    
 end
 
 

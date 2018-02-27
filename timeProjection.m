@@ -88,32 +88,20 @@ elseif totalFrames < 1E4
 end
 
 if ncRange
-    %Find the corresponding entry in the XLS file    
-    [~,~,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-    DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-    Dashes=findstr(FilePrefix,'-');
-
+    %Find the corresponding entry in moviedatabase file
+    [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
+    Channel1, Channel2, Objective, Power, DataFolderColumnValue, DropboxFolderName, Comments,...
+    nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
+    
     if (~isempty(findstr(FilePrefix,'Bcd')))&(isempty(findstr(FilePrefix,'BcdE1')))&...
             (isempty(findstr(FilePrefix(1:end-1),'NoBcd')))&...
             (isempty(findstr(FilePrefix(1:end-1),'Bcd1x')))
         warning('This step in CheckParticleTracking will most likely have to be modified to work')
-        XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-            [Date,'\BcdGFP-HisRFP']));
-    else
-        XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-            [FilePrefix(1:Dashes(3)-1),'\',FilePrefix(Dashes(3)+1:end-1)]));
-        if isempty(XLSEntry)
-            XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),...
-                [FilePrefix(1:Dashes(3)-1),'/',FilePrefix(Dashes(3)+1:end-1)]));
-            if isempty(XLSEntry)
-                error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-            end
-        end
     end
     
     %Getting nc range frame information
-    ncStartColumn=find(strcmp(XLSRaw(1,:),startNC));
-    ncStartFrame = cell2mat(XLSRaw(XLSEntry,ncStartColumn));
+    %determine ncStarFrame dinamically from 'nc?' arguments in varargin above
+    ncStartFrame = eval(startNC);
     
     if ncStartFrame == 0
         ncStartFrame = 1;
@@ -125,8 +113,8 @@ if ncRange
     else
         % Find the first frame of the next nc and make the previous frame 
         % the last frame looked at
-        ncEndColumn=find(strcmp(XLSRaw(1,:),endNC));
-        ncEndFrame = cell2mat(XLSRaw(XLSEntry,ncEndColumn))-1; 
+        %determine ncEndFrame dinamically from 'nc?' arguments in varargin above
+        ncEndFrame = eval(endNC); 
     end
     frameRange = ncStartFrame : ncEndFrame; % desired frame range
 else
