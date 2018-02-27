@@ -93,7 +93,7 @@ if ~exist([ProcPath,filesep,Prefix,filesep,'CytoImages.mat'])
             %this to account for the fact that we now have blank images at the
             %beginning and end of the stack
             
-            for j=2:ZSlices-1
+            for j=2:3%ZSlices-1
                 %I need to do this because the naming convention can be
                 %different when I have only one channel.
 %                 if NChannels>1
