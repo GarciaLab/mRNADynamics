@@ -233,8 +233,10 @@ for i=1:length(schnitzcells)
         %Check that for the remaining frames we got a good z-profile
         for j=1:length(schnitzcells(i).frames)
             [MaxValue,MaxPos]=max(schnitzcells(i).Fluo(j,:));
-            if (MaxPos==2)||(MaxPos==NZSclices-1)
-                FrameFilter(j)=0;
+            if NZSclices<3
+                if (MaxPos==2)||(MaxPos==NZSclices-1)
+                    FrameFilter(j)=0;
+                end
             end
         end
         
