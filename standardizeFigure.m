@@ -51,11 +51,15 @@ function standardizeFigure(ax, legend, varargin)
             dataObj(i).FaceColor = color(i,:);
         elseif strcmpi(dataType{i}, 'line') || strcmpi(dataType{i}, 'errorbar')
             dataObj(i).LineWidth = 5;
-            dataObj(i).Color = colorDict.(colorDictFields{i});
             dataObj(i).Marker = '.';
-            dataObj(i).MarkerFaceColor = colorDict.(colorDictFields{i});
-            dataObj(i).MarkerEdgeColor = colorDict.(colorDictFields{i});
             dataObj(i).MarkerSize = 30;
+            %Change color to physical biology colors as long as the number
+            %of colors needed is less than 5.
+            if i <= length(colorDictFields)
+                dataObj(i).Color = colorDict.(colorDictFields{i});
+                dataObj(i).MarkerFaceColor = colorDict.(colorDictFields{i});
+                dataObj(i).MarkerEdgeColor = colorDict.(colorDictFields{i});
+            end
             if strcmpi(dataType{i}, 'errorbar')
                 %insert errorbar specific things here.
             end

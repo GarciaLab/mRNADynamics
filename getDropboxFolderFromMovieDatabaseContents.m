@@ -6,7 +6,7 @@ function [dropboxFolderName, rowIndex] = getDropboxFolderFromMovieDatabaseConten
 
   dropboxFolderColumnIndex = findColumnIndex(movieDatabaseHeaderRow, 'DropboxFolder');
 
-  indexArray = regexpi(dataFolderColumn, ['^', prefix(1:10), PREFIX_SEPARATOR, prefix(12:end), '$']);
+  indexArray = regexpi(dataFolderColumn, ['^', prefix(1:10), PREFIX_SEPARATOR, strrep(prefix(12:end), '+', '\+'), '$']);
   rowIndex = find(not(cellfun('isempty', indexArray)));
 
   dropboxFolderNameCell = movieDatabase(rowIndex, dropboxFolderColumnIndex);
