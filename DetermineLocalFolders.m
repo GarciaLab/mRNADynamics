@@ -1,6 +1,6 @@
 function [SourcePath, FISHPath, DropboxFolder, MS2CodePath, PreProcPath, configValues, movieDatabasePath] = DetermineLocalFolders(varargin)
 
-  CONFIG_CSV_PATH = ['../ComputerFolders.csv'];
+  CONFIG_CSV_PATH = ['ComputerFolders.csv'];
 
   configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');
 
