@@ -1045,9 +1045,14 @@ elseif strcmp(FileMode,'LIFExport')
                 [OutputFolder,filesep,Prefix,'_FF.tif']);
         end
         
-        if strcmpi(ExperimentType,'1spot') || strcmp(ExperimentType,'2spot') || strcmp(ExperimentType,'2spot1color')
+        if strcmpi(ExperimentType,'1spot') || strcmpi(ExperimentType,'2spot') ||...
+                strcmpi(ExperimentType,'2spot1color') || strcmpi(ExperimentType,'inputoutput')
             %Figure out the different channels
-            Channels={Channel1{1},Channel2{1}};
+            if ~isempty(Channel3)
+                Channels={Channel1{1},Channel2{1},Channel3{1}};
+            else
+                Channels={Channel1{1},Channel2{1}};
+            end
             %Coat protein channel
             coatChannel=find((~cellfun(@isempty,strfind(lower(Channels),'mcp')))|...
                 (~cellfun(@isempty,strfind(lower(Channels),'pcp')))|...
@@ -1070,12 +1075,14 @@ elseif strcmp(FileMode,'LIFExport')
                     display('Could not find a histone channel. Proceeding without it.')
                 end
             end
-            % MCP-mCherry as a fake histone channel
-            if (~isempty(strfind(Channel1{1},'mCherry')))||(~isempty(strfind(Channel2{1},'mCherry')))
+            % MCP-mCherry as a fake histone channel in case there's no
+            % His-iRFP (Last edited : 3/28/2018, YJK)
+            if isempty(fiducialChannel)&&...
+                    ((~isempty(strfind(Channel1{1},'mCherry')))||(~isempty(strfind(Channel2{1},'mCherry'))))
                 if (~isempty(strfind(Channel1{1},'mCherry')))
                     fiducialChannel=1;
                     histoneChannel=1;
-                elseif (~isempty(strfind(Channel2{1},'NLSmCherry')))
+                elseif (~isempty(strfind(Channel2{1},'mCherry')))
                     fiducialChannel=2;
                     histoneChannel=2;
                 else
@@ -1092,7 +1099,7 @@ elseif strcmp(FileMode,'LIFExport')
                 if (~isempty(strfind(Channel1{1},'mCherry')))
                     fiducialChannel=1;
                     histoneChannel=1;
-                elseif (~isempty(strfind(Channel2{1},'NLSmCherry')))
+                elseif (~isempty(strfind(Channel2{1},'mCherry')))
                     fiducialChannel=2;
                     histoneChannel=2;
                 else
@@ -1159,27 +1166,29 @@ elseif strcmp(FileMode,'LIFExport')
 %                 warning('No histone channel found. Finding nuclei using the protein input channel.')
 %             end
 %             
-        elseif strcmpi(ExperimentType, 'inputoutput')
-            if (~isempty(strfind(lower(Channel2),'mcp')))&...
-                    ~isempty(strfind(lower(Channel2),'pcp'))
-                coatChannel=2;
-            elseif (~isempty(strfind(lower(Channel1),'mcp')))&...
-                    ~isempty(strfind(lower(Channel1),'pcp'))
-                coatChannel=1;
-            else
-                error('No MCP or PCP channel detected. Check MovieDatabase')
-            end
-            if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))
-                if (~isempty(strfind(Channel1{1},'mCherry')))
-                    fiducialChannel=1;
-                    histoneChannel=1;
-                elseif (~isempty(strfind(Channel2{1},'mCherry')))
-                    fiducialChannel=2;
-                    histoneChannel=2;
-                else
-                    error('mCherry channel not found. Cannot generate the fake nuclear image')
-                end
-            end
+%       Comment out 'inputoutput' mode since it's now same as '1spot' mode
+%       (By YJK on 3/28/2018)
+%         elseif strcmpi(ExperimentType, 'inputoutput')
+%             if (~isempty(strfind(lower(Channel2),'mcp')))&...
+%                     ~isempty(strfind(lower(Channel2),'pcp'))
+%                 coatChannel=2;
+%             elseif (~isempty(strfind(lower(Channel1),'mcp')))&...
+%                     ~isempty(strfind(lower(Channel1),'pcp'))
+%                 coatChannel=1;
+%             else
+%                 error('No MCP or PCP channel detected. Check MovieDatabase')
+%             end
+%             if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))
+%                 if (~isempty(strfind(Channel1{1},'mCherry')))
+%                     fiducialChannel=1;
+%                     histoneChannel=1;
+%                 elseif (~isempty(strfind(Channel2{1},'mCherry')))
+%                     fiducialChannel=2;
+%                     histoneChannel=2;
+%                 else
+%                     error('mCherry channel not found. Cannot generate the fake nuclear image')
+%                 end
+%             end
         else
             error('Experiment type not recognized. Check MovieDatabase')
         end
