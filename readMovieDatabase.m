@@ -1,5 +1,5 @@
 function [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
-    Folder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder]...
+    Folder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder, Channel3]...
 = readMovieDatabase(PrefixOverrideFlag)
 
 %Figure out the initial folders. We'll update the Drobpox one later on in the code.
@@ -26,6 +26,7 @@ movieDatabaseHeaderRow = movieDatabase(1, :);
 ExperimentTypeColumn = findColumnIndex(movieDatabaseHeaderRow, 'ExperimentType')
 Channel1Column = findColumnIndex(movieDatabaseHeaderRow, 'Channel1')
 Channel2Column = findColumnIndex(movieDatabaseHeaderRow, 'Channel2')
+Channel3Column = findColumnIndex(movieDatabaseHeaderRow, 'Channel3')
 
 [DropboxFolder, PrefixRow] = getDropboxFolderFromMovieDatabase(movieDatabasePath, Prefix, '[\\\\/-]')
 
@@ -35,6 +36,8 @@ Channel1 = movieDatabase(PrefixRow, Channel1Column);
 %Channel1 = Channel1{1}
 Channel2 = movieDatabase(PrefixRow, Channel2Column);
 %Channel2 = Channel2{1}
+Channel3 = movieDatabase(PrefixRow, Channel3Column);
+%Channel3 = Channel3{1}
 
 [~,~,DropboxFolder,~,~] = DetermineLocalFolders(Prefix);
 
