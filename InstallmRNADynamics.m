@@ -44,8 +44,6 @@ function configContents = InstallmRNADynamics
 
     createStartupFile();
 
-    setJavaHomeEnvironmentVariable();
-
     msgbox('Run "startup" from the command line or restart Matlab to finish the installation');
   end
           
@@ -187,20 +185,7 @@ function configContents = InstallmRNADynamics
 
     writeStartupFile(Output);
   end
-
-  function setJavaHomeEnvironmentVariable()
-    %Switch Matlab over to the Java release from the FIJI packaged with this
-    %repository
-    if ispc
-        [status,~] = dos(['setx MATLAB_JAVA ',ROOT_PATH,'\mRNADynamics\Fiji.app\java\win64\jdk1.8.0_66\jre']);
-        if status
-            warning('Something went wrong setting Java environment variable. Talk to Armando.');
-        end
-    else    
-        warning(['Please note that Weka integration is not supported outside of Windows. ',
-                'Talk to Armando if you need this.']);
-    end
-  end
+  
 end
 
 function safeString = toSafeWindowsString(aPath)
