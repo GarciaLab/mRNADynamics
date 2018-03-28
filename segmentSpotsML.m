@@ -177,11 +177,15 @@ if ~just_tifs
       [classifierPathCh2,~]=uigetfile([MS2CodePath, filesep, 'classifiers', filesep, '*.model']); 
     end
     evalin('base', 'clear probmaps');
-    version -java;
-    javaver = ans;
-    if ~strcmp('Java 1.8.0_66-b18 with Oracle Corporation Java HotSpot(TM) 64-Bit Server VM mixed mode', javaver)
-        error('Java version incorrect. Re-run InstallmRNADynamics or check environment variables')
-    end
+    
+    %AR 3/27/18- this isn't needed since we switched to Matlab's version of
+    %Java.
+%     version -java;
+%     javaver = ans;
+%     if ~strcmp('Java 1.8.0_66-b18 with Oracle Corporation Java HotSpot(TM) 64-Bit Server VM mixed mode', javaver)
+%         error('Java version incorrect. Re-run InstallmRNADynamics or check environment variables')
+%     end
+
     heapSize = java.lang.Runtime.getRuntime.maxMemory;
     if heapSize<1E10 
         error('Please increase your Java heap memory allocation to at least 10GB (Home -> Preferences -> General -> Java Heap Memory.');
