@@ -4,19 +4,6 @@
 % intensity of expression before and after mitosis.
 function combos=twospot(Prefix,Ellipses,schnitzcells,CompiledParticles,PreProcPath, nc14,nc13,delay)
 close all
-% Extract Data
-% load(['/home/avaneesh/Dropbox/LivemRNAEmilia',filesep,Prefix,filesep,Prefix,'_lin.mat']);
-% load(['/home/avaneesh/Dropbox/LivemRNAEmilia',filesep,Prefix,filesep,'Ellipses.mat']);
-% load(['/home/avaneesh/Dropbox/LivemRNAEmilia',filesep,Prefix,filesep,'CompiledParticles.mat']);
-% [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
-%     DetermineLocalFolders;
-% [Num,Txt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-% nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
-% DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-% Dashes=findstr(Prefix,'-');
-% XLSEntry=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-% nc14=XLSRaw{XLSEntry,nc14Column};
-
 %% Initialise Variables
 firstnc14=size(schnitzcells,2); % First schnitz to appear in nc14
 first14=size(Ellipses,1);

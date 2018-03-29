@@ -78,60 +78,10 @@ end
     Folder, Prefix, ExperimentType, Channel1, Channel2,OutputFolder...
     ] = readMovieDatabase(Prefix);
 
-%Note that some of this information is redundant given what we get out of
-%readMovieDatabase above. We'll have to integrate this better.
-[XLSNum,XLSTxt,XLSRaw]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-%Find the different columns.
-DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-nc9Column=find(strcmp(XLSRaw(1,:),'nc9'));
-nc10Column=find(strcmp(XLSRaw(1,:),'nc10'));
-nc11Column=find(strcmp(XLSRaw(1,:),'nc11'));
-nc12Column=find(strcmp(XLSRaw(1,:),'nc12'));
-nc13Column=find(strcmp(XLSRaw(1,:),'nc13'));
-nc14Column=find(strcmp(XLSRaw(1,:),'nc14'));
-CFColumn=find(strcmp(XLSRaw(1,:),'CF'));
-Channel1Column=find(strcmp(XLSRaw(1,:),'Channel1'));
-Channel2Column=find(strcmp(XLSRaw(1,:),'Channel2'));
-ExperimentTypeColumn=find(strcmp(XLSRaw(1,:),'ExperimentType'));
-ExperimentAxisColumn=find(strcmp(XLSRaw(1,:),'ExperimentAxis'));
-APResolutionColumn = find(strcmp(XLSRaw(1,:),'APResolution'));
-
-DataFolderColumn=find(strcmp(XLSRaw(1,:),'DataFolder'));
-Dashes=findstr(Prefix,'-');
-PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'\',Prefix(Dashes(3)+1:end)]));
-    if isempty(PrefixRow)
-        PrefixRow=find(strcmp(XLSRaw(:,DataFolderColumn),[Prefix(1:Dashes(3)-1),'/',Prefix(Dashes(3)+1:end)]));
-        if isempty(PrefixRow)
-            error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-        end
-    end
-        
-if isempty(PrefixRow)
-    error('Entry not found in MovieDatabase.xlsx')
-end
-
-ExperimentType=XLSRaw{PrefixRow,ExperimentTypeColumn};
-ExperimentAxis=XLSRaw{PrefixRow,ExperimentAxisColumn};
-APResolution = XLSRaw{PrefixRow,APResolutionColumn};
-Channel1=XLSTxt(PrefixRow,Channel1Column);
-Channel2=XLSTxt(PrefixRow,Channel2Column);
-
-nc9=cell2mat(XLSRaw(PrefixRow,nc9Column));
-nc10=cell2mat(XLSRaw(PrefixRow,nc10Column));
-nc11=cell2mat(XLSRaw(PrefixRow,nc11Column));
-nc12=cell2mat(XLSRaw(PrefixRow,nc12Column));
-nc13=cell2mat(XLSRaw(PrefixRow,nc13Column));
-nc14=cell2mat(XLSRaw(PrefixRow,nc14Column));
-%This is in case the last column for CF is all nan and is not part of
-%the Num matrix
-if ~isempty(CFColumn)    
-    CF=cell2mat(XLSRaw(PrefixRow,CFColumn));
-else
-    CF=nan;
-end
-
-
-
+% refactor in progress, we should replace readMovieDatabase with getExperimentDataFromMovieDatabase
+[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
+Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
 
 %Do we need to convert any NaN chars into doubles?
 if strcmpi(nc14,'nan')

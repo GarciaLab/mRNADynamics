@@ -4,57 +4,18 @@ function AddNuclearPosition(varargin)
 %images.
 
 %Get the relevant folders for this data set
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders;
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders(varargin{1});
-
-%We're not really using these flags here. I could remove them.
-SkipAlignment=0;
-ManualAlignment=0;
-NoAP=0;
-InvertHis=0;
+[SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
+configValues, movieDatabasePath] = DetermineAllLocalFolders(varargin{1});
 
 close all
 
 if ~isempty(varargin)
-    Prefix=varargin{1};
-    for i=2:length(varargin)
-        switch varargin{i}
-            case {'SkipAlignment'}
-                display('Skipping alignment step')
-                SkipAlignment=1;
-            case {'ManualAlignment'}
-                ManualAlignment=1;
-            case {'NoAP'}
-                NoAP=1;
-        end
-    end
+    Prefix = varargin{1};
 else
-    FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
-    Dashes=strfind(FolderTemp,filesep);
-    Prefix=FolderTemp((Dashes(end)+1):end);
+    FolderTemp = uigetdir(DropboxFolder,'Choose folder with files to analyze');
+    Dashes = strfind(FolderTemp,filesep);
+    Prefix = FolderTemp((Dashes(end)+1):end);
 end
-
-%Figure out what type of experiment we have
-[XLSNum,XLSTxt]=xlsread([DefaultDropboxFolder,filesep,'MovieDatabase.xlsx']);
-DataFolderColumn=find(strcmp(XLSTxt(1,:),'DataFolder'));
-ExperimentTypeColumn=find(strcmp(XLSTxt(1,:),'ExperimentType'));
-Channel1Column=find(strcmp(XLSTxt(1,:),'Channel1'));
-Channel2Column=find(strcmp(XLSTxt(1,:),'Channel2'));
-
-% Convert the prefix into the string used in the XLS file
-Dashes = strfind(Prefix, '-');
-PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
-    [Prefix(1:Dashes(3)-1), '\', Prefix(Dashes(3)+1:end)]));
-if isempty(PrefixRow)
-    PrefixRow = find(strcmp(XLSTxt(:, DataFolderColumn),...
-        [Prefix(1:Dashes(3)-1), '/', Prefix(Dashes(3)+1:end)]));
-    if isempty(PrefixRow)
-        error('Could not find data set in MovieDatabase.XLSX. Check if it is defined there.')
-    end
-end
-
 
 %Load the schnitzcells
 load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])

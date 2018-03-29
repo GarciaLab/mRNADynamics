@@ -96,10 +96,10 @@ end
 %%
 tic;
 
-maxWorkers = 6;
+maxWorkers = 56;
 p = gcp('nocreate');
 if isempty(p)
-    parpool(maxWorkers); %6 is the number of cores the Garcia lab server can reasonably handle per user.
+    parpool(maxWorkers); %56 is the number of cores the Garcia lab Tubby server can reasonably handle per user.
 elseif p.NumWorkers > maxWorkers
     delete(gcp('nocreate')); % if pool with too many workers, delete and restart
     parpool(maxWorkers);
@@ -177,11 +177,15 @@ if ~just_tifs
       [classifierPathCh2,~]=uigetfile([MS2CodePath, filesep, 'classifiers', filesep, '*.model']); 
     end
     evalin('base', 'clear probmaps');
-    version -java;
-    javaver = ans;
-    if ~strcmp('Java 1.8.0_66-b18 with Oracle Corporation Java HotSpot(TM) 64-Bit Server VM mixed mode', javaver)
-        error('Java version incorrect. Re-run InstallmRNADynamics or check environment variables')
-    end
+    
+    %AR 3/27/18- this isn't needed since we switched to Matlab's version of
+    %Java.
+%     version -java;
+%     javaver = ans;
+%     if ~strcmp('Java 1.8.0_66-b18 with Oracle Corporation Java HotSpot(TM) 64-Bit Server VM mixed mode', javaver)
+%         error('Java version incorrect. Re-run InstallmRNADynamics or check environment variables')
+%     end
+
     heapSize = java.lang.Runtime.getRuntime.maxMemory;
     if heapSize<1E10 
         error('Please increase your Java heap memory allocation to at least 10GB (Home -> Preferences -> General -> Java Heap Memory.');
@@ -336,6 +340,12 @@ else
 
     %%
     %Create a useful structure that can be fed into pipeline
+    Particles = struct('fixedAreaIntensity', [], 'xFit', [], 'yFit', [], 'Offset', [],...
+       'GaussianIntensity', [], 'CentralIntensity', [], 'xDoG', [], 'yDoG', [],...
+       'DOGIntensity', [], 'ConfidenceIntervals', {},...
+       'gaussParams', [],'z', [], 'discardThis', [], 'frame', [], 'r', []);
+    particleFields = fieldnames(Particles);
+
     if ~just_dog 
         n = 1;
         h=waitbar(0,'Saving particle information');
@@ -361,9 +371,9 @@ else
 %                          Particles(n).SisterDistance(1) = cell2mat(all_frames{i,j}{spot}(17));
                          Particles(n).ConfidenceIntervals{1} = cell2mat(all_frames{i,j}{spot}(19));          
 %                          Particles(n).gaussSpot{1} = cell2mat(all_frames{i,j}{spot}(20));
-                         raw = all_frames{i,j}{spot}(21);
-                         Particles(n).gaussParams = all_frames{i,j}{spot}(22);
+%                          raw = all_frames{i,j}{spot}(21);
 %                          Particles(n).rawSpot{1} = raw{1};
+                         Particles(n).gaussParams = all_frames{i,j}{spot}(22);
                          Particles(n).z(1) = j;
                          Particles(n).discardThis = 0;
                          Particles(n).frame(1) = i;
@@ -374,12 +384,6 @@ else
             end
         end
         close(h)
-        
-        try
-            fields = fieldnames(Particles);
-        catch 
-            error('No spots found, probably. Did you want spots? Try something else.')
-        end
         
         %z-tracking
         changes = 1;
@@ -395,8 +399,8 @@ else
                     for k = j+1:i+l-1
                         dist = sqrt( (Particles(j).xFit(end) - Particles(k).xFit(end))^2 + (Particles(j).yFit(end) - Particles(k).yFit(end))^2); 
                         if dist < neighborhoodZ && Particles(j).z(end) ~= Particles(k).z(end)
-                            for m = 1:numel(fields)-2 %do not include fields 'r' or 'frame'
-                                Particles(j).(fields{m}) = [Particles(j).(fields{m}), Particles(k).(fields{m})];
+                            for m = 1:numel(particleFields)-2 %do not include fields 'r' or 'frame'
+                                Particles(j).(particleFields{m}) = [Particles(j).(particleFields{m}), Particles(k).(particleFields{m})];
                             end
                             Particles(k).r = 1;
                             changes = changes + 1;
@@ -451,8 +455,8 @@ else
             z_shadow_vec = z_shadow_vec(ismember(z_grid,z_vec)); 
             n_shadows = z_shadow_vec(ZStackIndex)-1;
             if TrackSpots
-                for j = 1:numel(fields)-2 %do not include fields 'r' or 'frame'
-                    Particles(i).(fields{j}) = Particles(i).(fields{j})(MaxIntegralCentral);
+                for j = 1:numel(particleFields)-2 %do not include fields 'r' or 'frame'
+                    Particles(i).(particleFields{j}) = Particles(i).(particleFields{j})(MaxIntegralCentral);
                 end
             elseif n_shadows < num_shadows                                         
                 Particles(i).discardThis = 1;
@@ -463,8 +467,8 @@ else
 
         %Create a final Spots structure to be fed into TrackmRNADynamics
         Spots{q} = [];        
-        fields = fieldnames(Particles);
-        num_fields = length(fields);
+        particleFields = fieldnames(Particles);
+        num_fields = length(particleFields);
         for i = initial_frame:num_frames
             frames = find([Particles.frame]==i);
             if ~isempty(frames)
@@ -477,13 +481,13 @@ else
                     %case, create an empty Spots entry in that frame.
                     if length(Spots{q})<i
                         for l = 1:num_fields
-                            Spots{q}(i).Fits.(fields{l}) = [];                            
+                            Spots{q}(i).Fits.(particleFields{l}) = [];                            
                         end                   
                     end
                 end
             else 
                 for l = 1:num_fields
-                    Spots{q}(i).Fits.(fields{l}) = [];
+                    Spots{q}(i).Fits.(particleFields{l}) = [];
                 end                
             end
         end

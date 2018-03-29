@@ -18,14 +18,13 @@ function CompileAllDataSets(DataType,varargin)
 %and folders to use.
 
 %Get some of the default folders
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
+[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath, configValues]=...
     DetermineLocalFolders;
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath, configValues]=...
     DetermineLocalFolders;
 
 %Now, get a list of all possible other Dropbox folders
-[Dummy,XLS]=xlsread([MS2CodePath,filesep,'..',filesep,'ComputerFolders.XLSX']);
-DropboxRows=find(~cellfun(@isempty,strfind(XLS(:,1),'Dropbox')));
+DropboxRows=find(~cellfun(@isempty,strfind(configValues(:,1),'Dropbox')));
 DropboxFolders=XLS(DropboxRows,2);
 
 %Look in DataStatus.XLSX in each DropboxFolder and find the tab given by
