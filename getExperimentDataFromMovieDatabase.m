@@ -1,5 +1,6 @@
 function [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
-	Channel1, Channel2,Objective, Power,  DataFolder, DropboxFolderName, Comments, nc9, nc10, nc11, nc12, nc13, nc14, CF]...
+	Channel1, Channel2,Objective, Power,  DataFolder, DropboxFolderName, Comments,...
+    nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3]...
 	= getExperimentDataFromMovieDatabase(Prefix, movieDatabaseFolder)
 
   movieDatabasePath = [movieDatabaseFolder, '/MovieDatabase.csv'];
@@ -17,6 +18,7 @@ function [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolut
   APResolution = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'APResolution'));
   Channel1 = { getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel1') };
   Channel2 = { getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel2') };
+  Channel3 = { getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel3') };
   Objective = getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Objective');
   Power = getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Power');
   DataFolder = getValueFromMovieDatabase(movieDatabase, PrefixRow, 'DataFolder');
