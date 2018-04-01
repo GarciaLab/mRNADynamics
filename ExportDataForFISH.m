@@ -1339,10 +1339,11 @@ elseif strcmp(FileMode,'LIFExport')
                             Projection=max(HisSlices,[],3);
                         end
                         
-                        %Think about the case when there is no His channel,
+                        %YJK : Think about the case when there is no His channel,
                         %and it is inputoutput mode or 1spot mode or 2spot2color.
-                        %(MCP-mCherry)
-                        if (isempty(strfind(Channel1{1}, 'His')))&&(isempty(strfind(Channel2{1}, 'His')))
+                        %We can use (MCP-mCherry) either inverted or raw
+                        %images to make fake histone images.
+                        if (isempty(strfind(Channel1{1}, 'His')))&&(isempty(strfind(Channel2{1}, 'His')))&&(isempty(Channel3))
                             if strcmpi(ExperimentType, 'inputoutput')|strcmpi(ExperimentType, '1spot')|strcmpi(ExperimentType,'2spot2color')|strcmpi(ExperimentType,'input')
                                 if (~isempty(strfind(Channel1{1}, 'NLS')))|(~isempty(strfind(Channel2{1}, 'NLS')))
                                     %don't invert with NLS-MCP-mCherry
