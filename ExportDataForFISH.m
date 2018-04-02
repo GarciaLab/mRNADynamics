@@ -880,9 +880,6 @@ elseif strcmp(FileMode,'LIFExport')
         end
         close(h)
         
-elseif strcmp(FileMode, 'LAT')
-    [Output, FrameInfo] = ExportDataForFISH_Lattice(Prefix, D, Folder, OutputFolder, Channel1, Channel2, TAGOnly, ImageInfo); 
-    
     
 %Nikon spinning disk confocal mode - TH/CS 2017
 elseif strcmp(FileMode,'DSPIN')||strcmp(FileMode,'DND2')
