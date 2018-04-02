@@ -1,4 +1,4 @@
- function FrameInfo = processLatticeLightSheetData(Folder, D, Channel1, Channel2, ProjectionType, Prefix, OutputFolder)    
+function FrameInfo = processLatticeLightSheetData(Folder, D, Channel1, Channel2, ProjectionType, Prefix, OutputFolder)    
  %Do we have a second channel for Histone?
     if strcmp(Channel2,'His-RFP')
         HisChannel=1;
