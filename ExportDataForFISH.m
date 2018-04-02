@@ -60,55 +60,7 @@ end
     Folder, Prefix, ExperimentType, Channel1, Channel2,OutputFolder, Channel3...
     ] = readMovieDatabase(PrefixOverrideFlag);
 
-%Determine whether we're dealing with 2-photon data from Princeton or LSM
-%data. 2-photon data uses TIF files. In LSM mode multiple files will be
-%combined into one.
-DTIF=dir([Folder,filesep,'*.tif']);
-DLSM=dir([Folder,filesep,'*.lsm']);     %Zeiss confocal, old LSM format
-DLIF=dir([Folder,filesep,'*.lif']);     %Leica confocal
-DCZI=dir([Folder,filesep,'*.czi']);     %Zeiss confocal, new CZI format
-DLAT=dir([Folder,filesep,'*_Settings.txt']);
-DSPIN=dir([Folder,filesep,'*.nd']);     %Nikon spinning disk
-DND2=dir([Folder,filesep,'*.nd2']);    %Nikon point scanner .nd2 files
-
-if ~isempty(DTIF) && isempty(DLSM) && isempty(DCZI) && isempty(DSPIN)
-    if isempty(DLIF)
-        if isempty(DLAT)
-            disp('2-photon @ Princeton data mode')
-            D=DTIF;
-            FileMode='TIF';
-        else
-            disp('Lattice Light Sheet data mode')
-            D=DTIF;
-            FileMode='LAT';
-        end
-    else
-        disp('LIF export mode')
-        D=DTIF;
-        FileMode='LIFExport';
-    end
-elseif isempty(DTIF) && ~isempty(DLSM)
-    disp('LSM mode')
-    D=DLSM;
-    FileMode='LSM';
-elseif isempty(DTIF) && ~isempty(DCZI)
-    disp('LSM (CZI) mode')
-    D=DCZI;
-    FileMode='LSM';
-elseif ~isempty(DSPIN)
-    disp('Nikon spinning disk mode with .nd files')
-    D=dir([Folder,filesep,'*.tif']);     %spinning disk with .nd output files
-    if isempty(D)
-        error('No TIF files found')
-    end
-    FileMode = 'DSPIN';
-elseif ~isempty(DND2)
-    disp('Nikon LSM Mode');
-    D=dir([Folder,filesep,'*.nd2']);
-    FileMode='DND2';               
-else
-    error('File type not recognized. For LIF files, were they exported to TIF?')
-end
+[D, FileMode] = DetermineFileMode();
 
 %Create the output folder
 OutputFolder=[PreProcPath,filesep,Prefix];
@@ -464,9 +416,9 @@ elseif strcmp(FileMode, 'LAT')
     mcp_channel = 0;
     warning('While analyzing Lattice data, assuming Channel1 field in MovieDatabase.xlsx references CamA, and Channel2 references CamB.')
     h=waitbar(0,'Separating CamA/CamB into His and MCP Channels');
-    for j = 1:length(DTIF)
-        waitbar(j/length(DTIF),h)
-        fname = [Folder, filesep, DTIF(j).name];
+    for j = 1:length(D)
+        waitbar(j/length(D),h)
+        fname = [Folder, filesep, D(j).name];
         if contains(fname, 'CamA')
             if histoneChannel == 1
                 his_channel = 1;
@@ -527,8 +479,8 @@ elseif strcmp(FileMode, 'LAT')
         'PixelSize',{});
 
     %Extract time information from text metadata file
-
-    metaID = fopen([Folder, filesep, DLAT.name]);
+    LATDir=dir([Folder,filesep,'*_Settings.txt']);
+    metaID = fopen([Folder, filesep, LATDir.name]);
     metastring = fscanf(metaID,'%s');
     tok = strsplit(metastring,{'Cycle(s):','Cycle(Hz'});
     timestep = str2double(tok{2});
@@ -601,8 +553,8 @@ elseif strcmp(FileMode, 'LAT')
 %LSM mode
 elseif strcmp(FileMode,'LSM')
     
-%     warning('Still need to add the FF information') NL: I think this
-%     warning is out-dated
+    %warning('Still need to add the FF information') NL: I think this
+    %warning is out-dated
     
     %What type of experiment do we have?
     if strcmp(ExperimentType,'1spot') || strcmp(ExperimentType,'2spot') || strcmp(ExperimentType,'2spot1color')
@@ -674,9 +626,11 @@ elseif strcmp(FileMode,'LSM')
             
             %Get the starting time of this acquisition
             %This is different if I have an LSM or CZI file
-            if ~isempty(DLSM)
+            LSMDir=dir([Folder,filesep,'*.lsm']);     %Zeiss confocal, old LSM format
+            CZIDir=dir([Folder,filesep,'*.czi']);     %Zeiss confocal, new CZI format
+            if ~isempty(LSMDir)
                 StartingTime(LSMIndex) = LSMMeta2.get(['TimeStamp #',iIndex(1,NDigits)]);
-            elseif ~isempty(DCZI)
+            elseif ~isempty(CZIDir)
                 TimeStampString=LSMMeta2.get('Global Information|Image|T|StartTime #1');
                 TimeStampStrings{LSMIndex}=TimeStampString;
                 %Get the number of days since 1/1/0000
@@ -861,17 +815,18 @@ elseif strcmp(FileMode,'LIFExport')
             end
         end
  
+        LIFDir=dir([Folder,filesep,'*.lif']);     %Leica confocal
         %Load the file using BioFormats
         %Figure out which one is not the FF
-        LIFIndex=find(cellfun(@isempty,strfind({DLIF.name},'FF')));
+        LIFIndex=find(cellfun(@isempty,strfind({LIFDir.name},'FF')));
         %Load the data, this might cause problems with really large sets
-        LIFImages=bfopen([Folder,filesep,DLIF(LIFIndex).name]);
+        LIFImages=bfopen([Folder,filesep,LIFDir(LIFIndex).name]);
         %Extract the metadata for each series
         LIFMeta = LIFImages{:, 4};
-%         NSeries=LIFMeta.getImageCount(); %AR 2/4/2018 Not sure why this subtracts one, but it causes an error when there's only one series.
-%         if NSeries == 0
-%             NSeries = LIFMeta.getImageCount();
-%         end
+        % NSeries=LIFMeta.getImageCount(); %AR 2/4/2018 Not sure why this subtracts one, but it causes an error when there's only one series.
+        % if NSeries == 0
+        % NSeries = LIFMeta.getImageCount();
+        % end
         NSeries = LIFMeta.getImageCount();
         %Figure out the number of slices in each series
         NSlices = [];
@@ -896,7 +851,7 @@ elseif strcmp(FileMode,'LIFExport')
         NFrames=NFrames-1;
         NPlanes = NPlanes - NSlices*NChannels;      
         Frame_Times = zeros(1,sum(NFrames.*NSlices));
-%         Frame_Times = [];
+        % Frame_Times = [];
         m=1;
         for i = 1:NSeries
             xDoc = xmlread([XMLFolder,filesep,SeriesFiles(i).name]);
@@ -1146,49 +1101,49 @@ elseif strcmp(FileMode,'LIFExport')
                 FrameInfo(i).NChInput=length(inputProteinChannel);
             end
                         
-%             
-%             
-%             if ~isempty(strfind(lower(Channel2{1}),'his'))
-%                 fiducialChannel=2;
-%                 inputProteinChannel=1;
-%                 coatChannel=0;
-%                 histoneChannel=2;
-%             elseif ~isempty(strfind(lower(Channel1{1}),'his'))
-%                 fiducialChannel=1;
-%                 inputProteinChannel=2;
-%                 coatChannel=0;
-%                 histoneChannel=1;
-%             else
-%                 inputProteinChannel=1;
-%                 fiducialChannel=1;      %We're assuming we can use the protein channel for segmentation
-%                 coatChannel=0;
-%                 histoneChannel=1;
-%                 warning('No histone channel found. Finding nuclei using the protein input channel.')
-%             end
-%             
-%       Comment out 'inputoutput' mode since it's now same as '1spot' mode
-%       (By YJK on 3/28/2018)
-%         elseif strcmpi(ExperimentType, 'inputoutput')
-%             if (~isempty(strfind(lower(Channel2),'mcp')))&...
-%                     ~isempty(strfind(lower(Channel2),'pcp'))
-%                 coatChannel=2;
-%             elseif (~isempty(strfind(lower(Channel1),'mcp')))&...
-%                     ~isempty(strfind(lower(Channel1),'pcp'))
-%                 coatChannel=1;
-%             else
-%                 error('No MCP or PCP channel detected. Check MovieDatabase')
-%             end
-%             if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))
-%                 if (~isempty(strfind(Channel1{1},'mCherry')))
-%                     fiducialChannel=1;
-%                     histoneChannel=1;
-%                 elseif (~isempty(strfind(Channel2{1},'mCherry')))
-%                     fiducialChannel=2;
-%                     histoneChannel=2;
-%                 else
-%                     error('mCherry channel not found. Cannot generate the fake nuclear image')
-%                 end
-%             end
+    %             
+    %             
+    %             if ~isempty(strfind(lower(Channel2{1}),'his'))
+    %                 fiducialChannel=2;
+    %                 inputProteinChannel=1;
+    %                 coatChannel=0;
+    %                 histoneChannel=2;
+    %             elseif ~isempty(strfind(lower(Channel1{1}),'his'))
+    %                 fiducialChannel=1;
+    %                 inputProteinChannel=2;
+    %                 coatChannel=0;
+    %                 histoneChannel=1;
+    %             else
+    %                 inputProteinChannel=1;
+    %                 fiducialChannel=1;      %We're assuming we can use the protein channel for segmentation
+    %                 coatChannel=0;
+    %                 histoneChannel=1;
+    %                 warning('No histone channel found. Finding nuclei using the protein input channel.')
+    %             end
+    %             
+    %       Comment out 'inputoutput' mode since it's now same as '1spot' mode
+    %       (By YJK on 3/28/2018)
+    %         elseif strcmpi(ExperimentType, 'inputoutput')
+    %             if (~isempty(strfind(lower(Channel2),'mcp')))&...
+    %                     ~isempty(strfind(lower(Channel2),'pcp'))
+    %                 coatChannel=2;
+    %             elseif (~isempty(strfind(lower(Channel1),'mcp')))&...
+    %                     ~isempty(strfind(lower(Channel1),'pcp'))
+    %                 coatChannel=1;
+    %             else
+    %                 error('No MCP or PCP channel detected. Check MovieDatabase')
+    %             end
+    %             if (~isempty(strfind(Channel1{1},'mCherry')))|(~isempty(strfind(Channel2{1},'mCherry')))
+    %                 if (~isempty(strfind(Channel1{1},'mCherry')))
+    %                     fiducialChannel=1;
+    %                     histoneChannel=1;
+    %                 elseif (~isempty(strfind(Channel2{1},'mCherry')))
+    %                     fiducialChannel=2;
+    %                     histoneChannel=2;
+    %                 else
+    %                     error('mCherry channel not found. Cannot generate the fake nuclear image')
+    %                 end
+    %             end
         else
             error('Experiment type not recognized. Check MovieDatabase')
         end
@@ -1393,6 +1348,9 @@ elseif strcmp(FileMode, 'LAT')
     
 %Nikon spinning disk confocal mode - TH/CS 2017
 elseif strcmp(FileMode,'DSPIN')||strcmp(FileMode,'DND2')
+
+    SPINDir=dir([Folder,filesep,'*.nd']);     %Nikon spinning disk
+    ND2Dir=dir([Folder,filesep,'*.nd2']);    %Nikon point scanner .nd2 files
     
     % Excel-reading part of the LIF acquisition. In previous versions this comes after the bfopen stuff, but I don't think it
     % matters and the way I have it written, as the script loops through all relevant acquisitions it not only writes the FrameInfo struc,
@@ -1504,9 +1462,9 @@ elseif strcmp(FileMode,'DSPIN')||strcmp(FileMode,'DND2')
     end
         
     if strcmp(FileMode,'DSPIN')  
-        NSeries = length(DSPIN);
+        NSeries = length(SPINDir);
     else
-        NSeries = length(DND2);
+        NSeries = length(ND2Dir);
     end
     
     FrameTimes = cell(NSeries,1);
@@ -1516,11 +1474,11 @@ elseif strcmp(FileMode,'DSPIN')||strcmp(FileMode,'DND2')
 
     %Deal with ordering of files if more than 9 series in the
     %acquisition (so 1, 2, .... 10 .  rather than 1, 10, 2...)
-    fileName = cell(1,length(DSPIN));
+    fileName = cell(1,length(SPINDir));
 
     for ii = 1:NSeries
         if strcmp(FileMode, 'DSPIN')
-            fileName{ii} = DSPIN(ii).name;
+            fileName{ii} = SPINDir(ii).name;
         else
             fileName{ii} = D(ii).name;
         end
