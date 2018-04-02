@@ -1,7 +1,7 @@
 %Determine whether we're dealing with 2-photon data from Princeton or LSM
 %data. 2-photon data uses TIF files. In LSM mode multiple files will be
 %combined into one.
-function [D, FileMode] = DetermineFileMode()
+function [D, FileMode] = DetermineFileMode(Folder)
     DTIF=dir([Folder,filesep,'*.tif']);
     DLSM=dir([Folder,filesep,'*.lsm']);     %Zeiss confocal, old LSM format
     DLIF=dir([Folder,filesep,'*.lif']);     %Leica confocal

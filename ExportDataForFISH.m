@@ -60,7 +60,7 @@ end
     Folder, Prefix, ExperimentType, Channel1, Channel2,OutputFolder, Channel3...
     ] = readMovieDatabase(PrefixOverrideFlag);
 
-[D, FileMode] = DetermineFileMode();
+[D, FileMode] = DetermineFileMode(Folder);
 
 %Create the output folder
 OutputFolder=[PreProcPath,filesep,Prefix];
