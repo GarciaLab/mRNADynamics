@@ -157,7 +157,7 @@ if ~NoAP
         end
     % YJK, 2018/04/01 : In case we have three channels, we should see if
     % any of them has histone channel
-    elseif ~isempty(Channel3)
+    elseif (~isempty(strfind(lower(Channel3{1}), 'his')))
         ChannelToLoadTemp=~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1}),lower(Channel3{1})},'his'));
     else
         ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...

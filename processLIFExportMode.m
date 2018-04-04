@@ -227,7 +227,7 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, ProjectionType
             end
             % MCP-mCherry as a fake histone channel in case there's no
             % His-iRFP (Last edited : 3/28/2018, YJK)
-            if isempty(fiducialChannel)&&...
+            if (fiducialChannel==0)&&...
                     ((~isempty(strfind(Channel1{1},'mCherry')))||(~isempty(strfind(Channel2{1},'mCherry'))))
                 if (~isempty(strfind(Channel1{1},'mCherry')))
                     fiducialChannel=1;
@@ -493,7 +493,7 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, ProjectionType
                         %and it is inputoutput mode or 1spot mode or 2spot2color.
                         %We can use (MCP-mCherry) either inverted or raw
                         %images to make fake histone images.
-                        if (isempty(strfind(Channel1{1}, 'His')))&&(isempty(strfind(Channel2{1}, 'His')))&&(isempty(Channel3))
+                        if (isempty(strfind(Channel1{1}, 'His')))&&(isempty(strfind(Channel2{1}, 'His')))&&(isempty(strfind(Channel3{1}, 'His')))
                             if strcmpi(ExperimentType, 'inputoutput')|strcmpi(ExperimentType, '1spot')|strcmpi(ExperimentType,'2spot2color')|strcmpi(ExperimentType,'input')
                                 if (~isempty(strfind(Channel1{1}, 'NLS')))|(~isempty(strfind(Channel2{1}, 'NLS')))
                                     %don't invert with NLS-MCP-mCherry
