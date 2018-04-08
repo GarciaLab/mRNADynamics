@@ -26,13 +26,6 @@
 %the part related to the manual analysis.
 function Prefix = ExportDataForFISH(varargin)
 
-%Parameters:
-NIndices=3;     %Number of indices ScanImage used to save the files
-MaxShift=9;     %Maximum shift in pixels corresponding to image shift and
-                %alignment
-MaxHistone=1000;    %Maximum intensity for the histone channel. Anything above
-                    %this will be capped.
-              
 [PrefixOverrideFlag, SkipFrames, ProjectionType] = exportDataForFISH_processInputParameters(varargin{:})
 
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
@@ -56,8 +49,13 @@ FrameInfo = struct('LinesPerFrame',{},'PixelsPerLine',{},...
 %of the code. Note, however, that the channels are also extracted in this
 %code for each data type. I should integrate this.
 if strcmp(FileMode,'TIF')
-  FrameInfo = process2PhotonPrincetonData(Folder, D, FrameInfo, Channel2, OutputFolder);
+  %Maximum shift in pixels corresponding to image shift and alignment
+  MaxShift = 9; 
 
+  %Maximum intensity for the histone channel. Anything above this will be capped.
+  MaxHistone = 1000;
+
+  FrameInfo = process2PhotonPrincetonData(Folder, D, FrameInfo, Channel2, MaxShift, MaxHistone, OutputFolder);
 elseif strcmp(FileMode, 'LAT')
   FrameInfo = processLatticeLightSheetData(Folder, D, Channel1, Channel2, ProjectionType, Prefix, OutputFolder);
 

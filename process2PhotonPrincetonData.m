@@ -1,4 +1,4 @@
-function FrameInfo = process2PhotonPrincetonData(Folder, D, FrameInfo, Channel2, OutputFolder)    
+function FrameInfo = process2PhotonPrincetonData(Folder, D, FrameInfo, Channel2, MaxShift, MaxHistone, OutputFolder)    
     %Get the structure with the acquisition information
     ImageInfo = imfinfo([Folder,filesep,D(1).name]);
     
