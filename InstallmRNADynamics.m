@@ -38,6 +38,7 @@ function configContents = InstallmRNADynamics
     MOVIE_DATABASE_PATH =  [DYNAMICS_RESULTS_PATH, '/MovieDatabase.csv'];
     MS2CODE_PATH = mRNADynamicsPath;
 
+    COMPUTER_FOLDERS_PATH = [ROOT_PATH, '/ComputerFolders.csv'];
     configContents = createFoldersConfig();
     
     createMovieDatabaseFile();
@@ -87,7 +88,6 @@ function configContents = InstallmRNADynamics
   end
 
   function contents = createFoldersConfig()
-    COMPUTER_FOLDERS_PATH = [ROOT_PATH, '/ComputerFolders.csv'];
     if exist(COMPUTER_FOLDERS_PATH)
       warning([COMPUTER_FOLDERS_PATH, ' already exists. Not overwriting.']);
     else
