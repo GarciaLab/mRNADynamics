@@ -1,5 +1,3 @@
-function Prefix=ExportDataForFISH(varargin)
-
 %This function grabs individual z-stacks and splits them in
 %multiple channels so that it can be analyzed by the FISH code.
 %It adds a blank image at the beginning and the end so that the code
@@ -26,35 +24,9 @@ function Prefix=ExportDataForFISH(varargin)
 %
 %The idea of (4) being in Dropbox is that I don't need to be synchronizing
 %the part related to the manual analysis.
+function Prefix = ExportDataForFISH(varargin)
 
-
-%Parameters:
-NIndices=3;     %Number of indices ScanImage used to save the files
-MaxShift=9;     %Maximum shift in pixels corresponding to image shift and
-                %alignment
-MaxHistone=1000;    %Maximum intensity for the histone channel. Anything above
-                    %this will be capped.
-ProjectionType = 'maxprojection'; %Default setting for z-projection is maximum-based...
-                    %This may fail when high intensity reflections are present
-                
-
-%Look at parameters
-PrefixOverrideFlag = 0;
-SkipFrames=[];
-k=1;
-while k<=length(varargin)
-    if strcmpi(varargin{k},'skipframes')
-        SkipFrames=varargin{k+1};
-        k=k+1;
-        warning('SkipFrame mode.')
-    elseif strcmpi(varargin{k},'medianprojection')
-        ProjectionType = 'medianprojection';
-    else
-        Prefix = varargin{k};
-        PrefixOverrideFlag = 1;
-    end
-    k=k+1;
-end
+[PrefixOverrideFlag, SkipFrames, ProjectionType] = exportDataForFISH_processInputParameters(varargin{:})
 
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
     Folder, Prefix, ExperimentType, Channel1, Channel2,OutputFolder, Channel3...
@@ -63,11 +35,11 @@ end
 [D, FileMode] = DetermineFileMode(Folder);
 
 %Create the output folder
-OutputFolder=[PreProcPath,filesep,Prefix];
+OutputFolder = [PreProcPath,filesep,Prefix];
 mkdir(OutputFolder)
 
 %Generate FrameInfo
-FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
+FrameInfo = struct('LinesPerFrame',{},'PixelsPerLine',{},...
     'NumberSlices',{},'ZStep',{},'FileMode',{},...
     'PixelSize',{});
 
@@ -76,85 +48,30 @@ FrameInfo=struct('LinesPerFrame',{},'PixelsPerLine',{},...
 %This information will be stored in FrameInfo for use by subsequent parts
 %of the code. Note, however, that the channels are also extracted in this
 %code for each data type. I should integrate this.
+if strcmp(FileMode,'TIF')
+  %Maximum shift in pixels corresponding to image shift and alignment
+  MaxShift = 9; 
 
+  %Maximum intensity for the histone channel. Anything above this will be capped.
+  MaxHistone = 1000;
 
-
-
-if strcmp(FileMode,'TIF') && ~strcmp(FileMode,'DSPIN')
-
-  FrameInfo = process2PhotonPrincetonData(Folder, D, FrameInfo, Channel2, OutputFolder);
-
+  FrameInfo = process2PhotonPrincetonData(Folder, D, FrameInfo, Channel2, MaxShift, MaxHistone, OutputFolder);
 elseif strcmp(FileMode, 'LAT')
-      
   FrameInfo = processLatticeLightSheetData(Folder, D, Channel1, Channel2, ProjectionType, Prefix, OutputFolder);
-                  
-%LSM mode
+
 elseif strcmp(FileMode,'LSM')
-    
   FrameInfo = processZeissConfocalLSMData(Folder, D, ExperimentType, Channel1, Channel2, Prefix, OutputFolder);
-    
-%LIFExport mode
+
 elseif strcmp(FileMode,'LIFExport')
-    
   FrameInfo = processLIFExportMode(Folder, ExperimentType, ProjectionType, Channel1, Channel2, Channel3, Prefix, OutputFolder);        
-    
-%Nikon spinning disk confocal mode - TH/CS 2017
-elseif strcmp(FileMode,'DSPIN')||strcmp(FileMode,'DND2')
 
+elseif strcmp(FileMode,'DSPIN') || strcmp(FileMode,'DND2')
+  %Nikon spinning disk confocal mode - TH/CS 2017
   FrameInfo = processSPINandND2Data(Folder, D, ExperimentType, Channel1, Channel2, SourcePath, Prefix, OutputFolder, DropboxFolder);
-  
 end
 
-%Skipping frames?
-if ~isempty(SkipFrames)
-    %Filter FrameInfo
-    FrameFilter=ones(size(FrameInfo));
-    FrameFilter(SkipFrames)=0;
-    FrameInfo=FrameInfo(logical(FrameFilter));
-    
-    %Rename all Histone channel images
-    %Find all the Histone files
-    D=dir([OutputFolder,filesep,'*-His*.tif']);
-    %Delete the skipped files
-    for i=SkipFrames
-        delete([OutputFolder,filesep,D(i).name]);
-    end
-    %Rename all remaining files
-    D=dir([OutputFolder,filesep,'*-His*.tif']);
-    for i=1:length(D)
-        if ~strcmp([OutputFolder,filesep,D(i).name],...
-                [OutputFolder,filesep,D(i).name(1:end-7),iIndex(i,3),'.tif'])
-            movefile([OutputFolder,filesep,D(i).name],...
-                [OutputFolder,filesep,D(i).name(1:end-7),iIndex(i,3),'.tif'])
-        end
-    end
-    
-    %Rename all coat protein channel images
-    %Find all the coat protein files
-    D=dir([OutputFolder,filesep,'*_z01.tif']);
-    %Delete the skipped files
-    for i=SkipFrames
-        D2=dir([OutputFolder,filesep,D(i).name(1:end-6),'*.tif']);
-        for j=1:length(D2)
-            delete([OutputFolder,filesep,D2(j).name])
-        end
-    end
-    %Rename all remaining files
-    D=dir([OutputFolder,filesep,'*_z01.tif']);
-    for i=1:length(D)
-        if ~strcmp([OutputFolder,filesep,D(i).name],...
-                    [OutputFolder,filesep,D(i).name(1:end-11),iIndex(i,3),'_z01.tif'])
-            D2=dir([OutputFolder,filesep,D(i).name(1:end-6),'*.tif']);
-            for j=1:length(D2)
-                movefile([OutputFolder,filesep,D2(j).name],...
-                    [OutputFolder,filesep,D2(j).name(1:end-11),iIndex(i,3),D2(j).name(end-7:end)])
-            end
-        end
-    end
-end
-
+doFrameSkipping(SkipFrames, FrameInfo, OutputFolder);
 
 %Save the information about the various frames
-mkdir([DropboxFolder,filesep,Prefix])
-save([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'],...
-    'FrameInfo')
+mkdir([DropboxFolder, filesep, Prefix])
+save([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo')
