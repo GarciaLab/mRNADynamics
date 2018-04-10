@@ -2209,17 +2209,18 @@ while (cc~='x')
         
         %Update the coatChannel
         coatChannel=coatChannels(CurrentChannel);
-        
+
+    
         %Do we have a histone channel? If so, we can find the particle in
         %the next channel corresponding to this nucleus.
+        numParticlesCurrCh = length(Particles{CurrentChannel});
         if UseHistoneOverlay
             %If a particle is associated with this same nucleus in the new
             %channel then change to it
             AssignedNucleusPreviousChannel=Particles{PreviousChannel}(CurrentParticle).Nucleus;
-
             %Now, find its associated particle
             AssignedNucleusNewChannel=[];
-            for i=1:numParticles
+            for i=1:numParticlesCurrCh
                 if ~isempty(Particles{CurrentChannel}(i).Nucleus)
                     AssignedNucleusNewChannel(i)=Particles{CurrentChannel}(i).Nucleus;
                 else
@@ -2233,8 +2234,8 @@ while (cc~='x')
         
         %If we don't have a histone channel, go for the same particle
         %number in the new channel or for the last particle
-        elseif numParticles<CurrentParticle
-            CurrentParticle=numParticles;
+        elseif numParticlesCurrCh<CurrentParticle
+            CurrentParticle=numParticlesCurrCh;
         end
     
     elseif cc=='~'      %Switch projection mode
