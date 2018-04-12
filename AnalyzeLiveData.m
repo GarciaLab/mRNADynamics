@@ -27,11 +27,13 @@ segmentSpots(Prefix,[])
 
 
 %% Look at the dog-filtered images and decide on a threshold to use
+%Prefix = '2015-05-31-89B8-3-P2P'
+Prefix = '2017-10-09-m5m8peve'
 
 %We will keep the threshold low and then increase it after the fact.
 
 %Now, segment the particles using the threshold
-segmentSpots(Prefix, 8)
+segmentSpots(Prefix, 100, 'Shadows',0)
 
 
 %% Find and check the AP axis
@@ -82,9 +84,18 @@ TrackmRNADynamics(Prefix,8,8)
 
 CheckParticleTracking(Prefix)
 
-CompileParticles(Prefix,'ApproveAll')
+CompileParticles(Prefix,'ApproveAll','SkipAll')
 
-
+close all
 %% If there's only a nuclear signal then use
 
 CompileNuclearProtein(Prefix)
+
+
+%% import CompiledParticles.mat
+plot(nanmean(AllTracesVector,2))
+plot(AllTracesVector)
+
+%%
+
+end

@@ -1148,6 +1148,7 @@ for ChN=1:NChannels
                     MeanVectorAnterior{ChN} = nanmean(MeanVectorAPAnterior{ChN},2);
                 catch
                     %That didn't work
+                    MeanVectorAnterior = {NaN};
                 end
 
             else % This is the case which we don't use ROI option
@@ -1171,6 +1172,7 @@ for ChN=1:NChannels
                 MeanVectorAnterior{ChN} = nanmean(MeanVectorAPAnterior{ChN},2);
             catch
                 %That didn't work
+                MeanVectorAnterior = {NaN};
             end
 
             end

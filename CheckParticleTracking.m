@@ -954,7 +954,7 @@ while (cc~='x')
                 error('No Gaussian Fit Params or Gauss Snippet Found. Try Re-running segmentSpots')
             end
 
-            surf(gauss + double(CurrentSnippet));
+            %surf(gauss + double(CurrentSnippet));
             title('Gaussian fit')
             set(gcf,'units', 'normalized', 'position',[0.815, 0.15, .2/3*2, .33/3*2]);
             zlimit = max(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity);
