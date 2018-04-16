@@ -34,7 +34,7 @@ function [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolut
   if ~isempty(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel3'))
       Channel3 = { getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel3') };
   else 
-      Channel3 = 'DoesNotExist';
+      Channel3 = 'dummy';
   end
 
 end

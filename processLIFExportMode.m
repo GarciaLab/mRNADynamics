@@ -448,10 +448,9 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, ProjectionType
             end
             
             %YJK : Think about the case when there is no His channel,
-            %and it is inputoutput mode, 1spot mode or 2spot2color.
+            %and it is inputoutput mode or 1spot mode or 2spot2color.
             %We can use (MCP-mCherry) either inverted or raw
             %images to make fake histone images.
-            
             if (isempty(strfind(Channel1{1}, 'His')))&&(isempty(strfind(Channel2{1}, 'His')))&&(isempty(strfind(Channel3{1}, 'His')))
                 if strcmpi(ExperimentType, 'inputoutput')|strcmpi(ExperimentType, '1spot')|strcmpi(ExperimentType,'2spot2color')|strcmpi(ExperimentType,'input')
 
