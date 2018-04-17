@@ -31,10 +31,10 @@ function [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolut
   nc14 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'nc14'));
   CF = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'CF'));
   % For Channel3, make this as an optional
-  if ~isempty(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel3'))
+  try ~isempty(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel3'))
       Channel3 = { getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel3') };
-  else 
-      Channel3 = 'dummy';
+  catch 
+      Channel3 = {'DoesNotExist'};
   end
 
 end
