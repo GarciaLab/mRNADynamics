@@ -18,7 +18,6 @@ function [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolut
   APResolution = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'APResolution'));
   Channel1 = { getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel1') };
   Channel2 = { getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel2') };
-  Channel3 = { getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel3') };
   Objective = getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Objective');
   Power = getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Power');
   DataFolder = getValueFromMovieDatabase(movieDatabase, PrefixRow, 'DataFolder');
@@ -31,5 +30,11 @@ function [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolut
   nc13 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'nc13'));
   nc14 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'nc14'));
   CF = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'CF'));
+  % For Channel3, make this as an optional
+  try ~isempty(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel3'))
+      Channel3 = { getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel3') };
+  catch 
+      Channel3 = {'DoesNotExist'};
+  end
 
 end

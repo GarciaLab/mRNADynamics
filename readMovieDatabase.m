@@ -37,6 +37,9 @@ Channel1 = movieDatabase(PrefixRow, Channel1Column);
 Channel2 = movieDatabase(PrefixRow, Channel2Column);
 %Channel2 = Channel2{1}
 Channel3 = movieDatabase(PrefixRow, Channel3Column);
+if isempty(Channel3)
+    Channel3 = {'DoesNotExist'};
+end
 %Channel3 = Channel3{1}
 
 [~,~,DropboxFolder,~,~] = DetermineLocalFolders(Prefix);
