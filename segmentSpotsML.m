@@ -191,6 +191,14 @@ if ~just_tifs
         error('Please increase your Java heap memory allocation to at least 10GB (Home -> Preferences -> General -> Java Heap Memory.');
     end
     
+    zSize2 = zSize*2;
+    h=waitbar(0,'Running Weka Classifier');
+else 
+    h = waitbar(0, 'Making .tif stacks for Weka classification');
+end
+%Make requisite TIF stacks for classification
+for q = 1:nCh
+    
     try
         %this is just some function that can only be called if IJM is set up
         IJM.getIdentifier() 
@@ -201,13 +209,6 @@ if ~just_tifs
    
     ijm = evalin('base', 'IJM');
     mij = evalin('base', 'MIJ');
-    zSize2 = zSize*2;
-    h=waitbar(0,'Running Weka Classifier');
-else 
-    h = waitbar(0, 'Making .tif stacks for Weka classification');
-end
-%Make requisite TIF stacks for classification
-for q = 1:nCh
 
     if strcmpi(ExperimentType,'inputoutput')               
         nameSuffix= ['_ch',iIndex(coatChannel,2)];
