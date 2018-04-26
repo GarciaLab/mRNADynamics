@@ -72,7 +72,9 @@ end
 clear SetNames
 clear APDivisions
 clear MeanFits
+clear MeanLinearFits
 clear MeanFitsUp
+clear MeanLinearFitsUp
 clear Schnitzcells
 
 
@@ -199,6 +201,11 @@ for i=1:length(CompiledSets)
 %             warning(['MeanFits.mat not found for ',Prefix,...
 %                 '. This is a stupid way to check. Have the code check if this experiment is DV or AP instead.'])
         end
+        
+        %Linear slope fit results
+        if exist([DropboxFolder,filesep,Prefix,filesep,'MeanLinearFits.mat'],'file')
+            MeanLinearFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanLinearFits.mat']);
+        end
 
         try
             Schnitzcells(i)=load([DropboxFolder,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat']);
@@ -226,6 +233,10 @@ for i=1:length(CompiledSets)
 
         if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsUp.mat'],'file')
             MeanFitsUp(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsUp.mat']);
+        end
+        
+        if exist([DropboxFolder,filesep,Prefix,filesep,'MeanLinearFitsUp.mat'],'file')
+            MeanLinearFitsUp(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanLinearFitsUp.mat']);
         end
 
 
@@ -293,10 +304,16 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],'file')
                 Data(i).MeanFits=MeanFits(i).FitResults;
             end
         end
+        
+        if exist('MeanLinearFits','var')
+            if i<=length(MeanLinearFits)
+                Data(i).MeanLinearFits=MeanLinearFits(i).FitResults;
+            end
+        end
 
-       if exist('MeanFitsUp','var')
-            if i<=length(MeanFitsUp)
-                Data(i).MeanFitsUp=MeanFitsUp(i).FitResults;
+       if exist('MeanLinearFitsUp','var')
+            if i<=length(MeanLinearFitsUp)
+                Data(i).MeanLinearFitsUp=MeanLinearFitsUp(i).FitResults;
             end
         end
        try
