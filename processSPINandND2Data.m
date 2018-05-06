@@ -1,4 +1,4 @@
-function FrameInfo = processSPINandND2Data(Folder, D, ExperimentType, Channel1, Channel2, SourcePath, Prefix, OutputFolder, DropboxFolder)
+function FrameInfo = processSPINandND2Data(Folder, D, FrameInfo, ExperimentType, Channel1, Channel2, SourcePath, Prefix, OutputFolder, DropboxFolder)
     SPINDir=dir([Folder,filesep,'*.nd']);     %Nikon spinning disk
     ND2Dir=dir([Folder,filesep,'*.nd2']);    %Nikon point scanner .nd2 files
     

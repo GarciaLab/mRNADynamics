@@ -1,4 +1,4 @@
-function FrameInfo = processZeissConfocalLSMData(Folder, D, ExperimentType, Channel1, Channel2, Prefix, OutputFolder)
+function FrameInfo = processZeissConfocalLSMData(Folder, D, FrameInfo, ExperimentType, Channel1, Channel2, Prefix, OutputFolder)
     %warning('Still need to add the FF information') NL: I think this
     %warning is out-dated
     

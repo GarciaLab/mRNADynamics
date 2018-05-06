@@ -1,4 +1,4 @@
-function FrameInfo = processLIFExportMode(Folder, ExperimentType, ProjectionType, Channel1, Channel2, Channel3, Prefix, OutputFolder)
+function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, ProjectionType, Channel1, Channel2, Channel3, Prefix, OutputFolder)
   %Extract time information from xml files
   XMLFolder = Folder;
   SeriesFiles = dir([XMLFolder, filesep, '*Series*Properties.xml']);
