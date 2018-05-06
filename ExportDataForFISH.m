@@ -60,14 +60,14 @@ elseif strcmp(FileMode, 'LAT')
   FrameInfo = processLatticeLightSheetData(Folder, D, Channel1, Channel2, ProjectionType, Prefix, OutputFolder);
 
 elseif strcmp(FileMode,'LSM')
-  FrameInfo = processZeissConfocalLSMData(Folder, D, ExperimentType, Channel1, Channel2, Prefix, OutputFolder);
+  FrameInfo = processZeissConfocalLSMData(Folder, D, FrameInfo, ExperimentType, Channel1, Channel2, Prefix, OutputFolder);
 
 elseif strcmp(FileMode,'LIFExport')
-  FrameInfo = processLIFExportMode(Folder, ExperimentType, ProjectionType, Channel1, Channel2, Channel3, Prefix, OutputFolder);        
+  FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, ProjectionType, Channel1, Channel2, Channel3, Prefix, OutputFolder);        
 
 elseif strcmp(FileMode,'DSPIN') || strcmp(FileMode,'DND2')
   %Nikon spinning disk confocal mode - TH/CS 2017
-  FrameInfo = processSPINandND2Data(Folder, D, ExperimentType, Channel1, Channel2, SourcePath, Prefix, OutputFolder, DropboxFolder);
+  FrameInfo = processSPINandND2Data(Folder, D, FrameInfo, ExperimentType, Channel1, Channel2, SourcePath, Prefix, OutputFolder, DropboxFolder);
 end
 
 doFrameSkipping(SkipFrames, FrameInfo, OutputFolder);
