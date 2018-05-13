@@ -1,25 +1,24 @@
 classdef exportDataForFISHTest < matlab.unittest.TestCase
     %runs the export data process and compares preprocessed data with a known result set
        
-    properties
-        Prefix = '';            
-        dirName = '2015-07-25-P2P_75uW_bi'; 
-        expectedDataFolder = 'd:/Documents/Berkeley/PreProcessedData/2015-07-25-P2P_75uW_bi';
+    properties (TestParameter)
+        Prefix = '';
+        expectedDataFolder = '';
     end
     
     methods(Test)
-        function testCase = exportDataForFISHTest()
-            %[~,~,DropboxFolder,~,~]= DetermineLocalFolders(pref);
-            %testCase.dirKnownData = [DropboxFolder,filesep,pref];
-            %testCase.dirPreprocessedData = [DropboxFolder,filesep,pref];
+        function testCase = exportDataForFISHTest(dataFolder, pref)
+            testCase.Prefix = pref;
+            testCase.expectedDataFolder = strcat(dataFolder,filesep,pref);
+        end           
 
-
+        function testRun(testCase)
             %Figure out the initial folders. 
-            [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath, configValues, movieDatabasePath]=...
+            [~,~,~,~, PreProcPath, ~, ~]=...
                 DetermineLocalFolders;
 
             %Get file names to compare in preprocessed data folder
-            preprocessedDataFolder = [PreProcPath,filesep,testCase.dirName]
+            preprocessedDataFolder = strcat(PreProcPath,filesep,testCase.Prefix)
             cd(preprocessedDataFolder)
             sourceFiles = dir;
 
@@ -45,15 +44,6 @@ classdef exportDataForFISHTest < matlab.unittest.TestCase
                 [status,cmdout] = system(compareCommand, '-echo');
                 testCase.assertFalse(isempty(strfind(cmdout, expectedCompareResult)))
             end
-        end           
-        function testRun(testCase)
-            cd(PreProcPath);
-            sourceFiles = dir;
-            hello = 'hello';
-            disp(hello);
-            disp(sourceFiles);
-
-            testCase.assertTrue(1);
         end
     end
 end
