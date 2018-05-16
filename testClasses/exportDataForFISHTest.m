@@ -1,28 +1,31 @@
 classdef exportDataForFISHTest < matlab.unittest.TestCase
     %runs the export data process and compares preprocessed data with a known result set
        
-    properties (TestParameter)
-        Prefix = '';
-        expectedDataFolder = '';
+    properties
+        %Hardcoded with the path of the experiment that the test will use
+        Prefix = '2015-07-25-P2P_75uW_bi';
     end
     
     methods(Test)
-        function testCase = exportDataForFISHTest(dataFolder, pref)
-            testCase.Prefix = pref;
-            testCase.expectedDataFolder = strcat(dataFolder,filesep,pref);
-        end           
-
         function testRun(testCase)
             %Figure out the initial folders. 
-            [~,~,~,~, PreProcPath, ~, ~]=...
-                DetermineLocalFolders;
+            CONFIG_CSV_PATH = ['ComputerFolders.csv'];
+
+            configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');
+
+            PreProcPath = getConfigValue(configValues, 'PreProcPath');
+            testPath = getConfigValue(configValues, 'TestPath');
+
+            expectedDataFolder = strcat(testPath,filesep,testCase.Prefix);
 
             %Get file names to compare in preprocessed data folder
-            preprocessedDataFolder = strcat(PreProcPath,filesep,testCase.Prefix)
-            cd(preprocessedDataFolder)
+            preprocessedDataFolder = strcat(PreProcPath,filesep,testCase.Prefix);
+            disp(preprocessedDataFolder);
+            cd(preprocessedDataFolder);
             sourceFiles = dir;
 
-            filesToCompare = {};
+            numberOfFiles = length(sourceFiles)-2;
+            filesToCompare = {numberOfFiles};
             filesToCompareIndex = 1;
 
             %Traverse the files in folder, but ignore the first two as they are . and ..
@@ -32,17 +35,15 @@ classdef exportDataForFISHTest < matlab.unittest.TestCase
             end
 
             %Run comparison
-            compareCommand = '';
-            sourceFile = '';
-            targetFile = '';
             expectedCompareResult = 'FC: no differences encountered';
             
             for i = 1:length(filesToCompare)
                 sourceFile = strcat(preprocessedDataFolder,filesep,filesToCompare(i));
-                targetFile = strcat(testCase.expectedDataFolder,filesep,filesToCompare(i));
+                targetFile = strcat(expectedDataFolder,filesep,filesToCompare(i));
                 compareCommand = strcat("fc ",sourceFile," ",targetFile);
                 [status,cmdout] = system(compareCommand, '-echo');
-                testCase.assertFalse(isempty(strfind(cmdout, expectedCompareResult)))
+                disp(status);
+                testCase.assertFalse(~contains(cmdout, expectedCompareResult))
             end
         end
     end
