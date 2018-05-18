@@ -541,6 +541,15 @@ function AverageDatasets(DataType,varargin)
 
 Data = LoadMS2Sets(DataType);
 
+% Save path option
+savePath = '';
+
+    for i=1:length(varargin)
+        if strcmpi(varargin{i}, 'savePath')
+            savePath = varargin{i+1};
+        end
+    end
+
 numEmbryos=length(Data);
 
 %Find the total number of frames for each embryo
