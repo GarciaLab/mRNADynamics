@@ -56,7 +56,12 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, ProjectionType
                 Date = char(TimeStamp.getAttribute('Date'));
                 Time = char(TimeStamp.getAttribute('Time'));
                 Milli = char(TimeStamp.getAttribute('MiliSeconds'));
-                time_in_days = datenum(strcat(Date,'-',Time,'-',Milli),'dd/mm/yyyy-HH:MM:SS AM-FFF');
+                % in case LASX saves metadata as 24h rather than AM/PM
+                if strcmp(Time(end-1:end),'AM')|strcmp(Time(end-1:end),'PM')
+                    time_in_days = datenum(strcat(Date,'-',Time,'-',Milli),'dd/mm/yyyy-HH:MM:SS AM-FFF');
+                else
+                    time_in_days = datenum(strcat(Date,'-',Time,'-',Milli),'dd/mm/yyyy-HH:MM:SS-FFF');
+                end
                 Frame_Times(m)=time_in_days*86400;
                 m=m+1;
             end

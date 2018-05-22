@@ -14,6 +14,17 @@ function AnalyzeLiveData
 
 %2013-08-08: Modified to support Laurent's segmentation and tracking code
 
+%%
+Metadata = readtable('/Users/julia/Google Drive jf565/GitHub/Data/DynamicsResults/MovieDatabase.csv')
+%% MAIN
+Prefix=ExportDataForFISH;
+segmentSpots(Prefix,[]) %dogs
+segmentSpots(Prefix, 85, 'Shadows',0)
+TrackNuclei(Prefix)
+%CheckNucleiSegmentation(Prefix) %Check the segmentation
+TrackmRNADynamics(Prefix,8,8)
+%CheckParticleTracking(Prefix)
+CompileParticles(Prefix,'ApproveAll','SkipAll')
 
 %% Copy the images and do the initial FISH analysis
 
@@ -29,11 +40,13 @@ segmentSpots(Prefix,[])
 %% Look at the dog-filtered images and decide on a threshold to use
 %Prefix = '2015-05-31-89B8-3-P2P'
 Prefix = '2017-10-09-m5m8peve'
+Prefix = '2017-10-27-m5m8peve'
+Prefix = '2017-09-13-m5m8peve'
 
 %We will keep the threshold low and then increase it after the fact.
 
 %Now, segment the particles using the threshold
-segmentSpots(Prefix, 100, 'Shadows',0)
+segmentSpots(Prefix, 90, 'Shadows',0)
 
 
 %% Find and check the AP axis
@@ -92,9 +105,6 @@ close all
 CompileNuclearProtein(Prefix)
 
 
-%% import CompiledParticles.mat
-plot(nanmean(AllTracesVector,2))
-plot(AllTracesVector)
 
 %%
 
