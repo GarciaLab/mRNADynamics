@@ -6,6 +6,9 @@
 %Options:
 %medianprojection: Uses a median projection in the nuclear channel rather
 %                  than the default maximum projection
+%middleprojection: Uses a max projection in the nuclear channel, but only
+%                   of the middle slices (11-16) to prevent bright
+%                   reflections from overpowering the signal
 
 
 %Note:

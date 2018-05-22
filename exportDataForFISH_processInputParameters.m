@@ -15,6 +15,8 @@ function [PrefixOverrideFlag, SkipFrames, ProjectionType] = exportDataForFISH_pr
       warning('SkipFrame mode.')
     elseif strcmpi(varargin{k},'medianprojection')
       ProjectionType = 'medianprojection';
+    elseif strcmpi(varargin{k},'middleprojection')
+      ProjectionType = 'middleprojection';
     else
       Prefix = varargin{k};
       PrefixOverrideFlag = 1;

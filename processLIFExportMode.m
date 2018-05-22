@@ -252,6 +252,8 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, Pro
           if histoneChannel
             if strcmp(ProjectionType,'medianprojection')
               Projection = median(HisSlices, 3);
+            elseif strcmp(ProjectionType,'middleprojection')
+              Projection = max(HisSlices(:,:,11:16), [], 3);
             else
               Projection = max(HisSlices, [], 3);
             end
