@@ -1,6 +1,9 @@
 function testCase = testExportDataForFISH(testCase)
-    Prefix = ExportDataForFISH('2016-11-13-Hb-P2P-MS2V5-NB-MCP-mCherry');
-    %compareExportResults(testCase);
+    disp('Running with prefix ');
+    disp(testCase.Prefix);
+
+    Prefix = ExportDataForFISH(testCase.Prefix);
+    compareExportResults(testCase);
 end
 
 function testCase = compareExportResults(testCase)
