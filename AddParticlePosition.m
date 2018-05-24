@@ -1,5 +1,5 @@
 function AddParticlePosition(varargin)
-
+%
 %Locates particles from a zoomed-in movie within full embryo images using
 %spatial cross-correlation.
 %
@@ -7,7 +7,19 @@ function AddParticlePosition(varargin)
 %SkipAlignment
 %ManualAlignment
 %NoAP: Just add X and Y information
-
+%
+%Manual alignment controls
+%
+%. - Move to the right
+%> - Move to the right further
+%, - Move to the left
+%< - Move to the left further
+%a - Move up
+%A - Move up further
+%z - Move down
+%Z - Move down further
+%x - Save and cancel
+%
 %V2: Changed this function to use a correlation in order to center the
 %images.
 

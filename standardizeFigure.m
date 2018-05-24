@@ -47,7 +47,7 @@ function standardizeFigure(ax, legend, varargin)
             dataObj(i).MarkerFaceColor = color(i,:);
             dataObj(i).MarkerEdgeColor = color(i,:);
         elseif strcmpi(dataType{i}, 'bar') || strcmpi(dataType{i}, 'histogram')
-            dataObj(i).LineStyle = 'none';
+%             dataObj(i).LineStyle = 'none';
             dataObj(i).FaceColor = color(i,:);
         elseif strcmpi(dataType{i}, 'line') || strcmpi(dataType{i}, 'errorbar')
             dataObj(i).LineWidth = 5;
@@ -66,7 +66,7 @@ function standardizeFigure(ax, legend, varargin)
         end
     end
     
-    set(ax, 'TickLength',[0.01 0.01],...
+    set(ax, 'TickLength',[0 0],...
         'FontSize', 20, 'FontName', 'Myriad Pro', 'FontWeight', 'bold');
     ax.TickDir = 'out';
     ax.LineWidth = axesLineWidth;
