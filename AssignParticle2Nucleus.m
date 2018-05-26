@@ -106,15 +106,11 @@ if ~isempty(NewSpotsX)
     
     %Find the schnitz that were closest to the spots found in this frame.
     UniqueMinIndexSchnitz=unique(MinIndexSchnitz);
-
-        
-    
     for i=1:length(UniqueMinIndexSchnitz)
         
         if (CurrentFrame==12)&(UniqueMinIndexSchnitz(i)==15)
             1+1
         end
-        
         
         %Find the particles that are assigned to this schnitz
         ParticleToAssign=find(AssignedSchnitz==UniqueMinIndexSchnitz(i));
@@ -162,6 +158,7 @@ if ~isempty(NewSpotsX)
                 knnsearch([SpotToParticleX;SpotToParticleY]'*PixelSize,...
                 [PreviousParticlesX;PreviousParticlesY]'*PixelSize,...
                 'K',SpotsPerNucleus);
+            
             %Each row in NewSpotToAssign corresponds to the previous
             %particles. The index within that row tells us which new spot
             %it is closest to. Subsequent columns go beyond the nearest
@@ -221,14 +218,16 @@ if ~isempty(NewSpotsX)
 %                 end
 %             end
             
-            
+
             %Assign the new spots to their corresponding particles
             for j=1:length(ParticleToAssign)
                 if ~isinf(DistancesToNewSpots(j))
                     SpotIndexToCopy=SpotToParticleIndices(NewSpotToAssign(j));
                     %Finally, copy the information onto this particle.
-                    Particles(ParticleToAssign(j)).Index(end+1)=SpotIndexToCopy;
-                    Particles(ParticleToAssign(j)).Frame(end+1)=CurrentFrame;
+                    if Retracking == 0 || Particles(ParticleToAssign(j)).Approved ~= 1
+                        Particles(ParticleToAssign(j)).Index(end+1)=SpotIndexToCopy;
+                        Particles(ParticleToAssign(j)).Frame(end+1)=CurrentFrame;
+                    end
                     %Remove this spot from the pool so that it doesn't get
                     %assigned to a new particle at the end of the code
                     NewParticlesFlag(SpotIndexToCopy)=0;
