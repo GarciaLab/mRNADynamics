@@ -337,7 +337,6 @@ else
         end
         close(h)
         close all force;
-    end
 
     %%
     %Create a useful structure that can be fed into pipeline
@@ -593,6 +592,7 @@ else
         delete(poolobj);
     catch
         %fails if the parallel pool has timed out.
+    end
     end
 end
 end
