@@ -24,7 +24,7 @@ function APAnalysis(dataset, varargin)
 %OUTPUT
 %Does not return anything. Does generate graphs. 
 %
-%Author (contact): Armando Reimer (areimer@berkeley.edu)
+%Author (contact): Armando Reimer (areimer@berkeley.edu), Yang Joon Kim(yjkim90@berkeley.edu)
 %Created: 6/3/2017
 %Last Updated: 1/13/18
 %
@@ -504,3 +504,163 @@ end
 % %         title(Prefix{i})
 % %     end
 % end
+%% Averaging multiple datasets (This is written by Yang Joon Kim)
+function AverageDatasets(DataType,varargin)
+
+% DESCRIPTION
+% This function has input of datatype in DataStatus.xls, grabs all datasets
+% in that tab,and calculates 
+% 1) Weighted Sum of averaged MS2 spot fluorescence,Standard
+% Deviation, and the total number of MS2 spots from multiple embryos in
+% nc13 and nc14.
+% 2) Accumulated mRNA (Accumulated fluorescence over nc13 and nc14)
+% This is edited from Meghan's CombineMultipleEmbryos.m script
+
+% Note. This is assuming that you're interested in nc13 and nc14, thus you
+% can just edit this to include nc12, but you should make it work for the
+% datasets that doesn't have the whole nc12, probably making it as an
+% option.
+
+% To do : if the start of nc12 was caught, it can combine nc12 data as well.
+%
+% OPTIONS
+% No Options (This can be edited later, like for nc12 or sth else)
+
+% PARAMETERS
+% DataType: This is a string that is identical to the name of the tab in
+% dataStatus.xlsx that you wish to analyze.
+%
+% OUTPUT
+% Variables for plotting, or more detailed analysis with the Averaged spot
+% fluorescence over time. Save as 'Name of the DataType'.mat file
+% (nc12, nc13, nc14, NParticlesAP,MeanVectorsAP, SDVectorAP, ElapsedTime) 
+% corresponding to the embryos combined
+
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
+    DetermineLocalFolders;
+
+Data = LoadMS2Sets(DataType);
+
+% Save path option
+savePath = '';
+
+    for i=1:length(varargin)
+        if strcmpi(varargin{i}, 'savePath')
+            savePath = varargin{i+1};
+        end
+    end
+
+numEmbryos=length(Data);
+
+%Find the total number of frames for each embryo
+numFrames = zeros(1, numEmbryos);
+maxAPIndex = zeros(1, numEmbryos);
+maxTime = zeros(1, numEmbryos);
+for i = 1:numEmbryos
+    numFrames(i) = size(Data(i).ElapsedTime, 2);
+    nc13(i) = Data(i).nc13;
+    lengthNC1314(i) = numFrames(i) - nc13(i)+1; % length of frames from nc13 to the last frame
+    maxAPIndex(i) = Data(i).MaxAPIndex;
+    maxTime(i) = Data(i).ElapsedTime(numFrames(i));
+end
+
+%Store the number of AP bins (this should always be 41).
+numAPBins = maxAPIndex(1);
+
+%Store all variables to be combined in a single structure. 
+combinedData = struct('ElapsedTime',{},'NParticlesAP',{},...
+                        'MeanVectorAP',{},'SDVectorAP',{});
+
+%% Synchronize the vectors as the beginning of the nc 13
+% This should be edited to include the nc12 or even earlier in the future.
+% For now, nc13 and nc14 might be good enough.
+
+% Define the new ElapsedTime vector for the combined embryo. 
+% The new ElapsedTime should start with the beginning of nc13, and also has
+% the length of the frames of nc13 + nc14 (of the longest dataset), all the
+% empty values can be plugged with Nans.
+
+% This ElapsedTime variable has evenly spaced time points estimated from diff(ElapsedTime)
+% (This is assumption that we took the data with negligible time between serieses, which is pretty fair)
+ 
+% Calculate the length of the new ElapsedTime, and also from which dataset
+[NewFrameLength, Index] = max(lengthNC1314);
+
+% Define an empty matrices (filled with Nans)
+MeanVectorAP = NaN(NewFrameLength,numAPBins,numEmbryos);
+SDVectorAP = NaN(NewFrameLength,numAPBins,numEmbryos);
+NParticlesAP = NaN(NewFrameLength,numAPBins,numEmbryos);
+
+% Synchornize all fields as all of them starts from nc 13
+for i=1:numEmbryos
+    if nc13(i)==0
+        error('Check the Movie if it really does not start from nc13, then you should edit this code or make that dataset as an exception')
+    else
+        MeanVectorAP(1:numFrames(i)-nc13(i)+1,:,i) = Data(i).MeanVectorAP(nc13(i):numFrames(i),:);
+        SDVectorAP(1:numFrames(i)-nc13(i)+1,:,i) = Data(i).SDVectorAP(nc13(i):numFrames(i),:);
+        NParticlesAP(1:numFrames(i)-nc13(i)+1,:,i) = Data(i).NParticlesAP(nc13(i):numFrames(i),:);
+    end
+end
+        
+% % Take the most frequent value of dT from the ElapsedTime. It's because the
+% % dT can be different in case we stopped and restarted the movie.
+deltaT = mode(diff(Data(1).ElapsedTime)); 
+ElapsedTime = deltaT*(0:NewFrameLength-1);
+
+
+%% Average all fields at each time point
+
+% Make Nans as zeros
+MeanVectorAP(isnan(MeanVectorAP)) = 0;
+SDVectorAP(isnan(SDVectorAP)) = 0;
+NParticlesAP(isnan(NParticlesAP)) = 0;
+
+sumMean = zeros(NewFrameLength,numAPBins);
+sumSD = zeros(NewFrameLength,numAPBins);
+sumNParticles = zeros(NewFrameLength,numAPBins);
+
+for i=1:numEmbryos
+    sumMean = sumMean + squeeze(MeanVectorAP(:,:,i).*NParticlesAP(:,:,i));
+    sumSD = sumSD + squeeze(SDVectorAP(:,:,i).^2.*NParticlesAP(:,:,i));
+    sumNParticles = sumNParticles + squeeze(NParticlesAP(:,:,i));
+end
+    
+MeanVectorAPTemp = sumMean./sumNParticles;
+SDVectorAPTemp = sqrt(sumSD./sumNParticles);
+NParticlesAPTemp = sumNParticles;
+
+MeanVectorAP = MeanVectorAPTemp;
+SDVectorAP = SDVectorAPTemp;
+SEVectorAP = SDVectorAP/sqrt(numEmbryos); % Standard error of mean (SD / sqrt(number of observation)
+NParticlesAP = NParticlesAPTemp;
+ElapsedTime = ElapsedTime;
+
+%% Accumulate mRNA over time (This can be made as an optional)
+% I will calculate the Integrated mRNA from the MeanVectorAP
+NFrames = length(ElapsedTime);
+nAPbins = max(maxAPIndex);
+
+AccumulatedmRNA = zeros(NFrames,nAPbins);
+AccumulatedmRNA_SD =  zeros(NFrames,nAPbins);
+MeanVectorAP(isnan(MeanVectorAP))=0;
+SDVectorAP(isnan(SDVectorAP))=0;
+
+for i=1:maxAPIndex
+    for j=2:length(ElapsedTime)
+        AccumulatedmRNA(j,i) = trapz(ElapsedTime(1:j),MeanVectorAP(1:j,i));
+        AccumulatedmRNA_SD(j,i) = sqrt(trapz(ElapsedTime(1:j),SDVectorAP(1:j,i).^2));
+    end
+end
+
+%% Save the fields in .mat file
+    if ~isempty(savePath)
+        save([savePath,filesep,DataType,'.mat'],...
+            'MeanVectorAP','SDVectorAP','SEVectorAP','NParticlesAP','ElapsedTime',...
+            'AccumulatedmRNA','AccumulatedmRNA_SD')
+    else
+        warning('Define the File Path in the argument above')
+    end
+end
+
+
+
