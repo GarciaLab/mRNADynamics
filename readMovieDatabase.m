@@ -1,24 +1,27 @@
 function [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
     Folder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder, Channel3]...
-= readMovieDatabase(PrefixOverrideFlag)
+= readMovieDatabase(Prefix)
 
-%Figure out the initial folders. We'll update the Drobpox one later on in the code.
+%Figure out the initial folders. Well update the Drobpox one later on in the code.
+
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath, configValues, movieDatabasePath]=...
     DetermineLocalFolders;
 
-%Get the folder with the data
-if ~PrefixOverrideFlag
+%Get the Prefix if is not already present
+if isempty(Prefix)
     Folder = uigetdir(SourcePath,'Select folder with data');
+
 
     %Get the information from the last two folders in the structure
     SlashPositions = strfind(Folder,filesep);
     Prefix = [Folder((SlashPositions(end-1)+1):(SlashPositions(end)-1)),'-',...
         Folder((SlashPositions(end)+1):(end))];
 else 
-    Folder = '';
-    Prefix = PrefixOverrideFlag;
+    %Obtains the subfolder using the Prefix (replaces '-' with '/' after the date,
+    %knowing it takes 10 characters)
+    Subfolder = [Prefix(1:10),filesep,Prefix(12:length(Prefix))];
+    Folder = strcat(SourcePath,filesep,Subfolder);
 end
-
 
 %What type of experiment are we dealing with? Get this out of MovieDatabase
 movieDatabase = csv2cell(movieDatabasePath, 'fromfile');
