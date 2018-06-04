@@ -240,6 +240,7 @@ if justDoG
                 for i = 1:zSize
                     im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']));
                     dog = filterImage(im,filterType,sigmas, filterSize);
+                    dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
                     dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif'];
                     imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
                     imshow(dog,[]);
@@ -248,6 +249,7 @@ if justDoG
                 parfor i = 1:zSize    
                     im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']));
                     dog = filterImage(im,filterType,sigmas, filterSize);
+                    dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
                     dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif'];
                     imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
                 end

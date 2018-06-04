@@ -99,10 +99,18 @@ tic;
 maxWorkers = 56;
 p = gcp('nocreate');
 if isempty(p)
-    parpool(maxWorkers); %56 is the number of cores the Garcia lab Tubby server can reasonably handle per user.
+    try
+        parpool(maxWorkers); %56 is the number of cores the Garcia lab Tubby server can reasonably handle per user.
+    catch
+        parpool;
+    end
 elseif p.NumWorkers > maxWorkers
     delete(gcp('nocreate')); % if pool with too many workers, delete and restart
-    parpool(maxWorkers);
+    try
+        parpool(maxWorkers);
+    catch
+        parpool;
+    end
 end
     
 [~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
