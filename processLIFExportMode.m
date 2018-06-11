@@ -95,6 +95,7 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, Pro
     FrameInfo(i).LinesPerFrame = str2double(LIFMeta.getPixelsSizeY(0));
     FrameInfo(i).PixelsPerLine = str2double(LIFMeta.getPixelsSizeX(0));
     FrameInfo(i).NumberSlices = min(NSlices);
+    FrameInfo(i).ZCenter = 0; %will add real value later - AR 6/9/18
     FrameInfo(i).FileMode = 'LIFExport';
     %This is to allow for backwards compatibility with BioFormats
     if ~isempty(str2num(LIFMeta.getPixelsPhysicalSizeX(0)))

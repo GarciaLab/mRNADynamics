@@ -304,15 +304,15 @@ else
     for i=1:numFrames
         if i<nc9
             FrameInfo(i).nc=8;
-        elseif (i>=nc9)&&(i<nc10)
+        elseif (i>=nc9)&(i<nc10)
             FrameInfo(i).nc=9;
-        elseif (i>=nc10)&&(i<nc11)
+        elseif (i>=nc10)&(i<nc11)
             FrameInfo(i).nc=10;
-        elseif (i>=nc11)&&(i<=nc12)
+        elseif (i>=nc11)&(i<=nc12)
             FrameInfo(i).nc=11;
-        elseif (i>=nc12)&&(i<=nc13)
+        elseif (i>=nc12)&(i<=nc13)
             FrameInfo(i).nc=12;
-        elseif (i>=nc13)&&(i<=nc14)
+        elseif (i>=nc13)&(i<=nc14)
             FrameInfo(i).nc=13;
         elseif i>=nc14
             FrameInfo(i).nc=14;
@@ -1073,9 +1073,14 @@ while (cc~='x')
             ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),')'],...
             ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)]};
     else
-        FigureTitle={['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)],...
-            ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames), ' (nc',num2str(FrameInfo(CurrentFrame).nc),')'],...
-            ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)]};
+        try
+            FigureTitle={['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)],...
+                ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames), ' (nc',num2str(FrameInfo(CurrentFrame).nc),')'],...
+                ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)]};
+        catch
+                %just in case there's no nuclear tracking so this won't
+                %throw an error. 
+        end
     end
     
     if HideApprovedFlag==1
