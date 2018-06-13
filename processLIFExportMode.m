@@ -96,11 +96,11 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, Pro
     
     xmltext = fileread([XMLFolder,filesep,SeriesFiles3(i).name]);
     expressionobj = '(?<=ZUseMode="1" ZUseModeName="z-galvo" ZPosition=").*(?=" IsSuperZ)';
-    zobj = str2double(regexp(xmltext, expressionobj, 'match')); %this value is the same for all the files, so may as well retrieve it from the final slice
+    zGalvo = str2double(regexp(xmltext, expressionobj, 'match')); 
     
     for j = StartIndex:(NSlices(i)*NChannels):sum(NPlanes(1:i))
       InitialStackTime(m) = Frame_Times(j);
-      zObjs(m) = zobj;
+      zGalvo(m) = zGalvo;
       m = m + 1;
     end
   end
