@@ -9,6 +9,8 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, Pro
           error('XML MetaFiles could not be found. Did they get exported using the LAS software?')
       end
   end
+  %get the XML files in the metadata folder that do not contain the word
+  %"Properties"
   SeriesFiles2 = dir([XMLFolder, filesep, '*Series*.xml']);
   SeriesFiles3 = [];
   for j = 1:length(SeriesFiles2)
@@ -94,6 +96,7 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, Pro
       StartIndex = sum(NPlanes(1:i-1)) + 1;
     end
     
+    %Grab the z-galvo position by parsing the XML metadata
     xmltext = fileread([XMLFolder,filesep,SeriesFiles3(i).name]);
     expressionobj = '(?<=ZUseMode="1" ZUseModeName="z-galvo" ZPosition=").*(?=" IsSuperZ)';
     zGalvo = str2double(regexp(xmltext, expressionobj, 'match')); 
@@ -120,7 +123,6 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, Pro
         FrameInfo(i).ZStep = str2double(LIFMeta.getPixelsPhysicalSizeZ(0).value);
     end
     FrameInfo(i).Time = InitialStackTime(i);
-    FrameInfo(i).ZObjs = zObjs(i);
   end
  
   %Find the flat field (FF) information
