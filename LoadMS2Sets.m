@@ -264,6 +264,13 @@ for i=1:length(CompiledSets)
     %Load CompiledNuclei if it exists
     if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],'file')
         DataNuclei(i)=load([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat']);
+        
+        if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'file')
+            APDivisions(i)=load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat']);
+        else
+            warning('APDivisions.mat not found. This is a stupid way to check. Have the code check if this experiment is DV or AP instead')
+        end
+        
     end
 end
 
@@ -331,6 +338,10 @@ end
 if exist('DataNuclei','var')
     for i=1:length(DataNuclei)
         DataNuclei(i).SetName=SetNames{i};
+        
+        if exist('APDivisions','var')
+            DataNuclei(i).APDivision=APDivisions(i).APDivision;
+        end
     end
 end
 
