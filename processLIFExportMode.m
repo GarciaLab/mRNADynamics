@@ -96,14 +96,19 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, Pro
       StartIndex = sum(NPlanes(1:i-1)) + 1;
     end
     
+   
     %Grab the z-galvo position by parsing the XML metadata
     xmltext = fileread([XMLFolder,filesep,SeriesFiles3(i).name]);
     expressionobj = '(?<=ZUseMode="1" ZUseModeName="z-galvo" ZPosition=").*(?=" IsSuperZ)';
     zGalvo = str2double(regexp(xmltext, expressionobj, 'match')); 
+   
     
     for j = StartIndex:(NSlices(i)*NChannels):sum(NPlanes(1:i))
       InitialStackTime(m) = Frame_Times(j);
-      zGalvo(m) = zGalvo;
+      try
+         zGalvo(m) = zGalvo;
+      catch
+      end
       m = m + 1;
     end
   end
@@ -123,6 +128,10 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, Pro
         FrameInfo(i).ZStep = str2double(LIFMeta.getPixelsPhysicalSizeZ(0).value);
     end
     FrameInfo(i).Time = InitialStackTime(i);
+    try
+        FrameInfo(i).ZGalvo = zGalvo(i);
+    catch
+    end
   end
  
   %Find the flat field (FF) information
