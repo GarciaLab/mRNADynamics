@@ -42,7 +42,7 @@ function ImageJ(open_imagej, verbose)
         ImageJMATLAB.start();
     else
         % initialize ImageJ with the headless flag
-        ImageJMATLAB.start('--headless');
+        ImageJMATLAB.start('--headless'); %AR 6/19/18. This does not work with the current version ImageJMatlab. Documented error.
     end
 
     % Make sure that the scripts are found.
