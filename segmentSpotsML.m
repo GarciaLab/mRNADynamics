@@ -95,23 +95,6 @@ catch
 end
 %%
 tic;
-
-maxWorkers = 56;
-p = gcp('nocreate');
-if isempty(p)
-    try
-        parpool(maxWorkers); %56 is the number of cores the Garcia lab Tubby server can reasonably handle per user.
-    catch
-        parpool;
-    end
-elseif p.NumWorkers > maxWorkers
-    delete(gcp('nocreate')); % if pool with too many workers, delete and restart
-    try
-        parpool(maxWorkers);
-    catch
-        parpool;
-    end
-end
     
 [~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
     readMovieDatabase(Prefix);
@@ -178,7 +161,6 @@ if just_dog
 
 stacksPath = [PreProcPath,filesep,Prefix,filesep,'stacks', ];
 mkdir(stacksPath);
-rawStackArray = [];
 if ~just_tifs    
     [classifierPathCh1,classifierFolder]=uigetfile([MS2CodePath, filesep, 'classifiers', filesep, '*.model']);
     if nCh==2
@@ -227,16 +209,18 @@ for q = 1:nCh
     for current_frame = initial_frame:num_frames
         w = waitbar(current_frame/num_frames);
         set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
-        for i = 1:zSize
-            rawStackArray(:,:,i) = imread([PreProcPath,filesep,Prefix, filesep, Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']);    
-        end
         rawStackName = [stacksPath, filesep, iIndex(current_frame,3), nameSuffix,'.tif'];
         %Don't write new stacks if they're already made.
         if length(dir([stacksPath, filesep, '*.tif'])) ~= num_frames
+            rawStackArray = [];
+            for i = 1:zSize
+                rawStackArray(:,:,i) = imread([PreProcPath,filesep,Prefix, filesep, Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']);    
+            end
             imwrite(uint16(rawStackArray(:,:,1)), rawStackName);
             for k = 2:size(rawStackArray,3)
                 imwrite(uint16(rawStackArray(:,:,k)), rawStackName, 'WriteMode', 'append');
             end
+            clear rawStackArray;
         end
         %Do the classification with Weka in Fiji
         if ~just_tifs
@@ -261,12 +245,14 @@ for q = 1:nCh
             for m = 1:2:zSize2
                 pMap(:,:,ceil(m/2)) =  pMapTemp(:,:,m); %the even images in the original array are negatives of the odds
             end
+            clear pMapTemp;
             pMap = permute(pMap, [2 1 3]) * 10000; %multiplying so this can be cast to uint16
             for i = 1:size(pMap, 3)
                 p_name = ['prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif'];
                 imwrite(uint16(pMap(:,:,i)), [OutputFolder1,filesep,p_name])               
             end
             mij.run('Close All');
+            clear pMap;
         end
     end
     close(w);
@@ -274,6 +260,24 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Segment transcriptional loci
 else
+    
+    maxWorkers = 8;
+    p = gcp('nocreate');
+    if isempty(p)
+        try
+            parpool(maxWorkers);
+        catch
+            parpool;
+        end
+    elseif p.NumWorkers > maxWorkers
+        delete(gcp('nocreate')); % if pool with too many workers, delete and restart
+        try
+            parpool(maxWorkers);
+        catch
+            parpool;
+        end
+    end
+
     for q=1:nCh
 
         if strcmpi(ExperimentType,'inputoutput')            
