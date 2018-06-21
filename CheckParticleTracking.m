@@ -58,6 +58,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % 	current particle. Note that the command forces ZoomMode. To toggle, use
 %   'o' or '+' depending on whether you're adding to an existing trace or creating a new
 %    trace, respectively.
+% # remove a spot from Spots and erase its frame in Particles
 % 
 % 
 % 
