@@ -1074,14 +1074,13 @@ while (cc~='x')
             ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),')'],...
             ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)]};
     else
-        if isfield(FrameInfo, 'nc')
+        try
             FigureTitle={['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)],...
                 ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames), ' (nc',num2str(FrameInfo(CurrentFrame).nc),')'],...
                 ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)]};
-        else
-            FigureTitle={['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)],...
-                ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames)],...
-                ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)]};
+        catch
+                %just in case there's no nuclear tracking so this won't
+                %throw an error. 
         end
     end
     
