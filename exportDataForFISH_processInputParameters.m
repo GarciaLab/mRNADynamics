@@ -1,7 +1,7 @@
-function [PrefixOverrideFlag, SkipFrames, ProjectionType] = exportDataForFISH_processInputParameters(varargin)
+function [Prefix, SkipFrames, ProjectionType] = exportDataForFISH_processInputParameters(varargin)
   %Look at parameters
-  PrefixOverrideFlag = 0;
   SkipFrames=[];
+  Prefix='';
 
   %Default setting for z-projection is maximum-based...
   %This may fail when high intensity reflections are present
@@ -19,7 +19,6 @@ function [PrefixOverrideFlag, SkipFrames, ProjectionType] = exportDataForFISH_pr
       ProjectionType = 'middleprojection';
     else
       Prefix = varargin{k};
-      PrefixOverrideFlag = 1;
     end
     k=k+1;
   end

@@ -29,11 +29,11 @@
 %the part related to the manual analysis.
 function Prefix = ExportDataForFISH(varargin)
 
-[PrefixOverrideFlag, SkipFrames, ProjectionType] = exportDataForFISH_processInputParameters(varargin{:})
+[Prefix, SkipFrames, ProjectionType] = exportDataForFISH_processInputParameters(varargin{:})
 
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
     Folder, Prefix, ExperimentType, Channel1, Channel2,OutputFolder, Channel3...
-    ] = readMovieDatabase(PrefixOverrideFlag);
+    ] = readMovieDatabase(Prefix);
 
 [D, FileMode] = DetermineFileMode(Folder);
 
