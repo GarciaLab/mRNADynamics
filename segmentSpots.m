@@ -115,7 +115,7 @@ end
 %%
 tic;
 
-maxWorkers = 6;
+maxWorkers = 56;
 try
     parpool(maxWorkers);  % 6 is the number of cores the Garcia lab server can reasonably handle per user at present.
 catch
@@ -205,6 +205,9 @@ end
 if justDoG
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Generate difference of Gaussian images if no threshold was given.
+
+filterSize = round(2000/pixelSize);
+
     %If customSigma is desired, prompts for the sigma1 and sigma2 values
     if customSigmas
         prompt = {'Enter Sigma1 (Note: Sigma1<Sigma2):','Enter Sigma2:'};
@@ -220,7 +223,6 @@ if justDoG
         sigma1 = pixelSize / pixelSize; %width of narrower Gaussian
         sigma2 = round(42000 / pixelSize); % width of wider Gaussian. AR 1/10/18: what is this number.
         sigmas = {sigma1,sigma2};
-        filterSize = round(2000/pixelSize); %2um was empirically determined to be optimal.
     end   
     
      
@@ -239,7 +241,12 @@ if justDoG
             if displayFigures
                 for i = 1:zSize
                     im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']));
-                    dog = filterImage(im,filterType,sigmas, filterSize);
+                    if strcmp(filterType,'Difference_of_Gaussian')
+                        dog = filterImage(im,filterType,sigmas, filterSize);
+                    else
+                        dog = filterImage(im,filterType,sigmas, []) + 100;
+                    end
+                    dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
                     dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif'];
                     imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
                     imshow(dog,[]);
@@ -247,7 +254,12 @@ if justDoG
             else 
                 parfor i = 1:zSize    
                     im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']));
-                    dog = filterImage(im,filterType,sigmas, filterSize);
+                    if strcmp(filterType,'Difference_of_Gaussian')
+                        dog = filterImage(im,filterType,sigmas, filterSize);
+                    else
+                        dog = filterImage(im,filterType,sigmas, [])+100;
+                    end
+                    dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
                     dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif'];
                     imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
                 end

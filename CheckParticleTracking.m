@@ -58,6 +58,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % 	current particle. Note that the command forces ZoomMode. To toggle, use
 %   'o' or '+' depending on whether you're adding to an existing trace or creating a new
 %    trace, respectively.
+% # remove a spot from Spots and erase its frame in Particles
 % 
 % 
 % 
@@ -304,15 +305,15 @@ else
     for i=1:numFrames
         if i<nc9
             FrameInfo(i).nc=8;
-        elseif (i>=nc9)&&(i<nc10)
+        elseif (i>=nc9)&(i<nc10)
             FrameInfo(i).nc=9;
-        elseif (i>=nc10)&&(i<nc11)
+        elseif (i>=nc10)&(i<nc11)
             FrameInfo(i).nc=10;
-        elseif (i>=nc11)&&(i<=nc12)
+        elseif (i>=nc11)&(i<=nc12)
             FrameInfo(i).nc=11;
-        elseif (i>=nc12)&&(i<=nc13)
+        elseif (i>=nc12)&(i<=nc13)
             FrameInfo(i).nc=12;
-        elseif (i>=nc13)&&(i<=nc14)
+        elseif (i>=nc13)&(i<=nc14)
             FrameInfo(i).nc=13;
         elseif i>=nc14
             FrameInfo(i).nc=14;
@@ -433,6 +434,7 @@ end
 TraceFig=figure;
 SnippetFig=figure;
 ZProfileFig=figure;
+ZTrace=figure;
 % SisterFig=figure;
 % SisterFig2 = figure;
 % SisterFig3 = figure;
@@ -1006,7 +1008,7 @@ while (cc~='x')
         hold off
         title(['Z profile ' title_string],'FontSize',6)
     end
-
+        
     figure(TraceFig)
     if ~strcmpi(ExperimentType,'inputoutput')
         %Only update the trace information if we have switched particles
@@ -1073,9 +1075,15 @@ while (cc~='x')
             ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),')'],...
             ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)]};
     else
-        FigureTitle={['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)],...
-            ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames), ' (nc',num2str(FrameInfo(CurrentFrame).nc),')'],...
-            ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)]};
+        if isfield(FrameInfo, 'nc')
+            FigureTitle={['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)],...
+                ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames), ' (nc',num2str(FrameInfo(CurrentFrame).nc),')'],...
+                ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)]};
+        else
+            FigureTitle={['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)],...
+                ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames)],...
+                ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)]};
+        end
     end
     
     if HideApprovedFlag==1
@@ -1084,6 +1092,35 @@ while (cc~='x')
         FigureTitle=[FigureTitle,', Showing disapproved particles'];
     end
     title(FigureTitle)
+    
+    figure(ZTrace)
+    if ~strcmpi(ExperimentType,'inputoutput')
+        %Only update the trace information if we have switched particles
+        if (CurrentParticle~=PreviousParticle)||~exist('MaxZProfile', 'var')||(CurrentChannel~=PreviousChannel) 
+            PreviousParticle=CurrentParticle;
+            Frames=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
+        end    
+        for  i = 1:length(Frames)
+            MaxZProfile(i)=Spots{CurrentChannel}(Frames(i)).Fits...
+            (Particles{CurrentChannel}(CurrentParticle).Index(i)).brightestZ;
+        end
+        plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+            MaxZProfile(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-k');
+        hold on
+        plot(Frames(Frames==CurrentFrame),MaxZProfile(Frames==CurrentFrame),'ob');
+        hold off
+        
+        try
+            xlim([min(Frames)-1,max(Frames)+1]);
+            ylim([1,ZSlices+1])
+        catch
+%             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
+        end
+        xlabel('frame')        
+        ylabel('z slice')
+        title('Brightest Z trace')
+    end
+    
     
     %Define the windows
     figure(Overlay)
@@ -1098,6 +1135,8 @@ while (cc~='x')
     set(gcf,'units', 'normalized', 'position',[0.355, 0.15, .2/2, .33/2]);
     figure(ZProfileFig);
     set(gcf,'units', 'normalized', 'position',[0.47, 0.15, .2/2, .33/2]);
+    figure(ZTrace);
+    set(gcf,'units', 'normalized', 'position',[0.869, 0.55, .2/2, .42/2]);
     
     figure(Overlay)
     if isempty(SkipWaitForButtonPress)

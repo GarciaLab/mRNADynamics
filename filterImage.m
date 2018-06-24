@@ -27,14 +27,14 @@ function fint = filterImage(im, filterType, sigmas, customSize)
             s = str2double(sigmas{end});            
     end
     if exist('s','var')
-        filterSize = rad*s;
+        filterSize = round(rad*s);
         if ~mod(filterSize,2)
             filterSize = filterSize + 1;
         end
     end
     
     if ~isempty(customSize)
-        filterSize = customSize;
+        filterSize = round(customSize);
     end
 
     switch filterType  

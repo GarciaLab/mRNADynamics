@@ -224,7 +224,7 @@ if ~isempty(NewSpotsX)
                 if ~isinf(DistancesToNewSpots(j))
                     SpotIndexToCopy=SpotToParticleIndices(NewSpotToAssign(j));
                     %Finally, copy the information onto this particle.
-                    if Retracking == 0 || Particles(ParticleToAssign(j)).Approved ~= 1
+                    if Retracking == 0 || Particles(ParticleToAssign(j)).Approved < 1
                         Particles(ParticleToAssign(j)).Index(end+1)=SpotIndexToCopy;
                         Particles(ParticleToAssign(j)).Frame(end+1)=CurrentFrame;
                     end

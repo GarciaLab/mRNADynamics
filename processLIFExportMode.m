@@ -9,6 +9,15 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, Pro
           error('XML MetaFiles could not be found. Did they get exported using the LAS software?')
       end
   end
+  %get the XML files in the metadata folder that do not contain the word
+  %"Properties"
+  SeriesFiles2 = dir([XMLFolder, filesep, '*Series*.xml']);
+  SeriesFiles3 = [];
+  for j = 1:length(SeriesFiles2)
+      if mod(j,2) ~= 0
+          SeriesFiles3 = [SeriesFiles3,SeriesFiles2(j)];
+      end
+  end 
 
   %Leica confocal
   LIFDir = dir([Folder,filesep,'*.lif']);
@@ -51,7 +60,6 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, Pro
   NFrames = NFrames - 1;
   NPlanes = NPlanes - NSlices * NChannels;      
   Frame_Times = zeros(1, sum(NFrames.*NSlices));
-  % Frame_Times = [];
 
   m = 1;
   for i = 1:NSeries
@@ -66,6 +74,8 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, Pro
         Frame_Times(m) = time_in_days*86400;
         m=m+1;
     end
+    
+  
   end
   
   First_Time=Frame_Times(1);
@@ -85,8 +95,20 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, Pro
     else
       StartIndex = sum(NPlanes(1:i-1)) + 1;
     end
-    for j = StartIndex:(NSlices(i).*NChannels):sum(NPlanes(1:i))
+    
+   
+    %Grab the z-galvo position by parsing the XML metadata
+    xmltext = fileread([XMLFolder,filesep,SeriesFiles3(i).name]);
+    expressionobj = '(?<=ZUseMode="1" ZUseModeName="z-galvo" ZPosition=").*(?=" IsSuperZ)';
+    zGalvo = str2double(regexp(xmltext, expressionobj, 'match')); 
+   
+    
+    for j = StartIndex:(NSlices(i)*NChannels):sum(NPlanes(1:i))
       InitialStackTime(m) = Frame_Times(j);
+      try
+         zGalvo(m) = zGalvo;
+      catch
+      end
       m = m + 1;
     end
   end
@@ -94,7 +116,8 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, Pro
   for i = 1:sum(NFrames)
     FrameInfo(i).LinesPerFrame = str2double(LIFMeta.getPixelsSizeY(0));
     FrameInfo(i).PixelsPerLine = str2double(LIFMeta.getPixelsSizeX(0));
-    FrameInfo(i).NumberSlices = min(NSlices);
+    FrameInfo(i).NumberSlices = min(NSlices); 
+    
     FrameInfo(i).FileMode = 'LIFExport';
     %This is to allow for backwards compatibility with BioFormats
     if ~isempty(str2num(LIFMeta.getPixelsPhysicalSizeX(0)))
@@ -105,6 +128,10 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, Pro
         FrameInfo(i).ZStep = str2double(LIFMeta.getPixelsPhysicalSizeZ(0).value);
     end
     FrameInfo(i).Time = InitialStackTime(i);
+    try
+        FrameInfo(i).ZGalvo = zGalvo(i);
+    catch
+    end
   end
  
   %Find the flat field (FF) information
