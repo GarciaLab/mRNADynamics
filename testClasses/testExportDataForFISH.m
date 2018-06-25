@@ -2,7 +2,11 @@ function testCase = testExportDataForFISH(testCase)
     disp('Running with prefix ');
     disp(testCase.Prefix);
 
-    Prefix = ExportDataForFISH(testCase.Prefix);
+    if (~isprop(testCase, 'preferredFileName')) 
+      Prefix = ExportDataForFISH(testCase.Prefix);
+    else 
+      Prefix = ExportDataForFISH(testCase.Prefix, testCase.preferredFileName);
+    end
     compareExportResults(testCase);
 end
 

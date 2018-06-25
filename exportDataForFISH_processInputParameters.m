@@ -1,12 +1,13 @@
-function [Prefix, SkipFrames, ProjectionType] = exportDataForFISH_processInputParameters(varargin)
+function [Prefix, SkipFrames, ProjectionType, PreferredFileForTest] = exportDataForFISH_processInputParameters(varargin)
   %Look at parameters
-  SkipFrames=[];
-  Prefix='';
-
+  SkipFrames = [];
+  Prefix = '';
   %Default setting for z-projection is maximum-based...
   %This may fail when high intensity reflections are present
   ProjectionType = 'maxprojection'; 
-
+  %Added new argument to specify a preferred file name and enable automatic testing
+  PreferredFileForTest = [];
+  
   k=1;
   while k<=length(varargin)
     if strcmpi(varargin{k},'skipframes')
@@ -17,6 +18,8 @@ function [Prefix, SkipFrames, ProjectionType] = exportDataForFISH_processInputPa
       ProjectionType = 'medianprojection';
     elseif strcmpi(varargin{k},'middleprojection')
       ProjectionType = 'middleprojection';
+    elseif isobject(varargin{k}) && isa(varargin{k}, 'PreferredFileForTest')
+      PreferrediFileForTest = varargin{k};
     else
       Prefix = varargin{k};
     end
