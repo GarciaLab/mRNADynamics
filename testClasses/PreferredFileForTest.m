@@ -2,13 +2,14 @@
 % than one file in the folder. This avoids asking for user prompt.
 classdef PreferredFileForTest
 
-properties
-  fileName;
-end
-
-methods 
-  function obj = PreferredFileForTest(fileNameArg)
-    fileName = fileNameArg;
+  properties
+    fileName;
   end
-end
 
+  methods 
+    function obj = PreferredFileForTest(fileNameArg)
+      fileName = fileNameArg;
+    end
+  end
+
+end
