@@ -68,8 +68,8 @@ function LIFExportMode_flatFieldImage(LIFMeta, Folder, OutputFolder, Prefix, Pre
   
   if length(FFToUse)> 1
     FilePath = [];
-    if (~empty(PreferredFileForTest)) 
-      FilePath = [Folder, filesep, PreferredFileForTest.fileName];
+    if (~empty(PreferredFileNameForTest)) 
+      FilePath = [Folder, filesep, PreferredFileNameForTest];
       disp(['Too many flat field images, using file name specified for testing', FilePath])
     else
       warning('Too many flat field images match the pixel and image size size')

@@ -1,4 +1,4 @@
-function [Prefix, SkipFrames, ProjectionType, PreferredFileForTest] = exportDataForFISH_processInputParameters(varargin)
+function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest] = exportDataForFISH_processInputParameters(varargin)
   %Look at parameters
   SkipFrames = [];
   Prefix = '';
@@ -6,7 +6,7 @@ function [Prefix, SkipFrames, ProjectionType, PreferredFileForTest] = exportData
   %This may fail when high intensity reflections are present
   ProjectionType = 'maxprojection'; 
   %Added new argument to specify a preferred file name and enable automatic testing
-  PreferredFileForTest = [];
+  PreferredFileNameForTest = '';
   
   k=1;
   while k<=length(varargin)
@@ -20,6 +20,7 @@ function [Prefix, SkipFrames, ProjectionType, PreferredFileForTest] = exportData
       ProjectionType = 'middleprojection';
     elseif isobject(varargin{k}) && isa(varargin{k}, 'PreferredFileForTest')
       PreferredFileForTest = varargin{k};
+      PreferredFileNameForTest = PreferredFileForTest.fileName;
     else
       Prefix = varargin{k};
     end
