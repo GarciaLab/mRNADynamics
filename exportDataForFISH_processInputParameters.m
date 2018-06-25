@@ -19,7 +19,7 @@ function [Prefix, SkipFrames, ProjectionType, PreferredFileForTest] = exportData
     elseif strcmpi(varargin{k},'middleprojection')
       ProjectionType = 'middleprojection';
     elseif isobject(varargin{k}) && isa(varargin{k}, 'PreferredFileForTest')
-      PreferrediFileForTest = varargin{k};
+      PreferredFileForTest = varargin{k};
     else
       Prefix = varargin{k};
     end
