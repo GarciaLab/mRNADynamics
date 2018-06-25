@@ -28,12 +28,13 @@
 %The idea of (4) being in Dropbox is that I don't need to be synchronizing
 %the part related to the manual analysis.
 function Prefix = ExportDataForFISH(varargin)
+addpath('LIFExport');
 
-[PrefixOverrideFlag, SkipFrames, ProjectionType] = exportDataForFISH_processInputParameters(varargin{:})
+[Prefix, SkipFrames, ProjectionType] = exportDataForFISH_processInputParameters(varargin{:})
 
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
     Folder, Prefix, ExperimentType, Channel1, Channel2,OutputFolder, Channel3...
-    ] = readMovieDatabase(PrefixOverrideFlag);
+    ] = readMovieDatabase(Prefix);
 
 [D, FileMode] = DetermineFileMode(Folder);
 
