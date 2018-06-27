@@ -29,6 +29,7 @@
 %the part related to the manual analysis.
 function Prefix = ExportDataForFISH(varargin)
 addpath('LIFExport');
+addpath('ZeissConfocalLSM');
 
 [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest] = exportDataForFISH_processInputParameters(varargin{:})
 
