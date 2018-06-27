@@ -3,9 +3,9 @@ function testCase = testExportDataForFISH(testCase)
     disp(testCase.Prefix);
 
     if (~isprop(testCase, 'PreferredFileName')) 
-      Prefix = ExportDataForFISH(testCase.Prefix);
+      ExportDataForFISH(testCase.Prefix);
     else 
-      Prefix = ExportDataForFISH(testCase.Prefix, testCase.PreferredFileName);
+      ExportDataForFISH(testCase.Prefix, testCase.PreferredFileName);
     end
     compareExportResults(testCase);
 end
