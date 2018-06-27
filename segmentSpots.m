@@ -23,6 +23,7 @@ function segmentSpots(Prefix,Threshold,varargin)
 % 'Shadows':    	 This option should be followed by 0, 1 or 2. This
 %                specifies the number of requisite z-planes above and/or below the
 %                brightest plane for a spot to have to pass quality control. 
+% 'noPool':     Does not start and use a parallel pool. 
 % 'customFilters': Choose which filter to use to segment the image. Name
 %                  should be a string, followed by a cell with your filter
 %                  or filters
@@ -56,6 +57,7 @@ numFrames=0;
 numShadows = 2;
 customSigmas = 0;
 customFilter = 0;
+pool = 1;
 filterType = 'Difference_of_Gaussian';
 
 for i=1:length(varargin)
@@ -77,6 +79,8 @@ for i=1:length(varargin)
         else
             numFrames=varargin{i+1};
         end
+    elseif strcmp(varargin{i},'noPool')
+        pool = 0;
     elseif strcmp(varargin{i},'customFilter')
         customFilter = 1;
         try
@@ -115,15 +119,17 @@ end
 %%
 tic;
 
-maxWorkers = 56;
-try
-    parpool(maxWorkers);  % 6 is the number of cores the Garcia lab server can reasonably handle per user at present.
-catch
+if pool
+    maxWorkers = 56;
     try
-        parpool; %in case there aren't enough cores on the computer 
+        parpool(maxWorkers);  % 6 is the number of cores the Garcia lab server can reasonably handle per user at present.
     catch
+        try
+            parpool; %in case there aren't enough cores on the computer 
+        catch
+        end
+        %parpool throws an error if there's a pool already running. 
     end
-    %parpool throws an error if there's a pool already running. 
 end
 
 [~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
@@ -249,7 +255,7 @@ filterSize = round(2000/pixelSize);
                     dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
                     dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif'];
                     imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
-                    imshow(dog,[]);
+                    imshow(dog,[median(dog(:)), max(dog(:))]);
                 end
             else 
                 parfor i = 1:zSize    
