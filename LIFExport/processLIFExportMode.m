@@ -1,4 +1,5 @@
-function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, ProjectionType, Channel1, Channel2, Channel3, Prefix, OutputFolder)
+% Added PreferredFileName so we can automate testing and bypass the user prompt when there are many files available.
+function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, ProjectionType, Channel1, Channel2, Channel3, Prefix, OutputFolder, PreferredFileNameForTest)
   %Loads file and metadata
   [XMLFolder, SeriesFiles, SeriesFiles3] = getSeriesFiles(Folder);
   [LIFDir, LIFIndex, LIFImages, LIFMeta] = loadLIFFile(Folder);
@@ -11,7 +12,7 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, Pro
   FrameInfo = getFrameInfo(NFrames, NSlices, InitialStackTime, LIFMeta, zGalvo);
  
   %Find the flat field (FF) information
-  LIFExportMode_flatFieldImage(LIFMeta, Folder, OutputFolder, Prefix);
+  LIFExportMode_flatFieldImage(LIFMeta, Folder, OutputFolder, Prefix, PreferredFileNameForTest);
   
   [coatChannel, histoneChannel, fiducialChannel, inputProteinChannel, FrameInfo] =...
     LIFExportMode_interpretChannels(ExperimentType, Channel1, Channel2, Channel3, FrameInfo);

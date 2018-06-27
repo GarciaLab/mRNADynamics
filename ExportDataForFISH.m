@@ -30,7 +30,7 @@
 function Prefix = ExportDataForFISH(varargin)
 addpath('LIFExport');
 
-[Prefix, SkipFrames, ProjectionType] = exportDataForFISH_processInputParameters(varargin{:})
+[Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest] = exportDataForFISH_processInputParameters(varargin{:})
 
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
     Folder, Prefix, ExperimentType, Channel1, Channel2,OutputFolder, Channel3...
@@ -67,7 +67,7 @@ elseif strcmp(FileMode,'LSM')
   FrameInfo = processZeissConfocalLSMData(Folder, D, FrameInfo, ExperimentType, Channel1, Channel2, Prefix, OutputFolder);
 
 elseif strcmp(FileMode,'LIFExport')
-  FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, ProjectionType, Channel1, Channel2, Channel3, Prefix, OutputFolder);        
+  FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, ProjectionType, Channel1, Channel2, Channel3, Prefix, OutputFolder, PreferredFileNameForTest);        
 
 elseif strcmp(FileMode,'DSPIN') || strcmp(FileMode,'DND2')
   %Nikon spinning disk confocal mode - TH/CS 2017

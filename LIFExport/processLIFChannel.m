@@ -22,7 +22,5 @@ function processLIFChannel(ExperimentType, channelIndex, numberOfFrames, Prefix,
           slicesCounter = slicesCounter + 1;
       end
     end
-  else
-    disp(['ExperimentType and channels combination not supported - ',NewName]);
   end
 end
