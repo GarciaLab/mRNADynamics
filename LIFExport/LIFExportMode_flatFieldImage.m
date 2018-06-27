@@ -1,4 +1,4 @@
-function LIFExportMode_flatFieldImage(LIFMeta, Folder, OutputFolder, Prefix, PreferredFileForTest)
+function LIFExportMode_flatFieldImage(LIFMeta, Folder, OutputFolder, Prefix, PreferredFileNameForTest)
   %The flat field image can be in the folder with the data or in the folder corresponding to the date.
   D1 = dir([Folder, filesep, 'FF*.lif']);
   D2 = dir([Folder, filesep, '..', filesep, 'FF*.lif']);
@@ -68,9 +68,9 @@ function LIFExportMode_flatFieldImage(LIFMeta, Folder, OutputFolder, Prefix, Pre
   
   if length(FFToUse)> 1
     FilePath = [];
-    if (~empty(PreferredFileNameForTest)) 
+    if (~isempty(PreferredFileNameForTest)) 
       FilePath = [Folder, filesep, PreferredFileNameForTest];
-      disp(['Too many flat field images, using file name specified for testing', FilePath])
+      disp(['Too many flat field images, using file name specified for testing - ', FilePath])
     else
       warning('Too many flat field images match the pixel and image size size')
       [FFFile,FFPath] =...

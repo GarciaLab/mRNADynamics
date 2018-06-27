@@ -8,7 +8,7 @@ classdef PreferredFileForTest
 
   methods 
     function obj = PreferredFileForTest(fileNameArg)
-      fileName = fileNameArg;
+      obj.fileName = fileNameArg;
     end
   end
 
