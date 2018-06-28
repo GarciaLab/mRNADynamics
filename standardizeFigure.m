@@ -18,6 +18,7 @@ function standardizeFigure(ax, legend, varargin)
         dataType = {dataType};
     end
     legendSize = 20;
+    fontSize = 20;
     
     for i = 1:length(varargin)
        if strcmpi(varargin{i}, 'axeslinewidth')
@@ -32,8 +33,10 @@ function standardizeFigure(ax, legend, varargin)
             color(i,:) = [208,109,171]/255;
         elseif strcmpi(varargin{i}, 'lightblue')
             color(i,:) = [115,142,193]/255;
-       elseif strcmpi(varargin{i}, 'legendFontSize')
+        elseif strcmpi(varargin{i}, 'legendFontSize')
             legendSize = varargin{i+1};
+        elseif strcmpi(varargin{i}, 'fontSize')
+            fontSize = varargin{i+1};
         end
     end
     
@@ -67,7 +70,7 @@ function standardizeFigure(ax, legend, varargin)
     end
     
     set(ax, 'TickLength',[0 0],...
-        'FontSize', 20, 'FontName', 'Myriad Pro', 'FontWeight', 'bold');
+        'FontSize', fontSize, 'FontName', 'Myriad Pro', 'FontWeight', 'bold');
     ax.TickDir = 'out';
     ax.LineWidth = axesLineWidth;
     faceColor = [255,251,206]/255; %yellow axis face.
