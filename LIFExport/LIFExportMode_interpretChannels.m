@@ -32,8 +32,8 @@ function [coatChannel, histoneChannel, fiducialChannel, inputProteinChannel, Fra
             display('Could not find a histone channel. Proceeding without it.')
         end
     end
-    % MCP-mCherry as a fake histone channel in case there's no
-    % His-iRFP (Last edited : 3/28/2018, YJK)
+    % Use MCP-mCherry as a fake histone channel in case there's no
+    % Histone channel (Last edited : 3/28/2018, YJK)
     if (fiducialChannel==0)&&...
             ((~isempty(strfind(Channel1{1},'mCherry')))||(~isempty(strfind(Channel2{1},'mCherry'))))
         if (~isempty(strfind(Channel1{1},'mCherry')))
