@@ -31,7 +31,7 @@ function standardizeFigure(ax, legend, varargin)
             color(i,:) = [108,188,233]/255;
         elseif strcmpi(varargin{i}, 'magenta')
             color(i,:) = [208,109,171]/255;
-        elseif strcmpi(varargin{i}, 'lightblue')
+        elseif strcmpi(varargin{i}, 'lightBlue')
             color(i,:) = [115,142,193]/255;
         elseif strcmpi(varargin{i}, 'legendFontSize')
             legendSize = varargin{i+1};
@@ -51,7 +51,9 @@ function standardizeFigure(ax, legend, varargin)
             dataObj(i).MarkerEdgeColor = color(i,:);
         elseif strcmpi(dataType{i}, 'bar') || strcmpi(dataType{i}, 'histogram')
 %             dataObj(i).LineStyle = 'none';
-            dataObj(i).FaceColor = color(i,:);
+            if i <= length(colorDictFields)
+                dataObj(i).FaceColor = colorDict.(colorDictFields{i});
+            end
         elseif strcmpi(dataType{i}, 'line') || strcmpi(dataType{i}, 'errorbar')
             dataObj(i).LineWidth = 5;
             dataObj(i).Marker = '.';

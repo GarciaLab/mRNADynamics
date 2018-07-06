@@ -285,15 +285,15 @@ if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file')
     for i=1:numFrames
         if i<nc9
             FrameInfo(i).nc=8;
-        elseif (i>=nc9)&&(i<nc10)
+        elseif (i>=nc9)&(i<nc10)
             FrameInfo(i).nc=9;
-        elseif (i>=nc10)&&(i<nc11)
+        elseif (i>=nc10)&(i<nc11)
             FrameInfo(i).nc=10;
-        elseif (i>=nc11)&&(i<=nc12)
+        elseif (i>=nc11)&(i<=nc12)
             FrameInfo(i).nc=11;
-        elseif (i>=nc12)&&(i<=nc13)
+        elseif (i>=nc12)&(i<=nc13)
             FrameInfo(i).nc=12;
-        elseif (i>=nc13)&&(i<=nc14)
+        elseif (i>=nc13)&(i<=nc14)
             FrameInfo(i).nc=13;
         elseif i>=nc14
             FrameInfo(i).nc=14;

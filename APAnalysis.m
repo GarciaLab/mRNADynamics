@@ -138,6 +138,7 @@ function APAnalysis(dataset, varargin)
     g = zeros(numAPBins, 1);
     g2 = zeros(numAPBins, 1);
     n = zeros(numAPBins, 1);
+    fSet = zeros(numAPBins, nSets);
     for dataSet = 1:nSets
         f = data(dataSet).EllipsesOnAP(:,nc)./data(dataSet).TotalEllipsesAP(:,nc);
         nonanf = f;
@@ -149,14 +150,17 @@ function APAnalysis(dataset, varargin)
             plot(ap,f,'-o','DisplayName',Prefix{dataSet});
             hold on
         end
+        fSet(:, dataSet) = f;
     end
     n(~n) = 1;
     fmean = g./n;
     fstde = sqrt(g2./n - fmean.^2) ./ sqrt(n);
     if nSets > 1
-        e = errorbar(ap, fmean, fstde,'DisplayName', 'mean $\pm$ std. error');
+%         e = errorbar(ap, fmean, fstde,'DisplayName', 'mean $\pm$ std. error');
+        fMeanNaN = nanmean(fSet, 2);
+        e = plot(ap, fMeanNaN,'DisplayName', 'mean');
     end
-        
+           
     hold off
     lgd2 = legend('show');
     set(lgd2, 'Interpreter', 'Latex');
