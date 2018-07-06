@@ -24,7 +24,7 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 % 'LastFrame', M:     Run the code from initial frame to frame M. Defaults to all
 %                frames. It's suggested to run 5-20 frames for debugging.
 % 'Shadows':    	 This option should be followed by 0, 1 or 2. This
-%                specifies the number of requisite z-planes above and/or below the
+%                specifies the number of requisite z-planes above or below the
 %                brightest plane for a spot to have to pass quality control. 
 % 'IntegralZ':  Establish center slice at position that maximizes raw fluo integral 
 %               across sliding 3 z-slice window.
