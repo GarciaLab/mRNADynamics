@@ -173,7 +173,22 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             
             if  .1<sigma_x && sigma_x<(600/pixelSize) && .1<sigma_y && sigma_y<(600/pixelSize)...
                     || addition(1) %here is the place to introduce quality control
-                max_dog = max(max(dog_image(k_row,k_column)));
+                try
+                    max_dog = max(max(dog_image(k_row,k_column)));
+                catch exceptionMaxDOG
+                    exceptionMessage = exceptionMaxDOG.message;
+                
+                    if contains(exceptionMessage, 'array exceeds maximum array size preference')
+                        fprintf('***Error Suggestions: Please read!***');
+                        fprintf('\nYou have requested memory for an array that exceeds maximum array size preferences set by MATLAB.');
+                        fprintf('\nThis could be due to one of the following reasons:');
+                        fprintf('\n(1) Your ML classifier is not good enough and is finding too many false positives. Go back and retrain your classifier to find less false positives (i.e. Do better next time.).')
+                        fprintf('\n(2) In Weka, you made class 1 (red) "not spots" and class 2 (green) "spots". Train a new classifier where class 1 is "spots" and class 2 is "not spots".\n');
+                        rethrow(exceptionMaxDOG);
+                    else
+                        rethrow(exceptionMaxDOG);
+                    end
+                end
                 temp_particles = {{fixedAreaIntensity, spot_x, spot_y, fits(end-1), snippet, ...
                     area, sigma_x, sigma_y, centroid_y, centroid_x, gaussianIntensity,intensity,...
                     max_dog, snippet_mask, sigma_x2, sigma_y2, sister_chromatid_distance, relative_errors, confidence_intervals, gaussian, mesh,fits}};
