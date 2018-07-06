@@ -6,12 +6,14 @@ function [dropboxFolderName, rowIndex] = getDropboxFolderFromMovieDatabaseConten
 
   dropboxFolderColumnIndex = findColumnIndex(movieDatabaseHeaderRow, 'DropboxFolder');
   
-%   namestart = find(isletter(prefix));
-%   namestart = namestart(1); %Index of first letter in prefix name, i.e. start of dataset name
-% 
-%   indexArray = regexpi(dataFolderColumn, ['^', prefix(1:(namestart-2)), PREFIX_SEPARATOR, strrep(prefix(namestart:end), '+', '\+'), '$']);
-    indexArray = regexpi(dataFolderColumn, ['^', prefix(1:10), PREFIX_SEPARATOR, strrep(prefix(12:end),'+', '\+'), '$']);  
-    rowIndex = find(not(cellfun('isempty', indexArray)));
+  namestart = find(isletter(prefix));
+  namestart = namestart(1); %Index of first letter in prefix name, i.e. start of dataset name
+  
+  dash_indices = find(prefix(1:namestart)=='-'); %Get indices of dashes before the start of prefix name
+  sep_dash = dash_indices(end); %Get index of dash serving as prefix separator
+ 
+  indexArray = regexpi(dataFolderColumn, ['^', prefix(1:(sep_dash-1)), PREFIX_SEPARATOR, strrep(prefix((sep_dash+1):end), '+', '\+'), '$']);
+  rowIndex = find(not(cellfun('isempty', indexArray)));
 
   dropboxFolderNameCell = movieDatabase(rowIndex, dropboxFolderColumnIndex);
 
