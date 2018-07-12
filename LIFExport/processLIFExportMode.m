@@ -29,7 +29,7 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, Pro
   for seriesIndex = 1:NSeries
     waitbar(seriesIndex/NSeries, waitbarFigure)
     for framesIndex = 1:NFrames(seriesIndex) 
-      processLIFFrame(numberOfFrames, Prefix, BlankImage, OutputFolder, LIFImages, framesIndex, seriesIndex, NChannels, NSlices, ExperimentType, Channel1, Channel2, Channel3, ProjectionType, fiducialChannel, histoneChannel, ReferenceHist, coatChannel);
+      processLIFFrame(numberOfFrames, Prefix, BlankImage, OutputFolder, LIFImages, framesIndex, seriesIndex, NChannels, NSlices, ExperimentType, Channel1, Channel2, Channel3, ProjectionType, fiducialChannel, histoneChannel, ReferenceHist, coatChannel, inputProteinChannel);
       numberOfFrames = numberOfFrames + 1;
     end
   end
