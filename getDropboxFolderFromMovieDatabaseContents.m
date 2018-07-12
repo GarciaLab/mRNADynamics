@@ -7,6 +7,12 @@ function [dropboxFolderName, rowIndex] = getDropboxFolderFromMovieDatabaseConten
   dropboxFolderColumnIndex = findColumnIndex(movieDatabaseHeaderRow, 'DropboxFolder');
   
   namestart = find(isletter(prefix));
+  if (isempty(namestart))
+    % If the prefix name does not contain any letters, defaults to 12 
+    % which is the usual size after the date.
+    namestart = 12;
+  end;
+  
   namestart = namestart(1); %Index of first letter in prefix name, i.e. start of dataset name
   
   dash_indices = find(prefix(1:namestart)=='-'); %Get indices of dashes before the start of prefix name
