@@ -1,8 +1,9 @@
 try
   import matlab.unittest.TestSuite
 
-  suite = TestSuite.fromFolder('testKnownExperiments');
-  testResults = run(suite);
+  exportDataForFISHsuite = TestSuite.fromFolder('testExportDataForFISH');
+  
+  testResults = run(exportDataForFISHsuite);
   exit(any([testResults.Failed]));
 catch
   disp('Cannot execute test suite.');
