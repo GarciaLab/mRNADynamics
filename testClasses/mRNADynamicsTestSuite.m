@@ -1,9 +1,12 @@
 try
   import matlab.unittest.TestSuite
 
-  exportDataForFISHsuite = TestSuite.fromFolder('testExportDataForFISH');
+  exportDataForFISHSuite = TestSuite.fromFolder('testExportDataForFISH');
+  segmentSpotsSuite = TestSuite.fromFolder('testSegmentSpots');
   
-  testResults = run(exportDataForFISHsuite);
+  mRNADynamicsTestSuite = [exportDataForFISHSuite, segmentSpotsSuite];
+  testResults = run(mRNADynamicsTestSuite);
+
   exit(any([testResults.Failed]));
 catch
   disp('Cannot execute test suite.');
