@@ -10,8 +10,10 @@ function testCase = testSegmentSpots(testCase)
   processedDataPath = getConfigValue(configValues, 'FISHPath');
   
   dynamicResultsExperimentPath = [dynamicResultsPath, filesep, testCase.Prefix];
-  processedDataExperimentPath = [processedDataPath, filesep, testCase.Prefix];
+  % harrypotel: Not sure why the folder on ProcessedData has a _ at the end, is it a bug?
+  processedDataExperimentPath = [processedDataPath, filesep, testCase.Prefix, '_'];
 
+  % Clean up previous runs
   deleteDirectory(dynamicResultsExperimentPath);
   deleteDirectory(processedDataExperimentPath);
 
@@ -21,26 +23,63 @@ function testCase = testSegmentSpots(testCase)
   % Tests first pass
   % Executes segment spots without specifying DoG
   segmentSpots(testCase.Prefix, []);
-
-  % Then compares expected contents of both full DynamicsResults and ProcessedData folders
-  expectedDataFolder = [testPath, filesep, 'SegmentSpots_1stPass', filesep, 'DynamicsResults',...
-    filesep, testCase.Prefix];
-  compareExpectedDataDir(testCase, dynamicResultsExperimentPath, expectedDataFolder);
-
-  expectedDataFolder = [testPath, filesep, 'SegmentSpots_1stPass', filesep, 'ProcessedData',...
-    filesep, testCase.Prefix];
-  compareExpectedDataDir(testCase, processedDataExperimentPath, expectedDataFolder);
+  
+  % Then verifies log.mat and FrameInfo.mat and expected contents of dogs folder
+  assertLogFileExists(testCase, dynamicResultsExperimentPath);
+  assertFrameInfoEqualToExpected(testCase, dynamicResultsExperimentPath, testPath, 'SegmentSpots_1stPass');
+  assertDogsFolderEqualToExpected(testCase, processedDataExperimentPath, testPath, 'SegmentSpots_1stPass');
 
   % Tests second pass
   % Executes segment spots with known DoG
   segmentSpots(testCase.Prefix, testCase.DoG);
 
-  % Then compares expected contents of both full DynamicsResults and ProcessedData folders
-  expectedDataFolder = [testPath, filesep, 'SegmentSpots_2ndPass', filesep, 'DynamicsResults',...
-    filesep, testCase.Prefix];
-  compareExpectedDataDir(testCase, dynamicResultsExperimentPath, expectedDataFolder);
+  assertLogFileExists(testCase, dynamicResultsExperimentPath);
+  assertFrameInfoEqualToExpected(testCase, dynamicResultsExperimentPath, testPath, 'SegmentSpots_2ndPass');
+  assertDogsFolderEqualToExpected(testCase, processedDataExperimentPath, testPath, 'SegmentSpots_2ndPass');
+  assertSpotsEqualToExpected(testCase, dynamicResultsExperimentPath, testPath, 'SegmentSpots_2ndPass');
+end
 
-  expectedDataFolder = [testPath, filesep, 'SegmentSpots_2ndPass', filesep, 'ProcessedData',...
+% Given a path, asserts that a log.mat file exists on it.
+function  assertLogFileExists(testCase, dynamicResultsExperimentPath);
+  logFilePath = [dynamicResultsExperimentPath, filesep, 'log.mat'];
+  testCase.assertTrue(exist(logFilePath, 'file') == 2);
+end
+
+% Given the path of the dynamic results folder and the expected data path (1st pass or 2nd pass),
+% asserts that FrameInfo.mat is equal to expected.
+function assertFrameInfoEqualToExpected(testCase, dynamicResultsExperimentPath, testPath, expectedDataSubFolder)
+  frameInfoPath = [dynamicResultsExperimentPath, filesep, 'FrameInfo.mat'];
+  testCase.assertTrue(exist(frameInfoPath, 'file') == 2);
+  frameInfoResult = load(frameInfoPath);
+
+  expectedDataFolder = [testPath, filesep, expectedDataSubFolder, filesep, 'DynamicsResults',...
     filesep, testCase.Prefix];
-  compareExpectedDataDir(testCase, processedDataExperimentPath, expectedDataFolder);
+  expectedFrameInfoPath = [expectedDataFolder, filesep, 'FrameInfo.mat'];
+  expectedFrameInfo = load(expectedFrameInfoPath);
+
+  testCase.assertEqual(frameInfoResult.FrameInfo, expectedFrameInfo.FrameInfo);
+end
+
+% Given the path of the processed data folderand the expected data path (1st pass or 2nd pass),
+% asserts dogs folder with expected data set.
+function assertDogsFolderEqualToExpected(testCase, processedDataExperimentPath, testPath, expectedDataSubFolder);
+  dogsPath = [processedDataExperimentPath, filesep, 'dogs'];
+  expectedDataFolder = [testPath, filesep, expectedDataSubFolder, filesep, 'ProcessedData',...
+    filesep, testCase.Prefix, '_', filesep, 'dogs']; 
+  compareExpectedDataDir(testCase, dogsPath, expectedDataFolder);
+end
+
+% Given the path of the dynamic results folder and the expected data path (1st pass or 2nd pass),
+% asserts that FrameInfo.mat is equal to expected.
+function assertSpotsEqualToExpected(testCase, dynamicResultsExperimentPath, testPath, expectedDataSubFolder)
+  spotsPath = [dynamicResultsExperimentPath, filesep, 'Spots.mat'];
+  testCase.assertTrue(exist(spotsPath, 'file') == 2);
+  spotsFile = load(spotsPath);
+  
+  expectedDataFolder = [testPath, filesep, expectedDataSubFolder, filesep, 'DynamicsResults',...
+    filesep, testCase.Prefix];
+  expectedSpotsPath = [expectedDataFolder, filesep, 'Spots.mat'];
+  expectedSpotsFile = load(expectedSpotsPath);
+
+  testCase.assertEqual(spotsFile.Spots, expectedSpotsFile.Spots);
 end
