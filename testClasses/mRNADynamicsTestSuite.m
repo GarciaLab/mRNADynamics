@@ -4,8 +4,8 @@ try
   exportDataForFISHSuite = TestSuite.fromFolder('testExportDataForFISH');
   segmentSpotsSuite = TestSuite.fromFolder('testSegmentSpots');
   
-  mRNADynamicsTestSuite = [exportDataForFISHSuite, segmentSpotsSuite];
-  testResults = run(mRNADynamicsTestSuite);
+  completeTestSuite = [exportDataForFISHSuite, segmentSpotsSuite];
+  testResults = run(completeTestSuite);
 
   exit(any([testResults.Failed]));
 catch
