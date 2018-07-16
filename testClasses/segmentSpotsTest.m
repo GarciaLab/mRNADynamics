@@ -18,7 +18,7 @@ classdef segmentSpotsTest < matlab.unittest.TestCase
             testCase.dirSpots = [DropboxFolder,filesep,testCase.Prefix];
             testCase.dirDog = [FISHPath, filesep, testCase.Prefix, '_'];
         end
-       
+            
         function testDoGGeneration(testCase)
             %Verifies that segmentSpots actually created dog files.
             nFrames = 2;

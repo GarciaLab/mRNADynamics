@@ -1,12 +1,8 @@
 try
   import matlab.unittest.TestSuite
 
-  exportDataForFISHSuite = TestSuite.fromFolder('testExportDataForFISH');
-  segmentSpotsSuite = TestSuite.fromFolder('testSegmentSpots');
-  
-  completeTestSuite = [exportDataForFISHSuite, segmentSpotsSuite];
-  testResults = run(completeTestSuite);
-
+  suite = TestSuite.fromFolder('testKnownExperiments');
+  testResults = run(suite);
   exit(any([testResults.Failed]));
 catch
   disp('Cannot execute test suite.');
