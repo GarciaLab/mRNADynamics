@@ -24,6 +24,10 @@ function log = segmentSpots(Prefix,Threshold,varargin)
 %                specifies the number of requisite z-planes above and/or below the
 %                brightest plane for a spot to have to pass quality control. 
 % 'noPool':     Does not start and use a parallel pool. 
+% 'keepPool': Don't shut down the parallel pool when the script is done
+% running. 
+% 'highPrecision': Uses higher precision filtering for segmentation
+% 'intScale': Scale up the radius of integration
 % 'customFilters': Choose which filter to use to segment the image. Name
 %                  should be a string, followed by a cell with your filter
 %                  or filters
@@ -57,15 +61,19 @@ numFrames=0;
 numShadows = 2;
 customSigmas = 0;
 customFilter = 0;
-pool = 1;
+highPrecision = 0;
 filterType = 'Difference_of_Gaussian';
+intScale = 1;
+nWorkers = 8;
+keepPool = 0;
+pool = 1;
 
 for i=1:length(varargin)
-    if strcmp(varargin{i},'displayFigures')
+    if strcmpi(varargin{i},'displayFigures')
         displayFigures=1;
-    elseif strcmp(varargin{i},'TrackSpots')
+    elseif strcmpi(varargin{i},'TrackSpots')
         trackSpots=1;
-    elseif strcmp(varargin{i},'Shadows')
+    elseif strcmpi(varargin{i},'Shadows')
         if ~isnumeric(varargin{i+1}) || varargin{i+1} > 2
             error('Wrong input parameters. After ''Shadows'' you should input number of shadows (0, 1 or 2)')
         else
@@ -79,11 +87,21 @@ for i=1:length(varargin)
         else
             numFrames=varargin{i+1};
         end
-    elseif strcmp(varargin{i},'noPool')
-        pool = 0;
-    elseif strcmp(varargin{i},'customFilter')
+    elseif strcmpi(varargin{i},'keepPool')
+        pool = 1;   
+    elseif strcmpi(varargin{i},'highPrecision')
+        highPrecision = 1;
+    elseif strcmpi(varargin{i},'intScale')
+        intScale = varargin{i+1};
+    elseif strcmpi(varargin{i},'nWorkers')
+        nWorkers = varargin{i+1};
+        if nWorkers == 0
+            pool = 0;
+        end
+    elseif strcmpi(varargin{i},'customFilter')
         customFilter = 1;
         try
+            
             filterType = varargin{i+1};
         catch
             warning('Entered filter not recognized. Defaulting to DoG')
@@ -120,7 +138,7 @@ end
 tic;
 
 if pool
-    maxWorkers = 56;
+    maxWorkers = nWorkers;
     try
         parpool(maxWorkers);  % 6 is the number of cores the Garcia lab server can reasonably handle per user at present.
     catch
@@ -249,6 +267,9 @@ filterSize = round(2000/pixelSize);
                     im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']));
                     if strcmp(filterType,'Difference_of_Gaussian')
                         dog = filterImage(im,filterType,sigmas, filterSize);
+                        if highPrecision
+                            dog = (dog+100)*100;
+                        end
                     else
                         dog = filterImage(im,filterType,sigmas, []) + 100;
                     end
@@ -261,13 +282,16 @@ filterSize = round(2000/pixelSize);
                 parfor i = 1:zSize    
                     im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']));
                     if strcmp(filterType,'Difference_of_Gaussian')
-                        dog = filterImage(im,filterType,sigmas, filterSize);
+                        dog = filterImage(im,filterType,sigmas, filterSize); 
+                        if highPrecision
+                            dog = (dog+100)*100;
+                        end
                     else
                         dog = filterImage(im,filterType,sigmas, [])+100;
                     end
                     dog = padarray(dog(filterSize:end-filterSize-1, filterSize:end-filterSize-1), [filterSize,filterSize]);
                     dog_name = ['DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif'];
-                    imwrite(uint16(dog), [OutputFolder1,filesep,dog_name])
+                    imwrite(uint16(dog), [OutputFolder1,filesep,dog_name]);
                 end
             end
         end
@@ -288,7 +312,7 @@ else
         end
         
         h=waitbar(0,'Segmenting spots');
-        Threshold = thresh(q);
+%         Threshold = thresh(q);
         for current_frame = 1:numFrames
             w = waitbar(current_frame/numFrames,h);
             set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
@@ -301,7 +325,7 @@ else
                 end
                 if displayFigures
                     fig = figure(1);
-                    imshow(dog,[]);
+                    imshow(dog,[median(dog(:)), max(dog(:))]);
                 else
                     fig=[];
                 end
@@ -319,17 +343,17 @@ else
                 temp_particles = cell(1, n_spots);
                 
                 if n_spots ~= 0
-                    if ~displayFigures
+                    if ~displayFigures && pool
                         parfor k = 1:n_spots
                             centroid = round(centroids(k).Centroid);
                             temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, '');
+                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, '', intScale);
                         end
                     else
                         for k = 1:n_spots
                             centroid = round(centroids(k).Centroid);
                             temp_particles(k) = identifySingleSpot(k, im, im_label, dog, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, '');
+                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, '', intScale);
                         end
                     end
                     for k = 1:n_spots
@@ -582,10 +606,12 @@ else
     log(end).sigmas = sigmas;
 end
 save(logFile, 'log', '-v7.3');
-try
-    poolobj = gcp('nocreate');
-    delete(poolobj);
-catch
+if ~keepPool
+    try
+        poolobj = gcp('nocreate');
+        delete(poolobj);
+    catch
+    end
 end
 
 end

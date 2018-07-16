@@ -1357,7 +1357,7 @@ if NChannels==1
     %with and without the offset subtracted
 
 
-    if ~SkipFluctuations
+    if ~SkipFluctuations & ~isempty(ncFilter)
 
         IntArea=109; %AR 1/12/18 where did this number come from?
 

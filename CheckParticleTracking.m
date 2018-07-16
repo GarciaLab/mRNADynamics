@@ -26,7 +26,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % a z Move up/down in Z
 % j Jump to a specified frame
 % g b Increase/decrease histone channel contrast
-% !   Change the contranst in gfp channel
+% !   Change the contrast in transcription channel
 % 
 % 
 % Particle specific:
@@ -148,6 +148,8 @@ ncRange = 0;
 % This is for the projection mode
 projectionMode = 'None (Default)';
 
+intScale = 1;
+
 Prefix = varargin{1};
 if length(varargin)>1
     for i=2:length(varargin)
@@ -159,6 +161,8 @@ if length(varargin)>1
             SpeedMode = 1;
         elseif strcmpi(varargin{i}, 'sistermode')
             SisterMode = 1;
+        elseif strcmpi(varargin{i}, 'intScale')
+            intScale = varargin{i+1};
         elseif strcmpi(varargin{i},'nc') % checking for the desired nc range
             ncRange = 1;
             NC = varargin{i+1};
@@ -377,6 +381,7 @@ CurrentZ=round(ZSlices/2);
 ManualZFlag=0;
 CurrentParticle=1;
 PreviousParticle=1;
+lastParticle = 0; %this gets flagged if there's a drop to one particle within the Particles structure.
 CurrentFrameWithinParticle=1;
 CurrentChannel=1;
 PreviousChannel=CurrentChannel;
@@ -486,7 +491,7 @@ SkipWaitForButtonPress=[];
 
 while (cc~='x')
     
-    %Update the name suffic
+    %Update the name suffix
     if strcmpi(ExperimentType,'2spot2color')
         nameSuffix=['_ch',iIndex(coatChannel,2)];
     end
@@ -885,12 +890,15 @@ while (cc~='x')
         %(MT, 2018-02-12): Hacky fix to get this to run with lattice data -
         %FIX LATER
         elseif strcmpi(ExperimentType,'lattice')
-            snippet_size = 13;
-        else
-            snippet_size = 7;
-        end
+            snippet_size = 13; %pixels
+        elseif isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex), 'Snippet')
+            try
+                snippet_size = floor(size(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).Snippet{1}, 1)/2);
+            catch
+            end
+            end
         if isempty(snippet_size)
-                snippet_size = 7;
+                snippet_size = 7; %pixels 
         end
 %         CurrentSnippet=mat2gray(...
 %             Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).Snippet{CurrentZIndex});
@@ -900,7 +908,7 @@ while (cc~='x')
                                 max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size));
         imSnippet = mat2gray(CurrentSnippet);
         SnippetEdge=size(CurrentSnippet,1);     
-        IntegrationRadius = 6; % this appears to be hard-coded into IdentifySingleSpot
+        IntegrationRadius = 6*intScale; % this appears to be hard-coded into IdentifySingleSpot
         [xGrid, yGrid] = meshgrid(1:SnippetEdge,1:SnippetEdge);
         rGrid = sqrt((xGrid-ceil(SnippetEdge/2)).^2 + (yGrid-ceil(SnippetEdge/2)).^2); 
         SnippetMask = rGrid <= IntegrationRadius;
@@ -1012,7 +1020,7 @@ while (cc~='x')
     figure(TraceFig)
     if ~strcmpi(ExperimentType,'inputoutput')
         %Only update the trace information if we have switched particles
-        if (CurrentParticle~=PreviousParticle)||~exist('AmpIntegral', 'var')||(CurrentChannel~=PreviousChannel) 
+        if (CurrentParticle~=PreviousParticle)||~exist('AmpIntegral', 'var')||(CurrentChannel~=PreviousChannel) || lastParticle
             PreviousParticle=CurrentParticle;
             [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
         end       
@@ -1037,7 +1045,7 @@ while (cc~='x')
         ylabel('integrated intensity (a.u.)')
     else
         %Only update the trace information if we have switched particles
-        if (CurrentParticle~=PreviousParticle)||~exist('Amp', 'var')||(CurrentChannel~=PreviousChannel)
+        if (CurrentParticle~=PreviousParticle)||~exist('Amp', 'var')||(CurrentChannel~=PreviousChannel) || lastParticle
             PreviousParticle=CurrentParticle;
             [Frames,Amp]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
         end
@@ -1057,11 +1065,11 @@ while (cc~='x')
         yyaxis right
         plot(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames,...
             max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).Fluo,[],2),'r.-')      
-         try
+        try
             xlim([min(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames),max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames)])
         catch
 %             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
-         end
+        end
         ylabel('input protein intensity (a.u.)');
         hold on
         plot(Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
@@ -1293,6 +1301,9 @@ while (cc~='x')
                 %and this part deletes from the spots structure.
                 CurrentSpot = CurrentParticleIndex; %renaming this to make it clear what it actually is
                 Spots{CurrentChannel}(CurrentFrame).Fits(CurrentSpot)= [];
+                if isempty(Spots{CurrentChannel}(CurrentFrame).Fits)
+                    Spots{CurrentChannel}(CurrentFrame).Fits = [];
+                end
                 %now delete from spotfilter
                spotRow = SpotFilter{CurrentChannel}(CurrentFrame,:);
                spotRow(CurrentSpot) = [];
@@ -1302,20 +1313,23 @@ while (cc~='x')
                catch
                    error('There probably wasn''t a spot in the frame you were trying to delete.')
                end
-                if onlyFrame
+               if onlyFrame
                     %switch to another particle just to avoid any potential weirdness with
                     %checkparticletracking refreshing. simpler version of the
                     %'m' button
                     NextParticle = CurrentParticle+1;
                     if NextParticle>numParticles
-                        NextParticle=NextParticle-2; %go backwards one particle if the deleted particle was the last. 
+                        NextParticle=NextParticle-1; %go backwards one particle if the deleted particle was the last. 
+                    end
+                    if numParticles == 1
+                        lastParticle = 1;
                     end
                     CurrentParticle=NextParticle;
                     CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(1);
                     ParticleToFollow=[];
                     DisplayRange=[];
-                    disp 'Spot deleted successfully. Trace figures will refresh after switching particles.' 
-                end
+               end
+                disp 'Spot deleted successfully. Trace figures will refresh after switching particles.' 
             end
             ZoomMode=0;
             GlobalZoomMode=0;
@@ -1354,9 +1368,9 @@ while (cc~='x')
                         && (ConnectPositiony > snippet_size/2) && (ConnectPositiony + snippet_size/2 < LinesPerFrame)
                     SpotsIndex = length(Spots{CurrentChannel}(CurrentFrame).Fits)+1;
                     breakflag = 0;
-                    parfor i = 2:ZSlices-1
+                    for i = 2:ZSlices-1
                         spotsIm=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                             FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i,2),nameSuffix,'.tif']);  
+                             FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i,2),nameSuffix,'.tif']);                         
                         Threshold = min(min(spotsIm));
                         dog = spotsIm;
                         im_thresh = dog >= Threshold;
@@ -1369,7 +1383,7 @@ while (cc~='x')
                         neighborhood = round(1300 / pixelSize); %nm
                         %Get the information about the spot on this z-slice
                         temp_particles{i} = identifySingleSpot(k, spotsIm, im_label, dog, neighborhood, snippet_size, ...
-                            pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [], '' );
+                            pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [], '', intScale);
                     end
 
                     for i = 2:ZSlices-1
@@ -1471,10 +1485,6 @@ while (cc~='x')
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).r=...
                                     0;  
                             end
-%                             catch
-%                                 error('This spot might be too close to the image boundary');
-%                             end
-
                         else
                             disp('No spot added. Did you click too close to the image boundary?')
                             breakflag = 1;
@@ -1495,7 +1505,7 @@ while (cc~='x')
 %                         else % assume set was generated prior to inclusion of integral option
 %                             IntegralZ_flag = 0;
 %                         end                        
-                        % calculate concenience vectors
+                        % calculate convenience vectors
                         z_grid = min(z_vec):max(z_vec);
                         z_raw_values = NaN(size(z_grid));            
                         z_raw_values(ismember(z_grid,z_vec)) = RawIntensityVec;

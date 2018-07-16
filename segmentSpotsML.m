@@ -12,7 +12,7 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 %
 % OPTIONS
 % 'displayFigures':   If you want to display plots and images.
-% 'Tifs':         When running this script without a threshold to generate
+% 'tifs':         When running this script without a threshold to generate
 %                probability maps, use this option to instead only generate
 %                the TIF stacks necessary for doing Weka classification. 
 %                Recommended to run this before making a new classifier.
@@ -28,6 +28,11 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 %                brightest plane for a spot to have to pass quality control. 
 % 'IntegralZ':  Establish center slice at position that maximizes raw fluo integral 
 %               across sliding 3 z-slice window.
+% 'intScale': Scale up the radius of integration
+% 'keepPool': Don't shut down the parallel pool when the script is done
+% running. 
+% 'nWorkers': Specify the number of workers to use during parallel
+% processing
 %               
 % OUTPUT
 % 'Spots':  A structure array with a list of detected transcriptional loci
@@ -48,35 +53,46 @@ num_shadows = 2;
 initial_frame = 1;
 just_tifs = 0;
 use_integral_center = 0;
+intScale = 1;
+keepPool = 0;
+nWorkers = 8;
+pool = 1;
 
 for i=1:length(varargin)
     if strcmp(varargin{i},'displayFigures')
         displayFigures=1;
-    elseif strcmp(varargin{i}, 'Tifs')
+    elseif strcmpi(varargin{i}, 'tifs')
         just_tifs = 1;
-    elseif strcmp(varargin{i},'TrackSpots')
+    elseif strcmpi(varargin{i},'TrackSpots')
         TrackSpots=1;
-    elseif strcmp(varargin{i},'LastFrame')
+    elseif strcmpi(varargin{i},'LastFrame')
         if ~isnumeric(varargin{i+1})
             error('Wrong input parameters. After ''Frames'' you should input the number of frames')
         else
             num_frames=varargin{i+1};
         end
-    elseif strcmp(varargin{i},'Shadows')
+    elseif strcmpi(varargin{i},'Shadows')
         if ~isnumeric(varargin{i+1}) || varargin{i+1} > 2
             error('Wrong input parameters. After ''Shadows'' you should input number of shadows (0, 1 or 2)')
         else
             num_shadows=varargin{i+1};
         end
-    elseif strcmp(varargin{i}, 'InitialFrame')
+    elseif strcmpi(varargin{i}, 'InitialFrame')
          if ~isnumeric(varargin{i+1}) || varargin{i+1} < 1
             error('Wrong input parameter for initial frame.')
         else
             initial_frame=varargin{i+1};
         end
-    elseif strcmp(varargin{i}, 'IntegralZ')
-        use_integral_center = 1;      
-    else 
+     elseif strcmpi(varargin{i},'intScale')
+        intScale = varargin{i+1};      
+     elseif strcmpi(varargin{i},'keepPool')
+        keepPool = 1; 
+     elseif strcmpi(varargin{i},'nWorkers')
+        nWorkers = varargin{i+1};
+        if nWorkers == 0
+            pool = 0;
+        end
+     else        
         if ~isnumeric(varargin{i})
             error('Input parameters not recognized. Check spelling and case.')
         end
@@ -189,16 +205,19 @@ end
 %Make requisite TIF stacks for classification
 for q = 1:nCh
     
-    try
-        %this is just some function that can only be called if IJM is set up
-        IJM.getIdentifier() 
-    catch
-        addpath([MS2CodePath,filesep,'Fiji.app',filesep,'scripts'])
-        ImageJ               % Initialize IJM and MIJ
-    end
+    if ~just_tifs
+        try
+            %this is just some function that can only be called if IJM is set up
+            IJM.getIdentifier() 
+        catch
+            addpath([MS2CodePath,filesep,'Fiji.app',filesep,'scripts'])
+            ImageJ               % Initialize IJM and MIJ
+        end
    
-    ijm = evalin('base', 'IJM');
-    mij = evalin('base', 'MIJ');
+        ijm = evalin('base', 'IJM');
+        mij = evalin('base', 'MIJ');
+        
+    end
 
     if strcmpi(ExperimentType,'inputoutput')               
         nameSuffix= ['_ch',iIndex(coatChannel,2)];
@@ -261,7 +280,7 @@ end
 %Segment transcriptional loci
 else
     
-    maxWorkers = 8;
+    maxWorkers = nWorkers;
     p = gcp('nocreate');
     if isempty(p)
         try
@@ -327,7 +346,7 @@ else
                             try
                                 centroid = round(centroids(k).Centroid);
                                 temp_particles(k) = identifySingleSpot(k, im, im_label, pMap, ...
-                                    neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, 'ML');
+                                    neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, 'ML', intScale);
                             catch 
                             end
                         end
@@ -335,7 +354,7 @@ else
                         for k = 1:n_Spots
                             centroid = round(centroids(k).Centroid);    
                             temp_particles(k) = identifySingleSpot(k, im, im_label, pMap, ...
-                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, 'ML');
+                                neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, 'ML', intScale);
                         end
                     end
                     for k = 1:n_Spots
@@ -432,7 +451,7 @@ else
             CentralIntensityVec = [Particles(i).CentralIntensity]; 
             %find slice with brightest pixel
             [~, MaxIndexCentral] = max(CentralIntensityVec);            
-            % calculate concenience vectors
+            % calculate convenience vectors
             z_grid = min(z_vec):max(z_vec);
             z_raw_values = NaN(size(z_grid));            
             z_raw_values(ismember(z_grid,z_vec)) = RawIntensityVec;
@@ -599,12 +618,14 @@ else
         end
         save(logFile, 'log', '-v7.3');
     end
+    end
+end
+if ~keepPool
     try
         poolobj = gcp('nocreate');
         delete(poolobj);
     catch
         %fails if the parallel pool has timed out.
-    end
     end
 end
 end
