@@ -93,7 +93,7 @@ for i=1:length(CompiledSets)
     Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
 
     [~, ExperimentTypeFromDatabase, ExperimentAxisFromDatabase, ~, ~, APResolutionFromDatabase, ~,...
-    ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+    ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~] = getExperimentDataFromMovieDatabase(Prefix, DropboxFolder);
     
     %Load and check the experiment details consistency
     if ~isempty(ExperimentType)
