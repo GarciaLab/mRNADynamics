@@ -825,15 +825,15 @@ while (cc~='x')
        
         hold(hisOverlayFigAxes,'on')
         if ~SpeedMode
-            plot(xNonFlagged,yNonFlagged,'ow')
-            plot(xApproved,yApproved,'ob')
+            plot(hisOverlayFigAxes,xNonFlagged,yNonFlagged,'ow')
+            plot(hisOverlayFigAxes,xApproved,yApproved,'ob')
         end
-        plot(xTrace,yTrace,'og')
+        plot(hisOverlayFigAxes,xTrace,yTrace,'og')
         hold(hisOverlayFigAxes,'off')
         
         if ShowThreshold2
             hold(hisOverlayFigAxes,'on')
-            plot(x2,y2,'sw')
+            plot(hisOverlayFigAxes,x2,y2,'sw')
             hold(hisOverlayFigAxes,'off')
         end
   
@@ -930,7 +930,7 @@ while (cc~='x')
         imshow(SnippetOverlay,...
             [],'Border','Tight','InitialMagnification',1000, 'Parent', snippetFigAxes)
 
-        hold on
+        hold(snippetFigAxes,'on')
         
         SnippetX=(SnippetEdge-1)/2+1-...
             (Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xDoG(CurrentZIndex)-...
@@ -938,9 +938,9 @@ while (cc~='x')
         SnippetY=(SnippetEdge-1)/2+1-...
             (Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yDoG(CurrentZIndex)-...
             Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yFit(CurrentZIndex));
-        hold off
+        hold(snippetFigAxes,'off')
     else
-        imshow(zeros(SnippetEdge))
+        imshow(zeros(SnippetEdge), 'Parent', snippetFigAxes)
     end
     DoubleSnippet = double(CurrentSnippet);
     [mesh_y,mesh_x] = meshgrid(1:size(DoubleSnippet,2), 1:size(DoubleSnippet,1));
@@ -987,9 +987,9 @@ while (cc~='x')
             zlim(rawDataAxes,[0, zlimit]);
     else
 %         figure(Gaussian)
-%         clf(Gaussian)
+        cla(gaussianAxes, 'reset')
 %         figure(RawData)
-%         clf(RawData)
+        cla(rawDataAxes, 'reset')
     end
 
         
@@ -1037,15 +1037,15 @@ while (cc~='x')
        
         p1 = plot(traceFigAxes, Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
             AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-k');           
-%         hold on
+        hold(traceFigAxes, 'on')
 %         p2 = plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
 %             AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','green');                   
 %         p3 = plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
 %             GaussIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');                   
-%         plot(Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
-%         plot(Frames(Frames==CurrentFrame),AmpIntegral(Frames==CurrentFrame),'ob');
+        plot(traceFigAxes,Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
+        plot(traceFigAxes,Frames(Frames==CurrentFrame),AmpIntegral(Frames==CurrentFrame),'ob');
 %         legend([p1,p2,p3],'1 Slice Raw','3 Slice Raw','1 Slice Gaussian Fit')
-%         hold off
+        hold(traceFigAxes, 'off')
         try
             xlim(traceFigAxes,[min(Frames)-1,max(Frames)+1]);
         catch
