@@ -1,4 +1,4 @@
-function h=notEllipse(ra,rb,ang,x0,y0,C,Nb)
+function h=notEllipse(ra,rb,ang,x0,y0,C,Nb, ax)
 % Ellipse adds ellipses to the current plot
 %
 % ELLIPSE(ra,rb,ang,x0,y0) adds an ellipse with semimajor axis of ra,
@@ -156,7 +156,7 @@ Y = Ay*B;
   
 %  x=radm*cos(the)*co-si*radn*sin(the)+xpos;
 %  y=radm*cos(the)*si+co*radn*sin(the)+ypos;
-  h =line(X',Y','color',C);%radm*costhe*co-si*radn*sinthe+xpos,radm*costhe*si+co*radn*sinthe+ypos,'color',C(rem(k-1,size(C,1))+1,:));
+  h =line(ax, X',Y','color',C);%radm*costhe*co-si*radn*sinthe+xpos,radm*costhe*si+co*radn*sinthe+ypos,'color',C(rem(k-1,size(C,1))+1,:));
 %  set(h(k),'color',C(rem(k-1,size(C,1))+1,:));
 
 end

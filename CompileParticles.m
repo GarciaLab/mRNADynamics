@@ -36,7 +36,7 @@ function CompileParticles(varargin)
 %           ROI1 and ROI2 are the y-position of the ROI rectangle. ROI1 is the
 %           lower boundary of ROI and ROI2 is the upper boundary of non-ROI
 %           since there is almost always scattering in the middle
-%
+% 'intArea': Change the area (in pixels) of integration used in offset calculations
 %
 % Author (contact): Hernan Garcia (hggarcia@berkeley.edu)
 % Created: 
@@ -61,6 +61,7 @@ ApproveAll=0;       %Only use manually approved particles
 MinParticles=4;     
 minTime = 1;
 ROI=0; % No ROI
+intArea = 109;
 
 if isempty(varargin)%looks for the folder to analyze
     FolderTemp=uigetdir(DefaultDropboxFolder,'Select folder with data to analyze');
@@ -92,6 +93,12 @@ else
                 error('Wrong input parameters. After ''MinParticles'' you should input the desired minimum number of particles per approved AP bin')
             else
                 MinParticles=varargin{i+1};
+            end
+        elseif strcmp(varargin{i},'intArea')
+            if ~isnumeric(varargin{i+1})
+                error('Wrong input parameters. After ''intArea'' you should input the desired number of pixels for intensity integration')
+            else
+                intArea=varargin{i+1};
             end
         elseif strcmp(varargin{i},'MinTime')
             if ~isnumeric(varargin{i+1})
@@ -408,7 +415,6 @@ ElapsedTime=ElapsedTime/60;     %Time is in minutes
     
 
 %Some parameters
-IntArea=500;%190        %Area of integration. AR 3/15/16: This should be recalculated in microns
 MinAPArea=12500;%700;    %Minimum area in pixels in order to consider an AP bin as valid. AR 3/15/16: This should be recalculated in microns
 
 
@@ -751,7 +757,7 @@ for ChN=1:NChannels
                     FilterMatrix(:,1:ceil(NCols/2))=1;
                     subplot(TotalRows,NCols,find(FilterMatrix'))
                     
-                    yyaxis left
+%                     yyaxis left
                     errorbar(ElapsedTime(CompiledParticles{ChN}(k).Frame),...
                         CompiledParticles{ChN}(k).Fluo,ones(size(CompiledParticles{ChN}(k).Fluo))*...
                         CompiledParticles{ChN}(k).FluoError,...
@@ -759,9 +765,9 @@ for ChN=1:NChannels
                     ylabel('fluorescence (au)')
                     hold on
 
-                    yyaxis right
+%                     yyaxis right
                     plot(ElapsedTime(CompiledParticles{ChN}(k).Frame),...
-                        CompiledParticles{ChN}(k).Off*IntArea,'.-g');
+                        CompiledParticles{ChN}(k).Off*intArea,'.-g');
                     if ~isempty(CompiledParticles{ChN}(k).optFit1)
 
                         if strcmp(CompiledParticles{ChN}(k).FitType,'spline')
@@ -772,8 +778,8 @@ for ChN=1:NChannels
                             SplineValues=polyval(CompiledParticles{ChN}(k).optFit1,CompiledParticles{ChN}(k).Frame);     
                         end
 
-                        yyaxis right
-                        plot(ElapsedTime(CompiledParticles{ChN}(k).Frame),SplineValues*IntArea,'-b')
+%                         yyaxis right
+                        plot(ElapsedTime(CompiledParticles{ChN}(k).Frame),SplineValues*intArea,'-b')
                         try
                             title(['particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{ChN}(k).nc),', Ch: ',num2str(ChN)])
                         catch
@@ -824,7 +830,7 @@ for ChN=1:NChannels
                                 EllipseHandle=ellipse(CurrEllipse(3),...
                                     CurrEllipse(4),...
                                     CurrEllipse(5),...
-                                    0,0);
+                                    0,0,[],[],gca);
                                 set(EllipseHandle,'color',ColorTime(j,:))
                                 plot(CompiledParticles{ChN}(k).xPos(j)-CurrEllipse(1),...
                                     CompiledParticles{ChN}(k).yPos(j)-CurrEllipse(2),'o','color',...
@@ -911,7 +917,7 @@ for ChN=1:NChannels
                                         CurrEllipse(4),...
                                         CurrEllipse(5),...
                                         CurrEllipse(1)-xTrace+(SnippetSize-1)/2,...
-                                        CurrEllipse(2)-yTrace+(SnippetSize-1)/2);
+                                        CurrEllipse(2)-yTrace+(SnippetSize-1)/2,[],[],gca);
                                     %set(EllipseHandle,'color',ColorTime(j,:))
                                     set(EllipseHandle,'color','g')
                                     hold off
@@ -1359,9 +1365,6 @@ if NChannels==1
 
     if ~SkipFluctuations & ~isempty(ncFilter)
 
-        IntArea=109; %AR 1/12/18 where did this number come from?
-
-
         FilteredParticles=find(ncFilter(:,end)|ncFilter(:,end-1));
 
         OffsetFluct=[];
@@ -1374,7 +1377,7 @@ if NChannels==1
             try
                 %Deviation from offset with respect to spline
                 optFit = adaptiveSplineFit(double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]),...
-                        double([CompiledParticles{1}(FilteredParticles(j)).Off*IntArea]),5);
+                        double([CompiledParticles{1}(FilteredParticles(j)).Off*intArea]),5);
                 SplineValues=ppval(optFit,double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]));    
 
 
@@ -1402,7 +1405,7 @@ if NChannels==1
 
 
                 %Put all the data together for the plot
-                OffsetFluct=[OffsetFluct,CompiledParticles{1}(FilteredParticles(j)).Off*IntArea-SplineValues];
+                OffsetFluct=[OffsetFluct,CompiledParticles{1}(FilteredParticles(j)).Off*intArea-SplineValues];
                 DataRawFluct=[DataRawFluct,double(CompiledParticles{1}(FilteredParticles(j)).FluoRaw)-DataFitRawValues];
                 %DataOldFluct=[DataOldFluct,double(CompiledParticles{1}(FilteredParticles(j)).FluoOld)-DataSplineValuesOld];
                 DataSplineFluct=[DataSplineFluct,double(CompiledParticles{1}(FilteredParticles(j)).Fluo)-DataSplineValues];
@@ -1529,9 +1532,9 @@ if NChannels==1
 
         if strcmpi(ExperimentAxis,'AP')
             figure(8)
-            IntArea=109;
-            errorbar(1:length(MeanOffsetVector),MeanOffsetVector*IntArea,...
-                SDOffsetVector*IntArea,'.-r')
+            intArea=109;
+            errorbar(1:length(MeanOffsetVector),MeanOffsetVector*intArea,...
+                SDOffsetVector*intArea,'.-r')
             hold on
             errorbar(1:length(MeanVectorAll{1}),MeanVectorAll{1},...
                 SDVectorAll{1},'.-k')
@@ -1544,9 +1547,9 @@ if NChannels==1
 
 
             figure(9)
-            errorbar(1:length(MeanOffsetVector),MeanOffsetVector*IntArea-min(MeanOffsetVector*IntArea)+...
+            errorbar(1:length(MeanOffsetVector),MeanOffsetVector*intArea-min(MeanOffsetVector*intArea)+...
                 min(MeanVectorAll{1}),...
-                SDOffsetVector*IntArea,'.-r')
+                SDOffsetVector*intArea,'.-r')
             hold on
             errorbar(1:length(MeanVectorAll{1}),MeanVectorAll{1},...
                 SDVectorAll{1},'.-k')

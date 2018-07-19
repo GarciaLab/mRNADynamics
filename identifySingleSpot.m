@@ -150,7 +150,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             
             if show_status && ~isempty(fg)
                 figure(fg)
-                ellipse(distance_to_neighbor/2,distance_to_neighbor/2,0,centroid_x, centroid_y,'r');
+                ellipse(distance_to_neighbor/2,distance_to_neighbor/2,0,centroid_x, centroid_y,'r',[],gca);
                 pause(.1) %Ellipses won't be plotted correctly without this pause.
                 %figure(5)
                 %imshow(image,[])
@@ -207,7 +207,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
                 end
                 temp_particles = {{fixedAreaIntensity, spot_x, spot_y, fits(end-1), snippet, ...
                     area, sigma_x, sigma_y, centroid_y, centroid_x, gaussianIntensity,intensity,...
-                    max_dog, snippet_mask, sigma_x2, sigma_y2, sister_chromatid_distance, relative_errors, confidence_intervals, gaussian, mesh,fits}};
+                    max_dog, snippet_mask, sigma_x2, sigma_y2, sister_chromatid_distance, relative_errors, confidence_intervals, gaussian, mesh,fits, area}};
             else                
                 temp_particles = {{}};   
             end

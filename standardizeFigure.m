@@ -47,8 +47,15 @@ function standardizeFigure(ax, legend, varargin)
  
     for i = 1:length(dataObj)
         if strcmpi(dataType{i}, 'scatter')
-            dataObj(i).MarkerFaceColor = color(i,:);
-            dataObj(i).MarkerEdgeColor = color(i,:);
+            dataObj(i).Marker = '.';
+            dataObj(i).SizeData = 250;
+            %Change color to physical biology colors as long as the number
+            %of colors needed is less than 5.
+            if i <= length(colorDictFields)
+%                 dataObj(i).Color = colorDict.(colorDictFields{i});
+                dataObj(i).MarkerFaceColor = colorDict.(colorDictFields{i});
+                dataObj(i).MarkerEdgeColor = colorDict.(colorDictFields{i});
+            end
         elseif strcmpi(dataType{i}, 'bar') || strcmpi(dataType{i}, 'histogram')
 %             dataObj(i).LineStyle = 'none';
             if i <= length(colorDictFields)

@@ -132,7 +132,7 @@ function tp = identifySpot(particle_index, image, image_label, dog_image, distan
 
                 if show_status && ~isempty(fg)
                     figure(fg)
-                    ellipse(distance_to_neighbor/2,distance_to_neighbor/2,0,fits(1).XPosition,fits(1).YPosition,'r');
+                    ellipse(distance_to_neighbor/2,distance_to_neighbor/2,0,fits(1).XPosition,fits(1).YPosition,'r',[],gca);
                     pause(.1) %Ellipses won't be plotted correctly without this pause.
                 end
 

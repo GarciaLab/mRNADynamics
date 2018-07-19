@@ -409,6 +409,7 @@ else
                          Particles(n).discardThis = 0;
                          Particles(n).frame(1) = i;
                          Particles(n).r = 0;
+                         Particles(n).intArea = cell2mat(all_frames{i,j}{spot}(23));
                          n = n + 1;
                      end
                  end
