@@ -1059,7 +1059,7 @@ while (cc~='x')
             PreviousParticle=CurrentParticle;
             [Frames,Amp]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
         end
-        clf(TraceFig, 'reset');
+        cla(traceFigAxes, 'reset');
         %we'll plot the spot intensity first on the left axis.
         yyaxis(traceFigAxes,'left')
         hold(traceFigAxes,'on')
