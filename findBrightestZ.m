@@ -76,7 +76,7 @@ function [Particles,falsePositives] = findBrightestZ(Particles, num_shadows, use
 
         if n_shadows < num_shadows                                         
             Particles(i).discardThis = 1;
-            falsePositives = falsePositives + 1;                                    
+            falsePositives = falsePositives + 1;
         end
     end
 

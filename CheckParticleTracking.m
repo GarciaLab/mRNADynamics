@@ -206,6 +206,10 @@ else
 end
 xSize = FrameInfo(1).PixelsPerLine;
 ySize = FrameInfo(1).LinesPerFrame;
+pixelSize = FrameInfo(1).PixelSize*1000; %nm
+snippet_size = 2*(floor(1300/(2*pixelSize))) + 1; % nm. note that this is forced to be odd
+LinesPerFrame = FrameInfo(1).LinesPerFrame;
+PixelsPerLine = FrameInfo(1).PixelsPerLine;
 numFrames =length(FrameInfo);
 
 %See how  many frames we have and adjust the index size of the files to
@@ -892,7 +896,7 @@ while (cc~='x')
         xSpot = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xDoG(CurrentZIndex);
         ySpot = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yDoG(CurrentZIndex);
         
-        if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex), 'snippet_size')
+        if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex), 'snippet_size') && ~isempty(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).snippet_size)
             snippet_size = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).snippet_size;
         %(MT, 2018-02-12): Hacky fix to get this to run with lattice data -
         %FIX LATER
@@ -904,10 +908,7 @@ while (cc~='x')
             catch
             end
         end
-        if ~exist('snippet_size', 'var')
-            snippet_size = 7; %pixels 
-        end
-
+     
         CurrentSnippet = FullSlice(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
                                 max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size));
         imSnippet = mat2gray(CurrentSnippet);
@@ -1348,11 +1349,6 @@ while (cc~='x')
                 ConnectPositionx = round(ConnectPositionx);
                 ConnectPositiony = round(ConnectPositiony);
                 
-                pixelSize = FrameInfo(1).PixelSize*1000; %nm
-                LinesPerFrame = FrameInfo(1).LinesPerFrame;
-                PixelsPerLine = FrameInfo(1).PixelsPerLine;
-                snippet_size = 2*(floor(1300/(2*pixelSize))) + 1; % nm. note that this is forced to be odd
-                
                 % check that the clicked particle isn't too close to the
                 % edge of the frame
                 if (ConnectPositionx > snippet_size/2) && (ConnectPositionx + snippet_size/2 < PixelsPerLine)...
@@ -1422,12 +1418,18 @@ while (cc~='x')
                                     i;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).gaussParams{i}=...
                                     temp_particles{i}{1}{22};
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).intArea{i}=...
+                                    temp_particles{i}{1}{23};
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).discardThis=...
                                     0;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).frame=...
                                     CurrentFrame;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).r=...
                                     0;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity3 = NaN;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity5 = NaN;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).brightestZ = NaN;
+                                
                             else
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity(i)=...
                                     nan;
@@ -1474,7 +1476,10 @@ while (cc~='x')
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).frame=...
                                     CurrentFrame;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).r=...
-                                    0;  
+                                    0;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity3 = NaN;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity5 = NaN;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).brightestZ = NaN;
                             end
                         else
                             disp('No spot added. Did you click too close to the image boundary?')
@@ -1484,52 +1489,10 @@ while (cc~='x')
                     end
                                                     
                     if ~breakflag
-                        %pull intensity value from particle snippets
-                        RawIntensityVec = [Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity];            
-                        CentralIntensityVec = [Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).CentralIntensity]; 
-                        %find slice with brightest pixel
-                        [~, MaxIndexCentral] = max(CentralIntensityVec);            
-                        z_vec = [Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).z]; %convenience vector
-%                         %Determine which centering method was used for this
-%                         if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex),'IntegralZ')
-%                             IntegralZ_flag = Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).IntegralZ;
-%                         else % assume set was generated prior to inclusion of integral option
-%                             IntegralZ_flag = 0;
-%                         end                        
-                        % calculate convenience vectors
-                        z_grid = min(z_vec):max(z_vec);
-                        z_raw_values = NaN(size(z_grid));            
-                        z_raw_values(ismember(z_grid,z_vec)) = RawIntensityVec;
-                        if ~IntegralZ_flag                
-                            CentralZ = z_vec(MaxIndexCentral); 
-                            ZStackIndex = MaxIndexCentral;
-                        else
-                            % Convolve with gaussian filter to find "best" center
-                            g = [-1 0 1];
-                            gaussFilter = exp(-g .^ 2 / (2 ));
-                            RawRefVec = conv(gaussFilter,z_raw_values);
-                            RawRefVec = RawRefVec(2:end-1);
-                            RawRefVec(1) = NaN;
-                            RawRefVec(end) = NaN;
-                            RawRefVec = RawRefVec(ismember(z_grid,z_vec));
-                            [~, MaxIndexIntegral] = max(RawRefVec);
-                            CentralZ = z_vec(MaxIndexIntegral);               
-                            ZStackIndex = MaxIndexIntegral;
-                        end            
                         
-                        % if there are insufficient slices, these metrics will register as NaNs
-                        RawIntegral3 = mean(z_raw_values(ismember(z_grid,CentralZ-1:CentralZ+1)));
-                        RawIntegral5 = mean(z_raw_values(ismember(z_grid,CentralZ-2:CentralZ+2)));
-                        if multi_slice_flag
-                            Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity3 = RawIntegral3;
-                            Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity5 = RawIntegral5;
-                            Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).IntegralZ = IntegralZ_flag; 
-                            Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).snippet_size = snippet_size;
-                        end
-                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).brightestZ = CentralZ;
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).r = NaN;
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).discardThis = 0;
-%                                                                         
+                        [tempSpots,~] = findBrightestZ(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex), -1, 0);                         
+                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = tempSpots;
+                                                                        
                         %Add this to SpotFilter, which tells the code that this spot is
                         %above the threshold. First, check whether the
                         %dimensions of SpotFilter need to be altered. If so, pad it with NaNs
@@ -1540,22 +1503,6 @@ while (cc~='x')
                             SpotFilter{CurrentChannel}(:,end:SpotsIndex)=NaN;
                             SpotFilter{CurrentChannel}(CurrentFrame,SpotsIndex)=1;                
                         end
-
-%                     if ~breakflag
-%                         %Find the maximum Z-plane
-%                         [~, max_index] = max(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).CentralIntensity);
-%                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).brightestZ = Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).z(max_index);
-% 
-%                         %Add this to SpotFilter, which tells the code that this spot is
-%                         %above the threshold. First, check whether the
-%                         %dimensions of SpotFilter need to be altered. If so, pad it with NaNs
-%                         if size(SpotFilter{CurrentChannel},2)>SpotsIndex
-%                             SpotFilter{CurrentChannel}(CurrentFrame,SpotsIndex)=1;
-%                         else
-%                             %Pad with NaNs
-%                             SpotFilter{CurrentChannel}(:,end:SpotsIndex)=NaN;
-%                             SpotFilter{CurrentChannel}(CurrentFrame,SpotsIndex)=1;                
-%                         end
 % 
                         %Turn this spot into a new particle. This is the equivalent of
                         %the 'u' command.
