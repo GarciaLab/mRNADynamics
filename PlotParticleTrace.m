@@ -1,4 +1,4 @@
-function [Frames,AmpIntegral,AmpGaussian,AmpIntegral3,AmpIntegral5]=PlotParticleTrace(CurrentParticle,Particles,Spots)
+function [Frames,AmpIntegral,AmpGaussian,AmpIntegral3,AmpIntegral5, ErrorIntegral, ErrorIntegral3, ErrorIntegral5]=PlotParticleTrace(CurrentParticle,Particles,Spots)
 
 %This displays the particle trace as well as a montage of the images
 
@@ -6,7 +6,7 @@ function [Frames,AmpIntegral,AmpGaussian,AmpIntegral3,AmpIntegral5]=PlotParticle
 %the image.
 
 [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
-    ErrorIntegral,ErrorGauss,optFit,FitType,noIntensityFlag]=GetParticleTrace(CurrentParticle,Particles,Spots);
+    ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3, ErrorIntegral5]=GetParticleTrace(CurrentParticle,Particles,Spots);
 Frames=Particles(CurrentParticle).Frame;
 Indexes=Particles(CurrentParticle).Index;
 

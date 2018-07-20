@@ -17,8 +17,7 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 %                the TIF stacks necessary for doing Weka classification. 
 %                Recommended to run this before making a new classifier.
 %                
-% 'TrackSpots':   Do you want to use this code to track the particles instead
-%                of using TrackmRNADynamics?
+%
 % 'InitialFrame', N: Run the code from frame N to last frame. Defaults to first
 %                frame.
 % 'LastFrame', M:     Run the code from initial frame to frame M. Defaults to all
@@ -47,7 +46,6 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 
 %Default options
 displayFigures=0;
-TrackSpots=0;
 num_frames=0;
 num_shadows = 2;
 initial_frame = 1;
@@ -56,15 +54,12 @@ use_integral_center = 0;
 intScale = 1;
 keepPool = 0;
 nWorkers = 8;
-pool = 1;
 
 for i=1:length(varargin)
     if strcmp(varargin{i},'displayFigures')
         displayFigures=1;
     elseif strcmpi(varargin{i}, 'tifs')
         just_tifs = 1;
-    elseif strcmpi(varargin{i},'TrackSpots')
-        TrackSpots=1;
     elseif strcmpi(varargin{i},'LastFrame')
         if ~isnumeric(varargin{i+1})
             error('Wrong input parameters. After ''Frames'' you should input the number of frames')
@@ -89,9 +84,6 @@ for i=1:length(varargin)
         keepPool = 1; 
      elseif strcmpi(varargin{i},'nWorkers')
         nWorkers = varargin{i+1};
-        if nWorkers == 0
-            pool = 0;
-        end
      else        
         if ~isnumeric(varargin{i})
             error('Input parameters not recognized. Check spelling and case.')
@@ -280,20 +272,22 @@ end
 %Segment transcriptional loci
 else
     
-    maxWorkers = nWorkers;
-    p = gcp('nocreate');
-    if isempty(p)
-        try
-            parpool(maxWorkers);
-        catch
-            parpool;
-        end
-    elseif p.NumWorkers > maxWorkers
-        delete(gcp('nocreate')); % if pool with too many workers, delete and restart
-        try
-            parpool(maxWorkers);
-        catch
-            parpool;
+    if nWorkers > 0
+        maxWorkers = nWorkers;
+        p = gcp('nocreate');
+        if isempty(p)
+            try
+                parpool(maxWorkers);
+            catch
+                parpool;
+            end
+        elseif p.NumWorkers > maxWorkers
+            delete(gcp('nocreate')); % if pool with too many workers, delete and restart
+            try
+                parpool(maxWorkers);
+            catch
+                parpool;
+            end
         end
     end
 
@@ -341,7 +335,7 @@ else
                 temp_particles = cell(1, n_Spots);
 
                 if n_Spots ~= 0
-                    if ~displayFigures                    
+                    if ~displayFigures && nWorkers > 0                    
                         parfor k = 1:n_Spots
                             try
                                 centroid = round(centroids(k).Centroid);
@@ -410,6 +404,8 @@ else
                          Particles(n).frame(1) = i;
                          Particles(n).r = 0;
                          Particles(n).intArea = cell2mat(all_frames{i,j}{spot}(23));
+                         Particles(n).IntegralZ = use_integral_center; 
+                         Particles(n).snippet_size = snippet_size;
                          n = n + 1;
                      end
                  end
@@ -443,60 +439,10 @@ else
             Particles = Particles([Particles.r]~=1);
             close(h)
         end
-        falsePositives = 0;
+        
         %pick the brightest z-slice
-        for i = 1:length(Particles)
-            z_vec = [Particles(i).z]; %convenience vector
-            %pull intensity value from particle snippets
-            RawIntensityVec = [Particles(i).FixedAreaIntensity];            
-            CentralIntensityVec = [Particles(i).CentralIntensity]; 
-            %find slice with brightest pixel
-            [~, MaxIndexCentral] = max(CentralIntensityVec);            
-            % calculate convenience vectors
-            z_grid = min(z_vec):max(z_vec);
-            z_raw_values = NaN(size(z_grid));            
-            z_raw_values(ismember(z_grid,z_vec)) = RawIntensityVec;
-            if ~use_integral_center                
-                CentralZ = z_vec(MaxIndexCentral); 
-                ZStackIndex = MaxIndexCentral;
-            else
-                % Convolve with gaussian filter to find "best" center
-                g = [-1 0 1];
-                gaussFilter = exp(-g .^ 2 / (2 ));
-                RawRefVec = conv(gaussFilter,z_raw_values);
-                RawRefVec = RawRefVec(2:end-1);
-                RawRefVec(1) = NaN;
-                RawRefVec(end) = NaN;
-                RawRefVec = RawRefVec(ismember(z_grid,z_vec));
-                [~, MaxIndexIntegral] = max(RawRefVec);
-                CentralZ = z_vec(MaxIndexIntegral);               
-                ZStackIndex = MaxIndexIntegral;
-            end            
-            % if there are insufficient slices, these metrics will register as NaNs
-            RawIntegral3 = mean(z_raw_values(ismember(z_grid,CentralZ-1:CentralZ+1)));
-            RawIntegral5 = mean(z_raw_values(ismember(z_grid,CentralZ-2:CentralZ+2)));
-
-            Particles(i).FixedAreaIntensity3 = RawIntegral3;
-            Particles(i).FixedAreaIntensity5 = RawIntegral5;
-            Particles(i).brightestZ = CentralZ;
-            Particles(i).IntegralZ = use_integral_center; 
-            Particles(i).snippet_size = snippet_size;
-            %use convolution kernel to look for shadows
-            z_raw_binary = ~isnan(z_raw_values);
-            z_shadow_vec = conv(z_raw_binary,[1 1 1],'same');
-            z_shadow_vec = z_shadow_vec(ismember(z_grid,z_vec)); 
-            n_shadows = z_shadow_vec(ZStackIndex)-1;
-            if TrackSpots
-                for j = 1:numel(particleFields)-2 %do not include fields 'r' or 'frame'
-                    Particles(i).(particleFields{j}) = Particles(i).(particleFields{j})(MaxIntegralCentral);
-                end
-            elseif n_shadows < num_shadows                                         
-                Particles(i).discardThis = 1;
-%                 Particles(i).noIntensityAnalysis = 1;
-                falsePositives = falsePositives + 1;                                    
-            end
-        end
-
+        [Particles, falsePositives] = findBrightestZ(Particles, num_shadows, use_integral_center);
+                
         %Create a final Spots structure to be fed into TrackmRNADynamics
         Spots{q} = [];        
         particleFields = fieldnames(Particles);
@@ -549,17 +495,7 @@ else
                 Spots{q}(i).Fits = [];
             end
         end
-
-        %AR 7/10/16: Optional time tracking using track_Spots script. Also
-        %makes some potentially useful plots. This was originally here to have
-        %a single, fully integrated script before this segmentation was worked
-        %into the rest of the pipeline.
-        neighborhoodTracking = round(3000 / pixelSize);
-        if TrackSpots
-            Particles = track_Spots(Particles, neighborhoodTracking);
-            save([DropboxFolder,filesep,Prefix,filesep,'Particles_SS.mat'], 'Particles', '-v7.3');
-        end
-        
+      
         %If we only have one channel, then convert Spots{q} to a
         %standard structure.
         if nCh==1

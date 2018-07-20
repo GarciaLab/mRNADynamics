@@ -1,4 +1,4 @@
-function temp_particles = identifySingleSpot(particle_index, image, image_label, dog_image, distance_to_neighbor, snippet_size, ...
+function temp_particles = identifySingleSpot(particle_index, image, image_label, dog_image, searchRadius, snippet_size, ...
     pixelSize, show_status, fg, microscope, addition, centroid, ml_string, intScale)
 % identifySingleSpot(awholelot)
 %
@@ -27,16 +27,12 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
 
     %Find spot centroids in the actual image by hunting for global maxima in
     %neighborhoods around spots that were just located
-    possible_centroid = [];
+    possible_centroid_intensity = [];
     possible_centroid_location = {};
     if ~addition(1) %this gets flagged if we're not manually adding a particle in checkparticletracking
         [k_row, k_column] = find(image_label == particle_index); %the position of the k'th locus in the image
         row = k_row(1);
         col = k_column(1);
-%         if ML
-%             row = centroid(1);
-%             col = centroid(2);
-%         end
     else %if we're in checkparticletracking 
         row = addition(3);
         col = addition(2);
@@ -44,24 +40,24 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
         k_column = col;
         
     end
-    for i = 1:2*distance_to_neighbor
-        for j = 1:2*distance_to_neighbor
-            if row - distance_to_neighbor + i > 0 && col - distance_to_neighbor + j > 0 ... 
-                    && row - distance_to_neighbor + i < size(image,1)  && col - distance_to_neighbor + j < size(image,2)
+    for i = 1:2*searchRadius
+        for j = 1:2*searchRadius
+            if row - searchRadius + i > 0 && col - searchRadius + j > 0 ... 
+                    && row - searchRadius + i < size(image,1)  && col - searchRadius + j < size(image,2)
                 if ML
-                    possible_centroid(i,j) = image(row-distance_to_neighbor+i, col-distance_to_neighbor+j);
+                    possible_centroid_intensity(i,j) = sum(sum(image(row-searchRadius+i, col-searchRadius+j)));
                 else
                     if addition(1) || intScale~=1
-                        possible_centroid(i,j) = sum(sum(image(row-distance_to_neighbor+i-6:row-distance_to_neighbor+i+6,...
-                            col-distance_to_neighbor+j-6:col-distance_to_neighbor+j+6)));
-                        possible_centroid(i,j) = image(row-distance_to_neighbor+i, col-distance_to_neighbor+j); 
+                        possible_centroid_intensity(i,j) = sum(sum(image(row-2*searchRadius+i:row+i,...
+                            col-2*searchRadius+j:col+j)));
+                        possible_centroid_intensity(i,j) = sum(sum(image(row-searchRadius+i, col-searchRadius+j))); 
                     else
                     %using the max pixel value will be wrong in some cases. integral
                     %would be better
-                       possible_centroid(i,j) = image(row-distance_to_neighbor+i, col-distance_to_neighbor+j); 
+                       possible_centroid_intensity(i,j) = sum(sum(image(row-searchRadius+i, col-searchRadius+j))); 
                     end
                 end
-                possible_centroid_location{i,j} = [row-distance_to_neighbor+i, col-distance_to_neighbor+j];
+                possible_centroid_location{i,j} = [row-searchRadius+i, col-searchRadius+j];
             end
         end
     end
@@ -70,9 +66,26 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
     
     %Compute some preliminary properties of the located spots
     temp_particles = {[]};
-    if ~isempty(possible_centroid) && sum(sum(possible_centroid)) ~= 0
-        [intensity, centroid_index] = max(possible_centroid(:));
-        [row, col] = ind2sub(size(possible_centroid),centroid_index);
+    
+    
+    tp = struct('fixedAreaIntensity', [], 'xFit', [], 'yFit', [], 'Offset', [],...
+       'Snippet', [], 'Area', [], 'xFitWidth', [], 'yFitWidth', [], 'centroidY',...
+       [], 'centroidX', [], 'GaussianIntensity', [], 'CentralIntensity', [],...
+       'DOGIntensity', [], 'snippet_mask', [], 'sistersXWidth', [], 'sistersYWidth',...
+       [], 'sisterSeparation', [], 'relative_errors', [], 'ConfidenceIntervals',...
+       [], 'gaussSpot', [], 'mesh', [], 'sistersXPos', [], 'sistersYPos', [],...
+       'eccentricity', [],'sisterSeparation2', [],'sistersXPos2', [], 'sistersYPos2', [],...
+       'sistersXWidth2', [], 'sistersYWidth2',[], 'sisterAmps', []);
+   
+   %AR 7192018- i want to switch the tempparticles over to this structure
+   %in the future for reading clarity. currently doesn't have the right
+   %fields and is unused. 
+   
+   
+    if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)) ~= 0
+        
+        [intensity, centroid_index] = max(possible_centroid_intensity(:));
+        [row, col] = ind2sub(size(possible_centroid_intensity),centroid_index);
         centroid_y = possible_centroid_location{row,col}(1); 
         centroid_x = possible_centroid_location{row,col}(2);
        
@@ -81,17 +94,8 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
         %position where the user actually clicked
         if addition(1) && ~(centroid_y - snippet_size > 1 && centroid_x - snippet_size > 1 && centroid_y + snippet_size < size(image, 1) && centroid_x + snippet_size < size(image,2))    
             centroid_y = k_row;
-            centroid_x = k_column;
-            
-        %not currently used in ML segmentation    
-        elseif ~addition(1)
-%             if ML
-%                 centroid_x = centroid(1);
-%                 centroid_y = centroid(2);
-%             end
+            centroid_x = k_column;           
         end
-        
-        
         
        %Now, we'll calculate Gaussian fits 
        if centroid_y - snippet_size > 1 && centroid_x - snippet_size > 1 && centroid_y + snippet_size < size(image, 1) && centroid_x + snippet_size < size(image,2)
@@ -143,18 +147,18 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             sigma_x = fits(3);
             sigma_y = fits(5);
 
-            area = pi*sigma_x*sigma_y; %in pixels. this is one width away from peak
+            gaussianArea = pi*sigma_x*sigma_y; %in pixels. this is one width away from peak
             integration_radius = 6*intScale; %integrate 109 pixels around the spot or more optionally
             spot_x = fits(2) - snippet_size + centroid_x; %final reported spot position
             spot_y = fits(4) - snippet_size + centroid_y;    
             
             if show_status && ~isempty(fg)
                 figure(fg)
-                ellipse(distance_to_neighbor/2,distance_to_neighbor/2,0,centroid_x, centroid_y,'r',[],gca);
+                ellipse(searchRadius/2,searchRadius/2,0,centroid_x, centroid_y,'r',[],gca);
                 pause(.1) %Ellipses won't be plotted correctly without this pause.
                 %figure(5)
                 %imshow(image,[])
-                %ellipse(distance_to_neighbor/2,distance_to_neighbor/2,0,spot_x,spot_y,'r');
+                %ellipse(searchRadius/2,searchRadius/2,0,spot_x,spot_y,'r');
                 %pause(.1) %Ellipses won't be plotted correctly without this pause.
                 
             end
@@ -169,14 +173,14 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             % enough to position its center.
             
             snippet_mask = snippet;
-            area = 0;
+            maskArea = 0;
             for i = 1:size(snippet, 1)
                 for j = 1:size(snippet,2)
                     d = sqrt( (j - (size(snippet,1)+1)/2)^2 + (i - (size(snippet,2)+1)/2)^2) ;
                     if d >= integration_radius
                         snippet_mask(i, j) = 0;
                     else
-                        area = area+1;
+                        maskArea = maskArea+1;
                     end 
                 end
             end
@@ -184,7 +188,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             sigma_x2 = 0;
             sigma_y2 = 0;
             sister_chromatid_distance = fits(end);
-            fixedAreaIntensity = sum(sum(snippet_mask)) - fits(end-1)*area; %corrected AR 7/13/2018
+            fixedAreaIntensity = sum(sum(snippet_mask)) - fits(end-1)*maskArea; %corrected AR 7/13/2018
 
             
             if  .1<sigma_x && sigma_x<(600/pixelSize) && .1<sigma_y && sigma_y<(600/pixelSize)...
@@ -206,8 +210,8 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
                     end
                 end
                 temp_particles = {{fixedAreaIntensity, spot_x, spot_y, fits(end-1), snippet, ...
-                    area, sigma_x, sigma_y, centroid_y, centroid_x, gaussianIntensity,intensity,...
-                    max_dog, snippet_mask, sigma_x2, sigma_y2, sister_chromatid_distance, relative_errors, confidence_intervals, gaussian, mesh,fits, area}};
+                    gaussianArea, sigma_x, sigma_y, centroid_y, centroid_x, gaussianIntensity,intensity,...
+                    max_dog, snippet_mask, sigma_x2, sigma_y2, sister_chromatid_distance, relative_errors, confidence_intervals, gaussian, mesh,fits, maskArea}};
             else                
                 temp_particles = {{}};   
             end

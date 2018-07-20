@@ -11,7 +11,7 @@ function [dropboxFolderName, rowIndex] = getDropboxFolderFromMovieDatabaseConten
     % If the prefix name does not contain any letters, defaults to 12 
     % which is the usual size after the date.
     namestart = 12;
-  end;
+  end
   
   namestart = namestart(1); %Index of first letter in prefix name, i.e. start of dataset name
   

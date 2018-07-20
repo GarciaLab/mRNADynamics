@@ -26,12 +26,12 @@ end
 %What type of experiment are we dealing with? Get this out of MovieDatabase
 movieDatabase = csv2cell(movieDatabasePath, 'fromfile');
 movieDatabaseHeaderRow = movieDatabase(1, :);
-ExperimentTypeColumn = findColumnIndex(movieDatabaseHeaderRow, 'ExperimentType')
-Channel1Column = findColumnIndex(movieDatabaseHeaderRow, 'Channel1')
-Channel2Column = findColumnIndex(movieDatabaseHeaderRow, 'Channel2')
-Channel3Column = findColumnIndex(movieDatabaseHeaderRow, 'Channel3')
+ExperimentTypeColumn = findColumnIndex(movieDatabaseHeaderRow, 'ExperimentType');
+Channel1Column = findColumnIndex(movieDatabaseHeaderRow, 'Channel1');
+Channel2Column = findColumnIndex(movieDatabaseHeaderRow, 'Channel2');
+Channel3Column = findColumnIndex(movieDatabaseHeaderRow, 'Channel3');
 
-[DropboxFolder, PrefixRow] = getDropboxFolderFromMovieDatabase(movieDatabasePath, Prefix, '[\\\\/-]')
+[DropboxFolder, PrefixRow] = getDropboxFolderFromMovieDatabase(movieDatabasePath, Prefix, '[\\\\/-]');
 
 ExperimentType = movieDatabase(PrefixRow, ExperimentTypeColumn);
 %ExperimentType = ExperimentType{1}
@@ -48,4 +48,4 @@ end
 [~,~,DropboxFolder,~,~] = DetermineLocalFolders(Prefix);
 
 %Set the destination folders
-OutputFolder = [DropboxFolder, filesep, Prefix]
+OutputFolder = [DropboxFolder, filesep, Prefix];

@@ -1,17 +1,14 @@
 function [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
-    ErrorIntegral,ErrorGauss,optFit,FitType,noIntensityFlag]=...
+    ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3, ErrorIntegral5]=...
     GetParticleTrace(CurrentParticle,Particles,Spots)
 
 %This function uses the total intensity mask to calculate the particles
 %intensity and subtracts the background obtained from the fit.
 
 %First, get the different intensity values corresponding to this particle.
+
 for i=1:length(Particles(CurrentParticle).Frame)
-        try
-            noIntensityFlag = Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).noIntensityAnalysis;
-        catch
-            noIntensityFlag = 1;
-        end
+
         Frame(i)=Particles(CurrentParticle).Frame(i);
         
         %Determine the brightest Z plane of this particle
@@ -35,14 +32,12 @@ for i=1:length(Particles(CurrentParticle).Frame)
             Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).CentralIntensity(zIndex);
         %Check to see it multi-slice integration was performed for this set
         fields = fieldnames(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)));
-%         if ~isempty(find(strcmp('FixedAreaIntensity3',fields)))
         try
             AmpIntegral3(i)=...
             Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).FixedAreaIntensity3;
         catch
             AmpIntegral3(i)= NaN;
         end
-%         if ~isempty(find(strcmp('FixedAreaIntensity5',fields)))
         try
             AmpIntegral5(i)=...
             Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).FixedAreaIntensity5;
@@ -106,10 +101,22 @@ if exist('OffsetError')
     end
     %For the Integral, we just use the area of the snippet, which is a
     %constant for all time points.
-    ErrorIntegral=OffsetError*sqrt(2)*109;
-%         sum(sum(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).snippet_mask{1}));
+    if isfield(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)), 'intArea')
+        ErrorIntegral=OffsetError*sqrt(2)*Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).intArea;
+        if ~isnan(AmpIntegral3(i))
+           ErrorIntegral3=OffsetError*sqrt(2)*3*Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).intArea;
+        end
+        if ~isnan(AmpIntegral5(i))
+           ErrorIntegral5=OffsetError*sqrt(2)*5*Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).intArea;     
+        end
+    else
+        ErrorIntegral=OffsetError*sqrt(2)*109;
+    end
+    
 else
     ErrorGauss=[];
     ErrorIntegral=[];
+    ErrorIntegral3=[];
+    ErrorIntegral5 = [];
     optFit=[];
 end

@@ -12,7 +12,7 @@ function [SourcePath, FISHPath, DropboxFolder, MS2CodePath, PreProcPath, configV
   movieDatabasePath = [DropboxFolder,'/MovieDatabase.csv'];
 
   if isempty(varargin) || isempty(varargin{1})
-    warning('No Prefix specified. Using default Dropbox folder')
+%     warning('No Prefix specified. Using default Dropbox folder')
     return
   end
   
@@ -21,8 +21,8 @@ function [SourcePath, FISHPath, DropboxFolder, MS2CodePath, PreProcPath, configV
 
   %% We need to look for the dropbox folder specified by the provided prefix
   Prefix = varargin{1};
-  disp('Determining local folders using prefix:')
-  disp(Prefix)
+%   disp('Determining local folders using prefix:')
+%   disp(Prefix)
   if isempty(regexp(Prefix, PREFIX_REGEX))
     error('Prefix %s does not match "yyyy-mm-dd[/\\-]name". Please change it accordingly.', Prefix)
     % any 10 characters will work, not only yyyy-mm-dd,

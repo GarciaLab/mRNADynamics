@@ -1,6 +1,11 @@
 function h=ellipse(ra,rb,ang,x0,y0,C,Nb, ax)
 % Ellipse adds ellipses to the current plot
 %
+% MODIFIED BY AR 7/9/18: NOW REQUIRES A FULL 8 INPUTS FOR EVERY FUNCTION
+% CALL AND THE AXES HANDLE MUST BE SPECIFIED AS THE LAST INPUT. THE REST OF THE
+% DOCUMENTATION DOES NOT REFLECT THIS CHANGE. 
+%
+%
 % ELLIPSE(ra,rb,ang,x0,y0) adds an ellipse with semimajor axis of ra,
 % a semimajor axis of radius rb, a semimajor axis of ang, centered at
 % the point x0,y0.
@@ -31,7 +36,7 @@ function h=ellipse(ra,rb,ang,x0,y0,C,Nb, ax)
 %
 % note that if ra=rb, ELLIPSE plots a circle
 %
-
+% 
 % written by D.G. Long, Brigham Young University, based on the
 % CIRCLES.m original 
 % written by Peter Blattner, Institute of Microtechnology, University of 

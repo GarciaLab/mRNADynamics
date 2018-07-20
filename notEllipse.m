@@ -1,6 +1,10 @@
 function h=notEllipse(ra,rb,ang,x0,y0,C,Nb, ax)
 % Ellipse adds ellipses to the current plot
 %
+% MODIFIED BY AR 7/9/18: NOW REQUIRES A FULL 8 INPUTS FOR EVERY FUNCTION
+% CALL AND THE AXES HANDLE MUST BE SPECIFIED AS THE LAST INPUT. THE REST OF THE
+% DOCUMENTATION DOES NOT REFLECT THIS CHANGE. 
+%
 % ELLIPSE(ra,rb,ang,x0,y0) adds an ellipse with semimajor axis of ra,
 % a semimajor axis of radius rb, a semimajor axis of ang, centered at
 % the point x0,y0.

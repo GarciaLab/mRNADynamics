@@ -282,7 +282,7 @@ end
 % we name the variable DataFolderColumnValue to avoid shadowing previously defined DataFolder var, which is actually a subfolder inside dropbox
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
 Channel1, Channel2, Objective, Power, DataFolderColumnValue, DropboxFolderName, Comments,...
-nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file')
     
@@ -304,7 +304,7 @@ if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file')
         end
     end
 else
-    warning('No nuclear marker channel may result in strange behavior.');
+%     warning('No nuclear marker channel may result in strange behavior.');
     
     for i=1:numFrames
         if i<nc9
@@ -608,11 +608,7 @@ while (cc~='x')
         error('ExperimentType and/or channel not supported.')          
     end
     
-%     figure(Overlay)
     set(0, 'CurrentFigure', Overlay);
-%     imshow(Image,[minContrast maxContrast],'Border','Tight') %AR
-%     1/13/2018 this contrast setting does not work for dim particles.
-
     imshow(Image,DisplayRangeSpot,'Border','Tight','Parent',overlayAxes)
     hold(overlayAxes,'on')
     %Show all particles in regular mode
@@ -754,17 +750,19 @@ while (cc~='x')
             end
         end  
     end
-    
 
-    
     if ApprovedParticles(CurrentParticle)==1
         set(Overlay,'Color','g')
+        set(TraceFig,'Color','g')
     elseif ApprovedParticles(CurrentParticle)==-1
         set(Overlay,'Color','r')
+        set(TraceFig,'Color','r')
     elseif ApprovedParticles(CurrentParticle)==2
         set(Overlay,'Color','y')
+        set(TraceFig,'Color','y')
     else
         set(Overlay,'Color','default')
+        set(TraceFig,'Color','default')
     end
     
     %Show the particles that were under threshold 2.
@@ -806,7 +804,6 @@ while (cc~='x')
         
    
     if UseHistoneOverlay
-%         figure(HisOverlayFig)
         try
             ImageHis=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                 FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,NDigits),'.tif']);
@@ -887,7 +884,6 @@ while (cc~='x')
     multi_slice_flag = isfield(Spots{CurrentChannel}(CurrentFrame).Fits...
         (CurrentParticleIndex),'IntegralZ');
     
-%     figure(SnippetFig)
     if  ~isempty(xTrace) && ~isempty(CurrentZIndex)  
         %Get the snippet and the mask, and overlay them  
         %(MT, 2018-02-12): lattice data could use this, changed CurrentChannel to coatChannel 
@@ -895,6 +891,7 @@ while (cc~='x')
             ,'_z' iIndex(CurrentZ,2) '_ch' iIndex(coatChannel,2) '.tif']);
         xSpot = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xDoG(CurrentZIndex);
         ySpot = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yDoG(CurrentZIndex);
+        
         if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex), 'snippet_size')
             snippet_size = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).snippet_size;
         %(MT, 2018-02-12): Hacky fix to get this to run with lattice data -
@@ -908,12 +905,9 @@ while (cc~='x')
             end
         end
         if ~exist('snippet_size', 'var')
-                snippet_size = 7; %pixels 
+            snippet_size = 7; %pixels 
         end
-%         CurrentSnippet=mat2gray(...
-%             Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).Snippet{CurrentZIndex});
-        
-%         snippet_size = 15;        
+
         CurrentSnippet = FullSlice(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
                                 max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size));
         imSnippet = mat2gray(CurrentSnippet);
@@ -956,10 +950,6 @@ while (cc~='x')
         + params(6) - DoubleSnippet;
 
     if ~isempty(xTrace) && ~isempty(CurrentZIndex)
-%         figure(Gaussian)
-            %Get the snippet and the mask, and overlay them
-%             domain=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).rawSpot{CurrentZIndex};
-%             snip = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).Snippet{CurrentZIndex};
             if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex),'gaussParams')
                 gaussParams = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussParams;
                 if ~isempty(gaussParams)
@@ -979,24 +969,19 @@ while (cc~='x')
             set(Gaussian,'units', 'normalized', 'position',[0.815, 0.15, .2/3*2, .33/3*2]);
             zlimit = max(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity);
             zlim(gaussianAxes,[0, zlimit]);        
-%         figure(RawData)
-%             surf(domain{1}, domain{2}, CurrentSnippet)
             surf(rawDataAxes,CurrentSnippet)
             title(rawDataAxes,'Raw data');
             set(RawData,'units', 'normalized', 'position',[.6, 0.15, .2/3*2, .33/3*2]);
             zlim(rawDataAxes,[0, zlimit]);
     else
-%         figure(Gaussian)
         cla(gaussianAxes, 'reset')
-%         figure(RawData)
         cla(rawDataAxes, 'reset')
     end
 
         
-%     figure(ZProfileFig)
     if ~isempty(xTrace)
 
-        %Get the z DoG profile
+        %Get the z-DoG profile
         % check to see if Spots contains flag indicating type of
         % integration used
         title_string = '(max intensity)';
@@ -1017,6 +1002,7 @@ while (cc~='x')
         
         plot(zProfileFigAxes, Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z,...
             ZProfile,'.-k');
+        
         hold(zProfileFigAxes,'on')
         if ~isempty(CurrentZIndex)
             plot(zProfileFigAxes,CurrentZ,ZProfile(CurrentZIndex),'ob')
@@ -1024,27 +1010,28 @@ while (cc~='x')
             plot(zProfileFigAxes,CurrentZ,CurrentZ,'or')
         end
         hold(zProfileFigAxes,'off')
-        title(zProfileFigAxes,['Z profile ' title_string],'FontSize',6)
+        xlabel(zProfileFigAxes,'intensity(au)', 'FontSize',12);
+        ylabel(zProfileFigAxes,'z-slice', 'FontSize',12);
+        title(zProfileFigAxes,{'z-profile:';title_string},'FontSize',10)
     end
         
-%     figure(TraceFig)
     if ~strcmpi(ExperimentType,'inputoutput')
         %Only update the trace information if we have switched particles
         if (CurrentParticle~=PreviousParticle)||~exist('AmpIntegral', 'var')||(CurrentChannel~=PreviousChannel) || lastParticle
             PreviousParticle=CurrentParticle;
-            [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
+            [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ErrorIntegral, ErrorIntegral3, ErrorIntegral5]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
         end       
        
-        p1 = plot(traceFigAxes, Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-            AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-k');           
+        p1 = errorbar(traceFigAxes, Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+            AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral,'.-k');           
         hold(traceFigAxes, 'on')
-%         p2 = plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-%             AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','green');                   
-%         p3 = plot(Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-%             GaussIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');                   
+        p2 = errorbar(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+            AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');                   
+        p3 = errorbar(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+           AmpIntegral5(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral5(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral5,'.-','Color','blue');                   
         plot(traceFigAxes,Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
         plot(traceFigAxes,Frames(Frames==CurrentFrame),AmpIntegral(Frames==CurrentFrame),'ob');
-%         legend([p1,p2,p3],'1 Slice Raw','3 Slice Raw','1 Slice Gaussian Fit')
+        legend([p1,p2,p3],'1-slice','3-slice','5-slice')
         hold(traceFigAxes, 'off')
         try
             xlim(traceFigAxes,[min(Frames)-1,max(Frames)+1]);
@@ -1111,7 +1098,7 @@ while (cc~='x')
     end
     title(traceFigAxes,FigureTitle)
     
-%     figure(ZTrace)
+    %this is the brightest z-trace figure
     if ~strcmpi(ExperimentType,'inputoutput')
         %Only update the trace information if we have switched particles
         if (CurrentParticle~=PreviousParticle)||~exist('MaxZProfile', 'var')||(CurrentChannel~=PreviousChannel) 
@@ -1141,22 +1128,15 @@ while (cc~='x')
     
     
     %Define the windows
-%     figure(Overlay)
     set(Overlay,'units', 'normalized', 'position',[0.01, .55, .33, .33]);
     if UseHistoneOverlay 
-%         figure(HisOverlayFig)
         set(HisOverlayFig,'units', 'normalized', 'position',[0.01, 0.1, .33, .33]);
     end
-%     figure(TraceFig);
     set(TraceFig,'units', 'normalized', 'position',[0.35, 0.55, .5, .3]);
-%     figure(SnippetFig);
     set(SnippetFig,'units', 'normalized', 'position',[0.355, 0.15, .2/2, .33/2]);
-%     figure(ZProfileFig);
     set(ZProfileFig,'units', 'normalized', 'position',[0.47, 0.15, .2/2, .33/2]);
-%     figure(ZTrace);
     set(ZTrace,'units', 'normalized', 'position',[0.869, 0.55, .2/2, .42/2]);
     
-%     figure(Overlay)
     set(0, 'CurrentFigure', Overlay)
     if isempty(SkipWaitForButtonPress)
         ct=waitforbuttonpress;

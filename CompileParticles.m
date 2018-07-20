@@ -588,18 +588,16 @@ for ChN=1:NChannels
 
                 %Extract information from Spots about fluorescence and background
                 [Frame,AmpIntegral, AmpIntegral3, AmpIntegral5, AmpGaussian,...
-                    Off, ErrorIntegral,ErrorGauss,optFit1, FitType, noIntensityFlag]...
+                    Off, ErrorIntegral,ErrorGauss,optFit1, FitType, ~]...
                  = GetParticleTrace(k,CompiledParticles{ChN},Spots{ChN});
                 CompiledParticles{ChN}(k).Fluo= AmpIntegral;
                 CompiledParticles{ChN}(k).Fluo3= AmpIntegral3;
                 CompiledParticles{ChN}(k).Fluo5= AmpIntegral5;
                 CompiledParticles{ChN}(k).FluoGauss= AmpGaussian;
-%                 CompiledParticles{ChN}(k).FluoIntegral = AmpIntegral;
                 CompiledParticles{ChN}(k).Off=Off;
                 CompiledParticles{ChN}(k).FluoError=ErrorIntegral;
                 CompiledParticles{ChN}(k).optFit1=optFit1;
                 CompiledParticles{ChN}(k).FitType=FitType;
-                CompiledParticles{ChN}(k).noIntensityFlag = noIntensityFlag;
                 
                 
                 %Determine the nc where this particle was born
