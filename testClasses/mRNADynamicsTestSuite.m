@@ -1,12 +1,21 @@
+addpath(path, genpath('../testClasses'));
+
 try
   import matlab.unittest.TestSuite
 
-  suite = TestSuite.fromFolder('testKnownExperiments');
-  testResults = run(suite);
+  exportDataForFISHSuite = TestSuite.fromFolder('testExportDataForFISH');
+  segmentSpotsSuite = TestSuite.fromFolder('testSegmentSpots');
+  
+  completeTestSuite = [exportDataForFISHSuite, segmentSpotsSuite];
+  testResults = run(completeTestSuite);
+
   exit(any([testResults.Failed]));
-catch
+catch ME
   disp('Cannot execute test suite.');
-  exit(1);
+  disp(['Exception: ', ME.identifier]);
+  disp(['Message: ', ME.message]);
+  disp(['Cause: ', ME.cause]);
+  %exit(1);
 end
 
 %We can also do this, if we want to pick and choose the tests
