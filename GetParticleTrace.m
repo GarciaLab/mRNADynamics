@@ -7,6 +7,10 @@ function [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
 
 %First, get the different intensity values corresponding to this particle.
 
+ErrorIntegral = NaN;
+ErrorIntegral3 = NaN;
+ErrorIntegral5 = NaN;
+
 for i=1:length(Particles(CurrentParticle).Frame)
 
         Frame(i)=Particles(CurrentParticle).Frame(i);
