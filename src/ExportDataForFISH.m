@@ -28,8 +28,6 @@
 %The idea of (4) being in Dropbox is that I don't need to be synchronizing
 %the part related to the manual analysis.
 function Prefix = ExportDataForFISH(varargin)
-addpath('LIFExport');
-addpath('ZeissConfocalLSM');
 
 [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest] = exportDataForFISH_processInputParameters(varargin{:})
 
