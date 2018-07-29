@@ -19,6 +19,7 @@ function [FFPaths, FFToUse, LSMFF] = findFlatFieldInformation(Folder)
   %Go through the FF files and see which one matches the pixel size
   %and image pixel number
   FFToUse = [];
+  LSMFF = [];
   for i = 1:length(FFPaths)
     LSMFF = bfopen(FFPaths{i});
     LSMFFMeta = LSMFF{:, 4};
