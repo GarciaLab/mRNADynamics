@@ -1,6 +1,10 @@
-function arff = makeArff(Prefix,varargin)
+function arff = makeArffv2(Prefix,varargin)
+
+%Use this prefix for testing: Prefix = '2017-05-23-1A3+5_MS2v7L16_1_lifelongcopy'
+% and run makeArffv2(Prefix, 'numFrames', 2)
 
 % fCell = evalin('base', 'fCell'); %for debugging the arffmaking
+
 % makeArff(Prefix)
 %
 % DESCRIPTION
@@ -49,7 +53,14 @@ fin = fileread(in_path);
 filters = regexp(fin,'(?<=@attribute )\S*(?= )', 'match');
 filters = filters(2:end-1);
 numFilters = length(filters);
-arfftemp = zeros(stackSize*(numFilters+2)*numFrames,numFilters+2);
+%arfftemp is obviously too big as written. let's start smaller. keep 1/10^6
+%pixels?
+numEntriesUnreduced = stackSize*(numFilters+2)*numFrames; %this value is ~10^9 in test case
+fKeep = 1E-8;
+numKeep = round(numEntriesUnreduced*fKeep);
+arfftemp = zeros(numKeep,numFilters+2);
+numLeft = numKeep;
+ %n is the counter for rows in the arff file
 n = 0;
 for i = 1:numFrames
     imPath= [PreProcPath,filesep,Prefix,filesep,'stacks', filesep, iIndex(i,3),'.tif'];
@@ -57,6 +68,7 @@ for i = 1:numFrames
     im = zeros(rows,cols,zSlices);
     groundTruth = zeros(rows,cols,zSlices);
     
+    %these pixels will go in the last 2 columns of the arff file
     for j = 2:zSlices+1 %we don't want the top and bottom slices
         im(:,:,j-1) = imread(imPath, j);
         groundTruth(:,:,j-1) = imread(truthPath, j);
@@ -70,15 +82,22 @@ for i = 1:numFrames
 %   parfor o = 1:numFilters %just a reminder this can be parfored
     for o = 1:numFilters
         filterName = filters{o};
-        filterType = regexp(filterName,'\D*(?=_\d)', 'match');
+        filterType = regexp(filterName,'\D*(?=_\d)', 'match'); 
         filterType = filterType{1};
         sigmas = regexp(filterName,'(?<=_)\d(?=.)','match'); 
+        
         if ~strcmp(filterName, 'original') && ~strcmp(filterName, 'class')
             f = filterImage(im, filterType, sigmas);
-            arfftemp(n:stackSize, o+2) = f(:)'; %note for armando- this needs to be filled in so i can eliminate fcell entirely.
-            %i still need to figure out how to define
+            roll = rand() < fKeep; %randomly choose a pixel 
+            if roll 
+                arfftemp(n:stackSize, o+2) = f(:)'; %note for armando- this needs to be filled in so i can eliminate fcell entirely.
+                arfftemp(n+1:stackSize, 1) = im(:)';
+                arfftemp(n+1:stackSize, 2) = groundTruth(:)';
+                n = n + 3;
+                %i still need to figure out how to define
             %lastnonzeroentry and filterIndex
             n = n + stackSize;
+            
         end
     end
 end
