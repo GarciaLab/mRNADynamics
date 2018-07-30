@@ -5,10 +5,11 @@
 % configContents: A cell containing information within ComputerFolders configuration
 %
 % Author (contact): Hernan Garcia (hgarcia@berkeley.edu)
-function configContents = InstallmRNADynamics
+function configContents = InstallmRNADynamics(varargin)
   warning('off','MATLAB:MKDIR:DirectoryExists')
 
   ensureRightFolder();
+  cd('..');
   mRNADynamicsPath = toSafeWindowsString(pwd);
 
   cd('..');
@@ -18,7 +19,21 @@ function configContents = InstallmRNADynamics
   disp(['mRNADynamics absolute path is ', mRNADynamicsPath]);
   disp(['root directory absolute path is ', ROOT_PATH]);
 
-  if exist([ROOT_PATH, '/ComputerFolders.xlsx'])
+  % default directory locations
+  PREPROCESSED_DATA_PATH = createDataSubDir('PreProcessedData');
+  PROCESSED_DATA_PATH = createDataSubDir('ProcessedData');
+  RAW_DYNAMICS_DATA_PATH = createDataSubDir('RawDynamicsData'); %(old RawData folder)
+  DYNAMICS_RESULTS_PATH = createDataSubDir('DynamicsResults'); %(old DropboxFolder)
+  MOVIE_DATABASE_PATH =  [DYNAMICS_RESULTS_PATH, '/MovieDatabase.csv'];
+  MS2CODE_PATH = [mRNADynamicsPath, filesep, 'src'];
+  TEST_PATH =  createDirInRoot('/ExpectedData');
+
+  COMPUTER_FOLDERS_PATH = [ROOT_PATH, '/ComputerFolders.csv'];
+
+  if (~isempty(varargin) & strfind('updateStartupScript', varargin))
+    disp('Updating MATLAB startup script');
+    createStartupFile();
+  elseif exist([ROOT_PATH, '/ComputerFolders.xlsx'])
     disp(['Existing installation detected (', [ROOT_PATH, '/ComputerFolders.xlsx'],...
       ' exists). Will try to update configurations to CSV format.']);
     
@@ -29,16 +44,6 @@ function configContents = InstallmRNADynamics
     disp('Existing installation files successfully updated to CSV format.');
   else
     disp('New installation detected. Will create required configurations and folder structures.');
-    
-    % default directory locations
-    PREPROCESSED_DATA_PATH = createDataSubDir('PreProcessedData');
-    PROCESSED_DATA_PATH = createDataSubDir('ProcessedData');
-    RAW_DYNAMICS_DATA_PATH = createDataSubDir('RawDynamicsData'); %(old RawData folder)
-    DYNAMICS_RESULTS_PATH = createDataSubDir('DynamicsResults'); %(old DropboxFolder)
-    MOVIE_DATABASE_PATH =  [DYNAMICS_RESULTS_PATH, '/MovieDatabase.csv'];
-    MS2CODE_PATH = mRNADynamicsPath;
-
-    COMPUTER_FOLDERS_PATH = [ROOT_PATH, '/ComputerFolders.csv'];
     configContents = createFoldersConfig();
     
     createMovieDatabaseFile();
@@ -55,19 +60,23 @@ function configContents = InstallmRNADynamics
   %%
 
   function subDirPath = createDataSubDir(subDirName)
-    dataPath = [ROOT_PATH, '/Data'];
-    if ~exist(dataPath)
-      mkdir(dataPath);
-    end
+    dataPath = createDirInRoot('/Data');
 
     subDirPath = [dataPath, '/', subDirName];
     mkdir(subDirPath);
     subDirPath = subDirPath
   end
 
+  function dirPath = createDirInRoot(folderName)
+    dirPath = [ROOT_PATH, folderName];
+    if ~exist(dirPath)
+      mkdir(dirPath);
+    end
+  end
+
   function ensureRightFolder()
-    while ~strfind(pwd, 'mRNADynamics')
-      warning('This script must be run from the ''mRNADynamics'' directory.');
+    while ~strfind(pwd, 'src')
+      warning('This script must be run from the ''mRNADynamics/src'' directory.');
       cd(uigetdir);
     end
   end
@@ -98,7 +107,8 @@ function configContents = InstallmRNADynamics
         'PreProcPath', PREPROCESSED_DATA_PATH;
         'FISHPath', PROCESSED_DATA_PATH;
         'DropboxFolder', DYNAMICS_RESULTS_PATH;
-        'MS2CodePath', MS2CODE_PATH
+        'MS2CodePath', MS2CODE_PATH;
+        'TestPath', TEST_PATH
       };
 
       cell2csv(COMPUTER_FOLDERS_PATH, contents);
@@ -148,44 +158,36 @@ function configContents = InstallmRNADynamics
     % Add the right folders to the path.
     % This will be done as a startup file in the user's folder
 
-    DependenciesFolder = [mRNADynamicsPath, '/dependencies'];
-    DeprecatedFolder = [mRNADynamicsPath, '/deprecated'];
-    TestClassesFolder = [mRNADynamicsPath, '/testClasses'];
-    TrackingFolder = [mRNADynamicsPath, '/Tracking'];
-    SubfunctionsFolder = [TrackingFolder, '/subfunctions'];
-    LineageCodeFolder = [mRNADynamicsPath, '/LineageCode'];
-    tr2dFolder = [mRNADynamicsPath, '/tr2d'];
+    srcFolder = [mRNADynamicsPath, '/src'];
+    libFolder = [mRNADynamicsPath, '/lib'];
+    DependenciesFolder = [mRNADynamicsPath, '/lib/dependencies'];
+    testFolder = [mRNADynamicsPath, '/test'];
 
     % matlab paths
-    Output{1} = ['addpath(genpath(''', mRNADynamicsPath, '/Fiji.app/scripts''));'];
+    Output{1} = ['addpath(genpath(''', libFolder, '/Fiji.app/scripts''));'];
     Output{2} = ['path(''', PREPROCESSED_DATA_PATH, ''',path);'];
     Output{3} = ['path(''', ROOT_PATH, ''',path);'];
     Output{4} = ['path(''', mRNADynamicsPath, ''',path);'];
-    Output{5} = ['path(''', TrackingFolder, ''',path);'];
-    Output{6} = ['path(''', LineageCodeFolder, ''',path);'];
-    Output{7} = ['path(''', SubfunctionsFolder, ''',path);'];
-    Output{8} = ['addpath(genpath(''', DeprecatedFolder, '''));'];
-    Output{9} = ['path(''', DYNAMICS_RESULTS_PATH, ''',path);'];
-    Output{10} = ['addpath(genpath(''', TestClassesFolder, '''));'];
-    Output{11} = ['addpath(genpath(''', DependenciesFolder, '''));'];
-    Output{12} = ['addpath(genpath(''',  tr2dFolder, '''));'];
+    Output{5} = ['addpath(genpath(''', srcFolder, '''));'];
+    Output{6} = ['path(''', DYNAMICS_RESULTS_PATH, ''',path);'];
+    Output{7} = ['addpath(genpath(''', testFolder, '''));'];
+    Output{8} = ['addpath(genpath(''', DependenciesFolder, '''));'];
 
     % directory constants
-    Output{13} = ['ROOT_PATH = ''', ROOT_PATH, ''';'];
-    Output{14} = ['MRNA_DYNAMICS_PATH = ''', mRNADynamicsPath, ''';'];
-    Output{15} = ['PREPROCESSED_DATA_PATH = ''', PREPROCESSED_DATA_PATH, ''';'];
-    Output{16} = ['PROCESSED_DATA_PATH = ''', PROCESSED_DATA_PATH, ''';'];
-    Output{17} = ['RAW_DYNAMICS_DATA_PATH = ''', RAW_DYNAMICS_DATA_PATH, ''';'];
-    Output{18} = ['DYNAMICS_RESULTS_PATH = ''', DYNAMICS_RESULTS_PATH, ''';'];
-    Output{19} = ['MS2CODE_PATH = ''', MS2CODE_PATH, ''';'];
-    Output{20} = ['MOVIE_DATABASE_PATH = ''', MOVIE_DATABASE_PATH, ''';'];
-    Output{21} = ['COMPUTER_FOLDERS_PATH = ''', COMPUTER_FOLDERS_PATH, ''';'];
+    Output{9} = ['ROOT_PATH = ''', ROOT_PATH, ''';'];
+    Output{10} = ['MRNA_DYNAMICS_PATH = ''', mRNADynamicsPath, ''';'];
+    Output{11} = ['PREPROCESSED_DATA_PATH = ''', PREPROCESSED_DATA_PATH, ''';'];
+    Output{12} = ['PROCESSED_DATA_PATH = ''', PROCESSED_DATA_PATH, ''';'];
+    Output{13} = ['RAW_DYNAMICS_DATA_PATH = ''', RAW_DYNAMICS_DATA_PATH, ''';'];
+    Output{14} = ['DYNAMICS_RESULTS_PATH = ''', DYNAMICS_RESULTS_PATH, ''';'];
+    Output{15} = ['MS2CODE_PATH = ''', MS2CODE_PATH, ''';'];
+    Output{16} = ['MOVIE_DATABASE_PATH = ''', MOVIE_DATABASE_PATH, ''';'];
+    Output{17} = ['COMPUTER_FOLDERS_PATH = ''', COMPUTER_FOLDERS_PATH, ''';'];
 
-    Output{22} = ['disp(''mRNADynamics Startup script executed.'');'];
+    Output{18} = ['disp(''mRNADynamics Startup script executed.'');'];
 
     writeStartupFile(Output);
   end
-  
 end
 
 function safeString = toSafeWindowsString(aPath)

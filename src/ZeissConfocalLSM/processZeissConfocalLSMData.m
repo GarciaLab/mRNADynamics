@@ -1,13 +1,13 @@
 function FrameInfo = processZeissConfocalLSMData(Folder, D, FrameInfo, ExperimentType, Channel1, Channel2, Prefix, OutputFolder)
   % What type of experiment do we have?
-  if strcmp(ExperimentType,'1spot') || strcmp(ExperimentType,'2spot') || strcmp(ExperimentType,'2spot1color')
-    [coatChannel, histoneChannel, fiducialChannel] = obtainZeissChannels(Channel1, Channel2);
+  if strcmp(ExperimentType,'1spot') || strcmp(ExperimentType,'2spot') || strcmp(ExperimentType,'2spot1color') || strcmpi(ExperimentType, 'inputoutput')
+    [coatChannel, histoneChannel, fiducialChannel] = obtainZeissChannels(Channel1, Channel2, ExperimentType);
 
     NSeries = length(D);
     Frame_Times = []; % Store the frame information
 
     waitbarFigure = waitbar(0, 'Extracting LSM images');
-  
+    load('ReferenceHist.mat')
     for LSMIndex = 1:NSeries
       waitbar(LSMIndex / NSeries, waitbarFigure);
       
@@ -43,7 +43,7 @@ function FrameInfo = processZeissConfocalLSMData(Folder, D, FrameInfo, Experimen
       [ValueField, Frame_Times] = obtainZeissFrameTimes(LSMMeta, NSlices, LSMIndex, NPlanes, NChannels, StartingTime, Frame_Times);
       [FrameRange, FrameInfo] = createZeissFrameInfo(LSMIndex, NFrames, NSlices, FrameInfo, LSMMeta, Frame_Times, ValueField);
 
-      processZeissFrames(Prefix, OutputFolder, LSMImages, LSMIndex, FrameRange, NSlices, NChannels, coatChannel, fiducialChannel)
+      processZeissFrames(Prefix, ExperimentType, Channel1, Channel2, OutputFolder, LSMImages, LSMIndex, FrameRange, NSlices, NChannels, coatChannel, fiducialChannel, ReferenceHist)
     end
   
     close(waitbarFigure);

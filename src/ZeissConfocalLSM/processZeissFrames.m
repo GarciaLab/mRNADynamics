@@ -1,4 +1,4 @@
-function processZeissFrames(Prefix, OutputFolder, LSMImages, LSMIndex, FrameRange, NSlices, NChannels, coatChannel, fiducialChannel)
+function processZeissFrames(Prefix, ExperimentType, Channel1, Channel2, OutputFolder, LSMImages, LSMIndex, FrameRange, NSlices, NChannels, coatChannel, fiducialChannel, ReferenceHist)
   % Create a blank image
   BlankImage = uint16(zeros(size(LSMImages{1}{1, 1})));
 
@@ -40,6 +40,31 @@ function processZeissFrames(Prefix, OutputFolder, LSMImages, LSMIndex, FrameRang
     end
 
     Projection = median(HisSlices, 3);
+    if strcmpi(ExperimentType, 'inputoutput')
+      %YJK : Think about the case when there is no His channel,
+      %and it is inputoutput mode or 1spot mode or 2spot2color.
+      %We can use (MCP-mCherry) either inverted or raw
+      %images to make fake histone images.
+      if (isempty(strfind(Channel1{1}, 'His'))) && (isempty(strfind(Channel2{1}, 'His')))
+        if (~isempty(strfind(Channel1{1}, 'NLS')))|(~isempty(strfind(Channel2{1}, 'NLS')))
+          %don't invert with NLS-MCP-mCherry
+        else
+          %We don't want to use all slices. Only the center ones
+          StackCenter = round((min(NSlices) - 1) / 2);
+          StackRange = StackCenter - 1:StackCenter + 1;
+          if strcmp(ProjectionType, 'medianprojection')
+              Projection = median(HisSlices(:,:,StackRange), [], 3);
+          else
+              Projection = max(HisSlices(:,:,StackRange), [], 3);
+          end
+          %invert images to make nuclei bright
+          Projection = imcomplement(Projection);
+        end
+        Projection = histeq(mat2gray(Projection), ReferenceHist);
+        Projection = Projection * 10000;
+      end
+    end
+
     imwrite(uint16(Projection), [OutputFolder, filesep, Prefix, '-His_', iIndex(FrameRange(framesIndex), 3), '.tif']);
   end
 
