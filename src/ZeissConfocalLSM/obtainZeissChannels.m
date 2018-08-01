@@ -20,10 +20,10 @@ function [coatChannel, histoneChannel, fiducialChannel] = obtainZeissChannels(Ch
   else 
     if ~isempty(strfind(Channel1{1}, 'MCP'))
       coatChannel = 1;
-      histoneChannel = 1;
+      histoneChannel = 2;
     elseif ~isempty(strfind(Channel2{1}, 'MCP'))
       coatChannel = 2;
-      histoneChannel = 2;
+      histoneChannel = 1;
     end
   end
 
