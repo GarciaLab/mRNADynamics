@@ -440,7 +440,7 @@ Overlay=figure;
 overlayAxes = axes(Overlay);
 if UseHistoneOverlay 
     HisOverlayFig=figure;  
-    hisOverlayFigAxes = axes(hisOverlayFig);
+    HisOverlayFigAxes = axes(HisOverlayFig);
 end
 TraceFig=figure;
 traceFigAxes = axes(TraceFig);
@@ -627,7 +627,7 @@ while (cc~='x')
     hold(overlayAxes,'off')
 
     if isfield(FrameInfo, 'nc')
-    set(overlayAxes,'Name',['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles),...
+    set(Overlay,'Name',['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles),...
         ', Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),...
         ', Z: ',num2str(CurrentZ),'/',num2str(ZSlices),' nc: ', num2str(FrameInfo(CurrentFrame).nc),...
         ', Ch: ',num2str(CurrentChannel)])
@@ -674,7 +674,7 @@ while (cc~='x')
                     Ellipses{CurrentFrame}(NucleusIndex,4),...
                     Ellipses{CurrentFrame}(NucleusIndex,5),...
                     Ellipses{CurrentFrame}(NucleusIndex,1)+1,...
-                    Ellipses{CurrentFrame}(NucleusIndex,2)+1, overlayAxes);
+                    Ellipses{CurrentFrame}(NucleusIndex,2)+1,[],[], overlayAxes);
                 set(EllipseHandleGreen,'Color','g')
                 hold(overlayAxes,'off')
             else
@@ -821,21 +821,21 @@ while (cc~='x')
         else
             HisOverlayImage=cat(3,mat2gray(ImageHis,double(DisplayRange)),mat2gray(Image),zeros(size(Image)));
         end
-        imshow(HisOverlayImage,[],'Border','Tight','Parent',hisOverlayFigAxes)
+        imshow(HisOverlayImage,[],'Border','Tight','Parent',HisOverlayFigAxes)
 
        
-        hold(hisOverlayFigAxes,'on')
+        hold(HisOverlayFigAxes,'on')
         if ~SpeedMode
-            plot(hisOverlayFigAxes,xNonFlagged,yNonFlagged,'ow')
-            plot(hisOverlayFigAxes,xApproved,yApproved,'ob')
+            plot(HisOverlayFigAxes,xNonFlagged,yNonFlagged,'ow')
+            plot(HisOverlayFigAxes,xApproved,yApproved,'ob')
         end
-        plot(hisOverlayFigAxes,xTrace,yTrace,'og')
-        hold(hisOverlayFigAxes,'off')
+        plot(HisOverlayFigAxes,xTrace,yTrace,'og')
+        hold(HisOverlayFigAxes,'off')
         
         if ShowThreshold2
-            hold(hisOverlayFigAxes,'on')
-            plot(hisOverlayFigAxes,x2,y2,'sw')
-            hold(hisOverlayFigAxes,'off')
+            hold(HisOverlayFigAxes,'on')
+            plot(HisOverlayFigAxes,x2,y2,'sw')
+            hold(HisOverlayFigAxes,'off')
         end
   
         
@@ -849,14 +849,14 @@ while (cc~='x')
             
         end
     
-        set(hisOverlayFig,'Name',['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles),...
+        set(HisOverlayFig,'Name',['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles),...
             ', Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),...
             ', Z: ',num2str(CurrentZ),'/',num2str(ZSlices),' nc: ', num2str(FrameInfo(CurrentFrame).nc),...
             ' Ch: ',num2str(CurrentChannel)])
         
         if ZoomMode || GlobalZoomMode
-            xlim(hisOverlayFigAxes,[xForZoom-ZoomRange,xForZoom+ZoomRange])
-            ylim(hisOverlayFigAxes,[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2])
+            xlim(HisOverlayFigAxes,[xForZoom-ZoomRange,xForZoom+ZoomRange])
+            ylim(HisOverlayFigAxes,[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2])
         end
  
     end
