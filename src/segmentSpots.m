@@ -396,6 +396,7 @@ else
                          Particles(n).ConfidenceIntervals{1} = cell2mat(all_frames{i,j}{spot}(19));          
                          Particles(n).gaussSpot{1} = cell2mat(all_frames{i,j}{spot}(20));
                          Particles(n).intArea = cell2mat(all_frames{i,j}{spot}(23));
+                         Particles(n).intArea = Particles(n).intArea(1); %this should be the same for all z slices. 
                          raw = all_frames{i,j}{spot}(21);
                          Particles(n).rawSpot{1} = raw{1};
                          Particles(n).z(1) = j;
