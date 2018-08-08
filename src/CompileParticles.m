@@ -595,7 +595,7 @@ for ChN=1:NChannels
                 CompiledParticles{ChN}(k).Fluo5= AmpIntegral5;
                 CompiledParticles{ChN}(k).FluoGauss= AmpGaussian;
                 CompiledParticles{ChN}(k).Off=Off;
-                CompiledParticles{ChN}(k).FluoError=ErrorIntegral;
+                CompiledParticles{ChN}(k).FluoError=ErrorIntegral(1); % SEANCHANGED
                 CompiledParticles{ChN}(k).optFit1=optFit1;
                 CompiledParticles{ChN}(k).FitType=FitType;
                 
