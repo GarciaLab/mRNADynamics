@@ -177,6 +177,7 @@ elseif strcmp(FileMode,'LSM')
     full_embryo_angle = 0;
     
     LSMMid=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(MidFileIndex).name]);
+    LSMSurf = bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(SurfFileIndex).name]);
     LSMMeta=LSMMid{:,4};
     LSMMeta2=LSMMid{:,2};
     
@@ -190,6 +191,7 @@ elseif strcmp(FileMode,'LSM')
     %individual tiles if we're dealing with tile scan. Also, in CZI files,
     %this seems to ensure a high-contrast image as well.
     MidImage=LSMMid{ImageCellToUse,1}{HisChannel,:};
+    SurfImage = LSMSurf{ImageCellToUse,1}{HisChannel,:};
     
     %Figure out the rotation of the full embryo image
     %This works for LSM files
@@ -221,6 +223,7 @@ elseif strcmp(FileMode,'LSM')
     end
 
     MidImage = imrotate(MidImage, -zoom_angle + full_embryo_angle);
+    SurfImage = imrotate(SurfImage, -zoom_angle + full_embryo_angle);
     
 elseif strcmp(FileMode, 'DSPIN')        %CS20170911 This is really long-winded atm! Need to simplify.
     %Find and open the mid-saggistal .nd files in the FullEmbryo folder

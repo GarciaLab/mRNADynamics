@@ -130,7 +130,7 @@ if isfield(FrameInfo,'FileMode')
         for j=1:numFrames
             ElapsedTime(j)=etime(datevec(FrameInfo(j).TimeString),datevec(FrameInfo(1).TimeString));
         end
-    elseif strcmp(FrameInfo(1).FileMode,'LSM')||strcmp(FrameInfo(1).FileMode,'LIFExport')%If it is a LIFEexport Sum over Fram e info
+    elseif strcmp(FrameInfo(1).FileMode,'LSM')||strcmp(FrameInfo(1).FileMode,'LIFExport')||strcmp(FrameInfo(1).FileMode, 'LSMExport')% SEANCHANGE If it is a LIFEexport Sum over Fram e info
         for j=1:numFrames
             ElapsedTime(j)=FrameInfo(j).Time-FrameInfo(1).Time;%Finds the elapsed time by subtracting each time point by the initial time point
         end
