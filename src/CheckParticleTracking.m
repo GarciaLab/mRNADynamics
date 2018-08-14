@@ -1102,7 +1102,7 @@ while (cc~='x')
     %this is the brightest z-trace figure
     if ~strcmpi(ExperimentType,'inputoutput')
         %Only update the trace information if we have switched particles
-        if (CurrentParticle~=PreviousParticle)||~exist('MaxZProfile', 'var')||(CurrentChannel~=PreviousChannel) 
+        if (CurrentParticle~=PreviousParticle)||~exist('MaxZProfile', 'var')||(CurrentChannel~=PreviousChannel)|| CurrentFrame~=PreviousChannel
             PreviousParticle=CurrentParticle;
             Frames=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
         end    
@@ -1266,6 +1266,7 @@ while (cc~='x')
             end
             
             if del
+                CurrentFrameWithinParticle = find(Frames==CurrentFrame);
                 ind = Particles{CurrentChannel}(CurrentParticle).Index(CurrentFrameWithinParticle);
                 onlyFrame = length(Particles{CurrentChannel}(CurrentParticle).Frame) == 1;
                 if onlyFrame
@@ -1320,6 +1321,14 @@ while (cc~='x')
                     CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(1);
                     ParticleToFollow=[];
                     DisplayRange=[];
+               elseif CurrentFrame > 1
+                   CurrentFrame=CurrentFrame-1;
+                   ManualZFlag=0;
+               elseif CurrentFrame < length({Spots{1}.Fits})
+                   CurrentFrame=CurrentFrame+1;
+                   ManualZFlag=0;
+               else
+                   error('something''s wrong.')                 
                end
                 disp 'Spot deleted successfully. Trace figures will refresh after switching particles.' 
             end
