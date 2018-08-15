@@ -1,5 +1,7 @@
 function testCase = testExportDataForFISH(testCase)
+  tic;
   disp(['Running ExportDataForFISH test with prefix ', testCase.Prefix]);
+  fprintf('Test run started at %s\n', datestr(now,'yyyy-mm-dd HH:MM:SS.FFF'));
   
   %Figure out the initial folders. 
   CONFIG_CSV_PATH = ['ComputerFolders.csv'];
@@ -22,4 +24,8 @@ function testCase = testExportDataForFISH(testCase)
   end
 
   compareExpectedDataDir(testCase, preprocessedDataFolder, expectedDataFolder);
+
+  elapsedTime = toc;
+  fprintf('Test run for %s ended successfully at %s\n', testCase.Prefix, datestr(now,'yyyy-mm-dd HH:MM:SS.FFF'));
+  fprintf('Elapsed time for test was %d minutes and %f seconds\n', floor(elapsedTime/60), rem(elapsedTime,60));
 end
