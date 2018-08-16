@@ -1,4 +1,4 @@
-function [Particles,falsePositives] = findBrightestZ(Particles, num_shadows, use_integral_center)
+function [Particles,falsePositives] = findBrightestZ(Particles, num_shadows, use_integral_center, force_z)
 % Particles = findBrightestZ(Particles)
 %
 % DESCRIPTION
@@ -52,7 +52,13 @@ function [Particles,falsePositives] = findBrightestZ(Particles, num_shadows, use
             ZStackIndex = MaxIndexIntegral;
         end         
         
-        Particles(i).brightestZ = CentralZ;
+        %allow the function call to choose the "brightest" z plane rather
+        %than automatically determining it 
+        if ~force_z            
+            Particles(i).brightestZ = CentralZ;
+        else
+            Particles(i).brightestZ = force_z;
+        end
         
          %AR 7/19/2018- I'm appropriating these variables in order to
         %integrate within an ellipsoid volume. Not sure of the original
@@ -65,8 +71,8 @@ function [Particles,falsePositives] = findBrightestZ(Particles, num_shadows, use
         %Particles(i).FixedAreaIntensity5 = RawIntegral5;
 %             Particles(i).FixedAreaIntensity3 = Particles(i).FixedAreaIntensity(Particles(i).brightestZ - 1) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ + 1);
 %             Particles(i).FixedAreaIntensity5 = Particles(i).FixedAreaIntensity(Particles(i).brightestZ - 2) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ - 1) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ + 1) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ + 2);
-        Particles(i).FixedAreaIntensity3 = nansum(z_raw_values(ismember(z_grid,CentralZ-1:CentralZ+1)));
-        Particles(i).FixedAreaIntensity5 = nansum(z_raw_values(ismember(z_grid,CentralZ-2:CentralZ+2)));
+        Particles(i).FixedAreaIntensity3 = nansum(z_raw_values(ismember(z_grid,Particles(i).brightestZ-1:Particles(i).brightestZ+1)));
+        Particles(i).FixedAreaIntensity5 = nansum(z_raw_values(ismember(z_grid,Particles(i).brightestZ-2:Particles(i).brightestZ+2)));
         
         %use convolution kernel to look for shadows
         z_raw_binary = ~isnan(z_raw_values);

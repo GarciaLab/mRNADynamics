@@ -5,6 +5,12 @@ function Particles=JoinParticleTraces(OriginalParticle,ClickedParticle,Particles
 
 %Transfer the information to the original particle
 Particles(OriginalParticle).Frame=[Particles(OriginalParticle).Frame,Particles(ClickedParticle).Frame];
+if isfield(Particles,'xPos')
+    Particles(OriginalParticle).xPos=[Particles(OriginalParticle).xPos,Particles(ClickedParticle).xPos];
+end
+if isfield(Particles,'yPos')
+    Particles(OriginalParticle).yPos=[Particles(OriginalParticle).yPos,Particles(ClickedParticle).yPos];
+end
 Particles(OriginalParticle).Index=[Particles(OriginalParticle).Index,Particles(ClickedParticle).Index];
 Particles(OriginalParticle).Approved=0;
 %Particles(OriginalParticle).nc=[Particles(OriginalParticle).nc,Particles(ClickedParticle).nc];
@@ -27,5 +33,11 @@ Particles=Particles([1:ClickedParticle-1,ClickedParticle+1:end]);
 %connected to a particle that came before.
 [SortedFrame,Permutations]=sort(Particles(OriginalParticle).Frame);
 Particles(OriginalParticle).Frame=Particles(OriginalParticle).Frame(Permutations);
+if isfield(Particles,'xPos')
+    Particles(OriginalParticle).xPos=Particles(OriginalParticle).xPos(Permutations);
+end
+if isfield(Particles,'yPos')
+    Particles(OriginalParticle).yPos=Particles(OriginalParticle).yPos(Permutations);
+end
 Particles(OriginalParticle).Index=Particles(OriginalParticle).Index(Permutations);
 Particles(OriginalParticle).FrameApproved=Particles(OriginalParticle).FrameApproved(Permutations);    

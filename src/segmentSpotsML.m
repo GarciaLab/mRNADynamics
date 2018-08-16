@@ -441,7 +441,7 @@ else
         end
         
         %pick the brightest z-slice
-        [Particles, falsePositives] = findBrightestZ(Particles, num_shadows, use_integral_center);
+        [Particles, falsePositives] = findBrightestZ(Particles, num_shadows, use_integral_center, 0);
                 
         %Create a final Spots structure to be fed into TrackmRNADynamics
         Spots{q} = [];        
