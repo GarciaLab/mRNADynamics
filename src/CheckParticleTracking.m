@@ -1316,7 +1316,7 @@ while (cc~='x')
                     %'m' button
                     NextParticle = CurrentParticle+1;
                     if NextParticle>numParticles
-                        NextParticle=NextParticle-1; %go backwards one particle if the deleted particle was the last. 
+                        NextParticle=NextParticle-2; %go backwards one particle if the deleted particle was the last. 
                     end
                     if numParticles == 1
                         lastParticle = 1;
