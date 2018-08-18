@@ -1,10 +1,9 @@
-function [displayFigures, trackSpots, numFrames, numShadows, customSigmas, customFilter, highPrecision, filterType, intScale, nWorkers, keepPool, pool] = determineSegmentSpotsOptions(varargin)
+function [displayFigures, trackSpots, numFrames, numShadows, customFilter, highPrecision, filterType, intScale, nWorkers, keepPool, pool] = determineSegmentSpotsOptions(varargin)
   % Default options
   displayFigures = 0;
   trackSpots = 0;
   numFrames = 0;
   numShadows = 2;
-  customSigmas = 0;
   customFilter = 0;
   highPrecision = 0;
   filterType = 'Difference_of_Gaussian';
@@ -27,8 +26,6 @@ function [displayFigures, trackSpots, numFrames, numShadows, customSigmas, custo
         numShadows = varargin{i + 1};
       end 
 
-    elseif strcmpi(varargin{i}, 'customSigmas')
-      customSigmas = 1;
     elseif strcmp(varargin{i}, 'Frames')
 
       if ~ isnumeric(varargin{i + 1})
@@ -54,7 +51,6 @@ function [displayFigures, trackSpots, numFrames, numShadows, customSigmas, custo
       customFilter = 1;
 
       try 
-
         filterType = varargin{i + 1};
       catch 
         warning('Entered filter not recognized. Defaulting to DoG')

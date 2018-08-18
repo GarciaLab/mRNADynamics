@@ -13,12 +13,9 @@
 % OPTIONS
 % 'displayFigures':   If you want to display plots and images.
 %
-% 'TrackSpots':   Do you want to use this code to track the particles instead
-%                of using TrackmRNADynamics?
 % 'Frames', N:Run the code from frame 1 to frame N. Defaults to all
 %                frames. It's suggested to run 5-20 frames for debugging.
-% 'customSigmas': Prompts you to enter your custom sigmas to do DoG
-%                 filtering with
+%
 % 'Shadows':    	 This option should be followed by 0, 1 or 2. This
 %                specifies the number of requisite z-planes above and/or below the
 %                brightest plane for a spot to have to pass quality control.
@@ -44,10 +41,13 @@
 % OUTPUT
 % 'Spots':  A structure array with a list of detected transcriptional loci
 % in each frame and their properties.
+% 'log.mat': A cell array containing logging data from the segmentation
+% process. There's one row per run of segmentSpots(ML) on that particular
+% dataset. 
 %
 % Author (contact): Armando Reimer (areimer@berkeley.edu)
 % Created: 01/01/2016
-% Last Updated: 12/31/2016
+% Last Updated: 8/17/2018
 %
 % Documented by: Armando Reimer (areimer@berkeley.edu)
 
@@ -55,7 +55,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
 
   warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
-  [displayFigures, trackSpots, numFrames, numShadows, customSigmas, customFilter, highPrecision, filterType, ...
+  [displayFigures, trackSpots, numFrames, numShadows, customFilter, highPrecision, filterType, ...
   intScale, nWorkers, keepPool, pool] = determineSegmentSpotsOptions(varargin);
 
   % If no threshold was specified, then just generate the DoG images
@@ -142,8 +142,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Segment transcriptional loci
   else 
-    thresh = Threshold; %copy so we can change the value of Threshold for each channel iteration
-
+      
     for channelIndex = 1:nCh
       all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, channelIndex, all_frames, numFrames, zSize, ...
         PreProcPath, Prefix, DogOutputFolder, displayFigures, pool, doFF, ffim, Threshold, neighborhood, ...
@@ -154,24 +153,12 @@ function log = segmentSpots(Prefix, Threshold, varargin)
       % Create a useful structure that can be fed into pipeline
       [Particles, fields] = saveParticleInformation(numFrames, all_frames, zSize);
 
-      [neighborhood, Particles] = segmentSpotsZTracking(pixelSize, numFrames, Particles, fields);
+      [neighborhood, Particles] = segmentSpotsZTracking(pixelSize, numFrames, Particles, fields); %#ok<ASGLU>
 
-      [Particles, falsePositives] = pickBrightestZSlice(Particles, fields, trackSpots, numShadows);
+      [Particles, falsePositives] = findBrightestZ(numShadows, 0, 0);
 
       %Create a final Spots structure to be fed into TrackmRNADynamics
       Spots = createSpotsStructure(Particles, numFrames, channelIndex);
-
-      %AR 7/10/16: Optional time tracking using track_spots script. Also
-      %makes some potentially useful plots. This was originally here to have
-      %a single, fully integrated script before this segmentation was worked
-      %into the rest of the pipeline.
-
-      if trackSpots
-        neighborhood = round(3000 / pixelSize);
-        Particles = track_spots(Particles, neighborhood, numFrames);
-        particles_SS_Path = [DropboxFolder, filesep, Prefix, filesep, 'Particles_SS.mat'];
-        save(particles_SS_Path, 'Particles');
-      end 
 
       %If we only have one channel, then convert Spots to a
       %standard structure.
