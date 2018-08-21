@@ -1,6 +1,8 @@
 addpath(path, genpath('../testClasses'));
 
 try
+  tic;
+  fprintf('Test suite started running at %s\n', datestr(now,'yyyy-mm-dd HH:MM:SS.FFF'));
   import matlab.unittest.TestSuite
 
   exportDataForFISHSuite = TestSuite.fromFolder('testExportDataForFISH');
@@ -8,6 +10,10 @@ try
   
   completeTestSuite = [exportDataForFISHSuite, segmentSpotsSuite];
   testResults = run(completeTestSuite);
+
+  elapsedTime = toc;
+  fprintf('Test suite run ended at %s\n', datestr(now,'yyyy-mm-dd HH:MM:SS.FFF'));
+  fprintf('Elapsed time for test suite was %d minutes and %f seconds\n', floor(elapsedTime/60), rem(elapsedTime,60));
 
   exit(any([testResults.Failed]));
 catch ME

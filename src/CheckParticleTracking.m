@@ -58,6 +58,8 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % 	current particle. Note that the command forces ZoomMode. To toggle, use
 %   'o' or '+' depending on whether you're adding to an existing trace or creating a new
 %    trace, respectively.
+% { Same as [ but uses the exact pixel and z-plane that you click on.
+%   Useful if the algorithms get the centroid positioning wrong. 
 % # remove a spot from Spots and erase its frame in Particles
 % 
 % 
@@ -698,7 +700,7 @@ while (cc~='x')
                         Ellipses{CurrentFrame}(NucleusIndex,4),...
                         Ellipses{CurrentFrame}(NucleusIndex,5),...
                         Ellipses{CurrentFrame}(NucleusIndex,1)+1,...
-                        Ellipses{CurrentFrame}(NucleusIndex,2)+1), [],[],overlayAxes];
+                        Ellipses{CurrentFrame}(NucleusIndex,2)+1, [],[],overlayAxes)];
                     
                     hold(overlayAxes,'off')
                 else
@@ -716,7 +718,7 @@ while (cc~='x')
                         Ellipses{CurrentFrame}(NucleusIndex,4),...
                         Ellipses{CurrentFrame}(NucleusIndex,5),...
                         Ellipses{CurrentFrame}(NucleusIndex,1)+1,...
-                        Ellipses{CurrentFrame}(NucleusIndex,2)+1),[],[],overlayAxes];
+                        Ellipses{CurrentFrame}(NucleusIndex,2)+1,[],[],overlayAxes)];
                     hold(overlayAxes,'off')
                 else
                     %('Error: Particle without an associated nucleus?')
@@ -1102,7 +1104,7 @@ while (cc~='x')
     %this is the brightest z-trace figure
     if ~strcmpi(ExperimentType,'inputoutput')
         %Only update the trace information if we have switched particles
-        if (CurrentParticle~=PreviousParticle)||~exist('MaxZProfile', 'var')||(CurrentChannel~=PreviousChannel) 
+        if (CurrentParticle~=PreviousParticle)||~exist('MaxZProfile', 'var')||(CurrentChannel~=PreviousChannel)|| CurrentFrame~=PreviousChannel
             PreviousParticle=CurrentParticle;
             Frames=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
         end    
@@ -1266,6 +1268,7 @@ while (cc~='x')
             end
             
             if del
+                CurrentFrameWithinParticle = find(Frames==CurrentFrame);
                 ind = Particles{CurrentChannel}(CurrentParticle).Index(CurrentFrameWithinParticle);
                 onlyFrame = length(Particles{CurrentChannel}(CurrentParticle).Frame) == 1;
                 if onlyFrame
@@ -1275,7 +1278,9 @@ while (cc~='x')
                     particleFields = fieldnames(Particles{CurrentChannel});
                     for i = 1:numel(particleFields)
                         if ~strcmpi(particleFields{i},'Nucleus') && ~strcmpi(particleFields{i},'Approved')
-                            Particles{CurrentChannel}(CurrentParticle).(particleFields{i})(CurrentFrameWithinParticle) = [];
+                            try
+                                Particles{CurrentChannel}(CurrentParticle).(particleFields{i})(CurrentFrameWithinParticle) = [];
+                            end
                         end
                     end
                 end
@@ -1311,7 +1316,7 @@ while (cc~='x')
                     %'m' button
                     NextParticle = CurrentParticle+1;
                     if NextParticle>numParticles
-                        NextParticle=NextParticle-1; %go backwards one particle if the deleted particle was the last. 
+                        NextParticle=NextParticle-2; %go backwards one particle if the deleted particle was the last. 
                     end
                     if numParticles == 1
                         lastParticle = 1;
@@ -1320,6 +1325,14 @@ while (cc~='x')
                     CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(1);
                     ParticleToFollow=[];
                     DisplayRange=[];
+               elseif CurrentFrame > 1
+                   CurrentFrame=CurrentFrame-1;
+                   ManualZFlag=0;
+               elseif CurrentFrame < length({Spots{1}.Fits})
+                   CurrentFrame=CurrentFrame+1;
+                   ManualZFlag=0;
+               else
+                   error('something''s wrong.')                 
                end
                 disp 'Spot deleted successfully. Trace figures will refresh after switching particles.' 
             end
@@ -1330,7 +1343,7 @@ while (cc~='x')
 %     note to ar: a potentially simpler version of this button deletes
 %     particle frame but not spot. implement that with a different button.
 %           
-    elseif cc=='[' %Add particle and all of its shadows to Spots.
+    elseif cc=='[' || cc=='{' %Add particle and all of its shadows to Spots.
         
         %Check that we're in zoom mode. If not, set it up.
         if ~(ZoomMode || GlobalZoomMode)
@@ -1369,8 +1382,14 @@ while (cc~='x')
                                %However, this image only contains one particle
                         neighborhood = round(1300 / pixelSize); %nm
                         %Get the information about the spot on this z-slice
-                        temp_particles{i} = identifySingleSpot(k, spotsIm, im_label, dog, neighborhood, snippet_size, ...
+                        
+                        if cc == '['
+                            temp_particles{i} = identifySingleSpot(k, spotsIm, im_label, dog, neighborhood, snippet_size, ...
                             pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [], '', intScale);
+                        elseif cc == '{'
+                             temp_particles{i} = identifySingleSpot(k, spotsIm, im_label, dog, neighborhood, snippet_size, ...
+                            pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', intScale);                  
+                        end
                     end
 
                     for i = 2:ZSlices-1
@@ -1489,8 +1508,12 @@ while (cc~='x')
                     end
                                                     
                     if ~breakflag
-                        
-                        [tempSpots,~] = findBrightestZ(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex), -1, 0);                         
+                        if cc == '['
+                            force_z = 0;
+                        elseif cc == '{'
+                            force_z = CurrentZ;
+                        end
+                        [tempSpots,~] = findBrightestZ(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex), -1, 0, force_z);                         
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = tempSpots;
                                                                         
                         %Add this to SpotFilter, which tells the code that this spot is

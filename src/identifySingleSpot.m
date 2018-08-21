@@ -1,5 +1,5 @@
 function temp_particles = identifySingleSpot(particle_index, image, image_label, dog_image, searchRadius, snippet_size, ...
-    pixelSize, show_status, fg, microscope, addition, centroid, ml_string, intScale)
+    pixelSize, show_status, fg, microscope, addition, forced_centroid, ml_string, intScale)
 % identifySingleSpot(awholelot)
 %
 % DESCRIPTION
@@ -95,6 +95,11 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
         if addition(1) && ~(centroid_y - snippet_size > 1 && centroid_x - snippet_size > 1 && centroid_y + snippet_size < size(image, 1) && centroid_x + snippet_size < size(image,2))    
             centroid_y = k_row;
             centroid_x = k_column;           
+        end
+        
+        if ~isempty(forced_centroid)
+            centroid_y = forced_centroid(2);
+            centroid_x = forced_centroid(1);
         end
         
        %Now, we'll calculate Gaussian fits 

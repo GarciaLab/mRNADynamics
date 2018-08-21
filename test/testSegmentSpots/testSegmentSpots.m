@@ -1,5 +1,7 @@
 function testCase = testSegmentSpots(testCase)
+  tic;
   disp(['Running with segment spot test with prefix ', testCase.Prefix, ' and DoG ', testCase.DoG]);
+  fprintf('Test run started at %s\n', datestr(now,'yyyy-mm-dd HH:MM:SS.FFF'));
   
   %Figure out the initial folders. 
   CONFIG_CSV_PATH = ['ComputerFolders.csv'];
@@ -37,6 +39,10 @@ function testCase = testSegmentSpots(testCase)
   assertFrameInfoEqualToExpected(testCase, dynamicResultsExperimentPath, testPath, 'SegmentSpots_2ndPass');
   assertDogsFolderEqualToExpected(testCase, processedDataExperimentPath, testPath, 'SegmentSpots_2ndPass');
   assertSpotsEqualToExpected(testCase, dynamicResultsExperimentPath, testPath, 'SegmentSpots_2ndPass');
+
+  elapsedTime = toc;
+  fprintf('Test run for %s ended successfully at %s\n', testCase.Prefix, datestr(now,'yyyy-mm-dd HH:MM:SS.FFF'));
+  fprintf('Elapsed time for test was %d minutes and %f seconds\n', floor(elapsedTime/60), rem(elapsedTime,60));
 end
 
 % Given a path, asserts that a log.mat file exists on it.

@@ -105,13 +105,13 @@ if exist('OffsetError')
     end
     %For the Integral, we just use the area of the snippet, which is a
     %constant for all time points.
-    if isfield(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)), 'intArea')
-        ErrorIntegral=OffsetError*sqrt(2)*Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).intArea;
+    if isfield(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)), 'intArea') && ~isempty(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).intArea)
+        ErrorIntegral=OffsetError*sqrt(2)*Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).intArea(1);
         if ~isnan(AmpIntegral3(i))
-           ErrorIntegral3=OffsetError*sqrt(2)*3*Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).intArea;
+           ErrorIntegral3=OffsetError*sqrt(2)*3*Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).intArea(1);
         end
         if ~isnan(AmpIntegral5(i))
-           ErrorIntegral5=OffsetError*sqrt(2)*5*Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).intArea;     
+           ErrorIntegral5=OffsetError*sqrt(2)*5*Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).intArea(1);     
         end
     else
         ErrorIntegral=OffsetError*sqrt(2)*109;
