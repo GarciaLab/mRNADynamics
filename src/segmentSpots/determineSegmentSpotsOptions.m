@@ -20,7 +20,8 @@ function [displayFigures, trackSpots, numFrames, numShadows, customFilter, highP
       trackSpots = 1;
     elseif strcmpi(varargin{i}, 'Shadows')
 
-      if ~ isnumeric(varargin{i + 1}) || varargin{i + 1} > 2
+      
+      if (i + 1) > length(varargin)|| ~ isnumeric(varargin{i + 1}) || varargin{i + 1} > 2
         error('Wrong input parameters. After ''Shadows'' you should input number of shadows(0, 1 or 2)')
       else 
         numShadows = varargin{i + 1};
