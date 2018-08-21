@@ -25,8 +25,15 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
         ML = 1;
     end
 
+    if iscell(image)
+        imageAbove = image{2};
+        imageBelow = image{3};
+        image = image{1};
+    end
+    
     %Find spot centroids in the actual image by hunting for global maxima in
     %neighborhoods around spots that were just located
+    
     possible_centroid_intensity = [];
     possible_centroid_location = {};
     if ~addition(1) %this gets flagged if we're not manually adding a particle in checkparticletracking
@@ -48,8 +55,8 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
                     possible_centroid_intensity(i,j) = sum(sum(image(row-searchRadius+i, col-searchRadius+j)));
                 else
                     if addition(1) || intScale~=1
-                        possible_centroid_intensity(i,j) = sum(sum(image(row-2*searchRadius+i:row+i,...
-                            col-2*searchRadius+j:col+j)));
+%                         possible_centroid_intensity(i,j) = sum(sum(image(row-2*searchRadius+i:row+i,...
+%                             col-2*searchRadius+j:col+j)));
                         possible_centroid_intensity(i,j) = sum(sum(image(row-searchRadius+i, col-searchRadius+j))); 
                     else
                     %using the max pixel value will be wrong in some cases. integral
@@ -106,7 +113,10 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
        if centroid_y - snippet_size > 1 && centroid_x - snippet_size > 1 && centroid_y + snippet_size < size(image, 1) && centroid_x + snippet_size < size(image,2)
            
             snippet = image(centroid_y-snippet_size:centroid_y+snippet_size, centroid_x-snippet_size:centroid_x+snippet_size);
+            snippetAbove = imageAbove(centroid_y-snippet_size:centroid_y+snippet_size, centroid_x-snippet_size:centroid_x+snippet_size);
+            snippetBelow = imageBelow(centroid_y-snippet_size:centroid_y+snippet_size, centroid_x-snippet_size:centroid_x+snippet_size);
 
+            
             % Set parameters to use as initial guess in the fits. 
             if strcmp(microscope, 'LAT')
                 neighborhood_Size = 2000/pixelSize; %nm
@@ -178,12 +188,16 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             % enough to position its center.
             
             snippet_mask = snippet;
+            snippet_mask_above = snippetAbove;
+            snippet_mask_below = snippetBelow;
             maskArea = 0;
             for i = 1:size(snippet, 1)
                 for j = 1:size(snippet,2)
                     d = sqrt( (j - (size(snippet,1)+1)/2)^2 + (i - (size(snippet,2)+1)/2)^2) ;
                     if d >= integration_radius
                         snippet_mask(i, j) = 0;
+                        snippet_mask_above(i,j) = 0;
+                        snippet_mask_below(i,j) = 0;
                     else
                         maskArea = maskArea+1;
                     end 
@@ -195,6 +209,8 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             sister_chromatid_distance = fits(end);
             fixedAreaIntensity = sum(sum(snippet_mask)) - fits(end-1)*maskArea; %corrected AR 7/13/2018
 
+            fixedAreaIntensityCyl3 =  sum(sum(snippet_mask)) + sum(sum(snippet_mask_above))...
+                + sum(sum(snippet_mask_below)) - 3*fits(end-1)*maskArea;
             
             if  .1<sigma_x && sigma_x<(600/pixelSize) && .1<sigma_y && sigma_y<(600/pixelSize)...
                     || addition(1) %here is the place to introduce quality control
@@ -216,7 +232,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
                 end
                 temp_particles = {{fixedAreaIntensity, spot_x, spot_y, fits(end-1), snippet, ...
                     gaussianArea, sigma_x, sigma_y, centroid_y, centroid_x, gaussianIntensity,intensity,...
-                    max_dog, snippet_mask, sigma_x2, sigma_y2, sister_chromatid_distance, relative_errors, confidence_intervals, gaussian, mesh,fits, maskArea}};
+                    max_dog, snippet_mask, sigma_x2, sigma_y2, sister_chromatid_distance, relative_errors, confidence_intervals, gaussian, mesh,fits, maskArea, fixedAreaIntensityCyl3}};
             else                
                 temp_particles = {{}};   
             end

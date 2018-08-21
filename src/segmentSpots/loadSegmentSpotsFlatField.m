@@ -2,7 +2,8 @@ function [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, FrameInfo
   %Load flat-field. We need to process this file differently the images come
   %from a laser scanning or spinning disk microscope.
   doFF = 1;
-
+  ffim = [];
+  
   try 
     ffim = imread([PreProcPath, filesep, Prefix, filesep, Prefix, '_FF.tif']);
     %If we have a spinning disk confocal

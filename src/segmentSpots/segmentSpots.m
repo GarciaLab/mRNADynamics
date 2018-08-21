@@ -19,10 +19,11 @@
 % 'Shadows':    	 This option should be followed by 0, 1 or 2. This
 %                specifies the number of requisite z-planes above and/or below the
 %                brightest plane for a spot to have to pass quality control.
-% 'noPool':     Does not start and use a parallel pool.
 % 'keepPool': Don't shut down the parallel pool when the script is done
 % running.
 % 'highPrecision': Uses higher precision filtering for segmentation
+% 'nWorkers': Specify the number of workers to use during parallel
+% processing
 % 'intScale': Scale up the radius of integration
 % 'customFilters': Choose which filter to use to segment the image. Name
 %                  should be a string, followed by a cell with your filter
@@ -55,7 +56,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
 
   warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
-  [displayFigures, trackSpots, numFrames, numShadows, customFilter, highPrecision, filterType, ...
+  [displayFigures, numFrames, numShadows, customFilter, highPrecision, filterType, ...
   intScale, nWorkers, keepPool, pool] = determineSegmentSpotsOptions(varargin);
 
   % If no threshold was specified, then just generate the DoG images
@@ -155,7 +156,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
 
       [neighborhood, Particles] = segmentSpotsZTracking(pixelSize, numFrames, Particles, fields); %#ok<ASGLU>
 
-      [Particles, falsePositives] = findBrightestZ(numShadows, 0, 0);
+      [Particles, falsePositives] = findBrightestZ(Particles,numShadows, 0, 0);
 
       %Create a final Spots structure to be fed into TrackmRNADynamics
       Spots = createSpotsStructure(Particles, numFrames, channelIndex);

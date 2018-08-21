@@ -1,7 +1,10 @@
-function [displayFigures, trackSpots, numFrames, numShadows, customFilter, highPrecision, filterType, intScale, nWorkers, keepPool, pool] = determineSegmentSpotsOptions(varargin)
+function [displayFigures, numFrames, numShadows, customFilter, highPrecision, filterType, intScale, nWorkers, keepPool, pool] = determineSegmentSpotsOptions(varargin)
+  
+
+  varargin = varargin{1};
+  
   % Default options
   displayFigures = 0;
-  trackSpots = 0;
   numFrames = 0;
   numShadows = 2;
   customFilter = 0;
@@ -16,8 +19,6 @@ function [displayFigures, trackSpots, numFrames, numShadows, customFilter, highP
 
     if strcmpi(varargin{i}, 'displayFigures')
       displayFigures = 1;
-    elseif strcmpi(varargin{i}, 'TrackSpots')
-      trackSpots = 1;
     elseif strcmpi(varargin{i}, 'Shadows')
 
       if ~ isnumeric(varargin{i + 1}) || varargin{i + 1} > 2

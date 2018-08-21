@@ -18,6 +18,15 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
       imFileName = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(zIndex, 2),...
         nameSuffix, '.tif'];   
       im = double(imread(imFileName));
+      try
+          imAbove = double(imread([PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(zIndex-1, 2),...
+            nameSuffix, '.tif']));
+          imBelow = double(imread([PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(zIndex+1, 2),...
+            nameSuffix, '.tif']));
+      catch
+          imAbove = nan(size(im,1),size(im,2));
+          imBelow = nan(size(im,1),size(im,2));
+      end
       
       try
         dogFileName = [DogOutputFolder, filesep, 'DOG_', Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(zIndex, 2),...
@@ -50,13 +59,13 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
         if ~displayFigures && pool
           parfor spotIndex = 1:n_spots
             centroid = round(centroids(spotIndex).Centroid);
-            temp_particles(spotIndex) = identifySingleSpot(spotIndex, im, im_label, dog, ...
+            temp_particles(spotIndex) = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
               neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, '', intScale);
           end
         else
           for spotIndex = 1:n_spots
             centroid = round(centroids(spotIndex).Centroid);
-            temp_particles(spotIndex) = identifySingleSpot(spotIndex, im, im_label, dog, ...
+            temp_particles(spotIndex) = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
               neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, '', intScale);
           end
         end
