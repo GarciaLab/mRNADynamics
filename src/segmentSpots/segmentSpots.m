@@ -155,7 +155,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
 
       [neighborhood, Particles] = segmentSpotsZTracking(pixelSize, numFrames, Particles, fields); %#ok<ASGLU>
 
-      [Particles, falsePositives] = findBrightestZ(numShadows, 0, 0);
+      [Particles, falsePositives] = findBrightestZ(Particles, numShadows, 0, 0);
 
       %Create a final Spots structure to be fed into TrackmRNADynamics
       Spots = createSpotsStructure(Particles, numFrames, channelIndex);

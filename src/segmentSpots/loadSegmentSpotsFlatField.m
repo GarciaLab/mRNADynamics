@@ -23,6 +23,7 @@ function [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, FrameInfo
     ffim = double(ffim) / double(max(max(ffim)));
   catch 
     warning('Will not apply flat field correction');
+    ffim = [];
     doFF = 0;
   end 
 

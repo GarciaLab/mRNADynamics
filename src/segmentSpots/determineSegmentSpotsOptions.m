@@ -11,7 +11,7 @@ function [displayFigures, trackSpots, numFrames, numShadows, customFilter, highP
   nWorkers = 8;
   keepPool = 0;
   pool = 1;
-
+  varargin = varargin{1};
   for i = 1:length(varargin)
 
     if strcmpi(varargin{i}, 'displayFigures')
