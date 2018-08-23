@@ -10,7 +10,7 @@ classdef testSegmentSpots_2015_07_25_P2P_75uW_bi_short < matlab.unittest.TestCas
   methods(Test)
 
     function testRun(testCase)
-      testCase = testSegmentSpots(testCase);
+      testSegmentSpots(testCase);
     end
 
   end
