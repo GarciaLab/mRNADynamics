@@ -1034,7 +1034,7 @@ while (cc~='x')
            AmpIntegral5(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral5(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral5,'.-','Color','blue');                   
         plot(traceFigAxes,Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
         plot(traceFigAxes,Frames(Frames==CurrentFrame),AmpIntegral(Frames==CurrentFrame),'ob');
-        legend([p1,p2,p3],'1-slice','3-slice','5-slice')
+        legend([p1,p2,p3],'1-slice','3-slice cylinder','5-slice accordion')
         hold(traceFigAxes, 'off')
         try
             xlim(traceFigAxes,[min(Frames)-1,max(Frames)+1]);
