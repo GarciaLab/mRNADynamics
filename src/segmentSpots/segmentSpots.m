@@ -21,7 +21,8 @@
 %                brightest plane for a spot to have to pass quality control.
 % 'keepPool': Don't shut down the parallel pool when the script is done
 % running.
-% 'highPrecision': Uses higher precision filtering for segmentation
+% 'highPrecision': Uses higher precision filtering for segmentation, only
+%                   need to use with Threshold = [] (when finding dogs)
 % 'nWorkers': Specify the number of workers to use during parallel
 % processing
 % 'IntegralZ':  Establish center slice at position that maximizes raw fluo integral 
