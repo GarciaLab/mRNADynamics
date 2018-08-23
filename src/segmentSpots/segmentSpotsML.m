@@ -164,112 +164,117 @@ snippet_size = 2*(floor(1300/(2*pixelSize))) + 1; % nm. note that this is forced
 all_frames = cell(num_frames, zSize);
 close all force;
 if just_dog
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Generate probability maps of likely transcriptional loci
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %Generate probability maps of likely transcriptional loci
 
-stacksPath = [PreProcPath,filesep,Prefix,filesep,'stacks', ];
-mkdir(stacksPath);
-if ~just_tifs    
-    [classifierPathCh1,classifierFolder]=uigetfile([MS2CodePath, filesep, 'classifiers', filesep, '*.model']);
-    if nCh==2
-      [classifierPathCh2,~]=uigetfile([MS2CodePath, filesep, 'classifiers', filesep, '*.model']); 
-    end
-    evalin('base', 'clear probmaps');
-    
-    %AR 3/27/18- this isn't needed since we switched to Matlab's version of
-    %Java.
-%     version -java;
-%     javaver = ans;
-%     if ~strcmp('Java 1.8.0_66-b18 with Oracle Corporation Java HotSpot(TM) 64-Bit Server VM mixed mode', javaver)
-%         error('Java version incorrect. Re-run InstallmRNADynamics or check environment variables')
-%     end
-
-    heapSize = java.lang.Runtime.getRuntime.maxMemory;
-    if heapSize<1E10 
-        error('Please increase your Java heap memory allocation to at least 10GB (Home -> Preferences -> General -> Java Heap Memory.');
-    end
-    
-    zSize2 = zSize*2;
-    h=waitbar(0,'Running Weka Classifier');
-else 
-    h = waitbar(0, 'Making .tif stacks for Weka classification');
-end
-%Make requisite TIF stacks for classification
-for q = 1:nCh
-    
-    if ~just_tifs
-        try
-            %this is just some function that can only be called if IJM is set up
-            IJM.getIdentifier() 
-        catch
-            addpath([MS2CodePath,filesep,'Fiji.app',filesep,'scripts'])
-            ImageJ               % Initialize IJM and MIJ
+    stacksPath = [PreProcPath,filesep,Prefix,filesep,'stacks', ];
+    mkdir(stacksPath);
+    if ~just_tifs    
+        [classifierPathCh1,classifierFolder]=uigetfile([MS2CodePath, filesep, 'classifiers', filesep, '*.model']);
+        if nCh==2
+          [classifierPathCh2,~]=uigetfile([MS2CodePath, filesep, 'classifiers', filesep, '*.model']); 
         end
-   
-        ijm = evalin('base', 'IJM');
-        mij = evalin('base', 'MIJ');
-        
-    end
+        evalin('base', 'clear probmaps');
 
-    if strcmpi(ExperimentType,'inputoutput')               
-        nameSuffix= ['_ch',iIndex(coatChannel,2)];
-    else
-        nameSuffix= ['_ch',iIndex(q,2)];
-    end
-    
-    for current_frame = initial_frame:num_frames
-        w = waitbar(current_frame/num_frames);
-        set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
-        rawStackName = [stacksPath, filesep, iIndex(current_frame,3), nameSuffix,'.tif'];
-        %Don't write new stacks if they're already made.
-        if length(dir([stacksPath, filesep, '*.tif'])) ~= num_frames
-            rawStackArray = [];
-            for i = 1:zSize
-                rawStackArray(:,:,i) = imread([PreProcPath,filesep,Prefix, filesep, Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']);    
-            end
-            imwrite(uint16(rawStackArray(:,:,1)), rawStackName);
-            for k = 2:size(rawStackArray,3)
-                imwrite(uint16(rawStackArray(:,:,k)), rawStackName, 'WriteMode', 'append');
-            end
-            clear rawStackArray;
+        %AR 3/27/18- this isn't needed since we switched to Matlab's version of
+        %Java.
+        %     version -java;
+        %     javaver = ans;
+        %     if ~strcmp('Java 1.8.0_66-b18 with Oracle Corporation Java HotSpot(TM) 64-Bit Server VM mixed mode', javaver)
+        %         error('Java version incorrect. Re-run InstallmRNADynamics or check environment variables')
+        %     end
+
+        heapSize = java.lang.Runtime.getRuntime.maxMemory;
+        if heapSize<1E10 
+            error('Please increase your Java heap memory allocation to at least 10GB (Home -> Preferences -> General -> Java Heap Memory.');
         end
-        %Do the classification with Weka in Fiji
+
+        zSize2 = zSize*2;
+        h=waitbar(0,'Running Weka Classifier');
+    else 
+        h = waitbar(0, 'Making .tif stacks for Weka classification');
+    end
+    %Make requisite TIF stacks for classification
+    for q = 1:nCh
+
         if ~just_tifs
-            mij.run('Trainable Weka Segmentation 3D', ['open=',rawStackName]);
-            pause(10);
-            if q==1 || strcmpi(ExperimentType,'inputoutput')
-                trainableSegmentation.Weka_Segmentation.loadClassifier([classifierFolder, classifierPathCh1]);
-%                 call("trainableSegmentation.Weka_Segmentation.loadClassifier", "D:\Data\Nick\LivemRNA\LivemRNAFISH\mRNADynamics\classifiers\nl_eve2_v7.model");
-            elseif q==2
-                trainableSegmentation.Weka_Segmentation.loadClassifier([classifierFolder, classifierPathCh2]);
-            else
-                error(['This pipeline does not support',...
-                    'more than two spot channels. If you''re actually',...
-                    'trying to segment 3 or more channels, talk to Armando to',...
-                    'get this implemented. Otherwise you''ve reached an error.',...
-                    'Check your data. This is probably not a bug in the code.']);
+            try
+                %this is just some function that can only be called if IJM is set up
+                IJM.getIdentifier() 
+            catch
+                addpath([MS2CodePath,filesep,'Fiji.app',filesep,'scripts'])
+                ImageJ               % Initialize IJM and MIJ
             end
-            trainableSegmentation.Weka_Segmentation.getProbability();
-            ijm.getDatasetAs('probmaps')
-            pMapTemp = evalin('base', 'probmaps');
-            pMap = [];
-            for m = 1:2:zSize2
-                pMap(:,:,ceil(m/2)) =  pMapTemp(:,:,m); %the even images in the original array are negatives of the odds
-            end
-            clear pMapTemp;
-            pMap = permute(pMap, [2 1 3]) * 10000; %multiplying so this can be cast to uint16
-            for i = 1:size(pMap, 3)
-                p_name = ['prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif'];
-                imwrite(uint16(pMap(:,:,i)), [OutputFolder1,filesep,p_name])               
-            end
-            mij.run('Close All');
-            clear pMap;
+
+            ijm = evalin('base', 'IJM');
+            mij = evalin('base', 'MIJ');
+
         end
+        
+        if strcmpi(ExperimentType,'inputoutput')               
+            nameSuffix= ['_ch',iIndex(coatChannel,2)];
+        else
+            nameSuffix= ['_ch',iIndex(q,2)];
+        end
+        
+        h = waitbar(0,['Making ch0',nCh,'.tif stacks for Weka classification']);
+        
+        for current_frame = initial_frame:num_frames
+            w = waitbar(current_frame/num_frames);
+            set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
+            rawStackName = [stacksPath, filesep, iIndex(current_frame,3), nameSuffix,'.tif'];
+            %Don't write new stacks if they're already made.
+            %2018-08-22 MT: Now takes into account 1 vs 2 spot channels 
+            %when determining if you've already made the stacks
+            if length(dir([stacksPath, filesep, '*.tif'])) ~= num_frames*nCh
+                rawStackArray = [];
+                for i = 1:zSize
+                    rawStackArray(:,:,i) = imread([PreProcPath,filesep,Prefix, filesep, Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']);    
+                end
+                imwrite(uint16(rawStackArray(:,:,1)), rawStackName);
+                for k = 2:size(rawStackArray,3)
+                    imwrite(uint16(rawStackArray(:,:,k)), rawStackName, 'WriteMode', 'append');
+                end
+                clear rawStackArray;
+            end
+            %Do the classification with Weka in Fiji
+            if ~just_tifs
+                mij.run('Trainable Weka Segmentation 3D', ['open=',rawStackName]);
+                pause(10);
+                if q==1 || strcmpi(ExperimentType,'inputoutput')
+                    trainableSegmentation.Weka_Segmentation.loadClassifier([classifierFolder, classifierPathCh1]);
+    %                 call("trainableSegmentation.Weka_Segmentation.loadClassifier", "D:\Data\Nick\LivemRNA\LivemRNAFISH\mRNADynamics\classifiers\nl_eve2_v7.model");
+                elseif q==2
+                    trainableSegmentation.Weka_Segmentation.loadClassifier([classifierFolder, classifierPathCh2]);
+                else
+                    error(['This pipeline does not support',...
+                        'more than two spot channels. If you''re actually',...
+                        'trying to segment 3 or more channels, talk to Armando to',...
+                        'get this implemented. Otherwise you''ve reached an error.',...
+                        'Check your data. This is probably not a bug in the code.']);
+                end
+                trainableSegmentation.Weka_Segmentation.getProbability();
+                ijm.getDatasetAs('probmaps')
+                pMapTemp = evalin('base', 'probmaps');
+                pMap = [];
+                for m = 1:2:zSize2
+                    pMap(:,:,ceil(m/2)) =  pMapTemp(:,:,m); %the even images in the original array are negatives of the odds
+                end
+                clear pMapTemp;
+                pMap = permute(pMap, [2 1 3]) * 10000; %multiplying so this can be cast to uint16
+                for i = 1:size(pMap, 3)
+                    p_name = ['prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif'];
+                    imwrite(uint16(pMap(:,:,i)), [OutputFolder1,filesep,p_name])               
+                end
+                mij.run('Close All');
+                clear pMap;
+            end
+        end
+        close(w);
+        a = 2;
     end
-    close(w);
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Segment transcriptional loci
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %Segment transcriptional loci
 else
     
     if nWorkers > 0
