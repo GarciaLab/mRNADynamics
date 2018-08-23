@@ -24,6 +24,8 @@
 % 'highPrecision': Uses higher precision filtering for segmentation
 % 'nWorkers': Specify the number of workers to use during parallel
 % processing
+% 'IntegralZ':  Establish center slice at position that maximizes raw fluo integral 
+%               across sliding 3 z-slice window.
 % 'intScale': Scale up the radius of integration
 % 'customFilters': Choose which filter to use to segment the image. Name
 %                  should be a string, followed by a cell with your filter
@@ -57,10 +59,13 @@ function log = segmentSpots(Prefix, Threshold, varargin)
   warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
   [displayFigures, numFrames, numShadows, customFilter, highPrecision, filterType, ...
-  intScale, nWorkers, keepPool, pool] = determineSegmentSpotsOptions(varargin);
+  intScale, nWorkers, keepPool, use_integral_center] = determineSegmentSpotsOptions(varargin);
 
+ 
   % If no threshold was specified, then just generate the DoG images
   justDoG = 0;
+  
+  
 
   try 
 
@@ -75,7 +80,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
   % Start timer
   tic;
 
-  if pool
+  if nWorkers ~= 0
     maxWorkers = nWorkers;
 
     try 
@@ -146,7 +151,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
       
     for channelIndex = 1:nCh
       all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, channelIndex, all_frames, numFrames, zSize, ...
-        PreProcPath, Prefix, DogOutputFolder, displayFigures, pool, doFF, ffim, Threshold, neighborhood, ...
+        PreProcPath, Prefix, DogOutputFolder, displayFigures, nWorkers, doFF, ffim, Threshold, neighborhood, ...
         snippet_size, pixelSize, microscope, intScale);
 
       close all force;
@@ -155,8 +160,9 @@ function log = segmentSpots(Prefix, Threshold, varargin)
       [Particles, fields] = saveParticleInformation(numFrames, all_frames, zSize);
 
       [neighborhood, Particles] = segmentSpotsZTracking(pixelSize, numFrames, Particles, fields); %#ok<ASGLU>
-
-      [Particles, falsePositives] = findBrightestZ(Particles,numShadows, 0, 0);
+        
+      force_z = 0; %this is used exclusively by checkparticletracking
+      [Particles, falsePositives] = findBrightestZ(Particles,numShadows,use_integral_center, force_z);
 
       %Create a final Spots structure to be fed into TrackmRNADynamics
       Spots = createSpotsStructure(Particles, numFrames, channelIndex);

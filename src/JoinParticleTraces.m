@@ -33,11 +33,13 @@ Particles=Particles([1:ClickedParticle-1,ClickedParticle+1:end]);
 %connected to a particle that came before.
 [SortedFrame,Permutations]=sort(Particles(OriginalParticle).Frame);
 Particles(OriginalParticle).Frame=Particles(OriginalParticle).Frame(Permutations);
-if isfield(Particles,'xPos')
-    Particles(OriginalParticle).xPos=Particles(OriginalParticle).xPos(Permutations);
-end
-if isfield(Particles,'yPos')
-    Particles(OriginalParticle).yPos=Particles(OriginalParticle).yPos(Permutations);
+    try
+    if isfield(Particles,'xPos')
+        Particles(OriginalParticle).xPos=Particles(OriginalParticle).xPos(Permutations);
+    end
+    if isfield(Particles,'yPos')
+        Particles(OriginalParticle).yPos=Particles(OriginalParticle).yPos(Permutations);
+    end
 end
 Particles(OriginalParticle).Index=Particles(OriginalParticle).Index(Permutations);
 Particles(OriginalParticle).FrameApproved=Particles(OriginalParticle).FrameApproved(Permutations);    

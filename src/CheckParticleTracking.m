@@ -1368,9 +1368,18 @@ while (cc~='x')
                         && (ConnectPositiony > snippet_size/2) && (ConnectPositiony + snippet_size/2 < LinesPerFrame)
                     SpotsIndex = length(Spots{CurrentChannel}(CurrentFrame).Fits)+1;
                     breakflag = 0;
-                    for i = 2:ZSlices-1
+                    for i = 1:ZSlices
                         spotsIm=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                             FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i,2),nameSuffix,'.tif']);                         
+                             FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i,2),nameSuffix,'.tif']);                                                
+                          try
+                              imAbove = double(imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
+                             FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i-1,2),nameSuffix,'.tif']));  
+                              imBelow = double(imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
+                             FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i+1,2),nameSuffix,'.tif']));  
+                          catch
+                              imAbove = nan(size(spotsIm,1),size(spotsIm,2));
+                              imBelow = nan(size(spotsIm,1),size(spotsIm,2));
+                          end 
                         Threshold = min(min(spotsIm));
                         dog = spotsIm;
                         im_thresh = dog >= Threshold;
@@ -1384,15 +1393,15 @@ while (cc~='x')
                         %Get the information about the spot on this z-slice
                         
                         if cc == '['
-                            temp_particles{i} = identifySingleSpot(k, spotsIm, im_label, dog, neighborhood, snippet_size, ...
+                            temp_particles{i} = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood, snippet_size, ...
                             pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [], '', intScale);
                         elseif cc == '{'
-                             temp_particles{i} = identifySingleSpot(k, spotsIm, im_label, dog, neighborhood, snippet_size, ...
+                             temp_particles{i} = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood, snippet_size, ...
                             pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', intScale);                  
                         end
                     end
 
-                    for i = 2:ZSlices-1
+                    for i = 1:ZSlices
                         if ~isempty(temp_particles{i})
                             %Copy the information stored on temp_particles into the
                             %Spots structure                            
@@ -1447,6 +1456,7 @@ while (cc~='x')
                                     0;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity3 = NaN;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity5 = NaN;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).cylIntensity(i) = temp_particles{i}{1}{24};
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).brightestZ = NaN;
                                 
                             else
@@ -1497,6 +1507,7 @@ while (cc~='x')
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).r=...
                                     0;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity3 = NaN;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).cylIntensity(i) = NaN;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity5 = NaN;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).brightestZ = NaN;
                             end
@@ -1513,7 +1524,8 @@ while (cc~='x')
                         elseif cc == '{'
                             force_z = CurrentZ;
                         end
-                        [tempSpots,~] = findBrightestZ(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex), -1, 0, force_z);                         
+                        use_integral_center = 1;
+                        [tempSpots,~] = findBrightestZ(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex), -1, use_integral_center, force_z);                         
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = tempSpots;
                                                                         
                         %Add this to SpotFilter, which tells the code that this spot is
