@@ -25,7 +25,9 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
         ML = 1;
     end
 
+    doCyl = 0;
     if iscell(image)
+        doCyl = 1;
         imageAbove = image{2};
         imageBelow = image{3};
         image = image{1};
@@ -113,9 +115,10 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
        if centroid_y - snippet_size > 1 && centroid_x - snippet_size > 1 && centroid_y + snippet_size < size(image, 1) && centroid_x + snippet_size < size(image,2)
            
             snippet = image(centroid_y-snippet_size:centroid_y+snippet_size, centroid_x-snippet_size:centroid_x+snippet_size);
-            snippetAbove = imageAbove(centroid_y-snippet_size:centroid_y+snippet_size, centroid_x-snippet_size:centroid_x+snippet_size);
-            snippetBelow = imageBelow(centroid_y-snippet_size:centroid_y+snippet_size, centroid_x-snippet_size:centroid_x+snippet_size);
-
+            if doCyl
+                snippetAbove = imageAbove(centroid_y-snippet_size:centroid_y+snippet_size, centroid_x-snippet_size:centroid_x+snippet_size);
+                snippetBelow = imageBelow(centroid_y-snippet_size:centroid_y+snippet_size, centroid_x-snippet_size:centroid_x+snippet_size);
+            end
             
             % Set parameters to use as initial guess in the fits. 
             if strcmp(microscope, 'LAT')
@@ -188,8 +191,10 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             % enough to position its center.
             
             snippet_mask = snippet;
-            snippet_mask_above = snippetAbove;
-            snippet_mask_below = snippetBelow;
+            if doCyl
+                snippet_mask_above = snippetAbove;
+                snippet_mask_below = snippetBelow;
+            end
             maskArea = 0;
             for i = 1:size(snippet, 1)
                 for j = 1:size(snippet,2)
@@ -208,9 +213,11 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             sigma_y2 = 0;
             sister_chromatid_distance = fits(end);
             fixedAreaIntensity = sum(sum(snippet_mask)) - fits(end-1)*maskArea; %corrected AR 7/13/2018
-
-            fixedAreaIntensityCyl3 =  sum(sum(snippet_mask)) + sum(sum(snippet_mask_above))...
-                + sum(sum(snippet_mask_below)) - 3*fits(end-1)*maskArea;
+            fixedAreaIntensityCyl3 = NaN;
+            if doCyl
+                fixedAreaIntensityCyl3 =  sum(sum(snippet_mask)) + sum(sum(snippet_mask_above))...
+                    + sum(sum(snippet_mask_below)) - 3*fits(end-1)*maskArea;
+            end
             
             if  .1<sigma_x && sigma_x<(600/pixelSize) && .1<sigma_y && sigma_y<(600/pixelSize)...
                     || addition(1) %here is the place to introduce quality control
