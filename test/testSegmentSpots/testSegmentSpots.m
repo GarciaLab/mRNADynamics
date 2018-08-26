@@ -23,8 +23,8 @@ function testCase = testSegmentSpots(testCase)
   ExportDataForFISH(testCase.Prefix);
   
   % Tests first pass
-  % Executes segment spots without specifying DoG
-  segmentSpots(testCase.Prefix, []);
+  % Generates DoGs
+  filterMovie(testCase.Prefix);
   
   % Then verifies log.mat and FrameInfo.mat and expected contents of dogs folder
   assertLogFileExists(testCase, dynamicResultsExperimentPath);
@@ -40,9 +40,30 @@ function testCase = testSegmentSpots(testCase)
   assertDogsFolderEqualToExpected(testCase, processedDataExperimentPath, testPath, 'SegmentSpots_2ndPass');
   assertSpotsEqualToExpected(testCase, dynamicResultsExperimentPath, testPath, 'SegmentSpots_2ndPass');
 
+  testSegmentSpotsNoThreshold(testCase);
+  testSegmentSpotsEmptyThreshold(testCase);
+
   elapsedTime = toc;
   fprintf('Test run for %s ended successfully at %s\n', testCase.Prefix, datestr(now,'yyyy-mm-dd HH:MM:SS.FFF'));
   fprintf('Elapsed time for test was %d minutes and %f seconds\n', floor(elapsedTime/60), rem(elapsedTime,60));
+end
+
+function testCase = testSegmentSpotsNoThreshold(testCase) 
+  try
+    segmentSpots(testCase.Prefix);
+  catch ME
+    testCase.assertEqual(ME.message,...
+     'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images');
+  end
+end
+
+function testCase = testSegmentSpotsEmptyThreshold(testCase) 
+  try
+    segmentSpots(testCase.Prefix, []);
+  catch ME
+    testCase.assertEqual(ME.message,...
+     'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images');
+  end
 end
 
 % Given a path, asserts that a log.mat file exists on it.
