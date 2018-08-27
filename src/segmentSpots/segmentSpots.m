@@ -44,12 +44,14 @@ function log = segmentSpots(Prefix, Threshold, varargin)
 
   warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
-  [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, pool] = determineSegmentSpotsOptions(varargin);
+  [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, ...
+      pool, autoThresh] = determineSegmentSpotsOptions(varargin);
 
   argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
   try 
-
-    if isempty(Threshold)
+    if autoThresh
+        Threshold = -1;
+    elseif isempty(Threshold)
       error(argumentErrorMessage);
     end 
 
