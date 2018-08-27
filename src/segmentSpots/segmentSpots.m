@@ -26,6 +26,7 @@
 % 'IntegralZ':  Establish center slice at position that maximizes raw fluo integral 
 %               across sliding 3 z-slice window.
 % 'intScale': Scale up the radius of integration
+% 'autoThresh': Pops up a UI to help decide on a threshhold
 %
 % OUTPUT
 % 'Spots':  A structure array with a list of detected transcriptional loci
