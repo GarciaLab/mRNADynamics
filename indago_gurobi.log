@@ -1,0 +1,40 @@
+
+Gurobi 6.5.2 (win64) logging started 08/29/18 11:38:04
+
+Optimize a model with 406989 rows, 271709 columns and 1515764 nonzeros
+Coefficient statistics:
+  Matrix range    [1e+00, 1e+00]
+  Objective range [1e-01, 2e+08]
+  Bounds range    [1e+00, 1e+00]
+  RHS range       [1e+00, 1e+00]
+Found heuristic solution: objective 0
+Variable types: 0 continuous, 271709 integer (271709 binary)
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+   48331   -4.2641297e+07   3.122000e+03   0.000000e+00      5s
+   52273   -4.2081121e+07   0.000000e+00   0.000000e+00      6s
+
+Root relaxation: objective -4.208112e+07, 52273 iterations, 3.17 seconds
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 -4.208e+07    0  259    0.00000 -4.208e+07      -     -    8s
+H    0     0                    -4.20212e+07 -4.208e+07  0.14%     -    9s
+H    0     0                    -4.20473e+07 -4.208e+07  0.08%     -   11s
+H    0     0                    -4.20674e+07 -4.208e+07  0.03%     -   12s
+     0     0 -4.207e+07    0   95 -4.207e+07 -4.207e+07  0.02%     -   15s
+H    0     0                    -4.20709e+07 -4.207e+07  0.01%     -   20s
+
+Cutting planes:
+  Gomory: 14
+  Zero half: 31
+
+Explored 0 nodes (52361 simplex iterations) in 20.48 seconds
+Thread count was 32 (of 56 available processors)
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective -4.207086837107e+07, best bound -4.207379284091e+07, gap 0.0070%
+Optimal objective value: -4.2070868371069096E7

@@ -666,7 +666,7 @@ while (cc~='x')
         end
         
         %Show the corresponding nucleus
-        if ~isempty(Particles{CurrentChannel}(CurrentParticle).Nucleus)
+        if ~isempty(Particles{CurrentChannel}(CurrentParticle).Nucleus) && Particles{CurrentChannel}(CurrentParticle).Nucleus > 0
             SchnitzIndex=find(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames==CurrentFrame);
             NucleusIndex=schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).cellno(SchnitzIndex);
 
@@ -1368,7 +1368,7 @@ while (cc~='x')
                         && (ConnectPositiony > snippet_size/2) && (ConnectPositiony + snippet_size/2 < LinesPerFrame)
                     SpotsIndex = length(Spots{CurrentChannel}(CurrentFrame).Fits)+1;
                     breakflag = 0;
-                    for i = 1:ZSlices
+                    parfor i = 1:ZSlices
                         spotsIm=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                              FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i,2),nameSuffix,'.tif']);                                                
                           try
