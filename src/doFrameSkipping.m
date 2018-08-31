@@ -1,5 +1,6 @@
 function doFrameSkipping(SkipFrames, FrameInfo, OutputFolder)
-  %Skipping frames?
+  
+%Skipping frames?
   if ~isempty(SkipFrames)
     %Filter FrameInfo
     FrameFilter=ones(size(FrameInfo));
