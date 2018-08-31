@@ -2,7 +2,7 @@ function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest] = export
   %Look at parameters
   SkipFrames = [];
   Prefix = '';
-  %Default setting for z-projection is maximum-based...
+  %Default setting for z-projection is maximum-based. 
   %This may fail when high intensity reflections are present
   ProjectionType = 'maxprojection'; 
   %Added new argument to specify a preferred file name and enable automatic testing

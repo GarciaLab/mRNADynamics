@@ -1,8 +1,9 @@
 function Projection = getHistoneChannelProjection(ProjectionType, HisSlices, ExperimentType, Channel1, Channel2, Channel3, NSlices, ReferenceHist)
-  if strcmp(ProjectionType,'medianprojection')
+  
+  if strcmpi(ProjectionType,'medianprojection')
     Projection = median(HisSlices, 3);
-  elseif strcmp(ProjectionType,'middleprojection')
-    Projection = max(HisSlices(:,:,11:16), [], 3);
+  elseif strcmpi(ProjectionType,'middleprojection')
+    Projection = max(HisSlices(:,:,round(NSlices*.50):round(NSlices*.75)), [], 3); 
   else
     Projection = max(HisSlices, [], 3);
   end

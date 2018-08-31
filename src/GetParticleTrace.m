@@ -63,11 +63,19 @@ if length(Frame)>5
         nBreaks=5;
     end
 
-    optFit = adaptiveSplineFit(double(Frame),double(Offset),nBreaks);
-    OffsetFit=ppval(optFit,double(Frame));
+    try
+        optFit = adaptiveSplineFit(double(Frame),double(Offset),nBreaks);
+        OffsetFit=ppval(optFit,double(Frame));
 
-    %Calculate the error in the offset
-    OffsetError=std(Offset-OffsetFit);
+        %Calculate the error in the offset
+        OffsetError=std(Offset-OffsetFit);
+    catch
+        ErrorGauss=[];
+        ErrorIntegral=[];
+        ErrorIntegral3=[];
+        ErrorIntegral5 = [];
+        optFit=[];
+    end
 
     
 %If we have between 3 and five data points, we fit a line.

@@ -1,21 +1,41 @@
-%This function grabs individual z-stacks and splits them in
-%multiple channels so that it can be analyzed by the FISH code.
-%It adds a blank image at the beginning and the end so that the code
-%doesn't discard columns that peak at the edges of the Z-stack. 
-
-%Options:
-%medianprojection: Uses a median projection in the nuclear channel rather
+% ExportDataForFISH([Options])
+%
+% DESCRIPTION
+% %This function grabs individual z-stacks and splits them in
+% multiple channels so that it can be analyzed by the FISH code.
+% It adds a blank image at the beginning and the end so that the code
+% doesn't discard columns that peak at the edges of the Z-stack. 
+%
+% ARGUMENTS
+%
+% [Options]: See below.
+%
+% OPTIONS
+% 'medianprojection': Uses a median projection in the nuclear channel rather
 %                  than the default maximum projection
-%middleprojection: Uses a max projection in the nuclear channel, but only
+% 'middleprojection': Uses a max projection in the nuclear channel, but only
 %                   of the middle slices (11-16) to prevent bright
 %                   reflections from overpowering the signal
-
-
+% 'PreferredFileForTest': AR 8/30/2018 don't know. 
+% 'skipframes': AR 8/30/2018 don't know. 
+%
+%
+% OUTPUT
+% Exported tif images are placed in the PreProcessedData folder and divided
+% into a nuclear channel for tracking/protein quantification and a channel
+% for transcriptional loci. 
+%
+% Author (contact): Hernan Garcia
+% Created: 01/01/2016
+% Last Updated: 8/30/2018
+%
+% Documented by: Armando Reimer (areimer@berkeley.edu)
+%
 %Note:
 %Flatfield image: We assume there is no background of fluorescence / dark
 %current.
-
-
+%
+%
 %Where do things go?
 %
 %1) The original raw data: RawDynamics Folder
@@ -27,6 +47,7 @@
 %
 %The idea of (4) being in Dropbox is that I don't need to be synchronizing
 %the part related to the manual analysis.
+
 function Prefix = ExportDataForFISH(varargin)
 
 [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest] = exportDataForFISH_processInputParameters(varargin{:})
@@ -51,7 +72,7 @@ FrameInfo = struct('LinesPerFrame',{},'PixelsPerLine',{},...
 %This information will be stored in FrameInfo for use by subsequent parts
 %of the code. Note, however, that the channels are also extracted in this
 %code for each data type. I should integrate this.
-if strcmp(FileMode,'TIF')
+if strcmpi(FileMode,'TIF')
   %Maximum shift in pixels corresponding to image shift and alignment
   MaxShift = 9; 
 
@@ -59,16 +80,16 @@ if strcmp(FileMode,'TIF')
   MaxHistone = 1000;
 
   FrameInfo = process2PhotonPrincetonData(Folder, D, FrameInfo, Channel2, MaxShift, MaxHistone, OutputFolder);
-elseif strcmp(FileMode, 'LAT')
+elseif strcmpi(FileMode, 'LAT')
   FrameInfo = processLatticeLightSheetData(Folder, D, Channel1, Channel2, ProjectionType, Prefix, OutputFolder);
 
-elseif strcmp(FileMode,'LSM')
+elseif strcmpi(FileMode,'LSM')
   FrameInfo = processZeissConfocalLSMData(Folder, D, FrameInfo, ExperimentType, Channel1, Channel2, Prefix, OutputFolder);
 
-elseif strcmp(FileMode,'LIFExport')
+elseif strcmpi(FileMode,'LIFExport')
   FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, ProjectionType, Channel1, Channel2, Channel3, Prefix, OutputFolder, PreferredFileNameForTest);        
 
-elseif strcmp(FileMode,'DSPIN') || strcmp(FileMode,'DND2')
+elseif strcmpi(FileMode,'DSPIN') || strcmpi(FileMode,'DND2')
   %Nikon spinning disk confocal mode - TH/CS 2017
   FrameInfo = processSPINandND2Data(Folder, D, FrameInfo, ExperimentType, Channel1, Channel2, SourcePath, Prefix, OutputFolder, DropboxFolder);
 end
@@ -76,5 +97,5 @@ end
 doFrameSkipping(SkipFrames, FrameInfo, OutputFolder);
 
 %Save the information about the various frames
-mkdir([DropboxFolder, filesep, Prefix])
-save([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo')
+mkdir([DropboxFolder, filesep, Prefix]);
+save([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');

@@ -1,4 +1,5 @@
 function processLIFChannel(ExperimentType, channelIndex, numberOfFrames, Prefix, BlankImage, OutputFolder, LIFImages, framesIndex, seriesIndex, NChannels, NSlices, coatChannel, inputProteinChannel)
+  
   experimentType1 = (strcmpi(ExperimentType,'1spot') || strcmp(ExperimentType,'2spot') || strcmp(ExperimentType,'2spot1color')) && channelIndex == coatChannel;
   experimentType2 = strcmpi(ExperimentType,'2spot2color') || strcmpi(ExperimentType, 'inputoutput');
   experimentType3 = strcmpi(ExperimentType, 'input') && sum(channelIndex == inputProteinChannel);

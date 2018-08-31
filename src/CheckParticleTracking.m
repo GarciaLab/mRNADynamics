@@ -624,7 +624,10 @@ while (cc~='x')
         plot(overlayAxes,xDisapproved,yDisapproved,'^r')
         %plot(overlayAxes,x, y, 'sw')
     end
-    %Always show current particle
+    %Always show current particle. this indicates the x-y center of the spot
+        %within the brightest z-slice and may differ from the position
+        %shown in the snippet image, which is centered at the position with
+        %the current z-slice. 
     plot(overlayAxes,xTrace,yTrace,'og')
     hold(overlayAxes,'off')
 
@@ -652,8 +655,12 @@ while (cc~='x')
             schnitzCellNo=[];
             for i=1:numParticles
                 if Particles{CurrentChannel}(i).Approved==1
-                    schnitzIndex=find((schnitzcells(Particles{CurrentChannel}(i).Nucleus).frames)==CurrentFrame);
-                    schnitzCellNo=[schnitzCellNo,schnitzcells(Particles{CurrentChannel}(i).Nucleus).cellno(schnitzIndex)];
+                    try
+                        schnitzIndex=find((schnitzcells(Particles{CurrentChannel}(i).Nucleus).frames)==CurrentFrame);
+                        schnitzCellNo=[schnitzCellNo,schnitzcells(Particles{CurrentChannel}(i).Nucleus).cellno(schnitzIndex)];
+                    catch
+                        %can't identify the nucleus for this particle. 
+                    end
                 end
             end
             
@@ -798,9 +805,12 @@ while (cc~='x')
         xForZoom=xForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
         yForZoom=yForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
        
- 
-        xlim(overlayAxes,[xForZoom-ZoomRange,xForZoom+ZoomRange])
-        ylim(overlayAxes,[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2])
+        try
+            xlim(overlayAxes,[xForZoom-ZoomRange,xForZoom+ZoomRange])
+            ylim(overlayAxes,[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2])
+        catch
+            %something's outside the limits of the image
+        end
     end
     
     if GlobalZoomMode       
@@ -857,8 +867,12 @@ while (cc~='x')
             ' Ch: ',num2str(CurrentChannel)])
         
         if ZoomMode || GlobalZoomMode
-            xlim(HisOverlayFigAxes,[xForZoom-ZoomRange,xForZoom+ZoomRange])
-            ylim(HisOverlayFigAxes,[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2])
+            try
+                xlim(HisOverlayFigAxes,[xForZoom-ZoomRange,xForZoom+ZoomRange])
+                ylim(HisOverlayFigAxes,[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2])
+            catch
+                %something's outside the limits of the image
+            end
         end
  
     end
@@ -911,8 +925,8 @@ while (cc~='x')
             end
         end
      
-        CurrentSnippet = FullSlice(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
-                                max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size));
+        CurrentSnippet = double(FullSlice(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
+                                max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size)));
         imSnippet = mat2gray(CurrentSnippet);
         SnippetEdge=size(CurrentSnippet,1);     
         IntegrationRadius = 6*intScale; % this appears to be hard-coded into IdentifySingleSpot
@@ -929,6 +943,10 @@ while (cc~='x')
 
         hold(snippetFigAxes,'on')
         
+        %this displays the actual snippet for the current z-slice used in
+        %intensity calculations. the center may differ from the circle in
+        %the overlay figure, which indicates the x-y center of the spot
+        %within the brightest z-slice. 
         SnippetX=(SnippetEdge-1)/2+1-...
             (Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xDoG(CurrentZIndex)-...
             Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xFit(CurrentZIndex));
@@ -939,8 +957,8 @@ while (cc~='x')
     else
         imshow(zeros(SnippetEdge), 'Parent', snippetFigAxes)
     end
-    DoubleSnippet = double(CurrentSnippet);
-    [mesh_y,mesh_x] = meshgrid(1:size(DoubleSnippet,2), 1:size(DoubleSnippet,1));
+    
+    [mesh_y,mesh_x] = meshgrid(1:size(CurrentSnippet,2), 1:size(CurrentSnippet,1));
 
     % Single gaussian function: In future this should be a standalone
     % function file to ensure consistency with function used for fitting
@@ -950,24 +968,32 @@ while (cc~='x')
         - 2*((-sin(2*params(7)) / (4*params(3)^2) ) + (sin(2*params(7)) / 4*params(5)^2)) .* (mesh_x-params(2)).*(mesh_y-params(4))...
         + (((sin(params(7)))^2 / (2*params(3)^2) ) + ((cos(params(7)))^2 / 2*params(5)^2)).* (mesh_y-params(4)).^2 ...
             )))...
-        + params(6) - DoubleSnippet;
+        + params(6) - CurrentSnippet;
 
     if ~isempty(xTrace) && ~isempty(CurrentZIndex)
             if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex),'gaussParams')
                 gaussParams = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussParams;
+
                 if ~isempty(gaussParams)
                     gaussParams= gaussParams{CurrentZIndex};
-                    gauss = singleGaussian(gaussParams);
+                    if iscell(gaussParams)
+                        gauss = singleGaussian(gaussParams);
+                    else
+                        gauss = NaN;
+                    end
                 else
                     gauss = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{CurrentZIndex};
                 end
+                
             elseif isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex), 'gaussSpot')
                 gauss = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{CurrentZIndex};
             else
                 error('No Gaussian Fit Params or Gauss Snippet Found. Try Re-running segmentSpots')
             end
-
-            surf(gaussianAxes, gauss + double(CurrentSnippet));
+            
+            if ~isnan(gauss)
+                surf(gaussianAxes, gauss + CurrentSnippet);
+            end
             title(gaussianAxes,'Gaussian fit')
             set(Gaussian,'units', 'normalized', 'position',[0.815, 0.15, .2/3*2, .33/3*2]);
             zlimit = max(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity);
