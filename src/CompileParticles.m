@@ -1530,7 +1530,7 @@ if NChannels==1
 
         if strcmpi(ExperimentAxis,'AP')
             figure(8)
-            intArea=109;
+            intArea=109;  %109 pixels is the default area when the pixels are assumed to be 212nm x 212 nm AR 9/3/18
             errorbar(1:length(MeanOffsetVector),MeanOffsetVector*intArea,...
                 SDOffsetVector*intArea,'.-r')
             hold on

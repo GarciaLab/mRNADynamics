@@ -59,3 +59,61 @@ Thread count was 32 (of 56 available processors)
 Optimal solution found (tolerance 1.00e-04)
 Best objective -2.462266941552e+07, best bound -2.462507329985e+07, gap 0.0098%
 Optimal objective value: -2.4622669415521648E7
+Gurobi 6.5.2 (win64) logging started 08/31/18 23:07:11
+
+Optimize a model with 17735431 rows, 10813803 columns and 83053009 nonzeros
+Coefficient statistics:
+  Matrix range    [1e+00, 1e+00]
+  Objective range [2e-02, 1e+12]
+  Bounds range    [1e+00, 1e+00]
+  RHS range       [1e+00, 1e+00]
+Warning: Model contains large objective coefficients
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+Found heuristic solution: objective 0
+Presolve removed 0 rows and 0 columns (presolve time = 66s) ...
+Variable types: 0 continuous, 10813803 integer (10813803 binary)
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.9244288e+08   1.974725e+06   0.000000e+00    185s
+   51089   -1.7534893e+08   1.790183e+06   0.000000e+00    192s
+  128406   -1.7265712e+08   1.564294e+06   0.000000e+00    201s
+  247035   -1.6655869e+08   1.217668e+06   0.000000e+00    215s
+  365664   -1.5650344e+08   8.852340e+05   0.000000e+00    227s
+  484293   -1.4305931e+08   7.503710e+05   0.000000e+00    244s
+  602922   -1.3145508e+08   6.563290e+05   0.000000e+00    262s
+  721551   -1.2106151e+08   5.073790e+05   0.000000e+00    279s
+  840180   -1.0790425e+08   3.726880e+05   0.000000e+00    299s
+  958809   -1.0442804e+08   1.866080e+05   0.000000e+00    317s
+ 1077438   -9.9853685e+07   4.275733e+04   0.000000e+00    347s
+ 1108944   -9.8534933e+07   1.337424e+03   0.000000e+00    368s
+ 1109591   -9.8527026e+07   1.641333e+03   0.000000e+00    384s
+ 1112409   -9.8373324e+07   0.000000e+00   0.000000e+00    395s
+
+Root relaxation: objective -9.837332e+07, 1112409 iterations, 290.62 seconds
+Total elapsed time = 412.96s
+Total elapsed time = 512.97s
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 -9.837e+07    0 1257    0.00000 -9.837e+07      -     -  582s
+H    0     0                    -9.82091e+07 -9.837e+07  0.17%     -  692s
+H    0     0                    -9.82164e+07 -9.837e+07  0.16%     -  849s
+     0     0 -9.824e+07    0  317 -9.822e+07 -9.824e+07  0.02%     - 1007s
+H    0     0                    -9.82300e+07 -9.824e+07  0.01%     - 1160s
+H    0     0                    -9.82302e+07 -9.824e+07  0.01%     - 1390s
+     0     0 -9.824e+07    0  320 -9.823e+07 -9.824e+07  0.01%     - 1468s
+
+Cutting planes:
+  Gomory: 26
+  Zero half: 97
+
+Explored 0 nodes (1112846 simplex iterations) in 1473.62 seconds
+Thread count was 32 (of 56 available processors)
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective -9.823024622913e+07, best bound -9.823927050232e+07, gap 0.0092%
+Optimal objective value: -9.823024622913177E7

@@ -1,12 +1,15 @@
 function [Particles,schnitzcells]=TrackmRNADynamics(varargin)
-
-%This function sets up particle tracking using the FISH analysis code. If
-%nuclei have been tracked it uses that information for the particle
-%tracking.
-
+%function [Particles,schnitzcells]=TrackmRNADynamics(varargin)
+%
+%This function tracks transcription loci over time after 
+%segmentation and z-tracking have been performed. If nuclei have been 
+%tracked it uses that information for the particle tracking.
+%
+%
 %To do: The no-histone part of the code doesn't take into account the
-%Approved field of the Particles structure.
-
+%Approved field of the Particles structure. 
+%^ AR 9/3/18: has this been done? 
+%
 
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
@@ -93,7 +96,7 @@ if exist([OutputFolder,filesep,'Particles.mat'])
     if (~sum(Threshold1==Threshold1Backup)==length(Threshold1))&...
         (~sum(Threshold2==Threshold2Backup)==length(Threshold2))
             Answer=input('Thresholds changed, will delete previous tracking. Proceed? (y/n):','s');
-            if strcmp(lower(Answer),'y')
+            if strcmpi(Answer,'y')
                 Threshold1=Threshold1Backup;
                 Threshold2=Threshold2Backup;
                 delete([OutputFolder,filesep,'Particles.mat'])

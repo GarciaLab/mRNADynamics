@@ -1048,27 +1048,36 @@ while (cc~='x')
         %Only update the trace information if we have switched particles
         if (CurrentParticle~=PreviousParticle)||~exist('AmpIntegral', 'var')||(CurrentChannel~=PreviousChannel) || lastParticle
             PreviousParticle=CurrentParticle;
-            [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ErrorIntegral, ErrorIntegral3, ErrorIntegral5]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
+            [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ErrorIntegral, ErrorIntegral3, ErrorIntegral5,backGround3]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
         end       
-       
+%         yyaxis(traceFigAxes,'left');
         p1 = errorbar(traceFigAxes, Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
             AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral,'.-k');           
         hold(traceFigAxes, 'on')
         p2 = errorbar(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
             AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');                   
-        p3 = errorbar(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-           AmpIntegral5(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral5(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral5,'.-','Color','blue');                   
+%         p3 = errorbar(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+%            AmpIntegral5(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral5(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral5,'.-','Color','blue');                   
+%         p3 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+%             backGround3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');                        
         plot(traceFigAxes,Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
         plot(traceFigAxes,Frames(Frames==CurrentFrame),AmpIntegral(Frames==CurrentFrame),'ob');
-        legend([p1,p2,p3],'1-slice','3-slice cylinder','5-slice accordion')
+        plot(traceFigAxes,Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
+        plot(traceFigAxes,Frames(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
+%   
+        ylabel(traceFigAxes,'integrated intensity (a.u.)')
         hold(traceFigAxes, 'off')
+%         yyaxis(traceFigAxes,'right');
+%         p3 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+%             backGround3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');                   
+        legend([p1,p2],'1-slice','3-slice cylinder')
         try
             xlim(traceFigAxes,[min(Frames)-1,max(Frames)+1]);
         catch
 %             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
         end
         xlabel(traceFigAxes,'frame')        
-        ylabel(traceFigAxes,'integrated intensity (a.u.)')
+%         ylabel(traceFigAxes,'offset intensity (a.u.)')
     else
         %Only update the trace information if we have switched particles
         if (CurrentParticle~=PreviousParticle)||~exist('Amp', 'var')||(CurrentChannel~=PreviousChannel) || lastParticle
@@ -1102,23 +1111,18 @@ while (cc~='x')
         hold(traceFigAxes,'off')
     end
 
-    %(MT, 2018-02-11) Added support for lattice imaging, maybe 
-    %temporary - FIX LATER
-    if strcmpi(ExperimentType,'lattice')
-        FigureTitle={['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)],...
-            ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),')'],...
-            ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)]};
+    firstLine = ['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)];
+    secondLine = ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),'    ',num2str(round(FrameInfo(CurrentFrame).Time)), 's'];
+    thirdLine = ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)];
+    
+    if isfield(FrameInfo, 'nc')
+        FigureTitle={firstLine,...
+            [secondLine,'    (nc',num2str(FrameInfo(CurrentFrame).nc),')'],...
+            thirdLine};
     else
-        if isfield(FrameInfo, 'nc')
-            FigureTitle={['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)],...
-                ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames), ' (nc',num2str(FrameInfo(CurrentFrame).nc),')'],...
-                ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)]};
-        else
-            FigureTitle={['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)],...
-                ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames)],...
-                ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)]};
-        end
+        FigureTitle={firstLine,secondLine,thirdLine};
     end
+
     
     if HideApprovedFlag==1
         FigureTitle=[FigureTitle,', Showing non-flagged particles'];

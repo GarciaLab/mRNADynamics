@@ -11,7 +11,7 @@ dataSetNames = {'2018-08-23-p2p_mcp_opt_5'};
 dataSetOfinterest = 1;
 prefix = dataSetNames{dataSetOfinterest};
 %[prefix,~] = getPrefixAndFolder; % in case the prefix above is not yours. 
-intScale = 1;
+intScale = 2;
 
 [~,~,dropboxFolder,~,~]= DetermineLocalFolders(prefix);
 [~,~,defaultDropboxFolder,~,PreProcPath]=...
