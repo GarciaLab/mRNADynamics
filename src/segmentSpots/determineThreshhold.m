@@ -1,4 +1,4 @@
-% determineThreshhold(Prefix)
+% determineThreshhold(Prefix,Channel)
 %
 % DESCRIPTION
 % Tool for finding threshhold for segmentSpots. Generates a UI and starts
@@ -20,7 +20,7 @@
 function [thresh] = determineThreshhold(Prefix, Channel)
 
     default_std = 5;
-    num_frames_to_check = 50;
+    num_frames_to_check = 100;
 
     % loads information needed to loop through DOGs
     [~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
@@ -44,24 +44,31 @@ function [thresh] = determineThreshhold(Prefix, Channel)
             
             dog_name = ['DOG_',Prefix,'_',iIndex(frame,3),'_z',iIndex(z,2),nameSuffix,'.tif'];
             dog = double(imread([OutputFolder1 dog_name]));
-            val = sum(sum(dog));
-            if val > bestVal
-                bestVal = val;
+            non_zero_d = dog(dog > 0);
+            val = std(non_zero_d(:));
+            real_val = (max(non_zero_d(:)) - ...
+                mean(non_zero_d(:))) / (val + .01);
+            if real_val > bestVal
+                bestVal = real_val;
                 bestDOG = dog;
             end
         end
     end
     % generates UI for picking threshhold
-    mean_val = mean(bestDOG(:));
-    std_val = std(bestDOG(:));
+    non_zero_dog = bestDOG(bestDOG > 0);
+    mean_val = mean(non_zero_dog(:));
+    std_val = std(non_zero_dog(:));
     dog_copy = bestDOG;
-    thresh = mean_val + default_std * std_val;
+    max_val = max(non_zero_dog(:));
+    min_val = min(non_zero_dog(:));
+    thresh = min(mean_val + default_std * std_val, max_val - 1);
     dog_copy(dog_copy < thresh) = 0;
     f = figure();
-    imshow(dog_copy, []);
-    set(gcf, 'Position', [100, 100, 1000, 600])
+    uiAxes = axes(f);
+    im = imshow(dog_copy, [], 'Parent', uiAxes);
+    set(f, 'Position', [100, 100, 1000, 600])
     threshSlider = uicontrol('Style', 'slider',...
-        'Min',1,'Max',max(bestDOG(:)),'Value',thresh,...
+        'Min',min_val,'Max',max_val,'Value',thresh,...
         'Position', [200 20 500 20],...
         'Callback', @update_val); 
     
@@ -75,33 +82,23 @@ function [thresh] = determineThreshhold(Prefix, Channel)
         'Position', [700 20 250 20],...
         'Callback', @use_thresh); 
     
-    uiwait(gcf);
+    uiwait(f);
     
     function update_val(source, ~)
         dog_copy = bestDOG;
         thresh = source.Value;
         std_above_mean = (thresh - mean_val) / std_val;
         dog_copy(dog_copy < thresh) = 0;
-        imshow(dog_copy, []);
-        set(gcf, 'Position', [100, 100, 1000, 600])
-        threshSlider = uicontrol('Style', 'slider',...
-            'Min',1,'Max',max(bestDOG(:)),'Value',thresh,...
-            'Position', [200 20 500 20],...
-            'Callback', @update_val); 
+        im.CData = dog_copy;
+        threshSlider.Value = thresh;
 
-        threshVal = uicontrol('Style','text',...
-            'Position',[200 45 500 20],...
-            'String',['Threshhold = ' num2str(thresh) ' which is ' ...
-            num2str(std_above_mean) ' sds above the mean pixel value']); 
-        
-        btn = uicontrol('Style', 'pushbutton', 'String', 'Use Threshhold',...
-        'Position', [700 20 250 20],...
-        'Callback', @use_thresh);
-        
+        threshVal.String = ['Threshhold = ' num2str(thresh) ' which is ' ...
+            num2str(std_above_mean) ' sds above the mean pixel value']; 
+                 
     end
 
     function use_thresh(source, ~)
-        uiresume(gcf);
+        uiresume(f);
         close(f);
     end
     
