@@ -379,36 +379,27 @@ else
     if ~just_dog 
         n = 1;
         h=waitbar(0,'Saving particle information');
-        for i = initial_frame:num_frames  
-            waitbar(i/(num_frames-initial_frame),h)
-            for j = 1:zSize 
-                 for spot = 1:length(all_frames{i,j}) %Spots{q} within particular image
-                     if ~isempty(all_frames{i,j}{spot})
-                         Particles(n).FixedAreaIntensity(1) = cell2mat(all_frames{i,j}{spot}(1));
-                         Particles(n).xFit(1) = cell2mat(all_frames{i,j}{spot}(2));
-                         Particles(n).yFit(1) = cell2mat(all_frames{i,j}{spot}(3));
-                         Particles(n).Offset(1) = cell2mat(all_frames{i,j}{spot}(4));
-%                          Particles(n).Snippet{1} = cell2mat(all_frames{i,j}{spot}(5));
-%                          Particles(n).Area(1) = cell2mat(all_frames{i,j}{spot}(6));
-%                          Particles(n).xFitWidth(1) = cell2mat(all_frames{i,j}{spot}(7));
-%                          Particles(n).yFitWidth(1) = cell2mat(all_frames{i,j}{spot}(8));
-                         Particles(n).yDoG(1) = cell2mat(all_frames{i,j}{spot}(9));
-                         Particles(n).xDoG(1) = cell2mat(all_frames{i,j}{spot}(10));
-                         Particles(n).GaussianIntensity(1) = cell2mat(all_frames{i,j}{spot}(11));                     
-                         Particles(n).CentralIntensity(1) = cell2mat(all_frames{i,j}{spot}(12));
-                         Particles(n).DOGIntensity(1) = cell2mat(all_frames{i,j}{spot}(13));
-%                          Particles(n).snippet_mask{1} = cell2mat(all_frames{i,j}{spot}(14));
-%                          Particles(n).SisterDistance(1) = cell2mat(all_frames{i,j}{spot}(17));
-                         Particles(n).ConfidenceIntervals{1} = cell2mat(all_frames{i,j}{spot}(19));          
-%                          Particles(n).gaussSpot{1} = cell2mat(all_frames{i,j}{spot}(20));
-%                          raw = all_frames{i,j}{spot}(21);
-%                          Particles(n).rawSpot{1} = raw{1};
-                         Particles(n).gaussParams = all_frames{i,j}{spot}(22);
-                         Particles(n).z(1) = j;
+        for frameIndex = initial_frame:num_frames  
+            waitbar(frameIndex/(num_frames-initial_frame),h)
+            for zIndex = 1:zSize 
+                 for spot = 1:length(all_frames{frameIndex,zIndex}) %Spots{q} within particular image
+                     if ~isempty(all_frames{frameIndex,zIndex}{spot})
+                         Particles(n).FixedAreaIntensity(1) = cell2mat(all_frames{frameIndex,zIndex}{spot}(1));
+                         Particles(n).xFit(1) = cell2mat(all_frames{frameIndex,zIndex}{spot}(2));
+                         Particles(n).yFit(1) = cell2mat(all_frames{frameIndex,zIndex}{spot}(3));
+                         Particles(n).Offset(1) = cell2mat(all_frames{frameIndex,zIndex}{spot}(4));
+                         Particles(n).yDoG(1) = cell2mat(all_frames{frameIndex,zIndex}{spot}(9));
+                         Particles(n).xDoG(1) = cell2mat(all_frames{frameIndex,zIndex}{spot}(10));
+                         Particles(n).GaussianIntensity(1) = cell2mat(all_frames{frameIndex,zIndex}{spot}(11));                     
+                         Particles(n).CentralIntensity(1) = cell2mat(all_frames{frameIndex,zIndex}{spot}(12));
+                         Particles(n).DOGIntensity(1) = cell2mat(all_frames{frameIndex,zIndex}{spot}(13));
+                         Particles(n).ConfidenceIntervals{1} = cell2mat(all_frames{frameIndex,zIndex}{spot}(19));          
+                         Particles(n).gaussParams = all_frames{frameIndex,zIndex}{spot}(22);
+                         Particles(n).z(1) = zIndex;
                          Particles(n).discardThis = 0;
-                         Particles(n).frame(1) = i;
+                         Particles(n).frame(1) = frameIndex;
                          Particles(n).r = 0;
-                         Particles(n).intArea = cell2mat(all_frames{i,j}{spot}(23));
+                         Particles(n).intArea = cell2mat(all_frames{frameIndex,zIndex}{spot}(23));
                          Particles(n).IntegralZ = use_integral_center; 
                          Particles(n).snippet_size = snippet_size;
                          n = n + 1;

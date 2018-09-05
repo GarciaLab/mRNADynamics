@@ -1,4 +1,4 @@
-function addMissingFramesToParticles(prefix)
+function addMissingFramesToParticles(prefix, varargin)
 %% Information about the script
 % addMissingFramesToParticles will add the particle in frames that are
 % between frames where the particle is present.
@@ -9,7 +9,15 @@ function addMissingFramesToParticles(prefix)
 %% Loading the data set of interest
 
 %[prefix,~] = getPrefixAndFolder; % in case the prefix above is not yours.
-intScale = 2;
+intScale = 1;
+
+for i = 1:length(varargin)
+    if strcmpi(varargin{i}, 'intScale')
+        intScale = varargin{i+1};
+        display(['integration scaling factor: ', num2str(intScale)]);
+    end
+end
+
 [~,~,dropboxFolder,~,~]= DetermineLocalFolders(prefix);
 [~,~,defaultDropboxFolder,~,PreProcPath]=...
     DetermineLocalFolders;
@@ -50,15 +58,16 @@ LinesPerFrame = FrameInfo(1).LinesPerFrame;
 ZSlices=FrameInfo(1).NumberSlices+2;
 
 % Ellipses Information and Loading
-load([dropboxFolder,filesep,FilePrefix(1:end-1),filesep,'Ellipses.mat'])
+try
+    load([dropboxFolder,filesep,FilePrefix(1:end-1),filesep,'Ellipses.mat'])
 
-
-% Schnitzcells Information and Loading
-if ~exist([dropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'], 'file')
-    error('Need this file!')
+    % Schnitzcells Information and Loading
+    if ~exist([dropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'], 'file')
+        error('Need this file!')
+    end
+    schnitzcellsPathName = [dropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'];
+    load(schnitzcellsPathName)
 end
-schnitzcellsPathName = [dropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'];
-load(schnitzcellsPathName)
 
 % log Information and Loading
 logFile = [dropboxFolder, filesep, prefix, filesep, 'log.mat'];
@@ -69,11 +78,13 @@ load(logFile)
 %Remove the schnitz fields that can give us problems potentially if
 %present. I don't know how this came to be, but it's for fields that
 %are not all that relevant. The fields are: approved, ang
-if isfield(schnitzcells,'approved')
-    schnitzcells=rmfield(schnitzcells,'approved');
-end
-if isfield(schnitzcells,'ang')
-    schnitzcells=rmfield(schnitzcells,'ang');
+try
+    if isfield(schnitzcells,'approved')
+        schnitzcells=rmfield(schnitzcells,'approved');
+    end
+    if isfield(schnitzcells,'ang')
+        schnitzcells=rmfield(schnitzcells,'ang');
+    end
 end
 
 
@@ -109,7 +120,7 @@ for i = 1:numberOfParticles
     end
 end
 disp(['Need to double check ' num2str(length(particlesToDoubleCheck)) ' particle(s).'])
-disp(['Particles : ' num2str(particlesToDoubleCheck)])
+disp(['Checking particles : ' num2str(particlesToDoubleCheck)])
 
 %% Adding missing frames
 % Process flow:
@@ -327,7 +338,7 @@ for i = particlesToDoubleCheck
                     SpotFilter{currentChannel},Particles{currentChannel},...
                     currentFrame,SpotsIndex);
                 numberOfParticles = numberOfParticles + 1;
-                Particles{currentChannel}(end).FrameApproved = []; % not approved yet for this function
+                Particles{currentChannel}(end).FrameApproved = true;
                 
                 %Connect this particle to the CurrentParticle. This is
                 %the equivalent of running the 'c' command.
@@ -357,9 +368,11 @@ log(end).FunctionOrScriptUsed = 'addMissingFramesToParticles';
 log(end).ParticlesEdited = particlesToDoubleCheck;
 log(end).CorrespondingFramesAdded = framesModified;
 
-usersAnswer = input('Would you like to save these traces? (y/n)','s');
-saving = isequal('y',lower(usersAnswer));
-if saving
+% usersAnswer = input('Would you like to save these traces? (y/n)','s');
+% saving = isequal('y',lower(usersAnswer));
+saving = true;
+
+if saving && ~isempty(particlesToDoubleCheck)
     disp('Saving the changes')
     % Saving all that hardwork!
     save(particlePathName,'Particles','SpotFilter','Threshold1','Threshold2', '-v7.3')
@@ -369,10 +382,3 @@ if saving
 end
 
 end
-
-
-
-
-
-
-

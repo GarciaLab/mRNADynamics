@@ -134,36 +134,41 @@ function log = segmentSpots(Prefix, Threshold, varargin)
     % Create a useful structure that can be fed into pipeline
     [Particles, fields] = saveParticleInformation(numFrames, all_frames, zSize);
 
-    [neighborhood, Particles] = segmentSpotsZTracking(pixelSize, numFrames, Particles, fields); %#ok<ASGLU>
+    if ~isempty(fields)
+       
+        [neighborhood, Particles] = segmentSpotsZTracking(pixelSize, numFrames, Particles, fields); 
 
-    [Particles, falsePositives] = findBrightestZ(Particles,numShadows, 0, 0);
+        [Particles, falsePositives] = findBrightestZ(Particles,numShadows, 0, 0);
 
-    %Create a final Spots structure to be fed into TrackmRNADynamics
-    Spots = createSpotsStructure(Particles, numFrames, channelIndex);
+        %Create a final Spots structure to be fed into TrackmRNADynamics
+        Spots = createSpotsStructure(Particles, numFrames, channelIndex);
 
-    %If we only have one channel, then convert Spots to a
-    %standard structure.
+        %If we only have one channel, then convert Spots to a
+        %standard structure.
 
-    if nCh == 1
-      Spots = Spots{1};
-    end 
+        if nCh == 1
+          Spots = Spots{1};
+        end 
+        
+    end
 
     mkdir([DropboxFolder, filesep, Prefix]);
     save([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots', '-v7.3');
+    
   end 
 
 
   t = toc;
   disp(['Elapsed time: ', num2str(t / 60), ' min'])
 
-  log = logSegmentSpots(DropboxFolder, Prefix, t, numFrames, Spots, falsePositives, Threshold)
+  log = logSegmentSpots(DropboxFolder, Prefix, t, numFrames, Spots, falsePositives, Threshold);
+  display(log);
 
-  if ~ keepPool
+  if ~keepPool
 
     try 
       poolobj = gcp('nocreate');
       delete(poolobj);
-    catch 
     end 
 
   end 

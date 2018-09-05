@@ -6,13 +6,15 @@ function [Particles, fields] = saveParticleInformation(numFrames, all_frames, zS
   waitbarFigure = waitbar(0, 'Saving particle information');
 
   for frameIndex = 1:numFrames
+      
     waitbar(frameIndex / numFrames, waitbarFigure)
 
     for zIndex = 1:zSize
 
       for spot = 1:length(all_frames{frameIndex, zIndex}) % spots within particular image
 
-        if ~ isempty(all_frames{frameIndex, zIndex}{spot})
+        if ~isempty(all_frames{frameIndex, zIndex}{spot})
+            
           Particles(n).FixedAreaIntensity(1) = cell2mat(all_frames{frameIndex, zIndex}{spot}(1));
           Particles(n).xFit(1) = cell2mat(all_frames{frameIndex, zIndex}{spot}(2));
           Particles(n).yFit(1) = cell2mat(all_frames{frameIndex, zIndex}{spot}(3));
@@ -40,6 +42,7 @@ function [Particles, fields] = saveParticleInformation(numFrames, all_frames, zS
           Particles(n).frame(1) = frameIndex;
           Particles(n).r = 0;
           n = n + 1;
+          
         end 
 
       end 
@@ -51,4 +54,5 @@ function [Particles, fields] = saveParticleInformation(numFrames, all_frames, zS
   close(waitbarFigure);
 
   fields = fieldnames(Particles);
+  
 end 

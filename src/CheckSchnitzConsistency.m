@@ -69,7 +69,7 @@ if ~OnlyCellNo
     %than the number of frames
     for i=1:length(Particles)
         if length(Particles(i).Frame)~=length(Particles(i).FrameApproved)
-            Particles(i).FrameApproved=logical(ones(size(Particles(i).Frame)));
+            Particles(i).FrameApproved=true(size(Particles(i).Frame));
         end
     end
 

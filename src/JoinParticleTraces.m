@@ -15,7 +15,7 @@ Particles(OriginalParticle).Index=[Particles(OriginalParticle).Index,Particles(C
 Particles(OriginalParticle).Approved=0;
 %Particles(OriginalParticle).nc=[Particles(OriginalParticle).nc,Particles(ClickedParticle).nc];
 if isfield(Particles,'FrameApproved')
-    Particles(OriginalParticle).FrameApproved=[Particles(OriginalParticle).FrameApproved,Particles(ClickedParticle).FrameApproved];
+    Particles(OriginalParticle).FrameApproved=logical([Particles(OriginalParticle).FrameApproved,Particles(ClickedParticle).FrameApproved]);
 end
 
 
@@ -33,7 +33,7 @@ Particles=Particles([1:ClickedParticle-1,ClickedParticle+1:end]);
 %connected to a particle that came before.
 [SortedFrame,Permutations]=sort(Particles(OriginalParticle).Frame);
 Particles(OriginalParticle).Frame=Particles(OriginalParticle).Frame(Permutations);
-    try
+try
     if isfield(Particles,'xPos')
         Particles(OriginalParticle).xPos=Particles(OriginalParticle).xPos(Permutations);
     end
@@ -48,4 +48,5 @@ Particles(OriginalParticle).Index=Particles(OriginalParticle).Index(Permutations
 if ~isempty(Particles(OriginalParticle).FrameApproved)
     Particles(OriginalParticle).FrameApproved=Particles(OriginalParticle).FrameApproved(Permutations);
 end
+
 end

@@ -109,6 +109,7 @@ close all
 
 
 warning('off','MATLAB:nargchk:deprecated')
+warning('off','MATLAB:mir_warning_maybe_uninitialized_temporary')
 
 
 %% Information about about folders
@@ -1398,7 +1399,7 @@ while (cc~='x')
                         && (ConnectPositiony > snippet_size/2) && (ConnectPositiony + snippet_size/2 < LinesPerFrame)
                     SpotsIndex = length(Spots{CurrentChannel}(CurrentFrame).Fits)+1;
                     breakflag = 0;
-                    parfor i = 1:ZSlices
+                    parfor i = 1:ZSlices %#ok<PFUIX>
                         spotsIm=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                              FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i,2),nameSuffix,'.tif']);                                                
                           try
@@ -1431,113 +1432,67 @@ while (cc~='x')
                         end
                     end
 
-                    for i = 1:ZSlices
-                        if ~isempty(temp_particles{i})
-                            %Copy the information stored on temp_particles into the
+                    for zIndex = 1:ZSlices
+                        if ~isempty(temp_particles{zIndex})
+                            %Copy the information stored in temp_particles into the
                             %Spots structure                            
-                            if ~isempty(temp_particles{i}{1})
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity(i)=...
-                                temp_particles{i}{1}{1};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFit(i)=...
-                                    temp_particles{i}{1}{2};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yFit(i)=...
-                                    temp_particles{i}{1}{3};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Offset(i)=...
-                                    temp_particles{i}{1}{4};
-%                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Snippet{i}=...
-%                                     temp_particles{i}{1}{5};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Area{i}=...
-                                    temp_particles{i}{1}{6};
-%                                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFitWidth{i}=...
-%                                         temp_particles{i}{1}{7};
-%                                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yFitWidth{i}=...
-%                                         temp_particles{i}{1}{8};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yDoG(i)=...
-                                    temp_particles{i}{1}{9};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xDoG(i)=...
-                                    temp_particles{i}{1}{10};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).GaussianIntensity(i)=...
-                                    temp_particles{i}{1}{11};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).CentralIntensity(i)=...
-                                    temp_particles{i}{1}{12};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).DOGIntensity(i)=...
-                                    temp_particles{i}{1}{13};
-%                                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).snippet_mask{i}=...
-%                                         NaN;
-%                                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).SisterDistance(i)=... 
-%                                         temp_particles{i}{1}{17};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).ConfidenceIntervals{i}=...
-                                    temp_particles{i}{1}{19};
-%                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).gaussSpot{i}=...
-%                                     temp_particles{i}{1}{20};
-%                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).rawSpot{i}=...
-%                                     temp_particles{i}{1}{21};
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).z(i)=...
-                                    i;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).gaussParams{i}=...
-                                    temp_particles{i}{1}{22};
+                            if ~isempty(temp_particles{zIndex}{1})
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity(zIndex)=...
+                                temp_particles{zIndex}{1}{1};
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFit(zIndex)=...
+                                    temp_particles{zIndex}{1}{2};
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yFit(zIndex)=...
+                                    temp_particles{zIndex}{1}{3};
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Offset(zIndex)=...
+                                    temp_particles{zIndex}{1}{4};
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Area{zIndex}=...
+                                    temp_particles{zIndex}{1}{6};
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yDoG(zIndex)=...
+                                    temp_particles{zIndex}{1}{9};
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xDoG(zIndex)=...
+                                    temp_particles{zIndex}{1}{10};
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).GaussianIntensity(zIndex)=...
+                                    temp_particles{zIndex}{1}{11};
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).CentralIntensity(zIndex)=...
+                                    temp_particles{zIndex}{1}{12};
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).DOGIntensity(zIndex)=...
+                                    temp_particles{zIndex}{1}{13};
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).ConfidenceIntervals{zIndex}=...
+                                    temp_particles{zIndex}{1}{19};
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).z(zIndex)=...
+                                    zIndex;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).gaussParams{zIndex}=...
+                                    temp_particles{zIndex}{1}{22};
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).intArea=...
-                                    temp_particles{i}{1}{23};
+                                    temp_particles{zIndex}{1}{23};
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).discardThis=...
                                     0;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).frame=...
                                     CurrentFrame;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).r=...
-                                    0;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).r = 0;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity3 = NaN;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity5 = NaN;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).cylIntensity(i) = temp_particles{i}{1}{24};
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).brightestZ = NaN;
                                 
                             else
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity(i)=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFit(i)=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yFit(i)=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Offset(i)=...
-                                    nan;
-%                                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Snippet{i}=...
-%                                         nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Area{i}=...
-                                    nan;
-%                                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFitWidth{i}=...
-%                                         nan;
-%                                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yFitWidth{i}=...
-%                                         nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yDoG(i)=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xDoG(i)=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).GaussianIntensity(i)=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).CentralIntensity(i)=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).DOGIntensity(i)=...
-                                    nan;
-%                                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).snippet_mask{i}=...
-%                                         nan;
-%                                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).SisterDistance(i)=... 
-%                                         nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).ConfidenceIntervals{i}=...
-                                    nan;
-%                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).gaussSpot{i}=...
-%                                     nan;
-%                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).rawSpot{i}=...
-%                                     nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).z(i)=...
-                                    i;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).gaussParams{i}=...
-                                    nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).discardThis=...
-                                    0;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).frame=...
-                                    CurrentFrame;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).r=...
-                                    0;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity(zIndex)=nan;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFit(zIndex)=nan;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yFit(zIndex)=nan;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Offset(zIndex)=nan;                               Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Area{zIndex}= nan;                    
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yDoG(zIndex)= nan;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xDoG(zIndex)= nan;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).GaussianIntensity(zIndex)=nan;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).CentralIntensity(zIndex)=nan;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).DOGIntensity(zIndex)=nan;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).ConfidenceIntervals{zIndex}=nan;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).z(zIndex)=zIndex;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).gaussParams{zIndex}=nan;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).discardThis=0;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).frame=CurrentFrame;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).r=0;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity3 = NaN;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).cylIntensity(i) = NaN;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).cylIntensity(zIndex) = NaN;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity5 = NaN;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).brightestZ = NaN;
                             end
@@ -1545,7 +1500,7 @@ while (cc~='x')
                             disp('No spot added. Did you click too close to the image boundary?')
                             breakflag = 1;
                             break
-                        end                                  
+                        end
                     end
                                                     
                     if ~breakflag
@@ -1616,17 +1571,17 @@ while (cc~='x')
             %We need to save the data
             save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo')
             if UseHistoneOverlay
-                save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2', '-v7.3')
+                save([DataFolder,filesep,'Particles.mat'],'Particles','Threshold1','Threshold2', '-v7.3')
                 save([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'],'schnitzcells', '-v7.3')
             else
-                save([DataFolder,filesep,'Particles.mat'],'Particles','fad','fad2','Threshold1','Threshold2', '-v7.3')            
+                save([DataFolder,filesep,'Particles.mat'],'Particles','Threshold1','Threshold2', '-v7.3')            
             end
         disp('Particles saved.')
         if NChannels==1
             Particles=Particles{1};
         end
             
-           [Particles,schnitzcells,fad,fad2]=TrackmRNADynamics(FilePrefix(1:end-1),...
+           [Particles,schnitzcells]=TrackmRNADynamics(FilePrefix(1:end-1),...
                Threshold1,Threshold2); 
         if NChannels==1
             Particles={Particles};
@@ -1978,8 +1933,13 @@ while (cc~='x')
         
     elseif cc=='t'
         ShowThreshold2=~ShowThreshold2;
-    elseif (cc=='y')&(~UseHistoneOverlay)
-            FrameInfo=DetermineNC(fad,Particles{CurrentChannel},FrameInfo);
+        
+%     elseif (cc=='y')&(~UseHistoneOverlay)
+%             FrameInfo=DetermineNC(fad,Particles{CurrentChannel},FrameInfo);
+%     
+            %AR 9/5/18- this button is deprecated. leaving this comment in
+            %case we want to replace the functionality. 
+%            
     elseif cc=='h'
         if HideApprovedFlag==0
             HideApprovedFlag=1;         %Show only non-approved traces
