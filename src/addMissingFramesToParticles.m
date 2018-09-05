@@ -1,18 +1,15 @@
+function addMissingFramesToParticles(prefix)
 %% Information about the script
-% addMissingFramesToParticles will add the particle in frames that are 
-% between frames where the particle is present. 
+% addMissingFramesToParticles will add the particle in frames that are
+% between frames where the particle is present.
 
-% It is strongly encouraged that you disconnect any particles that are 
-% actually 2 particles before running this script. 
+% It is strongly encouraged that you disconnect any particles that are
+% actually 2 particles before running this script.
 
 %% Loading the data set of interest
 
-dataSetNames = {'2018-08-23-p2p_mcp_opt_5'};
-dataSetOfinterest = 1;
-prefix = dataSetNames{dataSetOfinterest};
-%[prefix,~] = getPrefixAndFolder; % in case the prefix above is not yours. 
+%[prefix,~] = getPrefixAndFolder; % in case the prefix above is not yours.
 intScale = 2;
-
 [~,~,dropboxFolder,~,~]= DetermineLocalFolders(prefix);
 [~,~,defaultDropboxFolder,~,PreProcPath]=...
     DetermineLocalFolders;
@@ -22,7 +19,10 @@ FilePrefix=[dataFolder(length(dropboxFolder)+2:end),'_'];
 % Particle Information and Loading
 particlePathName = [dataFolder,filesep,'Particles.mat'];
 load(particlePathName)
-Particles = {Particles};
+if ~iscell(Particles)
+    Particles = {Particles};
+    SpotFilter = {SpotFilter};
+end
 numberOfParticles = size(Particles{:},2);
 NChannels=1;
 nameSuffix=['_ch',iIndex(1,2)];
@@ -31,8 +31,9 @@ currentChannel = 1;
 % Spots Information and Loading
 spotsPathName = [dataFolder,filesep,'Spots.mat'];
 load(spotsPathName)
-Spots = {Spots};
-SpotFilter = {SpotFilter};
+if ~iscell(Spots)
+    Spots = {Spots};
+end
 
 % FrameInfo Information and Loading
 frameInfoPathName = [dataFolder,filesep,'FrameInfo.mat'];
@@ -59,6 +60,11 @@ end
 schnitzcellsPathName = [dropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'];
 load(schnitzcellsPathName)
 
+% log Information and Loading
+logFile = [dropboxFolder, filesep, prefix, filesep, 'log.mat'];
+% assuming that the log file has already been made by segmentspots
+load(logFile)
+
 %Taken from CheckParticleTracking
 %Remove the schnitz fields that can give us problems potentially if
 %present. I don't know how this came to be, but it's for fields that
@@ -71,7 +77,7 @@ if isfield(schnitzcells,'ang')
 end
 
 
-% Sorting Particles by their first frames
+%% Sorting Particles by their first frames
 for ChN=1:NChannels
     for i=1:length(Particles{ChN})
         FirstFrame(i)=Particles{ChN}(i).Frame(1);
@@ -111,10 +117,15 @@ disp(['Particles : ' num2str(particlesToDoubleCheck)])
 % 2. Go to the previous position of the particle
 % 3. Find the spots and shadows near the previous position.
 % 4. Repeat until all missing frames have been filled
+framesModified = {};
+counter = 1;
+frameInformationStruct = FrameInfo;
 for i = particlesToDoubleCheck
     currentFrames = Particles{currentChannel}(i).Frame;
     framesWithNoGaps = currentFrames(1):currentFrames(end);
     framesToCheck = framesWithNoGaps(~ismember(framesWithNoGaps,currentFrames));
+    framesModified{counter} = framesToCheck;
+    counter = counter + 1;
     
     for currentFrame = framesToCheck
         % Need to redefine the below each time you check for a new one
@@ -125,7 +136,7 @@ for i = particlesToDoubleCheck
         schnitzIndex=find(schnitzcells(Particles{currentChannel}(i).Nucleus).frames==currentFrame);
         nucleusIndex=schnitzcells(Particles{currentChannel}(i).Nucleus).cellno(schnitzIndex);
         nucleusCenterCoordinates = [Ellipses{currentFrame}(nucleusIndex,1:2)];
-       
+        
         % Finding the position in the previous frame
         previousFrame = currentFrame - 1;
         [x,y,z]=SpotsXYZ(Spots{currentChannel}(previousFrame)); % Looking at the previous frame
@@ -135,7 +146,7 @@ for i = particlesToDoubleCheck
         
         
         % The code below is from CheckParticleTracking (slightly modified)
-
+        
         connectPositionX = previousPositionOfParticle(1);%nucleusCenterCoordinates(1); % Why do we need to add 1?
         connectPositionY = previousPositionOfParticle(2);%nucleusCenterCoordinates(2);
         
@@ -161,7 +172,7 @@ for i = particlesToDoubleCheck
                 dog = spotsIm;
                 im_thresh = dog >= Threshold;
                 [im_label, ~] = bwlabel(im_thresh);
-                microscope = FrameInfo(1).FileMode;
+                microscope = frameInformationStruct(1).FileMode;
                 show_status = 0;
                 fig = [];
                 k = 1; %This is supposed to be the index for the partiles in an image.
@@ -316,6 +327,7 @@ for i = particlesToDoubleCheck
                     SpotFilter{currentChannel},Particles{currentChannel},...
                     currentFrame,SpotsIndex);
                 numberOfParticles = numberOfParticles + 1;
+                Particles{currentChannel}(end).FrameApproved = []; % not approved yet for this function
                 
                 %Connect this particle to the CurrentParticle. This is
                 %the equivalent of running the 'c' command.
@@ -327,7 +339,8 @@ for i = particlesToDoubleCheck
                 %Finally, force the code to recalculate the fluorescence trace
                 %for this particle
                 PreviousParticle=0;
-                disp('Spot addded to the current particle.')
+                spotAddedMessage = ['Spot added to the current particle ' num2str(i)];
+                disp(spotAddedMessage)
             else
                 warning('This particle is too close to the edge. A spot can''t be added here.');
             end
@@ -339,20 +352,23 @@ end
 
 %% Saving Particles and Spots
 % Possible insert: Double check the particles' traces before asking to save them
+log(end+1).Date = date;
+log(end).FunctionOrScriptUsed = 'addMissingFramesToParticles';
+log(end).ParticlesEdited = particlesToDoubleCheck;
+log(end).CorrespondingFramesAdded = framesModified;
 
-usersAnswer = input('Would you like to save these traces?','s');
+usersAnswer = input('Would you like to save these traces? (y/n)','s');
 saving = isequal('y',lower(usersAnswer));
 if saving
     disp('Saving the changes')
     % Saving all that hardwork!
-    save([dataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2', '-v7.3')
-    save([dataFolder,filesep,'Spots.mat'],'Spots','-v7.3')
+    save(particlePathName,'Particles','SpotFilter','Threshold1','Threshold2', '-v7.3')
+    save(spotsPathName,'Spots','-v7.3')
+    save(logFile,'log','-v7.3')
     % Note: did not use histone overlay so the _lin.mat file was not saved.
 end
 
-
-
-
+end
 
 
 

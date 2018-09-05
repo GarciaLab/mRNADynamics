@@ -73,7 +73,10 @@ function [Particles,falsePositives] = findBrightestZ(Particles, num_shadows, use
 %             Particles(i).FixedAreaIntensity5 = Particles(i).FixedAreaIntensity(Particles(i).brightestZ - 2) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ - 1) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ + 1) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ + 2);
         Particles(i).FixedAreaIntensity3 = nanmean(z_raw_values(ismember(z_grid,Particles(i).brightestZ-1:Particles(i).brightestZ+1)));
         Particles(i).FixedAreaIntensity5 = nanmean(z_raw_values(ismember(z_grid,Particles(i).brightestZ-2:Particles(i).brightestZ+2)));
-        Particles(i).cylIntensity = Particles(i).cylIntensity(ZStackIndex);
+        try
+            Particles(i).cylIntensity = Particles(i).cylIntensity(ZStackIndex);
+        catch
+        end
     
         %use convolution kernel to look for shadows
         z_raw_binary = ~isnan(z_raw_values);

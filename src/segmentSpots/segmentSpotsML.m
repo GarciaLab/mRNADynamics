@@ -309,8 +309,21 @@ else
             w = waitbar(current_frame/(num_frames-initial_frame),h);
             set(w,'units', 'normalized', 'position',[0.4, .15, .25,.1]);
             for i = 1:zSize   
+                
                 im = double(imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']));
+                
+                try
+                  imAbove = double(imread([PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(i-1, 2),...
+                    nameSuffix, '.tif']));
+                  imBelow = double(imread([PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(i+1, 2),...
+                    nameSuffix, '.tif']));
+                catch
+                  imAbove = nan(size(im,1),size(im,2));
+                  imBelow = nan(size(im,1),size(im,2));
+                end
+                
                 pMap = double(imread([OutputFolder1, filesep,'prob',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),nameSuffix,'.tif']));
+                
                 if displayFigures
                     fig = figure(1);
                     imshow(im,[]);
@@ -344,7 +357,7 @@ else
                         parfor k = 1:n_Spots
                             try
                                 centroid = round(centroids(k).Centroid);
-                                temp_particles(k) = identifySingleSpot(k, im, im_label, pMap, ...
+                                temp_particles(k) = identifySingleSpot(k, {im,imAbove,imBelow}, im_label, pMap, ...
                                     neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, 'ML', intScale);
                             catch 
                             end
@@ -352,7 +365,7 @@ else
                     else
                         for k = 1:n_Spots
                             centroid = round(centroids(k).Centroid);    
-                            temp_particles(k) = identifySingleSpot(k, im, im_label, pMap, ...
+                            temp_particles(k) = identifySingleSpot(k, {im,imAbove,imBelow}, im_label, pMap, ...
                                 neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, 'ML', intScale);
                         end
                     end
@@ -409,6 +422,7 @@ else
                          Particles(n).frame(1) = i;
                          Particles(n).r = 0;
                          Particles(n).intArea = cell2mat(all_frames{i,j}{spot}(23));
+                         Particles(n).cylIntensity = cell2mat(all_frames{i,j}{spot}(24));
                          Particles(n).IntegralZ = use_integral_center; 
                          Particles(n).snippet_size = snippet_size;
                          n = n + 1;

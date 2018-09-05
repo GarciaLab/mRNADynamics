@@ -65,10 +65,10 @@ function log = filterMovie(Prefix, varargin)
 
   clear rawdir;
 
-  pixelSize = FrameInfo(1).PixelSize * 1000;
+  pixelSize = FrameInfo(1).PixelSize * 1000; %nm
   close all force;
 
-  coatChannel = determineSegmentSpotsCoatChannel(ExperimentType, Channel1, Channel2);
+  coatChannel = getCoatChannel(ExperimentType, Channel1, Channel2);
 
   [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSize, customFilter, nCh, ExperimentType, ...
     coatChannel, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision);
@@ -89,7 +89,6 @@ function log = filterMovie(Prefix, varargin)
   log(end).runTime = t / 60; % min
   log(end).LastFrame = numFrames;
   log(end).TimePerFrame = (t / 60) / numFrames;
-
   log(end).Filter = filterType;
   log(end).sigmas = sigmas;
 

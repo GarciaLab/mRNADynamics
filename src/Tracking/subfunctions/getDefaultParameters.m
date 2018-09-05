@@ -14,9 +14,12 @@ function [ parameterValue ] = getDefaultParameters( parameterName, varargin )
 
 %% GLOBAL PARAMETERS
 
+time_resolution = 37;
+space_resolution = .22;
+
 parameters.global = {...
-    {37,'time resolution', 'timeResolution', 'time', 't'}...   % imaging period in seconds.
-    {0.22, 'space resolution', 'spaceResolution', 'space', 's'}...% pixel size in micrometers. 
+    {time_resolution,'time resolution', 'timeResolution', 'time', 't'}...   % imaging period in seconds.
+    {space_resolution, 'space resolution', 'spaceResolution', 'space', 's'}...% pixel size in micrometers. 
     {7.26, 'diameter nc7', 'd7'}... % diameter of nuclei during nc7 in micrometers.
     {7.26, 'diameter nc8', 'd8'}... % diameter of nuclei during nc8 in micrometers.
     {7.26, 'diameter nc9', 'd9'}... % diameter of nuclei during nc9 in micrometers.
@@ -37,7 +40,7 @@ parameters.global = {...
 
 % findMitosis
 parameters.findMitosis = {...
-    {0.22, 'smoothing factor', 'smoothing'}... % std of the spatial gaussian filter in micrometers. Was originally 1 pixel.
+    {space_resolution, 'smoothing factor', 'smoothing'}... % std of the spatial gaussian filter in micrometers. Was originally 1 pixel.
 	{259, 'time window', 'timewindow'}... % in seconds. Was originally 7 frames.
     };
 
