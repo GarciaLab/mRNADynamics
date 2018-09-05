@@ -1,15 +1,15 @@
-% determineThreshhold(Prefix,Channel)
+% determineThreshold(Prefix,Channel)
 %
 % DESCRIPTION
-% Tool for finding threshhold for segmentSpots. Generates a UI and starts
-% by picking a threshhold 4 standard deviations about the mean in the
-% brightest image. You can change this threshhold with a slider. Everything
-% below the threshhold is zeroes out so you can see what would be picked up
+% Tool for finding threshold for segmentSpots. Generates a UI and starts
+% by picking a threshold 4 standard deviations about the mean in the
+% brightest image. You can change this threshold with a slider. Everything
+% below the threshold is zeroes out so you can see what would be picked up
 % by segmentSpots
 %
 % ARGUMENTS
 % Prefix: Prefix of the data set to analyze
-% Channel: Channel to get threshhold for
+% Channel: Channel to get threshold for
 %
 % Author (contact): Sean Medin (smedin@berkeley.edu)
 % Created: 8/23/2018
@@ -17,7 +17,7 @@
 % Documented by: Sean Medin (smedin@berkeley.edu)
 
 
-function [thresh] = determineThreshhold(Prefix, Channel)
+function [thresh] = determineThreshold(Prefix, Channel)
 
     default_std = 5;
     num_frames_to_check = 100;
@@ -54,7 +54,7 @@ function [thresh] = determineThreshhold(Prefix, Channel)
             end
         end
     end
-    % generates UI for picking threshhold
+    % generates UI for picking threshold
     non_zero_dog = bestDOG(bestDOG > 0);
     mean_val = mean(non_zero_dog(:));
     std_val = std(non_zero_dog(:));
@@ -74,11 +74,11 @@ function [thresh] = determineThreshhold(Prefix, Channel)
     
     threshVal = uicontrol('Style','text',...
         'Position',[200 45 500 20],...
-        'String',['Threshhold = ' num2str(thresh) ' which is ' ...
+        'String',['threshold = ' num2str(thresh) ' which is ' ...
         num2str(default_std) ' sds above the mean pixel value']);
     
     % Create push button
-    btn = uicontrol('Style', 'pushbutton', 'String', 'Use Threshhold',...
+    btn = uicontrol('Style', 'pushbutton', 'String', 'Use threshold',...
         'Position', [700 20 250 20],...
         'Callback', @use_thresh); 
     
@@ -92,7 +92,7 @@ function [thresh] = determineThreshhold(Prefix, Channel)
         im.CData = dog_copy;
         threshSlider.Value = thresh;
 
-        threshVal.String = ['Threshhold = ' num2str(thresh) ' which is ' ...
+        threshVal.String = ['threshold = ' num2str(thresh) ' which is ' ...
             num2str(std_above_mean) ' sds above the mean pixel value']; 
                  
     end

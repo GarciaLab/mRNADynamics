@@ -117,7 +117,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
   all_frames = cell(numFrames, zSize);
   close all force;
 
-  coatChannel = determineSegmentSpotsCoatChannel(ExperimentType, Channel1, Channel2);
+  coatChannel = getCoatChannel(ExperimentType, Channel1, Channel2);
   Spots = [];
   falsePositives = 0;
 

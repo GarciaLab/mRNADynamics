@@ -13,11 +13,8 @@ function [Particles,SpotFilter]=AssignParticle2Nucleus(...
 %are performing retracking
 if isfield(Particles,'Approved')
     Retracking=1;
-    %HG for v2, I got rid of this
-    %SearchRadius=SearchRadius*2;        %HG: Why did I decide to do this?
 else
     Retracking=0;
-    %SearchRadius=inf;
 end
 
 
@@ -107,25 +104,16 @@ if ~isempty(NewSpotsX)
     %Find the schnitz that were closest to the spots found in this frame.
     UniqueMinIndexSchnitz=unique(MinIndexSchnitz);
     for i=1:length(UniqueMinIndexSchnitz)
+      
         
-        if (CurrentFrame==12)&(UniqueMinIndexSchnitz(i)==15)
-            1+1
-        end
-        
-        %Find the particles that are assigned to this schnitz
+       %Find the particles that are assigned to this schnitz
         ParticleToAssign=find(AssignedSchnitz==UniqueMinIndexSchnitz(i));
 
         %Are there any particles in previous frames that are assigned to
         %this schnitz? If not, we move on and define the current spots as
         %new particles.
         if ~isempty(ParticleToAssign)
-            
-            %HG: For debugging
-            if length(ParticleToAssign)>2
-                1+1
-            end
-            
-            
+                        
             %Find the spots I need to locate to this schnitz
             SpotToParticleIndices=find(MinIndexSchnitz==UniqueMinIndexSchnitz(i));
             %Get the spots' XY positions

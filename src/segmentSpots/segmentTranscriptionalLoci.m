@@ -6,12 +6,14 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
   if strcmpi(ExperimentType, 'inputoutput') ||  strcmpi(ExperimentType, 'lattice')
     nameSuffix= ['_ch', iIndex(coatChannel, 2)];
     if Threshold == -1
-        Threshold = determineThreshhold(Prefix, coatChannel)
+        Threshold = determineThreshold(Prefix, coatChannel);
+        display(['Threshold: ', num2str(Threshold)])
     end
   else
     nameSuffix = ['_ch', iIndex(channelIndex, 2)];
     if Threshold == -1
-        Threshold = determineThreshhold(Prefix, channelIndex)
+        Threshold = determineThreshold(Prefix, channelIndex);
+        display(['Threshold: ', num2str(Threshold)])
     end
   end        
   

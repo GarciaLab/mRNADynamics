@@ -1,4 +1,4 @@
-function coatChannel = determineSegmentSpotsCoatChannel(ExperimentType, Channel1, Channel2)
+function coatChannel = getCoatChannel(ExperimentType, Channel1, Channel2)
   % Support for inputoutput mode (since the coatChannel might not be
   % channel1 in inputoutput ExperimentType (YJK : 1/11/2018)
   % (MT, 2018-02-11) Added support for lattice imaging, maybe temporary -
