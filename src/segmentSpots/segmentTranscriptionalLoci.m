@@ -5,8 +5,14 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
   % temporary - FIX LATER
   if strcmpi(ExperimentType, 'inputoutput') ||  strcmpi(ExperimentType, 'lattice')
     nameSuffix= ['_ch', iIndex(coatChannel, 2)];
+    if Threshold == -1
+        Threshold = determineThreshhold(Prefix, coatChannel)
+    end
   else
     nameSuffix = ['_ch', iIndex(channelIndex, 2)];
+    if Threshold == -1
+        Threshold = determineThreshhold(Prefix, channelIndex)
+    end
   end        
   
   for current_frame = 1:numFrames

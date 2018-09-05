@@ -47,7 +47,7 @@ function generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameS
 
   im = double(imread(fileName));
 
-  if strcmp(filterType, 'Difference_of_Gaussian')
+  if strcmpi(filterType, 'Difference_of_Gaussian')
     dog = filterImage(im, filterType, sigmas, filterSize);
     
     if highPrecision
@@ -61,8 +61,12 @@ function generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameS
   dog = padarray(dog(filterSize:end - filterSize - 1, filterSize:end - filterSize - 1), [filterSize, filterSize]);
   dog_name = ['DOG_', Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(zIndex, 2), nameSuffix, '.tif'];
   dog_full_path = [DogOutputFolder, filesep, dog_name];
-  imwrite(uint16(dog), dog_full_path)
-  
+  if ~highPrecision
+    imwrite(uint16(dog), dog_full_path)
+  else
+    imwrite(uint16(dog), dog_full_path)
+%     'done'
+  end
   if displayFigures
     imshow(dog, [median(dog(:)), max(dog(:))]);
   end
