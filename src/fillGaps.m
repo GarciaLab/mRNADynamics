@@ -1,11 +1,12 @@
-function addMissingFramesToParticles(prefix, varargin)
+function fillGaps(prefix, varargin)
 %% Information about the script
-% addMissingFramesToParticles will add the particle in frames that are
+% fillGaps will add the particle in frames that are
 % between frames where the particle is present.
 
 % It is strongly encouraged that you disconnect any particles that are
 % actually 2 particles before running this script.
 
+%Author: Emma Luu (emma_luu@berkeley.edu)
 %% Loading the data set of interest
 
 %[prefix,~] = getPrefixAndFolder; % in case the prefix above is not yours.
@@ -210,14 +211,8 @@ for i = particlesToDoubleCheck
                             temp_particles{j}{1}{3};
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).Offset(j)=...
                             temp_particles{j}{1}{4};
-                        %                                 Spots{currentChannel}(CurrentFrame).Fits(SpotsIndex).Snippet{j}=...
-                        %                                     temp_particles{j}{1}{5};
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).Area{j}=...
                             temp_particles{j}{1}{6};
-                        %                                     Spots{currentChannel}(CurrentFrame).Fits(SpotsIndex).xFitWidth{j}=...
-                        %                                         temp_particles{j}{1}{7};
-                        %                                     Spots{currentChannel}(CurrentFrame).Fits(SpotsIndex).yFitWidth{j}=...
-                        %                                         temp_particles{j}{1}{8};
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).yDoG(j)=...
                             temp_particles{j}{1}{9};
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).xDoG(j)=...
@@ -228,16 +223,9 @@ for i = particlesToDoubleCheck
                             temp_particles{j}{1}{12};
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).DOGIntensity(j)=...
                             temp_particles{j}{1}{13};
-                        %                                     Spots{currentChannel}(CurrentFrame).Fits(SpotsIndex).snippet_mask{j}=...
-                        %                                         NaN;
-                        %                                     Spots{currentChannel}(CurrentFrame).Fits(SpotsIndex).SisterDistance(j)=...
-                        %                                         temp_particles{j}{1}{17};
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).ConfidenceIntervals{j}=...
                             temp_particles{j}{1}{19};
-                        %                                 Spots{currentChannel}(CurrentFrame).Fits(SpotsIndex).gaussSpot{j}=...
-                        %                                     temp_particles{j}{1}{20};
-                        %                                 Spots{currentChannel}(CurrentFrame).Fits(SpotsIndex).rawSpot{j}=...
-                        %                                     temp_particles{j}{1}{21};
+
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).z(j)=...
                             j;
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).gaussParams{j}=...
@@ -262,16 +250,9 @@ for i = particlesToDoubleCheck
                             nan;
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).yFit(j)=...
                             nan;
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).Offset(j)=...
-                            nan;
-                        %                                     Spots{currentChannel}(CurrentFrame).Fits(SpotsIndex).Snippet{j}=...
-                        %                                         nan;
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).Offset(j)=nan;  
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).Area{j}=...
                             nan;
-                        %                                     Spots{currentChannel}(CurrentFrame).Fits(SpotsIndex).xFitWidth{j}=...
-                        %                                         nan;
-                        %                                     Spots{currentChannel}(CurrentFrame).Fits(SpotsIndex).yFitWidth{j}=...
-                        %                                         nan;
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).yDoG(j)=...
                             nan;
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).xDoG(j)=...
@@ -282,16 +263,9 @@ for i = particlesToDoubleCheck
                             nan;
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).DOGIntensity(j)=...
                             nan;
-                        %                                     Spots{currentChannel}(CurrentFrame).Fits(SpotsIndex).snippet_mask{j}=...
-                        %                                         nan;
-                        %                                     Spots{currentChannel}(CurrentFrame).Fits(SpotsIndex).SisterDistance(j)=...
-                        %                                         nan;
+
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).ConfidenceIntervals{j}=...
                             nan;
-                        %                                 Spots{currentChannel}(CurrentFrame).Fits(SpotsIndex).gaussSpot{j}=...
-                        %                                     nan;
-                        %                                 Spots{currentChannel}(CurrentFrame).Fits(SpotsIndex).rawSpot{j}=...
-                        %                                     nan;
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).z(j)=...
                             j;
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).gaussParams{j}=...
@@ -371,10 +345,19 @@ log(end).CorrespondingFramesAdded = framesModified;
 % usersAnswer = input('Would you like to save these traces? (y/n)','s');
 % saving = isequal('y',lower(usersAnswer));
 saving = true;
-
 if saving && ~isempty(particlesToDoubleCheck)
     disp('Saving the changes')
     % Saving all that hardwork!
+
+    %If we only have one channel bring Particles back to the legacy
+    %format without any cells
+
+    if NChannels==1
+        Particles=Particles{1};
+        Spots=Spots{1};
+        SpotFilter=SpotFilter{1};
+    end
+     
     save(particlePathName,'Particles','SpotFilter','Threshold1','Threshold2', '-v7.3')
     save(spotsPathName,'Spots','-v7.3')
     save(logFile,'log','-v7.3')
