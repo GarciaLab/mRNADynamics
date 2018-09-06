@@ -412,12 +412,8 @@ else
                          Particles(n).discardThis = 0;
                          Particles(n).frame(1) = frameIndex;
                          Particles(n).r = 0;
-<<<<<<< HEAD
                          Particles(n).intArea = cell2mat(all_frames{frameIndex,zIndex}{spot}(23));
-=======
-                         Particles(n).intArea = cell2mat(all_frames{i,j}{spot}(23));
-                         Particles(n).cylIntensity = cell2mat(all_frames{i,j}{spot}(24));
->>>>>>> fba6ca7eb7e3063f7c6619b605ba2e58c88e8154
+                         Particles(n).cylIntensity = cell2mat(all_frames{frameIndex,zIndex}{spot}(24));
                          Particles(n).IntegralZ = use_integral_center; 
                          Particles(n).snippet_size = snippet_size;
                          n = n + 1;

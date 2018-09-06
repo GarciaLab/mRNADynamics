@@ -51,7 +51,7 @@ nTilesY = round(size(img1,2)/subTileSize);
 img1 = medfilt2(img1);
 img2 = medfilt2(img2);
 
-parfor j = 1:nTilesY
+for j = 1:nTilesY
     
     for jj = 1:nTilesX
         centerX = (jj-0.5)*subTileSize;
