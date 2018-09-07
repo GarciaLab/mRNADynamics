@@ -112,7 +112,7 @@ NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
 
 %Add the AP and DV Position to Particles if they don't exist yet
 if ((~isfield(schnitzcells,'APpos'))&&(strcmpi(ExperimentAxis,'ap')))||...
-        (~isfield(schnitzcells,'DVpos'))&&((strcmpi(ExperimentAxis,'apdv'))||(strcmpi(ExperimentAxis,'dv'))
+        (((~isfield(schnitzcells,'DVpos'))&&(strcmpi(ExperimentAxis,'apdv')))||(strcmpi(ExperimentAxis,'dv')))
     %First, run this to get the alignment between the zoom-in and zoom-out
     %images:
     AddParticlePosition(Prefix)
@@ -216,7 +216,7 @@ for i=1:length(schnitzcells)
             
             if (strcmpi(ExperimentAxis,'dv'))||(strcmpi(ExperimentAxis,'apdv'))
                 %Determine the particles average and median DV position
-                CompiledNuclei(k).MeanDV=mean(schnitzcells(i)DVPpos(FrameFilter));
+                CompiledNuclei(k).MeanDV=mean(schnitzcells(i).DVpos(FrameFilter));
                 CompiledNuclei(k).MedianDV=median(schnitzcells(i).DVpos(FrameFilter));
             end
 
@@ -366,7 +366,7 @@ if strcmpi(ExperimentAxis,'dv') || strcmpi(ExperimentAxis,'apdv')
     %particle falls where.
 
     %JAKE: We need to change this!
-    DVResolution=;
+    DVResolution=0.1;
     DVbinID=0:DVResolution:1;
 
     DVFilter=false(length(CompiledNuclei),length(DVbinID));
@@ -905,6 +905,7 @@ else if strcmpi(ExperimentAxis,'apdv')
             'nc12','nc13','nc14','ncFilterID','ncFilter','MeanVectorAll',...
             'SDVectorAll','NParticlesAll','MaxFrame',...
             'MeanCyto','SDCyto','MedianCyto','MaxCyto','IntegrationArea', '-v7.3')
+    end
     end
 end
 
