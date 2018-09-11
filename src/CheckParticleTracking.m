@@ -111,7 +111,6 @@ close all
 warning('off','MATLAB:nargchk:deprecated')
 warning('off','MATLAB:mir_warning_maybe_uninitialized_temporary')
 
-
 %% Information about about folders
 
 %Get the folders
@@ -1370,12 +1369,9 @@ while (cc~='x')
             ZoomMode=0;
             GlobalZoomMode=0;
         end
-    
-%     note to ar: a potentially simpler version of this button deletes
-%     particle frame but not spot. implement that with a different button.
-%           
+         
     elseif cc=='[' || cc=='{' %Add particle and all of its shadows to Spots.
-        
+             
         %Check that we're in zoom mode. If not, set it up.
         if ~(ZoomMode || GlobalZoomMode)
             disp('You need to be in Zoom Mode to do this. You can switch using ''o'' or ''+''. Run the ''['' command again.')
@@ -1399,6 +1395,16 @@ while (cc~='x')
                         && (ConnectPositiony > snippet_size/2) && (ConnectPositiony + snippet_size/2 < LinesPerFrame)
                     SpotsIndex = length(Spots{CurrentChannel}(CurrentFrame).Fits)+1;
                     breakflag = 0;
+                    maxWorkers = 8;
+                    try 
+                      parpool(maxWorkers);
+                    catch 
+                      try 
+                        parpool; % in case there aren't enough cores on the computer
+                      catch 
+                        % parpool throws an error if there's a pool already running.
+                      end 
+                    end
                     parfor i = 1:ZSlices %#ok<PFUIX>
                         spotsIm=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                              FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i,2),nameSuffix,'.tif']);                                                
