@@ -7,7 +7,7 @@ function [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,Curren
 %Find the closest particle and its index
 [x,y]=SpotsXYZ(Spots(CurrentFrame));
 Distances=sqrt((x-ConnectPosition(1)).^2+(y-ConnectPosition(2)).^2);
-[Dummy,IndexOutput]=min(Distances);
+[~,IndexOutput]=min(Distances);
 
 %Now, look for the particle in the Particles structure
 if isempty(Distances)

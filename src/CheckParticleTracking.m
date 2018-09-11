@@ -1594,33 +1594,54 @@ while (cc~='x')
             end
         end
     elseif cc=='c'
+        
+        
         PreviousParticle=0;
-        if ~sum(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame)
-            %ConnectPosition=ginput(1);
+        
+        exitConnectFlag = 0;
+        
+        
+        currentParticleExistsInCurrentFrame = sum(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame);
+        
+        if ~currentParticleExistsInCurrentFrame
             
             [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'b', 'linewidth',1);
             ConnectPosition = [ConnectPositionx,ConnectPositiony];
             
             if ~isempty(ConnectPosition)
-                [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
+                % find index of the particle we want to add (a.k.a output particle) to current
+                % particle (current particle)
+                [ParticleOutput,~]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
                
-                
+ 
                 %Check that the clicked particle doesn't exist in a previous
                 %frame, that there is no overlap of frames. If it does
                 %exist in a previous frame we will have to disconnect it.
-                if sum(Particles{CurrentChannel}(ParticleOutput).Frame<CurrentFrame)
-                    %Disconnect the clicked particle
-                    Particles{CurrentChannel}=SeparateParticleTraces(ParticleOutput,CurrentFrame,Particles{CurrentChannel});
-                    ParticleOutput=ParticleOutput+1;
+                
+               
+                clickedParticleExistsInAnyPreviousFrame = sum(Particles{CurrentChannel}(ParticleOutput).Frame<CurrentFrame);
+                
+
+                if clickedParticleExistsInAnyPreviousFrame
                     
-                    %If the current particle has an index larger than that
-                    %of the clicked particle (ParticleOutput) we also need to
-                    %move the index of the current Particle by one.
-                    if ParticleOutput<CurrentParticle
-                    	CurrentParticle=CurrentParticle+1;
-                    end
+                    
+                    msgbox('this button doesn''t currently support adding traces in this direction. try changing to this particle and then adding to the future particle.')
+                    exitConnectFlag = 1;
+% 
+%                     %Disconnect the clicked particle
+%                     Particles{CurrentChannel}=SeparateParticleTraces(ParticleOutput,CurrentFrame,Particles{CurrentChannel});
+%                     ParticleOutput=ParticleOutput+1;
+%                     
+%                     %If the current particle has an index larger than that
+%                     %of the clicked particle (ParticleOutput) we also need to
+%                     %move the index of the current Particle by one.
+%                     if ParticleOutput<CurrentParticle
+%                     	CurrentParticle=CurrentParticle+1;
+%                     end
+                    
                 end
                 
+                if ~exitConnectFlag
                 %Check that there is no overlap. If so, split current particle
                 overlap=0;
                 for i=1:length(Particles{CurrentChannel}(ParticleOutput).Frame)
@@ -1659,10 +1680,14 @@ while (cc~='x')
                 Particles{CurrentChannel}(CurrentParticle).FrameApproved=Particles{CurrentChannel}(CurrentParticle).FrameApproved(Permutations);                
 
             end
+            end
             
         else
-            ConnectPosition=ginput(1);
-            [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
+            
+            [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'b', 'linewidth',1);
+            ConnectPosition = [ConnectPositionx,ConnectPositiony];
+            
+            [ParticleOutput,~]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
             
             %If it's an independent particle swap it with the frame in the
             %current particle
