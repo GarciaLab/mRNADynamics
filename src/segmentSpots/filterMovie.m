@@ -37,7 +37,7 @@ function log = filterMovie(Prefix, varargin)
 
   warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
-  [displayFigures, numFrames, customFilter, highPrecision, filterType] = determineFilterMovieOptions(varargin);
+  [displayFigures, numFrames, customFilter, highPrecision, filterType, sigmas] = determineFilterMovieOptions(varargin);
 
   % Start timer
   tic;
@@ -71,7 +71,7 @@ function log = filterMovie(Prefix, varargin)
   coatChannel = getCoatChannel(ExperimentType, Channel1, Channel2);
 
   [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSize, customFilter, nCh, ExperimentType, ...
-    coatChannel, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision);
+    coatChannel, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision, sigmas);
 
   t = toc;
   

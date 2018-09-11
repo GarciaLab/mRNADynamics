@@ -1,4 +1,4 @@
-function [displayFigures, numFrames, customFilter, highPrecision, filterType] = determineFilterMovieOptions(varargin)
+function [displayFigures, numFrames, customFilter, highPrecision, filterType, sigmas] = determineFilterMovieOptions(varargin)
   
 
   varargin = varargin{1};
