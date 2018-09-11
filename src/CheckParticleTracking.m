@@ -1545,7 +1545,7 @@ while (cc~='x')
                             JoinParticleTraces(CurrentParticle,...
                             numParticles,Particles{CurrentChannel});
                         else
-                            disp('Re-run TrackmRNADynamics to associate this particle with a nucleus and trace.')
+                            disp('Re-run TrackmRNADynamics to associate this particle with a nucleus and trace or manually join with the ''c'' button.')
                         end
 
                         %Finally, force the code to recalculate the fluorescence trace
