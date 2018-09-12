@@ -1,4 +1,4 @@
-function [ parameterValue ] = getDefaultParameters(parameterName, varargin)
+function [ parameterValue ] = getDefaultParameters(Prefix, parameterName, varargin)
 %GETDEFAULTPARAMETERS All default settings are grouped in here, so that
 %they can dynamically be redefined in all functions.
 %
@@ -12,12 +12,18 @@ function [ parameterValue ] = getDefaultParameters(parameterName, varargin)
 % of the one appearing first in the cell is returned.
 
 
+[~, ~, ~, DropboxFolder, ~, ~,~, ~] = DetermineAllLocalFolders(Prefix);
+
+load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']) %#ok<LOAD>
+
 %% GLOBAL PARAMETERS
 
 % % time_resolution = 37;
 % % space_resolution = .22;
-time_resolution = 9.56;
-space_resolution = .0708;
+% time_resolution = 9.56; %AR 9/11/2018 
+% space_resolution = .0708;%AR 9/11/2018 
+time_resolution = median(diff([FrameInfo.Time]));     %Median separation between frames (in seconds)
+space_resolution = FrameInfo(1).PixelSize; % (um)
 
 parameters.global = {...
     {time_resolution,'time resolution', 'timeResolution', 'time', 't'}...   % imaging period in seconds.
@@ -68,7 +74,7 @@ parameters.trackToTheNextFrame = {...
 %% CODE
 
 % Default is set as a global parameter
-if nargin == 1
+if nargin == 2
     field = 'global';
 else
     field = varargin{1};

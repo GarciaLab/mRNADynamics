@@ -1,4 +1,4 @@
-function [ nuclei, varargout ] = trackWholeInterphase( names, startingFrame, previousMitosisInd, nextMitosisInd, nucleusDiameter, embryoMask, xy, mapping, nuclei, shifts, varargin )
+function [ nuclei, varargout ] = trackWholeInterphase(Prefix, names, startingFrame, previousMitosisInd, nextMitosisInd, nucleusDiameter, embryoMask, xy, mapping, nuclei, shifts, varargin )
 %TRACKWHOLEINTERPHASE Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -10,12 +10,12 @@ startingFrame = previousMitosisInd;
 
 totalNumberOfFrames = numel(names);
 numberOfFrames = nextMitosisInd-previousMitosisInd+1;
-time_resolution = getDefaultParameters('time resolution');
-space_resolution = getDefaultParameters('space resolution');
-edgeClearance = getDefaultParameters('edge clearance')*nucleusDiameter/space_resolution;
+time_resolution = getDefaultParameters(Prefix,'time resolution');
+space_resolution = getDefaultParameters(Prefix,'space resolution');
+edgeClearance = getDefaultParameters(Prefix,'edge clearance')*nucleusDiameter/space_resolution;
 img = imread(names{startingFrame});
-marginBeforeMitosis = ceil(getDefaultParameters('increased precision before mitosis')/time_resolution);
-marginAfterMitosis = ceil(getDefaultParameters('increased precision after mitosis')/time_resolution);
+marginBeforeMitosis = ceil(getDefaultParameters(Prefix,'increased precision before mitosis')/time_resolution);
+marginAfterMitosis = ceil(getDefaultParameters(Prefix,'increased precision after mitosis')/time_resolution);
 %This looks like it decides to use existing data that was passed to it, and
 %if none was provided makes it itself. 
 if exist('xy','var') && ~isempty(xy)
@@ -25,7 +25,7 @@ if exist('xy','var') && ~isempty(xy)
 else
     skip_segmentation = false;
     XY = cell(numberOfFrames,1);
-    XY{startingFrame-previousMitosisInd+1} = findNuclei(names,startingFrame,nucleusDiameter, embryoMask, [],[1 1 1 1 1]);
+    XY{startingFrame-previousMitosisInd+1} = findNuclei(Prefix,names,startingFrame,nucleusDiameter, embryoMask, [],[1 1 1 1 1]);
 end
 if ~exist('shifts','var') || isempty(shifts)
     shifts = cell(totalNumberOfFrames-1,1);
@@ -52,7 +52,7 @@ numberOfNuclei = size(XY{startingFrame-previousMitosisInd+1},1);
 %the errors
 ind = true(length(XY{startingFrame-previousMitosisInd+1}),1);
 nucleiIndices = nan(size(XY{1},1),1);
-for j = 1:size(XY{1},1);
+for j = 1:size(XY{1},1)
     for jj = 1:numel(nuclei)
         if nuclei(jj).indXY(previousMitosisInd) == j
             nucleiIndices(j) = jj;
@@ -77,9 +77,9 @@ for j = 1:(nextMitosisInd-startingFrame)%[]%1:(nextMitosisInd-startingFrame)
     [currentFrameNumber,currentFrameInd,newFrameNumber,newFrameInd];
     
     if skip_segmentation
-        [mapping{currentFrameInd},dummy1,dummy2,ind, shifts{currentFrameNumber}] = frame2frameCorrespondence(names,currentFrameNumber,newFrameNumber,XY{currentFrameInd},nucleusDiameter,1,XY{newFrameInd},mapping{currentFrameNumber},shifts{currentFrameNumber});%, embryoMask, targetNumber, [1 1 1]);
+        [mapping{currentFrameInd},~,~,ind, shifts{currentFrameNumber}] = frame2frameCorrespondence(Prefix, names,currentFrameNumber,newFrameNumber,XY{currentFrameInd},nucleusDiameter,1,XY{newFrameInd},mapping{currentFrameNumber},shifts{currentFrameNumber});%, embryoMask, targetNumber, [1 1 1]);
     else
-        [mapping{currentFrameInd},XY{newFrameInd},dummy,ind, shifts{currentFrameNumber}] = frame2frameCorrespondence(names,currentFrameNumber,newFrameNumber,XY{currentFrameInd},nucleusDiameter,1,[],shifts{currentFrameNumber});%, embryoMask, [],[1 1 0]);
+        [mapping{currentFrameInd},XY{newFrameInd},dummy,ind, shifts{currentFrameNumber}] = frame2frameCorrespondence(Prefix,names,currentFrameNumber,newFrameNumber,XY{currentFrameInd},nucleusDiameter,1,[],shifts{currentFrameNumber});%, embryoMask, [],[1 1 0]);
     end
     
     % Put the output in the nuclei structure.

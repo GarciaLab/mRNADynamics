@@ -1,4 +1,4 @@
-function [ trackingStartingPoints ] = choseFramesToStartTracking( indMitosis, numberOfFrames )
+function [ trackingStartingPoints ] = choseFramesToStartTracking(Prefix, indMitosis, numberOfFrames )
 %CHOSEFRAMESTOSTARTTRACKING This function decides where the tracking should
 % start. Tracking is done forward and backward through time, so any time
 % between two mitosis could be chosen. A good choice corresponds to a frame
@@ -15,8 +15,8 @@ function [ trackingStartingPoints ] = choseFramesToStartTracking( indMitosis, nu
 % picked.
 
 % Get Parameters
-time_resolution = getDefaultParameters('time resolution');
-delta_time_tracking = getDefaultParameters('delta t','choseFramesToStartTracking')/time_resolution;
+time_resolution = getDefaultParameters(Prefix,'time resolution');
+delta_time_tracking = getDefaultParameters(Prefix,'delta t','choseFramesToStartTracking')/time_resolution;
 
 %indicesMitosis = unique([1;indMitosis]);
 

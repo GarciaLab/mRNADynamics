@@ -1,12 +1,12 @@
-function [ mapping, nextNucleiXY, score, inverse_mapping, varargout ] = frame2frameCorrespondence( names, frameNumber1, frameNumber2, nucleiFrame1, nucleusDiameter, precision, nucleiFrame2, manualMapping, shifts )
+function [ mapping, nextNucleiXY, score, inverse_mapping, varargout ] = frame2frameCorrespondence(Prefix, names, frameNumber1, frameNumber2, nucleiFrame1, nucleusDiameter, precision, nucleiFrame2, manualMapping, shifts )
 %FRAME2FRAMECORRESPONDENCE Summary of this function goes here
 %   Detailed explanation goes here
 
 %% 0. Initialize Parameters
-space_resolution = getDefaultParameters('space resolution');
-time_resolution = getDefaultParameters('time resolution');
-maxShiftCorrection = getDefaultParameters('max Shift Correction', 'trackToTheNextFrame')*nucleusDiameter/space_resolution;
-maxNucleusStep = getDefaultParameters('max Interphase Displacement')*time_resolution/60*nucleusDiameter/space_resolution;
+space_resolution = getDefaultParameters(Prefix,'space resolution');
+time_resolution = getDefaultParameters(Prefix,'time resolution');
+maxShiftCorrection = getDefaultParameters(Prefix,'max Shift Correction', 'trackToTheNextFrame')*nucleusDiameter/space_resolution;
+maxNucleusStep = getDefaultParameters(Prefix,'max Interphase Displacement')*time_resolution/60*nucleusDiameter/space_resolution;
 mapping = zeros(size(nucleiFrame1,1),1);
 numbNucleiToConsider = 7;
 
@@ -15,7 +15,7 @@ frame2 = double(imread(names{frameNumber2}));
 
 %% 1. Find overall movements between the two frames
 if ~exist('shifts','var') || isempty(shifts)
-    [x,y,vx,vy] = interpolatedShift(frame1, frame2, maxShiftCorrection, [], [], precision);
+    [x,y,vx,vy] = interpolatedShift(Prefix, frame1, frame2, maxShiftCorrection, [], [], precision);
     varargout{1}(:,:,1) = vx;
     varargout{1}(:,:,2) = vy;
 else
@@ -33,7 +33,7 @@ end
 
 %% 2. If not provided, find nuclei in the second frame
 if ~exist('nucleiFrame2','var') || isempty(nucleiFrame2)
-    [nextNucleiXY, intensity] = findNuclei(names, frameNumber2, nucleusDiameter, true(size(frame1)), [],[1 1 1 1 1]);
+    [nextNucleiXY, intensity] = findNuclei(Prefix,names, frameNumber2, nucleusDiameter, true(size(frame1)), [],[1 1 1 1 1]);
 else
     nextNucleiXY = nucleiFrame2;
     intensity = zeros(size(nextNucleiXY,1),1);
