@@ -1374,7 +1374,7 @@ while (cc~='x')
 %     note to ar: a potentially simpler version of this button deletes
 %     particle frame but not spot. implement that with a different button.
 %           
-    elseif cc=='[' || cc=='{' %Add particle and all of its shadows to Spots.
+    elseif cc=='[' | cc=='{' %Add particle and all of its shadows to Spots.
         
         %Check that we're in zoom mode. If not, set it up.
         if ~(ZoomMode || GlobalZoomMode)

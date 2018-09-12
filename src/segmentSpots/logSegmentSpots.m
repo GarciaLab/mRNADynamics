@@ -1,4 +1,4 @@
-function log = logSegmentSpots(DropboxFolder, Prefix, t, numFrames, Spots, falsePositives, Threshold)
+function log = logSegmentSpots(DropboxFolder, Prefix, t, numFrames, Spots, falsePositives, Threshold, channelIndex)
   logFile = [DropboxFolder, filesep, Prefix, filesep, 'log.mat'];
 
   if exist(logFile, 'file')
@@ -20,10 +20,10 @@ function log = logSegmentSpots(DropboxFolder, Prefix, t, numFrames, Spots, false
 
   if iscell(Spots)
 
-    for i = 1:length(Spots{q})
+    for i = 1:length(Spots{channelIndex})
 
-      for j = 1:length(Spots{q}(i).Fits)
-        detectedCircles = detectedCircles + length(Spots{q}(i).Fits(j).z);
+      for j = 1:length(Spots{channelIndex}(i).Fits)
+        detectedCircles = detectedCircles + length(Spots{channelIndex}(i).Fits(j).z);
         detectedBalls = detectedBalls + 1;
       end 
 

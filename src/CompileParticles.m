@@ -661,7 +661,7 @@ for ChN=1:NChannels
                 %Plot and save this trace together with its offset value
                 
                 if ~SkipTraces     
-                    if ~isnan(nc9)||~isnan(nc10)||~isnan(nc11)||~isnan(nc12)||~isnan(nc13)||~isnan(nc14)
+                    if ~isnan(nc9)|~isnan(nc10)|~isnan(nc11)|~isnan(nc12)|~isnan(nc13)|~isnan(nc14)
                         %ncFilterID just tells you the identity of the different
                         %filters stored in the cell ncFilter
                         ncFilterID=[];

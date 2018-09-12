@@ -8,6 +8,8 @@
 % [Options]: See below.
 %
 % OPTIONS
+% 'keepPool': Don't shut down the parallel pool when the script is done
+% running.
 % 'Frames', N:Run the code from frame 1 to frame N. Defaults to all
 %                frames. It's suggested to run 5-20 frames for debugging.
 %
@@ -37,7 +39,7 @@ function log = filterMovie(Prefix, varargin)
 
   warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
-  [displayFigures, numFrames, customFilter, highPrecision, filterType] = determineFilterMovieOptions(varargin);
+  [displayFigures, numFrames, customFilter, highPrecision, filterType, keepPool] = determineFilterMovieOptions(varargin);
 
   % Start timer
   tic;
@@ -93,5 +95,14 @@ function log = filterMovie(Prefix, varargin)
   log(end).sigmas = sigmas;
 
   save(logFile, 'log', '-v7.3');
+  
+  if ~keepPool
+
+    try  %#ok<TRYNC>
+      poolobj = gcp('nocreate');
+      delete(poolobj);
+    end 
+
+  end 
 
 end 

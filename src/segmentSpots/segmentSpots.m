@@ -60,9 +60,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
     error(argumentErrorMessage);
   end 
 
-  % Start timer
-  tic;
-
+ 
   if nWorkers ~= 0
     maxWorkers = nWorkers;
 
@@ -125,6 +123,9 @@ function log = segmentSpots(Prefix, Threshold, varargin)
   % Segment transcriptional loci
       
   for channelIndex = 1:nCh
+      
+    tic;
+      
     all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, channelIndex, all_frames, numFrames, zSize, ...
       PreProcPath, Prefix, DogOutputFolder, displayFigures, pool, doFF, ffim, Threshold, neighborhood, ...
       snippet_size, pixelSize, microscope, intScale);
@@ -141,32 +142,38 @@ function log = segmentSpots(Prefix, Threshold, varargin)
         [Particles, falsePositives] = findBrightestZ(Particles,numShadows, 0, 0);
 
         %Create a final Spots structure to be fed into TrackmRNADynamics
-        Spots = createSpotsStructure(Particles, numFrames, channelIndex);
-
-        %If we only have one channel, then convert Spots to a
-        %standard structure.
-
-        if nCh == 1
-          Spots = Spots{1};
-        end 
-        
+        Spots{channelIndex} = createSpotsStructure(Particles, numFrames);
+ 
     end
-
-    mkdir([DropboxFolder, filesep, Prefix]);
-    save([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots', '-v7.3');
     
+    t = toc;
+    disp(['Elapsed time: ', num2str(t / 60), ' min'])
+    try %#ok<TRYNC>
+        log = logSegmentSpots(DropboxFolder, Prefix, t, numFrames, Spots, falsePositives, Threshold, channelIndex);
+        display(log);
+    end
+    
+  end
+  
+    %If we only have one channel, then convert Spots to a
+    %standard structure.
+  if nCh == 1
+      Spots = Spots{1}; %#ok<NASGU>
   end 
+  
+  mkdir([DropboxFolder, filesep, Prefix]);
+  save([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots', '-v7.3');
 
 
-  t = toc;
-  disp(['Elapsed time: ', num2str(t / 60), ' min'])
-
-  log = logSegmentSpots(DropboxFolder, Prefix, t, numFrames, Spots, falsePositives, Threshold);
-  display(log);
+%   t = toc;
+%   disp(['Elapsed time: ', num2str(t / 60), ' min'])
+% 
+%   log = logSegmentSpots(DropboxFolder, Prefix, t, numFrames, Spots, falsePositives, Threshold);
+%   display(log);
 
   if ~keepPool
 
-    try 
+    try  %#ok<TRYNC>
       poolobj = gcp('nocreate');
       delete(poolobj);
     end 
