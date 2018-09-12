@@ -10,6 +10,7 @@ function [displayFigures, numFrames, customFilter, highPrecision, filterType, ke
   highPrecision = 0;
   keepPool = 0;
   filterType = 'Difference_of_Gaussian';
+  sigmas = {};
 
   for i = 1:length(varargin)
 
