@@ -10,9 +10,7 @@ function TrackNuclei(Prefix,varargin)
 %
 % OPTIONS
 % 'StitchSchnitz' : Run the schnitzcells fixing code by Simon
-% 'noRetrack' : Use if you want to overwrite earlier tracking and track
-%               from scratch by bypassing retrack mode. 
-% 
+%
 % OUTPUT
 % '*_lin.mat' : Nuclei with lineages
 % 'Ellipses.mat' : Just nuclei
@@ -26,13 +24,10 @@ function TrackNuclei(Prefix,varargin)
 %
 
 SkipStitchSchnitz=1;
-noRetrack = 0;
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i},'stitchschnitz')
         SkipStitchSchnitz=0;
-    elseif strcmpi(varargin{i},'noRetrack')
-        noRetrack = 1;
     else
         error('Input parameter not recognized')
     end
@@ -150,11 +145,23 @@ settingArguments{2}=median(diff([FrameInfo.Time]));     %Median separation betwe
 settingArguments{3}='space resolution';
 settingArguments{4}=FrameInfo(1).PixelSize;
 
+retrack = exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file');
 
+if retrack
+    answer=input('Previous tracking detected. Proceed with retracking? (y/n):','s');
+    if strcmpi(answer,'y')
+       %do nothing
+    elseif strcmpi(answer, 'n')
+        retrack = 0;
+    else
+        %do nothing
+    end
+end
+           
 
 
 %Do the tracking for the first time
-if ~exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file') || noRetrack
+if ~retrack
     
     
     [nuclei, centers, ~, dataStructure] = ...

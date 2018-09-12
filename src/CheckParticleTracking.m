@@ -1193,7 +1193,7 @@ while (cc~='x')
         CurrentFrame=CurrentFrame+5;
         ManualZFlag=0;
         %DisplayRange=[];
-    elseif (cc=='<')&(CurrentFrame-5>1) %Move backward five frames
+    elseif (cc=='<')&(CurrentFrame-5>1) %#ok<*AND2> %Move backward five frames
         CurrentFrame=CurrentFrame-5;
         ManualZFlag=0;
         %DisplayRange=[];
