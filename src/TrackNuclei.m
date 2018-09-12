@@ -352,7 +352,7 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
                          Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
                 end
 
-                parfor j=1:TotalSchnitz
+                for j=1:TotalSchnitz
 
                     %HG: Note that I'm calling a function here so that I can
                     %debug the parfor loop above. Ideally, I would have 

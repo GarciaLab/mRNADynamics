@@ -37,7 +37,7 @@ if sum(schnitzcells.frames==CurrentFrame)
             round(cenx)+(3*IntegrationRadius-1)/2)=Circle;
 
         schnitzcells.Mask=Circle;
-        schnitzcells.Fluo(CurrentIndex,:,Channel)=sum(sum(Image(:,:,:).*Mask));
+        schnitzcells.Fluo(CurrentIndex,:,Channel)=squeeze(gather((sum(sum(gpuArray(Image).*gpuArray(Mask))))));
         
     else  %If not assign NaN to the fluroescence
         schnitzcells.Fluo(CurrentIndex,1:NumberSlices2,Channel)=nan;
