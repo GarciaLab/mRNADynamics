@@ -1,4 +1,4 @@
-function fillGaps(prefix, varargin)
+function fillFrameGaps(prefix, varargin)
 %% Information about the script
 % fillGaps will add the particle in frames that are
 % between frames where the particle is present.
@@ -13,9 +13,11 @@ function fillGaps(prefix, varargin)
 intScale = 1;
 
 for i = 1:length(varargin)
-    if strcmpi(varargin{i}, 'intScale')
-        intScale = varargin{i+1};
-        display(['integration scaling factor: ', num2str(intScale)]);
+    switch varargin{i}
+        case 'intScale'
+            intScale = varargin{i+1};
+            intScale = varargin{i+1};
+            display(['integration scaling factor: ', num2str(intScale)]);
     end
 end
 
