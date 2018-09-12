@@ -1,7 +1,7 @@
 function xy = segmentFrames(Prefix,names,firstFrame,lastFrame,nucleusDiameter, embryoMask, varargin)
 
     update_waitbar = false;
-    if nargin > 5
+    if nargin > 6
         try
             h_waitbar_segmentation = varargin{1};
             update_waitbar = true;

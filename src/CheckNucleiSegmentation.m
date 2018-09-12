@@ -23,27 +23,13 @@ function CheckNucleiSegmentation(varargin)
 
 
 %right click  - delete region
-%left click - add region with default nc radius
+%left click - add region with default nc radius and angle
 
 
 
 
 
 close all
-
-%Flags
-
-%Find out which computer this is. That will determine the folder structure.
-[ret, name] = system('hostname');  
-if ret ~= 0,  
-   if ispc  
-      name = getenv('COMPUTERNAME');  
-   else  
-      name = getenv('HOSTNAME');  
-   end  
-end  
-name = lower(name); 
-
 
 %Load the folder information
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
@@ -111,7 +97,7 @@ for i=1:length(D)
         nc(i)=11;
     elseif (i>=nc12)&(i<nc13)
         nc(i)=12;
-    elseif (i>=nc13)&(i<nc14)
+    elseif (i>=nc13)&(i<nc14) %#ok<*AND2>
         nc(i)=13;
     elseif i>=nc14
         nc(i)=14;
@@ -119,10 +105,10 @@ for i=1:length(D)
 end
 
 Overlay=figure;
-set(gcf,'units', 'normalized', 'position',[0.01, .55, .75, .33]);
+set(Overlay,'units', 'normalized', 'position',[0.01, .55, .75, .33]);
 
 OriginalImage=figure;
-set(gcf,'units', 'normalized', 'position',[0.01, .1, .75, .33]);
+set(OriginalImage,'units', 'normalized', 'position',[0.01, .1, .75, .33]);
 
 CurrentFrame=1;
 cc=1;
@@ -134,7 +120,7 @@ while (cc~='x')
     
     
     %Get the information about the centroids
-    [NCentroids,Dummy]=size(Ellipses{CurrentFrame});
+    [NCentroids,~]=size(Ellipses{CurrentFrame});
 
     
     figure(Overlay)
@@ -154,7 +140,7 @@ while (cc~='x')
 
     FigureTitle=['Frame: ',num2str(CurrentFrame),'/',num2str(TotalFrames),...
         ', nc: ',num2str(nc(CurrentFrame))];
-    set(gcf,'Name',FigureTitle)
+    set(Overlay,'Name',FigureTitle)
     %title(FigureTitle)
   
     

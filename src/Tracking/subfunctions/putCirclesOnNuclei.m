@@ -5,7 +5,7 @@ function [ ellipse ] = putCirclesOnNuclei(Prefix,centers, names, indMitosis, var
 % of fitting ellipses by doing it only once all the tracks have been 
 % approved.
 
-if nargin > 3
+if nargin > 4
     diameters = varargin{1};
     if numel(diameters) == 1
         diameters = repmat(diameters,numel(names),1);

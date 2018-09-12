@@ -20,7 +20,7 @@ space_resolution = getDefaultParameters(Prefix,'space resolution');
 THRESHOLD_DISTANCE = 2; % in micrometers. Only used when the old centers strucutre is provided too. Maximum offset allowed between a nucleus's position in the Ellipses struct and the centers struct for them to be considered the same nucleus.
 THRESHOLD_DISTANCE = THRESHOLD_DISTANCE/space_resolution;
 
-if nargin > 3
+if nargin > 2
     old_centers_provided = true;
     old_centers = varargin{1};
 else
