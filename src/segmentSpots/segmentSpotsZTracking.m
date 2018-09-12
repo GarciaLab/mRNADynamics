@@ -6,7 +6,8 @@ function [neighborhood, Particles] = segmentSpotsZTracking(pixelSize, numFrames,
     i = 1;
     waitbarFigure = waitbar(0, 'Finding z-columns');
 
-    neighborhood = round(1300 / pixelSize);
+    neighborhood = round(1300 / pixelSize); %empirically, the spot should be within ~1.3um of the same spot in other z-planes
+    
     for framesIndex = 1:numFrames
       waitbar(framesIndex / numFrames, waitbarFigure)
       l = length(Particles([Particles.frame] == framesIndex));

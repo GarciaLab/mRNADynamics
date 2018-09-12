@@ -1,4 +1,4 @@
-function [ xy, varargout ] = findNuclei( names, frameNumber, nucleusDiameter, embryoMask, varargin )
+function [ xy, varargout ] = findNuclei(Prefix, names, frameNumber, nucleusDiameter, embryoMask, varargin )
 %FINDNUCLEI This function finds the position of nuclei within a frame which
 %is used as an initial input for the tracking algorithm.
 %   Detection is made by detecting the local maxima in a
@@ -8,17 +8,17 @@ function [ xy, varargout ] = findNuclei( names, frameNumber, nucleusDiameter, em
 %% Initializing variables
 % Load parameters
 numberOfFrames = numel(names);
-LoGratio = getDefaultParameters('LoGratio');
-space_resolution = getDefaultParameters('space resolution');
+LoGratio = getDefaultParameters(Prefix,'LoGratio');
+space_resolution = getDefaultParameters(Prefix,'space resolution');
 localMaximumRadius = LoGratio*nucleusDiameter/space_resolution;
 LoGradius = nucleusDiameter/space_resolution*LoGratio;
-edgeClearance = getDefaultParameters('edge clearance')*nucleusDiameter/space_resolution;
+edgeClearance = getDefaultParameters(Prefix,'edge clearance')*nucleusDiameter/space_resolution;
 
 if ~exist('embryoMask','var') || isempty(embryoMask)
     embryoMask = true(size(imread(names{frameNumber})));
 end
 
-if nargin > 4
+if nargin > 5
     targetNumber = varargin{1}; % coarse estimate of the number of nuclei that should be found.
 end
 

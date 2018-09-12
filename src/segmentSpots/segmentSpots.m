@@ -21,26 +21,12 @@
 %                brightest plane for a spot to have to pass quality control.
 % 'keepPool': Don't shut down the parallel pool when the script is done
 % running.
-% 'highPrecision': Uses higher precision filtering for segmentation, only
-%                   need to use with Threshold = [] (when finding dogs)
 % 'nWorkers': Specify the number of workers to use during parallel
 % processing
 % 'IntegralZ':  Establish center slice at position that maximizes raw fluo integral 
 %               across sliding 3 z-slice window.
 % 'intScale': Scale up the radius of integration
-% 'customFilters': Choose which filter to use to segment the image. Name
-%                  should be a string, followed by a cell with your filter
-%                  or filters
-%                 ex. segmentSpots(Prefix,[],'customFilter', 'Structure_largest', {1, 8})
-%           Filter Options:
-%               'Gaussian_blur''Median'
-%               'Edges''Maximum'
-%               'Laplacian''Minimum'
-%               'Mean''Std'
-%               'Hessian_largest''Hessian_smallest'
-%               [DEFAULT] 'Difference_of_Gaussian' (2 sigmas) [DEFAULT]
-%               'Structure_largest' (2 sigmas)
-%               'Structure_smallest' (2 sigmas)
+% 'autoThresh': Pops up a UI to help decide on a threshhold
 %
 % OUTPUT
 % 'Spots':  A structure array with a list of detected transcriptional loci
@@ -51,7 +37,7 @@
 %
 % Author (contact): Armando Reimer (areimer@berkeley.edu)
 % Created: 01/01/2016
-% Last Updated: 8/17/2018
+% Last Updated: 8/23/2018
 %
 % Documented by: Armando Reimer (areimer@berkeley.edu)
 
@@ -59,28 +45,22 @@ function log = segmentSpots(Prefix, Threshold, varargin)
 
   warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
-  [displayFigures, numFrames, numShadows, customFilter, highPrecision, filterType, ...
-  intScale, nWorkers, keepPool, use_integral_center] = determineSegmentSpotsOptions(varargin);
+  [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, ...
+      pool, autoThresh] = determineSegmentSpotsOptions(varargin);
 
- 
-  % If no threshold was specified, then just generate the DoG images
-  justDoG = 0;
-  
-  
-
+  argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
   try 
-
-    if isempty(Threshold)
-      justDoG = 1;
+    if autoThresh
+        Threshold = -1;
+    elseif isempty(Threshold)
+      error(argumentErrorMessage);
     end 
 
   catch 
-    error('Please pass the argument "[]" to generate DoG images')
+    error(argumentErrorMessage);
   end 
 
-  % Start timer
-  tic;
-
+ 
   if nWorkers ~= 0
     maxWorkers = nWorkers;
 
@@ -104,7 +84,6 @@ function log = segmentSpots(Prefix, Threshold, varargin)
 
   load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat']);
 
-  % TODO harrypotel Should be renamed to DoGsFolder or something clearer.
   DogOutputFolder = [FISHPath, filesep, Prefix, '_', filesep, 'dogs'];
   mkdir(DogOutputFolder)
 
@@ -136,62 +115,67 @@ function log = segmentSpots(Prefix, Threshold, varargin)
   all_frames = cell(numFrames, zSize);
   close all force;
 
-  coatChannel = determineSegmentSpotsCoatChannel(ExperimentType, Channel1, Channel2);
+  coatChannel = getCoatChannel(ExperimentType, Channel1, Channel2);
   Spots = [];
-  sigmas = [];
   falsePositives = 0;
 
-  if justDoG
-    % Generate difference of Gaussian images if no threshold was given.
-    [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSize, customFilter, nCh, ExperimentType, ...
-      coatChannel, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision);
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Segment transcriptional loci
-  else 
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % Segment transcriptional loci
       
-    for channelIndex = 1:nCh
-      all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, channelIndex, all_frames, numFrames, zSize, ...
-        PreProcPath, Prefix, DogOutputFolder, displayFigures, nWorkers, doFF, ffim, Threshold, neighborhood, ...
-        snippet_size, pixelSize, microscope, intScale);
+  for channelIndex = 1:nCh
+      
+    tic;
+      
+    all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, channelIndex, all_frames, numFrames, zSize, ...
+      PreProcPath, Prefix, DogOutputFolder, displayFigures, pool, doFF, ffim, Threshold, neighborhood, ...
+      snippet_size, pixelSize, microscope, intScale);
 
-      close all force;
+    close all force;
 
-      % Create a useful structure that can be fed into pipeline
-      [Particles, fields] = saveParticleInformation(numFrames, all_frames, zSize);
+    % Create a useful structure that can be fed into pipeline
+    [Particles, fields] = saveParticleInformation(numFrames, all_frames, zSize);
 
-      [neighborhood, Particles] = segmentSpotsZTracking(pixelSize, numFrames, Particles, fields); %#ok<ASGLU>
-        
-      force_z = 0; %this is used exclusively by checkparticletracking
-      [Particles, falsePositives] = findBrightestZ(Particles,numShadows,use_integral_center, force_z);
+    if ~isempty(fields)
+       
+        [neighborhood, Particles] = segmentSpotsZTracking(pixelSize, numFrames, Particles, fields); 
 
-      %Create a final Spots structure to be fed into TrackmRNADynamics
-      Spots = createSpotsStructure(Particles, numFrames, channelIndex);
+        [Particles, falsePositives] = findBrightestZ(Particles,numShadows, 0, 0);
 
-      %If we only have one channel, then convert Spots to a
-      %standard structure.
-
-      if nCh == 1
-        Spots = Spots{1};
-      end 
-
-      mkdir([DropboxFolder, filesep, Prefix]);
-      save([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots', '-v7.3');
-    end 
-
+        %Create a final Spots structure to be fed into TrackmRNADynamics
+        Spots{channelIndex} = createSpotsStructure(Particles, numFrames);
+ 
+    end
+    
+    t = toc;
+    disp(['Elapsed time: ', num2str(t / 60), ' min'])
+    try %#ok<TRYNC>
+        log = logSegmentSpots(DropboxFolder, Prefix, t, numFrames, Spots, falsePositives, Threshold, channelIndex);
+        display(log);
+    end
+    
+  end
+  
+    %If we only have one channel, then convert Spots to a
+    %standard structure.
+  if nCh == 1
+      Spots = Spots{1}; %#ok<NASGU>
   end 
+  
+  mkdir([DropboxFolder, filesep, Prefix]);
+  save([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots', '-v7.3');
 
-  t = toc;
-  disp(['Elapsed time: ', num2str(t / 60), ' min'])
 
-  log = logSegmentSpots(DropboxFolder, Prefix, t, numFrames, justDoG, Spots, filterType, sigmas, falsePositives, Threshold);
+%   t = toc;
+%   disp(['Elapsed time: ', num2str(t / 60), ' min'])
+% 
+%   log = logSegmentSpots(DropboxFolder, Prefix, t, numFrames, Spots, falsePositives, Threshold);
+%   display(log);
 
-  if ~ keepPool
+  if ~keepPool
 
-    try 
+    try  %#ok<TRYNC>
       poolobj = gcp('nocreate');
       delete(poolobj);
-    catch 
     end 
 
   end 

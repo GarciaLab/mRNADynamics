@@ -37,6 +37,7 @@ function CompileParticles(varargin)
 %           lower boundary of ROI and ROI2 is the upper boundary of non-ROI
 %           since there is almost always scattering in the middle
 % 'intArea': Change the area (in pixels) of integration used in offset calculations
+% 'noHist': Force the code to assume there's no nuclear channel. 
 %
 % Author (contact): Hernan Garcia (hggarcia@berkeley.edu)
 % Created: 
@@ -61,7 +62,8 @@ ApproveAll=0;       %Only use manually approved particles
 MinParticles=4;     
 minTime = 1;
 ROI=0; % No ROI
-intArea = 109;
+intArea = 109; %default for 220nm x 220nm zoom. 
+noHist = 0;
 
 if isempty(varargin)%looks for the folder to analyze
     FolderTemp=uigetdir(DefaultDropboxFolder,'Select folder with data to analyze');
@@ -70,43 +72,45 @@ if isempty(varargin)%looks for the folder to analyze
 else
     Prefix=varargin{1};
     for i=2:length(varargin)
-        if strcmp(varargin{i},'ForceAP')
+        if strcmpi(varargin{i},'ForceAP')
             ForceAP=1;
-        elseif strcmp(varargin{i},'SkipTraces')
+        elseif strcmpi(varargin{i},'SkipTraces')
             SkipTraces=1;
-        elseif strcmp(varargin{i},'SkipFluctuations')
+        elseif strcmpi(varargin{i},'SkipFluctuations')
             SkipFluctuations=1;
-        elseif strcmp(varargin{i},'SkipFits')    
+        elseif strcmpi(varargin{i},'SkipFits')    
             SkipFits=1;
-        elseif strcmp(varargin{i},'SkipMovie')    
+        elseif strcmpi(varargin{i},'SkipMovie')    
             SkipMovie=1;
-        elseif strcmp(varargin{i},'SkipAll')        
+        elseif strcmpi(varargin{i},'SkipAll')        
             SkipTraces=1;
             SkipFluctuations=1;
             SkipFits=1;
             SkipMovie=1;
-        elseif strcmp(varargin{i},'ApproveAll')    
+        elseif strcmpi(varargin{i},'ApproveAll')    
             ApproveAll=1;
             disp('Approved')
+        elseif strcmpi(varargin{i},'noHist')    
+            noHist = 1;
         elseif strcmp(varargin{i},'MinParticles')
             if ~isnumeric(varargin{i+1})
                 error('Wrong input parameters. After ''MinParticles'' you should input the desired minimum number of particles per approved AP bin')
             else
                 MinParticles=varargin{i+1};
             end
-        elseif strcmp(varargin{i},'intArea')
+        elseif strcmpi(varargin{i},'intArea')
             if ~isnumeric(varargin{i+1})
                 error('Wrong input parameters. After ''intArea'' you should input the desired number of pixels for intensity integration')
             else
                 intArea=varargin{i+1};
             end
-        elseif strcmp(varargin{i},'MinTime')
+        elseif strcmpi(varargin{i},'MinTime')
             if ~isnumeric(varargin{i+1})
                 error('Wrong input parameters. After ''MinTime'' you should input the desired minimum number of frames per particle.')
             else
                 minTime=varargin{i+1};
             end
-        elseif strcmp(varargin{i},'ROI')
+        elseif strcmpi(varargin{i},'ROI')
             ROI = 1;
             if ~isnumeric(varargin{i+1})||~isnumeric(varargin{i+2})
                 error('Wrong input parameters. After ''ROI'' you should input the y-threshold of ROI ')
@@ -202,7 +206,7 @@ end
 
 
 %See if we had any lineage/nuclear information
-if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file')
+if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file') && ~noHist
     load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
     HistoneChannel=1;
 else
@@ -509,6 +513,7 @@ for ChN=1:NChannels
             end
 
 
+
             %See if this particle is in one of the approved AP bins
             try
                 if strcmpi(ExperimentAxis,'AP')
@@ -595,7 +600,7 @@ for ChN=1:NChannels
                 CompiledParticles{ChN}(k).Fluo5= AmpIntegral5;
                 CompiledParticles{ChN}(k).FluoGauss= AmpGaussian;
                 CompiledParticles{ChN}(k).Off=Off;
-                CompiledParticles{ChN}(k).FluoError=ErrorIntegral;
+                CompiledParticles{ChN}(k).FluoError=ErrorIntegral(1); % SEANCHANGED
                 CompiledParticles{ChN}(k).optFit1=optFit1;
                 CompiledParticles{ChN}(k).FitType=FitType;
                 
@@ -656,7 +661,7 @@ for ChN=1:NChannels
                 %Plot and save this trace together with its offset value
                 
                 if ~SkipTraces     
-                    if ~isnan(nc9)||~isnan(nc10)||~isnan(nc11)||~isnan(nc12)||~isnan(nc13)||~isnan(nc14)
+                    if ~isnan(nc9)|~isnan(nc10)|~isnan(nc11)|~isnan(nc12)|~isnan(nc13)|~isnan(nc14)
                         %ncFilterID just tells you the identity of the different
                         %filters stored in the cell ncFilter
                         ncFilterID=[];
@@ -1530,7 +1535,7 @@ if NChannels==1
 
         if strcmpi(ExperimentAxis,'AP')
             figure(8)
-            intArea=109;
+            intArea=109;  %109 pixels is the default area when the pixels are assumed to be 212nm x 212 nm AR 9/3/18
             errorbar(1:length(MeanOffsetVector),MeanOffsetVector*intArea,...
                 SDOffsetVector*intArea,'.-r')
             hold on

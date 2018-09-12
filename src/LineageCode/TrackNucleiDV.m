@@ -108,7 +108,7 @@ if ~exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
 
     % Convert the results to compatible structures and save them
     %Put circles on the nuclei
-    [Ellipses] = putCirclesOnNuclei(centers,names,indMit);
+    [Ellipses] = putCirclesOnNuclei(Prefix,centers,names,indMit);
     %Convert nuclei structure into schnitzcell structure
     [schnitzcells] = convertNucleiToSchnitzcells(nuclei); 
 else
@@ -119,7 +119,7 @@ else
     %Load the Ellipses and re-generate the centers
     load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
     %centers = updateCentersFromEllipses(Ellipses, centers);
-    centers = updateCentersFromEllipses(Ellipses);
+    centers = updateCentersFromEllipses(Prefix,Ellipses);
 
     %Load the dataStructure to seed up retracking if it exists
     if exist([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'])
@@ -149,21 +149,21 @@ else
     
     
     %Re-run the tracking
-    if exist('dataStructure')
+    if exist('dataStructure', 'var')
         %Edit the names in dataStructure to match the current folder setup
         dataStructure.names=names;
         
-        [nuclei, centers, Dummy, dataStructure] = mainTrackingDV(...
+        [nuclei, centers, ~, dataStructure] = mainTrackingDV(...
             names,'indMitosis',indMit,'embryoMask', embryo_mask,...
             'centers',centers,'dataStructure',dataStructure, settingArguments{:});
     else
-        [nuclei, centers, Dummy, dataStructure] = mainTrackingDV(...
+        [nuclei, centers, ~, dataStructure] = mainTrackingDV(...
             names,'indMitosis',indMit,'embryoMask', embryo_mask,...
             'centers',centers, settingArguments{:});
     end
 
     %Put circles on the nuclei
-    [Ellipses] = putCirclesOnNuclei(centers,names,indMit);
+    [Ellipses] = putCirclesOnNuclei(Prefix,centers,names,indMit);
     %Convert nuclei structure into schnitzcell structure
     [schnitzcells] = convertNucleiToSchnitzcells(nuclei); 
 end

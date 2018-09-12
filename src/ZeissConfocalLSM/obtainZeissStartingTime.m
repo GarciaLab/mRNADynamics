@@ -5,7 +5,7 @@ function StartingTime = obtainZeissStartingTime(Folder, LSMIndex, LSMMeta2, NDig
   CZIDir = dir([Folder, filesep, '*.czi']);     %Zeiss confocal, new CZI format
   
   if ~isempty(LSMDir)
-    StartingTime(LSMIndex) = LSMMeta2.get(['TimeStamp #', iIndex(1, NDigits)]);
+    StartingTime = LSMMeta2.get(['TimeStamp #', iIndex(1, NDigits)]); %SEANCHANGE
   elseif ~isempty(CZIDir)
     TimeStampString = LSMMeta2.get('Global Information|Image|T|StartTime #1');
     TimeStampStrings{LSMIndex} = TimeStampString;
@@ -14,7 +14,7 @@ function StartingTime = obtainZeissStartingTime(Folder, LSMIndex, LSMMeta2, NDig
     %Get the milliseconds, note that we're not using them!
     MilliSeconds = TimeStamp(21:end-1);
     %Convert the time to seconds. We're ignoring the seconds.
-    StartingTime(LSMIndex) = datenum(TimeStamp)*24*60*60;
+    StartingTime = datenum(TimeStamp)*24*60*60; %SEANCHANGE from StartingTime(LSMIndex)
   else
     error('Wrong file format. The code should not have gotten this far.')
   end

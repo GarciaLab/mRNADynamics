@@ -1,15 +1,28 @@
 function [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
-    ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3, ErrorIntegral5]=...
+    ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3, ErrorIntegral5,backGround3]=...
     GetParticleTrace(CurrentParticle,Particles,Spots)
 
+%function [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
+%    ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3, ErrorIntegral5]=...
+%    GetParticleTrace(CurrentParticle,Particles,Spots)
+%
 %This function uses the total intensity mask to calculate the particles
 %intensity and subtracts the background obtained from the fit.
+%
+% AR 9/3/2018- Currently, AmpIntegral3 is being calculated over a
+% cylindrical volume and not an accordion volume as ampintegral5 is. 
 
+
+
+%
 %First, get the different intensity values corresponding to this particle.
 
 ErrorIntegral = NaN;
 ErrorIntegral3 = NaN;
 ErrorIntegral5 = NaN;
+backGround3 = NaN;
+
+defaultArea = 109; %109 pixels is the default area when the pixels are assumed to be 212nm x 212 nm AR 9/3/18
 
 for i=1:length(Particles(CurrentParticle).Frame)
 
@@ -63,11 +76,19 @@ if length(Frame)>5
         nBreaks=5;
     end
 
-    optFit = adaptiveSplineFit(double(Frame),double(Offset),nBreaks);
-    OffsetFit=ppval(optFit,double(Frame));
+    try
+        optFit = adaptiveSplineFit(double(Frame),double(Offset),nBreaks);
+        OffsetFit=ppval(optFit,double(Frame));
 
-    %Calculate the error in the offset
-    OffsetError=std(Offset-OffsetFit);
+        %Calculate the error in the offset
+        OffsetError=std(Offset-OffsetFit);
+    catch
+        ErrorGauss=[];
+        ErrorIntegral=[];
+        ErrorIntegral3=[];
+        ErrorIntegral5 = [];
+        optFit=[];
+    end
 
     
 %If we have between 3 and five data points, we fit a line.
@@ -103,21 +124,25 @@ if exist('OffsetError')
              ErrorGauss=OffsetError*sqrt(2)*...
              mean(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).Area);
         catch
-            ErrorGauss=OffsetError*sqrt(2)*109;
+            ErrorGauss=OffsetError*sqrt(2)*defaultArea;
         end
     end
     %For the Integral, we just use the area of the snippet, which is a
     %constant for all time points.
     if isfield(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)), 'intArea') && ~isempty(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).intArea)
-        ErrorIntegral=OffsetError*sqrt(2)*Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).intArea(1);
+        intArea = Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).intArea(1);
+        ErrorIntegral=OffsetError*sqrt(2)*intArea;
         if ~isnan(AmpIntegral3(i))
-           ErrorIntegral3=OffsetError*sqrt(2)*3*Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).intArea(1);
+           backGround3 = 3*Offset*intArea;
+           ErrorIntegral3=OffsetError*sqrt(2)*3*intArea;%since this integration is actually done as a mean over the available slices, multiplying by 5 is definitely wrong. this error should be taken with 
+           %a grain of salt. AR 9/3/18
         end
         if ~isnan(AmpIntegral5(i))
-           ErrorIntegral5=OffsetError*sqrt(2)*5*Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).intArea(1);     
+           ErrorIntegral5=OffsetError*sqrt(2)*5*intArea; %since this integration is actually done as a mean over the available slices, multiplying by 5 is definitely wrong. this error should be taken with 
+           %a grain of salt. AR 9/3/18
         end
     else
-        ErrorIntegral=OffsetError*sqrt(2)*109;
+        ErrorIntegral=OffsetError*sqrt(2)*defaultArea; 
     end
     
 else

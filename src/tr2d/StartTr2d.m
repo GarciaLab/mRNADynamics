@@ -17,7 +17,7 @@ mkdir([PreProcessedData,filesep,Prefix,filesep,'tr2dProject',filesep,...
 CreateStack=1;
 filenameRaw = [PreProcessedData,filesep,Prefix,filesep,'tr2dProject',filesep,'RAW.tif'];
 if exist( filenameRaw )
-    Answer=input('Nuclear data has already been exported for tr2d. Do you want to export again? (y/N)','s');
+    Answer=input('Nuclear data has already been exported for tr2d. Do you want to export again? (y/n)','s');
     if strcmpi(Answer,'y')
         delete(filenameRaw);
     else

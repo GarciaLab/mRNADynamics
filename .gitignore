@@ -1,2 +1,5 @@
 *.asv
 .vscode/settings.json
+*.mdmp
+*.log
+*.log

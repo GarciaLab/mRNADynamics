@@ -1,4 +1,4 @@
-function [ centers ] = updateCentersFromEllipses( Ellipses, varargin )
+function [ centers ] = updateCentersFromEllipses(Prefix, Ellipses, varargin )
 %UPDATECENTERSFROMELLIPSES Takes an Ellipses structure and outputs an 
 % updated of the centers structure.
 %
@@ -15,12 +15,12 @@ function [ centers ] = updateCentersFromEllipses( Ellipses, varargin )
 %   that were not present in both structures, Ellipses and centers.
 
 
-space_resolution = getDefaultParameters('space resolution');
+space_resolution = getDefaultParameters(Prefix,'space resolution');
 
 THRESHOLD_DISTANCE = 2; % in micrometers. Only used when the old centers strucutre is provided too. Maximum offset allowed between a nucleus's position in the Ellipses struct and the centers struct for them to be considered the same nucleus.
 THRESHOLD_DISTANCE = THRESHOLD_DISTANCE/space_resolution;
 
-if nargin > 1
+if nargin > 2
     old_centers_provided = true;
     old_centers = varargin{1};
 else

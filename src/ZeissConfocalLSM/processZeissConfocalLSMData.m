@@ -39,7 +39,7 @@ function FrameInfo = processZeissConfocalLSMData(Folder, D, FrameInfo, Experimen
 
       NDigits = getNDigits(NFrames, LSMIndex);
 
-      StartingTime = obtainZeissStartingTime(Folder, LSMIndex, LSMMeta2, NDigits);
+      StartingTime(LSMIndex) = obtainZeissStartingTime(Folder, LSMIndex, LSMMeta2, NDigits); %SEANCHANGE
       [ValueField, Frame_Times] = obtainZeissFrameTimes(LSMMeta, NSlices, LSMIndex, NPlanes, NChannels, StartingTime, Frame_Times);
       [FrameRange, FrameInfo] = createZeissFrameInfo(LSMIndex, NFrames, NSlices, FrameInfo, LSMMeta, Frame_Times, ValueField);
 

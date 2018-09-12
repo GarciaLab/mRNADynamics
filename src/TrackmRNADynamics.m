@@ -1,12 +1,38 @@
 function [Particles,schnitzcells]=TrackmRNADynamics(varargin)
-
-%This function sets up particle tracking using the FISH analysis code. If
-%nuclei have been tracked it uses that information for the particle
-%tracking.
-
+%[Particles,schnitzcells]=TrackmRNADynamics(varargin)
+%
+% DESCRIPTION
+% %This function tracks transcription loci over time after 
+% segmentation and z-tracking have been performed. If nuclei have been 
+% tracked it uses that information for the particle tracking.
+%
+% ARGUMENTS
+% Prefix: Prefix of the data set to analyze
+% Threshold1 : Primary. This must be an array of two thresholds for 2 spot 2
+% color experiments. 
+% Threshold2 : Secondary. This must be an array of two thresholds for 2 spot 2
+% color experiments. 
+% [Options]: See below.
+%
+% OPTIONS
+% None.
+%
+% OUTPUT
+% Particles.mat : List of time traces found in the movie. 
+% *_lin.mat : Schnitzcell nuclear tracking is modified here. 
+%
+% Author (contact): Hernan Garcia (hggarcia@berkeley.edu)
+% Created: 01/01/2013 ish. 
+% Last Updated: 9/11/2018
+%
+% Documented by: Armando Reimer (areimer@berkeley.edu)
+%
+%
+%
 %To do: The no-histone part of the code doesn't take into account the
-%Approved field of the Particles structure.
-
+%Approved field of the Particles structure. 
+%^ AR 9/3/18: has this been done? 
+%
 
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
@@ -93,7 +119,7 @@ if exist([OutputFolder,filesep,'Particles.mat'])
     if (~sum(Threshold1==Threshold1Backup)==length(Threshold1))&...
         (~sum(Threshold2==Threshold2Backup)==length(Threshold2))
             Answer=input('Thresholds changed, will delete previous tracking. Proceed? (y/n):','s');
-            if strcmp(lower(Answer),'y')
+            if strcmpi(Answer,'y')
                 Threshold1=Threshold1Backup;
                 Threshold2=Threshold2Backup;
                 delete([OutputFolder,filesep,'Particles.mat'])
@@ -115,7 +141,7 @@ if exist([OutputFolder,filesep,'FrameInfo.mat'])
     %See if this came from the 2-photon, which is the default
     if ~isfield(FrameInfo,'FileMode')
     
-        if (FrameInfo(1).ZoomFactor==8)&(FrameInfo(1).PixelsPerLine==256)
+        if (FrameInfo(1).ZoomFactor==8)&(FrameInfo(1).PixelsPerLine==256) %#ok<*AND2>
             PixelSize=0.22;     %This is the pixel size in um for a zoom of 8.
         elseif (FrameInfo(1).ZoomFactor==4)&...
                 (FrameInfo(1).PixelsPerLine==512)&...
@@ -124,7 +150,7 @@ if exist([OutputFolder,filesep,'FrameInfo.mat'])
         elseif (FrameInfo(1).ZoomFactor==16)&(FrameInfo(1).PixelsPerLine==128)
             PixelSize=0.22;
         else
-            display('Warning: Imaging setting not defined. Using a pixel size of 0.22um')
+            disp('Warning: Imaging setting not defined. Using a pixel size of 0.22um')
             PixelSize=0.22;
         end
         
@@ -139,11 +165,11 @@ if exist([OutputFolder,filesep,'FrameInfo.mat'])
         elseif (FrameInfo(1).ZoomFactor==16)&(FrameInfo(1).PixelsPerLine==128)
             PixelSize=0.22;
         else
-            display('Warning: Imaging setting not defined. Using a pixel size of 0.22um')
+            disp('Warning: Imaging setting not defined. Using a pixel size of 0.22um')
             PixelSize=0.22;
         end
         
-    elseif strcmp(FrameInfo(1).FileMode,'LSM')|strcmp(FrameInfo(1).FileMode,'LSMExport')
+    elseif strcmp(FrameInfo(1).FileMode,'LSM')|strcmp(FrameInfo(1).FileMode,'LSMExport') %#ok<*OR2>
         PixelSize=FrameInfo(1).PixelSize;
     elseif strcmp(FrameInfo(1).FileMode,'LIFExport') || strcmp(FrameInfo(1).FileMode,'LAT') || strcmp(FrameInfo(1).FileMode,'DSPIN')  %CS20170907
         PixelSize=FrameInfo(1).PixelSize;

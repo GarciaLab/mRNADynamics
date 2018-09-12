@@ -1,7 +1,7 @@
-function xy = segmentFrames(names,firstFrame,lastFrame,nucleusDiameter, embryoMask, varargin)
+function xy = segmentFrames(Prefix,names,firstFrame,lastFrame,nucleusDiameter, embryoMask, varargin)
 
     update_waitbar = false;
-    if nargin > 5
+    if nargin > 6
         try
             h_waitbar_segmentation = varargin{1};
             update_waitbar = true;
@@ -14,7 +14,7 @@ function xy = segmentFrames(names,firstFrame,lastFrame,nucleusDiameter, embryoMa
     xy = cell(lastFrame-firstFrame+1,1);
     for j = 1:nFrames
 
-        [xy{j}, ~] = findNuclei(names, frameNum(j), nucleusDiameter, embryoMask);
+        [xy{j}, ~] = findNuclei(Prefix,names, frameNum(j), nucleusDiameter, embryoMask);
 
         if update_waitbar
             progress = findall(h_waitbar_segmentation,'type','patch');

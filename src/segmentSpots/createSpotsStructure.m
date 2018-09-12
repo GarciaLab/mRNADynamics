@@ -1,5 +1,5 @@
-function Spots = createSpotsStructure(Particles, numFrames, channelIndex)
-  Spots{channelIndex} = [];
+function Spots = createSpotsStructure(Particles, numFrames)
+  Spots = [];
   fields = fieldnames(Particles);
   num_fields = length(fields);
 
@@ -11,16 +11,16 @@ function Spots = createSpotsStructure(Particles, numFrames, channelIndex)
       for j = frames(1):frames(end)
 
         if ~ Particles(j).discardThis
-          Spots{channelIndex}(framesIndex).Fits(j - frames(1) + 1) = Particles(j);
+          Spots(framesIndex).Fits(j - frames(1) + 1) = Particles(j);
         end 
 
         %Sometimes, all spots are discarded in a frame. In that
         %case, create an empty Spots entry in that frame.
 
-        if length(Spots{channelIndex}) < framesIndex
+        if length(Spots) < framesIndex
 
           for l = 1:num_fields
-            Spots{channelIndex}(framesIndex).Fits.(fields{l}) = [];
+            Spots(framesIndex).Fits.(fields{l}) = [];
           end 
 
         end 
@@ -30,7 +30,7 @@ function Spots = createSpotsStructure(Particles, numFrames, channelIndex)
     else 
 
       for l = 1:num_fields
-        Spots{channelIndex}(framesIndex).Fits.(fields{l}) = [];
+        Spots(framesIndex).Fits.(fields{l}) = [];
       end 
 
     end 
@@ -38,26 +38,26 @@ function Spots = createSpotsStructure(Particles, numFrames, channelIndex)
   end 
 
   %Clean up Spots to remove empty rows
-  Dots{channelIndex} = struct('Fits', []);
+  Dots = struct('Fits', []);
 
-  for spotsIndex = 1:length(Spots{channelIndex})
-    Dots{channelIndex}(spotsIndex).Fits = [];
+  for spotsIndex = 1:length(Spots)
+    Dots(spotsIndex).Fits = [];
 
-    for j = 1:length(Spots{channelIndex}(spotsIndex).Fits)
+    for j = 1:length(Spots(spotsIndex).Fits)
 
       if j ~= 1
 
-        if ~ isempty(Spots{channelIndex}(spotsIndex).Fits(j).z)...
-          && ~ isequal(Spots{channelIndex}(spotsIndex).Fits(j).CentralIntensity, ...
-          Spots{channelIndex}(spotsIndex).Fits(j - 1).CentralIntensity)
+        if ~ isempty(Spots(spotsIndex).Fits(j).z)...
+          && ~ isequal(Spots(spotsIndex).Fits(j).CentralIntensity, ...
+          Spots(spotsIndex).Fits(j - 1).CentralIntensity)
           
-          Dots{channelIndex}(spotsIndex).Fits = [Dots{channelIndex}(spotsIndex).Fits, Spots{channelIndex}(spotsIndex).Fits(j)];
+          Dots(spotsIndex).Fits = [Dots(spotsIndex).Fits, Spots(spotsIndex).Fits(j)];
         end 
 
       else 
 
-        if ~ isempty(Spots{channelIndex}(spotsIndex).Fits(j).z)
-          Dots{channelIndex}(spotsIndex).Fits = [Dots{channelIndex}(spotsIndex).Fits, Spots{channelIndex}(spotsIndex).Fits(j)];
+        if ~ isempty(Spots(spotsIndex).Fits(j).z)
+          Dots(spotsIndex).Fits = [Dots(spotsIndex).Fits, Spots(spotsIndex).Fits(j)];
         end 
 
       end 
@@ -66,13 +66,13 @@ function Spots = createSpotsStructure(Particles, numFrames, channelIndex)
 
   end 
 
-  for dotsIndex = 1:length(Dots{channelIndex})
+  for dotsIndex = 1:length(Dots)
 
-    if isstruct(Dots{channelIndex}(dotsIndex).Fits)
-      Spots{channelIndex}(dotsIndex).Fits = rmfield(Dots{channelIndex}(dotsIndex).Fits, 'r');
-      Spots{channelIndex}(dotsIndex).Fits = rmfield(Spots{channelIndex}(dotsIndex).Fits, 'discardThis');
+    if isstruct(Dots(dotsIndex).Fits)
+      Spots(dotsIndex).Fits = rmfield(Dots(dotsIndex).Fits, 'r');
+      Spots(dotsIndex).Fits = rmfield(Spots(dotsIndex).Fits, 'discardThis');
     else 
-      Spots{channelIndex}(dotsIndex).Fits = [];
+      Spots(dotsIndex).Fits = [];
     end 
 
   end 

@@ -1,4 +1,4 @@
-function [ x,y, varargout ] = interpolatedShift( img1, img2, maxRadius, localMaxRadius, maxShift, precisionFactor, XY)
+function [ x,y, varargout ] = interpolatedShift(Prefix, img1, img2, maxRadius, localMaxRadius, maxShift, precisionFactor, XY)
 %INTERPOLATEDSHIFT Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -7,7 +7,7 @@ if ~exist('precisionFactor','var') || isempty(precisionFactor)
     precisionFactor = 1;
 end
 
-space_resolution = getDefaultParameters('space resolution');
+space_resolution = getDefaultParameters(Prefix,'space resolution');
 tileSizeX = round(1*128*0.22/space_resolution/precisionFactor);
 tileSizeY = round(1*128*0.22/space_resolution/precisionFactor);
 subTileSize = round(1*64*0.22/space_resolution/precisionFactor);
@@ -76,7 +76,12 @@ for j = 1:nTilesY
         maxY = min(ceil(size(f,2)*0.5+.5*tileSizeY),size(f,2));
         f = f(minX:maxX,minY:maxY);%f(spanX,spanY);%f((1+(jj-1)*tileSizeX):(tileSizeX+(jj-1)*tileSizeX),(1+(j-1)*tileSizeY):(tileSizeY+(j-1)*tileSizeY));
         
-        maxima = (f >= imdilate(f,localMaxMask));
+        try
+            %this may not be compatible with all GPU devices %AR 9/11/2018
+            maxima = (f >= gather(imdilate(gpuArray(uint8(f)),localMaxMask)));
+        catch
+            maxima = f >= imdilate(f,localMaxMask);
+        end
         
         if any(size(f) ~= [tileSizeX,tileSizeY])
             [X,Y] = meshgrid(1:size(f,1),1:size(f,2));

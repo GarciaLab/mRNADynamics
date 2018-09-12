@@ -184,8 +184,9 @@ function configContents = InstallmRNADynamics(varargin)
     Output{16} = ['MOVIE_DATABASE_PATH = ''', MOVIE_DATABASE_PATH, ''';'];
     Output{17} = ['COMPUTER_FOLDERS_PATH = ''', COMPUTER_FOLDERS_PATH, ''';'];
 
-    Output{18} = ['disp(''mRNADynamics Startup script executed.'');'];
-
+    Output{18} = ['disp(''Startup script executed.'');'];
+    Output{19} = ['clear all;'];
+    
     writeStartupFile(Output);
   end
 end
@@ -226,7 +227,7 @@ function computerName = getComputerName
 end
 
 function writeStartupFile(contents)
-  disp('Will create startup.m with this contents: ');
+  disp('Will create startup.m with these contents: ');
   disp(contents);
 
   %Create the startup.m file

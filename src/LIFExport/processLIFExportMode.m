@@ -2,7 +2,7 @@
 function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, ProjectionType, Channel1, Channel2, Channel3, Prefix, OutputFolder, PreferredFileNameForTest)
   %Loads file and metadata
   [XMLFolder, SeriesFiles, SeriesFiles3] = getSeriesFiles(Folder);
-  [LIFDir, LIFIndex, LIFImages, LIFMeta] = loadLIFFile(Folder);
+  [~, ~, LIFImages, LIFMeta] = loadLIFFile(Folder);
   
   %Obtains frames information
   [NSeries, NFrames, NSlices, NPlanes, NChannels, Frame_Times] = getFrames(LIFMeta);

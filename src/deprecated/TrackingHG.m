@@ -78,7 +78,7 @@ clear ImageTemp
 
 %PUT circles on the nuclei
 
-[Ellipses] = putCirclesOnNuclei(centers,names,indMit);
+[Ellipses] = putCirclesOnNuclei(Prefix,centers,names,indMit);
 
 %Convert nuclei structure into schnitzcell structure
 [schnitzcells] = convertNucleiToSchnitzcells(nuclei); 

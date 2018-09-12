@@ -79,6 +79,9 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
                 Particles{ChN}(i).yPos(j)=y(Particles{ChN}(i).Index(j));
             end
         end
+        if isfield(Particles{ChN},'DVpos')
+            warning('Particles.mat already has DV positions stored. They will be rewritten')
+        end
         if isfield(Particles{ChN},'APpos')
             warning('Particles.mat already has AP positions stored. They will be rewritten')
         end

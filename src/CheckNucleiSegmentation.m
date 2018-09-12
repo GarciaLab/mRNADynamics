@@ -1,13 +1,13 @@
 function CheckNucleiSegmentation(varargin)
-
+%
 %This code allows you to check the nuclear segmentation performed by
 %Timon's code implemented in SegmentNucleiTimon.m
-
+%
 %To do:
 %1) Allow to edit the size and angle of an ellipse
-
+%
 %Usage:
-
+%
 %.  - Move a frame forward
 %,  - Move a frame backwards
 %>  - Move 5 frames forward
@@ -20,30 +20,16 @@ function CheckNucleiSegmentation(varargin)
 %r  - Reset contrast setting
 %x  - Exit and save
 %9  - Debug mode
-
-
+%
+%
 %right click  - delete region
-%left click - add region with default nc radius
-
+%left click - add region with default nc radius and angle
+%
 
 
 
 
 close all
-
-%Flags
-
-%Find out which computer this is. That will determine the folder structure.
-[ret, name] = system('hostname');  
-if ret ~= 0,  
-   if ispc  
-      name = getenv('COMPUTERNAME');  
-   else  
-      name = getenv('HOSTNAME');  
-   end  
-end  
-name = lower(name); 
-
 
 %Load the folder information
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
@@ -111,60 +97,67 @@ for i=1:length(D)
         nc(i)=11;
     elseif (i>=nc12)&(i<nc13)
         nc(i)=12;
-    elseif (i>=nc13)&(i<nc14)
+    elseif (i>=nc13)&(i<nc14) %#ok<*AND2>
         nc(i)=13;
     elseif i>=nc14
         nc(i)=14;
     end
 end
+OriginalImage=figure;
+set(OriginalImage,'units', 'normalized', 'position',[0.01, .1, .75, .33]);
+originalAxes = axes(OriginalImage);
 
 Overlay=figure;
-set(gcf,'units', 'normalized', 'position',[0.01, .55, .75, .33]);
-
-OriginalImage=figure;
-set(gcf,'units', 'normalized', 'position',[0.01, .1, .75, .33]);
+set(Overlay,'units', 'normalized', 'position',[0.01, .55, .75, .33]);
+overlayAxes = axes(Overlay);
 
 CurrentFrame=1;
 cc=1;
 
+%Show the first image
+imOverlay = imshow(HisImage,DisplayRange,'Border','Tight','Parent',overlayAxes);
+imOriginal = imshow(HisImage,DisplayRange,'Border','Tight','Parent',originalAxes);
+
 while (cc~='x')
     
-    %Load the image
+    %Load subsequent images
     HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(CurrentFrame).name]);
     
     
     %Get the information about the centroids
-    [NCentroids,Dummy]=size(Ellipses{CurrentFrame});
+    [NCentroids,~]=size(Ellipses{CurrentFrame});
 
-    
-    figure(Overlay)
-    imshow(HisImage,DisplayRange,'Border','Tight')
-    hold on
+%     imshow(HisImage,DisplayRange,'Border','Tight','Parent',overlayAxes)
+    imOverlay.CData = HisImage;
+    axesHandlesToChildObjects = findobj(overlayAxes, 'Type', 'line');
+	if ~isempty(axesHandlesToChildObjects)
+		delete(axesHandlesToChildObjects);
+	end	
+%     hold(overlayAxes, 'on')
     PlotHandle=[];
     for i=1:NCentroids
         PlotHandle=[PlotHandle,ellipse(Ellipses{CurrentFrame}(i,3),...
             Ellipses{CurrentFrame}(i,4),...
             Ellipses{CurrentFrame}(i,5),Ellipses{CurrentFrame}(i,1)+1,...
-            Ellipses{CurrentFrame}(i,2)+1,[],[],gca)];
+            Ellipses{CurrentFrame}(i,2)+1,[],[],overlayAxes)];
     end
-    hold off
+%     hold(overlayAxes, 'off')
     set(PlotHandle,'Color','r', 'Linewidth', 3)
     
      
 
     FigureTitle=['Frame: ',num2str(CurrentFrame),'/',num2str(TotalFrames),...
         ', nc: ',num2str(nc(CurrentFrame))];
-    set(gcf,'Name',FigureTitle)
-    %title(FigureTitle)
+    set(Overlay,'Name',FigureTitle)
   
     
-    figure(OriginalImage)
-    imshow(HisImage,DisplayRange,'Border','Tight')
+%     imshow(HisImage,DisplayRange,'Border','Tight''Parent',originalAxes)
+    imOriginal.CData = HisImage;
     
-    figure(Overlay)
+%     set(0, 'CurrentFigure', Overlay)
     ct=waitforbuttonpress;
     cc=get(Overlay,'currentcharacter');
-    cm=get(gca,'CurrentPoint');
+    cm=get(overlayAxes,'CurrentPoint');
     
     
 
@@ -179,7 +172,7 @@ while (cc~='x')
         CurrentFrame=CurrentFrame-5;
     elseif (ct~=0)&(cc=='s')
         save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
-        display('Ellipses saved.')
+        disp('Ellipses saved.')
     elseif (ct==0)&(strcmp(get(Overlay,'SelectionType'),'normal'))
         cc=1;
         if (cm(1,2)>0)&(cm(1,1)>0)&(cm(1,2)<=Rows)&(cm(1,1)<=Cols)
@@ -213,7 +206,7 @@ while (cc~='x')
             %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
             Distances=sqrt((Ellipses{CurrentFrame}(:,1)-cm(1,1)).^2+...
                 (Ellipses{CurrentFrame}(:,2)-cm(1,2)).^2);
-            [MinValue,MinIndex]=min(Distances);
+            [~,MinIndex]=min(Distances);
 
             Ellipses{CurrentFrame}=[Ellipses{CurrentFrame}(1:MinIndex-1,:);...
                 Ellipses{CurrentFrame}(MinIndex+1:end,:)];
@@ -246,7 +239,7 @@ end
 
 
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
-display('Ellipses saved. Remember to re-run TrackNuclei if you made changes.')
+disp('Ellipses saved. Remember to re-run TrackNuclei if you made changes.')
 
 
 

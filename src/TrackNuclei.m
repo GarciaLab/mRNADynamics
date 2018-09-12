@@ -1,13 +1,32 @@
 function TrackNuclei(Prefix,varargin)
-
-%This function is just a script that call Laurent's tracking code
-
-%Options:
-%StitchSchnitz: Run the schnitzcells fixing code by Simon
+% TrackNuclei(Prefix, [Options])
+%
+% DESCRIPTION
+% Use exported and projected nuclear images to segment and track nuclei over time.
+%
+% ARGUMENTS
+% Prefix: Prefix of the data set to analyze
+% [Options]: See below.
+%
+% OPTIONS
+% 'StitchSchnitz' : Run the schnitzcells fixing code by Simon
+%
+% OUTPUT
+% '*_lin.mat' : Nuclei with lineages
+% 'Ellipses.mat' : Just nuclei
+%
+% Author (contact): Hernan Garcia (hggarcia@berkeley.edu)
+% Created: 01/01/2013 ish. 
+% Last Updated: 9/11/2018
+%
+% Documented by: Armando Reimer (areimer@berkeley.edu)
+%
+%
 
 SkipStitchSchnitz=1;
-if ~isempty(varargin)
-    if strcmpi(varargin{1},'stitchschnitz')
+
+for i = 1:length(varargin)
+    if strcmpi(varargin{i},'stitchschnitz')
         SkipStitchSchnitz=0;
     else
         error('Input parameter not recognized')
@@ -113,10 +132,6 @@ if isempty(indMit)
     indMit=[1,2];
 end
 
-
-%Make sure to edit getdefaultParameters.m to change the pixel size
-%parameters!!
-
 %Embryo mask
 ImageTemp=imread(names{1});
 embryo_mask=true(size(ImageTemp));
@@ -130,15 +145,27 @@ settingArguments{2}=median(diff([FrameInfo.Time]));     %Median separation betwe
 settingArguments{3}='space resolution';
 settingArguments{4}=FrameInfo(1).PixelSize;
 
+retrack = exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file');
 
+if retrack
+    answer=input('Previous tracking detected. Proceed with retracking? (y/n):','s');
+    if strcmpi(answer,'y')
+       %do nothing
+    elseif strcmpi(answer, 'n')
+        retrack = 0;
+    else
+        %do nothing
+    end
+end
+           
 
 
 %Do the tracking for the first time
-if ~exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file')
+if ~retrack
     
     
-    [nuclei, centers, Dummy, dataStructure] = ...
-        mainTracking(names,'indMitosis',indMit,'embryoMask', embryo_mask,...
+    [nuclei, centers, ~, dataStructure] = ...
+        mainTracking(Prefix, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
         settingArguments{:});
     % names is a cell array containing the names of all frames in the movie in order.
     % indMitosis is an nx2 array containing the first and last frame of mitosis in every row.
@@ -147,7 +174,7 @@ if ~exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file')
 
     % Convert the results to compatible structures and save them
     %Put circles on the nuclei
-    [Ellipses] = putCirclesOnNuclei(centers,names,indMit);
+    [Ellipses] = putCirclesOnNuclei(Prefix,centers,names,indMit);
     %Convert nuclei structure into schnitzcell structure
     [schnitzcells] = convertNucleiToSchnitzcells(nuclei); 
 else
@@ -158,9 +185,9 @@ else
     %Load the Ellipses and re-generate the centers
     load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
     %centers = updateCentersFromEllipses(Ellipses, centers);
-    centers = updateCentersFromEllipses(Ellipses);
+    centers = updateCentersFromEllipses(Prefix, Ellipses);
 
-    %Load the dataStructure to seed up retracking if it exists
+    %Load the dataStructure to speed up retracking if it exists
     if exist([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'], 'file')
         load([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'])
     elseif exist([FISHPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'], 'file')
@@ -192,17 +219,17 @@ else
         %Edit the names in dataStructure to match the current folder setup
         dataStructure.names=names;
         
-        [nuclei, centers, Dummy, dataStructure] = mainTracking(...
-            names,'indMitosis',indMit,'embryoMask', embryo_mask,...
+        [nuclei, centers, ~, dataStructure] = mainTracking(...
+            Prefix, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
             'centers',centers,'dataStructure',dataStructure, settingArguments{:});
     else
-        [nuclei, centers, Dummy, dataStructure] = mainTracking(...
-            names,'indMitosis',indMit,'embryoMask', embryo_mask,...
+        [nuclei, centers, ~, dataStructure] = mainTracking(...
+            Prefix, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
             'centers',centers, settingArguments{:});
     end
 
     %Put circles on the nuclei
-    [Ellipses] = putCirclesOnNuclei(centers,names,indMit);
+    [Ellipses] = putCirclesOnNuclei(Prefix,centers,names,indMit);
     %Convert nuclei structure into schnitzcell structure
     [schnitzcells] = convertNucleiToSchnitzcells(nuclei); 
 end
