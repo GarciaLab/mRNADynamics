@@ -1,5 +1,5 @@
 % Generates difference of Gaussian images
-function [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSize, customFilter, nCh, ExperimentType, coatChannel, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision)
+function [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSize, customFilter, nCh, ExperimentType, coatChannel, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision,sigmas)
 
   filterSize = round(2000/pixelSize); %2000nm seems to be a good size empirically -AR
   if ~customFilter

@@ -76,7 +76,12 @@ for j = 1:nTilesY
         maxY = min(ceil(size(f,2)*0.5+.5*tileSizeY),size(f,2));
         f = f(minX:maxX,minY:maxY);%f(spanX,spanY);%f((1+(jj-1)*tileSizeX):(tileSizeX+(jj-1)*tileSizeX),(1+(j-1)*tileSizeY):(tileSizeY+(j-1)*tileSizeY));
         
-        maxima = (f >= imdilate(f,localMaxMask));
+        try
+            %this may not be compatible with all GPU devices %AR 9/11/2018
+            maxima = (f >= gather(imdilate(gpuArray(uint8(f)),localMaxMask)));
+        catch
+            maxima = f >= imdilate(f,localMaxMask);
+        end
         
         if any(size(f) ~= [tileSizeX,tileSizeY])
             [X,Y] = meshgrid(1:size(f,1),1:size(f,2));

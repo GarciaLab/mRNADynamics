@@ -111,7 +111,6 @@ close all
 warning('off','MATLAB:nargchk:deprecated')
 warning('off','MATLAB:mir_warning_maybe_uninitialized_temporary')
 
-
 %% Information about about folders
 
 %Get the folders
@@ -1370,12 +1369,11 @@ while (cc~='x')
             ZoomMode=0;
             GlobalZoomMode=0;
         end
-    
-%     note to ar: a potentially simpler version of this button deletes
-%     particle frame but not spot. implement that with a different button.
-%           
-    elseif cc=='[' | cc=='{' %Add particle and all of its shadows to Spots.
+
+   
+    elseif cc=='[' | cc=='{' %#ok<*OR2> %Add particle and all of its shadows to Spots.
         
+             
         %Check that we're in zoom mode. If not, set it up.
         if ~(ZoomMode || GlobalZoomMode)
             disp('You need to be in Zoom Mode to do this. You can switch using ''o'' or ''+''. Run the ''['' command again.')
@@ -1399,6 +1397,16 @@ while (cc~='x')
                         && (ConnectPositiony > snippet_size/2) && (ConnectPositiony + snippet_size/2 < LinesPerFrame)
                     SpotsIndex = length(Spots{CurrentChannel}(CurrentFrame).Fits)+1;
                     breakflag = 0;
+                    maxWorkers = 8;
+                    try 
+                      parpool(maxWorkers);
+                    catch 
+                      try 
+                        parpool; % in case there aren't enough cores on the computer
+                      catch 
+                        % parpool throws an error if there's a pool already running.
+                      end 
+                    end
                     parfor i = 1:ZSlices %#ok<PFUIX>
                         spotsIm=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                              FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i,2),nameSuffix,'.tif']);                                                
@@ -1539,7 +1547,7 @@ while (cc~='x')
                             JoinParticleTraces(CurrentParticle,...
                             numParticles,Particles{CurrentChannel});
                         else
-                            disp('Re-run TrackmRNADynamics to associate this particle with a nucleus and trace.')
+                            disp('Re-run TrackmRNADynamics to associate this particle with a nucleus and trace or manually join with the ''c'' button.')
                         end
 
                         %Finally, force the code to recalculate the fluorescence trace
@@ -1594,33 +1602,54 @@ while (cc~='x')
             end
         end
     elseif cc=='c'
+        
+        
         PreviousParticle=0;
-        if ~sum(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame)
-            %ConnectPosition=ginput(1);
+        
+        exitConnectFlag = 0;
+        
+        
+        currentParticleExistsInCurrentFrame = sum(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame);
+        
+        if ~currentParticleExistsInCurrentFrame
             
             [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'b', 'linewidth',1);
             ConnectPosition = [ConnectPositionx,ConnectPositiony];
             
             if ~isempty(ConnectPosition)
-                [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
+                % find index of the particle we want to add (a.k.a output particle) to current
+                % particle (current particle)
+                [ParticleOutput,~]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
                
-                
+ 
                 %Check that the clicked particle doesn't exist in a previous
                 %frame, that there is no overlap of frames. If it does
                 %exist in a previous frame we will have to disconnect it.
-                if sum(Particles{CurrentChannel}(ParticleOutput).Frame<CurrentFrame)
-                    %Disconnect the clicked particle
-                    Particles{CurrentChannel}=SeparateParticleTraces(ParticleOutput,CurrentFrame,Particles{CurrentChannel});
-                    ParticleOutput=ParticleOutput+1;
+                
+               
+                clickedParticleExistsInAnyPreviousFrame = sum(Particles{CurrentChannel}(ParticleOutput).Frame<CurrentFrame);
+                
+
+                if clickedParticleExistsInAnyPreviousFrame
                     
-                    %If the current particle has an index larger than that
-                    %of the clicked particle (ParticleOutput) we also need to
-                    %move the index of the current Particle by one.
-                    if ParticleOutput<CurrentParticle
-                    	CurrentParticle=CurrentParticle+1;
-                    end
+                    
+                    msgbox('this button doesn''t currently support adding traces in this direction. try changing to this particle and then adding to the future particle.')
+                    exitConnectFlag = 1;
+% 
+%                     %Disconnect the clicked particle
+%                     Particles{CurrentChannel}=SeparateParticleTraces(ParticleOutput,CurrentFrame,Particles{CurrentChannel});
+%                     ParticleOutput=ParticleOutput+1;
+%                     
+%                     %If the current particle has an index larger than that
+%                     %of the clicked particle (ParticleOutput) we also need to
+%                     %move the index of the current Particle by one.
+%                     if ParticleOutput<CurrentParticle
+%                     	CurrentParticle=CurrentParticle+1;
+%                     end
+                    
                 end
                 
+                if ~exitConnectFlag
                 %Check that there is no overlap. If so, split current particle
                 overlap=0;
                 for i=1:length(Particles{CurrentChannel}(ParticleOutput).Frame)
@@ -1659,10 +1688,14 @@ while (cc~='x')
                 Particles{CurrentChannel}(CurrentParticle).FrameApproved=Particles{CurrentChannel}(CurrentParticle).FrameApproved(Permutations);                
 
             end
+            end
             
         else
-            ConnectPosition=ginput(1);
-            [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
+            
+            [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'b', 'linewidth',1);
+            ConnectPosition = [ConnectPositionx,ConnectPositiony];
+            
+            [ParticleOutput,~]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
             
             %If it's an independent particle swap it with the frame in the
             %current particle

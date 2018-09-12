@@ -1,4 +1,4 @@
-function [ parameterValue ] = getDefaultParameters( parameterName, varargin )
+function [ parameterValue ] = getDefaultParameters(parameterName, varargin)
 %GETDEFAULTPARAMETERS All default settings are grouped in here, so that
 %they can dynamically be redefined in all functions.
 %
@@ -14,8 +14,10 @@ function [ parameterValue ] = getDefaultParameters( parameterName, varargin )
 
 %% GLOBAL PARAMETERS
 
-time_resolution = 37;
-space_resolution = .22;
+% % time_resolution = 37;
+% % space_resolution = .22;
+time_resolution = 9.56;
+space_resolution = .0708;
 
 parameters.global = {...
     {time_resolution,'time resolution', 'timeResolution', 'time', 't'}...   % imaging period in seconds.

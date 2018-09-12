@@ -1,5 +1,5 @@
-function [displayFigures, numFrames, customFilter, highPrecision, filterType, keepPool] = determineFilterMovieOptions(varargin)
-  
+
+function [displayFigures, numFrames, customFilter, highPrecision, filterType, keepPool, sigmas] = determineFilterMovieOptions(varargin) 
 
   varargin = varargin{1};
   
