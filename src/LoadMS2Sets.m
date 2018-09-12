@@ -21,9 +21,9 @@ function Data=LoadMS2Sets(DataType)
 %Last Updated: 1/13/2018. AR 
 
 %Get some of the default folders
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath, configValues]=...
+[~,~,~,~,~, ~]=...
     DetermineLocalFolders;
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath, configValues]=...
+[~,~,~,~,~, configValues]=...
     DetermineLocalFolders;
 
 %Now, get a list of all possible other Dropbox folders
@@ -38,7 +38,7 @@ for i=1:length(DropboxFolders)
     if length(DDataStatus)>1
         error(['More than one DataStatus.XLS found in folder ',DropboxFolders{i}])
     elseif length(DDataStatus)==1
-        [Dummy,Sheets] = xlsfinfo([DropboxFolders{i},filesep,DDataStatus(1).name]);
+        [~,Sheets] = xlsfinfo([DropboxFolders{i},filesep,DDataStatus(1).name]);
         FindSheets=strcmpi(Sheets,DataType);
         if sum(FindSheets)==1
             DataStatusToCheck=[DataStatusToCheck,i];
@@ -56,7 +56,7 @@ end
 DropboxFolder=DropboxFolders{DataStatusToCheck};
 %Now, load the DataStatus.XLSX
 D=dir([DropboxFolder,filesep,'DataStatus.*']);
-[StatusNum,StatusTxt]=xlsread([DropboxFolder,filesep,D(1).name],DataType);
+[~,StatusTxt]=xlsread([DropboxFolder,filesep,D(1).name],DataType);
 
 
 %Which data sets are approved?
@@ -86,7 +86,7 @@ ExperimentType=[];
 ExperimentAxis=[];
 APResolution=[];
 
-PrefixRow=find(strcmp(StatusTxt(:,1),'Prefix:'));
+PrefixRow=strcmp(StatusTxt(:,1),'Prefix:');
 for i=1:length(CompiledSets)
     SetName=StatusTxt{PrefixRow,CompiledSets(i)};
     Quotes=strfind(SetName,'''');
@@ -97,14 +97,14 @@ for i=1:length(CompiledSets)
     
     %Load and check the experiment details consistency
     if ~isempty(ExperimentType)
-        if ~strcmp(ExperimentType, ExperimentTypeFromDatabase)
+        if ~strcmpi(ExperimentType, ExperimentTypeFromDatabase)
            error('Inconsistent experiment types found among the data sets.') 
         end
     else
         ExperimentType = ExperimentTypeFromDatabase;
     end
     if ~isempty(ExperimentAxis)
-        if ~strcmp(ExperimentAxis, ExperimentAxisFromDatabase)
+        if ~strcmpi(ExperimentAxis, ExperimentAxisFromDatabase)
            error('Inconsistent experiment axis found among the data sets.') 
         end
     else
@@ -123,7 +123,7 @@ end
 
 
 %Find and load the different prefixes
-PrefixRow=find(strcmp(StatusTxt(:,1),'Prefix:'));
+PrefixRow=find(strcmpi(StatusTxt(:,1),'Prefix:'));
 for i=1:length(CompiledSets)
     SetName=StatusTxt{PrefixRow,CompiledSets(i)};
     SetNames{i}=SetName;
@@ -348,18 +348,15 @@ end
 
 
 %If we have both particles and nuclei, then combine everything
-if exist('Data','var')&&exist('DataNuclei','var')
+if exist('Data','var') && exist('DataNuclei','var')
     DataTemp=Data;
     clear Data
     for i=1:length(DataTemp)
         Data(i).Particles=DataTemp(i);
         Data(i).Nuclei=DataNuclei(i);
     end
-elseif (~exist('Data', 'var'))&&exist('DataNuclei', 'var')
+elseif (~exist('Data', 'var')) && exist('DataNuclei', 'var')
     Data=DataNuclei;
-elseif  (~exist('Data','var'))&&(~exist('DataNuclei','var'))
+elseif  (~exist('Data','var')) && (~exist('DataNuclei','var'))
     error('No CompiledParticles found. Check DynamicsResults folder as well as DataStatus.XLSX.')
 end
-    
-
-

@@ -5,7 +5,7 @@ function [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSiz
   if ~customFilter
     sigmas = {1, round(42000/pixelSize)}; %42000nm seems to be a good size empirically -AR
   end 
-
+    
   for channelIndex = 1:nCh
     h=waitbar(0,'Filtering images');
     % (MT, 2018-02-11) Added support for lattice imaging, maybe 
