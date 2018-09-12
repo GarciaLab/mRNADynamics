@@ -1,14 +1,38 @@
 function TrackNuclei(Prefix,varargin)
-
-%This function is just a script that call Laurent's tracking code
-
-%Options:
-%StitchSchnitz: Run the schnitzcells fixing code by Simon
+% TrackNuclei(Prefix, [Options])
+%
+% DESCRIPTION
+% Use exported and projected nuclear images to segment and track nuclei over time.
+%
+% ARGUMENTS
+% Prefix: Prefix of the data set to analyze
+% [Options]: See below.
+%
+% OPTIONS
+% 'StitchSchnitz' : Run the schnitzcells fixing code by Simon
+% 'noRetrack' : Use if you want to overwrite earlier tracking and track
+%               from scratch by bypassing retrack mode. 
+% 
+% OUTPUT
+% '*_lin.mat' : Nuclei with lineages
+% 'Ellipses.mat' : Just nuclei
+%
+% Author (contact): Hernan Garcia (hggarcia@berkeley.edu)
+% Created: 01/01/2013 ish. 
+% Last Updated: 9/11/2018
+%
+% Documented by: Armando Reimer (areimer@berkeley.edu)
+%
+%
 
 SkipStitchSchnitz=1;
-if ~isempty(varargin)
-    if strcmpi(varargin{1},'stitchschnitz')
+noRetrack = 0;
+
+for i = 1:length(varargin)
+    if strcmpi(varargin{i},'stitchschnitz')
         SkipStitchSchnitz=0;
+    elseif strcmpi(varargin{i},'noRetrack')
+        noRetrack = 1;
     else
         error('Input parameter not recognized')
     end
@@ -130,7 +154,7 @@ settingArguments{4}=FrameInfo(1).PixelSize;
 
 
 %Do the tracking for the first time
-if ~exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file')
+if ~exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file') || noRetrack
     
     
     [nuclei, centers, ~, dataStructure] = ...
@@ -156,7 +180,7 @@ else
     %centers = updateCentersFromEllipses(Ellipses, centers);
     centers = updateCentersFromEllipses(Prefix, Ellipses);
 
-    %Load the dataStructure to seed up retracking if it exists
+    %Load the dataStructure to speed up retracking if it exists
     if exist([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'], 'file')
         load([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'])
     elseif exist([FISHPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'], 'file')
