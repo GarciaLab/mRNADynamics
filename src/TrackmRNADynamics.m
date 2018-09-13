@@ -581,6 +581,21 @@ end
 
 %If we only have one channel, then convert SpotFilter and Particles to a
 %standard structure.
+ 
+for currentChannel=1:NCh
+    if ~isfield(Particles{currentChannel},'FrameApproved')
+        for i=1:length(Particles{currentChannel})
+            Particles{currentChannel}(i).FrameApproved=true(size(Particles{currentChannel}(i).Frame));
+        end
+    else
+        for i=1:length(Particles{currentChannel})
+            if isempty(Particles{currentChannel}(i).FrameApproved)
+                Particles{currentChannel}(i).FrameApproved=true(size(Particles{currentChannel}(i).Frame));
+            end
+        end
+    end
+end
+
 if NCh==1
    SpotFilter=SpotFilter{1};
    Particles=Particles{1};
@@ -588,5 +603,34 @@ end
 
 mkdir([OutputFolder,filesep]);
 
+
 save([OutputFolder,filesep,'Particles.mat'],'Particles','SpotFilter',...
     'Threshold1','Threshold2', '-v7.3');
+
+% creating the field nc for FrameInfo
+if exist([OutputFolder,filesep,'FrameInfo.mat'])
+    numberOfFrames = length(FrameInfo);
+    for currentFrame=1:numberOfFrames
+        if currentFrame<nc9
+            FrameInfo(currentFrame).nc=8;
+        elseif (currentFrame>=nc9)&&(currentFrame<nc10)
+            FrameInfo(currentFrame).nc=9;
+        elseif (currentFrame>=nc10)&&(currentFrame<nc11)
+            FrameInfo(currentFrame).nc=10;
+        elseif (currentFrame>=nc11)&&(currentFrame<=nc12)
+            FrameInfo(currentFrame).nc=11;
+        elseif (currentFrame>=nc12)&&(currentFrame<=nc13)
+            FrameInfo(currentFrame).nc=12;
+        elseif (currentFrame>=nc13)&&(currentFrame<=nc14)
+            FrameInfo(currentFrame).nc=13;
+        elseif currentFrame>=nc14
+            FrameInfo(currentFrame).nc=14;
+        end
+    end
+    save([OutputFolder,filesep,'FrameInfo.mat'],'FrameInfo')
+else
+    warning('Tried to save nc frame information, but could not since there is no FrameInfo.mat')
+end
+
+
+
