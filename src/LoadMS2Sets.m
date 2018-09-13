@@ -21,7 +21,7 @@ function Data=LoadMS2Sets(DataType)
 %Last Updated: 1/13/2018. AR 
 
 %Get some of the default folders
-[~,~,~,~,~, ~]=...
+[~,~,DefaultDropboxFolder,~,~, ~]=...
     DetermineLocalFolders;
 [~,~,~,~,~, configValues]=...
     DetermineLocalFolders;
@@ -92,9 +92,16 @@ for i=1:length(CompiledSets)
     Quotes=strfind(SetName,'''');
     Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
 
-    [~, ExperimentTypeFromDatabase, ExperimentAxisFromDatabase, ~, ~, APResolutionFromDatabase, ~,...
-    ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~] = getExperimentDataFromMovieDatabase(Prefix, DropboxFolder);
-    
+    try 
+        [~, ExperimentTypeFromDatabase, ExperimentAxisFromDatabase, ~, ~, APResolutionFromDatabase, ~,...
+        ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~] = getExperimentDataFromMovieDatabase(Prefix, DropboxFolder);
+    catch 
+          [~, ExperimentTypeFromDatabase, ExperimentAxisFromDatabase, ~, ~, APResolutionFromDatabase, ~,...
+        ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+        DropboxFolder = DefaultDropboxFolder;
+        warning('Couldn''t find this project''s moviedatabase.csv. Trying default dropbox folder.')
+    end
+
     %Load and check the experiment details consistency
     if ~isempty(ExperimentType)
         if ~strcmpi(ExperimentType, ExperimentTypeFromDatabase)
