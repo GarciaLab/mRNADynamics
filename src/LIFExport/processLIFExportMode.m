@@ -1,5 +1,5 @@
 % Added PreferredFileName so we can automate testing and bypass the user prompt when there are many files available.
-function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, ProjectionType, Channel1, Channel2, Channel3, Prefix, OutputFolder, PreferredFileNameForTest)
+function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, ProjectionType, Channel1, Channel2, Channel3, Prefix, OutputFolder, PreferredFileNameForTest, keepTifs)
   %Loads file and metadata
   [XMLFolder, SeriesFiles, SeriesFiles3] = getSeriesFiles(Folder);
   [~, ~, LIFImages, LIFMeta] = loadLIFFile(Folder);
@@ -33,5 +33,27 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, Pro
       numberOfFrames = numberOfFrames + 1;
     end
   end
+
+  if ~keepTifs
+    removeUnwantedTIFs(Folder);
+  end
+
   close(waitbarFigure)
+end
+
+% Removes all TIF files from the original folder in RawDynamicsData
+function removeUnwantedTIFs(Folder) 
+  cd(Folder);
+  tifs = dir('*.tif');
+
+  allTifs = {tifs.name};
+
+  if numel(allTifs) > 1
+    disp(['Removing TIF files from source folder ', Folder]);
+    for i = 2:numel(allTifs)
+      disp(['Deleting ', allTifs{i}]);
+      delete(allTifs{i});
+    end
+  end
+
 end

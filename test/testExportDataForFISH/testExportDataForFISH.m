@@ -18,9 +18,9 @@ function testCase = testExportDataForFISH(testCase)
   deleteDirectory(preprocessedDataFolder);
 
   if (~isprop(testCase, 'PreferredFileName')) 
-    ExportDataForFISH(testCase.Prefix);
+    ExportDataForFISH(testCase.Prefix, 'keepTifs');
   else 
-    ExportDataForFISH(testCase.Prefix, testCase.PreferredFileName);
+    ExportDataForFISH(testCase.Prefix, testCase.PreferredFileName, 'keepTifs');
   end
 
   compareExpectedDataDir(testCase, preprocessedDataFolder, expectedDataFolder);
