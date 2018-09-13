@@ -9,7 +9,13 @@ function [Frame_Times, First_Time] = obtainFrameTimes(XMLFolder, SeriesFiles, NS
         Date = char(TimeStamp.getAttribute('Date'));
         Time = char(TimeStamp.getAttribute('Time'));
         Milli = char(TimeStamp.getAttribute('MiliSeconds'));
-        time_in_days = datenum(strcat(Date, '-', Time, '-', Milli), 'dd/mm/yyyy-HH:MM:SS AM-FFF');
+        if contains(Time, 'AM')
+            time_in_days = datenum(strcat(Date, '-', Time, '-', Milli), 'mm/dd/yyyy-HH:MM:SS AM-FFF');
+        elseif contains(Time, 'PM')
+            time_in_days = datenum(strcat(Date, '-', Time, '-', Milli), 'mm/dd/yyyy-HH:MM:SS PM-FFF');
+        else
+            error('something''s wrong with your timestamps. ask AR or HG?')
+        end
         Frame_Times(frameTimesIndex) = time_in_days * 86400;
         frameTimesIndex = frameTimesIndex + 1;
     end

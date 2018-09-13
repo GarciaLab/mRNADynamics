@@ -1,8 +1,5 @@
 function [NSeries, NFrames, NSlices, NPlanes, NChannels, Frame_Times] = getFrames(LIFMeta)
-  % NSeries=LIFMeta.getImageCount(); %AR 2/4/2018 Not sure why this subtracts one, but it causes an error when there's only one series.
-  % if NSeries == 0
-  % NSeries = LIFMeta.getImageCount();
-  % end
+  
   NSeries = LIFMeta.getImageCount();
   
   %Figure out the number of slices in each series
