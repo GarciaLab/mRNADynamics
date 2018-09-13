@@ -45,7 +45,7 @@ function CompileParticles(varargin)
 %
 % Documented by: Hernan Garcia (hggarcia@berkeley.edu)
 
-close all
+close all force;
 
 %Information about about folders
 [~,~,DefaultDropboxFolder,~,~]=...
@@ -2250,16 +2250,17 @@ if HistoneChannel&&strcmpi(ExperimentAxis,'AP')
             end
         end
 
-        figure(17)
+        fractionFig = figure();
+        fractionAxes = axes(fractionFig);
         plot(APbinID,EllipsesOnAP{ChN}(:,1)./TotalEllipsesAP(:,1),'.-b') % fraction on nc 12
-        hold on
+        hold(fractionAxes,'on')
         plot(APbinID,EllipsesOnAP{ChN}(:,2)./TotalEllipsesAP(:,2),'.-k') % fraction on nc 13
         plot(APbinID,EllipsesOnAP{ChN}(:,3)./TotalEllipsesAP(:,3),'.-r') % fraction on nc 14
-        hold off
-        title('Fraction active nuclei')
-        xlabel('AP (x/L)')
-        ylabel('Fraction')
-        legend('nc12', 'nc13', 'nc14')
+        hold(fractionAxes,'off')
+        title(fractionAxes,'Fraction active nuclei')
+        xlabel(fractionAxes,'AP (x/L)')
+        ylabel(fractionAxes,'Fraction')
+        legend(fractionAxes,'nc12', 'nc13', 'nc14')
     end
 end
 
@@ -2276,41 +2277,44 @@ if ~SkipMovie&&strcmpi(ExperimentAxis,'AP')
     
     for ChN=1:NChannels
 
-        APMovieFig = figure(17);
-        APMovieFigAxes = axes(APMovieFig);
-
+        APMovieFig = figure();
+        
         MaxValue=max(max(MeanVectorAP{ChN}));
         NParticlesAPFilter=NParticlesAP{ChN}>=MinParticles;
 
         for i=1:numFrames
+
             PlotHandle=errorbar(APbinID(NParticlesAPFilter(i,:)),...
                 MeanVectorAP{ChN}(i,NParticlesAPFilter(i,:)),SDVectorAP{ChN}(i,NParticlesAPFilter(i,:)),'.-k');
-            hold(APMovieFigAxes, 'on')
+            hold on
             PlotHandle=[PlotHandle,errorbar(APbinID(NParticlesAPFilter(i,:)),...
                 MeanVectorAP{ChN}(i,NParticlesAPFilter(i,:)),...
                 SDVectorAP{ChN}(i,NParticlesAPFilter(i,:))./sqrt(NParticlesAP{ChN}(i,NParticlesAPFilter(i,:))),'-k')];
-            hold(APMovieFigAxes, 'off')
-            xlim([0.1,0.8])
-            ylim([0,MaxValue])
-            xlabel('AP position (x/L)')
-            ylabel('Mean fluorescence')
+            hold off
 
             if isfield(FrameInfo, 'nc')
-                if FrameInfo(i).nc >0
-                    title(APMovieFig,['nc',num2str(FrameInfo(i).nc),'. Time into nc: ',num2str(round((ElapsedTime(i)-...
-                        ElapsedTime(eval(['nc',num2str(FrameInfo(i).nc)])))*10)/10),' min. Total time: ',...
-                        num2str(round(ElapsedTime(i)*10)/10),' min (Frame ',num2str(i),').'])
+                currentNC = num2str(FrameInfo(i).nc);
+                iStr = num2str(i);
+                elapsedStr = num2str(round(ElapsedTime(i)*10)/10);
+                if eval(['nc',currentNC]) > 0
+                    title(['nc', currentNC,'. Time into nc: ',num2str(round((ElapsedTime(i)-...
+                        round(ElapsedTime(eval(['nc',currentNC]))*10)/10))),' min. Total time: ',...
+                        elapsedStr,' min (Frame ',iStr,').'])
                 else
-                    title(APMovieFig,['nc',num2str(FrameInfo(i).nc),'. Total time: ',...
-                        num2str(round(ElapsedTime(i)*10)/10),' min (Frame ',num2str(i),').'])
+                    title(['nc',currentNC,'. Total time: ',...
+                        elapsedStr,' min (Frame ',iStr,').'])
                 end
             else
-                title(APMovieFig, ['nc',num2str(FrameInfo(i).nc),'. Total time: ',...
-                    num2str(round(ElapsedTime(i)*10)/10),' min (Frame ',num2str(i),').'])
+                title(['nc',currentNC,'. Total time: ',...
+                    elapsedStr,' min (Frame ',iStr,').'])
             end
+            xlim([0.1,0.8]);
+            ylim([0,MaxValue]);
+            xlabel('AP position (x/L)');
+            ylabel('Mean fluorescence');
 
-            StandardFigure(PlotHandle,APMovieFigAxes)
-            saveas(APMovieFig,[DropboxFolder,filesep,Prefix,filesep,'APMovie',filesep,iIndex(i,3),'_ch',iIndex(ChN,2),'.tif']);   
+            StandardFigure(PlotHandle,gca)
+            saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'APMovie',filesep,iIndex(i,3),'_ch',iIndex(ChN,2),'.tif']);   
         end
     end
 end
