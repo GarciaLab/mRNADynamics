@@ -17,13 +17,17 @@
 %                   of the middle slices (11-16) to prevent bright
 %                   reflections from overpowering the signal
 % 'PreferredFileForTest': AR 8/30/2018 don't know. 
-% 'skipframes': AR 8/30/2018 don't know. 
+% 'skipframes': AR 8/30/2018 don't know.
+% 'keepTifs': MPF 9/12/2018 Do not delete source folder TIF files when
+% running. This is used for testing purposes.
 %
 %
 % OUTPUT
 % Exported tif images are placed in the PreProcessedData folder and divided
 % into a nuclear channel for tracking/protein quantification and a channel
 % for transcriptional loci. 
+% All TIFs from source folder are deleted except argument 'keepTifs' is
+% used.
 %
 % Author (contact): Hernan Garcia
 % Created: 01/01/2016
@@ -50,7 +54,7 @@
 
 function Prefix = ExportDataForFISH(varargin)
 
-[Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest] = exportDataForFISH_processInputParameters(varargin{:})
+[Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs] = exportDataForFISH_processInputParameters(varargin{:})
 
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
     Folder, Prefix, ExperimentType, Channel1, Channel2,OutputFolder, Channel3...
@@ -87,7 +91,8 @@ elseif strcmpi(FileMode,'LSM')
   FrameInfo = processZeissConfocalLSMData(Folder, D, FrameInfo, ExperimentType, Channel1, Channel2, Prefix, OutputFolder);
 
 elseif strcmpi(FileMode,'LIFExport')
-  FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, ProjectionType, Channel1, Channel2, Channel3, Prefix, OutputFolder, PreferredFileNameForTest);        
+  FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, ProjectionType, Channel1, Channel2, Channel3, Prefix,...
+   OutputFolder, PreferredFileNameForTest, keepTifs);        
 
 elseif strcmpi(FileMode,'DSPIN') || strcmpi(FileMode,'DND2')
   %Nikon spinning disk confocal mode - TH/CS 2017
