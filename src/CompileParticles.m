@@ -2276,7 +2276,8 @@ if ~SkipMovie&&strcmpi(ExperimentAxis,'AP')
     
     for ChN=1:NChannels
 
-        figure(17)
+        APMovieFig = figure(17);
+        APMovieFigAxes = axes(APMovieFig);
 
         MaxValue=max(max(MeanVectorAP{ChN}));
         NParticlesAPFilter=NParticlesAP{ChN}>=MinParticles;
@@ -2284,32 +2285,32 @@ if ~SkipMovie&&strcmpi(ExperimentAxis,'AP')
         for i=1:numFrames
             PlotHandle=errorbar(APbinID(NParticlesAPFilter(i,:)),...
                 MeanVectorAP{ChN}(i,NParticlesAPFilter(i,:)),SDVectorAP{ChN}(i,NParticlesAPFilter(i,:)),'.-k');
-            hold on
+            hold(APMovieFigAxes, 'on')
             PlotHandle=[PlotHandle,errorbar(APbinID(NParticlesAPFilter(i,:)),...
                 MeanVectorAP{ChN}(i,NParticlesAPFilter(i,:)),...
                 SDVectorAP{ChN}(i,NParticlesAPFilter(i,:))./sqrt(NParticlesAP{ChN}(i,NParticlesAPFilter(i,:))),'-k')];
-            hold off
+            hold(APMovieFigAxes, 'off')
             xlim([0.1,0.8])
             ylim([0,MaxValue])
             xlabel('AP position (x/L)')
             ylabel('Mean fluorescence')
 
-            if exist(['nc',num2str(FrameInfo(i).nc)])
-                if eval(['nc',num2str(FrameInfo(i).nc)])>0
-                    title(['nc',num2str(FrameInfo(i).nc),'. Time into nc: ',num2str(round((ElapsedTime(i)-...
+            if isfield(FrameInfo, 'nc')
+                if FrameInfo(i).nc >0
+                    title(APMovieFig,['nc',num2str(FrameInfo(i).nc),'. Time into nc: ',num2str(round((ElapsedTime(i)-...
                         ElapsedTime(eval(['nc',num2str(FrameInfo(i).nc)])))*10)/10),' min. Total time: ',...
                         num2str(round(ElapsedTime(i)*10)/10),' min (Frame ',num2str(i),').'])
                 else
-                    title(['nc',num2str(FrameInfo(i).nc),'. Total time: ',...
+                    title(APMovieFig,['nc',num2str(FrameInfo(i).nc),'. Total time: ',...
                         num2str(round(ElapsedTime(i)*10)/10),' min (Frame ',num2str(i),').'])
                 end
             else
-                title(['nc',num2str(FrameInfo(i).nc),'. Total time: ',...
+                title(APMovieFig, ['nc',num2str(FrameInfo(i).nc),'. Total time: ',...
                     num2str(round(ElapsedTime(i)*10)/10),' min (Frame ',num2str(i),').'])
             end
 
-            StandardFigure(PlotHandle,gca)
-            saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'APMovie',filesep,iIndex(i,3),'_ch',iIndex(ChN,2),'.tif']);   
+            StandardFigure(PlotHandle,APMovieFigAxes)
+            saveas(APMovieFig,[DropboxFolder,filesep,Prefix,filesep,'APMovie',filesep,iIndex(i,3),'_ch',iIndex(ChN,2),'.tif']);   
         end
     end
 end

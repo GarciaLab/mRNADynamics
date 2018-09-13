@@ -41,7 +41,7 @@ if ~isempty(varargin)
     for i=2:length(varargin)
         switch varargin{i}
             case {'SkipAlignment'}
-                display('Skipping alignment step')
+                disp('Skipping alignment step')
                 SkipAlignment=1;
             case {'ManualAlignment'}
                 ManualAlignment=1;
@@ -115,32 +115,32 @@ DLIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lif']);
 DLAT=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*_Settings.txt']);
 DSPIN=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.nd']);     %Nikon spinning disk . CS20170911
 
-if (length(DTIF)>0)&(length(DLSM)==0)&(length(DSPIN)==0)
-    if length(DLIF)==0
-        if length(DLAT)==0
-            display('2-photon @ Princeton data mode')
+if ~isempty(DTIF) & isempty(DLSM)& isempty(DSPIN)
+    if isempty(DLIF)
+        if isempty(DLAT)
+            disp('2-photon @ Princeton data mode')
             D=DTIF;
             FileMode='TIF';
         else
-            display('Lattice Light Sheet data mode')
+            disp('Lattice Light Sheet data mode')
             D=DTIF;
             FileMode='LAT';
         end
     else
-        display('LIF export mode')
+        disp('LIF export mode')
         D=DTIF;
         FileMode='LIFExport';
     end
-elseif (length(DTIF)==0)&(length(DLSM)>0)
-    display('LSM mode')
+elseif (isempty(DTIF))&(~isempty(DLSM))
+    disp('LSM mode')
     D=DLSM;
     FileMode='LSM';
-elseif (length(DTIF)==0)&(length(DCZI)>0)
-    display('CZI mode')
+elseif (isempty(DTIF))&(~isempty(DCZI))
+    disp('CZI mode')
     D=DLSM;
     FileMode='CZI';
-elseif (length(DSPIN)>0)        %CS20170911
-    display('Nikon spinning disk mode with .nd files')
+elseif (~isempty(DSPIN))        %CS20170911
+    disp('Nikon spinning disk mode with .nd files')
     D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo', filesep,'*.nd']);     %spinning disk with .nd output files
     FileMode='DSPIN';
 else
@@ -566,16 +566,16 @@ if ~NoAP
             %Calculate the correlation matrix and find the maximum
             if ((~isempty(strfind(lower(Channel1),'bcd')))|...
                     (~isempty(strfind(lower(Channel2),'bcd'))))
-                C = normxcorr2(ZoomImage, SurfImageResized);
+                C = gather(normxcorr2(gpuArray(ZoomImage), gpuArray(SurfImageResized)));
             elseif InvertHis
                 warning('I still need to fix this part')
-                C = normxcorr2(imcomplement(ZoomImage), SurfImageResized);
+                C = gather(normxcorr2(imcomplement(gpuArray(ZoomImage)), gpuArray(SurfImageResized)));
             else
-                C = normxcorr2(ZoomImage, SurfImageResized);
+                C = gather(normxcorr2(gpuArray(ZoomImage), gpuArray(SurfImageResized)));
             end
             
             [Max2,MaxRows]=max(C);
-            [Dummy,MaxColumn]=max(Max2);
+            [~,MaxColumn]=max(Max2);
             MaxRow=MaxRows(MaxColumn);
             [CRows,CColumns]=size(C);
             
@@ -591,14 +591,14 @@ if ~NoAP
             [RowsZoom,ColumnsZoom]=size(ZoomImage);
             
             %If manual alignment was done before then load the results
-            if exist('ManualAlignmentDone')
+            if exist('ManualAlignmentDone', 'var')
                 if ManualAlignmentDone
-                    display('Manual alignment results saved.')
+                    disp('Manual alignment results saved.')
                     Answer=input('Would you like to use them (y/n)? ','s');
-                    if strcmp(lower(Answer),'y')
+                    if strcmpi(Answer,'y')
                         load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
-                    elseif strcmp(lower(Answer),'n')
-                        display('Deleting manual alignment results')
+                    elseif strcmpi(Answer,'n')
+                        disp('Deleting manual alignment results')
                         clear ManualAlignmentDone
                     else
                         msgbox('Error: Answer not recognized');
@@ -640,7 +640,7 @@ if ~NoAP
                     +mat2gray(ZoomImage),zeros(size(SurfImageResizeZoom)));
                 
                 %Nuclear mask overlay
-                NucMaskZoomOut=GetNuclearMask(SurfImage,2.5,0);
+                NucMaskZoomOut= GetNuclearMask(SurfImage,2.5,0);
                 NucMaskZoomOutResized=imresize(NucMaskZoomOut, ZoomRatio);
                 NucMaskZoomOutResizedCropped=...
                     NucMaskZoomOutResized(RowsResizedRange,ColumnsResizedRange);
@@ -662,8 +662,8 @@ if ~NoAP
                 figure(2)
                 %HG: Note that I changed the ranges here by two pixels at
                 %least.
-                contourf(abs(C(((CRows+1)/2-RowsZoom+1):(CRows-1)/2+RowsZoom,...
-                    ((CColumns+1)/2-ColumnsZoom+1):(CColumns-1)/2+ColumnsZoom)))
+                contourf(imresize(abs(C(((CRows+1)/2-RowsZoom+1):(CRows-1)/2+RowsZoom,...
+                    ((CColumns+1)/2-ColumnsZoom+1):(CColumns-1)/2+ColumnsZoom)), .5));
                 saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentCorrelation.tif']);
             catch
                 warning('Could not generate correlation image. Switching to manual alignment')
@@ -1168,15 +1168,16 @@ if ~NoAP
     end
     
     
-    figure(7)
-    imshow(imadjust(mat2gray(FullEmbryo)),'DisplayRange',[],'InitialMagnification',100)
-    hold on
+    fullFigure = figure(7);
+    fullAxes = axes(fullFigure);
+    imshow(imadjust(mat2gray(FullEmbryo)),'DisplayRange',[],'InitialMagnification',100,'Parent', fullAxes)
+    hold(fullAxes, 'on')
     rectangle('Position',[TopLeft([2,1]),BottomRight([2,1])-TopLeft([2,1])],'EdgeColor','r')
     plot(coordA(1),coordA(2),'.g','MarkerSize',30)
     plot(coordP(1),coordP(2),'.r','MarkerSize',30)
     plot([coordA(1),coordP(1)],[coordA(2),coordP(2)],'-b')
-    hold off
-    saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoArea.tif']);
+    hold(fullAxes, 'off')
+    saveas(fullFigure, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoArea.tif']);
     
     %     figure(8)
     %     imshow(imadjust(SurfImage),'DisplayRange',[],'InitialMagnification',100)
@@ -1194,16 +1195,18 @@ if ~NoAP
     
     
     if strcmp(FileMode,'TIF')
-        figure(8)
-        imshow(imadjust(SurfImage),'DisplayRange',[],'InitialMagnification',100)
-        hold on
+        
+        surfImageFigure = figure(8);
+        surfImageAxes = axes(surfImageFigure);
+        imshow(imadjust(SurfImage),'DisplayRange',[],'InitialMagnification',100, 'Parent', surfImageAxes)
+        hold(surfImageAxes, 'on')
         rectangle('Position',[TopLeftHalf([2,1]),BottomRightHalf([2,1])-TopLeftHalf([2,1])],'EdgeColor','r')
         plot(coordAHalf(1),coordAHalf(2),'.g','MarkerSize',30)
         plot(coordPHalf(1),coordPHalf(2),'.r','MarkerSize',30)
         plot([coordAHalf(1),coordPHalf(1)],[coordAHalf(2),coordPHalf(2)],'-b')
         plot([1],[1],'.y','MarkerSize',50)
-        hold off
-        saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'HalfEmbryoArea.tif']);
+        hold(surfImageAxes, 'off')
+        saveas(surfImageFigure, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'HalfEmbryoArea.tif']);
         
         %We have the position of the anterior and posterior in the coordinates of the
         %field of view we took. Do the mapping of the imaging region with respect to the AP axis.
@@ -1216,16 +1219,17 @@ if ~NoAP
         coordAZoom=(coordAHalf-[TopLeftHalf(2),TopLeftHalf(1)])*ZoomRatio;
         coordPZoom=(coordPHalf-[TopLeftHalf(2),TopLeftHalf(1)])*ZoomRatio;
     else
-        figure(8)
-        imshow(imadjust(SurfImage),'DisplayRange',[],'InitialMagnification',100)
-        hold on
+        surfImageFigure = figure(8);
+        surfImageAxes = axes(surfImageFigure);
+        imshow(imadjust(SurfImage),'DisplayRange',[],'InitialMagnification',100, 'Parent', surfImageAxes)
+        hold(surfImageAxes, 'on')
         rectangle('Position',[TopLeft([2,1]),BottomRight([2,1])-TopLeft([2,1])],'EdgeColor','r')
         plot(coordA(1),coordA(2),'.g','MarkerSize',30)
         plot(coordP(1),coordP(2),'.r','MarkerSize',30)
         plot([coordA(1),coordP(1)],[coordA(2),coordP(2)],'-b')
         plot([1],[1],'.y','MarkerSize',50)
-        hold off
-        saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'HalfEmbryoArea.tif'])
+        hold(surfImageAxes,'off')
+        saveas(surfImageFigure, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'HalfEmbryoArea.tif'])
         
         coordAZoom=(coordA-[TopLeft(2),TopLeft(1)])*ZoomRatio;
         coordPZoom=(coordP-[TopLeft(2),TopLeft(1)])*ZoomRatio;
@@ -1237,16 +1241,17 @@ if ~NoAP
     
     
     
-    figure(9)
-    imshow(imadjust(ZoomImage),[])
+    zoomImageFigure = figure(9);
+    zoomImageAxes = axes(zoomImageFigure);
+    imshow(imadjust(ZoomImage),[], 'Parent', zoomImageAxes)
     %imshow(NucMaskZoomIn)
     %imshow(NucMaskZoomOutResizedCropped)
-    hold on
+    hold(zoomImageAxes,'on')
     plot([coordAZoom(1),coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'-b')
     plot([coordAZoom(1)+1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'--r')
     plot([coordAZoom(1)-1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'-.g')
-    hold off
-    saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'ZoomedEmbryoAP.tif']);
+    hold(zoomImageAxes,'off')
+    saveas(zoomImageFigure, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'ZoomedEmbryoAP.tif']);
     
     
     %With AP coordinates in hand we can now determine the AP position of
@@ -1274,29 +1279,30 @@ if ~NoAP
     end
 
     
-    APbinID=0:APResolution:1;
+    APbinID = 0:APResolution:1;
     
     
     APPosBinImage=zeros(size(APPosImage));
     for i=1:(length(APbinID)-1)
         FilteredMask=(APbinID(i)<=APPosImage)&(APbinID(i+1)>APPosImage);
-        
+      
         APPosBinImage=APPosBinImage+FilteredMask*i;
     end
     
+    
+    zoomOverlayFigure = figure(10);
+    zoomOverlayAxes = axes(zoomOverlayFigure);
     ZoomOverlay=cat(3,mat2gray(ZoomImage)/2+mat2gray(APPosBinImage)/2,...
         mat2gray(ZoomImage)/2,mat2gray(ZoomImage)/2);
-    
-    figure(10)
-    imshow(ZoomOverlay)
-    hold on
+    imshow(ZoomOverlay, 'Parent', zoomOverlayAxes)
+    hold(zoomOverlayAxes, 'on')
     plot([coordAZoom(1),coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'-b')
     plot([coordAZoom(1)+1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'--r')
     plot([coordAZoom(1)-1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'-.g')
-    hold off
+    hold(zoomOverlayAxes,'off')
     
     
-    if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
+    if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
         for ChN=1:NChannels
             for i=1:length(Particles{ChN})
                 %Angle between the x-axis and the particle using the A position as a
@@ -1328,21 +1334,21 @@ if ~NoAP
     %Default set of variables to save
     VariablesToSave={'coordA','coordP','coordAZoom','coordPZoom'};
     %Information about shifts
-    if exist('xShift')
+    if exist('xShift', 'var')
         VariablesToSave={VariablesToSave{:},'xShift','yShift'};
-    elseif  exist('xShift1')
+    elseif  exist('xShift1', 'var')
         VariablesToSave={VariablesToSave{:},'xShift1','yShift1',...
             'xShift2','yShift2'};
     end
     %Rotation information
-    if exist('zoom_angle')
+    if exist('zoom_angle', 'var')
         ImageRotation=zoom_angle;
         VariablesToSave={VariablesToSave{:},'ImageRotation'};
     end
     
     save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],VariablesToSave{:})
     
-    if exist('ManualAlignmentDone')
+    if exist('ManualAlignmentDone', 'var')
         if ManualAlignmentDone
             save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ManualAlignmentDone',...
                 'ShiftColumn','ShiftRow','-append')

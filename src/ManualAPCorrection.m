@@ -38,29 +38,27 @@ NucMaskZoomIn=GetNuclearMask(ZoomImage,8,2);
 [RowsResized,ColumnsResized]=size(NucMaskZoomOutResized);
 [RowsZoom,ColumnsZoom]=size(ZoomImage);
 
-%Determine the positions and size of the figures, and create the figures
-ScreenSize=get( 0, 'ScreenSize' );
-ScreenSize=ScreenSize(3:end);
-ScreenRows=ScreenSize(2);
-ScreenColumns=ScreenSize(1);
-
 FigureCorrelation=figure;
-set(gcf,'units', 'normalized', 'position',[0.4, 0.2, 0.3, 0.2]);
-contourf(abs(C))
+correlationAxes = axes(FigureCorrelation);
+set(FigureCorrelation,'units', 'normalized', 'position',[0.4, 0.2, 0.3, 0.2]);
+contourf(imresize(abs(C),.1)); %AR 9/12/2018. resized the image to make this more computationally realistic and prevent crashes. 
 ylim([(CRows-1)/2-RowsZoom,(CRows-1)/2+RowsZoom])
 xlim([(CColumns-1)/2-ColumnsZoom,(CColumns-1)/2+ColumnsZoom])
 PlotHandle=[];
 
 FigureRealOverlay=figure;
-set(gcf,'units', 'normalized', 'position',[0.05, 0.2, 0.3, 0.3]);
+realAxes = axes(FigureRealOverlay);
+set(FigureRealOverlay,'units', 'normalized', 'position',[0.05, 0.2, 0.3, 0.3]);
 
 FigureOverlay=figure;
-set(gcf,'units', 'normalized', 'position',[0.05, 0.6, 0.3, 0.3]);
+overlayAxes = axes(FigureOverlay);
+set(FigureOverlay,'units', 'normalized', 'position',[0.05, 0.6, 0.3, 0.3]);
 
 cc=1;
 
 FigureRectangle=figure;
-set(gcf,'units', 'normalized', 'position',[0.4, 0.5, 0.3, 0.4]);
+rectangleAxes = axes(FigureRectangle);
+set(FigureRectangle,'units', 'normalized', 'position',[0.4, 0.5, 0.3, 0.4]);
 
 
 %Default flags
@@ -150,7 +148,7 @@ while (cc~=13)
     elseif (ct~=0)&(cc=='A')
         ShiftRow=ShiftRow+50;
     elseif (ct~=0)&(cc=='m')
-        display('Select a location to center the alignment box')
+        disp('Select a location to center the alignment box')
         figure(FigureRectangle)
         [Positionx,Positiony]=ginputc(1,'color', 'b', 'linewidth',1);
         Position = [Positionx,Positiony];
