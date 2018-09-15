@@ -964,9 +964,11 @@ while (cc~='x')
 
                 if ~isempty(gaussParams)
                     gaussParams= gaussParams{CurrentZIndex};
-                    if iscell(gaussParams)
+                    try
                         gauss = singleGaussian(gaussParams);
-                    else
+                    catch
+                        %not sure in what situation this fails. -AR
+                        %9/15/2018
                         gauss = NaN;
                     end
                 else
