@@ -111,6 +111,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
   pixelSize = FrameInfo(1).PixelSize * 1000; %nm
   neighborhood = round(1300 / pixelSize); %nm
   snippet_size = 2 * (floor(1300 / (2 * pixelSize))) + 1; % nm. note that this is forced to be odd
+  use_integral_center = 1; %for z-tracking
 
   all_frames = cell(numFrames, zSize);
   close all force;
@@ -133,7 +134,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
     close all force;
 
     % Create a useful structure that can be fed into pipeline
-    [Particles, fields] = saveParticleInformation(numFrames, all_frames, zSize);
+    [Particles, fields] = saveParticleInformation(numFrames, all_frames, zSize, use_integral_center);
 
     if ~isempty(fields)
        

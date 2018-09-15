@@ -117,18 +117,6 @@ warning('off','MATLAB:mir_warning_maybe_uninitialized_temporary')
 [~,~,DefaultDropboxFolder,~,PreProcPath]=...
     DetermineLocalFolders;
 
-%Also get the computer name. We'll use this later
-
-%Find out which computer this is. That will determine the folder structure.
-[ret, name] = system('hostname');  
-if ret ~= 0 
-   if ispc  
-      name = lower(getenv('COMPUTERNAME'));  
-   else  
-      name = lower(getenv('HOSTNAME'));  
-   end  
-end  
-
 if isempty(varargin)
     DataFolder=uigetdir(DefaultDropboxFolder,'Select data set to analyze');
 else
@@ -1014,15 +1002,18 @@ while (cc~='x')
         % check to see if Spots contains flag indicating type of
         % integration used
         title_string = '(max intensity)';
-        if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex),'IntegralZ')
-            if Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).IntegralZ
-                ZProfile=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).FixedAreaIntensity;
-                title_string = '(raw integral)';
+%         if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex),'IntegralZ')
+        if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex),'FixedAreaIntensity3')
+
+%             if Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).IntegralZ
+               ZProfile= conv(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).FixedAreaIntensity, [1, 1, 1]);
+               ZProfile = ZProfile(2:end-1);
+                title_string = '(3 slice raw integral)';
                 IntegralZ_flag = 1;
-            else
-                ZProfile=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity;
-                IntegralZ_flag = 0;
-            end
+%             else
+%                 ZProfile=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity;
+%                 IntegralZ_flag = 0;
+%             end
         else
             ZProfile=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity;
             IntegralZ_flag = 0;
@@ -1039,8 +1030,8 @@ while (cc~='x')
             plot(zProfileFigAxes,CurrentZ,CurrentZ,'or')
         end
         hold(zProfileFigAxes,'off')
-        xlabel(zProfileFigAxes,'intensity(au)', 'FontSize',12);
-        ylabel(zProfileFigAxes,'z-slice', 'FontSize',12);
+        ylabel(zProfileFigAxes,'intensity(au)', 'FontSize',12);
+        xlabel(zProfileFigAxes,'z-slice', 'FontSize',12);
         title(zProfileFigAxes,{'z-profile:';title_string},'FontSize',10)
     end
         
@@ -1398,6 +1389,7 @@ while (cc~='x')
                     SpotsIndex = length(Spots{CurrentChannel}(CurrentFrame).Fits)+1;
                     breakflag = 0;
                     maxWorkers = 8;
+                    use_integral_center = 1;
                     try 
                       parpool(maxWorkers);
                     catch 
@@ -1407,9 +1399,13 @@ while (cc~='x')
                         % parpool throws an error if there's a pool already running.
                       end 
                     end
+
                     parfor i = 1:ZSlices %#ok<PFUIX>
+                        imAbove = [];
+                        imBelow = [];
+                        spotsIm = [];
                         spotsIm=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                             FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i,2),nameSuffix,'.tif']);                                                
+                             FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i,2),nameSuffix,'.tif']);         
                           try
                               imAbove = double(imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                              FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(i-1,2),nameSuffix,'.tif']));  
@@ -1439,7 +1435,7 @@ while (cc~='x')
                             pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', intScale);                  
                         end
                     end
-
+            
                     for zIndex = 1:ZSlices
                         if ~isempty(temp_particles{zIndex})
                             %Copy the information stored in temp_particles into the
@@ -1482,6 +1478,7 @@ while (cc~='x')
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity5 = NaN;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).cylIntensity(zIndex) = temp_particles{zIndex}{1}{24};
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).brightestZ = NaN;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).IntegralZ = use_integral_center; 
                                 
                             else
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity(zIndex)=nan;
@@ -1503,6 +1500,7 @@ while (cc~='x')
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).cylIntensity(zIndex) = NaN;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity5 = NaN;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).brightestZ = NaN;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).IntegralZ = use_integral_center; 
                             end
                         else
                             disp('No spot added. Did you click too close to the image boundary?')
@@ -1517,7 +1515,6 @@ while (cc~='x')
                         elseif cc == '{'
                             force_z = CurrentZ;
                         end
-                        use_integral_center = 1;
                         [tempSpots,~] = findBrightestZ(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex), -1, use_integral_center, force_z);                         
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = tempSpots;
                                                                         

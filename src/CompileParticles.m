@@ -2252,10 +2252,10 @@ if HistoneChannel&&strcmpi(ExperimentAxis,'AP')
 
         fractionFig = figure();
         fractionAxes = axes(fractionFig);
-        plot(APbinID,EllipsesOnAP{ChN}(:,1)./TotalEllipsesAP(:,1),'.-b') % fraction on nc 12
+        plot(fractionAxes,APbinID,EllipsesOnAP{ChN}(:,1)./TotalEllipsesAP(:,1),'.-b') % fraction on nc 12
         hold(fractionAxes,'on')
-        plot(APbinID,EllipsesOnAP{ChN}(:,2)./TotalEllipsesAP(:,2),'.-k') % fraction on nc 13
-        plot(APbinID,EllipsesOnAP{ChN}(:,3)./TotalEllipsesAP(:,3),'.-r') % fraction on nc 14
+        plot(fractionAxes,APbinID,EllipsesOnAP{ChN}(:,2)./TotalEllipsesAP(:,2),'.-k') % fraction on nc 13
+        plot(fractionAxes,APbinID,EllipsesOnAP{ChN}(:,3)./TotalEllipsesAP(:,3),'.-r') % fraction on nc 14
         hold(fractionAxes,'off')
         title(fractionAxes,'Fraction active nuclei')
         xlabel(fractionAxes,'AP (x/L)')

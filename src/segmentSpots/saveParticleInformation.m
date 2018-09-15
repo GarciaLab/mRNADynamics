@@ -1,4 +1,4 @@
-function [Particles, fields] = saveParticleInformation(numFrames, all_frames, zSize)
+function [Particles, fields] = saveParticleInformation(numFrames, all_frames, zSize, use_integral_center)
   % Create a useful structure that can be fed into pipeline
   Particles = struct;
   n = 1;
@@ -33,6 +33,7 @@ function [Particles, fields] = saveParticleInformation(numFrames, all_frames, zS
           Particles(n).intArea = cell2mat(all_frames{frameIndex, zIndex}{spot}(23));
           Particles(n).intArea = Particles(n).intArea(1); %this should be the same for all z slices.
           Particles(n).cylIntensity(1) = cell2mat(all_frames{frameIndex, zIndex}{spot}(24));
+          Particles(n).IntegralZ = use_integral_center; 
           Particles(n).z(1) = zIndex;
           Particles(n).discardThis = 0;
           Particles(n).frame(1) = frameIndex;
