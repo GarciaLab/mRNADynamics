@@ -40,9 +40,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 %  and this particle is disconnected from the current nucleus. If this is
 %  done on a particle with only one frame then
 %  it disconnects it from its nucleus.
-%
-% Disconnect backwards??
-%
+%%
 % q Cycle between approved status: green - approved; yellow - approved but
 %  with conditions (drift of nucleus, for example)
 % w Disapprove a trace
@@ -1389,7 +1387,7 @@ while (cc~='x')
                 if (ConnectPositionx > snippet_size/2) && (ConnectPositionx + snippet_size/2 < PixelsPerLine)...
                         && (ConnectPositiony > snippet_size/2) && (ConnectPositiony + snippet_size/2 < LinesPerFrame)
                     SpotsIndex = length(Spots{CurrentChannel}(CurrentFrame).Fits)+1;
-                    breakflag = 0;
+                    breakflag = 1; %this catches when the spot addition was unsuccessful and allows checkparticletracking to keep running and not error out
                     maxWorkers = 8;
                     use_integral_center = 1;
                     try 
@@ -1441,7 +1439,7 @@ while (cc~='x')
                     for zIndex = 1:ZSlices
                         if ~isempty(temp_particles{zIndex})
                             %Copy the information stored in temp_particles into the
-                            %Spots structure                            
+                            %Spots structure
                             if ~isempty(temp_particles{zIndex}{1})
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity(zIndex)=...
                                 temp_particles{zIndex}{1}{1};
@@ -1480,13 +1478,13 @@ while (cc~='x')
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity5 = NaN;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).cylIntensity(zIndex) = temp_particles{zIndex}{1}{24};
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).brightestZ = NaN;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).IntegralZ = use_integral_center; 
-                                
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).IntegralZ = use_integral_center;
                             else
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity(zIndex)=nan;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFit(zIndex)=nan;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yFit(zIndex)=nan;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Offset(zIndex)=nan;                               Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Area{zIndex}= nan;                    
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Offset(zIndex)=nan;                               
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Area{zIndex}= nan;                    
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yDoG(zIndex)= nan;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xDoG(zIndex)= nan;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).GaussianIntensity(zIndex)=nan;
@@ -1510,7 +1508,17 @@ while (cc~='x')
                             break
                         end
                     end
-                                                    
+                    
+                    allNaNs = sum(isnan(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity)) ==...
+                        length(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity);
+                    if allNaNs
+                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = [];
+                        if length(Spots{CurrentChannel}(CurrentFrame).Fits)==0
+                            Spots{CurrentChannel}(CurrentFrame).Fits = [];
+                        end
+                        breakflag = 1;
+                    end
+                    
                     if ~breakflag
                         if cc == '['
                             force_z = 0;
@@ -1546,7 +1554,7 @@ while (cc~='x')
                             JoinParticleTraces(CurrentParticle,...
                             numParticles,Particles{CurrentChannel});
                         else
-                            disp('Re-run TrackmRNADynamics to associate this particle with a nucleus and trace or manually join with the ''c'' button.')
+                            disp('Re-run TrackmRNADynamics to associate this particle with a nucleus.')
                         end
 
                         %Finally, force the code to recalculate the fluorescence trace
@@ -1555,6 +1563,7 @@ while (cc~='x')
                         disp('Spot addded to the current particle.')                    
                     else 
                         warning('You clicked too close to the edge. A spot can''t be added here.');
+                        msgbox('You clicked too close to the edge. A spot can''t be added here.');
                     end
                 end
             end

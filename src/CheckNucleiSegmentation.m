@@ -103,13 +103,15 @@ for i=1:length(D)
         nc(i)=14;
     end
 end
-OriginalImage=figure;
-set(OriginalImage,'units', 'normalized', 'position',[0.01, .1, .75, .33]);
-originalAxes = axes(OriginalImage);
 
 Overlay=figure;
 set(Overlay,'units', 'normalized', 'position',[0.01, .55, .75, .33]);
 overlayAxes = axes(Overlay);
+
+OriginalImage=figure;
+set(OriginalImage,'units', 'normalized', 'position',[0.01, .1, .75, .33]);
+originalAxes = axes(OriginalImage);
+
 
 CurrentFrame=1;
 cc=1;
@@ -129,6 +131,9 @@ while (cc~='x')
 
 %     imshow(HisImage,DisplayRange,'Border','Tight','Parent',overlayAxes)
     imOverlay.CData = HisImage;
+    caxis(overlayAxes, DisplayRange);
+    caxis(originalAxes, DisplayRange);
+    
     axesHandlesToChildObjects = findobj(overlayAxes, 'Type', 'line');
 	if ~isempty(axesHandlesToChildObjects)
 		delete(axesHandlesToChildObjects);
@@ -154,7 +159,7 @@ while (cc~='x')
 %     imshow(HisImage,DisplayRange,'Border','Tight''Parent',originalAxes)
     imOriginal.CData = HisImage;
     
-%     set(0, 'CurrentFigure', Overlay)
+    set(0, 'CurrentFigure', Overlay)
     ct=waitforbuttonpress;
     cc=get(Overlay,'currentcharacter');
     cm=get(overlayAxes,'CurrentPoint');
@@ -240,6 +245,7 @@ end
 
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 disp('Ellipses saved. Remember to re-run TrackNuclei if you made changes.')
+close all force;
 
 
 
