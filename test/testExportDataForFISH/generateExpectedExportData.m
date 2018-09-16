@@ -2,8 +2,8 @@
 % so test cases can compare against it.
 % The function runs ExportDataForFISH and moves the required files to the expected folder.
 % If data exists already in the folder, it's deleted beforehand.
-function generateExpectedData_ExportDataForFISH(testCase)
-  disp('Generating expected data for ExportDataForFISH test cases');
+function generateExpectedExportData(testCase)
+  disp(['Generating expected data for ExportDataForFISH test case with Prefix', testCase.Prefix]);
 
   %Figure out the initial folders.
   CONFIG_CSV_PATH = ['ComputerFolders.csv'];
@@ -32,6 +32,8 @@ function generateExpectedData_ExportDataForFISH(testCase)
     ExportDataForFISH(testCase.Prefix, testCase.PreferredFileName, 'keepTifs');
   end
 
+  disp(['Copying expected data for Prefix ', testCase.Prefix]);
   copyfile([preprocessedDataFolder, filesep, '*'], expectedDataFolder);
-
+  disp(['Expected data copied to folder ', expectedDataFolder]);
+  
 end
