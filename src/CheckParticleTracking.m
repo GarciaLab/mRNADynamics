@@ -1387,7 +1387,7 @@ while (cc~='x')
                 if (ConnectPositionx > snippet_size/2) && (ConnectPositionx + snippet_size/2 < PixelsPerLine)...
                         && (ConnectPositiony > snippet_size/2) && (ConnectPositiony + snippet_size/2 < LinesPerFrame)
                     SpotsIndex = length(Spots{CurrentChannel}(CurrentFrame).Fits)+1;
-                    breakflag = 1; %this catches when the spot addition was unsuccessful and allows checkparticletracking to keep running and not error out
+                    breakflag = 0; %this catches when the spot addition was unsuccessful and allows checkparticletracking to keep running and not error out
                     maxWorkers = 8;
                     use_integral_center = 1;
                     try 
@@ -1538,7 +1538,7 @@ while (cc~='x')
                             SpotFilter{CurrentChannel}(:,end:SpotsIndex)=NaN;
                             SpotFilter{CurrentChannel}(CurrentFrame,SpotsIndex)=1;                
                         end
-% 
+
                         %Turn this spot into a new particle. This is the equivalent of
                         %the 'u' command.
                         [SpotFilter{CurrentChannel},Particles{CurrentChannel}]=...
@@ -1568,6 +1568,7 @@ while (cc~='x')
                 end
             end
         end
+        clear breakflag;    
 
     elseif cc=='r'
         %Order particles by the earliest frame they appear at. This makes the
@@ -2329,7 +2330,7 @@ else
     save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2', '-v7.3')            
     save([DataFolder,filesep,'Spots.mat'],'Spots','-v7.3')
 end
-close all
+close all force;
 disp('Particles saved.')
 disp(['(Left off at Particle #', num2str(CurrentParticle), ')'])
 %% Extra stuff that is useful in debug mode
