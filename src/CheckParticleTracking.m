@@ -63,8 +63,8 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % 
 % 
 % Nuclear tracking specific:
-% l Split a nucleus and select one or two daughter nuclei or stop the
-%  lineage. Usage:
+% l Modify a nuclear lineage and associate a particle with a nucleus. 
+%       Usage:
 %       Click on one new nucleus + ENTER: Continue the schnitz with that nucleus.
 %       Click on the current nucleus + ENTER: Split the schnitz. This time
 %           point will be the first frame of the new schnitz.
