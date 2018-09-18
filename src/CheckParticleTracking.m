@@ -1379,7 +1379,7 @@ while (cc~='x')
             else
                 
                 [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'r', 'linewidth',1, 'FigHandle', Overlay);
-                if ConnectPositionx || ConnectPositiony < 1
+                if ConnectPositionx < 1 || ConnectPositiony < 1
                     %sometimes ginputc returns the wrong coordinates for an
                     %unknown reason. if that happens, we'll resort to a
                     %black crosshair from ginput. 
