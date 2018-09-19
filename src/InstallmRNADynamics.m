@@ -54,6 +54,7 @@ function configContents = InstallmRNADynamics(varargin)
   end
           
   warning('on','MATLAB:MKDIR:DirectoryExists');
+  startup;
 
   %%
   %% nested sub-functions
