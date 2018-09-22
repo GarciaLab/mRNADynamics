@@ -22,8 +22,8 @@ function generateExpectedDataSegmentSpots(testCase)
   processedDataExperimentPath = [processedDataPath, filesep, testCase.Prefix, '_'];
 
   % Clean up previous runs
-  deleteDirectory(dynamicResultsExperimentPath);
-  deleteDirectory(processedDataExperimentPath);
+  deleteDirectory(dynamicResultsExperimentPath, testCase.Prefix);
+  deleteDirectory(processedDataExperimentPath, testCase.Prefix);
   [expectedDynamicsResults1stPass, expectedProcessedData1stPass, expectedDynamicsResults2ndPass, expectedProcessedData2ndPass] = createExpectedDataStructure(testPath, testCase.Prefix);
 
   % Precondition - Run ExportsDataForFISH without deleting TIFs
@@ -68,7 +68,7 @@ function folder = createOrCleanExpectedDataSubFolder(testPath, pass, subfolder, 
   end
 
   folder = [testPath, filesep, 'SegmentSpots_', pass, 'Pass', filesep, subfolder, filesep, prefix];
-  deleteDirectory(folder);
+  deleteDirectory(folder, prefix);
   mkdir folder;
 end
 

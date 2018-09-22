@@ -15,7 +15,7 @@ function testCase = testExportDataForFISH(testCase)
   preprocessedDataFolder = strcat(PreProcPath, filesep, testCase.Prefix);
   expectedDataFolder = strcat(testPath, filesep, 'ExportDataForFISH', filesep, testCase.Prefix);
 
-  deleteDirectory(preprocessedDataFolder);
+  deleteDirectory(preprocessedDataFolder, testCase.Prefix);
 
   if (~isprop(testCase, 'PreferredFileName')) 
     ExportDataForFISH(testCase.Prefix, 'keepTifs');

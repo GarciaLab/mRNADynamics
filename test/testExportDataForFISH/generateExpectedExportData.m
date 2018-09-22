@@ -21,8 +21,8 @@ function generateExpectedExportData(testCase)
   preprocessedDataFolder = strcat(PreProcPath, filesep, testCase.Prefix);
   expectedDataFolder = strcat(testPath, filesep, 'ExportDataForFISH', filesep, testCase.Prefix);
 
-  deleteDirectory(preprocessedDataFolder);
-  deleteDirectory(expectedDataFolder);
+  deleteDirectory(preprocessedDataFolder, testCase.Prefix);
+  deleteDirectory(expectedDataFolder, testCase.Prefix);
   mkdir(expectedDataFolder);
 
   if (~isprop(testCase, 'PreferredFileName'))
