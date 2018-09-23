@@ -1,8 +1,8 @@
 %Figure out the different channels
 function [coatChannel, histoneChannel, fiducialChannel] = obtainZeissChannels(Channel1, Channel2, ExperimentType)
-  
+  histoneChannel = 0;
   if (~strcmpi(ExperimentType, 'inputoutput'))
-    if ~isempty(strfind(Channel1{1}, 'MCP'))
+    if ~isempty(strfind(Channel1{1}, 'MCP')) || ~isempty(strfind(Channel1{1}, 'PCP')) || ~isempty(strfind(Channel1{1}, 'PP7'))
       coatChannel = 1;
     elseif strfind(Channel1{1}, 'His')
       histoneChannel = 1;
@@ -10,7 +10,7 @@ function [coatChannel, histoneChannel, fiducialChannel] = obtainZeissChannels(Ch
       error('LSM Mode error: Channel name not recognized. Check MovieDatabase')
     end
 
-    if ~isempty(strfind(Channel2{1}, 'MCP'))
+    if ~isempty(strfind(Channel2{1}, 'MCP')) || ~isempty(strfind(Channel2{1}, 'PCP')) || ~isempty(strfind(Channel2{1}, 'PP7'))
       coatChannel = 2;
     elseif strfind(Channel2{1}, 'His')
       histoneChannel = 2;

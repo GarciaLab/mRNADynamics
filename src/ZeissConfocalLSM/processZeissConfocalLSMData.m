@@ -1,7 +1,7 @@
 function FrameInfo = processZeissConfocalLSMData(Folder, D, FrameInfo, ExperimentType, Channel1, Channel2, Prefix, OutputFolder)
   % What type of experiment do we have?
-  if strcmp(ExperimentType,'1spot') || strcmp(ExperimentType,'2spot') || strcmp(ExperimentType,'2spot1color') || strcmpi(ExperimentType, 'inputoutput')
-    [coatChannel, histoneChannel, fiducialChannel] = obtainZeissChannels(Channel1, Channel2, ExperimentType);
+
+    [coatChannel, ~, fiducialChannel] = obtainZeissChannels(Channel1, Channel2, ExperimentType);
 
     NSeries = length(D);
     Frame_Times = []; % Store the frame information
@@ -50,7 +50,5 @@ function FrameInfo = processZeissConfocalLSMData(Folder, D, FrameInfo, Experimen
 
     [FFPaths, FFToUse, LSMFF] = findFlatFieldInformation(Folder);
     processFlatFieldInformation(Prefix, OutputFolder, FFPaths, FFToUse, LSMFF);
-  else
-    error('Experiment type not supported for LSM format. Ask HG.')
-  end
+
 end

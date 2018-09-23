@@ -9,25 +9,31 @@ function processZeissFrames(Prefix, ExperimentType, Channel1, Channel2, OutputFo
   for framesIndex = 1:length(FrameRange)
     
     if ~strcmpi(ExperimentType, 'inputoutput')
-      processZeissChannels(coatChannel, Prefix, FrameRange, framesIndex, OutputFolder, BlankImage, NSlices, NChannels, LSMIndex, LSMImages);
-    else 
+      for channelIndex = 1:NChannels
+         processZeissChannels(channelIndex, Prefix, FrameRange, framesIndex, OutputFolder, BlankImage, NSlices, NChannels, LSMIndex, LSMImages);
+      end
+     else 
       for channelIndex = 1:NChannels
         processZeissChannels(channelIndex, Prefix, FrameRange, framesIndex, OutputFolder, BlankImage, NSlices, NChannels, LSMIndex, LSMImages);
       end
     end
 
-    %Now do His-RFP
-    HisSlices = zeros([size(LSMImages{1, 1}, 1), size(LSMImages{1, 1}, 2), NSlices(LSMIndex)]);
-    slicesCounter = 1;
-    
-    for slicesIndex = ((framesIndex - 1) * NSlices(LSMIndex) * NChannels(LSMIndex) + 1 + (fiducialChannel - 1)):NChannels(LSMIndex):...
-      (framesIndex * NSlices(LSMIndex)) * NChannels(LSMIndex)
-      
-      HisSlices(:, :, slicesCounter) = LSMImages{slicesIndex, 1};
-      slicesCounter = slicesCounter + 1;
-    end
+    if fiducialChannel
+        %Now do His-RFP
+        HisSlices = zeros([size(LSMImages{1, 1}, 1), size(LSMImages{1, 1}, 2), NSlices(LSMIndex)]);
+        slicesCounter = 1;
 
-    Projection = median(HisSlices, 3);
+        for slicesIndex = ((framesIndex - 1) * NSlices(LSMIndex) * NChannels(LSMIndex) + 1 + (fiducialChannel - 1)):NChannels(LSMIndex):...
+          (framesIndex * NSlices(LSMIndex)) * NChannels(LSMIndex)
+
+          HisSlices(:, :, slicesCounter) = LSMImages{slicesIndex, 1};
+          slicesCounter = slicesCounter + 1;
+        end
+    end
+    
+    if fiducialChannel
+        Projection = median(HisSlices, 3);
+    end
     if strcmpi(ExperimentType, 'inputoutput')
       %YJK : Think about the case when there is no His channel,
       %and it is inputoutput mode or 1spot mode or 2spot2color.
@@ -52,8 +58,10 @@ function processZeissFrames(Prefix, ExperimentType, Channel1, Channel2, OutputFo
         Projection = Projection * 10000;
       end
     end
-
-    imwrite(uint16(Projection), [OutputFolder, filesep, Prefix, '-His_', iIndex(FrameRange(framesIndex), 3), '.tif']);
-  end
+    
+    if fiducialChannel
+        imwrite(uint16(Projection), [OutputFolder, filesep, Prefix, '-His_', iIndex(FrameRange(framesIndex), 3), '.tif']);
+    end
+end
 
 end
