@@ -164,7 +164,7 @@ function APAnalysis(dataset, varargin)
     hold off
     lgd2 = legend('show');
     set(lgd2, 'Interpreter', 'Latex');
-    xlim([.1, .8])
+    xlim([0, 1])
     ylim([0, 1.1])
     title(['fraction of actively transcribing nuclei, nuclear cycle ',num2str(nc+11)]);
     xlabel('fraction embryo length');

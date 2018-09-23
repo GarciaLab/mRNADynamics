@@ -51,7 +51,7 @@ function removeUnwantedTIFs(Folder)
   if numel(allTifs) > 1
     disp(['Removing TIF files from source folder ', Folder]);
     for i = 2:numel(allTifs)
-      disp(['Deleting ', allTifs{i}]);
+%       disp(['Deleting ', allTifs{i}]);
       delete(allTifs{i});
     end
   end
