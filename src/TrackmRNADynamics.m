@@ -613,15 +613,15 @@ if exist([OutputFolder,filesep,'FrameInfo.mat'])
     for currentFrame=1:numberOfFrames
         if currentFrame<nc9
             FrameInfo(currentFrame).nc=8;
-        elseif (currentFrame>=nc9)&&(currentFrame<nc10)
+        elseif (currentFrame>=nc9) &(currentFrame<nc10)
             FrameInfo(currentFrame).nc=9;
-        elseif (currentFrame>=nc10)&&(currentFrame<nc11)
+        elseif (currentFrame>=nc10)&(currentFrame<nc11)
             FrameInfo(currentFrame).nc=10;
-        elseif (currentFrame>=nc11)&&(currentFrame<=nc12)
+        elseif (currentFrame>=nc11)&(currentFrame<=nc12)
             FrameInfo(currentFrame).nc=11;
-        elseif (currentFrame>=nc12)&&(currentFrame<=nc13)
+        elseif (currentFrame>=nc12)&(currentFrame<=nc13)
             FrameInfo(currentFrame).nc=12;
-        elseif (currentFrame>=nc13)&&(currentFrame<=nc14)
+        elseif (currentFrame>=nc13)&(currentFrame<=nc14)
             FrameInfo(currentFrame).nc=13;
         elseif currentFrame>=nc14
             FrameInfo(currentFrame).nc=14;
