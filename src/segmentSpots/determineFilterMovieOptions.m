@@ -1,5 +1,5 @@
 
-function [displayFigures, numFrames, customFilter, highPrecision, filterType, keepPool, sigmas] = determineFilterMovieOptions(varargin) 
+function [displayFigures, numFrames, customFilter, highPrecision, filterType, keepPool, sigmas, nWorkers] = determineFilterMovieOptions(varargin) 
 
   varargin = varargin{1};
   
@@ -10,6 +10,7 @@ function [displayFigures, numFrames, customFilter, highPrecision, filterType, ke
   highPrecision = 0;
   keepPool = 0;
   filterType = 'Difference_of_Gaussian';
+  nWorkers = 8;
   sigmas = {};
 
   for i = 1:length(varargin)
@@ -30,6 +31,9 @@ function [displayFigures, numFrames, customFilter, highPrecision, filterType, ke
       
     elseif strcmpi(varargin{i}, 'keepPool')
         keepPool = 1;
+    elseif strcmpi(varargin{i}, 'nWorkers')
+            
+        nWorkers = varargin{i+1};
 
     elseif strcmpi(varargin{i}, 'customFilter')
       customFilter = 1;

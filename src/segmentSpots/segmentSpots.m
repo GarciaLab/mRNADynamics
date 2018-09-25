@@ -65,7 +65,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
     maxWorkers = nWorkers;
 
     try 
-      parpool(maxWorkers); % 6 is the number of cores the Garcia lab server can reasonably handle per user at present.
+      parpool(maxWorkers); 
     catch 
 
       try 

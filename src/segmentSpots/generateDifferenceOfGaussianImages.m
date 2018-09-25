@@ -1,5 +1,5 @@
 % Generates difference of Gaussian images
-function [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSize, customFilter, nCh, ExperimentType, coatChannel, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision,sigmas)
+function [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSize, customFilter, nCh, ExperimentType, coatChannel, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision,sigmas, nWorkers)
 
   filterSize = round(2000/pixelSize); %2000nm seems to be a good size empirically -AR
   if ~customFilter
@@ -7,7 +7,7 @@ function [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSiz
   end 
     
   for channelIndex = 1:nCh
-    h=waitbar(0,'Filtering images');
+    h=waitbar(0,['Filtering images: Channel ', num2str(channelIndex)]);
     % (MT, 2018-02-11) Added support for lattice imaging, maybe 
     % temporary - FIX LATER
 
@@ -16,23 +16,24 @@ function [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSiz
     else
       nameSuffix = ['_ch', iIndex(channelIndex, 2)];
     end
-        
+    
     for current_frame = 1:numFrames
       waitbar(current_frame/numFrames,h);
       
-      if displayFigures
+      if displayFigures || ~nWorkers
       
         for zIndex = 1:zSize
           generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameSuffix, filterType, sigmas, filterSize,...
             highPrecision, zIndex, displayFigures);
         end
       
-      else 
+      else
       
         parfor zIndex = 1:zSize   
           generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameSuffix, filterType, sigmas, filterSize,...
             highPrecision, zIndex, displayFigures);
         end
+           
       
       end
     
@@ -66,7 +67,9 @@ function generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameS
   imwrite(uint16(dog), dog_full_path)
 
   if displayFigures
-    imshow(dog, [median(dog(:)), max(dog(:))]);
+      figure()
+      imshow(dog, [median(dog(:)), max(dog(:))], 'Parent', gca);
+      title(gca, [nameSuffix, ' frame: ', num2str(current_frame), 'z ', num2str(zIndex)])
   end
 
 end

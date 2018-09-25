@@ -12,11 +12,13 @@
 % running.
 % 'Frames', N:Run the code from frame 1 to frame N. Defaults to all
 %                frames. It's suggested to run 5-20 frames for debugging.
+% 'nWorkers': Specify the number of workers to use during parallel
+% processing
 %
 % 'highPrecision': Uses higher precision filtering for segmentation when finding dogs
 % 'customFilters': Choose which filter to use to segment the image. Name
 %                  should be a string, followed by a cell with your filter
-%                  or filters
+%                  or filters2018-09-20-pNos-FLP-7_embryo2_581power_2_0_Linear unmixing
 %                 ex. filterMovie(Prefix,'customFilter', 'Structure_largest', {1, 8})
 %           Filter Options:
 %               'Gaussian_blur''Median'
@@ -39,7 +41,7 @@ function log = filterMovie(Prefix, varargin)
 
   warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
-  [displayFigures, numFrames, customFilter, highPrecision, filterType, keepPool, sigmas] = determineFilterMovieOptions(varargin);
+  [displayFigures, numFrames, customFilter, highPrecision, filterType, keepPool, sigmas, nWorkers] = determineFilterMovieOptions(varargin);
 
   % Start timer
   tic;
@@ -65,6 +67,25 @@ function log = filterMovie(Prefix, varargin)
     nCh = 2;
   end 
 
+  
+    if nWorkers ~= 0
+        maxWorkers = nWorkers;
+        try 
+          parpool(maxWorkers); 
+        catch 
+          try 
+            parpool; % in case there aren't enough cores on the computer
+          catch 
+            % parpool throws an error if there's a pool already running.
+          end 
+        end 
+    else 
+        try  %#ok<TRYNC>
+            poolobj = gcp('nocreate');
+            delete(poolobj);
+        end
+    end 
+  
   clear rawdir;
 
   pixelSize = FrameInfo(1).PixelSize * 1000; %nm
@@ -73,7 +94,7 @@ function log = filterMovie(Prefix, varargin)
   coatChannel = getCoatChannel(ExperimentType, Channel1, Channel2);
 
   [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSize, customFilter, nCh, ExperimentType, ...
-    coatChannel, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision, sigmas);
+    coatChannel, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision, sigmas, nWorkers);
 
   t = toc;
   
