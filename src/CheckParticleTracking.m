@@ -52,12 +52,15 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 %  connect it to the current particle. This is a combination of "u" and
 %  "c". %AR 1/15/18: This is currently deprecated. Talk to HG if you need
 %  this function.
-% [ Add a spot that was not recognized originally by segmentSpots to the
-% 	current particle. Note that the command forces ZoomMode. To toggle, use
-%   'o' or '+' depending on whether you're adding to an existing trace or creating a new
-%    trace, respectively.
+% [ Add a spot that was not recognized originally by segmentSpots, creating
+%    a new particle if you've used '+' to zoom in on the particle of 
+%    interest or adding to the current particle if you are zoomed out in 
+%    'o'. Note that the command forces ZoomMode. To toggle, use 'o' or '+' 
+%    depending on whether you're adding to an existing trace or creating 
+%    a new trace, respectively.
 % { Same as [ but uses the exact pixel and z-plane that you click on.
-%   Useful if the algorithms get the centroid positioning wrong. 
+%    Useful if the algorithms get the centroid positioning wrong (i.e. your
+%    particle is put in the wrong place by '[').
 % # remove a spot from Spots and erase its frame in Particles
 % 
 % 
@@ -88,7 +91,8 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % r Reorder the particles according to initial frame
 % f Redo tracking. It only gets done on the non-approved particles.
 % o Zoom in/out around the particle's first frame.
-% + Zoom anywhere button. Click with the mouse after hitting this. 
+% + Zoom anywhere button. Click with the mouse to specify the position to 
+%     to zoom in on after hitting this. 
 % -/= Change the zoom factor when in zoom mode.
 % 0 Enter debug mode to fix things manually
 % ~ Switch figure 1 from a single plane image to a z or time projection. 
