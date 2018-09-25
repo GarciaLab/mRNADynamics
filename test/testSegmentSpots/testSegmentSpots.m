@@ -16,8 +16,8 @@ function testCase = testSegmentSpots(testCase)
   processedDataExperimentPath = [processedDataPath, filesep, testCase.Prefix, '_'];
 
   % Clean up previous runs
-  deleteDirectory(dynamicResultsExperimentPath);
-  deleteDirectory(processedDataExperimentPath);
+  deleteDirectory(dynamicResultsExperimentPath, testCase.Prefix);
+  deleteDirectory(processedDataExperimentPath, testCase.Prefix);
 
   % Precondition - Run ExportsDataForFISH without deleting TIFs
   ExportDataForFISH(testCase.Prefix, 'keepTifs');
