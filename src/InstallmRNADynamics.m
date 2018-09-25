@@ -10,13 +10,13 @@ function configContents = InstallmRNADynamics(varargin)
 
   ensureRightFolder();
   cd('..');
-  mRNADynamicsPath = toSafeWindowsString(pwd);
+  MRNA_DYNAMICS_PATH = toSafeWindowsString(pwd);
 
   cd('..');
   ROOT_PATH = toSafeWindowsString(pwd);
-  cd(mRNADynamicsPath);
+  cd(MRNA_DYNAMICS_PATH);
 
-  disp(['mRNADynamics absolute path is ', mRNADynamicsPath]);
+  disp(['mRNADynamics absolute path is ', MRNA_DYNAMICS_PATH]);
   disp(['root directory absolute path is ', ROOT_PATH]);
 
   % default directory locations
@@ -25,7 +25,7 @@ function configContents = InstallmRNADynamics(varargin)
   RAW_DYNAMICS_DATA_PATH = createDataSubDir('RawDynamicsData'); %(old RawData folder)
   DYNAMICS_RESULTS_PATH = createDataSubDir('DynamicsResults'); %(old DropboxFolder)
   MOVIE_DATABASE_PATH =  [DYNAMICS_RESULTS_PATH, '/MovieDatabase.csv'];
-  MS2CODE_PATH = [mRNADynamicsPath, filesep, 'src'];
+  MS2CODE_PATH = [MRNA_DYNAMICS_PATH, filesep, 'src'];
   TEST_PATH =  createDirInRoot('/ExpectedData');
 
   COMPUTER_FOLDERS_PATH = [ROOT_PATH, '/ComputerFolders.csv'];
@@ -159,16 +159,16 @@ function configContents = InstallmRNADynamics(varargin)
     % Add the right folders to the path.
     % This will be done as a startup file in the user's folder
 
-    srcFolder = [mRNADynamicsPath, '/src'];
-    libFolder = [mRNADynamicsPath, '/lib'];
-    DependenciesFolder = [mRNADynamicsPath, '/lib/dependencies'];
-    testFolder = [mRNADynamicsPath, '/test'];
+    srcFolder = [MRNA_DYNAMICS_PATH, '/src'];
+    libFolder = [MRNA_DYNAMICS_PATH, '/lib'];
+    DependenciesFolder = [MRNA_DYNAMICS_PATH, '/lib/dependencies'];
+    testFolder = [MRNA_DYNAMICS_PATH, '/test'];
 
     % matlab paths
     Output{1} = ['addpath(genpath(''', libFolder, '/Fiji.app/scripts''));'];
     Output{2} = ['path(''', PREPROCESSED_DATA_PATH, ''',path);'];
     Output{3} = ['path(''', ROOT_PATH, ''',path);'];
-    Output{4} = ['path(''', mRNADynamicsPath, ''',path);'];
+    Output{4} = ['path(''', MRNA_DYNAMICS_PATH, ''',path);'];
     Output{5} = ['addpath(genpath(''', srcFolder, '''));'];
     Output{6} = ['path(''', DYNAMICS_RESULTS_PATH, ''',path);'];
     Output{7} = ['addpath(genpath(''', testFolder, '''));'];
@@ -176,7 +176,7 @@ function configContents = InstallmRNADynamics(varargin)
 
     % directory constants
     Output{9} = ['ROOT_PATH = ''', ROOT_PATH, ''';'];
-    Output{10} = ['MRNA_DYNAMICS_PATH = ''', mRNADynamicsPath, ''';'];
+    Output{10} = ['MRNA_DYNAMICS_PATH = ''', MRNA_DYNAMICS_PATH, ''';'];
     Output{11} = ['PREPROCESSED_DATA_PATH = ''', PREPROCESSED_DATA_PATH, ''';'];
     Output{12} = ['PROCESSED_DATA_PATH = ''', PROCESSED_DATA_PATH, ''';'];
     Output{13} = ['RAW_DYNAMICS_DATA_PATH = ''', RAW_DYNAMICS_DATA_PATH, ''';'];
