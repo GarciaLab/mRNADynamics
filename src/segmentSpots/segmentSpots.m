@@ -61,8 +61,9 @@ function log = segmentSpots(Prefix, Threshold, varargin)
   end 
 
  
-  if nWorkers ~= 0
-    maxWorkers = nWorkers;
+  if nWorkers ~= 0 && ~displayFigures
+    
+      maxWorkers = nWorkers;
 
     try 
       parpool(maxWorkers); 
