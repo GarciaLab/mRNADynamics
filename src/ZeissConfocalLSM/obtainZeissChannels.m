@@ -1,6 +1,8 @@
 %Figure out the different channels
 function [coatChannel, histoneChannel, fiducialChannel] = obtainZeissChannels(Channel1, Channel2, ExperimentType)
   histoneChannel = 0;
+  Channel1{1} = lower(Channel1{1});
+  Channel2{1} = lower(Channel2{1});
   if (~strcmpi(ExperimentType, 'inputoutput'))
     if ~isempty(strfind(Channel1{1}, lower('MCP'))) || ~isempty(strfind(Channel1{1}, lower('PCP'))) || ~isempty(strfind(Channel1{1}, lower('PP7')))
       coatChannel = 1;

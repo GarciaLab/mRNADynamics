@@ -15,6 +15,8 @@ function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs
       SkipFrames=varargin{k+1};
       k=k+1;
       warning('SkipFrame mode.')
+    elseif strcmpi(varargin{k},'maxprojection')
+      ProjectionType = 'maxprojection';
     elseif strcmpi(varargin{k},'medianprojection')
       ProjectionType = 'medianprojection';
     elseif strcmpi(varargin{k},'middleprojection')
