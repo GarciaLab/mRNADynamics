@@ -41,7 +41,8 @@ function log = filterMovie(Prefix, varargin)
 
   warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
-  [displayFigures, numFrames, customFilter, highPrecision, filterType, keepPool, sigmas, nWorkers] = determineFilterMovieOptions(varargin);
+  [displayFigures, numFrames, customFilter, highPrecision,...
+      filterType, keepPool, sigmas, nWorkers, app] = determineFilterMovieOptions(varargin);
 
   % Start timer
   tic;
@@ -68,7 +69,7 @@ function log = filterMovie(Prefix, varargin)
   end 
 
   
-    if nWorkers ~= 0
+    if nWorkers ~= 0 && ~displayFigures
         maxWorkers = nWorkers;
         try 
           parpool(maxWorkers); 
@@ -89,12 +90,12 @@ function log = filterMovie(Prefix, varargin)
   clear rawdir;
 
   pixelSize = FrameInfo(1).PixelSize * 1000; %nm
-  close all force;
+  close all;
 
   coatChannel = getCoatChannel(ExperimentType, Channel1, Channel2);
 
   [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSize, customFilter, nCh, ExperimentType, ...
-    coatChannel, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision, sigmas, nWorkers);
+    coatChannel, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision, sigmas, nWorkers, app);
 
   t = toc;
   

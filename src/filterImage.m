@@ -1,10 +1,10 @@
-function fint = filterImage(im, filterType, sigmas, customSize)
+function fint = filterImage(im, filterType, sigmas, varargin)
 
     dim = length(size(im));
     rad = 3; %rule of thumb is kernel size is 3x the Gaussian sigma
     f = [];
     fint = [];
-    
+        
     im = double(im);
     
     %convert string sigmas to doubles
@@ -19,22 +19,24 @@ function fint = filterImage(im, filterType, sigmas, customSize)
         case 0
             %do nothing
         case 1
-            s = sigmas{1};
+            s1 = sigmas{1};
         case 2
             s1 = sigmas{1};
             s2 = sigmas{2};
         otherwise
-            s = str2double(sigmas{end});            
+            s1 = str2double(sigmas{end});            
     end
-    if exist('s','var')
-        filterSize = round(rad*s);
-        if ~mod(filterSize,2)
-            filterSize = filterSize + 1;
-        end
+    if exist('s1','var')
+        filterSize = round(rad*s1);
     end
     
-    if ~isempty(customSize)
+    if ~isempty(varargin)
+        customSize = varargin{1};
         filterSize = round(customSize);
+    end
+    
+    if ~mod(filterSize,2)
+        filterSize = filterSize + 1;
     end
 
     switch filterType  
@@ -42,15 +44,15 @@ function fint = filterImage(im, filterType, sigmas, customSize)
             f=im;
         case 'Gaussian_blur'
             if dim == 2
-                f = imgaussfilt(im,s);
+                f = imgaussfilt(im,s1);
             elseif dim == 3
-                f = imgaussfilt3(im, s);
+                f = imgaussfilt3(im, s1);
             end
         case 'Edges'
             if dim == 2
-                f = edge(im, 'canny', s);
+                f = edge(im, 'canny', s1);
             elseif dim == 3
-                f = canny(im, s);
+                f = canny(im, s1);
             end
         case 'Difference_of_Gaussian'
             if dim==2
@@ -60,10 +62,10 @@ function fint = filterImage(im, filterType, sigmas, customSize)
             end
         case 'Laplacian'
             if dim==2
-                h = fspecial('log', filterSize,s);
+                h = fspecial('log', filterSize,s1);
                 f = imfilter(im, h);
             elseif dim==3
-                G = gauss3D(s);
+                G = gauss3D(s1);
                 [Gx,Gy] = gradient(G);
                 [Gxx,~] = gradient(Gx);
                 [~,Gyy] = gradient(Gy);
@@ -72,7 +74,7 @@ function fint = filterImage(im, filterType, sigmas, customSize)
             end
         case 'Mean'
             if dim == 2
-                h = fspecial('average', s);
+                h = fspecial('average', s1);
                 f = imfilter(im, h);
             elseif dim == 3
                 h = ones(filterSize, filterSize, filterSize);
@@ -187,7 +189,7 @@ function fint = filterImage(im, filterType, sigmas, customSize)
             end
         case 'Median'
             if dim==2
-                f = imgaussfilt(im,s);
+                f = imgaussfilt(im,s1);
                 f = ordfilt2(f,ceil(filterSize*filterSize/2),ones(filterSize,filterSize));
             elseif dim==3
 %                 f = ordfilt3(im, 'med', filterSize); %i need to rewrite
@@ -196,7 +198,7 @@ function fint = filterImage(im, filterType, sigmas, customSize)
             end
         case 'Maximum'
             if dim==2
-                f = imgaussfilt(im,s);
+                f = imgaussfilt(im,s1);
                 se = strel('disk',ceil(filterSize/2));
                 f = imdilate(f,se);
 %                 f = ordfilt2(f,(filterSize*filterSize),ones(filterSize,filterSize));
@@ -208,7 +210,7 @@ function fint = filterImage(im, filterType, sigmas, customSize)
             end
         case 'Variance'
             if dim==2
-                f = imgaussfilt(im,s);
+                f = imgaussfilt(im,s1);
                 f = colfilt(f,[filterSize filterSize],'sliding',@variance);
             elseif dim==3
 %                  f = ordfilt3(im, 'var', filterSize); %i need to rewrite
@@ -217,7 +219,7 @@ function fint = filterImage(im, filterType, sigmas, customSize)
             end
         case 'Minimum'
             if dim==2
-                f = imgaussfilt(im,s);
+                f = imgaussfilt(im,s1);
                 se = strel('disk',ceil(filterSize/2));
                 f = imerode(f,se);
             elseif dim==3
@@ -227,7 +229,7 @@ function fint = filterImage(im, filterType, sigmas, customSize)
             end
         case 'Std'
             if dim==2
-                f = imgaussfilt(im,s);
+                f = imgaussfilt(im,s1);
                 f = stdfilt(f);
             elseif dim==3
 %                  f = ordfilt3(im, 'min', filterSize); %i need to rewrite
@@ -236,7 +238,7 @@ function fint = filterImage(im, filterType, sigmas, customSize)
             end
         case 'Hessian_smallest'
             if dim==2
-                G=fspecial('gauss',[filterSize, filterSize], s); 
+                G=fspecial('gauss',[filterSize, filterSize], s1); 
                 [Gx,Gy] = gradient(G);
                 [Gxx, Gxy] = gradient(Gx);
                 [Gyy, ~] = gradient(Gy);
@@ -253,7 +255,7 @@ function fint = filterImage(im, filterType, sigmas, customSize)
                     end
                 end
             elseif dim ==3
-                G1 = gauss3D(s);
+                G1 = gauss3D(s1);
                 [Gx,Gy,Gz] = gradient(G1); 
                 [Gxx, Gxy, Gxz] = gradient(Gx);
                 [Gyy, Gyx, Gyz] = gradient(Gy);
@@ -286,7 +288,7 @@ function fint = filterImage(im, filterType, sigmas, customSize)
             end
         case 'Hessian_largest'
             if dim==2 
-                G=fspecial('gauss',[filterSize, filterSize], s); 
+                G=fspecial('gauss',[filterSize, filterSize], s1); 
                 [Gx,Gy] = gradient(G);
                 [Gxx, Gxy] = gradient(Gx);
                 [Gyy, ~] = gradient(Gy);
@@ -303,7 +305,7 @@ function fint = filterImage(im, filterType, sigmas, customSize)
                     end
                 end
             elseif dim==3
-                G1 = gauss3D(s);
+                G1 = gauss3D(s1);
                 [Gx,Gy,Gz] = gradient(G1); 
                 [Gxx, Gxy, Gxz] = gradient(Gx);
                 [Gyy, Gyx, Gyz] = gradient(Gy);

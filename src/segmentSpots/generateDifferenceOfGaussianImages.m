@@ -1,5 +1,5 @@
 % Generates difference of Gaussian images
-function [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSize, customFilter, nCh, ExperimentType, coatChannel, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision,sigmas, nWorkers)
+function [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSize, customFilter, nCh, ExperimentType, coatChannel, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision,sigmas, nWorkers, app)
 
   filterSize = round(2000/pixelSize); %2000nm seems to be a good size empirically -AR
   if ~customFilter
@@ -7,7 +7,11 @@ function [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSiz
   end 
     
   for channelIndex = 1:nCh
-    h=waitbar(0,['Filtering images: Channel ', num2str(channelIndex)]);
+    
+    if isempty(app)
+        h=waitbar(0,['Filtering images: Channel ', num2str(channelIndex)]);
+    end
+    
     % (MT, 2018-02-11) Added support for lattice imaging, maybe 
     % temporary - FIX LATER
 
@@ -17,34 +21,45 @@ function [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSiz
       nameSuffix = ['_ch', iIndex(channelIndex, 2)];
     end
     
+    if displayFigures && isempty(app)
+        filterFig = figure();
+        filterAxes = axes(filterFig);
+    end 
+    
     for current_frame = 1:numFrames
-      waitbar(current_frame/numFrames,h);
+        
+      if isempty(app)
+         waitbar(current_frame/numFrames,h);
+      end
       
       if displayFigures || ~nWorkers
       
         for zIndex = 1:zSize
           generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameSuffix, filterType, sigmas, filterSize,...
-            highPrecision, zIndex, displayFigures);
+            highPrecision, zIndex, displayFigures, app, numFrames);
         end
       
       else
       
         parfor zIndex = 1:zSize   
           generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameSuffix, filterType, sigmas, filterSize,...
-            highPrecision, zIndex, displayFigures);
+            highPrecision, zIndex, displayFigures, numFrames);
         end
            
       
       end
     
     end
-
-    close(h);
+    
+    if isempty(app)
+        close(h);
+    end
   end 
     
 end
 
-function generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameSuffix, filterType, sigmas, filterSize, highPrecision, zIndex, displayFigures) 
+function generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameSuffix, filterType, sigmas, filterSize, highPrecision, zIndex, displayFigures, app, numFrames) 
+  
   fileName = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(current_frame, 3), '_z',...
   iIndex(zIndex, 2), nameSuffix, '.tif'];
 
@@ -58,7 +73,7 @@ function generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameS
     end
   
   else
-    dog = filterImage(im, filterType, sigmas, []) + 100;
+    dog = filterImage(im, filterType, sigmas) + 100;
   end
   
   dog = padarray(dog(filterSize:end - filterSize - 1, filterSize:end - filterSize - 1), [filterSize, filterSize]);
@@ -67,9 +82,16 @@ function generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameS
   imwrite(uint16(dog), dog_full_path)
 
   if displayFigures
-      figure()
-      imshow(dog, [median(dog(:)), max(dog(:))], 'Parent', gca);
-      title(gca, [nameSuffix, ' frame: ', num2str(current_frame), 'z ', num2str(zIndex)])
+      
+      if ~isempty(app)
+          ax = app{1};
+      else
+          ax = gca;
+      end
+      
+      imshow(dog, [median(dog(:)), max(dog(:))], 'Parent', ax);
+      title(ax, [nameSuffix(2:end), ' frame: ', num2str(current_frame), '/',num2str(numFrames), ' z: ', num2str(zIndex)], 'Interpreter', 'none')
+      pause(.1)
   end
 
 end
