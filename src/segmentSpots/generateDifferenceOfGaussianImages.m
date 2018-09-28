@@ -89,7 +89,7 @@ function generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameS
           ax = gca;
       end
       
-      imshow(dog, [median(dog(:)), max(dog(:))], 'Parent', ax);
+      imshow(dog, [median(dog(:)), max(dog(:))], 'Parent', ax,'InitialMagnification', 'fit');
       title(ax, [nameSuffix(2:end), ' frame: ', num2str(current_frame), '/',num2str(numFrames), ' z: ', num2str(zIndex)], 'Interpreter', 'none')
       pause(.05)
   end

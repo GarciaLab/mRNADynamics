@@ -37,6 +37,8 @@ function [Particles,schnitzcells]=TrackmRNADynamics(varargin)
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
 
+app = {};
+
 
 %Look at the input parameter and use defaults if missing
 if isempty(varargin)
@@ -63,16 +65,16 @@ else
     Prefix=varargin{1};
     
     %Thresholds
-    if length(varargin)==3
-        Threshold1=varargin{2};
-        Threshold2=varargin{3}; 
-    elseif length(varargin)==5
-        Threshold1(1)=varargin{2};
-        Threshold2(1)=varargin{3};
-        Threshold1(2)=varargin{4};
-        Threshold2(2)=varargin{5};
-    else
-        error('Number of parameters not recognized.')
+    
+    %2 spot channel input should be like TrackmRNADynamics(Prefix,
+    %[thresh1, thresh2], [thresh3, thresh4])
+    Threshold1=varargin{2};
+    Threshold2=varargin{3}; 
+    
+    for i = 4:length(varargin)
+        if strcmpi(varargin{i}, 'app')
+          app{1} = varargin{i+1};
+        end
     end
 
 end
@@ -313,8 +315,12 @@ if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
     end
 
     %Start by numbering the particles found
-    ParticlesFig=figure;
-    NucleiFig=figure;
+    if isempty(app)
+        ParticlesFig=figure;
+        if UseHistone
+            NucleiFig=figure;
+        end
+    end
 
     
     %See how  many frames we have and adjust the index size of the files to
@@ -333,9 +339,10 @@ if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
             %I should probably not have both i and CurrentFrame here
             CurrentFrame=i;
 
-
-            figure(ParticlesFig)
-            set(gcf,'units', 'normalized', 'position',[0.01, .55, .33, .33]);
+            if isempty(app)
+                figure(ParticlesFig)
+                set(gcf,'units', 'normalized', 'position',[0.01, .55, .33, .33]);
+            end
 
             %Get the filter for this frame
             CurrentFrameFilter=...
@@ -358,18 +365,24 @@ if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
             Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix,iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),'_ch',iIndex(SpotsChannel(Channel),2),'.tif']);
 
             %TO-DO: Show spots above and below threshold differently
-            imshow(Image,[])
-            hold on
-            plot(x(CurrentFrameFilter),y(CurrentFrameFilter),'or', 'MarkerSize', 20)
-            plot(x(~CurrentFrameFilter),y(~CurrentFrameFilter),'ow', 'MarkerSize', 20)
-            hold off
-            title(i)
-            set(gcf,'Name',['Frame: ',num2str(CurrentFrame),'/',num2str(length(Spots))])
-
-            figure(NucleiFig)
-            set(gcf,'units', 'normalized', 'position',[0.65, .5, .2, .2])
-
+            if ~isempty(app)
+                ax1 = app{1};
+                title(ax1, ['Ch', num2str(Channel),'  Frame: ',num2str(CurrentFrame),'/',num2str(length(Spots{Channel}))])
+            else
+                ax1 = gca;
+                set(gcf,'Name',['Ch', num2str(Channel),'  Frame: ',num2str(CurrentFrame),'/',num2str(length(Spots{Channel}))]); 
+                title(ax1, i)
+            end
+            imshow(Image,[], 'Parent', ax1, 'InitialMagnification', 'fit')
+            hold(ax1, 'on')
+            plot(ax1,x(CurrentFrameFilter),y(CurrentFrameFilter),'or', 'MarkerSize', 10)
+            plot(ax1,x(~CurrentFrameFilter),y(~CurrentFrameFilter),'ow', 'MarkerSize', 10)
+            hold(ax1, 'off')
+            
             if UseHistone
+                
+                set(NucleiFig,'units', 'normalized', 'position',[0.65, .5, .2, .2])
+                
                 try
                     Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,NDigits),'.tif']);
                 catch
@@ -379,22 +392,28 @@ if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
                         Image=0;
                     end
                 end
-                imshow(Image,[],'Border','Tight')
-                hold on
+                if ~isempty(app)
+                    ax2 = app{2};
+                else
+                    ax2 = gca;
+                end
+                imshow(Image,[],'Border','Tight', 'Parent', ax2,'InitialMagnification', 'fit')
+                hold(ax2, 'on')
                 PlotHandle=[];
                 [NEllipses,~]=size(Ellipses{CurrentFrame});
                 for j=1:NEllipses
                     PlotHandle=[PlotHandle,ellipse(Ellipses{CurrentFrame}(j,3),...
                         Ellipses{CurrentFrame}(j,4),...
                         Ellipses{CurrentFrame}(j,5),Ellipses{CurrentFrame}(j,1)+1,...
-                        Ellipses{CurrentFrame}(j,2)+1, [],[],gca)];
-                        text(Ellipses{CurrentFrame}(j,1)+1,...
+                        Ellipses{CurrentFrame}(j,2)+1, [],[],ax2)];
+                        
+                    text(ax2, Ellipses{CurrentFrame}(j,1)+1,...
                             Ellipses{CurrentFrame}(j,2)+1,num2str(j),'BackgroundColor',[.7 .9 .7]);
 
                 end
                 set(PlotHandle,'Color','r')
-                hold off
-                title(i)
+                hold(ax2, 'off')
+                title(ax2, i)
             end
             drawnow
 
@@ -573,8 +592,12 @@ if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
             end
         end
     end
-    close(ParticlesFig)
-    close(NucleiFig)
+    if isempty(app)
+        close(ParticlesFig)
+        if UseHistone
+            close(NucleiFig)
+        end
+    end
 else
     error('Experiment type in MovieDatabase not recognized')    
 end
