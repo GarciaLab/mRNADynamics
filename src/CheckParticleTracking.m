@@ -369,7 +369,7 @@ if ~NoSort
 end
 
 %Some flags and initial parameters
-ShowThreshold2=0;                    %Whether to show particles below the threshold
+ShowThreshold2=1;                    %Whether to show particles below the threshold
 HideApprovedFlag=0;
 ParticleToFollow=[];
 ZSlices=FrameInfo(1).NumberSlices+2; %Note that the blank slices are included
@@ -429,26 +429,48 @@ end
 
 %Define the windows
 Overlay=figure;
-overlayAxes = axes(Overlay);
+% overlayAxes = axes(Overlay);
 if UseHistoneOverlay 
     HisOverlayFig=figure;  
     HisOverlayFigAxes = axes(HisOverlayFig);
 end
-TraceFig=figure;
-traceFigAxes = axes(TraceFig);
-SnippetFig=figure;
-snippetFigAxes = axes(SnippetFig);
-ZProfileFig=figure;
-zProfileFigAxes = axes(ZProfileFig);
-ZTrace=figure;
-zTraceAxes = axes(ZTrace);
+% 
+overlayAxes =subplot(1, 2, 1, 'Parent', Overlay);
+traceFigAxes = subplot(1, 2, 2, 'Parent', Overlay);
+% 
+% TraceFig=figure;
+% traceFigAxes = axes(TraceFig);
+
+zFig = figure;
+zProfileFigAxes =subplot(1, 2, 1, 'Parent', zFig);
+zTraceAxes  = subplot(1, 2, 2, 'Parent', zFig);
+
+snipFig = figure();
+snippetFigAxes =subplot(1, 3, 1, 'Parent', snipFig);
+rawDataAxes =subplot(1, 3, 2, 'Parent', snipFig);
+gaussianAxes =subplot(1, 3, 3, 'Parent', snipFig);
+
+%  uiFig = figure;
+% uiAx = axes(uiFig);
+% uiFig.Units = 'normalized'; uiFig.Position=[.5 .5 .05 .05];
+% title(uiAx, 'User interface box');
+% c = uicontrol;c.Units = 'normalized';c.Position = [.5 .5 .05 .05];
+% c.String = 'Push button';
+% c.Callback = @plotButtonPushed;
+
 % SisterFig=figure;
 % SisterFig2 = figure;
 % SisterFig3 = figure;
-Gaussian = figure;
-gaussianAxes = axes(Gaussian);
-RawData = figure;
-rawDataAxes = axes(RawData);
+
+%Define the windows
+set(Overlay,'units', 'normalized', 'position',[0.01, .55, .8, .33]);
+if UseHistoneOverlay 
+    set(HisOverlayFig,'units', 'normalized', 'position',[0.01, 0.1, .33, .33]);
+end
+set(overlayAxes,'position',[-.23  .06 .9 .9])
+set(traceFigAxes,'position',[.5  .17 .45 .63])
+set(snipFig,'units', 'normalized', 'position',[0.355, 0.15, 3*(.2/2), .33/2]);
+set(zFig,'units', 'normalized', 'position',[0.67, 0.15, .2, .33/2]);
 
 
 cc=1;
@@ -605,7 +627,7 @@ while (cc~='x')
     end
     
     set(0, 'CurrentFigure', Overlay);
-    imshow(Image,DisplayRangeSpot,'Border','Tight','Parent',overlayAxes)
+    imshow(Image,DisplayRangeSpot,'Border','Tight','Parent',overlayAxes, 'InitialMagnification', 'fit')
     hold(overlayAxes,'on')
     %Show all particles in regular mode
     if ~SpeedMode
@@ -756,16 +778,16 @@ while (cc~='x')
 
     if ApprovedParticles(CurrentParticle)==1
         set(Overlay,'Color','g')
-        set(TraceFig,'Color','g')
+%         set(TraceFig,'Color','g')
     elseif ApprovedParticles(CurrentParticle)==-1
         set(Overlay,'Color','r')
-        set(TraceFig,'Color','r')
+%         set(TraceFig,'Color','r')
     elseif ApprovedParticles(CurrentParticle)==2
         set(Overlay,'Color','y')
-        set(TraceFig,'Color','y')
+%         set(TraceFig,'Color','y')
     else
         set(Overlay,'Color','default')
-        set(TraceFig,'Color','default')
+%         set(TraceFig,'Color','default')
     end
     
     %Show the particles that were under threshold 2.
@@ -851,10 +873,10 @@ while (cc~='x')
             
         end
     
-        set(HisOverlayFig,'Name',['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles),...
-            ', Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),...
-            ', Z: ',num2str(CurrentZ),'/',num2str(ZSlices),' nc: ', num2str(FrameInfo(CurrentFrame).nc),...
-            ' Ch: ',num2str(CurrentChannel)])
+%         set(HisOverlayFigAxes,'Name',['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles),...
+%             ', Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),...
+%             ', Z: ',num2str(CurrentZ),'/',num2str(ZSlices),' nc: ', num2str(FrameInfo(CurrentFrame).nc),...
+%             ' Ch: ',num2str(CurrentChannel)])
         
         if ZoomMode || GlobalZoomMode
             try
@@ -987,12 +1009,10 @@ while (cc~='x')
                 surf(gaussianAxes, gauss + CurrentSnippet);
             end
             title(gaussianAxes,'Gaussian fit')
-            set(Gaussian,'units', 'normalized', 'position',[0.815, 0.15, .2/3*2, .33/3*2]);
             zlimit = max(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity);
             zlim(gaussianAxes,[0, zlimit]);        
             surf(rawDataAxes,CurrentSnippet)
             title(rawDataAxes,'Raw data');
-            set(RawData,'units', 'normalized', 'position',[.6, 0.15, .2/3*2, .33/3*2]);
             zlim(rawDataAxes,[0, zlimit]);
     else
         cla(gaussianAxes, 'reset')
@@ -1126,7 +1146,9 @@ while (cc~='x')
     end
     title(traceFigAxes,FigureTitle)
     
-    %this is the brightest z-trace figure
+      
+      
+  %%%%%    BRIGHTEST Z-TRACE PLOT   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     if ~strcmpi(ExperimentType,'inputoutput')
         %Only update the trace information if we have switched particles
         if (CurrentParticle~=PreviousParticle)||~exist('MaxZProfile', 'var')||(CurrentChannel~=PreviousChannel)|| CurrentFrame~=PreviousChannel
@@ -1154,29 +1176,24 @@ while (cc~='x')
         title(zTraceAxes,'Brightest Z trace')
     end
     
-    
-    %Define the windows
-    set(Overlay,'units', 'normalized', 'position',[0.01, .55, .33, .33]);
-    if UseHistoneOverlay 
-        set(HisOverlayFig,'units', 'normalized', 'position',[0.01, 0.1, .33, .33]);
-    end
-    set(TraceFig,'units', 'normalized', 'position',[0.35, 0.55, .5, .3]);
-    set(SnippetFig,'units', 'normalized', 'position',[0.355, 0.15, .2/2, .33/2]);
-    set(ZProfileFig,'units', 'normalized', 'position',[0.47, 0.15, .2/2, .33/2]);
-    set(ZTrace,'units', 'normalized', 'position',[0.869, 0.55, .2/2, .42/2]);
+
     
     set(0, 'CurrentFigure', Overlay)
     if isempty(SkipWaitForButtonPress)
         ct=waitforbuttonpress;
         cc=get(Overlay,'currentcharacter');
         cm=get(gca,'CurrentPoint');
+        if strcmpi(cc, '')
+            cc = 'donothing';
+        end
     else
         cc=SkipWaitForButtonPress;
         SkipWaitForButtonPress=[];
     end
         
-    
-    if cc=='.' & (CurrentFrame < length({Spots{1}.Fits})) %Move forward one frame
+     if strcmpi(cc, 'donothing')
+        %do nothing
+     elseif cc=='.' & (CurrentFrame < length({Spots{1}.Fits})) %Move forward one frame
         CurrentFrame=CurrentFrame+1;
         ManualZFlag=0;
         %DisplayRange=[];
@@ -1795,17 +1812,20 @@ while (cc~='x')
         ConnectPosition = [ConnectPositionx,ConnectPositiony];
         if ~isempty(ConnectPosition)
             %Find the closest particle
-            [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
-            disp(['Clicked particle: ',num2str(ParticleOutput)]);
-            try
+           try
+                [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
+                disp(['Clicked particle: ',num2str(ParticleOutput)]);
                 ParticleJump=ParticleOutput;
-            end
+           catch     
+               error('Maybe you clicked close to a particle under threshold 1 (red box). These particles can''t be selected.');
+           end
+
             if (floor(ParticleJump)>0)&&(ParticleJump<=numParticles)
                 CurrentParticle=ParticleJump;
                 CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(1);
                 ManualZFlag=0;
             end
-            
+           
             if UseHistoneOverlay
                 %Find the closest nucleus
                 NewNuclei=ConnectPosition;
@@ -2317,6 +2337,7 @@ while (cc~='x')
         DisplayRangeSpot=[min(min(Image)),max(max(Image))*1.5];
     elseif cc=='0'      %Debugging mode
         keyboard;
+
     end
         
 end
@@ -2341,7 +2362,7 @@ else
     save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2', '-v7.3')            
     save([DataFolder,filesep,'Spots.mat'],'Spots','-v7.3')
 end
-close all force;
+close all;
 disp('Particles saved.')
 disp(['(Left off at Particle #', num2str(CurrentParticle), ')'])
 %% Extra stuff that is useful in debug mode
@@ -2392,3 +2413,10 @@ disp(['(Left off at Particle #', num2str(CurrentParticle), ')'])
 %     %Decouple particle and schnitz
 %     Particles(ParticleToDecouple).Nucleus=[];
 % end
+
+
+end
+
+    function plotButtonPushed(src,event)
+        bar(randn(1,5));
+    end

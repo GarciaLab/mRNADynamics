@@ -317,8 +317,11 @@ if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
     %Start by numbering the particles found
     if isempty(app)
         ParticlesFig=figure;
+        particlesAxes = axes(ParticlesFig);
         if UseHistone
             NucleiFig=figure;
+            set(NucleiFig,'units', 'normalized', 'position',[0.65, .5, .2, .2])
+            nucAxes = axes(NucleiFig);
         end
     end
 
@@ -369,8 +372,8 @@ if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
                 ax1 = app{1};
                 title(ax1, ['Ch', num2str(Channel),'  Frame: ',num2str(CurrentFrame),'/',num2str(length(Spots{Channel}))])
             else
-                ax1 = gca;
-                set(gcf,'Name',['Ch', num2str(Channel),'  Frame: ',num2str(CurrentFrame),'/',num2str(length(Spots{Channel}))]); 
+                ax1 = particlesAxes;
+                set(ParticlesFig,'Name',['Ch', num2str(Channel),'  Frame: ',num2str(CurrentFrame),'/',num2str(length(Spots{Channel}))]); 
                 title(ax1, i)
             end
             imshow(Image,[], 'Parent', ax1, 'InitialMagnification', 'fit')
@@ -381,7 +384,6 @@ if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
             
             if UseHistone
                 
-                set(NucleiFig,'units', 'normalized', 'position',[0.65, .5, .2, .2])
                 
                 try
                     Image=imread([PreProcPath,filesep,Prefix,filesep,FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,NDigits),'.tif']);
@@ -395,7 +397,7 @@ if strcmpi(ExperimentType,'1spot')||strcmpi(ExperimentType,'2spot')||...
                 if ~isempty(app)
                     ax2 = app{2};
                 else
-                    ax2 = gca;
+                    ax2 = nucAxes;
                 end
                 imshow(Image,[],'Border','Tight', 'Parent', ax2,'InitialMagnification', 'fit')
                 hold(ax2, 'on')
