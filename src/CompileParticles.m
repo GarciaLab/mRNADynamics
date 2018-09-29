@@ -45,7 +45,7 @@ function CompileParticles(varargin)
 %
 % Documented by: Hernan Garcia (hggarcia@berkeley.edu)
 
-close all force;
+close all;
 
 %Information about about folders
 [~,~,DefaultDropboxFolder,~,~]=...
@@ -931,9 +931,11 @@ for ChN=1:NChannels
                     set(gcf,'Position',[1,41,1280,684])  
 
                     drawnow
-                    saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'ParticleTraces',filesep,iIndex(k,NDigits),...
-                        '(',num2str(i),')-nc',...
-                        num2str(CompiledParticles{ChN}(k).nc),'_ch',iIndex(ChN,2),'.tif'])
+                    if isfield(CompiledParticles{ChN}(k), 'nc')
+                        saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'ParticleTraces',filesep,iIndex(k,NDigits),...
+                            '(',num2str(i),')-nc',...
+                            num2str(CompiledParticles{ChN}(k).nc),'_ch',iIndex(ChN,2),'.tif'])
+                    end
                     close(2)
                 end
 
@@ -978,7 +980,7 @@ end
 
 %nc filters:
 
-if ~isnan(nc9)||~isnan(nc10)||~isnan(nc11)||~isnan(nc12)||~isnan(nc13)||~isnan(nc14)
+if ~isnan(nc9)|~isnan(nc10)|~isnan(nc11)|~isnan(nc12)|~isnan(nc13)|~isnan(nc14)
     %ncFilterID just tells you the identity of the different
     %filters stored in the cell ncFilter
     ncFilterID=[];
@@ -2489,6 +2491,10 @@ elseif HistoneChannel&&strcmpi(ExperimentAxis,'DV')
         'AllTracesVector','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
         'MeanOffsetVector','SDOffsetVector','NOffsetParticles', 'Prefix', '-v7.3')
 elseif strcmpi(ExperimentAxis,'NoAP')
+    
+   MeanOffsetVector = NaN;
+   SDOffsetVector = NaN;
+   NOffsetParticles = NaN;
     
     %If we have only one channel get rid of all the cells
     if NChannels==1
