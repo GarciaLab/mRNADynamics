@@ -631,7 +631,7 @@ save([OutputFolder,filesep,'Particles.mat'],'Particles','SpotFilter',...
     'Threshold1','Threshold2', '-v7.3');
 
 % creating the field nc for FrameInfo
-if exist([OutputFolder,filesep,'FrameInfo.mat'])
+if exist([OutputFolder,filesep,'FrameInfo.mat'], 'file')
     numberOfFrames = length(FrameInfo);
     for currentFrame=1:numberOfFrames
         if currentFrame<nc9

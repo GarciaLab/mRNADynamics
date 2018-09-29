@@ -115,7 +115,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
   use_integral_center = 1; %for z-tracking
 
   all_frames = cell(numFrames, zSize);
-  close all force;
+  close all;
 
   coatChannel = getCoatChannel(ExperimentType, Channel1, Channel2);
   Spots = [];
@@ -132,7 +132,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
       PreProcPath, Prefix, DogOutputFolder, displayFigures, pool, doFF, ffim, Threshold, neighborhood, ...
       snippet_size, pixelSize, microscope, intScale);
 
-    close all force;
+    close all;
 
     % Create a useful structure that can be fed into pipeline
     [Particles, fields] = saveParticleInformation(numFrames, all_frames, zSize, use_integral_center);
