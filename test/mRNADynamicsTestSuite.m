@@ -7,8 +7,9 @@ try
 
   exportDataForFISHSuite = TestSuite.fromFolder('testExportDataForFISH');
   segmentSpotsSuite = TestSuite.fromFolder('testSegmentSpots');
+  segmentSpotsMLSuite = TestSuite.fromFolder('testSegmentSpotsML');
   
-  completeTestSuite = [exportDataForFISHSuite, segmentSpotsSuite];
+  completeTestSuite = [exportDataForFISHSuite, segmentSpotsSuite, segmentSpotsMLSuite];
   testResults = run(completeTestSuite);
 
   elapsedTime = toc;
