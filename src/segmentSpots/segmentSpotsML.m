@@ -32,7 +32,7 @@ function segmentSpotsML(Prefix,Threshold,varargin)
 % running. 
 % 'nWorkers': Specify the number of workers to use during parallel
 % processing
-%               
+% 'ignoreMemoryCheck' : Ignores the memory check, should be used only for testing.               
 % OUTPUT
 % 'Spots':  A structure array with a list of detected transcriptional loci
 % in each frame and their properties.
@@ -54,6 +54,11 @@ use_integral_center = 0;
 intScale = 1;
 keepPool = 0;
 nWorkers = 8;
+ignoreMemoryCheck = false;
+%Added new argument to specify a preferred classifier name and enable automatic testing
+ClassifierForTest = '';
+classifierPathCh1 = [];
+classifierFolder = [];
 
 for i=1:length(varargin)
     if strcmp(varargin{i},'displayFigures')
@@ -84,6 +89,12 @@ for i=1:length(varargin)
         keepPool = 1; 
      elseif strcmpi(varargin{i},'nWorkers')
         nWorkers = varargin{i+1};
+     elseif strcmpi(varargin{i}, 'ignoreMemoryCheck')
+        ignoreMemoryCheck = true;
+     elseif isobject(varargin{i}) && isa(varargin{i}, 'ClassifierForTest')
+        ClassifierForTest = varargin{i};
+        classifierFolder = ClassifierForTest.classifierFolder;
+        classifierPathCh1 = ClassifierForTest.classifierPathCh1;
      else        
         if ~isnumeric(varargin{i})
             error('Input parameters not recognized. Check spelling and case.')
@@ -170,7 +181,9 @@ if just_dog
     stacksPath = [PreProcPath,filesep,Prefix,filesep,'stacks', ];
     mkdir(stacksPath);
     if ~just_tifs    
-        [classifierPathCh1,classifierFolder]=uigetfile([MS2CodePath, filesep, 'classifiers', filesep, '*.model']);
+        if isempty(classifierPathCh1) 
+          [classifierPathCh1,classifierFolder]=uigetfile([MS2CodePath, filesep, 'classifiers', filesep, '*.model']);
+        end
         if nCh==2
           [classifierPathCh2,~]=uigetfile([MS2CodePath, filesep, 'classifiers', filesep, '*.model']); 
         end
@@ -185,7 +198,7 @@ if just_dog
         %     end
 
         heapSize = java.lang.Runtime.getRuntime.maxMemory;
-        if heapSize<1E10 
+        if heapSize < 1E10 && ~ignoreMemoryCheck
             error('Please increase your Java heap memory allocation to at least 10GB (Home -> Preferences -> General -> Java Heap Memory.');
         end
 
