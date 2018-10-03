@@ -1,5 +1,5 @@
 
-function [displayFigures, numFrames, customFilter, highPrecision, filterType, keepPool, sigmas, nWorkers, app] = determineFilterMovieOptions(varargin) 
+function [displayFigures, numFrames, customFilter, highPrecision, filterType, keepPool, sigmas, nWorkers, app,kernelSize] = determineFilterMovieOptions(varargin) 
 
   varargin = varargin{1};
   
@@ -13,6 +13,7 @@ function [displayFigures, numFrames, customFilter, highPrecision, filterType, ke
   nWorkers = 8;
   sigmas = {};
   app = {};
+  kernelSize = [];
 
   for i = 1:length(varargin)
 
@@ -36,6 +37,10 @@ function [displayFigures, numFrames, customFilter, highPrecision, filterType, ke
     elseif strcmpi(varargin{i}, 'nWorkers')
             
         nWorkers = varargin{i+1};
+        
+    elseif strcmpi(varargin{i}, 'kernelSize')
+        
+        kernelSize = varargin{i+1};
 
     elseif strcmpi(varargin{i}, 'customFilter')
       customFilter = 1;

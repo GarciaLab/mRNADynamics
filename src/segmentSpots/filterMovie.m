@@ -16,19 +16,18 @@
 % processing
 %
 % 'highPrecision': Uses higher precision filtering for segmentation when finding dogs
-% 'customFilters': Choose which filter to use to segment the image. Name
+% 'customFilter': Choose which filter to use to segment the image. Name
 %                  should be a string, followed by a cell with your filter
 %                  or filters2018-09-20-pNos-FLP-7_embryo2_581power_2_0_Linear unmixing
 %                 ex. filterMovie(Prefix,'customFilter', 'Structure_largest', {1, 8})
 %           Filter Options:
 %               'Gaussian_blur''Median'
-%               'Edges''Maximum'
+%               'Maximum'
 %               'Laplacian''Minimum'
-%               'Mean''Std'
+%               'Mean'
 %               'Hessian_largest''Hessian_smallest'
 %               [DEFAULT] 'Difference_of_Gaussian' (2 sigmas) [DEFAULT]
-%               'Structure_largest' (2 sigmas)
-%               'Structure_smallest' (2 sigmas)
+%               
 %
 % OUTPUT
 %
@@ -42,7 +41,7 @@ function log = filterMovie(Prefix, varargin)
   warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
   [displayFigures, numFrames, customFilter, highPrecision,...
-      filterType, keepPool, sigmas, nWorkers, app] = determineFilterMovieOptions(varargin);
+      filterType, keepPool, sigmas, nWorkers, app, kernelSize] = determineFilterMovieOptions(varargin);
 
   % Start timer
   tic;
@@ -95,7 +94,7 @@ function log = filterMovie(Prefix, varargin)
   coatChannel = getCoatChannel(ExperimentType, Channel1, Channel2);
 
   [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSize, customFilter, nCh, ExperimentType, ...
-    coatChannel, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision, sigmas, nWorkers, app);
+    coatChannel, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision, sigmas, nWorkers, app,kernelSize);
 
   t = toc;
   

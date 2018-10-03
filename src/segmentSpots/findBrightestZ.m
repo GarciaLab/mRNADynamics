@@ -1,4 +1,4 @@
-function [Particles,falsePositives] = findBrightestZ(Particles, num_shadows, use_integral_center, force_z)
+ function [Particles,falsePositives] = findBrightestZ(Particles, num_shadows, use_integral_center, force_z)
 % Particles = findBrightestZ(Particles)
 %
 % DESCRIPTION
@@ -71,11 +71,11 @@ function [Particles,falsePositives] = findBrightestZ(Particles, num_shadows, use
         %Particles(i).FixedAreaIntensity5 = RawIntegral5;
 %             Particles(i).FixedAreaIntensity3 = Particles(i).FixedAreaIntensity(Particles(i).brightestZ - 1) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ + 1);
 %             Particles(i).FixedAreaIntensity5 = Particles(i).FixedAreaIntensity(Particles(i).brightestZ - 2) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ - 1) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ + 1) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ + 2);
-        Particles(i).FixedAreaIntensity3 = nanmean(z_raw_values(ismember(z_grid,Particles(i).brightestZ-1:Particles(i).brightestZ+1)));
-        Particles(i).FixedAreaIntensity5 = nanmean(z_raw_values(ismember(z_grid,Particles(i).brightestZ-2:Particles(i).brightestZ+2)));
+        Particles(i).FixedAreaIntensity3 = sum(z_raw_values(ismember(z_grid,Particles(i).brightestZ-1:Particles(i).brightestZ+1)));
+        Particles(i).FixedAreaIntensity5 = sum(z_raw_values(ismember(z_grid,Particles(i).brightestZ-2:Particles(i).brightestZ+2)));
         try
             Particles(i).cylIntensity = Particles(i).cylIntensity(ZStackIndex);
-        catch
+        catch                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
         end
     
         %use convolution kernel to look for shadows

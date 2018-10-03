@@ -50,10 +50,10 @@ for i=1:length(Particles(CurrentParticle).Frame)
         %Check to see it multi-slice integration was performed for this set
         fields = fieldnames(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)));
         try
-%             AmpIntegral3(i)=...
-%             Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).FixedAreaIntensity3;
             AmpIntegral3(i)=...
-            Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).cylIntensity;
+            Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).FixedAreaIntensity3;
+%             AmpIntegral3(i)=...
+%             Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).cylIntensity;
               
         catch
             AmpIntegral3(i)= NaN;

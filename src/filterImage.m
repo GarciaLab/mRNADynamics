@@ -55,6 +55,10 @@ function fint = filterImage(im, filterType, sigmas, varargin)
                 f = canny(im, s1);
             end
         case 'Difference_of_Gaussian'
+            if s2 < s1 
+                error('DoG filter requires sigma 1 < sigma 2')
+            end
+            %assumes sigma 2 > sigma 1
             if dim==2
                 f = conv2(im, fspecial('gaussian',filterSize, s1) - fspecial('gaussian',filterSize, s2),'same');
             elseif dim == 3

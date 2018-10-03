@@ -1085,7 +1085,7 @@ while (cc~='x')
 %         yyaxis(traceFigAxes,'right');
 %         p3 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
 %             backGround3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');                   
-        legend([p1,p2],'1-slice','3-slice cylinder')
+        legend([p1,p2],'1-slice','3-slice accordion')
         try
             xlim(traceFigAxes,[min(Frames)-1,max(Frames)+1]);
         catch

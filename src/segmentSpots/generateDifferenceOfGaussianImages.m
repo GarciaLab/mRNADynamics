@@ -1,7 +1,11 @@
 % Generates difference of Gaussian images
-function [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSize, customFilter, nCh, ExperimentType, coatChannel, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision,sigmas, nWorkers, app)
+function [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSize, customFilter, nCh, ExperimentType, coatChannel, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision,sigmas, nWorkers, app, kernelSize)
 
-  filterSize = round(2000/pixelSize); %2000nm seems to be a good size empirically -AR
+  if isempty(kernelSize)
+    filterSize = round(2000/pixelSize); %2000nm seems to be a good size empirically -AR
+  else
+      filterSize = kernelSize;
+  end
   if ~customFilter
     sigmas = {1, round(42000/pixelSize)}; %42000nm seems to be a good size empirically -AR
   end 
@@ -64,16 +68,20 @@ function generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameS
   iIndex(zIndex, 2), nameSuffix, '.tif'];
 
   im = double(imread(fileName));
-
-  if strcmpi(filterType, 'Difference_of_Gaussian')
-    dog = filterImage(im, filterType, sigmas, filterSize);
-    
-    if highPrecision
-      dog = (dog + 100) * 100;
-    end
   
+  if sum(im(:)) ~= 0
+      if strcmpi(filterType, 'Difference_of_Gaussian')
+        dog = filterImage(im, filterType, sigmas, filterSize);
+
+        if highPrecision
+          dog = (dog + 100) * 100;
+        end
+
+      else
+        dog = (filterImage(im, filterType, sigmas, filterSize) + 100)*100;
+      end
   else
-    dog = filterImage(im, filterType, sigmas) + 100;
+      dog = im;
   end
   
   dog = padarray(dog(filterSize:end - filterSize - 1, filterSize:end - filterSize - 1), [filterSize, filterSize]);
