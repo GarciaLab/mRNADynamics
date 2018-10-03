@@ -1,4 +1,4 @@
-function [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, pool, autoThresh] = determineSegmentSpotsOptions(varargin)
+function [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, pool, autoThresh, use_integral_center] = determineSegmentSpotsOptions(varargin)
 
   varargin = varargin{1};
   
@@ -10,7 +10,7 @@ function [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, p
   nWorkers = 8;
   keepPool = 0;
   pool = 1;
-  use_integral_center = 0;
+  use_integral_center = 1;
   autoThresh = 0;
 
   for i = 1:length(varargin)
@@ -40,8 +40,8 @@ function [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, p
       highPrecision = 1;
     elseif strcmpi(varargin{i}, 'intScale')
       intScale = varargin{i + 1};
-    elseif strcmpi(varargin{i}, 'IntegralZ')
-      use_integral_center = 1;
+    elseif strcmpi(varargin{i}, 'noIntegralZ')
+      use_integral_center = 0;
     elseif strcmpi(varargin{i}, 'nWorkers')
       nWorkers = varargin{i + 1};
 

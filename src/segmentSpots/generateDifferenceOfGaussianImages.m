@@ -12,9 +12,7 @@ function [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSiz
     
   for channelIndex = 1:nCh
     
-    if isempty(app)
         h=waitbar(0,['Filtering images: Channel ', num2str(channelIndex)]);
-    end
     
     % (MT, 2018-02-11) Added support for lattice imaging, maybe 
     % temporary - FIX LATER
@@ -32,9 +30,7 @@ function [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSiz
     
     for current_frame = 1:numFrames
         
-      if isempty(app)
          waitbar(current_frame/numFrames,h);
-      end
       
       if displayFigures || ~nWorkers
       
@@ -55,9 +51,7 @@ function [sigmas] = generateDifferenceOfGaussianImages(DogOutputFolder, pixelSiz
     
     end
     
-    if isempty(app)
         close(h);
-    end
   end 
     
 end

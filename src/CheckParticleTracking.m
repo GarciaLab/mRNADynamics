@@ -1030,10 +1030,15 @@ while (cc~='x')
         if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex),'FixedAreaIntensity3')
 
 %             if Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).IntegralZ
-               ZProfile= conv(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).FixedAreaIntensity, [1, 1, 1]);
-               ZProfile = ZProfile(2:end-1);
-                title_string = '(3 slice raw integral)';
-                IntegralZ_flag = 1;
+            g = [-1 0 1];
+            gaussFilter = exp(-g .^ 2 / (2 ));
+            zprofinit = zeros(1, ZSlices);
+            zprofinit(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z) = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).FixedAreaIntensity;
+            ZProfile= conv(gaussFilter,zprofinit);
+            ZProfile = ZProfile(2:end-1);
+            ZProfile = ZProfile(zprofinit~=0);
+            title_string = '';
+            IntegralZ_flag = 1;
 %             else
 %                 ZProfile=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity;
 %                 IntegralZ_flag = 0;

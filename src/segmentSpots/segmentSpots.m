@@ -23,7 +23,7 @@
 % running.
 % 'nWorkers': Specify the number of workers to use during parallel
 % processing
-% 'IntegralZ':  Establish center slice at position that maximizes raw fluo integral 
+% 'noIntegralZ':  Don't establish center slice at position that maximizes raw fluo integral 
 %               across sliding 3 z-slice window.
 % 'intScale': Scale up the radius of integration
 % 'autoThresh': Pops up a UI to help decide on a threshhold
@@ -46,7 +46,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
   warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
   [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, ...
-      pool, autoThresh] = determineSegmentSpotsOptions(varargin);
+      pool, autoThresh,use_integral_center] = determineSegmentSpotsOptions(varargin);
 
   argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
   try 
@@ -112,7 +112,6 @@ function log = segmentSpots(Prefix, Threshold, varargin)
   pixelSize = FrameInfo(1).PixelSize * 1000; %nm
   neighborhood = round(1300 / pixelSize); %nm
   snippet_size = 2 * (floor(1300 / (2 * pixelSize))) + 1; % nm. note that this is forced to be odd
-  use_integral_center = 1; %for z-tracking
 
   all_frames = cell(numFrames, zSize);
   close all;
@@ -141,7 +140,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
        
         [neighborhood, Particles] = segmentSpotsZTracking(pixelSize, numFrames, Particles, fields); 
 
-        [Particles, falsePositives] = findBrightestZ(Particles,numShadows, 0, 0);
+        [Particles, falsePositives] = findBrightestZ(Particles,numShadows, use_integral_center, 0);
 
         %Create a final Spots structure to be fed into TrackmRNADynamics
         Spots{channelIndex} = createSpotsStructure(Particles, numFrames);
