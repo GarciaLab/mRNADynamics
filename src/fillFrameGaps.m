@@ -10,17 +10,19 @@ function fillFrameGaps(prefix, varargin)
 %% Loading the data set of interest
 
 %[prefix,~] = getPrefixAndFolder; % in case the prefix above is not yours.
-intScale = 1;
-
+intScale = 1; % for intScale option
+notAllNC = 0; % for desiredNC(s) option
 for i = 1:length(varargin)
-    switch varargin{i}
-        case 'intScale'
+    if strcmp(varargin{i},'intScale')
             intScale = varargin{i+1};
-            intScale = varargin{i+1};
-            display(['integration scaling factor: ', num2str(intScale)]);
+    elseif strcmp(varargin{i}, 'desiredNC(s)')
+            notAllNC = 1;
+            desiredNC = varargin{i+1};
     end
 end
+display(['integration scaling factor: ', num2str(intScale)]);
 
+% getting folder information
 [~,~,dropboxFolder,~,~]= DetermineLocalFolders(prefix);
 [~,~,defaultDropboxFolder,~,PreProcPath]=...
     DetermineLocalFolders;
@@ -35,6 +37,7 @@ if ~iscell(Particles)
     SpotFilter = {SpotFilter};
 end
 numberOfParticles = size(Particles{:},2);
+
 NChannels=1;
 nameSuffix=['_ch',iIndex(1,2)];
 currentChannel = 1;
@@ -90,7 +93,6 @@ try
     end
 end
 
-
 %% Sorting Particles by their first frames
 for ChN=1:NChannels
     for i=1:length(Particles{ChN})
@@ -110,12 +112,36 @@ else
     error('No more than 10,000 frames supported. Change this in the code')
 end
 
+
+%% Section for option desiredNC(s) 
+
+if notAllNC
+    allParticleNC = zeros(1,numberOfParticles);
+    for currentParticle = 1:numberOfParticles
+        [frame,~,~,~,~,~,~,~,~,~,~,~,~]=...
+            GetParticleTrace(currentParticle,...
+            Particles{currentChannel},Spots{currentChannel});
+        correspondingNCInfo = [FrameInfo.nc];
+        currentNCRange = unique(correspondingNCInfo(frame));
+        allParticleNC(currentParticle) = currentNCRange(1);
+    end
+    
+    particlesOfInterest = [];
+    for currentNC = desiredNC
+        particleSubset = find(allParticleNC == currentNC);
+        particlesOfInterest = [particlesOfInterest particleSubset];
+    end
+else
+    particlesOfInterest = 1:numberOfParticles; % look at all of the particles
+end
+
+
 %% Beginning of double checking
 
 % Checking for particles with frames missing somewhere in the middle of
 % their trace
 particlesToDoubleCheck = [];
-for i = 1:numberOfParticles
+for i = particlesOfInterest
     currentFrames = Particles{currentChannel}(i).Frame;
     framesWithNoGaps = currentFrames(1):currentFrames(end);
     if ~isequal(currentFrames,framesWithNoGaps)
@@ -146,14 +172,14 @@ for i = particlesToDoubleCheck
         numberOfParticles = size(Particles{:},2);
         currentFrames = Particles{currentChannel}(i).Frame;
         
-        % getting current nucleus and schnitz
-        schnitzIndex=find(schnitzcells(Particles{currentChannel}(i).Nucleus).frames==currentFrame);
-        nucleusIndex=schnitzcells(Particles{currentChannel}(i).Nucleus).cellno(schnitzIndex);
-        nucleusCenterCoordinates = [Ellipses{currentFrame}(nucleusIndex,1:2)];
+%         % getting current nucleus and schnitz
+%         schnitzIndex=find(schnitzcells(Particles{currentChannel}(i).Nucleus).frames==currentFrame);
+%         nucleusIndex=schnitzcells(Particles{currentChannel}(i).Nucleus).cellno(schnitzIndex);
+%         nucleusCenterCoordinates = [Ellipses{currentFrame}(nucleusIndex,1:2)];
         
         % Finding the position in the previous frame
         previousFrame = currentFrame - 1;
-        [x,y,z]=SpotsXYZ(Spots{currentChannel}(previousFrame)); % Looking at the previous frame
+        [x,y,~]=SpotsXYZ(Spots{currentChannel}(previousFrame)); % Looking at the previous frame
         currentParticleIndex=...
             Particles{currentChannel}(i).Index(currentFrames==previousFrame);
         previousPositionOfParticle = [x(currentParticleIndex) y(currentParticleIndex)];
@@ -340,6 +366,7 @@ end
 %% Saving Particles and Spots
 % Possible insert: Double check the particles' traces before asking to save them
 log(end+1).Date = date;
+log(end).integrationScale = intScale;
 log(end).FunctionOrScriptUsed = 'addMissingFramesToParticles';
 log(end).ParticlesEdited = particlesToDoubleCheck;
 log(end).CorrespondingFramesAdded = framesModified;

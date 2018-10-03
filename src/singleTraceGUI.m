@@ -1,17 +1,17 @@
-% 9/12 To do list: 
+% 9/12 To do list:
 % - write prefix of the data set of the particle in the figure title
 
 close all;
 dataset = 'mcp_opt';
 
 colors = [0.1961    0.8039    0.1961;... % (1) lime green
-    0.2941         0    0.7059;... % (2) indigo 
+    0.2941         0    0.7059;... % (2) indigo
     0.8353    0.4235    0.3333;... % (3) red (1st of PBoC colors)
     0.9176    0.7608    0.3922;... % (4) yellow
     0.4235    0.7373    0.9137;... % (5) cyan
     0.8157    0.4275    0.6706;... % (6) magenta
     0.4510    0.5569    0.7569;]; % (7) light blue
-    
+
 colorTraceOneSlice = colors(1,:);
 colorTraceThreeSlices = colors(2,:);
 colorsForMultiple = colors(3:7,:);
@@ -30,58 +30,13 @@ axisFontSize = 14;
 currentParticle = 1;
 currentChannel = 1;
 
-%---- section for running with many data sets ---- 
-data = LoadMS2Sets(dataset);
-nSets = length(data);
-Prefix = cell(1, nSets);
-allParticles = [];
-particlesCorrespondingDataSetNumber = [];
-allSpots = [];
-spotsCorrespondingDataSetNumber = [];
-fieldNamesToKeep = {'Frame','Index','xPos','yPos','APpos'};
-
-for currentDataSet = 1:nSets
-%     if data(currentDataSet).Prefix
-        Prefix{currentDataSet} = data(currentDataSet).Prefix;
-        
-        [Particles,Spots,numberOfParticles,framesInMinutes,...
-            nuclearCycleBoundariesInMinutes,correspondingNCInfo] =...
-            loadRelevantData(Prefix{currentDataSet});
-        
-        % Not all of the particles have the fields: FrameApproved and Approved
-        % and this code currently doesn't use it
-%         disp(['Prefix : ', Prefix{currentDataSet}])
-%         disp(fieldnames(Particles{currentChannel}))
-        
-        clear temporaryStruct
-        for currentFieldIndex = 1:length(fieldNamesToKeep)
-           currentField = fieldNamesToKeep{currentFieldIndex};
-            temporaryStruct.(currentField) = {Particles{currentChannel}.(currentField)}; 
-        end
-        Particles = struct(...
-            fieldNamesToKeep{1},temporaryStruct.(fieldNamesToKeep{1}),...
-            fieldNamesToKeep{2},temporaryStruct.(fieldNamesToKeep{2}),...
-            fieldNamesToKeep{3},temporaryStruct.(fieldNamesToKeep{3}),...
-            fieldNamesToKeep{4},temporaryStruct.(fieldNamesToKeep{4}),...
-            fieldNamesToKeep{5},temporaryStruct.(fieldNamesToKeep{5}));
-        Particles = {Particles};    
-        
-        allParticles = [allParticles Particles{currentChannel}];
-        particlesCorrespondingDataSetNumber = [particlesCorrespondingDataSetNumber...
-            ones(1,length(Particles{currentChannel}))*currentDataSet];
-        allSpots = [allSpots Spots{currentChannel}];
-        spotsCorrespondingDataSetNumber = [spotsCorrespondingDataSetNumber...
-            ones(1,length(Spots{currentChannel}))*currentDataSet];
-        
-        otherRelevantData(currentDataSet).correspondingNCInfo = correspondingNCInfo;
-        otherRelevantData(currentDataSet).numberOfParticles = numberOfParticles;
-        otherRelevantData(currentDataSet).framesInMinutes = framesInMinutes;
-        otherRelevantData(currentDataSet).nuclearCycleBoundariesInMinutes = nuclearCycleBoundariesInMinutes;
-%     end
-end
+%---- section for running with many data sets ----
+[allParticles, particlesCorrespondingDataSetNumber,...
+    allSpots,spotsCorrespondingDataSetNumber,...
+    Prefixes, otherRelevantData] = concatenateDataSets(dataset);
 
 numberOfParticles = size(allParticles,2);
-%---- section for running with many data sets ---- 
+%---- section for running with many data sets ----
 
 
 %% making trace figure ------------------------------------------------------------------------
@@ -118,13 +73,18 @@ traceFigHandles = guihandles(particleTraceFig);
 %% making histogram figure  ------------------------------------------------------------------------
 % this figure will show the histogram of interest
 ncPresentInMovie = unique(correspondingNCInfo);
-timeOnHistogramAll = figure();
-timeOnHistogramAP = figure();
-firstMeasuredHistogramAll = figure();
-firstMeasuredHistogramAP = figure();
+timeOnHistogramAllFigure = figure();
+timeOnHistogramAPFigure = figure();
+firstMeasuredHistogramAllFigure = figure();
+firstMeasuredHistogramAPFigure = figure();
+overlayTimeOnFirstMeasured = figure();
+initialSlopeHistogramAllFigure = figure();
+initialSlopeHistogramAPFigure = figure();
 
-allHistogramHandles = [timeOnHistogramAll, timeOnHistogramAP,...
-    firstMeasuredHistogramAll, firstMeasuredHistogramAP];
+allHistogramHandles = [timeOnHistogramAllFigure, timeOnHistogramAPFigure,...
+    firstMeasuredHistogramAllFigure, firstMeasuredHistogramAPFigure,...
+    overlayTimeOnFirstMeasured,...
+    initialSlopeHistogramAllFigure initialSlopeHistogramAPFigure];
 positionOfHistogramFig = [4 49 996 635];%[4 97 996 587];
 
 for currentHistogramFigureIndex = 1:length(allHistogramHandles)
@@ -141,6 +101,36 @@ for currentHistogramFigureIndex = 1:length(allHistogramHandles)
     
 end
 
+%% making sorted trace figure ------------------------------------------------------------------
+sortedTraceFig = figure();
+positionOfSortedTraceFig = [4 49 996 635];%[4 97 996 587];%[403 49 562 635];
+set(gcf,'Position',positionOfSortedTraceFig);
+
+% Just going to draw one particle instead of drawing all of them
+drawCurrentSortedTrace(currentParticle,allParticles,particlesCorrespondingDataSetNumber,...
+    allSpots,spotsCorrespondingDataSetNumber,currentChannel,... % particle info
+    otherRelevantData,... % time info
+    markerSize,lineWidth,colorTraceOneSlice,colorsForMultiple,figTitleFontSize,axisFontSize) % plot info
+
+% making slider to change particle
+sortedParticleSliderPosition = [0.9268    0.2000    0.0315    0.7000]; % Units : normalized
+% textPosition = [0.91 0.9 0.04 0.9100]; % Units : normalized
+particleSliderSmallStep = 1/(numberOfParticles-1); % clicking will change it by 1
+particleSliderBigStep = particleSliderSmallStep*4; % sliding will change it by units of 4
+% Create slider
+sortedParticleSlider = uicontrol('Style', 'slider',...
+    'Min',1,'Max',numberOfParticles,'Value',currentParticle,...
+    'Units', 'normalized','Tag','particleSlider',...
+    'Position', sortedParticleSliderPosition,...
+    'SliderStep',[particleSliderSmallStep particleSliderBigStep],...
+    'Callback', {@chooseSortedTraceAction,...
+    allParticles,particlesCorrespondingDataSetNumber,...
+    allSpots,spotsCorrespondingDataSetNumber,currentChannel,... % particle info
+    otherRelevantData,... % time info
+    markerSize,lineWidth,colorTraceOneSlice,colorsForMultiple,figTitleFontSize,axisFontSize}); % plot info
+
+sortedTraceFigHandles = guihandles(sortedTraceFig);
+
 %% making option figure ------------------------------------------------------------------------
 optionsFig = figure();
 positionOfOptionFig = [1017 48 255 635];%[1017 97 255 586];
@@ -150,7 +140,7 @@ fullButtonWidth = 0.7;
 buttonHeight = 0.0341;
 tabFactor = 1.1;
 checkBoxOneIndentFactor = 3;
-sectionSpacing = 0.1;
+sectionSpacing = buttonHeight*2;
 currentSection = 0;
 buttonSpacing = buttonHeight;
 buttonCounter = 0; % this will increase by 1 before each check box
@@ -183,6 +173,7 @@ sectionTitleTxt = uicontrol('Style','text',...
     'FontSize',sectionFontSize,...
     'String',sectionString);
 
+% Fitted initial slope button
 buttonCounter = buttonCounter + 1;
 set(gcf,'Position',positionOfOptionFig);
 initialSlopeOption = uicontrol('Style','checkbox',...
@@ -192,8 +183,8 @@ initialSlopeOption = uicontrol('Style','checkbox',...
     allParticles,particlesCorrespondingDataSetNumber,...
     allSpots,spotsCorrespondingDataSetNumber,currentChannel,... % particle info
     otherRelevantData,... % time info
-    markerSize,lineWidth,lineWidthFitted,colorTraceOneSlice,colorTraceThreeSlices,transparencyFitted...
-    ,figTitleFontSize,axisFontSize}); % plot info
+    markerSize,lineWidth,lineWidthFitted,colorTraceOneSlice,colorTraceThreeSlices,...
+    transparencyFitted,figTitleFontSize,axisFontSize}); % plot info
 initialSlopeOption.Units = 'normalized';
 currentButtonYPoint = maxButtonYPoint- buttonSpacing*(buttonCounter-1)...
     - currentSection*sectionSpacing;
@@ -220,6 +211,24 @@ currentButtonYPoint = maxButtonYPoint- buttonSpacing*(buttonCounter-1)...
 currentButtonXPoint = firstXPoint + buttonSpacing*checkBoxOneIndentFactor;
 toggleRespacingOption.Position = [currentButtonXPoint currentButtonYPoint...
     fullButtonWidth buttonHeight];
+
+
+% looking at particle traces sorted by intensity....
+buttonCounter = buttonCounter + 1;
+toggleRespacingOption = uicontrol('Style','checkbox',...
+    'String',{'Sort by Intensity'},'Min',defaultOption,'Max',buttonCounter,...
+    'Value',defaultOption,'Tag','toggleRespacingButton',...
+    'Callback', {@showSortedTraceFig,particleTraceFig,traceFigHandles,...
+    sortedTraceFig, sortedTraceFigHandles}); % plot info
+toggleRespacingOption.Units = 'normalized';
+currentButtonYPoint = maxButtonYPoint- buttonSpacing*(buttonCounter-1)...
+    - currentSection*sectionSpacing;
+currentButtonXPoint = firstXPoint;
+toggleRespacingOption.Position = [currentButtonXPoint currentButtonYPoint...
+    fullButtonWidth buttonHeight];
+
+
+
 
 %% Histogram controls -----------------------------
 currentSection = currentSection + 1;
@@ -263,10 +272,11 @@ histogramCounter = histogramCounter + 1;
 initialTimeHistogram = uicontrol('Style','checkbox',...
     'String','All Nuclear Cycles & AP','Min',defaultOption,'Max',histogramCounter,...
     'Value',defaultOption,'Tag','All Nuclear Cycles & AP',...
-    'Callback', {@histogramOptionAction,timeOnHistogramAll,particleTraceFig});
+    'Callback', {@histogramOptionAction,particleTraceFig});
 initialTimeHistogram.Units = 'normalized';
 currentYPoint = currentYPoint - buttonSpacing./2;
-currentButtonXPoint = firstXPoint;
+% indenting this checkbox
+currentButtonXPoint = firstXPoint + buttonSpacing*checkBoxOneIndentFactor;
 initialTimeHistogram.Position = [currentButtonXPoint currentYPoint...
     fullButtonWidth buttonHeight];
 
@@ -277,10 +287,11 @@ initialMeasuredHistogram = uicontrol('Style','checkbox',...
     'String','% AP Position',...
     'Min',defaultOption,'Max',histogramCounter,...
     'Value',defaultOption,'Tag','% AP Position',...
-    'Callback', {@histogramOptionAction,timeOnHistogramAP,particleTraceFig});
+    'Callback', {@histogramOptionAction,particleTraceFig});
 initialMeasuredHistogram.Units = 'normalized';
 currentYPoint = currentYPoint - buttonSpacing;
-currentButtonXPoint = firstXPoint;
+% indenting this checkbox
+currentButtonXPoint = firstXPoint + buttonSpacing*checkBoxOneIndentFactor;
 initialMeasuredHistogram.Position = [currentButtonXPoint currentYPoint...
     fullButtonWidth buttonHeight];
 
@@ -304,48 +315,103 @@ initialMeasuredHistogram = uicontrol('Style','checkbox',...
     'String','All Nuclear Cycles & AP',...
     'Min',defaultOption,'Max',histogramCounter,...
     'Value',defaultOption,'Tag','All Nuclear Cycles & AP',...
-    'Callback', {@histogramOptionAction,firstMeasuredHistogramAll,particleTraceFig});
+    'Callback', {@histogramOptionAction,particleTraceFig});
 initialMeasuredHistogram.Units = 'normalized';
 currentYPoint = currentYPoint - buttonSpacing./2;
-currentButtonXPoint = firstXPoint;
+% indenting this checkbox
+currentButtonXPoint = firstXPoint + buttonSpacing*checkBoxOneIndentFactor;
 initialMeasuredHistogram.Position = [currentButtonXPoint currentYPoint...
     fullButtonWidth buttonHeight];
 
-% vs % AP position
+% by ap
 buttonCounter = buttonCounter + 1;
 histogramCounter = histogramCounter + 1;
 initialMeasuredHistogram = uicontrol('Style','checkbox',...
-    'String','% AP Position',...
+    'String','% AP',...
     'Min',defaultOption,'Max',histogramCounter,...
-    'Value',defaultOption,'Tag','% AP Position',...
-    'Callback', {@histogramOptionAction,firstMeasuredHistogramAP,particleTraceFig});
+    'Value',defaultOption,'Tag','% AP',...
+    'Callback', {@histogramOptionAction,particleTraceFig});
 initialMeasuredHistogram.Units = 'normalized';
 currentYPoint = currentYPoint - buttonSpacing;
-currentButtonXPoint = firstXPoint;
+% indenting this checkbox
+currentButtonXPoint = firstXPoint + buttonSpacing*checkBoxOneIndentFactor;
 initialMeasuredHistogram.Position = [currentButtonXPoint currentYPoint...
     fullButtonWidth buttonHeight];
 
 
+% First measured and time on!!!! ------------------
+currentYPoint = currentYPoint - buttonSpacing*2;
+textPosition = [firstXPoint currentYPoint ...
+    textLength textHeight*1.1];
+sectionFontSize = 8;
+sectionString = 'First Measured & Time On Overlay Histograms';
+firstMeasuredAndTimeOnSubsection = uicontrol('Style','text',...
+    'Units', 'normalized',...
+    'Position',textPosition,...
+    'FontSize',sectionFontSize,...
+    'String',sectionString,...
+    'HorizontalAlignment','left');
 
-% % Initial Slope Histogram button
-% buttonCounter = buttonCounter + 1;
-% initialSlopeHistogram = uicontrol('Style','checkbox',...
-%     'String','Initial Slope','Min',defaultOption,'Max',buttonCounter,...
-%     'Value',defaultOption,'Tag','selectButton',...
-%     'Callback', {@optionAction,particleTraceFig,traceFigHandles,...
-%     Particles,Spots,currentChannel,...
-%     markerSize,lineWidth,lineWidthFitted,color1,color3,transparencyFitted,...
-%     figTitleFontSize, axisFontSize});
-% initialSlopeHistogram.Units = 'normalized';
-% currentButtonYPoint = maxButtonYPoint- buttonSpacing*(buttonCounter-1)...
-%     - currentSection*sectionSpacing;
-% currentButtonXPoint = firstXPoint;
-% initialSlopeHistogram.Position = [currentButtonXPoint currentButtonYPoint...
-%     fullButtonWidth buttonHeight];
-%
-%
-%
-%
+% overlay
+buttonCounter = buttonCounter + 1;
+histogramCounter = histogramCounter + 1;
+initialMeasuredHistogram = uicontrol('Style','checkbox',...
+    'String','Overlay',...
+    'Min',defaultOption,'Max',histogramCounter,...
+    'Value',defaultOption,'Tag','overlay',...
+    'Callback', {@histogramOptionAction,particleTraceFig});
+initialMeasuredHistogram.Units = 'normalized';
+currentYPoint = currentYPoint - buttonSpacing./2;
+% indenting this checkbox
+currentButtonXPoint = firstXPoint + buttonSpacing*checkBoxOneIndentFactor;
+initialMeasuredHistogram.Position = [currentButtonXPoint currentYPoint...
+    fullButtonWidth buttonHeight];
+
+
+% Initial Slope ------------------
+currentYPoint = currentYPoint - buttonSpacing*2;
+textPosition = [firstXPoint currentYPoint ...
+    textLength textHeight*1.1];
+sectionFontSize = 8;
+sectionString = 'Initial Slope Histograms';
+firstMeasuredPointSubsection = uicontrol('Style','text',...
+    'Units', 'normalized',...
+    'Position',textPosition,...
+    'FontSize',sectionFontSize,...
+    'String',sectionString,...
+    'HorizontalAlignment','left');
+
+% all nc and ap
+buttonCounter = buttonCounter + 1;
+histogramCounter = histogramCounter + 1;
+initialSlopeHistogram = uicontrol('Style','checkbox',...
+    'String','All Nuclear Cycles & AP',...
+    'Min',defaultOption,'Max',histogramCounter,...
+    'Value',defaultOption,'Tag','Initial Slope',...
+    'Callback', {@histogramOptionAction,particleTraceFig});
+initialSlopeHistogram.Units = 'normalized';
+currentYPoint = currentYPoint - buttonSpacing./2;
+% indenting this checkbox
+currentButtonXPoint = firstXPoint + buttonSpacing*checkBoxOneIndentFactor;
+initialSlopeHistogram.Position = [currentButtonXPoint currentYPoint...
+    fullButtonWidth buttonHeight];
+
+% vs % ap
+buttonCounter = buttonCounter + 1;
+histogramCounter = histogramCounter + 1;
+initialSlopeHistogram = uicontrol('Style','checkbox',...
+    'String','% AP Position',...
+    'Min',defaultOption,'Max',histogramCounter,...
+    'Value',defaultOption,'Tag','Initial Slope',...
+    'Callback', {@histogramOptionAction,particleTraceFig});
+initialSlopeHistogram.Units = 'normalized';
+currentYPoint = currentYPoint - buttonSpacing;
+% indenting this checkbox
+currentButtonXPoint = firstXPoint + buttonSpacing*checkBoxOneIndentFactor;
+initialSlopeHistogram.Position = [currentButtonXPoint currentYPoint...
+    fullButtonWidth buttonHeight];
+
+
 % % template button
 % buttonCounter = buttonCounter + 1;
 % select = uicontrol('Style','checkbox',...
@@ -373,18 +439,52 @@ figure(particleTraceFig);
 
 %% other functions (most will be placed in a new script)
 % redrawing the trace of the particle that was choosen
-function chooseParticleAction(source,event,Particles,particlesCorrespondingDataSetNumber,...
-    Spots,spotsCorrespondingDataSetNumber,currentChannel,... % particle info
+function chooseParticleAction(source,event,allParticles,particlesCorrespondingDataSetNumber,...
+    allSpots,spotsCorrespondingDataSetNumber,currentChannel,... % particle info
     otherRelevantData,... % time info
-    markerSize,lineWidth,color1,color3,figTitleFontSize,axisFontSize) % plot info
+    markerSize,lineWidth,colorTraceOneSlice,colorTraceThreeSlices,...
+    figTitleFontSize,axisFontSize) % plot info
 
 currentParticle = round(source.Value);
 
-drawCurrentTrace(currentParticle,Particles,particlesCorrespondingDataSetNumber,...
-    Spots,spotsCorrespondingDataSetNumber,currentChannel,... % particle info
+drawCurrentTrace(currentParticle,allParticles,particlesCorrespondingDataSetNumber,...
+    allSpots,spotsCorrespondingDataSetNumber,currentChannel,... % particle info
     otherRelevantData,... % time info
-    markerSize,lineWidth,color1,color3,figTitleFontSize,axisFontSize) % plot info
+    markerSize,lineWidth,colorTraceOneSlice,colorTraceThreeSlices,...
+    figTitleFontSize,axisFontSize) % plot info
 
+end
+
+function chooseSortedTraceAction(source,event,...
+    allParticles,particlesCorrespondingDataSetNumber,...
+    allSpots,spotsCorrespondingDataSetNumber,currentChannel,... % particle info
+    otherRelevantData,... % time info
+    markerSize,lineWidth,colorTraceOneSlice,colorTraceThreeSlices,...
+    figTitleFontSize,axisFontSize)
+
+smallFigurePosition = [1022 47 254 132];
+smallFigureNumber = 11;
+
+currentParticle = round(source.Value);
+
+drawCurrentSortedTrace(currentParticle,allParticles,particlesCorrespondingDataSetNumber,...
+    allSpots,spotsCorrespondingDataSetNumber,currentChannel,... % particle info
+    otherRelevantData,... % time info
+    markerSize,lineWidth,colorTraceOneSlice,colorTraceThreeSlices,...
+    figTitleFontSize,axisFontSize) % plot info
+
+if ishandle(smallFigureNumber)
+    figure(smallFigureNumber)
+else
+    smallFigureHandle = figure();
+    set(smallFigureHandle,'Position',smallFigurePosition)
+end
+
+drawCurrentTrace(currentParticle,allParticles,particlesCorrespondingDataSetNumber,...
+    allSpots,spotsCorrespondingDataSetNumber,currentChannel,... % particle info
+    otherRelevantData,... % time info
+    markerSize,lineWidth,colorTraceOneSlice,colorTraceThreeSlices,...
+    figTitleFontSize,axisFontSize,'smallFigure') % plot info
 end
 
 function initialSlopeOptionAction(source,event,particleTraceFig,traceFigHandles,...
@@ -410,9 +510,9 @@ drawCurrentTrace(currentParticle,Particles,particlesCorrespondingDataSetNumber,.
 
 if source.Value > 0 % resets figure if source.Value < 0
     plotFittedLine(currentParticle,Particles,particlesCorrespondingDataSetNumber,...
-    Spots,spotsCorrespondingDataSetNumber,currentChannel,... % particle info
-    otherRelevantData,... % time info
-    lineWidthFitted,color1,color3,transparencyFitted,rescaling)
+        Spots,spotsCorrespondingDataSetNumber,currentChannel,... % particle info
+        otherRelevantData,... % time info
+        lineWidthFitted,color1,color3,transparencyFitted,rescaling)
 end
 
 end
@@ -446,10 +546,10 @@ plotFittedLine(currentParticle,Particles,particlesCorrespondingDataSetNumber,...
 
 end
 
-function histogramOptionAction(source,event,histogramFigure,particleTraceFig)
-
+function histogramOptionAction(source,event,particleTraceFig)
+figureShift = particleTraceFig.Number;
 if source.Value > 0
-    figure(histogramFigure)
+    figure(source.Value + figureShift)
 else
     figure(particleTraceFig)
 end
@@ -457,14 +557,33 @@ end
 end
 
 
+function showSortedTraceFig(source,event,particleTraceFig,traceFigHandles,...
+    sortedTraceFig, sortedTraceFigHandles)
+subFigureNumber = 11;
+
+if source.Value > 0
+%     figure(subFigureNumber)
+    figure(sortedTraceFig)
+else
+    if ishandle(subFigureNumber)
+        close(subFigureNumber);
+    end
+    figure(particleTraceFig)
+end
+
+end
 
 %% Calculation functions
 % calculate the initial slope of the current particle
 % draw the current particle's trace
-function drawCurrentTrace(currentParticle,Particles,particlesCorrespondingDataSetNumber,...
-    Spots,spotsCorrespondingDataSetNumber,currentChannel,... % particle info
+
+
+function drawCurrentSortedTrace(currentParticle,allParticles,particlesCorrespondingDataSetNumber,...
+    allSpots,spotsCorrespondingDataSetNumber,currentChannel,... % particle info
     otherRelevantData,... % time info
-    markerSize,lineWidth,color1,color3,figTitleFontSize,axisFontSize) % plot info
+    markerSize,lineWidth,colorTraceOneSlice,colorTraceThreeSlices,...
+    figTitleFontSize,axisFontSize) % plot info
+
 
 currentDataSet = particlesCorrespondingDataSetNumber(currentParticle);
 correspondingNCInfo = otherRelevantData(currentDataSet).correspondingNCInfo;
@@ -473,36 +592,74 @@ nuclearCycleBoundariesInMinutes = otherRelevantData(currentDataSet).nuclearCycle
 
 
 [currentParticleSubset,ParticlesSubset,SpotsSubset] = ...
-    getSubsetData(currentParticle,Particles,particlesCorrespondingDataSetNumber,...
-    Spots,spotsCorrespondingDataSetNumber);
+    getSubsetData(currentParticle,allParticles,particlesCorrespondingDataSetNumber,...
+    allSpots,spotsCorrespondingDataSetNumber);
 
+% getting trace of current particle
 [frame,ampIntegral,ampIntegral3,~,~,~,errorIntegral,...
     ~,~,~,errorIntegral3, ~,~]=GetParticleTrace(currentParticleSubset,...
     ParticlesSubset{currentChannel},SpotsSubset{currentChannel});
+traceLength = length(frame);
 
+% adjusting the time where 0 is the first time point of the nc of the trace
 frameRange = framesInMinutes(frame); % Units to seconds
 ncPresent = unique(correspondingNCInfo(frame));
 timeOfFirstNC = nuclearCycleBoundariesInMinutes(ncPresent(1)-8);
 % adjusting frameRange
 frameRange = frameRange - timeOfFirstNC;
 
+% finding the max
+[~, correspondingMaxIndex] = max(ampIntegral3);
+indexRange = {1:correspondingMaxIndex; correspondingMaxIndex+1:traceLength};
+
 % plotting the traces
+orderedXTickMarks = 1:traceLength;
 cla
 hold on
-errorbar(frameRange,ampIntegral,ones(1,length(ampIntegral))*errorIntegral,...
-    'Marker','.','MarkerSize',markerSize,'LineWidth',lineWidth,'Color',color1,...
-    'DisplayName','One Slice')
-errorbar(frameRange,ampIntegral3,ones(1,length(ampIntegral3))*errorIntegral3,...
-    'Marker','.','MarkerSize',markerSize,'LineWidth',lineWidth,'Color',color3,...
-    'DisplayName','Three Slices')
+
+% sorting
+[sortedIntensities3, correspondingIndex3] = sort(ampIntegral3);
+% up to max potion 
+tempIndex = find(correspondingIndex3<=correspondingMaxIndex);
+% upToMax = 1:currentMaxIndex;
+currentReorderedSubsetIndex = tempIndex;
+currentReorderedSubsetAmp = sortedIntensities3(tempIndex);
+subTraceLength = length(tempIndex);
+
+errorbar(currentReorderedSubsetIndex,currentReorderedSubsetAmp,...
+    ones(1,subTraceLength)*errorIntegral3,...
+    '.','MarkerSize',markerSize,'Color',colorTraceThreeSlices(2,:),...
+    'DisplayName','Up to max')
+
+%after max potion
+if ~isequal(correspondingMaxIndex,length(frameRange))
+    hold on 
+    tempIndex = find(correspondingIndex3>correspondingMaxIndex);
+%     afterMax = currentMaxIndex+1:length(correspondingIndex3);
+    currentReorderedSubsetIndex = tempIndex;
+    currentReorderedSubsetAmp = sortedIntensities3(tempIndex);
+    subTraceLength = length(tempIndex);
+    
+    errorbar(currentReorderedSubsetIndex,currentReorderedSubsetAmp,...
+        ones(1,subTraceLength)*errorIntegral3,...
+        '.','MarkerSize',markerSize,'Color',colorTraceThreeSlices(3,:),...
+        'DisplayName','After max')
+end
+
+xticks(orderedXTickMarks)
+correspondingSortedXValues3 = frameRange(correspondingIndex3);
+roundedCorrespondingSortedXValues3 = round(correspondingSortedXValues3,2);
+xticklabels(num2cell(roundedCorrespondingSortedXValues3))
+
 legend('show'); % 'FontSize',axisFontSize (?)
+
 
 ncRange = correspondingNCInfo(frame);
 ncRange = unique(ncRange); % removing repeats
 
 basicStringInfo = ['Particle ' num2str(currentParticleSubset)];
 % put in the frame boundaries of the nc?
-if length(ncRange) > 0
+if ~isempty(ncRange)
     titleInformation = {basicStringInfo, ['nc = ' num2str(ncRange)]};
 else
     error('There is nothing to plot!')
@@ -516,44 +673,25 @@ xPadding = 0.3*mean(frameRange);
 if length(frameRange) > 1
     xPadding = 0.3*(frameRange(end)-frameRange(1));
 end
-minX = frameRange(1)-xPadding;
-maxX = frameRange(end)+xPadding;
+% minX = frameRange(1)-xPadding;
+% maxX = frameRange(end)+xPadding;
+minX = 0;
+maxX = traceLength+1;
 xlim([minX maxX])
 
 % change y padding to include the error bars
 yPaddingFactor = [0.2, 0.6];
-%lowerPadding = 1 - yPaddingFactor(2);
 upperPadding = 1 + yPaddingFactor(1);
-%lowerBounds = [(ampIntegral-errorIntegral) (ampIntegral3-errorIntegral3)];
 upperBounds = [(ampIntegral+errorIntegral) (ampIntegral3+errorIntegral3)];
-%minY = min(lowerBounds);
+
 maxY = max(upperBounds)*upperPadding;
-%nMin = floor(log(abs(minY))./log(10)); % Calculating the order of magnitude
-% nMax = floor(log(abs(maxY))./log(10));
-% if nMin == 1 && minY > 0
-%     minY = 0;
-% else
-%     minY = floor(minY/(10^nMin))*lowerPadding*10^nMin;
-% end
-% maxY = ceil(maxY/(10^nMax))*upperPadding*10^nMax;
+
 minY = 0;
 ylim([minY maxY])
 end
 
-function [coefficientsOfFittedLine,indexOfMax] =...
-    initialSlopeCalc(frames,intensities)
 
-[~, indexOfMax]= max(intensities);
-regionOfRiseX = frames(1:indexOfMax);
-regionOfRiseY = intensities(1:indexOfMax);
 
-if length(regionOfRiseX) == 1
-    coefficientsOfFittedLine = NaN;
-else
-    coefficientsOfFittedLine = polyfit(regionOfRiseX,regionOfRiseY,1);
-end
-
-end
 
 % plot the fitted line
 function plotFittedLine(currentParticle,Particles,particlesCorrespondingDataSetNumber,...
@@ -655,27 +793,27 @@ end
 function [extrapolatedInitialTime, extrapolatedInitialTime3] = ...
     findInitialTime(Particles,particlesCorrespondingDataSetNumber,...
     Spots,spotsCorrespondingDataSetNumber,currentChannel,...
-                numberOfParticles,otherRelevantData,...
-                ncOfInterest,dataSetsOfInterest)
+    numberOfParticles,otherRelevantData,...
+    ncOfInterest,dataSetsOfInterest)
 %  useAPBins = 0; % default is to use all particles not separate by apbins
-%             
+%
 % for i = 1:length(varargin)
 %     switch varargin(i)
 %         case 'useAPBins'
 %             useAPBins = 1;
-%             
+%
 %     end
 % end
-            
- % Making sure the variables are of type cell
- if ~iscell(Particles)
-     Particles = {Particles};
- end
- if ~iscell(Spots)
-     Spots = {Spots};
- end
 
- 
+% Making sure the variables are of type cell
+if ~iscell(Particles)
+    Particles = {Particles};
+end
+if ~iscell(Spots)
+    Spots = {Spots};
+end
+
+
 extrapolatedInitialTime = [];
 extrapolatedInitialTime3 = [];
 counter = 0;
@@ -692,10 +830,10 @@ for currentParticle = particleIndexOfInterest
     correspondingNCInfo = otherRelevantData(currentDataSet).correspondingNCInfo;
     framesInMinutes = otherRelevantData(currentDataSet).framesInMinutes;
     nuclearCycleBoundariesInMinutes = otherRelevantData(currentDataSet).nuclearCycleBoundariesInMinutes;
-
+    
     [currentParticleSubset,ParticlesSubset,SpotsSubset] = ...
-    getSubsetData(currentParticle,Particles,particlesCorrespondingDataSetNumber,...
-    Spots,spotsCorrespondingDataSetNumber);
+        getSubsetData(currentParticle,Particles,particlesCorrespondingDataSetNumber,...
+        Spots,spotsCorrespondingDataSetNumber);
     
     % insert subset into here
     [frame,ampIntegral,ampIntegral3,~,~,~,~,~,~,~,~,~,~]=...
@@ -729,22 +867,18 @@ end
 function initialMeasured = ...
     findInitialMeasured(Particles,particlesCorrespondingDataSetNumber,...
     Spots,spotsCorrespondingDataSetNumber,currentChannel,...
-                numberOfParticles,otherRelevantData,...
-                ncOfInterest,dataSetsOfInterest)
-  
- 
+    numberOfParticles,otherRelevantData,...
+    ncOfInterest,dataSetsOfInterest)
 
- 
- 
- % Making sure the variables are of type cell
- if ~iscell(Particles)
-     Particles = {Particles};
- end
- if ~iscell(Spots)
-     Spots = {Spots};
- end
-            
-            
+% Making sure the variables are of type cell
+if ~iscell(Particles)
+    Particles = {Particles};
+end
+if ~iscell(Spots)
+    Spots = {Spots};
+end
+
+
 initialMeasured = [];
 counter = 0;
 
@@ -760,10 +894,10 @@ for currentParticle = particleIndexOfInterest
     correspondingNCInfo = otherRelevantData(currentDataSet).correspondingNCInfo;
     framesInMinutes = otherRelevantData(currentDataSet).framesInMinutes;
     nuclearCycleBoundariesInMinutes = otherRelevantData(currentDataSet).nuclearCycleBoundariesInMinutes;
-
+    
     [currentParticleSubset,ParticlesSubset,SpotsSubset] = ...
-    getSubsetData(currentParticle,Particles,particlesCorrespondingDataSetNumber,...
-    Spots,spotsCorrespondingDataSetNumber);
+        getSubsetData(currentParticle,Particles,particlesCorrespondingDataSetNumber,...
+        Spots,spotsCorrespondingDataSetNumber);
     
     [frame,~,~,~,~,~,~,~,~,~,~,~,~]=...
         GetParticleTrace(currentParticleSubset,...
@@ -806,35 +940,35 @@ cla
 histogramHeights = [];
 binLimits = [];
 apBinWidth = 0.2; % 20% embryo length bins
-makeSupTitle = 1; % make a title with the code after this switch block 
+makeSupTitle = 0; % make a super title if subplots were used
 
 dataSetsOfInterest = [6 2];
-switch histogramFigure.Number - 1 % there is a particle figure plotted first 
+switch histogramFigure.Number - 1 % there is a particle figure plotted first
     case 1 % Extrapolated Initial Time Histogram (for all ap)
         dataSetsOfInterest = unique(particlesCorrespondingDataSetNumber);
-      
-            [extrapolatedInitialTime, extrapolatedInitialTime3] = ...
-                findInitialTime(Particles,particlesCorrespondingDataSetNumber,...
-                Spots,spotsCorrespondingDataSetNumber,currentChannel,...
-                numberOfParticles,otherRelevantData,ncOfInterest,dataSetsOfInterest);
-            
-            % Plotting histogram (1 slice)
-            %         currentHistogram = histogram(extrapolatedInitialTime,...
-            %             'FaceColor',color1,...
-            %             'BinMethod','fd','DisplayName','One Slice');
-            %         histogramHeights = [histogramHeights currentHistogram.Values];
-            %         binLimits = [binLimits currentHistogram.BinLimits];
-            %         hold on
-            
-            % Plotting histogram (3 slices)
-            currentHistogram = histogram(extrapolatedInitialTime3,...
-                'FaceColor',color3(1,:),...
-                'BinMethod','fd','DisplayName','Three Slices');
-            histogramHeights = [histogramHeights currentHistogram.Values];
-            binLimits = [binLimits currentHistogram.BinLimits];
-       
         
-        % Setting X limits 
+        [extrapolatedInitialTime, extrapolatedInitialTime3] = ...
+            findInitialTime(Particles,particlesCorrespondingDataSetNumber,...
+            Spots,spotsCorrespondingDataSetNumber,currentChannel,...
+            numberOfParticles,otherRelevantData,ncOfInterest,dataSetsOfInterest);
+        
+        % Plotting histogram (1 slice)
+        %         currentHistogram = histogram(extrapolatedInitialTime,...
+        %             'FaceColor',color3(2,:),...
+        %             'BinMethod','fd','DisplayName','One Slice');
+        %         histogramHeights = [histogramHeights currentHistogram.Values];
+        %         binLimits = [binLimits currentHistogram.BinLimits];
+        %         hold on
+        
+        % Plotting histogram (3 slices)
+        currentHistogram = histogram(extrapolatedInitialTime3,...
+            'FaceColor',color3(3,:),...
+            'BinMethod','fd','DisplayName','Three Slices');
+        histogramHeights = [histogramHeights currentHistogram.Values];
+        binLimits = [binLimits currentHistogram.BinLimits];
+        
+        
+        % Setting X limits
         xlim([min(binLimits) max(binLimits)])
         
         % Setting Y limits and labels
@@ -844,13 +978,12 @@ switch histogramFigure.Number - 1 % there is a particle figure plotted first
         yAxisLabels = cellfun(@num2str, num2cell(desiredYRange),...
             'UniformOutput', false);
         set(gca, 'YTick',desiredYRange,'YTickLabel', yAxisLabels)
-
+        xLabelText = 'Time (minutes)';
         quantity = 'Time on';
         legend('show')
         
     case 2 % Extrapolated Initial Time Histogram (with AP)
-        % format: make 2 subplots where one side will be for 1 slice and
-        % the other will be for 3 slice 
+        
         quantity = 'Time on';
         colorCounter = 0;
         for i = dataSetsOfInterest
@@ -883,15 +1016,15 @@ switch histogramFigure.Number - 1 % there is a particle figure plotted first
             %         subplot(1,2,2)
             colorCounter = colorCounter + 1;
             currentHistogram = histogram(extrapolatedInitialTime3,...
-                'FaceColor',color3(colorCounter,:),...
+                'FaceColor',color3(colorCounter+1,:),...
                 'BinMethod','fd','DisplayName',['Data set : ' num2str(i+9)]);
             hold on
             histogramHeights = [histogramHeights currentHistogram.Values];
             binLimits = [currentHistogram.BinLimits];
         end
         % Setting X limits
-            xlim([min(binLimits) max(binLimits)])
-            
+        xlim([min(binLimits) max(binLimits)])
+        
         % Setting Y limits and labels
         tallestBarHeight = max(histogramHeights);
         ylim([0 tallestBarHeight+1])
@@ -899,24 +1032,23 @@ switch histogramFigure.Number - 1 % there is a particle figure plotted first
         yAxisLabels = cellfun(@num2str, num2cell(desiredYRange),...
             'UniformOutput', false);
         set(gca, 'YTick',desiredYRange,'YTickLabel', yAxisLabels)
-        xlabel('Time (minutes)','FontSize',axisFontSize)
-        ylabel('Counts','FontSize',axisFontSize)
-        
-%         makeSupTitle = 1;
+        xLabelText = 'Time (minutes)';
+        legend('show')
+        %         makeSupTitle = 1;
         
     case 3 % Initial measured time (for all ap)
-         dataSetsOfInterest = unique(particlesCorrespondingDataSetNumber);
-         
-            initialMeasured = findInitialMeasured(Particles,particlesCorrespondingDataSetNumber,...
-                Spots,spotsCorrespondingDataSetNumber,currentChannel,...
-                numberOfParticles,otherRelevantData,ncOfInterest,dataSetsOfInterest);
-            
-            % Plotting histogram
-            currentHistogram = histogram(initialMeasured,...
-                'FaceColor',color3(1,:),'BinMethod','fd');
-            histogramHeights = [histogramHeights currentHistogram.Values];
-            binLimits = [binLimits currentHistogram.BinLimits];
-  
+        dataSetsOfInterest = unique(particlesCorrespondingDataSetNumber);
+        
+        initialMeasured = findInitialMeasured(Particles,particlesCorrespondingDataSetNumber,...
+            Spots,spotsCorrespondingDataSetNumber,currentChannel,...
+            numberOfParticles,otherRelevantData,ncOfInterest,dataSetsOfInterest);
+        
+        % Plotting histogram
+        currentHistogram = histogram(initialMeasured,...
+            'FaceColor',color3(3,:),'BinMethod','fd');
+        histogramHeights = [histogramHeights currentHistogram.Values];
+        binLimits = [binLimits currentHistogram.BinLimits];
+        
         % Setting X limits
         xlim([min(binLimits) max(binLimits)])
         
@@ -928,7 +1060,8 @@ switch histogramFigure.Number - 1 % there is a particle figure plotted first
             'UniformOutput', false);
         set(gca, 'YTick',desiredYRange,'YTickLabel', yAxisLabels)
         quantity = 'First Data Point';
-        legend('show')
+        xLabelText = 'Time (minutes)';
+%         legend('show')
         
     case 4 % case for Initial time measured (with AP)
         colorCounter = 0;
@@ -938,12 +1071,12 @@ switch histogramFigure.Number - 1 % there is a particle figure plotted first
                 numberOfParticles,otherRelevantData,ncOfInterest,i);
             colorCounter = colorCounter + 1;
             currentHistogram = histogram(initialMeasured,...
-                'FaceColor',color3(colorCounter,:),'BinMethod','fd','DisplayName',['Data set : ' num2str(i+9)]);
+                'FaceColor',color3(colorCounter+1,:),'BinMethod','fd','DisplayName',['Data set : ' num2str(i+9)]);
             hold on
             histogramHeights = [histogramHeights currentHistogram.Values];
             binLimits = [binLimits currentHistogram.BinLimits];
         end
-        % Setting X limits 
+        % Setting X limits
         xlim([min(binLimits) max(binLimits)])
         
         % Setting Y limits and labels
@@ -954,18 +1087,203 @@ switch histogramFigure.Number - 1 % there is a particle figure plotted first
             'UniformOutput', false);
         set(gca, 'YTick',desiredYRange,'YTickLabel', yAxisLabels)
         quantity = 'First Data Point';
+        xLabelText = 'Time (minutes)';
         legend('show')
+    case 5 % overlay of histograms of initial measured time point and time on 
+        dataSetsOfInterest = unique(particlesCorrespondingDataSetNumber);
+        
+        % --------- time on ----------
+        [extrapolatedInitialTime, extrapolatedInitialTime3] = ...
+            findInitialTime(Particles,particlesCorrespondingDataSetNumber,...
+            Spots,spotsCorrespondingDataSetNumber,currentChannel,...
+            numberOfParticles,otherRelevantData,ncOfInterest,dataSetsOfInterest);
+     
+        % Plotting histogram (3 slices)
+        quantity = 'Time on';
+        currentHistogram = histogram(extrapolatedInitialTime3,...
+            'FaceColor',color3(2,:),...
+            'BinMethod','fd','DisplayName',quantity);
+        histogramHeights = [histogramHeights currentHistogram.Values];
+        binLimits = [binLimits currentHistogram.BinLimits];
+       
+        hold on 
+        % ------ initial measured -------
+        initialMeasured = findInitialMeasured(Particles,particlesCorrespondingDataSetNumber,...
+            Spots,spotsCorrespondingDataSetNumber,currentChannel,...
+            numberOfParticles,otherRelevantData,ncOfInterest,dataSetsOfInterest);
+        
+        % Plotting histogram
+        quantity = 'First Data Point';
+        currentHistogram = histogram(initialMeasured,...
+            'FaceColor',color3(3,:),'BinMethod','fd','DisplayName',quantity);
+        histogramHeights = [histogramHeights currentHistogram.Values];
+        binLimits = [binLimits currentHistogram.BinLimits];
+        
+        % Setting X limits
+        xlim([min(binLimits) max(binLimits)])
+        
+        % Setting Y limits and labels
+        tallestBarHeight = max(histogramHeights);
+        ylim([0 tallestBarHeight+1])
+        desiredYRange = 0:tallestBarHeight+1;
+        yAxisLabels = cellfun(@num2str, num2cell(desiredYRange),...
+            'UniformOutput', false);
+        set(gca, 'YTick',desiredYRange,'YTickLabel', yAxisLabels)
+        quantity = 'Overlay: Time On & First Measured';
+        xLabelText = 'Time (minutes)';
+        legend('show')
+        
+    case 6 % Histogram of fitted slopes
+        dataSetsOfInterest = unique(particlesCorrespondingDataSetNumber);
+        allParticleIndexes = 1:numberOfParticles;
+        
+        particlesToInclude = allParticleIndexes(...
+            ismember(particlesCorrespondingDataSetNumber,dataSetsOfInterest));
+        
+        allFittedSlopes = [];
+        for currentParticle = particlesToInclude
+            [currentParticleSubset,ParticlesSubset,SpotsSubset] = ...
+                getSubsetData(currentParticle,Particles,particlesCorrespondingDataSetNumber,...
+                Spots,spotsCorrespondingDataSetNumber);
+            
+            [frame,ampIntegral,ampIntegral3,~,~,~,~,~,~,~,~,~,~]=...
+                GetParticleTrace(currentParticleSubset,...
+                ParticlesSubset{currentChannel},SpotsSubset{currentChannel});
+            
+            % Getting corresponding frame range
+            currentDataSet = particlesCorrespondingDataSetNumber(currentParticle);
+            correspondingNCInfo = otherRelevantData(currentDataSet).correspondingNCInfo;
+            nuclearCycleBoundariesInMinutes = otherRelevantData(currentDataSet).nuclearCycleBoundariesInMinutes;
+            framesInMinutes = otherRelevantData(currentDataSet).framesInMinutes;
+            frameRange = framesInMinutes(frame); % Changing the units to seconds
+            ncPresent = unique(correspondingNCInfo(frame));
+            timeOfFirstNC = nuclearCycleBoundariesInMinutes(ncPresent(1)-8);
+            % adjusting frameRange
+            frameRange = frameRange - timeOfFirstNC;
+            
+            % Initial Slopes
+            [fittedEQ,~] = ...
+                initialSlopeCalc(frameRange,ampIntegral); % one slice
+            [fittedEQ3,~] = ...
+                initialSlopeCalc(frameRange,ampIntegral3); % three slice
+            
+            if ~isnan(fittedEQ) % not including particles with only one point
+                allFittedSlopes = [allFittedSlopes;
+                    fittedEQ(1) fittedEQ3(1)];
+            end
+        end
+        
+        % Plotting histogram ----------------------------------------------
+        % Plotting 1 slice integrated cylinder
+        %         currentHistogram = histogram(allFittedSlopes(:,1),...
+        %             'FaceColor',color3(2,:),'BinMethod','fd','DisplayName','One slice');
+        %         histogramHeights = [histogramHeights currentHistogram.Values];
+        %         binLimits = [binLimits currentHistogram.BinLimits];
+        
+        hold on
+        % Plotting 3 slice integrated cylinder
+        currentHistogram = histogram(allFittedSlopes(:,2),...
+            'FaceColor',color3(3,:),'BinMethod','fd','DisplayName','Three slice');
+        histogramHeights = [histogramHeights currentHistogram.Values];
+        binLimits = [binLimits currentHistogram.BinLimits];
+        
+        % Setting X limits
+        xlim([min(binLimits) max(binLimits)])
+        
+        % Setting Y limits and labels
+        tallestBarHeight = max(histogramHeights);
+        ylim([0 tallestBarHeight+1])
+        desiredYRange = 0:tallestBarHeight+1;
+        yAxisLabels = cellfun(@num2str, num2cell(desiredYRange),...
+            'UniformOutput', false);
+        set(gca, 'YTick',desiredYRange,'YTickLabel', yAxisLabels)
+        quantity = 'Initial Slope';
+        xLabelText = 'Slope (a.u./minutes)';
+        legend('show')
+        
+    case 7 % Histogram of fitted slopes
+        
+        allParticleIndexes = 1:numberOfParticles;
+        
+        
+        % change this so it can handle AP...multiple movies...
+        for currentDataSets = dataSetsOfInterest
+            allFittedSlopes = [];
+            particlesToInclude = allParticleIndexes(...
+            ismember(particlesCorrespondingDataSetNumber,currentDataSets));
+        
+            for currentParticle = particlesToInclude
+                [currentParticleSubset,ParticlesSubset,SpotsSubset] = ...
+                    getSubsetData(currentParticle,Particles,particlesCorrespondingDataSetNumber,...
+                    Spots,spotsCorrespondingDataSetNumber);
+                
+                [frame,ampIntegral,ampIntegral3,~,~,~,~,~,~,~,~,~,~]=...
+                    GetParticleTrace(currentParticleSubset,...
+                    ParticlesSubset{currentChannel},SpotsSubset{currentChannel});
+                
+                % Getting corresponding frame range
+                currentDataSet = particlesCorrespondingDataSetNumber(currentParticle);
+                correspondingNCInfo = otherRelevantData(currentDataSet).correspondingNCInfo;
+                nuclearCycleBoundariesInMinutes = otherRelevantData(currentDataSet).nuclearCycleBoundariesInMinutes;
+                framesInMinutes = otherRelevantData(currentDataSet).framesInMinutes;
+                frameRange = framesInMinutes(frame); % Changing the units to seconds
+                ncPresent = unique(correspondingNCInfo(frame));
+                timeOfFirstNC = nuclearCycleBoundariesInMinutes(ncPresent(1)-8);
+                % adjusting frameRange
+                frameRange = frameRange - timeOfFirstNC;
+                
+                % Initial Slopes
+                [fittedEQ,~] = ...
+                    initialSlopeCalc(frameRange,ampIntegral); % one slice
+                [fittedEQ3,~] = ...
+                    initialSlopeCalc(frameRange,ampIntegral3); % three slice
+                
+                if ~isnan(fittedEQ) % not including particles with only one point
+                    allFittedSlopes = [allFittedSlopes;
+                        fittedEQ(1) fittedEQ3(1)];
+                end
+            end
+        end
+        
+        % Plotting histogram ----------------------------------------------
+        % Plotting 1 slice integrated cylinder
+        %         currentHistogram = histogram(allFittedSlopes(:,1),...
+        %             'FaceColor',color3(2,:),'BinMethod','fd','DisplayName','One slice');
+        %         histogramHeights = [histogramHeights currentHistogram.Values];
+        %         binLimits = [binLimits currentHistogram.BinLimits];
+        
+        hold on
+        % Plotting 3 slice integrated cylinder
+        currentHistogram = histogram(allFittedSlopes(:,2),...
+            'FaceColor',color3(3,:),'BinMethod','fd','DisplayName','Three slice');
+        histogramHeights = [histogramHeights currentHistogram.Values];
+        binLimits = [binLimits currentHistogram.BinLimits];
+        
+        % Setting X limits
+        xlim([min(binLimits) max(binLimits)])
+        
+        % Setting Y limits and labels
+        tallestBarHeight = max(histogramHeights);
+        ylim([0 tallestBarHeight+1])
+        desiredYRange = 0:tallestBarHeight+1;
+        yAxisLabels = cellfun(@num2str, num2cell(desiredYRange),...
+            'UniformOutput', false);
+        set(gca, 'YTick',desiredYRange,'YTickLabel', yAxisLabels)
+        quantity = 'Initial Slope';
+        xLabelText = 'Slope (a.u./minutes)';
+        legend('show')      
+        
 end
 
 
 titleName = [quantity ' histogram'];
 if makeSupTitle
     superTitle = suptitle(titleName);
-    set(superTitle,'FontSize',20)
+    set(superTitle,'FontSize',figTitleFontSize)
 else
     title(titleName,'FontSize',figTitleFontSize)
-    xlabel('Time (minutes)','FontSize',axisFontSize)
     ylabel('Counts','FontSize',axisFontSize)
+    xlabel(xLabelText,'FontSize',axisFontSize)
 end
 
 end
@@ -985,81 +1303,7 @@ end
 end
 
 
-function [Particles,Spots,numberOfParticles,...
-    framesInMinutes,nuclearCycleBoundariesInMinutes,...
-    correspondingNCInfo] = loadRelevantData(prefix)
-[~,~,dropboxFolder,~,~]= DetermineLocalFolders(prefix);
-[~,~,defaultDropboxFolder,~,~]=DetermineLocalFolders;
-dataFolder=[dropboxFolder,filesep,prefix];
-FilePrefix=[dataFolder(length(dropboxFolder)+2:end),'_'];
 
-% Particle Information and Loading
-particlePathName = [dataFolder,filesep,'Particles.mat'];
-load(particlePathName)
-if ~iscell(Particles)
-    Particles = {Particles};
-    SpotFilter = {SpotFilter};
-end
-numberOfParticles = size(Particles{:},2);
-
-
-% Spots Information and Loading
-spotsPathName = [dataFolder,filesep,'Spots.mat'];
-load(spotsPathName)
-if ~iscell(Spots)
-    Spots = {Spots};
-end
-
-% Frame info
-frameInfoPathName = [dataFolder,filesep,'FrameInfo.mat'];
-load(frameInfoPathName)
-numberOfFrames = length(FrameInfo);
-% creates an array of the datasets frame in units of seconds.
-framesInSeconds = [FrameInfo.Time];
-% below is the array of corresponding nuclear cycle info for the
-% frameInSecondsArray.
-[~,~,~,~,~,~,~,~,~,~,~,~,~,...
-    nc9, nc10,nc11,nc12,nc13,nc14,~] = getExperimentDataFromMovieDatabase(prefix,defaultDropboxFolder);
-nuclearCycleBoundaries = [nc9,nc10,nc11,nc12,nc13,nc14]; % in units of frames
-
-if ~isfield(FrameInfo,'nc')
-    FrameInfo = createNCInformation(FrameInfo,numberOfFrames,...
-        nuclearCycleBoundaries);
-end
-correspondingNCInfo = [FrameInfo.nc];
-
-for i = 1:length(nuclearCycleBoundaries)
-    if nuclearCycleBoundaries(i) > 0
-        nuclearCycleBoundaries(i) = framesInSeconds(nuclearCycleBoundaries(i)); % in units of seconds
-    end
-end
-
-nuclearCycleBoundariesInMinutes = nuclearCycleBoundaries./60;
-framesInMinutes = framesInSeconds./60;
-end
-
-function [currentParticleSubset,ParticlesSubset,SpotsSubset] = ...
-    getSubsetData(currentParticle,Particles,particlesCorrespondingDataSetNumber,...
-    Spots,spotsCorrespondingDataSetNumber)
-% alter to support multiple channel data sets
-currentChannel = 1;
-if iscell(Particles) 
-    Particles = Particles{currentChannel};
-end
-if iscell(Spots)
-    Spots = Spots{currentChannel};
-end
-
-
-currentDataSet = particlesCorrespondingDataSetNumber(currentParticle);
- 
-indexOfParticleSubset = find(particlesCorrespondingDataSetNumber == currentDataSet);
-currentParticleSubset = currentParticle-indexOfParticleSubset(1)+1;
-
-ParticlesSubset = {Particles(indexOfParticleSubset)};
-SpotsSubset = {Spots(spotsCorrespondingDataSetNumber == currentDataSet)};
-
-end
 
 function FrameInfo = createNCInformation(FrameInfo,numberOfFrames,...
     nuclearCycleBoundaries)
@@ -1091,7 +1335,7 @@ end
 
 end
 
-% Template call function ------------------------------------- 
+% Template call function -------------------------------------
 function optionAction(source,event,particleTraceFig,traceFigHandles,...
     Particles,Spots,currentChannel,...
     markerSize,lineWidth,lineWidthFitted,color1,color3,transparencyFitted,...
@@ -1107,8 +1351,6 @@ currentParticle = round(traceFigHandles.slider.Value);
 disp('This button works! Congrats!!!')
 
 end
-
-
 
 
 
