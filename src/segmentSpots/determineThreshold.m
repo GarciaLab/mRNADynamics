@@ -19,7 +19,7 @@
 
 function [thresh] = determineThreshold(Prefix, Channel)
 
-    default_std = 5;
+    default_std = 6;
     num_frames_to_check = 100;
 
     % loads information needed to loop through DOGs

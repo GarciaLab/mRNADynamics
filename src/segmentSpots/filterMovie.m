@@ -25,7 +25,7 @@
 %               'Maximum'
 %               'Laplacian''Minimum'
 %               'Mean'
-%               'Hessian_largest''Hessian_smallest'
+%               'Hessian_largest''Hessian_smallest' 'bright_spot_psf'
 %               [DEFAULT] 'Difference_of_Gaussian' (2 sigmas) [DEFAULT]
 %               
 %
