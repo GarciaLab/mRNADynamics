@@ -11,15 +11,16 @@ function [InitialStackTime, zGalvo] = getFirstSliceTimestamp(NSlices, NSeries, N
 
     %Grab the z-galvo position by parsing the XML metadata
     xmltext = fileread([XMLFolder,filesep,SeriesFiles3(i).name]);
-    expressionobj = '(?<=ZUseMode="1" ZUseModeName="z-galvo" ZPosition=").*(?=" IsSuperZ)';
-    zGalvo = str2double(regexp(xmltext, expressionobj, 'match')); 
+    expressionobj = '(?<=ZPosition=").*?(?=")';
+    possiblePositions = regexp(xmltext, expressionobj, 'match'); 
+    zGalvo = str2double(possiblePositions{4}); %AR- I think this is the right element. 
    
     for j = StartIndex:(NSlices(i)*NChannels):sum(NPlanes(1:i))
       InitialStackTime(m) = Frame_Times(j);
       try
         zGalvo(m) = zGalvo;
       catch
-        % This exception should be treated.
+        warning('didn''t record zgalvo position')
       end      
       m = m + 1;
     end
