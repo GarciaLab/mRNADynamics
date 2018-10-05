@@ -1,4 +1,4 @@
-function FrameInfo = getFrameInfo(NFrames, NSlices, InitialStackTime, LIFMeta, zGalvo)
+function FrameInfo = getFrameInfo(NFrames, NSlices, InitialStackTime, LIFMeta, zPosition)
   for i = 1:sum(NFrames)
     FrameInfo(i).LinesPerFrame = str2double(LIFMeta.getPixelsSizeY(0));
     FrameInfo(i).PixelsPerLine = str2double(LIFMeta.getPixelsSizeX(0));
@@ -18,9 +18,9 @@ function FrameInfo = getFrameInfo(NFrames, NSlices, InitialStackTime, LIFMeta, z
     FrameInfo(i).Time = InitialStackTime(i);
 
     try
-      FrameInfo(i).ZGalvo = zGalvo(i);
+      FrameInfo(i).zPosition = zPosition(i);
     catch
-      % This exception should be treated
+      warning('didn''t record zgalvo in frameinfo- getframeinfo')
     end
   end
 end
