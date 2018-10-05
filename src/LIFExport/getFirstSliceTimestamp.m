@@ -17,11 +17,11 @@ function [InitialStackTime, zPosition] = getFirstSliceTimestamp(NSlices, NSeries
    
     for j = StartIndex:(NSlices(i)*NChannels):sum(NPlanes(1:i))
       InitialStackTime(m) = Frame_Times(j);
-%       try
+      try
         zPosition(m) = zPos;
-%       catch
-%         warning('didn''t record zgalvo position')
-%       end      
+      catch
+        warning('didn''t record zgalvo position')
+      end      
       m = m + 1;
     end
   end
