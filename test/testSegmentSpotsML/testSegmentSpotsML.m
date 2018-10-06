@@ -31,11 +31,11 @@ function testCase = testSegmentSpotsML(testCase)
   
   % Tests first pass
   % Generates DoGs
-  segmentSpotsML(testCase.Prefix, [], classifierForTest, 'ignoreMemoryCheck');
+  filterMovie(testCase.Prefix, 'Weka', classifierForTest, 'ignoreMemoryCheck');
   
   % Then verifies FrameInfo.mat and expected contents of dogs folder
   expectedPathSubFolderFilter = ['SegmentSpotsML', filesep, 'FilterMovie'];
-
+  assertLogFileExists(testCase, dynamicResultsExperimentPath);
   assertDogsFolderEqualToExpected(testCase, processedDataExperimentPath, testPath, expectedPathSubFolderFilter);
   
   % Tests second pass
@@ -48,11 +48,38 @@ function testCase = testSegmentSpotsML(testCase)
   assertDogsFolderEqualToExpected(testCase, processedDataExperimentPath, testPath, expectedPathSubfolderSpots);
   assertSpotsEqualToExpected(testCase, dynamicResultsExperimentPath, testPath, expectedPathSubfolderSpots);
 
-  % This will come in handy after the refactor
-  % testSegmentSpotsNoThreshold(testCase);
-  % testSegmentSpotsEmptyThreshold(testCase);
+  testSegmentSpotsMLTifsUnsupported(testCase);
+  testSegmentSpotsMLNoThreshold(testCase);
+  testSegmentSpotsMLEmptyThreshold(testCase);
 
   elapsedTime = toc;
   fprintf('Test run for %s ended successfully at %s\n', testCase.Prefix, datestr(now,'yyyy-mm-dd HH:MM:SS.FFF'));
   fprintf('Elapsed time for test was %d minutes and %f seconds\n', floor(elapsedTime/60), rem(elapsedTime,60));
 end
+
+function testCase = testSegmentSpotsMLTifsUnsupported(testCase) 
+  try
+    segmentSpotsML(testCase.Prefix, testCase.Threshold, 'Tifs');
+  catch ME
+    testCase.assertEqual(ME.message,...
+      'Tifs generation is no longer supported from segmentSpotsML, try filterMovie(Prefix, ''Tifs'') instead.');
+  end
+end
+
+function testCase = testSegmentSpotsMLNoThreshold(testCase) 
+  try
+    segmentSpotsML(testCase.Prefix);
+  catch ME
+    testCase.assertEqual(ME.message,['Not enough input arguments.']);
+  end
+end
+
+function testCase = testSegmentSpotsMLEmptyThreshold(testCase) 
+  try
+    segmentSpotsML(testCase.Prefix, []);
+  catch ME
+    testCase.assertEqual(ME.message,['Please use filterMovie(Prefix, ''Weka'', options) instead ',...
+      'of segmentSpots with the argument "[]" to generate DoG images']);
+  end
+end
+
