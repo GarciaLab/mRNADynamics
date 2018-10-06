@@ -36,7 +36,6 @@ function testCase = testSegmentSpotsML(testCase)
   % Then verifies FrameInfo.mat and expected contents of dogs folder
   expectedPathSubFolderFilter = ['SegmentSpotsML', filesep, 'FilterMovie'];
 
-  assertFrameInfoEqualToExpected(testCase, dynamicResultsExperimentPath, testPath, expectedPathSubFolderFilter);
   assertDogsFolderEqualToExpected(testCase, processedDataExperimentPath, testPath, expectedPathSubFolderFilter);
   
   % Tests second pass
@@ -46,7 +45,6 @@ function testCase = testSegmentSpotsML(testCase)
   expectedPathSubfolderSpots = ['SegmentSpotsML', filesep, 'SegmentSpotsML'];
 
   assertLogFileExists(testCase, dynamicResultsExperimentPath);
-  assertFrameInfoEqualToExpected(testCase, dynamicResultsExperimentPath, testPath, expectedPathSubfolderSpots);
   assertDogsFolderEqualToExpected(testCase, processedDataExperimentPath, testPath, expectedPathSubfolderSpots);
   assertSpotsEqualToExpected(testCase, dynamicResultsExperimentPath, testPath, expectedPathSubfolderSpots);
 
