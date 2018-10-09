@@ -8,14 +8,19 @@ function testCase = testExportDataForFISH(testCase)
   
   configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');
   
+  dynamicsResultsPath = getConfigValue(configValues, 'DropboxFolder');
   PreProcPath = getConfigValue(configValues, 'PreProcPath');
   testPath = getConfigValue(configValues, 'TestPath');
   
   %Get file names to compare in preprocessed data folder
   preprocessedDataFolder = strcat(PreProcPath, filesep, testCase.Prefix);
-  expectedDataFolder = strcat(testPath, filesep, 'ExportDataForFISH', filesep, testCase.Prefix);
-
+  expectedPreProcFolder = strcat(testPath, filesep, 'ExportDataForFISH', filesep, 'PreProcessedData', filesep,...
+    testCase.Prefix);
+  
+  dynamicsResultsDataFolder = strcat(dynamicsResultsPath, filesep, testCase.Prefix);
+  
   deleteDirectory(preprocessedDataFolder, testCase.Prefix);
+  deleteDirectory(dynamicsResultsDataFolder, testCase.Prefix);
 
   if (~isprop(testCase, 'PreferredFileName')) 
     ExportDataForFISH(testCase.Prefix, 'keepTifs');
@@ -23,7 +28,8 @@ function testCase = testExportDataForFISH(testCase)
     ExportDataForFISH(testCase.Prefix, testCase.PreferredFileName, 'keepTifs');
   end
 
-  compareExpectedDataDir(testCase, preprocessedDataFolder, expectedDataFolder);
+  assertFrameInfoEqualToExpected(testCase, dynamicsResultsDataFolder, testPath, 'ExportDataForFish');
+  compareExpectedDataDir(testCase, preprocessedDataFolder, expectedPreProcFolder);
 
   elapsedTime = toc;
   fprintf('Test run for %s ended successfully at %s\n', testCase.Prefix, datestr(now,'yyyy-mm-dd HH:MM:SS.FFF'));
