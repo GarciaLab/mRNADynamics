@@ -4,12 +4,28 @@ function [TotalProd,TotalProdError,TotalProdN,...
 %Calculates the total amount of mRNA produced per nucleus in each AP bin
 %If an extra parameter 'IntegrateAll' is given then it does not distinguish
 %between AP positions
+%Edited by Yang Joon Kim on 09/2018
+%If an extra parameter 'InputOutput' is given, then it will extract the
+%Data.Particles field and reconstruct them into structure for input. This
+%is because for inputoutput ExperimentType, it makes datastructure
+%different to the others (since it has protein channel, which is Data.Nuclei)
 
 IntegrateAll=0;
+InputOutput=0;
 if ~isempty(varargin)
     if strcmp(varargin{1},'IntegrateAll')
         IntegrateAll=1;
+    elseif strcmp(varargin{1},'InputOutput')
+        InputOutput = 1;
     end
+end
+
+% (optional)Re-construct the data structure for inputoutput datatype
+if InputOutput
+    for i=1:length(Data)
+        DataTemp(i) = Data(i).Particles;
+    end
+    Data = DataTemp;
 end
 
 %Figure out the minimum starting NC
@@ -48,10 +64,10 @@ if ~IntegrateAll
 
                         TotalProd(i,j,nc)=...
                             sum([Data(i).CompiledParticles(ParticleFilter).TotalmRNA])/...
-                            mean(Data(i).NEllipsesAP(FrameRange,j));                        
+                            nanmean(Data(i).NEllipsesAP(FrameRange,j));                        
                         TotalProdError(i,j,nc)=...
                             sqrt(sum([Data(i).CompiledParticles(ParticleFilter).TotalmRNAError].^2))/...
-                            mean(Data(i).NEllipsesAP(FrameRange,j));
+                            nanmean(Data(i).NEllipsesAP(FrameRange,j));
                         TotalProdN(i,j,nc)=...
                             length([Data(i).CompiledParticles(ParticleFilter).TotalmRNA]);
                     end
@@ -86,11 +102,11 @@ if ~IntegrateAll
             %Check that we got the minimum number of embryos
             if length(TotalProdTemp)>=MinEmbryos
                 %Calculate the mean
-                MeanTotalProd(j,nc)=mean(TotalProdTemp);
+                MeanTotalProd(j,nc)=nanmean(TotalProdTemp);
                 %Estimate the error from the SD
-                SDTotalProd(j,nc)=std(TotalProdTemp);
+                SDTotalProd(j,nc)=nanstd(TotalProdTemp);
                 %Standard error
-                SETotalProd(j,nc)=std(TotalProdTemp)/sqrt(length(TotalProdTemp));
+                SETotalProd(j,nc)=nanstd(TotalProdTemp)/sqrt(length(TotalProdTemp));
             end
         end
     end
