@@ -596,7 +596,7 @@ while (cc~='x')
         ManualZFlag=0;
     end
         
-    if NChannels==1 % inputoutput mode can also be in this case, changed CurrentChannel to the coatChannel (YJK : 1/15/2018)
+%     if NChannels==1 % inputoutput mode can also be in this case, changed CurrentChannel to the coatChannel (YJK : 1/15/2018)
         if strcmpi(projectionMode,'None (Default)')
             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                 FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
@@ -618,13 +618,14 @@ while (cc~='x')
             end
         end
 
-    elseif NChannels>1
-        Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-            FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),...
-            nameSuffix,'.tif']);
-    else
-        error('ExperimentType and/or channel not supported.')          
-    end
+%     elseif NChannels>1
+%         Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
+%             FilePrefix,iIndex(CurrentFrame,NDigits),'_z',iIndex(CurrentZ,2),...
+%             nameSuffix,'.tif']);
+%         
+%     else
+%         error('ExperimentType and/or channel not supported.')          
+%     end
     
     set(0, 'CurrentFigure', Overlay);
     imshow(Image,DisplayRangeSpot,'Border','Tight','Parent',overlayAxes, 'InitialMagnification', 'fit')

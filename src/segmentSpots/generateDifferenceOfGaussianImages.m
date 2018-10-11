@@ -64,15 +64,9 @@ function generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameS
   im = double(imread(fileName));
   
   if sum(im(:)) ~= 0
-      if strcmpi(filterType, 'Difference_of_Gaussian')
-        dog = filterImage(im, filterType, sigmas, filterSize);
-
-        if highPrecision
+      dog = filterImage(im, filterType, sigmas, filterSize);
+      if highPrecision
           dog = (dog + 100) * 100;
-        end
-
-      else
-        dog = (filterImage(im, filterType, sigmas, filterSize) + 100)*100;
       end
   else
       dog = im;
