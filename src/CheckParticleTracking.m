@@ -359,12 +359,14 @@ end
 %tracking a lot easier!
 if ~NoSort
     for ChN=1:NChannels
-        for i=1:length(Particles{ChN})
-            FirstFrame(i)=Particles{ChN}(i).Frame(1);
+        if ~isempty(Particles{ChN})
+            for i=1:length(Particles{ChN})
+                FirstFrame(i)=Particles{ChN}(i).Frame(1);
+            end
+            [~,Permutations]=sort(FirstFrame);
+            Particles{ChN}=Particles{ChN}(Permutations);
+            clear FirstFrame
         end
-        [~,Permutations]=sort(FirstFrame);
-        Particles{ChN}=Particles{ChN}(Permutations);
-        clear FirstFrame
     end
 end
 
@@ -380,8 +382,15 @@ PreviousParticle=1;
 lastParticle = 0; %this gets flagged if there's a drop to one particle within the Particles structure.
 CurrentFrameWithinParticle=1;
 CurrentChannel=1;
+if isempty(Particles{CurrentChannel}) && NChannels > 1
+    CurrentChannel=2;
+end
 PreviousChannel=CurrentChannel;
-CurrentFrame=Particles{1}(1).Frame(1);
+try 
+    CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(1);
+catch
+    CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(1);
+end
 DisplayRange=[];
 DisplayRangeSpot=[];
 ZoomMode=0;
@@ -503,7 +512,7 @@ elseif strcmpi(ExperimentType,'2spot2color')
         %We are assuming that channels 1 and 2 are assigned to coat
         %proteins. We should do a better job with this.
         coatChannels = [1,2];
-        coatChannel=coatChannels(1);
+        coatChannel= CurrentChannel;
 else
     error('Experiment type not recognized')
 end
@@ -533,7 +542,7 @@ while (cc~='x')
     %Get the coordinates of all the spots in this frame
     [x,y,z]=SpotsXYZ(Spots{CurrentChannel}(CurrentFrame));
         
-    %If the approved field does not exist create it
+    %If the approved field does not exist create i
     if ~isfield(Particles{CurrentChannel},'Approved')
         for i=1:numParticles
             Particles{CurrentChannel}(i).Approved=0;
