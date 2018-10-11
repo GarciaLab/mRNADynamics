@@ -12,12 +12,12 @@ function fillFrameGaps(prefix, varargin)
 %[prefix,~] = getPrefixAndFolder; % in case the prefix above is not yours.
 intScale = 1; % for intScale option
 notAllNC = 0; % for desiredNC(s) option
-for i = 1:length(varargin)
-    if strcmp(varargin{i},'intScale')
-            intScale = varargin{i+1};
-    elseif strcmp(varargin{i}, 'desiredNC(s)')
+for currentParticle = 1:length(varargin)
+    if strcmp(varargin{currentParticle},'intScale')
+            intScale = varargin{currentParticle+1};
+    elseif strcmp(varargin{currentParticle}, 'desiredNC(s)')
             notAllNC = 1;
-            desiredNC = varargin{i+1};
+            desiredNC = varargin{currentParticle+1};
     end
 end
 display(['integration scaling factor: ', num2str(intScale)]);
@@ -95,8 +95,8 @@ end
 
 %% Sorting Particles by their first frames
 for ChN=1:NChannels
-    for i=1:length(Particles{ChN})
-        FirstFrame(i)=Particles{ChN}(i).Frame(1);
+    for currentParticle=1:length(Particles{ChN})
+        FirstFrame(currentParticle)=Particles{ChN}(currentParticle).Frame(1);
     end
     [~,Permutations]=sort(FirstFrame);
     Particles{ChN}=Particles{ChN}(Permutations);
@@ -141,11 +141,11 @@ end
 % Checking for particles with frames missing somewhere in the middle of
 % their trace
 particlesToDoubleCheck = [];
-for i = particlesOfInterest
-    currentFrames = Particles{currentChannel}(i).Frame;
+for currentParticle = particlesOfInterest
+    currentFrames = Particles{currentChannel}(currentParticle).Frame;
     framesWithNoGaps = currentFrames(1):currentFrames(end);
     if ~isequal(currentFrames,framesWithNoGaps)
-        particlesToDoubleCheck = [particlesToDoubleCheck i];
+        particlesToDoubleCheck = [particlesToDoubleCheck currentParticle];
     end
 end
 disp(['Need to double check ' num2str(length(particlesToDoubleCheck)) ' particle(s).'])
@@ -160,8 +160,8 @@ disp(['Checking particles : ' num2str(particlesToDoubleCheck)])
 framesModified = {};
 counter = 1;
 frameInformationStruct = FrameInfo;
-for i = particlesToDoubleCheck
-    currentFrames = Particles{currentChannel}(i).Frame;
+for currentParticle = particlesToDoubleCheck
+    currentFrames = Particles{currentChannel}(currentParticle).Frame;
     framesWithNoGaps = currentFrames(1):currentFrames(end);
     framesToCheck = framesWithNoGaps(~ismember(framesWithNoGaps,currentFrames));
     framesModified{counter} = framesToCheck;
@@ -170,7 +170,7 @@ for i = particlesToDoubleCheck
     for currentFrame = framesToCheck
         % Need to redefine the below each time you check for a new one
         numberOfParticles = size(Particles{:},2);
-        currentFrames = Particles{currentChannel}(i).Frame;
+        currentFrames = Particles{currentChannel}(currentParticle).Frame;
         
 %         % getting current nucleus and schnitz
 %         schnitzIndex=find(schnitzcells(Particles{currentChannel}(i).Nucleus).frames==currentFrame);
@@ -181,7 +181,7 @@ for i = particlesToDoubleCheck
         previousFrame = currentFrame - 1;
         [x,y,~]=SpotsXYZ(Spots{currentChannel}(previousFrame)); % Looking at the previous frame
         currentParticleIndex=...
-            Particles{currentChannel}(i).Index(currentFrames==previousFrame);
+            Particles{currentChannel}(currentParticle).Index(currentFrames==previousFrame);
         previousPositionOfParticle = [x(currentParticleIndex) y(currentParticleIndex)];
         
         
@@ -196,14 +196,14 @@ for i = particlesToDoubleCheck
                 && (connectPositionY > snippet_size/2) && (connectPositionY + snippet_size/2 < LinesPerFrame)
             SpotsIndex = length(Spots{currentChannel}(currentFrame).Fits)+1;
             breakflag = 0;
-            parfor j = 1:ZSlices
+            parfor currentZSlice = 1:ZSlices
                 spotsIm=imread([PreProcPath,filesep,FilePrefix(1:length(FilePrefix)-1),filesep,...
-                    FilePrefix,iIndex(currentFrame,NDigits),'_z',iIndex(j,2),nameSuffix,'.tif']);
+                    FilePrefix,iIndex(currentFrame,NDigits),'_z',iIndex(currentZSlice,2),nameSuffix,'.tif']);
                 try
                     imAbove = double(imread([PreProcPath,filesep,FilePrefix(1:length(FilePrefix)-1),filesep,...
-                        FilePrefix,iIndex(currentFrame,NDigits),'_z',iIndex(j-1,2),nameSuffix,'.tif']));
+                        FilePrefix,iIndex(currentFrame,NDigits),'_z',iIndex(currentZSlice-1,2),nameSuffix,'.tif']));
                     imBelow = double(imread([PreProcPath,filesep,FilePrefix(1:length(FilePrefix)-1),filesep,...
-                        FilePrefix,iIndex(currentFrame,NDigits),'_z',iIndex(j+1,2),nameSuffix,'.tif']));
+                        FilePrefix,iIndex(currentFrame,NDigits),'_z',iIndex(currentZSlice+1,2),nameSuffix,'.tif']));
                 catch
                     imAbove = nan(size(spotsIm,1),size(spotsIm,2));
                     imBelow = nan(size(spotsIm,1),size(spotsIm,2));
@@ -221,45 +221,45 @@ for i = particlesToDoubleCheck
                 %Get the information about the spot on this z-slice
                 
                 
-                temp_particles{j} = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood, snippet_size, ...
+                temp_particles{currentZSlice} = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood, snippet_size, ...
                     pixelSize, show_status, fig, microscope, [1, connectPositionX, connectPositionY], [], '', intScale);
             end
             
             % future plan: use saveParticleInformation.m
-            for j = 1:ZSlices
-                if ~isempty(temp_particles{j})
+            for currentZSlice = 1:ZSlices
+                if ~isempty(temp_particles{currentZSlice})
                     %Copy the information stored on temp_particles into the
                     %Spots structure
-                    if ~isempty(temp_particles{j}{1})
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).FixedAreaIntensity(j)=...
-                            temp_particles{j}{1}{1};
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).xFit(j)=...
-                            temp_particles{j}{1}{2};
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).yFit(j)=...
-                            temp_particles{j}{1}{3};
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).Offset(j)=...
-                            temp_particles{j}{1}{4};
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).Area{j}=...
-                            temp_particles{j}{1}{6};
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).yDoG(j)=...
-                            temp_particles{j}{1}{9};
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).xDoG(j)=...
-                            temp_particles{j}{1}{10};
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).GaussianIntensity(j)=...
-                            temp_particles{j}{1}{11};
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).CentralIntensity(j)=...
-                            temp_particles{j}{1}{12};
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).DOGIntensity(j)=...
-                            temp_particles{j}{1}{13};
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).ConfidenceIntervals{j}=...
-                            temp_particles{j}{1}{19};
+                    if ~isempty(temp_particles{currentZSlice}{1})
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).FixedAreaIntensity(currentZSlice)=...
+                            temp_particles{currentZSlice}{1}{1};
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).xFit(currentZSlice)=...
+                            temp_particles{currentZSlice}{1}{2};
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).yFit(currentZSlice)=...
+                            temp_particles{currentZSlice}{1}{3};
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).Offset(currentZSlice)=...
+                            temp_particles{currentZSlice}{1}{4};
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).Area{currentZSlice}=...
+                            temp_particles{currentZSlice}{1}{6};
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).yDoG(currentZSlice)=...
+                            temp_particles{currentZSlice}{1}{9};
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).xDoG(currentZSlice)=...
+                            temp_particles{currentZSlice}{1}{10};
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).GaussianIntensity(currentZSlice)=...
+                            temp_particles{currentZSlice}{1}{11};
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).CentralIntensity(currentZSlice)=...
+                            temp_particles{currentZSlice}{1}{12};
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).DOGIntensity(currentZSlice)=...
+                            temp_particles{currentZSlice}{1}{13};
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).ConfidenceIntervals{currentZSlice}=...
+                            temp_particles{currentZSlice}{1}{19};
 
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).z(j)=...
-                            j;
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).gaussParams{j}=...
-                            temp_particles{j}{1}{22};
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).z(currentZSlice)=...
+                            currentZSlice;
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).gaussParams{currentZSlice}=...
+                            temp_particles{currentZSlice}{1}{22};
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).intArea=...
-                            temp_particles{j}{1}{23};
+                            temp_particles{currentZSlice}{1}{23};
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).discardThis=...
                             0;
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).frame=...
@@ -268,35 +268,35 @@ for i = particlesToDoubleCheck
                             0;
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).FixedAreaIntensity3 = NaN;
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).FixedAreaIntensity5 = NaN;
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).cylIntensity(j) = temp_particles{j}{1}{24};
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).cylIntensity(currentZSlice) = temp_particles{currentZSlice}{1}{24};
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).brightestZ = NaN;
                         
                     else
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).FixedAreaIntensity(j)=...
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).FixedAreaIntensity(currentZSlice)=...
                             nan;
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).xFit(j)=...
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).xFit(currentZSlice)=...
                             nan;
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).yFit(j)=...
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).yFit(currentZSlice)=...
                             nan;
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).Offset(j)=nan;  
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).Area{j}=...
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).Offset(currentZSlice)=nan;  
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).Area{currentZSlice}=...
                             nan;
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).yDoG(j)=...
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).yDoG(currentZSlice)=...
                             nan;
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).xDoG(j)=...
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).xDoG(currentZSlice)=...
                             nan;
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).GaussianIntensity(j)=...
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).GaussianIntensity(currentZSlice)=...
                             nan;
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).CentralIntensity(j)=...
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).CentralIntensity(currentZSlice)=...
                             nan;
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).DOGIntensity(j)=...
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).DOGIntensity(currentZSlice)=...
                             nan;
 
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).ConfidenceIntervals{j}=...
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).ConfidenceIntervals{currentZSlice}=...
                             nan;
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).z(j)=...
-                            j;
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).gaussParams{j}=...
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).z(currentZSlice)=...
+                            currentZSlice;
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).gaussParams{currentZSlice}=...
                             nan;
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).discardThis=...
                             0;
@@ -305,7 +305,7 @@ for i = particlesToDoubleCheck
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).r=...
                             0;
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).FixedAreaIntensity3 = NaN;
-                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).cylIntensity(j) = NaN;
+                        Spots{currentChannel}(currentFrame).Fits(SpotsIndex).cylIntensity(currentZSlice) = NaN;
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).FixedAreaIntensity5 = NaN;
                         Spots{currentChannel}(currentFrame).Fits(SpotsIndex).brightestZ = NaN;
                     end
@@ -346,13 +346,13 @@ for i = particlesToDoubleCheck
                 %the equivalent of running the 'c' command.
                 
                 Particles{currentChannel}=...
-                    JoinParticleTraces(i,...
+                    JoinParticleTraces(currentParticle,...
                     numberOfParticles,Particles{currentChannel});
                 
                 %Finally, force the code to recalculate the fluorescence trace
                 %for this particle
                 PreviousParticle=0;
-                spotAddedMessage = ['Spot added to the current particle ' num2str(i)];
+                spotAddedMessage = ['Spot added to the current particle ' num2str(currentParticle)];
                 disp(spotAddedMessage)
             else
                 warning('This particle is too close to the edge. A spot can''t be added here.');
