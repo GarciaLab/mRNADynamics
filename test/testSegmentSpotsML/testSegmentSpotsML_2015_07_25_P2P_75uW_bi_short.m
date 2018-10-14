@@ -5,7 +5,6 @@ classdef testSegmentSpotsML_2015_07_25_P2P_75uW_bi_short < matlab.unittest.TestC
       %Hardcoded with the path of the experiment that the test will use
       Prefix = '2015-07-25-P2P_75uW_bi_short';
       Threshold = 5000;
-      classifier = 'test_classifier.model';
   end
 
   methods(Test)

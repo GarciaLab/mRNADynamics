@@ -7,45 +7,32 @@ function testCase = testSegmentSpotsML(testCase)
   CONFIG_CSV_PATH = ['ComputerFolders.csv'];
   
   configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');
-  
-  codePath = getConfigValue(configValues, 'MS2CodePath');
   testPath = getConfigValue(configValues, 'TestPath');
 
   dynamicResultsPath = getConfigValue(configValues, 'DropboxFolder');
+  preprocessedDataPath = getConfigValue(configValues, 'PreProcPath');
   processedDataPath = getConfigValue(configValues, 'FISHPath');
 
-  % Classifier path must end with filesep
-  classifiersPath = strcat(codePath, filesep, 'src', filesep, 'classifiers', filesep);
-  classifierForTest = ClassifierForTest(classifiersPath, testCase.classifier);
-
   dynamicResultsExperimentPath = [dynamicResultsPath, filesep, testCase.Prefix];
+  preprocessedDataExperimentPath = [preprocessedDataPath, filesep, testCase.Prefix];
   % harrypotel: Not sure why the folder on ProcessedData has a _ at the end, is it a bug?
   processedDataExperimentPath = [processedDataPath, filesep, testCase.Prefix, '_'];
   
+  cd(testPath);
   % Clean up previous runs
   deleteDirectory(dynamicResultsExperimentPath, testCase.Prefix);
+  deleteDirectory(preprocessedDataExperimentPath, testCase.Prefix);
   deleteDirectory(processedDataExperimentPath, testCase.Prefix);
-  
-  % Precondition - Run ExportsDataForFISH without deleting TIFs
-  ExportDataForFISH(testCase.Prefix, 'keepTifs');
-  
-  % Tests first pass
-  % Generates DoGs
-  filterMovie(testCase.Prefix, 'Weka', classifierForTest, 'ignoreMemoryCheck');
-  
-  % Then verifies FrameInfo.mat and expected contents of dogs folder
-  expectedPathSubFolderFilter = ['SegmentSpotsML', filesep, 'FilterMovie'];
-  assertLogFileExists(testCase, dynamicResultsExperimentPath);
-  assertDogsFolderEqualToExpected(testCase, processedDataExperimentPath, testPath, expectedPathSubFolderFilter);
-  
-  % Tests second pass
+
+  % Precondition, copies existing Expected Data to proper folders before running the process
+  copyExpectedData(testCase.Prefix, testPath, dynamicResultsExperimentPath, preprocessedDataExperimentPath, processedDataExperimentPath)
+
   % Executes segment spots with known DoG
   segmentSpotsML(testCase.Prefix, testCase.Threshold);
 
   expectedPathSubfolderSpots = ['SegmentSpotsML', filesep, 'SegmentSpotsML'];
 
   assertLogFileExists(testCase, dynamicResultsExperimentPath);
-  assertDogsFolderEqualToExpected(testCase, processedDataExperimentPath, testPath, expectedPathSubfolderSpots);
   assertSpotsEqualToExpected(testCase, dynamicResultsExperimentPath, testPath, expectedPathSubfolderSpots);
 
   testSegmentSpotsMLTifsUnsupported(testCase);
@@ -83,3 +70,23 @@ function testCase = testSegmentSpotsMLEmptyThreshold(testCase)
   end
 end
 
+function copyExpectedData(Prefix, testPath, dynamicResultsExperimentPath, preprocessedDataExperimentPath, processedDataExperimentPath)
+  if 7 ~= exist(testPath, 'dir')
+    error('Test path data does not exist, please generate test data before running test case.');
+  end
+
+  mkdir(dynamicResultsExperimentPath);
+  mkdir(preprocessedDataExperimentPath);
+  mkdir(processedDataExperimentPath);
+
+  dynamicsResultsDataExpectedFolder = [testPath, filesep, 'ExportDataForFISH', filesep,...
+    'DynamicsResults', filesep, Prefix];
+  preProcessedDataExpectedFolder = [testPath, filesep, 'SegmentSpotsML', filesep, 'Tifs', filesep,...
+    'PreProcessedData', filesep, Prefix];
+  processedDataExpectedFolder = [testPath, filesep, 'SegmentSpotsML', filesep, 'FilterMovie', filesep,...
+    'ProcessedData', filesep, Prefix, '_'];
+
+  copyfile([dynamicsResultsDataExpectedFolder, filesep, '*'], dynamicResultsExperimentPath);
+  copyfile([preProcessedDataExpectedFolder, filesep, '*'], preprocessedDataExperimentPath);
+  copyfile([processedDataExpectedFolder, filesep, '*'], processedDataExperimentPath);
+end
