@@ -203,6 +203,7 @@ snippet_size = 2*(floor(1300/(2*pixelSize))) + 1; % nm. note that this is forced
 LinesPerFrame = FrameInfo(1).LinesPerFrame;
 PixelsPerLine = FrameInfo(1).PixelsPerLine;
 numFrames =length(FrameInfo);
+correspondingNCInfo = [FrameInfo.nc]; % the assigned nc of the frames
 
 %See how  many frames we have and adjust the index size of the files to
 %load accordingly
@@ -320,6 +321,7 @@ else
         end
     end
 end
+nuclearCycleBoundaries = [nc9,nc10,nc11,nc12,nc13,nc14];
 
 save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo') %this is here so that a user will still get an updated
 %frameinfo.mat even if they abort checkparticletracking without saving (to
@@ -1084,7 +1086,20 @@ while (cc~='x')
         plot(traceFigAxes,Frames(Frames==CurrentFrame),AmpIntegral(Frames==CurrentFrame),'ob');
         plot(traceFigAxes,Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
         plot(traceFigAxes,Frames(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
-%   
+%       
+        % plotting anaphase boundaries ------------------------------------ 
+        % Section added by EL 10/11/18
+        currentYLimits = get(gca,'YLim');  % Get the range of the y axis
+        
+        % plotting all nuclear embryo bonudaries as a line 
+        for i = 1:length(nuclearCycleBoundaries)
+            currentNCBoundary = nuclearCycleBoundaries(i);
+            plot(traceFigAxes,ones(1,2).*currentNCBoundary,currentYLimits,...
+                'LineWidth',3,'Color','red');
+        end
+        % End of anaphase boundary marking section 
+        % -----------------------------------------------------------------
+        
         ylabel(traceFigAxes,'integrated intensity (a.u.)')
         hold(traceFigAxes, 'off')
 %         yyaxis(traceFigAxes,'right');
@@ -1113,6 +1128,8 @@ while (cc~='x')
         ylabel(traceFigAxes,'transcript intensity (a.u.)')     
         plot(traceFigAxes,Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.k')
         plot(traceFigAxes,Frames(Frames==CurrentFrame),Amp(Frames==CurrentFrame),'ob')
+        % Should the nc boundary lines be added here?
+        % Search: plotting anaphase boundaries ------------------------------------ 
         hold(traceFigAxes,'off')
 
         

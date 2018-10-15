@@ -2267,9 +2267,9 @@ end
 
 %% Fitting shapes to single traces (includes time on and initial rate of loading)
 % This section of code is will fit lines in a piece wise fashion to the
-% single traces. lineEquations correspond to the stored fitted lines of the
+% single traces. fittedLineEquations correspond to the stored fitted lines of the
 % particles, where the indexing is as follows:
-% lineEquations(fittedLine,equationCoefficients,particle). This currently
+% fittedLineEquations(fittedLine,equationCoefficients,particle). This currently
 % does not support more than one channel. Please contact Emma to work on
 % implementing it for two channels.
 
@@ -2289,9 +2289,9 @@ else
     end
     
     
-    % each row in lineEquations is for a group, columns are slope and the constant
+    % each row in fittedLineEquations is for a group, columns are slope and the constant
     % each sheet (corresponding to the third index) per particle
-    lineEquations = zeros(4,2,numberOfParticles);
+    fittedLineEquations = zeros(4,2,numberOfParticles);
     allTimeOn = -1*ones(1,numberOfParticles); % stores all the time on (for particles longer than 3 data points)
     
     % lines are only fitted to traces that are longer than 3 data points
@@ -2377,11 +2377,13 @@ else
                 end
                 currentAmp = smoothedAmp(correspondingIndexes);
                 currentXs = currentTimeArray(correspondingIndexes);
-                lineEquations(currentGroup,:,currentParticle) = polyfit(currentXs,currentAmp,1);
+                fittedLineEquations(currentGroup,:,currentParticle) = polyfit(currentXs,currentAmp,1);
                 if currentGroup == 1
-                    timeOn = roots(lineEquations(currentGroup,:,currentParticle));
+                    try
+                    timeOn = roots(fittedLineEquations(currentGroup,:,currentParticle));
                     %currentXs = [timeOn currentXs]; % include the time on in the plot
                     allTimeOn(currentParticle) = timeOn;
+                    end
                 end
             end
         end
@@ -2398,7 +2400,7 @@ else
     
     currentChannel = 1;
     for currentParticle = 1:numberOfParticles
-        if ~isempty(Particles{currentChannel}.Nucleus)
+        if ~isempty(Particles{currentChannel}(currentParticle).Nucleus)
             % getting the frames of the particle of interest --------------------------
             [frames,~,~,~,~,~,~,~,~,~,~,~,~]=...
                 GetParticleTrace(currentParticle,...
@@ -2443,13 +2445,13 @@ else
             end
             
             % speed calculation and distance relative to the center of the nucleus
+            dz = diff(zArray);
             dxNO = diff(xArrayNO);
             dyNO = diff(yArrayNO);
             drNO = sqrt(dxNO.^2 + dyNO.^2 + dz.^2);
             rNO = sqrt(xArrayNO.^2 + yArrayNO.^2 + zArray.^2);
             
             %plot graph without showing and save it in a folder with the yy
-            %plots...
         end
     end
 end
@@ -2640,7 +2642,7 @@ if HistoneChannel&&strcmpi(ExperimentAxis,'AP')
             'MeanVectorAllAP','SEVectorAllAP', 'Prefix',...
             'MeanVectorAP_ROI','SDVectorAP_ROI','NParticlesAP_ROI',...
             'MeanVectorAP_nonROI','SDVectorAP_nonROI','NParticlesAP_nonROI',...
-            'lineEquations','-v7.3');
+            'fittedLineEquations','-v7.3');
     else
         save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
             'CompiledParticles','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
@@ -2655,7 +2657,7 @@ if HistoneChannel&&strcmpi(ExperimentAxis,'AP')
             'EllipsesOnAP','TotalEllipsesAP',...
             'EllipsePos','EllipsesFilteredPos','FilteredParticlesPos',...
             'MeanVectorAllAP','SEVectorAllAP', 'Prefix',...
-            'lineEquations','-v7.3');
+            'fittedLineEquations','-v7.3');
     end
 elseif HistoneChannel&&strcmpi(ExperimentAxis,'DV')
     
@@ -2677,7 +2679,7 @@ elseif HistoneChannel&&strcmpi(ExperimentAxis,'DV')
         'SDVectorAll','NParticlesAll','MaxFrame',...
         'AllTracesVector','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
         'MeanOffsetVector','SDOffsetVector','NOffsetParticles', 'Prefix',...
-        'lineEquations','-v7.3')
+        'fittedLineEquations','-v7.3')
 elseif strcmpi(ExperimentAxis,'NoAP')
     
     MeanOffsetVector = NaN;
@@ -2701,7 +2703,7 @@ elseif strcmpi(ExperimentAxis,'NoAP')
             'SDVectorAll','NParticlesAll','MaxFrame',...
             'AllTracesVector','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
             'MeanOffsetVector','SDOffsetVector','NOffsetParticles','Prefix',...
-            'lineEquations','-v7.3')
+            'fittedLineEquations','-v7.3')
     catch
         save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
             'CompiledParticles','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
@@ -2710,7 +2712,7 @@ elseif strcmpi(ExperimentAxis,'NoAP')
             'SDVectorAll','NParticlesAll','MaxFrame',...
             'AllTracesVector','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
             'MeanOffsetVector','SDOffsetVector','NOffsetParticles', 'Prefix',...
-            'lineEquations','-v7.3')
+            'fittedLineEquations','-v7.3')
     end
 else
     
@@ -2746,5 +2748,5 @@ else
         'AllTracesVector','AllTracesAP','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
         'MeanOffsetVector','SDOffsetVector','NOffsetParticles',...
         'MeanSlopeVectorAP','SDSlopeVectorAP','NSlopeAP', 'Prefix',...
-        'lineEquations','-v7.3')
+        'fittedLineEquations','-v7.3')
 end
