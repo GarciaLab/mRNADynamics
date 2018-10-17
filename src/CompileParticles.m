@@ -2391,69 +2391,72 @@ else
 end
 
 %% Calculation of particle speed
+try
+    if NChannels > 1
+        disp('Speeds could not be calculated for your data. Please contact Emma.')
+        % implement crude? initial slope and time on calculation
+    else
+        numberOfParticles = size(Particles{:},2);
 
-if NChannels > 1
-    disp('Speeds could not be calculated for your data. Please contact Emma.')
-    % implement crude? initial slope and time on calculation
-else
-    numberOfParticles = size(Particles{:},2);
-    
-    currentChannel = 1;
-    for currentParticle = 1:numberOfParticles
-        if ~isempty(Particles{currentChannel}(currentParticle).Nucleus)
-            % getting the frames of the particle of interest --------------------------
-            [frames,~,~,~,~,~,~,~,~,~,~,~,~]=...
-                GetParticleTrace(currentParticle,...
-                Particles{currentChannel},Spots{currentChannel});
-            
-            % getting tau (average time increment [minutes])--------------------------
-            currentTimeArray = ElapsedTime(frame); % Units to seconds
-            
-            % getting x,y,z positions -------------------------------------------------
-            xArray = zeros(1,length(frames));
-            yArray = zeros(1,length(frames));
-            zArray = zeros(1,length(frames));
-            
-            % coordinates with the Nucleus Center as the origin (NO).
-            xArrayNO = zeros(1,length(frames));
-            yArrayNO = zeros(1,length(frames));
-            
-            frameCounter = 0;
-            for currentFrame = frames
-                frameCounter = frameCounter + 1;
-                
-                % getting current particle index
-                currentParticleIndex=...
-                    Particles{currentChannel}(currentParticle).Index(frameCounter);
-                
-                % getting x and y positions of the brightest z slice
-                [x,y,z]=SpotsXYZ(Spots{currentChannel}(currentFrame));
-                
-                % storing "true" x, y, and z positions
-                xArray(frameCounter) = x(currentParticleIndex);
-                yArray(frameCounter) = y(currentParticleIndex);
-                zArray(frameCounter) = z(currentParticleIndex);
-                
-                %getting current nucleus and schnitz
-                schnitzIndex=find(schnitzcells(Particles{currentChannel}(currentParticle).Nucleus).frames==currentFrame);
-                nucleusIndex=schnitzcells(Particles{currentChannel}(currentParticle).Nucleus).cellno(schnitzIndex);
-                nucleusCenterCoordinates = [Ellipses{currentFrame}(nucleusIndex,1:2)];
-                
-                % storing x and y positions with the assigned nucleus as the origin.
-                xArrayNO(frameCounter) = x(currentParticleIndex) - nucleusCenterCoordinates(1);
-                yArrayNO(frameCounter) = y(currentParticleIndex) - nucleusCenterCoordinates(2);
+        currentChannel = 1;
+        for currentParticle = 1:numberOfParticles
+            if ~isempty(Particles{currentChannel}(currentParticle).Nucleus)
+                % getting the frames of the particle of interest --------------------------
+                [frames,~,~,~,~,~,~,~,~,~,~,~,~]=...
+                    GetParticleTrace(currentParticle,...
+                    Particles{currentChannel},Spots{currentChannel});
+
+                % getting tau (average time increment [minutes])--------------------------
+                currentTimeArray = ElapsedTime(frame); % Units to seconds
+
+                % getting x,y,z positions -------------------------------------------------
+                xArray = zeros(1,length(frames));
+                yArray = zeros(1,length(frames));
+                zArray = zeros(1,length(frames));
+
+                % coordinates with the Nucleus Center as the origin (NO).
+                xArrayNO = zeros(1,length(frames));
+                yArrayNO = zeros(1,length(frames));
+
+                frameCounter = 0;
+                for currentFrame = frames
+                    frameCounter = frameCounter + 1;
+
+                    % getting current particle index
+                    currentParticleIndex=...
+                        Particles{currentChannel}(currentParticle).Index(frameCounter);
+
+                    % getting x and y positions of the brightest z slice
+                    [x,y,z]=SpotsXYZ(Spots{currentChannel}(currentFrame));
+
+                    % storing "true" x, y, and z positions
+                    xArray(frameCounter) = x(currentParticleIndex);
+                    yArray(frameCounter) = y(currentParticleIndex);
+                    zArray(frameCounter) = z(currentParticleIndex);
+
+                    %getting current nucleus and schnitz
+                    schnitzIndex=find(schnitzcells(Particles{currentChannel}(currentParticle).Nucleus).frames==currentFrame);
+                    nucleusIndex=schnitzcells(Particles{currentChannel}(currentParticle).Nucleus).cellno(schnitzIndex);
+                    nucleusCenterCoordinates = [Ellipses{currentFrame}(nucleusIndex,1:2)];
+
+                    % storing x and y positions with the assigned nucleus as the origin.
+                    xArrayNO(frameCounter) = x(currentParticleIndex) - nucleusCenterCoordinates(1);
+                    yArrayNO(frameCounter) = y(currentParticleIndex) - nucleusCenterCoordinates(2);
+                end
+
+                % speed calculation and distance relative to the center of the nucleus
+                dz = diff(zArray);
+                dxNO = diff(xArrayNO);
+                dyNO = diff(yArrayNO);
+                drNO = sqrt(dxNO.^2 + dyNO.^2 + dz.^2);
+                rNO = sqrt(xArrayNO.^2 + yArrayNO.^2 + zArray.^2);
+
+                %plot graph without showing and save it in a folder with the yy
             end
-            
-            % speed calculation and distance relative to the center of the nucleus
-            dz = diff(zArray);
-            dxNO = diff(xArrayNO);
-            dyNO = diff(yArrayNO);
-            drNO = sqrt(dxNO.^2 + dyNO.^2 + dz.^2);
-            rNO = sqrt(xArrayNO.^2 + yArrayNO.^2 + zArray.^2);
-            
-            %plot graph without showing and save it in a folder with the yy
         end
     end
+catch
+    %who knows. 
 end
 
 %% Movie of AP profile
