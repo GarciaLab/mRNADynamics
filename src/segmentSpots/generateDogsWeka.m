@@ -25,19 +25,19 @@ function generateDogsWeka(Prefix, FISHPath, MS2CodePath, PreProcPath, Experiment
   zSize2 = zSize * 2;
   filterMovieWaitbarFigure = waitbar(0, 'Running Weka Classifier');
 
+  try
+    %this is just some function that can only be called if IJM is set up
+    IJM.getIdentifier()
+  catch
+    addpath([MS2CodePath, filesep, 'Fiji.app', filesep, 'scripts'])
+    ImageJ % Initialize IJM and MIJ
+  end
+
+  ijm = evalin('base', 'IJM');
+  mij = evalin('base', 'MIJ');
+
   %Make requisite TIF stacks for classification
   for channelIndex = 1:nCh
-
-    try
-      %this is just some function that can only be called if IJM is set up
-      IJM.getIdentifier()
-    catch
-      addpath([MS2CodePath, filesep, 'Fiji.app', filesep, 'scripts'])
-      ImageJ % Initialize IJM and MIJ
-    end
-
-    ijm = evalin('base', 'IJM');
-    mij = evalin('base', 'MIJ');
 
     if strcmpi(ExperimentType, 'inputoutput')
       nameSuffix = ['_ch', iIndex(coatChannel, 2)];

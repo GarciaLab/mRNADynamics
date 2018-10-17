@@ -72,6 +72,7 @@ function log = filterMovie(Prefix, varargin)
 
   [~, FISHPath, DropboxFolder, MS2CodePath, PreProcPath] = DetermineLocalFolders(Prefix);
 
+  
   load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat']);
   zSize = FrameInfo(1).NumberSlices + 2;
 
