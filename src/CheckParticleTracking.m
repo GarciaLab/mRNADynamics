@@ -26,16 +26,9 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % a z Move up/down in Z
 % j Jump to a specified frame
 % g b Increase/decrease histone channel contrast
-<<<<<<< HEAD
 % ! @ Change the contrast in transcription channel (! increases, @ resets
 %       it back to the lowest)
 %
-%
-=======
-% !   Change the contrast in transcription channel
-% 
-% 
->>>>>>> 233484f7288c8bc95cf3d29fbf8745bf18d7c05f
 % Particle specific:
 % m Move to the next particle
 % n Move to the previous particle
