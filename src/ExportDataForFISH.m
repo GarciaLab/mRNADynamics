@@ -88,7 +88,7 @@ elseif strcmpi(FileMode, 'LAT')
   FrameInfo = processLatticeLightSheetData(Folder, D, Channel1, Channel2, ProjectionType, Prefix, OutputFolder);
 
 elseif strcmpi(FileMode,'LSM')
-  FrameInfo = processZeissConfocalLSMData(Folder, D, FrameInfo, ExperimentType, Channel1, Channel2, Prefix, OutputFolder);
+  FrameInfo = processZeissConfocalLSMData(Folder, D, FrameInfo, ExperimentType, Channel1, Channel2,ProjectionType, Prefix, OutputFolder);
 
 elseif strcmpi(FileMode,'LIFExport')
   FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, ProjectionType, Channel1, Channel2, Channel3, Prefix,...
