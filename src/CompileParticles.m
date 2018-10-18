@@ -395,7 +395,7 @@ if HistoneChannel&&strcmpi(ExperimentAxis,'AP')
             
             %Added DV compatibility
             DVPositions=Distances.*sin(Angles-APAngle);
-            EllipsePos_DV{i}(j)=abs(DVPositions-offset_num);
+            EllipsePos_DV{i}(j)=DVPositions;
         end
     end
 end
