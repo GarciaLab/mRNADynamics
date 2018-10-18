@@ -367,7 +367,9 @@ if strcmpi(ExperimentAxis, 'AP')
     load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
     %Angle between the x-axis and the AP-axis
     if exist('coordPZoom', 'var')
-        APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
+        %APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
+        %Changed for DV compatibility
+        APAngle=atan2((coordPZoom(2)-coordAZoom(2)),(coordPZoom(1)-coordAZoom(1)));
     else
         error('coordPZoom not defined. Was AddParticlePosition.m run?')
     end
@@ -382,12 +384,18 @@ if HistoneChannel&&strcmpi(ExperimentAxis,'AP')
             
             %Angle between the x-axis and the particle using the A position as a
             %zero
-            Angles=atan((Ellipses{i}(j,2)-coordAZoom(2))./(Ellipses{i}(j,1)-coordAZoom(1)));
+            %Angles=atan((Ellipses{i}(j,2)-coordAZoom(2))./(Ellipses{i}(j,1)-coordAZoom(1)));
+            %Changed for DV compatibility
+            Angles=atan2((Ellipses{i}(j,2)-coordAZoom(2)),(Ellipses{i}(j,1)-coordAZoom(1)));
             
             %Distance between the points and the A point
             Distances=sqrt((coordAZoom(2)-Ellipses{i}(j,2)).^2+(coordAZoom(1)-Ellipses{i}(j,1)).^2);
             APPositions=Distances.*cos(Angles-APAngle);
             EllipsePos{i}(j)=APPositions/APLength;
+            
+            %Added DV compatibility
+            DVPositions=Distances.*sin(Angles-APAngle);
+            EllipsePos_DV{i}(j)=abs(DVPositions-offset_num);
         end
     end
 end
@@ -461,6 +469,47 @@ if strcmpi(ExperimentAxis,'AP')
     MedianArea=median(APbinArea(APbinArea>0));
     %Only keep the bins with an area of at least 70% of the median
     APbinArea(APbinArea<MedianArea*0.7)=nan;
+    
+end
+
+%Generate DV bin
+if strcmpi(ExperimentAxis,'DV')
+       
+    DVbinID=linspace(0,500,26); %JAKE: Would change to DV resolution later
+    %Create an image for the different DV bins
+    DVPosImage=zeros(FrameInfo(1).LinesPerFrame,FrameInfo(1).PixelsPerLine);
+    [Rows,Columns]=size(DVPosImage);
+
+    for i=1:Rows
+        for j=1:Columns
+            Angle=atan2((i-coordAZoom(2)),(j-coordAZoom(1)));   
+            
+            Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
+            DVPosition=Distance.*sin(Angle-APAngle);
+            DVPosImage(i,j)=abs(DVPosition-offset_num);
+        end
+    end
+
+
+    DVPosBinImage=zeros(size(DVPosImage));
+    for i=1:(length(DVbinID)-1)
+        FilteredMask=(DVbinID(i)<=DVPosImage)&(DVbinID(i+1)>DVPosImage);
+        DVPosBinImage=DVPosBinImage+FilteredMask*i;
+    end
+
+
+    %Calculate the area in pixels corresponding to each AP bin. We will use
+    %this to get rid of small AP bins in the image and also to calculate
+    %probabilities of nuclei being active.
+    DVbinArea = zeros(length(DVbinID),1);
+    %Calculate ther areas of the AP bins
+    for i=1:length(DVbinID)
+        DVbinArea(i)=sum(sum(DVPosBinImage==i));
+    end
+    %Get the median of the non-zero areas
+    MedianArea=median(DVbinArea(DVbinArea>0));
+    %Only keep the bins with an area of at least 70% of the median
+    DVbinArea(DVbinArea<MedianArea*0.7)=nan;
     
 end
 
