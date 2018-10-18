@@ -67,7 +67,7 @@ for j = 1:nTilesY
         mask_tmp = reshape(mask_tmp,size(fil,2),size(fil,1))';
         
         fil = fil-mean(mean(fil(spanX,spanY)));
-
+        
         cimg2 = img2-mean(mean(img2(spanX,spanY)));%img2-mean(mean(img2(((1+(jj-1)*tileSizeX):(tileSizeX+(jj-1)*tileSizeX)),(1+(j-1)*tileSizeY):(tileSizeY+(j-1)*tileSizeY))));
         f = fourierFilterInAGaussianWindow(fil.*mask_tmp,cimg2);
         minX = max(1,floor(size(f,1)*0.5-.5*tileSizeX));
@@ -76,10 +76,17 @@ for j = 1:nTilesY
         maxY = min(ceil(size(f,2)*0.5+.5*tileSizeY),size(f,2));
         f = f(minX:maxX,minY:maxY);%f(spanX,spanY);%f((1+(jj-1)*tileSizeX):(tileSizeX+(jj-1)*tileSizeX),(1+(j-1)*tileSizeY):(tileSizeY+(j-1)*tileSizeY));
         
+        useGPU = 0;
         try
-            %this may not be compatible with all GPU devices %AR 9/11/2018
-            maxima = (f >= gather(imdilate(gpuArray(uint8(f)),localMaxMask)));
+            gpuDevice;
+            useGPU = 1;
         catch
+            %do nothing;
+        end
+        
+        if useGPU
+            maxima = (f >= gather(imdilate(gpuArray(uint8(f)),localMaxMask)));
+        else
             maxima = f >= imdilate(f,localMaxMask);
         end
         
@@ -98,7 +105,7 @@ for j = 1:nTilesY
         [tx,ty] = ind2sub(size(f),indMaxima(IND));
         
         x(j,jj) = mean((0.5*size(f,1)+0.5)-tx);
-
+        
         y(j,jj) = mean((0.5*size(f,2)+0.5)-ty);
     end
 end
