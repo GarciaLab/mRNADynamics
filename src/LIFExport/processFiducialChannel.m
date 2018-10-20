@@ -13,7 +13,7 @@ function Projection = processFiducialChannel(numberOfFrames, LIFImages, framesIn
   if histoneChannel
     Projection = getHistoneChannelProjection(ProjectionType, HisSlices, ExperimentType, Channel1, Channel2, Channel3, NSlices, ReferenceHist);
   else 
-    Projection = getDefaultChannelProjection(NSlices, HisSlices);
+    Projection = getDefaultChannelProjection(ProjectionType, NSlices, HisSlices);
   end
 
   imwrite(uint16(Projection),[OutputFolder, filesep, Prefix, '-His_', iIndex(numberOfFrames, 3), '.tif']);
