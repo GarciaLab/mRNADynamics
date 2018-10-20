@@ -91,7 +91,7 @@ elseif strcmpi(FileMode,'LSM')
   FrameInfo = processZeissConfocalLSMData(Folder, D, FrameInfo, ExperimentType, Channel1, Channel2,ProjectionType, Prefix, OutputFolder);
 
 elseif strcmpi(FileMode,'LIFExport')
-  FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, ProjectionType, Channel1, Channel2, Channel3, Prefix,...
+  FrameInfo = processLIFExportMode(Folder, ExperimentType, ProjectionType, Channel1, Channel2, Channel3, Prefix,...
    OutputFolder, PreferredFileNameForTest, keepTifs);        
 
 elseif strcmpi(FileMode,'DSPIN') || strcmpi(FileMode,'DND2')
