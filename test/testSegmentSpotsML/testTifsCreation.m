@@ -17,6 +17,8 @@ function testCase = testTifsCreation(testCase)
   expectedPreProcessedDataFolder = [testPath, filesep, expectedDataSubFolder, filesep, 'PreProcessedData',...
     filesep, testCase.Prefix]; 
 
+  % Switches to a different directory so the removal does not fail
+  cd(testPath);
   % Clean up previous runs
   deleteDirectory(preprocessedDataExperimentPath, testCase.Prefix);
 

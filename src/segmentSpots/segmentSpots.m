@@ -143,14 +143,14 @@ function log = segmentSpots(Prefix, Threshold, varargin)
         [Particles, falsePositives] = findBrightestZ(Particles,numShadows, useIntegralCenter, 0);
 
         %Create a final Spots structure to be fed into TrackmRNADynamics
-        Spots{channelIndex} = createSpotsStructure(Particles, numFrames);
+        Spots{channelIndex} = createSpotsStructure(Particles, numFrames, 1);
  
     end
     
     t = toc;
     disp(['Elapsed time: ', num2str(t / 60), ' min'])
     try %#ok<TRYNC>
-        log = logSegmentSpots(DropboxFolder, Prefix, t, numFrames, Spots, falsePositives, Threshold, channelIndex);
+        log = logSegmentSpots(DropboxFolder, Prefix, t, [], numFrames, Spots, falsePositives, Threshold, channelIndex);
         display(log);
     end
     
