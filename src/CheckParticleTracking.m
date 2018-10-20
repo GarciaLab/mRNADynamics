@@ -203,7 +203,9 @@ snippet_size = 2*(floor(1300/(2*pixelSize))) + 1; % nm. note that this is forced
 LinesPerFrame = FrameInfo(1).LinesPerFrame;
 PixelsPerLine = FrameInfo(1).PixelsPerLine;
 numFrames =length(FrameInfo);
-correspondingNCInfo = [FrameInfo.nc]; % the assigned nc of the frames
+if isfield(FrameInfo, 'nc')
+    correspondingNCInfo = [FrameInfo.nc]; % the assigned nc of the frames
+end
 
 %See how  many frames we have and adjust the index size of the files to
 %load accordingly

@@ -2321,122 +2321,124 @@ end
 % fittedLineEquations(fittedLine,equationCoefficients,particle). This currently
 % does not support more than one channel. Please contact Emma to work on
 % implementing it for two channels.
+try
+    if NChannels > 1
+        disp('Shapes could not be fitted to your data. Please contact Emma.')
+        % implement crude? initial slope and time on calculation
+    else
+        numberOfParticles = size(Particles{:},2);
+        correspondingNCInfo = [FrameInfo.nc];
+        currentChannel = 1;
 
-if NChannels > 1
-    disp('Shapes could not be fitted to your data. Please contact Emma.')
-    % implement crude? initial slope and time on calculation
-else
-    numberOfParticles = size(Particles{:},2);
-    correspondingNCInfo = [FrameInfo.nc];
-    currentChannel = 1;
-    
-    nuclearCycleBoundaries = [nc9,nc10,nc11,nc12,nc13,nc14]; % in units of frames
-    for i = 1:length(nuclearCycleBoundaries)
-        if nuclearCycleBoundaries(i) > 0
-            nuclearCycleBoundaries(i) = ElapsedTime(nuclearCycleBoundaries(i)); % in units of seconds
-        end
-    end
-    
-    
-    % each row in fittedLineEquations is for a group, columns are slope and the constant
-    % each sheet (corresponding to the third index) per particle
-    fittedLineEquations = zeros(4,2,numberOfParticles);
-    allTimeOn = -1*ones(1,numberOfParticles); % stores all the time on (for particles longer than 3 data points)
-    
-    % lines are only fitted to traces that are longer than 3 data points
-    averagingLength = 3; % average over 3 points. Current default setting
-    for currentParticle = 1:numberOfParticles
-        
-        % getting frame information
-        [frame,~,ampIntegral3,~,~,~,~,~,~,~,~,~,~]=...
-            GetParticleTrace(currentParticle,...
-            Particles{currentChannel},Spots{currentChannel});
-        currentLength = length(frame);
-        
-        % performing moving average
-        smoothedAmp = movmean(ampIntegral3,averagingLength);
-        
-        % getting the corresponding time of the trace
-        currentTimeArray = ElapsedTime(frame); % Units to seconds
-        ncPresent = unique(correspondingNCInfo(frame));
-        timeOfFirstNC = nuclearCycleBoundaries(ncPresent(1)-8);
-        % adjusting frameRange to have time 0 be the start of the
-        % first nuclear cycle the particle appears in
-        currentTimeArray = currentTimeArray - timeOfFirstNC;
-        
-        
-        % Start of shape fitting process -----------------------------------------
-        
-        % Assigning states to each point --------------------------------------
-        % states: increase or decrease from previous point
-        if currentLength > 3
-            %         plot(frameRange,smoothedAmp,'Color',colors(5,:),'LineWidth',3,'DisplayName','avg''d')
-            %         hold on
-            dydx = diff([eps; smoothedAmp'])./diff([eps; currentTimeArray']);
-            hold on
-            pointSlopeState = zeros(1,length(dydx));
-            % calculating point slope state and plotting them
-            for currentPoint = 1:length(dydx)
-                
-                if dydx(currentPoint) < 0
-                    pointSlopeState(currentPoint) = -1;
-                else
-                    pointSlopeState(currentPoint) = 1;
-                end
+        nuclearCycleBoundaries = [nc9,nc10,nc11,nc12,nc13,nc14]; % in units of frames
+        for i = 1:length(nuclearCycleBoundaries)
+            if nuclearCycleBoundaries(i) > 0
+                nuclearCycleBoundaries(i) = ElapsedTime(nuclearCycleBoundaries(i)); % in units of seconds
             end
-            
-            % Assigning points to groups based on states ----------------------
-            % done by looking for crude version of point of inflections
-            pointGroupNumbers = zeros(1,length(dydx));
-            % checking points up until the last one
-            pointRangeToSearch = 1:length(dydx)-1;
-            % searching the next two points
-            searchingPoint = pointRangeToSearch(1);
-            currentGroupNumber = 1;
-            for currentPoint = pointRangeToSearch
-                searchingPoint = searchingPoint + 1;
-                pointGroupNumbers(currentPoint) = currentGroupNumber;
-                currentState = pointSlopeState(currentPoint);
-                nextState = pointSlopeState(searchingPoint);
-                
-                currentToNeighborEquality = isequal(currentState,nextState);
-                
-                if ~currentToNeighborEquality
-                    if currentPoint > 1
-                        previousState = pointSlopeState(currentPoint-1);
-                        if ~isequal(previousState,nextState)
-                            currentGroupNumber = currentGroupNumber + 1;
+        end
+
+
+        % each row in fittedLineEquations is for a group, columns are slope and the constant
+        % each sheet (corresponding to the third index) per particle
+        fittedLineEquations = zeros(4,2,numberOfParticles);
+        allTimeOn = -1*ones(1,numberOfParticles); % stores all the time on (for particles longer than 3 data points)
+
+        % lines are only fitted to traces that are longer than 3 data points
+        averagingLength = 3; % average over 3 points. Current default setting
+        for currentParticle = 1:numberOfParticles
+
+            % getting frame information
+            [frame,~,ampIntegral3,~,~,~,~,~,~,~,~,~,~]=...
+                GetParticleTrace(currentParticle,...
+                Particles{currentChannel},Spots{currentChannel});
+            currentLength = length(frame);
+
+            % performing moving average
+            smoothedAmp = movmean(ampIntegral3,averagingLength);
+
+            % getting the corresponding time of the trace
+            currentTimeArray = ElapsedTime(frame); % Units to seconds
+            ncPresent = unique(correspondingNCInfo(frame));
+            timeOfFirstNC = nuclearCycleBoundaries(ncPresent(1)-8);
+            % adjusting frameRange to have time 0 be the start of the
+            % first nuclear cycle the particle appears in
+            currentTimeArray = currentTimeArray - timeOfFirstNC;
+
+
+            % Start of shape fitting process -----------------------------------------
+
+            % Assigning states to each point --------------------------------------
+            % states: increase or decrease from previous point
+            if currentLength > 3
+                %         plot(frameRange,smoothedAmp,'Color',colors(5,:),'LineWidth',3,'DisplayName','avg''d')
+                %         hold on
+                dydx = diff([eps; smoothedAmp'])./diff([eps; currentTimeArray']);
+                hold on
+                pointSlopeState = zeros(1,length(dydx));
+                % calculating point slope state and plotting them
+                for currentPoint = 1:length(dydx)
+
+                    if dydx(currentPoint) < 0
+                        pointSlopeState(currentPoint) = -1;
+                    else
+                        pointSlopeState(currentPoint) = 1;
+                    end
+                end
+
+                % Assigning points to groups based on states ----------------------
+                % done by looking for crude version of point of inflections
+                pointGroupNumbers = zeros(1,length(dydx));
+                % checking points up until the last one
+                pointRangeToSearch = 1:length(dydx)-1;
+                % searching the next two points
+                searchingPoint = pointRangeToSearch(1);
+                currentGroupNumber = 1;
+                for currentPoint = pointRangeToSearch
+                    searchingPoint = searchingPoint + 1;
+                    pointGroupNumbers(currentPoint) = currentGroupNumber;
+                    currentState = pointSlopeState(currentPoint);
+                    nextState = pointSlopeState(searchingPoint);
+
+                    currentToNeighborEquality = isequal(currentState,nextState);
+
+                    if ~currentToNeighborEquality
+                        if currentPoint > 1
+                            previousState = pointSlopeState(currentPoint-1);
+                            if ~isequal(previousState,nextState)
+                                currentGroupNumber = currentGroupNumber + 1;
+                            end
+                        end
+                    end
+                end
+
+                % running for the last data point
+                pointGroupNumbers(searchingPoint) = currentGroupNumber;
+
+                % creating the lines of best fit for each group -------------------
+                numberOfGroups = min(4,max(pointGroupNumbers));
+
+                % calculating the fitted lines up to the 4th fitted line
+                for currentGroup = 1:numberOfGroups
+                    correspondingIndexes = find(pointGroupNumbers == currentGroup);
+                    if currentGroup > 1
+                        % using the previous point as part of the line...
+                        correspondingIndexes = [min(correspondingIndexes)-1 correspondingIndexes];
+                    end
+                    currentAmp = smoothedAmp(correspondingIndexes);
+                    currentXs = currentTimeArray(correspondingIndexes);
+                    fittedLineEquations(currentGroup,:,currentParticle) = polyfit(currentXs,currentAmp,1);
+                    if currentGroup == 1
+                        try
+                        timeOn = roots(fittedLineEquations(currentGroup,:,currentParticle));
+                        %currentXs = [timeOn currentXs]; % include the time on in the plot
+                        allTimeOn(currentParticle) = timeOn;
                         end
                     end
                 end
             end
-            
-            % running for the last data point
-            pointGroupNumbers(searchingPoint) = currentGroupNumber;
-            
-            % creating the lines of best fit for each group -------------------
-            numberOfGroups = min(4,max(pointGroupNumbers));
-            
-            % calculating the fitted lines up to the 4th fitted line
-            for currentGroup = 1:numberOfGroups
-                correspondingIndexes = find(pointGroupNumbers == currentGroup);
-                if currentGroup > 1
-                    % using the previous point as part of the line...
-                    correspondingIndexes = [min(correspondingIndexes)-1 correspondingIndexes];
-                end
-                currentAmp = smoothedAmp(correspondingIndexes);
-                currentXs = currentTimeArray(correspondingIndexes);
-                fittedLineEquations(currentGroup,:,currentParticle) = polyfit(currentXs,currentAmp,1);
-                if currentGroup == 1
-                    try
-                    timeOn = roots(fittedLineEquations(currentGroup,:,currentParticle));
-                    %currentXs = [timeOn currentXs]; % include the time on in the plot
-                    allTimeOn(currentParticle) = timeOn;
-                    end
-                end
-            end
         end
     end
+catch
 end
 
 %% Calculation of particle speed
