@@ -47,7 +47,7 @@ function generateExpectedDataSegmentSpotsML(testCase)
   copyExpectedDataFolder(preprocessedDataPath, tifsPreProcessedData, 'Tifs', testCase.Prefix);
 
   % Generates expected data for DoGs creation
-  filterMovie(testCase.Prefix, classifierForTest, 'ignoreMemoryCheck');
+  filterMovie(testCase.Prefix, 'Weka', classifierForTest, 'ignoreMemoryCheck');
   
   % Then copy expected data for filterMovie pass 
   copyProcessedDataML(processedDataPath, filterMovieProcessedData, 'FilterMovie', testCase.Prefix);
