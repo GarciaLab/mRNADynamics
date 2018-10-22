@@ -203,7 +203,9 @@ snippet_size = 2*(floor(1300/(2*pixelSize))) + 1; % nm. note that this is forced
 LinesPerFrame = FrameInfo(1).LinesPerFrame;
 PixelsPerLine = FrameInfo(1).PixelsPerLine;
 numFrames =length(FrameInfo);
-correspondingNCInfo = [FrameInfo.nc]; % the assigned nc of the frames
+if isfield(FrameInfo, 'nc')
+    correspondingNCInfo = [FrameInfo.nc]; % the assigned nc of the frames
+end
 
 %See how  many frames we have and adjust the index size of the files to
 %load accordingly
@@ -280,6 +282,7 @@ end
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
 Channel1, Channel2, Objective, Power, DataFolderColumnValue, DropboxFolderName, Comments,...
 nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+
 
 if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file')
     
@@ -1093,12 +1096,41 @@ while (cc~='x')
         
         % plotting all nuclear embryo bonudaries as a line 
         for i = 1:length(nuclearCycleBoundaries)
-            currentNCBoundary = nuclearCycleBoundaries(i);
-            plot(traceFigAxes,ones(1,2).*currentNCBoundary,currentYLimits,...
+            currentMetaphaseBoundary = nuclearCycleBoundaries(i);
+            plot(traceFigAxes,ones(1,2).*currentMetaphaseBoundary,currentYLimits,...
                 'LineWidth',3,'Color','red');
         end
         % End of anaphase boundary marking section 
         % -----------------------------------------------------------------
+        
+        %----------------------------------------------------
+        % plotting prophase and metaphase boundaries
+        try
+            [~, ~, ~, ~, ~, ~,...
+                ~, ~,~, ~,  ~, ~, ~,...
+                ~, ~, ~, ~, ~, ~, ~, ~,...
+                p9,p10,p11,p12,p13,p14,...
+                m9,m10,m11,m12,m13,m14]...
+                = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+            
+            currentYLimits = get(gca,'YLim');  % Get the range of the y axis
+            prophaseBoundaries = [p9 p10 p11 p12 p13 p14];
+            % plotting all prophase bonudaries as a line
+            for i = 1:length(prophaseBoundaries)
+                currentProphaseBoundary = prophaseBoundaries(i);
+                plot(traceFigAxes,ones(1,2).*currentProphaseBoundary,currentYLimits,...
+                    'LineWidth',3,'Color','green');
+            end
+            
+            currentYLimits = get(gca,'YLim');  % Get the range of the y axis
+            metaphaseBoundaries = [m9 m10 m11 m12 m13 m14];
+            % plotting all metaphase bonudaries as a line
+            for i = 1:length(metaphaseBoundaries)
+                currentMetaphaseBoundary = metaphaseBoundaries(i);
+                plot(traceFigAxes,ones(1,2).*currentMetaphaseBoundary,currentYLimits,...
+                    'LineWidth',3,'Color','blue');
+            end
+        end
         
         ylabel(traceFigAxes,'integrated intensity (a.u.)')
         hold(traceFigAxes, 'off')

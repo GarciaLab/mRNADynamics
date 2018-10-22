@@ -74,6 +74,7 @@ else
     for i = 4:length(varargin)
         if strcmpi(varargin{i}, 'app')
           app{1} = varargin{i+1};
+          app{2} = varargin{i+2};
         end
     end
 
