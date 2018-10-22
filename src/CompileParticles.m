@@ -362,7 +362,7 @@ end
 
 
 %First, figure out the AP position of each of the nuclei.
-if strcmpi(ExperimentAxis, 'AP')
+if strcmpi(ExperimentAxis, 'AP') || strcmpi(ExperimentAxis, 'DV')
     %Load the AP detection information
     load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
     %Angle between the x-axis and the AP-axis
@@ -486,7 +486,7 @@ if strcmpi(ExperimentAxis,'DV')
             
             Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
             DVPosition=Distance.*sin(Angle-APAngle);
-            DVPosImage(i,j)=abs(DVPosition-offset_num);
+            DVPosImage(i,j)=DVPosition;
         end
     end
 
@@ -1127,6 +1127,37 @@ if ~isnan(nc9)|~isnan(nc10)|~isnan(nc11)|~isnan(nc12)|~isnan(nc13)|~isnan(nc14)
                     end
                 end
             end
+            
+            %DV filters:
+            if strcmpi(ExperimentAxis,'DV')
+                %Divide the DV axis into boxes of a certain DV size. We'll see which
+                    %particle falls where.
+
+                if ROI==1
+                    %Define two DVFilters for ROI and non-ROI respectively
+                    DVFilter_ROI{ChN}=false(length(CompiledParticles_ROI{ChN}),length(DVbinID));
+                    DVFilter_nonROI{ChN}=false(length(CompiledParticles_nonROI{ChN}),length(DVbinID));
+                    DVFilter{ChN}=false(length(CompiledParticles{ChN}),length(DVbinID));
+
+                    for i=1:length(CompiledParticles{ChN})
+                        DVFilter{ChN}(i,max(find(DVbinID<=abs(CompiledParticles{ChN}(i).MeanDV))))=1; %JAKE: Added abs for DV
+                    end
+
+                    for i=1:length(CompiledParticles_ROI{ChN})
+                        DVFilter_ROI{ChN}(i,max(find(DVbinID<=abs(CompiledParticles_ROI{ChN}(i).MeanDV))))=1; %JAKE: Added abs for DV
+                    end
+
+                    for i=1:length(CompiledParticles_nonROI{ChN})
+                        DVFilter_nonROI{ChN}(i,max(find(DVbinID<=abs(CompiledParticles_nonROI{ChN}(i).MeanDV))))=1; %JAKE: Added abs for DV
+                    end
+
+                else
+                    DVFilter{ChN}=logical(zeros(length(CompiledParticles{ChN}),length(DVbinID)));
+                    for i=1:length(CompiledParticles{ChN})
+                        DVFilter{ChN}(i,max(find(DVbinID<=abs(CompiledParticles{ChN}(i).MeanDV))))=1; %JAKE: Added abs for DV
+                    end
+                end
+            end
         end
     end
 end
@@ -1146,8 +1177,7 @@ for ChN=1:NChannels
         %Get the data for the individual particles in a matrix that has the frame
         %number and the particle number as dimensions. Also, get a vector that
         %reports the mean AP position.
-        [AllTracesVector{ChN},AllTracesAP{ChN}]=AllTraces(FrameInfo,CompiledParticles{ChN},'NoAP');
-        
+        [AllTracesVector{ChN},AllTracesAP{ChN},AllTracesDV{ChN}]=AllTraces(FrameInfo,CompiledParticles{ChN},'NoAP');
         if strcmpi(ExperimentAxis,'AP')
             %Mean plot for different AP positions
             
@@ -1234,6 +1264,80 @@ for ChN=1:NChannels
                 
             end
         end
+        
+        %JAKE: Add DV support
+        if strcmpi(ExperimentAxis,'DV') %JAKE: Need to change later to DV
+            %Mean plot for different  positions
+
+            %Figure out the DV range to use
+            MinDVIndex=1;%min(find(sum(APFilter)));
+            MaxDVIndex=size(DVFilter{ChN},2);%max(find(sum(APFilter)));
+
+            if ROI
+
+                %Get the corresponding mean information (ROI, CompiledParticles_ROI)
+                k=1;
+                for i=MinDVIndex:MaxDVIndex
+                    [MeanVectorDVTemp_ROI,SDVectorDVTemp_ROI,NParticlesDVTemp_ROI]=AverageTraces(FrameInfo,...
+                        CompiledParticles_ROI{ChN}(DVFilter_ROI{ChN}(:,i)));
+                    MeanVectorDVCell_ROI{k}=MeanVectorDVTemp_ROI';
+                    SDVectorDVCell_ROI{k}=SDVectorDVTemp_ROI';
+                    NParticlesDVCell_ROI{k}=NParticlesDVTemp_ROI';
+                    k=k+1;
+                end
+                MeanVectorDV_ROI{ChN}=cell2mat(MeanVectorDVCell_ROI);
+                SDVectorDV_ROI{ChN}=cell2mat(SDVectorDVCell_ROI);
+                NParticlesDV_ROI{ChN}=cell2mat(NParticlesDVCell_ROI);
+
+                % Get the corresponding mean information 
+                %(nonROI, CompiledParticles_nonROI -> save all in MeanVectorAP_nonROI
+                k=1;
+                for i=MinDVIndex:MaxDVIndex
+                    [MeanVectorDVTemp_nonROI,SDVectorDVTemp_nonROI,NParticlesDVTemp_nonROI]=AverageTraces(FrameInfo,...
+                        CompiledParticles_nonROI{ChN}(DVFilter_nonROI{ChN}(:,i)));
+                    MeanVectorDVCell_nonROI{k}=MeanVectorDVTemp_nonROI';
+                    SDVectorDVCell_nonROI{k}=SDVectorDVTemp_nonROI';
+                    NParticlesDVCell_nonROI{k}=NParticlesDVTemp_nonROI';
+                    k=k+1;
+                end
+                MeanVectorDV_nonROI=cell2mat(MeanVectorDVCell_nonROI);
+                SDVectorDV_nonROI=cell2mat(SDVectorDVCell_nonROI);
+                NParticlesDV_nonROI=cell2mat(NParticlesDVCell_nonROI);
+
+                % Get the mean information for all of the CompiledParticles
+                % (Save this in MeanVectorDV)
+                k=1;
+                for i=MinDVIndex:MaxDVIndex
+                    [MeanVectorDVTemp,SDVectorDVTemp,NParticlesDVTemp]=AverageTraces(FrameInfo,...
+                        CompiledParticles{ChN}(DVFilter{ChN}(:,i)));
+                    MeanVectorDVCell{k}=MeanVectorDVTemp';
+                    SDVectorDVCell{k}=SDVectorDVTemp';
+                    NParticlesDVCell{k}=NParticlesDVTemp';
+                    k=k+1;
+                end
+                MeanVectorDV{ChN}=cell2mat(MeanVectorDVCell);
+                SDVectorDV{ChN}=cell2mat(SDVectorDVCell);
+                NParticlesDV{ChN}=cell2mat(NParticlesDVCell);
+
+
+            else % This is the case which we don't use ROI option
+            %Get the corresponding mean information
+            k=1;
+            for i=MinDVIndex:MaxDVIndex
+                [MeanVectorDVTemp,SDVectorDVTemp,NParticlesDVTemp]=AverageTraces(FrameInfo,...
+                    CompiledParticles{ChN}(DVFilter{ChN}(:,i)));
+                MeanVectorDVCell{k}=MeanVectorDVTemp';
+                SDVectorDVCell{k}=SDVectorDVTemp';
+                NParticlesDVCell{k}=NParticlesDVTemp';
+                k=k+1;
+            end
+            MeanVectorDV{ChN}=cell2mat(MeanVectorDVCell);
+            SDVectorDV{ChN}=cell2mat(SDVectorDVCell);
+            NParticlesDV{ChN}=cell2mat(NParticlesDVCell);
+            
+            end
+        end
+        
         
         %Calculate the mean for all of them
         [MeanVectorAll{ChN},SDVectorAll{ChN},NParticlesAll{ChN}]=AverageTraces(FrameInfo,CompiledParticles{ChN});
