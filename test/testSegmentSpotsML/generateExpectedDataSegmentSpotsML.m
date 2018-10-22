@@ -41,13 +41,13 @@ function generateExpectedDataSegmentSpotsML(testCase)
   ExportDataForFISH(testCase.Prefix, 'keepTifs');
 
   % Generates Tifs 
-  generateTifsForWeka(testCase.Prefix);
+  filterMovie(testCase.Prefix, 'Tifs');
 
   % Then copy expected data for filterMovie pass 
   copyExpectedDataFolder(preprocessedDataPath, tifsPreProcessedData, 'Tifs', testCase.Prefix);
 
   % Generates expected data for DoGs creation
-  segmentSpotsML(testCase.Prefix, [], classifierForTest, 'ignoreMemoryCheck');
+  filterMovie(testCase.Prefix, classifierForTest, 'ignoreMemoryCheck');
   
   % Then copy expected data for filterMovie pass 
   copyProcessedDataML(processedDataPath, filterMovieProcessedData, 'FilterMovie', testCase.Prefix);
