@@ -3307,6 +3307,150 @@ elseif HistoneChannel&&strcmpi(ExperimentAxis,'DV')
     
     %If we have only one channel get rid of all the cells
     if NChannels==1
+        
+        %If we had an empty Particles structure, we need ot make some empty
+        %variables. If this code was written in a smarter way, this assignment
+        %would have happened inside the code itself.
+        if isempty(Particles{1})
+            APFilter=cell(NChannels);
+            DVFilter=cell(NChannels);
+            MeanVectorAP=cell(NChannels);
+            MeanVectorDV=cell(NChannels);
+            SDVectorAP=cell(NChannels);
+            SDVectorDV=cell(NChannels);
+            NParticlesAP=cell(NChannels);
+            NParticlesDV=cell(NChannels);
+            MeanVectorAll=cell(NChannels);
+            MeanVectorAnterior = cell(NChannels);
+            SDVectorAll=cell(NChannels);
+            NParticlesAll=cell(NChannels);
+            MaxFrame=cell(NChannels);
+            AllTracesVector=cell(NChannels);
+            AllTracesAP=cell(NChannels);
+            MeanSlopeVectorAP=cell(NChannels);
+            MeanSlopeVectorDV=cell(NChannels);
+            SDSlopeVectorAP=cell(NChannels);
+            SDSlopeVectorDV=cell(NChannels);
+            NSlopeAP=cell(NChannels);
+            NSlopeDV=cell(NChannels);
+            ParticleCountAP=cell(NChannels);
+            ParticleCountDV=cell(NChannels);
+            OnRatioAP=cell(NChannels);
+            OnRatioDV=cell(NChannels);
+            ParticleCountProbAP=cell(NChannels);
+            ParticleCountProbDV=cell(NChannels);
+            MeanVectorAllAP=cell(NChannels);
+            MeanVectorAllDV=cell(NChannels);
+            SEVectorAllAP=cell(NChannels);
+            SEVectorAllDV=cell(NChannels);
+            ncFilter=[];
+            MinAPIndex=[];
+            MaxAPIndex=[];
+            MinDVIndex=[];
+            MaxDVIndex=[];
+            NEllipsesAP=[];
+            NEllipsesDV=[];
+            EllipsesFilteredPos=[];
+            FilteredParticlesPos=[];
+        end
+        
+        
+        CompiledParticles=CompiledParticles{1};
+        APFilter=APFilter{1};
+        DVFilter=DVFilter{1};
+        MeanVectorAP=MeanVectorAP{1};
+        MeanVectorDV=MeanVectorDV{1};
+        SDVectorAP=SDVectorAP{1};
+        SDVectorDV=SDVectorDV{1};
+        NParticlesAP=NParticlesAP{1};
+        NParticlesDV=NParticlesDV{1};
+        MeanVectorAll=MeanVectorAll{1};
+        MeanVectorAnterior = MeanVectorAnterior{1};
+        SDVectorAll=SDVectorAll{1};
+        NParticlesAll=NParticlesAll{1};
+        MaxFrame=MaxFrame{1};
+        AllTracesVector=AllTracesVector{1};
+        AllTracesAP=AllTracesAP{1};
+        AllTracesDV=AllTracesDV{1};
+        MeanSlopeVectorAP=MeanSlopeVectorAP{1};
+        MeanSlopeVectorDV=MeanSlopeVectorDV{1};
+        SDSlopeVectorAP=SDSlopeVectorAP{1};
+        SDSlopeVectorDV=SDSlopeVectorDV{1};
+        NSlopeAP=NSlopeAP{1};
+        NSlopeDV=NSlopeDV{1};
+        ParticleCountAP=ParticleCountAP{1};
+        ParticleCountDV=ParticleCountDV{1};
+        OnRatioAP=OnRatioAP{1};
+        OnRatioDV=OnRatioDV{1};
+        ParticleCountProbAP=ParticleCountProbAP{1};
+        ParticleCountProbDV=ParticleCountProbDV{1};
+        EllipsesOnAP=EllipsesOnAP{1};
+        EllipsesOnDV=EllipsesOnDV{1};
+        MeanVectorAllAP=MeanVectorAllAP{1};
+        MeanVectorAllDV=MeanVectorAllDV{1};
+        SEVectorAllAP=SEVectorAllAP{1};
+        SEVectorAllDV=SEVectorAllDV{1};
+        SNR = MeanVectorAll ./ (SDVectorAll*109); %AR 7/12/16: Rough estimate. Should do better.
+        if ROI
+            MeanVectorAP_ROI=MeanVectorAP_ROI{1};
+            MeanVectorDV_ROI=MeanVectorDV_ROI{1};
+            SDVectorAP_ROI=SDVectorAP_ROI{1};
+            SDVectorDV_ROI=SDVectorDV_ROI{1};
+            NParticlesAP_ROI=NParticlesAP_ROI{1};
+            NParticlesDV_ROI=NParticlesDV_ROI{1};
+        end
+    end
+    
+    if ROI
+        save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
+            'CompiledParticles','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
+            'nc12','nc13','nc14','ncFilterID','StemLoopEnd','ncFilter','APbinID','APFilter',...
+            'MeanVectorAP','SDVectorAP','NParticlesAP','MeanVectorAll','MeanVectorAnterior',...
+            'SDVectorAll','NParticlesAll','MaxFrame','MinAPIndex','MaxAPIndex',...
+            'AllTracesVector','AllTracesAP','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
+            'MeanOffsetVector','SDOffsetVector','NOffsetParticles',...
+            'MeanSlopeVectorAP','SDSlopeVectorAP','NSlopeAP',...
+            'ParticleCountAP','APbinArea','OnRatioAP','NEllipsesAP',...
+            'ParticleCountProbAP',...
+            'EllipsesOnAP','TotalEllipsesAP',...
+            'EllipsePos','EllipsesFilteredPos','FilteredParticlesPos',...
+            'MeanVectorAllAP','SEVectorAllAP', 'Prefix',...
+            'MeanVectorAP_ROI','SDVectorAP_ROI','NParticlesAP_ROI',...
+            'MeanVectorAP_nonROI','SDVectorAP_nonROI','NParticlesAP_nonROI',...
+            'fittedLineEquations', 'DVbinID','DVFilter', 'MeanVectorDV','SDVectorDV',...
+            'NParticlesDV','MaxDVIndex','MinDVIndex',...
+            'MeanSlopeVectorDV','SDSlopeVectorDV','NSlopeDV',...
+            'ParticleCountDV','DVbinArea','OnRatioDV','NEllipsesDV',...
+            'ParticleCountProbDV','EllipsesOnDV','TotalEllipsesDV',...
+            'MeanVectorAllDV','SEVectorAllDV', 'MeanVectorDV_ROI',...
+            'SDVectorDV_ROI','NParticlesDV_ROI','MeanVectorDV_nonROI',...
+            'SDVectorDV_nonROI','NParticlesDV_nonROI','-v7.3');
+    else
+        save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
+            'CompiledParticles','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
+            'nc12','nc13','nc14','ncFilterID','StemLoopEnd','ncFilter','APbinID','APFilter',...
+            'MeanVectorAP','SDVectorAP','NParticlesAP','MeanVectorAll','MeanVectorAnterior',...
+            'SDVectorAll','NParticlesAll','MaxFrame','MinAPIndex','MaxAPIndex',...
+            'AllTracesVector','AllTracesAP','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
+            'MeanOffsetVector','SDOffsetVector','NOffsetParticles',...
+            'MeanSlopeVectorAP','SDSlopeVectorAP','NSlopeAP',...
+            'ParticleCountAP','APbinArea','OnRatioAP','NEllipsesAP',...
+            'ParticleCountProbAP',...
+            'EllipsesOnAP','TotalEllipsesAP',...
+            'EllipsePos','EllipsesFilteredPos','FilteredParticlesPos',...
+            'MeanVectorAllAP','SEVectorAllAP', 'Prefix',...
+            'fittedLineEquations','DVbinID','DVFilter', 'MeanVectorDV','SDVectorDV',...
+            'NParticlesDV','MaxDVIndex','MinDVIndex',...
+            'MeanSlopeVectorDV','SDSlopeVectorDV','NSlopeDV',...
+            'ParticleCountDV','DVbinArea','OnRatioDV','NEllipsesDV',...
+            'ParticleCountProbDV','EllipsesOnDV','TotalEllipsesDV',...
+            'MeanVectorAllDV','SEVectorAllDV', 'MeanVectorDV',...
+            'SDVectorDV','NParticlesDV','-v7.3');
+    end
+    
+    
+    %If we have only one channel get rid of all the cells
+    if NChannels==1
         CompiledParticles=CompiledParticles{1};
         MeanVectorAll=MeanVectorAll{1};
         SDVectorAll=SDVectorAll{1};
