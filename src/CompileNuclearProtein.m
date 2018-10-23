@@ -111,7 +111,7 @@ NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
 
 
 %Add the APPosition to Particles if they don't exist yet
-if (~isfield(schnitzcells,'APpos'))&&(strcmpi(ExperimentAxis,'ap'))
+if (~isfield(schnitzcells,'APpos'))&&(strcmpi(ExperimentAxis,'AP')||strcmpi(ExperimentAxis,'DV'))
     %First, run this to get the alignment between the zoom-in and zoom-out
     %images:
     AddParticlePosition(Prefix)
@@ -207,10 +207,16 @@ for i=1:length(schnitzcells)
             CompiledNuclei(k).schnitz=i;
 
             
-            if strcmpi(ExperimentAxis,'ap')
+            if strcmpi(ExperimentAxis,'AP')
                 %Determine the particles average and median AP position
                 CompiledNuclei(k).MeanAP=mean(schnitzcells(i).APpos(FrameFilter));
                 CompiledNuclei(k).MedianAP=median(schnitzcells(i).APpos(FrameFilter));
+            else if strcmpi(ExperimentAxis,'DV')
+                CompiledNuclei(k).MeanDV=mean(schnitzcells(i).DVpos(FrameFilter));
+                CompiledNuclei(k).MedianDV=median(schnitzcells(i).DVpos(FrameFilter));
+                CompiledNuclei(k).MeanAP=mean(schnitzcells(i).APpos(FrameFilter));
+                CompiledNuclei(k).MedianAP=median(schnitzcells(i).APpos(FrameFilter));
+                end
             end
 
             %Copy and extract the fluorescence information
@@ -315,7 +321,7 @@ end
 
 
 
-if strcmpi(ExperimentAxis,'ap')
+if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
     %AP filters:
 
     %Divide the AP axis into boxes of a certain AP size. We'll see which
@@ -351,12 +357,47 @@ if strcmpi(ExperimentAxis,'ap')
     end
 end
 
+if strcmpi(ExperimentAxis,'DV')
+    %DV filters:
+
+    %Divide the AP axis into boxes of a certain AP size. We'll see which
+    %particle falls where.
+
+    DVbinID=linspace(-800,0,51); %JAKE: Would change to DV resolution later
+
+    DVFilter=false(length(CompiledNuclei),length(DVbinID));
+    
+    if ROI==1
+        %Define two DVFilters for ROI and non-ROI respectively
+        DVFilter_ROI=false(length(CompiledNuclei_ROI),length(DVbinID));
+        DVFilter_nonROI=false(length(CompiledNuclei_nonROI),length(DVbinID));
+        DVFilter=false(length(CompiledNuclei),length(DVbinID));
+
+        for i=1:length(CompiledNuclei)
+            DVFilter(i,max(find(DVbinID<=CompiledNuclei(i).MeanDV)))=1;
+        end
+
+        for i=1:length(CompiledNuclei_ROI)
+            DVFilter_ROI(i,max(find(DVbinID<=CompiledNuclei_ROI(i).MeanDV)))=1;
+        end
+
+        for i=1:length(CompiledNuclei_nonROI)
+            DVFilter_nonROI(i,max(find(DVbinID<=CompiledNuclei_nonROI(i).MeanDV)))=1;
+        end
+    
+    else
+        for i=1:length(CompiledNuclei)
+            DVFilter(i,max(find(DVbinID<=CompiledNuclei(i).MeanDV)))=1;
+        end
+    end
+end
+
 
 %% Information about the cytoplasmic fluroescence
 %If the nuclear masks are present then use them. Otherwise just calculate
 %the median of the images as a function of time
 
-if strcmp(ExperimentAxis,'AP')
+if strcmp(ExperimentAxis,'AP')|| strcmp(ExperimentAxis,'DV')
     [MeanCyto,SDCyto,MedianCyto,MaxCyto,...
         MeanCytoAPProfile,SDCytoAPProfile,SECytoAPProfile]=GetCytoMCP(Prefix);
 else
@@ -385,13 +426,14 @@ end
 %% Binning and averaging data
 
 
-if strcmpi(ExperimentAxis,'ap')
+%Get the data for the individual particles in a matrix that has the frame
+%number and the particle number as dimensions. Also, get a vector that
+%reports the mean position.
+[AllTracesVector,AllTracesAP, AllTracesDV]=AllTracesNuclei(FrameInfo,CompiledNuclei);
 
-   
-    %Get the data for the individual particles in a matrix that has the frame
-    %number and the particle number as dimensions. Also, get a vector that
-    %reports the mean AP position.
-    [AllTracesVector,AllTracesAP]=AllTracesNuclei(FrameInfo,CompiledNuclei);
+if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
+
+
 
     %Mean plot for different AP positions
 
@@ -557,6 +599,172 @@ if strcmpi(ExperimentAxis,'ap')
     end
 end
     
+if strcmpi(ExperimentAxis,'DV')
+
+    %Mean plot for different DV positions
+
+    %Figure out the DV range to use
+    MinDVIndex=1;%min(find(sum(DVFilter)));
+    MaxDVIndex=size(DVFilter,2);%max(find(sum(DVFilter)));
+    
+    if ROI
+        % Mean values for ROI region
+        k=1;
+        for i=MinDVIndex:MaxDVIndex
+            [MeanVectorDVTemp_ROI,SDVectorDVTemp_ROI,NParticlesDVTemp_ROI]=AverageTracesNuclei(FrameInfo,...
+                CompiledNuclei_ROI(DVFilter_ROI(:,i)),NChannels);
+            MeanVectorDVCell_ROI{k}=MeanVectorDVTemp_ROI';
+            SDVectorDVCell_ROI{k}=SDVectorDVTemp_ROI';
+            NParticlesDVCell_ROI{k}=NParticlesDVTemp_ROI';
+            k=k+1;
+        end
+
+        %Turn the information into useful structures
+        if NChannels>1
+            for j=1:NChannels
+                for i=MinDVIndex:MaxDVIndex
+                    MeanVectorDVCell2_ROI{j,i}=MeanVectorDVCell_ROI{i}{j};
+                    SDVectorDVCell2_ROI{j,i}=SDVectorDVCell_ROI{i}{j};
+                    NParticlesDVCell2_ROI{j,i}=NParticlesDVCell_ROI{i}{j};
+                end
+            end
+
+            for j=1:NChannels
+                MeanVectorDV_ROI{j}=cell2mat({MeanVectorDVCell2_ROI{j,:}}')';
+                SDVectorDV_ROI{j}=cell2mat({SDVectorDVCell2_ROI{j,:}}')';;
+                NParticlesDV_ROI{j}=cell2mat({NParticlesDVCell2_ROI{j,:}}')';;
+            end
+        else
+            for i=MinDVIndex:MaxDVIndex
+                MeanVectorDVCell2_ROI{j,i}=MeanVectorDVCell_ROI{i};
+                SDVectorDVCell2_ROI{j,i}=SDVectorDVCell_ROI{i};
+                NParticlesDVCell2_ROI{j,i}=NParticlesDVCell_ROI{i};
+            end
+
+                MeanVectorDV_ROI=cell2mat(MeanVectorDVCell2_ROI);
+                SDVectorDV_ROI=cell2mat(SDVectorDVCell2_ROI);
+                NParticlesDV_ROI=cell2mat(NParticlesDVCell2_ROI);
+        end
+
+%       Get the corresponding mean information 
+%      (nonROI, CompiledParticles_nonROI)
+        k=1;
+        for i=MinDVIndex:MaxDVIndex
+            [MeanVectorDVTemp_nonROI,SDVectorDVTemp_nonROI,NParticlesDVTemp_nonROI]=AverageTracesNuclei(FrameInfo,...
+                CompiledNuclei_nonROI(DVFilter_nonROI(:,i)),NChannels);
+            MeanVectorDVCell_nonROI{k}=MeanVectorDVTemp_nonROI';
+            SDVectorDVCell_nonROI{k}=SDVectorDVTemp_nonROI';
+            NParticlesDVCell_nonROI{k}=NParticlesDVTemp_nonROI';
+            k=k+1;
+        end
+
+        %Turn the information into useful structures
+        if NChannels>1
+            for j=1:NChannels
+                for i=MinDVIndex:MaxDVIndex
+                    MeanVectorDVCell2_nonROI{j,i}=MeanVectorDVCell_nonROI{i}{j};
+                    SDVectorDVCell2_nonROI{j,i}=SDVectorDVCell_nonROI{i}{j};
+                    NParticlesDVCell2_nonROI{j,i}=NParticlesDVCell_nonROI{i}{j};
+                end
+            end
+
+            for j=1:NChannels
+                MeanVectorDV_nonROI{j}=cell2mat({MeanVectorDVCell2_nonROI{j,:}}')';
+                SDVectorDV_nonROI{j}=cell2mat({SDVectorDVCell2_nonROI{j,:}}')';;
+                NParticlesDV_nonROI{j}=cell2mat({NParticlesDVCell2_nonROI{j,:}}')';;
+            end
+        else
+            for i=MinDVIndex:MaxDVIndex
+                MeanVectorDVCell2_nonROI{j,i}=MeanVectorDVCell_nonROI{i};
+                SDVectorDVCell2_nonROI{j,i}=SDVectorDVCell_nonROI{i};
+                NParticlesDVCell2_nonROI{j,i}=NParticlesDVCell_nonROI{i};
+            end
+
+                MeanVectorDV_nonROI=cell2mat(MeanVectorDVCell2_nonROI);
+                SDVectorDV_nonROI=cell2mat(SDVectorDVCell2_nonROI);
+                NParticlesDV_nonROI=cell2mat(NParticlesDVCell2_nonROI);
+        end
+        
+        %Get the corresponding mean information (for all nuclei, both ROI and non-ROI)
+        k=1;
+        for i=MinDVIndex:MaxDVIndex
+            [MeanVectorDVTemp,SDVectorDVTemp,NParticlesDVTemp]=AverageTracesNuclei(FrameInfo,...
+                CompiledNuclei(DVFilter(:,i)),NChannels);
+            MeanVectorDVCell{k}=MeanVectorDVTemp';
+            SDVectorDVCell{k}=SDVectorDVTemp';
+            NParticlesDVCell{k}=NParticlesDVTemp';
+            k=k+1;
+        end
+
+        %Turn the information into useful structures
+        if NChannels>1
+            for j=1:NChannels
+                for i=MinDVIndex:MaxDVIndex
+                    MeanVectorDVCell2{j,i}=MeanVectorDVCell{i}{j};
+                    SDVectorDVCell2{j,i}=SDVectorDVCell{i}{j};
+                    NParticlesDVCell2{j,i}=NParticlesDVCell{i}{j};
+                end
+            end
+
+            for j=1:NChannels
+                MeanVectorDV{j}=cell2mat({MeanVectorDVCell2{j,:}}')';
+                SDVectorDV{j}=cell2mat({SDVectorDVCell2{j,:}}')';;
+                NParticlesDV{j}=cell2mat({NParticlesDVCell2{j,:}}')';;
+            end
+        else
+            for i=MinDVIndex:MaxDVIndex
+                MeanVectorDVCell2{j,i}=MeanVectorDVCell{i};
+                SDVectorDVCell2{j,i}=SDVectorDVCell{i};
+                NParticlesDVCell2{j,i}=NParticlesDVCell{i};
+            end
+
+            MeanVectorDV=cell2mat(MeanVectorDVCell2);
+            SDVectorDV=cell2mat(SDVectorDVCell2);
+            NParticlesDV=cell2mat(NParticlesDVCell2);
+        end
+
+    else % This is the case which we don't use ROI option
+
+        %Get the corresponding mean information
+        k=1;
+        for i=MinDVIndex:MaxDVIndex
+            [MeanVectorDVTemp,SDVectorDVTemp,NParticlesDVTemp]=AverageTracesNuclei(FrameInfo,...
+                CompiledNuclei(DVFilter(:,i)),NChannels);
+            MeanVectorDVCell{k}=MeanVectorDVTemp';
+            SDVectorDVCell{k}=SDVectorDVTemp';
+            NParticlesDVCell{k}=NParticlesDVTemp';
+            k=k+1;
+        end
+
+        %Turn the information into useful structures
+        if NChannels>1
+            for j=1:NChannels
+                for i=MinDVIndex:MaxDVIndex
+                    MeanVectorDVCell2{j,i}=MeanVectorDVCell{i}{j};
+                    SDVectorDVCell2_nonROI{j,i}=SDVectorDVCell{i}{j};
+                    NParticlesDVCell2_nonROI{j,i}=NParticlesDVCell{i}{j};
+                end
+            end
+
+            for j=1:NChannels
+                MeanVectorDV{j}=cell2mat({MeanVectorDVCell2{j,:}}')';
+                SDVectorDV{j}=cell2mat({SDVectorDVCell2{j,:}}')';;
+                NParticlesDV{j}=cell2mat({NParticlesDVCell2{j,:}}')';;
+            end
+        else
+            for i=MinDVIndex:MaxDVIndex
+                MeanVectorDVCell2{j,i}=MeanVectorDVCell{i};
+                SDVectorDVCell2{j,i}=SDVectorDVCell{i};
+                NParticlesDVCell2{j,i}=NParticlesDVCell{i};
+            end
+
+            MeanVectorDV=cell2mat(MeanVectorDVCell2);
+            SDVectorDV=cell2mat(SDVectorDVCell2);
+            NParticlesDV=cell2mat(NParticlesDVCell2);
+        end
+    end
+end
+
 
 %Calculate the mean for all of them
 if ROI
@@ -595,7 +803,6 @@ end
 
 
 if strcmpi(ExperimentAxis,'ap')
-    
     % consider ROI option
     if ROI
         save([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],...
@@ -622,12 +829,47 @@ if strcmpi(ExperimentAxis,'ap')
             'MeanCyto','SDCyto','MedianCyto','MaxCyto',...
             'MeanCytoAPProfile','SDCytoAPProfile','SECytoAPProfile','IntegrationArea', '-v7.3');
     end
-else
-    save([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],...
-        'CompiledNuclei','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
-        'nc12','nc13','nc14','ncFilterID','ncFilter','MeanVectorAll',...
-        'SDVectorAll','NParticlesAll','MaxFrame',...
-        'MeanCyto','SDCyto','MedianCyto','MaxCyto','IntegrationArea', '-v7.3')
+    else if strcmpi(ExperimentAxis,'DV')
+            if ROI
+                save([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],...
+                    'CompiledNuclei','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
+                    'nc12','nc13','nc14','ncFilterID','ncFilter','APbinID','APFilter',...
+                    'MeanVectorAP','SDVectorAP','NParticlesAP',...
+                    'MeanVectorAll','SDVectorAll','NParticlesAll',...
+                    'MeanVectorAll_ROI','SDVectorAll_ROI','NParticlesAll_ROI',...
+                    'MeanVectorAll_nonROI','SDVectorAll_nonROI','NParticlesAll_nonROI',...
+                    'MaxFrame','MinAPIndex','MaxAPIndex',...
+                    'AllTracesVector','AllTracesAP',...
+                    'MeanCyto','SDCyto','MedianCyto','MaxCyto',...
+                    'MeanCytoAPProfile','SDCytoAPProfile','SECytoAPProfile',...
+                    'MeanVectorAP_ROI','SDVectorAP_ROI','NParticlesAP_ROI',...
+                    'MeanVectorAP_nonROI','SDVectorAP_nonROI','NParticlesAP_nonROI',...
+                    'CompiledNuclei_ROI','CompiledNuclei_nonROI','IntegrationArea',...
+                    'DVbinID','DVFilter''MeanVectorDV','SDVectorDV','NParticlesDV',...
+                    'MinDVIndex','MaxDVIndex', 'AllTracesDV','MeanVectorAP_ROI',...
+                    'SDVectorDV_ROI','NParticlesDV_ROI','MeanVectorDV_nonROI','SDVectorDV_nonROI',...
+                    'NParticlesDV_nonROI','-v7.3');
+            else 
+                save([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],...
+                    'CompiledNuclei','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
+                    'nc12','nc13','nc14','ncFilterID','ncFilter','APbinID','APFilter',...
+                    'MeanVectorAP','SDVectorAP','NParticlesAP','MeanVectorAll',...
+                    'SDVectorAll','NParticlesAll','MaxFrame','MinAPIndex','MaxAPIndex',...
+                    'AllTracesVector','AllTracesAP',...
+                    'MeanCyto','SDCyto','MedianCyto','MaxCyto',...
+                    'MeanCytoAPProfile','SDCytoAPProfile','SECytoAPProfile','IntegrationArea',...
+                    'DVbinID','DVFilter','MeanVectorDV','SDVectorDV','NParticlesDV',...
+                    'MinDVIndex','MaxDVIndex', 'AllTracesDV','MeanVectorAP',...
+                    'SDVectorDV','NParticlesDV','-v7.3');
+    
+            end
+        else
+            save([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],...
+            'CompiledNuclei','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
+            'nc12','nc13','nc14','ncFilterID','ncFilter','MeanVectorAll',...
+            'SDVectorAll','NParticlesAll','MaxFrame',...
+            'MeanCyto','SDCyto','MedianCyto','MaxCyto','IntegrationArea', '-v7.3')
+        end
 end
 
 
