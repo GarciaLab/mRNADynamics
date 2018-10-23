@@ -2893,9 +2893,10 @@ end
 
 %% Fitting shapes to single traces (includes time on and initial rate of loading)
 % This section of code is will fit lines in a piece wise fashion to the
-% single traces. fittedLineEquations correspond to the stored fitted lines of the
-% particles, where the indexing is as follows:
-% fittedLineEquations(fittedLine,equationCoefficients,particle). This currently
+% single traces. fittedLineEquations correspond to the stored fitted lines
+% of the particles, where the indexing is as follows:
+% fittedLineEquations(particleNumber) with fields: Coefficients,
+% ErrorEstimation, and frameIndex, which are described below. This currently
 % does not support more than one channel. Please contact Emma to work on
 % implementing it for two channels.
 try
@@ -2906,111 +2907,122 @@ try
         numberOfParticles = size(Particles{:},2);
         correspondingNCInfo = [FrameInfo.nc];
         currentChannel = 1;
-
+        
         nuclearCycleBoundaries = [nc9,nc10,nc11,nc12,nc13,nc14]; % in units of frames
         for i = 1:length(nuclearCycleBoundaries)
             if nuclearCycleBoundaries(i) > 0
                 nuclearCycleBoundaries(i) = ElapsedTime(nuclearCycleBoundaries(i)); % in units of seconds
             end
         end
-
-
-        % each row in fittedLineEquations is for a group, columns are slope and the constant
-        % each sheet (corresponding to the third index) per particle
-        fittedLineEquations = zeros(4,2,numberOfParticles);
-        allTimeOn = -1*ones(1,numberOfParticles); % stores all the time on (for particles longer than 3 data points)
-
+        
+        % The following for loop will create fittedLineEquations, which is a
+        % structure array with the following fields:
+        % Coefficients: a cell array of the coefficients of the lines fitted to
+        % the trace, where each row is for a line. The slope has units of
+        % AU/Time and the constant has units of AU (where Time is the unit of
+        % Elapsted Time). The function polyfit was used to make this.
+        % ErrorEstimation: The error estimation structure given by polyfit
+        % FrameIndex: a cell array of the first and last frames used to create
+        % the corredponding lines, where each row corresponds to a line.
+        % Note that the first fitted line can be used to find the time on
+        % (accomplished by taking the root of the equation with the function
+        % roots).
+        
+        % Example:
+        % To plot the line of the first three fitted line would be written as:
+        % figure()
+        % hold on
+        % currentParticle = 1; % doing this for the first particle
+        % for currentLine = 1:3
+        %     currentCoefficients = fittedLineEquations(currentParticle).coefficients{currentLine};
+        %     currentXPoints = fittedLineEquations(currentParticle).frameIndex{currentLine};
+        %     currentYPoints = polyval(currentCoefficients,currentXPoints);
+        %     plot(currentXPoints, currentYPoints);
+        % end
+        
         % lines are only fitted to traces that are longer than 3 data points
         averagingLength = 3; % average over 3 points. Current default setting
         for currentParticle = 1:numberOfParticles
-
+            
             % getting frame information
             [frame,~,ampIntegral3,~,~,~,~,~,~,~,~,~,~]=...
                 GetParticleTrace(currentParticle,...
                 Particles{currentChannel},Spots{currentChannel});
             currentLength = length(frame);
-
+            
             % performing moving average
             smoothedAmp = movmean(ampIntegral3,averagingLength);
-
+            
             % getting the corresponding time of the trace
             currentTimeArray = ElapsedTime(frame); % Units to seconds
             ncPresent = unique(correspondingNCInfo(frame));
+            % below subtracts 8 because the first element correspond to nc 9
             timeOfFirstNC = nuclearCycleBoundaries(ncPresent(1)-8);
             % adjusting frameRange to have time 0 be the start of the
             % first nuclear cycle the particle appears in
             currentTimeArray = currentTimeArray - timeOfFirstNC;
-
-
+            
+            
             % Start of shape fitting process -----------------------------------------
-
+            
             % Assigning states to each point --------------------------------------
             % states: increase or decrease from previous point
             if currentLength > 3
-                %         plot(frameRange,smoothedAmp,'Color',colors(5,:),'LineWidth',3,'DisplayName','avg''d')
-                %         hold on
                 dydx = diff([eps; smoothedAmp'])./diff([eps; currentTimeArray']);
                 hold on
-                pointSlopeState = zeros(1,length(dydx));
-                % calculating point slope state and plotting them
-                for currentPoint = 1:length(dydx)
-
-                    if dydx(currentPoint) < 0
-                        pointSlopeState(currentPoint) = -1;
-                    else
-                        pointSlopeState(currentPoint) = 1;
-                    end
-                end
-
+                pointsSlopeState = zeros(1,length(dydx));
+                % assigning points' slope state
+                pointsSlopeState(dydx<0) = -1;
+                pointsSlopeState(dydx>=0) = 1;
+                
                 % Assigning points to groups based on states ----------------------
                 % done by looking for crude version of point of inflections
                 pointGroupNumbers = zeros(1,length(dydx));
                 % checking points up until the last one
                 pointRangeToSearch = 1:length(dydx)-1;
-                % searching the next two points
                 searchingPoint = pointRangeToSearch(1);
                 currentGroupNumber = 1;
+                % Grouping the points based on change in the points' slope
+                % state (ignores fluctions of duration of one point)
                 for currentPoint = pointRangeToSearch
                     searchingPoint = searchingPoint + 1;
                     pointGroupNumbers(currentPoint) = currentGroupNumber;
-                    currentState = pointSlopeState(currentPoint);
-                    nextState = pointSlopeState(searchingPoint);
-
+                    currentState = pointsSlopeState(currentPoint);
+                    nextState = pointsSlopeState(searchingPoint);
+                    
                     currentToNeighborEquality = isequal(currentState,nextState);
-
+                    
                     if ~currentToNeighborEquality
                         if currentPoint > 1
-                            previousState = pointSlopeState(currentPoint-1);
+                            previousState = pointsSlopeState(currentPoint-1);
                             if ~isequal(previousState,nextState)
                                 currentGroupNumber = currentGroupNumber + 1;
                             end
                         end
                     end
                 end
-
-                % running for the last data point
-                pointGroupNumbers(searchingPoint) = currentGroupNumber;
-
+                
+                % assigning the last point to the last group made
+                pointGroupNumbers(end) = currentGroupNumber;
+                
                 % creating the lines of best fit for each group -------------------
-                numberOfGroups = min(4,max(pointGroupNumbers));
-
-                % calculating the fitted lines up to the 4th fitted line
+                numberOfGroups = max(pointGroupNumbers);
                 for currentGroup = 1:numberOfGroups
-                    correspondingIndexes = find(pointGroupNumbers == currentGroup);
+                    correspondingFrameIndexes = find(pointGroupNumbers == currentGroup);
                     if currentGroup > 1
                         % using the previous point as part of the line...
-                        correspondingIndexes = [min(correspondingIndexes)-1 correspondingIndexes];
+                        correspondingFrameIndexes = [min(correspondingFrameIndexes)-1 correspondingFrameIndexes];
                     end
-                    currentAmp = smoothedAmp(correspondingIndexes);
-                    currentXs = currentTimeArray(correspondingIndexes);
-                    fittedLineEquations(currentGroup,:,currentParticle) = polyfit(currentXs,currentAmp,1);
-                    if currentGroup == 1
-                        try
-                        timeOn = roots(fittedLineEquations(currentGroup,:,currentParticle));
-                        %currentXs = [timeOn currentXs]; % include the time on in the plot
-                        allTimeOn(currentParticle) = timeOn;
-                        end
-                    end
+                    % saving the boundaries of
+                    % correspondingFrameIndexes in frameIndex
+                    fittedLineEquations(currentParticle).frameIndex(currentGroup,:)...
+                        = [correspondingFrameIndexes(1) correspondingFrameIndexes(end)];
+                    
+                    currentAmpSegment = smoothedAmp(correspondingFrameIndexes);
+                    currentXSegment = currentTimeArray(correspondingFrameIndexes);
+                    [fittedLineEquations(currentParticle).Coefficients(currentGroup,:),...
+                        fittedLineEquations(currentParticle).ErrorEstimation(currentGroup)]...
+                        =  polyfit(currentXSegment,currentAmpSegment,1);
                 end
             end
         end
@@ -3084,7 +3096,6 @@ try
         end
     end
 catch
-    %who knows. 
 end
 
 %% Movie of AP profile
