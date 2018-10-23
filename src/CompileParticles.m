@@ -2120,16 +2120,19 @@ if HistoneChannel&&strcmpi(ExperimentAxis,'AP')
                             CompiledParticles{ChN}(CompiledParticlesToCheck(j)).FluoError];
                     end
                 end
-                
-                %Sum the fluorescence values and divide by the number of ellipses
-                for j=1:length(APbinID)
-                    if ~isnan(APbinArea(j))
-                        APFilterTemp=(APbinID(j)<=FilteredCompiledParticlesPos)&...
-                            (FilteredCompiledParticlesPos<APbinID(j+1));
-                        
-                        MeanVectorAllAP{ChN}(i,j)=sum(FluorescenceCompiledParticles(APFilterTemp))/NEllipsesAP(i,j);
-                        SEVectorAllAP{ChN}(i,j)=sqrt(sum((ErrorFluorescenceCompiledParticles(APFilterTemp)/NEllipsesAP(i,j)).^2));
+                try
+                    %Sum the fluorescence values and divide by the number of ellipses
+                    for j=1:length(APbinID)
+                        if ~isnan(APbinArea(j))
+                            APFilterTemp=(APbinID(j)<=FilteredCompiledParticlesPos)&...
+                                (FilteredCompiledParticlesPos<APbinID(j+1));
+
+                            MeanVectorAllAP{ChN}(i,j)=sum(FluorescenceCompiledParticles(APFilterTemp))/NEllipsesAP(i,j);
+                            SEVectorAllAP{ChN}(i,j)=sqrt(sum((ErrorFluorescenceCompiledParticles(APFilterTemp)/NEllipsesAP(i,j)).^2));
+                        end
                     end
+                catch
+                    %AR 10/22- not really sure why this fails. 
                 end
             end
             
