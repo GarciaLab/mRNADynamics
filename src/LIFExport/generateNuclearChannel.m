@@ -19,11 +19,11 @@ function Projection = generateNuclearChannel(numberOfFrames, LIFImages, framesIn
   
                     
   if ~nNuclearChannels==0
-      for nuclearChannel=1:nNuclearChannels
+      for ChannelIndex=1:nNuclearChannels
           
         % Find the corresponding channel
         AllNuclearChannels = find(~NuclearChannels==0,nNuclearChannels);
-        nuclearChannel = AllNuclearChannels(nuclearChannel);
+        nuclearChannel = AllNuclearChannels(ChannelIndex);
         
         % For all 'nuclear' channels, generate HisSlices, and do projection
         HisSlices = zeros([size(LIFImages{seriesIndex}{1,1},1), size(LIFImages{seriesIndex}{1,1},2), NSlices(seriesIndex)]);
@@ -37,25 +37,31 @@ function Projection = generateNuclearChannel(numberOfFrames, LIFImages, framesIn
         
         % Calculate the projection (either Maximum or Median)
           if strcmpi(ProjectionType,'medianprojection')
-            ProjectionTemp(:,:,nuclearChannel) = median(HisSlices, 3);
+            ProjectionTemp(:,:,ChannelIndex) = median(HisSlices, 3);
           elseif strcmpi(ProjectionType,'middleprojection')
-            ProjectionTemp(:,:,nuclearChannel) = max(HisSlices(:,:,round(NSlices*.50):round(NSlices*.75)), [], 3); 
+            ProjectionTemp(:,:,ChannelIndex) = max(HisSlices(:,:,round(NSlices*.50):round(NSlices*.75)), [], 3); 
           else
-            ProjectionTemp(:,:,nuclearChannel) = max(HisSlices, [], 3);
+            ProjectionTemp(:,:,ChannelIndex) = max(HisSlices, [], 3);
           end
         % Think about "invertedNuclear", for example, MCP-mCherry, then
         % invert the ProjectionTemp using imcomplement
         if InvertedChannels(nuclearChannel)==1
-            ProjectionTemp(:,:,nuclearChannel) = imcomplement(ProjectionTemp(:,:,nuclearChannel));
+            ProjectionTemp(:,:,ChannelIndex) = imcomplement(ProjectionTemp(:,:,ChannelIndex));
         end
         
         % Use the reference histogram to scale the Projection (This part
         % might need some more optimization later-YJK)
-        ProjectionTemp(:,:,nuclearChannel) = histeq(mat2gray(ProjectionTemp(:,:,nuclearChannel)), ReferenceHist);
-        ProjectionTemp(:,:,nuclearChannel) = ProjectionTemp(:,:,nuclearChannel) * 10000;   
+        ProjectionTemp(:,:,ChannelIndex) = histeq(mat2gray(ProjectionTemp(:,:,ChannelIndex)), ReferenceHist);
+        ProjectionTemp(:,:,ChannelIndex) = ProjectionTemp(:,:,ChannelIndex) * 10000;   
       end
-    
-      Projection = nanmean(ProjectionTemp,3);
+     
+      % Getting average of all Projections
+      if nNuclearChannels > 1
+        Projection = nanmean(ProjectionTemp,3);
+      elseif nNuclearChannels == 1
+        Projection = ProjectionTemp;
+      end
+      
   % In case of old datasets (does not have ":Nuclear")
   else
         HisSlices = zeros([size(LIFImages{seriesIndex}{1,1},1), size(LIFImages{seriesIndex}{1,1},2), NSlices(seriesIndex)]);
