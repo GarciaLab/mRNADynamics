@@ -4,6 +4,6 @@ function processLIFFrame(numberOfFrames, Prefix, BlankImage, OutputFolder, LIFIm
   end
   %Now copy nuclear tracking images
   if fiducialChannel
-    generateNuclearChannel(numberOfFrames, LIFImages, framesIndex, seriesIndex, NSlices, NChannels, fiducialChannel, histoneChannel, ProjectionType, ExperimentType, Channel1, Channel2, Channel3, ReferenceHist, OutputFolder, Prefix);
+    processFiducialChannel(numberOfFrames, LIFImages, framesIndex, seriesIndex, NSlices, NChannels, fiducialChannel, histoneChannel, ProjectionType, ExperimentType, Channel1, Channel2, Channel3, ReferenceHist, OutputFolder, Prefix);
   end
 end
