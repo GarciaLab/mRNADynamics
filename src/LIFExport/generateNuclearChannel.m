@@ -12,7 +12,12 @@ function Projection = generateNuclearChannel(numberOfFrames, LIFImages, framesIn
                 contains(Channel2,'Nuclear','IgnoreCase',true),...
                 contains(Channel3,'Nuclear','IgnoreCase',true)];
   nNuclearChannels = sum(NuclearChannels);
-
+  AllNuclearChannels = find(~NuclearChannels==0,nNuclearChannels);
+%     for i=1:3
+%         if ~NuclearChannels(i)==0
+%             j=1
+%             indexNuclearChannels = i.*NuclearChannels;
+%     end
   InvertedChannels = [contains(Channel1,'inverted','IgnoreCase',true),...
                 contains(Channel2,'inverted','IgnoreCase',true),...
                 contains(Channel3,'inverted','IgnoreCase',true)];
@@ -22,7 +27,6 @@ function Projection = generateNuclearChannel(numberOfFrames, LIFImages, framesIn
       for nuclearChannel=1:nNuclearChannels
           
         % Find the corresponding channel
-        AllNuclearChannels = find(~NuclearChannels==0,nNuclearChannels);
         nuclearChannel = AllNuclearChannels(nuclearChannel);
         
         % For all 'nuclear' channels, generate HisSlices, and do projection
