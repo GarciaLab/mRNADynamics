@@ -2911,7 +2911,7 @@ try
         nuclearCycleBoundaries = [nc9,nc10,nc11,nc12,nc13,nc14]; % in units of frames
         for i = 1:length(nuclearCycleBoundaries)
             if nuclearCycleBoundaries(i) > 0
-                nuclearCycleBoundaries(i) = ElapsedTime(nuclearCycleBoundaries(i)); % in units of seconds
+                nuclearCycleBoundaries(i) = ElapsedTime(nuclearCycleBoundaries(i)); % in units of minutes
             end
         end
         
@@ -2919,8 +2919,7 @@ try
         % structure array with the following fields:
         % Coefficients: a cell array of the coefficients of the lines fitted to
         % the trace, where each row is for a line. The slope has units of
-        % AU/Time and the constant has units of AU (where Time is the unit of
-        % Elapsted Time). The function polyfit was used to make this.
+        % AU/minutes and the constant has units of AU. The function polyfit was used to make this.
         % ErrorEstimation: The error estimation structure given by polyfit
         % FrameIndex: a cell array of the first and last frames used to create
         % the corredponding lines, where each row corresponds to a line.
