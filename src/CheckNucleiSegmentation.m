@@ -245,7 +245,7 @@ end
 
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 disp('Ellipses saved. Remember to re-run TrackNuclei if you made changes.')
-close all force;
+close all;
 
 
 

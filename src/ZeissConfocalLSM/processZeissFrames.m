@@ -1,4 +1,4 @@
-function processZeissFrames(Prefix, ExperimentType, Channel1, Channel2, OutputFolder, LSMImages, LSMIndex, FrameRange, NSlices, NChannels, coatChannel, fiducialChannel, ReferenceHist)
+function processZeissFrames(Prefix, ExperimentType, Channel1, Channel2,ProjectionType, OutputFolder, LSMImages, LSMIndex, FrameRange, NSlices, NChannels, coatChannel, fiducialChannel, ReferenceHist)
   % Create a blank image
   BlankImage = uint16(zeros(size(LSMImages{1}{1, 1})));
 

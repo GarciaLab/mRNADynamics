@@ -30,21 +30,26 @@ end
 % file is not properly configured.
 % In case that the validations fail, it'll prompt the user about the location and proceed if the user confirms.
 function validateDirectory(dirPath, expectedSubpath) 
+  jenkinsFolder = 'D:\Data\JuanPabloPicasso\Data';
   directoryOkToDelete = true;  
-  
-  % Validates that the dirPath contains the 'LivemRNA' string in it
-  if ~contains(dirPath, 'LivemRNA');
-    directoryOkToDelete = false;
-  else
-    subPath = extractAfter(dirPath, 'LivemRNA');
-    
-    % Validates that the remaining path after LivemRNA is not empty, meaning that the whole folder will be deleted
-    if length(subPath) < 2
-      directoryOkToDelete = false;
-    end
 
-    if ~contains(subPath, expectedSubpath)
+  % Ignores validation if the dirPath is the Jenkins folder
+  if ~contains(dirPath, jenkinsFolder) 
+    % Validates that the dirPath contains the 'LivemRNA' string in it
+    if ~contains(dirPath, 'LivemRNA')
       directoryOkToDelete = false;
+    else
+      subPath = extractAfter(dirPath, 'LivemRNA');
+      
+      % Validates that the remaining path after LivemRNA is not empty, meaning that the whole folder will be deleted
+      if length(subPath) < 2
+        directoryOkToDelete = false;
+      end
+
+      if ~contains(subPath, expectedSubpath)
+        directoryOkToDelete = false;
+      end
+
     end
 
   end

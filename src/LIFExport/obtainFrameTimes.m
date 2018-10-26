@@ -1,8 +1,8 @@
 %Obtains frames times and first time for all the frames in the series
-function [Frame_Times, First_Time] = obtainFrameTimes(XMLFolder, SeriesFiles, NSeries, NFrames, NSlices, NChannels)
+function [Frame_Times, First_Time] = obtainFrameTimes(XMLFolder, seriesPropertiesXML, NSeries, NFrames, NSlices, NChannels)
   frameTimesIndex = 1;
   for seriesIndex = 1:NSeries
-    xDoc = xmlread([XMLFolder,filesep,SeriesFiles(seriesIndex).name]);
+    xDoc = xmlread([XMLFolder,filesep,seriesPropertiesXML(seriesIndex).name]);
     TimeStampList = xDoc.getElementsByTagName('TimeStamp');
     for framesIndex = 0:(NFrames(seriesIndex) * NSlices(seriesIndex) * NChannels) - 1
         TimeStamp = TimeStampList.item(framesIndex);

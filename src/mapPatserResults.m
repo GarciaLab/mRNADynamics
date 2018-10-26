@@ -159,7 +159,7 @@ for i = 1:length(complementLocation)
     text(complementLocation(i),wordPosition(1+mod(i,2)),strcat(tf(complementSiteIndices(i))) ,'Rotation',rotation(1+mod(i,2)),'Interpreter','none');
 end
 
-standardizeFigure(ax, [], 'axeslinewidth', 1);
+%standardizeFigure(ax, [], 'axeslinewidth', 1);
 ax.XGrid = 'on';
 ax.XMinorGrid = 'on';
 
