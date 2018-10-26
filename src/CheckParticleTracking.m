@@ -1439,7 +1439,7 @@ while (cc~='x')
                     ParticleToFollow=[];
                     DisplayRange=[];
                     try
-                    CurrentParticle = CurrentParticle + 1;
+                        CurrentParticle = CurrentParticle + 1;
                     end
                 elseif CurrentFrame < length({Spots{1}.Fits})
                     CurrentFrame=CurrentFrame+1;
@@ -1447,7 +1447,7 @@ while (cc~='x')
                     ParticleToFollow=[];
                     DisplayRange=[];
                     try
-                    CurrentParticle = CurrentParticle + 1;
+                        CurrentParticle = CurrentParticle + 1;
                     end
                 else
                     error('something''s wrong.')
@@ -1463,12 +1463,10 @@ while (cc~='x')
                    error('something''s wrong.')                 
                end
                 disp 'Spot deleted successfully. Trace figures will refresh after switching particles.' 
->>>>>>> b6b3c055c07499af4ce3ae539b1592d66bbacb24
             end
             ZoomMode=0;
             GlobalZoomMode=0;
-        end
-
+    
    
     elseif cc=='[' | cc=='{' %#ok<*OR2> %Add particle and all of its shadows to Spots.
         
@@ -1514,10 +1512,7 @@ while (cc~='x')
                         % parpool throws an error if there's a pool already running.
                       end 
                     end
-<<<<<<< HEAD
-=======
 
->>>>>>> b6b3c055c07499af4ce3ae539b1592d66bbacb24
                     parfor i = 1:ZSlices %#ok<PFUIX>
                         imAbove = [];
                         imBelow = [];

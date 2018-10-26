@@ -2891,7 +2891,7 @@ end
 
 
 
-%% Fitting shapes to single traces (includes time on and initial rate of loading)
+%% Fitting shapes` to single traces (includes time on and initial rate of loading)
 % This section of code is will fit lines in a piece wise fashion to the
 % single traces. fittedLineEquations correspond to the stored fitted lines
 % of the particles, where the indexing is as follows:
@@ -2907,7 +2907,7 @@ end
 %% Calculation of particle speed
 try
     if NChannels > 1
-        disp('Speeds could not be calculated for your data. Please contact Emma.')
+%         disp('Speeds could not be calculated for your data. Please contact Emma.')
         % implement crude? initial slope and time on calculation
     else
         numberOfParticles = size(Particles{:},2);
@@ -3182,8 +3182,11 @@ elseif strcmpi(ExperimentType, '2spot2color')
     MeanOffsetVector = NaN;
     SDOffsetVector = NaN;
     NOffsetParticles = NaN;
+    ncFilterID = NaN;
+    ncFilter = NaN;
     
-    save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
+    
+    save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mast'],...
             'CompiledParticles','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
             'nc12','nc13','nc14','StemLoopEnd','ncFilterID','ncFilter',...
             'MeanVectorAll',...

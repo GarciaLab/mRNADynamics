@@ -72,7 +72,7 @@ end
 % implementing it for two channels.
 
 if NChannels > 1
-    disp('Shapes could not be fitted to your data. Please contact Emma.')
+%     disp('Shapes could not be fitted to your data. Please contact Emma.')
     % implement crude? initial slope and time on calculation
 else
     numberOfParticles = size(Particles{:},2);
