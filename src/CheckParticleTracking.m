@@ -1381,9 +1381,19 @@ while (cc~='x')
                 elseif CurrentFrame > 1
                     CurrentFrame=CurrentFrame-1;
                     ManualZFlag=0;
+                    ParticleToFollow=[];
+                    DisplayRange=[];
+                    try
+                    CurrentParticle = CurrentParticle + 1;
+                    end
                 elseif CurrentFrame < length({Spots{1}.Fits})
                     CurrentFrame=CurrentFrame+1;
                     ManualZFlag=0;
+                    ParticleToFollow=[];
+                    DisplayRange=[];
+                    try
+                    CurrentParticle = CurrentParticle + 1;
+                    end
                 else
                     error('something''s wrong.')
                 end
@@ -1438,7 +1448,6 @@ while (cc~='x')
                             % parpool throws an error if there's a pool already running.
                         end
                     end
-                    
                     parfor i = 1:ZSlices %#ok<PFUIX>
                         imAbove = [];
                         imBelow = [];
