@@ -1,19 +1,15 @@
 % Added PreferredFileName so we can automate testing and bypass the user prompt when there are many files available.
-function FrameInfo = processLIFExportMode(Folder, ExperimentType, ProjectionType, Channel1, Channel2, Channel3, Prefix, OutputFolder, PreferredFileNameForTest, keepTifs)
-  
+function FrameInfo = processLIFExportMode(Folder, ExperimentType, FrameInfo, ProjectionType, Channel1, Channel2, Channel3, Prefix, OutputFolder, PreferredFileNameForTest, keepTifs)
   %Loads file and metadata
-  [XMLFolder, seriesPropertiesXML, seriesXML] = getSeriesFiles(Folder);
-  
+  [XMLFolder, SeriesFiles, SeriesFiles3] = getSeriesFiles(Folder);
   [~, ~, LIFImages, LIFMeta] = loadLIFFile(Folder);
   
   %Obtains frames information
   [NSeries, NFrames, NSlices, NPlanes, NChannels, Frame_Times] = getFrames(LIFMeta);
+  [Frame_Times, First_Time] = obtainFrameTimes(XMLFolder, SeriesFiles, NSeries, NFrames, NSlices, NChannels);
   
-  [Frame_Times, First_Time] = obtainFrameTimes(XMLFolder, seriesPropertiesXML, NSeries, NFrames, NSlices, NChannels);
-  
-  [InitialStackTime, zPosition] = getFirstSliceTimestamp(NSlices, NSeries, NPlanes, NChannels, Frame_Times, XMLFolder, seriesXML);
-  
-  FrameInfo = recordFrameInfo(NFrames, NSlices, InitialStackTime, LIFMeta, zPosition);
+  [InitialStackTime, zGalvo] = getFirstSliceTimestamp(NSlices, NSeries, NPlanes, NChannels, Frame_Times, XMLFolder, SeriesFiles3);
+  FrameInfo = getFrameInfo(NFrames, NSlices, InitialStackTime, LIFMeta, zGalvo);
  
   %Find the flat field (FF) information
   LIFExportMode_flatFieldImage(LIFMeta, Folder, OutputFolder, Prefix, PreferredFileNameForTest);

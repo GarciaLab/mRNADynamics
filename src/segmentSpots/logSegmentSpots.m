@@ -1,4 +1,4 @@
-function log = logSegmentSpots(DropboxFolder, Prefix, t, initialFrame, numFrames, Spots, falsePositives, Threshold, channelIndex)
+function log = logSegmentSpots(DropboxFolder, Prefix, t, numFrames, Spots, falsePositives, Threshold, channelIndex)
   logFile = [DropboxFolder, filesep, Prefix, filesep, 'log.mat'];
 
   if exist(logFile, 'file')
@@ -9,16 +9,11 @@ function log = logSegmentSpots(DropboxFolder, Prefix, t, initialFrame, numFrames
 
   log(end + 1).Date = date;
   log(end).runTime = t / 60; %min
-
-  if ~isempty(initialFrame) 
-    log(end).InitialFrame = initialFrame;
-    log(end).LastFrame = numFrames;
-    log(end).NFrames = numFrames - initialFrame + 1;
-    log(end).TimePerFrame = (t / 60) / (numFrames - initialFrame + 1);
-  else
-    log(end).LastFrame = numFrames;
-    log(end).TimePerFrame = (t / 60) / numFrames;
-  end
+  % log(end).InitialFrame = initial_frame;
+  log(end).LastFrame = numFrames;
+  % log(end).NFrames = num_frames - initial_frame + 1;
+  % log(end).TimePerFrame = (t/60)/(num_frames-initial_frame + 1);
+  log(end).TimePerFrame = (t / 60) / numFrames;
 
   detectedCircles = 0;
   detectedBalls = 0;
@@ -57,6 +52,7 @@ function log = logSegmentSpots(DropboxFolder, Prefix, t, initialFrame, numFrames
   if isfield(log, 'Classifier')
     log(end).Classifier = 'no Weka';
   end 
+
 
   save(logFile, 'log', '-v7.3');
 end 

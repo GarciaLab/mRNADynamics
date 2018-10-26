@@ -1,9 +1,9 @@
-function Spots = createSpotsStructure(Particles, numFrames, initialFrame)
+function Spots = createSpotsStructure(Particles, numFrames)
   Spots = [];
   fields = fieldnames(Particles);
   num_fields = length(fields);
 
-  for framesIndex = initialFrame:numFrames
+  for framesIndex = 1:numFrames
     frames = find([Particles.frame] == framesIndex);
 
     if ~ isempty(frames)

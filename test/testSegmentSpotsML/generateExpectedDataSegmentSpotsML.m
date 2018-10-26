@@ -18,10 +18,8 @@ function generateExpectedDataSegmentSpotsML(testCase)
   end
 
   dynamicResultsPath = getConfigValue(configValues, 'DropboxFolder');
-  preprocessedDataPath = getConfigValue(configValues, 'PreProcPath');
   processedDataPath = getConfigValue(configValues, 'FISHPath');
 
-  preprocessedDataExperimentPath = [preprocessedDataPath, filesep, testCase.Prefix];
   dynamicResultsExperimentPath = [dynamicResultsPath, filesep, testCase.Prefix];
   processedDataExperimentPath = [processedDataPath, filesep, testCase.Prefix, '_'];
 
@@ -31,25 +29,26 @@ function generateExpectedDataSegmentSpotsML(testCase)
 
   % Clean up previous runs
   deleteDirectory(dynamicResultsExperimentPath, testCase.Prefix);
-  deleteDirectory(preprocessedDataExperimentPath, testCase.Prefix);
   deleteDirectory(processedDataExperimentPath, testCase.Prefix);
   
-  [tifsPreProcessedData, filterMovieProcessedData, segmentMLDynamicsResults, ...
-    segmentMLProcessedData] = createExpectedDataStructureML(testPath, testCase.Prefix);
+  [tifsDynamicsResults, tifsProcessedData, filterMovieDynamicsResults, filterMovieProcessedData, ...
+    segmentMLDynamicsResults, segmentMLProcessedData] = createExpectedDataStructureML(testPath, testCase.Prefix);
 
   % Precondition - Run ExportsDataForFISH without deleting TIFs
   ExportDataForFISH(testCase.Prefix, 'keepTifs');
 
   % Generates Tifs 
-  filterMovie(testCase.Prefix, 'Tifs');
+  segmentSpotsML(testCase.Prefix, [], 'Tifs');
 
   % Then copy expected data for filterMovie pass 
-  copyExpectedDataFolder(preprocessedDataPath, tifsPreProcessedData, 'Tifs', testCase.Prefix);
+  copyDynamicResultsDataML(dynamicResultsPath, tifsDynamicsResults, 'Tifs', testCase.Prefix);
+  copyProcessedDataML(processedDataPath, tifsProcessedData, 'Tifs', testCase.Prefix);
 
   % Generates expected data for DoGs creation
-  filterMovie(testCase.Prefix, 'Weka', classifierForTest, 'ignoreMemoryCheck');
+  segmentSpotsML(testCase.Prefix, [], classifierForTest, 'ignoreMemoryCheck');
   
   % Then copy expected data for filterMovie pass 
+  copyDynamicResultsDataML(dynamicResultsPath, filterMovieDynamicsResults, 'FilterMovie', testCase.Prefix);
   copyProcessedDataML(processedDataPath, filterMovieProcessedData, 'FilterMovie', testCase.Prefix);
 
   % Executes segment spots ML with known DoG
@@ -58,37 +57,39 @@ function generateExpectedDataSegmentSpotsML(testCase)
   % Then copy expected data for 2nd pass 
   % TODO harrypotel: Since now there are two separate functions, we should rename the 1st pass / 2nd pass logic.
   % I don't want to change to much in a single step, so I'll handle that change later on
-  copyExpectedDataFolder(dynamicResultsPath, segmentMLDynamicsResults, 'SegmentSpotsML', testCase.Prefix);
+  copyDynamicResultsDataML(dynamicResultsPath, segmentMLDynamicsResults, 'SegmentSpotsML', testCase.Prefix);
   copyProcessedDataML(processedDataPath, segmentMLProcessedData, 'SegmentSpotsML', testCase.Prefix);
 
   disp(['Test data for segment spots completed for Prefix ', testCase.Prefix]);
 end
 
-function [tifsPreProcessedData, filterMovieProcessedData, segmentMLDynamicsResults, segmentMLProcessedData] = createExpectedDataStructureML(testPath, prefix) 
+function [tifsDynamicsResults, tifsProcessedData, filterMovieDynamicsResults, filterMovieProcessedData, segmentMLDynamicsResults, segmentMLProcessedData] = createExpectedDataStructureML(testPath, prefix) 
   % Creates root folder if it does not exist
   if 7 ~= exist(testPath, 'dir')
     mkdir(testPath);
   end
 
-  tifsPreProcessedData = createOrCleanExpectedDataSubFolderML(testPath, 'Tifs', 'PreProcessedData', prefix);
+  tifsDynamicsResults = createOrCleanExpectedDataSubFolderML(testPath, 'Tifs', 'DynamicsResults', prefix);
+  tifsProcessedData = createOrCleanExpectedDataSubFolderML(testPath, 'Tifs', 'ProcessedData', prefix);
+  filterMovieDynamicsResults = createOrCleanExpectedDataSubFolderML(testPath, 'FilterMovie', 'DynamicsResults', prefix);
   filterMovieProcessedData = createOrCleanExpectedDataSubFolderML(testPath, 'FilterMovie', 'ProcessedData', prefix);
   segmentMLDynamicsResults = createOrCleanExpectedDataSubFolderML(testPath, 'SegmentSpotsML', 'DynamicsResults', prefix);
   segmentMLProcessedData = createOrCleanExpectedDataSubFolderML(testPath, 'SegmentSpotsML', 'ProcessedData', prefix);
 
 end
 
-function expectedDataSubFolder = createOrCleanExpectedDataSubFolderML(testPath, step, subfolder, prefix)
+function folder = createOrCleanExpectedDataSubFolderML(testPath, step, subfolder, prefix)
   % Adds underscore to the end of PreprocessedData subfolder
   if strcmpi('ProcessedData', subfolder)
     prefix = [prefix, '_'];
   end
 
-  expectedDataSubFolder = [testPath, filesep, 'SegmentSpotsML', filesep, step, filesep, subfolder, filesep, prefix];
-  deleteDirectory(expectedDataSubFolder, prefix);
-  mkdir( expectedDataSubFolder);
+  folder = [testPath, filesep, 'SegmentSpotsML', filesep, step, filesep, subfolder, filesep, prefix];
+  deleteDirectory(folder, prefix);
+  mkdir folder;
 end
 
-function copyExpectedDataFolder(sourceFolder, expectedDataFolder, step, prefix)
+function copyDynamicResultsDataML(sourceFolder, expectedDataFolder, step, prefix)
   disp(['Copying DynamicResults data for segment spots ML ', step, ' of Prefix ', prefix]);
   copyfile([sourceFolder, filesep, prefix, filesep, '*'], expectedDataFolder);
   disp(['Expected data copied to folder ', expectedDataFolder]);

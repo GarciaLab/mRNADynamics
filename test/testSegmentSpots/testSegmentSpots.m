@@ -15,8 +15,6 @@ function testCase = testSegmentSpots(testCase)
   % harrypotel: Not sure why the folder on ProcessedData has a _ at the end, is it a bug?
   processedDataExperimentPath = [processedDataPath, filesep, testCase.Prefix, '_'];
 
-  % Switches to a different directory so the removal does not fail
-  cd(testPath);
   % Clean up previous runs
   deleteDirectory(dynamicResultsExperimentPath, testCase.Prefix);
   deleteDirectory(processedDataExperimentPath, testCase.Prefix);
@@ -37,6 +35,7 @@ function testCase = testSegmentSpots(testCase)
   segmentSpots(testCase.Prefix, testCase.DoG);
 
   assertLogFileExists(testCase, dynamicResultsExperimentPath);
+  assertDogsFolderEqualToExpected(testCase, processedDataExperimentPath, testPath, 'SegmentSpots_2ndPass');
   assertSpotsEqualToExpected(testCase, dynamicResultsExperimentPath, testPath, 'SegmentSpots_2ndPass');
 
   testSegmentSpotsNoThreshold(testCase);

@@ -24,7 +24,7 @@
 % 'nWorkers': Specify the number of workers to use during parallel
 % processing
 % 'noIntegralZ':  Don't establish center slice at position that maximizes raw fluo integral 
-%                 across sliding 3 z-slice window.
+%               across sliding 3 z-slice window.
 % 'intScale': Scale up the radius of integration
 % 'autoThresh': Pops up a UI to help decide on a threshhold
 %
@@ -46,8 +46,8 @@ function log = segmentSpots(Prefix, Threshold, varargin)
   warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
   [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, ...
-    pool, autoThresh, useIntegralCenter] = determineSegmentSpotsOptions(varargin);
-      
+      pool, autoThresh,use_integral_center] = determineSegmentSpotsOptions(varargin);
+
   argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
   try 
     if autoThresh
@@ -134,23 +134,23 @@ function log = segmentSpots(Prefix, Threshold, varargin)
     close all;
 
     % Create a useful structure that can be fed into pipeline
-    [Particles, fields] = saveParticleInformation(numFrames, all_frames, zSize, useIntegralCenter);
+    [Particles, fields] = saveParticleInformation(numFrames, all_frames, zSize, use_integral_center);
 
     if ~isempty(fields)
        
         [neighborhood, Particles] = segmentSpotsZTracking(pixelSize, numFrames, Particles, fields); 
 
-        [Particles, falsePositives] = findBrightestZ(Particles,numShadows, useIntegralCenter, 0);
+        [Particles, falsePositives] = findBrightestZ(Particles,numShadows, use_integral_center, 0);
 
         %Create a final Spots structure to be fed into TrackmRNADynamics
-        Spots{channelIndex} = createSpotsStructure(Particles, numFrames, 1);
+        Spots{channelIndex} = createSpotsStructure(Particles, numFrames);
  
     end
     
     t = toc;
     disp(['Elapsed time: ', num2str(t / 60), ' min'])
     try %#ok<TRYNC>
-        log = logSegmentSpots(DropboxFolder, Prefix, t, [], numFrames, Spots, falsePositives, Threshold, channelIndex);
+        log = logSegmentSpots(DropboxFolder, Prefix, t, numFrames, Spots, falsePositives, Threshold, channelIndex);
         display(log);
     end
     

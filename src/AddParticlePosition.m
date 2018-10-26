@@ -562,21 +562,16 @@ if ~NoAP
             
             %Enlarge the zoomed out image so we can do the cross-correlation
             SurfImageResized=imresize(SurfImage, ZoomRatio);
-
-            
             
             %Calculate the correlation matrix and find the maximum
-            im1 = ZoomImage;
-            im2 = SurfImageResized;
-
-            if InvertHis
-                im1 = imcomplement(im1);
-                im2 = imcomplement(im2);
-            end
-            try
-                C = gather(normxcorr2(gpuArray(im1), gpuArray(im2)));
-            catch
-                C = normxcorr2(im1, im2);
+            if ((~isempty(strfind(lower(Channel1),'bcd')))|...
+                    (~isempty(strfind(lower(Channel2),'bcd'))))
+                C = gather(normxcorr2(gpuArray(ZoomImage), gpuArray(SurfImageResized)));
+            elseif InvertHis
+                warning('I still need to fix this part')
+                C = gather(normxcorr2(imcomplement(gpuArray(ZoomImage)), gpuArray(SurfImageResized)));
+            else
+                C = gather(normxcorr2(gpuArray(ZoomImage), gpuArray(SurfImageResized)));
             end
             
             [Max2,MaxRows]=max(C);
