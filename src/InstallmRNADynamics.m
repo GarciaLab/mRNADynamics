@@ -24,17 +24,17 @@ function configContents = InstallmRNADynamics(varargin)
   PROCESSED_DATA_PATH = createDataSubDir('ProcessedData');
   RAW_DYNAMICS_DATA_PATH = createDataSubDir('RawDynamicsData'); %(old RawData folder)
   DYNAMICS_RESULTS_PATH = createDataSubDir('DynamicsResults'); %(old DropboxFolder)
-  MOVIE_DATABASE_PATH =  [DYNAMICS_RESULTS_PATH, '/MovieDatabase.csv'];
+  MOVIE_DATABASE_PATH =  [DYNAMICS_RESULTS_PATH, filesep, 'MovieDatabase.csv'];
   MS2CODE_PATH = [MRNA_DYNAMICS_PATH, filesep, 'src'];
-  TEST_PATH =  createDirInRoot('/ExpectedData');
+  TEST_PATH =  createDirInRoot('ExpectedData');
 
-  COMPUTER_FOLDERS_PATH = [ROOT_PATH, '/ComputerFolders.csv'];
+  COMPUTER_FOLDERS_PATH = [ROOT_PATH, filesep, 'ComputerFolders.csv'];
 
   if (~isempty(varargin) & strfind('updateStartupScript', varargin))
     disp('Updating MATLAB startup script');
     createStartupFile();
-  elseif exist([ROOT_PATH, '/ComputerFolders.xlsx'])
-    disp(['Existing installation detected (', [ROOT_PATH, '/ComputerFolders.xlsx'],...
+  elseif exist(COMPUTER_FOLDERS_PATH)
+    disp(['Existing installation detected (', COMPUTER_FOLDERS_PATH,...
       ' exists). Will try to update configurations to CSV format.']);
     
     configContents = migrateComputerFoldersToCSV();
@@ -61,15 +61,14 @@ function configContents = InstallmRNADynamics(varargin)
   %%
 
   function subDirPath = createDataSubDir(subDirName)
-    dataPath = createDirInRoot('/Data');
+    dataPath = createDirInRoot('Data');
 
-    subDirPath = [dataPath, '/', subDirName];
+    subDirPath = [dataPath, filesep, subDirName];
     mkdir(subDirPath);
-    subDirPath = subDirPath
   end
 
   function dirPath = createDirInRoot(folderName)
-    dirPath = [ROOT_PATH, folderName];
+    dirPath = [ROOT_PATH, filesep, folderName];
     if ~exist(dirPath)
       mkdir(dirPath);
     end
@@ -119,14 +118,14 @@ function configContents = InstallmRNADynamics(varargin)
   end
 
   function contents = migrateComputerFoldersToCSV
-    ComputerFoldersCSVPath = [ROOT_PATH, '/ComputerFolders.csv'];
-    ComputerFoldersXLSPath = [ROOT_PATH, '/ComputerFolders.xlsx'];
+    ComputerFoldersCSVPath = [ROOT_PATH, filesep, 'ComputerFolders.csv'];
+    ComputerFoldersXLSPath = [ROOT_PATH, filesep, 'ComputerFolders.xlsx'];
     contents = migrateFileToCSV(ComputerFoldersXLSPath, ComputerFoldersCSVPath, {''});
   end
 
   function migrateMovieDatabaseToCSV(movieDatabaseDirectory)
-    MovieDatabaseCSVPath = [movieDatabaseDirectory, '/MovieDatabase.csv'];
-    MovieDatabaseXLSPath = [movieDatabaseDirectory, '/MovieDatabase.xlsx'];
+    MovieDatabaseCSVPath = [movieDatabaseDirectory, filesep, 'MovieDatabase.csv'];
+    MovieDatabaseXLSPath = [movieDatabaseDirectory, filesep, 'MovieDatabase.xlsx'];
     migrateFileToCSV(MovieDatabaseXLSPath, MovieDatabaseCSVPath, {'date'});
   end
 
@@ -159,13 +158,13 @@ function configContents = InstallmRNADynamics(varargin)
     % Add the right folders to the path.
     % This will be done as a startup file in the user's folder
 
-    srcFolder = [MRNA_DYNAMICS_PATH, '/src'];
-    libFolder = [MRNA_DYNAMICS_PATH, '/lib'];
-    DependenciesFolder = [MRNA_DYNAMICS_PATH, '/lib/dependencies'];
-    testFolder = [MRNA_DYNAMICS_PATH, '/test'];
+    srcFolder = [MRNA_DYNAMICS_PATH, filesep, 'src'];
+    libFolder = [MRNA_DYNAMICS_PATH, filesep, 'lib'];
+    DependenciesFolder = [MRNA_DYNAMICS_PATH, filesep, 'lib/dependencies'];
+    testFolder = [MRNA_DYNAMICS_PATH, filesep, 'test'];
 
     % matlab paths
-    Output{1} = ['addpath(genpath(''', libFolder, '/Fiji.app/scripts''));'];
+    Output{1} = ['addpath(genpath(''', libFolder, filesep, 'Fiji.app', filesep, 'scripts''));'];
     Output{2} = ['path(''', PREPROCESSED_DATA_PATH, ''',path);'];
     Output{3} = ['path(''', ROOT_PATH, ''',path);'];
     Output{4} = ['path(''', MRNA_DYNAMICS_PATH, ''',path);'];

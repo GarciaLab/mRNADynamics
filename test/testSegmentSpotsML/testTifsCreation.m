@@ -9,29 +9,26 @@ function testCase = testTifsCreation(testCase)
   configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');
   testPath = getConfigValue(configValues, 'TestPath');
   
-  dynamicResultsPath = getConfigValue(configValues, 'DropboxFolder');
   preprocessedDataPath = getConfigValue(configValues, 'PreProcPath');
-  
-  expectedDataSubFolder = ['SegmentSpotsML', filesep, 'Tifs'];
 
-  dynamicResultsExperimentPath = [dynamicResultsPath, filesep, testCase.Prefix];
+  expectedDataSubFolder = ['SegmentSpotsML', filesep, 'Tifs'];
   
   preprocessedDataExperimentPath = [preprocessedDataPath, filesep, testCase.Prefix];
   expectedPreProcessedDataFolder = [testPath, filesep, expectedDataSubFolder, filesep, 'PreProcessedData',...
     filesep, testCase.Prefix]; 
 
+  % Switches to a different directory so the removal does not fail
+  cd(testPath);
   % Clean up previous runs
-  deleteDirectory(dynamicResultsExperimentPath, testCase.Prefix);
   deleteDirectory(preprocessedDataExperimentPath, testCase.Prefix);
 
   % Precondition - Run ExportsDataForFISH without deleting TIFs
   ExportDataForFISH(testCase.Prefix, 'keepTifs');
   
   % Tests Tifs generation
-  segmentSpotsML(testCase.Prefix, [], 'Tifs');
+  filterMovie(testCase.Prefix, 'Tifs');
 
   % Then verifies log.mat and FrameInfo.mat and expected contents of dogs folder
-  assertFrameInfoEqualToExpected(testCase, dynamicResultsExperimentPath, testPath, expectedDataSubFolder);
   compareExpectedDataDir(testCase, preprocessedDataExperimentPath, expectedPreProcessedDataFolder);
 
   elapsedTime = toc;

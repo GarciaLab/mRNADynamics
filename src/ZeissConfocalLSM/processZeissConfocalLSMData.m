@@ -1,4 +1,4 @@
-function FrameInfo = processZeissConfocalLSMData(Folder, D, FrameInfo, ExperimentType, Channel1, Channel2, Prefix, OutputFolder)
+function FrameInfo = processZeissConfocalLSMData(Folder, D, FrameInfo, ExperimentType, Channel1, Channel2, ProjectionType,Prefix, OutputFolder)
   % What type of experiment do we have?
 
     [coatChannel, ~, fiducialChannel] = obtainZeissChannels(Channel1, Channel2, ExperimentType);
@@ -43,7 +43,7 @@ function FrameInfo = processZeissConfocalLSMData(Folder, D, FrameInfo, Experimen
       [ValueField, Frame_Times] = obtainZeissFrameTimes(LSMMeta, NSlices, LSMIndex, NPlanes, NChannels, StartingTime, Frame_Times);
       [FrameRange, FrameInfo] = createZeissFrameInfo(LSMIndex, NFrames, NSlices, FrameInfo, LSMMeta, Frame_Times, ValueField);
 
-      processZeissFrames(Prefix, ExperimentType, Channel1, Channel2, OutputFolder, LSMImages, LSMIndex, FrameRange, NSlices, NChannels, coatChannel, fiducialChannel, ReferenceHist)
+      processZeissFrames(Prefix, ExperimentType, Channel1, Channel2,ProjectionType, OutputFolder, LSMImages, LSMIndex, FrameRange, NSlices, NChannels, coatChannel, fiducialChannel, ReferenceHist)
     end
   
     close(waitbarFigure);
