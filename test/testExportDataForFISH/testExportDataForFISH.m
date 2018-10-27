@@ -17,10 +17,10 @@ function testCase = testExportDataForFISH(testCase)
   expectedPreProcFolder = strcat(testPath, filesep, 'ExportDataForFISH', filesep, 'PreProcessedData', filesep,...
     testCase.Prefix);
   
-  dynamicsResultsDataFolder = strcat(dynamicsResultsPath, filesep, testCase.Prefix);
+  dynamicResultsPath = strcat(dynamicsResultsPath, filesep, testCase.Prefix);
   
   deleteDirectory(preprocessedDataFolder, testCase.Prefix);
-  deleteDirectory(dynamicsResultsDataFolder, testCase.Prefix);
+  deleteDirectory(dynamicResultsPath, testCase.Prefix);
 
   if (~isprop(testCase, 'PreferredFileName')) 
     ExportDataForFISH(testCase.Prefix, 'keepTifs');
@@ -28,7 +28,7 @@ function testCase = testExportDataForFISH(testCase)
     ExportDataForFISH(testCase.Prefix, testCase.PreferredFileName, 'keepTifs');
   end
 
-  assertFrameInfoEqualToExpected(testCase, dynamicsResultsDataFolder, testPath, 'ExportDataForFish');
+  assertFrameInfoEqualToExpected(testCase, dynamicResultsPath, testPath, 'ExportDataForFish');
   compareExpectedDataDir(testCase, preprocessedDataFolder, expectedPreProcFolder);
 
   elapsedTime = toc;
