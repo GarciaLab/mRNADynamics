@@ -36,7 +36,8 @@ lsqOptions=optimset('Display','none',... %Inherited these options from Mikhail T
 % lb = [min(min(min(snip3D))), 1, 1, 1, 0, 0];
 % ub = [inf, size(snip3D, 1), size(snip3D, 2), size(snip3D, 3), size(snip3D, 1)/2, max(max(max(snip3D)))];
 
-lb = [min(min(min(snip3D))), 1, 1, 1, -inf, -inf, -inf, -inf, -inf, -inf, 0];
+lb_offset = 1/10; %this is empirical. corresponds to a weak background of 1 pixel per ten having a value of 1. 
+lb = [max(max(max(snip3D))) / 2, 1, 1, 1, -inf, -inf, -inf, -inf, -inf, -inf, lb_offset];
 ub = [inf, size(snip3D, 1), size(snip3D, 2), size(snip3D, 3), inf, inf, inf, inf, inf, inf,max(max(max(snip3D)))];
 
 [fits, res1, residual, exitflag, output, lambda, jacobian] = lsqnonlin(single3DGaussian, ...
