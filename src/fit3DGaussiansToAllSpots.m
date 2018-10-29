@@ -98,8 +98,7 @@ end
 if length(Spots) < 2
     Spots = Spots{1};
 end
-
 save([DataFolder,filesep,'Spots.mat'])
-
+disp('Fitting done.')
 end
 
