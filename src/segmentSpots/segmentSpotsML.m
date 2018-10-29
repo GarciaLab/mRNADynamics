@@ -90,7 +90,6 @@ function segmentSpotsML(Prefix, Threshold, varargin)
   catch
     warning('Will not apply flat field correction');
     doFF = 0;
-    ffim = 0;
   end
 
   clear rawdir;
