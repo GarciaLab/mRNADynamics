@@ -88,6 +88,7 @@ function segmentSpotsML(Prefix, Threshold, varargin)
     ffim = CPsmooth(ffim, 'Gaussian Filter', 256, 0); %large feature scale-space representation
     ffim = double(ffim / max(max(ffim)));
   catch
+    ffim = ones(FrameInfo(1).LinesPerFrame,FrameInfo(1).PixelsPerLine);
     warning('Will not apply flat field correction');
     doFF = 0;
   end
