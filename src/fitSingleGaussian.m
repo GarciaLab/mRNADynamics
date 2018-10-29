@@ -37,12 +37,8 @@ lsqOptions=optimset('Display','none',... %Inherited these options from Mikhail T
 'maxfunevals',10000,...
 'maxiter',10000); 
 
-ub = inf(1, 7);
-ub(2) = length(snippet);
-ub(4) = length(snippet);
-
 [single_fit, res1, residual, exitflag, output, lambda, jacobian] = lsqnonlin(singleGaussian, ...
-    initial_parameters,zeros(1,7),ub, lsqOptions);
+    initial_parameters,zeros(1,7),inf(1,7), lsqOptions);
 
 confidence_intervals = nlparci(single_fit,residual,'jacobian',jacobian);
 errors = zeros(1, length(single_fit));
