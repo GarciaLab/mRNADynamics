@@ -215,9 +215,12 @@ else
                     normOfResiduals = fittedLineEquations(currentParticle).ErrorEstimation(currentGroup).normr;
                     RSquared = 1 - (normOfResiduals^2)/denominator;
                     errorArray = ones(1,length(currentXSegment)).*...
-                        normOfResiduals;
+                        normOfResiduals./(length(currentTimeArray)); %EL normalized by number of points included
+                    % EL Save number of particles included in group
                     errorbar(currentXSegment,currentYSegment,errorArray,'o');
-                    legend({'Avg Amp', 'Fitted Line', 'Norm of Residuals'},'Location','Best')
+                    legend({'Avg Amp', ...
+                        ['Fitted Line Slope: ' num2str(fittedLineEquations(currentParticle).Coefficients(currentGroup,1))],...
+                        'Norm of Residuals'},'Location','Best')
                     title(['Current Particle : ' num2str(currentParticle)...
                         '   R squared :' num2str(RSquared)])
                     xlabel('Time after start of nc (minutes)')
