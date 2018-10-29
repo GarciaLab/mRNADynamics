@@ -54,7 +54,8 @@ for i=1:length(Particles(CurrentParticle).Frame)
             Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).FixedAreaIntensity3;
 %             AmpIntegral3(i)=...
 %             Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).cylIntensity;
-              
+%               AmpIntegral3(i)=...
+%               Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).gauss3DIntensity;    
         catch
             AmpIntegral3(i)= NaN;
         end

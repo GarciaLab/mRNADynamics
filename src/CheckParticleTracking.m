@@ -11,6 +11,8 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 %
 % OPTIONS
 % NoSort : Flag to sort or not particles according to their starting frame
+% sortByLength : Flag to have the particles with the most points (and thus 
+%       potentially most useful) tracked show up first
 % ForCompileAll : Flag to just save the data. This is good for CompileAll
 % speedmode : Flag to plot only ellipses for current particle & save time
 % sistermode : Decide whether you want to do sister chromatid analysis
@@ -128,7 +130,9 @@ else
 end
     
 %Flag to sort or not particles according to their starting frame
-NoSort=0;
+Sort=1;
+%Flag to sort by the number of times a spot was found in each particle
+sortByLength=0;
 %Flag to just save the data. This is good for CompileAll
 ForCompileAll=0;
 %Flag to plot only ellipses for current particle & save time
@@ -146,7 +150,9 @@ Prefix = varargin{1};
 if length(varargin)>1
     for i=2:length(varargin)
         if strcmpi(varargin{i},'NoSort')
-            NoSort=1;
+            Sort=0;
+        elseif strcmpi(varargin{i},'sortByLength')
+            sortByLength=1;
         elseif strcmpi(varargin{i},'ForCompileAll')
             ForCompileAll=1;
         elseif strcmpi(varargin{i}, 'speedmode')
@@ -361,15 +367,22 @@ end
 % end
 
 %Order particles by the earliest frame they appear at. This makes the
-%tracking a lot easier!
-if ~NoSort
+%tracking a lot easier! Can also track by the number of spots in a trace
+if Sort
     for ChN=1:NChannels
+        nParticles = length(Particles{ChN});
+        sortIndex = zeros(1, nParticles);
         for i=1:length(Particles{ChN})
-            FirstFrame(i)=Particles{ChN}(i).Frame(1);
+            if sortByLength %sort by most points in particle
+                sortIndex(i)=length(Particles{ChN}(i).Frame);
+                direction = 'descend';
+            else %Otherwise, sort by first frame as normal
+                sortIndex(i)=Particles{ChN}(i).Frame(1);
+                direction = 'ascend';
+            end
         end
-        [~,Permutations]=sort(FirstFrame);
+        [~,Permutations]=sort(sortIndex,direction);
         Particles{ChN}=Particles{ChN}(Permutations);
-        clear FirstFrame
     end
 end
 
@@ -1421,6 +1434,26 @@ while (cc~='x')
                     CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(1);
                     ParticleToFollow=[];
                     DisplayRange=[];
+                elseif CurrentFrame > 1
+                    CurrentFrame=CurrentFrame-1;
+                    ManualZFlag=0;
+                    ParticleToFollow=[];
+                    DisplayRange=[];
+                    try
+                        CurrentParticle = CurrentParticle + 1;
+                    end
+                elseif CurrentFrame < length({Spots{1}.Fits})
+                    CurrentFrame=CurrentFrame+1;
+                    ManualZFlag=0;
+                    ParticleToFollow=[];
+                    DisplayRange=[];
+                    try
+                        CurrentParticle = CurrentParticle + 1;
+                    end
+                else
+                    error('something''s wrong.')
+                end
+                disp 'Spot deleted successfully. Trace figures will refresh after switching particles.'
                elseif CurrentFrame > 1
                    CurrentFrame=CurrentFrame-1;
                    ManualZFlag=0;
@@ -1434,8 +1467,7 @@ while (cc~='x')
             end
             ZoomMode=0;
             GlobalZoomMode=0;
-        end
-
+    
    
     elseif cc=='[' | cc=='{' %#ok<*OR2> %Add particle and all of its shadows to Spots.
         
