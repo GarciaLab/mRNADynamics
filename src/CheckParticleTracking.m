@@ -382,6 +382,7 @@ if Sort
             end
         end
         [~,Permutations]=sort(sortIndex,direction);
+        Particles{ChN}=Particles{ChN}(Permutations);
     end
 end
 

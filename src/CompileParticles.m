@@ -3063,7 +3063,7 @@ end
 % ROI option added (YJK on 10/27/2017) :
 % When the data is acquired in ROI mode, I added the ROI option,
 % two thresholds to be incorporated into CompileNuclearProtein
-if strcmpi(ExperimentType,'inputoutput') && strcmpi(ExperimentAxis,'ap')
+if strcmpi(ExperimentType,'inputoutput') && (strcmpi(ExperimentAxis,'AP')||strcmpi(ExperimentAxis,'DV'))
     if ~ROI
         CompileNuclearProtein(Prefix)
     else
@@ -3219,11 +3219,11 @@ elseif HistoneChannel&&strcmpi(ExperimentAxis,'DV')
             AllTracesVector=cell(NChannels);
             AllTracesAP=cell(NChannels);
             MeanSlopeVectorAP=cell(NChannels);
-            MeanSlopeVectorDV=cell(NChannels);
+            %MeanSlopeVectorDV=cell(NChannels);
             SDSlopeVectorAP=cell(NChannels);
-            SDSlopeVectorDV=cell(NChannels);
+            %SDSlopeVectorDV=cell(NChannels);
             NSlopeAP=cell(NChannels);
-            NSlopeDV=cell(NChannels);
+            %NSlopeDV=cell(NChannels);
             ParticleCountAP=cell(NChannels);
             ParticleCountDV=cell(NChannels);
             OnRatioAP=cell(NChannels);
@@ -3244,8 +3244,7 @@ elseif HistoneChannel&&strcmpi(ExperimentAxis,'DV')
             EllipsesFilteredPos=[];
             FilteredParticlesPos=[];
         end
-        
-        
+ 
         CompiledParticles=CompiledParticles{1};
         APFilter=APFilter{1};
         DVFilter=DVFilter{1};
@@ -3264,11 +3263,11 @@ elseif HistoneChannel&&strcmpi(ExperimentAxis,'DV')
         AllTracesAP=AllTracesAP{1};
         AllTracesDV=AllTracesDV{1};
         MeanSlopeVectorAP=MeanSlopeVectorAP{1};
-        MeanSlopeVectorDV=MeanSlopeVectorDV{1};
+        %MeanSlopeVectorDV=MeanSlopeVectorDV{1};
         SDSlopeVectorAP=SDSlopeVectorAP{1};
-        SDSlopeVectorDV=SDSlopeVectorDV{1};
+        %SDSlopeVectorDV=SDSlopeVectorDV{1};
         NSlopeAP=NSlopeAP{1};
-        NSlopeDV=NSlopeDV{1};
+        %NSlopeDV=NSlopeDV{1};
         ParticleCountAP=ParticleCountAP{1};
         ParticleCountDV=ParticleCountDV{1};
         OnRatioAP=OnRatioAP{1};
@@ -3310,7 +3309,6 @@ elseif HistoneChannel&&strcmpi(ExperimentAxis,'DV')
             'MeanVectorAP_nonROI','SDVectorAP_nonROI','NParticlesAP_nonROI',...
             'fittedLineEquations', 'DVbinID','DVFilter', 'MeanVectorDV','SDVectorDV',...
             'NParticlesDV','MaxDVIndex','MinDVIndex',...
-            'MeanSlopeVectorDV','SDSlopeVectorDV','NSlopeDV',...
             'ParticleCountDV','DVbinArea','OnRatioDV','NEllipsesDV',...
             'ParticleCountProbDV','EllipsesOnDV','TotalEllipsesDV',...
             'MeanVectorAllDV','SEVectorAllDV', 'MeanVectorDV_ROI',...
@@ -3332,33 +3330,12 @@ elseif HistoneChannel&&strcmpi(ExperimentAxis,'DV')
             'MeanVectorAllAP','SEVectorAllAP', 'Prefix',...
             'fittedLineEquations','DVbinID','DVFilter', 'MeanVectorDV','SDVectorDV',...
             'NParticlesDV','MaxDVIndex','MinDVIndex',...
-            'MeanSlopeVectorDV','SDSlopeVectorDV','NSlopeDV',...
             'ParticleCountDV','DVbinArea','OnRatioDV','NEllipsesDV',...
             'ParticleCountProbDV','EllipsesOnDV','TotalEllipsesDV',...
             'MeanVectorAllDV','SEVectorAllDV', 'MeanVectorDV',...
             'SDVectorDV','NParticlesDV','-v7.3');
     end
     
-    
-    %If we have only one channel get rid of all the cells
-    if NChannels==1
-        CompiledParticles=CompiledParticles{1};
-        MeanVectorAll=MeanVectorAll{1};
-        SDVectorAll=SDVectorAll{1};
-        NParticlesAll=NParticlesAll{1};
-        MaxFrame=MaxFrame{1};
-        AllTracesVector=AllTracesVector{1};
-    end
-    
-    
-    save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
-        'CompiledParticles','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
-        'nc12','nc13','nc14','StemLoopEnd','ncFilterID','ncFilter',...
-        'MeanVectorAll',...
-        'SDVectorAll','NParticlesAll','MaxFrame',...
-        'AllTracesVector','MeanCyto','SDCyto','MedianCyto','MaxCyto',...
-        'MeanOffsetVector','SDOffsetVector','NOffsetParticles', 'Prefix',...
-        'fittedLineEquations','-v7.3')
 elseif strcmpi(ExperimentAxis,'NoAP')
     
     MeanOffsetVector = NaN;
