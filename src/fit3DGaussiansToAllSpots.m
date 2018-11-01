@@ -58,7 +58,7 @@ for ch = 1:nCh
             zBot = bZ - snipDepth;
             zTop = bZ + snipDepth;
             width = 200/pixelSize; %nm. empirically determined and seems to work width of spot psf
-            offsetGuess = mean(s.Offset);
+            offsetGuess = nanmean(s.Offset);
             snip3D = [];
             try
                 k = 1;
@@ -98,8 +98,7 @@ end
 if length(Spots) < 2
     Spots = Spots{1};
 end
-
 save([DataFolder,filesep,'Spots.mat'])
-
+disp('Fitting done.')
 end
 

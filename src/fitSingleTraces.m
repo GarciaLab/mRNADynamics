@@ -121,7 +121,9 @@ else
     
     % lines are only fitted to traces that are longer than 3 data points
     averagingLength = 3; % average over 3 points. Current default setting
+    waitBarHandle = waitbar(0,'Fitting traces');
     for currentParticle = 1:numberOfParticles
+        waitbar(currentParticle/numberOfParticles,waitBarHandle);
         % getting frame information
         [frame,~,ampIntegral3,~,~,~,~,~,~,~,~,~,~]=...
             GetParticleTrace(currentParticle,...
@@ -202,7 +204,7 @@ else
                     fittedLineEquations(currentParticle).ErrorEstimation(currentGroup)]...
                     =  polyfit(currentXSegment,currentAmpSegment,1);
                 if currentGroup == 1
-                    figure()
+                    figure('visible','off')
                     plot(currentTimeArray,smoothedAmp,'.','MarkerSize',20,...
                         'DisplayName','Avg amp'); % plot the smoothed trace and fitted line
                     hold on
@@ -215,9 +217,15 @@ else
                     normOfResiduals = fittedLineEquations(currentParticle).ErrorEstimation(currentGroup).normr;
                     RSquared = 1 - (normOfResiduals^2)/denominator;
                     errorArray = ones(1,length(currentXSegment)).*...
-                        normOfResiduals;
+                        normOfResiduals./(length(currentTimeArray)); %EL normalized by number of points included
+                    
+                    fittedLineEquations(currentParticle).numberOfParticlesUsedForFit(currentGroup) = ...
+                        length(currentTimeArray);% Saving the number of particles included in group
+                    
                     errorbar(currentXSegment,currentYSegment,errorArray,'o');
-                    legend({'Avg Amp', 'Fitted Line', 'Norm of Residuals'},'Location','Best')
+                    legend({'Avg Amp', ...
+                        ['Fitted Line Slope: ' num2str(fittedLineEquations(currentParticle).Coefficients(currentGroup,1))],...
+                        'Norm of Residuals'},'Location','Best')
                     title(['Current Particle : ' num2str(currentParticle)...
                         '   R squared :' num2str(RSquared)])
                     xlabel('Time after start of nc (minutes)')
@@ -229,10 +237,12 @@ else
                     fileName = [savedImageFolder,filesep,...
                         'Particle' num2str(currentParticle) '.png'];
                     saveas(gcf,fileName)
+                    close(gcf)
                 end
             end
         end
     end
+    close(waitBarHandle)
 end
 
 end
