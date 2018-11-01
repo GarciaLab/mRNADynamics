@@ -206,18 +206,11 @@ for i=1:length(schnitzcells)
             %Save the information about the original schnitz
             CompiledNuclei(k).schnitz=i;
 
-            
-            if strcmpi(ExperimentAxis,'AP')
-                %Determine the particles average and median AP position
-                CompiledNuclei(k).MeanAP=mean(schnitzcells(i).APpos(FrameFilter));
-                CompiledNuclei(k).MedianAP=median(schnitzcells(i).APpos(FrameFilter));
-            else if strcmpi(ExperimentAxis,'DV')
-                CompiledNuclei(k).MeanDV=mean(schnitzcells(i).DVpos(FrameFilter));
-                CompiledNuclei(k).MedianDV=median(schnitzcells(i).DVpos(FrameFilter));
-                CompiledNuclei(k).MeanAP=mean(schnitzcells(i).APpos(FrameFilter));
-                CompiledNuclei(k).MedianAP=median(schnitzcells(i).APpos(FrameFilter));
-                end
-            end
+            CompiledNuclei(k).MeanDV=mean(schnitzcells(i).DVpos(FrameFilter));
+            CompiledNuclei(k).MedianDV=median(schnitzcells(i).DVpos(FrameFilter));
+            CompiledNuclei(k).MeanAP=mean(schnitzcells(i).APpos(FrameFilter));
+            CompiledNuclei(k).MedianAP=median(schnitzcells(i).APpos(FrameFilter));
+
 
             %Copy and extract the fluorescence information
             CompiledNuclei(k).FluoMax=squeeze(max(schnitzcells(i).Fluo(FrameFilter,:,:),[],2));
@@ -363,7 +356,7 @@ if strcmpi(ExperimentAxis,'DV')
     %Divide the AP axis into boxes of a certain AP size. We'll see which
     %particle falls where.
 
-    DVbinID=linspace(-800,0,51); %JAKE: Would change to DV resolution later
+    DVbinID=linspace(-500,0,26); %JAKE: Would change to DV resolution later
 
     DVFilter=false(length(CompiledNuclei),length(DVbinID));
     

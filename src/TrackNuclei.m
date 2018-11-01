@@ -358,9 +358,12 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
                     %debug the parfor loop above. Ideally, I would have 
                     %parfor loop over images, not schnitzes within an image.
                     %However, I couldn't quite figure out how to do that.
+                    %schnitzcells(j)=ExtractNuclearFluorescence(schnitzcells(j),...
+                    %    CurrentFrame,...
+                    %    Image,LinesPerFrame,PixelsPerLine,NumberSlices2,Circle,IntegrationRadius,InputChannel(ChN));
                     schnitzcells(j)=ExtractNuclearFluorescence(schnitzcells(j),...
                         CurrentFrame,...
-                        Image,LinesPerFrame,PixelsPerLine,NumberSlices2,Circle,IntegrationRadius,InputChannel(ChN));
+                        Image,LinesPerFrame,PixelsPerLine,NumberSlices2,Circle,IntegrationRadius,ChN);
                 end
             end
         close(h)
