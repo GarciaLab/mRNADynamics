@@ -148,44 +148,10 @@ else
         % Assigning states to each point --------------------------------------
         % states: increase or decrease from previous point
         if currentLength > 3
-            dydx = diff([eps; smoothedAmp'])./diff([eps; currentTimeArray']);
-            hold on
-            pointsSlopeState = zeros(1,length(dydx));
-            % assigning points' slope state
-            pointsSlopeState(dydx<0) = -1;
-            pointsSlopeState(dydx>=0) = 1;
-            
-            % Assigning points to groups based on states ----------------------
-            % done by looking for crude version of point of inflections
-            pointGroupNumbers = zeros(1,length(dydx));
-            % checking points up until the last one
-            pointRangeToSearch = 1:length(dydx)-1;
-            searchingPoint = pointRangeToSearch(1);
-            currentGroupNumber = 1;
-            % Grouping the points based on change in the points' slope
-            % state (ignores fluctions of duration of one point)
-            for currentPoint = pointRangeToSearch
-                searchingPoint = searchingPoint + 1;
-                pointGroupNumbers(currentPoint) = currentGroupNumber;
-                currentState = pointsSlopeState(currentPoint);
-                nextState = pointsSlopeState(searchingPoint);
-                
-                currentToNeighborEquality = isequal(currentState,nextState);
-                
-                if ~currentToNeighborEquality
-                    if currentPoint > 1
-                        previousState = pointsSlopeState(currentPoint-1);
-                        if ~isequal(previousState,nextState)
-                            currentGroupNumber = currentGroupNumber + 1;
-                        end
-                    end
-                end
-            end
-            
-            % assigning the last point to the last group made
-            pointGroupNumbers(end) = currentGroupNumber;
+            pointGroupNumbers = groupingPoints(currentTimeArray,smoothedAmp);
             
             % creating the lines of best fit for each group -------------------
+            
             numberOfGroups = max(pointGroupNumbers);
             for currentGroup = 1:numberOfGroups
                 correspondingFrameIndexes = find(pointGroupNumbers == currentGroup);
@@ -208,6 +174,7 @@ else
                     plot(currentTimeArray,smoothedAmp,'.','MarkerSize',20,...
                         'DisplayName','Avg amp'); % plot the smoothed trace and fitted line
                     hold on
+                    % plotting the fitted line
                     currentYSegment = polyval(...
                         fittedLineEquations(currentParticle).Coefficients(currentGroup,:),...
                         currentXSegment); % this is for the predicted line
@@ -217,10 +184,10 @@ else
                     normOfResiduals = fittedLineEquations(currentParticle).ErrorEstimation(currentGroup).normr;
                     RSquared = 1 - (normOfResiduals^2)/denominator;
                     errorArray = ones(1,length(currentXSegment)).*...
-                        normOfResiduals./(length(currentTimeArray)); %EL normalized by number of points included
+                        normOfResiduals./sum(pointGroupNumbers==currentGroup); %EL normalized by number of points included
                     
                     fittedLineEquations(currentParticle).numberOfParticlesUsedForFit(currentGroup) = ...
-                        length(currentTimeArray);% Saving the number of particles included in group
+                        sum(pointGroupNumbers==currentGroup);% Saving the number of particles included in group
                     
                     errorbar(currentXSegment,currentYSegment,errorArray,'o');
                     legend({'Avg Amp', ...
