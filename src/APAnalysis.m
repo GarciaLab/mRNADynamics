@@ -64,6 +64,7 @@ function APAnalysis(dataset, varargin)
     Prefix = cell(1, nSets);
     to = 0;
     tf = 0;
+    channel = 1; %no support for 2 channel data at the moment. 
     
     %% 
     
@@ -89,6 +90,9 @@ function APAnalysis(dataset, varargin)
         end
         if to == 0
             to = 1; %to fix an indexing issue 
+        end
+        if iscell(d.MeanVectorAP)
+            d.MeanVectorAP = d.MeanVectorAP{channel};
         end
         fluo = d.MeanVectorAP(to:tf ,:);
         fluo2 = fluo;
@@ -135,12 +139,25 @@ function APAnalysis(dataset, varargin)
     %% 
     %Experiment fraction on
     figure('Name', 'fraction')
+    totalEllipses =  zeros(numAPBins, 1);
+    ellipsesOn = zeros(numAPBins, 1);
     g = zeros(numAPBins, 1);
     g2 = zeros(numAPBins, 1);
     n = zeros(numAPBins, 1);
     fSet = zeros(numAPBins, nSets);
     for dataSet = 1:nSets
+        if iscell(data(dataSet).EllipsesOnAP)
+            data(dataSet).EllipsesOnAP = data(dataSet).EllipsesOnAP{channel};
+        end
+        if iscell(data(dataSet).TotalEllipsesAP)
+            data(dataSet).TotalEllipsesAP = data(dataSet).TotalEllipsesAP{channel};
+        end
+            
         f = data(dataSet).EllipsesOnAP(:,nc)./data(dataSet).TotalEllipsesAP(:,nc);
+        
+        totalEllipses = totalEllipses + data(dataSet).TotalEllipsesAP(:,nc);
+        ellipsesOn = ellipsesOn + data(dataSet).EllipsesOnAP(:,nc);
+       
         nonanf = f;
         nonanf(isnan(nonanf))=0;
         g = g + nonanf;
@@ -156,9 +173,9 @@ function APAnalysis(dataset, varargin)
     fmean = g./n;
     fstde = sqrt(g2./n - fmean.^2) ./ sqrt(n);
     if nSets > 1
-%         e = errorbar(ap, fmean, fstde,'DisplayName', 'mean $\pm$ std. error');
+        e = errorbar(ap, fmean, fstde,'DisplayName', 'mean $\pm$ std. error');
         fMeanNaN = nanmean(fSet, 2);
-        e = plot(ap, fMeanNaN,'DisplayName', 'mean');
+%         e = plot(ap, fMeanNaN,'DisplayName', 'mean');
     end
            
     hold off
@@ -172,7 +189,13 @@ function APAnalysis(dataset, varargin)
     standardizeFigure(gca, legend('show'),'red');
     e.Color = [213,108,85]/255;
     
-    
+    figure()
+    ellipsesOn(totalEllipses < 3) = NaN;
+    totalEllipses(totalEllipses < 3) = NaN;
+    idx = ~any(isnan(totalEllipses),2);
+    errorbar(ap(idx),ellipsesOn(idx)./totalEllipses(idx), 1./totalEllipses(idx));
+    xlim([.2, 1])
+    ylim([0, 1.1])
     %% 
  
     %Experiment number on
@@ -228,9 +251,12 @@ end
 %%
 function plotWindowTimings(movie)
  
+    channel = 1; %no support for 2 channel
     %movie is the data set we want to look into. 
-    
     compiledParticles = movie.CompiledParticles;
+    if iscell(compiledParticles)
+        compiledParticles = compiledParticles{channel};
+    end
     nParticles = length(compiledParticles);
     onTimes = [];
     offTimes = [];
@@ -276,9 +302,12 @@ function analyzeContiguity(movie)
     contiguity2Long = [];
     contiguity = zeros(1, nParticles);
     contiguity2 = zeros(1, nParticles);
+    channel = 1; %no support for 2 channels at the moment
     
     for i = 1:nParticles
-       
+        if iscell(compiledParticles)
+            compiledParticles = compiledParticles{channel};
+        end
         frames = compiledParticles(i).Frame; len = length(frames); contiguity(i) = len; contiguity2(i) = len; missed = 0; missed2 = 0;
        
         if len > 1

@@ -1,5 +1,6 @@
 function standardizeFigure(ax, legend, varargin)
-    
+
+try
     colorDict = struct();
     colorDict.red = [213,108,85]/255;
     colorDict.yellow = [234,194,100]/255;
@@ -85,5 +86,5 @@ function standardizeFigure(ax, legend, varargin)
     faceColor = [255,251,206]/255; %yellow axis face.
     ax.Color = faceColor;
     fig.Color = [255,255,255]/255; %white figure background
-    
+end
 end
