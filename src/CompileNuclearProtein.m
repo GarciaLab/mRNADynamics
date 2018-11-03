@@ -355,8 +355,19 @@ if strcmpi(ExperimentAxis,'DV')
 
     %Divide the AP axis into boxes of a certain AP size. We'll see which
     %particle falls where.
+    %Find maximum and minimum DV
+    DV_min = Inf;
+    DV_max = -Inf;
+    for i = 1:size(CompiledNuclei,2)
+        if DV_min>CompiledNuclei(i).MeanDV
+            DV_min = CompiledNuclei(i).MeanDV;
+        end
+        if DV_max<CompiledNuclei(i).MeanDV
+            DV_max = CompiledNuclei(i).MeanDV;
+        end
+    end
 
-    DVbinID=linspace(-500,0,26); %JAKE: Would change to DV resolution later
+    DVbinID=linspace(DV_min,DV_max,21); %JAKE: Would change to DV resolution later
 
     DVFilter=false(length(CompiledNuclei),length(DVbinID));
     

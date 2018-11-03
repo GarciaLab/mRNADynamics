@@ -2821,9 +2821,9 @@ if HistoneChannel&&strcmpi(ExperimentAxis,'DV') %JAKE: Need to change this later
 
             %Figure out which frame we'll look at
             if nc==14
-                %FrameToUse=numFrames-FramesBack;
+                FrameToUse=numFrames-FramesBack;
                 %JAKE
-                FrameToUse = nc14+41;
+                %FrameToUse = nc14+41;
             else
                 FrameToUse=eval(['nc',num2str(nc+1)])-FramesBack;
             end
