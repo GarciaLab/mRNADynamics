@@ -9,7 +9,8 @@ function deleteDirectory(dirPath, expectedSubpath)
         fileOrFolder = dirContents(i);
         if isfolder([dirPath, filesep, fileOrFolder.name]) 
           if ~strcmp('.', fileOrFolder.name) && ~strcmp('..', fileOrFolder.name)
-            deleteDirectory([dirPath, filesep, fileOrFolder.name]);
+            subfolderPath = [dirPath, filesep, fileOrFolder.name];
+            deleteDirectory(subfolderPath, expectedSubpath);
           end
         else 
           delete([dirPath, filesep, fileOrFolder.name]);
@@ -17,10 +18,13 @@ function deleteDirectory(dirPath, expectedSubpath)
       end
       
       rehash; 
-      rmdir(dirPath);
+      rmdirResult = rmdir(dirPath, 's');
+      if rmdirResult == 0
+        warning(['Directory ', dirPath, ' cannot be removed. Try closing Matlab and running again. Proceeding with test.']);
+      end
     end
-  catch
-    warning('Directory cannot be removed. Try closing Matlab and running again. Proceeding with test.');
+  catch ME
+    warning(['Directory cannot be removed. Try closing Matlab and running again. Proceeding with test.', ME.identifier, ' - ', ME.message]);
   end
 
 end
