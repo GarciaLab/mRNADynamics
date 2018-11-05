@@ -35,10 +35,11 @@ end
 % In case that the validations fail, it'll prompt the user about the location and proceed if the user confirms.
 function validateDirectory(dirPath, expectedSubpath) 
   jenkinsFolder = 'D:\Data\JuanPabloPicasso\Data';
+  expectedDataFolder = 'D:\Data\JuanPabloPicasso\ExpectedData';
   directoryOkToDelete = true;  
 
   % Ignores validation if the dirPath is the Jenkins folder
-  if ~contains(dirPath, jenkinsFolder) 
+  if ~contains(dirPath, jenkinsFolder) && ~contains(dirPath, expectedDataFolder) 
     % Validates that the dirPath contains the 'LivemRNA' string in it
     if ~contains(dirPath, 'LivemRNA')
       directoryOkToDelete = false;
