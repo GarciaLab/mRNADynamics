@@ -8,13 +8,13 @@ function trackmRNADynamicsAndCopyData(testCase, testPath, dynamicsResultsPath, p
   preProcessedDataExpectedPath = createOrCleanTrackmRNADynamicsExpectedDataSubFolder(testPath, 'PreProcessedData', testCase.Prefix);
   processedDataExpectedPath = createOrCleanTrackmRNADynamicsExpectedDataSubFolder(testPath, 'ProcessedData', testCase.Prefix);
   
-  TrackmRNADynamics(testCase.Prefix, testCase.Threshold1, testCase.Threshold2);
+  TrackmRNADynamics(testCase.Prefix, testCase.Threshold1, testCase.Threshold2, 'bypassUserPrompt');
 
   copyDataToExpectedData(testCase.Prefix, dynamicsResultsPath, dynamicsResultsExpectedPath, preprocessedDataPath,...
     preProcessedDataExpectedPath, processedDataPath, processedDataExpectedPath);
 
   % Runs the tracking a second time and stores the results of it, so we can test the case of Particles.mat already existing.
-  TrackmRNADynamics(testCase.Prefix, testCase.Threshold1, testCase.Threshold2);
+  TrackmRNADynamics(testCase.Prefix, testCase.Threshold1, testCase.Threshold2, 'bypassUserPrompt');
 
   secondPassSubFolder = [testPath, filesep, 'TrackmRNADynamics', filesep, 'secondPass', filesep, 'DynamicsResults', filesep, testCase.Prefix];
   deleteDirectory(secondPassSubFolder, testCase.Prefix);

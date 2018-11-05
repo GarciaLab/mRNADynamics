@@ -14,8 +14,8 @@ function copyExpectedTrackNucleiData(Prefix, testPath, dynamicsResultsPath, prep
   deleteDirectory(preprocessedDataPath, Prefix);
   mkdir(preprocessedDataPath);
 
-  deleteDirectory(processedDataExpectedPath, Prefix);
-  mkdir(processedDataExpectedPath);
+  deleteDirectory(processedDataPath, Prefix);
+  mkdir(processedDataPath);
 
   copyExpectedDataToData(Prefix, dynamicsResultsPath, dynamicsResultsExpectedPath, preprocessedDataPath,...
     preProcessedDataExpectedPath, processedDataPath, processedDataExpectedPath);

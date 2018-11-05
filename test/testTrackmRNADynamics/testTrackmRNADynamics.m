@@ -27,10 +27,18 @@ function testCase = testTrackmRNADynamics(testCase)
   % Precondition, copies existing Expected Data to proper folders before running the process
   copyExpectedDataForPrefix(testCase.Prefix, 'TrackNuclei');
 
-  % Executes segment spots with known DoG
-  TrackmRNADynamics(testCase.Prefix, testCase.Threshold1, testCase.Threshold1);
+  % Executes trackmRNADynamis with known thresholds
+  TrackmRNADynamics(testCase.Prefix, testCase.Threshold1, testCase.Threshold1, 'bypassUserPrompt');
 
   expectedDynamicsResultsFolder = [testPath, filesep, 'TrackmRNADynamics', filesep, 'DynamicsResults', filesep, testCase.Prefix];
+  assertStructEqualToExpected(testCase, dynamicResultsExperimentPath, expectedDynamicsResultsFolder, 'Particles.mat');
+  assertStructEqualToExpected(testCase, dynamicResultsExperimentPath, expectedDynamicsResultsFolder, 'FrameInfo.mat');
+
+  % Executes tracking a second time to test out the case when Particles.mat already exists
+  TrackmRNADynamics(testCase.Prefix, testCase.Threshold1, testCase.Threshold1, 'bypassUserPrompt');
+
+  expectedDynamicsResultsFolder = [testPath, filesep, 'TrackmRNADynamics', filesep, 'secondPass', filesep, 'DynamicsResults',...
+    filesep, testCase.Prefix];
   assertStructEqualToExpected(testCase, dynamicResultsExperimentPath, expectedDynamicsResultsFolder, 'Particles.mat');
   assertStructEqualToExpected(testCase, dynamicResultsExperimentPath, expectedDynamicsResultsFolder, 'FrameInfo.mat');
 

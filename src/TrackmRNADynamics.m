@@ -38,7 +38,7 @@ function [Particles,schnitzcells]=TrackmRNADynamics(varargin)
     DetermineLocalFolders;
 
 app = {};
-
+bypassUserPrompt = false;
 
 %Look at the input parameter and use defaults if missing
 if isempty(varargin)
@@ -75,6 +75,8 @@ else
         if strcmpi(varargin{i}, 'app')
           app{1} = varargin{i+1};
           app{2} = varargin{i+2};
+        elseif strcmpi(varargin{i}, 'bypassUserPrompt')
+          bypassUserPrompt = true;
         end
     end
 
@@ -121,7 +123,12 @@ if exist([OutputFolder,filesep,'Particles.mat'])
         
     if (~sum(Threshold1==Threshold1Backup)==length(Threshold1))&...
         (~sum(Threshold2==Threshold2Backup)==length(Threshold2))
-            Answer=input('Thresholds changed, will delete previous tracking. Proceed? (y/n):','s');
+            if ~bypassUserPrompt
+              Answer=input('Thresholds changed, will delete previous tracking. Proceed? (y/n):','s');
+            else 
+              Answer = 'y';
+            end
+            
             if strcmpi(Answer,'y')
                 Threshold1=Threshold1Backup;
                 Threshold2=Threshold2Backup;
