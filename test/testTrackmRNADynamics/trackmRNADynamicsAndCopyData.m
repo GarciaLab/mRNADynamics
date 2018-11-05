@@ -12,6 +12,16 @@ function trackmRNADynamicsAndCopyData(testCase, testPath, dynamicsResultsPath, p
 
   copyDataToExpectedData(testCase.Prefix, dynamicsResultsPath, dynamicsResultsExpectedPath, preprocessedDataPath,...
     preProcessedDataExpectedPath, processedDataPath, processedDataExpectedPath);
+
+  % Runs the tracking a second time and stores the results of it, so we can test the case of Particles.mat already existing.
+  TrackmRNADynamics(testCase.Prefix, testCase.Threshold1, testCase.Threshold2);
+
+  secondPassSubFolder = [testPath, filesep, 'TrackmRNADynamics', filesep, 'secondPass', filesep, 'DynamicsResults', filesep, testCase.Prefix];
+  deleteDirectory(secondPassSubFolder, testCase.Prefix);
+  mkdir(secondPassSubFolder);
+
+  copyfile([dynamicsResultsPath, filesep, '*'], secondPassSubFolder);
+  disp(['Expected data copied to folder ', secondPassSubFolder]);
 end
 
 function expectedDataSubFolder = createOrCleanTrackmRNADynamicsExpectedDataSubFolder(testPath, subfolder, Prefix)
