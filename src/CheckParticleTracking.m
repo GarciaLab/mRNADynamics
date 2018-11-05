@@ -1731,10 +1731,10 @@ while (cc~='x')
         
         exitConnectFlag = 0;
         
-        
+        particlesExistInFrame = length(Spots{ch}(CurrentFrame).Fits);
         currentParticleExistsInCurrentFrame = sum(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame);
         
-        if ~currentParticleExistsInCurrentFrame
+        if ~currentParticleExistsInCurrentFrame && particlesExistInFrame
             
             [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'b', 'linewidth',1);
             ConnectPosition = [ConnectPositionx,ConnectPositiony];
