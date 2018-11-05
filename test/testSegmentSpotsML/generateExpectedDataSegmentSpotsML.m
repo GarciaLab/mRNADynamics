@@ -24,78 +24,13 @@ function generateExpectedDataSegmentSpotsML(testCase)
   preprocessedDataExperimentPath = [preprocessedDataPath, filesep, testCase.Prefix];
   dynamicResultsExperimentPath = [dynamicResultsPath, filesep, testCase.Prefix];
   processedDataExperimentPath = [processedDataPath, filesep, testCase.Prefix, '_'];
-
-  % Classifier path must end with filesep
-  classifiersPath = strcat(codePath, filesep, 'src', filesep, 'classifiers', filesep);
-  classifierForTest = ClassifierForTest(classifiersPath, testCase.classifier);
-
-  % Clean up previous runs
+  
   deleteDirectory(dynamicResultsExperimentPath, testCase.Prefix);
   deleteDirectory(preprocessedDataExperimentPath, testCase.Prefix);
   deleteDirectory(processedDataExperimentPath, testCase.Prefix);
-  
-  [tifsPreProcessedData, filterMovieProcessedData, segmentMLDynamicsResults, ...
-    segmentMLProcessedData] = createExpectedDataStructureML(testPath, testCase.Prefix);
 
   % Precondition - Run ExportsDataForFISH without deleting TIFs
   ExportDataForFISH(testCase.Prefix, 'keepTifs');
 
-  % Generates Tifs 
-  filterMovie(testCase.Prefix, 'Tifs');
-
-  % Then copy expected data for filterMovie pass 
-  copyExpectedDataFolder(preprocessedDataPath, tifsPreProcessedData, 'Tifs', testCase.Prefix);
-
-  % Generates expected data for DoGs creation
-  filterMovie(testCase.Prefix, 'Weka', classifierForTest, 'ignoreMemoryCheck');
-  
-  % Then copy expected data for filterMovie pass 
-  copyProcessedDataML(processedDataPath, filterMovieProcessedData, 'FilterMovie', testCase.Prefix);
-
-  % Executes segment spots ML with known DoG
-  segmentSpotsML(testCase.Prefix, testCase.Threshold);
-
-  % Then copy expected data for 2nd pass 
-  % TODO harrypotel: Since now there are two separate functions, we should rename the 1st pass / 2nd pass logic.
-  % I don't want to change to much in a single step, so I'll handle that change later on
-  copyExpectedDataFolder(dynamicResultsPath, segmentMLDynamicsResults, 'SegmentSpotsML', testCase.Prefix);
-  copyProcessedDataML(processedDataPath, segmentMLProcessedData, 'SegmentSpotsML', testCase.Prefix);
-
-  disp(['Test data for segment spots completed for Prefix ', testCase.Prefix]);
-end
-
-function [tifsPreProcessedData, filterMovieProcessedData, segmentMLDynamicsResults, segmentMLProcessedData] = createExpectedDataStructureML(testPath, prefix) 
-  % Creates root folder if it does not exist
-  if 7 ~= exist(testPath, 'dir')
-    mkdir(testPath);
-  end
-
-  tifsPreProcessedData = createOrCleanExpectedDataSubFolderML(testPath, 'Tifs', 'PreProcessedData', prefix);
-  filterMovieProcessedData = createOrCleanExpectedDataSubFolderML(testPath, 'FilterMovie', 'ProcessedData', prefix);
-  segmentMLDynamicsResults = createOrCleanExpectedDataSubFolderML(testPath, 'SegmentSpotsML', 'DynamicsResults', prefix);
-  segmentMLProcessedData = createOrCleanExpectedDataSubFolderML(testPath, 'SegmentSpotsML', 'ProcessedData', prefix);
-
-end
-
-function expectedDataSubFolder = createOrCleanExpectedDataSubFolderML(testPath, step, subfolder, prefix)
-  % Adds underscore to the end of PreprocessedData subfolder
-  if strcmpi('ProcessedData', subfolder)
-    prefix = [prefix, '_'];
-  end
-
-  expectedDataSubFolder = [testPath, filesep, 'SegmentSpotsML', filesep, step, filesep, subfolder, filesep, prefix];
-  deleteDirectory(expectedDataSubFolder, prefix);
-  mkdir( expectedDataSubFolder);
-end
-
-function copyExpectedDataFolder(sourceFolder, expectedDataFolder, step, prefix)
-  disp(['Copying DynamicResults data for segment spots ML ', step, ' of Prefix ', prefix]);
-  copyfile([sourceFolder, filesep, prefix, filesep, '*'], expectedDataFolder);
-  disp(['Expected data copied to folder ', expectedDataFolder]);
-end
-
-function copyProcessedDataML(sourceFolder, expectedDataFolder, step, prefix)
-  disp(['Copying ProcessedData for segment spots ML ', step, ' pass of Prefix ', prefix]);
-  copyfile([sourceFolder, filesep, prefix, '_',  filesep, '*'], expectedDataFolder);
-  disp(['Expected data copied to folder ', expectedDataFolder]);
+  segmentSpotsMLAndCopyData(testCase, testPath, codePath, dynamicResultsPath, preprocessedDataPath, processedDataPath);
 end
