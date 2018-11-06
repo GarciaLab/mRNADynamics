@@ -5,10 +5,10 @@ try
   fprintf('Test suite started running at %s\n', datestr(now,'yyyy-mm-dd HH:MM:SS.FFF'));
   import matlab.unittest.TestSuite
 
-  exportDataForFISHSuite = TestSuite.fromFolder('testExportDataForFISH');
-  segmentSpotsSuite = TestSuite.fromFolder('testSegmentSpots');
-  segmentSpotsMLSuite = TestSuite.fromFolder('testSegmentSpotsML');
-  trackmRNADynamicsSuite = TestSuite.fromFolder('testTrackmRNADynamics');
+  exportDataForFISHSuite = TestSuite.fromFolder('test/testExportDataForFISH');
+  segmentSpotsSuite = TestSuite.fromFolder('test/testSegmentSpots');
+  segmentSpotsMLSuite = TestSuite.fromFolder('test/testSegmentSpotsML');
+  trackmRNADynamicsSuite = TestSuite.fromFolder('test/testTrackmRNADynamics');
   
   completeTestSuite = [exportDataForFISHSuite, segmentSpotsSuite, segmentSpotsMLSuite, trackmRNADynamicsSuite];
   testResults = run(completeTestSuite);
