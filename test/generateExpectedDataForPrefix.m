@@ -19,28 +19,34 @@ function generateExpectedDataForPrefix(exportTestCase, segmentSpotsTestCase, tra
   end
 
   dynamicsResultsPath = getConfigValue(configValues, 'DropboxFolder');
-  preprocessedDataPath = getConfigValue(configValues, 'PreProcPath');
+  preProcessedDataPath = getConfigValue(configValues, 'PreProcPath');
   processedDataPath = getConfigValue(configValues, 'FISHPath');
 
-  preprocessedDataExperimentPath = [preprocessedDataPath, filesep, Prefix];
+  preProcessedDataExperimentPath = [preProcessedDataPath, filesep, Prefix];
   dynamicsResultsExperimentPath = [dynamicsResultsPath, filesep, Prefix];
   processedDataExperimentPath = [processedDataPath, filesep, Prefix, '_'];
 
   % Clean up previous runs
   deleteDirectory(dynamicsResultsExperimentPath, Prefix);
-  deleteDirectory(preprocessedDataExperimentPath, Prefix);
+  deleteDirectory(preProcessedDataExperimentPath, Prefix);
   deleteDirectory(processedDataExperimentPath, Prefix);
 
   % Export Data
-  exportAndCopyData(exportTestCase, testPath, dynamicsResultsExperimentPath, preprocessedDataExperimentPath);
+  exportAndCopyData(exportTestCase, testPath, dynamicsResultsExperimentPath, preProcessedDataExperimentPath);
+
+  % Filter movie to generate Tifs
+  filterMovieTifsAndCopyData(segmentSpotsTestCase, testPath, dynamicsResultsExperimentPath, preProcessedDataExperimentPath);
+
+  % Filter movie to generate DoGs with Weka
+  filterMovieWekaAndCopyData(segmentSpotsTestCase, testPath, codePath, processedDataExperimentPath);
 
   % Segment Spots ML
-  segmentSpotsMLAndCopyData(segmentSpotsTestCase, testPath, codePath, dynamicsResultsPath, preprocessedDataPath, processedDataPath);
+  segmentSpotsMLAndCopyData(segmentSpotsTestCase, testPath, dynamicsResultsExperimentPath, preProcessedDataExperimentPath, processedDataExperimentPath);
 
   % TrackNuclei
-  trackNucleiAndCopyData(Prefix, testPath, dynamicsResultsExperimentPath, preprocessedDataExperimentPath, processedDataExperimentPath);
+  trackNucleiAndCopyData(Prefix, testPath, dynamicsResultsExperimentPath, preProcessedDataExperimentPath, processedDataExperimentPath);
 
   % TrackmRNADynamics
-  trackmRNADynamicsAndCopyData(trackmRNADynamicsTestCase, testPath, dynamicsResultsExperimentPath, preprocessedDataExperimentPath,...
+  trackmRNADynamicsAndCopyData(trackmRNADynamicsTestCase, testPath, dynamicsResultsExperimentPath, preProcessedDataExperimentPath,...
     processedDataExperimentPath);
 end

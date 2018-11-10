@@ -1,13 +1,19 @@
 function copyExpectedDataToData(Prefix, dynamicsResultsPath, dynamicsResultsExpectedPath, preprocessedDataPath, preProcessedDataExpectedPath, processedDataPath, processedDataExpectedPath)
   disp(['Copying expected data for Prefix ', Prefix]);
   
-  copyfile([dynamicsResultsExpectedPath, filesep, '*'], dynamicsResultsPath);
-  disp(['Expected data copied to folder ', dynamicsResultsPath]);
+  if ~isempty(dynamicsResultsExpectedPath) 
+    copyfile([dynamicsResultsExpectedPath, filesep, '*'], dynamicsResultsPath);
+    disp(['Expected data copied to folder ', dynamicsResultsPath]);
+  end
 
-  copyfile([preProcessedDataExpectedPath, filesep, '*'], preprocessedDataPath);
-  disp(['Expected data copied to folder ', preprocessedDataPath]);
+  if ~isempty(preProcessedDataExpectedPath) 
+    copyfile([preProcessedDataExpectedPath, filesep, '*'], preprocessedDataPath);
+    disp(['Expected data copied to folder ', preprocessedDataPath]);
+  end
 
-  copyfile([processedDataExpectedPath, filesep, '*'], processedDataPath);
-  disp(['Expected data copied to folder ', processedDataPath]);
+  if ~isempty(processedDataExpectedPath) 
+    copyfile([processedDataExpectedPath, filesep, '*'], processedDataPath);
+    disp(['Expected data copied to folder ', processedDataPath]);
+  end
 
 end

@@ -22,23 +22,15 @@ function testCase = testGenerateDogsWeka(testCase)
   % harrypotel: Not sure why the folder on ProcessedData has a _ at the end, is it a bug?
   processedDataExperimentPath = [processedDataPath, filesep, testCase.Prefix, '_'];
   
-  % Switches to a different directory so the removal does not fail
-  cd(testPath);
-  % Clean up previous runs
-  deleteDirectory(dynamicResultsExperimentPath, testCase.Prefix);
-  deleteDirectory(processedDataExperimentPath, testCase.Prefix);
-  
-  % Precondition - Run ExportsDataForFISH without deleting TIFs
-  ExportDataForFISH(testCase.Prefix, 'keepTifs');
-  
-  % Tests first pass
+  % Precondition, copies existing Expected Data to proper folders before running the process
+  copyExpectedDataForPrefix(testCase.Prefix, 'filterMovieTifs');
+
   % Generates DoGs
   filterMovie(testCase.Prefix, 'Weka', classifierForTest, 'ignoreMemoryCheck');
   
   % Then verifies FrameInfo.mat and expected contents of dogs folder
-  expectedPathSubFolderFilter = ['SegmentSpotsML', filesep, 'FilterMovie'];
   assertLogFileExists(testCase, dynamicResultsExperimentPath);
-  assertDogsFolderEqualToExpected(testCase, processedDataExperimentPath, testPath, expectedPathSubFolderFilter);
+  assertDogsFolderEqualToExpected(testCase, processedDataExperimentPath, testPath, 'filterMovieWeka');
 
   elapsedTime = toc;
   fprintf('Test run for %s ended successfully at %s\n', testCase.Prefix, datestr(now,'yyyy-mm-dd HH:MM:SS.FFF'));

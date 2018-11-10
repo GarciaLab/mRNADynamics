@@ -1,11 +1,11 @@
 function copyExpectedSegmentSpotsMLData(Prefix, testPath, dynamicsResultsPath, preprocessedDataPath, processedDataPath)
-  preProcessedDataExpectedPath = getExpectedDataFolderNameSegmentSpotsML(testPath, 'Tifs', 'PreProcessedData', Prefix);
-  validateExpectedDataFolderExists(preProcessedDataExpectedPath, Prefix)
-
-  dynamicsResultsExpectedPath = getExpectedDataFolderNameSegmentSpotsML(testPath, 'SegmentSpotsML', 'DynamicsResults', Prefix);
+  dynamicsResultsExpectedPath = [testPath, '/SegmentSpotsML/DynamicsResults/', Prefix];
   validateExpectedDataFolderExists(dynamicsResultsExpectedPath, Prefix)
 
-  processedDataExpectedPath = getExpectedDataFolderNameSegmentSpotsML(testPath, 'SegmentSpotsML', 'ProcessedData', Prefix);
+  preProcessedDataExpectedPath = [testPath, '/SegmentSpotsML/PreProcessedData/', Prefix];
+  validateExpectedDataFolderExists(preProcessedDataExpectedPath, Prefix)
+
+  processedDataExpectedPath = [testPath, '/SegmentSpotsML/ProcessedData/', Prefix, '_'];
   validateExpectedDataFolderExists(processedDataExpectedPath, Prefix)
 
   deleteDirectory(dynamicsResultsPath, Prefix);

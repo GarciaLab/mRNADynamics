@@ -11,19 +11,11 @@ function testCase = testTifsCreation(testCase)
   
   preprocessedDataPath = getConfigValue(configValues, 'PreProcPath');
 
-  expectedDataSubFolder = ['SegmentSpotsML', filesep, 'Tifs'];
-  
   preprocessedDataExperimentPath = [preprocessedDataPath, filesep, testCase.Prefix];
-  expectedPreProcessedDataFolder = [testPath, filesep, expectedDataSubFolder, filesep, 'PreProcessedData',...
-    filesep, testCase.Prefix]; 
+  expectedPreProcessedDataFolder = [testPath, '/filterMovieTifs/PreProcessedData/', testCase.Prefix]; 
 
-  % Switches to a different directory so the removal does not fail
-  cd(testPath);
-  % Clean up previous runs
-  deleteDirectory(preprocessedDataExperimentPath, testCase.Prefix);
-
-  % Precondition - Run ExportsDataForFISH without deleting TIFs
-  ExportDataForFISH(testCase.Prefix, 'keepTifs');
+  % Precondition, copies existing Expected Data to proper folders before running the process
+  copyExpectedDataForPrefix(testCase.Prefix, 'ExportDataForFISH');
   
   % Tests Tifs generation
   filterMovie(testCase.Prefix, 'Tifs');
