@@ -209,9 +209,7 @@ snippet_size = 2*(floor(1300/(2*pixelSize))) + 1; % nm. note that this is forced
 LinesPerFrame = FrameInfo(1).LinesPerFrame;
 PixelsPerLine = FrameInfo(1).PixelsPerLine;
 numFrames =length(FrameInfo);
-if isfield(FrameInfo, 'nc')
-    correspondingNCInfo = [FrameInfo.nc]; % the assigned nc of the frames
-end
+
 
 %See how  many frames we have and adjust the index size of the files to
 %load accordingly
@@ -330,7 +328,40 @@ else
         end
     end
 end
+
+% %Get the actual time corresponding to each frame
+try
+    if isfield(FrameInfo,'FileMode')
+        if strcmp(FrameInfo(end).FileMode,'TIF')
+            for j=1:numFrames
+                ElapsedTime(j)=etime(datevec(FrameInfo(j).TimeString),datevec(FrameInfo(1).TimeString));
+            end
+        elseif strcmp(FrameInfo(end).FileMode,'LSM')||strcmp(FrameInfo(end).FileMode,'LSMExport')||...
+                strcmp(FrameInfo(end).FileMode,'LIFExport')||strcmp(FrameInfo(end).FileMode,'LAT')
+            for j=1:numFrames
+                ElapsedTime(j)=FrameInfo(j).Time-FrameInfo(1).Time;
+            end
+        else
+            error('File mode not supported. Cannot extract time information. Include format in ExportDataForFISH.m')
+        end
+    else
+        warning('No FileMode information found. Assuming that this is TIF from the 2-photon.')
+        for j=1:numFrames
+            ElapsedTime(j)=etime(datevec(FrameInfo(j).TimeString),datevec(FrameInfo(1).TimeString));
+        end
+    end
+end
+ElapsedTime=ElapsedTime/60;     %Time is in minutes
 nuclearCycleBoundaries = [nc9,nc10,nc11,nc12,nc13,nc14];
+%changing from frames to minutes
+nuclearCycleBoundariesMinutes = nuclearCycleBoundaries;
+for i = 1:length(nuclearCycleBoundaries)
+    if nuclearCycleBoundaries(i) > 0
+        nuclearCycleBoundariesMinutes(i) = ElapsedTime(nuclearCycleBoundaries(i)); % in units of minutes
+    end
+end
+
+correspondingNCInfo = [FrameInfo.nc]; % the assigned nc of the frames
 
 save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo') %this is here so that a user will still get an updated
 %frameinfo.mat even if they abort checkparticletracking without saving (to
@@ -531,7 +562,7 @@ end
 %This flag allows the code to directly pass a command without waiting for
 %the user to press a key or click on the figure
 SkipWaitForButtonPress=[];
-
+lineFit = 0; % the initial rise of the trace was not fitted
 
 while (cc~='x')
     
@@ -1089,19 +1120,33 @@ while (cc~='x')
             [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ErrorIntegral, ErrorIntegral3, ErrorIntegral5,backGround3]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
         end       
 %         yyaxis(traceFigAxes,'left');
-        p1 = errorbar(traceFigAxes, Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-            AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral,'.-k');           
+        if ~lineFit
+            xAxis = Frames;
+            if exist('fit1','var')
+                delete(fit1)
+                delete(fit1E)
+            end
+        else
+            xAxis = ElapsedTime;
+            if exist('p1','var')
+                delete(p1)
+                delete(p2)
+            end
+        end
+        
         hold(traceFigAxes, 'on')
-        p2 = errorbar(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+        p1 = errorbar(traceFigAxes, xAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+            AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral,'.-k');           
+        p2 = errorbar(traceFigAxes,xAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
             AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');                   
 %         p3 = errorbar(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
 %            AmpIntegral5(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral5(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral5,'.-','Color','blue');                   
 %         p3 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
 %             backGround3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');                        
-        plot(traceFigAxes,Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
-        plot(traceFigAxes,Frames(Frames==CurrentFrame),AmpIntegral(Frames==CurrentFrame),'ob');
-        plot(traceFigAxes,Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
-        plot(traceFigAxes,Frames(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
+        plot(traceFigAxes,xAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
+        plot(traceFigAxes,xAxis(Frames==CurrentFrame),AmpIntegral(Frames==CurrentFrame),'ob');
+        plot(traceFigAxes,xAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
+        plot(traceFigAxes,xAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
 %       
         % plotting anaphase boundaries ------------------------------------ 
         % Section added by EL 10/11/18
@@ -1128,6 +1173,9 @@ while (cc~='x')
             
             currentYLimits = get(gca,'YLim');  % Get the range of the y axis
             prophaseBoundaries = [p9 p10 p11 p12 p13 p14];
+            if lineFit
+                prophaseBoundaries = ElapsedTime(prophaseBoundaries);
+            end
             % plotting all prophase bonudaries as a line
             for i = 1:length(prophaseBoundaries)
                 currentProphaseBoundary = prophaseBoundaries(i);
@@ -1137,6 +1185,9 @@ while (cc~='x')
             
             currentYLimits = get(gca,'YLim');  % Get the range of the y axis
             metaphaseBoundaries = [m9 m10 m11 m12 m13 m14];
+            if lineFit
+                metaphaseBoundaries = ElapsedTime(metaphaseBoundaries);
+            end
             % plotting all metaphase bonudaries as a line
             for i = 1:length(metaphaseBoundaries)
                 currentMetaphaseBoundary = metaphaseBoundaries(i);
@@ -1152,7 +1203,12 @@ while (cc~='x')
 %             backGround3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');                   
         legend([p1,p2],'1-slice','3-slice accordion')
         try
-            xlim(traceFigAxes,[min(Frames)-1,max(Frames)+1]);
+            if ~lineFit
+                xlim(traceFigAxes,[min(Frames)-1,max(Frames)+1]);
+            else
+                xlim(traceFigAxes,ElapsedTime([min(Frames),max(Frames)]));
+            end
+            
         catch
 %             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
         end
@@ -2130,6 +2186,7 @@ while (cc~='x')
         end
     
     elseif (cc=='m')&(CurrentParticle<numParticles)
+        lineFit = 0; % the initial rise was not fitted! 
         
         NextParticle=CurrentParticle+1;
         
@@ -2174,6 +2231,8 @@ while (cc~='x')
         end
             
     elseif (cc=='n')&(CurrentParticle>1)
+        lineFit = 0; % the initial rise was not fitted! 
+        
         Approved=(find([Particles{CurrentChannel}.Approved]));
         %NotApproved=(find(~[Particles.Approved]));
         
@@ -2420,12 +2479,44 @@ while (cc~='x')
             DisplayRangeSpot=[DisplayRangeSpot(1),DisplayRangeSpot(2)/1.5];
        end
     elseif cc=='@'      %Decrease spot channel contrast
-        DisplayRangeSpot=[min(min(Image)),max(max(Image))*1.5];
+        DisplayRangeSpot=[min(min(Image)),max(max(Image))*1.5];  
     elseif cc=='0'      %Debugging mode
         keyboard;
-
-    end
         
+     elseif cc== '3'
+         averagingLength = 3;
+         
+         try
+             lineFit = 1;
+             [frameIndex,Coefficients,ErrorEstimation,numberOfParticlesUsedForFit] = ...
+                 fitASingleTrace(CurrentParticle,Particles,Spots,CurrentChannel,...
+                 ElapsedTime,nuclearCycleBoundariesMinutes,correspondingNCInfo,...
+                 averagingLength,'initialOnly','skipSavingTraces');
+             
+             
+             % plotting the fitted line
+             ncPresent = unique(correspondingNCInfo(Frames));
+             % below subtracts 8 because the first element correspond to nc 9
+             timeOfFirstNC = nuclearCycleBoundariesMinutes(ncPresent(1)-8);
+             currentXSegment = ElapsedTime(Frames(frameIndex(1):frameIndex(end)))-timeOfFirstNC;
+             currentYSegment = polyval(Coefficients,currentXSegment);
+             % error of predicted line
+             %          currentAmpSegment = AmpIntegral3(frameIndex(1):frameIndex(end));
+             %          denominator = sum((currentAmpSegment - mean(currentAmpSegment)).^2);
+             %          RSquared = 1 - (normOfResiduals^2)/denominator;
+             normOfResiduals = ErrorEstimation.normr;
+             errorArray = ones(1,length(currentXSegment)).*...
+                 normOfResiduals./numberOfParticlesUsedForFit; %EL normalized by number of points included
+             hold(traceFigAxes,'on')
+             fit1 = plot(traceFigAxes,ElapsedTime(Frames(frameIndex(1):frameIndex(end))), ...
+                 currentYSegment,'DisplayName','fittedLine','Color','red');
+             fit1E = errorbar(traceFigAxes,ElapsedTime(Frames(frameIndex(1):frameIndex(end))),...
+                 currentYSegment,errorArray,'.','Color','red');
+             hold(traceFigAxes,'off')
+         catch
+             msgbox('A line was not fitted','Key 3 was selected');
+         end
+     end
 end
 
 

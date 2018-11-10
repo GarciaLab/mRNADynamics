@@ -10,10 +10,12 @@ minimumLength = 3; % minimum length of trace
 %% Checking varargin
 if length(varargin)
     for i=1:length(varargin)
-        if strcmpi(varargin{i},'initalOnly')
+        if strcmpi(varargin{i},'initialOnly')
             initialOnly = 1;
-        elseif strcmpi(carargin{i},'minimumLength')
+        elseif strcmpi(varargin{i},'minimumLength')
             minimumLength = varargin{i+1};
+        elseif strcmpi(varargin{i},'skipSavingTraces')
+            skipSavingTraces = 1;
         end
     end
 end
@@ -78,6 +80,9 @@ if currentLength > minimumLength
             ErrorEstimation(currentGroup)]...
             =  polyfit(currentXSegment,currentAmpSegment,1);
         
+        numberOfParticlesUsedForFit(currentGroup) = ...
+                sum(pointGroupNumbers==currentGroup);% Saving the number of particles included in group
+            
         if currentGroup == 1
             currentYSegment = ...
                 polyval(Coefficients(currentGroup,:),currentXSegment); 
@@ -86,7 +91,7 @@ if currentLength > minimumLength
             normOfResiduals = ErrorEstimation(currentGroup).normr;
             RSquared = 1 - (normOfResiduals^2)/denominator;
             errorArray = ones(1,length(currentXSegment)).*...
-                normOfResiduals./sum(pointGroupNumbers==currentGroup); %EL normalized by number of points included
+                normOfResiduals./numberOfParticlesUsedForFit(currentGroup); %EL normalized by number of points included
             
             if ~skipSavingTraces
                 % plot and save  the first fitted line with the
@@ -111,9 +116,7 @@ if currentLength > minimumLength
             end
         end
         
-        numberOfParticlesUsedForFit(currentGroup) = ...
-                sum(pointGroupNumbers==currentGroup);% Saving the number of particles included in group
-            
+        
     end
 end
 
