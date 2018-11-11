@@ -34,8 +34,8 @@ end
 % file is not properly configured.
 % In case that the validations fail, it'll prompt the user about the location and proceed if the user confirms.
 function validateDirectory(dirPath, expectedSubpath) 
-  jenkinsFolder = 'D:\Data\JuanPabloPicasso\Data';
-  expectedDataFolder = 'D:\Data\JuanPabloPicasso\ExpectedData';
+  jenkinsFolder = 'D:\Data\Jenkins\Data';
+  expectedDataFolder = 'D:\Data\Jenkins\ExpectedData';
   directoryOkToDelete = true;  
 
   % Ignores validation if the dirPath is the Jenkins folder
