@@ -18,12 +18,6 @@ function testCase = testTrackmRNADynamics(testCase)
   % harrypotel: Not sure why the folder on ProcessedData has a _ at the end, is it a bug?
   processedDataExperimentPath = [processedDataPath, filesep, testCase.Prefix, '_'];
   
-  cd(testPath);
-  % Clean up previous runs
-  deleteDirectory(dynamicResultsExperimentPath, testCase.Prefix);
-  deleteDirectory(preprocessedDataExperimentPath, testCase.Prefix);
-  deleteDirectory(processedDataExperimentPath, testCase.Prefix);
-
   % Precondition, copies existing Expected Data to proper folders before running the process
   copyExpectedDataForPrefix(testCase.Prefix, 'TrackNuclei');
 

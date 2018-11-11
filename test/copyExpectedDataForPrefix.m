@@ -8,7 +8,6 @@ function copyExpectedDataForPrefix(Prefix, step)
   preprocessedDataPath = getConfigValue(configValues, 'PreProcPath');
   processedDataPath = getConfigValue(configValues, 'FISHPath');
     
-  codePath = getConfigValue(configValues, 'MS2CodePath');
   testPath = getConfigValue(configValues, 'TestPath');
 
   if 7 ~= exist(testPath, 'dir')
@@ -26,6 +25,11 @@ function copyExpectedDataForPrefix(Prefix, step)
 
   if strcmpi(step, 'ExportDataForFISH')
     copyExpectedExportData(Prefix, testPath, dynamicsResultsExperimentPath, preprocessedDataExperimentPath);
+  elseif strcmpi(step, 'filterMovieTifs')
+    copyFilterMovieTifsData(Prefix, testPath, dynamicsResultsExperimentPath, preprocessedDataExperimentPath);
+  elseif strcmpi(step, 'filterMovieWeka')
+    copyFilterMovieWekaData(Prefix, testPath, dynamicsResultsExperimentPath, preprocessedDataExperimentPath,...
+      processedDataExperimentPath);
   elseif strcmpi(step, 'SegmentSpotsML')
     copyExpectedSegmentSpotsMLData(Prefix, testPath, dynamicsResultsExperimentPath, preprocessedDataExperimentPath,...
       processedDataExperimentPath);
