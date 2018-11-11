@@ -2512,7 +2512,8 @@ while (cc~='x')
                  currentYSegment,errorArray,'.-','Color','red');
              hold(traceFigAxes,'off')
          catch
-             msgbox('A line was not fitted','Key 3 was selected');
+             lineFit = 0;
+             uiwait(msgbox('A line was not fitted','Key 3 was selected'));
          end
      end
 end
