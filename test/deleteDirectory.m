@@ -18,9 +18,9 @@ function deleteDirectory(dirPath, expectedSubpath)
       end
       
       rehash; 
-      rmdirResult = rmdir(dirPath, 's');
+      [rmdirResult, rmDirErrorMsg] = rmdir(dirPath, 's');
       if rmdirResult == 0
-        warning(['Directory ', dirPath, ' cannot be removed. Try closing Matlab and running again. Proceeding with test.']);
+        warning(['Directory ', dirPath, ' cannot be removed. Reason: ', rmDirErrorMsg, ' .Try closing Matlab and running again. Proceeding with test.']);
       end
     end
   catch ME
