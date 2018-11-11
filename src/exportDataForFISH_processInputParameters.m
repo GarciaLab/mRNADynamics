@@ -1,4 +1,4 @@
-function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs] = exportDataForFISH_processInputParameters(varargin)
+function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs, generateTifs] = exportDataForFISH_processInputParameters(varargin)
   %Look at parameters
   SkipFrames = [];
   Prefix = '';
@@ -8,6 +8,7 @@ function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs
   %Added new argument to specify a preferred file name and enable automatic testing
   PreferredFileNameForTest = '';
   keepTifs = false;
+  generateTifs = false;
   
   k=1;
   while k<=length(varargin)
@@ -26,6 +27,8 @@ function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs
       PreferredFileNameForTest = PreferredFileForTest.fileName;
     elseif strcmpi(varargin{k}, 'keepTifs')
       keepTifs = true;
+    elseif strcmpi(varargin{k}, 'generateTifs')
+      generateTifs = true;
     else
       Prefix = varargin{k};
     end
