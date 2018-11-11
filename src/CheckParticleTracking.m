@@ -1127,8 +1127,7 @@ while (cc~='x')
         else
             xAxis = ElapsedTime(Frames);
             if exist('p1','var')
-                delete(p1)
-                delete(p2)
+                delete([p1,p2,cPoint1,cPoint2])
             end
         end
         
@@ -1141,10 +1140,10 @@ while (cc~='x')
 %            AmpIntegral5(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral5(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral5,'.-','Color','blue');                   
 %         p3 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
 %             backGround3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');                        
-        plot(traceFigAxes,xAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
-        plot(traceFigAxes,xAxis(Frames==CurrentFrame),AmpIntegral(Frames==CurrentFrame),'ob');
-        plot(traceFigAxes,xAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
-        plot(traceFigAxes,xAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
+        dPoint1 = plot(traceFigAxes,xAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
+        cPoint1 = plot(traceFigAxes,xAxis(Frames==CurrentFrame),AmpIntegral(Frames==CurrentFrame),'ob');
+        dPoint2 = plot(traceFigAxes,xAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
+        cPoint2 = plot(traceFigAxes,xAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
 %       
         % plotting anaphase boundaries ------------------------------------ 
         % Section added by EL 10/11/18
@@ -1201,10 +1200,12 @@ while (cc~='x')
 %             backGround3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');                   
         if ~lineFit
             legend([p1,p2],'1-slice','3-slice accordion')
+            xlabel(traceFigAxes,'frame')
         else
             legend([p1,p2,fit1E],'1-slice','3-slice accordion',...
                 ['fit slope, time on: ' ...
                 num2str(Coefficients(1)) ',' num2str(roots(Coefficients))])
+            xlabel(traceFigAxes,'time (minutes)')
         end
         
         try
@@ -1212,7 +1213,7 @@ while (cc~='x')
         catch
 %             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
         end
-        xlabel(traceFigAxes,'frame')        
+                
 %         ylabel(traceFigAxes,'offset intensity (a.u.)')
     else
         %Only update the trace information if we have switched particles
