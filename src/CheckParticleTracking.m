@@ -702,6 +702,7 @@ while (cc~='x')
         %Show all the nuclei in regular mode
         if ~SpeedMode
             hold(overlayAxes,'on')
+            axes(overlayAxes)
             EllipseHandle=notEllipse(Ellipses{CurrentFrame}(:,3),...
                 Ellipses{CurrentFrame}(:,4),...
                 Ellipses{CurrentFrame}(:,5),...
@@ -1122,12 +1123,9 @@ while (cc~='x')
 %         yyaxis(traceFigAxes,'left');
         if ~lineFit
             xAxis = Frames;
-            if exist('fit1','var')
-                delete(fit1)
-                delete(fit1E)
-            end
+            cla(traceFigAxes)
         else
-            xAxis = ElapsedTime;
+            xAxis = ElapsedTime(Frames);
             if exist('p1','var')
                 delete(p1)
                 delete(p2)
@@ -1201,14 +1199,16 @@ while (cc~='x')
 %         yyaxis(traceFigAxes,'right');
 %         p3 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
 %             backGround3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');                   
-        legend([p1,p2],'1-slice','3-slice accordion')
+        if ~lineFit
+            legend([p1,p2],'1-slice','3-slice accordion')
+        else
+            legend([p1,p2,fit1E],'1-slice','3-slice accordion',...
+                ['fit slope, time on: ' ...
+                num2str(Coefficients(1)) ',' num2str(roots(Coefficients))])
+        end
+        
         try
-            if ~lineFit
-                xlim(traceFigAxes,[min(Frames)-1,max(Frames)+1]);
-            else
-                xlim(traceFigAxes,ElapsedTime([min(Frames),max(Frames)]));
-            end
-            
+                xlim(traceFigAxes,[min(xAxis),max(xAxis)]+[-1,1]);
         catch
 %             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
         end
@@ -2508,10 +2508,8 @@ while (cc~='x')
              errorArray = ones(1,length(currentXSegment)).*...
                  normOfResiduals./numberOfParticlesUsedForFit; %EL normalized by number of points included
              hold(traceFigAxes,'on')
-             fit1 = plot(traceFigAxes,ElapsedTime(Frames(frameIndex(1):frameIndex(end))), ...
-                 currentYSegment,'DisplayName','fittedLine','Color','red');
              fit1E = errorbar(traceFigAxes,ElapsedTime(Frames(frameIndex(1):frameIndex(end))),...
-                 currentYSegment,errorArray,'.','Color','red');
+                 currentYSegment,errorArray,'.-','Color','red');
              hold(traceFigAxes,'off')
          catch
              msgbox('A line was not fitted','Key 3 was selected');
