@@ -247,7 +247,7 @@ for NCh=1:NChannels
         for i=1:length(Particles{NCh})
             Particles{NCh}(i).FrameApproved=true(size(Particles{NCh}(i).Frame));
         end
-        elseproph
+    else
         for i=1:length(Particles{NCh})
             if isempty(Particles{NCh}(i).FrameApproved)
                 Particles{NCh}(i).FrameApproved=true(size(Particles{NCh}(i).Frame));
