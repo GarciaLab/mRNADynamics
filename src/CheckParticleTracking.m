@@ -354,12 +354,12 @@ try
     end
 end
 ElapsedTime=ElapsedTime/60;     %Time is in minutes
-nuclearCycleBoundaries = [nc9,nc10,nc11,nc12,nc13,nc14];
+anaphase = [nc9,nc10,nc11,nc12,nc13,nc14];
 %changing from frames to minutes
-nuclearCycleBoundariesMinutes = nuclearCycleBoundaries;
-for i = 1:length(nuclearCycleBoundaries)
-    if nuclearCycleBoundaries(i) > 0
-        nuclearCycleBoundariesMinutes(i) = ElapsedTime(nuclearCycleBoundaries(i)); % in units of minutes
+anaphaseInMins = anaphase;
+for i = 1:length(anaphase)
+    if anaphase(i) > 0
+        anaphaseInMins(i) = ElapsedTime(anaphase(i)); % in units of minutes
     end
 end
 
@@ -1123,38 +1123,51 @@ while (cc~='x')
         end       
 %         yyaxis(traceFigAxes,'left');
         if ~lineFit
-            xAxis = Frames;
+            traceFigTimeAxis = Frames;
             cla(traceFigAxes)
         else
-            xAxis = ElapsedTime(Frames);
-%             if exist('p1','var')
-%                 delete([p1,p2,cPoint1,cPoint2])
-%             end
+            ncPresent = unique(correspondingNCInfo(Frames));
+             % below subtracts 8 because the first element corresponds to nc 9
+             priorAnaphaseInMins = anaphaseInMins(ncPresent(1)-8);
+%             traceFigTimeAxis = ElapsedTime(Frames);
+            traceFigTimeAxis = ElapsedTime(Frames) - priorAnaphaseInMins;
+            if exist('p1','var')
+                delete([p1,p2,cPoint1,cPoint2])
+            end
         end
         
         hold(traceFigAxes, 'on')
-        p1 = errorbar(traceFigAxes, xAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+        p1 = errorbar(traceFigAxes, traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
             AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral,'.-k');           
-        p2 = errorbar(traceFigAxes,xAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+        p2 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
             AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');                   
 %         p3 = errorbar(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
 %            AmpIntegral5(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral5(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral5,'.-','Color','blue');                   
 %         p3 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
 %             backGround3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');                        
-        dPoint1 = plot(traceFigAxes,xAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
-        cPoint1 = plot(traceFigAxes,xAxis(Frames==CurrentFrame),AmpIntegral(Frames==CurrentFrame),'ob');
-        dPoint2 = plot(traceFigAxes,xAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
-        cPoint2 = plot(traceFigAxes,xAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
+        dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
+        cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral(Frames==CurrentFrame),'ob');
+        dPoint2 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
+        cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
       
+        try
+            xlim(traceFigAxes,[min(traceFigTimeAxis),max(traceFigTimeAxis)]+[-1,1]);
+        catch
+%             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
+        end
         % plotting anaphase boundaries ------------------------------------ 
         % Section added by EL 10/11/18
         currentYLimits = get(traceFigAxes,'YLim');  % Get the range of the y axis
         
-        % plotting all nuclear embryo bonudaries as a line 
-        for i = 1:length(nuclearCycleBoundaries)
-            currentMetaphaseBoundary = nuclearCycleBoundaries(i);
-            plot(traceFigAxes,ones(1,2).*currentMetaphaseBoundary,currentYLimits,...
-                'LineWidth',3,'Color','black');
+        % plotting all anaphase time points as vertical lines
+        for i = 1:length(anaphase)
+            if ~lineFit
+                currentAnaphaseBoundary = anaphase(i);
+            else
+                currentAnaphaseBoundary = anaphaseInMins(i) - priorAnaphaseInMins;
+            end
+            plot(traceFigAxes,ones(1,2).*currentAnaphaseBoundary,currentYLimits,...
+                'LineWidth',2,'Color','black');
         end
         % End of anaphase boundary marking section 
         % -----------------------------------------------------------------
@@ -1178,7 +1191,7 @@ while (cc~='x')
             for i = 1:length(prophaseBoundaries)
                 currentProphaseBoundary = prophaseBoundaries(i);
                 plot(traceFigAxes,ones(1,2).*currentProphaseBoundary,currentYLimits,...
-                    'LineWidth',3,'Color','green');
+                    'LineWidth',2,'Color','green');
             end
             
             currentYLimits = get(traceFigAxes,'YLim');  % Get the range of the y axis
@@ -1190,7 +1203,7 @@ while (cc~='x')
             for i = 1:length(metaphaseBoundaries)
                 currentMetaphaseBoundary = metaphaseBoundaries(i);
                 plot(traceFigAxes,ones(1,2).*currentMetaphaseBoundary,currentYLimits,...
-                    'LineWidth',3,'Color','blue');
+                    'LineWidth',2,'Color','blue');
             end
         end
         
@@ -1200,22 +1213,14 @@ while (cc~='x')
 %         p3 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
 %             backGround3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');                   
         if ~lineFit
-            legend(traceFigAxes,[p1,p2],'1-slice','3-slice accordion')
+            legend(traceFigAxes,[p1,p2],'1-slice','multi-slice')
             xlabel(traceFigAxes,'frame')
         else
-            legend(traceFigAxes,[p1,p2,fit1E],'1-slice','3-slice accordion',...
-                ['fit slope, time on: ' ...
-                num2str(Coefficients(1)) ',' num2str(roots(Coefficients))])
-            xlabel(traceFigAxes,'time (minutes)')
+            legend(traceFigAxes,[p1,p2,fit1E],'1-slice','multi-slice',...
+                ['fit slope: ', num2str(round(Coefficients(1))), ' a.u.',newline,'time on: ',num2str(roots(Coefficients)), ' min'])
+            xlabel(traceFigAxes,'time since anaphase (min)')
         end
         
-        try
-                xlim(traceFigAxes,[min(xAxis),max(xAxis)]+[-1,1]);
-        catch
-%             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
-        end
-                
-%         ylabel(traceFigAxes,'offset intensity (a.u.)')
     else
         %Only update the trace information if we have switched particles
         if (CurrentParticle~=PreviousParticle)||~exist('Amp', 'var')||(CurrentChannel~=PreviousChannel) || lastParticle
@@ -2490,29 +2495,34 @@ while (cc~='x')
          
          try
              lineFit = 1;
-             [frameIndex,Coefficients,ErrorEstimation,numberOfParticlesUsedForFit] = ...
+             [frameIndex,Coefficients,ErrorEstimation,nParticlesForFit] = ...
                  fitASingleTrace(CurrentParticle,Particles,Spots,CurrentChannel,...
-                 ElapsedTime,nuclearCycleBoundariesMinutes,correspondingNCInfo,...
+                 ElapsedTime,anaphaseInMins,correspondingNCInfo,...
                  averagingLength,'initialOnly','skipSavingTraces');
              
              
              % plotting the fitted line
              ncPresent = unique(correspondingNCInfo(Frames));
-             % below subtracts 8 because the first element correspond to nc 9
-             timeOfFirstNC = nuclearCycleBoundariesMinutes(ncPresent(1)-8);
-             currentXSegment = ElapsedTime(Frames(frameIndex(1):frameIndex(end)))-timeOfFirstNC;
+             % below subtracts 8 because the first element corresponds to nc 9
+             priorAnaphaseInMins = anaphaseInMins(ncPresent(1)-8);
+             currentXSegment = ElapsedTime(Frames(frameIndex(1):frameIndex(end)))-priorAnaphaseInMins;
              currentYSegment = polyval(Coefficients,currentXSegment);
              % error of predicted line
              %          currentAmpSegment = AmpIntegral3(frameIndex(1):frameIndex(end));
-             %          denominator = sum((currentAmpSegment - mean(currentAmpSegment)).^2);
-             %          RSquared = 1 - (normOfResiduals^2)/denominator;
+%                       denominator = sum((currentAmpSegment - mean(currentAmpSegment)).^2);
+%              RSquared = 1 - (normOfResiduals^2)/denominator;
 %              normOfResiduals = ErrorEstimation.normr;
 %              errorArray = ones(1,length(currentXSegment)).*...
-%                  normOfResiduals./numberOfParticlesUsedForFit; %EL normalized by number of points included
+%                  normOfResiduals./nParticlesForFit; %EL normalized by number of points included
              hold(traceFigAxes,'on')
 %              fit1E = errorbar(traceFigAxes,ElapsedTime(Frames(frameIndex(1):frameIndex(end))),...
 %                  currentYSegment,errorArray,'.-','Color','red');
-             fit1E = plot(traceFigAxes,ElapsedTime(Frames(frameIndex(1):frameIndex(end))),...
+%              to = -Coefficients(2) / Coefficients(1) + priorAnaphaseInMins;
+             to = -Coefficients(2) / Coefficients(1) + priorAnaphaseInMins;
+             fit1ETimeAxis = [to, ElapsedTime(Frames(frameIndex(1):frameIndex(end)))] - priorAnaphaseInMins;
+             currentYSegment = [0, currentYSegment];
+%              fit1ETimeAxis = ElapsedTime(Frames(frameIndex(1):frameIndex(end)));
+             fit1E = plot(traceFigAxes,fit1ETimeAxis,...
                  currentYSegment,'-','Color','red');
              hold(traceFigAxes,'off')
          catch

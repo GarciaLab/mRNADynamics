@@ -64,17 +64,17 @@ if currentLength > minimumLength
     
     numberOfParticlesUsedForFit = zeros(1,numberOfGroups);
     for currentGroup = 1:numberOfGroups
-        correspondingFrameIndexes = find(pointGroupNumbers == currentGroup);
+        correspondingFrameIndices = find(pointGroupNumbers == currentGroup);
         if currentGroup > 1
             % using the previous point as part of the line...
-            correspondingFrameIndexes = [min(correspondingFrameIndexes)-1 correspondingFrameIndexes];
+            correspondingFrameIndices = [min(correspondingFrameIndices)-1 correspondingFrameIndices];
         end
         % saving the boundaries of correspondingFrameIndexes in frameIndex
         frameIndex(currentGroup,:)...
-            = [correspondingFrameIndexes(1) correspondingFrameIndexes(end)];
+            = [correspondingFrameIndices(1) correspondingFrameIndices(end)];
         
-        currentAmpSegment = smoothedAmp(correspondingFrameIndexes);
-        currentXSegment = currentTimeArray(correspondingFrameIndexes);
+        currentAmpSegment = smoothedAmp(correspondingFrameIndices);
+        currentXSegment = currentTimeArray(correspondingFrameIndices);
         
         [Coefficients(currentGroup,:),...
             ErrorEstimation(currentGroup)]...
