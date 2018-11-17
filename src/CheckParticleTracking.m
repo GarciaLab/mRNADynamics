@@ -229,11 +229,13 @@ storedTimeProjection = []; % Don't need to wait for timeProjection to finish eac
 
 %Create the particle array. This is done so that we can support multiple
 %channels. Also figure out the number of channels
-if iscell(Particles)
+if iscell(Particles) 
     NChannels=length(Particles);
 else
     Particles={Particles};
-    Spots={Spots};
+    if ~iscell(Spots)
+        Spots={Spots};
+    end
     SpotFilter={SpotFilter};
     NChannels=1;
 end
@@ -245,7 +247,7 @@ for NCh=1:NChannels
         for i=1:length(Particles{NCh})
             Particles{NCh}(i).FrameApproved=true(size(Particles{NCh}(i).Frame));
         end
-    else
+        elseproph
         for i=1:length(Particles{NCh})
             if isempty(Particles{NCh}(i).FrameApproved)
                 Particles{NCh}(i).FrameApproved=true(size(Particles{NCh}(i).Frame));
@@ -702,7 +704,6 @@ while (cc~='x')
         %Show all the nuclei in regular mode
         if ~SpeedMode
             hold(overlayAxes,'on')
-            axes(overlayAxes)
             EllipseHandle=notEllipse(Ellipses{CurrentFrame}(:,3),...
                 Ellipses{CurrentFrame}(:,4),...
                 Ellipses{CurrentFrame}(:,5),...
@@ -915,11 +916,11 @@ while (cc~='x')
         
         if UseSchnitz
             
-            copyobj(EllipseHandle,gca)
-            copyobj(EllipseHandleBlue,gca)
-            copyobj(EllipseHandleGreen,gca)
-            copyobj(EllipseHandleWhite,gca)
-            copyobj(EllipseHandleYellow,gca)
+            copyobj(EllipseHandle,HisOverlayFigAxes)
+            copyobj(EllipseHandleBlue,HisOverlayFigAxes)
+            copyobj(EllipseHandleGreen,HisOverlayFigAxes)
+            copyobj(EllipseHandleWhite,HisOverlayFigAxes)
+            copyobj(EllipseHandleYellow,HisOverlayFigAxes)
             
         end
     
@@ -1126,9 +1127,9 @@ while (cc~='x')
             cla(traceFigAxes)
         else
             xAxis = ElapsedTime(Frames);
-            if exist('p1','var')
-                delete([p1,p2,cPoint1,cPoint2])
-            end
+%             if exist('p1','var')
+%                 delete([p1,p2,cPoint1,cPoint2])
+%             end
         end
         
         hold(traceFigAxes, 'on')
@@ -1144,16 +1145,16 @@ while (cc~='x')
         cPoint1 = plot(traceFigAxes,xAxis(Frames==CurrentFrame),AmpIntegral(Frames==CurrentFrame),'ob');
         dPoint2 = plot(traceFigAxes,xAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
         cPoint2 = plot(traceFigAxes,xAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
-%       
+      
         % plotting anaphase boundaries ------------------------------------ 
         % Section added by EL 10/11/18
-        currentYLimits = get(gca,'YLim');  % Get the range of the y axis
+        currentYLimits = get(traceFigAxes,'YLim');  % Get the range of the y axis
         
         % plotting all nuclear embryo bonudaries as a line 
         for i = 1:length(nuclearCycleBoundaries)
             currentMetaphaseBoundary = nuclearCycleBoundaries(i);
             plot(traceFigAxes,ones(1,2).*currentMetaphaseBoundary,currentYLimits,...
-                'LineWidth',3,'Color','red');
+                'LineWidth',3,'Color','black');
         end
         % End of anaphase boundary marking section 
         % -----------------------------------------------------------------
@@ -1168,7 +1169,7 @@ while (cc~='x')
                 m9,m10,m11,m12,m13,m14]...
                 = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
             
-            currentYLimits = get(gca,'YLim');  % Get the range of the y axis
+            currentYLimits = get(traceFigAxes,'YLim');  % Get the range of the y axis
             prophaseBoundaries = [p9 p10 p11 p12 p13 p14];
             if lineFit
                 prophaseBoundaries = ElapsedTime(prophaseBoundaries);
@@ -1180,7 +1181,7 @@ while (cc~='x')
                     'LineWidth',3,'Color','green');
             end
             
-            currentYLimits = get(gca,'YLim');  % Get the range of the y axis
+            currentYLimits = get(traceFigAxes,'YLim');  % Get the range of the y axis
             metaphaseBoundaries = [m9 m10 m11 m12 m13 m14];
             if lineFit
                 metaphaseBoundaries = ElapsedTime(metaphaseBoundaries);
@@ -1199,10 +1200,10 @@ while (cc~='x')
 %         p3 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
 %             backGround3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');                   
         if ~lineFit
-            legend([p1,p2],'1-slice','3-slice accordion')
+            legend(traceFigAxes,[p1,p2],'1-slice','3-slice accordion')
             xlabel(traceFigAxes,'frame')
         else
-            legend([p1,p2,fit1E],'1-slice','3-slice accordion',...
+            legend(traceFigAxes,[p1,p2,fit1E],'1-slice','3-slice accordion',...
                 ['fit slope, time on: ' ...
                 num2str(Coefficients(1)) ',' num2str(roots(Coefficients))])
             xlabel(traceFigAxes,'time (minutes)')
@@ -2505,12 +2506,14 @@ while (cc~='x')
              %          currentAmpSegment = AmpIntegral3(frameIndex(1):frameIndex(end));
              %          denominator = sum((currentAmpSegment - mean(currentAmpSegment)).^2);
              %          RSquared = 1 - (normOfResiduals^2)/denominator;
-             normOfResiduals = ErrorEstimation.normr;
-             errorArray = ones(1,length(currentXSegment)).*...
-                 normOfResiduals./numberOfParticlesUsedForFit; %EL normalized by number of points included
+%              normOfResiduals = ErrorEstimation.normr;
+%              errorArray = ones(1,length(currentXSegment)).*...
+%                  normOfResiduals./numberOfParticlesUsedForFit; %EL normalized by number of points included
              hold(traceFigAxes,'on')
-             fit1E = errorbar(traceFigAxes,ElapsedTime(Frames(frameIndex(1):frameIndex(end))),...
-                 currentYSegment,errorArray,'.-','Color','red');
+%              fit1E = errorbar(traceFigAxes,ElapsedTime(Frames(frameIndex(1):frameIndex(end))),...
+%                  currentYSegment,errorArray,'.-','Color','red');
+             fit1E = plot(traceFigAxes,ElapsedTime(Frames(frameIndex(1):frameIndex(end))),...
+                 currentYSegment,'-','Color','red');
              hold(traceFigAxes,'off')
          catch
              lineFit = 0;
@@ -2593,7 +2596,7 @@ disp(['(Left off at Particle #', num2str(CurrentParticle), ')'])
 
 
 end
-
-    function plotButtonPushed(src,event)
-        bar(randn(1,5));
-    end
+% 
+%     function plotButtonPushed(src,event)
+%         bar(randn(1,5));
+%     end
