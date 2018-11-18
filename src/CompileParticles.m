@@ -655,7 +655,7 @@ for ChN=1:NChannels
                     end
                 end
             catch
-                error(['You probably need to re-run AddParticlePosition again. If that',...
+                error(['You probably need to re-run AddParticlePosition again. If that ',...
                     'doesn''t fix things, talk to HG.'])
             end
             

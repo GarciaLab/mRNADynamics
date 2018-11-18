@@ -1794,7 +1794,7 @@ while (cc~='x')
         
         exitConnectFlag = 0;
         
-        particlesExistInFrame = length(Spots{ch}(CurrentFrame).Fits);
+        particlesExistInFrame = length(Spots{CurrentChannel}(CurrentFrame).Fits);
         currentParticleExistsInCurrentFrame = sum(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame);
         
         if ~currentParticleExistsInCurrentFrame && particlesExistInFrame

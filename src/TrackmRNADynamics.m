@@ -132,6 +132,9 @@ if exist([OutputFolder,filesep,'Particles.mat'])
             if strcmpi(Answer,'y')
                 Threshold1=Threshold1Backup;
                 Threshold2=Threshold2Backup;
+                %save a backup of the older version just in case. 
+                mkdir([OutputFolder,filesep,'OldParticlesVersions']);
+                save([OutputFolder,filesep,'OldParticlesVersions',filesep,'Particles.mat']);
                 delete([OutputFolder,filesep,'Particles.mat'])
             else
                 error('Cannot retrack if the threshold changed')

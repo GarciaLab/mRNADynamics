@@ -173,29 +173,29 @@ function APAnalysis(dataset, varargin)
     fmean = g./n;
     fstde = sqrt(g2./n - fmean.^2) ./ sqrt(n);
     if nSets > 1
-        e = errorbar(ap, fmean, fstde,'DisplayName', 'mean $\pm$ std. error');
-        fMeanNaN = nanmean(fSet, 2);
+%         e = errorbar(ap, fmean, fstde,'DisplayName', 'mean $\pm$ std. error');
+%         fMeanNaN = nanmean(fSet, 2);
 %         e = plot(ap, fMeanNaN,'DisplayName', 'mean');
     end
            
     hold off
-    lgd2 = legend('show');
-    set(lgd2, 'Interpreter', 'Latex');
-    xlim([0, 1])
+    
+    figure()
+%     ellipsesOn(totalEllipses < 3) = NaN;
+%     totalEllipses(totalEllipses < 3) = NaN;
+%     fstde(totalEllipses < 3) = NaN;
+    idx = ~any(isnan(totalEllipses),2);
+    errorbar(ap(idx),ellipsesOn(idx)./totalEllipses(idx), fstde(idx));
+    xlim([.275, .65])
     ylim([0, 1.1])
+    
+    lgd2 = legend('mean $\pm$ std. error');
+    set(lgd2, 'Interpreter', 'latex');
     title(['fraction of actively transcribing nuclei, nuclear cycle ',num2str(nc+11)]);
     xlabel('fraction embryo length');
     ylabel('fraction on');
     standardizeFigure(gca, legend('show'),'red');
     e.Color = [213,108,85]/255;
-    
-    figure()
-    ellipsesOn(totalEllipses < 3) = NaN;
-    totalEllipses(totalEllipses < 3) = NaN;
-    idx = ~any(isnan(totalEllipses),2);
-    errorbar(ap(idx),ellipsesOn(idx)./totalEllipses(idx), 1./totalEllipses(idx));
-    xlim([.2, 1])
-    ylim([0, 1.1])
     %% 
  
     %Experiment number on
@@ -233,7 +233,12 @@ function APAnalysis(dataset, varargin)
     ylabel('number on');
     standardizeFigure(gca, legend('show'), 'red');    
   
-%%
+%%  
+    try
+        pol2LoadingAnalysis(dataset);
+    catch
+    end
+    
     analyzeContiguity(d);
     plotWindowTimings(d);
     %saving every figure
