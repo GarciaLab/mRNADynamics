@@ -1,4 +1,4 @@
-function fittedLineEquations = fitSingleTraces(Prefix,Particles,Spots,FrameInfo,ElapsedTime,varargin)
+function fittedLineEquations = fitSingleTraces(Prefix,Particles,Spots,schnitzcells,FrameInfo,ElapsedTime,varargin)
 % fittedLineSubSetCode(varargin)
 %
 % DESCRIPTION
@@ -9,7 +9,7 @@ function fittedLineEquations = fitSingleTraces(Prefix,Particles,Spots,FrameInfo,
 %
 % Author (contact): Emma Luu (emma_luu@berkeley.edu)
 % Created: 10/25/18
-% Last Updated: 11/7/18
+% Last Updated: 11/20/18
 %
 % Documented by: Emma Luu (emma_luu@berkeley.edu)
 
@@ -18,7 +18,7 @@ initialOnly = 0;
 skipSavingTraces = 0;
 
 %% Checking varargin
-if length(varargin)
+if ~isempty(varargin)
     for i=1:length(varargin)
         if strcmpi(varargin{i},'initalOnly')
             initialOnly = 1;
@@ -141,7 +141,7 @@ else
         
         [frameIndex,coefficients,errorEstimation,numOfPartUsedForFit] = ...
             fitASingleTrace(currentParticle,Particles,Spots,currentChannel,...
-            ElapsedTime,nuclearCycleBoundaries,correspondingNCInfo,...
+            schnitzcells,ElapsedTime,nuclearCycleBoundaries,correspondingNCInfo,...
             averagingLength);
         
         fittedLineEquations(currentParticle).frameIndex = frameIndex;

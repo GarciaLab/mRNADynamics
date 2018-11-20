@@ -2984,7 +2984,7 @@ end
 % does not support more than one channel. Please contact Emma to work on
 % implementing it for two channels.
 try
-    fittedLineEquations = fitSingleTraces(Prefix,Particles,Spots,FrameInfo,ElapsedTime);
+    fittedLineEquations = fitSingleTraces(Prefix,Particles,Spots,schnitzcells,FrameInfo,ElapsedTime);
 catch
 end
 
