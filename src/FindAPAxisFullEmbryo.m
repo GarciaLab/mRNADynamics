@@ -199,7 +199,7 @@ elseif strcmp(FileMode,'LSM')
     %If full_embryo_angle is empty, chances are we have a CZI file
     if isempty(full_embryo_angle)
         full_embryo_angle=str2num(LSMMeta2.get('Global HardwareSetting|ParameterCollection|RoiRotation #1'));
-    else
+    else      
         error('Could not extract rotation of FullEmbryo images')
     end
     
