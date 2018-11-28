@@ -74,13 +74,18 @@ currentTimeArray = ElapsedTime(frame); % Units to seconds
 ncPresent = unique(correspondingNCInfo(frame));
 % below subtracts 8 because the first element correspond to nc 9
 timeOfFirstNC = nuclearCycleBoundaries(ncPresent(1)-8);
-nucleusFirstTime = ElapsedTime(...
-    schnitzcells(Particles{currentChannel}(currentParticle).Nucleus).frames(1));
+try
+    nucleusFirstTime = ElapsedTime(...
+        schnitzcells(Particles{currentChannel}(currentParticle).Nucleus).frames(1));
+    timeShift = nucleusFirstTime;
+catch
+    timeShift = timeOfFirstNC;
+end
 % adjusting frameRange to have time 0 be the start of the
 % first nuclear cycle the particle appears in or the first time point of
 % the nucleus it is assigned to
 if useDefaultTimeShift
-    currentTimeArray = currentTimeArray - nucleusFirstTime;
+    currentTimeArray = currentTimeArray - timeShift;
 elseif useAnaphase
     currentTimeArray = currentTimeArray - timeOfFirstNC;
 % leaving a structure such that you could also use this for any other
