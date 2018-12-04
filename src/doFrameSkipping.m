@@ -28,6 +28,7 @@ function doFrameSkipping(SkipFrames, FrameInfo, OutputFolder)
     %Find all the coat protein files
     D=dir([OutputFolder,filesep,'*_z01.tif']);
     %Delete the skipped files
+    try
     for i=SkipFrames
         D2=dir([OutputFolder,filesep,D(i).name(1:end-6),'*.tif']);
         for j=1:length(D2)
@@ -46,5 +47,7 @@ function doFrameSkipping(SkipFrames, FrameInfo, OutputFolder)
             end
         end
     end
+    end
+    
   end
 end
