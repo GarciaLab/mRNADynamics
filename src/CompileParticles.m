@@ -58,6 +58,7 @@ SkipTraces=0;   %Do not output the individual traces.
 SkipFluctuations=0;  %Do not generate the plots of correlations of fluctuations and offset
 SkipFits=0;         %Do not generate the fit output (but still does the fit)
 SkipMovie=0;        %Do not generate the movie
+SkipAll=0;          %Do not do other things 
 ApproveAll=0;       %Only use manually approved particles
 MinParticles=4;
 minTime = 1;
@@ -170,6 +171,7 @@ else
             SkipFluctuations=1;
             SkipFits=1;
             SkipMovie=1;
+            SkipAll=1;
         elseif strcmpi(varargin{i},'ApproveAll')
             ApproveAll=1;
             disp('Approved')
@@ -1904,101 +1906,104 @@ for ChN=1:NChannels
     %identified the parent nucleus.
     
     if HistoneChannel
-        
-        figure(11)
-        clf
-        xRange=linspace(13.5,14.5);
-        plot(xRange,ones(size(xRange))*nc14,'-k')
-        hold on
-        for i=1:length(CompiledParticles{ChN})
-            if (CompiledParticles{ChN}(i).nc==14)&(CompiledParticles{ChN}(i).PParticle>0) %#ok<*AND2>
-                plot(14*(1+(rand(1)-0.5)/100),CompiledParticles{ChN}(i).NucStart,'.k')
-            end
-        end
-        
-        xRange=linspace(12.5,13.5);
-        plot(xRange,ones(size(xRange))*nc13,'-k')
-        hold on
-        for i=1:length(CompiledParticles{ChN})
-            if (CompiledParticles{ChN}(i).nc==13)&(CompiledParticles{ChN}(i).PParticle>0)
-                plot(13*(1+(rand(1)-0.5)/100),CompiledParticles{ChN}(i).NucStart,'.k')
-            end
-        end
-        hold off
-        try
-            ylim([nc13-5,nc14+5])
-        end
-        set(gca,'XTick',[13,14])
-        xlabel('nc')
-        ylabel('Frame')
-        title('Division time set by eye vs. actual division times of nuclei')
-        saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Various',filesep,'DivisionTimes_ch',...
-            iIndex(ChN,2),'.tif'])
-        
-        
-        
-        %Is there any correlation between the first frame and the time of division?
-        
-        
-        figure(12)
-        subplot(1,2,1)
-        hold on
-        for i=1:length(CompiledParticles{ChN})
-            if (CompiledParticles{ChN}(i).nc==13)&(CompiledParticles{ChN}(i).PParticle>0)
-                plot(CompiledParticles{ChN}(i).NucStart*(1+(rand(1)-0.5)/100),CompiledParticles{ChN}(i).FirstFrame,'.k')
-            end
-        end
-        hold off
-        axis square
-        xlabel('Nuclear birth (frame)')
-        ylabel('First particle frame')
-        title('nc13')
-        
-        
-        subplot(1,2,2)
-        hold on
-        for i=1:length(CompiledParticles{ChN})
-            if (CompiledParticles{ChN}(i).nc==14)&(CompiledParticles{ChN}(i).PParticle>0)
-                plot(CompiledParticles{ChN}(i).NucStart*(1+(rand(1)-0.5)/100),CompiledParticles{ChN}(i).FirstFrame,'.k')
-            end
-        end
-        hold off
-        axis square
-        title('nc14')
-        xlabel('Nuclear birth (frame)')
-        ylabel('First particle frame')
-        saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Various',filesep,'DivisionVsFirstFrame_ch',...
-            iIndex(ChN,2),'.tif'])
-        
-        
-        
-        
-        
-        %First frame and AP position
-        if strcmpi(ExperimentAxis,'AP')
-            figure(13)
+        if ~SkipAll
+            figure(11)
             clf
+            xRange=linspace(13.5,14.5);
+            plot(xRange,ones(size(xRange))*nc14,'-k')
             hold on
             for i=1:length(CompiledParticles{ChN})
-                plot(CompiledParticles{ChN}(i).MeanAP,....
-                    ElapsedTime(CompiledParticles{ChN}(i).FirstFrame)-...
-                    ElapsedTime(nc14),'.k')
+                if (CompiledParticles{ChN}(i).nc==14)&(CompiledParticles{ChN}(i).PParticle>0) %#ok<*AND2>
+                    plot(14*(1+(rand(1)-0.5)/100),CompiledParticles{ChN}(i).NucStart,'.k')
+                end
+            end
+        
+
+            xRange=linspace(12.5,13.5);
+            plot(xRange,ones(size(xRange))*nc13,'-k')
+            hold on
+            for i=1:length(CompiledParticles{ChN})
+                if (CompiledParticles{ChN}(i).nc==13)&(CompiledParticles{ChN}(i).PParticle>0)
+                    plot(13*(1+(rand(1)-0.5)/100),CompiledParticles{ChN}(i).NucStart,'.k')
+                end
             end
             hold off
-            box on
-            xlabel('AP position (x/L)')
-            ylabel('Particle first frame (min)')
-            %         if length(ElapsedTime) > nc14+20
-            %             ylim([0,ElapsedTime(nc14+20)-ElapsedTime(nc14)])
-            %         elseif (ElapsedTime(end) - ElapsedTime(nc14))>0
-            %             ylim([0, ElapsedTime(end) - ElapsedTime(nc14)])
-            %         end
-            % ES 2014-01-05 Testing early-nc14-only movies
-            saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Various',filesep,'FirstFrameVsAP_ch',...
+            try
+                ylim([nc13-5,nc14+5])
+            end
+            set(gca,'XTick',[13,14])
+            xlabel('nc')
+            ylabel('Frame')
+            title('Division time set by eye vs. actual division times of nuclei')
+            saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Various',filesep,'DivisionTimes_ch',...
                 iIndex(ChN,2),'.tif'])
+
+
+
+            %Is there any correlation between the first frame and the time of division?
+
+
+            figure(12)
+            subplot(1,2,1)
+            hold on
+            for i=1:length(CompiledParticles{ChN})
+                if (CompiledParticles{ChN}(i).nc==13)&(CompiledParticles{ChN}(i).PParticle>0)
+                    plot(CompiledParticles{ChN}(i).NucStart*(1+(rand(1)-0.5)/100),CompiledParticles{ChN}(i).FirstFrame,'.k')
+                end
+            end
+            hold off
+            axis square
+            xlabel('Nuclear birth (frame)')
+            ylabel('First particle frame')
+            title('nc13')
+
+
+            subplot(1,2,2)
+            hold on
+            for i=1:length(CompiledParticles{ChN})
+                if (CompiledParticles{ChN}(i).nc==14)&(CompiledParticles{ChN}(i).PParticle>0)
+                    plot(CompiledParticles{ChN}(i).NucStart*(1+(rand(1)-0.5)/100),CompiledParticles{ChN}(i).FirstFrame,'.k')
+                end
+            end
+            hold off
+            axis square
+            title('nc14')
+            xlabel('Nuclear birth (frame)')
+            ylabel('First particle frame')
+            saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Various',filesep,'DivisionVsFirstFrame_ch',...
+                iIndex(ChN,2),'.tif'])
+
+
+
+
+
+            %First frame and AP position
+            if strcmpi(ExperimentAxis,'AP')
+                figure(13)
+                clf
+                hold on
+                for i=1:length(CompiledParticles{ChN})
+                    plot(CompiledParticles{ChN}(i).MeanAP,....
+                        ElapsedTime(CompiledParticles{ChN}(i).FirstFrame)-...
+                        ElapsedTime(nc14),'.k')
+                end
+                hold off
+                box on
+                xlabel('AP position (x/L)')
+                ylabel('Particle first frame (min)')
+                %         if length(ElapsedTime) > nc14+20
+                %             ylim([0,ElapsedTime(nc14+20)-ElapsedTime(nc14)])
+                %         elseif (ElapsedTime(end) - ElapsedTime(nc14))>0
+                %             ylim([0, ElapsedTime(end) - ElapsedTime(nc14)])
+                %         end
+                % ES 2014-01-05 Testing early-nc14-only movies
+                saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Various',filesep,'FirstFrameVsAP_ch',...
+                    iIndex(ChN,2),'.tif'])
+            end
         end
     end
 end
+
 
 %% AP position of particle vs nucleus
 
@@ -2491,17 +2496,19 @@ if HistoneChannel&&strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
             end
         end
         
-        fractionFig = figure();
-        fractionAxes = axes(fractionFig);
-        plot(fractionAxes,APbinID,EllipsesOnAP{ChN}(:,1)./TotalEllipsesAP(:,1),'.-b') % fraction on nc 12
-        hold(fractionAxes,'on')
-        plot(fractionAxes,APbinID,EllipsesOnAP{ChN}(:,2)./TotalEllipsesAP(:,2),'.-k') % fraction on nc 13
-        plot(fractionAxes,APbinID,EllipsesOnAP{ChN}(:,3)./TotalEllipsesAP(:,3),'.-r') % fraction on nc 14
-        hold(fractionAxes,'off')
-        title(fractionAxes,'Fraction active nuclei')
-        xlabel(fractionAxes,'AP (x/L)')
-        ylabel(fractionAxes,'Fraction')
-        legend(fractionAxes,'nc12', 'nc13', 'nc14')
+        if ~SkipAll
+            fractionFig = figure();
+            fractionAxes = axes(fractionFig);
+            plot(fractionAxes,APbinID,EllipsesOnAP{ChN}(:,1)./TotalEllipsesAP(:,1),'.-b') % fraction on nc 12
+            hold(fractionAxes,'on')
+            plot(fractionAxes,APbinID,EllipsesOnAP{ChN}(:,2)./TotalEllipsesAP(:,2),'.-k') % fraction on nc 13
+            plot(fractionAxes,APbinID,EllipsesOnAP{ChN}(:,3)./TotalEllipsesAP(:,3),'.-r') % fraction on nc 14
+            hold(fractionAxes,'off')
+            title(fractionAxes,'Fraction active nuclei')
+            xlabel(fractionAxes,'AP (x/L)')
+            ylabel(fractionAxes,'Fraction')
+            legend(fractionAxes,'nc12', 'nc13', 'nc14')
+        end
     end
 end
 
@@ -2983,9 +2990,11 @@ end
 % ErrorEstimation, and frameIndex, which are described below. This currently
 % does not support more than one channel. Please contact Emma to work on
 % implementing it for two channels.
-try
-    fittedLineEquations = fitSingleTraces(Prefix,Particles,Spots,FrameInfo,ElapsedTime);
-catch
+if ~SkipFits
+    try
+        fittedLineEquations = fitSingleTraces(Prefix,Particles,Spots,schnitzcells,FrameInfo,ElapsedTime);
+    catch
+    end
 end
 
 %% Calculation of particle speed

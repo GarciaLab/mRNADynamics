@@ -1,14 +1,48 @@
 function [frameIndex,Coefficients,ErrorEstimation,numberOfParticlesUsedForFit] = ...
     fitASingleTrace(currentParticle,Particles,Spots,currentChannel,...
-    ElapsedTime,nuclearCycleBoundaries,correspondingNCInfo,...
+    schnitzcells,ElapsedTime,nuclearCycleBoundaries,correspondingNCInfo,...
     averagingLength,varargin)
+% CompileParticles(varargin)
+%
+% DESCRIPTION
+% Fits a piece-wise function of lines to a fluorescent trace.
+%
+% ARGUMENTS
+% currentParticle : particle index of interest
+% Particles : a cell variable holding all the particles
+% Spots : a cell variable holding all the spots
+% currentChannel : index of current channel
+% ElapsedTime : array of time elapsed since start of the movie
+% nuclearCycleBoundaries : array of nuclearCycleBoundaries (in minutes) 
+%                          corresponding to ElapsedTime 
+% correspondingNCInfo : corresponding nc to the ElapsedTime array
+% averagingLength : length of averaging done by the movmean function. 
+%
+% OPTIONS
+% 'initialOnly' : only spends time fitting the polymerase 
+%                 loading rate of the trace
+% 'minimumLength' : adjusts the threshold number of total number of points
+%                   in a trace that will be fitted, not inclusive.
+%                  (default = 3 points)
+% 'skipSavingTraces' : skips saving the traces into a folder (meant for
+%                      CompileParticles
+% 'useAnaphase' : uses the users values of the anaphase to set time 0 to be
+%                 the start of the nuclear cycle of the particle. 
+% 
+% Author (contact): Emma Luu (emma_luu@berkeley.edu)
+% Created: 11/7/18
+% Last Updated: 11/20/18 (EL)
+% Documented by: Emma Luu (emma_luu@berkeley.edu)
+
 %% Initializing the options
 skipSavingTraces = 0;
 initialOnly = 0;
 minimumLength = 3; % minimum length of trace
+useDefaultTimeShift = 1;
+useAnaphase = 0;
 
 %% Checking varargin
-if length(varargin)
+if ~isempty(varargin)
     for i=1:length(varargin)
         if strcmpi(varargin{i},'initialOnly')
             initialOnly = 1;
@@ -16,6 +50,9 @@ if length(varargin)
             minimumLength = varargin{i+1};
         elseif strcmpi(varargin{i},'skipSavingTraces')
             skipSavingTraces = 1;
+        elseif strcmpi(varargin{i},'useAnaphase')
+            useAnaphase = 1;
+            useDefaultTimeShift = 0;
         end
     end
 end
@@ -37,9 +74,24 @@ currentTimeArray = ElapsedTime(frame); % Units to seconds
 ncPresent = unique(correspondingNCInfo(frame));
 % below subtracts 8 because the first element correspond to nc 9
 timeOfFirstNC = nuclearCycleBoundaries(ncPresent(1)-8);
+try
+    nucleusFirstTime = ElapsedTime(...
+        schnitzcells(Particles{currentChannel}(currentParticle).Nucleus).frames(1));
+    timeShift = nucleusFirstTime;
+catch
+    timeShift = timeOfFirstNC;
+end
 % adjusting frameRange to have time 0 be the start of the
-% first nuclear cycle the particle appears in
-currentTimeArray = currentTimeArray - timeOfFirstNC;
+% first nuclear cycle the particle appears in or the first time point of
+% the nucleus it is assigned to
+if useDefaultTimeShift
+    currentTimeArray = currentTimeArray - timeShift;
+elseif useAnaphase
+    currentTimeArray = currentTimeArray - timeOfFirstNC;
+% leaving a structure such that you could also use this for any other
+% time/event to shift...can rework it to be an if/else with ~useAnaphase as
+% the condition. 11/20/18 - EL
+end
 
 
 %% Fitting process
