@@ -16,8 +16,13 @@
 % 'middleprojection': Uses a max projection in the nuclear channel, but only
 %                   of the middle slices (11-16) to prevent bright
 %                   reflections from overpowering the signal
-% 'PreferredFileForTest': AR 8/30/2018 don't know.
-% 'skipframes': AR 8/30/2018 don't know.
+% 'PreferredFileForTest': Uses the given filename for the prefered FF file.
+%                         PreferredFileForTest needs to be a struct with 
+%                         a field name called "fileName" with the file name. 
+%                         EL 12/3/2018
+% 'skipframes',framesToSkip: deletes frames given by framesToSkip
+%                            EL 12/3/2018 option might not be working as
+%                            intended. 
 % 'keepTifs': MPF 9/12/2018 Do not delete source folder TIF files when
 % running. This is used for testing purposes.
 % 'generateTifs': MPF 11/11/2018 Additionally run filterMovie to generate Tifs stacks

@@ -143,6 +143,8 @@ SisterMode = 0;
 ncRange = 0;
 % This is for the projection mode
 projectionMode = 'None (Default)';
+%do 3D gaussian fitting
+fit3DGauss = 0;
 
 intScale = 1;
 
@@ -157,6 +159,8 @@ if length(varargin)>1
             ForCompileAll=1;
         elseif strcmpi(varargin{i}, 'speedmode')
             SpeedMode = 1;
+        elseif strcmpi(varargin{i}, 'fit3DGauss')
+            fit3DGauss = 1;
         elseif strcmpi(varargin{i}, 'sistermode')
             SisterMode = 1;
         elseif strcmpi(varargin{i}, 'intScale')
@@ -2564,6 +2568,10 @@ end
 close all;
 disp('Particles saved.')
 disp(['(Left off at Particle #', num2str(CurrentParticle), ')'])
+
+if fit3DGauss
+    fit3DGaussiansToAllSpots(Prefix);
+end
 %% Extra stuff that is useful in debug mode
 
 %Reset approve status of all approved particles in a certain nc
