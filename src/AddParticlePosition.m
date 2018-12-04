@@ -474,9 +474,13 @@ if ~NoAP
     mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
     
     %Check whether we have Bcd-GFP. If so, we'll use it for the alignment
-    %if there is no histone.
+    %if there is no histone. (Actually, if there's Bcd, it's usually the
+    %best channel to calculate the cross-correlation.
+    % YJK (12/3/2018) : This whole part of finding the channel for the
+    % ZoomImage should be written better. Right now, it's pretty
+    % hard-coded, and also doesn't support the channel3 feature.
     if ((~isempty(cell2mat(strfind(lower(Channel1),'bcd'))))|...
-            (~isempty(cell2mat(strfind(lower(Channel2),'bcd')))))&InvertHis
+            (~isempty(cell2mat(strfind(lower(Channel2),'bcd')))))||InvertHis
         %Figure out which channel Bcd is in
         if ~isempty(strfind(lower(Channel1),'bcd'))
             BcdChannel=1;
