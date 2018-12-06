@@ -138,7 +138,7 @@ function APAnalysis(dataset, varargin)
     
     %% 
     %Experiment fraction on
-    figure('Name', 'fraction')
+    figure('Name', 'Individual Movie Fraction On')
     totalEllipses =  zeros(numAPBins, 1);
     ellipsesOn = zeros(numAPBins, 1);
     g = zeros(numAPBins, 1);
@@ -177,16 +177,16 @@ function APAnalysis(dataset, varargin)
 %         fMeanNaN = nanmean(fSet, 2);
 %         e = plot(ap, fMeanNaN,'DisplayName', 'mean');
     end
-           
+    legend('show')       
     hold off
     
-    figure()
+    figure('Name','Combined Fraction of On')
 %     ellipsesOn(totalEllipses < 3) = NaN;
 %     totalEllipses(totalEllipses < 3) = NaN;
 %     fstde(totalEllipses < 3) = NaN;
     idx = ~any(isnan(totalEllipses),2);
     errorbar(ap(idx),ellipsesOn(idx)./totalEllipses(idx), fstde(idx));
-    xlim([.275, .65])
+    xlim([0.15 0.6])%xlim([.275, .65])
     ylim([0, 1.1])
     
     lgd2 = legend('mean $\pm$ std. error');
@@ -196,6 +196,18 @@ function APAnalysis(dataset, varargin)
     ylabel('fraction on');
     standardizeFigure(gca, legend('show'),'red');
     e.Color = [213,108,85]/255;
+    %% Combined Ellipses Count
+    % This is for a quick visual check of the fraction on plots 
+    figure('Name','Combined Ellipses Count')
+    plot(ap,totalEllipses,'DisplayName','Total')
+    hold on
+    plot(ap,ellipsesOn,'DisplayName','On')
+    title(['on ellipses and total ellipses, nuclear cycle ',num2str(nc+11)]);
+    xlabel('fraction embryo length');
+    ylabel('ellipses')
+    legend('show')
+    standardizeFigure(gca, legend('show'),'red');
+    hold off
     %% 
  
     %Experiment number on
