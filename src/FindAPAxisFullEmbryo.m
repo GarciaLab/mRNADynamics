@@ -173,8 +173,8 @@ elseif strcmp(FileMode,'LSM')
     
     %Rotates the full embryo image to match the rotation of the zoomed
     %time series
-    zoom_angle = -1;        %Set defaults to -1 so we can tell if the 
-    full_embryo_angle = -1;     %angles were successfully extracted
+    zoom_angle = NaN;        %Set defaults to NaN so we can tell if the 
+    full_embryo_angle = NaN;     %angles were successfully extracted
     
     LSMMid=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(MidFileIndex).name]);
     LSMSurf = bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(SurfFileIndex).name]);
@@ -200,7 +200,7 @@ elseif strcmp(FileMode,'LSM')
     if isempty(full_embryo_angle)
         full_embryo_angle=str2num(LSMMeta2.get('Global HardwareSetting|ParameterCollection|RoiRotation #1'));
     %Check if angle was successfully extracted
-    elseif full_embryo_angle == -1
+    elseif isnan(full_embryo_angle)
         error('Could not extract rotation of FullEmbryo images')
     end
     
@@ -220,7 +220,7 @@ elseif strcmp(FileMode,'LSM')
     if isempty(zoom_angle)
         zoom_angle=str2num(LSMMetaZoom2.get('Global HardwareSetting|ParameterCollection|RoiRotation #1'));
     %Check if angle was successfully extracted
-    elseif zoom_angle == -1
+    elseif isnan(zoom_angle)
         error('Could not extract rotation of FullEmbryo images')
     end
 
