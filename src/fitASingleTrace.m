@@ -60,13 +60,18 @@ end
 %% Getting particle information
 % Amplitude ---------------------------------------------------------------
 % getting frame information
-[frame,~,ampIntegral3,~,~,~,~,~,~,~,~,~,~]=...
+[frame,~,ampIntegral3,~,~,~,~,~,~,~,~, ~,~, ampIntegralGauss3D,~]=...
     GetParticleTrace(currentParticle,...
     Particles{currentChannel},Spots{currentChannel});
 currentLength = length(frame);
 
 % performing moving average
-smoothedAmp = movmean(ampIntegral3,averagingLength);
+if sum(isnan(ampIntegralGauss3D))
+    disp('Note: Could not use the 3D guassian intensity fits so ampIntegral3 will be used')
+    smoothedAmp = movmean(ampIntegral3,averagingLength);
+else
+    smoothedAmp = movmean(ampIntegralGauss3D,averagingLength);
+end
 
 % Time --------------------------------------------------------------------
 % getting the corresponding time of the trace

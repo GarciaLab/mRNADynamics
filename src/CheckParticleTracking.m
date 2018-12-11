@@ -98,6 +98,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % -/= Change the zoom factor when in zoom mode.
 % 0 Enter debug mode to fix things manually
 % ~ Switch figure 1 from a single plane image to a z or time projection.
+% 3 Fits a line to the polymerase loading regime of the trace.
 %
 % OUTPUT
 % Particles: A modified Particles
