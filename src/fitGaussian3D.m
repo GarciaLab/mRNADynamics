@@ -60,7 +60,7 @@ ub = [inf, size(snip3D, 1)*1.5, size(snip3D, 2)*1.5, size(snip3D, 3)*1.5, inf, i
 close all
 vol = size(snip3D, 1)*size(snip3D,2)*size(snip3D,3);
 gaussian = single3DGaussian(fits) + snip3D;
-intensity = sum(gaussian(:) + snip3D(:)) - vol*fits(end);
+intensity = sum(gaussian(:)) - vol*fits(end);
 
 %% All Plotting
 if displayFigures
