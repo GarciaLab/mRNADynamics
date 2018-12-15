@@ -106,6 +106,7 @@ MinAPIndex = [];
 MinDVIndex = [];
 NEllipsesAP = [];
 NEllipsesDV = [];
+NOffsetParticles = [];
 NParticlesAP = {};
 NParticlesAP_ROI = {};
 NParticlesAP_nonROI = {};
