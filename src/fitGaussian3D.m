@@ -57,13 +57,13 @@ ub = [inf, size(snip3D, 1)*1.5, size(snip3D, 2)*1.5, size(snip3D, 3)*1.5, inf, i
 
 %Display
 
-close all
 vol = size(snip3D, 1)*size(snip3D,2)*size(snip3D,3);
 gaussian = single3DGaussian(fits) + snip3D;
 intensity = sum(gaussian(:)) - vol*fits(end);
 
 %% All Plotting
 if displayFigures
+    close all
     figure(1)
     isosurface(gaussian, 3)
 %     p = patch(isosurface(gaussian, 3));

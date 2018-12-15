@@ -210,6 +210,7 @@ end
 xSize = FrameInfo(1).PixelsPerLine;
 ySize = FrameInfo(1).LinesPerFrame;
 pixelSize = FrameInfo(1).PixelSize*1000; %nm
+zStep = FrameInfo(1).ZStep;
 snippet_size = 2*(floor(1300/(2*pixelSize))) + 1; % nm. note that this is forced to be odd
 LinesPerFrame = FrameInfo(1).LinesPerFrame;
 PixelsPerLine = FrameInfo(1).PixelsPerLine;
@@ -1684,6 +1685,7 @@ while (cc~='x')
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).cylIntensity(zIndex) = temp_particles{zIndex}{1}{24};
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).brightestZ = NaN;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).IntegralZ = use_integral_center;
+
                             else
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity(zIndex)=nan;
                                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFit(zIndex)=nan;
@@ -1732,6 +1734,61 @@ while (cc~='x')
                         end
                         [tempSpots,~] = findBrightestZ(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex), -1, use_integral_center, force_z);
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = tempSpots;
+                        
+                        try
+                            s = Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex);
+                            zMax = FrameInfo(1).NumberSlices+2;
+                            bZ = s.brightestZ;
+                            zInd = s.z==bZ;
+                            xSpotNew = s.xDoG(zInd);
+                            ySpotNew = s.yDoG(zInd);
+                            
+                            if isfield(s, 'snippet_size') && ~isempty(s.snippet_size)
+                                snippet_sizeNew = s.snippet_size;
+                            else
+                                snippet_sizeNew = 13; %pixels
+                            end
+                            
+                            snipDepth = 2;
+                            zBot = bZ - snipDepth;
+                            zTop = bZ + snipDepth;
+                            width = 200/pixelSize; %nm. empirically determined and seems to work width of spot psf
+                            offsetGuess = nanmean(s.Offset);
+                            snip3D = [];
+                            try
+                                k = 1;
+                                for z = zBot:zTop
+                                    
+                                    FullSlice=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3)...
+                                        ,'_z' iIndex(z,2) '_ch' iIndex(CurrentChannel,2) '.tif']);
+                                    
+                                    snip3D(:,:,k) = double(FullSlice(max(1,ySpotNew-snippet_sizeNew):min(ySize,ySpotNew+snippet_sizeNew),...
+                                        max(1,xSpotNew-snippet_sizeNew):min(xSize,xSpotNew+snippet_sizeNew))); %#ok<*SAGROW>
+                                    k = k + 1;
+                                    
+                                end
+                            catch
+                                snipDepth = zMax;
+                                for z = 1:zMax
+                                    FullSlice=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3)...
+                                        ,'_z' iIndex(z,2) '_ch' iIndex(CurrentChannel,2) '.tif']);
+                                    
+                                    snip3D(:,:,z) = double(FullSlice(max(1,ySpotNew-snippet_sizeNew):min(ySize,ySpotNew+snippet_sizeNew),...
+                                        max(1,xSpotNew-snippet_sizeNew):min(xSize,xSpotNew+snippet_sizeNew))); %#ok<*SAGROW>
+                                end
+                            end
+                            initial_params = [max(max(max(snip3D))), NaN,NaN, snipDepth + 1, width,offsetGuess];
+                            [fits3D, int3D] = fitGaussian3D(snip3D, initial_params, zStep);
+                            x3D = fits3D(2) - snippet_sizeNew + xSpotNew;
+                            y3D = fits3D(3) - snippet_sizeNew + ySpotNew;
+                            z3D = fits3D(4) - snipDepth + bZ;
+                            Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).GaussPos = [x3D, y3D, z3D];
+                            Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).fits3D = fits3D;
+                            Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).gauss3DIntensity = int3D;
+                        catch
+                            warning('failed to fit 3D Gaussian to spot. Not sure why. Talk to AR if you need this.');
+                        end
+                        
                         
                         %Add this to SpotFilter, which tells the code that this spot is
                         %above the threshold. First, check whether the
