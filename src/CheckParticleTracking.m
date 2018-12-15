@@ -144,7 +144,10 @@ SisterMode = 0;
 ncRange = 0;
 % This is for the projection mode
 projectionMode = 'None (Default)';
-%do 3D gaussian fitting
+%plot 3D gaussian fitting intensities in tracefig
+plot3DGauss = 0;
+%when checkparticletracking saves, it will add 3d gaussian fits to
+%Spots.mat
 fit3DGauss = 0;
 
 intScale = 1;
@@ -160,8 +163,13 @@ if length(varargin)>1
             ForCompileAll=1;
         elseif strcmpi(varargin{i}, 'speedmode')
             SpeedMode = 1;
+        elseif strcmpi(varargin{i}, 'plot3DGauss')
+            plot3DGauss = 1;
         elseif strcmpi(varargin{i}, 'fit3DGauss')
             fit3DGauss = 1;
+            plot3DGauss = 1;
+        elseif strcmpi(varargin{i}, 'plot3DGauss')
+            plot3DGauss = 1;
         elseif strcmpi(varargin{i}, 'sistermode')
             SisterMode = 1;
         elseif strcmpi(varargin{i}, 'intScale')
@@ -1146,7 +1154,7 @@ while (cc~='x')
         end
         
         hold(traceFigAxes, 'on')
-        if ~fit3DGauss
+        if ~plot3DGauss
             p1 = errorbar(traceFigAxes, traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
                 AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral,'.-k');
             p2 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
@@ -1234,7 +1242,7 @@ while (cc~='x')
         %         yyaxis(traceFigAxes,'right');
         %         p3 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
         %             backGround3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
-        if fit3DGauss
+        if plot3DGauss
             str1 = '3-slice';
             str2 = '3D-Gaussian fit';
         else
@@ -2652,7 +2660,7 @@ disp('Particles saved.')
 disp(['(Left off at Particle #', num2str(CurrentParticle), ')'])
 
 if fit3DGauss
-    fit3DGaussiansToAllSpots(Prefix);
+    plot3DGaussiansToAllSpots(Prefix);
 end
 %% Extra stuff that is useful in debug mode
 
