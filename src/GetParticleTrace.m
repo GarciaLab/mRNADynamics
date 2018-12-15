@@ -1,5 +1,5 @@
 function [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
-    ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3, ErrorIntegral5,backGround3]=...
+    ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3, ErrorIntegral5,backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D]=...
     GetParticleTrace(CurrentParticle,Particles,Spots)
 
 %function [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
@@ -134,6 +134,17 @@ if exist('OffsetError')
             ErrorGauss=OffsetError*sqrt(2)*defaultArea;
         end
     end
+    try
+        ErrorIntegralGauss3D=OffsetError*sqrt(2)*...
+         mean(cell2mat(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).Area));
+    catch
+        try
+             ErrorIntegralGauss3D=OffsetError*sqrt(2)*...
+             mean(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).Area);
+        catch
+            ErrorIntegralGauss3D=OffsetError*sqrt(2)*defaultArea;
+        end
+    end
     %For the Integral, we just use the area of the snippet, which is a
     %constant for all time points.
     if isfield(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)), 'intArea') && ~isempty(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).intArea)
@@ -157,5 +168,6 @@ else
     ErrorIntegral=[];
     ErrorIntegral3=[];
     ErrorIntegral5 = [];
+    ErrorIntegralGauss3D = [];
     optFit=[];
 end

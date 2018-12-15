@@ -1,10 +1,17 @@
-% ExportDataForFISH
-run('testExportDataForFISH/generateAllExpectedDataForExport.m');
+exportTest = testExport_2015_07_25_P2P_75uW_bi_short;
+segmentSpotsMLTest = testSegmentSpotsML_2015_07_25_P2P_75uW_bi_short;
+trackmRNADynamicsTestCase = testTrackmRNADynamics_2015_07_25_P2P_75uW_bi_short;
+generateExpectedDataForPrefix(exportTest, segmentSpotsMLTest, trackmRNADynamicsTestCase);
 
 % Segment spots only has one test so far
-tc = testSegmentSpots_2015_07_25_P2P_75uW_bi_short;
-generateExpectedDataSegmentSpots(tc);
+segmentSpotsTest = testSegmentSpots_2015_07_25_P2P_75uW_bi_short;
+generateExpectedDataSegmentSpots(segmentSpotsTest);
 
-% Segment spots ML only has one test so far
-tc = testSegmentSpotsML_2015_07_25_P2P_75uW_bi_short;
-generateExpectedDataSegmentSpotsML(tc);
+exportTest = testExport_2016_11_13_Hb_P2P_MS2V5_NB_MCP_mCherry;
+generateExpectedExportData(exportTest);
+
+exportTest = testExport_2017_10_13_20170921_4;
+generateExpectedExportData(exportTest);
+
+exportTest = testExport_2018_06_05_A140P_MSE_30uW_550V;
+generateExpectedExportData(exportTest);

@@ -98,8 +98,13 @@ for i=1:length(CompiledSets)
     catch 
           [~, ExperimentTypeFromDatabase, ExperimentAxisFromDatabase, ~, ~, APResolutionFromDatabase, ~,...
         ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
-        DropboxFolder = DefaultDropboxFolder;
-        warning('Couldn''t find this project''s moviedatabase.csv. Trying default dropbox folder.')
+        % DropboxFolder = DefaultDropboxFolder; % This was commented out
+        % because what if the MovieDataBase is in a different folder from  
+        % the CompiledParticles.mat? EL 11/29 
+        slashes = strfind(DropboxFolder,'/');
+        warning(['Couldn''t find this project''s moviedatabase.csv in your ' ...
+            DropboxFolder(slashes(end)+1:end) ...
+            ' folder. Trying default dropbox folder.'])
     end
 
     %Load and check the experiment details consistency

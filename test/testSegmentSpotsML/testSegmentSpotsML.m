@@ -10,30 +10,17 @@ function testCase = testSegmentSpotsML(testCase)
   testPath = getConfigValue(configValues, 'TestPath');
 
   dynamicResultsPath = getConfigValue(configValues, 'DropboxFolder');
-  preprocessedDataPath = getConfigValue(configValues, 'PreProcPath');
-  processedDataPath = getConfigValue(configValues, 'FISHPath');
 
   dynamicResultsExperimentPath = [dynamicResultsPath, filesep, testCase.Prefix];
-  preprocessedDataExperimentPath = [preprocessedDataPath, filesep, testCase.Prefix];
-  % harrypotel: Not sure why the folder on ProcessedData has a _ at the end, is it a bug?
-  processedDataExperimentPath = [processedDataPath, filesep, testCase.Prefix, '_'];
   
-  cd(testPath);
-  % Clean up previous runs
-  deleteDirectory(dynamicResultsExperimentPath, testCase.Prefix);
-  deleteDirectory(preprocessedDataExperimentPath, testCase.Prefix);
-  deleteDirectory(processedDataExperimentPath, testCase.Prefix);
-
   % Precondition, copies existing Expected Data to proper folders before running the process
-  copyExpectedData(testCase.Prefix, testPath, dynamicResultsExperimentPath, preprocessedDataExperimentPath, processedDataExperimentPath)
+  copyExpectedDataForPrefix(testCase.Prefix, 'filterMovieWeka');
 
   % Executes segment spots with known DoG
   segmentSpotsML(testCase.Prefix, testCase.Threshold);
 
-  expectedPathSubfolderSpots = ['SegmentSpotsML', filesep, 'SegmentSpotsML'];
-
   assertLogFileExists(testCase, dynamicResultsExperimentPath);
-  assertSpotsEqualToExpected(testCase, dynamicResultsExperimentPath, testPath, expectedPathSubfolderSpots);
+  assertSpotsEqualToExpected(testCase, dynamicResultsExperimentPath, testPath, 'SegmentSpotsML');
 
   testSegmentSpotsMLTifsUnsupported(testCase);
   testSegmentSpotsMLNoThreshold(testCase);

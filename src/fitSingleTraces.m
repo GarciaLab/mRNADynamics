@@ -1,4 +1,4 @@
-function fittedLineEquations = fitSingleTraces(Prefix,Particles,Spots,FrameInfo,ElapsedTime)
+function fittedLineEquations = fitSingleTraces(Prefix,Particles,Spots,schnitzcells,FrameInfo,ElapsedTime,varargin)
 % fittedLineSubSetCode(varargin)
 %
 % DESCRIPTION
@@ -9,12 +9,26 @@ function fittedLineEquations = fitSingleTraces(Prefix,Particles,Spots,FrameInfo,
 %
 % Author (contact): Emma Luu (emma_luu@berkeley.edu)
 % Created: 10/25/18
-% Last Updated: 10/25/18
+% Last Updated: 11/20/18
 %
 % Documented by: Emma Luu (emma_luu@berkeley.edu)
 
-%%
+%% Initializing options
+initialOnly = 0;
+skipSavingTraces = 0;
 
+%% Checking varargin
+if ~isempty(varargin)
+    for i=1:length(varargin)
+        if strcmpi(varargin{i},'initalOnly')
+            initialOnly = 1;
+        elseif strcmpi(varargin{i},'skipSavingTraces')
+            skipSavingTraces = 1;
+        end
+    end
+end
+
+%% Getting relevant information
 %Information about about folders
 [~,~,DefaultDropboxFolder,~,~]=...
     DetermineLocalFolders;
@@ -39,7 +53,6 @@ end
 if ~iscell(Spots)
     Spots={Spots};
 end
-
 
 %Do we need to convert any NaN chars into doubles?
 if strcmpi(nc14,'nan')
@@ -72,7 +85,6 @@ end
 % implementing it for two channels.
 
 if NChannels > 1
-%     disp('Shapes could not be fitted to your data. Please contact Emma.')
     % implement crude? initial slope and time on calculation
 else
     numberOfParticles = size(Particles{:},2);
@@ -109,14 +121,15 @@ else
     %     currentYPoints = polyval(currentCoefficients,currentXPoints);
     %     plot(currentXPoints, currentYPoints);
     % end
-    
-    % The folder that will save all the figures created by this function
-    savedImageFolder = [DropboxFolder,filesep,Prefix,filesep,...
-        'FittedInitialRates'];
-    if ~exist(savedImageFolder, 'dir')
-        mkdir(savedImageFolder)
-    else
-        delete([savedImageFolder,filesep,'*.*'])
+    if ~skipSavingTraces
+        % The folder that will save all the figures created by this function
+        savedImageFolder = [DropboxFolder,filesep,Prefix,filesep,...
+            'FittedInitialRates'];
+        if ~exist(savedImageFolder, 'dir')
+            mkdir(savedImageFolder)
+        else
+            delete([savedImageFolder,filesep,'*.*'])
+        end
     end
     
     % lines are only fitted to traces that are longer than 3 data points
@@ -124,90 +137,31 @@ else
     waitBarHandle = waitbar(0,'Fitting traces');
     for currentParticle = 1:numberOfParticles
         waitbar(currentParticle/numberOfParticles,waitBarHandle);
-        % getting frame information
-        [frame,~,ampIntegral3,~,~,~,~,~,~,~,~,~,~]=...
-            GetParticleTrace(currentParticle,...
-            Particles{currentChannel},Spots{currentChannel});
-        currentLength = length(frame);
+        figure('visible','off')
         
-        % performing moving average
-        smoothedAmp = movmean(ampIntegral3,averagingLength);
+        [frameIndex,coefficients,errorEstimation,numOfPartUsedForFit] = ...
+            fitASingleTrace(currentParticle,Particles,Spots,currentChannel,...
+            schnitzcells,ElapsedTime,nuclearCycleBoundaries,correspondingNCInfo,...
+            averagingLength);
         
-        % getting the corresponding time of the trace
-        currentTimeArray = ElapsedTime(frame); % Units to seconds
-        ncPresent = unique(correspondingNCInfo(frame));
-        % below subtracts 8 because the first element correspond to nc 9
-        timeOfFirstNC = nuclearCycleBoundaries(ncPresent(1)-8);
-        % adjusting frameRange to have time 0 be the start of the
-        % first nuclear cycle the particle appears in
-        currentTimeArray = currentTimeArray - timeOfFirstNC;
+        fittedLineEquations(currentParticle).frameIndex = frameIndex;
         
+        fittedLineEquations(currentParticle).Coefficients = ...
+            coefficients;
         
-        % Start of shape fitting process -----------------------------------------
+        fittedLineEquations(currentParticle).ErrorEstimation = ...
+            errorEstimation;
         
-        % Assigning states to each point --------------------------------------
-        % states: increase or decrease from previous point
-        if currentLength > 3
-            pointGroupNumbers = groupingPoints(currentTimeArray,smoothedAmp);
-            
-            % creating the lines of best fit for each group -------------------
-            
-            numberOfGroups = max(pointGroupNumbers);
-            for currentGroup = 1:numberOfGroups
-                correspondingFrameIndexes = find(pointGroupNumbers == currentGroup);
-                if currentGroup > 1
-                    % using the previous point as part of the line...
-                    correspondingFrameIndexes = [min(correspondingFrameIndexes)-1 correspondingFrameIndexes];
-                end
-                % saving the boundaries of
-                % correspondingFrameIndexes in frameIndex
-                fittedLineEquations(currentParticle).frameIndex(currentGroup,:)...
-                    = [correspondingFrameIndexes(1) correspondingFrameIndexes(end)];
-                
-                currentAmpSegment = smoothedAmp(correspondingFrameIndexes);
-                currentXSegment = currentTimeArray(correspondingFrameIndexes);
-                [fittedLineEquations(currentParticle).Coefficients(currentGroup,:),...
-                    fittedLineEquations(currentParticle).ErrorEstimation(currentGroup)]...
-                    =  polyfit(currentXSegment,currentAmpSegment,1);
-                if currentGroup == 1
-                    figure('visible','off')
-                    plot(currentTimeArray,smoothedAmp,'.','MarkerSize',20,...
-                        'DisplayName','Avg amp'); % plot the smoothed trace and fitted line
-                    hold on
-                    % plotting the fitted line
-                    currentYSegment = polyval(...
-                        fittedLineEquations(currentParticle).Coefficients(currentGroup,:),...
-                        currentXSegment); % this is for the predicted line
-                    plot(currentXSegment, ...
-                        currentYSegment,'DisplayName','fittedLine');
-                    denominator = sum((currentAmpSegment - mean(currentAmpSegment)).^2);
-                    normOfResiduals = fittedLineEquations(currentParticle).ErrorEstimation(currentGroup).normr;
-                    RSquared = 1 - (normOfResiduals^2)/denominator;
-                    errorArray = ones(1,length(currentXSegment)).*...
-                        normOfResiduals./sum(pointGroupNumbers==currentGroup); %EL normalized by number of points included
-                    
-                    fittedLineEquations(currentParticle).numberOfParticlesUsedForFit(currentGroup) = ...
-                        sum(pointGroupNumbers==currentGroup);% Saving the number of particles included in group
-                    
-                    errorbar(currentXSegment,currentYSegment,errorArray,'o');
-                    legend({'Avg Amp', ...
-                        ['Fitted Line Slope: ' num2str(fittedLineEquations(currentParticle).Coefficients(currentGroup,1))],...
-                        'Norm of Residuals'},'Location','Best')
-                    title(['Current Particle : ' num2str(currentParticle)...
-                        '   R squared :' num2str(RSquared)])
-                    xlabel('Time after start of nc (minutes)')
-                    ylabel('Integrated Intensity (A.U.)')
-                    hold off
-                    
-                    set(gcf,'Position',[85 43.5000 787 601]) % resizing the figure
-                    
-                    fileName = [savedImageFolder,filesep,...
-                        'Particle' num2str(currentParticle) '.png'];
-                    saveas(gcf,fileName)
-                    close(gcf)
-                end
-            end
+        fittedLineEquations(currentParticle).numberOfParticlesUsedForFit = ...
+            numOfPartUsedForFit; % only happens for 
+        
+        if ~skipSavingTraces
+            set(gcf,'Position',[85 43.5000 787 601]) % resizing the figure
+            fileName = [savedImageFolder,filesep,...
+                'Particle' num2str(currentParticle) '.png'];
+            saveas(gcf,fileName)
         end
+        close(gcf)
     end
     close(waitBarHandle)
 end

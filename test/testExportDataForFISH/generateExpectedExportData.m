@@ -10,7 +10,7 @@ function generateExpectedExportData(testCase)
 
   configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');
 
-  dynamicsResultsPath = getConfigValue(configValues, 'DropboxFolder');
+  dynamicResultsPath = getConfigValue(configValues, 'DropboxFolder');
   PreProcPath = getConfigValue(configValues, 'PreProcPath');
   testPath = getConfigValue(configValues, 'TestPath');
   
@@ -19,34 +19,13 @@ function generateExpectedExportData(testCase)
   end
 
   %Get file names to compare in preprocessed data folder
-  experimentTestRootPath = strcat(testPath, filesep, 'ExportDataForFISH', filesep);
-
-  preprocessedDataFolder = strcat(PreProcPath, filesep, testCase.Prefix);
-  expectedPreProcFolder = strcat(experimentTestRootPath, 'PreProcessedData', filesep, testCase.Prefix);
   
-  dynamicsResultsDataFolder = strcat(dynamicsResultsPath, filesep, testCase.Prefix);
-  expectedDynamicsResultsFolder = strcat(experimentTestRootPath, 'DynamicsResults', filesep, testCase.Prefix);
+  preprocessedDataPath = strcat(PreProcPath, filesep, testCase.Prefix);
+  dynamicResultsPath = strcat(dynamicResultsPath, filesep, testCase.Prefix);
 
-  deleteDirectory(preprocessedDataFolder, testCase.Prefix);
-  deleteDirectory(expectedPreProcFolder, testCase.Prefix);
-  
-  deleteDirectory(dynamicsResultsDataFolder, testCase.Prefix);
-  deleteDirectory(expectedDynamicsResultsFolder, testCase.Prefix);
+  deleteDirectory(preprocessedDataPath, testCase.Prefix);
+  deleteDirectory(dynamicResultsPath, testCase.Prefix);
 
-  mkdir(expectedPreProcFolder);
-  mkdir(expectedDynamicsResultsFolder);
-
-  if (~isprop(testCase, 'PreferredFileName'))
-    ExportDataForFISH(testCase.Prefix, 'keepTifs');
-  else
-    testCase.initializeTestCase;
-    ExportDataForFISH(testCase.Prefix, testCase.PreferredFileName, 'keepTifs');
-  end
-
-  disp(['Copying expected data for Prefix ', testCase.Prefix]);
-  copyfile([dynamicsResultsDataFolder, filesep, '*'], expectedDynamicsResultsFolder);
-  disp(['Expected data copied to folder ', expectedDynamicsResultsFolder]);
-  copyfile([preprocessedDataFolder, filesep, '*'], expectedPreProcFolder);
-  disp(['Expected data copied to folder ', expectedPreProcFolder]);
+  exportAndCopyData(testCase, testPath, dynamicResultsPath, preprocessedDataPath);
 
 end

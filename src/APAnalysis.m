@@ -138,7 +138,7 @@ function APAnalysis(dataset, varargin)
     
     %% 
     %Experiment fraction on
-    figure('Name', 'fraction')
+    figure('Name', 'Individual Movie Fraction On')
     totalEllipses =  zeros(numAPBins, 1);
     ellipsesOn = zeros(numAPBins, 1);
     g = zeros(numAPBins, 1);
@@ -173,29 +173,41 @@ function APAnalysis(dataset, varargin)
     fmean = g./n;
     fstde = sqrt(g2./n - fmean.^2) ./ sqrt(n);
     if nSets > 1
-        e = errorbar(ap, fmean, fstde,'DisplayName', 'mean $\pm$ std. error');
-        fMeanNaN = nanmean(fSet, 2);
+%         e = errorbar(ap, fmean, fstde,'DisplayName', 'mean $\pm$ std. error');
+%         fMeanNaN = nanmean(fSet, 2);
 %         e = plot(ap, fMeanNaN,'DisplayName', 'mean');
     end
-           
+    legend('show')       
     hold off
-    lgd2 = legend('show');
-    set(lgd2, 'Interpreter', 'Latex');
-    xlim([0, 1])
+    
+    figure('Name','Combined Fraction of On')
+%     ellipsesOn(totalEllipses < 3) = NaN;
+%     totalEllipses(totalEllipses < 3) = NaN;
+%     fstde(totalEllipses < 3) = NaN;
+    idx = ~any(isnan(totalEllipses),2);
+    errorbar(ap(idx),ellipsesOn(idx)./totalEllipses(idx), fstde(idx));
+    xlim([0.15 0.6])%xlim([.275, .65])
     ylim([0, 1.1])
+    
+    lgd2 = legend('mean $\pm$ std. error');
+    set(lgd2, 'Interpreter', 'latex');
     title(['fraction of actively transcribing nuclei, nuclear cycle ',num2str(nc+11)]);
     xlabel('fraction embryo length');
     ylabel('fraction on');
     standardizeFigure(gca, legend('show'),'red');
     e.Color = [213,108,85]/255;
-    
-    figure()
-    ellipsesOn(totalEllipses < 3) = NaN;
-    totalEllipses(totalEllipses < 3) = NaN;
-    idx = ~any(isnan(totalEllipses),2);
-    errorbar(ap(idx),ellipsesOn(idx)./totalEllipses(idx), 1./totalEllipses(idx));
-    xlim([.2, 1])
-    ylim([0, 1.1])
+    %% Combined Ellipses Count
+    % This is for a quick visual check of the fraction on plots 
+    figure('Name','Combined Ellipses Count')
+    plot(ap,totalEllipses,'DisplayName','Total')
+    hold on
+    plot(ap,ellipsesOn,'DisplayName','On')
+    title(['on ellipses and total ellipses, nuclear cycle ',num2str(nc+11)]);
+    xlabel('fraction embryo length');
+    ylabel('ellipses')
+    legend('show')
+    standardizeFigure(gca, legend('show'),'red');
+    hold off
     %% 
  
     %Experiment number on
@@ -233,7 +245,12 @@ function APAnalysis(dataset, varargin)
     ylabel('number on');
     standardizeFigure(gca, legend('show'), 'red');    
   
-%%
+%%  
+    try
+        pol2LoadingAnalysis(dataset);
+    catch
+    end
+    
     analyzeContiguity(d);
     plotWindowTimings(d);
     %saving every figure

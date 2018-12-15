@@ -4,15 +4,14 @@ function generateDogsWeka(Prefix, FISHPath, MS2CodePath, PreProcPath, Experiment
   OutputFolder1 = [FISHPath, filesep, Prefix, '_', filesep, 'dogs'];
   mkdir(OutputFolder1)
 
-  % Create stacks subfolder
   stacksPath = [PreProcPath, filesep, Prefix, filesep, 'stacks'];
 
   if isempty(classifierPathCh1)
-    [classifierPathCh1, classifierFolder] = uigetfile([MS2CodePath, filesep, 'classifiers', filesep, '*.model']);
+    [classifierPathCh1, classifierFolder] = uigetfile([MS2CodePath, '/src/classifiers/*.model']);
   end
 
   if nCh == 2
-    [classifierPathCh2, ~] = uigetfile([MS2CodePath, filesep, 'classifiers', filesep, '*.model']);
+    [classifierPathCh2, ~] = uigetfile([MS2CodePath, '/src/classifiers/*.model']);
   end
 
   evalin('base', 'clear probmaps');
@@ -29,7 +28,7 @@ function generateDogsWeka(Prefix, FISHPath, MS2CodePath, PreProcPath, Experiment
     %this is just some function that can only be called if IJM is set up
     IJM.getIdentifier()
   catch
-    addpath([MS2CodePath, filesep, 'Fiji.app', filesep, 'scripts'])
+    addpath([MS2CodePath, '/lib/Fiji.app/scripts'])
     ImageJ % Initialize IJM and MIJ
   end
 
@@ -62,10 +61,10 @@ function generateDogsWeka(Prefix, FISHPath, MS2CodePath, PreProcPath, Experiment
         trainableSegmentation.Weka_Segmentation.loadClassifier([classifierFolder, classifierPathCh2]);
       else
         error(['This pipeline does not support', ...
-               'more than two spot channels. If you''re actually', ...
-               'trying to segment 3 or more channels, talk to Armando to', ...
-               'get this implemented. Otherwise you''ve reached an error.', ...
-               'Check your data. This is probably not a bug in the code.']);
+              'more than two spot channels. If you''re actually', ...
+              'trying to segment 3 or more channels, talk to Armando to', ...
+              'get this implemented. Otherwise you''ve reached an error.', ...
+              'Check your data. This is probably not a bug in the code.']);
       end
 
       trainableSegmentation.Weka_Segmentation.getProbability();

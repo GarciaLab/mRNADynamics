@@ -1,5 +1,6 @@
-function [fits, intensity] = fitGaussian3D(snip3D, initial_params, varargin)
+function [fits, intensity] = fitGaussian3D(snip3D, initial_params, zstep, varargin)
 
+%%Fitting
 displayFigures = 0;
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'displayFigures')
@@ -32,8 +33,12 @@ centroid_guess = [size(snip3D, 1)/2, size(snip3D, 2)/2, initial_params(4)];
 %         initial_params(5),initial_params(6)];   
 initial_parameters = [initial_params(1), centroid_guess(1),centroid_guess(2), centroid_guess(3), ...
         1, 1, 1, 1, 1, 1,initial_params(6)];    
-
     
+%%% params and fits: %%%
+%(1)amplitude (2) x (3) y (4) z (5)sigma x (6)sigma xy
+%(7)sigma xz (8)sigma y (9)sigma yz (10) sigma z (11) offset 
+
+   
 %fitting options
 lsqOptions=optimset('Display','none',... %Inherited these options from Mikhail Tikhonov's FISH analysis
 'maxfunevals',10000,...
@@ -44,9 +49,9 @@ lsqOptions=optimset('Display','none',... %Inherited these options from Mikhail T
 % ub = [inf, size(snip3D, 1), size(snip3D, 2), size(snip3D, 3), size(snip3D, 1)/2, max(max(max(snip3D)))];
 
 lb_offset = 1/10; %this is empirical. corresponds to a weak background of 1 pixel per ten having a value of 1. 
-lb = [max(max(max(snip3D))) / 2, 1, 1, 1, -inf, -inf, -inf, -inf, -inf, -inf, lb_offset];
-ub = [inf, size(snip3D, 1), size(snip3D, 2), size(snip3D, 3), inf, inf, inf, inf, inf, inf,max(max(max(snip3D)))];
-
+lb = [max(max(max(snip3D))) / 2, 1 - size(snip3D, 1)*1.5, 1- size(snip3D, 2)*1.5, 1- size(snip3D, 3)*1.5, -inf, -inf, -inf, -inf, -inf, -inf, lb_offset];
+% ub = [inf, size(snip3D, 1)*1.5, size(snip3D, 2)*1.5, size(snip3D, 3)*1.5, inf, inf, inf, inf, inf, inf,max(max(max(snip3D)))];
+ub = [inf, size(snip3D, 1)*1.5, size(snip3D, 2)*1.5, size(snip3D, 3)*1.5, inf, inf, inf, ceil(0.8/zstep), inf, inf,max(max(max(snip3D)))];
 [fits, res1, residual, exitflag, output, lambda, jacobian] = lsqnonlin(single3DGaussian, ...
     initial_parameters,lb,ub, lsqOptions);
 
@@ -55,8 +60,9 @@ ub = [inf, size(snip3D, 1), size(snip3D, 2), size(snip3D, 3), inf, inf, inf, inf
 close all
 vol = size(snip3D, 1)*size(snip3D,2)*size(snip3D,3);
 gaussian = single3DGaussian(fits) + snip3D;
-intensity = sum(gaussian(:) + snip3D(:)) - vol*fits(end);
+intensity = sum(gaussian(:)) - vol*fits(end);
 
+%% All Plotting
 if displayFigures
     figure(1)
     isosurface(gaussian, 3)
@@ -65,16 +71,74 @@ if displayFigures
 %     p.EdgeColor = 'green';
     axis tight
 
+    % Generate arrays and grids/axis to plot %
     m = max(snip3D(:));
-    figure(2)
-    [y,x] = meshgrid(1:size(snip3D,2), 1:size(snip3D,1));
-    proj = max(gaussian + snip3D, [], 3);
-    surf(y,x, proj)
+    f2 = figure(2);
+    [yz,xz] = meshgrid(1:size(snip3D,2), 1:size(snip3D,1));
+    [yx,zx] = meshgrid(1:size(snip3D,2), 1:size(snip3D,3));
+    [xy,zy] = meshgrid(1:size(snip3D,1), 1:size(snip3D,3));
+    projz = max(gaussian, [], 3);
+    projxFit = [];
+    projyFit = [];
+    projxRaw = [];
+    projyRaw = [];
+    for z = 1:size(zx,1)
+        maxxFit = max(gaussian, [], 1);
+        maxyFit = max(gaussian, [], 2);
+        maxxRaw = max(snip3D, [], 1);
+        maxyRaw = max(snip3D, [], 2);
+        projxFit(z,:) = maxxFit(:,:,z);
+        projyFit(z,:) = maxyFit(:,:,z);
+        projxRaw(z,:) = maxxRaw(:,:,z);
+        projyRaw(z,:) = maxyRaw(:,:,z);
+    end
+    axesxyFit = axes(f2);
+    axesyzFit = axes(f2);
+    axesxzFit = axes(f2);
+    axesxyRaw = axes(f2);
+    axesyzRaw = axes(f2);
+    axesxzRaw = axes(f2);
+    
+    %%%% Gaussian Fit Plotting %%%%
+    subplot(3,2,2,axesxyFit)
+    surf(yz,xz, projz)
+    title(axesxyFit,{'Gaussian fit in X,Y';'(Z projected)'})
+    xlabel(axesxyFit,'x-axis')
+    ylabel(axesxyFit,'y-axis')
+    
+    subplot(3,2,4,axesyzFit)
+    surf(yx,zx, projxFit)
+    title(axesyzFit,{'Gaussian fit in Y,Z';'(X projected)'})
+    xlabel(axesyzFit,'y-axis')
+    ylabel(axesyzFit,'z-axis')
+    
+    subplot(3,2,6,axesxzFit)
+    surf(xy,zy, projyFit)
+    title(axesxzFit,{'Gaussian fit in X,Z';'(Y projected)'})
+    xlabel(axesxzFit,'x-axis')
+    ylabel(axesxzFit,'z-axis')
+
+    %%%% Raw Data Plotting %%%%
+    subplot(3,2,1,axesxyRaw)
+    surf(yz, xz, max(snip3D, [], 3))
+    title(axesxyRaw,{'Raw spot data in X,Y';'(Z projected)'})
+    xlabel(axesxyRaw,'x-axis')
+    ylabel(axesxyRaw,'y-axis')
+    
+    subplot(3,2,3,axesyzRaw)
+    surf(yx, zx, projxRaw)
+    title(axesyzRaw,{'Raw spot data in Y,Z';'(X projected)'})
+    xlabel(axesyzRaw,'y-axis')
+    ylabel(axesyzRaw,'z-axis')
+    
+    subplot(3,2,5,axesxzRaw)
+    surf(xy, zy, projyRaw)
+    title(axesxzRaw,{'Raw spot data in X,Z';'(Y projected)'})
+    xlabel(axesxzRaw,'x-axis')
+    ylabel(axesxzRaw,'z-axis')
+    
     zlim([0, m]);
-    figure(3)
-    surf(y, x, max(snip3D, [], 3))
-    zlim([0, m]);
-    pause(.3)
+    pause(1)
 end
     
 %     figure(2);
