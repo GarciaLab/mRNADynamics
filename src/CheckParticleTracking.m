@@ -2267,7 +2267,11 @@ while (cc~='x')
     elseif cc=='+'
         if ~ZoomMode
             if ~GlobalZoomMode
-                [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'r', 'linewidth',1);
+                %AR 12/14/2018 ginputc doesn't work at the moment. not sure
+                %why. maybe related to the fact that this is an image
+                %within a figure that has multiple axes. 
+%                 [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'r', 'linewidth',1);
+                [ConnectPositionx,ConnectPositiony]=ginput(1);
                 xForZoom = round(ConnectPositionx);
                 yForZoom = round(ConnectPositiony);
             else
