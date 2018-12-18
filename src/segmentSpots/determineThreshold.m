@@ -20,7 +20,7 @@
 function [thresh] = determineThreshold(Prefix, Channel)
 
     default_std = 6;
-    num_frames_to_check = 100;
+    brightest_std_test = 12;
 
     % loads information needed to loop through DOGs
     [~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
@@ -36,29 +36,33 @@ function [thresh] = determineThreshold(Prefix, Channel)
     nameSuffix = ['_ch',iIndex(Channel,2)];
     
     % loops through DOGs to find brightest one
-    bestDOG = 0;
+    % does this by choosing DOG with most pixels above brightest_std_test sds
+    bestZ = 2;
+    bestFrame = 1;
     bestVal = 0;
-    num_skip = ceil(numFrames / num_frames_to_check); % looks at 50 frames only
-    for frame = 1:num_skip:numFrames
+    all_dogs = cell(numFrames, zSize - 2);
+    for frame = 1:numFrames
         for z = 2:(zSize - 1)
             
             dog_name = ['DOG_',Prefix,'_',iIndex(frame,3),'_z',iIndex(z,2),nameSuffix,'.tif'];
             dog = double(imread([OutputFolder1 dog_name]));
+            all_dogs{frame, z - 1} = dog;
             non_zero_d = dog(dog > 0);
             val = std(non_zero_d(:));
-            real_val = (max(non_zero_d(:)) - ...
-                mean(non_zero_d(:))) / (val + .01);
-            if real_val > bestVal
-                bestVal = real_val;
-                bestDOG = dog;
+            num_above = sum(non_zero_d(:) > val * brightest_std_test);
+            if num_above > bestVal
+                bestVal = num_above;
+                bestZ = z;
+                bestFrame = frame;
             end
         end
     end
     % generates UI for picking threshold
+    bestDOG = all_dogs{bestFrame, bestZ - 1};
     non_zero_dog = bestDOG(bestDOG > 0);
     mean_val = mean(non_zero_dog(:));
     std_val = std(non_zero_dog(:));
-    dog_copy = bestDOG;
+    dog_copy = all_dogs{bestFrame, bestZ - 1};
     max_val = max(non_zero_dog(:));
     min_val = min(non_zero_dog(:));
     thresh = min(mean_val + default_std * std_val, max_val - 1);
@@ -67,33 +71,61 @@ function [thresh] = determineThreshold(Prefix, Channel)
     uiAxes = axes(f);
     im = imshow(dog_copy, [], 'Parent', uiAxes);
     set(f, 'Position', [100, 100, 1000, 600])
+    
+    % Slider for changing the z slice
+    zStep = 1.0 / (zSize - 2);
+    zSlider = uicontrol('Style', 'slider', 'Min', 2, ...
+        'Max', zSize - 1, 'Value', bestZ, 'SliderStep', [zStep, zStep], ...
+        'Position', [250 50 500 20], 'Callback', @update_val);
+    
+    zVal = uicontrol('Style','text',...
+        'Position',[750 50 100 20],...
+        'String',['Z-slice = ' num2str(bestZ)]); 
+    
+    % Slider for changing the frame
+    fStep = 1.0 / numFrames;
+    frameSlider = uicontrol('Style', 'slider', 'Min', 1, ...
+        'Max', numFrames, 'Value', bestFrame, 'SliderStep', [fStep, fStep], ...
+        'Position', [60 50 20 500], 'Callback', @update_val);
+    
+    frameVal = uicontrol('Style','text',...
+        'Position',[60 555 100 20],...
+        'String',['Frame = ' num2str(bestFrame)]); 
+    
+    % Slider for adjusting the threshold
     threshSlider = uicontrol('Style', 'slider',...
         'Min',min_val,'Max',max_val,'Value',thresh,...
-        'Position', [200 20 500 20],...
+        'Position', [250 5 500 20],...
         'Callback', @update_val); 
     
     threshVal = uicontrol('Style','text',...
-        'Position',[200 45 500 20],...
+        'Position',[250 25 500 20],...
         'String',['threshold = ' num2str(thresh) ' which is ' ...
         num2str(default_std) ' sds above the mean pixel value']);
     
-    % Create push button
+    % Button to press once threshold is found
     btn = uicontrol('Style', 'pushbutton', 'String', 'Use threshold',...
-        'Position', [700 20 250 20],...
+        'Position', [750 5 250 20],...
         'Callback', @use_thresh); 
     
     uiwait(f);
     
     function update_val(source, ~)
-        dog_copy = bestDOG;
-        thresh = source.Value;
+        zSlider.Value = round(zSlider.Value);
+        frameSlider.Value = round(frameSlider.Value);
+        bestZ = zSlider.Value;
+        bestFrame = frameSlider.Value;
+        
+        dog_copy = all_dogs{bestFrame, bestZ - 1};
+        thresh = threshSlider.Value;
         std_above_mean = (thresh - mean_val) / std_val;
         dog_copy(dog_copy < thresh) = 0;
         im.CData = dog_copy;
-        threshSlider.Value = thresh;
 
         threshVal.String = ['threshold = ' num2str(thresh) ' which is ' ...
             num2str(std_above_mean) ' sds above the mean pixel value']; 
+        zVal.String = ['Z-slice = ' num2str(bestZ)];
+        frameVal.String = ['Frame = ' num2str(bestFrame)];
                  
     end
 
