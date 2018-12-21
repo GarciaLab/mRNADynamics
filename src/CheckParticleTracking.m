@@ -116,6 +116,8 @@ close all
 warning('off','MATLAB:nargchk:deprecated')
 warning('off','MATLAB:mir_warning_maybe_uninitialized_temporary')
 
+addpath('checkParticleTracking/');
+addpath('checkParticleTracking/plotStuff');
 %% Information about about folders
 
 %Get the folders
@@ -130,64 +132,9 @@ else
     DataFolder=[DropboxFolder,filesep,varargin{1}];
 end
 
-%Flag to sort or not particles according to their starting frame
-Sort=1;
-%Flag to sort by the number of times a spot was found in each particle
-sortByLength=0;
-%Flag to just save the data. This is good for CompileAll
-ForCompileAll=0;
-%Flag to plot only ellipses for current particle & save time
-SpeedMode = 0;
-%Decide whether you want to do sister chromatid analysis
-SisterMode = 0;
-%Decide whether you want to only see nc13
-ncRange = 0;
-% This is for the projection mode
-projectionMode = 'None (Default)';
-%plot 3D gaussian fitting intensities in tracefig
-plot3DGauss = 0;
-%when checkparticletracking saves, it will add 3d gaussian fits to
-%Spots.mat
-fit3DGauss = 0;
-
-intScale = 1;
-
-Prefix = varargin{1};
-if length(varargin)>1
-    for i=2:length(varargin)
-        if strcmpi(varargin{i},'NoSort')
-            Sort=0;
-        elseif strcmpi(varargin{i},'sortByLength')
-            sortByLength=1;
-        elseif strcmpi(varargin{i},'ForCompileAll')
-            ForCompileAll=1;
-        elseif strcmpi(varargin{i}, 'speedmode')
-            SpeedMode = 1;
-        elseif strcmpi(varargin{i}, 'plot3DGauss')
-            plot3DGauss = 1;
-        elseif strcmpi(varargin{i}, 'fit3DGauss')
-            fit3DGauss = 1;
-            plot3DGauss = 1;
-        elseif strcmpi(varargin{i}, 'plot3DGauss')
-            plot3DGauss = 1;
-        elseif strcmpi(varargin{i}, 'sistermode')
-            SisterMode = 1;
-        elseif strcmpi(varargin{i}, 'intScale')
-            intScale = varargin{i+1};
-        elseif strcmpi(varargin{i},'nc') % checking for the desired nc range
-            ncRange = 1;
-            NC = varargin{i+1};
-            % startNC and endNC will be the varibale names that have the start of the nc(s) of interest
-            if length((varargin{i+1})) == 2
-                startNC = ['nc' num2str(varargin{i+1}(1))];
-                endNC = ['nc' num2str(varargin{i+1}(2) +1)];% Not including the next nc
-            else
-                startNC = ['nc' num2str(varargin{i+1})];
-                endNC = ['nc' num2str(varargin{i+1} + 1)]; % Not including the next nc
-            end
-        end
-    end
-end
+[Prefix, Sort, sortByLength, ForCompileAll, SpeedMode, SisterMode, ...
+    ncRange, projectionMode, plot3DGauss, fit3DGauss, intScale, NC, ...
+    startNC, endNC] = determineCheckParticleTrackingOptions(varargin);
 
 %%
 
@@ -494,17 +441,14 @@ end
 
 %Define the windows
 Overlay=figure;
-% overlayAxes = axes(Overlay);
+
 if UseHistoneOverlay
     HisOverlayFig=figure;
     HisOverlayFigAxes = axes(HisOverlayFig);
 end
-%
+
 overlayAxes =subplot(1, 2, 1, 'Parent', Overlay);
 traceFigAxes = subplot(1, 2, 2, 'Parent', Overlay);
-%
-% TraceFig=figure;
-% traceFigAxes = axes(TraceFig);
 
 zFig = figure;
 zProfileFigAxes =subplot(1, 2, 1, 'Parent', zFig);
@@ -522,10 +466,6 @@ gaussianAxes =subplot(1, 3, 3, 'Parent', snipFig);
 % c = uicontrol;c.Units = 'normalized';c.Position = [.5 .5 .05 .05];
 % c.String = 'Push button';
 % c.Callback = @plotButtonPushed;
-
-% SisterFig=figure;
-% SisterFig2 = figure;
-% SisterFig3 = figure;
 
 %Define the windows
 set(Overlay,'units', 'normalized', 'position',[0.01, .55, .8, .33]);
@@ -587,12 +527,6 @@ while (cc~='x')
         nameSuffix=['_ch',iIndex(coatChannel,2)];
     end
     
-    EllipseHandle=[];
-    EllipseHandleYellow=[];
-    EllipseHandleBlue=[];
-    EllipseHandleWhite=[];
-    EllipseHandleGreen=[];
-    
     numParticles = length(Particles{CurrentChannel});
     
     %Get the coordinates of all the spots in this frame
@@ -604,7 +538,6 @@ while (cc~='x')
             Particles{CurrentChannel}(i).Approved=0;
         end
     end
-    ApprovedParticles=[Particles{CurrentChannel}.Approved];
     
     %Pull out the right particle if it exists in this frame
     CurrentParticleIndex=...
@@ -613,45 +546,6 @@ while (cc~='x')
     %This is the position of the current particle
     xTrace=x(CurrentParticleIndex);
     yTrace=y(CurrentParticleIndex);
-    
-    %These are the positions of all the approved, disapproved and
-    %unflagged particles
-    
-    %Approved particles
-    IndexApprovedParticles=[];
-    for i=1:numParticles
-        if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&&...
-                sum(Particles{CurrentChannel}(i).Approved==1)
-            IndexApprovedParticles=[IndexApprovedParticles,...
-                Particles{CurrentChannel}(i).Index(Particles{CurrentChannel}(i).Frame==CurrentFrame)];
-        end
-    end
-    xApproved=x(IndexApprovedParticles);
-    yApproved=y(IndexApprovedParticles);
-    
-    %Disapproved particles
-    IndexDisapprovedParticles=[];
-    for i=1:numParticles
-        if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&&sum(Particles{CurrentChannel}(i).Approved==-1)
-            IndexDisapprovedParticles=[IndexDisapprovedParticles,...
-                Particles{CurrentChannel}(i).Index(Particles{CurrentChannel}(i).Frame==CurrentFrame)];
-        end
-    end
-    xDisapproved=x(IndexDisapprovedParticles);
-    yDisapproved=y(IndexDisapprovedParticles);
-    
-    %Non-flagged particles (these are particles that have not been
-    %processed)
-    IndexNonFlaggedParticles=[];
-    for i=1:numParticles
-        if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&&...
-                ~(sum(Particles{CurrentChannel}(i).Approved==-1)||sum(Particles{CurrentChannel}(i).Approved==1))
-            IndexNonFlaggedParticles=[IndexNonFlaggedParticles,...
-                Particles{CurrentChannel}(i).Index(Particles{CurrentChannel}(i).Frame==CurrentFrame)];
-        end
-    end
-    xNonFlagged=x(IndexNonFlaggedParticles);
-    yNonFlagged=y(IndexNonFlaggedParticles);
     
     if (~isempty(xTrace))&&(~ManualZFlag)
         CurrentZ=z(CurrentParticleIndex);
@@ -694,275 +588,26 @@ while (cc~='x')
     set(0, 'CurrentFigure', Overlay);
     imshow(Image,DisplayRangeSpot,'Border','Tight','Parent',overlayAxes, 'InitialMagnification', 'fit')
     hold(overlayAxes,'on')
-    %Show all particles in regular mode
-    if ~SpeedMode
-        plot(overlayAxes,xNonFlagged,yNonFlagged,'ow')
-        plot(overlayAxes,xApproved,yApproved,'ob')
-        plot(overlayAxes,xDisapproved,yDisapproved,'^r')
-        %plot(overlayAxes,x, y, 'sw')
-    end
-    %Always show current particle. this indicates the x-y center of the spot
-    %within the brightest z-slice and may differ from the position
-    %shown in the snippet image, which is centered at the position with
-    %the current z-slice.
-    plot(overlayAxes,xTrace,yTrace,'og')
-    hold(overlayAxes,'off')
-    
-    if isfield(FrameInfo, 'nc')
-        set(Overlay,'Name',['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles),...
-            ', Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),...
-            ', Z: ',num2str(CurrentZ),'/',num2str(ZSlices),' nc: ', num2str(FrameInfo(CurrentFrame).nc),...
-            ', Ch: ',num2str(CurrentChannel)])
-    end
-    if UseSchnitz
-        %Show all the nuclei in regular mode
-        if ~SpeedMode
-            hold(overlayAxes,'on')
-            EllipseHandle=notEllipse(Ellipses{CurrentFrame}(:,3),...
-                Ellipses{CurrentFrame}(:,4),...
-                Ellipses{CurrentFrame}(:,5),...
-                Ellipses{CurrentFrame}(:,1)+1,...
-                Ellipses{CurrentFrame}(:,2)+1,'r',50, overlayAxes);
-            hold(overlayAxes,'off')
-            
-            
-            %Show the ones that have been approved
-            
-            hold(overlayAxes,'on')
-            schnitzCellNo=[];
-            for i=1:numParticles
-                if Particles{CurrentChannel}(i).Approved==1
-                    try
-                        schnitzIndex=find((schnitzcells(Particles{CurrentChannel}(i).Nucleus).frames)==CurrentFrame);
-                        schnitzCellNo=[schnitzCellNo,schnitzcells(Particles{CurrentChannel}(i).Nucleus).cellno(schnitzIndex)];
-                    catch
-                        %can't identify the nucleus for this particle.
-                    end
-                end
-            end
-            
-            EllipseHandleBlue=notEllipse(Ellipses{CurrentFrame}(schnitzCellNo,3),...
-                Ellipses{CurrentFrame}(schnitzCellNo,4),...
-                Ellipses{CurrentFrame}(schnitzCellNo,5),...
-                Ellipses{CurrentFrame}(schnitzCellNo,1)+1,...
-                Ellipses{CurrentFrame}(schnitzCellNo,2)+1,'b',50, overlayAxes);
-            hold(overlayAxes,'off')
-        end
-        
-        %Show the corresponding nucleus
-        if ~isempty(Particles{CurrentChannel}(CurrentParticle).Nucleus) && Particles{CurrentChannel}(CurrentParticle).Nucleus > 0
-            SchnitzIndex=find(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames==CurrentFrame);
-            NucleusIndex=schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).cellno(SchnitzIndex);
-            
-            if ~isempty(NucleusIndex)
-                hold(overlayAxes,'on')
-                EllipseHandleGreen=ellipse(Ellipses{CurrentFrame}(NucleusIndex,3),...
-                    Ellipses{CurrentFrame}(NucleusIndex,4),...
-                    Ellipses{CurrentFrame}(NucleusIndex,5),...
-                    Ellipses{CurrentFrame}(NucleusIndex,1)+1,...
-                    Ellipses{CurrentFrame}(NucleusIndex,2)+1,[],[], overlayAxes);
-                set(EllipseHandleGreen,'Color','g')
-                hold(overlayAxes,'off')
-            else
-                %('Error: Particle without an associated nucleus?')
-            end
-            
-            
-            
-            %Show the daughter nuclei if applicable
-            DaughterE=schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).E;
-            DaughterD=schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).D;
-            
-            
-            if DaughterE~=0
-                SchnitzIndex=find(schnitzcells(DaughterE).frames==CurrentFrame);
-                NucleusIndex=schnitzcells(DaughterE).cellno(SchnitzIndex);
-                
-                if ~isempty(NucleusIndex)
-                    hold(overlayAxes,'on')
-                    EllipseHandleWhite=[EllipseHandleWhite,ellipse(Ellipses{CurrentFrame}(NucleusIndex,3),...
-                        Ellipses{CurrentFrame}(NucleusIndex,4),...
-                        Ellipses{CurrentFrame}(NucleusIndex,5),...
-                        Ellipses{CurrentFrame}(NucleusIndex,1)+1,...
-                        Ellipses{CurrentFrame}(NucleusIndex,2)+1, [],[],overlayAxes)];
-                    
-                    hold(overlayAxes,'off')
-                else
-                    %('Error: Particle without an associated nucleus?')
-                end
-            end
-            
-            if DaughterD~=0
-                SchnitzIndex=find(schnitzcells(DaughterD).frames==CurrentFrame);
-                NucleusIndex=schnitzcells(DaughterD).cellno(SchnitzIndex);
-                
-                if ~isempty(NucleusIndex)
-                    hold(overlayAxes,'on')
-                    EllipseHandleWhite=[EllipseHandleWhite,ellipse(Ellipses{CurrentFrame}(NucleusIndex,3),...
-                        Ellipses{CurrentFrame}(NucleusIndex,4),...
-                        Ellipses{CurrentFrame}(NucleusIndex,5),...
-                        Ellipses{CurrentFrame}(NucleusIndex,1)+1,...
-                        Ellipses{CurrentFrame}(NucleusIndex,2)+1,[],[],overlayAxes)];
-                    hold(overlayAxes,'off')
-                else
-                    %('Error: Particle without an associated nucleus?')
-                end
-            end
-            
-            if ~isempty(EllipseHandleWhite)
-                set(EllipseHandleWhite,'Color','w')
-            end
-            
-            %Show the mother nucleus if applicable
-            Mother=schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).P;
-            
-            if Mother~=0
-                SchnitzIndex=find(schnitzcells(Mother).frames==CurrentFrame);
-                NucleusIndex=schnitzcells(Mother).cellno(SchnitzIndex);
-                
-                if ~isempty(NucleusIndex)
-                    hold(overlayAxes,'on')
-                    EllipseHandleYellow=ellipse(Ellipses{CurrentFrame}(NucleusIndex,3),...
-                        Ellipses{CurrentFrame}(NucleusIndex,4),...
-                        Ellipses{CurrentFrame}(NucleusIndex,5),...
-                        Ellipses{CurrentFrame}(NucleusIndex,1)+1,...
-                        Ellipses{CurrentFrame}(NucleusIndex,2)+1,[],[],overlayAxes);
-                    set(EllipseHandleYellow,'Color','y')
-                    hold(overlayAxes,'off')
-                else
-                    %('Error: Particle without an associated nucleus?')
-                end
-            end
-            
-        else
-            if UseHistoneOverlay
-                warning('This particle does not have an associated nucleus.');
-            end
-        end
-    end
-    
-    if ApprovedParticles(CurrentParticle)==1
-        set(Overlay,'Color','g')
-        %         set(TraceFig,'Color','g')
-    elseif ApprovedParticles(CurrentParticle)==-1
-        set(Overlay,'Color','r')
-        %         set(TraceFig,'Color','r')
-    elseif ApprovedParticles(CurrentParticle)==2
-        set(Overlay,'Color','y')
-        %         set(TraceFig,'Color','y')
-    else
-        set(Overlay,'Color','default')
-        %         set(TraceFig,'Color','default')
-    end
-    
-    %Show the particles that were under threshold 2.
-    if ShowThreshold2
-        %Get the positions of all the spots in this frame
-        [x2,y2]=SpotsXYZ(Spots{CurrentChannel}(CurrentFrame));
-        %Filter those that were under threshold 2.
-        CurrentSpotFilter=...
-            ~logical(SpotFilter{CurrentChannel}(CurrentFrame,~isnan(SpotFilter{CurrentChannel}(CurrentFrame,:))));
-        x2=x2(CurrentSpotFilter);
-        y2=y2(CurrentSpotFilter);
-        
-        hold(overlayAxes,'on')
-        plot(overlayAxes,x2,y2,'sr')
-        hold(overlayAxes,'off')
-    end
-    
-    if ZoomMode
-        %Find the closest frame
-        [~,MinIndex]=min((Particles{CurrentChannel}(CurrentParticle).Frame-CurrentFrame).^2);
-        if length(MinIndex)>1
-            MinIndex=MinIndex(1);
-        end
-        [xForZoom,yForZoom]=...
-            SpotsXYZ(Spots{CurrentChannel}(Particles{CurrentChannel}(CurrentParticle).Frame(MinIndex)));
-        
-        xForZoom=xForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
-        yForZoom=yForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
-        
-        try
-            xlim(overlayAxes,[xForZoom-ZoomRange,xForZoom+ZoomRange])
-            ylim(overlayAxes,[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2])
-        catch
-            %something's outside the limits of the image
-        end
-    end
-    
-    if GlobalZoomMode
-        xlim(overlayAxes,[xForZoom-ZoomRange,xForZoom+ZoomRange])
-        ylim(overlayAxes,[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2])
-    end
-    
     
     if UseHistoneOverlay
-        try
-            ImageHis=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,NDigits),'.tif']);
-        catch %Had to do this for KITP
-            ImageHis=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                FilePrefix(1:end-1),'_His_',iIndex(CurrentFrame,NDigits),'.tif']);
-        end
-        
-        if isempty(DisplayRange)
-            HisOverlayImage=cat(3,mat2gray(ImageHis),mat2gray(Image),zeros(size(Image)));
-        else
-            HisOverlayImage=cat(3,mat2gray(ImageHis,double(DisplayRange)),mat2gray(Image),zeros(size(Image)));
-        end
-        imshow(HisOverlayImage,[],'Border','Tight','Parent',HisOverlayFigAxes)
-        
-        
-        hold(HisOverlayFigAxes,'on')
-        if ~SpeedMode
-            plot(HisOverlayFigAxes,xNonFlagged,yNonFlagged,'ow')
-            plot(HisOverlayFigAxes,xApproved,yApproved,'ob')
-        end
-        plot(HisOverlayFigAxes,xTrace,yTrace,'og')
-        hold(HisOverlayFigAxes,'off')
-        
-        if ShowThreshold2
-            hold(HisOverlayFigAxes,'on')
-            plot(HisOverlayFigAxes,x2,y2,'sw')
-            hold(HisOverlayFigAxes,'off')
-        end
-        
-        
-        if UseSchnitz
-            
-            copyobj(EllipseHandle,HisOverlayFigAxes)
-            copyobj(EllipseHandleBlue,HisOverlayFigAxes)
-            copyobj(EllipseHandleGreen,HisOverlayFigAxes)
-            copyobj(EllipseHandleWhite,HisOverlayFigAxes)
-            copyobj(EllipseHandleYellow,HisOverlayFigAxes)
-            
-        end
-        
-        %         set(HisOverlayFigAxes,'Name',['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles),...
-        %             ', Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),...
-        %             ', Z: ',num2str(CurrentZ),'/',num2str(ZSlices),' nc: ', num2str(FrameInfo(CurrentFrame).nc),...
-        %             ' Ch: ',num2str(CurrentChannel)])
-        
-        if ZoomMode || GlobalZoomMode
-            try
-                xlim(HisOverlayFigAxes,[xForZoom-ZoomRange,xForZoom+ZoomRange])
-                ylim(HisOverlayFigAxes,[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2])
-            catch
-                %something's outside the limits of the image
-            end
-        end
-        
+        HisPath1 = [PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
+            FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,NDigits),'.tif'];
+        HisPath2 = [PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
+            FilePrefix(1:end-1),'_His_',iIndex(CurrentFrame,NDigits),'.tif'];
+        ImageHis = plotFrame(overlayAxes, Image, SpeedMode, FrameInfo, Particles, ...
+            Spots, CurrentFrame, ShowThreshold2, ...
+            Overlay, CurrentChannel, CurrentParticle, ZSlices, CurrentZ, numFrames, ...
+            schnitzcells, UseSchnitz, DisplayRange, Ellipses, SpotFilter, ZoomMode, GlobalZoomMode, ...
+            ZoomRange,UseHistoneOverlay, HisOverlayFigAxes, HisPath1, HisPath2);
+
+    else
+        plotFrame(overlayAxes, Image, SpeedMode, ...
+            FrameInfo, Particles, Spots, CurrentFrame, ShowThreshold2, ...
+            Overlay, CurrentChannel, CurrentParticle, ZSlices, CurrentZ, numFrames, ...
+            schnitzcells, UseSchnitz, DisplayRange, Ellipses, SpotFilter, ...
+            ZoomMode, GlobalZoomMode, ZoomRange, UseHistoneOverlay);
     end
     
-    %     %AR 7/14/16: Need to fill in the details.
-    %     figure(SisterFig)
-    %     %plot sister 1 versus time
-    %     hold on
-    %     %plot sister 2 versus time
-    %     figure(SisterFig2)
-    %     %plot distance versus intensity
-    %     figure(SisterFig3)
-    %     %plot distance versus time
     if ~isempty(xTrace)
         MaxZIndex=find(...
             Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z==...
@@ -981,369 +626,56 @@ while (cc~='x')
     multi_slice_flag = isfield(Spots{CurrentChannel}(CurrentFrame).Fits...
         (CurrentParticleIndex),'IntegralZ');
     
-    if  ~isempty(xTrace) && ~isempty(CurrentZIndex)
-        %Get the snippet and the mask, and overlay them
-        %(MT, 2018-02-12): lattice data could use this, changed CurrentChannel to coatChannel
-        FullSlice=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3)...
-            ,'_z' iIndex(CurrentZ,2) '_ch' iIndex(coatChannel,2) '.tif']);
-        xSpot = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xDoG(CurrentZIndex);
-        ySpot = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yDoG(CurrentZIndex);
-        
-        if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex), 'snippet_size') && ~isempty(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).snippet_size)
-            snippet_size = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).snippet_size;
-            %(MT, 2018-02-12): Hacky fix to get this to run with lattice data -
-            %FIX LATER
-        elseif strcmpi(ExperimentType,'lattice')
-            snippet_size = 13; %pixels
-        elseif isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex), 'Snippet')
-            try
-                snippet_size = floor(size(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).Snippet{1}, 1)/2);
-            catch
-            end
-        end
-        
-        CurrentSnippet = double(FullSlice(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
-            max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size)));
-        imSnippet = mat2gray(CurrentSnippet);
-        SnippetEdge=size(CurrentSnippet,1);
-        IntegrationRadius = 6*intScale; % this appears to be hard-coded into IdentifySingleSpot
-        [xGrid, yGrid] = meshgrid(1:SnippetEdge,1:SnippetEdge);
-        rGrid = sqrt((xGrid-ceil(SnippetEdge/2)).^2 + (yGrid-ceil(SnippetEdge/2)).^2);
-        SnippetMask = rGrid <= IntegrationRadius;
-        IntegrationArea=bwperim(SnippetMask);
-        
-        SnippetOverlay=cat(3,IntegrationArea/2 + ...
-            +imSnippet,imSnippet,imSnippet);
-        
-        imshow(SnippetOverlay,...
-            [],'Border','Tight','InitialMagnification',1000, 'Parent', snippetFigAxes)
-        
-        hold(snippetFigAxes,'on')
-        
-        %this displays the actual snippet for the current z-slice used in
-        %intensity calculations. the center may differ from the circle in
-        %the overlay figure, which indicates the x-y center of the spot
-        %within the brightest z-slice.
-        SnippetX=(SnippetEdge-1)/2+1-...
-            (Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xDoG(CurrentZIndex)-...
-            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xFit(CurrentZIndex));
-        SnippetY=(SnippetEdge-1)/2+1-...
-            (Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yDoG(CurrentZIndex)-...
-            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yFit(CurrentZIndex));
-        hold(snippetFigAxes,'off')
+    % PLOTS SNIPPET
+    
+    FullSlicePath = [PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3)...
+        ,'_z' iIndex(CurrentZ,2) '_ch' iIndex(coatChannel,2) '.tif'];
+    if exist('CurrentSnippet', 'var')
+        CurrentSnippet = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
+            CurrentZIndex, FullSlicePath, Spots, CurrentChannel, CurrentFrame, ...
+            CurrentParticleIndex, ExperimentType, intScale, snippet_size, xSize, ...
+            ySize, SnippetEdge, CurrentSnippet);
     else
-        imshow(zeros(SnippetEdge), 'Parent', snippetFigAxes)
+        CurrentSnippet = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
+            CurrentZIndex, FullSlicePath, Spots, CurrentChannel, CurrentFrame, ...
+            CurrentParticleIndex, ExperimentType, intScale, snippet_size, xSize, ...
+            ySize, SnippetEdge);
     end
     
-    [mesh_y,mesh_x] = meshgrid(1:size(CurrentSnippet,2), 1:size(CurrentSnippet,1));
+    % PLOTS TRACE OF CURRENT PARTICLE
     
-    % Single gaussian function: In future this should be a standalone
-    % function file to ensure consistency with function used for fitting
-    singleGaussian = @(params) (params(1).*...
-        exp(-(...
-        (((cos(params(7)))^2 / (2*params(3)^2) ) + ((sin(params(7)))^2 / 2*params(5)^2))  .* (mesh_x-params(2)).^2 ...
-        - 2*((-sin(2*params(7)) / (4*params(3)^2) ) + (sin(2*params(7)) / 4*params(5)^2)) .* (mesh_x-params(2)).*(mesh_y-params(4))...
-        + (((sin(params(7)))^2 / (2*params(3)^2) ) + ((cos(params(7)))^2 / 2*params(5)^2)).* (mesh_y-params(4)).^2 ...
-        )))...
-        + params(6) - CurrentSnippet;
-    
-    if ~isempty(xTrace) && ~isempty(CurrentZIndex)
-        if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex),'gaussParams')
-            gaussParams = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussParams;
-            
-            if ~isempty(gaussParams)
-                gaussParams= gaussParams{CurrentZIndex};
-                try
-                    gauss = singleGaussian(gaussParams);
-                catch
-                    %not sure in what situation this fails. -AR
-                    %9/15/2018
-                    gauss = NaN;
-                end
-            else
-                gauss = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{CurrentZIndex};
-            end
-            
-        elseif isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex), 'gaussSpot')
-            gauss = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{CurrentZIndex};
-        else
-            error('No Gaussian Fit Params or Gauss Snippet Found. Try Re-running segmentSpots')
-        end
-        
-        if ~isnan(gauss)
-            surf(gaussianAxes, gauss + CurrentSnippet);
-        end
-        title(gaussianAxes,'Gaussian fit')
-        zlimit = max(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity);
-        zlim(gaussianAxes,[0, zlimit]);
-        surf(rawDataAxes,CurrentSnippet)
-        title(rawDataAxes,'Raw data');
-        zlim(rawDataAxes,[0, zlimit]);
+    if exist('AmpIntegral', 'var')
+        [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ...
+            ErrorIntegral, ErrorIntegral3, ErrorIntegral5,backGround3, ...
+            AmpIntegralGauss3D, ErrorIntegralGauss3D] = plotTrace(traceFigAxes, ...
+            ExperimentType, FrameInfo, CurrentChannel, PreviousChannel, ...
+        CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFit, anaphaseInMins, ...
+        ElapsedTime, schnitzcells, Particles, plot3DGauss, anaphase, Prefix, ...
+        DefaultDropboxFolder, numFrames, CurrentFrame, ZSlices, CurrentZ, Spots, ...
+        Frames, AmpIntegral, GaussIntegral, AmpIntegral3, AmpIntegral5, ErrorIntegral, ...
+        ErrorIntegral3, ErrorIntegral5, backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D);
     else
-        cla(gaussianAxes, 'reset')
-        cla(rawDataAxes, 'reset')
-    end
+        [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ...
+            ErrorIntegral, ErrorIntegral3, ErrorIntegral5,backGround3, ...
+            AmpIntegralGauss3D, ErrorIntegralGauss3D] = plotTrace(traceFigAxes, ...
+            ExperimentType, FrameInfo, CurrentChannel, PreviousChannel, ...
+        CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFit, anaphaseInMins, ...
+        ElapsedTime, schnitzcells, Particles, plot3DGauss, anaphase, Prefix, ...
+        DefaultDropboxFolder, numFrames, CurrentFrame, ZSlices, CurrentZ, Spots);
+    end 
     
-    
-    if ~isempty(xTrace)
-        
-        %Get the z-DoG profile
-        % check to see if Spots contains flag indicating type of
-        % integration used
-        title_string = '(max intensity)';
-        %         if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex),'IntegralZ')
-        if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex),'FixedAreaIntensity3')
-            
-            %             if Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).IntegralZ
-            g = [-1 0 1];
-            gaussFilter = exp(-g .^ 2 / (2 ));
-            zprofinit = zeros(1, ZSlices);
-            zprofinit(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z) = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).FixedAreaIntensity;
-            ZProfile= conv(gaussFilter,zprofinit);
-            ZProfile = ZProfile(2:end-1);
-            ZProfile = ZProfile(zprofinit~=0);
-            title_string = '';
-            IntegralZ_flag = 1;
-            %             else
-            %                 ZProfile=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity;
-            %                 IntegralZ_flag = 0;
-            %             end
-        else
-            ZProfile=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity;
-            IntegralZ_flag = 0;
-        end
-        MaxZ=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ;
-        
-        plot(zProfileFigAxes, Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z,...
-            ZProfile,'.-k');
-        
-        hold(zProfileFigAxes,'on')
-        if ~isempty(CurrentZIndex)
-            plot(zProfileFigAxes,CurrentZ,ZProfile(CurrentZIndex),'ob')
-        else
-            plot(zProfileFigAxes,CurrentZ,CurrentZ,'or')
-        end
-        hold(zProfileFigAxes,'off')
-        ylabel(zProfileFigAxes,'intensity(au)', 'FontSize',12);
-        xlabel(zProfileFigAxes,'z-slice', 'FontSize',12);
-        title(zProfileFigAxes,{'z-profile:';title_string},'FontSize',10)
-    end
-    
-    if ~strcmpi(ExperimentType,'inputoutput')
-        %Only update the trace information if we have switched particles
-        if (CurrentParticle~=PreviousParticle)||~exist('AmpIntegral', 'var')||(CurrentChannel~=PreviousChannel) || lastParticle
-            PreviousParticle=CurrentParticle;
-            [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ErrorIntegral, ErrorIntegral3, ErrorIntegral5,backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
-        end
-        %         yyaxis(traceFigAxes,'left');
-        if ~lineFit
-            traceFigTimeAxis = Frames;
-            cla(traceFigAxes)
-        else
-            ncPresent = unique(correspondingNCInfo(Frames));
-            % below subtracts 8 because the first element corresponds to nc 9
-            priorAnaphaseInMins = anaphaseInMins(ncPresent(1)-8);
-            nucleusFirstFrame = ElapsedTime(...
-                schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames(1));
-%             traceFigTimeAxis = ElapsedTime(Frames);
-%             traceFigTimeAxis = ElapsedTime(Frames) - priorAnaphaseInMins;
-            traceFigTimeAxis = ElapsedTime(Frames) - nucleusFirstFrame;
-            if exist('p1','var')
-                delete([p1,p2,cPoint1,cPoint2])
-            end
-        end
-        
-        hold(traceFigAxes, 'on')
-        if ~plot3DGauss
-            p1 = errorbar(traceFigAxes, traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-                AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral,'.-k');
-            p2 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-                AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');
-           dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
-            cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral(Frames==CurrentFrame),'ob');
-            dPoint2 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
-            cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
-
-        else
-           p1 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-                AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');
-           p2 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-                    AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
-           dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
-            cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
-            dPoint2 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
-            cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegralGauss3D(Frames==CurrentFrame),'ob');
-
-        end
-            %         p3 = errorbar(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-        %            AmpIntegral5(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral5(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral5,'.-','Color','blue');
-        %         p3 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-        %             backGround3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
-        
-        try
-            xlim(traceFigAxes,[min(traceFigTimeAxis),max(traceFigTimeAxis)]+[-1,1]);
-        catch
-            %             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
-        end
-        % plotting anaphase boundaries ------------------------------------
-        % Section added by EL 10/11/18
-        currentYLimits = get(traceFigAxes,'YLim');  % Get the range of the y axis
-        
-        % plotting all anaphase time points as vertical lines
-        for i = 1:length(anaphase)
-            if ~lineFit
-                currentAnaphaseBoundary = anaphase(i);
-            else
-                currentAnaphaseBoundary = anaphaseInMins(i) - priorAnaphaseInMins;
-            end
-            plot(traceFigAxes,ones(1,2).*currentAnaphaseBoundary,currentYLimits,...
-                'LineWidth',2,'Color','black');
-        end
-        % End of anaphase boundary marking section
-        % -----------------------------------------------------------------
-        
-        %----------------------------------------------------
-        % plotting prophase and metaphase boundaries
-        try
-            [~, ~, ~, ~, ~, ~,...
-                ~, ~,~, ~,  ~, ~, ~,...
-                ~, ~, ~, ~, ~, ~, ~, ~,...
-                p9,p10,p11,p12,p13,p14,...
-                m9,m10,m11,m12,m13,m14]...
-                = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
-            
-            currentYLimits = get(traceFigAxes,'YLim');  % Get the range of the y axis
-            prophaseBoundaries = [p9 p10 p11 p12 p13 p14];
-            if lineFit
-                prophaseBoundaries = ElapsedTime(prophaseBoundaries);
-            end
-            % plotting all prophase bonudaries as a line
-            for i = 1:length(prophaseBoundaries)
-                currentProphaseBoundary = prophaseBoundaries(i);
-                plot(traceFigAxes,ones(1,2).*currentProphaseBoundary,currentYLimits,...
-                    'LineWidth',2,'Color','green');
-            end
-            
-            currentYLimits = get(traceFigAxes,'YLim');  % Get the range of the y axis
-            metaphaseBoundaries = [m9 m10 m11 m12 m13 m14];
-            if lineFit
-                metaphaseBoundaries = ElapsedTime(metaphaseBoundaries);
-            end
-            % plotting all metaphase bonudaries as a line
-            for i = 1:length(metaphaseBoundaries)
-                currentMetaphaseBoundary = metaphaseBoundaries(i);
-                plot(traceFigAxes,ones(1,2).*currentMetaphaseBoundary,currentYLimits,...
-                    'LineWidth',2,'Color','blue');
-            end
-        end
-        
-        ylabel(traceFigAxes,'integrated intensity (a.u.)')
-        hold(traceFigAxes, 'off')
-        %         yyaxis(traceFigAxes,'right');
-        %         p3 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-        %             backGround3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
-        if plot3DGauss
-            str1 = '3-slice';
-            str2 = '3D-Gaussian fit';
-        else
-            str1 = '1-slice';
-            str2 = 'multi-slice';
-        end
-        if ~lineFit
-            legend(traceFigAxes,[p1,p2],str1,str2)
-            xlabel(traceFigAxes,'frame')
-        else
-            legend(traceFigAxes,[p1,p2,fit1E],str1,str2,...
-                ['fit slope: ', num2str(round(Coefficients(1))), ' a.u./min',newline,'time on: ',num2str(roots(Coefficients)), ' min'])
-            xlabel(traceFigAxes,'time since anaphase (min)')
-        end
-        
+    % PLOT Z SLICE RELATED FIGURES
+    if exist('MaxZProfile', 'var')
+        [MaxZProfile, Frames] = plotZFigures(zProfileFigAxes, zTraceAxes, ExperimentType, ...
+            xTrace, Spots, CurrentFrame, CurrentChannel, CurrentParticleIndex, ZSlices, ...
+            CurrentZ, CurrentZIndex, PreviousParticle, CurrentParticle, ...
+            PreviousChannel, Particles, MaxZProfile, Frames);
     else
-        %Only update the trace information if we have switched particles
-        if (CurrentParticle~=PreviousParticle)||~exist('Amp', 'var')||(CurrentChannel~=PreviousChannel) || lastParticle
-            PreviousParticle=CurrentParticle;
-            [Frames,Amp]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
-        end
-        cla(traceFigAxes, 'reset');
-        %we'll plot the spot intensity first on the left axis.
-        yyaxis(traceFigAxes,'left')
-        hold(traceFigAxes,'on')
-        plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-b')
-        xlabel(traceFigAxes,'frame')
-        ylabel(traceFigAxes,'transcript intensity (a.u.)')
-        plot(traceFigAxes,Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.k')
-        plot(traceFigAxes,Frames(Frames==CurrentFrame),Amp(Frames==CurrentFrame),'ob')
-        % Should the nc boundary lines be added here?
-        % Search: plotting anaphase boundaries ------------------------------------
-        hold(traceFigAxes,'off')
-        
-        
-        %now we'll plot the input protein intensity on the right-hand axis.
-        yyaxis(traceFigAxes,'right')
-        plot(traceFigAxes,schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames,...
-            max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).Fluo,[],2),'r.-')
-        try
-            xlim(traceFigAxes,[min(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames),max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames)])
-        catch
-            %             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
-        end
-        ylabel(traceFigAxes,'input protein intensity (a.u.)');
-        hold(traceFigAxes,'on')
-        plot(traceFigAxes,Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),Amp(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
-        hold(traceFigAxes,'off')
+        [MaxZProfile, Frames] = plotZFigures(zProfileFigAxes, zTraceAxes, ExperimentType, ...
+            xTrace, Spots, CurrentFrame, CurrentChannel, CurrentParticleIndex, ZSlices, ...
+            CurrentZ, CurrentZIndex, PreviousParticle, CurrentParticle, ...
+            PreviousChannel, Particles);
     end
-    
-    firstLine = ['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)];
-    secondLine = ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),'    ',num2str(round(FrameInfo(CurrentFrame).Time)), 's'];
-    thirdLine = ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)];
-    
-    if isfield(FrameInfo, 'nc')
-        FigureTitle={firstLine,...
-            [secondLine,'    (nc',num2str(FrameInfo(CurrentFrame).nc),')'],...
-            thirdLine};
-    else
-        FigureTitle={firstLine,secondLine,thirdLine};
-    end
-    
-    
-    if HideApprovedFlag==1
-        FigureTitle=[FigureTitle,', Showing non-flagged particles'];
-    elseif HideApprovedFlag==2
-        FigureTitle=[FigureTitle,', Showing disapproved particles'];
-    end
-    title(traceFigAxes,FigureTitle)
-    
-    
-    
-    %%%%%    BRIGHTEST Z-TRACE PLOT   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    if ~strcmpi(ExperimentType,'inputoutput')
-        %Only update the trace information if we have switched particles
-        if (CurrentParticle~=PreviousParticle)||~exist('MaxZProfile', 'var')||(CurrentChannel~=PreviousChannel)|| CurrentFrame~=PreviousChannel
-            PreviousParticle=CurrentParticle;
-            Frames=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
-        end
-        for  i = 1:length(Frames)
-            MaxZProfile(i)=Spots{CurrentChannel}(Frames(i)).Fits...
-                (Particles{CurrentChannel}(CurrentParticle).Index(i)).brightestZ;
-        end
-        plot(zTraceAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-            MaxZProfile(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-k');
-        hold(zTraceAxes, 'on')
-        plot(zTraceAxes,Frames(Frames==CurrentFrame),MaxZProfile(Frames==CurrentFrame),'ob');
-        hold(zTraceAxes, 'off')
-        
-        try
-            xlim(zTraceAxes,[min(Frames)-1,max(Frames)+1]);
-            ylim(zTraceAxes,[1,ZSlices+1])
-        catch
-            %             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
-        end
-        xlabel(zTraceAxes,'frame')
-        ylabel(zTraceAxes,'z slice')
-        title(zTraceAxes,'Brightest Z trace')
-    end
-    
-    
     
     set(0, 'CurrentFigure', Overlay)
     if isempty(SkipWaitForButtonPress)
@@ -1449,14 +781,18 @@ while (cc~='x')
         
         DisplayRange=[];
     elseif cc=='g'      %Increase histone channel contrast
-        if isempty(DisplayRange)
-            DisplayRange=[min(min(ImageHis)),max(max(ImageHis))/1.5];
-        else
-            DisplayRange=[DisplayRange(1),DisplayRange(2)/1.5];
+        if UseHistoneOverlay
+            if isempty(DisplayRange)
+                DisplayRange=[min(min(ImageHis)),max(max(ImageHis))/1.5];
+            else
+                DisplayRange=[DisplayRange(1),DisplayRange(2)/1.5];
+            end
         end
         
     elseif cc=='b'      %Decrease histone channel contrast
-        DisplayRange=[min(min(ImageHis)),max(max(ImageHis))*1.5];
+        if UseHistoneOverlay
+            DisplayRange=[min(min(ImageHis)),max(max(ImageHis))*1.5];
+        end
         
     elseif cc=='#' %remove a spot from Spots and erase its frame in Particles
         %Check that we're in zoom mode. If not, set it up.
@@ -2120,59 +1456,8 @@ while (cc~='x')
                 ClickedSpot,Particles{CurrentChannel},CurrentFrame)
         end
     elseif cc=='i'
-        %         PreviousParticle=0;
-        %          [x2,y2]=fad2xyzFit(CurrentFrame,fad2(CurrentChannel), 'addMargin');
-        %          if ~isempty(x2)
-        %             fad2Position=ginput(1);
-        %             if (~isempty(fad2Position))
-        %                 [fad(CurrentChannel),fad2(CurrentChannel),Particles{CurrentChannel}]=...
-        %                     Integratefad2Particle(fad(CurrentChannel),fad2(CurrentChannel),fad2Position,Particles{CurrentChannel},CurrentFrame);
-        %             end
-        %          end
-        %
-        %
-        %          if (~sum(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame))&(~isempty(fad2Position))
-        %             ConnectPosition=fad2Position;
-        %             [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,fad(CurrentChannel),Particles{CurrentChannel});
-        %
-        %             %Check that the clicked particle doesn't exist in a previous
-        %             %frame, that there is no overlap of frames.  Maybe I can have
-        %             %those in a different color.
-        %
-        %
-        %             if sum(Particles{CurrentChannel}(ParticleOutput).Frame<CurrentFrame)
-        %                 disp(['Target particle (',num2str(ParticleOutput),') is already in a previous frame!']);
-        %             else
-        %                 Particles=JoinParticleTraces(CurrentParticle,ParticleOutput,Particles{CurrentChannel});
-        %                 %Do this in case the clicked particle comes before the current
-        %                 %particle in the structure
-        %                 if ParticleOutput<CurrentParticle
-        %                     CurrentParticle=ParticleOutput;
-        %                 end
-        %                 %
-        %                 %Sort the frames within the particle. This is useful if we
-        %                 %connected to a particle that came before.
-        %
-        %                 %There is an error here, cell contents reference from a non-cell array object.
-        %                 [SortedFrame,Permutations]=sort(Particles{CurrentChannel}(CurrentParticle).Frame);
-        %                 Particles{CurrentChannel}(CurrentParticle).Frame=Particles{CurrentChannel}(CurrentParticle).Frame(Permutations);
-        %                 Particles{CurrentChannel}(CurrentParticle).Index=Particles{CurrentChannel}(CurrentParticle).Index(Permutations);
-        %                 Particles{CurrentChannel}(CurrentParticle).FrameApproved=Particles{CurrentChannel}(CurrentParticle).FrameApproved(Permutations);
-        %
-        %                 if UseHistoneOverlay
-        %                     %Check for consistency within schnitzcell
-        %                     [Particles{CurrentChannel},schnitzcells]=CheckSchnitzLineage(Particles{CurrentChannel},CurrentParticle,schnitzcells,CurrentFrame,...
-        %                         Overlay);
-        %                 end
-        %             end
-        %         else
-        %             disp('Cannnot connect to two particles!')
-        %         end
-        
         warning(' AR 1/15/18: This is currently deprecated. Talk to HG if you need this function.')
-        
-        
-    elseif cc=='d'  %d Separate traces forward at the current frame.
+    elseif cc=='d' || cc=='v'  %d Separate traces forward at the current frame.
         %The separated particle (the trace following current frame) won't have a nucleus assigned!
         PreviousParticle=0;
         %Check that the particle does actually exist in this frame
@@ -2185,24 +1470,6 @@ while (cc~='x')
         else
             disp('Cannot divide a trace at the first time point')
         end
-        
-    elseif cc=='v'  %d Separate traces forward at the current frame.
-        %The separated particle (the trace following current frame) won't have a nucleus assigned!
-        PreviousParticle=0;
-        %Check that the particle does actually exist in this frame
-        if ~(Particles{CurrentChannel}(CurrentParticle).Frame(1)==CurrentFrame)
-            if sum(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame)
-                Particles{CurrentChannel}=SeparateParticleTraces(CurrentParticle,CurrentFrame,Particles{CurrentChannel});
-            end
-        elseif length(Particles{CurrentChannel}(CurrentParticle).Frame)==1
-            Particles{CurrentChannel}(CurrentParticle).Nucleus=[];
-        else
-            disp('Cannot divide a trace at the first time point')
-        end
-        
-        
-        
-        
     elseif cc=='q'      %Approve a trace
         if Particles{CurrentChannel}(CurrentParticle).Approved==1
             Particles{CurrentChannel}(CurrentParticle).Approved=2;
