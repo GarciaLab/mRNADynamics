@@ -1,7 +1,9 @@
-function [outputArg1,outputArg2] = changeParticle(inputArg1,inputArg2)
+function [CurrentParticle,CurrentFrame, ManualZFlag] = ...
+    changeParticle(ParticleNum, Particles, numParticles, CurrentChannel)
 %CHANGEPARTICLE Summary of this function goes here
 %   Detailed explanation goes here
-outputArg1 = inputArg1;
-outputArg2 = inputArg2;
+    CurrentParticle = min(max(ParticleNum, 1), numParticles);
+    ManualZFlag = 0;
+    CurrentFrame = Particles{CurrentChannel}(CurrentParticle).Frame(1);
 end
 

@@ -1,7 +1,7 @@
-function [outputArg1,outputArg2] = changeSlice(inputArg1,inputArg2)
+function [CurrentZ,ManualZFlag] = changeZSlice(NewZ, ZSlices)
 %CHANGESLICE Summary of this function goes here
 %   Detailed explanation goes here
-outputArg1 = inputArg1;
-outputArg2 = inputArg2;
+    CurrentZ = min(max(1, NewZ), ZSlices);
+    ManualZFlag = 1;
 end
 
