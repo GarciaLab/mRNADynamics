@@ -1,7 +1,7 @@
 function [MaxZProfile, Frames] = plotZFigures(zProfileFigAxes, zTraceAxes, ExperimentType, ...
     xTrace, Spots, CurrentFrame, CurrentChannel, CurrentParticleIndex, ZSlices, ...
     CurrentZ, CurrentZIndex, PreviousParticle, CurrentParticle, ...
-    PreviousChannel, Particles, MaxZProfile, Frames)
+    PreviousChannel, Particles, Frames, MaxZProfile)
 %PLOTZFIGURES Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -75,6 +75,8 @@ if ~strcmpi(ExperimentType,'inputoutput')
     xlabel(zTraceAxes,'frame')
     ylabel(zTraceAxes,'z slice')
     title(zTraceAxes,'Brightest Z trace')
+else
+    MaxZProfile = [];
 end
     
 end
