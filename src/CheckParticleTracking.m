@@ -145,12 +145,13 @@ FilePrefix=[DataFolder(length(DropboxFolder)+2:end),'_'];
 [~,~,DropboxFolder,~,PreProcPath]=...
     DetermineLocalFolders(FilePrefix(1:end-1));
 
-load([DataFolder,filesep,'Particles.mat'])
-load([DataFolder,filesep,'Spots.mat'])
+load([DataFolder,filesep,'Particles.mat'], 'Particles', 'SpotFilter', ...
+    'Threshold1', 'Threshold2')
+load([DataFolder,filesep,'Spots.mat'], 'Spots')
 
 %Check that FrameInfo exists
 if exist([DataFolder,filesep,'FrameInfo.mat'], 'file')
-    load([DataFolder,filesep,'FrameInfo.mat'])
+    load([DataFolder,filesep,'FrameInfo.mat'], 'FrameInfo')
 else
     warning('No FrameInfo.mat found. Trying to continue')
     %Adding frame information
@@ -229,7 +230,7 @@ if exist([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
     %(MT, 2018-02-11) Added support for lattice imaging with bad histone
     %channel, maybe temporary - FIX LATER
     if exist([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,'Ellipses.mat'])
-        load([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,'Ellipses.mat'])
+        load([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,'Ellipses.mat'], 'Ellipses')
         UseHistoneOverlay=1;
     else
         warning('Ellipses.mat does not exist. Proceeding as though there is no Histone channel. If you expect a Histone channel, there is something wrong.')
@@ -460,24 +461,105 @@ snippetFigAxes =subplot(1, 3, 1, 'Parent', snipFig);
 rawDataAxes =subplot(1, 3, 2, 'Parent', snipFig);
 gaussianAxes =subplot(1, 3, 3, 'Parent', snipFig);
 
-%  uiFig = figure;
-% uiAx = axes(uiFig);
-% uiFig.Units = 'normalized'; uiFig.Position=[.5 .5 .05 .05];
-% title(uiAx, 'User interface box');
-% c = uicontrol;c.Units = 'normalized';c.Position = [.5 .5 .05 .05];
-% c.String = 'Push button';
-% c.Callback = @plotButtonPushed;
-
 %Define the windows
-set(Overlay,'units', 'normalized', 'position',[0.01, .55, .8, .33]);
+set(Overlay,'units', 'normalized', 'position',[0.01, .55, .9, .33]);
+set(Overlay, 'units', 'pixels');
+overlayPos = get(Overlay, 'position');
+set(Overlay, 'units', 'normalized');
 if UseHistoneOverlay
     set(HisOverlayFig,'units', 'normalized', 'position',[0.01, 0.1, .33, .33]);
 end
 set(overlayAxes,'position',[-.23  .06 .9 .9])
-set(traceFigAxes,'position',[.5  .17 .45 .63])
+set(traceFigAxes,'position',[.5  .17 .35 .63])
 set(snipFig,'units', 'normalized', 'position',[0.355, 0.15, 3*(.2/2), .33/2]);
 set(zFig,'units', 'normalized', 'position',[0.67, 0.15, .2, .33/2]);
 
+%Define user interface
+[controls, frame_num, z_num, particle_num, ...
+    add_spot, smart_add_spot, delete_spot] = setupControls(Overlay);
+
+import java.awt.Robot;
+import java.awt.event.KeyEvent;
+robot = Robot;
+fake_event = KeyEvent.VK_T;
+no_clicking = false;
+
+frame_num.KeyPressFcn = @frame_num_changed;
+    function frame_num_changed(~, event)
+        if strcmp(event.Key, 'return')
+            set(frame_num, 'Enable', 'off');
+            drawnow
+            set(frame_num, 'Enable', 'on');
+            numValidFrames = length({Spots{1}.Fits});
+            [CurrentFrame, ManualZFlag] = changeFrame(str2double(frame_num.String), numValidFrames);
+            robot.keyPress(fake_event);
+            robot.keyRelease(fake_event);
+        end
+    end
+
+z_num.KeyPressFcn = @z_num_changed;
+    function z_num_changed(~, event)
+        if strcmp(event.Key, 'return')
+            set(z_num, 'Enable', 'off');
+            drawnow
+            set(z_num, 'Enable', 'on');
+            [CurrentZ,ManualZFlag] = changeZSlice(str2double(z_num.String), ZSlices);
+            robot.keyPress(fake_event);
+            robot.keyRelease(fake_event);
+        end
+    end
+
+particle_num.KeyPressFcn = @particle_num_changed;
+    function particle_num_changed(~, event)
+        if strcmp(event.Key, 'return')
+            set(particle_num, 'Enable', 'off');
+            drawnow
+            set(particle_num, 'Enable', 'on');
+            [CurrentParticle,CurrentFrame, ManualZFlag] = changeParticle(...
+                str2double(particle_num.String), Particles, numParticles, CurrentChannel);
+            robot.keyPress(fake_event);
+            robot.keyRelease(fake_event);
+        end
+    end
+
+add_spot.Callback = @add_spot_pushed;
+    function add_spot_pushed(~,~)
+        smart_add = '{';
+        if smart_add_spot.Value
+            smart_add = '[';
+        end
+        PathPart1 = [PreProcPath,filesep,FilePrefix(1:end-1),filesep,FilePrefix];
+        PathPart2 = [nameSuffix,'.tif'];
+        Path3 = [PreProcPath,filesep,Prefix,filesep,Prefix];
+        no_clicking = true;
+        [numParticles, SpotFilter, Particles, Spots, PreviousParticle] =...
+            addSpot(ZoomMode, GlobalZoomMode, Particles, CurrentChannel, ...
+            CurrentParticle, CurrentFrame, CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
+            LinesPerFrame, Spots, ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
+            SpotFilter, numParticles, smart_add, xSize, ySize, NDigits, intScale);
+        set(add_spot, 'Enable', 'off');
+        drawnow
+        set(add_spot, 'Enable', 'on');
+        robot.keyPress(fake_event);
+        robot.keyRelease(fake_event);
+        no_clicking = false;
+    end
+
+delete_spot.Callback = @delete_spot_pushed;
+    function delete_spot_pushed(~,~)
+        no_clicking = true;
+        [Spots, SpotFilter, ZoomMode, GlobalZoomMode, CurrentFrame, ...
+            CurrentParticle, Particles, ManualZFlag, DisplayRange, lastParticle, PreviousParticle] =...
+            removeSpot(ZoomMode, GlobalZoomMode, Frames, CurrentFrame, ...
+            CurrentChannel, CurrentParticle, CurrentParticleIndex, Particles, Spots, SpotFilter, ...
+            numParticles, ManualZFlag, DisplayRange, lastParticle, PreviousParticle);
+        set(delete_spot, 'Enable', 'off');
+        drawnow
+        set(delete_spot, 'Enable', 'on');
+        robot.keyPress(fake_event);
+        robot.keyRelease(fake_event);
+        no_clicking = false;
+    end
 
 cc=1;
 
@@ -684,13 +766,27 @@ while (cc~='x')
             PreviousChannel, Particles);
     end
     
+    % UPDATE UICONTROLS
+    updateControls(frame_num, z_num, particle_num, CurrentFrame, CurrentZ, CurrentParticle);
+    
     set(0, 'CurrentFigure', Overlay)
     if isempty(SkipWaitForButtonPress)
-        ct=waitforbuttonpress;
+        ct=waitforbuttonpress; % ct=0 for click and ct=1 for keypress
         cc=get(Overlay,'currentcharacter');
-        cm=get(gca,'CurrentPoint');
-        if strcmpi(cc, '')
+        cm=get(overlayAxes,'CurrentPoint');
+        cm2 = get(Overlay, 'CurrentPoint');
+        set(Overlay, 'units', 'pixels');
+        overlayPos = get(Overlay, 'Position'); 
+        overlayWidth = overlayPos(3);
+        set(Overlay, 'units', 'normalized');
+        if strcmpi(cc, '') || ct == 0
             cc = 'donothing';
+        end
+        if ct == 0 && cm(1) < xSize && cm(1) > 0 && cm2(1) < 0.55 && ~no_clicking
+            
+            [CurrentParticle, CurrentFrame, ManualZFlag] = toNearestParticle(Spots, ...
+            Particles, CurrentFrame, CurrentChannel, UseHistoneOverlay, ...
+            schnitzcells, [cm(1,1) cm(2,2)]);
         end
     else
         cc=SkipWaitForButtonPress;

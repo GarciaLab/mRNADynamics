@@ -1,12 +1,15 @@
 function ParticleOutput = identifyParticle(Spots, Particles, CurrentFrame, ...
-    CurrentChannel, UseHistoneOverlay, schnitzcells)
+    CurrentChannel, UseHistoneOverlay, schnitzcells, ConnectPosition)
 %IDENTIFYPARTICLE Summary of this function goes here
 %   Detailed explanation goes here
 
 numParticles = length(Particles{CurrentChannel});
-[ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'b', 'linewidth',1);
-ConnectPosition = [ConnectPositionx,ConnectPositiony];
+if ~exist('ConnectPosition', 'var')
+    [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'b', 'linewidth',1);
+    ConnectPosition = [ConnectPositionx,ConnectPositiony];
+end
 if ~isempty(ConnectPosition)
+    display(ConnectPosition);
     %Find the closest particle
     [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
     disp(['Clicked particle: ',num2str(ParticleOutput)]);
