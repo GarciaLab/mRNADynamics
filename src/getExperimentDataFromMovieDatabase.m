@@ -32,7 +32,7 @@ function [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolut
   nc14 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'nc14'));
   CF = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'CF'));
   % For Channel3, make this as an optional
-  try ~isempty(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel3'))
+  try ~isempty(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel3'));
       Channel3 = { getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel3') };
   catch 
       Channel3 = {'DoesNotExist'};
@@ -41,7 +41,7 @@ function [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolut
   % Making prophase and metaphase time points optional
   % assuing that nuclear cucles included are 9-14
   % for prophase
-  try ~isempty(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'p9'))
+  try ~isempty(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'p9'));
       p9 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'p9'));
       p10 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'p10'));
       p11 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'p11'));
@@ -57,13 +57,13 @@ function [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolut
       p14 = {'DoesNotExist'};
   end
   % doing the same for metaphase
-  try ~isempty(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'p9'))
-      m9 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'p9'));
-      m10 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'p10'));
-      m11 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'p11'));
-      m12 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'p12'));
-      m13 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'p13'));
-      m14 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'p14'));
+  try ~isempty(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'm9'));
+      m9 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'm9'));
+      m10 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'm10'));
+      m11 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'm11'));
+      m12 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'm12'));
+      m13 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'm13'));
+      m14 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'm14'));
   catch
       m9 = {'DoesNotExist'};
       m10 = {'DoesNotExist'};
