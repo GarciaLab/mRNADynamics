@@ -1,4 +1,4 @@
-function Data=LoadMS2Sets(DataType)
+function [Data, Prefixes] = LoadMS2Sets(DataType)
 %Data = LoadMS2Sets(DataType)
 %
 %DESCRIPTION
@@ -19,6 +19,8 @@ function Data=LoadMS2Sets(DataType)
 %Author (contact): Hernan Garcia (hgarcia@berkeley.edu)
 %Created: 
 %Last Updated: 1/13/2018. AR 
+
+Prefixes = {};
 
 %Get some of the default folders
 [~,~,DefaultDropboxFolder,~,~, ~]=...
@@ -141,6 +143,7 @@ for i=1:length(CompiledSets)
     SetNames{i}=SetName;
     Quotes=strfind(SetName,'''');
     Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
+    Prefixes = [Prefixes, Prefix];
     
     %Load CompiledParticles if it exists. This constitutes the main part of
     %the Data output. However, we will later add more information to this

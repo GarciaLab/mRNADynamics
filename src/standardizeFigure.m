@@ -13,6 +13,7 @@ try
 
     axesLineWidth = 5;
     fig = gcf;
+    legend = findobj(fig, 'Type', 'Legend');
     dataObj = get(ax, 'Children');
     dataType = get(dataObj, 'Type');
     if ~iscell(dataType)
