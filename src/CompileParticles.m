@@ -728,7 +728,7 @@ for ChN=1:NChannels
                 
                 %Extract information from Spots about fluorescence and background
                 [Frame,AmpIntegral, AmpIntegral3, AmpIntegral5, AmpGaussian,...
-                    Off, ErrorIntegral,ErrorGauss,optFit1, FitType, ~]...
+                    Off, ErrorIntegral,ErrorGauss,optFit1, FitType, ErrorIntegral3, ErrorIntegral5,backGround3]...
                     = GetParticleTrace(k,CompiledParticles{ChN},Spots{ChN});
                 CompiledParticles{ChN}(k).Fluo= AmpIntegral;
                 CompiledParticles{ChN}(k).Fluo3= AmpIntegral3;
@@ -2404,7 +2404,7 @@ if HistoneChannel&&strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
                 EllipsesToCheck=find(EllipseFilter);
                 
                 for j=1:length(EllipsesToCheck)
-                    %Find which AP bind we're in
+                    %Find which AP bin we're in
                     CurrentAPbin=max(find(APbinID<EllipsePos{FrameToUse}(EllipsesToCheck(j))));
                     %Count the total amount of ellipses in the right AP bin
                     TotalEllipsesAP(CurrentAPbin,nc-11)=TotalEllipsesAP(CurrentAPbin,nc-11)+1;

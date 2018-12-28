@@ -376,9 +376,10 @@ for i = 1:length(anaphase)
         anaphaseInMins(i) = ElapsedTime(anaphase(i)); % in units of minutes
     end
 end
-
-correspondingNCInfo = [FrameInfo.nc]; % the assigned nc of the frames
-
+try
+    correspondingNCInfo = [FrameInfo.nc]; % the assigned nc of the frames
+catch
+end
 save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo') %this is here so that a user will still get an updated
 %frameinfo.mat even if they abort checkparticletracking without saving (to
 %prevent issues with compileparticles)
@@ -1298,11 +1299,11 @@ while (cc~='x')
     thirdLine = ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)];
     
     if isfield(FrameInfo, 'nc')
-        FigureTitle={firstLine,...
+        FigureTitle={Prefix, firstLine,...
             [secondLine,'    (nc',num2str(FrameInfo(CurrentFrame).nc),')'],...
             thirdLine};
     else
-        FigureTitle={firstLine,secondLine,thirdLine};
+        FigureTitle={Prefix, firstLine,secondLine,thirdLine};
     end
     
     
@@ -1311,7 +1312,7 @@ while (cc~='x')
     elseif HideApprovedFlag==2
         FigureTitle=[FigureTitle,', Showing disapproved particles'];
     end
-    title(traceFigAxes,FigureTitle)
+    title(traceFigAxes,FigureTitle, 'Interpreter', 'latex')
     
     
     
