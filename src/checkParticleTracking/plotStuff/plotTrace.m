@@ -2,8 +2,8 @@ function [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ...
             ErrorIntegral, ErrorIntegral3, ErrorIntegral5,backGround3, ...
             AmpIntegralGauss3D, ErrorIntegralGauss3D, PreviousParticle] = plotTrace(traceFigAxes, ...
             FrameInfo, CurrentChannel, PreviousChannel, ...
-    CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFit, anaphaseInMins, ...
-    ElapsedTime, schnitzcells, Particles, plot3DGauss, anaphase, Prefix, ...
+    CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFit, anaphaseInMins,...
+    ElapsedTime, schnitzcells, Particles, plot3DGauss, anaphase,prophase, metaphase, prophaseInMins, metaphaseInMins,Prefix, ...
     DefaultDropboxFolder, numFrames, CurrentFrame, ZSlices, CurrentZ, Spots, ...
     correspondingNCInfo, fit1E, Coefficients, Frames, AmpIntegral, GaussIntegral, AmpIntegral3, ...
     AmpIntegral5, ErrorIntegral, ErrorIntegral3, ErrorIntegral5, backGround3, ...
@@ -34,28 +34,28 @@ else
 %             traceFigTimeAxis = ElapsedTime(Frames);
 %             traceFigTimeAxis = ElapsedTime(Frames) - priorAnaphaseInMins;
     traceFigTimeAxis = ElapsedTime(Frames) - nucleusFirstFrame;
-    if exist('p1','var')
-        delete([p1,p2,cPoint1,cPoint2])
+    if exist('traceErrorBar1','var')
+        delete([traceErrorBar1,traceErrorBar2,cPoint1,cPoint2])
     end
 end
 
 hold(traceFigAxes, 'on')
 if ~plot3DGauss
-    p1 = errorbar(traceFigAxes, traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+    traceErrorBar1 = errorbar(traceFigAxes, traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
         AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral,'.-k');
-    p2 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+    traceErrorBar2 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
         AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');
-   dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
+    dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
     cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral(Frames==CurrentFrame),'ob');
     dPoint2 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
     cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
 
 else
-   p1 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+   traceErrorBar1 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
         AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');
-   p2 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+   traceErrorBar2 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
             AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
-   dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
+    dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
     cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
     dPoint2 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
     cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegralGauss3D(Frames==CurrentFrame),'ob');
@@ -90,37 +90,24 @@ end
 
 %----------------------------------------------------
 % plotting prophase and metaphase boundaries
-try
-    [~, ~, ~, ~, ~, ~,...
-        ~, ~,~, ~,  ~, ~, ~,...
-        ~, ~, ~, ~, ~, ~, ~, ~,...
-        p9,p10,p11,p12,p13,p14,...
-        m9,m10,m11,m12,m13,m14]...
-        = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+for i = 1:length(prophase)
+    if ~lineFit
+        currentProphase = prophase(i);
+    else
+        currentProphase = prophaseInMins(i) - priorAnaphaseInMins;
+    end
+    plot(traceFigAxes,ones(1,2).*currentProphase,currentYLimits,...
+        'LineWidth',2,'Color','blue');
+end
 
-    currentYLimits = get(traceFigAxes,'YLim');  % Get the range of the y axis
-    prophaseBoundaries = [p9 p10 p11 p12 p13 p14];
-    if lineFit
-        prophaseBoundaries = ElapsedTime(prophaseBoundaries);
+for i = 1:length(metaphase)
+    if ~lineFit
+        currentMetaphase = metaphase(i);
+    else
+        currentMetaphase = metaphaseInMins(i) - priorAnaphaseInMins;
     end
-    % plotting all prophase bonudaries as a line
-    for i = 1:length(prophaseBoundaries)
-        currentProphaseBoundary = prophaseBoundaries(i);
-        plot(traceFigAxes,ones(1,2).*currentProphaseBoundary,currentYLimits,...
-            'LineWidth',2,'Color','green');
-    end
-
-    currentYLimits = get(traceFigAxes,'YLim');  % Get the range of the y axis
-    metaphaseBoundaries = [m9 m10 m11 m12 m13 m14];
-    if lineFit
-        metaphaseBoundaries = ElapsedTime(metaphaseBoundaries);
-    end
-    % plotting all metaphase bonudaries as a line
-    for i = 1:length(metaphaseBoundaries)
-        currentMetaphaseBoundary = metaphaseBoundaries(i);
-        plot(traceFigAxes,ones(1,2).*currentMetaphaseBoundary,currentYLimits,...
-            'LineWidth',2,'Color','blue');
-    end
+    plot(traceFigAxes,ones(1,2).*currentMetaphase,currentYLimits,...
+        'LineWidth',2,'Color','yellow');
 end
 
 ylabel(traceFigAxes,'integrated intensity (a.u.)')
@@ -136,10 +123,10 @@ else
     str2 = 'multi-slice';
 end
 if ~lineFit
-    legend(traceFigAxes,[p1,p2],str1,str2)
+    legend(traceFigAxes,[traceErrorBar1,traceErrorBar2],str1,str2)
     xlabel(traceFigAxes,'frame')
 else
-    legend(traceFigAxes,[p1,p2,fit1E],str1,str2,...
+    legend(traceFigAxes,[traceErrorBar1,traceErrorBar2,fit1E],str1,str2,...
         ['fit slope: ', num2str(round(Coefficients(1))), ' a.u./min',newline,'time on: ',num2str(roots(Coefficients)), ' min'])
     xlabel(traceFigAxes,'time since anaphase (min)')
 end
@@ -150,20 +137,20 @@ secondLine = ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),'    ',num2
 thirdLine = ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)];
 
 if isfield(FrameInfo, 'nc')
-    FigureTitle={firstLine,...
+    axisTitle={firstLine,...
         [secondLine,'    (nc',num2str(FrameInfo(CurrentFrame).nc),')'],...
         thirdLine};
 else
-    FigureTitle={firstLine,secondLine,thirdLine};
+    axisTitle={firstLine,secondLine,thirdLine};
 end
 
 
 if HideApprovedFlag==1
-    FigureTitle=[FigureTitle,', Showing non-flagged particles'];
+    axisTitle=[axisTitle,', Showing non-flagged particles'];
 elseif HideApprovedFlag==2
-    FigureTitle=[FigureTitle,', Showing disapproved particles'];
+    axisTitle=[axisTitle,', Showing disapproved particles'];
 end
-title(traceFigAxes,FigureTitle)
+title(traceFigAxes,axisTitle)
     
 end
 
