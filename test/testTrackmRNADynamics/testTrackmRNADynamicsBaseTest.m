@@ -26,14 +26,14 @@ function testCase = testTrackmRNADynamicsBaseTest(testCase, histone)
   end
 
   % Executes trackmRNADynamis with known thresholds
-  TrackmRNADynamics(testCase.Prefix, testCase.Threshold1, testCase.Threshold1, 'bypassUserPrompt');
+  TrackmRNADynamics(testCase.Prefix);
 
   expectedDynamicsResultsFolder = [testPath, filesep, TestFolder, filesep, 'DynamicsResults', filesep, testCase.Prefix];
   assertStructEqualToExpected(testCase, dynamicResultsExperimentPath, expectedDynamicsResultsFolder, 'Particles.mat');
   assertStructEqualToExpected(testCase, dynamicResultsExperimentPath, expectedDynamicsResultsFolder, 'FrameInfo.mat');
 
   % Executes tracking a second time to test out the case when Particles.mat already exists
-  TrackmRNADynamics(testCase.Prefix, testCase.Threshold1, testCase.Threshold1, 'bypassUserPrompt');
+  TrackmRNADynamics(testCase.Prefix);
 
   expectedDynamicsResultsFolder = [testPath, filesep, TestFolder, filesep, 'secondPass', filesep, 'DynamicsResults',...
     filesep, testCase.Prefix];
