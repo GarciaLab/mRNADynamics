@@ -351,7 +351,9 @@ try
     end
 end
 
+try
 correspondingNCInfo = [FrameInfo.nc]; % the assigned nc of the frames
+end
 
 save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo') %this is here so that a user will still get an updated
 %frameinfo.mat even if they abort checkparticletracking without saving (to
