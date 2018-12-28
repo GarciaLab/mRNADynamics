@@ -1,6 +1,6 @@
 function [CurrentChannel, PreviousChannel, coatChannel, CurrentParticle] =...
     switchChannels(CurrentChannel, CurrentParticle, Particles, ...
-    UseHistoneOverlay, coatChannels)
+    UseHistoneOverlay, coatChannels, NChannels)
 %SWITCHCHANNELS Summary of this function goes here
 %   Detailed explanation goes here
 

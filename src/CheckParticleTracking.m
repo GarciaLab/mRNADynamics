@@ -119,6 +119,14 @@ warning('off','MATLAB:mir_warning_maybe_uninitialized_temporary')
 addpath('checkParticleTracking/');
 addpath('checkParticleTracking/plotStuff');
 addpath('checkParticleTracking/actionResponses');
+
+
+%%Initialization
+schnitzcells = [];
+Ellipses = [];
+correspondingNCInfo = [];
+
+
 %% Information about about folders
 
 %Get the folders
@@ -351,8 +359,8 @@ try
     end
 end
 
-try
-correspondingNCInfo = [FrameInfo.nc]; % the assigned nc of the frames
+if isfield(FrameInfo,'nc')
+    correspondingNCInfo = [FrameInfo.nc]; % the assigned nc of the frames
 end
 
 save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo') %this is here so that a user will still get an updated
@@ -1011,10 +1019,10 @@ while (cc~='x')
     elseif cc=='2' %2 set parent of current nucleus
         schnitzcells = setParentNucleus(schnitzcells, ...
             CurrentFrame, CurrentChannel, CurrentParticle, Particles);
-    elseif (cc=='8')&(NChannels>1)      %Switch channels
+    elseif cc=='8' && NChannels > 1      %Switch channels
         [CurrentChannel, PreviousChannel, coatChannel, CurrentParticle] =...
             switchChannels(CurrentChannel, CurrentParticle, Particles, ...
-            UseHistoneOverlay, coatChannels);       
+            UseHistoneOverlay, coatChannels, NChannels);       
     elseif cc=='~'      %Switch projection mode
         projectionMode = chooseProjection;
         disp(['projectionMode : ' projectionMode])
