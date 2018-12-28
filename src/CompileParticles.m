@@ -38,7 +38,7 @@ function CompileParticles(varargin)
 %           since there is almost always scattering in the middle
 % 'intArea': Change the area (in pixels) of integration used in offset calculations
 % 'noHist': Force the code to assume there's no nuclear channel.
-%
+% 'doSingleFits': Generate single trace fits. Added by EL&AR 
 % Author (contact): Hernan Garcia (hggarcia@berkeley.edu)
 % Created:
 % Last Updated: 6/17/17 (AR)
@@ -46,25 +46,6 @@ function CompileParticles(varargin)
 % Documented by: Hernan Garcia (hggarcia@berkeley.edu)
 
 close all;
-
-%Information about about folders
-[~,~,DefaultDropboxFolder,~,~]=...
-    DetermineLocalFolders;
-
-%Look at the input parameters and use defaults if missing
-Prefix='';
-ForceAP=0;      %Force AP detection even if it's already there
-SkipTraces=0;   %Do not output the individual traces.
-SkipFluctuations=0;  %Do not generate the plots of correlations of fluctuations and offset
-SkipFits=0;         %Do not generate the fit output (but still does the fit)
-SkipMovie=0;        %Do not generate the movie
-SkipAll=0;          %Do not do other things 
-ApproveAll=0;       %Only use manually approved particles
-MinParticles=4;
-minTime = 1;
-ROI=0; % No ROI
-intArea = 109; %default for 220nm x 220nm zoom.
-noHist = 0; 
 
 %% INITIALIZE ALL SAVED VARIABLES
 % Please initialize any new variables you have added and want to save!!!!
@@ -140,6 +121,11 @@ StemLoopEnd = '';
 TotalEllipsesAP = [];
 TotalEllipsesDV = [];
 fittedLineEquations = [];
+rateOnAP = [];
+timeOnOnAP = [];
+rateOnAPCell = [];
+timeOnOnAPCell = [];
+
 nc9 = [];
 nc10 = [];
 nc11 = [];
@@ -148,8 +134,31 @@ nc13 = [];
 nc14 = [];
 ncFilter = [];
 ncFilterID = [];
+%%
 
-%% Checking Varargin 
+%Information about about folders
+[~,~,DefaultDropboxFolder,~,~]=...
+    DetermineLocalFolders;
+
+%Look at the input parameters and use defaults if missing
+Prefix='';
+ForceAP=0;      %Force AP detection even if it's already there
+SkipTraces=0;   %Do not output the individual traces.
+SkipFluctuations=0;  %Do not generate the plots of correlations of fluctuations and offset
+SkipFits=0;         %Do not generate the fit output (but still does the fit)
+SkipMovie=0;        %Do not generate the movie
+SkipAll=0;          %Do not do other things 
+ApproveAll=0;       %Only use manually approved particles
+MinParticles=4;
+minTime = 1;
+ROI=0; % No ROI
+intArea = 109; %default for 220nm x 220nm zoom.
+noHist = 0; 
+doSingleFits = 0;
+
+
+
+% Checking Varargin 
 if isempty(varargin)%looks for the folder to analyze
     FolderTemp=uigetdir(DefaultDropboxFolder,'Select folder with data to analyze');
     Dashes=strfind(FolderTemp,filesep);
@@ -173,6 +182,8 @@ else
             SkipFits=1;
             SkipMovie=1;
             SkipAll=1;
+        elseif strcmpi(varargin{i},'doSingleFits')
+            doSingleFits=1;
         elseif strcmpi(varargin{i},'ApproveAll')
             ApproveAll=1;
             disp('Approved')
@@ -728,7 +739,7 @@ for ChN=1:NChannels
                 
                 %Extract information from Spots about fluorescence and background
                 [Frame,AmpIntegral, AmpIntegral3, AmpIntegral5, AmpGaussian,...
-                    Off, ErrorIntegral,ErrorGauss,optFit1, FitType, ~]...
+                    Off, ErrorIntegral,ErrorGauss,optFit1, FitType, ErrorIntegral3, ErrorIntegral5,backGround3]...
                     = GetParticleTrace(k,CompiledParticles{ChN},Spots{ChN});
                 CompiledParticles{ChN}(k).Fluo= AmpIntegral;
                 CompiledParticles{ChN}(k).Fluo3= AmpIntegral3;
@@ -2047,6 +2058,39 @@ end
 
 
 
+%% Fitting shapes` to single traces (includes time on and initial rate of loading)
+% This section of code is will fit line segments piece-wise to the
+% single traces. fittedLineEquations correspond to the stored fitted lines
+% of the particles, where the indexing is as follows:
+% fittedLineEquations(particleNumber) with fields: Coefficients,
+% ErrorEstimation, and frameIndex, which are described below. This currently
+% does not support more than one channel. Please contact Emma to work on
+% implementing it for two channels.
+if doSingleFits
+%     try
+        fittedLineEquations = fitSingleTraces(Prefix,Particles,Spots,schnitzcells,FrameInfo,ElapsedTime);
+        ChN = 1; %only supports one channel for now
+        for i = 1:length(CompiledParticles{ChN})
+            if ~isempty(fittedLineEquations(i).Coefficients)
+                singleTraceLoadingRate = fittedLineEquations(i).Coefficients(1,1); %au/min
+                if singleTraceLoadingRate >= 0 %some easy quality control
+                    singleTraceTimeOn = roots(fittedLineEquations(i).Coefficients(1,:));
+                    CompiledParticles{ChN}(i).singleTraceLoadingRate = singleTraceLoadingRate;
+                    CompiledParticles{ChN}(i).singleTraceTimeOn = singleTraceTimeOn;
+                else     
+                    CompiledParticles{ChN}(i).singleTraceLoadingRate = NaN;
+                    CompiledParticles{ChN}(i).singleTraceTimeOn = NaN;     
+                end
+            else
+                CompiledParticles{ChN}(i).singleTraceLoadingRate = NaN;
+                CompiledParticles{ChN}(i).singleTraceTimeOn = NaN;      
+            end
+        end
+%     catch
+%     %Talk to EL if you need this.     
+%     end
+end
+
 %% Probability of being on
 
 %I'm going to measure the probability of a nucleus having detectable
@@ -2380,6 +2424,11 @@ if HistoneChannel&&strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
         
         TotalEllipsesAP=zeros(length(APbinID),3);
         EllipsesOnAP{ChN}=zeros(length(APbinID),3);
+        rateOnAP{ChN}=zeros(length(APbinID),3);
+        rateOnAPCell{ChN}=cell(length(APbinID),3);     
+        timeOnOnAP{ChN}=zeros(length(APbinID),3);
+        timeOnOnAPCell{ChN}=cell(length(APbinID),3);
+
         for nc=12:14
             
             %Figure out which frame we'll look at
@@ -2404,7 +2453,7 @@ if HistoneChannel&&strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
                 EllipsesToCheck=find(EllipseFilter);
                 
                 for j=1:length(EllipsesToCheck)
-                    %Find which AP bind we're in
+                    %Find which AP bin we're in
                     CurrentAPbin=max(find(APbinID<EllipsePos{FrameToUse}(EllipsesToCheck(j))));
                     %Count the total amount of ellipses in the right AP bin
                     TotalEllipsesAP(CurrentAPbin,nc-11)=TotalEllipsesAP(CurrentAPbin,nc-11)+1;
@@ -2489,13 +2538,21 @@ if HistoneChannel&&strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
                                 if CompiledParticles{ChN}(m).Nucleus==k
                                     [j,k,m];
                                     EllipsesOnAP{ChN}(CurrentAPbin,nc-11)=EllipsesOnAP{ChN}(CurrentAPbin,nc-11)+1;
+                                    rateOnAP{ChN}(CurrentAPbin,nc-11) = nansum([rateOnAP{ChN}(CurrentAPbin,nc-11),CompiledParticles{ChN}(m).singleTraceLoadingRate]);
+                                    rateOnAPCell{ChN}{CurrentAPbin,nc-11} = [rateOnAPCell{ChN}{CurrentAPbin,nc-11},CompiledParticles{ChN}(m).singleTraceLoadingRate];
+                                    timeOnOnAP{ChN}(CurrentAPbin,nc-11) = nansum([timeOnOnAP{ChN}(CurrentAPbin,nc-11),CompiledParticles{ChN}(m).singleTraceTimeOn]);
+                                    timeOnOnAPCell{ChN}{CurrentAPbin,nc-11} = [timeOnOnAPCell{ChN}{CurrentAPbin,nc-11},CompiledParticles{ChN}(m).singleTraceTimeOn];
                                 end
                             end
+                            
                         end
                     end
                 end
             end
         end
+        
+        rateOnAP{ChN} = rateOnAP{ChN} ./ EllipsesOnAP{ChN};
+        timeOnOnAP{ChN} = timeOnOnAP{ChN} ./ EllipsesOnAP{ChN};
         
         if ~SkipAll
             fractionFig = figure();
@@ -2983,21 +3040,6 @@ end
 
 
 
-%% Fitting shapes` to single traces (includes time on and initial rate of loading)
-% This section of code is will fit lines in a piece wise fashion to the
-% single traces. fittedLineEquations correspond to the stored fitted lines
-% of the particles, where the indexing is as follows:
-% fittedLineEquations(particleNumber) with fields: Coefficients,
-% ErrorEstimation, and frameIndex, which are described below. This currently
-% does not support more than one channel. Please contact Emma to work on
-% implementing it for two channels.
-if ~SkipFits
-    try
-        fittedLineEquations = fitSingleTraces(Prefix,Particles,Spots,schnitzcells,FrameInfo,ElapsedTime);
-    catch
-    end
-end
-
 %% Calculation of particle speed
 try
     if NChannels > 1
@@ -3189,7 +3231,7 @@ save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
     'SDVectorAP', 'SDVectorAP_ROI', 'SDVectorAP_nonROI', 'SDVectorAll',...
     'SDVectorDV', 'SDVectorDV_ROI', 'SDVectorDV_nonROI', 'SEVectorAllAP',...
     'SEVectorAllDV', 'StemLoopEnd', 'TotalEllipsesAP', 'TotalEllipsesDV',...
-    'fittedLineEquations', 'nc10', 'nc11', 'nc12',...
+    'fittedLineEquations', 'rateOnAP', 'timeOnOnAP','rateOnAPCell', 'timeOnOnAPCell','nc10', 'nc11', 'nc12',...
     'nc13', 'nc14', 'nc9', 'ncFilter',...
     'ncFilterID','-v7.3');
  

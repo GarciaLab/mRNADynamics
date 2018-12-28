@@ -40,6 +40,7 @@ function APAnalysis(dataset, varargin)
     nc = 2;
     justMeans = 0;
     savePath = '';
+    noLoading = 0;
 
     for i=1:length(varargin)
         if strcmpi(varargin{i},'control')
@@ -48,16 +49,23 @@ function APAnalysis(dataset, varargin)
             nc = varargin{i+1} - 11; %Because in the CompiledParticles, nc12 is indexed as 1, nc13 as 2, etc.
         elseif strcmpi(varargin{i}, 'justMeans')
             justMeans = 1;
+        elseif strcmpi(varargin{i}, 'noLoading')
+            noLoading = 1;
         elseif strcmpi(varargin{i}, 'savePath')
             savePath = varargin{i+1};
         end
     end
         
     warning('off', 'MATLAB:handle_graphics:exceptions:SceneNode');
-    close all force;
+    close all;
 
     %Set up treatment data for plotting and analysis
-    data = LoadMS2Sets(dataset);
+    if ischar(dataset)
+        data = LoadMS2Sets(dataset);
+    else
+        data = dataset; %this allows you to pass the data directly to the script,
+        %bypassing the need to call loadms2sets
+    end
     nSets = length(data);
     ap = data(1).APbinID;
     numAPBins = length(ap);
@@ -141,6 +149,9 @@ function APAnalysis(dataset, varargin)
     figure('Name', 'Individual Movie Fraction On')
     totalEllipses =  zeros(numAPBins, 1);
     ellipsesOn = zeros(numAPBins, 1);
+    rateSum = zeros(1,numAPBins);
+%     tSum = zeros(numAPBins, 1);
+    
     g = zeros(numAPBins, 1);
     g2 = zeros(numAPBins, 1);
     n = zeros(numAPBins, 1);
@@ -157,7 +168,15 @@ function APAnalysis(dataset, varargin)
         
         totalEllipses = totalEllipses + data(dataSet).TotalEllipsesAP(:,nc);
         ellipsesOn = ellipsesOn + data(dataSet).EllipsesOnAP(:,nc);
-       
+        
+        rateAr = data(dataSet).rateOnAP{channel}(:,nc);
+        b = (rateAr.*data(dataSet).EllipsesOnAP(:,nc))';
+        c = vertcat(rateSum,b);
+        rateSum = nansum(c);
+%         tSum = tSum + data(dataSet).timeOnOnAP{channel}.*data(dataSet).EllipsesOnAP(:,nc);
+        
+%         rateStd = data(dataSet).rateOnAP{channel}.*data(dataSet).EllipsesOnAP
+        
         nonanf = f;
         nonanf(isnan(nonanf))=0;
         g = g + nonanf;
@@ -169,6 +188,29 @@ function APAnalysis(dataset, varargin)
         end
         fSet(:, dataSet) = f;
     end
+    rateSum = rateSum';
+    rateMean = rateSum ./ ellipsesOn;
+%     timeMean = tSum ./ ellipsesOn;
+    
+    rateChiSq = zeros(1,numAPBins);
+    
+    for dataSet = 1:nSets 
+        %note to AR tomorrow. This step probably is not right syntax. want
+        %to do elementwise subtraction 
+        rateCellAr = (data(dataSet).rateOnAPCell{channel}(:,nc))';
+        
+        for k = 1:length(rateCellAr)
+            if ~isempty(rateCellAr{k})
+                deviation = rateCellAr{k} - rateMean(k);
+                rateChiSq(k) = rateChiSq(k) + sum(deviation.^2);
+            end
+        end       
+    end
+    
+    rateChiSq = rateChiSq';
+    rateStD = sqrt(rateChiSq ./ ellipsesOn);
+    rateStE = rateStD ./ sqrt(ellipsesOn);
+    
     n(~n) = 1;
     fmean = g./n;
     fstde = sqrt(g2./n - fmean.^2) ./ sqrt(n);
@@ -188,7 +230,6 @@ function APAnalysis(dataset, varargin)
     errorbar(ap(idx),ellipsesOn(idx)./totalEllipses(idx), fstde(idx));
     xlim([0.15 0.6])%xlim([.275, .65])
     ylim([0, 1.1])
-    
     lgd2 = legend('mean $\pm$ std. error');
     set(lgd2, 'Interpreter', 'latex');
     title(['fraction of actively transcribing nuclei, nuclear cycle ',num2str(nc+11)]);
@@ -196,6 +237,27 @@ function APAnalysis(dataset, varargin)
     ylabel('fraction on');
     standardizeFigure(gca, legend('show'),'red');
     e.Color = [213,108,85]/255;
+    
+ figure('Name','rate vs ap')
+%     ellipsesOn(totalEllipses < 3) = NaN;
+%     totalEllipses(totalEllipses < 3) = NaN;
+%     fstde(totalEllipses < 3) = NaN;
+    idx = ~any(isnan(rateMean),2);
+    apidx = ap(idx);rateMeanidx = rateMean(idx);rateStEidx=rateStE(idx);
+    e = errorbar(apidx(apidx<=.55),rateMeanidx(apidx<=.55), rateStEidx(apidx<=.55));
+    xlim([.25, .7])
+    ylim([0, 1000])
+    lgd2 = legend('mean $\pm$ std. error');
+    set(lgd2, 'Interpreter', 'latex');
+    title(['single trace loading rates of ellipses flagged as on, nuclear cycle ',num2str(nc+11)]);
+    xlabel('fraction embryo length');
+    ylabel('pol II loading rate (a.u./min)');
+    standardizeFigure(gca, legend('show'),'red');
+    e.Color = [213,108,85]/255;
+    e.MarkerSize= 40;
+    e.LineWidth= 4;
+
+        
     %% Combined Ellipses Count
     % This is for a quick visual check of the fraction on plots 
     figure('Name','Combined Ellipses Count')
@@ -209,6 +271,22 @@ function APAnalysis(dataset, varargin)
     standardizeFigure(gca, legend('show'),'red');
     hold off
     %% 
+    
+% %rate plots    
+% g = zeros(numAPBins, 1);
+%     g2 = zeros(numAPBins, 1);
+%     n = zeros(numAPBins, 1);
+%     fSet = zeros(numAPBins, nSets);
+% 
+% %      f = 
+%         nonanf = f;
+%         nonanf(isnan(nonanf))=0;
+%         g = g + nonanf;
+%         g2 = g2 + nonanf.^2; 
+%         n = ~isnan(f) + n;
+    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
  
     %Experiment number on
     figure('Name', 'number_spots')
@@ -240,15 +318,17 @@ function APAnalysis(dataset, varargin)
      ylim([0, max(f)*1.1]);
     else
     end
-    title(['numer of actively transcring nuclei, nuclear cycle ',num2str(nc+11)]);
+    title(['number of actively transcring nuclei, nuclear cycle ',num2str(nc+11)]);
     xlabel('fraction embryo length');
     ylabel('number on');
     standardizeFigure(gca, legend('show'), 'red');    
   
 %%  
-    try
-        pol2LoadingAnalysis(dataset);
-    catch
+    if ~noLoading
+        try
+            pol2LoadingAnalysis(dataset);
+        catch
+        end
     end
     
     analyzeContiguity(d);

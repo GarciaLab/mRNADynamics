@@ -335,6 +335,7 @@ end
 
 %prophase and metaphase 
 prophase = []; metaphase = []; prophaseInMins=[]; metaphaseInMins=[];
+
 try
     [~, ~, ~, ~, ~, ~,...
     ~, ~,~, ~,  ~, ~, ~,...
@@ -359,10 +360,11 @@ try
     end
 end
 
-if isfield(FrameInfo,'nc')
-    correspondingNCInfo = [FrameInfo.nc]; % the assigned nc of the frames
-end
 
+try
+    correspondingNCInfo = [FrameInfo.nc]; % the assigned nc of the frames
+catch
+end
 save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo') %this is here so that a user will still get an updated
 %frameinfo.mat even if they abort checkparticletracking without saving (to
 %prevent issues with compileparticles)
@@ -801,6 +803,7 @@ while (cc~='x')
         end 
     end
     
+
     % PLOT Z SLICE RELATED FIGURES
     if exist('MaxZProfile', 'var')
         [MaxZProfile, Frames] = plotZFigures(zProfileFigAxes, zTraceAxes, ExperimentType, ...

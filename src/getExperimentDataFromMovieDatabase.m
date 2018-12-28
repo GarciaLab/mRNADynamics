@@ -57,7 +57,8 @@ function [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolut
       p14 = {'DoesNotExist'};
   end
   % doing the same for metaphase
-try ~isempty(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'm9'));
+
+  try ~isempty(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'm9'));
       m9 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'm9'));
       m10 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'm10'));
       m11 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'm11'));
@@ -68,7 +69,7 @@ try ~isempty(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'm9'));
       m9 = {'DoesNotExist'};
       m10 = {'DoesNotExist'};
       m11 = {'DoesNotExist'};
-      m2 = {'DoesNotExist'};
+      m12 = {'DoesNotExist'};
       m13 = {'DoesNotExist'};
       m14 = {'DoesNotExist'};
   end

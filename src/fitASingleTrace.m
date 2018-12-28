@@ -66,12 +66,12 @@ end
 currentLength = length(frame);
 
 % performing moving average
-if sum(isnan(ampIntegralGauss3D))
-    disp('Note: Could not use the 3D guassian intensity fits so ampIntegral3 will be used')
+% if sum(isnan(ampIntegralGauss3D))
+%     disp('Note: Could not use the 3D guassian intensity fits so ampIntegral3 will be used')
     smoothedAmp = movmean(ampIntegral3,averagingLength);
-else
-    smoothedAmp = movmean(ampIntegralGauss3D,averagingLength);
-end
+% else
+%     smoothedAmp = movmean(ampIntegralGauss3D,averagingLength);
+% end
 
 % Time --------------------------------------------------------------------
 % getting the corresponding time of the trace
