@@ -52,6 +52,8 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
 
   SearchRadius = ceil(SearchRadiusMicrons / PixelSize);
 
+  schnitzcells = [];
+  Ellipses = [];
   % Check if we have tracked the lineages of the nuclei
   if exist([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'file')
     UseHistone = 1;
@@ -61,7 +63,7 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
 
     % Load the nuclear tracking information
     load([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'schnitzcells')
-    
+
   else
     UseHistone = 0;
     schnitzcells = [];
@@ -80,7 +82,7 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
   [Spots, SpotFilter] = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefix, NCh);
 
   [ParticlesFig, particlesAxes, NucleiFig, nucAxes] = generateTrackingFigures(app, UseHistone);
-  
+
   NDigits = adjustIndexSizeAccordingToFrames(FrameInfo);
 
   [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh, Spots, app, SpotFilter, PreProcPath, ...
@@ -205,6 +207,7 @@ function Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh)
 end
 
 function [Spots, SpotFilter] = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefix, NCh)
+
   if ~exist('Spots', 'var')
     load([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots')
 
@@ -255,11 +258,14 @@ function [Spots, SpotFilter] = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefi
 end
 
 function [ParticlesFig, particlesAxes, NucleiFig, nucAxes] = generateTrackingFigures(app, UseHistone)
-  
-  ParticlesFig=[]; particlesAxes=[]; NucleiFig=[];nucAxes = [];
-  
+
+  ParticlesFig = [];
+  particlesAxes = [];
+  NucleiFig = [];
+  nucAxes = [];
+
   if isempty(app)
-    
+
     ParticlesFig = figure;
     particlesAxes = axes(ParticlesFig);
 

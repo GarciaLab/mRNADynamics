@@ -21,7 +21,8 @@ function [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh,
         [Particles, SpotFilter] = trackHistone(PreProcPath, Prefix, CurrentFrame, NDigits, app, nucAxes, Ellipses, ...
           ExperimentType, Channel, schnitzcells, Particles, Spots, SpotFilter, PixelSize, SearchRadius);
       else
-        [Particles] = trackParticlesBasedOnProximity(Particles, Spots, x, SpotFilter, Channel, CurrentFrame, SearchRadius,PixelSize);
+        [Particles] = trackParticlesBasedOnProximity(Particles, Spots, x, SpotFilter, Channel, CurrentFrame,... 
+          SearchRadius, PixelSize);
       end
 
     end
@@ -172,7 +173,7 @@ function Image = openHistoneImage(Prefix, PreProcPath, CurrentFrame, NDigits)
 end
 
 % If we don't have nuclear tracking then track the particles based on proximity
-function [Particles] = trackParticlesBasedOnProximity(Particles, Spots, x, SpotFilter, Channel, CurrentFrame, SearchRadius,PixelSize)
+function [Particles] = trackParticlesBasedOnProximity(Particles, Spots, x, SpotFilter, Channel, CurrentFrame, SearchRadius, PixelSize)
   drawnow
   % Get the particles detected in the frame
 
