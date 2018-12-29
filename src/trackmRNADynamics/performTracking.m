@@ -1,5 +1,6 @@
 function [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh, Spots, app, SpotFilter, PreProcPath, Prefix, UseHistone, ParticlesFig, SpotsChannel, NDigits, NucleiFig, particlesAxes, nucAxes, Ellipses, PixelSize, SearchRadius, ExperimentType, FrameInfo)
   % Iterate over all channels
+  
   for Channel = 1:NCh
 
     % Iterate over all frames
@@ -20,7 +21,8 @@ function [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh,
         [Particles, SpotFilter] = trackHistone(PreProcPath, Prefix, CurrentFrame, NDigits, app, nucAxes, Ellipses, ...
           ExperimentType, Channel, schnitzcells, Particles, Spots, SpotFilter, PixelSize, SearchRadius);
       else
-        [Particles] = trackParticlesBasedOnProximity(Particles, Spots, x, SpotFilter, Channel, CurrentFrame, SearchRadius);
+        [Particles] = trackParticlesBasedOnProximity(Particles, Spots, x, SpotFilter, Channel, CurrentFrame,... 
+          SearchRadius, PixelSize);
       end
 
     end
@@ -84,7 +86,6 @@ function x = loadAndShowImage(app, particlesAxes, ParticlesFig, Spots, Channel, 
   FileNamePrefix = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(CurrentFrame, 3), '_z', iIndex(CurrentZ, 2)];
   Image = imread([FileNamePrefix, '_ch', iIndex(SpotsChannel(Channel), 2), '.tif']);
 
-  % TO-DO: Show spots above and below threshold differently
   FigureName = ['Ch', num2str(Channel), '  Frame: ', num2str(CurrentFrame), '/', num2str(length(Spots{Channel}))];
 
   if ~isempty(app)
@@ -172,7 +173,7 @@ function Image = openHistoneImage(Prefix, PreProcPath, CurrentFrame, NDigits)
 end
 
 % If we don't have nuclear tracking then track the particles based on proximity
-function [Particles] = trackParticlesBasedOnProximity(Particles, Spots, x, SpotFilter, Channel, CurrentFrame, SearchRadius)
+function [Particles] = trackParticlesBasedOnProximity(Particles, Spots, x, SpotFilter, Channel, CurrentFrame, SearchRadius, PixelSize)
   drawnow
   % Get the particles detected in the frame
 

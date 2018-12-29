@@ -1,15 +1,13 @@
 function [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
 	Channel1, Channel2,Objective, Power,  DataFolder, DropboxFolderName, Comments,...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3,p9,p10,p11,p12,p13,p14,...
-    m9,m10,m11,m12,m13,m14]...
+    nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3,prophase,metaphase]...
 	= getExperimentDataFromMovieDatabase(Prefix, movieDatabaseFolder)
 
   movieDatabasePath = [movieDatabaseFolder, '/MovieDatabase.csv'];
 
   movieDatabase = csv2cell(movieDatabasePath, 'fromfile');
-  movieDatabaseHeaderRow = movieDatabase(1, :);
 
-  [DropboxFolder, PrefixRow] = getDropboxFolderFromMovieDatabase(movieDatabasePath, Prefix, '[\\\\/-]');
+  [~, PrefixRow] = getDropboxFolderFromMovieDatabase(movieDatabasePath, Prefix, '[\\\\/-]');
 
   Date = getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Date');
   ExperimentType = getValueFromMovieDatabase(movieDatabase, PrefixRow, 'ExperimentType');
@@ -30,8 +28,10 @@ function [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolut
   nc12 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'nc12'));
   nc13 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'nc13'));
   nc14 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'nc14'));
+  anaphase = [nc9, nc10, nc11, nc12, nc14];
   CF = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'CF'));
-  % For Channel3, make this as an optional
+  
+  % For Channel3, make this optional
   try ~isempty(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel3'));
       Channel3 = { getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel3') };
   catch 
@@ -39,7 +39,7 @@ function [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolut
   end
   
   % Making prophase and metaphase time points optional
-  % assuing that nuclear cucles included are 9-14
+  % assuming that nuclear cycles included are 9-14
   % for prophase
   try ~isempty(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'p9'));
       p9 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'p9'));
@@ -48,14 +48,11 @@ function [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolut
       p12 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'p12'));
       p13 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'p13'));
       p14 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'p14'));
+      prophase = [p9, p10, p11, p12, p13, p14];
   catch
-      p9 = {'DoesNotExist'};
-      p10 = {'DoesNotExist'};
-      p11 = {'DoesNotExist'};
-      p12 = {'DoesNotExist'};
-      p13 = {'DoesNotExist'};
-      p14 = {'DoesNotExist'};
+      prophase = [];
   end
+  
   % doing the same for metaphase
 
   try ~isempty(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'm9'));
@@ -65,13 +62,9 @@ function [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolut
       m12 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'm12'));
       m13 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'm13'));
       m14 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'm14'));
+      metaphase = [m9, m10, m11, m12,m13,m14];
   catch
-      m9 = {'DoesNotExist'};
-      m10 = {'DoesNotExist'};
-      m11 = {'DoesNotExist'};
-      m12 = {'DoesNotExist'};
-      m13 = {'DoesNotExist'};
-      m14 = {'DoesNotExist'};
+      metaphase = [];
   end
 
 end
