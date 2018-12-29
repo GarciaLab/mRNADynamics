@@ -59,28 +59,28 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
     % Load the nuclei segmentation information
     load([DropboxFolder, filesep, Prefix, filesep, 'Ellipses.mat'], 'Ellipses')
 
-    % Load the nuclei tracking information
-    load([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'])
-
-    % Do a bunch of check on schnitzcells only if tracking for the first
-    % time.
-
+    % Load the nuclear tracking information
+    load([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'schnitzcells')
+    
   else
     UseHistone = 0;
+    schnitzcells = [];
+    Ellipses = [];
     warning('Warning: No nuclei lineage tracking found. Proceeding with tracking particles only.')
   end
 
   validateExperimentTypeSupported(ExperimentType);
 
   SpotsChannel = determineSpotsChannel(ExperimentType, Channel1, Channel2);
-  % Get the number of channels
+
   NCh = length(SpotsChannel);
 
   Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh);
 
   [Spots, SpotFilter] = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefix, NCh);
 
-  [ParticlesFig, particlesAxes, NucleiFig, nucAxes] = numberFoundParticles(app, UseHistone);
+  [ParticlesFig, particlesAxes, NucleiFig, nucAxes] = generateTrackingFigures(app, UseHistone);
+  
   NDigits = adjustIndexSizeAccordingToFrames(FrameInfo);
 
   [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh, Spots, app, SpotFilter, PreProcPath, ...
@@ -152,7 +152,7 @@ function SpotsChannel = determineSpotsChannel(ExperimentType, Channel1, Channel2
 
 end
 
-function Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh);
+function Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh)
   % Check if particle tracking has already been done on this dataset
   if exist([OutputFolder, filesep, 'Particles.mat'], 'file')
 
@@ -182,7 +182,7 @@ function Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh);
 
         end
 
-        if exist('NewParticles')
+        if exist('NewParticles', 'var')
           Particles{Channel} = NewParticles{Channel};
         else
           Particles{Channel} = [];
@@ -254,9 +254,12 @@ function [Spots, SpotFilter] = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefi
 
 end
 
-function [ParticlesFig, particlesAxes, NucleiFig, nucAxes] = numberFoundParticles(app, UseHistone)
-  %Start by numbering the particles found
+function [ParticlesFig, particlesAxes, NucleiFig, nucAxes] = generateTrackingFigures(app, UseHistone)
+  
+  ParticlesFig=[]; particlesAxes=[]; NucleiFig=[];nucAxes = [];
+  
   if isempty(app)
+    
     ParticlesFig = figure;
     particlesAxes = axes(ParticlesFig);
 

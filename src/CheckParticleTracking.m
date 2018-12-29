@@ -116,11 +116,6 @@ close all
 warning('off','MATLAB:nargchk:deprecated')
 warning('off','MATLAB:mir_warning_maybe_uninitialized_temporary')
 
-addpath('checkParticleTracking/');
-addpath('checkParticleTracking/plotStuff');
-addpath('checkParticleTracking/actionResponses');
-
-
 %%Initialization
 schnitzcells = [];
 Ellipses = [];
@@ -189,7 +184,7 @@ if numFrames<1E3
 elseif numFrames<1E4
     NDigits=4;
 else
-    error('No more than 10,000 frames supported. Change this in the code')
+    error('No more than 10,000 frames supported.')
 end
 
 
@@ -237,7 +232,7 @@ if exist([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
         FilePrefix(1:end-1),'_His_',iIndex(1,NDigits),'.tif'], 'file')
     %(MT, 2018-02-11) Added support for lattice imaging with bad histone
     %channel, maybe temporary - FIX LATER
-    if exist([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,'Ellipses.mat'])
+    if exist([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,'Ellipses.mat'], 'file')
         load([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,'Ellipses.mat'], 'Ellipses')
         UseHistoneOverlay=1;
     else
@@ -258,7 +253,7 @@ end
 % we name the variable DataFolderColumnValue to avoid shadowing previously defined DataFolder var, which is actually a subfolder inside dropbox
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
     Channel1, Channel2, Objective, Power, DataFolderColumnValue, DropboxFolderName, Comments,...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+    nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 
 if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file')
@@ -334,24 +329,15 @@ for i = 1:length(anaphase)
 end
 
 %prophase and metaphase 
-prophase = []; metaphase = []; prophaseInMins=[]; metaphaseInMins=[];
+prophaseInMins=[]; metaphaseInMins=[];
 
 try
-    [~, ~, ~, ~, ~, ~,...
-    ~, ~,~, ~,  ~, ~, ~,...
-    ~, ~, ~, ~, ~, ~, ~, ~,...
-    p9,p10,p11,p12,p13,p14,...
-    m9,m10,m11,m12,m13,m14]...
-    = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
-     
-    prophase = [p9 p10 p11 p12 p13 p14];
     prophaseInMins = prophase;
     for i = 1:length(prophase)
         if prophase(i) > 0
             prophaseInMins(i) = ElapsedTime(prophase(i)); %mins
         end
     end
-    metaphase = [m9 m10 m11 m12 m13 m14];
     metaphaseInMins = metaphase;
     for i = 1:length(metaphase)
         if metaphase(i) > 0
@@ -365,6 +351,7 @@ try
     correspondingNCInfo = [FrameInfo.nc]; % the assigned nc of the frames
 catch
 end
+
 save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo') %this is here so that a user will still get an updated
 %frameinfo.mat even if they abort checkparticletracking without saving (to
 %prevent issues with compileparticles)

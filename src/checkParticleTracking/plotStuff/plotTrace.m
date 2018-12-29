@@ -21,7 +21,7 @@ if (CurrentParticle~=PreviousParticle)||~exist('AmpIntegral', 'var')||(CurrentCh
         AmpIntegralGauss3D, ErrorIntegralGauss3D]= ...
         PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
 end
-%         yyaxis(traceFigAxes,'left');
+
 if ~lineFit
     traceFigTimeAxis = Frames;
     cla(traceFigAxes)
@@ -31,8 +31,6 @@ else
     priorAnaphaseInMins = anaphaseInMins(ncPresent(1)-8);
     nucleusFirstFrame = ElapsedTime(...
         schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames(1));
-%             traceFigTimeAxis = ElapsedTime(Frames);
-%             traceFigTimeAxis = ElapsedTime(Frames) - priorAnaphaseInMins;
     traceFigTimeAxis = ElapsedTime(Frames) - nucleusFirstFrame;
     if exist('traceErrorBar1','var')
         delete([traceErrorBar1,traceErrorBar2,cPoint1,cPoint2])
@@ -59,21 +57,15 @@ else
     cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
     dPoint2 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
     cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegralGauss3D(Frames==CurrentFrame),'ob');
-
 end
-    %         p3 = errorbar(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-%            AmpIntegral5(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral5(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral5,'.-','Color','blue');
-%         p3 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-%             backGround3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
 
 try
     xlim(traceFigAxes,[min(traceFigTimeAxis),max(traceFigTimeAxis)]+[-1,1]);
 catch
     %             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
 end
-% plotting anaphase boundaries ------------------------------------
-% Section added by EL 10/11/18
-currentYLimits = get(traceFigAxes,'YLim');  % Get the range of the y axis
+
+traceFigYLimits = get(traceFigAxes,'YLim');
 
 % plotting all anaphase time points as vertical lines
 for i = 1:length(anaphase)
@@ -82,39 +74,32 @@ for i = 1:length(anaphase)
     else
         currentAnaphaseBoundary = anaphaseInMins(i) - priorAnaphaseInMins;
     end
-    plot(traceFigAxes,ones(1,2).*currentAnaphaseBoundary,currentYLimits,...
+    plot(traceFigAxes,ones(1,2).*currentAnaphaseBoundary,traceFigYLimits,...
         'LineWidth',2,'Color','black');
 end
-% End of anaphase boundary marking section
-% -----------------------------------------------------------------
-
-%----------------------------------------------------
-% plotting prophase and metaphase boundaries
+%prophase
 for i = 1:length(prophase)
     if ~lineFit
         currentProphase = prophase(i);
     else
         currentProphase = prophaseInMins(i) - priorAnaphaseInMins;
     end
-    plot(traceFigAxes,ones(1,2).*currentProphase,currentYLimits,...
+    plot(traceFigAxes,ones(1,2).*currentProphase,traceFigYLimits,...
         'LineWidth',2,'Color','blue');
 end
-
+%metaphase
 for i = 1:length(metaphase)
     if ~lineFit
         currentMetaphase = metaphase(i);
     else
         currentMetaphase = metaphaseInMins(i) - priorAnaphaseInMins;
     end
-    plot(traceFigAxes,ones(1,2).*currentMetaphase,currentYLimits,...
+    plot(traceFigAxes,ones(1,2).*currentMetaphase,traceFigYLimits,...
         'LineWidth',2,'Color','yellow');
 end
 
 ylabel(traceFigAxes,'integrated intensity (a.u.)')
 hold(traceFigAxes, 'off')
-%         yyaxis(traceFigAxes,'right');
-%         p3 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-%             backGround3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
 if plot3DGauss
     str1 = '3-slice';
     str2 = '3D-Gaussian fit';
