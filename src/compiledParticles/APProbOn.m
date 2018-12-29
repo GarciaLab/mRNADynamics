@@ -1,6 +1,9 @@
 function [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
-    FilteredParticlesPos] = APProbOn(NChannels, Particles, schnitzcells, ...
-    CompiledParticles, Ellipses, APbinID, FrameInfo)
+    FilteredParticlesPos, OnRatioAP, ParticleCountAP, ParticleCountProbAP, ...
+    EllipsesOnAP, rateOnAP, rateOnAPCell, timeOnOnAP, timeOnOnAPCell, TotalEllipsesAP]...
+    = APProbOn(NChannels, Particles, schnitzcells, ...
+    CompiledParticles, Ellipses, APbinID, FrameInfo, ElapsedTime, DropboxFolder, ...
+    Prefix)
 %APPROBON Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -321,6 +324,11 @@ for ChN=1:NChannels
 
     TotalEllipsesAP=zeros(length(APbinID),3);
     EllipsesOnAP{ChN}=zeros(length(APbinID),3);
+    rateOnAP{ChN}=zeros(length(APbinID),3);
+    rateOnAPCell{ChN}=cell(length(APbinID),3);     
+    timeOnOnAP{ChN}=zeros(length(APbinID),3);
+    timeOnOnAPCell{ChN}=cell(length(APbinID),3);
+
     for nc=12:14
 
         %Figure out which frame we'll look at
@@ -345,7 +353,7 @@ for ChN=1:NChannels
             EllipsesToCheck=find(EllipseFilter);
 
             for j=1:length(EllipsesToCheck)
-                %Find which AP bind we're in
+                %Find which AP bin we're in
                 CurrentAPbin=max(find(APbinID<EllipsePos{FrameToUse}(EllipsesToCheck(j))));
                 %Count the total amount of ellipses in the right AP bin
                 TotalEllipsesAP(CurrentAPbin,nc-11)=TotalEllipsesAP(CurrentAPbin,nc-11)+1;
@@ -430,13 +438,21 @@ for ChN=1:NChannels
                             if CompiledParticles{ChN}(m).Nucleus==k
                                 [j,k,m];
                                 EllipsesOnAP{ChN}(CurrentAPbin,nc-11)=EllipsesOnAP{ChN}(CurrentAPbin,nc-11)+1;
+                                rateOnAP{ChN}(CurrentAPbin,nc-11) = nansum([rateOnAP{ChN}(CurrentAPbin,nc-11),CompiledParticles{ChN}(m).singleTraceLoadingRate]);
+                                rateOnAPCell{ChN}{CurrentAPbin,nc-11} = [rateOnAPCell{ChN}{CurrentAPbin,nc-11},CompiledParticles{ChN}(m).singleTraceLoadingRate];
+                                timeOnOnAP{ChN}(CurrentAPbin,nc-11) = nansum([timeOnOnAP{ChN}(CurrentAPbin,nc-11),CompiledParticles{ChN}(m).singleTraceTimeOn]);
+                                timeOnOnAPCell{ChN}{CurrentAPbin,nc-11} = [timeOnOnAPCell{ChN}{CurrentAPbin,nc-11},CompiledParticles{ChN}(m).singleTraceTimeOn];
                             end
                         end
+
                     end
                 end
             end
         end
     end
+
+    rateOnAP{ChN} = rateOnAP{ChN} ./ EllipsesOnAP{ChN};
+    timeOnOnAP{ChN} = timeOnOnAP{ChN} ./ EllipsesOnAP{ChN};
 
     if ~SkipAll
         fractionFig = figure();
