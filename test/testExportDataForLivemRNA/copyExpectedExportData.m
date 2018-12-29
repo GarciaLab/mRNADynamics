@@ -1,7 +1,7 @@
 function copyExpectedExportData(Prefix, testPath, dynamicResultsPath, preprocessedDataPath)
-  disp(['Copying expected data for ExportDataForFISH test case with Prefix', Prefix]);
+  disp(['Copying expected data for ExportDataForLivemRNA test case with Prefix', Prefix]);
 
-  experimentTestRootPath = strcat(testPath, filesep, 'ExportDataForFISH', filesep);
+  experimentTestRootPath = strcat(testPath, filesep, 'ExportDataForLivemRNA', filesep);
 
   expectedDynamicsResultsFolder = strcat(experimentTestRootPath, 'DynamicsResults', filesep, Prefix);
   validateExpectedDataFolderExists(expectedDynamicsResultsFolder, Prefix)

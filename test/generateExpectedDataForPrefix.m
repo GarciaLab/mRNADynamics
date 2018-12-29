@@ -1,6 +1,6 @@
 % Generates expected data for Segment Spots ML for the given Prefix in the expected data folder,
 % so test cases can compare against it.
-% The function runs ExportDataForFISH, Tifs generation, filterMovie and segmentSpotsML and moves
+% The function runs ExportDataForLivemRNA, Tifs generation, filterMovie and segmentSpotsML and moves
 % the required files to the expected folders.
 % If data exists already in the folder, it's deleted beforehand.
 function generateExpectedDataForPrefix(exportTestCase, segmentSpotsTestCase, trackmRNADynamicsTestCase)

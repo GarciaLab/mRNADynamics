@@ -19,8 +19,8 @@ function AnalyzeLiveData
 
 
 %Process the raw images from the microscopes so that they can be analyzed
-%by the FISH code.
-Prefix=ExportDataForFISH;
+%by the LivemRNA code.
+Prefix=ExportDataForLivemRNA;
 
 %First do an analysis without a threshold to generate the DoG images.
 segmentSpots(Prefix,[])

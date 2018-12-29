@@ -3,12 +3,12 @@ try
   fprintf('Test suite started running at %s\n', datestr(now,'yyyy-mm-dd HH:MM:SS.FFF'));
   import matlab.unittest.TestSuite
 
-  exportDataForFISHSuite = TestSuite.fromFolder('test/testExportDataForFISH');
+  exportDataForLivemRNASuite = TestSuite.fromFolder('test/testExportDataForLivemRNA');
   segmentSpotsSuite = TestSuite.fromFolder('test/testSegmentSpots');
   segmentSpotsMLSuite = TestSuite.fromFolder('test/testSegmentSpotsML');
   trackmRNADynamicsSuite = TestSuite.fromFolder('test/testTrackmRNADynamics');
   
-  completeTestSuite = [exportDataForFISHSuite, segmentSpotsSuite, segmentSpotsMLSuite, trackmRNADynamicsSuite];
+  completeTestSuite = [exportDataForLivemRNASuite, segmentSpotsSuite, segmentSpotsMLSuite, trackmRNADynamicsSuite];
   testResults = run(completeTestSuite);
 
   elapsedTime = toc;

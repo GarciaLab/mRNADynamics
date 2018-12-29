@@ -135,7 +135,7 @@ if isfield(FrameInfo,'FileMode')
             ElapsedTime(j)=FrameInfo(j).Time-FrameInfo(1).Time;%Finds the elapsed time by subtracting each time point by the initial time point
         end
     else
-        error('File mode not supported. Cannot extract time information. Include format in ExportDataForFISH.m')
+        error('File mode not supported. Cannot extract time information. Include format in ExportDataForLivemRNA.m')
     end
 else
     warning('No FileMode information found. Assuming that this is TIF from the 2-photon.')

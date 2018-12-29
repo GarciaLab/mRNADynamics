@@ -1,6 +1,6 @@
 % Generates expected data for Segment Spots for the given Prefix in the expected data folder,
 % so test cases can compare against it.
-% The function runs ExportDataForFISH, filterMovie and segmentSpots and moves the required files to the 
+% The function runs ExportDataForLivemRNA, filterMovie and segmentSpots and moves the required files to the 
 % expected folders.
 % If data exists already in the folder, it's deleted beforehand.
 function generateExpectedDataSegmentSpots(testCase)
@@ -26,8 +26,8 @@ function generateExpectedDataSegmentSpots(testCase)
   deleteDirectory(processedDataExperimentPath, testCase.Prefix);
   [expectedDynamicsResults1stPass, expectedProcessedData1stPass, expectedDynamicsResults2ndPass, expectedProcessedData2ndPass] = createExpectedDataStructure(testPath, testCase.Prefix);
 
-  % Precondition - Run ExportsDataForFISH without deleting TIFs
-  ExportDataForFISH(testCase.Prefix, 'keepTifs');
+  % Precondition - Run ExportsDataForLivemRNA without deleting TIFs
+  ExportDataForLivemRNA(testCase.Prefix, 'keepTifs');
   
   % Tests first pass
   % Generates DoGs

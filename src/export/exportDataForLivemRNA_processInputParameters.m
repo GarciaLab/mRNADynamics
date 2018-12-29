@@ -1,4 +1,4 @@
-function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs, generateTifs] = exportDataForFISH_processInputParameters(varargin)
+function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs, generateTifs] = exportDataForLivemRNA_processInputParameters(varargin)
   %Look at parameters
   SkipFrames = [];
   Prefix = '';
