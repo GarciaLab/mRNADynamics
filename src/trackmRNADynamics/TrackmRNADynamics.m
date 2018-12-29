@@ -7,10 +7,6 @@
 %
 % ARGUMENTS
 % Prefix: Prefix of the data set to analyze
-% Threshold1 : Primary. This must be an array of two thresholds for 2 spot 2
-% color experiments.
-% Threshold2 : Secondary. This must be an array of two thresholds for 2 spot 2
-% color experiments.
 % [Options]: See below.
 %
 % OPTIONS
@@ -26,8 +22,6 @@
 %
 % Documented by: Armando Reimer (areimer@berkeley.edu)
 %
-%
-%
 % To do: The no-histone part of the code doesn't take into account the
 % Approved field of the Particles structure.
 % ^ AR 9/3/18: has this been done?
@@ -36,12 +30,7 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
 
   [~, ~, DefaultDropboxFolder, ~, ~] = DetermineLocalFolders;
 
-  [Prefix, Threshold1, Threshold2, app, bypassUserPrompt] = parseTrackmRNADynamicsArguments(DefaultDropboxFolder, varargin{:});
-
-  % Save a backup of the threshold. We'll check that it didn't change if we're
-  % doing retracking. This is definitely not an elegant solution
-  Threshold1Backup = Threshold1;
-  Threshold2Backup = Threshold2;
+  [Prefix, app] = parseTrackmRNADynamicsArguments(DefaultDropboxFolder, varargin{:});
 
   % Get the actual folder now that we have the Prefix
   [~, ~, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix);
@@ -55,9 +44,6 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
 
   % Determine the search radius based on the imaging conditions
   SearchRadiusMicrons = 3; % Search radius in um
-
-  [Threshold1, Threshold2] = deleteTrackingIfThresholdsChangedRetracking(Threshold1, Threshold2, Threshold1Backup, ...
-    Threshold2Backup, OutputFolder, bypassUserPrompt);
 
   % Load the information about this image
   % Check if we have FrameInfo otherwise try to get the information straight
@@ -92,7 +78,7 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
 
   Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh);
 
-  [Spots, SpotFilter] = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefix, NCh, Threshold1);
+  [Spots, SpotFilter] = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefix, NCh);
 
   [ParticlesFig, particlesAxes, NucleiFig, nucAxes] = numberFoundParticles(app, UseHistone);
   NDigits = adjustIndexSizeAccordingToFrames(FrameInfo);
@@ -100,43 +86,12 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
   [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh, Spots, app, SpotFilter, PreProcPath, ...
     Prefix, UseHistone, ParticlesFig, SpotsChannel, NDigits, NucleiFig, particlesAxes, nucAxes, Ellipses, ...
     PixelSize, SearchRadius, ExperimentType, FrameInfo);
-  
+
   mkdir([OutputFolder, filesep]);
 
-  save([OutputFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter', ...
-    'Threshold1', 'Threshold2', '-v7.3');
+  save([OutputFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter', '-v7.3');
 
   createFieldNCAndSaveFrameInfo(FrameInfo, OutputFolder, nc9, nc10, nc11, nc12, nc13, nc14);
-end
-
-% Check whether we're using the same threshold in the case of retracking
-function [Threshold1, Threshold2] = deleteTrackingIfThresholdsChangedRetracking(Threshold1, Threshold2, Threshold1Backup, Threshold2Backup, OutputFolder, bypassUserPrompt)
-  ParticlesFilePath = [OutputFolder, filesep, 'Particles.mat'];
-
-  if exist(ParticlesFilePath, 'file')
-    load(ParticlesFilePath, 'Threshold1', 'Threshold2')
-
-    if (~sum(Threshold1 == Threshold1Backup) == length(Threshold1)) & ...
-        (~sum(Threshold2 == Threshold2Backup) == length(Threshold2))
-
-      if ~bypassUserPrompt
-        Answer = input('Thresholds changed, will delete previous tracking. Proceed? (y/n):', 's');
-      else
-        Answer = 'y';
-      end
-
-      if strcmpi(Answer, 'y')
-        Threshold1 = Threshold1Backup;
-        Threshold2 = Threshold2Backup;
-        delete(ParticlesFilePath)
-      else
-        error('Cannot retrack if the threshold changed')
-      end
-
-    end
-
-  end
-
 end
 
 function [FrameInfo, PixelSize] = obtainPixelSize(OutputFolder)
@@ -249,9 +204,7 @@ function Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh);
 
 end
 
-function [Spots, SpotFilter] = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefix, NCh, Threshold1)
-  % First, generate a structure array with a flag that determines whether
-  % each spots is above Threshold1
+function [Spots, SpotFilter] = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefix, NCh)
   if ~exist('Spots', 'var')
     load([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots')
 
@@ -283,14 +236,13 @@ function [Spots, SpotFilter] = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefi
       end
 
       SpotFilter{Channel} = nan(length(Spots{Channel}), MaxSpots{Channel});
-      %Populate the filter
+      % Populate the filter
       for i = 1:length(Spots{Channel})
 
         for j = 1:length(Spots{Channel}(i).Fits)
 
-          if sum(Spots{Channel}(i).Fits(j).DOGIntensity > Threshold1(Channel))
-            SpotFilter{Channel}(i, j) = 1;
-          end
+          % Initializes the filter as all 1s, since the Threshold has been removed
+          SpotFilter{Channel}(i, j) = 1;
 
         end
 
@@ -315,6 +267,7 @@ function [ParticlesFig, particlesAxes, NucleiFig, nucAxes] = numberFoundParticle
     end
 
   end
+
 end
 
 % See how  many frames we have and adjust the index size of the files to
@@ -360,4 +313,5 @@ function createFieldNCAndSaveFrameInfo(FrameInfo, OutputFolder, nc9, nc10, nc11,
   else
     warning('Tried to save nc frame information, but could not since there is no FrameInfo.mat')
   end
+
 end

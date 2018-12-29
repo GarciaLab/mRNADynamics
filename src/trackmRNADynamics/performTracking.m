@@ -2,8 +2,6 @@ function [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh,
   % Iterate over all channels
   for Channel = 1:NCh
 
-    % Initially, only track particles that are above Threshold1
-
     % Iterate over all frames
     for CurrentFrame = 1:length(Spots{Channel})
 
