@@ -3,7 +3,7 @@ function [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
     EllipsesOnAP, rateOnAP, rateOnAPCell, timeOnOnAP, timeOnOnAPCell, TotalEllipsesAP]...
     = APProbOn(NChannels, Particles, schnitzcells, ...
     CompiledParticles, Ellipses, APbinID, FrameInfo, ElapsedTime, DropboxFolder, ...
-    Prefix)
+    Prefix, EllipsePos, nc12, nc13, nc14, numFrames, doSingleFits, SkipAll, APbinArea)
 %APPROBON Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -432,7 +432,7 @@ for ChN=1:NChannels
 
                     end
 
-                    if schnitzcells(k).cellno(IndexToUse)==EllipsesToCheck(j)
+                    if schnitzcells(k).cellno(IndexToUse)==EllipsesToCheck(j) & doSingleFits
                         %Now see if there is an associated particle with it
                         for m=1:length(CompiledParticles{ChN})
                             if CompiledParticles{ChN}(m).Nucleus==k

@@ -1,5 +1,5 @@
 function firstFramesThing(NChannels, HistoneChannel, SkipAll, nc13, nc14, ...
-    CompiledParticles, DropboxFolder, Prefix, ElapsedTime)
+    CompiledParticles, DropboxFolder, Prefix, ElapsedTime, ExperimentAxis)
 %FIRSTFRAMESTHING Summary of this function goes here
 %   Detailed explanation goes here
 for ChN=1:NChannels

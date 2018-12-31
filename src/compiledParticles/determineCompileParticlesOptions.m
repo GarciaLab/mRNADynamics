@@ -21,7 +21,8 @@ ROI=0; % No ROI
 intArea = 109; %default for 220nm x 220nm zoom.
 noHist = 0; 
 doSingleFits = 0;
-
+ROI1 = -1; % no ROI
+ROI2 = -1; % no ROI
 
 
 % Checking Varargin 

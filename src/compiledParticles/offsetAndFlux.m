@@ -1,6 +1,6 @@
 function [MeanOffsetVector, SDOffsetVector, NOffsetParticles] = offsetAndFlux(NChannels, ...
     SkipFluctuations, ncFilter, ElapsedTime, CompiledParticles, DropboxFolder, ...
-    Prefix, ExperimentAxis, intArea, MeanVectorAll, SDVectorAll)
+    Prefix, ExperimentAxis, intArea, MeanVectorAll, SDVectorAll, MaxFrame, numFrames)
 %OFFSETANDFLUX Summary of this function goes here
 %   Detailed explanation goes here
 if NChannels==1
