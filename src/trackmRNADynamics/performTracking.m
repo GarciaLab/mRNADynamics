@@ -1,6 +1,5 @@
 function [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh, Spots, app, SpotFilter, PreProcPath, Prefix, UseHistone, ParticlesFig, SpotsChannel, NDigits, NucleiFig, particlesAxes, nucAxes, Ellipses, PixelSize, SearchRadius, ExperimentType, FrameInfo)
   % Iterate over all channels
-  
   for Channel = 1:NCh
 
     % Iterate over all frames
@@ -8,21 +7,20 @@ function [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh,
 
       if isempty(app)
         figure(ParticlesFig)
-        set(gcf, 'units', 'normalized', 'position', [0.01, .55, .33, .33]);
+        set(ParticlesFig, 'units', 'normalized', 'position', [0.01, .55, .33, .33]);
       end
 
       % Get the filter for this frame
       CurrentFrameFilter = logical(SpotFilter{Channel}(CurrentFrame, ~isnan(SpotFilter{Channel}(CurrentFrame, :))));
 
-      x = loadAndShowImage(app, particlesAxes, ParticlesFig, Spots, Channel, CurrentFrame, ...
+      xPos = displayParticlesFigure(app, particlesAxes, ParticlesFig, Spots, Channel, CurrentFrame, ...
         CurrentFrameFilter, PreProcPath, Prefix, SpotsChannel, FrameInfo);
 
       if UseHistone
         [Particles, SpotFilter] = trackHistone(PreProcPath, Prefix, CurrentFrame, NDigits, app, nucAxes, Ellipses, ...
           ExperimentType, Channel, schnitzcells, Particles, Spots, SpotFilter, PixelSize, SearchRadius);
       else
-        [Particles] = trackParticlesBasedOnProximity(Particles, Spots, x, SpotFilter, Channel, CurrentFrame,... 
-          SearchRadius, PixelSize);
+        [Particles] = trackParticlesBasedOnProximity(Particles, Spots, xPos, SpotFilter, Channel, CurrentFrame, SearchRadius);
       end
 
     end
@@ -31,11 +29,9 @@ function [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh,
 
   if isempty(app)
     close(ParticlesFig)
-
     if UseHistone
       close(NucleiFig)
     end
-
   end
 
   
@@ -69,7 +65,8 @@ function [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh,
 
 end
 
-function x = loadAndShowImage(app, particlesAxes, ParticlesFig, Spots, Channel, CurrentFrame, CurrentFrameFilter, PreProcPath, Prefix, SpotsChannel, FrameInfo)
+function x = displayParticlesFigure(app, particlesAxes, ParticlesFig, Spots, Channel, CurrentFrame, CurrentFrameFilter, PreProcPath, Prefix, SpotsChannel, FrameInfo)
+  
   % Get the positions of the spots in this frame
   [x, y, ~] = SpotsXYZ(Spots{Channel}(CurrentFrame));
 
@@ -84,7 +81,7 @@ function x = loadAndShowImage(app, particlesAxes, ParticlesFig, Spots, Channel, 
   % Load the corresponding mRNA image. Check whether we have multiple
   % channels saved or not.
   FileNamePrefix = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(CurrentFrame, 3), '_z', iIndex(CurrentZ, 2)];
-  Image = imread([FileNamePrefix, '_ch', iIndex(SpotsChannel(Channel), 2), '.tif']);
+  particleImage = imread([FileNamePrefix, '_ch', iIndex(SpotsChannel(Channel), 2), '.tif']);
 
   FigureName = ['Ch', num2str(Channel), '  Frame: ', num2str(CurrentFrame), '/', num2str(length(Spots{Channel}))];
 
@@ -97,7 +94,7 @@ function x = loadAndShowImage(app, particlesAxes, ParticlesFig, Spots, Channel, 
     title(ax1, CurrentFrame)
   end
 
-  imshow(Image, [], 'Parent', ax1, 'InitialMagnification', 'fit')
+  imshow(particleImage, [], 'Parent', ax1, 'InitialMagnification', 'fit')
   hold(ax1, 'on')
   plot(ax1, x(CurrentFrameFilter), y(CurrentFrameFilter), 'or', 'MarkerSize', 10)
   plot(ax1, x(~CurrentFrameFilter), y(~CurrentFrameFilter), 'ow', 'MarkerSize', 10)
@@ -107,7 +104,7 @@ end
 function [Particles, SpotFilter] = trackHistone(PreProcPath, Prefix, CurrentFrame, NDigits, app, nucAxes, Ellipses, ...
     ExperimentType, Channel, schnitzcells, Particles, Spots, SpotFilter, PixelSize, SearchRadius)
 
-  Image = openHistoneImage(Prefix, PreProcPath, CurrentFrame, NDigits);
+  hisImage = openHistoneImage(Prefix, PreProcPath, CurrentFrame, NDigits);
 
   if ~isempty(app)
     ax2 = app{2};
@@ -115,7 +112,7 @@ function [Particles, SpotFilter] = trackHistone(PreProcPath, Prefix, CurrentFram
     ax2 = nucAxes;
   end
 
-  imshow(Image, [], 'Border', 'Tight', 'Parent', ax2, 'InitialMagnification', 'fit')
+  imshow(hisImage, [], 'Border', 'Tight', 'Parent', ax2, 'InitialMagnification', 'fit')
   hold(ax2, 'on')
   PlotHandle = [];
   [NEllipses, ~] = size(Ellipses{CurrentFrame});
@@ -138,15 +135,10 @@ function [Particles, SpotFilter] = trackHistone(PreProcPath, Prefix, CurrentFram
   title(ax2, CurrentFrame)
   drawnow
 
-  % (MT, 2018-02-11) Added support for lattice imaging,
-  % maybe temporary - FIX LATER
-  if strcmpi(ExperimentType, '1spot') || ...
-      strcmpi(ExperimentType, 'inputoutput') || ...
-      strcmpi(ExperimentType, '2spot2color') || ...
-      strcmpi(ExperimentType, 'lattice')
-    SpotsPerNucleus = 1;
-  elseif strcmp(ExperimentType, '2spot')
+  if strcmp(ExperimentType, '2spot')
     SpotsPerNucleus = 2;
+  else
+      SpotsPerNucleus = 1;
   end
 
   [Particles{Channel}, SpotFilter{Channel}] = AssignParticle2Nucleus(schnitzcells, Ellipses, ...
@@ -154,39 +146,43 @@ function [Particles, SpotFilter] = trackHistone(PreProcPath, Prefix, CurrentFram
 
 end
 
-function Image = openHistoneImage(Prefix, PreProcPath, CurrentFrame, NDigits)
+function hisImage = openHistoneImage(Prefix, PreProcPath, CurrentFrame, NDigits)
+  
   HistoneImageFileNamePrefix = [PreProcPath, filesep, Prefix, filesep, Prefix];
   HistoneImageFileNameSuffix = [iIndex(CurrentFrame, NDigits), '.tif'];
 
   try
-    Image = imread([HistoneImageFileNamePrefix, '-His_', HistoneImageFileNameSuffix]);
+    hisImage = imread([HistoneImageFileNamePrefix, '-His_', HistoneImageFileNameSuffix]);
   catch
 
     try
-      Image = imread([HistoneImageFileNamePrefix, '_His_', HistoneImageFileNameSuffix]);
+      hisImage = imread([HistoneImageFileNamePrefix, '_His_', HistoneImageFileNameSuffix]);
     catch
-      Image = 0;
+      hisImage = 0;
     end
 
   end
 
 end
 
-% If we don't have nuclear tracking then track the particles based on proximity
-function [Particles] = trackParticlesBasedOnProximity(Particles, Spots, x, SpotFilter, Channel, CurrentFrame, SearchRadius, PixelSize)
+function [Particles] = trackParticlesBasedOnProximity(Particles, Spots, xPos, SpotFilter, Channel, CurrentFrame, SearchRadius)
+  
+  %This function is used by the performTracking subfunction of
+  %trackmRNADynamics to track particles in the event there's no nuclear
+  %channel. 
+  
   drawnow
   % Get the particles detected in the frame
 
-  if ~isempty(x)
+  if ~isempty(xPos)
 
     % Find the approved spots in this frame
+    %AR 12/29/2018: since spotFilter isn't really used in this context, all
+    %spots are approved. 
     ApprovedSpots = find(SpotFilter{Channel}(CurrentFrame, ~isnan(SpotFilter{Channel}(CurrentFrame, :))));
 
     % Get the positions of ALL spots (approved and disapproved)
     [NewSpotsX, NewSpotsY] = SpotsXYZ(Spots{Channel}(CurrentFrame));
-    % Filter for the approved spots
-    NewSpotsX = NewSpotsX(ApprovedSpots);
-    NewSpotsY = NewSpotsY(ApprovedSpots);
 
     if isempty(Particles{Channel})
       %Initialize the Particles structure if it doesn't exist yet

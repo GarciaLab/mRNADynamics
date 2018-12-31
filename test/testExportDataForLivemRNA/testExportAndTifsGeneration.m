@@ -1,6 +1,6 @@
-function testCase = testExportDataForFISH(testCase)
+function testCase = testExportAndTifsGeneration(testCase)
   tic;
-  disp(['Running ExportDataForFISH test with prefix ', testCase.Prefix]);
+  disp(['Running ExportDataForLivemRNA test with prefix ', testCase.Prefix]);
   fprintf('Test run started at %s\n', datestr(now,'yyyy-mm-dd HH:MM:SS.FFF'));
   
   %Figure out the initial folders. 
@@ -14,8 +14,7 @@ function testCase = testExportDataForFISH(testCase)
   
   %Get file names to compare in preprocessed data folder
   preprocessedDataFolder = strcat(PreProcPath, filesep, testCase.Prefix);
-  expectedPreProcFolder = strcat(testPath, filesep, 'ExportDataForFISH', filesep, 'PreProcessedData', filesep,...
-    testCase.Prefix);
+  expectedPreProcessedDataFolder = [testPath, '/filterMovieTifs/PreProcessedData/', testCase.Prefix]; 
   
   dynamicResultsPath = strcat(dynamicsResultsPath, filesep, testCase.Prefix);
   
@@ -23,13 +22,13 @@ function testCase = testExportDataForFISH(testCase)
   deleteDirectory(dynamicResultsPath, testCase.Prefix);
 
   if (~isprop(testCase, 'PreferredFileName')) 
-    ExportDataForFISH(testCase.Prefix, 'keepTifs');
+    ExportDataForLivemRNA(testCase.Prefix, 'keepTifs', 'generateTifs');
   else 
-    ExportDataForFISH(testCase.Prefix, testCase.PreferredFileName, 'keepTifs');
+    ExportDataForLivemRNA(testCase.Prefix, testCase.PreferredFileName, 'keepTifs', 'generateTifs');
   end
 
-  assertFrameInfoEqualToExpected(testCase, dynamicResultsPath, testPath, 'ExportDataForFish');
-  compareExpectedDataDir(testCase, preprocessedDataFolder, expectedPreProcFolder);
+  assertFrameInfoEqualToExpected(testCase, dynamicResultsPath, testPath, 'ExportDataForLivemRNA');
+  compareExpectedDataDir(testCase, preprocessedDataFolder, expectedPreProcessedDataFolder);
 
   elapsedTime = toc;
   fprintf('Test run for %s ended successfully at %s\n', testCase.Prefix, datestr(now,'yyyy-mm-dd HH:MM:SS.FFF'));

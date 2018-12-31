@@ -9,7 +9,7 @@ classdef testExport_2018_06_05_A140P_MSE_30uW_550V < matlab.unittest.TestCase
   methods(Test)
 
     function testRun(testCase)
-      testCase = testExportDataForFISH(testCase);
+      testCase = testExportDataForLivemRNA(testCase);
     end
 
   end

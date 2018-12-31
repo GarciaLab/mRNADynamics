@@ -1,9 +1,9 @@
-% Generates expected data for ExportDataForFISH for the given Prefix in the expected data folder,
+% Generates expected data for ExportDataForLivemRNA for the given Prefix in the expected data folder,
 % so test cases can compare against it.
-% The function runs ExportDataForFISH and moves the required files to the expected folder.
+% The function runs ExportDataForLivemRNA and moves the required files to the expected folder.
 % If data exists already in the folder, it's deleted beforehand.
 function generateExpectedExportData(testCase)
-  disp(['Generating expected data for ExportDataForFISH test case with Prefix', testCase.Prefix]);
+  disp(['Generating expected data for ExportDataForLivemRNA test case with Prefix', testCase.Prefix]);
 
   %Figure out the initial folders.
   CONFIG_CSV_PATH = ['ComputerFolders.csv'];

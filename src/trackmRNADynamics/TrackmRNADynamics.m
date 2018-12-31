@@ -10,7 +10,12 @@
 % [Options]: See below.
 %
 % OPTIONS
-% None.
+% 'app': This is used exclusively by the livemRNAApp to change the location
+% of the display figures
+% 
+% 'noRetracking': Use this to track from scratch instead of retracking if 
+%                trackmRNADynamics has been run before.
+% 
 %
 % OUTPUT
 % Particles.mat : List of time traces found in the movie.
@@ -30,7 +35,7 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
 
   [~, ~, DefaultDropboxFolder, ~, ~] = DetermineLocalFolders;
 
-  [Prefix, app] = parseTrackmRNADynamicsArguments(DefaultDropboxFolder, varargin{:});
+  [Prefix, app, retrack] = parseTrackmRNADynamicsArguments(DefaultDropboxFolder, varargin{:});
 
   % Get the actual folder now that we have the Prefix
   [~, ~, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix);
@@ -48,12 +53,10 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
   % Load the information about this image
   % Check if we have FrameInfo otherwise try to get the information straight
   % from the file.
-  [FrameInfo, PixelSize] = obtainPixelSize(OutputFolder);
+  [FrameInfo, PixelSize] = loadFrameInfo(OutputFolder);
 
   SearchRadius = ceil(SearchRadiusMicrons / PixelSize);
 
-  schnitzcells = [];
-  Ellipses = [];
   % Check if we have tracked the lineages of the nuclei
   if exist([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'file')
     UseHistone = 1;
@@ -63,7 +66,7 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
 
     % Load the nuclear tracking information
     load([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'schnitzcells')
-
+    
   else
     UseHistone = 0;
     schnitzcells = [];
@@ -77,12 +80,12 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
 
   NCh = length(SpotsChannel);
 
-  Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh);
+  Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh, retrack);
 
   [Spots, SpotFilter] = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefix, NCh);
 
   [ParticlesFig, particlesAxes, NucleiFig, nucAxes] = generateTrackingFigures(app, UseHistone);
-
+  
   NDigits = adjustIndexSizeAccordingToFrames(FrameInfo);
 
   [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh, Spots, app, SpotFilter, PreProcPath, ...
@@ -96,7 +99,7 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
   createFieldNCAndSaveFrameInfo(FrameInfo, OutputFolder, nc9, nc10, nc11, nc12, nc13, nc14);
 end
 
-function [FrameInfo, PixelSize] = obtainPixelSize(OutputFolder)
+function [FrameInfo, PixelSize] = loadFrameInfo(OutputFolder)
   FrameInfoPath = [OutputFolder, filesep, 'FrameInfo.mat'];
 
   if exist(FrameInfoPath, 'file')
@@ -154,7 +157,7 @@ function SpotsChannel = determineSpotsChannel(ExperimentType, Channel1, Channel2
 
 end
 
-function Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh)
+function Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh,retrack)
   % Check if particle tracking has already been done on this dataset
   if exist([OutputFolder, filesep, 'Particles.mat'], 'file')
 
@@ -169,7 +172,7 @@ function Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh)
 
     for Channel = 1:NCh
 
-      if isfield(Particles{1}, 'Approved')
+      if isfield(Particles{1}, 'Approved') && retrack
         display(['Performing retracking on channel ', num2str(Channel)])
 
         %Only keep the approved particles and start the tracking from there
@@ -207,7 +210,6 @@ function Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh)
 end
 
 function [Spots, SpotFilter] = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefix, NCh)
-
   if ~exist('Spots', 'var')
     load([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots')
 
@@ -258,14 +260,11 @@ function [Spots, SpotFilter] = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefi
 end
 
 function [ParticlesFig, particlesAxes, NucleiFig, nucAxes] = generateTrackingFigures(app, UseHistone)
-
-  ParticlesFig = [];
-  particlesAxes = [];
-  NucleiFig = [];
-  nucAxes = [];
-
+  
+  ParticlesFig=[]; particlesAxes=[]; NucleiFig=[];nucAxes = [];
+  
   if isempty(app)
-
+    
     ParticlesFig = figure;
     particlesAxes = axes(ParticlesFig);
 

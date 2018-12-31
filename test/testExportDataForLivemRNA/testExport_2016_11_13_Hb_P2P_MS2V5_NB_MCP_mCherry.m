@@ -9,7 +9,7 @@ classdef testExport_2016_11_13_Hb_P2P_MS2V5_NB_MCP_mCherry < matlab.unittest.Tes
   methods(Test)
 
     function testRun(testCase)
-      testCase = testExportDataForFISH(testCase);
+      testCase = testExportDataForLivemRNA(testCase);
     end
 
   end

@@ -1,5 +1,5 @@
 function exportAndCopyData(testCase, testPath, dynamicsResultsPath, preprocessedDataPath)
-  experimentTestRootPath = strcat(testPath, filesep, 'ExportDataForFISH', filesep);
+  experimentTestRootPath = strcat(testPath, filesep, 'ExportDataForLivemRNA', filesep);
   expectedPreProcFolder = strcat(experimentTestRootPath, 'PreProcessedData', filesep, testCase.Prefix);
   expectedDynamicsResultsFolder = strcat(experimentTestRootPath, 'DynamicsResults', filesep, testCase.Prefix);
 
@@ -10,10 +10,10 @@ function exportAndCopyData(testCase, testPath, dynamicsResultsPath, preprocessed
   mkdir(expectedDynamicsResultsFolder);
 
   if (~ isprop(testCase, 'PreferredFileName'))
-    ExportDataForFISH(testCase.Prefix, 'keepTifs');
+    ExportDataForLivemRNA(testCase.Prefix, 'keepTifs');
   else
     testCase.initializeTestCase;
-    ExportDataForFISH(testCase.Prefix, testCase.PreferredFileName, 'keepTifs');
+    ExportDataForLivemRNA(testCase.Prefix, testCase.PreferredFileName, 'keepTifs');
   end
 
   disp(['Copying expected data for Prefix ', testCase.Prefix]);

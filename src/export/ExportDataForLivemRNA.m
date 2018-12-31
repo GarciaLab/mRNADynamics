@@ -1,4 +1,4 @@
-% ExportDataForFISH([Options])
+% ExportDataForLivemRNA([Options])
 %
 % DESCRIPTION
 % %This function grabs individual z-stacks and splits them in
@@ -57,10 +57,10 @@
 %The idea of (4) being in Dropbox is that I don't need to be synchronizing
 %the part related to the manual analysis.
 
-function Prefix = ExportDataForFISH(varargin)
+function Prefix = ExportDataForLivemRNA(varargin)
 
   [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs,...
-    generateTifs] = exportDataForFISH_processInputParameters(varargin{:});
+    generateTifs] = exportDataForLivemRNA_processInputParameters(varargin{:});
 
   [SourcePath, ~, DropboxFolder, ~, PreProcPath, Folder, Prefix, ExperimentType, Channel1, Channel2, ~,...
     Channel3] = readMovieDatabase(Prefix);

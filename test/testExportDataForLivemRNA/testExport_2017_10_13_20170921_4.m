@@ -10,7 +10,7 @@ classdef testExport_2017_10_13_20170921_4 < matlab.unittest.TestCase
 
     function testRun(testCase)
       disp('Ignoring test case as it breaks after commit jhkliu42');
-      % testCase = testExportDataForFISH(testCase);
+      % testCase = testExportDataForLivemRNA(testCase);
     end
 
   end
