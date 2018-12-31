@@ -148,8 +148,7 @@ FilePrefix=[DataFolder(length(DropboxFolder)+2:end),'_'];
 [~,~,DropboxFolder,~,PreProcPath]=...
     DetermineLocalFolders(FilePrefix(1:end-1));
 
-load([DataFolder,filesep,'Particles.mat'], 'Particles', 'SpotFilter', ...
-    'Threshold1', 'Threshold2')
+load([DataFolder,filesep,'Particles.mat'], 'Particles', 'SpotFilter')
 load([DataFolder,filesep,'Spots.mat'], 'Spots')
 
 %Check that FrameInfo exists
@@ -905,7 +904,7 @@ while (cc~='x')
     elseif cc=='f'
         [Particles, schnitzcells] = redoTracking(DataFolder, ...
             UseHistoneOverlay, FrameInfo, DropboxFolder, FilePrefix, schnitzcells, ...
-            Particles, Threshold1, Threshold2, NChannels, CurrentChannel, numParticles);
+            Particles, NChannels, CurrentChannel, numParticles);
     elseif cc=='c'
         [PreviousParticle, Particles] = combineTraces(Spots, ...
             CurrentChannel, CurrentFrame, Particles, CurrentParticle);
@@ -946,7 +945,7 @@ while (cc~='x')
         
     elseif cc=='s'  
         saveChanges(NChannels, Particles, Spots, SpotFilter, DataFolder, ...
-            FrameInfo, UseHistoneOverlay, Threshold1, Threshold2, FilePrefix, ...
+            FrameInfo, UseHistoneOverlay, FilePrefix, ...
             schnitzcells, DropboxFolder);      
     elseif cc=='t'
         ShowThreshold2=~ShowThreshold2;
@@ -1048,11 +1047,11 @@ end
 
 
 if UseHistoneOverlay
-    save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2', '-v7.3')
+    save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter', '-v7.3')
     save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3')
     save([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'],'schnitzcells')
 else
-    save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter','Threshold1','Threshold2', '-v7.3')
+    save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter', '-v7.3')
     save([DataFolder,filesep,'Spots.mat'],'Spots','-v7.3')
 end
 close all;
