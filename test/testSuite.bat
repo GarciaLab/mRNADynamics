@@ -29,6 +29,9 @@ if %errorlevel% == 1 set error=1
 REM trackmRNADynamics
 C:\"Program Files"\MATLAB\R2017b\bin\matlab.exe -wait -nodesktop -nosplash -sd "D:\Data\Jenkins\mRNADynamics-tests" -logfile "D:\Data\Jenkins\testTrackmRNADynamics_2015_07_25_P2P_75uW_bi_short.log" -r "runTestCase(testTrackmRNADynamics_2015_07_25_P2P_75uW_bi_short);"
 if %errorlevel% == 1 set error=1
+C:\"Program Files"\MATLAB\R2017b\bin\matlab.exe -wait -nodesktop -nosplash -sd "D:\Data\Jenkins\mRNADynamics-tests" -logfile "D:\Data\Jenkins\testTrackmRNADynamicsNotHistone_2015_07_25_P2P_75uW_bi_short.log" -r "runTestCase(testTrackmRNADynamicsNotHistone_2015_07_25_P2P_75uW_bi_short);"
+if %errorlevel% == 1 set error=1
+
 
 REM C:\"Program Files"\MATLAB\R2017b\bin\matlab.exe -wait -nodesktop -nosplash -sd "D:\Data\Jenkins\mRNADynamics-tests" -logfile "D:\Data\Jenkins\logs\tests.log" -r "runTestCase();"
 exit /b %error%
