@@ -26,11 +26,6 @@
 % Last Updated: 9/11/2018
 %
 % Documented by: Armando Reimer (areimer@berkeley.edu)
-%
-% To do: The no-histone part of the code doesn't take into account the
-% Approved field of the Particles structure.
-% ^ AR 9/3/18: has this been done?
-%
 function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
 
   [~, ~, DefaultDropboxFolder, ~, ~] = DetermineLocalFolders;
