@@ -20,7 +20,7 @@ function [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh,
         [Particles, SpotFilter] = trackHistone(PreProcPath, Prefix, CurrentFrame, NDigits, app, nucAxes, Ellipses, ...
           ExperimentType, Channel, schnitzcells, Particles, Spots, SpotFilter, PixelSize, SearchRadius);
       else
-        [Particles] = trackParticlesBasedOnProximity(Particles, Spots, xPos, SpotFilter, Channel, CurrentFrame, SearchRadius);
+        [Particles] = trackParticlesBasedOnProximity(Particles, Spots, xPos, SpotFilter, Channel, CurrentFrame, PixelSize, SearchRadius);
       end
 
     end
@@ -165,7 +165,7 @@ function hisImage = openHistoneImage(Prefix, PreProcPath, CurrentFrame, NDigits)
 
 end
 
-function [Particles] = trackParticlesBasedOnProximity(Particles, Spots, xPos, SpotFilter, Channel, CurrentFrame, SearchRadius)
+function [Particles] = trackParticlesBasedOnProximity(Particles, Spots, xPos, SpotFilter, Channel, CurrentFrame, PixelSize, SearchRadius)
   
   %This function is used by the performTracking subfunction of
   %trackmRNADynamics to track particles in the event there's no nuclear
