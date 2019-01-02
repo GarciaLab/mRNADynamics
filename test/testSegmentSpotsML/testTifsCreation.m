@@ -15,7 +15,7 @@ function testCase = testTifsCreation(testCase)
   expectedPreProcessedDataFolder = [testPath, '/filterMovieTifs/PreProcessedData/', testCase.Prefix]; 
 
   % Precondition, copies existing Expected Data to proper folders before running the process
-  copyExpectedDataForPrefix(testCase.Prefix, 'ExportDataForFISH');
+  copyExpectedDataForPrefix(testCase.Prefix, 'ExportDataForLivemRNA');
   
   % Tests Tifs generation
   filterMovie(testCase.Prefix, 'Tifs');

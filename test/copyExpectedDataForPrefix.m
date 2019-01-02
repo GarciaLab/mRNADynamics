@@ -23,7 +23,7 @@ function copyExpectedDataForPrefix(Prefix, step)
   deleteDirectory(preprocessedDataExperimentPath, Prefix);
   deleteDirectory(processedDataExperimentPath, Prefix);
 
-  if strcmpi(step, 'ExportDataForFISH')
+  if strcmpi(step, 'ExportDataForLivemRNA')
     copyExpectedExportData(Prefix, testPath, dynamicsResultsExperimentPath, preprocessedDataExperimentPath);
   elseif strcmpi(step, 'filterMovieTifs')
     copyFilterMovieTifsData(Prefix, testPath, dynamicsResultsExperimentPath, preprocessedDataExperimentPath);

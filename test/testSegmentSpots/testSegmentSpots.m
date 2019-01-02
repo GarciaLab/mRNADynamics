@@ -22,7 +22,7 @@ function testCase = testSegmentSpots(testCase)
   deleteDirectory(processedDataExperimentPath, testCase.Prefix);
 
   % Precondition - Run ExportsDataForFISH without deleting TIFs
-  ExportDataForFISH(testCase.Prefix, 'keepTifs');
+  ExportDataForLivemRNA(testCase.Prefix, 'keepTifs');
   
   % Tests first pass
   % Generates DoGs
