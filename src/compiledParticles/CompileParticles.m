@@ -171,6 +171,7 @@ end
 %Check that FrameInfo exists
 if exist([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'file')
     load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
+    pixelSize = FrameInfo(1).PixelSize;
 else
     warning('No FrameInfo.mat found. Trying to continue')
     %Adding frame information
@@ -623,25 +624,21 @@ end
 %% Probability of being on
 
 %I'm going to measure the probability of a nucleus having detectable
-%expressiona as a function of time and AP. In order to do this I'll use
+%expression as a function of time and AP. In order to do this I'll use
 %Particles that have both the Approved flag set to 1 and 2. However, I'll
 %also check that the nuclei are not too close to the edges.
 
 %NOTE: I need a way to go back and check the nuclei that weren't on. Maybe
 %I should move this to Check particles
 
-
-%Create an image that is partitioned according to the AP bins. We will use
-%this to calculate the area per AP bin.
-
 if HistoneChannel&&strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
     [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
         FilteredParticlesPos, OnRatioAP, ParticleCountAP, ParticleCountProbAP, ...
         EllipsesOnAP, rateOnAP, rateOnAPCell, timeOnOnAP, timeOnOnAPCell, TotalEllipsesAP]...
-        = APProbOn(NChannels, Particles, schnitzcells, ...
+        = computeAPFractionOn(NChannels, Particles, schnitzcells, ...
         CompiledParticles, Ellipses, APbinID, FrameInfo, ElapsedTime, DropboxFolder, ...
         Prefix, EllipsePos, nc12, nc13, nc14, numFrames, doSingleFits, SkipAll, ...
-        APbinArea);
+        APbinArea,pixelSize);
 end
 
 % DV version
@@ -656,7 +653,7 @@ end
 
 %% Calculation of particle speed
 calcParticleSpeeds(NChannels, Particles, ...
-    Spots, ElapsedTime, schnitzcells, Ellipses) % this doesn't appear to do anything...
+    Spots, ElapsedTime, schnitzcells, Ellipses);
 
 %% Movie of AP profile
 
