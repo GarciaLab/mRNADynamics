@@ -237,6 +237,10 @@ if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file') && ~n
 else
     disp('No lineage / nuclear information found. Proceeding without it.');
     HistoneChannel=0;
+    % initialize the variables so that they can be plugged into the
+    % CompileTraces below.
+    schnitzcells={};
+    Ellipses = {};
 end
 
 
