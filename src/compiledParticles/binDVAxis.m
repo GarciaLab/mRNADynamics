@@ -1,5 +1,5 @@
-function [DVbinID, DVbinArea] = generateDVBin(FrameInfo, coordAZoom, APAngle)
-%GENERATEDVBIN Summary of this function goes here
+function [DVbinID, DVbinArea] = binDVAxis(FrameInfo, coordAZoom, APAngle)
+%binDVAxis Summary of this function goes here
 %   Detailed explanation goes here
 
 DVbinID=linspace(-800,0,51); %JAKE: Would change to DV resolution later
