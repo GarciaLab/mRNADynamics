@@ -452,6 +452,6 @@ hold off
 saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APEmbryo.tif']);
 close(diagFigure);
 
-if CorrectAxis
+if CC.NumObjects~=1 || CorrectAxis
     CorrectAPAxis(Prefix);
 end

@@ -49,6 +49,9 @@ close all;
 
 %% INITIALIZE ALL SAVED VARIABLES
 % Please initialize any new variables you have added and want to save!!!!
+
+savedVariables = {};
+
 APFilter  =  {};
 APbinArea = [];
 APbinID = [];
@@ -618,18 +621,10 @@ end
 % implementing it for two channels.
 if doSingleFits
     [CompiledParticles, fittedLineEquations] = fitShapesToTraces(Prefix, ...
-        Particles, schnitzcells, FrameInfo, ElapsedTime, CompiledParticles);
+        Particles, schnitzcells, FrameInfo, ElapsedTime, CompiledParticles,Spots);
 end
 
 %% Probability of being on
-
-%I'm going to measure the probability of a nucleus having detectable
-%expression as a function of time and AP. In order to do this I'll use
-%Particles that have both the Approved flag set to 1 and 2. However, I'll
-%also check that the nuclei are not too close to the edges.
-
-%NOTE: I need a way to go back and check the nuclei that weren't on. Maybe
-%I should move this to Check particles
 
 if HistoneChannel&&strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
     [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
@@ -641,7 +636,8 @@ if HistoneChannel&&strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
         APbinArea,pixelSize);
 end
 
-% DV version
+% DV version. This should instead be smoothly integrated with the AP
+% version since there's a lot of duplicate code here. 
 if HistoneChannel&&strcmpi(ExperimentAxis,'DV') %JAKE: Need to change this later
     [NEllipsesDV, MeanVectorAllDV, SEVectorAllDV, OnRatioDV, ParticleCountDV, ...
         ParticleCountProbDV, TotalEllipsesDV, EllipsesOnDV, EllipsesFilteredPos, ...
@@ -652,9 +648,11 @@ if HistoneChannel&&strcmpi(ExperimentAxis,'DV') %JAKE: Need to change this later
 end
 
 %% Calculation of particle speed
-calcParticleSpeeds(NChannels, Particles, ...
-    Spots, ElapsedTime, schnitzcells, Ellipses);
-
+try
+    calcParticleSpeeds(NChannels, Particles, ...
+        Spots, ElapsedTime, schnitzcells, Ellipses);
+catch
+end
 %% Movie of AP profile
 
 %I want to make a movie of the average fluorescence as a function of AP as
@@ -711,8 +709,8 @@ end
 %% Save everything
 
 %Now save all the information
-save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
-    'APFilter', 'APbinArea', 'APbinID', 'AllTracesAP',...
+
+savedVariables = [savedVariables,'APFilter', 'APbinArea', 'APbinID', 'AllTracesAP',...
     'AllTracesVector', 'CompiledParticles', 'DVFilter', 'DVbinArea',...
     'DVbinID', 'ElapsedTime', 'EllipsePos', 'EllipsesFilteredPos',...
     'EllipsesOnAP', 'EllipsesOnDV', 'FilteredParticlesPos', 'MaxAPIndex',...
@@ -732,6 +730,9 @@ save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
     'SEVectorAllDV', 'StemLoopEnd', 'TotalEllipsesAP', 'TotalEllipsesDV',...
     'fittedLineEquations', 'rateOnAP', 'timeOnOnAP','rateOnAPCell', 'timeOnOnAPCell','nc10', 'nc11', 'nc12',...
     'nc13', 'nc14', 'nc9', 'ncFilter',...
-    'ncFilterID','-v7.3');
+    'ncFilterID'];
+
+save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
+    savedVariables{:},'-v7.3');
  
 end

@@ -5,10 +5,23 @@ function [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
     CompiledParticles, Ellipses, APbinID, FrameInfo, ElapsedTime, DropboxFolder, ...
     Prefix, EllipsePos, nc12, nc13, nc14, numFrames, doSingleFits, SkipAll, APbinArea, pixelSize)
 
-%APPROBON Calculate the fraction of transcribing nuclei using three
+%computeAPFractionOn Calculate the fraction of transcribing nuclei using three
 %different methods. 
+%
+%HGNOTE: I'm going to measure the probability of a nucleus having detectable
+%expression as a function of time and AP. In order to do this I'll use
+%Particles that have both the Approved flag set to 1 and 2. However, I'll
+%also check that the nuclei are not too close to the edges.
+%
+%HGNOTE: I need a way to go back and check the nuclei that weren't on. Maybe
+%I should move this to Check particles
+%
+%TO DO: place each method of calculation inside a subfunction that will go
+%in this file for easier reading and manipulation. Also combine the DV
+%version with this version. 
 
-    EdgeWidth=pixelSize*47.17; %in microns. 47.17 is simply the number that results in 10 pixel width
+
+    EdgeWidth=2.12/pixelSize; %in microns. 2.12 is simply the number that results in 10 pixel width
     %when using a spatial resolution of 212nm. 
 
     for ChN=1:NChannels
@@ -380,8 +393,8 @@ function [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
                                     for m=1:length(schnitzcells(k).frames)
                                         %The information in Ellipses is
                                         %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
-                                        MaxDistance=pixelSize*9.43; %in microns. Maximum distance to identify an
-                                        %ellipse with a schnitz. 9.43
+                                        MaxDistance=.424/pixelSize; %in microns. Maximum distance to identify an
+                                        %ellipse with a schnitz. .424
                                         %corresponds to 2 pixels when using
                                         %212nm resolution.
                                         Distances=sqrt((Ellipses{schnitzcells(k).frames(m)}(:,1)-...

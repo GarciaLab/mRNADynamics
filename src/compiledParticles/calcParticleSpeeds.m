@@ -1,8 +1,9 @@
 function calcParticleSpeeds(NChannels, Particles, ...
     Spots, ElapsedTime, schnitzcells, Ellipses)
+%
 %CALCPARTICLESPEEDS Summary of this function goes here
-%   Detailed explanation goes here
-try
+%   TO DO: produce output and plots. 
+
     if NChannels > 1
 %         disp('Speeds could not be calculated for your data. Please contact Emma.')
         % implement crude? initial slope and time on calculation
@@ -19,6 +20,7 @@ try
 
                 % getting tau (average time increment [minutes])--------------------------
                 currentTimeArray = ElapsedTime(frame); % Units to seconds
+                %AR 1/2/2019- what was this originally for?
 
                 % getting x,y,z positions -------------------------------------------------
                 xArray = zeros(1,length(frames));
@@ -40,7 +42,8 @@ try
                     % getting x and y positions of the brightest z slice
                     [x,y,z]=SpotsXYZ(Spots{currentChannel}(currentFrame));
 
-                    % storing "true" x, y, and z positions
+                    % storing x, y, and z positions in pixels relative to the image
+                    % frame
                     xArray(frameCounter) = x(currentParticleIndex);
                     yArray(frameCounter) = y(currentParticleIndex);
                     zArray(frameCounter) = z(currentParticleIndex);
@@ -56,7 +59,7 @@ try
                 end
 
                 % speed calculation and distance relative to the center of the nucleus
-                dz = diff(zArray);
+                dz = diff(zArray); %AR 1/2/2019- why isn't the z coordinate also NO?
                 dxNO = diff(xArrayNO);
                 dyNO = diff(yArrayNO);
                 drNO = sqrt(dxNO.^2 + dyNO.^2 + dz.^2);
@@ -66,7 +69,4 @@ try
             end
         end
     end
-catch
 end
-end
-
