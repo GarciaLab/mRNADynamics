@@ -1030,7 +1030,7 @@ while (cc~='x')
     elseif cc== '3'
         [lineFit, Coefficients, fit1E] =...
             fitLine(CurrentParticle, Particles, Spots, CurrentChannel, schnitzcells, ...
-            ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, Frames);
+            ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, Frames, anaphase);
     end
 end
 

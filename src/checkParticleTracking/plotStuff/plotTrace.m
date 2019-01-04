@@ -28,10 +28,16 @@ if ~lineFit
 else
     ncPresent = unique(correspondingNCInfo(Frames));
     % below subtracts 8 because the first element corresponds to nc 9
-    priorAnaphaseInMins = anaphaseInMins(ncPresent(1)-8);
-    nucleusFirstFrame = ElapsedTime(...
-        schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames(1));
-    traceFigTimeAxis = ElapsedTime(Frames) - nucleusFirstFrame;
+    priorAnaphaseInMins = anaphaseInMins(ncPresent(1)-8); %min
+    priorAnaphase = anaphase(ncPresent(1)-8); %frame
+    if ~isempty(Particles{CurrentChannel}(CurrentParticle).Nucleus)
+        nucleusFirstFrame = ElapsedTime(...
+            schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames(1)); %min
+    else
+        nucleusFirstFrame = ElapsedTime(priorAnaphase); %min
+        warning('No nucleus assigned to this particle. Using anaphase from moviedatabase as the first timepoint.')
+    end
+    traceFigTimeAxis = ElapsedTime(Frames) - nucleusFirstFrame; %min
     if exist('traceErrorBar1','var')
         delete([traceErrorBar1,traceErrorBar2,cPoint1,cPoint2])
     end
