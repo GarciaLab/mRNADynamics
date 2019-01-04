@@ -1,4 +1,4 @@
-function [lineFit, Coefficients, fit1E] =...
+function [lineFit, Coefficients, fit1E, Particles] =...
     fitLine(CurrentParticle, Particles, Spots, CurrentChannel, schnitzcells, ...
     ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, Frames, anaphase)
 %FITLINE Summary of this function goes here
@@ -50,6 +50,23 @@ averagingLength = 3;
     fit1E = plot(traceFigAxes,fit1ETimeAxis,...
         currentYSegment,'-','Color','red');
     hold(traceFigAxes,'off')
+    
+    % save the fitted values (Slope and Time on) in Particles.mat
+    if ~isempty(Coefficients)
+        singleTraceLoadingRate = Coefficients(1,1); %au/min
+        if singleTraceLoadingRate >= 0 %some easy quality control
+            singleTraceTimeOn = roots(Coefficients(1,:));
+            Particles{CurrentChannel}(CurrentParticle).fittedSlope =  singleTraceLoadingRate;
+            Particles{CurrentChannel}(CurrentParticle).fittedTON =  singleTraceTimeOn;
+        else     
+            Particles{CurrentChannel}(CurrentParticle).fittedSlope =  NaN;
+            Particles{CurrentChannel}(CurrentParticle).fittedTON =  NaN; 
+        end
+    else
+        Particles{CurrentChannel}(CurrentParticle).fittedSlope =  NaN;
+        Particles{CurrentChannel}(CurrentParticle).fittedTON =  NaN;   
+    end
+
 catch
     lineFit = 0;
     uiwait(msgbox('A line was not fitted','Key 3 was selected'));
