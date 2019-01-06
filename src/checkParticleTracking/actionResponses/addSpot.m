@@ -176,7 +176,7 @@ else
                 end
                 [tempSpots,~] = findBrightestZ(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex), -1, use_integral_center, force_z);
                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = tempSpots;
-
+%%
                 try
                     s = Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex);
                     zMax = FrameInfo(1).NumberSlices+2;
@@ -220,18 +220,28 @@ else
                         end
                     end
                     initial_params = [max(max(max(snip3D))), NaN,NaN, snipDepth + 1, width,offsetGuess];
-                    [fits3D, int3D] = fitGaussian3D(snip3D, initial_params, zStep);
+                    [fits3D, int3D, ci95] = fitGaussian3D(snip3D, initial_params, zStep);
                     x3D = fits3D(2) - snippet_sizeNew + xSpotNew;
                     y3D = fits3D(3) - snippet_sizeNew + ySpotNew;
                     z3D = fits3D(4) - snipDepth + bZ;
+                     dxLow = ci95(2, 1) - snippet_size + xSpotNew;
+            dxHigh = ci95(2, 2) - snippet_sizeNew + xSpotNew;
+            dyLow = ci95(3, 1) - snippet_sizeNew + ySpotNew;
+            dyHigh = ci95(3, 2) - snippet_sizeNew + ySpotNew;
+            dzLow = ci95(4, 1) - snipDepth + bZ;
+            dzHigh = ci95(4, 2) - snipDepth + bZ;
                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).GaussPos = [x3D, y3D, z3D];
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).GaussPosCI95 = [dxLow,dxHigh; dyLow, dyHigh; dzLow, dzHigh];
+
                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).fits3D = fits3D;
                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).gauss3DIntensity = int3D;
+                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).fits3DCI95 = ci95;
+
                 catch
                     warning('failed to fit 3D Gaussian to spot. Not sure why. Talk to AR if you need this.');
                 end
 
-
+%%
                 %Add this to SpotFilter, which tells the code that this spot is
                 %above the threshold. First, check whether the
                 %dimensions of SpotFilter need to be altered. If so, pad it with NaNs
