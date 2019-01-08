@@ -1,4 +1,4 @@
-function [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh, Spots, app, SpotFilter, PreProcPath, Prefix, UseHistone, ParticlesFig, SpotsChannel, NDigits, NucleiFig, particlesAxes, nucAxes, Ellipses, PixelSize, SearchRadius, ExperimentType, FrameInfo)
+function [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh, Spots, app, SpotFilter, PreProcPath, Prefix, UseHistone, ParticlesFig, SpotsChannel, NDigits, NucleiFig, particlesAxes, nucAxes, Ellipses, PixelSize, SearchRadius, ExperimentType, FrameInfo, retrack)
   % Iterate over all channels
   for Channel = 1:NCh
 
@@ -18,9 +18,9 @@ function [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh,
 
       if UseHistone
         [Particles, SpotFilter] = trackHistone(PreProcPath, Prefix, CurrentFrame, NDigits, app, nucAxes, Ellipses, ...
-          ExperimentType, Channel, schnitzcells, Particles, Spots, SpotFilter, PixelSize, SearchRadius);
+          ExperimentType, Channel, schnitzcells, Particles, Spots, SpotFilter, PixelSize, SearchRadius, retrack);
       else
-        [Particles] = trackParticlesBasedOnProximity(Particles, Spots, xPos, SpotFilter, Channel, CurrentFrame, PixelSize, SearchRadius);
+        [Particles] = trackParticlesBasedOnProximity(Particles, Spots, xPos, SpotFilter, Channel, CurrentFrame, PixelSize, SearchRadius, retrack);
       end
 
     end
@@ -102,7 +102,7 @@ function x = displayParticlesFigure(app, particlesAxes, ParticlesFig, Spots, Cha
 end
 
 function [Particles, SpotFilter] = trackHistone(PreProcPath, Prefix, CurrentFrame, NDigits, app, nucAxes, Ellipses, ...
-    ExperimentType, Channel, schnitzcells, Particles, Spots, SpotFilter, PixelSize, SearchRadius)
+    ExperimentType, Channel, schnitzcells, Particles, Spots, SpotFilter, PixelSize, SearchRadius, retrack)
 
   hisImage = openHistoneImage(Prefix, PreProcPath, CurrentFrame, NDigits);
 
@@ -138,11 +138,11 @@ function [Particles, SpotFilter] = trackHistone(PreProcPath, Prefix, CurrentFram
   if strcmp(ExperimentType, '2spot')
     SpotsPerNucleus = 2;
   else
-      SpotsPerNucleus = 1;
+     SpotsPerNucleus = 1;
   end
 
   [Particles{Channel}, SpotFilter{Channel}] = AssignParticle2Nucleus(schnitzcells, Ellipses, ...
-    Particles{Channel}, Spots{Channel}, SpotFilter{Channel}, CurrentFrame, PixelSize, SearchRadius, SpotsPerNucleus);
+    Particles{Channel}, Spots{Channel}, SpotFilter{Channel}, CurrentFrame, PixelSize, SearchRadius, SpotsPerNucleus, retrack);
 
 end
 
@@ -165,7 +165,7 @@ function hisImage = openHistoneImage(Prefix, PreProcPath, CurrentFrame, NDigits)
 
 end
 
-function [Particles] = trackParticlesBasedOnProximity(Particles, Spots, xPos, SpotFilter, Channel, CurrentFrame, PixelSize, SearchRadius)
+function [Particles] = trackParticlesBasedOnProximity(Particles, Spots, xPos, SpotFilter, Channel, CurrentFrame, PixelSize, SearchRadius, retrack)
   
   %This function is used by the performTracking subfunction of
   %trackmRNADynamics to track particles in the event there's no nuclear

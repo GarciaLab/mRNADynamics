@@ -18,7 +18,7 @@ ApproveAll=0;       %Only use manually approved particles
 MinParticles=4;
 minTime = 1;
 ROI=0; % No ROI
-intArea = 109; %default for 220nm x 220nm zoom.
+intArea = 109; %pixels. default for 220nm x 220nm zoom. for 70nm use 437 pixels. 
 noHist = 0; 
 doSingleFits = 0;
 ROI1 = -1; % no ROI
@@ -53,7 +53,6 @@ else
             doSingleFits=1;
         elseif strcmpi(varargin{i},'ApproveAll')
             ApproveAll=1;
-            disp('Approved')
         elseif strcmpi(varargin{i},'noHist')
             noHist = 1;
         elseif strcmp(varargin{i},'MinParticles')

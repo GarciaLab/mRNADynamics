@@ -1,6 +1,6 @@
 function [Particles,SpotFilter]=AssignParticle2Nucleus(...
     schnitzcells,Ellipses,Particles,Spots,SpotFilter,...
-    CurrentFrame,PixelSize,SearchRadius,SpotsPerNucleus)
+    CurrentFrame,PixelSize,SearchRadius,SpotsPerNucleus, retrack)
 
 %Find the N closest particles to each nucleus. N is determined by
 %ExperimentType (1spot, 2spots). If N>1, then the code also uses the spot
@@ -8,14 +8,6 @@ function [Particles,SpotFilter]=AssignParticle2Nucleus(...
 
 %SearchRadius is given in pixels, but it comes from a setting in um
 %from TrackmRNADynamics.
-
-%Check if this Particles structure already has the Approved field. If so we
-%are performing retracking
-if isfield(Particles,'Approved')
-    Retracking=1;
-else
-    Retracking=0;
-end
 
 
 %Get the particles and nuclei positions. The order of both the nuclei and
@@ -48,9 +40,9 @@ if ~isempty(NewSpotsX)
             NewEllipsesY*PixelSize).^2);
     end
         
-    %If retracking make the distance for the particles that have been
+    %If retrack make the distance for the particles that have been
     %approved infinite.
-    if Retracking
+    if retrack
         for i=1:length(Particles)
             %Find which approved particles are in this frame
             if sum(Particles(i).Frame==CurrentFrame)&(Particles(i).Approved~=0)
@@ -66,9 +58,9 @@ if ~isempty(NewSpotsX)
     %position corresponds to the closest ellipse.
     [MinValues,MinIndex]=min(Distance');
                
-    %If retracking, set the distance of the already assigned spots to
+    %If retrack, set the distance of the already assigned spots to
     %infinity
-    if Retracking
+    if retrack
         MinIndex(MinValues==inf)=inf;
     end
     
@@ -212,7 +204,7 @@ if ~isempty(NewSpotsX)
                 if ~isinf(DistancesToNewSpots(j))
                     SpotIndexToCopy=SpotToParticleIndices(NewSpotToAssign(j));
                     %Finally, copy the information onto this particle.
-                    if Retracking == 0 || Particles(ParticleToAssign(j)).Approved < 1
+                    if retrack == 0 || Particles(ParticleToAssign(j)).Approved < 1
                         Particles(ParticleToAssign(j)).Index(end+1)=SpotIndexToCopy;
                         Particles(ParticleToAssign(j)).Frame(end+1)=CurrentFrame;
                     end
@@ -326,7 +318,7 @@ if ~isempty(NewSpotsX)
             Particles(end+1).Frame=CurrentFrame;
             Particles(end).Index=NewParticlesIndices(i);
             Particles(end).Nucleus=MinIndexSchnitz(NewParticlesIndices(i));
-            if Retracking
+            if retrack
                 Particles(end).Approved=0;
             end
         else

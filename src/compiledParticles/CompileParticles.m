@@ -49,6 +49,9 @@ close all;
 
 %% INITIALIZE ALL SAVED VARIABLES
 % Please initialize any new variables you have added and want to save!!!!
+
+savedVariables = {};
+
 APFilter  =  {};
 APbinArea = [];
 APbinID = [];
@@ -154,7 +157,7 @@ FilePrefix=[Prefix,'_'];
 % refactor in progress, we should replace readMovieDatabase with getExperimentDataFromMovieDatabase
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoopEnd, APResolution,...
     Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
+    nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 
 %Load all the information
@@ -170,7 +173,8 @@ end
 
 %Check that FrameInfo exists
 if exist([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'file')
-    load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']);
+    pixelSize = FrameInfo(1).PixelSize;
 else
     warning('No FrameInfo.mat found. Trying to continue')
     %Adding frame information
@@ -233,15 +237,10 @@ if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file') && ~n
 else
     disp('No lineage / nuclear information found. Proceeding without it.');
     HistoneChannel=0;
-end
-
-
-if sum(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
-        ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')))
-    
-    % nothing to do, we already have ncs from abobe. refactor this if.
-else
-    warning('Warning: lack of histone channel may result in strange behavior.');
+    % initialize the variables so that they can be plugged into the
+    % CompileTraces below.
+    schnitzcells={};
+    Ellipses = {};
 end
 
 
@@ -266,17 +265,6 @@ if strcmpi(nc9,'nan')
 end
 
 
-
-% % Read in which end the stem loops are at, if this information is available
-% % (ES 2014-03-20)
-% StemLoopEndColumn = find(strcmp(XLSRaw(1, :), 'StemLoopEnd'));
-% if ~isempty(StemLoopEndColumn)
-%     StemLoopEnd = XLSRaw{XLSEntry, StemLoopEndColumn};
-% else
-%     StemLoopEnd = '';
-% end
-%
-
 NewCyclePos=[nc9,nc10,nc11,nc12,nc13,nc14];
 NewCyclePos=NewCyclePos(~(NewCyclePos==0));
 NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
@@ -284,7 +272,7 @@ NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
 
 
 %Add the APPosition to Particles if they don't exist yet. Do this only if
-%we took AP data. Otherwise just add XY.
+%we took AP data. Otherwise just add x and y pixel coordinates
 
 if strcmpi(ExperimentAxis,'AP')
     if (~isfield(Particles{1},'APpos')) || ForceAP
@@ -294,7 +282,7 @@ if strcmpi(ExperimentAxis,'AP')
             AddParticlePosition(Prefix,'SkipAlignment')
         end
     else
-        disp('Using saved AP information')
+        disp('Using saved AP information (results from AddParticlePosition)')
     end
 elseif strcmpi(ExperimentAxis,'dv') && exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'file')
     AddParticlePosition(Prefix);
@@ -391,8 +379,6 @@ if strcmpi(ExperimentAxis, 'AP') || strcmpi(ExperimentAxis, 'DV')
     load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
     %Angle between the x-axis and the AP-axis
     if exist('coordPZoom', 'var')
-        %APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
-        %Changed for DV compatibility
         APAngle=atan2((coordPZoom(2)-coordAZoom(2)),(coordPZoom(1)-coordAZoom(1)));
     else
         error('coordPZoom not defined. Was AddParticlePosition.m run?')
@@ -400,7 +386,7 @@ if strcmpi(ExperimentAxis, 'AP') || strcmpi(ExperimentAxis, 'DV')
     APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
 end
 
-if HistoneChannel&&strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
+if HistoneChannel && (strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV'))
     %The information in Ellipses is
     %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
     for i=1:length(Ellipses)
@@ -408,8 +394,7 @@ if HistoneChannel&&strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
             
             %Angle between the x-axis and the particle using the A position as a
             %zero
-            %Angles=atan((Ellipses{i}(j,2)-coordAZoom(2))./(Ellipses{i}(j,1)-coordAZoom(1)));
-            %Changed for DV compatibility
+
             Angles=atan2((Ellipses{i}(j,2)-coordAZoom(2)),(Ellipses{i}(j,1)-coordAZoom(1)));
             
             %Distance between the points and the A point
@@ -417,7 +402,6 @@ if HistoneChannel&&strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
             APPositions=Distances.*cos(Angles-APAngle);
             EllipsePos{i}(j)=APPositions/APLength;
             
-            %Added DV compatibility
             DVPositions=Distances.*sin(Angles-APAngle);
             EllipsePos_DV{i}(j)=DVPositions;
         end
@@ -448,21 +432,15 @@ end
 
 ElapsedTime=ElapsedTime/60;     %Time is in minutes
 
-
-%Some parameters
-MinAPArea=12500;%700;    %Minimum area in pixels in order to consider an AP bin as valid. AR 3/15/16: This should be recalculated in microns
-
-
+%Divide the AP and DV axes into bins for generating means, etc. 
 if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')  
-    [APbinID, APbinArea] = generateAPBin(APResolution, FrameInfo, ...
+    [APbinID, APbinArea] = binAPAxis(APResolution, FrameInfo, ...
         coordAZoom, APAngle, APLength);
 end
-
-%Generate DV bin
 if strcmpi(ExperimentAxis,'DV')
-    [DVbinID, DVbinArea] = generateDVBin(FrameInfo, coordAZoom, APAngle);
-end
-
+    [DVbinID, DVbinArea] = binDVAxis(FrameInfo, coordAZoom, APAngle);
+end    
+    
 
 %Now get the particle information for those that were approved
 [Particles, CompiledParticles, ncFilter, ncFilterID] =...
@@ -522,7 +500,7 @@ APFilter_ROI = []; APFilter_nonROI = []; DVFilter_ROI = []; DVFilter_nonROI = []
     SDVectorDV_ROI, NParticlesDV_ROI, MeanVectorDV_nonROI, SDVectorDV_nonROI, ...
     NParticlesDV_nonROI, MeanVectorDV, SDVectorDV, NParticlesDV, ...
     MeanVectorAnterior, MeanVectorAll, SDVectorAll, NParticlesAll, MaxFrame] =...
-    binAndAverage(NChannels, CompiledParticles, FrameInfo, ExperimentAxis, ...
+    computeAPandDVStatistics(NChannels, CompiledParticles, FrameInfo, ExperimentAxis, ...
     APFilter, ROI, CompiledParticles_ROI, CompiledParticles_nonROI, ...
     APFilter_ROI, APFilter_nonROI, NewCyclePos, MaxFrame, ...
     MeanVectorAP_ROI, SDVectorAP_ROI, NParticlesAP_ROI, MeanVectorAP_nonROI, ...
@@ -617,34 +595,23 @@ end
 % implementing it for two channels.
 if doSingleFits
     [CompiledParticles, fittedLineEquations] = fitShapesToTraces(Prefix, ...
-        Particles, schnitzcells, FrameInfo, ElapsedTime, CompiledParticles);
+        Particles, schnitzcells, FrameInfo, ElapsedTime, CompiledParticles,Spots);
 end
 
 %% Probability of being on
-
-%I'm going to measure the probability of a nucleus having detectable
-%expressiona as a function of time and AP. In order to do this I'll use
-%Particles that have both the Approved flag set to 1 and 2. However, I'll
-%also check that the nuclei are not too close to the edges.
-
-%NOTE: I need a way to go back and check the nuclei that weren't on. Maybe
-%I should move this to Check particles
-
-
-%Create an image that is partitioned according to the AP bins. We will use
-%this to calculate the area per AP bin.
 
 if HistoneChannel&&strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
     [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
         FilteredParticlesPos, OnRatioAP, ParticleCountAP, ParticleCountProbAP, ...
         EllipsesOnAP, rateOnAP, rateOnAPCell, timeOnOnAP, timeOnOnAPCell, TotalEllipsesAP]...
-        = APProbOn(NChannels, Particles, schnitzcells, ...
+        = computeAPFractionOn(NChannels, Particles, schnitzcells, ...
         CompiledParticles, Ellipses, APbinID, FrameInfo, ElapsedTime, DropboxFolder, ...
         Prefix, EllipsePos, nc12, nc13, nc14, numFrames, doSingleFits, SkipAll, ...
-        APbinArea);
+        APbinArea,pixelSize);
 end
 
-% DV version
+% DV version. This should instead be smoothly integrated with the AP
+% version since there's a lot of duplicate code here. 
 if HistoneChannel&&strcmpi(ExperimentAxis,'DV') %JAKE: Need to change this later
     [NEllipsesDV, MeanVectorAllDV, SEVectorAllDV, OnRatioDV, ParticleCountDV, ...
         ParticleCountProbDV, TotalEllipsesDV, EllipsesOnDV, EllipsesFilteredPos, ...
@@ -655,9 +622,11 @@ if HistoneChannel&&strcmpi(ExperimentAxis,'DV') %JAKE: Need to change this later
 end
 
 %% Calculation of particle speed
-calcParticleSpeeds(NChannels, Particles, ...
-    Spots, ElapsedTime, schnitzcells, Ellipses) % this doesn't appear to do anything...
-
+try
+    calcParticleSpeeds(NChannels, Particles, ...
+        Spots, ElapsedTime, schnitzcells, Ellipses);
+catch
+end
 %% Movie of AP profile
 
 %I want to make a movie of the average fluorescence as a function of AP as
@@ -714,8 +683,8 @@ end
 %% Save everything
 
 %Now save all the information
-save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
-    'APFilter', 'APbinArea', 'APbinID', 'AllTracesAP',...
+
+savedVariables = [savedVariables,'APFilter', 'APbinArea', 'APbinID', 'AllTracesAP',...
     'AllTracesVector', 'CompiledParticles', 'DVFilter', 'DVbinArea',...
     'DVbinID', 'ElapsedTime', 'EllipsePos', 'EllipsesFilteredPos',...
     'EllipsesOnAP', 'EllipsesOnDV', 'FilteredParticlesPos', 'MaxAPIndex',...
@@ -735,6 +704,9 @@ save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
     'SEVectorAllDV', 'StemLoopEnd', 'TotalEllipsesAP', 'TotalEllipsesDV',...
     'fittedLineEquations', 'rateOnAP', 'timeOnOnAP','rateOnAPCell', 'timeOnOnAPCell','nc10', 'nc11', 'nc12',...
     'nc13', 'nc14', 'nc9', 'ncFilter',...
-    'ncFilterID','-v7.3');
+    'ncFilterID'];
+
+save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
+    savedVariables{:},'-v7.3');
  
 end

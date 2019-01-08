@@ -85,7 +85,7 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
 
   [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh, Spots, app, SpotFilter, PreProcPath, ...
     Prefix, UseHistone, ParticlesFig, SpotsChannel, NDigits, NucleiFig, particlesAxes, nucAxes, Ellipses, ...
-    PixelSize, SearchRadius, ExperimentType, FrameInfo);
+    PixelSize, SearchRadius, ExperimentType, FrameInfo, retrack);
 
   mkdir([OutputFolder, filesep]);
 
