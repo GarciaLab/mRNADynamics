@@ -1,7 +1,7 @@
-function [Frames,Amp, PreviousParticle, spotAdded] = plotTraceInputOutput(traceFigAxes, ...
+function [Frames,Amp, PreviousParticle] = plotTraceInputOutput(traceFigAxes, ...
             FrameInfo, CurrentChannel, PreviousChannel, ...
     CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, ...
-    schnitzcells, Particles, numFrames, CurrentFrame, ZSlices, CurrentZ, Spots, spotAdded, ...
+    schnitzcells, Particles, numFrames, CurrentFrame, ZSlices, CurrentZ, Spots, ...
     Frames, Amp)
 %PLOTTRACEINPUTOUTPUT Summary of this function goes here
 %   Detailed explanation goes here
@@ -9,10 +9,9 @@ function [Frames,Amp, PreviousParticle, spotAdded] = plotTraceInputOutput(traceF
 numParticles = length(Particles{CurrentChannel});
 
  %Only update the trace information if we have switched particles
-if (CurrentParticle~=PreviousParticle)||~exist('Amp', 'var')||(CurrentChannel~=PreviousChannel) || lastParticle || spotAdded
+if (CurrentParticle~=PreviousParticle)||~exist('Amp', 'var')||(CurrentChannel~=PreviousChannel) || lastParticle
     PreviousParticle=CurrentParticle;
     [Frames,Amp]=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
-    spotAdded = false;
 end
 cla(traceFigAxes, 'reset');
 %we'll plot the spot intensity first on the left axis.

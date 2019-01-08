@@ -1,11 +1,11 @@
 function [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ...
             ErrorIntegral, ErrorIntegral3, ErrorIntegral5,backGround3, ...
-            AmpIntegralGauss3D, ErrorIntegralGauss3D, PreviousParticle, spotAdded] = plotTrace(traceFigAxes, ...
+            AmpIntegralGauss3D, ErrorIntegralGauss3D, PreviousParticle] = plotTrace(traceFigAxes, ...
             FrameInfo, CurrentChannel, PreviousChannel, ...
     CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFit, anaphaseInMins,...
     ElapsedTime, schnitzcells, Particles, plot3DGauss, anaphase,prophase, metaphase, prophaseInMins, metaphaseInMins,Prefix, ...
     DefaultDropboxFolder, numFrames, CurrentFrame, ZSlices, CurrentZ, Spots, ...
-    correspondingNCInfo, fit1E, Coefficients, spotAdded, Frames, AmpIntegral, GaussIntegral, AmpIntegral3, ...
+    correspondingNCInfo, fit1E, Coefficients, ExperimentType, Frames, AmpIntegral, GaussIntegral, AmpIntegral3, ...
     AmpIntegral5, ErrorIntegral, ErrorIntegral3, ErrorIntegral5, backGround3, ...
     AmpIntegralGauss3D, ErrorIntegralGauss3D)
 %PLOTTRACE Summary of this function goes here
@@ -14,14 +14,17 @@ function [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ...
 numParticles = length(Particles{CurrentChannel});
 
 %Only update the trace information if we have switched particles
-if (CurrentParticle~=PreviousParticle)||~exist('AmpIntegral', 'var')||(CurrentChannel~=PreviousChannel) || lastParticle || spotAdded
+if (CurrentParticle~=PreviousParticle)||~exist('AmpIntegral', 'var')||(CurrentChannel~=PreviousChannel) || lastParticle
     PreviousParticle=CurrentParticle;
     [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ...
         ErrorIntegral, ErrorIntegral3, ErrorIntegral5,backGround3, ...
         AmpIntegralGauss3D, ErrorIntegralGauss3D]= ...
         PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
-        spotAdded = false;
 end
+
+cla(traceFigAxes, 'reset');
+%we'll plot the spot intensity first on the left axis.
+yyaxis(traceFigAxes,'left')
 
 if ~lineFit
     traceFigTimeAxis = Frames;
@@ -123,6 +126,21 @@ else
     xlabel(traceFigAxes,'time since anaphase (min)')
 end
 
+if strcmpi(ExperimentType, 'inputoutput')
+    %now we'll plot the input protein intensity on the right-hand axis.
+    yyaxis(traceFigAxes,'right')
+    plot(traceFigAxes,schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames,...
+        max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).Fluo,[],2),'r.-')
+    try
+        xlim(traceFigAxes,[min(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames),max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames)])
+    catch
+        %             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
+    end
+    ylabel(traceFigAxes,'input protein intensity (a.u.)');
+    hold(traceFigAxes,'on')
+    plot(traceFigAxes,Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
+    hold(traceFigAxes,'off')
+end
 
 firstLine = ['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)];
 secondLine = ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),'    ',num2str(round(FrameInfo(CurrentFrame).Time)), 's'];

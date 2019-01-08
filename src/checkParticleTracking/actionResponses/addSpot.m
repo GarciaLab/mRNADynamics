@@ -1,4 +1,4 @@
-function [numParticles, SpotFilter, Particles, Spots, spotAdded] =...
+function [numParticles, SpotFilter, Particles, Spots, PreviousParticle] =...
     addSpot(ZoomMode, GlobalZoomMode, Particles, CurrentChannel, ...
     CurrentParticle, CurrentFrame, CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
     LinesPerFrame, Spots, ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
@@ -7,6 +7,7 @@ function [numParticles, SpotFilter, Particles, Spots, spotAdded] =...
 %   Detailed explanation goes here
 
 %Check that we're in zoom mode. If not, set it up.
+PreviousParticle = 0; % resets particle so trace will refresh
 if ~(ZoomMode || GlobalZoomMode)
     disp('You need to be in Zoom Mode to do this. You can switch using ''o'' or ''+''. Run the ''['' command again.')
 else
@@ -271,11 +272,7 @@ else
                     disp('Re-run TrackmRNADynamics to associate this particle with a nucleus.')
                 end
 
-                %Finally, force the code to recalculate the fluorescence trace
-                %for this particle
-                PreviousParticle=0;
                 disp('Spot addded to the current particle.')
-                spotAdded = true;
             else
                 warning('You clicked too close to the edge. A spot can''t be added here.');
                 msgbox('You clicked too close to the edge. A spot can''t be added here.');
