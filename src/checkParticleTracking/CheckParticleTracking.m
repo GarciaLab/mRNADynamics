@@ -120,6 +120,8 @@ warning('off','MATLAB:mir_warning_maybe_uninitialized_temporary')
 schnitzcells = [];
 Ellipses = [];
 correspondingNCInfo = [];
+xForZoom = 0;
+yForZoom = 0;
 
 
 %% Information about about folders
@@ -485,67 +487,63 @@ rawDataAxes =subplot(1, 3, 2, 'Parent', snipFig);
 gaussianAxes =subplot(1, 3, 3, 'Parent', snipFig);
 
 %Define the windows
-set(Overlay,'units', 'normalized', 'position',[0.01, .45, .94, .33]);
-set(Overlay, 'units', 'pixels');
-set(Overlay, 'units', 'normalized');
+
+set(Overlay,'units', 'normalized', 'position', [0.01, .45, .82, .33]);
+
 if UseHistoneOverlay
     set(HisOverlayFig,'units', 'normalized', 'position',[0.01, 0.1, .33, .33]);
 end
-set(overlayAxes,'position',[-.25  .06 .9 .9])
-set(traceFigAxes,'position',[.44  .17 .37 .63])
+
+set(overlayAxes,'units', 'normalized', 'position', [-.25 .06 .9 .9])
+set(traceFigAxes,'units', 'normalized', 'position', [.48 .17 .48 .63])
 set(snipFig,'units', 'normalized', 'position',[0.355, 0.15, 3*(.2/2), .33/2]);
 set(zFig,'units', 'normalized', 'position',[0.67, 0.15, .2, .33/2]);
 
 %Define user interface
 [controls, frame_num, z_num, particle_num, ...
     add_spot, smart_add_spot, delete_spot] = setupControls(Overlay);
-
+set(0, 'CurrentFigure', Overlay);
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
 robot = Robot;
 fake_event = KeyEvent.VK_T;
 no_clicking = false;
 
-frame_num.KeyPressFcn = @frame_num_changed;
-    function frame_num_changed(~, event)
-        if strcmp(event.Key, 'return')
-            set(frame_num, 'Enable', 'off');
-            drawnow
-            set(frame_num, 'Enable', 'on');
-            numValidFrames = length({Spots{1}.Fits});
-            [CurrentFrame, ManualZFlag] = changeFrame(str2double(frame_num.String), numValidFrames);
-            robot.keyPress(fake_event);
-            robot.keyRelease(fake_event);
-        end
+frame_num.ValueChangedFcn = @frame_num_changed;
+    function frame_num_changed(~, ~)
+
+        figure(Overlay);
+        numValidFrames = length({Spots{1}.Fits});
+        [CurrentFrame, ManualZFlag] = changeFrame(str2double(frame_num.Value), numValidFrames);
+        %pause(0.5);
+        robot.keyPress(fake_event);
+        robot.keyRelease(fake_event);
     end
 
-z_num.KeyPressFcn = @z_num_changed;
-    function z_num_changed(~, event)
-        if strcmp(event.Key, 'return')
-            set(z_num, 'Enable', 'off');
-            drawnow
-            set(z_num, 'Enable', 'on');
-            [CurrentZ,ManualZFlag] = changeZSlice(str2double(z_num.String), ZSlices);
-            robot.keyPress(fake_event);
-            robot.keyRelease(fake_event);
-        end
+z_num.ValueChangedFcn = @z_num_changed;
+    function z_num_changed(~,~)
+
+        figure(Overlay);
+        [CurrentZ,ManualZFlag] = changeZSlice(str2double(z_num.Value), ZSlices);
+        robot.keyPress(fake_event);
+        robot.keyRelease(fake_event);
+
     end
 
-particle_num.KeyPressFcn = @particle_num_changed;
-    function particle_num_changed(~, event)
-        if strcmp(event.Key, 'return')
-            set(particle_num, 'Enable', 'off');
-            drawnow
-            set(particle_num, 'Enable', 'on');
-            [CurrentParticle,CurrentFrame, ManualZFlag] = changeParticle(...
-                str2double(particle_num.String), Particles, numParticles, CurrentChannel);
-            robot.keyPress(fake_event);
-            robot.keyRelease(fake_event);
-        end
+particle_num.ValueChangedFcn = @particle_num_changed;
+    function particle_num_changed(~, ~)
+
+        figure(Overlay);
+        [CurrentParticle,CurrentFrame, ManualZFlag] = changeParticle(...
+            str2double(particle_num.Value), Particles, numParticles, CurrentChannel);
+        robot.keyPress(fake_event);
+        robot.keyRelease(fake_event);
+
     end
 
-add_spot.Callback = @add_spot_pushed;
+add_spot.ButtonPushedFcn = @add_spot_pushed;
     function add_spot_pushed(~,~)
+        figure(Overlay);
         smart_add = '{';
         if smart_add_spot.Value
             smart_add = '[';
@@ -559,25 +557,22 @@ add_spot.Callback = @add_spot_pushed;
             CurrentParticle, CurrentFrame, CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
             LinesPerFrame, Spots, ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
             SpotFilter, numParticles, smart_add, xSize, ySize, NDigits, intScale);
-        set(add_spot, 'Enable', 'off');
-        drawnow
-        set(add_spot, 'Enable', 'on');
+
         robot.keyPress(fake_event);
         robot.keyRelease(fake_event);
         no_clicking = false;
     end
 
-delete_spot.Callback = @delete_spot_pushed;
+delete_spot.ButtonPushedFcn = @delete_spot_pushed;
     function delete_spot_pushed(~,~)
         no_clicking = true;
+        figure(Overlay);
         [Spots, SpotFilter, ZoomMode, GlobalZoomMode, CurrentFrame, ...
             CurrentParticle, Particles, ManualZFlag, DisplayRange, lastParticle, PreviousParticle] =...
             removeSpot(ZoomMode, GlobalZoomMode, Frames, CurrentFrame, ...
             CurrentChannel, CurrentParticle, CurrentParticleIndex, Particles, Spots, SpotFilter, ...
             numParticles, ManualZFlag, DisplayRange, lastParticle, PreviousParticle);
-        set(delete_spot, 'Enable', 'off');
-        drawnow
-        set(delete_spot, 'Enable', 'on');
+
         robot.keyPress(fake_event);
         robot.keyRelease(fake_event);
         no_clicking = false;
@@ -695,7 +690,8 @@ while (cc~='x')
     end
     
     set(0, 'CurrentFigure', Overlay);
-    imshow(Image,DisplayRangeSpot,'Border','Tight','Parent',overlayAxes, 'InitialMagnification', 'fit')
+    imshow(Image,DisplayRangeSpot,'Border','Tight','Parent',overlayAxes, ...
+        'InitialMagnification', 'fit')
     hold(overlayAxes,'on')
     
     if UseHistoneOverlay
@@ -703,11 +699,11 @@ while (cc~='x')
             FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,NDigits),'.tif'];
         HisPath2 = [PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
             FilePrefix(1:end-1),'_His_',iIndex(CurrentFrame,NDigits),'.tif'];
-        ImageHis = plotFrame(overlayAxes, Image, SpeedMode, FrameInfo, Particles, ...
+        [ImageHis, xForZoom, yForZoom] = plotFrame(overlayAxes, Image, SpeedMode, FrameInfo, Particles, ...
             Spots, CurrentFrame, ShowThreshold2, ...
             Overlay, CurrentChannel, CurrentParticle, ZSlices, CurrentZ, numFrames, ...
             schnitzcells, UseSchnitz, DisplayRange, Ellipses, SpotFilter, ZoomMode, GlobalZoomMode, ...
-            ZoomRange,UseHistoneOverlay, HisOverlayFigAxes, HisPath1, HisPath2);
+            ZoomRange,xForZoom,yForZoom,UseHistoneOverlay, HisOverlayFigAxes, HisPath1, HisPath2);
 
     else
         plotFrame(overlayAxes, Image, SpeedMode, ...
@@ -806,23 +802,23 @@ while (cc~='x')
     % UPDATE UICONTROLS
     updateControls(frame_num, z_num, particle_num, CurrentFrame, CurrentZ, CurrentParticle);
     
-    set(0, 'CurrentFigure', Overlay)
+    set(0, 'CurrentFigure', Overlay);
     if isempty(SkipWaitForButtonPress)
-        ct=waitforbuttonpress; % ct=0 for click and ct=1 for keypress
-        cc=get(Overlay,'currentcharacter');
-        cm=get(Overlay,'CurrentPoint');
+        ct = waitforbuttonpress; % ct=0 for click and ct=1 for keypress
+        cc = get(Overlay, 'CurrentCharacter');
         cm2 = get(overlayAxes, 'CurrentPoint');
+           
         current_axes = get(Overlay, 'CurrentAxes');
         if strcmpi(cc, '') || ct == 0
             cc = 'donothing';
         end
         is_control = isa(get(Overlay, 'CurrentObject'), 'matlab.ui.control.UIControl');
-        if ct == 0 && cm(1) < xSize && current_axes == overlayAxes...
-                && ~no_clicking && cm(1) < 0.6 && ~is_control
+        if ct == 0 && cm2(1,1) < xSize && current_axes == overlayAxes...
+                && ~no_clicking && ~is_control
             
             [CurrentParticle, CurrentFrame, ManualZFlag] = toNearestParticle(Spots, ...
             Particles, CurrentFrame, CurrentChannel, UseHistoneOverlay, ...
-            schnitzcells, [cm2(1,1) cm2(2,2)]);
+            schnitzcells, [cm2(1,1), cm2(2,2)]);
         end
     else
         cc=SkipWaitForButtonPress;
