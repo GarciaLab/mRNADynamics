@@ -6,6 +6,8 @@ function [numParticles, SpotFilter, Particles, Spots, PreviousParticle] =...
 %ADDSPOT Summary of this function goes here
 %   Detailed explanation goes here
 
+zStep = FrameInfo(1).ZStep;
+
 %Check that we're in zoom mode. If not, set it up.
 PreviousParticle = 0; % resets particle so trace will refresh
 if ~(ZoomMode || GlobalZoomMode)
