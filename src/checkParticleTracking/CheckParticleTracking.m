@@ -120,6 +120,7 @@ warning('off','MATLAB:mir_warning_maybe_uninitialized_temporary')
 schnitzcells = [];
 Ellipses = [];
 correspondingNCInfo = [];
+IntegrationArea=[]; %Initialized here to avoid dynamic assignment later in function
 
 
 %% Information about about folders

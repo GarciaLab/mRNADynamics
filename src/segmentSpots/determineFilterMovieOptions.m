@@ -27,7 +27,7 @@ function [displayFigures, numFrames, initialFrame, customFilter, highPrecision, 
     if strcmpi(varargin{i}, 'displayFigures')
       displayFigures = 1;
 
-    elseif strcmp(varargin{i}, 'Frames') || strcmpi(varargin{i}, 'LastFrame')
+    elseif strcmp(varargin{i}, 'Frames') | strcmpi(varargin{i}, 'LastFrame')
 
       if ~ isnumeric(varargin{i + 1})
         error('Wrong input parameters. After ''Frames'' you should input the number of frames')
