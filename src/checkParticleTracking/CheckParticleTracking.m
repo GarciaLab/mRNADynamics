@@ -99,6 +99,8 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % 0 Enter debug mode to fix things manually
 % ~ Switch figure 1 from a single plane image to a z or time projection.
 % 3 Fits a line to the polymerase loading regime of the trace.
+% F Start a fitting mode for the single trace (in the current particle).
+% (in progress)
 %
 % OUTPUT
 % Particles: A modified Particles
@@ -121,6 +123,9 @@ schnitzcells = [];
 Ellipses = [];
 correspondingNCInfo = [];
 IntegrationArea=[]; %Initialized here to avoid dynamic assignment later in function
+
+xForZoom = 0;
+yForZoom = 0;
 
 
 %% Information about about folders
@@ -486,67 +491,63 @@ rawDataAxes =subplot(1, 3, 2, 'Parent', snipFig);
 gaussianAxes =subplot(1, 3, 3, 'Parent', snipFig);
 
 %Define the windows
-set(Overlay,'units', 'normalized', 'position',[0.01, .45, .94, .33]);
-set(Overlay, 'units', 'pixels');
-set(Overlay, 'units', 'normalized');
+
+set(Overlay,'units', 'normalized', 'position', [0.01, .45, .82, .33]);
+
 if UseHistoneOverlay
     set(HisOverlayFig,'units', 'normalized', 'position',[0.01, 0.1, .33, .33]);
 end
-set(overlayAxes,'position',[-.25  .06 .9 .9])
-set(traceFigAxes,'position',[.44  .17 .37 .63])
+
+set(overlayAxes,'units', 'normalized', 'position', [-.25 .06 .9 .9])
+set(traceFigAxes,'units', 'normalized', 'position', [.48 .17 .48 .63])
 set(snipFig,'units', 'normalized', 'position',[0.355, 0.15, 3*(.2/2), .33/2]);
 set(zFig,'units', 'normalized', 'position',[0.67, 0.15, .2, .33/2]);
 
 %Define user interface
 [controls, frame_num, z_num, particle_num, ...
-    add_spot, smart_add_spot, delete_spot] = setupControls(Overlay);
-
+    add_spot, smart_add_spot, delete_spot, ...
+    fit_spot, averagingLength] = setupControls(Overlay);
+set(0, 'CurrentFigure', Overlay);
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
 robot = Robot;
 fake_event = KeyEvent.VK_T;
 no_clicking = false;
 
-frame_num.KeyPressFcn = @frame_num_changed;
-    function frame_num_changed(~, event)
-        if strcmp(event.Key, 'return')
-            set(frame_num, 'Enable', 'off');
-            drawnow
-            set(frame_num, 'Enable', 'on');
-            numValidFrames = length({Spots{1}.Fits});
-            [CurrentFrame, ManualZFlag] = changeFrame(str2double(frame_num.String), numValidFrames);
-            robot.keyPress(fake_event);
-            robot.keyRelease(fake_event);
-        end
+frame_num.ValueChangedFcn = @frame_num_changed;
+    function frame_num_changed(~, ~)
+
+        figure(Overlay);
+        numValidFrames = length({Spots{1}.Fits});
+        [CurrentFrame, ManualZFlag] = changeFrame(str2double(frame_num.Value), numValidFrames);
+        robot.keyPress(fake_event);
+        robot.keyRelease(fake_event);
     end
 
-z_num.KeyPressFcn = @z_num_changed;
-    function z_num_changed(~, event)
-        if strcmp(event.Key, 'return')
-            set(z_num, 'Enable', 'off');
-            drawnow
-            set(z_num, 'Enable', 'on');
-            [CurrentZ,ManualZFlag] = changeZSlice(str2double(z_num.String), ZSlices);
-            robot.keyPress(fake_event);
-            robot.keyRelease(fake_event);
-        end
+z_num.ValueChangedFcn = @z_num_changed;
+    function z_num_changed(~,~)
+
+        figure(Overlay);
+        [CurrentZ,ManualZFlag] = changeZSlice(str2double(z_num.Value), ZSlices);
+        robot.keyPress(fake_event);
+        robot.keyRelease(fake_event);
+
     end
 
-particle_num.KeyPressFcn = @particle_num_changed;
-    function particle_num_changed(~, event)
-        if strcmp(event.Key, 'return')
-            set(particle_num, 'Enable', 'off');
-            drawnow
-            set(particle_num, 'Enable', 'on');
-            [CurrentParticle,CurrentFrame, ManualZFlag] = changeParticle(...
-                str2double(particle_num.String), Particles, numParticles, CurrentChannel);
-            robot.keyPress(fake_event);
-            robot.keyRelease(fake_event);
-        end
+particle_num.ValueChangedFcn = @particle_num_changed;
+    function particle_num_changed(~, ~)
+
+        figure(Overlay);
+        [CurrentParticle,CurrentFrame, ManualZFlag] = changeParticle(...
+            str2double(particle_num.Value), Particles, numParticles, CurrentChannel);
+        robot.keyPress(fake_event);
+        robot.keyRelease(fake_event);
+
     end
 
-add_spot.Callback = @add_spot_pushed;
+add_spot.ButtonPushedFcn = @add_spot_pushed;
     function add_spot_pushed(~,~)
+        figure(Overlay);
         smart_add = '{';
         if smart_add_spot.Value
             smart_add = '[';
@@ -555,34 +556,74 @@ add_spot.Callback = @add_spot_pushed;
         PathPart2 = [nameSuffix,'.tif'];
         Path3 = [PreProcPath,filesep,Prefix,filesep,Prefix];
         no_clicking = true;
-        [numParticles, SpotFilter, Particles, Spots] =...
+        [numParticles, SpotFilter, Particles, Spots, PreviousParticle] =...
             addSpot(ZoomMode, GlobalZoomMode, Particles, CurrentChannel, ...
             CurrentParticle, CurrentFrame, CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
             LinesPerFrame, Spots, ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
             SpotFilter, numParticles, smart_add, xSize, ySize, NDigits, intScale);
-        set(add_spot, 'Enable', 'off');
-        drawnow
-        set(add_spot, 'Enable', 'on');
+
         robot.keyPress(fake_event);
         robot.keyRelease(fake_event);
         no_clicking = false;
     end
 
-delete_spot.Callback = @delete_spot_pushed;
+delete_spot.ButtonPushedFcn = @delete_spot_pushed;
     function delete_spot_pushed(~,~)
         no_clicking = true;
+        figure(Overlay);
         [Spots, SpotFilter, ZoomMode, GlobalZoomMode, CurrentFrame, ...
             CurrentParticle, Particles, ManualZFlag, DisplayRange, lastParticle, PreviousParticle] =...
             removeSpot(ZoomMode, GlobalZoomMode, Frames, CurrentFrame, ...
             CurrentChannel, CurrentParticle, CurrentParticleIndex, Particles, Spots, SpotFilter, ...
             numParticles, ManualZFlag, DisplayRange, lastParticle, PreviousParticle);
-        set(delete_spot, 'Enable', 'off');
-        drawnow
-        set(delete_spot, 'Enable', 'on');
+
         robot.keyPress(fake_event);
         robot.keyRelease(fake_event);
         no_clicking = false;
     end
+
+% The part below is added by Yang Joon Kim, for single MS2 trace linear
+% fitting (for the inital slope). Contact yjkim90@berkeley.edu for further
+% discussion or improvement.
+% Define the averaging window
+averagingLength.ValueChangedFcn = @averagingLength_changed;
+    function averagingLength_changed(~,~)
+        averagingLength = str2double(averagingLength.Value);
+        robot.keyPress(fake_event);
+        robot.keyRelease(fake_event);
+
+    end
+
+% Fit the initial slope, by clicking two points, you can define the window
+% for fitting.
+fit_spot.ButtonPushedFcn = @fit_spot_pushed;
+    function fit_spot_pushed(~,~)
+        figure(Overlay);
+        
+        % define the Frames for fitting
+        [X,Y] = ginput(2); % pick two points (left, and right)
+        pos1 = Frames(find((Frames-X(1)).^2 == min((Frames-X(1)).^2)));
+        pos2 = Frames(find((Frames-X(2)).^2 == min((Frames-X(2)).^2)));
+        posIndex1 = find((Frames-X(1)).^2 == min((Frames-X(1)).^2));
+        posIndex2 = find((Frames-X(2)).^2 == min((Frames-X(2)).^2));
+        FramesToFit = [pos1:pos2]; % actual frames numbers used for linear fitting
+        FrameIndicesToFit = [posIndex1:posIndex2]; % indices of those frames in the trace
+        
+    [lineFit, Coefficients, fit1E, Particles] =...
+        fitInitialSlope(CurrentParticle, Particles, Spots, CurrentChannel, schnitzcells, ...
+        ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, Frames, anaphase, ...
+        averagingLength, FramesToFit, FrameIndicesToFit)
+    end
+
+% At this moment, averagingLength should be defined before clicking the
+% ManualFit button.
+% averagingLength.ValueChangedFcn = @averagingLength_changed;
+%     function averagingLength_changed(~,~)
+%         averagingLength = N;
+%         robot.keyPress(fake_event);
+%         robot.keyRelease(fake_event);
+% 
+%     end
 
 cc=1;
 
@@ -696,7 +737,8 @@ while (cc~='x')
     end
     
     set(0, 'CurrentFigure', Overlay);
-    imshow(Image,DisplayRangeSpot,'Border','Tight','Parent',overlayAxes, 'InitialMagnification', 'fit')
+    imshow(Image,DisplayRangeSpot,'Border','Tight','Parent',overlayAxes, ...
+        'InitialMagnification', 'fit')
     hold(overlayAxes,'on')
     
     if UseHistoneOverlay
@@ -704,18 +746,18 @@ while (cc~='x')
             FilePrefix(1:end-1),'-His_',iIndex(CurrentFrame,NDigits),'.tif'];
         HisPath2 = [PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
             FilePrefix(1:end-1),'_His_',iIndex(CurrentFrame,NDigits),'.tif'];
-        ImageHis = plotFrame(overlayAxes, Image, SpeedMode, FrameInfo, Particles, ...
+        [ImageHis, xForZoom, yForZoom] = plotFrame(overlayAxes, Image, SpeedMode, FrameInfo, Particles, ...
             Spots, CurrentFrame, ShowThreshold2, ...
             Overlay, CurrentChannel, CurrentParticle, ZSlices, CurrentZ, numFrames, ...
             schnitzcells, UseSchnitz, DisplayRange, Ellipses, SpotFilter, ZoomMode, GlobalZoomMode, ...
-            ZoomRange,UseHistoneOverlay, HisOverlayFigAxes, HisPath1, HisPath2);
+            ZoomRange,xForZoom,yForZoom,UseHistoneOverlay, HisOverlayFigAxes, HisPath1, HisPath2);
 
     else
         plotFrame(overlayAxes, Image, SpeedMode, ...
             FrameInfo, Particles, Spots, CurrentFrame, ShowThreshold2, ...
             Overlay, CurrentChannel, CurrentParticle, ZSlices, CurrentZ, numFrames, ...
             schnitzcells, UseSchnitz, DisplayRange, Ellipses, SpotFilter, ...
-            ZoomMode, GlobalZoomMode, ZoomRange, UseHistoneOverlay);
+            ZoomMode, GlobalZoomMode, ZoomRange,xForZoom,yForZoom,UseHistoneOverlay);
     end
     
     if ~isempty(xTrace)
@@ -753,42 +795,28 @@ while (cc~='x')
     end
     
     % PLOTS TRACE OF CURRENT PARTICLE
-    if strcmp(ExperimentType, 'inputoutput')
-        if exist('Amp', 'var')
-            [Frames,Amp, PreviousParticle] = plotTraceInputOutput(traceFigAxes, ...
-                FrameInfo, CurrentChannel, PreviousChannel, ...
-                CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, ...
-                schnitzcells, Particles, numFrames, CurrentFrame, ZSlices, CurrentZ, Spots, ...
-                Frames, Amp);
-        else
-            [Frames,Amp, PreviousParticle] = plotTraceInputOutput(traceFigAxes, ...
-                FrameInfo, CurrentChannel, PreviousChannel, ...
-                CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, ...
-                schnitzcells, Particles, numFrames, CurrentFrame, ZSlices, CurrentZ, Spots);
-        end
+    if exist('AmpIntegral', 'var')
+        [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ...
+            ErrorIntegral, ErrorIntegral3, ErrorIntegral5,backGround3, ...
+            AmpIntegralGauss3D, ErrorIntegralGauss3D, PreviousParticle] = plotTrace(traceFigAxes, ...
+            FrameInfo, CurrentChannel, PreviousChannel, ...
+        CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFit, anaphaseInMins, ...
+        ElapsedTime, schnitzcells, Particles, plot3DGauss, anaphase, prophase, metaphase,prophaseInMins, metaphaseInMins,Prefix, ...
+        DefaultDropboxFolder, numFrames, CurrentFrame, ZSlices, CurrentZ, Spots, ...
+        correspondingNCInfo, fit1E, Coefficients, ExperimentType, Frames, AmpIntegral, ...
+        GaussIntegral, AmpIntegral3, AmpIntegral5, ErrorIntegral, ErrorIntegral3, ...
+        ErrorIntegral5, backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D);
     else
-        if exist('AmpIntegral', 'var')
-            [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ...
-                ErrorIntegral, ErrorIntegral3, ErrorIntegral5,backGround3, ...
-                AmpIntegralGauss3D, ErrorIntegralGauss3D, PreviousParticle] = plotTrace(traceFigAxes, ...
-                FrameInfo, CurrentChannel, PreviousChannel, ...
-            CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFit, anaphaseInMins, ...
-            ElapsedTime, schnitzcells, Particles, plot3DGauss, anaphase, prophase, metaphase,prophaseInMins, metaphaseInMins,Prefix, ...
-            DefaultDropboxFolder, numFrames, CurrentFrame, ZSlices, CurrentZ, Spots, ...
-            correspondingNCInfo, fit1E, Coefficients, Frames, AmpIntegral, ...
-            GaussIntegral, AmpIntegral3, AmpIntegral5, ErrorIntegral, ErrorIntegral3, ...
-            ErrorIntegral5, backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D);
-        else
-            [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ...
-                ErrorIntegral, ErrorIntegral3, ErrorIntegral5,backGround3, ...
-                AmpIntegralGauss3D, ErrorIntegralGauss3D, PreviousParticle] = plotTrace(traceFigAxes, ...
-                FrameInfo, CurrentChannel, PreviousChannel, ...
-            CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFit, anaphaseInMins, ...
-            ElapsedTime, schnitzcells, Particles, plot3DGauss, anaphase,prophase, metaphase, prophaseInMins, metaphaseInMins,Prefix, ...
-            DefaultDropboxFolder, numFrames, CurrentFrame, ZSlices, CurrentZ, Spots, ...
-            correspondingNCInfo, fit1E, Coefficients);
-        end 
-    end
+        [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ...
+            ErrorIntegral, ErrorIntegral3, ErrorIntegral5,backGround3, ...
+            AmpIntegralGauss3D, ErrorIntegralGauss3D, PreviousParticle] = plotTrace(traceFigAxes, ...
+            FrameInfo, CurrentChannel, PreviousChannel, ...
+        CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFit, anaphaseInMins, ...
+        ElapsedTime, schnitzcells, Particles, plot3DGauss, anaphase,prophase, metaphase, prophaseInMins, metaphaseInMins,Prefix, ...
+        DefaultDropboxFolder, numFrames, CurrentFrame, ZSlices, CurrentZ, Spots, ...
+        correspondingNCInfo, fit1E, Coefficients, ExperimentType);
+    end 
+
     
 
     % PLOT Z SLICE RELATED FIGURES
@@ -807,23 +835,23 @@ while (cc~='x')
     % UPDATE UICONTROLS
     updateControls(frame_num, z_num, particle_num, CurrentFrame, CurrentZ, CurrentParticle);
     
-    set(0, 'CurrentFigure', Overlay)
+    set(0, 'CurrentFigure', Overlay);
     if isempty(SkipWaitForButtonPress)
-        ct=waitforbuttonpress; % ct=0 for click and ct=1 for keypress
-        cc=get(Overlay,'currentcharacter');
-        cm=get(Overlay,'CurrentPoint');
+        ct = waitforbuttonpress; % ct=0 for click and ct=1 for keypress
+        cc = get(Overlay, 'CurrentCharacter');
         cm2 = get(overlayAxes, 'CurrentPoint');
+           
         current_axes = get(Overlay, 'CurrentAxes');
         if strcmpi(cc, '') || ct == 0
             cc = 'donothing';
         end
         is_control = isa(get(Overlay, 'CurrentObject'), 'matlab.ui.control.UIControl');
-        if ct == 0 && cm(1) < xSize && current_axes == overlayAxes...
-                && ~no_clicking && cm(1) < 0.6 && ~is_control
+        if ct == 0 && cm2(1,1) < xSize && current_axes == overlayAxes...
+                && ~no_clicking && ~is_control
             
             [CurrentParticle, CurrentFrame, ManualZFlag] = toNearestParticle(Spots, ...
             Particles, CurrentFrame, CurrentChannel, UseHistoneOverlay, ...
-            schnitzcells, [cm2(1,1) cm2(2,2)]);
+            schnitzcells, [cm2(1,1), cm2(2,2)]);
         end
     else
         cc=SkipWaitForButtonPress;
@@ -895,7 +923,7 @@ while (cc~='x')
         PathPart1 = [PreProcPath,filesep,FilePrefix(1:end-1),filesep,FilePrefix];
         PathPart2 = [nameSuffix,'.tif'];
         Path3 = [PreProcPath,filesep,Prefix,filesep,Prefix];
-        [numParticles, SpotFilter, Particles, Spots] =...
+        [numParticles, SpotFilter, Particles, Spots,PreviousParticle] =...
             addSpot(ZoomMode, GlobalZoomMode, Particles, CurrentChannel, ...
             CurrentParticle, CurrentFrame, CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
             LinesPerFrame, Spots, ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
@@ -1029,9 +1057,17 @@ while (cc~='x')
         keyboard;
         
     elseif cc== '3'
-        [lineFit, Coefficients, fit1E] =...
+        [lineFit, Coefficients, fit1E, Particles] =...
             fitLine(CurrentParticle, Particles, Spots, CurrentChannel, schnitzcells, ...
-            ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, Frames);
+            ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, Frames, anaphase);
+%     elseif cc=='F'
+%     % This is for the initial slope fitting for individual MS2 traces
+%     % written by Yang Joon Kim (yjkim90@berkeley.edu)
+%     % Last updated : Jan/2019
+%     [lineFit, Coefficients, fit1E, Particles] =...
+%         fitInitialSlope(CurrentParticle, Particles, Spots, CurrentChannel, schnitzcells, ...
+%         ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, Frames, anaphase);
+
     end
 end
 

@@ -3,8 +3,8 @@ function Spots = fit3DGaussiansToAllSpots(prefix, varargin)
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
     Folder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder, Channel3] = readMovieDatabase(prefix);
 DataFolder=[DropboxFolder,filesep,prefix];
-load([DataFolder,filesep,'Spots.mat'])
-load([DataFolder,filesep,'FrameInfo.mat'])
+load([DataFolder,filesep,'Spots.mat'], 'Spots');
+load([DataFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
 
 displayFigures = 0;
 for i = 1:length(varargin)
@@ -81,25 +81,29 @@ for ch = 1:nCh
             %         snips3D = [snips3D, currentSnippet3D]; %#ok<*AGROW>
             if displayFigures
                 initial_params = [max(max(max(snip3D))), NaN,NaN, snipDepth + 1, width,offsetGuess];
-                [fits, intensity] = fitGaussian3D(snip3D, initial_params, zstep,'displayFigures');
+                [fits, intensity, ci95] = fitGaussian3D(snip3D, initial_params, zstep,'displayFigures');
             else
                 initial_params = [max(max(max(snip3D))), NaN,NaN, snipDepth + 1, width,offsetGuess];
-                    [fits, intensity] = fitGaussian3D(snip3D, initial_params, zstep);
+                    [fits, intensity, ci95] = fitGaussian3D(snip3D, initial_params, zstep);
             end
 
             x = fits(2) - snippet_size + xSpot;
             y = fits(3) - snippet_size + ySpot;
             z = fits(4) - snipDepth + bZ;
+            
+            dxLow = ci95(2, 1) - snippet_size + xSpot;
+            dxHigh = ci95(2, 2) - snippet_size + xSpot;
+            dyLow = ci95(3, 1) - snippet_size + ySpot;
+            dyHigh = ci95(3, 2) - snippet_size + ySpot;
+            dzLow = ci95(4, 1) - snipDepth + bZ;
+            dzHigh = ci95(4, 2) - snipDepth + bZ;
+            
             SpotsCh(frame).Fits(spot).GaussPos = [x,y,z];
+            SpotsCh(frame).Fits(spot).GaussPosCI95 = [dxLow,dxHigh; dyLow, dyHigh; dzLow, dzHigh];
             SpotsCh(frame).Fits(spot).fits3D = fits;
             SpotsCh(frame).Fits(spot).gauss3DIntensity = intensity;
+            SpotsCh(frame).Fits(spot).fits3DCI95 = ci95;
 
-            if displayFigures
-                
-%                 imshow(FullSlice,[])
-%                 hold on
-%                 plot(x,y,'ro'); %maybe? or maybe x,y
-            end
        end
     end
     

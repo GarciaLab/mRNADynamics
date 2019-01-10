@@ -5,7 +5,7 @@ function [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ...
     CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFit, anaphaseInMins,...
     ElapsedTime, schnitzcells, Particles, plot3DGauss, anaphase,prophase, metaphase, prophaseInMins, metaphaseInMins,Prefix, ...
     DefaultDropboxFolder, numFrames, CurrentFrame, ZSlices, CurrentZ, Spots, ...
-    correspondingNCInfo, fit1E, Coefficients, Frames, AmpIntegral, GaussIntegral, AmpIntegral3, ...
+    correspondingNCInfo, fit1E, Coefficients, ExperimentType, Frames, AmpIntegral, GaussIntegral, AmpIntegral3, ...
     AmpIntegral5, ErrorIntegral, ErrorIntegral3, ErrorIntegral5, backGround3, ...
     AmpIntegralGauss3D, ErrorIntegralGauss3D)
 %PLOTTRACE Summary of this function goes here
@@ -22,16 +22,25 @@ if (CurrentParticle~=PreviousParticle)||~exist('AmpIntegral', 'var')||(CurrentCh
         PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
 end
 
+%we'll plot the spot intensity first on the left axis.
+yyaxis(traceFigAxes,'left')
+
 if ~lineFit
     traceFigTimeAxis = Frames;
     cla(traceFigAxes)
 else
     ncPresent = unique(correspondingNCInfo(Frames));
     % below subtracts 8 because the first element corresponds to nc 9
-    priorAnaphaseInMins = anaphaseInMins(ncPresent(1)-8);
-    nucleusFirstFrame = ElapsedTime(...
-        schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames(1));
-    traceFigTimeAxis = ElapsedTime(Frames) - nucleusFirstFrame;
+    priorAnaphaseInMins = anaphaseInMins(ncPresent(1)-8); %min
+    priorAnaphase = anaphase(ncPresent(1)-8); %frame
+    if ~isempty(Particles{CurrentChannel}(CurrentParticle).Nucleus)
+        nucleusFirstFrame = ElapsedTime(...
+            schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames(1)); %min
+    else
+        nucleusFirstFrame = ElapsedTime(priorAnaphase); %min
+        warning('No nucleus assigned to this particle. Using anaphase from moviedatabase as the first timepoint.')
+    end
+    traceFigTimeAxis = ElapsedTime(Frames) - nucleusFirstFrame; %min
     if exist('traceErrorBar1','var')
         delete([traceErrorBar1,traceErrorBar2,cPoint1,cPoint2])
     end
@@ -116,6 +125,21 @@ else
     xlabel(traceFigAxes,'time since anaphase (min)')
 end
 
+if strcmpi(ExperimentType, 'inputoutput')
+    %now we'll plot the input protein intensity on the right-hand axis.
+    yyaxis(traceFigAxes,'right')
+    plot(traceFigAxes,schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames,...
+        max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).Fluo,[],2),'r.-')
+    try
+        xlim(traceFigAxes,[min(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames),max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames)])
+    catch
+        %             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
+    end
+    ylabel(traceFigAxes,'input protein intensity (a.u.)');
+    hold(traceFigAxes,'on')
+    plot(traceFigAxes,Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
+    hold(traceFigAxes,'off')
+end
 
 firstLine = ['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)];
 secondLine = ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),'    ',num2str(round(FrameInfo(CurrentFrame).Time)), 's'];

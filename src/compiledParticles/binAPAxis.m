@@ -1,9 +1,10 @@
-function [APbinID, APbinArea] = generateAPBin(APResolution, ...
+function [APbinID, APbinArea] = binAPAxis(APResolution, ...
     FrameInfo, coordAZoom, APAngle, APLength)
-%GENERATEAPBIN Summary of this function goes here
+%binAPAxis Summary of this function goes here
 %   Detailed explanation goes here
 
 APbinID=0:APResolution:1;
+
 %Create an image for the different AP bins
 APPosImage=zeros(FrameInfo(1).LinesPerFrame,FrameInfo(1).PixelsPerLine);
 [Rows,Columns]=size(APPosImage);

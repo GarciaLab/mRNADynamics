@@ -9,17 +9,18 @@ function fillFrameGaps(prefix, varargin)
 %Author: Emma Luu (emma_luu@berkeley.edu)
 %% Loading the data set of interest
 
-%[prefix,~] = getPrefixAndFolder; % in case the prefix above is not yours.
 intScale = 1; % for intScale option
 notAllNC = 0; % for desiredNC(s) option
-for currentParticle = 1:length(varargin)
-    if strcmp(varargin{currentParticle},'intScale')
-            intScale = varargin{currentParticle+1};
-    elseif strcmp(varargin{currentParticle}, 'desiredNC(s)')
+
+for i = 1:length(varargin)
+    if strcmp(varargin{i},'intScale')
+            intScale = varargin{i+1};
+    elseif strcmp(varargin{i}, 'desiredNC(s)')
             notAllNC = 1;
-            desiredNC = varargin{currentParticle+1};
+            desiredNC = varargin{i+1};
     end
 end
+
 display(['integration scaling factor: ', num2str(intScale)]);
 
 % getting folder information
@@ -108,8 +109,6 @@ if numberOfFrames<1E3
     NDigits=3;
 elseif numberOfFrames<1E4
     NDigits=4;
-else
-    error('No more than 10,000 frames supported. Change this in the code')
 end
 
 
@@ -387,7 +386,7 @@ if saving && ~isempty(particlesToDoubleCheck)
         SpotFilter=SpotFilter{1};
     end
      
-    save(particlePathName,'Particles','SpotFilter','Threshold1','Threshold2', '-v7.3')
+    save(particlePathName,'Particles','SpotFilter', '-v7.3')
     save(spotsPathName,'Spots','-v7.3')
     save(logFile,'log','-v7.3')
     % Note: did not use histone overlay so the _lin.mat file was not saved.

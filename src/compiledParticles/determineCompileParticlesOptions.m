@@ -53,7 +53,6 @@ else
             doSingleFits=1;
         elseif strcmpi(varargin{i},'ApproveAll')
             ApproveAll=1;
-            disp('Approved')
         elseif strcmpi(varargin{i},'noHist')
             noHist = 1;
         elseif strcmp(varargin{i},'MinParticles')
