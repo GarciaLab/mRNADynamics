@@ -112,7 +112,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % Created:
 % Last Updated: 1/13/2018
 
-close all
+delete(findall(0));
 
 
 warning('off','MATLAB:nargchk:deprecated')
@@ -1091,13 +1091,14 @@ else
     save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter', '-v7.3')
     save([DataFolder,filesep,'Spots.mat'],'Spots','-v7.3')
 end
-close all;
+delete(findall(0));
 disp('Particles saved.')
 disp(['(Left off at Particle #', num2str(CurrentParticle), ')'])
 
 if fit3DGauss
     plot3DGaussiansToAllSpots(Prefix);
 end
+
 %% Extra stuff that is useful in debug mode
 
 %Reset approve status of all approved particles in a certain nc
