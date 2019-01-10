@@ -22,7 +22,6 @@ if (CurrentParticle~=PreviousParticle)||~exist('AmpIntegral', 'var')||(CurrentCh
         PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
 end
 
-cla(traceFigAxes, 'reset');
 %we'll plot the spot intensity first on the left axis.
 yyaxis(traceFigAxes,'left')
 

@@ -516,7 +516,7 @@ frame_num.ValueChangedFcn = @frame_num_changed;
         figure(Overlay);
         numValidFrames = length({Spots{1}.Fits});
         [CurrentFrame, ManualZFlag] = changeFrame(str2double(frame_num.Value), numValidFrames);
-        %pause(0.5);
+
         robot.keyPress(fake_event);
         robot.keyRelease(fake_event);
     end
