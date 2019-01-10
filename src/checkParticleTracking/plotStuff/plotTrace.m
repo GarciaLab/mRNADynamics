@@ -25,6 +25,8 @@ end
 cla(traceFigAxes, 'reset');
 %we'll plot the spot intensity first on the left axis.
 yyaxis(traceFigAxes,'left')
+%we'll use this axis if there's a protein channel. 
+yyaxis(traceFigAxes,'right')
 
 if ~lineFit
     traceFigTimeAxis = Frames;
@@ -125,10 +127,8 @@ else
         ['fit slope: ', num2str(round(Coefficients(1))), ' a.u./min',newline,'time on: ',num2str(roots(Coefficients)), ' min'])
     xlabel(traceFigAxes,'time since anaphase (min)')
 end
-
 if strcmpi(ExperimentType, 'inputoutput')
     %now we'll plot the input protein intensity on the right-hand axis.
-    yyaxis(traceFigAxes,'right')
     plot(traceFigAxes,schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames,...
         max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).Fluo,[],2),'r.-')
     try
@@ -140,9 +140,11 @@ if strcmpi(ExperimentType, 'inputoutput')
     hold(traceFigAxes,'on')
     plot(traceFigAxes,Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
     hold(traceFigAxes,'off')
+else
+    traceFigAxes.YAxis(2).Visible = 'off'; 
 end
 
-firstLine = ['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)];
+firstLine = [Prefix,'    Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)];
 secondLine = ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),'    ',num2str(round(FrameInfo(CurrentFrame).Time)), 's'];
 thirdLine = ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)];
 
@@ -160,7 +162,7 @@ if HideApprovedFlag==1
 elseif HideApprovedFlag==2
     axisTitle=[axisTitle,', Showing disapproved particles'];
 end
-title(traceFigAxes,axisTitle)
+title(traceFigAxes,axisTitle, 'Interpreter', 'none')
     
 end
 
