@@ -99,6 +99,8 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % 0 Enter debug mode to fix things manually
 % ~ Switch figure 1 from a single plane image to a z or time projection.
 % 3 Fits a line to the polymerase loading regime of the trace.
+% F Start a fitting mode for the single trace (in the current particle).
+% (in progress)
 %
 % OUTPUT
 % Particles: A modified Particles
@@ -502,7 +504,8 @@ set(zFig,'units', 'normalized', 'position',[0.67, 0.15, .2, .33/2]);
 
 %Define user interface
 [controls, frame_num, z_num, particle_num, ...
-    add_spot, smart_add_spot, delete_spot] = setupControls(Overlay);
+    add_spot, smart_add_spot, delete_spot, ...
+    fit_spot, averagingLength] = setupControls(Overlay);
 set(0, 'CurrentFigure', Overlay);
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
@@ -516,7 +519,6 @@ frame_num.ValueChangedFcn = @frame_num_changed;
         figure(Overlay);
         numValidFrames = length({Spots{1}.Fits});
         [CurrentFrame, ManualZFlag] = changeFrame(str2double(frame_num.Value), numValidFrames);
-
         robot.keyPress(fake_event);
         robot.keyRelease(fake_event);
     end
@@ -578,6 +580,49 @@ delete_spot.ButtonPushedFcn = @delete_spot_pushed;
         robot.keyRelease(fake_event);
         no_clicking = false;
     end
+
+% The part below is added by Yang Joon Kim, for single MS2 trace linear
+% fitting (for the inital slope). Contact yjkim90@berkeley.edu for further
+% discussion or improvement.
+% Define the averaging window
+averagingLength.ValueChangedFcn = @averagingLength_changed;
+    function averagingLength_changed(~,~)
+        averagingLength = str2double(averagingLength.Value);
+        robot.keyPress(fake_event);
+        robot.keyRelease(fake_event);
+
+    end
+
+% Fit the initial slope, by clicking two points, you can define the window
+% for fitting.
+fit_spot.ButtonPushedFcn = @fit_spot_pushed;
+    function fit_spot_pushed(~,~)
+        figure(Overlay);
+        
+        % define the Frames for fitting
+        [X,Y] = ginput(2); % pick two points (left, and right)
+        pos1 = Frames(find((Frames-X(1)).^2 == min((Frames-X(1)).^2)));
+        pos2 = Frames(find((Frames-X(2)).^2 == min((Frames-X(2)).^2)));
+        posIndex1 = find((Frames-X(1)).^2 == min((Frames-X(1)).^2));
+        posIndex2 = find((Frames-X(2)).^2 == min((Frames-X(2)).^2));
+        FramesToFit = [pos1:pos2]; % actual frames numbers used for linear fitting
+        FrameIndicesToFit = [posIndex1:posIndex2]; % indices of those frames in the trace
+        
+    [lineFit, Coefficients, fit1E, Particles] =...
+        fitInitialSlope(CurrentParticle, Particles, Spots, CurrentChannel, schnitzcells, ...
+        ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, Frames, anaphase, ...
+        averagingLength, FramesToFit, FrameIndicesToFit)
+    end
+
+% At this moment, averagingLength should be defined before clicking the
+% ManualFit button.
+% averagingLength.ValueChangedFcn = @averagingLength_changed;
+%     function averagingLength_changed(~,~)
+%         averagingLength = N;
+%         robot.keyPress(fake_event);
+%         robot.keyRelease(fake_event);
+% 
+%     end
 
 cc=1;
 
@@ -1014,6 +1059,14 @@ while (cc~='x')
         [lineFit, Coefficients, fit1E, Particles] =...
             fitLine(CurrentParticle, Particles, Spots, CurrentChannel, schnitzcells, ...
             ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, Frames, anaphase);
+%     elseif cc=='F'
+%     % This is for the initial slope fitting for individual MS2 traces
+%     % written by Yang Joon Kim (yjkim90@berkeley.edu)
+%     % Last updated : Jan/2019
+%     [lineFit, Coefficients, fit1E, Particles] =...
+%         fitInitialSlope(CurrentParticle, Particles, Spots, CurrentChannel, schnitzcells, ...
+%         ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, Frames, anaphase);
+
     end
 end
 

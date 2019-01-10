@@ -4,7 +4,7 @@ function [lineFit, Coefficients, fit1E, Particles] =...
 %FITLINE Summary of this function goes here
 %   Detailed explanation goes here
 
-averagingLength = 3;
+averagingLength = 1;
 
  try
     lineFit = 1;
