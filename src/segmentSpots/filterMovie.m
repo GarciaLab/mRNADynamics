@@ -41,7 +41,7 @@
 %
 % 'customFilter': Choose which filter to use to segment the image. Name
 %                  should be a string, followed by a cell with your filter
-%                  or filters2018-09-20-pNos-FLP-7_embryo2_581power_2_0_Linear unmixing
+%                  or filters
 %                 ex. filterMovie(Prefix,'customFilter', 'Structure_largest', {1, 8})
 %           Filter Options:
 %               'Gaussian_blur''Median'
