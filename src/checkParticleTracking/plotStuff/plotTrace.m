@@ -35,7 +35,7 @@ else
     % below subtracts 8 because the first element corresponds to nc 9
     priorAnaphaseInMins = anaphaseInMins(ncPresent(1)-8); %min
     priorAnaphase = anaphase(ncPresent(1)-8); %frame
-    if ~isempty(Particles{CurrentChannel}(CurrentParticle).Nucleus)
+    if ~isempty(schnitzcells) && ~isempty(Particles{CurrentChannel}(CurrentParticle).Nucleus)
         nucleusFirstFrame = ElapsedTime(...
             schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames(1)); %min
     else
