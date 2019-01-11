@@ -98,19 +98,20 @@ function generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameS
   if sum(im(:)) ~= 0
 
     if strcmpi(filterType, 'Difference_of_Gaussian')
-      dog = filterImage(im, filterType, sigmas, filterSize);
+      tempDog = filterImage(im, filterType, sigmas, filterSize);
 
       if highPrecision
-        dog = (dog + 100) * 100;
+        dog = (tempDog + 100) * 10;
       end
 
     else
-      dog = (filterImage(im, filterType, sigmas, filterSize) + 100) * 100;
+      dog = (filterImage(im, filterType, sigmas, filterSize) + 100) * 10;
     end
 
   else
     dog = im;
   end
+
 
   dog = padarray(dog(filterSize:end - filterSize - 1, filterSize:end - filterSize - 1), [filterSize, filterSize]);
   dog_name = ['DOG_', Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(zIndex, 2), nameSuffix, '.tif'];
