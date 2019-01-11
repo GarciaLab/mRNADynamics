@@ -1,3 +1,11 @@
+% Prepares data from the full embryo images to run through the pipeline
+% using Tr2d to track nuclei. In order for this to work, there must be at
+% least two images for "surf," a set corresponding to each layer of a
+% z-stack and one maximum projection image created manually in FIJI. The
+% maximum projection image must be the last numbered image in the stack.
+% Paul Marchando
+% 1-04-2019
+
 function PrepareFullEmbryoDatForFISH(Prefix)
 
 %Get the folders, including the default Dropbox one
@@ -76,7 +84,7 @@ mkdir(OutputFolder)
 
 res_info = imfinfo([SourcePath '/' Prefix(1:10) '/' Prefix(12:end) '/' Prefix '_00' num2str(i) '_z0' num2str(m) '_ch01' '.tif']);
 
-%Generate FrameInfo
+% Generate FrameInfo
 FrameInfo = struct('LinesPerFrame', {}, 'PixelsPerLine', {}, ...
     'NumberSlices', {}, 'FileMode', {}, 'Time', {}, ...
     'PixelSize', {},'ZStep', {}, 'zPosition', {}, 'NChInput', {});
