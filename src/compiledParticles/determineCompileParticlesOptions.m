@@ -1,6 +1,6 @@
 function [Prefix, ForceAP, SkipTraces, SkipFluctuations, SkipFits, SkipMovie, ...
     SkipAll, ApproveAll, MinParticles, minTime, ROI, intArea, noHist, ...
-    doSingleFits, ROI1, ROI2] = determineCompileParticlesOptions(varargin)
+    doSingleFits, ROI1, ROI2, slimVersion] = determineCompileParticlesOptions(varargin)
 %DETERMINECOMPILEPARTICLESOPTIONS Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -21,6 +21,7 @@ ROI=0; % No ROI
 intArea = 109; %pixels. default for 220nm x 220nm zoom. for 70nm use 437 pixels. 
 noHist = 0; 
 doSingleFits = 0;
+slimVersion = 0;
 ROI1 = -1; % no ROI
 ROI2 = -1; % no ROI
 
@@ -81,6 +82,8 @@ else
                 ROI1=varargin{i+1};
                 ROI2=varargin{i+2};
             end
+        elseif strcmpi(varargin{i}, 'slimVersion')
+            slimVersion = 1;
         end
     end
     

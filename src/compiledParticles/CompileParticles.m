@@ -145,7 +145,7 @@ ncFilterID = [];
 
 [Prefix, ForceAP, SkipTraces, SkipFluctuations, SkipFits, SkipMovie, ...
     SkipAll, ApproveAll, MinParticles, minTime, ROI, intArea, noHist, ...
-    doSingleFits, ROI1, ROI2] = determineCompileParticlesOptions(varargin);
+    doSingleFits, ROI1, ROI2, slimVersion] = determineCompileParticlesOptions(varargin);
 
 FilePrefix=[Prefix,'_'];
 
@@ -218,8 +218,6 @@ else
     NChannels=1;
 end
 
-
-
 %Delete the files in folder where we'll write again.
 if ~SkipTraces
     delete([DropboxFolder,filesep,Prefix,filesep,'ParticleTraces',filesep,'*.*'])
@@ -227,8 +225,6 @@ end
 if ~SkipFits
     delete([DropboxFolder,filesep,Prefix,filesep,'Fits',filesep,'*.*'])
 end
-
-
 
 %See if we had any lineage/nuclear information
 if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file') && ~noHist
@@ -268,7 +264,6 @@ end
 NewCyclePos=[nc9,nc10,nc11,nc12,nc13,nc14];
 NewCyclePos=NewCyclePos(~(NewCyclePos==0));
 NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
-
 
 
 %Add the APPosition to Particles if they don't exist yet. Do this only if
@@ -355,24 +350,6 @@ if ApproveAll
     end
 end
 
-
-if HistoneChannel
-    for ChN=1:NChannels
-        %Get information about which particle is associated to which nucleus in
-        %schnitzcells
-        for i=1:length(Particles{ChN})
-            if ~isempty(Particles{ChN}(i).Nucleus)
-                AssignedNuclei{ChN}(i)=Particles{ChN}(i).Nucleus;
-            else
-                AssignedNuclei{ChN}(i)=nan;
-            end
-        end
-    end
-else
-    AssignedNuclei = {};
-end
-
-
 %First, figure out the AP position of each of the nuclei.
 if strcmpi(ExperimentAxis, 'AP') || strcmpi(ExperimentAxis, 'DV')
     %Load the AP detection information
@@ -447,7 +424,7 @@ end
     compileTraces(NChannels, Particles, HistoneChannel, ...
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
     Spots, SkipTraces, nc9, nc10, nc11, nc12, nc13, nc14, ncFilterID, ncFilter, ...
-    ElapsedTime, intArea, Ellipses, EllipsePos, AssignedNuclei, PreProcPath, ...
+    ElapsedTime, intArea, Ellipses, EllipsePos, PreProcPath, ...
     FilePrefix, Prefix, DropboxFolder, NDigits);
 
 %% ROI option
@@ -511,155 +488,156 @@ APFilter_ROI = []; APFilter_nonROI = []; DVFilter_ROI = []; DVFilter_nonROI = []
     DVFilter_nonROI, DVFilter);
 
 
-%% Instantaneous rate of change
+if ~slimVersion
+    %% Instantaneous rate of change
 
-[CompiledParticles, MeanSlopeVectorAP, SDSlopeVectorAP, NSlopeAP]...
-    = instantRateOfChange(NChannels, CompiledParticles, ElapsedTime, ...
-    ExperimentAxis, APFilter, MeanVectorAP, MeanSlopeVectorAP, ...
-    SDSlopeVectorAP, NSlopeAP);
+    [CompiledParticles, MeanSlopeVectorAP, SDSlopeVectorAP, NSlopeAP]...
+        = instantRateOfChange(NChannels, CompiledParticles, ElapsedTime, ...
+        ExperimentAxis, APFilter, MeanVectorAP, MeanSlopeVectorAP, ...
+        SDSlopeVectorAP, NSlopeAP);
 
-%% Integrating each particle
+    %% Integrating each particle
 
-CompiledParticles = integrateParticles(NChannels, ElapsedTime, CompiledParticles);
-
-
-%% Information about the cytoplasm
-%If the nuclear masks are present then use them. Otherwise just calculate
-%the median of the images as a function of time
-
-%HG on 8/6/16: Why was this commented out? Did I do this?
+    CompiledParticles = integrateParticles(NChannels, ElapsedTime, CompiledParticles);
 
 
-% if NChannels==1
-%
-%     if HistoneChannel&strcmpi(ExperimentAxis,'AP')
-%         [MeanCyto,SDCyto,MedianCyto,MaxCyto]=GetCytoMCP(Prefix);
-%     else
-%         MeanCyto=[];
-%         SDCyto=[];
-%         MaxCyto=[];
-%
-%         h=waitbar(0,'Calculating the median cyto intentisy');
-%         for i=1:numFrames
-%             waitbar(i/numFrames,h)
-%             for j=1:FrameInfo(1).NumberSlices
-%                 Image(:,:,j)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),'.tif']);
-%             end
-%             ImageMax=max(Image,[],3);
-%             MedianCyto(i)=median(double(ImageMax(:)));
-%         end
-%         close(h)
-%     end
-% else
-MeanCyto=[];
-SDCyto=[];
-MaxCyto=[];
-MedianCyto=[];
-% end
+    %% Information about the cytoplasm
+    %If the nuclear masks are present then use them. Otherwise just calculate
+    %the median of the images as a function of time
+
+    %HG on 8/6/16: Why was this commented out? Did I do this?
+
+
+    % if NChannels==1
+    %
+    %     if HistoneChannel&strcmpi(ExperimentAxis,'AP')
+    %         [MeanCyto,SDCyto,MedianCyto,MaxCyto]=GetCytoMCP(Prefix);
+    %     else
+    %         MeanCyto=[];
+    %         SDCyto=[];
+    %         MaxCyto=[];
+    %
+    %         h=waitbar(0,'Calculating the median cyto intentisy');
+    %         for i=1:numFrames
+    %             waitbar(i/numFrames,h)
+    %             for j=1:FrameInfo(1).NumberSlices
+    %                 Image(:,:,j)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),'.tif']);
+    %             end
+    %             ImageMax=max(Image,[],3);
+    %             MedianCyto(i)=median(double(ImageMax(:)));
+    %         end
+    %         close(h)
+    %     end
+    % else
+    MeanCyto=[];
+    SDCyto=[];
+    MaxCyto=[];
+    MedianCyto=[];
+    % end
 
 
 
 
-%% Offset and fluctuations
+    %% Offset and fluctuations
 
-[MeanOffsetVector, SDOffsetVector, NOffsetParticles] = offsetAndFlux(NChannels, ...
-    SkipFluctuations, ncFilter, ElapsedTime, CompiledParticles, DropboxFolder, ...
-    Prefix, ExperimentAxis, intArea, MeanVectorAll, SDVectorAll, MaxFrame, numFrames);
+    [MeanOffsetVector, SDOffsetVector, NOffsetParticles] = offsetAndFlux(NChannels, ...
+        SkipFluctuations, ncFilter, ElapsedTime, CompiledParticles, DropboxFolder, ...
+        Prefix, ExperimentAxis, intArea, MeanVectorAll, SDVectorAll, MaxFrame, numFrames);
 
-%% Rate of mRNA production
+    %% Rate of mRNA production
 
-CompiledParticles = mRNAProdRate(NChannels, CompiledParticles, ...
-    ncFilter, ElapsedTime, SkipFits, DropboxFolder, Prefix);
+    CompiledParticles = mRNAProdRate(NChannels, CompiledParticles, ...
+        ncFilter, ElapsedTime, SkipFits, DropboxFolder, Prefix);
 
 
-%% First frames
+    %% First frames
 
-firstFramesThing(NChannels, HistoneChannel, SkipAll, nc13, nc14, ...
-    CompiledParticles, DropboxFolder, Prefix, ElapsedTime, ExperimentAxis);
+    firstFramesThing(NChannels, HistoneChannel, SkipAll, nc13, nc14, ...
+        CompiledParticles, DropboxFolder, Prefix, ElapsedTime, ExperimentAxis);
 
-%% AP position of particle vs nucleus
+    %% AP position of particle vs nucleus
 
-if HistoneChannel&&strcmpi(ExperimentAxis,'AP')
-    CompiledParticles = APPosParticleVsNucleus(NChannels, ...
-        CompiledParticles, schnitzcells, EllipsePos, DropboxFolder, Prefix);
+    if HistoneChannel&&strcmpi(ExperimentAxis,'AP')
+        CompiledParticles = APPosParticleVsNucleus(NChannels, ...
+            CompiledParticles, schnitzcells, EllipsePos, DropboxFolder, Prefix);
+    end
+
+
+    %% Fitting shapes` to single traces (includes time on and initial rate of loading)
+    % This section of code is will fit line segments piece-wise to the
+    % single traces. fittedLineEquations correspond to the stored fitted lines
+    % of the particles, where the indexing is as follows:
+    % fittedLineEquations(particleNumber) with fields: Coefficients,
+    % ErrorEstimation, and frameIndex, which are described below. This currently
+    % does not support more than one channel. Please contact Emma to work on
+    % implementing it for two channels.
+    if doSingleFits
+        [CompiledParticles, fittedLineEquations] = fitShapesToTraces(Prefix, ...
+            Particles, schnitzcells, FrameInfo, ElapsedTime, CompiledParticles,Spots);
+    end
+
+    %% Probability of being on
+
+    if HistoneChannel&&strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
+        [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
+            FilteredParticlesPos, OnRatioAP, ParticleCountAP, ParticleCountProbAP, ...
+            EllipsesOnAP, rateOnAP, rateOnAPCell, timeOnOnAP, timeOnOnAPCell, TotalEllipsesAP]...
+            = computeAPFractionOn(NChannels, Particles, schnitzcells, ...
+            CompiledParticles, Ellipses, APbinID, FrameInfo, ElapsedTime, DropboxFolder, ...
+            Prefix, EllipsePos, nc12, nc13, nc14, numFrames, doSingleFits, SkipAll, ...
+            APbinArea,pixelSize);
+    end
+
+    % DV version. This should instead be smoothly integrated with the AP
+    % version since there's a lot of duplicate code here. 
+    if HistoneChannel&&strcmpi(ExperimentAxis,'DV') %JAKE: Need to change this later
+        [NEllipsesDV, MeanVectorAllDV, SEVectorAllDV, OnRatioDV, ParticleCountDV, ...
+            ParticleCountProbDV, TotalEllipsesDV, EllipsesOnDV, EllipsesFilteredPos, ...
+            FilteredParticlesPos] = DVProbOn(NChannels, Particles, schnitzcells, ...
+            CompiledParticles, Ellipses, FrameInfo, DropboxFolder, Prefix, ...
+            ElapsedTime, DVbinID, EllipsePos_DV, nc12, nc13, nc14, numFrames, ...
+            DVbinArea);
+    end
+
+    %% Calculation of particle speed
+    try
+        calcParticleSpeeds(NChannels, Particles, ...
+            Spots, ElapsedTime, schnitzcells, Ellipses);
+    catch
+    end
+    %% Movie of AP profile
+
+    %I want to make a movie of the average fluorescence as a function of AP as
+    %a function of time. In order to make life easier I'll just export to a
+    %folder. I can then load everything in ImageJ.
+
+    if ~SkipMovie&&strcmpi(ExperimentAxis,'AP')
+        APProfileMovie(MeanVectorAP, NParticlesAP, MinParticles, numFrames, ...
+            APbinID, SDVectorAP, FrameInfo, ElapsedTime, DropboxFolder, Prefix)
+    end
+
+    %% Checking correlations with position and expression
+    %
+    % 1+1;
+    %
+    % i=100
+    %
+    % for j=1:length(CompiledParticles{1}(i).Frame)
+    %
+    %     CurrentFrame=CompiledParticles{1}(i).Frame(j);
+    %     EllipsePos=find((schnitzcells(CompiledParticles{1}(i).Nucleus).frames)==CurrentFrame);
+    %     CurrentEllipse=Ellipses{CompiledParticles{1}(i).Frame};
+    %     CurrentEllipse=CurrentEllipse(EllipsePos,:);
+    %
+    %     Position(j)=(CompiledParticles{1}(i).xPos(j)-CurrentEllipse(1))^2+...
+    %         (CompiledParticles{1}(i).yPos(j)-CurrentEllipse(2))^2;
+    % end
+    %
+    % figure(9)
+    % plot(  Position ,CompiledParticles{1}(i).Fluo,'.k')
+    %
+    %
 end
-
-
-%% Fitting shapes` to single traces (includes time on and initial rate of loading)
-% This section of code is will fit line segments piece-wise to the
-% single traces. fittedLineEquations correspond to the stored fitted lines
-% of the particles, where the indexing is as follows:
-% fittedLineEquations(particleNumber) with fields: Coefficients,
-% ErrorEstimation, and frameIndex, which are described below. This currently
-% does not support more than one channel. Please contact Emma to work on
-% implementing it for two channels.
-if doSingleFits
-    [CompiledParticles, fittedLineEquations] = fitShapesToTraces(Prefix, ...
-        Particles, schnitzcells, FrameInfo, ElapsedTime, CompiledParticles,Spots);
-end
-
-%% Probability of being on
-
-if HistoneChannel&&strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
-    [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
-        FilteredParticlesPos, OnRatioAP, ParticleCountAP, ParticleCountProbAP, ...
-        EllipsesOnAP, rateOnAP, rateOnAPCell, timeOnOnAP, timeOnOnAPCell, TotalEllipsesAP]...
-        = computeAPFractionOn(NChannels, Particles, schnitzcells, ...
-        CompiledParticles, Ellipses, APbinID, FrameInfo, ElapsedTime, DropboxFolder, ...
-        Prefix, EllipsePos, nc12, nc13, nc14, numFrames, doSingleFits, SkipAll, ...
-        APbinArea,pixelSize);
-end
-
-% DV version. This should instead be smoothly integrated with the AP
-% version since there's a lot of duplicate code here. 
-if HistoneChannel&&strcmpi(ExperimentAxis,'DV') %JAKE: Need to change this later
-    [NEllipsesDV, MeanVectorAllDV, SEVectorAllDV, OnRatioDV, ParticleCountDV, ...
-        ParticleCountProbDV, TotalEllipsesDV, EllipsesOnDV, EllipsesFilteredPos, ...
-        FilteredParticlesPos] = DVProbOn(NChannels, Particles, schnitzcells, ...
-        CompiledParticles, Ellipses, FrameInfo, DropboxFolder, Prefix, ...
-        ElapsedTime, DVbinID, EllipsePos_DV, nc12, nc13, nc14, numFrames, ...
-        DVbinArea);
-end
-
-%% Calculation of particle speed
-try
-    calcParticleSpeeds(NChannels, Particles, ...
-        Spots, ElapsedTime, schnitzcells, Ellipses);
-catch
-end
-%% Movie of AP profile
-
-%I want to make a movie of the average fluorescence as a function of AP as
-%a function of time. In order to make life easier I'll just export to a
-%folder. I can then load everything in ImageJ.
-
-if ~SkipMovie&&strcmpi(ExperimentAxis,'AP')
-    APProfileMovie(MeanVectorAP, NParticlesAP, MinParticles, numFrames, ...
-        APbinID, SDVectorAP, FrameInfo, ElapsedTime, DropboxFolder, Prefix)
-end
-
-%% Checking correlations with position and expression
-%
-% 1+1;
-%
-% i=100
-%
-% for j=1:length(CompiledParticles{1}(i).Frame)
-%
-%     CurrentFrame=CompiledParticles{1}(i).Frame(j);
-%     EllipsePos=find((schnitzcells(CompiledParticles{1}(i).Nucleus).frames)==CurrentFrame);
-%     CurrentEllipse=Ellipses{CompiledParticles{1}(i).Frame};
-%     CurrentEllipse=CurrentEllipse(EllipsePos,:);
-%
-%     Position(j)=(CompiledParticles{1}(i).xPos(j)-CurrentEllipse(1))^2+...
-%         (CompiledParticles{1}(i).yPos(j)-CurrentEllipse(2))^2;
-% end
-%
-% figure(9)
-% plot(  Position ,CompiledParticles{1}(i).Fluo,'.k')
-%
-%
-
 
 %% Input-output
 

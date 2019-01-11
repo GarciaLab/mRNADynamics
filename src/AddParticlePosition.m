@@ -153,7 +153,7 @@ end
 %Figure out what type of experiment we have
 [DateFromDateColumn, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
 Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
+nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 
 if ~NoAP

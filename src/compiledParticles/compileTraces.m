@@ -2,7 +2,7 @@ function [Particles, CompiledParticles, ncFilter, ncFilterID] =...
     compileTraces(NChannels, Particles, HistoneChannel, ...
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
     Spots, SkipTraces, nc9, nc10, nc11, nc12, nc13, nc14, ncFilterID, ncFilter, ...
-    ElapsedTime, intArea, Ellipses, EllipsePos, AssignedNuclei, PreProcPath, ...
+    ElapsedTime, intArea, Ellipses, EllipsePos, PreProcPath, ...
     FilePrefix, Prefix, DropboxFolder, NDigits)
 %COMPILETRACES Summary of this function goes here
 %   Detailed explanation goes here
@@ -159,30 +159,30 @@ for ChN=1:NChannels
                     
                     %Save lineage information in terms of particles
                     if ~isempty(schnitzcells(Particles{ChN}(i).Nucleus).P)
-                        if isempty(find(AssignedNuclei{ChN}==schnitzcells(Particles{ChN}(i).Nucleus).P))
+                        if isempty(find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).P))
                             CompiledParticles{ChN}(k).PParticle=0;
                         else
-                            CompiledParticles{ChN}(k).PParticle=find(AssignedNuclei{ChN}==schnitzcells(Particles{ChN}(i).Nucleus).P);
+                            CompiledParticles{ChN}(k).PParticle=find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).P);
                         end
                     else
                         CompiledParticles{ChN}(k).PParticle=[];
                     end
                     
                     if ~isempty(schnitzcells(Particles{ChN}(i).Nucleus).D)
-                        if isempty(find(AssignedNuclei{ChN}==schnitzcells(Particles{ChN}(i).Nucleus).D))
+                        if isempty(find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).D))
                             CompiledParticles{ChN}(k).DParticle=0;
                         else
-                            CompiledParticles{ChN}(k).DParticle=find(AssignedNuclei{ChN}==schnitzcells(Particles{ChN}(i).Nucleus).D);
+                            CompiledParticles{ChN}(k).DParticle=find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).D);
                         end
                     else
                         CompiledParticles{ChN}(k).DParticle=[];
                     end
                     
                     if ~isempty(schnitzcells(Particles{ChN}(i).Nucleus).E)
-                        if isempty(find(AssignedNuclei{ChN}==schnitzcells(Particles{ChN}(i).Nucleus).E))
+                        if isempty(find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).E))
                             CompiledParticles{ChN}(k).EParticle=0;
                         else
-                            CompiledParticles{ChN}(k).EParticle=find(AssignedNuclei{ChN}==schnitzcells(Particles{ChN}(i).Nucleus).E);
+                            CompiledParticles{ChN}(k).EParticle=find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).E);
                         end
                     else
                         CompiledParticles{ChN}(k).EParticle=[];
