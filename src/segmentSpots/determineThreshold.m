@@ -20,7 +20,7 @@
 function [thresh] = determineThreshold(Prefix, Channel)
 
     default_std = 6;
-    brightest_std_test = 12;
+    brightest_std_test = 8;
 
     % loads information needed to loop through DOGs
     [~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
@@ -32,6 +32,11 @@ function [thresh] = determineThreshold(Prefix, Channel)
     load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
     zSize = FrameInfo(1).NumberSlices + 2;
     numFrames = length(FrameInfo);
+    
+    % says which z-slices and frames that we can scroll through
+    available_zs = 2:3:(zSize - 1);
+    available_frames = 1:4:numFrames;
+    
     OutputFolder1=[FISHPath,filesep,Prefix,'_',filesep,'dogs',filesep];
     nameSuffix = ['_ch',iIndex(Channel,2)];
     
@@ -40,21 +45,24 @@ function [thresh] = determineThreshold(Prefix, Channel)
     bestZ = 2;
     bestFrame = 1;
     bestVal = 0;
+    max_val = 0;
     all_dogs = cell(numFrames, zSize - 2);
-    for frame = 1:numFrames
-        for z = 2:(zSize - 1)
+    for frame = available_frames
+        for z = available_zs
             
             dog_name = ['DOG_',Prefix,'_',iIndex(frame,3),'_z',iIndex(z,2),nameSuffix,'.tif'];
             dog = double(imread([OutputFolder1 dog_name]));
             all_dogs{frame, z - 1} = dog;
             non_zero_d = dog(dog > 0);
             val = std(non_zero_d(:));
-            num_above = sum(non_zero_d(:) > val * brightest_std_test);
+            mean_val = mean(non_zero_d(:));
+            num_above = sum(non_zero_d(:) > (val * brightest_std_test + mean_val));
             if num_above > bestVal
                 bestVal = num_above;
                 bestZ = z;
                 bestFrame = frame;
             end
+            max_val = max(max(dog(:)), max_val);
         end
     end
     % generates UI for picking threshold
@@ -63,7 +71,6 @@ function [thresh] = determineThreshold(Prefix, Channel)
     mean_val = mean(non_zero_dog(:));
     std_val = std(non_zero_dog(:));
     dog_copy = all_dogs{bestFrame, bestZ - 1};
-    max_val = max(non_zero_dog(:));
     min_val = min(non_zero_dog(:));
     thresh = min(mean_val + default_std * std_val, max_val - 1);
     dog_copy(dog_copy < thresh) = 0;
@@ -111,8 +118,10 @@ function [thresh] = determineThreshold(Prefix, Channel)
     uiwait(f);
     
     function update_val(source, ~)
-        zSlider.Value = round(zSlider.Value);
-        frameSlider.Value = round(frameSlider.Value);
+        [~, I] = min(abs(zSlider.Value - available_zs));
+        zSlider.Value = available_zs(I(1));
+        [~, I] = min(abs(frameSlider.Value - available_frames));
+        frameSlider.Value = available_frames(I(1));
         bestZ = zSlider.Value;
         bestFrame = frameSlider.Value;
         

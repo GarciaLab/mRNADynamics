@@ -26,7 +26,7 @@ function Projection = generateNuclearChannel(numberOfFrames, LIFImages, framesIn
       nuclearChannel = AllNuclearChannels(ChannelIndex);
 
       % For all 'nuclear' channels, generate HisSlices, and do projection
-      HisSlices = generateHisSlices(LIFImages, NSlices, NChannels, fiducialChannel, framesIndex, seriesIndex);
+      HisSlices = generateHisSlices(LIFImages, NSlices, NChannels, nuclearChannel, framesIndex, seriesIndex);
 
       ProjectionTemp(:, :, ChannelIndex) = calculateProjection(ProjectionType, NSlices, HisSlices);
 
