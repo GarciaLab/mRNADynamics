@@ -1,4 +1,4 @@
-function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs, generateTifs] = exportDataForLivemRNA_processInputParameters(varargin)
+function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs, generateTifs, nuclearGUI] = exportDataForLivemRNA_processInputParameters(varargin)
   %Look at parameters
   SkipFrames = [];
   Prefix = '';
@@ -9,6 +9,7 @@ function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs
   PreferredFileNameForTest = '';
   keepTifs = false;
   generateTifs = false;
+  nuclearGUI = false;
   
   k=1;
   while k<=length(varargin)
@@ -29,6 +30,8 @@ function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs
       keepTifs = true;
     elseif strcmpi(varargin{k}, 'generateTifs')
       generateTifs = true;
+    elseif strcmpi(varargin{k}, 'nuclearGUI')
+      nuclearGUI = true;
     else
       Prefix = varargin{k};
     end

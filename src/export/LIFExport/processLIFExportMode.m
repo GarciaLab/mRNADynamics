@@ -1,5 +1,5 @@
 % Added PreferredFileName so we can automate testing and bypass the user prompt when there are many files available.
-function FrameInfo = processLIFExportMode(Folder, ExperimentType, ProjectionType, Channel1, Channel2, Channel3, Prefix, OutputFolder, PreferredFileNameForTest, keepTifs)
+function FrameInfo = processLIFExportMode(Folder, ExperimentType, ProjectionType, Channel1, Channel2, Channel3, Prefix, OutputFolder, PreferredFileNameForTest, keepTifs, nuclearGUI)
   
   %Loads file and metadata
   [XMLFolder, seriesPropertiesXML, seriesXML] = getSeriesFiles(Folder);
@@ -30,6 +30,11 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, ProjectionType
   numberOfFrames = 1;        
   %Load the reference histogram for the fake histone channel
   load('ReferenceHist.mat')
+  if nuclearGUI
+      [Channel1, Channel2, Channel3, ProjectionType] = chooseNuclearChannels(...
+        LIFImages, NSeries, NSlices, NChannels, NFrames, ProjectionType, Channel1, Channel2, ...
+        Channel3, ReferenceHist);
+  end
   for seriesIndex = 1:NSeries
     waitbar(seriesIndex/NSeries, waitbarFigure)
     for framesIndex = 1:NFrames(seriesIndex) 
