@@ -24,8 +24,6 @@ end
 
 %we'll plot the spot intensity first on the left axis.
 yyaxis(traceFigAxes,'left')
-%we'll use this axis if there's a protein channel. 
-yyaxis(traceFigAxes,'right')
 
 if ~lineFit
     traceFigTimeAxis = Frames;
@@ -112,11 +110,11 @@ end
 ylabel(traceFigAxes,'integrated intensity (a.u.)')
 hold(traceFigAxes, 'off')
 if plot3DGauss
-    str1 = '3-slice';
-    str2 = '3D-Gaussian fit';
+    str1 = '3-slice mRNA';
+    str2 = '3D-Gaussian fit mRNA';
 else
-    str1 = '1-slice';
-    str2 = 'multi-slice';
+    str1 = '1-slice mRNA';
+    str2 = 'multi-slice mRNA';
 end
 if ~lineFit
     legend(traceFigAxes,[traceErrorBar1,traceErrorBar2],str1,str2)
@@ -127,9 +125,10 @@ else
     xlabel(traceFigAxes,'time since anaphase (min)')
 end
 if strcmpi(ExperimentType, 'inputoutput')
+    yyaxis(traceFigAxes,'right')
     %now we'll plot the input protein intensity on the right-hand axis.
     plot(traceFigAxes,schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames,...
-        max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).Fluo,[],2),'r.-')
+        max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).Fluo,[],2),'r.-','DisplayName','protein')
     try
         xlim(traceFigAxes,[min(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames),max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames)])
     catch
