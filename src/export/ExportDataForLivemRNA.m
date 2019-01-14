@@ -92,7 +92,8 @@ function Prefix = ExportDataForLivemRNA(varargin)
     FrameInfo = processLatticeLightSheetData(Folder, D, Channel1, Channel2, ProjectionType, Prefix, OutputFolder);
 
   elseif strcmpi(FileMode, 'LSM')
-    FrameInfo = processZeissConfocalLSMData(Folder, D, FrameInfo, ExperimentType, Channel1, Channel2, ProjectionType, Prefix, OutputFolder);
+    FrameInfo = processLSMData(Folder, D, FrameInfo, ExperimentType, ...
+    Channel1, Channel2, Channel3, ProjectionType,Prefix, OutputFolder,nuclearGUI);
 
   elseif strcmpi(FileMode, 'LIFExport')
     FrameInfo = processLIFExportMode(Folder, ExperimentType, ProjectionType, Channel1, Channel2, Channel3, Prefix, ...
