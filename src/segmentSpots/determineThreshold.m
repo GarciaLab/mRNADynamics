@@ -118,13 +118,17 @@ function [thresh] = determineThreshold(Prefix, Channel)
     uiwait(f);
     
     function update_val(source, ~)
-        [~, I] = min(abs(zSlider.Value - available_zs));
-        zSlider.Value = available_zs(I(1));
-        [~, I] = min(abs(frameSlider.Value - available_frames));
-        frameSlider.Value = available_frames(I(1));
+        
+        zSlider.Value = round(zSlider.Value);
+        frameSlider.Value = round(frameSlider.Value);
         bestZ = zSlider.Value;
         bestFrame = frameSlider.Value;
-        
+        if isempty(all_dogs{bestFrame, bestZ - 1})
+            dog_name = ['DOG_',Prefix,'_',iIndex(bestFrame,3),'_z'...
+                ,iIndex(bestZ,2),nameSuffix,'.tif'];
+            dog = double(imread([OutputFolder1 dog_name]));
+            all_dogs{bestFrame, bestZ - 1} = dog;
+        end
         dog_copy = all_dogs{bestFrame, bestZ - 1};
         thresh = threshSlider.Value;
         std_above_mean = (thresh - mean_val) / std_val;
@@ -136,7 +140,8 @@ function [thresh] = determineThreshold(Prefix, Channel)
         zVal.String = ['Z-slice = ' num2str(bestZ)];
         frameVal.String = ['Frame = ' num2str(bestFrame)];
                  
-    end
+        end
+        
 
     function use_thresh(source, ~)
         uiresume(f);
