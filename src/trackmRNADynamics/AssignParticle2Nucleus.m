@@ -1,13 +1,10 @@
 function [Particles,SpotFilter]=AssignParticle2Nucleus(...
     schnitzcells,Ellipses,Particles,Spots,SpotFilter,...
-    CurrentFrame,PixelSize,SearchRadius,SpotsPerNucleus, retrack)
+    CurrentFrame,PixelSize,SpotsPerNucleus, retrack)
 
 %Find the N closest particles to each nucleus. N is determined by
 %ExperimentType (1spot, 2spots). If N>1, then the code also uses the spot
 %position for tracking.
-
-%SearchRadius is given in pixels, but it comes from a setting in um
-%from TrackmRNADynamics.
 
 
 %Get the particles and nuclei positions. The order of both the nuclei and
@@ -31,7 +28,6 @@ if ~isempty(NewSpotsX)
 
     %Calculate the distances between the spots on this frame and the
     %ellipses
-    clear Distance
 
     for j=1:length(NewSpotsX)
         Distance(j,:)=sqrt((NewSpotsX(j)*PixelSize-...
@@ -178,7 +174,6 @@ if ~isempty(NewSpotsX)
             end
             %Now, we can remake the assignment list and the distances
             [DistancesToNewSpots,NewSpotToAssignIndices]=min(DistancesToNewSpots,[],2);
-            clear NewSpotToAssignTemp
             for j=1:length(NewSpotToAssignIndices)
                 NewSpotToAssignTemp(j)=NewSpotToAssign(j,NewSpotToAssignIndices(j));
             end

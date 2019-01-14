@@ -11,7 +11,6 @@ nWorkers = 8;
 keepPool = 0;
 pool = 1;
 autoThresh = 0;
-% Default is 1
 useIntegralCenter = 1;
 initialFrame = 1;
 
@@ -30,7 +29,7 @@ for i = 1:length(varargin)
         
     elseif strcmp(varargin{i}, 'Frames') || strcmpi(varargin{i}, 'LastFrame')
         
-        if ~ isnumeric(varargin{i + 1})
+        if ~isnumeric(varargin{i + 1}) || varargin{i + 1} < 1
             error('Wrong input parameters. After ''Frames'' you should input the number of frames')
         else
             numFrames = varargin{i + 1};
@@ -38,7 +37,7 @@ for i = 1:length(varargin)
         
     elseif strcmpi(varargin{i}, 'InitialFrame')
         
-        if ~ isnumeric(varargin{i + 1}) || varargin{i + 1} < 1
+        if ~isnumeric(varargin{i + 1}) || varargin{i + 1} < 1
             error('Wrong input parameter for initial frame.')
         else
             initialFrame = varargin{i + 1};

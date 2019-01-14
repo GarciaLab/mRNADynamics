@@ -17,7 +17,7 @@ function [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh,
         CurrentFrameFilter, PreProcPath, Prefix, SpotsChannel, FrameInfo);
 
       if UseHistone
-        [Particles, SpotFilter] = trackHistone(PreProcPath, Prefix, CurrentFrame, NDigits, app, nucAxes, Ellipses, ...
+        [Particles, SpotFilter] = trackParticlesBasedOnNuclei(PreProcPath, Prefix, CurrentFrame, NDigits, app, nucAxes, Ellipses, ...
           ExperimentType, Channel, schnitzcells, Particles, Spots, SpotFilter, PixelSize, SearchRadius, retrack);
       else
         [Particles] = trackParticlesBasedOnProximity(Particles, Spots, xPos, SpotFilter, Channel, CurrentFrame, PixelSize, SearchRadius, retrack);
@@ -101,7 +101,7 @@ function x = displayParticlesFigure(app, particlesAxes, ParticlesFig, Spots, Cha
   hold(ax1, 'off')
 end
 
-function [Particles, SpotFilter] = trackHistone(PreProcPath, Prefix, CurrentFrame, NDigits, app, nucAxes, Ellipses, ...
+function [Particles, SpotFilter] = trackParticlesBasedOnNuclei(PreProcPath, Prefix, CurrentFrame, NDigits, app, nucAxes, Ellipses, ...
     ExperimentType, Channel, schnitzcells, Particles, Spots, SpotFilter, PixelSize, SearchRadius, retrack)
 
   hisImage = openHistoneImage(Prefix, PreProcPath, CurrentFrame, NDigits);
@@ -142,7 +142,7 @@ function [Particles, SpotFilter] = trackHistone(PreProcPath, Prefix, CurrentFram
   end
 
   [Particles{Channel}, SpotFilter{Channel}] = AssignParticle2Nucleus(schnitzcells, Ellipses, ...
-    Particles{Channel}, Spots{Channel}, SpotFilter{Channel}, CurrentFrame, PixelSize, SearchRadius, SpotsPerNucleus, retrack);
+    Particles{Channel}, Spots{Channel}, SpotFilter{Channel}, CurrentFrame, PixelSize, SpotsPerNucleus, retrack);
 
 end
 

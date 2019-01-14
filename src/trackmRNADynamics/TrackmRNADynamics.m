@@ -48,7 +48,7 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
   % Load the information about this image
   % Check if we have FrameInfo otherwise try to get the information straight
   % from the file.
-  [FrameInfo, PixelSize] = loadFrameInfo(OutputFolder);
+  [FrameInfo, PixelSize] = loadFrameInfo(OutputFolder, PreProcPath, Prefix);
 
   SearchRadius = ceil(SearchRadiusMicrons / PixelSize);
 
@@ -94,7 +94,7 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
   createFieldNCAndSaveFrameInfo(FrameInfo, OutputFolder, nc9, nc10, nc11, nc12, nc13, nc14);
 end
 
-function [FrameInfo, PixelSize] = loadFrameInfo(OutputFolder)
+function [FrameInfo, PixelSize] = loadFrameInfo(OutputFolder, PreProcPath, Prefix)
   FrameInfoPath = [OutputFolder, filesep, 'FrameInfo.mat'];
 
   if exist(FrameInfoPath, 'file')

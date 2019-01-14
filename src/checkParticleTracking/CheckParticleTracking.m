@@ -154,8 +154,12 @@ FilePrefix=[DataFolder(length(DropboxFolder)+2:end),'_'];
 [~,~,DropboxFolder,~,PreProcPath]=...
     DetermineLocalFolders(FilePrefix(1:end-1));
 
+disp('Loading Particles.mat...')
 load([DataFolder,filesep,'Particles.mat'], 'Particles', 'SpotFilter')
+disp('Particles.mat loaded')
+disp('Loading Spots.mat...')
 load([DataFolder,filesep,'Spots.mat'], 'Spots')
+disp('Spots.mat loaded')
 
 %Check that FrameInfo exists
 if exist([DataFolder,filesep,'FrameInfo.mat'], 'file')

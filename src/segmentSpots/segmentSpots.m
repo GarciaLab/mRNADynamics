@@ -13,7 +13,10 @@
 % OPTIONS
 % 'displayFigures':   If you want to display plots and images.
 %
-% 'Frames', N:Run the code from frame 1 to frame N. Defaults to all
+% 'InitialFrame', N: Run the code from frame N to last frame. Defaults to first
+%                frame.
+%
+% 'LastFrame', M:     Run the code from initial frame to frame M. Defaults to all
 %                frames. It's suggested to run 5-20 frames for debugging.
 %
 % 'Shadows':    	 This option should be followed by 0, 1 or 2. This
@@ -45,8 +48,10 @@ function log = segmentSpots(Prefix, Threshold, varargin)
 
   warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
+  disp('Segmenting spots...')
+  
   [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, ...
-    pool, autoThresh, useIntegralCenter] = determineSegmentSpotsOptions(varargin);
+    pool, autoThresh, useIntegralCenter, initialFrame] = determineSegmentSpotsOptions(varargin);
       
   argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
   try 
@@ -127,7 +132,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
       
     tic;
       
-    all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, channelIndex, all_frames, numFrames, zSize, ...
+    all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, ...
       PreProcPath, Prefix, DogOutputFolder, displayFigures, pool, doFF, ffim, Threshold(nCh), neighborhood, ...
       snippet_size, pixelSize, microscope, intScale);
 
