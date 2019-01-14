@@ -1,4 +1,4 @@
-function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, channelIndex, all_frames, numFrames, zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures, pool, doFF, ffim, Threshold, neighborhood, snippet_size, pixelSize, microscope, intScale)
+function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures, pool, doFF, ffim, Threshold, neighborhood, snippet_size, pixelSize, microscope, intScale)
   waitbarFigure = waitbar(0, 'Segmenting spots');
 
   % (MT, 2018-02-11) Added support for lattice imaging, maybe 
@@ -17,7 +17,7 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
     end
   end        
   
-  for current_frame = 1:numFrames
+  for current_frame = initialFrame:numFrames
     
     w = waitbar(current_frame / numFrames, waitbarFigure);
     set(w, 'units', 'normalized', 'position', [0.4, .15, .25,.1]);
