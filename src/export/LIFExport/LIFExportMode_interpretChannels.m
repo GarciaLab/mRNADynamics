@@ -20,8 +20,14 @@ function [coatChannel, histoneChannel, fiducialChannel, inputProteinChannel, Fra
         error('LIF Mode error: Channel name not recognized. Check MovieDatabase')
     end
 
-    %Histone channel
-    histoneChannel=find(~cellfun(@isempty,strfind(lower(Channels),'his')));
+    %Histone channel 
+    % YJK (2019-01-14)
+    % This has to be defined better, including the case of MCP-mCherry. 
+    % YJK should come back to this and make it better
+    histoneChannel=strfind(contains(Channels,'his','IgnoreCase',true),1);
+    if isempty(histoneChannel)
+        histoneChannel=strfind(contains(Channels,'Nuclear','IgnoreCase',true),1);
+    end
     fiducialChannel = histoneChannel;
     %Distinguish between not having histone, but having a dummy channel
     if isempty(fiducialChannel)
