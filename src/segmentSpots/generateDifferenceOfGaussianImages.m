@@ -69,14 +69,14 @@ function [sigmas] = generateDifferenceOfGaussianImages(FISHPath, customFilter, n
 
         for zIndex = 1:zSize
           generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameSuffix, filterType, sigmas, filterSize, ...
-          highPrecision, zIndex, displayFigures, app, numFrames);
+            highPrecision, zIndex, displayFigures, app, numFrames);
         end
 
       else
 
         parfor zIndex = 1:zSize
           generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameSuffix, filterType, sigmas, filterSize, ...
-          highPrecision, zIndex, displayFigures, numFrames);
+            highPrecision, zIndex, displayFigures, numFrames);
         end
 
       end
@@ -91,17 +91,17 @@ end
 function generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameSuffix, filterType, sigmas, filterSize, highPrecision, zIndex, displayFigures, app, numFrames)
 
   fileName = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(current_frame, 3), '_z', ...
-                iIndex(zIndex, 2), nameSuffix, '.tif'];
+    iIndex(zIndex, 2), nameSuffix, '.tif'];
 
   im = double(imread(fileName));
 
   if sum(im(:)) ~= 0
 
     if strcmpi(filterType, 'Difference_of_Gaussian')
-      tempDog = filterImage(im, filterType, sigmas, filterSize);
+      dog = filterImage(im, filterType, sigmas, filterSize);
 
       if highPrecision
-        dog = (tempDog + 100) * 10;
+        dog = (dog + 100) * 10;
       end
 
     else

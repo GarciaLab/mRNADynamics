@@ -31,7 +31,7 @@ function generateExpectedDataTrackmRNADynamicsNotHistone(testCase)
   % Executes trackmRNADynamis with known thresholds
   TrackmRNADynamics(testCase.Prefix);
   disp(['Copying expected data for testCase.Prefix ', testCase.Prefix]);
-  copyfile([dynamicsResultsPath, filesep, '*'], expectedDataSubFolder);
+  copyfile([dynamicsResultsExperimentPath, filesep, '*'], expectedDataSubFolder);
   disp(['Expected data copied to folder ', dynamicsResultsPath]);
 
   % Executes second time to test retracking path  
@@ -42,6 +42,6 @@ function generateExpectedDataTrackmRNADynamicsNotHistone(testCase)
   TrackmRNADynamics(testCase.Prefix);
 
   disp(['Copying expected data for testCase.Prefix ', testCase.Prefix]);
-  copyfile([dynamicsResultsPath, filesep, '*'], expectedDataSubFolder);
+  copyfile([dynamicsResultsExperimentPath, filesep, '*'], expectedDataSubFolder);
   disp(['Expected data copied to folder ', dynamicsResultsPath]);
 end
