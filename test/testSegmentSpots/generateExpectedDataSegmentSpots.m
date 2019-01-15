@@ -67,7 +67,7 @@ function folder = createOrCleanExpectedDataSubFolder(testPath, pass, subfolder, 
     prefix = [prefix, '_'];
   end
 
-  folder = [testPath, filesep, 'SegmentSpots_', pass, 'Pass', filesep, subfolder, filesep, prefix];
+  folder = [testPath, filesep, 'SegmentSpots/', pass, 'Pass', filesep, subfolder, filesep, prefix];
   deleteDirectory(folder, prefix);
   mkdir folder;
 end
