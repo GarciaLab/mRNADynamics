@@ -157,36 +157,50 @@ nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3] = getExperimentDataFromMovieDat
 
 
 if ~NoAP
-    
-    %First, check whether we have Bcd-GFP and inverted histone
-    if ((~isempty(strfind(lower(Channel1{1}),'bcd')))|...
-            (~isempty(strfind(lower(Channel2{1}),'bcd'))))
-        if ((~isempty(strfind(lower(Channel1{1}),'his')))|...
-            (~isempty(strfind(lower(Channel2{1}),'his'))))
-        ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
-            ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')));
+    NuclearChannel=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
+    if ~NuclearChannel
+        %First, check whether we have Bcd-GFP and inverted histone
+        if ((~isempty(strfind(lower(Channel1{1}),'bcd')))|...
+                (~isempty(strfind(lower(Channel2{1}),'bcd'))))
+            if ((~isempty(strfind(lower(Channel1{1}),'his')))|...
+                (~isempty(strfind(lower(Channel2{1}),'his'))))
+            ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
+                ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')));
+            else
+            warning('Using only Bcd-GFP to determine AP position')
+            ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd'))|...
+                ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd')));
+            end
+        % YJK, 2018/04/01 : In case we have three channels, we should see if
+        % any of them has histone channel
+        elseif (~isempty(strfind(lower(Channel3{1}), 'his')))
+            ChannelToLoadTemp=~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1}),lower(Channel3{1})},'his'));
         else
-        warning('Using only Bcd-GFP to determine AP position')
-        ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd'))|...
-            ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd')));
+            ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
+                ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')));
         end
-    % YJK, 2018/04/01 : In case we have three channels, we should see if
-    % any of them has histone channel
-    elseif (~isempty(strfind(lower(Channel3{1}), 'his')))
-        ChannelToLoadTemp=~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1}),lower(Channel3{1})},'his'));
     else
-        ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
-            ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')));
+        % From now, we will use a better way to define the channel for
+        % alignment (used for cross-correlation).
+        % Find channels with ":Nuclear"
+        ChannelToLoadTemp=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true)
+
+        % Define the Channel to load, for calculating the cross-correlation
+        % In future, we can think about combining multiple channels for
+        % calculating the cross-correlation to get more accurate estimates.
+        % For now, let's pick only one channel for this. For multiple
+        % channels, let's first pick the first channel. This can be fine in
+        % most cases, since we normally use lower wavelength for sth we
+        % care more, or we get better signal from those.
+        if sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)==1
+            ChannelToLoad=find(ChannelToLoadTemp);
+        elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>2
+            ChannelToLoad = ChannelToLoadTemp(1);
+        else
+            error('No histone channel found. Was it defined in MovieDatabase?')
+        end
     end
-    
-    
-    if sum(ChannelToLoadTemp)
-        ChannelToLoad=find(ChannelToLoadTemp);
-    else
-        error('No histone channel found. Was it defined in MovieDatabase?')
-    end
-    
-    
+        
     %Get information about all images. This depends on the microscope used.
     
     %Get the information about the zoom
