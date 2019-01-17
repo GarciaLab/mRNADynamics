@@ -259,7 +259,8 @@ if ~NoAP
         SurfName=[];
         
         %Figure out the different channels
-        
+        %NuclearChannel=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
+        % Let's use NuclearChannel if possible
         %If we have Bcd-GFP and inverted His, we will use Bcd-GFP for the
         %alignment
         if ((contains(lower(Channel1{1}),'bcd'))||...
@@ -267,13 +268,15 @@ if ~NoAP
             if  contains(lower(Channel1{1}),'his')
                 HisChannel=1;
                 InvertHis=0;
-            elseif contains(lower(Channel1{1}),'mcherry')
+            elseif contains(lower(Channel1{1}),'mcherry')||...
+                    contains(lower(Channel1{1}),'invertedNuclear')
                 HisChannel=1;
                 InvertHis=1;
             elseif contains(lower(Channel2{1}),'his')
                 HisChannel=2;
                 InvertHis=0;
-            elseif contains(lower(Channel2{1}),'mcherry')
+            elseif contains(lower(Channel2{1}),'mcherry')||...
+                    contains(lower(Channel2{1}),'invertedNuclear')
                 HisChannel=2;
                 InvertHis=1;
             else
@@ -286,13 +289,15 @@ if ~NoAP
             if contains(lower(Channel1{1}),'his')
                 HisChannel=1;
                 InvertHis=0;
-            elseif contains(lower(Channel1{1}),'mcherry')
+            elseif contains(lower(Channel1{1}),'mcherry')||...
+                    contains(lower(Channel1{1}),'invertedNuclear')
                 HisChannel=1;
                 InvertHis=1;
             elseif contains(lower(Channel2{1}),'his')
                 HisChannel=2;
                 InvertHis=0;
-            elseif contains(lower(Channel2{1}),'mcherry')
+            elseif contains(lower(Channel2{1}),'mcherry')||...
+                    contains(lower(Channel2{1}),'invertedNuclear')
                 HisChannel=2;
                 InvertHis=1;
             else
