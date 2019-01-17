@@ -28,17 +28,13 @@ function copyExpectedDataForPrefix(Prefix, step)
   elseif strcmpi(step, 'filterMovieTifs')
     copyFilterMovieTifsData(Prefix, testPath, dynamicsResultsExperimentPath, preprocessedDataExperimentPath);
   elseif strcmpi(step, 'filterMovieWeka')
-    copyFilterMovieWekaData(Prefix, testPath, dynamicsResultsExperimentPath, preprocessedDataExperimentPath,...
-      processedDataExperimentPath);
-  elseif strcmpi(step, 'SegmentSpotsML')
-    copyExpectedSegmentSpotsMLData(Prefix, testPath, dynamicsResultsExperimentPath, preprocessedDataExperimentPath,...
-      processedDataExperimentPath);
+    copyFilterMovieWekaData(Prefix, testPath, dynamicsResultsExperimentPath, preprocessedDataExperimentPath, processedDataExperimentPath);
+  elseif strcmpi(step, 'SegmentSpots')
+    copyExpectedSegmentSpotsData(Prefix, testPath, dynamicsResultsExperimentPath);
   elseif strcmpi(step, 'TrackNuclei')
-    copyExpectedTrackNucleiData(Prefix, testPath, dynamicsResultsExperimentPath, preprocessedDataExperimentPath,...
-      processedDataExperimentPath);
+    copyExpectedTrackNucleiData(Prefix, testPath, dynamicsResultsExperimentPath, preprocessedDataExperimentPath, [], []);
   elseif strcmpi(step, 'TrackmRNADynamics')
-    copyExpectedTrackmRNADynamicsData(Prefix, testPath, dynamicsResultsExperimentPath, preprocessedDataExperimentPath,...
-      processedDataExperimentPath);
+    copyExpectedTrackmRNADynamicsData(Prefix, testPath, dynamicsResultsExperimentPath, preprocessedDataExperimentPath, [], []);
   else
     error('Pipeline step not recognized, data cannot be copied.')
   end

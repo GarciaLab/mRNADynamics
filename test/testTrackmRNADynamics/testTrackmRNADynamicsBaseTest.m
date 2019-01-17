@@ -21,7 +21,7 @@ function testCase = testTrackmRNADynamicsBaseTest(testCase, histone)
   if (histone)
     copyExpectedDataForPrefix(testCase.Prefix, 'TrackNuclei');
   else 
-    copyExpectedDataForPrefix(testCase.Prefix, 'SegmentSpotsML');
+    copyExpectedDataForPrefix(testCase.Prefix, 'SegmentSpots');
     TestFolder = 'TrackmRNADynamicsNoHistone';
   end
 

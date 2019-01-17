@@ -34,43 +34,45 @@ end
 % file is not properly configured.
 % In case that the validations fail, it'll prompt the user about the location and proceed if the user confirms.
 function validateDirectory(dirPath, expectedSubpath) 
-  jenkinsFolder = 'D:\Data\Jenkins\Data';
-  expectedDataFolder = 'D:\Data\Jenkins\ExpectedData';
-  directoryOkToDelete = true;  
-
-  % Ignores validation if the dirPath is the Jenkins folder
-  if ~contains(dirPath, jenkinsFolder) && ~contains(dirPath, expectedDataFolder) 
-    % Validates that the dirPath contains the 'LivemRNA' string in it
-    if ~contains(dirPath, 'LivemRNA')
-      directoryOkToDelete = false;
-    else
-      subPath = extractAfter(dirPath, 'LivemRNA');
+  if ~isempty(dirPath)
+    jenkinsFolder = 'D:\Data\Jenkins\Data';
+    expectedDataFolder = 'D:\Data\Jenkins\ExpectedData';
+    directoryOkToDelete = true;  
+    
+    % Ignores validation if the dirPath is the Jenkins folder
+    if ~contains(dirPath, jenkinsFolder) && ~contains(dirPath, expectedDataFolder) 
+      % Validates that the dirPath contains the 'LivemRNA' string in it
+      if ~contains(dirPath, 'LivemRNA')
+        directoryOkToDelete = false;
+      else
+        subPath = extractAfter(dirPath, 'LivemRNA');
+        
+        % Validates that the remaining path after LivemRNA is not empty, meaning that the whole folder will be deleted
+        if length(subPath) < 2
+          directoryOkToDelete = false;
+        end
+        
+        if ~contains(subPath, expectedSubpath)
+          directoryOkToDelete = false;
+        end
+        
+      end
       
-      % Validates that the remaining path after LivemRNA is not empty, meaning that the whole folder will be deleted
-      if length(subPath) < 2
-        directoryOkToDelete = false;
-      end
-
-      if ~contains(subPath, expectedSubpath)
-        directoryOkToDelete = false;
-      end
-
-    end
-
-  end
-
-  if ~directoryOkToDelete
-    buttonYesText = 'Yes, proceed with directory deletion.';
-    buttonCancelText = 'No, cancel process.';
-
-    question = ['You''re about to delete a suspicious directory, please confirm that you''d like to delete ', dirPath];  
-
-    answer = questdlg(question, 'Directory delete confirmation', buttonYesText, buttonCancelText, buttonCancelText);
-    if strcmp(answer, buttonCancelText)
-      ME = MException('UserAborted:FolderDeletionCancelled', ['User confirmed folder ', dirPath, ' should not be deleted']);
-      throw(ME);
     end
     
-  end
-
+    if ~directoryOkToDelete
+      buttonYesText = 'Yes, proceed with directory deletion.';
+      buttonCancelText = 'No, cancel process.';
+      
+      question = ['You''re about to delete a suspicious directory, please confirm that you''d like to delete ', dirPath];  
+      
+      answer = questdlg(question, 'Directory delete confirmation', buttonYesText, buttonCancelText, buttonCancelText);
+      if strcmp(answer, buttonCancelText)
+        ME = MException('UserAborted:FolderDeletionCancelled', ['User confirmed folder ', dirPath, ' should not be deleted']);
+        throw(ME);
+      end
+      
+    end
+  end 
+    
 end

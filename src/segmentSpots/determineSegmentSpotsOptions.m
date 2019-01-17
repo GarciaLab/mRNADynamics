@@ -1,4 +1,4 @@
-function [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, pool, threshGUI, initialFrame, useIntegralCenter, Weka] = determineSegmentSpotsOptions(varargin)
+function [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, pool, threshGUI, initialFrame, useIntegralCenter, Weka, keepProcessedData] = determineSegmentSpotsOptions(varargin)
 
 varargin = varargin{1};
 
@@ -14,6 +14,7 @@ threshGUI = 0;
 useIntegralCenter = 1;
 initialFrame = 1;
 Weka = 0;
+keepProcessedData = false;
 
 for i = 1:length(varargin)
     
@@ -64,6 +65,9 @@ for i = 1:length(varargin)
         Weka = 1;
     elseif strcmpi(varargin{i}, 'tifs')
         error('Tifs generation is no longer supported from segmentSpotsML, try filterMovie(Prefix, ''Tifs'') instead.');  
+  
+    elseif strcmpi(varargin{i}, 'keepProcessedData')
+      keepProcessedData = true;  
     end
     
 end

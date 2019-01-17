@@ -38,10 +38,10 @@ function generateExpectedDataForPrefix(exportTestCase, segmentSpotsTestCase, tra
   filterMovieTifsAndCopyData(segmentSpotsTestCase, testPath, dynamicsResultsExperimentPath, preProcessedDataExperimentPath);
 
   % Filter movie to generate DoGs with Weka
-  filterMovieWekaAndCopyData(segmentSpotsTestCase, testPath, codePath, processedDataExperimentPath);
+  filterMovieAndCopyData(segmentSpotsTestCase, testPath, codePath, processedDataExperimentPath);
 
   % Segment Spots ML
-  segmentSpotsMLAndCopyData(segmentSpotsTestCase, testPath, dynamicsResultsExperimentPath, preProcessedDataExperimentPath, processedDataExperimentPath);
+  segmentSpotsAndCopyData(segmentSpotsTestCase, testPath, dynamicsResultsExperimentPath, preProcessedDataExperimentPath);
 
   % TrackNuclei
   trackNucleiAndCopyData(Prefix, testPath, dynamicsResultsExperimentPath, preProcessedDataExperimentPath, processedDataExperimentPath);
