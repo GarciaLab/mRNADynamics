@@ -16,6 +16,19 @@ function Projection = generateNuclearChannel(numberOfFrames, LIFImages, framesIn
   InvertedChannels = [contains(Channel1, 'inverted', 'IgnoreCase', true), ...
                         contains(Channel2, 'inverted', 'IgnoreCase', true), ...
                         contains(Channel3, 'inverted', 'IgnoreCase', true)];
+                    
+  % Define the SurfImages that will be used for calculating the Projected
+  % SurfImage for AddParticlePosition later.
+  %Find out the date it was taken, from the Prefix
+    Dashes=strfind(Prefix,'-');
+    Date=Prefix(1:Dashes(3)-1);
+    EmbryoName=Prefix(Dashes(3)+1:end);
+    [SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath,...
+        PreProcPath, configValues, movieDatabasePath] = DetermineAllLocalFolders(Prefix)
+  
+    D = dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,...
+            'FullEmbryo',filesep,'Surf*.tif']);
+    SurfName=D(find(~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
 
   if nNuclearChannels ~= 0
 
@@ -26,8 +39,12 @@ function Projection = generateNuclearChannel(numberOfFrames, LIFImages, framesIn
       nuclearChannel = AllNuclearChannels(ChannelIndex);
 
       % For all 'nuclear' channels, generate HisSlices, and do projection
+      % From now, we will put the code from the AddParticlePosition that
+      % generates SurfImages in here, so that it's calculated in the
+      % similar way as ZoomedImage is calculated. (YJK, Jan.2019)
       HisSlices = generateHisSlices(LIFImages, NSlices, NChannels, nuclearChannel, framesIndex, seriesIndex);
-
+      SurfSlices = generateSurfSlices(SurfImages,SurfNSlices, NChannels, nuclearChannel, framesIndex, seriesIndex);
+      
       ProjectionTemp(:, :, ChannelIndex) = calculateProjection(ProjectionType, NSlices, HisSlices);
 
       % Think about "invertedNuclear", for example, MCP-mCherry, then
@@ -94,6 +111,21 @@ function Projection = generateNuclearChannel(numberOfFrames, LIFImages, framesIn
 end
 
 function HisSlices = generateHisSlices(LIFImages, NSlices, NChannels, fiducialChannel, framesIndex, seriesIndex)
+  
+  % For all 'nuclear' channels, generate HisSlices, and do projection
+  HisSlices = zeros([size(LIFImages{seriesIndex}{1, 1}, 1), size(LIFImages{seriesIndex}{1, 1}, 2), NSlices(seriesIndex)]);
+  n = 1;
+  firstImage = (framesIndex - 1) * NSlices(seriesIndex) * NChannels + 1 + (fiducialChannel - 1);
+  lastImage = framesIndex * NSlices(seriesIndex) * NChannels;
+  
+  for imagesIndex = firstImage:NChannels:lastImage
+    HisSlices(:, :, n) = LIFImages{seriesIndex}{imagesIndex, 1};
+    n = n + 1;
+  end
+  
+end
+
+function SurfSlices = generateHisSlices(LIFImages, NSlices, NChannels, fiducialChannel, framesIndex, seriesIndex)
   
   % For all 'nuclear' channels, generate HisSlices, and do projection
   HisSlices = zeros([size(LIFImages{seriesIndex}{1, 1}, 1), size(LIFImages{seriesIndex}{1, 1}, 2), NSlices(seriesIndex)]);

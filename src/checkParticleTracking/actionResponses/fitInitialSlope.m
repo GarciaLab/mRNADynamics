@@ -1,7 +1,7 @@
-function [lineFit, Coefficients, fit1E, Particles] =...
+function [lineFit, Coefficients, fit1E, Particles, fitApproved] =...
     fitInitialSlope(CurrentParticle, Particles, Spots, CurrentChannel, schnitzcells, ...
     ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, Frames, anaphase, ...
-    averagingLength, FramesToFit, FrameIndicesToFit)
+    averagingLength, FramesToFit, FrameIndicesToFit, fitApproved)
 %fitInitialSlope Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -9,19 +9,31 @@ function [lineFit, Coefficients, fit1E, Particles] =...
 % AverageLength, Time window for fitting(adjustable), 
 % Use GUI for defining the inputs, as well as repeating the fitting until
 % it's approved.
+SkipWaitForButtonPress = [];
 
-%while (~dd==13) % 13 is same as enter key
+set(0, 'CurrentFigure', Overlay);
+if isempty(SkipWaitForButtonPress)
+    ct = waitforbuttonpress; % ct=0 for click and ct=1 for keypress
+    cc = get(Overlay, 'CurrentCharacter');
+    cm2 = get(overlayAxes, 'CurrentPoint');
+
+    current_axes = get(Overlay, 'CurrentAxes');
+    if strcmpi(cc, '') || ct == 0
+        cc = 'donothing';
+    end
+    is_control = isa(get(Overlay, 'CurrentObject'), 'matlab.ui.control.UIControl');
+
+else
+    cc=SkipWaitForButtonPress;
+    SkipWaitForButtonPress=[];
+end
+    
+% Make a while loop so that we can keep fitting until we like, and approve,
+% or decide not to fit.
+while (~cc==13) % 13 is same as enter key
     % Plug in inputs defined in GUI, 
     % averagingLength, FramesToFit
-    
-%     averagingLength = 1; % default
-%     % Define the frames to fit
-%     [X,Y] = ginput(2); % pick two points (left, and right)
-%     pos1 = find((Frames-X(1)).^2 == min((Frames-X(1)).^2))
-%     pos2 = find((Frames-X(2)).^2 == min((Frames-X(2)).^2))
-%     FramesToFit = [pos1:pos2];
      try
-        lineFit = 1; % this should go after the approval/rejection
         
         % currently shifted by the first frame of the assigned nucleus
         [frameIndex,Coefficients,ErrorEstimation,nFramesForFit] = ...
@@ -73,7 +85,8 @@ function [lineFit, Coefficients, fit1E, Particles] =...
         fit1E = [];
         Coefficients = [];
      end
-%end
+end
+
 
     % save the fitted values (Slope and Time on) in Particles.mat
     % Save only after the approval, which is pressing the 'enter' key
