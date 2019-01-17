@@ -1,7 +1,8 @@
 % Generates differences of gaussians files that will be later used to run segment spots ML, requires a classifier.
-function generateDogsWeka(Prefix, FISHPath, MS2CodePath, PreProcPath, ExperimentType, coatChannel, zSize, numFrames, nCh, initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder)
+function generateDogsWeka(Prefix, ProcPath, MS2CodePath, PreProcPath, ExperimentType, coatChannel, zSize, numFrames, nCh, initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder)
 
-  OutputFolder1 = [FISHPath, filesep, Prefix, '_', filesep, 'dogs'];
+  cd(MS2CodePath);
+  OutputFolder1 = [ProcPath, filesep, Prefix, '_', filesep, 'dogs'];
   mkdir(OutputFolder1)
 
   stacksPath = [PreProcPath, filesep, Prefix, filesep, 'stacks'];
@@ -44,7 +45,7 @@ function generateDogsWeka(Prefix, FISHPath, MS2CodePath, PreProcPath, Experiment
       nameSuffix = ['_ch', iIndex(channelIndex, 2)];
     end
 
-    currentFrameWaitbar = waitbar(0, ['Making ch0', nCh, '.tif stacks for Weka classification']);
+    currentFrameWaitbar = waitbar(0, ['Making ch0', num2str(channelIndex), ' .tif stacks for Weka classification']);
 
     for currentFrame = initialFrame:numFrames
       currentFrameWaitbar = waitbar(currentFrame / numFrames, currentFrameWaitbar);

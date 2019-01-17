@@ -1,9 +1,9 @@
-function writeFilterMovieLog(t, justTifs, weka, DropboxFolder, Prefix, initialFrame, numFrames, filterType, sigmas, classifierPathCh1)
-  if ~justTifs
+function log = writeFilterMovieLog(t, Weka, DropboxFolder, Prefix, initialFrame, numFrames, filterType, sigmas, classifierPathCh1)
+    
     logFile = [DropboxFolder, filesep, Prefix, filesep, 'log.mat'];
 
     if exist(logFile, 'file')
-      load(logFile);
+      load(logFile, 'log');
     else
       log = struct();
     end
@@ -11,13 +11,13 @@ function writeFilterMovieLog(t, justTifs, weka, DropboxFolder, Prefix, initialFr
     log(end + 1).Date = date;
     log(end).runTime = t / 60; % min
     
-    if weka
+    if Weka
       log(end).InitialFrame = initialFrame;
     end
     
     log(end).LastFrame = numFrames;
     
-    if ~weka
+    if ~Weka
       log(end).TimePerFrame = (t / 60) / numFrames;
       log(end).Filter = filterType;
       log(end).sigmas = sigmas;
@@ -28,6 +28,5 @@ function writeFilterMovieLog(t, justTifs, weka, DropboxFolder, Prefix, initialFr
     end
 
     save(logFile, 'log', '-v7.3');
-  end
 
 end

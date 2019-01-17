@@ -16,7 +16,7 @@ function generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh
       nameSuffix = ['_ch', iIndex(channelIndex, 2)];
     end
 
-    currentFrameWaitbar = waitbar(0, ['Making ch0', nCh, '.tif stacks for Weka classification']);
+    currentFrameWaitbar = waitbar(0, ['Making ch0', num2str(channelIndex), ' .tif stacks for Weka classification']);
   
     for currentFrame = initialFrame:numFrames
       currentFrameWaitbar = waitbar(currentFrame / numFrames, currentFrameWaitbar);

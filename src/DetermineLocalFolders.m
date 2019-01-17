@@ -1,11 +1,11 @@
-function [SourcePath, FISHPath, DropboxFolder, MS2CodePath, PreProcPath, configValues, movieDatabasePath] = DetermineLocalFolders(varargin)
+function [SourcePath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath, configValues, movieDatabasePath] = DetermineLocalFolders(varargin)
 
   CONFIG_CSV_PATH = 'ComputerFolders.csv';
 
   configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');
 
   SourcePath = getConfigValue(configValues, 'SourcePath');
-  FISHPath = getConfigValue(configValues, 'FISHPath');
+  ProcPath = getConfigValue(configValues, 'FISHPath');
   DropboxFolder = getConfigValue(configValues, 'DropboxFolder');
   MS2CodePath = getConfigValue(configValues, 'MS2CodePath');
   PreProcPath = getConfigValue(configValues, 'PreProcPath');

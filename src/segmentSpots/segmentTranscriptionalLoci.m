@@ -1,17 +1,26 @@
-function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures, pool, doFF, ffim, Threshold, neighborhood, snippet_size, pixelSize, microscope, intScale)
+function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures, pool, doFF, ffim, Threshold, neighborhood, snippet_size, pixelSize, microscope, intScale, Weka)
+  
   waitbarFigure = waitbar(0, 'Segmenting spots');
 
+  if Weka
+      MLFlag = 'ML';
+      dogStr = 'DOG_';
+      Threshold = 5000;
+  else
+      MLFlag = '';
+      dogStr = 'prob';
+  end
   % (MT, 2018-02-11) Added support for lattice imaging, maybe 
   % temporary - FIX LATER
   if strcmpi(ExperimentType, 'inputoutput') ||  strcmpi(ExperimentType, 'lattice')
     nameSuffix= ['_ch', iIndex(coatChannel, 2)];
-    if Threshold == -1
+    if Threshold == -1 && ~Weka
         Threshold = determineThreshold(Prefix, coatChannel);
         display(['Threshold: ', num2str(Threshold)])
     end
   else
     nameSuffix = ['_ch', iIndex(channelIndex, 2)];
-    if Threshold == -1
+    if Threshold == -1 && ~Weka
         Threshold = determineThreshold(Prefix, channelIndex);
         display(['Threshold: ', num2str(Threshold)])
     end
@@ -37,7 +46,7 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
       end
       
       try
-        dogFileName = [DogOutputFolder, filesep, 'DOG_', Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(zIndex, 2),...
+        dogFileName = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(zIndex, 2),...
           nameSuffix,'.tif'];
         dog = double(imread(dogFileName));
       catch
@@ -56,25 +65,32 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
         im = im.*ffim;
       end
       
-      im_thresh = dog >= Threshold;
+      
+      im_thresh = dog >= Threshold(channelIndex);
+      
+      if  Weka     
+          se = strel('square', 3);
+          im_thresh = imdilate(im_thresh, se); %thresholding from this classified probability map can produce non-contiguous, spurious Spots{channelIndex}. This fixes that and hopefully does not combine real Spots{channelIndex} from different nuclei
+          im_thresh = im_thresh > 0;
+      end
       [im_label, n_spots] = bwlabel(im_thresh); 
       centroids = regionprops(im_thresh, 'centroid');
-
+      
       temp_frames = {};
       temp_particles = cell(1, n_spots);
       
       if n_spots ~= 0
-        if ~displayFigures && pool
+        if ~displayFigures && pool && ~Weka
           parfor spotIndex = 1:n_spots
             centroid = round(centroids(spotIndex).Centroid);
             temp_particles(spotIndex) = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
-              neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, '', intScale);
+              neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid,MLFlag, intScale);
           end
         else
           for spotIndex = 1:n_spots
             centroid = round(centroids(spotIndex).Centroid);
             temp_particles(spotIndex) = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
-              neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, '', intScale);
+              neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, MLFlag, intScale);
           end
         end
         
@@ -85,8 +101,11 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
         end
 
         all_frames{current_frame, zIndex} = temp_frames;
+        
       end
+      
     end
+    
   end
 
   close(waitbarFigure);

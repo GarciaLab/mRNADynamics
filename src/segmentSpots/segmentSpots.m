@@ -12,6 +12,7 @@
 %
 % OPTIONS
 % 'displayFigures':   If you want to display plots and images.
+% 'Weka': For Weka machine learning. 
 %
 % 'InitialFrame', N: Run the code from frame N to last frame. Defaults to first
 %                frame.
@@ -51,7 +52,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
   disp('Segmenting spots...')
   
   [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, ...
-    pool, autoThresh, useIntegralCenter, initialFrame] = determineSegmentSpotsOptions(varargin);
+    pool, autoThresh, useIntegralCenter, initialFrame, Weka] = determineSegmentSpotsOptions(varargin);
       
   argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
   try 
@@ -86,11 +87,11 @@ function log = segmentSpots(Prefix, Threshold, varargin)
 
   [~, ~, ~, ~, ~, ~, ~, ExperimentType, Channel1, Channel2, ~] = readMovieDatabase(Prefix);
 
-  [~, FISHPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix);
+  [~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix);
 
-  load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat']);
+  load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
 
-  DogOutputFolder = [FISHPath, filesep, Prefix, '_', filesep, 'dogs'];
+  DogOutputFolder = [ProcPath, filesep, Prefix, '_', filesep, 'dogs'];
   mkdir(DogOutputFolder)
 
   microscope = FrameInfo(1).FileMode;
@@ -134,7 +135,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
       
     all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, ...
       PreProcPath, Prefix, DogOutputFolder, displayFigures, pool, doFF, ffim, Threshold(nCh), neighborhood, ...
-      snippet_size, pixelSize, microscope, intScale);
+      snippet_size, pixelSize, microscope, intScale, Weka);
 
     close all;
 
