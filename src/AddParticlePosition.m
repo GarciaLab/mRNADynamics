@@ -269,14 +269,14 @@ if ~NoAP
                 HisChannel=1;
                 InvertHis=0;
             elseif contains(lower(Channel1{1}),'mcherry')||...
-                    contains(lower(Channel1{1}),'invertedNuclear')
+                    contains(lower(Channel1{1}),'inverteduclear')
                 HisChannel=1;
                 InvertHis=1;
             elseif contains(lower(Channel2{1}),'his')
                 HisChannel=2;
                 InvertHis=0;
             elseif contains(lower(Channel2{1}),'mcherry')||...
-                    contains(lower(Channel2{1}),'invertedNuclear')
+                    contains(lower(Channel2{1}),'inverteduclear')
                 HisChannel=2;
                 InvertHis=1;
             else
@@ -290,14 +290,14 @@ if ~NoAP
                 HisChannel=1;
                 InvertHis=0;
             elseif contains(lower(Channel1{1}),'mcherry')||...
-                    contains(lower(Channel1{1}),'invertedNuclear')
+                    contains(lower(Channel1{1}),'invertednuclear')
                 HisChannel=1;
                 InvertHis=1;
             elseif contains(lower(Channel2{1}),'his')
                 HisChannel=2;
                 InvertHis=0;
             elseif contains(lower(Channel2{1}),'mcherry')||...
-                    contains(lower(Channel2{1}),'invertedNuclear')
+                    contains(lower(Channel2{1}),'invertednuclear')
                 HisChannel=2;
                 InvertHis=1;
             else
@@ -499,7 +499,7 @@ if ~NoAP
     % ZoomImage should be written better. Right now, it's pretty
     % hard-coded, and also doesn't support the channel3 feature.
     if ((~isempty(cell2mat(strfind(lower(Channel1),'bcd'))))|...
-            (~isempty(cell2mat(strfind(lower(Channel2),'bcd')))))||InvertHis
+            (~isempty(cell2mat(strfind(lower(Channel2),'bcd')))))
         %Figure out which channel Bcd is in
         if contains(lower(Channel1),'bcd')
             BcdChannel=1;
@@ -523,7 +523,7 @@ if ~NoAP
         
         %Otherwise, if there a histone channel
     elseif histoneChannelPresent
-        ChannelToLoad=2;
+        ChannelToLoad=HisChannel;
         
         %Get the surface image in the zoomed case by looking at the last
         %frame of our movie
