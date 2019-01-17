@@ -62,7 +62,7 @@ function log = filterMovie(Prefix, varargin)
   warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
   [displayFigures, numFrames, initialFrame, customFilter, highPrecision, filterType, keepPool,...
-    sigmas, nWorkers, app, kernelSize, weka, justTifs, ignoreMemoryCheck, classifierFolder, ...
+    sigmas, nWorkers, app, kernelSize, Weka, justTifs, ignoreMemoryCheck, classifierFolder, ...
     classifierPathCh1] = determineFilterMovieOptions(varargin);
 
   % Start timer
@@ -70,10 +70,10 @@ function log = filterMovie(Prefix, varargin)
 
   [~, ~, ~, ~, ~, ~, ~, ExperimentType, Channel1, Channel2, ~] = readMovieDatabase(Prefix);
 
-  [~, FISHPath, DropboxFolder, MS2CodePath, PreProcPath] = DetermineLocalFolders(Prefix);
+  [~, ProcPath, DropboxFolder, MS2CodePath, PreProcPath] = DetermineLocalFolders(Prefix);
 
   
-  load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat']);
+  load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
   zSize = FrameInfo(1).NumberSlices + 2;
 
   if numFrames == 0
@@ -88,11 +88,14 @@ function log = filterMovie(Prefix, varargin)
 
   coatChannel = getCoatChannel(ExperimentType, Channel1, Channel2);
 
-  if ~weka && ~justTifs
-    sigmas = generateDifferenceOfGaussianImages(FISHPath, customFilter, nCh, ExperimentType, FrameInfo, coatChannel,...
+  if ~Weka && ~justTifs
+    sigmas = generateDifferenceOfGaussianImages(ProcPath, customFilter, nCh, ExperimentType, FrameInfo, coatChannel,...
       numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision, sigmas, nWorkers, app, kernelSize);
-  elseif weka
-    generateDogsWeka(Prefix, FISHPath, MS2CodePath, PreProcPath, ExperimentType, coatChannel, zSize, numFrames, nCh,...
+  elseif Weka
+      if ~exist([PreProcPath, filesep, Prefix, filesep, 'stacks'], 'dir')
+        generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,coatChannel, zSize, initialFrame);  
+      end
+    generateDogsWeka(Prefix, ProcPath, MS2CodePath, PreProcPath, ExperimentType, coatChannel, zSize, numFrames, nCh,...
       initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder);
   elseif justTifs
     generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,coatChannel, zSize, initialFrame);
@@ -102,9 +105,10 @@ function log = filterMovie(Prefix, varargin)
 
   disp(['Elapsed time: ', num2str(t / 60), ' min'])
 
-  writeFilterMovieLog(t, justTifs, weka, DropboxFolder, Prefix, initialFrame, numFrames, filterType, sigmas, classifierPathCh1);
-
-  if ~keepPool && ~weka && ~justTifs
+  if ~justTifs
+    log = writeFilterMovieLog(t, Weka, DropboxFolder, Prefix, initialFrame, numFrames, filterType, sigmas, classifierPathCh1);
+  end
+  if ~keepPool && ~Weka && ~justTifs
 
     try %#ok<TRYNC>
       poolobj = gcp('nocreate');

@@ -88,7 +88,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
 
   [~, FISHPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix);
 
-  load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat']);
+  load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
 
   DogOutputFolder = [FISHPath, filesep, Prefix, '_', filesep, 'dogs'];
   mkdir(DogOutputFolder)
