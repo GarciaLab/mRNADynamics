@@ -25,8 +25,8 @@ function AddParticlePosition(varargin)
 
 
 %Get the relevant folders for this data set
-[SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
-configValues, movieDatabasePath] = DetermineAllLocalFolders(varargin{1});
+[SourcePath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
+~, ~] = DetermineAllLocalFolders(varargin{1});
 
 
 SkipAlignment=0;
@@ -56,9 +56,9 @@ else
 end
 
 
-if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
+if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
     load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
-    load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots')
     
     %Create the particle array. This is done so that we can support multiple
     %channels. Also figure out the number of channels
@@ -95,9 +95,9 @@ end
 %See if we had any lineage/nuclear information
 D=dir([PreProcPath,filesep,Prefix,filesep,'*-His_*']);
 if ~isempty(D)
-    HistoneChannel=1;
+    histoneChannelPresent=1;
 else
-    HistoneChannel=0;
+    histoneChannelPresent=0;
 end
 
 
@@ -151,9 +151,9 @@ end
 
 
 %Figure out what type of experiment we have
-[DateFromDateColumn, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
-Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+[~, ~, ~, ~, ~, APResolution,...
+Channel1, Channel2, ~, ~, ~, ~, ~,...
+~, ~, ~, ~, ~, ~, ~, Channel3] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 
 if ~NoAP
@@ -183,7 +183,7 @@ if ~NoAP
         % From now, we will use a better way to define the channel for
         % alignment (used for cross-correlation).
         % Find channels with ":Nuclear"
-        ChannelToLoadTemp=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true)
+        ChannelToLoadTemp=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
 
         % Define the Channel to load, for calculating the cross-correlation
         % In future, we can think about combining multiple channels for
@@ -501,7 +501,7 @@ if ~NoAP
     if ((~isempty(cell2mat(strfind(lower(Channel1),'bcd'))))|...
             (~isempty(cell2mat(strfind(lower(Channel2),'bcd')))))||InvertHis
         %Figure out which channel Bcd is in
-        if ~isempty(strfind(lower(Channel1),'bcd'))
+        if contains(lower(Channel1),'bcd')
             BcdChannel=1;
         else
             BcdChannel=2;
@@ -522,7 +522,7 @@ if ~NoAP
         ZoomImage=max(MaxTemp,[],3);
         
         %Otherwise, if there a histone channel
-    elseif HistoneChannel
+    elseif histoneChannelPresent
         ChannelToLoad=2;
         
         %Get the surface image in the zoomed case by looking at the last
@@ -575,19 +575,15 @@ if ~NoAP
     
     
     %Do a correlation between the zoomed in and zoomed out surface images
-    %to figure out the shift.
-    
+    %to figure out the shift.    
     FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
     
-    
-    if ~SkipAlignment && HistoneChannel
+    if ~SkipAlignment && histoneChannelPresent
         if ZoomRatio < 24  %ZoomRatio > 1 && ZoomRatio < 24. AR 12/4/17- where did this number come from
             
             %Enlarge the zoomed out image so we can do the cross-correlation
             SurfImageResized=imresize(SurfImage, ZoomRatio);
 
-            
-            
             %Calculate the correlation matrix and find the maximum
             im1 = ZoomImage;
             im2 = SurfImageResized;
@@ -677,22 +673,24 @@ if ~NoAP
                     +mat2gray(NucMaskZoomIn),zeros(size(NucMaskZoomOutResizedCropped)));
                 
                 
-                figure(1)
-                subplot(2,1,1)
-                imshow(ImOverlay)
-                subplot(2,1,2)
-                imshow(ImOverlayMask)
+                alOvFig = figure(1);
+                imOv = subplot(2,1,1);
+                imshow(ImOverlay, 'Parent', imOv)
+                imOvMask = subplot(2,1,2);
+                imshow(ImOverlayMask, 'Parent', imOvMask)
+                saveas(alOvFig, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentOverlay.tif']);
                 
                 
-                saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentOverlay.tif']);
+                
                 
                 %Show the correlation image, but crop it a little bit
-                figure(2)
+                contFig = figure(2);
+                contAxes = axes(contFig);
                 %HG: Note that I changed the ranges here by two pixels at
                 %least.
-                contourf(imresize(abs(C(((CRows+1)/2-RowsZoom+1):(CRows-1)/2+RowsZoom,...
+                contourf(contAxes,imresize(abs(C(((CRows+1)/2-RowsZoom+1):(CRows-1)/2+RowsZoom,...
                     ((CColumns+1)/2-ColumnsZoom+1):(CColumns-1)/2+ColumnsZoom)), .5));
-                saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentCorrelation.tif']);
+                saveas(contFig, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentCorrelation.tif']);
             catch
                 warning('Could not generate correlation image. Switching to manual alignment')
                 
@@ -995,14 +993,15 @@ if ~NoAP
                 zeros(size(SurfImage)));
             
             
-            figure(5)
-            imshow(SurfOutMaskInOverlay)
-            hold on
-            rectangle('Position',[TopLeftHalf([2,1]),BottomRightHalf([2,1])-TopLeftHalf([2,1])],'EdgeColor','r')
-            plot(coordAHalf(1),coordAHalf(2),'.g','MarkerSize',30)
-            plot(coordPHalf(1),coordPHalf(2),'.r','MarkerSize',30)
-            plot([coordAHalf(1),coordPHalf(1)],[coordAHalf(2),coordPHalf(2)],'-b')
-            hold off
+            surfOutFig = figure(5);
+            surfOutAxes = axes(surfOutFig);
+            imshow(SurfOutMaskInOverlay, 'Parent',surfOutAxes);
+            hold(surfOutAxes, 'on')
+            rectangle(surfOutAxes,'Position',[TopLeftHalf([2,1]),BottomRightHalf([2,1])-TopLeftHalf([2,1])],'EdgeColor','r')
+            plot(surfOutAxes,coordAHalf(1),coordAHalf(2),'.g','MarkerSize',30)
+            plot(surfOutAxes,coordPHalf(1),coordPHalf(2),'.r','MarkerSize',30)
+            plot(surfOutAxes,[coordAHalf(1),coordPHalf(1)],[coordAHalf(2),coordPHalf(2)],'-b')
+            hold(surfOutAxes, 'off')
             
             
             %This is for the full image
@@ -1228,11 +1227,11 @@ if ~NoAP
         surfImageAxes = axes(surfImageFigure);
         imshow(imadjust(SurfImage),'DisplayRange',[],'InitialMagnification',100, 'Parent', surfImageAxes)
         hold(surfImageAxes, 'on')
-        rectangle('Position',[TopLeftHalf([2,1]),BottomRightHalf([2,1])-TopLeftHalf([2,1])],'EdgeColor','r')
-        plot(coordAHalf(1),coordAHalf(2),'.g','MarkerSize',30)
-        plot(coordPHalf(1),coordPHalf(2),'.r','MarkerSize',30)
-        plot([coordAHalf(1),coordPHalf(1)],[coordAHalf(2),coordPHalf(2)],'-b')
-        plot([1],[1],'.y','MarkerSize',50)
+        rectangle(surfImageAxes,'Position',[TopLeftHalf([2,1]),BottomRightHalf([2,1])-TopLeftHalf([2,1])],'EdgeColor','r')
+        plot(surfImageAxes,coordAHalf(1),coordAHalf(2),'.g','MarkerSize',30)
+        plot(surfImageAxes,coordPHalf(1),coordPHalf(2),'.r','MarkerSize',30)
+        plot(surfImageAxes,[coordAHalf(1),coordPHalf(1)],[coordAHalf(2),coordPHalf(2)],'-b')
+        plot(surfImageAxes,1,1,'.y','MarkerSize',50)
         hold(surfImageAxes, 'off')
         saveas(surfImageFigure, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'HalfEmbryoArea.tif']);
         
@@ -1251,11 +1250,11 @@ if ~NoAP
         surfImageAxes = axes(surfImageFigure);
         imshow(imadjust(SurfImage),'DisplayRange',[],'InitialMagnification',100, 'Parent', surfImageAxes)
         hold(surfImageAxes, 'on')
-        rectangle('Position',[TopLeft([2,1]),BottomRight([2,1])-TopLeft([2,1])],'EdgeColor','r')
-        plot(coordA(1),coordA(2),'.g','MarkerSize',30)
-        plot(coordP(1),coordP(2),'.r','MarkerSize',30)
-        plot([coordA(1),coordP(1)],[coordA(2),coordP(2)],'-b')
-        plot([1],[1],'.y','MarkerSize',50)
+        rectangle(surfImageAxes,'Position',[TopLeft([2,1]),BottomRight([2,1])-TopLeft([2,1])],'EdgeColor','r')
+        plot(surfImageAxes,coordA(1),coordA(2),'.g','MarkerSize',30)
+        plot(surfImageAxes,coordP(1),coordP(2),'.r','MarkerSize',30)
+        plot(surfImageAxes,[coordA(1),coordP(1)],[coordA(2),coordP(2)],'-b')
+        plot(surfImageAxes,1,1,'.y','MarkerSize',50)
         hold(surfImageAxes,'off')
         saveas(surfImageFigure, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'HalfEmbryoArea.tif'])
         
@@ -1275,9 +1274,9 @@ if ~NoAP
     %imshow(NucMaskZoomIn)
     %imshow(NucMaskZoomOutResizedCropped)
     hold(zoomImageAxes,'on')
-    plot([coordAZoom(1),coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'-b')
-    plot([coordAZoom(1)+1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'--r')
-    plot([coordAZoom(1)-1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'-.g')
+    plot(zoomImageAxes,[coordAZoom(1),coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'-b')
+    plot(zoomImageAxes,[coordAZoom(1)+1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'--r')
+    plot(zoomImageAxes,[coordAZoom(1)-1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'-.g')
     hold(zoomImageAxes,'off')
     saveas(zoomImageFigure, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'ZoomedEmbryoAP.tif']);
     
@@ -1324,9 +1323,9 @@ if ~NoAP
         mat2gray(ZoomImage)/2,mat2gray(ZoomImage)/2);
     imshow(ZoomOverlay, 'Parent', zoomOverlayAxes)
     hold(zoomOverlayAxes, 'on')
-    plot([coordAZoom(1),coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'-b')
-    plot([coordAZoom(1)+1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'--r')
-    plot([coordAZoom(1)-1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'-.g')
+    plot(zoomOverlayAxes,[coordAZoom(1),coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'-b')
+    plot(zoomOverlayAxes,[coordAZoom(1)+1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'--r')
+    plot(zoomOverlayAxes,[coordAZoom(1)-1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'-.g')
     hold(zoomOverlayAxes,'off')
     
     
@@ -1363,15 +1362,15 @@ if ~NoAP
     VariablesToSave={'coordA','coordP','coordAZoom','coordPZoom'};
     %Information about shifts
     if exist('xShift', 'var')
-        VariablesToSave={VariablesToSave{:},'xShift','yShift'};
+        VariablesToSave=[VariablesToSave,'xShift','yShift'];
     elseif  exist('xShift1', 'var')
-        VariablesToSave={VariablesToSave{:},'xShift1','yShift1',...
-            'xShift2','yShift2'};
+        VariablesToSave=[VariablesToSave,'xShift1','yShift1',...
+            'xShift2','yShift2'];
     end
     %Rotation information
     if exist('zoom_angle', 'var')
         ImageRotation=zoom_angle;
-        VariablesToSave={VariablesToSave{:},'ImageRotation'};
+        VariablesToSave=[VariablesToSave,'ImageRotation'];
     end
     
     save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],VariablesToSave{:})
@@ -1389,19 +1388,14 @@ end
 
 
 %Save particle information
-if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
+if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
     
     %Bring the one channel case back to the legacy setting
     if NChannels==1
         Particles=Particles{1};
     end
     
-    if exist('Threshold1')
-        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles',...
-            'Threshold1','Threshold2', 'SpotFilter');
-    else
-        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','SpotFilter');
-    end
+    save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','SpotFilter');
 end
 %close all force;
 

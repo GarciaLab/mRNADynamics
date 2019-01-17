@@ -5,7 +5,7 @@
 % For MovieDatabase Channels, we should put ":Nuclear" or
 % "invertedNuclear" for those channels to be recognized for histone
 % channel generation.
-function Projection = generateNuclearChannel(numberOfFrames, LIFImages, framesIndex, seriesIndex, NSlices, NChannels, fiducialChannel, ProjectionType, ExperimentType, Channel1, Channel2, Channel3, ReferenceHist, OutputFolder, Prefix)
+function Projection = generateNuclearChannel(numberOfFrames, LIFImages, framesIndex, seriesIndex, NSlices, NChannels, nuclearChannel, ProjectionType, ExperimentType, Channel1, Channel2, Channel3, ReferenceHist, OutputFolder, Prefix)
 
   % Check how many channels have ":Nuclear" in the MovieDatabase.csv
   NuclearChannels = [contains(Channel1, 'Nuclear', 'IgnoreCase', true), ...
@@ -16,7 +16,7 @@ function Projection = generateNuclearChannel(numberOfFrames, LIFImages, framesIn
   InvertedChannels = [contains(Channel1, 'inverted', 'IgnoreCase', true), ...
                         contains(Channel2, 'inverted', 'IgnoreCase', true), ...
                         contains(Channel3, 'inverted', 'IgnoreCase', true)];
-
+  
   if nNuclearChannels ~= 0
 
     for ChannelIndex = 1:nNuclearChannels
@@ -52,7 +52,7 @@ function Projection = generateNuclearChannel(numberOfFrames, LIFImages, framesIn
     % In case of old datasets (does not have ":Nuclear")
   else
 
-    HisSlices = generateHisSlices(LIFImages, NSlices, NChannels, fiducialChannel, framesIndex, seriesIndex);
+    HisSlices = generateHisSlices(LIFImages, NSlices, NChannels, nuclearChannel, framesIndex, seriesIndex);
 
     Projection = calculateProjection(ProjectionType, NSlices, HisSlices);
     
@@ -97,13 +97,13 @@ function HisSlices = generateHisSlices(LIFImages, NSlices, NChannels, fiducialCh
   
   % For all 'nuclear' channels, generate HisSlices, and do projection
   HisSlices = zeros([size(LIFImages{seriesIndex}{1, 1}, 1), size(LIFImages{seriesIndex}{1, 1}, 2), NSlices(seriesIndex)]);
-  n = 1;
+  z = 1;
   firstImage = (framesIndex - 1) * NSlices(seriesIndex) * NChannels + 1 + (fiducialChannel - 1);
   lastImage = framesIndex * NSlices(seriesIndex) * NChannels;
   
   for imagesIndex = firstImage:NChannels:lastImage
-    HisSlices(:, :, n) = LIFImages{seriesIndex}{imagesIndex, 1};
-    n = n + 1;
+    HisSlices(:, :, z) = LIFImages{seriesIndex}{imagesIndex, 1};
+    z = z + 1;
   end
   
 end
