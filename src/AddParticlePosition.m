@@ -25,8 +25,8 @@ function AddParticlePosition(varargin)
 
 
 %Get the relevant folders for this data set
-[SourcePath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
-~, ~] = DetermineAllLocalFolders(varargin{1});
+[SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
+configValues, movieDatabasePath] = DetermineAllLocalFolders(varargin{1});
 
 
 SkipAlignment=0;
@@ -56,9 +56,9 @@ else
 end
 
 
-if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
-    load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'Particles')
-    load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots')
+if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'])
     
     %Create the particle array. This is done so that we can support multiple
     %channels. Also figure out the number of channels
@@ -94,11 +94,11 @@ end
 
 %See if we had any lineage/nuclear information
 D=dir([PreProcPath,filesep,Prefix,filesep,'*-His_*']);
-% if ~isempty(D)
-%     HistoneChannel=1;
-% else
-%     HistoneChannel=0;
-% end
+if ~isempty(D)
+    HistoneChannel=1;
+else
+    HistoneChannel=0;
+end
 
 
 %Determine whether we're dealing with 2-photon data from Princeton or LSM
@@ -157,49 +157,49 @@ nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3] = getExperimentDataFromMovieDat
 
 
 if ~NoAP
-%     NuclearChannel=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
-%     if ~NuclearChannel
-%         %First, check whether we have Bcd-GFP and inverted histone
-%         if ((~isempty(strfind(lower(Channel1{1}),'bcd')))|...
-%                 (~isempty(strfind(lower(Channel2{1}),'bcd'))))
-%             if ((~isempty(strfind(lower(Channel1{1}),'his')))|...
-%                 (~isempty(strfind(lower(Channel2{1}),'his'))))
-%             ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
-%                 ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')));
-%             else
-%             warning('Using only Bcd-GFP to determine AP position')
-%             ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd'))|...
-%                 ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd')));
-%             end
-%         % YJK, 2018/04/01 : In case we have three channels, we should see if
-%         % any of them has histone channel
-%         elseif (~isempty(strfind(lower(Channel3{1}), 'his')))
-%             ChannelToLoadTemp=~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1}),lower(Channel3{1})},'his'));
-%         else
-%             ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
-%                 ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')));
-%         end
-%     else
-%         % From now, we will use a better way to define the channel for
-%         % alignment (used for cross-correlation).
-%         % Find channels with ":Nuclear"
-%         ChannelToLoadTemp=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
-% 
-%         % Define the Channel to load, for calculating the cross-correlation
-%         % In future, we can think about combining multiple channels for
-%         % calculating the cross-correlation to get more accurate estimates.
-%         % For now, let's pick only one channel for this. For multiple
-%         % channels, let's first pick the first channel. This can be fine in
-%         % most cases, since we normally use lower wavelength for sth we
-%         % care more, or we get better signal from those.
-%         if sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)==1
-%             ChannelToLoad=find(ChannelToLoadTemp);
-%         elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>2
-%             ChannelToLoad = ChannelToLoadTemp(1);
-%         else
-%             error('No histone channel found. Was it defined in MovieDatabase?')
-%         end
-%     end
+    NuclearChannel=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
+    if ~NuclearChannel
+        %First, check whether we have Bcd-GFP and inverted histone
+        if ((~isempty(strfind(lower(Channel1{1}),'bcd')))|...
+                (~isempty(strfind(lower(Channel2{1}),'bcd'))))
+            if ((~isempty(strfind(lower(Channel1{1}),'his')))|...
+                (~isempty(strfind(lower(Channel2{1}),'his'))))
+            ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
+                ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')));
+            else
+            warning('Using only Bcd-GFP to determine AP position')
+            ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd'))|...
+                ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd')));
+            end
+        % YJK, 2018/04/01 : In case we have three channels, we should see if
+        % any of them has histone channel
+        elseif (~isempty(strfind(lower(Channel3{1}), 'his')))
+            ChannelToLoadTemp=~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1}),lower(Channel3{1})},'his'));
+        else
+            ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
+                ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')));
+        end
+    else
+        % From now, we will use a better way to define the channel for
+        % alignment (used for cross-correlation).
+        % Find channels with ":Nuclear"
+        ChannelToLoadTemp=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true)
+
+        % Define the Channel to load, for calculating the cross-correlation
+        % In future, we can think about combining multiple channels for
+        % calculating the cross-correlation to get more accurate estimates.
+        % For now, let's pick only one channel for this. For multiple
+        % channels, let's first pick the first channel. This can be fine in
+        % most cases, since we normally use lower wavelength for sth we
+        % care more, or we get better signal from those.
+        if sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)==1
+            ChannelToLoad=find(ChannelToLoadTemp);
+        elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>2
+            ChannelToLoad = ChannelToLoadTemp(1);
+        else
+            error('No histone channel found. Was it defined in MovieDatabase?')
+        end
+    end
         
     %Get information about all images. This depends on the microscope used.
     
@@ -258,50 +258,47 @@ if ~NoAP
         %This is so that the code doesn't freak out later
         SurfName=[];
         
-%         %Figure out the different channels
-%         
-%         %If we have Bcd-GFP and inverted His, we will use Bcd-GFP for the
-%         %alignment
-%         if ((contains(lower(Channel1{1}),'bcd'))||...
-%                 (contains(lower(Channel2{1}),'bcd')))
-%             if  contains(lower(Channel1{1}),'his')
-%                 HisChannel=1;
-%                 InvertHis=0;
-%             elseif contains(lower(Channel1{1}),'mcherry')
-%                 HisChannel=1;
-%                 InvertHis=1;
-%             elseif contains(lower(Channel2{1}),'his')
-%                 HisChannel=2;
-%                 InvertHis=0;
-%             elseif contains(lower(Channel2{1}),'mcherry')
-%                 HisChannel=2;
-%                 InvertHis=1;
-%             else
-%                 ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd'))|...
-%                     ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd')));
-%                 HisChannel=find(ChannelToLoad);
-%                 InvertHis=0;
-%             end
-%         else
-%             if contains(lower(Channel1{1}),'his')
-%                 HisChannel=1;
-%                 InvertHis=0;
-%             elseif contains(lower(Channel1{1}),'mcherry')
-%                 HisChannel=1;
-%                 InvertHis=1;
-%             elseif contains(lower(Channel2{1}),'his')
-%                 HisChannel=2;
-%                 InvertHis=0;
-%             elseif contains(lower(Channel2{1}),'mcherry')
-%                 HisChannel=2;
-%                 InvertHis=1;
-%             else
-%                 error('LIF Mode error: Channel name not recognized. Check MovieDatabase.')
-%             end
-%         end
-%         
-        HisChannel = 1;
-        InvertHis = 0;
+        %Figure out the different channels
+        
+        %If we have Bcd-GFP and inverted His, we will use Bcd-GFP for the
+        %alignment
+        if ((contains(lower(Channel1{1}),'bcd'))||...
+                (contains(lower(Channel2{1}),'bcd')))
+            if  contains(lower(Channel1{1}),'his')
+                HisChannel=1;
+                InvertHis=0;
+            elseif contains(lower(Channel1{1}),'mcherry')
+                HisChannel=1;
+                InvertHis=1;
+            elseif contains(lower(Channel2{1}),'his')
+                HisChannel=2;
+                InvertHis=0;
+            elseif contains(lower(Channel2{1}),'mcherry')
+                HisChannel=2;
+                InvertHis=1;
+            else
+                ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd'))|...
+                    ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd')));
+                HisChannel=find(ChannelToLoad);
+                InvertHis=0;
+            end
+        else
+            if contains(lower(Channel1{1}),'his')
+                HisChannel=1;
+                InvertHis=0;
+            elseif contains(lower(Channel1{1}),'mcherry')
+                HisChannel=1;
+                InvertHis=1;
+            elseif contains(lower(Channel2{1}),'his')
+                HisChannel=2;
+                InvertHis=0;
+            elseif contains(lower(Channel2{1}),'mcherry')
+                HisChannel=2;
+                InvertHis=1;
+            else
+                error('LIF Mode error: Channel name not recognized. Check MovieDatabase.')
+            end
+        end
         
         %Find the zoomed movie pixel size
         D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.',FileMode(1:3)]);
@@ -366,34 +363,32 @@ if ~NoAP
         %             PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX);
         %         end
         
-%         
-%         %How many channels and slices do we have?
-%         NChannelsMeta=MetaFullEmbryo.getChannelCount(0);
-%         NSlices=str2double(MetaFullEmbryo.getPixelsSizeZ(0));
-%         clear MaxTemp
-%         
-%         %Do a maximum projection
-%         
-%         %Look for the image with the largest size. In this way, we avoid
-%         %loading individual tiles in the case of a tile scan.
-%         for i=1:size(ImageTemp,1)
-%             SizesImages(i)=size(ImageTemp{i,1}{1,1},1);
-%         end
-%         [~,ImageCellToUse]=max(SizesImages);
-%         
-%         
-%         %By looking at the last image we make sure we're avoiding the
-%         %individual tiles if we're dealing with tile scan
-%         for i=HisChannel:NChannelsMeta:size(ImageTemp{ImageCellToUse,1},1)
-%             MaxTemp(:,:,i)=ImageTemp{ImageCellToUse,1}{i,1};
-%         end
-%         if InvertHis
-%             SurfImage=MaxTemp(:,:,HisChannel-1+round(NSlices/2)*NChannelsMeta-1);
-%         else
-%             SurfImage=max(MaxTemp,[],3);
-%         end
-
-        SurfImage = 'YJK please add images here';
+        
+        %How many channels and slices do we have?
+        NChannelsMeta=MetaFullEmbryo.getChannelCount(0);
+        NSlices=str2double(MetaFullEmbryo.getPixelsSizeZ(0));
+        clear MaxTemp
+        
+        %Do a maximum projection
+        
+        %Look for the image with the largest size. In this way, we avoid
+        %loading individual tiles in the case of a tile scan.
+        for i=1:size(ImageTemp,1)
+            SizesImages(i)=size(ImageTemp{i,1}{1,1},1);
+        end
+        [~,ImageCellToUse]=max(SizesImages);
+        
+        
+        %By looking at the last image we make sure we're avoiding the
+        %individual tiles if we're dealing with tile scan
+        for i=HisChannel:NChannelsMeta:size(ImageTemp{ImageCellToUse,1},1)
+            MaxTemp(:,:,i)=ImageTemp{ImageCellToUse,1}{i,1};
+        end
+        if InvertHis
+            SurfImage=MaxTemp(:,:,HisChannel-1+round(NSlices/2)*NChannelsMeta-1);
+        else
+            SurfImage=max(MaxTemp,[],3);
+        end
         
         %For Nikon spinnind disk data load the stitched surface image that
         %was made by FindAPAxisFullEmbryo
@@ -486,11 +481,11 @@ if ~NoAP
     
     %Get the information about the AP axis as well as the image shifts
     %used for the stitching of the two halves of the embryo
-    load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat']);
+    load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
     
     
     %Make a folder to store the images
-    mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection']);
+    mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
     
     %Check whether we have Bcd-GFP. If so, we'll use it for the alignment
     %if there is no histone. (Actually, if there's Bcd, it's usually the
@@ -498,60 +493,60 @@ if ~NoAP
     % YJK (12/3/2018) : This whole part of finding the channel for the
     % ZoomImage should be written better. Right now, it's pretty
     % hard-coded, and also doesn't support the channel3 feature.
-%     if ((~isempty(cell2mat(strfind(lower(Channel1),'bcd'))))|...
-%             (~isempty(cell2mat(strfind(lower(Channel2),'bcd')))))||InvertHis
-%         %Figure out which channel Bcd is in
-%         if ~isempty(strfind(lower(Channel1),'bcd'))
-%             BcdChannel=1;
-%         else
-%             BcdChannel=2;
-%         end
-%         
-%         %Find the last frame
-%         DGFP=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'*_z*_ch',...
-%             iIndex(BcdChannel,2),'.tif']);
-%         %Now load all z planes in that frame
-%         DGFP=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'_',...
-%             DGFP(end).name(end-15:end-13),'*_z*_ch',...
-%             iIndex(BcdChannel,2),'.tif']);
-%         %Take the maximum projection
-%         MaxTemp=[];
-%         for i=1:length(DGFP)
-%             MaxTemp(:,:,i)=imread([PreProcPath,filesep,Prefix,filesep,DGFP(i).name]);
-%         end
-%         ZoomImage=max(MaxTemp,[],3);
-%         
-%         %Otherwise, if there a histone channel
-%     elseif HistoneChannel
-%         ChannelToLoad=2;
-%         
-%         %Get the surface image in the zoomed case by looking at the last
-%         %frame of our movie
+    if ((~isempty(cell2mat(strfind(lower(Channel1),'bcd'))))|...
+            (~isempty(cell2mat(strfind(lower(Channel2),'bcd')))))||InvertHis
+        %Figure out which channel Bcd is in
+        if ~isempty(strfind(lower(Channel1),'bcd'))
+            BcdChannel=1;
+        else
+            BcdChannel=2;
+        end
+        
+        %Find the last frame
+        DGFP=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'*_z*_ch',...
+            iIndex(BcdChannel,2),'.tif']);
+        %Now load all z planes in that frame
+        DGFP=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'_',...
+            DGFP(end).name(end-15:end-13),'*_z*_ch',...
+            iIndex(BcdChannel,2),'.tif']);
+        %Take the maximum projection
+        MaxTemp=[];
+        for i=1:length(DGFP)
+            MaxTemp(:,:,i)=imread([PreProcPath,filesep,Prefix,filesep,DGFP(i).name]);
+        end
+        ZoomImage=max(MaxTemp,[],3);
+        
+        %Otherwise, if there a histone channel
+    elseif HistoneChannel
+        ChannelToLoad=2;
+        
+        %Get the surface image in the zoomed case by looking at the last
+        %frame of our movie
         DHis=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
         ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis(end-1).name]);
-%     else
-%         ChannelToLoad=1;
-%         
-%         %Get the surface image in the zoomed case
-%         DGFP=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'*_z*.tif']);
-%         if ~isempty(DGFP)
-%             ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DGFP(end).name],ChannelToLoad);
-%         else
-%             % This might be the case, for instance, if you're just trying
-%             % to find AP information about an image without using FISH
-%             % code. In that case, just extract the nuclei from the last
-%             % raw image.
-%             DGFP = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, '*.tif']);
-%             ImageInfo = imfinfo([SourcePath, filesep, Date, filesep, EmbryoName, filesep, DGFP(end).name]);
-%             NumFramesAndSlices = length(ImageInfo)/2;
-%             RawImage3M = NaN(Rows, Columns, NumFramesAndSlices);
-%             for lImageIndex = 1:NumFramesAndSlices
-%                 RawImage3M(:, :, lImageIndex) = imread([SourcePath, filesep, Date, filesep, EmbryoName, filesep, DGFP(end).name],...
-%                     'Index', 2*(lImageIndex-1) + ChannelToLoad);
-%             end
-%             ZoomImage = max(RawImage3M, [], 3) / 255;
-%         end
-%     end
+    else
+        ChannelToLoad=1;
+        
+        %Get the surface image in the zoomed case
+        DGFP=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'*_z*.tif']);
+        if ~isempty(DGFP)
+            ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DGFP(end).name],ChannelToLoad);
+        else
+            % This might be the case, for instance, if you're just trying
+            % to find AP information about an image without using FISH
+            % code. In that case, just extract the nuclei from the last
+            % raw image.
+            DGFP = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, '*.tif']);
+            ImageInfo = imfinfo([SourcePath, filesep, Date, filesep, EmbryoName, filesep, DGFP(end).name]);
+            NumFramesAndSlices = length(ImageInfo)/2;
+            RawImage3M = NaN(Rows, Columns, NumFramesAndSlices);
+            for lImageIndex = 1:NumFramesAndSlices
+                RawImage3M(:, :, lImageIndex) = imread([SourcePath, filesep, Date, filesep, EmbryoName, filesep, DGFP(end).name],...
+                    'Index', 2*(lImageIndex-1) + ChannelToLoad);
+            end
+            ZoomImage = max(RawImage3M, [], 3) / 255;
+        end
+    end
     
     
     
@@ -579,22 +574,23 @@ if ~NoAP
     
     FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
     
-    HistoneChannel = true;
     
     if ~SkipAlignment && HistoneChannel
         if ZoomRatio < 24  %ZoomRatio > 1 && ZoomRatio < 24. AR 12/4/17- where did this number come from
             
             %Enlarge the zoomed out image so we can do the cross-correlation
             SurfImageResized=imresize(SurfImage, ZoomRatio);
-                
+
+            
+            
             %Calculate the correlation matrix and find the maximum
             im1 = ZoomImage;
             im2 = SurfImageResized;
 
-%             if InvertHis
-%                 im1 = imcomplement(im1);
-%                 im2 = imcomplement(im2);
-%             end
+            if InvertHis
+                im1 = imcomplement(im1);
+                im2 = imcomplement(im2);
+            end
             try
                 C = gather(normxcorr2(gpuArray(im1), gpuArray(im2)));
             catch
@@ -1250,11 +1246,11 @@ if ~NoAP
         surfImageAxes = axes(surfImageFigure);
         imshow(imadjust(SurfImage),'DisplayRange',[],'InitialMagnification',100, 'Parent', surfImageAxes)
         hold(surfImageAxes, 'on')
-        rectangle(surfImageAxes,'Position',[TopLeft([2,1]),BottomRight([2,1])-TopLeft([2,1])],'EdgeColor','r')
-        plot(surfImageAxes,coordA(1),coordA(2),'.g','MarkerSize',30)
-        plot(surfImageAxescoordP(1),coordP(2),'.r','MarkerSize',30)
-        plot(surfImageAxes,[coordA(1),coordP(1)],[coordA(2),coordP(2)],'-b')
-        plot(surfImageAxes,1,1,'.y','MarkerSize',50)
+        rectangle('Position',[TopLeft([2,1]),BottomRight([2,1])-TopLeft([2,1])],'EdgeColor','r')
+        plot(coordA(1),coordA(2),'.g','MarkerSize',30)
+        plot(coordP(1),coordP(2),'.r','MarkerSize',30)
+        plot([coordA(1),coordP(1)],[coordA(2),coordP(2)],'-b')
+        plot([1],[1],'.y','MarkerSize',50)
         hold(surfImageAxes,'off')
         saveas(surfImageFigure, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'HalfEmbryoArea.tif'])
         
@@ -1262,16 +1258,21 @@ if ~NoAP
         coordPZoom=(coordP-[TopLeft(2),TopLeft(1)])*ZoomRatio;
     end
     
-
+    
+    
+    
+    
+    
+    
     zoomImageFigure = figure(9);
     zoomImageAxes = axes(zoomImageFigure);
     imshow(imadjust(ZoomImage),[], 'Parent', zoomImageAxes)
     %imshow(NucMaskZoomIn)
     %imshow(NucMaskZoomOutResizedCropped)
     hold(zoomImageAxes,'on')
-    plot(zoomImageAxes,[coordAZoom(1),coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'-b')
-    plot(zoomImageAxes,[coordAZoom(1)+1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'--r')
-    plot(zoomImageAxes,[coordAZoom(1)-1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'-.g')
+    plot([coordAZoom(1),coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'-b')
+    plot([coordAZoom(1)+1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'--r')
+    plot([coordAZoom(1)-1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'-.g')
     hold(zoomImageAxes,'off')
     saveas(zoomImageFigure, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'ZoomedEmbryoAP.tif']);
     
@@ -1346,25 +1347,29 @@ if ~NoAP
         end
     end
     
-  
+    
+    
+    
+    
+    
     %Save AP detection information
     
     %Default set of variables to save
-    variablesToSave={'coordA','coordP','coordAZoom','coordPZoom'};
+    VariablesToSave={'coordA','coordP','coordAZoom','coordPZoom'};
     %Information about shifts
     if exist('xShift', 'var')
-        variablesToSave=[variablesToSave,'xShift','yShift'];
+        VariablesToSave={VariablesToSave{:},'xShift','yShift'};
     elseif  exist('xShift1', 'var')
-        variablesToSave=[variablesToSave,'xShift1','yShift1',...
-            'xShift2','yShift2'];
+        VariablesToSave={VariablesToSave{:},'xShift1','yShift1',...
+            'xShift2','yShift2'};
     end
     %Rotation information
     if exist('zoom_angle', 'var')
         ImageRotation=zoom_angle;
-        variablesToSave=[variablesToSave,'ImageRotation'];
+        VariablesToSave={VariablesToSave{:},'ImageRotation'};
     end
     
-    save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],variablesToSave{:})
+    save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],VariablesToSave{:})
     
     if exist('ManualAlignmentDone', 'var')
         if ManualAlignmentDone
@@ -1376,14 +1381,25 @@ if ~NoAP
 end
 
 
+
+
 %Save particle information
-if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
+if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
     
     %Bring the one channel case back to the legacy setting
     if NChannels==1
         Particles=Particles{1};
     end
     
-    
-    save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','SpotFilter');
+    if exist('Threshold1')
+        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles',...
+            'Threshold1','Threshold2', 'SpotFilter');
+    else
+        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','SpotFilter');
+    end
 end
+%close all force;
+
+
+
+
