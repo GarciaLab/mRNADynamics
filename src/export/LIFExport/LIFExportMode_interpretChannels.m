@@ -40,7 +40,7 @@ function [coatChannel, histoneChannel, fiducialChannel, inputProteinChannel, Fra
     end
     % Use MCP-mCherry as a fake histone channel in case there's no
     % Histone channel (Last edited : 3/28/2018, YJK)
-    if (fiducialChannel==0)&&...
+    if (sum(fiducialChannel==0))&&...
             ((~isempty(strfind(Channel1{1},'mCherry')))||(~isempty(strfind(Channel2{1},'mCherry'))))
         if (~isempty(strfind(Channel1{1},'mCherry')))
             fiducialChannel=1;
