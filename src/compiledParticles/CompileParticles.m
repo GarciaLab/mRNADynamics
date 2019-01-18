@@ -157,7 +157,7 @@ FilePrefix=[Prefix,'_'];
 % refactor in progress, we should replace readMovieDatabase with getExperimentDataFromMovieDatabase
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoopEnd, APResolution,...
     Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+    nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 
 %Load all the information
@@ -612,8 +612,8 @@ if ~slimVersion
     %folder. I can then load everything in ImageJ.
 
     if ~SkipMovie&&strcmpi(ExperimentAxis,'AP')
-        APProfileMovie(MeanVectorAP, NParticlesAP, MinParticles, numFrames, ...
-            APbinID, SDVectorAP, FrameInfo, ElapsedTime, DropboxFolder, Prefix)
+        APProfileMovie(MeanVectorAP, NParticlesAP, MinParticles, ...
+            APbinID, SDVectorAP, FrameInfo, ElapsedTime, DropboxFolder, Prefix, nc9, nc10, nc11, nc12, nc13, nc14)
     end
 
     %% Checking correlations with position and expression
