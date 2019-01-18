@@ -4,11 +4,11 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
 
   if Weka
       MLFlag = 'ML';
-      dogStr = 'DOG_';
+      dogStr = 'prob';
       Threshold = 5000;
   else
       MLFlag = '';
-      dogStr = 'prob';
+      dogStr = 'DOG_';
   end
   % (MT, 2018-02-11) Added support for lattice imaging, maybe 
   % temporary - FIX LATER
