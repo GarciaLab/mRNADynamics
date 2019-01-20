@@ -50,7 +50,7 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
           nameSuffix,'.tif'];
         dog = double(imread(dogFileName));
       catch
-        error('Please re-run with threshold ''[]'' to create DoG files')
+        error('Please run filterMovie to create DoG files')
       end
       
       if displayFigures

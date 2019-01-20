@@ -1,11 +1,11 @@
-%exportTest = testExport_2015_07_25_P2P_75uW_bi_short;
-%segmentSpotsMLTest = testSegmentSpotsML_2015_07_25_P2P_75uW_bi_short;
-%trackmRNADynamicsTestCase = testTrackmRNADynamics_2015_07_25_P2P_75uW_bi_short;
-%generateExpectedDataForPrefix(exportTest, segmentSpotsMLTest, trackmRNADynamicsTestCase);
+exportTest = testExport_2015_07_25_P2P_75uW_bi_short;
+segmentSpotsMLTest = testSegmentSpotsML_2015_07_25_P2P_75uW_bi_short;
+trackmRNADynamicsTestCase = testTrackmRNADynamics_2015_07_25_P2P_75uW_bi_short;
+generateExpectedDataForPrefix(exportTest, segmentSpotsMLTest, trackmRNADynamicsTestCase);
 
 % No histone path of traackmRNADynamics is processed separately
-%trackmRNADynamicsNotHistoneTestCase = testTrackmRNADynamicsNotHistone_2015_07_25_P2P_75uW_bi_short;
-%generateExpectedDataTrackmRNADynamicsNotHistone(trackmRNADynamicsNotHistoneTestCase);
+trackmRNADynamicsNotHistoneTestCase = testTrackmRNADynamicsNotHistone_2015_07_25_P2P_75uW_bi_short;
+generateExpectedDataTrackmRNADynamicsNotHistone(trackmRNADynamicsNotHistoneTestCase);
 
 % Segment spots only has one test so far
 segmentSpotsTest = testSegmentSpots_2015_07_25_P2P_75uW_bi_short;

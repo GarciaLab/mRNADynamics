@@ -30,14 +30,14 @@ function testCase = testSegmentSpots(testCase)
   
   % Then verifies log.mat and FrameInfo.mat and expected contents of dogs folder
   assertLogFileExists(testCase, dynamicResultsExperimentPath);
-  assertDogsFolderEqualToExpected(testCase, processedDataExperimentPath, testPath, 'SegmentSpots/1stPass');
+  assertDogsFolderEqualToExpected(testCase, processedDataExperimentPath, testPath, 'filterMovie');
 
   % Tests second pass
   % Executes segment spots with known DoG
   segmentSpots(testCase.Prefix, testCase.DoG);
 
   assertLogFileExists(testCase, dynamicResultsExperimentPath);
-  assertSpotsEqualToExpected(testCase, dynamicResultsExperimentPath, testPath, 'SegmentSpots/2ndPass');
+  assertSpotsEqualToExpected(testCase, dynamicResultsExperimentPath, testPath, 'SegmentSpots');
 
   testSegmentSpotsNoThreshold(testCase);
   testSegmentSpotsEmptyThreshold(testCase);

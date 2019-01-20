@@ -33,6 +33,8 @@
 % 'nWorkers': Specify the number of workers to use during parallel
 % processing
 %
+% 'keepProcessedData': Keeps the ProcessedData folder for the given prefix after running segment spots
+%
 % OUTPUT
 % 'Spots':  A structure array with a list of detected transcriptional loci
 % in each frame and their properties.
@@ -51,7 +53,7 @@ function segmentSpotsML(Prefix, Threshold, varargin)
   end
 
   [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, ~, ~, ...
-     initialFrame, ~] = determineSegmentSpotsOptions(varargin);
+     initialFrame, ~, keepProcessedData] = determineSegmentSpotsOptions(varargin);
   useIntegralCenter = 0;
 
   %% Start timer
@@ -69,7 +71,8 @@ function segmentSpotsML(Prefix, Threshold, varargin)
     numFrames = length(FrameInfo);
   end
 
-  dogsFolder = [FISHPath, filesep, Prefix, '_', filesep, 'dogs'];
+  ProcessedDataFolder = [FISHPath, filesep, Prefix, '_'];
+  dogsFolder = [ProcessedDataFolder, filesep, 'dogs'];
   mkdir(dogsFolder)
 
   nCh = 1;
@@ -180,6 +183,12 @@ function segmentSpotsML(Prefix, Threshold, varargin)
       display(log);
     end
   
+  end
+
+  if ~keepProcessedData
+    deleteProcessedDataFolder(ProcessedDataFolder, Prefix);
+  else
+    disp('keepProcessedData parameter sent. ProcessedData folder will not be removed.');    
   end
 
   if ~ keepPool

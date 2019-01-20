@@ -6,7 +6,4 @@ function copyDataToExpectedData(Prefix, dynamicsResultsPath, dynamicsResultsExpe
 
   copyfile([preprocessedDataPath, filesep, '*'], preProcessedDataExpectedPath);
   disp(['Expected data copied to folder ', preProcessedDataExpectedPath]);
-
-  copyfile([processedDataPath, filesep, '*'], processedDataExpectedPath);
-  disp(['Expected data copied to folder ', processedDataExpectedPath]);
 end

@@ -31,6 +31,7 @@
 %                 across sliding 3 z-slice window.
 % 'intScale': Scale up the radius of integration
 % 'autoThresh': Pops up a UI to help decide on a threshhold
+% 'keepProcessedData': Keeps the ProcessedData folder for the given prefix after running segment spots
 %
 % OUTPUT
 % 'Spots':  A structure array with a list of detected transcriptional loci
@@ -52,7 +53,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
   disp('Segmenting spots...')
   
   [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, ...
-    pool, autoThresh, useIntegralCenter, initialFrame, Weka] = determineSegmentSpotsOptions(varargin);
+    pool, autoThresh, useIntegralCenter, initialFrame, Weka, keepProcessedData] = determineSegmentSpotsOptions(varargin);
       
   argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
   try 
@@ -91,7 +92,8 @@ function log = segmentSpots(Prefix, Threshold, varargin)
 
   load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
 
-  DogOutputFolder = [ProcPath, filesep, Prefix, '_', filesep, 'dogs'];
+  ProcessedDataFolder = [ProcPath, filesep, Prefix, '_'];
+  DogOutputFolder = [ProcessedDataFolder, filesep, 'dogs'];
   mkdir(DogOutputFolder)
 
   microscope = FrameInfo(1).FileMode;
@@ -164,7 +166,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
   
     %If we only have one channel, then convert Spots to a
     %standard structure.
-  if nCh == 1
+  if nCh == 1 && iscell(Spots)
       Spots = Spots{1}; %#ok<NASGU>
   end 
   
@@ -177,6 +179,11 @@ function log = segmentSpots(Prefix, Threshold, varargin)
 % 
 %   log = logSegmentSpots(DropboxFolder, Prefix, t, numFrames, Spots, falsePositives, Threshold);
 %   display(log);
+  if ~keepProcessedData
+    deleteProcessedDataFolder(ProcessedDataFolder, Prefix);
+  else
+    disp('keepProcessedData parameter sent. ProcessedData folder will not be removed.');
+  end
 
   if ~keepPool
 

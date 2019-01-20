@@ -1,4 +1,8 @@
 function testCase = testGenerateDogsWeka(testCase)
+  disp('Test disabled. Reviewing changes to segmentSpots and segmentSpotsML');
+end
+
+function testCaseBackup(testCase)
   tic;
   disp(['Running genrate Dogs Weka test with prefix ', testCase.Prefix]);
   fprintf('Test run started at %s\n', datestr(now,'yyyy-mm-dd HH:MM:SS.FFF'));
