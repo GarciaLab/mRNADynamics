@@ -21,7 +21,7 @@ function generateExpectedDataTrackmRNADynamicsNotHistone(testCase)
   deleteDirectory(processedDataExperimentPath, testCase.Prefix);
 
   % Copies required data from SegmentSpotsML step
-  copyExpectedDataForPrefix(testCase.Prefix, 'SegmentSpotsML');
+  copyExpectedDataForPrefix(testCase.Prefix, 'SegmentSpots');
 
   % Creates or cleans existing ExpectedData folder for TrachmRNADynamicsNoHistone
   expectedDataSubFolder = [testPath, filesep, 'TrackmRNADynamicsNoHistone', filesep, 'DynamicsResults', filesep, testCase.Prefix];

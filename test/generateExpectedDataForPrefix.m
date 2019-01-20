@@ -40,7 +40,7 @@ function generateExpectedDataForPrefix(exportTestCase, segmentSpotsTestCase, tra
   % Filter movie to generate DoGs with Weka
   filterMovieAndCopyData(segmentSpotsTestCase, testPath, codePath, processedDataExperimentPath);
 
-  % Segment Spots ML
+  % Segment Spots
   segmentSpotsAndCopyData(segmentSpotsTestCase, testPath, dynamicsResultsExperimentPath, preProcessedDataExperimentPath);
 
   % TrackNuclei
