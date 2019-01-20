@@ -30,7 +30,7 @@ function copyExpectedDataForPrefix(Prefix, step)
   elseif strcmpi(step, 'filterMovieWeka')
     copyFilterMovieWekaData(Prefix, testPath, dynamicsResultsExperimentPath, preprocessedDataExperimentPath, processedDataExperimentPath);
   elseif strcmpi(step, 'SegmentSpots')
-    copyExpectedSegmentSpotsData(Prefix, testPath, dynamicsResultsExperimentPath);
+    copyExpectedSegmentSpotsData(Prefix, testPath, dynamicsResultsExperimentPath, preprocessedDataExperimentPath);
   elseif strcmpi(step, 'TrackNuclei')
     copyExpectedTrackNucleiData(Prefix, testPath, dynamicsResultsExperimentPath, preprocessedDataExperimentPath, [], []);
   elseif strcmpi(step, 'TrackmRNADynamics')
