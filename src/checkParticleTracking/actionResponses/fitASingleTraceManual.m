@@ -1,3 +1,5 @@
+% FitASingleTraceManual - this should be merged with the function
+% FitInitialSlope above in the future.
 function [frameIndex,Coefficients,ErrorEstimation,numberOfFramesUsedForFit] = ...
     fitASingleTraceManual(currentParticle,Particles,Spots,currentChannel,...
     schnitzcells,ElapsedTime,nuclearCycleBoundaries,correspondingNCInfo,...
@@ -19,12 +21,7 @@ function [frameIndex,Coefficients,ErrorEstimation,numberOfFramesUsedForFit] = ..
 % upstream function, which is fitInitialSlope.
 %
 % OPTIONS
-% 'minimumLength' : adjusts the threshold number of total number of points
-%                   in a trace that will be fitted, not inclusive.
-%                  (default = 3 points)
-% 'useAnaphase' : uses the users values of the anaphase to set time 0 to be
-%                 the start of the nuclear cycle of the particle. 
-% 
+
 % Author (contact): Yang Joon Kim (yjkim90@berkeley.edu)
 % This is edited from Emma Luu (emma_luu@berkeley.edu)'s code,
 % fitASingleTrace.
@@ -35,7 +32,15 @@ function [frameIndex,Coefficients,ErrorEstimation,numberOfFramesUsedForFit] = ..
 %% Initializing the options
 minimumLength = 3; % minimum length of trace
 useDefaultTimeShift = 1;
-useAnaphase = 0;
+fitApproved = 0;
+%% Checking varargin
+if ~isempty(varargin)
+    for i=1:length(varargin)
+        if strcmpi(varargin{i},'fitApproved')
+            fitApproved = 1;
+        end
+    end
+end
 %% Getting particle information
 % Amplitude ---------------------------------------------------------------
 % getting frame information
@@ -45,12 +50,12 @@ useAnaphase = 0;
 currentLength = length(frame);
 
 % performing moving average
-% if sum(isnan(ampIntegralGauss3D))
-%     disp('Note: Could not use the 3D guassian intensity fits so ampIntegral3 will be used')
+if sum(isnan(ampIntegralGauss3D))
+    disp('Note: Could not use the 3D guassian intensity fits so ampIntegral3 will be used')
     smoothedAmp = movmean(ampIntegral3,averagingLength);
-% else
-%     smoothedAmp = movmean(ampIntegralGauss3D,averagingLength);
-% end
+else
+    smoothedAmp = movmean(ampIntegralGauss3D,averagingLength);
+end
 
 % Time --------------------------------------------------------------------
 % getting the corresponding time of the trace
@@ -80,14 +85,14 @@ end
 
 %% Fitting process
 
-% initializing outputs of function
+% initializing outputs of the function
 frameIndex = [];
 Coefficients = [];
 ErrorEstimation = struct('R',{},'df',{},'normr',{});
 numberOfFramesUsedForFit = [];
  
-% Assigning states to each point ------------------------------------------
-% states: increase or decrease from previous point
+% Fitting only when the trace has more than the minimumLength, which is 3
+% as a default. This should be edited as an option in the future.
     if currentLength > minimumLength
 
         %numberOfFramesUsedForFit = zeros(1,numberOfGroups);
@@ -101,8 +106,11 @@ numberOfFramesUsedForFit = [];
             = [correspondingFrameIndices(1) correspondingFrameIndices(end)];
         
         currentAmpSegment = smoothedAmp(correspondingFrameIndices);
-        currentXSegment = currentTimeArray(correspondingFrameIndices);
-        
+        if fitApproved
+            currentXSegment = currentTimeArray(FrameIndicesToFit);
+        else
+            currentXSegment = frame(FrameIndicesToFit); % Frames (not minutes)
+        end
         [Coefficients(1,:),...
             ErrorEstimation(1)]...
             =  polyfit(currentXSegment,currentAmpSegment,1);
@@ -115,26 +123,6 @@ numberOfFramesUsedForFit = [];
         RSquared = 1 - (normOfResiduals^2)/denominator;
         errorArray = ones(1,length(currentXSegment)).*...
             normOfResiduals./numberOfFramesUsedForFit(1); %EL normalized by number of points included
-
-%         if ~skipSavingTraces
-%             % plot and save  the first fitted line with the
-%             % smoothed trace
-% 
-%             plot(currentTimeArray,smoothedAmp,'.','MarkerSize',20,...
-%                 'DisplayName','Avg amp'); % plot the smoothed trace and fitted line
-%             hold on
-%             % plotting the fitted line
-%             plot(currentXSegment, ...
-%                 currentYSegment,'DisplayName','fittedLine');
-%             errorbar(currentXSegment,currentYSegment,errorArray,'o');
-%             legend({'Avg Amp', ...
-%                 ['Fitted Line Slope: ' num2str(Coefficients(1,1))],...
-%                 'Norm of Residuals'},'Location','Best')
-%             title(['Current Particle : ' num2str(currentParticle)...
-%                 '   R squared :' num2str(RSquared)])
-%             xlabel('Time after start of nc (minutes)')
-%             ylabel('Integrated Intensity (A.U.)')
-%             hold off
-%         end
     end
 end
+

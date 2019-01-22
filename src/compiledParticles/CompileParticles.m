@@ -39,6 +39,8 @@ function CompileParticles(varargin)
 % 'intArea': Change the area (in pixels) of integration used in offset calculations
 % 'noHist': Force the code to assume there's no nuclear channel.
 % 'doSingleFits': Generate single trace fits. Added by EL&AR 
+% 'manualSingleFits' : Compile manually generated single trace fits to
+% corresponding compiledparticles.
 % Author (contact): Hernan Garcia (hggarcia@berkeley.edu)
 % Created:
 % Last Updated: 6/17/17 (AR)

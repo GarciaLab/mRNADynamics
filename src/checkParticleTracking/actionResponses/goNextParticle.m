@@ -4,6 +4,7 @@ function [lineFit, CurrentParticle, CurrentFrame, ManualZFlag, DisplayRange] =..
 %   Detailed explanation goes here
 
 lineFit = 0; % the initial rise was not fitted!
+fitApproved = 0; % the initial rise fit was not approved!
 numParticles = length(Particles{CurrentChannel});
 NextParticle=CurrentParticle+1;
 
