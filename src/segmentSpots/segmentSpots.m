@@ -32,6 +32,7 @@
 % 'intScale': Scale up the radius of integration
 % 'autoThresh': Pops up a UI to help decide on a threshhold
 % 'keepProcessedData': Keeps the ProcessedData folder for the given prefix after running segment spots
+% 'fit3D': Fit 3D Gaussians to all segmented spots. 
 %
 % OUTPUT
 % 'Spots':  A structure array with a list of detected transcriptional loci
@@ -53,7 +54,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
   disp('Segmenting spots...')
   
   [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, ...
-    pool, autoThresh, useIntegralCenter, initialFrame, Weka, keepProcessedData] = determineSegmentSpotsOptions(varargin);
+    pool, autoThresh, useIntegralCenter, initialFrame, Weka, keepProcessedData, fit3D] = determineSegmentSpotsOptions(varargin);
       
   argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
   try 
@@ -194,4 +195,10 @@ function log = segmentSpots(Prefix, Threshold, varargin)
 
   end 
 
+    if fit3D
+        disp('Fitting 3D Gaussians...')
+        fit3DGaussiansToAllSpots(Prefix, 'segmentSpots', Spots);
+        disp('3D Gaussian fitting completed.')
+    end
+  
 end 

@@ -3,15 +3,24 @@ function Spots = fit3DGaussiansToAllSpots(prefix, varargin)
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
     Folder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder, Channel3] = readMovieDatabase(prefix);
 DataFolder=[DropboxFolder,filesep,prefix];
-load([DataFolder,filesep,'Spots.mat'], 'Spots');
-load([DataFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
 
+segmentSpots = 0;
 displayFigures = 0;
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'displayFigures')
         displayFigures = 1;
+    elseif strcmpi(varargin{i}, 'segmentSpots')
+        Spots = varargin{i+1};
+        segmentSpots = 1;
+    else
     end
 end
+
+if ~segmentSpots
+    load([DataFolder,filesep,'Spots.mat'], 'Spots');
+end
+
+load([DataFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
 
 xSize = FrameInfo(1).PixelsPerLine;
 ySize = FrameInfo(1).LinesPerFrame;
