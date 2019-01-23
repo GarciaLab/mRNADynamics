@@ -33,6 +33,8 @@
 % 'autoThresh': Pops up a UI to help decide on a threshhold
 % 'keepProcessedData': Keeps the ProcessedData folder for the given prefix after running segment spots
 % 'fit3D': Fit 3D Gaussians to all segmented spots. 
+% 'skipChannel': Skips segmentation of channels inputted array (e.g. [1]
+%                skips channel 1, [1, 2] skips channels 1 and 2
 %
 % OUTPUT
 % 'Spots':  A structure array with a list of detected transcriptional loci
@@ -54,7 +56,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
   disp('Segmenting spots...')
   
   [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, ...
-    pool, autoThresh, useIntegralCenter, initialFrame, Weka, keepProcessedData, fit3D] = determineSegmentSpotsOptions(varargin);
+    pool, autoThresh, useIntegralCenter, initialFrame, Weka, keepProcessedData, fit3D, skipChannel] = determineSegmentSpotsOptions(varargin);
       
   argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
   try 
@@ -133,11 +135,14 @@ function log = segmentSpots(Prefix, Threshold, varargin)
   % Segment transcriptional loci
       
   for channelIndex = 1:nCh
+      if ismember(channelIndex, skipChannel)
+          continue
+      end
       
     tic;
       
     all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, ...
-      PreProcPath, Prefix, DogOutputFolder, displayFigures, pool, doFF, ffim, Threshold(nCh), neighborhood, ...
+      PreProcPath, Prefix, DogOutputFolder, displayFigures, pool, doFF, ffim, Threshold(channelIndex), neighborhood, ...
       snippet_size, pixelSize, microscope, intScale, Weka);
 
     close all;

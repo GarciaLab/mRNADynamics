@@ -66,7 +66,7 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
       end
       
       
-      im_thresh = dog >= Threshold(channelIndex);
+      im_thresh = dog >= Threshold;
       
       if  Weka     
           se = strel('square', 3);
