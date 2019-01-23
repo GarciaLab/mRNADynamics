@@ -56,7 +56,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
   disp('Segmenting spots...')
   
   [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, ...
-    pool, autoThresh, useIntegralCenter, initialFrame, Weka, keepProcessedData, fit3D, skipChannel] = determineSegmentSpotsOptions(varargin);
+    pool, autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel] = determineSegmentSpotsOptions(varargin);
       
   argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
   try 

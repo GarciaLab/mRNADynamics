@@ -40,7 +40,7 @@ for i = 1:length(varargin)
         end
         
     elseif strcmpi(varargin{i}, 'InitialFrame')
-        
+
         if ~isnumeric(varargin{i + 1}) || varargin{i + 1} < 1
             error('Wrong input parameter for initial frame.')
         else
