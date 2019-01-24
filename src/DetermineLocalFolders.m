@@ -39,8 +39,8 @@ function [SourcePath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath, configV
     % if user indicated a RootFolder in movie database, reassign paths
     % accordingly
     if ~strcmpi(rootFolderName,'noFolder')
-        if strcmpi(rootFolderName,'default')
-            dropboxFolderName = 'DataRoot';
+        if strcmpi(rootFolderName,'default') || isempty(rootFolderName)
+            rootFolderName = 'DataRoot';
         end
         DataRoot = getConfigValue(configValues, rootFolderName);        
         SourcePath = [DataRoot '/RawDynamicsData'];
