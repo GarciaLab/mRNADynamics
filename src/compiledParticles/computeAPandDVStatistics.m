@@ -59,9 +59,9 @@ function [AllTracesVector, AllTracesAP, AllTracesDV, MeanVectorAP_ROI, ...
                         NParticlesAPCell_nonROI{k}=NParticlesAPTemp_nonROI';
                         k=k+1;
                     end
-                    MeanVectorAP_nonROI=cell2mat(MeanVectorAPCell_nonROI);
-                    SDVectorAP_nonROI=cell2mat(SDVectorAPCell_nonROI);
-                    NParticlesAP_nonROI=cell2mat(NParticlesAPCell_nonROI);
+                    MeanVectorAP_nonROI{ChN}=cell2mat(MeanVectorAPCell_nonROI);
+                    SDVectorAP_nonROI{ChN}=cell2mat(SDVectorAPCell_nonROI);
+                    NParticlesAP_nonROI{ChN}=cell2mat(NParticlesAPCell_nonROI);
     %%                
                     %AP Means
 
