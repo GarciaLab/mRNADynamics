@@ -215,6 +215,12 @@ if NChannels==1
         SDOffsetVector=[];
         NOffsetParticles=[];
     end
+else
+    %This is just to make 2spot2color work by skipping the calculations for
+    %this function (JL 1/23/19).
+    MeanOffsetVector=[];
+    SDOffsetVector=[];
+    NOffsetParticles=[];
 end
 end
 
