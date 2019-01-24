@@ -3,7 +3,7 @@ function [Particles, CompiledParticles, ncFilter, ncFilterID] =...
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
     Spots, SkipTraces, nc9, nc10, nc11, nc12, nc13, nc14, ncFilterID, ncFilter, ...
     ElapsedTime, intArea, Ellipses, EllipsePos, PreProcPath, ...
-    FilePrefix, Prefix, DropboxFolder, NDigits)
+    FilePrefix, Prefix, DropboxFolder, NDigits, )
 %COMPILETRACES Summary of this function goes here
 %   Detailed explanation goes here
 h=waitbar(0,'Compiling traces');
@@ -128,6 +128,17 @@ for ChN=1:NChannels
                 if isfield(Particles,'Fit')
                     CompiledParticles{ChN}(k).Fit=Particles{ChN}(i).Fit;
                 end
+                
+                % Save the manually fitted initial slope and T_ON if it
+                % exists
+                if manualSingleFits && Particles{ChN}(i).fitApproved==1
+                    CompiledParticles{ChN}(k).fittedSlope = Particles{ChN}(i).fittedSlope;
+                    CompiledParticles{ChN}(k).fittedTon = Particles{ChN}(i).fittedTON;
+                else
+                    CompiledParticles{ChN}(k).fittedSlope = [];
+                    CompiledParticles{ChN}(k).fittedTon = []; 
+                end
+                    
                 
                 
                 %Extract information from Spots about fluorescence and background

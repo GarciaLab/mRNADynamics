@@ -1,6 +1,6 @@
 function [Prefix, ForceAP, SkipTraces, SkipFluctuations, SkipFits, SkipMovie, ...
     SkipAll, ApproveAll, MinParticles, minTime, ROI, intArea, noHist, ...
-    doSingleFits, ROI1, ROI2, slimVersion] = determineCompileParticlesOptions(varargin)
+    doSingleFits, ROI1, ROI2, slimVersion, manualSingleFits] = determineCompileParticlesOptions(varargin)
 %DETERMINECOMPILEPARTICLESOPTIONS Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -24,6 +24,7 @@ doSingleFits = 0;
 slimVersion = 0;
 ROI1 = -1; % no ROI
 ROI2 = -1; % no ROI
+manualSingleFits = 0; % no manually fitted single fits
 
 
 % Checking Varargin 
@@ -84,6 +85,8 @@ else
             end
         elseif strcmpi(varargin{i}, 'slimVersion')
             slimVersion = 1;
+        elseif strcmpi(varargin{i}, 'manualSingleFits')
+            manualSingleFits = 1;
         end
     end
     
