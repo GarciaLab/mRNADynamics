@@ -13,14 +13,9 @@ function [coordA,coordP,xShift,yShift]=FindAPAxisFullEmbryo(varargin)
 
 CorrectAxis = 0;
 Prefix=varargin{1};
-%Load the folder information
-[SourcePath, ~, DropboxFolder, ~, ~, ~, ~] = DetermineLocalFolders(Prefix);
-%Get location of default dropbox folder
-CONFIG_CSV_PATH = 'ComputerFolders.csv';
-configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');    
-DefaultDropboxFolder = getConfigValue(configValues, 'DropboxFolder');
 
-
+[SourcePath, ~, DefaultDropboxFolder, DropboxFolder, ~, ~,...
+~, ~] = DetermineAllLocalFolders(Prefix);
 
 for i=2:length(varargin)
     if isnumeric(varargin{i})
