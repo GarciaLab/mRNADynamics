@@ -17,7 +17,7 @@ function TrackNuclei(Prefix,varargin)
 %
 % Author (contact): Hernan Garcia (hggarcia@berkeley.edu)
 % Created: 01/01/2013 ish. 
-% Last Updated: 9/11/2018
+% Last Updated: 1/23/2019
 %
 % Documented by: Armando Reimer (areimer@berkeley.edu)
 %
@@ -34,12 +34,16 @@ for i = 1:length(varargin)
 end
 
 
-
+% NL: Changed from DetermineAllLocalFolders to DetermineLocalFodlers to enable
+% compatibility with dynamic data folders
+[~, FISHPath, DropboxFolder, ~, PreProcPath, ~, ~] = DetermineLocalFolders(Prefix);
 %Get the folders, including the default Dropbox one
-[SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
-configValues, movieDatabasePath] = DetermineAllLocalFolders(Prefix);
+% [SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
+% configValues, movieDatabasePath] = DetermineAllLocalFolders(Prefix);
 
-
+CONFIG_CSV_PATH = 'ComputerFolders.csv';
+configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');    
+DefaultDropboxFolder = getConfigValue(configValues, 'DropboxFolder');
 
 %Determine division times
 %Load the information about the nc from moviedatabase file
