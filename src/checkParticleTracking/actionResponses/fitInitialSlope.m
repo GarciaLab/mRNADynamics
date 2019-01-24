@@ -56,9 +56,7 @@ function [lineFit, Coefficients, fit1E, Particles, FramesToFit, FrameIndicesToFi
         averagingLength, FramesToFit,FrameIndicesToFit);
 
     % plotting the fitted line
-    %              currentXSegment = ElapsedTime(Frames(frameIndex(1):frameIndex(end)))-priorAnaphaseInMins;
-    %currentXSegment = Frames(frameIndex(1):frameIndex(end));% Frame number from the original movie 
-    currentXSegment = ElapsedTime(Frames(frameIndex(1):frameIndex(end)))-nucleusFirstFrame;
+    currentXSegment = ElapsedTime(Frames(frameIndex(1):frameIndex(end)))-nucleusFirstFrame; % min after the previous anaphse
     currentYSegment = polyval(Coefficients,currentXSegment);
     % error of predicted line
     %          currentAmpSegment = AmpIntegral3(frameIndex(1):frameIndex(end));
@@ -75,9 +73,8 @@ function [lineFit, Coefficients, fit1E, Particles, FramesToFit, FrameIndicesToFi
     to = -Coefficients(2) / Coefficients(1) + nucleusFirstFrame; % frame, not minutes for now
     %              fit1ETimeAxis = [to, ElapsedTime(Frames(frameIndex(1):frameIndex(end)))] - priorAnaphaseInMins;
     fit1ETimeAxis = [to, ElapsedTime(Frames(frameIndex(1):frameIndex(end)))] - nucleusFirstFrame;
-    %fit1ETimeAxis = Frames(frameIndex(1):frameIndex(end));
     currentYSegment = [0, currentYSegment];
-    %              fit1ETimeAxis = ElapsedTime(Frames(frameIndex(1):frameIndex(end)));
+    
     fit1E = plot(traceFigAxes,fit1ETimeAxis,...
         currentYSegment,'-','Color','red');
     hold(traceFigAxes,'off')
@@ -93,6 +90,7 @@ catch
 
 end
 
+% This is a subfunction for the fitInitialSlopes.m
 function [frameIndex,Coefficients,ErrorEstimation,numberOfFramesUsedForFit] = ...
     fitASingleTraceManual(currentParticle,Particles,Spots,currentChannel,...
     schnitzcells,ElapsedTime,nuclearCycleBoundaries,correspondingNCInfo,...
@@ -114,17 +112,12 @@ function [frameIndex,Coefficients,ErrorEstimation,numberOfFramesUsedForFit] = ..
 % upstream function, which is fitInitialSlope.
 %
 % OPTIONS
-% 'minimumLength' : adjusts the threshold number of total number of points
-%                   in a trace that will be fitted, not inclusive.
-%                  (default = 3 points)
-% 'useAnaphase' : uses the users values of the anaphase to set time 0 to be
-%                 the start of the nuclear cycle of the particle. 
 % 
 % Author (contact): Yang Joon Kim (yjkim90@berkeley.edu)
 % This is edited from Emma Luu (emma_luu@berkeley.edu)'s code,
 % fitASingleTrace.
 % Created: 1/9/19
-% Last Updated: 1/9/19 (YJK)
+% Last Updated: 1/23/19 (YJK)
 % Documented by: Yang Joon Kim (yjkim90@berkeley.edu)
 
 %% Initializing the options
@@ -140,12 +133,12 @@ useAnaphase = 0;
 currentLength = length(frame);
 
 % performing moving average
-% if sum(isnan(ampIntegralGauss3D))
-%     disp('Note: Could not use the 3D guassian intensity fits so ampIntegral3 will be used')
+if sum(isnan(ampIntegralGauss3D))
+    disp('Note: Could not use the 3D guassian intensity fits so ampIntegral3 will be used')
     smoothedAmp = movmean(ampIntegral3,averagingLength);
-% else
-%     smoothedAmp = movmean(ampIntegralGauss3D,averagingLength);
-% end
+else
+    smoothedAmp = movmean(ampIntegralGauss3D,averagingLength);
+end
 
 % Time --------------------------------------------------------------------
 % getting the corresponding time of the trace
@@ -172,7 +165,6 @@ elseif useAnaphase
 % the condition. 11/20/18 - EL
 end
 
-
 %% Fitting process
 
 % initializing outputs of function
@@ -185,10 +177,9 @@ numberOfFramesUsedForFit = [];
 % states: increase or decrease from previous point
     if currentLength > minimumLength
 
-        %numberOfFramesUsedForFit = zeros(1,numberOfGroups);
         % number of Frames to fit, this is given as an input
         numberOfFramesUsedForFit = length(FrameIndicesToFit);
-
+        
         correspondingFrameIndices = FrameIndicesToFit;
 
         % saving the boundaries of correspondingFrameIndexes in frameIndex
@@ -210,26 +201,6 @@ numberOfFramesUsedForFit = [];
         RSquared = 1 - (normOfResiduals^2)/denominator;
         errorArray = ones(1,length(currentXSegment)).*...
             normOfResiduals./numberOfFramesUsedForFit(1); %EL normalized by number of points included
-
-%         if ~skipSavingTraces
-%             % plot and save  the first fitted line with the
-%             % smoothed trace
-% 
-%             plot(currentTimeArray,smoothedAmp,'.','MarkerSize',20,...
-%                 'DisplayName','Avg amp'); % plot the smoothed trace and fitted line
-%             hold on
-%             % plotting the fitted line
-%             plot(currentXSegment, ...
-%                 currentYSegment,'DisplayName','fittedLine');
-%             errorbar(currentXSegment,currentYSegment,errorArray,'o');
-%             legend({'Avg Amp', ...
-%                 ['Fitted Line Slope: ' num2str(Coefficients(1,1))],...
-%                 'Norm of Residuals'},'Location','Best')
-%             title(['Current Particle : ' num2str(currentParticle)...
-%                 '   R squared :' num2str(RSquared)])
-%             xlabel('Time after start of nc (minutes)')
-%             ylabel('Integrated Intensity (A.U.)')
-%             hold off
-%         end
+        
     end
 end

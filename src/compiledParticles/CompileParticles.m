@@ -39,8 +39,10 @@ function CompileParticles(varargin)
 % 'intArea': Change the area (in pixels) of integration used in offset calculations
 % 'noHist': Force the code to assume there's no nuclear channel.
 % 'doSingleFits': Generate single trace fits. Added by EL&AR 
-% 'manualSingleFits' : Compile manually generated single trace fits to
-% corresponding compiledparticles.
+% 'manualSingleFits' : Compile values from manually generated single trace fits to
+% CompiledParticles.mat, the field names are 'fittedSlope', 'fittedTon' for
+% the initial slope and T_on respectively.
+
 % Author (contact): Hernan Garcia (hggarcia@berkeley.edu)
 % Created:
 % Last Updated: 6/17/17 (AR)
@@ -130,6 +132,8 @@ rateOnAP = [];
 timeOnOnAP = [];
 rateOnAPCell = [];
 timeOnOnAPCell = [];
+fittedSlope = [];
+fittedTon = [];
 
 nc9 = [];
 nc10 = [];
@@ -147,7 +151,7 @@ ncFilterID = [];
 
 [Prefix, ForceAP, SkipTraces, SkipFluctuations, SkipFits, SkipMovie, ...
     SkipAll, ApproveAll, MinParticles, minTime, ROI, intArea, noHist, ...
-    doSingleFits, ROI1, ROI2, slimVersion] = determineCompileParticlesOptions(varargin);
+    doSingleFits, ROI1, ROI2, slimVersion, manualSingleFits] = determineCompileParticlesOptions(varargin);
 
 FilePrefix=[Prefix,'_'];
 
@@ -427,7 +431,7 @@ end
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
     Spots, SkipTraces, nc9, nc10, nc11, nc12, nc13, nc14, ncFilterID, ncFilter, ...
     ElapsedTime, intArea, Ellipses, EllipsePos, PreProcPath, ...
-    FilePrefix, Prefix, DropboxFolder, NDigits);
+    FilePrefix, Prefix, DropboxFolder, NDigits, manualSingleFits);
 
 %% ROI option
 % This option is separating the CompiledParticles defined above into
