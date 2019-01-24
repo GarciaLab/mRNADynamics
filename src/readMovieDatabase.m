@@ -4,7 +4,9 @@ function [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
 
 %Figure out the initial folders. Well update the Drobpox one later on in the code.
 
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath, configValues, movieDatabasePath]=...
+% [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath, configValues, movieDatabasePath]=...
+%     DetermineLocalFolders;
+[SourcePath,~,~,~, ~, ~, movieDatabasePath]=...
     DetermineLocalFolders;
 
 %Get the Prefix if is not already present
@@ -31,7 +33,7 @@ Channel1Column = findColumnIndex(movieDatabaseHeaderRow, 'Channel1');
 Channel2Column = findColumnIndex(movieDatabaseHeaderRow, 'Channel2');
 Channel3Column = findColumnIndex(movieDatabaseHeaderRow, 'Channel3');
 
-[DropboxFolder, PrefixRow] = getDropboxFolderFromMovieDatabase(movieDatabasePath, Prefix, '[\\\\/-]');
+[~, PrefixRow] = getDropboxFolderFromMovieDatabase(movieDatabasePath, Prefix, '[\\\\/-]');
 
 ExperimentType = movieDatabase(PrefixRow, ExperimentTypeColumn);
 %ExperimentType = ExperimentType{1}
@@ -44,8 +46,9 @@ if isempty(Channel3)
     Channel3 = {'DoesNotExist'};
 end
 %Channel3 = Channel3{1}
-
-[~,~,DropboxFolder,~,~] = DetermineLocalFolders(Prefix);
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath, ~, ~]=...
+    DetermineLocalFolders(Prefix);
+% [~,~,DropboxFolder,~,~] = DetermineLocalFolders(Prefix);
 
 %Set the destination folders
 OutputFolder = [DropboxFolder, filesep, Prefix];

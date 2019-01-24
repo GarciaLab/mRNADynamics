@@ -32,10 +32,10 @@ function [coatChannel, histoneChannel, fiducialChannel, inputProteinChannel, Fra
     %Distinguish between not having histone, but having a dummy channel
     if isempty(fiducialChannel)
         if find(~cellfun(@isempty,strfind(lower(Channels),'dummy')))
-            fiducialChannel=0;
+            fiducialChannel=0; % NL to YJK: Should this be 1?
         else
             fiducialChannel=0;
-            display('Could not find a histone channel. Proceeding without it.')
+            display('Could not find a histone channel. Atempting to generate fake histone using MCP channel...')
         end
     end
     % Use MCP-mCherry as a fake histone channel in case there's no
@@ -52,7 +52,7 @@ function [coatChannel, histoneChannel, fiducialChannel, inputProteinChannel, Fra
             warning('mCherry channel not found. Cannot generate the fake nuclear image');
         end
     end
-      
+   
   elseif strcmpi(ExperimentType,'2spot2color')       %2 spots, 2 colors
     load('ReferenceHist.mat')
     fiducialChannel=0;
