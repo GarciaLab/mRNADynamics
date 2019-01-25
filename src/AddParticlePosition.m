@@ -263,42 +263,26 @@ if ~NoAP
         % Let's use NuclearChannel if possible
         %If we have Bcd-GFP and inverted His, we will use Bcd-GFP for the
         %alignment
-        if ((contains(lower(Channel1{1}),'bcd'))||...
-                (contains(lower(Channel2{1}),'bcd')))
-            if  contains(lower(Channel1{1}),'his')
-                HisChannel=1;
+        %JL 1/25/19: revised this to work with more than 2 channels
+        if any(contains([Channel1,Channel2,Channel3],'bcd','IgnoreCase',true))
+            if any(contains([Channel1,Channel2,Channel3],'his','IgnoreCase',true))
+                HisChannel = find(contains([Channel1,Channel2,Channel3],'his','IgnoreCase',true));
                 InvertHis=0;
-            elseif contains(lower(Channel1{1}),'mcherry')||...
-                    contains(lower(Channel1{1}),'inverteduclear')
-                HisChannel=1;
-                InvertHis=1;
-            elseif contains(lower(Channel2{1}),'his')
-                HisChannel=2;
-                InvertHis=0;
-            elseif contains(lower(Channel2{1}),'mcherry')||...
-                    contains(lower(Channel2{1}),'inverteduclear')
-                HisChannel=2;
+            elseif any(contains([Channel1,Channel2,Channel3],'invertednuclear','IgnoreCase',true))
+                HisChannel= find(contains([Channel1,Channel2,Channel3],'invertednuclear','IgnoreCase',true));
                 InvertHis=1;
             else
-                ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd'))|...
-                    ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd')));
+                ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1}),lower(Channel3{1})},'bcd'))|...
+                    ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1}),lower(Channel3{1})},'bcd')));
                 HisChannel=find(ChannelToLoad);
                 InvertHis=0;
             end
         else
-            if contains(lower(Channel1{1}),'his')
-                HisChannel=1;
+            if any(contains([Channel1,Channel2,Channel3],'his','IgnoreCase',true))
+                HisChannel= find(contains([Channel1,Channel2,Channel3],'his','IgnoreCase',true));
                 InvertHis=0;
-            elseif contains(lower(Channel1{1}),'mcherry')||...
-                    contains(lower(Channel1{1}),'invertednuclear')
-                HisChannel=1;
-                InvertHis=1;
-            elseif contains(lower(Channel2{1}),'his')
-                HisChannel=2;
-                InvertHis=0;
-            elseif contains(lower(Channel2{1}),'mcherry')||...
-                    contains(lower(Channel2{1}),'invertednuclear')
-                HisChannel=2;
+            elseif any(contains([Channel1,Channel2,Channel3],'invertednuclear','IgnoreCase',true))
+                HisChannel=find(contains([Channel1,Channel2,Channel3],'invertednuclear','IgnoreCase',true));
                 InvertHis=1;
             else
                 error('LIF Mode error: Channel name not recognized. Check MovieDatabase.')
