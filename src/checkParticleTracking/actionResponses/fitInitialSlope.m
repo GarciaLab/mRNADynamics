@@ -133,11 +133,13 @@ useAnaphase = 0;
 currentLength = length(frame);
 
 % performing moving average
-if sum(isnan(ampIntegralGauss3D))
-    disp('Note: Could not use the 3D guassian intensity fits so ampIntegral3 will be used')
-    smoothedAmp = movmean(ampIntegral3,averagingLength);
-else
+% Also, note that this is using the 3D-Gaussian fitted spot fluorescence,
+% which is ampIntegralGauss3D, if you don't have it, you should have it by
+% running CheckParticleTracking with an option.
+if ~sum(isnan(ampIntegralGauss3D))
     smoothedAmp = movmean(ampIntegralGauss3D,averagingLength);
+else
+    error('Note: Could not use the 3D guassian intensity fits so make sure you have 3D gaussian fitted spot fluorescence. Run fit3DGaussiansToAllSpots(Prefix)')
 end
 
 % Time --------------------------------------------------------------------
