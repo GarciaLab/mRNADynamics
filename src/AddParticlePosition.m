@@ -169,7 +169,7 @@ if ~NoAP
     % channels, let's first pick the first channel. This can be fine in
     % most cases, since we normally use lower wavelength for sth we
     % care more, or we get better signal from those.
-    if sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)==1
+    if sum(ChannelToLoadTemp) && sum(ChannelToLoadTemp)==1
         ChannelToLoad=find(ChannelToLoadTemp);
     elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>2
         ChannelToLoad = ChannelToLoadTemp(1);
@@ -236,7 +236,7 @@ if ~NoAP
         SurfName=[];
         
         %Figure out the different channels
-        NuclearChannel=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
+        %NuclearChannel=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
         % Let's use NuclearChannel, instead of making the code to guess
         % which channel should be used for HisChannel and whether it should
         % be inverted or not.
