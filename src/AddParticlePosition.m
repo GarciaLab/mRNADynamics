@@ -446,12 +446,19 @@ if ~NoAP
     % cross-correlation. This part now only requires the same
     % ChannelToLoad, which is defined above using ":Nuclear" or
     % ":invertedNuclear" 
-        
-    %Get the surface image in the zoomed case
-    DGFP=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'*_z*.tif']);
-    if ~isempty(DGFP)
-        ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DGFP(end).name],ChannelToLoad);
+    
+    %Get the surface image in the zoomed case by looking at the last
+    %frame of our movie
+    % From "Nuclear" or "invertedNuclear", it should've made His images
+    % when you run ExportDataforLivemRNA. If you edit the channels in the
+    % MovieDatabase after you ran the ExportDataForLivemRNA, then run this
+    % script, the code might freak out. I'll put a warning message about
+    % that.
+    DHis=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
+    if ~isempty(DHis)
+        ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis(end-1).name]);
     else
+        disp('Did you run ExportDataForLivemRNA again, after editing the MovieDatabase.csv with ":Nuclear" ("invertedNuclear")?')
         % This might be the case, for instance, if you're just trying
         % to find AP information about an image without using FISH
         % code. In that case, just extract the nuclei from the last
@@ -466,8 +473,6 @@ if ~NoAP
         end
         ZoomImage = max(RawImage3M, [], 3) / 255;
     end
-    
-    
     
     
     
