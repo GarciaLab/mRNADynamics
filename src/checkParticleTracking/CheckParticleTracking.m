@@ -19,6 +19,8 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % nc, NC : Only look at particles that show up in nc13
 %    % Currently this only starts at nc13...not restrict you to nc13 Added by Emma
 %    % Also, this option shows you the max projection.
+% plot3DGauss: plot 3D gaussian fitting intensities in tracefig
+% sortByLength: sort particles by duration instead of time observed
 %
 % CONTROLS
 % Frame specific:

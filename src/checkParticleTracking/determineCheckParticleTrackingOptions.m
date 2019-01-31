@@ -22,9 +22,6 @@ ncRange = 0;
 projectionMode = 'None (Default)';
 %plot 3D gaussian fitting intensities in tracefig
 plot3DGauss = 0;
-%when checkparticletracking saves, it will add 3d gaussian fits to
-%Spots.mat
-fit3DGauss = 0;
 
 intScale = 1;
 
@@ -44,11 +41,6 @@ if length(varargin)>1
             ForCompileAll=1;
         elseif strcmpi(varargin{i}, 'speedmode')
             SpeedMode = 1;
-        elseif strcmpi(varargin{i}, 'plot3DGauss')
-            plot3DGauss = 1;
-        elseif strcmpi(varargin{i}, 'fit3DGauss')
-            fit3DGauss = 1;
-            plot3DGauss = 1;
         elseif strcmpi(varargin{i}, 'plot3DGauss')
             plot3DGauss = 1;
         elseif strcmpi(varargin{i}, 'sistermode')
