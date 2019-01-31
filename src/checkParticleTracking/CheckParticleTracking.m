@@ -98,7 +98,6 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % -/= Change the zoom factor when in zoom mode.
 % 0 Enter debug mode to fix things manually
 % ~ Switch figure 1 from a single plane image to a z or time projection.
-% 3 Fits a line to the polymerase loading regime of the trace.
 % F Start a fitting mode for the single trace (in the current particle).
 % (in progress)
 %
@@ -1069,10 +1068,6 @@ while (cc~='x')
     elseif cc=='0'      %Debugging mode
         keyboard;
         
-    elseif cc== '3'
-        [lineFit, Coefficients, fit1E, Particles] =...
-            fitLine(CurrentParticle, Particles, Spots, CurrentChannel, schnitzcells, ...
-            ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, Frames, anaphase);
     end
 end
 
