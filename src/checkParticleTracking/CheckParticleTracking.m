@@ -128,7 +128,7 @@ xForZoom = 0;
 yForZoom = 0;
 
 % Parameters for fitting
-lifeFit = 0;
+lineFit = 0;
 fitApproved = 0;
 FramesToFit = [];
 FrameIndicesToFit = [];
@@ -148,7 +148,7 @@ else
 end
 
 [Prefix, Sort, sortByLength, ForCompileAll, SpeedMode, SisterMode, ...
-    ncRange, projectionMode, plot3DGauss, fit3DGauss, intScale, NC, ...
+    ncRange, projectionMode, plot3DGauss, intScale, NC, ...
     startNC, endNC] = determineCheckParticleTrackingOptions(varargin);
 
 %%
@@ -1105,9 +1105,6 @@ end
 disp('Particles saved.')
 disp(['(Left off at Particle #', num2str(CurrentParticle), ')'])
 
-if fit3DGauss
-    plot3DGaussiansToAllSpots(Prefix);
-end
 %% Extra stuff that is useful in debug mode
 
 %Reset approve status of all approved particles in a certain nc
