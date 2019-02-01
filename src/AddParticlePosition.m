@@ -171,8 +171,9 @@ if ~NoAP
     % care more, or we get better signal from those.
     if sum(ChannelToLoadTemp) && sum(ChannelToLoadTemp)==1
         ChannelToLoad=find(ChannelToLoadTemp);
-    elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>2
-        ChannelToLoad = ChannelToLoadTemp(1);
+    elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>=2
+        ChannelToLoad=find(ChannelToLoadTemp);
+        ChannelToLoad = ChannelToLoad(1);
         disp('You have multiple nuclear channels, you can pick the best channel by editing the MovieDatabase.csv')
     else
         error('No histone channel found. Was it defined in MovieDatabase?')
