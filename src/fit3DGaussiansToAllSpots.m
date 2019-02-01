@@ -1,7 +1,7 @@
 function Spots = fit3DGaussiansToAllSpots(prefix, varargin)
 
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
-    Folder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder, Channel3] = readMovieDatabase(prefix);
+[~,~,DropboxFolder,~, PreProcPath,...
+    ~, Prefix, ~,~,~,~, ~] = readMovieDatabase(prefix);
 DataFolder=[DropboxFolder,filesep,prefix];
 
 segmentSpots = 0;
