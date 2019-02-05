@@ -39,27 +39,31 @@ end
 hold off
 
 legend
-title('Dorsal gradient plots following NC14')
+title('Dorsal gradient plots following NC14 (Embryo 3)')
 xlabel('"Fake" DV position')
 ylabel('Nuclear fluorescence (AFU)')
+set(gca,'FontSize',20)
 
 figure
-scatter(para_values(:,1),para_values(:,3),'.','k')
-title('Center')
-axis([ 1 length(gauss_out) -200 200])
-xlabel('Frame number')
+scatter(para_values(:,1) * 20.8,para_values(:,3),'.','k')
+title('Center (Embryo 3)')
+axis([ 1 max(para_values(:,1) * 20.8) -200 200])
+xlabel('Time (sec)')
 ylabel('Parameter value')
+set(gca,'FontSize',20)
 
 figure
-bar(para_values(:,1),para_values(:,2),'r')
-title('Amplitude')
-axis([ 1 length(gauss_out) 0 2500])
-xlabel('Frame number')
+scatter(para_values(:,1) * 20.8,para_values(:,2),'.','r')
+title('Amplitude (Embryo 3)')
+axis([ 1 max(para_values(:,1) * 20.8) 0 2500])
+xlabel('Time (sec)')
 ylabel('Parameter value')
+set(gca,'FontSize',20)
 
 figure
-bar(para_values(:,1),para_values(:,4),'b')
-title('Spread')
-axis([ 1 length(gauss_out) 0 2000])
-xlabel('Frame Number')
+scatter(para_values(:,1) * 20.8,para_values(:,4),'.','b')
+title('Spread (Embryo 3)')
+axis([ 1 max(para_values(:,1) * 20.8) 0 600])
+xlabel('Time (sec)')
 ylabel('Parameter value')
+set(gca,'FontSize',20)
