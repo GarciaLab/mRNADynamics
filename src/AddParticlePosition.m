@@ -7,6 +7,7 @@ function AddParticlePosition(varargin)
 %SkipAlignment
 %ManualAlignment
 %NoAP: Just add X and Y information
+%SelectChannel: Choose which channel to align to
 %
 %Manual alignment controls
 %
@@ -32,6 +33,7 @@ function AddParticlePosition(varargin)
 SkipAlignment=0;
 ManualAlignment=0;
 NoAP=0;
+SelectChannel=0;
 InvertHis=0;
 
 close all
@@ -47,6 +49,8 @@ if ~isempty(varargin)
                 ManualAlignment=1;
             case {'NoAP'}
                 NoAP=1;
+            case {'SelectChannel'}
+                SelectChannel=1;
         end
     end
 else
@@ -157,6 +161,12 @@ Channel1, Channel2, ~, ~, ~, ~, ~,...
 
 
 if ~NoAP
+    %If you want to select which channel to load as alignment.
+    if SelectChannel
+        list = string({Channel1,Channel2,Channel3});
+        [indx,tf] = listdlg('PromptString','Select the channel to use for alignment:','ListString',list);
+        ChannelToLoad = indx;
+    else
     % From now, we will use a better way to define the channel for
     % alignment (used for cross-correlation).
     % Find channels with ":Nuclear"
@@ -174,9 +184,11 @@ if ~NoAP
     elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>=2
         ChannelToLoad=find(ChannelToLoadTemp);
         ChannelToLoad = ChannelToLoad(1);
-        disp('You have multiple nuclear channels, you can pick the best channel by editing the MovieDatabase.csv')
+        disp('You have multiple nuclear channels, pick the one to use.');
     else
         error('No histone channel found. Was it defined in MovieDatabase?')
+    end
+    
     end
         
     %Get information about all images. This depends on the microscope used.
@@ -243,7 +255,10 @@ if ~NoAP
         % be inverted or not.
 
         if any(contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true))
-            if ~any(contains([Channel1,Channel2,Channel3],'inverted','IgnoreCase',true))
+            if SelectChannel
+                HisChannel = ChannelToLoad;
+                InvertHis=0;
+            elseif ~any(contains([Channel1,Channel2,Channel3],'inverted','IgnoreCase',true))
                 HisChannel = ChannelToLoad;
                 InvertHis=0;
             elseif any(contains([Channel1,Channel2,Channel3],'inverted','IgnoreCase',true))
