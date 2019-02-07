@@ -132,6 +132,10 @@ rateOnAP = [];
 timeOnOnAP = [];
 rateOnAPCell = [];
 timeOnOnAPCell = [];
+rateOnAPManual = [];
+timeOnOnAPManual = [];
+rateOnAPCelManuall = [];
+timeOnOnAPCellManual = [];
 fittedSlope = [];
 fittedTon = [];
 
@@ -179,7 +183,7 @@ end
 
 %Check that FrameInfo exists
 if exist([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'file')
-    load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']);
+    load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
     pixelSize = FrameInfo(1).PixelSize;
 else
     warning('No FrameInfo.mat found. Trying to continue')
@@ -587,11 +591,11 @@ if ~slimVersion
     if HistoneChannel&&strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
         [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
             FilteredParticlesPos, OnRatioAP, ParticleCountAP, ParticleCountProbAP, ...
-            EllipsesOnAP, rateOnAP, rateOnAPCell, timeOnOnAP, timeOnOnAPCell, TotalEllipsesAP]...
+            EllipsesOnAP, rateOnAP, rateOnAPCell, timeOnOnAP, timeOnOnAPCell, TotalEllipsesAP, rateOnAPManual, rateOnAPCellManual, timeOnOnAPManual, timeOnOnAPCellManual]...
             = computeAPFractionOn(NChannels, Particles, schnitzcells, ...
             CompiledParticles, Ellipses, APbinID, FrameInfo, ElapsedTime, DropboxFolder, ...
             Prefix, EllipsePos, nc12, nc13, nc14, numFrames, doSingleFits, SkipAll, ...
-            APbinArea,pixelSize);
+            APbinArea,pixelSize, manualSingleFits);
     end
 
     % DV version. This should instead be smoothly integrated with the AP
@@ -688,7 +692,7 @@ savedVariables = [savedVariables,'APFilter', 'APbinArea', 'APbinID', 'AllTracesA
     'SEVectorAllDV', 'StemLoopEnd', 'TotalEllipsesAP', 'TotalEllipsesDV',...
     'fittedLineEquations', 'rateOnAP', 'timeOnOnAP','rateOnAPCell', 'timeOnOnAPCell','nc10', 'nc11', 'nc12',...
     'nc13', 'nc14', 'nc9', 'ncFilter',...
-    'ncFilterID'];
+    'ncFilterID', 'rateOnAPManual', 'rateOnAPCellManual', 'timeOnOnAPManual', 'timeOnOnAPCellManual'];
 
 save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
     savedVariables{:},'-v7.3');

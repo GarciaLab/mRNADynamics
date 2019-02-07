@@ -19,6 +19,8 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % nc, NC : Only look at particles that show up in nc13
 %    % Currently this only starts at nc13...not restrict you to nc13 Added by Emma
 %    % Also, this option shows you the max projection.
+% plot3DGauss: plot 3D gaussian fitting intensities in tracefig
+% sortByLength: sort particles by duration instead of time observed
 %
 % CONTROLS
 % Frame specific:
@@ -98,7 +100,6 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % -/= Change the zoom factor when in zoom mode.
 % 0 Enter debug mode to fix things manually
 % ~ Switch figure 1 from a single plane image to a z or time projection.
-% 3 Fits a line to the polymerase loading regime of the trace.
 % F Start a fitting mode for the single trace (in the current particle).
 % (in progress)
 %
@@ -128,7 +129,7 @@ xForZoom = 0;
 yForZoom = 0;
 
 % Parameters for fitting
-lifeFit = 0;
+lineFit = 0;
 fitApproved = 0;
 FramesToFit = [];
 FrameIndicesToFit = [];
@@ -148,7 +149,7 @@ else
 end
 
 [Prefix, Sort, sortByLength, ForCompileAll, SpeedMode, SisterMode, ...
-    ncRange, projectionMode, plot3DGauss, fit3DGauss, intScale, NC, ...
+    ncRange, projectionMode, plot3DGauss, intScale, NC, ...
     startNC, endNC] = determineCheckParticleTrackingOptions(varargin);
 
 %%
@@ -1069,10 +1070,6 @@ while (cc~='x')
     elseif cc=='0'      %Debugging mode
         keyboard;
         
-    elseif cc== '3'
-        [lineFit, Coefficients, fit1E, Particles] =...
-            fitLine(CurrentParticle, Particles, Spots, CurrentChannel, schnitzcells, ...
-            ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, Frames, anaphase);
     end
 end
 
@@ -1105,9 +1102,6 @@ end
 disp('Particles saved.')
 disp(['(Left off at Particle #', num2str(CurrentParticle), ')'])
 
-if fit3DGauss
-    plot3DGaussiansToAllSpots(Prefix);
-end
 %% Extra stuff that is useful in debug mode
 
 %Reset approve status of all approved particles in a certain nc

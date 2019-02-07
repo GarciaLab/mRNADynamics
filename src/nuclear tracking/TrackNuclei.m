@@ -117,7 +117,7 @@ indMit(indMit<1)=1;
 
 %Check whether nc14 occurred very close to the end of the movie. For those
 %frames we'll move the boundary for tracking purposes
-load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
+load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo')
 numFrames = length(FrameInfo);
 indMit(indMit>=numFrames)=indMit(indMit>=numFrames)-2;
 
@@ -128,7 +128,6 @@ if isempty(indMit)
 %If we don't have nc14 we'll fool the code into thinking that the last
 %frame of the movie was nc14
 elseif isnan(indMit(end,1))
-    load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
     indMit(end,1)=numFrames-6;
     indMit(end,2)=numFrames-5;
 end    

@@ -28,7 +28,8 @@ load([DropboxFolder '/' Prefix '/' Prefix '_lin.mat'])
 
 [working_dat_final] = CleanDVData(schnitzcells,CompiledNuclei);
 
-% Fits polynomials to each nucleus z-stack
+% Fits polynomials to each nucleus z-stack, can change the value of the
+% threshold (set to 0.5 right now)
 
 [fake_dv_comb, fake_dv_check, polyfit_data, polyfit_out, ...
     polyfit_maximums] = DVpolyfit(working_dat_final,0.5);

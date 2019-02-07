@@ -1,9 +1,9 @@
 function [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
     FilteredParticlesPos, OnRatioAP, ParticleCountAP, ParticleCountProbAP, ...
-    EllipsesOnAP, rateOnAP, rateOnAPCell, timeOnOnAP, timeOnOnAPCell, TotalEllipsesAP]...
+    EllipsesOnAP, rateOnAP, rateOnAPCell, timeOnOnAP, timeOnOnAPCell, TotalEllipsesAP, rateOnAPManual, rateOnAPCellManual, timeOnOnAPManual, timeOnOnAPCellManual]...
     = computeAPFractionOn(NChannels, Particles, schnitzcells, ...
     CompiledParticles, Ellipses, APbinID, FrameInfo, ElapsedTime, DropboxFolder, ...
-    Prefix, EllipsePos, nc12, nc13, nc14, numFrames, doSingleFits, SkipAll, APbinArea, pixelSize)
+    Prefix, EllipsePos, nc12, nc13, nc14, numFrames, doSingleFits, SkipAll, APbinArea, pixelSize, manualSingleFits)
 
 %computeAPFractionOn Calculate the fraction of transcribing nuclei using three
 %different methods. 
@@ -339,10 +339,18 @@ function [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
 
         TotalEllipsesAP=zeros(length(APbinID),3);
         EllipsesOnAP{ChN}=zeros(length(APbinID),3);
+        
+        %emma single fits
         rateOnAP{ChN}=zeros(length(APbinID),3);
         rateOnAPCell{ChN}=cell(length(APbinID),3);     
         timeOnOnAP{ChN}=zeros(length(APbinID),3);
         timeOnOnAPCell{ChN}=cell(length(APbinID),3);
+        
+        %yjk single fits
+        rateOnAPManual{ChN}=zeros(length(APbinID),3);
+        rateOnAPCellManual{ChN}=cell(length(APbinID),3);     
+        timeOnOnAPManual{ChN}=zeros(length(APbinID),3);
+        timeOnOnAPCellManual{ChN}=cell(length(APbinID),3);
 
         for nc=12:14
 
@@ -460,6 +468,13 @@ function [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
                                         rateOnAPCell{ChN}{CurrentAPbin,nc-11} = [rateOnAPCell{ChN}{CurrentAPbin,nc-11},CompiledParticles{ChN}(m).singleTraceLoadingRate];
                                         timeOnOnAP{ChN}(CurrentAPbin,nc-11) = nansum([timeOnOnAP{ChN}(CurrentAPbin,nc-11),CompiledParticles{ChN}(m).singleTraceTimeOn]);
                                         timeOnOnAPCell{ChN}{CurrentAPbin,nc-11} = [timeOnOnAPCell{ChN}{CurrentAPbin,nc-11},CompiledParticles{ChN}(m).singleTraceTimeOn];
+                                                 
+                                    end
+                                    if manualSingleFits
+                                              rateOnAPManual{ChN}(CurrentAPbin,nc-11) = nansum([rateOnAPManual{ChN}(CurrentAPbin,nc-11),CompiledParticles{ChN}(m).fittedSlope]);
+                                        rateOnAPCellManual{ChN}{CurrentAPbin,nc-11} = [rateOnAPCellManual{ChN}{CurrentAPbin,nc-11},CompiledParticles{ChN}(m).fittedSlope];
+                                        timeOnOnAPManual{ChN}(CurrentAPbin,nc-11) = nansum([timeOnOnAPManual{ChN}(CurrentAPbin,nc-11),CompiledParticles{ChN}(m).fittedTon]);
+                                        timeOnOnAPCellManual{ChN}{CurrentAPbin,nc-11} = [timeOnOnAPCellManual{ChN}{CurrentAPbin,nc-11},CompiledParticles{ChN}(m).fittedTon];
                                     end
                                 end
                             end
@@ -473,6 +488,10 @@ function [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
         if doSingleFits
             rateOnAP{ChN} = rateOnAP{ChN} ./ EllipsesOnAP{ChN};
             timeOnOnAP{ChN} = timeOnOnAP{ChN} ./ EllipsesOnAP{ChN};
+        end
+        if manualSingleFits
+            rateOnAPManual{ChN} = rateOnAPManual{ChN} ./ EllipsesOnAP{ChN};
+            timeOnOnAPManual{ChN} = timeOnOnAPManual{ChN} ./ EllipsesOnAP{ChN};
         end
 
         if ~SkipAll
