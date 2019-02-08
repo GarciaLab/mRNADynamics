@@ -110,7 +110,7 @@ if ~isequal(s1,s2)
 		flag(1) = 1;
 	else
 		% the same?
-		if ~isequal(s1,s2)
+        if ~isequaln(s1,s2)
 			flag(1) = 1;
 			% not the same - differance?
 			% class error
