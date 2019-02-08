@@ -42,7 +42,7 @@ end
 
 function assertExpectedResults(testCase, stepName, fileName)
   cd('E:/repos/mRNADynamics'); %JP: temporary hardcode
-  expectedFrameInfoPath = ['./test/testCheckParticleTracking/expected/', stepName, filesep, testCase.Prefix, filesep, fileName];
+  expectedFrameInfoPath = ['./test/integrationTest/expected/', stepName, filesep, testCase.Prefix, filesep, fileName];
   actualFrameInfoPath = ['../Data/DynamicsResults/', testCase.Prefix, filesep, fileName];
   testCase.assertTrue(exist(actualFrameInfoPath, 'file') == 2);
   

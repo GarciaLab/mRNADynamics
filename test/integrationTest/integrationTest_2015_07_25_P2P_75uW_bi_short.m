@@ -1,4 +1,4 @@
-classdef testCheckParticleTracking_2015_07_25_P2P_75uW_bi_short < matlab.unittest.TestCase
+classdef integrationTest_2015_07_25_P2P_75uW_bi_short < matlab.unittest.TestCase
 
   properties
       Prefix = '2015-07-25-P2P_75uW_bi_short';
@@ -9,7 +9,7 @@ classdef testCheckParticleTracking_2015_07_25_P2P_75uW_bi_short < matlab.unittes
   methods(Test)
 
     function testRun(testCase)
-        testCheckParticleTracking(testCase);
+        integrationTest(testCase);
     end
 
   end
