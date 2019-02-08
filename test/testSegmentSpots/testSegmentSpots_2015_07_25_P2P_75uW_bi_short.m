@@ -4,7 +4,7 @@ classdef testSegmentSpots_2015_07_25_P2P_75uW_bi_short < matlab.unittest.TestCas
   properties
       %Hardcoded with the path of the experiment that the test will use
       Prefix = '2015-07-25-P2P_75uW_bi_short';
-      Options = 60;
+      DoG = 60;
   end
 
   methods(Test)
