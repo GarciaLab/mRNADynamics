@@ -48,7 +48,7 @@ function [lineFit, Coefficients, fit1E, Particles, FramesToFit, FrameIndicesToFi
         FrameIndicesToFit = posIndex1:posIndex2; % indices of those frames in the trace
     end
 
- try
+ %try
     % currently shifted by the first frame of the assigned nucleus
     [frameIndex,Coefficients,ErrorEstimation,nFramesForFit] = ...
         fitASingleTraceManual(CurrentParticle,Particles,Spots,CurrentChannel,...
@@ -81,12 +81,12 @@ function [lineFit, Coefficients, fit1E, Particles, FramesToFit, FrameIndicesToFi
     
     lineFit = 1;
 
-catch
-    lineFit = 0;
-    uiwait(msgbox('A line was not fitted','Key 3 was selected'));
-    fit1E = [];
-    Coefficients = [];
- end
+%catch
+%     lineFit = 0;
+%     uiwait(msgbox('A line was not fitted','Key 3 was selected'));
+%     fit1E = [];
+%     Coefficients = [];
+% end
 
 end
 

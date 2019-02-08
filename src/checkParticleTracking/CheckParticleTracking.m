@@ -100,8 +100,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 % -/= Change the zoom factor when in zoom mode.
 % 0 Enter debug mode to fix things manually
 % ~ Switch figure 1 from a single plane image to a z or time projection.
-% F Start a fitting mode for the single trace (in the current particle).
-% (in progress)
+
 %
 % OUTPUT
 % Particles: A modified Particles
