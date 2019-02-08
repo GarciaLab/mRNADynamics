@@ -30,6 +30,10 @@ NC = -1;
 startNC = -1;
 endNC = -1;
 
+if length(varargin) == 0
+    error('Please specify the Prefix of the data set to analyze')
+end
+
 Prefix = varargin{1};
 if length(varargin)>1
     for i=2:length(varargin)
