@@ -8,9 +8,16 @@ loc = [Overlay.Position(1) + Overlay.Position(3) + 10, Overlay.Position(2)];
 screen_size = get(0, 'screensize');
 dim = [screen_size(3) - loc(1) - 10, Overlay.Position(4)];
 controls_fig = uifigure('Position', [loc(1), loc(2), dim(1), dim(2)]);
+try
 controls = uipanel(controls_fig, 'Title', 'Controls', 'Position', ...
     [0, 0, dim(1), dim(2)], ...
     'FontSize', 12, 'Scrollable', 'on');
+catch
+    warning('Panel does not have Scrollable property, using old MATLAB version settings');
+    controls = uipanel(controls_fig, 'Title', 'Controls', 'Position', ...
+    [0, 0, dim(1), dim(2)], ...
+    'FontSize', 12);
+end
 Overlay.Units = 'normalized';
 offset = 0.5 * dim(2);
 uilabel('Parent', controls, 'Text', 'Frame: ', 'Position', ...
