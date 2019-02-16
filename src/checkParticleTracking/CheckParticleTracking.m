@@ -402,6 +402,7 @@ end
 
 %Order particles by the earliest frame they appear at. This makes the
 %tracking a lot easier! Can also track by the number of spots in a trace
+direction = 'ascend';
 if Sort
     for ChN=1:NChannels
         nParticles = length(Particles{ChN});
@@ -412,7 +413,6 @@ if Sort
                 direction = 'descend';
             else %Otherwise, sort by first frame as normal
                 sortIndex(i)=Particles{ChN}(i).Frame(1);
-                direction = 'ascend';
             end
         end
         [~,Permutations]=sort(sortIndex,direction);

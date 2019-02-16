@@ -323,15 +323,6 @@ if ~NoAP
             error('The surface and midsaggital images were not taken with the same pixel size')
         end
         
-        %
-        %         %AR: Odd bioformats feature. Not sure why these formats are different
-        %         %sometimes.
-        %         try
-        %             PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX(0));
-        %         catch
-        %             PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX);
-        %         end
-        
         
         %How many channels and slices do we have?
         NChannelsMeta=MetaFullEmbryo.getChannelCount(0);
@@ -1332,8 +1323,3 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
     
     save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','SpotFilter');
 end
-%close all force;
-
-
-
-
