@@ -595,9 +595,10 @@ delete_spot.ButtonPushedFcn = @delete_spot_pushed;
 % fitting (for the inital slope). Contact yjkim90@berkeley.edu for further
 % discussion or improvement.
 % Define the averaging window
+AveragingLength = 1; % Default
 averagingLength.ValueChangedFcn = @averagingLength_changed;
     function averagingLength_changed(~,~)
-        averagingLength = str2double(averagingLength.Value);
+        AveragingLength = str2double(averagingLength.Value);
     end
 
 % Fit the initial slope, by clicking two points, you can define the window
@@ -608,34 +609,33 @@ fit_spot.ButtonPushedFcn = @fit_spot_pushed;
         clear fit1E;
         figure(Overlay);
         
-    [lineFit, Coefficients, fit1E, Particles, FramesToFit, FrameIndicesToFit] =...
+    [lineFit, Coefficients, fit1E, Particles, FramesToFit, FrameIndicesToFit, currentXSegment] =...
         fitInitialSlope(CurrentParticle, Particles, Spots, CurrentChannel, schnitzcells, ...
         ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, Frames, anaphase, ...
-        averagingLength, FramesToFit, FrameIndicesToFit, lineFit)
+        AveragingLength, FramesToFit, FrameIndicesToFit, lineFit)
     end
 
 approve_fit.ButtonPushedFcn = @fit_approve;
     function fit_approve(~,~)
         % Define the fitApproved as true
         fitApproved=1
-        % save the fitted values (Slope and Time on) in Particles.mat
-        if ~isempty(Coefficients)
-            singleTraceLoadingRate = Coefficients(1,1); %au/min
-            if singleTraceLoadingRate >= 0 %some easy quality control
-                singleTraceTimeOn = roots(Coefficients(1,:));
-                Particles{CurrentChannel}(CurrentParticle).fittedSlope =  singleTraceLoadingRate;
-                Particles{CurrentChannel}(CurrentParticle).fittedTON =  singleTraceTimeOn;
-                Particles{CurrentChannel}(CurrentParticle).fitApproved = 1;
-            else     
-                Particles{CurrentChannel}(CurrentParticle).fittedSlope =  NaN;
-                Particles{CurrentChannel}(CurrentParticle).fittedTON =  NaN; 
-                Particles{CurrentChannel}(CurrentParticle).fitApproved = 0;
-            end
+        % save the fitted values (Coefficients and fit1E) in Particles.mat
+        % For now, I will save fit1E (which is a plot for the initial
+        % slope), but it might take up too much space, then I need a better
+        % way to regenerate the plot, using the Coefficients and fittedFrames
+        % Quality control : Check whether the slope is positive
+        if Coefficients(1,1)>0
+            Particles{CurrentChannel}(CurrentParticle).fitApproved = 1;
+            Particles{CurrentChannel}(CurrentParticle).Coefficients =  Coefficients;
+            Particles{CurrentChannel}(CurrentParticle).fit1E =  fit1E;
+            %Particles{CurrentChannel}(CurrentParticle).fittedXSegment = currentXSegment;
         else
-            Particles{CurrentChannel}(CurrentParticle).fittedSlope =  NaN;
-            Particles{CurrentChannel}(CurrentParticle).fittedTON =  NaN;   
             Particles{CurrentChannel}(CurrentParticle).fitApproved = 0;
+            Particles{CurrentChannel}(CurrentParticle).Coefficients =  [];
+            Particles{CurrentChannel}(CurrentParticle).fit1E =  [];
+            %Particles{CurrentChannel}(CurrentParticle).fittedXSegment = [];
         end
+            
     end
 
 cc=1;
