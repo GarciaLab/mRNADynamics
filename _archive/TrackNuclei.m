@@ -258,7 +258,6 @@ save([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
 
 %Extract the nuclear fluorescence values if we're in the right experiment
 %type
-tic
 if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
     
     
@@ -303,14 +302,18 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
     Circle=MidpointCircle(Circle,IntegrationRadius,1.5*IntegrationRadius+0.5,...
         1.5*IntegrationRadius+0.5,1);
     
-    %Initialize fields
-    schnitzcells(1).Fluo = [];
-    schnitzcells(1).Mask = [];
+    %Add the Fluo and Mask field to schnitzcells. This is done now so that
+    %the parfor doesn't freak out
+    schnitzcells(1).Fluo=[];
+    schnitzcells(1).Mask=[];
+    
     
     if sum(InputChannel)
                 
         %Extract the fluroescence of each schnitz, for each channel,
         %at each time point
+
+        TotalSchnitz=length(schnitzcells);
          
         %Get the image dimensions
         PixelsPerLine=FrameInfo(1).PixelsPerLine;
@@ -318,11 +321,11 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
         %Number of z-slices
         NumberSlices=FrameInfo(1).NumberSlices;
         NumberSlices2 = NumberSlices + 2;
-              
-        %Generate reference frame for edfe detection
-        refFrame = ones(LinesPerFrame,PixelsPerLine,NumberSlices2);
-        convRef = convn(refFrame, Circle, 'same');
-        edgeMask = convRef~=sum(Circle(:));
+        
+        %Initialize blank images
+        Mask=false(LinesPerFrame,PixelsPerLine);
+        Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2); 
+
         
         for ChN=1:length(InputChannel)
         
@@ -335,47 +338,34 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
                 else
                     error('Not sure what happened here. Talk to YJK or SA.')
                 end
-            % NL: should parallelize this
-            for CurrentFrame=10:numFrames
+                
+            for CurrentFrame=1:numFrames
 
                 waitbar(CurrentFrame/numFrames,h);
 % 
 %                 %Initialize the image
 %                 Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2)
 %                 %AR 1/12/18 moved this outside the for loops
-                Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2);
-                %Load the z-stack for this frame        
-                for CurrentZ=1:NumberSlices2   %Note that I need to add the two extra slices manually
-                    Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
-                end
                 
-                % NL: rewriting this extraction step as a convolution                            
-                convImage = convn(Image, Circle, 'same');                
-                convImage(edgeMask) = NaN;
-                for j=1:length(schnitzcells)
-                    CurrentIndex=find(schnitzcells(j).frames==CurrentFrame);
-                    cenx=schnitzcells(j).cenx(CurrentIndex);
-                    ceny=schnitzcells(j).ceny(CurrentIndex);
-                    schnitzcells(j).FluoTest(CurrentIndex,1:NumberSlices2,ChN) = convImage(ceny,cenx,:);
-                    schnitzcells(j).Mask=Circle;                    
+                %Load the z-stack for this frame
+
+                for CurrentZ=1:NumberSlices2   %Note that I need to add the two extra slices manually
+                         Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
                 end
-%                 toc
-%                 tic
-%                 NL: commented out old version
-%                 for j=1:length(schnitzcells)
-% 
-%                     %HG: Note that I'm calling a function here so that I can
-%                     %debug the parfor loop above. Ideally, I would have 
-%                     %parfor loop over images, not schnitzes within an image.
-%                     %However, I couldn't quite figure out how to do that.
-%                     %schnitzcells(j)=ExtractNuclearFluorescence(schnitzcells(j),...
-%                     %    CurrentFrame,...
-%                     %    Image,LinesPerFrame,PixelsPerLine,NumberSlices2,Circle,IntegrationRadius,InputChannel(ChN));
-%                     schnitzcells(j)= ExtractNuclearFluorescence(schnitzcells(j),...
-%                         CurrentFrame,...
-%                         Image,LinesPerFrame,PixelsPerLine,NumberSlices2,Circle,IntegrationRadius,ChN);
-%                 end
-%                 toc
+
+                for j=1:TotalSchnitz
+
+                    %HG: Note that I'm calling a function here so that I can
+                    %debug the parfor loop above. Ideally, I would have 
+                    %parfor loop over images, not schnitzes within an image.
+                    %However, I couldn't quite figure out how to do that.
+                    %schnitzcells(j)=ExtractNuclearFluorescence(schnitzcells(j),...
+                    %    CurrentFrame,...
+                    %    Image,LinesPerFrame,PixelsPerLine,NumberSlices2,Circle,IntegrationRadius,InputChannel(ChN));
+                    schnitzcells(j)=ExtractNuclearFluorescence(schnitzcells(j),...
+                        CurrentFrame,...
+                        Image,LinesPerFrame,PixelsPerLine,NumberSlices2,Circle,IntegrationRadius,ChN);
+                end
             end
         close(h)
         end
@@ -383,7 +373,8 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
         error('Input channel not recognized. Check correct definition in MovieDatabase')
     end
 end
-toc
+    
+
 %Save the information
 %Now save
 mkdir([DropboxFolder,filesep,Prefix])

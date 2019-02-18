@@ -64,8 +64,7 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
       if doFF && sum(size(im)==size(ffim))
         im = im.*ffim;
       end
-      
-      
+            
       im_thresh = dog >= Threshold;
       
       if  Weka     
