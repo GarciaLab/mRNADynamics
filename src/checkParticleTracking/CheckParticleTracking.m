@@ -609,7 +609,7 @@ fit_spot.ButtonPushedFcn = @fit_spot_pushed;
         clear fit1E;
         figure(Overlay);
         
-    [lineFit, Coefficients, fit1E, Particles, FramesToFit, FrameIndicesToFit, currentXSegment] =...
+    [lineFit, Coefficients, fit1E, Particles, FramesToFit, FrameIndicesToFit] =...
         fitInitialSlope(CurrentParticle, Particles, Spots, CurrentChannel, schnitzcells, ...
         ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, Frames, anaphase, ...
         AveragingLength, FramesToFit, FrameIndicesToFit, lineFit)
@@ -627,13 +627,15 @@ approve_fit.ButtonPushedFcn = @fit_approve;
         if Coefficients(1,1)>0
             Particles{CurrentChannel}(CurrentParticle).fitApproved = 1;
             Particles{CurrentChannel}(CurrentParticle).Coefficients =  Coefficients;
-            Particles{CurrentChannel}(CurrentParticle).fit1E =  fit1E;
-            %Particles{CurrentChannel}(CurrentParticle).fittedXSegment = currentXSegment;
+            %Particles{CurrentChannel}(CurrentParticle).fit1E =  fit1E;
+            Particles{CurrentChannel}(CurrentParticle).fittedFrames = FramesToFit;
+            %Particles{CurrentChannel}(CurrentParticle).fittedYSegment = currentYSegment;
         else
             Particles{CurrentChannel}(CurrentParticle).fitApproved = 0;
             Particles{CurrentChannel}(CurrentParticle).Coefficients =  [];
-            Particles{CurrentChannel}(CurrentParticle).fit1E =  [];
-            %Particles{CurrentChannel}(CurrentParticle).fittedXSegment = [];
+            %Particles{CurrentChannel}(CurrentParticle).fit1E =  [];
+            Particles{CurrentChannel}(CurrentParticle).fittedFrames = [];
+            %Particles{CurrentChannel}(CurrentParticle).fittedYSegment = [];
         end
             
     end
