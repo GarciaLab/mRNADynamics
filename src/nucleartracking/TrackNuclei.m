@@ -336,7 +336,7 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
                     error('Not sure what happened here. Talk to YJK or SA.')
                 end
             % NL: should parallelize this
-            for CurrentFrame=10:numFrames
+            for CurrentFrame=1:numFrames
 
                 waitbar(CurrentFrame/numFrames,h);
 % 
