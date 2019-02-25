@@ -74,14 +74,17 @@ end
 
 %What type of experiment are we dealing with? Get this out of
 %MovieDatabase.xlsx
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
-    Folder, Prefix, ExperimentType, Channel1, Channel2,OutputFolder...
-    ] = readMovieDatabase(Prefix);
+% [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
+%     Folder, Prefix, ExperimentType, Channel1, Channel2,OutputFolder...
+%     ] = readMovieDatabase(Prefix);
 
 % refactor in progress, we should replace readMovieDatabase with getExperimentDataFromMovieDatabase
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
 Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
 nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
+
+%Pre-calculating ExperimentAxis boolean for faster use in later if statements
+ExperimentAxisIsNoAP = strcmpi(ExperimentAxis, 'NoAP');
 
 %Do we need to convert any NaN chars into doubles?
 if strcmpi(nc14,'nan')
@@ -205,12 +208,14 @@ for i=1:length(schnitzcells)
             
             %Save the information about the original schnitz
             CompiledNuclei(k).schnitz=i;
-
-            CompiledNuclei(k).MeanDV=mean(schnitzcells(i).DVpos(FrameFilter));
-            CompiledNuclei(k).MedianDV=median(schnitzcells(i).DVpos(FrameFilter));
-            CompiledNuclei(k).MeanAP=mean(schnitzcells(i).APpos(FrameFilter));
-            CompiledNuclei(k).MedianAP=median(schnitzcells(i).APpos(FrameFilter));
-
+            
+            if ~ExperimentAxisIsNoAP
+                CompiledNuclei(k).MeanDV=mean(schnitzcells(i).DVpos(FrameFilter));
+                CompiledNuclei(k).MedianDV=median(schnitzcells(i).DVpos(FrameFilter));
+                CompiledNuclei(k).MeanAP=mean(schnitzcells(i).APpos(FrameFilter));
+                CompiledNuclei(k).MedianAP=median(schnitzcells(i).APpos(FrameFilter));
+            end
+           
 
             %Copy and extract the fluorescence information
             CompiledNuclei(k).FluoMax=squeeze(max(schnitzcells(i).Fluo(FrameFilter,:,:),[],2));
@@ -429,13 +434,12 @@ end
 
 %% Binning and averaging data
 
-
+if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
+    
 %Get the data for the individual particles in a matrix that has the frame
 %number and the particle number as dimensions. Also, get a vector that
 %reports the mean position.
 [AllTracesVector,AllTracesAP, AllTracesDV]=AllTracesNuclei(FrameInfo,CompiledNuclei);
-
-if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
 
 
 
@@ -601,6 +605,11 @@ if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
             NParticlesAP=cell2mat(NParticlesAPCell2);
         end
     end
+elseif strcmpi(ExperimentAxis,'NoAP')
+    %Get the data for the individual particles in a matrix that has the frame
+    %number and the particle number as dimensions. Also, get a vector that
+    %reports the mean position.
+    [AllTracesVector,AllTracesAP, AllTracesDV]=AllTracesNuclei(FrameInfo,CompiledNuclei,'NoAP');
 end
     
 if strcmpi(ExperimentAxis,'DV')

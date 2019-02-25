@@ -658,7 +658,8 @@ end
 % ROI option added (YJK on 10/27/2017) :
 % When the data is acquired in ROI mode, I added the ROI option,
 % two thresholds to be incorporated into CompileNuclearProtein
-if strcmpi(ExperimentType,'inputoutput') && (strcmpi(ExperimentAxis,'AP')||strcmpi(ExperimentAxis,'DV'))
+if strcmpi(ExperimentType,'inputoutput') 
+    %&& (strcmpi(ExperimentAxis,'AP')||strcmpi(ExperimentAxis,'DV'))
     if ~ROI
         CompileNuclearProtein(Prefix)
     else
