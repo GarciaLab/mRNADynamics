@@ -1,11 +1,11 @@
 function [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ...
-            ErrorIntegral, ErrorIntegral3, ErrorIntegral5,backGround3, ...
-            AmpIntegralGauss3D, ErrorIntegralGauss3D, PreviousParticle] = plotTrace(traceFigAxes, ...
-            FrameInfo, CurrentChannel, PreviousChannel, ...
-    CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFit, anaphaseInMins,...
+    ErrorIntegral, ErrorIntegral3, ErrorIntegral5,backGround3, ...
+    AmpIntegralGauss3D, ErrorIntegralGauss3D, PreviousParticle] = plotTrace(traceFigAxes, ...
+    FrameInfo, CurrentChannel, PreviousChannel, ...
+    CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFitted, anaphaseInMins,...
     ElapsedTime, schnitzcells, Particles, plot3DGauss, anaphase,prophase, metaphase, prophaseInMins, metaphaseInMins,Prefix, ...
     DefaultDropboxFolder, numFrames, CurrentFrame, ZSlices, CurrentZ, Spots, ...
-    correspondingNCInfo, fit1E, Coefficients, ExperimentType, Frames, AmpIntegral, GaussIntegral, AmpIntegral3, ...
+    correspondingNCInfo, lineFitHandle, Coefficients, ExperimentType, Frames, AmpIntegral, GaussIntegral, AmpIntegral3, ...
     AmpIntegral5, ErrorIntegral, ErrorIntegral3, ErrorIntegral5, backGround3, ...
     AmpIntegralGauss3D, ErrorIntegralGauss3D)
 %PLOTTRACE Summary of this function goes here
@@ -25,19 +25,24 @@ end
 % Check if this particle was fitted manually before
 if  isfield(Particles{CurrentChannel},'fitApproved') && ...
         ~isempty(Particles{CurrentChannel}(CurrentParticle).fitApproved)
-    lineFit = 1;
-    % Call fit1E (fitted line plot, we need a better way in future)
-    fit1E = Particles{CurrentChannel}(CurrentParticle).fit1E;
+    approvedFit = 1;
+    lineFitted = 1;
+    % Call lineFitHandle (fitted line plot, we need a better way in future)
+    %lineFitHandle = Particles{CurrentChannel}(CurrentParticle).lineFitHandle;
     Coefficients = Particles{CurrentChannel}(CurrentParticle).Coefficients;
-    %fit1E = [];
-else 
-    fit1E = [];
+    fittedXFrames = Particles{CurrentChannel}(CurrentParticle).fittedFrames;
+    clear lineFitHandle
+    %lineFitHandle = [];
+else
+    lineFitHandle = [];
+    approvedFit = 0;
 end
 
 %we'll plot the spot intensity first on the left axis.
 yyaxis(traceFigAxes,'left')
 
-if ~lineFit
+% finding the traceFigTimeAxis
+if ~lineFitted
     traceFigTimeAxis = Frames;
     cla(traceFigAxes)
 else
@@ -58,6 +63,7 @@ else
     end
 end
 
+% plotting the lines and traces
 hold(traceFigAxes, 'on')
 if ~plot3DGauss
     traceErrorBar1 = errorbar(traceFigAxes, traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
@@ -69,37 +75,45 @@ if ~plot3DGauss
     dPoint2 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
     cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
 elseif lineFit
-   traceErrorBar1 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-            AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');
-   traceErrorBar2 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-            AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
-   fit1E = plot(traceFigAxes,fittedXsegment,fittedYSegment)
+    % plotting the traces
+    traceErrorBar1 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+        AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');
+    traceErrorBar2 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+        AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
+    
+    % calculate the fittedXSegment and fittedYSegment
+    fittedXSegment = traceFigTimeAxis(fittedXFrames);
+    fittedYSegment = polyval(Coefficients,fittedXSegment);
+    lineFitHandle = plot(traceFigAxes,fittedXSegment,fittedYSegment);
+    
     dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
     cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
     dPoint2 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
     cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegralGauss3D(Frames==CurrentFrame),'ob');
-else 
-   traceErrorBar1 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+else
+    traceErrorBar1 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
         AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');
-   traceErrorBar2 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-            AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
+    traceErrorBar2 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+        AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
     dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
     cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
     dPoint2 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
     cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegralGauss3D(Frames==CurrentFrame),'ob');
 end
 
+% adjusting x limits
 try
     xlim(traceFigAxes,[min(traceFigTimeAxis),max(traceFigTimeAxis)]+[-1,1]);
 catch
     %             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
 end
 
+% adjusting y limits
 traceFigYLimits = get(traceFigAxes,'YLim');
 
 % plotting all anaphase time points as vertical lines
 for i = 1:length(anaphase)
-    if ~lineFit
+    if ~lineFitted
         currentAnaphaseBoundary = anaphase(i);
     else
         currentAnaphaseBoundary = anaphaseInMins(i) - priorAnaphaseInMins;
@@ -107,9 +121,10 @@ for i = 1:length(anaphase)
     plot(traceFigAxes,ones(1,2).*currentAnaphaseBoundary,traceFigYLimits,...
         'LineWidth',2,'Color','black');
 end
-%prophase
+
+% plotting all prophase time points as vertical lines
 for i = 1:length(prophase)
-    if ~lineFit
+    if ~lineFitted
         currentProphase = prophase(i);
     else
         currentProphase = prophaseInMins(i) - priorAnaphaseInMins;
@@ -117,9 +132,10 @@ for i = 1:length(prophase)
     plot(traceFigAxes,ones(1,2).*currentProphase,traceFigYLimits,...
         'LineWidth',2,'Color','blue');
 end
-%metaphase
+
+% plotting all metaphase time points as vertical lines
 for i = 1:length(metaphase)
-    if ~lineFit
+    if ~lineFitted
         currentMetaphase = metaphase(i);
     else
         currentMetaphase = metaphaseInMins(i) - priorAnaphaseInMins;
@@ -128,8 +144,11 @@ for i = 1:length(metaphase)
         'LineWidth',2,'Color','yellow');
 end
 
+% labeling plott
 ylabel(traceFigAxes,'integrated intensity (a.u.)')
 hold(traceFigAxes, 'off')
+
+% creating legend
 if plot3DGauss
     str1 = '3-slice mRNA';
     str2 = '3D-Gaussian fit mRNA';
@@ -137,14 +156,16 @@ else
     str1 = '1-slice mRNA';
     str2 = 'multi-slice mRNA';
 end
-if ~lineFit
+
+if ~lineFitted
     legend(traceFigAxes,[traceErrorBar1,traceErrorBar2],str1,str2)
     xlabel(traceFigAxes,'frame')
 else
-    legend(traceFigAxes,[traceErrorBar1,traceErrorBar2,fit1E],str1,str2,...
+    legend(traceFigAxes,[traceErrorBar1,traceErrorBar2,lineFitHandle],str1,str2,...
         ['fit slope: ', num2str(round(Coefficients(1))), ' a.u./min',newline,'time on: ',num2str(roots(Coefficients)), ' min'])
     xlabel(traceFigAxes,'time since anaphase (min)')
 end
+
 if strcmpi(ExperimentType, 'inputoutput')
     yyaxis(traceFigAxes,'right')
     %now we'll plot the input protein intensity on the right-hand axis.
@@ -160,9 +181,10 @@ if strcmpi(ExperimentType, 'inputoutput')
     plot(traceFigAxes,Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
     hold(traceFigAxes,'off')
 else
-    traceFigAxes.YAxis(2).Visible = 'off'; 
+    traceFigAxes.YAxis(2).Visible = 'off';
 end
 
+% creating axis title
 firstLine = [Prefix,'    Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)];
 secondLine = ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),'    ',num2str(round(FrameInfo(CurrentFrame).Time)), 's'];
 thirdLine = ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)];
@@ -175,13 +197,12 @@ else
     axisTitle={firstLine,secondLine,thirdLine};
 end
 
-
 if HideApprovedFlag==1
     axisTitle=[axisTitle,', Showing non-flagged particles'];
 elseif HideApprovedFlag==2
     axisTitle=[axisTitle,', Showing disapproved particles'];
 end
 title(traceFigAxes,axisTitle, 'Interpreter', 'none')
-    
+
 end
 

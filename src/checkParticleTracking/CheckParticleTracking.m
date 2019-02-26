@@ -128,7 +128,7 @@ xForZoom = 0;
 yForZoom = 0;
 
 % Parameters for fitting
-lineFit = 0;
+lineFitted = 0; % equals 1 if a line has been fitted
 fitApproved = 0;
 FramesToFit = [];
 FrameIndicesToFit = [];
@@ -247,7 +247,7 @@ if exist([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
     %(MT, 2018-02-11) Added support for lattice imaging with bad histone
     %channel, maybe temporary - FIX LATER
     if exist([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,'Ellipses.mat'], 'file')
-        load([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,'Ellipses.mat'], 'Ellipses')
+        load([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,'Ellipses.mat'], 'Ellipses');
         UseHistoneOverlay=1;
     else
         warning('Ellipses.mat does not exist. Proceeding as though there is no Histone channel. If you expect a Histone channel, there is something wrong.')
@@ -366,7 +366,7 @@ try
 catch
 end
 
-save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo') %this is here so that a user will still get an updated
+save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo'); %this is here so that a user will still get an updated
 %frameinfo.mat even if they abort checkparticletracking without saving (to
 %prevent issues with compileparticles)
 
@@ -376,7 +376,7 @@ if (~isfield(FrameInfo,'nc'))&&(~UseHistoneOverlay)
     %script seems to have disappeared.
     
 elseif UseSchnitz
-    load([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'])
+    load([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat']);
     
     %Remove the schnitz fields that can give us problems potentially if
     %present. I don't know how this came to be, but it's for fields that
@@ -606,34 +606,34 @@ averagingLength.ValueChangedFcn = @averagingLength_changed;
 fit_spot.ButtonPushedFcn = @fit_spot_pushed;
     function fit_spot_pushed(~,~)
         %lineFit = 0;
-        clear fit1E;
+        clear lineFitHandle;
         figure(Overlay);
         
-    [lineFit, Coefficients, fit1E, Particles, FramesToFit, FrameIndicesToFit] =...
+    [lineFitted, Coefficients, lineFitHandle, Particles, FramesToFit, FrameIndicesToFit] =...
         fitInitialSlope(CurrentParticle, Particles, Spots, CurrentChannel, schnitzcells, ...
         ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, Frames, anaphase, ...
-        AveragingLength, FramesToFit, FrameIndicesToFit, lineFit)
+        AveragingLength, FramesToFit, FrameIndicesToFit, lineFitted);
     end
 
 approve_fit.ButtonPushedFcn = @fit_approve;
     function fit_approve(~,~)
         % Define the fitApproved as true
-        fitApproved=1
-        % save the fitted values (Coefficients and fit1E) in Particles.mat
-        % For now, I will save fit1E (which is a plot for the initial
+        fitApproved=1;
+        % save the fitted values (Coefficients and lineFitHandle) in Particles.mat
+        % For now, I will save lineFitHandle (which is a plot for the initial
         % slope), but it might take up too much space, then I need a better
         % way to regenerate the plot, using the Coefficients and fittedFrames
         % Quality control : Check whether the slope is positive
         if Coefficients(1,1)>0
             Particles{CurrentChannel}(CurrentParticle).fitApproved = 1;
             Particles{CurrentChannel}(CurrentParticle).Coefficients =  Coefficients;
-            %Particles{CurrentChannel}(CurrentParticle).fit1E =  fit1E;
+            %Particles{CurrentChannel}(CurrentParticle).lineFitHandle =  lineFitHandle;
             Particles{CurrentChannel}(CurrentParticle).fittedFrames = FramesToFit;
             %Particles{CurrentChannel}(CurrentParticle).fittedYSegment = currentYSegment;
         else
             Particles{CurrentChannel}(CurrentParticle).fitApproved = 0;
             Particles{CurrentChannel}(CurrentParticle).Coefficients =  [];
-            %Particles{CurrentChannel}(CurrentParticle).fit1E =  [];
+            %Particles{CurrentChannel}(CurrentParticle).lineFitHandle =  [];
             Particles{CurrentChannel}(CurrentParticle).fittedFrames = [];
             %Particles{CurrentChannel}(CurrentParticle).fittedYSegment = [];
         end
@@ -680,10 +680,10 @@ end
 %This flag allows the code to directly pass a command without waiting for
 %the user to press a key or click on the figure
 SkipWaitForButtonPress=[];
-lineFit = 0; % the initial rise of the trace was not fitted
+lineFitted = 0; % the initial rise of the trace was not fitted
 
 % these variables are only use when lineFit = 1
-fit1E = []; 
+lineFitHandle = []; 
 Coefficients = []; 
 
 while (cc~='x')
@@ -815,21 +815,22 @@ while (cc~='x')
             ErrorIntegral, ErrorIntegral3, ErrorIntegral5,backGround3, ...
             AmpIntegralGauss3D, ErrorIntegralGauss3D, PreviousParticle] = plotTrace(traceFigAxes, ...
             FrameInfo, CurrentChannel, PreviousChannel, ...
-        CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFit, anaphaseInMins, ...
+        CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFitted, anaphaseInMins, ...
         ElapsedTime, schnitzcells, Particles, plot3DGauss, anaphase, prophase, metaphase,prophaseInMins, metaphaseInMins,Prefix, ...
         DefaultDropboxFolder, numFrames, CurrentFrame, ZSlices, CurrentZ, Spots, ...
-        correspondingNCInfo, fit1E, Coefficients, ExperimentType, Frames, AmpIntegral, ...
-        GaussIntegral, AmpIntegral3, AmpIntegral5, ErrorIntegral, ErrorIntegral3, ...
-        ErrorIntegral5, backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D);
+        correspondingNCInfo, lineFitHandle, Coefficients, ExperimentType, ...
+        Frames, AmpIntegral, GaussIntegral, AmpIntegral3, AmpIntegral5, ...
+        ErrorIntegral, ErrorIntegral3, ErrorIntegral5, backGround3, ...
+        AmpIntegralGauss3D, ErrorIntegralGauss3D);
     else
         [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ...
             ErrorIntegral, ErrorIntegral3, ErrorIntegral5,backGround3, ...
             AmpIntegralGauss3D, ErrorIntegralGauss3D, PreviousParticle] = plotTrace(traceFigAxes, ...
             FrameInfo, CurrentChannel, PreviousChannel, ...
-        CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFit, anaphaseInMins, ...
+        CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFitted, anaphaseInMins, ...
         ElapsedTime, schnitzcells, Particles, plot3DGauss, anaphase,prophase, metaphase, prophaseInMins, metaphaseInMins,Prefix, ...
         DefaultDropboxFolder, numFrames, CurrentFrame, ZSlices, CurrentZ, Spots, ...
-        correspondingNCInfo, fit1E, Coefficients, ExperimentType);
+        correspondingNCInfo, lineFitHandle, Coefficients, ExperimentType);
     end 
 
     
@@ -1035,10 +1036,10 @@ while (cc~='x')
         end
         
     elseif (cc=='m')&(CurrentParticle<numParticles)
-        [lineFit, CurrentParticle, CurrentFrame, ManualZFlag, DisplayRange] =...
+        [lineFitted, CurrentParticle, CurrentFrame, ManualZFlag, DisplayRange] =...
             goNextParticle(CurrentParticle, CurrentChannel, HideApprovedFlag, Particles);
     elseif (cc=='n')&(CurrentParticle>1)
-        [lineFit, CurrentParticle, CurrentFrame, ManualZFlag, DisplayRange] =...
+        [lineFitted, CurrentParticle, CurrentFrame, ManualZFlag, DisplayRange] =...
             goPreviousParticle(CurrentParticle, CurrentChannel, HideApprovedFlag, Particles);    
     elseif cc=='e'
         Particles{CurrentChannel}(CurrentParticle).FrameApproved(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame)=...

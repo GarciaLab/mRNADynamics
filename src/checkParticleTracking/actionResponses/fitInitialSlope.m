@@ -1,7 +1,7 @@
-function [lineFit, Coefficients, fit1E, Particles, FramesToFit, FrameIndicesToFit] =...
+function [lineFitted, Coefficients, lineFitHandle, Particles, FramesToFit, FrameIndicesToFit] =...
     fitInitialSlope(CurrentParticle, Particles, Spots, CurrentChannel, schnitzcells, ...
     ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, Frames, anaphase, ...
-    averagingLength, FramesToFit, FrameIndicesToFit, lineFit)
+    averagingLength, FramesToFit, FrameIndicesToFit, lineFitted)
 %fitInitialSlope 
 % : This function grabs two points that you click, then fits using polyfit,
 % and will give you the slope, error, and fitted line for overlaid plot.
@@ -32,14 +32,14 @@ function [lineFit, Coefficients, fit1E, Particles, FramesToFit, FrameIndicesToFi
     
     % define the Frames for fitting
     [X,Y] = ginput(2); % pick two points (left, and right)
-    if ~lineFit
+    if ~lineFitted
         pos1 = Frames(find((Frames-X(1)).^2 == min((Frames-X(1)).^2)));
         pos2 = Frames(find((Frames-X(2)).^2 == min((Frames-X(2)).^2)));
         posIndex1 = find((Frames-X(1)).^2 == min((Frames-X(1)).^2));
         posIndex2 = find((Frames-X(2)).^2 == min((Frames-X(2)).^2));
         FramesToFit = pos1:pos2; % actual frames numbers used for linear fitting
         FrameIndicesToFit = posIndex1:posIndex2; % indices of those frames in the trace
-    elseif lineFit
+    elseif lineFitted
         pos1 = currentTimeArray(find((currentTimeArray-X(1)).^2 == min((currentTimeArray-X(1)).^2)));
         pos2 = currentTimeArray(find((currentTimeArray-X(2)).^2 == min((currentTimeArray-X(2)).^2)));
         posIndex1 = find((currentTimeArray-X(1)).^2 == min((currentTimeArray-X(1)).^2));
@@ -66,25 +66,25 @@ function [lineFit, Coefficients, fit1E, Particles, FramesToFit, FrameIndicesToFi
     %              errorArray = ones(1,length(currentXSegment)).*...
     %                  normOfResiduals./nParticlesForFit; %EL normalized by number of points included
     hold(traceFigAxes,'on')
-    %              fit1E = errorbar(traceFigAxes,ElapsedTime(Frames(frameIndex(1):frameIndex(end))),...
+    %              lineFitHandle = errorbar(traceFigAxes,ElapsedTime(Frames(frameIndex(1):frameIndex(end))),...
     %                  currentYSegment,errorArray,'.-','Color','red');
     %              to = -Coefficients(2) / Coefficients(1) + priorAnaphaseInMins;
     %              to = -Coefficients(2) / Coefficients(1) + priorAnaphaseInMins;
     to = -Coefficients(2) / Coefficients(1) + nucleusFirstFrame; % frame, not minutes for now
-    %              fit1ETimeAxis = [to, ElapsedTime(Frames(frameIndex(1):frameIndex(end)))] - priorAnaphaseInMins;
-    fit1ETimeAxis = [to, ElapsedTime(Frames(frameIndex(1):frameIndex(end)))] - nucleusFirstFrame;
+    %              lineFitTimeAxis = [to, ElapsedTime(Frames(frameIndex(1):frameIndex(end)))] - priorAnaphaseInMins;
+    lineFitTimeAxis = [to, ElapsedTime(Frames(frameIndex(1):frameIndex(end)))] - nucleusFirstFrame;
     currentYSegment = [0, currentYSegment];
     
-    fit1E = plot(traceFigAxes,fit1ETimeAxis,...
+    lineFitHandle = plot(traceFigAxes,lineFitTimeAxis,...
         currentYSegment,'-','Color','red');
     hold(traceFigAxes,'off')
     
-    lineFit = 1;
+    lineFitted = 1;
 
 %catch
 %     lineFit = 0;
 %     uiwait(msgbox('A line was not fitted','Key 3 was selected'));
-%     fit1E = [];
+%     lineFitHandle = [];
 %     Coefficients = [];
 % end
 
