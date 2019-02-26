@@ -75,33 +75,39 @@ function [displayFigures, numFrames, initialFrame, customFilter, highPrecision, 
       customFilter = 1;
 
       try
-        filterType = varargin{i + 1};
+          filterType = varargin{i + 1};
+          
+          if length(varargin) > i+1 
+              if iscell(varargin{i + 2})
+                sigmas = varargin{i + 2};
+              else 
+                  error('Entered sigma(s) not recognized. Make sure the sigma(s) are entered as numbers in a cell {}')
+              end
+              
+              if strcmp(filterType, 'Difference_of_Gaussian') || ...
+                      strcmp(filterType, 'Structure_largest') || ...
+                      strcmp(filterType, 'Structure_smallest')
+                  
+                  if length(sigmas) ~= 2
+                      error('DoG and Structure filters require two sigma values e.g.{lower_sigma,higher_sigma}')
+                  end
+                  
+              else
+                  
+                  if length(sigmas) ~= 1
+                      error('All filters besides DoG and Structure require only 1 sigma value')
+                  end
+                  
+              end
+
+          else
+              error('You did not give your desired simga(s).')
+          end
+          
       catch
-        warning('Entered filter not recognized. Defaulting to DoG')
+          warning('Entered filter not recognized. Defaulting to DoG')
       end
 
-      if iscell(varargin{i + 2})
-        sigmas = varargin{i + 2};
-
-        if strcmp(filterType, 'Difference_of_Gaussian') || ...
-          strcmp(filterType, 'Structure_largest') || ...
-          strcmp(filterType, 'Structure_smallest')
-
-          if length(sigmas) ~= 2
-            error('DoG and Structure filters require two sigma values e.g.{lower_sigma,higher_sigma}')
-          end
-
-        else
-
-          if length(sigmas) ~= 1
-            error('All filters besides DoG and Structure require only 1 sigma value')
-          end
-
-        end
-
-      else
-        error('Entered sigma(s) not recognized. Make sure the sigma(s) are entered as numbers in a cell {}')
-      end
 
     end
 

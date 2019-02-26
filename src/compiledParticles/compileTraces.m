@@ -6,7 +6,7 @@ function [Particles, CompiledParticles, ncFilter, ncFilterID] =...
     FilePrefix, Prefix, DropboxFolder, NDigits, manualSingleFits)
 %COMPILETRACES Summary of this function goes here
 %   Detailed explanation goes here
-h=waitbar(0,'Compiling traces');
+h = waitbar(0,'Compiling traces');
 for ChN=1:NChannels
     k=1;
     for i=1:length(Particles{ChN})
