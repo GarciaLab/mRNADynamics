@@ -80,6 +80,8 @@ function [displayFigures, numFrames, initialFrame, customFilter, highPrecision, 
           if length(varargin) > i+1 
               if iscell(varargin{i + 2})
                 sigmas = varargin{i + 2};
+              else 
+                  error('Entered sigma(s) not recognized. Make sure the sigma(s) are entered as numbers in a cell {}')
               end
               
               if strcmp(filterType, 'Difference_of_Gaussian') || ...
@@ -99,7 +101,7 @@ function [displayFigures, numFrames, initialFrame, customFilter, highPrecision, 
               end
 
           else
-              error('Entered sigma(s) not recognized. Make sure the sigma(s) are entered as numbers in a cell {}')
+              error('You did not give your desired simga(s).')
           end
           
       catch
