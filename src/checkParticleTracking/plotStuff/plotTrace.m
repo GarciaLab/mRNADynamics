@@ -2,12 +2,13 @@ function [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ...
     ErrorIntegral, ErrorIntegral3, ErrorIntegral5,backGround3, ...
     AmpIntegralGauss3D, ErrorIntegralGauss3D, PreviousParticle] = plotTrace(traceFigAxes, ...
     FrameInfo, CurrentChannel, PreviousChannel, ...
-    CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFitted, anaphaseInMins,...
-    ElapsedTime, schnitzcells, Particles, plot3DGauss, anaphase,prophase, metaphase, prophaseInMins, metaphaseInMins,Prefix, ...
+    CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFitted, anaphaseInMins, ...
+    ElapsedTime, schnitzcells, Particles, plot3DGauss, anaphase, prophase, metaphase,prophaseInMins, metaphaseInMins,Prefix, ...
     DefaultDropboxFolder, numFrames, CurrentFrame, ZSlices, CurrentZ, Spots, ...
-    correspondingNCInfo, lineFitHandle, Coefficients, ExperimentType, Frames, AmpIntegral, GaussIntegral, AmpIntegral3, ...
-    AmpIntegral5, ErrorIntegral, ErrorIntegral3, ErrorIntegral5, backGround3, ...
-    AmpIntegralGauss3D, ErrorIntegralGauss3D)
+    correspondingNCInfo , Coefficients, ExperimentType, ...
+    Frames, AmpIntegral, GaussIntegral, AmpIntegral3, AmpIntegral5, ...
+    ErrorIntegral, ErrorIntegral3, ErrorIntegral5, backGround3, ...
+    AmpIntegralGauss3D, ErrorIntegralGauss3D,FrameIndicesToFit)
 %PLOTTRACE Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -22,8 +23,10 @@ if (CurrentParticle~=PreviousParticle)||~exist('AmpIntegral', 'var')||(CurrentCh
         PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
 end
 
-% Check if this particle was fitted manually before
-if  isfield(Particles{CurrentChannel},'fitApproved') && ...
+% Check if this particle has a saved manual fit or if fitInitialSlope ran
+if lineFitted
+    fittedXFrames = FrameIndicesToFit;
+elseif  isfield(Particles{CurrentChannel},'fitApproved') && ...
         ~isempty(Particles{CurrentChannel}(CurrentParticle).fitApproved)
     approvedFit = 1;
     lineFitted = 1;
@@ -31,7 +34,6 @@ if  isfield(Particles{CurrentChannel},'fitApproved') && ...
     %lineFitHandle = Particles{CurrentChannel}(CurrentParticle).lineFitHandle;
     Coefficients = Particles{CurrentChannel}(CurrentParticle).Coefficients;
     fittedXFrames = Particles{CurrentChannel}(CurrentParticle).fittedFrames;
-    clear lineFitHandle
     %lineFitHandle = [];
 else
     lineFitHandle = [];
@@ -51,17 +53,18 @@ else
     priorAnaphaseInMins = anaphaseInMins(ncPresent(1)-8); %min
     priorAnaphase = anaphase(ncPresent(1)-8); %frame
     if ~isempty(schnitzcells) && ~isempty(Particles{CurrentChannel}(CurrentParticle).Nucleus)
-        nucleusFirstFrame = ElapsedTime(...
+        nucleusFirstTimePoint = ElapsedTime(...
             schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames(1)); %min
     else
-        nucleusFirstFrame = ElapsedTime(priorAnaphase); %min
+        nucleusFirstTimePoint = ElapsedTime(priorAnaphase); %min
         warning('No nucleus assigned to this particle. Using anaphase from moviedatabase as the first timepoint.')
     end
-    traceFigTimeAxis = ElapsedTime(Frames) - nucleusFirstFrame; %min
+    traceFigTimeAxis = ElapsedTime(Frames) - nucleusFirstTimePoint; %min
     if exist('traceErrorBar1','var')
         delete([traceErrorBar1,traceErrorBar2,cPoint1,cPoint2])
     end
 end
+
 
 % plotting the lines and traces
 hold(traceFigAxes, 'on')
@@ -74,15 +77,16 @@ if ~plot3DGauss
     cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral(Frames==CurrentFrame),'ob');
     dPoint2 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
     cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
-elseif lineFit
+elseif lineFitted
     % plotting the traces
     traceErrorBar1 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
         AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');
-    traceErrorBar2 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+    traceErrorBar2 = plot(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
         AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
     
     % calculate the fittedXSegment and fittedYSegment
-    fittedXSegment = traceFigTimeAxis(fittedXFrames);
+    to = -Coefficients(2) / Coefficients(1); % minutes 
+    fittedXSegment = [to, traceFigTimeAxis(fittedXFrames)];
     fittedYSegment = polyval(Coefficients,fittedXSegment);
     lineFitHandle = plot(traceFigAxes,fittedXSegment,fittedYSegment);
     
@@ -93,7 +97,7 @@ elseif lineFit
 else
     traceErrorBar1 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
         AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');
-    traceErrorBar2 = plot(traceFigAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+    traceErrorBar2 = plot(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
         AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
     dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
     cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');

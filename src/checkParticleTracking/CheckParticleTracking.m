@@ -130,8 +130,9 @@ yForZoom = 0;
 % Parameters for fitting
 lineFitted = 0; % equals 1 if a line has been fitted
 fitApproved = 0;
-FramesToFit = [];
-FrameIndicesToFit = [];
+FramesToFit = []; % actual frames of the movie that were used for fitting
+FrameIndicesToFit = []; % index of the current particle that were used for fitting
+Coefficients = []; % coefficients of the fitted line 
 
 %% Information about about folders
 
@@ -606,10 +607,10 @@ averagingLength.ValueChangedFcn = @averagingLength_changed;
 fit_spot.ButtonPushedFcn = @fit_spot_pushed;
     function fit_spot_pushed(~,~)
         %lineFit = 0;
-        clear lineFitHandle;
+        %clear lineFitHandle;
         figure(Overlay);
         
-    [lineFitted, Coefficients, lineFitHandle, Particles, FramesToFit, FrameIndicesToFit] =...
+    [lineFitted, Coefficients, FramesToFit, FrameIndicesToFit] =...
         fitInitialSlope(CurrentParticle, Particles, Spots, CurrentChannel, schnitzcells, ...
         ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, Frames, anaphase, ...
         AveragingLength, FramesToFit, FrameIndicesToFit, lineFitted);
@@ -628,7 +629,7 @@ approve_fit.ButtonPushedFcn = @fit_approve;
             Particles{CurrentChannel}(CurrentParticle).fitApproved = 1;
             Particles{CurrentChannel}(CurrentParticle).Coefficients =  Coefficients;
             %Particles{CurrentChannel}(CurrentParticle).lineFitHandle =  lineFitHandle;
-            Particles{CurrentChannel}(CurrentParticle).fittedFrames = FramesToFit;
+            Particles{CurrentChannel}(CurrentParticle).fittedFrames = FrameIndicesToFit; % use the index of particle trace for convenience
             %Particles{CurrentChannel}(CurrentParticle).fittedYSegment = currentYSegment;
         else
             Particles{CurrentChannel}(CurrentParticle).fitApproved = 0;
@@ -680,11 +681,6 @@ end
 %This flag allows the code to directly pass a command without waiting for
 %the user to press a key or click on the figure
 SkipWaitForButtonPress=[];
-lineFitted = 0; % the initial rise of the trace was not fitted
-
-% these variables are only use when lineFit = 1
-lineFitHandle = []; 
-Coefficients = []; 
 
 while (cc~='x')
     
@@ -818,10 +814,10 @@ while (cc~='x')
         CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFitted, anaphaseInMins, ...
         ElapsedTime, schnitzcells, Particles, plot3DGauss, anaphase, prophase, metaphase,prophaseInMins, metaphaseInMins,Prefix, ...
         DefaultDropboxFolder, numFrames, CurrentFrame, ZSlices, CurrentZ, Spots, ...
-        correspondingNCInfo, lineFitHandle, Coefficients, ExperimentType, ...
+        correspondingNCInfo , Coefficients, ExperimentType, ...
         Frames, AmpIntegral, GaussIntegral, AmpIntegral3, AmpIntegral5, ...
         ErrorIntegral, ErrorIntegral3, ErrorIntegral5, backGround3, ...
-        AmpIntegralGauss3D, ErrorIntegralGauss3D);
+        AmpIntegralGauss3D, ErrorIntegralGauss3D,FrameIndicesToFit);
     else
         [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ...
             ErrorIntegral, ErrorIntegral3, ErrorIntegral5,backGround3, ...
@@ -830,7 +826,7 @@ while (cc~='x')
         CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFitted, anaphaseInMins, ...
         ElapsedTime, schnitzcells, Particles, plot3DGauss, anaphase,prophase, metaphase, prophaseInMins, metaphaseInMins,Prefix, ...
         DefaultDropboxFolder, numFrames, CurrentFrame, ZSlices, CurrentZ, Spots, ...
-        correspondingNCInfo, lineFitHandle, Coefficients, ExperimentType);
+        correspondingNCInfo , Coefficients, ExperimentType);
     end 
 
     

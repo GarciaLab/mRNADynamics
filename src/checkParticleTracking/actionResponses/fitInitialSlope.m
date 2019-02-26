@@ -1,4 +1,4 @@
-function [lineFitted, Coefficients, lineFitHandle, Particles, FramesToFit, FrameIndicesToFit] =...
+function [lineFitted, Coefficients, FramesToFit, FrameIndicesToFit] =...
     fitInitialSlope(CurrentParticle, Particles, Spots, CurrentChannel, schnitzcells, ...
     ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, Frames, anaphase, ...
     averagingLength, FramesToFit, FrameIndicesToFit, lineFitted)
@@ -22,13 +22,13 @@ function [lineFitted, Coefficients, lineFitHandle, Particles, FramesToFit, Frame
 %     priorAnaphaseInMins = anaphaseInMins(ncPresent(1)-8);
     priorAnaphase = anaphase(ncPresent(1)-8); %frame
     if ~isempty(schnitzcells)&&~isempty(Particles{CurrentChannel}(CurrentParticle).Nucleus)
-        nucleusFirstFrame = ElapsedTime(...
+        nucleusFirstTimePoint = ElapsedTime(...
             schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames(1)); %min
     else
-        nucleusFirstFrame = ElapsedTime(priorAnaphase); %min
+        nucleusFirstTimePoint = ElapsedTime(priorAnaphase); %min
         warning('No nucleus assigned to this particle. Using anaphase from moviedatabase as the first timepoint.')
     end
-    currentTimeArray = ElapsedTime(Frames) - nucleusFirstFrame;
+    currentTimeArray = ElapsedTime(Frames) - nucleusFirstTimePoint;
     
     % define the Frames for fitting
     [X,Y] = ginput(2); % pick two points (left, and right)
@@ -56,8 +56,8 @@ function [lineFitted, Coefficients, lineFitHandle, Particles, FramesToFit, Frame
         averagingLength, FramesToFit,FrameIndicesToFit);
 
     % plotting the fitted line
-    currentXSegment = ElapsedTime(Frames(frameIndex(1):frameIndex(end)))-nucleusFirstFrame; % min after the previous anaphse
-    currentYSegment = polyval(Coefficients,currentXSegment);
+%     currentXSegment = ElapsedTime(Frames(frameIndex(1):frameIndex(end)))-nucleusFirstTimePoint; % min after the previous anaphse
+%     currentYSegment = polyval(Coefficients,currentXSegment);
     % error of predicted line
     %          currentAmpSegment = AmpIntegral3(frameIndex(1):frameIndex(end));
     %                       denominator = sum((currentAmpSegment - mean(currentAmpSegment)).^2);
@@ -65,19 +65,19 @@ function [lineFitted, Coefficients, lineFitHandle, Particles, FramesToFit, Frame
     %              normOfResiduals = ErrorEstimation.normr;
     %              errorArray = ones(1,length(currentXSegment)).*...
     %                  normOfResiduals./nParticlesForFit; %EL normalized by number of points included
-    hold(traceFigAxes,'on')
+%     hold(traceFigAxes,'on')
     %              lineFitHandle = errorbar(traceFigAxes,ElapsedTime(Frames(frameIndex(1):frameIndex(end))),...
     %                  currentYSegment,errorArray,'.-','Color','red');
     %              to = -Coefficients(2) / Coefficients(1) + priorAnaphaseInMins;
     %              to = -Coefficients(2) / Coefficients(1) + priorAnaphaseInMins;
-    to = -Coefficients(2) / Coefficients(1) + nucleusFirstFrame; % frame, not minutes for now
+%     to = -Coefficients(2) / Coefficients(1) + nucleusFirstTimePoint; % minutes 
     %              lineFitTimeAxis = [to, ElapsedTime(Frames(frameIndex(1):frameIndex(end)))] - priorAnaphaseInMins;
-    lineFitTimeAxis = [to, ElapsedTime(Frames(frameIndex(1):frameIndex(end)))] - nucleusFirstFrame;
-    currentYSegment = [0, currentYSegment];
+%     lineFitTimeAxis = [to, ElapsedTime(Frames(frameIndex(1):frameIndex(end)))] - nucleusFirstTimePoint;
+%     currentYSegment = [0, currentYSegment];
     
-    lineFitHandle = plot(traceFigAxes,lineFitTimeAxis,...
-        currentYSegment,'-','Color','red');
-    hold(traceFigAxes,'off')
+%     lineFitHandle = plot(traceFigAxes,lineFitTimeAxis,...
+%         currentYSegment,'-','Color','red');
+%     hold(traceFigAxes,'off')
     
     lineFitted = 1;
 
