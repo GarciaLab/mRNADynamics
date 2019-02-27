@@ -46,7 +46,6 @@ yyaxis(traceFigAxes,'left')
 % finding the traceFigTimeAxis
 if ~lineFitted
     traceFigTimeAxis = Frames;
-    cla(traceFigAxes)
 else
     ncPresent = unique(correspondingNCInfo(Frames));
     % below subtracts 8 because the first element corresponds to nc 9
@@ -65,8 +64,8 @@ else
     end
 end
 
-
 % plotting the lines and traces
+cla(traceFigAxes)
 hold(traceFigAxes, 'on')
 if ~plot3DGauss
     traceErrorBar1 = errorbar(traceFigAxes, traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
