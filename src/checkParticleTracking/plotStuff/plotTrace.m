@@ -88,7 +88,7 @@ elseif lineFitted
     to = -Coefficients(2) / Coefficients(1); % minutes 
     fittedXSegment = [to, traceFigTimeAxis(fittedXFrames)];
     fittedYSegment = polyval(Coefficients,fittedXSegment);
-    lineFitHandle = plot(traceFigAxes,fittedXSegment,fittedYSegment);
+    lineFitHandle = plot(traceFigAxes,fittedXSegment,fittedYSegment); % is this where things get weird?
     
     dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
     cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
