@@ -352,10 +352,11 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
                 % NL: rewriting this extraction step as a convolution                            
                 convImage = convn(Image, Circle, 'same');                
                 convImage(edgeMask) = NaN;
+                [yDim, xDim] = size(convImage);
                 for j=1:length(schnitzcells)
                     CurrentIndex=find(schnitzcells(j).frames==CurrentFrame);
-                    cenx=schnitzcells(j).cenx(CurrentIndex);
-                    ceny=schnitzcells(j).ceny(CurrentIndex);
+                    cenx=min(max(1,round(schnitzcells(j).cenx(CurrentIndex))),xDim);
+                    ceny=min(max(1,round(schnitzcells(j).ceny(CurrentIndex))),yDim);
                     schnitzcells(j).Fluo(CurrentIndex,1:NumberSlices2,ChN) = convImage(ceny,cenx,:);
                     schnitzcells(j).Mask=Circle;                    
                 end
