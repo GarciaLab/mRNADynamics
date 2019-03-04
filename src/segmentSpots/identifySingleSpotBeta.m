@@ -1,4 +1,4 @@
-function temp_particles = identifySingleSpot(particle_index, image, image_label, dog_image, searchRadius, snippet_size, ...
+function temp_particles = identifySingleSpotBeta(particle_index, image, image_label, dog_image, searchRadius, snippet_size, ...
     pixelSize, show_status, fg, microscope, addition, forced_centroid, ml_string, intScale)
 % identifySingleSpot(awholelot)
 %
@@ -38,42 +38,23 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
     
     possible_centroid_intensity = [];
     possible_centroid_location = {};
-    if ~addition(1) %this gets flagged if we're not manually adding a particle in checkparticletracking
+    if addition(1) %this gets flagged if we're not manually adding a particle in checkparticletracking
+        centroid_y = addition(3);
+        centroid_x = addition(2);
+        intensity = image(centroid_y,centroid_x);
+    elseif ~isempty(forced_centroid) %if we're in checkparticletracking 
+        centroid_y = forced_centroid(2);
+        centroid_x = forced_centroid(1);
+        intensity = image(centroid_y,centroid_x);       
+    else
         [k_row, k_column] = find(image_label == particle_index); %the position of the k'th locus in the image
+        mask = image;
+        mask(image_label~=particle_index) = nan;
+        [intensity, mi] = nanmax(mask(:));
+        [centroid_y, centroid_x] = ind2sub(size(mask),mi);
         row = k_row(1);
         col = k_column(1);
-    else %if we're in checkparticletracking 
-        row = addition(3);
-        col = addition(2);
-        k_row = row;
-        k_column = col;        
-    end
-    
-    
-    for i = 1:2*searchRadius
-        for j = 1:2*searchRadius
-            if row - searchRadius + i > 0 && col - searchRadius + j > 0 ... 
-                    && row - searchRadius + i < size(image,1)  && col - searchRadius + j < size(image,2)
-                if ML
-                    possible_centroid_intensity(i,j) = sum(sum(image(row-searchRadius+i, col-searchRadius+j)));
-                else
-                    if addition(1) || intScale~=1
-%                         possible_centroid_intensity(i,j) = sum(sum(image(row-2*searchRadius+i:row+i,...
-%                             col-2*searchRadius+j:col+j)));
-                        possible_centroid_intensity(i,j) = sum(sum(image(row-searchRadius+i, col-searchRadius+j))); 
-                    else
-                    %using the max pixel value will be wrong in some cases. integral
-                    %would be better
-                       possible_centroid_intensity(i,j) = sum(sum(image(row-searchRadius+i, col-searchRadius+j))); 
-                    end
-                end
-                possible_centroid_location{i,j} = [row-searchRadius+i, col-searchRadius+j];
-            end
-        end
-    end
-    clear row;
-    clear col;
-    
+    end    
     %Compute some preliminary properties of the located spots
     temp_particles = {[]};
     
@@ -90,28 +71,8 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
    %AR 7192018- i want to switch the tempparticles over to this structure
    %in the future for reading clarity. currently doesn't have the right
    %fields and is unused. 
-   
-   
-    if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)) ~= 0
-        
-        [intensity, centroid_index] = max(possible_centroid_intensity(:));
-        [row, col] = ind2sub(size(possible_centroid_intensity),centroid_index);
-        centroid_y = possible_centroid_location{row,col}(1); 
-        centroid_x = possible_centroid_location{row,col}(2);
-       
-        %if the predicted centroid is outside of the image while manually
-        %adding spots in checkparticletracking, we'll try to use the
-        %position where the user actually clicked
-        if addition(1) && ~(centroid_y - snippet_size > 1 && centroid_x - snippet_size > 1 ...
-                && centroid_y + snippet_size < size(image, 1) && centroid_x + snippet_size < size(image,2))    
-            centroid_y = k_row;
-            centroid_x = k_column;           
-        end
-        
-        if ~isempty(forced_centroid)
-            centroid_y = forced_centroid(2);
-            centroid_x = forced_centroid(1);
-        end
+      
+    if ~isnan(intensity)
         
        %Now, we'll calculate Gaussian fits 
        if centroid_y - snippet_size > 1 && centroid_x - snippet_size > 1 && ...
@@ -154,8 +115,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
                 fitstruct(i).gaussian = gaussian;
                 fitstruct(i).mesh = mesh;
                 chisq(i) = sum(sum(residual.^2));
-            end
-            
+            end     
             [~, optindex] = min(chisq);
             fits = fitstruct(optindex).fits;
             relative_errors = fitstruct(optindex).relative_errors;
@@ -199,6 +159,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
                 snippet_mask_below = snippetBelow;
             end
             maskArea = 0;
+            tic
             for i = 1:size(snippet, 1)
                 for j = 1:size(snippet,2)
                     d = sqrt( (j - (size(snippet,1)+1)/2)^2 + (i - (size(snippet,2)+1)/2)^2) ;
@@ -211,7 +172,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
                     end 
                 end
             end
-            
+            toc
             sigma_x2 = 0;
             sigma_y2 = 0;
             sister_chromatid_distance = fits(end);
@@ -225,7 +186,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             if  .1<sigma_x && sigma_x<(600/pixelSize) && .1<sigma_y && sigma_y<(600/pixelSize)...
                     || addition(1) %here is the place to introduce quality control
                 try
-                    max_dog = max(max(dog_image(k_row,k_column)));
+                    max_dog = max(dog_image(image_label == particle_index));
                 catch exceptionMaxDOG
                     exceptionMessage = exceptionMaxDOG.message;
                 
@@ -248,6 +209,5 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             end
 
        end
-
     end
 end

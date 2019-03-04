@@ -37,7 +37,7 @@ function [displayFigures, numFrames, initialFrame, customFilter, highPrecision, 
 
     elseif strcmpi(varargin{i}, 'InitialFrame')
 
-      if ~ isnumeric( varargin{i + 1} || (varargin{i + 1} < 1) )
+      if ~ isnumeric( varargin{i + 1}) || (varargin{i + 1} < 1) 
         error('Wrong input parameter for initial frame.')
       else
         initialFrame = varargin{i + 1};
