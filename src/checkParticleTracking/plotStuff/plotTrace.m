@@ -46,7 +46,6 @@ yyaxis(traceFigAxes,'left')
 % finding the traceFigTimeAxis
 if ~lineFitted
     traceFigTimeAxis = Frames;
-    cla(traceFigAxes)
 else
     ncPresent = unique(correspondingNCInfo(Frames));
     % below subtracts 8 because the first element corresponds to nc 9
@@ -65,8 +64,8 @@ else
     end
 end
 
-
 % plotting the lines and traces
+cla(traceFigAxes)
 hold(traceFigAxes, 'on')
 if ~plot3DGauss
     traceErrorBar1 = errorbar(traceFigAxes, traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
@@ -88,7 +87,7 @@ elseif lineFitted
     to = -Coefficients(2) / Coefficients(1); % minutes 
     fittedXSegment = [to, traceFigTimeAxis(fittedXFrames)];
     fittedYSegment = polyval(Coefficients,fittedXSegment);
-    lineFitHandle = plot(traceFigAxes,fittedXSegment,fittedYSegment);
+    lineFitHandle = plot(traceFigAxes,fittedXSegment,fittedYSegment); % is this where things get weird?
     
     dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
     cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
