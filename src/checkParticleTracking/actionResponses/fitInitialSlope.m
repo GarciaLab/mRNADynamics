@@ -37,15 +37,15 @@ function [lineFitted, Coefficients, FramesToFit, FrameIndicesToFit] =...
         pos2 = Frames(find((Frames-X(2)).^2 == min((Frames-X(2)).^2)));
         posIndex1 = find((Frames-X(1)).^2 == min((Frames-X(1)).^2));
         posIndex2 = find((Frames-X(2)).^2 == min((Frames-X(2)).^2));
-        FramesToFit = pos1:pos2; % actual frames numbers used for linear fitting
         FrameIndicesToFit = posIndex1:posIndex2; % indices of those frames in the trace
+        FramesToFit = Frames(FrameIndicesToFit); % actual frames numbers used for linear fitting
     elseif lineFitted
         pos1 = currentTimeArray(find((currentTimeArray-X(1)).^2 == min((currentTimeArray-X(1)).^2)));
         pos2 = currentTimeArray(find((currentTimeArray-X(2)).^2 == min((currentTimeArray-X(2)).^2)));
         posIndex1 = find((currentTimeArray-X(1)).^2 == min((currentTimeArray-X(1)).^2));
         posIndex2 = find((currentTimeArray-X(2)).^2 == min((currentTimeArray-X(2)).^2));
-        FramesToFit = pos1:pos2; % actual frames numbers used for linear fitting
         FrameIndicesToFit = posIndex1:posIndex2; % indices of those frames in the trace
+        FramesToFit = currentTimeArray(FrameIndicesToFit); % time in minutes used for linear fitting
     end
 
  %try
