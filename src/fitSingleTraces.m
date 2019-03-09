@@ -1,5 +1,5 @@
 function fittedLineEquations = fitSingleTraces(Prefix,Particles,Spots,schnitzcells,FrameInfo,ElapsedTime,varargin)
-% fittedLineSubSetCode(varargin)
+% fitSingleTraces(varargin)
 %
 % DESCRIPTION
 %
