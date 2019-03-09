@@ -155,7 +155,7 @@ ncFilterID = [];
 
 [Prefix, ForceAP, SkipTraces, SkipFluctuations, SkipFits, SkipMovie, ...
     SkipAll, ApproveAll, MinParticles, minTime, ROI, intArea, noHist, ...
-    doSingleFits, ROI1, ROI2, slimVersion, manualSingleFits] = determineCompileParticlesOptions(varargin);
+    ROI1, ROI2, slimVersion, manualSingleFits] = determineCompileParticlesOptions(varargin);
 
 FilePrefix=[Prefix,'_'];
 
@@ -236,6 +236,7 @@ if ~SkipTraces
     delete([DropboxFolder,filesep,Prefix,filesep,'ParticleTraces',filesep,'*.*'])
 end
 if ~SkipFits
+    % deleting the figures saved from fitSingleTraces.m
     delete([DropboxFolder,filesep,Prefix,filesep,'Fits',filesep,'*.*'])
 end
 
@@ -584,7 +585,7 @@ if ~slimVersion
     % ErrorEstimation, and frameIndex, which are described below. This currently
     % does not support more than one channel. Please contact Emma to work on
     % implementing it for two channels.
-    if doSingleFits
+    if ~SkipFits
         [CompiledParticles, fittedLineEquations] = fitShapesToTraces(Prefix, ...
             Particles, schnitzcells, FrameInfo, ElapsedTime, CompiledParticles,Spots);
     end
@@ -597,7 +598,7 @@ if ~slimVersion
             EllipsesOnAP, rateOnAP, rateOnAPCell, timeOnOnAP, timeOnOnAPCell, TotalEllipsesAP, rateOnAPManual, rateOnAPCellManual, timeOnOnAPManual, timeOnOnAPCellManual]...
             = computeAPFractionOn(NChannels, Particles, schnitzcells, ...
             CompiledParticles, Ellipses, APbinID, FrameInfo, ElapsedTime, DropboxFolder, ...
-            Prefix, EllipsePos, nc12, nc13, nc14, numFrames, doSingleFits, SkipAll, ...
+            Prefix, EllipsePos, nc12, nc13, nc14, numFrames, SkipFits, SkipAll, ...
             APbinArea,pixelSize, manualSingleFits);
     end
 
