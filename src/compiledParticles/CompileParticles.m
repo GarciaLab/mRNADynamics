@@ -171,9 +171,12 @@ FilePrefix=[Prefix,'_'];
 
 
 %Load all the information
-load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
-load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'])
-
+disp('Loading Particles.mat...');
+load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat']);
+disp('Particles loaded.');
+disp('Loading Spots.mat...');
+load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat']);
+disp('Spots loaded.');
 if isempty(Particles)
     SkipTraces=1;
     SkipFluctuations=1;

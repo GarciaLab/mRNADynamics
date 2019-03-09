@@ -8,9 +8,9 @@ function [SourcePath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath, configV
     MS2CodePath = getConfigValue(configValues, 'MS2CodePath');      
     try
         DataRoot = getConfigValue(configValues, 'DataRoot');
-        SourcePath = [DataRoot '/RawDynamicsData'];
-        PreProcPath = [DataRoot '/PreProcessedData'];
-        ProcPath = [DataRoot '/ProcessedData'];
+        SourcePath = [DataRoot,filesep,'RawDynamicsData'];
+        PreProcPath = [DataRoot,filesep, 'PreProcessedData'];
+        ProcPath = [DataRoot, filesep,'ProcessedData'];
     catch  
         SourcePath = getConfigValue(configValues, 'SourcePath');
         ProcPath = getConfigValue(configValues, 'FISHPath');
