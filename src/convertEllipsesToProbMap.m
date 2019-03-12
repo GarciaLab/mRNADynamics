@@ -43,7 +43,7 @@ function convertEllipsesToProbMap(Prefix,varargin)
   % from the file.
 
   %SearchRadius = ceil(SearchRadiusMicrons / PixelSize);
-    FrameInfo = load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']);
+    load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']);
     nPixels_y = FrameInfo.LinesPerFrame; % number of pixels in y axis
     nPixels_x = FrameInfo.PixelsPerLine; % number of pixels in x axis
     nFrames = length(FrameInfo);
@@ -83,7 +83,7 @@ ProbMap = zeros(nPixels_y, nPixels_x, nFrames);
                 % Radius Adjustment
                 % For many cases, the diameter is pretty large value, thus
                 % I'll divide it with 2, for now.
-                adjustment_factor_diameter = 2;
+                adjustment_factor_diameter = 3;
                 Diameter = ceil((Nuclei_temp_currentFrame(j,3)-1)./ConversionUnit) /adjustment_factor_diameter ; % um divided by um/pixel, thus it's now pixels unit.
                 
                 % Make the nuclei region (pixels') prob map to be 1.
