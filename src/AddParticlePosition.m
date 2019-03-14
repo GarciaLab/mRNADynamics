@@ -78,9 +78,10 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
     for ChN=1:NChannels
         for i=1:length(Particles{ChN})
             for j=1:length(Particles{ChN}(i).Frame)
-                [x,y,~]=SpotsXYZ(Spots{ChN}(Particles{ChN}(i).Frame(j)));
+                [x,y,z]=SpotsXYZ(Spots{ChN}(Particles{ChN}(i).Frame(j)));
                 Particles{ChN}(i).xPos(j)=x(Particles{ChN}(i).Index(j));
                 Particles{ChN}(i).yPos(j)=y(Particles{ChN}(i).Index(j));
+                Particles{ChN}(i).zPos(j)=z(Particles{ChN}(i).Index(j));
             end
         end
         if isfield(Particles{ChN},'DVpos')
