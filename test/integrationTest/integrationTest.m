@@ -41,13 +41,18 @@ function testCase = testCheckParticleTracking(testCase)
 end
 
 function assertExpectedResults(testCase, stepName, fileName)
-  
   % because current directory could have change during execution of tests,
   % we position ourselves again in the root of the project (mRNADynamics folder)
-  [~, ~, ~, srcPath, ~, ~, ~] = DetermineLocalFolders %this returns mRNADyanmics/src, we need one level less
-  cd(srcPath)
-  cd('..')
-  
+  if isempty(getenv('JENKINS_TEST_PATH'))
+    % we are not in jenkins, so grab the source folder from the normal
+    % config
+    [~, ~, ~, srcPath, ~, ~, ~] = DetermineLocalFolders %this returns mRNADyanmics/src, we need one level less
+    cd(srcPath)
+    cd('..')
+  else
+    jenkinsTestPath = getenv('JENKINS_TEST_PATH')
+    cd(jenkinsTestPath)
+  end
   
   expectedFrameInfoPath = ['./test/integrationTest/expected/', stepName, filesep, testCase.Prefix, filesep, fileName];
   actualFrameInfoPath = ['../Data/DynamicsResults/', testCase.Prefix, filesep, fileName];
