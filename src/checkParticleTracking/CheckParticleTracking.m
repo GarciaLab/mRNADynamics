@@ -117,7 +117,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
   warning('off', 'MATLAB:nargchk:deprecated')
   warning('off', 'MATLAB:mir_warning_maybe_uninitialized_temporary')
 
-  %%Initialization
+  %% Initialization
   schnitzcells = [];
   Ellipses = [];
   correspondingNCInfo = [];
@@ -143,111 +143,32 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
   
   %% Information about about folders
 
-  %Get the folders
+  % Get the folders
   [~, ~, DefaultDropboxFolder, ~, PreProcPath] = DetermineLocalFolders;
   [~, ~, DropboxFolder, ~, ~] = DetermineLocalFolders(varargin{1});
   DataFolder = [DropboxFolder, filesep, varargin{1}];
 
   FilePrefix = [DataFolder(length(DropboxFolder) + 2:end), '_'];
 
-  %Now get the actual folders
+  % Now get the actual folders
   [~, ~, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(FilePrefix(1:end - 1));
 
   [Particles, SpotFilter, Spots, FrameInfo] = loadCheckParticleTrackingMats(DataFolder, PreProcPath);
 
-  xSize = FrameInfo(1).PixelsPerLine;
-  ySize = FrameInfo(1).LinesPerFrame;
-  pixelSize = FrameInfo(1).PixelSize * 1000; %nm
-  zStep = FrameInfo(1).ZStep;
-  snippet_size = 2 * (floor(1300 / (2 * pixelSize))) + 1; % nm. note that this is forced to be odd
-  LinesPerFrame = FrameInfo(1).LinesPerFrame;
-  PixelsPerLine = FrameInfo(1).PixelsPerLine;
-  numFrames = length(FrameInfo);
-
-  %See how  many frames we have and adjust the index size of the files to
-  %load accordingly
-  if numFrames < 1E3
-    NDigits = 3;
-  elseif numFrames < 1E4
-    NDigits = 4;
-  else
-    error('No more than 10,000 frames supported.')
-  end
-
-  %Create the particle array. This is done so that we can support multiple
-  %channels. Also figure out the number of channels
-  if iscell(Particles)
-    NChannels = length(Particles);
-  else
-    Particles = {Particles};
-
-    if ~iscell(Spots)
-      Spots = {Spots};
-    end
-
-    SpotFilter = {SpotFilter};
-    NChannels = 1;
-  end
+  [xSize, ySize, pixelSize, zStep, snippet_size, LinesPerFrame, PixelsPerLine,...
+    numFrames, NDigits, NChannels, Particles, Spots, SpotFilter] = getFrameInfoParams(FrameInfo, Particles, Spots, SpotFilter);
 
   %Add FramesApproved where necessary
-  for NCh = 1:NChannels
+  [Particles] = addFrameApproved(NChannels, Particles);
 
-    if ~isfield(Particles{NCh}, 'FrameApproved')
+  [Ellipses, UseHistoneOverlay, UseSchnitz] = checkHistoneAndNuclearSegmentation(PreProcPath, FilePrefix, NDigits, DropboxFolder);
 
-      for i = 1:length(Particles{NCh})
-        Particles{NCh}(i).FrameApproved = true(size(Particles{NCh}(i).Frame));
-      end
-
-    else
-
-      for i = 1:length(Particles{NCh})
-
-        if isempty(Particles{NCh}(i).FrameApproved)
-          Particles{NCh}(i).FrameApproved = true(size(Particles{NCh}(i).Frame));
-        end
-
-      end
-
-    end
-
-  end
-
-  %Check if we have the histone channel and we have done the nuclear
-  %segmentation.
-  if exist([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
-            FilePrefix(1:end - 1), '-His_', iIndex(1, NDigits), '.tif'], 'file') || ...
-    exist([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
-        FilePrefix(1:end - 1), '_His_', iIndex(1, NDigits), '.tif'], 'file')
-  %(MT, 2018-02-11) Added support for lattice imaging with bad histone
-  %channel, maybe temporary - FIX LATER
-  if exist([DropboxFolder, filesep, FilePrefix(1:end - 1), filesep, 'Ellipses.mat'], 'file')
-    load([DropboxFolder, filesep, FilePrefix(1:end - 1), filesep, 'Ellipses.mat'], 'Ellipses');
-    UseHistoneOverlay = 1;
-  else
-    warning('Ellipses.mat does not exist. Proceeding as though there is no Histone channel. If you expect a Histone channel, there is something wrong.')
-    UseHistoneOverlay = 0;
-  end
-
-else
-  UseHistoneOverlay = 0;
-end
-
-%Check that we have the nuclear tracking done using schnitzcells
-if exist([DropboxFolder, filesep, FilePrefix(1:end - 1), filesep, FilePrefix(1:end - 1), '_lin.mat'], 'file')
-  UseSchnitz = 1;
-else
-  UseSchnitz = 0;
-end
-
-% we name the variable DataFolderColumnValue to avoid shadowing previously defined DataFolder var, which is actually a subfolder inside dropbox
-[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution, ...
-  Channel1, Channel2, Objective, Power, DataFolderColumnValue, DropboxFolderName, Comments, ...
-  nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3, prophase, metaphase] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
-
-if exist([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'file')
+  % we name the variable DataFolderColumnValue to avoid shadowing previously defined DataFolder var, which is actually a subfolder inside dropbox
+  [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution, ...
+    Channel1, Channel2, Objective, Power, DataFolderColumnValue, DropboxFolderName, Comments, ...
+    nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3, prophase, metaphase] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
   for i = 1:numFrames
-
     if i < nc9
       FrameInfo(i).nc = 8;
     elseif (i >= nc9) & (i < nc10)
@@ -263,232 +184,100 @@ if exist([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'file')
     elseif i >= nc14
       FrameInfo(i).nc = 14;
     end
+  end
+  
+  %Get the actual time corresponding to each frame, in minutes
+  ElapsedTime = getFrameElapsedTime(FrameInfo, numFrames);
 
+  anaphase = [nc9, nc10, nc11, nc12, nc13, nc14];
+  [anaphaseInMins, prophaseInMins, metaphaseInMins] = getPhasesDurationsInMins(anaphase, prophase, metaphase, ElapsedTime);
+
+  try
+    correspondingNCInfo = [FrameInfo.nc]; % the assigned nc of the frames
+  catch
   end
 
-else
-  %     warning('No nuclear marker channel may result in strange behavior.');
+  % this save() is here so that a user will still get an updated
+  % frameinfo.mat even if they abort checkparticletracking without saving
+  % (to prevent issues with compileparticles)
+  save([DataFolder, filesep, 'FrameInfo.mat'], 'FrameInfo');
 
-  for i = 1:numFrames
+  %Check if we have already determined nc
+  if (~isfield(FrameInfo, 'nc')) && (~UseHistoneOverlay)
+    %FrameInfo=DetermineNC(fad,Particles,FrameInfo);  AR 3/14/16: This
+    %script seems to have disappeared.
 
-    if i < nc9
-      FrameInfo(i).nc = 8;
-    elseif (i >= nc9) & (i < nc10)
-      FrameInfo(i).nc = 9;
-    elseif (i >= nc10) & (i < nc11)
-      FrameInfo(i).nc = 10;
-    elseif (i >= nc11) & (i <= nc12)
-      FrameInfo(i).nc = 11;
-    elseif (i >= nc12) & (i <= nc13)
-      FrameInfo(i).nc = 12;
-    elseif (i >= nc13) & (i <= nc14)
-      FrameInfo(i).nc = 13;
-    elseif i >= nc14
-      FrameInfo(i).nc = 14;
+  elseif UseSchnitz
+    load([DropboxFolder, filesep, FilePrefix(1:end - 1), filesep, FilePrefix(1:end - 1), '_lin.mat']);
+
+    %Remove the schnitz fields that can give us problems potentially if
+    %present. I don't know how this came to be, but it's for fields that
+    %are not all that relevant. The fields are: approved, ang
+    if isfield(schnitzcells, 'approved')
+      schnitzcells = rmfield(schnitzcells, 'approved');
+    end
+
+    if isfield(schnitzcells, 'ang')
+      schnitzcells = rmfield(schnitzcells, 'ang');
     end
 
   end
 
-end
+  [Particles] = sortParticles(Sort, sortByLength, NChannels, Particles);
+  
+  %Some flags and initial parameters
+  ShowThreshold2 = 1; %Whether to show particles below the threshold
+  HideApprovedFlag = 0;
+  ParticleToFollow = [];
+  ZSlices = FrameInfo(1).NumberSlices + 2; %Note that the blank slices are included
+  CurrentZ = round(ZSlices / 2);
+  ManualZFlag = 0;
+  CurrentParticle = 1;
+  PreviousParticle = 1;
+  lastParticle = 0; %this gets flagged if there's a drop to one particle within the Particles structure.
+  CurrentFrameWithinParticle = 1;
+  CurrentChannel = 1;
+  PreviousChannel = CurrentChannel;
+  CurrentFrame = Particles{1}(1).Frame(1);
+  DisplayRange = [];
+  DisplayRangeSpot = [];
+  ZoomMode = 0;
+  GlobalZoomMode = 0;
+  ZoomRange = 50;
+  nameSuffix = '';
 
-% %Get the actual time corresponding to each frame
-try
+  %Set up the default contrast settings for the MCP channel depending on the
+  %microscope that was used used
+  if strcmpi(FrameInfo(1).FileMode, 'dspin')
+    %For spinning disk, we set the contrast to the maximum and minimum
+    minContrast = [];
+    maxContrast = [];
+  else
+    %For all other microscopes, we have a default. HG is not sure this will
+    %actually work well beyond Leica SP8.
+    minContrast = 0; % Default contrast settings for gfp channel
+    maxContrast = 80;
+  end
 
-  if isfield(FrameInfo, 'FileMode')
+  % Changing the intial frames and particle if justNC13
+  if ncRange
 
-    if strcmp(FrameInfo(end).FileMode, 'TIF')
-
-      for j = 1:numFrames
-        ElapsedTime(j) = etime(datevec(FrameInfo(j).TimeString), datevec(FrameInfo(1).TimeString));
-      end
-
-    elseif strcmp(FrameInfo(end).FileMode, 'LSM') || strcmp(FrameInfo(end).FileMode, 'LSMExport') || ...
-        strcmp(FrameInfo(end).FileMode, 'LIFExport') || strcmp(FrameInfo(end).FileMode, 'LAT')
-
-      for j = 1:numFrames
-        ElapsedTime(j) = FrameInfo(j).Time - FrameInfo(1).Time;
-      end
-
+    if strcmpi('nc15', endNC)
+      lastNCFrame = numFrames;
     else
-      error('File mode not supported. Cannot extract time information. Include format in ExportDataForLivemRNA.m')
+      lastNCFrame = eval(endNC) - 1; % This will not include the 1st frame of the next NC
     end
 
-  else
-    warning('No FileMode information found. Assuming that this is TIF from the 2-photon.')
-
-    for j = 1:numFrames
-      ElapsedTime(j) = etime(datevec(FrameInfo(j).TimeString), datevec(FrameInfo(1).TimeString));
-    end
-
+    firstNCFrame = eval(startNC);
+    particlesInRange = particlesWithinFrames(Prefix, firstNCFrame, lastNCFrame);
+    CurrentParticle = particlesInRange(1);
+    CurrentFrame = Particles{1}(CurrentParticle).Frame(1);
+    disp(['nc range: ' num2str(NC)])
+    disp(['start frame: ' num2str(firstNCFrame)])
+    disp(['end frame: ' num2str(lastNCFrame)])
+    disp(['Particles in range: ' num2str(particlesInRange)])
+    disp(['Number of Particles: ' num2str(length(particlesInRange))])
   end
-
-end
-
-ElapsedTime = ElapsedTime / 60; %Time is in minutes
-anaphase = [nc9, nc10, nc11, nc12, nc13, nc14];
-anaphaseInMins = anaphase;
-
-for i = 1:length(anaphase)
-
-  if anaphase(i) > 0
-    anaphaseInMins(i) = ElapsedTime(anaphase(i)); % in units of minutes
-  end
-
-end
-
-%prophase and metaphase
-prophaseInMins = []; metaphaseInMins = [];
-
-try
-  prophaseInMins = prophase;
-
-  for i = 1:length(prophase)
-
-    if prophase(i) > 0
-      prophaseInMins(i) = ElapsedTime(prophase(i)); %mins
-    end
-
-  end
-
-  metaphaseInMins = metaphase;
-
-  for i = 1:length(metaphase)
-
-    if metaphase(i) > 0
-      metaphaseInMins(i) = ElapsedTime(metaphase(i)); %mins
-    end
-
-  end
-
-end
-
-try
-  correspondingNCInfo = [FrameInfo.nc]; % the assigned nc of the frames
-catch
-end
-
-save([DataFolder, filesep, 'FrameInfo.mat'], 'FrameInfo'); %this is here so that a user will still get an updated
-%frameinfo.mat even if they abort checkparticletracking without saving (to
-%prevent issues with compileparticles)
-
-%Check if we have already determined nc
-if (~isfield(FrameInfo, 'nc')) && (~UseHistoneOverlay)
-  %FrameInfo=DetermineNC(fad,Particles,FrameInfo);  AR 3/14/16: This
-  %script seems to have disappeared.
-
-elseif UseSchnitz
-  load([DropboxFolder, filesep, FilePrefix(1:end - 1), filesep, FilePrefix(1:end - 1), '_lin.mat']);
-
-  %Remove the schnitz fields that can give us problems potentially if
-  %present. I don't know how this came to be, but it's for fields that
-  %are not all that relevant. The fields are: approved, ang
-  if isfield(schnitzcells, 'approved')
-    schnitzcells = rmfield(schnitzcells, 'approved');
-  end
-
-  if isfield(schnitzcells, 'ang')
-    schnitzcells = rmfield(schnitzcells, 'ang');
-  end
-
-end
-
-% %Load the DoG images. Necessary for particle addition/subtraction
-% dog = [];
-% num_frames = numFrames;
-% zSize = FrameInfo(1).NumberSlices + 2;
-% OutputFolder1=[FISHPath,filesep,Prefix,'_',filesep,'dogs'];
-% for current_frame = 1:num_frames
-%     for i = 1:zSize
-%         dog(:,:,i,current_frame) = double(imread([OutputFolder1, filesep,'DOG_',Prefix,'_',iIndex(current_frame,3),'_z',iIndex(i,2),'.tif']));
-%     end
-% end
-
-%Order particles by the earliest frame they appear at. This makes the
-%tracking a lot easier! Can also track by the number of spots in a trace
-direction = 'ascend';
-
-if Sort
-
-  for ChN = 1:NChannels
-    nParticles = length(Particles{ChN});
-    sortIndex = zeros(1, nParticles);
-
-    for i = 1:length(Particles{ChN})
-
-      if sortByLength%sort by most points in particle
-        sortIndex(i) = length(Particles{ChN}(i).Frame);
-        direction = 'descend';
-      else %Otherwise, sort by first frame as normal
-        sortIndex(i) = Particles{ChN}(i).Frame(1);
-      end
-
-    end
-
-    [~, Permutations] = sort(sortIndex, direction);
-    Particles{ChN} = Particles{ChN}(Permutations);
-  end
-
-end
-
-%Some flags and initial parameters
-ShowThreshold2 = 1; %Whether to show particles below the threshold
-HideApprovedFlag = 0;
-ParticleToFollow = [];
-ZSlices = FrameInfo(1).NumberSlices + 2; %Note that the blank slices are included
-CurrentZ = round(ZSlices / 2);
-ManualZFlag = 0;
-CurrentParticle = 1;
-PreviousParticle = 1;
-lastParticle = 0; %this gets flagged if there's a drop to one particle within the Particles structure.
-CurrentFrameWithinParticle = 1;
-CurrentChannel = 1;
-PreviousChannel = CurrentChannel;
-CurrentFrame = Particles{1}(1).Frame(1);
-DisplayRange = [];
-DisplayRangeSpot = [];
-ZoomMode = 0;
-GlobalZoomMode = 0;
-ZoomRange = 50;
-nameSuffix = '';
-
-%Set up the default contrast settings for the MCP channel depending on the
-%microscope that was used used
-if strcmpi(FrameInfo(1).FileMode, 'dspin')
-  %For spinning disk, we set the contrast to the maximum and minimum
-  minContrast = [];
-  maxContrast = [];
-else
-  %For all other microscopes, we have a default. HG is not sure this will
-  %actually work well beyond Leica SP8.
-  minContrast = 0; % Default contrast settings for gfp channel
-  maxContrast = 80;
-end
-
-% Changing the intial frames and particle if justNC13
-if ncRange
-
-  if strcmpi('nc15', endNC)
-    lastNCFrame = numFrames;
-  else
-    lastNCFrame = eval(endNC) - 1; % This will not include the 1st frame of the next NC
-  end
-
-  firstNCFrame = eval(startNC);
-  particlesInRange = particlesWithinFrames(Prefix, firstNCFrame, lastNCFrame);
-  CurrentParticle = particlesInRange(1);
-  CurrentFrame = Particles{1}(CurrentParticle).Frame(1);
-  %     ncRangeFigure = figure();
-  %     set(gcf,'units', 'normalized', 'position',[0.35, 0.55, .2, .33])
-  %     uicontrol('Parent', ncRangeFigure, 'Style', 'text','String','Implementing justNC13','Units','normalized', 'Position', [0.25 0.5 0.5 0.35])
-  %     uicontrol('Parent', ncRangeFigure, 'Style', 'text','String',['nc13 : ' num2str(firstNCFrame)],'Units','normalized', 'Position', [0.25 0.40 0.5 0.35])
-  %     uicontrol('Parent', ncRangeFigure, 'Style', 'text','String',['Number of Particles: ' num2str(length(particlesInRange))],'Units','normalized','Position', [0.25 0.30 0.5 0.35])
-  %     uicontrol('Parent', ncRangeFigure, 'Style', 'text','String',['Particles in range: ' num2str(particlesInRange)],'Units','normalized','Position', [0.25 0.20 0.5 0.35])
-  disp(['nc range: ' num2str(NC)])
-  disp(['start frame: ' num2str(firstNCFrame)])
-  disp(['end frame: ' num2str(lastNCFrame)])
-  disp(['Particles in range: ' num2str(particlesInRange)])
-  disp(['Number of Particles: ' num2str(length(particlesInRange))])
-end
 
 %Define the windows
 Overlay = figure;
