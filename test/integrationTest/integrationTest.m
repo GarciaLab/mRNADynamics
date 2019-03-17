@@ -41,7 +41,14 @@ function testCase = testCheckParticleTracking(testCase)
 end
 
 function assertExpectedResults(testCase, stepName, fileName)
-  cd('E:/repos/mRNADynamics'); %JP: temporary hardcode
+  
+  % because current directory could have change during execution of tests,
+  % we position ourselves again in the root of the project (mRNADynamics folder)
+  [~, ~, ~, srcPath, ~, ~, ~] = DetermineLocalFolders %this returns mRNADyanmics/src, we need one level less
+  cd(srcPath)
+  cd('..')
+  
+  
   expectedFrameInfoPath = ['./test/integrationTest/expected/', stepName, filesep, testCase.Prefix, filesep, fileName];
   actualFrameInfoPath = ['../Data/DynamicsResults/', testCase.Prefix, filesep, fileName];
   testCase.assertTrue(exist(actualFrameInfoPath, 'file') == 2);
