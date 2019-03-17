@@ -54,12 +54,12 @@ function assertExpectedResults(testCase, stepName, fileName)
     cd(jenkinsTestPath)
   end
   
-  expectedFrameInfoPath = ['./test/integrationTest/expected/', stepName, filesep, testCase.Prefix, filesep, fileName];
-  actualFrameInfoPath = ['../Data/DynamicsResults/', testCase.Prefix, filesep, fileName];
+  expectedFrameInfoPath = ['./test/integrationTest/expected/', stepName, filesep, testCase.Prefix, filesep, fileName]
+  actualFrameInfoPath = ['../Data/DynamicsResults/', testCase.Prefix, filesep, fileName]
   testCase.assertTrue(exist(actualFrameInfoPath, 'file') == 2);
   
-  ExpectedFile = load(expectedFrameInfoPath)
-  ActualFile = load(actualFrameInfoPath)
+  ExpectedFile = load(expectedFrameInfoPath);
+  ActualFile = load(actualFrameInfoPath);
 
   [common, d1, d2] = comp_struct(ExpectedFile, ActualFile)
   
