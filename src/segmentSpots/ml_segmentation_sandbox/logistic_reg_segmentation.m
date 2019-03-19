@@ -1,6 +1,8 @@
 % Script to test feasibility of porting ML segmentation over to matlab
+clc; 
 clear
 close all
+imtool close all;
 % specify file paths and test project
 Prefix = '2018-10-25-embryo2_nc14_Linear unmixing';
 dataRoot = 'E:\Liya\LivemRNA\Data\';
@@ -42,6 +44,88 @@ for i = 1:numel(feature_cell)
         training_headers = [training_headers{:} {[feature '_s' num2str(sigmaVec(j))]}];
     end
 end
+
+%% Experiment with labeling data
+fontSize = 16;
+labelCell = cell(1,size(rawStack,3));
+[yq, xq] = meshgrid(1:size(rawStack,1),1:size(rawStack,2));
+xq = xq(:);
+yq = yq(:);
+
+% Move through Z-stack and label spot and background regions
+zc = 1;
+exit_flag = 0;
+while ~exit_flag
+    grayImage = mat2gray(rawStack(:,:,zc));
+    % generate masks to show existing labels
+    labelMat = labelCell{zc};
+    notSpotMask = zeros(size(grayImage));
+    spotMask = zeros(size(grayImage));
+    if ~isempty(labelMat)        
+        spotMask(labelMat(labelMat(:,1)==1,2)) = .5;        
+        notSpotMask(labelMat(labelMat(:,1)==0,2)) = .5;
+    end
+    % generate RGB
+    RGB = cat(3,mat2gray(grayImage+spotMask),mat2gray(grayImage+notSpotMask),grayImage);
+    % generate figure
+    label_fig = figure;
+    axis on
+    imshow(RGB);
+    title(['Class labels (z slice: ' sprintf('%02d',zc) ')'])
+    set(gcf, 'Position', get(0,'Screensize')); % Maximize figure.
+%     message = sprintf('Highlight "spot" and "notSpot" regions');
+%     uiwait(msgbox(message));
+    % User signs name here.
+    ax = gca;
+    hFH = drawfreehand(ax,'FaceAlpha',.2,'LineWidth',1);        
+    
+    % Get the xy coordinates of where they drew.
+    xy = hFH.Position;
+    in = inpolygon(xq,yq,xy(:,2),xy(:,1));
+    delete(hFH);
+    titleBarCaption = 'Enter Region Type';
+    promptMessage = sprintf('');
+    button = questdlg(promptMessage, titleBarCaption, 'Spot', 'NotSpot', 'Cancel');
+    
+    
+    if strcmpi(button,'Spot')
+        indices = find(in);
+        lb_mat = [ones(size(indices)), indices];
+        labelMat = vertcat(labelMat,lb_mat);
+    elseif strcmpi(button,'NotSpot')
+        indices = find(in);
+        lb_mat = [zeros(size(indices)), indices];
+        labelMat = vertcat(labelMat,lb_mat);
+    end    
+    labelCell{zc} = labelMat;
+    
+%     promptMessage = sprintf('Press:\n "Enter" to label another region\n "a/z" to move up or down in Z stack\n "m/n" to move to next/previous frame \n "x" to save and exit');
+    promptMessage = sprintf('Specify next action');
+    titleBarCaption = 'Continue?';    
+    promptMessage = sprintf('');
+    button = questdlg(promptMessage, titleBarCaption, 'Continue','Exit','Exit');
+    if strcmpi(button,'Exit')
+        close all
+        exit_flag = 1;
+        continue
+    end
+    
+    titleBarCaption = 'Where to?';    
+    promptMessage = sprintf('');
+    button = questdlg(promptMessage, titleBarCaption, 'SameZ', 'Up', 'Down','Down');
+
+    if strcmpi(button,'Up')
+        zc = max([1,zc-1]);
+    elseif strcmpi(button,'Down')
+        zc = min([size(rawStack,3),zc+1]);       
+    else
+        continue
+    end
+end
+
+
+
+%%
 
 trainingTable = array2table(training_array, 'VariableNames',training_headers);
 
