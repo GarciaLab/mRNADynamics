@@ -15,11 +15,16 @@ function [Channel1, Channel2, Channel3, ProjectionType] = chooseNuclearChannels(
     Channel3, ReferenceHist)
 
 % generates all the HisImages
-skip_factor = 4; % Only uses 1/skip_factor frames
+skip_factor = 5; % Only uses 1/skip_factor frames
 median_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
 max_proj = cell(NChannels, sum(NFrames));
 middle_proj = cell(NChannels, sum(NFrames));
+custom_proj = cell(NChannels, sum(NFrames));
 idx = 1;
+
+% for custom projection
+max_custom = 1;
+min_custom = 5;
 
 for seriesIndex = 1:NSeries
     for framesIndex = 1:NFrames(seriesIndex)
@@ -33,6 +38,8 @@ for seriesIndex = 1:NSeries
                     'maxprojection', NSlices, HisSlices);
                 middle_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
                     'middleprojection', NSlices, HisSlices);
+                custom_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
+                    'customprojection', NSlices, HisSlices, max_custom, min_custom);
             end       
         end
         idx = idx + 1;
@@ -83,10 +90,19 @@ proj_type_label = uilabel(fig, 'Position', [dim(1) * 0.4, dim(2) * 0.93, dim(1) 
     'Text', 'Projection Type');
 proj_type_dropdown = uidropdown(fig, 'Position', ...
     [dim(1) * 0.4, dim(2) * 0.85, dim(1) * 0.125, dim(2) * 0.08], ...
-    'Items', {'maxprojection', 'medianprojection', 'middleprojection'}, ...
+    'Items', {'maxprojection', 'medianprojection', 'middleprojection', 'customprojection'}, ...
     'Value', {'maxprojection'});
 
 proj_type_dropdown.ValueChangedFcn = @updateHisImage;
+
+custom_label = uilabel(fig, 'Position', [dim(1) * 0.4, dim(2) * 0.75, dim(1) * 0.125, dim(2) * 0.05],...
+    'Text', 'Averaging Range');
+custom_edit_text = uieditfield(fig, 'Position', [dim(1) * 0.525, dim(2) * 0.75, dim(1) * 0.125, dim(2) * 0.05],...
+    'Value', [num2str(max_custom) ':' num2str(min_custom)]);
+
+custom_change_confirmation = uibutton(fig, 'Text', 'Update Custom Projection', ...
+    'Position', [dim(1) * .7, dim(2) * 0.75, dim(1) * 0.2, dim(2) * 0.05]);
+custom_change_confirmation.ButtonPushedFcn = @updatedCustom;
 
 save_button = uibutton(fig, 'Text', 'Save Channel Selection', 'Position', ...
     [dim(1) * 0.6, dim(2) * 0.85, dim(1) * 0.2, dim(2) * 0.08]);
@@ -100,8 +116,8 @@ uiwait(fig);
         channels_to_use = channel_list.Value;
         inverted_channels = invert_list.Value;
         projection_type = proj_type_dropdown.Value;
-        frame_slider.Value = ((ceil(frame_slider.Value / 4) - 1) * 4) + 1;
-        frame = ceil(frame_slider.Value / 4);
+        frame_slider.Value = ((ceil(frame_slider.Value / skip_factor) - 1) * skip_factor) + 1;
+        frame = ceil(frame_slider.Value / skip_factor);
         channels = [];
         for i = 1:3
             if any(strcmp(channels_to_use, ['Channel ' num2str(i)]))
@@ -115,8 +131,10 @@ uiwait(fig);
                 ProjectionTemp(:, :, i) = median_proj{cIndex, frame};
             elseif strcmpi(projection_type, 'middleprojection')
                 ProjectionTemp(:, :, i) = middle_proj{cIndex, frame};
-            else
+            elseif strcmpi(projection_type, 'maxprojection')
                 ProjectionTemp(:, :, i) = max_proj{cIndex, frame};
+            else
+                ProjectionTemp(:, :, i) = custom_proj{cIndex, frame};
             end
             if any(strcmp(inverted_channels, ['Channel ' num2str(cIndex)]))
                 ProjectionTemp(:, :, i) = imcomplement(ProjectionTemp(:, :, i));
@@ -169,6 +187,37 @@ uiwait(fig);
         close(fig);
     end
 
+    function updatedCustom(~, ~)
+        
+        % updates hisslice range and makes sure choices are valid
+        try
+            custom_value = strsplit(custom_edit_text.Value, ':');
+            max_custom = max(min(round(str2double(custom_value(1))), NSlices(1)), 1);
+            min_custom = max(min(round(str2double(custom_value(2)), NSlices(1))), max_custom);
+            custom_edit_text.Value = [num2str(max_custom) ':' num2str(min_custom)];
+        catch
+            min_custom = max(max_custom, min_custom);
+            custom_edit_text.Value = [num2str(max_custom) ':' num2str(min_custom)];
+        end
+        
+        %redoes projection for custom_proj
+        idx2 = 1;
+        for seriesIndex = 1:NSeries
+            for framesIndex = 1:NFrames(seriesIndex)
+                if mod(idx2, skip_factor) == 1
+                    for channelIndex = 1:NChannels
+                        HisSlices = generateHisSlices(LIFImages, NSlices, NChannels, ...
+                            channelIndex, framesIndex, seriesIndex);
+                        custom_proj{channelIndex, ceil(idx2 / skip_factor)} = calculateProjection(...
+                            'customprojection', NSlices, HisSlices, max_custom, min_custom);
+                    end       
+                end
+                idx2 = idx2 + 1;
+            end
+        end
+        updateHisImage();
+    end
+
 end
 
 function HisSlices = generateHisSlices(LIFImages, NSlices, NChannels, fiducialChannel, framesIndex, seriesIndex)
@@ -186,14 +235,17 @@ function HisSlices = generateHisSlices(LIFImages, NSlices, NChannels, fiducialCh
   
 end
 
-function Projection = calculateProjection(ProjectionType, NSlices, HisSlices)
+function Projection = calculateProjection(ProjectionType, NSlices, HisSlices, max_custom, min_custom)
   % Calculate the projection (either Maximum or Median)
   if strcmpi(ProjectionType, 'medianprojection')
     Projection = median(HisSlices, 3);
   elseif strcmpi(ProjectionType, 'middleprojection')
     Projection = max(HisSlices(:, :, round(NSlices * .50):round(NSlices * .75)), [], 3);
-  else
+  elseif strcmpi(ProjectionType, 'maxprojection')
     Projection = max(HisSlices, [], 3);
+  else
+    SortedHisSlices = sort(HisSlices, 3, 'descend');
+    Projection = mean(SortedHisSlices(:, :, max_custom:min_custom), 3);
   end
 
 end
