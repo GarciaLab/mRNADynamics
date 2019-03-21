@@ -1,6 +1,6 @@
 function [Prefix, ForceAP, SkipTraces, SkipFluctuations, SkipFits, SkipMovie, ...
     SkipAll, ApproveAll, MinParticles, minTime, ROI, intArea, noHist, ...
-    doSingleFits, ROI1, ROI2, slimVersion] = determineCompileParticlesOptions(varargin)
+    ROI1, ROI2, slimVersion, manualSingleFits] = determineCompileParticlesOptions(varargin)
 %DETERMINECOMPILEPARTICLESOPTIONS Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -11,7 +11,7 @@ Prefix='';
 ForceAP=0;      %Force AP detection even if it's already there
 SkipTraces=0;   %Do not output the individual traces.
 SkipFluctuations=0;  %Do not generate the plots of correlations of fluctuations and offset
-SkipFits=0;         %Do not generate the fit output (but still does the fit)
+SkipFits=0;         %Do not run and savegenerate the 
 SkipMovie=0;        %Do not generate the movie
 SkipAll=0;          %Do not do other things 
 ApproveAll=0;       %Only use manually approved particles
@@ -20,10 +20,10 @@ minTime = 1;
 ROI=0; % No ROI
 intArea = 109; %pixels. default for 220nm x 220nm zoom. for 70nm use 437 pixels. 
 noHist = 0; 
-doSingleFits = 0;
 slimVersion = 0;
 ROI1 = -1; % no ROI
 ROI2 = -1; % no ROI
+manualSingleFits = 0; % no manually fitted single fits
 
 
 % Checking Varargin 
@@ -50,8 +50,6 @@ else
             SkipFits=1;
             SkipMovie=1;
             SkipAll=1;
-        elseif strcmpi(varargin{i},'doSingleFits')
-            doSingleFits=1;
         elseif strcmpi(varargin{i},'ApproveAll')
             ApproveAll=1;
         elseif strcmpi(varargin{i},'noHist')
@@ -84,6 +82,8 @@ else
             end
         elseif strcmpi(varargin{i}, 'slimVersion')
             slimVersion = 1;
+        elseif strcmpi(varargin{i}, 'manualSingleFits')
+            manualSingleFits = 1;
         end
     end
     

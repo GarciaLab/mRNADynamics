@@ -3,10 +3,10 @@ function [Particles, CompiledParticles, ncFilter, ncFilterID] =...
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
     Spots, SkipTraces, nc9, nc10, nc11, nc12, nc13, nc14, ncFilterID, ncFilter, ...
     ElapsedTime, intArea, Ellipses, EllipsePos, PreProcPath, ...
-    FilePrefix, Prefix, DropboxFolder, NDigits)
+    FilePrefix, Prefix, DropboxFolder, NDigits, manualSingleFits)
 %COMPILETRACES Summary of this function goes here
 %   Detailed explanation goes here
-h=waitbar(0,'Compiling traces');
+h = waitbar(0,'Compiling traces');
 for ChN=1:NChannels
     k=1;
     for i=1:length(Particles{ChN})
@@ -78,6 +78,7 @@ for ChN=1:NChannels
                 CompiledParticles{ChN}(k).Index=Particles{ChN}(i).Index(FrameFilter);
                 CompiledParticles{ChN}(k).xPos=Particles{ChN}(i).xPos(FrameFilter);
                 CompiledParticles{ChN}(k).yPos=Particles{ChN}(i).yPos(FrameFilter);
+                CompiledParticles{ChN}(k).zPos=Particles{ChN}(i).zPos(FrameFilter);
                 %(MT, 2018-02-11) Hacky fix to get lattice to run - FIX LATER
                 %CompiledParticles{ChN}(k).DVpos=Particles{ChN}(i).DVpos(FrameFilter);
                 CompiledParticles{ChN}(k).FrameApproved = Particles{ChN}(i).FrameApproved;
@@ -128,6 +129,17 @@ for ChN=1:NChannels
                 if isfield(Particles,'Fit')
                     CompiledParticles{ChN}(k).Fit=Particles{ChN}(i).Fit;
                 end
+                
+                % Save the manually fitted initial slope and T_ON if it
+                % exists
+                if manualSingleFits && Particles{ChN}(i).fitApproved==1
+                    CompiledParticles{ChN}(k).fittedSlope = Particles{ChN}(i).fittedSlope;
+                    CompiledParticles{ChN}(k).fittedTon = Particles{ChN}(i).fittedTON;
+                else
+                    CompiledParticles{ChN}(k).fittedSlope = [];
+                    CompiledParticles{ChN}(k).fittedTon = []; 
+                end
+                    
                 
                 
                 %Extract information from Spots about fluorescence and background

@@ -16,6 +16,8 @@
 % 'middleprojection': Uses a max projection in the nuclear channel, but only
 %                   of the middle slices (11-16) to prevent bright
 %                   reflections from overpowering the signal
+% 'meanprojection'  : Uses the mean projection in the nuclear channel
+%                     instead of the default maximum projection. 
 % 'PreferredFileForTest': Uses the given filename for the prefered FF file.
 %                         PreferredFileForTest needs to be a struct with 
 %                         a field name called "fileName" with the file name. 

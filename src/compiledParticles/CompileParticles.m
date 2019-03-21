@@ -39,6 +39,10 @@ function CompileParticles(varargin)
 % 'intArea': Change the area (in pixels) of integration used in offset calculations
 % 'noHist': Force the code to assume there's no nuclear channel.
 % 'doSingleFits': Generate single trace fits. Added by EL&AR 
+% 'manualSingleFits' : Compile values from manually generated single trace fits to
+% CompiledParticles.mat, the field names are 'fittedSlope', 'fittedTon' for
+% the initial slope and T_on respectively.
+
 % Author (contact): Hernan Garcia (hggarcia@berkeley.edu)
 % Created:
 % Last Updated: 6/17/17 (AR)
@@ -128,6 +132,12 @@ rateOnAP = [];
 timeOnOnAP = [];
 rateOnAPCell = [];
 timeOnOnAPCell = [];
+rateOnAPManual = [];
+timeOnOnAPManual = [];
+rateOnAPCellManual = [];
+timeOnOnAPCellManual = [];
+fittedSlope = [];
+fittedTon = [];
 
 nc9 = [];
 nc10 = [];
@@ -145,7 +155,7 @@ ncFilterID = [];
 
 [Prefix, ForceAP, SkipTraces, SkipFluctuations, SkipFits, SkipMovie, ...
     SkipAll, ApproveAll, MinParticles, minTime, ROI, intArea, noHist, ...
-    doSingleFits, ROI1, ROI2, slimVersion] = determineCompileParticlesOptions(varargin);
+    ROI1, ROI2, slimVersion, manualSingleFits] = determineCompileParticlesOptions(varargin);
 
 FilePrefix=[Prefix,'_'];
 
@@ -161,9 +171,12 @@ FilePrefix=[Prefix,'_'];
 
 
 %Load all the information
-load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
-load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'])
-
+disp('Loading Particles.mat...');
+load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat']);
+disp('Particles loaded.');
+disp('Loading Spots.mat...');
+load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat']);
+disp('Spots loaded.');
 if isempty(Particles)
     SkipTraces=1;
     SkipFluctuations=1;
@@ -173,7 +186,7 @@ end
 
 %Check that FrameInfo exists
 if exist([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'file')
-    load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']);
+    load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
     pixelSize = FrameInfo(1).PixelSize;
 else
     warning('No FrameInfo.mat found. Trying to continue')
@@ -223,6 +236,7 @@ if ~SkipTraces
     delete([DropboxFolder,filesep,Prefix,filesep,'ParticleTraces',filesep,'*.*'])
 end
 if ~SkipFits
+    % deleting the figures saved from fitSingleTraces.m
     delete([DropboxFolder,filesep,Prefix,filesep,'Fits',filesep,'*.*'])
 end
 
@@ -425,7 +439,7 @@ end
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
     Spots, SkipTraces, nc9, nc10, nc11, nc12, nc13, nc14, ncFilterID, ncFilter, ...
     ElapsedTime, intArea, Ellipses, EllipsePos, PreProcPath, ...
-    FilePrefix, Prefix, DropboxFolder, NDigits);
+    FilePrefix, Prefix, DropboxFolder, NDigits, manualSingleFits);
 
 %% ROI option
 % This option is separating the CompiledParticles defined above into
@@ -571,7 +585,7 @@ if ~slimVersion
     % ErrorEstimation, and frameIndex, which are described below. This currently
     % does not support more than one channel. Please contact Emma to work on
     % implementing it for two channels.
-    if doSingleFits
+    if ~SkipFits
         [CompiledParticles, fittedLineEquations] = fitShapesToTraces(Prefix, ...
             Particles, schnitzcells, FrameInfo, ElapsedTime, CompiledParticles,Spots);
     end
@@ -581,11 +595,11 @@ if ~slimVersion
     if HistoneChannel&&strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
         [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
             FilteredParticlesPos, OnRatioAP, ParticleCountAP, ParticleCountProbAP, ...
-            EllipsesOnAP, rateOnAP, rateOnAPCell, timeOnOnAP, timeOnOnAPCell, TotalEllipsesAP]...
+            EllipsesOnAP, rateOnAP, rateOnAPCell, timeOnOnAP, timeOnOnAPCell, TotalEllipsesAP, rateOnAPManual, rateOnAPCellManual, timeOnOnAPManual, timeOnOnAPCellManual]...
             = computeAPFractionOn(NChannels, Particles, schnitzcells, ...
             CompiledParticles, Ellipses, APbinID, FrameInfo, ElapsedTime, DropboxFolder, ...
-            Prefix, EllipsePos, nc12, nc13, nc14, numFrames, doSingleFits, SkipAll, ...
-            APbinArea,pixelSize);
+            Prefix, EllipsePos, nc12, nc13, nc14, numFrames, SkipFits, SkipAll, ...
+            APbinArea,pixelSize, manualSingleFits);
     end
 
     % DV version. This should instead be smoothly integrated with the AP
@@ -648,7 +662,8 @@ end
 % ROI option added (YJK on 10/27/2017) :
 % When the data is acquired in ROI mode, I added the ROI option,
 % two thresholds to be incorporated into CompileNuclearProtein
-if strcmpi(ExperimentType,'inputoutput') && (strcmpi(ExperimentAxis,'AP')||strcmpi(ExperimentAxis,'DV'))
+if strcmpi(ExperimentType,'inputoutput') 
+    %&& (strcmpi(ExperimentAxis,'AP')||strcmpi(ExperimentAxis,'DV'))
     if ~ROI
         CompileNuclearProtein(Prefix)
     else
@@ -682,7 +697,7 @@ savedVariables = [savedVariables,'APFilter', 'APbinArea', 'APbinID', 'AllTracesA
     'SEVectorAllDV', 'StemLoopEnd', 'TotalEllipsesAP', 'TotalEllipsesDV',...
     'fittedLineEquations', 'rateOnAP', 'timeOnOnAP','rateOnAPCell', 'timeOnOnAPCell','nc10', 'nc11', 'nc12',...
     'nc13', 'nc14', 'nc9', 'ncFilter',...
-    'ncFilterID'];
+    'ncFilterID', 'rateOnAPManual', 'rateOnAPCellManual', 'timeOnOnAPManual', 'timeOnOnAPCellManual'];
 
 save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
     savedVariables{:},'-v7.3');

@@ -1,5 +1,5 @@
 function [Prefix, Sort, sortByLength, ForCompileAll, SpeedMode, SisterMode, ...
-    ncRange, projectionMode, plot3DGauss, fit3DGauss, intScale, NC, ...
+    ncRange, projectionMode, plot3DGauss, intScale, NC, ...
     startNC, endNC] = determineCheckParticleTrackingOptions(varargin)
 %DETERMINEOPTIONS Summary of this function goes here
 %   Detailed explanation goes here
@@ -22,9 +22,6 @@ ncRange = 0;
 projectionMode = 'None (Default)';
 %plot 3D gaussian fitting intensities in tracefig
 plot3DGauss = 0;
-%when checkparticletracking saves, it will add 3d gaussian fits to
-%Spots.mat
-fit3DGauss = 0;
 
 intScale = 1;
 
@@ -32,6 +29,10 @@ intScale = 1;
 NC = -1;
 startNC = -1;
 endNC = -1;
+
+if length(varargin) == 0
+    error('Please specify the Prefix of the data set to analyze')
+end
 
 Prefix = varargin{1};
 if length(varargin)>1
@@ -44,11 +45,6 @@ if length(varargin)>1
             ForCompileAll=1;
         elseif strcmpi(varargin{i}, 'speedmode')
             SpeedMode = 1;
-        elseif strcmpi(varargin{i}, 'plot3DGauss')
-            plot3DGauss = 1;
-        elseif strcmpi(varargin{i}, 'fit3DGauss')
-            fit3DGauss = 1;
-            plot3DGauss = 1;
         elseif strcmpi(varargin{i}, 'plot3DGauss')
             plot3DGauss = 1;
         elseif strcmpi(varargin{i}, 'sistermode')

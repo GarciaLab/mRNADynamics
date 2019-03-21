@@ -7,6 +7,7 @@ function AddParticlePosition(varargin)
 %SkipAlignment
 %ManualAlignment
 %NoAP: Just add X and Y information
+%SelectChannel: Choose which channel to align to
 %
 %Manual alignment controls
 %
@@ -32,6 +33,7 @@ function AddParticlePosition(varargin)
 SkipAlignment=0;
 ManualAlignment=0;
 NoAP=0;
+SelectChannel=0;
 InvertHis=0;
 
 close all
@@ -47,6 +49,8 @@ if ~isempty(varargin)
                 ManualAlignment=1;
             case {'NoAP'}
                 NoAP=1;
+            case {'SelectChannel'}
+                SelectChannel=1;
         end
     end
 else
@@ -74,9 +78,10 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
     for ChN=1:NChannels
         for i=1:length(Particles{ChN})
             for j=1:length(Particles{ChN}(i).Frame)
-                [x,y,~]=SpotsXYZ(Spots{ChN}(Particles{ChN}(i).Frame(j)));
+                [x,y,z]=SpotsXYZ(Spots{ChN}(Particles{ChN}(i).Frame(j)));
                 Particles{ChN}(i).xPos(j)=x(Particles{ChN}(i).Index(j));
                 Particles{ChN}(i).yPos(j)=y(Particles{ChN}(i).Index(j));
+                Particles{ChN}(i).zPos(j)=z(Particles{ChN}(i).Index(j));
             end
         end
         if isfield(Particles{ChN},'DVpos')
@@ -157,48 +162,34 @@ Channel1, Channel2, ~, ~, ~, ~, ~,...
 
 
 if ~NoAP
-    NuclearChannel=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
-    if ~NuclearChannel
-        %First, check whether we have Bcd-GFP and inverted histone
-        if ((~isempty(strfind(lower(Channel1{1}),'bcd')))|...
-                (~isempty(strfind(lower(Channel2{1}),'bcd'))))
-            if ((~isempty(strfind(lower(Channel1{1}),'his')))|...
-                (~isempty(strfind(lower(Channel2{1}),'his'))))
-            ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
-                ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')));
-            else
-            warning('Using only Bcd-GFP to determine AP position')
-            ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd'))|...
-                ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd')));
-            end
-        % YJK, 2018/04/01 : In case we have three channels, we should see if
-        % any of them has histone channel
-        elseif (~isempty(strfind(lower(Channel3{1}), 'his')))
-            ChannelToLoadTemp=~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1}),lower(Channel3{1})},'his'));
-        else
-            ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'mcherry'))|...
-                ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'his')));
-        end
+    %If you want to select which channel to load as alignment.
+    if SelectChannel
+        list = string({Channel1,Channel2,Channel3});
+        [indx,tf] = listdlg('PromptString','Select the channel to use for alignment:','ListString',list);
+        ChannelToLoad = indx;
     else
-        % From now, we will use a better way to define the channel for
-        % alignment (used for cross-correlation).
-        % Find channels with ":Nuclear"
-        ChannelToLoadTemp=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
+    % From now, we will use a better way to define the channel for
+    % alignment (used for cross-correlation).
+    % Find channels with ":Nuclear"
+    ChannelToLoadTemp=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
 
-        % Define the Channel to load, for calculating the cross-correlation
-        % In future, we can think about combining multiple channels for
-        % calculating the cross-correlation to get more accurate estimates.
-        % For now, let's pick only one channel for this. For multiple
-        % channels, let's first pick the first channel. This can be fine in
-        % most cases, since we normally use lower wavelength for sth we
-        % care more, or we get better signal from those.
-        if sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)==1
-            ChannelToLoad=find(ChannelToLoadTemp);
-        elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>2
-            ChannelToLoad = ChannelToLoadTemp(1);
-        else
-            error('No histone channel found. Was it defined in MovieDatabase?')
-        end
+    % Define the Channel to load, for calculating the cross-correlation
+    % In future, we can think about combining multiple channels for
+    % calculating the cross-correlation to get more accurate estimates.
+    % For now, let's pick only one channel for this. For multiple
+    % channels, let's first pick the first channel. This can be fine in
+    % most cases, since we normally use lower wavelength for sth we
+    % care more, or we get better signal from those.
+    if sum(ChannelToLoadTemp) && sum(ChannelToLoadTemp)==1
+        ChannelToLoad=find(ChannelToLoadTemp);
+    elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>=2
+        ChannelToLoad=find(ChannelToLoadTemp);
+        ChannelToLoad = ChannelToLoad(1);
+        disp('You have multiple nuclear channels, pick the one to use.');
+    else
+        error('No histone channel found. Was it defined in MovieDatabase?')
+    end
+    
     end
         
     %Get information about all images. This depends on the microscope used.
@@ -260,48 +251,22 @@ if ~NoAP
         
         %Figure out the different channels
         %NuclearChannel=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
-        % Let's use NuclearChannel if possible
-        %If we have Bcd-GFP and inverted His, we will use Bcd-GFP for the
-        %alignment
-        if ((contains(lower(Channel1{1}),'bcd'))||...
-                (contains(lower(Channel2{1}),'bcd')))
-            if  contains(lower(Channel1{1}),'his')
-                HisChannel=1;
+        % Let's use NuclearChannel, instead of making the code to guess
+        % which channel should be used for HisChannel and whether it should
+        % be inverted or not.
+
+        if any(contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true))
+            if SelectChannel
+                HisChannel = ChannelToLoad;
                 InvertHis=0;
-            elseif contains(lower(Channel1{1}),'mcherry')||...
-                    contains(lower(Channel1{1}),'inverteduclear')
-                HisChannel=1;
-                InvertHis=1;
-            elseif contains(lower(Channel2{1}),'his')
-                HisChannel=2;
+            elseif ~any(contains([Channel1,Channel2,Channel3],'inverted','IgnoreCase',true))
+                HisChannel = ChannelToLoad;
                 InvertHis=0;
-            elseif contains(lower(Channel2{1}),'mcherry')||...
-                    contains(lower(Channel2{1}),'inverteduclear')
-                HisChannel=2;
+            elseif any(contains([Channel1,Channel2,Channel3],'inverted','IgnoreCase',true))
+                HisChannel= ChannelToLoad;
                 InvertHis=1;
             else
-                ChannelToLoadTemp=(~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd'))|...
-                    ~cellfun(@isempty,strfind({lower(Channel1{1}),lower(Channel2{1})},'bcd')));
-                HisChannel=find(ChannelToLoad);
-                InvertHis=0;
-            end
-        else
-            if contains(lower(Channel1{1}),'his')
-                HisChannel=1;
-                InvertHis=0;
-            elseif contains(lower(Channel1{1}),'mcherry')||...
-                    contains(lower(Channel1{1}),'invertednuclear')
-                HisChannel=1;
-                InvertHis=1;
-            elseif contains(lower(Channel2{1}),'his')
-                HisChannel=2;
-                InvertHis=0;
-            elseif contains(lower(Channel2{1}),'mcherry')||...
-                    contains(lower(Channel2{1}),'invertednuclear')
-                HisChannel=2;
-                InvertHis=1;
-            else
-                error('LIF Mode error: Channel name not recognized. Check MovieDatabase.')
+                error('You should check the MovieDatabase.csv to see whether ":Nuclear" or "invertedNuclear" is plugged into your channels.')
             end
         end
         
@@ -358,15 +323,6 @@ if ~NoAP
         if abs(PixelSizeFullEmbryo/PixelSizeFullEmbryoMid-1)>0.01
             error('The surface and midsaggital images were not taken with the same pixel size')
         end
-        
-        %
-        %         %AR: Odd bioformats feature. Not sure why these formats are different
-        %         %sometimes.
-        %         try
-        %             PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX(0));
-        %         catch
-        %             PixelSizeFullEmbryoMid=str2num(MetaFullEmbryo1.getPixelsPhysicalSizeX);
-        %         end
         
         
         %How many channels and slices do we have?
@@ -492,68 +448,39 @@ if ~NoAP
     %Make a folder to store the images
     mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
     
-    %Check whether we have Bcd-GFP. If so, we'll use it for the alignment
-    %if there is no histone. (Actually, if there's Bcd, it's usually the
-    %best channel to calculate the cross-correlation.
-    % YJK (12/3/2018) : This whole part of finding the channel for the
-    % ZoomImage should be written better. Right now, it's pretty
-    % hard-coded, and also doesn't support the channel3 feature.
-    if ((~isempty(cell2mat(strfind(lower(Channel1),'bcd'))))|...
-            (~isempty(cell2mat(strfind(lower(Channel2),'bcd')))))
-        %Figure out which channel Bcd is in
-        if contains(lower(Channel1),'bcd')
-            BcdChannel=1;
-        else
-            BcdChannel=2;
-        end
-        
-        %Find the last frame
-        DGFP=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'*_z*_ch',...
-            iIndex(BcdChannel,2),'.tif']);
-        %Now load all z planes in that frame
-        DGFP=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'_',...
-            DGFP(end).name(end-15:end-13),'*_z*_ch',...
-            iIndex(BcdChannel,2),'.tif']);
-        %Take the maximum projection
-        MaxTemp=[];
-        for i=1:length(DGFP)
-            MaxTemp(:,:,i)=imread([PreProcPath,filesep,Prefix,filesep,DGFP(i).name]);
-        end
-        ZoomImage=max(MaxTemp,[],3);
-        
-        %Otherwise, if there a histone channel
-    elseif histoneChannelPresent
-        ChannelToLoad=HisChannel;
-        
-        %Get the surface image in the zoomed case by looking at the last
-        %frame of our movie
-        DHis=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
+ 
+
+    % Load the last frame of the zoomed-in image, for calculating the
+    % cross-correlation. This part now only requires the same
+    % ChannelToLoad, which is defined above using ":Nuclear" or
+    % ":invertedNuclear" 
+    
+    %Get the surface image in the zoomed case by looking at the last
+    %frame of our movie
+    % From "Nuclear" or "invertedNuclear", it should've made His images
+    % when you run ExportDataforLivemRNA. If you edit the channels in the
+    % MovieDatabase after you ran the ExportDataForLivemRNA, then run this
+    % script, the code might freak out. I'll put a warning message about
+    % that.
+    DHis=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
+    if ~isempty(DHis)
         ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis(end-1).name]);
     else
-        ChannelToLoad=1;
-        
-        %Get the surface image in the zoomed case
-        DGFP=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'*_z*.tif']);
-        if ~isempty(DGFP)
-            ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DGFP(end).name],ChannelToLoad);
-        else
-            % This might be the case, for instance, if you're just trying
-            % to find AP information about an image without using FISH
-            % code. In that case, just extract the nuclei from the last
-            % raw image.
-            DGFP = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, '*.tif']);
-            ImageInfo = imfinfo([SourcePath, filesep, Date, filesep, EmbryoName, filesep, DGFP(end).name]);
-            NumFramesAndSlices = length(ImageInfo)/2;
-            RawImage3M = NaN(Rows, Columns, NumFramesAndSlices);
-            for lImageIndex = 1:NumFramesAndSlices
-                RawImage3M(:, :, lImageIndex) = imread([SourcePath, filesep, Date, filesep, EmbryoName, filesep, DGFP(end).name],...
-                    'Index', 2*(lImageIndex-1) + ChannelToLoad);
-            end
-            ZoomImage = max(RawImage3M, [], 3) / 255;
+        disp('Did you run ExportDataForLivemRNA again, after editing the MovieDatabase.csv with ":Nuclear" ("invertedNuclear")?')
+        % This might be the case, for instance, if you're just trying
+        % to find AP information about an image without using FISH
+        % code. In that case, just extract the nuclei from the last
+        % raw image.
+        DGFP = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, '*.tif']);
+        ImageInfo = imfinfo([SourcePath, filesep, Date, filesep, EmbryoName, filesep, DGFP(end).name]);
+        NumFramesAndSlices = length(ImageInfo)/2;
+        RawImage3M = NaN(Rows, Columns, NumFramesAndSlices);
+        for lImageIndex = 1:NumFramesAndSlices
+            RawImage3M(:, :, lImageIndex) = imread([SourcePath, filesep, Date, filesep, EmbryoName, filesep, DGFP(end).name],...
+                'Index', 2*(lImageIndex-1) + ChannelToLoad);
         end
+        ZoomImage = max(RawImage3M, [], 3) / 255;
     end
-    
-    
     
     
     
@@ -1397,8 +1324,3 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
     
     save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','SpotFilter');
 end
-%close all force;
-
-
-
-

@@ -20,6 +20,9 @@ median_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
 max_proj = cell(NChannels, sum(NFrames));
 middle_proj = cell(NChannels, sum(NFrames));
 custom_proj = cell(NChannels, sum(NFrames));
+mean_proj = cell(NChannels, sum(NFrames));
+
+
 idx = 1;
 
 % for custom projection
@@ -131,6 +134,8 @@ uiwait(fig);
                 ProjectionTemp(:, :, i) = median_proj{cIndex, frame};
             elseif strcmpi(projection_type, 'middleprojection')
                 ProjectionTemp(:, :, i) = middle_proj{cIndex, frame};
+            elseif strcmpi(projection_type, 'meanprojection')
+                ProjectionTemp(:,:, i) = mean_proj(cIndex,frame);
             elseif strcmpi(projection_type, 'maxprojection')
                 ProjectionTemp(:, :, i) = max_proj{cIndex, frame};
             else
@@ -241,6 +246,8 @@ function Projection = calculateProjection(ProjectionType, NSlices, HisSlices, ma
     Projection = median(HisSlices, 3);
   elseif strcmpi(ProjectionType, 'middleprojection')
     Projection = max(HisSlices(:, :, round(NSlices * .50):round(NSlices * .75)), [], 3);
+  elseif strcmpi(ProjectionType, 'meanprojection')
+    Projection = mean(HisSlices,3);
   elseif strcmpi(ProjectionType, 'maxprojection')
     Projection = max(HisSlices, [], 3);
   else

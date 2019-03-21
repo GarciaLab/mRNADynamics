@@ -1,4 +1,4 @@
-function [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, pool, threshGUI, initialFrame, useIntegralCenter, Weka, keepProcessedData] = determineSegmentSpotsOptions(varargin)
+function [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, pool, threshGUI, initialFrame, useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel] = determineSegmentSpotsOptions(varargin)
 
 varargin = varargin{1};
 
@@ -15,6 +15,8 @@ useIntegralCenter = 1;
 initialFrame = 1;
 Weka = 0;
 keepProcessedData = false;
+fit3D = 0;
+skipChannel = [];
 
 for i = 1:length(varargin)
     
@@ -38,7 +40,7 @@ for i = 1:length(varargin)
         end
         
     elseif strcmpi(varargin{i}, 'InitialFrame')
-        
+
         if ~isnumeric(varargin{i + 1}) || varargin{i + 1} < 1
             error('Wrong input parameter for initial frame.')
         else
@@ -52,6 +54,8 @@ for i = 1:length(varargin)
         intScale = varargin{i + 1};
     elseif strcmpi(varargin{i}, 'noIntegralZ')
         useIntegralCenter = 0;
+    elseif strcmpi(varargin{i}, 'skipChannel')
+        skipChannel = varargin{i + 1};
     elseif strcmpi(varargin{i}, 'nWorkers')
         nWorkers = varargin{i + 1};
         
@@ -61,6 +65,8 @@ for i = 1:length(varargin)
         
     elseif strcmpi(varargin{i}, 'autoThresh')
         threshGUI = 1;
+    elseif strcmpi(varargin{i}, 'fit3D')
+        fit3D = 1;
     elseif strcmpi(varargin{i}, 'Weka')
         Weka = 1;
     elseif strcmpi(varargin{i}, 'tifs')

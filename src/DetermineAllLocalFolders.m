@@ -1,11 +1,12 @@
 function [SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath, configValues, movieDatabasePath] = DetermineAllLocalFolders(varargin)
 
-%Get the folders, including the default Dropbox one
-[SourcePath, FISHPath, DefaultDropboxFolder, MS2CodePath, PreProcPath, configValues, movieDatabasePath] = DetermineLocalFolders;
-
-%Now get the actual DropboxFolder according to the provided prefix
-if(~isempty(varargin))
-  [~, ~, DropboxFolder, ~, ~, ~, ~] = DetermineLocalFolders(varargin{1});
+%Get default Dropbox folder location
+CONFIG_CSV_PATH = 'ComputerFolders.csv';
+configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');    
+DefaultDropboxFolder = getConfigValue(configValues, 'DropboxFolder');
+%Now get rest of folder locations
+if(~isempty(varargin))   
+    [SourcePath, FISHPath, DropboxFolder, MS2CodePath, PreProcPath, configValues, movieDatabasePath] = DetermineLocalFolders(varargin{1});
 else
-  DropboxFolder = DefaultDropboxFolder
+  	[SourcePath, FISHPath, DropboxFolder, MS2CodePath, PreProcPath, configValues, movieDatabasePath] = DetermineLocalFolders;
 end

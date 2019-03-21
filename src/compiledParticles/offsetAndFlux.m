@@ -111,14 +111,18 @@ if NChannels==1
             MaxAP=0;
             MinAP=inf;
             hold all
-            for i=1:length(CompiledParticles{1})
-                if sum(CompiledParticles{1}(i).Frame==MaxFrame{1}(end-1))
-                    MaxAP=max([CompiledParticles{1}(i).MeanAP,MaxAP]);
-                    MinAP=min([CompiledParticles{1}(i).MeanAP,MinAP]);
-                    FramePos=find(CompiledParticles{1}(i).Frame==MaxFrame{1}(end-1));
-                    plot(CompiledParticles{1}(i).MeanAP,CompiledParticles{1}(i).Off(FramePos),'.k')
+            if ~isempty(MaxFrame{1})
+                for i=1:length(CompiledParticles{1})
+                    if sum(CompiledParticles{1}(i).Frame==MaxFrame{1}(end-1))
+                        MaxAP=max([CompiledParticles{1}(i).MeanAP,MaxAP]);
+                        MinAP=min([CompiledParticles{1}(i).MeanAP,MinAP]);
+                        FramePos=find(CompiledParticles{1}(i).Frame==MaxFrame{1}(end-1));
+                        plot(CompiledParticles{1}(i).MeanAP,CompiledParticles{1}(i).Off(FramePos),'.k')
+                    end   
                 end
-            end
+            else
+                warning('MaxFrame is empty. Unable to check offset of particles')
+            end 
             hold off
             if MinAP<MaxAP
                 xlim([MinAP*0.8,MaxAP*1.2])
@@ -132,13 +136,17 @@ if NChannels==1
             MaxAP=0;
             MinAP=inf;
             hold all
-            for i=1:length(CompiledParticles)
-                if sum(CompiledParticles{1}(i).Frame==MaxFrame{1}(end))
-                    MaxAP=max([CompiledParticles{1}(i).MeanAP,MaxAP]);
-                    MinAP=min([CompiledParticles{1}(i).MeanAP,MinAP]);
-                    FramePos=find(CompiledParticles{1}(i).Frame==MaxFrame{1}(end));
-                    plot(CompiledParticles{1}(i).MeanAP,CompiledParticles{1}(i).Off(FramePos),'.k')
+            if ~isempty(MaxFrame{1})
+                for i=1:length(CompiledParticles)
+                    if sum(CompiledParticles{1}(i).Frame==MaxFrame{1}(end))
+                        MaxAP=max([CompiledParticles{1}(i).MeanAP,MaxAP]);
+                        MinAP=min([CompiledParticles{1}(i).MeanAP,MinAP]);
+                        FramePos=find(CompiledParticles{1}(i).Frame==MaxFrame{1}(end));
+                        plot(CompiledParticles{1}(i).MeanAP,CompiledParticles{1}(i).Off(FramePos),'.k')
+                    end
                 end
+            else
+                warning('MaxFrame is empty. Unable to check offset of particles')
             end
             hold off
             if MinAP < Inf && MaxAP > 0
@@ -215,6 +223,12 @@ if NChannels==1
         SDOffsetVector=[];
         NOffsetParticles=[];
     end
+else
+    %This is just to make 2spot2color work by skipping the calculations for
+    %this function (JL 1/23/19).
+    MeanOffsetVector=[];
+    SDOffsetVector=[];
+    NOffsetParticles=[];
 end
 end
 

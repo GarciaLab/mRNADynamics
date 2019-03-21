@@ -19,14 +19,18 @@ function APAnalysis(dataset, varargin)
 %with the right name.
 %
 %OPTIONS
-%No options
+% 'control', control : 
+% 'nc', nc : Specify the nuclear cycle of interest (12,13,or 14).
+% 'justMeans' : 
+% 'noLoading' :
+% 'savePath', path : 
 %
 %OUTPUT
 %Does not return anything. Does generate graphs. 
 %
 %Author (contact): Armando Reimer (areimer@berkeley.edu), Yang Joon Kim(yjkim90@berkeley.edu)
 %Created: 6/3/2017
-%Last Updated: 1/13/18
+%Last Updated: 2/4/19
 %
 %To do:   
 %        3) Separate out graphs into functions
@@ -37,7 +41,7 @@ function APAnalysis(dataset, varargin)
 %        8) Add ability to plot multiple data sets on same graphs. loop?
 %% 
     control = '';
-    nc = 2;
+    nc = 2; % the default nuclear cycle shown is nc13  
     justMeans = 0;
     savePath = '';
     noLoading = 0;
@@ -46,7 +50,7 @@ function APAnalysis(dataset, varargin)
         if strcmpi(varargin{i},'control')
             control = varargin{i+1};
         elseif strcmpi(varargin{i},'nc')
-            nc = varargin{i+1} - 11; %Because in the CompiledParticles, nc12 is indexed as 1, nc13 as 2, etc.
+            nc = varargin{i+1} - 11; %In CompiledParticles, nc12 is indexed as 1, nc13 as 2, and nc14 as 3.
         elseif strcmpi(varargin{i}, 'justMeans')
             justMeans = 1;
         elseif strcmpi(varargin{i}, 'noLoading')

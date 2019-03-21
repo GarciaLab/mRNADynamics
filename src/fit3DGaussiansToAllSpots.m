@@ -1,17 +1,26 @@
 function Spots = fit3DGaussiansToAllSpots(prefix, varargin)
 
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
-    Folder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder, Channel3] = readMovieDatabase(prefix);
+[~,~,DropboxFolder,~, PreProcPath,...
+    ~, Prefix, ~,~,~,~, ~] = readMovieDatabase(prefix);
 DataFolder=[DropboxFolder,filesep,prefix];
-load([DataFolder,filesep,'Spots.mat'], 'Spots');
-load([DataFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
 
+segmentSpots = 0;
 displayFigures = 0;
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'displayFigures')
         displayFigures = 1;
+    elseif strcmpi(varargin{i}, 'segmentSpots')
+        Spots = varargin{i+1};
+        segmentSpots = 1;
+    else
     end
 end
+
+if ~segmentSpots
+    load([DataFolder,filesep,'Spots.mat'], 'Spots');
+end
+
+load([DataFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
 
 xSize = FrameInfo(1).PixelsPerLine;
 ySize = FrameInfo(1).LinesPerFrame;
@@ -27,7 +36,6 @@ end
 
 zMax = FrameInfo(1).NumberSlices+2;
 
-
 for ch = 1:nCh
     
     nFrames = length(Spots{ch});
@@ -35,7 +43,7 @@ for ch = 1:nCh
     for frame = 1:nFrames %frames
         nSpotsPerFrame = length(SpotsCh(frame).Fits);
         SpotsFrame = SpotsCh(frame).Fits;
-            
+        
        for spot = 1:nSpotsPerFrame
 
             s = SpotsFrame(spot);
@@ -49,35 +57,37 @@ for ch = 1:nCh
             else
                 snippet_size = 13; %pixels
             end
-
-            snipDepth = 2;
+            
+            zoomFactor = 1; %replace this with zStep from FrameInfo later- AR 1/31/2019
+            snipDepth = round(2*zoomFactor);
             zBot = bZ - snipDepth;
             zTop = bZ + snipDepth;
             width = 200/pixelSize; %nm. empirically determined and seems to work width of spot psf
             offsetGuess = nanmean(s.Offset);
             snip3D = [];
-            try
+%           try
                 k = 1;
                 for z = zBot:zTop
+                    if z > 1 && z < zMax
+                        FullSlice=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(frame,3)...
+                            ,'_z' iIndex(z,2) '_ch' iIndex(ch,2) '.tif']);
 
-                    FullSlice=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(frame,3)...
-                        ,'_z' iIndex(z,2) '_ch' iIndex(ch,2) '.tif']);
-
-                    snip3D(:,:,k) = double(FullSlice(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
-                        max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size))); %#ok<*SAGROW>
-                    k = k + 1;
-
+                        snip3D(:,:,k) = double(FullSlice(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
+                            max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size))); %#ok<*SAGROW>
+                        k = k + 1;
+                    end
                 end
-            catch
-                snipDepth = zMax;
-                for z = 1:zMax
-                    FullSlice=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(frame,3)...
-                        ,'_z' iIndex(z,2) '_ch' iIndex(ch,2) '.tif']);
-
-                    snip3D(:,:,z) = double(FullSlice(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
-                        max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size))); %#ok<*SAGROW>
-                end
-            end
+                
+%                 catch
+%                     snipDepth = zMax;
+%                     for z = 1:zMax
+%                         FullSlice=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(frame,3)...
+%                             ,'_z' iIndex(z,2) '_ch' iIndex(ch,2) '.tif']);
+% 
+%                         snip3D(:,:,z) = double(FullSlice(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
+%                             max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size))); %#ok<*SAGROW>
+%                     end
+%                 end
             %         snips3D = [snips3D, currentSnippet3D]; %#ok<*AGROW>
             if displayFigures
                 initial_params = [max(max(max(snip3D))), NaN,NaN, snipDepth + 1, width,offsetGuess];
@@ -104,6 +114,12 @@ for ch = 1:nCh
             SpotsCh(frame).Fits(spot).gauss3DIntensity = intensity;
             SpotsCh(frame).Fits(spot).fits3DCI95 = ci95;
 
+            if k < 3
+                SpotsCh(frame).Fits(spot).weeFit = 1;
+            else
+                SpotsCh(frame).Fits(spot).weeFit = 0;
+            end
+            
        end
     end
     

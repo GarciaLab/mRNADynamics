@@ -64,9 +64,8 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
       if doFF && sum(size(im)==size(ffim))
         im = im.*ffim;
       end
-      
-      
-      im_thresh = dog >= Threshold(channelIndex);
+            
+      im_thresh = dog >= Threshold;
       
       if  Weka     
           se = strel('square', 3);
@@ -80,7 +79,7 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
       temp_particles = cell(1, n_spots);
       
       if n_spots ~= 0
-        if ~displayFigures && pool && ~Weka
+        if ~displayFigures && pool %&& ~Weka
           parfor spotIndex = 1:n_spots
             centroid = round(centroids(spotIndex).Centroid);
             temp_particles(spotIndex) = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
@@ -89,6 +88,7 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
         else
           for spotIndex = 1:n_spots
             centroid = round(centroids(spotIndex).Centroid);
+            tic
             temp_particles(spotIndex) = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
               neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, MLFlag, intScale);
           end

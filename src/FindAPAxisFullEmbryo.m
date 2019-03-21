@@ -12,12 +12,10 @@ function [coordA,coordP,xShift,yShift]=FindAPAxisFullEmbryo(varargin)
 %CorrectAxis- Runs a correction script after automatic detection
 
 CorrectAxis = 0;
-
-%Load the folder information
-[SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
-configValues, movieDatabasePath] = DetermineAllLocalFolders(varargin{1});
-
 Prefix=varargin{1};
+
+[SourcePath, ~, DefaultDropboxFolder, DropboxFolder, ~, ~,...
+~, ~] = DetermineAllLocalFolders(Prefix);
 
 for i=2:length(varargin)
     if isnumeric(varargin{i})

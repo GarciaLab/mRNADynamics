@@ -12,7 +12,7 @@ else
         CurrentChannel, UseHistoneOverlay, schnitzcells);
 end
 
-if (floor(ParticleOutput)>0)&&(ParticleOutput<=numParticles)
+if (floor(ParticleOutput)>0)&(ParticleOutput<=numParticles)
     [CurrentParticle,CurrentFrame, ManualZFlag] = ...
     changeParticle(ParticleOutput, Particles, numParticles, CurrentChannel);
 end

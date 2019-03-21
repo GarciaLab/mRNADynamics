@@ -19,13 +19,9 @@ function [frameIndex,Coefficients,ErrorEstimation,numberOfFramesUsedForFit] = ..
 % upstream function, which is fitInitialSlope.
 %
 % OPTIONS
-% 'initialOnly' : only spends time fitting the polymerase 
-%                 loading rate of the trace
 % 'minimumLength' : adjusts the threshold number of total number of points
 %                   in a trace that will be fitted, not inclusive.
 %                  (default = 3 points)
-% 'skipSavingTraces' : skips saving the traces into a folder (meant for
-%                      CompileParticles
 % 'useAnaphase' : uses the users values of the anaphase to set time 0 to be
 %                 the start of the nuclear cycle of the particle. 
 % 
@@ -37,28 +33,9 @@ function [frameIndex,Coefficients,ErrorEstimation,numberOfFramesUsedForFit] = ..
 % Documented by: Yang Joon Kim (yjkim90@berkeley.edu)
 
 %% Initializing the options
-skipSavingTraces = 0;
-initialOnly = 0;
 minimumLength = 3; % minimum length of trace
 useDefaultTimeShift = 1;
 useAnaphase = 0;
-
-%% Checking varargin
-if ~isempty(varargin)
-    for i=1:length(varargin)
-        if strcmpi(varargin{i},'initialOnly')
-            initialOnly = 1;
-        elseif strcmpi(varargin{i},'minimumLength')
-            minimumLength = varargin{i+1};
-        elseif strcmpi(varargin{i},'skipSavingTraces')
-            skipSavingTraces = 1;
-        elseif strcmpi(varargin{i},'useAnaphase')
-            useAnaphase = 1;
-            useDefaultTimeShift = 0;
-        end
-    end
-end
-
 %% Getting particle information
 % Amplitude ---------------------------------------------------------------
 % getting frame information

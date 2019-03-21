@@ -8,9 +8,11 @@ function fint = filterImage(im, filterType, sigmas, varargin)
     im = double(im);
     
     %convert string sigmas to doubles
-    if ischar(sigmas{1})
-        for i=1:length(sigmas)
-            sigmas{i}=str2double(sigmas{i});
+    if ~isempty(sigmas)
+        if ischar(sigmas{1})
+            for i=1:length(sigmas)
+                sigmas{i}=str2double(sigmas{i});
+            end
         end
     end
     

@@ -194,51 +194,51 @@ else
                         snippet_sizeNew = 13; %pixels
                     end
 
-                    snipDepth = 2;
+                    zoomFactor = 1; %replace this with zStep from FrameInfo later- AR 1/31/2019
+                    snipDepth = round(2*zoomFactor);
                     zBot = bZ - snipDepth;
                     zTop = bZ + snipDepth;
                     width = 200/pixelSize; %nm. empirically determined and seems to work width of spot psf
                     offsetGuess = nanmean(s.Offset);
                     snip3D = [];
-                    try
-                        k = 1;
-                        for z = zBot:zTop
-
+                    k = 1;
+                    for z = zBot:zTop
+                        if z > 1 && z < zMax
                             FullSlice=imread([Path3,'_',iIndex(CurrentFrame,3)...
                                 ,'_z' iIndex(z,2) '_ch' iIndex(CurrentChannel,2) '.tif']);
 
                             snip3D(:,:,k) = double(FullSlice(max(1,ySpotNew-snippet_sizeNew):min(ySize,ySpotNew+snippet_sizeNew),...
                                 max(1,xSpotNew-snippet_sizeNew):min(xSize,xSpotNew+snippet_sizeNew))); %#ok<*SAGROW>
                             k = k + 1;
-
-                        end
-                    catch
-                        snipDepth = zMax;
-                        for z = 1:zMax
-                            FullSlice=imread([Path3,'_',iIndex(CurrentFrame,3)...
-                                ,'_z' iIndex(z,2) '_ch' iIndex(CurrentChannel,2) '.tif']);
-
-                            snip3D(:,:,z) = double(FullSlice(max(1,ySpotNew-snippet_sizeNew):min(ySize,ySpotNew+snippet_sizeNew),...
-                                max(1,xSpotNew-snippet_sizeNew):min(xSize,xSpotNew+snippet_sizeNew))); %#ok<*SAGROW>
                         end
                     end
+
                     initial_params = [max(max(max(snip3D))), NaN,NaN, snipDepth + 1, width,offsetGuess];
                     [fits3D, int3D, ci95] = fitGaussian3D(snip3D, initial_params, zStep);
                     x3D = fits3D(2) - snippet_sizeNew + xSpotNew;
                     y3D = fits3D(3) - snippet_sizeNew + ySpotNew;
                     z3D = fits3D(4) - snipDepth + bZ;
-                     dxLow = ci95(2, 1) - snippet_size + xSpotNew;
-            dxHigh = ci95(2, 2) - snippet_sizeNew + xSpotNew;
-            dyLow = ci95(3, 1) - snippet_sizeNew + ySpotNew;
-            dyHigh = ci95(3, 2) - snippet_sizeNew + ySpotNew;
-            dzLow = ci95(4, 1) - snipDepth + bZ;
-            dzHigh = ci95(4, 2) - snipDepth + bZ;
+                    
+                    dxLow = ci95(2, 1) - snippet_size + xSpotNew;
+                    dxHigh = ci95(2, 2) - snippet_sizeNew + xSpotNew;
+                    dyLow = ci95(3, 1) - snippet_sizeNew + ySpotNew;
+                    dyHigh = ci95(3, 2) - snippet_sizeNew + ySpotNew;
+                    dzLow = ci95(4, 1) - snipDepth + bZ;
+                    dzHigh = ci95(4, 2) - snipDepth + bZ;
+                    
                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).GaussPos = [x3D, y3D, z3D];
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).GaussPosCI95 = [dxLow,dxHigh; dyLow, dyHigh; dzLow, dzHigh];
+                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).GaussPosCI95 = [dxLow,dxHigh; dyLow, dyHigh; dzLow, dzHigh];
 
                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).fits3D = fits3D;
                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).gauss3DIntensity = int3D;
-                                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).fits3DCI95 = ci95;
+                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).fits3DCI95 = ci95;
+                    
+                    
+                    if k < 3
+                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).weeFit = 1;
+                    else
+                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).weeFit = 0;
+                    end
 
                 catch
                     warning('failed to fit 3D Gaussian to spot. Not sure why. Talk to AR if you need this.');

@@ -46,9 +46,10 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
         row = addition(3);
         col = addition(2);
         k_row = row;
-        k_column = col;
-        
+        k_column = col;        
     end
+    
+    
     for i = 1:2*searchRadius
         for j = 1:2*searchRadius
             if row - searchRadius + i > 0 && col - searchRadius + j > 0 ... 
@@ -101,7 +102,8 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
         %if the predicted centroid is outside of the image while manually
         %adding spots in checkparticletracking, we'll try to use the
         %position where the user actually clicked
-        if addition(1) && ~(centroid_y - snippet_size > 1 && centroid_x - snippet_size > 1 && centroid_y + snippet_size < size(image, 1) && centroid_x + snippet_size < size(image,2))    
+        if addition(1) && ~(centroid_y - snippet_size > 1 && centroid_x - snippet_size > 1 ...
+                && centroid_y + snippet_size < size(image, 1) && centroid_x + snippet_size < size(image,2))    
             centroid_y = k_row;
             centroid_x = k_column;           
         end
@@ -112,7 +114,8 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
         end
         
        %Now, we'll calculate Gaussian fits 
-       if centroid_y - snippet_size > 1 && centroid_x - snippet_size > 1 && centroid_y + snippet_size < size(image, 1) && centroid_x + snippet_size < size(image,2)
+       if centroid_y - snippet_size > 1 && centroid_x - snippet_size > 1 && ...
+               centroid_y + snippet_size < size(image, 1) && centroid_x + snippet_size < size(image,2)
            
             snippet = image(centroid_y-snippet_size:centroid_y+snippet_size, centroid_x-snippet_size:centroid_x+snippet_size);
             if doCyl
