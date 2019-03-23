@@ -32,6 +32,8 @@ function [cc, Particles, CurrentChannel, Spots, CurrentFrame, CurrentParticle, M
   xTrace = x(CurrentParticleIndex);
   yTrace = y(CurrentParticleIndex);
 
+  persistent CurrentZIndex
+  
   if (~isempty(xTrace)) && (~ManualZFlag)
     CurrentZ = z(CurrentParticleIndex);
     CurrentZIndex = find(...
