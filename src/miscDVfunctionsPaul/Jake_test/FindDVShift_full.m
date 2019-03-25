@@ -1,4 +1,13 @@
-function  [DV_shift] = FindDVShift(varargin)
+function  [DV_shift] = FindDVShift_full(varargin)
+%% Initialization
+
+% Resolution: 1024*1024
+%AreaThresh=20;
+%AreaMax = 100;
+
+% Resolution: 2048*2048
+AreaThresh=100;
+AreaMax = 450;
 
 %% Part 1: Read image data
 
@@ -15,37 +24,39 @@ nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Pref
 Dashes=findstr(Prefix,'-');
 Date=Prefix(1:Dashes(3)-1);
 EmbryoName=Prefix(Dashes(3)+1:end);
-%{
-DLIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.lif']);
 
-D=DLIF;
-FileMode='LIFExport';
+%Find Zoom Factor
+    FileMode='LIFExport';
+    %Find the zoomed movie pixel size
+    D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.',FileMode(1:3)]);
 
-% Identify the midsagittal image
-MidFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'mid')));
-SurfFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'surf')));
+    %Load only the metadata from the zoomed images
+    MetaReader=bfGetReader([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(end).name]);
+    MetaZoom=MetaReader.getMetadataStore();
+    try
+        PixelSizeZoom=str2double(MetaZoom.getPixelsPhysicalSizeX(0).value);
+    catch
+        PixelSizeZoom=str2double(MetaZoom.getPixelsPhysicalSizeX(0));
+    end
 
-LIFMid=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(MidFileIndex).name]);
-LIFSurf=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(SurfFileIndex).name]);
+    %Find the full embryo pixel size and load the image
+    D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*surf*.',FileMode(1:3)]);
 
-% Find His Channel
-HisChannel=find(~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'mcherry'))|...
-        ~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'his'))); 
-%If this channel is empty, we can check whether there is Bcd-GFP, for
-%example
-if isempty(HisChannel)
-    HisChannel=find(~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'bcd-gfp')));
-end    
-if isempty(HisChannel)
-    error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
-end
+    ImageTemp=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(end).name]);
+    MetaFullEmbryo= ImageTemp{:, 4};
+    PixelSizeFullEmbryo=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0) );
+    try
+        PixelSizeFullEmbryo=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0).value);
+    catch
+        PixelSizeFullEmbryo=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
+    end
 
-% Extract Mid and Surf image
-for i = 1:size(LIFMid{end,1},1)/
-MidImage(i) = LIFMid{end,1}{:,1};
-SurfImage(i) = LIFSurf{end,1}{:,1};
-%}
+    %Zoom factor
+    MovieZoom=PixelSizeFullEmbryo(1)/PixelSizeZoom(1);
+    SurfZoom=1;     %We'll call the zoom of the full embryo image 1
 
+
+% Read full embryo image (surf, mid)
 FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
 FullEmbryoSurf=imread([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'surf_max.tif']);
 
@@ -71,21 +82,19 @@ ImProps
 Areas=[ImProps.Area];
 %Plot histagram for area
 %edges = [0:5:100];
-edges = [0:10:500];
+edges = [0:5:AreaMax+20];
 figure(2)
 histogram(Areas,edges);
 xlabel('area (pixels)')
 ylabel('number of regions')
 
+
+%% Part 3: Quality Control
+
 %Note that most of our regions have one or two pixels.
 %We want to get rid of them by filtering for areas
 %that are larger than 20 and smaller than 100 pixels.
-%AreaThresh=20;
-%AreaMax = 100;
-AreaThresh=100;
-AreaMax = 450;
 
-%% Part 3: Calculate average fluorescence and position for each cell
 
 %We are going to extract the regions with an area larger
 %than AreaThresh. To do this, we'll copy those selected
@@ -113,6 +122,8 @@ imshow(NewImage);
 ImLabel2=bwlabel(NewImage); %relabel image using bwlabel
 %imshow(ImLabel2,[])
 
+
+%% Part 4: Calculate average fluorescence and position for each cell
 %Load surface image
 ImFluo = FullEmbryoSurf;
 %ImFluo = imread('./test2/surf.tif');
@@ -162,8 +173,6 @@ ylabel('number of cells');
 
 %% Part 4: Calculate DV position
 
-
-%Find AP position from mid image
 ImMid = FullEmbryo;
 
 %{
@@ -183,7 +192,6 @@ load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
 APx = [coordA(1),coordP(1)];
 APy = [coordA(2),coordP(2)];
 
-%ImMid = imread('./test2/mid.tif');
 imshow(ImMid,[0,2]);
 hold on
 plot(APx,APy,'o-r','LineWidth',4);
@@ -192,17 +200,25 @@ plot(APx,APy,'o-r','LineWidth',4);
 mAP=(APy(1)-APy(2))/(APx(1)-APx(2));
 bAP=APy(1)-mAP*APx(1);
 
+%Invert mAP to get tangent line that is perpendicular
 mAP_i = -1/mAP;
+
+APAngle = atan2((coordP(2)-coordA(2)),(coordP(1)-coordA(1)));
 
 for i=1:length(Areas2)
     b = y_ave(i)-mAP_i*x_ave(i);
     x_int = (b-bAP)/(mAP-mAP_i);
     y_int = mAP*x_int+bAP;
-    DVpos(i) = sqrt((x_ave(i)-x_int)^2+(y_ave(i)-y_int)^2);
-    if (x_ave(i)-x_int)<0
-        DVpos(i) = -DVpos(i);
-    end
-    plot([x_int,x_ave(i)],[y_int,y_ave(i)],'o-r','LineWidth',4);
+    
+    Angles = atan2((y_ave(i)-coordA(2)),...
+                    (x_ave(i)-coordA(1)));
+    %DVpos(i) = sqrt((x_ave(i)-x_int)^2+(y_ave(i)-y_int)^2);
+    Distances = sqrt((coordA(2)-y_ave(i)).^2+(coordA(1)-x_ave(i)).^2);
+    DVpos(i) = Distances.*sin(Angles-APAngle);
+    %if (x_ave(i)-x_int)<0
+    %    DVpos(i) = -DVpos(i);
+    %end
+    %plot([x_int,x_ave(i)],[y_int,y_ave(i)],'o-r','LineWidth',0.5);
     %pause(0.1);
 end
 
@@ -228,4 +244,9 @@ options = fitoptions(mygauss);
 %Plot fitted data
 figure(6);
 plot(temp_gauss,DVpos, CellFluoPerArea);
+
+%DV_shift = temp_gauss.b1*MovieZoom;
+DV_shift = temp_gauss.b1;
+
+end
 
