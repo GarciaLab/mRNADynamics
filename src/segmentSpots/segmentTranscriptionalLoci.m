@@ -82,7 +82,7 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
         if ~displayFigures && pool %&& ~Weka            
           parfor spotIndex = 1:n_spots
             centroid = round(centroids(spotIndex).Centroid);
-            temp_particles(spotIndex) = e(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
+            temp_particles(spotIndex) = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
               neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid,MLFlag, intScale);
           end
         else
