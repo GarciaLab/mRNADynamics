@@ -161,10 +161,10 @@ function log = segmentSpots(Prefix, Threshold, varargin)
  
     end
     
-    t = toc;
-    disp(['Elapsed time: ', num2str(t / 60), ' min'])
+    timeElapsed = toc;
+    disp(['Elapsed time: ', num2str(timeElapsed / 60), ' min'])
     try %#ok<TRYNC>
-        log = logSegmentSpots(DropboxFolder, Prefix, t, [], numFrames, Spots, falsePositives, Threshold, channelIndex);
+        log = logSegmentSpots(DropboxFolder, Prefix, timeElapsed, [], numFrames, Spots, falsePositives, Threshold, channelIndex);
         display(log);
     end
     
@@ -185,6 +185,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
 % 
 %   log = logSegmentSpots(DropboxFolder, Prefix, t, numFrames, Spots, falsePositives, Threshold);
 %   display(log);
+
   if ~keepProcessedData
     deleteProcessedDataFolder(ProcessedDataFolder, Prefix);
   else
