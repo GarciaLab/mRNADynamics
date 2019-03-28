@@ -1,5 +1,5 @@
 function [Overlay, overlayAxes, snippetFigAxes, rawDataAxes, gaussianAxes, traceFigAxes, zProfileFigAxes,...
-  zTraceAxes] = checkParticleTracking_drawGUI(UseHistoneOverlay)
+  zTraceAxes, HisOverlayFig,HisOverlayFigAxes] = checkParticleTracking_drawGUI(UseHistoneOverlay)
   Overlay = figure;
   
   if UseHistoneOverlay
