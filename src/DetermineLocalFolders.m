@@ -1,5 +1,6 @@
 function [SourcePath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath, configValues, movieDatabasePath] = DetermineLocalFolders(varargin)
 
+    optionalResults = '';
     CONFIG_CSV_PATH = 'ComputerFolders.csv';
 
     configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');
@@ -27,6 +28,10 @@ function [SourcePath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath, configV
 
     %% We need to look for the dropbox folder specified by the provided prefix
     Prefix = varargin{1};
+    
+    if length(varargin)>1
+        optionalResults = varargin{2};
+    end
 
     if isempty(regexp(Prefix, PREFIX_REGEX, 'once'))
     error('Prefix %s does not match "yyyy-mm-dd[/\\-]name". Please change it accordingly.', Prefix)
@@ -34,7 +39,11 @@ function [SourcePath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath, configV
     % but we enforce this in the error msg for simplicity
     end
 
-    dropboxFolderName = getDropboxFolderFromMovieDatabase(movieDatabasePath, Prefix, PREFIX_SEPARATOR);
+    if ~isempty(optionalResults)
+        dropboxFolderName = getDropboxFolderFromMovieDatabase(movieDatabasePath, Prefix, PREFIX_SEPARATOR, optionalResults);
+    else
+        dropboxFolderName = getDropboxFolderFromMovieDatabase(movieDatabasePath, Prefix, PREFIX_SEPARATOR);
+    end
     rootFolderName = getRootFolderFromMovieDatabase(movieDatabasePath, Prefix, PREFIX_SEPARATOR);
     % if user indicated a RootFolder in movie database, reassign paths
     % accordingly

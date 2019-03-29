@@ -138,7 +138,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 
   [Prefix, Sort, sortByLength, ForCompileAll, SpeedMode, ~, ...
   ncRange, projectionMode, plot3DGauss, intScale, NC, ...
-  startNC, endNC] = determineCheckParticleTrackingOptions(varargin);
+  startNC, endNC, optionalResults] = determineCheckParticleTrackingOptions(varargin);
 
   
   %% Information about about folders
@@ -146,7 +146,13 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
   % Get the folders
   [~, ~, DefaultDropboxFolder, ~, PreProcPath] = DetermineLocalFolders;
   [~, ~, DropboxFolder, ~, ~] = DetermineLocalFolders(varargin{1});
+  if ~isempty(optionalResults)
+      [~, ~, DropboxFolder, ~, ~] = DetermineLocalFolders(varargin{1}, optionalResults);
+  else
+      [~, ~, DropboxFolder, ~, ~] = DetermineLocalFolders(varargin{1});
+  end
   DataFolder = [DropboxFolder, filesep, varargin{1}];
+
 
   FilePrefix = [DataFolder(length(DropboxFolder) + 2:end), '_'];
 
