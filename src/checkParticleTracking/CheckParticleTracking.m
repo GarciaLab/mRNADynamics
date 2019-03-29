@@ -440,6 +440,7 @@ function add_spot_pushed(~, ~)
   end
 
   %Figure out channel-specific information
+  coatChannels = []
   if NChannels == 1
 
     if contains(Channel1{1}, 'MCP') || contains(Channel1{1}, 'PCP')
@@ -486,7 +487,7 @@ function add_spot_pushed(~, ~)
   SnippetEdge, traceFigAxes, PreviousChannel, PreviousParticle, lastParticle, HideApprovedFlag, lineFitted,...
   anaphaseInMins, ElapsedTime, plot3DGauss, anaphase, prophase, metaphase, prophaseInMins, metaphaseInMins, DefaultDropboxFolder,...
   correspondingNCInfo, Coefficients, zProfileFigAxes, zTraceAxes, frame_num, z_num, particle_num,...
-  CurrentZ, no_clicking, DataFolder, DropboxFolder,HisOverlayFig,HisOverlayFigAxes);
+  CurrentZ, no_clicking, DataFolder, DropboxFolder,HisOverlayFig,HisOverlayFigAxes, coatChannels);
   end
 
   save([DataFolder, filesep, 'FrameInfo.mat'], 'FrameInfo')
