@@ -1,5 +1,5 @@
 % Script to test feasibility of porting ML segmentation over to matlab
-clc; 
+% clc; 
 clear
 close all
 imtool close all;

@@ -81,7 +81,7 @@ try
     end
     
     set(ax, 'TickLength',[0 0],...
-        'FontSize', fontSize, 'FontName', 'Myriad Pro', 'FontWeight', 'bold');
+        'FontSize', fontSize, 'FontName', 'Lucida Sans', 'FontWeight', 'bold');
     ax.TickDir = 'out';
     ax.LineWidth = axesLineWidth;
     faceColor = [255,251,206]/255; %yellow axis face.

@@ -34,10 +34,8 @@
         [~, MaxIndexRaw] = max(RawIntensityVec);  
         % calculate convenience vectors
         z_grid = min(z_vec):max(z_vec);
-        z_raw_values = NaN(size(z_grid));            
-        z_raw_values(ismember(z_grid,z_vec)) = RawIntensityVec;
-        z_raw_values_zeroes = z_raw_values;
-        z_raw_values_zeroes(isnan(z_raw_values_zeroes)) = 0;
+        z_raw_values = zeros(size(z_grid));            
+        z_raw_values(ismember(z_grid,z_vec)) = RawIntensityVec;        
         if ~use_integral_center                
             CentralZ = z_vec(MaxIndexCentral); 
             ZStackIndex = MaxIndexCentral;
@@ -48,13 +46,13 @@
             else
                 % Convolve with gaussian filter to find "best" center
                 g = [-1 0 1];
-                gaussFilter = exp(-g .^ 2 / (2 ));
-                RawRefVec = conv(gaussFilter,z_raw_values_zeroes);
+                gaussFilter = exp(-g .^ 2 / (2));
+                RawRefVec = conv(gaussFilter,z_raw_values);
                 RawRefVec = RawRefVec(2:end-1);
                 RawRefVec(1) = NaN;
                 RawRefVec(end) = NaN;
                 RawRefVec = RawRefVec(ismember(z_grid,z_vec));
-                [~, MaxIndexIntegral] = max(RawRefVec);
+                [~, MaxIndexIntegral] = nanmax(RawRefVec);
                 CentralZ = z_vec(MaxIndexIntegral);               
                 ZStackIndex = MaxIndexIntegral;
             end
