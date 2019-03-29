@@ -114,8 +114,14 @@ function Projection = calculateProjection(ProjectionType, NSlices, HisSlices)
     Projection = median(HisSlices, 3);
   elseif strcmpi(ProjectionType, 'middleprojection')
     Projection = max(HisSlices(:, :, round(NSlices * .50):round(NSlices * .75)), [], 3);
-  else
+  elseif strcmpi(ProjectionType, 'maxprojection')
     Projection = max(HisSlices, [], 3);
+  else
+    ProjectionBounds = strsplit(ProjectionType, ':');
+    SortedHisSlices = sort(HisSlices, 3, 'descend');
+    max_custom = str2double(ProjectionBounds{2});
+    min_custom = str2double(ProjectionBounds{3});
+    Projection = mean(SortedHisSlices(:, :, max_custom:min_custom), 3);
   end
 
 end

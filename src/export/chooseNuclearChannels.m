@@ -14,21 +14,22 @@ function [Channel1, Channel2, Channel3, ProjectionType] = chooseNuclearChannels(
     LIFImages, NSeries, NSlices, NChannels, NFrames, ProjectionType, Channel1, Channel2, ...
     Channel3, ReferenceHist)
 
-% generates all the HisImages
 skip_factor = 5; % Only uses 1/skip_factor frames
+
+% initializes cell arrays for all the histone projections
 median_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
-max_proj = cell(NChannels, sum(NFrames));
-middle_proj = cell(NChannels, sum(NFrames));
-custom_proj = cell(NChannels, sum(NFrames));
-mean_proj = cell(NChannels, sum(NFrames));
+max_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
+middle_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
+custom_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
+mean_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
 
 
+% default custom projection parameters
+max_custom = 1; % highest histone channel slice used
+min_custom = 5; % lowest histone channel slice used
+
+% creates and stores histone slices
 idx = 1;
-
-% for custom projection
-max_custom = 1;
-min_custom = 5;
-
 for seriesIndex = 1:NSeries
     for framesIndex = 1:NFrames(seriesIndex)
         if mod(idx, skip_factor) == 1
@@ -115,6 +116,8 @@ save_button.ButtonPushedFcn = @saveOptions;
 updateHisImage();
 uiwait(fig);
 
+    % called whenever the frame, channels, or projectio is changed. Updates
+    % the histone image the UI shows
     function updateHisImage(~, ~)
         channels_to_use = channel_list.Value;
         inverted_channels = invert_list.Value;
@@ -158,7 +161,8 @@ uiwait(fig);
         end
         imshow(uint16(Projection), [], 'Parent', img);
     end
-
+    
+    % closes UI and returns chosen options
     function saveOptions(~, ~)
         if ~isempty(Channel1)
             if any(strcmp(channel_list.Value, 'Channel 1'))
@@ -189,12 +193,15 @@ uiwait(fig);
         end
         
         ProjectionType = proj_type_dropdown.Value;
+        if strcmpi(ProjectionType, 'customprojection')
+            ProjectionType = [ProjectionType ':' num2str(max_custom) ':' num2str(min_custom)];
+        end
         close(fig);
     end
 
     function updatedCustom(~, ~)
         
-        % updates hisslice range and makes sure choices are valid
+        % updates hisslice range and forces range to be valid
         try
             custom_value = strsplit(custom_edit_text.Value, ':');
             max_custom = max(min(round(str2double(custom_value(1))), NSlices(1)), 1);
