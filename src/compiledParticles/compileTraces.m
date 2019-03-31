@@ -41,7 +41,12 @@ for ChN=1:NChannels
             AnalyzeThisParticle=1;      %Flag to see if this particle should be analyzed.
             
             if HistoneChannel
-                if ~((sum(FrameFilter)>0)&...
+                %3/29/19 JL Bug workaround: if there are any nuclei with
+                %label 0 the following line breaks, due to zero indexing.
+                %For now, just skip.
+                if Particles{ChN}(i).Nucleus == 0
+                    AnalyzeThisParticle=0;
+                elseif ~((sum(FrameFilter)>0)&...
                         (~isempty(schnitzcells(Particles{ChN}(i).Nucleus).frames)))
                     AnalyzeThisParticle=0;
                 end

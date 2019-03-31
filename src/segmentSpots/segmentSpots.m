@@ -56,7 +56,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
   disp('Segmenting spots...')
   
   [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, ...
-    pool, autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel] = determineSegmentSpotsOptions(varargin);
+    pool, autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel, optionalResults] = determineSegmentSpotsOptions(varargin);
       
   argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
   try 
@@ -91,7 +91,12 @@ function log = segmentSpots(Prefix, Threshold, varargin)
 
   [~, ~, ~, ~, ~, ~, ~, ExperimentType, Channel1, Channel2, ~] = readMovieDatabase(Prefix);
 
-  [~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix);
+  if ~isempty(optionalResults)
+      [~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix, optionalResults);
+  else
+      
+       [~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix);
+  end
 
   load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
 
@@ -161,10 +166,10 @@ function log = segmentSpots(Prefix, Threshold, varargin)
  
     end
     
-    t = toc;
-    disp(['Elapsed time: ', num2str(t / 60), ' min'])
+    timeElapsed = toc;
+    disp(['Elapsed time: ', num2str(timeElapsed / 60), ' min'])
     try %#ok<TRYNC>
-        log = logSegmentSpots(DropboxFolder, Prefix, t, [], numFrames, Spots, falsePositives, Threshold, channelIndex);
+        log = logSegmentSpots(DropboxFolder, Prefix, timeElapsed, [], numFrames, Spots, falsePositives, Threshold, channelIndex);
         display(log);
     end
     
@@ -185,6 +190,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
 % 
 %   log = logSegmentSpots(DropboxFolder, Prefix, t, numFrames, Spots, falsePositives, Threshold);
 %   display(log);
+
   if ~keepProcessedData
     deleteProcessedDataFolder(ProcessedDataFolder, Prefix);
   else

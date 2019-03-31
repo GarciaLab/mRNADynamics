@@ -1,9 +1,15 @@
-function [ nuclei, varargout ] = trackWholeInterphase(Prefix, names, startingFrame, previousMitosisInd, nextMitosisInd, nucleusDiameter, embryoMask, xy, mapping, nuclei, shifts, varargin )
+function [ nuclei, varargout ] = trackWholeInterphase(Prefix, names, startingFrame, ...
+    previousMitosisInd, nextMitosisInd, nucleusDiameter, embryoMask, xy, ...
+    mapping, nuclei, shifts, varargin )
 %TRACKWHOLEINTERPHASE Summary of this function goes here
 %   Detailed explanation goes here
 
 if numel(varargin) > 0
     h_waitbar_tracking = varargin{1};
+    if numel(varargin) > 1
+        ExpandedSpaceTolerance = varargin{2};
+        NoBulkShift = varargin{3};
+    end
 end
 
 startingFrame = previousMitosisInd;
@@ -77,9 +83,16 @@ for j = 1:(nextMitosisInd-startingFrame)%[]%1:(nextMitosisInd-startingFrame)
     [currentFrameNumber,currentFrameInd,newFrameNumber,newFrameInd];
     
     if skip_segmentation
-        [mapping{currentFrameInd},~,~,ind, shifts{currentFrameNumber}] = frame2frameCorrespondence(Prefix, names,currentFrameNumber,newFrameNumber,XY{currentFrameInd},nucleusDiameter,1,XY{newFrameInd},mapping{currentFrameNumber},shifts{currentFrameNumber});%, embryoMask, targetNumber, [1 1 1]);
+        [mapping{currentFrameInd},~,~,ind, shifts{currentFrameNumber}] =...
+            frame2frameCorrespondence(Prefix, names,currentFrameNumber,...
+            newFrameNumber,XY{currentFrameInd},nucleusDiameter,1,XY{newFrameInd},...
+            mapping{currentFrameNumber},shifts{currentFrameNumber}, ...
+            ExpandedSpaceTolerance, NoBulkShift);%, embryoMask, targetNumber, [1 1 1]);
     else
-        [mapping{currentFrameInd},XY{newFrameInd},dummy,ind, shifts{currentFrameNumber}] = frame2frameCorrespondence(Prefix,names,currentFrameNumber,newFrameNumber,XY{currentFrameInd},nucleusDiameter,1,[],shifts{currentFrameNumber});%, embryoMask, [],[1 1 0]);
+        [mapping{currentFrameInd},XY{newFrameInd},dummy,ind, shifts{currentFrameNumber}]...
+            = frame2frameCorrespondence(Prefix,names,currentFrameNumber,...
+            newFrameNumber,XY{currentFrameInd},nucleusDiameter,1,[],...
+            shifts{currentFrameNumber}, ExpandedSpaceTolerance, NoBulkShift);%, embryoMask, [],[1 1 0]);
     end
     
     % Put the output in the nuclei structure.

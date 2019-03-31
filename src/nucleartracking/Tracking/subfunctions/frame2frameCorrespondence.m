@@ -1,4 +1,7 @@
-function [ mapping, nextNucleiXY, score, inverse_mapping, varargout ] = frame2frameCorrespondence(Prefix, names, frameNumber1, frameNumber2, nucleiFrame1, nucleusDiameter, precision, nucleiFrame2, manualMapping, shifts )
+function [ mapping, nextNucleiXY, score, inverse_mapping, varargout ] =...
+    frame2frameCorrespondence(Prefix, names, frameNumber1, frameNumber2, ...
+    nucleiFrame1, nucleusDiameter, precision, nucleiFrame2, manualMapping, ...
+    shifts, ExpandedSpaceTolerance, NoBulkShift )
 %FRAME2FRAMECORRESPONDENCE Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -6,23 +9,30 @@ function [ mapping, nextNucleiXY, score, inverse_mapping, varargout ] = frame2fr
 space_resolution = getDefaultParameters(Prefix,'space resolution');
 time_resolution = getDefaultParameters(Prefix,'time resolution');
 maxShiftCorrection = getDefaultParameters(Prefix,'max Shift Correction', 'trackToTheNextFrame')*nucleusDiameter/space_resolution;
-maxNucleusStep = getDefaultParameters(Prefix,'max Interphase Displacement')*time_resolution/60*nucleusDiameter/space_resolution;
+maxNucleusStep = getDefaultParameters(Prefix,'max Interphase Displacement')...
+    *time_resolution/60*nucleusDiameter/space_resolution * ExpandedSpaceTolerance;
 mapping = zeros(size(nucleiFrame1,1),1);
-numbNucleiToConsider = 7;
 
 frame1 = double(imread(names{frameNumber1}));
 frame2 = double(imread(names{frameNumber2}));
 
 %% 1. Find overall movements between the two frames
-if ~exist('shifts','var') || isempty(shifts)
-    [x,y,vx,vy] = interpolatedShift(Prefix, frame1, frame2, maxShiftCorrection, [], [], precision);
+if NoBulkShift
+    vx = zeros(size(frame1));
+    vy = zeros(size(frame2));
     varargout{1}(:,:,1) = vx;
     varargout{1}(:,:,2) = vy;
 else
-    vx = shifts(:,:,1);
-    vy = shifts(:,:,2);
-    
-    varargout{1} = shifts;
+    if ~exist('shifts','var') || isempty(shifts)
+        [x,y,vx,vy] = interpolatedShift(Prefix, frame1, frame2, maxShiftCorrection, [], [], precision);
+        varargout{1}(:,:,1) = vx;
+        varargout{1}(:,:,2) = vy;
+    else
+        vx = shifts(:,:,1);
+        vy = shifts(:,:,2);
+
+        varargout{1} = shifts;
+    end
 end
 
 %Added by HG for troubleshooting

@@ -138,7 +138,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 
   [Prefix, Sort, sortByLength, ForCompileAll, SpeedMode, ~, ...
   ncRange, projectionMode, plot3DGauss, intScale, NC, ...
-  startNC, endNC] = determineCheckParticleTrackingOptions(varargin);
+  startNC, endNC, optionalResults] = determineCheckParticleTrackingOptions(varargin);
 
   
   %% Information about about folders
@@ -146,7 +146,13 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
   % Get the folders
   [~, ~, DefaultDropboxFolder, ~, PreProcPath] = DetermineLocalFolders;
   [~, ~, DropboxFolder, ~, ~] = DetermineLocalFolders(varargin{1});
+  if ~isempty(optionalResults)
+      [~, ~, DropboxFolder, ~, ~] = DetermineLocalFolders(varargin{1}, optionalResults);
+  else
+      [~, ~, DropboxFolder, ~, ~] = DetermineLocalFolders(varargin{1});
+  end
   DataFolder = [DropboxFolder, filesep, varargin{1}];
+
 
   FilePrefix = [DataFolder(length(DropboxFolder) + 2:end), '_'];
 
@@ -281,7 +287,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 
 %Define user interface
 [Overlay, overlayAxes, snippetFigAxes, rawDataAxes, gaussianAxes, traceFigAxes, zProfileFigAxes,...
-  zTraceAxes] = checkParticleTracking_drawGUI(UseHistoneOverlay);
+  zTraceAxes,HisOverlayFig,HisOverlayFigAxes] = checkParticleTracking_drawGUI(UseHistoneOverlay);
 
 [controls, frame_num, z_num, particle_num, ...
   add_spot, smart_add_spot, delete_spot, ...
@@ -434,6 +440,7 @@ function add_spot_pushed(~, ~)
   end
 
   %Figure out channel-specific information
+  coatChannels = []
   if NChannels == 1
 
     if contains(Channel1{1}, 'MCP') || contains(Channel1{1}, 'PCP')
@@ -480,7 +487,7 @@ function add_spot_pushed(~, ~)
   SnippetEdge, traceFigAxes, PreviousChannel, PreviousParticle, lastParticle, HideApprovedFlag, lineFitted,...
   anaphaseInMins, ElapsedTime, plot3DGauss, anaphase, prophase, metaphase, prophaseInMins, metaphaseInMins, DefaultDropboxFolder,...
   correspondingNCInfo, Coefficients, zProfileFigAxes, zTraceAxes, frame_num, z_num, particle_num,...
-  CurrentZ, no_clicking, DataFolder, DropboxFolder);
+  CurrentZ, no_clicking, DataFolder, DropboxFolder,HisOverlayFig,HisOverlayFigAxes, coatChannels);
   end
 
   save([DataFolder, filesep, 'FrameInfo.mat'], 'FrameInfo')
