@@ -8,41 +8,26 @@ warning('off','MATLAB:singularMatrix')
 snippet = double(snippet);
 [mesh_y,mesh_x] = meshgrid(1:size(snippet,2), 1:size(snippet,1));
 
-% Single gaussian function
-singleGaussian = @(params) (params(1).*...
-    exp(-(...
-    (((cos(params(7)))^2 / (2*params(3)^2) ) + ((sin(params(7)))^2 / 2*params(5)^2))  .* (mesh_x-params(2)).^2 ...
-    - 2*((-sin(2*params(7)) / (4*params(3)^2) ) + (sin(2*params(7)) / 4*params(5)^2)) .* (mesh_x-params(2)).*(mesh_y-params(4))...
-    + (((sin(params(7)))^2 / (2*params(3)^2) ) + ((cos(params(7)))^2 / 2*params(5)^2)).* (mesh_y-params(4)).^2 ...
-        )))...
-    + params(6) - double(snippet);
+%fits: [amplitude, x position, x width, y position, y width, offset, angle] 
+
+singleGaussian = gaussianForSpot(snippet);
 
 %Define some more initial parameters for fitting
-neighborhoodSize = 2*floor(neighborhoodSize/2) + 1; %notice that this is forced to be odd
-    
-hLocalMax = vision.LocalMaximaFinder;
-hLocalMax.NeighborhoodSize = [neighborhoodSize, neighborhoodSize];
-hLocalMax.Threshold = threshold;
-centers = double(step(hLocalMax, snippet));    
-if ~isempty(centers)
-    initial_parameters = [max(max(snippet)), centers(1,2), widthGuess, centers(1,1), ...
+
+    initial_parameters = [max(snippet(:)), round(length(snippet)/2), widthGuess, round(length(snippet)/2), ...
         widthGuess,offsetGuess, 0];
-else
-    initial_parameters = [max(max(snippet)), round(length(snippet)/2), widthGuess, round(length(snippet)/2), ...
-        widthGuess,offsetGuess, 0];
-end
 
 %Perform fitting
 lsqOptions=optimset('Display','none',... %Inherited these options from Mikhail Tikhonov's FISH analysis
 'maxfunevals',10000,...
 'maxiter',10000); 
 
-ub = inf(1, 7);
-ub(2) = length(snippet);
-ub(4) = length(snippet);
+lb_offset = 1/10; %this is empirical. corresponds to a weak background of 1 pixel per ten having a value of 1. 
+lb = [max(snippet(:))*.5, 0, 1, 0, 1,lb_offset, 0];
+ub = [max(snippet(:))*2, size(snippet, 1), size(snippet, 1), size(snippet, 2), size(snippet, 2), max(snippet(:)), inf];
 
 [single_fit, res1, residual, exitflag, output, lambda, jacobian] = lsqnonlin(singleGaussian, ...
-    initial_parameters,zeros(1,7),ub, lsqOptions);
+    initial_parameters,lb,ub, lsqOptions);
 
 confidence_intervals = nlparci(single_fit,residual,'jacobian',jacobian);
 errors = zeros(1, length(single_fit));

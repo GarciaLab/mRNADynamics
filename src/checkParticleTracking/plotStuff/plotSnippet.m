@@ -66,18 +66,6 @@ function CurrentSnippet = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes,
         imshow(zeros(SnippetEdge), 'Parent', snippetFigAxes)
     end
 
-    [mesh_y,mesh_x] = meshgrid(1:size(CurrentSnippet,2), 1:size(CurrentSnippet,1));
-
-    % Single gaussian function: In future this should be a standalone
-    % function file to ensure consistency with function used for fitting
-    singleGaussian = @(params) (params(1).*...
-        exp(-(...
-        (((cos(params(7)))^2 / (2*params(3)^2) ) + ((sin(params(7)))^2 / 2*params(5)^2))  .* (mesh_x-params(2)).^2 ...
-        - 2*((-sin(2*params(7)) / (4*params(3)^2) ) + (sin(2*params(7)) / 4*params(5)^2)) .* (mesh_x-params(2)).*(mesh_y-params(4))...
-        + (((sin(params(7)))^2 / (2*params(3)^2) ) + ((cos(params(7)))^2 / 2*params(5)^2)).* (mesh_y-params(4)).^2 ...
-        )))...
-        + params(6) - CurrentSnippet;
-
     if ~isempty(xTrace) && ~isempty(CurrentZIndex)
         if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex),'gaussParams')
             gaussParams = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussParams;
@@ -85,7 +73,8 @@ function CurrentSnippet = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes,
             if ~isempty(gaussParams)
                 gaussParams= gaussParams{CurrentZIndex};
                 try
-                    gauss = singleGaussian(gaussParams);
+                    g = gaussianForSpot(CurrentSnippet);
+                    gauss = g(gaussParams);
                 catch
                     %not sure in what situation this fails. -AR
                     %9/15/2018
@@ -115,8 +104,8 @@ function CurrentSnippet = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes,
         %calibrate the axes
         rawDataAxes.Children.XData = (rawDataAxes.Children.XData - max(rawDataAxes.Children.XData)/2)*xyRes;
         rawDataAxes.Children.YData = (rawDataAxes.Children.YData -max(rawDataAxes.Children.YData)/2)*xyRes;
-        gaussianAxes.Children.XData = (rawDataAxes.Children.XData -max(gaussianAxes.Children.XData)/2)*xyRes;
-        gaussianAxes.Children.YData = (rawDataAxes.Children.YData -max(gaussianAxes.Children.YData)/2)*xyRes;
+        gaussianAxes.Children.XData = (gaussianAxes.Children.XData -max(gaussianAxes.Children.XData)/2)*xyRes;
+        gaussianAxes.Children.YData = (gaussianAxes.Children.YData -max(gaussianAxes.Children.YData)/2)*xyRes;
         xlabel(rawDataAxes, '\mum'); ylabel(rawDataAxes, '\mum');
         xlabel(gaussianAxes, '\mum'); ylabel(gaussianAxes, '\mum');
     else
