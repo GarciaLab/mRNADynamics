@@ -147,6 +147,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
                     fitSingleGaussian(snippet, neighborhood_Size, maxThreshold, ...
                     steps(i), offsetGuess, show_status);
                 fitstruct(i).fits = fits;
+                %fits: [amplitude, x position, x width, y position, y width, offset, angle] 
                 fitstruct(i).relative_errors = relative_errors;
                 fitstruct(i).residual = residual;
                 fitstruct(i).confidence_intervals = confidence_intervals;
@@ -167,6 +168,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             
             sigma_x = fits(3);
             sigma_y = fits(5);
+            offset = fits(6);
 
             gaussianArea = pi*sigma_x*sigma_y; %in pixels. this is one width away from peak
             integration_radius = 6*intScale; %integrate 109 pixels around the spot or more optionally
@@ -214,12 +216,12 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             
             sigma_x2 = 0;
             sigma_y2 = 0;
-            sister_chromatid_distance = fits(end);
-            fixedAreaIntensity = sum(sum(snippet_mask)) - fits(end-1)*maskArea; %corrected AR 7/13/2018
+            sister_chromatid_distance = NaN; %leaving this here for now but should be removed. AR 4/3/2019
+            fixedAreaIntensity = sum(sum(snippet_mask)) - offset*maskArea; %corrected AR 7/13/2018
             fixedAreaIntensityCyl3 = NaN;
             if doCyl
                 fixedAreaIntensityCyl3 =  sum(sum(snippet_mask)) + sum(sum(snippet_mask_above))...
-                    + sum(sum(snippet_mask_below)) - 3*fits(end-1)*maskArea;
+                    + sum(sum(snippet_mask_below)) - 3*offset*maskArea;
             end
             
             if  .1<sigma_x && sigma_x<(600/pixelSize) && .1<sigma_y && sigma_y<(600/pixelSize)...
@@ -240,7 +242,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
                         rethrow(exceptionMaxDOG);
                     end
                 end
-                temp_particles = {{fixedAreaIntensity, spot_x, spot_y, fits(end-1), snippet, ...
+                temp_particles = {{fixedAreaIntensity, spot_x, spot_y, offset, snippet, ...
                     gaussianArea, sigma_x, sigma_y, centroid_y, centroid_x, gaussianIntensity,intensity,...
                     max_dog, snippet_mask, sigma_x2, sigma_y2, sister_chromatid_distance, relative_errors, confidence_intervals, gaussian, mesh,fits, maskArea, fixedAreaIntensityCyl3}};
             else                

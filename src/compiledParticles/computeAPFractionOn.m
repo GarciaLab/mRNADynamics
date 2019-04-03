@@ -78,6 +78,10 @@ function [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
 
     EdgeWidth=2.12/pixelSize; %in microns. 2.12 is simply the number that results in 10 pixel width
     %when using a spatial resolution of 212nm. 
+    
+    continueanyway = 0; %3/29/19 JL: Workaround to skip schnitzcell rescuing error.
+    %Skips the calculation of AP fraction ON if the schnitzcell can't be
+    %rescued.
 
     for ChN=1:NChannels
 
@@ -93,7 +97,9 @@ function [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
             clear ParticleNuclei
             clear ParticleFrames
             for i=1:length(Particles{ChN})
-                if ~isempty(Particles{ChN}(i).Nucleus)
+                %3/29/19 JL: Also make sure to check that the nucleus label
+                %isn't 0.
+                if ~isempty(Particles{ChN}(i).Nucleus) && Particles{ChN}(i).Nucleus ~=0
                     ParticleNuclei{i}=...
                         schnitzcells(Particles{ChN}(i).Nucleus).cellno(ismember(schnitzcells(Particles{ChN}(i).Nucleus).frames,...
                         Particles{ChN}(i).Frame));
@@ -506,7 +512,15 @@ function [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
                                     end
 
                                 else
-                                    error('Cannnot rescue schnitz')
+                                    if continueanyway == 0
+                                        continueanywaycheck = input('Cannot rescue schnitz. Enter y to continue anyway.','s');
+                                        if strcmp('y',continueanywaycheck)
+                                            continueanyway = 1;
+                                        else
+                                            error('Cannnot rescue schnitz')
+                                        end
+                                    else
+                                    end
                                 end
                             end
 

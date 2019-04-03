@@ -30,11 +30,16 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
 
   [~, ~, DefaultDropboxFolder, ~, ~] = DetermineLocalFolders;
 
-  [Prefix, app, retrack] = parseTrackmRNADynamicsArguments(DefaultDropboxFolder, varargin{:});
+  [Prefix, app, retrack, optionalResults] = parseTrackmRNADynamicsArguments(DefaultDropboxFolder, varargin{:});
 
   % Get the actual folder now that we have the Prefix
-  [~, ~, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix);
-
+  
+  if isempty(optionalResults)
+    [~, ~, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix);
+  else
+    [~, ~, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix, optionalResults);
+  end
+  
   % What type of experiment are we dealing with? Get this out of MovieDatabase
   [~, ExperimentType, ~, ~, ~, ~, Channel1, Channel2, ~, ~, ~, ~, ~, ...
       nc9, nc10, nc11, nc12, nc13, nc14, ~] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);

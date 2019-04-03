@@ -1,6 +1,9 @@
 %Check if we have the histone channel and we have done the nuclear segmentation.
 function [Ellipses, UseHistoneOverlay, UseSchnitz] = checkHistoneAndNuclearSegmentation(PreProcPath, FilePrefix, NDigits, DropboxFolder)
-
+  
+  Ellipses = [];
+  UseHistoneOverlay = 0;
+  
   if exist([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
             FilePrefix(1:end - 1), '-His_', iIndex(1, NDigits), '.tif'], 'file') || ...
     exist([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
@@ -15,14 +18,9 @@ function [Ellipses, UseHistoneOverlay, UseSchnitz] = checkHistoneAndNuclearSegme
       UseHistoneOverlay = 0;
       Ellipses = [];
     end
-  else
-    UseHistoneOverlay = 0;
   end
 
   %Check that we have the nuclear tracking done using schnitzcells
-  if exist([DropboxFolder, filesep, FilePrefix(1:end - 1), filesep, FilePrefix(1:end - 1), '_lin.mat'], 'file')
-    UseSchnitz = 1;
-  else
-    UseSchnitz = 0;
-  end
+  UseSchnitz = exist([DropboxFolder, filesep, FilePrefix(1:end - 1), filesep, FilePrefix(1:end - 1), '_lin.mat'], 'file');
+  
 end

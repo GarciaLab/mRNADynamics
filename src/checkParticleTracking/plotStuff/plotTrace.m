@@ -147,7 +147,7 @@ for i = 1:length(metaphase)
         'LineWidth',2,'Color','yellow');
 end
 
-% labeling plott
+% labeling plot
 ylabel(traceFigAxes,'integrated intensity (a.u.)')
 hold(traceFigAxes, 'off')
 

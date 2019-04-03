@@ -68,8 +68,12 @@ if ~isempty(NewSpotsX)
     MinIndexSchnitz=zeros(size(MinIndex));
     for i=1:length(MinIndex)
         for j=1:length(schnitzcells)
-            if schnitzcells(j).cellno(schnitzcells(j).frames==(CurrentFrame))==MinIndex(i)
-                MinIndexSchnitz(i)=j;
+            try
+                %AR 3/31/2019- sometimes this errors and I couldn't discover
+                %why. 
+                if schnitzcells(j).cellno(schnitzcells(j).frames==(CurrentFrame))==MinIndex(i)
+                    MinIndexSchnitz(i)=j;
+                end
             end
         end
         if MinIndex(i)==inf

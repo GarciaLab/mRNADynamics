@@ -1,6 +1,6 @@
 function [Prefix, Sort, sortByLength, ForCompileAll, SpeedMode, SisterMode, ...
     ncRange, projectionMode, plot3DGauss, intScale, NC, ...
-    startNC, endNC] = determineCheckParticleTrackingOptions(varargin)
+    startNC, endNC, optionalResults] = determineCheckParticleTrackingOptions(varargin)
 %DETERMINEOPTIONS Summary of this function goes here
 %   Detailed explanation goes here
  
@@ -22,6 +22,9 @@ ncRange = 0;
 projectionMode = 'None (Default)';
 %plot 3D gaussian fitting intensities in tracefig
 plot3DGauss = 0;
+%optional results if you have multiple prefixes with different results
+%folders
+optionalResults = '';
 
 intScale = 1;
 
@@ -30,7 +33,7 @@ NC = -1;
 startNC = -1;
 endNC = -1;
 
-if length(varargin) == 0
+if isempty(varargin)
     error('Please specify the Prefix of the data set to analyze')
 end
 
@@ -51,10 +54,12 @@ if length(varargin)>1
             SisterMode = 1;
         elseif strcmpi(varargin{i}, 'intScale')
             intScale = varargin{i+1};
+        elseif strcmpi(varargin{i}, 'optionalResults')
+            optionalResults = varargin{i+1};
         elseif strcmpi(varargin{i},'nc') % checking for the desired nc range
             ncRange = 1;
             NC = varargin{i+1};
-            % startNC and endNC will be the varibale names that have the start of the nc(s) of interest
+            % startNC and endNC will be the variable names that have the start of the nc(s) of interest
             if length((varargin{i+1})) == 2
                 startNC = ['nc' num2str(varargin{i+1}(1))];
                 endNC = ['nc' num2str(varargin{i+1}(2) +1)];% Not including the next nc
