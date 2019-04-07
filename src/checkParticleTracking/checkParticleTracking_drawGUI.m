@@ -5,9 +5,6 @@ function [Overlay, overlayAxes, snippetFigAxes, rawDataAxes, gaussianAxes, trace
   if UseHistoneOverlay
     HisOverlayFig = figure;
     HisOverlayFigAxes = axes(HisOverlayFig);
-  else
-    HisOverlayFig = [];
-    HisOverlayFigAxes = [];
   end
 
 
