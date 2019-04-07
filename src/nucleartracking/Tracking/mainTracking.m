@@ -85,8 +85,16 @@ provided_space_resolution = NaN;
 provided_LoGratio = NaN;
 segmentationOnly = false;
 
+% default values
+ExpandedSpaceTolerance = 1;
+NoBulkShift = 0;
+
 for j = 1:2:numel(varargin)
     switch lower(varargin{j})
+        case {'expandedspacetolerance'}
+            ExpandedSpaceTolerance = varargin{j + 1};
+        case {'nobulkshift'}
+            NoBulkShift = varargin{j + 1};
         case {'indmitosis'}
             indMitosis = varargin{j+1};
         case {'centers'}
@@ -452,7 +460,10 @@ for j = 1:numberOfPhases
         end
         %This trackingStatingPoint(1) looks like it might be a magic number
         %and does not appear to be used
-        [nuclei, ~, interpolatedShifts] = trackWholeInterphase(Prefix,names,trackingStartingPoints(1),first,last,diameters(j), embryoMask, xy, mapping,nuclei, interpolatedShifts, h_waitbar_tracking);
+        [nuclei, ~, interpolatedShifts] = trackWholeInterphase(Prefix,names,...
+            trackingStartingPoints(1),first,last,diameters(j), embryoMask, ...
+            xy, mapping,nuclei, interpolatedShifts, h_waitbar_tracking, ...
+            ExpandedSpaceTolerance, NoBulkShift);
         
         fprintf('Done!\n')
         

@@ -1,6 +1,7 @@
-function [Prefix, app, retrack] = parseTrackmRNADynamicsArguments(DefaultDropboxFolder, varargin)
+function [Prefix, app, retrack, optionalResults] = parseTrackmRNADynamicsArguments(DefaultDropboxFolder, varargin)
   app = {};
   retrack = 1;
+  optionalResults = '';
   
   %Look at the input parameter and use defaults if missing
   if isempty(varargin)
@@ -17,7 +18,10 @@ function [Prefix, app, retrack] = parseTrackmRNADynamicsArguments(DefaultDropbox
         app{2} = varargin{i + 2};
       elseif strcmpi(varargin{i}, 'noRetracking')
           retrack = 0;
+      elseif strcmpi(varargin{i}, 'optionalResults')
+          optionalResults = varargin{i+1};
       end
+      
 
     end
 

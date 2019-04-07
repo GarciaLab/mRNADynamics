@@ -10,6 +10,10 @@ function TrackNuclei(Prefix,varargin)
 %
 % OPTIONS
 % 'StitchSchnitz' : Run the schnitzcells fixing code by Simon
+% 'ExpandedSpaceTolerance': A multiplier for how how far away two nuclei of
+% adjacent frames can be in order for them to be the same nuclei
+% 'NoBulkShift': Runs the nuclear tracking without accounting for the bulk
+% shift between frames (greatly speeds up runtime)
 %
 % OUTPUT
 % '*_lin.mat' : Nuclei with lineages
@@ -23,15 +27,8 @@ function TrackNuclei(Prefix,varargin)
 %
 %
 
-SkipStitchSchnitz=1;
+[SkipStitchSchnitz, ExpandedSpaceTolerance, NoBulkShift] = DetermineTrackNucleiOptions(varargin);
 
-for i = 1:length(varargin)
-    if strcmpi(varargin{i},'stitchschnitz')
-        SkipStitchSchnitz=0;
-    else
-        error('Input parameter not recognized')
-    end
-end
 
 
 % NL: Changed from DetermineAllLocalFolders to DetermineLocalFodlers to enable
@@ -49,7 +46,7 @@ DefaultDropboxFolder = getConfigValue(configValues, 'DropboxFolder');
 %Load the information about the nc from moviedatabase file
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
 Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 %If Channel2 was left empty, it would contain a NaN, which will cause
 %problems below. In that case, replace it by an empty string.
@@ -167,7 +164,8 @@ if ~retrack
     
     [nuclei, centers, ~, dataStructure] = ...
         mainTracking(Prefix, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
-        settingArguments{:});
+        settingArguments{:}, 'ExpandedSpaceTolerance', ExpandedSpaceTolerance, ...
+        'NoBulkShift', NoBulkShift);
     % names is a cell array containing the names of all frames in the movie in order.
     % indMitosis is an nx2 array containing the first and last frame of mitosis in every row.
     % embryoMask is the possible mask of the embryo. If no embryo edge is visible,
@@ -222,11 +220,14 @@ else
         
         [nuclei, centers, ~, dataStructure] = mainTracking(...
             Prefix, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
-            'centers',centers,'dataStructure',dataStructure, settingArguments{:});
+            'centers',centers,'dataStructure',dataStructure, settingArguments{:}, ...
+            'ExpandedSpaceTolerance', ExpandedSpaceTolerance, ...
+        'NoBulkShift', NoBulkShift);
     else
         [nuclei, centers, ~, dataStructure] = mainTracking(...
             Prefix, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
-            'centers',centers, settingArguments{:});
+            'centers',centers, settingArguments{:}, 'ExpandedSpaceTolerance', ...
+            ExpandedSpaceTolerance, 'NoBulkShift', NoBulkShift);
     end
 
     %Put circles on the nuclei

@@ -1,6 +1,6 @@
 function [Prefix, ForceAP, SkipTraces, SkipFluctuations, SkipFits, SkipMovie, ...
     SkipAll, ApproveAll, MinParticles, minTime, ROI, intArea, noHist, ...
-    ROI1, ROI2, slimVersion, manualSingleFits] = determineCompileParticlesOptions(varargin)
+    ROI1, ROI2, slimVersion, manualSingleFits, optionalResults, yToManualAlignmentPrompt] = determineCompileParticlesOptions(varargin)
 %DETERMINECOMPILEPARTICLESOPTIONS Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -24,6 +24,8 @@ slimVersion = 0;
 ROI1 = -1; % no ROI
 ROI2 = -1; % no ROI
 manualSingleFits = 0; % no manually fitted single fits
+optionalResults = ''; %different dropbox folder
+yToManualAlignmentPrompt = 0; %this is an option for addparticleposition
 
 
 % Checking Varargin 
@@ -84,6 +86,10 @@ else
             slimVersion = 1;
         elseif strcmpi(varargin{i}, 'manualSingleFits')
             manualSingleFits = 1;
+        elseif strcmpi(varargin{i}, 'optionalResults')
+            optionalResults = varargin{i+1};
+        elseif strcmpi(varargin{i}, 'yToManualAlignmentPrompt')
+            yToManualAlignmentPrompt = 1;
         end
     end
     

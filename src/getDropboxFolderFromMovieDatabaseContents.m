@@ -1,4 +1,11 @@
-function [dropboxFolderName, rowIndex] = getDropboxFolderFromMovieDatabaseContents(movieDatabase, prefix, PREFIX_SEPARATOR)
+function [dropboxFolderName, rowIndex] = getDropboxFolderFromMovieDatabaseContents(movieDatabase, prefix, PREFIX_SEPARATOR, varargin)
+  
+  if ~isempty(varargin)
+     optionalResults = varargin{1};
+  else
+      optionalResults = '';
+  end
+
   movieDatabaseHeaderRow = movieDatabase(1, :);
 
   dataFolderColumnIndex = findColumnIndex(movieDatabaseHeaderRow, 'DataFolder');
@@ -27,5 +34,29 @@ function [dropboxFolderName, rowIndex] = getDropboxFolderFromMovieDatabaseConten
     error(['Data set "', prefix, '" not found in MovieDatabase.csv'])
   end
 
-  dropboxFolderName = dropboxFolderNameCell{1};
+  if length(dropboxFolderNameCell) > 1
+      if ~isempty(optionalResults)
+          dropboxFolderName = optionalResults;
+          rowIndex = rowIndex(2);
+      else
+          dropboxFolderName = dropboxFolderNameCell{1};
+          rowIndex = rowIndex(1);
+      end 
+  else
+     dropboxFolderName = dropboxFolderNameCell{1};
+     rowIndex = rowIndex(1);
+  end
+     
+%      f = figure();
+%      c = uicontrol(f,'Style','popupmenu');
+%      c.Position = [20 75 60 20];
+%      c.String = {'dummy'};
+%      c.Callback = @selection;
+%      
+%   end
+%   
+%     function selection(src,event)
+%         val = c.Value;
+%         disp(['Selection: ' dropboxFolderNameCell{val}]);
+%     end
 end

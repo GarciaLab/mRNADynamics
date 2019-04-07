@@ -16,10 +16,12 @@ function Projection = generateNuclearChannel(numberOfFrames, LIFImages, framesIn
   InvertedChannels = [contains(Channel1, 'inverted', 'IgnoreCase', true), ...
                         contains(Channel2, 'inverted', 'IgnoreCase', true), ...
                         contains(Channel3, 'inverted', 'IgnoreCase', true)];
+  AllChannels = [Channel1,Channel2,Channel3]; %Cell array of channel labels
   
   if nNuclearChannels ~= 0
 
     for ChannelIndex = 1:nNuclearChannels
+      
 
       % Find the corresponding channel
       AllNuclearChannels = find(~ NuclearChannels == 0, nNuclearChannels);
@@ -40,6 +42,47 @@ function Projection = generateNuclearChannel(numberOfFrames, LIFImages, framesIn
       % might need some more optimization later-YJK)
       ProjectionTemp(:, :, ChannelIndex) = histeq(mat2gray(ProjectionTemp(:, :, ChannelIndex)), ReferenceHist);
       ProjectionTemp(:, :, ChannelIndex) = ProjectionTemp(:, :, ChannelIndex) * 10000;
+      
+      % Check if we are excluding this frame from this nuclear channel
+      excludeFrames = 0;
+
+      if and(contains(AllChannels{nuclearChannel},'['),contains(AllChannels{nuclearChannel},']'))
+          excludeFrames = 1;
+      end
+
+      if excludeFrames
+          framesToExcludeAll = extractBetween(AllChannels{nuclearChannel},'[',']');
+          framesToExcludeAll = framesToExcludeAll{1};
+
+          %Split at commas to separate into multiple sets of exclusion frames
+          framesToExcludeAll = strsplit(framesToExcludeAll,',');
+          
+          %Save both the series and frames to exclude per series
+          firstFrame = [];
+          lastFrame = [];
+          seriesToExclude = [];
+          for i = 1:length(framesToExcludeAll)
+              seriesAndFrames = strsplit(framesToExcludeAll{i},'_');
+              seriesToExclude(end+1) = str2double(seriesAndFrames{1});
+              framesToExclude = seriesAndFrames{2};
+              colIndex = strfind(framesToExclude,':');
+              firstFrame(end+1) = str2double(framesToExclude(1:(colIndex-1)));
+              lastFrame(end+1) = str2double(framesToExclude((colIndex+1):end));
+          end
+          
+          %If this frame is within the excluded series and frames, throw it out
+          
+          for f = 1:length(seriesToExclude)
+              frameWindow = firstFrame(f):lastFrame(f);
+              if and(~isempty(find(ismember(framesIndex,frameWindow), 1)),...
+                      seriesIndex == seriesToExclude(f))
+                  ProjectionTemp(:, :, ChannelIndex) = nan(size(ProjectionTemp,1),size(ProjectionTemp,2));
+                  disp(['Excluding frame ',num2str(framesIndex),' of series ',...
+                      num2str(seriesIndex),' from nuclear projection of channel ',...
+                      num2str(nuclearChannel)]);
+              end
+          end
+      end
     end
 
     % Getting average of all Projections
@@ -114,8 +157,14 @@ function Projection = calculateProjection(ProjectionType, NSlices, HisSlices)
     Projection = median(HisSlices, 3);
   elseif strcmpi(ProjectionType, 'middleprojection')
     Projection = max(HisSlices(:, :, round(NSlices * .50):round(NSlices * .75)), [], 3);
-  else
+  elseif strcmpi(ProjectionType, 'maxprojection')
     Projection = max(HisSlices, [], 3);
+  else
+    ProjectionBounds = strsplit(ProjectionType, ':');
+    SortedHisSlices = sort(HisSlices, 3, 'descend');
+    max_custom = str2double(ProjectionBounds{2});
+    min_custom = str2double(ProjectionBounds{3});
+    Projection = mean(SortedHisSlices(:, :, max_custom:min_custom), 3);
   end
 
 end
