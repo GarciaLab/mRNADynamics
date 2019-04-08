@@ -235,7 +235,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
                         fprintf('***Error Suggestions: Please read!***');
                         fprintf('\nYou have requested memory for an array that exceeds maximum array size preferences set by MATLAB.');
                         fprintf('\nThis could be due to one of the following reasons:');
-                        fprintf('\n(1) Your ML classifier is not good enough and is finding too many false positives. Go back and retrain your classifier to find less false positives (i.e. Do better next time.).')
+                        fprintf('\n(1) Your ML classifier is not good enough and is finding too many false positives. Go back and retrain your classifier to find fewer false positives.')
                         fprintf('\n(2) In Weka, you made class 1 (red) "not spots" and class 2 (green) "spots". Train a new classifier where class 1 is "spots" and class 2 is "not spots".\n');
                         rethrow(exceptionMaxDOG);
                     else
