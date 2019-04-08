@@ -12,7 +12,9 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
   end
   % (MT, 2018-02-11) Added support for lattice imaging, maybe 
   % temporary - FIX LATER
-  if strcmpi(ExperimentType, 'inputoutput') ||  strcmpi(ExperimentType, 'lattice')
+  % (MT, 2019-04-03) Hacky fix to run input2spot data through as 2spot. 
+  % Does this even need to take the ExperimentType into account?
+  if strcmpi(ExperimentType, 'inputoutput') ||  strcmpi(ExperimentType, 'lattice') || strcmpi(ExperimentType, '2spot')
     nameSuffix= ['_ch', iIndex(coatChannel, 2)];
     if Threshold == -1 && ~Weka
         Threshold = determineThreshold(Prefix, coatChannel);
