@@ -35,6 +35,8 @@
 % 'fit3D': Fit 3D Gaussians to all segmented spots. 
 % 'skipChannel': Skips segmentation of channels inputted array (e.g. [1]
 %                skips channel 1, [1, 2] skips channels 1 and 2
+% 'optionalResults': use this if you have multiple Results/Dropbox folders
+% for the same data to specify which you'll use. 
 %
 % OUTPUT
 % 'Spots':  A structure array with a list of detected transcriptional loci
@@ -91,12 +93,8 @@ function log = segmentSpots(Prefix, Threshold, varargin)
 
   [~, ~, ~, ~, ~, ~, ~, ExperimentType, Channel1, Channel2, ~] = readMovieDatabase(Prefix);
 
-  if ~isempty(optionalResults)
-      [~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix, optionalResults);
-  else
-      
-       [~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix);
-  end
+  [~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix, optionalResults);
+
 
   load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
 
@@ -208,7 +206,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
 
     if fit3D
         disp('Fitting 3D Gaussians...')
-        fit3DGaussiansToAllSpots(Prefix, 'segmentSpots', Spots);
+        fit3DGaussiansToAllSpots(Prefix, 'segmentSpots', Spots, optionalResults);
         disp('3D Gaussian fitting completed.')
     end
   

@@ -40,8 +40,9 @@ function CompileParticles(varargin)
 % 'noHist': Force the code to assume there's no nuclear channel.
 % 'doSingleFits': Generate single trace fits. Added by EL&AR 
 % 'manualSingleFits' : Compile values from manually generated single trace fits to
-% CompiledParticles.mat, the field names are 'fittedSlope', 'fittedTon' for
-% the initial slope and T_on respectively.
+%               CompiledParticles.mat, the field names are 'fittedSlope', 'fittedTon' for
+%               the initial slope and T_on respectively.
+% 'optionalResults' : if you want to use a different dropbox folder
 
 % Author (contact): Hernan Garcia (hggarcia@berkeley.edu)
 % Created:
@@ -155,14 +156,13 @@ ncFilterID = [];
 
 [Prefix, ForceAP, SkipTraces, SkipFluctuations, SkipFits, SkipMovie, ...
     SkipAll, ApproveAll, MinParticles, minTime, ROI, intArea, noHist, ...
-    ROI1, ROI2, slimVersion, manualSingleFits] = determineCompileParticlesOptions(varargin);
+    ROI1, ROI2, slimVersion, manualSingleFits, optionalResults, yToManualAlignmentPrompt] = determineCompileParticlesOptions(varargin);
 
 FilePrefix=[Prefix,'_'];
 
 %What type of experiment are we dealing with? Get this out of MovieDatabase
 [~,~,DropboxFolder,~, PreProcPath,...
-    ~, ~, ~, ~, ~,~] = readMovieDatabase(Prefix);
-
+    ~, ~, ~, ~, ~,~] = readMovieDatabase(Prefix, optionalResults);
 
 % refactor in progress, we should replace readMovieDatabase with getExperimentDataFromMovieDatabase
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoopEnd, APResolution,...
@@ -283,13 +283,20 @@ NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
 %Add the APPosition to Particles if they don't exist yet. Do this only if
 %we took AP data. Otherwise just add x and y pixel coordinates
 
+addParticleArgs = {Prefix};
+if ~isempty(optionalResults)
+    addParticleArgs = [addParticleArgs, optionalResults];
+end
+if yToManualAlignmentPrompt
+    addParticleArgs = [addParticleArgs, 'yToManualAlignmentPrompt'];
+end
+
 if strcmpi(ExperimentAxis,'AP')
     if (~isfield(Particles{1},'APpos')) || ForceAP
-        if HistoneChannel
-            AddParticlePosition(Prefix);
-        else
-            AddParticlePosition(Prefix,'SkipAlignment')
+        if ~HistoneChannel
+            addParticleArgs = [addParticleArgs, 'SkipAlignment'];
         end
+        AddParticlePosition(addParticleArgs{:});
     else
         disp('Using saved AP information (results from AddParticlePosition)')
     end
@@ -471,12 +478,15 @@ end
 % filters for each CompiledParticles (ROI and nonROI) (YJK on 10/24/2017)
 
 %nc filters:
+try
+    
 APFilter_ROI = []; APFilter_nonROI = []; DVFilter_ROI = []; DVFilter_nonROI = [];
 [ncFilterID, ncFilter, APFilter, APFilter_ROI, APFilter_nonROI, ...
     DVFilter, DVFilter_ROI, DVFilter_nonROI] = createFilters(nc9, nc10, nc11, nc12, ...
     nc13, nc14, NChannels, CompiledParticles, ExperimentAxis, ROI, APFilter,...
     APFilter_ROI, APFilter_nonROI, APbinID, DVbinID, DVFilter, DVFilter_ROI, ...
     DVFilter_nonROI, CompiledParticles_ROI, CompiledParticles_nonROI);
+end
 
 %% Binning and averaging data
 
@@ -484,7 +494,7 @@ APFilter_ROI = []; APFilter_nonROI = []; DVFilter_ROI = []; DVFilter_nonROI = []
 % One way is having a function that splits the CompiledParticles into CompiledParticles_ROI
 % and CompiledParticles_nonROI according to its y-position (Threshold). Then, pass them through
 % the AverageTraces (YJK on 10/22/2017)
-
+try
 [AllTracesVector, AllTracesAP, AllTracesDV, MeanVectorAP_ROI, ...
     SDVectorAP_ROI, NParticlesAP_ROI, MeanVectorAP_nonROI, SDVectorAP_nonROI, ...
     NParticlesAP_nonROI, MeanVectorAP, SDVectorAP, NParticlesAP, MeanVectorDV_ROI, ...
@@ -500,20 +510,19 @@ APFilter_ROI = []; APFilter_nonROI = []; DVFilter_ROI = []; DVFilter_nonROI = []
     MeanVectorDV_nonROI, SDVectorDV_nonROI, NParticlesDV_nonROI, ...
     MeanVectorDV, SDVectorDV, NParticlesDV, MeanVectorAnterior, DVFilter_ROI, ...
     DVFilter_nonROI, DVFilter);
-
-
+end
 if ~slimVersion
     %% Instantaneous rate of change
-
+    try
     [CompiledParticles, MeanSlopeVectorAP, SDSlopeVectorAP, NSlopeAP]...
         = instantRateOfChange(NChannels, CompiledParticles, ElapsedTime, ...
         ExperimentAxis, APFilter, MeanVectorAP, MeanSlopeVectorAP, ...
         SDSlopeVectorAP, NSlopeAP);
-
+    end
     %% Integrating each particle
-
+try
     CompiledParticles = integrateParticles(NChannels, ElapsedTime, CompiledParticles);
-
+end
 
     %% Information about the cytoplasm
     %If the nuclear masks are present then use them. Otherwise just calculate
@@ -553,7 +562,7 @@ if ~slimVersion
 
 
     %% Offset and fluctuations
-
+try
     [MeanOffsetVector, SDOffsetVector, NOffsetParticles] = offsetAndFlux(NChannels, ...
         SkipFluctuations, ncFilter, ElapsedTime, CompiledParticles, DropboxFolder, ...
         Prefix, ExperimentAxis, intArea, MeanVectorAll, SDVectorAll, MaxFrame, numFrames);
@@ -612,7 +621,7 @@ if ~slimVersion
             ElapsedTime, DVbinID, EllipsePos_DV, nc12, nc13, nc14, numFrames, ...
             DVbinArea);
     end
-
+end
     %% Calculation of particle speed
     try
         calcParticleSpeeds(NChannels, Particles, ...

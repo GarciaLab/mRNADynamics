@@ -52,9 +52,11 @@ function [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
         Channel3 = {'DoesNotExist'};
     end
     if ~isempty(optionalResults)
-    else
         [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath, ~, ~]=...
             DetermineLocalFolders(Prefix, optionalResults);
+    else
+        [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath, ~, ~]=...
+            DetermineLocalFolders(Prefix);
     end
 
     %Set the destination folders

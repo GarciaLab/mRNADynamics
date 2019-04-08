@@ -35,6 +35,8 @@ ManualAlignment=0;
 NoAP=0;
 SelectChannel=0;
 InvertHis=0;
+optionalResults = '';
+yToManualAlignmentPrompt = 0;
 
 close all
 
@@ -51,6 +53,10 @@ if ~isempty(varargin)
                 NoAP=1;
             case {'SelectChannel'}
                 SelectChannel=1;
+            case {'optionalResults'}
+                optionalResults = varargin{i+1};
+            case {'yToManualAlignmentPrompt'}
+                yToManualAlignmentPrompt = 1;
         end
     end
 else
@@ -58,6 +64,10 @@ else
     Dashes=strfind(FolderTemp,filesep);
     Prefix=FolderTemp((Dashes(end)+1):end);
 end
+
+%Get the relevant folders for this data set
+[SourcePath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
+~, ~] = DetermineAllLocalFolders(varargin{1}, optionalResults);
 
 
 if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
@@ -79,9 +89,11 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
         for i=1:length(Particles{ChN})
             for j=1:length(Particles{ChN}(i).Frame)
                 [x,y,z]=SpotsXYZ(Spots{ChN}(Particles{ChN}(i).Frame(j)));
-                Particles{ChN}(i).xPos(j)=x(Particles{ChN}(i).Index(j));
-                Particles{ChN}(i).yPos(j)=y(Particles{ChN}(i).Index(j));
-                Particles{ChN}(i).zPos(j)=z(Particles{ChN}(i).Index(j));
+                if ~isempty(x) 
+                    Particles{ChN}(i).xPos(j)=x(Particles{ChN}(i).Index(j));
+                    Particles{ChN}(i).yPos(j)=y(Particles{ChN}(i).Index(j));
+                    Particles{ChN}(i).zPos(j)=z(Particles{ChN}(i).Index(j));
+                end
             end
         end
         if isfield(Particles{ChN},'DVpos')
@@ -545,7 +557,11 @@ if ~NoAP
             if exist('ManualAlignmentDone', 'var')
                 if ManualAlignmentDone
                     disp('Manual alignment results saved.')
-                    Answer=input('Would you like to use them (y/n)? ','s');
+                    if ~yToManualAlignmentPrompt
+                        Answer=input('Would you like to use them (y/n)? ','s');
+                    else
+                        Answer = 'y';
+                    end
                     if strcmpi(Answer,'y')
                         load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
                     elseif strcmpi(Answer,'n')
@@ -615,8 +631,12 @@ if ~NoAP
                 contAxes = axes(contFig);
                 %HG: Note that I changed the ranges here by two pixels at
                 %least.
-                contourf(contAxes,imresize(abs(C(((CRows+1)/2-RowsZoom+1):(CRows-1)/2+RowsZoom,...
-                    ((CColumns+1)/2-ColumnsZoom+1):(CColumns-1)/2+ColumnsZoom)), .5));
+                lX = uint16((CRows+1)/2-RowsZoom+1);
+                uX = uint16((CRows-1)/2+RowsZoom);
+                lY = uint16((CColumns+1)/2-ColumnsZoom+1);
+                uY = uint16((CColumns-1)/2+ColumnsZoom);
+                
+                contourf(contAxes,imresize(abs(C(lX:uX,lY:uY)),.5));
                 saveas(contFig, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentCorrelation.tif']);
             catch
                 warning('Could not generate correlation image. Switching to manual alignment')
