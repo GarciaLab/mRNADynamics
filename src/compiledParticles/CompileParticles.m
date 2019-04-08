@@ -162,12 +162,7 @@ FilePrefix=[Prefix,'_'];
 
 %What type of experiment are we dealing with? Get this out of MovieDatabase
 [~,~,DropboxFolder,~, PreProcPath,...
-    ~, ~, ~, ~, ~,~] = readMovieDatabase(Prefix);
-
-if ~isempty(optionalResults)
-    [~,~,DropboxFolder,~, PreProcPath,...
     ~, ~, ~, ~, ~,~] = readMovieDatabase(Prefix, optionalResults);
-end
 
 % refactor in progress, we should replace readMovieDatabase with getExperimentDataFromMovieDatabase
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoopEnd, APResolution,...

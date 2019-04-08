@@ -34,11 +34,9 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
 
   % Get the actual folder now that we have the Prefix
   
-  if isempty(optionalResults)
-    [~, ~, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix);
-  else
-    [~, ~, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix, optionalResults);
-  end
+
+[~, ~, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix, optionalResults);
+
   
   % What type of experiment are we dealing with? Get this out of MovieDatabase
   [~, ExperimentType, ~, ~, ~, ~, Channel1, Channel2, ~, ~, ~, ~, ~, ...

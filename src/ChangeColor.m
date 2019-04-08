@@ -1,7 +1,7 @@
 function ChangeColor(PlotHandle,ColorProperty)
 
 CurrentColor=get(PlotHandle,ColorProperty);
-
+try
 if isempty(strmatch(CurrentColor,'none'))
     if sum(CurrentColor==[1,0,0])==3
         set(PlotHandle,ColorProperty,[236,32,36]/255)
@@ -16,4 +16,5 @@ if isempty(strmatch(CurrentColor,'none'))
     elseif sum(CurrentColor==[1,0,1])==3 %Magenta
         set(PlotHandle,ColorProperty,[237,38,144]/255) 
     end
+end
 end

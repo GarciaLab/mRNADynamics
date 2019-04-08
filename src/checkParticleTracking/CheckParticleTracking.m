@@ -145,12 +145,8 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
 
   % Get the folders
   [~, ~, DefaultDropboxFolder, ~, PreProcPath] = DetermineLocalFolders;
-  [~, ~, DropboxFolder, ~, ~] = DetermineLocalFolders(varargin{1});
-  if ~isempty(optionalResults)
-      [~, ~, DropboxFolder, ~, ~] = DetermineLocalFolders(varargin{1}, optionalResults);
-  else
-      [~, ~, DropboxFolder, ~, ~] = DetermineLocalFolders(varargin{1});
-  end
+  [~, ~, DropboxFolder, ~, ~] = DetermineLocalFolders(varargin{1}, optionalResults);
+ 
   DataFolder = [DropboxFolder, filesep, varargin{1}];
 
 

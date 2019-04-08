@@ -65,11 +65,9 @@ else
     Prefix=FolderTemp((Dashes(end)+1):end);
 end
 
-if ~isempty(optionalResults)
 %Get the relevant folders for this data set
 [SourcePath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
 ~, ~] = DetermineAllLocalFolders(varargin{1}, optionalResults);
-end
 
 
 if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')

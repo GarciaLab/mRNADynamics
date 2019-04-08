@@ -1,8 +1,6 @@
 function Spots = fit3DGaussiansToAllSpots(prefix, varargin)
 
-[~,~,DropboxFolder,~, PreProcPath,...
-    ~, Prefix, ~,~,~,~, ~] = readMovieDatabase(prefix);
-DataFolder=[DropboxFolder,filesep,prefix];
+optionalResults = '';
 
 segmentSpots = 0;
 displayFigures = 0;
@@ -12,9 +10,16 @@ for i = 1:length(varargin)
     elseif strcmpi(varargin{i}, 'segmentSpots')
         Spots = varargin{i+1};
         segmentSpots = 1;
+    elseif strcmpi(varargin{i}, 'optionalResults')
+        optionalResults = varargin{i+1};
     else
     end
 end
+
+[~,~,DropboxFolder,~, PreProcPath,...
+    ~, Prefix, ~,~,~,~, ~] = readMovieDatabase(prefix, optionalResults);
+
+DataFolder=[DropboxFolder,filesep,prefix];
 
 if ~segmentSpots
     load([DataFolder,filesep,'Spots.mat'], 'Spots');
