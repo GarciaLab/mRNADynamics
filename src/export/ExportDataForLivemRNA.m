@@ -28,6 +28,8 @@
 % 'keepTifs': MPF 9/12/2018 Do not delete source folder TIF files when
 % running. This is used for testing purposes.
 % 'generateTifs': MPF 11/11/2018 Additionally run filterMovie to generate Tifs stacks
+% 'skipExtraction': This doesn't extract LIF files to Tifs. Occasionally
+%                   useful if only the FrameInfo is desired. 
 %
 % OUTPUT
 % Exported tif images are placed in the PreProcessedData folder and divided
@@ -62,7 +64,7 @@
 function Prefix = ExportDataForLivemRNA(varargin)
 
   [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs,...
-    generateTifs, nuclearGUI] = exportDataForLivemRNA_processInputParameters(varargin{:});
+    generateTifs, nuclearGUI, skipExtraction] = exportDataForLivemRNA_processInputParameters(varargin{:});
 
   [SourcePath, ~, DropboxFolder, ~, PreProcPath, Folder, Prefix, ExperimentType, Channel1, Channel2, ~,...
     Channel3] = readMovieDatabase(Prefix);
@@ -99,7 +101,7 @@ function Prefix = ExportDataForLivemRNA(varargin)
 
   elseif strcmpi(FileMode, 'LIFExport')
     FrameInfo = processLIFExportMode(Folder, ExperimentType, ProjectionType, Channel1, Channel2, Channel3, Prefix, ...
-      OutputFolder, PreferredFileNameForTest, keepTifs, nuclearGUI);
+      OutputFolder, PreferredFileNameForTest, keepTifs, nuclearGUI, skipExtraction);
 
   elseif strcmpi(FileMode, 'DSPIN') || strcmpi(FileMode, 'DND2')
     %Nikon spinning disk confocal mode - TH/CS 2017
