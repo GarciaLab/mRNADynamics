@@ -9,6 +9,8 @@ function generateDogsWeka(Prefix, ProcPath, MS2CodePath, PreProcPath, Experiment
 
   if isempty(classifierPathCh1)
     [classifierPathCh1, classifierFolder] = uigetfile([MS2CodePath, '/src/classifiers/*.model']);
+%     classifierFolder = 'E:\Nick\LivemRNA\mRNADynamics\src\classifiers\';
+%     classifierPathCh1 = 'nl_P2P_mCherry_Leica.model';
   end
 
   if nCh == 2
