@@ -100,7 +100,7 @@ clear ImageTemp
 %Do the tracking for the first time
 if ~exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
     [nuclei, centers, Dummy, dataStructure] = ...
-        mainTrackingDV(names,'indMitosis',indMit,'embryoMask', embryo_mask);
+        mainTrackingDV(names,'indMitosis',indMit,'embryoMask', embryo_mask, 'frameinfo', FrameInfo);
     % names is a cell array containing the names of all frames in the movie in order.
     % indMitosis is an nx2 array containing the first and last frame of mitosis in every row.
     % embryoMask is the possible mask of the embryo. If no embryo edge is visible,
@@ -119,7 +119,7 @@ else
     %Load the Ellipses and re-generate the centers
     load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
     %centers = updateCentersFromEllipses(Ellipses, centers);
-    centers = updateCentersFromEllipses(Prefix,Ellipses);
+    centers = updateCentersFromEllipses(FrameInfo,Ellipses);
 
     %Load the dataStructure to seed up retracking if it exists
     if exist([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'])
@@ -155,15 +155,15 @@ else
         
         [nuclei, centers, ~, dataStructure] = mainTrackingDV(...
             names,'indMitosis',indMit,'embryoMask', embryo_mask,...
-            'centers',centers,'dataStructure',dataStructure, settingArguments{:});
+            'centers',centers,'dataStructure',dataStructure, 'frameinfo', FrameInfo, settingArguments{:});
     else
         [nuclei, centers, ~, dataStructure] = mainTrackingDV(...
             names,'indMitosis',indMit,'embryoMask', embryo_mask,...
-            'centers',centers, settingArguments{:});
+            'centers',centers, 'frameinfo', FrameInfo, settingArguments{:});
     end
 
     %Put circles on the nuclei
-    [Ellipses] = putCirclesOnNuclei(Prefix,centers,names,indMit);
+    [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,names,indMit);
     %Convert nuclei structure into schnitzcell structure
     [schnitzcells] = convertNucleiToSchnitzcells(nuclei); 
 end

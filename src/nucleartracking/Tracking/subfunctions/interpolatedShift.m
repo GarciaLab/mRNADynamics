@@ -1,4 +1,4 @@
-function [ x,y, varargout ] = interpolatedShift(Prefix, img1, img2, maxRadius, localMaxRadius, maxShift, precisionFactor, XY)
+function [ x,y, varargout ] = interpolatedShift(FrameInfo, img1, img2, maxRadius, localMaxRadius, maxShift, precisionFactor, XY)
 %INTERPOLATEDSHIFT Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -7,7 +7,7 @@ if ~exist('precisionFactor','var') || isempty(precisionFactor)
     precisionFactor = 1;
 end
 
-space_resolution = getDefaultParameters(Prefix,'space resolution');
+space_resolution = getDefaultParameters(FrameInfo,'space resolution');
 tileSizeX = round(1*128*0.22/space_resolution/precisionFactor);
 tileSizeY = round(1*128*0.22/space_resolution/precisionFactor);
 subTileSize = round(1*64*0.22/space_resolution/precisionFactor);
