@@ -52,7 +52,12 @@ if ~isempty(NewSpotsX)
     %MinIndex is a row vector. The position in MinIndex
     %corresponds to each spot. The value at that
     %position corresponds to the closest ellipse.
-    [MinValues,MinIndex]=min(Distance');
+    if size(Distance,2)>1  %Check whether we had multiple ellipses
+        [MinValues,MinIndex]=min(Distance');
+    else %If we only had one Ellipse, we need to be careful
+        MinValues=Distance;
+        MinIndex=ones(size(Distance));
+    end
                
     %If retrack, set the distance of the already assigned spots to
     %infinity
@@ -70,14 +75,14 @@ if ~isempty(NewSpotsX)
     len2 = length(schnitzcells);
     for i=1:len1
         for j=1:len2
-            try
+%             try
                 %AR 3/31/2019- sometimes this errors and I couldn't discover
                 %why. 
                 sj = schnitzcells(j);
                 if sj.cellno(sj.frames==(CurrentFrame))==MinIndex(i)
                     MinIndexSchnitz(i)=j;
                 end
-            end
+%             end
         end
         if MinIndex(i)==inf
             MinIndexSchnitz(i)=inf;

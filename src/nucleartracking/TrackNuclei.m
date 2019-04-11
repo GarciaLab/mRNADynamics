@@ -11,9 +11,11 @@ function TrackNuclei(Prefix,varargin)
 % OPTIONS
 % 'StitchSchnitz' : Run the schnitzcells fixing code by Simon
 % 'ExpandedSpaceTolerance': A multiplier for how how far away two nuclei of
-% adjacent frames can be in order for them to be the same nuclei
+% adjacent frames can be in order for them to be the same nuclei. It's
+% recommended to set this to 1.5 if you use NoBulkShift. 
 % 'NoBulkShift': Runs the nuclear tracking without accounting for the bulk
-% shift between frames (greatly speeds up runtime)
+% shift between frames (greatly speeds up runtime). It's recommended you
+% set ExpandedSpaceTolerance to 1.5 if you use this. 
 %
 % OUTPUT
 % '*_lin.mat' : Nuclei with lineages
