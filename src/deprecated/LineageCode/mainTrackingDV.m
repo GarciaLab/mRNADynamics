@@ -1,4 +1,4 @@
-function [ nuclei, varargout ] = mainTrackingDV(FrameInfo, names, varargin)
+function [ nuclei, varargout ] = mainTrackingDV(Prefix, names, varargin)
 %MAINTRACKING Run the full segmentation and tracking of a movie.
 % Optionally, call again with more arguments to enforce manual
 % corrections.
@@ -189,7 +189,7 @@ if ~exist('interpolatedShifts','var') || isempty(interpolatedShifts)
 end
 
 % Get default parameters.
-time_resolution = getDefaultParameters(FrameInfo,'time resolution');
+time_resolution = getDefaultParameters(Prefix,'time resolution');
 numberOfFrames = numel(names);
 %margin = ceil(getDefaultParameters('margin mitosis')/time_resolution);
 
@@ -236,7 +236,7 @@ waitbar(0.9,h_waitbar_initialization);
 
 % Define the starting points for the tracking (at the middle of the
 % interphase).
-trackingStartingPoints = choseFramesToStartTracking(FrameInfo,indMitosis,numberOfFrames);
+trackingStartingPoints = choseFramesToStartTracking(Prefix,indMitosis,numberOfFrames);
 
 % Determine the nuclear cycle of the interphases:
 nucCyc = zeros(numel(trackingStartingPoints),1);
@@ -245,10 +245,10 @@ for j = 1:numel(trackingStartingPoints)
 end
 % Associate the diameter of the cells at those nuclear cycles.
 for j = 1:numel(trackingStartingPoints)
-    diameters(j) = getDefaultParameters(FrameInfo,['d' num2str(nucCyc(j))]);
+    diameters(j) = getDefaultParameters(Prefix,['d' num2str(nucCyc(j))]);
 end
 if ~exist('diameters','var') || isempty(diameters) % diameters is empty if there is no interphase in the movie (so all the frames are from a single interphase). Assume the nucleus diameter is between nc13 and nc14.
-    diameters = 0.5*(getDefaultParameters(FrameInfo,'d13')+getDefaultParameters(FrameInfo,'d14'));
+    diameters = 0.5*(getDefaultParameters(Prefix,'d13')+getDefaultParameters(Prefix,'d14'));
 end
 
 close(h_waitbar_initialization);
@@ -281,7 +281,7 @@ if ~exist('centers','var') || isempty(centers)
                     end
         end
         if segment
-            xy(first:last) = segmentFrames(FrameInfo,names,first,last,diameters(j),embryoMask,h_waitbar_segmentation);
+            xy(first:last) = segmentFrames(Prefix,names,first,last,diameters(j),embryoMask,h_waitbar_segmentation);
         end
         
         % Segment mitosis
@@ -311,7 +311,7 @@ if ~exist('centers','var') || isempty(centers)
             else
                 D = 0.5*sum(diameters(j-1:j));
             end
-            xy(first:last) = segmentFrames(FrameInfo,names,first,last,D,embryoMask,h_waitbar_segmentation);
+            xy(first:last) = segmentFrames(Prefix,names,first,last,D,embryoMask,h_waitbar_segmentation);
         end
         
     end
@@ -403,17 +403,17 @@ indInterphases = find(~phaseIsAMitosis);
 diameters = zeros(numberOfPhases,1);
 if phaseIsAMitosis(end)
     nuclearCycle = 13;
-    diameters(end) = 0.5*(getDefaultParameters(FrameInfo,'d13')+getDefaultParameters(FrameInfo,'d14'));
+    diameters(end) = 0.5*(getDefaultParameters(Prefix,'d13')+getDefaultParameters(Prefix,'d14'));
 else
     nuclearCycle = 14;
 end
 for j = numel(indInterphases):-1:1
-    diameters(indInterphases(j)) = getDefaultParameters(FrameInfo,['d' num2str(max(nuclearCycle,10))]);
+    diameters(indInterphases(j)) = getDefaultParameters(Prefix,['d' num2str(max(nuclearCycle,10))]);
     previousNuclearCycle = nuclearCycle;
     nucCyc(j) = nuclearCycle;
     nuclearCycleFloored = max(nuclearCycle-1,10);
     if indInterphases(j) > 1
-        diameters(indInterphases(j)-1) = 0.5* (getDefaultParameters(FrameInfo,['d' num2str(nuclearCycleFloored)])+getDefaultParameters(FrameInfo,['d' num2str(previousNuclearCycle)])) ;
+        diameters(indInterphases(j)-1) = 0.5* (getDefaultParameters(Prefix,['d' num2str(nuclearCycleFloored)])+getDefaultParameters(Prefix,['d' num2str(previousNuclearCycle)])) ;
     end
     nuclearCycle = nuclearCycle-1;
 end
@@ -429,7 +429,7 @@ for j = 1:numberOfPhases
             fprintf(['Processing mitosis between nuclear cycle ' num2str(nucCyc(0.5*(j+1))-1) ' and ' num2str(nucCyc(0.5*(j+1))) '... ']);
         end
         
-        [ xy(first:last), mapping(first:last-1), nuclei ] = trackMitosis(FrameInfo, names, first, last, shifts, diameters(j), embryoMask, xy(first:last), mapping(first:last-1), nuclei, h_waitbar_tracking );
+        [ xy(first:last), mapping(first:last-1), nuclei ] = trackMitosis(Prefix, names, first, last, shifts, diameters(j), embryoMask, xy(first:last), mapping(first:last-1), nuclei, h_waitbar_tracking );
         
         fprintf('Done!\n')
     
@@ -443,7 +443,7 @@ for j = 1:numberOfPhases
             fprintf(['Processing nuclear cycle ' num2str(nucCyc(0.5*j)) '... ']);
         end
         
-        [nuclei, ~, interpolatedShifts] = trackWholeInterphase(FrameInfo,names,trackingStartingPoints(1),first,last,diameters(j), embryoMask, xy, mapping,nuclei, interpolatedShifts, h_waitbar_tracking);
+        [nuclei, ~, interpolatedShifts] = trackWholeInterphase(Prefix,names,trackingStartingPoints(1),first,last,diameters(j), embryoMask, xy, mapping,nuclei, interpolatedShifts, h_waitbar_tracking);
         
         fprintf('Done!\n')
         
@@ -486,8 +486,8 @@ if nargout > 1
         if nargout > 3
             
             data.names = names;
-            data.time_resolution = getDefaultParameters(FrameInfo,'time resolution');
-            data.space_resolution = getDefaultParameters(FrameInfo,'space resolution');
+            data.time_resolution = getDefaultParameters(Prefix,'time resolution');
+            data.space_resolution = getDefaultParameters(Prefix,'space resolution');
             data.interpolatedShifts = interpolatedShifts;
             data.shifts = shifts;
             data.indMitosis = indMitosis;

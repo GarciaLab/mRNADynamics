@@ -1,7 +1,7 @@
-function [ parameterValue ] = getDefaultParameters(FrameInfo, parameterName, varargin)
+function [ parameterValue ] = getDefaultParameters(Prefix, parameterName, varargin)
 %GETDEFAULTPARAMETERS All default settings are grouped in here, so that
 %they can dynamically be redefined in all functions.
-%  
+%
 % ORGANIZATION
 % Each function has a field in the 'parameters' structure. It contains a
 % cell with one column per parameter. Each column is a cell, with the first
@@ -10,6 +10,11 @@ function [ parameterValue ] = getDefaultParameters(FrameInfo, parameterName, var
 % NAME CONFLICTS
 % If within one function several parameters have identical names, the value
 % of the one appearing first in the cell is returned.
+
+
+[~, ~, ~, DropboxFolder, ~, ~,~, ~] = DetermineAllLocalFolders(Prefix);
+
+load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']) %#ok<LOAD>
 
 %% GLOBAL PARAMETERS
 

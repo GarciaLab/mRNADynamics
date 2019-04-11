@@ -1,4 +1,4 @@
-function xy = segmentFrames(FrameInfo,names,firstFrame,lastFrame,nucleusDiameter, embryoMask, varargin)
+function xy = segmentFrames(Prefix,names,firstFrame,lastFrame,nucleusDiameter, embryoMask, varargin)
 
     update_waitbar = false;
     if nargin > 6
@@ -14,10 +14,17 @@ function xy = segmentFrames(FrameInfo,names,firstFrame,lastFrame,nucleusDiameter
     xy = cell(lastFrame-firstFrame+1,1);
     for j = 1:nFrames
 
-        [xy{j}, ~] = findNuclei(FrameInfo,names, frameNum(j), nucleusDiameter, embryoMask);
+        [xy{j}, ~] = findNuclei(Prefix,names, frameNum(j), nucleusDiameter, embryoMask);
 
         if update_waitbar
-            waitbar(j/nFrames,h_waitbar_segmentation, ['Segmentation progress : ', num2str(j), ' frames processed out of ', num2str(nFrames)]);
+            progress = findall(h_waitbar_segmentation,'type','patch');
+            progress = get(progress,'XData');
+            try
+                progress = progress(2)/100;
+                waitbar((progress*numel(names)+1)/numel(names),h_waitbar_segmentation,['Segmentation progress : ' num2str((progress*numel(names)+1)) ' processed out of ' num2str(numel(names))])
+            catch
+%                 warning('There is a problem with calling waitbar. Is this something with the Matlab version?')
+            end
         end
     end
     

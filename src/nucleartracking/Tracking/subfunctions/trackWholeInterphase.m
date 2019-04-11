@@ -1,4 +1,4 @@
-function [ nuclei, varargout ] = trackWholeInterphase(FrameInfo, names, startingFrame, ...
+function [ nuclei, varargout ] = trackWholeInterphase(Prefix, names, startingFrame, ...
     previousMitosisInd, nextMitosisInd, nucleusDiameter, embryoMask, xy, ...
     mapping, nuclei, shifts, varargin )
 %TRACKWHOLEINTERPHASE Summary of this function goes here
@@ -16,12 +16,12 @@ startingFrame = previousMitosisInd;
 
 totalNumberOfFrames = numel(names);
 numberOfFrames = nextMitosisInd-previousMitosisInd+1;
-time_resolution = getDefaultParameters(FrameInfo,'time resolution');
-space_resolution = getDefaultParameters(FrameInfo,'space resolution');
-edgeClearance = getDefaultParameters(FrameInfo,'edge clearance')*nucleusDiameter/space_resolution;
+time_resolution = getDefaultParameters(Prefix,'time resolution');
+space_resolution = getDefaultParameters(Prefix,'space resolution');
+edgeClearance = getDefaultParameters(Prefix,'edge clearance')*nucleusDiameter/space_resolution;
 img = imread(names{startingFrame});
-marginBeforeMitosis = ceil(getDefaultParameters(FrameInfo,'increased precision before mitosis')/time_resolution);
-marginAfterMitosis = ceil(getDefaultParameters(FrameInfo,'increased precision after mitosis')/time_resolution);
+marginBeforeMitosis = ceil(getDefaultParameters(Prefix,'increased precision before mitosis')/time_resolution);
+marginAfterMitosis = ceil(getDefaultParameters(Prefix,'increased precision after mitosis')/time_resolution);
 %This looks like it decides to use existing data that was passed to it, and
 %if none was provided makes it itself. 
 if exist('xy','var') && ~isempty(xy)
@@ -31,7 +31,7 @@ if exist('xy','var') && ~isempty(xy)
 else
     skip_segmentation = false;
     XY = cell(numberOfFrames,1);
-    XY{startingFrame-previousMitosisInd+1} = findNuclei(FrameInfo,names,startingFrame,nucleusDiameter, embryoMask, [],[1 1 1 1 1]);
+    XY{startingFrame-previousMitosisInd+1} = findNuclei(Prefix,names,startingFrame,nucleusDiameter, embryoMask, [],[1 1 1 1 1]);
 end
 if ~exist('shifts','var') || isempty(shifts)
     shifts = cell(totalNumberOfFrames-1,1);
@@ -84,13 +84,13 @@ for j = 1:(nextMitosisInd-startingFrame)%[]%1:(nextMitosisInd-startingFrame)
     
     if skip_segmentation
         [mapping{currentFrameInd},~,~,ind, shifts{currentFrameNumber}] =...
-            frame2frameCorrespondence(FrameInfo, names,currentFrameNumber,...
+            frame2frameCorrespondence(Prefix, names,currentFrameNumber,...
             newFrameNumber,XY{currentFrameInd},nucleusDiameter,1,XY{newFrameInd},...
             mapping{currentFrameNumber},shifts{currentFrameNumber}, ...
             ExpandedSpaceTolerance, NoBulkShift);%, embryoMask, targetNumber, [1 1 1]);
     else
         [mapping{currentFrameInd},XY{newFrameInd},dummy,ind, shifts{currentFrameNumber}]...
-            = frame2frameCorrespondence(FrameInfo,names,currentFrameNumber,...
+            = frame2frameCorrespondence(Prefix,names,currentFrameNumber,...
             newFrameNumber,XY{currentFrameInd},nucleusDiameter,1,[],...
             shifts{currentFrameNumber}, ExpandedSpaceTolerance, NoBulkShift);%, embryoMask, [],[1 1 0]);
     end

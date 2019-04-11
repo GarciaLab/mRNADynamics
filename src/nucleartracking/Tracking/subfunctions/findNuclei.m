@@ -1,4 +1,4 @@
-function [ xy, varargout ] = findNuclei(FrameInfo, names, frameNumber, nucleusDiameter, embryoMask, varargin )
+function [ xy, varargout ] = findNuclei(Prefix, names, frameNumber, nucleusDiameter, embryoMask, varargin )
 %FINDNUCLEI This function finds the position of nuclei within a frame which
 %is used as an initial input for the tracking algorithm.
 %   Detection is made by detecting the local maxima in a
@@ -8,11 +8,11 @@ function [ xy, varargout ] = findNuclei(FrameInfo, names, frameNumber, nucleusDi
 %% Initializing variables
 % Load parameters
 numberOfFrames = numel(names);
-LoGratio = getDefaultParameters(FrameInfo,'LoGratio');
-space_resolution = getDefaultParameters(FrameInfo,'space resolution');
+LoGratio = getDefaultParameters(Prefix,'LoGratio');
+space_resolution = getDefaultParameters(Prefix,'space resolution');
 localMaximumRadius = LoGratio*nucleusDiameter/space_resolution;
 LoGradius = nucleusDiameter/space_resolution*LoGratio;
-edgeClearance = getDefaultParameters(FrameInfo,'edge clearance')*nucleusDiameter/space_resolution;
+edgeClearance = getDefaultParameters(Prefix,'edge clearance')*nucleusDiameter/space_resolution;
 
 if ~exist('embryoMask','var') || isempty(embryoMask)
     embryoMask = true(size(imread(names{frameNumber})));
@@ -35,11 +35,9 @@ img = double(imread(names{frameNumber}));
 
 % Filter the image
 %filteredImg = imfilter(img,-fspecial('log',round(10*LoGradius),LoGradius),'symmetric');
-% filteredImg = imresize(fourierFilterWithSymmetricBoundaryConditions(imresize(img,.5),-fspecial('log',round(10*LoGradius),LoGradius)), 2);
 filteredImg = fourierFilterWithSymmetricBoundaryConditions(img,-fspecial('log',round(10*LoGradius),LoGradius));
 
 % Find local maxima
-% maxima = (filteredImg > imresize(imdilate(imresize(filteredImg, .5),imresize(localMaxMask, .5)),2) ) & embryoMask;
 maxima = (filteredImg > imdilate(filteredImg,localMaxMask) ) & embryoMask;
 
 % Smooth the image to get more robust maxima values:
