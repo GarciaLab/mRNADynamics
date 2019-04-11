@@ -15,6 +15,7 @@
 % 
 % 'noRetracking': Use this to track from scratch instead of retracking if 
 %                trackmRNADynamics has been run before.
+% 'displayFigures': don't display figures while tracking
 % 
 %
 % OUTPUT
@@ -30,7 +31,7 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
 
   [~, ~, DefaultDropboxFolder, ~, ~] = DetermineLocalFolders;
 
-  [Prefix, app, retrack, optionalResults] = parseTrackmRNADynamicsArguments(DefaultDropboxFolder, varargin{:});
+  [Prefix, app, retrack, optionalResults, displayFigures] = parseTrackmRNADynamicsArguments(DefaultDropboxFolder, varargin{:});
 
   % Get the actual folder now that we have the Prefix
   
@@ -82,13 +83,16 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
 
   [Spots, SpotFilter] = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefix, NCh);
 
-  [ParticlesFig, particlesAxes, NucleiFig, nucAxes] = generateTrackingFigures(app, UseHistone);
-  
+  if displayFigures
+    [ParticlesFig, particlesAxes, NucleiFig, nucAxes] = generateTrackingFigures(app, UseHistone);
+  else
+      ParticlesFig = []; particlesAxes = []; NucleiFig = []; nucAxes = [];
+  end
   NDigits = adjustIndexSizeAccordingToFrames(FrameInfo);
 
   [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh, Spots, app, SpotFilter, PreProcPath, ...
     Prefix, UseHistone, ParticlesFig, SpotsChannel, NDigits, NucleiFig, particlesAxes, nucAxes, Ellipses, ...
-    PixelSize, SearchRadius, ExperimentType, FrameInfo, retrack);
+    PixelSize, SearchRadius, ExperimentType, FrameInfo, retrack, displayFigures);
 
   mkdir([OutputFolder, filesep]);
 
@@ -105,7 +109,7 @@ function [FrameInfo, PixelSize] = loadFrameInfo(OutputFolder, PreProcPath, Prefi
 
     %See if this came from the 2-photon, which is the default
     if ~isfield(FrameInfo, 'FileMode') || strcmp(FrameInfo(end).FileMode, 'TIF')
-      PixelSize = 0.22;
+      PixelSize = 0.22; %um
     elseif strcmp(FrameInfo(1).FileMode, 'LSM') | strcmp(FrameInfo(1).FileMode, 'LSMExport')%#ok<*OR2>
       PixelSize = FrameInfo(1).PixelSize;
     elseif strcmp(FrameInfo(1).FileMode, 'LIFExport') || strcmp(FrameInfo(1).FileMode, 'LAT') || strcmp(FrameInfo(1).FileMode, 'DSPIN')%CS20170907
