@@ -60,7 +60,7 @@ for i = 1:length(varargin)
     elseif strcmpi(varargin{i}, 'nWorkers')
         nWorkers = varargin{i + 1};
         
-        if nWorkers == 0
+        if nWorkers < 2
             pool = 0;
         end
         

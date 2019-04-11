@@ -2,6 +2,22 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
   
   waitbarFigure = waitbar(0, 'Segmenting spots');
 
+  if displayFigures
+      %left bottom width height
+      dogFig = figure('units', 'normalized', 'position',[.4, .5, .4, .4]);
+      dogAx = axes(dogFig, 'Visible', 'off');
+      gFig = figure('units', 'normalized', 'position',[0.01, .55, .33, .33]);
+      gAx = axes(gFig);
+      snipFig = figure('units', 'normalized', 'position',[0.4, .2, .1, .1]);
+      snipAx = axes(snipFig);
+      rawFig = figure('units', 'normalized', 'position',[.01, .1, .33, .33]);
+      rawAx = axes(rawFig);
+      
+      graphicsHandles = [dogFig, dogAx, gFig, gAx, snipFig, snipAx, rawFig, rawAx];
+  else
+      graphicsHandles = [];
+  end
+  
   if Weka
       MLFlag = 'ML';
       dogStr = 'prob';
@@ -56,10 +72,17 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
       end
       
       if displayFigures
-        fig = figure(1);
-        imshow(dog, [median(dog(:)), max(dog(:))]);
-      else
-        fig=[];
+          dogO = dog(:);
+          lLim = median(dogO);
+          uLim = max(dogO);
+        if uLim > 0
+         imagesc(dogAx,dog, [lLim, uLim]);
+         colormap(dogAx, 'gray')
+
+        else
+            imagesc(dogAx,dog);
+            colormap(dogAx, 'gray')
+        end
       end
             
       % Apply flatfield correction
@@ -81,29 +104,36 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
       temp_particles = cell(1, n_spots);
       
       if n_spots ~= 0
-        if ~displayFigures && pool %&& ~Weka            
+        if ~displayFigures && pool         
           parfor spotIndex = 1:n_spots
             centroid = round(centroids(spotIndex).Centroid);
-            temp_particles(spotIndex) = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
-              neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid,MLFlag, intScale);
+%             [tp(spotIndex),temp_particles(spotIndex)] = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
+%               neighborhood, snippet_size, pixelSize, displayFigures, graphicsHandles, microscope, 0, centroid,MLFlag, intScale);
+           temp_particles(spotIndex) = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
+              neighborhood, snippet_size, pixelSize, displayFigures, graphicsHandles, microscope, 0, centroid,MLFlag, intScale);
+      
           end
         else
           for spotIndex = 1:n_spots
             centroid = round(centroids(spotIndex).Centroid);
             tic
+%             [tp(spotIndex),temp_particles(spotIndex)] = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
+%               neighborhood, snippet_size, pixelSize, displayFigures, graphicsHandles, microscope, 0, centroid, MLFlag, intScale);
             temp_particles(spotIndex) = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
-              neighborhood, snippet_size, pixelSize, displayFigures, fig, microscope, 0, centroid, MLFlag, intScale);
+              neighborhood, snippet_size, pixelSize, displayFigures, graphicsHandles, microscope, 0, centroid,MLFlag, intScale);  
           end
         end
         
         for spotIndex = 1:n_spots
           if ~isempty(temp_particles{spotIndex})
+              % if ~isempty([tp(k)])
             temp_frames = [temp_frames, temp_particles(spotIndex)];
+            %temp_frames = [temp_frames, tp(k)];
           end
         end
 
         all_frames{current_frame, zIndex} = temp_frames;
-        
+%           all_frames{current_frame, zIndex} = tp;
       end
       
     end

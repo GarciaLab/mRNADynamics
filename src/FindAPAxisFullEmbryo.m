@@ -13,9 +13,7 @@ function [coordA,coordP,xShift,yShift]=FindAPAxisFullEmbryo(varargin)
 
 CorrectAxis = 0;
 Prefix=varargin{1};
-
-[SourcePath, ~, DefaultDropboxFolder, DropboxFolder, ~, ~,...
-~, ~] = DetermineAllLocalFolders(Prefix);
+optionalResults = '';
 
 for i=2:length(varargin)
     if isnumeric(varargin{i})
@@ -24,9 +22,14 @@ for i=2:length(varargin)
         end
     elseif strcmp(varargin{i},'CorrectAxis')
         CorrectAxis = 1;
+    elseif strcmp(varargin{i},'optionalResults')
+        optionalResults = varargin{i+1};
     end
 end
    
+[SourcePath, ~, DefaultDropboxFolder, DropboxFolder, ~, ~,...
+~, ~] = DetermineAllLocalFolders(Prefix, optionalResults);
+
 if ~exist('Prefix')
     FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
     Dashes=strfind(FolderTemp,filesep);
