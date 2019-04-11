@@ -165,7 +165,7 @@ if ~retrack
     
     
     [nuclei, centers, ~, dataStructure] = ...
-        mainTracking(FrameInfo, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
+        mainTracking(Prefix, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
         settingArguments{:}, 'ExpandedSpaceTolerance', ExpandedSpaceTolerance, ...
         'NoBulkShift', NoBulkShift);
     % names is a cell array containing the names of all frames in the movie in order.
@@ -175,7 +175,7 @@ if ~retrack
 
     % Convert the results to compatible structures and save them
     %Put circles on the nuclei
-    [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,names,indMit);
+    [Ellipses] = putCirclesOnNuclei(Prefix,centers,names,indMit);
     %Convert nuclei structure into schnitzcell structure
     [schnitzcells] = convertNucleiToSchnitzcells(nuclei); 
 else
@@ -186,7 +186,7 @@ else
     %Load the Ellipses and re-generate the centers
     load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
     %centers = updateCentersFromEllipses(Ellipses, centers);
-    centers = updateCentersFromEllipses(FrameInfo, Ellipses);
+    centers = updateCentersFromEllipses(Prefix, Ellipses);
 
     %Load the dataStructure to speed up retracking if it exists
     if exist([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'], 'file')
@@ -221,19 +221,19 @@ else
         dataStructure.names=names;
         
         [nuclei, centers, ~, dataStructure] = mainTracking(...
-            FrameInfo, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
+            Prefix, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
             'centers',centers,'dataStructure',dataStructure, settingArguments{:}, ...
             'ExpandedSpaceTolerance', ExpandedSpaceTolerance, ...
         'NoBulkShift', NoBulkShift);
     else
         [nuclei, centers, ~, dataStructure] = mainTracking(...
-            FrameInfo, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
+            Prefix, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
             'centers',centers, settingArguments{:}, 'ExpandedSpaceTolerance', ...
             ExpandedSpaceTolerance, 'NoBulkShift', NoBulkShift);
     end
 
     %Put circles on the nuclei
-    [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,names,indMit);
+    [Ellipses] = putCirclesOnNuclei(Prefix,centers,names,indMit);
     %Convert nuclei structure into schnitzcell structure
     [schnitzcells] = convertNucleiToSchnitzcells(nuclei); 
 end
@@ -261,6 +261,7 @@ save([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
 
 %Extract the nuclear fluorescence values if we're in the right experiment
 %type
+tic
 if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
     
     
@@ -362,6 +363,8 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
                     schnitzcells(j).Fluo(CurrentIndex,1:NumberSlices2,ChN) = convImage(ceny,cenx,:);
                     schnitzcells(j).Mask=Circle;                    
                 end
+%                 toc
+%                 tic
 %                 NL: commented out old version
 %                 for j=1:length(schnitzcells)
 % 
@@ -376,6 +379,7 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
 %                         CurrentFrame,...
 %                         Image,LinesPerFrame,PixelsPerLine,NumberSlices2,Circle,IntegrationRadius,ChN);
 %                 end
+%                 toc
             end
         close(h)
         end
@@ -383,6 +387,7 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
         error('Input channel not recognized. Check correct definition in MovieDatabase')
     end
 end
+toc
 %Save the information
 %Now save
 mkdir([DropboxFolder,filesep,Prefix])
