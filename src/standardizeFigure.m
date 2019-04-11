@@ -83,7 +83,7 @@ try
         end
     end
     
-    set(ax, 'TickLength',[.01 .01],...
+    set(ax, 'TickLength',[.01 .025],...
         'FontSize', fontSize, 'FontName', 'Lucida Sans OT', 'FontWeight', 'bold');
     ax.TickDir = 'in';
     ax.LineWidth = axesLineWidth;

@@ -1,4 +1,4 @@
-function [Data, Prefixes] = LoadMS2Sets(DataType, varargin)
+function [Data, Prefixes] = LoadMS2Sets(DataType)
 %Data = LoadMS2Sets(DataType)
 %
 %DESCRIPTION
@@ -22,14 +22,6 @@ function [Data, Prefixes] = LoadMS2Sets(DataType, varargin)
 
 Prefixes = {};
 
-optionalResults = '';
-
-for i= 1:length(varargin)
-    if strcmpi(varargin{i},'optionalResults')
-        optionalResults = varargin{i+1};
-    end
-end
-    
 %Get some of the default folders
 [~,~,DefaultDropboxFolder,~,~, ~]=...
     DetermineLocalFolders;
@@ -142,15 +134,11 @@ for i=1:length(CompiledSets)
 end
 
 
-if ~isempty(optionalResults)
-    [~,~,DropboxFolder] = readMovieDatabase(Prefix, optionalResults);
-end
+
 
 %Find and load the different prefixes
 PrefixRow=find(strcmpi(StatusTxt(:,1),'Prefix:'));
 for i=1:length(CompiledSets)
-    
-    
     SetName=StatusTxt{PrefixRow,CompiledSets(i)};
     SetNames{i}=SetName;
     Quotes=strfind(SetName,'''');
@@ -311,10 +299,8 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],'file')
             Data(i).ImageRotation=ImageRotation(i);
         end
         
-        try
-            if exist('APDivisions','var')
-                Data(i).APDivision=APDivisions(i).APDivision;
-            end
+        if exist('APDivisions','var')
+            Data(i).APDivision=APDivisions(i).APDivision;
         end
 
         if exist('IntegralFits','var')
