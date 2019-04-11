@@ -710,5 +710,7 @@ savedVariables = [savedVariables,'APFilter', 'APbinArea', 'APbinID', 'AllTracesA
 
 save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
     savedVariables{:},'-v7.3');
+
+disp('CompiledParticles.mat saved.');
  
 end

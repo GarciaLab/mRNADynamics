@@ -6,9 +6,13 @@ function [Frame_Times, First_Time] = obtainFrameTimes(XMLFolder, seriesPropertie
     TimeStampList = xDoc.getElementsByTagName('TimeStamp');
     for framesIndex = 0:(NFrames(seriesIndex) * NSlices(seriesIndex) * NChannels) - 1
         TimeStamp = TimeStampList.item(framesIndex);
-        Date = char(TimeStamp.getAttribute('Date'));
-        Time = char(TimeStamp.getAttribute('Time'));
-        Milli = char(TimeStamp.getAttribute('MiliSeconds'));
+        if ~isempty(TimeStamp)
+            Date = char(TimeStamp.getAttribute('Date'));
+            Time = char(TimeStamp.getAttribute('Time'));
+            Milli = char(TimeStamp.getAttribute('MiliSeconds'));
+        else
+            %do nothing;
+        end
         if contains(Time, 'AM')
             time_in_days = datenum(strcat(Date, '-', Time, '-', Milli), 'mm/dd/yyyy-HH:MM:SS AM-FFF');
         elseif contains(Time, 'PM')

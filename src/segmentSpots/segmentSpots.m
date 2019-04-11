@@ -73,7 +73,7 @@ function log = segmentSpots(Prefix, Threshold, varargin)
   end 
 
  
-  if nWorkers ~= 0 && ~displayFigures
+  if nWorkers > 1 && ~displayFigures
     
       maxWorkers = nWorkers;
 
@@ -181,13 +181,6 @@ function log = segmentSpots(Prefix, Threshold, varargin)
   
   mkdir([DropboxFolder, filesep, Prefix]);
   save([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots', '-v7.3');
-
-
-%   t = toc;
-%   disp(['Elapsed time: ', num2str(t / 60), ' min'])
-% 
-%   log = logSegmentSpots(DropboxFolder, Prefix, t, numFrames, Spots, falsePositives, Threshold);
-%   display(log);
 
   if ~keepProcessedData
     deleteProcessedDataFolder(ProcessedDataFolder, Prefix);

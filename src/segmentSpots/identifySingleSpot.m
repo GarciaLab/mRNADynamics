@@ -1,5 +1,5 @@
-function temp_particles = identifySingleSpot(particle_index, image, image_label, dog_image, searchRadius, snippet_size, ...
-    pixelSize, show_status, fg, microscope, addition, forced_centroid, ml_string, intScale)
+function [temp_particles,tp] = identifySingleSpot(particle_index, image, image_label, dog_image, searchRadius, snippet_size, ...
+    pixelSize, show_status, graphicsHandles, microscope, addition, forced_centroid, ml_string, intScale)
 % identifySingleSpot(awholelot)
 %
 % DESCRIPTION
@@ -81,11 +81,10 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
     tp = struct('fixedAreaIntensity', [], 'xFit', [], 'yFit', [], 'Offset', [],...
        'Snippet', [], 'Area', [], 'xFitWidth', [], 'yFitWidth', [], 'centroidY',...
        [], 'centroidX', [], 'GaussianIntensity', [], 'CentralIntensity', [],...
-       'DOGIntensity', [], 'snippet_mask', [], 'sistersXWidth', [], 'sistersYWidth',...
+       'DoGIntensity', [], 'snippetMask', [], 'sistersXWidth', [], 'sistersYWidth',...
        [], 'sisterSeparation', [], 'relative_errors', [], 'ConfidenceIntervals',...
-       [], 'gaussSpot', [], 'mesh', [], 'sistersXPos', [], 'sistersYPos', [],...
-       'eccentricity', [],'sisterSeparation2', [],'sistersXPos2', [], 'sistersYPos2', [],...
-       'sistersXWidth2', [], 'sistersYWidth2',[], 'sisterAmps', []);
+       [], 'gaussSpot', [], 'mesh', []);
+   
    
    %AR 7192018- i want to switch the tempparticles over to this structure
    %in the future for reading clarity. currently doesn't have the right
@@ -145,7 +144,7 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             for i = 1:length(steps)
                 [fits, relative_errors, residual, confidence_intervals, gaussianIntensity, gaussian, mesh] =  ...
                     fitSingleGaussian(snippet, neighborhood_Size, maxThreshold, ...
-                    steps(i), offsetGuess, show_status);
+                    steps(i), offsetGuess, show_status, graphicsHandles);
                 fitstruct(i).fits = fits;
                 %fits: [amplitude, x position, x width, y position, y width, offset, angle] 
                 fitstruct(i).relative_errors = relative_errors;
@@ -175,10 +174,10 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
             spot_x = fits(2) - snippet_size + centroid_x; %final reported spot position
             spot_y = fits(4) - snippet_size + centroid_y;    
             
-            if show_status && ~isempty(fg)
-                figure(fg)
-                ellipse(searchRadius/2,searchRadius/2,0,centroid_x, centroid_y,'r',[],gca);
-                pause(.1) %Ellipses won't be plotted correctly without this pause.
+            if show_status && ~isempty(graphicsHandles)
+                dogAx = graphicsHandles(2);
+                ellipse(searchRadius/2,searchRadius/2,0,centroid_x, centroid_y,'r',[],dogAx);
+                pause(.05) %Ellipses won't be plotted correctly without this pause.
                 %figure(5)
                 %imshow(image,[])
                 %ellipse(searchRadius/2,searchRadius/2,0,spot_x,spot_y,'r');
@@ -245,6 +244,31 @@ function temp_particles = identifySingleSpot(particle_index, image, image_label,
                 temp_particles = {{fixedAreaIntensity, spot_x, spot_y, offset, snippet, ...
                     gaussianArea, sigma_x, sigma_y, centroid_y, centroid_x, gaussianIntensity,intensity,...
                     max_dog, snippet_mask, sigma_x2, sigma_y2, sister_chromatid_distance, relative_errors, confidence_intervals, gaussian, mesh,fits, maskArea, fixedAreaIntensityCyl3}};
+                
+                tp.fixedAreaIntensity = fixedAreaIntensity;
+                tp.xFit = spot_x;
+                tp.yFit = spot_y;
+                tp.Offset = offset;
+                tp.Snippet = snippet;
+                tp.GaussianArea = gaussianArea;
+                tp.sigmaX = sigma_x;
+                tp.sigmaY = sigma_y;
+                tp.centroidY = centroid_y;
+                tp.centroidX = centroid_x;
+                tp.GaussianIntensity = gaussianIntensity;
+                tp.centralIntensity = intensity;
+                tp.DoGIntensity = max_dog;
+                tp.snippetMask = snippet_mask;
+                tp.sigmaX2 = sigma_x2;
+                tp.sigmaY2 = sigma_y2;
+                tp.sisterSeparation = sister_chromatid_distance;
+                tp.relativeErrors = relative_errors;
+                tp.confidenceIntervals = confidence_intervals;
+                tp.Gaussian = gaussian;
+                tp.Mesh = mesh;
+                tp.Fits = fits;
+                tp.maskArea = maskArea;
+                tp.fixedAreaIntensityCyl3 = fixedAreaIntensityCyl3;
             else                
                 temp_particles = {{}};   
             end
