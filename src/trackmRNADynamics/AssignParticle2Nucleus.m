@@ -65,7 +65,6 @@ if ~isempty(NewSpotsX)
         MinIndex(MinValues==inf)=inf;
     end
     
-    
     %Find the schnitz corresponding to MinIndex in the schnitzcell structure.
     %MinIndexNuclei is now a row vector. The position in MinIndexNuclei
     %corresponds to each spot. The value at that position corresponds
@@ -75,14 +74,15 @@ if ~isempty(NewSpotsX)
     len2 = length(schnitzcells);
     for i=1:len1
         for j=1:len2
-%             try
+            try
                 %AR 3/31/2019- sometimes this errors and I couldn't discover
                 %why. 
                 sj = schnitzcells(j);
-                if sj.cellno(sj.frames==(CurrentFrame))==MinIndex(i)
+
+                if sj.cellno(sj.frames==CurrentFrame) == MinIndex(i)
                     MinIndexSchnitz(i)=j;
                 end
-%             end
+            end
         end
         if MinIndex(i)==inf
             MinIndexSchnitz(i)=inf;

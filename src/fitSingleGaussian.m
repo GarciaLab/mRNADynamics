@@ -5,7 +5,6 @@ function [fits, relative_errors, residual, confidence_intervals, GaussianIntensi
 
     warning('off','MATLAB:singularMatrix')
 
-    snippet = double(snippet);
     [mesh_y,mesh_x] = meshgrid(1:size(snippet,2), 1:size(snippet,1));
 
     %fits: [amplitude, x position, x width, y position, y width, offset, angle] 
@@ -22,21 +21,26 @@ function [fits, relative_errors, residual, confidence_intervals, GaussianIntensi
 %     lsqOptions=optimset('Display','none',... %Inherited these options from Mikhail Tikhonov's FISH analysis
 %     'maxfunevals',1000,...
 %     'maxiter',1000); 
-    lsqOptions=optimset('Display','none');
+%     lsqOptions=optimset('Display','none', 'UseParallel', true);
+lsqOptions=optimset('Display','none');
 
     lb_offset = 1/10; %this is empirical. corresponds to a weak background of 1 pixel per ten having a value of 1. 
     lb = [max(snippet(:))*.5, 0, 1, 0, 1,lb_offset, 0];
     ub = [max(snippet(:))*2, size(snippet, 1), size(snippet, 1), size(snippet, 2), size(snippet, 2), max(snippet(:)), 2*pi];
 
-    [single_fit, res1, residual, exitflag, output, lambda, jacobian] = lsqnonlin(singleGaussian, ...
-        initial_parameters,lb,ub, lsqOptions);
+    
+        [single_fit, res1, residual, exitflag, output, lambda, jacobian] = lsqnonlin(singleGaussian, ...
+            initial_parameters,lb,ub, lsqOptions);
+        
 
-    confidence_intervals = nlparci(single_fit,residual,'jacobian',jacobian);
-    errors = zeros(1, length(single_fit));
-    for i = 1:length(confidence_intervals)
-        errors(i) = abs((abs(confidence_intervals(i, 1)) - abs(confidence_intervals(i, 2)))/2);
-    end
-    relative_errors = abs(errors./single_fit);
+        confidence_intervals = nlparci(single_fit,residual,'jacobian',jacobian);
+        errors = zeros(1, length(single_fit));
+        for i = 1:length(confidence_intervals)
+            errors(i) = abs((abs(confidence_intervals(i, 1)) - abs(confidence_intervals(i, 2)))/2);
+        end
+        relative_errors = abs(errors./single_fit);
+   
+        
     fits = single_fit; 
     GaussianIntensity = sum(sum(singleGaussian(single_fit) + double(snippet) - single_fit(6)));
 

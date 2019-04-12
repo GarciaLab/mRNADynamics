@@ -24,6 +24,8 @@ backGround3 = NaN;
 
 defaultArea = 109; %109 pixels is the default area when the pixels are assumed to be 212nm x 212 nm AR 9/3/18
 
+warning('off', 'MATLAB:rankDeficientMatrix'); %suppress the spline fitting warnings 
+
 for i=1:length(Particles(CurrentParticle).Frame)
 
         Frame(i)=Particles(CurrentParticle).Frame(i);
