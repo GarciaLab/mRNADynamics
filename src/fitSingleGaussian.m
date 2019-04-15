@@ -5,6 +5,7 @@ function [fits, relative_errors, residual, confidence_intervals, GaussianIntensi
 
     warning('off','MATLAB:singularMatrix')
 
+    snippet = double(snippet);
     [mesh_y,mesh_x] = meshgrid(1:size(snippet,2), 1:size(snippet,1));
 
     %fits: [amplitude, x position, x width, y position, y width, offset, angle] 
