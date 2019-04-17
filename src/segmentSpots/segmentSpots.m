@@ -141,6 +141,7 @@ coatChannel = getCoatChannel(ExperimentType, Channel1, Channel2);
 falsePositives = 0;
 all_frames = cell(numFrames, zSize);
 Spots3 = {};
+Spots = [];
 
 for channelIndex = 1:nCh
     if ismember(channelIndex, skipChannel)
@@ -152,22 +153,13 @@ for channelIndex = 1:nCh
     [all_frames, tempSpots] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, ...
         PreProcPath, Prefix, DogOutputFolder, displayFigures, pool, doFF, ffim, Threshold(channelIndex), neighborhood, ...
         snippet_size, pixelSize, microscope, intScale, Weka, useIntegralCenter);
-    
-    close all;
-    
-    % Create a useful structure that can be fed into pipeline
-    Particles = saveParticleInformation(numFrames, all_frames, zSize, useIntegralCenter);
-    
-    if ~isempty(fieldnames(Particles))
+
+        tempSpots = segmentSpotsZTracking(pixelSize,tempSpots);
         
-        [neighborhood, Particles, tempSpots] = segmentSpotsZTracking(pixelSize, numFrames, Particles, tempSpots);
-        
-        [Particles, falsePositives, tempSpots] = findBrightestZ(Particles,numShadows, useIntegralCenter, 0, tempSpots);
+        [~, falsePositives, tempSpots] = findBrightestZ([], numShadows, useIntegralCenter, 0, tempSpots);
         
         %Create a final Spots structure to be fed into TrackmRNADynamics
-        
-        Spots{channelIndex} = createSpotsStructure(Particles, numFrames, 1);
-        
+                
         for i = 1:length(tempSpots)
             
             if isstruct(tempSpots(i).Fits)
@@ -176,7 +168,7 @@ for channelIndex = 1:nCh
             end
         end
         
-    end
+
     
     Spots3{channelIndex} = tempSpots;
     
@@ -190,11 +182,14 @@ for channelIndex = 1:nCh
     
 end
 
+Spots = Spots3;
+
 
 %If we only have one channel, then convert Spots to a
 %standard structure.
 if nCh == 1 && iscell(Spots)
-    Spots = Spots{1}; %#ok<NASGU>
+    Spots = Spots{1}; 
+    Spots3 = Spots3{1}; 
 end
 
 mkdir([DropboxFolder, filesep, Prefix]);

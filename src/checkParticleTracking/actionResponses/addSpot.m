@@ -80,10 +80,10 @@ else
 
                 if cc == '['
                     temp_particles{i} = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood, snippet_size, ...
-                        pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [], '', intScale);
+                        pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [], '', intScale,[], [], [], []);
                 elseif cc == '{'
                     temp_particles{i} = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood, snippet_size, ...
-                        pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', intScale);
+                        pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', intScale,[], [], [], []);
                 end
             end
 
@@ -177,7 +177,7 @@ else
                 elseif cc == '{'
                     force_z = CurrentZ;
                 end
-                [tempSpots,~] = findBrightestZ(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex), -1, use_integral_center, force_z);
+                [tempSpots,~] = findBrightestZ(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex), -1, use_integral_center, force_z, []);
                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = tempSpots;
 %%
                 try
