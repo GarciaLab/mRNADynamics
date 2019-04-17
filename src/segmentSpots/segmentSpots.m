@@ -157,9 +157,7 @@ for channelIndex = 1:nCh
         tempSpots = segmentSpotsZTracking(pixelSize,tempSpots);
         
         [~, falsePositives, tempSpots] = findBrightestZ([], numShadows, useIntegralCenter, 0, tempSpots);
-        
-        %Create a final Spots structure to be fed into TrackmRNADynamics
-                
+                        
         for i = 1:length(tempSpots)
             
             if isstruct(tempSpots(i).Fits)
