@@ -140,23 +140,13 @@ function validateExperimentTypeSupported(ExperimentType)
 end
 
 function SpotsChannel = determineSpotsChannel(ExperimentType, Channel1, Channel2)
-
-  if strcmp(ExperimentType, '1spot') || strcmp(ExperimentType, '2spot')
-    SpotsChannel = 1;
-    %(MT, 2018-02-11) Added support for lattice imaging, maybe temporary -
-    %FIX LATER
-  elseif strcmp(ExperimentType, 'inputoutput') || strcmp(ExperimentType, 'lattice')
+    %Find the channel(s) with spots
     SpotsChannel = find(~cellfun(@isempty, strfind(lower([Channel1, Channel2]), 'mcp')) | ...
-      ~cellfun(@isempty, strfind(lower([Channel1, Channel2]), 'pcp')));
+          ~cellfun(@isempty, strfind(lower([Channel1, Channel2]), 'pcp')));
 
-    if length(SpotsChannel) > 1
-      error('only one output channel currently supported in inputoutput mode')
+    if strcmp(ExperimentType, 'inputoutput') && length(SpotsChannel) > 1
+          error('Only one output channel currently supported in inputoutput mode. Try running through nuclear segmentation/tracking as ''inputoutput'' and then through spot segmentation/tracking steps as ''2spot''.')
     end
-
-  elseif strcmpi(ExperimentType, '2spot2color')
-    SpotsChannel = [1, 2];
-  end
-
 end
 
 function Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh,retrack)
