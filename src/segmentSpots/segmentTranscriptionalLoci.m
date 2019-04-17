@@ -1,7 +1,9 @@
-function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures, pool, doFF, ffim, Threshold, neighborhood, snippet_size, pixelSize, microscope, intScale, Weka)
+function [all_frames, Spots] = segmentTranscriptionalLoci(ExperimentType, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures, pool, doFF, ffim, Threshold, neighborhood, snippet_size, pixelSize, microscope, intScale, Weka, use_integral_center)
   
   waitbarFigure = waitbar(0, 'Segmenting spots');
 
+  Spots = repmat(struct('Fits', []), 1, numFrames);
+  
   if displayFigures
       %left bottom width height
       dogFig = figure('units', 'normalized', 'position',[.4, .5, .4, .4]);
@@ -48,7 +50,7 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
     
     w = waitbar(current_frame / numFrames, waitbarFigure);
     set(w, 'units', 'normalized', 'position', [0.4, .15, .25,.1]);
-        
+    zFits = [];  
     for zIndex = 1:zSize
       imFileName = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(zIndex, 2),...
         nameSuffix, '.tif'];   
@@ -75,7 +77,7 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
           dogO = dog(:);
           lLim = median(dogO);
           uLim = max(dogO);
-        if uLim > 0
+        if lLim ~= uLim
          imagesc(dogAx,dog, [lLim, uLim]);
          colormap(dogAx, 'gray')
 
@@ -107,37 +109,34 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
         if ~displayFigures && pool
           parfor spotIndex = 1:n_spots
             centroid = round(centroids(spotIndex).Centroid);
-%             [tp(spotIndex),temp_particles(spotIndex)] = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
-%               neighborhood, snippet_size, pixelSize, displayFigures, graphicsHandles, microscope, 0, centroid,MLFlag, intScale);
-           temp_particles(spotIndex) = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
-              neighborhood, snippet_size, pixelSize, displayFigures, graphicsHandles, microscope, 0, centroid,MLFlag, intScale);
-      
+           [temp_particles(spotIndex), Fits] = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
+              neighborhood, snippet_size, pixelSize, displayFigures, graphicsHandles, microscope, 0, centroid,MLFlag, intScale, current_frame, spotIndex, zIndex, use_integral_center);
           end
         else
           for spotIndex = 1:n_spots
             centroid = round(centroids(spotIndex).Centroid);
             tic
-%             [tp(spotIndex),temp_particles(spotIndex)] = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
-%               neighborhood, snippet_size, pixelSize, displayFigures, graphicsHandles, microscope, 0, centroid, MLFlag, intScale);
-            temp_particles(spotIndex) = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
-              neighborhood, snippet_size, pixelSize, displayFigures, graphicsHandles, microscope, 0, centroid,MLFlag, intScale);  
+            [temp_particles(spotIndex), Fits] = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
+              neighborhood, snippet_size, pixelSize, displayFigures, graphicsHandles, microscope, 0, centroid,MLFlag, intScale, current_frame, spotIndex, zIndex, use_integral_center);  
+                    Spots(current_frame).Fits = [Spots(current_frame).Fits, Fits];
+
           end
+%           zFits = [zFits, Fits];
+%           Spots(current_frame).Fits = [Spots(current_frame).Fits, Fits];
         end
         
         for spotIndex = 1:n_spots
           if ~isempty(temp_particles{spotIndex})
-              % if ~isempty([tp(k)])
             temp_frames = [temp_frames, temp_particles(spotIndex)];
-            %temp_frames = [temp_frames, tp(k)];
           end
         end
 
         all_frames{current_frame, zIndex} = temp_frames;
-%           all_frames{current_frame, zIndex} = tp;
       end
       
     end
-    
+%     Spots(current_frame).Fits = [Spots(current_frame).Fits, zFits];
+
   end
 
   close(waitbarFigure);

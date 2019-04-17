@@ -1,4 +1,4 @@
-function [Particles, fields] = saveParticleInformation(numFrames, all_frames, zSize, use_integral_center)
+function Particles = saveParticleInformation(numFrames, all_frames, zSize, use_integral_center)
   % Create a useful structure that can be fed into pipeline
   Particles = struct;
   n = 1;
@@ -49,7 +49,5 @@ function [Particles, fields] = saveParticleInformation(numFrames, all_frames, zS
   end 
 
   close(waitbarFigure);
-
-  fields = fieldnames(Particles);
   
 end 

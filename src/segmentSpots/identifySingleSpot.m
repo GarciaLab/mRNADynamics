@@ -1,5 +1,5 @@
-function [temp_particles,tp] = identifySingleSpot(particle_index, image, image_label, dog_image, searchRadius, snippet_size, ...
-    pixelSize, show_status, graphicsHandles, microscope, addition, forced_centroid, ml_string, intScale)
+function [temp_particles, Fits] = identifySingleSpot(particle_index, image, image_label, dog_image, searchRadius, snippet_size, ...
+    pixelSize, show_status, graphicsHandles, microscope, addition, forced_centroid, ml_string, intScale, currentFrame, spotIndex, zIndex, use_integral_center)
 % identifySingleSpot(awholelot)
 %
 % DESCRIPTION
@@ -20,6 +20,10 @@ function [temp_particles,tp] = identifySingleSpot(particle_index, image, image_l
 %
 % Documented by: Armando Reimer (areimer@berkeley.edu)
 
+    
+    Spots = [];
+    Fits = [];
+    
     ML = 0;
     if strcmp(ml_string, 'ML')
         ML = 1;
@@ -77,18 +81,6 @@ function [temp_particles,tp] = identifySingleSpot(particle_index, image, image_l
     %Compute some preliminary properties of the located spots
     temp_particles = {[]};
     
-    
-    tp = struct('fixedAreaIntensity', [], 'xFit', [], 'yFit', [], 'Offset', [],...
-       'Snippet', [], 'Area', [], 'xFitWidth', [], 'yFitWidth', [], 'centroidY',...
-       [], 'centroidX', [], 'GaussianIntensity', [], 'CentralIntensity', [],...
-       'DoGIntensity', [], 'snippetMask', [], 'sistersXWidth', [], 'sistersYWidth',...
-       [], 'sisterSeparation', [], 'relative_errors', [], 'ConfidenceIntervals',...
-       [], 'gaussSpot', [], 'mesh', []);
-   
-   
-   %AR 7192018- i want to switch the tempparticles over to this structure
-   %in the future for reading clarity. currently doesn't have the right
-   %fields and is unused. 
    
    
     if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)) ~= 0
@@ -244,33 +236,31 @@ function [temp_particles,tp] = identifySingleSpot(particle_index, image, image_l
                 temp_particles = {{fixedAreaIntensity, spot_x, spot_y, offset, snippet, ...
                     gaussianArea, sigma_x, sigma_y, centroid_y, centroid_x, gaussianIntensity,intensity,...
                     max_dog, snippet_mask, sigma_x2, sigma_y2, sister_chromatid_distance, relative_errors, confidence_intervals, gaussian, mesh,fits, maskArea, fixedAreaIntensityCyl3}};
+
                 
-                tp.fixedAreaIntensity = fixedAreaIntensity;
-                tp.xFit = spot_x;
-                tp.yFit = spot_y;
-                tp.Offset = offset;
-                tp.Snippet = snippet;
-                tp.GaussianArea = gaussianArea;
-                tp.sigmaX = sigma_x;
-                tp.sigmaY = sigma_y;
-                tp.centroidY = centroid_y;
-                tp.centroidX = centroid_x;
-                tp.GaussianIntensity = gaussianIntensity;
-                tp.centralIntensity = intensity;
-                tp.DoGIntensity = max_dog;
-                tp.snippetMask = snippet_mask;
-                tp.sigmaX2 = sigma_x2;
-                tp.sigmaY2 = sigma_y2;
-                tp.sisterSeparation = sister_chromatid_distance;
-                tp.relativeErrors = relative_errors;
-                tp.confidenceIntervals = confidence_intervals;
-                tp.Gaussian = gaussian;
-                tp.Mesh = mesh;
-                tp.Fits = fits;
-                tp.maskArea = maskArea;
-                tp.fixedAreaIntensityCyl3 = fixedAreaIntensityCyl3;
+                 Fits.FixedAreaIntensity = fixedAreaIntensity;
+                  Fits.xFit = spot_x;
+                  Fits.yFit = spot_y;
+                  Fits.Offset = offset;
+                  Fits.Area = gaussianArea;
+                  Fits.xFitWidth = sigma_x;
+                  Fits.yFitWidth = sigma_y;
+                  Fits.yDoG = centroid_y;
+                  Fits.xDoG = centroid_x;
+                  Fits.GaussianIntensity = gaussianIntensity;
+                  Fits.CentralIntensity = intensity;
+                  Fits.DOGIntensity = max_dog;
+                  Fits.SisterDistance = sister_chromatid_distance;
+                  Fits.ConfidenceIntervals = confidence_intervals;
+                  Fits.gaussParams = fits;
+                  Fits.intArea = maskArea;
+                  Fits.z = zIndex;
+                  Fits.frame = currentFrame;
+                  Fits.discardThis = 0;
+                  Fits.r = 0;
+                  Fits.IntegralZ = use_integral_center;
             else                
-                temp_particles = {{}};   
+                temp_particles = {{}}; 
             end
 
        end
