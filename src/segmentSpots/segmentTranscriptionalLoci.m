@@ -105,23 +105,22 @@ function [all_frames, Spots] = segmentTranscriptionalLoci(nCh, coatChannel, chan
       temp_particles = cell(1, n_spots);
       
       if n_spots ~= 0
-        if ~displayFigures && pool
-          parfor spotIndex = 1:n_spots
-            centroid = round(centroids(spotIndex).Centroid);
-           [temp_particles(spotIndex), Fits] = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
-              neighborhood, snippet_size, pixelSize, displayFigures, graphicsHandles, microscope, 0, centroid,MLFlag, intScale, current_frame, spotIndex, zIndex, use_integral_center);
-          end
-        else
+%         if ~displayFigures && pool
+%           for spotIndex = 1:n_spots
+%             centroid = round(centroids(spotIndex).Centroid);
+%            [temp_particles(spotIndex), Fits] = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
+%               neighborhood, snippet_size, pixelSize, displayFigures, graphicsHandles, microscope, 0, centroid,MLFlag, intScale, current_frame, spotIndex, zIndex, use_integral_center);
+%           end
+%         else
           for spotIndex = 1:n_spots
             centroid = round(centroids(spotIndex).Centroid);
             tic
             [temp_particles(spotIndex), Fits] = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
               neighborhood, snippet_size, pixelSize, displayFigures, graphicsHandles, microscope, 0, centroid,MLFlag, intScale, current_frame, spotIndex, zIndex, use_integral_center);  
                     Spots(current_frame).Fits = [Spots(current_frame).Fits, Fits];
-
           end
 
-        end
+%         end
         
         for spotIndex = 1:n_spots
           if ~isempty(temp_particles{spotIndex})
