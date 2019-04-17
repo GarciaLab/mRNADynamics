@@ -15,6 +15,4 @@ function coatChannel = getCoatChannel(ExperimentType, Channel1, Channel2)
       error('No MCP or PCP channel detected. Check MovieDatabase.csv')
     end 
 
-  end 
-
 end 
