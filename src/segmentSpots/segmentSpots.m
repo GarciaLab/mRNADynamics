@@ -123,20 +123,23 @@ clear rawdir;
 % above the threshold. Then, it finds global maxima within these regions by searching in a region "neighborhood"
 % within the regions.
 
+if strcmpi(ExperimentType, '2spot2color')
+    nCh = 2;
+end
+
+[ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, FrameInfo);
+clear rawdir;
+
+% The spot finding algorithm first segments the image into regions that are
+% above the threshold. Then, it finds global maxima within these regions by searching in a region "neighborhood"
+% within the regions.
+
 pixelSize = FrameInfo(1).PixelSize * 1000; %nm
 neighborhood = round(1300 / pixelSize); %nm
 snippet_size = 2 * (floor(1300 / (2 * pixelSize))) + 1; % nm. note that this is forced to be odd
-
-all_frames = cell(numFrames, zSize);
-close all;
-
 coatChannel = getCoatChannel(ExperimentType, Channel1, Channel2);
-Spots = [];
 falsePositives = 0;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Segment transcriptional loci
-
+all_frames = cell(numFrames, zSize);
 Spots3 = {};
 
 for channelIndex = 1:nCh
@@ -146,7 +149,7 @@ for channelIndex = 1:nCh
     
     tic;
     
-    [all_frames, tempSpots] = segmentTranscriptionalLoci(ExperimentType, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, ...
+    [all_frames, tempSpots] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, ...
         PreProcPath, Prefix, DogOutputFolder, displayFigures, pool, doFF, ffim, Threshold(channelIndex), neighborhood, ...
         snippet_size, pixelSize, microscope, intScale, Weka, useIntegralCenter);
     
@@ -170,8 +173,6 @@ for channelIndex = 1:nCh
             if isstruct(tempSpots(i).Fits)
                 tempSpots(i).Fits = rmfield(tempSpots(i).Fits, 'r');
                 tempSpots(i).Fits = rmfield(tempSpots(i).Fits, 'discardThis');
-            else
-%                 Spots2(i).Fits = [];
             end
         end
         
