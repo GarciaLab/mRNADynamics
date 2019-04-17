@@ -1,4 +1,4 @@
-function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures, pool, doFF, ffim, Threshold, neighborhood, snippet_size, pixelSize, microscope, intScale, Weka)
+function all_frames = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures, pool, doFF, ffim, Threshold, neighborhood, snippet_size, pixelSize, microscope, intScale, Weka)
   
   waitbarFigure = waitbar(0, 'Segmenting spots');
 
@@ -26,20 +26,19 @@ function all_frames = segmentTranscriptionalLoci(ExperimentType, coatChannel, ch
       MLFlag = '';
       dogStr = 'DOG_';
   end
-  % (MT, 2018-02-11) Added support for lattice imaging, maybe 
-  % temporary - FIX LATER
-  % (MT, 2019-04-03) Hacky fix to run input2spot data through as 2spot. 
-  % Does this even need to take the ExperimentType into account?
-  if strcmpi(ExperimentType, 'inputoutput') ||  strcmpi(ExperimentType, 'lattice') || strcmpi(ExperimentType, '2spot')
-    nameSuffix= ['_ch', iIndex(coatChannel, 2)];
-    if Threshold == -1 && ~Weka
-        Threshold = determineThreshold(Prefix, coatChannel);
-        display(['Threshold: ', num2str(Threshold)])
-    end
-  else
+  
+  %Check how many coat channels we have and segment the appropriate channel
+  %accordingly
+  if nCh > 1
     nameSuffix = ['_ch', iIndex(channelIndex, 2)];
     if Threshold == -1 && ~Weka
         Threshold = determineThreshold(Prefix, channelIndex);
+        display(['Threshold: ', num2str(Threshold)])
+    end
+  else
+    nameSuffix= ['_ch', iIndex(coatChannel, 2)];
+    if Threshold == -1 && ~Weka
+        Threshold = determineThreshold(Prefix, coatChannel);
         display(['Threshold: ', num2str(Threshold)])
     end
   end        
