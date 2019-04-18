@@ -1,25 +1,29 @@
-function AddParticlePosition(varargin)
+function AddParticlePosition(Prefix, varargin)
 %
-%Locates particles from a zoomed-in movie within full embryo images using
-%spatial cross-correlation.
+% DESCRIPTION
+% Locates particles from a zoomed-in movie within full embryo images using
+% spatial cross-correlation.
 %
-%First parameter should be the prefix. The other parameters can be:
-%SkipAlignment
-%ManualAlignment
-%NoAP: Just add X and Y information
-%SelectChannel: Choose which channel to align to
+% ARGUMENTS
+% Prefix: Prefix of the data set to analyze
 %
-%Manual alignment controls
+% OPTIONS
+% 'SkipAlignment': If you want to skip alignment
+% 'ManualAlignment': If you want to manually align the zoomed in and full
+%                       embyro images
+% 'NoAP': Just adds X and Y information
+% 'SelectChannel': Prompts user to select the channel to use for alignment               
 %
-%. - Move to the right
-%> - Move to the right further
-%, - Move to the left
-%< - Move to the left further
-%a - Move up
-%A - Move up further
-%z - Move down
-%Z - Move down further
-%x - Save and cancel
+% MANUAL ALIGNMENT CONTROLS
+% . - Move to the right
+% > - Move to the right further
+% , - Move to the left
+% < - Move to the left further
+% a - Move up
+% A - Move up further
+% z - Move down
+% Z - Move down further
+% x - Save and exit
 %
 %V2: Changed this function to use a correlation in order to center the
 %images.
@@ -27,7 +31,7 @@ function AddParticlePosition(varargin)
 
 %Get the relevant folders for this data set
 [SourcePath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
-~, ~] = DetermineAllLocalFolders(varargin{1});
+~, ~] = DetermineAllLocalFolders(Prefix);
 
 
 SkipAlignment=0;
@@ -41,8 +45,7 @@ yToManualAlignmentPrompt = 0;
 close all
 
 if ~isempty(varargin)
-    Prefix=varargin{1};
-    for i=2:length(varargin)
+    for i=1:length(varargin)
         switch varargin{i}
             case {'SkipAlignment'}
                 disp('Skipping alignment step')
@@ -67,7 +70,7 @@ end
 
 %Get the relevant folders for this data set
 [SourcePath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
-~, ~] = DetermineAllLocalFolders(varargin{1}, optionalResults);
+~, ~] = DetermineAllLocalFolders(Prefix, optionalResults);
 
 
 if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
@@ -180,27 +183,27 @@ if ~NoAP
         [indx,tf] = listdlg('PromptString','Select the channel to use for alignment:','ListString',list);
         ChannelToLoad = indx;
     else
-    % From now, we will use a better way to define the channel for
-    % alignment (used for cross-correlation).
-    % Find channels with ":Nuclear"
-    ChannelToLoadTemp=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
+        % From now, we will use a better way to define the channel for
+        % alignment (used for cross-correlation).
+        % Find channels with ":Nuclear"
+        ChannelToLoadTemp=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
 
-    % Define the Channel to load, for calculating the cross-correlation
-    % In future, we can think about combining multiple channels for
-    % calculating the cross-correlation to get more accurate estimates.
-    % For now, let's pick only one channel for this. For multiple
-    % channels, let's first pick the first channel. This can be fine in
-    % most cases, since we normally use lower wavelength for sth we
-    % care more, or we get better signal from those.
-    if sum(ChannelToLoadTemp) && sum(ChannelToLoadTemp)==1
-        ChannelToLoad=find(ChannelToLoadTemp);
-    elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>=2
-        ChannelToLoad=find(ChannelToLoadTemp);
-        ChannelToLoad = ChannelToLoad(1);
-        disp('You have multiple nuclear channels, pick the one to use.');
-    else
-        error('No histone channel found. Was it defined in MovieDatabase?')
-    end
+        % Define the Channel to load, for calculating the cross-correlation
+        % In future, we can think about combining multiple channels for
+        % calculating the cross-correlation to get more accurate estimates.
+        % For now, let's pick only one channel for this. For multiple
+        % channels, let's first pick the first channel. This can be fine in
+        % most cases, since we normally use lower wavelength for sth we
+        % care more, or we get better signal from those.
+        if sum(ChannelToLoadTemp) && sum(ChannelToLoadTemp)==1
+            ChannelToLoad=find(ChannelToLoadTemp);
+        elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>=2
+            ChannelToLoad=find(ChannelToLoadTemp);
+            ChannelToLoad = ChannelToLoad(1);
+            disp('You have multiple nuclear channels, pick the one to use.');
+        else
+            error('No histone channel found. Was it defined in MovieDatabase?')
+        end
     
     end
         
