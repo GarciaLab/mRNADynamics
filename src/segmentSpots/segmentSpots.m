@@ -174,7 +174,7 @@ for channelIndex = 1:nCh
     timeElapsed = toc;
     disp(['Elapsed time: ', num2str(timeElapsed / 60), ' min'])
     try %#ok<TRYNC>
-        log = logSegmentSpots(DropboxFolder, Prefix, timeElapsed, [], numFrames, Spots, falsePositives, Threshold, channelIndex);
+        log = logSegmentSpots(DropboxFolder, Prefix, timeElapsed, [], numFrames, Spots3, falsePositives, Threshold, channelIndex);
         display(log);
     end
     
