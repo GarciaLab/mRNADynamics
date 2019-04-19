@@ -8,6 +8,10 @@ loc = [Overlay.Position(1) + Overlay.Position(3) + 10, Overlay.Position(2)];
 screen_size = get(0, 'screensize');
 dim = [screen_size(3) - loc(1) - 10, Overlay.Position(4)];
 controls_fig = uifigure('Position', [loc(1), loc(2), dim(1), dim(2)]);
+
+Overlay.Units = 'normalized';
+offset = 0.5 * dim(2);
+
 try
 controls = uipanel(controls_fig, 'Title', 'Controls', 'Position', ...
     [0, 0, dim(1), dim(2)], ...
@@ -17,9 +21,15 @@ catch
     controls = uipanel(controls_fig, 'Title', 'Controls', 'Position', ...
     [0, 0, dim(1), dim(2)], ...
     'FontSize', 12);
+  
+    % this is a hack for older MATLAB version that don't support scrollable panels this way.
+    % basically, the scrollable version is setting an offset bigger than
+    % the field of view (because is scrollable), but older versions would
+    % position components outside the field of view without the possibility
+    % of scrolling to view them.
+    offset = -20; 
 end
-Overlay.Units = 'normalized';
-offset = 0.5 * dim(2);
+
 uilabel('Parent', controls, 'Text', 'Frame: ', 'Position', ...
     [0.05 * dim(1), .9 * dim(2) + offset, 0.35 * dim(1), 0.08 * dim(2)], ...
     'FontSize', 10);
