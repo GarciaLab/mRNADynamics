@@ -178,4 +178,11 @@ for frame = 1:length(Spots)
     end
 end
 
+for i = 1:length(Spots2)
+    if isstruct(Spots2(i).Fits)
+        Spots2(i).Fits = rmfield(Spots2(i).Fits, 'r');
+        Spots2(i).Fits = rmfield(Spots2(i).Fits, 'discardThis');
+    end
+end
+
 end
