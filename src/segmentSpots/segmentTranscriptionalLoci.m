@@ -18,6 +18,7 @@ function [all_frames, Spots] = segmentTranscriptionalLoci(nCh, coatChannel, chan
       graphicsHandles = [dogFig, dogAx, gFig, gAx, snipFig, snipAx, rawFig, rawAx];
   else
       graphicsHandles = [];
+      dogAx = 0;
   end
   
   if Weka
@@ -45,10 +46,11 @@ function [all_frames, Spots] = segmentTranscriptionalLoci(nCh, coatChannel, chan
     end
   end        
   
-  for current_frame = initialFrame:numFrames
+  parfor current_frame = initialFrame:numFrames
     
-    w = waitbar(current_frame / numFrames, waitbarFigure);
-    set(w, 'units', 'normalized', 'position', [0.4, .15, .25,.1]);
+    %w = waitbar(current_frame / numFrames, waitbarFigure);
+    %set(w, 'units', 'normalized', 'position', [0.4, .15, .25,.1]);
+
     zFits = [];  
     for zIndex = 1:zSize
       imFileName = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(zIndex, 2),...
