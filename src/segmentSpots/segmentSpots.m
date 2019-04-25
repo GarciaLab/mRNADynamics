@@ -140,8 +140,7 @@ snippet_size = 2 * (floor(1300 / (2 * pixelSize))) + 1; % nm. note that this is 
 coatChannel = getCoatChannel(ExperimentType, Channel1, Channel2);
 falsePositives = 0;
 all_frames = cell(numFrames, zSize);
-Spots3 = {};
-Spots = [];
+Spots = cell(1, nCh);
 
 for channelIndex = 1:nCh
     if ismember(channelIndex, skipChannel)
@@ -158,36 +157,22 @@ for channelIndex = 1:nCh
         
         [~, falsePositives, tempSpots] = findBrightestZ([], numShadows, useIntegralCenter, 0, tempSpots);
                         
-        for i = 1:length(tempSpots)
-            
-            if isstruct(tempSpots(i).Fits)
-                tempSpots(i).Fits = rmfield(tempSpots(i).Fits, 'r');
-                tempSpots(i).Fits = rmfield(tempSpots(i).Fits, 'discardThis');
-            end
-        end
-        
-
-    
-    Spots3{channelIndex} = tempSpots;
-    
+    Spots{channelIndex} = tempSpots;
     
     timeElapsed = toc;
     disp(['Elapsed time: ', num2str(timeElapsed / 60), ' min'])
     try %#ok<TRYNC>
-        log = logSegmentSpots(DropboxFolder, Prefix, timeElapsed, [], numFrames, Spots3, falsePositives, Threshold, channelIndex);
+        log = logSegmentSpots(DropboxFolder, Prefix, timeElapsed, [], numFrames, Spots, falsePositives, Threshold, channelIndex);
         display(log);
     end
     
 end
-
-Spots = Spots3;
 
 
 %If we only have one channel, then convert Spots to a
 %standard structure.
 if nCh == 1 && iscell(Spots)
     Spots = Spots{1}; 
-    Spots3 = Spots3{1}; 
 end
 
 mkdir([DropboxFolder, filesep, Prefix]);
