@@ -45,7 +45,15 @@ for ch = 1:nCh
     
     nFrames = length(Spots{ch});
     SpotsCh = Spots{ch};
-    for frame = 1:nFrames %frames
+    
+    % disables parfor if figures are going to be displayed
+    ps = parallel.Settings;
+    if displayFigures
+        ps.Pool.AutoCreate = false;
+    else
+        ps.Pool.AutoCreate = true;
+    end
+    parfor frame = 1:nFrames %frames
         nSpotsPerFrame = length(SpotsCh(frame).Fits);
         SpotsFrame = SpotsCh(frame).Fits;
         
