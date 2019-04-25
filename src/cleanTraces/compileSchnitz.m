@@ -13,13 +13,15 @@ function [s_cells] = compileSchnitz(schnitzcells, frames_clean, setID, i, ...
         if length(nc_frames) >= 1 % skip nuclei not desired nc range                     
             %Will be set to particle real values for nuclei with matching
             %particle
-            for cidx = 1:num_outputs
-                s_cells(e_pass).(['ParticleID' num2str(cidx)]) = NaN;
-                s_cells(e_pass).(['xPosParticle' num2str(cidx)]) = NaN(1,sum(nc_filter));
-                s_cells(e_pass).(['yPosParticle' num2str(cidx)]) = NaN(1,sum(nc_filter));
-                s_cells(e_pass).(['zPosParticle' num2str(cidx)]) = NaN(1,sum(nc_filter));            
-                s_cells(e_pass).(['fluo' num2str(cidx)]) = NaN(1,sum(nc_filter));
-            end
+            s_cells(e_pass).ParticleID = NaN(1, num_outputs);
+            s_cells(e_pass).xPosParticle = NaN(num_outputs,sum(nc_filter));
+            s_cells(e_pass).yPosParticle= NaN(num_outputs,sum(nc_filter));
+            s_cells(e_pass).zPosParticle = NaN(num_outputs,sum(nc_filter));           
+            s_cells(e_pass).fluo = NaN(1,sum(nc_filter));
+            s_cells(e_pass).fluo3 = NaN(1, sum(nc_filter));
+            s_cells(e_pass).fluo5 = NaN(1, sum(nc_filter));
+            s_cells(e_pass).fluo3D = NaN(1, sum(nc_filter));
+
             % add core nucleus info
             x = schnitzcells(e).cenx;            
             y = schnitzcells(e).ceny;                           
@@ -50,7 +52,7 @@ function [s_cells] = compileSchnitz(schnitzcells, frames_clean, setID, i, ...
                 for j = 1:length(cp_protein)
                     prot_nuc = cp_protein{j}([cp_protein{j}.schnitz] == e);                     
                     pt_vec = prot_nuc.FluoMax(nc_filter);
-                    s_cells(e_pass).(['protein' j]) = pt_vec';
+                    s_cells(e_pass).protein(j,:) = pt_vec';
                 end
             end
             e_pass = e_pass + 1;

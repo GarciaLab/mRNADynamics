@@ -184,6 +184,12 @@ else
     disp('keepProcessedData parameter sent. ProcessedData folder will not be removed.');
 end
 
+if fit3D
+    disp('Fitting 3D Gaussians...')
+    fit3DGaussiansToAllSpots(Prefix, 'segmentSpots', Spots, optionalResults);
+    disp('3D Gaussian fitting completed.')
+end
+
 if ~keepPool
     
     try  %#ok<TRYNC>
@@ -191,12 +197,6 @@ if ~keepPool
         delete(poolobj);
     end
     
-end
-
-if fit3D
-    disp('Fitting 3D Gaussians...')
-    fit3DGaussiansToAllSpots(Prefix, 'segmentSpots', Spots, optionalResults);
-    disp('3D Gaussian fitting completed.')
 end
 
 end

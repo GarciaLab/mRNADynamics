@@ -32,6 +32,7 @@ function combineAndCleanTraces(project, varargin)
 
 [fnames, ncs_used, DropboxFolder, Prefixes] = processCompileTracesOptions(varargin);
 minDP = 5;
+nan_buffer = 2;
 
 %% ...............Extract CompiledParticles data from each file.......%
 
@@ -191,14 +192,35 @@ for i = 1:length(cp_filenames)
                 trace_stop = find(~isnan(raw_trace),1,'last');        
                 %Creat versions with all intervening frames present (missing frames
                 %appear as NaNs)
-                trace_full = raw_trace(trace_start:trace_stop)';                                   
-                frames_full = frames_clean(trace_start:trace_stop);                       
+                trace_full = raw_trace(trace_start:trace_stop)';
+                frames_full = frames_clean(trace_start:trace_stop); 
+                
                 % Find intersection btw full frame range and CP frames        
                 raw_pt_frames = cp_particles{cidx}(j).Frame;
-                cp_frames = raw_pt_frames(ismember(raw_pt_frames,frames_full));        
+                cp_frames = raw_pt_frames(ismember(raw_pt_frames,frames_clean));        
                 qc_flag = 1;
                 if numel(cp_frames) < minDP
                     qc_flag = 0;
+                end
+                
+                % gets other fluorescence measures
+                raw_trace3 = nan(1, length(frames_clean));
+                raw_trace5 = nan(1, length(frames_clean));
+                raw_trace3D = nan(1, length(frames_clean));
+                if isfield(cp_particles{cidx}(j), 'Fluo3')
+                    raw3 = nan(1, length(frames_raw));
+                    raw3(raw_pt_frames) = cp_particles{cidx}(j).Fluo3;
+                    raw_trace3 = raw3(first_frame:last_frame);
+                end
+                if isfield(cp_particles{cidx}(j), 'Fluo5')
+                    raw5 = nan(1, length(frames_raw));
+                    raw5(raw_pt_frames) = cp_particles{cidx}(j).Fluo5;
+                    raw_trace5 = raw5(first_frame:last_frame);
+                end
+                if isfield(cp_particles{cidx}(j), 'Fluo3D')
+                    raw3D = nan(1, length(frames_raw));
+                    raw3D(raw_pt_frames) = cp_particles{cidx}(j).Fluo3D;
+                    raw_trace3D = raw3D(first_frame:last_frame);
                 end
                 
                 % stores z information if necessary
@@ -230,27 +252,30 @@ for i = 1:length(cp_filenames)
                     error('Inconsistent particle and nucleus frames')
                 end
                 % record fluorescence info             
-                s_cells(nc_ind).(['fluo' num2str(cidx)])(spot_filter) = trace_full;               
+                s_cells(nc_ind).fluo(cidx, spot_filter) = raw_trace(trace_start:trace_stop)';
+                s_cells(nc_ind).fluo3(cidx, spot_filter) = raw_trace3(trace_start:trace_stop);
+                s_cells(nc_ind).fluo5(cidx, spot_filter) = raw_trace5(trace_start:trace_stop);
+                s_cells(nc_ind).fluo3D(cidx, spot_filter)= raw_trace3D(trace_start:trace_stop);
                 % x and y info                                
-                s_cells(nc_ind).(['xPosParticle' num2str(cidx)])(ismember(nc_frames,cp_frames)) = ...
+                s_cells(nc_ind).xPosParticle(cidx,ismember(nc_frames,cp_frames)) = ...
                     cp_particles{cidx}(j).xPos(ismember(cp_frames,nc_frames));
-                s_cells(nc_ind).(['yPosParticle' num2str(cidx)])(ismember(nc_frames,cp_frames)) = ...
+                s_cells(nc_ind).yPosParticle(cidx,ismember(nc_frames,cp_frames)) = ...
                     cp_particles{cidx}(j).yPos(ismember(cp_frames,nc_frames));
                 % add z info       
                 if ~cp_z_flag
-                    s_cells(nc_ind).(['zPosParticle' num2str(cidx)])(spot_filter) = bZ;   
+                    s_cells(nc_ind).zPosParticle(cidx,spot_filter) = bZ;   
                 else
-                    s_cells(nc_ind).(['zPosParticle' num2str(cidx)])(ismember(nc_frames,cp_frames)) = ...
+                    s_cells(nc_ind).zPosParticle(cidx,ismember(nc_frames,cp_frames)) = ...
                     cp_particles{cidx}(j).zPos(ismember(cp_frames,nc_frames));
                 end
                 % add ap info
                 if ap_flag
-                    s_cells(nc_ind).(['apPosParticle' num2str(cidx)])(ismember(nc_frames,cp_frames)) = ...
+                    s_cells(nc_ind).apPosParticle(cidx,ismember(nc_frames,cp_frames)) = ...
                     cp_particles{cidx}(j).APpos(ismember(cp_frames,nc_frames));
                 end
                 % Identifier variables                        
                 particle = cp_particles{cidx}(j).OriginalParticle;                        
-                s_cells(nc_ind).(['ParticleID' num2str(cidx)]) = eval([num2str(setID) '.' sprintf('%04d',particle)]);   
+                s_cells(nc_ind).ParticleID(cidx) = eval([num2str(setID) '.' sprintf('%04d',particle)]);   
                 s_cells(nc_ind).qc_flag{cidx} = qc_flag; 
             end      
         end
@@ -263,7 +288,7 @@ end
 med_time = nanmedian(diff([nucleus_struct.time]));
 TresInterp = round(med_time);
 [nucleus_struct] = interpolateTraces(nucleus_struct, minDP, ...
-    TresInterp, num_outputs);
+    TresInterp, num_outputs, nan_buffer); 
 
 %% ..................Save Trace and Nucleus Data .........................
 mkdir([DropboxFolder,filesep,project]);
