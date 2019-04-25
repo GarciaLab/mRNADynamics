@@ -21,7 +21,6 @@ function [temp_particles, Fits] = identifySingleSpot(particle_index, image, imag
 % Documented by: Armando Reimer (areimer@berkeley.edu)
 
     
-    Spots = [];
     Fits = [];
     
     ML = 0;
@@ -109,6 +108,8 @@ function [temp_particles, Fits] = identifySingleSpot(particle_index, image, imag
                centroid_y + snippet_size < size(image, 1) && centroid_x + snippet_size < size(image,2)
            
             snippet = image(centroid_y-snippet_size:centroid_y+snippet_size, centroid_x-snippet_size:centroid_x+snippet_size);
+            dogsnip = dog_image(centroid_y-snippet_size:centroid_y+snippet_size, centroid_x-snippet_size:centroid_x+snippet_size);
+            
             if doCyl
                 snippetAbove = imageAbove(centroid_y-snippet_size:centroid_y+snippet_size, centroid_x-snippet_size:centroid_x+snippet_size);
                 snippetBelow = imageBelow(centroid_y-snippet_size:centroid_y+snippet_size, centroid_x-snippet_size:centroid_x+snippet_size);
@@ -187,6 +188,7 @@ function [temp_particles, Fits] = identifySingleSpot(particle_index, image, imag
             % enough to position its center.
             
             snippet_mask = snippet;
+            dog_mask = dogsnip;
             if doCyl
                 snippet_mask_above = snippetAbove;
                 snippet_mask_below = snippetBelow;
@@ -199,6 +201,7 @@ function [temp_particles, Fits] = identifySingleSpot(particle_index, image, imag
                         snippet_mask(i, j) = 0;
                         snippet_mask_above(i,j) = 0;
                         snippet_mask_below(i,j) = 0;
+                        dog_mask(i,j) = 0;
                     else
                         maskArea = maskArea+1;
                     end 
@@ -208,7 +211,8 @@ function [temp_particles, Fits] = identifySingleSpot(particle_index, image, imag
             sigma_x2 = 0;
             sigma_y2 = 0;
             sister_chromatid_distance = NaN; %leaving this here for now but should be removed. AR 4/3/2019
-            fixedAreaIntensity = sum(sum(snippet_mask)) - offset*maskArea; %corrected AR 7/13/2018
+            fixedAreaIntensity = sum(sum(snippet_mask)) - (offset*maskArea); %corrected AR 7/13/2018
+            dogFixedAreaIntensity = sum(dog_mask(:));
             fixedAreaIntensityCyl3 = NaN;
             if doCyl
                 fixedAreaIntensityCyl3 =  sum(sum(snippet_mask)) + sum(sum(snippet_mask_above))...
@@ -242,9 +246,9 @@ function [temp_particles, Fits] = identifySingleSpot(particle_index, image, imag
                   Fits.xFit = spot_x;
                   Fits.yFit = spot_y;
                   Fits.Offset = offset;
-                  Fits.Area = {gaussianArea};
-                  Fits.xFitWidth = {sigma_x};
-                  Fits.yFitWidth = {sigma_y};
+                  Fits.Area = gaussianArea;
+                  Fits.xFitWidth = sigma_x;
+                  Fits.yFitWidth = sigma_y;
                   Fits.yDoG = centroid_y;
                   Fits.xDoG = centroid_x;
                   Fits.GaussianIntensity = gaussianIntensity;
@@ -253,6 +257,7 @@ function [temp_particles, Fits] = identifySingleSpot(particle_index, image, imag
                   Fits.SisterDistance = sister_chromatid_distance;
                   Fits.ConfidenceIntervals = confidence_intervals;
                   Fits.gaussParams = {fits};
+                  Fits.dogFixedAreaIntensity = dogFixedAreaIntensity;
                   Fits.intArea = maskArea;
                   Fits.z = zIndex;
                   Fits.frame = currentFrame;
