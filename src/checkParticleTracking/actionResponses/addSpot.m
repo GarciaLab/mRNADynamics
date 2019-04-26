@@ -100,7 +100,7 @@ else
                             temp_particles{zIndex}{1}{3};
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Offset(zIndex)=...
                             temp_particles{zIndex}{1}{4};
-                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Area{zIndex}=...
+                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Area(zIndex)=...
                             temp_particles{zIndex}{1}{6};
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yDoG(zIndex)=...
                             temp_particles{zIndex}{1}{9};
@@ -136,7 +136,7 @@ else
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xFit(zIndex)=nan;
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yFit(zIndex)=nan;
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Offset(zIndex)=nan;
-                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Area{zIndex}= nan;
+                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).Area(zIndex)= nan;
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).yDoG(zIndex)= nan;
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).xDoG(zIndex)= nan;
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).GaussianIntensity(zIndex)=nan;

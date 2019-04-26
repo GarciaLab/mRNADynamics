@@ -1,5 +1,5 @@
 function [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
-    ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3, ErrorIntegral5,backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D]=...
+    ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3, ErrorIntegral5,backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D, AmpDog, AmpDogMax]=...
     GetParticleTrace(CurrentParticle,Particles,Spots)
 
 %function [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
@@ -73,6 +73,17 @@ for i=1:length(Particles(CurrentParticle).Frame)
         catch
             AmpIntegral5(i)= NaN;
         end
+        try
+            AmpDog(i) =  Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).dogFixedAreaIntensity(zIndex);   
+        catch
+            AmpDog(i) = NaN;
+        end
+        try
+            AmpDogMax(i) =  Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).DOGIntensity(zIndex);
+        catch
+            AmpDogMax(i) = NaN;
+        end
+        
 end
 
 %Do a spline fit to the offset and use it to estimate the error
@@ -127,7 +138,7 @@ if exist('OffsetError')
     %each data point.
     try
         ErrorGauss=OffsetError*sqrt(2)*...
-         mean(cell2mat(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).Area));
+         mean(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).Area);
     catch
         try
              ErrorGauss=OffsetError*sqrt(2)*...
@@ -138,7 +149,7 @@ if exist('OffsetError')
     end
     try
         ErrorIntegralGauss3D=OffsetError*sqrt(2)*...
-         mean(cell2mat(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).Area));
+         mean(Spots(Particles(CurrentParticle).Frame(i)).Fits(Particles(CurrentParticle).Index(i)).Area);
     catch
         try
              ErrorIntegralGauss3D=OffsetError*sqrt(2)*...

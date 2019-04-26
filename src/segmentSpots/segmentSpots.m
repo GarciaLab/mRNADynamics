@@ -153,9 +153,9 @@ for channelIndex = 1:nCh
         PreProcPath, Prefix, DogOutputFolder, displayFigures, pool, doFF, ffim, Threshold(channelIndex), neighborhood, ...
         snippet_size, pixelSize, microscope, intScale, Weka, useIntegralCenter);
 
-        tempSpots = segmentSpotsZTracking(pixelSize,tempSpots);
-        
-        [~, falsePositives, tempSpots] = findBrightestZ([], numShadows, useIntegralCenter, 0, tempSpots);
+    tempSpots = segmentSpotsZTracking(pixelSize,tempSpots);
+
+    [~, falsePositives, tempSpots] = findBrightestZ([], numShadows, useIntegralCenter, 0, tempSpots);
                         
     Spots{channelIndex} = tempSpots;
     
