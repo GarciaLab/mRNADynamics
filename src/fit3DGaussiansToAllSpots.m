@@ -102,13 +102,14 @@ for ch = 1:nCh
 %                     end
 %                 end
             %         snips3D = [snips3D, currentSnippet3D]; %#ok<*AGROW>
+            
+            initial_params = [max(snip3D(:)), NaN,NaN, snipDepth + 1, width,offsetGuess];
+            fitOptions = [];
             if displayFigures
-                initial_params = [max(max(max(snip3D))), NaN,NaN, snipDepth + 1, width,offsetGuess];
-                [fits, intensity, ci95] = fitGaussian3D(snip3D, initial_params, zstep,'displayFigures');
-            else
-                initial_params = [max(max(max(snip3D))), NaN,NaN, snipDepth + 1, width,offsetGuess];
-                    [fits, intensity, ci95] = fitGaussian3D(snip3D, initial_params, zstep);
+                fitOptions = [fitOptions,'displayFigures'];
             end
+            
+            [fits, intensity, ci95] = fitGaussian3D(snip3D, initial_params, zstep, fitOptions{:});
 
             x = fits(2) - snippet_size + xSpot;
             y = fits(3) - snippet_size + ySpot;
@@ -126,7 +127,9 @@ for ch = 1:nCh
             SpotsCh(frame).Fits(spot).fits3D = fits;
             SpotsCh(frame).Fits(spot).gauss3DIntensity = intensity;
             SpotsCh(frame).Fits(spot).fits3DCI95 = ci95;
-
+    
+            %this is a flag that the fit was done over few z-frames so the
+            %user can decide if they want to keep the fit or not
             if k < 3
                 SpotsCh(frame).Fits(spot).weeFit = 1;
             else
@@ -144,8 +147,8 @@ if length(Spots) < 2
     Spots = Spots{1};
 end
 
+
 save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3');
 disp('Fitting done.')
 
 end
-
