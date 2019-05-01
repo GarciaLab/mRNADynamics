@@ -1,4 +1,4 @@
-function [fits, intensity, ci95, intensityError95] = fitGaussian3D(snip3D, initial_params, zstep, varargin)
+function [fits, intensity, ci95, intensityError95] = fitGaussian3D(snip3D, initial_params, zstep, pixelSize, varargin)
 
 %%Fitting
 displayFigures = 0;
@@ -8,6 +8,9 @@ for i = 1:length(varargin)
     end
 end
 
+
+    
+    
 [mesh_y,mesh_x, mesh_z] = meshgrid(1:size(snip3D,2), 1:size(snip3D,1), 1:size(snip3D, 3));
 
 %     % Single 2D generalized gaussian function
@@ -31,7 +34,7 @@ centroid_guess = [size(snip3D, 1)/2, size(snip3D, 2)/2, initial_params(4)];
 
 
 initial_parameters = [initial_params(1), centroid_guess(1),centroid_guess(2), centroid_guess(3), ...
-    1, 1, 1, 1, 1, 1,initial_params(6)];
+    initial_params(5), 0, 0, initial_params(5), 0, initial_params(5),initial_params(6)];
 
 %%% params and fits: %%%
 %(1)amplitude (2) x (3) y (4) z (5)sigma x (6)sigma xy
@@ -43,15 +46,17 @@ lsqOptions=optimset('Display','none','maxfunevals',10000,...
     'maxiter',10000);
 
 %constraints
-lb_offset = 1/10; %this is empirical. corresponds to a weak background of 1 pixel per ten having a value of 1.
-lb = [max(snip3D(:)) / 2, 1 - size(snip3D, 1)*1.5, 1- size(snip3D, 2)*1.5, 1- size(snip3D, 3)*1.5, -inf, -inf, -inf, -inf, -inf, -inf, lb_offset];
-ub = [inf, size(snip3D, 1)*1.5, size(snip3D, 2)*1.5, size(snip3D, 3)*1.5, inf, inf, inf, ceil(0.8/zstep), inf, inf,max(max(max(snip3D)))];
-
+covbound = 5/pixelSize; %nm. empirically determined. 
+xybound = 10/pixelSize; %nm. empirically determined.
+zbound = 20/pixelSize;%nm. empirically determined.
+lb_offset = 1/10; %this is empirical. corresponds to a weak background of 1 pixel per ten having a value of .
+lb = [max(snip3D(:)) / 2, 1 - size(snip3D, 1)*1.5, 1- size(snip3D, 2)*1.5, 1- size(snip3D, 3)*1.5, 0, -covbound, -covbound, 0, -covbound, 0, lb_offset];
+ub = [max(snip3D(:))*2, size(snip3D, 1)*1.5, size(snip3D, 2)*1.5, size(snip3D, 3)*1.5, xybound, covbound, covbound, xybound, covbound, zbound, max(snip3D(:))/3];
 
 [fits, ~, residual, ~, ~, ~, jacobian] = lsqnonlin(single3DGaussian, ...
     initial_parameters,lb,ub, lsqOptions);
 
-ci63 = nlparci(fits, residual, 'jacobian', jacobian, 'A', .37); %63% confidence intervals for the fit. 
+ci63 = nlparci(fits, residual, 'jacobian', jacobian, 'alpha', .37); %63% confidence intervals for the fit. 
 ci95 = nlparci(fits,residual,'jacobian',jacobian); %95% confidence intervals for the fit.
 
 
@@ -167,7 +172,7 @@ if displayFigures
     ylabel(axesxzRaw,'z-axis')
     
     zlim([0, m]);
-    pause(.3)
+    pause(.1)
 end
 
 if intensityError95 > intensity

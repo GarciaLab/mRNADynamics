@@ -119,7 +119,7 @@ for ch = 1:nCh
                 fitOptions = [fitOptions,'displayFigures'];
             end
             
-            [fits, intensity, ci95, intensityError95] = fitGaussian3D(snip3D, initial_params, zstep, fitOptions{:});
+            [fits, intensity, ci95, intensityError95] = fitGaussian3D(snip3D, initial_params, zstep, pixelSize, fitOptions{:});
 
             x = fits(2) - snippet_size + xSpot;
             y = fits(3) - snippet_size + ySpot;
