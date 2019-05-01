@@ -1,4 +1,4 @@
-function [fits, intensity, ci95] = fitGaussian3D(snip3D, initial_params, zstep, varargin)
+function [fits, intensity, ci95, intensityError95] = fitGaussian3D(snip3D, initial_params, zstep, varargin)
 
 %%Fitting
 displayFigures = 0;
@@ -51,29 +51,42 @@ ub = [inf, size(snip3D, 1)*1.5, size(snip3D, 2)*1.5, size(snip3D, 3)*1.5, inf, i
 [fits, ~, residual, ~, ~, ~, jacobian] = lsqnonlin(single3DGaussian, ...
     initial_parameters,lb,ub, lsqOptions);
 
-ci95 = nlparci(fits,residual,'jacobian',jacobian); %95% confidence intervals for the fit. AR 1/4/2019- should we use 63% instead?
+ci63 = nlparci(fits, residual, 'jacobian', jacobian, 'A', .37); %63% confidence intervals for the fit. 
+ci95 = nlparci(fits,residual,'jacobian',jacobian); %95% confidence intervals for the fit.
 
-%Display
 
-vol = size(snip3D, 1)*size(snip3D,2)*size(snip3D,3);
+
+
+%%
+%Intensity calculations
+% vol = size(snip3D, 1)*size(snip3D,2)*size(snip3D,3);
 gaussian = single3DGaussian(fits) + snip3D;
 
 % intensity = sum(gaussian(:)) - vol*fits(end);
 
 
-%%% params and fits: %%%
+%%% fits and fits: %%%
 %(1)amplitude (2) x (3) y (4) z (5)sigma x (6)sigma xy
 %(7)sigma xz (8)sigma y (9)sigma yz (10) sigma z (11) offset
 % formula: amplitude * sqrt(pi^3) / sqrt(det(cov))
-%det cov = alpha*beta*gamma - alpha*(zeta/2)^2 - beta*(epsilon/2)^2 -
-%gamma*(delta/2)^2 + delta*epsilon*zeta/4 
-%where alpha = params(5).  beta = params(8). gamma = params(10). 
-% delta = params(6). epsilon = params(7). zeta = params(9)
+%det cov = A*B*C - A*(F/2)^2 - B*(E/2)^2 -
+%C*(D/2)^2 + D*E*F/4 
+%where A = fits(5).  B = fits(8). C = fits(10). 
+% D = fits(6). E = fits(7). F = fits(9)
 
-intensity = params(1) * sqrt(pi^3) * sqrt(...
-    params(5)*params(8)*params(10) - params(5)*(params(9)/2)^2 - ...
-    - params(8)*(params(7)/2)^2 - params(10)*(params(6)/2)^2 +...
-    (params(6)*params(7)*params(9)/4) );
+syms amplitude A B C D E F
+intCalc = amplitude * sqrt(pi^3) / sqrt( A*B*C - A*(F/2)^2 - B*(E/2)^2 -...
+C*(D/2)^2 + D*E*F/4);
+
+
+vals = [fits(1),fits(5), fits(8), fits(10), fits(6), fits(7), fits(9)]; 
+
+errs = [ci95(1,2) - fits(1), ci95(5,2) - fits(5), ci95(8,2) - fits(8), ...
+    ci95(10,2) - fits(10), ci95(6,2) - fits(6),...
+    ci95(7,2) - fits(7), ci95(9,2) - fits(9)]; %get errors from ci95 or ci63
+
+[intensity, intensityError95] = PropError(intCalc, [amplitude A B C D E F], vals, errs);
+
 
 %% All Plotting
 if displayFigures

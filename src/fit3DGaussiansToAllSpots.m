@@ -104,12 +104,12 @@ for ch = 1:nCh
             %         snips3D = [snips3D, currentSnippet3D]; %#ok<*AGROW>
             
             initial_params = [max(snip3D(:)), NaN,NaN, snipDepth + 1, width,offsetGuess];
-            fitOptions = [];
+            fitOptions = {};
             if displayFigures
                 fitOptions = [fitOptions,'displayFigures'];
             end
             
-            [fits, intensity, ci95] = fitGaussian3D(snip3D, initial_params, zstep, fitOptions{:});
+            [fits, intensity, ci95, intensityError95] = fitGaussian3D(snip3D, initial_params, zstep, fitOptions{:});
 
             x = fits(2) - snippet_size + xSpot;
             y = fits(3) - snippet_size + ySpot;
@@ -127,6 +127,7 @@ for ch = 1:nCh
             SpotsCh(frame).Fits(spot).fits3D = fits;
             SpotsCh(frame).Fits(spot).gauss3DIntensity = intensity;
             SpotsCh(frame).Fits(spot).fits3DCI95 = ci95;
+            SpotsCh(frame).Fits(spot).gauss3DIntensityCI95 = intensityError95;
     
             %this is a flag that the fit was done over few z-frames so the
             %user can decide if they want to keep the fit or not
