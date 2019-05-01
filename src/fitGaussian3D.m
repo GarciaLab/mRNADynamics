@@ -170,6 +170,11 @@ if displayFigures
     pause(.3)
 end
 
+if intensityError95 > intensity
+    intensity = NaN;
+    intensityError95 = NaN;
+end
+
 end
 
 

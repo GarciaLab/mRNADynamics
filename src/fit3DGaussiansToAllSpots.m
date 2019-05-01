@@ -41,18 +41,28 @@ end
 
 zMax = FrameInfo(1).NumberSlices+2;
 
+% disables parfor if figures are going to be displayed
+ps = parallel.Settings;
+if displayFigures
+    ps.Pool.AutoCreate = false;
+else
+    ps.Pool.AutoCreate = true;
+    maxWorkers = 8;
+    try parpool(maxWorkers);
+    catch      
+        try  parpool; % in case there aren't enough cores on the computer
+        catch
+            % parpool throws an error if there's a pool already running.
+        end
+    end
+end
+    
+
 for ch = 1:nCh
     
     nFrames = length(Spots{ch});
     SpotsCh = Spots{ch};
     
-    % disables parfor if figures are going to be displayed
-    ps = parallel.Settings;
-    if displayFigures
-        ps.Pool.AutoCreate = false;
-    else
-        ps.Pool.AutoCreate = true;
-    end
     parfor frame = 1:nFrames %frames
         nSpotsPerFrame = length(SpotsCh(frame).Fits);
         SpotsFrame = SpotsCh(frame).Fits;
