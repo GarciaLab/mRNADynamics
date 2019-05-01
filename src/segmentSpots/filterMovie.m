@@ -38,6 +38,7 @@
 % 'highPrecision': Uses higher precision filtering for segmentation when finding dogs
 %
 % 'ignoreMemoryCheck' : Ignores the memory check, should be used only for testing. Only for Weka.
+% 'customML' : run Nick's custom ML
 %
 % 'customFilter': Choose which filter to use to segment the image. Name
 %                  should be a string, followed by a cell with your filter
@@ -63,7 +64,7 @@ function log = filterMovie(Prefix, varargin)
 
   [displayFigures, numFrames, initialFrame, customFilter, highPrecision, filterType, keepPool,...
     sigmas, nWorkers, app, kernelSize, Weka, justTifs, ignoreMemoryCheck, classifierFolder, ...
-    classifierPathCh1] = determineFilterMovieOptions(varargin);
+    classifierPathCh1, customML] = determineFilterMovieOptions(varargin);
 
   % Start timer
   tic;
@@ -99,6 +100,9 @@ function log = filterMovie(Prefix, varargin)
       initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder);
   elseif justTifs
     generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,coatChannel, zSize, initialFrame);
+  elseif customML
+      generateProbMapsCustomML(Prefix, ProcPath, MS2CodePath, PreProcPath, ExperimentType, coatChannel, zSize, numFrames, nCh,...
+      initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder);
   end
 
   t = toc;
