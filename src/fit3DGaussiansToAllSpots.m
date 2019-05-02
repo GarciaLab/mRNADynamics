@@ -17,8 +17,8 @@ for i = 1:length(varargin)
 end
 
 [~,~,DropboxFolder,~, PreProcPath,...
-    ~, Prefix, ~,~,~,~, ~] = readMovieDatabase(prefix, optionalResults);
-
+    ~, Prefix, ~,Channel1,Channel2,~, Channel3] = readMovieDatabase(prefix, optionalResults);
+mcp_channels = find(contains([Channel1,Channel2,Channel3],'MCP-'));
 DataFolder=[DropboxFolder,filesep,prefix];
 
 if ~segmentSpots
@@ -62,7 +62,7 @@ for ch = 1:nCh
     
     nFrames = length(Spots{ch});
     SpotsCh = Spots{ch};
-    
+    mcp_channel = mcp_channels(ch);
     parfor frame = 1:nFrames %frames
         nSpotsPerFrame = length(SpotsCh(frame).Fits);
         SpotsFrame = SpotsCh(frame).Fits;
@@ -93,7 +93,7 @@ for ch = 1:nCh
                 for z = zBot:zTop
                     if z > 1 && z < zMax
                         FullSlice=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(frame,3)...
-                            ,'_z' iIndex(z,2) '_ch' iIndex(ch,2) '.tif']);
+                            ,'_z' iIndex(z,2) '_ch' iIndex(mcp_channel,2) '.tif']);
 
                         snip3D(:,:,k) = double(FullSlice(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
                             max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size))); %#ok<*SAGROW>
