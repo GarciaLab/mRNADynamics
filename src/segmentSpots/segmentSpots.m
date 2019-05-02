@@ -190,7 +190,7 @@ end
 
 if fit3D
     disp('Fitting 3D Gaussians...')
-    fit3DGaussiansToAllSpots(Prefix, 'segmentSpots', Spots, optionalResults);
+    fit3DGaussiansToAllSpots(Prefix, 'segmentSpots', Spots, 'optionalResults', optionalResults);
     disp('3D Gaussian fitting completed.')
 end
 

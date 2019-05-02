@@ -49,10 +49,6 @@ for i=1:length(Particles(CurrentParticle).Frame)
     fields = fieldnames(spot);
     try
         AmpIntegral3(i) = spot.FixedAreaIntensity3;
-        % %             AmpIntegral3(i)=...
-        %             spot.cylIntensity;
-        %               AmpIntegral3(i)=...
-        %               spot.gauss3DIntensity;
     catch
         AmpIntegral3(i)= NaN;
     end

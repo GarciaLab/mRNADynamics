@@ -160,6 +160,6 @@ end
 
 
 save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3');
-disp('Fitting done.')
+disp('3D fitting done on all spots.')
 
 end
