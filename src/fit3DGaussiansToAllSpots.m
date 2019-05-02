@@ -18,7 +18,7 @@ end
 
 [~,~,DropboxFolder,~, PreProcPath,...
     ~, Prefix, ~,Channel1,Channel2,~, Channel3] = readMovieDatabase(prefix, optionalResults);
-mcp_channels = find(contains([Channel1,Channel2,Channel3],'MCP-'));
+mcp_channels = find(contains([Channel1,Channel2,Channel3],'MCP'));
 DataFolder=[DropboxFolder,filesep,prefix];
 
 if ~segmentSpots
