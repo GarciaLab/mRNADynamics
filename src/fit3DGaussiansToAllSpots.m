@@ -18,7 +18,7 @@ end
 
 [~,~,DropboxFolder,~, PreProcPath,...
     ~, Prefix, ~,Channel1,Channel2,~, Channel3] = readMovieDatabase(prefix, optionalResults);
-mcp_channels = find(contains([Channel1,Channel2,Channel3],'MCP'));
+spotChannels = find(contains([Channel1,Channel2,Channel3],'CP'));
 DataFolder=[DropboxFolder,filesep,prefix];
 
 if ~segmentSpots
@@ -62,7 +62,7 @@ for ch = 1:nCh
     
     nFrames = length(Spots{ch});
     SpotsCh = Spots{ch};
-    mcp_channel = mcp_channels(ch);
+    mcp_channel = spotChannels(ch);
     parfor frame = 1:nFrames %frames
         nSpotsPerFrame = length(SpotsCh(frame).Fits);
         SpotsFrame = SpotsCh(frame).Fits;
