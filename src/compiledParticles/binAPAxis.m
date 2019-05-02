@@ -1,7 +1,9 @@
 function [APbinID, APbinArea] = binAPAxis(APResolution, ...
-    FrameInfo, coordAZoom, APAngle, APLength)
+    FrameInfo, coordAZoom, APAngle, APLength, minBinSize)
 %binAPAxis Summary of this function goes here
 %   Detailed explanation goes here
+
+%minBinSize is the fraction of the median bin size;
 
 APbinID=0:APResolution:1;
 
@@ -40,7 +42,7 @@ for i=1:length(APbinID)
 end
 %Get the median of the non-zero areas
 MedianArea=median(APbinArea(APbinArea>0));
-%Only keep the bins with an area of at least 70% of the median
-APbinArea(APbinArea<MedianArea*0.7)=nan;
+%Only keep the bins with an area of at least minBinSize of the median
+APbinArea(APbinArea<MedianArea*minBinSize)= NaN;
 end
 

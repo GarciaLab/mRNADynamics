@@ -1,4 +1,4 @@
-function [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, pool, threshGUI, initialFrame, useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel, optionalResults] = determineSegmentSpotsOptions(varargin)
+function [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, threshGUI, initialFrame, useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel, optionalResults] = determineSegmentSpotsOptions(varargin)
 
 varargin = varargin{1};
 
@@ -9,7 +9,6 @@ numShadows = 2;
 intScale = 1;
 nWorkers = 8;
 keepPool = 0;
-pool = 1;
 threshGUI = 0;
 useIntegralCenter = 1;
 initialFrame = 1;
@@ -49,7 +48,6 @@ for i = 1:length(varargin)
         end
         
     elseif strcmpi(varargin{i}, 'keepPool')
-        pool = 1;
         keepPool = 1;
     elseif strcmpi(varargin{i}, 'intScale')
         intScale = varargin{i + 1};
@@ -58,12 +56,7 @@ for i = 1:length(varargin)
     elseif strcmpi(varargin{i}, 'skipChannel')
         skipChannel = varargin{i + 1};
     elseif strcmpi(varargin{i}, 'nWorkers')
-        nWorkers = varargin{i + 1};
-        
-        if nWorkers < 2
-            pool = 0;
-        end
-        
+        nWorkers = varargin{i + 1};        
     elseif strcmpi(varargin{i}, 'autoThresh')
         threshGUI = 1;
     elseif strcmpi(varargin{i}, 'fit3D')

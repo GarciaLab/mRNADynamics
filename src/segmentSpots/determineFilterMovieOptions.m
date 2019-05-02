@@ -1,4 +1,4 @@
-function [displayFigures, numFrames, initialFrame, customFilter, highPrecision, filterType, keepPool, sigmas, nWorkers, app, kernelSize, weka, justTifs, ignoreMemoryCheck, classifierFolder, classifierPathCh1] = determineFilterMovieOptions(varargin)
+function [displayFigures, numFrames, initialFrame, customFilter, highPrecision, filterType, keepPool, sigmas, nWorkers, app, kernelSize, weka, justTifs, ignoreMemoryCheck, classifierFolder, classifierPathCh1, customML] = determineFilterMovieOptions(varargin)
 
   varargin = varargin{1};
 
@@ -13,6 +13,7 @@ function [displayFigures, numFrames, initialFrame, customFilter, highPrecision, 
   sigmas = {};
   app = {};
   kernelSize = [];
+  customML = 0;
 
   weka = false;
   justTifs = false;
@@ -65,6 +66,9 @@ function [displayFigures, numFrames, initialFrame, customFilter, highPrecision, 
 
     elseif strcmpi(varargin{i}, 'weka')
       weka = true;
+      
+    elseif strcmpi(varargin{i}, 'customML')
+      customML = 1;
 
     elseif isobject(varargin{i}) && isa(varargin{i}, 'ClassifierForTest')
       ClassifierForTest = varargin{i};

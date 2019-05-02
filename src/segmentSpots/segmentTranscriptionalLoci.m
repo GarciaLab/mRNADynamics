@@ -1,4 +1,4 @@
-function [all_frames, Spots] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures, pool, doFF, ffim, Threshold, neighborhood, snippet_size, pixelSize, microscope, intScale, Weka, use_integral_center)
+function [all_frames, Spots] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures,doFF, ffim, Threshold, neighborhood, snippet_size, pixelSize, microscope, intScale, Weka, use_integral_center)
   
   waitbarFigure = waitbar(0, 'Segmenting spots');
 
@@ -51,7 +51,6 @@ function [all_frames, Spots] = segmentTranscriptionalLoci(nCh, coatChannel, chan
     %w = waitbar(current_frame / numFrames, waitbarFigure);
     %set(w, 'units', 'normalized', 'position', [0.4, .15, .25,.1]);
 
-    zFits = [];  
     for zIndex = 1:zSize
       imFileName = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(zIndex, 2),...
         nameSuffix, '.tif'];   
@@ -107,13 +106,7 @@ function [all_frames, Spots] = segmentTranscriptionalLoci(nCh, coatChannel, chan
       temp_particles = cell(1, n_spots);
       
       if n_spots ~= 0
-%         if ~displayFigures && pool
-%           for spotIndex = 1:n_spots
-%             centroid = round(centroids(spotIndex).Centroid);
-%            [temp_particles(spotIndex), Fits] = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
-%               neighborhood, snippet_size, pixelSize, displayFigures, graphicsHandles, microscope, 0, centroid,MLFlag, intScale, current_frame, spotIndex, zIndex, use_integral_center);
-%           end
-%         else
+          
           for spotIndex = 1:n_spots
             centroid = round(centroids(spotIndex).Centroid);
             tic
@@ -121,8 +114,6 @@ function [all_frames, Spots] = segmentTranscriptionalLoci(nCh, coatChannel, chan
               neighborhood, snippet_size, pixelSize, displayFigures, graphicsHandles, microscope, 0, centroid,MLFlag, intScale, current_frame, spotIndex, zIndex, use_integral_center);  
                     Spots(current_frame).Fits = [Spots(current_frame).Fits, Fits];
           end
-
-%         end
         
         for spotIndex = 1:n_spots
           if ~isempty(temp_particles{spotIndex})

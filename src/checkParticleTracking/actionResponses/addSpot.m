@@ -214,7 +214,7 @@ else
                     end
 
                     initial_params = [max(max(max(snip3D))), NaN,NaN, snipDepth + 1, width,offsetGuess];
-                    [fits3D, int3D, ci95] = fitGaussian3D(snip3D, initial_params, zStep);
+                    [fits3D, int3D, ci95, intensityError95] = fitGaussian3D(snip3D, initial_params, zStep, pixelSize);
                     x3D = fits3D(2) - snippet_sizeNew + xSpotNew;
                     y3D = fits3D(3) - snippet_sizeNew + ySpotNew;
                     z3D = fits3D(4) - snipDepth + bZ;
@@ -232,6 +232,7 @@ else
                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).fits3D = fits3D;
                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).gauss3DIntensity = int3D;
                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).fits3DCI95 = ci95;
+                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).gauss3DIntensityCI95 = intensityError95;
                     
                     
                     if k < 3

@@ -1,6 +1,6 @@
 function [Prefix, ForceAP, SkipTraces, SkipFluctuations, SkipFits, SkipMovie, ...
     SkipAll, ApproveAll, MinParticles, minTime, ROI, intArea, noHist, ...
-    ROI1, ROI2, slimVersion, manualSingleFits, optionalResults, yToManualAlignmentPrompt] = determineCompileParticlesOptions(varargin)
+    ROI1, ROI2, slimVersion, manualSingleFits, optionalResults, yToManualAlignmentPrompt, minBinSize] = determineCompileParticlesOptions(varargin)
 %DETERMINECOMPILEPARTICLESOPTIONS Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -26,6 +26,7 @@ ROI2 = -1; % no ROI
 manualSingleFits = 0; % no manually fitted single fits
 optionalResults = ''; %different dropbox folder
 yToManualAlignmentPrompt = 0; %this is an option for addparticleposition
+minBinSize = .7; % fraction of the median bin size allowed
 
 
 % Checking Varargin 
@@ -68,11 +69,17 @@ else
             else
                 intArea=varargin{i+1};
             end
-        elseif strcmpi(varargin{i},'MinTime')
+            elseif strcmpi(varargin{i},'intArea')
             if ~isnumeric(varargin{i+1})
-                error('Wrong input parameters. After ''MinTime'' you should input the desired minimum number of frames per particle.')
+                error('Wrong input parameters. After ''intArea'' you should input the desired number of pixels for intensity integration')
             else
-                minTime=varargin{i+1};
+                intArea=varargin{i+1};
+            end
+        elseif strcmpi(varargin{i},'minBinSize')
+            if ~isnumeric(varargin{i+1})
+                error('Wrong input parameters. After ''minBinSize'' you should input the desired minimum number of frames per particle.')
+            else
+                minBinSize=varargin{i+1};
             end
         elseif strcmpi(varargin{i},'ROI')
             ROI = 1;

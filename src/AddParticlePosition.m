@@ -1,4 +1,4 @@
-function AddParticlePosition(Prefix, varargin)
+function AddParticlePosition(varargin)
 %
 % DESCRIPTION
 % Locates particles from a zoomed-in movie within full embryo images using
@@ -28,6 +28,7 @@ function AddParticlePosition(Prefix, varargin)
 %V2: Changed this function to use a correlation in order to center the
 %images.
 
+Prefix = varargin{1};
 
 %Get the relevant folders for this data set
 [SourcePath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
@@ -44,8 +45,10 @@ yToManualAlignmentPrompt = 0;
 
 close all
 
+
 if ~isempty(varargin)
-    for i=1:length(varargin)
+    Prefix = varargin{1};
+    for i=2:length(varargin)
         switch varargin{i}
             case {'SkipAlignment'}
                 disp('Skipping alignment step')
@@ -63,6 +66,7 @@ if ~isempty(varargin)
         end
     end
 else
+    
     FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
     Dashes=strfind(FolderTemp,filesep);
     Prefix=FolderTemp((Dashes(end)+1):end);
