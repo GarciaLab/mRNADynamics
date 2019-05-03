@@ -34,7 +34,7 @@ centroid_guess = [size(snip3D, 1)/2, size(snip3D, 2)/2, initial_params(4)];
 
 
 initial_parameters = [initial_params(1), centroid_guess(1),centroid_guess(2), centroid_guess(3), ...
-    initial_params(5), 0, 0, initial_params(5), 0, initial_params(5),initial_params(6)];
+    initial_params(5)^(-2), 0, 0, initial_params(5)^(-2), 0, initial_params(5)^(-2),initial_params(6)];
 
 %%% params and fits: %%%
 %(1)amplitude (2) x (3) y (4) z (5)sigma x (6)sigma xy
