@@ -81,11 +81,20 @@ for i = 1:length(cp_filenames)
     % loads AP information
     ap_flag = 1;
     try
-        load(ap_filenames{i}) % AP Info   
+        load(ap_filenames{i}) % AP Info 
+        % get angle between the x-axis and the AP-axis 
+        APAngle = round(atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)))*360 / (2*pi));    
+        %Correction for if APAngle is in quadrants II or III
+        if coordPZoom(1)-coordAZoom(1) < 0       
+            APAngle = APAngle + 180;
+        end  
     catch
         warning('No AP Data detected. Proceeding without AP info')
         ap_flag = 0;
+        APAngle = 0;
     end   
+    
+     
     
     % extract data structures
     processed_data = load(cp_filenames{i}); % processed particles  
@@ -129,7 +138,11 @@ for i = 1:length(cp_filenames)
     frames_raw = 1:length(time_raw); % Frame list   
     num_outputs = length(traces_raw);
     
+    % loops through nuclear cycles
     for nc = ncs_used
+        
+        % check if we have data taken during this nuclear cycle; skips it
+        % if we don't
         try
             if ~(processed_data.(['nc' num2str(nc)]) || processed_data.(['nc' num2str(nc+1)]) > 1)
                 continue
@@ -139,9 +152,9 @@ for i = 1:length(cp_filenames)
         end
         
         % finds beginning of nuclear cycle
-        first_frame = max([1, processed_data.(['nc' num2str(nc)])]); 
+        first_frame = max([1, processed_data.(['nc' num2str(nc)])]);
+        
         % finds end (or last frame we have) of the nuclear cycle
-        last_frame = length(time_raw);
         try
             last_frame = processed_data.(['nc' num2str(nc + 1)]) - 1;
             if isnan(last_frame) || last_frame <= 1
@@ -151,7 +164,7 @@ for i = 1:length(cp_filenames)
             last_frame = length(time_raw);
         end
 
-        % filter trace mat and time
+        % takes times within nuclear cycle
         time_clean = time_raw(first_frame:last_frame);    
         time_clean = time_clean - min(time_clean); % Normalize to start of nc    
         frames_clean = frames_raw(first_frame:last_frame);    
@@ -217,9 +230,9 @@ for i = 1:length(cp_filenames)
                     raw5(raw_pt_frames) = cp_particles{cidx}(j).Fluo5;
                     raw_trace5 = raw5(first_frame:last_frame);
                 end
-                if isfield(cp_particles{cidx}(j), 'Fluo3D')
+                if isfield(cp_particles{cidx}(j), 'FluoGauss')
                     raw3D = nan(1, length(frames_raw));
-                    raw3D(raw_pt_frames) = cp_particles{cidx}(j).Fluo3D;
+                    raw3D(raw_pt_frames) = cp_particles{cidx}(j).FluoGauss;
                     raw_trace3D = raw3D(first_frame:last_frame);
                 end
                 
@@ -252,10 +265,11 @@ for i = 1:length(cp_filenames)
                     error('Inconsistent particle and nucleus frames')
                 end
                 % record fluorescence info             
-                s_cells(nc_ind).fluo(cidx, spot_filter) = raw_trace(trace_start:trace_stop)';
-                s_cells(nc_ind).fluo3(cidx, spot_filter) = raw_trace3(trace_start:trace_stop);
-                s_cells(nc_ind).fluo5(cidx, spot_filter) = raw_trace5(trace_start:trace_stop);
-                s_cells(nc_ind).fluo3D(cidx, spot_filter)= raw_trace3D(trace_start:trace_stop);
+                s_cells(nc_ind).fluo(cidx,:) = raw_trace';
+                s_cells(nc_ind).fluo3(cidx,:) = raw_trace3;
+                s_cells(nc_ind).fluo5(cidx,:) = raw_trace5;
+                s_cells(nc_ind).fluo3D(cidx,:)= raw_trace3D;
+                s_cells(nc_ind).APAngle = APAngle;
                 % x and y info                                
                 s_cells(nc_ind).xPosParticle(cidx,ismember(nc_frames,cp_frames)) = ...
                     cp_particles{cidx}(j).xPos(ismember(cp_frames,nc_frames));
