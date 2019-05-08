@@ -15,8 +15,8 @@ for ChN=1:NChannels
             
             for NCh=1:NChannels
                 if ~isfield(Particles{NCh},'FrameApproved')
-                    for i=1:length(Particles{NCh})
-                        Particles{NCh}(i).FrameApproved=true(size(Particles{NCh}(i).Frame));
+                    for m=1:length(Particles{NCh})
+                        Particles{NCh}(m).FrameApproved=true(size(Particles{NCh}(m).Frame));
                     end
                 end
             end
@@ -83,7 +83,7 @@ for ChN=1:NChannels
                 CompiledParticles{ChN}(k).Index=Particles{ChN}(i).Index(FrameFilter);
                 CompiledParticles{ChN}(k).xPos=Particles{ChN}(i).xPos(FrameFilter);
                 CompiledParticles{ChN}(k).yPos=Particles{ChN}(i).yPos(FrameFilter);
-                try
+                if isfield(Particles{ChN}(k),'zPos')
                     CompiledParticles{ChN}(k).zPos=Particles{ChN}(i).zPos(FrameFilter);
                 end
                 %(MT, 2018-02-11) Hacky fix to get lattice to run - FIX LATER
@@ -146,9 +146,15 @@ for ChN=1:NChannels
                     CompiledParticles{ChN}(k).fittedSlope = [];
                     CompiledParticles{ChN}(k).fittedTon = []; 
                 end
-                    
-                
-                
+                %Extract position info and general Gauss3D fit info                                
+                [~,gx_vec,gy_vec,gz_vec,g_fits_cell]=...
+                       getGauss3DFitInfo(k,CompiledParticles{ChN},Spots{ChN});
+                if ~all(isnan(gx_vec))
+                    CompiledParticles{ChN}(k).xPosGauss3D = gx_vec;
+                    CompiledParticles{ChN}(k).yPosGauss3D = gy_vec;
+                    CompiledParticles{ChN}(k).zPosGauss3D = gz_vec;
+                    CompiledParticles{ChN}(k).fitParamsGauss3D = g_fits_cell;
+                end
                 %Extract information from Spots about fluorescence and background
                 [Frame,AmpIntegral, AmpIntegral3, AmpIntegral5, AmpGaussian,...
                     Off, ErrorIntegral,ErrorGauss,optFit1, FitType, ErrorIntegral3, ErrorIntegral5,backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D, AmpDog, AmpDogMax]...
@@ -452,7 +458,7 @@ for ChN=1:NChannels
                     for j=1:NFrames
                         subplot(TotalRows,NCols,(TotalRows-NRows)*NCols+j)
                         spotFrame = CompiledParticles{ChN}(k).Frame(j);
-                        [x,y,z]=SpotsXYZ(Spots{ChN}(spotFrame));
+                        [x,y,z]=SpotsXYZ(Spots{ChN}(spotFrame));                        
                         if ~isempty(x)
                             xTrace=x(CompiledParticles{ChN}(k).Index(j));
                             yTrace=y(CompiledParticles{ChN}(k).Index(j));

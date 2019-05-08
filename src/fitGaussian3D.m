@@ -10,7 +10,7 @@ end
 
 
     
-    
+% NL: Is this right?    
 [mesh_y,mesh_x, mesh_z] = meshgrid(1:size(snip3D,2), 1:size(snip3D,1), 1:size(snip3D, 3));
 
 %     % Single 2D generalized gaussian function
