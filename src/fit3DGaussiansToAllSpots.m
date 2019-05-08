@@ -18,7 +18,7 @@ end
 
 [~,~,DropboxFolder,~, PreProcPath,...
     ~, Prefix, ~,Channel1,Channel2,~, Channel3] = readMovieDatabase(prefix, optionalResults);
-mcp_channels = find(contains([Channel1,Channel2,Channel3],'MCP-'));
+spotChannels = find(contains([Channel1,Channel2,Channel3],'CP'));
 DataFolder=[DropboxFolder,filesep,prefix];
 
 if ~segmentSpots
@@ -62,7 +62,8 @@ for ch = 1:nCh
     
     nFrames = length(Spots{ch});
     SpotsCh = Spots{ch};
-    mcp_channel = mcp_channels(ch);
+    mcp_channel = spotChannels(ch);
+    
     parfor frame = 1:nFrames %frames
         nSpotsPerFrame = length(SpotsCh(frame).Fits);
         SpotsFrame = SpotsCh(frame).Fits;
@@ -82,7 +83,7 @@ for ch = 1:nCh
             end
             
             zoomFactor = 1; %replace this with zStep from FrameInfo later- AR 1/31/2019
-            snipDepth = round(2*zoomFactor);
+            snipDepth = round(3*zoomFactor);
             zBot = bZ - snipDepth;
             zTop = bZ + snipDepth;
             width = 200/pixelSize; %nm. empirically determined and seems to work width of spot psf
@@ -160,6 +161,6 @@ end
 
 
 save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3');
-disp('Fitting done.')
+disp('3D fitting done on all spots.')
 
 end

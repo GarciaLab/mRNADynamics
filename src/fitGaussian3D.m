@@ -28,17 +28,24 @@ end
 single3DGaussian = @(params) params(1).*...
     exp(-( params(5).*(mesh_x-params(2)).^2 + params(6).*(mesh_x-params(2)).*(mesh_y-params(3)) + params(7).*(mesh_x-params(2)).*(mesh_z-params(4))+...
     params(8).*(mesh_y-params(3)).^2 + params(9).*(mesh_y-params(3)).*(mesh_z-params(4)) + params(10).*(mesh_z-params(4)).^2 ))...
-    + params(11) - snip3D;
+    + params(11) +...
+    params(12).*mesh_x + params(13).*mesh_y + params(14).*mesh_z...
+    + params(15).*(mesh_x.^2) + params(16).*(mesh_y.^2) + params(17).*(mesh_z.^2) +...
+    + params(18).*(mesh_x.*mesh_z) + params(19).*mesh_x.*mesh_y + params(20).*mesh_y.*mesh_z...
+    - snip3D;
 
 centroid_guess = [size(snip3D, 1)/2, size(snip3D, 2)/2, initial_params(4)];
 
 
 initial_parameters = [initial_params(1), centroid_guess(1),centroid_guess(2), centroid_guess(3), ...
-    initial_params(5), 0, 0, initial_params(5), 0, initial_params(5),initial_params(6)];
+    initial_params(5)^(-2), 0, 0, initial_params(5)^(-2), 0, initial_params(5)^(-2),initial_params(6),...
+    0, 0, 0,...
+    0, 0, 0, 0, 0, 0];
 
 %%% params and fits: %%%
 %(1)amplitude (2) x (3) y (4) z (5)sigma x (6)sigma xy
 %(7)sigma xz (8)sigma y (9)sigma yz (10) sigma z (11) offset
+%(12)linear x offset (13) etc 14 etc
 
 
 %fitting options
@@ -46,12 +53,17 @@ lsqOptions=optimset('Display','none','maxfunevals',10000,...
     'maxiter',10000);
 
 %constraints
-covbound = 5/pixelSize; %nm. empirically determined. 
-xybound = 10/pixelSize; %nm. empirically determined.
-zbound = 20/pixelSize;%nm. empirically determined.
+covxybound = 30/pixelSize; %nm. empirically determined. 
+covzbound = 200/pixelSize;
+xybound = 100/pixelSize; %nm. empirically determined.
+zbound = 800/pixelSize;%nm. empirically determined.
 lb_offset = 1/10; %this is empirical. corresponds to a weak background of 1 pixel per ten having a value of .
-lb = [max(snip3D(:)) / 2, 1 - size(snip3D, 1)*1.5, 1- size(snip3D, 2)*1.5, 1- size(snip3D, 3)*1.5, 0, -covbound, -covbound, 0, -covbound, 0, lb_offset];
-ub = [max(snip3D(:))*2, size(snip3D, 1)*1.5, size(snip3D, 2)*1.5, size(snip3D, 3)*1.5, xybound, covbound, covbound, xybound, covbound, zbound, max(snip3D(:))/3];
+lb = [max(snip3D(:)) / 10, 1 - size(snip3D, 1)*1.5, 1- size(snip3D, 2)*1.5, 1- size(snip3D, 3)*1.5, 0, -covxybound, -covzbound, 0, -covzbound, 0, lb_offset,...
+    -inf, -inf, -inf,...
+    -inf, -inf, -inf, -inf, -inf, -inf];
+ub = [max(snip3D(:))*2, size(snip3D, 1)*1.5, size(snip3D, 2)*1.5, size(snip3D, 3)*1.5, xybound, covxybound, covzbound, xybound, covzbound, zbound, max(snip3D(:))/3,...
+    inf, inf, inf,...
+    inf, inf, inf, inf, inf, inf];
 
 [fits, ~, residual, ~, ~, ~, jacobian] = lsqnonlin(single3DGaussian, ...
     initial_parameters,lb,ub, lsqOptions);
@@ -175,7 +187,7 @@ if displayFigures
     pause(.1)
 end
 
-if intensityError95 > intensity
+if intensityError95 > intensity*2
     intensity = NaN;
     intensityError95 = NaN;
 end
