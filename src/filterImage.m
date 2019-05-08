@@ -72,7 +72,7 @@ function fint = filterImage(im, filterType, sigmas, varargin)
             if dim==2
                 f = conv2(im, fspecial('gaussian',filterSize, s1) - fspecial('gaussian',filterSize, s2),'same');
             elseif dim == 3
-                 f = fastConv3D(gauss3D(s1) - gauss3D(s2), im);
+                 f = fastConv3D(gauss3D(s1,3*s2+1) - gauss3D(s2), im);
             end
         case 'Laplacian'
             if dim==2

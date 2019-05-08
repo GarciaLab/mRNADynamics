@@ -29,6 +29,8 @@
 % Documented by: Armando Reimer (areimer@berkeley.edu)
 function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
 
+  disp(['Running TrackmRNADynamics on ', varargin{1}, '...']);
+  
   [~, ~, DefaultDropboxFolder, ~, ~] = DetermineLocalFolders;
 
   [Prefix, app, retrack, optionalResults, displayFigures] = parseTrackmRNADynamicsArguments(DefaultDropboxFolder, varargin{:});
@@ -36,7 +38,7 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
   % Get the actual folder now that we have the Prefix
   
 
-[~, ~, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix, optionalResults);
+ [~, ~, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix, optionalResults);
 
   
   % What type of experiment are we dealing with? Get this out of MovieDatabase
@@ -80,7 +82,7 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
   NCh = length(SpotsChannel);
 
   Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh, retrack);
-
+  
   [Spots, SpotFilter] = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefix, NCh);
 
   if displayFigures
@@ -202,6 +204,8 @@ function Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh,retra
 end
 
 function [Spots, SpotFilter] = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefix, NCh)
+  
+  disp('Loading Spots.mat...')
   if ~exist('Spots', 'var')
     load([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots')
 

@@ -1,10 +1,11 @@
-function G = gauss3D(sigma, customSize)
-
-    if isempty(customSize)
+function G = gauss3D(sigma, varargin)
+ 
+    if isempty(varargin)      
         C = 3;
         M = C*sigma + 1;
     else
-        M = customSize{1};
+        customSize = varargin{1};
+        M = customSize;
     end
     x = -M:1:M;
     y = x;
