@@ -30,7 +30,7 @@ function combineAndCleanTraces(project, varargin)
 
 %% ..............Process compileTraces Options..........%
 
-[fnames, ncs_used, DropboxFolder, Prefixes] = processCompileTracesOptions(varargin);
+[fnames, ncs_used, dataPath, DropboxFolder, Prefixes] = processCompileTracesOptions(varargin);
 minDP = 5;
 nan_buffer = 2;
 
@@ -305,8 +305,8 @@ TresInterp = round(med_time);
     TresInterp, num_outputs, nan_buffer); 
 
 %% ..................Save Trace and Nucleus Data .........................
-mkdir([DropboxFolder,filesep,project]);
-save([DropboxFolder,filesep,project,filesep,'nucleus_struct.mat'],...
+mkdir([dataPath,filesep,project]);
+save([dataPath,filesep,project,filesep,'nucleus_struct.mat'],...
     'nucleus_struct','-v7.3');
 end
 

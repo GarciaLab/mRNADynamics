@@ -17,7 +17,7 @@ function [SourcePath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath, configV
         ProcPath = getConfigValue(configValues, 'FISHPath');
         PreProcPath = getConfigValue(configValues, 'PreProcPath');
     end
-    movieDatabasePath = [DropboxFolder,'/MovieDatabase.csv'];
+    movieDatabasePath = [DropboxFolder,'\MovieDatabase.csv'];
 
     if isempty(varargin) || isempty(varargin{1})
     %     warning('No Prefix specified. Using default Dropbox folder')
