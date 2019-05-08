@@ -52,6 +52,9 @@
 %               'Hessian_largest''Hessian_smallest' 'bright_spot_psf'
 %               [DEFAULT] 'Difference_of_Gaussian' (2 sigmas) [DEFAULT]
 %
+%               for the 3D versions of these filters, append '_3D' to the
+%               end of the filtername. output is still 2D tifs. 
+%
 %
 % Author (contact): Armando Reimer (areimer@berkeley.edu) / Matías Potel Feola (matias.potel.feola@gmail.com)
 % Created: 8/23/2018
@@ -88,7 +91,7 @@ function log = filterMovie(Prefix, varargin)
   end
 
   coatChannel = getCoatChannel(ExperimentType, Channel1, Channel2);
-
+  
   if ~Weka && ~justTifs
     sigmas = generateDifferenceOfGaussianImages(ProcPath, customFilter, nCh, ExperimentType, FrameInfo, coatChannel,...
       numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision, sigmas, nWorkers, app, kernelSize);

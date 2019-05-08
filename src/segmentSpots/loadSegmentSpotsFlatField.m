@@ -16,7 +16,6 @@ function [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, FrameInfo
       ffim = CPsmooth(ffim, 'Gaussian Filter', 256, 0);
       %If not, we assume we have a laser scanning confocal
     else 
-      disp('Assuming a laser-scanning confocal for flat-field correction')
       ffim = CPsmooth(ffim, 'Gaussian Filter', 256, 0);
     end 
 

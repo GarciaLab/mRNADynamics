@@ -1,13 +1,13 @@
 function G = gauss3D(sigma, varargin)
  
-    if isempty(varargin)      
-        C = 3;
-        M = C*sigma + 1;
+    if isempty(varargin)
+        kernelScale = 3;
+        kernelBound = kernelScale*sigma + 1;
     else
         customSize = varargin{1};
-        M = customSize;
+        kernelBound = customSize;
     end
-    x = -M:1:M;
+    x = -kernelBound:1:kernelBound;
     y = x;
     z = x;
     [x_, y_,z_] = meshgrid(x,y,z);
