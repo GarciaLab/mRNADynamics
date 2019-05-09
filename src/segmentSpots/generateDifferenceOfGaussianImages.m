@@ -90,7 +90,7 @@ for channelIndex = 1:nCh
         
     else
         for currentFrame = 1:numFrames
-            for zIndex = 2:zSize-2
+            for zIndex = 2:zSize-1
                 imStack(:,:,zIndex) = double(imread([PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(currentFrame, 3), '_z', ...
                     iIndex(zIndex, 2), nameSuffix, '.tif']));
             end
@@ -161,8 +161,11 @@ if displayFigures && dim == 2
     else
         ax = gca;
     end
-    
-    imshow(dog, [median(dog(:)), max(dog(:))], 'Parent', ax, 'InitialMagnification', 'fit');
+    if dim == 2
+        imshow(dog, [median(dog(:)), max(dog(:))], 'Parent', ax, 'InitialMagnification', 'fit');
+    else
+        imshow(dog(:, :, zIndex), [median(dog(:)), max(dog(:))], 'Parent', ax, 'InitialMagnification', 'fit');
+    end
     title(ax, [nameSuffix(2:end), ' frame: ', num2str(current_frame), '/', num2str(numFrames), ' z: ', num2str(zIndex)], 'Interpreter', 'none')
     pause(.05)
 end
