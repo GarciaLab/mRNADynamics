@@ -6,7 +6,7 @@ function fint = filterImage(im, filterType, sigmas, varargin)
     fint = [];
         
     im = double(im);
-    
+        
     %convert string sigmas to doubles
     if ~isempty(sigmas)
         if ischar(sigmas{1})
@@ -84,7 +84,7 @@ function fint = filterImage(im, filterType, sigmas, varargin)
             elseif dim == 3
                  kernelSize = 3*s2+1;
                  sigmaZ = 280 / zStep;
-                 f = fastConv3D(gauss3D(s1,'kernelSize', kernelSize, 'sigmaZ',sigmaZ) - gauss3D(s2, 'kernelSize', kernelSize, 'sigmaZ', sigmaZ*4), im);
+                 f = imgaussfilt3(im, [s1, s1, sigmaZ]) - imgaussfilt3(im, [s2, s2, sigmaZ*4]);
             end
         case 'Laplacian'
             if dim==2

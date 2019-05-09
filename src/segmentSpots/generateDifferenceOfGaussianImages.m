@@ -56,7 +56,7 @@ if ~customFilter
 end
 
 if filter3D
-    imStack = zeros(FrameInfo(1).LinesPerFrame,FrameInfo(1).PixelsPerLine, zSize);
+    imStack = zeros(FrameInfo(1).LinesPerFrame,FrameInfo(1).PixelsPerLine, zSize-2);
 else
     imStack = [];
 end
@@ -92,8 +92,9 @@ for channelIndex = 1:nCh
     else
         for currentFrame = 1:numFrames
             for zIndex = 2:zSize-1
-                imStack(:,:,zIndex) = double(imread([PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(currentFrame, 3), '_z', ...
-                    iIndex(zIndex, 2), nameSuffix, '.tif']));
+                imPath = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(currentFrame, 3), '_z', ...
+                    iIndex(zIndex, 2), nameSuffix, '.tif'];
+                imStack(:,:,zIndex-1) = double(imread(imPath));
             end
             generateDoGs(DogOutputFolder, PreProcPath, Prefix, currentFrame, nameSuffix, filterType, sigmas, filterSize, ...
                 highPrecision, zIndex, displayFigures, app, numFrames, imStack, zSize, zStep);
@@ -125,7 +126,6 @@ if sum(im(:)) ~= 0
     
     if strcmpi(filterType, 'Difference_of_Gaussian')
         dog = filterImage(im, filterType, sigmas, 'filterSize',filterSize, 'zStep', zStep);
-        
         if highPrecision
             dog = (dog + 100) * 10;
         end
@@ -147,8 +147,9 @@ if dim == 2
     dog_full_path = [DogOutputFolder, filesep, dog_name];
     imwrite(uint16(dog), dog_full_path)
 elseif dim == 3
-    dog = cat(3, zeros(size(im, 1), size(im, 2)), dog);
-    dog(:, :, zSize) = zeros(size(im, 1), size(im, 2));
+    
+    dog = cat(3, zeros(size(dog, 1), size(dog, 2)), dog);
+    dog(:, :, zSize) = zeros(size(dog, 1), size(dog, 2));
     for z = 1:zSize
         dog_name = ['DOG_', Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(z, 2), nameSuffix, '.tif'];
         dog_full_path = [DogOutputFolder, filesep, dog_name];
