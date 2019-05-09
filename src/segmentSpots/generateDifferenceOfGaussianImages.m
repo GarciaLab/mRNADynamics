@@ -42,6 +42,7 @@ end
 clear rawdir;
 
 pixelSize = FrameInfo(1).PixelSize * 1000; %nm
+zStep = FrameInfo(1).ZStep*1000; %nm
 close all;
 
 if isempty(kernelSize)
@@ -95,7 +96,7 @@ for channelIndex = 1:nCh
                     iIndex(zIndex, 2), nameSuffix, '.tif']));
             end
             generateDoGs(DogOutputFolder, PreProcPath, Prefix, currentFrame, nameSuffix, filterType, sigmas, filterSize, ...
-                highPrecision, zIndex, displayFigures, app, numFrames, imStack, zSize);
+                highPrecision, zIndex, displayFigures, app, numFrames, imStack, zSize, zStep);
         end
     end
     
@@ -111,6 +112,7 @@ function generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameS
 if ~isempty(varargin)
     im = varargin{1};
     zSize = varargin{2};
+    zStep = varargin{3};
     dim = 3;
 else
     fileName = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(current_frame, 3), '_z', ...
@@ -122,7 +124,7 @@ end
 if sum(im(:)) ~= 0
     
     if strcmpi(filterType, 'Difference_of_Gaussian')
-        dog = filterImage(im, filterType, sigmas, filterSize);
+        dog = filterImage(im, filterType, sigmas, 'filterSize',filterSize, 'zStep', zStep);
         
         if highPrecision
             dog = (dog + 100) * 10;
@@ -132,7 +134,7 @@ if sum(im(:)) ~= 0
             dog = padarray(dog(kernelSize:end - kernelSize - 1, kernelSize:end - kernelSize - 1, :), [kernelSize, kernelSize], 0, 'both');
         end
     else
-        dog = (filterImage(im, filterType, sigmas, filterSize) + 100) * 10;
+        dog = (filterImage(im, filterType, sigmas, 'filterSize',filterSize) + 100) * 10;
     end
     
 else
