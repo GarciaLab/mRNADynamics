@@ -88,9 +88,9 @@ function [displayFigures, numFrames, initialFrame, customFilter, highPrecision, 
                   error('Entered sigma(s) not recognized. Make sure the sigma(s) are entered as numbers in a cell {}')
               end
               
-              if strcmp(filterType, 'Difference_of_Gaussian') || ...
-                      strcmp(filterType, 'Structure_largest') || ...
-                      strcmp(filterType, 'Structure_smallest')
+              if contains(filterType, 'Difference_of_Gaussian') || ...
+                      contains(filterType, 'Structure_largest') || ...
+                      contains(filterType, 'Structure_smallest')
                   
                   if length(sigmas) ~= 2
                       error('DoG and Structure filters require two sigma values e.g.{lower_sigma,higher_sigma}')
@@ -105,7 +105,7 @@ function [displayFigures, numFrames, initialFrame, customFilter, highPrecision, 
               end
 
           else
-              error('You did not give your desired simga(s).')
+              error('You did not give your desired sigma(s).')
           end
           
       catch
