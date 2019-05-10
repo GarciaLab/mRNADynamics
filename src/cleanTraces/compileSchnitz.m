@@ -13,22 +13,19 @@ function [s_cells] = compileSchnitz(schnitzcells, frames_clean, setID, i, ...
         if length(nc_frames) >= 1 % skip nuclei not desired nc range                     
             %Will be set to particle real values for nuclei with matching
             %particle
-            s_cells(e_pass).ParticleID = NaN(1, num_outputs);
+            s_cells(e_pass).ParticleID = NaN(num_outputs,1);            
             s_cells(e_pass).xPosParticle = NaN(num_outputs,sum(nc_filter));
             s_cells(e_pass).yPosParticle= NaN(num_outputs,sum(nc_filter));
-            s_cells(e_pass).zPosParticle = NaN(num_outputs,sum(nc_filter)); 
-            
-            s_cells(e_pass).fluo = NaN(1,length(frames_clean));
-            s_cells(e_pass).fluo3 = NaN(1, length(frames_clean));
-            s_cells(e_pass).fluo5 = NaN(1, length(frames_clean));
-            s_cells(e_pass).fluo3D = NaN(1, length(frames_clean));
+            s_cells(e_pass).zPosParticle = NaN(num_outputs,sum(nc_filter));             
+            s_cells(e_pass).fluo = NaN(num_outputs,sum(nc_filter));
+            s_cells(e_pass).fluo3D = NaN(num_outputs,sum(nc_filter));
 
             % add core nucleus info
             x = schnitzcells(e).cenx;            
             y = schnitzcells(e).ceny;  
-            s_cells(e_pass).xPos = NaN(1, length(frames_clean));
+            s_cells(e_pass).xPos = NaN(sum(nc_filter),1);
             s_cells(e_pass).xPos(ismember(frames_clean, e_frames)) = x(nc_filter);
-            s_cells(e_pass).yPos = NaN(1, length(frames_clean));
+            s_cells(e_pass).yPos = NaN(sum(nc_filter),1);
             s_cells(e_pass).yPos(ismember(frames_clean, e_frames)) = y(nc_filter); 
             s_cells(e_pass).frames = nc_frames';            
             s_cells(e_pass).Nucleus = e; 

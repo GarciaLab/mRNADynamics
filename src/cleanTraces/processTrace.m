@@ -24,15 +24,16 @@ function [trace1_interp, approved] = processTrace(trace1,nan_buffer,pt_time,...
     % interpolate remaining NaNs    
     query_points1 = pt_time(isnan(trace1_clean));
     interp_t1 = pt_time(~isnan(trace1_clean));
-    interp_f1 = trace1_clean(~isnan(trace1_clean));
-
-    new_f1 = interp1(interp_t1,interp_f1,query_points1);  
-
+    interp_f1 = trace1_clean(~isnan(trace1_clean));   
+    new_f1 = interp1(interp_t1,interp_f1,query_points1);    
     trace1_clean(ismember(pt_time,query_points1)) = new_f1;        
 
-    % Interpolate to standardize spacing    
-    trace1_interp = interp1(pt_time,trace1_clean,time_interp); 
-    
+    % Interpolate to standardize spacing   
+    try        
+        trace1_interp = interp1(pt_time,trace1_clean,time_interp); 
+    catch
+        error('asfa')
+    end
     % says if trace is good
     approved =  standardQualityControl(trace1,trace1_clean,minDP,jump_thresh);
 end
