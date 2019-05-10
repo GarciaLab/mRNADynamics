@@ -1,10 +1,12 @@
 function fint = filterImage(im, filterType, sigmas, varargin)
 
-persistent gh; 
-gh = memoize(@gauss3D);
+persistent dh;
+dh = memoize(@DoG);
+persistent g3;
+g3 = memoize(@gauss3D);
 persistent Gx; persistent Gy; persistent Gz;
 grad = memoize(@gradient);
-persistent Gxx; persistent Gxy; persistent Gxz; persistent Gyy; persistent Gyz; persistent Gzz; 
+persistent Gxx; persistent Gxy; persistent Gxz; persistent Gyy; persistent Gyz; persistent Gzz;
 
 zStep = 400; %nm. default.
 
@@ -88,7 +90,8 @@ switch filterType
         end
         %assumes sigma 2 > sigma 1
         if dim==2
-            f = conv2(im, fspecial('gaussian',filterSize, s1) - fspecial('gaussian',filterSize, s2),'same');
+            d = dh(filterSize, s1, s2);
+            f = conv2(im, d,'same');
         elseif dim == 3
             im = gpuArray(im);
             kernelSize = 3*s2+1;
@@ -100,7 +103,7 @@ switch filterType
             h = fspecial('log', filterSize,s1);
             f = imfilter(im, h, 'corr', 'symmetric', 'same');
         elseif dim==3
-            G = gh(s1, 'sigmaZ', sigmaZ);
+            G = g3(s1, 'sigmaZ', sigmaZ);
             [Gx,Gy] = grad(G);
             [Gxx,~] = grad(Gx);
             [~,Gyy] = grad(Gy);
@@ -246,7 +249,7 @@ switch filterType
                 end
             end
         elseif dim ==3
-            G1 = gh(s1, 'sigmaZ', sigmaZ);
+            G1 = g3(s1, 'sigmaZ', sigmaZ);
             [Gx,Gy,Gz] = grad(G1);
             [Gxx, Gxy, Gxz] = grad(Gx);
             [Gyy, ~, Gyz] = grad(Gy);
@@ -297,5 +300,9 @@ end
 %     else
 fint = f;
 %     end
+
+    function dog = DoG(filterSize, s1, s2)
+        dog = fspecial('gaussian',filterSize, s1) - fspecial('gaussian',filterSize, s2);
+    end
 
 end
