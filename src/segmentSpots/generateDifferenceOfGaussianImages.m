@@ -129,10 +129,10 @@ if sum(im(:)) ~= 0
         if highPrecision
             dog = (dog + 100) * 10;
         end
-        if dim == 3
-            kernelSize = 3*sigmas{2}+1;
-            dog = padarray(dog(kernelSize:end - kernelSize - 1, kernelSize:end - kernelSize - 1, :), [kernelSize, kernelSize], 0, 'both');
-        end
+%         if dim == 3
+%             kernelSize = 3*sigmas{2}+1;
+% %             dog = padarray(dog(kernelSize:end - kernelSize - 1, kernelSize:end - kernelSize - 1, :), [kernelSize, kernelSize], 0, 'both');
+%         end
     else
         dog = (filterImage(im, filterType, sigmas, 'filterSize',filterSize) + 100) * 10;
     end

@@ -127,7 +127,7 @@ for i = 1:length(anaphase)
         currentAnaphaseBoundary = anaphaseInMins(i) - priorAnaphaseInMins;
     end
     plot(traceFigAxes,ones(1,2).*currentAnaphaseBoundary,traceFigYLimits,...
-        'LineWidth',2,'Color','black');
+        'LineWidth',2,'Color','black', 'Marker', 'none');
 end
 
 % plotting all prophase time points as vertical lines
@@ -138,7 +138,7 @@ for i = 1:length(prophase)
         currentProphase = prophaseInMins(i) - priorAnaphaseInMins;
     end
     plot(traceFigAxes,ones(1,2).*currentProphase,traceFigYLimits,...
-        'LineWidth',2,'Color','blue');
+        'LineWidth',2,'Color','blue', 'Marker', 'none');
 end
 
 % plotting all metaphase time points as vertical lines
@@ -160,6 +160,7 @@ hold(traceFigAxes, 'off')
 if plot3DGauss
     str1 = '3-slice mRNA';
     str2 = '3D-Gaussian fit mRNA';
+    ylim(traceFigAxes, [0, traceFigYLimits(2)]); 
 else
     str1 = '1-slice mRNA';
     str2 = 'multi-slice mRNA';
