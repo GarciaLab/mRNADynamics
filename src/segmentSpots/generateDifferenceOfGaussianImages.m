@@ -11,34 +11,6 @@ else
     filter3D = false;
 end
 
-ps = parallel.Settings;
-ps.Pool.AutoCreate = false;
-
-if nWorkers > 1 && ~displayFigures
-    maxWorkers = nWorkers;
-    ps.Pool.AutoCreate = true;
-    
-    try
-        parpool(maxWorkers);
-    catch
-        
-        try
-            parpool; % in case there aren't enough cores on the computer
-        catch
-            % parpool throws an error if there's a pool already running.
-        end
-        
-    end
-    
-else
-    
-    try %#ok<TRYNC>
-        poolobj = gcp('nocreate');
-        delete(poolobj);
-    end
-    
-end
-
 clear rawdir;
 
 pixelSize = FrameInfo(1).PixelSize * 1000; %nm
@@ -81,7 +53,7 @@ for channelIndex = 1:nCh
     if ~filter3D
         parfor current_frame = 1:numFrames
             
-            %         waitbar(current_frame / numFrames, h);
+%             waitbar(current_frame / numFrames, h);
             
             for zIndex = 1:zSize
                 generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameSuffix, filterType, sigmas, filterSize, ...
@@ -90,7 +62,10 @@ for channelIndex = 1:nCh
         end
         
     else
+ 
         for currentFrame = 1:numFrames
+             waitbar(currentFrame / numFrames, h);
+             
             for zIndex = 2:zSize-1
                 imPath = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(currentFrame, 3), '_z', ...
                     iIndex(zIndex, 2), nameSuffix, '.tif'];

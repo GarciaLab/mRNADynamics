@@ -73,8 +73,9 @@ function CurrentSnippet = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes,
             if ~isempty(gaussParams)
                 gaussParams= gaussParams{CurrentZIndex};
                 try
-                    g = gaussianForSpot(CurrentSnippet);
-                    gauss = g(gaussParams);
+                    [mesh_y,mesh_x] = meshgrid(1:size(CurrentSnippet,2), 1:size(CurrentSnippet,1)); 
+                    g = gaussianForSpot(mesh_y, mesh_x, CurrentSnippet);
+                    gauss = g(gaussParams) + CurrentSnippet;
                 catch
                     %not sure in what situation this fails. -AR
                     %9/15/2018
@@ -91,7 +92,7 @@ function CurrentSnippet = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes,
         end
 
         if ~isnan(gauss)
-            surf(gaussianAxes, gauss + CurrentSnippet);
+            surf(gaussianAxes, gauss);
         end
         title(gaussianAxes,'Gaussian fit')
         zlimit = max(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity);

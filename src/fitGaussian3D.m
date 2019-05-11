@@ -1,5 +1,9 @@
 function [fits, intensity, ci95, intensityError95] = fitGaussian3D(snip3D, initial_params, zstep, pixelSize, varargin)
 
+
+persistent gh;
+gh = memoize(@gaussian3DForSpot);
+
 %%Fitting
 displayFigures = 0;
 for i = 1:length(varargin)
@@ -25,14 +29,8 @@ end
 %         + params(6) - snip3D;
 
 % Single 3D generalized gaussian function
-single3DGaussian = @(params) params(1).*...
-    exp(-( params(5).*(mesh_x-params(2)).^2 + params(6).*(mesh_x-params(2)).*(mesh_y-params(3)) + params(7).*(mesh_x-params(2)).*(mesh_z-params(4))+...
-    params(8).*(mesh_y-params(3)).^2 + params(9).*(mesh_y-params(3)).*(mesh_z-params(4)) + params(10).*(mesh_z-params(4)).^2 ))...
-    + params(11) +...
-    params(12).*mesh_x + params(13).*mesh_y + params(14).*mesh_z...
-    + params(15).*(mesh_x.^2) + params(16).*(mesh_y.^2) + params(17).*(mesh_z.^2) +...
-    + params(18).*(mesh_x.*mesh_z) + params(19).*mesh_x.*mesh_y + params(20).*mesh_y.*mesh_z...
-    - snip3D;
+
+single3DGaussian = gh(mesh_y,mesh_x, mesh_z, snip3D);
 
 centroid_guess = [size(snip3D, 1)/2, size(snip3D, 2)/2, initial_params(4)];
 
@@ -192,6 +190,25 @@ if intensityError95 > intensity*2
     intensityError95 = NaN;
 end
 
+end
+
+function single3DGaussian = gaussian3DForSpot(mesh_y, mesh_x, mesh_z, snip3D)
+
+    %%% params and fits: %%%
+    %(1)amplitude (2) x (3) y (4) z (5)sigma x (6)sigma xy
+    %(7)sigma xz (8)sigma y (9)sigma yz (10) sigma z (11) offset
+    %(12)linear x offset (13) etc 14 etc
+
+    
+    single3DGaussian = @(params) params(1).*...
+    exp(-( params(5).*(mesh_x-params(2)).^2 + params(6).*(mesh_x-params(2)).*(mesh_y-params(3)) + params(7).*(mesh_x-params(2)).*(mesh_z-params(4))+...
+    params(8).*(mesh_y-params(3)).^2 + params(9).*(mesh_y-params(3)).*(mesh_z-params(4)) + params(10).*(mesh_z-params(4)).^2 ))...
+    + params(11) +...
+    params(12).*mesh_x + params(13).*mesh_y + params(14).*mesh_z...
+    + params(15).*(mesh_x.^2) + params(16).*(mesh_y.^2) + params(17).*(mesh_z.^2) +...
+    + params(18).*(mesh_x.*mesh_z) + params(19).*mesh_x.*mesh_y + params(20).*mesh_y.*mesh_z...
+    - double(snip3D);
+     
 end
 
 

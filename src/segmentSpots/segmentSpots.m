@@ -72,28 +72,7 @@ catch
     error(argumentErrorMessage);
 end
 
-% disables parfor if figures are going to be displayed
-ps = parallel.Settings;
-ps.Pool.AutoCreate = false;
-
-if nWorkers > 1 && ~displayFigures
-    
-    ps.Pool.AutoCreate = true;
-    maxWorkers = nWorkers;
-    
-    try
-        parpool(maxWorkers);
-    catch
-        
-        try
-            parpool; % in case there aren't enough cores on the computer
-        catch
-            % parpool throws an error if there's a pool already running.
-        end
-        
-    end
-    
-end
+startParallelPool(nWorkers, displayFigures);
 
 [~, ~, ~, ~, ~, ~, ~, ExperimentType, Channel1, Channel2, ~] = readMovieDatabase(Prefix);
 
@@ -166,7 +145,7 @@ for channelIndex = 1:nCh
     timeElapsed = toc;
     disp(['Elapsed time: ', num2str(timeElapsed / 60), ' min'])
     try %#ok<TRYNC>
-        log = logSegmentSpots(DropboxFolder, Prefix, timeElapsed, [], numFrames, Spots, falsePositives, Threshold, channelIndex);
+        log = logSegmentSpots(DropboxFolder, Prefix, timeElapsed, [], numFrames, Spots, falsePositives, Threshold, channelIndex, numShadows, intScale, fit3D);
         display(log);
     end
     

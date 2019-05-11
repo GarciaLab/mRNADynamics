@@ -116,5 +116,9 @@ function [displayFigures, numFrames, initialFrame, customFilter, highPrecision, 
     end
 
   end
+  
+if weka
+    nWorkers = 1;
+end
 
 end

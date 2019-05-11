@@ -91,12 +91,35 @@ switch filterType
         %assumes sigma 2 > sigma 1
         if dim==2
             d = dh(filterSize, s1, s2);
-            f = conv2(im, d,'same');
+%             try
+%                 gp = gpuDevice;
+%                 if gp.AvailableMemory < 1E9
+%                     gp = gpuDevice(1);
+%                 end
+%                 gim = gpuArray(im);
+%                 gd = gpuArray(d);
+%                 gpuf = conv2(gim, gd,'same');
+%                 f = gather(gpuf); clear gpuf; clear gim; clear gd;
+%             catch
+                 f = imfilter(im, d, 'same', 'replicate');
+%         end
         elseif dim == 3
-            im = gpuArray(im);
+            
             kernelSize = 3*s2+1;
             sigmaZ = 280 / zStep;
-            f = gather(imgaussfilt3(im, [s1, s1, sigmaZ]) - imgaussfilt3(im, [s2, s2, sigmaZ*4]));
+%             try
+%             gp = gpuDevice;
+%             if gp.AvailableMemory < 1E9
+%                 gp = gpuDevice(1);
+%             end
+%             
+%             gim = gpuArray(im);
+% 
+%             gpuf = imgaussfilt3(gim, [s1, s1, sigmaZ]) - imgaussfilt3(gim, [s2, s2, sigmaZ*4]);
+%             f = gather(gpuf); clear gpuf; clear gim;
+%             catch
+                f = imgaussfilt3(im, [s1, s1, sigmaZ]) - imgaussfilt3(im, [s2, s2, sigmaZ*4]);
+%         end
         end
     case 'Laplacian'
         if dim==2

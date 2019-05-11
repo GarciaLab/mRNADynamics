@@ -2,20 +2,22 @@ function [fits, relative_errors, residual, confidence_intervals, GaussianIntensi
     fitSingleGaussian(snippet, ~, ~, widthGuess, offsetGuess, show_status, graphicsHandles)
 
     % Fit Gaussians to the given locus within a snippet
-
+    
+    persistent gh;
+    gh = memoize(@gaussianForSpot);
+    
     warning('off','MATLAB:singularMatrix')
 
     snippet = double(snippet);
     [mesh_y,mesh_x] = meshgrid(1:size(snippet,2), 1:size(snippet,1));
 
     %fits: [amplitude, x position, x width, y position, y width, offset, angle] 
-
-    singleGaussian = gaussianForSpot(snippet);
-%     [logGaussian, singleGaussian] = gaussianForSpot(snippet);
+    
+    singleGaussian = gh(mesh_y, mesh_x, snippet);
     
     %Define some more initial parameters for fitting
 
-        initial_parameters = [max(snippet(:)), round(length(snippet)/2), widthGuess, round(length(snippet)/2), ...
+      initial_parameters = [max(snippet(:)), round(length(snippet)/2), widthGuess, round(length(snippet)/2), ...
             widthGuess,offsetGuess, 0];
 
     %Perform fitting
@@ -43,7 +45,7 @@ lsqOptions=optimset('Display','none');
    
         
     fits = single_fit; 
-    GaussianIntensity = sum(sum(singleGaussian(single_fit) + double(snippet) - single_fit(6)));
+    GaussianIntensity = sum(sum(singleGaussian(single_fit) + snippet - single_fit(6)));
 
     %Display
     gaussian = singleGaussian(single_fit);

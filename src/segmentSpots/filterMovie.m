@@ -71,6 +71,8 @@ function log = filterMovie(Prefix, varargin)
 
   % Start timer
   tic;
+  
+  startParallelPool(nWorkers, displayFigures);
 
   [~, ~, ~, ~, ~, ~, ~, ExperimentType, Channel1, Channel2, ~] = readMovieDatabase(Prefix);
 
@@ -115,13 +117,12 @@ function log = filterMovie(Prefix, varargin)
   if ~justTifs
     log = writeFilterMovieLog(t, Weka, DropboxFolder, Prefix, initialFrame, numFrames, filterType, sigmas, classifierPathCh1);
   end
+  
   if ~keepPool && ~Weka && ~justTifs
-
     try %#ok<TRYNC>
       poolobj = gcp('nocreate');
       delete(poolobj);
     end
-
   end
 
 end

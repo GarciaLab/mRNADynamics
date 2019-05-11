@@ -1,4 +1,5 @@
-function log = logSegmentSpots(DropboxFolder, Prefix, t, initialFrame, numFrames, Spots, falsePositives, Threshold, channelIndex)
+function log = logSegmentSpots(DropboxFolder, Prefix, t, initialFrame, numFrames, Spots, falsePositives, Threshold, channelIndex, numShadows, intScale, fit3D)
+  
   logFile = [DropboxFolder, filesep, Prefix, filesep, 'log.mat'];
 
   if exist(logFile, 'file')
@@ -8,6 +9,8 @@ function log = logSegmentSpots(DropboxFolder, Prefix, t, initialFrame, numFrames
   end 
 
   log(end + 1).Date = date;
+  
+  log(end).Script = 'segmentSpots';
   log(end).runTime = t / 60; %min
 
   if ~isempty(initialFrame) 
@@ -53,6 +56,9 @@ function log = logSegmentSpots(DropboxFolder, Prefix, t, initialFrame, numFrames
   log(end).totalBalls = detectedBalls;
   log(end).avgZSize = detectedCircles / detectedBalls;
   log(end).Threshold = Threshold;
+  log(end).numShadows = numShadows;
+  log(end).intScale = intScale;
+  log(end).fit3D = fit3D;
 
   if isfield(log, 'Classifier')
     log(end).Classifier = 'no Weka';

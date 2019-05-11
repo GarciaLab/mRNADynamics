@@ -41,15 +41,8 @@ else
             breakflag = 0; %this catches when the spot addition was unsuccessful and allows checkparticletracking to keep running and not error out
             maxWorkers = 8;
             use_integral_center = 1;
-            try
-                parpool(maxWorkers);
-            catch
-                try
-                    parpool; % in case there aren't enough cores on the computer
-                catch
-                    % parpool throws an error if there's a pool already running.
-                end
-            end
+            
+            startParallelPool(maxWorkers);
 
             parfor i = 1:ZSlices %#ok<PFUIX>
                 imAbove = [];
