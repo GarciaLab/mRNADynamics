@@ -95,6 +95,7 @@ else
         iIndex(zIndex, 2), nameSuffix, '.tif'];
     im = double(imread(fileName));
     dim = 2;
+    zStep = NaN;
 end
 
 if sum(im(:)) ~= 0
