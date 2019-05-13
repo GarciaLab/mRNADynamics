@@ -73,7 +73,6 @@ for channelIndex = 1:nCh
         %             generateDoGs(DogOutputFolder, PreProcPath, Prefix, currentFrame, nameSuffix, filterType, sigmas, filterSize, ...
         %                 highPrecision, zIndex, displayFigures, app, numFrames, imStack, zSize, zStep);
         %         end
-        padSize = 2*filterSize;
         format = [FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSize];
         
         if noSave
