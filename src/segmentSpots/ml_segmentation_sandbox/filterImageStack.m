@@ -39,20 +39,6 @@ maxPixVol = maxGPUMem / 4; %bytes in a single
 chunkSize = floor(maxPixVol/pixVol);
 chunks = [1:chunkSize:numFrames, numFrames+1];
 
-for i = 1:length(chunks)-1
-    g = makeGiantImage(PreProcPath, format, padSize, chunks(i), chunks(i+1)-1, Prefix, spotChannels);
-    gt = permute(g, [2 1 3]);
-    gdog = filterImage(gt, filterType, sigmas, 'zStep', zStep);
-    gdogt = permute(gdog, [2 1 3]);
-    dogs(:,:,:,chunks(i):chunks(i+1)-1) = extractFromGiant(gdogt, format, padSize, chunks(i), chunks(i+1)-1, Prefix, spotChannels, ProcPath, noSave);
-end
-
-
-
-
-
-
-
 % load stack
 % rawStack = NaN(yDim,xDim,zDim);
 % mcpChannel = find(contains([Channel1,Channel2,Channel3],'MCP'));

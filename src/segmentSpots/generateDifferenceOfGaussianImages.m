@@ -30,12 +30,8 @@ end
 
 for channelIndex = 1:nCh
     
-    if ~filter3D
-        h = waitbar(0, ['Filtering images: Channel ', num2str(channelIndex)]);
-    else
-        h = [];
-    end
-    
+    h = waitbar(0, ['Filtering images: Channel ', num2str(channelIndex)]);
+
     % (MT, 2018-02-11) Added support for lattice imaging, maybe
     % temporary - FIX LATER
     
@@ -87,6 +83,7 @@ for channelIndex = 1:nCh
         chunkSize = floor(maxPixVol/pixVol);
         chunks = [1:chunkSize:numFrames, numFrames+1];
         for i = 1:length(chunks)-1
+            waitbar(chunks(i) / numFrames, h);
             g = makeGiantImage(PreProcPath, format, padSize, chunks(i), chunks(i+1)-1, Prefix, coatChannel);
             gt = permute(g, [2 1 3]);
             gdog = filterImage(gt, filterType, sigmas, 'zStep', zStep);
