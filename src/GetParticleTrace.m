@@ -21,6 +21,8 @@ ErrorIntegral = NaN;
 ErrorIntegral3 = NaN;
 ErrorIntegral5 = NaN;
 backGround3 = NaN;
+AmpIntegralGauss3D = NaN;
+ErrorIntegralGauss3D = NaN;
 
 defaultArea = 109; %109 pixels is the default area when the pixels are assumed to be 212nm x 212 nm AR 9/3/18
 
