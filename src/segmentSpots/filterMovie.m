@@ -61,13 +61,15 @@
 % Last updated: 10/08/2018 - Matías Potel Feola - Refactor filterMovie and segmentSpotsML
 %
 % Documented by: Matías Potel Feola (harrypotel@gmail.com)
-function log = filterMovie(Prefix, varargin)
+function [log, dogs] = filterMovie(Prefix, varargin)
 
   warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
+  dogs = [];
+  
   [displayFigures, numFrames, initialFrame, customFilter, highPrecision, filterType, keepPool,...
     sigmas, nWorkers, app, kernelSize, Weka, justTifs, ignoreMemoryCheck, classifierFolder, ...
-    classifierPathCh1, customML] = determineFilterMovieOptions(varargin);
+    classifierPathCh1, customML, noSave] = determineFilterMovieOptions(varargin);
 
   % Start timer
   tic;
@@ -95,8 +97,8 @@ function log = filterMovie(Prefix, varargin)
   coatChannel = getCoatChannel(ExperimentType, Channel1, Channel2);
   
   if ~Weka && ~justTifs
-    sigmas = generateDifferenceOfGaussianImages(ProcPath, customFilter, nCh, ExperimentType, FrameInfo, coatChannel,...
-      numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision, sigmas, nWorkers, app, kernelSize);
+    dogs = generateDifferenceOfGaussianImages(ProcPath, customFilter, nCh, ExperimentType, FrameInfo, coatChannel,...
+      numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision, sigmas, nWorkers, app, kernelSize, noSave);
   elseif Weka
       if ~exist([PreProcPath, filesep, Prefix, filesep, 'stacks'], 'dir')
         generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,coatChannel, zSize, initialFrame);  

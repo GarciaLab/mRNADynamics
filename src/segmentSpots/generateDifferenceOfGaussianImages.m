@@ -1,7 +1,9 @@
 % Generates difference of Gaussian images
-function [sigmas] = generateDifferenceOfGaussianImages(FISHPath, customFilter, nCh, ExperimentType, FrameInfo,  coatChannel, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision, sigmas, nWorkers, app, kernelSize)
+function dogs = generateDifferenceOfGaussianImages(ProcPath, customFilter, nCh, ExperimentType, FrameInfo,  coatChannel, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision, sigmas, nWorkers, app, kernelSize, noSave)
 
-DogOutputFolder = [FISHPath, filesep, Prefix, '_', filesep, 'dogs'];
+dogs = [];
+
+DogOutputFolder = [ProcPath, filesep, Prefix, '_', filesep, 'dogs'];
 mkdir(DogOutputFolder)
 
 if contains(filterType, '_3D','IgnoreCase',true)
@@ -11,20 +13,13 @@ else
     filter3D = false;
 end
 
-clear rawdir;
-
 pixelSize = FrameInfo(1).PixelSize * 1000; %nm
 zStep = FrameInfo(1).ZStep*1000; %nm
-close all;
 
 if isempty(kernelSize)
     filterSize = round(2000 / pixelSize); %2000nm seems to be a good size empirically -AR
 else
     filterSize = kernelSize;
-end
-
-if ~customFilter
-    sigmas = {1, round(42000 / pixelSize)}; %42000nm seems to be a good size empirically -AR
 end
 
 if filter3D
@@ -35,7 +30,11 @@ end
 
 for channelIndex = 1:nCh
     
-    h = waitbar(0, ['Filtering images: Channel ', num2str(channelIndex)]);
+    if ~filter3D
+        h = waitbar(0, ['Filtering images: Channel ', num2str(channelIndex)]);
+    else
+        h = [];
+    end
     
     % (MT, 2018-02-11) Added support for lattice imaging, maybe
     % temporary - FIX LATER
@@ -51,9 +50,9 @@ for channelIndex = 1:nCh
         filterAxes = axes(filterFig);
     end
     if ~filter3D
-        parfor current_frame = 1:numFrames
+       for current_frame = 1:numFrames
             
-%             waitbar(current_frame / numFrames, h);
+            %             waitbar(current_frame / numFrames, h);
             
             for zIndex = 1:zSize
                 generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameSuffix, filterType, sigmas, filterSize, ...
@@ -62,21 +61,42 @@ for channelIndex = 1:nCh
         end
         
     else
- 
-        for currentFrame = 1:numFrames
-             waitbar(currentFrame / numFrames, h);
-             
-            for zIndex = 2:zSize-1
-                imPath = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(currentFrame, 3), '_z', ...
-                    iIndex(zIndex, 2), nameSuffix, '.tif'];
-                imStack(:,:,zIndex-1) = double(imread(imPath));
-            end
-            generateDoGs(DogOutputFolder, PreProcPath, Prefix, currentFrame, nameSuffix, filterType, sigmas, filterSize, ...
-                highPrecision, zIndex, displayFigures, app, numFrames, imStack, zSize, zStep);
+        
+        %         for currentFrame = 1:numFrames
+        %              waitbar(currentFrame / numFrames, h);
+        %
+        %             for zIndex = 2:zSize-1
+        %                 imPath = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(currentFrame, 3), '_z', ...
+        %                     iIndex(zIndex, 2), nameSuffix, '.tif'];
+        %                 imStack(:,:,zIndex-1) = single(imread(imPath));
+        %             end
+        %             generateDoGs(DogOutputFolder, PreProcPath, Prefix, currentFrame, nameSuffix, filterType, sigmas, filterSize, ...
+        %                 highPrecision, zIndex, displayFigures, app, numFrames, imStack, zSize, zStep);
+        %         end
+        padSize = 2*filterSize;
+        format = [FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSize];
+        
+        if noSave
+            dogs = zeros(format(1), format(2), format(3)-2, numFrames);
+        end
+        sigmas = {round(210/pixelSize), floor(800/pixelSize)};
+        padSize = 2*sigmas{2};
+        pixVol = format(1)*format(2)*format(3);
+        maxGPUMem = 1.8E9;
+%         maxGPUMem = evalin('base', 'maxGPUMem'); %for testing
+        maxPixVol = maxGPUMem / 4; %bytes in a single
+        chunkSize = floor(maxPixVol/pixVol);
+        chunks = [1:chunkSize:numFrames, numFrames+1];
+        for i = 1:length(chunks)-1
+            g = makeGiantImage(PreProcPath, format, padSize, chunks(i), chunks(i+1)-1, Prefix, coatChannel);
+            gt = permute(g, [2 1 3]);
+            gdog = filterImage(gt, filterType, sigmas, 'zStep', zStep);
+            gdogt = permute(gdog, [2 1 3]);
+            dogs(:,:,:,chunks(i):chunks(i+1)-1) = extractFromGiant(gdogt, format, padSize, chunks(i), chunks(i+1)-1, Prefix, coatChannel, ProcPath, noSave);
         end
     end
     
-    
+%     imshow(dogs(:,:, 5, 5),[]);
     close(h);
     
 end
@@ -105,10 +125,6 @@ if sum(im(:)) ~= 0
         if highPrecision
             dog = (dog + 100) * 10;
         end
-%         if dim == 3
-%             kernelSize = 3*sigmas{2}+1;
-% %             dog = padarray(dog(kernelSize:end - kernelSize - 1, kernelSize:end - kernelSize - 1, :), [kernelSize, kernelSize], 0, 'both');
-%         end
     else
         dog = (filterImage(im, filterType, sigmas, 'filterSize',filterSize) + 100) * 10;
     end

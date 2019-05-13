@@ -1,6 +1,6 @@
 function standardizeFigure(ax, ~, varargin)
 
-try
+% try
     colorDict = struct();
     colorDict.red = [213,108,85]/256;
     colorDict.yellow = [234,194,100]/256;
@@ -68,7 +68,7 @@ try
             end
         elseif strcmpi(dataType{i}, 'line') || strcmpi(dataType{i}, 'errorbar')
             dataObj(i).LineWidth = .5;
-            dataObj(i).Marker = '-o';
+            dataObj(i).Marker = 'o';
             dataObj(i).MarkerSize = 8;
             %Change color to physical biology colors as long as the number
             %of colors needed is less than 5.
@@ -90,5 +90,7 @@ try
     faceColor = 'none'; %yellow axis face.
     ax.Color = faceColor;
     ax.Box = 'on';
-end
+% catch
+%     disp('couldn''t standardize figure');
+% end
 end

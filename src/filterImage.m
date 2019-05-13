@@ -1,62 +1,35 @@
-function fint = filterImage(im, filterType, sigmas, varargin)
+function f = filterImage(im, filterType, sigmas, varargin)
 
-persistent dh;
-dh = memoize(@DoG);
+persistent dh; persistent dh3;
+% dh = memoize(@DoG); dh3 = memoize(@DoG3);
+dh3 = @DoG3;
 persistent g3;
-g3 = memoize(@gauss3D);
+% g3 = memoize(@gauss3D);
 persistent Gx; persistent Gy; persistent Gz;
-grad = memoize(@gradient);
+% grad = memoize(@gradient);
 persistent Gxx; persistent Gxy; persistent Gxz; persistent Gyy; persistent Gyz; persistent Gzz;
 
 zStep = 400; %nm. default.
 
-for i = 1:length(varargin)
-    if strcmpi(varargin{i}, 'filterSize')
-        filterSize = round(varargin{i+1});
-    elseif strcmpi(varargin{i}, 'zStep')
-        zStep = varargin{i+1};
+%initialize
+filterSizeZ = NaN; s1 = NaN; s2 = NaN; sigmaZ = NaN; filterSizeXY = NaN;
+
+
+padding = 'symmetric';
+for args = 1:length(varargin)
+    if strcmpi(varargin{args}, 'filterSize')
+        filterSizeXY = round(varargin{args+1});
+    elseif strcmpi(varargin{args}, 'zStep')
+        zStep = varargin{args+1};
+    elseif strcmpi(varargin{args}, 'padding')
+        padding = varargin{args+1};
     end
 end
 
-sigmaZ = 280 / zStep;
+getSigmasAndFilterSizes;
+
 dim = length(size(im));
-rad = 3; %rule of thumb is kernel size is 3x the Gaussian sigma
 f = [];
-fint = [];
-
-im = double(im);
-
-%convert string sigmas to doubles
-if ~isempty(sigmas)
-    if ischar(sigmas{1})
-        for i=1:length(sigmas)
-            sigmas{i}=str2double(sigmas{i});
-        end
-    end
-end
-
-q = length(sigmas);
-switch q
-    case 0
-        %do nothing
-    case 1
-        s1 = sigmas{1};
-    case 2
-        s1 = sigmas{1};
-        s2 = sigmas{2};
-    otherwise
-        s1 = str2double(sigmas{end});
-end
-if exist('s1','var')
-    filterSize = round(rad*s1);
-end
-
-sigmaZ = 280 / zStep;
-
-
-if ~mod(filterSize,2)
-    filterSize = filterSize + 1;
-end
 
 switch filterType
     case 'Identity'
@@ -90,63 +63,66 @@ switch filterType
         end
         %assumes sigma 2 > sigma 1
         if dim==2
-            d = dh(filterSize, s1, s2);
-%             try
-%                 gp = gpuDevice;
-%                 if gp.AvailableMemory < 1E9
-%                     gp = gpuDevice(1);
-%                 end
-%                 gim = gpuArray(im);
-%                 gd = gpuArray(d);
-%                 gpuf = conv2(gim, gd,'same');
-%                 f = gather(gpuf); clear gpuf; clear gim; clear gd;
-%             catch
-                 f = imfilter(im, d, 'same', 'replicate');
-%         end
+            d = DoG(filterSizeXY, s1, s2);
+            %             try
+            %                 gp = gpuDevice;
+            %                 if gp.AvailableMemory < 1E9
+            %                     gp = gpuDevice(1);
+            %                 end
+            %                 gim = gpuArray(im);
+            %                 gd = gpuArray(d);
+            %                 gpuf = conv2(gim, gd,'same');
+            %                 f = gather(gpuf); clear gpuf; clear gim; clear gd;
+            %             catch
+            f = imfilter(im, d, 'same', padding);
+            %         end
         elseif dim == 3
-            
-            kernelSize = 3*s2+1;
-            sigmaZ = 280 / zStep;
-%             try
-%             gp = gpuDevice;
-%             if gp.AvailableMemory < 1E9
-%                 gp = gpuDevice(1);
-%             end
-%             
-%             gim = gpuArray(im);
-% 
-%             gpuf = imgaussfilt3(gim, [s1, s1, sigmaZ]) - imgaussfilt3(gim, [s2, s2, sigmaZ*4]);
-%             f = gather(gpuf); clear gpuf; clear gim;
-%             catch
-                f = imgaussfilt3(im, [s1, s1, sigmaZ]) - imgaussfilt3(im, [s2, s2, sigmaZ*4]);
-%         end
+            try
+                d = gpuArray(dh3(s1, s2, sigmaZ));
+            catch
+                disp('GPU unavailable. Defaulting to CPU.');
+            end
+
+            % %             try
+            %             gp = gpuDevice;
+            %             if gp.AvailableMemory < 1E9
+            %                 gp = gpuDevice(1);
+            %             end
+            %
+            %             gim = gpuArray(im);
+            %           gd = gpuArray(d);
+            %             gpuf = imgaussfilt3(gim, [s1, s1, sigmaZ]) - imgaussfilt3(gim, [s2, s2, sigmaZ*4]);
+            %             f = gather(gpuf); clear gpuf; clear gim;
+            %             catch
+            f = imfilter(im, d, 'same', padding);
+            %         end
         end
     case 'Laplacian'
         if dim==2
-            h = fspecial('log', filterSize,s1);
+            h = fspecial('log', filterSizeXY,s1);
             f = imfilter(im, h, 'corr', 'symmetric', 'same');
         elseif dim==3
-            G = g3(s1, 'sigmaZ', sigmaZ);
-            [Gx,Gy] = grad(G);
-            [Gxx,~] = grad(Gx);
-            [~,Gyy] = grad(Gy);
-            LoG = Gxx + Gyy;
-            f = -imfilter(im, LoG, 'corr', 'symmetric', 'same');
+            %             G = g3(s1, 'sigmaZ', sigmaZ);
+            %             [Gx,Gy] = grad(G);
+            %             [Gxx,~] = grad(Gx);
+            %             [~,Gyy] = grad(Gy);
+            %             LoG = Gxx + Gyy;
+            %             f = -imfilter(im, LoG, 'corr', 'symmetric', 'same');
             %                 f = fastConv3D(LoG, im);
+            h = fspecial3('log', [filterSizeXY, filterSizeXY, filterSizeZ], [s1, s1, sigmaZ]);
+            f = -imfilter(im, h, 'corr', 'symmetric', 'same');
         end
     case 'Mean'
         if dim == 2
             h = fspecial('average', s1);
             f = imfilter(im, h);
         elseif dim == 3
-            h = ones(filterSize, filterSize, ceil(3*sigmaZ));
-            h = h./sum(h(:));
-            %                 f = fastConv3D(h, im);
-            f = imfilter(im, h, 'corr', 'same', 'replicate');
+            h = fspecial3('average',filterSizeXY);
+            f = imfilter(im, h, 'symmetric', 'same');
         end
     case {'Structure_smallest', 'Structure_largest'}
         if dim==2
-            G=fspecial('gauss',[filterSize, filterSize], s1);
+            G=fspecial('gauss',[filterSizeXY, filterSizeXY], s1);
             [Gx,Gy] = grad(G);
             %Compute Gaussian partial derivatives
             Dx = conv2(im, Gx,'same');
@@ -171,9 +147,9 @@ switch filterType
             G = imgaussfilt3(im, [s1, s1, sigmaZ]);
             [Gx,Gy,Gz] = grad(G);
             %Compute Gaussian partial derivatives
-            Dx = imfilter(im, Gx, 'corr', 'same', 'replicate');
-            Dy = imfilter(im, Gy, 'corr', 'same', 'replicate');
-            Dz = imfilter(im, Gz, 'corr', 'same', 'replicate');
+            Dx = imfilter(im, Gx, 'corr', 'same', 'symmetric');
+            Dy = imfilter(im, Gy, 'corr', 'same', 'symmetric');
+            Dz = imfilter(im, Gz, 'corr', 'same', 'symmetric');
             
             %Smooth elements of the structure tensor
             S11 = imgaussfilt3(Dx.^2, [s1, s1, sigmaZ]);
@@ -202,56 +178,52 @@ switch filterType
         end
     case 'Median'
         if dim==2
-            f = imgaussfilt(im,s1);
-            f = ordfilt2(f,ceil(filterSize*filterSize/2),ones(filterSize,filterSize));
+            %             f = imgaussfilt(im,s1);
+            %             f = ordfilt2(f,ceil(filterSizeXY*filterSizeXY/2),ones(filterSizeXY,filterSizeXY));
+            f = medfilt2(im, [filterSizeXY, filterSizeXY]);
         elseif dim==3
-            %                 f = ordfilt3(im, 'med', filterSize); %i need to rewrite
-            %                 this algorithm because it doesn't work
+            f = medfilt3(im, [filterSizeXY, filterSizeXY, filterSizeZ]);
             f = im;
         end
     case 'Maximum'
         if dim==2
             f = imgaussfilt(im,s1);
-            se = strel('disk',ceil(filterSize/2));
+            se = strel('disk',ceil(filterSizeXY/2));
             f = imdilate(f,se);
             %                 f = ordfilt2(f,(filterSize*filterSize),ones(filterSize,filterSize));
             %                 f = imgaussfilt(f,s);
         elseif dim==3
-            %                 f = ordfilt3(im, 'max', filterSize); %i need to rewrite
-            %                 this algorithm because it doesn't work
-            f = im;
+            f = imgaussfilt3(im, [s1, s1, sigmaZ]);
+            se = strel('cuboid',[ceil(filterSizeXY/2), ceil(filterSizeXY/2), ceil(filterSizeZ/2)]);
+            f = imdilate(f, se);
         end
-    case 'Variance'
-        if dim==2
-            f = imgaussfilt(im,s1);
-            f = colfilt(f,[filterSize filterSize],'sliding',@variance);
-        elseif dim==3
-            %                  f = ordfilt3(im, 'var', filterSize); %i need to rewrite
-            %                 this algorithm because it doesn't work
-            f = im;
-        end
+        
     case 'Minimum'
         if dim==2
             f = imgaussfilt(im,s1);
-            se = strel('disk',ceil(filterSize/2));
+            se = strel('disk',ceil(filterSizeXY/2));
             f = imerode(f,se);
         elseif dim==3
-            %                  f = ordfilt3(im, 'min', filterSize); %i need to rewrite
-            %                 this algorithm because it doesn't work
-            f = im;
+            f = imgaussfilt3(im, [s1, s1, sigmaZ]);
+            se = strel('cuboid',[ceil(filterSizeXY/2), ceil(filterSizeXY/2), ceil(filterSizeZ/2)]);
+            f = imerode(f, se);
         end
-    case 'Std'
+    case {'Std', 'Variance'}
         if dim==2
             f = imgaussfilt(im,s1);
             f = stdfilt(f);
         elseif dim==3
             %this blurs with sigma and sigmaZ, then stdfilts with sizes
             %dictated by sigma and sigma z.
-            f = stdfilt(imgaussfilt3(im, [s1, s1, sigmaZ]), ones(filterSize, filterSize, ceil(3*sigmaZ)));
+            f = stdfilt(imgaussfilt3(im, [s1, s1, sigmaZ]), ones(filterSizeXY, filterSizeXY, ceil(3*sigmaZ)));
+        end
+        
+        if strcmpi(filterType, 'Variance')
+            f = f.^2;
         end
     case {'Hessian_smallest', 'Hessian_largest'}
         if dim==2
-            G = fspecial('gauss',[filterSize, filterSize], s1);
+            G = fspecial('gauss',[filterSizeXY, filterSizeXY], s1);
             [Gx,Gy] = grad(G);
             [Gxx, Gxy] = grad(Gx);
             [Gyy, ~] = grad(Gy);
@@ -278,12 +250,12 @@ switch filterType
             [Gyy, ~, Gyz] = grad(Gy);
             [~, ~, Gzz] = grad(Gz);
             %Compute elements of the Hessian matrix
-            H11 = imfilter(im, Gxx, 'corr', 'same', 'replicate');
-            H12 = imfilter(im, Gxy, 'corr', 'same', 'replicate');
-            H13 = imfilter(im, Gxz, 'corr', 'same', 'replicate');
-            H22 = imfilter(im, Gyy, 'corr', 'same', 'replicate');
-            H23 = imfilter(im, Gyz, 'corr', 'same', 'replicate');
-            H33 = imfilter(im, Gzz, 'corr', 'same', 'replicate');
+            H11 = imfilter(im, Gxx, 'corr', 'same', 'symmetric');
+            H12 = imfilter(im, Gxy, 'corr', 'same', 'symmetric');
+            H13 = imfilter(im, Gxz, 'corr', 'same', 'symmetric');
+            H22 = imfilter(im, Gyy, 'corr', 'same', 'symmetric');
+            H23 = imfilter(im, Gyz, 'corr', 'same', 'symmetric');
+            H33 = imfilter(im, Gzz, 'corr', 'same', 'symmetric');
             %Make eigenimages from the Hessian
             l = size(im, 1); m = size(im, 2); n = size(im, 3);
             f = zeros(l,m,n);
@@ -321,11 +293,54 @@ end
 %         fround = round(fprime, ndigits);
 %         fint = int16(fround*10^ndigits);
 %     else
-fint = f;
+% fint = f;
 %     end
 
     function dog = DoG(filterSize, s1, s2)
         dog = fspecial('gaussian',filterSize, s1) - fspecial('gaussian',filterSize, s2);
     end
+
+    function dog = DoG3(s1, s2, sigmaZ)
+        filterSizeXY = round(s2*3);
+        filterSizeZ = round(sigmaZ*4*3);
+        dog = fspecial3('gaussian',[filterSizeXY, filterSizeXY, filterSizeZ], [s1,s1,ceil(sigmaZ*4)]) - fspecial3('gaussian',[filterSizeXY, filterSizeXY, filterSizeZ], [s2,s2,ceil(sigmaZ*4)]);
+    end
+
+    function getSigmasAndFilterSizes
+        rad = 3; %rule of thumb is kernel size is 3x the Gaussian sigma
+        zStep = 400; %nm. default.
+        %convert string sigmas to doubles
+        if ~isempty(sigmas)
+            if ischar(sigmas{1})
+                for ii=1:length(sigmas)
+                    sigmas{ii}=str2double(sigmas{ii});
+                end
+            end
+        end
+        
+        len = length(sigmas);
+        switch len
+            case 0
+                %do nothing
+            case 1
+                s1 = sigmas{1};
+            case 2
+                s1 = sigmas{1};
+                s2 = sigmas{2};
+            otherwise
+                s1 = str2double(sigmas{end});
+        end
+        if exist('s1','var')
+            filterSizeXY = round(rad*s1);
+        end
+        
+        sigmaZ = 280 / zStep;
+        filterSizeZ = ceil(sigmaZ*3);
+        
+        if ~mod(filterSizeXY,2)
+            filterSizeXY = filterSizeXY + 1;
+        end
+    end
+
 
 end

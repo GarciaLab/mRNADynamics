@@ -1,4 +1,4 @@
-function [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, threshGUI, initialFrame, useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel, optionalResults] = determineSegmentSpotsOptions(varargin)
+function [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, threshGUI, initialFrame, useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel, optionalResults, filterMovieFlag] = determineSegmentSpotsOptions(varargin)
 
 varargin = varargin{1};
 
@@ -17,6 +17,7 @@ keepProcessedData = false;
 fit3D = 0;
 skipChannel = [];
 optionalResults = '';
+filterMovieFlag = false;
 
 for i = 1:length(varargin)
     
@@ -61,6 +62,8 @@ for i = 1:length(varargin)
         threshGUI = 1;
     elseif strcmpi(varargin{i}, 'fit3D')
         fit3D = 1;
+    elseif strcmpi(varargin{i}, 'filterMovie')
+        filterMovieFlag = true;
     elseif strcmpi(varargin{i}, 'Weka')
         Weka = 1;
     elseif strcmpi(varargin{i}, 'optionalResults')
