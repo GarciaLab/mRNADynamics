@@ -1,6 +1,6 @@
 function standardizeFigure(ax, ~, varargin)
 
-% try
+try
     colorDict = struct();
     colorDict.red = [213,108,85]/256;
     colorDict.yellow = [234,194,100]/256;
@@ -90,7 +90,7 @@ function standardizeFigure(ax, ~, varargin)
     faceColor = 'none'; %yellow axis face.
     ax.Color = faceColor;
     ax.Box = 'on';
-% catch
-%     disp('couldn''t standardize figure');
-% end
+catch
+    disp('couldn''t standardize figure');
+end
 end

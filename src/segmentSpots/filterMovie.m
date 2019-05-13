@@ -63,6 +63,7 @@
 % Documented by: Matías Potel Feola (harrypotel@gmail.com)
 function [log, dogs] = filterMovie(Prefix, varargin)
 
+  disp(['Generating filtered movie from ', Prefix,'...']);
   warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
   dogs = [];
@@ -127,4 +128,5 @@ function [log, dogs] = filterMovie(Prefix, varargin)
     end
   end
 
+  disp([Prefix, ' filtered']);
 end
