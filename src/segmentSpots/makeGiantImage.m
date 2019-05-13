@@ -9,7 +9,7 @@ gpuDevice(1);
 numFrames = (lastFrame - firstFrame) + 1;
 
 dim = length(format);
-frameInterval = padSize+format(1);
+frameInterval = padSize+format(2);
 
 stacks = false;
 if contains(imIn, lower('stacks'))
@@ -27,9 +27,9 @@ end
 nPads = numFrames;
 
 if dim == 2
-    ggiantIm = zeros(format(2), (format(1)*numFrames) + (padSize*nPads), 'gpuArray');
+    ggiantIm = zeros(format(1), (format(2)*numFrames) + (padSize*nPads), 'gpuArray');
 elseif dim == 3
-    ggiantIm = zeros(format(2), (format(1)*numFrames) + (padSize*nPads),format(3)-2, 'single','gpuArray');
+    ggiantIm = zeros(format(1), (format(2)*numFrames) + (padSize*nPads),format(3)-2, 'single','gpuArray');
 end
 
 fcnt = 1;
