@@ -82,20 +82,7 @@ switch filterType
             catch
                 disp('GPU unavailable. Defaulting to CPU.');
             end
-
-            % %             try
-            %             gp = gpuDevice;
-            %             if gp.AvailableMemory < 1E9
-            %                 gp = gpuDevice(1);
-            %             end
-            %
-            %             gim = gpuArray(im);
-            %           gd = gpuArray(d);
-            %             gpuf = imgaussfilt3(gim, [s1, s1, sigmaZ]) - imgaussfilt3(gim, [s2, s2, sigmaZ*4]);
-            %             f = gather(gpuf); clear gpuf; clear gim;
-            %             catch
             f = imfilter(im, d, 'same', padding);
-            %         end
         end
     case 'Laplacian'
         if dim==2

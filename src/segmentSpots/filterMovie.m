@@ -72,10 +72,12 @@ dogs = [];
 tic;
 
 
-[~, ~, ~, ~, ~, ~, ~, ExperimentType, Channel1, Channel2, ~] = readMovieDatabase(Prefix);
+[~, ~, ~, ~, ~, ~, ~, ExperimentType, ~, ~, ~, ~, spotChannels] = readMovieDatabase(Prefix);
 
 [~, ProcPath, DropboxFolder, MS2CodePath, PreProcPath] = DetermineLocalFolders(Prefix);
+
 load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
+
 [displayFigures, numFrames, initialFrame, customFilter, highPrecision, filterType, keepPool,...
     sigmas, nWorkers, app, kernelSize, Weka, justTifs, ignoreMemoryCheck, classifierFolder, ...
     classifierPathCh1, customML, noSave] = determineFilterMovieOptions(FrameInfo,varargin);
@@ -89,13 +91,7 @@ if numFrames == 0
     numFrames = length(FrameInfo);
 end
 
-nCh = 1;
-
-if strcmpi(ExperimentType, '2spot2color')
-    nCh = 2;
-end
-
-coatChannel = getCoatChannel(ExperimentType, Channel1, Channel2);
+nCh = length(spotChannels);
 
 if ~Weka && ~justTifs
     dogs = generateDifferenceOfGaussianImages(ProcPath, customFilter, nCh, ExperimentType, FrameInfo, coatChannel,...

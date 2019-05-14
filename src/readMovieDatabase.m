@@ -1,5 +1,5 @@
 function [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
-    Folder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder, Channel3]...
+    Folder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder, Channel3, spotChannels]...
 = readMovieDatabase(Prefix, varargin)
     
     optionalResults = '';
@@ -62,4 +62,7 @@ function [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
     %Set the destination folders
     OutputFolder = [DropboxFolder, filesep, Prefix];
     
+    %Determine the spot channel(s)
+    spotChannels = find(contains([Channel1,Channel2,Channel3],'CP'));
+
 end

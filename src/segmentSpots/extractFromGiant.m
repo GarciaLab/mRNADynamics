@@ -14,6 +14,7 @@ for frame = firstFrame:lastFrame
     elseif dim == 3
         
         im = gather(uint16((giantIm(:,ind1:ind2, :) + 100)*10));
+        im(:, padSize/2 : end, :) = 0;
         if noSave
             dogs(:, :, :, fcnt) = im; 
         end
@@ -34,5 +35,4 @@ for frame = firstFrame:lastFrame
     fcnt = fcnt + 1;
     
 end
-
 end

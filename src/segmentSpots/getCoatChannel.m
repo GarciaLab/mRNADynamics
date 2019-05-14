@@ -1,18 +1,12 @@
-function coatChannel = getCoatChannel(ExperimentType, Channel1, Channel2)
+function spotChannels = getCoatChannel(Channel1, Channel2, varargin)
     %Finds the channel that contains the stem loop coat protein (aka the
-    %channel with the transcription spots)
-    coatChannel = [];
-
-    if strcmpi(ExperimentType, 'input') 
-         coatChannel = [];
-    elseif contains(Channel2, 'mcp', 'IgnoreCase', true) || ...
-      contains(Channel2, 'pcp', 'IgnoreCase', true)
-      coatChannel = 2;
-    elseif contains(Channel1, 'mcp', 'IgnoreCase', true) || ...
-      contains(Channel1, 'pcp', 'IgnoreCase', true)
-      coatChannel = 1; 
-    else
-      error('No MCP or PCP channel detected. Check MovieDatabase.csv')
-    end 
+    %channel with the transcription spots
+    spotChannels = [];
+    
+    if ~isempty(varargin)
+        Channel3 = varargin{1};
+    end
+    
+    spotChannels = find(contains([Channel1,Channel2,Channel3],'CP') || contains([Channel1,Channel2,Channel3],'Spot'));
 
 end 
