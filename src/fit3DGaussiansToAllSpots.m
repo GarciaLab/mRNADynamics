@@ -18,7 +18,9 @@ end
 
 [~,~,DropboxFolder,~, PreProcPath,...
     ~, Prefix, ~,Channel1,Channel2,~, Channel3] = readMovieDatabase(prefix, optionalResults);
-spotChannels = find(contains([Channel1,Channel2,Channel3],'CP'));
+
+spotChannels = getCoatChannel(Channel1, Channel2, Channel3);
+
 DataFolder=[DropboxFolder,filesep,prefix];
 
 if ~segmentSpots
@@ -32,23 +34,15 @@ ySize = FrameInfo(1).LinesPerFrame;
 pixelSize = FrameInfo(1).PixelSize*1000; %nm
 zstep = FrameInfo(1).ZStep;
 
-nCh = 1;
-if iscell(Spots)
-    nCh = length(Spots);
-else
-    Spots = {Spots};
-end
-
 zMax = FrameInfo(1).NumberSlices+2;
 
 nWorkers = 8;
 startParallelPool(nWorkers, displayFigures);    
 
-for ch = 1:nCh
+for ch = spotChannels
     
     nFrames = length(Spots{ch});
     SpotsCh = Spots{ch};
-    mcp_channel = spotChannels(ch);
     
     parfor frame = 1:nFrames %frames
         nSpotsPerFrame = length(SpotsCh(frame).Fits);
@@ -80,7 +74,7 @@ for ch = 1:nCh
                 for z = zBot:zTop
                     if z > 1 && z < zMax
                         FullSlice=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(frame,3)...
-                            ,'_z' iIndex(z,2) '_ch' iIndex(mcp_channel,2) '.tif']);
+                            ,'_z' iIndex(z,2) '_ch' iIndex(ch,2) '.tif']);
 
                         snip3D(:,:,k) = double(FullSlice(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
                             max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size))); %#ok<*SAGROW>

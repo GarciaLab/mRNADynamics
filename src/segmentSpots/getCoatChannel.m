@@ -7,7 +7,7 @@ function spotChannels = getCoatChannel(Channel1, Channel2, varargin)
         Channel3 = varargin{1};
     end
     
-    channels = {Channel1, Channel2, Channel3};
+    channels = {Channel1{1}, Channel2{1}, Channel3{1}};
     
     spotChannels = find(contains(channels,'CP', 'IgnoreCase',true)...
         | contains(channels,'Spot', 'IgnoreCase',true));
