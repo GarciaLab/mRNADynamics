@@ -41,9 +41,13 @@ startParallelPool(nWorkers, displayFigures);
 
 for ch = spotChannels
     
+    if ~iscell(Spots)
+        Spots = {Spots};
+    end
     nFrames = length(Spots{ch});
     SpotsCh = Spots{ch};
-    
+  
+        
     parfor frame = 1:nFrames %frames
         nSpotsPerFrame = length(SpotsCh(frame).Fits);
         SpotsFrame = SpotsCh(frame).Fits;

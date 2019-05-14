@@ -63,6 +63,6 @@ function [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
     OutputFolder = [DropboxFolder, filesep, Prefix];
     
     %Determine the spot channel(s)
-    spotChannels = find(contains([Channel1,Channel2,Channel3],'CP'));
+    spotChannels = getCoatChannel(Channel1, Channel2, Channel3);
 
 end

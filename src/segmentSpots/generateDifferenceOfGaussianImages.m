@@ -1,5 +1,5 @@
 % Generates difference of Gaussian images
-function dogs = generateDifferenceOfGaussianImages(ProcPath, customFilter, nCh, ExperimentType, FrameInfo,  coatChannel, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision, sigmas, nWorkers, app, kernelSize, noSave)
+function dogs = generateDifferenceOfGaussianImages(ProcPath, ExperimentType, FrameInfo, spotChannels, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision, sigmas, app, kernelSize, noSave)
 
 dogs = [];
 
@@ -22,12 +22,7 @@ else
     filterSize = kernelSize;
 end
 
-if filter3D
-    imStack = zeros(FrameInfo(1).LinesPerFrame,FrameInfo(1).PixelsPerLine, zSize-2);
-else
-    imStack = [];
-end
-
+nCh = length(spotChannels);
 for channelIndex = 1:nCh
     
     h = waitbar(0, ['Filtering images: Channel ', num2str(channelIndex)]);
@@ -36,17 +31,17 @@ for channelIndex = 1:nCh
     % temporary - FIX LATER
     
     if strcmpi(ExperimentType, 'inputoutput') || strcmpi(ExperimentType, 'lattice')
-        nameSuffix = ['_ch', iIndex(coatChannel, 2)];
+        nameSuffix = ['_ch', iIndex(spotChannels, 2)];
     else
         nameSuffix = ['_ch', iIndex(channelIndex, 2)];
     end
     
     if displayFigures && isempty(app)
         filterFig = figure();
-        filterAxes = axes(filterFig);
+
     end
     if ~filter3D
-       for current_frame = 1:numFrames
+       parfor current_frame = 1:numFrames
             
             %             waitbar(current_frame / numFrames, h);
             
@@ -57,18 +52,7 @@ for channelIndex = 1:nCh
         end
         
     else
-        
-        %         for currentFrame = 1:numFrames
-        %              waitbar(currentFrame / numFrames, h);
-        %
-        %             for zIndex = 2:zSize-1
-        %                 imPath = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(currentFrame, 3), '_z', ...
-        %                     iIndex(zIndex, 2), nameSuffix, '.tif'];
-        %                 imStack(:,:,zIndex-1) = single(imread(imPath));
-        %             end
-        %             generateDoGs(DogOutputFolder, PreProcPath, Prefix, currentFrame, nameSuffix, filterType, sigmas, filterSize, ...
-        %                 highPrecision, zIndex, displayFigures, app, numFrames, imStack, zSize, zStep);
-        %         end
+       
         format = [FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSize];
         
         if noSave
@@ -84,11 +68,11 @@ for channelIndex = 1:nCh
         chunks = [1:chunkSize:numFrames, numFrames+1];
         for i = 1:length(chunks)-1
             waitbar(chunks(i) / numFrames, h);
-            g = makeGiantImage(PreProcPath, format, padSize, chunks(i), chunks(i+1)-1, Prefix, coatChannel);
+            g = makeGiantImage(PreProcPath, format, padSize, chunks(i), chunks(i+1)-1, Prefix, spotChannels);
             gt = permute(g, [2 1 3]);
             gdog = filterImage(gt, filterType, sigmas, 'zStep', zStep);
             gdogt = permute(gdog, [2 1 3]);
-            dogs(:,:,:,chunks(i):chunks(i+1)-1) = extractFromGiant(gdogt, format, padSize, chunks(i), chunks(i+1)-1, Prefix, coatChannel, ProcPath, noSave);
+            dogs(:,:,:,chunks(i):chunks(i+1)-1) = extractFromGiant(gdogt, format, padSize, chunks(i), chunks(i+1)-1, Prefix, spotChannels, ProcPath, noSave);
         end
     end
     
