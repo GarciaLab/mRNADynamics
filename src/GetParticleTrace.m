@@ -66,6 +66,9 @@ for i=1:length(Particles(CurrentParticle).Frame)
         catch
             ErrorIntegralGauss3D(i) = NaN;
         end
+    else
+        ErrorIntegralGauss3D(i) = NaN;
+        warning('gauss3d intensities calculated but not their errors. Re-run fit3dgaussianstoallspots if this is desired.');
     end
     try
         AmpIntegral5(i)=...
