@@ -1,9 +1,5 @@
 function [fits, intensity, ci95, intensityError95] = fitGaussian3D(snip3D, initial_params, zstep, pixelSize, varargin)
 
-
-persistent gh;
-gh = memoize(@gaussian3DForSpot);
-
 %%Fitting
 displayFigures = 0;
 for i = 1:length(varargin)
@@ -30,7 +26,7 @@ end
 
 % Single 3D generalized gaussian function
 
-single3DGaussian = gh(mesh_y,mesh_x, mesh_z, snip3D);
+single3DGaussian = gaussian3DForSpot(mesh_y,mesh_x, mesh_z, snip3D);
 
 centroid_guess = [size(snip3D, 1)/2, size(snip3D, 2)/2, initial_params(4)];
 
