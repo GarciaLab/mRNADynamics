@@ -3,6 +3,7 @@ function dogs = extractFromGiant(giantIm, format, padSize, firstFrame, lastFrame
 dim = length(size(giantIm));
 frameInterval = padSize+format(2);
 dogs = zeros(format(1), format(2), format(3)-2, lastFrame - firstFrame + 1);
+padZ = false;
 
 fcnt = 1;
 for frame = firstFrame:lastFrame
@@ -14,14 +15,23 @@ for frame = firstFrame:lastFrame
     elseif dim == 3
         
         im = gather(uint16((giantIm(:,ind1:ind2, :) + 100)*10));
-        im(:, end - (padSize/2) : end, :) = 0;
+        
+        %pad the image to avoid edge effects    
+        im(:, 1:1+round((padSize/2)), :) = 0;
+        im(:, end-round((padSize/2)):end, :) = 0;
+%         imshow(im(:, :, 6), [median(im(:)), max(im(:))]);
+
+        if padZ 
+            im = cat(zeros(size(im,1), size(im,2)), im, 3);
+            im(:,:,end+1) = zeros(size(im,1), size(im,2));
+        end
+        
         if noSave
             dogs(:, :, :, fcnt) = im; 
         end
         
         for z = 1:size(im,3)
             plane = im(:,:,z);
-%             imshow(plane,[median(plane(:)), max(plane(:))]);
             if ~noSave
                 nameSuffix = ['_ch', iIndex(channel, 2)];
                 dog_name = ['DOG_', Prefix, '_', iIndex(frame, 3), '_z', iIndex(z, 2), nameSuffix, '.tif'];
@@ -36,4 +46,5 @@ for frame = firstFrame:lastFrame
     fcnt = fcnt + 1;
     
 end
+
 end

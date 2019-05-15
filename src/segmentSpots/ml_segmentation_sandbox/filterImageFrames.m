@@ -48,7 +48,7 @@ for k = 1:length(chunks)-1
                 gdog = filterImage(gt, feature, {sigmaVec{j}}, 'zStep', zStep);
             end
             gdogt = permute(gdog, [2 1 3]);
-            imshow(gdogt(:,:,5),[]);
+%             imshow(gdogt(:,:,5),[]);
             dogs(:,:,:,chunks(k):chunks(k+1)-1) = gather(extractFromGiant(gdogt, format, padSize, chunks(k), chunks(k+1)-1,...
                 Prefix, spotChannels, ProcPath, noSave));
             
