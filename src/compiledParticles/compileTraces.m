@@ -157,7 +157,9 @@ for ChN=1:NChannels
                 end
                 %Extract information from Spots about fluorescence and background
                 [Frame,AmpIntegral, AmpIntegral3, AmpIntegral5, AmpGaussian,...
-                    Off, ErrorIntegral,ErrorGauss,optFit1, FitType, ErrorIntegral3, ErrorIntegral5,backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D, AmpDog, AmpDogMax]...
+                    Off, ErrorIntegral,ErrorGauss,optFit1, FitType, ErrorIntegral3,...
+                    ErrorIntegral5,backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D,...
+                    AmpDog, AmpDogMax, ampdog3, ampdog3Max]...
                     = GetParticleTrace(k,CompiledParticles{ChN},Spots{ChN});
                 CompiledParticles{ChN}(k).Fluo= AmpIntegral;
                 CompiledParticles{ChN}(k).Fluo3= AmpIntegral3;
@@ -171,6 +173,8 @@ for ChN=1:NChannels
                 CompiledParticles{ChN}(k).FluoDogMax = AmpDogMax;
                 CompiledParticles{ChN}(k).FluoGauss3D = AmpIntegralGauss3D;
                 CompiledParticles{ChN}(k).FluoGauss3DError = ErrorIntegralGauss3D;
+                CompiledParticles{ChN}(k).ampgauss3D = ampdog3;
+                CompiledParticles{ChN}(k).ampgauss3DMax = ampdog3Max;
                   
                   
                 

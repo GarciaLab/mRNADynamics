@@ -24,14 +24,18 @@ yDim = FrameInfo(1).LinesPerFrame;
 xDim = FrameInfo(1).PixelsPerLine;
 pixelSize = FrameInfo(1).PixelSize;
 
-
+gp = gpuDevice;
+if gp.AvailableMemory < 1E9
+    gpuDevice(1);
+end
 % load stack
-rawStack = NaN(yDim,xDim,zDim);
+rawStack = zeros(yDim,xDim,zDim, 'single','gpuArray');
 mcpChannel = find(contains([Channel1,Channel2,Channel3],'MCP'));
 for z = 1:zDim
     fileName = [Prefix '_' sprintf('%03d',frame) '_z' sprintf('%02d',z)  '_ch' sprintf('%02d',mcpChannel) '.tif'];
     rawStack(:,:,z) = imread([PreProcPath '/' Prefix '/' fileName]);
 end
+rawStack = gpuArray(rawStack);
 % apply filters
 for i = 1:numel(featureCell)
     feature = featureCell{i};
@@ -42,6 +46,7 @@ for i = 1:numel(featureCell)
             ft_im = filterImage(rawStack, feature, {sigmaVec(j)});
         end
         
+        ft_im = gather(ft_im);
         featureName = [feature '_s' num2str(sigmaVec(j))];
         if trainingFlag
             % initialize field if it's not a;ready present

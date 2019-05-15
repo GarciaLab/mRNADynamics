@@ -14,6 +14,7 @@ zStep = 400; %nm. default.
 %initialize
 filterSizeZ = NaN; s1 = NaN; s2 = NaN; sigmaZ = NaN; filterSizeXY = NaN;
 
+gpu = strcmpi(class(im), 'gpuArray');
 
 padding = 'symmetric';
 for args = 1:length(varargin)
@@ -77,10 +78,11 @@ switch filterType
             f = imfilter(im, d, 'same', padding);
             %         end
         elseif dim == 3
-            try
+            if gpu
                 d = gpuArray(dh3(s1, s2, sigmaZ));
-            catch
-                disp('GPU unavailable. Defaulting to CPU.');
+            else
+                disp('Defaulting to CPU.');
+                d = dh3(s1, s2, sigmaZ);
             end
             f = imfilter(im, d, 'same', padding);
         end
