@@ -1,4 +1,4 @@
-function [fits, intensity, ci95, intensityError95] = fitGaussian3D(snip3D, initial_params, zstep, pixelSize, varargin)
+function [fits, intensity, ci95, intensityError95] = fitGaussian3D(snip3D, initial_params, zStep, pixelSize, varargin)
 
 %%Fitting
 displayFigures = 0;
@@ -28,11 +28,11 @@ end
 
 single3DGaussian = gaussian3DForSpot(mesh_y,mesh_x, mesh_z, snip3D);
 
-centroid_guess = [size(snip3D, 1)/2, size(snip3D, 2)/2, initial_params(4)];
+centroid_guess = [size(snip3D, 1)/2, size(snip3D, 2)/2, initial_params(2)];
 
 
 initial_parameters = [initial_params(1), centroid_guess(1),centroid_guess(2), centroid_guess(3), ...
-    initial_params(5)^(-2), 0, 0, initial_params(5)^(-2), 0, initial_params(5)^(-2),initial_params(6),...
+    initial_params(3)^(-2), 0, 0, initial_params(3)^(-2), 0, initial_params(3)^(-2),initial_params(4),...
     0, 0, 0,...
     0, 0, 0, 0, 0, 0];
 
@@ -98,6 +98,9 @@ errs = [ci95(1,2) - fits(1), ci95(5,2) - fits(5), ci95(8,2) - fits(8), ...
 
 [intensity, intensityError95] = PropError(intCalc, [amplitude A B C D E F], vals, errs);
 
+if ~isreal(intensity)
+    disp('uh oh complex');
+end
 
 %% All Plotting
 if displayFigures

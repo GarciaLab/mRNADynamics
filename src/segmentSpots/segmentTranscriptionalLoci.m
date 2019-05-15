@@ -91,14 +91,10 @@ for current_frame = initialFrame:numFrames
             lLim = median(dogO);
             uLim = max(dogO);
             if lLim ~= uLim
-                imagesc(dogAx,im, [lLim, uLim]);
+                imagescUpdate(dogAx, im, [lLim, uLim]);
             else
-                imagesc(dogAx,im);
+                imagescUpdate(dogAx, im, []);
             end
-            colormap(dogAx, 'gray')
-            dogAx.Visible = 'off';
-            dogAx.DataAspectRatio = [1, 1, 1];
-            dogAx.PlotBoxAspectRatio = [1, 1, 1];
         end
         
         % Apply flatfield correction

@@ -110,7 +110,7 @@ for ch = spotChannels
 %                 end
             %         snips3D = [snips3D, currentSnippet3D]; %#ok<*AGROW>
             
-            initial_params = [max(snip3D(:)), NaN,NaN, snipDepth + 1, width,offsetGuess];
+            initial_params = [max(snip3D(:)), snipDepth + 1, width,offsetGuess];
             fitOptions = {};
             if displayFigures
                 fitOptions = [fitOptions,'displayFigures'];

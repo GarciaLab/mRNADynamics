@@ -90,12 +90,12 @@ for i=1:length(Particles(CurrentParticle).Frame)
         AmpDogMax(i) = NaN;
     end
      try
-        ampdog3(i) =  spot.ampdog3(zIndex);
+        ampdog3(i) =  spot.ampdog3;
     catch
         ampdog3(i) = NaN;
      end
      try
-        ampdog3Max(i) =  spot.ampdog3Max(zIndex);
+        ampdog3Max(i) =  spot.ampdog3Max;
     catch
         ampdog3Max(i) = NaN;
     end

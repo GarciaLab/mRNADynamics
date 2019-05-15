@@ -1,12 +1,12 @@
 function f = filterImage(im, filterType, sigmas, varargin)
 
-persistent dh; persistent dh3;
-% dh = memoize(@DoG); dh3 = memoize(@DoG3);
-dh3 = @DoG3;
-persistent g3;
-% g3 = memoize(@gauss3D);
+% persistent dh; persistent dh3;
+% % dh = memoize(@DoG); dh3 = memoize(@DoG3);
+% dh3 = @DoG3;
+% persistent g3;
+% % g3 = memoize(@gauss3D);
 persistent Gx; persistent Gy; persistent Gz;
-% grad = memoize(@gradient);
+grad = memoize(@gradient);
 persistent Gxx; persistent Gxy; persistent Gxz; persistent Gyy; persistent Gyz; persistent Gzz;
 
 zStep = 400; %nm. default.
@@ -79,10 +79,10 @@ switch filterType
             %         end
         elseif dim == 3
             if gpu
-                d = gpuArray(dh3(s1, s2, sigmaZ));
+                d = gpuArray(DoG3(s1, s2, sigmaZ));
             else
                 disp('Defaulting to CPU.');
-                d = dh3(s1, s2, sigmaZ);
+                d = DoG3(s1, s2, sigmaZ);
             end
             f = imfilter(im, d, 'same', padding);
         end
@@ -166,13 +166,18 @@ switch filterType
             end
         end
     case 'Median'
+        if gpu
+            im = gather(im);
+        end
         if dim==2
             %             f = imgaussfilt(im,s1);
             %             f = ordfilt2(f,ceil(filterSizeXY*filterSizeXY/2),ones(filterSizeXY,filterSizeXY));
             f = medfilt2(im, [filterSizeXY, filterSizeXY]);
         elseif dim==3
             f = medfilt3(im, [filterSizeXY, filterSizeXY, filterSizeZ]);
-            f = im;
+        end
+        if gpu
+            f = gpuArray(im);
         end
     case 'Maximum'
         if dim==2
@@ -184,7 +189,13 @@ switch filterType
         elseif dim==3
             f = imgaussfilt3(im, [s1, s1, sigmaZ]);
             se = strel('cuboid',[ceil(filterSizeXY/2), ceil(filterSizeXY/2), ceil(filterSizeZ/2)]);
+            if gpu
+                f = gather(f);
+            end
             f = imdilate(f, se);
+            if gpu
+                f = gpuArray(f);
+            end
         end
         
     case 'Minimum'
@@ -195,16 +206,28 @@ switch filterType
         elseif dim==3
             f = imgaussfilt3(im, [s1, s1, sigmaZ]);
             se = strel('cuboid',[ceil(filterSizeXY/2), ceil(filterSizeXY/2), ceil(filterSizeZ/2)]);
+             if gpu
+                f = gather(f);
+            end
             f = imerode(f, se);
+            if gpu
+                f = gpuArray(f);
+            end
         end
     case {'Std', 'Variance'}
         if dim==2
             f = imgaussfilt(im,s1);
-            f = stdfilt(f);
+            f = stdfilt(f,ones(filterSizeXY, filterSizeXY), 'single', 'gpuArray');
         elseif dim==3
             %this blurs with sigma and sigmaZ, then stdfilts with sizes
             %dictated by sigma and sigma z.
+            if gpu
+                im = gather(im);
+            end
             f = stdfilt(imgaussfilt3(im, [s1, s1, sigmaZ]), ones(filterSizeXY, filterSizeXY, ceil(3*sigmaZ)));
+            if gpu
+                f = gpuArray(im);
+            end
         end
         
         if strcmpi(filterType, 'Variance')
@@ -233,7 +256,7 @@ switch filterType
                 end
             end
         elseif dim ==3
-            G1 = g3(s1, 'sigmaZ', sigmaZ);
+            G1 = DoG3(s1, s2, sigmaZ);
             [Gx,Gy,Gz] = grad(G1);
             [Gxx, Gxy, Gxz] = grad(Gx);
             [Gyy, ~, Gyz] = grad(Gy);
@@ -248,7 +271,7 @@ switch filterType
             %Make eigenimages from the Hessian
             l = size(im, 1); m = size(im, 2); n = size(im, 3);
             f = zeros(l,m,n);
-            for p = 1:l
+            parfor p = 1:l
                 for q = 1:m
                     for r = 1:n
                         H = [H11(p, q, r), H12(p, q, r), H13(p, q, r);...
