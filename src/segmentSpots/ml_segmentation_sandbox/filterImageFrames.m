@@ -3,11 +3,10 @@ function featureTable = filterImageFrames(Prefix,sigmaVec,featureCell,varargin)
 featureTable = [];
 for i = 1:numel(varargin)
 end
-[SourcePath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
-    Folder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder,...
-    Channel3] = readMovieDatabase(Prefix);
+[~,ProcPath,DropboxFolder,~, PreProcPath,...
+    ~, Prefix, ~,~,~,~,...
+    ~, spotChannels] = readMovieDatabase(Prefix);
 
-spotChannels = find(contains([Channel1,Channel2,Channel3],'CP'));
 if length(spotChannels) > 1
     error('nope. talk to nick');
 end
