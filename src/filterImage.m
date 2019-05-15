@@ -79,7 +79,7 @@ switch filterType
             %         end
         elseif dim == 3
             if gpu
-                d = gpuArray(DoG3(s1, s2, sigmaZ));
+                d = DoG3(s1, s2, sigmaZ);
             else
                 disp('Defaulting to CPU.');
                 d = DoG3(s1, s2, sigmaZ);
@@ -321,6 +321,9 @@ end
     function getSigmasAndFilterSizes
         rad = 3; %rule of thumb is kernel size is 3x the Gaussian sigma
         zStep = 400; %nm. default.
+        if ~iscell(sigmas)
+            sigmas = {sigmas};
+        end
         %convert string sigmas to doubles
         if ~isempty(sigmas)
             if ischar(sigmas{1})

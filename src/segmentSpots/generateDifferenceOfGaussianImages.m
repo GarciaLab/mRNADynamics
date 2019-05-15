@@ -66,6 +66,7 @@ for channelIndex = 1:nCh
         maxPixVol = maxGPUMem / 4; %bytes in a single
         chunkSize = floor(maxPixVol/pixVol);
         chunks = [1:chunkSize:numFrames, numFrames+1];
+        end
         for i = 1:length(chunks)-1
             waitbar(chunks(i) / numFrames, h);
             g = makeGiantImage(PreProcPath, format, padSize, chunks(i), chunks(i+1)-1, Prefix, spotChannels);
@@ -74,9 +75,8 @@ for channelIndex = 1:nCh
             gdogt = permute(gdog, [2 1 3]);
             dogs(:,:,:,chunks(i):chunks(i+1)-1) = extractFromGiant(gdogt, format, padSize, chunks(i), chunks(i+1)-1, Prefix, spotChannels, ProcPath, noSave);
         end
-    end
     
-%     imshow(dogs(:,:, 5, 5),[]);
+    imshow(dogs(:,:, 5, 5),[]);
     close(h);
     
 end

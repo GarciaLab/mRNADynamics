@@ -16,7 +16,9 @@ load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat']);
 zDim = FrameInfo(1).NumberSlices + 2;
 yDim = FrameInfo(1).LinesPerFrame;
 xDim = FrameInfo(1).PixelsPerLine;
-pixelSize = FrameInfo(1).PixelSize;
+pixelSize = FrameInfo(1).PixelSize*1000;
+numFrames = length(FrameInfo);
+zStep = FrameInfo(1).ZStep * 1000; %nm
 
 format = [yDim, xDim, zDim];
 
@@ -40,14 +42,15 @@ for k = 1:length(chunks)-1
     for i = 1:numel(featureCell)
         feature = featureCell{i};
         for j = 1:numel(sigmaVec)
-            
             if strcmpi(feature,'Difference_of_Gaussian')
-                gdog = filterImage(gt, feature, {sigmaVec(j), sigmaVec(j)*4}, 'zStep', zStep);
+                gdog = filterImage(gt, feature, {sigmaVec{j}, sigmaVec{j}*4}, 'zStep', zStep);
             else
-                gdog = filterImage(gt, feature, sigmaVec{j}, 'zStep', zStep);
+                gdog = filterImage(gt, feature, {sigmaVec{j}}, 'zStep', zStep);
             end
             gdogt = permute(gdog, [2 1 3]);
-            dogs(:,:,:,chunks(k):chunks(k+1)-1) = extractFromGiant(gdogt, format, padSize, chunks(k), chunks(k+1)-1, Prefix, spotChannels, ProcPath, noSave);
+            imshow(gdogt(:,:,5),[]);
+            dogs(:,:,:,chunks(k):chunks(k+1)-1) = gather(extractFromGiant(gdogt, format, padSize, chunks(k), chunks(k+1)-1,...
+                Prefix, spotChannels, ProcPath, noSave));
             
             if i == 1 && j == 1
                 featureTable = dogs(:);

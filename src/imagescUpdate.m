@@ -1,8 +1,8 @@
-function imagescUpdate(ax,im, lims)
+function h = imagescUpdate(ax,im, lims)
     if ~isempty(lims)
-        imagesc(ax, im,lims);
+        h = imagesc(ax, im,lims);
     else
-        imagesc(ax, im);
+        h = imagesc(ax, im);
     end
     colormap(ax, 'gray');
     ax.Visible = 'off';

@@ -14,6 +14,7 @@ yDim = FrameInfo(1).LinesPerFrame;
 xDim = FrameInfo(1).PixelsPerLine;
 pixelSize = FrameInfo(1).PixelSize;
 nFrames = length(FrameInfo);
+zMax = zDim - 2;
 
 nameSuffix = ['_ch', iIndex(spotChannels, 2)];
         
@@ -25,7 +26,7 @@ probStack = reshape(pihat(:,2),[yDim, xDim, zMax, nFrames]);
 for currentFrame = 1:nFrames
     for i = 1:zMax
         p_name = ['prob', Prefix, '_', iIndex(currentFrame, 3), '_z', iIndex(i, 2), nameSuffix, '.tif'];
-        imwrite(uint16(probStack(:, :, i, frame)), [ProcPath, filesep,Prefix, '_', filesep, p_name]);
+        imwrite(uint16(probStack(:, :, i, currentFrame)), [ProcPath, filesep,Prefix, '_', filesep, p_name]);
     end
 end
 
