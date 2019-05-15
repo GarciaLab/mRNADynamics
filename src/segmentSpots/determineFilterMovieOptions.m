@@ -5,6 +5,7 @@ pixelSize = FrameInfo(1).PixelSize;
 
 % Default options
 displayFigures = 0;
+customFilter = 0;
 numFrames = 0;
 highPrecision = 0;
 keepPool = 0;
@@ -78,7 +79,8 @@ for i = 1:length(varargin)
         classifierFolder = ClassifierForTest.classifierFolder;
         classifierPathCh1 = ClassifierForTest.classifierPathCh1;
         
-    elseif strcmpi(varargin{i}, 'customFilter')        
+    elseif strcmpi(varargin{i}, 'customFilter') 
+        customFilter = 1;
         try
             filterType = varargin{i + 1};
             

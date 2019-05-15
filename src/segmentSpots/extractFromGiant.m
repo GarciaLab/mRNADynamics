@@ -14,13 +14,14 @@ for frame = firstFrame:lastFrame
     elseif dim == 3
         
         im = gather(uint16((giantIm(:,ind1:ind2, :) + 100)*10));
-        im(:, padSize/2 : end, :) = 0;
+        im(:, end - (padSize/2) : end, :) = 0;
         if noSave
             dogs(:, :, :, fcnt) = im; 
         end
         
         for z = 1:size(im,3)
             plane = im(:,:,z);
+%             imshow(plane,[median(plane(:)), max(plane(:))]);
             if ~noSave
                 nameSuffix = ['_ch', iIndex(channel, 2)];
                 dog_name = ['DOG_', Prefix, '_', iIndex(frame, 3), '_z', iIndex(z, 2), nameSuffix, '.tif'];

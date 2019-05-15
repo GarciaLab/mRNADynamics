@@ -76,7 +76,7 @@ for channelIndex = 1:nCh
             dogs(:,:,:,chunks(i):chunks(i+1)-1) = extractFromGiant(gdogt, format, padSize, chunks(i), chunks(i+1)-1, Prefix, spotChannels, ProcPath, noSave);
         end
     
-    imshow(dogs(:,:, 5, 5),[]);
+%     imshow(dogs(:,:, 5, 5),[]);
     close(h);
     
 end
