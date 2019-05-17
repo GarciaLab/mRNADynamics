@@ -117,7 +117,8 @@ catch
 end
 
 % adjusting y limits
-traceFigYLimits = get(traceFigAxes,'YLim');
+traceFigYLimits = [0, max(AmpIntegralGauss3D)];
+% traceFigYLimits = get(traceFigAxes,'YLim');
 
 % plotting all anaphase time points as vertical lines
 for i = 1:length(anaphase)

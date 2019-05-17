@@ -57,11 +57,11 @@ xybound = 100/pixelSize; %nm. empirically determined.
 zbound = 800/pixelSize;%nm. empirically determined.
 lb_offset = 1/10; %this is empirical. corresponds to a weak background of 1 pixel per ten having a value of .
 lb = [max(snip3D(:)) / 10, 1 - size(snip3D, 1)*1.5, 1- size(snip3D, 2)*1.5, 1- size(snip3D, 3)*1.5, 0, -covxybound, -covzbound, 0, -covzbound, 0, lb_offset,...
-    -inf, -inf, -inf,...
-    -inf, -inf, -inf, -inf, -inf, -inf];
+    -1, -1, -1,...
+    -1, -1, -1, -1, -1, -1];
 ub = [max(snip3D(:))*2, size(snip3D, 1)*1.5, size(snip3D, 2)*1.5, size(snip3D, 3)*1.5, xybound, covxybound, covzbound, xybound, covzbound, zbound, max(snip3D(:))/3,...
-    inf, inf, inf,...
-    inf, inf, inf, inf, inf, inf];
+    1, 1, 1,...
+    1, 1, 1, 1, 1, 1];
 
 [fits, ~, residual, ~, ~, ~, jacobian] = lsqnonlin(single3DGaussian, ...
     initial_parameters,lb,ub, lsqOptions);
@@ -185,7 +185,7 @@ if displayFigures
     pause(.1)
 end
 
-if intensityError95 > intensity*2
+if intensityError95 > intensity*2 || ~isreal(intensity)
     intensity = NaN;
     intensityError95 = NaN;
 end
