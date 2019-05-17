@@ -4,7 +4,7 @@ dim = length(size(giantIm));
 frameInterval = padSize+format(2);
 dogs = zeros(format(1), format(2), format(3)-2, lastFrame - firstFrame + 1);
 padZ = false;
-
+probs = false;
 if ~isempty(varargin)
     probs = varargin{1};
 end
