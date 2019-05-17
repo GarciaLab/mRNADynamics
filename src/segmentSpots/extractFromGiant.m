@@ -19,7 +19,7 @@ for frame = firstFrame:lastFrame
         
         if probs
             im = gather(uint16(giantIm(:,ind1:ind2, :)));
-            imshow(im(:,:,5),[median(im(:)),max(im(:))]);
+%             imshow(im(:,:,5),[median(im(:)),max(im(:))]);
         else
             im = gather(uint16((giantIm(:,ind1:ind2, :) + 100)*10));
         end

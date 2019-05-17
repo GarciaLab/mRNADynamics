@@ -33,8 +33,9 @@ noSave = false;
 % end
 sigmas = {round(210/pixelSize), floor(800/pixelSize)};
 padSize = 2*sigmas{2};
+% padSize = 2*max(cell2mat(sigmaVec));
 pixVol = format(1)*format(2)*format(3);
-maxGPUMem = .2E9;
+maxGPUMem = 1.5E9;
 %         maxGPUMem = evalin('base', 'maxGPUMem'); %for testing
 maxPixVol = maxGPUMem / 4; %bytes in a single
 chunkSize = floor(maxPixVol/pixVol);
@@ -62,10 +63,10 @@ for k = 1:length(chunks)-1
     h = waitbar(chunks(k) / numFrames, h);
     plotGPUMem;
     g = makeGiantImage(PreProcPath, format, padSize, chunks(k), chunks(k+1)-1, Prefix, spotChannels);
-    plotGPUMem;
+%     plotGPUMem;
     %     gt = permute(g, [2 1 3]);
     pChunk = zeros(size(g), 'like', g);
-    plotGPUMem;
+%     plotGPUMem;
     hf = waitbar(0, ['Filtering frames ', num2str(chunks(k)), ' to ', num2str(chunks(k+1)-1)]);
     m = 1;
     for i = 1:numel(featureCell)
@@ -77,15 +78,13 @@ for k = 1:length(chunks)-1
             %
             waitbar((i*j)/(numel(sigmaVec)*numel(featureCell)), hf);
             if strcmpi(feature,'Difference_of_Gaussian')
-                %                 g = filterImage(g, feature, {sigmaVec{j}, sigmaVec{j}*4}, 'zStep', zStep);
-%                 a = filterImage(g, feature, {sigmaVec{j}, sigmaVec{j}*4}, 'zStep', zStep);
-%                 b = beta(m).*a;
-%                 imshow(b(:,:,5));
+                
                 pChunk = pChunk + beta(m).*filterImage(g, feature, {sigmaVec{j}, sigmaVec{j}*4}, 'zStep', zStep);
-                plotGPUMem;
+                
+%                 plotGPUMem;
             else
                 %                 g = filterImage(g, feature, {sigmaVec{j}}, 'zStep', zStep);
-                plotGPUMem;
+%                 plotGPUMem;
                 pChunk = pChunk + beta(m).*filterImage(g, feature, {sigmaVec{j}}, 'zStep', zStep);
             end
             %             gdogt = permute(gdog, [2 1 3]);
@@ -107,13 +106,15 @@ for k = 1:length(chunks)-1
     %     szes = [szes, format(1)*format(2)*(format(3)-2)*(chunks(k+1)-chunks(k))];
     %             ind2 = szes(cnt);
     %             featureTable(ind1:ind2) = dogs(:,:,:,chunks(k):chunks(k+1)-1);
-    plotGPUMem;
-    pChunk = exp(pChunk);
-    plotGPUMem;
+%     plotGPUMem;
+
+    pChunk = exp(-pChunk)./ (1 +exp(-pChunk));
+%     imshow(pChunk(:, 1:1000, 5), [nanmedian(pChunk(:)), max(pChunk(:))]);
+%     plotGPUMem;
     %             probStack = reshape(pChunk(:,2),[yDim, xDim, zMax, chunks(k+1)-chunks(k)]);
     extractFromGiant(pChunk, format, padSize, chunks(k), chunks(k+1)-1,...
         Prefix, spotChannels, ProcPath, noSave, true);
-    plotGPUMem;
+%     plotGPUMem;
     close(hf);
     
 end

@@ -563,7 +563,7 @@ end
 
 
     %% Offset and fluctuations
-try
+
     [MeanOffsetVector, SDOffsetVector, NOffsetParticles] = offsetAndFlux(NChannels, ...
         SkipFluctuations, ncFilter, ElapsedTime, CompiledParticles, DropboxFolder, ...
         Prefix, ExperimentAxis, intArea, MeanVectorAll, SDVectorAll, MaxFrame, numFrames);
@@ -622,7 +622,7 @@ try
             ElapsedTime, DVbinID, EllipsePos_DV, nc12, nc13, nc14, numFrames, ...
             DVbinArea);
     end
-end
+
     %% Calculation of particle speed
     try
         calcParticleSpeeds(NChannels, Particles, ...

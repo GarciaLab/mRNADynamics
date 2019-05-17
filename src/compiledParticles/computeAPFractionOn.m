@@ -284,7 +284,11 @@ function [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
                 caxis([APbinID(MinAPIndexProb),APbinID(MaxAPIndexProb)])
                 ylabel(h,'AP Position (x/L)')
                 StandardFigure(PlotHandle,gca)
+                try
                 xlim([0,ElapsedTime(end)])
+                catch
+                    warning('Y2K bug strikes again? ElapsedTime field of FrameInfo is broken.');
+                end
                 ylim([0,1.01])
                 saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsTimeVsAP.tif'])
             end
@@ -397,7 +401,11 @@ function [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
         %later to the elongation time as a way to say that these particles
         %won't contribute to the total amount of mRNA produced anyway.
         FramesBack=ceil(2.5/mean(diff(ElapsedTime)));
-
+        if FramesBack < 0
+            warning('Y2K bug strikes again? ElapsedTime field of FrameInfo is broken.');
+            warning('Setting FramesBack to arbitrary number for ellipses and fraction calculations.');
+            FramesBack = 15;
+        end
         TotalEllipsesAP=zeros(length(APbinID),3);
         EllipsesOnAP{ChN}=zeros(length(APbinID),3);
         
