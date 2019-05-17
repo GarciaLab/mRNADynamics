@@ -78,7 +78,7 @@ tic;
 
 load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
 
-[displayFigures, numFrames, initialFrame, customFilter, highPrecision, filterType, keepPool,...
+[displayFigures, numFrames, initialFrame, highPrecision, filterType, keepPool,...
     sigmas, nWorkers, app, kernelSize, Weka, justTifs, ignoreMemoryCheck, classifierFolder, ...
     classifierPathCh1, customML, noSave] = determineFilterMovieOptions(FrameInfo,varargin);
 
@@ -94,16 +94,16 @@ end
 nCh = length(spotChannels);
 
 if ~Weka && ~justTifs
-    dogs = generateDifferenceOfGaussianImages(ProcPath, customFilter, nCh, ExperimentType, FrameInfo, coatChannel,...
-        numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision, sigmas, nWorkers, app, kernelSize, noSave);
+    dogs = generateDifferenceOfGaussianImages(ProcPath, ExperimentType, FrameInfo, spotChannels,...
+        numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision, sigmas, app, kernelSize, noSave);
 elseif Weka
     if ~exist([PreProcPath, filesep, Prefix, filesep, 'stacks'], 'dir')
-        generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,coatChannel, zSize, initialFrame);
+        generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,spotChannels, zSize, initialFrame);
     end
-    generateDogsWeka(Prefix, ProcPath, MS2CodePath, PreProcPath, ExperimentType, coatChannel, zSize, numFrames, nCh,...
+    generateDogsWeka(Prefix, ProcPath, MS2CodePath, PreProcPath, ExperimentType, spotChannels, zSize, numFrames, nCh,...
         initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder);
 elseif justTifs
-    generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,coatChannel, zSize, initialFrame);
+    generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,spotChannels, zSize, initialFrame);
 elseif customML
     generateProbMapsCustomML(Prefix, ProcPath, MS2CodePath, PreProcPath, ExperimentType, coatChannel, zSize, numFrames, nCh,...
         initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder);

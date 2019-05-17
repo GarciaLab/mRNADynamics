@@ -1,12 +1,12 @@
-function [displayFigures, numFrames, initialFrame, customFilter, highPrecision, filterType, keepPool, sigmas, nWorkers, app, kernelSize, weka, justTifs, ignoreMemoryCheck, classifierFolder, classifierPathCh1, customML, noSave] = determineFilterMovieOptions(FrameInfo,varargin)
+function [displayFigures, numFrames, initialFrame, highPrecision, filterType, keepPool, sigmas, nWorkers, app, kernelSize, weka, justTifs, ignoreMemoryCheck, classifierFolder, classifierPathCh1, customML, noSave] = determineFilterMovieOptions(FrameInfo,varargin)
 
 varargin = varargin{1};
 pixelSize = FrameInfo(1).PixelSize;
 
 % Default options
 displayFigures = 0;
-numFrames = 0;
 customFilter = 0;
+numFrames = 0;
 highPrecision = 0;
 keepPool = 0;
 filterType = 'Difference_of_Gaussian';
@@ -79,9 +79,8 @@ for i = 1:length(varargin)
         classifierFolder = ClassifierForTest.classifierFolder;
         classifierPathCh1 = ClassifierForTest.classifierPathCh1;
         
-    elseif strcmpi(varargin{i}, 'customFilter')
+    elseif strcmpi(varargin{i}, 'customFilter') 
         customFilter = 1;
-        
         try
             filterType = varargin{i + 1};
             

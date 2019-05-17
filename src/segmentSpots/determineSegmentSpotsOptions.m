@@ -1,4 +1,4 @@
-function [displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, threshGUI, initialFrame, useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel, optionalResults, filterMovieFlag] = determineSegmentSpotsOptions(varargin)
+function [displayFigures, numFrames, numShadows, intScale, keepPool, threshGUI, initialFrame, useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel, optionalResults, filterMovieFlag] = determineSegmentSpotsOptions(varargin)
 
 varargin = varargin{1};
 
@@ -19,11 +19,14 @@ skipChannel = [];
 optionalResults = '';
 filterMovieFlag = false;
 
+poolOpts = {};
+
 for i = 1:length(varargin)
     
     if strcmpi(varargin{i}, 'displayFigures')
         displayFigures = 1;
-        
+        poolOpts = [poolOpts, 'displayFigures'];
+        close all;
     elseif strcmpi(varargin{i}, 'Shadows')
         
         if (i + 1) > length(varargin) || ~ isnumeric(varargin{i + 1}) || varargin{i + 1} > 2
@@ -50,6 +53,7 @@ for i = 1:length(varargin)
         
     elseif strcmpi(varargin{i}, 'keepPool')
         keepPool = 1;
+        poolOpts = [poolOpts, 'keepPool'];
     elseif strcmpi(varargin{i}, 'intScale')
         intScale = varargin{i + 1};
     elseif strcmpi(varargin{i}, 'noIntegralZ')
@@ -74,5 +78,10 @@ for i = 1:length(varargin)
     elseif strcmpi(varargin{i}, 'keepProcessedData')
       keepProcessedData = true;  
     end
+    
+end
+
+startParallelPool(nWorkers, poolOpts{:});
+
     
 end

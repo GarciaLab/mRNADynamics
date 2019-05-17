@@ -57,12 +57,8 @@ warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
 disp('Segmenting spots...')
 
-[displayFigures, numFrames, numShadows, intScale, nWorkers, keepPool, ...
+[displayFigures, numFrames, numShadows, intScale, keepPool, ...
     autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel, optionalResults, filterMovieFlag] = determineSegmentSpotsOptions(varargin);
-
-if displayFigures
-    close all;
-end
 
 argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
 try
@@ -76,9 +72,7 @@ catch
     error(argumentErrorMessage);
 end
 
-startParallelPool(nWorkers, displayFigures);
-
-[~, ~, ~, ~, ~, ~, ~, ExperimentType, Channel1, Channel2, ~] = readMovieDatabase(Prefix);
+[~, ~, ~, ~, ~, ~, ~, ExperimentType, Channel1, Channel2,~, ~, spotChannels] = readMovieDatabase(Prefix);
 
 [~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix, optionalResults);
 
@@ -97,11 +91,7 @@ if numFrames == 0
     numFrames = length(FrameInfo);
 end
 
-nCh = 1;
-
-if strcmpi(ExperimentType, '2spot2color')
-    nCh = 2;
-end
+nCh = length(spotChannels);
 
 [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, FrameInfo);
 
@@ -112,7 +102,8 @@ end
 pixelSize = FrameInfo(1).PixelSize * 1000; %nm
 neighborhood = round(1300 / pixelSize); %nm
 snippet_size = 2 * (floor(1300 / (2 * pixelSize))) + 1; % nm. note that this is forced to be odd
-coatChannel = getCoatChannel(ExperimentType, Channel1, Channel2);
+coatChannel = spotChannels;
+
 falsePositives = 0;
 all_frames = cell(numFrames, zSize);
 Spots = cell(1, nCh);

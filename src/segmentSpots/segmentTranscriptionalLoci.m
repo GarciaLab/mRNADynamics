@@ -87,16 +87,13 @@ for current_frame = initialFrame:numFrames
         end
         
         if displayFigures
-            dogO = dog(:);
+            dogO = im(:);
             lLim = median(dogO);
             uLim = max(dogO);
             if lLim ~= uLim
-                imagesc(dogAx,dog, [lLim, uLim]);
-                colormap(dogAx, 'gray')
-                
+                imagescUpdate(dogAx, im, [lLim, uLim]);
             else
-                imagesc(dogAx,dog);
-                colormap(dogAx, 'gray')
+                imagescUpdate(dogAx, im, []);
             end
         end
         

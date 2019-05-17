@@ -1,5 +1,6 @@
 function [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
-    ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3, ErrorIntegral5,backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D, AmpDog, AmpDogMax]=...
+    ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3, ErrorIntegral5,backGround3,...
+    AmpIntegralGauss3D, ErrorIntegralGauss3D, AmpDog, AmpDogMax, ampdog3, ampdog3Max]=...
     GetParticleTrace(CurrentParticle,Particles,Spots)
 
 %function [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
@@ -23,6 +24,8 @@ ErrorIntegral5 = NaN;
 backGround3 = NaN;
 AmpIntegralGauss3D = NaN;
 ErrorIntegralGauss3D = NaN;
+ampdog3 = NaN;
+ampdog3Max = NaN;
 
 defaultArea = 109; %109 pixels is the default area when the pixels are assumed to be 212nm x 212 nm AR 9/3/18
 
@@ -86,7 +89,16 @@ for i=1:length(Particles(CurrentParticle).Frame)
     catch
         AmpDogMax(i) = NaN;
     end
-    
+     try
+        ampdog3(i) =  spot.ampdog3;
+    catch
+        ampdog3(i) = NaN;
+     end
+     try
+        ampdog3Max(i) =  spot.ampdog3Max;
+    catch
+        ampdog3Max(i) = NaN;
+    end
 end
 
 %Do a spline fit to the offset and use it to estimate the error

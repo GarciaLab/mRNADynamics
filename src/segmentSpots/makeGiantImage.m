@@ -50,20 +50,20 @@ for frame = firstFrame:lastFrame
          end
     end
     
-    gim = gpuArray(im);
+%     gim = gpuArray(im);
     
     if dim == 2
-        padIm = padarray(gim, [0,padSize], 0, 'post'); clear gim;
+        padIm = padarray(gim, [0,padSize], 0, 'post');
     else
-        padIm = padarray(gim, [0,padSize, 0], 0, 'post'); clear gim;
+%         padIm = padarray(gim, [0,padSize, 0], 0, 'post');
     end
     
     ind1 = frameInterval*(fcnt-1) + 1;
     ind2 = frameInterval + (frameInterval*(fcnt-1));
     if dim == 2
-        ggiantIm(:,ind1:ind2) = padIm; clear padIm;
+%         ggiantIm(:,ind1:ind2) = padarray(gpuArray(im), [0,padSize, 0], 0, 'post');
     elseif dim == 3
-        ggiantIm(:,ind1:ind2, :) = padIm; clear padIm;
+        ggiantIm(:,ind1:ind2, :) = padarray(gpuArray(im), [0,padSize, 0], 0, 'post');
     end
     
     fcnt = fcnt + 1;
