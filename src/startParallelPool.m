@@ -1,18 +1,18 @@
-function startParallelPool(nWorkers, varargin)
+function startParallelPool(nWorkers, displayFigures, keepPool)
 
 ps = parallel.Settings;
 ps.Pool.AutoCreate = false;
 
-displayFigures = false;
-keepPool = false;
-
-for i = 1:length(varargin)
-    if strcmpi(varargin{i}, 'displayFigures')
-        displayFigures = true;
-    elseif strcmpi(varargin{i}, 'keepPool')
-        keepPool = true;
-    end
-end
+% displayFigures = false;
+% keepPool = false;
+% 
+% for i = 1:length(varargin)
+%     if strcmpi(varargin{i}, 'displayFigures')
+%         displayFigures = true;
+%     elseif strcmpi(varargin{i}, 'keepPool')
+%         keepPool = true;
+%     end
+% end
 
 
 if nWorkers > 1 && ~displayFigures

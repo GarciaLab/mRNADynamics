@@ -17,16 +17,22 @@
 % Documented by: Sean Medin (smedin@berkeley.edu)
 
 
-function [thresh] = determineThreshold(Prefix, Channel)
+function [thresh] = determineThreshold(Prefix, Channel, varargin)
 
     default_std = 6;
     brightest_std_test = 8;
+    noSave = false;
+    
+    for i = 1:length(varargin)
+        if strcmpi(varargin{i}, 'noSave')
+            noSave = true;
+            dogs = varargin{i+1};
+        end
+    end
 
     % loads information needed to loop through DOGs
-    [~,~,~,~,~,~,~,ExperimentType, Channel1, Channel2,~] =...
-    readMovieDatabase(Prefix);
 
-    [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
+    [SourcePath,ProcPath,DropboxFolder,MS2CodePath,PreProcPath]=...
         DetermineLocalFolders(Prefix);
 
     load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
@@ -37,7 +43,7 @@ function [thresh] = determineThreshold(Prefix, Channel)
     available_zs = 2:3:(zSize - 1);
     available_frames = 1:4:numFrames;
     
-    OutputFolder1=[FISHPath,filesep,Prefix,'_',filesep,'dogs',filesep];
+    OutputFolder1=[ProcPath,filesep,Prefix,'_',filesep,'dogs',filesep];
     nameSuffix = ['_ch',iIndex(Channel,2)];
     
     % loops through DOGs to find brightest one
@@ -49,9 +55,12 @@ function [thresh] = determineThreshold(Prefix, Channel)
     all_dogs = cell(numFrames, zSize - 2);
     for frame = available_frames
         for z = available_zs
-            
-            dog_name = ['DOG_',Prefix,'_',iIndex(frame,3),'_z',iIndex(z,2),nameSuffix,'.tif'];
-            dog = double(imread([OutputFolder1 dog_name]));
+            if ~noSave
+                dog_name = ['DOG_',Prefix,'_',iIndex(frame,3),'_z',iIndex(z,2),nameSuffix,'.tif'];
+                dog = double(imread([OutputFolder1 dog_name]));
+            else
+                dog = dogs(:, :, z, frame);
+            end
             all_dogs{frame, z - 1} = dog;
             non_zero_d = dog(dog > 0);
             val = std(non_zero_d(:));
@@ -124,9 +133,13 @@ function [thresh] = determineThreshold(Prefix, Channel)
         bestZ = zSlider.Value;
         bestFrame = frameSlider.Value;
         if isempty(all_dogs{bestFrame, bestZ - 1})
-            dog_name = ['DOG_',Prefix,'_',iIndex(bestFrame,3),'_z'...
-                ,iIndex(bestZ,2),nameSuffix,'.tif'];
-            dog = double(imread([OutputFolder1 dog_name]));
+            if ~noSave
+                dog_name = ['DOG_',Prefix,'_',iIndex(bestFrame,3),'_z'...
+                    ,iIndex(bestZ,2),nameSuffix,'.tif'];
+                dog = double(imread([OutputFolder1 dog_name]));
+            else
+                dog = dogs(:,:,bestZ, bestFrame);
+            end
             all_dogs{bestFrame, bestZ - 1} = dog;
         end
         dog_copy = all_dogs{bestFrame, bestZ - 1};

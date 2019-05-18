@@ -1,8 +1,18 @@
-function ggiantIm = makeGiantImage(imIn, format, padSize,firstFrame, lastFrame, Prefix, channel)
+function ggiantIm = makeGiantImage(imIn, format, padSize,firstFrame, lastFrame, Prefix, channel, varargin)
 
 %imDir is the folder where images are located
 % format is like [numrows, numcolumns, num z slices]
 %padSize should be twice filterSize
+
+numType = 'single';
+
+for i = 1:length(varargin)
+    if strcmpi(varargin{i}, 'single')
+        numType = 'single';
+    elseif strcmpi(varargin{i}, 'double')
+        numType = 'double';
+    end
+end
 
 gpuDevice(1);
 
@@ -29,7 +39,7 @@ nPads = numFrames;
 if dim == 2
     ggiantIm = zeros(format(1), (format(2)*numFrames) + (padSize*nPads), 'gpuArray');
 elseif dim == 3
-    ggiantIm = zeros(format(1), (format(2)*numFrames) + (padSize*nPads),format(3)-2, 'single','gpuArray');
+    ggiantIm = zeros(format(1), (format(2)*numFrames) + (padSize*nPads),format(3)-2, numType,'gpuArray');
 end
 
 fcnt = 1;
@@ -40,7 +50,7 @@ for frame = firstFrame:lastFrame
         if dim == 2
             im = single(imread(imPath));
         elseif dim == 3
-            im = single(readStack(imPath, format));
+            im = single(readTiffStack(imPath));
         end
     else
          if dim == 2
@@ -74,13 +84,6 @@ end
 
 % giantIm = gather(ggiantIm); clear ggiantIm;
 
-    function imStack = readStack(imPath, format)
-        info = imfinfo(imPath);
-        imStack = zeros(format(1), format(2), format(3)-2);
-        for k = 2:format(3)-2
-            imStack(:,:,k) = imread(imPath, k, 'Info', info);
-        end
-    end
 
     function imStack = readPlanes(imDir, format, frame, Prefix, channel)
        

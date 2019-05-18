@@ -1,5 +1,7 @@
 % Generates difference of Gaussian images
-function dogs = generateDifferenceOfGaussianImages(ProcPath, ExperimentType, FrameInfo, spotChannels, numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision, sigmas, app, kernelSize, noSave)
+function dogs = generateDifferenceOfGaussianImages(ProcPath, ExperimentType, FrameInfo, spotChannels,...
+    numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision,...
+    sigmas, app, kernelSize, noSave, numType)
 
 dogs = [];
 
@@ -26,7 +28,7 @@ nCh = length(spotChannels);
 for channelIndex = 1:nCh
     
     h = waitbar(0, ['Filtering images: Channel ', num2str(channelIndex)]);
-
+    
     % (MT, 2018-02-11) Added support for lattice imaging, maybe
     % temporary - FIX LATER
     
@@ -38,21 +40,27 @@ for channelIndex = 1:nCh
     
     if displayFigures && isempty(app)
         filterFig = figure();
-
     end
+    
+    q = parallel.pool.DataQueue;
+    afterEach(q, @nUpdateWaitbar);
+    p = 1;
+
+    
     if ~filter3D
-       parfor current_frame = 1:numFrames
-            
-            %             waitbar(current_frame / numFrames, h);
+        parfor current_frame = 1:numFrames
+                        
             
             for zIndex = 1:zSize
                 generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameSuffix, filterType, sigmas, filterSize, ...
                     highPrecision, zIndex, displayFigures, app, numFrames);
             end
+                    send(q, current_frame);
+
         end
-        
+
     else
-       
+        
         format = [FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSize];
         
         if noSave
@@ -61,27 +69,34 @@ for channelIndex = 1:nCh
         sigmas = {round(210/pixelSize), floor(800/pixelSize)};
         padSize = 2*sigmas{2};
         pixVol = format(1)*format(2)*format(3);
-        maxGPUMem = 1.8E9;
-%         maxGPUMem = evalin('base', 'maxGPUMem'); %for testing
+        maxGPUMem = .8E9;
+        %         maxGPUMem = evalin('base', 'maxGPUMem'); %for testing
         maxPixVol = maxGPUMem / 4; %bytes in a single
         chunkSize = floor(maxPixVol/pixVol);
         chunks = [1:chunkSize:numFrames, numFrames+1];
-        end
+        
         for i = 1:length(chunks)-1
             waitbar(chunks(i) / numFrames, h);
-            g = makeGiantImage(PreProcPath, format, padSize, chunks(i), chunks(i+1)-1, Prefix, spotChannels);
+            g = makeGiantImage(PreProcPath, format, padSize, chunks(i), chunks(i+1)-1, Prefix, spotChannels, numType);
             gt = permute(g, [2 1 3]);
-            gdog = filterImage(gt, filterType, sigmas, 'zStep', zStep);
+            gdog = filterImage(gt, filterType, sigmas, 'zStep', zStep, numType);
             gdogt = permute(gdog, [2 1 3]);
-            dogs(:,:,:,chunks(i):chunks(i+1)-1) = extractFromGiant(gdogt, format, padSize, chunks(i), chunks(i+1)-1, Prefix, spotChannels, ProcPath, noSave);
+            dogs(:,:,:,chunks(i):chunks(i+1)-1) = extractFromGiant(gdogt, format, padSize, chunks(i), chunks(i+1)-1, Prefix, spotChannels, ProcPath, noSave, numType);
         end
-    
-%     imshow(dogs(:,:, 5, 5),[]);
+        
+        %     imshow(dogs(:,:, 5, 5),[]);
+    end
     close(h);
     
 end
 
+function nUpdateWaitbar(~)
+    waitbar(p/numFrames, waitbarFigure);
+    p = p + 1;
 end
+
+end
+
 
 function generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameSuffix, filterType, sigmas, filterSize, highPrecision, zIndex, displayFigures, app, numFrames, varargin)
 
@@ -145,3 +160,4 @@ if displayFigures && dim == 2
     pause(.05)
 end
 end
+

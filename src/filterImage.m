@@ -15,6 +15,7 @@ zStep = 400; %nm. default.
 filterSizeZ = NaN; s1 = NaN; s2 = NaN; sigmaZ = NaN; filterSizeXY = NaN;
 
 gpu = strcmpi(class(im), 'gpuArray');
+numType = 'double';
 
 padding = 'symmetric';
 for args = 1:length(varargin)
@@ -24,6 +25,10 @@ for args = 1:length(varargin)
         zStep = varargin{args+1};
     elseif strcmpi(varargin{args}, 'padding')
         padding = varargin{args+1};
+     elseif strcmpi(varargin{args},'single')
+        numType = numType;
+    elseif strcmpi(varargin{args}, 'double')
+        numType = numType;
     end
 end
 
@@ -33,7 +38,7 @@ dim = length(size(im));
 
 switch filterType
     case 'Identity'
-        im=im;
+        %return the image
     case 'Gaussian_blur'
         if dim == 2
             im = imgaussfilt(im,s1);
@@ -217,7 +222,7 @@ switch filterType
     case {'Std', 'Variance'}
         if dim==2
             im = imgaussfilt(im,s1);
-            im = stdfilt(im,ones(filterSizeXY, filterSizeXY), 'single', 'gpuArray');
+            im = stdfilt(im,ones(filterSizeXY, filterSizeXY), numType,'gpuArray');
         elseif dim==3
             %this blurs with sigma and sigmaZ, then stdfilts with sizes
             %dictated by sigma and sigma z.

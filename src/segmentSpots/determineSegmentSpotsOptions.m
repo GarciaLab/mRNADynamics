@@ -19,13 +19,11 @@ skipChannel = [];
 optionalResults = '';
 filterMovieFlag = false;
 
-poolOpts = {};
 
 for i = 1:length(varargin)
     
     if strcmpi(varargin{i}, 'displayFigures')
         displayFigures = 1;
-        poolOpts = [poolOpts, 'displayFigures'];
         close all;
     elseif strcmpi(varargin{i}, 'Shadows')
         
@@ -53,7 +51,6 @@ for i = 1:length(varargin)
         
     elseif strcmpi(varargin{i}, 'keepPool')
         keepPool = 1;
-        poolOpts = [poolOpts, 'keepPool'];
     elseif strcmpi(varargin{i}, 'intScale')
         intScale = varargin{i + 1};
     elseif strcmpi(varargin{i}, 'noIntegralZ')
@@ -81,7 +78,6 @@ for i = 1:length(varargin)
     
 end
 
-startParallelPool(nWorkers, poolOpts{:});
-
+startParallelPool(nWorkers, displayFigures, keepPool);
     
 end

@@ -4,9 +4,8 @@ trainingFlag = 0;
 
 [SourcePath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
     Folder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder,...
-    Channel3] = readMovieDatabase(Prefix);
+    Channel3, spotChannels] = readMovieDatabase(Prefix);
 
-spotChannels = find(contains([Channel1,Channel2,Channel3],'CP'));
 if length(spotChannels) > 1
     error('nope. talk to nick');
 end
@@ -19,10 +18,16 @@ xDim = FrameInfo(1).PixelsPerLine;
 pixelSize = FrameInfo(1).PixelSize * 1000;
 pixVol = xDim*yDim*zDim;
 
+numType = 'double';
+
 for i = 1:numel(varargin)
     if strcmpi(varargin{i},'Training')
         trainingFlag = 1;
         featureTable = varargin{i+1};
+    elseif strcmpi(varargin{i},'single')
+        numType = 'single';
+    elseif strcmpi(varargin{i}, 'double')
+        numType = 'double';
     end
 end
 
@@ -31,10 +36,10 @@ if gp.AvailableMemory < 1E9
     gpuDevice(1);
 end
 % load stack
-raw_stack = zeros(yDim,xDim,zDim, 'single','gpuArray');
-mcpChannel = find(contains([Channel1,Channel2,Channel3],'MCP'));
+raw_stack = zeros(yDim,xDim,zDim, numType,'gpuArray');
+
 for z = 1:zDim
-    fileName = [Prefix '_' sprintf('%03d',frame) '_z' sprintf('%02d',z)  '_ch' sprintf('%02d',mcpChannel) '.tif'];
+    fileName = [Prefix '_' sprintf('%03d',frame) '_z' sprintf('%02d',z)  '_ch' sprintf('%02d',spotChannels) '.tif'];
     raw_stack(:,:,z) = imread([PreProcPath '/' Prefix '/' fileName]);
 end
 

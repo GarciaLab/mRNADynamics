@@ -20,7 +20,7 @@ function [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh,
         [Particles, SpotFilter] = trackParticlesBasedOnNuclei(PreProcPath, Prefix, CurrentFrame, NDigits, app, nucAxes, Ellipses, ...
           ExperimentType, Channel, schnitzcells, Particles, Spots, SpotFilter, PixelSize, SearchRadius, retrack, displayFigures);
       else
-        [Particles] = trackParticlesBasedOnProximity(Particles, Spots, xPos, SpotFilter, Channel, CurrentFrame, PixelSize, SearchRadius, retrack);
+        [Particles] = trackParticlesBasedOnProximity(Particles, Spots, xPos, SpotFilter, Channel, CurrentFrame, PixelSize, SearchRadius, retrack, displayFigures);
       end
 
     end

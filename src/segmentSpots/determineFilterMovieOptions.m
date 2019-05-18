@@ -1,4 +1,6 @@
-function [displayFigures, numFrames, initialFrame, highPrecision, filterType, keepPool, sigmas, nWorkers, app, kernelSize, weka, justTifs, ignoreMemoryCheck, classifierFolder, classifierPathCh1, customML, noSave] = determineFilterMovieOptions(FrameInfo,varargin)
+function [displayFigures, numFrames, initialFrame, highPrecision, filterType, keepPool,...
+    sigmas, nWorkers, app, kernelSize, weka, justTifs, ignoreMemoryCheck,...
+    classifierFolder, classifierPathCh1, customML, noSave,numType] = determineFilterMovieOptions(FrameInfo,varargin)
 
 varargin = varargin{1};
 pixelSize = FrameInfo(1).PixelSize;
@@ -23,6 +25,7 @@ initialFrame = 1;
 %Added new argument to specify a preferred classifier name and enable automatic testing
 classifierPathCh1 = [];
 classifierFolder = [];
+numType = 'double';
 
 for i = 1:length(varargin)
     
@@ -70,6 +73,10 @@ for i = 1:length(varargin)
         
     elseif strcmpi(varargin{i}, 'weka')
         weka = true;
+    elseif strcmpi(varargin{i}, 'single')
+        numType = 'single';
+    elseif strcmpi(varargin{i}, 'double')
+        numType = 'double';
         
     elseif strcmpi(varargin{i}, 'customML')
         customML = 1;
@@ -127,5 +134,8 @@ end
 if isempty(sigmas) && ~customFilter
     sigmas = {1, round(42000 / pixelSize)}; %42000nm seems to be a good size empirically -AR
 end
+
+startParallelPool(nWorkers, displayFigures, keepPool);
+
 
 end

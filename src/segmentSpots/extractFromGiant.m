@@ -1,13 +1,28 @@
-function dogs = extractFromGiant(giantIm, format, padSize, firstFrame, lastFrame, Prefix, channel, outPath, noSave, varargin)
+function dogs = extractFromGiant(giantIm, format, padSize, firstFrame, lastFrame,...
+    Prefix, channel, outPath, noSave, varargin)
 
 dim = length(size(giantIm));
 frameInterval = padSize+format(2);
 dogs = zeros(format(1), format(2), format(3)-2, lastFrame - firstFrame + 1);
 padZ = false;
 probs = false;
-if ~isempty(varargin)
-    probs = varargin{1};
+numType = 'single';
+mat = false;
+
+for i = 1:length(varargin)
+    if strcmpi(varargin{i}, 'single')
+        numType = 'single';
+    elseif strcmpi(varargin{i}, 'double')
+        numType = 'double';
+    elseif strcmpi(varargin{i}, 'probs')
+        probs = true;
+    elseif strcmpi(varargin{i}, 'mat')
+        mat = true;
+    elseif strcmpi(varargin{i}, 'padZ')
+        padZ = true;
+    end
 end
+
 fcnt = 1;
 for frame = firstFrame:lastFrame
     ind1 = frameInterval*(fcnt-1) + 1;
@@ -17,12 +32,18 @@ for frame = firstFrame:lastFrame
         im = giantIm(:,ind1:ind2);
     elseif dim == 3
         
-        if probs
-            im = gather(uint16(giantIm(:,ind1:ind2, :)));
-%             imshow(im(:,:,5),[median(im(:)),max(im(:))]);
+        if ~mat && ~noSave
+            if probs
+                im = gather(uint16(giantIm(:,ind1:ind2, :)));
+                %             imshow(im(:,:,5),[median(im(:)),max(im(:))]);
+            else
+                im = gather(uint16((giantIm(:,ind1:ind2, :) + 100)*10));
+            end
         else
-            im = gather(uint16((giantIm(:,ind1:ind2, :) + 100)*10));
+            im = gather(giantIm(:,ind1:ind2, :));
         end
+        
+        
         
         %pad the image to avoid edge effects
         im(:, 1:1+round((padSize/2)), :) = 0;
@@ -36,31 +57,33 @@ for frame = firstFrame:lastFrame
         
         if noSave
             dogs(:, :, :, fcnt) = im;
-        end
-        if probs
-            fldr = 'custProbs';
         else
-            fldr = 'dogs';
-        end
-        nameSuffix = ['_ch', iIndex(channel, 2)];
-        
-        mkdir([outPath, filesep,Prefix,'_',filesep,fldr]);
-        
-        
-        for z = 1:size(im,3)
-            plane = im(:,:,z);
-            if ~noSave
-                
-                dog_name = ['DOG_', Prefix, '_', iIndex(frame, 3), '_z', iIndex(z, 2), nameSuffix, '.tif'];
+            if probs
+                fldr = 'custProbs';
+            else
+                fldr = 'dogs';
+            end
+            nameSuffix = ['_ch', iIndex(channel, 2)];
+            
+            mkdir([outPath, filesep,Prefix,'_',filesep,fldr]);
+            
+            
+            for z = 1:size(im,3)
+                plane = im(:,:,z);
+                dog_name = ['DOG_', Prefix, '_', iIndex(frame, 3), '_z', iIndex(z, 2), nameSuffix];
                 dog_full_path = [outPath, filesep,Prefix,'_',filesep,fldr,filesep,dog_name];
                 %         imwrite(uint16(dog(:,:, z)), dog_full_path);
-                imwrite(plane,dog_full_path);
-                % save(['E:\Armando\giantDogs\','dog_frame',num2str(frame),'_z',num2str(z),'.mat'], 'plane');
+                imwrite(plane,[dog_full_path, '.tif']);
+                if mat
+                    save([dog_full_path,'.mat'], 'plane');
+                end
             end
         end
     end
     
+    
     fcnt = fcnt + 1;
+    
     
 end
 

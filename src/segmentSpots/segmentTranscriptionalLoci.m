@@ -1,6 +1,7 @@
 function [all_frames, Spots] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures,doFF, ffim, Threshold, neighborhood, snippet_size, pixelSize, microscope, intScale, Weka, use_integral_center, filterMovieFlag, resultsFolder)
 
 waitbarFigure = waitbar(0, 'Segmenting spots');
+set(waitbarFigure, 'units', 'normalized', 'position', [0.4, .15, .25,.1]);
 
 Spots = repmat(struct('Fits', []), 1, numFrames);
 
@@ -32,29 +33,41 @@ end
 
 %Check how many coat channels we have and segment the appropriate channel
 %accordingly
-if nCh > 1
-    nameSuffix = ['_ch', iIndex(channelIndex, 2)];
-    if Threshold == -1 && ~Weka
-        Threshold = determineThreshold(Prefix, channelIndex);
-        display(['Threshold: ', num2str(Threshold)])
-    end
-else
-    nameSuffix= ['_ch', iIndex(coatChannel, 2)];
-    if Threshold == -1 && ~Weka
-        Threshold = determineThreshold(Prefix, coatChannel);
-        display(['Threshold: ', num2str(Threshold)])
-    end
-end
 
 if filterMovieFlag
     filterType = 'Difference_of_Gaussian_3D';
     sigmas = {round(200/pixelSize),round(800/pixelSize)};
-    [~, dogs] = filterMovie(Prefix,'optionalResults', resultsFolder,'nWorkers', 1, 'highPrecision', 'customFilter', filterType, sigmas, 'noSave');
+    [~, dogs] = filterMovie(Prefix,'optionalResults', resultsFolder,'nWorkers', 1, 'highPrecision', 'customFilter', filterType, sigmas, 'noSave', 'double', 'keepPool');
 end
-for current_frame = initialFrame:numFrames
+
+if nCh > 1
+    chh = channelIndex;
+else
+    chh = coatChannel;
+end
+
+nameSuffix = ['_ch', iIndex(chh, 2)];
+
+if Threshold == -1 && ~Weka
     
-    %w = waitbar(current_frame / numFrames, waitbarFigure);
-    %set(w, 'units', 'normalized', 'position', [0.4, .15, .25,.1]);
+    if ~filterMovieFlag
+        Threshold = determineThreshold(Prefix, chh);
+        display(['Threshold: ', num2str(Threshold)])
+    else
+        Threshold = determineThreshold(Prefix, chh, 'noSave', dogs);
+    end
+    
+    display(['Threshold: ', num2str(Threshold)])
+
+end
+
+
+q = parallel.pool.DataQueue;
+afterEach(q, @nUpdateWaitbar);
+p = 1;
+
+parfor current_frame = initialFrame:numFrames
+    
     
     for zIndex = 1:zSize
         imFileName = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(zIndex, 2),...
@@ -136,8 +149,15 @@ for current_frame = initialFrame:numFrames
         
     end
     
+    send(q, current_frame);
+    
 end
 
 close(waitbarFigure);
+
+function nUpdateWaitbar(~)
+    waitbar(p/numFrames, waitbarFigure);
+    p = p + 1;
+end
 
 end

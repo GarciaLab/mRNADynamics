@@ -2,21 +2,23 @@ function Spots = fit3DGaussiansToAllSpots(prefix, varargin)
 
 optionalResults = '';
 
-segmentSpots = 0;
-displayFigures = 0;
+segmentSpots = false;
+displayFigures = false;
 nWorkers = 8;
+keepPool = false;
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'displayFigures')
-        displayFigures = 1;
+        displayFigures = true;
     elseif strcmpi(varargin{i}, 'segmentSpots')
         Spots = varargin{i+1};
-        segmentSpots = 1;
+        segmentSpots = true;
     elseif strcmpi(varargin{i}, 'optionalResults')
         optionalResults = varargin{i+1};
     elseif strcmpi(varargin{i}, 'nWorkers')
         nWorkers = varargin{i+1};
-    else
+    elseif strcmpi(varargin{i}, 'keepPool')
+        keepPool = true;
     end
 end
 
@@ -40,7 +42,7 @@ zStep = FrameInfo(1).ZStep;
 
 zMax = FrameInfo(1).NumberSlices+2;
 
-startParallelPool(nWorkers, displayFigures);    
+startParallelPool(nWorkers, displayFigures, keepPool);    
 
 if ~iscell(Spots)
     Spots = {Spots};
