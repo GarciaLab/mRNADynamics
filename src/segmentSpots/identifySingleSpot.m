@@ -244,6 +244,7 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
             Fits.IntegralZ = use_integral_center;
         else
             temp_particles = {{}};
+            Fits = [];
         end
         
     end

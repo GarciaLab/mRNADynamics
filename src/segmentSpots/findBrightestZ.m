@@ -1,4 +1,4 @@
- function [Particles,falsePositives, Spots2] = findBrightestZ(Particles, num_shadows, use_integral_center, force_z, Spots)
+ function [Particles,falsePositives, Spots2] = findBrightestZ(Particles, num_shadows, use_integral_center, force_z, Spots, varargin)
 % Particles = findBrightestZ(Particles)
 %
 % DESCRIPTION
@@ -21,6 +21,15 @@
 % Last Updated: 7/19/2018
 %
 % Documented by: Armando Reimer (areimer@berkeley.edu)
+
+dogs = [];
+
+    for i = 1:length(varargin)
+        if contains(varargin{i}, 'dog', 'IgnoreCase', true)
+            dogs = varargin{i+1};
+        end
+    end
+            
 
     numFrames = length(Spots);
     Spots2 = repmat(struct('Fits', []), 1, numFrames);
@@ -158,6 +167,7 @@ for frame = 1:length(Spots)
         %             Particles(i).FixedAreaIntensity5 = Particles(i).FixedAreaIntensity(Particles(i).brightestZ - 2) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ - 1) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ + 1) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ + 2);
         Spots(frame).Fits(spotIndex).FixedAreaIntensity3 = sum(z_raw_values(ismember(z_grid,Spots(frame).Fits(spotIndex).brightestZ-1:Spots(frame).Fits(spotIndex).brightestZ+1)));
         Spots(frame).Fits(spotIndex).FixedAreaIntensity5 = sum(z_raw_values(ismember(z_grid,Spots(frame).Fits(spotIndex).brightestZ-2:Spots(frame).Fits(spotIndex).brightestZ+2)));
+        
         try
             Spots(frame).Fits(spotIndex).cylIntensity = Spots(frame).Fits(spotIndex).cylIntensity(ZStackIndex);
         catch

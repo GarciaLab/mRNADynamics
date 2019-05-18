@@ -27,7 +27,7 @@ end
 nCh = length(spotChannels);
 for channelIndex = 1:nCh
     
-    h = waitbar(0, ['Filtering images: Channel ', num2str(channelIndex)]);
+    waitbarFigure = waitbar(0, ['Filtering images: Channel ', num2str(channelIndex)]);
     
     % (MT, 2018-02-11) Added support for lattice imaging, maybe
     % temporary - FIX LATER

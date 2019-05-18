@@ -26,9 +26,9 @@ for args = 1:length(varargin)
     elseif strcmpi(varargin{args}, 'padding')
         padding = varargin{args+1};
      elseif strcmpi(varargin{args},'single')
-        numType = numType;
+        numType = 'single';
     elseif strcmpi(varargin{args}, 'double')
-        numType = numType;
+        numType = 'double';
     end
 end
 

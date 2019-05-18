@@ -144,7 +144,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
   %% Information about about folders
 
   % Get the folders
-  [~, ~, DefaultDropboxFolder, ~, PreProcPath] = DetermineLocalFolders;
+  [~, ProcPath, DefaultDropboxFolder, ~, PreProcPath] = DetermineLocalFolders;
   [~, ~, DropboxFolder, ~, ~] = DetermineLocalFolders(varargin{1}, optionalResults);
  
   DataFolder = [DropboxFolder, filesep, varargin{1}];
@@ -743,7 +743,7 @@ function add_spot_pushed(~, ~)
         addSpot(ZoomMode, GlobalZoomMode, Particles, CurrentChannel, ...
         CurrentParticle, CurrentFrame, CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
         LinesPerFrame, Spots, ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
-        SpotFilter, numParticles, cc, xSize, ySize, NDigits, intScale);
+        SpotFilter, numParticles, cc, xSize, ySize, NDigits, intScale, Prefix, PreProcPath, ProcPath);
     elseif cc == 'r'
       Particles = orderParticles(numParticles, CurrentChannel, Particles);
     elseif cc == 'f'

@@ -1,4 +1,7 @@
-function [all_frames, Spots] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures,doFF, ffim, Threshold, neighborhood, snippet_size, pixelSize, microscope, intScale, Weka, use_integral_center, filterMovieFlag, resultsFolder)
+function [all_frames, Spots, dogs] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures,doFF, ffim, Threshold, neighborhood, snippet_size, pixelSize, microscope, intScale, Weka, use_integral_center, filterMovieFlag, resultsFolder)
+
+
+dogs = [];
 
 waitbarFigure = waitbar(0, 'Segmenting spots');
 set(waitbarFigure, 'units', 'normalized', 'position', [0.4, .15, .25,.1]);

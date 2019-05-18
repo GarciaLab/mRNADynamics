@@ -115,13 +115,13 @@ for channelIndex = 1:nCh
     
     tic;
     
-    [all_frames, tempSpots] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, ...
+    [all_frames, tempSpots, dogs] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, ...
         PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(channelIndex), neighborhood, ...
         snippet_size, pixelSize, microscope, intScale, Weka, useIntegralCenter, filterMovieFlag, optionalResults);
 
     tempSpots = segmentSpotsZTracking(pixelSize,tempSpots);
 
-    [~, falsePositives, tempSpots] = findBrightestZ([], numShadows, useIntegralCenter, 0, tempSpots);
+    [~, falsePositives, tempSpots] = findBrightestZ([], numShadows, useIntegralCenter, 0, tempSpots, dogs);
                         
     Spots{channelIndex} = tempSpots;
     
@@ -152,7 +152,7 @@ end
 
 if fit3D
     disp('Fitting 3D Gaussians...')
-    fit3DGaussiansToAllSpots(Prefix, 'segmentSpots', Spots, 'optionalResults', optionalResults);
+    fit3DGaussiansToAllSpots(Prefix, 'segmentSpots', Spots, 'optionalResults', optionalResults, 'dogs', dogs);
     disp('3D Gaussian fitting completed.')
 end
 
