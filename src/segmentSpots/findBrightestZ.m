@@ -107,7 +107,19 @@ dogs = [];
             falsePositives = falsePositives + 1;
         end
     end
+    
+    
 
+        if isstruct(Particles)
+            Particles = rmfield(Particles, 'r');
+            Particles = rmfield(Particles, 'discardThis');
+        end
+
+        Particles.intArea = Particles.intArea(1);
+        if ~isempty(Particles.IntegralZ)
+            Particles.IntegralZ = Particles.IntegralZ(1);
+        end
+        
   if ~isempty(Spots)
     falsePositives = 0;
     for frame = 1:length(Spots)
@@ -195,6 +207,7 @@ dogs = [];
             Spots2(i).Fits = rmfield(Spots2(i).Fits, 'discardThis');
         end
     end
+    
   end
 
 end

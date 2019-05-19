@@ -90,17 +90,17 @@ else
                 end
             end
             
-            if ~isempty(Fits)
-                if ~isempty(Spots{CurrentChannel}(CurrentFrame).Fits)
-                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = Fits;
-                else
-                     Spots{CurrentChannel}(CurrentFrame).Fits = Fits;
-                end
-            else
-                disp('No spot added. Did you click too close to the image boundary?');
-                %                     breakflag = 1;
-                %                     break
-            end
+%             if ~isempty(Fits)
+%                 if ~isempty(Spots{CurrentChannel}(CurrentFrame).Fits)
+%                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = Fits;
+%                 else
+%                      Spots{CurrentChannel}(CurrentFrame).Fits = Fits;
+%                 end
+%             else
+%                 disp('No spot added. Did you click too close to the image boundary?');
+%                 %                     breakflag = 1;
+%                 %                     break
+%             end
 %             Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = Fits;
 
 % %             for z = 1:zSlices
@@ -197,6 +197,10 @@ else
 %                 breakflag = 1;
 %             end
 
+            if isempty(Fits)
+                breakflag = true;
+            end
+            
             if ~breakflag
                 if cc == '['
                     force_z = 0;
@@ -204,9 +208,14 @@ else
                     force_z = CurrentZ;
                 end
 %                 [Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex),~, ~] = findBrightestZ(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex), -1, use_integral_center, force_z, []);
-                  [a,~, ~] = findBrightestZ(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex), -1, use_integral_center, force_z, []);
-                  Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = a;
-                
+%                   [a,~, ~] = findBrightestZ(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex), -1, use_integral_center, force_z, []);
+                        [a,~, ~] = findBrightestZ(Fits, -1, use_integral_center, force_z, []);
+    
+                     if SpotsIndex ~= 1
+                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = a;
+                     else
+                         Spots{CurrentChannel}(CurrentFrame).Fits = a;
+                     end
 %%
                 try
                    Spots{CurrentChannel} = fitSnip3D(Spots{CurrentChannel}, CurrentChannel, SpotsIndex, CurrentFrame, Prefix, PreProcPath, ProcPath, FrameInfo, []); 
