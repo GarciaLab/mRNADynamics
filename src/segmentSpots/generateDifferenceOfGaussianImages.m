@@ -1,7 +1,7 @@
 % Generates difference of Gaussian images
 function dogs = generateDifferenceOfGaussianImages(ProcPath, ExperimentType, FrameInfo, spotChannels,...
     numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision,...
-    sigmas, app, kernelSize, noSave, numType)
+    sigmas, app, kernelSize, noSave, numType, gpu)
 
 dogs = [];
 
@@ -76,8 +76,8 @@ for channelIndex = 1:nCh
         chunks = [1:chunkSize:numFrames, numFrames+1];
         
         for i = 1:length(chunks)-1
-            waitbar(chunks(i) / numFrames, h);
-            g = makeGiantImage(PreProcPath, format, padSize, chunks(i), chunks(i+1)-1, Prefix, spotChannels, numType);
+            waitbar(chunks(i) / numFrames, waitbarFigure);
+            g = makeGiantImage(PreProcPath, format, padSize, chunks(i), chunks(i+1)-1, Prefix, spotChannels, numType, gpu);
             gt = permute(g, [2 1 3]);
             gdog = filterImage(gt, filterType, sigmas, 'zStep', zStep, numType);
             gdogt = permute(gdog, [2 1 3]);
@@ -86,7 +86,7 @@ for channelIndex = 1:nCh
         
         %     imshow(dogs(:,:, 5, 5),[]);
     end
-    close(h);
+    close(waitbarFigure);
     
 end
 

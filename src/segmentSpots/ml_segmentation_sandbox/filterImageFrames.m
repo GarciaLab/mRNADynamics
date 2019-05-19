@@ -120,14 +120,17 @@ for k = 1:length(chunks)-1
 end
 
     function plotGPUMem()
-        memi = gpuDevice;
-        mem = [mem, memi.AvailableMemory / (1E9)];
-        tocs = [tocs, toc];
-        plot(mAx, tocs,mem);
-        ylabel(mAx, 'Available GPU memory (GB)');
-        xlabel(mAx, 'time (s)');
-        standardizeFigure(mAx, []);
-        drawnow;
+        gpuAvailable = tryGPU;
+        if ~isempty(gpuAvailable)
+            memi = gpuDevice;
+            mem = [mem, memi.AvailableMemory / (1E9)];
+            tocs = [tocs, toc];
+            plot(mAx, tocs,mem);
+            ylabel(mAx, 'Available GPU memory (GB)');
+            xlabel(mAx, 'time (s)');
+            standardizeFigure(mAx, []);
+            drawnow;
+        end
     end
     close(h);
 end

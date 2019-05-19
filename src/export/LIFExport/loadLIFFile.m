@@ -5,7 +5,7 @@ function [LIFDir, LIFIndex, LIFImages, LIFMeta] = loadLIFFile(Folder)
 
   %Load the file using BioFormats
   %Figure out which one is not the FF
-  LIFIndex = find(~contains(LIFDir.name, 'FF'));
+  LIFIndex = find(~contains({LIFDir.name}, 'FF'));
   
   LIFPath = [Folder, filesep, LIFDir(LIFIndex).name];
   

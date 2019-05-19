@@ -42,9 +42,9 @@ else
             maxWorkers = 8;
             use_integral_center = 1;
             
-            startParallelPool(maxWorkers);
-
-            parfor z = 1:ZSlices %#ok<PFUIX>
+%             startParallelPool(maxWorkers, false, true);
+            Fits = [];
+            for z = 1:ZSlices %#ok<PFUIX>
                 imAbove = [];
                 imBelow = [];
                 spotsIm = [];
@@ -71,23 +71,47 @@ else
                 neighborhood = round(1300 / pixelSize); %nm
                 %Get the information about the spot on this z-slice
                 if cc == '['
-                    [temp_particles{z}, Fits(z)] = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood, snippet_size, ...
+                    [temp_particles{z}, Fit] = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood, snippet_size, ...
                         pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [], '', intScale,[], [], [], []);
                 elseif cc == '{'
-                    [temp_particles{z}, Fits(z)] = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood, snippet_size, ...
+                    [temp_particles{z}, Fit] = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood, snippet_size, ...
                         pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', intScale,[], [], [], []);
+                end
+                if ~isempty(Fit)
+                    Fit.z = z;
+                    fieldnames = fields(Fit);
+                    if isempty(Fits)
+                        Fits = Fit;
+                    else
+                        for i = 1:length(fieldnames)
+                            Fits.(fieldnames{i}) =  [Fits.(fieldnames{i}), Fit.(fieldnames{i})];
+                        end
+                    end
                 end
             end
             
-            for z = 1:zSlices
-                if ~isempty(Fits(z))
-                    Spots{CurrentChannel}(CurrentFrame).Fits = [Spots{CurrentChannel}(CurrentFrame).Fits, Fits(z)];
+            if ~isempty(Fits)
+                if ~isempty(Spots{CurrentChannel}(CurrentFrame).Fits)
+                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = Fits;
                 else
-                    disp('No spot added. Did you click too close to the image boundary?');
-                    breakflag = 1;
-                    break
+                     Spots{CurrentChannel}(CurrentFrame).Fits = Fits;
                 end
+            else
+                disp('No spot added. Did you click too close to the image boundary?');
+                %                     breakflag = 1;
+                %                     break
             end
+%             Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = Fits;
+
+% %             for z = 1:zSlices
+%                 if ~isempty(Fits)
+%                     Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = Fits;
+%                 else
+%                     disp('No spot added. Did you click too close to the image boundary?');
+% %                     breakflag = 1;
+% %                     break
+%                 end
+%             end
             
 %             for zIndex = 1:ZSlices
 %                 if ~isempty(temp_particles{zIndex})
@@ -163,15 +187,15 @@ else
 %                 end
 %             end
 
-            allNaNs = sum(isnan(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity)) ==...
-                length(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity);
-            if allNaNs
-                Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = [];
-                if isempty(Spots{CurrentChannel}(CurrentFrame).Fits)
-                    Spots{CurrentChannel}(CurrentFrame).Fits = [];
-                end
-                breakflag = 1;
-            end
+%             allNaNs = sum(isnan(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity)) ==...
+%                 length(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex).FixedAreaIntensity);
+%             if allNaNs
+%                 Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = [];
+%                 if isempty(Spots{CurrentChannel}(CurrentFrame).Fits)
+%                     Spots{CurrentChannel}(CurrentFrame).Fits = [];
+%                 end
+%                 breakflag = 1;
+%             end
 
             if ~breakflag
                 if cc == '['
@@ -179,7 +203,10 @@ else
                 elseif cc == '{'
                     force_z = CurrentZ;
                 end
-                [Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex),~] = findBrightestZ(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex), -1, use_integral_center, force_z, []);
+%                 [Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex),~, ~] = findBrightestZ(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex), -1, use_integral_center, force_z, []);
+                  [a,~, ~] = findBrightestZ(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex), -1, use_integral_center, force_z, []);
+                  Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = a;
+                
 %%
                 try
                    Spots{CurrentChannel} = fitSnip3D(Spots{CurrentChannel}, CurrentChannel, SpotsIndex, CurrentFrame, Prefix, PreProcPath, ProcPath, FrameInfo, []); 

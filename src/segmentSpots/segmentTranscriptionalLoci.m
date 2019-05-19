@@ -1,4 +1,4 @@
-function [all_frames, Spots, dogs] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures,doFF, ffim, Threshold, neighborhood, snippet_size, pixelSize, microscope, intScale, Weka, use_integral_center, filterMovieFlag, resultsFolder)
+function [all_frames, Spots, dogs] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures,doFF, ffim, Threshold, neighborhood, snippet_size, pixelSize, microscope, intScale, Weka, use_integral_center, filterMovieFlag, resultsFolder, gpu)
 
 
 dogs = [];
@@ -40,7 +40,7 @@ end
 if filterMovieFlag
     filterType = 'Difference_of_Gaussian_3D';
     sigmas = {round(200/pixelSize),round(800/pixelSize)};
-    [~, dogs] = filterMovie(Prefix,'optionalResults', resultsFolder,'nWorkers', 1, 'highPrecision', 'customFilter', filterType, sigmas, 'noSave', 'double', 'keepPool');
+    [~, dogs] = filterMovie(Prefix,'optionalResults', resultsFolder,'nWorkers', 1, 'highPrecision', 'customFilter', filterType, sigmas, 'noSave', 'double', 'keepPool', gpu);
 end
 
 if nCh > 1

@@ -70,25 +70,9 @@ switch filterType
         %assumes sigma 2 > sigma 1
         if dim==2
             d = DoG(filterSizeXY, s1, s2);
-            %             try
-            %                 gp = gpuDevice;
-            %                 if gp.AvailableMemory < 1E9
-            %                     gp = gpuDevice(1);
-            %                 end
-            %                 gim = gpuArray(im);
-            %                 gd = gpuArray(d);
-            %                 gpuf = conv2(gim, gd,'same');
-            %                 f = gather(gpuf); clear gpuf; clear gim; clear gd;
-            %             catch
             im = imfilter(im, d, 'same', padding);
-            %         end
         elseif dim == 3
-            if gpu
                 d = DoG3(s1, s2, sigmaZ);
-            else
-                disp('Defaulting to CPU.');
-                d = DoG3(s1, s2, sigmaZ);
-            end
             im = imfilter(im, d, 'same', padding);
         end
     case 'Laplacian'
@@ -171,9 +155,8 @@ switch filterType
             end
         end
     case 'Median'
-        if gpu
             im = gather(im);
-        end
+        
         if dim==2
             %             f = imgaussfilt(im,s1);
             %             f = ordfilt2(f,ceil(filterSizeXY*filterSizeXY/2),ones(filterSizeXY,filterSizeXY));
@@ -194,9 +177,7 @@ switch filterType
         elseif dim==3
             im = imgaussfilt3(im, [s1, s1, sigmaZ]);
             se = strel('cuboid',[ceil(filterSizeXY/2), ceil(filterSizeXY/2), ceil(filterSizeZ/2)]);
-            if gpu
-                im = gather(im);
-            end
+            im = gather(im);
             im = imdilate(im, se);
             if gpu
                 im = gpuArray(im);
@@ -211,9 +192,7 @@ switch filterType
         elseif dim==3
             im = imgaussfilt3(im, [s1, s1, sigmaZ]);
             se = strel('cuboid',[ceil(filterSizeXY/2), ceil(filterSizeXY/2), ceil(filterSizeZ/2)]);
-             if gpu
-                im = gather(im);
-            end
+            im = gather(im);
             im = imerode(im, se);
             if gpu
                 im = gpuArray(im);
@@ -226,9 +205,7 @@ switch filterType
         elseif dim==3
             %this blurs with sigma and sigmaZ, then stdfilts with sizes
             %dictated by sigma and sigma z.
-            if gpu
                 im = gather(im);
-            end
             im = stdfilt(imgaussfilt3(im, [s1, s1, sigmaZ]), ones(filterSizeXY, filterSizeXY, ceil(3*sigmaZ)));
             if gpu
                 im = gpuArray(im);

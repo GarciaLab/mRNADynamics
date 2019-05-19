@@ -58,7 +58,8 @@ warning('off', 'MATLAB:MKDIR:DirectoryExists');
 disp('Segmenting spots...')
 
 [displayFigures, numFrames, numShadows, intScale, keepPool, ...
-    autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel, optionalResults, filterMovieFlag] = determineSegmentSpotsOptions(varargin);
+    autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData,...
+    fit3D, skipChannel, optionalResults, filterMovieFlag, gpu] = determineSegmentSpotsOptions(varargin);
 
 argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
 try
@@ -117,11 +118,11 @@ for channelIndex = 1:nCh
     
     [all_frames, tempSpots, dogs] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, ...
         PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(channelIndex), neighborhood, ...
-        snippet_size, pixelSize, microscope, intScale, Weka, useIntegralCenter, filterMovieFlag, optionalResults);
+        snippet_size, pixelSize, microscope, intScale, Weka, useIntegralCenter, filterMovieFlag, optionalResults, gpu);
 
     tempSpots = segmentSpotsZTracking(pixelSize,tempSpots);
 
-    [~, falsePositives, tempSpots] = findBrightestZ([], numShadows, useIntegralCenter, 0, tempSpots, dogs);
+    [~, falsePositives, tempSpots] = findBrightestZ([], numShadows, useIntegralCenter, 0, tempSpots, 'dogs', dogs);
                         
     Spots{channelIndex} = tempSpots;
     

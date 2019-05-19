@@ -1,6 +1,6 @@
 function [displayFigures, numFrames, initialFrame, highPrecision, filterType, keepPool,...
     sigmas, nWorkers, app, kernelSize, weka, justTifs, ignoreMemoryCheck,...
-    classifierFolder, classifierPathCh1, customML, noSave,numType] = determineFilterMovieOptions(FrameInfo,varargin)
+    classifierFolder, classifierPathCh1, customML, noSave,numType, gpu] = determineFilterMovieOptions(FrameInfo,varargin)
 
 varargin = varargin{1};
 pixelSize = FrameInfo(1).PixelSize;
@@ -26,6 +26,7 @@ initialFrame = 1;
 classifierPathCh1 = [];
 classifierFolder = [];
 numType = 'double';
+gpu = '';
 
 for i = 1:length(varargin)
     
@@ -50,6 +51,8 @@ for i = 1:length(varargin)
         
     elseif strcmpi(varargin{i}, 'highPrecision')
         highPrecision = 1;
+      elseif strcmpi(varargin{i}, 'noGPU')
+        gpu = 'noGPU';
     elseif strcmpi(varargin{i}, 'keepPool')
         keepPool = 1;
     elseif strcmpi(varargin{i}, 'app')

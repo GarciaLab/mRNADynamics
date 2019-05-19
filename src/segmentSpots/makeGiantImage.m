@@ -5,16 +5,23 @@ function ggiantIm = makeGiantImage(imIn, format, padSize,firstFrame, lastFrame, 
 %padSize should be twice filterSize
 
 numType = 'single';
+gpu = true;
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'single')
         numType = 'single';
     elseif strcmpi(varargin{i}, 'double')
         numType = 'double';
+    elseif strcmpi(varargin{i}, 'noGPU')
+        gpu = false;
     end
 end
 
-gpuDevice(1);
+if gpu
+    argin = tryGPU;
+else
+    argin = {};
+end
 
 numFrames = (lastFrame - firstFrame) + 1;
 
@@ -36,10 +43,11 @@ end
 
 nPads = numFrames;
 
+
 if dim == 2
-    ggiantIm = zeros(format(1), (format(2)*numFrames) + (padSize*nPads), 'gpuArray');
+    ggiantIm = zeros(format(1), (format(2)*numFrames) + (padSize*nPads), numType, argin);
 elseif dim == 3
-    ggiantIm = zeros(format(1), (format(2)*numFrames) + (padSize*nPads),format(3)-2, numType,'gpuArray');
+    ggiantIm = zeros(format(1), (format(2)*numFrames) + (padSize*nPads),format(3)-2, numType,argin{:});
 end
 
 fcnt = 1;
@@ -61,7 +69,10 @@ for frame = firstFrame:lastFrame
     end
     
 %     gim = gpuArray(im);
-    
+if gpu
+    im = gpuArray(im);
+end
+
     if dim == 2
         padIm = padarray(gim, [0,padSize], 0, 'post');
     else
@@ -73,7 +84,7 @@ for frame = firstFrame:lastFrame
     if dim == 2
 %         ggiantIm(:,ind1:ind2) = padarray(gpuArray(im), [0,padSize, 0], 0, 'post');
     elseif dim == 3
-        ggiantIm(:,ind1:ind2, :) = padarray(gpuArray(im), [0,padSize, 0], 0, 'post');
+        ggiantIm(:,ind1:ind2, :) = padarray(im, [0,padSize, 0], 0, 'post');
     end
     
     fcnt = fcnt + 1;

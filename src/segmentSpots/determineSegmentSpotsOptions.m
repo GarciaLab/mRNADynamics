@@ -1,4 +1,6 @@
-function [displayFigures, numFrames, numShadows, intScale, keepPool, threshGUI, initialFrame, useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel, optionalResults, filterMovieFlag] = determineSegmentSpotsOptions(varargin)
+function [displayFigures, numFrames, numShadows, intScale, keepPool, threshGUI, initialFrame, ...
+    useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel,...
+    optionalResults, filterMovieFlag, gpu] = determineSegmentSpotsOptions(varargin)
 
 varargin = varargin{1};
 
@@ -18,6 +20,7 @@ fit3D = 0;
 skipChannel = [];
 optionalResults = '';
 filterMovieFlag = false;
+gpu = '';
 
 
 for i = 1:length(varargin)
@@ -53,6 +56,8 @@ for i = 1:length(varargin)
         keepPool = 1;
     elseif strcmpi(varargin{i}, 'intScale')
         intScale = varargin{i + 1};
+     elseif strcmpi(varargin{i}, 'noGPU')
+       gpu = 'noGPU';
     elseif strcmpi(varargin{i}, 'noIntegralZ')
         useIntegralCenter = 0;
     elseif strcmpi(varargin{i}, 'skipChannel')

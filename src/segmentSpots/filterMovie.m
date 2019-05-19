@@ -79,7 +79,7 @@ load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
 
 [displayFigures, numFrames, initialFrame, highPrecision, filterType, keepPool,...
     sigmas, nWorkers, app, kernelSize, Weka, justTifs, ignoreMemoryCheck, classifierFolder, ...
-    classifierPathCh1, customML, noSave, numType] = determineFilterMovieOptions(FrameInfo,varargin);
+    classifierPathCh1, customML, noSave, numType, gpu] = determineFilterMovieOptions(FrameInfo,varargin);
 
 zSize = FrameInfo(1).NumberSlices + 2;
 
@@ -91,7 +91,7 @@ nCh = length(spotChannels);
 
 if ~Weka && ~justTifs
     dogs = generateDifferenceOfGaussianImages(ProcPath, ExperimentType, FrameInfo, spotChannels,...
-        numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision, sigmas, app, kernelSize, noSave, numType);
+        numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision, sigmas, app, kernelSize, noSave, numType, gpu);
 elseif Weka
     if ~exist([PreProcPath, filesep, Prefix, filesep, 'stacks'], 'dir')
         generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,spotChannels, zSize, initialFrame);

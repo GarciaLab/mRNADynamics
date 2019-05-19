@@ -242,6 +242,9 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
             Fits.discardThis = 0;
             Fits.r = 0;
             Fits.IntegralZ = use_integral_center;
+            Fits.FixedAreaIntensity3  = NaN;
+            Fits.FixedAreaIntensity5 = NaN;
+            Fits.brightestZ = NaN;
         else
             temp_particles = {{}};
             Fits = [];
