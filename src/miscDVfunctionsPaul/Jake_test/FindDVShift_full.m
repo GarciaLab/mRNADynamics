@@ -63,7 +63,7 @@ FullEmbryoSurf=imread([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'surf_m
 
 %% Part 2: Label Image (Classified with Weka)
 %I = imread('./test2/binary.tif');
-I = imread([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'Classified image.tif']);
+I = imread([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'Classified_image.tif']);
 J = 1-I;    %Inverse image
 
 figure(1)
@@ -148,7 +148,8 @@ for i = 1:size(J,2)
 end
 
 %For-loop to calculate the total fluorescence and average position of each cell
-for i=1:length(Areas2)
+parfor i=1:length(Areas2)
+    i
     %Generate the mask for the i-th cell
     ImMask=(ImLabel2==i);
     %Multiply the mask by the fluorescence image
@@ -171,6 +172,49 @@ histogram(CellFluoPerArea);
 xlabel('fluorescence per pixel');
 ylabel('number of cells');
 
+%% Part 3: Calculate Ellipse Position
+
+%Get the information about the AP axis as well as the image shifts
+%used for the stitching of the two halves of the embryo
+load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'])
+
+APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
+APAngle = atan2((coordP(2)-coordA(2)),(coordP(1)-coordA(1)));
+
+AP_max = 0;
+AP_min = 1;
+
+% Find AP position range for Ellipses
+for i=1:length(Ellipses)
+    for j=1:size(Ellipses{i},1)
+
+        %Angle between the x-axis and the particle using the A position as a
+        %zero
+
+        Angles=atan2((Ellipses{i}(j,2)-coordAZoom(2)),(Ellipses{i}(j,1)-coordAZoom(1)));
+
+        %Distance between the points and the A point
+        Distances=sqrt((coordAZoom(2)-Ellipses{i}(j,2)).^2+(coordAZoom(1)-Ellipses{i}(j,1)).^2);
+        APPositions=Distances.*cos(Angles-APAngle);
+        EllipsePos{i}(j)=APPositions/APLength;
+
+        DVPositions=Distances.*sin(Angles-APAngle);
+        EllipsePos_DV{i}(j)=DVPositions;
+        
+        if EllipsePos{i}(j) < AP_min
+            AP_min = EllipsePos{i}(j);
+        end
+        if EllipsePos{i}(j) > AP_max
+            AP_max = EllipsePos{i}(j);
+        end
+        
+    end
+end
+
+AP_max = AP_max+0.1;
+AP_min = AP_min-0.1;
+
 %% Part 4: Calculate DV position
 
 ImMid = FullEmbryo;
@@ -186,9 +230,7 @@ APx=[AP(1,1),AP(2,1)];
 APy=[AP(1,2),AP(2,2)];
 %}
 
-%Get the information about the AP axis as well as the image shifts
-%used for the stitching of the two halves of the embryo
-load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+
 APx = [coordA(1),coordP(1)];
 APy = [coordA(2),coordP(2)];
 
@@ -203,7 +245,7 @@ bAP=APy(1)-mAP*APx(1);
 %Invert mAP to get tangent line that is perpendicular
 mAP_i = -1/mAP;
 
-APAngle = atan2((coordP(2)-coordA(2)),(coordP(1)-coordA(1)));
+num = 0;
 
 for i=1:length(Areas2)
     b = y_ave(i)-mAP_i*x_ave(i);
@@ -214,7 +256,15 @@ for i=1:length(Areas2)
                     (x_ave(i)-coordA(1)));
     %DVpos(i) = sqrt((x_ave(i)-x_int)^2+(y_ave(i)-y_int)^2);
     Distances = sqrt((coordA(2)-y_ave(i)).^2+(coordA(1)-x_ave(i)).^2);
-    DVpos(i) = Distances.*sin(Angles-APAngle);
+    
+    APpos_temp = Distances.*cos(Angles-APAngle)/APLength;
+    if (APpos_temp<AP_max) && (APpos_temp>AP_min)
+        num = num + 1;
+        APpos(num+1) = APpos_temp;
+        DVpos(num+1) = Distances.*sin(Angles-APAngle);
+        Cell_Fluo(num+1) = CellFluoPerArea(i);
+    end
+
     %if (x_ave(i)-x_int)<0
     %    DVpos(i) = -DVpos(i);
     %end
@@ -239,11 +289,11 @@ mygauss = fittype('a1*exp(-((x-b1)/c1)^2)',...
 options = fitoptions(mygauss);
 %options.Lower = [0 -Inf 100];
 %options.Upper = [Inf Inf 500];
-[temp_gauss, temp_gof] = fit(DVpos',CellFluoPerArea',mygauss,options);
+[temp_gauss, temp_gof] = fit(DVpos',Cell_Fluo',mygauss,options);
 
 %Plot fitted data
 figure(6);
-plot(temp_gauss,DVpos, CellFluoPerArea);
+plot(temp_gauss,DVpos, Cell_Fluo);
 
 %DV_shift = temp_gauss.b1*MovieZoom;
 DV_shift = temp_gauss.b1;
