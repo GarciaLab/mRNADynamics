@@ -60,7 +60,7 @@ for ch = spotChannels
     for frame = 1:nFrames %frames
         nSpotsPerFrame = length(SpotsCh(frame).Fits);
         for spot = 1:nSpotsPerFrame
-            SpotsCh = fitSnip3D(SpotsCh, channel, spot, frame, Prefix, PreProcPath, ProcPath, FrameInfo, dogs);
+            SpotsCh = fitSnip3D(SpotsCh, ch, spot, frame, Prefix, PreProcPath, ProcPath, FrameInfo, dogs, displayFigures);
         end
         send(q, frame); %update the waitbar
         

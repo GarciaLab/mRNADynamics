@@ -127,7 +127,7 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
             neighborhood_Size = 2000/pixelSize; %nm
             maxThreshold = 30; %intensity
             widthGuess = 200 / pixelSize; %nm
-            offsetGuess = 0; %intensity
+            offsetGuess = median(snippet(:)); %intensity
         end
         
         

@@ -69,11 +69,14 @@ function CurrentSnippet = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes,
     if ~isempty(xTrace) && ~isempty(CurrentZIndex)
         if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex),'gaussParams')
             gaussParams = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussParams;
-
+     
             if ~isempty(gaussParams)
                 gaussParams= gaussParams{CurrentZIndex};
+                if length(gaussParams) == 7
+                    gaussParams = [gaussParams, 0, 0];
+                end
                 try
-                    [mesh_y,mesh_x] = meshgrid(1:size(CurrentSnippet,2), 1:size(CurrentSnippet,1)); 
+                    [mesh_y,mesh_x] = meshgrid(1:size(CurrentSnippet,2), 1:size(CurrentSnippet,1));
                     g = gaussianForSpot(mesh_y, mesh_x, CurrentSnippet);
                     gauss = g(gaussParams) + CurrentSnippet;
                 catch

@@ -1,4 +1,4 @@
-function SpotsCh = fitSnip3D(SpotsCh, channel, spot, frame, Prefix, PreProcPath, ProcPath, FrameInfo, dogs)
+function SpotsCh = fitSnip3D(SpotsCh, channel, spot, frame, Prefix, PreProcPath, ProcPath, FrameInfo, dogs, displayFigures)
 
 s = SpotsCh(frame).Fits(spot);
 xSize = FrameInfo(1).PixelsPerLine;
@@ -36,14 +36,22 @@ for z = zBot:zTop
         if isempty(dogs)
             dog_name = ['DOG_', Prefix, '_', iIndex(frame, 3), '_z', iIndex(z, 2), nameSuffix, '.tif'];
             dog_full_path = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,dog_name];
-            FullDoGSlice= double(imread(dog_full_path));
+            if ~isempty(dir([ProcPath, filesep, Prefix,'_', filesep, 'dogs']))
+             FullDoGSlice= double(imread(dog_full_path));
+            else
+             FullDoGSlice = [];
+            end
         else
             FullDoGSlice = dogs(:, :, z, frame);
         end
         snip3D(:,:,k) = double(FullSlice(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
             max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size))); %#ok<*SAGROW>
-        dogSnip3D(:, :, k) = double(FullDoGSlice(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
-            max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size))); %#ok<*SAGROW>
+        if ~isempty(FullDoGSlice)
+            dogSnip3D(:, :, k) = double(FullDoGSlice(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
+                max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size))); %#ok<*SAGROW>
+        else
+            dogSnip3D = [];
+        end
         k = k + 1;
     end
 end
@@ -73,13 +81,15 @@ dzHigh = SpotsCh(frame).Fits(spot).fits3DCI95(4, 2) - snipDepth + bZ;
 SpotsCh(frame).Fits(spot).GaussPos = [x,y,z];
 SpotsCh(frame).Fits(spot).GaussPosCI95 = [dxLow,dxHigh; dyLow, dyHigh; dzLow, dzHigh];
 
-midind = ceil(size(dogSnip3D,3)/2);
-if size(dogSnip3D,3) > 2
-    SpotsCh(frame).Fits(spot).ampdog3 = sum(sum(sum(dogSnip3D(:,:,midind-1:midind+1))) );
-    SpotsCh(frame).Fits(spot).ampdog3Max = max(max(max(dogSnip3D(:,:,midind-1:midind+1))) );
-else
-    SpotsCh(frame).Fits(spot).ampdog3 = NaN;
-    SpotsCh(frame).Fits(spot).ampdog3Max = max(max(max(dogSnip3D(:,:,:))));
+if ~isempty(dogSnip3D)
+    midind = ceil(size(dogSnip3D,3)/2);
+    if size(dogSnip3D,3) > 2
+        SpotsCh(frame).Fits(spot).ampdog3 = sum(sum(sum(dogSnip3D(:,:,midind-1:midind+1))) );
+        SpotsCh(frame).Fits(spot).ampdog3Max = max(max(max(dogSnip3D(:,:,midind-1:midind+1))) );
+    else
+        SpotsCh(frame).Fits(spot).ampdog3 = NaN;
+        SpotsCh(frame).Fits(spot).ampdog3Max = max(max(max(dogSnip3D(:,:,:))));
+    end
 end
 
 %this is a flag that the fit was done over few z-frames so the

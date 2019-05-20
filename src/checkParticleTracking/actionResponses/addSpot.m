@@ -77,6 +77,7 @@ else
                     [temp_particles{z}, Fit] = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood, snippet_size, ...
                         pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', intScale,[], [], [], []);
                 end
+                
                 if ~isempty(Fit)
                     Fit.z = z;
                     fieldnames = fields(Fit);
@@ -199,6 +200,8 @@ else
 
             if isempty(Fits)
                 breakflag = true;
+            else
+                Fits.frame = CurrentFrame;
             end
             
             if ~breakflag
@@ -210,7 +213,9 @@ else
 %                 [Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex),~, ~] = findBrightestZ(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex), -1, use_integral_center, force_z, []);
 %                   [a,~, ~] = findBrightestZ(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex), -1, use_integral_center, force_z, []);
                         [a,~, ~] = findBrightestZ(Fits, -1, use_integral_center, force_z, []);
-    
+                    
+ 
+                        
                      if SpotsIndex ~= 1
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = a;
                      else
@@ -218,7 +223,7 @@ else
                      end
 %%
                 try
-                   Spots{CurrentChannel} = fitSnip3D(Spots{CurrentChannel}, CurrentChannel, SpotsIndex, CurrentFrame, Prefix, PreProcPath, ProcPath, FrameInfo, []); 
+                   Spots{CurrentChannel} = fitSnip3D(Spots{CurrentChannel}, CurrentChannel, SpotsIndex, CurrentFrame, Prefix, PreProcPath, ProcPath, FrameInfo, [], false); 
                 catch
                     warning('failed to fit 3D Gaussian to spot. Not sure why. Talk to AR if you need this.');
                 end
