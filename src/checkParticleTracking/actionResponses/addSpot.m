@@ -209,18 +209,18 @@ else
                 end
 %                 [Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex),~, ~] = findBrightestZ(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex), -1, use_integral_center, force_z, []);
 %                   [a,~, ~] = findBrightestZ(Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex), -1, use_integral_center, force_z, []);
-                        [a,~, ~] = findBrightestZ(Fits, -1, use_integral_center, force_z, []);
+                        [Fits,~, ~] = findBrightestZ(Fits, -1, use_integral_center, force_z, []);
                     
  
                         
                      if SpotsIndex ~= 1
-                        if ~isempty(setdiff(fields(Spots{CurrentChannel}(CurrentFrame).Fits), fields(a)))...
-                                | ~isempty(setdiff(fields(a),fields(Spots{CurrentChannel}(CurrentFrame).Fits)))
-                            addFields(Spots{CurrentChannel}(CurrentFrame).Fits, a);
+                        if ~isempty(setdiff(fields(Spots{CurrentChannel}(CurrentFrame).Fits), fields(Fits)))...
+                                | ~isempty(setdiff(fields(Fits),fields(Spots{CurrentChannel}(CurrentFrame).Fits)))
+                            addFields(Spots{CurrentChannel}(CurrentFrame).Fits, Fits);
                         end
-                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = a;
+                        Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = Fits;
                      else
-                         Spots{CurrentChannel}(CurrentFrame).Fits = a;
+                         Spots{CurrentChannel}(CurrentFrame).Fits = Fits;
                      end
 %%
                 try

@@ -188,10 +188,10 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
         
         sigma_x2 = 0;
         sigma_y2 = 0;
-        sister_chromatid_distance = NaN; %leaving this here for now but should be removed. AR 4/3/2019
+%         sister_chromatid_distance = NaN; %leaving this here for now but should be removed. AR 4/3/2019
         fixedAreaIntensity = sum(sum(snippet_mask)) - (offset*maskArea); %corrected AR 7/13/2018
         dogFixedAreaIntensity = sum(dog_mask(:));
-        fixedAreaIntensityCyl3 = NaN;
+%         fixedAreaIntensityCyl3 = NaN;
         if doCyl
             fixedAreaIntensityCyl3 =  sum(sum(snippet_mask)) + sum(sum(snippet_mask_above))...
                 + sum(sum(snippet_mask_below)) - 3*offset*maskArea;
@@ -217,7 +217,7 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
             end
             temp_particles = {{fixedAreaIntensity, spot_x, spot_y, offset, snippet, ...
                 gaussianArea, sigma_x, sigma_y, centroid_y, centroid_x, gaussianIntensity,intensity,...
-                max_dog, snippet_mask, sigma_x2, sigma_y2, sister_chromatid_distance, relative_errors, confidence_intervals, gaussian, mesh,fits, maskArea, fixedAreaIntensityCyl3}};
+                max_dog, snippet_mask, sigma_x2, sigma_y2, relative_errors, confidence_intervals, gaussian, mesh,fits, maskArea, fixedAreaIntensityCyl3}};
             
             
             Fits.FixedAreaIntensity = single(fixedAreaIntensity);
@@ -227,24 +227,25 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
             Fits.Area = single(gaussianArea);
             Fits.xFitWidth = single(sigma_x);
             Fits.yFitWidth = single(sigma_y);
-            Fits.yDoG = single(centroid_y);
-            Fits.xDoG = single(centroid_x);
+            Fits.yDoG = uint16(centroid_y);
+            Fits.xDoG = uint16(centroid_x);
             Fits.GaussianIntensity = single(gaussianIntensity);
             Fits.CentralIntensity = single(intensity);
             Fits.DOGIntensity = single(max_dog);
-            Fits.SisterDistance = sister_chromatid_distance;
+%             Fits.SisterDistance = sister_chromatid_distance;
             Fits.ConfidenceIntervals = confidence_intervals;
             Fits.gaussParams = {fits};
             Fits.dogFixedAreaIntensity = single(dogFixedAreaIntensity);
-            Fits.intArea = single(maskArea);
+            Fits.intArea = uint16(maskArea);
             Fits.z = uint8(zIndex);
-            Fits.frame = uint8(currentFrame);
+%             Fits.frame = uint16(currentFrame);
             Fits.discardThis = false;
             Fits.r = false;
             Fits.IntegralZ = logical(use_integral_center);
-            Fits.FixedAreaIntensity3  = NaN;
-            Fits.FixedAreaIntensity5 = NaN;
-            Fits.brightestZ = NaN;
+            Fits.FixedAreaIntensity3  = [];
+            Fits.FixedAreaIntensity5 = [];
+            Fits.brightestZ =[];
+            Fits.snippet_size = uint8(snippet_size);
         else
             temp_particles = {{}};
             Fits = [];

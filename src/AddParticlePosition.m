@@ -206,7 +206,7 @@ if ~NoAP
             ChannelToLoad = ChannelToLoad(1);
             disp('You have multiple nuclear channels, pick the one to use.');
         else
-            error('No histone channel found. Was it defined in MovieDatabase?')
+            error('No histone channel found. Was it defined in MovieDatabase as :Nuclear or :InvertedNuclear?')
         end
     
     end

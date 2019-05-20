@@ -5,6 +5,7 @@ function [MaxZProfile, Frames] = plotZFigures(zProfileFigAxes, zTraceAxes, Exper
 %PLOTZFIGURES Summary of this function goes here
 %   Detailed explanation goes here
 
+
 if ~isempty(xTrace)
     
     %Get the z-DoG profile

@@ -121,7 +121,6 @@ dogs = [];
                 if ~isempty(Particles.IntegralZ)
                     Particles.IntegralZ = Particles.IntegralZ(1);
                 end
-                    Particles.frame = Particles.frame(1);
             end
         end
         

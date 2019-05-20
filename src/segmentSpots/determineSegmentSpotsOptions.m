@@ -1,6 +1,6 @@
 function [displayFigures, numFrames, numShadows, intScale, keepPool, threshGUI, initialFrame, ...
     useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel,...
-    optionalResults, filterMovieFlag, gpu] = determineSegmentSpotsOptions(varargin)
+    optionalResults, filterMovieFlag, gpu, nWorkers] = determineSegmentSpotsOptions(varargin)
 
 varargin = varargin{1};
 
