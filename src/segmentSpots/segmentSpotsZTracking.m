@@ -26,7 +26,7 @@ if ~isempty([Spots.Fits])
                             for m = 1:numel(fields)
                                 if strcmpi(fields{m}, 'r')
                                     Spots(currentFrame).Fits(spotIndex2).r = 1;
-                                elseif strcmpi(fields{m}, 'frame')                                
+                                elseif strcmpi(fields{m}, 'frame') | strcmpi(fields{m}, 'IntegralZ') | strcmpi(fields{m}, 'intArea')                             
                                     %do nothing
                                 else
                                     Spots(currentFrame).Fits(spotIndex).(fields{m}) = [Spots(currentFrame).Fits(spotIndex).(fields{m}),Spots(currentFrame).Fits(spotIndex2).(fields{m}) ];

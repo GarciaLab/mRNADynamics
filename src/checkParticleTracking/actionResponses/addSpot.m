@@ -72,14 +72,13 @@ else
                 %Get the information about the spot on this z-slice
                 if cc == '['
                     [temp_particles{z}, Fit] = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood, snippet_size, ...
-                        pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [], '', intScale,[], [], [], []);
+                        pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [], '', intScale, CurrentFrame, [], z, use_integral_center);
                 elseif cc == '{'
                     [temp_particles{z}, Fit] = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood, snippet_size, ...
-                        pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', intScale,[], [], [], []);
+                        pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', intScale, CurrentFrame, [], z, use_integral_center);
                 end
                 
                 if ~isempty(Fit)
-                    Fit.z = z;
                     fieldnames = fields(Fit);
                     if isempty(Fits)
                         Fits = Fit;
@@ -200,8 +199,6 @@ else
 
             if isempty(Fits)
                 breakflag = true;
-            else
-                Fits.frame = CurrentFrame;
             end
             
             if ~breakflag
@@ -217,6 +214,10 @@ else
  
                         
                      if SpotsIndex ~= 1
+                        if ~isempty(setdiff(fields(Spots{CurrentChannel}(CurrentFrame).Fits), fields(a)))...
+                                | ~isempty(setdiff(fields(a),fields(Spots{CurrentChannel}(CurrentFrame).Fits)))
+                            addFields(Spots{CurrentChannel}(CurrentFrame).Fits, a);
+                        end
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = a;
                      else
                          Spots{CurrentChannel}(CurrentFrame).Fits = a;

@@ -26,12 +26,12 @@ end
 
 % Single 3D generalized gaussian function
 
+initial_params = double(initial_params);
 single3DGaussian = gaussian3DForSpot(mesh_y,mesh_x, mesh_z, snip3D);
 
 centroid_guess = [size(snip3D, 1)/2, size(snip3D, 2)/2, initial_params(2)];
 
-
-initial_parameters = [initial_params(1), centroid_guess(1),centroid_guess(2), centroid_guess(3), ...
+initial_parameters =[initial_params(1), centroid_guess(1),centroid_guess(2), centroid_guess(3), ...
     initial_params(3)^(-2), 0, 0, initial_params(3)^(-2), 0, initial_params(3)^(-2),initial_params(4),...
     0, 0, 0,...
     0, 0, 0, 0, 0, 0];
@@ -97,6 +97,12 @@ errs = [ci95(1,2) - fits(1), ci95(5,2) - fits(5), ci95(8,2) - fits(8), ...
     ci95(7,2) - fits(7), ci95(9,2) - fits(9)]; %get errors from ci95 or ci63
 
 [intensity, intensityError95] = PropError(intCalc, [amplitude A B C D E F], vals, errs);
+
+%and because these values will never reach double precision:
+intensity = single(intensity);
+intensityError95 = single(intensityError95);
+fits = single(fits);
+ci95 = single(ci95);
 
 if ~isreal(intensity)
     disp('uh oh complex');

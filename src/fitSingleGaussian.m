@@ -59,20 +59,21 @@ lsqOptions=optimset('Display','none');
                 initial_parameters,lb,ub, lsqOptions);
         end
         
-        confidence_intervals = nlparci(single_fit,residual,'jacobian',jacobian);
+        confidence_intervals = single(nlparci(single_fit,residual,'jacobian',jacobian));
         errors = zeros(1, length(single_fit));
         for i = 1:length(confidence_intervals)
             errors(i) = abs((abs(confidence_intervals(i, 1)) - abs(confidence_intervals(i, 2)))/2);
         end
-        relative_errors = abs(errors./single_fit);
-   
+        relative_errors = single(abs(errors./single_fit));
         
-    fits = single_fit; 
-    GaussianIntensity = sum(sum(singleGaussian(single_fit) + snippet - single_fit(6)));
+        residual = single(residual);
+        
+    fits = single(single_fit); 
+    GaussianIntensity = single(sum(sum(singleGaussian(single_fit) + snippet - single_fit(6))));
 
     %Display
-    gaussian = singleGaussian(single_fit);
-    mesh = {mesh_y, mesh_x};
+    gaussian = single(singleGaussian(single_fit));
+    mesh = {uint8(mesh_y), uint8(mesh_x)};
 
     if show_status && ~isempty(graphicsHandles)
         gAx = graphicsHandles(4);

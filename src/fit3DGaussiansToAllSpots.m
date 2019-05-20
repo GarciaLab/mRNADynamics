@@ -20,7 +20,7 @@ for i = 1:length(varargin)
         nWorkers = varargin{i+1};
     elseif strcmpi(varargin{i}, 'keepPool')
         keepPool = true;
-    elseif contains(varargin{i}, 'dog', 'IgnoreCase', true)
+    elseif strcmpi(varargin{i}, 'dogs')
         dogs = varargin{i+1};
     end
 end
