@@ -223,11 +223,7 @@ else
                          Spots{CurrentChannel}(CurrentFrame).Fits = Fits;
                      end
 %%
-                try
                    Spots{CurrentChannel} = fitSnip3D(Spots{CurrentChannel}, CurrentChannel, SpotsIndex, CurrentFrame, Prefix, PreProcPath, ProcPath, FrameInfo, [], false); 
-                catch
-                    warning('failed to fit 3D Gaussian to spot. Not sure why. Talk to AR if you need this.');
-                end
 %%
                 %Add this to SpotFilter, which tells the code that this spot is
                 %above the threshold. First, check whether the

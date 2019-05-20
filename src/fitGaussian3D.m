@@ -1,4 +1,4 @@
-function [fits, intensity, ci95, intensityError95] = fitGaussian3D(snip3D, initial_params, zStep, pixelSize, varargin)
+function [fits, intensity, CI, intensityError95] = fitGaussian3D(snip3D, initial_params, zStep, pixelSize, varargin)
 
 %%Fitting
 displayFigures = 0;
@@ -62,8 +62,8 @@ ub = [max(snip3D(:))*2, size(snip3D, 1)*1.5, size(snip3D, 2)*1.5, size(snip3D, 3
 [fits, ~, residual, ~, ~, ~, jacobian] = lsqnonlin(single3DGaussian, ...
     initial_parameters,lb,ub, lsqOptions);
 
-ci63 = nlparci(fits, residual, 'jacobian', jacobian, 'alpha', .37); %63% confidence intervals for the fit. 
-ci95 = nlparci(fits,residual,'jacobian',jacobian); %95% confidence intervals for the fit.
+% ci63 = nlparci(fits, residual, 'jacobian', jacobian, 'alpha', .37); %63% confidence intervals for the fit. 
+CI = nlparci(fits,residual,'jacobian',jacobian); %95% confidence intervals for the fit.
 
 
 
@@ -92,9 +92,9 @@ C*(D/2)^2 + D*E*F/4);
 
 vals = [fits(1),fits(5), fits(8), fits(10), fits(6), fits(7), fits(9)]; 
 
-errs = [ci95(1,2) - fits(1), ci95(5,2) - fits(5), ci95(8,2) - fits(8), ...
-    ci95(10,2) - fits(10), ci95(6,2) - fits(6),...
-    ci95(7,2) - fits(7), ci95(9,2) - fits(9)]; %get errors from ci95 or ci63
+errs = [CI(1,2) - fits(1), CI(5,2) - fits(5), CI(8,2) - fits(8), ...
+    CI(10,2) - fits(10), CI(6,2) - fits(6),...
+    CI(7,2) - fits(7), CI(9,2) - fits(9)]; %get errors from ci95 or ci63
 
 [intensity, intensityError95] = PropError(intCalc, [amplitude A B C D E F], vals, errs);
 
@@ -102,7 +102,7 @@ errs = [ci95(1,2) - fits(1), ci95(5,2) - fits(5), ci95(8,2) - fits(8), ...
 intensity = single(intensity);
 intensityError95 = single(intensityError95);
 fits = single(fits);
-ci95 = single(ci95);
+CI = single(CI);
 
 if ~isreal(intensity)
     disp('uh oh complex');

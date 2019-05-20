@@ -20,7 +20,7 @@ if isfield(s, 'snippet_size') && ~isempty(s.snippet_size)
 else
     snippet_size = 13; %pixels
 end
-snippet_size = uint16(snippet_size);
+snippet_size = uint16(snippet_size(1));
 
 
 zBot = bZ - snipDepth;

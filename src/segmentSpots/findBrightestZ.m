@@ -116,6 +116,7 @@ dogs = [];
         end
        
         if ~isempty(Particles)
+            Particles.snippet_size = Particles.snippet_size(1);
             Particles.intArea = Particles.intArea(1);
             if isfield(Particles, 'IntegralZ')
                 if ~isempty(Particles.IntegralZ)
