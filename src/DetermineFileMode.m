@@ -1,14 +1,15 @@
 %Determine whether we're dealing with 2-photon data from Princeton or LSM
 %data. 2-photon data uses TIF files. In LSM mode multiple files will be
 %combined into one.
-function [D, FileMode] = DetermineFileMode(Folder)
-    DTIF=dir([Folder,filesep,'*.tif']);
-    DLSM=dir([Folder,filesep,'*.lsm']);     %Zeiss confocal, old LSM format
-    DLIF=dir([Folder,filesep,'*.lif']);     %Leica confocal
-    DCZI=dir([Folder,filesep,'*.czi']);     %Zeiss confocal, new CZI format
-    DLAT=dir([Folder,filesep,'*_Settings.txt']);
-    DSPIN=dir([Folder,filesep,'*.nd']);     %Nikon spinning disk
-    DND2=dir([Folder,filesep,'*.nd2']);    %Nikon point scanner .nd2 files
+function [D, FileMode] = DetermineFileMode(rawDataFolder)
+
+    DTIF=dir([rawDataFolder,filesep,'*.tif']);
+    DLSM=dir([rawDataFolder,filesep,'*.lsm']);     %Zeiss confocal, old LSM format
+    DLIF=dir([rawDataFolder,filesep,'*.lif']);     %Leica confocal
+    DCZI=dir([rawDataFolder,filesep,'*.czi']);     %Zeiss confocal, new CZI format
+    DLAT=dir([rawDataFolder,filesep,'*_Settings.txt']);
+    DSPIN=dir([rawDataFolder,filesep,'*.nd']);     %Nikon spinning disk
+    DND2=dir([rawDataFolder,filesep,'*.nd2']);    %Nikon point scanner .nd2 files
 
     if ~isempty(DTIF) && isempty(DLSM) && isempty(DCZI) && isempty(DSPIN)
         if isempty(DLIF)

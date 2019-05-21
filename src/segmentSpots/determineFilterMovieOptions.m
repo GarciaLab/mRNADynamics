@@ -1,6 +1,8 @@
 function [displayFigures, numFrames, initialFrame, highPrecision, filterType, keepPool,...
     sigmas, nWorkers, app, kernelSize, weka, justTifs, ignoreMemoryCheck,...
-    classifierFolder, classifierPathCh1, customML, noSave,numType, gpu] = determineFilterMovieOptions(FrameInfo,varargin)
+    classifierFolder, classifierPathCh1, customML, noSave,numType, gpu,saveAsMat, saveType]...
+    ...
+    = determineFilterMovieOptions(FrameInfo,varargin)
 
 varargin = varargin{1};
 pixelSize = FrameInfo(1).PixelSize;
@@ -27,6 +29,8 @@ classifierPathCh1 = [];
 classifierFolder = [];
 numType = 'double';
 gpu = '';
+saveAsMat = false;
+saveType = '.tif';
 
 for i = 1:length(varargin)
     
@@ -72,8 +76,11 @@ for i = 1:length(varargin)
         justTifs = true;
         
     elseif strcmpi(varargin{i}, 'noSave')
-        noSave = true;
-        
+        noSave = true;      
+        saveType = 'none';
+    elseif strcmpi(varargin{i}, 'saveAsMat') | strcmpi(varargin{i}, '.mat')
+        saveAsMat = true;
+        saveType = '.mat';
     elseif strcmpi(varargin{i}, 'weka')
         weka = true;
     elseif strcmpi(varargin{i}, 'single')

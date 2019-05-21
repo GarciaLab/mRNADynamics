@@ -1,7 +1,7 @@
 % Generates difference of Gaussian images
 function dogs = generateDifferenceOfGaussianImages(ProcPath, ExperimentType, FrameInfo, spotChannels,...
     numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision,...
-    sigmas, app, kernelSize, noSave, numType, gpu)
+    sigmas, app, kernelSize, noSave, numType, gpu, saveAsMat, saveType)
 
 dogs = [];
 
@@ -23,6 +23,12 @@ if isempty(kernelSize)
 else
     filterSize = kernelSize;
 end
+
+extractOpts = {};
+if saveAsMat | strcmpi(saveType, '.mat')
+    extractOpts = [extractOpts, 'mat'];
+end
+
 
 nCh = length(spotChannels);
 for channelIndex = 1:nCh
@@ -69,9 +75,13 @@ for channelIndex = 1:nCh
         sigmas = {round(210/pixelSize), floor(800/pixelSize)};
         padSize = 2*sigmas{2};
         pixVol = format(1)*format(2)*format(3);
-        maxGPUMem = .8E9;
+%         if ~strcmpi(gpu, 'noGPU')
+            maxMem = .8E9;
+%         else
+%             maxMem = 30E9;
+%         end
         %         maxGPUMem = evalin('base', 'maxGPUMem'); %for testing
-        maxPixVol = maxGPUMem / 4; %bytes in a single
+        maxPixVol = maxMem / 4; %bytes in a single
         chunkSize = floor(maxPixVol/pixVol);
         chunks = [1:chunkSize:numFrames, numFrames+1];
         
@@ -81,7 +91,7 @@ for channelIndex = 1:nCh
             gt = permute(g, [2 1 3]);
             gdog = filterImage(gt, filterType, sigmas, 'zStep', zStep, numType);
             gdogt = permute(gdog, [2 1 3]);
-            dogs(:,:,:,chunks(i):chunks(i+1)-1) = extractFromGiant(gdogt, format, padSize, chunks(i), chunks(i+1)-1, Prefix, spotChannels, ProcPath, noSave, numType);
+            dogs(:,:,:,chunks(i):chunks(i+1)-1) = extractFromGiant(gdogt, format, padSize, chunks(i), chunks(i+1)-1, Prefix, spotChannels, ProcPath, noSave, numType, extractOpts{:});
         end
         
         %     imshow(dogs(:,:, 5, 5),[]);

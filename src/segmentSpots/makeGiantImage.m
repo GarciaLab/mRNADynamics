@@ -6,6 +6,7 @@ function ggiantIm = makeGiantImage(imIn, format, padSize,firstFrame, lastFrame, 
 
 numType = 'single';
 gpu = true;
+processor = 'gpu';
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'single')
@@ -14,6 +15,7 @@ for i = 1:length(varargin)
         numType = 'double';
     elseif strcmpi(varargin{i}, 'noGPU')
         gpu = false;
+        processor = 'cpu';
     end
 end
 
@@ -21,6 +23,7 @@ if gpu
     argin = tryGPU;
 else
     argin = {};
+    processor = 'cpu';
 end
 
 numFrames = (lastFrame - firstFrame) + 1;
@@ -69,7 +72,7 @@ for frame = firstFrame:lastFrame
     end
     
 %     gim = gpuArray(im);
-if gpu
+if strcmpi(processor, 'gpu')
     im = gpuArray(im);
 end
 

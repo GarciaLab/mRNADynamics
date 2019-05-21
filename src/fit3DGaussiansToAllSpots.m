@@ -7,6 +7,7 @@ displayFigures = false;
 nWorkers = 8;
 keepPool = false;
 dogs = [];
+saveType = '.tif';
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'displayFigures')
@@ -22,6 +23,8 @@ for i = 1:length(varargin)
         keepPool = true;
     elseif strcmpi(varargin{i}, 'dogs')
         dogs = varargin{i+1};
+    elseif strcmpi(varargin{i}, 'saveAsMat') | strcmpi(varargin{i}, '.mat')
+        saveType = '.mat';
     end
 end
 
@@ -60,7 +63,7 @@ for ch = spotChannels
     for frame = 1:numFrames %frames
         nSpotsPerFrame = length(SpotsCh(frame).Fits);
         for spot = 1:nSpotsPerFrame
-            SpotsCh = fitSnip3D(SpotsCh, ch, spot, frame, Prefix, PreProcPath, ProcPath, FrameInfo, dogs, displayFigures);
+            SpotsCh = fitSnip3D(SpotsCh, ch, spot, frame, Prefix, PreProcPath, ProcPath, FrameInfo, dogs, displayFigures, saveType);
         end
         send(q, frame); %update the waitbar
         

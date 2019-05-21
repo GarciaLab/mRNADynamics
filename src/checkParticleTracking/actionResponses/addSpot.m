@@ -7,6 +7,7 @@ function [numParticles, SpotFilter, Particles, Spots, PreviousParticle] =...
 %   Detailed explanation goes here
 
 zStep = FrameInfo(1).ZStep;
+saveType = '.tif';
 
 %Check that we're in zoom mode. If not, set it up.
 PreviousParticle = 0; % resets particle so trace will refresh
@@ -223,7 +224,7 @@ else
                          Spots{CurrentChannel}(CurrentFrame).Fits = Fits;
                      end
 %%
-                   Spots{CurrentChannel} = fitSnip3D(Spots{CurrentChannel}, CurrentChannel, SpotsIndex, CurrentFrame, Prefix, PreProcPath, ProcPath, FrameInfo, [], false); 
+                   Spots{CurrentChannel} = fitSnip3D(Spots{CurrentChannel}, CurrentChannel, SpotsIndex, CurrentFrame, Prefix, PreProcPath, ProcPath, FrameInfo, [], false, saveType); 
 %%
                 %Add this to SpotFilter, which tells the code that this spot is
                 %above the threshold. First, check whether the

@@ -8,6 +8,7 @@ padZ = false;
 probs = false;
 numType = 'single';
 mat = false;
+saveType = '.tif';
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'single')
@@ -18,8 +19,12 @@ for i = 1:length(varargin)
         probs = true;
     elseif strcmpi(varargin{i}, 'mat')
         mat = true;
+        saveType = '.mat';
     elseif strcmpi(varargin{i}, 'padZ')
         padZ = true;
+    elseif strmcpi(varargin{i}, 'noSave')
+        noSave = true;
+        saveType = 'none';
     end
 end
 
@@ -32,15 +37,16 @@ for frame = firstFrame:lastFrame
         im = giantIm(:,ind1:ind2);
     elseif dim == 3
         
-        if ~mat && ~noSave
-            if probs
-                im = gather(uint16(giantIm(:,ind1:ind2, :)));
-                %             imshow(im(:,:,5),[median(im(:)),max(im(:))]);
-            else
-                im = gather(uint16((giantIm(:,ind1:ind2, :) + 100)*10));
-            end
-        else
-            im = gather(giantIm(:,ind1:ind2, :));
+        switch saveType
+            case '.tif'
+                if probs
+                    im = gather(uint16(giantIm(:,ind1:ind2, :)));
+                    %             imshow(im(:,:,5),[median(im(:)),max(im(:))]);
+                else
+                    im = gather(uint16((giantIm(:,ind1:ind2, :) + 100)*10));
+                end
+            case {'.mat', 'none'}
+                im = gather(giantIm(:,ind1:ind2, :));
         end
         
         
@@ -52,7 +58,7 @@ for frame = firstFrame:lastFrame
         
         if padZ
             im = cat(zeros(size(im,1), size(im,2)), im, 3);
-            im(:,:,end+1) = zeros(size(im,1), size(im,2));
+            im(:,:,format(3)) = zeros(size(im,1), size(im,2));
         end
         
         if noSave
@@ -69,14 +75,18 @@ for frame = firstFrame:lastFrame
             
             
             for z = 1:size(im,3)
+                
                 plane = im(:,:,z);
                 dog_name = ['DOG_', Prefix, '_', iIndex(frame, 3), '_z', iIndex(z, 2), nameSuffix];
                 dog_full_path = [outPath, filesep,Prefix,'_',filesep,fldr,filesep,dog_name];
-                %         imwrite(uint16(dog(:,:, z)), dog_full_path);
-                imwrite(plane,[dog_full_path, '.tif']);
-                if mat
-                    save([dog_full_path,'.mat'], 'plane');
+                
+                switch saveType
+                    case '.tif'
+                        imwrite(plane,[dog_full_path, saveType]);
+                    case '.mat'
+                        save([dog_full_path,saveType], 'plane');
                 end
+                
             end
         end
     end

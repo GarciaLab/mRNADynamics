@@ -1,4 +1,4 @@
-function [SourcePath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath, configValues, movieDatabasePath] = DetermineLocalFolders(varargin)
+function [rawDataPath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath, configValues, movieDatabasePath] = DetermineLocalFolders(varargin)
 
     optionalResults = '';
     CONFIG_CSV_PATH = 'ComputerFolders.csv';
@@ -9,11 +9,11 @@ function [SourcePath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath, configV
     MS2CodePath = getConfigValue(configValues, 'MS2CodePath');      
     try
         DataRoot = getConfigValue(configValues, 'DataRoot');
-        SourcePath = [DataRoot,filesep,'RawDynamicsData'];
+        rawDataPath = [DataRoot,filesep,'RawDynamicsData'];
         PreProcPath = [DataRoot,filesep, 'PreProcessedData'];
         ProcPath = [DataRoot, filesep,'ProcessedData'];
     catch  
-        SourcePath = getConfigValue(configValues, 'SourcePath');
+        rawDataPath = getConfigValue(configValues, 'SourcePath');
         ProcPath = getConfigValue(configValues, 'FISHPath');
         PreProcPath = getConfigValue(configValues, 'PreProcPath');
     end
@@ -52,7 +52,7 @@ function [SourcePath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath, configV
             rootFolderName = 'DataRoot';
         end
         DataRoot = getConfigValue(configValues, rootFolderName);        
-        SourcePath = [DataRoot '/RawDynamicsData'];
+        rawDataPath = [DataRoot '/RawDynamicsData'];
         PreProcPath = [DataRoot '/PreProcessedData'];
         ProcPath = [DataRoot '/ProcessedData'];
     end

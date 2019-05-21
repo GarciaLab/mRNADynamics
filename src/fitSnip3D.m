@@ -1,4 +1,4 @@
-function SpotsCh = fitSnip3D(SpotsCh, channel, spot, frame, Prefix, PreProcPath, ProcPath, FrameInfo, dogs, displayFigures)
+function SpotsCh = fitSnip3D(SpotsCh, channel, spot, frame, Prefix, PreProcPath, ProcPath, FrameInfo, dogs, displayFigures, saveType)
 
 s = SpotsCh(frame).Fits(spot);
 xSize = FrameInfo(1).PixelsPerLine;
@@ -36,12 +36,19 @@ for z = zBot:zTop
             ,'_z' iIndex(z,2) '_ch' iIndex(channel,2) '.tif']);
         nameSuffix = ['_ch', iIndex(channel, 2)];
         if isempty(dogs)
-            dog_name = ['DOG_', Prefix, '_', iIndex(frame, 3), '_z', iIndex(z, 2), nameSuffix, '.tif'];
+            dog_name = ['DOG_', Prefix, '_', iIndex(frame, 3), '_z', iIndex(z, 2), nameSuffix, saveType];
             dog_full_path = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,dog_name];
             if ~isempty(dir([ProcPath, filesep, Prefix,'_', filesep, 'dogs']))
-             FullDoGSlice= double(imread(dog_full_path));
+                if strcmpi(saveType, 'tif')
+                    FullDoGSlice= double(imread(dog_full_path));
+                elseif strcmpi(saveType, '.mat')
+                    dog_name = ['DOG_', Prefix, '_', iIndex(frame, 3), '_z', iIndex(z-1, 2), nameSuffix, saveType];
+                    dog_full_path = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,dog_name];
+                    load(dog_full_path, 'plane');
+                    FullDoGSlice = double(plane);
+                end
             else
-             FullDoGSlice = [];
+                FullDoGSlice = [];
             end
         else
             FullDoGSlice = dogs(:, :, z, frame);
@@ -75,7 +82,7 @@ snippet_size = single(snippet_size); xSpot = single(xSpot); ySpot = single(ySpot
 x = SpotsCh(frame).Fits(spot).fits3D(2)  -snippet_size + xSpot;
 y = SpotsCh(frame).Fits(spot).fits3D(3)  -snippet_size + ySpot;
 z = SpotsCh(frame).Fits(spot).fits3D(4) -  snipDepth + bZ;
- 
+
 dxLow = SpotsCh(frame).Fits(spot).fits3DCI95(2, 1) - snippet_size + xSpot;
 dxHigh = SpotsCh(frame).Fits(spot).fits3DCI95(2, 2) - snippet_size + xSpot;
 dyLow = SpotsCh(frame).Fits(spot).fits3DCI95(3, 1) - snippet_size + ySpot;
