@@ -59,7 +59,7 @@ disp('Segmenting spots...')
 
 [displayFigures, numFrames, numShadows, intScale, keepPool, ...
     autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData,...
-    fit3D, skipChannel, optionalResults, filterMovieFlag, gpu] = determineSegmentSpotsOptions(varargin);
+    fit3D, skipChannel, optionalResults, filterMovieFlag, gpu, nWorkers] = determineSegmentSpotsOptions(varargin);
 
 argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
 try
@@ -153,7 +153,7 @@ end
 
 if fit3D
     disp('Fitting 3D Gaussians...')
-    fit3DGaussiansToAllSpots(Prefix, 'segmentSpots', Spots, 'optionalResults', optionalResults, 'dogs', dogs);
+    fit3DGaussiansToAllSpots(Prefix, 'segmentSpots', Spots, 'optionalResults', optionalResults, 'dogs', dogs, 'nWorkers', nWorkers);
     disp('3D Gaussian fitting completed.')
 end
 

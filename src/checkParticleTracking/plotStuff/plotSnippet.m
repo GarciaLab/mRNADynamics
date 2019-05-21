@@ -5,6 +5,8 @@ function CurrentSnippet = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes,
 %PLOTSNIPPET Summary of this function goes here
 %   Detailed explanation goes here
 
+Spots = castStructNumbersToDoubles(Spots);
+
     if  ~isempty(xTrace) && ~isempty(CurrentZIndex)
         %Get the snippet and the mask, and overlay them
         %(MT, 2018-02-12): lattice data could use this, changed CurrentChannel to coatChannel
@@ -21,10 +23,11 @@ function CurrentSnippet = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes,
         elseif isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex), 'Snippet')
             try
                 snippet_size = floor(size(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).Snippet{1}, 1)/2);
+                snippet_size = snippet_size(1);
             catch
             end
         end
-
+                snippet_size = snippet_size(1);
         CurrentSnippet = double(FullSlice(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
             max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size)));
         imSnippet = mat2gray(CurrentSnippet);
@@ -56,11 +59,11 @@ function CurrentSnippet = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes,
         %the overlay figure, which indicates the x-y center of the spot
         %within the brightest z-slice.
         SnippetX=(SnippetEdge-1)/2+1-...
-            (Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xDoG(CurrentZIndex)-...
-            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xFit(CurrentZIndex));
+            double(((Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xDoG(CurrentZIndex)))-...
+            double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xFit(CurrentZIndex)));
         SnippetY=(SnippetEdge-1)/2+1-...
-            (Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yDoG(CurrentZIndex)-...
-            Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yFit(CurrentZIndex));
+           double( (Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yDoG(CurrentZIndex))-...
+           double( Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yFit(CurrentZIndex)));
         hold(snippetFigAxes,'off')
     else
         imshow(zeros(SnippetEdge), 'Parent', snippetFigAxes)

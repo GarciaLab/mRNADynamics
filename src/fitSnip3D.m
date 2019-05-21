@@ -20,6 +20,8 @@ if isfield(s, 'snippet_size') && ~isempty(s.snippet_size)
 else
     snippet_size = 13; %pixels
 end
+snippet_size = uint16(snippet_size(1));
+
 
 zBot = bZ - snipDepth;
 zTop = bZ + snipDepth;
@@ -67,16 +69,19 @@ end
 [SpotsCh(frame).Fits(spot).fits3D, SpotsCh(frame).Fits(spot).gauss3DIntensity,...
     SpotsCh(frame).Fits(spot).fits3DCI95, SpotsCh(frame).Fits(spot).gauss3DIntensityCI95] = fitGaussian3D(snip3D, initial_params, zStep, pixelSize, fitOptions{:});
 
-x = SpotsCh(frame).Fits(spot).fits3D(2) - snippet_size + xSpot;
-y = SpotsCh(frame).Fits(spot).fits3D(3) - snippet_size + ySpot;
-z = SpotsCh(frame).Fits(spot).fits3D(4) - single(snipDepth + bZ);
+%cast all as singles so the addition will work properly
+snippet_size = single(snippet_size); xSpot = single(xSpot); ySpot = single(ySpot); snipDepth = single(snipDepth); bZ = single(bZ);
+
+x = SpotsCh(frame).Fits(spot).fits3D(2)  -snippet_size + xSpot;
+y = SpotsCh(frame).Fits(spot).fits3D(3)  -snippet_size + ySpot;
+z = SpotsCh(frame).Fits(spot).fits3D(4) -  snipDepth + bZ;
  
 dxLow = SpotsCh(frame).Fits(spot).fits3DCI95(2, 1) - snippet_size + xSpot;
 dxHigh = SpotsCh(frame).Fits(spot).fits3DCI95(2, 2) - snippet_size + xSpot;
 dyLow = SpotsCh(frame).Fits(spot).fits3DCI95(3, 1) - snippet_size + ySpot;
 dyHigh = SpotsCh(frame).Fits(spot).fits3DCI95(3, 2) - snippet_size + ySpot;
-dzLow = SpotsCh(frame).Fits(spot).fits3DCI95(4, 1) - single(snipDepth + bZ);
-dzHigh = SpotsCh(frame).Fits(spot).fits3DCI95(4, 2) - single(snipDepth + bZ);
+dzLow = SpotsCh(frame).Fits(spot).fits3DCI95(4, 1) - snipDepth + bZ;
+dzHigh = SpotsCh(frame).Fits(spot).fits3DCI95(4, 2) - snipDepth + bZ;
 
 SpotsCh(frame).Fits(spot).GaussPos = single([x,y,z]);
 SpotsCh(frame).Fits(spot).GaussPosCI95 = single([dxLow,dxHigh; dyLow, dyHigh; dzLow, dzHigh]);
@@ -87,7 +92,7 @@ if ~isempty(dogSnip3D)
         SpotsCh(frame).Fits(spot).ampdog3 = single(sum(sum(sum(dogSnip3D(:,:,midind-1:midind+1)))) );
         SpotsCh(frame).Fits(spot).ampdog3Max = single(max(max(max(dogSnip3D(:,:,midind-1:midind+1))) ));
     else
-        SpotsCh(frame).Fits(spot).ampdog3 = NaN;
+        SpotsCh(frame).Fits(spot).ampdog3 = [];
         SpotsCh(frame).Fits(spot).ampdog3Max = single(max(max(max(dogSnip3D(:,:,:)))));
     end
 end

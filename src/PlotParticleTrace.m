@@ -7,11 +7,11 @@ function [Frames,AmpIntegral,AmpGaussian,AmpIntegral3,AmpIntegral5,...
 %V2: Removed the ImageSnippet for now. I was running into the borders of
 %the image.
 
+
 [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
     ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3, ErrorIntegral5,backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D]=GetParticleTrace(CurrentParticle,Particles,Spots);
 Frames=Particles(CurrentParticle).Frame;
 Indexes=Particles(CurrentParticle).Index;
-
 
 
 for i=1:length(Frames)

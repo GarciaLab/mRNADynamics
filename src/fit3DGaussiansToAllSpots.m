@@ -54,10 +54,10 @@ for ch = spotChannels
     p = 1;
     
     SpotsCh = Spots{ch};
-    nFrames = length(SpotsCh);
+    numFrames = length(SpotsCh);
     
     
-    for frame = 1:nFrames %frames
+    for frame = 1:numFrames %frames
         nSpotsPerFrame = length(SpotsCh(frame).Fits);
         for spot = 1:nSpotsPerFrame
             SpotsCh = fitSnip3D(SpotsCh, ch, spot, frame, Prefix, PreProcPath, ProcPath, FrameInfo, dogs, displayFigures);

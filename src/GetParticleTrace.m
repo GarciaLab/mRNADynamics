@@ -17,6 +17,7 @@ function [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
 
 %
 %First, get the different intensity values corresponding to this particle.
+Spots = castStructNumbersToDoubles(Spots);
 
 ErrorIntegral = NaN;
 ErrorIntegral3 = NaN;
