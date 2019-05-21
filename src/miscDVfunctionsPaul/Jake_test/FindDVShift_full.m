@@ -1,13 +1,19 @@
 function  [DV_shift] = FindDVShift_full(varargin)
 %% Initialization
 
-% Resolution: 1024*1024
-%AreaThresh=20;
-%AreaMax = 100;
-
-% Resolution: 2048*2048
-AreaThresh=100;
-AreaMax = 450;
+prompt = 'Please input the resolution: (1024/2048)';
+res = input(prompt);
+if res == 1024
+    AreaThresh=20;
+    AreaMax = 100;
+else
+    if res == 2048
+    AreaThresh=100;
+    AreaMax = 450;
+    else
+        error('Input resolution not supported');
+    end
+end
 
 %% Part 1: Read image data
 
@@ -180,6 +186,8 @@ load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
 load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'])
 
 APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
+APLength_full=sqrt((coordP(2)-coordA(2))^2+(coordP(1)-coordA(1))^2);
+AP_Ratio=APLength/APLength_full;
 APAngle = atan2((coordP(2)-coordA(2)),(coordP(1)-coordA(1)));
 
 AP_max = 0;
@@ -257,11 +265,12 @@ for i=1:length(Areas2)
     %DVpos(i) = sqrt((x_ave(i)-x_int)^2+(y_ave(i)-y_int)^2);
     Distances = sqrt((coordA(2)-y_ave(i)).^2+(coordA(1)-x_ave(i)).^2);
     
-    APpos_temp = Distances.*cos(Angles-APAngle)/APLength;
+    APpos_temp = Distances.*cos(Angles-APAngle)/APLength*AP_Ratio;
+    APpos(i) = APpos_temp;
     if (APpos_temp<AP_max) && (APpos_temp>AP_min)
         num = num + 1;
         APpos(num+1) = APpos_temp;
-        DVpos(num+1) = Distances.*sin(Angles-APAngle);
+        DVpos(num+1) = Distances.*sin(Angles-APAngle)*AP_Ratio;
         Cell_Fluo(num+1) = CellFluoPerArea(i);
     end
 
