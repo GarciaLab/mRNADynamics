@@ -1286,15 +1286,13 @@ if ~NoAP
     plot(zoomOverlayAxes,[coordAZoom(1)-1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'-.g')
     hold(zoomOverlayAxes,'off')
     
-    
+    DV_correction = 0;
     %Add DV correction from full embryo image if needed
     if strcmpi(ExperimentAxis,'DV')
         prompt = 'Do you want to correct DV position from full embryo image?(Y/N) ';
         str = input(prompt,'s');
         if (str == 'Y') || (str == 'y')
             DV_correction = FindDVShift_full(Prefix);
-        else
-            DV_correction = 0;
         end
     end
     
