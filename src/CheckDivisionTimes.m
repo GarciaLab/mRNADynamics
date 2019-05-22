@@ -71,7 +71,7 @@ D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.tif']);
 %used for the stitching of the two halves of the embryo
 load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
 
-if ~exist('coordPZoom')
+if ~exist('coordPZoom', 'var')
     warning('AddParticlePosition should have been run first. Running it now.')
     AddParticlePosition(Prefix, 'ManualAlignment')
     load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
@@ -106,7 +106,7 @@ end
 
 [DateFromDateColumn, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
 Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
 
@@ -122,8 +122,8 @@ end
 
 
 %Load the division information if it's already there
-if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'])
-    load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'])
+if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'], 'var')
+    load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'], 'APDivision')
     %Check if we changed the number of AP bins
     if size(APDivision,2)~=length(APbinID)
         APDivision=zeros(14,length(APbinID));
@@ -135,12 +135,17 @@ end
 
 
 %Show the frames on top of the AP bins
-Overlay=figure;
+figureOverlay=figure;
+axOverlay = axes(figureOverlay);
 
 
+try
+    CurrentFrame = min(ncs(ncs~=0));
+catch
+    CurrentFrame=1;
+end
 
-CurrentFrame=1;
-CurrentNC=min(find(ncs))+8;
+CurrentNC=find(ncs,1)+8;
 
 cc=1;
 
@@ -148,7 +153,6 @@ cc=1;
 
 while (cc~='x')
     
-    figure(Overlay)
     
     %Load the image
     %Get the surface image in the zoomed case
@@ -194,23 +198,26 @@ while (cc~='x')
         mat2gray(HisImage)+mat2gray(GreenImage)/2,...
         mat2gray(HisImage)+mat2gray(BlueImage));
     
-    imshow(HisOverlay)
+    imshow(HisOverlay, 'Parent', axOverlay)
     
-    set(gcf,'Name',(['Frame: ',num2str(CurrentFrame),'/',num2str(length(D)),...
+    set(figureOverlay,'Name',(['Frame: ',num2str(CurrentFrame),'/',num2str(length(D)),...
         '. Current nc:',num2str(CurrentNC)]));
     
     
-    figure(Overlay)
+%     figure(Overlay)
     ct=waitforbuttonpress;
-    cc=get(Overlay,'currentcharacter');
-    cm=get(gca,'CurrentPoint');
+    cc=get(figureOverlay,'currentcharacter');
+    cm=get(axOverlay,'CurrentPoint');
     
     %Move frames
     if (ct~=0)&(cc=='.')&(CurrentFrame<length(D))
         CurrentFrame=CurrentFrame+1;
     elseif (ct~=0)&(cc==',')&(CurrentFrame>1)
         CurrentFrame=CurrentFrame-1;
-        
+    elseif (ct~=0)&(cc=='>')& (CurrentFrame+10)< length(D)
+        CurrentFrame=CurrentFrame+10;
+    elseif (ct~=0)&(cc=='>')&( CurrentFrame-10) > 1
+        CurrentFrame=CurrentFrame-10;    
     %Move nc
     elseif (ct~=0)&(cc=='m')&(CurrentNC<14)
         CurrentNC=CurrentNC+1;
@@ -226,9 +233,9 @@ while (cc~='x')
     %Save
     elseif (ct~=0)&(cc=='s')
         save([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'APDivision')
-        display('Data saved')
+        disp('APDivision.mat saved.');
     %Select a time for division
-    elseif (ct==0)&(strcmp(get(Overlay,'SelectionType'),'normal'))
+    elseif (ct==0)&(strcmp(get(figureOverlay,'SelectionType'),'normal'))
         cc=1;
         if (cm(1,2)>0)&(cm(1,1)>0)&(cm(1,2)<=Rows)&(cm(1,1)<=Columns)
             APDivision(CurrentNC,APPosBinImage(round(cm(1,2)),round(cm(1,1))))=CurrentFrame;
@@ -241,6 +248,6 @@ while (cc~='x')
 end
 
 
-save([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'APDivision')
-display('Data saved')
-
+save([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'APDivision');
+disp('APDivision.mat saved.');
+close(figureOverlay);

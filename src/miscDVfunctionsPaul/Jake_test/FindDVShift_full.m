@@ -1,15 +1,19 @@
 function  [DV_shift] = FindDVShift_full(varargin)
-
-%{
 %% Initialization
 
-% Resolution: 1024*1024
-%AreaThresh=20;
-%AreaMax = 100;
-
-% Resolution: 2048*2048
-AreaThresh = 100;
-AreaMax = 450;
+prompt = 'Please input the resolution: (1024/2048)';
+res = input(prompt);
+if res == 1024
+    AreaThresh=20;
+    AreaMax = 100;
+else
+    if res == 2048
+    AreaThresh=100;
+    AreaMax = 450;
+    else
+        error('Input resolution not supported');
+    end
+end
 
 %% Part 1: Read image data
 
@@ -60,14 +64,12 @@ EmbryoName=Prefix(Dashes(3)+1:end);
 
 % Read full embryo image (surf, mid)
 FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
-%FullEmbryoSurf=imread([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'surf_max.tif']);
-FullEmbryoSurf = imread('1_fluo.tif');
+FullEmbryoSurf=imread([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'surf_max.tif']);
 
 
 %% Part 2: Label Image (Classified with Weka)
 %I = imread('./test2/binary.tif');
-%I = imread([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'Classified image.tif']);
-I = imread('1_classified.tif');
+I = imread([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'Classified_image.tif']);
 J = 1-I;    %Inverse image
 
 figure(1)
@@ -152,8 +154,7 @@ for i = 1:size(J,2)
 end
 
 %For-loop to calculate the total fluorescence and average position of each cell
-for i=1:length(Areas2)
-%for i = 1:100
+parfor i=1:length(Areas2)
     i
     %Generate the mask for the i-th cell
     ImMask=(ImLabel2==i);
@@ -167,19 +168,60 @@ for i=1:length(Areas2)
     y_ave(i) = sum(sum(Im_y))/Areas2(i);
 end
 
-save('matlab_1.mat');
-%}
-load('matlab_1.mat')
 %Now divide the total cell fluorescence in CellFluo
 %by the cell area
 CellFluoPerArea=CellFluo./Areas2;
-%CellFluoPerArea=CellFluo./Areas2(1:100);
 
 %Plot the histogram
 figure(4);
 histogram(CellFluoPerArea);
 xlabel('fluorescence per pixel');
 ylabel('number of cells');
+
+%% Part 3: Calculate Ellipse Position
+
+%Get the information about the AP axis as well as the image shifts
+%used for the stitching of the two halves of the embryo
+load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'])
+
+APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
+APLength_full=sqrt((coordP(2)-coordA(2))^2+(coordP(1)-coordA(1))^2);
+AP_Ratio=APLength/APLength_full;
+APAngle = atan2((coordP(2)-coordA(2)),(coordP(1)-coordA(1)));
+
+AP_max = 0;
+AP_min = 1;
+
+% Find AP position range for Ellipses
+for i=1:length(Ellipses)
+    for j=1:size(Ellipses{i},1)
+
+        %Angle between the x-axis and the particle using the A position as a
+        %zero
+
+        Angles=atan2((Ellipses{i}(j,2)-coordAZoom(2)),(Ellipses{i}(j,1)-coordAZoom(1)));
+
+        %Distance between the points and the A point
+        Distances=sqrt((coordAZoom(2)-Ellipses{i}(j,2)).^2+(coordAZoom(1)-Ellipses{i}(j,1)).^2);
+        APPositions=Distances.*cos(Angles-APAngle);
+        EllipsePos{i}(j)=APPositions/APLength;
+
+        DVPositions=Distances.*sin(Angles-APAngle);
+        EllipsePos_DV{i}(j)=DVPositions;
+        
+        if EllipsePos{i}(j) < AP_min
+            AP_min = EllipsePos{i}(j);
+        end
+        if EllipsePos{i}(j) > AP_max
+            AP_max = EllipsePos{i}(j);
+        end
+        
+    end
+end
+
+AP_max = AP_max+0.1;
+AP_min = AP_min-0.1;
 
 %% Part 4: Calculate DV position
 
@@ -196,9 +238,7 @@ APx=[AP(1,1),AP(2,1)];
 APy=[AP(1,2),AP(2,2)];
 %}
 
-%Get the information about the AP axis as well as the image shifts
-%used for the stitching of the two halves of the embryo
-load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+
 APx = [coordA(1),coordP(1)];
 APy = [coordA(2),coordP(2)];
 
@@ -213,11 +253,9 @@ bAP=APy(1)-mAP*APx(1);
 %Invert mAP to get tangent line that is perpendicular
 mAP_i = -1/mAP;
 
-APAngle = atan2((coordP(2)-coordA(2)),(coordP(1)-coordA(1)));
-APLength=sqrt((coordP(2)-coordA(2))^2+(coordP(1)-coordA(1))^2);
+num = 0;
 
 for i=1:length(Areas2)
-    i
     b = y_ave(i)-mAP_i*x_ave(i);
     x_int = (b-bAP)/(mAP-mAP_i);
     y_int = mAP*x_int+bAP;
@@ -226,8 +264,19 @@ for i=1:length(Areas2)
                     (x_ave(i)-coordA(1)));
     %DVpos(i) = sqrt((x_ave(i)-x_int)^2+(y_ave(i)-y_int)^2);
     Distances = sqrt((coordA(2)-y_ave(i)).^2+(coordA(1)-x_ave(i)).^2);
-    APpos(i) = Distances.*cos(Angles-APAngle)/APLength;
-    DVpos(i) = Distances.*sin(Angles-APAngle);
+    
+    APpos_temp = Distances.*cos(Angles-APAngle)/APLength*AP_Ratio;
+    APpos(i) = APpos_temp;
+    if (APpos_temp<AP_max) && (APpos_temp>AP_min)
+        num = num + 1;
+        APpos(num+1) = APpos_temp;
+        DVpos(num+1) = Distances.*sin(Angles-APAngle)*AP_Ratio;
+        Cell_Fluo(num+1) = CellFluoPerArea(i);
+    end
+
+    %if (x_ave(i)-x_int)<0
+    %    DVpos(i) = -DVpos(i);
+    %end
     %plot([x_int,x_ave(i)],[y_int,y_ave(i)],'o-r','LineWidth',0.5);
     %pause(0.1);
 end
@@ -237,102 +286,26 @@ plot3(x_ave,y_ave,CellFluoPerArea,'o');
 
 %% Part 6: Fit Pattern to Gaussian
 
-num_seg = 21;
-x_reg = linspace(0,1,num_seg);
+%Fit data using curve fitting toolbox
+mygauss = fittype('a1*exp(-((x-b1)/c1)^2)',...
+            'dependent',{'y'},'independent',{'x'},...
+            'coefficients',{'a1','b1','c1'});
+        
+%If you change the number of parameters, make sure to update the
+%lower and upper bounds to include ranges for added/removed
+%parameters
 
-for k = 1:num_seg-1
+options = fitoptions(mygauss);
+%options.Lower = [0 -Inf 100];
+%options.Upper = [Inf Inf 500];
+[temp_gauss, temp_gof] = fit(DVpos',Cell_Fluo',mygauss,options);
 
-    DVpos_region = [];
-    CellFluoPerArea_region = [];
+%Plot fitted data
+figure(6);
+plot(temp_gauss,DVpos, Cell_Fluo);
 
-    AP_min = x_reg(k);
-    AP_max = x_reg(k+1);
-
-    for i=1:length(Areas2)
-        if (APpos(i)>AP_min) && (APpos(i)<AP_max)
-            DVpos_region = [DVpos_region DVpos(i)];
-            CellFluoPerArea_region = [CellFluoPerArea_region CellFluoPerArea(i)];
-        end
-    end
-
-    %Fit data using curve fitting toolbox
-    mygauss = fittype('a1*exp(-((x-b1)/c1)^2)',...
-                'dependent',{'y'},'independent',{'x'},...
-                'coefficients',{'a1','b1','c1'});
-
-    %If you change the number of parameters, make sure to update the
-    %lower and upper bounds to include ranges for added/removed
-    %parameters
-
-    options = fitoptions(mygauss);
-    options.Lower = [0 -Inf 100];
-    options.Upper = [Inf Inf 500];
-    %[temp_gauss, temp_gof] = fit(DVpos',CellFluoPerArea',mygauss,options);
-    if size(DVpos_region,2)>=3
-        [temp_gauss, temp_gof] = fit(DVpos_region',CellFluoPerArea_region',mygauss,options);
-        %Plot fitted data
-        figure(6);
-        %plot(temp_gauss,DVpos, CellFluoPerArea);
-        plot(temp_gauss,DVpos_region, CellFluoPerArea_region);
-        %xlim([-300 300]);
-        %ylim([0,7]);
-
-        %DV_shift = temp_gauss.b1*MovieZoom;
-        DV_shift(k) = temp_gauss.b1;
-    else
-        DV_shift(k) = 0;
-    end
-    
-end
-
-%% Part 7: Compare with Ventral Furrow
-
-%Get the information about the AP axis as well as the image shifts
-%used for the stitching of the two halves of the embryo
-load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
-APx = [coordA(1),coordP(1)];
-APy = [coordA(2),coordP(2)];
-
-%Find the equation of the AP axis
-mAP=(APy(1)-APy(2))/(APx(1)-APx(2));
-bAP=APy(1)-mAP*APx(1);
-
-
-FullEmbryoFurrow = imread('ventral_furrow.tif');
-for i = 1:num_seg-1
-    figure(7);
-    imshow(imcomplement(FullEmbryoFurrow),[]);
-    hold on
-    x_1 = APx(1)+(APx(2)-APx(1))*x_reg(i);
-    y_1 = APy(1)+(APy(2)-APy(1))*x_reg(i); 
-    x_2 = APx(1)+(APx(2)-APx(1))*x_reg(i+1);
-    y_2 = APy(1)+(APy(2)-APy(1))*x_reg(i+1);
-    plot(x_1,y_1,'o','MarkerSize',1);
-    plot(x_2,y_2,'o','MarkerSize',1);
-    %plot(APx,APy,'o-r','LineWidth',4);
-    furrow=ginput(1); %Click once on the tip of the ventral furrow
-    Angles = atan2((furrow(2)-coordA(2)),...
-                    (furrow(1)-coordA(1)));
-    Distances = sqrt((coordA(2)-furrow(2)).^2+(coordA(1)-furrow(1)).^2);
-    DV_shift_furrow(i) = Distances.*sin(Angles-APAngle)
-end
-save('DV_shift.mat', 'DV_shift_furrow');
-load('DV_shift.mat')
-
-1
-figure(8)
-plot(x_reg(1:num_seg-1),DV_shift);
-hold on
-plot(x_reg(1:num_seg-1),DV_shift_furrow);
-legend('Fitting Result','Furrow Result')
-xlabel('AP position')
-ylabel('DV shift (pixels)')
-
-figure(9)
-plot(x_reg(1:num_seg-1),(DV_shift-DV_shift_furrow)/APLength*100);
-title('Error for each position')
-xlabel('AP position')
-ylabel('Error (% AP Length)')
+%DV_shift = temp_gauss.b1*MovieZoom;
+DV_shift = temp_gauss.b1;
 
 end
 

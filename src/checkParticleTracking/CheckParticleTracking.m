@@ -144,7 +144,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
   %% Information about about folders
 
   % Get the folders
-  [~, ~, DefaultDropboxFolder, ~, PreProcPath] = DetermineLocalFolders;
+  [~, ProcPath, DefaultDropboxFolder, ~, PreProcPath] = DetermineLocalFolders;
   [~, ~, DropboxFolder, ~, ~] = DetermineLocalFolders(varargin{1}, optionalResults);
  
   DataFolder = [DropboxFolder, filesep, varargin{1}];
@@ -240,7 +240,11 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
   CurrentFrameWithinParticle = 1;
   CurrentChannel = 1;
   PreviousChannel = CurrentChannel;
-  CurrentFrame = Particles{1}(1).Frame(1);
+  if ~isempty(Particles{CurrentChanel})
+    CurrentFrame = Particles{CurrentChannel}(CurrentParticle).Frame(CurrentFrameWithinParticle);
+  else
+      error('Looks like the Particles structure is empty. There''s nothing to check.');
+  end
   DisplayRange = [];
   DisplayRangeSpot = [];
   ZoomMode = 0;
@@ -743,7 +747,7 @@ function add_spot_pushed(~, ~)
         addSpot(ZoomMode, GlobalZoomMode, Particles, CurrentChannel, ...
         CurrentParticle, CurrentFrame, CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
         LinesPerFrame, Spots, ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
-        SpotFilter, numParticles, cc, xSize, ySize, NDigits, intScale);
+        SpotFilter, numParticles, cc, xSize, ySize, NDigits, intScale, Prefix, PreProcPath, ProcPath);
     elseif cc == 'r'
       Particles = orderParticles(numParticles, CurrentChannel, Particles);
     elseif cc == 'f'

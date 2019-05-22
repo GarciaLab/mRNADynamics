@@ -5,9 +5,9 @@ function [x,y,z]=SpotsXYZ(Spots)
 
 if ~isempty(Spots.Fits)
     for i=1:length(Spots.Fits)
-        x(i)=Spots.Fits(i).xDoG(Spots.Fits(i).z==Spots.Fits(i).brightestZ);
-        y(i)=Spots.Fits(i).yDoG(Spots.Fits(i).z==Spots.Fits(i).brightestZ);
-        z(i)=Spots.Fits(i).brightestZ;
+        x(i)=double(Spots.Fits(i).xDoG(Spots.Fits(i).z==Spots.Fits(i).brightestZ));
+        y(i)=double(Spots.Fits(i).yDoG(Spots.Fits(i).z==Spots.Fits(i).brightestZ));
+        z(i)=double(Spots.Fits(i).brightestZ);
     end
 else
     x=[];

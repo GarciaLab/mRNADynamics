@@ -68,7 +68,7 @@ try
             end
         elseif strcmpi(dataType{i}, 'line') || strcmpi(dataType{i}, 'errorbar')
             dataObj(i).LineWidth = .5;
-            dataObj(i).Marker = '-o';
+            dataObj(i).Marker = 'o';
             dataObj(i).MarkerSize = 8;
             %Change color to physical biology colors as long as the number
             %of colors needed is less than 5.
@@ -90,5 +90,7 @@ try
     faceColor = 'none'; %yellow axis face.
     ax.Color = faceColor;
     ax.Box = 'on';
+catch
+    disp('couldn''t standardize figure');
 end
 end

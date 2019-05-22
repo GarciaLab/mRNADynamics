@@ -219,6 +219,15 @@ for i=1:length(schnitzcells)
 
             %Copy and extract the fluorescence information
             CompiledNuclei(k).FluoMax=squeeze(max(schnitzcells(i).Fluo(FrameFilter,:,:),[],2));
+            %For DV case, need to calculate more
+            if strcmpi(ExperimentAxis,'DV')
+                DV_Fluo = schnitzcells(i).Fluo(FrameFilter,:,:);
+                CompiledNuclei(k).DVFluo = DV_Fluo;
+                CompiledNuclei(k).FluoMin=squeeze(min(DV_Fluo(DV_Fluo>0),[],2));
+                CompiledNuclei(k).FluoMean=squeeze(mean(DV_Fluo(DV_Fluo>0),2));
+                CompiledNuclei(k).p = polyfit(1:length(DV_Fluo),DV_Fluo,2);
+            end
+
             %If there was only one time point and multiple channels,
             %squeeze can lead to a weird shape of the matrix
             if (NChannels>1)&&(size(CompiledNuclei(k).FluoMax,2)==1)
@@ -371,8 +380,8 @@ if strcmpi(ExperimentAxis,'DV')
             DV_max = CompiledNuclei(i).MeanDV;
         end
     end
-
-    DVbinID=linspace(DV_min,DV_max,21); %JAKE: Would change to DV resolution later
+    DVbinID=linspace(0,1000,21);
+    %DVbinID=linspace(DV_min,DV_max,21); %JAKE: Would change to DV resolution later
 
     DVFilter=false(length(CompiledNuclei),length(DVbinID));
     

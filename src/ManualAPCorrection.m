@@ -1,12 +1,13 @@
 function [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ResizeFactor,ShiftRow,ShiftColumn,  FullEmbryo, ZoomRatio, SurfRows, Rows, Columns, coordA, coordP, SurfColumns)
-
+%
 % RowsZoom/2+*2+RowsZoom/2-1+,...
 %         2-ColumnsZoom/2+ShiftColumn:/2+ColumnsZoom/);
-
-
+%
+%
 % TopLeftHalf,BottomRightHalf,...
 %        ShiftColumn,ShiftRow,coordAHalf,coordPHalf,Rows,Columns,Zoom)
-
+%
+%m - Place the area with your mouse
 %. - Move to the right
 %> - Move to the right further
 %, - Move to the left
@@ -39,11 +40,11 @@ NucMaskZoomIn=GetNuclearMask(ZoomImage,8,2);
 [RowsZoom,ColumnsZoom]=size(ZoomImage);
 
 FigureCorrelation=figure;
-correlationAxes = axes(FigureCorrelation);
+axesCorrelation = axes(FigureCorrelation);
 set(FigureCorrelation,'units', 'normalized', 'position',[0.4, 0.2, 0.3, 0.2]);
 contourf(imresize(abs(C),.1)); %AR 9/12/2018. resized the image to make this more computationally realistic and prevent crashes. 
-ylim([(CRows-1)/2-RowsZoom,(CRows-1)/2+RowsZoom])
-xlim([(CColumns-1)/2-ColumnsZoom,(CColumns-1)/2+ColumnsZoom])
+ylim(axesCorrelation,[(CRows-1)/2-RowsZoom,(CRows-1)/2+RowsZoom])
+xlim(axesCorrelation,[(CColumns-1)/2-ColumnsZoom,(CColumns-1)/2+ColumnsZoom])
 PlotHandle=[];
 
 FigureRealOverlay=figure;
@@ -57,7 +58,7 @@ set(FigureOverlay,'units', 'normalized', 'position',[0.05, 0.6, 0.3, 0.3]);
 cc=1;
 
 FigureRectangle=figure;
-rectangleAxes = axes(FigureRectangle);
+rectAx = axes(FigureRectangle);
 set(FigureRectangle,'units', 'normalized', 'position',[0.4, 0.5, 0.3, 0.4]);
 
 
@@ -70,22 +71,23 @@ while (cc~=13)
     
 
     %Show the correlation image and the shift position we're at
-    figure(FigureCorrelation)
     delete(PlotHandle)
-    hold on
+    hold(axesCorrelation, 'on')
     CorrX=ShiftColumn*ResizeFactor+(CColumns/2+1);
     CorrY=ShiftRow*ResizeFactor+(CRows/2+1);
-    PlotHandle=plot(CorrX,CorrY,...
+    PlotHandle=plot(axesCorrelation,CorrX,CorrY,...
         'or','MarkerSize',10);
-    hold off
-    set(gcf,'units', 'normalized', 'position',[0.4, 0.2, 0.3, 0.2]);
+    hold(axesCorrelation, 'off')
 
    
     
     %Crop the zoomed out nuclear mask
-    NucMaskZoomOutResizedCropped=...
-        NucMaskZoomOutResized(uint16(RowsResized/2-RowsZoom/2+ShiftRow*ResizeFactor+1):uint16(round(RowsResized/2+RowsZoom/2+ShiftRow*ResizeFactor)),...
-        uint16(ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ResizeFactor+1):uint16(ColumnsResized/2+ColumnsZoom/2+ShiftColumn*ResizeFactor));
+        rowInd1 = uint16( (RowsResized/2-RowsZoom/2) + (ShiftRow*ResizeFactor) +1 );
+        rowInd2 = uint16(round(RowsResized/2+RowsZoom/2+ShiftRow*ResizeFactor));
+        colInd1 = uint16(ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ResizeFactor+1);
+        colInd2 = uint16(ColumnsResized/2+ColumnsZoom/2+ShiftColumn*ResizeFactor);
+        NucMaskZoomOutResizedCropped = NucMaskZoomOutResized(rowInd1:rowInd2, colInd1:colInd2);
+    
     ZoomOutResizedCropped=...
         ZoomOutResized(uint16(RowsResized/2-RowsZoom/2+ShiftRow*ResizeFactor+1):uint16(RowsResized/2+RowsZoom/2+ShiftRow*ResizeFactor),...
         uint16(ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ResizeFactor+1):uint16(ColumnsResized/2+ColumnsZoom/2+ShiftColumn*ResizeFactor));
@@ -96,37 +98,33 @@ while (cc~=13)
     ImOverlay=cat(3,mat2gray(ZoomOutResizedCropped)*Red,...
         +mat2gray(ZoomImage)*Green,zeros(size(ZoomOutResizedCropped)));
     
-    figure(FigureOverlay)
-    imshow(ImOverlayMask)
-    set(gcf,'name',['ShiftRow: ',num2str(ShiftRow),'. ShiftColumn:',num2str(ShiftColumn),'.'])
-    set(gcf,'units', 'normalized', 'position',[0.05, 0.6, 0.3, 0.3]);
+    imshow(ImOverlayMask,'Parent', overlayAxes)
+    
+    set(FigureRectangle,'name',['ShiftRow: ',num2str(ShiftRow),'. ShiftColumn:',num2str(ShiftColumn),'.'])
 
 
     
-    figure(FigureRealOverlay)
-    imshow(ImOverlay)
-    set(gcf,'units', 'normalized', 'position',[0.05, 0.2, 0.3, 0.3]);
+    imshow(ImOverlay, 'Parent', realAxes);
 
-    
-    figure(FigureRectangle)
+
     ImageCenter=[SurfRows/2 + ShiftRow,SurfColumns/2 + ShiftColumn];
     TopLeft=[ImageCenter(1)-Rows/ZoomRatio/2,ImageCenter(2)-Columns/ZoomRatio/2];
     BottomRight=[ImageCenter(1)+Rows/ZoomRatio/2,ImageCenter(2)+Columns/ZoomRatio/2];
-    imshow(imadjust(mat2gray(SurfImage)),'DisplayRange',[],'InitialMagnification',100)
-    hold on
-    rectangle('Position',[TopLeft([2,1]),BottomRight([2,1])-TopLeft([2,1])],'EdgeColor','r')
-    plot(coordA(1),coordA(2),'.g','MarkerSize',30)
-    plot(coordP(1),coordP(2),'.r','MarkerSize',30)
-    plot([coordA(1),coordP(1)],[coordA(2),coordP(2)],'-b')
-    hold off
-    set(gcf,'units', 'normalized', 'position',[0.4, 0.5, 0.3, 0.4]);
+    imshow(imadjust(mat2gray(SurfImage)),'DisplayRange',[],'InitialMagnification',100, 'Parent', rectAx)
+    hold(rectAx, 'on')
+    rectangle(rectAx,'Position',[TopLeft([2,1]),BottomRight([2,1])-TopLeft([2,1])],'EdgeColor','r')
+    plot(rectAx,coordA(1),coordA(2),'.g','MarkerSize',30)
+    plot(rectAx,coordP(1),coordP(2),'.r','MarkerSize',30)
+    plot(rectAx,[coordA(1),coordP(1)],[coordA(2),coordP(2)],'-b')
+    hold(rectAx, 'off')
 
     
-    figure(FigureOverlay)
+%     figure(FigureOverlay)
+    figure(FigureRectangle)
     drawnow
     ct = waitforbuttonpress;
     ct=1;
-    cc=get(FigureOverlay,'currentcharacter');
+    cc=get(FigureRectangle,'currentcharacter');
     %cm=get(gca,'CurrentPoint');
     
 
@@ -136,20 +134,19 @@ while (cc~=13)
     elseif (ct~=0)&(cc==',')
         ShiftColumn=ShiftColumn-1;
     elseif (ct~=0)&(cc=='z')
-        ShiftRow=ShiftRow-1;
-    elseif (ct~=0)&(cc=='a')
         ShiftRow=ShiftRow+1;
+    elseif (ct~=0)&(cc=='a')
+        ShiftRow=ShiftRow-1;
     elseif (ct~=0)&(cc=='>')
         ShiftColumn=ShiftColumn+50;
     elseif (ct~=0)&(cc=='<')
         ShiftColumn=ShiftColumn-50;
     elseif (ct~=0)&(cc=='Z')
-        ShiftRow=ShiftRow-50;
-    elseif (ct~=0)&(cc=='A')
         ShiftRow=ShiftRow+50;
+    elseif (ct~=0)&(cc=='A')
+        ShiftRow=ShiftRow-50;
     elseif (ct~=0)&(cc=='m')
-        disp('Select a location to center the alignment box')
-        figure(FigureRectangle)
+        disp('Select a location to center the alignment box');
         [Positionx,Positiony]=ginputc(1,'color', 'b', 'linewidth',1);
         Position = [Positionx,Positiony];
         ShiftColumn=round(Position(1)-SurfColumns/2);
@@ -165,19 +162,17 @@ while (cc~=13)
     
     %Zoom in and out
     elseif (ct~=0)&(cc=='=') %#ok<*AND2>
-        figure(FigureCorrelation)
-        OldXLim=xlim;
-        OldYLim=ylim;
-        xlim([OldXLim-CorrX]/2+CorrX)
-        ylim([OldYLim-CorrY]/2+CorrY)
+        OldXLim=xlim(axesCorrelation);
+        OldYLim=ylim(axesCorrelation);
+        xlim(axesCorrelation,[OldXLim-CorrX]/2+CorrX)
+        ylim(axesCorrelation,[OldYLim-CorrY]/2+CorrY)
        
         
     elseif (ct~=0)&(cc=='-')
-        figure(FigureCorrelation)
-        OldXLim=xlim;
-        OldYLim=ylim;
-        xlim([OldXLim-CorrX]*2+CorrX)
-        ylim([OldYLim-CorrY]*2+CorrY)
+        OldXLim=xlim(axesCorrelation);
+        OldYLim=ylim(axesCorrelation);
+        xlim(axesCorrelation,[OldXLim-CorrX]*2+CorrX)
+        ylim(axesCorrelation,[OldYLim-CorrY]*2+CorrY)
        
         
     elseif (ct~=0)&(cc=='x')
@@ -187,6 +182,7 @@ while (cc~=13)
     end
 end
 
-close(FigureOverlay)
-close(FigureRectangle)
-close(FigureRealOverlay)
+close(FigureOverlay);
+close(FigureRectangle);
+close(FigureRealOverlay);
+close(FigureCorrelation);

@@ -1,6 +1,9 @@
 function [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ...
     ErrorIntegral, ErrorIntegral3, ErrorIntegral5,backGround3, ...
-    AmpIntegralGauss3D, ErrorIntegralGauss3D, PreviousParticle] = plotTrace(traceFigAxes, ...
+    AmpIntegralGauss3D, ErrorIntegralGauss3D, PreviousParticle]...
+    ...
+    = plotTrace(traceFigAxes, ...
+    ....
     FrameInfo, CurrentChannel, PreviousChannel, ...
     CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFitted, anaphaseInMins, ...
     ElapsedTime, schnitzcells, Particles, plot3DGauss, anaphase, prophase, metaphase,prophaseInMins, metaphaseInMins,Prefix, ...
@@ -82,7 +85,9 @@ elseif lineFitted
         AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');
     traceErrorBar2 = plot(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
         AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
-    
+%     traceErrorBar2 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+%         AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ErrorIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
+%     
     % calculate the fittedXSegment and fittedYSegment
     to = -Coefficients(2) / Coefficients(1); % minutes 
     fittedXSegment = [to, traceFigTimeAxis(fittedXFrames)];
@@ -96,8 +101,11 @@ elseif lineFitted
 else
     traceErrorBar1 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
         AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');
-    traceErrorBar2 = plot(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-        AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
+%     traceErrorBar2 = plot(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+%         AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
+    traceErrorBar2 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+        AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ErrorIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');     
+    
     dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
     cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
     dPoint2 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
@@ -111,8 +119,10 @@ catch
     %             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
 end
 
-% adjusting y limits
-traceFigYLimits = get(traceFigAxes,'YLim');
+
+traceFigYLimits = [0, max(AmpIntegralGauss3D)];
+
+% traceFigYLimits = get(traceFigAxes,'YLim');
 
 % plotting all anaphase time points as vertical lines
 for i = 1:length(anaphase)
@@ -122,7 +132,7 @@ for i = 1:length(anaphase)
         currentAnaphaseBoundary = anaphaseInMins(i) - priorAnaphaseInMins;
     end
     plot(traceFigAxes,ones(1,2).*currentAnaphaseBoundary,traceFigYLimits,...
-        'LineWidth',2,'Color','black');
+        'LineWidth',2,'Color','black', 'Marker', 'none');
 end
 
 % plotting all prophase time points as vertical lines
@@ -133,7 +143,7 @@ for i = 1:length(prophase)
         currentProphase = prophaseInMins(i) - priorAnaphaseInMins;
     end
     plot(traceFigAxes,ones(1,2).*currentProphase,traceFigYLimits,...
-        'LineWidth',2,'Color','blue');
+        'LineWidth',2,'Color','blue', 'Marker', 'none');
 end
 
 % plotting all metaphase time points as vertical lines
@@ -155,6 +165,9 @@ hold(traceFigAxes, 'off')
 if plot3DGauss
     str1 = '3-slice mRNA';
     str2 = '3D-Gaussian fit mRNA';
+    if ~isnan(traceFigYLimits(2))
+     ylim(traceFigAxes, [0, traceFigYLimits(2)]); 
+    end
 else
     str1 = '1-slice mRNA';
     str2 = 'multi-slice mRNA';

@@ -51,8 +51,8 @@ EmbryoName=Prefix(Dashes(3)+1:end);
 
 % Read full embryo image (surf, mid)
 FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
-%FullEmbryoSurf=imread([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'surf_max.tif']);
-FullEmbryoSurf = imread('embryo2_surf_max.lif_furrow_ch01.tif');
+FullEmbryoSurf=imread([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'surf_max.tif']);
+
 
 %% Part 4: Calculate DV position
 

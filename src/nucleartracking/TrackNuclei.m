@@ -29,6 +29,8 @@ function TrackNuclei(Prefix,varargin)
 %
 %
 
+disp(['Tracking nuclei on ', Prefix, '...']);
+
 [SkipStitchSchnitz, ExpandedSpaceTolerance, NoBulkShift] = DetermineTrackNucleiOptions(varargin);
 
 

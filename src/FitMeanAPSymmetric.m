@@ -474,7 +474,7 @@ while (cc~=13)
                 %Get rid of any NaN in the data
                 NanFilter=~isnan(FluoDataForFit);
 
-                if ~isempty(TimeData(NanFilter))
+                if ~isempty(TimeDataForFit(NanFilter))
 
                     [xFit,resnorm,residual,exitflag,output,lambda,jacobian]=...
                         lsqnonlin(@(x) lsqnonlinFitFluorescenceCurve(TimeDataForFit(NanFilter)-...
@@ -512,7 +512,7 @@ while (cc~=13)
                         FluoData,'or');
                     %Plot the data that was actually used for the fit
                     PlotHandle(end+1)=plot(ElapsedTime(FitFrameRange)-ElapsedTime(FrameWindow(1)),...
-                        FluoData(ismember(FrameWindow(FrameFilter),FitFrameRange)),'or','MarkerFaceColor','r');
+                        FluoDataForFit(ismember(FrameWindow(FrameFilter),FitFrameRange)),'or','MarkerFaceColor','r');
                     
                     %Plot the fit
                     PlotHandle(end+1)=plot(TimeFit,FluoFit,'-r');

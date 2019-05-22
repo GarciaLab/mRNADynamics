@@ -37,7 +37,7 @@ end
     end
     
     P=regionprops(imSegmented,'Area','PixelIdxList');
-    areas = extractfield(P,'Area');
+    areas = [P.Area];
     bounds = mean(areas)*[0.5, 2.5];
     
 %     % show a diagnostic plot

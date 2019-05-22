@@ -1,6 +1,8 @@
 % Generates the TIF stacks necessary for doing Weka classification.
 % Recommended to run this before making a new classifier.
-function generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,coatChannel, zSize, initialFrame)
+function generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames,...
+    nCh,coatChannel, zSize, initialFrame)
+
   % Create stacks subfolder
   stacksPath = [PreProcPath, filesep, Prefix, filesep, 'stacks'];
   mkdir(stacksPath);

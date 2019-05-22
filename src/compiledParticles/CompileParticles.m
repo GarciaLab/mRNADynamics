@@ -43,6 +43,7 @@ function CompileParticles(varargin)
 %               CompiledParticles.mat, the field names are 'fittedSlope', 'fittedTon' for
 %               the initial slope and T_on respectively.
 % 'optionalResults' : if you want to use a different dropbox folder
+% 'minBinSize': changes the minimum size of allowed AP bins
 
 % Author (contact): Hernan Garcia (hggarcia@berkeley.edu)
 % Created:
@@ -156,7 +157,7 @@ ncFilterID = [];
 
 [Prefix, ForceAP, SkipTraces, SkipFluctuations, SkipFits, SkipMovie, ...
     SkipAll, ApproveAll, MinParticles, minTime, ROI, intArea, noHist, ...
-    ROI1, ROI2, slimVersion, manualSingleFits, optionalResults, yToManualAlignmentPrompt] = determineCompileParticlesOptions(varargin);
+    ROI1, ROI2, slimVersion, manualSingleFits, optionalResults, yToManualAlignmentPrompt, minBinSize] = determineCompileParticlesOptions(varargin);
 
 FilePrefix=[Prefix,'_'];
 
@@ -433,7 +434,7 @@ ElapsedTime=ElapsedTime/60;     %Time is in minutes
 %Divide the AP and DV axes into bins for generating means, etc. 
 if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')  
     [APbinID, APbinArea] = binAPAxis(APResolution, FrameInfo, ...
-        coordAZoom, APAngle, APLength);
+        coordAZoom, APAngle, APLength, minBinSize);
 end
 if strcmpi(ExperimentAxis,'DV')
     [DVbinID, DVbinArea] = binDVAxis(FrameInfo, coordAZoom, APAngle);
@@ -562,7 +563,7 @@ end
 
 
     %% Offset and fluctuations
-try
+
     [MeanOffsetVector, SDOffsetVector, NOffsetParticles] = offsetAndFlux(NChannels, ...
         SkipFluctuations, ncFilter, ElapsedTime, CompiledParticles, DropboxFolder, ...
         Prefix, ExperimentAxis, intArea, MeanVectorAll, SDVectorAll, MaxFrame, numFrames);
@@ -621,7 +622,7 @@ try
             ElapsedTime, DVbinID, EllipsePos_DV, nc12, nc13, nc14, numFrames, ...
             DVbinArea);
     end
-end
+
     %% Calculation of particle speed
     try
         calcParticleSpeeds(NChannels, Particles, ...
