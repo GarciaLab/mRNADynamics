@@ -122,7 +122,7 @@ end
 
 
 %Load the division information if it's already there
-if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'], 'var')
+if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'], 'file')
     load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'], 'APDivision')
     %Check if we changed the number of AP bins
     if size(APDivision,2)~=length(APbinID)
@@ -161,7 +161,9 @@ while (cc~='x')
 %         HisImage=imread([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,D(CurrentFrame).name]);
 % 
 %     else
-        HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(CurrentFrame).name]);
+        if ~isnan(CurrentFrame)
+            HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(CurrentFrame).name]);
+        end
     %end
     
     
@@ -219,7 +221,7 @@ while (cc~='x')
     elseif (ct~=0)&(cc=='<')&( CurrentFrame-10) > 1
         CurrentFrame=CurrentFrame-10;    
     %Move nc
-    elseif (ct~=0)&(cc=='m')&(CurrentNC<14)
+    elseif (ct~=0)&(cc=='m')&(CurrentNC<14) & ~isnan(ncs(CurrentNC+1-8))
         CurrentNC=CurrentNC+1;
         eval(['CurrentFrame=nc',num2str(CurrentNC)]);
     elseif (ct~=0)&(cc=='n')&(CurrentNC>8)&eval(['nc',num2str(CurrentNC-1),'~=0'])

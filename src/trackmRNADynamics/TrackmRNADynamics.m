@@ -303,9 +303,9 @@ function createFieldNCAndSaveFrameInfo(FrameInfo, OutputFolder, nc9, nc10, nc11,
         FrameInfo(currentFrame).nc = 10;
       elseif (currentFrame >= nc11) & (currentFrame <= nc12)
         FrameInfo(currentFrame).nc = 11;
-      elseif (currentFrame >= nc12) & (currentFrame <= nc13)
+      elseif (currentFrame >= nc12) & ( currentFrame <= nc13 | isnan(nc13) )
         FrameInfo(currentFrame).nc = 12;
-      elseif (currentFrame >= nc13) & (currentFrame <= nc14)
+      elseif (currentFrame >= nc13) &  ( currentFrame <= nc14 | isnan(nc14) )
         FrameInfo(currentFrame).nc = 13;
       elseif currentFrame >= nc14
         FrameInfo(currentFrame).nc = 14;

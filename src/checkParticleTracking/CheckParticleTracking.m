@@ -240,7 +240,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(va
   CurrentFrameWithinParticle = 1;
   CurrentChannel = 1;
   PreviousChannel = CurrentChannel;
-  if ~isempty(Particles{CurrentChanel})
+  if ~isempty(Particles{CurrentChannel})
     CurrentFrame = Particles{CurrentChannel}(CurrentParticle).Frame(CurrentFrameWithinParticle);
   else
       error('Looks like the Particles structure is empty. There''s nothing to check.');

@@ -312,7 +312,13 @@ function [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
             %This will be an array with rows for nc13 and nc14 and columns
             %corresponding to each AP bin.
             %This only works if we trust the tracking within one nc
+            
+            activeFig = figure;
+            activeAxes = axes(activeFig);
+            
             ParticleCountAP{ChN}=zeros(3,length(APbinID));
+            
+            
 
             try
                 for i=1:length(Particles{ChN})
@@ -369,24 +375,29 @@ function [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
             %in each nc. Note that we look at a reduced range within the nc to
             %reduce variability in counting at mitosis.
             ParticleCountProbAP{ChN}(:,1)=ParticleCountAP{ChN}(1,:)./mean(NEllipsesAP(nc12+5:nc13-5,:));
-            ParticleCountProbAP{ChN}(:,2)=ParticleCountAP{ChN}(2,:)./mean(NEllipsesAP(nc13+5:nc14-5,:));
-            ParticleCountProbAP{ChN}(:,3)=ParticleCountAP{ChN}(3,:)./...
-                mean(NEllipsesAP(max(1,nc14-5):numFrames-5,:));
+            if ~isnan(nc14)
+                ParticleCountProbAP{ChN}(:,2)=ParticleCountAP{ChN}(2,:)./mean(NEllipsesAP(nc13+5:nc14-5,:));
+                ParticleCountProbAP{ChN}(:,3)=ParticleCountAP{ChN}(3,:)./...
+                    mean(NEllipsesAP(max(1,nc14-5):numFrames-5,:));
+            end
             % ES 2014-01-08: accounting for movies started fewer than 5 frames before
             % mitosis 13
 
-            figure(16)
-            plot(APbinID,ParticleCountProbAP{ChN}(:,1),'.-b')
-            hold on
-            plot(APbinID,ParticleCountProbAP{ChN}(:,2),'.-k')
-            plot(APbinID,ParticleCountProbAP{ChN}(:,3),'.-r')
-            hold off
+            plot(activeAxes,APbinID,ParticleCountProbAP{ChN}(:,1),'.-b')
+            legEntries = {'nc12'};
+            hold(activeAxes, 'on')
+            if ~isnan(nc14)
+                plot(activeAxes,APbinID,ParticleCountProbAP{ChN}(:,2),'.-k')
+                plot(activeAxes,APbinID,ParticleCountProbAP{ChN}(:,3),'.-r')
+            legEndries = [legEntries, 'nc13', 'nc14'];
+            end
+            hold(activeAxes, 'off')
             %ylim([0,max(ParticleCountAP(1,:))*2*1.1])
-            xlabel('AP position (x/L)')
-            ylabel('Active nuclei')
-            title('Number active nuclei')
-            legend('nc12', 'nc13', 'nc14')
-            saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsAP_ch',...
+            xlabel(activeAxes,'AP position (x/L)')
+            ylabel(activeAxes,'Active nuclei')
+            title(activeAxes,'Number active nuclei')
+            legend(activeAxes,legEntries{:});
+            saveas(activeAxes,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsAP_ch',...
                 iIndex(ChN,2),'.tif'])
 
         end

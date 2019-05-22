@@ -120,7 +120,7 @@ catch
 end
 
 
-traceFigYLimits = [0, max(AmpIntegralGauss3D)];
+traceFigYLimits = [0, max(AmpIntegralGauss3D)*1.1];
 
 % traceFigYLimits = get(traceFigAxes,'YLim');
 
