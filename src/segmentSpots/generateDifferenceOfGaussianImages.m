@@ -96,6 +96,7 @@ for channelIndex = 1:nCh
         
         %     imshow(dogs(:,:, 5, 5),[]);
     end
+    
     close(waitbarFigure);
     
 end

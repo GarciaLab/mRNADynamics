@@ -65,7 +65,7 @@
 function Prefix = ExportDataForLivemRNA(varargin)
 
   [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs,...
-    generateTifs, nuclearGUI, skipExtraction, rootFolder] = exportDataForLivemRNA_processInputParameters(varargin{:});
+    generateTifStacks, nuclearGUI, skipExtraction, rootFolder] = exportDataForLivemRNA_processInputParameters(varargin{:});
 
   [rawDataPath, ~, DropboxFolder, ~, PreProcPath, rawDataFolder, Prefix, ExperimentType, Channel1, Channel2, ~,...
     Channel3] = readMovieDatabase(Prefix);
@@ -90,13 +90,8 @@ function Prefix = ExportDataForLivemRNA(varargin)
   %of the code. Note, however, that the channels are also extracted in this
   %code for each data type. I should integrate this.
   if strcmpi(FileMode, 'TIF')
-    %Maximum shift in pixels corresponding to image shift and alignment
-    MaxShift = 9;
 
-    %Maximum intensity for the histone channel. Anything above this will be capped.
-    MaxHistone = 1000;
-
-    FrameInfo = process2PhotonPrincetonData(rawDataFolder, D, FrameInfo, Channel2, MaxShift, MaxHistone, OutputFolder);
+    FrameInfo = process2PhotonPrincetonData(rawDataFolder, D, FrameInfo, Channel2, OutputFolder);
   elseif strcmpi(FileMode, 'LAT')
     FrameInfo = processLatticeLightSheetData(rawDataFolder, D, Channel1, Channel2, ProjectionType, Prefix, OutputFolder);
 
@@ -119,7 +114,7 @@ function Prefix = ExportDataForLivemRNA(varargin)
   mkdir([DropboxFolder, filesep, Prefix]);
   save([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
 
-  if generateTifs
+  if generateTifStacks
     filterMovie(Prefix, 'Tifs');
     disp(['Prefix: ', Prefix]);
   end

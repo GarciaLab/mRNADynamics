@@ -80,6 +80,7 @@ end
 
 save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3');
 disp('3D fitting done on all spots.')
+close(waitbarFigure);
 
     function nUpdateWaitbar(~)
         waitbar(p/numFrames, waitbarFigure);

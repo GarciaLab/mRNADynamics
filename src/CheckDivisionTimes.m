@@ -216,7 +216,7 @@ while (cc~='x')
         CurrentFrame=CurrentFrame-1;
     elseif (ct~=0)&(cc=='>')& (CurrentFrame+10)< length(D)
         CurrentFrame=CurrentFrame+10;
-    elseif (ct~=0)&(cc=='>')&( CurrentFrame-10) > 1
+    elseif (ct~=0)&(cc=='<')&( CurrentFrame-10) > 1
         CurrentFrame=CurrentFrame-10;    
     %Move nc
     elseif (ct~=0)&(cc=='m')&(CurrentNC<14)

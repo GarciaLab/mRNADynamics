@@ -60,7 +60,7 @@ disp('Segmenting spots...')
 [displayFigures, numFrames, numShadows, intScale, keepPool, ...
     autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData,...
     fit3D, skipChannel, optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat, saveType]...
-    = determineSegmentSpotsOptions(varargin);
+    = determineSegmentSpotsOptions(varargin{:});
 
 argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
 try
@@ -146,16 +146,16 @@ end
 mkdir([DropboxFolder, filesep, Prefix]);
 save([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots', '-v7.3');
 
-if ~keepProcessedData
-    deleteProcessedDataFolder(ProcessedDataFolder, Prefix);
-else
-    disp('keepProcessedData parameter sent. ProcessedData folder will not be removed.');
-end
-
 if fit3D
     disp('Fitting 3D Gaussians...')
     fit3DGaussiansToAllSpots(Prefix, 'segmentSpots', Spots, 'optionalResults', optionalResults, 'dogs', dogs, 'nWorkers', nWorkers, saveType);
     disp('3D Gaussian fitting completed.')
+end
+
+if ~keepProcessedData
+    deleteProcessedDataFolder(ProcessedDataFolder, Prefix);
+else
+    disp('keepProcessedData parameter sent. ProcessedData folder will not be removed.');
 end
 
 if ~keepPool

@@ -1,5 +1,5 @@
 function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest,...
-    keepTifs, generateTifs, nuclearGUI, skipExtraction, rootFolder]...
+    keepTifs, generateTifStacks, nuclearGUI, skipExtraction, rootFolder]...
     ...
     = exportDataForLivemRNA_processInputParameters(varargin)
 
@@ -12,7 +12,7 @@ ProjectionType = 'maxprojection';
 %Added new argument to specify a preferred file name and enable automatic testing
 PreferredFileNameForTest = '';
 keepTifs = false;
-generateTifs = false;
+generateTifStacks = false;
 nuclearGUI = false;
 skipExtraction = false;
 rootFolder = '';
@@ -37,7 +37,7 @@ while k<=length(varargin)
     elseif strcmpi(varargin{k}, 'keepTifs')
         keepTifs = true;
     elseif strcmpi(varargin{k}, 'generateTifs')
-        generateTifs = true;
+        generateTifStacks = true;
     elseif strcmpi(varargin{k}, 'nuclearGUI')
         nuclearGUI = true;
     elseif strcmpi(varargin{k}, 'skipExtraction')

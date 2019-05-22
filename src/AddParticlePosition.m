@@ -34,13 +34,13 @@ function AddParticlePosition(Prefix, varargin)
 ~, ~] = DetermineAllLocalFolders(Prefix);
 
 
-SkipAlignment=0;
-ManualAlignment=0;
-NoAP=0;
+SkipAlignment=false;
+ManualAlignment=false;
+NoAP=false;
 SelectChannel=0;
-InvertHis=0;
+InvertHis=false;
 optionalResults = '';
-yToManualAlignmentPrompt = 0;
+yToManualAlignmentPrompt = false;
 
 close all
 

@@ -2,21 +2,19 @@ function [displayFigures, numFrames, numShadows, intScale, keepPool, threshGUI, 
     useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel,...
     optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat, saveType] = determineSegmentSpotsOptions(varargin)
 
-varargin = varargin{1};
-
 % Default options
-displayFigures = 0;
+displayFigures = false;
 numFrames = 0;
 numShadows = 2;
 intScale = 1;
 nWorkers = 8;
-keepPool = 0;
-threshGUI = 0;
-useIntegralCenter = 1;
+keepPool = false;
+threshGUI = false;
+useIntegralCenter = true;
 initialFrame = 1;
-Weka = 0;
-keepProcessedData = false;
-fit3D = 0;
+Weka = false;
+keepProcessedData = true;
+fit3D = false;
 skipChannel = [];
 optionalResults = '';
 filterMovieFlag = false;

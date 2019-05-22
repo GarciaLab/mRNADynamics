@@ -217,14 +217,19 @@ else
                      if SpotsIndex ~= 1
                         if ~isempty(setdiff(fields(Spots{CurrentChannel}(CurrentFrame).Fits), fields(Fits)))...
                                 | ~isempty(setdiff(fields(Fits),fields(Spots{CurrentChannel}(CurrentFrame).Fits)))
-                            addFields(Spots{CurrentChannel}(CurrentFrame).Fits, Fits);
+                            [Spots{CurrentChannel}(CurrentFrame).Fits, Fits] = addFields(Spots{CurrentChannel}(CurrentFrame).Fits, Fits);
                         end
                         Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = Fits;
                      else
                          Spots{CurrentChannel}(CurrentFrame).Fits = Fits;
                      end
 %%
-                   Spots{CurrentChannel} = fitSnip3D(Spots{CurrentChannel}, CurrentChannel, SpotsIndex, CurrentFrame, Prefix, PreProcPath, ProcPath, FrameInfo, [], false, saveType); 
+                   Spots{CurrentChannel} =...
+                   ...
+                   fitSnip3D(...
+                   ...
+                   Spots{CurrentChannel}, CurrentChannel, SpotsIndex, CurrentFrame,...
+                   Prefix, PreProcPath, ProcPath, FrameInfo, [], false, saveType); 
 %%
                 %Add this to SpotFilter, which tells the code that this spot is
                 %above the threshold. First, check whether the
