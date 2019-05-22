@@ -39,7 +39,7 @@ for z = zBot:zTop
             dog_name = ['DOG_', Prefix, '_', iIndex(frame, 3), '_z', iIndex(z, 2), nameSuffix, saveType];
             dog_full_path = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,dog_name];
             if ~isempty(dir([ProcPath, filesep, Prefix,'_', filesep, 'dogs']))
-                if strcmpi(saveType, 'tif')
+                if strcmpi(saveType, '.tif')
                     FullDoGSlice= double(imread(dog_full_path));
                 elseif strcmpi(saveType, '.mat')
                     dog_name = ['DOG_', Prefix, '_', iIndex(frame, 3), '_z', iIndex(z-1, 2), nameSuffix, saveType];
