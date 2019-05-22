@@ -1,4 +1,4 @@
-function AddParticlePosition(Prefix, varargin)
+function AddParticlePosition(varargin)
 %
 % DESCRIPTION
 % Locates particles from a zoomed-in movie within full embryo images using
@@ -28,24 +28,31 @@ function AddParticlePosition(Prefix, varargin)
 %V2: Changed this function to use a correlation in order to center the
 %images.
 
+Prefix = varargin{1};
 
 %Get the relevant folders for this data set
 [SourcePath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
 ~, ~] = DetermineAllLocalFolders(Prefix);
 
+% refactor in progress, we should replace readMovieDatabase with getExperimentDataFromMovieDatabase
+[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoopEnd, APResolution,...
+    Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+    nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
-SkipAlignment=false;
-ManualAlignment=false;
-NoAP=false;
+SkipAlignment=0;
+ManualAlignment=0;
+NoAP=0;
 SelectChannel=0;
-InvertHis=false;
+InvertHis=0;
 optionalResults = '';
-yToManualAlignmentPrompt = false;
+yToManualAlignmentPrompt = 0;
 
 close all
 
+
 if ~isempty(varargin)
-    for i=1:length(varargin)
+    Prefix = varargin{1};
+    for i=2:length(varargin)
         switch varargin{i}
             case {'SkipAlignment'}
                 disp('Skipping alignment step')
@@ -63,6 +70,7 @@ if ~isempty(varargin)
         end
     end
 else
+    
     FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
     Dashes=strfind(FolderTemp,filesep);
     Prefix=FolderTemp((Dashes(end)+1):end);
@@ -202,7 +210,7 @@ if ~NoAP
             ChannelToLoad = ChannelToLoad(1);
             disp('You have multiple nuclear channels, pick the one to use.');
         else
-            error('No histone channel found. Was it defined in MovieDatabase?')
+            error('No histone channel found. Was it defined in MovieDatabase as :Nuclear or :InvertedNuclear?')
         end
     
     end
@@ -361,7 +369,7 @@ if ~NoAP
             MaxTemp(:,:,i)=ImageTemp{ImageCellToUse,1}{i,1};
         end
         if InvertHis
-            SurfImage=MaxTemp(:,:,HisChannel-1+round(NSlices/2)*NChannelsMeta-1);
+            SurfImage=MaxTemp(:,:,HisChannel+round(NSlices/2)*NChannelsMeta);
         else
             SurfImage=max(MaxTemp,[],3);
         end
@@ -1278,6 +1286,15 @@ if ~NoAP
     plot(zoomOverlayAxes,[coordAZoom(1)-1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'-.g')
     hold(zoomOverlayAxes,'off')
     
+    DV_correction = 0;
+    %Add DV correction from full embryo image if needed
+    if strcmpi(ExperimentAxis,'DV')
+        prompt = 'Do you want to correct DV position from full embryo image?(Y/N) ';
+        str = input(prompt,'s');
+        if (str == 'Y') || (str == 'y')
+            DV_correction = FindDVShift_full(Prefix);
+        end
+    end
     
     if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
         for ChN=1:NChannels
@@ -1294,9 +1311,7 @@ if ~NoAP
                 
                 %Determine the distance perpendicular to the AP axis. This is a
                 %proxy for a DV axis.
-                
-                Particles{ChN}(i).DVpos=Distances.*sin(Angles-APAngle);
-                
+                Particles{ChN}(i).DVpos=Distances.*sin(Angles-APAngle)-DV_correction;             
             end
         end
     end
