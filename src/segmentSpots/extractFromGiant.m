@@ -22,7 +22,7 @@ for i = 1:length(varargin)
         saveType = '.mat';
     elseif strcmpi(varargin{i}, 'padZ')
         padZ = true;
-    elseif strmcpi(varargin{i}, 'noSave')
+    elseif strcmpi(varargin{i}, 'noSave')
         noSave = true;
         saveType = 'none';
     end

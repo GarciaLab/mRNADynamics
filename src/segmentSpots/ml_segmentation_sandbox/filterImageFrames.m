@@ -58,6 +58,8 @@ tic;
 mfig = figure();
 mAx = axes(mfig);
 plotGPUMem;
+
+
 % apply filters
 for k = 1:length(chunks)-1
     h = waitbar(chunks(k) / numFrames, h);
@@ -65,10 +67,11 @@ for k = 1:length(chunks)-1
     g = makeGiantImage(PreProcPath, format, padSize, chunks(k), chunks(k+1)-1, Prefix, spotChannels);
 %     plotGPUMem;
     %     gt = permute(g, [2 1 3]);
-    pChunk = zeros(size(g), 'like', g);
+    pChunk = beta(1).*ones(size(g), 'like', g);
 %     plotGPUMem;
     hf = waitbar(0, ['Filtering frames ', num2str(chunks(k)), ' to ', num2str(chunks(k+1)-1)]);
-    m = 1;
+    m = 2;
+%     betaMat = beta(m).*ones(size(g, 1), size(g, 2), size(g, 3), 'like', g);
     for i = 1:numel(featureCell)
         feature = featureCell{i};
         for j = 1:numel(sigmaVec)
