@@ -69,9 +69,8 @@ for channelIndex = 1:nCh
         
         format = [FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSize];
         
-        if noSave
-            dogs = zeros(format(1), format(2), format(3)-2, numFrames);
-        end
+        dogs = zeros(format(1), format(2), format(3)-2, numFrames);
+        
         sigmas = {round(210/pixelSize), floor(800/pixelSize)};
         padSize = 2*sigmas{2};
         pixVol = format(1)*format(2)*format(3);

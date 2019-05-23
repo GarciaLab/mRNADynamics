@@ -23,8 +23,8 @@ else
             del = 0;
     end
 
-    if del
-        CurrentFrameWithinParticle = find(Frames==CurrentFrame);
+    CurrentFrameWithinParticle = find(Frames==CurrentFrame);
+    if del & ~isempty(CurrentFrameWithinParticle)
         ind = Particles{CurrentChannel}(CurrentParticle).Index(CurrentFrameWithinParticle);
         onlyFrame = length(Particles{CurrentChannel}(CurrentParticle).Frame) == 1;
         if onlyFrame
@@ -61,11 +61,8 @@ else
         spotRow = SpotFilter{CurrentChannel}(CurrentFrame,:);
         spotRow(CurrentSpot) = [];
         spotRow(end+1) = NaN;
-        try
-            SpotFilter{CurrentChannel}(CurrentFrame,:) = spotRow;
-        catch
-            error('There probably wasn''t a spot in the frame you were trying to delete.')
-        end
+        SpotFilter{CurrentChannel}(CurrentFrame,:) = spotRow;
+
         if onlyFrame
             %switch to another particle just to avoid any potential weirdness with
             %checkparticletracking refreshing. simpler version of the

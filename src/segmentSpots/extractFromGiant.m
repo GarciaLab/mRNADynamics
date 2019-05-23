@@ -61,9 +61,8 @@ for frame = firstFrame:lastFrame
             im(:,:,format(3)) = zeros(size(im,1), size(im,2));
         end
         
-        if noSave
-            dogs(:, :, :, fcnt) = im;
-        else
+        dogs(:, :, :, fcnt) = im;
+        
             if probs
                 fldr = 'custProbs';
             else
@@ -85,6 +84,8 @@ for frame = firstFrame:lastFrame
                         imwrite(plane,[dog_full_path, saveType]);
                     case '.mat'
                         save([dog_full_path,saveType], 'plane');
+                    case 'none'
+                        %do nothing
                 end
                 
             end
