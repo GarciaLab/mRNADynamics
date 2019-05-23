@@ -27,22 +27,49 @@ zBot = bZ - snipDepth;
 zTop = bZ + snipDepth;
 snip3D = [];
 dogSnip3D = [];
+nameSuffix = ['_ch', iIndex(channel, 2)];
+
+
+isZPadded = false;
+  firstdogname = ['DOG_', Prefix, '_', iIndex(1, 3), '_z', iIndex(1, 2), nameSuffix, saveType];
+     firstdogpath = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,firstdogname];
+
+if strcmpi(saveType, '.tif')
+   firstDoG = imread(firstdogpath);
+elseif strcmpi(saveType, '.mat')
+     load(firstdogpath, 'plane');
+    firstDoG = plane;
+elseif strcmpi(saveType, 'none')
+    firstDoG = dogs(:, :, 1, 1);
+end
+
+if sum(firstDoG(:)) == 0
+    isZPadded = true;
+end
+
 
 %%
 k = 1;
 for z = zBot:zTop
+    
+    if isZPadded
+        dogZ = z;
+    else
+        dogZ = z-1;
+        dogZMax = zMax - 2;
+    end
+    
     if z > 1 && z < zMax
         FullSlice=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(frame,3)...
             ,'_z' iIndex(z,2) '_ch' iIndex(channel,2) '.tif']);
-        nameSuffix = ['_ch', iIndex(channel, 2)];
         if isempty(dogs)
-            dog_name = ['DOG_', Prefix, '_', iIndex(frame, 3), '_z', iIndex(z, 2), nameSuffix, saveType];
+            dog_name = ['DOG_', Prefix, '_', iIndex(frame, 3), '_z', iIndex(dogZ, 2), nameSuffix, saveType];
             dog_full_path = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,dog_name];
             if ~isempty(dir([ProcPath, filesep, Prefix,'_', filesep, 'dogs']))
                 if strcmpi(saveType, '.tif')
                     FullDoGSlice= double(imread(dog_full_path));
                 elseif strcmpi(saveType, '.mat')
-                    dog_name = ['DOG_', Prefix, '_', iIndex(frame, 3), '_z', iIndex(z-1, 2), nameSuffix, saveType];
+                    dog_name = ['DOG_', Prefix, '_', iIndex(frame, 3), '_z', iIndex(dogZ, 2), nameSuffix, saveType];
                     dog_full_path = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,dog_name];
                     load(dog_full_path, 'plane');
                     FullDoGSlice = double(plane);
@@ -51,7 +78,7 @@ for z = zBot:zTop
                 FullDoGSlice = [];
             end
         else
-            FullDoGSlice = dogs(:, :, z, frame);
+            FullDoGSlice = dogs(:, :, dogZ, frame);
         end
         snip3D(:,:,k) = double(FullSlice(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
             max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size))); %#ok<*SAGROW>

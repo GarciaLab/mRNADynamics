@@ -51,20 +51,20 @@ for channelIndex = 1:nCh
     q = parallel.pool.DataQueue;
     afterEach(q, @nUpdateWaitbar);
     p = 1;
-
+    
     
     if ~filter3D
         parfor current_frame = 1:numFrames
-                        
+            
             
             for zIndex = 1:zSize
                 generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameSuffix, filterType, sigmas, filterSize, ...
                     highPrecision, zIndex, displayFigures, app, numFrames);
             end
-                    send(q, current_frame);
-
+            send(q, current_frame);
+            
         end
-
+        
     else
         
         format = [FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSize];
@@ -74,11 +74,11 @@ for channelIndex = 1:nCh
         sigmas = {round(210/pixelSize), floor(800/pixelSize)};
         padSize = 2*sigmas{2};
         pixVol = format(1)*format(2)*format(3);
-%         if ~strcmpi(gpu, 'noGPU')
-            maxMem = .8E9;
-%         else
-%             maxMem = 30E9;
-%         end
+        %         if ~strcmpi(gpu, 'noGPU')
+        maxMem = .8E9;
+        %         else
+        %             maxMem = 30E9;
+        %         end
         %         maxGPUMem = evalin('base', 'maxGPUMem'); %for testing
         maxPixVol = maxMem / 4; %bytes in a single
         chunkSize = floor(maxPixVol/pixVol);
@@ -100,10 +100,10 @@ for channelIndex = 1:nCh
     
 end
 
-function nUpdateWaitbar(~)
-    waitbar(p/numFrames, waitbarFigure);
-    p = p + 1;
-end
+    function nUpdateWaitbar(~)
+        waitbar(p/numFrames, waitbarFigure);
+        p = p + 1;
+    end
 
 end
 
@@ -169,5 +169,6 @@ if displayFigures && dim == 2
     title(ax, [nameSuffix(2:end), ' frame: ', num2str(current_frame), '/', num2str(numFrames), ' z: ', num2str(zIndex)], 'Interpreter', 'none')
     pause(.05)
 end
+
 end
 
