@@ -11,7 +11,7 @@ gz_vec = NaN(size(particle_frames));
 g_fits_cell = cell(size(particle_frames));
 for i=1:length(particle_frames)    
     spot = Spots(particle_frames(i)).Fits(Particles(CurrentParticle).Index(i));    
-    if isfield(spot,'gauss3DIntensity') 
+    if isfield(spot,'gauss3DIntensity') && ~isempty(spot.gauss3DIntensity)
         % position
         GaussPos = spot.GaussPos;
         gx_vec(i) = GaussPos(1);
