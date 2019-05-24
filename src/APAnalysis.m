@@ -86,14 +86,12 @@ function APAnalysis(dataset, varargin)
         end
         d = data(dataSet);
         if nc==1
-            integrationFrames(1) = d.nc12;
-            integrationFrames(2) = d.nc13-1;
+            integrationFrames = d.nc12:d.nc13-1;
         elseif nc==2
-            integrationFrames(1) = d.nc13;
-            integrationFrames(2) = d.nc14-1;
+                        integrationFrames = d.nc13:d.nc14-1;
+
         elseif nc==3
-            integrationFrames(1) = d.nc14;
-            integrationFrames(2) = length(d.ElapsedTime); %last frame of the movie
+            integrationFrames = d.nc14:length(d.ElapsedTime);
         end
         
         if integrationFrames(1) == 0
@@ -146,12 +144,13 @@ function APAnalysis(dataset, varargin)
     hold(timeIntAx, 'off');
     lgd1 = legend(timeIntAx,'show');
     set(lgd1, 'Interpreter', 'Latex');
-    xlim(timeIntAx,[0, 1])
-    try
-        ylim(timeIntAx,[0, max([cummean+abs(cumstde), cum(:)']).*1.1 ])
-    catch
-        %
-    end
+    xlim(timeIntAx,[.275, .7])
+    ylim(timeIntAx, [0, 100]);
+%     try
+%         ylim(timeIntAx,[0, max([cummean+abs(cumstde), cum(:)']).*1.1 ])
+%     catch
+%         %
+%     end
     title(timeIntAx,{'total average nuclear intensity across';['anterior-posterior axis, nuclear cycle ',num2str(nc+11)]});
     xlabel(timeIntAx,'fraction embryo length');
     ylabel(timeIntAx,'intensity (a.u.)');
@@ -260,7 +259,7 @@ function APAnalysis(dataset, varargin)
     apidx = ap(idx);rateMeanidx = rateMean(idx);rateStEidx=rateStE(idx);
     e = errorbar(apidx(apidx<=.55),rateMeanidx(apidx<=.55), rateStEidx(apidx<=.55));
     xlim([.275, .7])
-    ylim([0, 1000])
+%     ylim([0, 1000])
     lgd2 = legend('mean $\pm$ std. error');
     set(lgd2, 'Interpreter', 'latex');
     title(['single trace loading rates of ellipses flagged as on, nuclear cycle ',num2str(nc+11)]);

@@ -71,11 +71,13 @@ NParticlesAll = {}; NParticlesAP = {}; NParticlesDV = {};
                     MeanVectorAP_nonROI{ChN}=cell2mat(MeanVectorAPCell_nonROI);
                     SDVectorAP_nonROI{ChN}=cell2mat(SDVectorAPCell_nonROI);
                     NParticlesAP_nonROI{ChN}=cell2mat(NParticlesAPCell_nonROI);
-    %%                
+                end
                     %AP Means
 
                     % Get the mean information for all of the CompiledParticles
                     % (Save this in MeanVectorAP)
+
+                 %Get the corresponding mean information
                     k=1;
                     for i=MinAPIndex:MaxAPIndex
                         [MeanVectorAPTemp,SDVectorAPTemp,NParticlesAPTemp]=AverageTraces(FrameInfo,...
@@ -94,35 +96,9 @@ NParticlesAll = {}; NParticlesAP = {}; NParticlesDV = {};
                         MeanVectorAPAnterior{ChN} = MeanVectorAP{ChN}(:,5:15); %Only average particles within window of 10% to 35% w/ 2.5% AP resolution. P2P expression is relatively flat here.
                         MeanVectorAnterior{ChN} = nanmean(MeanVectorAPAnterior{ChN},2);
                     catch
-                        %That didn't work
+                        warning('didn''t calculate meanvectoranterior.');
                     end
-
-
-
-                else % This is the case which we don't use ROI option
-                    %Get the corresponding mean information
-                    k=1;
-                    for i=MinAPIndex:MaxAPIndex
-                        [MeanVectorAPTemp,SDVectorAPTemp,NParticlesAPTemp]=AverageTraces(FrameInfo,...
-                            CompiledParticles{ChN}(APFilter{ChN}(:,i)));
-                        MeanVectorAPCell{k}=MeanVectorAPTemp';
-                        SDVectorAPCell{k}=SDVectorAPTemp';
-                        NParticlesAPCell{k}=NParticlesAPTemp';
-                        k=k+1;
-                    end
-                    MeanVectorAP{ChN}=cell2mat(MeanVectorAPCell);
-                    SDVectorAP{ChN}=cell2mat(SDVectorAPCell);
-                    NParticlesAP{ChN}=cell2mat(NParticlesAPCell);
-
-                    %Calculate the mean for only anterior particles
-                    try
-                        MeanVectorAPAnterior{ChN} = MeanVectorAP{ChN}(:,5:15); %Only average particles within window of 10% to 35% w/ 2.5% AP resolution. P2P expression is relatively flat here.
-                        MeanVectorAnterior{ChN} = nanmean(MeanVectorAPAnterior{ChN},2);
-                    catch
-                        %That didn't work
-                    end
-
-                end
+                
             end
     %%        
             %DV ROI and non-ROI means
