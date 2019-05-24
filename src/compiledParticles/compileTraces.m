@@ -44,11 +44,16 @@ for ChN=1:NChannels
                 %3/29/19 JL Bug workaround: if there are any nuclei with
                 %label 0 the following line breaks, due to zero indexing.
                 %For now, just skip.
-                if Particles{ChN}(i).Nucleus == 0
-                    AnalyzeThisParticle=0;
-                elseif ~((sum(FrameFilter)>0)&...
-                        (~isempty(schnitzcells(Particles{ChN}(i).Nucleus).frames)))
-                    AnalyzeThisParticle=0;
+                try
+                    if Particles{ChN}(i).Nucleus == 0
+                        AnalyzeThisParticle=0;
+                    elseif ~((sum(FrameFilter)>0)&...
+                            (~isempty(schnitzcells(Particles{ChN}(i).Nucleus).frames)))
+                        AnalyzeThisParticle=0;
+                    end
+                catch
+                    error('Particle possibly not associated with nucleus. May lead to inaccuracies in fraction calcluations.')
+                    
                 end
             elseif ~(sum(FrameFilter)>0)
                 AnalyzeThisParticle=0;
@@ -144,11 +149,11 @@ for ChN=1:NChannels
                     CompiledParticles{ChN}(k).fittedTon = Particles{ChN}(i).fittedTON;
                 else
                     CompiledParticles{ChN}(k).fittedSlope = [];
-                    CompiledParticles{ChN}(k).fittedTon = []; 
+                    CompiledParticles{ChN}(k).fittedTon = [];
                 end
-                %Extract position info and general Gauss3D fit info                                
+                %Extract position info and general Gauss3D fit info
                 [~,gx_vec,gy_vec,gz_vec,g_fits_cell]=...
-                       getGauss3DFitInfo(k,CompiledParticles{ChN},Spots{ChN});
+                    getGauss3DFitInfo(k,CompiledParticles{ChN},Spots{ChN});
                 if ~all(isnan(gx_vec))
                     CompiledParticles{ChN}(k).xPosGauss3D = gx_vec;
                     CompiledParticles{ChN}(k).yPosGauss3D = gy_vec;
@@ -175,8 +180,8 @@ for ChN=1:NChannels
                 CompiledParticles{ChN}(k).FluoGauss3DError = ErrorIntegralGauss3D;
                 CompiledParticles{ChN}(k).ampdog3 = ampdog3;
                 CompiledParticles{ChN}(k).ampdog3Max = ampdog3Max;
-                  
-                  
+                
+                
                 
                 
                 %Determine the nc where this particle was born
@@ -456,13 +461,13 @@ for ChN=1:NChannels
                             title(['Mean AP: ',num2str(CompiledParticles{ChN}(k).MeanAP)])
                         end
                         drawnow
-                    end 
+                    end
                     
                     %Snippets
                     for j=1:NFrames
                         subplot(TotalRows,NCols,(TotalRows-NRows)*NCols+j)
                         spotFrame = CompiledParticles{ChN}(k).Frame(j);
-                        [x,y,z]=SpotsXYZ(Spots{ChN}(spotFrame));                        
+                        [x,y,z]=SpotsXYZ(Spots{ChN}(spotFrame));
                         if ~isempty(x)
                             xTrace=x(CompiledParticles{ChN}(k).Index(j));
                             yTrace=y(CompiledParticles{ChN}(k).Index(j));

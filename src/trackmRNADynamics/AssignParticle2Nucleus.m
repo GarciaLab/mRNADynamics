@@ -70,18 +70,18 @@ if ~isempty(NewSpotsX)
     %corresponds to each spot. The value at that position corresponds
     %to the closest schnitz.
     MinIndexSchnitz=zeros(size(MinIndex));
-    len1 = length(MinIndex);
-    len2 = length(schnitzcells);
-    for i=1:len1
-        for j=1:len2
+    for i=1:length(MinIndex)
+        for j=1:length(schnitzcells)
             try
-                %AR 3/31/2019- sometimes this errors and I couldn't discover
-                %why. 
+
                 sj = schnitzcells(j);
 
                 if sj.cellno(sj.frames==CurrentFrame) == MinIndex(i)
                     MinIndexSchnitz(i)=j;
                 end
+            catch
+                 %AR 3/31/2019- sometimes this errors and I couldn't discover
+                %why. 
             end
         end
         if MinIndex(i)==inf

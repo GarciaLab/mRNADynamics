@@ -3,9 +3,9 @@ function APAnalysis(dataset, varargin)
 %
 %DESCRIPTION
 %Performs analyses on AP profiles generated from time traces of enhancer
-%datasets. Should find general use 
+%datasets. Should find general use
 %for any AP-dependent enhancer data and can be modified with little hassle
-%for DV enhancers. This uses the negative control data from 
+%for DV enhancers. This uses the negative control data from
 %controlset to perform corrections on the data given in dataset.
 %
 %PARAMETERS
@@ -15,157 +15,169 @@ function APAnalysis(dataset, varargin)
 %
 %OPTIONS
 % 'nc', nc : Specify the nuclear cycle of interest (12,13,or 14).
-% 'justMeans' : 
+% 'justMeans' :
 % 'noLoading' :
-% 'savePath', path : 
+% 'savePath', path :
 %
 %OUTPUT
-%Does not return anything. Does generate graphs. 
+%Does not return anything. Does generate graphs.
 %
 %Author (contact): Armando Reimer (areimer@berkeley.edu), Yang Joon Kim(yjkim90@berkeley.edu)
 %Created: 6/3/2017
 %Last Updated: 2/4/19
 %
-%To do:   
+%To do:
 %        3) Separate out graphs into functions
 %        5) Make zeros in cumulative graph actually all zeros. PRIORITY
 %        6) Make sure integration periods are consistent with APDiv times
 %        7) Make duration graphs subfunction
 %        8) Add ability to plot multiple data sets on same graphs. loop?
-%% 
-    nc = 2; % the default nuclear cycle shown is nc13  
-    justMeans = 0;
-    savePath = '';
-    noLoading = 0;
+%%
+nc = 2; % the default nuclear cycle shown is nc13
+justMeans = 0;
+savePath = '';
+noLoading = 0;
 
-    for i=1:length(varargin)
-
-        if strcmpi(varargin{i},'nc')
-            nc = varargin{i+1} - 11; %In CompiledParticles, nc12 is indexed as 1, nc13 as 2, and nc14 as 3.
-        elseif strcmpi(varargin{i}, 'justMeans')
-            justMeans = 1;
-        elseif strcmpi(varargin{i}, 'noLoading')
-            noLoading = 1;
-        elseif strcmpi(varargin{i}, 'savePath')
-            savePath = varargin{i+1};
-        end
+for i=1:length(varargin)
+    
+    if strcmpi(varargin{i},'nc')
+        nc = varargin{i+1} - 11; %In CompiledParticles, nc12 is indexed as 1, nc13 as 2, and nc14 as 3.
+    elseif strcmpi(varargin{i}, 'justMeans')
+        justMeans = 1;
+    elseif strcmpi(varargin{i}, 'noLoading')
+        noLoading = 1;
+    elseif strcmpi(varargin{i}, 'savePath')
+        savePath = varargin{i+1};
     end
-       
-    [rawDataPath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath, configValues, movieDatabasePath] = DetermineLocalFolders;
-    
-    warning('off', 'MATLAB:handle_graphics:exceptions:SceneNode');
-    close all;
+end
 
-    %Set up treatment data for plotting and analysis
-    if ischar(dataset)
-        data = LoadMS2Sets(dataset);
-    else
-        data = dataset; %this allows you to pass the data directly to the script,
-        %bypassing the need to call loadms2sets
+[rawDataPath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath, configValues, movieDatabasePath] = DetermineLocalFolders;
+
+warning('off', 'MATLAB:handle_graphics:exceptions:SceneNode');
+close all;
+
+%Set up treatment data for plotting and analysis
+if ischar(dataset)
+    data = LoadMS2Sets(dataset);
+else
+    data = dataset; %this allows you to pass the data directly to the script,
+    %bypassing the need to call loadms2sets
+end
+nSets = length(data);
+ap = data(1).APbinID;
+numAPBins = length(ap);
+Prefix = cell(1, nSets);
+channel = 1; %no support for 2 channel data at the moment.
+
+%%
+
+%Do some analysis and plotting of treatment data
+cum = zeros(0,numAPBins);
+integrationFrames = [1, 0];
+timeIntegrationFig = figure('Name', 'time integrated intensity');
+timeIntAx = axes(timeIntegrationFig);
+
+for dataSet = 1:nSets
+    try
+        Prefix{dataSet} = data(dataSet).SetName;
+    catch
+        Prefix{dataSet} = ['data set: ',int2str(dataSet)];
     end
-    nSets = length(data);
-    ap = data(1).APbinID;
-    numAPBins = length(ap);
-    Prefix = cell(1, nSets);
-    channel = 1; %no support for 2 channel data at the moment. 
+    d = data(dataSet);
+    if nc==1
+        integrationFrames(1) = d.nc12;
+        integrationFrames(2) = d.nc13-1;
+    elseif nc==2
+        integrationFrames(1) = d.nc13;
+        integrationFrames(2) = d.nc14-1;
+    elseif nc==3
+        integrationFrames(1) = d.nc14;
+        integrationFrames(2) = length(d.ElapsedTime); %last frame of the movie
+    end
     
-    %% 
+    if integrationFrames(1) == 0
+        integrationFrames(1) = 1;
+    end
     
-    %Do some analysis and plotting of treatment data
-    cum = zeros(0,numAPBins);
-    integrationFrames = [1, 0];
-    timeIntegrationFig = figure('Name', 'time integrated intensity');
-    timeIntAx = axes(timeIntegrationFig);
-
-    for dataSet = 1:nSets
-        try
-            Prefix{dataSet} = data(dataSet).SetName;
-        catch 
-            Prefix{dataSet} = ['data set: ',int2str(dataSet)];
-        end
-        d = data(dataSet);
-        if nc==1
-            integrationFrames(1) = d.nc12;
-            integrationFrames(2) = d.nc13-1;
-        elseif nc==2
-            integrationFrames(1) = d.nc13;
-            integrationFrames(2) = d.nc14-1;
-        elseif nc==3
-            integrationFrames(1) = d.nc14;
-            integrationFrames(2) = length(d.ElapsedTime); %last frame of the movie
-        end
-        
-        if integrationFrames(1) == 0
-            integrationFrames(1) = 1;
-        end
-
+    
+    fluo = [];
+    if ~isempty(d.MeanVectorAP)
         if iscell(d.MeanVectorAP)
             d.MeanVectorAP = d.MeanVectorAP{channel};
         end
-        
         fluo = d.MeanVectorAP(integrationFrames,:);
         fluo(isnan(fluo)) = 0;
-        
-        for APBin = 1:numAPBins
-            cum(dataSet,APBin) = trapz(d.ElapsedTime(integrationFrames),fluo(:,APBin));
-        end
     end
-    
-    cummean = zeros(1,numAPBins);
-    cumstd = zeros(1,numAPBins);
     
     for APBin = 1:numAPBins
-        cummean(1, APBin) = nanmean(cum(:,APBin));
-        cumstd(1, APBin) = nanstd(cum(:,APBin));
-        if ~cummean(APBin)
-            cummean(APBin) = NaN;
-        end
-         if ~cumstd(APBin)
-            cumstd(APBin) = NaN;
-         end
-         cumstde(APBin) = cumstd(APBin) /  sqrt(sum(cum(:,APBin) ~= 0));
-    end
-    if ~justMeans
-        for dataSet = 1:nSets
-            plot(timeIntAx, ap,cum(dataSet,:),'-o','DisplayName',Prefix{dataSet});
-            hold(timeIntAx, 'on');
+        if ~isempty(fluo)
+            cum(dataSet,APBin) = trapz(d.ElapsedTime(integrationFrames),fluo(:,APBin));
+        else
+            cum(dataSet,APBin) = 0;
         end
     end
-    if nSets > 1
-        timeIntegrationErrorPlot = errorbar(timeIntAx,ap, cummean, cumstde, 'DisplayName', 'mean $\pm$ std. error');
+end
+
+cummean = zeros(1,numAPBins);
+cumstd = zeros(1,numAPBins);
+
+for APBin = 1:numAPBins
+    cummean(1, APBin) = nanmean(cum(:,APBin));
+    cumstd(1, APBin) = nanstd(cum(:,APBin));
+    if ~cummean(APBin)
+        cummean(APBin) = NaN;
     end
-        
-    hold(timeIntAx, 'off');
-    lgd1 = legend(timeIntAx,'show');
-    set(lgd1, 'Interpreter', 'Latex');
-    xlim(timeIntAx,[0, 1])
-    ylim(timeIntAx,[0, max([cummean+abs(cumstde), cum(:)']).*1.1 ])
-    title(timeIntAx,{'total average nuclear intensity across';['anterior-posterior axis, nuclear cycle ',num2str(nc+11)]});
-    xlabel(timeIntAx,'fraction embryo length');
-    ylabel(timeIntAx,'intensity (a.u.)');
-    standardizeFigure(timeIntAx, legend('show'), 'red');
-    timeIntegrationErrorPlot.Color = [213,108,85]/256;
-    
-    %% 
-    %Experiment fraction on
-    figure('Name', 'Individual Movie Fraction On')
-    totalEllipses =  zeros(numAPBins, 1);
-    ellipsesOn = zeros(numAPBins, 1);
-    rateSum = zeros(1,numAPBins);
-%     tSum = zeros(numAPBins, 1);
-    
-    g = zeros(numAPBins, 1);
-    g2 = zeros(numAPBins, 1);
-    n = zeros(numAPBins, 1);
-    fSet = zeros(numAPBins, nSets);
+    if ~cumstd(APBin)
+        cumstd(APBin) = NaN;
+    end
+    cumstde(APBin) = cumstd(APBin) /  sqrt(sum(cum(:,APBin) ~= 0));
+end
+if ~justMeans
     for dataSet = 1:nSets
-        if iscell(data(dataSet).EllipsesOnAP)
+        plot(timeIntAx, ap,cum(dataSet,:),'-o','DisplayName',Prefix{dataSet});
+        hold(timeIntAx, 'on');
+    end
+end
+if nSets > 1
+    timeIntegrationErrorPlot = errorbar(timeIntAx,ap, cummean, cumstde, 'DisplayName', 'mean $\pm$ std. error');
+end
+
+hold(timeIntAx, 'off');
+lgd1 = legend(timeIntAx,'show');
+set(lgd1, 'Interpreter', 'Latex');
+xlim(timeIntAx,[0, 1])
+try
+    ylim(timeIntAx,[0, max([cummean+abs(cumstde), cum(:)']).*1.1 ])
+catch
+    %
+end
+title(timeIntAx,{'total average nuclear intensity across';['anterior-posterior axis, nuclear cycle ',num2str(nc+11)]});
+xlabel(timeIntAx,'fraction embryo length');
+ylabel(timeIntAx,'intensity (a.u.)');
+standardizeFigure(timeIntAx, legend('show'), 'red');
+timeIntegrationErrorPlot.Color = [213,108,85]/256;
+
+%%
+%Experiment fraction on
+figure('Name', 'Individual Movie Fraction On')
+totalEllipses =  zeros(numAPBins, 1);
+ellipsesOn = zeros(numAPBins, 1);
+rateSum = zeros(1,numAPBins);
+%     tSum = zeros(numAPBins, 1);
+
+g = zeros(numAPBins, 1);
+g2 = zeros(numAPBins, 1);
+n = zeros(numAPBins, 1);
+fSet = zeros(numAPBins, nSets);
+for dataSet = 1:nSets
+    if iscell(data(dataSet).EllipsesOnAP)
+        if ~isempty(d.dataSet.EllipsesOnAP)
             data(dataSet).EllipsesOnAP = data(dataSet).EllipsesOnAP{channel};
         end
         if iscell(data(dataSet).TotalEllipsesAP)
             data(dataSet).TotalEllipsesAP = data(dataSet).TotalEllipsesAP{channel};
         end
-            
+        
         f = data(dataSet).EllipsesOnAP(:,nc)./data(dataSet).TotalEllipsesAP(:,nc);
         
         totalEllipses = totalEllipses + data(dataSet).TotalEllipsesAP(:,nc);
@@ -175,14 +187,14 @@ function APAnalysis(dataset, varargin)
         b = (rateAr.*data(dataSet).EllipsesOnAP(:,nc))';
         c = vertcat(rateSum,b);
         rateSum = nansum(c);
-%         tSum = tSum + data(dataSet).timeOnOnAP{channel}.*data(dataSet).EllipsesOnAP(:,nc);
+        %         tSum = tSum + data(dataSet).timeOnOnAP{channel}.*data(dataSet).EllipsesOnAP(:,nc);
         
-%         rateStd = data(dataSet).rateOnAP{channel}.*data(dataSet).EllipsesOnAP
+        %         rateStd = data(dataSet).rateOnAP{channel}.*data(dataSet).EllipsesOnAP
         
         nonanf = f;
         nonanf(isnan(nonanf))=0;
         g = g + nonanf;
-        g2 = g2 + nonanf.^2; 
+        g2 = g2 + nonanf.^2;
         n = ~isnan(f) + n;
         if ~justMeans
             plot(ap,f,'-o','DisplayName',Prefix{dataSet});
@@ -192,13 +204,13 @@ function APAnalysis(dataset, varargin)
     end
     rateSum = rateSum';
     rateMean = rateSum ./ ellipsesOn;
-%     timeMean = tSum ./ ellipsesOn;
+    %     timeMean = tSum ./ ellipsesOn;
     
     rateChiSq = zeros(1,numAPBins);
     
-    for dataSet = 1:nSets 
+    for dataSet = 1:nSets
         %note to AR tomorrow. This step probably is not right syntax. want
-        %to do elementwise subtraction 
+        %to do elementwise subtraction
         rateCellAr = (data(dataSet).rateOnAPCell{channel}(:,nc))';
         
         for k = 1:length(rateCellAr)
@@ -206,7 +218,7 @@ function APAnalysis(dataset, varargin)
                 deviation = rateCellAr{k} - rateMean(k);
                 rateChiSq(k) = rateChiSq(k) + sum(deviation.^2);
             end
-        end       
+        end
     end
     
     rateChiSq = rateChiSq';
@@ -217,17 +229,17 @@ function APAnalysis(dataset, varargin)
     fmean = g./n;
     fstde = sqrt(g2./n - fmean.^2) ./ sqrt(n);
     if nSets > 1
-%         e = errorbar(ap, fmean, fstde,'DisplayName', 'mean $\pm$ std. error');
-%         fMeanNaN = nanmean(fSet, 2);
-%         e = plot(ap, fMeanNaN,'DisplayName', 'mean');
+        %         e = errorbar(ap, fmean, fstde,'DisplayName', 'mean $\pm$ std. error');
+        %         fMeanNaN = nanmean(fSet, 2);
+        %         e = plot(ap, fMeanNaN,'DisplayName', 'mean');
     end
-    legend('show')       
+    legend('show')
     hold off
     
     figure('Name','Combined Fraction of On')
-%     ellipsesOn(totalEllipses < 3) = NaN;
-%     totalEllipses(totalEllipses < 3) = NaN;
-%     fstde(totalEllipses < 3) = NaN;
+    %     ellipsesOn(totalEllipses < 3) = NaN;
+    %     totalEllipses(totalEllipses < 3) = NaN;
+    %     fstde(totalEllipses < 3) = NaN;
     idx = ~any(isnan(totalEllipses),2);
     errorbar(ap(idx),ellipsesOn(idx)./totalEllipses(idx), fstde(idx));
     xlim([0.275 0.7])
@@ -240,10 +252,10 @@ function APAnalysis(dataset, varargin)
     standardizeFigure(gca, legend('show'),'red');
     e.Color = [213,108,85]/256;
     
- figure('Name','rate vs ap')
-%     ellipsesOn(totalEllipses < 3) = NaN;
-%     totalEllipses(totalEllipses < 3) = NaN;
-%     fstde(totalEllipses < 3) = NaN;
+    figure('Name','rate vs ap')
+    %     ellipsesOn(totalEllipses < 3) = NaN;
+    %     totalEllipses(totalEllipses < 3) = NaN;
+    %     fstde(totalEllipses < 3) = NaN;
     idx = ~any(isnan(rateMean),2);
     apidx = ap(idx);rateMeanidx = rateMean(idx);rateStEidx=rateStE(idx);
     e = errorbar(apidx(apidx<=.55),rateMeanidx(apidx<=.55), rateStEidx(apidx<=.55));
@@ -256,12 +268,12 @@ function APAnalysis(dataset, varargin)
     ylabel('pol II loading rate (a.u./min)');
     standardizeFigure(gca, legend('show'),'red');
     e.Color = [213,108,85]/256;
-%     e.MarkerSize= 40;
-%     e.LineWidth= 4;
-
-        
+    %     e.MarkerSize= 40;
+    %     e.LineWidth= 4;
+    
+    
     %% Combined Ellipses Count
-    % This is for a quick visual check of the fraction on plots 
+    % This is for a quick visual check of the fraction on plots
     figure('Name','Combined Ellipses Count')
     plot(ap,totalEllipses,'DisplayName','Total')
     hold on
@@ -272,24 +284,24 @@ function APAnalysis(dataset, varargin)
     legend('show')
     standardizeFigure(gca, legend('show'),'red');
     hold off
-    %% 
+    %%
     
-% %rate plots    
-% g = zeros(numAPBins, 1);
-%     g2 = zeros(numAPBins, 1);
-%     n = zeros(numAPBins, 1);
-%     fSet = zeros(numAPBins, nSets);
-% 
-% %      f = 
-%         nonanf = f;
-%         nonanf(isnan(nonanf))=0;
-%         g = g + nonanf;
-%         g2 = g2 + nonanf.^2; 
-%         n = ~isnan(f) + n;
+    % %rate plots
+    % g = zeros(numAPBins, 1);
+    %     g2 = zeros(numAPBins, 1);
+    %     n = zeros(numAPBins, 1);
+    %     fSet = zeros(numAPBins, nSets);
+    %
+    % %      f =
+    %         nonanf = f;
+    %         nonanf(isnan(nonanf))=0;
+    %         g = g + nonanf;
+    %         g2 = g2 + nonanf.^2;
+    %         n = ~isnan(f) + n;
     
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%
- 
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%
+    
     %Experiment number on
     figure('Name', 'number_spots')
     g = zeros(numAPBins, 1);
@@ -300,7 +312,7 @@ function APAnalysis(dataset, varargin)
         nonanf = f;
         nonanf(isnan(nonanf))=0;
         g = g + nonanf;
-        g2 = g2 + nonanf.^2; 
+        g2 = g2 + nonanf.^2;
         n = ~isnan(f) + n;
         plot(ap, f, '-o','DisplayName', Prefix{dataSet});
         hold on
@@ -311,24 +323,24 @@ function APAnalysis(dataset, varargin)
     if nSets > 1
         errorbar(ap, fmean, fstde,'DisplayName', 'mean $\pm$ std. error');
     end
-        
+    
     hold off
     lgd2 = legend('show');
     set(lgd2, 'Interpreter', 'Latex');
     xlim([.1, .8])
     if max(f) ~= 0
-     ylim([0, max(f)*1.1]);
+        ylim([0, max(f)*1.1]);
     else
     end
     title(['number of actively transcring nuclei, nuclear cycle ',num2str(nc+11)]);
     xlabel('fraction embryo length');
     ylabel('number on');
-    standardizeFigure(gca, legend('show'), 'red');    
-  
-%%  
+    standardizeFigure(gca, legend('show'), 'red');
+    
+    %%
     if ~noLoading
         try
-%             pol2LoadingAnalysis(dataset);
+            %             pol2LoadingAnalysis(dataset);
         catch
         end
     end
@@ -340,11 +352,11 @@ function APAnalysis(dataset, varargin)
     if ~isempty(savePath)
         FigList = findobj(allchild(0), 'flat', 'Type', 'figure');
         for iFig = 1:length(FigList)
-              FigHandle = FigList(iFig);
-              FigName   = [date, '_', dataset, '_', get(FigHandle, 'Name')];
-              savefig(FigHandle, [savePath,filesep, APAnalysis, filesep, FigName, '.fig']);
-              saveas(FigHandle, [savePath,filesep,APAnalysis, FigName, '.png']);
+            FigHandle = FigList(iFig);
+            FigName   = [date, '_', dataset, '_', get(FigHandle, 'Name')];
+            savefig(FigHandle, [savePath,filesep, APAnalysis, filesep, FigName, '.fig']);
+            saveas(FigHandle, [savePath,filesep,APAnalysis, FigName, '.png']);
         end
     end
-
+    
 end
