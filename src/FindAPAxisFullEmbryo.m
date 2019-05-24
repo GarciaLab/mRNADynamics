@@ -30,7 +30,7 @@ end
 [SourcePath, ~, DefaultDropboxFolder, DropboxFolder, ~, ~,...
 ~, ~] = DetermineAllLocalFolders(Prefix, optionalResults);
 
-if ~exist('Prefix')
+if ~exist('Prefix', 'var')
     FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
     Dashes=strfind(FolderTemp,filesep);
     Prefix=FolderTemp((Dashes(end)+1):end);
@@ -48,7 +48,7 @@ EmbryoName=Prefix(Dashes(3)+1:end);
 %Figure out what type of experiment we have. Note: we name the var "DateFromDateColumn" to avoid shadowing previously defined "Date" var.
 [DateFromDateColumn, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
 Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 %Determine whether we're dealing with 2-photon data from Princeton, LSM, or
 %LIF data. 2-photon data uses TIF files. In LSM mode multiple files will be
@@ -59,20 +59,20 @@ DCZI=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filese
 DLIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.lif']);
 DSPIN=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.nd']);     %Nikon spinning disk . CS20170911
 
-if (length(DTIF)>0)&(length(DLIF)==0)&(length(DSPIN)==0)        %CS20170911
-    display('2-photon @ Princeton data mode')
+if (~isempty(DTIF))&(isempty(DLIF))&(isempty(DSPIN))        %CS20170911
+    disp('2-photon @ Princeton data mode')
     D=DTIF;
     FileMode='TIF';
-elseif (length(DLIF)>0)
-    display('LIF export mode')
+elseif (~isempty(DLIF))
+    disp('LIF export mode')
     D=DLIF;
     FileMode='LIFExport';
-elseif (length(DLSM)>0)|(length(DCZI)>0)
-    display('LSM mode')
+elseif (~isempty(DLSM))|(~isempty(DCZI))
+    disp('LSM mode')
     D=[DLSM,DCZI];
     FileMode='LSM';
-elseif (length(DSPIN)>0)        %CS20170911
-    display('Nikon spinning disk mode with .nd files')
+elseif (~isempty(DSPIN))        %CS20170911
+    disp('Nikon spinning disk mode with .nd files')
     D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo', filesep,'*.nd']);     %spinning disk with .nd output files
     FileMode='DSPIN';
 else
@@ -84,14 +84,14 @@ end
 MidFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'mid')));
 SurfFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'surf')));
 
-if (length(MidFileIndex)>1)&strcmp(FileMode, ~'DSPIN')
+if (length(MidFileIndex)>1)& strcmpi(FileMode, ~'DSPIN')
     error('Too many midsagittal files in FullEmbryo folder')
 end
 
 
 
 %See if we don't want the default AP orientation
-if ~exist('FlipAP')
+if ~exist('FlipAP', 'var')
     if strcmp(FileMode, 'TIF')||strcmp(FileMode, 'LIFExport')||strcmp(FileMode, 'LSM')
         if strcmp(D(MidFileIndex).name,'PA')
             FlipAP=1;
@@ -139,7 +139,7 @@ elseif strcmp(FileMode,'LIFExport')
     if size(MidImage) ~= size(SurfImage)
             MidImage = imresize(MidImage,length(SurfImage)/length(MidImage));
     end
-    if isdir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData'])
+    if isfolder([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData'])
         xml_file_path = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, '*.xml']);
         xml_file = xml_file_path(1).name;
         xDoc = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, xml_file]);
@@ -147,7 +147,7 @@ elseif strcmp(FileMode,'LIFExport')
     else 
         warning('No time series metadata found.')
     end
-    if isdir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo', filesep...
+    if isfolder([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo', filesep...
             'MetaData'])     
         xml_file_path2 = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo',...
             filesep, 'MetaData', filesep,'*Mid*.xml']);

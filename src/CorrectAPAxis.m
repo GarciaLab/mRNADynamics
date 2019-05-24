@@ -23,7 +23,7 @@ close all
 
 % ES 2013-10-29: Required for multiple users to be able to analyze data on
 % one computer
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath]=...
+[RawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath]=...
     DetermineLocalFolders(varargin{1});
 
 
@@ -46,16 +46,18 @@ APImage=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'Full
 
 
 APImageFig=figure;
+apAx = axes(APImageFig);
 %Range for image display
 DisplayRange=[min(min(APImage)),max(max(APImage))];
 
 
 %Now, do the correction
 cc=1;
+
 while (cc~='x')
 
     
-    imshow(imadjust(APImage))
+    imshow(imadjust(APImage), 'Parent', apAx)
     %imshow(APImage,DisplayRange)
     
     axis image
@@ -63,10 +65,15 @@ while (cc~='x')
     title('Anterior (green), posterior (red); original')
     hold on
     try
-        plot(coordA(1),coordA(2),'g.','MarkerSize',20);        
+        plot(coordA(1),coordA(2),'g.','MarkerSize',20);      
+    catch
+        %not sure what happened here. 
     end
     try
         plot(coordP(1),coordP(2),'r.','MarkerSize',20);
+     catch
+        %not sure what happened here. 
+    end
     end
     hold off
 
@@ -98,7 +105,7 @@ while (cc~='x')
     elseif (ct==0)&(strcmp(get(APImageFig,'SelectionType'),'alt')) %Delete the point that was clicked on
         cc=1;
     
-        [Dummy,MinIndex]=min((cm(1,1)-[coordA(1),coordP(1)]).^2+(cm(1,2)-[coordA(2),coordP(2)]).^2);
+        [~,MinIndex]=min((cm(1,1)-[coordA(1),coordP(1)]).^2+(cm(1,2)-[coordA(2),coordP(2)]).^2);
             
         if MinIndex==1
             coordA=[];
@@ -115,10 +122,10 @@ while (cc~='x')
 end
             
 %Save the information
-if exist('xShift')
+if exist('xShift', 'var')
     save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
         'xShift','yShift');
-elseif exist('xShift1')
+elseif exist('xShift1', 'var')
    save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP',...
         'xShift1','yShift1','xShift2','yShift2');
 else
@@ -137,5 +144,8 @@ plot(coordA(1),coordA(2),'g.','MarkerSize',20);
 plot(coordP(1),coordP(2),'r.','MarkerSize',20);
 hold off
 saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'APEmbryo-Manual.tif']);
+
 close(diagFigure);
+
+end
 

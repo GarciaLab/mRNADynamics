@@ -542,11 +542,12 @@ if ~NoAP
                 im1 = imcomplement(im1);
                 im2 = imcomplement(im2);
             end
-            try
-                C = gather(normxcorr2(gpuArray(im1), gpuArray(im2)));
-            catch
+            
+%             try
+%                 C = gather(normxcorr2(gpuArray(im1), gpuArray(im2)));
+%             catch
                 C = normxcorr2(im1, im2);
-            end
+%             end
             
             [Max2,MaxRows]=max(C);
             [~,MaxColumn]=max(Max2);

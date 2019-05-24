@@ -31,9 +31,24 @@ nameSuffix = ['_ch', iIndex(channel, 2)];
 
 
 isZPadded = false;
-  firstdogname = ['DOG_', Prefix, '_', iIndex(1, 3), '_z', iIndex(1, 2), nameSuffix, saveType];
-     firstdogpath = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,firstdogname];
 
+firstdogname = ['DOG_', Prefix, '_', iIndex(1, 3), '_z', iIndex(1, 2), nameSuffix];
+firstdogpath = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,firstdogname];
+
+matsPresent = exist([firstdogpath, '.mat'], 'file');
+tifsPresent = exist([firstdogpath, '.tif'], 'file');
+if ~strcmpi(saveType, 'none')
+    if tifsPresent & ~matsPresent
+        saveType = '.tif';
+    elseif matsPresent & ~tifsPresent
+        saveType = '.mat';
+    elseif matsPresent & tifsPresent
+        error('not sure which files to pick. check your processed folder.');
+    end
+end
+
+firstdogpath = [firstdogpath, saveType];
+    
 if strcmpi(saveType, '.tif')
    firstDoG = imread(firstdogpath);
 elseif strcmpi(saveType, '.mat')
@@ -56,7 +71,6 @@ for z = zBot:zTop
         dogZ = z;
     else
         dogZ = z-1;
-        dogZMax = zMax - 2;
     end
     
     if z > 1 && z < zMax

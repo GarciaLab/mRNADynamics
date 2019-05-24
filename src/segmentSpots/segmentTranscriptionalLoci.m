@@ -89,14 +89,26 @@ end
 
 isZPadded = false;
 
-if strcmpi(saveType, '.tif')
-    firstdogpath = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(1, 3), '_z', iIndex(1, 2),...
-        nameSuffix,'.tif'];
-    firstDoG = imread(firstdogpath);
+firstdogpath = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(1, 3), '_z', iIndex(1, 2),...
+        nameSuffix];
     
+matsPresent = exist([firstdogpath, '.mat'], 'file');
+tifsPresent = exist([firstdogpath, '.tif'], 'file');
+
+if ~strcmpi(saveType, 'none')
+    if tifsPresent & ~matsPresent
+        saveType = '.tif';
+    elseif matsPresent & ~tifsPresent
+        saveType = '.mat';
+    elseif matsPresent & tifsPresent
+        error('not sure which files to pick. check your processed folder.');
+    end
+end
+
+firstdogpath = [firstdogpath, saveType];
+if strcmpi(saveType, '.tif')
+    firstDoG = imread(firstdogpath);
 elseif strcmpi(saveType, '.mat')
-    firstdogpath = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(1, 3), '_z', iIndex(1, 2),...
-        nameSuffix,'.mat'];
     load(firstdogpath, 'plane');
     firstDoG = plane;
 elseif strcmpi(saveType, 'none')

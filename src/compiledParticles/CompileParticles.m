@@ -602,7 +602,8 @@ end
 
     %% Probability of being on
 
-    if HistoneChannel&&strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
+    if ( HistoneChannel&&strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV') )...
+            & ~isempty(CompiledParticles{:})
         [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
             FilteredParticlesPos, OnRatioAP, ParticleCountAP, ParticleCountProbAP, ...
             EllipsesOnAP, rateOnAP, rateOnAPCell, timeOnOnAP, timeOnOnAPCell, TotalEllipsesAP, rateOnAPManual, rateOnAPCellManual, timeOnOnAPManual, timeOnOnAPCellManual]...
@@ -628,6 +629,7 @@ end
         calcParticleSpeeds(NChannels, Particles, ...
             Spots, ElapsedTime, schnitzcells, Ellipses);
     catch
+        %this failed
     end
     %% Movie of AP profile
 
