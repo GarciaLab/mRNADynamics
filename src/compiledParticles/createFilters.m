@@ -5,6 +5,10 @@ function [ncFilterID, ncFilter, APFilter, APFilter_ROI, APFilter_nonROI, ...
     DVFilter_nonROI, CompiledParticles_ROI, CompiledParticles_nonROI)
 %CREATEFILTERS Summary of this function goes here
 %   Detailed explanation goes here
+
+ncFilter = [];
+APFilter = [];
+
 if ~isnan(nc9)|~isnan(nc10)|~isnan(nc11)|~isnan(nc12)|~isnan(nc13)|~isnan(nc14)
     %ncFilterID just tells you the identity of the different
     %filters stored in the cell ncFilter
@@ -47,7 +51,7 @@ if ~isnan(nc9)|~isnan(nc10)|~isnan(nc11)|~isnan(nc12)|~isnan(nc13)|~isnan(nc14)
                     CompiledParticles{ChN}(i).nc = [];
                 end
                 if ~isempty(CompiledParticles{ChN}(i).nc)
-                    ncFilter(i,find(CompiledParticles{ChN}(i).nc==ncFilterID))=true;
+                    ncFilter(i,CompiledParticles{ChN}(i).nc==ncFilterID)=true;
                 else
                     ncsFound=find(CompiledParticles{ChN}(i).Frame(1)>=[nc9,nc10,nc11,nc12,nc13,nc14]);
                     if ncsFound(end)==1
@@ -86,21 +90,21 @@ if ~isnan(nc9)|~isnan(nc10)|~isnan(nc11)|~isnan(nc12)|~isnan(nc13)|~isnan(nc14)
                     APFilter{ChN}=false(length(CompiledParticles{ChN}),length(APbinID));
                     
                     for i=1:length(CompiledParticles{ChN})
-                        APFilter{ChN}(i,max(find(APbinID<=CompiledParticles{ChN}(i).MeanAP)))=1;
+                        APFilter{ChN}(i,find(APbinID<=CompiledParticles{ChN}(i).MeanAP, 1, 'last' ))=1;
                     end
                     
                     for i=1:length(CompiledParticles_ROI{ChN})
-                        APFilter_ROI{ChN}(i,max(find(APbinID<=CompiledParticles_ROI{ChN}(i).MeanAP)))=1;
+                        APFilter_ROI{ChN}(i,find(APbinID<=CompiledParticles_ROI{ChN}(i).MeanAP, 1, 'last' ))=1;
                     end
                     
                     for i=1:length(CompiledParticles_nonROI{ChN})
-                        APFilter_nonROI{ChN}(i,max(find(APbinID<=CompiledParticles_nonROI{ChN}(i).MeanAP)))=1;
+                        APFilter_nonROI{ChN}(i,find(APbinID<=CompiledParticles_nonROI{ChN}(i).MeanAP, 1, 'last' ))=1;
                     end
                     
                 else
-                    APFilter{ChN}=logical(zeros(length(CompiledParticles{ChN}),length(APbinID)));
+                    APFilter{ChN}=false(length(CompiledParticles{ChN}),length(APbinID));
                     for i=1:length(CompiledParticles{ChN})
-                        APFilter{ChN}(i,max(find(APbinID<=CompiledParticles{ChN}(i).MeanAP)))=1;
+                        APFilter{ChN}(i,find(APbinID<=CompiledParticles{ChN}(i).MeanAP, 1, 'last' ))=1;
                     end
                 end
             end

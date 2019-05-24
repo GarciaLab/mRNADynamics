@@ -479,7 +479,6 @@ end
 % filters for each CompiledParticles (ROI and nonROI) (YJK on 10/24/2017)
 
 %nc filters:
-try
     
 APFilter_ROI = []; APFilter_nonROI = []; DVFilter_ROI = []; DVFilter_nonROI = [];
 [ncFilterID, ncFilter, APFilter, APFilter_ROI, APFilter_nonROI, ...
@@ -487,7 +486,7 @@ APFilter_ROI = []; APFilter_nonROI = []; DVFilter_ROI = []; DVFilter_nonROI = []
     nc13, nc14, NChannels, CompiledParticles, ExperimentAxis, ROI, APFilter,...
     APFilter_ROI, APFilter_nonROI, APbinID, DVbinID, DVFilter, DVFilter_ROI, ...
     DVFilter_nonROI, CompiledParticles_ROI, CompiledParticles_nonROI);
-end
+
 
 %% Binning and averaging data
 
@@ -495,7 +494,7 @@ end
 % One way is having a function that splits the CompiledParticles into CompiledParticles_ROI
 % and CompiledParticles_nonROI according to its y-position (Threshold). Then, pass them through
 % the AverageTraces (YJK on 10/22/2017)
-try
+
 [AllTracesVector, AllTracesAP, AllTracesDV, MeanVectorAP_ROI, ...
     SDVectorAP_ROI, NParticlesAP_ROI, MeanVectorAP_nonROI, SDVectorAP_nonROI, ...
     NParticlesAP_nonROI, MeanVectorAP, SDVectorAP, NParticlesAP, MeanVectorDV_ROI, ...
@@ -511,7 +510,7 @@ try
     MeanVectorDV_nonROI, SDVectorDV_nonROI, NParticlesDV_nonROI, ...
     MeanVectorDV, SDVectorDV, NParticlesDV, MeanVectorAnterior, DVFilter_ROI, ...
     DVFilter_nonROI, DVFilter);
-end
+
 if ~slimVersion
     %% Instantaneous rate of change
     try
@@ -603,7 +602,6 @@ end
     %% Probability of being on
 
     if ( HistoneChannel&&strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV') )...
-            & ~isempty(CompiledParticles{:})
         [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
             FilteredParticlesPos, OnRatioAP, ParticleCountAP, ParticleCountProbAP, ...
             EllipsesOnAP, rateOnAP, rateOnAPCell, timeOnOnAP, timeOnOnAPCell, TotalEllipsesAP, rateOnAPManual, rateOnAPCellManual, timeOnOnAPManual, timeOnOnAPCellManual]...
