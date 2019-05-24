@@ -145,7 +145,8 @@ function APAnalysis(dataset, varargin)
     lgd1 = legend(timeIntAx,'show');
     set(lgd1, 'Interpreter', 'Latex');
     xlim(timeIntAx,[.275, .7])
-    ylim(timeIntAx, [0, 100]);
+%     ylim(timeIntAx, [0, 100]);
+    ylim(timeIntAx, [0, max(cummean)]);
 %     try
 %         ylim(timeIntAx,[0, max([cummean+abs(cumstde), cum(:)']).*1.1 ])
 %     catch

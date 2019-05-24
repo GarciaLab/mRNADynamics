@@ -5,7 +5,7 @@ function argin = tryGPU(~)
         gpuDevice(1);
         argin = {'gpuArray'};
     catch
-        warning('nvidia cuda gpu unavailable.. defaulting to cpu');
+        warning('NVIDIA CUDA GPU unavailable. Defaulting to CPU.');
     end
 
 end

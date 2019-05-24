@@ -1,13 +1,17 @@
 function [ncFilterID, ncFilter, APFilter, APFilter_ROI, APFilter_nonROI, ...
-    DVFilter, DVFilter_ROI, DVFilter_nonROI] = createFilters(nc9, nc10, nc11, nc12, ...
+    DVFilter, DVFilter_ROI, DVFilter_nonROI]...
+    ...
+    = binParticles(nc9, nc10, nc11, nc12,...
+    ...
     nc13, nc14, NChannels, CompiledParticles, ExperimentAxis, ROI, APFilter,...
     APFilter_ROI, APFilter_nonROI, APbinID, DVbinID, DVFilter, DVFilter_ROI, ...
     DVFilter_nonROI, CompiledParticles_ROI, CompiledParticles_nonROI)
+
 %CREATEFILTERS Summary of this function goes here
 %   Detailed explanation goes here
 
 ncFilter = [];
-APFilter = [];
+APFilter = cell(1, NChannels);
 
 if ~isnan(nc9)|~isnan(nc10)|~isnan(nc11)|~isnan(nc12)|~isnan(nc13)|~isnan(nc14)
     %ncFilterID just tells you the identity of the different
@@ -83,7 +87,7 @@ if ~isnan(nc9)|~isnan(nc10)|~isnan(nc11)|~isnan(nc12)|~isnan(nc13)|~isnan(nc14)
                 %particle falls where.
                 
                 
-                if ROI==1
+                if ROI
                     %Define two APFilters for ROI and non-ROI respectively
                     APFilter_ROI{ChN}=false(length(CompiledParticles_ROI{ChN}),length(APbinID));
                     APFilter_nonROI{ChN}=false(length(CompiledParticles_nonROI{ChN}),length(APbinID));
@@ -101,12 +105,12 @@ if ~isnan(nc9)|~isnan(nc10)|~isnan(nc11)|~isnan(nc12)|~isnan(nc13)|~isnan(nc14)
                         APFilter_nonROI{ChN}(i,find(APbinID<=CompiledParticles_nonROI{ChN}(i).MeanAP, 1, 'last' ))=1;
                     end
                     
-                else
-                    APFilter{ChN}=false(length(CompiledParticles{ChN}),length(APbinID));
-                    for i=1:length(CompiledParticles{ChN})
-                        APFilter{ChN}(i,find(APbinID<=CompiledParticles{ChN}(i).MeanAP, 1, 'last' ))=1;
-                    end
                 end
+                APFilter{ChN}=false(length(CompiledParticles{ChN}),length(APbinID));
+                for i=1:length(CompiledParticles{ChN})
+                    APFilter{ChN}(i,find(APbinID<=CompiledParticles{ChN}(i).MeanAP, 1, 'last' ))=1;
+                end
+                
             end
             
             %DV filters:

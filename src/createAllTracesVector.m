@@ -1,4 +1,4 @@
-function [AllTracesVector,AllTracesAP,AllTracesDV]=AllTraces(FrameInfo,Particles,varargin)
+function [AllTracesVector,AllTracesAP,AllTracesDV]= createAllTracesVector(FrameInfo,Particles,varargin)
 
 %Order all traces in a time array. Also create a vector with the
 %corresponding AP positions
