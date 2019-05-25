@@ -82,6 +82,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(Pr
 % 2 set parent of current nucleus
 % p Find the particle associated with the clicked nucleus. It will also tell
 %  you the closest particle associated you clicked on.
+% $ add particle to the nearest nucleus 
 %
 %
 % General:
@@ -874,8 +875,12 @@ while (cc ~= 'x')
     elseif cc == '@'%Decrease spot channel contrast
         DisplayRangeSpot = [min(Image(:)), max(Image(:)) * 1.5];
     elseif cc == '$' %add particle to nucleus
+        try
         Particles = addNucleusToParticle(Particles, CurrentFrame, ...
     CurrentChannel, UseHistoneOverlay, schnitzcells, CurrentParticle);  
+        catch
+            % ?
+        end
     elseif cc == '0'%Debugging mode
         keyboard;
         

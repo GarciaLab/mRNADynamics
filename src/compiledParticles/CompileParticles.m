@@ -193,6 +193,7 @@ end
 if exist([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'file')
     load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
     pixelSize = FrameInfo(1).PixelSize;
+    numFrames = length(FrameInfo);
 else
     warning('No FrameInfo.mat found. Trying to continue')
     %Adding frame information
@@ -211,19 +212,6 @@ else
     end
 end
 
-numFrames = length(FrameInfo);
-
-
-
-%See how  many frames we have and adjust the index size of the files to
-%load accordingly
-if numFrames<1E3
-    NDigits=3;
-elseif numFrames<1E4
-    NDigits=4;
-else
-    error('No more than 10,000 frames currently supported.')
-end
 
 %Create the particle array. This is done so that we can support multiple
 %channels. Also figure out the number of channels
@@ -326,7 +314,7 @@ end
 
 
 if HistoneChannel
-    load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses')
 end
 
 
@@ -452,15 +440,16 @@ end
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
     Spots, SkipTraces, nc9, nc10, nc11, nc12, nc13, nc14, ncFilterID, ncFilter, ...
     ElapsedTime, intArea, Ellipses, EllipsePos, PreProcPath, ...
-    FilePrefix, Prefix, DropboxFolder, NDigits, manualSingleFits);
+    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits);
 
 %% ROI option
 % This option is separating the CompiledParticles defined above into
 % CompiledParticles_ROI and COmpiledParticles_nonROI
 % written by YJK on 10/24/2017
-CompiledParticles_ROI = {}; CompiledParticles_nonROI = {};
-for ChN=1:NChannels
-    if ROI
+CompiledParticles_ROI = cell(1,NChannels); CompiledParticles_nonROI = cell(1,NChannels);
+
+if ROI
+    for ChN=1:NChannels
         % separate the CompileParticles into CompiledParticles_ROI and
         % CompiledParticles_nonROI using the Threshold (y position)
         t=1;

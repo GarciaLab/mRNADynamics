@@ -8,13 +8,13 @@ function Particles =...
 %addNucleusToParticle Summary of this function goes here
 %   Detailed explanation goes here
 
-frames = Particles{CurrentChannel}(CurrentParticle).Frame;
 
-xPos = Particles{CurrentChannel}(CurrentParticle).xPos(frames == CurrentFrame);
-yPos = Particles{CurrentChannel}(CurrentParticle).yPos(frames == CurrentFrame);
-
-if UseHistoneOverlay
-    %Find the closest nucleus
+if UseHistoneOverlay & isfield(Particles{CurrentChannel}, 'xPos')
+    
+    frames = Particles{CurrentChannel}(CurrentParticle).Frame;
+    xPos = Particles{CurrentChannel}(CurrentParticle).xPos(frames == CurrentFrame);
+    yPos = Particles{CurrentChannel}(CurrentParticle).yPos(frames == CurrentFrame);
+    
     NewNuclei=[xPos, yPos];
     
     %Find which schnitz this corresponds to

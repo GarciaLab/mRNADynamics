@@ -3,9 +3,20 @@ function [Particles, CompiledParticles, ncFilter, ncFilterID] =...
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
     Spots, SkipTraces, nc9, nc10, nc11, nc12, nc13, nc14, ncFilterID, ncFilter, ...
     ElapsedTime, intArea, Ellipses, EllipsePos, PreProcPath, ...
-    FilePrefix, Prefix, DropboxFolder, NDigits, manualSingleFits)
+    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits)
 %COMPILETRACES Summary of this function goes here
 %   Detailed explanation goes here
+
+%See how  many frames we have and adjust the index size of the files to
+%load accordingly
+if numFrames<1E3
+    NDigits=3;
+elseif numFrames<1E4
+    NDigits=4;
+else
+    error('No more than 10,000 frames currently supported.')
+end
+
 h = waitbar(0,'Compiling traces');
 for ChN=1:NChannels
     k=1;

@@ -64,17 +64,19 @@ while (cc~='x')
     axis off
     title('Anterior (green), posterior (red); original')
     hold on
+    
     try
         plot(coordA(1),coordA(2),'g.','MarkerSize',20);      
     catch
         %not sure what happened here. 
     end
+    
     try
         plot(coordP(1),coordP(2),'r.','MarkerSize',20);
      catch
         %not sure what happened here. 
     end
-    end
+    
     hold off
 
     figure(APImageFig)
