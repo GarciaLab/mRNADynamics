@@ -1,4 +1,5 @@
-function [Data, Prefixes] = LoadMS2Sets(DataType, varargin)
+function [Data, Prefixes, resultsFolder] = LoadMS2Sets(DataType, varargin)
+%
 %Data = LoadMS2Sets(DataType)
 %
 %DESCRIPTION
@@ -31,11 +32,12 @@ for i= 1:length(varargin)
 end
 
 %Get some of the default folders
-[rawDataPath, ProcPath, DefaultDropboxFolder, MS2CodePath, PreProcPath, configValues, movieDatabasePath] = DetermineLocalFolders;
+[rawDataPath, ~, DefaultDropboxFolder,...
+    ~, ~, configValues, ~] = DetermineLocalFolders;
 
 
 %Now, get a list of all possible other Dropbox folders
-DropboxRows=find(contains(configValues(:,1),'Dropbox'));
+DropboxRows=contains(configValues(:,1),'Dropbox');
 DropboxFolders=configValues(DropboxRows,2);
 
 %Look in DataStatus.XLSX in each DropboxFolder and find the tab given by
@@ -62,6 +64,8 @@ end
 
 %Redefine the DropboxFolder according to the DataStatus.XLSX we'll use
 DropboxFolder=DropboxFolders{DataStatusToCheck};
+resultsFolder = DropboxFolder;
+
 %Now, load the DataStatus.XLSX
 D=dir([DropboxFolder,filesep,'DataStatus.*']);
 [~,StatusTxt]=xlsread([DropboxFolder,filesep,D(1).name],DataType);
@@ -213,7 +217,7 @@ for i=1:length(CompiledSets)
         if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'file')
             APDivisions(i)=load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat']);
         else
-            warning('APDivisions.mat not found. This is a stupid way to check. Have the code check if this experiment is DV or AP instead')
+            warning('APDivisions.mat not found.')
         end
         
         
@@ -221,10 +225,7 @@ for i=1:length(CompiledSets)
         if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'],'file')
             MeanFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat']);
         else
-            %Commented out by AR 12/11/17 since this comment seems
-            %outdated.
-            %             warning(['MeanFits.mat not found for ',Prefix,...
-            %                 '. This is a stupid way to check. Have the code check if this experiment is DV or AP instead.'])
+            warning('MeanFits.mat not found');
         end
         
         %Linear slope fit results
@@ -233,7 +234,7 @@ for i=1:length(CompiledSets)
         end
         
         try
-            Schnitzcells(i)=load([DropboxFolder,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat']);
+            Schnitzcells(i)=load([DropboxFolder,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat'], 'schnitzcells');
         catch
             warning('_lin.mat not found.');
         end
@@ -267,7 +268,7 @@ for i=1:length(CompiledSets)
         
         %Load Ellipses
         try
-            Ellipses(i)=load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat']);
+            Ellipses(i)=load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses');
         catch
             warning('Ellipses.mat not found.')
         end
@@ -291,9 +292,9 @@ for i=1:length(CompiledSets)
         DataNuclei(i)=load([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat']);
         
         if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'file')
-            APDivisions(i)=load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat']);
+            APDivisions(i)=load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'], 'APDivision');
         else
-            warning('APDivisions.mat not found. This is a stupid way to check. Have the code check if this experiment is DV or AP instead')
+            warning('APDivision.mat not found.')
         end
         
     end
