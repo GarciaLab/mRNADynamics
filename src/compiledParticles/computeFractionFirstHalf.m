@@ -2,7 +2,7 @@ function [NEllipsesAP, OnRatioAP, MeanVectorAllAP, SEVectorAllAP,...
     EllipsesFilteredPos, FilteredParticlesPos, ParticleCountAP, ParticleCountProbAP] =...
     ...
     computeFractionFirstHalf(Particles, ChN, CompiledParticles, Ellipses, schnitzcells,...
-    APbinID, pixelSize, FrameInfo, EllipsePos, DropboxFolder, Prefix, ElapsedTime, edgeWidth)
+    APbinID, pixelSize, FrameInfo, EllipsePos, DropboxFolder, Prefix, ElapsedTime, edgeWidth, SkipAll)
 
 ParticleCountAP = [];
 ParticleCountProbAP = [];
@@ -184,36 +184,37 @@ if ~isempty(Particles{ChN})
     OnRatioAP{ChN}(~MinNucleiFilter)=nan;
     OnRatioAP{ChN}=reshape(OnRatioAP{ChN},size(MinNucleiFilter));
     
-    
-    if MaxAPIndexProb>MinAPIndexProb
-        colormap(jet(128));
-        cmap=colormap;
-        
-        Color=cmap(round((APbinID(MinAPIndexProb:MaxAPIndexProb)-...
-            APbinID(MinAPIndexProb))/...
-            (APbinID(MaxAPIndexProb)-APbinID(MinAPIndexProb))*127)+1,:);
-        figure(15)
-        clf
-        PlotHandle=[];
-        hold on
-        %             for j=MinAPIndexProb:MaxAPIndexProb
-        %                 PlotHandle=[PlotHandle,...
-        %                     plot(ElapsedTime,OnRatioAP{ChN}(:,j),'color',Color(j-MinAPIndexProb+1,:))];
-        %             end
-        hold off
-        xlabel('Time (min)')
-        ylabel('Fraction of on nuclei')
-        h = colorbar;
-        caxis([APbinID(MinAPIndexProb),APbinID(MaxAPIndexProb)])
-        ylabel(h,'AP Position (x/L)')
-        StandardFigure(PlotHandle,gca)
-        try
-            xlim([0,ElapsedTime(end)])
-        catch
-            warning('Y2K bug strikes again? ElapsedTime field of FrameInfo is broken.');
+    if ~SkipAll
+        if MaxAPIndexProb>MinAPIndexProb
+            colormap(jet(128));
+            cmap=colormap;
+            
+            Color=cmap(round((APbinID(MinAPIndexProb:MaxAPIndexProb)-...
+                APbinID(MinAPIndexProb))/...
+                (APbinID(MaxAPIndexProb)-APbinID(MinAPIndexProb))*127)+1,:);
+            figure(15)
+            clf
+            PlotHandle=[];
+            hold on
+            %             for j=MinAPIndexProb:MaxAPIndexProb
+            %                 PlotHandle=[PlotHandle,...
+            %                     plot(ElapsedTime,OnRatioAP{ChN}(:,j),'color',Color(j-MinAPIndexProb+1,:))];
+            %             end
+            hold off
+            xlabel('Time (min)')
+            ylabel('Fraction of on nuclei')
+            h = colorbar;
+            caxis([APbinID(MinAPIndexProb),APbinID(MaxAPIndexProb)])
+            ylabel(h,'AP Position (x/L)')
+            StandardFigure(PlotHandle,gca)
+            try
+                xlim([0,ElapsedTime(end)])
+            catch
+                warning('Y2K bug strikes again? ElapsedTime field of FrameInfo is broken.');
+            end
+            ylim([0,1.01])
+            saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsTimeVsAP.tif'])
         end
-        ylim([0,1.01])
-        saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsTimeVsAP.tif'])
     end
     
     

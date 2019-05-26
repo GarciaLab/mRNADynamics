@@ -194,6 +194,11 @@ if intensityError95 > intensity*2 || ~isreal(intensity)
     intensity = NaN;
     intensityError95 = NaN;
 end
+% 
+% if ~isreal(intensity)
+%     intensity = NaN;
+%     intensityError95 = NaN;
+% end
 
 end
 

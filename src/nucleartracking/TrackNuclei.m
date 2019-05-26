@@ -33,14 +33,15 @@ disp(['Tracking nuclei on ', Prefix, '...']);
 
 [SkipStitchSchnitz, ExpandedSpaceTolerance, NoBulkShift] = DetermineTrackNucleiOptions(varargin);
 
+%added this bulkshift requirement because i'm not sure it'll work without
+%it
+if NoBulkShift
+    workers = 8;
+    startParallelPool(workers, 0,0);
+end
 
 
-% NL: Changed from DetermineAllLocalFolders to DetermineLocalFodlers to enable
-% compatibility with dynamic data folders
-[~, FISHPath, DropboxFolder, ~, PreProcPath, ~, ~] = DetermineLocalFolders(Prefix);
-%Get the folders, including the default Dropbox one
-% [SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
-% configValues, movieDatabasePath] = DetermineAllLocalFolders(Prefix);
+[~, ProcPath, DropboxFolder, ~, PreProcPath, ~, ~] = DetermineLocalFolders(Prefix);
 
 CONFIG_CSV_PATH = 'ComputerFolders.csv';
 configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');    
@@ -191,10 +192,10 @@ else
     centers = updateCentersFromEllipses(FrameInfo, Ellipses);
 
     %Load the dataStructure to speed up retracking if it exists
-    if exist([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'], 'file')
-        load([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'])
-    elseif exist([FISHPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'], 'file')
-        load([FISHPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'])
+    if exist([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'], 'file')
+        load([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'])
+    elseif exist([ProcPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'], 'file')
+        load([ProcPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'])
     end
 
     % look for a settings file in the Raw Data folder.
@@ -254,10 +255,10 @@ end
 mkdir([DropboxFolder,filesep,Prefix])
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells')
-if ~exist([FISHPath,filesep,Prefix,'_'], 'dir')
-    mkdir([FISHPath,filesep,Prefix,'_'])
+if ~exist([ProcPath,filesep,Prefix,'_'], 'dir')
+    mkdir([ProcPath,filesep,Prefix,'_'])
 end
-save([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
+save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
 
 
 
@@ -399,10 +400,10 @@ else
     save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells')
 end
 
-if ~exist([FISHPath,filesep,Prefix,'_'], 'dir')
-    mkdir([FISHPath,filesep,Prefix,'_'])
+if ~exist([ProcPath,filesep,Prefix,'_'], 'dir')
+    mkdir([ProcPath,filesep,Prefix,'_'])
 end
-save([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
+save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
 
 
 %Stitch the schnitzcells using Simon's code

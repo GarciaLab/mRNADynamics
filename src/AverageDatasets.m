@@ -39,21 +39,25 @@ function AverageDatasets(DataType,varargin)
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
 
-Data = LoadMS2Sets(DataType);
+if ischar(DataType)
+    Data = LoadMS2Sets(DataType);
+else
+    Data = DataType;
+end
 
 % Save path option
 savePath = '';
 
-for i=1:length(varargin)
-    if strcmpi(varargin{i}, 'savePath')
-        savePath = varargin{i+1};
+for embryo=1:length(varargin)
+    if strcmpi(varargin{embryo}, 'savePath')
+        savePath = varargin{embryo+1};
     end
 end
 
 NC = 13; % Default
-for i = 1:length(varargin)
-   if strcmpi(varargin{i}, 'NC')
-        NC = varargin{i+1};  
+for embryo = 1:length(varargin)
+   if strcmpi(varargin{embryo}, 'NC')
+        NC = varargin{embryo+1};  
    end
 end
 
@@ -61,21 +65,25 @@ numEmbryos=length(Data);
 
 %Find the total number of frames for each embryo
 numFrames = zeros(1, numEmbryos);
-maxAPIndex = zeros(1, numEmbryos);
+maxAPIndex = ones(1, numEmbryos)*41; %initialize with the value 41 just in case this isn't set by compileparticles
 maxTime = zeros(1, numEmbryos);
-for i = 1:numEmbryos
+for embryo = 1:numEmbryos
     if NC~=12
-        numFrames(i) = size(Data(i).ElapsedTime, 2);
-        nc13(i) = Data(i).nc13;
-        length_total_NC(i) = numFrames(i) - nc13(i)+1; % length of frames from nc13 to the last frame
-        maxAPIndex(i) = Data(i).MaxAPIndex; % Usually 41, in 2.5% binning
-        maxTime(i) = Data(i).ElapsedTime(numFrames(i));
+        numFrames(embryo) = size(Data(embryo).ElapsedTime, 2);
+        nc13(embryo) = Data(embryo).nc13;
+        length_total_NC(embryo) = numFrames(embryo) - nc13(embryo)+1; % length of frames from nc13 to the last frame
+        if ~isempty(Data(embryo).MaxAPIndex)
+            maxAPIndex(embryo) = Data(embryo).MaxAPIndex; % Usually 41, in 2.5% binning
+        end
+        maxTime(embryo) = Data(embryo).ElapsedTime(numFrames(embryo));
     elseif NC==12
-        numFrames(i) = size(Data(i).ElapsedTime, 2);
-        nc12(i) = Data(i).nc12;
-        length_total_NC(i) = numFrames(i) - nc12(i)+1; % length of frames from nc13 to the last frame
-        maxAPIndex(i) = Data(i).MaxAPIndex; % Usually 41, in 2.5% binning
-        maxTime(i) = Data(i).ElapsedTime(numFrames(i));
+        numFrames(embryo) = size(Data(embryo).ElapsedTime, 2);
+        nc12(embryo) = Data(embryo).nc12;
+        length_total_NC(embryo) = numFrames(embryo) - nc12(embryo)+1; % length of frames from nc13 to the last frame
+        if ~isempty(Data(embryo).MaxAPIndex)
+            maxAPIndex(embryo) = Data(embryo).MaxAPIndex; % Usually 41, in 2.5% binning
+        end
+        maxTime(embryo) = Data(embryo).ElapsedTime(numFrames(embryo));
     end
 end
 
@@ -107,34 +115,34 @@ end
 Length13 = zeros(numEmbryos,numAPBins);
 Length14 = zeros(numEmbryos,numAPBins);
 
-for j=1:numAPBins
+for APBin=1:numAPBins
     % For all embryos, go through to find the longest nuclear cycle (number
     % of frames)
-    for i=1:numEmbryos
+    for embryo=1:numEmbryos
         % Define the nuclear cycle (In case we start from nc 12)
         if NC==12
-            nc12(i,j) = Data(i).APDivision(12,j);
+            nc12(embryo,APBin) = Data(embryo).APDivision(12,APBin);
         end
-            nc13(i,j) = Data(i).APDivision(13,j);
-            nc14(i,j) = Data(i).APDivision(14,j);
+            nc13(embryo,APBin) = Data(embryo).APDivision(13,APBin);
+            nc14(embryo,APBin) = Data(embryo).APDivision(14,APBin);
             
         % Calculate the number of frames (during nc)
-        if NC==12 && nc12(i,j)~=0
-            Length12 (i,j) = nc13(i,j) - nc12(i,j);
-            Length13 (i,j) = nc14(i,j) - nc13(i,j);
-            Length14 (i,j) = numFrames(i) - nc14(i,j);
-        elseif NC==13 && nc13(i,j)~=0
-            Length13 (i,j) = nc14(i,j) - nc13(i,j);
-            Length14 (i,j) = numFrames(i) - nc14(i,j);
+        if NC==12 && nc12(embryo,APBin)~=0
+            Length12 (embryo,APBin) = nc13(embryo,APBin) - nc12(embryo,APBin);
+            Length13 (embryo,APBin) = nc14(embryo,APBin) - nc13(embryo,APBin);
+            Length14 (embryo,APBin) = numFrames(embryo) - nc14(embryo,APBin);
+        elseif NC==13 && nc13(embryo,APBin)~=0
+            Length13 (embryo,APBin) = nc14(embryo,APBin) - nc13(embryo,APBin);
+            Length14 (embryo,APBin) = numFrames(embryo) - nc14(embryo,APBin);
         end
     end
     % Find the maximum length for each cycle
-        numFrames13(j) = max(Length13(:,j));
-        numFrames14(j) = max(Length14(:,j));
-        TotalFrames(j) = numFrames13(j) + numFrames14(j);
+        numFrames13(APBin) = max(Length13(:,APBin));
+        numFrames14(APBin) = max(Length14(:,APBin));
+        TotalFrames(APBin) = numFrames13(APBin) + numFrames14(APBin);
     if NC==12
-        numFrames12(j) = max(Length12(:,j));
-        TotalFrames(j) = numFrames12(j) + numFrames13(j) + numFrames14(j);
+        numFrames12(APBin) = max(Length12(:,APBin));
+        TotalFrames(APBin) = numFrames12(APBin) + numFrames13(APBin) + numFrames14(APBin);
     end
    
 end
@@ -179,54 +187,60 @@ FractionON_Instant = NaN(NewFrameLength,numAPBins,numEmbryos);
 % This synchronization should be done for each AP bin, since they might
 % have different anaphase time point.
 
-for j=1:numAPBins       
-    for i=1:numEmbryos
+for APBin=1:numAPBins       
+    for embryo=1:numEmbryos
         % First, 
-        Data(i).NEllipsesAP(Data(i).NEllipsesAP==0)=inf;
-        if NC==12 && nc12(i,j)~=0
+        Data(embryo).NEllipsesAP(Data(embryo).NEllipsesAP==0)=inf;
+        %assuming just one spot channel
+        if iscell(Data(embryo).MeanVectorAP)
+            Data(embryo).MeanVectorAP = Data(embryo).MeanVectorAP{1};
+            Data(embryo).SDVectorAP = Data(embryo).SDVectorAP{1};
+            Data(embryo).NParticlesAP = Data(embryo).NParticlesAP{1};
+        end
+        if NC==12 && nc12(embryo,APBin)~=0
             % Sync the fields for each nc
             % NC12
-            MeanVectorAP_12(1:L12,j,i) = Data(i).MeanVectorAP(nc12(i,j):nc12(i,j)+L12-1,j);
-            SDVectorAP_12(1:L12,j,i) = Data(i).SDVectorAP(nc12(i,j):nc12(i,j)+L12-1,j);
-            NParticlesAP_12(1:L12,j,i) = Data(i).NParticlesAP(nc12(i,j):nc12(i,j)+L12-1,j);
-            FractionON_Instant_12(1:L12,j,i) = Data(i).NParticlesAP(nc12(i,j):nc12(i,j)+L12-1,j)./...
-                                                Data(i).NEllipsesAP(nc12(i,j):nc12(i,j)+L12-1,j);
+            MeanVectorAP_12(1:L12,APBin,embryo) = Data(embryo).MeanVectorAP(nc12(embryo,APBin):nc12(embryo,APBin)+L12-1,APBin);
+            SDVectorAP_12(1:L12,APBin,embryo) = Data(embryo).SDVectorAP(nc12(embryo,APBin):nc12(embryo,APBin)+L12-1,APBin);
+            NParticlesAP_12(1:L12,APBin,embryo) = Data(embryo).NParticlesAP(nc12(embryo,APBin):nc12(embryo,APBin)+L12-1,APBin);
+            FractionON_Instant_12(1:L12,APBin,embryo) = Data(embryo).NParticlesAP(nc12(embryo,APBin):nc12(embryo,APBin)+L12-1,APBin)./...
+                                                Data(embryo).NEllipsesAP(nc12(embryo,APBin):nc12(embryo,APBin)+L12-1,APBin);
             % NC13
-            MeanVectorAP_13(1:L13,j,i) = Data(i).MeanVectorAP(nc13(i,j):nc13(i,j)+L13-1,j);
-            SDVectorAP_13(1:L13,j,i) = Data(i).SDVectorAP(nc13(i,j):nc13(i,j)+L13-1,j);
-            NParticlesAP_13(1:L13,j,i) = Data(i).NParticlesAP(nc13(i,j):nc13(i,j)+L13-1,j);
-            FractionON_Instant_13(1:L13,j,i) = Data(i).NParticlesAP(nc13(i,j):nc13(i,j)+L13-1,j)./...
-                                                Data(i).NEllipsesAP(nc13(i,j):nc13(i,j)+L13-1,j);
+            MeanVectorAP_13(1:L13,APBin,embryo) = Data(embryo).MeanVectorAP(nc13(embryo,APBin):nc13(embryo,APBin)+L13-1,APBin);
+            SDVectorAP_13(1:L13,APBin,embryo) = Data(embryo).SDVectorAP(nc13(embryo,APBin):nc13(embryo,APBin)+L13-1,APBin);
+            NParticlesAP_13(1:L13,APBin,embryo) = Data(embryo).NParticlesAP(nc13(embryo,APBin):nc13(embryo,APBin)+L13-1,APBin);
+            FractionON_Instant_13(1:L13,APBin,embryo) = Data(embryo).NParticlesAP(nc13(embryo,APBin):nc13(embryo,APBin)+L13-1,APBin)./...
+                                                Data(embryo).NEllipsesAP(nc13(embryo,APBin):nc13(embryo,APBin)+L13-1,APBin);
             % NC14                          
-            MeanVectorAP_14(1:numFrames(i)-nc14(i,j),j,i) = Data(i).MeanVectorAP(nc14(i,j):numFrames(i)-1,j);
-            SDVectorAP_14(1:numFrames(i)-nc14(i,j),j,i) = Data(i).SDVectorAP(nc14(i,j):numFrames(i)-1,j);
-            NParticlesAP_14(1:numFrames(i)-nc14(i,j),j,i) = Data(i).NParticlesAP(nc14(i,j):numFrames(i)-1,j);
-            FractionON_Instant_14(1:numFrames(i)-nc14(i,j),j,i) = Data(i).NParticlesAP(nc14(i,j):numFrames(i)-1,j)./...
-                                                Data(i).NEllipsesAP(nc14(i,j):numFrames(i)-1,j);
+            MeanVectorAP_14(1:numFrames(embryo)-nc14(embryo,APBin),APBin,embryo) = Data(embryo).MeanVectorAP(nc14(embryo,APBin):numFrames(embryo)-1,APBin);
+            SDVectorAP_14(1:numFrames(embryo)-nc14(embryo,APBin),APBin,embryo) = Data(embryo).SDVectorAP(nc14(embryo,APBin):numFrames(embryo)-1,APBin);
+            NParticlesAP_14(1:numFrames(embryo)-nc14(embryo,APBin),APBin,embryo) = Data(embryo).NParticlesAP(nc14(embryo,APBin):numFrames(embryo)-1,APBin);
+            FractionON_Instant_14(1:numFrames(embryo)-nc14(embryo,APBin),APBin,embryo) = Data(embryo).NParticlesAP(nc14(embryo,APBin):numFrames(embryo)-1,APBin)./...
+                                                Data(embryo).NEllipsesAP(nc14(embryo,APBin):numFrames(embryo)-1,APBin);
 %             SDVectorAP(1:numFrames(i)-nc12(i)+1,:,i) = Data(i).SDVectorAP(nc12(i):numFrames(i),:);
 %             NParticlesAP(1:numFrames(i)-nc12(i)+1,:,i) = Data(i).NParticlesAP(nc12(i):numFrames(i),:);
 %             FractionOn_Instant(1:numFrames(i)-nc13(i)+1,:,i) = Data(i).NParticlesAP(nc13(i):numFrames(i),:)./Data(i).NEllipsesAP(nc13(i):numFrames(i),:)
 
         %elseif nc13(i)==0
         %    error('Check the Movie if it really does not start from nc13, then you should edit this code or make that dataset as an exception')
-        elseif nc13(i,j)~=0 && nc14(i,j)~=0
+        elseif nc13(embryo,APBin)~=0 && nc14(embryo,APBin)~=0
 %             MeanVectorAP(1:numFrames(i)-nc13(i)+1,:,i) = Data(i).MeanVectorAP(nc13(i):numFrames(i),:);
 %             SDVectorAP(1:numFrames(i)-nc13(i)+1,:,i) = Data(i).SDVectorAP(nc13(i):numFrames(i),:);
 %             NParticlesAP(1:numFrames(i)-nc13(i)+1,:,i) = Data(i).NParticlesAP(nc13(i):numFrames(i),:);
 %             FractionOn_Instant(1:numFrames(i)-nc13(i)+1,:,i) = Data(i).NParticlesAP(nc13(i):numFrames(i),:)./Data(i).NEllipsesAP(nc13(i):numFrames(i),:);
 
             % NC13
-            MeanVectorAP_13(1:L13,j,i) = Data(i).MeanVectorAP(nc13(i,j):nc13(i,j)+L13-1,j);
-            SDVectorAP_13(1:L13,j,i) = Data(i).SDVectorAP(nc13(i,j):nc13(i,j)+L13-1,j);
-            NParticlesAP_13(1:L13,j,i) = Data(i).NParticlesAP(nc13(i,j):nc13(i,j)+L13-1,j);
-            FractionON_Instant_13(1:L13,j,i) = Data(i).NParticlesAP(nc13(i,j):nc13(i,j)+L13-1,j)./...
-                                                Data(i).NEllipsesAP(nc13(i,j):nc13(i,j)+L13-1,j);
+            MeanVectorAP_13(1:L13,APBin,embryo) = Data(embryo).MeanVectorAP(nc13(embryo,APBin):nc13(embryo,APBin)+L13-1,APBin);
+            SDVectorAP_13(1:L13,APBin,embryo) = Data(embryo).SDVectorAP(nc13(embryo,APBin):nc13(embryo,APBin)+L13-1,APBin);
+            NParticlesAP_13(1:L13,APBin,embryo) = Data(embryo).NParticlesAP(nc13(embryo,APBin):nc13(embryo,APBin)+L13-1,APBin);
+            FractionON_Instant_13(1:L13,APBin,embryo) = Data(embryo).NParticlesAP(nc13(embryo,APBin):nc13(embryo,APBin)+L13-1,APBin)./...
+                                                Data(embryo).NEllipsesAP(nc13(embryo,APBin):nc13(embryo,APBin)+L13-1,APBin);
             % NC14                          
-            MeanVectorAP_14(1:numFrames(i)-nc14(i,j),j,i) = Data(i).MeanVectorAP(nc14(i,j):numFrames(i)-1,j);
-            SDVectorAP_14(1:numFrames(i)-nc14(i,j),j,i) = Data(i).SDVectorAP(nc14(i,j):numFrames(i)-1,j);
-            NParticlesAP_14(1:numFrames(i)-nc14(i,j),j,i) = Data(i).NParticlesAP(nc14(i,j):numFrames(i)-1,j);
-            FractionON_Instant_14(1:numFrames(i)-nc14(i,j),j,i) = Data(i).NParticlesAP(nc14(i,j):numFrames(i)-1,j)./...
-                                                Data(i).NEllipsesAP(nc14(i,j):numFrames(i)-1,j);
+            MeanVectorAP_14(1:numFrames(embryo)-nc14(embryo,APBin),APBin,embryo) = Data(embryo).MeanVectorAP(nc14(embryo,APBin):numFrames(embryo)-1,APBin);
+            SDVectorAP_14(1:numFrames(embryo)-nc14(embryo,APBin),APBin,embryo) = Data(embryo).SDVectorAP(nc14(embryo,APBin):numFrames(embryo)-1,APBin);
+            NParticlesAP_14(1:numFrames(embryo)-nc14(embryo,APBin),APBin,embryo) = Data(embryo).NParticlesAP(nc14(embryo,APBin):numFrames(embryo)-1,APBin);
+            FractionON_Instant_14(1:numFrames(embryo)-nc14(embryo,APBin),APBin,embryo) = Data(embryo).NParticlesAP(nc14(embryo,APBin):numFrames(embryo)-1,APBin)./...
+                                                Data(embryo).NEllipsesAP(nc14(embryo,APBin):numFrames(embryo)-1,APBin);
         end
     end
 end
@@ -295,12 +309,12 @@ sumSD = zeros(NewFrameLength,numAPBins);
 sumNParticles = zeros(NewFrameLength,numAPBins);
 sumMean_ForSum = zeros(NewFrameLength,numAPBins);
 
-for i=1:numEmbryos
-    sumMean = sumMean + squeeze(MeanVectorAP(:,:,i).*NParticlesAP(:,:,i));
-    sumSD = sumSD + squeeze(SDVectorAP(:,:,i).^2.*NParticlesAP(:,:,i));
-    sumNParticles = sumNParticles + squeeze(NParticlesAP(:,:,i));
+for embryo=1:numEmbryos
+    sumMean = sumMean + squeeze(MeanVectorAP(:,:,embryo).*NParticlesAP(:,:,embryo));
+    sumSD = sumSD + squeeze(SDVectorAP(:,:,embryo).^2.*NParticlesAP(:,:,embryo));
+    sumNParticles = sumNParticles + squeeze(NParticlesAP(:,:,embryo));
     % MeanVectorAP considering the doubling of nuclei in each cycle
-    sumMean_ForSum = sumMean_ForSum + squeeze(MeanVectorAP_ForSum(:,:,i).*NParticlesAP(:,:,i));
+    sumMean_ForSum = sumMean_ForSum + squeeze(MeanVectorAP_ForSum(:,:,embryo).*NParticlesAP(:,:,embryo));
 end
     
 MeanVectorAPTemp = sumMean./sumNParticles;
@@ -339,12 +353,12 @@ FractionON(isnan(FractionON))=0;
 NParticlesAP(isnan(NParticlesAP))=0;
 MeanVectorAP_ForSum(isnan(MeanVectorAP_ForSum))=0;
 
-for i=1:maxAPIndex
-    for j=2:length(ElapsedTime)
-        AccumulatedmRNA(j,i) = trapz(ElapsedTime(1:j),MeanVectorAP(1:j,i));
-        AccumulatedmRNA_SD(j,i) = sqrt(trapz(ElapsedTime(1:j),SDVectorAP(1:j,i).^2));
+for embryo=1:maxAPIndex
+    for APBin=2:length(ElapsedTime)
+        AccumulatedmRNA(APBin,embryo) = trapz(ElapsedTime(1:APBin),MeanVectorAP(1:APBin,embryo));
+        AccumulatedmRNA_SD(APBin,embryo) = sqrt(trapz(ElapsedTime(1:APBin),SDVectorAP(1:APBin,embryo).^2));
         
-        AccumulatedmRNA_FractionON(j,i) = trapz(ElapsedTime(1:j),MeanVectorAP_ForSum(1:j,i).*FractionON(1:j,i));
+        AccumulatedmRNA_FractionON(APBin,embryo) = trapz(ElapsedTime(1:APBin),MeanVectorAP_ForSum(1:APBin,embryo).*FractionON(1:APBin,embryo));
         %AccumulatedmRNA_SD(j,i) = sqrt(trapz(ElapsedTime(1:j),SDVectorAP(1:j,i).^2));
     end
 end
@@ -395,8 +409,8 @@ end
 
 %(1) Averaging the Fraction ON from each embryo.
 FractionON_individual = zeros(41,3,numEmbryos);
-for i=1:numEmbryos
-    FractionON_individual(:,:,i) = Data(i).EllipsesOnAP./Data(i).TotalEllipsesAP;
+for embryo=1:numEmbryos
+    FractionON_individual(:,:,embryo) = Data(embryo).EllipsesOnAP./Data(embryo).TotalEllipsesAP;
 end
 FractionON_Average = nanmean(FractionON_individual,3);
 FractionON_Average_Error = nanstd(FractionON_individual,[],3) / sqrt(numEmbryos);
@@ -415,9 +429,9 @@ FractionON_Average_Error = nanstd(FractionON_individual,[],3) / sqrt(numEmbryos)
 TotalONNuclei = zeros(41,3);
 TotalNuclei = zeros(41,3);
     
-for i=1:numEmbryos
-    TotalONNuclei = TotalONNuclei + Data(i).EllipsesOnAP;
-    TotalNuclei = TotalNuclei + Data(i).TotalEllipsesAP;
+for embryo=1:numEmbryos
+    TotalONNuclei = TotalONNuclei + Data(embryo).EllipsesOnAP;
+    TotalNuclei = TotalNuclei + Data(embryo).TotalEllipsesAP;
 end
 
 FractionONTemp = TotalONNuclei ./ TotalNuclei;

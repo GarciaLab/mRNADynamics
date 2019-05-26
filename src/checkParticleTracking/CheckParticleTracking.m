@@ -875,12 +875,9 @@ while (cc ~= 'x')
     elseif cc == '@'%Decrease spot channel contrast
         DisplayRangeSpot = [min(Image(:)), max(Image(:)) * 1.5];
     elseif cc == '$' %add particle to nucleus
-        try
         Particles = addNucleusToParticle(Particles, CurrentFrame, ...
     CurrentChannel, UseHistoneOverlay, schnitzcells, CurrentParticle);  
-        catch
             % ?
-        end
     elseif cc == '0'%Debugging mode
         keyboard;
         

@@ -187,7 +187,7 @@ for ChN=1:NChannels
                 CompiledParticles{ChN}(k).FitType=FitType;
                 CompiledParticles{ChN}(k).FluoDog = AmpDog;
                 CompiledParticles{ChN}(k).FluoDogMax = AmpDogMax;
-                CompiledParticles{ChN}(k).FluoGauss3D = AmpIntegralGauss3D;
+                CompiledParticles{ChN}(k).FluoGauss3D = AmpIntegralGauss3D';
                 CompiledParticles{ChN}(k).FluoGauss3DError = ErrorIntegralGauss3D;
                 CompiledParticles{ChN}(k).ampdog3 = ampdog3;
                 CompiledParticles{ChN}(k).ampdog3Max = ampdog3Max;
@@ -321,6 +321,7 @@ for ChN=1:NChannels
                         end
                         %end
                     end
+                    
                     
                     figure(2)
                     left_color = [213,108,85]/255;

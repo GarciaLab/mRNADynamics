@@ -38,7 +38,8 @@ if UseHistoneOverlay & isfield(Particles{CurrentChannel}, 'xPos')
     ClickedSchnitz=SchnitzSuspect(ClosestNucleusIndex);
     
     Particles{CurrentChannel}(CurrentParticle).Nucleus = ClickedSchnitz;
-    
+else
+    disp('Failed to connect particle to a nucleus. Either histone channel isn''t present or AddParticlePosition has not yet been run.');
 end
 
 end

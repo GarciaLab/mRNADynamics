@@ -32,10 +32,6 @@ NC = -1;
 startNC = -1;
 endNC = -1;
 
-if isempty(varargin)
-    error('Please specify the Prefix of the data set to analyze')
-end
-
 for i=1:length(varargin)
     if strcmpi(varargin{i},'NoSort')
         sortByFrame=0;

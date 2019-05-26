@@ -24,7 +24,7 @@ end
 
 % Create the mask used to detect local maxima.
 localMaxMask = fspecial('disk',localMaximumRadius);
-localMaxMask = im2bw(mat2gray(localMaxMask),graythresh(mat2gray(localMaxMask)));
+localMaxMask = imbinarize(mat2gray(localMaxMask),graythresh(mat2gray(localMaxMask)));
 localMaxMask(round(length(localMaxMask)/2),round(length(localMaxMask)/2))  = 0;
 
 
@@ -36,10 +36,10 @@ img = double(imread(names{frameNumber}));
 % Filter the image
 %filteredImg = imfilter(img,-fspecial('log',round(10*LoGradius),LoGradius),'symmetric');
 % filteredImg = imresize(fourierFilterWithSymmetricBoundaryConditions(imresize(img,.5),-fspecial('log',round(10*LoGradius),LoGradius)), 2);
+
 filteredImg = fourierFilterWithSymmetricBoundaryConditions(img,-fspecial('log',round(10*LoGradius),LoGradius));
 
 % Find local maxima
-% maxima = (filteredImg > imresize(imdilate(imresize(filteredImg, .5),imresize(localMaxMask, .5)),2) ) & embryoMask;
 maxima = (filteredImg > imdilate(filteredImg,localMaxMask) ) & embryoMask;
 
 % Smooth the image to get more robust maxima values:
@@ -65,7 +65,7 @@ sample_ind = [ind(:) ; background_ind(:)];
 nuc1 = G(sample_ind);
 
 thresh = graythresh(mat2gray(nuc1));
-indNuclei = im2bw(mat2gray(nuc1),thresh);
+indNuclei = imbinarize(mat2gray(nuc1),thresh);
 
 %% Check the segmentation if a target number was provided.
 if exist('targetNumber','var') && numel(targetNumber) == 1 && isnumeric(targetNumber) && abs(sum(indNuclei(1:numel(nuc1)))-targetNumber)/targetNumber > 0.25
@@ -77,16 +77,16 @@ if exist('targetNumber','var') && numel(targetNumber) == 1 && isnumeric(targetNu
     % Test whether the number of nuclei found is within the given range. If
     % not, then chose the threshold to get as close as possible to the 
     % target number.
-    if abs(sum(indNuclei(1:numel(nuc1)))-targetNumber)/targetNumber > perc/100;
+    if abs(sum(indNuclei(1:numel(nuc1)))-targetNumber)/targetNumber > perc/100
         indNucleiTmp = nan(21,numel([nuc1;nuc_prev;nuc_next]));
         T = 0:.005:1;
         % test a range of threshold and pick the one that returns the
         % number of nuclei the closest to the target number.
         for j = 1:numel(T)
-            indNucleiTmp(j,:) = im2bw(mat2gray([nuc1;nuc_prev;nuc_next]),T(j));
+            indNucleiTmp(j,:) = imbinarize(mat2gray([nuc1;nuc_prev;nuc_next]),T(j));
         end
         indNucleiTmp(:,(numel(nuc1)+1):end) = [];
-        [dummy, IND] =  min(abs(sum(indNucleiTmp,2)-targetNumber));
+        [~, IND] =  min(abs(sum(indNucleiTmp,2)-targetNumber));
         indNuclei = logical(indNucleiTmp(IND,:));
     end
 end

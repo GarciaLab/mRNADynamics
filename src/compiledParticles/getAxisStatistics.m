@@ -3,18 +3,14 @@ function [AllTracesVector, AllTracesAP, AllTracesDV, MeanVectorAP_ROI, ...
     NParticlesAP_nonROI, MeanVectorAP, SDVectorAP, NParticlesAP, MeanVectorDV_ROI, ...
     SDVectorDV_ROI, NParticlesDV_ROI, MeanVectorDV_nonROI, SDVectorDV_nonROI, ...
     NParticlesDV_nonROI, MeanVectorDV, SDVectorDV, NParticlesDV, ...
-    MeanVectorAnterior, MeanVectorAll, SDVectorAll, NParticlesAll, peakFrame] =...
+    MeanVectorAnterior, MeanVectorAll, SDVectorAll,...
+    NParticlesAll, peakFrame,  MeanVector3DAll, MeanVector3DAP] =...
     ...
     getAxisStatistics(...
     ...
     NChannels, CompiledParticles, FrameInfo, ExperimentAxis, ...
     APFilter, ROI, CompiledParticles_ROI, CompiledParticles_nonROI, ...
-    APFilter_ROI, APFilter_nonROI, NewCyclePos, peakFrame, ...
-    MeanVectorAP_ROI, SDVectorAP_ROI, NParticlesAP_ROI, MeanVectorAP_nonROI, ...
-    SDVectorAP_nonROI, NParticlesAP_nonROI, MeanVectorAP, SDVectorAP, ...
-    NParticlesAP, MeanVectorDV_ROI, SDVectorDV_ROI, NParticlesDV_ROI, ...
-    MeanVectorDV_nonROI, SDVectorDV_nonROI, NParticlesDV_nonROI, ...
-    MeanVectorDV, SDVectorDV, NParticlesDV, MeanVectorAnterior, DVFilter_ROI, ...
+    APFilter_ROI, APFilter_nonROI, NewCyclePos,DVFilter_ROI, ...
     DVFilter_nonROI, DVFilter)
 %
 %computeAPandDVStatistics Summary of this function goes here
@@ -25,6 +21,22 @@ MeanVectorAll = {}; MeanVectorAP = {}; SDVectorAP = {};
 MeanVectorDV = {}; SDVectorDV = {};
 MeanVectorAnterior = {}; SDVectorAll = {};
 NParticlesAll = {}; NParticlesAP = {}; NParticlesDV = {};
+MeanVector3DAll = {}; MeanVector3DAP={};
+
+MeanVectorAP_ROI = {}; MeanVectorAP_nonROI = {};
+ 
+SDVectorAP_ROI = {}; SDVectorAP_nonROI = {};
+MeanVectorDV_ROI = {}; MeanVectorDV_nonROI = {};
+
+SDVectorDV_ROI = {}; SDVectorDV_nonROI = {};
+
+NParticlesAP_ROI = {}; NParticlesAP_nonROI = {}; 
+NParticlesDV_ROI = {}; NParticlesDV_nonROI = {}; 
+
+peakFrame = {};
+
+
+
 
 for ChN=1:NChannels
     if ~isempty(CompiledParticles{ChN})
@@ -84,16 +96,24 @@ for ChN=1:NChannels
             %Get the corresponding mean information
             k=1;
             for i=MinAPIndex:MaxAPIndex
-                [MeanVectorAPTemp,SDVectorAPTemp,NParticlesAPTemp]=AverageTraces(FrameInfo,...
+
+                [MeanVectorAPTemp,SDVectorAPTemp,NParticlesAPTemp,ErrorVarVector, MeanVector3DAPTemp]=AverageTraces(FrameInfo,...
                     CompiledParticles{ChN}(APFilter{ChN}(:,i)));
+                
                 MeanVectorAPCell{k}=MeanVectorAPTemp';
                 SDVectorAPCell{k}=SDVectorAPTemp';
                 NParticlesAPCell{k}=NParticlesAPTemp';
+                
+                MeanVector3DAPCell{k}=MeanVector3DAPTemp';
+
                 k=k+1;
             end
             MeanVectorAP{ChN}=cell2mat(MeanVectorAPCell);
             SDVectorAP{ChN}=cell2mat(SDVectorAPCell);
             NParticlesAP{ChN}=cell2mat(NParticlesAPCell);
+            
+            MeanVector3DAP{ChN}=cell2mat(MeanVector3DAPCell);
+
             
             %Calculate the mean for only anterior particles
             try
@@ -182,7 +202,7 @@ for ChN=1:NChannels
         
         %%
         %Calculate the mean for all AP bins
-        [MeanVectorAll{ChN},SDVectorAll{ChN},NParticlesAll{ChN}] =...
+        [MeanVectorAll{ChN},SDVectorAll{ChN},NParticlesAll{ChN}, MeanVector3DAll{ChN}] =...
             AverageTraces(FrameInfo,CompiledParticles{ChN});
         
         %Now find the different maxima in each nc

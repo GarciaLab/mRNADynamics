@@ -5,7 +5,9 @@ function [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
     = computeAPFractionOn(NChannels, Particles, schnitzcells, ...
     ...
     CompiledParticles, Ellipses, APbinID, FrameInfo, ElapsedTime, DropboxFolder, ...
-    Prefix, EllipsePos, nc12, nc13, nc14, numFrames, SkipFits, SkipAll, APbinArea, pixelSize, manualSingleFits, edgeWidth)
+    Prefix, EllipsePos, nc12, nc13, nc14, numFrames, SkipFits, SkipAll,...
+    APbinArea, pixelSize, manualSingleFits, edgeWidth)
+%
 % computeAPFractionOn(varargin)
 %
 % DESCRIPTION
@@ -85,8 +87,10 @@ continueanyway = 0; %3/29/19 JL: Workaround to skip schnitzcell rescuing error.
 %Skips the calculation of AP fraction ON if the schnitzcell can't be
 %rescued.
 
-fractionFig = figure();
-fractionAxes = axes(fractionFig);
+if ~SkipAll
+    fractionFig = figure();
+    fractionAxes = axes(fractionFig);
+end
 
 EllipsesOnAP = cell(1, NChannels);
 
@@ -99,7 +103,8 @@ for ChN=1:NChannels
         EllipsesFilteredPos, FilteredParticlesPos, ParticleCountAP, ParticleCountProbAP] =...
         ...
         computeFractionFirstHalf(Particles, ChN, CompiledParticles, Ellipses,...
-        schnitzcells, APbinID, pixelSize, FrameInfo, EllipsePos, DropboxFolder, Prefix, ElapsedTime, edgeWidth);
+        schnitzcells, APbinID, pixelSize, FrameInfo, EllipsePos,...
+        DropboxFolder, Prefix, ElapsedTime, edgeWidth, SkipAll);
     
     %Use the alternative approach I used for the movies. We are going to
     %look at each nucleus towards the end of each nc and ask if they

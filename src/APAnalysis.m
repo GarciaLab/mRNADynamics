@@ -20,7 +20,7 @@ function APAnalysis(dataset, varargin)
 % 'savePath', path : 
 %
 %OUTPUT
-%Does not return anything. Does generate graphs. 
+%Does not return anything. Does generate graphs.
 %
 %Author (contact): Armando Reimer (areimer@berkeley.edu), Yang Joon Kim(yjkim90@berkeley.edu)
 %Created: 6/3/2017
@@ -74,11 +74,16 @@ function APAnalysis(dataset, varargin)
     
     %Do some analysis and plotting of treatment data
     cum = zeros(0,numAPBins);
+    rate = zeros(0, numAPBins);
     integrationFrames = [1, 0];
     timeIntegrationFig = figure('Name', 'time integrated intensity');
     timeIntAx = axes(timeIntegrationFig);
-
-    for dataSet = 1:nSets
+    rateFig = figure('Name', 'rate');
+    rateAx = axes(rateFig);
+    
+    
+    dataSets = 1:nSets;
+    for dataSet = dataSets
         try
             Prefix{dataSet} = data(dataSet).SetName;
         catch 
@@ -88,8 +93,7 @@ function APAnalysis(dataset, varargin)
         if nc==1
             integrationFrames = d.nc12:d.nc13-1;
         elseif nc==2
-                        integrationFrames = d.nc13:d.nc14-1;
-
+            integrationFrames = d.nc13:d.nc14-1;
         elseif nc==3
             integrationFrames = d.nc14:length(d.ElapsedTime);
         end
@@ -100,17 +104,18 @@ function APAnalysis(dataset, varargin)
 
         
         fluo = [];
-        if ~isempty(d.MeanVectorAP)
-            if iscell(d.MeanVectorAP)
-                d.MeanVectorAP = d.MeanVectorAP{channel};
+        if ~isempty(d.MeanVector3DAP)
+            if iscell(d.MeanVector3DAP)
+                d.MeanVector3DAP = d.MeanVector3DAP{channel};
             end
-            fluo = d.MeanVectorAP(integrationFrames,:);
+            fluo = d.MeanVector3DAP(integrationFrames,:);
             fluo(isnan(fluo)) = 0;
         end
         
         for APBin = 1:numAPBins
             if ~isempty(fluo)
                 cum(dataSet,APBin) = trapz(d.ElapsedTime(integrationFrames),fluo(:,APBin));
+                rate(dataSet, APBin) = max(fluo(:,APBin));
             else
                 cum(dataSet,APBin) = 0;
             end
@@ -119,15 +124,21 @@ function APAnalysis(dataset, varargin)
     
     cummean = zeros(1,numAPBins);
     cumstd = zeros(1,numAPBins);
+    ratemean = zeros(1, numAPBins);
     
     for APBin = 1:numAPBins
         cummean(1, APBin) = nanmean(cum(:,APBin));
         cumstd(1, APBin) = nanstd(cum(:,APBin));
-        if ~cummean(APBin)
+        ratemean(1, APBin) = nanmean(rate(:,APBin));
+        
+        if cummean(APBin) == 0
             cummean(APBin) = NaN;
         end
-         if ~cumstd(APBin)
+         if cumstd(APBin) == 0
             cumstd(APBin) = NaN;
+         end
+         if ratemean(APBin) == 0
+            ratemean(APBin) = NaN;
          end
          cumstde(APBin) = cumstd(APBin) /  sqrt(sum(cum(:,APBin) ~= 0));
     end
@@ -135,10 +146,14 @@ function APAnalysis(dataset, varargin)
         for dataSet = 1:nSets
             plot(timeIntAx, ap,cum(dataSet,:),'-o','DisplayName',Prefix{dataSet});
             hold(timeIntAx, 'on');
+            plot(rateAx, ap,rate(dataSet,:),'-o','DisplayName',Prefix{dataSet});
+            hold(rateAx, 'on');
         end
     end
     if nSets > 1
         timeIntegrationErrorPlot = errorbar(timeIntAx,ap, cummean, cumstde, 'DisplayName', 'mean $\pm$ std. error');
+        ratePlot = plot(rateAx,ap, ratemean, 'DisplayName', 'mean $\pm$ std. error');
+
     end
         
     hold(timeIntAx, 'off');
@@ -146,7 +161,9 @@ function APAnalysis(dataset, varargin)
     set(lgd1, 'Interpreter', 'Latex');
     xlim(timeIntAx,[.275, .7])
 %     ylim(timeIntAx, [0, 100]);
+try
     ylim(timeIntAx, [0, max(cummean)]);
+end
 %     try
 %         ylim(timeIntAx,[0, max([cummean+abs(cumstde), cum(:)']).*1.1 ])
 %     catch
@@ -157,6 +174,10 @@ function APAnalysis(dataset, varargin)
     ylabel(timeIntAx,'intensity (a.u.)');
     standardizeFigure(timeIntAx, legend('show'), 'red');
     timeIntegrationErrorPlot.Color = [213,108,85]/256;
+    
+    standardizeFigure(rateAx, legend('show'), 'red');
+    ratePlot.Color = [213,108,85]/256;
+
     
     %% 
     %Experiment fraction on
@@ -243,7 +264,7 @@ function APAnalysis(dataset, varargin)
     idx = ~any(isnan(totalEllipses),2);
     errorbar(ap(idx),ellipsesOn(idx)./totalEllipses(idx), fstde(idx));
     xlim([0.275 0.7])
-    ylim([0, 1.1])
+    ylim([0, .4])
     lgd2 = legend('mean $\pm$ std. error');
     set(lgd2, 'Interpreter', 'latex');
     title(['fraction of actively transcribing nuclei, nuclear cycle ',num2str(nc+11)]);
