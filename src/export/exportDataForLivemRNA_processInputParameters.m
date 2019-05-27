@@ -47,6 +47,7 @@ while k<=length(varargin)
     else
         if isempty(rootFolder)
             Prefix = varargin{k};
+            disp(['ExportDataForLivemRNA using prefix: ', Prefix]);
         end
     end
     k=k+1;

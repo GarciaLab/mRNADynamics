@@ -10,8 +10,16 @@ function [D, FileMode] = DetermineFileMode(rawDataFolder)
     DLAT=dir([rawDataFolder,filesep,'*_Settings.txt']);
     DSPIN=dir([rawDataFolder,filesep,'*.nd']);     %Nikon spinning disk
     DND2=dir([rawDataFolder,filesep,'*.nd2']);    %Nikon point scanner .nd2 files
+    
+    % OME-TIFF xml companion file (*.ome).
+    % Not mandatory per OME-TIFF standard, but our examples have it so for know we detect ome-tiff based on the presence of this file.
+    OMETIFF = dir([rawDataFolder,filesep,'*.ome']);   
 
-    if ~isempty(DTIF) && isempty(DLSM) && isempty(DCZI) && isempty(DSPIN)
+    if ~isempty(OMETIFF)
+      disp('OME-TIFF with .ome XML companion file mode')
+      D = OMETIFF;
+      FileMode = 'OMETIFF';
+    elseif ~isempty(DTIF) && isempty(DLSM) && isempty(DCZI) && isempty(DSPIN)
         if isempty(DLIF)
             if isempty(DLAT)
                 disp('2-photon @ Princeton data mode')
