@@ -67,7 +67,8 @@ function FrameInfo = processOMETIFFData(rawDataFolder, OMETIFFFile, FrameInfo, C
   disp(['TIF files count: ', num2str(tifDataCount)]);
  
   % debug level - for now
-  loci.common.DebugTools.setRootLevel('INFO');
+  % loci.common.DebugTools.setRootLevel('INFO'); % commented out, for some
+  % reason is not finding this bioformats class on the server.
 
   fprintf('Reading file: %s\n', omeTiffCompanionFile);
   TIFImages = bfopen(omeTiffCompanionFile);
