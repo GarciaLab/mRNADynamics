@@ -1,4 +1,5 @@
-function SpotsCh = fitSnip3D(SpotsCh, channel, spot, frame, Prefix, PreProcPath, ProcPath, FrameInfo, dogs, displayFigures, saveType)
+function SpotsCh = fitSnip3D(SpotsCh, spotChannel, spot, frame, Prefix, PreProcPath, ProcPath, FrameInfo, dogs, displayFigures, saveType)
+
 
 s = SpotsCh(frame).Fits(spot);
 xSize = FrameInfo(1).PixelsPerLine;
@@ -27,12 +28,13 @@ zBot = bZ - snipDepth;
 zTop = bZ + snipDepth;
 snip3D = [];
 dogSnip3D = [];
-nameSuffix = ['_ch', iIndex(channel, 2)];
+nameSuffix = ['_ch', iIndex(spotChannel, 2)];
 
+dogProb = 'DOG_';
 
 isZPadded = false;
+    firstdogname = ['DOG_', Prefix, '_', iIndex(1, 3), '_z', iIndex(1, 2), nameSuffix];
 
-firstdogname = ['DOG_', Prefix, '_', iIndex(1, 3), '_z', iIndex(1, 2), nameSuffix];
 firstdogpath = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,firstdogname];
 
 matsPresent = exist([firstdogpath, '.mat'], 'file');
@@ -50,7 +52,16 @@ end
 firstdogpath = [firstdogpath, saveType];
     
 if strcmpi(saveType, '.tif')
-   firstDoG = imread(firstdogpath);
+    try
+    firstDoG = imread(firstdogpath);
+    catch
+    firstdogname = ['prob', Prefix, '_', iIndex(1, 3), '_z', iIndex(1, 2), nameSuffix];
+    dogProb = 'prob';
+    firstdogpath = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,firstdogname];
+firstdogpath = [firstdogpath, saveType];
+    firstDoG = imread(firstdogpath);
+
+    end
 elseif strcmpi(saveType, '.mat')
      load(firstdogpath, 'plane');
     firstDoG = plane;
@@ -75,15 +86,15 @@ for z = zBot:zTop
     
     if z > 1 && z < zMax
         FullSlice=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(frame,3)...
-            ,'_z' iIndex(z,2) '_ch' iIndex(channel,2) '.tif']);
+            ,'_z' iIndex(z,2) '_ch' iIndex(spotChannel,2) '.tif']);
         if isempty(dogs)
-            dog_name = ['DOG_', Prefix, '_', iIndex(frame, 3), '_z', iIndex(dogZ, 2), nameSuffix, saveType];
+            dog_name = [dogProb, Prefix, '_', iIndex(frame, 3), '_z', iIndex(dogZ, 2), nameSuffix, saveType];
             dog_full_path = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,dog_name];
             if ~isempty(dir([ProcPath, filesep, Prefix,'_', filesep, 'dogs']))
                 if strcmpi(saveType, '.tif')
                     FullDoGSlice= double(imread(dog_full_path));
                 elseif strcmpi(saveType, '.mat')
-                    dog_name = ['DOG_', Prefix, '_', iIndex(frame, 3), '_z', iIndex(dogZ, 2), nameSuffix, saveType];
+                    dog_name = [dogProb, Prefix, '_', iIndex(frame, 3), '_z', iIndex(dogZ, 2), nameSuffix, saveType];
                     dog_full_path = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,dog_name];
                     load(dog_full_path, 'plane');
                     FullDoGSlice = double(plane);
