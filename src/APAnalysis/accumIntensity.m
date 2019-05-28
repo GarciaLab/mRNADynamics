@@ -6,6 +6,7 @@ function accumIntensity(data, nc, justMeans)
     numAPBins = length(ap);
     Prefix = cell(1, nSets);
     channel = 1; %no support for 2 channel data at the moment. 
+
     
     cum = zeros(0,numAPBins);
     rate = zeros(0, numAPBins);
@@ -24,6 +25,10 @@ function accumIntensity(data, nc, justMeans)
             Prefix{dataSet} = ['data set: ',int2str(dataSet)];
         end
         d = data(dataSet);
+            
+%     apdiv = data(dataSet).APDivision; 
+%     if apdiv(nc+11, :) ~= 0
+%     end
         if nc==1
             integrationFrames = d.nc12:d.nc13-1;
         elseif nc==2
@@ -42,14 +47,18 @@ function accumIntensity(data, nc, justMeans)
             if iscell(d.MeanVector3DAP)
                 d.MeanVector3DAP = d.MeanVector3DAP{channel};
             end
-            fluo = d.MeanVector3DAP(integrationFrames,:);
+            fluo = d.MeanVector3DAP;
             fluo(isnan(fluo)) = 0;
         end
         
         for APBin = 1:numAPBins
             if ~isempty(fluo)
-                cum(dataSet,APBin) = trapz(d.ElapsedTime(integrationFrames),fluo(:,APBin));
-                rate(dataSet, APBin) = max(fluo(:,APBin));
+                ncStart = d.APDivision(nc+11, APBin);
+                ncEnd = d.APDivision(nc+11+1, APBin);
+                if ncStart ~= 0
+                    cum(dataSet,APBin) = trapz(d.ElapsedTime(ncStart:ncEnd),fluo(ncStart:ncEnd,APBin));
+                    rate(dataSet, APBin) = max(fluo(ncStart:ncEnd,APBin));
+                end
             else
                 cum(dataSet,APBin) = 0;
             end

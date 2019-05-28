@@ -1,4 +1,4 @@
-function [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh, Spots, app, SpotFilter, PreProcPath, Prefix, UseHistone, ParticlesFig, SpotsChannel, NDigits, NucleiFig, particlesAxes, nucAxes, Ellipses, PixelSize, SearchRadius, ExperimentType, FrameInfo, retrack, displayFigures)
+function [Particles, SpotFilter] = performTracking(Particles, scurrentChannelitzcells, NCh, Spots, app, SpotFilter, PreProcPath, Prefix, UseHistone, ParticlesFig, SpotsChannel, NDigits, NucleiFig, particlesAxes, nucAxes, Ellipses, PixelSize, SearchRadius, ExperimentType, FrameInfo, retrack, displayFigures)
   % Iterate over all channels
   for Channel = 1:NCh
 
@@ -18,7 +18,7 @@ function [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh,
 
       if UseHistone
         [Particles, SpotFilter] = trackParticlesBasedOnNuclei(PreProcPath, Prefix, CurrentFrame, NDigits, app, nucAxes, Ellipses, ...
-          ExperimentType, Channel, schnitzcells, Particles, Spots, SpotFilter, PixelSize, SearchRadius, retrack, displayFigures);
+          ExperimentType, Channel, scurrentChannelitzcells, Particles, Spots, SpotFilter, PixelSize, SearchRadius, retrack, displayFigures);
       else
         [Particles] = trackParticlesBasedOnProximity(Particles, Spots, xPos, SpotFilter, Channel, CurrentFrame, PixelSize, SearchRadius, retrack, displayFigures);
       end
@@ -54,6 +54,21 @@ function [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh,
       end
       
     end
+    
+    %AR: add x, y and z positions to the Particles structure. This was
+    %originally only added by addParticlePosition, but it it's more useful
+    %early on in the pipeline. 
+    
+        for i=1:length(Particles{currentChannel})
+            for j=1:length(Particles{currentChannel}(i).Frame)
+                [x,y,z]=SpotsXYZ(Spots{currentChannel}(Particles{currentChannel}(i).Frame(j)));
+                if ~isempty(x) 
+                    Particles{currentChannel}(i).xPos(j)=x(Particles{currentChannel}(i).Index(j));
+                    Particles{currentChannel}(i).yPos(j)=y(Particles{currentChannel}(i).Index(j));
+                    Particles{currentChannel}(i).zPos(j)=z(Particles{currentChannel}(i).Index(j));
+                end
+            end
+        end
     
   end
   
@@ -104,7 +119,7 @@ function x = displayParticlesFigure(app, particlesAxes, ParticlesFig, Spots, Cha
 end
 
 function [Particles, SpotFilter] = trackParticlesBasedOnNuclei(PreProcPath, Prefix, CurrentFrame, NDigits, app, nucAxes, Ellipses, ...
-    ExperimentType, Channel, schnitzcells, Particles, Spots, SpotFilter, PixelSize, SearchRadius, retrack, displayFigures)
+    ExperimentType, Channel, scurrentChannelitzcells, Particles, Spots, SpotFilter, PixelSize, SearchRadius, retrack, displayFigures)
 
 if displayFigures
   hisImage = openHistoneImage(Prefix, PreProcPath, CurrentFrame, NDigits);
@@ -145,7 +160,7 @@ end
      SpotsPerNucleus = 1;
   end
 
-  [Particles{Channel}, SpotFilter{Channel}] = AssignParticle2Nucleus(schnitzcells, Ellipses, ...
+  [Particles{Channel}, SpotFilter{Channel}] = AssignParticle2Nucleus(scurrentChannelitzcells, Ellipses, ...
     Particles{Channel}, Spots{Channel}, SpotFilter{Channel}, CurrentFrame, PixelSize, SpotsPerNucleus, retrack);
 
 end

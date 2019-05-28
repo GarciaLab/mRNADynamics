@@ -82,7 +82,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(Pr
 % 2 set parent of current nucleus
 % p Find the particle associated with the clicked nucleus. It will also tell
 %  you the closest particle associated you clicked on.
-% $ add particle to the nearest nucleus 
+% $ add particle to the nearest nucleus
 %
 %
 % General:
@@ -442,7 +442,7 @@ elseif strcmpi(ExperimentType, '2spot2color')
     %We are assuming that channels 1 and 2 are assigned to coat
     %proteins. We should do a better job with this.
     coatChannels = [1, 2];
-    coatChannel = coatChannels(1);
+    coatChannel = coatChannels(CurrentChannel);
 else
     error('Experiment type not recognized')
 end
@@ -497,40 +497,33 @@ while (cc ~= 'x')
         ManualZFlag = 0;
     end
     
-    if NChannels == 1% inputoutput mode can also be in this case, changed CurrentChannel to the coatChannel (YJK : 1/15/2018)
+    
+    if strcmpi(projectionMode, 'None (Default)')
+        Image = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
+            FilePrefix, iIndex(CurrentFrame, NDigits), '_z', iIndex(CurrentZ, 2), nameSuffix, '.tif']);
+    elseif strcmpi(projectionMode, 'Max Z')
+        [Image, ~] = zProjections(Prefix, coatChannel, CurrentFrame, ZSlices, NDigits, DropboxFolder, PreProcPath);
+    elseif strcmpi(projectionMode, 'Median Z')
+        [~, Image] = zProjections(Prefix, coatChannel, CurrentFrame, ZSlices, NDigits, DropboxFolder, PreProcPath);
+    elseif strcmpi(projectionMode, 'Max Z and Time')
         
-        if strcmpi(projectionMode, 'None (Default)')
-            Image = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
-                FilePrefix, iIndex(CurrentFrame, NDigits), '_z', iIndex(CurrentZ, 2), nameSuffix, '.tif']);
-        elseif strcmpi(projectionMode, 'Max Z')
-            [Image, ~] = zProjections(Prefix, coatChannel, CurrentFrame, ZSlices, NDigits, DropboxFolder, PreProcPath);
-        elseif strcmpi(projectionMode, 'Median Z')
-            [~, Image] = zProjections(Prefix, coatChannel, CurrentFrame, ZSlices, NDigits, DropboxFolder, PreProcPath);
-        elseif strcmpi(projectionMode, 'Max Z and Time')
+        if isempty(storedTimeProjection)
             
-            if isempty(storedTimeProjection)
-                
-                if ncRange
-                    Image = timeProjection(Prefix, coatChannel, 'nc', NC);
-                    storedTimeProjection = Image;
-                else
-                    Image = timeProjection(Prefix, CurrentChannel);
-                    storedTimeProjection = Image;
-                end
-                
+            if ncRange
+                Image = timeProjection(Prefix, coatChannel, 'nc', NC);
+                storedTimeProjection = Image;
             else
-                Image = storedTimeProjection;
+                Image = timeProjection(Prefix, CurrentChannel);
+                storedTimeProjection = Image;
             end
             
+        else
+            Image = storedTimeProjection;
         end
         
-    elseif NChannels > 1
-        Image = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
-            FilePrefix, iIndex(CurrentFrame, NDigits), '_z', iIndex(CurrentZ, 2), ...
-            nameSuffix, '.tif']);
-    else
-        error('ExperimentType and/or channel not supported.')
     end
+    
+    
     
     set(0, 'CurrentFigure', Overlay);
     imshow(Image, DisplayRangeSpot, 'Border', 'Tight', 'Parent', overlayAxes, ...
@@ -713,7 +706,7 @@ while (cc ~= 'x')
         DisplayRange = [];
     elseif cc == 'g' & UseHistoneOverlay%Increase histone channel contrast
         
-        if isempty(DisplayRange)
+        if isempty(DisplayRange)'8
             DisplayRange = [min(min(ImageHis)), max(max(ImageHis)) / 1.5];
         else
             DisplayRange = [DisplayRange(1), DisplayRange(2) / 1.5];
@@ -876,8 +869,8 @@ while (cc ~= 'x')
         DisplayRangeSpot = [min(Image(:)), max(Image(:)) * 1.5];
     elseif cc == '$' %add particle to nucleus
         Particles = addNucleusToParticle(Particles, CurrentFrame, ...
-    CurrentChannel, UseHistoneOverlay, schnitzcells, CurrentParticle);  
-            % ?
+            CurrentChannel, UseHistoneOverlay, schnitzcells, CurrentParticle);
+        % ?
     elseif cc == '0'%Debugging mode
         keyboard;
         

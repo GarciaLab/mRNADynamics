@@ -169,17 +169,17 @@ pb = uicontrol(buttonFig,'Style','text','String',['Controls-',...
 
 %Run CombineMultipleEmbryos if required
 if MultipleEmbryos
-    CombineMultipleEmbryos(DataType)
+    saveFolder = CombineMultipleEmbryos(DataType);
     disp('Embryos successfully combined')
 end
 
                                     
 %Load the complied particles and the division information
 if MultipleEmbryos
-    load([DropboxFolder,filesep,DataType,'_Combined_CompiledParticles.mat'])
+    load([saveFolder,filesep,DataType,'_Combined_CompiledParticles.mat'])
 
-    if exist([DropboxFolder,filesep,DataType,'_Combined_APDivision.mat'], 'file')
-        load([DropboxFolder,filesep,DataType,'_Combined_APDivision.mat'])
+    if exist([saveFolder,filesep,DataType,'_Combined_APDivision.mat'], 'file')
+        load([saveFolder,filesep,DataType,'_Combined_APDivision.mat'])
     else
         error('Could not load Combined_APDivision.mat. Make sure to have done the manual check of division.')
     end
@@ -707,7 +707,7 @@ while (cc~=13)
     %Save
     elseif ct~=0 & cc=='v'
         if MultipleEmbryos
-            save([DropboxFolder,filesep,DataType,'_Combined_MeanFits.mat'],...
+            save([saveFolder,filesep,DataType,'_Combined_MeanFits.mat'],...
                 'FitResults')
             disp('DataType_Combined_MeanFits.mat saved')
         else
@@ -727,7 +727,7 @@ end
 
 %Save the information
 if MultipleEmbryos
-    save([DropboxFolder,filesep,DataType,'_Combined_MeanFits.mat'],...
+    save([saveFolder,filesep,DataType,'_Combined_MeanFits.mat'],...
         'FitResults')
     disp('DataType_Combined_MeanFits.mat saved')
 else

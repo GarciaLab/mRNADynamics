@@ -283,6 +283,7 @@ if UseHistoneOverlay
     else
         HisOverlayImage=cat(3,mat2gray(ImageHis,double(DisplayRange)),mat2gray(Image),zeros(size(Image)));
     end
+    
     imshow(HisOverlayImage,[],'Border','Tight','Parent',HisOverlayFigAxes)
 
 

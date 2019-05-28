@@ -55,7 +55,7 @@ end
     PreProcPath, configValues, movieDatabasePath] = DetermineLocalFolders;
 
 warning('off', 'MATLAB:handle_graphics:exceptions:SceneNode');
-close all;
+% close all;
 
 %Set up treatment data for plotting and analysis
 if ischar(dataset)
@@ -92,6 +92,10 @@ for dataSet = 1:nSets
         Prefix{dataSet} = ['data set: ',int2str(dataSet)];
     end
     d = data(dataSet);
+    
+%     apdiv = data(dataSet).APDivision; 
+%     if adiv(nc, :) ~= 0
+%     end
     
     if iscell(data(dataSet).EllipsesOnAP)
         data(dataSet).EllipsesOnAP = data(dataSet).EllipsesOnAP{channel};
@@ -163,16 +167,17 @@ figure('Name','Combined Fraction of On')
 %     totalEllipses(totalEllipses < 3) = NaN;
 %     fstde(totalEllipses < 3) = NaN;
 idx = ~any(isnan(totalEllipses),2);
-errorbar(ap(idx),ellipsesOn(idx)./totalEllipses(idx), fstde(idx));
-xlim([0.275 0.7])
+e = errorbar(ap(idx),ellipsesOn(idx)./totalEllipses(idx), fstde(idx));
+% xlim([0.275 0.7])
+xlim([0 1]);
 ylim([0, .4])
 lgd2 = legend('mean $\pm$ std. error');
 set(lgd2, 'Interpreter', 'latex');
 title(['fraction of actively transcribing nuclei, nuclear cycle ',num2str(nc+11)]);
 xlabel('fraction embryo length');
 ylabel('fraction on');
-standardizeFigure(gca, legend('show'),'red');
-e.Color = [213,108,85]/256;
+standardizeFigure(gca, legend('show'));
+% e.Color = [213,108,85]/256;
 
 figure('Name','rate vs ap')
 %     ellipsesOn(totalEllipses < 3) = NaN;
