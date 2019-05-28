@@ -42,7 +42,7 @@ function FrameInfo = processOMETIFFData(rawDataFolder, OMETIFFFile, FrameInfo, C
   disp('OME Pixel attributes:');
   pixelAttributes = xml.OME.Image.Pixels.Attributes;
   
-  NChannels = str2double(pixelAttributes.SizeC);
+  % NChannels = str2double(pixelAttributes.SizeC);
   
   % TO-DO: get the series amount from...? Is it necessary?
   % NSeries = 1;
@@ -74,7 +74,7 @@ function FrameInfo = processOMETIFFData(rawDataFolder, OMETIFFFile, FrameInfo, C
   TIFImages = bfopen(omeTiffCompanionFile);
 
   %Extract the metadata for each series
-  TIFMeta = TIFImages{:, 4};
+  % TIFMeta = TIFImages{:, 4};
 
   for i = 1:sum(NFrames)
       
@@ -87,7 +87,7 @@ function FrameInfo = processOMETIFFData(rawDataFolder, OMETIFFFile, FrameInfo, C
     FrameInfo(i).Time = (i - 1) * TimeIncrement; 
   end
   
-  writeOMETifToOutputFolder(TIFImages, Prefix, NFrames, NChannels, NumberSlices, OutputFolder);
+  writeOMETifToOutputFolder(TIFImages, Prefix, OutputFolder);
   
   disp('Finished processing OME-TIFF data');
 
