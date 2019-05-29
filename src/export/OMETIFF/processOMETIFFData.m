@@ -87,7 +87,7 @@ function FrameInfo = processOMETIFFData(rawDataFolder, OMETIFFFile, FrameInfo, C
     FrameInfo(i).Time = (i - 1) * TimeIncrement; 
   end
   
-  writeOMETifToOutputFolder(TIFImages, Prefix, OutputFolder);
+  writeOMETifToOutputFolder(TIFImages, Prefix, NumberSlices, OutputFolder);
   
   disp('Finished processing OME-TIFF data');
 
