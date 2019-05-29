@@ -108,11 +108,12 @@ for dataSet = 1:nSets
     
     totalEllipses = totalEllipses + data(dataSet).TotalEllipsesAP(:,nc);
     ellipsesOn = ellipsesOn + data(dataSet).EllipsesOnAP(:,nc);
-    
+    try
     rateAr = data(dataSet).rateOnAP{channel}(:,nc);
     b = (rateAr.*data(dataSet).EllipsesOnAP(:,nc))';
     c = vertcat(rateSum,b);
     rateSum = nansum(c);
+    end
     %         tSum = tSum + data(dataSet).timeOnOnAP{channel}.*data(dataSet).EllipsesOnAP(:,nc);
     
     %         rateStd = data(dataSet).rateOnAP{channel}.*data(dataSet).EllipsesOnAP
@@ -127,13 +128,16 @@ for dataSet = 1:nSets
         hold on
     end
     fSet(:, dataSet) = f;
+    
 end
+try
 rateSum = rateSum';
 rateMean = rateSum ./ ellipsesOn;
 %     timeMean = tSum ./ ellipsesOn;
 
 rateChiSq = zeros(1,numAPBins);
-
+end
+try
 for dataSet = 1:nSets
     %note to AR tomorrow. This step probably is not right syntax. want
     %to do elementwise subtraction
@@ -150,7 +154,7 @@ end
 rateChiSq = rateChiSq';
 rateStD = sqrt(rateChiSq ./ ellipsesOn);
 rateStE = rateStD ./ sqrt(ellipsesOn);
-
+end
 n(~n) = 1;
 fmean = g./n;
 fstde = sqrt(g2./n - fmean.^2) ./ sqrt(n);
@@ -184,7 +188,10 @@ figure('Name','rate vs ap')
 %     totalEllipses(totalEllipses < 3) = NaN;
 %     fstde(totalEllipses < 3) = NaN;
 idx = ~any(isnan(rateMean),2);
-apidx = ap(idx);rateMeanidx = rateMean(idx);rateStEidx=rateStE(idx);
+apidx = ap(idx);
+try
+rateMeanidx = rateMean(idx);
+rateStEidx=rateStE(idx);
 e = errorbar(apidx(apidx<=.55),rateMeanidx(apidx<=.55), rateStEidx(apidx<=.55));
 xlim([.275, .7])
 %     ylim([0, 1000])
@@ -197,7 +204,7 @@ standardizeFigure(gca, legend('show'),'red');
 e.Color = [213,108,85]/256;
 %     e.MarkerSize= 40;
 %     e.LineWidth= 4;
-
+end
 
 %% Combined Ellipses Count
 % This is for a quick visual check of the fraction on plots

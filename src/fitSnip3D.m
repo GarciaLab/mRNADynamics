@@ -1,7 +1,7 @@
-function SpotsCh = fitSnip3D(SpotsCh, spotChannel, spot, frame, Prefix, PreProcPath, ProcPath, FrameInfo, dogs, displayFigures, saveType)
+function SpotsFr = fitSnip3D(SpotsFr, spotChannel, spot, frame, Prefix, PreProcPath, ProcPath, FrameInfo, dogs, displayFigures, saveType)
 
 
-s = SpotsCh(frame).Fits(spot);
+s = SpotsFr.Fits(spot);
 xSize = FrameInfo(1).PixelsPerLine;
 ySize = FrameInfo(1).LinesPerFrame;
 pixelSize = FrameInfo(1).PixelSize*1000; %nm
@@ -125,43 +125,43 @@ if displayFigures
     fitOptions = [fitOptions,'displayFigures'];
 end
 
-[SpotsCh(frame).Fits(spot).fits3D, SpotsCh(frame).Fits(spot).gauss3DIntensity,...
-    SpotsCh(frame).Fits(spot).fits3DCI95, SpotsCh(frame).Fits(spot).gauss3DIntensityCI95] = fitGaussian3D(snip3D, initial_params, zStep, pixelSize, fitOptions{:});
+[SpotsFr.Fits(spot).fits3D, SpotsFr.Fits(spot).gauss3DIntensity,...
+    SpotsFr.Fits(spot).fits3DCI95, SpotsFr.Fits(spot).gauss3DIntensityCI95] = fitGaussian3D(snip3D, initial_params, zStep, pixelSize, fitOptions{:});
 
 %cast all as singles so the addition will work properly
 snippet_size = single(snippet_size); xSpot = single(xSpot); ySpot = single(ySpot); snipDepth = single(snipDepth); bZ = single(bZ);
 
-x = SpotsCh(frame).Fits(spot).fits3D(2)  -snippet_size + xSpot;
-y = SpotsCh(frame).Fits(spot).fits3D(3)  -snippet_size + ySpot;
-z = SpotsCh(frame).Fits(spot).fits3D(4) -  snipDepth + bZ;
+x = SpotsFr.Fits(spot).fits3D(2)  -snippet_size + xSpot;
+y = SpotsFr.Fits(spot).fits3D(3)  -snippet_size + ySpot;
+z = SpotsFr.Fits(spot).fits3D(4) -  snipDepth + bZ;
 
-dxLow = SpotsCh(frame).Fits(spot).fits3DCI95(2, 1) - snippet_size + xSpot;
-dxHigh = SpotsCh(frame).Fits(spot).fits3DCI95(2, 2) - snippet_size + xSpot;
-dyLow = SpotsCh(frame).Fits(spot).fits3DCI95(3, 1) - snippet_size + ySpot;
-dyHigh = SpotsCh(frame).Fits(spot).fits3DCI95(3, 2) - snippet_size + ySpot;
-dzLow = SpotsCh(frame).Fits(spot).fits3DCI95(4, 1) - snipDepth + bZ;
-dzHigh = SpotsCh(frame).Fits(spot).fits3DCI95(4, 2) - snipDepth + bZ;
+dxLow = SpotsFr.Fits(spot).fits3DCI95(2, 1) - snippet_size + xSpot;
+dxHigh = SpotsFr.Fits(spot).fits3DCI95(2, 2) - snippet_size + xSpot;
+dyLow = SpotsFr.Fits(spot).fits3DCI95(3, 1) - snippet_size + ySpot;
+dyHigh = SpotsFr.Fits(spot).fits3DCI95(3, 2) - snippet_size + ySpot;
+dzLow = SpotsFr.Fits(spot).fits3DCI95(4, 1) - snipDepth + bZ;
+dzHigh = SpotsFr.Fits(spot).fits3DCI95(4, 2) - snipDepth + bZ;
 
-SpotsCh(frame).Fits(spot).GaussPos = single([x,y,z]);
-SpotsCh(frame).Fits(spot).GaussPosCI95 = single([dxLow,dxHigh; dyLow, dyHigh; dzLow, dzHigh]);
+SpotsFr.Fits(spot).GaussPos = single([x,y,z]);
+SpotsFr.Fits(spot).GaussPosCI95 = single([dxLow,dxHigh; dyLow, dyHigh; dzLow, dzHigh]);
 
 if ~isempty(dogSnip3D)
     midind = ceil(size(dogSnip3D,3)/2);
     if size(dogSnip3D,3) > 2
-        SpotsCh(frame).Fits(spot).ampdog3 = single(sum(sum(sum(dogSnip3D(:,:,midind-1:midind+1)))) );
-        SpotsCh(frame).Fits(spot).ampdog3Max = single(max(max(max(dogSnip3D(:,:,midind-1:midind+1))) ));
+        SpotsFr.Fits(spot).ampdog3 = single(sum(sum(sum(dogSnip3D(:,:,midind-1:midind+1)))) );
+        SpotsFr.Fits(spot).ampdog3Max = single(max(max(max(dogSnip3D(:,:,midind-1:midind+1))) ));
     else
-        SpotsCh(frame).Fits(spot).ampdog3 = [];
-        SpotsCh(frame).Fits(spot).ampdog3Max = single(max(max(max(dogSnip3D(:,:,:)))));
+        SpotsFr.Fits(spot).ampdog3 = [];
+        SpotsFr.Fits(spot).ampdog3Max = single(max(max(max(dogSnip3D(:,:,:)))));
     end
 end
 
 %this is a flag that the fit was done over few z-frames so the
 %user can decide if they want to keep the fit or not
 if k < 3
-    SpotsCh(frame).Fits(spot).weeFit = true;
+    SpotsFr.Fits(spot).weeFit = true;
 else
-    SpotsCh(frame).Fits(spot).weeFit = false;
+    SpotsFr.Fits(spot).weeFit = false;
 end
 
 end

@@ -43,18 +43,23 @@ function accumIntensity(data, nc, justMeans)
 
         
         fluo = [];
-        if ~isempty(d.MeanVector3DAP)
-            if iscell(d.MeanVector3DAP)
-                d.MeanVector3DAP = d.MeanVector3DAP{channel};
+        if ~isempty(d.MeanVectorAP)
+            if iscell(d.MeanVectorAP)
+                d.MeanVectorAP = d.MeanVectorAP{channel};
             end
-            fluo = d.MeanVector3DAP;
+            fluo = d.MeanVectorAP;
             fluo(isnan(fluo)) = 0;
         end
         
         for APBin = 1:numAPBins
             if ~isempty(fluo)
-                ncStart = d.APDivision(nc+11, APBin);
-                ncEnd = d.APDivision(nc+11+1, APBin);
+                if ~isempty(d.APDivision)
+                    ncStart = d.APDivision(nc+11, APBin);
+                    ncEnd = d.APDivision(nc+11+1, APBin);
+                else
+                    ncStart = nc+11;
+                    ncEnd = nc+11+1;
+                end
                 if ncStart ~= 0
                     cum(dataSet,APBin) = trapz(d.ElapsedTime(ncStart:ncEnd),fluo(ncStart:ncEnd,APBin));
                     rate(dataSet, APBin) = max(fluo(ncStart:ncEnd,APBin));

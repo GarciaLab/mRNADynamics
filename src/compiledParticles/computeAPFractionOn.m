@@ -1,12 +1,14 @@
 function [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
     FilteredParticlesPos, OnRatioAP, ParticleCountAP, ParticleCountProbAP, ...
-    EllipsesOnAP, rateOnAP, rateOnAPCell, timeOnOnAP, timeOnOnAPCell, TotalEllipsesAP, rateOnAPManual, rateOnAPCellManual, timeOnOnAPManual, timeOnOnAPCellManual]...
+    EllipsesOnAP, rateOnAP, rateOnAPCell,...
+    timeOnOnAP, timeOnOnAPCell, TotalEllipsesAP, rateOnAPManual, rateOnAPCellManual,...
+    timeOnOnAPManual, timeOnOnAPCellManual]...
     ...
     = computeAPFractionOn(NChannels, Particles, schnitzcells, ...
     ...
     CompiledParticles, Ellipses, APbinID, FrameInfo, ElapsedTime, DropboxFolder, ...
     Prefix, EllipsePos, nc12, nc13, nc14, numFrames, SkipFits, SkipAll,...
-    APbinArea, pixelSize, manualSingleFits, edgeWidth)
+    APbinArea, pixelSize, manualSingleFits, edgeWidth, APDivision)
 %
 % computeAPFractionOn(varargin)
 %
@@ -81,8 +83,9 @@ function [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
 
 EdgeWidth= edgeWidth/pixelSize; %in microns. 2.12 is simply the number that results in 10 pixel width
 %when using a spatial resolution of 212nm.
-
-
+try
+load([DropboxFolder, filesep, Prefix, filesep, 'APDivision.mat'], 'APDivision');
+end
 continueanyway = 0; %3/29/19 JL: Workaround to skip schnitzcell rescuing error.
 %Skips the calculation of AP fraction ON if the schnitzcell can't be
 %rescued.
@@ -133,13 +136,13 @@ for ChN=1:NChannels
     timeOnOnAPManual{ChN}=zeros(length(APbinID),3);
     timeOnOnAPCellManual{ChN}=cell(length(APbinID),3);
     
-    for nc=12:14
+    for ncIndex=12:14
         
         %Figure out which frame we'll look at
-        if nc==14
+        if ncIndex==14
             FrameToUse=numFrames-FramesBack;
         else
-            FrameToUse=eval(['nc',num2str(nc+1)])-FramesBack;
+            FrameToUse=eval(['nc',num2str(ncIndex+1)])-FramesBack;
         end
         
         if FrameToUse>0
@@ -164,7 +167,8 @@ for ChN=1:NChannels
                 %Find which AP bin we're in
                 CurrentAPbin=find(APbinID<EllipsePos{FrameToUse}(EllipsesToCheck(j)), 1, 'last' );
                 %Count the total amount of ellipses in the right AP bin
-                TotalEllipsesAP(CurrentAPbin,nc-11)=TotalEllipsesAP(CurrentAPbin,nc-11)+1;
+%                 nc = APDivision(, CurrentAPbin);
+                TotalEllipsesAP(CurrentAPbin,ncIndex-11)=TotalEllipsesAP(CurrentAPbin,ncIndex-11)+1;
                 
                 
                 
@@ -254,19 +258,19 @@ for ChN=1:NChannels
                         %Now see if there is an associated particle with it
                         for m=1:length(CompiledParticles{ChN})
                             if CompiledParticles{ChN}(m).Nucleus==k
-                                EllipsesOnAP{ChN}(CurrentAPbin,nc-11)=EllipsesOnAP{ChN}(CurrentAPbin,nc-11)+1;
+                                EllipsesOnAP{ChN}(CurrentAPbin,ncIndex-11)=EllipsesOnAP{ChN}(CurrentAPbin,ncIndex-11)+1;
                                 if ~SkipFits % if the fitting was done by fitSingleTraces, save the information
-                                    rateOnAP{ChN}(CurrentAPbin,nc-11) = nansum([rateOnAP{ChN}(CurrentAPbin,nc-11),CompiledParticles{ChN}(m).singleTraceLoadingRate]);
-                                    rateOnAPCell{ChN}{CurrentAPbin,nc-11} = [rateOnAPCell{ChN}{CurrentAPbin,nc-11},CompiledParticles{ChN}(m).singleTraceLoadingRate];
-                                    timeOnOnAP{ChN}(CurrentAPbin,nc-11) = nansum([timeOnOnAP{ChN}(CurrentAPbin,nc-11),CompiledParticles{ChN}(m).singleTraceTimeOn]);
-                                    timeOnOnAPCell{ChN}{CurrentAPbin,nc-11} = [timeOnOnAPCell{ChN}{CurrentAPbin,nc-11},CompiledParticles{ChN}(m).singleTraceTimeOn];
+                                    rateOnAP{ChN}(CurrentAPbin,ncIndex-11) = nansum([rateOnAP{ChN}(CurrentAPbin,ncIndex-11),CompiledParticles{ChN}(m).singleTraceLoadingRate]);
+                                    rateOnAPCell{ChN}{CurrentAPbin,ncIndex-11} = [rateOnAPCell{ChN}{CurrentAPbin,ncIndex-11},CompiledParticles{ChN}(m).singleTraceLoadingRate];
+                                    timeOnOnAP{ChN}(CurrentAPbin,ncIndex-11) = nansum([timeOnOnAP{ChN}(CurrentAPbin,ncIndex-11),CompiledParticles{ChN}(m).singleTraceTimeOn]);
+                                    timeOnOnAPCell{ChN}{CurrentAPbin,ncIndex-11} = [timeOnOnAPCell{ChN}{CurrentAPbin,ncIndex-11},CompiledParticles{ChN}(m).singleTraceTimeOn];
                                     
                                 end
                                 if manualSingleFits
-                                    rateOnAPManual{ChN}(CurrentAPbin,nc-11) = nansum([rateOnAPManual{ChN}(CurrentAPbin,nc-11),CompiledParticles{ChN}(m).fittedSlope]);
-                                    rateOnAPCellManual{ChN}{CurrentAPbin,nc-11} = [rateOnAPCellManual{ChN}{CurrentAPbin,nc-11},CompiledParticles{ChN}(m).fittedSlope];
-                                    timeOnOnAPManual{ChN}(CurrentAPbin,nc-11) = nansum([timeOnOnAPManual{ChN}(CurrentAPbin,nc-11),CompiledParticles{ChN}(m).fittedTon]);
-                                    timeOnOnAPCellManual{ChN}{CurrentAPbin,nc-11} = [timeOnOnAPCellManual{ChN}{CurrentAPbin,nc-11},CompiledParticles{ChN}(m).fittedTon];
+                                    rateOnAPManual{ChN}(CurrentAPbin,ncIndex-11) = nansum([rateOnAPManual{ChN}(CurrentAPbin,ncIndex-11),CompiledParticles{ChN}(m).fittedSlope]);
+                                    rateOnAPCellManual{ChN}{CurrentAPbin,ncIndex-11} = [rateOnAPCellManual{ChN}{CurrentAPbin,ncIndex-11},CompiledParticles{ChN}(m).fittedSlope];
+                                    timeOnOnAPManual{ChN}(CurrentAPbin,ncIndex-11) = nansum([timeOnOnAPManual{ChN}(CurrentAPbin,ncIndex-11),CompiledParticles{ChN}(m).fittedTon]);
+                                    timeOnOnAPCellManual{ChN}{CurrentAPbin,ncIndex-11} = [timeOnOnAPCellManual{ChN}{CurrentAPbin,ncIndex-11},CompiledParticles{ChN}(m).fittedTon];
                                 end
                             end
                         end
