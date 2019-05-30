@@ -408,7 +408,7 @@ if isfield(FrameInfo,'FileMode')
         for j=1:numFrames
             ElapsedTime(j)=etime(datevec(FrameInfo(j).TimeString),datevec(FrameInfo(1).TimeString));
         end
-    elseif strcmp(FrameInfo(end).FileMode,'LSM')||strcmp(FrameInfo(end).FileMode,'LSMExport')||...
+    elseif strcmp(FrameInfo(end).FileMode,'OMETIFF') || strcmp(FrameInfo(end).FileMode,'LSM')||strcmp(FrameInfo(end).FileMode,'LSMExport')||...
             strcmp(FrameInfo(end).FileMode,'LIFExport')||strcmp(FrameInfo(end).FileMode,'LAT')
         for j=1:numFrames
             ElapsedTime(j)=FrameInfo(j).Time-FrameInfo(1).Time;

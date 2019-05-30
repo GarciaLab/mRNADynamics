@@ -143,7 +143,15 @@ DLIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lif']);
 DLAT=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*_Settings.txt']);
 DSPIN=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.nd']);     %Nikon spinning disk . CS20170911
 
-if ~isempty(DTIF) & isempty(DLSM)& isempty(DSPIN)
+% OME-TIFF xml companion file (*.ome).
+% Not mandatory per OME-TIFF standard, but our examples have it so for know we detect ome-tiff based on the presence of this file.
+OMETIFF = dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.ome']);   
+
+if ~isempty(OMETIFF)
+    disp('OME-TIFF with .ome XML companion file mode')
+    D = OMETIFF;
+    FileMode = 'OMETIFF';
+elseif ~isempty(DTIF) & isempty(DLSM)& isempty(DSPIN)
     if isempty(DLIF)
         if isempty(DLAT)
             disp('2-photon @ Princeton data mode')
@@ -267,7 +275,7 @@ if ~NoAP
         % resolutions, though...
         ZoomRatio = ResizeFactor;
         
-    elseif strcmp(FileMode,'LSM')||strcmp(FileMode,'CZI')||strcmp(FileMode,'LIFExport')||strcmp(FileMode, 'DSPIN')     %CS20170912
+    elseif strcmp(FileMode,'OMETIFF') || strcmp(FileMode,'LSM')||strcmp(FileMode,'CZI')||strcmp(FileMode,'LIFExport')||strcmp(FileMode, 'DSPIN')     %CS20170912
         
         %This is so that the code doesn't freak out later
         SurfName=[];
