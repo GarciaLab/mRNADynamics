@@ -79,6 +79,7 @@ gaussian = single3DGaussian(fits) + snip3D;
 %%% fits and fits: %%%
 %(1)amplitude (2) x (3) y (4) z (5)sigma x (6)sigma xy
 %(7)sigma xz (8)sigma y (9)sigma yz (10) sigma z (11) offset
+% covariance matrix = { {A D E} {D B F} {E F C} }
 % formula: amplitude * sqrt(pi^3) / sqrt(det(cov))
 %det cov = A*B*C - A*(F/2)^2 - B*(E/2)^2 -
 %C*(D/2)^2 + D*E*F/4 
@@ -187,7 +188,7 @@ if displayFigures
     ylabel(axesxzRaw,'z-axis')
     
     zlim([0, m]);
-    pause(.1)
+%     pause(.1)
 end
 
 if intensityError95 > intensity*2 || ~isreal(intensity)
