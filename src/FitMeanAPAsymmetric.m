@@ -62,12 +62,19 @@ end
 %Load the complied particles and the division information                                    
 load([DropboxFolder,filesep,Prefix,'\CompiledParticles.mat'])
 
-if exist([DropboxFolder,filesep,Prefix,'\APDivision.mat'])
-    load([DropboxFolder,filesep,Prefix,'\APDivision.mat'])
+if exist([DropboxFolder,filesep,Prefix,'\APDivision.mat'], 'file')
+    load([DropboxFolder,filesep,Prefix,'\APDivision.mat'], 'APDivision')
 else
     error('Could not load APDivision.mat. Make sure to have done the manual check of division.')
 end
 
+
+channel = 1;
+
+if iscell(MeanVectorAP)
+    MeanVectorAP = MeanVectorAP{channel};
+    NParticlesAP = NParticlesAP{channel};
+end
 
 %Initial parameters for fits. We will estimate the maximum rate based on
 %the elongation time and the maximum average fluorescence of the data set.
