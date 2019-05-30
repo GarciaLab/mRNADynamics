@@ -139,6 +139,8 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
         sigma_x = fits(3);
         sigma_y = fits(5);
         offset = fits(6);
+   
+        
         
         gaussianArea = pi*sigma_x*sigma_y; %in pixels. this is one width away from peak
         integration_radius = 6*intScale; %integrate 109 pixels around the spot or more optionally
@@ -190,6 +192,18 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
         sigma_y2 = 0;
 %         sister_chromatid_distance = NaN; %leaving this here for now but should be removed. AR 4/3/2019
         fixedAreaIntensity = sum(sum(snippet_mask)) - (offset*maskArea); %corrected AR 7/13/2018
+        
+        fixedAreaIntensityLinearOffset = [];
+        try
+            off_x = fits(8);
+            off_y = fits(9);
+            totalOffset = off_x*(integration_radius-1)/2 +  off_y*(integration_radius-1)/2 + offset;
+            fixedAreaIntensityLinearOffset = sum(sum(snippet_mask)) - (totalOffset*maskArea);
+        catch
+            %
+        end
+        
+   
         dogFixedAreaIntensity = sum(dog_mask(:));
 %         fixedAreaIntensityCyl3 = NaN;
         if doCyl
@@ -246,6 +260,7 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
             Fits.FixedAreaIntensity5 = [];
             Fits.brightestZ =[];
             Fits.snippet_size = uint8(snippet_size);
+            Fits.FixedAreaIntensityLinearOffset = fixedAreaIntensityLinearOffset;
         else
             temp_particles = {{}};
             Fits = [];
