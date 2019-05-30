@@ -92,7 +92,7 @@ function Prefix = ExportDataForLivemRNA(varargin)
   %code for each data type. I should integrate this.
   if strcmpi(FileMode, 'OMETIFF')
     disp('OMETIFF FileMode')
-    FrameInfo = processOMETIFFData(rawDataFolder, D, FrameInfo, Channel1, Channel2, Prefix, OutputFolder);
+    FrameInfo = processOMETIFFData(rawDataFolder, D, FrameInfo, ProjectionType, Channel1, Channel2, Prefix, OutputFolder);
   elseif strcmpi(FileMode, 'TIF')
 
     FrameInfo = process2PhotonPrincetonData(rawDataFolder, D, FrameInfo, Channel2, OutputFolder);

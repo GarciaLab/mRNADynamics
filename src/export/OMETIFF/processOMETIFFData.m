@@ -1,4 +1,6 @@
-function FrameInfo = processOMETIFFData(rawDataFolder, OMETIFFFile, FrameInfo, Channel1, Channel2, Prefix, OutputFolder)
+function FrameInfo = processOMETIFFData(rawDataFolder, OMETIFFFile, FrameInfo, ProjectionType, Channel1, Channel2, Prefix, OutputFolder)
+  % TO-DO: support Channel3
+  
   disp('Processing OME-TIFF Data');
   disp(['RawData folder: ', rawDataFolder]);
   
@@ -87,7 +89,7 @@ function FrameInfo = processOMETIFFData(rawDataFolder, OMETIFFFile, FrameInfo, C
     FrameInfo(i).Time = (i - 1) * TimeIncrement; 
   end
   
-  writeOMETifToOutputFolder(TIFImages, Prefix, NumberSlices, OutputFolder);
+  writeOMETifToOutputFolder(TIFImages, Prefix, NumberSlices, NFrames, ProjectionType, Channel1, Channel2, OutputFolder);
   
   disp('Finished processing OME-TIFF data');
 

@@ -114,8 +114,10 @@ function [FrameInfo, PixelSize] = loadFrameInfo(OutputFolder, PreProcPath, Prefi
       PixelSize = 0.22; %um
     elseif strcmp(FrameInfo(1).FileMode, 'LSM') | strcmp(FrameInfo(1).FileMode, 'LSMExport')%#ok<*OR2>
       PixelSize = FrameInfo(1).PixelSize;
-    elseif strcmp(FrameInfo(1).FileMode, 'LIFExport') || strcmp(FrameInfo(1).FileMode, 'LAT') || strcmp(FrameInfo(1).FileMode, 'DSPIN')%CS20170907
+    elseif strcmp(FrameInfo(1).FileMode, 'OMETIFF') || strcmp(FrameInfo(1).FileMode, 'LIFExport') || strcmp(FrameInfo(1).FileMode, 'LAT') || strcmp(FrameInfo(1).FileMode, 'DSPIN')%CS20170907
       PixelSize = FrameInfo(1).PixelSize;
+    else
+      error('FileMode %s not supported', FrameInfo(1).FileMode);
     end
 
   else
