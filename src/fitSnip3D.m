@@ -33,12 +33,13 @@ nameSuffix = ['_ch', iIndex(spotChannel, 2)];
 dogProb = 'DOG_';
 
 isZPadded = false;
-    firstdogname = ['DOG_', Prefix, '_', iIndex(1, 3), '_z', iIndex(1, 2), nameSuffix];
+firstdogname = [dogProb, Prefix, '_', iIndex(1, 3), '_z', iIndex(1, 2), nameSuffix];
 
 firstdogpath = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,firstdogname];
 
 matsPresent = exist([firstdogpath, '.mat'], 'file');
 tifsPresent = exist([firstdogpath, '.tif'], 'file');
+
 if ~strcmpi(saveType, 'none')
     if tifsPresent & ~matsPresent
         saveType = '.tif';
@@ -50,20 +51,20 @@ if ~strcmpi(saveType, 'none')
 end
 
 firstdogpath = [firstdogpath, saveType];
-    
+
 if strcmpi(saveType, '.tif')
     try
-    firstDoG = imread(firstdogpath);
+        firstDoG = imread(firstdogpath);
     catch
-    firstdogname = ['prob', Prefix, '_', iIndex(1, 3), '_z', iIndex(1, 2), nameSuffix];
-    dogProb = 'prob';
-    firstdogpath = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,firstdogname];
-firstdogpath = [firstdogpath, saveType];
-    firstDoG = imread(firstdogpath);
-
+        firstdogname = ['prob', Prefix, '_', iIndex(1, 3), '_z', iIndex(1, 2), nameSuffix];
+        dogProb = 'prob';
+        firstdogpath = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,firstdogname];
+        firstdogpath = [firstdogpath, saveType];
+        firstDoG = imread(firstdogpath);
+        
     end
 elseif strcmpi(saveType, '.mat')
-     load(firstdogpath, 'plane');
+    load(firstdogpath, 'plane');
     firstDoG = plane;
 elseif strcmpi(saveType, 'none')
     firstDoG = dogs(:, :, 1, 1);

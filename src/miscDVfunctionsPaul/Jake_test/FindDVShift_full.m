@@ -1,6 +1,7 @@
 function  [DV_shift] = FindDVShift_full(varargin)
 %% Initialization
 
+
 prompt = 'Please input the resolution: (1024/2048)';
 res = input(prompt);
 if res == 1024

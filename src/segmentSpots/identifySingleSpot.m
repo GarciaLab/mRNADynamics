@@ -53,24 +53,24 @@ else %if we're in checkparticletracking
 end
 
 
-for i = 1:2*searchRadius
-    for j = 1:2*searchRadius
-        if row - searchRadius + i > 0 && col - searchRadius + j > 0 ...
-                && row - searchRadius + i < size(image,1)  && col - searchRadius + j < size(image,2)
+for y = 1:2*searchRadius
+    for x = 1:2*searchRadius
+        if row - searchRadius + y > 0 && col - searchRadius + x > 0 ...
+                && row - searchRadius + y < size(image,1)  && col - searchRadius + x < size(image,2)
             if ML
-                possible_centroid_intensity(i,j) = sum(sum(image(row-searchRadius+i, col-searchRadius+j)));
+                possible_centroid_intensity(y,x) = sum(sum(image(row-searchRadius+y, col-searchRadius+x)));
             else
                 if addition(1) || intScale~=1
                     %                         possible_centroid_intensity(i,j) = sum(sum(image(row-2*searchRadius+i:row+i,...
                     %                             col-2*searchRadius+j:col+j)));
-                    possible_centroid_intensity(i,j) = sum(sum(image(row-searchRadius+i, col-searchRadius+j)));
+                    possible_centroid_intensity(y,x) = sum(sum(image(row-searchRadius+y, col-searchRadius+x)));
                 else
                     %using the max pixel value will be wrong in some cases. integral
                     %would be better
-                    possible_centroid_intensity(i,j) = sum(sum(image(row-searchRadius+i, col-searchRadius+j)));
+                    possible_centroid_intensity(y,x) = sum(sum(image(row-searchRadius+y, col-searchRadius+x)));
                 end
             end
-            possible_centroid_location{i,j} = [row-searchRadius+i, col-searchRadius+j];
+            possible_centroid_location{y,x} = [row-searchRadius+y, col-searchRadius+x];
         end
     end
 end
@@ -173,17 +173,27 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
             snippet_mask_above = snippetAbove;
             snippet_mask_below = snippetBelow;
         end
+        
+        if length(fits)>7
+            linearOffset = true;
+            off_x = fits(8);
+            off_y = fits(9);
+        end
+        
         maskArea = 0;
-        for i = 1:size(snippet, 1)
-            for j = 1:size(snippet,2)
-                d = sqrt( (j - (size(snippet,1)+1)/2)^2 + (i - (size(snippet,2)+1)/2)^2) ;
+        for y = 1:size(snippet, 1)
+            for x = 1:size(snippet,2)
+                d = sqrt( (x - (size(snippet,1)+1)/2)^2 + (y - (size(snippet,2)+1)/2)^2) ;
                 if d >= integration_radius
-                    snippet_mask(i, j) = 0;
-                    snippet_mask_above(i,j) = 0;
-                    snippet_mask_below(i,j) = 0;
-                    dog_mask(i,j) = 0;
+                    snippet_mask(y, x) = 0;
+                    snippet_mask_above(y,x) = 0;
+                    snippet_mask_below(y,x) = 0;
+                    dog_mask(y,x) = 0;
                 else
                     maskArea = maskArea+1;
+                    if linearOffset
+                        snippet_mask(y,x) = snippet_mask(y,x) - off_x*x - off_y*y;
+                    end
                 end
             end
         end
@@ -192,18 +202,7 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
         sigma_y2 = 0;
 %         sister_chromatid_distance = NaN; %leaving this here for now but should be removed. AR 4/3/2019
         fixedAreaIntensity = sum(sum(snippet_mask)) - (offset*maskArea); %corrected AR 7/13/2018
-        
-        fixedAreaIntensityLinearOffset = [];
-        try
-            off_x = fits(8);
-            off_y = fits(9);
-            totalOffset = off_x*(integration_radius-1)/2 +  off_y*(integration_radius-1)/2 + offset;
-            fixedAreaIntensityLinearOffset = sum(sum(snippet_mask)) - (totalOffset*maskArea);
-        catch
-            %
-        end
-        
-   
+
         dogFixedAreaIntensity = sum(dog_mask(:));
 %         fixedAreaIntensityCyl3 = NaN;
         if doCyl
@@ -260,7 +259,6 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
             Fits.FixedAreaIntensity5 = [];
             Fits.brightestZ =[];
             Fits.snippet_size = uint8(snippet_size);
-            Fits.FixedAreaIntensityLinearOffset = fixedAreaIntensityLinearOffset;
         else
             temp_particles = {{}};
             Fits = [];

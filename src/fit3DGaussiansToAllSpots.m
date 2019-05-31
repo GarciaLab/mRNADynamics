@@ -43,10 +43,6 @@ FrameInfo = FrameInfo.FrameInfo;
 
 startParallelPool(nWorkers, displayFigures, keepPool);
 
-if ~iscell(Spots)
-    Spots = {Spots};
-end
-
 
 %%
 for ch = spotChannels
@@ -57,7 +53,12 @@ for ch = spotChannels
     afterEach(q, @nUpdateWaitbar);
     p = 1;
     
-    SpotsCh = Spots{ch};
+    if iscell(Spots)
+        SpotsCh = Spots{ch};
+    else
+        SpotsCh = Spots;
+    end
+    
     numFrames = length(SpotsCh);
     
     
@@ -72,7 +73,11 @@ for ch = spotChannels
         send(q, frame); %update the waitbar
     end
     
-    Spots{ch} = SpotsCh;
+    if iscell(Spots) & length(Spots) > 1
+        Spots{ch} = SpotsCh;
+    else
+        Spots = SpotsCh;
+    end
     
 end
 

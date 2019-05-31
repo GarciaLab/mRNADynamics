@@ -324,7 +324,7 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
         NumberSlices=FrameInfo(1).NumberSlices;
         NumberSlices2 = NumberSlices + 2;
               
-        %Generate reference frame for edfe detection
+        %Generate reference frame for edge detection
         refFrame = ones(LinesPerFrame,PixelsPerLine,NumberSlices2);
         convRef = convn(refFrame, Circle, 'same');
         edgeMask = convRef~=sum(Circle(:));
@@ -341,6 +341,7 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
                     error('Not sure what happened here. Talk to YJK or SA.')
                 end
             % NL: should parallelize this
+            Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2);
             for CurrentFrame=1:numFrames
 
                 waitbar(CurrentFrame/numFrames,h);
@@ -348,7 +349,7 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
 %                 %Initialize the image
 %                 Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2)
 %                 %AR 1/12/18 moved this outside the for loops
-                Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2);
+%                 Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2);
                 %Load the z-stack for this frame        
                 for CurrentZ=1:NumberSlices2   %Note that I need to add the two extra slices manually
                     Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
@@ -357,14 +358,18 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
                 % NL: rewriting this extraction step as a convolution                            
                 convImage = convn(Image, Circle, 'same');                
                 convImage(edgeMask) = NaN;
-                [yDim, xDim] = size(convImage);
+%                 [yDim, xDim] = size(convImage);
+%                 tempFluo = []; tempMask = [];
                 for j=1:length(schnitzcells)
                     CurrentIndex=find(schnitzcells(j).frames==CurrentFrame);
-                    cenx=min(max(1,round(schnitzcells(j).cenx(CurrentIndex))),xDim);
-                    ceny=min(max(1,round(schnitzcells(j).ceny(CurrentIndex))),yDim);
+                    cenx=min(max(1,round(schnitzcells(j).cenx(CurrentIndex))),PixelsPerLine);
+                    ceny=min(max(1,round(schnitzcells(j).ceny(CurrentIndex))),LinesPerFrame);
+%                     tempFluo(j) = convImage(ceny,cenx,:);
                     schnitzcells(j).Fluo(CurrentIndex,1:NumberSlices2,ChN) = convImage(ceny,cenx,:);
+%                     tempMask(j) = Circle;
                     schnitzcells(j).Mask=Circle;                    
                 end
+                
 %                 NL: commented out old version
 %                 for j=1:length(schnitzcells)
 % 
@@ -380,6 +385,10 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
 %                         Image,LinesPerFrame,PixelsPerLine,NumberSlices2,Circle,IntegrationRadius,ChN);
 %                 end
             end
+            
+%             schnitzcells.Fluo = tempFluo;
+%             schnitzcells.Mask = tempMask;
+            
         close(h)
         end
     else
