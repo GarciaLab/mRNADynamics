@@ -1,5 +1,11 @@
-function [Particles, SpotFilter] = performTracking(Particles, scurrentChannelitzcells, NCh, Spots, app, SpotFilter, PreProcPath, Prefix, UseHistone, ParticlesFig, SpotsChannel, NDigits, NucleiFig, particlesAxes, nucAxes, Ellipses, PixelSize, SearchRadius, ExperimentType, FrameInfo, retrack, displayFigures)
-  % Iterate over all channels
+function [Particles, SpotFilter] = performTracking(Particles, scurrentChannelitzcells, NCh, Spots, app, SpotFilter, PreProcPath, Prefix, UseHistone, ParticlesFig, SpotsChannel, NucleiFig, particlesAxes, nucAxes, Ellipses, PixelSize, SearchRadius, ExperimentType, FrameInfo, retrack, displayFigures)
+ 
+
+NDigits = adjustIndexSizeAccordingToFrames(FrameInfo);
+  
+
+% Iterate over all channels
+  
   for Channel = 1:NCh
 
     % Iterate over all frames
@@ -39,16 +45,16 @@ function [Particles, SpotFilter] = performTracking(Particles, scurrentChannelitz
     
     if ~isfield(Particles{currentChannel}, 'FrameApproved')
       
-      for i = 1:length(Particles{currentChannel})
-        Particles{currentChannel}(i).FrameApproved = true(size(Particles{currentChannel}(i).Frame));
+      for particle = 1:length(Particles{currentChannel})
+        Particles{currentChannel}(particle).FrameApproved = true(size(Particles{currentChannel}(particle).Frame));
       end
       
     else
       
-      for i = 1:length(Particles{currentChannel})
+      for particle = 1:length(Particles{currentChannel})
         
-        if isempty(Particles{currentChannel}(i).FrameApproved)
-          Particles{currentChannel}(i).FrameApproved = true(size(Particles{currentChannel}(i).Frame));
+        if isempty(Particles{currentChannel}(particle).FrameApproved)
+          Particles{currentChannel}(particle).FrameApproved = true(size(Particles{currentChannel}(particle).Frame));
         end
         
       end
@@ -59,13 +65,13 @@ function [Particles, SpotFilter] = performTracking(Particles, scurrentChannelitz
     %originally only added by addParticlePosition, but it it's more useful
     %early on in the pipeline. 
     
-        for i=1:length(Particles{currentChannel})
-            for j=1:length(Particles{currentChannel}(i).Frame)
-                [x,y,z]=SpotsXYZ(Spots{currentChannel}(Particles{currentChannel}(i).Frame(j)));
+        for particle=1:length(Particles{currentChannel})
+            for frame=1:length(Particles{currentChannel}(particle).Frame)
+                [x,y,z]=SpotsXYZ(Spots{currentChannel}(Particles{currentChannel}(particle).Frame(frame)));
                 if ~isempty(x) 
-                    Particles{currentChannel}(i).xPos(j)=x(Particles{currentChannel}(i).Index(j));
-                    Particles{currentChannel}(i).yPos(j)=y(Particles{currentChannel}(i).Index(j));
-                    Particles{currentChannel}(i).zPos(j)=z(Particles{currentChannel}(i).Index(j));
+                    Particles{currentChannel}(particle).xPos(frame)=x(Particles{currentChannel}(particle).Index(frame));
+                    Particles{currentChannel}(particle).yPos(frame)=y(Particles{currentChannel}(particle).Index(frame));
+                    Particles{currentChannel}(particle).zPos(frame)=z(Particles{currentChannel}(particle).Index(frame));
                 end
             end
         end
@@ -180,6 +186,20 @@ function hisImage = openHistoneImage(Prefix, PreProcPath, CurrentFrame, NDigits)
       hisImage = 0;
     end
 
+  end
+
+end
+
+% See how  many frames we have and adjust the index size of the files to
+% load accordingly
+function NDigits = adjustIndexSizeAccordingToFrames(FrameInfo)
+
+  if length(FrameInfo) < 1E3
+    NDigits = 3;
+  elseif length(FrameInfo) < 1E4
+    NDigits = 4;
+  else
+    error('No more than 10,000 frames supported. Change this in the code')
   end
 
 end

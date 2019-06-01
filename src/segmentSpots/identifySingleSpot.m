@@ -167,11 +167,11 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
         % but the first one does, and the second one is good
         % enough to position its center.
         
-        snippet_mask = snippet;
-        dog_mask = dogsnip;
+        snippet_mask = double(snippet);
+        dog_mask = double(dogsnip);
         if doCyl
-            snippet_mask_above = snippetAbove;
-            snippet_mask_below = snippetBelow;
+            snippet_mask_above = double(snippetAbove);
+            snippet_mask_below = double(snippetBelow);
         end
         
         if length(fits)>7
@@ -193,6 +193,8 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
                     maskArea = maskArea+1;
                     if linearOffset
                         snippet_mask(y,x) = snippet_mask(y,x) - off_x*x - off_y*y;
+                        snippet_mask_above(y,x) = snippet_mask_above(y,x) - off_x*x - off_y*y;
+                        snippet_mask_below(y,x) = snippet_mask_below(y,x) - off_x*x - off_y*y;
                     end
                 end
             end

@@ -90,10 +90,9 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
   else
       ParticlesFig = []; particlesAxes = []; NucleiFig = []; nucAxes = [];
   end
-  NDigits = adjustIndexSizeAccordingToFrames(FrameInfo);
 
   [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh, Spots, app, SpotFilter, PreProcPath, ...
-    Prefix, UseHistone, ParticlesFig, SpotsChannel, NDigits, NucleiFig, particlesAxes, nucAxes, Ellipses, ...
+    Prefix, UseHistone, ParticlesFig, SpotsChannel, NucleiFig, particlesAxes, nucAxes, Ellipses, ...
     PixelSize, SearchRadius, ExperimentType, FrameInfo, retrack, displayFigures);
 
   mkdir([OutputFolder, filesep]);
@@ -276,19 +275,6 @@ function [ParticlesFig, particlesAxes, NucleiFig, nucAxes] = generateTrackingFig
 
 end
 
-% See how  many frames we have and adjust the index size of the files to
-% load accordingly
-function NDigits = adjustIndexSizeAccordingToFrames(FrameInfo)
-
-  if length(FrameInfo) < 1E3
-    NDigits = 3;
-  elseif length(FrameInfo) < 1E4
-    NDigits = 4;
-  else
-    error('No more than 10,000 frames supported. Change this in the code')
-  end
-
-end
 
 function createFieldNCAndSaveFrameInfo(FrameInfo, OutputFolder, nc9, nc10, nc11, nc12, nc13, nc14)
   % creating the field nc for FrameInfo

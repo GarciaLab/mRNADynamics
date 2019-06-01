@@ -188,7 +188,7 @@ if strcmpi(ExperimentType, 'inputoutput')
     plot(traceFigAxes,schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames,...
         max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).Fluo,[],2),'r.-','DisplayName','protein')
     try
-        xlim(traceFigAxes,[min(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames),max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames)])
+%         xlim(traceFigAxes,[min(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames),max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames)])
     catch
         %             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
     end

@@ -1,4 +1,4 @@
-function  [DV_shift] = FindDVShift_full(varargin)
+function  [DV_shift] = FindDVShift_full(Prefix, varargin)
 %% Initialization
 
 
@@ -18,7 +18,6 @@ end
 
 %% Part 1: Read image data
 
-Prefix=varargin{1};
 [SourcePath, ~, DefaultDropboxFolder, DropboxFolder, ~, ~,...
 ~, ~] = DetermineAllLocalFolders(Prefix);
 
@@ -82,8 +81,7 @@ ImLabel=bwlabel(J,4);
 
 %We need to calculate the area of each region found by bwlabel.
 %To get the area, we'll use regionprops
-ImProps=regionprops(ImLabel,'Area');
-ImProps
+ImProps=regionprops(ImLabel,'Area')
 
 %Generate a list of all areas we have
 Areas=[ImProps.Area];
