@@ -1,4 +1,4 @@
-function AddParticlePosition(varargin)
+function AddParticlePosition(Prefix, varargin)
 %
 % DESCRIPTION
 % Locates particles from a zoomed-in movie within full embryo images using
@@ -28,10 +28,8 @@ function AddParticlePosition(varargin)
 %V2: Changed this function to use a correlation in order to center the
 %images.
 
-Prefix = varargin{1};
-
 %Get the relevant folders for this data set
-[SourcePath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
+[RawDynamicsPath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
     ~, ~] = DetermineAllLocalFolders(Prefix);
 
 % refactor in progress, we should replace readMovieDatabase with getExperimentDataFromMovieDatabase
@@ -51,9 +49,7 @@ correctDV = false;
 close all
 
 
-if ~isempty(varargin)
-    Prefix = varargin{1};
-    for i=2:length(varargin)
+    for i=1:length(varargin)
         switch varargin{i}
             case {'SkipAlignment'}
                 disp('Skipping alignment step')
@@ -72,15 +68,10 @@ if ~isempty(varargin)
                 correctDV = true;
         end
     end
-else
-    
-    FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
-    Dashes=strfind(FolderTemp,filesep);
-    Prefix=FolderTemp((Dashes(end)+1):end);
-end
+
 
 %Get the relevant folders for this data set
-[SourcePath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
+[RawDynamicsPath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
     ~, ~] = DetermineAllLocalFolders(Prefix, optionalResults);
 
 
@@ -124,75 +115,23 @@ end
 
 
 %See if we had any lineage/nuclear information
-D=dir([PreProcPath,filesep,Prefix,filesep,'*-His_*']);
-if ~isempty(D)
+hisDir=dir([PreProcPath,filesep,Prefix,filesep,'*-His_*']);
+if ~isempty(hisDir)
     histoneChannelPresent = true;
 else
     histoneChannelPresent = false;
 end
 
-
-%Determine whether we're dealing with 2-photon data from Princeton or LSM
-%data. 2-photon data uses TIF files. In LSM mode multiple files will be
-%combined into one.
-%Find out the date it was taken
-Dashes=strfind(Prefix,'-');
-Date=Prefix(1:Dashes(3)-1);
-EmbryoName=Prefix(Dashes(3)+1:end);
-DTIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.tif']);
-DLSM=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lsm']);
-DCZI=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.czi']);
-DLIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lif']);
-DLAT=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*_Settings.txt']);
-DSPIN=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.nd']);     %Nikon spinning disk . CS20170911
-
-% OME-TIFF xml companion file (*.ome).
-% Not mandatory per OME-TIFF standard, but our examples have it so for know we detect ome-tiff based on the presence of this file.
-OMETIFF = dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.ome']);
-
-if ~isempty(OMETIFF)
-    disp('OME-TIFF with .ome XML companion file mode')
-    D = OMETIFF;
-    FileMode = 'OMETIFF';
-elseif ~isempty(DTIF) & isempty(DLSM)& isempty(DSPIN)
-    if isempty(DLIF)
-        if isempty(DLAT)
-            disp('2-photon @ Princeton data mode')
-            D=DTIF;
-            FileMode='TIF';
-        else
-            disp('Lattice Light Sheet data mode')
-            D=DTIF;
-            FileMode='LAT';
-        end
-    else
-        disp('LIF export mode')
-        D=DTIF;
-        FileMode='LIFExport';
-    end
-elseif (isempty(DTIF))&(~isempty(DLSM))
-    disp('LSM mode')
-    D=DLSM;
-    FileMode='LSM';
-elseif (isempty(DTIF))&(~isempty(DCZI))
-    disp('CZI mode')
-    D=DLSM;
-    FileMode='CZI';
-elseif (~isempty(DSPIN))        %CS20170911
-    disp('Nikon spinning disk mode with .nd files')
-    D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo', filesep,'*.nd']);     %spinning disk with .nd output files
-    FileMode='DSPIN';
-else
-    error('File type not recognized')
-end
-
-
-
-
 %Figure out what type of experiment we have
 [~, ~, ~, ~, ~, APResolution,...
     Channel1, Channel2, ~, ~, ~, ~, ~,...
     ~, ~, ~, ~, ~, ~, ~, Channel3] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+
+
+
+[FileMode, EmbryoName, projectDate] = getMicroscope(RawDynamicsPath, Prefix);
+rawPrefixPath = [RawDynamicsPath,filesep,projectDate,filesep,EmbryoName,filesep];
+fullEmbryoPath = [rawPrefixPath, 'FullEmbryo', filesep];
 
 
 if ~NoAP
@@ -228,10 +167,11 @@ if ~NoAP
     
     %Get information about all images. This depends on the microscope used.
     
+    
     %Get the information about the zoom
     if strcmp(FileMode,'TIF')
-        D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.tif']);
-        ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(1).name]);
+        D=dir([rawPrefixPath,'*.tif']);
+        ImageInfo = imfinfo([rawPrefixPath,D(1).name]);
         
         %Figure out the zoom factor
         MovieZoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
@@ -239,16 +179,16 @@ if ~NoAP
         
         
         %Get the zoomed out surface image and its dimensions from the FullEmbryo folder
-        D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.tif']);
+        D=dir([fullEmbryoPath,filesep,'*.tif']);
         SurfName=D(find(~cellfun('isempty',strfind(lower({D.name}),'surf')))).name;
-        SurfImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,...
+        SurfImage=imread([rawPrefixPath,...
             'FullEmbryo',filesep,SurfName],ChannelToLoad);
         
         %Get the size of the zoom image
         Rows = str2double(ExtractInformationField(ImageInfo(1), 'state.acq.linesPerFrame='));
         Columns = str2double(ExtractInformationField(ImageInfo(1), 'state.acq.pixelsPerLine='));
         
-        SurfInfo = imfinfo([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo', filesep, SurfName]);
+        SurfInfo = imfinfo([RawDynamicsPath, filesep, projectDate, filesep, EmbryoName, filesep, 'FullEmbryo', filesep, SurfName]);
         SurfZoom = ExtractInformationField(SurfInfo(1), 'state.acq.zoomFactor=');
         SurfZoom = str2double(SurfZoom);
         
@@ -278,8 +218,7 @@ if ~NoAP
         % resolutions, though...
         ZoomRatio = ResizeFactor;
         
-    elseif strcmp(FileMode,'OMETIFF') || strcmp(FileMode,'LSM')||strcmp(FileMode,'CZI')||strcmp(FileMode,'LIFExport')||strcmp(FileMode, 'DSPIN')     %CS20170912
-        
+    else         
         %This is so that the code doesn't freak out later
         SurfName=[];
         
@@ -305,15 +244,15 @@ if ~NoAP
         end
         
         %Find the zoomed movie pixel size
-        D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.',FileMode(1:3)]);
+        D=dir([rawPrefixPath,'*.',FileMode(1:3)]);
         
         if strcmp(FileMode, 'DSPIN')            %CS20170912
-            D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.nd']);
+            D=dir([rawPrefixPath,'*.nd']);
         end
         
         %Load only the metadata from the zoomed images
-        MetaReader=bfGetReader([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(end).name]);
-        MetaZoom=MetaReader.getMetadataStore();
+        MetaReader=bfGetReader([rawPrefixPath,D(end).name]);
+        MetaZoom=MetaReader.getMetadataStore()6
         try
             PixelSizeZoom=str2double(MetaZoom.getPixelsPhysicalSizeX(0).value);
         catch
@@ -321,12 +260,12 @@ if ~NoAP
         end
         
         %Find the full embryo pixel size and load the image
-        D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*surf*.',FileMode(1:3)]);
+        D=dir([fullEmbryoPath,filesep,'*surf*.',FileMode(1:3)]);
         if strcmp(FileMode, 'DSPIN')            %CS20170912
-            D=dir([SourcePath,filesep,Date,filesep,EmbryoName, filesep,'FullEmbryo',filesep,'*surf*']);
+            D=dir([RawDynamicsPath,filesep,projectDate,filesep,EmbryoName, filesep,'FullEmbryo',filesep,'*surf*']);
         end
         
-        ImageTemp=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(end).name]);
+        ImageTemp=bfopen([fullEmbryoPath,filesep,D(end).name]);
         MetaFullEmbryo= ImageTemp{:, 4};
         PixelSizeFullEmbryo=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0) );
         try
@@ -336,11 +275,11 @@ if ~NoAP
         end
         
         %Check that the surface and midsaggital images have the same zoom
-        D1=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*mid*.',FileMode(1:3)]);
+        D1=dir([fullEmbryoPath,'*mid*.',FileMode(1:3)]);
         if strcmp(FileMode, 'DSPIN')            %CS20170912
-            D1=dir([SourcePath,filesep,Date,filesep,EmbryoName, filesep,'FullEmbryo',filesep,'*surf*']);
+            D1=dir([fullEmbryoPath,'*surf*']);
         end
-        ImageTemp1=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D1(end).name]);
+        ImageTemp1=bfopen([fullEmbryoPath,D1(end).name]);
         MetaFullEmbryo1= ImageTemp1{:, 4};
         
         %This if for BioFormats backwards compatibility
@@ -392,31 +331,24 @@ if ~NoAP
             SurfImage = SurfImage{1}{1};
         end
         
-        Dashes=findstr(Prefix,'-');
-        Date=Prefix(1:Dashes(3)-1);
-        EmbryoName=Prefix(Dashes(3)+1:end);
-        
-        %Rotates the full embryo image to match the rotation of the zoomed
+               %Rotates the full embryo image to match the rotation of the zoomed
         %time series
         zoom_angle = 0;
         full_embryo_angle = 0;
         
         if strcmp(FileMode,'LIFExport')
-            if isdir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData'])
-                xml_file_path = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, '*.xml']);
+            if isfolder([rawPrefixPath, 'MetaData'])
+                xml_file_path = dir([rawPrefixPath,'MetaData', filesep, '*.xml']);
                 xml_file = xml_file_path(1).name;
-                xDoc = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, xml_file]);
+                xDoc = searchXML([rawPrefixPath,'MetaData', filesep, xml_file]);
                 zoom_angle = str2double(evalin('base','rot'));
             else
                 warning('No time series metadata found.')
             end
-            if isdir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo', filesep...
-                    'MetaData'])
-                xml_file_path2 = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo',...
-                    filesep, 'MetaData', filesep,'*Surf*.xml']);
+            if isfolder([fullEmbryoPath,'MetaData'])
+                xml_file_path2 = dir([fullEmbryoPath,'MetaData', filesep,'*Surf*.xml']);
                 xml_file2 = xml_file_path2(1).name;
-                xDoc2 = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep,'FullEmbryo', filesep,...
-                    'MetaData', filesep, xml_file2]);
+                xDoc2 = searchXML([fullEmbryoPath,'MetaData', filesep, xml_file2]);
                 full_embryo_angle = str2double(evalin('base','rot'));
             else
                 warning('No full embryo metadata found.')
@@ -424,7 +356,7 @@ if ~NoAP
             
             evalin('base','clear rot')
         elseif strcmp(FileMode,'LSM')|strcmp(FileMode,'CZI')|strcmp(FileMode,'DSPIN') %CS20170912
-            LSMSurf=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(1).name]);
+            LSMSurf=bfopen([fullEmbryoPath,D(1).name]);
             LSMMeta=LSMSurf{:,4};
             LSMMeta2=LSMSurf{:,2};
             
@@ -438,9 +370,8 @@ if ~NoAP
                 full_embryo_angle = LSMMeta2.get('Recording Rotation #1');
                 
                 %Figure out the rotation of the zoomed-in image
-                DLSMZoom=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lsm']);
-                LSMZoom=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,...
-                    DLSMZoom(1).name]);
+                DLSMZoom=dir([rawPrefixPath,'*.lsm']);
+                LSMZoom=bfopen([rawPrefixPath, DLSMZoom(1).name]);
                 LSMMetaZoom2=LSMZoom{:,2};
                 zoom_angle=LSMMetaZoom2.get('Recording Rotation #1');
             elseif strcmp(FileMode,'CZI')
@@ -448,11 +379,11 @@ if ~NoAP
                 full_embryo_angle=str2num(LSMMeta2.get('Global HardwareSetting|ParameterCollection|RoiRotation #1'));
                 
                 %Figure out the rotation of the zoomed-in image
-                DLSMZoom=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.czi']);
-                LSMZoom=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,...
+                DLSMZoom=dir([rawPrefixPath,'*.czi']);
+                LSMZoom=bfopen([rawPrefixPath,...
                     DLSMZoom(1).name]);
                 LSMMetaZoom2=LSMZoom{:,2};
-                zoom_angle=str2num(LSMMetaZoom2.get('Global HardwareSetting|ParameterCollection|RoiRotation #1'));
+                zoom_angle=str2double(LSMMetaZoom2.get('Global HardwareSetting|ParameterCollection|RoiRotation #1'));
             end
         end
         
@@ -505,41 +436,29 @@ if ~NoAP
         % to find AP information about an image without using FISH
         % code. In that case, just extract the nuclei from the last
         % raw image.
-        DGFP = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, '*.tif']);
-        ImageInfo = imfinfo([SourcePath, filesep, Date, filesep, EmbryoName, filesep, DGFP(end).name]);
+        DGFP = dir([rawPrefixPath, '*.tif']);
+        ImageInfo = imfinfo([rawPrefixPath, DGFP(end).name]);
         NumFramesAndSlices = length(ImageInfo)/2;
         RawImage3M = NaN(Rows, Columns, NumFramesAndSlices);
         for lImageIndex = 1:NumFramesAndSlices
-            RawImage3M(:, :, lImageIndex) = imread([SourcePath, filesep, Date, filesep, EmbryoName, filesep, DGFP(end).name],...
-                'Index', 2*(lImageIndex-1) + ChannelToLoad);
+            RawImage3M(:, :, lImageIndex) = imread([rawPrefixPath,DGFP(end).name],'Index', 2*(lImageIndex-1) + ChannelToLoad);
         end
-        ZoomImage = max(RawImage3M, [], 3) / 255;
+        ZoomImage = max(RawImage3M, [], 3) / 256;
     end
     
-    
-    
-    %If there is no zoom information on the surface image then look into
-    %the temp folder. This is because sometimes we edit images in ImageJ
-    %which leads to losing the zoom information.
-    if isnan(SurfZoom)
-        Dtemp=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'temp',filesep,'*.tif']);
-        LeftFileIndex=find(~cellfun('isempty',strfind(lower({Dtemp.name}),'left'))&...
-            cellfun('isempty',strfind(lower({Dtemp.name}),'surf')));
-        ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,...
-            'temp',filesep,Dtemp(LeftFileIndex).name]);
-        SurfZoom=str2double(ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor='));
-        
-        SurfRows=SurfInfo.Height;
-        SurfColumns=SurfInfo.Width;
-    end
-    
-    
+
     
     %Do a correlation between the zoomed in and zoomed out surface images
     %to figure out the shift.
     FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
     
     if ~SkipAlignment && histoneChannelPresent
+        
+        ShiftColumn=0;
+        ShiftRow=0;
+        NucMaskZoomIn = false(size(ZoomImage));
+        NucMaskZoomOut = false(size(SurfImage));
+        
         if ZoomRatio < 24  %ZoomRatio > 1 && ZoomRatio < 24. AR 12/4/17- where did this number come from
             
             %Enlarge the zoomed out image so we can do the cross-correlation
@@ -663,23 +582,12 @@ if ~NoAP
                 saveas(contFig, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentCorrelation.tif']);
             catch
                 warning('Could not generate correlation image. Switching to manual alignment')
-                
-                ManualAlignment=1;
-                ShiftColumn=0;
-                ShiftRow=0;
-                NucMaskZoomIn = false(size(ZoomImage));
-                NucMaskZoomOut = false(size(SurfImage));
+                ManualAlignment=true;
             end
             
         else
-            
-            warning('Not able to do the cross correlation. Switching to manual alignment mode.')
-            
-            ManualAlignment=1;
-            ShiftColumn=0;
-            ShiftRow=0;
-            NucMaskZoomIn = false(size(ZoomImage));
-            NucMaskZoomOut = false(size(SurfImage));
+            warning('Not able to do the cross correlation. Switching to manual alignment mode.')     
+            ManualAlignment=true;
         end
         
         
@@ -688,17 +596,11 @@ if ~NoAP
             %See if we need to load the previous manual alignment results
             [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ZoomRatio,ShiftRow,ShiftColumn,...
                 FullEmbryo, ZoomRatio, SurfRows,Rows, Columns, coordA, coordP, SurfColumns);
-            ManualAlignmentDone=1;
+            ManualAlignmentDone = true;
         end
         
     else
         warning('Not able to do the cross correlation. Assuming no shift between surface-level and movie-level images.')
-        
-        ManualAlignment = 0;
-        ShiftColumn=0;
-        ShiftRow=0;
-        NucMaskZoomIn = false(size(ZoomImage));
-        NucMaskZoomOut = false(size(SurfImage));
     end
     
     
@@ -722,15 +624,7 @@ if ~NoAP
     plot([coordA(1),coordP(1)],[coordA(2),coordP(2)],'-b')
     hold(fullAxes, 'off')
     saveas(fullFigure, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoArea.tif']);
-    
-    
-    
-    
-    
-    
-    
-    
-    
+       
     zoomImageFigure = figure(9);
     zoomImageAxes = axes(zoomImageFigure);
     imshow(imadjust(ZoomImage),[], 'Parent', zoomImageAxes)
@@ -750,11 +644,8 @@ if ~NoAP
     
     %Angle between the x-axis and the AP-axis
     APAngle=atan2((coordPZoom(2)-coordAZoom(2)),(coordPZoom(1)-coordAZoom(1)));
-    
-    
     APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
-    
-    
+
     APPosImage=zeros(size(ZoomImage));
     [Rows,Columns]=size(ZoomImage);
     
@@ -862,4 +753,61 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
     end
     
     save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','SpotFilter');
+end
+
+end
+
+function [FileMode, EmbryoName, projectDate] = getMicroscope(RawDynamicsPath, Prefix)
+
+
+%Determine whether we're dealing with 2-photon data from Princeton or LSM
+%data. 2-photon data uses TIF files. In LSM mode multiple files will be
+%combined into one.
+%Find out the date it was taken
+Dashes=strfind(Prefix,'-');
+projectDate=Prefix(1:Dashes(3)-1);
+EmbryoName=Prefix(Dashes(3)+1:end);
+rawPrefixPath = [RawDynamicsPath,filesep,projectDate,filesep,EmbryoName,filesep];
+
+
+DTIF=dir([rawPrefixPath,'*.tif']);
+DLSM=dir([rawPrefixPath,'*.lsm']);
+DCZI=dir([rawPrefixPath,'*.czi']);
+DLIF=dir([rawPrefixPath,'*.lif']);
+DLAT=dir([rawPrefixPath,'*_Settings.txt']);
+DSPIN=dir([rawPrefixPath,'FullEmbryo',filesep,'*.nd']);     %Nikon spinning disk . CS20170911
+
+% OME-TIFF xml companion file (*.ome).
+% Not mandatory per OME-TIFF standard, but our examples have it so for know we detect ome-tiff based on the presence of this file.
+OMETIFF = dir([rawPrefixPath,'*.ome']);
+
+if ~isempty(OMETIFF)
+    disp('OME-TIFF with .ome XML companion file mode')
+    FileMode = 'OMETIFF';
+elseif ~isempty(DTIF) & isempty(DLSM)& isempty(DSPIN)
+    if isempty(DLIF)
+        if isempty(DLAT)
+            disp('2-photon @ Princeton data mode')
+            FileMode='TIF';
+        else
+            disp('Lattice Light Sheet data mode')
+            FileMode='LAT';
+        end
+    else
+        disp('LIF export mode')
+        FileMode='LIFExport';
+    end
+elseif (isempty(DTIF))&(~isempty(DLSM))
+    disp('LSM mode')
+    FileMode='LSM';
+elseif (isempty(DTIF))&(~isempty(DCZI))
+    disp('CZI mode')
+    FileMode='CZI';
+elseif (~isempty(DSPIN))        %CS20170911
+    disp('Nikon spinning disk mode with .nd files')
+    FileMode='DSPIN';
+else
+    error('File type not recognized')
+end
+
 end

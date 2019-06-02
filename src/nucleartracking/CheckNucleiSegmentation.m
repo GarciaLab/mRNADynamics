@@ -14,6 +14,8 @@ function CheckNucleiSegmentation(varargin)
 %<  - Move 5 frames backwards
 %j  - Jump to a frame
 %d  - Delete all ellipses in the current frame
+%c  - Copy all ellipses from previous frame
+%v  - Copy all ellipses from next frame
 %s  - Save current analysis
 %m  - Increase contrast
 %n  - Decrease contrast
@@ -71,11 +73,6 @@ nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Pref
 
 %Get the nuclei segmentation data
 load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat']);
-
-
-%Get the information about the Histone channel images
-D=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His_*.tif']);
-TotalFrames=length(D);
 
 
 %Get information about the image size
@@ -234,7 +231,10 @@ while (cc~='x')
         
     elseif (ct~=0)&(cc=='d')    %Delete all ellipses in the current frame
         Ellipses{CurrentFrame}=[];
-        
+    elseif (ct~=0)&(cc=='c') & CurrentFrame > 1 %copy nuclear information from previous frame
+        Ellipses{CurrentFrame} = Ellipses{CurrentFrame-1};
+    elseif (ct~=0)&(cc=='v') & CurrentFrame < TotalFrames %copy nuclear information from next frame
+        Ellipses{CurrentFrame} = Ellipses{CurrentFrame+1};
     elseif (ct~=0)&(cc=='9')    %Debug mode
         keyboard
    
@@ -244,10 +244,8 @@ end
 
 
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
-disp('Ellipses saved. Remember to re-run TrackNuclei if you made changes.')
 close all;
+disp('Ellipses saved. Running TrackNuclei to incorporate changes.')
+TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack');
 
-
-
-
-
+end

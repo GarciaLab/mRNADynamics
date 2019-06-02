@@ -1,20 +1,4 @@
 function  [DV_shift] = FindDVShift_full(Prefix, varargin)
-%% Initialization
-
-
-prompt = 'Please input the resolution: (1024/2048)';
-res = input(prompt);
-if res == 1024
-    AreaThresh=20;
-    AreaMax = 100;
-else
-    if res == 2048
-    AreaThresh=100;
-    AreaMax = 450;
-    else
-        error('Input resolution not supported');
-    end
-end
 
 %% Part 1: Read image data
 
@@ -64,7 +48,21 @@ EmbryoName=Prefix(Dashes(3)+1:end);
 
 % Read full embryo image (surf, mid)
 FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
+
+if size(FullEmbryo, 1) == 1024
+    AreaThresh = 20;
+    AreaMax = 100;
+elseif size(FullEmbryo, 2) == 2048
+    AreaThresh = 100;
+    AreaMax = 450;
+else
+    disp('full embryo resolution found not supported. talk to jake.')
+end
+
+%note: should make addparticleposition generate and save surfmax
+%automatically
 FullEmbryoSurf=imread([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'surf_max.tif']);
+
 
 
 %% Part 2: Label Image (Classified with Weka)

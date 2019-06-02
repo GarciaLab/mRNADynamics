@@ -16,6 +16,7 @@ function TrackNuclei(Prefix,varargin)
 % 'NoBulkShift': Runs the nuclear tracking without accounting for the bulk
 % shift between frames (greatly speeds up runtime). It's recommended you
 % set ExpandedSpaceTolerance to 1.5 if you use this. 
+% 'retrack': retrack
 %
 % OUTPUT
 % '*_lin.mat' : Nuclei with lineages
@@ -31,7 +32,7 @@ function TrackNuclei(Prefix,varargin)
 
 disp(['Tracking nuclei on ', Prefix, '...']);
 
-[SkipStitchSchnitz, ExpandedSpaceTolerance, NoBulkShift] = DetermineTrackNucleiOptions(varargin);
+[SkipStitchSchnitz, ExpandedSpaceTolerance, NoBulkShift, retrack] = DetermineTrackNucleiOptions(varargin{:});
 
 %added this bulkshift requirement because i'm not sure it'll work without
 %it
@@ -39,6 +40,7 @@ if NoBulkShift
     workers = 8;
     startParallelPool(workers, 0,0);
 end
+
 
 
 [~, ProcPath, DropboxFolder, ~, PreProcPath, ~, ~] = DetermineLocalFolders(Prefix);
@@ -148,19 +150,19 @@ settingArguments{2}=median(diff([FrameInfo.Time]));     %Median separation betwe
 settingArguments{3}='space resolution';
 settingArguments{4}=FrameInfo(1).PixelSize;
 
-retrack = exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file');
+schnitzFileExists = exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file');
 
-if retrack
+if schnitzFileExists & ~retrack
     answer=input('Previous tracking detected. Proceed with retracking? (y/n):','s');
     if strcmpi(answer,'y')
-       %do nothing
+       retrack = true;
     elseif strcmpi(answer, 'n')
-        retrack = 0;
+        retrack = false;
     else
         %do nothing
     end
 end
-           
+
 
 
 %Do the tracking for the first time
