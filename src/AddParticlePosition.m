@@ -252,7 +252,7 @@ if ~NoAP
         
         %Load only the metadata from the zoomed images
         MetaReader=bfGetReader([rawPrefixPath,D(end).name]);
-        MetaZoom=MetaReader.getMetadataStore()6
+        MetaZoom=MetaReader.getMetadataStore();
         try
             PixelSizeZoom=str2double(MetaZoom.getPixelsPhysicalSizeX(0).value);
         catch

@@ -26,7 +26,11 @@ function [MeanCyto, SDCyto, MaxCyto, MedianCyto] =...
             for i=1:numFrames
                 waitbar(i/numFrames,h)
                 for j=1:FrameInfo(1).NumberSlices
-                    Image(:,:,j)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),'.tif']);
+                    % JP on 6/3/2019: I'm adding a hardcoded _ch01 to
+                    % comply with naming convention, otherwise it fails. I
+                    % hardcoded 01 since we are inside the if NChannels ==
+                    % 1 block.
+                    Image(:,:,j)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),'_ch01','.tif']);
                 end
                 ImageMax=max(Image,[],3);
                 MedianCyto(i)=median(double(ImageMax(:)));
