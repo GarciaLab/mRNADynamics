@@ -33,14 +33,18 @@ for ch = 1:nCh
                 end
             end
         end
+        
         sCh(frame).Fits = spots;
     end
+    
+    
     
     if iscell(s)
         s{ch} = sCh;
     else
         s = sCh;
     end
+    
     
 end
 
