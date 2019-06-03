@@ -97,6 +97,9 @@ if ~exist([ProcPath,filesep,Prefix,filesep,'CytoImages.mat'], 'file')
 
         %Go back to the original image size
         Mask=Mask(IncreasePixels+1:end-IncreasePixels,IncreasePixels+1:end-IncreasePixels);
+        % Mask's underlying class needs to be logical or uint8 or else 
+        % morphopInputParser will throw an error. 
+        Mask=logical(Mask); 
         Mask=imdilate(Mask,StrucElement);
         Mask=~Mask;
 
@@ -121,13 +124,24 @@ if ~exist([ProcPath,filesep,Prefix,filesep,'CytoImages.mat'], 'file')
                 FileName=[Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),...
                          '_ch',iIndex(ChN,2),'.tif'];
                
+                % EL: There is an error when argin is not empty. 
+                % The function imdivide will not work since
+                % MCPImage(:,:,j-1) class is not the same as FFImage{ChN},
+                % which are gpuArray and double respectively. One way
+                % around this is to have a temporary  array. 
+                
                 if ~isempty(argin)
-                    MCPImage(:,:,j-1)=double(gpuArray(imread([PreProcPath,filesep,Prefix,filesep,FileName])));
+                    %below is the original code:
+                    %MCPImage(:,:,j-1)=double(gpuArray(imread([PreProcPath,filesep,Prefix,filesep,FileName])));
+                    tempMCPImage = gpuArray(imread([PreProcPath,filesep,Prefix,filesep,FileName]));
+                    tempMCPImage = double(gather(tempMCPImage));
                 else
-                    MCPImage(:,:,j-1)=double(imread([PreProcPath,filesep,Prefix,filesep,FileName]));
+                    %below is the original code: 
+                    %MCPImage(:,:,j-1)=double(imread([PreProcPath,filesep,Prefix,filesep,FileName]));
+                    tempMCPImage = double(imread([PreProcPath,filesep,Prefix,filesep,FileName]));
                 end
                 
-                MCPImage(:,:,j-1)=imdivide(MCPImage(:,:,j-1),FFImage{ChN});
+                MCPImage(:,:,j-1)=imdivide(tempMCPImage,FFImage{ChN});
                 
             end
 
