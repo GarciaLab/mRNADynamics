@@ -40,12 +40,18 @@ NParticlesAP_nonROI = [];
 CompiledNuclei_ROI = [];
 CompiledNuclei_nonROI = [];
 MeanVectorAP_ROI = [];
+MinDVIndex = [];
+MaxDVIndex = [];
 SDVectorDV_ROI = [];
 NParticlesDV_ROI = [];
 MeanVectorDV_nonROI = [];
 SDVectorDV_nonROI = [];
 NParticlesDV_nonROI = [];
-
+DVbinID = [];
+DVFilter = [];
+MeanVectorDV = [];
+SDVectorDV = [];
+NParticlesDV = [];
 
 % Default values for Options
 ROI=false; % No ROI, as a default
@@ -763,8 +769,8 @@ if strcmpi(ExperimentAxis,'DV')
 
             for j=1:NChannels
                 MeanVectorDV{j}=cell2mat({MeanVectorDVCell2{j,:}}')';
-                SDVectorDV{j}=cell2mat({SDVectorDVCell2{j,:}}')';;
-                NParticlesDV{j}=cell2mat({NParticlesDVCell2{j,:}}')';;
+                SDVectorDV{j}=cell2mat({SDVectorDVCell2{j,:}}')';
+                NParticlesDV{j}=cell2mat({NParticlesDVCell2{j,:}}')';
             end
         else
             for i=MinDVIndex:MaxDVIndex
@@ -803,8 +809,8 @@ if strcmpi(ExperimentAxis,'DV')
 
             for j=1:NChannels
                 MeanVectorDV{j}=cell2mat({MeanVectorDVCell2{j,:}}')';
-                SDVectorDV{j}=cell2mat({SDVectorDVCell2{j,:}}')';;
-                NParticlesDV{j}=cell2mat({NParticlesDVCell2{j,:}}')';;
+                SDVectorDV{j}=cell2mat({SDVectorDVCell2{j,:}}')';
+                NParticlesDV{j}=cell2mat({NParticlesDVCell2{j,:}}')';
             end
         else
             for i=MinDVIndex:MaxDVIndex
