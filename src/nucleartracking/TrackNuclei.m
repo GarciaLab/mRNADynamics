@@ -343,13 +343,14 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
                     error('Not sure what happened here. Talk to YJK or SA.')
                 end
             % NL: should parallelize this
-            Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2);
+          
+            tempSchnitz = schnitzcells;
             for CurrentFrame=1:numFrames
 
                 waitbar(CurrentFrame/numFrames,h);
 % 
 %                 %Initialize the image
-%                 Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2)
+                Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2);
 %                 %AR 1/12/18 moved this outside the for loops
 %                 Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2);
                 %Load the z-stack for this frame        
@@ -358,19 +359,23 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
                 end
                 
                 % NL: rewriting this extraction step as a convolution                            
-                convImage = convn(Image, Circle, 'same');                
+%                 convImage = convn(Image, Circle, 'same');    
+                convImage = imfilter(Image, double(Circle), 'same');
                 convImage(edgeMask) = NaN;
 %                 [yDim, xDim] = size(convImage);
 %                 tempFluo = []; tempMask = [];
-                for j=1:length(schnitzcells)
-                    CurrentIndex=find(schnitzcells(j).frames==CurrentFrame);
-                    cenx=min(max(1,round(schnitzcells(j).cenx(CurrentIndex))),PixelsPerLine);
-                    ceny=min(max(1,round(schnitzcells(j).ceny(CurrentIndex))),LinesPerFrame);
+                for j=1:length(tempSchnitz)
+                    CurrentIndex=find(tempSchnitz(j).frames==CurrentFrame);
+                    cenx=min(max(1,round(tempSchnitz(j).cenx(CurrentIndex))),PixelsPerLine);
+                    ceny=min(max(1,round(tempSchnitz(j).ceny(CurrentIndex))),LinesPerFrame);
 %                     tempFluo(j) = convImage(ceny,cenx,:);
-                    schnitzcells(j).Fluo(CurrentIndex,1:NumberSlices2,ChN) = convImage(ceny,cenx,:);
-%                     tempMask(j) = Circle;
-                    schnitzcells(j).Mask=Circle;                    
+%                      tempFluo(j).Fluo(CurrentIndex,1:NumberSlices2,ChN) = convImage(ceny,cenx,:);
+                    tempSchnitz(j).Fluo(CurrentIndex,1:NumberSlices2,ChN) = convImage(ceny,cenx,:);
+%                      tempMask(j).Mask = Circle;
+                    tempSchnitz(j).Mask=Circle;                    
                 end
+                
+%                 schnitzcells.Mask = tempMask;
                 
 %                 NL: commented out old version
 %                 for j=1:length(schnitzcells)
@@ -387,7 +392,7 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
 %                         Image,LinesPerFrame,PixelsPerLine,NumberSlices2,Circle,IntegrationRadius,ChN);
 %                 end
             end
-            
+            schnitzcells = tempSchnitz;
 %             schnitzcells.Fluo = tempFluo;
 %             schnitzcells.Mask = tempMask;
             

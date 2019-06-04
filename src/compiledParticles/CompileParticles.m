@@ -169,8 +169,8 @@ FilePrefix=[Prefix,'_'];
 
 % refactor in progress, we should replace readMovieDatabase with getExperimentDataFromMovieDatabase
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoopEnd, APResolution,...
-    Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+   Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+    nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase, DVResolution] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 APExperiment = strcmpi(ExperimentAxis, 'AP');
 DVExperiment = strcmpi(ExperimentAxis, 'DV');
@@ -285,22 +285,16 @@ end
 if yToManualAlignmentPrompt
     addParticleArgs = [addParticleArgs, 'yToManualAlignmentPrompt'];
 end
+if ~HistoneChannel
+    addParticleArgs = [addParticleArgs, 'SkipAlignment'];
+end
 
-if APExperiment
+if APExperiment | DVExperiment
     if (~isfield(Particles{1},'APpos')) || ForceAP
-        if ~HistoneChannel
-            addParticleArgs = [addParticleArgs, 'SkipAlignment'];
-        end
         AddParticlePosition(addParticleArgs{:});
     else
         disp('Using saved AP information (results from AddParticlePosition)')
     end
-elseif DVExperiment && exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'file')
-    AddParticlePosition(Prefix);
-elseif DVExperiment || strcmpi(ExperimentAxis,'NoAP')
-    AddParticlePosition(Prefix,'NoAP');
-else
-    error('Experiment axis not recognized in MovieDatabase')
 end
 
 %Reload Particles.mat
@@ -432,6 +426,9 @@ if APExperiment || DVExperiment
 end
 
 if DVExperiment
+    if isempty(DVResolution)
+        DVResolution = 50;
+    end
     [DVbinID, DVbinArea] = binAxis(DVResolution, FrameInfo, ...
         coordAZoom, APAngle, APLength, minBinSize, 'DV');
 end
