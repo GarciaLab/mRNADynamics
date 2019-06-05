@@ -22,7 +22,7 @@ for i = 1:length(varargin)
         saveType = '.mat';
     elseif strcmpi(varargin{i}, 'padZ')
         padZ = true;
-    elseif strmcpi(varargin{i}, 'noSave')
+    elseif strcmpi(varargin{i}, 'noSave')
         noSave = true;
         saveType = 'none';
     end
@@ -61,39 +61,39 @@ for frame = firstFrame:lastFrame
             im(:,:,format(3)) = zeros(size(im,1), size(im,2));
         end
         
-        if noSave
-            dogs(:, :, :, fcnt) = im;
+        dogs(:, :, :, fcnt) = im;
+        
+        if probs
+            fldr = 'custProbs';
         else
-            if probs
-                fldr = 'custProbs';
-            else
-                fldr = 'dogs';
-            end
-            nameSuffix = ['_ch', iIndex(channel, 2)];
-            
-            mkdir([outPath, filesep,Prefix,'_',filesep,fldr]);
-            
-            
-            for z = 1:size(im,3)
-                
-                plane = im(:,:,z);
-                dog_name = ['DOG_', Prefix, '_', iIndex(frame, 3), '_z', iIndex(z, 2), nameSuffix];
-                dog_full_path = [outPath, filesep,Prefix,'_',filesep,fldr,filesep,dog_name];
-                
-                switch saveType
-                    case '.tif'
-                        imwrite(plane,[dog_full_path, saveType]);
-                    case '.mat'
-                        save([dog_full_path,saveType], 'plane');
-                end
-                
-            end
+            fldr = 'dogs';
         end
+        nameSuffix = ['_ch', iIndex(channel, 2)];
+        
+        mkdir([outPath, filesep,Prefix,'_',filesep,fldr]);
+        
+        
+        for z = 1:size(im,3)
+            
+            plane = im(:,:,z);
+            dog_name = ['DOG_', Prefix, '_', iIndex(frame, 3), '_z', iIndex(z, 2), nameSuffix];
+            dog_full_path = [outPath, filesep,Prefix,'_',filesep,fldr,filesep,dog_name];
+            
+            switch saveType
+                case '.tif'
+                    imwrite(plane,[dog_full_path, saveType]);
+                case '.mat'
+                    save([dog_full_path,saveType], 'plane');
+                case 'none'
+                    %do nothing
+            end
+            
+        end
+        
     end
     
     
     fcnt = fcnt + 1;
-    
     
 end
 

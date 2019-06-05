@@ -1,4 +1,4 @@
-function CombineMultipleEmbryos(DataType, PrefixName)
+function saveFolder = CombineMultipleEmbryos(DataType, varargin)
 % CombineMultipleEmbryos(DataType,Prefix)
 %
 % DESCRIPTION
@@ -14,8 +14,8 @@ function CombineMultipleEmbryos(DataType, PrefixName)
 %
 % OUTPUT
 % Minimum required variables for FitMeanAP (nc12, nc13, nc14, NParticlesAP,
- %MeanVectorsAP, SDVectorAP, ElapsedTime, APDivision) corresponding to the
- %embryos combined
+%MeanVectorsAP, SDVectorAP, ElapsedTime, APDivision) corresponding to the
+%embryos combined
 %
 % Author (contact): Meghan Turner (meghan_turner@berkeley.edu [Could also be slack])
 % Created: 01/01/2016
@@ -23,12 +23,9 @@ function CombineMultipleEmbryos(DataType, PrefixName)
 %
 % Commented by: Simon Alamos (simon.alamos@berkeley.edu)
 
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders;
-
 %allData stores the following variables from each of the embryos to be
 %averaged:
-%APFilter, APbinArea, APbinID, AllTracesVector, CompiledParticles, 
+%APFilter, APbinArea, APbinID, AllTracesVector, CompiledParticles,
 %ElapsedTime, EllipsePos, EllipsesOnAP, FilteredParticlesPos, MaxAPIndex,
 %MaxCyto, MaxFrame, MeanCyto, MeanOffsetVector, MeanSlopeVectorAP,
 %MeanVectorAP, MeanVectorAll, MeanVectorAllAP, MeanVectorAnterior,
@@ -38,103 +35,152 @@ function CombineMultipleEmbryos(DataType, PrefixName)
 %SDVectorAP, SDVectorAll, SEVectorAllAP, StemLoopEnd, TotalEllipsesAP,
 %nc10, nc11, nc12, nc13, nc14, nc9, ncFilter, ncFilterID, SetName,
 %APDivision, schnitzcells, Ellipses, Particles
-allData = LoadMS2Sets(DataType,PrefixName);
+
+dim = 2;
+for i = 1:length(varargin)
+    if strcmpi(varargin{i}, '3D')
+        dim = 3;
+    end
+end
+
+if ischar(DataType)
+    [allData, ~, resultsFolder] = LoadMS2Sets(DataType);
+else
+    allData = DataType;
+    DataType = inputname(1);
+end
 
 
 %% Find and save some useful variables
 
 %Find number of embryos being combined
+
+allData(cellfun(@isempty,{allData.NParticlesAP})) = []; %don't include embryos that have no particles 
 numEmbryos = size(allData,2);
 
 %Find the total number of frames for each embryo
 numFrames = zeros(1, numEmbryos);
 maxAPIndex = zeros(1, numEmbryos);
+
 maxTime = zeros(1, numEmbryos);
-for i = 1:numEmbryos
-    numFrames(i) = size(allData(i).ElapsedTime, 2);
-    maxAPIndex(i) = allData(i).MaxAPIndex;
-    maxTime(i) = allData(i).ElapsedTime(numFrames(i));
+for embryo = 1:numEmbryos
+    numFrames(embryo) = size(allData(embryo).ElapsedTime, 2);
+    if ~isempty(allData(embryo).MaxAPIndex)
+        maxAPIndex(embryo) = allData(embryo).MaxAPIndex;
+    else
+        maxAPIndex(embryo) = 41; %assume standard AP resolution if unspecified.
+    end
+    maxTime(embryo) = allData(embryo).ElapsedTime(numFrames(embryo));
 end
+
+
+allData(isempty(allData(embryo).NParticlesAP)) = [];
+numEmbryos = length(allData);
 
 %Store the number of AP bins (this should always be 41).
 numAPBins = maxAPIndex(1);
+timeStep = median(diff([allData.ElapsedTime]));
 
-%Store all variables to be combined in a single structure. 
+%Store all variables to be combined in a single structure.
 combinedData = struct('APDivision',{},'ElapsedTime',{},'NParticlesAP',{},...
-                        'MeanVectorAP',{},'SDVectorAP',{}, ...
-                        'OnRatioLineageAP',{});
-                    
+    'MeanVectorAP',{},'SDVectorAP',{}, ...
+    'OnRatioLineageAP',{});
+
 %% ALIGN ElapsedTime AND SHIFT OTHER VARIABLE TO MATCH NEW TIME VECTOR
 
 % Define the new ElapsedTime vector for the combined embryo. This
 % ElapsedTime variable has evenly spaces time points (40 seconds, 0.6667
 % minutes) and is long enough to accomodate all the data for the longest
 % running embryo
-maxElapsedTime = max(ceil(maxTime./0.6667));
-ElapsedTime = 0.6667*(0:maxElapsedTime);
- 
+% timestep = .6667; %min
+maxElapsedTime = max(ceil(maxTime./timeStep));
+ElapsedTime = timeStep*(0:maxElapsedTime);
+
+%assume channel 1
+ch = 1; 
+
 %This inserts the variables to be combined into a structure such that there
 %is room to shift the elements around as needed to align by ElapsedTime.
-for i = 1:numEmbryos
+for embryo = 1:numEmbryos
+    if ~isempty(allData(embryo).NParticlesAP)
     %ElapsedTime
-    combinedData(i).ElapsedTime = NaN(1,maxElapsedTime + 1);
-    combinedData(i).ElapsedTime(1,1:length(allData(i).ElapsedTime))... 
-        = allData(i).ElapsedTime;
+    combinedData(embryo).ElapsedTime = NaN(1,maxElapsedTime + 1);
+    combinedData(embryo).ElapsedTime(1,1:length(allData(embryo).ElapsedTime))...
+        = allData(embryo).ElapsedTime;
     %NParticlesAP
-    combinedData(i).NParticlesAP = zeros((maxElapsedTime + 1), numAPBins);
-    combinedData(i).NParticlesAP(1:size(allData(i).NParticlesAP,1),:)... 
-        = allData(i).NParticlesAP;
+    if iscell(allData(embryo).NParticlesAP)
+        allData(embryo).NParticlesAP = allData(embryo).NParticlesAP{ch};
+        if dim == 3
+        allData(embryo).MeanVector3DAP = allData(embryo).MeanVector3DAP{ch};
+        else
+                    allData(embryo).MeanVectorAP = allData(embryo).MeanVectorAP{ch};
+
+        end
+        allData(embryo).SDVectorAP = allData(embryo).SDVectorAP{ch};
+    end
+    combinedData(embryo).NParticlesAP = zeros((maxElapsedTime + 1), numAPBins);
+    combinedData(embryo).NParticlesAP(1:size(allData(embryo).NParticlesAP,1),:)...
+        = allData(embryo).NParticlesAP;
     %MeanVectorAP
-    combinedData(i).MeanVectorAP = NaN((maxElapsedTime + 1), numAPBins);
-    combinedData(i).MeanVectorAP(1:size(allData(i).MeanVectorAP,1),:)... 
-        = allData(i).MeanVectorAP;
+   
+    combinedData(embryo).MeanVectorAP = NaN((maxElapsedTime + 1), numAPBins);
+    if dim == 3
+        combinedData(embryo).MeanVectorAP(1:size(allData(embryo).MeanVector3DAP,1),:)...
+        = allData(embryo).MeanVector3DAP;
+    else
+    combinedData(embryo).MeanVectorAP(1:size(allData(embryo).MeanVectorAP,1),:)...
+        = allData(embryo).MeanVectorAP;
+    end
     %SDVectorAP
-    combinedData(i).SDVectorAP = NaN((maxElapsedTime + 1), numAPBins);
-    combinedData(i).SDVectorAP(1:size(allData(i).SDVectorAP,1),:)... 
-        = allData(i).SDVectorAP;
+   
+    combinedData(embryo).SDVectorAP = NaN((maxElapsedTime + 1), numAPBins);
+    combinedData(embryo).SDVectorAP(1:size(allData(embryo).SDVectorAP,1),:)...
+        = allData(embryo).SDVectorAP;
     %APDivision
-    combinedData(i).APDivision = allData(i).APDivision;
+    combinedData(embryo).APDivision = allData(embryo).APDivision;
+
+    end
 end
 
 %Adjust all the individual elapsed time vectors to align with the correct
 %bin in the combined ElasedTime vector. A data point is considered to be in
 %a time bin if it is within 20 seconds (0.33335 minutes), plus or minus, of
 %the correct time (found in ElapsedTime).
-for i = 1:numEmbryos
+for embryo = 1:numEmbryos
     aligned = 0;
     while ~aligned
-        difference = combinedData(i).ElapsedTime - ElapsedTime;
-        if isempty(difference(difference >= 0.33335))
+        difference = combinedData(embryo).ElapsedTime - ElapsedTime;
+        if isempty(difference(difference >= timeStep/2))
             aligned = 1;
         else
-            index = find((difference >= 0.33335), 1, 'first');
+            index = find((difference >= timeStep/2), 1, 'first');
             %Shift the ElapsedTime vector
-            combinedData(i).ElapsedTime((index+1):(maxElapsedTime+1)) = ...
-                combinedData(i).ElapsedTime(index:(maxElapsedTime+1-1));
-            combinedData(i).ElapsedTime(index) = NaN;
+            combinedData(embryo).ElapsedTime((index+1):(maxElapsedTime+1)) = ...
+                combinedData(embryo).ElapsedTime(index:(maxElapsedTime+1-1));
+            combinedData(embryo).ElapsedTime(index) = NaN;
             
             %Shift the NParticlesAP matrix
-            combinedData(i).NParticlesAP((index+1):(maxElapsedTime+1),:) = ...
-                combinedData(i).NParticlesAP(index:(maxElapsedTime+1-1),:);
-            combinedData(i).NParticlesAP(index, :) = 0;
-          
+            combinedData(embryo).NParticlesAP((index+1):(maxElapsedTime+1),:) = ...
+                combinedData(embryo).NParticlesAP(index:(maxElapsedTime+1-1),:);
+            combinedData(embryo).NParticlesAP(index, :) = 0;
+            
             %Shift the MeanVectorAP matrix
-            combinedData(i).MeanVectorAP((index+1):(maxElapsedTime+1),:) = ...
-                combinedData(i).MeanVectorAP(index:(maxElapsedTime+1-1),:);
-            combinedData(i).MeanVectorAP(index, :) = NaN;
+            combinedData(embryo).MeanVectorAP((index+1):(maxElapsedTime+1),:) = ...
+                combinedData(embryo).MeanVectorAP(index:(maxElapsedTime+1-1),:);
+            combinedData(embryo).MeanVectorAP(index, :) = NaN;
             
             %Shift the SDVectorAP matrix
-            combinedData(i).SDVectorAP((index+1):(maxElapsedTime+1),:) = ...
-                combinedData(i).SDVectorAP(index:(maxElapsedTime+1-1),:);
-            combinedData(i).SDVectorAP(index, :) = NaN;
+            combinedData(embryo).SDVectorAP((index+1):(maxElapsedTime+1),:) = ...
+                combinedData(embryo).SDVectorAP(index:(maxElapsedTime+1-1),:);
+            combinedData(embryo).SDVectorAP(index, :) = NaN;
             
             %Adjust APDivision. Every time the other variables are shifted,
             %any AP bin that has a start time frame greater than or equal
             %to the shifted index must be incremented by one to ensure that
             %APDivision still refers to the correct time and data.
-            binsAboveIndex = combinedData(i).APDivision >= index;
-            combinedData(i).APDivision = combinedData(i).APDivision + ... 
-                                                            binsAboveIndex;
+            binsAboveIndex = combinedData(embryo).APDivision >= index;
+            combinedData(embryo).APDivision = combinedData(embryo).APDivision + ...
+                binsAboveIndex;
         end
     end
 end
@@ -157,61 +203,78 @@ numEmbryosWithMeanFluor = zeros(maxElapsedTime + 1, max(maxAPIndex));
 for APBin = 1:max(maxAPIndex)
     %Determine which frame all embryos should be aligned to for this AP bin
     %for nc13
+    
     startFrames13 = zeros(1,numEmbryos);
     endFrames13 = zeros(1,numEmbryos);
-    for i = 1:numEmbryos
-        startFrames13(1,i) = combinedData(i).APDivision(13, APBin);
-        endFrames13(1,i) = combinedData(i).APDivision(14, APBin) - 1;
+    startFrames12 = zeros(1,numEmbryos);
+    endFrames12 = zeros(1,numEmbryos);
+    
+    for embryo = 1:numEmbryos
+        startFrames12(1,embryo) = combinedData(embryo).APDivision(12, APBin);
+        endFrames12(1,embryo) = combinedData(embryo).APDivision(13, APBin) - 1;
+        
+        startFrames13(1,embryo) = combinedData(embryo).APDivision(13, APBin);
+        endFrames13(1,embryo) = combinedData(embryo).APDivision(14, APBin) - 1;
     end
     combinedStart13 = max(startFrames13);
     combinedEnd13 = combinedStart13 + max(endFrames13 - startFrames13);
+    
+    combinedStart12 = max(startFrames12);
+    combinedEnd12 = combinedStart12 + max(endFrames12 - startFrames12);
+    
     combinedStart14 = combinedEnd13 + 1;
-   
-    %Only add embryos' data to the combined variables if at least one 
+    
+    
+    %Only add embryos' data to the combined variables if at least one
     %embryo exists in this AP bin
     if combinedStart13 ~= 0
         %Combine APDivision
+        APDivision(12, APBin) = combinedStart12;
         APDivision(13, APBin) = combinedStart13;
         APDivision(14, APBin) = combinedStart14;
         
         %Align and combine the embryos' data for this AP bin
-        for i = 1:numEmbryos
-            begin13 = combinedData(i).APDivision(13, APBin);
-            end13 = combinedData(i).APDivision(14, APBin) - 1;
+        for embryo = 1:numEmbryos
+            begin13 = combinedData(embryo).APDivision(13, APBin);
+            end13 = combinedData(embryo).APDivision(14, APBin) - 1;
             length13 = end13 - begin13;
+            
+            begin12 = combinedData(embryo).APDivision(12, APBin);
+            end12 = combinedData(embryo).APDivision(13, APBin) - 1;
+            length12 = end12 - begin12;
             
             %Only bother adding the embryo to the combined variables if the
             %embryo exists in this AP bin
             if begin13 ~= 0
                 %Combine NParticlesAP for all embryos
-                newParticles = combinedData(i).NParticlesAP(begin13:end13,APBin);
+                newParticles = combinedData(embryo).NParticlesAP(begin13:end13,APBin);
                 NParticlesAP(combinedStart13:(combinedStart13 + length13),APBin) = ...
                     NParticlesAP(combinedStart13:(combinedStart13 + length13),APBin) ...
                     + newParticles;
-
+                
                 %Combine MeanVectorAP for all embryos
-                newMeans = combinedData(i).MeanVectorAP(begin13:end13,APBin);
-                newMeans(isnan(newMeans)) = 0;      %Replacing all the NaN's with 
-                                                    %zeros to be able to add 
-                                                    %matrices
+                newMeans = combinedData(embryo).MeanVectorAP(begin13:end13,APBin);
+                newMeans(isnan(newMeans)) = 0;      %Replacing all the NaN's with
+                %zeros to be able to add
+                %matrices
                 newMeans = newMeans .* newParticles;
-                newEmbryosWithMeanFluor = newMeans~=0;                                    
+                newEmbryosWithMeanFluor = newMeans~=0;
                 MeanVectorAP(combinedStart13:(combinedStart13 + length13),APBin) = ...
                     MeanVectorAP(combinedStart13:(combinedStart13 + length13),APBin)...
                     + newMeans;
-
+                
                 numEmbryosWithMeanFluor(combinedStart13:(combinedStart13 + length13),APBin) = ...
                     numEmbryosWithMeanFluor(combinedStart13:(combinedStart13 + length13),APBin)...
                     + newEmbryosWithMeanFluor;
-
+                
                 %Combine SDVectorAP for all embryos
                 %This will be done by squaring the SD to get the Variances,
                 %averaging all the Variances, and finally taking the square root to
                 %regain the SDs.
-                newSDs = combinedData(i).SDVectorAP(begin13:end13,APBin);
-                newSDs(isnan(newSDs)) = 0;          %Replacing all the NaN's with 
-                                                    %zeros to be able to add 
-                                                    %matrices
+                newSDs = combinedData(embryo).SDVectorAP(begin13:end13,APBin);
+                newSDs(isnan(newSDs)) = 0;          %Replacing all the NaN's with
+                %zeros to be able to add
+                %matrices
                 newVars = newSDs.^2;     %Changing SDs to Variances
                 newVars = newVars .* newParticles;
                 SDVectorAP(combinedStart13:(combinedStart13 + length13),APBin) = ...
@@ -220,6 +283,63 @@ for APBin = 1:max(maxAPIndex)
             end
         end
     end
+    
+    
+    if combinedStart12 ~= 0
+        %Combine APDivision
+        APDivision(12, APBin) = combinedStart12;
+        
+        %Align and combine the embryos' data for this AP bin
+        for embryo = 1:numEmbryos
+            
+            
+            begin12 = combinedData(embryo).APDivision(12, APBin);
+            end12 = combinedData(embryo).APDivision(13, APBin) - 1;
+            length12 = end12 - begin12;
+            
+            %Only bother adding the embryo to the combined variables if the
+            %embryo exists in this AP bin
+            if begin12 ~= 0
+                %Combine NParticlesAP for all embryos
+                newParticles = combinedData(embryo).NParticlesAP(begin12:end12,APBin);
+                NParticlesAP(combinedStart12:(combinedStart12 + length12),APBin) = ...
+                    NParticlesAP(combinedStart12:(combinedStart12 + length12),APBin) ...
+                    + newParticles;
+                
+                %Combine MeanVectorAP for all embryos
+                newMeans = combinedData(embryo).MeanVectorAP(begin12:end12,APBin);
+                newMeans(isnan(newMeans)) = 0;      %Replacing all the NaN's with
+                %zeros to be able to add
+                %matrices
+                newMeans = newMeans .* newParticles;
+                newEmbryosWithMeanFluor = newMeans~=0;
+                MeanVectorAP(combinedStart12:(combinedStart12 + length12),APBin) = ...
+                    MeanVectorAP(combinedStart12:(combinedStart12 + length12),APBin)...
+                    + newMeans;
+                
+                numEmbryosWithMeanFluor(combinedStart12:(combinedStart12 + length12),APBin) = ...
+                    numEmbryosWithMeanFluor(combinedStart12:(combinedStart12 + length12),APBin)...
+                    + newEmbryosWithMeanFluor;
+                
+                %Combine SDVectorAP for all embryos
+                %This will be done by squaring the SD to get the Variances,
+                %averaging all the Variances, and finally taking the square root to
+                %regain the SDs.
+                newSDs = combinedData(embryo).SDVectorAP(begin12:end12,APBin);
+                newSDs(isnan(newSDs)) = 0;          %Replacing all the NaN's with
+                %zeros to be able to add
+                %matrices
+                newVars = newSDs.^2;     %Changing SDs to Variances
+                newVars = newVars .* newParticles;
+                SDVectorAP(combinedStart12:(combinedStart12 + length12),APBin) = ...
+                    SDVectorAP(combinedStart12:(combinedStart12 + length12),APBin)...
+                    + newVars;
+            end
+        end
+    end
+    
+    
+    
 end
 
 %Replace all remaining zeros with NaN's (reversing what was done above ^)
@@ -243,18 +363,21 @@ for m = 1:size(MeanVectorAP, 1)
     end
 end
 
-%% COMBINE EllipsesOnProbAP 
+
+%% COMBINE EllipsesOnProbAP
 OnRatioLineageAP = zeros(numAPBins,3);
 contributingElements = zeros(numAPBins,3);
-for i = 1:numEmbryos
-    newRatio = allData(i).OnRatioLineageAP;     %Store embryo's ratio data
-    newElements = ~isnan(newRatio);             %Store which elements 
-                                                 %conribute to combined ratio
-    newRatio(isnan(newRatio)) = 0;              %Change NaN to zero to be
-                                                 %able to add matrices
-                                                 
-    OnRatioLineageAP = OnRatioLineageAP + newRatio;
-    contributingElements = contributingElements + newElements;
+for embryo = 1:numEmbryos
+    if isfield(allData(embryo),'OnRatioLineageAP')
+        newRatio = allData(embryo).OnRatioLineageAP;     %Store embryo's ratio data
+        newElements = ~isnan(newRatio);             %Store which elements
+        %conribute to combined ratio
+        newRatio(isnan(newRatio)) = 0;              %Change NaN to zero to be
+        %able to add matrices
+
+        OnRatioLineageAP = OnRatioLineageAP + newRatio;
+        contributingElements = contributingElements + newElements;
+    end
 end
 
 OnRatioLineageAP = OnRatioLineageAP./contributingElements;
@@ -262,11 +385,13 @@ OnRatioLineageAP = OnRatioLineageAP./contributingElements;
 
 %As written right now, nc12 isn't analyzed with this code so I'm just
 %saying that the start of nc12 doesn't exist
-nc12 = 0;
+% nc12 = 0;
 
-%Define nc13 as the earliest nc13 start time found in the combined 
+nc12 = min(nonzeros(APDivision(12,:)));
+
+%Define nc13 as the earliest nc13 start time found in the combined
 %APDivision matrix
-nc13 = min(nonzeros(APDivision(13,:))); 
+nc13 = min(nonzeros(APDivision(13,:)));
 
 %Define nc14 as the earliest nc14 start time found in the combined
 %APDivision matrix
@@ -284,15 +409,17 @@ APbinID = allData(1).APbinID;
 
 %Minimum required variables for FitMeanAP: nc12, nc13, nc14, NParticlesAP,
 %MeanVectorsAP, SDVectorAP, ElapsedTime, APDivision.
-save([DropboxFolder,filesep,[DataType,'_Combined_CompiledParticles.mat']],...
+saveFolder = [resultsFolder, filesep, DataType, '_combinedEmbryo'];
+mkdir(saveFolder);
+save([saveFolder,filesep,[DataType,'_Combined_CompiledParticles.mat']],...
     'nc12','nc13', 'nc14','NParticlesAP', 'MeanVectorAP', 'SDVectorAP', ...
     'ElapsedTime','APbinID', 'OnRatioLineageAP');
-display('Combined_CompiledParticles saved');
-save([DropboxFolder,filesep,[DataType,'_Combined_APDivision.mat']],'APDivision');
-display('Combined_APDivision saved');
+disp('Combined_CompiledParticles saved');
+save([saveFolder,filesep,[DataType,'_Combined_APDivision.mat']],'APDivision');
+disp('Combined_APDivision saved');
 
 %Final line of code at which a breakpoint can be placed for debugging
-%purposes ('A' is not an actual variable with any important meaning). 
+%purposes ('A' is not an actual variable with any important meaning).
 %Allows you to view and manipulate the workspace created by this function
 %after running the whole thing. Shouldn't do anything, but you can delete
 %if you don't need to debug.

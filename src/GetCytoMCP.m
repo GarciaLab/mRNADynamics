@@ -1,9 +1,6 @@
 function [Mean,SD,Median,Max,...
     MeanAPProfile,SDAPProfile,SEAPProfile]=GetCytoMCP(Prefix)
 
-
-
-
 %Are the observed differences in offset related to the total amount of
 %fluorescent protein that the mother deposited in the embryo?
 
@@ -11,23 +8,38 @@ function [Mean,SD,Median,Max,...
 [SourcePath, ProcPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
 configValues, movieDatabasePath] = DetermineAllLocalFolders(Prefix);
 
+[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoopEnd, APResolution,...
+    Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+    nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+
+
 %Load FrameInfo
-load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
+load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo')
 
 %Do we have multiple channels? In that case, we will extract the
 %cytoplasmic fluorescence from each channel.
-NChannels=...
-    length(dir([PreProcPath,filesep,Prefix,filesep,Prefix,'_001_z01*.tif']));
+
+%AR 5/24/19- the commented out logic didn't work for me. I replaced it with
+%the current code, but I think this will fail in some circumstances. A
+%permanent solution would be to invoke the :protein, :Nuclear, :spots
+%notation in moviedatabase. 
+if strcmpi(ExperimentType, '1Spot')
+    NChannels = 1;
+else
+%     NChannels=...
+%         length(dir([PreProcPath,filesep,Prefix,filesep,Prefix,'_001_z01*.tif']));
+    NChannels = 2;
+end
 
 %Find out the image size
 ImageSize=[FrameInfo(1).LinesPerFrame,FrameInfo(1).PixelsPerLine];
 %How many slices do we have?
 ZSlices=FrameInfo(1).NumberSlices;
 
-%Folder for report figures
+%Folder for depositing figures
 mkdir([DropboxFolder,filesep,Prefix,filesep,'CytoFluo'])
 
-if ~exist([ProcPath,filesep,Prefix,filesep,'CytoImages.mat'])
+if ~exist([ProcPath,filesep,Prefix,filesep,'CytoImages.mat'], 'file')
 
     %Get the flat field and smooth it with a Gaussian.
     FFDir=dir([PreProcPath,filesep,Prefix,filesep,'*FF.tif']);
@@ -51,7 +63,7 @@ if ~exist([ProcPath,filesep,Prefix,filesep,'CytoImages.mat'])
 
 
     %Get the ellipses
-    load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses')
 
     %This is the structuring element we will use to dilate the mask. 1.5um
     %might be a good choice.
@@ -59,6 +71,9 @@ if ~exist([ProcPath,filesep,Prefix,filesep,'CytoImages.mat'])
     StrucElement=strel('disk',SESize);
 
     h=waitbar(0,'Calculating the maximum projection');
+    
+    argin = tryGPU;
+    
     for i=1:length(Ellipses)
         waitbar(i/length(Ellipses),h)
 
@@ -67,10 +82,10 @@ if ~exist([ProcPath,filesep,Prefix,filesep,'CytoImages.mat'])
         %Initialize the image. In order to avoid problems with the drawing of
         %ellipses we'll make the image larger and then reduce it.
         IncreasePixels=200;
-        Mask=zeros(ImageSize+IncreasePixels*2);
+        Mask=zeros(ImageSize+IncreasePixels*2, argin{:});
 
         %How many ellipses do we have?
-        [NEllipses,Dummy]=size(Ellipses{i});
+        [NEllipses,~]=size(Ellipses{i});
 
         for j=1:NEllipses
             %Put ellipses at their corresponding positions. THe value of each
@@ -82,6 +97,9 @@ if ~exist([ProcPath,filesep,Prefix,filesep,'CytoImages.mat'])
 
         %Go back to the original image size
         Mask=Mask(IncreasePixels+1:end-IncreasePixels,IncreasePixels+1:end-IncreasePixels);
+        % Mask's underlying class needs to be logical or uint8 or else 
+        % morphopInputParser will throw an error. 
+        Mask=logical(Mask); 
         Mask=imdilate(Mask,StrucElement);
         Mask=~Mask;
 
@@ -106,8 +124,25 @@ if ~exist([ProcPath,filesep,Prefix,filesep,'CytoImages.mat'])
                 FileName=[Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),...
                          '_ch',iIndex(ChN,2),'.tif'];
                
-                MCPImage(:,:,j-1)=double(imread([PreProcPath,filesep,Prefix,filesep,filesep,FileName]));
-                MCPImage(:,:,j-1)=imdivide(MCPImage(:,:,j-1),FFImage{ChN});
+                % EL: There is an error when argin is not empty. 
+                % The function imdivide will not work since
+                % MCPImage(:,:,j-1) class is not the same as FFImage{ChN},
+                % which are gpuArray and double respectively. One way
+                % around this is to have a temporary  array. 
+                
+                if ~isempty(argin)
+                    %below is the original code:
+                    %MCPImage(:,:,j-1)=double(gpuArray(imread([PreProcPath,filesep,Prefix,filesep,FileName])));
+                    tempMCPImage = gpuArray(imread([PreProcPath,filesep,Prefix,filesep,FileName]));
+                    tempMCPImage = double(gather(tempMCPImage));
+                else
+                    %below is the original code: 
+                    %MCPImage(:,:,j-1)=double(imread([PreProcPath,filesep,Prefix,filesep,FileName]));
+                    tempMCPImage = double(imread([PreProcPath,filesep,Prefix,filesep,FileName]));
+                end
+                
+                MCPImage(:,:,j-1)=imdivide(tempMCPImage,FFImage{ChN});
+                
             end
 
             %Find the maximum and the mean
@@ -122,10 +157,10 @@ if ~exist([ProcPath,filesep,Prefix,filesep,'CytoImages.mat'])
     end
     close(h)
 
-    %Save to the FISH path so that we don't overwhelm the Dropbox folder!
+    %Save to the processed path so that we don't overwhelm the Dropbox folder!
     save([ProcPath,filesep,Prefix,'_',filesep,'CytoImages.mat'],'MaxImage','MeanImage','MedianImage')
 else
-    display('Using saved CytoImages.mat located in the PreProcessed folder.')
+    disp('Using saved CytoImages.mat located in the PreProcessed folder.')
 
     load([ProcPath,filesep,Prefix,filesep,'CytoImages.mat']);
 end
@@ -176,13 +211,6 @@ for i=1:Rows
         APPosImage(i,j)=APPosition/APLength;
     end
 end
-
-
-
-%Bin the pixels along the AP axis
-[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
-Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
 
 APbinID=0:APResolution:1;
 
@@ -283,4 +311,5 @@ for ChN=1:NChannels
         title(['Channel ',num2str(ChN)])
     saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'CytoFluo',filesep,...
         'CytoFluoTime_ch',iIndex(ChN,2),'.tif'])
+    
 end

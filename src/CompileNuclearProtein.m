@@ -1,4 +1,4 @@
-function CompileNuclearProtein(varargin)
+function CompileNuclearProtein(Prefix, varargin)
 %This code gives me the input
 %varargin Variable length input argument list.
 %allows any number of arguments to a function.  The variable
@@ -14,8 +14,47 @@ function CompileNuclearProtein(varargin)
 % Note. The main change is in the 'APbin filter' and 'binning and
 % averaging' part of the code.
 
+
+
+%initialize variables
+savedVariables = {};
+MeanCytoAPProfile = [];
+SDCytoAPProfile = [];
+SECytoAPProfile = [];
+IntegrationArea = NaN;
+MeanVectorAll_ROI = [];
+SDVectorAll_ROI = [];
+NParticlesAll_ROI = [];
+MeanVectorAll_nonROI = [];
+SDVectorAll_nonROI = [];
+NParticlesAll_nonROI = [];
+MaxFrame = [];
+MinAPIndex = [];
+MaxAPIndex = [];
+MeanVectorAP_ROI = [];
+SDVectorAP_ROI = [];
+NParticlesAP_ROI = [];
+MeanVectorAP_nonROI = [];
+SDVectorAP_nonROI = [];
+NParticlesAP_nonROI = [];
+CompiledNuclei_ROI = [];
+CompiledNuclei_nonROI = [];
+MeanVectorAP_ROI = [];
+MinDVIndex = [];
+MaxDVIndex = [];
+SDVectorDV_ROI = [];
+NParticlesDV_ROI = [];
+MeanVectorDV_nonROI = [];
+SDVectorDV_nonROI = [];
+NParticlesDV_nonROI = [];
+DVbinID = [];
+DVFilter = [];
+MeanVectorDV = [];
+SDVectorDV = [];
+NParticlesDV = [];
+
 % Default values for Options
-ROI=0; % No ROI, as a default
+ROI=false; % No ROI, as a default
 
 %This function will add fluorescence information to each schnitz.
 
@@ -25,28 +64,18 @@ close all
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
 
-%Look at the input parameter and use defaults if missing
-if isempty(varargin)% returns 1 if it is an empty array and 0 otherwise.an empty array has prod(size(X))==0
-    FolderTemp=uigetdir(DropboxFolder,'Select folder with data to analyze');
-    Dashes=strfind(FolderTemp,'\');
-    Prefix=FolderTemp((Dashes(end)+1):end);
-else
-    Prefix=varargin{1};
-    for i=2:length(varargin)
-        % Adding the option of ROI, and two thresholds like in
-        % ComileParticls (YJK : on 10/27/2017)
-        if strcmp(varargin{i},'ROI')
-            ROI = 1;
-            if ~isnumeric(varargin{i+1})||~isnumeric(varargin{i+2})
-                error('Wrong input parameters. After ''ROI'' you should input the y-threshold of ROI ')
-            else
-                ROI1=varargin{i+1};
-                ROI2=varargin{i+2};
-            end
+
+for args=1:length(varargin)
+    if strcmp(varargin{args},'ROI')
+        ROI = true;
+        if ~isnumeric(varargin{args+1})||~isnumeric(varargin{args+2})
+            error('Wrong input parameters. After ''ROI'' you should input the y-threshold of ROI ')
+        else
+            ROI1=varargin{args+1};
+            ROI2=varargin{args+2};
         end
     end
 end
-FilePrefix=[Prefix,'_'];
 
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
@@ -117,7 +146,7 @@ NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
 if (~isfield(schnitzcells,'APpos'))&&(strcmpi(ExperimentAxis,'AP')||strcmpi(ExperimentAxis,'DV'))
     %First, run this to get the alignment between the zoom-in and zoom-out
     %images:
-    AddParticlePosition(Prefix)
+%     AddParticlePosition(Prefix)
     %Now, add the nuclear position
     AddNuclearPosition(Prefix)
     load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
@@ -225,7 +254,12 @@ for i=1:length(schnitzcells)
                 CompiledNuclei(k).DVFluo = DV_Fluo;
                 CompiledNuclei(k).FluoMin=squeeze(min(DV_Fluo(DV_Fluo>0),[],2));
                 CompiledNuclei(k).FluoMean=squeeze(mean(DV_Fluo(DV_Fluo>0),2));
-                CompiledNuclei(k).p = polyfit(1:length(DV_Fluo),DV_Fluo,2);
+                %the 'p' field is a parabola fit of DV fluorescence over
+                %time
+                for frame = 1:size(DV_Fluo, 1)
+                    CompiledNuclei(k).parabolaFit{frame} = polyfit(1:size(DV_Fluo,2),DV_Fluo(frame,:),2);
+                end
+                    
             end
 
             %If there was only one time point and multiple channels,
@@ -414,31 +448,36 @@ end
 %% Information about the cytoplasmic fluroescence
 %If the nuclear masks are present then use them. Otherwise just calculate
 %the median of the images as a function of time
-
-if strcmp(ExperimentAxis,'AP')|| strcmp(ExperimentAxis,'DV')
-    [MeanCyto,SDCyto,MedianCyto,MaxCyto,...
-        MeanCytoAPProfile,SDCytoAPProfile,SECytoAPProfile]=GetCytoMCP(Prefix);
-else
-    MeanCyto=[];
-    SDCyto=[];
-    MaxCyto=[];
-    if (~isempty(strfind(Channel1{1}, 'Bcd')))
-        nameSuffix=['_ch',iIndex(1,2)];
-    else
-        nameSuffix=['_ch',iIndex(2,2)]; %assuming input channel is channel two. obviously this is going to be wrong in general.
-    end
-    
-    h=waitbar(0,'Calculating the median cyto intentisy');
-    for i=1:numFrames
-        waitbar(i/numFrames,h)
-        for j=1:FrameInfo(1).NumberSlices
-            Image(:,:,j)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),nameSuffix,'.tif']);
-        end
-        ImageMax=max(Image,[],3);
-        MedianCyto(i)=median(double(ImageMax(:)));
-    end
-    close(h)
-end  
+ MeanCyto=[];
+SDCyto=[];
+MaxCyto=[];
+MedianCyto = [];
+% if strcmp(ExperimentAxis,'AP')|| strcmp(ExperimentAxis,'DV')
+%     [MeanCyto,SDCyto,MedianCyto,MaxCyto,...
+%         MeanCytoAPProfile,SDCytoAPProfile,SECytoAPProfile]=GetCytoMCP(Prefix);
+% if false
+% else
+%     MeanCyto=[];
+%     SDCyto=[];
+%     MaxCyto=[];
+%     if (~isempty(strfind(Channel1{1}, 'Bcd')))
+%         nameSuffix=['_ch',iIndex(1,2)];
+%     else
+%         nameSuffix=['_ch',iIndex(2,2)]; %assuming input channel is channel two. obviously this is going to be wrong in general.
+%     end
+%     
+%     MedianCyto = zeros(numFrames);
+%     h=waitbar(0,'Calculating the median cyto intentisy');
+%     for frame=1:numFrames
+%         waitbar(i/numFrames,h)
+%         for z=1:FrameInfo(1).NumberSlices
+%             Image(:,:,z)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),nameSuffix,'.tif']);
+%         end
+%         ImageMax=max(Image,[],3);
+%         MedianCyto(frame)=median(double(ImageMax(:)));
+%     end
+%     close(h)
+% end  
 
 
 %% Binning and averaging data
@@ -559,8 +598,8 @@ if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
 
             for j=1:NChannels
                 MeanVectorAP{j}=cell2mat({MeanVectorAPCell2{j,:}}')';
-                SDVectorAP{j}=cell2mat({SDVectorAPCell2{j,:}}')';;
-                NParticlesAP{j}=cell2mat({NParticlesAPCell2{j,:}}')';;
+                SDVectorAP{j}=cell2mat({SDVectorAPCell2{j,:}}')';
+                NParticlesAP{j}=cell2mat({NParticlesAPCell2{j,:}}')';
             end
         else
             for i=MinAPIndex:MaxAPIndex
@@ -730,8 +769,8 @@ if strcmpi(ExperimentAxis,'DV')
 
             for j=1:NChannels
                 MeanVectorDV{j}=cell2mat({MeanVectorDVCell2{j,:}}')';
-                SDVectorDV{j}=cell2mat({SDVectorDVCell2{j,:}}')';;
-                NParticlesDV{j}=cell2mat({NParticlesDVCell2{j,:}}')';;
+                SDVectorDV{j}=cell2mat({SDVectorDVCell2{j,:}}')';
+                NParticlesDV{j}=cell2mat({NParticlesDVCell2{j,:}}')';
             end
         else
             for i=MinDVIndex:MaxDVIndex
@@ -770,8 +809,8 @@ if strcmpi(ExperimentAxis,'DV')
 
             for j=1:NChannels
                 MeanVectorDV{j}=cell2mat({MeanVectorDVCell2{j,:}}')';
-                SDVectorDV{j}=cell2mat({SDVectorDVCell2{j,:}}')';;
-                NParticlesDV{j}=cell2mat({NParticlesDVCell2{j,:}}')';;
+                SDVectorDV{j}=cell2mat({SDVectorDVCell2{j,:}}')';
+                NParticlesDV{j}=cell2mat({NParticlesDVCell2{j,:}}')';
             end
         else
             for i=MinDVIndex:MaxDVIndex
@@ -818,16 +857,7 @@ MaxFrame=[MaxFrame,NewCyclePos(i)+MaxIndex-1];
 
 %% Save everything
 
-if ~exist('IntegrationArea', 'var')
-    %to take care of some compatibility issues
-    IntegrationArea = NaN;
-end
-
-
-if strcmpi(ExperimentAxis,'ap')
-    % consider ROI option
-    if ROI
-        save([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],...
+savedVariables = [savedVariables,...
             'CompiledNuclei','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
             'nc12','nc13','nc14','ncFilterID','ncFilter','APbinID','APFilter',...
             'MeanVectorAP','SDVectorAP','NParticlesAP',...
@@ -840,60 +870,15 @@ if strcmpi(ExperimentAxis,'ap')
             'MeanCytoAPProfile','SDCytoAPProfile','SECytoAPProfile',...
             'MeanVectorAP_ROI','SDVectorAP_ROI','NParticlesAP_ROI',...
             'MeanVectorAP_nonROI','SDVectorAP_nonROI','NParticlesAP_nonROI',...
-            'CompiledNuclei_ROI','CompiledNuclei_nonROI','IntegrationArea', '-v7.3');
-    else 
-        save([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],...
-            'CompiledNuclei','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
-            'nc12','nc13','nc14','ncFilterID','ncFilter','APbinID','APFilter',...
-            'MeanVectorAP','SDVectorAP','NParticlesAP','MeanVectorAll',...
-            'SDVectorAll','NParticlesAll','MaxFrame','MinAPIndex','MaxAPIndex',...
-            'AllTracesVector','AllTracesAP',...
-            'MeanCyto','SDCyto','MedianCyto','MaxCyto',...
-            'MeanCytoAPProfile','SDCytoAPProfile','SECytoAPProfile','IntegrationArea', '-v7.3');
-    end
-    else if strcmpi(ExperimentAxis,'DV')
-            if ROI
-                save([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],...
-                    'CompiledNuclei','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
-                    'nc12','nc13','nc14','ncFilterID','ncFilter','APbinID','APFilter',...
-                    'MeanVectorAP','SDVectorAP','NParticlesAP',...
-                    'MeanVectorAll','SDVectorAll','NParticlesAll',...
-                    'MeanVectorAll_ROI','SDVectorAll_ROI','NParticlesAll_ROI',...
-                    'MeanVectorAll_nonROI','SDVectorAll_nonROI','NParticlesAll_nonROI',...
-                    'MaxFrame','MinAPIndex','MaxAPIndex',...
-                    'AllTracesVector','AllTracesAP',...
-                    'MeanCyto','SDCyto','MedianCyto','MaxCyto',...
-                    'MeanCytoAPProfile','SDCytoAPProfile','SECytoAPProfile',...
-                    'MeanVectorAP_ROI','SDVectorAP_ROI','NParticlesAP_ROI',...
-                    'MeanVectorAP_nonROI','SDVectorAP_nonROI','NParticlesAP_nonROI',...
-                    'CompiledNuclei_ROI','CompiledNuclei_nonROI','IntegrationArea',...
-                    'DVbinID','DVFilter','MeanVectorDV','SDVectorDV','NParticlesDV',...
+            'CompiledNuclei_ROI','CompiledNuclei_nonROI','IntegrationArea'...
+            'DVbinID','DVFilter','MeanVectorDV','SDVectorDV','NParticlesDV',...
                     'MinDVIndex','MaxDVIndex', 'AllTracesDV','MeanVectorAP_ROI',...
                     'SDVectorDV_ROI','NParticlesDV_ROI','MeanVectorDV_nonROI','SDVectorDV_nonROI',...
-                    'NParticlesDV_nonROI','-v7.3');
-            else 
-                save([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],...
-                    'CompiledNuclei','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
-                    'nc12','nc13','nc14','ncFilterID','ncFilter','APbinID','APFilter',...
-                    'MeanVectorAP','SDVectorAP','NParticlesAP','MeanVectorAll',...
-                    'SDVectorAll','NParticlesAll','MaxFrame','MinAPIndex','MaxAPIndex',...
-                    'AllTracesVector','AllTracesAP',...
-                    'MeanCyto','SDCyto','MedianCyto','MaxCyto',...
-                    'MeanCytoAPProfile','SDCytoAPProfile','SECytoAPProfile','IntegrationArea',...
-                    'DVbinID','DVFilter','MeanVectorDV','SDVectorDV','NParticlesDV',...
-                    'MinDVIndex','MaxDVIndex', 'AllTracesDV','MeanVectorAP',...
-                    'SDVectorDV','NParticlesDV','-v7.3');
-    
-            end
-        else
-            save([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],...
-            'CompiledNuclei','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
-            'nc12','nc13','nc14','ncFilterID','ncFilter','MeanVectorAll',...
-            'SDVectorAll','NParticlesAll','MaxFrame',...
-            'MeanCyto','SDCyto','MedianCyto','MaxCyto','IntegrationArea', '-v7.3')
-        end
-end
+                    'NParticlesDV_nonROI'];
 
+
+save([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],...
+    savedVariables{:},'-v7.3');
 
 save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v7.3')
 

@@ -5,29 +5,25 @@ function CurrentSnippet = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes,
 %PLOTSNIPPET Summary of this function goes here
 %   Detailed explanation goes here
 
-Spots = castStructNumbersToDoubles(Spots);
+% Spots = castStructNumbersToDoubles(Spots);
+intScale = double(intScale);
 
     if  ~isempty(xTrace) && ~isempty(CurrentZIndex)
         %Get the snippet and the mask, and overlay them
         %(MT, 2018-02-12): lattice data could use this, changed CurrentChannel to coatChannel
         FullSlice=imread(FullSlicePath);
-        xSpot = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xDoG(CurrentZIndex);
-        ySpot = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yDoG(CurrentZIndex);
+        xSpot = double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xDoG(CurrentZIndex));
+        ySpot = double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yDoG(CurrentZIndex));
 
         if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex), 'snippet_size') && ~isempty(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).snippet_size)
-            snippet_size = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).snippet_size;
+            
+            snippet_size = double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).snippet_size);
             %(MT, 2018-02-12): Hacky fix to get this to run with lattice data -
             %FIX LATER
         elseif strcmpi(ExperimentType,'lattice')
             snippet_size = 13; %pixels
-        elseif isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex), 'Snippet')
-            try
-                snippet_size = floor(size(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).Snippet{1}, 1)/2);
-                snippet_size = snippet_size(1);
-            catch
-            end
         end
-                snippet_size = snippet_size(1);
+        snippet_size = snippet_size(1);
         CurrentSnippet = double(FullSlice(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
             max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size)));
         imSnippet = mat2gray(CurrentSnippet);
@@ -74,7 +70,7 @@ Spots = castStructNumbersToDoubles(Spots);
             gaussParams = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussParams;
      
             if ~isempty(gaussParams)
-                gaussParams= gaussParams{CurrentZIndex};
+                gaussParams= double(gaussParams{CurrentZIndex});
                 if length(gaussParams) == 7
                     gaussParams = [gaussParams, 0, 0];
                 end
@@ -88,11 +84,11 @@ Spots = castStructNumbersToDoubles(Spots);
                     gauss = NaN;
                 end
             else
-                gauss = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{CurrentZIndex};
+                gauss = double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{CurrentZIndex});
             end
 
         elseif isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex), 'gaussSpot')
-            gauss = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{CurrentZIndex};
+            gauss = double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{CurrentZIndex});
         else
             error('No Gaussian Fit Params or Gauss Snippet Found. Try Re-running segmentSpots')
         end
@@ -101,7 +97,7 @@ Spots = castStructNumbersToDoubles(Spots);
             surf(gaussianAxes, gauss);
         end
         title(gaussianAxes,'Gaussian fit')
-        zlimit = max(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity);
+        zlimit = max(double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity));
         zlim(gaussianAxes,[0, zlimit]);
         surf(rawDataAxes,CurrentSnippet)
         title(rawDataAxes,'Raw data');

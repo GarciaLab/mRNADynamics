@@ -1,6 +1,7 @@
 function [Prefix, ForceAP, SkipTraces, SkipFluctuations, SkipFits, SkipMovie, ...
     SkipAll, ApproveAll, MinParticles, minTime, ROI, intArea, noHist, ...
-    ROI1, ROI2, slimVersion, manualSingleFits, optionalResults, yToManualAlignmentPrompt, minBinSize] = determineCompileParticlesOptions(varargin)
+    ROI1, ROI2, slimVersion, manualSingleFits, optionalResults,...
+    yToManualAlignmentPrompt, minBinSize, edgeWidth] = determineCompileParticlesOptions(varargin)
 %DETERMINECOMPILEPARTICLESOPTIONS Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -27,6 +28,7 @@ manualSingleFits = 0; % no manually fitted single fits
 optionalResults = ''; %different dropbox folder
 yToManualAlignmentPrompt = 0; %this is an option for addparticleposition
 minBinSize = .7; % fraction of the median bin size allowed
+edgeWidth = 2.12;
 
 
 % Checking Varargin 
@@ -91,6 +93,8 @@ else
             end
         elseif strcmpi(varargin{i}, 'slimVersion')
             slimVersion = 1;
+        elseif strcmpi(varargin{i}, 'edgeWidth')
+            edgeWidth = varargin{i+1};
         elseif strcmpi(varargin{i}, 'manualSingleFits')
             manualSingleFits = 1;
         elseif strcmpi(varargin{i}, 'optionalResults')

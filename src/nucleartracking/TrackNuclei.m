@@ -16,6 +16,7 @@ function TrackNuclei(Prefix,varargin)
 % 'NoBulkShift': Runs the nuclear tracking without accounting for the bulk
 % shift between frames (greatly speeds up runtime). It's recommended you
 % set ExpandedSpaceTolerance to 1.5 if you use this. 
+% 'retrack': retrack
 %
 % OUTPUT
 % '*_lin.mat' : Nuclei with lineages
@@ -31,16 +32,18 @@ function TrackNuclei(Prefix,varargin)
 
 disp(['Tracking nuclei on ', Prefix, '...']);
 
-[SkipStitchSchnitz, ExpandedSpaceTolerance, NoBulkShift] = DetermineTrackNucleiOptions(varargin);
+[SkipStitchSchnitz, ExpandedSpaceTolerance, NoBulkShift, retrack] = DetermineTrackNucleiOptions(varargin{:});
+
+%added this bulkshift requirement because i'm not sure it'll work without
+%it
+if NoBulkShift
+    workers = 8;
+    startParallelPool(workers, 0,0);
+end
 
 
 
-% NL: Changed from DetermineAllLocalFolders to DetermineLocalFodlers to enable
-% compatibility with dynamic data folders
-[~, FISHPath, DropboxFolder, ~, PreProcPath, ~, ~] = DetermineLocalFolders(Prefix);
-%Get the folders, including the default Dropbox one
-% [SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
-% configValues, movieDatabasePath] = DetermineAllLocalFolders(Prefix);
+[~, ProcPath, DropboxFolder, ~, PreProcPath, ~, ~] = DetermineLocalFolders(Prefix);
 
 CONFIG_CSV_PATH = 'ComputerFolders.csv';
 configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');    
@@ -147,19 +150,19 @@ settingArguments{2}=median(diff([FrameInfo.Time]));     %Median separation betwe
 settingArguments{3}='space resolution';
 settingArguments{4}=FrameInfo(1).PixelSize;
 
-retrack = exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file');
+schnitzFileExists = exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file');
 
-if retrack
+if schnitzFileExists & ~retrack
     answer=input('Previous tracking detected. Proceed with retracking? (y/n):','s');
     if strcmpi(answer,'y')
-       %do nothing
+       retrack = true;
     elseif strcmpi(answer, 'n')
-        retrack = 0;
+        retrack = false;
     else
         %do nothing
     end
 end
-           
+
 
 
 %Do the tracking for the first time
@@ -191,10 +194,10 @@ else
     centers = updateCentersFromEllipses(FrameInfo, Ellipses);
 
     %Load the dataStructure to speed up retracking if it exists
-    if exist([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'], 'file')
-        load([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'])
-    elseif exist([FISHPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'], 'file')
-        load([FISHPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'])
+    if exist([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'], 'file')
+        load([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'])
+    elseif exist([ProcPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'], 'file')
+        load([ProcPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'])
     end
 
     % look for a settings file in the Raw Data folder.
@@ -254,10 +257,10 @@ end
 mkdir([DropboxFolder,filesep,Prefix])
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells')
-if ~exist([FISHPath,filesep,Prefix,'_'], 'dir')
-    mkdir([FISHPath,filesep,Prefix,'_'])
+if ~exist([ProcPath,filesep,Prefix,'_'], 'dir')
+    mkdir([ProcPath,filesep,Prefix,'_'])
 end
-save([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
+save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
 
 
 
@@ -323,7 +326,7 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
         NumberSlices=FrameInfo(1).NumberSlices;
         NumberSlices2 = NumberSlices + 2;
               
-        %Generate reference frame for edfe detection
+        %Generate reference frame for edge detection
         refFrame = ones(LinesPerFrame,PixelsPerLine,NumberSlices2);
         convRef = convn(refFrame, Circle, 'same');
         edgeMask = convRef~=sum(Circle(:));
@@ -340,30 +343,40 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
                     error('Not sure what happened here. Talk to YJK or SA.')
                 end
             % NL: should parallelize this
+          
+            tempSchnitz = schnitzcells;
             for CurrentFrame=1:numFrames
 
                 waitbar(CurrentFrame/numFrames,h);
 % 
 %                 %Initialize the image
-%                 Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2)
-%                 %AR 1/12/18 moved this outside the for loops
                 Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2);
+%                 %AR 1/12/18 moved this outside the for loops
+%                 Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2);
                 %Load the z-stack for this frame        
                 for CurrentZ=1:NumberSlices2   %Note that I need to add the two extra slices manually
                     Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
                 end
                 
                 % NL: rewriting this extraction step as a convolution                            
-                convImage = convn(Image, Circle, 'same');                
+%                 convImage = convn(Image, Circle, 'same');    
+                convImage = imfilter(Image, double(Circle), 'same');
                 convImage(edgeMask) = NaN;
-                [yDim, xDim] = size(convImage);
-                for j=1:length(schnitzcells)
-                    CurrentIndex=find(schnitzcells(j).frames==CurrentFrame);
-                    cenx=min(max(1,round(schnitzcells(j).cenx(CurrentIndex))),xDim);
-                    ceny=min(max(1,round(schnitzcells(j).ceny(CurrentIndex))),yDim);
-                    schnitzcells(j).Fluo(CurrentIndex,1:NumberSlices2,ChN) = convImage(ceny,cenx,:);
-                    schnitzcells(j).Mask=Circle;                    
+%                 [yDim, xDim] = size(convImage);
+%                 tempFluo = []; tempMask = [];
+                for j=1:length(tempSchnitz)
+                    CurrentIndex=find(tempSchnitz(j).frames==CurrentFrame);
+                    cenx=min(max(1,round(tempSchnitz(j).cenx(CurrentIndex))),PixelsPerLine);
+                    ceny=min(max(1,round(tempSchnitz(j).ceny(CurrentIndex))),LinesPerFrame);
+%                     tempFluo(j) = convImage(ceny,cenx,:);
+%                      tempFluo(j).Fluo(CurrentIndex,1:NumberSlices2,ChN) = convImage(ceny,cenx,:);
+                    tempSchnitz(j).Fluo(CurrentIndex,1:NumberSlices2,ChN) = convImage(ceny,cenx,:);
+%                      tempMask(j).Mask = Circle;
+                    tempSchnitz(j).Mask=Circle;                    
                 end
+                
+%                 schnitzcells.Mask = tempMask;
+                
 %                 NL: commented out old version
 %                 for j=1:length(schnitzcells)
 % 
@@ -379,6 +392,10 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
 %                         Image,LinesPerFrame,PixelsPerLine,NumberSlices2,Circle,IntegrationRadius,ChN);
 %                 end
             end
+            schnitzcells = tempSchnitz;
+%             schnitzcells.Fluo = tempFluo;
+%             schnitzcells.Mask = tempMask;
+            
         close(h)
         end
     else
@@ -399,10 +416,10 @@ else
     save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells')
 end
 
-if ~exist([FISHPath,filesep,Prefix,'_'], 'dir')
-    mkdir([FISHPath,filesep,Prefix,'_'])
+if ~exist([ProcPath,filesep,Prefix,'_'], 'dir')
+    mkdir([ProcPath,filesep,Prefix,'_'])
 end
-save([FISHPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
+save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
 
 
 %Stitch the schnitzcells using Simon's code

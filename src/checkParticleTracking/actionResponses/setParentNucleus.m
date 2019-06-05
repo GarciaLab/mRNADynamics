@@ -54,5 +54,6 @@ else
         schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).P=0;
     end
 end
+
 end
 

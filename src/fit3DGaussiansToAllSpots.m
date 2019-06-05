@@ -38,13 +38,10 @@ if ~segmentSpots
     load([DataFolder,filesep,'Spots.mat'], 'Spots');
 end
 
-load([DataFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
+FrameInfo = load([DataFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
+FrameInfo = FrameInfo.FrameInfo;
 
 startParallelPool(nWorkers, displayFigures, keepPool);
-
-if ~iscell(Spots)
-    Spots = {Spots};
-end
 
 
 %%
@@ -56,20 +53,31 @@ for ch = spotChannels
     afterEach(q, @nUpdateWaitbar);
     p = 1;
     
-    SpotsCh = Spots{ch};
+    if iscell(Spots)
+        SpotsCh = Spots{ch};
+    else
+        SpotsCh = Spots;
+    end
+    
     numFrames = length(SpotsCh);
     
     
-    for frame = 1:numFrames %frames
-        nSpotsPerFrame = length(SpotsCh(frame).Fits);
+    parfor frame = 1:numFrames %frames
+        SpotsFr = SpotsCh(frame);
+
+        nSpotsPerFrame = length(SpotsFr.Fits);
         for spot = 1:nSpotsPerFrame
-            SpotsCh = fitSnip3D(SpotsCh, ch, spot, frame, Prefix, PreProcPath, ProcPath, FrameInfo, dogs, displayFigures, saveType);
+            SpotsFr = fitSnip3D(SpotsFr, ch, spot, frame, Prefix, PreProcPath, ProcPath, FrameInfo, dogs, displayFigures, saveType);
         end
+        SpotsCh(frame) = SpotsFr;
         send(q, frame); %update the waitbar
-        
     end
     
-    Spots{ch} = SpotsCh;
+    if iscell(Spots) & length(Spots) > 1
+        Spots{ch} = SpotsCh;
+    else
+        Spots = SpotsCh;
+    end
     
 end
 

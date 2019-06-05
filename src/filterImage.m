@@ -80,13 +80,6 @@ switch filterType
             h = fspecial('log', filterSizeXY,s1);
             im = imfilter(im, h, 'corr', 'symmetric', 'same');
         elseif dim==3
-            %             G = g3(s1, 'sigmaZ', sigmaZ);
-            %             [Gx,Gy] = grad(G);
-            %             [Gxx,~] = grad(Gx);
-            %             [~,Gyy] = grad(Gy);
-            %             LoG = Gxx + Gyy;
-            %             f = -imfilter(im, LoG, 'corr', 'symmetric', 'same');
-            %                 f = fastConv3D(LoG, im);
             h = fspecial3('log', [filterSizeXY, filterSizeXY, filterSizeZ], [s1, s1, sigmaZ]);
             im = -imfilter(im, h, 'corr', 'symmetric', 'same');
         end

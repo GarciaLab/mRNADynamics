@@ -1,5 +1,11 @@
-function [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh, Spots, app, SpotFilter, PreProcPath, Prefix, UseHistone, ParticlesFig, SpotsChannel, NDigits, NucleiFig, particlesAxes, nucAxes, Ellipses, PixelSize, SearchRadius, ExperimentType, FrameInfo, retrack, displayFigures)
-  % Iterate over all channels
+function [Particles, SpotFilter] = performTracking(Particles, scurrentChannelitzcells, NCh, Spots, app, SpotFilter, PreProcPath, Prefix, UseHistone, ParticlesFig, SpotsChannel, NucleiFig, particlesAxes, nucAxes, Ellipses, PixelSize, SearchRadius, ExperimentType, FrameInfo, retrack, displayFigures)
+ 
+
+NDigits = adjustIndexSizeAccordingToFrames(FrameInfo);
+  
+
+% Iterate over all channels
+  
   for Channel = 1:NCh
 
     % Iterate over all frames
@@ -18,7 +24,7 @@ function [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh,
 
       if UseHistone
         [Particles, SpotFilter] = trackParticlesBasedOnNuclei(PreProcPath, Prefix, CurrentFrame, NDigits, app, nucAxes, Ellipses, ...
-          ExperimentType, Channel, schnitzcells, Particles, Spots, SpotFilter, PixelSize, SearchRadius, retrack, displayFigures);
+          ExperimentType, Channel, scurrentChannelitzcells, Particles, Spots, SpotFilter, PixelSize, SearchRadius, retrack, displayFigures);
       else
         [Particles] = trackParticlesBasedOnProximity(Particles, Spots, xPos, SpotFilter, Channel, CurrentFrame, PixelSize, SearchRadius, retrack, displayFigures);
       end
@@ -39,21 +45,36 @@ function [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh,
     
     if ~isfield(Particles{currentChannel}, 'FrameApproved')
       
-      for i = 1:length(Particles{currentChannel})
-        Particles{currentChannel}(i).FrameApproved = true(size(Particles{currentChannel}(i).Frame));
+      for particle = 1:length(Particles{currentChannel})
+        Particles{currentChannel}(particle).FrameApproved = true(size(Particles{currentChannel}(particle).Frame));
       end
       
     else
       
-      for i = 1:length(Particles{currentChannel})
+      for particle = 1:length(Particles{currentChannel})
         
-        if isempty(Particles{currentChannel}(i).FrameApproved)
-          Particles{currentChannel}(i).FrameApproved = true(size(Particles{currentChannel}(i).Frame));
+        if isempty(Particles{currentChannel}(particle).FrameApproved)
+          Particles{currentChannel}(particle).FrameApproved = true(size(Particles{currentChannel}(particle).Frame));
         end
         
       end
       
     end
+    
+    %AR: add x, y and z positions to the Particles structure. This was
+    %originally only added by addParticlePosition, but it it's more useful
+    %early on in the pipeline. 
+    
+        for particle=1:length(Particles{currentChannel})
+            for frame=1:length(Particles{currentChannel}(particle).Frame)
+                [x,y,z]=SpotsXYZ(Spots{currentChannel}(Particles{currentChannel}(particle).Frame(frame)));
+                if ~isempty(x) 
+                    Particles{currentChannel}(particle).xPos(frame)=x(Particles{currentChannel}(particle).Index(frame));
+                    Particles{currentChannel}(particle).yPos(frame)=y(Particles{currentChannel}(particle).Index(frame));
+                    Particles{currentChannel}(particle).zPos(frame)=z(Particles{currentChannel}(particle).Index(frame));
+                end
+            end
+        end
     
   end
   
@@ -104,7 +125,7 @@ function x = displayParticlesFigure(app, particlesAxes, ParticlesFig, Spots, Cha
 end
 
 function [Particles, SpotFilter] = trackParticlesBasedOnNuclei(PreProcPath, Prefix, CurrentFrame, NDigits, app, nucAxes, Ellipses, ...
-    ExperimentType, Channel, schnitzcells, Particles, Spots, SpotFilter, PixelSize, SearchRadius, retrack, displayFigures)
+    ExperimentType, Channel, scurrentChannelitzcells, Particles, Spots, SpotFilter, PixelSize, SearchRadius, retrack, displayFigures)
 
 if displayFigures
   hisImage = openHistoneImage(Prefix, PreProcPath, CurrentFrame, NDigits);
@@ -145,7 +166,7 @@ end
      SpotsPerNucleus = 1;
   end
 
-  [Particles{Channel}, SpotFilter{Channel}] = AssignParticle2Nucleus(schnitzcells, Ellipses, ...
+  [Particles{Channel}, SpotFilter{Channel}] = AssignParticle2Nucleus(scurrentChannelitzcells, Ellipses, ...
     Particles{Channel}, Spots{Channel}, SpotFilter{Channel}, CurrentFrame, PixelSize, SpotsPerNucleus, retrack);
 
 end
@@ -169,154 +190,16 @@ function hisImage = openHistoneImage(Prefix, PreProcPath, CurrentFrame, NDigits)
 
 end
 
-function [Particles] = trackParticlesBasedOnProximity(Particles, Spots, xPos, SpotFilter, Channel, CurrentFrame, PixelSize, SearchRadius, retrack, displayFigures)
-  
-  %This function is used by the performTracking subfunction of
-  %trackmRNADynamics to track particles in the event there's no nuclear
-  %channel. 
-  
-  if displayFigures
-    drawnow
-  end
-  % Get the particles detected in the frame
+% See how  many frames we have and adjust the index size of the files to
+% load accordingly
+function NDigits = adjustIndexSizeAccordingToFrames(FrameInfo)
 
-  if ~isempty(xPos)
-
-    % Find the approved spots in this frame
-    %AR 12/29/2018: since spotFilter isn't really used in this context, all
-    %spots are approved. 
-    ApprovedSpots = find(SpotFilter{Channel}(CurrentFrame, ~isnan(SpotFilter{Channel}(CurrentFrame, :))));
-
-    % Get the positions of ALL spots (approved and disapproved)
-    [NewSpotsX, NewSpotsY] = SpotsXYZ(Spots{Channel}(CurrentFrame));
-
-    if isempty(Particles{Channel})
-      %Initialize the Particles structure if it doesn't exist yet
-      for j = 1:length(ApprovedSpots)
-        Particles{Channel}(j).Frame = CurrentFrame;
-        Particles{Channel}(j).Index = ApprovedSpots(j);
-        Particles{Channel}(j).Approved = 0;
-      end
-
-    else
-      %If we already have recorded particles, we need to compare
-      %them to the new ones found and try to assign them.
-
-      %Get a list of the particles that were present in
-      %the previous frame and of their positions.
-      PreviousFrameParticles = [];
-      xPreviousFrameParticles = [];
-      yPreviousFrameParticles = [];
-      [PreviousSpotsX, PreviousSpotsY] = SpotsXYZ(Spots{Channel}(CurrentFrame - 1));
-
-      for j = 1:length(Particles{Channel})
-
-        if Particles{Channel}(j).Frame(end) == (CurrentFrame - 1)
-          PreviousFrameParticles = [PreviousFrameParticles, j];
-          PreviousFrameIndex = Particles{Channel}(j).Index(end);
-          xPreviousFrameParticles = [xPreviousFrameParticles, PreviousSpotsX(PreviousFrameIndex)];
-          yPreviousFrameParticles = [yPreviousFrameParticles, PreviousSpotsY(PreviousFrameIndex)];
-        end
-
-      end
-
-      % If there were particles present in the previous frame,
-      % then we find their distances to the spots present in
-      % the current frame. Otherwise, we create new particles
-      % for each new spot.
-      % We keep track of which spots goes to a new or old
-      % particle using the NewParticle array.
-      NewParticleFlag = true(size(ApprovedSpots));
-
-      if ~isempty(PreviousFrameParticles)
-        % Get the distances between the spots in this frame
-        % and those within the particles in the previous
-        % frame
-        clear Distance
-
-        % The rows of Distance correspond to the new spots.
-        % The columns correspond to the particles present in
-        % the previous frame. Each element is the distance.
-        for j = 1:length(NewSpotsX)
-          Distance(j, :) = sqrt((NewSpotsX(j) * PixelSize - xPreviousFrameParticles * PixelSize).^2 + ...
-            (NewSpotsY(j) * PixelSize - yPreviousFrameParticles * PixelSize).^2);
-        end
-
-        % We want to make sure there is only one match of
-        % new spot to previous particle. To make this
-        % possible, we'll go through each column in the
-        % matrix Distance and set all pairwise distances
-        % that are not the minimum one to infinity.
-        for j = 1:length(PreviousFrameParticles)
-          DistanceFilter = false(size(Distance(:, j)));
-          [DistMinValue, DistMindIndex] = min(Distance(:, j));
-          DistanceFilter(DistMindIndex) = true;
-          Distance(~DistanceFilter, j) = inf;
-        end
-
-        % The rows of distance correspond to the new particles.
-        % The columns correspond to their distance to the old particles.
-
-        % The followign tracking works well if we have more than one previous particle. If not, we need to be
-        % more careful.
-        if (size(Distance, 2) > 1)
-          % MinIndex is a row vector. The element position correspond to the new spot and the value within it
-          % correspond to the previous particle that it's closest to.
-          [MinValues, MinIndex] = min(Distance');
-          % Note that inf can be a distance as well. In those cases, turn MinIndex to 0.
-          MinIndex(MinValues == inf) = 0;
-          % Now, check that the distances are smaller than SearchRadius
-          MinIndex(~(MinValues < SearchRadius)) = 0;
-
-          % Assign the new spots to their corresponding particles.
-          if sum(MinIndex)
-
-            for j = 1:length(MinIndex)
-
-              if MinIndex(j) > 0
-                Particles{Channel}(PreviousFrameParticles(MinIndex(j))).Frame(end + 1) = CurrentFrame;
-                Particles{Channel}(PreviousFrameParticles(MinIndex(j))).Index(end + 1) = ApprovedSpots(j);
-
-                %We don't want this new spot to generate a
-                %new particle further below
-                NewParticleFlag(j) = false;
-              end
-
-            end
-
-          end
-
-        else
-          % Find the new spot that is closest to the one previous particle
-          [MinValues, MinIndex] = min(Distance);
-          % Note that inf can be a distance as well. In those cases, turn MinIndex to 0.
-          MinIndex(MinValues == inf) = 0;
-          % Now, check that the distances are smaller than SearchRadius
-          MinIndex(~(MinValues < SearchRadius)) = 0;
-
-          if sum(MinIndex)
-            Particles{Channel}(PreviousFrameParticles).Frame(end + 1) = CurrentFrame;
-            Particles{Channel}(PreviousFrameParticles).Index(end + 1) = MinIndex;
-            % We don't want this new spot to generate a new particle further below
-            NewParticleFlag(MinIndex) = false;
-          end
-
-        end
-
-      end
-
-      % See which spots weren't assigned and add them to the structure as new particles
-      NewParticles = find(NewParticleFlag);
-
-      for j = 1:length(NewParticles)
-        TotalParticles = length(Particles{Channel});
-        Particles{Channel}(TotalParticles + 1).Frame = CurrentFrame;
-        Particles{Channel}(TotalParticles + 1).Index = ApprovedSpots(NewParticles(j));
-        Particles{Channel}(TotalParticles + 1).Approved = 0;
-      end
-
-    end
-
+  if length(FrameInfo) < 1E3
+    NDigits = 3;
+  elseif length(FrameInfo) < 1E4
+    NDigits = 4;
+  else
+    error('No more than 10,000 frames supported. Change this in the code')
   end
 
 end

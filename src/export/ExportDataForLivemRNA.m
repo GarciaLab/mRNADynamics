@@ -78,6 +78,7 @@ function Prefix = ExportDataForLivemRNA(varargin)
 
   %Create the output folder
   OutputFolder = [PreProcPath, filesep, Prefix];
+  disp(['Creating folder: ', OutputFolder]);
   mkdir(OutputFolder)
 
   %Generate FrameInfo
@@ -89,7 +90,10 @@ function Prefix = ExportDataForLivemRNA(varargin)
   %This information will be stored in FrameInfo for use by subsequent parts
   %of the code. Note, however, that the channels are also extracted in this
   %code for each data type. I should integrate this.
-  if strcmpi(FileMode, 'TIF')
+  if strcmpi(FileMode, 'OMETIFF')
+    disp('OMETIFF FileMode')
+    FrameInfo = processOMETIFFData(rawDataFolder, D, FrameInfo, ProjectionType, Channel1, Channel2, Prefix, OutputFolder);
+  elseif strcmpi(FileMode, 'TIF')
 
     FrameInfo = process2PhotonPrincetonData(rawDataFolder, D, FrameInfo, Channel2, OutputFolder);
   elseif strcmpi(FileMode, 'LAT')
@@ -111,7 +115,9 @@ function Prefix = ExportDataForLivemRNA(varargin)
   doFrameSkipping(SkipFrames, FrameInfo, OutputFolder);
 
   %Save the information about the various frames
-  mkdir([DropboxFolder, filesep, Prefix]);
+  DropboxFolderName = [DropboxFolder, filesep, Prefix];
+  disp(['Creating folder: ', DropboxFolderName]);
+  mkdir(DropboxFolderName);
   save([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
 
   if generateTifStacks
