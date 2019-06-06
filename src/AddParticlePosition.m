@@ -13,6 +13,9 @@ function AddParticlePosition(Prefix, varargin)
 %                       embyro images
 % 'NoAP': Just adds X and Y information
 % 'SelectChannel': Prompts user to select the channel to use for alignment
+% 'optionalResults': ?
+% 'yToManualAlignmentPrompt': ?
+% 'correctDV': If you want the DV shift calculated
 %
 % MANUAL ALIGNMENT CONTROLS
 % . - Move to the right
@@ -611,7 +614,8 @@ if ~NoAP
         ImageCenter(2)-Columns/ZoomRatio/2+ShiftColumn];
     BottomRight=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
         ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
-    
+    coordAZoom=(coordA-[TopLeft(2),TopLeft(1)])*ZoomRatio;
+	coordPZoom=(coordP-[TopLeft(2),TopLeft(1)])*ZoomRatio;
     
     
     fullFigure = figure(7);
