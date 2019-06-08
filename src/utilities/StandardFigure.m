@@ -74,16 +74,16 @@ for i=1:length(PlotHandle)
         ChangeColorPBoC2(PlotHandle(i),'FaceColor')
         
     else
-        %Why do I have this auto thingy?
-        if isempty(strmatch(get(PlotHandle(i),'MarkerFaceColor'),'auto'))
-            ChangeColorPBoC2(PlotHandle(i),'Color')
-        end
-        try
-        if isempty(strmatch(get(PlotHandle(i),'MarkerEdgeColor'),'auto'))
-            ChangeColorPBoC2(PlotHandle(i),'MarkerEdgeColor')
-        end
-        catch
-        end
+%         %Why do I have this auto thingy?
+%         if isempty(strmatch(get(PlotHandle(i),'MarkerFaceColor'),'auto'))
+%             ChangeColorPBoC2(PlotHandle(i),'Color')
+%         end
+%         try
+%         if isempty(strmatch(get(PlotHandle(i),'MarkerEdgeColor'),'auto'))
+%             ChangeColorPBoC2(PlotHandle(i),'MarkerEdgeColor')
+%         end
+%         catch
+%         end
 try
         if isempty(strmatch(get(PlotHandle(i),'MarkerFaceColor'),'auto'))
             ChangeColorPBoC2(PlotHandle(i),'MarkerFaceColor')

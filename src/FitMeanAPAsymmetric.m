@@ -69,10 +69,14 @@ else
 end
 
 
+% Extract the fields from the cell structure (This is for fields like MeanVectorAP
+% that are saved inside {}.
 channel = 1;
 
 if iscell(MeanVectorAP)
     MeanVectorAP = MeanVectorAP{channel};
+    SDVectorAP = SDVectorAP{channel};
+    OnRatioAP = OnRatioAP{channel};
     NParticlesAP = NParticlesAP{channel};
 end
 
@@ -179,8 +183,6 @@ end
 
 
 
-
-         
 
 
 
