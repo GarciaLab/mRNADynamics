@@ -6,7 +6,7 @@ function CompileNuclearProtein(Prefix, varargin)
 %function.  varargin must be declared as the last input argument
 %and collects all the inputs from that point onwards.
 
-% ROI (Region of Interest, illuminatio) option is added on 10/27/2017 by YJK
+% ROI (Region of Interest, illumination) option is added on 10/27/2017 by YJK
 % ex ) CompileNuclearProtein(Prefix,'ROI','direction',[ROI1 ROI1])
 % 1st varargin : 'ROI' or 'nonROI'. This is for file saving name.
 % 2nd varargin : the direction, either 'x', or 'y'.
@@ -31,8 +31,6 @@ MeanVectorAll_nonROI = [];
 SDVectorAll_nonROI = [];
 NParticlesAll_nonROI = [];
 MaxFrame = [];
-MinAPIndex = [];
-MaxAPIndex = [];
 MeanVectorAP_ROI = [];
 SDVectorAP_ROI = [];
 NParticlesAP_ROI = [];
@@ -109,9 +107,9 @@ end
 
 
 %Load all the information
-load([DropboxFolder,filesep,Prefix,'\Ellipses.mat'])
-load([DropboxFolder,filesep,Prefix,'\FrameInfo.mat'])
-load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
+load([DropboxFolder,filesep,Prefix,'\Ellipses.mat'], 'Ellipses')
+load([DropboxFolder,filesep,Prefix,'\FrameInfo.mat'], 'FrameInfo')
+load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'schnitzcells')
 
 numFrames = length(FrameInfo);
 
@@ -397,16 +395,13 @@ if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
     %Divide the AP axis into boxes of a certain AP size. We'll see which
     %particle falls where.
 
-    APResolution=APResolution;
     APbinID=0:APResolution:1;
 
     APFilter=false(length(CompiledNuclei),length(APbinID));
     
     for i=1:length(CompiledNuclei)
-        APFilter(i,max(find(APbinID<=CompiledNuclei(i).MeanAP)))=1;
+        APFilter(i,max(find(APbinID<=CompiledNuclei(i).MeanAP)))=true;
     end
-
-end
 
 end
 
@@ -465,9 +460,9 @@ if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
     
     %Get the corresponding mean information 
     k=1;
-    for i=MinAPIndex:MaxAPIndex
+    for ap=MinAPIndex:MaxAPIndex
         [MeanVectorAPTemp,SDVectorAPTemp,NParticlesAPTemp]=AverageTracesNuclei(FrameInfo,...
-            CompiledNuclei(APFilter(:,i)),NChannels);
+            CompiledNuclei(APFilter(:,ap)),NChannels);
         MeanVectorAPCell{k}=MeanVectorAPTemp';
         SDVectorAPCell{k}=SDVectorAPTemp';
         NParticlesAPCell{k}=NParticlesAPTemp';
@@ -476,24 +471,24 @@ if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
 
     %Turn the information into useful structures
     if NChannels>1
-        for j=1:NChannels
-            for i=MinAPIndex:MaxAPIndex
-                MeanVectorAPCell2{j,i}=MeanVectorAPCell{i}{j};
-                SDVectorAPCell2{j,i}=SDVectorAPCell{i}{j};
-                NParticlesAPCell2{j,i}=NParticlesAPCell{i}{j};
+        for ch=1:NChannels
+            for ap=MinAPIndex:MaxAPIndex
+                MeanVectorAPCell2{ch,ap}=MeanVectorAPCell{ap}{ch};
+                SDVectorAPCell2{ch,ap}=SDVectorAPCell{ap}{ch};
+                NParticlesAPCell2{ch,ap}=NParticlesAPCell{ap}{ch};
             end
         end
 
-        for j=1:NChannels
-            MeanVectorAP{j}=cell2mat({MeanVectorAPCell2{j,:}}')';
-            SDVectorAP{j}=cell2mat({SDVectorAPCell2{j,:}}')';
-            NParticlesAP{j}=cell2mat({NParticlesAPCell2{j,:}}')';
+        for ch=1:NChannels
+            MeanVectorAP{ch}=cell2mat({MeanVectorAPCell2{ch,:}}')';
+            SDVectorAP{ch}=cell2mat({SDVectorAPCell2{ch,:}}')';
+            NParticlesAP{ch}=cell2mat({NParticlesAPCell2{ch,:}}')';
         end
     else
-        for i=MinAPIndex:MaxAPIndex
-            MeanVectorAPCell2{j,i}=MeanVectorAPCell{i};
-            SDVectorAPCell2{j,i}=SDVectorAPCell{i};
-            NParticlesAPCell2{j,i}=NParticlesAPCell{i};
+        for ap=MinAPIndex:MaxAPIndex
+            MeanVectorAPCell2{ch,ap}=MeanVectorAPCell{ap};
+            SDVectorAPCell2{ch,ap}=SDVectorAPCell{ap};
+            NParticlesAPCell2{ch,ap}=NParticlesAPCell{ap};
         end
 
         MeanVectorAP=cell2mat(MeanVectorAPCell2);
@@ -515,20 +510,22 @@ end
 %Calculate the mean for all of them
 [MeanVectorAll,SDVectorAll,NParticlesAll]=AverageTracesNuclei(FrameInfo,CompiledNuclei);
 
-%Now find the different maxima in each nc
 
-MaxFrame=[];
-for i=1:length(NewCyclePos)
-    if i==1
-        [~,MaxIndex]=max(MeanVectorAll(1:NewCyclePos(1)));
-        MaxFrame=[MaxFrame,MaxIndex];
-    elseif i<=length(NewCyclePos)
-        [~,MaxIndex]=max(MeanVectorAll(NewCyclePos(i-1):NewCyclePos(i)));
-        MaxFrame=[MaxFrame,NewCyclePos(i-1)+MaxIndex-1];
-    end
-end
-[~,MaxIndex]=max(MeanVectorAll(NewCyclePos(i):end));
-MaxFrame=[MaxFrame,NewCyclePos(i)+MaxIndex-1];
+% %Now find the different maxima in each nc
+% 
+% MaxFrame=[];
+% for i=1:length(NewCyclePos)
+%     if i==1
+%         [~,MaxIndex]=max(MeanVectorAll(1:NewCyclePos(1)));
+%         MaxFrame=[MaxFrame,MaxIndex];
+%     elseif i<=length(NewCyclePos)
+%         [~,MaxIndex]=max(MeanVectorAll(NewCyclePos(i-1):NewCyclePos(i)));
+%         MaxFrame=[MaxFrame,NewCyclePos(i-1)+MaxIndex-1];
+%     end
+% end
+% 
+% [~,MaxIndex]=max(MeanVectorAll(NewCyclePos(i):end));
+% MaxFrame=[MaxFrame,NewCyclePos(i)+MaxIndex-1];
 
 
 
@@ -541,7 +538,7 @@ savedVariables = [savedVariables,...
             'nc12','nc13','nc14','ncFilterID','ncFilter','APbinID','APFilter',...
             'MeanVectorAP','SDVectorAP','NParticlesAP',...
             'MeanVectorAll','SDVectorAll','NParticlesAll',...
-            'MaxFrame','MinAPIndex','MaxAPIndex',...
+            'MaxFrame',...
             'AllTracesVector','AllTracesAP',...
             'MeanCyto','SDCyto','MedianCyto','MaxCyto',...
             'MeanCytoAPProfile','SDCytoAPProfile','SECytoAPProfile',...

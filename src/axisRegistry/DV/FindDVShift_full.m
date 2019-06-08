@@ -67,14 +67,14 @@ FullEmbryoSurf=imread([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'surf_m
 
 %% Part 2: Label Image (Classified with Weka)
 %I = imread('./test2/binary.tif');
-I = imread([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'Classified_image.tif']);
-J = 1-I;    %Inverse image
+classifiedFullEmbryoImage = imread([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'Classified_image.tif']);
+invertedClassifiedFullEmbryoImage = 1-classifiedFullEmbryoImage;    %Inverse image
 
 figure(1)
-imshow(J,[]);
+imshow(invertedClassifiedFullEmbryoImage,[]);
 
 %First, we need to give each regions of 1s a unique identity.
-ImLabel=bwlabel(J,4);
+ImLabel=bwlabel(invertedClassifiedFullEmbryoImage,4);
 %imshow(ImLabel,[])
 
 %We need to calculate the area of each region found by bwlabel.
@@ -102,7 +102,7 @@ ylabel('number of regions')
 %We are going to extract the regions with an area larger
 %than AreaThresh. To do this, we'll copy those selected
 %regions onto a blank image.
-NewImage=zeros(size(J));
+NewImage=zeros(size(invertedClassifiedFullEmbryoImage));
                                               
 %Loop through each regions in ImLabel
 for i=1:length(Areas)
@@ -140,19 +140,10 @@ ImFluo = FullEmbryoSurf;
 ImProps2=regionprops(ImLabel2,'Area');
 Areas2=[ImProps2.Area];
 
-x_pos = zeros(size(J));
-y_pos = zeros(size(J));
-
-for i = 1:size(J,2)
-    for j = 1:size(J,1)
-        x_pos(i,j) = j;
-        y_pos(i,j) = i;
-    end
-end
+[x_pos, y_pos] = meshgrid(1:size(classifiedFullEmbryoImage,2), 1:size(classifiedFullEmbryoImage,1));
 
 %For-loop to calculate the total fluorescence and average position of each cell
 parfor i=1:length(Areas2)
-    i
     %Generate the mask for the i-th cell
     ImMask=(ImLabel2==i);
     %Multiply the mask by the fluorescence image
@@ -180,7 +171,7 @@ ylabel('number of cells');
 %Get the information about the AP axis as well as the image shifts
 %used for the stitching of the two halves of the embryo
 load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
-load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'])
+load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses')
 
 APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
 APLength_full=sqrt((coordP(2)-coordA(2))^2+(coordP(1)-coordA(1))^2);

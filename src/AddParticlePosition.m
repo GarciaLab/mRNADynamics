@@ -13,8 +13,8 @@ function AddParticlePosition(Prefix, varargin)
 %                       embyro images
 % 'NoAP': Just adds X and Y information
 % 'SelectChannel': Prompts user to select the channel to use for alignment
-% 'optionalResults': ?
-% 'yToManualAlignmentPrompt': ?
+% 'optionalResults': 
+% 'yToManualAlignmentPrompt': 
 % 'correctDV': If you want the DV shift calculated
 %
 % MANUAL ALIGNMENT CONTROLS
@@ -653,13 +653,13 @@ if ~NoAP
     APPosImage=zeros(size(ZoomImage));
     [Rows,Columns]=size(ZoomImage);
     
-    for i=1:Rows
-        for j=1:Columns
-            Angle=atan2((i-coordAZoom(2)),(j-coordAZoom(1)));
+    for y=1:Rows
+        for x=1:Columns
+            Angle=atan2((y-coordAZoom(2)),(x-coordAZoom(1)));
             
-            Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
+            Distance=sqrt((coordAZoom(2)-y).^2+(coordAZoom(1)-x).^2);
             APPosition=Distance.*cos(Angle-APAngle);
-            APPosImage(i,j)=APPosition/APLength;
+            APPosImage(y,x)=APPosition/APLength;
         end
     end
     
