@@ -13,18 +13,22 @@ function FrameInfo = processLIFExportMode(rawDataFolder, ExperimentType, Project
   if sum(NFrames)~=0
     [Frame_Times, First_Time] = obtainFrameTimes(XMLFolder, seriesPropertiesXML, NSeries, NFrames, NSlices, NChannels);
     [InitialStackTime, zPosition] = getFirstSliceTimestamp(NSlices, NSeries, NPlanes, NChannels, Frame_Times, XMLFolder, seriesXML);
-   else
+  else
       InitialStackTime = [];
       zPosition = [];
   end
   FrameInfo = recordFrameInfo(NFrames, NSlices, InitialStackTime, LIFMeta, zPosition);
- 
+  
   %Find the flat field (FF) information
   LIFExportMode_flatFieldImage(LIFMeta, rawDataFolder, OutputFolder, Prefix, PreferredFileNameForTest);
   
   [coatChannel, histoneChannel, fiducialChannel, inputProteinChannel, FrameInfo] =...
     LIFExportMode_interpretChannels(ExperimentType, Channel1, Channel2, Channel3, FrameInfo);
 
+  if sum(NFrames) == 0
+      NFrames = ~NFrames;
+  end
+  
   if ~skipExtraction
       %Copy the data
       waitbarFigure = waitbar(0, 'Extracting LIFExport images');
