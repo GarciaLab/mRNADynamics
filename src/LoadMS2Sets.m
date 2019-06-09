@@ -233,6 +233,20 @@ for i=1:length(CompiledSets)
             MeanLinearFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanLinearFits.mat']);
         end
         
+        % Fit results from the MeanFitAPAsymmetric.m
+        if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV2.mat'],'file')
+            MeanFitsV2(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV2.mat']);
+        else
+            warning('MeanFitsV2.mat not found');
+        end
+        
+        % Fit results from the FitTiltedTrapezoids_4Clicks.m
+        if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV3.mat'],'file')
+            MeanFitsV23(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV3.mat']);
+        else
+            warning('MeanFitsV3.mat not found');
+        end
+        
         try
             Schnitzcells(i)=load([DropboxFolder,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat'], 'schnitzcells');
         catch

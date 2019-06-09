@@ -2,13 +2,12 @@ function standardizeFigure(ax, ~, varargin)
 
 try
     colorDict = struct();
-    colorDict.red = [213,108,85]/256;
-    colorDict.lightBlue = [115,142,193]/256;
-    colorDict.brown = [207 178 147] /256;
-    colorDict.yellow = [234,194,100]/256;
-    colorDict.cyan = [108,188,233]/256;
     colorDict.magenta = [208,109,171]/256;
     colorDict.lightBlue = [115,142,193]/256;
+    colorDict.yellow = [234,194,100]/256;
+    colorDict.red = [213,108,85]/256;
+    colorDict.brown = [207 178 147] /256;
+    colorDict.cyan = [108,188,233]/256;
     colorDictFields = fields(colorDict);
     
     color(1,:) = [0 0 0];
