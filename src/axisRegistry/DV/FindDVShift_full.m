@@ -59,8 +59,7 @@ else
     disp('full embryo resolution found not supported. talk to jake.')
 end
 
-%note: should make addparticleposition generate and save surfmax
-%automatically
+
 FullEmbryoSurf=imread([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'surf_max.tif']);
 
 

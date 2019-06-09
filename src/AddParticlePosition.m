@@ -270,33 +270,33 @@ if ~NoAP
         
         ImageTemp=bfopen([fullEmbryoPath,filesep,D(end).name]);
         MetaFullEmbryo= ImageTemp{:, 4};
-        PixelSizeFullEmbryo=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0) );
+        PixelSizeFullEmbryoSurf=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0) );
         try
-            PixelSizeFullEmbryo=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0).value);
+            PixelSizeFullEmbryoSurf=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0).value);
         catch
-            PixelSizeFullEmbryo=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
+            PixelSizeFullEmbryoSurf=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
         end
         
         %Check that the surface and midsaggital images have the same zoom
-        D1=dir([fullEmbryoPath,'*mid*.',FileMode(1:3)]);
+        midDirectory=dir([fullEmbryoPath,'*mid*.',FileMode(1:3)]);
         if strcmp(FileMode, 'DSPIN')            %CS20170912
-            D1=dir([fullEmbryoPath,'*surf*']);
+            midDirectory=dir([fullEmbryoPath,'*surf*']);
         end
-        ImageTemp1=bfopen([fullEmbryoPath,D1(end).name]);
-        MetaFullEmbryo1= ImageTemp1{:, 4};
+        ImageTempMid=bfopen([fullEmbryoPath,midDirectory(end).name]);
+        MetaFullEmbryoMid= ImageTempMid{:, 4};
         
         %This if for BioFormats backwards compatibility
-        if ~isempty(str2double(MetaFullEmbryo1.getPixelsPhysicalSizeX(0)))
-            PixelSizeFullEmbryoMid=str2double(MetaFullEmbryo1.getPixelsPhysicalSizeX(0));
+        if ~isempty(str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0)))
+            PixelSizeFullEmbryoMid=str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0));
         else
-            PixelSizeFullEmbryoMid=str2double(MetaFullEmbryo1.getPixelsPhysicalSizeX(0).value);
+            PixelSizeFullEmbryoMid=str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0).value);
         end
         
         
         %In principle, we would be comparing PixelSizeFullEmbryo==PixelSizeFullEmbryoMid
         %However, some issues of machine precision made this not work
         %sometimes.
-        if abs(PixelSizeFullEmbryo/PixelSizeFullEmbryoMid-1)>0.01
+        if abs(PixelSizeFullEmbryoSurf/PixelSizeFullEmbryoMid-1)>0.01
             error('The surface and midsaggital images were not taken with the same pixel size')
         end
         
@@ -321,6 +321,7 @@ if ~NoAP
         for i=HisChannel:NChannelsMeta:size(ImageTemp{ImageCellToUse,1},1)
             MaxTemp(:,:,i)=ImageTemp{ImageCellToUse,1}{i,1};
         end
+        
         if InvertHis
             SurfImage=MaxTemp(:,:,HisChannel+round(NSlices/2)*NChannelsMeta);
         else
@@ -333,8 +334,8 @@ if ~NoAP
             SurfImage = bfopen([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoSurf.tif']);
             SurfImage = SurfImage{1}{1};
         end
-        
-               %Rotates the full embryo image to match the rotation of the zoomed
+        %%
+        %Rotates the full embryo image to match the rotation of the zoomed
         %time series
         zoom_angle = 0;
         full_embryo_angle = 0;
@@ -389,17 +390,23 @@ if ~NoAP
                 zoom_angle=str2double(LSMMetaZoom2.get('Global HardwareSetting|ParameterCollection|RoiRotation #1'));
             end
         end
-        
+        %%
         SurfImage = imrotate(SurfImage, -zoom_angle + full_embryo_angle);
+        
+        if correctDV
+            maxSurfSavePath = [DropboxFolder,filesep,Prefix, filesep, 'DV', filesep, 'surf_max.tif'];
+            imwrite(SurfImage,maxSurfSavePath);
+        end
+        
         clear ImageTemp
         
         %Zoom factor
-        MovieZoom=PixelSizeFullEmbryo(1)/PixelSizeZoom(1);
+        MovieZoom=PixelSizeFullEmbryoSurf(1)/PixelSizeZoom(1);
         SurfZoom=1;     %We'll call the zoom of the full embryo image 1
         
         %Get the size of the zoom image
-        Columns = str2num(MetaZoom.getPixelsSizeX(0));
-        Rows = str2num(MetaZoom.getPixelsSizeY(0));
+        Columns = str2double(MetaZoom.getPixelsSizeX(0));
+        Rows = str2double(MetaZoom.getPixelsSizeY(0));
         surf_size = size(SurfImage);
         SurfColumns= surf_size(2);
         SurfRows=surf_size(1);
