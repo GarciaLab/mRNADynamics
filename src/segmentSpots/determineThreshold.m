@@ -55,7 +55,7 @@ else
     minZ = 1;
     maxZ = zSize - 2;
 end
-available_zs = 2:3:zSize+1;
+available_zs = 2:3:zSize-1;
 available_frames = 1:4:numFrames;
 
 % loops through DOGs to find brightest one

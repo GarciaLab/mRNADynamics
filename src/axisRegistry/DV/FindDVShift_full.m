@@ -78,13 +78,13 @@ ImLabel=bwlabel(invertedClassifiedFullEmbryoImage,4);
 
 %We need to calculate the area of each region found by bwlabel.
 %To get the area, we'll use regionprops
-ImProps=regionprops(ImLabel,'Area')
+ImProps=regionprops(ImLabel,'Area');
 
 %Generate a list of all areas we have
 Areas=[ImProps.Area];
 %Plot histagram for area
 %edges = [0:5:100];
-edges = [0:5:AreaMax+20];
+edges = 0:5:AreaMax+20;
 figure(2)
 histogram(Areas,edges);
 xlabel('area (pixels)')

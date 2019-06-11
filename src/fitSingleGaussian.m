@@ -14,12 +14,20 @@ function [fits, relative_errors, residual, confidence_intervals, GaussianIntensi
      med = median(snippet(:));
     %fits: [amplitude, x position, x width, y position, y width, offset, angle] 
     
-    singleGaussian = gaussianForSpot(mesh_y, mesh_x, snippet);
+    [singleGaussian,  singleGaussianV2] = gaussianForSpot(mesh_y, mesh_x, snippet);
     
     %Define some more initial parameters for fitting
 
       initial_parameters = [max(snippet(:)), round(length(snippet)/2), widthGuess, round(length(snippet)/2), ...
             widthGuess,median(snippet(:)), 0, 0, 0];
+       
+        
+      initial_parameters2 = [max(snippet(:)), round(size(snippet, 2)/2), round(size(snippet, 1)/2), ...
+            0, widthGuess, widthGuess,median(snippet(:)), 0, 0];
+        
+     % @(A, x0, y0, rho, sigma_x, sigma_y, offset, offset_x, offset_y)
+     
+     
 
     %Perform fitting
 %     lsqOptions=optimset('Display','none',... %Inherited these options from Mikhail Tikhonov's FISH analysis
@@ -31,10 +39,23 @@ lsqOptions=optimset('Display','none');
 %fits: [amplitude, x position, x width, y position, y width, offset, angle] 
     lb_offset = 1/10; %this is empirical. corresponds to a weak background of 1 pixel per ten having a value of 1. 
     lb = [0, 0, 0, 0, 0,lb_offset, 0, -med/2, -med/2];
-    ub = [max(snippet(:))*1.5, size(snippet, 1), size(snippet, 1), size(snippet, 2), size(snippet, 2), max(snippet(:)), 2*pi, med/2, med/2];
+    ub = [max(snippet(:))*1.5, size(snippet, 2), size(snippet, 1), size(snippet, 2), size(snippet, 1), max(snippet(:)), 2*pi, med/2, med/2];
 
-        [single_fit, res1, residual, exitflag, output, lambda, jacobian] = lsqnonlin(singleGaussian, ...
-            initial_parameters,lb,ub, lsqOptions);
+    [single_fit, ~, residual, ~, ~, ~, ~] = lsqnonlin(singleGaussian, ...
+        initial_parameters,lb,ub, lsqOptions);
+        
+     % @(A, x0, y0, rho, sigma_x, sigma_y, offset, offset_x, offset_y)
+     
+    lb_offset = 1/10; %this is empirical. corresponds to a weak background of 1 pixel per ten having a value of 1. 
+    lb2 = [0, 0, 0, -1, 0, 0,lb_offset, 0, 0];
+    ub2 = [max(snippet(:))*1.5, size(snippet, 2), size(snippet, 1), 1, size(snippet, 2), size(snippet, 1), max(snippet(:)),med/2, med/2];
+    
+
+%     lsqOptions = optimoptions('lsqnonlin','Diagnostics', 'on', 'FunctionTolerance', 1E-10,...
+%         'PlotFcn','optimplotresnorm', 'PlotFcn', 'optimplotx'  );
+    [single_fit2, ~, ~, ~, ~, ~, jacobian] = lsqnonlin(singleGaussianV2, ...
+        initial_parameters2,lb2,ub2, lsqOptions);
+        
         
         %quality control. probably just noisy background so amplitude
         %should be close to offset in this case.
