@@ -21,16 +21,17 @@ function [nucleus_struct] = interpolateTraces(nucleus_struct, minDP, ...
             trace3D = temp.fluo3D(cidx,:);
             pt_time = temp.time;      
 
-            if sum(~isnan(trace)) == 0 
-                t_start = 0;
-                t_stop = -1;
-            else
-                t_start = interpGrid(find(interpGrid>=min(pt_time(~isnan(trace))),1));
-                t_stop = interpGrid(find(interpGrid<=max(pt_time(~isnan(trace))),1,'last'));
-            end
-            
-            
+%             if sum(~isnan(trace)) == 0 
+%                 t_start = 0;
+%                 t_stop = -1;
+%             else
+%                 t_start = interpGrid(find(interpGrid>=min(pt_time(~isnan(trace))),1));
+%                 t_stop = interpGrid(find(interpGrid<=max(pt_time(~isnan(trace))),1,'last'));
+%             end
+            t_start = interpGrid(find(interpGrid>=min(pt_time),1));
+            t_stop = interpGrid(find(interpGrid<=max(pt_time),1,'last'));            
             time_interp = t_start:TresInterp:t_stop;
+            
             if sum(~isnan(trace)) > 1
                 [trace_interp, quality_flag] = processTrace(trace,nan_buffer,pt_time,...
                     time_interp,jump_thresholds(cidx),minDP);
@@ -63,7 +64,11 @@ function [nucleus_struct] = interpolateTraces(nucleus_struct, minDP, ...
                 if numel(init_time) < 2 || numel(time_interp) < 2
                     nucleus_struct(i).([interp_fields{j} '_interp'])(cidx,:) = init_vec;                
                 else
-                    nucleus_struct(i).([interp_fields{j} '_interp'])(cidx,:) = interp1(init_time,init_vec,time_interp);
+                    try 
+                        nucleus_struct(i).([interp_fields{j} '_interp'])(cidx,:) = interp1(init_time,init_vec,time_interp);
+                    catch
+                        error('asfa')
+                    end
                 end
             end
         end     
