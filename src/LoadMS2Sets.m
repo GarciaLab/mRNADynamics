@@ -1,4 +1,5 @@
-function [Data, Prefixes] = LoadMS2Sets(DataType, varargin)
+function [Data, Prefixes, resultsFolder] = LoadMS2Sets(DataType, varargin)
+%
 %Data = LoadMS2Sets(DataType)
 %
 %DESCRIPTION
@@ -17,8 +18,8 @@ function [Data, Prefixes] = LoadMS2Sets(DataType, varargin)
 %DataType tab in dataStatus.xlsx
 %
 %Author (contact): Hernan Garcia (hgarcia@berkeley.edu)
-%Created: 
-%Last Updated: 1/13/2018. AR 
+%Created:
+%Last Updated: 1/13/2018. AR
 
 Prefixes = {};
 
@@ -29,15 +30,14 @@ for i= 1:length(varargin)
         optionalResults = varargin{i+1};
     end
 end
-    
+
 %Get some of the default folders
-[~,~,DefaultDropboxFolder,~,~, ~]=...
-    DetermineLocalFolders;
-[~,~,~,~,~, configValues]=...
-    DetermineLocalFolders;
+[rawDataPath, ~, DefaultDropboxFolder,...
+    ~, ~, configValues, ~] = DetermineLocalFolders;
+
 
 %Now, get a list of all possible other Dropbox folders
-DropboxRows=find(~cellfun(@isempty,strfind(configValues(:,1),'Dropbox')));
+DropboxRows=contains(configValues(:,1),'Dropbox');
 DropboxFolders=configValues(DropboxRows,2);
 
 %Look in DataStatus.XLSX in each DropboxFolder and find the tab given by
@@ -64,6 +64,8 @@ end
 
 %Redefine the DropboxFolder according to the DataStatus.XLSX we'll use
 DropboxFolder=DropboxFolders{DataStatusToCheck};
+resultsFolder = DropboxFolder;
+
 %Now, load the DataStatus.XLSX
 D=dir([DropboxFolder,filesep,'DataStatus.*']);
 [~,StatusTxt]=xlsread([DropboxFolder,filesep,D(1).name],DataType);
@@ -101,40 +103,40 @@ for i=1:length(CompiledSets)
     SetName=StatusTxt{PrefixRow,CompiledSets(i)};
     Quotes=strfind(SetName,'''');
     Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
-
-    try 
+    
+    try
         [~, ExperimentTypeFromDatabase, ExperimentAxisFromDatabase, ~, ~, APResolutionFromDatabase, ~,...
-        ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~] = getExperimentDataFromMovieDatabase(Prefix, DropboxFolder);
-    catch 
-          [~, ExperimentTypeFromDatabase, ExperimentAxisFromDatabase, ~, ~, APResolutionFromDatabase, ~,...
-        ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+            ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~] = getExperimentDataFromMovieDatabase(Prefix, DropboxFolder);
+    catch
+        [~, ExperimentTypeFromDatabase, ExperimentAxisFromDatabase, ~, ~, APResolutionFromDatabase, ~,...
+            ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
         % DropboxFolder = DefaultDropboxFolder; % This was commented out
-        % because what if the MovieDataBase is in a different folder from  
-        % the CompiledParticles.mat? EL 11/29 
+        % because what if the MovieDataBase is in a different folder from
+        % the CompiledParticles.mat? EL 11/29
         slashes = strfind(DropboxFolder,'/');
         warning(['Couldn''t find this project''s moviedatabase.csv in your ' ...
             DropboxFolder(slashes(end)+1:end) ...
             ' folder. Trying default dropbox folder.'])
     end
-
+    
     %Load and check the experiment details consistency
     if ~isempty(ExperimentType)
         if ~strcmpi(ExperimentType, ExperimentTypeFromDatabase)
-           error('Inconsistent experiment types found among the data sets.') 
+            error('Inconsistent experiment types found among the data sets.')
         end
     else
         ExperimentType = ExperimentTypeFromDatabase;
     end
     if ~isempty(ExperimentAxis)
         if ~strcmpi(ExperimentAxis, ExperimentAxisFromDatabase)
-           error('Inconsistent experiment axis found among the data sets.') 
+            error('Inconsistent experiment axis found among the data sets.')
         end
     else
         ExperimentAxis = ExperimentAxisFromDatabase;
     end
     if ~isempty(APResolution)
         if APResolution ~= APResolutionFromDatabase
-           error('Inconsistent axis resolution found among the data sets.') 
+            error('Inconsistent axis resolution found among the data sets.')
         end
     else
         APResolution = APResolutionFromDatabase;
@@ -176,12 +178,12 @@ for i=1:length(CompiledSets)
             DataTemp=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
             FieldNamesData=fieldnames(Data);
             FieldNamesDataTemp=fieldnames(DataTemp);
-
+            
             %If there are new fields we'll just get rid of them here
             if length(FieldNamesData)<length(FieldNamesDataTemp)
                 %Figure out which fields to copy
                 FieldsToCopy=FieldNamesDataTemp(~ismember(FieldNamesDataTemp,FieldNamesData));
-
+                
                 for j=1:length(FieldsToCopy)
                     DataTemp=rmfield(DataTemp,FieldsToCopy{j});
                     DataTemp=orderfields(DataTemp);
@@ -191,73 +193,84 @@ for i=1:length(CompiledSets)
             else
                 FieldsToCopy = FieldNamesData(~ismember(FieldNamesData,FieldNamesDataTemp));
                 for j=1:length(FieldsToCopy)
-                    DataTemp.(FieldsToCopy{j}) = {};               
+                    DataTemp.(FieldsToCopy{j}) = {};
                     DataTemp=orderfields(DataTemp);
                 end
             end
         end
-
         
-%         %Load information about the rotation of the zoomed-in image.
-%         if exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
-%             APDetection=load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat']);
-%             try
-%                 ImageRotation(i)=APDetection.ImageRotation;
-%             catch
-%                 error('Image rotation information not found in APDetection.mat. Rerun AddParticlePosition.m')
-%             end
-%         elseif strcmpi(ExperimentAxis,'ap')|strcmpi(ExperimentAxis,'dv')
-%             error(['APDetection.mat not found despite this experiment being on the ',ExperimentAxis,' axis'])
-%         end
+        
+        %         %Load information about the rotation of the zoomed-in image.
+        %         if exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+        %             APDetection=load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat']);
+        %             try
+        %                 ImageRotation(i)=APDetection.ImageRotation;
+        %             catch
+        %                 error('Image rotation information not found in APDetection.mat. Rerun AddParticlePosition.m')
+        %             end
+        %         elseif strcmpi(ExperimentAxis,'ap')|strcmpi(ExperimentAxis,'dv')
+        %             error(['APDetection.mat not found despite this experiment being on the ',ExperimentAxis,' axis'])
+        %         end
         
         
         
         if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'file')
             APDivisions(i)=load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat']);
         else
-            warning('APDivisions.mat not found. This is a stupid way to check. Have the code check if this experiment is DV or AP instead')
+            warning('APDivisions.mat not found.')
         end
-
-
+        
+        
         %Fit results assuming the same slopes
         if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'],'file')
             MeanFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat']);
         else
-            %Commented out by AR 12/11/17 since this comment seems
-            %outdated.
-%             warning(['MeanFits.mat not found for ',Prefix,...
-%                 '. This is a stupid way to check. Have the code check if this experiment is DV or AP instead.'])
+            warning('MeanFits.mat not found');
         end
         
         %Linear slope fit results
         if exist([DropboxFolder,filesep,Prefix,filesep,'MeanLinearFits.mat'],'file')
             MeanLinearFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanLinearFits.mat']);
         end
-
+        
+        % Fit results from the MeanFitAPAsymmetric.m
+        if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV2.mat'],'file')
+            MeanFitsV2(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV2.mat']);
+        else
+            warning('MeanFitsV2.mat not found');
+        end
+        
+        % Fit results from the FitTiltedTrapezoids_4Clicks.m
+        if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV3.mat'],'file')
+            MeanFitsV23(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV3.mat']);
+        else
+            warning('MeanFitsV3.mat not found');
+        end
+        
         try
-            Schnitzcells(i)=load([DropboxFolder,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat']);
+            Schnitzcells(i)=load([DropboxFolder,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat'], 'schnitzcells');
         catch
             warning('_lin.mat not found.');
         end
         
-
+        
         %Fit to the integrals
         if exist([DropboxFolder,filesep,Prefix,filesep,'FitIntegralResults.mat'],'file')
             IntegralFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'FitIntegralResults.mat']);
         end
-
-
+        
+        
         %Fits to individual traces
         if exist([DropboxFolder,filesep,Prefix,filesep,'IndividualFits.mat'],'file')
             IndividualFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'IndividualFits.mat']);
         end
-
+        
         %Integrated amount accounting from degradation. This is generated using
         %Jacques' code
-    %     if exist([DropboxFolder,filesep,Prefix,filesep,'AccumulationData.mat'])
-    %         AccumulationData(i)=load([DropboxFolder,filesep,Prefix,filesep,'AccumulationData.mat']);
-    %     end
-
+        %     if exist([DropboxFolder,filesep,Prefix,filesep,'AccumulationData.mat'])
+        %         AccumulationData(i)=load([DropboxFolder,filesep,Prefix,filesep,'AccumulationData.mat']);
+        %     end
+        
         if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsUp.mat'],'file')
             MeanFitsUp(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsUp.mat']);
         end
@@ -265,15 +278,15 @@ for i=1:length(CompiledSets)
         if exist([DropboxFolder,filesep,Prefix,filesep,'MeanLinearFitsUp.mat'],'file')
             MeanLinearFitsUp(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanLinearFitsUp.mat']);
         end
-
-
+        
+        
         %Load Ellipses
         try
-            Ellipses(i)=load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat']);
+            Ellipses(i)=load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses');
         catch
             warning('Ellipses.mat not found.')
         end
-
+        
         % Load Particles
         load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat']);
         ParticleTemp(i).Particles=Particles;
@@ -293,9 +306,9 @@ for i=1:length(CompiledSets)
         DataNuclei(i)=load([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat']);
         
         if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'file')
-            APDivisions(i)=load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat']);
+            APDivisions(i)=load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'], 'APDivision');
         else
-            warning('APDivisions.mat not found. This is a stupid way to check. Have the code check if this experiment is DV or AP instead')
+            warning('APDivision.mat not found.')
         end
         
     end
@@ -306,7 +319,7 @@ end
 if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],'file')
     for i=1:length(Data)
         Data(i).SetName=SetNames{i};
-
+        
         if exist('ImageRotation','var')
             Data(i).ImageRotation=ImageRotation(i);
         end
@@ -316,25 +329,25 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],'file')
                 Data(i).APDivision=APDivisions(i).APDivision;
             end
         end
-
+        
         if exist('IntegralFits','var')
             if i<=length(IntegralFits)
                 Data(i).IntegralFits=IntegralFits(i).FitResults;
             end
         end
-
+        
         if exist('IndividualFits','var')
             if i<=length(IndividualFits)
                 Data(i).IndividualFits=IndividualFits(i).FitResultsIndiv;
             end
         end
-
+        
         if exist('AccumulationData','var')
             if i<=length(AccumulationData)
                 Data(i).AccumulationData=AccumulationData(i).AcumData;
             end
         end
-
+        
         if exist('MeanFits','var')
             if i<=length(MeanFits)
                 Data(i).MeanFits=MeanFits(i).FitResults;
@@ -346,19 +359,19 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],'file')
                 Data(i).MeanLinearFits=MeanLinearFits(i).FitResults;
             end
         end
-
-       if exist('MeanLinearFitsUp','var')
+        
+        if exist('MeanLinearFitsUp','var')
             if i<=length(MeanLinearFitsUp)
                 Data(i).MeanLinearFitsUp=MeanLinearFitsUp(i).FitResults;
             end
         end
-       try
-           Data(i).schnitzcells=Schnitzcells(i).schnitzcells;
-           Data(i).Ellipses=Ellipses(i).Ellipses;
-       catch
-           warning('No schnitzcells or ellipses');
-       end
-
+        try
+            Data(i).schnitzcells=Schnitzcells(i).schnitzcells;
+            Data(i).Ellipses=Ellipses(i).Ellipses;
+        catch
+            warning('No schnitzcells or ellipses');
+        end
+        
         Data(i).Particles=ParticleTemp(i).Particles;
     end
 end
@@ -388,4 +401,12 @@ elseif (~exist('Data', 'var')) && exist('DataNuclei', 'var')
     Data=DataNuclei;
 elseif  (~exist('Data','var')) && (~exist('DataNuclei','var'))
     error('No CompiledParticles found. Check DynamicsResults folder as well as DataStatus.XLSX.')
+end
+
+try
+    compareExperimentSettings(DropboxFolder,rawDataPath, DataType);
+catch
+    warning('Failed to run CompareExperimentSettings.');
+end
+
 end

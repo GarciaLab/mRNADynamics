@@ -1,31 +1,32 @@
-function [displayFigures, numFrames, numShadows, intScale, keepPool, threshGUI, initialFrame, useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel, optionalResults, filterMovieFlag] = determineSegmentSpotsOptions(varargin)
-
-varargin = varargin{1};
+function [displayFigures, numFrames, numShadows, intScale, keepPool, threshGUI, initialFrame, ...
+    useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel,...
+    optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat, saveType] = determineSegmentSpotsOptions(varargin)
 
 % Default options
-displayFigures = 0;
+displayFigures = false;
 numFrames = 0;
 numShadows = 2;
 intScale = 1;
 nWorkers = 8;
-keepPool = 0;
-threshGUI = 0;
-useIntegralCenter = 1;
+keepPool = false;
+threshGUI = false;
+useIntegralCenter = true;
 initialFrame = 1;
-Weka = 0;
-keepProcessedData = false;
-fit3D = 0;
+Weka = false;
+keepProcessedData = true;
+fit3D = false;
 skipChannel = [];
 optionalResults = '';
 filterMovieFlag = false;
+gpu = '';
+saveAsMat = false;
+saveType = '.tif';
 
-poolOpts = {};
 
 for i = 1:length(varargin)
     
     if strcmpi(varargin{i}, 'displayFigures')
         displayFigures = 1;
-        poolOpts = [poolOpts, 'displayFigures'];
         close all;
     elseif strcmpi(varargin{i}, 'Shadows')
         
@@ -53,9 +54,13 @@ for i = 1:length(varargin)
         
     elseif strcmpi(varargin{i}, 'keepPool')
         keepPool = 1;
-        poolOpts = [poolOpts, 'keepPool'];
+    elseif strcmpi(varargin{i}, 'saveAsMat') | strcmpi(varargin{i}, '.mat')
+        saveAsMat = true;
+        saveType = '.mat';
     elseif strcmpi(varargin{i}, 'intScale')
         intScale = varargin{i + 1};
+     elseif strcmpi(varargin{i}, 'noGPU')
+       gpu = 'noGPU';
     elseif strcmpi(varargin{i}, 'noIntegralZ')
         useIntegralCenter = 0;
     elseif strcmpi(varargin{i}, 'skipChannel')
@@ -81,7 +86,6 @@ for i = 1:length(varargin)
     
 end
 
-startParallelPool(nWorkers, poolOpts{:});
-
+startParallelPool(nWorkers, displayFigures, keepPool);
     
 end

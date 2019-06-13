@@ -119,7 +119,7 @@ scatter(complementLocation,separationY*ones(1,length(complementLocation))+ orien
 ax = gca;
 ylim(ax,[-2 2]*separationY);
 ax.YTick = [-2:2]*separationY;
-set(ax,'YTickLabel',{' ','Forward',' ', 'Reverse',' '},'FontSize',15,'FontWeight','bold');
+set(ax,'YTickLabel',{' ','Forward',' ', 'Reverse',' '});
 ax.XGrid = 'on';
 ax.XMinorGrid = 'on';
 ylabel('Orientation','FontSize',20,'FontWeight','bold')
@@ -144,7 +144,7 @@ for i = 1:length(location)
     rotation = [45,-45];
     arrow = {'$\downarrow$','$\uparrow$'};
     text(location(i)+arrowXAdjustment,arrowPosition(1+mod(i,2)),arrow{1+mod(i,2)},'Interpreter','latex');
-    text(location(i),wordPosition(1+mod(i,2)),strcat(tf(siteIndices(i))),'Rotation',rotation(1+mod(i,2)),'Interpreter','none');
+    text(location(i),wordPosition(1+mod(i,2)),strcat(tf(siteIndices(i))),'Rotation',rotation(1+mod(i,2)),'Interpreter','none', 'FontSize', 15, 'FontWeight', 'bold');
 end
 
 %adding binding site labels for the reverse orientation
@@ -156,7 +156,7 @@ for i = 1:length(complementLocation)
     arrow = {'$\downarrow$','$\uparrow$'};
     
     text(complementLocation(i)+arrowXAdjustment,arrowPosition(1+mod(i,2)),arrow{1+mod(i,2)},'Interpreter','latex');
-    text(complementLocation(i),wordPosition(1+mod(i,2)),strcat(tf(complementSiteIndices(i))) ,'Rotation',rotation(1+mod(i,2)),'Interpreter','none');
+    text(complementLocation(i),wordPosition(1+mod(i,2)),strcat(tf(complementSiteIndices(i))) ,'Rotation',rotation(1+mod(i,2)),'Interpreter','none', 'FontSize', 15, 'FontWeight', 'bold');
 end
 
 %standardizeFigure(ax, [], 'axeslinewidth', 1);

@@ -38,7 +38,7 @@ function CompileParticles(varargin)
 %           since there is almost always scattering in the middle
 % 'intArea': Change the area (in pixels) of integration used in offset calculations
 % 'noHist': Force the code to assume there's no nuclear channel.
-% 'doSingleFits': Generate single trace fits. Added by EL&AR 
+% 'doSingleFits': Generate single trace fits. Added by EL&AR
 % 'manualSingleFits' : Compile values from manually generated single trace fits to
 %               CompiledParticles.mat, the field names are 'fittedSlope', 'fittedTon' for
 %               the initial slope and T_on respectively.
@@ -126,7 +126,7 @@ SDVectorDV_ROI = {};
 SDVectorDV_nonROI = {};
 SEVectorAllAP = {};
 SEVectorAllDV = {};
-StemLoopEnd = ''; 
+StemLoopEnd = '';
 TotalEllipsesAP = [];
 TotalEllipsesDV = [];
 fittedLineEquations = [];
@@ -140,6 +140,8 @@ rateOnAPCellManual = [];
 timeOnOnAPCellManual = [];
 fittedSlope = [];
 fittedTon = [];
+MeanVector3DAll = {};
+MeanVector3DAP = {};
 
 nc9 = [];
 nc10 = [];
@@ -157,7 +159,7 @@ ncFilterID = [];
 
 [Prefix, ForceAP, SkipTraces, SkipFluctuations, SkipFits, SkipMovie, ...
     SkipAll, ApproveAll, MinParticles, minTime, ROI, intArea, noHist, ...
-    ROI1, ROI2, slimVersion, manualSingleFits, optionalResults, yToManualAlignmentPrompt, minBinSize] = determineCompileParticlesOptions(varargin);
+    ROI1, ROI2, slimVersion, manualSingleFits, optionalResults, yToManualAlignmentPrompt, minBinSize, edgeWidth] = determineCompileParticlesOptions(varargin);
 
 FilePrefix=[Prefix,'_'];
 
@@ -167,8 +169,12 @@ FilePrefix=[Prefix,'_'];
 
 % refactor in progress, we should replace readMovieDatabase with getExperimentDataFromMovieDatabase
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoopEnd, APResolution,...
-    Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+   Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+    nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase, DVResolution] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+
+APExperiment = strcmpi(ExperimentAxis, 'AP');
+DVExperiment = strcmpi(ExperimentAxis, 'DV');
+
 
 
 %Load all the information
@@ -189,6 +195,7 @@ end
 if exist([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'file')
     load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
     pixelSize = FrameInfo(1).PixelSize;
+    numFrames = length(FrameInfo);
 else
     warning('No FrameInfo.mat found. Trying to continue')
     %Adding frame information
@@ -207,19 +214,6 @@ else
     end
 end
 
-numFrames = length(FrameInfo);
-
-
-
-%See how  many frames we have and adjust the index size of the files to
-%load accordingly
-if numFrames<1E3
-    NDigits=3;
-elseif numFrames<1E4
-    NDigits=4;
-else
-    error('No more than 10,000 frames currently supported.')
-end
 
 %Create the particle array. This is done so that we can support multiple
 %channels. Also figure out the number of channels
@@ -291,22 +285,16 @@ end
 if yToManualAlignmentPrompt
     addParticleArgs = [addParticleArgs, 'yToManualAlignmentPrompt'];
 end
+if ~HistoneChannel
+    addParticleArgs = [addParticleArgs, 'SkipAlignment'];
+end
 
-if strcmpi(ExperimentAxis,'AP')
+if APExperiment | DVExperiment
     if (~isfield(Particles{1},'APpos')) || ForceAP
-        if ~HistoneChannel
-            addParticleArgs = [addParticleArgs, 'SkipAlignment'];
-        end
         AddParticlePosition(addParticleArgs{:});
     else
         disp('Using saved AP information (results from AddParticlePosition)')
     end
-elseif strcmpi(ExperimentAxis,'dv') && exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'file')
-    AddParticlePosition(Prefix);
-elseif strcmpi(ExperimentAxis,'dv') || strcmpi(ExperimentAxis,'NoAP')
-    AddParticlePosition(Prefix,'NoAP');
-else
-    error('Experiment axis not recognized in MovieDatabase')
 end
 
 %Reload Particles.mat
@@ -322,13 +310,13 @@ end
 
 
 if HistoneChannel
-    load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses')
 end
 
 
 %Folders for reports
 warning('off', 'MATLAB:MKDIR:DirectoryExists');
-if strcmpi(ExperimentAxis,'AP')
+if APExperiment
     mkdir([DropboxFolder,filesep,Prefix,filesep,'APMovie'])
 end
 mkdir([DropboxFolder,filesep,Prefix,filesep,'ParticleTraces'])
@@ -373,7 +361,7 @@ if ApproveAll
 end
 
 %First, figure out the AP position of each of the nuclei.
-if strcmpi(ExperimentAxis, 'AP') || strcmpi(ExperimentAxis, 'DV')
+if APExperiment || DVExperiment
     %Load the AP detection information
     load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
     %Angle between the x-axis and the AP-axis
@@ -385,7 +373,7 @@ if strcmpi(ExperimentAxis, 'AP') || strcmpi(ExperimentAxis, 'DV')
     APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
 end
 
-if HistoneChannel && (strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV'))
+if HistoneChannel && (APExperiment || DVExperiment)
     %The information in Ellipses is
     %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
     for i=1:length(Ellipses)
@@ -393,7 +381,7 @@ if HistoneChannel && (strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV
             
             %Angle between the x-axis and the particle using the A position as a
             %zero
-
+            
             Angles=atan2((Ellipses{i}(j,2)-coordAZoom(2)),(Ellipses{i}(j,1)-coordAZoom(1)));
             
             %Distance between the points and the A point
@@ -414,7 +402,7 @@ if isfield(FrameInfo,'FileMode')
         for j=1:numFrames
             ElapsedTime(j)=etime(datevec(FrameInfo(j).TimeString),datevec(FrameInfo(1).TimeString));
         end
-    elseif strcmp(FrameInfo(end).FileMode,'LSM')||strcmp(FrameInfo(end).FileMode,'LSMExport')||...
+    elseif strcmp(FrameInfo(end).FileMode,'OMETIFF') || strcmp(FrameInfo(end).FileMode,'LSM')||strcmp(FrameInfo(end).FileMode,'LSMExport')||...
             strcmp(FrameInfo(end).FileMode,'LIFExport')||strcmp(FrameInfo(end).FileMode,'LAT')
         for j=1:numFrames
             ElapsedTime(j)=FrameInfo(j).Time-FrameInfo(1).Time;
@@ -431,31 +419,40 @@ end
 
 ElapsedTime=ElapsedTime/60;     %Time is in minutes
 
-%Divide the AP and DV axes into bins for generating means, etc. 
-if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')  
-    [APbinID, APbinArea] = binAPAxis(APResolution, FrameInfo, ...
-        coordAZoom, APAngle, APLength, minBinSize);
+%Divide the AP and DV axes into bins for generating means, etc.
+if APExperiment || DVExperiment
+    [APbinID, APbinArea] = binAxis(APResolution, FrameInfo, ...
+        coordAZoom, APAngle, APLength, minBinSize, 'AP');
 end
-if strcmpi(ExperimentAxis,'DV')
-    [DVbinID, DVbinArea] = binDVAxis(FrameInfo, coordAZoom, APAngle);
-end    
-    
+
+if DVExperiment
+    if isempty(DVResolution)
+        DVResolution = 50;
+    end
+    [DVbinID, DVbinArea] = binAxis(DVResolution, FrameInfo, ...
+        coordAZoom, APAngle, APLength, minBinSize, 'DV');
+end
+
 
 %Now get the particle information for those that were approved
 [Particles, CompiledParticles, ncFilter, ncFilterID] =...
-    compileTraces(NChannels, Particles, HistoneChannel, ...
+    ...
+    compileTraces(...
+    ...
+    NChannels, Particles, HistoneChannel, ...
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
     Spots, SkipTraces, nc9, nc10, nc11, nc12, nc13, nc14, ncFilterID, ncFilter, ...
     ElapsedTime, intArea, Ellipses, EllipsePos, PreProcPath, ...
-    FilePrefix, Prefix, DropboxFolder, NDigits, manualSingleFits);
+    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits);
 
 %% ROI option
 % This option is separating the CompiledParticles defined above into
 % CompiledParticles_ROI and COmpiledParticles_nonROI
 % written by YJK on 10/24/2017
-CompiledParticles_ROI = {}; CompiledParticles_nonROI = {};
-for ChN=1:NChannels
-    if ROI
+CompiledParticles_ROI = cell(1,NChannels); CompiledParticles_nonROI = cell(1,NChannels);
+
+if ROI
+    for ChN=1:NChannels
         % separate the CompileParticles into CompiledParticles_ROI and
         % CompiledParticles_nonROI using the Threshold (y position)
         t=1;
@@ -473,120 +470,93 @@ for ChN=1:NChannels
         end
     end
 end
-%% Create filters
+%% Bin particles into AP, DV and NC bins. Create filters that store binning information.
 
-% APFilter needs to be changed for ROI option, so that we can have two
-% filters for each CompiledParticles (ROI and nonROI) (YJK on 10/24/2017)
-
-%nc filters:
-try
-    
 APFilter_ROI = []; APFilter_nonROI = []; DVFilter_ROI = []; DVFilter_nonROI = [];
+
 [ncFilterID, ncFilter, APFilter, APFilter_ROI, APFilter_nonROI, ...
-    DVFilter, DVFilter_ROI, DVFilter_nonROI] = createFilters(nc9, nc10, nc11, nc12, ...
-    nc13, nc14, NChannels, CompiledParticles, ExperimentAxis, ROI, APFilter,...
-    APFilter_ROI, APFilter_nonROI, APbinID, DVbinID, DVFilter, DVFilter_ROI, ...
-    DVFilter_nonROI, CompiledParticles_ROI, CompiledParticles_nonROI);
-end
+    DVFilter, DVFilter_ROI, DVFilter_nonROI] =...
+    ...
+    binParticles(...
+    ...
+    nc9, nc10, nc11, nc12,...
+    nc13, nc14, NChannels, CompiledParticles, ExperimentAxis, ROI,...
+    APbinID, DVbinID, CompiledParticles_ROI, CompiledParticles_nonROI);
 
-%% Binning and averaging data
 
-% Here I need to think about how to bin ROI and non-ROI particles.
-% One way is having a function that splits the CompiledParticles into CompiledParticles_ROI
-% and CompiledParticles_nonROI according to its y-position (Threshold). Then, pass them through
-% the AverageTraces (YJK on 10/22/2017)
-try
+%% Averaging data
+
 [AllTracesVector, AllTracesAP, AllTracesDV, MeanVectorAP_ROI, ...
     SDVectorAP_ROI, NParticlesAP_ROI, MeanVectorAP_nonROI, SDVectorAP_nonROI, ...
     NParticlesAP_nonROI, MeanVectorAP, SDVectorAP, NParticlesAP, MeanVectorDV_ROI, ...
     SDVectorDV_ROI, NParticlesDV_ROI, MeanVectorDV_nonROI, SDVectorDV_nonROI, ...
     NParticlesDV_nonROI, MeanVectorDV, SDVectorDV, NParticlesDV, ...
-    MeanVectorAnterior, MeanVectorAll, SDVectorAll, NParticlesAll, MaxFrame] =...
-    computeAPandDVStatistics(NChannels, CompiledParticles, FrameInfo, ExperimentAxis, ...
+    MeanVectorAnterior, MeanVectorAll, SDVectorAll, NParticlesAll, MaxFrame, MeanVector3DAll, MeanVector3DAP] =...
+    ...
+    getAxisStatistics(...
+    ...
+    NChannels, CompiledParticles, FrameInfo, ExperimentAxis, ...
     APFilter, ROI, CompiledParticles_ROI, CompiledParticles_nonROI, ...
-    APFilter_ROI, APFilter_nonROI, NewCyclePos, MaxFrame, ...
-    MeanVectorAP_ROI, SDVectorAP_ROI, NParticlesAP_ROI, MeanVectorAP_nonROI, ...
-    SDVectorAP_nonROI, NParticlesAP_nonROI, MeanVectorAP, SDVectorAP, ...
-    NParticlesAP, MeanVectorDV_ROI, SDVectorDV_ROI, NParticlesDV_ROI, ...
-    MeanVectorDV_nonROI, SDVectorDV_nonROI, NParticlesDV_nonROI, ...
-    MeanVectorDV, SDVectorDV, NParticlesDV, MeanVectorAnterior, DVFilter_ROI, ...
+    APFilter_ROI, APFilter_nonROI, NewCyclePos, DVFilter_ROI, ...
     DVFilter_nonROI, DVFilter);
-end
+
 if ~slimVersion
     %% Instantaneous rate of change
-    try
+    
     [CompiledParticles, MeanSlopeVectorAP, SDSlopeVectorAP, NSlopeAP]...
         = instantRateOfChange(NChannels, CompiledParticles, ElapsedTime, ...
         ExperimentAxis, APFilter, MeanVectorAP, MeanSlopeVectorAP, ...
         SDSlopeVectorAP, NSlopeAP);
-    end
+    
     %% Integrating each particle
-try
+    
     CompiledParticles = integrateParticles(NChannels, ElapsedTime, CompiledParticles);
-end
-
+    
     %% Information about the cytoplasm
     %If the nuclear masks are present then use them. Otherwise just calculate
     %the median of the images as a function of time
-
-    %HG on 8/6/16: Why was this commented out? Did I do this?
-
-
-    % if NChannels==1
-    %
-    %     if HistoneChannel&strcmpi(ExperimentAxis,'AP')
-    %         [MeanCyto,SDCyto,MedianCyto,MaxCyto]=GetCytoMCP(Prefix);
-    %     else
-    %         MeanCyto=[];
-    %         SDCyto=[];
-    %         MaxCyto=[];
-    %
-    %         h=waitbar(0,'Calculating the median cyto intentisy');
-    %         for i=1:numFrames
-    %             waitbar(i/numFrames,h)
-    %             for j=1:FrameInfo(1).NumberSlices
-    %                 Image(:,:,j)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(i,3),'_z',iIndex(j,2),'.tif']);
-    %             end
-    %             ImageMax=max(Image,[],3);
-    %             MedianCyto(i)=median(double(ImageMax(:)));
-    %         end
-    %         close(h)
-    %     end
-    % else
-    MeanCyto=[];
-    SDCyto=[];
-    MaxCyto=[];
-    MedianCyto=[];
-    % end
-
-
-
-
+    if ~SkipAll
+        [MeanCyto, SDCyto, MaxCyto, MedianCyto] =...
+            ...
+            getCytoplasmStatistics(...
+            ...
+            APExperiment, HistoneChannel, Prefix, numFrames, PreProcPath,...
+            FrameInfo, NChannels);
+    end
+    
     %% Offset and fluctuations
-try
-    [MeanOffsetVector, SDOffsetVector, NOffsetParticles] = offsetAndFlux(NChannels, ...
-        SkipFluctuations, ncFilter, ElapsedTime, CompiledParticles, DropboxFolder, ...
-        Prefix, ExperimentAxis, intArea, MeanVectorAll, SDVectorAll, MaxFrame, numFrames);
-
+    
+    if NChannels == 1
+        
+        [MeanOffsetVector, SDOffsetVector, NOffsetParticles] =...
+            ...
+            offsetAndFlux(...
+            ...
+            SkipFluctuations, ncFilter, ElapsedTime, CompiledParticles, DropboxFolder, ...
+            Prefix, ExperimentAxis, intArea, MeanVectorAll, SDVectorAll, MaxFrame, numFrames, SkipAll);
+        
+    end
+    
     %% Rate of mRNA production
-
+    
     CompiledParticles = mRNAProdRate(NChannels, CompiledParticles, ...
         ncFilter, ElapsedTime, SkipFits, DropboxFolder, Prefix);
-
-
+    
+    
     %% First frames
-
-    firstFramesThing(NChannels, HistoneChannel, SkipAll, nc13, nc14, ...
-        CompiledParticles, DropboxFolder, Prefix, ElapsedTime, ExperimentAxis);
-
-    %% AP position of particle vs nucleus
-
-    if HistoneChannel&&strcmpi(ExperimentAxis,'AP')
-        CompiledParticles = APPosParticleVsNucleus(NChannels, ...
-            CompiledParticles, schnitzcells, EllipsePos, DropboxFolder, Prefix);
+    if ~SkipAll
+        plotFirstFrames(NChannels, HistoneChannel, nc13, nc14, ...
+            CompiledParticles, DropboxFolder, Prefix, ElapsedTime, ExperimentAxis);
     end
-
-
+    
+    %% AP position of particle vs nucleus
+    
+    if HistoneChannel && APExperiment
+        CompiledParticles = APPosParticleVsNucleus(NChannels, ...
+            CompiledParticles, schnitzcells, EllipsePos, DropboxFolder, Prefix, SkipAll);
+    end
+    
+    
     %% Fitting shapes` to single traces (includes time on and initial rate of loading)
     % This section of code is will fit line segments piece-wise to the
     % single traces. fittedLineEquations correspond to the stored fitted lines
@@ -599,81 +569,71 @@ try
         [CompiledParticles, fittedLineEquations] = fitShapesToTraces(Prefix, ...
             Particles, schnitzcells, FrameInfo, ElapsedTime, CompiledParticles,Spots);
     end
-
+    
     %% Probability of being on
-
-    if HistoneChannel&&strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
+    
+    if HistoneChannel && (APExperiment || DVExperiment)
+        
         [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
             FilteredParticlesPos, OnRatioAP, ParticleCountAP, ParticleCountProbAP, ...
-            EllipsesOnAP, rateOnAP, rateOnAPCell, timeOnOnAP, timeOnOnAPCell, TotalEllipsesAP, rateOnAPManual, rateOnAPCellManual, timeOnOnAPManual, timeOnOnAPCellManual]...
-            = computeAPFractionOn(NChannels, Particles, schnitzcells, ...
+            EllipsesOnAP, rateOnAP, rateOnAPCell, timeOnOnAP, timeOnOnAPCell,...
+            TotalEllipsesAP, rateOnAPManual, rateOnAPCellManual, timeOnOnAPManual, timeOnOnAPCellManual...
+            NEllipsesDV, MeanVectorAllDV, SEVectorAllDV, OnRatioDV, ParticleCountDV, ...
+            ParticleCountProbDV, TotalEllipsesDV, EllipsesOnDV, EllipsesFilteredPosDV, ...
+            FilteredParticlesPosDV]...
+            ...
+            = computeAPFractionOn(...
+            ...
+            NChannels, Particles, schnitzcells,...
             CompiledParticles, Ellipses, APbinID, FrameInfo, ElapsedTime, DropboxFolder, ...
             Prefix, EllipsePos, nc12, nc13, nc14, numFrames, SkipFits, SkipAll, ...
-            APbinArea,pixelSize, manualSingleFits);
+            APbinArea,pixelSize, manualSingleFits, edgeWidth,  DVbinArea, DVbinID, EllipsePos_DV);
+        
     end
-
+    
     % DV version. This should instead be smoothly integrated with the AP
-    % version since there's a lot of duplicate code here. 
-    if HistoneChannel&&strcmpi(ExperimentAxis,'DV') %JAKE: Need to change this later
+    % version since there's a lot of duplicate code here.
+    if HistoneChannel && DVExperiment %JAKE: Need to change this later
+        
         [NEllipsesDV, MeanVectorAllDV, SEVectorAllDV, OnRatioDV, ParticleCountDV, ...
             ParticleCountProbDV, TotalEllipsesDV, EllipsesOnDV, EllipsesFilteredPos, ...
-            FilteredParticlesPos] = DVProbOn(NChannels, Particles, schnitzcells, ...
+            FilteredParticlesPos] =...
+            ...
+            DVProbOn(NChannels, Particles, schnitzcells, ...
             CompiledParticles, Ellipses, FrameInfo, DropboxFolder, Prefix, ...
             ElapsedTime, DVbinID, EllipsePos_DV, nc12, nc13, nc14, numFrames, ...
             DVbinArea);
+        
     end
-end
+    
     %% Calculation of particle speed
     try
         calcParticleSpeeds(NChannels, Particles, ...
             Spots, ElapsedTime, schnitzcells, Ellipses);
     catch
+        %this failed
     end
+    
     %% Movie of AP profile
-
+    
     %I want to make a movie of the average fluorescence as a function of AP as
     %a function of time. In order to make life easier I'll just export to a
     %folder. I can then load everything in ImageJ.
-
-    if ~SkipMovie&&strcmpi(ExperimentAxis,'AP')
+    
+    if ~SkipMovie && APExperiment
         APProfileMovie(MeanVectorAP, NParticlesAP, MinParticles, ...
             APbinID, SDVectorAP, FrameInfo, ElapsedTime, DropboxFolder, Prefix, nc9, nc10, nc11, nc12, nc13, nc14)
     end
-
-    %% Checking correlations with position and expression
-    %
-    % 1+1;
-    %
-    % i=100
-    %
-    % for j=1:length(CompiledParticles{1}(i).Frame)
-    %
-    %     CurrentFrame=CompiledParticles{1}(i).Frame(j);
-    %     EllipsePos=find((schnitzcells(CompiledParticles{1}(i).Nucleus).frames)==CurrentFrame);
-    %     CurrentEllipse=Ellipses{CompiledParticles{1}(i).Frame};
-    %     CurrentEllipse=CurrentEllipse(EllipsePos,:);
-    %
-    %     Position(j)=(CompiledParticles{1}(i).xPos(j)-CurrentEllipse(1))^2+...
-    %         (CompiledParticles{1}(i).yPos(j)-CurrentEllipse(2))^2;
-    % end
-    %
-    % figure(9)
-    % plot(  Position ,CompiledParticles{1}(i).Fluo,'.k')
-    %
-    %
+    
 end
 
 %% Input-output
 
 %Compile the nuclear fluorescence information if we have the appropriate
 %experiment type and axis
-%Simon: This script is not required for Dl-Venus experiments in DV so I
-%added the ExperimentAxis condition.
-% ROI option added (YJK on 10/27/2017) :
-% When the data is acquired in ROI mode, I added the ROI option,
-% two thresholds to be incorporated into CompileNuclearProtein
-if strcmpi(ExperimentType,'inputoutput') 
-    %&& (strcmpi(ExperimentAxis,'AP')||strcmpi(ExperimentAxis,'DV'))
+
+if strcmpi(ExperimentType,'inputoutput')
+    
     if ~ROI
         CompileNuclearProtein(Prefix)
     else
@@ -707,11 +667,12 @@ savedVariables = [savedVariables,'APFilter', 'APbinArea', 'APbinID', 'AllTracesA
     'SEVectorAllDV', 'StemLoopEnd', 'TotalEllipsesAP', 'TotalEllipsesDV',...
     'fittedLineEquations', 'rateOnAP', 'timeOnOnAP','rateOnAPCell', 'timeOnOnAPCell','nc10', 'nc11', 'nc12',...
     'nc13', 'nc14', 'nc9', 'ncFilter',...
-    'ncFilterID', 'rateOnAPManual', 'rateOnAPCellManual', 'timeOnOnAPManual', 'timeOnOnAPCellManual'];
+    'ncFilterID', 'rateOnAPManual', 'rateOnAPCellManual', 'timeOnOnAPManual', 'timeOnOnAPCellManual'...
+    'MeanVector3DAP', 'MeanVector3DAll'];
 
 save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
     savedVariables{:},'-v7.3');
 
 disp('CompiledParticles.mat saved.');
- 
+
 end

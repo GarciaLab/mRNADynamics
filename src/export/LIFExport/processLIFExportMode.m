@@ -1,26 +1,34 @@
 % Added PreferredFileName so we can automate testing and bypass the user prompt when there are many files available.
-function FrameInfo = processLIFExportMode(Folder, ExperimentType, ProjectionType, Channel1, Channel2, Channel3, Prefix, OutputFolder, PreferredFileNameForTest, keepTifs, nuclearGUI, skipExtraction)
+function FrameInfo = processLIFExportMode(rawDataFolder, ExperimentType, ProjectionType, Channel1, Channel2, Channel3,...
+    Prefix, OutputFolder, PreferredFileNameForTest, keepTifs, nuclearGUI, skipExtraction)
   
   %Loads file and metadata
-  [XMLFolder, seriesPropertiesXML, seriesXML] = getSeriesFiles(Folder);
+  [XMLFolder, seriesPropertiesXML, seriesXML] = getSeriesFiles(rawDataFolder);
   
-  [~, ~, LIFImages, LIFMeta] = loadLIFFile(Folder);
+  [~, ~, LIFImages, LIFMeta] = loadLIFFile(rawDataFolder);
   
   %Obtains frames information
   [NSeries, NFrames, NSlices, NPlanes, NChannels, Frame_Times] = getFrames(LIFMeta);
   
-  [Frame_Times, First_Time] = obtainFrameTimes(XMLFolder, seriesPropertiesXML, NSeries, NFrames, NSlices, NChannels);
-  
-  [InitialStackTime, zPosition] = getFirstSliceTimestamp(NSlices, NSeries, NPlanes, NChannels, Frame_Times, XMLFolder, seriesXML);
-  
+  if sum(NFrames)~=0
+    [Frame_Times, First_Time] = obtainFrameTimes(XMLFolder, seriesPropertiesXML, NSeries, NFrames, NSlices, NChannels);
+    [InitialStackTime, zPosition] = getFirstSliceTimestamp(NSlices, NSeries, NPlanes, NChannels, Frame_Times, XMLFolder, seriesXML);
+  else
+      InitialStackTime = [];
+      zPosition = [];
+  end
   FrameInfo = recordFrameInfo(NFrames, NSlices, InitialStackTime, LIFMeta, zPosition);
- 
+  
   %Find the flat field (FF) information
-  LIFExportMode_flatFieldImage(LIFMeta, Folder, OutputFolder, Prefix, PreferredFileNameForTest);
+  LIFExportMode_flatFieldImage(LIFMeta, rawDataFolder, OutputFolder, Prefix, PreferredFileNameForTest);
   
   [coatChannel, histoneChannel, fiducialChannel, inputProteinChannel, FrameInfo] =...
     LIFExportMode_interpretChannels(ExperimentType, Channel1, Channel2, Channel3, FrameInfo);
 
+  if sum(NFrames) == 0
+      NFrames = ~NFrames;
+  end
+  
   if ~skipExtraction
       %Copy the data
       waitbarFigure = waitbar(0, 'Extracting LIFExport images');
@@ -46,25 +54,28 @@ function FrameInfo = processLIFExportMode(Folder, ExperimentType, ProjectionType
   end
 
   if ~keepTifs
-    removeUnwantedTIFs(Folder);
+    removeUnwantedTIFs(rawDataFolder);
   end
 
   close(waitbarFigure)
 end
 
 % Removes all TIF files from the original folder in RawDynamicsData
-function removeUnwantedTIFs(Folder) 
-  cd(Folder);
+function removeUnwantedTIFs(rawDataFolder) 
+
+  oldFolder = cd(rawDataFolder);
+  
   tifs = dir('*.tif');
 
   allTifs = {tifs.name};
 
   if numel(allTifs) > 1
-    disp(['Removing TIF files from source folder ', Folder]);
+    disp(['Removing TIF files from source folder ', rawDataFolder]);
     for i = 2:numel(allTifs)
-%       disp(['Deleting ', allTifs{i}]);
       delete(allTifs{i});
     end
   end
+  
+  cd(oldFolder);
 
 end

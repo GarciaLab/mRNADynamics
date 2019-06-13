@@ -90,10 +90,9 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
   else
       ParticlesFig = []; particlesAxes = []; NucleiFig = []; nucAxes = [];
   end
-  NDigits = adjustIndexSizeAccordingToFrames(FrameInfo);
 
   [Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh, Spots, app, SpotFilter, PreProcPath, ...
-    Prefix, UseHistone, ParticlesFig, SpotsChannel, NDigits, NucleiFig, particlesAxes, nucAxes, Ellipses, ...
+    Prefix, UseHistone, ParticlesFig, SpotsChannel, NucleiFig, particlesAxes, nucAxes, Ellipses, ...
     PixelSize, SearchRadius, ExperimentType, FrameInfo, retrack, displayFigures);
 
   mkdir([OutputFolder, filesep]);
@@ -114,8 +113,10 @@ function [FrameInfo, PixelSize] = loadFrameInfo(OutputFolder, PreProcPath, Prefi
       PixelSize = 0.22; %um
     elseif strcmp(FrameInfo(1).FileMode, 'LSM') | strcmp(FrameInfo(1).FileMode, 'LSMExport')%#ok<*OR2>
       PixelSize = FrameInfo(1).PixelSize;
-    elseif strcmp(FrameInfo(1).FileMode, 'LIFExport') || strcmp(FrameInfo(1).FileMode, 'LAT') || strcmp(FrameInfo(1).FileMode, 'DSPIN')%CS20170907
+    elseif strcmp(FrameInfo(1).FileMode, 'OMETIFF') || strcmp(FrameInfo(1).FileMode, 'LIFExport') || strcmp(FrameInfo(1).FileMode, 'LAT') || strcmp(FrameInfo(1).FileMode, 'DSPIN')%CS20170907
       PixelSize = FrameInfo(1).PixelSize;
+    else
+      error('FileMode %s not supported', FrameInfo(1).FileMode);
     end
 
   else
@@ -274,19 +275,6 @@ function [ParticlesFig, particlesAxes, NucleiFig, nucAxes] = generateTrackingFig
 
 end
 
-% See how  many frames we have and adjust the index size of the files to
-% load accordingly
-function NDigits = adjustIndexSizeAccordingToFrames(FrameInfo)
-
-  if length(FrameInfo) < 1E3
-    NDigits = 3;
-  elseif length(FrameInfo) < 1E4
-    NDigits = 4;
-  else
-    error('No more than 10,000 frames supported. Change this in the code')
-  end
-
-end
 
 function createFieldNCAndSaveFrameInfo(FrameInfo, OutputFolder, nc9, nc10, nc11, nc12, nc13, nc14)
   % creating the field nc for FrameInfo
@@ -303,9 +291,9 @@ function createFieldNCAndSaveFrameInfo(FrameInfo, OutputFolder, nc9, nc10, nc11,
         FrameInfo(currentFrame).nc = 10;
       elseif (currentFrame >= nc11) & (currentFrame <= nc12)
         FrameInfo(currentFrame).nc = 11;
-      elseif (currentFrame >= nc12) & (currentFrame <= nc13)
+      elseif (currentFrame >= nc12) & ( currentFrame <= nc13 | isnan(nc13) )
         FrameInfo(currentFrame).nc = 12;
-      elseif (currentFrame >= nc13) & (currentFrame <= nc14)
+      elseif (currentFrame >= nc13) &  ( currentFrame <= nc14 | isnan(nc14) )
         FrameInfo(currentFrame).nc = 13;
       elseif currentFrame >= nc14
         FrameInfo(currentFrame).nc = 14;

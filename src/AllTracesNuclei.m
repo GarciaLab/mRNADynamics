@@ -3,25 +3,23 @@ function [AllTracesVector,AllTracesAP,AllTracesDV]=AllTracesNuclei(FrameInfo,Nuc
 %Order all traces in a time array. Also create a vector with the
 %corresponding AP positions
 
-AllTracesVector=zeros(length(FrameInfo),length(Nuclei));
-AllTracesVector(:)=nan;
+AllTracesVector=nan(length(FrameInfo),length(Nuclei));
+AllTracesAP=nan(length(Nuclei),1);
+AllTracesDV=nan(length(Nuclei),1);
 
-AllTracesAP=zeros(length(Nuclei),1);
-AllTracesDV=zeros(length(Nuclei),1);
-
-for i=1:length(Nuclei)
-    for j=1:length(Nuclei(i).Frames)
-        AllTracesVector(Nuclei(i).Frames(j),i)=...
-        Nuclei(i).FluoMax(Nuclei(i).Frames==Nuclei(i).Frames(j));
+for nuc=1:length(Nuclei)
+    for frame=1:length(Nuclei(nuc).Frames)
+        
+        AllTracesVector(Nuclei(nuc).Frames(frame),nuc)=...
+        Nuclei(nuc).FluoMax(Nuclei(nuc).Frames==Nuclei(nuc).Frames(frame));
     
         if length(varargin)==1
             if strcmp(varargin{1},'NoAP')
-                AllTracesAP(i)=nan;
-                AllTracesDV(i)=nan;
+                %do nothing
             end
         else
-            AllTracesAP(i)= Nuclei(i).MeanAP;
-            AllTracesDV(i)= Nuclei(i).MeanDV;
+            AllTracesAP(nuc)= Nuclei(nuc).MeanAP;
+            AllTracesDV(nuc)= Nuclei(nuc).MeanDV;
         end
     end
    

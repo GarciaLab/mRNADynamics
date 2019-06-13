@@ -71,7 +71,6 @@ dogs = [];
 % Start timer
 tic;
 
-
 [~, ~, ~, ~, ~, ~, ~, ExperimentType, ~, ~, ~, ~, spotChannels] = readMovieDatabase(Prefix);
 
 [~, ProcPath, DropboxFolder, MS2CodePath, PreProcPath] = DetermineLocalFolders(Prefix);
@@ -80,10 +79,7 @@ load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
 
 [displayFigures, numFrames, initialFrame, highPrecision, filterType, keepPool,...
     sigmas, nWorkers, app, kernelSize, Weka, justTifs, ignoreMemoryCheck, classifierFolder, ...
-    classifierPathCh1, customML, noSave] = determineFilterMovieOptions(FrameInfo,varargin);
-
-startParallelPool(nWorkers, displayFigures);
-
+    classifierPathCh1, customML, noSave, numType, gpu, saveAsMat, saveType] = determineFilterMovieOptions(FrameInfo,varargin);
 
 zSize = FrameInfo(1).NumberSlices + 2;
 
@@ -95,7 +91,9 @@ nCh = length(spotChannels);
 
 if ~Weka && ~justTifs
     dogs = generateDifferenceOfGaussianImages(ProcPath, ExperimentType, FrameInfo, spotChannels,...
-        numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision, sigmas, app, kernelSize, noSave);
+        numFrames, displayFigures, zSize, PreProcPath,...
+        Prefix, filterType, highPrecision, sigmas, app,...
+        kernelSize, noSave, numType, gpu, saveAsMat, saveType);
 elseif Weka
     if ~exist([PreProcPath, filesep, Prefix, filesep, 'stacks'], 'dir')
         generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,spotChannels, zSize, initialFrame);
@@ -103,7 +101,7 @@ elseif Weka
     generateDogsWeka(Prefix, ProcPath, MS2CodePath, PreProcPath, ExperimentType, spotChannels, zSize, numFrames, nCh,...
         initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder);
 elseif justTifs
-    generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,coatChannel, zSize, initialFrame);
+    generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,spotChannels, zSize, initialFrame);
 elseif customML
     generateProbMapsCustomML(Prefix, ProcPath, MS2CodePath, PreProcPath, ExperimentType, coatChannel, zSize, numFrames, nCh,...
         initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder);
@@ -124,5 +122,5 @@ if ~keepPool && ~Weka && ~justTifs
     end
 end
 
-disp([Prefix, ' filtered']);
+disp([Prefix, ' filtered.']);
 end

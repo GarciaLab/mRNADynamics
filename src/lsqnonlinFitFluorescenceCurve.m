@@ -34,6 +34,7 @@ end
 
 %NanFilter=~isnan(FluoData);
 %chi2=(FluoData(NanFilter)-InterpData(NanFilter)').^2;
+
 try
     chi2=(FluoData-FluoPrediction').^2;
 catch

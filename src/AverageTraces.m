@@ -1,4 +1,4 @@
-function [MeanVector,SDVector,NParticles,ErrorVarVector]=AverageTraces(FrameInfo,Particles)
+function [MeanVector,SDVector,NParticles,ErrorVarVector, MeanVector3D]=AverageTraces(FrameInfo,Particles)
 
 %Average and SD over each time point. In order to do this we'll generate a
 %cell array with all the values for a given time point
@@ -7,17 +7,18 @@ function [MeanVector,SDVector,NParticles,ErrorVarVector]=AverageTraces(FrameInfo
 %assign an error to the variance.
 
 TraceCell=cell(length(FrameInfo),1);
+TraceCell3D =cell(length(FrameInfo),1);
 
 
 for i=1:length(Particles)
     for j=1:length(Particles(i).Frame)
-        try
-            noIntensityFlag = Particles(i).noIntensityFlag(j);
-        catch
-            noIntensityFlag = 1;
-        end
         TraceCell{Particles(i).Frame(j)}=[TraceCell{Particles(i).Frame(j)},...
-            Particles(i).Fluo(j).*noIntensityFlag];
+            Particles(i).Fluo(j)];
+        try
+            TraceCell3D{Particles(i).Frame(j)}=[TraceCell3D{Particles(i).Frame(j)},...
+                Particles(i).FluoGauss3D(j)];
+        catch
+        end
     end
 end
 
@@ -30,6 +31,14 @@ MeanVector=[MeanTrace{:}];
 SDVector=[SDTrace{:}];
 NParticles=[NParticlesTrace{:}];
 ErrorVarVector=nan(size(MeanTrace));
+
+
+
+try
+    MeanTrace3D = cellfun(@nanmean,TraceCell3D,'UniformOutput',false);
+    MeanVector3D = [MeanTrace3D{:}];
+end
+
 
 %Estimate the error in the SD by bootstrapping
 for i=1:length(TraceCell)

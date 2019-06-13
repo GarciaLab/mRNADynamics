@@ -1,4 +1,8 @@
-function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs, generateTifs, nuclearGUI, skipExtraction] = exportDataForLivemRNA_processInputParameters(varargin)
+function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest,...
+    keepTifs, generateTifStacks, nuclearGUI, skipExtraction, rootFolder]...
+    ...
+    = exportDataForLivemRNA_processInputParameters(varargin)
+
 %Look at parameters
 SkipFrames = [];
 Prefix = '';
@@ -8,9 +12,10 @@ ProjectionType = 'maxprojection';
 %Added new argument to specify a preferred file name and enable automatic testing
 PreferredFileNameForTest = '';
 keepTifs = false;
-generateTifs = false;
+generateTifStacks = false;
 nuclearGUI = false;
 skipExtraction = false;
+rootFolder = '';
 
 k=1;
 while k<=length(varargin)
@@ -32,13 +37,18 @@ while k<=length(varargin)
     elseif strcmpi(varargin{k}, 'keepTifs')
         keepTifs = true;
     elseif strcmpi(varargin{k}, 'generateTifs')
-        generateTifs = true;
+        generateTifStacks = true;
     elseif strcmpi(varargin{k}, 'nuclearGUI')
         nuclearGUI = true;
     elseif strcmpi(varargin{k}, 'skipExtraction')
         skipExtraction = true;
+    elseif strcmpi(varargin{k}, 'rootFolder')
+        rootFolder = varargin{k+1};
     else
-        Prefix = varargin{k};
+        if isempty(rootFolder)
+            Prefix = varargin{k};
+            disp(['ExportDataForLivemRNA using prefix: ', Prefix]);
+        end
     end
     k=k+1;
 end

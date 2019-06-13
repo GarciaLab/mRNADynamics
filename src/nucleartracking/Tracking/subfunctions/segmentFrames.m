@@ -12,7 +12,10 @@ function xy = segmentFrames(FrameInfo,names,firstFrame,lastFrame,nucleusDiameter
     nFrames = lastFrame-firstFrame+1;
     frameNum = firstFrame:lastFrame;
     xy = cell(lastFrame-firstFrame+1,1);
-    for j = 1:nFrames
+    
+    update_waitbar = false;
+    
+    parfor j = 1:nFrames
 
         [xy{j}, ~] = findNuclei(FrameInfo,names, frameNum(j), nucleusDiameter, embryoMask);
 

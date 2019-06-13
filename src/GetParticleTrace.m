@@ -1,7 +1,10 @@
 function [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
     ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3, ErrorIntegral5,backGround3,...
-    AmpIntegralGauss3D, ErrorIntegralGauss3D, AmpDog, AmpDogMax, ampdog3, ampdog3Max]=...
-    GetParticleTrace(CurrentParticle,Particles,Spots)
+    AmpIntegralGauss3D, ErrorIntegralGauss3D, AmpDog, AmpDogMax, ampdog3, ampdog3Max] =...
+    ...
+    GetParticleTrace(...
+    ...
+    CurrentParticle,Particles,Spots)
 
 %function [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
 %    ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3, ErrorIntegral5]=...
@@ -40,62 +43,62 @@ for i=1:length(Particles(CurrentParticle).Frame)
     zIndex=find(spot.brightestZ == spot.z);
     
     %Offset obtained using Gaussian fitting.
-    Offset(i) = spot.Offset(zIndex);
+    Offset(i) = double(spot.Offset(zIndex));
     %Intensity obtained by integrating over the area. This has
     %magnitude already has the offset (obtained from the Gaussian fit)
     %subtracted.
-    AmpIntegral(i) = spot.FixedAreaIntensity(zIndex);
+    AmpIntegral(i) = double(spot.FixedAreaIntensity(zIndex));
     %Intensity obtained by integrating over the Gaussian fit. This
     %already has subtracted the offset.
-    AmpGaussian(i)= spot.GaussianIntensity(zIndex);
+    AmpGaussian(i)= double(spot.GaussianIntensity(zIndex));
     %Amplitude of the Gaussian fit. This is an intensity per pixel.
-    IntensityMaxGauss(i)= spot.CentralIntensity(zIndex);
+    IntensityMaxGauss(i)= double(spot.CentralIntensity(zIndex));
     %Check to see it multi-slice integration was performed for this set
     fields = fieldnames(spot);
     try
-        AmpIntegral3(i) = spot.FixedAreaIntensity3;
+        AmpIntegral3(i) = double(spot.FixedAreaIntensity3);
     catch
         AmpIntegral3(i)= NaN;
     end
     try
         AmpIntegralGauss3D(i)=...
-            spot.gauss3DIntensity;
+            double(spot.gauss3DIntensity);
     catch
         AmpIntegralGauss3D(i)= NaN;
     end
     if isfield(spot, 'gauss3DIntensityCI95')
         try
-            ErrorIntegralGauss3D(i) = spot.gauss3DIntensityCI95;
+            ErrorIntegralGauss3D(i) = double(spot.gauss3DIntensityCI95);
         catch
             ErrorIntegralGauss3D(i) = NaN;
         end
     else
         ErrorIntegralGauss3D(i) = NaN;
-        warning('gauss3d intensities calculated but not their errors. Re-run fit3dgaussianstoallspots if this is desired.');
+%         warning('gauss3d intensities calculated but not their errors. Re-run fit3dgaussianstoallspots if this is desired.');
     end
     try
         AmpIntegral5(i)=...
-            spot.FixedAreaIntensity5;
+            double(spot.FixedAreaIntensity5);
     catch
         AmpIntegral5(i)= NaN;
     end
     try
-        AmpDog(i) =  spot.dogFixedAreaIntensity(zIndex);
+        AmpDog(i) =  double(spot.dogFixedAreaIntensity(zIndex));
     catch
         AmpDog(i) = NaN;
     end
     try
-        AmpDogMax(i) =  spot.DOGIntensity(zIndex);
+        AmpDogMax(i) =  double(spot.DOGIntensity(zIndex));
     catch
         AmpDogMax(i) = NaN;
     end
      try
-        ampdog3(i) =  spot.ampdog3;
+        ampdog3(i) =  double(spot.ampdog3);
     catch
         ampdog3(i) = NaN;
      end
      try
-        ampdog3Max(i) =  spot.ampdog3Max;
+        ampdog3Max(i) =  double(spot.ampdog3Max);
     catch
         ampdog3Max(i) = NaN;
     end
@@ -146,18 +149,18 @@ else
     OffsetError=std(OffFit);
 end
 
-if exist('OffsetError')
+if exist('OffsetError', 'var')
     %Now, estimate the error in the signal.
     %For the Gaussian fit, we use the average area to get an overall
     %error for the whole trace. We could also just define an error for
     %each data point.
     try
         ErrorGauss=OffsetError*sqrt(2)*...
-            mean(spot.Area);
+            mean(double(spot.Area));
     catch
         try
             ErrorGauss=OffsetError*sqrt(2)*...
-                mean(spot.Area);
+                mean(double(spot.Area));
         catch
             ErrorGauss=OffsetError*sqrt(2)*defaultArea;
         end
@@ -169,7 +172,7 @@ if exist('OffsetError')
     %For the Integral, we just use the area of the snippet, which is a
     %constant for all time points.
     if isfield(spot, 'intArea') && ~isempty(spot.intArea)
-        intArea = spot.intArea(1);
+        intArea = double(spot.intArea(1));
         ErrorIntegral=OffsetError*sqrt(2)*intArea;
         if ~isnan(AmpIntegral3(i))
             backGround3 = 3*Offset*intArea;

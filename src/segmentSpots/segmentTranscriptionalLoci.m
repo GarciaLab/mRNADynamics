@@ -1,6 +1,17 @@
-function [all_frames, Spots] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures,doFF, ffim, Threshold, neighborhood, snippet_size, pixelSize, microscope, intScale, Weka, use_integral_center, filterMovieFlag, resultsFolder)
+function [all_frames, Spots, dogs]...
+    ...
+    = segmentTranscriptionalLoci(...
+    ...
+    nCh, coatChannel, channelIndex, all_frames, initialFrame, numFrames,...
+    zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures,doFF, ffim,...
+    Threshold, neighborhood, snippet_size, pixelSize, microscope, intScale,...
+    Weka, use_integral_center, filterMovieFlag, resultsFolder, gpu, saveAsMat, saveType)
+
+
+dogs = [];
 
 waitbarFigure = waitbar(0, 'Segmenting spots');
+set(waitbarFigure, 'units', 'normalized', 'position', [0.4, .15, .25,.1]);
 
 Spots = repmat(struct('Fits', []), 1, numFrames);
 
@@ -32,31 +43,87 @@ end
 
 %Check how many coat channels we have and segment the appropriate channel
 %accordingly
-if nCh > 1
-    nameSuffix = ['_ch', iIndex(channelIndex, 2)];
-    if Threshold == -1 && ~Weka
-        Threshold = determineThreshold(Prefix, channelIndex);
-        display(['Threshold: ', num2str(Threshold)])
-    end
-else
-    nameSuffix= ['_ch', iIndex(coatChannel, 2)];
-    if Threshold == -1 && ~Weka
-        Threshold = determineThreshold(Prefix, coatChannel);
-        display(['Threshold: ', num2str(Threshold)])
-    end
-end
 
 if filterMovieFlag
     filterType = 'Difference_of_Gaussian_3D';
     sigmas = {round(200/pixelSize),round(800/pixelSize)};
-    [~, dogs] = filterMovie(Prefix,'optionalResults', resultsFolder,'nWorkers', 1, 'highPrecision', 'customFilter', filterType, sigmas, 'noSave');
+    filterOpts = {'nWorkers', 1, 'highPrecision', 'customFilter', filterType,...
+        sigmas, 'double', 'keepPool', gpu};
+    if saveAsMat
+        filterOpts = [filterOpts, 'saveAsMat'];
+    else
+        filterOpts = [filterOpts, 'noSave'];
+    end
+    [~, dogs] = filterMovie(Prefix,'optionalResults', resultsFolder, filterOpts{:});
 end
+
+if nCh > 1
+    chh = channelIndex;
+else
+    chh = coatChannel;
+end
+
+nameSuffix = ['_ch', iIndex(chh, 2)];
+
+if Threshold == -1 && ~Weka
+    
+    if ~filterMovieFlag
+        Threshold = determineThreshold(Prefix, chh);
+        display(['Threshold: ', num2str(Threshold)])
+    else
+        Threshold = determineThreshold(Prefix, chh, 'noSave', dogs);
+    end
+    
+    display(['Threshold: ', num2str(Threshold)])
+    
+end
+
+
+q = parallel.pool.DataQueue;
+afterEach(q, @nUpdateWaitbar);
+p = 1;
+
+if filterMovieFlag
+    saveType = 'none';
+end
+
+isZPadded = false;
+
+firstdogpath = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(1, 3), '_z', iIndex(1, 2),...
+        nameSuffix];
+    
+matsPresent = exist([firstdogpath, '.mat'], 'file');
+tifsPresent = exist([firstdogpath, '.tif'], 'file');
+
+if ~strcmpi(saveType, 'none')
+    if tifsPresent & ~matsPresent
+        saveType = '.tif';
+    elseif matsPresent & ~tifsPresent
+        saveType = '.mat';
+    elseif matsPresent & tifsPresent
+        error('not sure which files to pick. check your processed folder.');
+    end
+end
+
+firstdogpath = [firstdogpath, saveType];
+if strcmpi(saveType, '.tif')
+    firstDoG = imread(firstdogpath);
+elseif strcmpi(saveType, '.mat')
+    load(firstdogpath, 'plane');
+    firstDoG = plane;
+elseif strcmpi(saveType, 'none')
+    firstDoG = dogs(:, :, 1, 1);
+end
+
+if sum(firstDoG(:)) == 0
+    isZPadded = true;
+end
+
+
 for current_frame = initialFrame:numFrames
     
-    %w = waitbar(current_frame / numFrames, waitbarFigure);
-    %set(w, 'units', 'normalized', 'position', [0.4, .15, .25,.1]);
-    
     for zIndex = 1:zSize
+        
         imFileName = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(zIndex, 2),...
             nameSuffix, '.tif'];
         im = double(imread(imFileName));
@@ -70,21 +137,36 @@ for current_frame = initialFrame:numFrames
             imBelow = nan(size(im,1),size(im,2));
         end
         
-        if ~filterMovieFlag
-            try
-                dogFileName = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(zIndex, 2),...
-                    nameSuffix,'.tif'];
-                dog = double(imread(dogFileName));
-            catch
-                error('Please run filterMovie to create DoG files')
-            end
+        
+        if isZPadded
+            dogZ = zIndex;
         else
-            if zIndex == 1 || zIndex == zSize
-                dog = zeros(size(dogs,1), size(dogs, 2));
-            else
-                dog = dogs(:,:, zIndex - 1, current_frame);
-            end
+            dogZ = zIndex - 1;
         end
+                
+        try
+            if isZPadded | ( ~isZPadded & (zIndex~=1 & zIndex~=zSize) )
+                if strcmpi(saveType, '.tif')
+                    dogFileName = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(dogZ, 2),...
+                        nameSuffix,'.tif'];
+                    dog = double(imread(dogFileName));
+                elseif strcmpi(saveType, '.mat')
+                    dogFileName = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(dogZ, 2),...
+                        nameSuffix,'.mat'];
+                    load(dogFileName, 'plane');
+                    dog = plane;
+                elseif strcmpi(saveType, 'none')
+                    dog = dogs(:,:, dogZ, current_frame);
+                end
+            else
+                dog = false(size(im, 1), size(im, 2));
+            end
+        catch
+            error('Please run filterMovie to create DoG files.');
+        end
+        
+        
+        
         
         if displayFigures
             dogO = im(:);
@@ -95,6 +177,7 @@ for current_frame = initialFrame:numFrames
             else
                 imagescUpdate(dogAx, im, []);
             end
+            drawnow;
         end
         
         % Apply flatfield correction
@@ -136,8 +219,16 @@ for current_frame = initialFrame:numFrames
         
     end
     
+    send(q, current_frame);
+    
 end
 
+
 close(waitbarFigure);
+
+    function nUpdateWaitbar(~)
+        waitbar(p/numFrames, waitbarFigure);
+        p = p + 1;
+    end
 
 end

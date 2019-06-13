@@ -2,13 +2,15 @@
 %
 % DESCRIPTION
 % Searches Leica XML files for the following microscope settings and  
-% saves them as fields in a structure to be accessed by other scripts
+% saves them as fields in a structure to be accessed by other scripts. This
+% allows for direct access to settings that are not supported by
+% Bio-Formats.
 % 
 % ARGUMENTS
 % filename: Full or relative path to the .xml file to be read
 % 
 % OUTPUT
-% theStrcut: Structure created by recursing over the nodes of the .xml
+% theStruct: Structure created by recursing over the nodes of the .xml
 %            document
 % settingStruct: Structure containing fields corresponding to the
 %                settings read from teh .xml document. Numbers have
@@ -19,14 +21,15 @@
 % 
 % Author (contact): Meghan Turner (meghan_turner@berkeley.edu)
 % Created: 2019-04-30
+% Last Updated: 2019-05-07
 %
 % Based on the searchXML.m script written by Armando Reimer. Uses nested
 %   functions and structures instead of local functions & assignin/evalin.
 %
 % Documented by: Meghan Turner (meghan_turner@berkeley.edu)
 
-function [theStruct, settingStruct] = readSettingsFromXML(filename)
-    % Initilaize variables so they're accessible in the main function
+function [theStruct, settingStruct] = readSettingsFromXML(Prefix, filename)
+    % Initilaize variables so they're accessible in the nested functions
     pixelDwellTime = [];
     lineAccumulation = [];
     frameAccumulation = [];
@@ -47,7 +50,7 @@ function [theStruct, settingStruct] = readSettingsFromXML(filename)
     objectiveNumber = [];
     magnification = [];
     frameTime = [];
-    completeTime = [];
+%     completeTime = [];
     cycleTime = [];
     zStackDirectionModeName = '';
     zUseModeName = '';
@@ -69,6 +72,7 @@ function [theStruct, settingStruct] = readSettingsFromXML(filename)
     end
     
     % Save settings into a structure
+    settingStruct.Prefix = Prefix;
     settingStruct.pixelDwellTime = str2double(pixelDwellTime);
     settingStruct.lineAccumulation = str2double(lineAccumulation);
     settingStruct.frameAccumulation = str2double(frameAccumulation);
@@ -79,21 +83,21 @@ function [theStruct, settingStruct] = readSettingsFromXML(filename)
     settingStruct.pinhole = str2double(pinhole);    % in um
     settingStruct.rotatorAngle = str2double(rotatorAngle);  % in degrees
     settingStruct.phaseX = str2double(phaseX);
-    settingStruct.scanDirectionXName = scanDirectionXName;
+    settingStruct.scanDirectionXName = char(scanDirectionXName);
     settingStruct.scanDirectionX = str2double(scanDirectionX);
     settingStruct.zoomSetting = str2double(zoomSetting);
     settingStruct.scanSpeed = str2double(scanSpeed);
     settingStruct.refractionIndex = str2double(refractionIndex);
     settingStruct.numericalAperture = str2double(numericalAperture);
-    settingStruct.immersion = immersion;
+    settingStruct.immersion = char(immersion);
     settingStruct.objectiveNumber = str2double(objectiveNumber);
     settingStruct.magnification = str2double(magnification);
     settingStruct.frameTime = str2double(frameTime);
-    settingStruct.completeTime = str2double(completeTime);
+%     settingStruct.completeTime = str2double(completeTime);
     settingStruct.cycleTime = str2double(cycleTime);
-    settingStruct.zStackDirectionModeName = zStackDirectionModeName;
-    settingStruct.zUseModeName = zUseModeName;
-    settingStruct.xGalvoMovementModeName = xGalvoMovementModeName;
+    settingStruct.zStackDirectionModeName = char(zStackDirectionModeName);
+    settingStruct.zUseModeName = char(zUseModeName);
+    settingStruct.xGalvoMovementModeName = char(xGalvoMovementModeName);
 
 
     % ----- Nested function PARSECHILDNODES -----

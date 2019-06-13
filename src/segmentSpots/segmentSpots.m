@@ -58,7 +58,9 @@ warning('off', 'MATLAB:MKDIR:DirectoryExists');
 disp('Segmenting spots...')
 
 [displayFigures, numFrames, numShadows, intScale, keepPool, ...
-    autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel, optionalResults, filterMovieFlag] = determineSegmentSpotsOptions(varargin);
+    autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData,...
+    fit3D, skipChannel, optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat, saveType]...
+    = determineSegmentSpotsOptions(varargin{:});
 
 argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
 try
@@ -115,13 +117,13 @@ for channelIndex = 1:nCh
     
     tic;
     
-    [all_frames, tempSpots] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, ...
+    [all_frames, tempSpots, dogs] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, ...
         PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(channelIndex), neighborhood, ...
-        snippet_size, pixelSize, microscope, intScale, Weka, useIntegralCenter, filterMovieFlag, optionalResults);
+        snippet_size, pixelSize, microscope, intScale, Weka, useIntegralCenter, filterMovieFlag, optionalResults, gpu, saveAsMat, saveType);
 
     tempSpots = segmentSpotsZTracking(pixelSize,tempSpots);
 
-    [~, falsePositives, tempSpots] = findBrightestZ([], numShadows, useIntegralCenter, 0, tempSpots);
+    [~, falsePositives, tempSpots] = findBrightestZ([], numShadows, useIntegralCenter, 0, tempSpots, 'dogs', dogs);
                         
     Spots{channelIndex} = tempSpots;
     
@@ -144,16 +146,16 @@ end
 mkdir([DropboxFolder, filesep, Prefix]);
 save([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots', '-v7.3');
 
+if fit3D
+    disp('Fitting 3D Gaussians...')
+    fit3DGaussiansToAllSpots(Prefix, 'segmentSpots', Spots, 'optionalResults', optionalResults, 'dogs', dogs, 'nWorkers', nWorkers, saveType);
+    disp('3D Gaussian fitting completed.')
+end
+
 if ~keepProcessedData
     deleteProcessedDataFolder(ProcessedDataFolder, Prefix);
 else
     disp('keepProcessedData parameter sent. ProcessedData folder will not be removed.');
-end
-
-if fit3D
-    disp('Fitting 3D Gaussians...')
-    fit3DGaussiansToAllSpots(Prefix, 'segmentSpots', Spots, 'optionalResults', optionalResults);
-    disp('3D Gaussian fitting completed.')
 end
 
 if ~keepPool

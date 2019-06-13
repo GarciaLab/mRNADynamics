@@ -53,24 +53,24 @@ else %if we're in checkparticletracking
 end
 
 
-for i = 1:2*searchRadius
-    for j = 1:2*searchRadius
-        if row - searchRadius + i > 0 && col - searchRadius + j > 0 ...
-                && row - searchRadius + i < size(image,1)  && col - searchRadius + j < size(image,2)
+for y = 1:2*searchRadius
+    for x = 1:2*searchRadius
+        if row - searchRadius + y > 0 && col - searchRadius + x > 0 ...
+                && row - searchRadius + y < size(image,1)  && col - searchRadius + x < size(image,2)
             if ML
-                possible_centroid_intensity(i,j) = sum(sum(image(row-searchRadius+i, col-searchRadius+j)));
+                possible_centroid_intensity(y,x) = sum(sum(image(row-searchRadius+y, col-searchRadius+x)));
             else
                 if addition(1) || intScale~=1
                     %                         possible_centroid_intensity(i,j) = sum(sum(image(row-2*searchRadius+i:row+i,...
                     %                             col-2*searchRadius+j:col+j)));
-                    possible_centroid_intensity(i,j) = sum(sum(image(row-searchRadius+i, col-searchRadius+j)));
+                    possible_centroid_intensity(y,x) = sum(sum(image(row-searchRadius+y, col-searchRadius+x)));
                 else
                     %using the max pixel value will be wrong in some cases. integral
                     %would be better
-                    possible_centroid_intensity(i,j) = sum(sum(image(row-searchRadius+i, col-searchRadius+j)));
+                    possible_centroid_intensity(y,x) = sum(sum(image(row-searchRadius+y, col-searchRadius+x)));
                 end
             end
-            possible_centroid_location{i,j} = [row-searchRadius+i, col-searchRadius+j];
+            possible_centroid_location{y,x} = [row-searchRadius+y, col-searchRadius+x];
         end
     end
 end
@@ -127,7 +127,7 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
             neighborhood_Size = 2000/pixelSize; %nm
             maxThreshold = 30; %intensity
             widthGuess = 200 / pixelSize; %nm
-            offsetGuess = 0; %intensity
+            offsetGuess = median(snippet(:)); %intensity
         end
         
         
@@ -135,15 +135,23 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
             fitSingleGaussian(snippet, neighborhood_Size, maxThreshold, ...
             widthGuess, offsetGuess, show_status, graphicsHandles);
         %fits: [amplitude, x position, x width, y position, y width, offset, angle]
+        
+        % @(A, x0, y0, rho, sigma_x, sigma_y, offset, offset_x, offset_y)
 
-        sigma_x = fits(3);
-        sigma_y = fits(5);
-        offset = fits(6);
+%         sigma_x = fits(3);
+%         sigma_y = fits(5);
+%         offset = fits(6);
+
+    sigma_x = fits(5);
+        sigma_y = fits(6);
+        offset = fits(7);
+        
         
         gaussianArea = pi*sigma_x*sigma_y; %in pixels. this is one width away from peak
         integration_radius = 6*intScale; %integrate 109 pixels around the spot or more optionally
         spot_x = fits(2) - snippet_size + centroid_x; %final reported spot position
-        spot_y = fits(4) - snippet_size + centroid_y;
+%         spot_y = fits(4) - snippet_size + centroid_y;
+spot_y = fits(3) - snippet_size + centroid_y;
         
         if show_status && ~isempty(graphicsHandles)
             dogAx = graphicsHandles(2);
@@ -165,33 +173,46 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
         % but the first one does, and the second one is good
         % enough to position its center.
         
-        snippet_mask = snippet;
-        dog_mask = dogsnip;
+        snippet_mask = double(snippet);
+        dog_mask = double(dogsnip);
         if doCyl
-            snippet_mask_above = snippetAbove;
-            snippet_mask_below = snippetBelow;
+            snippet_mask_above = double(snippetAbove);
+            snippet_mask_below = double(snippetBelow);
         end
+        
+        if length(fits)>7
+            linearOffset = true;
+            off_x = fits(8);
+            off_y = fits(9);
+        end
+        
         maskArea = 0;
-        for i = 1:size(snippet, 1)
-            for j = 1:size(snippet,2)
-                d = sqrt( (j - (size(snippet,1)+1)/2)^2 + (i - (size(snippet,2)+1)/2)^2) ;
+        for y = 1:size(snippet, 1)
+            for x = 1:size(snippet,2)
+                d = sqrt( (x - (size(snippet,1)+1)/2)^2 + (y - (size(snippet,2)+1)/2)^2) ;
                 if d >= integration_radius
-                    snippet_mask(i, j) = 0;
-                    snippet_mask_above(i,j) = 0;
-                    snippet_mask_below(i,j) = 0;
-                    dog_mask(i,j) = 0;
+                    snippet_mask(y, x) = 0;
+                    snippet_mask_above(y,x) = 0;
+                    snippet_mask_below(y,x) = 0;
+                    dog_mask(y,x) = 0;
                 else
                     maskArea = maskArea+1;
+                    if linearOffset
+                        snippet_mask(y,x) = snippet_mask(y,x) - off_x*x - off_y*y;
+                        snippet_mask_above(y,x) = snippet_mask_above(y,x) - off_x*x - off_y*y;
+                        snippet_mask_below(y,x) = snippet_mask_below(y,x) - off_x*x - off_y*y;
+                    end
                 end
             end
         end
         
         sigma_x2 = 0;
         sigma_y2 = 0;
-        sister_chromatid_distance = NaN; %leaving this here for now but should be removed. AR 4/3/2019
+%         sister_chromatid_distance = NaN; %leaving this here for now but should be removed. AR 4/3/2019
         fixedAreaIntensity = sum(sum(snippet_mask)) - (offset*maskArea); %corrected AR 7/13/2018
+
         dogFixedAreaIntensity = sum(dog_mask(:));
-        fixedAreaIntensityCyl3 = NaN;
+%         fixedAreaIntensityCyl3 = NaN;
         if doCyl
             fixedAreaIntensityCyl3 =  sum(sum(snippet_mask)) + sum(sum(snippet_mask_above))...
                 + sum(sum(snippet_mask_below)) - 3*offset*maskArea;
@@ -217,33 +238,38 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
             end
             temp_particles = {{fixedAreaIntensity, spot_x, spot_y, offset, snippet, ...
                 gaussianArea, sigma_x, sigma_y, centroid_y, centroid_x, gaussianIntensity,intensity,...
-                max_dog, snippet_mask, sigma_x2, sigma_y2, sister_chromatid_distance, relative_errors, confidence_intervals, gaussian, mesh,fits, maskArea, fixedAreaIntensityCyl3}};
+                max_dog, snippet_mask, sigma_x2, sigma_y2, relative_errors, confidence_intervals, gaussian, mesh,fits, maskArea, fixedAreaIntensityCyl3}};
             
             
-            Fits.FixedAreaIntensity = fixedAreaIntensity;
-            Fits.xFit = spot_x;
-            Fits.yFit = spot_y;
-            Fits.Offset = offset;
-            Fits.Area = gaussianArea;
-            Fits.xFitWidth = sigma_x;
-            Fits.yFitWidth = sigma_y;
-            Fits.yDoG = centroid_y;
-            Fits.xDoG = centroid_x;
-            Fits.GaussianIntensity = gaussianIntensity;
-            Fits.CentralIntensity = intensity;
-            Fits.DOGIntensity = max_dog;
-            Fits.SisterDistance = sister_chromatid_distance;
+            Fits.FixedAreaIntensity = single(fixedAreaIntensity);
+            Fits.xFit = single(spot_x);
+            Fits.yFit = single(spot_y);
+            Fits.Offset = single(offset);
+            Fits.Area = single(gaussianArea);
+            Fits.xFitWidth = single(sigma_x);
+            Fits.yFitWidth = single(sigma_y);
+            Fits.yDoG = uint16(centroid_y);
+            Fits.xDoG = uint16(centroid_x);
+            Fits.GaussianIntensity = single(gaussianIntensity);
+            Fits.CentralIntensity = single(intensity);
+            Fits.DOGIntensity = single(max_dog);
+%             Fits.SisterDistance = sister_chromatid_distance;
             Fits.ConfidenceIntervals = confidence_intervals;
             Fits.gaussParams = {fits};
-            Fits.dogFixedAreaIntensity = dogFixedAreaIntensity;
-            Fits.intArea = maskArea;
-            Fits.z = zIndex;
-            Fits.frame = currentFrame;
-            Fits.discardThis = 0;
-            Fits.r = 0;
-            Fits.IntegralZ = use_integral_center;
+            Fits.dogFixedAreaIntensity = single(dogFixedAreaIntensity);
+            Fits.intArea = uint16(maskArea);
+            Fits.z = uint8(zIndex);
+%             Fits.frame = uint16(currentFrame);
+            Fits.discardThis = false;
+            Fits.r = false;
+            Fits.IntegralZ = logical(use_integral_center);
+            Fits.FixedAreaIntensity3  = [];
+            Fits.FixedAreaIntensity5 = [];
+            Fits.brightestZ =[];
+            Fits.snippet_size = uint8(snippet_size);
         else
             temp_particles = {{}};
+            Fits = [];
         end
         
     end

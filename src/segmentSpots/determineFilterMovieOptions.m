@@ -1,4 +1,8 @@
-function [displayFigures, numFrames, initialFrame, highPrecision, filterType, keepPool, sigmas, nWorkers, app, kernelSize, weka, justTifs, ignoreMemoryCheck, classifierFolder, classifierPathCh1, customML, noSave] = determineFilterMovieOptions(FrameInfo,varargin)
+function [displayFigures, numFrames, initialFrame, highPrecision, filterType, keepPool,...
+    sigmas, nWorkers, app, kernelSize, weka, justTifs, ignoreMemoryCheck,...
+    classifierFolder, classifierPathCh1, customML, noSave,numType, gpu,saveAsMat, saveType]...
+    ...
+    = determineFilterMovieOptions(FrameInfo,varargin)
 
 varargin = varargin{1};
 pixelSize = FrameInfo(1).PixelSize;
@@ -23,6 +27,10 @@ initialFrame = 1;
 %Added new argument to specify a preferred classifier name and enable automatic testing
 classifierPathCh1 = [];
 classifierFolder = [];
+numType = 'double';
+gpu = '';
+saveAsMat = false;
+saveType = '.tif';
 
 for i = 1:length(varargin)
     
@@ -47,6 +55,8 @@ for i = 1:length(varargin)
         
     elseif strcmpi(varargin{i}, 'highPrecision')
         highPrecision = 1;
+      elseif strcmpi(varargin{i}, 'noGPU')
+        gpu = 'noGPU';
     elseif strcmpi(varargin{i}, 'keepPool')
         keepPool = 1;
     elseif strcmpi(varargin{i}, 'app')
@@ -66,10 +76,17 @@ for i = 1:length(varargin)
         justTifs = true;
         
     elseif strcmpi(varargin{i}, 'noSave')
-        noSave = true;
-        
+        noSave = true;      
+        saveType = 'none';
+    elseif strcmpi(varargin{i}, 'saveAsMat') | strcmpi(varargin{i}, '.mat')
+        saveAsMat = true;
+        saveType = '.mat';
     elseif strcmpi(varargin{i}, 'weka')
         weka = true;
+    elseif strcmpi(varargin{i}, 'single')
+        numType = 'single';
+    elseif strcmpi(varargin{i}, 'double')
+        numType = 'double';
         
     elseif strcmpi(varargin{i}, 'customML')
         customML = 1;
@@ -127,5 +144,8 @@ end
 if isempty(sigmas) && ~customFilter
     sigmas = {1, round(42000 / pixelSize)}; %42000nm seems to be a good size empirically -AR
 end
+
+startParallelPool(nWorkers, displayFigures, keepPool);
+
 
 end

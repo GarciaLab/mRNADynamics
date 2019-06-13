@@ -1,9 +1,16 @@
-function [MeanOffsetVector, SDOffsetVector, NOffsetParticles] = offsetAndFlux(NChannels, ...
+function [MeanOffsetVector, SDOffsetVector, NOffsetParticles] =...
+    offsetAndFlux(...
     SkipFluctuations, ncFilter, ElapsedTime, CompiledParticles, DropboxFolder, ...
-    Prefix, ExperimentAxis, intArea, MeanVectorAll, SDVectorAll, MaxFrame, numFrames)
+    Prefix, ExperimentAxis, intArea, MeanVectorAll, SDVectorAll, MaxFrame, numFrames, SkipAll)
 %OFFSETANDFLUX Summary of this function goes here
 %   Detailed explanation goes here
-if NChannels==1
+
+MeanOffsetVector=[];
+SDOffsetVector=[];
+NOffsetParticles=[];
+
+ch = 1;
+
     
     %Is there a correlation between the fluctuations coming from the offset and
     %those observed in the traces? In order to figure this out I'll fit the
@@ -25,39 +32,39 @@ if NChannels==1
             
             try
                 %Deviation from offset with respect to spline
-                optFit = adaptiveSplineFit(double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]),...
-                    double([CompiledParticles{1}(FilteredParticles(j)).Off*intArea]),5);
-                SplineValues=ppval(optFit,double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]));
+                optFit = adaptiveSplineFit(double([ElapsedTime(CompiledParticles{ch}(FilteredParticles(j)).Frame)]),...
+                    double([CompiledParticles{ch}(FilteredParticles(j)).Off*intArea]),5);
+                SplineValues=ppval(optFit,double([ElapsedTime(CompiledParticles{ch}(FilteredParticles(j)).Frame)]));
                 
                 
                 
                 %Deviation of the raw data, without background subtraction, with
                 %respect to a spline.
-                DataFitRaw = adaptiveSplineFit(double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]),...
-                    double(CompiledParticles{1}(FilteredParticles(j)).FluoRaw),10);
-                DataFitRawValues=ppval(DataFitRaw,double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]));
+                DataFitRaw = adaptiveSplineFit(double([ElapsedTime(CompiledParticles{ch}(FilteredParticles(j)).Frame)]),...
+                    double(CompiledParticles{ch}(FilteredParticles(j)).FluoRaw),10);
+                DataFitRawValues=ppval(DataFitRaw,double([ElapsedTime(CompiledParticles{ch}(FilteredParticles(j)).Frame)]));
                 
                 
                 %                 %Deviation of the raw data minus the actual offset with respect to a
                 %                 %spline
-                %                 DataFitOld = adaptiveSplineFit(double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]),...
-                %                     double(CompiledParticles{1}(FilteredParticles(j)).FluoOld),10);
-                %                 DataSplineValuesOld=ppval(DataFitOld,double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]));
+                %                 DataFitOld = adaptiveSplineFit(double([ElapsedTime(CompiledParticles{ch}(FilteredParticles(j)).Frame)]),...
+                %                     double(CompiledParticles{ch}(FilteredParticles(j)).FluoOld),10);
+                %                 DataSplineValuesOld=ppval(DataFitOld,double([ElapsedTime(CompiledParticles{ch}(FilteredParticles(j)).Frame)]));
                 
                 
                 
                 %Deviation of the raw data minues the spline offset
-                DataFit = adaptiveSplineFit(double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]),...
-                    double(CompiledParticles{1}(FilteredParticles(j)).Fluo),10);
-                DataSplineValues=ppval(DataFit,double([ElapsedTime(CompiledParticles{1}(FilteredParticles(j)).Frame)]));
+                DataFit = adaptiveSplineFit(double([ElapsedTime(CompiledParticles{ch}(FilteredParticles(j)).Frame)]),...
+                    double(CompiledParticles{ch}(FilteredParticles(j)).Fluo),10);
+                DataSplineValues=ppval(DataFit,double([ElapsedTime(CompiledParticles{ch}(FilteredParticles(j)).Frame)]));
                 
                 
                 
                 %Put all the data together for the plot
-                OffsetFluct=[OffsetFluct,CompiledParticles{1}(FilteredParticles(j)).Off*intArea-SplineValues];
-                DataRawFluct=[DataRawFluct,double(CompiledParticles{1}(FilteredParticles(j)).FluoRaw)-DataFitRawValues];
-                %DataOldFluct=[DataOldFluct,double(CompiledParticles{1}(FilteredParticles(j)).FluoOld)-DataSplineValuesOld];
-                DataSplineFluct=[DataSplineFluct,double(CompiledParticles{1}(FilteredParticles(j)).Fluo)-DataSplineValues];
+                OffsetFluct=[OffsetFluct,CompiledParticles{ch}(FilteredParticles(j)).Off*intArea-SplineValues];
+                DataRawFluct=[DataRawFluct,double(CompiledParticles{ch}(FilteredParticles(j)).FluoRaw)-DataFitRawValues];
+                %DataOldFluct=[DataOldFluct,double(CompiledParticles{ch}(FilteredParticles(j)).FluoOld)-DataSplineValuesOld];
+                DataSplineFluct=[DataSplineFluct,double(CompiledParticles{ch}(FilteredParticles(j)).Fluo)-DataSplineValues];
             end
         end
         
@@ -104,20 +111,20 @@ if NChannels==1
     
     %Look at the offset of each particle. Do they all look the same? This is
     %only for AP for now
-    if ~isempty(CompiledParticles{1})
-        if strcmpi(ExperimentAxis,'AP')
+    if ~isempty(CompiledParticles{ch})
+        if strcmpi(ExperimentAxis,'AP') & ~SkipAll
             figure(7)
             subplot(1,2,1)
             MaxAP=0;
             MinAP=inf;
             hold all
             if ~isempty(MaxFrame{1})
-                for i=1:length(CompiledParticles{1})
-                    if sum(CompiledParticles{1}(i).Frame==MaxFrame{1}(end-1))
-                        MaxAP=max([CompiledParticles{1}(i).MeanAP,MaxAP]);
-                        MinAP=min([CompiledParticles{1}(i).MeanAP,MinAP]);
-                        FramePos=find(CompiledParticles{1}(i).Frame==MaxFrame{1}(end-1));
-                        plot(CompiledParticles{1}(i).MeanAP,CompiledParticles{1}(i).Off(FramePos),'.k')
+                for i=1:length(CompiledParticles{ch})
+                    if sum(CompiledParticles{ch}(i).Frame==MaxFrame{1}(end-1))
+                        MaxAP=max([CompiledParticles{ch}(i).MeanAP,MaxAP]);
+                        MinAP=min([CompiledParticles{ch}(i).MeanAP,MinAP]);
+                        FramePos=find(CompiledParticles{ch}(i).Frame==MaxFrame{1}(end-1));
+                        plot(CompiledParticles{ch}(i).MeanAP,CompiledParticles{ch}(i).Off(FramePos),'.k')
                     end   
                 end
             else
@@ -138,11 +145,11 @@ if NChannels==1
             hold all
             if ~isempty(MaxFrame{1})
                 for i=1:length(CompiledParticles)
-                    if sum(CompiledParticles{1}(i).Frame==MaxFrame{1}(end))
-                        MaxAP=max([CompiledParticles{1}(i).MeanAP,MaxAP]);
-                        MinAP=min([CompiledParticles{1}(i).MeanAP,MinAP]);
-                        FramePos=find(CompiledParticles{1}(i).Frame==MaxFrame{1}(end));
-                        plot(CompiledParticles{1}(i).MeanAP,CompiledParticles{1}(i).Off(FramePos),'.k')
+                    if sum(CompiledParticles{ch}(i).Frame==MaxFrame{1}(end))
+                        MaxAP=max([CompiledParticles{ch}(i).MeanAP,MaxAP]);
+                        MinAP=min([CompiledParticles{ch}(i).MeanAP,MinAP]);
+                        FramePos=find(CompiledParticles{ch}(i).Frame==MaxFrame{1}(end));
+                        plot(CompiledParticles{ch}(i).MeanAP,CompiledParticles{ch}(i).Off(FramePos),'.k')
                     end
                 end
             else
@@ -169,10 +176,10 @@ if NChannels==1
         OffsetCell=cell(numFrames,1);
         
         
-        for i=1:length(CompiledParticles{1})
-            for j=1:length(CompiledParticles{1}(i).Frame)
-                OffsetCell{CompiledParticles{1}(i).Frame(j)}=[OffsetCell{CompiledParticles{1}(i).Frame(j)},...
-                    CompiledParticles{1}(i).Off(j)];
+        for i=1:length(CompiledParticles{ch})
+            for j=1:length(CompiledParticles{ch}(i).Frame)
+                OffsetCell{CompiledParticles{ch}(i).Frame(j)}=[OffsetCell{CompiledParticles{ch}(i).Frame(j)},...
+                    CompiledParticles{ch}(i).Off(j)];
             end
         end
         
@@ -187,7 +194,7 @@ if NChannels==1
         NOffsetParticles=[NParticlesOffsetTrace{:}];
         
         
-        if strcmpi(ExperimentAxis,'AP')
+        if strcmpi(ExperimentAxis,'AP') & ~SkipAll
             figure(8)
             intArea=109;  %109 pixels is the default area when the pixels are assumed to be 212nm x 212 nm AR 9/3/18
             errorbar(1:length(MeanOffsetVector),MeanOffsetVector*intArea,...
@@ -218,17 +225,9 @@ if NChannels==1
             axis square
             saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'Offset',filesep,'OffsetAndFluoTime-Displaced.tif'])
         end
-    else
-        MeanOffsetVector=[];
-        SDOffsetVector=[];
-        NOffsetParticles=[];
+
     end
-else
-    %This is just to make 2spot2color work by skipping the calculations for
-    %this function (JL 1/23/19).
-    MeanOffsetVector=[];
-    SDOffsetVector=[];
-    NOffsetParticles=[];
-end
+
+
 end
 
