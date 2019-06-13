@@ -135,17 +135,23 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
             fitSingleGaussian(snippet, neighborhood_Size, maxThreshold, ...
             widthGuess, offsetGuess, show_status, graphicsHandles);
         %fits: [amplitude, x position, x width, y position, y width, offset, angle]
+        
+        % @(A, x0, y0, rho, sigma_x, sigma_y, offset, offset_x, offset_y)
 
-        sigma_x = fits(3);
-        sigma_y = fits(5);
-        offset = fits(6);
-   
+%         sigma_x = fits(3);
+%         sigma_y = fits(5);
+%         offset = fits(6);
+
+    sigma_x = fits(5);
+        sigma_y = fits(6);
+        offset = fits(7);
         
         
         gaussianArea = pi*sigma_x*sigma_y; %in pixels. this is one width away from peak
         integration_radius = 6*intScale; %integrate 109 pixels around the spot or more optionally
         spot_x = fits(2) - snippet_size + centroid_x; %final reported spot position
-        spot_y = fits(4) - snippet_size + centroid_y;
+%         spot_y = fits(4) - snippet_size + centroid_y;
+spot_y = fits(3) - snippet_size + centroid_y;
         
         if show_status && ~isempty(graphicsHandles)
             dogAx = graphicsHandles(2);

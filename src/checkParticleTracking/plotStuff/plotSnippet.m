@@ -75,8 +75,8 @@ intScale = double(intScale);
                     gaussParams = [gaussParams, 0, 0];
                 end
                 try
-                    [mesh_y,mesh_x] = meshgrid(1:size(CurrentSnippet,2), 1:size(CurrentSnippet,1));
-                    g = gaussianForSpot(mesh_y, mesh_x, CurrentSnippet);
+                    [y,x] = meshgrid(1:size(CurrentSnippet,2), 1:size(CurrentSnippet,1));
+                    g = gaussianForSpot(y, x, CurrentSnippet);
                     gauss = g(gaussParams) + CurrentSnippet;
                 catch
                     %not sure in what situation this fails. -AR

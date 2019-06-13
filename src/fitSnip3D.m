@@ -127,7 +127,8 @@ if displayFigures
 end
 
 [SpotsFr.Fits(spot).fits3D, SpotsFr.Fits(spot).gauss3DIntensity,...
-    SpotsFr.Fits(spot).fits3DCI95, SpotsFr.Fits(spot).gauss3DIntensityCI95] = fitGaussian3D(snip3D, initial_params, zStep, pixelSize, fitOptions{:});
+    SpotsFr.Fits(spot).fits3DCI95,...
+    SpotsFr.Fits(spot).gauss3DIntensityCI95] = fitGaussian3D(snip3D, initial_params, zStep, pixelSize, fitOptions{:});
 
 %cast all as singles so the addition will work properly
 snippet_size = single(snippet_size); xSpot = single(xSpot); ySpot = single(ySpot); snipDepth = single(snipDepth); bZ = single(bZ);
