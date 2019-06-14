@@ -134,19 +134,24 @@ end
 %cast all as singles so the addition will work properly
 snippet_size = single(snippet_size); xSpot = single(xSpot); ySpot = single(ySpot); snipDepth = single(snipDepth); bZ = single(bZ);
 
-x = SpotsFr.Fits(spot).fits3D(2)  -snippet_size + xSpot;
-y = SpotsFr.Fits(spot).fits3D(3)  -snippet_size + ySpot;
-z = SpotsFr.Fits(spot).fits3D(4) -  snipDepth + bZ;
+x = SpotsFr.Fits(spot).fits3D(2) - snippet_size + xSpot;
+y = SpotsFr.Fits(spot).fits3D(3) - snippet_size + ySpot;
+z = SpotsFr.Fits(spot).fits3D(4) - snipDepth + bZ;
 
-dxLow = SpotsFr.Fits(spot).fits3DCI95(2, 1) - snippet_size + xSpot;
-dxHigh = SpotsFr.Fits(spot).fits3DCI95(2, 2) - snippet_size + xSpot;
-dyLow = SpotsFr.Fits(spot).fits3DCI95(3, 1) - snippet_size + ySpot;
-dyHigh = SpotsFr.Fits(spot).fits3DCI95(3, 2) - snippet_size + ySpot;
-dzLow = SpotsFr.Fits(spot).fits3DCI95(4, 1) - snipDepth + bZ;
-dzHigh = SpotsFr.Fits(spot).fits3DCI95(4, 2) - snipDepth + bZ;
+% dxLow = SpotsFr.Fits(spot).fits3DCI95(2, 1) - snippet_size + xSpot;
+% dxHigh = SpotsFr.Fits(spot).fits3DCI95(2, 2) - snippet_size + xSpot;
+% dyLow = SpotsFr.Fits(spot).fits3DCI95(3, 1) - snippet_size + ySpot;
+% dyHigh = SpotsFr.Fits(spot).fits3DCI95(3, 2) - snippet_size + ySpot;
+% dzLow = SpotsFr.Fits(spot).fits3DCI95(4, 1) - snipDepth + bZ;
+% dzHigh = SpotsFr.Fits(spot).fits3DCI95(4, 2) - snipDepth + bZ;
+
+dx = x - SpotsFr.Fits(spot).fits3DCI95(2, 1);
+dy = y - SpotsFr.Fits(spot).fits3DCI95(3, 1);
+dz = z - SpotsFr.Fits(spot).fits3DCI95(4, 1);
 
 SpotsFr.Fits(spot).GaussPos = single([x,y,z]);
-SpotsFr.Fits(spot).GaussPosCI95 = single([dxLow,dxHigh; dyLow, dyHigh; dzLow, dzHigh]);
+% SpotsFr.Fits(spot).GaussPosCI95 = single([dxLow,dxHigh; dyLow, dyHigh; dzLow, dzHigh]);
+SpotsFr.Fits(spot).GaussPosCI95 = single([dx, dy, dz]);
 
 try
     if ~isempty(dogSnip3D)
