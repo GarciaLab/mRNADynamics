@@ -33,6 +33,7 @@ nameSuffix = ['_ch', iIndex(spotChannel, 2)];
 dogProb = 'DOG_';
 
 isZPadded = false;
+try
 firstdogname = [dogProb, Prefix, '_', iIndex(1, 3), '_z', iIndex(1, 2), nameSuffix];
 
 firstdogpath = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,firstdogname];
@@ -74,6 +75,7 @@ if sum(firstDoG(:)) == 0
     isZPadded = true;
 end
 
+end
 FullDoGSlice = [];
 
 %%
