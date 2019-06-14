@@ -32,7 +32,7 @@ lsqOptions=optimset('Display','none');
 lb_offset = 1/10; %this is empirical. corresponds to a weak background of 1 pixel per ten having a value of 1.
 % lb = [0, 0, 0, 0, 0,lb_offset, 0, -med/2, -med/2];
 % ub = [max(snippet(:))*1.5, size(snippet, 2), size(snippet, 1), size(snippet, 2), size(snippet, 1), max(snippet(:)), 2*pi, med/2, med/2];
-% 
+%
 % [single_fit, ~, residual, ~, ~, ~, ~] = lsqnonlin(singleGaussian, ...
 %     initial_parameters,lb,ub, lsqOptions);
 
@@ -47,14 +47,14 @@ ub = [max(snippet(:))*1.5, size(snippet, 2), size(snippet, 1), 1, size(snippet, 
 
 %quality control. probably just noisy background so amplitude
 %should be close to offset in this case.
-% 
+%
 % if .1 > single_fit(3) | .1 > single_fit(5)...
 %         | single_fit(3) > size(snippet)/2 | single_fit(5) > size(snippet)/2
 %     initial_parameters = [lb_offset, round(length(snippet)/2), widthGuess, round(length(snippet)/2), ...
 %         widthGuess,med, 0, 0, 0];
 %     lb = [0, 0, 0, 0, 0,lb_offset, 0, -med/2, -med/2];
 %     ub = [median(snippet(:))/2, size(snippet, 1), size(snippet, 1), size(snippet, 2), size(snippet, 2), max(snippet(:)), 2*pi, med/2, med/2];
-%     
+%
 %     [single_fit, res1, residual, exitflag, output, lambda, jacobian] = lsqnonlin(singleGaussian, ...
 %         initial_parameters,lb,ub, lsqOptions);
 % end
@@ -75,7 +75,7 @@ GaussianIntensity = single(sum(sum(singleGaussian(single_fit) + snippet - single
 gaussian = single(singleGaussian(single_fit));
 mesh = {uint8(y), uint8(x)};
 
-if show_status && ~isempty(graphicsHandles)
+if show_status && ~isempty(graph icsHandles)
     gAx = graphicsHandles(4);
     snipAx = graphicsHandles(6);
     rawAx = graphicsHandles(8);

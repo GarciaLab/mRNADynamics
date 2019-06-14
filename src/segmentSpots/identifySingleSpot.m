@@ -137,12 +137,12 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
         %fits: [amplitude, x position, x width, y position, y width, offset, angle]
         
         % @(A, x0, y0, rho, sigma_x, sigma_y, offset, offset_x, offset_y)
-
-%         sigma_x = fits(3);
-%         sigma_y = fits(5);
-%         offset = fits(6);
-
-    sigma_x = fits(5);
+        
+        %         sigma_x = fits(3);
+        %         sigma_y = fits(5);
+        %         offset = fits(6);
+        
+        sigma_x = fits(5);
         sigma_y = fits(6);
         offset = fits(7);
         
@@ -150,8 +150,8 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
         gaussianArea = pi*sigma_x*sigma_y; %in pixels. this is one width away from peak
         integration_radius = 6*intScale; %integrate 109 pixels around the spot or more optionally
         spot_x = fits(2) - snippet_size + centroid_x; %final reported spot position
-%         spot_y = fits(4) - snippet_size + centroid_y;
-spot_y = fits(3) - snippet_size + centroid_y;
+        %         spot_y = fits(4) - snippet_size + centroid_y;
+        spot_y = fits(3) - snippet_size + centroid_y;
         
         if show_status && ~isempty(graphicsHandles)
             dogAx = graphicsHandles(2);
@@ -208,11 +208,11 @@ spot_y = fits(3) - snippet_size + centroid_y;
         
         sigma_x2 = 0;
         sigma_y2 = 0;
-%         sister_chromatid_distance = NaN; %leaving this here for now but should be removed. AR 4/3/2019
+        %         sister_chromatid_distance = NaN; %leaving this here for now but should be removed. AR 4/3/2019
         fixedAreaIntensity = sum(sum(snippet_mask)) - (offset*maskArea); %corrected AR 7/13/2018
-
+        
         dogFixedAreaIntensity = sum(dog_mask(:));
-%         fixedAreaIntensityCyl3 = NaN;
+        %         fixedAreaIntensityCyl3 = NaN;
         if doCyl
             fixedAreaIntensityCyl3 =  sum(sum(snippet_mask)) + sum(sum(snippet_mask_above))...
                 + sum(sum(snippet_mask_below)) - 3*offset*maskArea;
@@ -253,13 +253,13 @@ spot_y = fits(3) - snippet_size + centroid_y;
             Fits.GaussianIntensity = single(gaussianIntensity);
             Fits.CentralIntensity = single(intensity);
             Fits.DOGIntensity = single(max_dog);
-%             Fits.SisterDistance = sister_chromatid_distance;
+            %             Fits.SisterDistance = sister_chromatid_distance;
             Fits.ConfidenceIntervals = confidence_intervals;
             Fits.gaussParams = {fits};
             Fits.dogFixedAreaIntensity = single(dogFixedAreaIntensity);
             Fits.intArea = uint16(maskArea);
             Fits.z = uint8(zIndex);
-%             Fits.frame = uint16(currentFrame);
+            %             Fits.frame = uint16(currentFrame);
             Fits.discardThis = false;
             Fits.r = false;
             Fits.IntegralZ = logical(use_integral_center);
