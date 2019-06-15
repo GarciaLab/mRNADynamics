@@ -75,7 +75,7 @@ GaussianIntensity = single(sum(sum(singleGaussian(single_fit) + snippet - single
 gaussian = single(singleGaussian(single_fit));
 mesh = {uint8(y), uint8(x)};
 
-if show_status && ~isempty(graph icsHandles)
+if show_status && ~isempty(graphicsHandles)
     gAx = graphicsHandles(4);
     snipAx = graphicsHandles(6);
     rawAx = graphicsHandles(8);
