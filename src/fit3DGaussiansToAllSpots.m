@@ -81,7 +81,7 @@ for ch = spotChannels
     
 end
 
-if length(Spots) < 2
+if iscell(Spots) & length(Spots) < 2
     Spots = Spots{1};
 end
 
