@@ -1,5 +1,5 @@
 function [s_cells] = compileSchnitz(schnitzcells, frames_clean, setID, i, ...
-    cp_filenames, cp_protein, nc, ap_flag, FrameInfo, num_outputs, time_clean)
+    cp_filenames, cp_protein, nc, ap_flag, FrameInfo, num_outputs, time_clean, ap_ref_grid)
 %COMPILESCHNITZ Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -23,10 +23,13 @@ function [s_cells] = compileSchnitz(schnitzcells, frames_clean, setID, i, ...
             % add core nucleus info
             x = schnitzcells(e).cenx;            
             y = schnitzcells(e).ceny;  
-            s_cells(e_pass).xPos = NaN(sum(nc_filter),1);
-            s_cells(e_pass).xPos(ismember(frames_clean, e_frames)) = x(nc_filter);
-            s_cells(e_pass).yPos = NaN(sum(nc_filter),1);
-            s_cells(e_pass).yPos(ismember(frames_clean, e_frames)) = y(nc_filter); 
+            s_cells(e_pass).xPos = round(x(nc_filter));
+            s_cells(e_pass).yPos = round(y(nc_filter)); 
+            apPos = NaN(size(x(nc_filter)));
+            for m = 1:numel(apPos)
+                apPos(m) = ap_ref_grid(s_cells(e_pass).yPos(m),s_cells(e_pass).xPos(m));
+            end
+            s_cells(e_pass).apPos = apPos;            
             s_cells(e_pass).frames = nc_frames';            
             s_cells(e_pass).Nucleus = e; 
 
@@ -34,8 +37,8 @@ function [s_cells] = compileSchnitz(schnitzcells, frames_clean, setID, i, ...
             s_cells(e_pass).xMean = mean(x(nc_filter));
             s_cells(e_pass).yMean = mean(y(nc_filter));
             s_cells(e_pass).ncStart = nc;
-            % time and set info
-            s_cells(e_pass).time = time_clean;
+            % time and set info 
+            s_cells(e_pass).time = time_clean(ismember(frames_clean,e_frames));
 
             s_cells(e_pass).setID = setID;
             fn = cp_filenames{i}; % Get filename to store in struct  

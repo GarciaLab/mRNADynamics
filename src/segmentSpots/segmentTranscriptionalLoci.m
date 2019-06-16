@@ -90,8 +90,8 @@ end
 isZPadded = false;
 
 firstdogpath = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(1, 3), '_z', iIndex(1, 2),...
-        nameSuffix];
-    
+    nameSuffix];
+
 matsPresent = exist([firstdogpath, '.mat'], 'file');
 tifsPresent = exist([firstdogpath, '.tif'], 'file');
 
@@ -143,7 +143,7 @@ for current_frame = initialFrame:numFrames
         else
             dogZ = zIndex - 1;
         end
-                
+        
         try
             if isZPadded | ( ~isZPadded & (zIndex~=1 & zIndex~=zSize) )
                 if strcmpi(saveType, '.tif')

@@ -184,9 +184,24 @@ for i = 1:length(cp_filenames)
         time_clean = time_raw(first_frame:last_frame);    
         time_clean = time_clean - min(time_clean); % Normalize to start of nc    
         frames_clean = frames_raw(first_frame:last_frame);    
-
+        
+        % generate AP reference grid 
+        yDim = FrameInfo(1).LinesPerFrame;
+        xDim = FrameInfo(1).PixelsPerLine;
+        APAngle=atan2((coordPZoom(2)-coordAZoom(2)),(coordPZoom(1)-coordAZoom(1)));        
+        APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);            
+        APPosImage=zeros(yDim,xDim);        
+        for k=1:yDim
+            for j=1:xDim
+                Angle=atan2((k-coordAZoom(2)),(j-coordAZoom(1)));            
+                Distance=sqrt((coordAZoom(2)-k).^2+(coordAZoom(1)-j).^2);
+                APPosition=Distance.*cos(Angle-APAngle);
+                APPosImage(k,j)=APPosition/APLength;
+            end
+        end 
+        
         s_cells = compileSchnitz(schnitzcells, frames_clean, setID, i, ...
-            cp_filenames, cp_protein, nc, ap_flag, FrameInfo, num_outputs, time_clean);
+            cp_filenames, cp_protein, nc, ap_flag, FrameInfo, num_outputs, time_clean,APPosImage);
 
         % now add particle info
 

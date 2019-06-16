@@ -320,10 +320,10 @@ if ROI
             end
         end
     end
+    % Redefine the CompiledNuclei sorted out.
+    CompiledNuclei = CompileNuclei_ROI;
 end
 
-% Redefine the CompiledNuclei sorted out.
-CompiledNuclei = CompileNuclei_ROI;
 
 %% Create AP and nc filters
 
@@ -486,9 +486,9 @@ if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
         end
     else
         for ap=MinAPIndex:MaxAPIndex
-            MeanVectorAPCell2{ch,ap}=MeanVectorAPCell{ap};
-            SDVectorAPCell2{ch,ap}=SDVectorAPCell{ap};
-            NParticlesAPCell2{ch,ap}=NParticlesAPCell{ap};
+            MeanVectorAPCell2{ap}=MeanVectorAPCell{ap};
+            SDVectorAPCell2{ap}=SDVectorAPCell{ap};
+            NParticlesAPCell2{ap}=NParticlesAPCell{ap};
         end
 
         MeanVectorAP=cell2mat(MeanVectorAPCell2);

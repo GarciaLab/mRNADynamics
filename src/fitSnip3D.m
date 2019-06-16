@@ -33,6 +33,7 @@ nameSuffix = ['_ch', iIndex(spotChannel, 2)];
 dogProb = 'DOG_';
 
 isZPadded = false;
+try
 firstdogname = [dogProb, Prefix, '_', iIndex(1, 3), '_z', iIndex(1, 2), nameSuffix];
 
 firstdogpath = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,firstdogname];
@@ -74,6 +75,8 @@ if sum(firstDoG(:)) == 0
     isZPadded = true;
 end
 
+end
+FullDoGSlice = [];
 
 %%
 k = 1;
@@ -88,23 +91,23 @@ for z = zBot:zTop
     if z > 1 && z < zMax
         FullSlice=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(frame,3)...
             ,'_z' iIndex(z,2) '_ch' iIndex(spotChannel,2) '.tif']);
-        if isempty(dogs)
-            dog_name = [dogProb, Prefix, '_', iIndex(frame, 3), '_z', iIndex(dogZ, 2), nameSuffix, saveType];
-            dog_full_path = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,dog_name];
-            if ~isempty(dir([ProcPath, filesep, Prefix,'_', filesep, 'dogs']))
-                if strcmpi(saveType, '.tif')
-                    FullDoGSlice= double(imread(dog_full_path));
-                elseif strcmpi(saveType, '.mat')
-                    dog_name = [dogProb, Prefix, '_', iIndex(frame, 3), '_z', iIndex(dogZ, 2), nameSuffix, saveType];
-                    dog_full_path = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,dog_name];
-                    load(dog_full_path, 'plane');
-                    FullDoGSlice = double(plane);
+        try
+            if isempty(dogs)
+                dog_name = [dogProb, Prefix, '_', iIndex(frame, 3), '_z', iIndex(dogZ, 2), nameSuffix, saveType];
+                dog_full_path = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,dog_name];
+                if ~isempty(dir([ProcPath, filesep, Prefix,'_', filesep, 'dogs']))
+                    if strcmpi(saveType, '.tif')
+                        FullDoGSlice= double(imread(dog_full_path));
+                    elseif strcmpi(saveType, '.mat')
+                        dog_name = [dogProb, Prefix, '_', iIndex(frame, 3), '_z', iIndex(dogZ, 2), nameSuffix, saveType];
+                        dog_full_path = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,dog_name];
+                        load(dog_full_path, 'plane');
+                        FullDoGSlice = double(plane);
+                    end
                 end
             else
-                FullDoGSlice = [];
+                FullDoGSlice = dogs(:, :, dogZ, frame);
             end
-        else
-            FullDoGSlice = dogs(:, :, dogZ, frame);
         end
         snip3D(:,:,k) = double(FullSlice(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
             max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size))); %#ok<*SAGROW>
@@ -127,33 +130,41 @@ if displayFigures
 end
 
 [SpotsFr.Fits(spot).fits3D, SpotsFr.Fits(spot).gauss3DIntensity,...
-    SpotsFr.Fits(spot).fits3DCI95, SpotsFr.Fits(spot).gauss3DIntensityCI95] = fitGaussian3D(snip3D, initial_params, zStep, pixelSize, fitOptions{:});
+    SpotsFr.Fits(spot).fits3DCI95,...
+    SpotsFr.Fits(spot).gauss3DIntensityCI95] = fitGaussian3D(snip3D, initial_params, zStep, pixelSize, fitOptions{:});
 
 %cast all as singles so the addition will work properly
 snippet_size = single(snippet_size); xSpot = single(xSpot); ySpot = single(ySpot); snipDepth = single(snipDepth); bZ = single(bZ);
 
-x = SpotsFr.Fits(spot).fits3D(2)  -snippet_size + xSpot;
-y = SpotsFr.Fits(spot).fits3D(3)  -snippet_size + ySpot;
-z = SpotsFr.Fits(spot).fits3D(4) -  snipDepth + bZ;
+x = SpotsFr.Fits(spot).fits3D(2) - snippet_size + xSpot;
+y = SpotsFr.Fits(spot).fits3D(3) - snippet_size + ySpot;
+z = SpotsFr.Fits(spot).fits3D(4) - snipDepth + bZ;
 
-dxLow = SpotsFr.Fits(spot).fits3DCI95(2, 1) - snippet_size + xSpot;
-dxHigh = SpotsFr.Fits(spot).fits3DCI95(2, 2) - snippet_size + xSpot;
-dyLow = SpotsFr.Fits(spot).fits3DCI95(3, 1) - snippet_size + ySpot;
-dyHigh = SpotsFr.Fits(spot).fits3DCI95(3, 2) - snippet_size + ySpot;
-dzLow = SpotsFr.Fits(spot).fits3DCI95(4, 1) - snipDepth + bZ;
-dzHigh = SpotsFr.Fits(spot).fits3DCI95(4, 2) - snipDepth + bZ;
+% dxLow = SpotsFr.Fits(spot).fits3DCI95(2, 1) - snippet_size + xSpot;
+% dxHigh = SpotsFr.Fits(spot).fits3DCI95(2, 2) - snippet_size + xSpot;
+% dyLow = SpotsFr.Fits(spot).fits3DCI95(3, 1) - snippet_size + ySpot;
+% dyHigh = SpotsFr.Fits(spot).fits3DCI95(3, 2) - snippet_size + ySpot;
+% dzLow = SpotsFr.Fits(spot).fits3DCI95(4, 1) - snipDepth + bZ;
+% dzHigh = SpotsFr.Fits(spot).fits3DCI95(4, 2) - snipDepth + bZ;
+
+dx = x - SpotsFr.Fits(spot).fits3DCI95(2, 1);
+dy = y - SpotsFr.Fits(spot).fits3DCI95(3, 1);
+dz = z - SpotsFr.Fits(spot).fits3DCI95(4, 1);
 
 SpotsFr.Fits(spot).GaussPos = single([x,y,z]);
-SpotsFr.Fits(spot).GaussPosCI95 = single([dxLow,dxHigh; dyLow, dyHigh; dzLow, dzHigh]);
+% SpotsFr.Fits(spot).GaussPosCI95 = single([dxLow,dxHigh; dyLow, dyHigh; dzLow, dzHigh]);
+SpotsFr.Fits(spot).GaussPosCI95 = single([dx, dy, dz]);
 
-if ~isempty(dogSnip3D)
-    midind = ceil(size(dogSnip3D,3)/2);
-    if size(dogSnip3D,3) > 2
-        SpotsFr.Fits(spot).ampdog3 = single(sum(sum(sum(dogSnip3D(:,:,midind-1:midind+1)))) );
-        SpotsFr.Fits(spot).ampdog3Max = single(max(max(max(dogSnip3D(:,:,midind-1:midind+1))) ));
-    else
-        SpotsFr.Fits(spot).ampdog3 = [];
-        SpotsFr.Fits(spot).ampdog3Max = single(max(max(max(dogSnip3D(:,:,:)))));
+try
+    if ~isempty(dogSnip3D)
+        midind = ceil(size(dogSnip3D,3)/2);
+        if size(dogSnip3D,3) > 2
+            SpotsFr.Fits(spot).ampdog3 = single(sum(sum(sum(dogSnip3D(:,:,midind-1:midind+1)))) );
+            SpotsFr.Fits(spot).ampdog3Max = single(max(max(max(dogSnip3D(:,:,midind-1:midind+1))) ));
+        else
+            SpotsFr.Fits(spot).ampdog3 = [];
+            SpotsFr.Fits(spot).ampdog3Max = single(max(max(max(dogSnip3D(:,:,:)))));
+        end
     end
 end
 
