@@ -427,31 +427,6 @@ for NCh = 1:NChannels
     
 end
 
-%Figure out channel-specific information
-if NChannels == 1
-    
-    if contains(Channel1{1}, 'MCP') || contains(Channel1{1}, 'PCP')
-        nameSuffix = ['_ch', iIndex(1, 2)];
-        coatChannel = 1;
-    elseif contains(Channel2{1}, 'MCP') || contains(Channel2{1}, 'PCP')
-        nameSuffix = ['_ch', iIndex(2, 2)];
-        coatChannel = 2;
-    end
-    
-elseif strcmpi(ExperimentType, '2spot2color')
-    %We are assuming that channels 1 and 2 are assigned to coat
-    %proteins. We should do a better job with this.
-    coatChannels = [1, 2];
-    coatChannel = coatChannels(CurrentChannel);
-else
-    error('Experiment type not recognized')
-end
-
-%Update the name suffix
-if strcmpi(ExperimentType, '2spot2color')
-    nameSuffix = ['_ch', iIndex(coatChannel, 2)];
-end
-
 cc = 1;
 
 if ForCompileAll
@@ -466,7 +441,32 @@ SkipWaitForButtonPress = [];
 while (cc ~= 'x')
     
     %% Main loop - start
-    
+    %%
+    %Figure out channel-specific information
+    if NChannels == 1
+
+        if contains(Channel1{1}, 'MCP') || contains(Channel1{1}, 'PCP')
+            nameSuffix = ['_ch', iIndex(1, 2)];
+            coatChannel = 1;
+        elseif contains(Channel2{1}, 'MCP') || contains(Channel2{1}, 'PCP')
+            nameSuffix = ['_ch', iIndex(2, 2)];
+            coatChannel = 2;
+        end
+
+    elseif strcmpi(ExperimentType, '2spot2color')
+        %We are assuming that channels 1 and 2 are assigned to coat
+        %proteins. We should do a better job with this.
+        coatChannels = [1, 2];
+        coatChannel = coatChannels(CurrentChannel);
+    else
+        error('Experiment type not recognized')
+    end
+
+    %Update the name suffix
+    if strcmpi(ExperimentType, '2spot2color')
+        nameSuffix = ['_ch', iIndex(coatChannel, 2)];
+    end
+    %%
     numParticles = length(Particles{CurrentChannel});
     
     %Get the coordinates of all the spots in this frame
@@ -706,7 +706,7 @@ while (cc ~= 'x')
         DisplayRange = [];
     elseif cc == 'g' & UseHistoneOverlay%Increase histone channel contrast
         
-        if isempty(DisplayRange)'8
+        if isempty(DisplayRange)'
             DisplayRange = [min(min(ImageHis)), max(max(ImageHis)) / 1.5];
         else
             DisplayRange = [DisplayRange(1), DisplayRange(2) / 1.5];
