@@ -55,6 +55,7 @@ NParticlesDV = [];
 
 % Default values for Options
 ROI=false; % No ROI, as a default
+nonROI=false;
 xROI = false;
 yROI = false;
 NameString_ROI='';
