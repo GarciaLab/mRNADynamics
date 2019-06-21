@@ -389,8 +389,15 @@ if HistoneChannel && (APExperiment || DVExperiment)
             APPositions=Distances.*cos(Angles-APAngle);
             EllipsePos{i}(j)=APPositions/APLength;
             
-            DVPositions=Distances.*sin(Angles-APAngle);
-            EllipsePos_DV{i}(j)=DVPositions;
+            if DVExperiment && exist([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'], 'file')
+                load([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat']);
+                DVPositions=Distances.*sin(Angles-APAngle);
+                EllipsePos_DV{i}(j)=abs(DVPositions-DV_correction);
+            else
+                DVPositions=Distances.*sin(Angles-APAngle);
+                EllipsePos_DV{i}(j)=DVPositions;
+            end
+            
         end
     end
 end

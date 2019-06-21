@@ -4,7 +4,7 @@ function [binID, binArea] = binAxis(axisResolution, ...
 if strcmpi(axis, 'AP')
     binID=0:axisResolution:1;
 elseif strcmpi(axis, 'DV')
-    binID = -800:axisResolution:0; %why -800? AR 6/3/2019
+    binID = 0:axisResolution:1000; %why -800? AR 6/3/2019
 end
 
 %Create an image for the different AP bins

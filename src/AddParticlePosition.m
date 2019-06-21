@@ -696,7 +696,8 @@ if ~NoAP
     DV_correction = 0;
     
     if correctDV
-        DV_correction = FindDVShift_full(Prefix);
+        DV_correction = FindDVShift_full(Prefix,coordAZoom,coordPZoom);
+        save([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'],'DV_correction');
     end
     
     if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
@@ -714,7 +715,7 @@ if ~NoAP
                 
                 %Determine the distance perpendicular to the AP axis. This is a
                 %proxy for a DV axis.
-                Particles{ChN}(i).DVpos=Distances.*sin(Angles-APAngle)-DV_correction;
+                Particles{ChN}(i).DVpos=abs(Distances.*sin(Angles-APAngle)-DV_correction);
             end
         end
     end

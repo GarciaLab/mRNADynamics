@@ -1,4 +1,4 @@
-function  [DV_shift] = FindDVShift_full(Prefix, varargin)
+function  [DV_shift] = FindDVShift_full(Prefix,coordAZoom,coordPZoom,varargin)
 
 %% Part 1: Read image data
 
@@ -50,8 +50,10 @@ EmbryoName=Prefix(Dashes(3)+1:end);
 FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
 
 if size(FullEmbryo, 1) == 1024
-    AreaThresh = 20;
-    AreaMax = 100;
+    AreaThresh = 50;
+    AreaMax = 250;
+    %AreaThresh = 10;
+    %AreaMax = 100;
 elseif size(FullEmbryo, 2) == 2048
     AreaThresh = 100;
     AreaMax = 450;
@@ -143,6 +145,7 @@ Areas2=[ImProps2.Area];
 
 %For-loop to calculate the total fluorescence and average position of each cell
 parfor i=1:length(Areas2)
+    i
     %Generate the mask for the i-th cell
     ImMask=(ImLabel2==i);
     %Multiply the mask by the fluorescence image
@@ -283,8 +286,8 @@ mygauss = fittype('a1*exp(-((x-b1)/c1)^2)',...
 %parameters
 
 options = fitoptions(mygauss);
-%options.Lower = [0 -Inf 100];
-%options.Upper = [Inf Inf 500];
+options.Lower = [0 -Inf 100];
+options.Upper = [Inf Inf Inf];
 [temp_gauss, temp_gof] = fit(DVpos',Cell_Fluo',mygauss,options);
 
 %Plot fitted data
