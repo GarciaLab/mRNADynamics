@@ -715,7 +715,11 @@ if ~NoAP
                 
                 %Determine the distance perpendicular to the AP axis. This is a
                 %proxy for a DV axis.
-                Particles{ChN}(i).DVpos=abs(Distances.*sin(Angles-APAngle)-DV_correction);
+                if correctDV
+                    Particles{ChN}(i).DVpos=abs(Distances.*sin(Angles-APAngle)-DV_correction);
+                else
+                    Particles{ChN}(i).DVpos=Distances.*sin(Angles-APAngle);
+                end
             end
         end
     end
