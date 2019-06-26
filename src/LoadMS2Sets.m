@@ -114,6 +114,9 @@ for i=1:length(CompiledSets)
         % because what if the MovieDataBase is in a different folder from
         % the CompiledParticles.mat? EL 11/29
         slashes = strfind(DropboxFolder,'/');
+        if isempty(slashes)
+            slashes = strfind(DropboxFolder,'\');
+        end
         warning(['Couldn''t find this project''s moviedatabase.csv in your ' ...
             DropboxFolder(slashes(end)+1:end) ...
             ' folder. Trying default dropbox folder.'])
