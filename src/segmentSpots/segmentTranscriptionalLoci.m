@@ -35,7 +35,7 @@ end
 if Weka
     MLFlag = 'ML';
     dogStr = 'prob';
-    Threshold = 5000;
+%     Threshold = 5000;
 else
     MLFlag = '';
     dogStr = 'DOG_';
