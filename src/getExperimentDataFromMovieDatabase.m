@@ -15,7 +15,6 @@ function [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolut
   CoatProtein = getValueFromMovieDatabase(movieDatabase, PrefixRow, 'CoatProtein');
   StemLoop = getValueFromMovieDatabase(movieDatabase, PrefixRow, 'StemLoop');
   APResolution = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'APResolution'));
-  DVResolution = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'DVResolution'));
   Channel1 = { getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel1') };
   Channel2 = { getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel2') };
   Objective = getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Objective');
@@ -38,6 +37,14 @@ function [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolut
   catch 
       Channel3 = {'DoesNotExist'};
   end
+  
+  % For Channel3, make this optional
+  try ~isempty(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'DVResolution'));
+      DVResolution = str2double(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'DVResolution'));
+  catch 
+      DVResolution = NaN;
+  end
+
   
   % Making prophase and metaphase time points optional
   % assuming that nuclear cycles included are 9-14
