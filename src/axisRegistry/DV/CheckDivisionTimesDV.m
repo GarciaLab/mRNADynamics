@@ -1,11 +1,11 @@
-function CheckDivisionTimes(varargin)
+function CheckDivisionTimesDV(varargin)
 
 %The idea is to determine division times with a higher spatial resolution
-%by doing it per AP bin.
+%by doing it per DV bin.
 
 %m n: Move between nuclear cycles
 %, .: Move between frames
-%Click: Division of clicked AP bin in current frame
+%Click: Division of clicked DV bin in current frame
 %r  : Reset the information for the current nuclear cycle
 %s  : Save the information
 %x  : Save and quit
@@ -36,21 +36,12 @@ Date=Prefix(1:Dashes(3)-1);
 EmbryoName=Prefix(Dashes(3)+1:end);
 
 
-%See if we're dealing with a Bcd case
-if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
-        (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
-    SourcePath=[SourcePath,filesep,'..',filesep,'..',filesep,'Bcd-GFP'];
-end
-
-
-
-
 D=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
 ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,D(end).name]);
 
 
 
-%Get the information about the AP axis as well as the image shifts
+%Get the information about the DV axis as well as the image shifts
 %used for the stitching of the two halves of the embryo
 load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
 
@@ -60,16 +51,18 @@ if ~exist('coordPZoom', 'var')
     load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
 end
 
-%Angle between the x-axis and the AP-axis
+%Angle between the x-axis and the DV-axis
 APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
-%Correction for if APAngle is in quadrants II or III
+%Correction for if DVAngle is in quadrants II or III
 if coordPZoom(1)-coordAZoom(1) < 0
     APAngle = APAngle + pi;
 end
 APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
 
+%need to double-check this.
+DVAngle = APAngle + (pi/2);
 
-APPosImage=zeros(size(ZoomImage));
+DVPosImage=zeros(size(ZoomImage));
 [Rows,Columns]=size(ZoomImage);
 
 for i=1:Rows
@@ -82,42 +75,42 @@ for i=1:Rows
         
         
         Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
-        APPosition=Distance.*cos(Angle-APAngle);
-        APPosImage(i,j)=APPosition/APLength;
+        DVPosition=Distance.*cos(Angle-DVAngle);
+        DVPosImage(i,j)=DVPosition/DVLength;
     end
 end
 
-[DateFromDateColumn, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
+[DateFromDateColumn, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, DVResolution,...
     Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
     nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
 
-APbinID=0:APResolution:1;
+DVbinID=0:DVResolution:1;
 
 
-APPosBinImage=zeros(size(APPosImage));
-for i=1:(length(APbinID)-1)
-    FilteredMask=(APbinID(i)<=APPosImage)&(APbinID(i+1)>APPosImage);
+DVPosBinImage=zeros(size(DVPosImage));
+for i=1:(length(DVbinID)-1)
+    FilteredMask=(DVbinID(i)<=DVPosImage)&(DVbinID(i+1)>DVPosImage);
     
-    APPosBinImage=APPosBinImage+FilteredMask*i;
+    DVPosBinImage=DVPosBinImage+FilteredMask*i;
 end
 
 
 %Load the division information if it's already there
-if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'], 'file')
-    load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'], 'APDivision')
-    %Check if we changed the number of AP bins
-    if size(APDivision,2)~=length(APbinID)
-        APDivision=zeros(14,length(APbinID));
+if exist([DropboxFolder,filesep,Prefix,filesep,'DVDivision.mat'], 'file')
+    load([DropboxFolder,filesep,Prefix,filesep,'DVDivision.mat'], 'DVDivision')
+    %Check if we changed the number of DV bins
+    if size(DVDivision,2)~=length(DVbinID)
+        DVDivision=zeros(14,length(DVbinID));
     end
 else
     %Matrix where we'll store the information about the divisions
-    APDivision=zeros(14,length(APbinID));
+    DVDivision=zeros(14,length(DVbinID));
 end
 
 
-%Show the frames on top of the AP bins
+%Show the frames on top of the DV bins
 figureOverlay=figure;
 axOverlay = axes(figureOverlay);
 
@@ -145,24 +138,24 @@ while (cc~='x')
     
     
     %Generate the image with the information about divisions
-    %Green: This AP bin divided in the current frame
-    %Blue: This AP bin has been determined, but divided in another frame
+    %Green: This DV bin divided in the current frame
+    %Blue: This DV bin has been determined, but divided in another frame
     %than the current one
-    %Red: The division of this AP bin has not been determined.
+    %Red: The division of this DV bin has not been determined.
     
-    BlueImage=zeros(size(APPosBinImage));
-    GreenImage=zeros(size(APPosBinImage));
-    RedImage=zeros(size(APPosBinImage));
+    BlueImage=zeros(size(DVPosBinImage));
+    GreenImage=zeros(size(DVPosBinImage));
+    RedImage=zeros(size(DVPosBinImage));
     
-    for i=1:length(APDivision(CurrentNC,:))
-        if APDivision(CurrentNC,i)
-            if APDivision(CurrentNC,i)==CurrentFrame
-                GreenImage(APPosBinImage==i)=i;
+    for i=1:length(DVDivision(CurrentNC,:))
+        if DVDivision(CurrentNC,i)
+            if DVDivision(CurrentNC,i)==CurrentFrame
+                GreenImage(DVPosBinImage==i)=i;
             else
-                BlueImage(APPosBinImage==i)=i;
+                BlueImage(DVPosBinImage==i)=i;
             end
         else
-            RedImage(APPosBinImage==i)=i;
+            RedImage(DVPosBinImage==i)=i;
         end
     end
     
@@ -205,17 +198,17 @@ while (cc~='x')
         
         %Reset the information
     elseif (ct~=0)&(cc=='r')
-        APDivision(CurrentNC,:)=0;
+        DVDivision(CurrentNC,:)=0;
         
         %Save
     elseif (ct~=0)&(cc=='s')
-        save([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'APDivision')
-        disp('APDivision.mat saved.');
+        save([DropboxFolder,filesep,Prefix,filesep,'DVDivision.mat'],'DVDivision')
+        disp('DVDivision.mat saved.');
         %Select a time for division
     elseif (ct==0)&(strcmp(get(figureOverlay,'SelectionType'),'normal'))
         cc=1;
         if (cm(1,2)>0)&(cm(1,1)>0)&(cm(1,2)<=Rows)&(cm(1,1)<=Columns)
-            APDivision(CurrentNC,APPosBinImage(round(cm(1,2)),round(cm(1,1))))=CurrentFrame;
+            DVDivision(CurrentNC,DVPosBinImage(round(cm(1,2)),round(cm(1,1))))=CurrentFrame;
         end
         
         %Debug mode
@@ -225,6 +218,6 @@ while (cc~='x')
 end
 
 
-save([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'APDivision');
-disp('APDivision.mat saved.');
+save([DropboxFolder,filesep,Prefix,filesep,'DVDivision.mat'],'DVDivision');
+disp('DVDivision.mat saved.');
 close(figureOverlay);

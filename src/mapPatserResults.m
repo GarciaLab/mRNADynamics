@@ -21,10 +21,12 @@ function mapPatserResults(path, varargin)
 %
 % Documented by: Emma Luu(emma_luu@berkeley.edu)
 
+offset = [];
+
 for arg = 1:length(varargin)
     if strcmpi(varargin{arg}, 'index')
         offset = varargin{arg+1};
-    end  
+    end
 end
 
 close all force;
@@ -47,11 +49,6 @@ for i = 1:length(s0)
     
     poswidth = strfind(tinverse(pos0:length(tinverse)), ' :x');
     s02{i} = t((s1(i)+length(expression1)):(s1(i)+length(expression1)+8)); % 8 = # of characters before score=
-    %         try
-    %             postf = strfind(tinverse(pos:length(tinverse)), '_FT');
-    %         catch
-    %             postf = strfind(tinverse(pos:length(tinverse)), '_FT');
-    %         end
     b= postf(1)+pos0;
     c = poswidth(1)+pos0;
     width{i} = flip(tinverse(c-3:c-2));
@@ -73,33 +70,22 @@ complementSiteIndices = [];
 for i = 1:length(s01)
     s = s01{i};
     s2 = s02(i);
-    values(i) = str2double(flip(s{1})); 
+    values(i) = str2double(flip(s{1}));
     % making different arrays for sequence and complement sequence locations.
     if isnan(str2double(s2)) %checking if this the complement (#C)
         complementPositionCounter = complementPositionCounter + 1;
         complementLocation(complementPositionCounter) = str2double(erase(s2,'C')); % Removing the C
         complementSiteIndices(complementPositionCounter) = i;% an array to store the indices of the sites.
-        complementFootprints(complementPositionCounter) = footprints(i);
-        complementTFs(complementPositionCounter) = tf(i); %useful for debugging and validation
-        cVals(complementPositionCounter) = values(i);
-
     else
         positionCounter = positionCounter + 1;
         location(positionCounter) = str2double(s2);
         siteIndices(positionCounter) = i;% an array to store the indices of the sites.
-        forwardFootprints(positionCounter) = footprints(i);
-        forwardTFs(positionCounter) = tf(i); %useful for debugging and validation
-        fVals(positionCounter) = values(i);
     end
 end
 tf = flip(tf);
 values = flip(values);
 footprints = flip(footprints);
 
-fLoc = location;
-cFLoc = complementLocation;
-fInd = siteIndices;
-cInd = complementSiteIndices;
 
 %sorting by score for colorbar
 [location,siteIndices] = sortScore(location,values,siteIndices);
@@ -209,52 +195,55 @@ for i = 1:length(complementLocation)
 end
 fclose(fileID);
 
+if ~isempty(offset)
 %%
-%make a .gb file with annotations
+    %make a .gb file with annotations
 
-fileName = [path(1:length(path)-4),'.gb'];
-fid = fopen(fileName, 'w');
-fidIn = fopen('E:\Armando\LivemRNA\Data\Dropbox\pib-phsp70-ms2v5-lacz.gb', 'r');
+    fileName = [path(1:length(path)-4),'.gb'];
+    fid = fopen(fileName, 'w');
+    fidIn = fopen('E:\Armando\LivemRNA\Data\Dropbox\pib-phsp70-ms2v5-lacz.gb', 'r');
 
 
-fin = fscanf(fidIn, '%c');
-qI = strfind(fin, 'Qualifiers');
-fprintf(fid, '%c', fin(1:qI+length('Qualifiers')));
+    fin = fscanf(fidIn, '%c');
+    qI = strfind(fin, 'Qualifiers');
+    fprintf(fid, '%c', fin(1:qI+length('Qualifiers')));
 
-offsetLocation = location + offset - 1;
-offsetComplementLocation = complementLocation + offset - 1;
 
-for i = 1:length(offsetLocation)
-    
-    endLocation = offsetLocation(i) + footprints(siteIndices(i)) - 1;
-    
-    if i == 1
-        fprintf(fid, '%c\r\n', '');
-    end
+    offsetLocation = location + offset - 1;
+    offsetComplementLocation = complementLocation + offset - 1;
+
+    for i = 1:length(offsetLocation)
+
+        endLocation = offsetLocation(i) + footprints(siteIndices(i)) - 1;
+
+        if i == 1
+            fprintf(fid, '%c\r\n', '');
+        end
         fprintf(fid, '%c', ['     misc_feature    ',num2str(offsetLocation(i)), '..', num2str(endLocation)]);
         fprintf(fid, '%c\r\n', '');
         fprintf(fid, '%c', ['                     /label="',tf{siteIndices(i)},' score: ',num2str(round(values(siteIndices(i)))),'"']);
         if i ~= length(offsetLocation)
             fprintf(fid, '%c\r\n', '');
         end
-end
-
-
-%not sure if the complement location is at the end or beginning
-for i = 1:length(offsetComplementLocation)
-    
-    endLocation = offsetComplementLocation(i) + footprints(complementSiteIndices(i)) - 1;
-
-    if i == 1
-    fprintf(fid, '%c\r\n', '');
     end
-    fprintf(fid, '%c', ['     misc_feature    complement(',num2str(offsetComplementLocation(i)), '..', num2str(endLocation),')']);
-    fprintf(fid, '%c\r\n', '');
-    fprintf(fid, '%c', ['                     /label="',tf{complementSiteIndices(i)},' score: ',num2str(round(values(complementSiteIndices(i)))),'"']);
-    fprintf(fid, '%c\r\n', '');
+
+
+    %not sure if the complement location is at the end or beginning
+    for i = 1:length(offsetComplementLocation)
+
+        endLocation = offsetComplementLocation(i) + footprints(complementSiteIndices(i)) - 1;
+
+        if i == 1
+            fprintf(fid, '%c\r\n', '');
+        end
+        fprintf(fid, '%c', ['     misc_feature    complement(',num2str(offsetComplementLocation(i)), '..', num2str(endLocation),')']);
+        fprintf(fid, '%c\r\n', '');
+        fprintf(fid, '%c', ['                     /label="',tf{complementSiteIndices(i)},' score: ',num2str(round(values(complementSiteIndices(i)))),'"']);
+        fprintf(fid, '%c\r\n', '');
+    end
+    fprintf(fid, '%c', fin(qI+length('Qualifiers')+1:end));
+    fclose(fid);
 end
-fprintf(fid, '%c', fin(qI+length('Qualifiers')+1:end));
-fclose(fid);
 
 end
 
