@@ -11,7 +11,7 @@ function [Data, Prefixes, resultsFolder] = LoadMS2Sets(DataType, varargin)
 %dataStatus.xlsx that you wish to analyze.
 %
 %OPTIONS
-%No options
+%'dontCompare': Skip comparing experiment settings
 %
 %OUTPUT
 %Returns the Data structure containing all of the relevant datasets from your
@@ -24,11 +24,14 @@ function [Data, Prefixes, resultsFolder] = LoadMS2Sets(DataType, varargin)
 Prefixes = {};
 
 optionalResults = '';
+compareSettings = true;
 
 for i= 1:length(varargin)
     if strcmpi(varargin{i},'optionalResults')
         optionalResults = varargin{i+1};
     end
+    if strcmpi(varargin{i},'dontCompare')
+        compareSettings = false;
 end
 
 %Get some of the default folders
@@ -408,10 +411,12 @@ elseif  (~exist('Data','var')) && (~exist('DataNuclei','var'))
     error('No CompiledParticles found. Check DynamicsResults folder as well as DataStatus.XLSX.')
 end
 
-try
-    compareExperimentSettings(DropboxFolder,rawDataPath, DataType);
-catch
-    warning('Failed to run CompareExperimentSettings.');
+if compareSettings
+    try
+        compareExperimentSettings(DropboxFolder,rawDataPath, DataType);
+    catch
+        warning('Failed to run CompareExperimentSettings.');
+    end
 end
 
 end
