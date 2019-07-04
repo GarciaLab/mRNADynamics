@@ -1,10 +1,14 @@
-function averageDV(resultsFolder)
+function averageDV(Prefix)
+
+
+[~,~,DropboxFolder,~, PreProcPath,...
+    ~, ~, ~, ~, ~,~] = readMovieDatabase(Prefix);
+resultsFolder = [DropboxFolder, filesep, Prefix];
 
 load([resultsFolder, filesep, 'CompiledParticles.mat']);
 load([resultsFolder, filesep, 'APDivision.mat']);
 
-% meanDV12 = zeros(length(DVbinID));
-
+dvspresent = [];
 for ch = 1:length(CompiledParticles)
     cp = CompiledParticles{ch};
     %make common cycle
@@ -23,26 +27,73 @@ for ch = 1:length(CompiledParticles)
     frames12 = 1:min13-min12;
     frames13 = 1:min14-min13;
     frames14 = 1:(length(ElapsedTime)-min14);
+    cycleFrames = {frames12, frames13, frames14};
     
-    sumDV = {zeros(length(DVbinID), length(frames11)), zeros(length(DVbinID), length(frames12)),...
+    sumDV = {zeros(length(DVbinID), length(frames12)),...
         zeros(length(DVbinID), length(frames13)),zeros(length(DVbinID), length(frames14))};
     meanDV = sumDV;
-    countsDV = {ones(length(DVbinID), length(frames11)), ones(length(DVbinID), length(frames12)),...
-        ones(length(DVbinID), length(frames13)),ones(length(DVbinID), length(frames14))};
+    countsDV = {zeros(length(DVbinID), length(frames12)),...
+        zeros(length(DVbinID), length(frames13)),zeros(length(DVbinID), length(frames14))};
     for nc = 12:14
         for p = 1:length(cp)
             for dv = 1:length(DVbinID)
                 if cp(p).cycle == nc && cp(p).dvbin == dv
-                    sumDV{nc-10}(dv,cp(p).FramesWRTAnaphase) = sumDV{nc-10}(dv,cp(p).FramesWRTAnaphase) + cp(p).Fluo;
-                    countsDV{nc-10}(dv,cp(p).FramesWRTAnaphase) = countsDV{nc-10}(dv,cp(p).FramesWRTAnaphase) + 1;
+                    dvspresent = [dvspresent, dv];
+                    sumDV{nc-11}(dv,cp(p).FramesWRTAnaphase) = sumDV{nc-11}(dv,cp(p).FramesWRTAnaphase) + cp(p).Fluo;
+                    countsDV{nc-11}(dv,cp(p).FramesWRTAnaphase) = countsDV{nc-11}(dv,cp(p).FramesWRTAnaphase) + 1;
                 end
             end
         end
-        meanDV{nc-10} = sumDV{nc-10}./countsDV{nc-10};
+        meanDV{nc-11} = sumDV{nc-11}./countsDV{nc-11};
     end
 end
 
-save([resultsFolder, filesep, 'CompiledParticles.mat'],'meanDV', 'countsDV', 'sumDV','-append');
+dvspresent = unique(dvspresent);
+
+cumdv = {};
+close all;
+cm = magma;
+cmsize = size(cm, 1);
+cmslice = cm(1:floor(cmsize/max(dvspresent)):end, :);
+cmsize = size(cm, 1);
+for c = 1:3
+    curAv = meanDV{c};
+    nbins = size(curAv, 1);
+    time = 1:size(curAv, 2);
+    figure(c);
+    for dv = 1:nbins
+        cumdv{c}(dv) = nansum(curAv(dv, :));
+        subplot(1, 2, 1);
+        if cumdv{c}(dv)~=0
+            plot(time, curAv(dv, :), 'Color', cmslice(dv,:), 'lineWidth', 3, 'DisplayName', [num2str(DVbinID(dv)*100),'% dv']);
+        end
+        hold on
+    end
+    
+    title(['mean spot intensity. nc ', num2str(c+11)]);
+    xlabel('frames since anaphase');
+    ylabel('intensity (au)');
+    legend;
+    
+    subplot(1, 2, 2);
+%     plot(1:nbins, sl, 'lineWidth', 3);
+%     cumdvnan{c} = cumdv{c}
+    if length(dvspresent) > 2
+    h = colormapline(DVbinID(dvspresent), cumdv{c}(dvspresent),[], cmslice);
+    else
+     h = plot(DVbinID(dvspresent), cumdv{c}(dvspresent), 'Color',cmslice(dvspresent, :));   
+    end
+%     xlim([min(dvspresent) max(dvspresent)]);
+    set(h,'linewidth',3) 
+    title(['accumulated spot intensity. nc ', num2str(c+11)]);
+    xlabel('fraction dv');
+    ylabel('intensity (au)');    
+    
+end
+
+
+
+save([resultsFolder, filesep, 'CompiledParticles.mat'],'meanDV', 'countsDV', 'sumDV','cumdv','cycleFrames','-append');
 
 
 end

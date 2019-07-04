@@ -31,6 +31,10 @@ function AddParticlePosition(Prefix, varargin)
 %V2: Changed this function to use a correlation in order to center the
 %images.
 
+   %Default set of variables to save
+    saveVars={'coordA','coordP','coordAZoom','coordPZoom'};
+
+
 %Get the relevant folders for this data set
 [RawDynamicsPath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
     ~, ~] = DetermineAllLocalFolders(Prefix);
@@ -227,9 +231,7 @@ if ~NoAP
         
         %Figure out the different channels
         %NuclearChannel=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
-        % Let's use NuclearChannel, instead of making the code to guess
-        % which channel should be used for HisChannel and whether it should
-        % be inverted or not.
+
         
         if any(contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true))
             if SelectChannel
@@ -478,10 +480,10 @@ if ~NoAP
             im1 = ZoomImage;
             im2 = SurfImageResized;
             
-            if InvertHis
-                im1 = imcomplement(im1);
-                im2 = imcomplement(im2);
-            end
+%             if InvertHis
+%                 im1 = imcomplement(im1);
+%                 im2 = imcomplement(im2);
+%             end
             
             %             try
             %                 C = gather(normxcorr2(gpuArray(im1), gpuArray(im2)));
@@ -623,7 +625,10 @@ if ~NoAP
         ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
     coordAZoom=(coordA-[TopLeft(2),TopLeft(1)])*ZoomRatio;
 	coordPZoom=(coordP-[TopLeft(2),TopLeft(1)])*ZoomRatio;
-    
+    if exist('coordD', 'var')
+         coordDZoom=(coordD-[TopLeft(2),TopLeft(1)])*ZoomRatio;
+        coordVZoom=(coordV-[TopLeft(2),TopLeft(1)])*ZoomRatio;
+    end
     
     fullFigure = figure(7);
     fullAxes = axes(fullFigure);
@@ -655,7 +660,13 @@ if ~NoAP
     
     %Angle between the x-axis and the AP-axis
     APAngle=atan2((coordPZoom(2)-coordAZoom(2)),(coordPZoom(1)-coordAZoom(1)));
-    APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
+    APLength = norm(coordAZoom-coordPZoom);
+        if exist('coordD', 'var')
+            DVLength = norm(coordDZoom-coordVZoom);
+        else
+            DVLength = APLength/2; %rough estimate but surprisingly accurate
+        end
+    saveVars = [saveVars, 'APLength', 'DVLength'];
 
     APPosImage=zeros(size(ZoomImage));
     [Rows,Columns]=size(ZoomImage);
@@ -694,10 +705,11 @@ if ~NoAP
     hold(zoomOverlayAxes,'off')
     
     DV_correction = 0;
-    
+
     if correctDV
         DV_correction = FindDVShift_full(Prefix,coordAZoom,coordPZoom);
         save([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'],'DV_correction');
+        saveVars = [saveVars, 'DV_correction'];
     end
     
     if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
@@ -715,10 +727,15 @@ if ~NoAP
                 
                 %Determine the distance perpendicular to the AP axis. This is a
                 %proxy for a DV axis.
+                DVPositions = Distances.*sin(Angles-APAngle); %units of pixels on the surface of blastoderm. 
                 if correctDV
-                    Particles{ChN}(i).DVpos=abs(Distances.*sin(Angles-APAngle)-DV_correction);
+                    %ventral midline is dv_correction pixels away from the
+                    %AP axis. 
+                    Particles{ChN}(i).DVpos=abs(DVPositions-DV_correction)/DVLength;
+                    %so DVpos is pixels away from the ventral midline
+                    %across the blastoderm.
                 else
-                    Particles{ChN}(i).DVpos=Distances.*sin(Angles-APAngle);
+                    Particles{ChN}(i).DVpos=DVPositions/DVLength;
                 end
             end
         end
@@ -731,22 +748,21 @@ if ~NoAP
     
     %Save AP detection information
     
-    %Default set of variables to save
-    VariablesToSave={'coordA','coordP','coordAZoom','coordPZoom'};
+   
     %Information about shifts
     if exist('xShift', 'var')
-        VariablesToSave=[VariablesToSave,'xShift','yShift'];
+        saveVars=[saveVars,'xShift','yShift'];
     elseif  exist('xShift1', 'var')
-        VariablesToSave=[VariablesToSave,'xShift1','yShift1',...
+        saveVars=[saveVars,'xShift1','yShift1',...
             'xShift2','yShift2'];
     end
     %Rotation information
     if exist('zoom_angle', 'var')
         ImageRotation=zoom_angle;
-        VariablesToSave=[VariablesToSave,'ImageRotation'];
+        saveVars=[saveVars,'ImageRotation'];
     end
     
-    save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],VariablesToSave{:})
+    save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],saveVars{:})
     
     if exist('ManualAlignmentDone', 'var')
         if ManualAlignmentDone

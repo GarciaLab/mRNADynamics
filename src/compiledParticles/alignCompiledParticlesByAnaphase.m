@@ -1,4 +1,10 @@
-function alignCompiledParticlesByAnaphase(resultsFolder)
+function alignCompiledParticlesByAnaphase(Prefix)
+
+
+
+[~,~,DropboxFolder,~, PreProcPath,...
+    ~, ~, ~, ~, ~,~] = readMovieDatabase(Prefix);
+resultsFolder = [DropboxFolder, filesep, Prefix];
 
 load([resultsFolder, filesep, 'CompiledParticles.mat']);
 load([resultsFolder, filesep, 'APDivision.mat']);
@@ -8,6 +14,9 @@ for ch = 1:length(CompiledParticles)
         [~, apbin] = min(abs(APbinID -  CompiledParticles{ch}(p).MedianAP));
         [~, dvbin] = min(abs(DVbinID -  CompiledParticles{ch}(p).MedianDV));
         divFrames = APDivision(:, apbin);
+        if sum(divFrames) == 0
+            error('rerun checkdivisiontimes');
+        end
         actualFrames = CompiledParticles{ch}(p).Frame;
         inds = find(actualFrames(1) > divFrames);
         nc = inds(end);

@@ -176,30 +176,32 @@ for i=1:length(CompiledSets)
             DataTemp=orderfields(DataTemp);
             Data(i)=DataTemp;
         catch
-            warning('Incompatible analysis in the data sets. Re-check this part of the code.')
-            %If this fails figure out what's the missing field
-            DataTemp=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
-            FieldNamesData=fieldnames(Data);
-            FieldNamesDataTemp=fieldnames(DataTemp);
-            
-            %If there are new fields we'll just get rid of them here
-            if length(FieldNamesData)<length(FieldNamesDataTemp)
-                %Figure out which fields to copy
-                FieldsToCopy=FieldNamesDataTemp(~ismember(FieldNamesDataTemp,FieldNamesData));
-                
-                for j=1:length(FieldsToCopy)
-                    DataTemp=rmfield(DataTemp,FieldsToCopy{j});
-                    DataTemp=orderfields(DataTemp);
-                    warning(['Getting rid of field ', FieldsToCopy{j}])
-                end
-                Data(i)=DataTemp;
-            else
-                FieldsToCopy = FieldNamesData(~ismember(FieldNamesData,FieldNamesDataTemp));
-                for j=1:length(FieldsToCopy)
-                    DataTemp.(FieldsToCopy{j}) = {};
-                    DataTemp=orderfields(DataTemp);
-                end
-            end
+%             warning('Incompatible analysis in the data sets. Re-check this part of the code.')
+%             %If this fails figure out what's the missing field
+%             DataTemp=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
+%             FieldNamesData=fieldnames(Data);
+%             FieldNamesDataTemp=fieldnames(DataTemp);
+%             
+%             %If there are new fields we'll just get rid of them here
+%             if length(FieldNamesData)<length(FieldNamesDataTemp)
+%                 %Figure out which fields to copy
+%                 FieldsToCopy=FieldNamesDataTemp(~ismember(FieldNamesDataTemp,FieldNamesData));
+%                 
+%                 for j=1:length(FieldsToCopy)
+%                     DataTemp=rmfield(DataTemp,FieldsToCopy{j});
+%                     DataTemp=orderfields(DataTemp);
+%                     warning(['Getting rid of field ', FieldsToCopy{j}])
+%                 end
+%                 Data(i)=DataTemp;
+%             else
+%                 FieldsToCopy = FieldNamesData(~ismember(FieldNamesData,FieldNamesDataTemp));
+%                 for j=1:length(FieldsToCopy)
+%                     DataTemp.(FieldsToCopy{j}) = {};
+%                     DataTemp=orderfields(DataTemp);
+%                 end
+%             end
+            [Data, DataTemp] = addFields(Data, DataTemp);
+            Data(i) = DataTemp;
         end
         
         

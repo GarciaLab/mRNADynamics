@@ -649,7 +649,6 @@ if strcmpi(ExperimentType,'inputoutput')
 end
 
 
-
 %% Save everything
 
 %Now save all the information
@@ -679,6 +678,13 @@ savedVariables = [savedVariables,'APFilter', 'APbinArea', 'APbinID', 'AllTracesA
 
 save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
     savedVariables{:},'-v7.3');
+
+
+%%
+if DVExperiment
+    alignCompiledParticlesByAnaphase(Prefix);
+    averageDV(Prefix);
+end
 
 disp('CompiledParticles.mat saved.');
 

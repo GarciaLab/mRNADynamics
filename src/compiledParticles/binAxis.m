@@ -1,11 +1,9 @@
 function [binID, binArea] = binAxis(axisResolution, ...
     FrameInfo, coordAZoom, axisAngle, axisLength, minBinSize, axis)
 
-if strcmpi(axis, 'AP')
-    binID=0:axisResolution:1;
-elseif strcmpi(axis, 'DV')
-    binID = 0:axisResolution:1000; %why -800? AR 6/3/2019
-end
+binID=0:axisResolution:1;
+
+DVLength = axisLength/2; %rough estimate for now. 
 
 %Create an image for the different AP bins
 posImage=zeros(FrameInfo(1).LinesPerFrame,FrameInfo(1).PixelsPerLine);
@@ -24,7 +22,7 @@ for i=1:Rows
             posImage(i,j)=position/axisLength;
         elseif strcmpi(axis, 'DV') 
             position = Distance.*sin(Angle-axisAngle);
-            posImage(i,j) = position;
+            posImage(i,j) = position/DVLength;
         end
     end
 end

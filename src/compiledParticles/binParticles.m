@@ -11,8 +11,8 @@ function [ncFilterID, ncFilter, APFilter, APFilter_ROI, APFilter_nonROI, ...
 
 ncFilter = [];
 APFilter = cell(1, NChannels);
-APFilter_ROI = cell(1, NChannels); APFilter_nonROI = cell(1, NChannels); 
-DVFilter = cell(1, NChannels); DVFilter_ROI = cell(1, NChannels);  DVFilter_nonROI = cell(1, NChannels); 
+APFilter_ROI = cell(1, NChannels); APFilter_nonROI = cell(1, NChannels);
+DVFilter = cell(1, NChannels); DVFilter_ROI = cell(1, NChannels);  DVFilter_nonROI = cell(1, NChannels);
 
 
 if ~isnan(nc9)|~isnan(nc10)|~isnan(nc11)|~isnan(nc12)|~isnan(nc13)|~isnan(nc14)
@@ -108,6 +108,8 @@ if ~isnan(nc9)|~isnan(nc10)|~isnan(nc11)|~isnan(nc12)|~isnan(nc13)|~isnan(nc14)
                     end
                     
                 end
+                
+                
                 APFilter{ChN}=false(length(CompiledParticles{ChN}),length(APbinID));
                 for i=1:length(CompiledParticles{ChN})
                     APFilter{ChN}(i,find(APbinID<=CompiledParticles{ChN}(i).MeanAP, 1, 'last' ))=1;
@@ -118,35 +120,39 @@ if ~isnan(nc9)|~isnan(nc10)|~isnan(nc11)|~isnan(nc12)|~isnan(nc13)|~isnan(nc14)
             %DV filters:
             if strcmpi(ExperimentAxis,'DV')
                 %Divide the DV axis into boxes of a certain DV size. We'll see which
-                    %particle falls where.
-
-                if ROI==1
+                %particle falls where.
+                
+                if ROI
                     %Define two DVFilters for ROI and non-ROI respectively
                     DVFilter_ROI{ChN}=false(length(CompiledParticles_ROI{ChN}),length(DVbinID));
                     DVFilter_nonROI{ChN}=false(length(CompiledParticles_nonROI{ChN}),length(DVbinID));
                     DVFilter{ChN}=false(length(CompiledParticles{ChN}),length(DVbinID));
-
+                    
                     for i=1:length(CompiledParticles{ChN})
                         DVFilter{ChN}(i,max(find(DVbinID<=abs(CompiledParticles{ChN}(i).MeanDV))))=1; %JAKE: Added abs for DV
                     end
-
+                    
                     for i=1:length(CompiledParticles_ROI{ChN})
                         DVFilter_ROI{ChN}(i,max(find(DVbinID<=abs(CompiledParticles_ROI{ChN}(i).MeanDV))))=1; %JAKE: Added abs for DV
                     end
-
+                    
                     for i=1:length(CompiledParticles_nonROI{ChN})
                         DVFilter_nonROI{ChN}(i,max(find(DVbinID<=abs(CompiledParticles_nonROI{ChN}(i).MeanDV))))=1; %JAKE: Added abs for DV
                     end
-
-                else
-                    DVFilter{ChN}=logical(zeros(length(CompiledParticles{ChN}),length(DVbinID)));
-                    for i=1:length(CompiledParticles{ChN})
-                        DVFilter{ChN}(i,max(find(DVbinID<=abs(CompiledParticles{ChN}(i).MeanDV))))=1; %JAKE: Added abs for DV
-                    end
+                    
                 end
+                
+                
+                DVFilter{ChN}=false(length(CompiledParticles{ChN}),length(DVbinID));
+                
+                for i=1:length(CompiledParticles{ChN})
+                    DVFilter{ChN}(i,max(find(DVbinID<=abs(CompiledParticles{ChN}(i).MeanDV)))) = 1;
+                end
+                
+                
             end
         end
     end
 end
-end
 
+end
