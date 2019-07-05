@@ -705,9 +705,12 @@ if ~NoAP
     hold(zoomOverlayAxes,'off')
     
     DV_correction = 0;
-
+    
+    if exist([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'Classified_image.tif'], 'file')
+        correctDV = 1;
+    end
     if correctDV
-        DV_correction = FindDVShift_full(Prefix,coordAZoom,coordPZoom);
+        DV_correction = FindDVShift_full(Prefix);
         save([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'],'DV_correction');
         saveVars = [saveVars, 'DV_correction'];
     end

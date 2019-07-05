@@ -107,6 +107,7 @@ end
     legend;
     
     subplot(3, 2, nc*2);
+    cumdv{nc}(cumdv{nc}==0) = NaN;
 %     plot(1:nbins, sl, 'lineWidth', 3);
 %     cumdvnan{nc} = cumdv{nc}
     if length(dvspresent) > 2

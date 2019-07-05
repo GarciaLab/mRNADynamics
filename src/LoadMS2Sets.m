@@ -32,6 +32,7 @@ for i= 1:length(varargin)
     end
     if strcmpi(varargin{i},'dontCompare')
         compareSettings = false;
+    end
 end
 
 %Get some of the default folders
