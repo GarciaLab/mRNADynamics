@@ -1,5 +1,5 @@
 function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest,...
-    keepTifs, generateTifStacks, nuclearGUI, skipExtraction, rootFolder]...
+    keepTifs, generateTifStacks, nuclearGUI, skipExtraction, rootFolder, zslicesPadding]...
     ...
     = exportDataForLivemRNA_processInputParameters(varargin)
 
@@ -16,6 +16,7 @@ generateTifStacks = false;
 nuclearGUI = false;
 skipExtraction = false;
 rootFolder = '';
+zslicesPadding = false;
 
 k=1;
 while k<=length(varargin)
@@ -44,6 +45,8 @@ while k<=length(varargin)
         skipExtraction = true;
     elseif strcmpi(varargin{k}, 'rootFolder')
         rootFolder = varargin{k+1};
+    elseif strcmpi(varargin{k}, 'zslicesPadding')
+        zslicesPadding = true;
     else
         if isempty(rootFolder)
             Prefix = varargin{k};
