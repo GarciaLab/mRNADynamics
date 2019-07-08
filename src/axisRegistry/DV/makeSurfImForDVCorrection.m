@@ -1,4 +1,4 @@
-function makeSurfImForDVCorrection(Prefix)
+function classSurf = makeSurfImForDVCorrection(Prefix)
 
 %give this function the path to the surface image max projection as input.
 %the output is a classified image 
@@ -8,7 +8,8 @@ function makeSurfImForDVCorrection(Prefix)
 ~, ~] = DetermineAllLocalFolders(Prefix);
 
 %this is generated around line 400 of addparticleposition
-surf=imread([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'surf_max.tif']);
+dvPath = [DropboxFolder,filesep,Prefix,filesep,'DV'];
+surf=imread([dvPath,filesep,'surf_max.tif']);
 
 %%
 %let hough transform do its best
@@ -83,7 +84,19 @@ for i = 1:size(centers, 1)
 end
 
 classSurf = imresize(classSurf, .5);
-classFig = figure();
 imshow(classSurf);
 
-imwrite(classSurf, [DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'classSurf.tif']);
+
+if exist([dvPath, filesep, 'Classified_image.tif'], 'file')
+    answer = input('already found classified image. sure you want to overwrite? y/n', 's');
+        if strcmpi(answer, 'y')
+            imwrite(classSurf, [dvPath,filesep,'Classified_image.tif']);
+            disp('overrwrote it');
+        else
+            disp('ok not overwriting');
+        end
+else
+    imwrite(classSurf, [dvPath,filesep,'Classified_image.tif']);
+end
+
+end

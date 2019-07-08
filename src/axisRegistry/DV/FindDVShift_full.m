@@ -35,7 +35,12 @@ FullEmbryoSurf=imread([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'surf_m
 
 %% Part 2: Label Image (Classified with Weka)
 figure(1)
-classifiedFullEmbryoImage = imread([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'Classified_image.tif']);
+if exist([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'Classified_image.tif'], 'file')
+    classifiedFullEmbryoImage = imread([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'Classified_image.tif']);
+else
+    disp('didn''t find classified surface image. running script to make it now.');
+    classifiedFullEmbryoImage = makeSurfImForDVCorrection(Prefix);
+end
 invertedClassifiedFullEmbryoImage = 1-classifiedFullEmbryoImage;    %Inverse image
 imshow(invertedClassifiedFullEmbryoImage,[]);
 ImLabel=bwlabel(invertedClassifiedFullEmbryoImage,4); %First, we need to give each regions of 1s a unique identity.
