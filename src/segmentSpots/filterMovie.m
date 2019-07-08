@@ -45,7 +45,8 @@
 %                  or filters
 %                 ex. filterMovie(Prefix,'customFilter', 'Structure_largest', {1, 8})
 %           Filter Options:
-%               'Gaussian_blur''Median'
+%               'Gaussian_blur'
+%               'Median'
 %               'Maximum'
 %               'Laplacian''Minimum'
 %               'Mean'
@@ -54,6 +55,8 @@
 %
 %               for the 3D versions of these filters, append '_3D' to the
 %               end of the filtername. output is still 2D tifs.
+% saveAsMat: save as a .mat file instead of .tif
+% nogpu: do not use the gpu
 %
 %
 % Author (contact): Armando Reimer (areimer@berkeley.edu) / Matías Potel Feola (matias.potel.feola@gmail.com)
