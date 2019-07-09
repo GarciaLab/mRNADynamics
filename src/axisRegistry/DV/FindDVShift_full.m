@@ -2,13 +2,15 @@ function  [DV_shift] = FindDVShift_full(Prefix)
 
 %% Part 1: Read image data
 
+disp('Performing DV correction...');
+
 [SourcePath, ~, DefaultDropboxFolder, DropboxFolder, ~, ~,...
 ~, ~] = DetermineAllLocalFolders(Prefix);
 
 %Figure out what type of experiment we have. Note: we name the var "DateFromDateColumn" to avoid shadowing previously defined "Date" var.
 [DateFromDateColumn, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
 Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 % Read full embryo image (surf, mid)
 midImage=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
@@ -83,7 +85,7 @@ ImLabel2=bwlabel(NewImage); %relabel image using bwlabel
 
 
 %% Part 4: Calculate average fluorescence and position for each cell
-ImFluo = FullEmbryoSurf; %Load surface image
+ImFluo = double(FullEmbryoSurf); %Load surface image
 %Finally, we want to calculate the mean fluorescence per
 %pixel per cell for all the cells on this image. Dividing
 %by area will make our results a little bit more
@@ -93,8 +95,8 @@ ImProps2=regionprops(ImLabel2,'Area'); %Let's get a list of the new areas then
 Areas2=[ImProps2.Area];
 [x_pos, y_pos] = meshgrid(1:size(classifiedFullEmbryoImage,2), 1:size(classifiedFullEmbryoImage,1));
 for i=1:length(Areas2) %For-loop to calculate the total fluorescence and average position of each cell
-    ImMask=(ImLabel2==i);     %Generate the mask for the i-th cell
-    SingleCellImFluo=immultiply(ImMask,ImFluo);     %Multiply the mask by the fluorescence image
+    ImMask= double(ImLabel2==i);     %Generate the mask for the i-th cell
+    SingleCellImFluo=ImMask.*ImFluo;     %Multiply the mask by the fluorescence image
     CellFluo(i)=sum(sum(SingleCellImFluo));     %Calculate and store the total fluorescence
     Im_x = ImMask.*x_pos;
     Im_y = ImMask.*y_pos;
@@ -165,14 +167,6 @@ AP = P - A;
 APMid = (P+A)*.5;
 plot(APMid(1), APMid(2), 'o-y')
 
-DV = [AP(2), -AP(1)];
-% APAngle = atan2((coordP(2)-coordA(2)),(coordP(1)-coordA(1)));
-% DVAngle = atan2(DV(1), DV(2));
-% dvmag = norm(AP);
-% DV2 = [DV(1)-dvmag*cos(DVAngle), DV(2)-dvmag*sin(DVAngle)]
-% plot([APMid(1),DV2(1)],[APMid(2),DV2(2)],'o-r','LineWidth',2);
-% 
-
 
 %Find the equations of the lines
 mAP=(APy(1)-APy(2))/(APx(1)-APx(2)); %slope of the ap axis
@@ -180,9 +174,7 @@ bAP=APy(1)-mAP*APx(1); %intercept of the ap axis
 
 %Invert mAP to get tangent line that is perpendicular
 mDV = -1/mAP;
-dvx = APMid(1);
-dvy = dvx*mDV + APMid(2);
-plot([APMid(1), dvx], [APMid(2), dvy], 'o-y')
+
 goodNucleus = 0;
 
 for i=1:length(Areas2)
@@ -204,11 +196,11 @@ for i=1:length(Areas2)
         goodNucleus = goodNucleus + 1;
     end
 
-    %if (x_ave(i)-x_int)<0
-    %    DVpos(i) = -DVpos(i);
-    %end
-%     plot([x_int,x_ave(i)],[y_int,y_ave(i)],'o-r','LineWidth',0.5);
-%     pause(0.1);
+%     if (x_ave(i)-x_int)<0
+%        DVpos(i) = -DVpos(i);
+%     end
+    plot([x_int,x_ave(i)],[y_int,y_ave(i)],'o-r','LineWidth',0.5);
+    pause(0.1);
 end
 
 figure(7);
