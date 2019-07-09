@@ -92,6 +92,7 @@ clear MeanLinearFits
 clear MeanFitsUp
 clear MeanLinearFitsUp
 clear Schnitzcells
+clear MeanFitsMCMC
 
 
 
@@ -256,6 +257,13 @@ for i=1:length(CompiledSets)
             warning('MeanFitsV3.mat not found');
         end
         
+        %Fit results assuming the same slopes
+        if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsMCMC.mat'],'file')
+            MeanFitsMCMC(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsMCMC.mat']);
+        else
+            warning('MeanFitsMCMC.mat not found');
+        end
+        
         try
             Schnitzcells(i)=load([DropboxFolder,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat'], 'schnitzcells');
         catch
@@ -372,6 +380,11 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],'file')
         if exist('MeanLinearFitsUp','var')
             if i<=length(MeanLinearFitsUp)
                 Data(i).MeanLinearFitsUp=MeanLinearFitsUp(i).FitResults;
+            end
+        end
+        if exist('MeanFitsMCMC','var')
+            if i<=length(MeanFitsMCMC)
+                Data(i).MeanFitsMCMC=MeanFitsMCMC(i).MCMCresults;
             end
         end
         try
