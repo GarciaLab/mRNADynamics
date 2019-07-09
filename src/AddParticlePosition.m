@@ -395,10 +395,9 @@ if ~NoAP
         %%
         SurfImage = imrotate(SurfImage, -zoom_angle + full_embryo_angle);
         
-        if correctDV
-            maxSurfSavePath = [DropboxFolder,filesep,Prefix, filesep, 'DV', filesep, 'surf_max.tif'];
-            imwrite(SurfImage,maxSurfSavePath);
-        end
+        maxSurfSavePath = [DropboxFolder,filesep,Prefix, filesep, 'DV', filesep, 'surf_max.tif'];
+        imwrite(SurfImage,maxSurfSavePath);
+        
         
         clear ImageTemp
         

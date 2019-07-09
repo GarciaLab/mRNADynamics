@@ -1,4 +1,4 @@
-function [SkipStitchSchnitz, ExpandedSpaceTolerance, NoBulkShift, retrack] = DetermineTrackNucleiOptions(varargin)
+function [SkipStitchSchnitz, ExpandedSpaceTolerance, NoBulkShift, retrack, nWorkers] = DetermineTrackNucleiOptions(varargin)
 %DETERMINETRACKNUCLEIOPTIONS Processes varargin for TrackNuclei,
 %   See description of possible input arguments in TrackNuclei
     
@@ -7,6 +7,7 @@ function [SkipStitchSchnitz, ExpandedSpaceTolerance, NoBulkShift, retrack] = Det
     ExpandedSpaceTolerance = 1;
     NoBulkShift = false;
     retrack = false;
+    nWorkers = 8;
     
     for i = 1:length(varargin)
         if strcmpi(varargin{i},'stitchschnitz')
@@ -17,6 +18,8 @@ function [SkipStitchSchnitz, ExpandedSpaceTolerance, NoBulkShift, retrack] = Det
             NoBulkShift = true;
         elseif strcmpi(varargin{i}, 'retrack')
             retrack = true;
+        elseif strcmpi(varargin{i}, 'nWorkers')
+            nWorkers = varargin{i+1};
         end
     end
 end

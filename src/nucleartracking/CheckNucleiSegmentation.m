@@ -265,6 +265,6 @@ end
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 close all;
 disp('Ellipses saved. Running TrackNuclei to incorporate changes.')
-TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack');
+TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1);
 
 end
