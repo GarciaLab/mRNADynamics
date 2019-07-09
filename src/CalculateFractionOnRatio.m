@@ -5,6 +5,11 @@ function [MeanFracOn,SEFracOn,FracOn]=CalculateFractionOnRatio(Data,MinParticles
 %EllipsesOnAP and TotalEllipsesAP, so the fraction calculated is using any
 %nucleus that turns over over the course of the nuclear cycle.
 
+%Inputs:
+%   Data: array of compiled data (e.g. from LoadMS2Sets)
+%   MinParticles: minimum number of particles in each AP bin per dataset
+%   MinEmbryos: minimum number of embryos to average in each AP bin
+
 %Last updated 7/9/19 by Jonathan Liu.
 
 FracOn=nan(length(Data),length(Data(1).APbinID),3);
