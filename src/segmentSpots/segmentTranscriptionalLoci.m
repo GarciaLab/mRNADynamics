@@ -95,7 +95,7 @@ firstdogpath = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(1, 3), '_z
 matsPresent = exist([firstdogpath, '.mat'], 'file');
 tifsPresent = exist([firstdogpath, '.tif'], 'file');
 
-if ~strcmpi(saveType, 'none')
+if isempty(saveType)
     if tifsPresent & ~matsPresent
         saveType = '.tif';
     elseif matsPresent & ~tifsPresent

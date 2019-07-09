@@ -226,7 +226,6 @@ if ~NoAP
         ZoomRatio = ResizeFactor;
         
     else         
-        %This is so that the code doesn't freak out later
         SurfName=[];
         
         %Figure out the different channels

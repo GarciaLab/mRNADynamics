@@ -245,7 +245,6 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
             Fits.xFit = single(spot_x);
             Fits.yFit = single(spot_y);
             Fits.Offset = single(offset);
-            Fits.Area = single(gaussianArea);
             Fits.xFitWidth = single(sigma_x);
             Fits.yFitWidth = single(sigma_y);
             Fits.yDoG = uint16(centroid_y);
@@ -253,18 +252,15 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
             Fits.GaussianIntensity = single(gaussianIntensity);
             Fits.CentralIntensity = single(intensity);
             Fits.DOGIntensity = single(max_dog);
-            %             Fits.SisterDistance = sister_chromatid_distance;
             Fits.ConfidenceIntervals = confidence_intervals;
             Fits.gaussParams = {fits};
             Fits.dogFixedAreaIntensity = single(dogFixedAreaIntensity);
             Fits.intArea = uint16(maskArea);
             Fits.z = uint8(zIndex);
-            %             Fits.frame = uint16(currentFrame);
             Fits.discardThis = false;
             Fits.r = false;
             Fits.IntegralZ = logical(use_integral_center);
             Fits.FixedAreaIntensity3  = [];
-            Fits.FixedAreaIntensity5 = [];
             Fits.brightestZ =[];
             Fits.snippet_size = uint8(snippet_size);
         else
