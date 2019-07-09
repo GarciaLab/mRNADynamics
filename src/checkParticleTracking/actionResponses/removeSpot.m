@@ -1,30 +1,30 @@
-function [Spots, SpotFilter, ZoomMode, GlobalZoomMode, CurrentFrame, ...
+function [Spots, SpotFilter, CurrentFrame, ...
     CurrentParticle, Particles, ManualZFlag, DisplayRange, lastParticle, PreviousParticle] =...
-    removeSpot(ZoomMode, GlobalZoomMode, Frames, CurrentFrame, ...
+    ...
+    removeSpot(Frames, CurrentFrame, ...
+    ...   
     CurrentChannel, CurrentParticle, CurrentParticleIndex, Particles, Spots, SpotFilter, ...
-    numParticles, ManualZFlag, DisplayRange, lastParticle, PreviousParticle)
-%REMOVESPOT Summary of this function goes here
-%   Detailed explanation goes here
+    numParticles)
+%
+%REMOVESPOT removes a spot from the spots and particles structure 
+%  removes a spot from the spots and particles structure 
 
-%Check that we're in zoom mode. If not, set it up.
-% if ~(ZoomMode || GlobalZoomMode)
-%     disp('You need to be in Zoom Mode to do this. You can switch using ''o'' or ''+''. Run the ''#'' command again.')
-% else
-%delete from particles
 del = 0;
-choice = questdlg('Are you sure you want to delete this spot? This can''t be undone.', ...
-    '', 'Delete spot','Cancel','Cancel');
-switch choice
-    case 'Delete spot'
-        disp 'Deleting spot.'
-        del = 1;
-    case 'Cancel'
-        disp 'Spot deletion cancelled.'
-        del = 0;
+CurrentFrameWithinParticle = find(Frames==CurrentFrame);
+
+if ~isempty(CurrentFrameWithinParticle)
+    choice = questdlg('Are you sure you want to delete this spot? This can''t be undone.', ...
+        '', 'Delete spot','Cancel','Cancel');
+    switch choice
+        case 'Delete spot'
+            disp 'Deleting spot.'
+            del = 1;
+        case 'Cancel'
+            disp 'Spot deletion cancelled.'
+    end
 end
 
-CurrentFrameWithinParticle = find(Frames==CurrentFrame);
-if del & ~isempty(CurrentFrameWithinParticle)
+if del
     ind = Particles{CurrentChannel}(CurrentParticle).Index(CurrentFrameWithinParticle);
     onlyFrame = length(Particles{CurrentChannel}(CurrentParticle).Frame) == 1;
     if onlyFrame
@@ -93,7 +93,6 @@ if del & ~isempty(CurrentFrameWithinParticle)
     else
         error('something''s wrong.')
     end
-    disp 'Spot deleted successfully. Trace figures will refresh after switching particles.'
 elseif CurrentFrame > 1
     CurrentFrame=CurrentFrame-1;
     ManualZFlag=0;
@@ -103,9 +102,8 @@ elseif CurrentFrame < length({Spots{1}.Fits})
 else
     error('something''s wrong.')
 end
-disp('Spot deleted successfully. Trace figures will refresh after switching particles.');
-% end
-ZoomMode=0;
-GlobalZoomMode=0;
+
+disp('Spot deleted successfully. Trace figures will refresh after switching particles.')
+
 end
 

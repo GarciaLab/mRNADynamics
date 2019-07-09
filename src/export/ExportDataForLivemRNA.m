@@ -122,6 +122,10 @@ function Prefix = ExportDataForLivemRNA(varargin)
   mkdir(DropboxFolderName);
   save([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
 
+  if strcmpi(FileMode, 'LIFExport') & ~keepTifs
+    removeUnwantedTIFs(rawDataFolder);
+  end
+  
   if generateTifStacks
     filterMovie(Prefix, 'Tifs');
     disp(['Prefix: ', Prefix]);

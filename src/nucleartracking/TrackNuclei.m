@@ -32,14 +32,10 @@ function TrackNuclei(Prefix,varargin)
 
 disp(['Tracking nuclei on ', Prefix, '...']);
 
-[SkipStitchSchnitz, ExpandedSpaceTolerance, NoBulkShift, retrack] = DetermineTrackNucleiOptions(varargin{:});
+[SkipStitchSchnitz, ExpandedSpaceTolerance, NoBulkShift, retrack, nWorkers] = DetermineTrackNucleiOptions(varargin{:});
 
-%added this bulkshift requirement because i'm not sure it'll work without
-%it
-if NoBulkShift
-    workers = 8;
-    startParallelPool(workers, 0,0);
-end
+
+startParallelPool(nWorkers, 0,0);
 
 
 

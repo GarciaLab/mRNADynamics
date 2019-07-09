@@ -117,6 +117,8 @@ cc=1;
 imOverlay = imshow(HisImage,DisplayRange,'Border','Tight','Parent',overlayAxes);
 imOriginal = imshow(HisImage,DisplayRange,'Border','Tight','Parent',originalAxes);
 
+set(0, 'CurrentFigure', Overlay)
+
 while (cc~='x')
     
     %Load subsequent images
@@ -156,7 +158,6 @@ while (cc~='x')
 %     imshow(HisImage,DisplayRange,'Border','Tight''Parent',originalAxes)
     imOriginal.CData = HisImage;
     
-    set(0, 'CurrentFigure', Overlay)
     ct=waitforbuttonpress;
     cc=get(Overlay,'currentcharacter');
     cm=get(overlayAxes,'CurrentPoint');
@@ -235,6 +236,24 @@ while (cc~='x')
         Ellipses{CurrentFrame} = Ellipses{CurrentFrame-1};
     elseif (ct~=0)&(cc=='v') & CurrentFrame < TotalFrames %copy nuclear information from next frame
         Ellipses{CurrentFrame} = Ellipses{CurrentFrame+1};
+    elseif (ct~=0)&(cc=='g')  %copy nuclear information from next frame
+        mitDuration = 10; % ~10 frames before and after anaphase
+        for frame = CurrentFrame - mitDuration:CurrentFrame
+            Ellipses{frame} = Ellipses{CurrentFrame-mitDuration-1};
+        end
+        for frame = CurrentFrame + 1:CurrentFrame + mitDuration
+            Ellipses{frame} = Ellipses{CurrentFrame+mitDuration+1};
+        end
+     elseif (ct~=0)&(cc=='q') %go to next nc
+         nextncframes = find(nc == (nc(CurrentFrame)+1));
+         if ~isempty(nextncframes)
+            CurrentFrame = nextncframes(1);
+         end
+     elseif (ct~=0)&(cc=='w') %go to previous nc
+         previousncframes = find(nc == (nc(CurrentFrame)-1));
+         if ~isempty(previousncframes)
+            CurrentFrame = previousncframes(1);
+         end
     elseif (ct~=0)&(cc=='9')    %Debug mode
         keyboard
    
@@ -246,6 +265,6 @@ end
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 close all;
 disp('Ellipses saved. Running TrackNuclei to incorporate changes.')
-TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack');
+TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1);
 
 end
