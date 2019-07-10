@@ -229,8 +229,9 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
                     fprintf('***Error Suggestions: Please read!***');
                     fprintf('\nYou have requested memory for an array that exceeds maximum array size preferences set by MATLAB.');
                     fprintf('\nThis could be due to one of the following reasons:');
-                    fprintf('\n(1) Your ML classifier is not good enough and is finding too many false positives. Go back and retrain your classifier to find fewer false positives.')
-                    fprintf('\n(2) In Weka, you made class 1 (red) "not spots" and class 2 (green) "spots". Train a new classifier where class 1 is "spots" and class 2 is "not spots".\n');
+                    fprintf('\n(1) Your threshold is set too low, thus finding too many false positives. Try a slightly higher threshold.');
+                    fprintf('\n(2) Your ML classifier is not good enough and is finding too many false positives. Go back and retrain your classifier to find fewer false positives.')
+                    fprintf('\n(3) In Weka, you made class 1 (red) "not spots" and class 2 (green) "spots". Train a new classifier where class 1 is "spots" and class 2 is "not spots".\n');
                     rethrow(exceptionMaxDOG);
                 else
                     rethrow(exceptionMaxDOG);
