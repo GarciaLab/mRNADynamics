@@ -717,14 +717,14 @@ while (cc ~= 'x')
         
     elseif cc == '#'%remove a spot from Spots and erase its frame in Particles
         [Spots, SpotFilter,CurrentFrame, ...
-            CurrentParticle, Particles, ManualZFlag, DisplayRange, lastParticle, PreviousParticle] = ...
+            CurrentParticle, Particles, ManualZFlag, lastParticle, PreviousParticle] = ...
             removeSpot(Frames, CurrentFrame, ...
             CurrentChannel, CurrentParticle, CurrentParticleIndex, Particles, Spots, SpotFilter, ...
             numParticles);
     elseif cc == '^'%remove a whole trace from Spots and Particles. AR 7/9/2019 a work in progress
         for f = 1:length(Frames)
             [Spots, SpotFilter,CurrentFrame, ...
-                CurrentParticle, Particles, ManualZFlag, DisplayRange, lastParticle, PreviousParticle] = ...
+                CurrentParticle, Particles, ManualZFlag, lastParticle, PreviousParticle] = ...
                 removeSpot(Frames, f, ...
                 CurrentChannel, CurrentParticle, CurrentParticleIndex, Particles, Spots, SpotFilter, ...
                 numParticles);
@@ -791,15 +791,7 @@ while (cc ~= 'x')
         saveChanges(NChannels, Particles, Spots, SpotFilter, DataFolder, ...
             FrameInfo, UseHistoneOverlay, FilePrefix, ...
             schnitzcells, DropboxFolder);
-    elseif cc == 't'
-        ShowThreshold2 = ~ShowThreshold2;
-        
-        %     elseif (cc=='y')&(~UseHistoneOverlay)
-        %             FrameInfo=DetermineNC(fad,Particles{CurrentChannel},FrameInfo);
-        %
-        %AR 9/5/18- this button is deprecated. leaving this comment in
-        %case we want to replace the functionality.
-        %
+
     elseif cc == 'h'
         
         if HideApprovedFlag == 0
@@ -815,28 +807,22 @@ while (cc ~= 'x')
         
         if ~GlobalZoomMode
             ZoomMode = ~ZoomMode;
-        else
-            disp('Try again after exiting global zoom mode by hitting ''+ ''')
+        elseif GlobalZoomMode & ~ZoomMode
+            GlobalZoomMode = false;
         end
+        
         
     elseif cc == '+'
         
-        if ~ZoomMode
-            
-            if ~GlobalZoomMode
-                %AR 12/14/2018 ginputc doesn't work at the moment. not sure
-                %why. maybe related to the fact that this is an image
-                %within a figure that has multiple axes.
-                %                 [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'r', 'linewidth',1);
+        if ~ZoomMode & ~GlobalZoomMode
                 [ConnectPositionx, ConnectPositiony] = ginput(1);
                 xForZoom = round(ConnectPositionx);
                 yForZoom = round(ConnectPositiony);
-            else
-            end
-            
-            GlobalZoomMode = ~GlobalZoomMode;
-        else
-            disp('Try again after exiting zoom mode by hitting ''o''')
+            GlobalZoomMode = true;
+        elseif ZoomMode & ~GlobalZoomMode
+            ZoomMode = false;
+        elseif ~ZoomMode & GlobalZoomMode
+            GlobalZoomMode = false;
         end
         
     elseif (cc == 'm') & (CurrentParticle < numParticles)
@@ -918,57 +904,4 @@ end
 disp('Particles saved.')
 disp(['(Left off at Particle #', num2str(CurrentParticle), ')'])
 
-%% Extra stuff that is useful in debug mode
-
-%Reset approve status of all approved particles in a certain nc
-% nc=13;
-%
-% %Determine the start and end frame of the nc
-% if nc==14
-%     disp('Do this')
-% else
-%     eval(['ncStart=nc',num2str(nc),';']);
-%     eval(['ncEnd=nc',num2str(nc+1),';']);
-% end
-%
-% for i=1:length(Particles)
-%     if Particles(i).Approved==1
-%
-%         if (min(Particles(i).Frame(Particles(i).FrameApproved))>=ncStart)&...
-%                 (min(Particles(i).Frame(Particles(i).FrameApproved))<ncEnd)
-%             Particles(i).Approved=0;
-%         end
-%     end
-% end
-
-%This is if the reference from schnitz to nucleus is screwed up. It
-%manifests itself in that cenx and ceny of the schnitz will not coincide
-%with the actual ellipse. In this case we delete the schnitz (emptying it)
-%and the nuclear reference and use '1' to recreate the schnitz.
-
-% ParticlesToDecouple=[314:316,318,320:325,328,329,331:333,335,337,339,341,342,344:346]
-%
-% for ParticleToDecouple=ParticlesToDecouple
-%
-%     SchnitzToDecouple=Particles(ParticleToDecouple).Nucleus;
-%
-%     %Delete the schnitz by emptying it
-%     schnitzcells(SchnitzToDecouple).P=[];
-%     schnitzcells(SchnitzToDecouple).E=[];
-%     schnitzcells(SchnitzToDecouple).D=[];
-%     schnitzcells(SchnitzToDecouple).frames=[];
-%     schnitzcells(SchnitzToDecouple).cenx=[];
-%     schnitzcells(SchnitzToDecouple).ceny=[];
-%     schnitzcells(SchnitzToDecouple).len=[];
-%     schnitzcells(SchnitzToDecouple).cellno=[];
-%
-%     %Decouple particle and schnitz
-%     Particles(ParticleToDecouple).Nucleus=[];
-% end
-
 end
-
-%
-%     function plotButtonPushed(src,event)
-%         bar(randn(1,5));
-%     end

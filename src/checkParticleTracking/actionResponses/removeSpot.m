@@ -1,5 +1,5 @@
 function [Spots, SpotFilter, CurrentFrame, ...
-    CurrentParticle, Particles, ManualZFlag, DisplayRange, lastParticle, PreviousParticle] =...
+    CurrentParticle, Particles, ManualZFlag, lastParticle, PreviousParticle] =...
     ...
     removeSpot(Frames, CurrentFrame, ...
     ...   
@@ -11,6 +11,10 @@ function [Spots, SpotFilter, CurrentFrame, ...
 
 del = 0;
 CurrentFrameWithinParticle = find(Frames==CurrentFrame);
+
+lastParticle = CurrentParticle;
+PreviousParticle = CurrentParticle;
+ManualZFlag = 0;
 
 if ~isempty(CurrentFrameWithinParticle)
     choice = questdlg('Are you sure you want to delete this spot? This can''t be undone.', ...
@@ -77,18 +81,15 @@ if del
         CurrentParticle=NextParticle;
         CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(1);
         ParticleToFollow=[];
-        DisplayRange=[];
     elseif CurrentFrame > 1
         CurrentFrame=CurrentFrame-1;
         ManualZFlag=0;
         ParticleToFollow=[];
-        DisplayRange=[];
         PreviousParticle = 0; % this is done so that the trace is updated
     elseif CurrentFrame < length({Spots{1}.Fits})
         CurrentFrame=CurrentFrame+1;
         ManualZFlag=0;
         ParticleToFollow=[];
-        DisplayRange=[];
         PreviousParticle = 0; % this is done so that the trace is updated
     else
         error('something''s wrong.')

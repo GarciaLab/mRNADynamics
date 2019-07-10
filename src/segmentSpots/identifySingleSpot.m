@@ -259,7 +259,6 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
             Fits.z = uint8(zIndex);
             Fits.discardThis = false;
             Fits.r = false;
-            Fits.IntegralZ = logical(use_integral_center);
             Fits.FixedAreaIntensity3  = [];
             Fits.brightestZ =[];
             Fits.snippet_size = uint8(snippet_size);

@@ -15,7 +15,6 @@ function [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ...
 %PLOTTRACE Summary of this function goes here
 %   Detailed explanation goes here
 
-numParticles = length(Particles{CurrentChannel});
 
 %Only update the trace information if we have switched particles
 if (CurrentParticle~=PreviousParticle)||~exist('AmpIntegral', 'var')||(CurrentChannel~=PreviousChannel) || lastParticle
@@ -33,11 +32,8 @@ elseif  isfield(Particles{CurrentChannel},'fitApproved') && ...
         ~isempty(Particles{CurrentChannel}(CurrentParticle).fitApproved)
     approvedFit = 1;
     lineFitted = 1;
-    % Call lineFitHandle (fitted line plot, we need a better way in future)
-    %lineFitHandle = Particles{CurrentChannel}(CurrentParticle).lineFitHandle;
     Coefficients = Particles{CurrentChannel}(CurrentParticle).Coefficients;
     fittedXFrames = Particles{CurrentChannel}(CurrentParticle).fittedFrames;
-    %lineFitHandle = [];
 else
     lineFitHandle = [];
     approvedFit = 0;
@@ -51,8 +47,7 @@ if ~lineFitted
     traceFigTimeAxis = Frames;
 else
     ncPresent = unique(correspondingNCInfo(Frames));
-    % below subtracts 8 because the first element corresponds to nc 9
-    priorAnaphaseInMins = anaphaseInMins(ncPresent(1)-8); %min
+    priorAnaphaseInMins = anaphaseInMins(ncPresent(1)-8); %min  subtracts 8 because the first element corresponds to nc 9
     priorAnaphase = anaphase(ncPresent(1)-8); %frame
     if ~isempty(schnitzcells) && ~isempty(Particles{CurrentChannel}(CurrentParticle).Nucleus)
         nucleusFirstTimePoint = ElapsedTime(...
@@ -85,14 +80,12 @@ elseif lineFitted
         AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');
     traceErrorBar2 = plot(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
         AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
-%     traceErrorBar2 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-%         AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ErrorIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
-%     
+
     % calculate the fittedXSegment and fittedYSegment
     to = -Coefficients(2) / Coefficients(1); % minutes 
     fittedXSegment = [to, traceFigTimeAxis(fittedXFrames)];
     fittedYSegment = polyval(Coefficients,fittedXSegment);
-    lineFitHandle = plot(traceFigAxes,fittedXSegment,fittedYSegment); % is this where things get weird?
+    lineFitHandle = plot(traceFigAxes,fittedXSegment,fittedYSegment); 
     
     dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
     cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
@@ -119,10 +112,7 @@ catch
     %             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
 end
 
-
 traceFigYLimits = [0, max(AmpIntegralGauss3D)*1.1];
-
-% traceFigYLimits = get(traceFigAxes,'YLim');
 
 % plotting all anaphase time points as vertical lines
 for i = 1:length(anaphase)
@@ -187,11 +177,6 @@ if strcmpi(ExperimentType, 'inputoutput')
     %now we'll plot the input protein intensity on the right-hand axis.
     plot(traceFigAxes,schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames,...
         max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).Fluo,[],2),'r.-','DisplayName','protein')
-    try
-%         xlim(traceFigAxes,[min(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames),max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames)])
-    catch
-        %             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
-    end
     ylabel(traceFigAxes,'input protein intensity (a.u.)');
     hold(traceFigAxes,'on')
     plot(traceFigAxes,Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
@@ -201,6 +186,7 @@ else
 end
 
 % creating axis title
+numParticles = length(Particles{CurrentChannel});
 firstLine = [Prefix,'    Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)];
 secondLine = ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),'    ',num2str(round(FrameInfo(CurrentFrame).Time)), 's'];
 thirdLine = ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)];
