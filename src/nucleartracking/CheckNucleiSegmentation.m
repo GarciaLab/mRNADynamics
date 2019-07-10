@@ -108,6 +108,7 @@ overlayAxes = axes(Overlay);
 OriginalImage=figure;
 set(OriginalImage,'units', 'normalized', 'position',[0.01, .1, .75, .33]);
 originalAxes = axes(OriginalImage);
+tb = axtoolbar(overlayAxes);
 
 
 CurrentFrame=1;

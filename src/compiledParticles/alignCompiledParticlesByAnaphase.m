@@ -11,8 +11,10 @@ load([resultsFolder, filesep, 'APDivision.mat']);
 
 for ch = 1:length(CompiledParticles)
     for p = 1:length(CompiledParticles{ch})
-        [~, apbin] = min(abs(APbinID -  CompiledParticles{ch}(p).MedianAP));
-        [~, dvbin] = min(abs(DVbinID -  CompiledParticles{ch}(p).MedianDV));
+        apdif = CompiledParticles{ch}(p).MedianAP - APbinID;
+        [~, apbin] = min(apdif(apdif > 0));
+        dvdif = CompiledParticles{ch}(p).MedianDV - DVbinID;
+        [~, dvbin] = min(dvdif(dvdif > 0));
         divFrames = APDivision(:, apbin);
         if sum(divFrames) == 0
             error('rerun checkdivisiontimes');

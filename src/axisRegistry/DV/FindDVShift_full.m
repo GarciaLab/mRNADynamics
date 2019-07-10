@@ -206,9 +206,13 @@ figure(7);
 plot3(x_ave,y_ave,CellFluoPerArea,'o');
 %% Part 6: Fit Pattern to Gaussian- %Fit data using curve fitting toolbox
 
-mygauss = fittype('a1*exp(-((x-b1)/c1)^2)',...
+mygauss = fittype('a1*exp(-((x-b1)/c1)^2 + d1)',...
             'dependent',{'y'},'independent',{'x'},...
-            'coefficients',{'a1','b1','c1'});
+            'coefficients',{'a1','b1','c1','d1'});
+        
+% mygauss = fittype('a1*exp(-((x-b1)/c1)^2)',...
+%             'dependent',{'y'},'independent',{'x'},...
+%             'coefficients',{'a1','b1','c1'});
         
 %If you change the number of parameters, make sure to update the
 %lower and upper bounds to include ranges for added/removed
@@ -216,7 +220,9 @@ mygauss = fittype('a1*exp(-((x-b1)/c1)^2)',...
 
 options = fitoptions(mygauss);
 options.Lower = [0 -Inf 100];
+options.Lower = [options.Lower, min(Cell_Fluo)];
 options.Upper = [Inf Inf Inf];
+options.Upper= [options.Upper, max(Cell_Fluo)];
 [temp_gauss, temp_gof] = fit(DVpos',Cell_Fluo',mygauss,options);
 
 figure(8); %Plot fitted data
@@ -225,8 +231,38 @@ xlabel('distance to AP axis (pixels)');
 ylabel('intensity (au)');
 legend('dorsal-venus (au)', 'Gaussian fit');
 
-
 DV_shift = temp_gauss.b1
+
+figure()
+data = horzcat(DVpos', Cell_Fluo');
+sData = sortrows(data);
+x = sData(:, 1);
+y = sData(:, 2);
+plot(x, y, 'o');
+hold on
+sy = smooth(y, 30);
+plot(x, sy, 'LineWidth', 3)
+hold on
+ [ymax, ymaxidx] = max(sy)
+ DV_shift_alt = x(ymaxidx);
+ plot(DV_shift_alt, ymax,  'y');
+xline(DV_shift_alt, 'LineWidth', 3);
+
+if abs(DV_shift) > 2048
+    DV_shift = 0;
+    warning('didn''t correct DV since fit was not good.')
+end
+
+prompt = 'do you accept this value? y/n';
+answer = input(prompt, 's');
+if strcmpi(answer, 'y')
+    %do nothing
+elseif strcmpi(answer, 'n')
+    prompt2 = 'what value do you want?';
+    DV_shift = input(prompt2);
+else
+    error('');
+end
 
 
 end

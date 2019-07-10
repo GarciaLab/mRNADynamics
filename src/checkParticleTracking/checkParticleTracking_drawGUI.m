@@ -12,6 +12,7 @@ function [Overlay, overlayAxes, snippetFigAxes, rawDataAxes, gaussianAxes, trace
 
 
   overlayAxes = subplot(1, 2, 1, 'Parent', Overlay);
+  tb = axtoolbar(overlayAxes);
   traceFigAxes = subplot(1, 2, 2, 'Parent', Overlay);
 
   zFig = figure;
