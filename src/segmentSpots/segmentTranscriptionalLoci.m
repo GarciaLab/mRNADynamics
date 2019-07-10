@@ -120,7 +120,7 @@ if sum(firstDoG(:)) == 0
 end
 
 
-for current_frame = initialFrame:numFrames
+parfor current_frame = initialFrame:numFrames
     
     for zIndex = 1:zSize
         
