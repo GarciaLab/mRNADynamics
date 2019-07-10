@@ -165,7 +165,6 @@ if ~NoAP
         elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>=2
             ChannelToLoad=find(ChannelToLoadTemp);
             ChannelToLoad = ChannelToLoad(1);
-            disp('You have multiple nuclear channels, pick the one to use.');
         else
             error('No histone channel found. Was it defined in MovieDatabase as :Nuclear or :InvertedNuclear?')
         end
@@ -394,6 +393,7 @@ if ~NoAP
         %%
         SurfImage = imrotate(SurfImage, -zoom_angle + full_embryo_angle);
         
+        mkdir([DropboxFolder,filesep,Prefix, filesep, 'DV');
         maxSurfSavePath = [DropboxFolder,filesep,Prefix, filesep, 'DV', filesep, 'surf_max.tif'];
         imwrite(SurfImage,maxSurfSavePath);
         
