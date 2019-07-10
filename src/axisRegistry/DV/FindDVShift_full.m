@@ -199,8 +199,7 @@ for i=1:length(Areas2)
 %     if (x_ave(i)-x_int)<0
 %        DVpos(i) = -DVpos(i);
 %     end
-    plot([x_int,x_ave(i)],[y_int,y_ave(i)],'o-r','LineWidth',0.5);
-    pause(0.1);
+%     plot([x_int,x_ave(i)],[y_int,y_ave(i)],'o-r','LineWidth',0.5);
 end
 
 figure(7);
@@ -227,7 +226,7 @@ ylabel('intensity (au)');
 legend('dorsal-venus (au)', 'Gaussian fit');
 
 
-DV_shift = temp_gauss.b1;
+DV_shift = temp_gauss.b1
 
 
 end

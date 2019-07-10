@@ -1,4 +1,4 @@
-function CheckDivisionTimes(varargin)
+function CheckDivisionTimes(Prefix, varargin)
 
 %The idea is to determine division times with a higher spatial resolution
 %by doing it per AP bin.
@@ -17,16 +17,13 @@ close all
 %Information about about folders
 
 [SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
-    configValues, movieDatabasePath] = DetermineAllLocalFolders(varargin{1});
+    configValues, movieDatabasePath] = DetermineAllLocalFolders(Prefix);
 
-
-if ~isempty(varargin)
-    Prefix=varargin{1};
-    
-else
-    FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
-    Dashes=strfind(FolderTemp,filesep);
-    Prefix=FolderTemp((Dashes(end)+1):end);
+lazy = false;
+for arg = 1:length(varargin)
+    if strcmpi(varargin{arg}, 'lazy')
+        lazy = true;
+    end
 end
 
 
@@ -117,6 +114,18 @@ else
 end
 
 
+%lazy mode
+if lazy
+    apsPresent = unique(APPosBinImage(:));
+    for nc = 1:length(ncs)
+        for ap = apsPresent
+            if ncs(nc)~=0
+                APDivision(nc+8, ap) = ncs(nc);
+            end
+        end
+    end
+end
+
 %Show the frames on top of the AP bins
 figureOverlay=figure;
 axOverlay = axes(figureOverlay);
@@ -133,8 +142,8 @@ CurrentNC=find(ncs,1)+8;
 cc=1;
 
 
-
-while (cc~='x')
+if ~lazy
+    while (cc~='x')
     
     
     if ~isnan(CurrentFrame)
@@ -222,6 +231,7 @@ while (cc~='x')
     elseif (ct~=0)&(cc=='9')
         keyboard;
     end
+end
 end
 
 
