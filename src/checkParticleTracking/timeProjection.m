@@ -1,4 +1,4 @@
-function desiredProjection = timeProjection(Prefix,currentChannel,varargin)
+function desiredProjection = timeProjection(Prefix,currentChannel,FrameInfo, DropboxFolder,PreProcPath, varargin)
 % timeProjection(Prefix, currentChannel, [Options])
 %
 % DESCRIPTION
@@ -67,16 +67,6 @@ end
 %% Information about the Folders and Frames 
 % Define and make them here instead of passing these from CheckParticleTracking
 waitbar(0,h,'Getting Relevant Folder Information');
-[~,~,DropboxFolder,~,PreProcPath]= DetermineLocalFolders(Prefix);
-[~,~,DefaultDropboxFolder,~,~]= DetermineLocalFolders;
-DataFolder=[DropboxFolder,filesep,Prefix];
-FilePrefix=[DataFolder(length(DropboxFolder)+2:end),'_'];
-
-if exist([DataFolder, filesep, 'FrameInfo.mat'])
-    load([DataFolder, filesep, 'FrameInfo.mat']);
-else
-    error('noFrameInfo.mat found')
-end
 
 totalFrames = length(FrameInfo);
 zSlices = FrameInfo(1).NumberSlices + 2; %Note: Blank slides are included
@@ -88,16 +78,6 @@ elseif totalFrames < 1E4
 end
 
 if ncRange
-    %Find the corresponding entry in moviedatabase file
-    [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
-    Channel1, Channel2, Objective, Power, DataFolderColumnValue, DropboxFolderName, Comments,...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
-    
-    if (~isempty(findstr(FilePrefix,'Bcd')))&(isempty(findstr(FilePrefix,'BcdE1')))&...
-            (isempty(findstr(FilePrefix(1:end-1),'NoBcd')))&...
-            (isempty(findstr(FilePrefix(1:end-1),'Bcd1x')))
-        warning('This step in CheckParticleTracking will most likely have to be modified to work')
-    end
     
     %Getting nc range frame information
     %determine ncStarFrame dinamically from 'nc?' arguments in varargin above
@@ -124,19 +104,24 @@ end
 %% Z Projections
 % The variables below will store the max and median Z projections 
 waitbar(0,h,'Starting Z Projections');
-desiredZProjs = zeros(FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSlices);
 framesCompleted = 0;
 if useMedian || medianZOnly
+    desiredZProjs = zeros(FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSlices);
     for CurrentFrame = frameRange
-        [~,desiredZProjs(:,:,CurrentFrame)] = ...
-            zProjections(Prefix, currentChannel, CurrentFrame, zSlices, NDigits,DropboxFolder,PreProcPath);
+        desiredZProjs(:,:,CurrentFrame) = ...
+            zProjections(Prefix, currentChannel, CurrentFrame, zSlices, NDigits,DropboxFolder,PreProcPath, FrameInfo, 'median');
         framesCompleted = 1 + framesCompleted;
         waitbar(framesCompleted/length(frameRange),h,'Making Z Median Projections');
     end
 else
+    im = zeros(FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, 'uint16');
+    desiredProjection = im;
     for CurrentFrame = frameRange
-        [desiredZProjs(:,:,CurrentFrame),~]= ...
-            zProjections(Prefix, currentChannel, CurrentFrame, zSlices, NDigits,DropboxFolder,PreProcPath);
+        for currentZ = 2:zSlices-1
+            im = imread([PreProcPath,filesep,Prefix,filesep,...
+                    Prefix,'_',iIndex(currentFrame,nDigits),'_z',iIndex(currentZ,2),'_ch0', num2str(currentChannel) ,'.tif']);
+            desiredProjection = max(desiredProjection, im);
+        end
         framesCompleted = 1 + framesCompleted;
 %         plot(desiredZProjs(:,:,CurrentFrame))
 %         title(['Frame: ' num2str(CurrentFrame)])
@@ -146,11 +131,11 @@ end
 %% Time Projections
 % Taking the max and median with respect to the time axis (3) 
 
-if maxZOnly || medianZOnly
-    desiredProjection = desiredZProjs;
-else
-    desiredProjection = max(desiredZProjs,[],3);
-end
+% if maxZOnly || medianZOnly
+%     desiredProjection = desiredZProjs;
+% else
+%     desiredProjection = max(desiredZProjs,[],3);
+% end
 % figure()
 % imshow(desiredTimeProjection,[0 80])
 close(h)

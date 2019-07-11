@@ -1,13 +1,13 @@
 function [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
 	Channel1, Channel2,Objective, Power,  DataFolder, DropboxFolderName, Comments,...
     nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3,prophase,metaphase, anaphase, DVResolution]...
-	= getExperimentDataFromMovieDatabase(Prefix, movieDatabaseFolder)
+	= getExperimentDataFromMovieDatabase(Prefix, movieDatabase)
 
-  movieDatabasePath = [movieDatabaseFolder, '/MovieDatabase.csv'];
+if ischar(movieDatabase) %accept the input as either the database itself or a path to the database
+  movieDatabase = csv2cell([movieDatabase, '/MovieDatabase.csv'], 'fromfile');
+end
 
-  movieDatabase = csv2cell(movieDatabasePath, 'fromfile');
-
-  [~, PrefixRow] = getDropboxFolderFromMovieDatabase(movieDatabasePath, Prefix, '[\\\\/-]');
+  [~, PrefixRow] = getDropboxFolderFromMovieDatabase(movieDatabase, Prefix, '[\\\\/-]');
 
   Date = getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Date');
   ExperimentType = getValueFromMovieDatabase(movieDatabase, PrefixRow, 'ExperimentType');

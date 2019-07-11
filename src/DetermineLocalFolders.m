@@ -1,4 +1,5 @@
-function [rawDataPath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath, configValues, movieDatabasePath] = DetermineLocalFolders(varargin)
+function [rawDataPath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath,...
+    configValues, movieDatabasePath, movieDatabaseFolder] = DetermineLocalFolders(varargin)
 
     optionalResults = '';
     CONFIG_CSV_PATH = 'ComputerFolders.csv';
@@ -17,8 +18,11 @@ function [rawDataPath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath, config
         ProcPath = getConfigValue(configValues, 'FISHPath');
         PreProcPath = getConfigValue(configValues, 'PreProcPath');
     end
+    
+    movieDatabaseFolder = DropboxFolder;
     movieDatabasePath = [DropboxFolder,'\MovieDatabase.csv'];
-
+    movieDatabase = csv2cell(movieDatabasePath, 'fromfile');
+    
     if isempty(varargin) || isempty(varargin{1})
     %     warning('No Prefix specified. Using default Dropbox folder')
         return
@@ -40,11 +44,11 @@ function [rawDataPath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath, config
     end
 
     if ~isempty(optionalResults)
-        dropboxFolderName = getDropboxFolderFromMovieDatabase(movieDatabasePath, Prefix, PREFIX_SEPARATOR, optionalResults);
+        dropboxFolderName = getDropboxFolderFromMovieDatabase(movieDatabase, Prefix, PREFIX_SEPARATOR, optionalResults);
     else
-        dropboxFolderName = getDropboxFolderFromMovieDatabase(movieDatabasePath, Prefix, PREFIX_SEPARATOR);
+        dropboxFolderName = getDropboxFolderFromMovieDatabase(movieDatabase, Prefix, PREFIX_SEPARATOR);
     end
-    rootFolderName = getRootFolderFromMovieDatabase(movieDatabasePath, Prefix, PREFIX_SEPARATOR);
+    rootFolderName = getRootFolderFromMovieDatabase(movieDatabase, Prefix, PREFIX_SEPARATOR);
     % if user indicated a RootFolder in movie database, reassign paths
     % accordingly
     if ~strcmpi(rootFolderName,'noFolder')

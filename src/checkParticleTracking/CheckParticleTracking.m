@@ -147,10 +147,10 @@ storedTimeProjection = []; % Don't need to wait for timeProjection to finish eac
 % Get the folders
 
 [rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
-    rawDataFolder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder, Channel3, spotChannels]...
+    rawDataFolder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder,...
+    Channel3, spotChannels, MovieDataBaseFolder]...
     = readMovieDatabase(Prefix, optionalResults);
 
-[~, ~, MovieDataBaseFolder, ~, ~] = DetermineLocalFolders;
 DataFolder = [DropboxFolder, filesep, Prefix];
 FilePrefix = [Prefix, '_'];
 
@@ -158,7 +158,28 @@ FilePrefix = [Prefix, '_'];
 [Particles, SpotFilter, Spots, FrameInfo] = loadCheckParticleTrackingMats(DataFolder, PreProcPath);
 
 [xSize, ySize, pixelSize, zStep, snippet_size, LinesPerFrame, PixelsPerLine,...
-    numFrames, NDigits, NChannels, Particles, Spots, SpotFilter] = getFrameInfoParams(FrameInfo, Particles, Spots, SpotFilter);
+    numFrames] = getFrameInfoParams(FrameInfo);
+
+  %See how  many frames we have and adjust the index size of the files to load accordingly
+  if numFrames < 1E3
+    NDigits = 3;
+  elseif numFrames < 1E4
+    NDigits = 4;
+  else
+    error('No more than 10,000 frames supported.')
+  end
+  %Create the particle array. This is done so that we can support multiple
+  %channels. Also figure out the number of channels
+  if iscell(Particles)
+      NChannels = length(Particles);
+  else
+      Particles = {Particles};
+      if ~iscell(Spots)
+          Spots = {Spots};
+      end
+      SpotFilter = {SpotFilter};
+      NChannels = 1;
+  end
 
 %Add FramesApproved where necessary
 [Particles] = addFrameApproved(NChannels, Particles);
@@ -502,18 +523,18 @@ while (cc ~= 'x')
         Image = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
             FilePrefix, iIndex(CurrentFrame, NDigits), '_z', iIndex(CurrentZ, 2), nameSuffix, '.tif']);
     elseif strcmpi(projectionMode, 'Max Z')
-        [Image, ~] = zProjections(Prefix, coatChannel, CurrentFrame, ZSlices, NDigits, DropboxFolder, PreProcPath);
+        Image = zProjections(Prefix, coatChannel, CurrentFrame, ZSlices, NDigits, DropboxFolder, PreProcPath, FrameInfo, 'max');
     elseif strcmpi(projectionMode, 'Median Z')
-        [~, Image] = zProjections(Prefix, coatChannel, CurrentFrame, ZSlices, NDigits, DropboxFolder, PreProcPath);
+        Image = zProjections(Prefix, coatChannel, CurrentFrame, ZSlices, NDigits, DropboxFolder, PreProcPath, FrameInfo, 'median');
     elseif strcmpi(projectionMode, 'Max Z and Time')
         
         if isempty(storedTimeProjection)
             
             if ncRange
-                Image = timeProjection(Prefix, coatChannel, 'nc', NC);
+                Image = timeProjection(Prefix, coatChannel,FrameInfo, DropboxFolder,PreProcPath, 'nc', NC);
                 storedTimeProjection = Image;
             else
-                Image = timeProjection(Prefix, CurrentChannel);
+                Image = timeProjection(Prefix, CurrentChannel,FrameInfo, DropboxFolder,PreProcPath);
                 storedTimeProjection = Image;
             end
             

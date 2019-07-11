@@ -1,5 +1,6 @@
 function [rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
-    rawDataFolder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder, Channel3, spotChannels]...
+    rawDataFolder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder,...
+    Channel3, spotChannels, movieDatabaseFolder]...
 = readMovieDatabase(Prefix, varargin)
     
     optionalResults = '';
@@ -11,7 +12,7 @@ function [rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
 
     % [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath, configValues, movieDatabasePath]=...
     %     DetermineLocalFolders;
-    [rawDataPath,~,~,~, ~, ~, movieDatabasePath]=...
+    [rawDataPath,~,~,~, ~, ~, movieDatabasePath, movieDatabaseFolder]=...
         DetermineLocalFolders;
 
     %Get the Prefix if is not already present
@@ -38,11 +39,8 @@ function [rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
     Channel2Column = findColumnIndex(movieDatabaseHeaderRow, 'Channel2');
     Channel3Column = findColumnIndex(movieDatabaseHeaderRow, 'Channel3');
 
-    if isempty(optionalResults)
-        [~, PrefixRow] = getDropboxFolderFromMovieDatabase(movieDatabasePath, Prefix, '[\\\\/-]');
-    else
-        [~, PrefixRow] = getDropboxFolderFromMovieDatabase(movieDatabasePath, Prefix, '[\\\\/-]', optionalResults);
-    end
+
+    [~, PrefixRow] = getDropboxFolderFromMovieDatabase(movieDatabase, Prefix, '[\\\\/-]', optionalResults);
 
     ExperimentType = movieDatabase(PrefixRow, ExperimentTypeColumn);
     Channel1 = movieDatabase(PrefixRow, Channel1Column);
@@ -53,13 +51,9 @@ function [rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
         Channel3 = {'DoesNotExist'};
     end
     
-    if ~isempty(optionalResults)
-        [rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath, ~, ~]=...
-            DetermineLocalFolders(Prefix, optionalResults);
-    else
-        [rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath, ~, ~]=...
-            DetermineLocalFolders(Prefix);
-    end
+[rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath, ~, ~]=...
+    DetermineLocalFolders(Prefix, optionalResults);
+
 
     %Set the destination folders
     OutputFolder = [DropboxFolder, filesep, Prefix];

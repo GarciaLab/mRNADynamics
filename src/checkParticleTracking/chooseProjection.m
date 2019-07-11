@@ -8,10 +8,10 @@ function choice = chooseProjection
            'String',{'None (Default)';'Max Z';'Median Z'; 'Max Z and Time'},...
            'Callback',@popup_callback);
        
-    btn = uicontrol('Parent',d,'Position',[89 20 70 25],'String','Close',...
+    btn = uicontrol('Parent',d,'Position',[89 20 70 25],'String','Okay',...
            'Callback','delete(gcf)');
        
-    choice = 'None (Default)';
+    choice = 'None';
        
     % Wait for d to close before running to completion
     uiwait(d);
