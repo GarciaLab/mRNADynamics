@@ -87,7 +87,12 @@ mkdir(DogOutputFolder)
 
 microscope = FrameInfo(1).FileMode;
 
-zSize = FrameInfo(1).NumberSlices + 2;
+zSize = 2;
+for i = 1:size(FrameInfo,2)
+    if (FrameInfo(i).NumberSlices+2)>zSize
+        zSize = FrameInfo(i).NumberSlices + 2;
+    end
+end
 
 if numFrames == 0
     numFrames = length(FrameInfo);
