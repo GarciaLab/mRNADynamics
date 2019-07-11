@@ -23,10 +23,10 @@ for ch = 1:length(CompiledParticles)
     min13 = min(ap13(ap13~=0));
     max13 = max(ap13(ap13~=0));
     min14 = min(ap14(ap14~=0));
-    frames11 = 1:min12-min11 + 1;
-    frames12 = 1:min13-min12 + 1;
-    frames13 = 1:min14-min13 + 1;
-    frames14 = 1:(length(ElapsedTime)-min14 + 1) ;
+    frames11 = 1:min12-min11;
+    frames12 = 1:min13-min12;
+    frames13 = 1:min14-min13;
+    frames14 = 1:(length(ElapsedTime)-min14) ;
     cycleFrames = {frames12, frames13, frames14};
     
     sumDV = {zeros(length(DVbinID), length(frames12)),...
@@ -34,6 +34,8 @@ for ch = 1:length(CompiledParticles)
     meanDV = sumDV;
     countsDV = {zeros(length(DVbinID), length(frames12)),...
         zeros(length(DVbinID), length(frames13)),zeros(length(DVbinID), length(frames14))};
+    
+    
     for nc = 12:14
         for p = 1:length(cp)
             for dv = 1:length(DVbinID)

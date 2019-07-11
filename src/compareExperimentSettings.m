@@ -40,6 +40,7 @@ LaserTolerance = 0.1;
 pinholeTolerance = 4;   % Number of decimals to which to round off the pinhole to consider settings the same
 cycleTimeTolerance = 2;   % Number of decimals to which to round off the cycleTime to consider settings the same
 pixelSizeZTolerance = 2;    % Number of decimals to which to round off the pixelSizeZ to consider settings the same
+justReady = false;
 
 for i= 1:length(varargin)
     if strcmpi(varargin{i},'LaserTolerance')
@@ -47,6 +48,8 @@ for i= 1:length(varargin)
         if LaserTolerance < 0 || LaserTolerance > 1
             error('LaserTolerance must be between 0 and 1.')
         end
+    elseif strcmpi(varargin{i}, 'justReady')
+        justReady = true;
     end
 end
 
@@ -61,17 +64,39 @@ else
             DynamicsResultsPath, '.'])
 end
 
+CompileRow=find(strcmpi(DataTab(:,1),'AnalyzeLiveData Compile Particles')|...
+    strcmpi(DataTab(:,1),'CompileParticles')|...
+    strcmpi(DataTab(:,1),'CompileNuclearProtein'));
+prefixFilter=find(strcmpi(DataTab(CompileRow,:),'READY')|strcmpi(DataTab(CompileRow,:),'ApproveAll'));
+
 %Find and load the different prefixes
 PrefixRow = find(strcmpi(DataTab(:,1),'Prefix:'));
 SizeDataTab = size(DataTab);
-NumDatasets = SizeDataTab(2) - 1;
+
+if ~justReady
+    NumDatasets = SizeDataTab(2) - 1;
+    Prefixes = cell(1,NumDatasets);
+else
+    NumDatasets = length(prefixFilter)
+end
+
 Prefixes = cell(1,NumDatasets);
-for i = 2:(NumDatasets+1)
-    PrefixCell = DataTab{PrefixRow,i};
-    QuotePositions = strfind(PrefixCell,'''');
-    PrefixName = PrefixCell((QuotePositions(1)+1):(QuotePositions(end)-1));
-    Prefixes(i-1) = {PrefixName};
-end 
+
+if ~justReady
+    for i = 2:(NumDatasets+1)
+        PrefixCell = DataTab{PrefixRow,i};
+        QuotePositions = strfind(PrefixCell,'''');
+        PrefixName = PrefixCell((QuotePositions(1)+1):(QuotePositions(end)-1));
+        Prefixes(i-1) = {PrefixName};
+    end 
+else
+    for i = 1:length(prefixFilter)
+        PrefixCell = DataTab{PrefixRow,prefixFilter(i)};
+        QuotePositions = strfind(PrefixCell,'''');
+        PrefixName = PrefixCell((QuotePositions(1)+1):(QuotePositions(end)-1));
+        Prefixes(i) = {PrefixName};
+    end 
+end
 
 % Extract the MetaData from each Prefix
 PrefixFolders = {};

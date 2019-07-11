@@ -1,4 +1,4 @@
-function standardizeFigure(ax, ~, varargin)
+function standardizeFigure(ax, leg, varargin)
 
 try
     colorDict = struct();
@@ -13,8 +13,10 @@ try
     color(1,:) = [0 0 0];
 
     axesLineWidth = .5;
-    fig = gcf;
-    legend = findobj(fig, 'Type', 'Legend');
+    if isempty(leg)
+        fig = gcf;
+        leg= findobj(fig, 'Type', 'Legend');
+    end
     dataObj = get(ax, 'Children');
     dataType = get(dataObj, 'Type');
     if ~iscell(dataType)
@@ -45,9 +47,9 @@ try
         end
     end
     
-    if ~isempty(legend)
-        legend.FontSize = legendSize;
-        legend.Box = 'off';
+    if ~isempty(leg)
+        leg.FontSize = legendSize;
+        leg.Box = 'off';
     end
  
     for i = 1:length(dataObj)

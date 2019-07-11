@@ -708,9 +708,13 @@ if ~NoAP
         correctDV = 1;
     end
     if correctDV
-        DV_correction = FindDVShift_full(Prefix);
-        save([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'],'DV_correction');
-        saveVars = [saveVars, 'DV_correction'];
+        if exist([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'])
+            load([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'],'DV_correction');
+        else
+            DV_correction = FindDVShift_full(Prefix);
+            save([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'],'DV_correction');
+        end
+            saveVars = [saveVars, 'DV_correction'];
     end
     
     if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')

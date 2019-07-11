@@ -266,7 +266,9 @@ for i=1:length(schnitzcells)
                 CompiledNuclei(k).MeanAP=mean(schnitzcells(i).APpos(FrameFilter));
                 CompiledNuclei(k).MedianAP=median(schnitzcells(i).APpos(FrameFilter));
             end
-           
+            
+           FluoTimeTrace = ExtractDlFluo(schnitzcells(i).Fluo, .5);
+           CompiledNuclei(k).FluoTimeTrace=FluoTimeTrace;
 
             %Copy and extract the fluorescence information
             CompiledNuclei(k).FluoMax=squeeze(max(schnitzcells(i).Fluo(FrameFilter,:,:),[],2));

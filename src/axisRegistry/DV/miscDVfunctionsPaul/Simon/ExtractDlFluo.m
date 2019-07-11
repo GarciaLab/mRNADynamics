@@ -4,14 +4,14 @@ function FluoTimeTrace = extractDorsalFluo(FluoMatrix, Thresh)
 % FLUOMATRIX is a txz matrix of fluorescence values where t is frames and z
 % is Z slice. It corresponds to the 'schnitzcells(i).Fluo' field in the schnitzcells struct
 % THRESH corresponds to the quadratic coefficient in the parabola we fit to
-% fluo(z).
+% fluo(z). .5 works. 
 
 % Output 
 % FLUOTIMETRACE is a tx1 vector of nuclear fluorescence values.
 
 % it classifies each frame in 'schnitzcells(i).Fluo' in three different categores,
 % which represent the three different ways the Dl nuclear fluorescence compares to the
-% sorrounding cytoplasm:
+% surrounding cytoplasm:
 
 % Case 1: the nuclear fluorescence is higher than the cytoplasm. In this
 % case a line of y = fluo(z) looks kind of like a parabola pointing up. In this

@@ -427,7 +427,7 @@ end
 
 if compareSettings
     try
-        compareExperimentSettings(DropboxFolder,rawDataPath, DataType);
+        compareExperimentSettings(DropboxFolder,rawDataPath, DataType, 'justReady');
     catch
         warning('Failed to run CompareExperimentSettings.');
     end
