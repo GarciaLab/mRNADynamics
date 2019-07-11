@@ -34,7 +34,7 @@ function FitMeanAPMCMC(varargin)
 %   'Prefix', Prefix: Input a Prefix string. If not chosen, user
 %                           selects Prefix in a dialog box.
 %   'MCMCsteps', [n_steps, n_burn]: MCMC step/burn-in counts. Default is
-%                           n_steps = 20000, n_burn = 10000.
+%                           n_steps = 30000, n_burn = 15000.
 %   'NCWindow', [nc13start, nc13end; nc14start, nc14end]: Start and end
 %                           times of fitting for cycles 13 and 14.
 %                           Pass this in as a 2x2 array of doubles.
@@ -61,7 +61,7 @@ function FitMeanAPMCMC(varargin)
 %Default settings
 prior_sigma = 50; %Width of Gaussian prior in loading rate fluctuations
 ncwindow = [1.5, -5; 1.5, 18]; %Time of MCMC fitting for nc13 and nc14
-MCMCsteps = [20000 10000]; %Number of MCMC total steps and burn-in steps.
+MCMCsteps = [30000 15000]; %Number of MCMC total steps and burn-in steps.
 LoadPrefix = true; %User selection of Prefix by default.
 construct = 'P2P-MS2v5-LacZ'; %Default construct.
 v_elong = 1.8; %Default elongation rate.
