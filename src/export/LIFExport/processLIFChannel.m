@@ -34,13 +34,13 @@ function processLIFChannel(ExperimentType, channelIndex, numberOfFrames, Prefix,
           slicesCounter = slicesCounter + 1;
       end
     end
+    
+    % Save as many blank images at the end of the stack are needed
+    % (depending on zPadding being active or not)
+    for zPaddingIndex = slicesCounter+1:topZSlice+2
+      NewName = [Prefix, '_', iIndex(numberOfFrames,3), '_z', iIndex(zPaddingIndex, 2), NameSuffix, '.tif'];
+      imwrite(BlankImage, [OutputFolder, filesep, NewName]);
+    end
+
   end
-  
-  % Save as many blank images at the end of the stack are needed
-  % (depending on zPadding being active or not)
-  for zPaddingIndex = slicesCounter+1:topZSlice+2
-    NewName = [Prefix, '_', iIndex(numberOfFrames,3), '_z', iIndex(zPaddingIndex, 2), NameSuffix, '.tif'];
-    imwrite(BlankImage, [OutputFolder, filesep, NewName]);
-  end
-  
 end
