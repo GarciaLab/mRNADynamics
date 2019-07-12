@@ -119,7 +119,7 @@ else
     for CurrentFrame = frameRange
         for currentZ = 2:zSlices-1
             im = imread([PreProcPath,filesep,Prefix,filesep,...
-                    Prefix,'_',iIndex(currentFrame,nDigits),'_z',iIndex(currentZ,2),'_ch0', num2str(currentChannel) ,'.tif']);
+                    Prefix,'_',iIndex(CurrentFrame,NDigits),'_z',iIndex(currentZ,2),'_ch0', num2str(currentChannel) ,'.tif']);
             desiredProjection = max(desiredProjection, im);
         end
         framesCompleted = 1 + framesCompleted;

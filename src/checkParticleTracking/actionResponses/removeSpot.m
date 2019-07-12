@@ -9,12 +9,12 @@ function [Spots, SpotFilter, CurrentFrame, ...
 %REMOVESPOT removes a spot from the spots and particles structure 
 %  removes a spot from the spots and particles structure 
 
-del = 0;
+del = false;
 CurrentFrameWithinParticle = find(Frames==CurrentFrame);
 
 lastParticle = CurrentParticle;
 PreviousParticle = CurrentParticle;
-ManualZFlag = 0;
+ManualZFlag = false;
 
 if ~isempty(CurrentFrameWithinParticle)
     choice = questdlg('Are you sure you want to delete this spot? This can''t be undone.', ...
@@ -22,13 +22,14 @@ if ~isempty(CurrentFrameWithinParticle)
     switch choice
         case 'Delete spot'
             disp 'Deleting spot.'
-            del = 1;
+            del = true;
         case 'Cancel'
             disp 'Spot deletion cancelled.'
     end
 end
 
 if del
+    
     ind = Particles{CurrentChannel}(CurrentParticle).Index(CurrentFrameWithinParticle);
     onlyFrame = length(Particles{CurrentChannel}(CurrentParticle).Frame) == 1;
     if onlyFrame
@@ -55,17 +56,20 @@ if del
             end
         end
     end
+    
     %and this part deletes from the spots structure.
     CurrentSpot = CurrentParticleIndex; %renaming this to make it clear what it actually is
     Spots{CurrentChannel}(CurrentFrame).Fits(CurrentSpot)= [];
     if isempty(Spots{CurrentChannel}(CurrentFrame).Fits)
         Spots{CurrentChannel}(CurrentFrame).Fits = [];
     end
+    
     %now delete from spotfilter
     spotRow = SpotFilter{CurrentChannel}(CurrentFrame,:);
     spotRow(CurrentSpot) = [];
     spotRow(end+1) = NaN;
     SpotFilter{CurrentChannel}(CurrentFrame,:) = spotRow;
+    disp('Spot deleted successfully. Trace figures will refresh after switching particles.');
     
     if onlyFrame
         %switch to another particle just to avoid any potential weirdness with
@@ -91,17 +95,8 @@ if del
         ManualZFlag=0;
         ParticleToFollow=[];
         PreviousParticle = 0; % this is done so that the trace is updated
-    else
-        error('something''s wrong.')
     end
-elseif CurrentFrame > 1
-    CurrentFrame=CurrentFrame-1;
-    ManualZFlag=0;
-elseif CurrentFrame < length({Spots{1}.Fits})
-    CurrentFrame=CurrentFrame+1;
-    ManualZFlag=0;
-else
-    error('something''s wrong.')
+
 end
 
 disp('Spot deleted successfully. Trace figures will refresh after switching particles.')

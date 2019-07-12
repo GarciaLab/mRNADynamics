@@ -28,6 +28,7 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(Pr
 % > < Move five frames forward/backward
 % ; ' Move to the next empty frame within a particle
 % a z Move up/down in Z
+% t jump to a specific z-slice
 % j Jump to a specified frame
 % g b Increase/decrease histone channel contrast
 % ! @ Change the contrast in transcription channel (! increases, @ resets
@@ -356,11 +357,12 @@ add_spot.ButtonPushedFcn = @add_spot_pushed;
         PathPart2 = [nameSuffix, '.tif'];
         Path3 = [PreProcPath, filesep, Prefix, filesep, Prefix];
         no_clicking = true;
-        [numParticles, SpotFilter, Particles, Spots, PreviousParticle] = ...
+        [numParticles, SpotFilter, Particles, Spots, PreviousParticle, CurrentParticle] = ...
             addSpot(ZoomMode, GlobalZoomMode, Particles, CurrentChannel, ...
             CurrentParticle, CurrentFrame, CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
             LinesPerFrame, Spots, ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
-            SpotFilter, numParticles, smart_add, xSize, ySize, NDigits, intScale, coatChannel);
+            SpotFilter, numParticles, smart_add, xSize, ySize, NDigits, intScale,...
+            coatChannel, UseHistoneOverlay, schnitzcells);
         
         robot.keyPress(fake_event);
         robot.keyRelease(fake_event);
@@ -519,7 +521,7 @@ while (cc ~= 'x')
     end
     
     
-    if strcmpi(projectionMode, 'None (Default)')
+    if strcmpi(projectionMode, 'None')
         Image = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
             FilePrefix, iIndex(CurrentFrame, NDigits), '_z', iIndex(CurrentZ, 2), nameSuffix, '.tif']);
     elseif strcmpi(projectionMode, 'Max Z')
@@ -680,6 +682,7 @@ while (cc ~= 'x')
     
     if strcmpi(cc, 'donothing')
         %do nothing
+        
     elseif cc == '.'%Move forward one frame
         [CurrentFrame, ManualZFlag] = changeFrame(CurrentFrame + 1, numValidFrames);
     elseif (cc == ',')%Move backward one frame
@@ -688,18 +691,6 @@ while (cc ~= 'x')
         [CurrentFrame, ManualZFlag] = changeFrame(CurrentFrame + 5, numValidFrames);
     elseif (cc == '<')%#ok<*AND2>%Move backward five frames
         [CurrentFrame, ManualZFlag] = changeFrame(CurrentFrame - 5, numValidFrames);
-    elseif (cc == '''') & (CurrentFrame < numValidFrames)%Move to the next skipped frame
-        %within the particle
-        CurrentFrame = nextSkippedFrame(Particles, CurrentChannel, ...
-            CurrentParticle, CurrentFrame);
-    elseif (cc == ';') & (CurrentFrame > 1)%Move to the previous skipped frame
-        %within the particle
-        CurrentFrame = previousSkippedFrame(Particles, CurrentChannel, ...
-            CurrentParticle, CurrentFrame);
-    elseif (cc == 'a') & (CurrentZ < ZSlices)%Move up in Z
-        [CurrentZ, ManualZFlag] = changeZSlice(CurrentZ + 1, ZSlices);
-    elseif (cc == 'z') & (CurrentZ > 1)%Move down in Z
-        [CurrentZ, ManualZFlag] = changeZSlice(CurrentZ - 1, ZSlices);
     elseif cc == 'j'
         
         try
@@ -712,6 +703,32 @@ while (cc ~= 'x')
         
         [CurrentFrame, ManualZFlag] = changeFrame(iJump, numValidFrames);
         DisplayRange = [];
+        
+    elseif (cc == '''') & (CurrentFrame < numValidFrames)%Move to the next skipped frame
+        %within the particle
+        CurrentFrame = nextSkippedFrame(Particles, CurrentChannel, ...
+            CurrentParticle, CurrentFrame);
+    elseif (cc == ';') & (CurrentFrame > 1)%Move to the previous skipped frame
+        %within the particle
+        CurrentFrame = previousSkippedFrame(Particles, CurrentChannel, ...
+            CurrentParticle, CurrentFrame);
+        
+    elseif (cc == 'a') & (CurrentZ < ZSlices)%Move up in Z
+        [CurrentZ, ManualZFlag] = changeZSlice(CurrentZ + 1, ZSlices);
+    elseif (cc == 'z') & (CurrentZ > 1)%Move down in Z
+        [CurrentZ, ManualZFlag] = changeZSlice(CurrentZ - 1, ZSlices);
+    elseif cc == 't'
+        
+        try
+            iJump = inputdlg('z-slice to jump to:', ...
+                'Move to z-slice');
+            iJump = str2double(iJump{1});
+        catch
+            iJump = CurrentFrame;
+        end
+        [CurrentZ, ManualZFlag] = changeZSlice(iJump, ZSlices);
+        DisplayRange = [];
+    
     elseif cc == 'k'
         
         try
@@ -754,11 +771,13 @@ while (cc ~= 'x')
         PathPart1 = [PreProcPath, filesep, FilePrefix(1:end - 1), filesep, FilePrefix];
         PathPart2 = [nameSuffix, '.tif'];
         Path3 = [PreProcPath, filesep, Prefix, filesep, Prefix];
-        [numParticles, SpotFilter, Particles, Spots, PreviousParticle] = ...
+        [numParticles, SpotFilter, Particles, Spots,...
+            PreviousParticle, CurrentParticle, ZoomMode, GlobalZoomMode] = ...
             addSpot(ZoomMode, GlobalZoomMode, Particles, CurrentChannel, ...
             CurrentParticle, CurrentFrame, CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
             LinesPerFrame, Spots, ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
-            SpotFilter, numParticles, cc, xSize, ySize, NDigits, intScale, Prefix, PreProcPath, ProcPath, coatChannel);
+            SpotFilter, numParticles, cc, xSize, ySize, NDigits,...
+            intScale, Prefix, PreProcPath, ProcPath, coatChannel, UseHistoneOverlay, schnitzcells);
     elseif cc == 'r'
         Particles = orderParticles(numParticles, CurrentChannel, Particles);
     elseif cc == 'f'
@@ -883,12 +902,8 @@ while (cc ~= 'x')
     elseif cc == '@'%Decrease spot channel contrast
         DisplayRangeSpot = [min(Image(:)), max(Image(:)) * 1.5];
     elseif cc == '$' %add particle to nucleus
-%         try
             Particles = addNucleusToParticle(Particles, CurrentFrame, ...
                 CurrentChannel, UseHistoneOverlay, schnitzcells, CurrentParticle);
-%         catch
-%             disp('failed to associate particle with nucleus.')
-%         end
     elseif cc == '0'%Debugging mode
         keyboard;
         

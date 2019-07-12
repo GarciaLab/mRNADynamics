@@ -1,13 +1,16 @@
-function [numParticles, SpotFilter, Particles, Spots, PreviousParticle] =...
+function [numParticles, SpotFilter, Particles, Spots,...
+    PreviousParticle, CurrentParticle, ZoomMode, GlobalZoomMode] =...
     addSpot(ZoomMode, GlobalZoomMode, Particles, CurrentChannel, ...
     CurrentParticle, CurrentFrame, CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
     LinesPerFrame, Spots, ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
-    SpotFilter, numParticles, cc, xSize, ySize, NDigits, intScale, Prefix, PreProcPath, ProcPath, coatChannel)
+    SpotFilter, numParticles, cc, xSize, ySize, NDigits, intScale,...
+    Prefix, PreProcPath, ProcPath, coatChannel, UseHistoneOverlay, schnitzcells)
 %ADDSPOT Summary of this function goes here
 %   Detailed explanation goes here
 
 zStep = FrameInfo(1).ZStep;
 saveType = '.tif';
+
 
 %Check that we're in zoom mode. If not, set it up.
 PreviousParticle = 0; % resets particle so trace will refresh
@@ -148,7 +151,12 @@ else
                         JoinParticleTraces(CurrentParticle,...
                         numParticles,Particles{CurrentChannel});
                 else
-                    disp('Re-run TrackmRNADynamics to associate this particle with a nucleus.')
+                     CurrentParticle = length(Particles{CurrentChannel});
+                     Particles = addNucleusToParticle(Particles, CurrentFrame, ...
+                        CurrentChannel, UseHistoneOverlay, schnitzcells, CurrentParticle);
+                    GlobalZoomMode = false;
+                    ZoomMode = true;
+                    disp('Creating new particle trace...');
                 end
                 
                 

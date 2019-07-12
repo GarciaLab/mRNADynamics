@@ -18,7 +18,7 @@ SisterMode = false;
 %Decide whether you want to only see nc13
 ncRange = 0;
 % This is for the projection mode
-projectionMode = 'None (Default)';
+projectionMode = 'None';
 %plot 3D gaussian fitting intensities in tracefig
 plot3DGauss = false;
 %optional results if you have multiple prefixes with different results
