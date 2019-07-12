@@ -1,4 +1,6 @@
 function x = FitMeanAPMCMC_ConstantElongationSim(v,ton,R,t)
+%Last updated: 7/12/19 by Jonathan Liu
+
 %Simulation of Pol II elongation using constant elongation type of model. Each
 %individual Pol II is simulated and its position is kept track of. The Pol
 %II molecule has a drift term. At each timestep,

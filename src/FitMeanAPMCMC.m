@@ -405,7 +405,7 @@ mean_sigma = sqrt(mean(s2chain));
 sigma_sigma = std(sqrt(s2chain),1);
 
 %Plotting variables
-simMS2 = FitMeanAPMCMC_GetFluorFromPolPos(construct,ConstantElongationSim(v_elong,mean_ton,...
+simMS2 = FitMeanAPMCMC_GetFluorFromPolPos(construct,FitMeanAPMCMC_ConstantElongationSim(v_elong,mean_ton,...
     mean_R0+mean_dR,data.xdata),v_elong,mean_MS2_basal,mean_dwelltime);
 t_plot = t(nc_array(nc):nc_array(nc+1)) - t(nc_array(nc));
 MS2_plot = MS2(nc_array(nc):nc_array(nc+1));
