@@ -716,7 +716,7 @@ if ~NoAP
         end
             saveVars = [saveVars, 'DV_correction'];
     end
-    
+    DVLength = APLength/2;
     if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
         for ChN=1:NChannels
             for i=1:length(Particles{ChN})
@@ -736,7 +736,7 @@ if ~NoAP
                 if correctDV
                     %ventral midline is dv_correction pixels away from the
                     %AP axis. 
-                    Particles{ChN}(i).DVpos=abs(DVPositions-DV_correction)/DVLength;
+                    Particles{ChN}(i).DVpos=abs(DVPositions-DV_correction)/DVLength;;
                     %so DVpos is pixels away from the ventral midline
                     %across the blastoderm.
                 else
