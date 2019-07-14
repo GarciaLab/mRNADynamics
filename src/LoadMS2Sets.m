@@ -210,7 +210,7 @@ for i=1:length(CompiledSets)
         
         % Fit results from the FitTiltedTrapezoids_4Clicks.m
         if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV3.mat'],'file')
-            MeanFitsV23(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV3.mat']);
+            MeanFitsV3(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV3.mat']);
         else
             warning('MeanFitsV3.mat not found');
         end
@@ -326,6 +326,12 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],'file')
         if exist('MeanFits','var')
             if i<=length(MeanFits)
                 Data(i).MeanFits=MeanFits(i).FitResults;
+            end
+        end
+        
+        if exist('MeanFitsV2','var')
+            if i<=length(MeanFitsV2)
+                Data(i).MeanFitsV2=MeanFitsV2(i).FitResults;
             end
         end
         

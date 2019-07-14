@@ -36,6 +36,7 @@ R0 = x(4);
 dR = x(5:end);
 
 R = R0 + dR; %Loading rate as a sum of mean rate and fluctuations
+R(R<0) = 0; %Replace any negative loading rates with zero
 
 t = data.xdata;
 fluorExp = data.ydata;
