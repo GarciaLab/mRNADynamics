@@ -44,6 +44,8 @@ function CompileParticles(varargin)
 %               the initial slope and T_on respectively.
 % 'optionalResults' : if you want to use a different dropbox folder
 % 'minBinSize': changes the minimum size of allowed AP bins
+% 'edgeWidth': remove ellipses and particles close to the boundary of the
+% field of view
 
 % Author (contact): Hernan Garcia (hggarcia@berkeley.edu)
 % Created:
@@ -164,13 +166,15 @@ ncFilterID = [];
 FilePrefix=[Prefix,'_'];
 
 %What type of experiment are we dealing with? Get this out of MovieDatabase
-[~,~,DropboxFolder,~, PreProcPath,...
-    ~, ~, ~, ~, ~,~] = readMovieDatabase(Prefix, optionalResults);
+[rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
+    rawDataFolder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder,...
+    Channel3, spotChannels, MovieDataBaseFolder, movieDatabase]...
+    = readMovieDatabase(Prefix, optionalResults);
 
 % refactor in progress, we should replace readMovieDatabase with getExperimentDataFromMovieDatabase
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoopEnd, APResolution,...
    Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase, DVResolution] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+    nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase, DVResolution] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
 
 APExperiment = strcmpi(ExperimentAxis, 'AP');
 DVExperiment = strcmpi(ExperimentAxis, 'DV');
@@ -451,7 +455,7 @@ end
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
     Spots, SkipTraces, nc9, nc10, nc11, nc12, nc13, nc14, ncFilterID, ncFilter, ...
     ElapsedTime, intArea, Ellipses, EllipsePos, PreProcPath, ...
-    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits);
+    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits, edgeWidth);
 
 %% ROI option
 % This option is separating the CompiledParticles defined above into

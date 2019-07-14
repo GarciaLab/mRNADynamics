@@ -36,9 +36,8 @@ for i= 1:length(varargin)
 end
 
 %Get some of the default folders
-[rawDataPath, ~, DefaultDropboxFolder,...
-    ~, ~, configValues, ~] = DetermineLocalFolders;
-
+[rawDataPath, ProcPath, DefaultDropboxFolder, MS2CodePath, PreProcPath,...
+    configValues, movieDatabasePath, movieDatabaseFolder, movieDatabase] =  DetermineLocalFolders;
 
 %Now, get a list of all possible other Dropbox folders
 DropboxRows=contains(configValues(:,1),'Dropbox');
@@ -76,10 +75,10 @@ D=dir([DropboxFolder,filesep,'DataStatus.*']);
 
 
 %Which data sets are approved?
-CompileRow=find(strcmp(StatusTxt(:,1),'AnalyzeLiveData Compile Particles')|...
-    strcmp(StatusTxt(:,1),'CompileParticles')|...
-    strcmp(StatusTxt(:,1),'CompileNuclearProtein'));
-CompiledSets=find(strcmp(StatusTxt(CompileRow,:),'READY')|strcmp(StatusTxt(CompileRow,:),'ApproveAll'));
+CompileRow=find(strcmpi(StatusTxt(:,1),'AnalyzeLiveData Compile Particles')|...
+    strcmpi(StatusTxt(:,1),'CompileParticles')|...
+    strcmpi(StatusTxt(:,1),'CompileNuclearProtein'));
+CompiledSets=find(strcmpi(StatusTxt(CompileRow,:),'READY')|strcmpi(StatusTxt(CompileRow,:),'ApproveAll'));
 
 if isempty(CompiledSets)
     error('No ApproveAll or READY sets found')
@@ -109,24 +108,10 @@ for i=1:length(CompiledSets)
     Quotes=strfind(SetName,'''');
     Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
     
-    try
-        [~, ExperimentTypeFromDatabase, ExperimentAxisFromDatabase, ~, ~, APResolutionFromDatabase, ~,...
-            ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~] = getExperimentDataFromMovieDatabase(Prefix, DropboxFolder);
-    catch
-        [~, ExperimentTypeFromDatabase, ExperimentAxisFromDatabase, ~, ~, APResolutionFromDatabase, ~,...
-            ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
-        % DropboxFolder = DefaultDropboxFolder; % This was commented out
-        % because what if the MovieDataBase is in a different folder from
-        % the CompiledParticles.mat? EL 11/29
-        slashes = strfind(DropboxFolder,'/');
-        if isempty(slashes)
-            slashes = strfind(DropboxFolder,'\');
-        end
-        warning(['Couldn''t find this project''s moviedatabase.csv in your ' ...
-            DropboxFolder(slashes(end)+1:end) ...
-            ' folder. Trying default dropbox folder.'])
-    end
-    
+    [~, ExperimentTypeFromDatabase, ExperimentAxisFromDatabase, ~, ~, APResolutionFromDatabase, ~,...
+        ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
+
+
     %Load and check the experiment details consistency
     if ~isempty(ExperimentType)
         if ~strcmpi(ExperimentType, ExperimentTypeFromDatabase)
@@ -151,10 +136,7 @@ for i=1:length(CompiledSets)
     end
 end
 
-
-if ~isempty(optionalResults)
-    [~,~,DropboxFolder] = readMovieDatabase(Prefix, optionalResults);
-end
+[~,~,DropboxFolder] = readMovieDatabase(Prefix, optionalResults);
 
 %Find and load the different prefixes
 PrefixRow=find(strcmpi(StatusTxt(:,1),'Prefix:'));
@@ -181,30 +163,6 @@ for i=1:length(CompiledSets)
             DataTemp=orderfields(DataTemp);
             Data(i)=DataTemp;
         catch
-%             warning('Incompatible analysis in the data sets. Re-check this part of the code.')
-%             %If this fails figure out what's the missing field
-%             DataTemp=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
-%             FieldNamesData=fieldnames(Data);
-%             FieldNamesDataTemp=fieldnames(DataTemp);
-%             
-%             %If there are new fields we'll just get rid of them here
-%             if length(FieldNamesData)<length(FieldNamesDataTemp)
-%                 %Figure out which fields to copy
-%                 FieldsToCopy=FieldNamesDataTemp(~ismember(FieldNamesDataTemp,FieldNamesData));
-%                 
-%                 for j=1:length(FieldsToCopy)
-%                     DataTemp=rmfield(DataTemp,FieldsToCopy{j});
-%                     DataTemp=orderfields(DataTemp);
-%                     warning(['Getting rid of field ', FieldsToCopy{j}])
-%                 end
-%                 Data(i)=DataTemp;
-%             else
-%                 FieldsToCopy = FieldNamesData(~ismember(FieldNamesData,FieldNamesDataTemp));
-%                 for j=1:length(FieldsToCopy)
-%                     DataTemp.(FieldsToCopy{j}) = {};
-%                     DataTemp=orderfields(DataTemp);
-%                 end
-%             end
             [Data, DataTemp] = addFields(Data, DataTemp);
             Data(i) = DataTemp;
         end
@@ -423,14 +381,6 @@ elseif (~exist('Data', 'var')) && exist('DataNuclei', 'var')
     Data=DataNuclei;
 elseif  (~exist('Data','var')) && (~exist('DataNuclei','var'))
     error('No CompiledParticles found. Check DynamicsResults folder as well as DataStatus.XLSX.')
-end
-
-if compareSettings
-    try
-        compareExperimentSettings(DropboxFolder,rawDataPath, DataType, 'justReady');
-    catch
-        warning('Failed to run CompareExperimentSettings.');
-    end
 end
 
 end
