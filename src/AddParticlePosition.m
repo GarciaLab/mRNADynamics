@@ -31,18 +31,9 @@ function AddParticlePosition(Prefix, varargin)
 %V2: Changed this function to use a correlation in order to center the
 %images.
 
-   %Default set of variables to save
-    saveVars={'coordA','coordP','coordAZoom','coordPZoom'};
+%Default set of variables to save
+saveVars={'coordA','coordP','coordAZoom','coordPZoom'};
 
-
-%Get the relevant folders for this data set
-[RawDynamicsPath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
-    ~, ~] = DetermineAllLocalFolders(Prefix);
-
-% refactor in progress, we should replace readMovieDatabase with getExperimentDataFromMovieDatabase
-[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoopEnd, APResolution,...
-    Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 SkipAlignment=false;
 ManualAlignment=false;
@@ -75,11 +66,15 @@ close all
                 correctDV = true;
         end
     end
-
-
+    
 %Get the relevant folders for this data set
 [RawDynamicsPath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
-    ~, ~] = DetermineAllLocalFolders(Prefix, optionalResults);
+    configValues,...
+    movieDatabasePath, movieDatabase] = DetermineAllLocalFolders(Prefix, optionalResults);
+
+[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoopEnd, APResolution,...
+    Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+    nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
 
 
 if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
@@ -128,11 +123,6 @@ if ~isempty(hisDir)
 else
     histoneChannelPresent = false;
 end
-
-%Figure out what type of experiment we have
-[~, ~, ~, ~, ~, APResolution,...
-    Channel1, Channel2, ~, ~, ~, ~, ~,...
-    ~, ~, ~, ~, ~, ~, ~, Channel3] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 
 
@@ -716,7 +706,7 @@ if ~NoAP
         end
             saveVars = [saveVars, 'DV_correction'];
     end
-    
+    DVLength = APLength/2;
     if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
         for ChN=1:NChannels
             for i=1:length(Particles{ChN})
@@ -736,7 +726,7 @@ if ~NoAP
                 if correctDV
                     %ventral midline is dv_correction pixels away from the
                     %AP axis. 
-                    Particles{ChN}(i).DVpos=abs(DVPositions-DV_correction)/DVLength;
+                    Particles{ChN}(i).DVpos=abs(DVPositions-DV_correction)/DVLength;;
                     %so DVpos is pixels away from the ventral midline
                     %across the blastoderm.
                 else

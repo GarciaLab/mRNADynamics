@@ -10,13 +10,6 @@ function AverageDatasets(DataType,varargin)
 % 1) Averaged MS2 spot fluorescence (weighted sum) ,Standard
 % Deviation, and the total number of MS2 spots from multiple embryos in
 % nc12, nc13 and nc14.
-% 2) Fraction ON : This can be calculated for each embryo, then averaged in
-% multiple ways.
-% 3) Accumulated mRNA (Accumulated fluorescence over nc13 and nc14) among ON nuclei,
-% since it's using MeanVectorAP
-% 4) Accumulated mRNA (considering Fraction ON) :
-% This will be more appropriate for deciding the boundary profiles, such as
-% boundary position, sharpness, and width.
 
 % Note. This is assuming that you're interested in nc12, nc13 and nc14.
 % If you don't have the whole nc12, you might need to comment that dataset
@@ -33,8 +26,7 @@ function AverageDatasets(DataType,varargin)
 % OUTPUT
 % Variables for plotting, or more detailed analysis with the Averaged spot
 % fluorescence over time. Save as 'Name of the DataType'.mat file
-% (nc12, nc13, nc14, NParticlesAP,MeanVectorsAP, SDVectorAP, ElapsedTime,
-%  AccumulatedmRNA, FractionON, AccumulatedmRNA_FractionON  ) 
+% (nc12, nc13, nc14, NParticlesAP,MeanVectorsAP, SDVectorAP, ElapsedTime) 
 % corresponding to the embryos combined
 
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
@@ -201,8 +193,7 @@ for j=1:numAPBins
             SDVectorAP_12(1:L12,j,i) = SDVectorAPTemp(nc12(i,j):nc12(i,j)+L12-1,j);
             NParticlesAP_12(1:L12,j,i) = NParticlesAPTemp(nc12(i,j):nc12(i,j)+L12-1,j);
             FractionON_Instant_12(1:L12,j,i) = NParticlesAPTemp(nc12(i,j):nc12(i,j)+L12-1,j)./...
-                                                NEllipsesAPT
-emp(nc12(i,j):nc12(i,j)+L12-1,j);
+                                                NEllipsesAPTemp(nc12(i,j):nc12(i,j)+L12-1,j);
             % NC13
             MeanVectorAP_13(1:L13,j,i) = MeanVectorAPTemp(nc13(i,j):nc13(i,j)+L13-1,j);
             SDVectorAP_13(1:L13,j,i) = SDVectorAPTemp(nc13(i,j):nc13(i,j)+L13-1,j);
@@ -285,13 +276,13 @@ if NC==12
     SDVectorAP = cat(1,SDVectorAP_12,SDVectorAP_13,SDVectorAP_14);
     NParticlesAP = cat(1,NParticlesAP_12,NParticlesAP_13,NParticlesAP_14);
     FractionON = cat(1,FractionON_Instant_12,FractionON_Instant_13,FractionON_Instant_14);
-    MeanVectorAP_ForSum = cat(1,MeanVectorAP_12*0.25,MeanVectorAP_13*0.5,MeanVectorAP_14);
+    %MeanVectorAP_ForSum = cat(1,MeanVectorAP_12*0.25,MeanVectorAP_13*0.5,MeanVectorAP_14);
 elseif NC==13
     MeanVectorAP = cat(1,MeanVectorAP_13,MeanVectorAP_14);
     SDVectorAP = cat(1,SDVectorAP_13,SDVectorAP_14);
     NParticlesAP = cat(1,NParticlesAP_13,NParticlesAP_14);
     FractionON = cat(1,FractionON_Instant_13,FractionON_Instant_14);
-    MeanVectorAP_ForSum = cat(1,MeanVectorAP_13*0.5,MeanVectorAP_14);
+    %MeanVectorAP_ForSum = cat(1,MeanVectorAP_13*0.5,MeanVectorAP_14);
 else 
     warning('This part is left as an option. You can designate earlier cycles by editing this code.')
 
@@ -310,7 +301,7 @@ MeanVectorAP_individual = MeanVectorAP;
 SDVectorAP_individual = SDVectorAP;
 NParticlesAP_individual = NParticlesAP;
 FractionON__individual = FractionON;
-MeanVectorAP_ForSum_individual = MeanVectorAP_ForSum;
+%MeanVectorAP_ForSum_individual = MeanVectorAP_ForSum;
 
 %% Convert NaNs to zeros
 % This is for a convenient averaging
@@ -325,7 +316,7 @@ FractionON(isnan(FractionON)) = 0;
 MeanVectorAP(MeanVectorAP<0) = 0;
 NParticlesAP(MeanVectorAP<0) = 0;
 
-%% Averaging - weigthed sum
+%% Averaging - weighted sum
 sumMean = zeros(NewFrameLength,numAPBins);
 sumSD = zeros(NewFrameLength,numAPBins);
 sumNParticles = zeros(NewFrameLength,numAPBins);
@@ -336,13 +327,13 @@ for i=1:numEmbryos
     sumSD = sumSD + squeeze(SDVectorAP(:,:,i).^2.*NParticlesAP(:,:,i));
     sumNParticles = sumNParticles + squeeze(NParticlesAP(:,:,i));
     % MeanVectorAP considering the doubling of nuclei in each cycle
-    sumMean_ForSum = sumMean_ForSum + squeeze(MeanVectorAP_ForSum(:,:,i).*NParticlesAP(:,:,i));
+    %sumMean_ForSum = sumMean_ForSum + squeeze(MeanVectorAP_ForSum(:,:,i).*NParticlesAP(:,:,i));
 end
     
 MeanVectorAP_combined = sumMean./sumNParticles;
 SDVectorAP_combined = sqrt(sumSD./sumNParticles);
 NParticlesAP_combined = sumNParticles;
-MeanVectorAP_ForSum_combined = sumMean_ForSum./sumNParticles;
+%MeanVectorAP_ForSum_combined = sumMean_ForSum./sumNParticles;
 
 % For FractionON, we will use nanmean, to ignore the APbin(of embryos) that
 % doesn't have any values.
@@ -355,38 +346,38 @@ FractionON_combined(isnan(FractionON_combined)) = 0;
 MeanVectorAP_combined(isnan(MeanVectorAP_combined)) = 0;  
 SDVectorAP_combined(isnan(SDVectorAP_combined)) = 0;
 NParticlesAP_combined(isnan(NParticlesAP_combined)) = 0;
-MeanVectorAP_ForSum_combined(isnan(MeanVectorAP_ForSum_combined)) = 0;
+%MeanVectorAP_ForSum_combined(isnan(MeanVectorAP_ForSum_combined)) = 0;
 
-%% Accumulate mRNA over time (This can be made as an option, or a separate function)
-% I will calculate the Integrated mRNA from the MeanVectorAP
-NFrames = length(ElapsedTime);
-nAPbins = max(maxAPIndex);
-
-AccumulatedmRNA = zeros(NFrames,nAPbins);
-AccumulatedmRNA_SD =  zeros(NFrames,nAPbins);
-
-% Consider the FractionON
-% For MeanVectorAP, we can just multiply the FractonOn (instantaneous)
-% But, for error estimation, we need to think hard. For example, we can use
-% bootstrapping, or 
-AccumulatedmRNA_FractionON = zeros(NFrames,nAPbins);
-AccumulatedmRNA_FractionON_SD =  zeros(NFrames,nAPbins);
-AccumulatedmRNA_FractionON_SE =  zeros(NFrames,nAPbins);
-
-for i=1:maxAPIndex
-    for j=2:length(ElapsedTime)
-        % This is assuming that all nuclei are on, then thinking about how
-        % many mRNA molecules are made in 
-        AccumulatedmRNA(j,i) = trapz(ElapsedTime(1:j),MeanVectorAP_combined(1:j,i)); 
-        AccumulatedmRNA_SD(j,i) = sqrt(trapz(ElapsedTime(1:j),SDVectorAP_combined(1:j,i).^2));
-        
-        AccumulatedmRNA_FractionON(j,i) = trapz(ElapsedTime(1:j),MeanVectorAP_combined(1:j,i).*FractionON_combined(1:j,i));
-        % Define the error for the Accumulated mRNA, this should be
-        % revisited later for with more justification.
-        AccumulatedmRNA_FractionON_SD(j,i) = sqrt(trapz(ElapsedTime(1:j),SDVectorAP(1:j,i).^2.*FractionON_combined(1:j,i)));
-        AccumulatedmRNA_FractionON_SE(j,i) = sqrt(trapz(ElapsedTime(1:j),SDVectorAP(1:j,i).^2.*FractionON_combined(1:j,i)./numEmbryos));
-    end
-end
+% %% Accumulate mRNA over time (This can be made as an option, or a separate function)
+% % I will calculate the Integrated mRNA from the MeanVectorAP
+% NFrames = length(ElapsedTime);
+% nAPbins = max(maxAPIndex);
+% 
+% AccumulatedmRNA = zeros(NFrames,nAPbins);
+% AccumulatedmRNA_SD =  zeros(NFrames,nAPbins);
+% 
+% % Consider the FractionON
+% % For MeanVectorAP, we can just multiply the FractonOn (instantaneous)
+% % But, for error estimation, we need to think hard. For example, we can use
+% % bootstrapping, or 
+% AccumulatedmRNA_FractionON = zeros(NFrames,nAPbins);
+% AccumulatedmRNA_FractionON_SD =  zeros(NFrames,nAPbins);
+% AccumulatedmRNA_FractionON_SE =  zeros(NFrames,nAPbins);
+% 
+% for i=1:maxAPIndex
+%     for j=2:length(ElapsedTime)
+%         % This is assuming that all nuclei are on, then thinking about how
+%         % many mRNA molecules are made in 
+%         AccumulatedmRNA(j,i) = trapz(ElapsedTime(1:j),MeanVectorAP_combined(1:j,i)); 
+%         AccumulatedmRNA_SD(j,i) = sqrt(trapz(ElapsedTime(1:j),SDVectorAP_combined(1:j,i).^2));
+%         
+%         AccumulatedmRNA_FractionON(j,i) = trapz(ElapsedTime(1:j),MeanVectorAP_combined(1:j,i).*FractionON_combined(1:j,i));
+%         % Define the error for the Accumulated mRNA, this should be
+%         % revisited later for with more justification.
+%         AccumulatedmRNA_FractionON_SD(j,i) = sqrt(trapz(ElapsedTime(1:j),SDVectorAP(1:j,i).^2.*FractionON_combined(1:j,i)));
+%         AccumulatedmRNA_FractionON_SE(j,i) = sqrt(trapz(ElapsedTime(1:j),SDVectorAP(1:j,i).^2.*FractionON_combined(1:j,i)./numEmbryos));
+%     end
+% end
 
  %% Quick plot to check - Accumulated mRNA
  
@@ -484,7 +475,7 @@ SEVectorAP = SDVectorAP_combined/sqrt(numEmbryos); % Standard error of mean (SD 
 NParticlesAP = NParticlesAP_combined;
 ElapsedTime = ElapsedTime;
 FractionON = FractionON_combined;
-MeanVectorAP_ForSum = MeanVectorAP_ForSum_combined;
+%MeanVectorAP_ForSum = MeanVectorAP_ForSum_combined;
 
 % AccumulatedmRNA 
 % AccumulatedmRNA_SD 
@@ -498,22 +489,23 @@ MeanVectorAP(MeanVectorAP ==0) = nan;
 SDVectorAP(SDVectorAP ==0) = nan;
 SEVectorAP(SEVectorAP ==0) = nan; % Standard error of mean (SD / sqrt(number of observation)
 NParticlesAP(NParticlesAP==0) = nan;
-MeanVectorAP_ForSum(MeanVectorAP_ForSum==0) = nan;
+%MeanVectorAP_ForSum(MeanVectorAP_ForSum==0) = nan;
 
-AccumulatedmRNA(AccumulatedmRNA ==0) = nan; 
-AccumulatedmRNA_SD(AccumulatedmRNA_SD ==0) = nan;
+%AccumulatedmRNA(AccumulatedmRNA ==0) = nan; 
+%AccumulatedmRNA_SD(AccumulatedmRNA_SD ==0) = nan;
 
-AccumulatedmRNA_FractionON(AccumulatedmRNA_FractionON==0) = nan;
-AccumulatedmRNA_FractionON_SD(AccumulatedmRNA_FractionON_SD==0) = nan; 
-AccumulatedmRNA_FractionON_SE(AccumulatedmRNA_FractionON_SE ==0) = nan; 
+%AccumulatedmRNA_FractionON(AccumulatedmRNA_FractionON==0) = nan;
+%AccumulatedmRNA_FractionON_SD(AccumulatedmRNA_FractionON_SD==0) = nan; 
+%AccumulatedmRNA_FractionON_SE(AccumulatedmRNA_FractionON_SE ==0) = nan; 
 %% Save the fields in .mat file
     if ~isempty(savePath)
         save([savePath,filesep,DataType,'.mat'],...
             'MeanVectorAP','SDVectorAP','SEVectorAP','NParticlesAP','ElapsedTime',...
-                        'nc12', 'nc13', 'nc14',...
-            'AccumulatedmRNA','AccumulatedmRNA_SD', 'AccumulatedmRNA_FractionON',...
-            'AccumulatedmRNA_FractionON_SD',...
+            'nc12', 'nc13', 'nc14',...
             'MeanVectorAP_individual','SDVectorAP_individual','NParticlesAP_individual')
+            %'AccumulatedmRNA','AccumulatedmRNA_SD', 'AccumulatedmRNA_FractionON',...
+            %'AccumulatedmRNA_FractionON_SD',...
+            
             %'FractionON', 'FractionON_Global',...
             %'FractionON_Average','FractionON_Average_Error',...
 

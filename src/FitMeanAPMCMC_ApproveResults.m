@@ -1,5 +1,5 @@
 function FitMeanAPMCMC_ApproveResults(varargin)
-%Last updated: 7/11/19 by Jonathan Liu
+%Last updated: 7/13/19 by Jonathan Liu
 
 %Analyzes saved MCMC results from FitMeanAPMCMC. The user has the option of
 %approving or rejecting the results of each single nucleus fit. The
@@ -23,10 +23,14 @@ function FitMeanAPMCMC_ApproveResults(varargin)
 %   Prefix: Prefix string. If none chosen, user has the option to select
 %           using a dialog menu.
 %   'RawChains': visualize raw chains from MCMC inference.
+%   'SmoothRate', span: smooth inferred loading rate using a sliding
+%   averaging window of size span, where span is the fraction of the total
+%   number of datapoints. By default, span is 0.1.
 
 %% Input arguments
 LoadPrefix = true; %By default, user selects which Prefix to load.
 RawChains = false; %By default, don't look at raw chains.
+span = 0.1; %By default, smooth loading rate using 10% of datapoints.
 for i=1:length(varargin)
     if strcmpi(varargin{i},'Prefix')
         Prefix = varargin{i+1};
@@ -34,6 +38,9 @@ for i=1:length(varargin)
     end
     if strcmpi(varargin{i},'RawChains')
         RawChains = true;
+    end
+    if strcmpi(varargin{i},'SmoothRate')
+        span = varargin{i+1};
     end
 end
 
@@ -114,7 +121,9 @@ end
 while running
     
 clf(f); %Clear figures
-clf(c);
+if RawChains
+    clf(c);
+end
 
 %Extract plotting variables from results
 t_plot = MCMCplot{nc}(i).t_plot;
@@ -146,7 +155,6 @@ sigma_basalfluor = MCMCresults{nc}(i).sigma_MS2_basal;
 %Smoothed loading rate
 rate_plot = mean_R0 + mean_dR;
 rateerror_plot = sigma_R0 + sigma_dR;
-span = 0.1;
 ratesmooth_plot = smooth(rate_plot,span);
 
 %Remove loading rates before inferred initiation time

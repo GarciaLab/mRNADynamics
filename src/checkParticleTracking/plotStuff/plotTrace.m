@@ -15,17 +15,19 @@ function [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ...
 %PLOTTRACE Summary of this function goes here
 %   Detailed explanation goes here
 
-deltaFlag = false;
+switchParticleFlag= false;
+switchFrameFlag = false;
+
 %Only update the trace information if we have switched particles
 if (CurrentParticle~=PreviousParticle)||~exist('AmpIntegral', 'var')||(CurrentChannel~=PreviousChannel) || lastParticle
-    deltaFlag = true;
+    switchParticleFlag = true;
     PreviousParticle=CurrentParticle;
     [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,AmpIntegral5, ...
         ErrorIntegral, ErrorIntegral3, ErrorIntegral5,backGround3, ...
         AmpIntegralGauss3D, ErrorIntegralGauss3D]= ...
         PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
 end
-if deltaFlag
+if switchParticleFlag
     % Check if this particle has a saved manual fit or if fitInitialSlope ran
     if lineFitted
         fittedXFrames = FrameIndicesToFit;

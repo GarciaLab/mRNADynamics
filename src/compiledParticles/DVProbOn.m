@@ -3,11 +3,12 @@ function [NEllipsesDV, MeanVectorAllDV, SEVectorAllDV, OnRatioDV, ParticleCountD
     FilteredParticlesPosDV] = DVProbOn(NChannels, ...
     Particles, schnitzcells, CompiledParticles, Ellipses, FrameInfo, ...
     DropboxFolder, Prefix, ElapsedTime, DVbinID, EllipsePos_DV, nc12, ...
-    nc13, nc14, numFrames, DVbinArea)
+    nc13, nc14, numFrames, DVbinArea, edgeWidth, pixelSize)
 %DVPROBON Summary of this function goes here
 %   Detailed explanation goes here
 
-EdgeWidth=10; %AR 1/12/18 why 10?
+EdgeWidth= edgeWidth/pixelSize; %in microns. 2.12 is simply the number that results in 10 pixel width
+%when using a spatial resolution of 212nm.
     
 for ChN=1:NChannels
 

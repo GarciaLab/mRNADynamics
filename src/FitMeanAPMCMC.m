@@ -1,6 +1,6 @@
 function FitMeanAPMCMC(varargin)
 
-%Last updated on: 7/11/19 by Jonathan Liu
+%Last updated on: 7/13/19 by Jonathan Liu
 
 %
 %
@@ -49,7 +49,8 @@ function FitMeanAPMCMC(varargin)
 %                           1.8kb/min.
 %   'MeanRateDeviation', prior_sigma: set scale of loading rate fluctuations, where
 %                           the fluctuations have a Gaussian prior centered
-%                           around zero with variance s.
+%                           around zero with variance s. Default value is
+%                           10.
 %   'ChooseNC', {ncstrings}: select which nuclear cycles to analyze by
 %                            passing in a cell array of strings. Currently
 %                            only 'nc13' and 'nc14' are supported.
@@ -59,7 +60,7 @@ function FitMeanAPMCMC(varargin)
 %% Variable inputs
 
 %Default settings
-prior_sigma = 50; %Width of Gaussian prior in loading rate fluctuations
+prior_sigma = 10; %Width of Gaussian prior in loading rate fluctuations
 ncwindow = [1.5, -5; 1.5, 18]; %Time of MCMC fitting for nc13 and nc14
 MCMCsteps = [30000 15000]; %Number of MCMC total steps and burn-in steps.
 LoadPrefix = true; %User selection of Prefix by default.
@@ -389,6 +390,15 @@ dwelltime_chain = chain(n_burn:end,2);
 MS2_basal_chain = chain(n_burn:end,3);
 R0_chain = chain(n_burn:end,4);
 dR_chain = chain(n_burn:end,5:end);
+
+%Change negative loading rates to zero
+for i = 1:size(dR_chain,1)
+    for j = 1:size(dR_chain,2)
+        if dR_chain(i,j) + R0_chain(i) < 0
+            dR_chain(i,j) = -R0_chain(i);
+        end
+    end
+end
 
 %Mean results
 mean_ton = mean(ton_chain);

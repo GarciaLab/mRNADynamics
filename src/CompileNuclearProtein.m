@@ -108,6 +108,7 @@ end
 
 
 %Load all the information
+load([DropboxFolder,filesep,Prefix,'\CompiledParticles.mat'], 'CompiledParticles')
 load([DropboxFolder,filesep,Prefix,'\Ellipses.mat'], 'Ellipses')
 load([DropboxFolder,filesep,Prefix,'\FrameInfo.mat'], 'FrameInfo')
 load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'schnitzcells')
@@ -531,8 +532,20 @@ end
 % MaxFrame=[MaxFrame,NewCyclePos(i)+MaxIndex-1];
 
 
+%%
+ch=1;
 
-
+ for p = 1:length(CompiledParticles)
+        schnitzInd = CompiledParticles{ch}(p).schnitz;
+        schnitzcells(schnitzInd).compiledParticle = p;
+        schnitzcells(schnitzInd).nc = CompiledParticles{ch}(p).cycle;
+        schnitzcells(schnitzInd).dvbin = CompiledParticles{ch}(p).dvbin;
+    end
+    
+    for s = 1:length(schnitzcells)
+        schnitzcells(s).FluoTimeTrace = ExtractDlFluo(schnitzcells(s).Fluo, .5);
+        schnitzcells(s).FluoFeature = max(schnitzcells(s).FluoTimeTrace); %to be changed later. 
+    end
 
 %% Save everything
 
@@ -554,5 +567,3 @@ save([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat',NameString_ROI],
         savedVariables{:},'-v7.3');
 
 save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v7.3')
-
-

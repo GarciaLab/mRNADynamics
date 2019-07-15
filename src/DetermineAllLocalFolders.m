@@ -1,4 +1,6 @@
-function [SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath, configValues, movieDatabasePath] = DetermineAllLocalFolders(varargin)
+function [SourcePath, FISHPath, DefaultDropboxFolder,...
+    DropboxFolder, MS2CodePath, PreProcPath, configValues,...
+    movieDatabasePath, movieDatabase] = DetermineAllLocalFolders(varargin)
 
     optionalResults = '';
     
@@ -13,7 +15,7 @@ function [SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath
     
     %Now get rest of folder locations
     if(~isempty(varargin))   
-        [SourcePath, FISHPath, DropboxFolder, MS2CodePath, PreProcPath, configValues, movieDatabasePath] = DetermineLocalFolders(varargin{1}, optionalResults);
+        [SourcePath, FISHPath, DropboxFolder, MS2CodePath, PreProcPath, configValues, movieDatabasePath, movieDatabase] = DetermineLocalFolders(varargin{1}, optionalResults);
     else
-        [SourcePath, FISHPath, DropboxFolder, MS2CodePath, PreProcPath, configValues, movieDatabasePath] = DetermineLocalFolders;
+        [SourcePath, FISHPath, DropboxFolder, MS2CodePath, PreProcPath, configValues, movieDatabasePath, movieDatabase] = DetermineLocalFolders;
     end

@@ -28,7 +28,7 @@ manualSingleFits = 0; % no manually fitted single fits
 optionalResults = ''; %different dropbox folder
 yToManualAlignmentPrompt = 0; %this is an option for addparticleposition
 minBinSize = .7; % fraction of the median bin size allowed
-edgeWidth = 2.12;
+edgeWidth = 2.12; 
 
 
 % Checking Varargin 

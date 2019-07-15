@@ -82,15 +82,14 @@ while (cc~=13)
    
     
     %Crop the zoomed out nuclear mask
-        rowInd1 = uint16( (RowsResized/2-RowsZoom/2) + (ShiftRow*ResizeFactor) +1 );
+        rowInd1 = uint16( (RowsResized/2-RowsZoom/2) + (ShiftRow*ResizeFactor) + 1 );
         rowInd2 = uint16(round(RowsResized/2+RowsZoom/2+ShiftRow*ResizeFactor));
-        colInd1 = uint16(ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ResizeFactor+1);
+        colInd1 = uint16( (ColumnsResized/2-ColumnsZoom/2) + (ShiftColumn*ResizeFactor) + 1);
         colInd2 = uint16(ColumnsResized/2+ColumnsZoom/2+ShiftColumn*ResizeFactor);
         NucMaskZoomOutResizedCropped = NucMaskZoomOutResized(rowInd1:rowInd2, colInd1:colInd2);
     
     ZoomOutResizedCropped=...
-        ZoomOutResized(uint16(RowsResized/2-RowsZoom/2+ShiftRow*ResizeFactor+1):uint16(RowsResized/2+RowsZoom/2+ShiftRow*ResizeFactor),...
-        uint16(ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ResizeFactor+1):uint16(ColumnsResized/2+ColumnsZoom/2+ShiftColumn*ResizeFactor));
+        ZoomOutResized(rowInd1:rowInd2,colInd1:colInd2);
     
    
     ImOverlayMask=cat(3,mat2gray(NucMaskZoomOutResizedCropped),...

@@ -1,5 +1,5 @@
 function [rawDataPath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath,...
-    configValues, movieDatabasePath, movieDatabaseFolder] = DetermineLocalFolders(varargin)
+    configValues, movieDatabasePath, movieDatabaseFolder, movieDatabase] = DetermineLocalFolders(varargin)
 
     optionalResults = '';
     CONFIG_CSV_PATH = 'ComputerFolders.csv';
