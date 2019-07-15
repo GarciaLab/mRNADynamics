@@ -5,6 +5,7 @@ function processLIFChannel(ExperimentType, channelIndex, numberOfFrames, Prefix,
   experimentType2 = strcmpi(ExperimentType,'2spot2color') || strcmpi(ExperimentType, 'inputoutput');
   experimentType3 = strcmpi(ExperimentType, 'input') && sum(channelIndex == inputProteinChannel);
 
+  
   % if zPadding was indicated in the arguments, we round up to the series
   % with more z-slices (because we'll pad with blank images the other series)
   if (zslicesPadding)
@@ -14,10 +15,13 @@ function processLIFChannel(ExperimentType, channelIndex, numberOfFrames, Prefix,
     topZSlice = min(NSlices);
   end
   
-  % Save the blank image at the beginning of the stack
-  NameSuffix = ['_ch',iIndex(channelIndex,2)];
-  NewName = [Prefix, '_', iIndex(numberOfFrames,3), '_z', iIndex(1,2), NameSuffix, '.tif'];
-  imwrite(BlankImage, [OutputFolder, filesep, NewName]);
+  if(experimentType1 || experimentType2 || experimentType3)
+      % Save the blank image at the beginning of the stack only for
+      % type1,2,or3
+      NameSuffix = ['_ch',iIndex(channelIndex,2)];
+      NewName = [Prefix, '_', iIndex(numberOfFrames,3), '_z', iIndex(1,2), NameSuffix, '.tif'];
+      imwrite(BlankImage, [OutputFolder, filesep, NewName]);
+  end
   
   %Copy the rest of the images
   if(experimentType1 || experimentType2 || experimentType3)
