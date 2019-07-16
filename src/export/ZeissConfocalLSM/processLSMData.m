@@ -43,9 +43,23 @@ function FrameInfo = processLSMData(Folder, D, FrameInfo, ExperimentType, ...
 
       StartingTime(LSMIndex) = obtainZeissStartingTime(Folder, LSMIndex, LSMMeta2, NDigits);
       [ValueField, Frame_Times] = obtainZeissFrameTimes(LSMMeta, NSlices, LSMIndex, NPlanes, NChannels, StartingTime, Frame_Times);
-      [~, FrameInfo] = createZeissFrameInfo(LSMIndex, NFrames, NSlices, FrameInfo, LSMMeta, Frame_Times, ValueField, zslicesPadding);
-
-
+      [~, FrameInfo] = createZeissFrameInfo(LSMIndex, NFrames, NSlices, FrameInfo, LSMMeta, Frame_Times, ValueField);
+    end
+    
+    
+    % We need a second pass to set the correct slices count after having
+    % processed all the series so we know the max(NSlices) number
+    % if zPadding was indicated in the arguments, we round up to the series
+    % with more z-slices (because we'll pad with blank images the other series)
+    if (zslicesPadding)
+      topZSlice = max(NSlices);
+    else
+      % if no zPadding, we round down to the series with less z-slices
+      topZSlice = min(NSlices);
+    end
+    
+    for frameInfoIndex = 1:size(FrameInfo, 2)
+      FrameInfo(frameInfoIndex).NumberSlices = topZSlice;
     end
   
     close(waitbarFigure);
