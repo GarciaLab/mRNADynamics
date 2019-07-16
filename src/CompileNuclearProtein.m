@@ -108,7 +108,6 @@ end
 
 
 %Load all the information
-load([DropboxFolder,filesep,Prefix,'\CompiledParticles.mat'], 'CompiledParticles')
 load([DropboxFolder,filesep,Prefix,'\Ellipses.mat'], 'Ellipses')
 load([DropboxFolder,filesep,Prefix,'\FrameInfo.mat'], 'FrameInfo')
 load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'schnitzcells')
