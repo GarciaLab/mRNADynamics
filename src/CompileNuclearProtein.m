@@ -490,9 +490,9 @@ if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
         end
     else
         for ap=MinAPIndex:MaxAPIndex
-            MeanVectorAPCell2{ap}=MeanVectorAPCell{ap};
-            SDVectorAPCell2{ap}=SDVectorAPCell{ap};
-            NParticlesAPCell2{ap}=NParticlesAPCell{ap};
+            MeanVectorAPCell2{ap}=double(MeanVectorAPCell{ap});
+            SDVectorAPCell2{ap}=double(SDVectorAPCell{ap});
+            NParticlesAPCell2{ap}=double(NParticlesAPCell{ap});
         end
 
         MeanVectorAP=cell2mat(MeanVectorAPCell2);

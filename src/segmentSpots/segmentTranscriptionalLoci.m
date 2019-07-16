@@ -36,7 +36,7 @@ if Weka
     MLFlag = 'ML';
     dogStr = 'prob';
     if Threshold < 5000
-        warning('Increasing threshold to 5000. Threshold shouldn''t be set below 5000.')
+        warning('Increasing threshold to 5000. For Weka ML, you are thresholding on probability maps so the threshold shouldn''t be set below 50% = 5000.')
         Threshold = 5000;
     end
 else
