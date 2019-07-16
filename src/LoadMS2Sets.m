@@ -25,6 +25,7 @@ Prefixes = {};
 
 optionalResults = '';
 compareSettings = true;
+noCompiledNuclei = false;
 
 for i= 1:length(varargin)
     if strcmpi(varargin{i},'optionalResults')
@@ -32,6 +33,9 @@ for i= 1:length(varargin)
     end
     if strcmpi(varargin{i},'dontCompare')
         compareSettings = false;
+    end
+    if strcmpi(varargin{i}, 'noCompiledNuclei')
+        noCompiledNuclei = true;
     end
 end
 
@@ -277,7 +281,7 @@ for i=1:length(CompiledSets)
     
     
     %Load CompiledNuclei if it exists
-    if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],'file')
+    if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],'file') & ~noCompiledNuclei
         DataNuclei(i)=load([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat']);
         
         if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'file')

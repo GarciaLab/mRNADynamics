@@ -308,7 +308,6 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
     
     %Initialize fields
     schnitzcells(1).Fluo = [];
-    schnitzcells(1).Mask = [];
     
     if sum(InputChannel)
                 
@@ -347,50 +346,24 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
 % 
 %                 %Initialize the image
                 Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2);
-%                 %AR 1/12/18 moved this outside the for loops
-%                 Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2);
+
                 %Load the z-stack for this frame        
                 for CurrentZ=1:NumberSlices2   %Note that I need to add the two extra slices manually
                     Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
                 end
                 
-                % NL: rewriting this extraction step as a convolution                            
-%                 convImage = convn(Image, Circle, 'same');    
                 convImage = imfilter(Image, double(Circle), 'same');
                 convImage(edgeMask) = NaN;
-%                 [yDim, xDim] = size(convImage);
-%                 tempFluo = []; tempMask = [];
                 for j=1:length(tempSchnitz)
                     CurrentIndex=find(tempSchnitz(j).frames==CurrentFrame);
                     cenx=min(max(1,round(tempSchnitz(j).cenx(CurrentIndex))),PixelsPerLine);
                     ceny=min(max(1,round(tempSchnitz(j).ceny(CurrentIndex))),LinesPerFrame);
-%                     tempFluo(j) = convImage(ceny,cenx,:);
-%                      tempFluo(j).Fluo(CurrentIndex,1:NumberSlices2,ChN) = convImage(ceny,cenx,:);
                     tempSchnitz(j).Fluo(CurrentIndex,1:NumberSlices2,ChN) = convImage(ceny,cenx,:);
-%                      tempMask(j).Mask = Circle;
-                    tempSchnitz(j).Mask=Circle;                    
                 end
                 
-%                 schnitzcells.Mask = tempMask;
-                
-%                 NL: commented out old version
-%                 for j=1:length(schnitzcells)
-% 
-%                     %HG: Note that I'm calling a function here so that I can
-%                     %debug the parfor loop above. Ideally, I would have 
-%                     %parfor loop over images, not schnitzes within an image.
-%                     %However, I couldn't quite figure out how to do that.
-%                     %schnitzcells(j)=ExtractNuclearFluorescence(schnitzcells(j),...
-%                     %    CurrentFrame,...
-%                     %    Image,LinesPerFrame,PixelsPerLine,NumberSlices2,Circle,IntegrationRadius,InputChannel(ChN));
-%                     schnitzcells(j)= ExtractNuclearFluorescence(schnitzcells(j),...
-%                         CurrentFrame,...
-%                         Image,LinesPerFrame,PixelsPerLine,NumberSlices2,Circle,IntegrationRadius,ChN);
-%                 end
             end
             schnitzcells = tempSchnitz;
-%             schnitzcells.Fluo = tempFluo;
-%             schnitzcells.Mask = tempMask;
+
             
         close(h)
         end
@@ -423,4 +396,3 @@ if ~SkipStitchSchnitz
     disp 'Skipping StitchSchnitz'
     StitchSchnitz(Prefix)
 end
-

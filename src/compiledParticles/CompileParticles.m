@@ -686,9 +686,8 @@ save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
 %%
 if DVExperiment
     alignCompiledParticlesByAnaphase(Prefix);
-    averageDV(Prefix);
+%     averageDV(Prefix);
     plotByDorsalConc(Prefix);
-
 end
 
 disp('CompiledParticles.mat saved.');

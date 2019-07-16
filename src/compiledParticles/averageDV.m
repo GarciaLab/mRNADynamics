@@ -59,10 +59,7 @@ dvspresent = unique(dvspresent);
 
 cumdv = {};
 close all;
-cm = magma;
-cmsize = size(cm, 1);
-cmslice = cm(1:floor(cmsize/max(dvspresent)):end, :);
-cmsize = size(cm, 1);
+cm = magma(length(dvspresent));
 for c = 1:3
     curAv = meanDV{c};
     nbins = size(curAv, 1);
@@ -72,7 +69,7 @@ for c = 1:3
         cumdv{c}(dv) = nansum(curAv(dv, :));
         subplot(1, 2, 1);
         if cumdv{c}(dv)~=0
-            plot(time, curAv(dv, :), 'Color', cmslice(dv,:), 'lineWidth', 3, 'DisplayName', [num2str(DVbinID(dv)*100),'% dv']);
+            plot(time, curAv(dv, :), 'Color', cm(dv,:), 'lineWidth', 3, 'DisplayName', [num2str(DVbinID(dv)*100),'% dv']);
         end
         hold on
     end
@@ -86,9 +83,9 @@ for c = 1:3
 %     plot(1:nbins, sl, 'lineWidth', 3);
 %     cumdvnan{c} = cumdv{c}
     if length(dvspresent) > 2
-    h = colormapline(DVbinID(dvspresent), cumdv{c}(dvspresent),[], cmslice);
+        h = colormapline(DVbinID(dvspresent), cumdv{c}(dvspresent),[], cm);
     else
-     h = plot(DVbinID(dvspresent), cumdv{c}(dvspresent), 'Color',cmslice(1, :));   
+        h = plot(DVbinID(dvspresent), cumdv{c}(dvspresent), 'Color',cm(1, :));   
     end
 %     xlim([min(dvspresent) max(dvspresent)]);
     set(h,'linewidth',3) 

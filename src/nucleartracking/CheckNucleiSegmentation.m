@@ -117,7 +117,7 @@ originalAxes = axes(OriginalImage);
 tb = axtoolbar(overlayAxes);
 
 clrmp = hsv(length(schnitzcells));
-clrmp = clrmp(randperm(length(clrmp)), :)
+clrmp = clrmp(randperm(length(clrmp)), :);
 
 CurrentFrame=1;
 cc=1;
@@ -154,7 +154,11 @@ while (cc~='x')
             Ellipses{CurrentFrame}(i,5),Ellipses{CurrentFrame}(i,1)+1,...
             Ellipses{CurrentFrame}(i,2)+1,[],[],overlayAxes)];
         schnitzInd = Ellipses{CurrentFrame}(i, 9);
-        set(PlotHandle(i), 'Color', clrmp(schnitzInd, :),'Linewidth', 2);
+        try
+            set(PlotHandle(i), 'Color', clrmp(schnitzInd, :),'Linewidth', 2);
+        catch
+            set(PlotHandle(i), 'Color', 'k','Linewidth', 2);
+        end
     end
     %     hold(overlayAxes, 'off')
     %     set(PlotHandle,'Color','r', 'Linewidth', 3)
@@ -204,9 +208,13 @@ while (cc~='x')
                 MeanRadius=mean((Ellipses{CurrentFrame-1}(:,3)+Ellipses{CurrentFrame-1}(:,4))/2);
             end
             
-            
-            Ellipses{CurrentFrame}(end+1,:)=...
-                [cm(1,1),cm(1,2),MeanRadius,MeanRadius,0,0,0,0];
+            try
+                Ellipses{CurrentFrame}(end+1,:)=...
+                    [cm(1,1),cm(1,2),MeanRadius,MeanRadius,0,0,0,0,0];
+            catch
+                Ellipses{CurrentFrame}(end+1,:)=...
+                    [cm(1,1),cm(1,2),MeanRadius,MeanRadius,0,0,0,0];
+            end
         end
         
         

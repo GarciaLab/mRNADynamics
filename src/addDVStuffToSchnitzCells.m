@@ -2,6 +2,10 @@ function addDVStuffToSchnitzCells(DataType)
 %%
 [allData, Prefixes, resultsFolder] = LoadMS2Sets(DataType);
 
+load([resultsFolder,filesep,Prefixes{1},filesep,'FrameInfo.mat'], 'FrameInfo')
+imSize = [FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine];
+
+
 ch = 1;
 
 fluoFeatures = [];
@@ -14,17 +18,21 @@ for e = 1:length(allData)
     for p = 1:length(CompiledParticles)
         schnitzInd = CompiledParticles{ch}(p).schnitz;
         schnitzcells(schnitzInd).compiledParticle = p;
-        schnitzcells(schnitzInd).cycle = CompiledParticles{ch}(p).cycle;
         schnitzcells(schnitzInd).dvbin = CompiledParticles{ch}(p).dvbin;
     end
+    
+    
+    schnitzcells = filterSchnitz(schnitzcells, imSize);
+    
     
     ncs = [zeros(1,8),allData(e).Particles.nc9, allData(e).Particles.nc10, allData(e).Particles.nc11,...
         allData(e).Particles.nc12, allData(e).Particles.nc13, allData(e).Particles.nc14];
     
     for s = 1:length(schnitzcells)
-        dif = schnitzcells(s).frames(1) - ncs;
+		midFrame = ceil(length(schnitzcells(s).frames)/2);
+        dif = schnitzcells(s).frames(midFrame) - ncs;
         cycle = max(find(dif>0));
-        schnitzcells(s).cycle = cycle;           
+        schnitzcells(s).cycle = cycle;    
     end
     
     for s = 1:length(schnitzcells)
@@ -39,7 +47,9 @@ for e = 1:length(allData)
         if isempty(schnitzcells(s).FluoFeature)
             schnitzcells(s).FluoFeature = NaN;
         end
-        fluoFeatures = [fluoFeatures, schnitzcells(s).FluoFeature];
+        if schnitzcells(s).Approved
+            fluoFeatures = [fluoFeatures, schnitzcells(s).FluoFeature];
+        end
     end
   
     save([resultsFolder,filesep,Prefixes{e},filesep,Prefixes{e},'_lin.mat'], 'schnitzcells')
@@ -47,9 +57,13 @@ for e = 1:length(allData)
     
 end
 
-nbins = length(DVbinID);
+mkdir([resultsFolder,filesep,DataType]);
+% nbins = floor(length(DVbinID) / 2);
+nbins = 10;
 dlfluobinwidth = (max(fluoFeatures) - min(fluoFeatures)) / (nbins-1);
 dlfluobins = min(fluoFeatures):dlfluobinwidth:max(fluoFeatures);
+save([resultsFolder,filesep,DataType,filesep,'dlfluobins.mat'], 'dlfluobins');
+
 
 %%
 

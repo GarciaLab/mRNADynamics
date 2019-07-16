@@ -21,14 +21,32 @@ for e = 1:length(allData);
     
     schnitzcells = allData(e).Particles.schnitzcells;
     CompiledParticles = allData(e).Particles.CompiledParticles;
-    
-    
+        
     for nc = 12:14
         for bin = 1:nbins
+            
             particles = find([CompiledParticles{ch}.cycle] == nc & [CompiledParticles{ch}.dvbin] == bin);
-            schnitzes = find([schnitzcells.cycle] == nc & [schnitzcells.dvbin] == bin);
+            schnitzes = find([schnitzcells.cycle] == nc & [schnitzcells.dvbin] == bin...
+                & [schnitzcells.Approved]);
             particlesFluo = find([CompiledParticles{ch}.cycle] == nc & [CompiledParticles{ch}.dlfluobin] == bin);
-            schnitzesFluo = find([schnitzcells.cycle] == nc & [schnitzcells.dlfluobin] == bin);
+            schnitzesFluo = find([schnitzcells.cycle] == nc & [schnitzcells.dlfluobin] == bin...
+                & [schnitzcells.Approved]);
+            if ~isempty(schnitzesFluo)
+                1
+            end
+            for p = 1:length(particles)
+                keyboard
+                if ~schnitzcells(CompiledParticles{ch}(p).schnitz).Approved
+                    keyboard
+                    particles(p) = [];
+                end
+            end
+            
+            for p = 1:length(particlesFluo)
+                if ~schnitzcells(CompiledParticles{ch}(p).schnitz).Approved
+                    particlesFluo(p) = [];
+                end
+            end
             
             npart{nc-11}(bin) = npart{nc-11}(bin) + length(particles);
             nschnitz{nc-11}(bin) = nschnitz{nc-11}(bin) + length(schnitzes);
@@ -44,10 +62,25 @@ end
 figure()
 for cycle = 1:3
     subplot(1, 3, cycle)
-    plot(dlfluobins, fracFluo{cycle}, 'o');
-    set(gca, 'YScale', 'log');
+    plot(dlfluobins, fracFluo{cycle}, '-o');
     xlabel('dorsal concentration (au)');
     ylabel('fraction active nuclei');
+    ylim([0, 1]);
+    xlim([0, max(dlfluobins)*1.1]);
+    title(['nc',num2str(cycle+11)]);
+    standardizeFigure(gca, []);
+end
+
+
+%stacked bar
+figure()
+for cycle = 1:3
+    subplot(1, 3, cycle)
+    bardata = cat(1,npartFluo{cycle}, nschnitzFluo{cycle});
+    bar(dlfluobins, bardata', 'stacked');
+    legend('particles', 'ellipses')
+    xlabel('dorsal concentration (au)');
+    ylabel('number');
     title(['nc',num2str(cycle+11)]);
     standardizeFigure(gca, []);
 end

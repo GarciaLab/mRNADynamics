@@ -59,7 +59,7 @@ for f = 1:Frames
     %\/\/\/\/\/\/\/
 
 
-    % Clasify the trace and calculate the fluo
+    % Classify the trace and calculate the fluo
     %if the a coefficient in the model fluo(z) = az^2 + bz + c is negative, the
     %parabola opens up. If its positive, it opens down. If it's slightly
     %negative or slightly positive it's a very shallow parabola.

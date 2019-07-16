@@ -231,7 +231,7 @@ for i=1:length(schnitzcells)
 
     waitbar(i/length(schnitzcells),h)
     
-    if (schnitzcells(i).Approved==1)
+    if schnitzcells(i).Approved
         %Which frames were approved manually?
         FrameFilter=schnitzcells(i).FrameApproved;
         
@@ -240,7 +240,7 @@ for i=1:length(schnitzcells)
             [MaxValue,MaxPos]=max(schnitzcells(i).Fluo(j,:));
             if NZSclices<3
                 if (MaxPos==2)||(MaxPos==NZSclices-1)
-                    FrameFilter(j)=0;
+                    FrameFilter(j)=false;
                 end
             end
         end
@@ -251,39 +251,39 @@ for i=1:length(schnitzcells)
             CompiledNuclei(k).P=schnitzcells(i).P;
             CompiledNuclei(k).E=schnitzcells(i).E;
             CompiledNuclei(k).D=schnitzcells(i).D;
-            CompiledNuclei(k).Frames=schnitzcells(i).frames(FrameFilter);
-            CompiledNuclei(k).xPos=schnitzcells(i).cenx(FrameFilter);
-            CompiledNuclei(k).yPos=schnitzcells(i).ceny(FrameFilter);
-            CompiledNuclei(k).Radius=schnitzcells(i).len(FrameFilter);
-            CompiledNuclei(k).cellno=schnitzcells(i).cellno(FrameFilter);
+            CompiledNuclei(k).Frames=uint16(schnitzcells(i).frames(FrameFilter));
+            CompiledNuclei(k).xPos=single(schnitzcells(i).cenx(FrameFilter));
+            CompiledNuclei(k).yPos=single(schnitzcells(i).ceny(FrameFilter));
+            CompiledNuclei(k).Radius=single(schnitzcells(i).len(FrameFilter));
+            CompiledNuclei(k).cellno=uint16(schnitzcells(i).cellno(FrameFilter));
             CompiledNuclei(k).nc=[];
             
             %Save the information about the original schnitz
-            CompiledNuclei(k).schnitz=i;
+            CompiledNuclei(k).schnitz=uint16(i);
             
             if ~ExperimentAxisIsNoAP
-                CompiledNuclei(k).MeanDV=mean(schnitzcells(i).DVpos(FrameFilter));
-                CompiledNuclei(k).MedianDV=median(schnitzcells(i).DVpos(FrameFilter));
-                CompiledNuclei(k).MeanAP=mean(schnitzcells(i).APpos(FrameFilter));
-                CompiledNuclei(k).MedianAP=median(schnitzcells(i).APpos(FrameFilter));
+                CompiledNuclei(k).MeanDV=single(mean(schnitzcells(i).DVpos(FrameFilter)));
+                CompiledNuclei(k).MedianDV=single(median(schnitzcells(i).DVpos(FrameFilter)));
+                CompiledNuclei(k).MeanAP=single(mean(schnitzcells(i).APpos(FrameFilter)));
+                CompiledNuclei(k).MedianAP=single(median(schnitzcells(i).APpos(FrameFilter)));
             end
             
            FluoTimeTrace = ExtractDlFluo(schnitzcells(i).Fluo, .5);
-           CompiledNuclei(k).FluoTimeTrace=FluoTimeTrace;
+           CompiledNuclei(k).FluoTimeTrace=single(FluoTimeTrace);
 
             %Copy and extract the fluorescence information
-            CompiledNuclei(k).FluoMax=squeeze(max(schnitzcells(i).Fluo(FrameFilter,:,:),[],2));
+            CompiledNuclei(k).FluoMax=single(squeeze(max(schnitzcells(i).Fluo(FrameFilter,:,:),[],2)));
             %For DV case, need to calculate more
             if strcmpi(ExperimentAxis,'DV')
                 DV_Fluo = schnitzcells(i).Fluo(FrameFilter,:,:);
-                CompiledNuclei(k).DVFluo = DV_Fluo;
-                CompiledNuclei(k).FluoMin=squeeze(min(DV_Fluo(DV_Fluo>0),[],2));
-                CompiledNuclei(k).FluoMean=squeeze(mean(DV_Fluo(DV_Fluo>0),2));
+                CompiledNuclei(k).DVFluo = single(DV_Fluo);
+                CompiledNuclei(k).FluoMin=single(squeeze(min(DV_Fluo(DV_Fluo>0),[],2)));
+                CompiledNuclei(k).FluoMean=single(squeeze(mean(DV_Fluo(DV_Fluo>0),2)));
                 %the 'p' field is a parabola fit of DV fluorescence over
                 %time
-                for frame = 1:size(DV_Fluo, 1)
-                    CompiledNuclei(k).parabolaFit{frame} = polyfit(1:size(DV_Fluo,2),DV_Fluo(frame,:),2);
-                end
+%                 for frame = 1:size(DV_Fluo, 1)
+%                     CompiledNuclei(k).parabolaFit{frame} = polyfit(1:size(DV_Fluo,2),DV_Fluo(frame,:),2);
+%                 end
                     
             end
 
@@ -530,22 +530,6 @@ end
 % 
 % [~,MaxIndex]=max(MeanVectorAll(NewCyclePos(i):end));
 % MaxFrame=[MaxFrame,NewCyclePos(i)+MaxIndex-1];
-
-
-%%
-ch=1;
-
- for p = 1:length(CompiledParticles)
-        schnitzInd = CompiledParticles{ch}(p).schnitz;
-        schnitzcells(schnitzInd).compiledParticle = p;
-        schnitzcells(schnitzInd).nc = CompiledParticles{ch}(p).cycle;
-        schnitzcells(schnitzInd).dvbin = CompiledParticles{ch}(p).dvbin;
-    end
-    
-    for s = 1:length(schnitzcells)
-        schnitzcells(s).FluoTimeTrace = ExtractDlFluo(schnitzcells(s).Fluo, .5);
-        schnitzcells(s).FluoFeature = max(schnitzcells(s).FluoTimeTrace); %to be changed later. 
-    end
 
 %% Save everything
 
