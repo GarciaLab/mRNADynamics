@@ -288,13 +288,6 @@ for i=1:length(CompiledSets)
     %Load CompiledNuclei if it exists
     if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],'file') & ~noCompiledNuclei
         DataNuclei(i)=load([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat']);
-        
-        if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'file')
-            APDivisions(i)=load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'], 'APDivision');
-        else
-            warning('APDivision.mat not found.')
-        end
-        
     end
 end
 
@@ -393,9 +386,18 @@ if exist('Data','var') && exist('DataNuclei','var')
         Data(i).Nuclei=DataNuclei(i);
     end
 elseif (~exist('Data', 'var')) && exist('DataNuclei', 'var')
-    Data=DataNuclei;
+    Data=DataNuclei
 elseif  (~exist('Data','var')) && (~exist('DataNuclei','var'))
     error('No CompiledParticles found. Check DynamicsResults folder as well as DataStatus.XLSX.')
 end
+
+if noCompiledNuclei
+    DataTemp = Data;
+    clear Data
+      for i=1:length(DataTemp)
+            Data(i).Particles=DataTemp(i);
+      end
+end
+    
 
 end

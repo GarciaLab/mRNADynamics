@@ -4,6 +4,8 @@ function removeUnwantedTIFs(rawDataFolder)
   oldFolder = cd(rawDataFolder);
   
   tifs = dir('*.tif');
+  jpgs = dir('*.jpg');
+  tifs = [tifs, jpgs];
 
   allTifs = {tifs.name};
 

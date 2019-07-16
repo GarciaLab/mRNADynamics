@@ -1,8 +1,6 @@
-function schnitzcells = breakUpSchnitzesAtMitoses(schnitzcells, ncs, nFrames)
+function [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncs, nFrames)
 
-% ncs = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
-nFrames = 500;
-cycleFrames = nan(1,500);
+cycleFrames = nan(1,nFrames);
 
 for i = 1:length(ncs)
     if i==14
@@ -20,45 +18,44 @@ nNuclei = length(schnitzcells)
 j = 1;
 for s = 1:nNuclei
     
-    sc  = schnitzcells(s);
-    hasncs = [];
+    sc  = schnitzcells(s);  
     
-    for nc = 1:length(ncs)
-        hasnc = nc*logical(sum(sc.frames' >= ncs(nc) & sc.frames' < ncs(nc) + 1));
-        if hasnc
-            hasncs = [hasncs, hasnc]
-        end
-    end
-    
-    hasncs = unique(cycleFrames(sc.frames))
+    hasncs = unique(cycleFrames(sc.frames));
     
     if length(hasncs) > 1
         
-        keyboard
+%         keyboard
         for i = 1:length(hasncs)
-%             cycleFrames = find(sc.frames <  hasncs(i) & sc.frames > ncs(hasncs(i)-1));
             newInd = nNuclei + j;
             tempSchnitzcells(newInd) = sc;
-            newFrames = (cycleFrames(sc.frames) == i);
-            tempSchnitzcells(newInd).frames = sc.frames(newFrames);
+            newFrames = cycleFrames(sc.frames) == hasncs(i)
+
+            tempSchnitzcells(newInd).frames = sc.frames(newFrames)
             tempSchnitzcells(newInd).cenx = sc.cenx(newFrames);
             tempSchnitzcells(newInd).ceny = sc.ceny(newFrames);
             tempSchnitzcells(newInd).len = sc.len(newFrames);
             tempSchnitzcells(newInd).cellno = sc.cellno(newFrames);
             tempSchnitzcells(newInd).Fluo = sc.Fluo(newFrames, :);
             tempSchnitzcells(newInd).cellno = sc.cellno(newFrames);
-            tempSchnitzcells(newInd).APPos = sc.APPos(newFrames);
-            tempSchnitzcells(newInd).DVPos = sc.DVPos(newFrames);
+            tempSchnitzcells(newInd).APpos = sc.APpos(newFrames);
+            tempSchnitzcells(newInd).DVpos = sc.DVpos(newFrames);
              tempSchnitzcells(newInd).FrameApproved = sc.FrameApproved(newFrames);
              try
-             tempSchnitzcells(newInd).FluoTimeTrace = sc.FluoTimeTrace(newFrames);
+                tempSchnitzcells(newInd).FluoTimeTrace = sc.FluoTimeTrace(newFrames);
              end
             j = j+1;
         end
+        
+        tempSchnitzcells(s) = [];
+        j = j-1;
         
         
     end
     
 end
+
+schnitzcells = tempSchnitzcells;
+
+Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells)
 
 end

@@ -14,6 +14,7 @@ for e = 1:length(allData)
     schnitzcells = allData(e).Particles.schnitzcells;
     CompiledParticles = allData(e).Particles.CompiledParticles;
     DVbinID = allData(1).Particles.DVbinID;
+    Ellipses = allData(e).Particles.Ellipses;
     
     for p = 1:length(CompiledParticles)
         schnitzInd = CompiledParticles{ch}(p).schnitz;
@@ -21,12 +22,14 @@ for e = 1:length(allData)
         schnitzcells(schnitzInd).dvbin = CompiledParticles{ch}(p).dvbin;
     end
     
-    
-    schnitzcells = filterSchnitz(schnitzcells, imSize);
-    
-    
     ncs = [zeros(1,8),allData(e).Particles.nc9, allData(e).Particles.nc10, allData(e).Particles.nc11,...
         allData(e).Particles.nc12, allData(e).Particles.nc13, allData(e).Particles.nc14];
+
+    nFrames = length(allData(e).Particles.ElapsedTime);
+    [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncs, nFrames);
+    
+    schnitzcells = filterSchnitz(schnitzcells, imSize);
+   
     
     for s = 1:length(schnitzcells)
 		midFrame = ceil(length(schnitzcells(s).frames)/2);
@@ -53,7 +56,7 @@ for e = 1:length(allData)
     end
   
     save([resultsFolder,filesep,Prefixes{e},filesep,Prefixes{e},'_lin.mat'], 'schnitzcells')
-    
+    save([resultsFolder,filesep,Prefixes{e},filesep,'Ellipses.mat'], 'Ellipses');
     
 end
 

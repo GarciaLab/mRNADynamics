@@ -1,7 +1,7 @@
 function [npart, nschnitz, npartFluo, nschnitzFluo] = plotFracByDlFluo(DataType)
 
 if ischar(DataType)
-    [allData, Prefixes, resultsFolder] = LoadMS2Sets(DataType);
+    [allData, Prefixes, resultsFolder] = LoadMS2Sets(DataType, 'noCompiledNuclei');
 else
     allData = DataType;
     DataType = inputname(1);
@@ -25,31 +25,28 @@ for e = 1:length(allData);
     for nc = 12:14
         for bin = 1:nbins
             
-            particles = find([CompiledParticles{ch}.cycle] == nc & [CompiledParticles{ch}.dvbin] == bin);
-            schnitzes = find([schnitzcells.cycle] == nc & [schnitzcells.dvbin] == bin...
-                & [schnitzcells.Approved]);
+%             particles = find([CompiledParticles{ch}.cycle] == nc & [CompiledParticles{ch}.dvbin] == bin);
+%             schnitzes = find([schnitzcells.cycle] == nc & [schnitzcells.dvbin] == bin...
+%                 & [schnitzcells.Approved]);
             particlesFluo = find([CompiledParticles{ch}.cycle] == nc & [CompiledParticles{ch}.dlfluobin] == bin);
             schnitzesFluo = find([schnitzcells.cycle] == nc & [schnitzcells.dlfluobin] == bin...
                 & [schnitzcells.Approved]);
-            if ~isempty(schnitzesFluo)
-                1
-            end
-            for p = 1:length(particles)
-                keyboard
-                if ~schnitzcells(CompiledParticles{ch}(p).schnitz).Approved
-                    keyboard
-                    particles(p) = [];
-                end
-            end
-            
+%             for p = 1:length(particles)
+%                 keyboard
+%                 if ~schnitzcells(CompiledParticles{ch}(p).schnitz).Approved
+%                     keyboard
+%                     particles(p) = [];
+%                 end
+%             end
+            tempParticlesFluo = [];
             for p = 1:length(particlesFluo)
-                if ~schnitzcells(CompiledParticles{ch}(p).schnitz).Approved
-                    particlesFluo(p) = [];
+                if schnitzcells(CompiledParticles{ch}(p).schnitz).Approved
+                    tempParticlesFluo = [tempParticlesFluo, particlesFluo(p)];
                 end
             end
             
-            npart{nc-11}(bin) = npart{nc-11}(bin) + length(particles);
-            nschnitz{nc-11}(bin) = nschnitz{nc-11}(bin) + length(schnitzes);
+%             npart{nc-11}(bin) = npart{nc-11}(bin) + length(particles);
+%             nschnitz{nc-11}(bin) = nschnitz{nc-11}(bin) + length(schnitzes);
             npartFluo{nc-11}(bin) = npartFluo{nc-11}(bin) + length(particlesFluo);
             nschnitzFluo{nc-11}(bin) = nschnitzFluo{nc-11}(bin) + length(schnitzesFluo);
         end

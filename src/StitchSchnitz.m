@@ -1,4 +1,4 @@
-function StitchSchnitz(varargin)
+function schnitzcells = StitchSchnitz(varargin)
 
 %This function joins schnitzcells that overlap in space and are contiguous in time.
 
@@ -30,12 +30,12 @@ load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
 %% /|\/|\/|\/|\ Setup stuff /|\/|\/|\/|\
 
 %Start the stitching
-[Frames,Dummy] = size(Ellipses); %how many frames do we have?
+[nFrames,~] = size(Ellipses); %how many frames do we have?
 Radii = []; %a vector of length = frames that will contain ellipse radius per frame
 %get the size information of ellipses in time
 %we want to use size info as a threshold to decide if two schnitz in two contiguous frames
 %correspond to the same nucleus.
-for fr = 1:Frames
+for fr = 1:nFrames
     Radius = Ellipses{fr}(1,3); %the third column contains size info. by definition all ellipses/frame are equal in size
     %Is this value the actual radius? or is it a diameter?
     Radii = [Radii Radius];
@@ -180,7 +180,10 @@ for i=1:length(Thresholds)
 end
 close(h)
 
+
+[schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames)
 save([DropboxFolder,filesep,Prefix,filesep,Prefix '_lin.mat'],'schnitzcells')
+save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 
 
 %% Accesory code to check nuclear traces

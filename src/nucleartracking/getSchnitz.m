@@ -6,7 +6,7 @@ val = [];
 center = [ellipse(1), ellipse(2)];
 foundIt = false;
 s = 0;
-while ~foundIt & s <= length(schnitzcells)
+while ~foundIt & s < length(schnitzcells)
     s = s+1;
     schnitz = schnitzcells(s);
     schnitzInd = find(schnitz.frames == frame);
@@ -15,7 +15,6 @@ while ~foundIt & s <= length(schnitzcells)
     end
     
     if foundIt
-%         Ellipses{frame}(ellipseIndex, 9) = s;
         val = s;
     end
 

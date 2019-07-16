@@ -4,6 +4,8 @@
 function [D, FileMode] = DetermineFileMode(rawDataFolder)
 
     DTIF=dir([rawDataFolder,filesep,'*.tif']);
+    DJPG = dir([rawDataFolder,filesep,'*.jpg']);
+    DTIF = [DTIF, DJPG];
     DLSM=dir([rawDataFolder,filesep,'*.lsm']);     %Zeiss confocal, old LSM format
     DLIF=dir([rawDataFolder,filesep,'*.lif']);     %Leica confocal
     DCZI=dir([rawDataFolder,filesep,'*.czi']);     %Zeiss confocal, new CZI format
