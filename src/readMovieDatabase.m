@@ -10,12 +10,26 @@ function [rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
         
     %Figure out the initial folders. We'll update the Drobpox one later on in the code.
 
-    % [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath, configValues, movieDatabasePath]=...
-    %     DetermineLocalFolders;
     [rawDataPath,~,~,~, ~, ~, movieDatabasePath, movieDatabaseFolder]=...
         DetermineLocalFolders;
 
 
+    %Get the Prefix if is not already present
+    if isempty(Prefix)
+        rawDataFolder = uigetdir(rawDataPath,'Select folder with data');
+
+
+        %Get the information from the last two folders in the structure
+        SlashPositions = strfind(rawDataFolder,filesep);
+        Prefix = [rawDataFolder((SlashPositions(end-1)+1):(SlashPositions(end)-1)),'-',...
+            rawDataFolder((SlashPositions(end)+1):(end))];
+    else 
+        %Obtains the subfolder using the Prefix (replaces '-' with '/' after the date,
+        %knowing it takes 10 characters)
+        Subfolder = [Prefix(1:10),filesep,Prefix(12:length(Prefix))];
+        rawDataFolder = strcat(rawDataPath,filesep,Subfolder);
+    end
+    
     %What type of experiment are we dealing with? Get this out of MovieDatabase
     movieDatabase = csv2cell(movieDatabasePath, 'fromfile');
     movieDatabaseHeaderRow = movieDatabase(1, :);
@@ -39,22 +53,11 @@ function [rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
 [rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath, ~, ~]=...
     DetermineLocalFolders(Prefix, optionalResults);
 
-
-    %Get the Prefix if is not already present
-    if isempty(Prefix)
-        rawDataFolder = uigetdir(rawDataPath,'Select folder with data');
-
-
-        %Get the information from the last two folders in the structure
-        SlashPositions = strfind(rawDataFolder,filesep);
-        Prefix = [rawDataFolder((SlashPositions(end-1)+1):(SlashPositions(end)-1)),'-',...
-            rawDataFolder((SlashPositions(end)+1):(end))];
-    else 
-        %Obtains the subfolder using the Prefix (replaces '-' with '/' after the date,
+ %Obtains the subfolder using the Prefix (replaces '-' with '/' after the date,
         %knowing it takes 10 characters)
         Subfolder = [Prefix(1:10),filesep,Prefix(12:length(Prefix))];
         rawDataFolder = strcat(rawDataPath,filesep,Subfolder);
-    end
+
     
     %Set the destination folders
     OutputFolder = [DropboxFolder, filesep, Prefix];
