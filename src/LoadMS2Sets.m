@@ -140,7 +140,12 @@ for i=1:length(CompiledSets)
     end
 end
 
-[~,~,DropboxFolder] = readMovieDatabase(Prefix, optionalResults);
+%7/15/19 JL: DropboxFolder was already defined above, why do we need this
+%line here? I'm running into issues where I'm trying to load data from a
+%different folder than my normal DynamicsResults, and using
+%readMovieDatabase defaults my DropboxFolder to my normal DynamicsResults,
+%resulting in a failure to load the datasets I want.
+%[~,~,DropboxFolder] = readMovieDatabase(Prefix, optionalResults);
 
 %Find and load the different prefixes
 PrefixRow=find(strcmpi(StatusTxt(:,1),'Prefix:'));

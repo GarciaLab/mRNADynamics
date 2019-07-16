@@ -35,7 +35,10 @@ end
 if Weka
     MLFlag = 'ML';
     dogStr = 'prob';
-%     Threshold = 5000;
+    if Threshold < 5000
+        warning('Increasing threshold to 5000. Threshold shouldn''t be set below 5000.')
+        Threshold = 5000;
+    end
 else
     MLFlag = '';
     dogStr = 'DOG_';

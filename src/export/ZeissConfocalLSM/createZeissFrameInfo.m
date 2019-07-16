@@ -1,4 +1,4 @@
-function [FrameRange, FrameInfo] = createZeissFrameInfo(LSMIndex, NFrames, NSlices, FrameInfo, LSMMeta, Frame_Times, ValueField, zslicesPadding)
+function [FrameRange, FrameInfo] = createZeissFrameInfo(LSMIndex, NFrames, NSlices, FrameInfo, LSMMeta, Frame_Times, ValueField)
   %Save the information in FrameInfo
   if LSMIndex == 1
     FrameRange = 1:NFrames(LSMIndex);
@@ -6,19 +6,11 @@ function [FrameRange, FrameInfo] = createZeissFrameInfo(LSMIndex, NFrames, NSlic
     FrameRange = (1:NFrames(LSMIndex)) + length(FrameInfo);
   end
   
-  % if zPadding was indicated in the arguments, we round up to the series
-  % with more z-slices (because we'll pad with blank images the other series)
-  if (zslicesPadding)
-    topZSlice = max(NSlices);
-  else
-    % if no zPadding, we round down to the series with less z-slices
-    topZSlice = min(NSlices);
-  end
-
   for i = FrameRange
     FrameInfo(i).LinesPerFrame = str2double(LSMMeta.getPixelsSizeY(0));
     FrameInfo(i).PixelsPerLine = str2double(LSMMeta.getPixelsSizeX(0));
-    FrameInfo(i).NumberSlices = topZSlice;
+    % FrameInfo(i).NumberSlices = min(NSlices); % JP: because of z-padding
+    % feature, we need to set NumberSlices after we've processed all series
     FrameInfo(i).FileMode = 'LSMExport';
 
     if ValueField
