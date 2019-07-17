@@ -386,7 +386,7 @@ if exist('Data','var') && exist('DataNuclei','var')
         Data(i).Nuclei=DataNuclei(i);
     end
 elseif (~exist('Data', 'var')) && exist('DataNuclei', 'var')
-    Data=DataNuclei
+    Data=DataNuclei;
 elseif  (~exist('Data','var')) && (~exist('DataNuclei','var'))
     error('No CompiledParticles found. Check DynamicsResults folder as well as DataStatus.XLSX.')
 end

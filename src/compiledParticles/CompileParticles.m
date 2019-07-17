@@ -384,6 +384,7 @@ if APExperiment || DVExperiment
 end
 
 DVLength = APLength/2; 
+EllipsePos_DV = [];
 if HistoneChannel && (APExperiment || DVExperiment)
     %The information in Ellipses is
     %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
