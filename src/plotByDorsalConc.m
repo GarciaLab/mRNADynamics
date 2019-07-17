@@ -7,6 +7,7 @@ resultsFolder = [DropboxFolder, filesep, Prefix];
 
 load([resultsFolder, filesep, 'CompiledNuclei.mat']);
 load([resultsFolder, filesep, 'CompiledParticles.mat']);
+load([resultsFolder,filesep, Prefix, '_lin.mat']);
 load([resultsFolder, filesep, 'APDivision.mat']);
 
 ch = 1;

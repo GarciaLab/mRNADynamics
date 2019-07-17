@@ -64,10 +64,6 @@ NameString_ROI='';
 
 close all
 
-%gives the location of these 5 quantities.
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders;
-
 
 for args=1:length(varargin)
     if strcmp(varargin{args},'ROI')|| strcmp(varargin{args},'nonROI')
@@ -99,9 +95,8 @@ else
 end
 
 
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders;
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath,...
+    configValues, movieDatabasePath, movieDatabaseFolder, movieDatabase] ]=...
     DetermineLocalFolders(Prefix);
 
 
@@ -123,16 +118,10 @@ else
     NChannels=1;
 end
 
-%What type of experiment are we dealing with? Get this out of
-%MovieDatabase.xlsx
-% [SourcePath,FISHPath,DropboxFolder,MS2CodePath, PreProcPath,...
-%     Folder, Prefix, ExperimentType, Channel1, Channel2,OutputFolder...
-%     ] = readMovieDatabase(Prefix);
-
 % refactor in progress, we should replace readMovieDatabase with getExperimentDataFromMovieDatabase
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
 Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase)
 
 %Pre-calculating ExperimentAxis boolean for faster use in later if statements
 ExperimentAxisIsNoAP = strcmpi(ExperimentAxis, 'NoAP');

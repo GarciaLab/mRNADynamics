@@ -1,4 +1,6 @@
-function [npart, nschnitz, npartFluo, nschnitzFluo] = plotFracByDlFluo(DataType)
+function [npartFluo, nschnitzFluo, axs] = plotFracByDlFluo(DataType)
+
+
 
 if ischar(DataType)
     [allData, Prefixes, resultsFolder] = LoadMS2Sets(DataType, 'noCompiledNuclei');
@@ -17,6 +19,11 @@ nschnitz = {zeros(1, nbins), zeros(1, nbins), zeros(1, nbins)};
 npartFluo = {zeros(1, nbins), zeros(1, nbins), zeros(1, nbins)};
 nschnitzFluo = {zeros(1, nbins), zeros(1, nbins), zeros(1, nbins)};
 
+
+npartFluoEmbryo = {};
+nschnitzFluoEmbryo = {};
+fracFluoEmbryo = {};
+
 for e = 1:length(allData);
     
     schnitzcells = allData(e).Particles.schnitzcells;
@@ -32,55 +39,85 @@ for e = 1:length(allData);
             schnitzesFluo = find([schnitzcells.cycle] == nc & [schnitzcells.dlfluobin] == bin...
                 & [schnitzcells.Approved]);
 %             for p = 1:length(particles)
-%                 keyboard
-%                 if ~schnitzcells(CompiledParticles{ch}(p).schnitz).Approved
-%                     keyboard
+%                 if ~schnitzcells(CompiledParticles{ch}(particles(p)).schnitz).Approved
 %                     particles(p) = [];
 %                 end
 %             end
+
             tempParticlesFluo = [];
+            particlesFluoCopy = particlesFluo;
+            
             for p = 1:length(particlesFluo)
-                if schnitzcells(CompiledParticles{ch}(p).schnitz).Approved
+                if schnitzcells(CompiledParticles{ch}(particlesFluo(p)).schnitz).Approved
                     tempParticlesFluo = [tempParticlesFluo, particlesFluo(p)];
+                    mrnas = [mrnas, sum(CompiledParticles{ch}(particlesFluo(p)).Fluo)];
                 end
             end
+            
+            particlesFluo = tempParticlesFluo;
+    
             
 %             npart{nc-11}(bin) = npart{nc-11}(bin) + length(particles);
 %             nschnitz{nc-11}(bin) = nschnitz{nc-11}(bin) + length(schnitzes);
             npartFluo{nc-11}(bin) = npartFluo{nc-11}(bin) + length(particlesFluo);
             nschnitzFluo{nc-11}(bin) = nschnitzFluo{nc-11}(bin) + length(schnitzesFluo);
+            allmrnas{nc-11}(bin) = allmrnas{nc-11}(bin) + mrnas;
+            
+            npartFluoEmbryo{nc-11}(bin, e) = length(particlesFluo);
+            nschnitzFluoEmbryo{nc-11}(bin, e) = length(schnitzesFluo);
+            
         end
         
         fracFluo{nc-11} = npartFluo{nc-11}./nschnitzFluo{nc-11};
+        
+        fracFluoEmbryo{nc-11}(:, e) = npartFluoEmbryo{nc-11}(:,e)./nschnitzFluoEmbryo{nc-11}(:,e);
+        
     end
+    
 end
 
 
+for nc = 1:2
+     meanFracFluoEmbryo{nc} = nanmean(fracFluoEmbryo{nc}, 2);
+    nEmbryos = size(fracFluoEmbryo{nc}, 2);
+    seFracFluoEmbryo{nc} = nanstd(fracFluoEmbryo{nc},0, 2)./sqrt(nEmbryos);
+end
+
+
+%%
+%plotting
+
 figure()
-for cycle = 1:3
-    subplot(1, 3, cycle)
-    plot(dlfluobins, fracFluo{cycle}, '-o');
+axs = {};
+for cycle = 1:2
+    
+    axs{cycle} = subplot(1, 2, cycle);
+    errorbar(dlfluobins, meanFracFluoEmbryo{cycle},seFracFluoEmbryo{cycle}, '-o');
     xlabel('dorsal concentration (au)');
     ylabel('fraction active nuclei');
     ylim([0, 1]);
     xlim([0, max(dlfluobins)*1.1]);
     title(['nc',num2str(cycle+11)]);
     standardizeFigure(gca, []);
+    
 end
 
 
 %stacked bar
-figure()
-for cycle = 1:3
-    subplot(1, 3, cycle)
+figure();
+for cycle = 1:2
+    subplot(1, 2, cycle)
     bardata = cat(1,npartFluo{cycle}, nschnitzFluo{cycle});
     bar(dlfluobins, bardata', 'stacked');
-    legend('particles', 'ellipses')
+    leg = legend('particles', 'ellipses')
     xlabel('dorsal concentration (au)');
     ylabel('number');
     title(['nc',num2str(cycle+11)]);
-    standardizeFigure(gca, []);
+    standardizeFigure(gca, leg);
 end
+
+%%
+
 
 
 end
