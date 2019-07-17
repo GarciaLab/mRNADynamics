@@ -82,28 +82,28 @@ while (cc~=13)
    
     
     %Crop the zoomed out nuclear mask
-        rowInd1 = uint16( (RowsResized/2-RowsZoom/2) + (ShiftRow*ResizeFactor) + 1 );
-        rowInd2 = uint16(round(RowsResized/2+RowsZoom/2+ShiftRow*ResizeFactor));
-        colInd1 = uint16( (ColumnsResized/2-ColumnsZoom/2) + (ShiftColumn*ResizeFactor) + 1);
-        colInd2 = uint16(ColumnsResized/2+ColumnsZoom/2+ShiftColumn*ResizeFactor);
+    rowInd1 = uint16( (RowsResized/2-RowsZoom/2) + (ShiftRow*ResizeFactor) + 1 );
+    rowInd2 = uint16(round(RowsResized/2+RowsZoom/2+ShiftRow*ResizeFactor));
+    colInd1 = uint16( (ColumnsResized/2-ColumnsZoom/2) + (ShiftColumn*ResizeFactor) + 1);
+    colInd2 = uint16(ColumnsResized/2+ColumnsZoom/2+ShiftColumn*ResizeFactor);
+    try
         NucMaskZoomOutResizedCropped = NucMaskZoomOutResized(rowInd1:rowInd2, colInd1:colInd2);
     
-    ZoomOutResizedCropped=...
-        ZoomOutResized(rowInd1:rowInd2,colInd1:colInd2);
+        ZoomOutResizedCropped=...
+            ZoomOutResized(rowInd1:rowInd2,colInd1:colInd2);
     
    
-    ImOverlayMask=cat(3,mat2gray(NucMaskZoomOutResizedCropped),...
-        +mat2gray(NucMaskZoomIn),zeros(size(NucMaskZoomOutResizedCropped)));
-    ImOverlay=cat(3,mat2gray(ZoomOutResizedCropped)*Red,...
-        +mat2gray(ZoomImage)*Green,zeros(size(ZoomOutResizedCropped)));
-    
-    imshow(ImOverlayMask,'Parent', overlayAxes)
-    
+        ImOverlayMask=cat(3,mat2gray(NucMaskZoomOutResizedCropped),...
+            +mat2gray(NucMaskZoomIn),zeros(size(NucMaskZoomOutResizedCropped)));
+        ImOverlay=cat(3,mat2gray(ZoomOutResizedCropped)*Red,...
+            +mat2gray(ZoomImage)*Green,zeros(size(ZoomOutResizedCropped)));
+
+        imshow(ImOverlayMask,'Parent', overlayAxes)
+        imshow(ImOverlay, 'Parent', realAxes);
+    catch
+        warning('Could not generate correlation image.');
+    end
     set(FigureRectangle,'name',['ShiftRow: ',num2str(ShiftRow),'. ShiftColumn:',num2str(ShiftColumn),'.'])
-
-
-    
-    imshow(ImOverlay, 'Parent', realAxes);
 
 
     ImageCenter=[SurfRows/2 + ShiftRow,SurfColumns/2 + ShiftColumn];
