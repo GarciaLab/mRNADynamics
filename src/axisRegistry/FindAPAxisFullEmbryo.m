@@ -120,6 +120,11 @@ elseif strcmp(FileMode,'LIFExport')
         HisChannel=find(~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'bcd-gfp')));
     end    
     
+    %Alternatively, check for an inverted nuclear signal.
+    if isempty(HisChannel)
+        HisChannel=find(~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'invertednuclear')));
+    end
+    
     if isempty(HisChannel)
         error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
     end
