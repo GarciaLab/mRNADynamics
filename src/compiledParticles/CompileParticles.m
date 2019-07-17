@@ -179,6 +179,14 @@ FilePrefix=[Prefix,'_'];
 APExperiment = strcmpi(ExperimentAxis, 'AP');
 DVExperiment = strcmpi(ExperimentAxis, 'DV');
 
+correctDV = false;
+if DVExperiment
+    correctDV = exist([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'], 'file');
+    if correctDV            
+        load([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat']);
+    end
+end
+
 
 
 %Load all the information
@@ -295,14 +303,12 @@ end
 
 if APExperiment | DVExperiment
     if (~isfield(Particles{1},'APpos')) || ForceAP
-        AddParticlePosition(addParticleArgs{:});
+        [Particles, SpotFilter] = AddParticlePosition(addParticleArgs{:});
     else
         disp('Using saved AP information (results from AddParticlePosition)')
     end
 end
 
-%Reload Particles.mat
-load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
 %Create the particle array. This is done so that we can support multiple
 %channels. Also figure out the number of channels
 if iscell(Particles)
@@ -394,8 +400,7 @@ if HistoneChannel && (APExperiment || DVExperiment)
             APPositions=Distances.*cos(Angles-APAngle);
             EllipsePos{i}(j)=APPositions/APLength;
             
-            if DVExperiment && exist([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'], 'file')
-                load([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat']);
+            if DVExperiment && correctDV
                 DVPositions=Distances.*sin(Angles-APAngle);
                 EllipsePos_DV{i}(j)=abs(DVPositions-DV_correction)/DVLength;
             else
@@ -439,7 +444,7 @@ end
 
 if DVExperiment
     if isempty(DVResolution)
-        DVResolution = 50;
+        DVResolution = 100;
     end
     [DVbinID, DVbinArea] = binAxis(DVResolution, FrameInfo, ...
         coordAZoom, APAngle, APLength, minBinSize, 'DV');
@@ -620,8 +625,6 @@ if ~slimVersion
     try
         calcParticleSpeeds(NChannels, Particles, ...
             Spots, ElapsedTime, schnitzcells, Ellipses);
-    catch
-        %this failed
     end
     
     %% Movie of AP profile
@@ -687,7 +690,7 @@ save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
 if DVExperiment
     alignCompiledParticlesByAnaphase(Prefix);
 %     averageDV(Prefix);
-    plotByDorsalConc(Prefix);
+%     plotByDorsalConc(Prefix);
 end
 
 disp('CompiledParticles.mat saved.');

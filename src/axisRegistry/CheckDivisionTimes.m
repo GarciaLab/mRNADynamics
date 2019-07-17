@@ -51,10 +51,12 @@ ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,D(end).name]);
 %used for the stitching of the two halves of the embryo
 load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
 
-if ~exist('coordPZoom', 'var')
-    warning('AddParticlePosition should have been run first. Running it now.')
-    AddParticlePosition(Prefix, 'ManualAlignment')
-    load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+if ~lazy
+    if ~exist('coordPZoom', 'var')
+        warning('AddParticlePosition should have been run first. Running it now.')
+        AddParticlePosition(Prefix, 'ManualAlignment')
+        load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+    end
 end
 
 %Angle between the x-axis and the AP-axis

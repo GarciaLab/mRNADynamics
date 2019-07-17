@@ -1,4 +1,19 @@
-function [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncs, nFrames)
+function [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncs, nFrames, varargin)
+
+p = false;
+cp = false;
+
+if ~isempty(varargin)
+    if length(varargin) == 1
+        Particles = varargin{1}
+        p = true;
+    elseif length(varargin) == 2
+        Particles = varargin{1};
+        CompiledParticles = varargin{2};
+        p = true;
+        cp = true;
+    end
+end
 
 cycleFrames = nan(1,nFrames);
 
@@ -15,10 +30,18 @@ end
 
 tempSchnitzcells = schnitzcells;
 nNuclei = length(schnitzcells)
+
 j = 1;
 for s = 1:nNuclei
     
     sc  = schnitzcells(s);  
+    
+    if p
+        pInd = find(Particles.Nucleus == s);
+    end
+    if cp
+        cpInd = find(CompiledParticles.Nucleus == s);
+    end
     
     hasncs = unique(cycleFrames(sc.frames));
     
@@ -40,9 +63,18 @@ for s = 1:nNuclei
             tempSchnitzcells(newInd).APpos = sc.APpos(newFrames);
             tempSchnitzcells(newInd).DVpos = sc.DVpos(newFrames);
              tempSchnitzcells(newInd).FrameApproved = sc.FrameApproved(newFrames);
+             
              try
                 tempSchnitzcells(newInd).FluoTimeTrace = sc.FluoTimeTrace(newFrames);
              end
+             
+             if cp
+                 CompiledParticles(cpInd).Nucleus = newInd;
+                 CompiledParticles(cpInd).schnitz = newInd;
+             if p
+                Particles(pInd).Nucleus= newInd;
+             end
+             
             j = j+1;
         end
         

@@ -8,10 +8,6 @@ function [Frames,AmpIntegral,AmpGaussian,AmpIntegral3,...
 
 %This displays the particle trace as well as a montage of the images
 
-%V2: Removed the ImageSnippet for now. I was running into the borders of
-%the image.
-
-
 [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
     ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3,...
     ErrorIntegral5,backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D]=...
@@ -23,6 +19,7 @@ Indexes=Particles(CurrentParticle).Index;
 
 
 for i=1:length(Frames)
+    
     CurrentFrame=Frames(i);
 
     %Get the coordinates taking the margins into account
@@ -35,5 +32,6 @@ for i=1:length(Frames)
     xTrace=round(x(CurrentParticleIndex));
     yTrace=round(y(CurrentParticleIndex));
     zTrace=round(z(CurrentParticleIndex));
+    
 end
 

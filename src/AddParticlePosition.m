@@ -1,4 +1,4 @@
-function AddParticlePosition(Prefix, varargin)
+function [Particles, SpotFilter] = AddParticlePosition(Prefix, varargin)
 %
 % DESCRIPTION
 % Locates particles from a zoomed-in movie within full embryo images using

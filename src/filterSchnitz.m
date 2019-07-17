@@ -5,7 +5,7 @@ lengths = {[], [], []};
 
 for nc = 12:14
     
-    snc = schnitzcells([schnitzcells.cycle] == nc)
+    snc = schnitzcells([schnitzcells.cycle] == nc);
     for i = 1:length(snc)
         lengths{nc-11} = [lengths{nc-11}, length(snc(i).frames)];
     end

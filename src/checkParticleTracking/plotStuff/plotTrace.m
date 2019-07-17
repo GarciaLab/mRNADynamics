@@ -81,10 +81,10 @@ cla(traceFigAxes)
 hold(traceFigAxes, 'on')
 if ~plot3DGauss
     if switchFrameFlag
-    traceErrorBar1 = errorbar(traceFigAxes, traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-        AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral,'.-k');
-    traceErrorBar2 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-        AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');
+        traceErrorBar1 = errorbar(traceFigAxes, traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+            AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral,'.-k');
+        traceErrorBar2 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+            AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');
     end
     dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
     cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral(Frames==CurrentFrame),'ob');
@@ -109,12 +109,12 @@ elseif lineFitted
     cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegralGauss3D(Frames==CurrentFrame),'ob');
 else
     if switchFrameFlag
-    traceErrorBar1 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-        AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');
-    %     traceErrorBar2 = plot(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-    %         AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
-    traceErrorBar2 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-        AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ErrorIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
+        traceErrorBar1 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+            AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');
+        %     traceErrorBar2 = plot(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+        %         AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
+        traceErrorBar2 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
+            AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ErrorIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
     end
     dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
     cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
@@ -122,8 +122,8 @@ else
     cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegralGauss3D(Frames==CurrentFrame),'ob');
 end
 
-%% 
-%Change the labels, xlimits, etc. only if the frame changed. 
+%%
+%Change the labels, xlimits, etc. only if the frame changed.
 if switchFrameFlag
     
     % adjusting x limits

@@ -1,6 +1,8 @@
 function standardizeFigure(ax, leg, varargin)
 
+
 try
+    
     colorDict = struct();
     colorDict.magenta = [208,109,171]/256;
     colorDict.lightBlue = [115,142,193]/256;
