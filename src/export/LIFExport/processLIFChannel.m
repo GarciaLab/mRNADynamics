@@ -28,6 +28,10 @@ function processLIFChannel(ExperimentType, channelIndex, numberOfFrames, Prefix,
     slicesCounter = 1;        
     firstImage = (framesIndex-1) * NSlices(seriesIndex) * NChannels + 1 + (channelIndex - 1);
     lastImage = framesIndex * NSlices(seriesIndex) * NChannels;
+    if firstImage == lastImage
+        firstImage = 1;
+        lastImage = 1;
+    end
     for imageIndex = firstImage:NChannels:lastImage
       if slicesCounter <= topZSlice
           % if zPadding, it will process all images (because topZSlice would be max(NSlices)
