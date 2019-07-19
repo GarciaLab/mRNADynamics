@@ -222,6 +222,14 @@ for i=1:length(CompiledSets)
                 warning('MeanFitsV2.mat not found');
             end
             
+            % Fit results from the MeanFitAPAsymmetric.m
+            if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsAsymmetric.mat'],'file')
+                MeanFitsAsymmetric(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsAsymmetric.mat']);
+            else
+                warning('MeanFitsAsymmetric.mat not found');
+            end
+            
+            
             % Fit results from the FitTiltedTrapezoids_4Clicks.m
             if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV3.mat'],'file')
                 MeanFitsV3(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV3.mat']);
@@ -341,6 +349,12 @@ if ~justPrefixes
             if exist('MeanFitsV2','var')
                 if i<=length(MeanFitsV2)
                     Data(i).MeanFitsV2=MeanFitsV2(i).FitResults;
+                end
+            end
+            
+            if exist('MeanFitsAsymmetric','var')
+                if i<=length(MeanFitsAsymmetric)
+                    Data(i).MeanFitsAsymmetric=MeanFitsASymmetric(i).FitResults;
                 end
             end
             
