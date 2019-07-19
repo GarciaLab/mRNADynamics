@@ -22,7 +22,7 @@ function [Data, Prefixes, resultsFolder] = LoadMS2Sets(DataType, varargin)
 %Last Updated: 1/13/2018. AR
 
 Prefixes = {};
-Data = [];
+Data = struct();
 resultsFolder = '';
 
 optionalResults = '';
