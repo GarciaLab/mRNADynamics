@@ -5,7 +5,7 @@ function [all_frames, Spots, dogs]...
     nCh, coatChannel, channelIndex, all_frames, initialFrame, numFrames,...
     zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures,doFF, ffim,...
     Threshold, neighborhood, snippet_size, pixelSize, microscope, intScale,...
-    Weka, use_integral_center, filterMovieFlag, resultsFolder, gpu, saveAsMat, saveType)
+    Weka, use_integral_center, filterMovieFlag, resultsFolder, gpu, saveAsMat, saveType, Ellipses)
 
 
 dogs = [];
@@ -123,7 +123,7 @@ if sum(firstDoG(:)) == 0
 end
 
 
-parfor current_frame = initialFrame:numFrames
+for current_frame = initialFrame:numFrames
     
     for zIndex = 1:zSize
         
@@ -190,11 +190,21 @@ parfor current_frame = initialFrame:numFrames
         
         im_thresh = dog >= Threshold;
         
+        % apply nuclear mask if it exists
+        if ~isempty(Ellipses)
+            ellipsesFrame = Ellipses{current_frame};
+            nuclearMask = makeNuclearMask(ellipsesFrame, [size(im,1), size(im,2)]);
+    %         immask = uint16(nuclearMask).*im;
+    %         imshow(immask, [])
+            im_thresh = im_thresh & nuclearMask;
+        end
+        
         if Weka
             se = strel('square', 3);
             im_thresh = imdilate(im_thresh, se); %thresholding from this classified probability map can produce non-contiguous, spurious Spots{channelIndex}. This fixes that and hopefully does not combine real Spots{channelIndex} from different nuclei
             im_thresh = im_thresh > 0;
         end
+        
         [im_label, n_spots] = bwlabel(im_thresh);
         centroids = regionprops(im_thresh, 'centroid');
         

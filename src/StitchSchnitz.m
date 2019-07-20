@@ -182,8 +182,8 @@ close(h)
 
 
 [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames)
-save([DropboxFolder,filesep,Prefix,filesep,Prefix '_lin.mat'],'schnitzcells')
-save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
+save([DropboxFolder,filesep,Prefix,filesep,Prefix '_lin.mat'],'schnitzcells', '-append')
+save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-append')
 
 
 %% Accesory code to check nuclear traces

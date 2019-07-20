@@ -395,5 +395,4 @@ save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
 if ~SkipStitchSchnitz
     disp 'Skipping StitchSchnitz'
     StitchSchnitz(Prefix)
-    [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncs, nFrames)
 end

@@ -208,11 +208,10 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
         
         sigma_x2 = 0;
         sigma_y2 = 0;
-        %         sister_chromatid_distance = NaN; %leaving this here for now but should be removed. AR 4/3/2019
         fixedAreaIntensity = sum(sum(snippet_mask)) - (offset*maskArea); %corrected AR 7/13/2018
         
         dogFixedAreaIntensity = sum(dog_mask(:));
-        %         fixedAreaIntensityCyl3 = NaN;
+        
         if doCyl
             fixedAreaIntensityCyl3 =  sum(sum(snippet_mask)) + sum(sum(snippet_mask_above))...
                 + sum(sum(snippet_mask_below)) - 3*offset*maskArea;
