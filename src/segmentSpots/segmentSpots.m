@@ -120,7 +120,6 @@ snippet_size = 2 * (floor(1300 / (2 * pixelSize))) + 1; % nm. note that this is 
 coatChannel = spotChannels;
 
 falsePositives = 0;
-all_frames = cell(numFrames, zSize);
 Spots = cell(1, nCh);
 
 for channelIndex = 1:nCh
@@ -130,7 +129,7 @@ for channelIndex = 1:nCh
     
     tic;
     
-    [all_frames, tempSpots, dogs] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, ...
+    [tempSpots, dogs] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, initialFrame, numFrames, zSize, ...
         PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(channelIndex), neighborhood, ...
         snippet_size, pixelSize, microscope, intScale, Weka,...
         useIntegralCenter, filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, Ellipses);
