@@ -1,12 +1,10 @@
-function schnitzcells = StitchSchnitz(varargin)
+function schnitzcells = StitchSchnitz(Prefix)
 
 %This function joins schnitzcells that overlap in space and are contiguous in time.
 
 
 
 %Information about about folders
-Prefix = varargin{1};
-
 [SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
 configValues, movieDatabasePath] = DetermineAllLocalFolders(Prefix);
 
@@ -37,7 +35,6 @@ Radii = []; %a vector of length = frames that will contain ellipse radius per fr
 %correspond to the same nucleus.
 for fr = 1:nFrames
     Radius = Ellipses{fr}(1,3); %the third column contains size info. by definition all ellipses/frame are equal in size
-    %Is this value the actual radius? or is it a diameter?
     Radii = [Radii Radius];
 end
 
@@ -58,7 +55,7 @@ h=waitbar(0,'Stitching broken schnitzs');
 for i=1:length(Thresholds)
     
     waitbar(i/length(Thresholds),h);
-    display (['Trying threshold', num2str(Thresholds(i))]);
+%     display (['Trying threshold', num2str(Thresholds(i))]);
     %length(schnitzcells) for debugging
     threshold = Thresholds(i);
     Rule = 1;
@@ -106,15 +103,28 @@ for i=1:length(Thresholds)
                         schnitzcells(s1).ceny = [schnitzcells(s1).ceny schnitzcells(s2).ceny]; %
                         schnitzcells(s1).len = [schnitzcells(s1).len schnitzcells(s2).len]; %
                         schnitzcells(s1).cellno = [schnitzcells(s1).cellno schnitzcells(s2).cellno]; %
-                        %schnitzcells(s1).P = [schnitzcells(s1).P schnitzcells(s2).P];
-                        %schnitzcells(s1).D = [schnitzcells(s1).D schnitzcells(s2).D]; 
-                        %schnitzcells(s1).E = [schnitzcells(s1).E schnitzcells(s2).E];
 
-                        %The Fluo field is only present in input-output
-                        %function mode
+
                         if isfield(schnitzcells,'Fluo')
                             schnitzcells(s1).Fluo = [schnitzcells(s1).Fluo;schnitzcells(s2).Fluo]; %  
                         end
+                        
+                          if isfield(schnitzcells, 'APpos')
+                            schnitzcells(s1).APpos = [schnitzcells(s1).APpos;schnitzcells(s2).APpos];
+                          end
+                          if isfield(schnitzcells, 'APpos')
+                            schnitzcells(s1).DVpos =  [schnitzcells(s1).DVpos;schnitzcells(s2).DVpos];
+                          end
+                          if isfield(schnitzcells, 'FrameApproved')
+                            schnitzcells(s1).FrameApproved =  [schnitzcells(s1).FrameApproved;schnitzcells(s2).FrameApproved];
+                          end
+                        if isfield(schnitzcells, 'FluoTimeTrace')
+                            schnitzcells(s1).FluoTimeTrace =  [schnitzcells(s1).FluoTimeTrace;schnitzcells(s2).FluoTimeTrace];
+
+                         end
+             
+                        
+                        
 
                     end
                 end
@@ -181,10 +191,10 @@ end
 close(h)
 
 
-[schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames)
-save([DropboxFolder,filesep,Prefix,filesep,Prefix '_lin.mat'],'schnitzcells', '-append')
-save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-append')
-
+[schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
+save([DropboxFolder,filesep,Prefix,filesep,Prefix '_lin.mat'],'schnitzcells', '-append');
+save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-append');
+TrackNuclei(Prefix, 'NoBulkShift','ExpandedSpaceTolerance' ,1.5, 'nWorkers', 8, 'skipStitchSchnitz', 'retrack')
 
 %% Accesory code to check nuclear traces
 % % Does the number of schnitz make sense?

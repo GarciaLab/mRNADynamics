@@ -391,8 +391,19 @@ end
 save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
 
 
-%Stitch the schnitzcells using Simon's code
+% Stitch the schnitzcells using Simon's code
 if stitchSchnitz
     disp('stitching schnitzes')
-    StitchSchnitz(Prefix)
+    try
+        StitchSchnitz(Prefix);
+    catch
+        disp('failed to stitch schnitzes')
+    end
+end
+% 
+% ncVector=[0,0,0,0,0,0,0,0,nc9,nc10,nc11,nc12,nc13,nc14];
+% [nFrames,~] = size(Ellipses); %how many frames do we have?
+% [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
+
+
 end
