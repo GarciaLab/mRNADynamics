@@ -33,6 +33,7 @@
 % 'rootFolder': open a directory different from the default user directory
 % 'zslicesPadding': if series have different number of z-slices, pad them
 % with blank images so every generates series has the same amount
+% 'nuclearGUI
 %
 % OUTPUT
 % Exported tif images are placed in the PreProcessedData folder and divided

@@ -556,8 +556,7 @@ if ~NoAP
                 NucMaskZoomIn=GetNuclearMask(ZoomImage,8,2);
                 ImOverlayMask=cat(3,mat2gray(NucMaskZoomOutResizedCropped),...
                     +mat2gray(NucMaskZoomIn),zeros(size(NucMaskZoomOutResizedCropped)));
-                
-                
+
                 alOvFig = figure(1);
                 imOv = subplot(2,1,1);
                 imshow(ImOverlay, 'Parent', imOv)
@@ -698,7 +697,7 @@ if ~NoAP
         correctDV = 1;
     end
     if correctDV
-        if exist([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'])
+        if exist([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'], 'file')
             load([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'],'DV_correction');
         else
             DV_correction = FindDVShift_full(Prefix);

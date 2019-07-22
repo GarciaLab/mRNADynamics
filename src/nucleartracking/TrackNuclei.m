@@ -9,7 +9,7 @@ function TrackNuclei(Prefix,varargin)
 % [Options]: See below.
 %
 % OPTIONS
-% 'StitchSchnitz' : Run the schnitzcells fixing code by Simon
+% 'skipStitchSchnitz' : Run the schnitzcells fixing code by Simon
 % 'ExpandedSpaceTolerance': A multiplier for how how far away two nuclei of
 % adjacent frames can be in order for them to be the same nuclei. It's
 % recommended to set this to 1.5 if you use NoBulkShift. 
@@ -32,7 +32,7 @@ function TrackNuclei(Prefix,varargin)
 
 disp(['Tracking nuclei on ', Prefix, '...']);
 
-[SkipStitchSchnitz, ExpandedSpaceTolerance, NoBulkShift, retrack, nWorkers] = DetermineTrackNucleiOptions(varargin{:});
+[stitchSchnitz, ExpandedSpaceTolerance, NoBulkShift, retrack, nWorkers] = DetermineTrackNucleiOptions(varargin{:});
 
 
 startParallelPool(nWorkers, 0,0);
@@ -392,7 +392,7 @@ save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
 
 
 %Stitch the schnitzcells using Simon's code
-if ~SkipStitchSchnitz
-    disp 'Skipping StitchSchnitz'
+if stitchSchnitz
+    disp('stitching schnitzes')
     StitchSchnitz(Prefix)
 end

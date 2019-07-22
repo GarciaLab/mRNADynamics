@@ -329,12 +329,16 @@ warning('off', 'MATLAB:MKDIR:DirectoryExists');
 if APExperiment
     mkdir([DropboxFolder,filesep,Prefix,filesep,'APMovie'])
 end
-mkdir([DropboxFolder,filesep,Prefix,filesep,'ParticleTraces'])
-mkdir([DropboxFolder,filesep,Prefix,filesep,'TracesFluctuations'])
-mkdir([DropboxFolder,filesep,Prefix,filesep,'Offset'])
-mkdir([DropboxFolder,filesep,Prefix,filesep,'Fits'])
-mkdir([DropboxFolder,filesep,Prefix,filesep,'Probabilities'])
-mkdir([DropboxFolder,filesep,Prefix,filesep,'Various']);
+
+if ~SkipAll
+    mkdir([DropboxFolder,filesep,Prefix,filesep,'ParticleTraces'])
+    mkdir([DropboxFolder,filesep,Prefix,filesep,'TracesFluctuations'])
+    mkdir([DropboxFolder,filesep,Prefix,filesep,'Offset'])
+    mkdir([DropboxFolder,filesep,Prefix,filesep,'Fits'])
+    mkdir([DropboxFolder,filesep,Prefix,filesep,'Probabilities'])
+    mkdir([DropboxFolder,filesep,Prefix,filesep,'Various']);
+    
+end
 
 
 %% Put together CompiledParticles
@@ -451,7 +455,7 @@ if DVExperiment
         coordAZoom, APAngle, APLength, minBinSize, 'DV');
 end
 
-
+coatChannel = getCoatChannel(Channel1, Channel2, Channel3);
 %Now get the particle information for those that were approved
 [Particles, CompiledParticles, ncFilter, ncFilterID] =...
     ...
@@ -461,7 +465,7 @@ end
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
     Spots, SkipTraces, nc9, nc10, nc11, nc12, nc13, nc14, ncFilterID, ncFilter, ...
     ElapsedTime, intArea, Ellipses, EllipsePos, PreProcPath, ...
-    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits, edgeWidth);
+    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits, edgeWidth, pixelSize, coatChannel);
 
 %% ROI option
 % This option is separating the CompiledParticles defined above into
@@ -533,14 +537,14 @@ if ~slimVersion
     %% Information about the cytoplasm
     %If the nuclear masks are present then use them. Otherwise just calculate
     %the median of the images as a function of time
-    if ~SkipAll
-        [MeanCyto, SDCyto, MaxCyto, MedianCyto] =...
-            ...
-            getCytoplasmStatistics(...
-            ...
-            APExperiment, HistoneChannel, Prefix, numFrames, PreProcPath,...
-            FrameInfo, NChannels);
-    end
+%     if ~SkipAll
+%         [MeanCyto, SDCyto, MaxCyto, MedianCyto] =...
+%             ...
+%             getCytoplasmStatistics(...
+%             ...
+%             APExperiment, HistoneChannel, Prefix, numFrames, PreProcPath,...
+%             FrameInfo, NChannels);
+%     end
     
     %% Offset and fluctuations
     

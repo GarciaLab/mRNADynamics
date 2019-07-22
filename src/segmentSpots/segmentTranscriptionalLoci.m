@@ -122,7 +122,6 @@ if sum(firstDoG(:)) == 0
     isZPadded = true;
 end
 
-
 parfor current_frame = initialFrame:numFrames
     
     for zIndex = 1:zSize

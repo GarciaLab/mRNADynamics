@@ -28,9 +28,6 @@ for e = 1:length(allData)
     nFrames = length(allData(e).Particles.ElapsedTime);
 %     [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncs, nFrames);
     
-    schnitzcells = filterSchnitz(schnitzcells, imSize);
-   
-    
     for s = 1:length(schnitzcells)
 		midFrame = ceil(length(schnitzcells(s).frames)/2);
         dif = schnitzcells(s).frames(midFrame) - ncs;
@@ -38,6 +35,9 @@ for e = 1:length(allData)
         schnitzcells(s).cycle = cycle;    
     end
     
+    schnitzcells = filterSchnitz(schnitzcells, imSize);
+   
+   
     for s = 1:length(schnitzcells)
         schnitzcells(s).FluoTimeTrace = ExtractDlFluo(schnitzcells(s).Fluo, .5);
         if schnitzcells(s).cycle ~= 14

@@ -1,5 +1,5 @@
-function [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
-    ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3, ErrorIntegral5,backGround3,...
+function [Frame,AmpIntegral,AmpIntegral3,AmpGaussian,Offset,...
+    ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3, backGround3,...
     AmpIntegralGauss3D, ErrorIntegralGauss3D, AmpDog, AmpDogMax, ampdog3, ampdog3Max] =...
     ...
     GetParticleTrace(...
@@ -23,7 +23,6 @@ function [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
 
 ErrorIntegral = NaN;
 ErrorIntegral3 = NaN;
-ErrorIntegral5 = NaN;
 backGround3 = NaN;
 AmpIntegralGauss3D = NaN;
 ErrorIntegralGauss3D = NaN;
@@ -76,12 +75,7 @@ for i=1:length(Particles(CurrentParticle).Frame)
         ErrorIntegralGauss3D(i) = NaN;
 %         warning('gauss3d intensities calculated but not their errors. Re-run fit3dgaussianstoallspots if this is desired.');
     end
-    try
-        AmpIntegral5(i)=...
-            double(spot.FixedAreaIntensity5);
-    catch
-        AmpIntegral5(i)= NaN;
-    end
+  
     try
         AmpDog(i) =  double(spot.dogFixedAreaIntensity(zIndex));
     catch
@@ -124,7 +118,6 @@ if length(Frame)>5
         ErrorGauss=[];
         ErrorIntegral=[];
         ErrorIntegral3=[];
-        ErrorIntegral5 = [];
         optFit=[];
     end
     
@@ -165,8 +158,6 @@ if exist('OffsetError', 'var')
             ErrorGauss=OffsetError*sqrt(2)*defaultArea;
         end
     end
-    %      ErrorIntegralGauss3D=OffsetError*sqrt(2)*...
-    %          mean(spot.Area);
     
     
     %For the Integral, we just use the area of the snippet, which is a
@@ -179,10 +170,6 @@ if exist('OffsetError', 'var')
             ErrorIntegral3=OffsetError*sqrt(2)*3*intArea;%since this integration is actually done as a mean over the available slices, multiplying by 5 is definitely wrong. this error should be taken with
             %a grain of salt. AR 9/3/18
         end
-        if ~isnan(AmpIntegral5(i))
-            ErrorIntegral5=OffsetError*sqrt(2)*5*intArea; %since this integration is actually done as a mean over the available slices, multiplying by 5 is definitely wrong. this error should be taken with
-            %a grain of salt. AR 9/3/18
-        end
     else
         ErrorIntegral=OffsetError*sqrt(2)*defaultArea;
     end
@@ -191,7 +178,6 @@ else
     ErrorGauss=[];
     ErrorIntegral=[];
     ErrorIntegral3=[];
-    ErrorIntegral5 = [];
     ErrorIntegralGauss3D = [];
     optFit=[];
 end
