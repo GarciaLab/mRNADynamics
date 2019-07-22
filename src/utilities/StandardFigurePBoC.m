@@ -19,8 +19,10 @@ for i=1:length(PlotHandle)
     end
     
 
-    %Marker style. Do this only if we're not dealing with a histogram
-    if ~strcmp(get(PlotHandle(i),'Type'),'histogram') && ~strcmpi(get(PlotHandle(i),'Type'),'image')
+    %Marker style. Do this only if we're not dealing with a histogram or
+    %bar plot
+    if ~strcmp(get(PlotHandle(i),'Type'),'histogram') && ~strcmpi(get(PlotHandle(i),'Type'),'image')...
+            &&  ~strcmp(get(PlotHandle(i),'Type'),'bar')
         if ~strcmp(get(PlotHandle(i),'Marker'),'none')
             if get(PlotHandle(i),'Marker')=='.'
                 set(PlotHandle(i),'MarkerSize',15)
@@ -51,6 +53,11 @@ for i=1:length(PlotHandle)
     
     %New Matlab histogram
     elseif strcmp(get(PlotHandle(i),'Type'),'histogram')
+        %Change the colors of the bars. Note that this will only work if
+        %we've specified the colors. If we let Matlab choose colors, then
+        %this function won't change them.
+        ChangeColorPBoC2(PlotHandle(i),'FaceColor')
+    elseif strcmp(get(PlotHandle(i),'Type'),'bar')
         %Change the colors of the bars. Note that this will only work if
         %we've specified the colors. If we let Matlab choose colors, then
         %this function won't change them.
