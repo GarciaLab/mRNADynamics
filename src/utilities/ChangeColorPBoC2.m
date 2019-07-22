@@ -14,6 +14,6 @@ if isempty(strmatch(CurrentColor,'none'))&isempty(strmatch(CurrentColor,'auto'))
     elseif sum(CurrentColor==[0,1,1])==3 %Cyan
         set(PlotHandle,ColorProperty,[108,188,233]/255)
     elseif sum(CurrentColor==[1,0,1])==3 %Magenta
-        set(PlotHandle,ColorProperty,[208,109,171]/255) 
+        set(PlotHandle,ColorProperty,[169,121,212]/255) 
     end
 end
