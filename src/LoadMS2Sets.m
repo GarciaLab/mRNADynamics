@@ -354,7 +354,7 @@ if ~justPrefixes
             
             if exist('MeanFitsAsymmetric','var')
                 if i<=length(MeanFitsAsymmetric)
-                    Data(i).MeanFitsAsymmetric=MeanFitsASymmetric(i).FitResults;
+                    Data(i).MeanFitsAsymmetric=MeanFitsAsymmetric(i).FitResults;
                 end
             end
             
