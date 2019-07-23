@@ -30,11 +30,11 @@ if ~isempty(NewSpotsX)
     %ellipses
 
     for j=1:length(NewSpotsX)
-        
+
         newSpotPos = [NewSpotsX(j), NewSpotsY(j)]*PixelSize;
         newEllipsePos =[NewEllipsesX, NewEllipsesY]*PixelSize;
         
-        Distance(j,:) = norm(newSpotPos - newEllipsePos);
+        Distance(j,:) = vecnorm(newSpotPos - newEllipsePos, 2, 2);
 
     end
     

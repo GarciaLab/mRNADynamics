@@ -194,7 +194,7 @@ close(h)
 [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
 save([DropboxFolder,filesep,Prefix,filesep,Prefix '_lin.mat'],'schnitzcells', '-append');
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-append');
-TrackNuclei(Prefix, 'NoBulkShift','ExpandedSpaceTolerance' ,1.5, 'nWorkers', 8, 'skipStitchSchnitz', 'retrack')
+TrackNuclei(Prefix, 'NoBulkShift','ExpandedSpaceTolerance' ,1.5, 'nWorkers', 8, 'skipStitchSchnitz', 'retrack');
 
 %% Accesory code to check nuclear traces
 % % Does the number of schnitz make sense?
