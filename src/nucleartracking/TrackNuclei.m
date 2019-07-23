@@ -377,9 +377,9 @@ mkdir([DropboxFolder,filesep,Prefix])
 % 
 % 
 % 
-% ncVector=[0,0,0,0,0,0,0,0,nc9,nc10,nc11,nc12,nc13,nc14];
-% [nFrames,~] = size(Ellipses); %how many frames do we have?
-% [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
+ncVector=[0,0,0,0,0,0,0,0,nc9,nc10,nc11,nc12,nc13,nc14];
+[nFrames,~] = size(Ellipses); %how many frames do we have?
+[schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
 
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 
