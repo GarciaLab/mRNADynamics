@@ -700,7 +700,11 @@ if ~NoAP
         if exist([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'], 'file')
             load([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'],'DV_correction');
         else
-            DV_correction = FindDVShift_full(Prefix);
+            try
+                DV_correction = FindDVShift_full(Prefix);
+            catch
+                disp('failed to apply dv correction');
+            end
             save([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'],'DV_correction');
         end
             saveVars = [saveVars, 'DV_correction'];
