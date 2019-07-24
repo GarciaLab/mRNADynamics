@@ -390,6 +390,7 @@ dwelltime_chain = chain(n_burn:end,2);
 MS2_basal_chain = chain(n_burn:end,3);
 R0_chain = chain(n_burn:end,4);
 dR_chain = chain(n_burn:end,5:end);
+s2chain = s2chain(n_burn:end);
 
 %Change negative loading rates to zero
 for i = 1:size(dR_chain,1)
