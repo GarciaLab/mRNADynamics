@@ -542,7 +542,7 @@ end
 
 
 %Save the information
-save([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV2.mat'],...
+save([DropboxFolder,filesep,Prefix,filesep,'MeanFitsAsymmetric.mat'],...
     'FitResults')
 display('MeanFitsV2.mat saved')        
         
