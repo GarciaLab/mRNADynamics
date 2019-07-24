@@ -9,13 +9,16 @@ s = 0;
 while ~foundIt & s < length(schnitzcells)
     s = s+1;
     schnitz = schnitzcells(s);
-    schnitzInd = find(schnitz.frames == frame);
-    if ~isempty(schnitzInd)
-        foundIt = schnitz.ceny(schnitzInd) == center(2) & schnitz.cenx(schnitzInd) == center(1);
+    schnitzFrameIndex = find(schnitz.frames == frame);
+    if ~isempty(schnitzFrameIndex)
+        foundIt = schnitz.ceny(schnitzFrameIndex) == center(2) & schnitz.cenx(schnitzFrameIndex) == center(1);
     end
     
     if foundIt
-        val = s;
+        val = uint16(s);
+%         'hooray'
+%     else
+%         'uh oh empty'
     end
 
 end

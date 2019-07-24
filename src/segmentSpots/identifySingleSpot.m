@@ -1,3 +1,4 @@
+
 function [temp_particles, Fits] = identifySingleSpot(particle_index, image, image_label, dog_image, searchRadius, snippet_size, ...
     pixelSize, show_status, graphicsHandles, microscope, addition, forced_centroid, ml_string, intScale, currentFrame, spotIndex, zIndex, use_integral_center)
 % identifySingleSpot(awholelot)

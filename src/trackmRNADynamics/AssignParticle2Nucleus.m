@@ -30,11 +30,14 @@ if ~isempty(NewSpotsX)
     %ellipses
 
     for j=1:length(NewSpotsX)
-        Distance(j,:)=sqrt((NewSpotsX(j)*PixelSize-...
-            NewEllipsesX*PixelSize).^2+...
-            (NewSpotsY(j)*PixelSize-...
-            NewEllipsesY*PixelSize).^2);
+
+        newSpotPos = [NewSpotsX(j), NewSpotsY(j)]*PixelSize;
+        newEllipsePos =[NewEllipsesX, NewEllipsesY]*PixelSize;
+        
+        Distance(j,:) = vecnorm(newSpotPos - newEllipsePos, 2, 2);
+
     end
+    
         
     %If retrack make the distance for the particles that have been
     %approved infinite.
@@ -79,6 +82,7 @@ if ~isempty(NewSpotsX)
                 if sj.cellno(sj.frames==CurrentFrame) == MinIndex(i)
                     MinIndexSchnitz(i)=j;
                 end
+                
             catch
                  %AR 3/31/2019- sometimes this errors and I couldn't discover
                 %why. 

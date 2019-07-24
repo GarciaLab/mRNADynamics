@@ -27,6 +27,8 @@ elseif size(midImage, 1) == 2048
     AreaThresh = 100;
     AreaMax = 450;
 else
+    AreaThresh = 60;
+    AreaMax = 300;
     disp('full embryo resolution found not supported. talk to jake.')
 end
 
@@ -41,7 +43,9 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'Classified_image.ti
     classifiedFullEmbryoImage = imread([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'Classified_image.tif']);
 else
     disp('didn''t find classified surface image. running script to make it now.');
-    classifiedFullEmbryoImage = makeSurfImForDVCorrection(Prefix);
+%     classifiedFullEmbryoImage = makeSurfImForDVCorrection(Prefix);
+
+    classifiedFullEmbryoImage = imbinarize(FullEmbryoSurf);
 end
 invertedClassifiedFullEmbryoImage = 1-classifiedFullEmbryoImage;    %Inverse image
 imshow(invertedClassifiedFullEmbryoImage,[]);

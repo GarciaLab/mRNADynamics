@@ -153,10 +153,19 @@ while (cc~='x')
             Ellipses{CurrentFrame}(i,4),...
             Ellipses{CurrentFrame}(i,5),Ellipses{CurrentFrame}(i,1)+1,...
             Ellipses{CurrentFrame}(i,2)+1,[],[],overlayAxes)];
-        schnitzInd = Ellipses{CurrentFrame}(i, 9);
-        try
+        if size(Ellipses{CurrentFrame}, 2) > 8 
+            schnitzInd = Ellipses{CurrentFrame}(i, 9);
+        else
+            schnitzInd = getSchnitz(Ellipses{CurrentFrame}(i,:), schnitzcells, CurrentFrame);
+            if ~isempty(schnitzInd)
+                Ellipses{CurrentFrame}(i, 9) = schnitz;
+            else
+                Ellipses{CurrentFrame}(i, 9) = 0;
+            end
+        end
+        if schnitzInd ~=0
             set(PlotHandle(i), 'Color', clrmp(schnitzInd, :),'Linewidth', 2);
-        catch
+        else
             set(PlotHandle(i), 'Color', 'k','Linewidth', 2);
         end
     end

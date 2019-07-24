@@ -9,13 +9,12 @@ function TrackNuclei(Prefix,varargin)
 % [Options]: See below.
 %
 % OPTIONS
-% 'StitchSchnitz' : Run the schnitzcells fixing code by Simon
+% 'skipStitchSchnitz' : Run the schnitzcells fixing code by Simon
 % 'ExpandedSpaceTolerance': A multiplier for how how far away two nuclei of
 % adjacent frames can be in order for them to be the same nuclei. It's
 % recommended to set this to 1.5 if you use NoBulkShift. 
-% 'NoBulkShift': Runs the nuclear tracking without accounting for the bulk
-% shift between frames (greatly speeds up runtime). It's recommended you
-% set ExpandedSpaceTolerance to 1.5 if you use this. 
+% 'bulkShift': Runs the nuclear tracking with accounting for the bulk
+% shift between frames (greatly reduces runtime). 
 % 'retrack': retrack
 %
 % OUTPUT
@@ -32,7 +31,7 @@ function TrackNuclei(Prefix,varargin)
 
 disp(['Tracking nuclei on ', Prefix, '...']);
 
-[SkipStitchSchnitz, ExpandedSpaceTolerance, NoBulkShift, retrack, nWorkers] = DetermineTrackNucleiOptions(varargin{:});
+[stitchSchnitz, ExpandedSpaceTolerance, NoBulkShift, retrack, nWorkers] = DetermineTrackNucleiOptions(varargin{:});
 
 
 startParallelPool(nWorkers, 0,0);
@@ -374,6 +373,13 @@ end
 %Save the information
 %Now save
 mkdir([DropboxFolder,filesep,Prefix])
+% 
+% 
+% 
+ncVector=[0,0,0,0,0,0,0,0,nc9,nc10,nc11,nc12,nc13,nc14];
+[nFrames,~] = size(Ellipses); %how many frames do we have?
+[schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
+
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 
 if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
@@ -391,8 +397,16 @@ end
 save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
 
 
-%Stitch the schnitzcells using Simon's code
-if ~SkipStitchSchnitz
-    disp 'Skipping StitchSchnitz'
-    StitchSchnitz(Prefix)
+% Stitch the schnitzcells using Simon's code
+if stitchSchnitz
+    disp('stitching schnitzes')
+    try
+        StitchSchnitz(Prefix);
+    catch
+        disp('failed to stitch schnitzes')
+    end
+end
+
+
+
 end

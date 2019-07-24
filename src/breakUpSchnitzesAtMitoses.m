@@ -1,7 +1,11 @@
-function [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncs, nFrames, varargin)
+function [schnitzcells, Ellipses, CompiledParticles, Particles] =...
+    ...
+    breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncs, nFrames, varargin)
 
 p = false;
 cp = false;
+Particles = [];
+CompiledParticles = [];
 
 if ~isempty(varargin)
     if length(varargin) == 1
@@ -29,12 +33,15 @@ end
 
 
 tempSchnitzcells = schnitzcells;
-nNuclei = length(schnitzcells)
+nNuclei = length(schnitzcells);
 
 j = 1;
 for s = 1:nNuclei
     
-    sc  = schnitzcells(s);  
+     schnitzcells(s).deleteMe = false;
+    sc  = schnitzcells(s);
+    tempSchnitzcells(s).deleteMe = false;
+    schnitzcells(s).deleteMe = false;
     
     if p
         pInd = find(Particles.Nucleus == s);
@@ -47,47 +54,64 @@ for s = 1:nNuclei
     
     if length(hasncs) > 1
         
-%         keyboard
+        %         keyboard
         for i = 1:length(hasncs)
             newInd = nNuclei + j;
             tempSchnitzcells(newInd) = sc;
-            newFrames = cycleFrames(sc.frames) == hasncs(i)
-
-            tempSchnitzcells(newInd).frames = sc.frames(newFrames)
+            newFrames = cycleFrames(sc.frames) == hasncs(i);
+            
+            tempSchnitzcells(newInd).frames = sc.frames(newFrames);
             tempSchnitzcells(newInd).cenx = sc.cenx(newFrames);
             tempSchnitzcells(newInd).ceny = sc.ceny(newFrames);
             tempSchnitzcells(newInd).len = sc.len(newFrames);
             tempSchnitzcells(newInd).cellno = sc.cellno(newFrames);
-            tempSchnitzcells(newInd).Fluo = sc.Fluo(newFrames, :);
+            tempSchnitzcells(newInd).deleteMe = false;
+            
+            
+            if isfield(tempSchnitzcells, 'Fluo')
+                tempSchnitzcells(newInd).Fluo = sc.Fluo(newFrames, :);
+            end
             tempSchnitzcells(newInd).cellno = sc.cellno(newFrames);
-            tempSchnitzcells(newInd).APpos = sc.APpos(newFrames);
-            tempSchnitzcells(newInd).DVpos = sc.DVpos(newFrames);
-             tempSchnitzcells(newInd).FrameApproved = sc.FrameApproved(newFrames);
-             
-             try
+            if isfield(tempSchnitzcells, 'APpos')
+                tempSchnitzcells(newInd).APpos = sc.APpos(newFrames);
+                
+            end
+            
+            if isfield(tempSchnitzcells, 'DVpos')
+                tempSchnitzcells(newInd).DVpos = sc.DVpos(newFrames);
+            end
+            if isfield(tempSchnitzcells, 'FrameApproved')
+                tempSchnitzcells(newInd).FrameApproved = sc.FrameApproved(newFrames);
+            end
+            
+            if isfield(tempSchnitzcells, 'FluoTimeTrace')
+                
                 tempSchnitzcells(newInd).FluoTimeTrace = sc.FluoTimeTrace(newFrames);
-             end
-             
-             if cp
-                 CompiledParticles(cpInd).Nucleus = newInd;
-                 CompiledParticles(cpInd).schnitz = newInd;
-             if p
+            end
+            
+            if cp
+                CompiledParticles(cpInd).Nucleus = newInd;
+                CompiledParticles(cpInd).schnitz = newInd;
+            end
+            if p
                 Particles(pInd).Nucleus= newInd;
-             end
-             
+            end
+            
             j = j+1;
         end
-        
-        tempSchnitzcells(s) = [];
-        j = j-1;
-        
+        tempSchnitzcells(s).deleteMe = true;
+        schnitzcells(s).deleteMe = true;
         
     end
     
 end
 
-schnitzcells = tempSchnitzcells;
-
-Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells)
-
+tempSchnitzcells([tempSchnitzcells.deleteMe]) = [];
+if isfield(tempSchnitzcells, 'Valid')
+    tempSchnitzcells = rmfield(tempSchnitzcells, {'deleteMe', 'StitchedTo', 'StitchedFrom', 'Valid'});
+else
+    tempSchnitzcells = rmfield(tempSchnitzcells, {'deleteMe'});
 end
+schnitzcells = tempSchnitzcells;
+Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
+

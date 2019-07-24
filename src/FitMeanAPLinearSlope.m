@@ -165,7 +165,17 @@ else
         error('Could not load APDivision.mat. Make sure to have done the manual check of division.')
     end
 end
-                                  
+
+% Extract the fields from the cell structure (This is for fields like MeanVectorAP
+% that are saved inside {}.
+channel = 1;
+
+if iscell(MeanVectorAP)
+    MeanVectorAP = MeanVectorAP{channel};
+    SDVectorAP = SDVectorAP{channel};
+    OnRatioAP = OnRatioAP{channel};
+    NParticlesAP = NParticlesAP{channel};
+end
  
 %Rough frame window to consider in the fits
 
@@ -501,7 +511,7 @@ while (cc~=13)
                         sqrt(NParticlesAP(FrameWindow,i)),'.-k');
                     hold on
                     %Plot the data that could be used for the fit
-                    PlotHandle(end+1)=plot(ElapsedTime(Fram0eWindow(FrameFilter))-ElapsedTime(FrameWindow(1)),...
+                    PlotHandle(end+1)=plot(ElapsedTime(FrameWindow(FrameFilter))-ElapsedTime(FrameWindow(1)),...
                         FluoData,'or');
                     %Plot the data that was actually used for the fit
                     PlotHandle(end+1)=plot(ElapsedTime(FitFrameRange)-ElapsedTime(FrameWindow(1)),...

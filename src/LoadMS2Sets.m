@@ -11,7 +11,8 @@ function [Data, Prefixes, resultsFolder] = LoadMS2Sets(DataType, varargin)
 %dataStatus.xlsx that you wish to analyze.
 %
 %OPTIONS
-%'dontCompare': Skip comparing experiment settings
+% 'noCompiledNuclei'
+% 'justPrefixes'
 %
 %OUTPUT
 %Returns the Data structure containing all of the relevant datasets from your
@@ -354,7 +355,7 @@ if ~justPrefixes
             
             if exist('MeanFitsAsymmetric','var')
                 if i<=length(MeanFitsAsymmetric)
-                    Data(i).MeanFitsAsymmetric=MeanFitsASymmetric(i).FitResults;
+                    Data(i).MeanFitsAsymmetric=MeanFitsAsymmetric(i).FitResults;
                 end
             end
             
