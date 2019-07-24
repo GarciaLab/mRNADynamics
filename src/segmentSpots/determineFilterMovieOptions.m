@@ -8,17 +8,17 @@ varargin = varargin{1};
 pixelSize = FrameInfo(1).PixelSize;
 
 % Default options
-displayFigures = 0;
-customFilter = 0;
+displayFigures = false;
+customFilter = false;
 numFrames = 0;
-highPrecision = 0;
-keepPool = 0;
+highPrecision = false;
+keepPool = false;
 filterType = 'Difference_of_Gaussian';
 nWorkers = 8;
 sigmas = {};
 app = {};
 kernelSize = [];
-customML = 0;
+customML = false;
 noSave = false;
 weka = false;
 justTifs = false;
@@ -28,7 +28,7 @@ initialFrame = 1;
 classifierPathCh1 = [];
 classifierFolder = [];
 numType = 'double';
-gpu = '';
+gpu = 'noGPU';
 saveAsMat = false;
 saveType = '.tif';
 

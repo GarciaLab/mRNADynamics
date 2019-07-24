@@ -4,8 +4,8 @@ function [stitchSchnitz, ExpandedSpaceTolerance, NoBulkShift, retrack, nWorkers]
     
 
     stitchSchnitz=true;
-    ExpandedSpaceTolerance = 1;
-    NoBulkShift = false;
+    ExpandedSpaceTolerance = 1.5;
+    NoBulkShift = true;
     retrack = false;
     nWorkers = 8;
     
@@ -15,7 +15,7 @@ function [stitchSchnitz, ExpandedSpaceTolerance, NoBulkShift, retrack, nWorkers]
         elseif strcmpi(varargin{i}, 'ExpandedSpaceTolerance')
             ExpandedSpaceTolerance = str2double(varargin{i+1});
         elseif strcmpi(varargin{i}, 'NoBulkShift')
-            NoBulkShift = true;
+            NoBulkShift = varargin{i+1};
         elseif strcmpi(varargin{i}, 'retrack')
             retrack = true;
         elseif strcmpi(varargin{i}, 'nWorkers')
