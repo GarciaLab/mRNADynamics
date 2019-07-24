@@ -13,9 +13,8 @@ function TrackNuclei(Prefix,varargin)
 % 'ExpandedSpaceTolerance': A multiplier for how how far away two nuclei of
 % adjacent frames can be in order for them to be the same nuclei. It's
 % recommended to set this to 1.5 if you use NoBulkShift. 
-% 'NoBulkShift': Runs the nuclear tracking without accounting for the bulk
-% shift between frames (greatly speeds up runtime). It's recommended you
-% set ExpandedSpaceTolerance to 1.5 if you use this. 
+% 'bulkShift': Runs the nuclear tracking with accounting for the bulk
+% shift between frames (greatly reduces runtime). 
 % 'retrack': retrack
 %
 % OUTPUT
