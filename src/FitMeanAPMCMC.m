@@ -41,6 +41,9 @@ function FitMeanAPMCMC(varargin)
 %                           Read as [time after nc13 start, time after nc14 start, time
 %                           after nc14 start, time after nc14 start].
 %                           Default values are [1.5, -5; 1.5, 18].
+%   'InterpScale', InterpScale: Fold-scale of time interpolation (default
+%                           is 1, >1 means interpolating to a time resolution finer than
+%                           experiment).
 %   'Construct', construct: Name of construct used to get total length of
 %                           gene. Definitions of constructs must first be
 %                           given in FitMeanAPMCMC_GetFluorFromPolPos
@@ -62,6 +65,7 @@ function FitMeanAPMCMC(varargin)
 %Default settings
 prior_sigma = 10; %Width of Gaussian prior in loading rate fluctuations
 ncwindow = [1.5, -5; 1.5, 18]; %Time of MCMC fitting for nc13 and nc14
+InterpScale = 1; %Default is to not interpolate time beyond experimental resolution.
 MCMCsteps = [30000 15000]; %Number of MCMC total steps and burn-in steps.
 LoadPrefix = true; %User selection of Prefix by default.
 construct = 'P2P-MS2v5-LacZ'; %Default construct.
@@ -80,6 +84,9 @@ for i=1:length(varargin)
     end
     if strcmpi(varargin{i},'NCWindow')
         ncwindow = varargin{i+1};
+    end
+    if strcmpi(varargin{i},'InterpScale')
+        InterpScale = varargin{i+1};
     end
     if strcmpi(varargin{i},'Construct')
         construct = varargin{i+1};
@@ -179,7 +186,7 @@ nc_string = {'nc13','nc14'}; %Cell array of nc strings
 nc13 = data.nc13; %nc13 frame index
 nc14 = data.nc14; %nc14 frame index
 t = data.ElapsedTime; %time variable
-dt = mean(t((nc14+1):end)-t(nc14:(end-1))); %Set a simulation timestep given by mean time resolution
+dt = mean(t((nc14+1):end)-t(nc14:(end-1)))./InterpScale; %Set a simulation timestep given by mean time resolution
 scalefac = 10; %Arbitrary scale factor to reduce simulation size
 bins = 0:APResolution:1; %AP resolution
 N_bins = length(bins); %Total number of bins
@@ -390,6 +397,7 @@ dwelltime_chain = chain(n_burn:end,2);
 MS2_basal_chain = chain(n_burn:end,3);
 R0_chain = chain(n_burn:end,4);
 dR_chain = chain(n_burn:end,5:end);
+s2chain = s2chain(n_burn:end);
 
 %Change negative loading rates to zero
 for i = 1:size(dR_chain,1)
