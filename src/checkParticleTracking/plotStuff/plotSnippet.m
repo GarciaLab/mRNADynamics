@@ -31,8 +31,7 @@ intScale = double(intScale);
         IntegrationRadius = 6*intScale; % this appears to be hard-coded into IdentifySingleSpot
         [xGrid, yGrid] = meshgrid(1:SnippetEdge,1:SnippetEdge);
         rGrid = sqrt((xGrid-ceil(SnippetEdge/2)).^2 + (yGrid-ceil(SnippetEdge/2)).^2);
-        SnippetMask = rGrid < IntegrationRadius;
-        IntegrationArea=bwperim(SnippetMask);
+        IntegrationArea= rGrid < IntegrationRadius & (rGrid+1) >= IntegrationRadius;
 
         SnippetOverlay=cat(3,IntegrationArea/2 + ...
             +imSnippet,imSnippet,imSnippet);

@@ -75,7 +75,6 @@ SizeDataTab = size(DataTab);
 
 if ~justReady
     NumDatasets = SizeDataTab(2) - 1;
-    Prefixes = cell(1,NumDatasets);
 else
     NumDatasets = length(prefixFilter)
 end

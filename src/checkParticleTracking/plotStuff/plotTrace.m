@@ -36,8 +36,9 @@ if CurrentParticle~=PreviousParticle || ~exist('AmpIntegral', 'var')|| CurrentCh
     [Frames,AmpIntegral,GaussIntegral,AmpIntegral3,...
         ErrorIntegral, ErrorIntegral3, backGround3, ...
         AmpIntegralGauss3D, ErrorIntegralGauss3D]= ...
-        PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
+        PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel}, 'noSpline');
 end
+
 
 % Check if this particle has a saved manual fit or if fitInitialSlope ran
 if lineFitted
@@ -79,52 +80,46 @@ end
 % plotting the lines and traces
 cla(traceFigAxes)
 hold(traceFigAxes, 'on')
-if ~plot3DGauss
-    if switchFrameFlag
-        traceErrorBar1 = errorbar(traceFigAxes, traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-            AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral,'.-k');
-        traceErrorBar2 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-            AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');
-    end
-    dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
-    cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral(Frames==CurrentFrame),'ob');
-    dPoint2 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
-    cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
-elseif lineFitted
-    % plotting the traces
-    traceErrorBar1 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-        AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');
-    traceErrorBar2 = plot(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-        AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
-    
-    % calculate the fittedXSegment and fittedYSegment
-    to = -Coefficients(2) / Coefficients(1); % minutes
-    fittedXSegment = [to, traceFigTimeAxis(fittedXFrames)];
-    fittedYSegment = polyval(Coefficients,fittedXSegment);
-    lineFitHandle = plot(traceFigAxes,fittedXSegment,fittedYSegment);
-    
-    dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
-    cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
-    dPoint2 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
-    cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegralGauss3D(Frames==CurrentFrame),'ob');
-else
-    if switchFrameFlag
-        traceErrorBar1 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-            AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ones(length(AmpIntegral3(Particles{CurrentChannel}(CurrentParticle).FrameApproved)),1)'*ErrorIntegral3,'.-','Color','green');
-        %     traceErrorBar2 = plot(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-        %         AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
-        traceErrorBar2 = errorbar(traceFigAxes,traceFigTimeAxis(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-            AmpIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),ErrorIntegralGauss3D(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-','Color','blue');
-    end
-    dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
-    cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegral3(Frames==CurrentFrame),'ob');
-    dPoint2 = plot(traceFigAxes,traceFigTimeAxis(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral3(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r');
-    cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),AmpIntegralGauss3D(Frames==CurrentFrame),'ob');
+approvedParticleFrames = Particles{CurrentChannel}(CurrentParticle).FrameApproved;
+if isempty(ErrorIntegral)
+    ErrorIntegral = zeros(length(AmpIntegral(approvedParticleFrames)),1);
+    ErrorIntegral3 =zeros(length(AmpIntegral3(approvedParticleFrames)),1);
 end
+
+if plot3DGauss
+    amp1 = AmpIntegral3;
+    amp2 = AmpIntegralGauss3D;
+    error1 = ones(length(amp1(approvedParticleFrames)),1)'*ErrorIntegral3;
+    error2 = ErrorIntegralGauss3D(approvedParticleFrames);
+    if lineFitted
+        to = -Coefficients(2) / Coefficients(1); % minutes
+        fittedXSegment = [to, traceFigTimeAxis(fittedXFrames)];
+        fittedYSegment = polyval(Coefficients,fittedXSegment);
+        lineFitHandle = plot(traceFigAxes,fittedXSegment,fittedYSegment);
+    end
+else
+    amp1 = AmpIntegral;
+    amp2 = AmpIntegral3;
+    error1 = ones(length(amp1(approvedParticleFrames)),1)'.*ErrorIntegral';
+    error2 = ones(length(amp2(approvedParticleFrames)),1)'.*ErrorIntegral3';
+end
+
+idata1 = amp1(approvedParticleFrames);
+idata2 = amp2(approvedParticleFrames);
+
+traceErrorBar1 = errorbar(traceFigAxes,traceFigTimeAxis(approvedParticleFrames),...
+    idata1, error1,'.-','Color','k');
+traceErrorBar2 = errorbar(traceFigAxes,traceFigTimeAxis(approvedParticleFrames),...
+    idata2, error2,'.-','Color','blue');
+
+dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~approvedParticleFrames),amp1(~approvedParticleFrames),'.r');
+cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),amp1(Frames==CurrentFrame),'ob');
+dPoint2 = plot(traceFigAxes,traceFigTimeAxis(~approvedParticleFrames),amp2(~approvedParticleFrames),'.r');
+cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),amp2(Frames==CurrentFrame),'ob');
+
 
 %%
 %Change the labels, xlimits, etc. only if the frame changed.
-if switchFrameFlag
     
     % adjusting x limits
     try
@@ -197,7 +192,7 @@ if switchFrameFlag
             max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).Fluo,[],2),'r.-','DisplayName','protein')
         ylabel(traceFigAxes,'input protein intensity (a.u.)');
         hold(traceFigAxes,'on')
-        plot(traceFigAxes,Frames(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),AmpIntegral(~Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.r')
+        plot(traceFigAxes,Frames(~approvedParticleFrames),AmpIntegral(~approvedParticleFrames),'.r')
         hold(traceFigAxes,'off')
     else
         traceFigAxes.YAxis(2).Visible = 'off';
@@ -224,7 +219,6 @@ if switchFrameFlag
     end
     title(traceFigAxes,axisTitle, 'Interpreter', 'none')
     
-end
 
 end
 
