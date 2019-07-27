@@ -1,4 +1,4 @@
-function proj = zProjections(Prefix, currentChannel, currentFrame, zSlices, nDigits,DropboxFolder,PreProcPath, FrameInfo, projType)
+function proj = zProjections(Prefix, currentChannel, currentFrame, zSlices, nDigits,DropboxFolder,PreProcPath, FrameInfo, projType, nWorkers)
 % zProjections(Prefix, currentFrame, zSlices, nDigits,DropboxFolder,PreProcPath)
 %
 % DESCRIPTION
@@ -32,6 +32,8 @@ function proj = zProjections(Prefix, currentChannel, currentFrame, zSlices, nDig
 
 %% Making Projection
 % This is to store all the z stacks into a 3D matrix. 
+
+startParallelPool(nWorkers, 0, 1);
 
 if strcmpi(projType, 'median')
     Images =zeros(FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSlices);

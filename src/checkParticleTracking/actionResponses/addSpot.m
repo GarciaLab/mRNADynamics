@@ -4,13 +4,14 @@ function [numParticles, SpotFilter, Particles, Spots,...
     CurrentParticle, CurrentFrame, CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
     LinesPerFrame, Spots, ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
     SpotFilter, numParticles, cc, xSize, ySize, NDigits, intScale,...
-    Prefix, PreProcPath, ProcPath, coatChannel, UseHistoneOverlay, schnitzcells)
+    Prefix, PreProcPath, ProcPath, coatChannel, UseHistoneOverlay, schnitzcells, nWorkers)
 %ADDSPOT Summary of this function goes here
 %   Detailed explanation goes here
 
 zStep = FrameInfo(1).ZStep;
 saveType = '.tif';
 
+startParallelPool(nWorkers, 0, 1);
 
 %Check that we're in zoom mode. If not, set it up.
 PreviousParticle = 0; % resets particle so trace will refresh
@@ -26,13 +27,8 @@ else
         warning('There is a spot assigned to this particle in this frame already.')
     else
         
-        [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'r', 'linewidth',1, 'FigHandle', Overlay);
-        if ConnectPositionx < 1 || ConnectPositiony < 1
-            %sometimes ginputc returns the wrong coordinates for an
-            %unknown reason. if that happens, we'll resort to a
-            %black crosshair from ginput.
-            [ConnectPositionx,ConnectPositiony] = ginput(1);
-        end
+     
+        [ConnectPositionx,ConnectPositiony] = ginput(1);
         
         ConnectPositionx = round(ConnectPositionx);
         ConnectPositiony = round(ConnectPositiony);
@@ -43,10 +39,8 @@ else
                 && (ConnectPositiony > snippet_size/2) && (ConnectPositiony + snippet_size/2 < LinesPerFrame)
             SpotsIndex = length(Spots{CurrentChannel}(CurrentFrame).Fits)+1;
             breakflag = 0; %this catches when the spot addition was unsuccessful and allows checkparticletracking to keep running and not error out
-            maxWorkers = 24;
             use_integral_center = 1;
             
-            startParallelPool(maxWorkers, false, true);
             FitCell = cell(1, ZSlices);
             
             parfor z = 1:ZSlices %#ok<PFUIX>

@@ -284,8 +284,8 @@ if UseHistoneOverlay
         HisOverlayImage=cat(3,mat2gray(ImageHis,double(DisplayRange)),mat2gray(Image),zeros(size(Image)));
     end
     
-    imshow(HisOverlayImage,[],'Border','Tight','Parent',HisOverlayFigAxes)
-
+%     imshow(HisOverlayImage,[],'Border','Tight','Parent',HisOverlayFigAxes)
+    imagescUpdate(HisOverlayFigAxes, HisOverlayImage, []);
 
     hold(HisOverlayFigAxes,'on')
     if ~SpeedMode
