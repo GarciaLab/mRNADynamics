@@ -43,12 +43,13 @@ else
                 && (ConnectPositiony > snippet_size/2) && (ConnectPositiony + snippet_size/2 < LinesPerFrame)
             SpotsIndex = length(Spots{CurrentChannel}(CurrentFrame).Fits)+1;
             breakflag = 0; %this catches when the spot addition was unsuccessful and allows checkparticletracking to keep running and not error out
-            maxWorkers = 8;
+            maxWorkers = 24;
             use_integral_center = 1;
             
-            %             startParallelPool(maxWorkers, false, true);
-            Fits = [];
-            for z = 1:ZSlices %#ok<PFUIX>
+            startParallelPool(maxWorkers, false, true);
+            FitCell = cell(1, ZSlices);
+            
+            parfor z = 1:ZSlices %#ok<PFUIX>
                 imAbove = [];
                 imBelow = [];
                 spotsIm = [];
@@ -82,13 +83,20 @@ else
                         pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', intScale, CurrentFrame, [], z, use_integral_center);
                 end
                 
-                if ~isempty(Fit)
-                    fieldnames = fields(Fit);
+                FitCell{z} = Fit;
+                
+                
+            end
+            Fits = [];
+            
+            for z = 1:ZSlices
+                if ~isempty(FitCell{z})
+                    fieldnames = fields(FitCell{z});
                     if isempty(Fits)
-                        Fits = Fit;
+                        Fits = FitCell{z};
                     else
                         for field = 1:length(fieldnames)
-                            Fits.(fieldnames{field}) =  [Fits.(fieldnames{field}), Fit.(fieldnames{field})];
+                            Fits.(fieldnames{field}) =  [Fits.(fieldnames{field}), FitCell{z}.(fieldnames{field})];
                         end
                     end
                 end
@@ -151,8 +159,8 @@ else
                         JoinParticleTraces(CurrentParticle,...
                         numParticles,Particles{CurrentChannel});
                 else
-                     CurrentParticle = length(Particles{CurrentChannel});
-                     Particles = addNucleusToParticle(Particles, CurrentFrame, ...
+                    CurrentParticle = length(Particles{CurrentChannel});
+                    Particles = addNucleusToParticle(Particles, CurrentFrame, ...
                         CurrentChannel, UseHistoneOverlay, schnitzcells, CurrentParticle);
                     GlobalZoomMode = false;
                     ZoomMode = true;
