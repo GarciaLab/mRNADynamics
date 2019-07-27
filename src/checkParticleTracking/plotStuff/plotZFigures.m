@@ -40,10 +40,11 @@ end
 
 %%%%%    BRIGHTEST Z-TRACE PLOT   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~strcmpi(ExperimentType,'inputoutput')
+        
     %Only update the trace information if we have switched particles
-    if (CurrentParticle~=PreviousParticle)||~exist('MaxZProfile', 'var')||(CurrentChannel~=PreviousChannel)|| CurrentFrame~=PreviousChannel
+    if (CurrentParticle~=PreviousParticle)||~exist('MaxZProfile', 'var')||CurrentChannel ~= PreviousChannel
         PreviousParticle=CurrentParticle;
-        Frames=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel});
+        Frames=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel}, 'noSpline');
     end
     for  i = 1:length(Frames)
         MaxZProfile(i)=Spots{CurrentChannel}(Frames(i)).Fits...

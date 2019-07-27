@@ -36,7 +36,7 @@ function proj = zProjections(Prefix, currentChannel, currentFrame, zSlices, nDig
 if strcmpi(projType, 'median')
     Images =zeros(FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSlices);
 
-    for currentZ = 2:zSlices-1
+    parfor currentZ = 2:zSlices-1
         Images(:,:,currentZ) = imread([PreProcPath,filesep,Prefix,filesep,...
             Prefix,'_',iIndex(currentFrame,nDigits),'_z',iIndex(currentZ,2),'_ch0', num2str(currentChannel) ,'.tif']);
     end
@@ -44,7 +44,7 @@ if strcmpi(projType, 'median')
 elseif strcmpi(projType, 'max')
     im = zeros(FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, 'uint16');
     proj = im;
-    for currentZ = 2:zSlices-1
+    parfor currentZ = 2:zSlices-1
         im = imread([PreProcPath,filesep,Prefix,filesep,...
                 Prefix,'_',iIndex(currentFrame,nDigits),'_z',iIndex(currentZ,2),'_ch0', num2str(currentChannel) ,'.tif']);
         proj = max(proj, im);

@@ -12,7 +12,7 @@ currentParticleExistsInCurrentFrame = sum(Particles{CurrentChannel}(CurrentParti
 
 if ~currentParticleExistsInCurrentFrame && particlesExistInFrame
 
-    [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'b', 'linewidth',1);
+    [ConnectPositionx,ConnectPositiony]=ginput(1);
     ConnectPosition = [ConnectPositionx,ConnectPositiony];
 
     if ~isempty(ConnectPosition)
