@@ -29,6 +29,8 @@ ampdog3Max = NaN;
 doSpline = true;
 optFit = [];
 FitType = [];
+ErrorGauss=[];
+
 
 for i = 1:length(varargin)
     if strcmpi('noSpline', varargin{i})
@@ -150,7 +152,6 @@ if doSpline
         OffsetError=std(OffFit);
     end
 
-end
 
 if exist('OffsetError', 'var')
     %Now, estimate the error in the signal.
@@ -184,10 +185,6 @@ if exist('OffsetError', 'var')
         ErrorIntegral=OffsetError*sqrt(2)*defaultArea;
     end
     
-else
-    ErrorGauss=[];
-    ErrorIntegral=[];
-    ErrorIntegral3=[];
-    ErrorIntegralGauss3D = [];
-    optFit=[];
+end
+
 end
