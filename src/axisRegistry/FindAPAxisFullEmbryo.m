@@ -11,7 +11,7 @@ function [coordA,coordP,xShift,yShift]=FindAPAxisFullEmbryo(varargin)
 %FlipAP- Switches anterior and posterior poles
 %CorrectAxis- Runs a correction script after automatic detection
 
-CorrectAxis = 0;
+CorrectAxis = 1;
 Prefix=varargin{1};
 optionalResults = '';
 
