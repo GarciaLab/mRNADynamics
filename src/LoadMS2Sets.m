@@ -400,6 +400,14 @@ end
 
 
 %If we have both particles and nuclei, then combine everything
+%First, check to see if we have empty structures and clear them if we do
+if isempty(fieldnames(Data))
+    clear Data
+end
+if isempty(fieldnames(DataNuclei))
+    clear DataNuclei
+end
+
 if exist('Data','var') && exist('DataNuclei','var')
     DataTemp=Data;
     clear Data
