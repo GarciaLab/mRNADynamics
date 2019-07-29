@@ -31,14 +31,16 @@ for i=1:length(Data)
     %We will only go ahead if we have at least a MinParticles
     %number of ellipses to check
 
+    %Look at 1 color data for now
+    ch = 1;
     %Max # of particles per AP bin for each nuclear cycle
-    NParticlesAPMax = [max(Data(i).NParticlesAP(nc12:nc13,:),[],1);...
-        max(Data(i).NParticlesAP(nc13:nc14,:),[],1);...
-        max(Data(i).NParticlesAP(nc14:end,:),[],1)];
+    NParticlesAPMax = [max(Data(i).NParticlesAP{ch}(nc12:nc13,:),[],1);...
+        max(Data(i).NParticlesAP{ch}(nc13:nc14,:),[],1);...
+        max(Data(i).NParticlesAP{ch}(nc14:end,:),[],1)];
     NParticlesAPMax = NParticlesAPMax'; %Transpose to keep same dimensions as EllipsesOnAP
 
     %Calculate fraction on for each AP bin
-    FracOnTemp = Data(i).EllipsesOnAP./Data(i).TotalEllipsesAP;
+    FracOnTemp = Data(i).EllipsesOnAP{ch}./Data(i).TotalEllipsesAP;
 
 
     %Replace AP bins that don't have enough particles with nan
