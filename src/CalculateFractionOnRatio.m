@@ -33,14 +33,23 @@ for i=1:length(Data)
 
     %Look at 1 color data for now
     ch = 1;
+    if iscell(Data(i).NParticlesAP)
+        Data(i).NParticlesAP = Data(i).NParticlesAP{ch};
+    end
+    if iscell(Data(i).EllipsesOnAP)
+        Data(i).EllipsesOnAP = Data(i).EllipsesOnAP{ch};
+    end
+    if iscell(Data(i).TotalEllipsesAP)
+        Data(i).TotalEllipsesAP = Data(i).TotalEllipsesAP{ch};
+    end
     %Max # of particles per AP bin for each nuclear cycle
-    NParticlesAPMax = [max(Data(i).NParticlesAP{ch}(nc12:nc13,:),[],1);...
-        max(Data(i).NParticlesAP{ch}(nc13:nc14,:),[],1);...
-        max(Data(i).NParticlesAP{ch}(nc14:end,:),[],1)];
+    NParticlesAPMax = [max(Data(i).NParticlesAP(nc12:nc13,:),[],1);...
+        max(Data(i).NParticlesAP(nc13:nc14,:),[],1);...
+        max(Data(i).NParticlesAP(nc14:end,:),[],1)];
     NParticlesAPMax = NParticlesAPMax'; %Transpose to keep same dimensions as EllipsesOnAP
 
     %Calculate fraction on for each AP bin
-    FracOnTemp = Data(i).EllipsesOnAP{ch}./Data(i).TotalEllipsesAP;
+    FracOnTemp = Data(i).EllipsesOnAP./Data(i).TotalEllipsesAP;
 
 
     %Replace AP bins that don't have enough particles with nan
