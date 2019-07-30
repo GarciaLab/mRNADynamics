@@ -1,10 +1,10 @@
-function [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
-    ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3, ErrorIntegral5,backGround3,...
+function [Frame,AmpIntegral,AmpIntegral3,AmpGaussian,Offset,...
+    ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3, backGround3,...
     AmpIntegralGauss3D, ErrorIntegralGauss3D, AmpDog, AmpDogMax, ampdog3, ampdog3Max] =...
     ...
     GetParticleTrace(...
     ...
-    CurrentParticle,Particles,Spots)
+    CurrentParticle,Particles,Spots, varargin)
 
 %function [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
 %    ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3, ErrorIntegral5]=...
@@ -13,8 +13,6 @@ function [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
 %This function uses the total intensity mask to calculate the particles
 %intensity and subtracts the background obtained from the fit.
 %
-% AR 9/3/2018- Currently, AmpIntegral3 is being calculated over a
-% cylindrical volume and not an accordion volume as ampintegral5 is.
 
 
 
@@ -23,12 +21,22 @@ function [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
 
 ErrorIntegral = NaN;
 ErrorIntegral3 = NaN;
-ErrorIntegral5 = NaN;
 backGround3 = NaN;
 AmpIntegralGauss3D = NaN;
 ErrorIntegralGauss3D = NaN;
 ampdog3 = NaN;
 ampdog3Max = NaN;
+doSpline = true;
+optFit = [];
+FitType = [];
+ErrorGauss=[];
+
+
+for i = 1:length(varargin)
+    if strcmpi('noSpline', varargin{i})
+        doSpline = false;
+    end
+end
 
 defaultArea = 109; %109 pixels is the default area when the pixels are assumed to be 212nm x 212 nm AR 9/3/18
 
@@ -76,12 +84,7 @@ for i=1:length(Particles(CurrentParticle).Frame)
         ErrorIntegralGauss3D(i) = NaN;
 %         warning('gauss3d intensities calculated but not their errors. Re-run fit3dgaussianstoallspots if this is desired.');
     end
-    try
-        AmpIntegral5(i)=...
-            double(spot.FixedAreaIntensity5);
-    catch
-        AmpIntegral5(i)= NaN;
-    end
+  
     try
         AmpDog(i) =  double(spot.dogFixedAreaIntensity(zIndex));
     catch
@@ -104,50 +107,51 @@ for i=1:length(Particles(CurrentParticle).Frame)
     end
 end
 
+if doSpline
 %Do a spline fit to the offset and use it to estimate the error
 %If we have more than five data points, we fit a spline.
-if length(Frame)>5
-    FitType='spline';
-    
-    nBreaks=max([floor(length(Frame)/3),3]);
-    if nBreaks>5
-        nBreaks=5;
-    end
-    
-    try
-        optFit = adaptiveSplineFit(double(Frame),double(Offset),nBreaks);
-        OffsetFit=ppval(optFit,double(Frame));
-        
+    if length(Frame)>5
+        FitType='spline';
+
+        nBreaks=max([floor(length(Frame)/3),3]);
+        if nBreaks>5
+            nBreaks=5;
+        end
+
+        try
+            optFit = adaptiveSplineFit(double(Frame),double(Offset),nBreaks);
+            OffsetFit=ppval(optFit,double(Frame));
+
+            %Calculate the error in the offset
+            OffsetError=std(Offset-OffsetFit);
+        catch
+            ErrorGauss=[];
+            ErrorIntegral=[];
+            ErrorIntegral3=[];
+            optFit=[];
+        end
+
+
+        %If we have between 3 and five data points, we fit a line.
+    elseif length(Frame)>2
+
+        FitType='line';
+        optFit = polyfit(double(Frame),double(Offset),1);
+
         %Calculate the error in the offset
-        OffsetError=std(Offset-OffsetFit);
-    catch
-        ErrorGauss=[];
-        ErrorIntegral=[];
-        ErrorIntegral3=[];
-        ErrorIntegral5 = [];
-        optFit=[];
+        OffsetError=std(Offset-polyval(optFit,double(Frame)));
+
+        %If we have less than 2 data points, we just take the mean.
+    else
+        FitType='mean';
+
+        OffFit=mean(double(Offset));
+        optFit=OffFit;
+
+        %Calculate the error in the offset
+        OffsetError=std(OffFit);
     end
-    
-    
-    %If we have between 3 and five data points, we fit a line.
-elseif length(Frame)>2
-    
-    FitType='line';
-    optFit = polyfit(double(Frame),double(Offset),1);
-    
-    %Calculate the error in the offset
-    OffsetError=std(Offset-polyval(optFit,double(Frame)));
-    
-    %If we have less than 2 data points, we just take the mean.
-else
-    FitType='mean';
-    
-    OffFit=mean(double(Offset));
-    optFit=OffFit;
-    
-    %Calculate the error in the offset
-    OffsetError=std(OffFit);
-end
+
 
 if exist('OffsetError', 'var')
     %Now, estimate the error in the signal.
@@ -165,8 +169,6 @@ if exist('OffsetError', 'var')
             ErrorGauss=OffsetError*sqrt(2)*defaultArea;
         end
     end
-    %      ErrorIntegralGauss3D=OffsetError*sqrt(2)*...
-    %          mean(spot.Area);
     
     
     %For the Integral, we just use the area of the snippet, which is a
@@ -179,19 +181,10 @@ if exist('OffsetError', 'var')
             ErrorIntegral3=OffsetError*sqrt(2)*3*intArea;%since this integration is actually done as a mean over the available slices, multiplying by 5 is definitely wrong. this error should be taken with
             %a grain of salt. AR 9/3/18
         end
-        if ~isnan(AmpIntegral5(i))
-            ErrorIntegral5=OffsetError*sqrt(2)*5*intArea; %since this integration is actually done as a mean over the available slices, multiplying by 5 is definitely wrong. this error should be taken with
-            %a grain of salt. AR 9/3/18
-        end
     else
         ErrorIntegral=OffsetError*sqrt(2)*defaultArea;
     end
     
-else
-    ErrorGauss=[];
-    ErrorIntegral=[];
-    ErrorIntegral3=[];
-    ErrorIntegral5 = [];
-    ErrorIntegralGauss3D = [];
-    optFit=[];
+end
+
 end

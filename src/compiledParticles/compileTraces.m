@@ -3,7 +3,7 @@ function [Particles, CompiledParticles, ncFilter, ncFilterID] =...
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
     Spots, SkipTraces, nc9, nc10, nc11, nc12, nc13, nc14, ncFilterID, ncFilter, ...
     ElapsedTime, intArea, Ellipses, EllipsePos, PreProcPath, ...
-    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits)
+    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits, edgeWidth, pixelSize, coatChannels)
 %COMPILETRACES Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -16,6 +16,11 @@ elseif numFrames<1E4
 else
     error('No more than 10,000 frames currently supported.')
 end
+
+pixelSize = pixelSize * 1000; %nm
+SnippetSize = 2 * (floor(1300 / (2 * pixelSize))) + 1; % nm. note that this is forced to be odd
+
+NChannels = length(coatChannels);
 
 h = waitbar(0,'Compiling traces');
 for ChN=1:NChannels
@@ -172,14 +177,13 @@ for ChN=1:NChannels
                     CompiledParticles{ChN}(k).fitParamsGauss3D = g_fits_cell;
                 end
                 %Extract information from Spots about fluorescence and background
-                [Frame,AmpIntegral, AmpIntegral3, AmpIntegral5, AmpGaussian,...
+                [Frame,AmpIntegral, AmpIntegral3, AmpGaussian,...
                     Off, ErrorIntegral,ErrorGauss,optFit1, FitType, ErrorIntegral3,...
-                    ErrorIntegral5,backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D,...
+                    backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D,...
                     AmpDog, AmpDogMax, ampdog3, ampdog3Max]...
                     = GetParticleTrace(k,CompiledParticles{ChN},Spots{ChN});
                 CompiledParticles{ChN}(k).Fluo= AmpIntegral;
                 CompiledParticles{ChN}(k).Fluo3= AmpIntegral3;
-                CompiledParticles{ChN}(k).Fluo5= AmpIntegral5;
                 CompiledParticles{ChN}(k).FluoGauss= AmpGaussian;
                 CompiledParticles{ChN}(k).Off=Off;
                 CompiledParticles{ChN}(k).FluoError=ErrorIntegral(1); % SEANCHANGED
@@ -323,12 +327,16 @@ for ChN=1:NChannels
                     end
                     
                     
-                    figure(2)
+                    titlestr = ['ParticleTraces',filesep,iIndex(k,NDigits),...
+                            '(',num2str(i),')-nc',...
+                            num2str(CompiledParticles{ChN}(k).nc),'_ch',iIndex(ChN,2)];
+                    
+                    figure('Name',titlestr,'NumberTitle','off');
+
                     left_color = [213,108,85]/255;
                     right_color = [0, 0, 0]/255;
                     set(gcf,'defaultAxesColorOrder',[left_color; right_color]);
                     %Size of the snippet for each frame
-                    SnippetSize=31; %AR 3/15/16: Why is this 31?
                     %Width of the screen
                     ScreenWidth=get( 0, 'ScreenSize' );
                     ScreenWidth=ScreenWidth(3);
@@ -352,141 +360,138 @@ for ChN=1:NChannels
                     subplot(TotalRows,NCols,find(FilterMatrix'))
                     
                     %                     yyaxis left
+%                     errorbar(ElapsedTime(CompiledParticles{ChN}(k).Frame),...
+%                         CompiledParticles{ChN}(k).Fluo,ones(size(CompiledParticles{ChN}(k).Fluo))*...
+%                         CompiledParticles{ChN}(k).FluoError,...
+%                         '.-r');
                     errorbar(ElapsedTime(CompiledParticles{ChN}(k).Frame),...
-                        CompiledParticles{ChN}(k).Fluo,ones(size(CompiledParticles{ChN}(k).Fluo))*...
-                        CompiledParticles{ChN}(k).FluoError,...
+                        CompiledParticles{ChN}(k).FluoGauss3D, CompiledParticles{ChN}(k).FluoGauss3DError,...
                         '.-r');
                     ylabel('fluorescence (au)')
-                    hold on
+%                     hold on
                     
                     %                     yyaxis right
-                    plot(ElapsedTime(CompiledParticles{ChN}(k).Frame),...
-                        CompiledParticles{ChN}(k).Off*intArea,'.-g');
-                    if ~isempty(CompiledParticles{ChN}(k).optFit1)
-                        
-                        if strcmp(CompiledParticles{ChN}(k).FitType,'spline')
-                            SplineValues=ppval(CompiledParticles{ChN}(k).optFit1,double(CompiledParticles{ChN}(k).Frame));
-                        elseif strcmp(CompiledParticles{ChN}(k).FitType,'mean')
-                            SplineValues=ones(size(CompiledParticles{ChN}(k).Frame))*CompiledParticles{ChN}(k).optFit1;
-                        elseif strcmp(CompiledParticles{ChN}(k).FitType,'line')
-                            SplineValues=polyval(CompiledParticles{ChN}(k).optFit1,CompiledParticles{ChN}(k).Frame);
-                        end
-                        
-                        %                         yyaxis right
-                        plot(ElapsedTime(CompiledParticles{ChN}(k).Frame),SplineValues*intArea,'-b')
-                        try
-                            title(['particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{ChN}(k).nc),', Ch: ',num2str(ChN)])
-                        catch
-                        end
-                    else
-                        title(['particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{1}(k).nc),', Ch: ',num2str(ChN),...
-                            ' - WARNING: No offset fit'])
-                    end
-                    hold off
-                    legend({'Particle','Offset','Offset fit'},'Location','Best')
+%                     plot(ElapsedTime(CompiledParticles{ChN}(k).Frame),...
+%                         CompiledParticles{ChN}(k).Off*intArea,'.-g');
+%                     if ~isempty(CompiledParticles{ChN}(k).optFit1)
+%                         
+%                         if strcmp(CompiledParticles{ChN}(k).FitType,'spline')
+%                             SplineValues=ppval(CompiledParticles{ChN}(k).optFit1,double(CompiledParticles{ChN}(k).Frame));
+%                         elseif strcmp(CompiledParticles{ChN}(k).FitType,'mean')
+%                             SplineValues=ones(size(CompiledParticles{ChN}(k).Frame))*CompiledParticles{ChN}(k).optFit1;
+%                         elseif strcmp(CompiledParticles{ChN}(k).FitType,'line')
+%                             SplineValues=polyval(CompiledParticles{ChN}(k).optFit1,CompiledParticles{ChN}(k).Frame);
+%                         end
+%                         
+%                         %                         yyaxis right
+%                         plot(ElapsedTime(CompiledParticles{ChN}(k).Frame),SplineValues*intArea,'-b')
+%                         try
+%                             title(['particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{ChN}(k).nc),', Ch: ',num2str(ChN)])
+%                         catch
+%                         end
+%                     else
+%                         title(['particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{1}(k).nc),', Ch: ',num2str(ChN),...
+%                             ' - WARNING: No offset fit'])
+%                     end
+%                     hold off
+%                     legend({'Particle','Offset','Offset fit'},'Location','Best')
                     xlabel('time (min)')
                     axis square
                     set(gca, 'Position', get(gca, 'OuterPosition') - ...
                         get(gca, 'TightInset') * [-1 0 1 0; 0 -1 0 1; 0 0 1 0; 0 0 0 1]);
+                    standardizeFigure(gca, []);
                     drawnow
                     
                     
                     
-                    
-                    %Top right plot
-                    if HistoneChannel
-                        subplot(TotalRows,NCols,find(~FilterMatrix'))
-                        
-                        if length(CompiledParticles{ChN}(k).Frame)>1
-                            colormap(jet(128));
-                            cmap=colormap;
-                            
-                            ColorTime=[];
-                            for j=1:length(CompiledParticles{ChN}(k).Frame)
-                                ColorTime(j,:)= cmap(round((j-1)/...
-                                    (length(CompiledParticles{ChN}(k).Frame)-1)*127+1),:);
-                            end
-                        else
-                            ColorTime=[];
-                            ColorTime(1,:)=[1,0,0];
-                        end
-                        
-                        
-                        
-                        hold on
-                        for j=1:length(CompiledParticles{ChN}(k).Frame)
-                            PosSchnitz=find((schnitzcells(CompiledParticles{ChN}(k).Nucleus).frames)==...
-                                CompiledParticles{ChN}(k).Frame(j));
-                            PosEllipse=schnitzcells(CompiledParticles{ChN}(k).Nucleus).cellno(PosSchnitz);
-                            CurrEllipse=Ellipses{CompiledParticles{ChN}(k).Frame(j)}(PosEllipse,:);
-                            
-                            if ~isempty(CurrEllipse)
-                                EllipseHandle=ellipse(CurrEllipse(3),...
-                                    CurrEllipse(4),...
-                                    CurrEllipse(5),...
-                                    0,0,[],[],gca);
-                                set(EllipseHandle,'color',ColorTime(j,:))
-                                plot(CompiledParticles{ChN}(k).xPos(j)-CurrEllipse(1),...
-                                    CompiledParticles{ChN}(k).yPos(j)-CurrEllipse(2),'o','color',...
-                                    ColorTime(j,:))
-                            else
-                                PosSchnitz=length(schnitzcells(CompiledParticles{ChN}(k).Nucleus).frames);
-                                PosEllipse=schnitzcells(CompiledParticles{ChN}(k).Nucleus).cellno(PosSchnitz);
-                                CurrEllipse=...
-                                    Ellipses{schnitzcells(CompiledParticles{ChN}(k).Nucleus).frames(PosSchnitz)}(PosEllipse,:);
-                                
-                                
-                                
-                                plot(CompiledParticles{ChN}(k).xPos(j)-CurrEllipse(1),...
-                                    CompiledParticles{ChN}(k).yPos(j)-CurrEllipse(2),'o','color',...
-                                    ColorTime(j,:))
-                            end
-                            
-                            
-                            
-                        end
-                        hold off
-                        box on
-                        xlabel('x position (pixels)')
-                        ylabel('y position (pixels)')
-                        axis square
-                        set(gca, 'Position', get(gca, 'OuterPosition') - ...
-                            get(gca, 'TightInset') * [-1 0 1 0; 0 -1 0 1; 0 0 1 0; 0 0 0 1]);
-                        set(gca, 'YDir', 'reverse')
-                        BarHandle = colorbar;
-                        set(BarHandle,'YTick',[])
-                        
-                        %%%%%AR 6/16/17: This still doesn't work in 2017. We need to find a
-                        %%%%%replacement.
-                        %                         try
-                        %                             if ~isempty(cbfreeze(BarHandle))
-                        %                                 BarHandle=cbfreeze(BarHandle);
-                        %                             else
-                        %                                 warning('Issue with cbfreeze.m. Skipping it. The color bar will not reflect time appropriately.')
-                        %                             end
-                        %                             ylabel(BarHandle,'Time')
-                        %                         catch
-                        %                             warning('Issue with cbfreeze.m. Skipping it. The color bar will not reflect time appropriately. This is an issue of Matlab 2014b.')
-                        %                         end
-                        %%%%%%%%%%%%%%%%
-                        if strcmpi(ExperimentAxis,'AP')
-                            title(['Mean AP: ',num2str(CompiledParticles{ChN}(k).MeanAP)])
-                        end
-                        drawnow
-                    end
-                    
+%                     %%
+%                     %Top right plot
+%                     if HistoneChannel
+%                         subplot(TotalRows,NCols,find(~FilterMatrix'))
+%                         
+%                         if length(CompiledParticles{ChN}(k).Frame)>1
+%                             colormap(jet(128));
+%                             cmap=colormap;
+%                             
+%                             ColorTime=[];
+%                             for j=1:length(CompiledParticles{ChN}(k).Frame)
+%                                 ColorTime(j,:)= cmap(round((j-1)/...
+%                                     (length(CompiledParticles{ChN}(k).Frame)-1)*127+1),:);
+%                             end
+%                         else
+%                             ColorTime=[];
+%                             ColorTime(1,:)=[1,0,0];
+%                         end
+%                         
+%                         
+%                         
+%                         hold on
+%                         for j=1:length(CompiledParticles{ChN}(k).Frame)
+%                             PosSchnitz=find((schnitzcells(CompiledParticles{ChN}(k).Nucleus).frames)==...
+%                                 CompiledParticles{ChN}(k).Frame(j));
+%                             PosEllipse=schnitzcells(CompiledParticles{ChN}(k).Nucleus).cellno(PosSchnitz);
+%                             CurrEllipse=Ellipses{CompiledParticles{ChN}(k).Frame(j)}(PosEllipse,:);
+%                             
+%                             if ~isempty(CurrEllipse)
+%                                 EllipseHandle=ellipse(CurrEllipse(3),...
+%                                     CurrEllipse(4),...
+%                                     CurrEllipse(5),...
+%                                     0,0,[],[],gca);
+%                                 set(EllipseHandle,'color',ColorTime(j,:))
+%                                 plot(CompiledParticles{ChN}(k).xPos(j)-CurrEllipse(1),...
+%                                     CompiledParticles{ChN}(k).yPos(j)-CurrEllipse(2),'o','color',...
+%                                     ColorTime(j,:))
+%                             else
+%                                 PosSchnitz=length(schnitzcells(CompiledParticles{ChN}(k).Nucleus).frames);
+%                                 PosEllipse=schnitzcells(CompiledParticles{ChN}(k).Nucleus).cellno(PosSchnitz);
+%                                 CurrEllipse=...
+%                                     Ellipses{schnitzcells(CompiledParticles{ChN}(k).Nucleus).frames(PosSchnitz)}(PosEllipse,:);
+%                                 
+%                                 
+%                                 
+%                                 plot(CompiledParticles{ChN}(k).xPos(j)-CurrEllipse(1),...
+%                                     CompiledParticles{ChN}(k).yPos(j)-CurrEllipse(2),'o','color',...
+%                                     ColorTime(j,:))
+%                             end
+%                             
+%                             
+%                             
+%                         end
+%                         hold off
+%                         box on
+%                         xlabel('x position (pixels)')
+%                         ylabel('y position (pixels)')
+%                         axis square
+%                         set(gca, 'Position', get(gca, 'OuterPosition') - ...
+%                             get(gca, 'TightInset') * [-1 0 1 0; 0 -1 0 1; 0 0 1 0; 0 0 0 1]);
+%                         set(gca, 'YDir', 'reverse')
+%                         BarHandle = colorbar;
+%                         set(BarHandle,'YTick',[])
+%                        
+%                         if strcmpi(ExperimentAxis,'AP')
+%                             title(['Mean AP: ',num2str(CompiledParticles{ChN}(k).MeanAP)])
+%                         end
+%                         drawnow
+%                     end
+                    %%
                     %Snippets
                     for j=1:NFrames
                         subplot(TotalRows,NCols,(TotalRows-NRows)*NCols+j)
                         spotFrame = CompiledParticles{ChN}(k).Frame(j);
                         [x,y,z]=SpotsXYZ(Spots{ChN}(spotFrame));
+%                             [x,y,z]=SpotsXYZ(Spots{ChN}(spotFrame), true);
                         if ~isempty(x)
-                            xTrace=x(CompiledParticles{ChN}(k).Index(j));
-                            yTrace=y(CompiledParticles{ChN}(k).Index(j));
-                            zTrace=z(CompiledParticles{ChN}(k).Index(j));
+%                             xTrace=x(CompiledParticles{ChN}(k).Index(j));
+%                             yTrace=y(CompiledParticles{ChN}(k).Index(j));
+%                             zTrace=z(CompiledParticles{ChN}(k).Index(j));
+                                xTrace = round(CompiledParticles{ChN}(k).xPosGauss3D(j));
+                                yTrace = round(CompiledParticles{ChN}(k).yPosGauss3D(j));
+                                zTrace = round(CompiledParticles{ChN}(k).zPosGauss3D(j));
+                                try
                             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                                 FilePrefix,iIndex(CompiledParticles{ChN}(k).Frame(j),NDigits),'_z',iIndex(zTrace,2),...
-                                '_ch',iIndex(ChN,2),'.tif']);
+                                '_ch',iIndex(coatChannels(ChN),2),'.tif']);
+                           
                             [ImRows,ImCols]=size(Image);
                             ImageSnippet=zeros(SnippetSize,SnippetSize);
                             yRange=round(yTrace)+[-(SnippetSize-1)/2:(SnippetSize-1)/2];
@@ -517,16 +522,15 @@ for ChN=1:NChannels
                                 end
                             end
                         end
+                        end
                     end
                     set(gcf,'Position',[1,41,1280,684])
                     
                     drawnow
                     if isfield(CompiledParticles{ChN}(k), 'nc')
-                        saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,'ParticleTraces',filesep,iIndex(k,NDigits),...
-                            '(',num2str(i),')-nc',...
-                            num2str(CompiledParticles{ChN}(k).nc),'_ch',iIndex(ChN,2),'.tif'])
+                        saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,titlestr,'.tif'])
                     end
-                    close(2)
+                    close(gcf)
                 end
                 
                 

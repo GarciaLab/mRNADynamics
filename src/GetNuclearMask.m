@@ -1,8 +1,7 @@
-function nucMask=GetNuclearMask(I,smoothing,imopenParam)
+function nucMask=GetNuclearMask(I,smoothing,imopenParam, varargin)
 
 %The following has been canibalized from Michael Tikhonov's FISH code.
-%It creates a quick nuclear mask so we cna check alignments
-
+%It creates a quick nuclear mask so we can check alignments    
 
 I_mask = getEmbryoMaskLive(I, max(10*smoothing,10));
 
@@ -13,21 +12,27 @@ end
 if sum(I_mask(:))/numel(I_mask)<0.1
     I_mask = true(size(I_mask));
 end
+
+if ~isempty(varargin)
+    I_mask = varargin{1};
+end
+
 % Use watershed algorithm to partition the image; prevent oversegmentation by first
 % gaussian filtering the image 
     segmentationOk = false;
     while ~segmentationOk
         if smoothing>0
             iSmooth = imfilter(I,...
-                fspecial('gaussian',smoothing*2, smoothing),'symmetric');
+                fspecial('gaussian',max(smoothing*2, 1), smoothing),'symmetric');
         else
             iSmooth = I;
         end
         imSegmented = single(watershed(imcomplement(iSmooth))).*single(I_mask);
-        %imSegmented = watershed(imcomplement(mexican_hat_filter(I,smoothing))).*single(I_mask);
+%         imSegmented = watershed(imcomplement(mexican_hat_filter(I,smoothing))).*single(I_mask);
 
         % Areas that are too large or too small do not correspond to single nuclei; remove
         % them.
+        imshow(imSegmented, [])
         cc=bwconncomp(imSegmented);
         if cc.NumObjects<5000
             segmentationOk = true;

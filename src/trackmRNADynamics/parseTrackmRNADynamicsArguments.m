@@ -13,16 +13,19 @@ function [Prefix, app, retrack, optionalResults, displayFigures] = parseTrackmRN
     Prefix = varargin{1};
 
     for i = 2:length(varargin)
-
-      if strcmpi(varargin{i}, 'app')
-        app{1} = varargin{i + 1};
-        app{2} = varargin{i + 2};
-      elseif contains(varargin{i}, 'noRetrack', 'IgnoreCase', true)
-          retrack = 0;
-      elseif strcmpi(varargin{i}, 'optionalResults')
-          optionalResults = varargin{i+1};
-      elseif strcmpi(varargin{i}, 'displayFigures')
-          displayFigures = 1;
+      if ~ischar(varargin{i})
+          continue
+      else
+          if strcmpi(varargin{i}, 'app')
+            app{1} = varargin{i + 1};
+            app{2} = varargin{i + 2};
+          elseif contains(varargin{i}, 'noRetrack', 'IgnoreCase', true)
+              retrack = 0;
+          elseif strcmpi(varargin{i}, 'optionalResults')
+              optionalResults = varargin{i+1};
+          elseif strcmpi(varargin{i}, 'displayFigures')
+              displayFigures = 1;
+          end
       end
       
 

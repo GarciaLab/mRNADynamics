@@ -1,4 +1,4 @@
-function AddParticlePosition(Prefix, varargin)
+function [Particles, SpotFilter] = AddParticlePosition(Prefix, varargin)
 %
 % DESCRIPTION
 % Locates particles from a zoomed-in movie within full embryo images using
@@ -13,8 +13,8 @@ function AddParticlePosition(Prefix, varargin)
 %                       embyro images
 % 'NoAP': Just adds X and Y information
 % 'SelectChannel': Prompts user to select the channel to use for alignment
-% 'optionalResults': ?
-% 'yToManualAlignmentPrompt': ?
+% 'optionalResults': 
+% 'yToManualAlignmentPrompt': 
 % 'correctDV': If you want the DV shift calculated
 %
 % MANUAL ALIGNMENT CONTROLS
@@ -31,14 +31,9 @@ function AddParticlePosition(Prefix, varargin)
 %V2: Changed this function to use a correlation in order to center the
 %images.
 
-%Get the relevant folders for this data set
-[RawDynamicsPath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
-    ~, ~] = DetermineAllLocalFolders(Prefix);
+%Default set of variables to save
+saveVars={'coordA','coordP','coordAZoom','coordPZoom'};
 
-% refactor in progress, we should replace readMovieDatabase with getExperimentDataFromMovieDatabase
-[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoopEnd, APResolution,...
-    Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 SkipAlignment=false;
 ManualAlignment=false;
@@ -71,11 +66,15 @@ close all
                 correctDV = true;
         end
     end
-
-
+    
 %Get the relevant folders for this data set
 [RawDynamicsPath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
-    ~, ~] = DetermineAllLocalFolders(Prefix, optionalResults);
+    configValues,...
+    movieDatabasePath, movieDatabase] = DetermineAllLocalFolders(Prefix, optionalResults);
+
+[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoopEnd, APResolution,...
+    Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+    nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
 
 
 if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
@@ -125,14 +124,9 @@ else
     histoneChannelPresent = false;
 end
 
-%Figure out what type of experiment we have
-[~, ~, ~, ~, ~, APResolution,...
-    Channel1, Channel2, ~, ~, ~, ~, ~,...
-    ~, ~, ~, ~, ~, ~, ~, Channel3] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 
-
-[FileMode, EmbryoName, projectDate] = getMicroscope(RawDynamicsPath, Prefix);
+[FileMode, EmbryoName, projectDate] = getMicroscope(Prefix);
 rawPrefixPath = [RawDynamicsPath,filesep,projectDate,filesep,EmbryoName,filesep];
 fullEmbryoPath = [rawPrefixPath, 'FullEmbryo', filesep];
 
@@ -161,7 +155,6 @@ if ~NoAP
         elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>=2
             ChannelToLoad=find(ChannelToLoadTemp);
             ChannelToLoad = ChannelToLoad(1);
-            disp('You have multiple nuclear channels, pick the one to use.');
         else
             error('No histone channel found. Was it defined in MovieDatabase as :Nuclear or :InvertedNuclear?')
         end
@@ -222,14 +215,11 @@ if ~NoAP
         ZoomRatio = ResizeFactor;
         
     else         
-        %This is so that the code doesn't freak out later
         SurfName=[];
         
         %Figure out the different channels
         %NuclearChannel=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
-        % Let's use NuclearChannel, instead of making the code to guess
-        % which channel should be used for HisChannel and whether it should
-        % be inverted or not.
+
         
         if any(contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true))
             if SelectChannel
@@ -270,33 +260,33 @@ if ~NoAP
         
         ImageTemp=bfopen([fullEmbryoPath,filesep,D(end).name]);
         MetaFullEmbryo= ImageTemp{:, 4};
-        PixelSizeFullEmbryo=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0) );
+        PixelSizeFullEmbryoSurf=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0) );
         try
-            PixelSizeFullEmbryo=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0).value);
+            PixelSizeFullEmbryoSurf=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0).value);
         catch
-            PixelSizeFullEmbryo=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
+            PixelSizeFullEmbryoSurf=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
         end
         
         %Check that the surface and midsaggital images have the same zoom
-        D1=dir([fullEmbryoPath,'*mid*.',FileMode(1:3)]);
+        midDirectory=dir([fullEmbryoPath,'*mid*.',FileMode(1:3)]);
         if strcmp(FileMode, 'DSPIN')            %CS20170912
-            D1=dir([fullEmbryoPath,'*surf*']);
+            midDirectory=dir([fullEmbryoPath,'*surf*']);
         end
-        ImageTemp1=bfopen([fullEmbryoPath,D1(end).name]);
-        MetaFullEmbryo1= ImageTemp1{:, 4};
+        ImageTempMid=bfopen([fullEmbryoPath,midDirectory(end).name]);
+        MetaFullEmbryoMid= ImageTempMid{:, 4};
         
         %This if for BioFormats backwards compatibility
-        if ~isempty(str2double(MetaFullEmbryo1.getPixelsPhysicalSizeX(0)))
-            PixelSizeFullEmbryoMid=str2double(MetaFullEmbryo1.getPixelsPhysicalSizeX(0));
+        if ~isempty(str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0)))
+            PixelSizeFullEmbryoMid=str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0));
         else
-            PixelSizeFullEmbryoMid=str2double(MetaFullEmbryo1.getPixelsPhysicalSizeX(0).value);
+            PixelSizeFullEmbryoMid=str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0).value);
         end
         
         
         %In principle, we would be comparing PixelSizeFullEmbryo==PixelSizeFullEmbryoMid
         %However, some issues of machine precision made this not work
         %sometimes.
-        if abs(PixelSizeFullEmbryo/PixelSizeFullEmbryoMid-1)>0.01
+        if abs(PixelSizeFullEmbryoSurf/PixelSizeFullEmbryoMid-1)>0.01
             error('The surface and midsaggital images were not taken with the same pixel size')
         end
         
@@ -321,6 +311,7 @@ if ~NoAP
         for i=HisChannel:NChannelsMeta:size(ImageTemp{ImageCellToUse,1},1)
             MaxTemp(:,:,i)=ImageTemp{ImageCellToUse,1}{i,1};
         end
+        
         if InvertHis
             SurfImage=MaxTemp(:,:,HisChannel+round(NSlices/2)*NChannelsMeta);
         else
@@ -333,8 +324,8 @@ if ~NoAP
             SurfImage = bfopen([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoSurf.tif']);
             SurfImage = SurfImage{1}{1};
         end
-        
-               %Rotates the full embryo image to match the rotation of the zoomed
+        %%
+        %Rotates the full embryo image to match the rotation of the zoomed
         %time series
         zoom_angle = 0;
         full_embryo_angle = 0;
@@ -389,17 +380,23 @@ if ~NoAP
                 zoom_angle=str2double(LSMMetaZoom2.get('Global HardwareSetting|ParameterCollection|RoiRotation #1'));
             end
         end
-        
+        %%
         SurfImage = imrotate(SurfImage, -zoom_angle + full_embryo_angle);
+        
+        mkdir([DropboxFolder,filesep,Prefix, filesep, 'DV']);
+        maxSurfSavePath = [DropboxFolder,filesep,Prefix, filesep, 'DV', filesep, 'surf_max.tif'];
+        imwrite(SurfImage,maxSurfSavePath);
+        
+        
         clear ImageTemp
         
         %Zoom factor
-        MovieZoom=PixelSizeFullEmbryo(1)/PixelSizeZoom(1);
+        MovieZoom=PixelSizeFullEmbryoSurf(1)/PixelSizeZoom(1);
         SurfZoom=1;     %We'll call the zoom of the full embryo image 1
         
         %Get the size of the zoom image
-        Columns = str2num(MetaZoom.getPixelsSizeX(0));
-        Rows = str2num(MetaZoom.getPixelsSizeY(0));
+        Columns = str2double(MetaZoom.getPixelsSizeX(0));
+        Rows = str2double(MetaZoom.getPixelsSizeY(0));
         surf_size = size(SurfImage);
         SurfColumns= surf_size(2);
         SurfRows=surf_size(1);
@@ -471,10 +468,10 @@ if ~NoAP
             im1 = ZoomImage;
             im2 = SurfImageResized;
             
-            if InvertHis
-                im1 = imcomplement(im1);
-                im2 = imcomplement(im2);
-            end
+%             if InvertHis
+%                 im1 = imcomplement(im1);
+%                 im2 = imcomplement(im2);
+%             end
             
             %             try
             %                 C = gather(normxcorr2(gpuArray(im1), gpuArray(im2)));
@@ -559,8 +556,7 @@ if ~NoAP
                 NucMaskZoomIn=GetNuclearMask(ZoomImage,8,2);
                 ImOverlayMask=cat(3,mat2gray(NucMaskZoomOutResizedCropped),...
                     +mat2gray(NucMaskZoomIn),zeros(size(NucMaskZoomOutResizedCropped)));
-                
-                
+
                 alOvFig = figure(1);
                 imOv = subplot(2,1,1);
                 imshow(ImOverlay, 'Parent', imOv)
@@ -616,7 +612,10 @@ if ~NoAP
         ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
     coordAZoom=(coordA-[TopLeft(2),TopLeft(1)])*ZoomRatio;
 	coordPZoom=(coordP-[TopLeft(2),TopLeft(1)])*ZoomRatio;
-    
+    if exist('coordD', 'var')
+         coordDZoom=(coordD-[TopLeft(2),TopLeft(1)])*ZoomRatio;
+        coordVZoom=(coordV-[TopLeft(2),TopLeft(1)])*ZoomRatio;
+    end
     
     fullFigure = figure(7);
     fullAxes = axes(fullFigure);
@@ -648,18 +647,24 @@ if ~NoAP
     
     %Angle between the x-axis and the AP-axis
     APAngle=atan2((coordPZoom(2)-coordAZoom(2)),(coordPZoom(1)-coordAZoom(1)));
-    APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
+    APLength = norm(coordAZoom-coordPZoom);
+        if exist('coordD', 'var')
+            DVLength = norm(coordDZoom-coordVZoom);
+        else
+            DVLength = APLength/2; %rough estimate but surprisingly accurate
+        end
+    saveVars = [saveVars, 'APLength', 'DVLength'];
 
     APPosImage=zeros(size(ZoomImage));
     [Rows,Columns]=size(ZoomImage);
     
-    for i=1:Rows
-        for j=1:Columns
-            Angle=atan2((i-coordAZoom(2)),(j-coordAZoom(1)));
+    for y=1:Rows
+        for x=1:Columns
+            Angle=atan2((y-coordAZoom(2)),(x-coordAZoom(1)));
             
-            Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
+            Distance=sqrt((coordAZoom(2)-y).^2+(coordAZoom(1)-x).^2);
             APPosition=Distance.*cos(Angle-APAngle);
-            APPosImage(i,j)=APPosition/APLength;
+            APPosImage(y,x)=APPosition/APLength;
         end
     end
     
@@ -688,10 +693,23 @@ if ~NoAP
     
     DV_correction = 0;
     
-    if correctDV
-        DV_correction = FindDVShift_full(Prefix);
+    if exist([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'Classified_image.tif'], 'file')
+        correctDV = 1;
     end
-    
+    if correctDV
+        if exist([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'], 'file')
+            load([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'],'DV_correction');
+        else
+            try
+                DV_correction = FindDVShift_full(Prefix);
+            catch
+                disp('failed to apply dv correction');
+            end
+            save([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'],'DV_correction');
+        end
+            saveVars = [saveVars, 'DV_correction'];
+    end
+    DVLength = APLength/2;
     if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
         for ChN=1:NChannels
             for i=1:length(Particles{ChN})
@@ -707,34 +725,36 @@ if ~NoAP
                 
                 %Determine the distance perpendicular to the AP axis. This is a
                 %proxy for a DV axis.
-                Particles{ChN}(i).DVpos=Distances.*sin(Angles-APAngle)-DV_correction;
+                DVPositions = Distances.*sin(Angles-APAngle); %units of pixels on the surface of blastoderm. 
+                if correctDV
+                    %ventral midline is dv_correction pixels away from the
+                    %AP axis. 
+                    Particles{ChN}(i).DVpos=abs(DVPositions-DV_correction)/DVLength;;
+                    %so DVpos is pixels away from the ventral midline
+                    %across the blastoderm.
+                else
+                    Particles{ChN}(i).DVpos=DVPositions/DVLength;
+                end
             end
         end
     end
     
-    
-    
-    
-    
-    
     %Save AP detection information
     
-    %Default set of variables to save
-    VariablesToSave={'coordA','coordP','coordAZoom','coordPZoom'};
     %Information about shifts
     if exist('xShift', 'var')
-        VariablesToSave=[VariablesToSave,'xShift','yShift'];
+        saveVars=[saveVars,'xShift','yShift'];
     elseif  exist('xShift1', 'var')
-        VariablesToSave=[VariablesToSave,'xShift1','yShift1',...
+        saveVars=[saveVars,'xShift1','yShift1',...
             'xShift2','yShift2'];
     end
     %Rotation information
     if exist('zoom_angle', 'var')
         ImageRotation=zoom_angle;
-        VariablesToSave=[VariablesToSave,'ImageRotation'];
+        saveVars=[saveVars,'ImageRotation'];
     end
     
-    save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],VariablesToSave{:})
+    save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],saveVars{:})
     
     if exist('ManualAlignmentDone', 'var')
         if ManualAlignmentDone
@@ -759,59 +779,9 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
     save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','SpotFilter');
 end
 
-end
-
-function [FileMode, EmbryoName, projectDate] = getMicroscope(RawDynamicsPath, Prefix)
-
-
-%Determine whether we're dealing with 2-photon data from Princeton or LSM
-%data. 2-photon data uses TIF files. In LSM mode multiple files will be
-%combined into one.
-%Find out the date it was taken
-Dashes=strfind(Prefix,'-');
-projectDate=Prefix(1:Dashes(3)-1);
-EmbryoName=Prefix(Dashes(3)+1:end);
-rawPrefixPath = [RawDynamicsPath,filesep,projectDate,filesep,EmbryoName,filesep];
-
-
-DTIF=dir([rawPrefixPath,'*.tif']);
-DLSM=dir([rawPrefixPath,'*.lsm']);
-DCZI=dir([rawPrefixPath,'*.czi']);
-DLIF=dir([rawPrefixPath,'*.lif']);
-DLAT=dir([rawPrefixPath,'*_Settings.txt']);
-DSPIN=dir([rawPrefixPath,'FullEmbryo',filesep,'*.nd']);     %Nikon spinning disk . CS20170911
-
-% OME-TIFF xml companion file (*.ome).
-% Not mandatory per OME-TIFF standard, but our examples have it so for know we detect ome-tiff based on the presence of this file.
-OMETIFF = dir([rawPrefixPath,'*.ome']);
-
-if ~isempty(OMETIFF)
-    disp('OME-TIFF with .ome XML companion file mode')
-    FileMode = 'OMETIFF';
-elseif ~isempty(DTIF) & isempty(DLSM)& isempty(DSPIN)
-    if isempty(DLIF)
-        if isempty(DLAT)
-            disp('2-photon @ Princeton data mode')
-            FileMode='TIF';
-        else
-            disp('Lattice Light Sheet data mode')
-            FileMode='LAT';
-        end
-    else
-        disp('LIF export mode')
-        FileMode='LIFExport';
-    end
-elseif (isempty(DTIF))&(~isempty(DLSM))
-    disp('LSM mode')
-    FileMode='LSM';
-elseif (isempty(DTIF))&(~isempty(DCZI))
-    disp('CZI mode')
-    FileMode='CZI';
-elseif (~isempty(DSPIN))        %CS20170911
-    disp('Nikon spinning disk mode with .nd files')
-    FileMode='DSPIN';
-else
-    error('File type not recognized')
+if correctDV
+    CheckDivisionTimes(Prefix, 'lazy');
+    %for convenience. 
 end
 
 end

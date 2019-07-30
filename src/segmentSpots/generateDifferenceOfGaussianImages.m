@@ -54,7 +54,7 @@ for channelIndex = 1:nCh
     
     
     if ~filter3D
-        parfor current_frame = 1:numFrames
+        for current_frame = 1:numFrames
             
             
             for zIndex = 1:zSize

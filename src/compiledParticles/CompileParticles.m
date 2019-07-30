@@ -44,6 +44,8 @@ function CompileParticles(varargin)
 %               the initial slope and T_on respectively.
 % 'optionalResults' : if you want to use a different dropbox folder
 % 'minBinSize': changes the minimum size of allowed AP bins
+% 'edgeWidth': remove ellipses and particles close to the boundary of the
+% field of view
 
 % Author (contact): Hernan Garcia (hggarcia@berkeley.edu)
 % Created:
@@ -164,16 +166,26 @@ ncFilterID = [];
 FilePrefix=[Prefix,'_'];
 
 %What type of experiment are we dealing with? Get this out of MovieDatabase
-[~,~,DropboxFolder,~, PreProcPath,...
-    ~, ~, ~, ~, ~,~] = readMovieDatabase(Prefix, optionalResults);
+[rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
+    rawDataFolder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder,...
+    Channel3, spotChannels, MovieDataBaseFolder, movieDatabase]...
+    = readMovieDatabase(Prefix, optionalResults);
 
 % refactor in progress, we should replace readMovieDatabase with getExperimentDataFromMovieDatabase
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoopEnd, APResolution,...
    Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase, DVResolution] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+    nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase, DVResolution] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
 
 APExperiment = strcmpi(ExperimentAxis, 'AP');
 DVExperiment = strcmpi(ExperimentAxis, 'DV');
+
+correctDV = false;
+if DVExperiment
+    correctDV = exist([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'], 'file');
+    if correctDV            
+        load([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat']);
+    end
+end
 
 
 
@@ -291,14 +303,12 @@ end
 
 if APExperiment | DVExperiment
     if (~isfield(Particles{1},'APpos')) || ForceAP
-        AddParticlePosition(addParticleArgs{:});
+        [Particles, SpotFilter] = AddParticlePosition(addParticleArgs{:});
     else
         disp('Using saved AP information (results from AddParticlePosition)')
     end
 end
 
-%Reload Particles.mat
-load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
 %Create the particle array. This is done so that we can support multiple
 %channels. Also figure out the number of channels
 if iscell(Particles)
@@ -319,12 +329,16 @@ warning('off', 'MATLAB:MKDIR:DirectoryExists');
 if APExperiment
     mkdir([DropboxFolder,filesep,Prefix,filesep,'APMovie'])
 end
-mkdir([DropboxFolder,filesep,Prefix,filesep,'ParticleTraces'])
-mkdir([DropboxFolder,filesep,Prefix,filesep,'TracesFluctuations'])
-mkdir([DropboxFolder,filesep,Prefix,filesep,'Offset'])
-mkdir([DropboxFolder,filesep,Prefix,filesep,'Fits'])
-mkdir([DropboxFolder,filesep,Prefix,filesep,'Probabilities'])
-mkdir([DropboxFolder,filesep,Prefix,filesep,'Various']);
+
+if ~SkipAll
+    mkdir([DropboxFolder,filesep,Prefix,filesep,'ParticleTraces'])
+    mkdir([DropboxFolder,filesep,Prefix,filesep,'TracesFluctuations'])
+    mkdir([DropboxFolder,filesep,Prefix,filesep,'Offset'])
+    mkdir([DropboxFolder,filesep,Prefix,filesep,'Fits'])
+    mkdir([DropboxFolder,filesep,Prefix,filesep,'Probabilities'])
+    mkdir([DropboxFolder,filesep,Prefix,filesep,'Various']);
+    
+end
 
 
 %% Put together CompiledParticles
@@ -373,6 +387,8 @@ if APExperiment || DVExperiment
     APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
 end
 
+DVLength = APLength/2; 
+EllipsePos_DV = [];
 if HistoneChannel && (APExperiment || DVExperiment)
     %The information in Ellipses is
     %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
@@ -389,8 +405,14 @@ if HistoneChannel && (APExperiment || DVExperiment)
             APPositions=Distances.*cos(Angles-APAngle);
             EllipsePos{i}(j)=APPositions/APLength;
             
-            DVPositions=Distances.*sin(Angles-APAngle);
-            EllipsePos_DV{i}(j)=DVPositions;
+            if DVExperiment && correctDV
+                DVPositions=Distances.*sin(Angles-APAngle);
+                EllipsePos_DV{i}(j)=abs(DVPositions-DV_correction)/DVLength;
+            else
+                DVPositions=Distances.*sin(Angles-APAngle);
+                EllipsePos_DV{i}(j)=DVPositions/DVLength;
+            end
+            
         end
     end
 end
@@ -427,13 +449,13 @@ end
 
 if DVExperiment
     if isempty(DVResolution)
-        DVResolution = 50;
+        DVResolution = 100;
     end
     [DVbinID, DVbinArea] = binAxis(DVResolution, FrameInfo, ...
         coordAZoom, APAngle, APLength, minBinSize, 'DV');
 end
 
-
+coatChannel = getCoatChannel(Channel1, Channel2, Channel3);
 %Now get the particle information for those that were approved
 [Particles, CompiledParticles, ncFilter, ncFilterID] =...
     ...
@@ -443,7 +465,7 @@ end
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
     Spots, SkipTraces, nc9, nc10, nc11, nc12, nc13, nc14, ncFilterID, ncFilter, ...
     ElapsedTime, intArea, Ellipses, EllipsePos, PreProcPath, ...
-    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits);
+    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits, edgeWidth, pixelSize, coatChannel);
 
 %% ROI option
 % This option is separating the CompiledParticles defined above into
@@ -515,14 +537,14 @@ if ~slimVersion
     %% Information about the cytoplasm
     %If the nuclear masks are present then use them. Otherwise just calculate
     %the median of the images as a function of time
-    if ~SkipAll
-        [MeanCyto, SDCyto, MaxCyto, MedianCyto] =...
-            ...
-            getCytoplasmStatistics(...
-            ...
-            APExperiment, HistoneChannel, Prefix, numFrames, PreProcPath,...
-            FrameInfo, NChannels);
-    end
+%     if ~SkipAll
+%         [MeanCyto, SDCyto, MaxCyto, MedianCyto] =...
+%             ...
+%             getCytoplasmStatistics(...
+%             ...
+%             APExperiment, HistoneChannel, Prefix, numFrames, PreProcPath,...
+%             FrameInfo, NChannels);
+%     end
     
     %% Offset and fluctuations
     
@@ -578,9 +600,7 @@ if ~slimVersion
             FilteredParticlesPos, OnRatioAP, ParticleCountAP, ParticleCountProbAP, ...
             EllipsesOnAP, rateOnAP, rateOnAPCell, timeOnOnAP, timeOnOnAPCell,...
             TotalEllipsesAP, rateOnAPManual, rateOnAPCellManual, timeOnOnAPManual, timeOnOnAPCellManual...
-            NEllipsesDV, MeanVectorAllDV, SEVectorAllDV, OnRatioDV, ParticleCountDV, ...
-            ParticleCountProbDV, TotalEllipsesDV, EllipsesOnDV, EllipsesFilteredPosDV, ...
-            FilteredParticlesPosDV]...
+            ]...
             ...
             = computeAPFractionOn(...
             ...
@@ -602,7 +622,7 @@ if ~slimVersion
             DVProbOn(NChannels, Particles, schnitzcells, ...
             CompiledParticles, Ellipses, FrameInfo, DropboxFolder, Prefix, ...
             ElapsedTime, DVbinID, EllipsePos_DV, nc12, nc13, nc14, numFrames, ...
-            DVbinArea);
+            DVbinArea,edgeWidth, pixelSize);
         
     end
     
@@ -610,8 +630,6 @@ if ~slimVersion
     try
         calcParticleSpeeds(NChannels, Particles, ...
             Spots, ElapsedTime, schnitzcells, Ellipses);
-    catch
-        %this failed
     end
     
     %% Movie of AP profile
@@ -642,14 +660,13 @@ if strcmpi(ExperimentType,'inputoutput')
 end
 
 
-
 %% Save everything
 
 %Now save all the information
 
 savedVariables = [savedVariables,'APFilter', 'APbinArea', 'APbinID', 'AllTracesAP',...
     'AllTracesVector', 'CompiledParticles', 'DVFilter', 'DVbinArea',...
-    'DVbinID', 'ElapsedTime', 'EllipsePos', 'EllipsesFilteredPos',...
+    'DVbinID', 'ElapsedTime', 'EllipsePos','EllipsePos_DV', 'EllipsesFilteredPos',...
     'EllipsesOnAP', 'EllipsesOnDV', 'FilteredParticlesPos', 'MaxAPIndex',...
     'MaxCyto', 'MaxDVIndex', 'MaxFrame', 'MeanCyto',...
     'MeanOffsetVector', 'MeanSlopeVectorAP', 'MeanSlopeVectorDV', 'MeanVectorAP',...
@@ -672,6 +689,14 @@ savedVariables = [savedVariables,'APFilter', 'APbinArea', 'APbinID', 'AllTracesA
 
 save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
     savedVariables{:},'-v7.3');
+
+
+%%
+if DVExperiment
+    alignCompiledParticlesByAnaphase(Prefix);
+%     averageDV(Prefix);
+%     plotByDorsalConc(Prefix);
+end
 
 disp('CompiledParticles.mat saved.');
 

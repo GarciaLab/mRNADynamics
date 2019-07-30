@@ -5,11 +5,12 @@ function [FrameRange, FrameInfo] = createZeissFrameInfo(LSMIndex, NFrames, NSlic
   else
     FrameRange = (1:NFrames(LSMIndex)) + length(FrameInfo);
   end
-
+  
   for i = FrameRange
     FrameInfo(i).LinesPerFrame = str2double(LSMMeta.getPixelsSizeY(0));
     FrameInfo(i).PixelsPerLine = str2double(LSMMeta.getPixelsSizeX(0));
-    FrameInfo(i).NumberSlices = min(NSlices);
+    % FrameInfo(i).NumberSlices = min(NSlices); % JP: because of z-padding
+    % feature, we need to set NumberSlices after we've processed all series
     FrameInfo(i).FileMode = 'LSMExport';
 
     if ValueField

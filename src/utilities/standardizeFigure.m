@@ -1,32 +1,39 @@
-function standardizeFigure(ax, ~, varargin)
+function standardizeFigure(ax, leg, varargin)
+
 
 try
+    
     colorDict = struct();
-    colorDict.red = [213,108,85]/256;
-    colorDict.lightBlue = [115,142,193]/256;
-    colorDict.brown = [207 178 147] /256;
-    colorDict.yellow = [234,194,100]/256;
-    colorDict.cyan = [108,188,233]/256;
     colorDict.magenta = [208,109,171]/256;
     colorDict.lightBlue = [115,142,193]/256;
+    colorDict.yellow = [234,194,100]/256;
+    colorDict.red = [213,108,85]/256;
+    colorDict.brown = [207 178 147] /256;
+    colorDict.cyan = [108,188,233]/256;
     colorDictFields = fields(colorDict);
     
     color(1,:) = [0 0 0];
-
+    
     axesLineWidth = .5;
-    fig = gcf;
-    legend = findobj(fig, 'Type', 'Legend');
+    
+    if isempty(leg)
+        fig = gcf;
+        leg= findobj(fig, 'Type', 'Legend');
+    end
+    
     dataObj = get(ax, 'Children');
     dataType = get(dataObj, 'Type');
+    
     if ~iscell(dataType)
         dataType = {dataType};
     end
+    
     legendSize = 8;
     fontSize = 8;
     
     for i = 1:length(varargin)
-       if strcmpi(varargin{i}, 'axeslinewidth')
-            axesLineWidth = varargin{i+1};            
+        if strcmpi(varargin{i}, 'axeslinewidth')
+            axesLineWidth = varargin{i+1};
         elseif strcmpi(varargin{i}, 'red')
             color(i,:) = colorDict.red;
         elseif strcmpi(varargin{i}, 'yellow')
@@ -38,7 +45,7 @@ try
         elseif strcmpi(varargin{i}, 'lightBlue')
             color(i,:) = colorDict.lightBlue;
         elseif strcmpi(varargin{i}, 'brown')
-            color(i,:) = colorDict.brown; 
+            color(i,:) = colorDict.brown;
         elseif strcmpi(varargin{i}, 'legendFontSize')
             legendSize = varargin{i+1};
         elseif strcmpi(varargin{i}, 'fontSize')
@@ -46,11 +53,13 @@ try
         end
     end
     
-    if ~isempty(legend)
-        legend.FontSize = legendSize;
-        legend.Box = 'off';
+    if ~isempty(leg)
+        for i = 1:length(leg)
+            leg(i).FontSize = legendSize;
+            leg(i).Box = 'off';
+        end
     end
- 
+    
     for i = 1:length(dataObj)
         if strcmpi(dataType{i}, 'scatter')
             dataObj(i).Marker = '.';
@@ -58,12 +67,12 @@ try
             %Change color to physical biology colors as long as the number
             %of colors needed is less than 5.
             if i <= length(colorDictFields)
-%                 dataObj(i).Color = colorDict.(colorDictFields{i});
+                %                 dataObj(i).Color = colorDict.(colorDictFields{i});
                 dataObj(i).MarkerFaceColor = colorDict.(colorDictFields{i});
                 dataObj(i).MarkerEdgeColor = 'none';
             end
         elseif strcmpi(dataType{i}, 'bar') || strcmpi(dataType{i}, 'histogram')
-%             dataObj(i).LineStyle = 'none';
+            %             dataObj(i).LineStyle = 'none';
             if i <= length(colorDictFields)
                 dataObj(i).FaceColor = colorDict.(colorDictFields{i});
             end
@@ -91,7 +100,9 @@ try
     faceColor = 'none'; %yellow axis face.
     ax.Color = faceColor;
     ax.Box = 'on';
+    
 catch
     disp('couldn''t standardize figure');
 end
+
 end

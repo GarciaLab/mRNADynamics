@@ -1,11 +1,11 @@
-function [all_frames, Spots, dogs]...
+function [Spots, dogs]...
     ...
     = segmentTranscriptionalLoci(...
     ...
-    nCh, coatChannel, channelIndex, all_frames, initialFrame, numFrames,...
+    nCh, coatChannel, channelIndex, initialFrame, numFrames,...
     zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures,doFF, ffim,...
     Threshold, neighborhood, snippet_size, pixelSize, microscope, intScale,...
-    Weka, use_integral_center, filterMovieFlag, resultsFolder, gpu, saveAsMat, saveType)
+    Weka, use_integral_center, filterMovieFlag, resultsFolder, gpu, saveAsMat, saveType, Ellipses)
 
 
 dogs = [];
@@ -35,7 +35,10 @@ end
 if Weka
     MLFlag = 'ML';
     dogStr = 'prob';
-    Threshold = 5000;
+    if Threshold < 5000
+        warning('Increasing threshold to 5000. For Weka ML, you are thresholding on probability maps so the threshold shouldn''t be set below 50% = 5000.')
+        Threshold = 5000;
+    end
 else
     MLFlag = '';
     dogStr = 'DOG_';
@@ -90,12 +93,12 @@ end
 isZPadded = false;
 
 firstdogpath = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(1, 3), '_z', iIndex(1, 2),...
-        nameSuffix];
-    
+    nameSuffix];
+
 matsPresent = exist([firstdogpath, '.mat'], 'file');
 tifsPresent = exist([firstdogpath, '.tif'], 'file');
 
-if ~strcmpi(saveType, 'none')
+if isempty(saveType)
     if tifsPresent & ~matsPresent
         saveType = '.tif';
     elseif matsPresent & ~tifsPresent
@@ -119,8 +122,7 @@ if sum(firstDoG(:)) == 0
     isZPadded = true;
 end
 
-
-for current_frame = initialFrame:numFrames
+parfor current_frame = initialFrame:numFrames
     
     for zIndex = 1:zSize
         
@@ -143,8 +145,8 @@ for current_frame = initialFrame:numFrames
         else
             dogZ = zIndex - 1;
         end
-                
-        try
+        
+%         try
             if isZPadded | ( ~isZPadded & (zIndex~=1 & zIndex~=zSize) )
                 if strcmpi(saveType, '.tif')
                     dogFileName = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(dogZ, 2),...
@@ -153,17 +155,17 @@ for current_frame = initialFrame:numFrames
                 elseif strcmpi(saveType, '.mat')
                     dogFileName = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(dogZ, 2),...
                         nameSuffix,'.mat'];
-                    load(dogFileName, 'plane');
-                    dog = plane;
+                    plane = load(dogFileName, 'plane');
+                    dog = plane.plane;
                 elseif strcmpi(saveType, 'none')
                     dog = dogs(:,:, dogZ, current_frame);
                 end
             else
                 dog = false(size(im, 1), size(im, 2));
             end
-        catch
-            error('Please run filterMovie to create DoG files.');
-        end
+%         catch
+%             error('Please run filterMovie to create DoG files.');
+%         end
         
         
         
@@ -187,11 +189,21 @@ for current_frame = initialFrame:numFrames
         
         im_thresh = dog >= Threshold;
         
+        % apply nuclear mask if it exists
+        if ~isempty(Ellipses)
+            ellipsesFrame = Ellipses{current_frame};
+            nuclearMask = makeNuclearMask(ellipsesFrame, [size(im,1), size(im,2)]);
+    %         immask = uint16(nuclearMask).*im;
+    %         imshow(immask, [])
+            im_thresh = im_thresh & nuclearMask;
+        end
+        
         if Weka
             se = strel('square', 3);
             im_thresh = imdilate(im_thresh, se); %thresholding from this classified probability map can produce non-contiguous, spurious Spots{channelIndex}. This fixes that and hopefully does not combine real Spots{channelIndex} from different nuclei
             im_thresh = im_thresh > 0;
         end
+        
         [im_label, n_spots] = bwlabel(im_thresh);
         centroids = regionprops(im_thresh, 'centroid');
         
@@ -208,13 +220,6 @@ for current_frame = initialFrame:numFrames
                 Spots(current_frame).Fits = [Spots(current_frame).Fits, Fits];
             end
             
-            for spotIndex = 1:n_spots
-                if ~isempty(temp_particles{spotIndex})
-                    temp_frames = [temp_frames, temp_particles(spotIndex)];
-                end
-            end
-            
-            all_frames{current_frame, zIndex} = temp_frames;
         end
         
     end

@@ -1,5 +1,5 @@
 function FrameInfo = processLSMData(Folder, D, FrameInfo, ExperimentType, ...
-    Channel1, Channel2, Channel3, ProjectionType,Prefix, OutputFolder,nuclearGUI)
+    Channel1, Channel2, Channel3, ProjectionType,Prefix, OutputFolder,nuclearGUI, zslicesPadding)
   % What type of experiment do we have?
 
     NSeries = length(D);
@@ -44,8 +44,22 @@ function FrameInfo = processLSMData(Folder, D, FrameInfo, ExperimentType, ...
       StartingTime(LSMIndex) = obtainZeissStartingTime(Folder, LSMIndex, LSMMeta2, NDigits);
       [ValueField, Frame_Times] = obtainZeissFrameTimes(LSMMeta, NSlices, LSMIndex, NPlanes, NChannels, StartingTime, Frame_Times);
       [~, FrameInfo] = createZeissFrameInfo(LSMIndex, NFrames, NSlices, FrameInfo, LSMMeta, Frame_Times, ValueField);
-
-
+    end
+    
+    
+    % We need a second pass to set the correct slices count after having
+    % processed all the series so we know the max(NSlices) number
+    % if zPadding was indicated in the arguments, we round up to the series
+    % with more z-slices (because we'll pad with blank images the other series)
+    if (zslicesPadding)
+      topZSlice = max(NSlices);
+    else
+      % if no zPadding, we round down to the series with less z-slices
+      topZSlice = min(NSlices);
+    end
+    
+    for frameInfoIndex = 1:size(FrameInfo, 2)
+      FrameInfo(frameInfoIndex).NumberSlices = topZSlice;
     end
   
     close(waitbarFigure);
@@ -65,7 +79,7 @@ function FrameInfo = processLSMData(Folder, D, FrameInfo, ExperimentType, ...
           processLIFFrame(numberOfFrames, Prefix, BlankImage, OutputFolder,...
               AllLSMImages, framesIndex, seriesIndex, NChannels(1), NSlices, ...
               ExperimentType, Channel1, Channel2, Channel3, ProjectionType, ...
-              fiducialChannel, histoneChannel, ReferenceHist, coatChannel, inputProteinChannel);
+              fiducialChannel, histoneChannel, ReferenceHist, coatChannel, inputProteinChannel, zslicesPadding);
           numberOfFrames = numberOfFrames + 1;
         end
     end

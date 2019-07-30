@@ -1,4 +1,4 @@
-function [maxProj, medianProj] = zProjections(Prefix, currentChannel, currentFrame, zSlices, nDigits,DropboxFolder,PreProcPath)
+function proj = zProjections(Prefix, currentChannel, currentFrame, zSlices, nDigits,DropboxFolder,PreProcPath, FrameInfo, projType, nWorkers)
 % zProjections(Prefix, currentFrame, zSlices, nDigits,DropboxFolder,PreProcPath)
 %
 % DESCRIPTION
@@ -30,21 +30,27 @@ function [maxProj, medianProj] = zProjections(Prefix, currentChannel, currentFra
 %
 % Documented by: Emma Luu (emma_luu@berkeley.edu)
 
-%% Information about the Folders and Frames 
-% [~,~,DropboxFolder,~,PreProcPath]=...
-%     DetermineLocalFolders(Prefix);
-DataFolder=[DropboxFolder,filesep,Prefix];
-load([DataFolder, filesep, 'FrameInfo.mat']);
-FilePrefix=[DataFolder(length(DropboxFolder)+2:end),'_'];
-
 %% Making Projection
 % This is to store all the z stacks into a 3D matrix. 
-Images =zeros(FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSlices);
 
-for currentZ = 1:zSlices
-    Images(:,:,currentZ) = imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-        FilePrefix,iIndex(currentFrame,nDigits),'_z',iIndex(currentZ,2),'_ch0', num2str(currentChannel) ,'.tif']);
+startParallelPool(nWorkers, 0, 1);
+
+if strcmpi(projType, 'median')
+    Images =zeros(FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSlices);
+
+    parfor currentZ = 2:zSlices-1
+        Images(:,:,currentZ) = imread([PreProcPath,filesep,Prefix,filesep,...
+            Prefix,'_',iIndex(currentFrame,nDigits),'_z',iIndex(currentZ,2),'_ch0', num2str(currentChannel) ,'.tif']);
+    end
+    proj = median(Images,3);
+elseif strcmpi(projType, 'max')
+    im = zeros(FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, 'uint16');
+    proj = im;
+    parfor currentZ = 2:zSlices-1
+        im = imread([PreProcPath,filesep,Prefix,filesep,...
+                Prefix,'_',iIndex(currentFrame,nDigits),'_z',iIndex(currentZ,2),'_ch0', num2str(currentChannel) ,'.tif']);
+        proj = max(proj, im);
+    end
 end
-maxProj = max(Images,[],3);
-medianProj = median(Images,3);
+
 end            

@@ -1,28 +1,32 @@
-function [Frames,AmpIntegral,AmpGaussian,AmpIntegral3,AmpIntegral5,...
-    ErrorIntegral, ErrorIntegral3, ErrorIntegral5,...
+function [Frames,AmpIntegral,AmpGaussian,AmpIntegral3,...
+    ErrorIntegral, ErrorIntegral3, ...
     backGround3,AmpIntegralGauss3D, ErrorIntegralGauss3D]=...
     ...
     PlotParticleTrace(...
     ...
-    CurrentParticle,Particles,Spots)
+    CurrentParticle,Particles,Spots, varargin)
 
 %This displays the particle trace as well as a montage of the images
+noSpline = '';
 
-%V2: Removed the ImageSnippet for now. I was running into the borders of
-%the image.
+for i = 1:length(varargin)
+    if strcmpi('noSpline', varargin{i})
+        noSpline = 'noSpline';
+    end
+end
 
-
-[Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
-    ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3,...
-    ErrorIntegral5,backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D]=...
+[Frame,AmpIntegral,AmpIntegral3,AmpGaussian,Offset,...
+    ErrorIntegral,ErrorGauss,~, ~,ErrorIntegral3,...
+    backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D]=...
     ...
-    GetParticleTrace(CurrentParticle,Particles,Spots);
+    GetParticleTrace(CurrentParticle,Particles,Spots, noSpline);
 
 Frames=Particles(CurrentParticle).Frame;
 Indexes=Particles(CurrentParticle).Index;
 
 
 for i=1:length(Frames)
+    
     CurrentFrame=Frames(i);
 
     %Get the coordinates taking the margins into account
@@ -35,5 +39,6 @@ for i=1:length(Frames)
     xTrace=round(x(CurrentParticleIndex));
     yTrace=round(y(CurrentParticleIndex));
     zTrace=round(z(CurrentParticleIndex));
+    
 end
 

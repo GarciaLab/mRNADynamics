@@ -43,6 +43,16 @@ if ~IntegrateAll
     TotalProdN=nan(length(Data),length(Data(1).APbinID),14);
     for nc=StartNC:14
         for i=1:length(Data)
+            %If using old data that doesn't use cell arrays for channels, convert to
+            %the new format
+            if ~iscell(Data(i).APFilter)
+                tempAPFilter = Data(i).APFilter;
+                tempCompiledParticles = Data(i).CompiledParticles;
+                Data(i).APFilter = {};
+                Data(i).CompiledParticles = {};
+                Data(i).APFilter{1,1} = tempAPFilter;
+                Data(i).CompiledParticles{1,1} = tempCompiledParticles;
+            end
             
             for j=1:length(Data(1).APbinID)
                 if Data(i).APDivision(nc,j)
@@ -58,7 +68,7 @@ if ~IntegrateAll
                         else
                            FrameRange=Data(i).APDivision(nc,j):Data(i).APDivision(nc+1,j);
                         end
-
+                        
                         ParticleFilter=Data(i).APFilter{1,1}(:,j)&...
                             Data(i).ncFilter(:,Data(i).ncFilterID==nc);
 

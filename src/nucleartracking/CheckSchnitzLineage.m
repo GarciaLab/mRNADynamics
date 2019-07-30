@@ -47,15 +47,4 @@ if (~sum((schnitzcells(Particles(CurrentParticle).Nucleus).frames)==CurrentFrame
     %Join the corresponding schnitz
     [Particles,schnitzcells]=JoinSchnitz(Particles,schnitzcells,Particles(CurrentParticle).Nucleus,...
         SchnitzSuspect(ClosestNucleusIndex))
-end
-    
-    
-    
-    
-        
-        
-        
-        
-        
-        
-    
+end    

@@ -590,11 +590,7 @@ while (cc~=13)
     
     %Set the limits on the x-axis
     if CurrentNC==14
-        %xlim([0,ElapsedTime(end)])
-        xlim([0,60])
-%     else
-%         xlim([0,ElapsedTime(eval(['nc',num2str(nc+1)]))-...
-%             ElapsedTime(eval(['nc',num2str(nc)]))])
+        xlim([0,60]) %min
     end
     
     
@@ -645,9 +641,6 @@ while (cc~=13)
             FilteredFramesTemp=FilteredFramesTemp(~ismember(FilteredFramesTemp,FitResults(APBin,CurrentNC-11).FitFrameRange));
             FitResults(APBin,CurrentNC-11).FitFrameRange(end+1)=...
                 min(FilteredFramesTemp(FilteredFramesTemp>max(FitResults(APBin,CurrentNC-11).FitFrameRange)));
-            %HG removed            
-%             FitResults(i,CurrentNC-11).FitFrameRange(end+1)=...
-%                 FilteredFramesTemp(min(find(~ismember(FilteredFramesTemp,FitResults(i,CurrentNC-11).FitFrameRange))));
         end
     %Move left range of fit
     elseif (ct~=0)&(cc=='j')&(length(FitResults(APBin,CurrentNC-11).FitFrameRange)>2)

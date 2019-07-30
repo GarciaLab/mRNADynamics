@@ -4,14 +4,14 @@ function FluoTimeTrace = extractDorsalFluo(FluoMatrix, Thresh)
 % FLUOMATRIX is a txz matrix of fluorescence values where t is frames and z
 % is Z slice. It corresponds to the 'schnitzcells(i).Fluo' field in the schnitzcells struct
 % THRESH corresponds to the quadratic coefficient in the parabola we fit to
-% fluo(z).
+% fluo(z). .5 works. 
 
 % Output 
 % FLUOTIMETRACE is a tx1 vector of nuclear fluorescence values.
 
 % it classifies each frame in 'schnitzcells(i).Fluo' in three different categores,
 % which represent the three different ways the Dl nuclear fluorescence compares to the
-% sorrounding cytoplasm:
+% surrounding cytoplasm:
 
 % Case 1: the nuclear fluorescence is higher than the cytoplasm. In this
 % case a line of y = fluo(z) looks kind of like a parabola pointing up. In this
@@ -59,7 +59,7 @@ for f = 1:Frames
     %\/\/\/\/\/\/\/
 
 
-    % Clasify the trace and calculate the fluo
+    % Classify the trace and calculate the fluo
     %if the a coefficient in the model fluo(z) = az^2 + bz + c is negative, the
     %parabola opens up. If its positive, it opens down. If it's slightly
     %negative or slightly positive it's a very shallow parabola.
@@ -79,69 +79,6 @@ for f = 1:Frames
 %     figure(2)
 %     plot(FluoTimeTrace)
     % \/\/\/\/\/\/ 
-end
-
-
-
-
-%%
-
-
-
-
-
-
-%{
-% Case 1: No corrections needed
-for i=1:size(schnitzcells,2)
-   for j=1:max(size(schnitzcells(i).frames))
-       Frame_now = schnitzcells(i).frames(j);  % get frame number for schnitzcells
-       if ~isnan(max(schnitzcells(i).Fluo(j,:)))
-           num(Frame_now)=num(Frame_now)+1; % count number of nuclei for each frame being processed
-           Dorsal_data{Frame_now}.Fluo(num(Frame_now))=max(schnitzcells(i).Fluo(j,2:size(schnitzcells(i).Fluo(j,:),2)-1));
-           Dorsal_data{Frame_now}.DVpos(num(Frame_now))=EllipsePos_DV{schnitzcells(i).frames(j)}(schnitzcells(i).cellno(j));
-           Dorsal_data{Frame_now}.APpos(num(Frame_now))=EllipsePos_AP{schnitzcells(i).frames(j)}(schnitzcells(i).cellno(j));
-       end
-   end
-end
-%}
-
-
-%{
-% Case 2: Corrections needed with min
-for i=1:size(schnitzcells,2)
-   for j=1:size(schnitzcells(i).frames)
-       Frame_now = schnitzcells(i).frames(j);  % get frame number for schnitzcells
-       if ~isnan(max(schnitzcells(i).Fluo(j,:)))
-           num(Frame_now)=num(Frame_now)+1; % count number of nuclei for each frame being processed
-           Dorsal_data{Frame_now}.Fluo(num(Frame_now))=min(schnitzcells(i).Fluo(j,2:size(schnitzcells(i).Fluo(j,:),2)-1));
-           Dorsal_data{Frame_now}.DVpos(num(Frame_now))=EllipsePos_DV{schnitzcells(i).frames(j)}(schnitzcells(i).cellno(j));
-           Dorsal_data{Frame_now}.APpos(num(Frame_now))=EllipsePos_AP{schnitzcells(i).frames(j)}(schnitzcells(i).cellno(j));
-       end
-   end
-end
-%}
-
-
-
-% % Case 3: Correction needed
-% for i=1:size(schnitzcells,2)
-%    for j=1:size(schnitzcells(i).frames)
-%        Frame_now = schnitzcells(i).frames(j);  % get frame number for schnitzcells
-%        if ~isnan(max(schnitzcells(i).Fluo(j,:)))
-%            num(Frame_now)=num(Frame_now)+1; % count number of nuclei for each frame being processed
-%            coef = polyfit(2:size(schnitzcells(i).Fluo(j,:),2)-1,schnitzcells(i).Fluo(j,2:size(schnitzcells(i).Fluo(j,:),2)-1),2); % Fit with parabola to determine whether we take min or max of the intensity slice
-%            if abs(coef(1))<0.5
-%                Dorsal_data{Frame_now}.Fluo(num(Frame_now))=mean(schnitzcells(i).Fluo(j,2:size(schnitzcells(i).Fluo(j,:),2)-1));
-%            elseif coef(1)<0
-%                Dorsal_data{Frame_now}.Fluo(num(Frame_now))=max(schnitzcells(i).Fluo(j,2:size(schnitzcells(i).Fluo(j,:),2)-1));
-%            else
-%                Dorsal_data{Frame_now}.Fluo(num(Frame_now))=min(schnitzcells(i).Fluo(j,2:size(schnitzcells(i).Fluo(j,:),2)-1));
-%            end
-%            Dorsal_data{Frame_now}.DVpos(num(Frame_now))=EllipsePos_DV{schnitzcells(i).frames(j)}(schnitzcells(i).cellno(j));
-%            Dorsal_data{Frame_now}.APpos(num(Frame_now))=EllipsePos_AP{schnitzcells(i).frames(j)}(schnitzcells(i).cellno(j));
-%        end
-%    end
-% end
+    end
 
 end

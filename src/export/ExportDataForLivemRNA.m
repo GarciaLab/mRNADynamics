@@ -31,6 +31,9 @@
 % 'skipExtraction': This doesn't extract LIF files to Tifs. Occasionally
 %                   useful if only the FrameInfo is desired. 
 % 'rootFolder': open a directory different from the default user directory
+% 'zslicesPadding': if series have different number of z-slices, pad them
+% with blank images so every generates series has the same amount
+% 'nuclearGUI'
 %
 % OUTPUT
 % Exported tif images are placed in the PreProcessedData folder and divided
@@ -65,7 +68,7 @@
 function Prefix = ExportDataForLivemRNA(varargin)
 
   [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs,...
-    generateTifStacks, nuclearGUI, skipExtraction, rootFolder] = exportDataForLivemRNA_processInputParameters(varargin{:});
+    generateTifStacks, nuclearGUI, skipExtraction, rootFolder, zslicesPadding] = exportDataForLivemRNA_processInputParameters(varargin{:});
 
   [rawDataPath, ~, DropboxFolder, ~, PreProcPath, rawDataFolder, Prefix, ExperimentType, Channel1, Channel2, ~,...
     Channel3] = readMovieDatabase(Prefix);
@@ -101,7 +104,7 @@ function Prefix = ExportDataForLivemRNA(varargin)
 
   elseif strcmpi(FileMode, 'LSM')
     FrameInfo = processLSMData(rawDataFolder, D, FrameInfo, ExperimentType, ...
-    Channel1, Channel2, Channel3, ProjectionType,Prefix, OutputFolder,nuclearGUI);
+    Channel1, Channel2, Channel3, ProjectionType,Prefix, OutputFolder,nuclearGUI, zslicesPadding);
 
   elseif strcmpi(FileMode, 'LIFExport')
     FrameInfo = processLIFExportMode(rawDataFolder, ExperimentType, ProjectionType, Channel1, Channel2, Channel3, Prefix, ...
@@ -120,6 +123,10 @@ function Prefix = ExportDataForLivemRNA(varargin)
   mkdir(DropboxFolderName);
   save([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
 
+  if strcmpi(FileMode, 'LIFExport') & ~keepTifs
+    removeUnwantedTIFs(rawDataFolder);
+  end
+  
   if generateTifStacks
     filterMovie(Prefix, 'Tifs');
     disp(['Prefix: ', Prefix]);

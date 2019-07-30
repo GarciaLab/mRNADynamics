@@ -5,7 +5,7 @@ function [NSeries, NFrames, NSlices, NPlanes, NChannels, Frame_Times] = getFrame
   %Figure out the number of slices in each series
   NSlices = [];
   for i = 1:NSeries
-      NSlices(i) = str2num(LIFMeta.getPixelsSizeZ(i-1));
+      NSlices(i) = str2double(LIFMeta.getPixelsSizeZ(i-1));
   end
 
   %Number of planes per series

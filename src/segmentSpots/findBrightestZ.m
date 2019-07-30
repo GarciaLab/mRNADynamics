@@ -78,23 +78,9 @@ dogs = [];
             Particles(i).brightestZ = force_z;
         end
         
-         %AR 7/19/2018- I'm appropriating these variables in order to
-        %integrate within an ellipsoid volume. Not sure of the original
-        %purpose but it seems deprecated. 
-        
-         % if there are insufficient slices, these metrics will register as NaNs
-       % RawIntegral3 = mean(z_raw_values(ismember(z_grid,CentralZ-1:CentralZ+1)));
-       % RawIntegral5 = mean(z_raw_values(ismember(z_grid,CentralZ-2:CentralZ+2)));
-        %Particles(i).FixedAreaIntensity3 = RawIntegral3;
-        %Particles(i).FixedAreaIntensity5 = RawIntegral5;
-%             Particles(i).FixedAreaIntensity3 = Particles(i).FixedAreaIntensity(Particles(i).brightestZ - 1) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ + 1);
-%             Particles(i).FixedAreaIntensity5 = Particles(i).FixedAreaIntensity(Particles(i).brightestZ - 2) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ - 1) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ + 1) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ + 2);
+
         Particles(i).FixedAreaIntensity3 = sum(z_raw_values(ismember(z_grid,Particles(i).brightestZ-1:Particles(i).brightestZ+1)));
-        Particles(i).FixedAreaIntensity5 = sum(z_raw_values(ismember(z_grid,Particles(i).brightestZ-2:Particles(i).brightestZ+2)));
-        try
-            Particles(i).cylIntensity = Particles(i).cylIntensity(ZStackIndex);
-        catch                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
-        end
+
     
         %use convolution kernel to look for shadows
         z_raw_binary = ~isnan(z_raw_values);
@@ -118,11 +104,6 @@ dogs = [];
         if ~isempty(Particles)
             Particles.snippet_size = Particles.snippet_size(1);
             Particles.intArea = Particles.intArea(1);
-            if isfield(Particles, 'IntegralZ')
-                if ~isempty(Particles.IntegralZ)
-                    Particles.IntegralZ = Particles.IntegralZ(1);
-                end
-            end
         end
         
   if ~isempty(Spots)
@@ -171,25 +152,8 @@ dogs = [];
             else
                 Spots(frame).Fits(spotIndex).brightestZ = uint8(force_z);
             end
-
-            %AR 7/19/2018- I'm appropriating these variables in order to
-            %integrate within an ellipsoid volume. Not sure of the original
-            %purpose but it seems deprecated.
-
-            % if there are insufficient slices, these metrics will register as NaNs
-            % RawIntegral3 = mean(z_raw_values(ismember(z_grid,CentralZ-1:CentralZ+1)));
-            % RawIntegral5 = mean(z_raw_values(ismember(z_grid,CentralZ-2:CentralZ+2)));
-            %Particles(i).FixedAreaIntensity3 = RawIntegral3;
-            %Particles(i).FixedAreaIntensity5 = RawIntegral5;
-            %             Particles(i).FixedAreaIntensity3 = Particles(i).FixedAreaIntensity(Particles(i).brightestZ - 1) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ + 1);
-            %             Particles(i).FixedAreaIntensity5 = Particles(i).FixedAreaIntensity(Particles(i).brightestZ - 2) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ - 1) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ + 1) + Particles(i).FixedAreaIntensity(Particles(i).brightestZ + 2);
             Spots(frame).Fits(spotIndex).FixedAreaIntensity3 = single(sum(z_raw_values(ismember(z_grid,Spots(frame).Fits(spotIndex).brightestZ-1:Spots(frame).Fits(spotIndex).brightestZ+1))));
-            Spots(frame).Fits(spotIndex).FixedAreaIntensity5 = single(sum(z_raw_values(ismember(z_grid,Spots(frame).Fits(spotIndex).brightestZ-2:Spots(frame).Fits(spotIndex).brightestZ+2))));
 
-            try
-                Spots(frame).Fits(spotIndex).cylIntensity = single(Spots(frame).Fits(spotIndex).cylIntensity(ZStackIndex));
-            catch
-            end
 
             %use convolution kernel to look for shadows
             z_raw_binary = ~isnan(z_raw_values);
@@ -210,8 +174,6 @@ dogs = [];
         if isstruct(Spots2(i).Fits)
             Spots2(i).Fits = rmfield(Spots2(i).Fits, 'r');
             Spots2(i).Fits = rmfield(Spots2(i).Fits, 'discardThis');
-%              Spots2(i).Fits.IntegralZ = Spots2(i).Fits.IntegralZ(1);
-%              Spots2(i).Fits.intArea= Spots2(i).Fits.intArea(1);
         end
     end
     

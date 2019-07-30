@@ -54,9 +54,7 @@ for i=1:length(schnitzcells)
     %zero
     Angles=atan2((schnitzcells(i).ceny-coordAZoom(2)),...
         (schnitzcells(i).cenx-coordAZoom(1)));
-%     if schnitzcells(i).cenx-coordAZoom(1) < 0
-%         Angles = Angles + pi;
-%     end
+
     %Distance between the points and the A point
     Distances=sqrt((coordAZoom(2)-schnitzcells(i).ceny).^2+(coordAZoom(1)-schnitzcells(i).cenx).^2);
     APPositions=Distances.*cos(Angles-APAngle);

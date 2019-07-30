@@ -31,8 +31,7 @@ intScale = double(intScale);
         IntegrationRadius = 6*intScale; % this appears to be hard-coded into IdentifySingleSpot
         [xGrid, yGrid] = meshgrid(1:SnippetEdge,1:SnippetEdge);
         rGrid = sqrt((xGrid-ceil(SnippetEdge/2)).^2 + (yGrid-ceil(SnippetEdge/2)).^2);
-        SnippetMask = rGrid < IntegrationRadius;
-        IntegrationArea=bwperim(SnippetMask);
+        IntegrationArea= rGrid < IntegrationRadius & (rGrid+1) >= IntegrationRadius;
 
         SnippetOverlay=cat(3,IntegrationArea/2 + ...
             +imSnippet,imSnippet,imSnippet);
@@ -75,8 +74,8 @@ intScale = double(intScale);
                     gaussParams = [gaussParams, 0, 0];
                 end
                 try
-                    [mesh_y,mesh_x] = meshgrid(1:size(CurrentSnippet,2), 1:size(CurrentSnippet,1));
-                    g = gaussianForSpot(mesh_y, mesh_x, CurrentSnippet);
+                    [y,x] = meshgrid(1:size(CurrentSnippet,2), 1:size(CurrentSnippet,1));
+                    g = gaussianForSpot(y, x, CurrentSnippet);
                     gauss = g(gaussParams) + CurrentSnippet;
                 catch
                     %not sure in what situation this fails. -AR

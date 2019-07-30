@@ -9,13 +9,12 @@ function TrackNuclei(Prefix,varargin)
 % [Options]: See below.
 %
 % OPTIONS
-% 'StitchSchnitz' : Run the schnitzcells fixing code by Simon
+% 'skipStitchSchnitz' : Run the schnitzcells fixing code by Simon
 % 'ExpandedSpaceTolerance': A multiplier for how how far away two nuclei of
 % adjacent frames can be in order for them to be the same nuclei. It's
 % recommended to set this to 1.5 if you use NoBulkShift. 
-% 'NoBulkShift': Runs the nuclear tracking without accounting for the bulk
-% shift between frames (greatly speeds up runtime). It's recommended you
-% set ExpandedSpaceTolerance to 1.5 if you use this. 
+% 'bulkShift': Runs the nuclear tracking with accounting for the bulk
+% shift between frames (greatly reduces runtime). 
 % 'retrack': retrack
 %
 % OUTPUT
@@ -32,14 +31,10 @@ function TrackNuclei(Prefix,varargin)
 
 disp(['Tracking nuclei on ', Prefix, '...']);
 
-[SkipStitchSchnitz, ExpandedSpaceTolerance, NoBulkShift, retrack] = DetermineTrackNucleiOptions(varargin{:});
+[stitchSchnitz, ExpandedSpaceTolerance, NoBulkShift, retrack, nWorkers] = DetermineTrackNucleiOptions(varargin{:});
 
-%added this bulkshift requirement because i'm not sure it'll work without
-%it
-if NoBulkShift
-    workers = 8;
-    startParallelPool(workers, 0,0);
-end
+
+startParallelPool(nWorkers, 0,0);
 
 
 
@@ -312,7 +307,6 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
     
     %Initialize fields
     schnitzcells(1).Fluo = [];
-    schnitzcells(1).Mask = [];
     
     if sum(InputChannel)
                 
@@ -351,50 +345,24 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
 % 
 %                 %Initialize the image
                 Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2);
-%                 %AR 1/12/18 moved this outside the for loops
-%                 Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2);
+
                 %Load the z-stack for this frame        
                 for CurrentZ=1:NumberSlices2   %Note that I need to add the two extra slices manually
                     Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
                 end
                 
-                % NL: rewriting this extraction step as a convolution                            
-%                 convImage = convn(Image, Circle, 'same');    
                 convImage = imfilter(Image, double(Circle), 'same');
                 convImage(edgeMask) = NaN;
-%                 [yDim, xDim] = size(convImage);
-%                 tempFluo = []; tempMask = [];
                 for j=1:length(tempSchnitz)
                     CurrentIndex=find(tempSchnitz(j).frames==CurrentFrame);
                     cenx=min(max(1,round(tempSchnitz(j).cenx(CurrentIndex))),PixelsPerLine);
                     ceny=min(max(1,round(tempSchnitz(j).ceny(CurrentIndex))),LinesPerFrame);
-%                     tempFluo(j) = convImage(ceny,cenx,:);
-%                      tempFluo(j).Fluo(CurrentIndex,1:NumberSlices2,ChN) = convImage(ceny,cenx,:);
                     tempSchnitz(j).Fluo(CurrentIndex,1:NumberSlices2,ChN) = convImage(ceny,cenx,:);
-%                      tempMask(j).Mask = Circle;
-                    tempSchnitz(j).Mask=Circle;                    
                 end
                 
-%                 schnitzcells.Mask = tempMask;
-                
-%                 NL: commented out old version
-%                 for j=1:length(schnitzcells)
-% 
-%                     %HG: Note that I'm calling a function here so that I can
-%                     %debug the parfor loop above. Ideally, I would have 
-%                     %parfor loop over images, not schnitzes within an image.
-%                     %However, I couldn't quite figure out how to do that.
-%                     %schnitzcells(j)=ExtractNuclearFluorescence(schnitzcells(j),...
-%                     %    CurrentFrame,...
-%                     %    Image,LinesPerFrame,PixelsPerLine,NumberSlices2,Circle,IntegrationRadius,InputChannel(ChN));
-%                     schnitzcells(j)= ExtractNuclearFluorescence(schnitzcells(j),...
-%                         CurrentFrame,...
-%                         Image,LinesPerFrame,PixelsPerLine,NumberSlices2,Circle,IntegrationRadius,ChN);
-%                 end
             end
             schnitzcells = tempSchnitz;
-%             schnitzcells.Fluo = tempFluo;
-%             schnitzcells.Mask = tempMask;
+
             
         close(h)
         end
@@ -405,6 +373,13 @@ end
 %Save the information
 %Now save
 mkdir([DropboxFolder,filesep,Prefix])
+% 
+% 
+% 
+ncVector=[0,0,0,0,0,0,0,0,nc9,nc10,nc11,nc12,nc13,nc14];
+[nFrames,~] = size(Ellipses); %how many frames do we have?
+[schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
+
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 
 if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
@@ -422,9 +397,16 @@ end
 save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
 
 
-%Stitch the schnitzcells using Simon's code
-if ~SkipStitchSchnitz
-    disp 'Skipping StitchSchnitz'
-    StitchSchnitz(Prefix)
+% Stitch the schnitzcells using Simon's code
+if stitchSchnitz
+    disp('stitching schnitzes')
+    try
+        StitchSchnitz(Prefix);
+    catch
+        disp('failed to stitch schnitzes')
+    end
 end
 
+
+
+end

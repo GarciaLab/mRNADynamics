@@ -232,16 +232,16 @@ uiwait(fig);
 
 end
 
-function HisSlices = generateHisSlices(LIFImages, NSlices, NChannels, fiducialChannel, framesIndex, seriesIndex)
+function HisSlices = generateHisSlices(images, NSlices, NChannels, fiducialChannel, framesIndex, seriesIndex)
   
   % For all 'nuclear' channels, generate HisSlices, and do projection
-  HisSlices = zeros([size(LIFImages{seriesIndex}{1, 1}, 1), size(LIFImages{seriesIndex}{1, 1}, 2), NSlices(seriesIndex)]);
+  HisSlices = zeros([size(images{seriesIndex}{1, 1}, 1), size(images{seriesIndex}{1, 1}, 2), NSlices(seriesIndex)]);
   n = 1;
   firstImage = (framesIndex - 1) * NSlices(seriesIndex) * NChannels + 1 + (fiducialChannel - 1);
   lastImage = framesIndex * NSlices(seriesIndex) * NChannels;
   
   for imagesIndex = firstImage:NChannels:lastImage
-    HisSlices(:, :, n) = LIFImages{seriesIndex}{imagesIndex, 1};
+    HisSlices(:, :, n) = images{seriesIndex}{imagesIndex, 1};
     n = n + 1;
   end
   
@@ -259,7 +259,11 @@ function Projection = calculateProjection(ProjectionType, NSlices, HisSlices, ma
     Projection = max(HisSlices, [], 3);
   else
     SortedHisSlices = sort(HisSlices, 3, 'descend');
-    Projection = mean(SortedHisSlices(:, :, max_custom:min_custom), 3);
+    if length(size(SortedHisSlices)) > 2
+        Projection = mean(SortedHisSlices(:, :, max_custom:min_custom), 3);
+    else
+        Projection = SortedHisSlices;
+    end
   end
 
 end

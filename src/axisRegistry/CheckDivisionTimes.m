@@ -1,4 +1,4 @@
-function CheckDivisionTimes(varargin)
+function CheckDivisionTimes(Prefix, varargin)
 
 %The idea is to determine division times with a higher spatial resolution
 %by doing it per AP bin.
@@ -17,16 +17,13 @@ close all
 %Information about about folders
 
 [SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
-configValues, movieDatabasePath] = DetermineAllLocalFolders(varargin{1});
+    configValues, movieDatabasePath] = DetermineAllLocalFolders(Prefix);
 
-
-if ~isempty(varargin)
-    Prefix=varargin{1};
-               
-else
-    FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
-    Dashes=strfind(FolderTemp,filesep);
-    Prefix=FolderTemp((Dashes(end)+1):end);
+lazy = false;
+for arg = 1:length(varargin)
+    if strcmpi(varargin{arg}, 'lazy')
+        lazy = true;
+    end
 end
 
 
@@ -44,26 +41,9 @@ end
 
 
 
-D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.tif']);
 
-% %Get the information about the zoom
-% ImageInfo = imfinfo([SourcePath,filesep,Date,filesep,EmbryoName,filesep,D(1).name]);
-% 
-% %Figure out the zoom factor
-% Zoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
-% Zoom=str2num(Zoom);
-
-
-
-%Get the surface image in the zoomed case
-% if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
-%         (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
-%     D=dir([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,'*His_*.tif']);
-%     ZoomImage=imread([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,D(end).name]);
-% else
-    D=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
-    ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,D(end).name]);
-%end
+D=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
+ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,D(end).name]);
 
 
 
@@ -71,10 +51,12 @@ D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.tif']);
 %used for the stitching of the two halves of the embryo
 load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
 
-if ~exist('coordPZoom', 'var')
-    warning('AddParticlePosition should have been run first. Running it now.')
-    AddParticlePosition(Prefix, 'ManualAlignment')
-    load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+if ~lazy
+    if ~exist('coordPZoom', 'var')
+        warning('AddParticlePosition should have been run first. Running it now.')
+        AddParticlePosition(Prefix, 'ManualAlignment')
+        load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+    end
 end
 
 %Angle between the x-axis and the AP-axis
@@ -97,7 +79,7 @@ for i=1:Rows
             Angle = Angle + pi;
         end
         
-
+        
         Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
         APPosition=Distance.*cos(Angle-APAngle);
         APPosImage(i,j)=APPosition/APLength;
@@ -105,8 +87,8 @@ for i=1:Rows
 end
 
 [DateFromDateColumn, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
-Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+    Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+    nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
 
@@ -134,6 +116,18 @@ else
 end
 
 
+%lazy mode
+if lazy
+    apsPresent = unique(APPosBinImage(:));
+    for nc = 1:length(ncs)
+        for ap = apsPresent
+            if ncs(nc)~=0
+                APDivision(nc+8, ap) = ncs(nc);
+            end
+        end
+    end
+end
+
 %Show the frames on top of the AP bins
 figureOverlay=figure;
 axOverlay = axes(figureOverlay);
@@ -150,21 +144,13 @@ CurrentNC=find(ncs,1)+8;
 cc=1;
 
 
-
-while (cc~='x')
+if ~lazy
+    while (cc~='x')
     
     
-    %Load the image
-    %Get the surface image in the zoomed case
-%     if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
-%             (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
-%         HisImage=imread([SourcePath,filesep,Date,filesep,'BcdGFP-HisRFP',filesep,'AveragedData',filesep,D(CurrentFrame).name]);
-% 
-%     else
-        if ~isnan(CurrentFrame)
-            HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(CurrentFrame).name]);
-        end
-    %end
+    if ~isnan(CurrentFrame)
+        HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(CurrentFrame).name]);
+    end
     
     
     
@@ -190,9 +176,9 @@ while (cc~='x')
             RedImage(APPosBinImage==i)=i;
         end
     end
-           
-                
-                
+    
+    
+    
     
     
     %Combine the images
@@ -206,7 +192,7 @@ while (cc~='x')
         '. Current nc:',num2str(CurrentNC)]));
     
     
-%     figure(Overlay)
+    %     figure(Overlay)
     ct=waitforbuttonpress;
     cc=get(figureOverlay,'currentcharacter');
     cm=get(axOverlay,'CurrentPoint');
@@ -219,34 +205,35 @@ while (cc~='x')
     elseif (ct~=0)&(cc=='>')& (CurrentFrame+10)< length(D)
         CurrentFrame=CurrentFrame+10;
     elseif (ct~=0)&(cc=='<')&( CurrentFrame-10) > 1
-        CurrentFrame=CurrentFrame-10;    
-    %Move nc
+        CurrentFrame=CurrentFrame-10;
+        %Move nc
     elseif (ct~=0)&(cc=='m')&(CurrentNC<14) & ~isnan(ncs(CurrentNC+1-8))
         CurrentNC=CurrentNC+1;
         eval(['CurrentFrame=nc',num2str(CurrentNC)]);
     elseif (ct~=0)&(cc=='n')&(CurrentNC>8)&eval(['nc',num2str(CurrentNC-1),'~=0'])
-        CurrentNC=CurrentNC-1;    
+        CurrentNC=CurrentNC-1;
         eval(['CurrentFrame=nc',num2str(CurrentNC)]);
         
-    %Reset the information
+        %Reset the information
     elseif (ct~=0)&(cc=='r')
         APDivision(CurrentNC,:)=0;
         
-    %Save
+        %Save
     elseif (ct~=0)&(cc=='s')
         save([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'APDivision')
         disp('APDivision.mat saved.');
-    %Select a time for division
+        %Select a time for division
     elseif (ct==0)&(strcmp(get(figureOverlay,'SelectionType'),'normal'))
         cc=1;
         if (cm(1,2)>0)&(cm(1,1)>0)&(cm(1,2)<=Rows)&(cm(1,1)<=Columns)
             APDivision(CurrentNC,APPosBinImage(round(cm(1,2)),round(cm(1,1))))=CurrentFrame;
         end
         
-    %Debug mode
+        %Debug mode
     elseif (ct~=0)&(cc=='9')
         keyboard;
     end
+end
 end
 
 

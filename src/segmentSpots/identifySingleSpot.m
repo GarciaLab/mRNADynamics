@@ -1,3 +1,4 @@
+
 function [temp_particles, Fits] = identifySingleSpot(particle_index, image, image_label, dog_image, searchRadius, snippet_size, ...
     pixelSize, show_status, graphicsHandles, microscope, addition, forced_centroid, ml_string, intScale, currentFrame, spotIndex, zIndex, use_integral_center)
 % identifySingleSpot(awholelot)
@@ -135,17 +136,23 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
             fitSingleGaussian(snippet, neighborhood_Size, maxThreshold, ...
             widthGuess, offsetGuess, show_status, graphicsHandles);
         %fits: [amplitude, x position, x width, y position, y width, offset, angle]
-
-        sigma_x = fits(3);
-        sigma_y = fits(5);
-        offset = fits(6);
-   
+        
+        % @(A, x0, y0, rho, sigma_x, sigma_y, offset, offset_x, offset_y)
+        
+        %         sigma_x = fits(3);
+        %         sigma_y = fits(5);
+        %         offset = fits(6);
+        
+        sigma_x = fits(5);
+        sigma_y = fits(6);
+        offset = fits(7);
         
         
         gaussianArea = pi*sigma_x*sigma_y; %in pixels. this is one width away from peak
         integration_radius = 6*intScale; %integrate 109 pixels around the spot or more optionally
         spot_x = fits(2) - snippet_size + centroid_x; %final reported spot position
-        spot_y = fits(4) - snippet_size + centroid_y;
+        %         spot_y = fits(4) - snippet_size + centroid_y;
+        spot_y = fits(3) - snippet_size + centroid_y;
         
         if show_status && ~isempty(graphicsHandles)
             dogAx = graphicsHandles(2);
@@ -202,11 +209,10 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
         
         sigma_x2 = 0;
         sigma_y2 = 0;
-%         sister_chromatid_distance = NaN; %leaving this here for now but should be removed. AR 4/3/2019
         fixedAreaIntensity = sum(sum(snippet_mask)) - (offset*maskArea); %corrected AR 7/13/2018
-
+        
         dogFixedAreaIntensity = sum(dog_mask(:));
-%         fixedAreaIntensityCyl3 = NaN;
+        
         if doCyl
             fixedAreaIntensityCyl3 =  sum(sum(snippet_mask)) + sum(sum(snippet_mask_above))...
                 + sum(sum(snippet_mask_below)) - 3*offset*maskArea;
@@ -223,8 +229,9 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
                     fprintf('***Error Suggestions: Please read!***');
                     fprintf('\nYou have requested memory for an array that exceeds maximum array size preferences set by MATLAB.');
                     fprintf('\nThis could be due to one of the following reasons:');
-                    fprintf('\n(1) Your ML classifier is not good enough and is finding too many false positives. Go back and retrain your classifier to find fewer false positives.')
-                    fprintf('\n(2) In Weka, you made class 1 (red) "not spots" and class 2 (green) "spots". Train a new classifier where class 1 is "spots" and class 2 is "not spots".\n');
+                    fprintf('\n(1) Your threshold is set too low, thus finding too many false positives. Try a slightly higher threshold.');
+                    fprintf('\n(2) Your ML classifier is not good enough and is finding too many false positives. Go back and retrain your classifier to find fewer false positives.')
+                    fprintf('\n(3) In Weka, you made class 1 (red) "not spots" and class 2 (green) "spots". Train a new classifier where class 1 is "spots" and class 2 is "not spots".\n');
                     rethrow(exceptionMaxDOG);
                 else
                     rethrow(exceptionMaxDOG);
@@ -239,7 +246,6 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
             Fits.xFit = single(spot_x);
             Fits.yFit = single(spot_y);
             Fits.Offset = single(offset);
-            Fits.Area = single(gaussianArea);
             Fits.xFitWidth = single(sigma_x);
             Fits.yFitWidth = single(sigma_y);
             Fits.yDoG = uint16(centroid_y);
@@ -247,18 +253,14 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
             Fits.GaussianIntensity = single(gaussianIntensity);
             Fits.CentralIntensity = single(intensity);
             Fits.DOGIntensity = single(max_dog);
-%             Fits.SisterDistance = sister_chromatid_distance;
             Fits.ConfidenceIntervals = confidence_intervals;
             Fits.gaussParams = {fits};
             Fits.dogFixedAreaIntensity = single(dogFixedAreaIntensity);
             Fits.intArea = uint16(maskArea);
             Fits.z = uint8(zIndex);
-%             Fits.frame = uint16(currentFrame);
             Fits.discardThis = false;
             Fits.r = false;
-            Fits.IntegralZ = logical(use_integral_center);
             Fits.FixedAreaIntensity3  = [];
-            Fits.FixedAreaIntensity5 = [];
             Fits.brightestZ =[];
             Fits.snippet_size = uint8(snippet_size);
         else

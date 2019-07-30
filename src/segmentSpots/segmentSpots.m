@@ -37,6 +37,8 @@
 %                skips channel 1, [1, 2] skips channels 1 and 2
 % 'optionalResults': use this if you have multiple Results/Dropbox folders
 % for the same data to specify which you'll use.
+% 'nuclearMask': Use the Ellipses structure to filter out particles
+% detected outside of nuclei. 
 %
 % OUTPUT
 % 'Spots':  A structure array with a list of detected transcriptional loci
@@ -59,7 +61,7 @@ disp('Segmenting spots...')
 
 [displayFigures, numFrames, numShadows, intScale, keepPool, ...
     autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData,...
-    fit3D, skipChannel, optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat, saveType]...
+    fit3D, skipChannel, optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat, saveType, nuclearMask]...
     = determineSegmentSpotsOptions(varargin{:});
 
 argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
@@ -80,6 +82,12 @@ end
 
 
 load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
+if nuclearMask
+    load([DropboxFolder, filesep, Prefix, filesep, 'Ellipses.mat'], 'Ellipses');
+else
+    Ellipses = {};
+end
+
 
 ProcessedDataFolder = [ProcPath, filesep, Prefix, '_'];
 DogOutputFolder = [ProcessedDataFolder, filesep, 'dogs'];
@@ -87,7 +95,12 @@ mkdir(DogOutputFolder)
 
 microscope = FrameInfo(1).FileMode;
 
-zSize = FrameInfo(1).NumberSlices + 2;
+zSize = 2;
+for i = 1:size(FrameInfo,2)
+    if (FrameInfo(i).NumberSlices+2)>zSize
+        zSize = FrameInfo(i).NumberSlices + 2;
+    end
+end
 
 if numFrames == 0
     numFrames = length(FrameInfo);
@@ -107,7 +120,6 @@ snippet_size = 2 * (floor(1300 / (2 * pixelSize))) + 1; % nm. note that this is 
 coatChannel = spotChannels;
 
 falsePositives = 0;
-all_frames = cell(numFrames, zSize);
 Spots = cell(1, nCh);
 
 for channelIndex = 1:nCh
@@ -117,9 +129,10 @@ for channelIndex = 1:nCh
     
     tic;
     
-    [all_frames, tempSpots, dogs] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, all_frames, initialFrame, numFrames, zSize, ...
+    [tempSpots, dogs] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, initialFrame, numFrames, zSize, ...
         PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(channelIndex), neighborhood, ...
-        snippet_size, pixelSize, microscope, intScale, Weka, useIntegralCenter, filterMovieFlag, optionalResults, gpu, saveAsMat, saveType);
+        snippet_size, pixelSize, microscope, intScale, Weka,...
+        useIntegralCenter, filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, Ellipses);
 
     tempSpots = segmentSpotsZTracking(pixelSize,tempSpots);
 

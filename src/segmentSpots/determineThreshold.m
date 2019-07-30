@@ -55,7 +55,7 @@ else
     minZ = 1;
     maxZ = zSize - 2;
 end
-available_zs = 2:3:zSize+1;
+available_zs = 2:3:zSize-1;
 available_frames = 1:4:numFrames;
 
 % loops through DOGs to find brightest one
@@ -73,7 +73,7 @@ for frame = available_frames
         else
             zInd = z-1;
         end
-        dog = loadDog(zInd, saveType, dogProb);
+        dog = loadDog(zInd, frame, saveType, dogProb);
         all_dogs{frame, zInd} = dog;
         non_zero_d = dog(dog ~= 0);
         val = iqr(non_zero_d(:))/2;
@@ -147,7 +147,7 @@ uiwait(f);
         bestZ = zSlider.Value;
         bestFrame = frameSlider.Value;
         if isempty(all_dogs{bestFrame, bestZ})
-            dog = loadDog(bestZ,saveType, dogProb);
+            dog = loadDog(bestZ,bestFrame, saveType, dogProb);
             all_dogs{bestFrame, bestZ} = dog;
         end
         dog_copy = all_dogs{bestFrame, bestZ};
@@ -169,7 +169,7 @@ uiwait(f);
         close(f);
     end
 
-    function dog = loadDog(zInd,saveType, dogProb)
+    function dog = loadDog(zInd, frame, saveType, dogProb)
         
         dog_name = [dogProb,Prefix,'_',iIndex(frame,3),'_z',iIndex(zInd,2),nameSuffix,saveType];
         

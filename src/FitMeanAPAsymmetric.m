@@ -69,10 +69,14 @@ else
 end
 
 
+% Extract the fields from the cell structure (This is for fields like MeanVectorAP
+% that are saved inside {}.
 channel = 1;
 
 if iscell(MeanVectorAP)
     MeanVectorAP = MeanVectorAP{channel};
+    SDVectorAP = SDVectorAP{channel};
+    OnRatioAP = OnRatioAP{channel};
     NParticlesAP = NParticlesAP{channel};
 end
 
@@ -179,8 +183,6 @@ end
 
 
 
-
-         
 
 
 
@@ -540,7 +542,7 @@ end
 
 
 %Save the information
-save([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV2.mat'],...
+save([DropboxFolder,filesep,Prefix,filesep,'MeanFitsAsymmetric.mat'],...
     'FitResults')
 display('MeanFitsV2.mat saved')        
         

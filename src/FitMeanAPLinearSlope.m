@@ -165,7 +165,17 @@ else
         error('Could not load APDivision.mat. Make sure to have done the manual check of division.')
     end
 end
-                                  
+
+% Extract the fields from the cell structure (This is for fields like MeanVectorAP
+% that are saved inside {}.
+channel = 1;
+
+if iscell(MeanVectorAP)
+    MeanVectorAP = MeanVectorAP{channel};
+    SDVectorAP = SDVectorAP{channel};
+    OnRatioAP = OnRatioAP{channel};
+    NParticlesAP = NParticlesAP{channel};
+end
  
 %Rough frame window to consider in the fits
 
@@ -501,7 +511,7 @@ while (cc~=13)
                         sqrt(NParticlesAP(FrameWindow,i)),'.-k');
                     hold on
                     %Plot the data that could be used for the fit
-                    PlotHandle(end+1)=plot(ElapsedTime(Fram0eWindow(FrameFilter))-ElapsedTime(FrameWindow(1)),...
+                    PlotHandle(end+1)=plot(ElapsedTime(FrameWindow(FrameFilter))-ElapsedTime(FrameWindow(1)),...
                         FluoData,'or');
                     %Plot the data that was actually used for the fit
                     PlotHandle(end+1)=plot(ElapsedTime(FitFrameRange)-ElapsedTime(FrameWindow(1)),...
@@ -679,8 +689,22 @@ while (cc~=13)
     %Reset frame fit range
      elseif (ct~=0)&(cc=='r')   
         FitResults(i,CurrentNC-11).FitFrameRange=FrameWindow(FrameFilter);
+    
+    % Manually set frame fit range (Could be added later)
+%     elseif (ct~=0)&(cc=='f')
+%         [X,Y] = ginput(2);
 
-        
+    % Save the fitted slope & raw data plot
+    elseif (ct~=0)&(cc=='s')
+        if ~exist([DropboxFolder,filesep,Prefix,filesep,'InitialFit_snapshots'])
+            mkdir([DropboxFolder,filesep,Prefix,filesep,'InitialFit_snapshots'])
+            FigPath = [DropboxFolder,filesep,Prefix,filesep,'InitialFit_snapshots'];
+        end
+        FigPath = [DropboxFolder,filesep,Prefix,filesep,'InitialFit_snapshots'];
+        % Save the figures as .tif and .pdf
+        saveas(FitFigure,[FigPath,filesep, 'InitialSlopeFit_AP=', num2str(APbinID(i)*100),'%' , '_NC',num2str(CurrentNC) , '.tif']); 
+        saveas(FitFigure,[FigPath,filesep, 'InitialSlopeFit_AP=', num2str(APbinID(i)*100),'%' , '_NC',num2str(CurrentNC) , '.pdf']); 
+        display('Plot for the fitted slope and raw data is saved')
         
     %Change the initial parameters
     %TimeStart
