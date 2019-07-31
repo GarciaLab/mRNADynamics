@@ -1,7 +1,7 @@
-function CurrentSnippet = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
+function [CurrentSnippet, himage] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
     CurrentZIndex, FullSlicePath, Spots, CurrentChannel, CurrentFrame, ...
     CurrentParticleIndex, ExperimentType, intScale, snippet_size, xSize, ... 
-    ySize, SnippetEdge, FrameInfo, CurrentSnippet)
+    ySize, SnippetEdge, FrameInfo, CurrentSnippet, himage)
 %PLOTSNIPPET Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -36,8 +36,12 @@ intScale = double(intScale);
         SnippetOverlay=cat(3,IntegrationArea/2 + ...
             +imSnippet,imSnippet,imSnippet);
 
-        imshow(SnippetOverlay,...
-            [],'Border','Tight','InitialMagnification',1000, 'Parent', snippetFigAxes)
+        if ~isempty(himage)
+            himage = imshow(SnippetOverlay,...
+                [],'Border','Tight','InitialMagnification',1000, 'Parent', snippetFigAxes)
+        else
+            himage.CData = SnippetOverlay;
+        end
 
         hold(snippetFigAxes,'on')
 

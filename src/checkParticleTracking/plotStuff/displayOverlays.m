@@ -1,4 +1,4 @@
-function [ImageHis, xForZoom, yForZoom] =...
+function [ImageHis, xForZoom, yForZoom, oim, ellipseHandles] =...
     ...
     displayOverlays(...
     ...
@@ -6,7 +6,7 @@ function [ImageHis, xForZoom, yForZoom] =...
     Spots, CurrentFrame, ShowThreshold2, ...
     Overlay, CurrentChannel, CurrentParticle, ZSlices, CurrentZ, numFrames, ...
     schnitzcells, UseSchnitz, DisplayRange, Ellipses, SpotFilter, ZoomMode, GlobalZoomMode, ...
-    ZoomRange, xForZoom, yForZoom, UseHistoneOverlay, HisOverlayFigAxes, HisPath1, HisPath2)
+    ZoomRange, xForZoom, yForZoom, UseHistoneOverlay, HisOverlayFigAxes, HisPath1, HisPath2, oim, ellipseHandles)
 
 %PLOTFRAME Summary of this function goes here
 %   Detailed explanation goes here
@@ -17,6 +17,9 @@ EllipseHandleYellow=[];
 EllipseHandleBlue=[];
 EllipseHandleWhite=[];
 EllipseHandleGreen=[];
+% for i = 1:length(ellipseHandles)
+%     delete(ellipseHandles{i});
+% end
 
 %Get the coordinates of all the spots in this frame
 [x,y,z]=SpotsXYZ(Spots{CurrentChannel}(CurrentFrame));
@@ -94,6 +97,7 @@ if UseSchnitz
     %Show all the nuclei in regular mode
     if ~SpeedMode
         hold(overlayAxes,'on')
+        
         EllipseHandle=notEllipse(Ellipses{CurrentFrame}(:,3),...
             Ellipses{CurrentFrame}(:,4),...
             Ellipses{CurrentFrame}(:,5),...
@@ -284,9 +288,15 @@ if UseHistoneOverlay
         HisOverlayImage=cat(3,mat2gray(ImageHis,double(DisplayRange)),mat2gray(Image),zeros(size(Image)));
     end
     
-%     imshow(HisOverlayImage,[],'Border','Tight','Parent',HisOverlayFigAxes)
-    imagescUpdate(HisOverlayFigAxes, HisOverlayImage, []);
-
+%     if isempty(oim)
+        oim = imshow(HisOverlayImage,[],'Border','Tight','Parent',HisOverlayFigAxes);
+%     else
+%         oim.CData = HisOverlayImage;
+%     end
+    
+%     imagescUpdate(HisOverlayFigAxes, HisOverlayImage, []);
+    
+    
     hold(HisOverlayFigAxes,'on')
     if ~SpeedMode
         plot(HisOverlayFigAxes,xNonFlagged,yNonFlagged,'ow')
@@ -327,6 +337,8 @@ if UseHistoneOverlay
     end
 
 end
+
+ellipseHandles = {EllipseHandle,EllipseHandleYellow,EllipseHandleBlue,EllipseHandleWhite,EllipseHandleGreen};
 
 end
 

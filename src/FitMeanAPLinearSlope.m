@@ -689,8 +689,22 @@ while (cc~=13)
     %Reset frame fit range
      elseif (ct~=0)&(cc=='r')   
         FitResults(i,CurrentNC-11).FitFrameRange=FrameWindow(FrameFilter);
+    
+    % Manually set frame fit range (Could be added later)
+%     elseif (ct~=0)&(cc=='f')
+%         [X,Y] = ginput(2);
 
-        
+    % Save the fitted slope & raw data plot
+    elseif (ct~=0)&(cc=='s')
+        if ~exist([DropboxFolder,filesep,Prefix,filesep,'InitialFit_snapshots'])
+            mkdir([DropboxFolder,filesep,Prefix,filesep,'InitialFit_snapshots'])
+            FigPath = [DropboxFolder,filesep,Prefix,filesep,'InitialFit_snapshots'];
+        end
+        FigPath = [DropboxFolder,filesep,Prefix,filesep,'InitialFit_snapshots'];
+        % Save the figures as .tif and .pdf
+        saveas(FitFigure,[FigPath,filesep, 'InitialSlopeFit_AP=', num2str(APbinID(i)*100),'%' , '_NC',num2str(CurrentNC) , '.tif']); 
+        saveas(FitFigure,[FigPath,filesep, 'InitialSlopeFit_AP=', num2str(APbinID(i)*100),'%' , '_NC',num2str(CurrentNC) , '.pdf']); 
+        display('Plot for the fitted slope and raw data is saved')
         
     %Change the initial parameters
     %TimeStart
