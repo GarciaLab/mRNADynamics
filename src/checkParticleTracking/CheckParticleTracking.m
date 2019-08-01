@@ -272,6 +272,15 @@ ZoomMode = 0;
 GlobalZoomMode = 0;
 ZoomRange = 50;
 nameSuffix = '';
+hImage = [];
+CurrentSnippet = [];
+oim = [];
+hIm = [];
+Image = [];
+ellipseHandles = {};
+spotHandles = {};
+ellipseHisHandles = {};
+
 
 Frames = [];
 
@@ -549,8 +558,13 @@ while (cc ~= 'x')
     
     
     set(0, 'CurrentFigure', Overlay);
-    imshow(Image, DisplayRangeSpot, 'Border', 'Tight', 'Parent', overlayAxes, ...
-        'InitialMagnification', 'fit')
+%     if isempty(hIm)
+        hIm = imshow(Image, DisplayRangeSpot, 'Border', 'Tight', 'Parent', overlayAxes, ...
+            'InitialMagnification', 'fit');
+%     else
+%         hIm.CData = Image;
+%     end
+%     
     hold(overlayAxes, 'on')
     
     if UseHistoneOverlay
@@ -559,11 +573,11 @@ while (cc ~= 'x')
         HisPath2 = [PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
             FilePrefix(1:end - 1), '_His_', iIndex(CurrentFrame, NDigits), '.tif'];
         
-        [ImageHis, xForZoom, yForZoom] = displayOverlays(overlayAxes, Image, SpeedMode, FrameInfo, Particles, ...
+        [ImageHis, xForZoom, yForZoom, oim,ellipseHandles] = displayOverlays(overlayAxes, Image, SpeedMode, FrameInfo, Particles, ...
             Spots, CurrentFrame, ShowThreshold2, ...
             Overlay, CurrentChannel, CurrentParticle, ZSlices, CurrentZ, numFrames, ...
             schnitzcells, UseSchnitz, DisplayRange, Ellipses, SpotFilter, ZoomMode, GlobalZoomMode, ...
-            ZoomRange, xForZoom, yForZoom, UseHistoneOverlay, HisOverlayFigAxes, HisPath1, HisPath2);
+            ZoomRange, xForZoom, yForZoom, UseHistoneOverlay, HisOverlayFigAxes, HisPath1, HisPath2, oim, ellipseHandles);
         
     else
         displayOverlays(overlayAxes, Image, SpeedMode, ...
@@ -593,22 +607,16 @@ while (cc ~= 'x')
     multi_slice_flag = isfield(Spots{CurrentChannel}(CurrentFrame).Fits ...
         (CurrentParticleIndex), 'IntegralZ');
     
-    % PLOTS SNIPPET
+    % PLOT SNIPPET
     
     FullSlicePath = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(CurrentFrame, 3) ...
         , '_z' iIndex(CurrentZ, 2) '_ch' iIndex(coatChannel, 2) '.tif'];
     
-    if exist('CurrentSnippet', 'var')
-        CurrentSnippet = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
+        [CurrentSnippet, hImage] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
             CurrentZIndex, FullSlicePath, Spots, CurrentChannel, CurrentFrame, ...
             CurrentParticleIndex, ExperimentType, intScale, snippet_size, xSize, ...
-            ySize, SnippetEdge, FrameInfo, CurrentSnippet);
-    else
-        CurrentSnippet = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
-            CurrentZIndex, FullSlicePath, Spots, CurrentChannel, CurrentFrame, ...
-            CurrentParticleIndex, ExperimentType, intScale, snippet_size, xSize, ...
-            ySize, SnippetEdge, FrameInfo);
-    end
+            ySize, SnippetEdge, FrameInfo, CurrentSnippet, hImage);
+
     
     % PLOTS TRACE OF CURRENT PARTICLE
     plottrace_argin = {};

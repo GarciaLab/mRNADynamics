@@ -8,7 +8,7 @@ function [Frames,AmpIntegral,GaussIntegral,AmpIntegral3, ...
     CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFitted, anaphaseInMins, ...
     ElapsedTime, schnitzcells, Particles, plot3DGauss, anaphase, prophase, metaphase,prophaseInMins, metaphaseInMins,Prefix, ...
     numFrames, CurrentFrame, ZSlices, CurrentZ, Spots, ...
-    correspondingNCInfo , Coefficients, ExperimentType, PreviousFrame,Frames, varargin)
+    correspondingNCInfo , Coefficients, ExperimentType, PreviousFrame, Frames,varargin)
 
 %PLOTTRACE
 %plot traces in checkparticletracking
@@ -39,7 +39,6 @@ if CurrentParticle~=PreviousParticle || ~exist('AmpIntegral', 'var')|| CurrentCh
         PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel}, 'noSpline');
 end
 
-approvedParticleFrames = Particles{CurrentChannel}(CurrentParticle).FrameApproved;
 
 % Check if this particle has a saved manual fit or if fitInitialSlope ran
 if lineFitted
@@ -77,9 +76,14 @@ else
         delete([traceErrorBar1,traceErrorBar2,cPoint1,cPoint2])
     end
 end
+
+% plotting the lines and traces
+cla(traceFigAxes)
+hold(traceFigAxes, 'on')
+approvedParticleFrames = Particles{CurrentChannel}(CurrentParticle).FrameApproved;
 if isempty(ErrorIntegral)
-    ErrorIntegral = zeros(length(AmpIntegral(approvedParticleFrames)),1);
-    ErrorIntegral3 =zeros(length(AmpIntegral3(approvedParticleFrames)),1);
+    ErrorIntegral = 0;
+    ErrorIntegral3 =0;
 end
 
 if plot3DGauss
@@ -100,34 +104,22 @@ else
     error2 = ones(length(amp2(approvedParticleFrames)),1)'.*ErrorIntegral3';
 end
 
-% if switchParticleFlag
-% plotting the lines and traces
-    cla(traceFigAxes)
-    hold(traceFigAxes, 'on')
-    
-    
-    idata1 = amp1(approvedParticleFrames);
-    idata2 = amp2(approvedParticleFrames);
-    
-    traceErrorBar1 = errorbar(traceFigAxes,traceFigTimeAxis(approvedParticleFrames),...
-        idata1, error1,'.-','Color','k');
-    traceErrorBar2 = errorbar(traceFigAxes,traceFigTimeAxis(approvedParticleFrames),...
-        idata2, error2,'.-','Color','blue');
+idata1 = amp1(approvedParticleFrames);
+idata2 = amp2(approvedParticleFrames);
 
-% end
+traceErrorBar1 = errorbar(traceFigAxes,traceFigTimeAxis(approvedParticleFrames),...
+    idata1, error1,'.-','Color','k');
+traceErrorBar2 = errorbar(traceFigAxes,traceFigTimeAxis(approvedParticleFrames),...
+    idata2, error2,'.-','Color','blue');
 
-if switchFrameFlag
-    dPoint = plot(traceFigAxes,traceFigTimeAxis(~approvedParticleFrames),amp1(~approvedParticleFrames),'.r');
-    cPoint = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),amp1(Frames==CurrentFrame),'ob');
-end
+dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~approvedParticleFrames),amp1(~approvedParticleFrames),'.r');
+cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),amp1(Frames==CurrentFrame),'ob');
+dPoint2 = plot(traceFigAxes,traceFigTimeAxis(~approvedParticleFrames),amp2(~approvedParticleFrames),'.r');
+cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),amp2(Frames==CurrentFrame),'ob');
 
 
 %%
-%Change the labels, xlimits, etc. only if the particle changed.
-
-
-% if switchParticleFlag
-    
+%Change the labels, xlimits, etc. only if the frame changed.
     
     % adjusting x limits
     try
@@ -205,27 +197,28 @@ end
     else
         traceFigAxes.YAxis(2).Visible = 'off';
     end
-% end
-% creating axis title
-numParticles = length(Particles{CurrentChannel});
-firstLine = [Prefix,'    Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)];
-secondLine = ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),'    ',num2str(round(FrameInfo(CurrentFrame).Time)), 's'];
-thirdLine = ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)];
+    
+    % creating axis title
+    numParticles = length(Particles{CurrentChannel});
+    firstLine = [Prefix,'    Particle: ',num2str(CurrentParticle),'/',num2str(numParticles)];
+    secondLine = ['Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),'    ',num2str(round(FrameInfo(CurrentFrame).Time)), 's'];
+    thirdLine = ['Z: ',num2str(CurrentZ),'/',num2str(ZSlices),', Ch: ',num2str(CurrentChannel)];
+    
+    if isfield(FrameInfo, 'nc')
+        axisTitle={firstLine,...
+            [secondLine,'    (nc',num2str(FrameInfo(CurrentFrame).nc),')'],...
+            thirdLine};
+    else
+        axisTitle={firstLine,secondLine,thirdLine};
+    end
+    
+    if HideApprovedFlag==1
+        axisTitle=[axisTitle,', Showing non-flagged particles'];
+    elseif HideApprovedFlag==2
+        axisTitle=[axisTitle,', Showing disapproved particles'];
+    end
+    title(traceFigAxes,axisTitle, 'Interpreter', 'none')
+    
 
-if isfield(FrameInfo, 'nc')
-    axisTitle={firstLine,...
-        [secondLine,'    (nc',num2str(FrameInfo(CurrentFrame).nc),')'],...
-        thirdLine};
-else
-    axisTitle={firstLine,secondLine,thirdLine};
 end
 
-if HideApprovedFlag==1
-    axisTitle=[axisTitle,', Showing non-flagged particles'];
-elseif HideApprovedFlag==2
-    axisTitle=[axisTitle,', Showing disapproved particles'];
-end
-title(traceFigAxes,axisTitle, 'Interpreter', 'none')
-
-
-end
