@@ -149,7 +149,6 @@ for channelIndex = 1:nCh
     
 end
 
-
 %If we only have one channel, then convert Spots to a
 %standard structure.
 if nCh == 1 && iscell(Spots)
@@ -161,7 +160,7 @@ save([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots', '-v7.3');
 
 if fit3D
     disp('Fitting 3D Gaussians...')
-    fit3DGaussiansToAllSpots(Prefix, 'segmentSpots', Spots, 'optionalResults', optionalResults, 'dogs', dogs, 'nWorkers', nWorkers, saveType);
+    fit3DGaussiansToAllSpots(Prefix, 'segmentSpots', Spots, 'nWorkers', nWorkers, saveType);
     disp('3D Gaussian fitting completed.')
 end
 

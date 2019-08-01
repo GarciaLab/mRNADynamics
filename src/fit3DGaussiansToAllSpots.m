@@ -41,7 +41,7 @@ end
 FrameInfo = load([DataFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
 FrameInfo = FrameInfo.FrameInfo;
 
-startParallelPool(nWorkers, displayFigures, keepPool);
+% startParallelPool(nWorkers, displayFigures, keepPool);
 
 
 %%
@@ -61,13 +61,14 @@ for ch = spotChannels
     
     numFrames = length(SpotsCh);
     
-    
+    % iterate through frames
     parfor frame = 1:numFrames %frames
         SpotsFr = SpotsCh(frame);
 
         nSpotsPerFrame = length(SpotsFr.Fits);
         for spot = 1:nSpotsPerFrame
-            SpotsFr = fitSnip3D(SpotsFr, ch, spot, frame, Prefix, PreProcPath, ProcPath, FrameInfo, dogs, displayFigures, saveType);
+            SpotsFr = fitSnip3D(SpotsFr, ch, spot, frame, Prefix, PreProcPath, FrameInfo);
+%             fitSnip3D(SpotsFr, spotChannel, spot, frame, Prefix, PreProcPath, FrameInfo)
         end
         SpotsCh(frame) = SpotsFr;
         send(q, frame); %update the waitbar
