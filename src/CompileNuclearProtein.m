@@ -52,6 +52,10 @@ DVFilter = [];
 MeanVectorDV = [];
 SDVectorDV = [];
 NParticlesDV = [];
+MeanVectorAP = [];
+SDVectorAP = [];
+NParticlesAP = [];
+
 
 % Default values for Options
 ROI=false; % No ROI, as a default
@@ -394,8 +398,11 @@ if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
     for i=1:length(CompiledNuclei)
         APFilter(i,max(find(APbinID<=CompiledNuclei(i).MeanAP)))=true;
     end
-
+else
+    APbinID = [];
+    APFilter = [];
 end
+
 
 
 %% Information about the cytoplasmic fluroescence
