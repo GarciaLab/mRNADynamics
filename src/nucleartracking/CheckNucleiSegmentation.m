@@ -292,7 +292,15 @@ end
 
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 close all;
-disp('Ellipses saved. Running TrackNuclei to incorporate changes.')
-TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1);
+
+%Decide whether we need to re-track
+userPrompt = 'Did you make changes to nuclei and thus require re-tracking? (y/n)';
+reTrackAnswer = inputdlg(userPrompt);
+if contains(reTrackAnswer,'n')
+    disp('Ellipses saved. Per user input, not re-tracking. Exiting.')
+else
+   TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1); 
+   disp('Ellipses saved. Running TrackNuclei to incorporate changes.')
+end
 
 end
