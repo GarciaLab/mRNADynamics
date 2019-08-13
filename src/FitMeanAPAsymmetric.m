@@ -18,6 +18,7 @@ function FitMeanAPAsymmetric(varargin)
 %d,c: Rate, fine
 %D,C: Rate, coarse
 %q,w: approve or disapprove a fit
+%S : save the fitted plot
 %e: save
 %Moving around:
 %, .: Move in AP
@@ -119,6 +120,11 @@ FrameWindow14=[nc14:length(ElapsedTime)];
 %or nc14
 if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV2.mat'])
     load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV2.mat']);
+    if isempty(FitResults)
+        FitResults(length(APbinID),3).Rate0=[];
+    end
+elseif exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsAsymmetric.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsAsymmetric.mat']);
     if isempty(FitResults)
         FitResults(length(APbinID),3).Rate0=[];
     end
@@ -524,7 +530,18 @@ while (cc~=13)
         CurrentNC=CurrentNC+1;
     elseif (ct~=0)&(cc=='n')&CurrentNC>12
         CurrentNC=CurrentNC-1;
-        
+    
+        % Save the fitted slope & raw data plot
+    elseif (ct~=0)&(cc=='S')
+        if ~exist([DropboxFolder,filesep,Prefix,filesep,'AsymmetricFit_snapshots'])
+            mkdir([DropboxFolder,filesep,Prefix,filesep,'AsymmetricFit_snapshots'])
+        end
+        FigPath = [DropboxFolder,filesep,Prefix,filesep,'AsymmetricFit_snapshots'];
+        % Save the figures as .tif and .pdf
+        StandardFigure(FitFigure,FitFigure.CurrentAxes)
+        saveas(FitFigure,[FigPath,filesep, 'AsymmetricFit_AP=', num2str(APbinID(i)*100),'%' , '_NC',num2str(CurrentNC) , '.tif']); 
+        saveas(FitFigure,[FigPath,filesep, 'AsymmetricFit_AP=', num2str(APbinID(i)*100),'%' , '_NC',num2str(CurrentNC) , '.pdf']); 
+        display('Plot for the fitted slope and raw data is saved')
         
     %Save
     elseif (ct~=0)&(cc=='e')
@@ -544,6 +561,6 @@ end
 %Save the information
 save([DropboxFolder,filesep,Prefix,filesep,'MeanFitsAsymmetric.mat'],...
     'FitResults')
-display('MeanFitsV2.mat saved')        
+display('MeanFitsAsymmetric.mat saved')        
         
 close(FitFigure)
