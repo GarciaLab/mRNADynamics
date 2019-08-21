@@ -54,9 +54,11 @@ for i=1:length(Data)
 
     %Replace AP bins that don't have enough particles with nan
     FracOnTemp(NParticlesAPMax < MinParticles) = nan;
-
+    
     %Save fraction on
-    FracOn(i,:,:) = FracOnTemp;
+    if ~isempty(FracOnTemp)
+        FracOn(i,:,:) = FracOnTemp;
+    end
 end
 
 %Average all the embryos
