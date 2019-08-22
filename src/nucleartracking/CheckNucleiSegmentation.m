@@ -116,8 +116,10 @@ set(OriginalImage,'units', 'normalized', 'position',[0.01, .1, .75, .33]);
 originalAxes = axes(OriginalImage);
 tb = axtoolbar(overlayAxes);
 
-clrmp = hsv(length(schnitzcells));
-clrmp = clrmp(randperm(length(clrmp)), :);
+try
+    clrmp = hsv(length(schnitzcells));
+    clrmp = clrmp(randperm(length(clrmp)), :);
+end
 
 CurrentFrame=1;
 cc=1;
