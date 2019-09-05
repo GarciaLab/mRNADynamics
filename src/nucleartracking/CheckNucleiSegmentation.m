@@ -13,6 +13,8 @@ function CheckNucleiSegmentation(varargin)
 %>  - Move 5 frames forward
 %<  - Move 5 frames backwards
 %j  - Jump to a frame
+%q  - Move a cycle forward
+%w  - Move a cycle backwards
 %d  - Delete all ellipses in the current frame
 %c  - Copy all ellipses from previous frame
 %v  - Copy all ellipses from next frame
