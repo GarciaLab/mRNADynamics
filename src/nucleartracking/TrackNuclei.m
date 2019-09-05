@@ -48,7 +48,8 @@ DefaultDropboxFolder = getConfigValue(configValues, 'DropboxFolder');
 %Load the information about the nc from moviedatabase file
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
     Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+    nc9, nc10, nc11, nc12, nc13, nc14, CF,...
+    Channel3,prophase,metaphase, anaphase, DVResolution] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 %If Channel2 was left empty, it would contain a NaN, which will cause
 %problems below. In that case, replace it by an empty string.
@@ -169,26 +170,21 @@ if ~retrack
             mainTracking(FrameInfo, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
             settingArguments{:}, 'ExpandedSpaceTolerance', ExpandedSpaceTolerance, ...
             'NoBulkShift', NoBulkShift);
-        % names is a cell array containing the names of all frames in the movie in order.
-        % indMitosis is an nx2 array containing the first and last frame of mitosis in every row.
-        % embryoMask is the possible mask of the embryo. If no embryo edge is visible,
-        % true(size(an_image_from_the_movie)) can be given as input.
-        
-        % Convert the results to compatible structures and save them
-        %Put circles on the nuclei
-        [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,names,indMit);
-        %Convert nuclei structure into schnitzcell structure
-        [schnitzcells] = convertNucleiToSchnitzcells(nuclei);
     else
         [nuclei, centers] = ...
             mainTracking(FrameInfo, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
             settingArguments{:}, 'ExpandedSpaceTolerance', ExpandedSpaceTolerance, ...
             'NoBulkShift', NoBulkShift, 'segmentationonly', true);
-        
+    end
+        % names is a cell array containing the names of all frames in the movie in order.
+        % indMitosis is an nx2 array containing the first and last frame of mitosis in every row.
+        % embryoMask is the possible mask of the embryo. If no embryo edge is visible,
+        % true(size(an_image_from_the_movie)) can be given as input.
+         % Convert the results to compatible structures and save them
         %Put circles on the nuclei
         [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,names,indMit);
+        %Convert nuclei structure into schnitzcell structure
         [schnitzcells] = convertNucleiToSchnitzcells(nuclei);
-    end
     
 else
     %Do re-tracking
@@ -278,22 +274,17 @@ end
 if (strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input'))
     
     
-    
+    Channels={Channel1{1},Channel2{1}, Channel3{1}};
     %Parse the channel information for the different experiment types
     if strcmpi(ExperimentType,'inputoutput')
-        InputChannelTemp=strfind({lower(Channel1{1}),lower(Channel2{1})},'mcp');
-        if isempty(InputChannelTemp)
-            InputChannelTemp=strfind({lower(Channel1{1}),lower(Channel2{1})},'pp7');
-            if isempty(InputChannelTemp)
-                InputChannelTemp=strfind({lower(Channel1{1}),lower(Channel2{1})},'lambdan');
-            end
-        end
-        InputChannelTemp=cellfun(@isempty,InputChannelTemp);
-        InputChannel = find(InputChannelTemp);
+        
+        InputChannelTemp1 = strfind({lower(Channel1{1}),lower(Channel2{1}), lower(Channel3{1})},'input');
+        InputChannelTemp2=~cellfun(@isempty,InputChannelTemp1);
+        InputChannel = find(InputChannelTemp2);
+        
         
     elseif strcmpi(ExperimentType,'input')
         %Parse the information from the different channels
-        Channels={Channel1{1},Channel2{1}};
         
         %Histone channel.
         histoneChannel=find(~cellfun(@isempty,strfind(lower(Channels),'his')));

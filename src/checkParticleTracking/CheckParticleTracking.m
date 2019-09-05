@@ -475,14 +475,14 @@ while (cc ~= 'x')
     %% Main loop - start
     %%
     %Figure out channel-specific information
+    channels = {Channel1{1}, Channel2{1}, Channel3{1}};
     if NChannels == 1
-
-        if contains(Channel1{1}, 'MCP') || contains(Channel1{1}, 'PCP')
-            nameSuffix = ['_ch', iIndex(1, 2)];
-            coatChannel = 1;
-        elseif contains(Channel2{1}, 'MCP') || contains(Channel2{1}, 'PCP')
-            nameSuffix = ['_ch', iIndex(2, 2)];
-            coatChannel = 2;
+        
+        for ch = 1:length(channels)
+            if contains(channels{ch}, 'MCP') || contains(channels{ch}, 'PCP') || contains(channels{ch}, 'spot') 
+                nameSuffix = ['_ch', iIndex(ch, 2)];
+                coatChannel = ch;
+            end
         end
 
     elseif strcmpi(ExperimentType, '2spot2color')

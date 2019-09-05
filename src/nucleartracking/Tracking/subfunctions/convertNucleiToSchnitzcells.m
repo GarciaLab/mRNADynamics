@@ -1,6 +1,5 @@
 function [ schnitzcells, varargout ] = convertNucleiToSchnitzcells( nuclei, approvedCenters, approvedSchnitzcell, previousSchnitzcell)
-%CONVERTMAPPINGANDCENTERTOSCHNITZCELLS Summary of this function goes here
-%   Detailed explanation goes here
+%CONVERTMAPPINGANDCENTERTOSCHNITZCELLS 
 
 approvedSchnitz = false(numel(nuclei),1);
 
