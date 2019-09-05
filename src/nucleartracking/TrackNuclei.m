@@ -31,7 +31,8 @@ function TrackNuclei(Prefix,varargin)
 
 disp(['Tracking nuclei on ', Prefix, '...']);
 
-[stitchSchnitz, ExpandedSpaceTolerance, NoBulkShift, retrack, nWorkers, track] = DetermineTrackNucleiOptions(varargin{:});
+[stitchSchnitz, ExpandedSpaceTolerance, NoBulkShift,...
+    retrack, nWorkers, track, noBreak, noStitch] = DetermineTrackNucleiOptions(varargin{:});
 
 
 startParallelPool(nWorkers, 0,0);
@@ -384,7 +385,7 @@ mkdir([DropboxFolder,filesep,Prefix])
 %
 ncVector=[0,0,0,0,0,0,0,0,nc9,nc10,nc11,nc12,nc13,nc14];
 [nFrames,~] = size(Ellipses); %how many frames do we have?
-if track
+if track & ~noBreak
     [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
 end
 
@@ -408,12 +409,8 @@ save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
     end
 
 
-if ~track
-    stitchSchnitz = false;
-end
-
 % Stitch the schnitzcells using Simon's code
-if stitchSchnitz
+if ~noStitch
     disp('stitching schnitzes')
     try
         StitchSchnitz(Prefix);
