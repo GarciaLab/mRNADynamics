@@ -1,4 +1,4 @@
-function CheckNucleiSegmentation(varargin)
+function CheckNucleiSegmentation(Prefix, varargin)
 %
 %This code allows you to check the nuclear segmentation performed by
 %Timon's code implemented in SegmentNucleiTimon.m
@@ -39,13 +39,11 @@ close all
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
 
-
-if ~isempty(varargin)
-    Prefix=varargin{1};
-else
-    FolderTemp=uigetdir(DefaultDropboxFolder,'Choose folder with files to analyze');
-    Dashes=strfind(FolderTemp,filesep);
-    Prefix=FolderTemp((Dashes(end)+1):end);
+noAdd = false;
+for i = 1:length(varargin)
+    if strcmpi(varargin{i}, 'noAdd')
+        noAdd = true;
+    end
 end
 
 
@@ -79,7 +77,7 @@ load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat']);
 
 hasSchnitzInd =size(Ellipses{1},2) == 9;
 
-if ~hasSchnitzInd
+if ~hasSchnitzInd & ~noAdd
     Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
 end
 
@@ -162,7 +160,7 @@ while (cc~='x')
         else
             schnitzInd = getSchnitz(Ellipses{CurrentFrame}(i,:), schnitzcells, CurrentFrame);
             if ~isempty(schnitzInd)
-                Ellipses{CurrentFrame}(i, 9) = schnitz;
+                Ellipses{CurrentFrame}(i, 9) = schnitzInd;
             else
                 Ellipses{CurrentFrame}(i, 9) = 0;
             end
@@ -170,7 +168,7 @@ while (cc~='x')
         if schnitzInd ~=0
             set(PlotHandle(i), 'Color', clrmp(schnitzInd, :),'Linewidth', 2);
         else
-            set(PlotHandle(i), 'Color', 'k','Linewidth', 2);
+            set(PlotHandle(i), 'Color', 'w','Linewidth', 1);
         end
     end
     %     hold(overlayAxes, 'off')
