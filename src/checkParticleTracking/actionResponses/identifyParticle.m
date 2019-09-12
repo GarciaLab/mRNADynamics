@@ -5,13 +5,13 @@ function ParticleOutput = identifyParticle(Spots, Particles, CurrentFrame, ...
 
 numParticles = length(Particles{CurrentChannel});
 if ~exist('ConnectPosition', 'var')
-    [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'b', 'linewidth',1);
+    [ConnectPositionx,ConnectPositiony]=ginput(1);
     ConnectPosition = [ConnectPositionx,ConnectPositiony];
 end
 if ~isempty(ConnectPosition)
     display(ConnectPosition);
     %Find the closest particle
-    [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
+    [ParticleOutput,~]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannel},Particles{CurrentChannel});
     disp(['Clicked particle: ',num2str(ParticleOutput)]);
 
     if UseHistoneOverlay

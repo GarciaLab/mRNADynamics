@@ -100,6 +100,7 @@ clear MeanFitsUp
 clear MeanLinearFitsUp
 clear Schnitzcells
 clear MeanFitsMCMC
+clear SingleParticleFitsMCMC
 
 
 
@@ -238,11 +239,18 @@ for i=1:length(CompiledSets)
                 warning('MeanFitsV3.mat not found');
             end
             
-            %Fit results assuming the same slopes
+            %Fit results using MeanFitsMCMC
             if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsMCMC.mat'],'file')
                 MeanFitsMCMC(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsMCMC.mat']);
             else
                 warning('MeanFitsMCMC.mat not found');
+            end
+            
+            %Single particle results using MeanFitsMCMC
+            if exist([DropboxFolder,filesep,Prefix,filesep,'SingleParticleFitsMCMC.mat'],'file')
+                SingleParticleFitsMCMC(i)=load([DropboxFolder,filesep,Prefix,filesep,'SingleParticleFitsMCMC.mat']);
+            else
+                warning('SingleParticleFitsMCMC.mat not found');
             end
             
             try
@@ -375,6 +383,11 @@ if ~justPrefixes
                     Data(i).MeanFitsMCMC=MeanFitsMCMC(i).MCMCresults;
                 end
             end
+            if exist('SingleParticleFitsMCMC','var')
+                if i<=length(SingleParticleFitsMCMC)
+                    Data(i).SingleParticleFitsMCMC=SingleParticleFitsMCMC(i).MCMCresults;
+                end
+            end
             try
                 Data(i).schnitzcells=Schnitzcells(i).schnitzcells;
                 Data(i).Ellipses=Ellipses(i).Ellipses;
@@ -400,6 +413,14 @@ end
 
 
 %If we have both particles and nuclei, then combine everything
+%First, check to see if we have empty structures and clear them if we do
+if exist('Data','var') && isempty(fieldnames(Data))
+    clear Data
+end
+if exist('DataNuclei','var') && isempty(fieldnames(DataNuclei))
+    clear DataNuclei
+end
+
 if exist('Data','var') && exist('DataNuclei','var')
     DataTemp=Data;
     clear Data

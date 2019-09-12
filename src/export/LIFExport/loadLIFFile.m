@@ -4,10 +4,15 @@ function [LIFDir, LIFIndex, LIFImages, LIFMeta] = loadLIFFile(Folder)
   LIFDir = dir([Folder,filesep,'*.lif']);
 
   %Load the file using BioFormats
-  %Figure out which one is not the FF
+   %Figure out which one is not the FF
   LIFIndex = find(~contains({LIFDir.name}, 'FF'));
   
+  if isempty(LIFIndex)
+      error('Only flat field LIF file found. No dataset LIF file found.\n%s', 'Check that your dataset LIF is present in the folder. Check that your full dataset name doesn''t contain the phrase ''FF''.')
+  end
+
   LIFPath = [Folder, filesep, LIFDir(LIFIndex).name];
+
   
   %Load the data, this might cause problems with really large sets
   % Construct an empty Bio-Formats reader

@@ -50,7 +50,7 @@ end
 %# tracklet_id	 parent_tracklet_id	 child_tracklat_id1	 child_tracklat_id2	 (time	 object_id)...
 %Note that time and ID are given as a pair of numbers. Also, the csv is
 %padded with zeroes at the end of the list of frames and IDs.
-
+try
 for i=1:size(Tracks,1)
     %Find where the list of frames and IDs ends. I need to be careful with
     %to potentially problematic cases
@@ -97,6 +97,7 @@ for i=1:size(Tracks,1)
     end
 end
 
+end
 
 %Save the information
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')

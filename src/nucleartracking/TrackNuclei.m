@@ -12,9 +12,9 @@ function TrackNuclei(Prefix,varargin)
 % 'skipStitchSchnitz' : Run the schnitzcells fixing code by Simon
 % 'ExpandedSpaceTolerance': A multiplier for how how far away two nuclei of
 % adjacent frames can be in order for them to be the same nuclei. It's
-% recommended to set this to 1.5 if you use NoBulkShift. 
+% recommended to set this to 1.5 if you use NoBulkShift.
 % 'bulkShift': Runs the nuclear tracking with accounting for the bulk
-% shift between frames (greatly reduces runtime). 
+% shift between frames (greatly reduces runtime).
 % 'retrack': retrack
 %
 % OUTPUT
@@ -22,7 +22,7 @@ function TrackNuclei(Prefix,varargin)
 % 'Ellipses.mat' : Just nuclei
 %
 % Author (contact): Hernan Garcia (hggarcia@berkeley.edu)
-% Created: 01/01/2013 ish. 
+% Created: 01/01/2013 ish.
 % Last Updated: 1/23/2019
 %
 % Documented by: Armando Reimer (areimer@berkeley.edu)
@@ -31,7 +31,8 @@ function TrackNuclei(Prefix,varargin)
 
 disp(['Tracking nuclei on ', Prefix, '...']);
 
-[stitchSchnitz, ExpandedSpaceTolerance, NoBulkShift, retrack, nWorkers] = DetermineTrackNucleiOptions(varargin{:});
+[stitchSchnitz, ExpandedSpaceTolerance, NoBulkShift,...
+    retrack, nWorkers, track, noBreak, noStitch] = DetermineTrackNucleiOptions(varargin{:});
 
 
 startParallelPool(nWorkers, 0,0);
@@ -41,14 +42,15 @@ startParallelPool(nWorkers, 0,0);
 [~, ProcPath, DropboxFolder, ~, PreProcPath, ~, ~] = DetermineLocalFolders(Prefix);
 
 CONFIG_CSV_PATH = 'ComputerFolders.csv';
-configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');    
+configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');
 DefaultDropboxFolder = getConfigValue(configValues, 'DropboxFolder');
 
 %Determine division times
 %Load the information about the nc from moviedatabase file
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
-Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+    Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+    nc9, nc10, nc11, nc12, nc13, nc14, CF,...
+    Channel3,prophase,metaphase, anaphase, DVResolution] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 %If Channel2 was left empty, it would contain a NaN, which will cause
 %problems below. In that case, replace it by an empty string.
@@ -124,12 +126,12 @@ indMit(indMit>=numFrames)=indMit(indMit>=numFrames)-2;
 %this by assigning the first frames to it
 if isempty(indMit)
     indMit=[1,2];
-%If we don't have nc14 we'll fool the code into thinking that the last
-%frame of the movie was nc14
+    %If we don't have nc14 we'll fool the code into thinking that the last
+    %frame of the movie was nc14
 elseif isnan(indMit(end,1))
     indMit(end,1)=numFrames-6;
     indMit(end,2)=numFrames-5;
-end    
+end
 
 
 %Embryo mask
@@ -138,7 +140,7 @@ embryo_mask=true(size(ImageTemp));
 clear ImageTemp
 
 
-  
+
 %Get information about the spatial and temporal resolution
 settingArguments{1}='time resolution';
 settingArguments{2}=median(diff([FrameInfo.Time]));     %Median separation between frames (in seconds)
@@ -147,10 +149,10 @@ settingArguments{4}=FrameInfo(1).PixelSize;
 
 schnitzFileExists = exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file');
 
-if schnitzFileExists & ~retrack
+if schnitzFileExists & ~retrack &track
     answer=input('Previous tracking detected. Proceed with retracking? (y/n):','s');
     if strcmpi(answer,'y')
-       retrack = true;
+        retrack = true;
     elseif strcmpi(answer, 'n')
         retrack = false;
     else
@@ -164,37 +166,43 @@ end
 if ~retrack
     
     
-    [nuclei, centers, ~, dataStructure] = ...
-        mainTracking(FrameInfo, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
-        settingArguments{:}, 'ExpandedSpaceTolerance', ExpandedSpaceTolerance, ...
-        'NoBulkShift', NoBulkShift);
-    % names is a cell array containing the names of all frames in the movie in order.
-    % indMitosis is an nx2 array containing the first and last frame of mitosis in every row.
-    % embryoMask is the possible mask of the embryo. If no embryo edge is visible,
-    % true(size(an_image_from_the_movie)) can be given as input.
-
-    % Convert the results to compatible structures and save them
-    %Put circles on the nuclei
-    [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,names,indMit);
-    %Convert nuclei structure into schnitzcell structure
-    [schnitzcells] = convertNucleiToSchnitzcells(nuclei); 
+    if track
+        [nuclei, centers, ~, dataStructure] = ...
+            mainTracking(FrameInfo, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
+            settingArguments{:}, 'ExpandedSpaceTolerance', ExpandedSpaceTolerance, ...
+            'NoBulkShift', NoBulkShift);
+    else
+        [nuclei, centers] = ...
+            mainTracking(FrameInfo, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
+            settingArguments{:}, 'ExpandedSpaceTolerance', ExpandedSpaceTolerance, ...
+            'NoBulkShift', NoBulkShift, 'segmentationonly', true);
+    end
+        % names is a cell array containing the names of all frames in the movie in order.
+        % indMitosis is an nx2 array containing the first and last frame of mitosis in every row.
+        % embryoMask is the possible mask of the embryo. If no embryo edge is visible,
+        % true(size(an_image_from_the_movie)) can be given as input.
+         % Convert the results to compatible structures and save them
+        %Put circles on the nuclei
+        [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,names,indMit);
+        %Convert nuclei structure into schnitzcell structure
+        [schnitzcells] = convertNucleiToSchnitzcells(nuclei);
+    
 else
     %Do re-tracking
     disp 'Re-tracking...'
     warning('Re-tracking.') %This code needs to be able to handle approved schnitz still
-  
+    
     %Load the Ellipses and re-generate the centers
     load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
-    %centers = updateCentersFromEllipses(Ellipses, centers);
     centers = updateCentersFromEllipses(FrameInfo, Ellipses);
-
+    
     %Load the dataStructure to speed up retracking if it exists
     if exist([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'], 'file')
         load([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'])
     elseif exist([ProcPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'], 'file')
         load([ProcPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'])
     end
-
+    
     % look for a settings file in the Raw Data folder.
     if exist([PreProcPath,filesep,Prefix,filesep,Prefix,'-AcquisitionSettings.mat'],'file')
         load([PreProcPath,filesep,Prefix,filesep,Prefix,'-AcquisitionSettings.mat']);
@@ -224,18 +232,18 @@ else
             FrameInfo, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
             'centers',centers,'dataStructure',dataStructure, settingArguments{:}, ...
             'ExpandedSpaceTolerance', ExpandedSpaceTolerance, ...
-        'NoBulkShift', NoBulkShift);
+            'NoBulkShift', NoBulkShift);
     else
         [nuclei, centers, ~, dataStructure] = mainTracking(...
             FrameInfo, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
             'centers',centers, settingArguments{:}, 'ExpandedSpaceTolerance', ...
             ExpandedSpaceTolerance, 'NoBulkShift', NoBulkShift);
     end
-
+    
     %Put circles on the nuclei
     [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,names,indMit);
     %Convert nuclei structure into schnitzcell structure
-    [schnitzcells] = convertNucleiToSchnitzcells(nuclei); 
+    [schnitzcells] = convertNucleiToSchnitzcells(nuclei);
 end
 
 %Add the radius information to the schnitz
@@ -252,40 +260,39 @@ end
 mkdir([DropboxFolder,filesep,Prefix])
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells')
+
 if ~exist([ProcPath,filesep,Prefix,'_'], 'dir')
     mkdir([ProcPath,filesep,Prefix,'_'])
 end
-save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
+if exist('dataStructure', 'var')
+    save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
+end
 
 
 
 %Extract the nuclear fluorescence values if we're in the right experiment
 %type
-if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
+if (strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input'))
     
     
+    Channels={Channel1{1},Channel2{1}, Channel3{1}};
     %Parse the channel information for the different experiment types
     if strcmpi(ExperimentType,'inputoutput')
-        InputChannelTemp=strfind({lower(Channel1{1}),lower(Channel2{1})},'mcp');
-        if isempty(InputChannelTemp)
-            InputChannelTemp=strfind({lower(Channel1{1}),lower(Channel2{1})},'pp7');
-                if isempty(InputChannelTemp)
-                    InputChannelTemp=strfind({lower(Channel1{1}),lower(Channel2{1})},'lambdan');
-                end    
-        end
-        InputChannelTemp=cellfun(@isempty,InputChannelTemp);
-        InputChannel = find(InputChannelTemp);
+        
+        InputChannelTemp1 = strfind({lower(Channel1{1}),lower(Channel2{1}), lower(Channel3{1})},'input');
+        InputChannelTemp2=~cellfun(@isempty,InputChannelTemp1);
+        InputChannel = find(InputChannelTemp2);
+        
         
     elseif strcmpi(ExperimentType,'input')
         %Parse the information from the different channels
-        Channels={Channel1{1},Channel2{1}};
-
+        
         %Histone channel.
         histoneChannel=find(~cellfun(@isempty,strfind(lower(Channels),'his')));
         if isempty(histoneChannel)
             histoneChannel=0;
         end
-
+        
         %Input channels
         InputChannel=~cellfun(@isempty,Channels);
         if histoneChannel
@@ -309,44 +316,44 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
     schnitzcells(1).Fluo = [];
     
     if sum(InputChannel)
-                
+        
         %Extract the fluroescence of each schnitz, for each channel,
         %at each time point
-         
+        
         %Get the image dimensions
         PixelsPerLine=FrameInfo(1).PixelsPerLine;
         LinesPerFrame=FrameInfo(1).LinesPerFrame;
         %Number of z-slices
         NumberSlices=FrameInfo(1).NumberSlices;
         NumberSlices2 = NumberSlices + 2;
-              
+        
         %Generate reference frame for edge detection
         refFrame = ones(LinesPerFrame,PixelsPerLine,NumberSlices2);
         convRef = convn(refFrame, Circle, 'same');
         edgeMask = convRef~=sum(Circle(:));
         
         for ChN=1:length(InputChannel)
-        
+            
             h=waitbar(0,['Extracting nuclear fluorescence for channel ',num2str(ChN)]);
             
-                if strcmpi(ExperimentType,'inputoutput') || (strcmpi(ExperimentType,'input')&&(length(InputChannel))==1)
-                    nameSuffix=['_ch',iIndex(InputChannel,2)];
-                elseif strcmpi(ExperimentType,'input')&&(length(InputChannel))>1
-                    nameSuffix=['_ch',iIndex(InputChannel(ChN),2)];
-                else
-                    error('Not sure what happened here. Talk to YJK or SA.')
-                end
+            if strcmpi(ExperimentType,'inputoutput') || (strcmpi(ExperimentType,'input')&&(length(InputChannel))==1)
+                nameSuffix=['_ch',iIndex(InputChannel,2)];
+            elseif strcmpi(ExperimentType,'input')&&(length(InputChannel))>1
+                nameSuffix=['_ch',iIndex(InputChannel(ChN),2)];
+            else
+                error('Not sure what happened here. Talk to YJK or SA.')
+            end
             % NL: should parallelize this
-          
+            
             tempSchnitz = schnitzcells;
             for CurrentFrame=1:numFrames
-
+                
                 waitbar(CurrentFrame/numFrames,h);
-% 
-%                 %Initialize the image
+                %
+                %                 %Initialize the image
                 Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2);
-
-                %Load the z-stack for this frame        
+                
+                %Load the z-stack for this frame
                 for CurrentZ=1:NumberSlices2   %Note that I need to add the two extra slices manually
                     Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
                 end
@@ -362,9 +369,9 @@ if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
                 
             end
             schnitzcells = tempSchnitz;
-
             
-        close(h)
+            
+            close(h)
         end
     else
         error('Input channel not recognized. Check correct definition in MovieDatabase')
@@ -373,32 +380,37 @@ end
 %Save the information
 %Now save
 mkdir([DropboxFolder,filesep,Prefix])
-% 
-% 
-% 
+%
+%
+%
 ncVector=[0,0,0,0,0,0,0,0,nc9,nc10,nc11,nc12,nc13,nc14];
 [nFrames,~] = size(Ellipses); %how many frames do we have?
-[schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
+if track & ~noBreak
+    [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
+end
 
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 
-if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
-    %Change the name of the Circle variable to make it more understandable when
-    %loaded independently
-    IntegrationArea=Circle;
-    save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells','IntegrationArea')
-else
-    save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells')
-end
-
-if ~exist([ProcPath,filesep,Prefix,'_'], 'dir')
-    mkdir([ProcPath,filesep,Prefix,'_'])
-end
-save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
+    if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
+        %Change the name of the Circle variable to make it more understandable when
+        %loaded independently
+        IntegrationArea=Circle;
+        save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells','IntegrationArea')
+    else
+        save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells')
+    end
+    
+    if ~exist([ProcPath,filesep,Prefix,'_'], 'dir')
+        mkdir([ProcPath,filesep,Prefix,'_'])
+    end
+    if exist('dataStructure', 'var')
+        
+        save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
+    end
 
 
 % Stitch the schnitzcells using Simon's code
-if stitchSchnitz
+if ~noStitch
     disp('stitching schnitzes')
     try
         StitchSchnitz(Prefix);

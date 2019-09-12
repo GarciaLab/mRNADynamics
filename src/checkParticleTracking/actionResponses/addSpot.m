@@ -4,13 +4,14 @@ function [numParticles, SpotFilter, Particles, Spots,...
     CurrentParticle, CurrentFrame, CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
     LinesPerFrame, Spots, ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
     SpotFilter, numParticles, cc, xSize, ySize, NDigits, intScale,...
-    Prefix, PreProcPath, ProcPath, coatChannel, UseHistoneOverlay, schnitzcells)
+    Prefix, PreProcPath, ProcPath, coatChannel, UseHistoneOverlay, schnitzcells, nWorkers, plot3DGauss)
 %ADDSPOT Summary of this function goes here
 %   Detailed explanation goes here
 
 zStep = FrameInfo(1).ZStep;
 saveType = '.tif';
 
+startParallelPool(nWorkers, 0, 1);
 
 %Check that we're in zoom mode. If not, set it up.
 PreviousParticle = 0; % resets particle so trace will refresh
@@ -26,13 +27,8 @@ else
         warning('There is a spot assigned to this particle in this frame already.')
     else
         
-        [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'r', 'linewidth',1, 'FigHandle', Overlay);
-        if ConnectPositionx < 1 || ConnectPositiony < 1
-            %sometimes ginputc returns the wrong coordinates for an
-            %unknown reason. if that happens, we'll resort to a
-            %black crosshair from ginput.
-            [ConnectPositionx,ConnectPositiony] = ginput(1);
-        end
+     
+        [ConnectPositionx,ConnectPositiony] = ginput(1);
         
         ConnectPositionx = round(ConnectPositionx);
         ConnectPositiony = round(ConnectPositiony);
@@ -43,12 +39,11 @@ else
                 && (ConnectPositiony > snippet_size/2) && (ConnectPositiony + snippet_size/2 < LinesPerFrame)
             SpotsIndex = length(Spots{CurrentChannel}(CurrentFrame).Fits)+1;
             breakflag = 0; %this catches when the spot addition was unsuccessful and allows checkparticletracking to keep running and not error out
-            maxWorkers = 8;
             use_integral_center = 1;
             
-            %             startParallelPool(maxWorkers, false, true);
-            Fits = [];
-            for z = 1:ZSlices %#ok<PFUIX>
+            FitCell = cell(1, ZSlices);
+            
+            for z = 1:ZSlices
                 imAbove = [];
                 imBelow = [];
                 spotsIm = [];
@@ -82,13 +77,20 @@ else
                         pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', intScale, CurrentFrame, [], z, use_integral_center);
                 end
                 
-                if ~isempty(Fit)
-                    fieldnames = fields(Fit);
+                FitCell{z} = Fit;
+                
+                
+            end
+            Fits = [];
+            
+            for z = 1:ZSlices
+                if ~isempty(FitCell{z})
+                    fieldnames = fields(FitCell{z});
                     if isempty(Fits)
-                        Fits = Fit;
+                        Fits = FitCell{z};
                     else
                         for field = 1:length(fieldnames)
-                            Fits.(fieldnames{field}) =  [Fits.(fieldnames{field}), Fit.(fieldnames{field})];
+                            Fits.(fieldnames{field}) =  [Fits.(fieldnames{field}), FitCell{z}.(fieldnames{field})];
                         end
                     end
                 end
@@ -118,12 +120,14 @@ else
                     Spots{CurrentChannel}(CurrentFrame).Fits = Fits;
                 end
                 %%
-                Spots{CurrentChannel}(CurrentFrame) =...
-                    ...
-                    fitSnip3D(...
-                    ...
-                    Spots{CurrentChannel}(CurrentFrame), coatChannel, SpotsIndex, CurrentFrame,...
-                    Prefix, PreProcPath, ProcPath, FrameInfo, [], false, saveType);
+                if plot3DGauss
+                    Spots{CurrentChannel}(CurrentFrame) =...
+                        ...
+                        fitSnip3D(...
+                        ...
+                        Spots{CurrentChannel}(CurrentFrame), coatChannel, SpotsIndex, CurrentFrame,...
+                        Prefix, PreProcPath, ProcPath, FrameInfo, [], false, saveType);
+                end
                 %%
                 %Add this to SpotFilter, which tells the code that this spot is
                 %above the threshold. First, check whether the
@@ -151,8 +155,8 @@ else
                         JoinParticleTraces(CurrentParticle,...
                         numParticles,Particles{CurrentChannel});
                 else
-                     CurrentParticle = length(Particles{CurrentChannel});
-                     Particles = addNucleusToParticle(Particles, CurrentFrame, ...
+                    CurrentParticle = length(Particles{CurrentChannel});
+                    Particles = addNucleusToParticle(Particles, CurrentFrame, ...
                         CurrentChannel, UseHistoneOverlay, schnitzcells, CurrentParticle);
                     GlobalZoomMode = false;
                     ZoomMode = true;

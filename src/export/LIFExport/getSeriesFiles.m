@@ -4,7 +4,7 @@ function [XMLFolder, seriesPropertiesXML, seriesXML] = getSeriesFiles(Folder)
   seriesPropertiesXML = dir([XMLFolder, filesep, '*Series*Properties.xml']);
   if isempty(seriesPropertiesXML)
       XMLFolder = [Folder, filesep, 'MetaData'];
-      seriesPropertiesXML = dir([XMLFolder, filesep, '*Series*Properties.xml']);
+      seriesPropertiesXML = dir([XMLFolder, filesep, '*Properties.xml']);
       if isempty(seriesPropertiesXML)
           error('XML MetaFiles could not be found. Did they get exported using the LAS software?')
       end

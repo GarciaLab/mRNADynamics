@@ -1,4 +1,4 @@
-function CheckNucleiSegmentation(varargin)
+function CheckNucleiSegmentation(Prefix, varargin)
 %
 %This code allows you to check the nuclear segmentation performed by
 %Timon's code implemented in SegmentNucleiTimon.m
@@ -13,6 +13,8 @@ function CheckNucleiSegmentation(varargin)
 %>  - Move 5 frames forward
 %<  - Move 5 frames backwards
 %j  - Jump to a frame
+%q  - Move a cycle forward
+%w  - Move a cycle backwards
 %d  - Delete all ellipses in the current frame
 %c  - Copy all ellipses from previous frame
 %v  - Copy all ellipses from next frame
@@ -37,13 +39,11 @@ close all
 [SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
 
-
-if ~isempty(varargin)
-    Prefix=varargin{1};
-else
-    FolderTemp=uigetdir(DefaultDropboxFolder,'Choose folder with files to analyze');
-    Dashes=strfind(FolderTemp,filesep);
-    Prefix=FolderTemp((Dashes(end)+1):end);
+noAdd = false;
+for i = 1:length(varargin)
+    if strcmpi(varargin{i}, 'noAdd')
+        noAdd = true;
+    end
 end
 
 
@@ -77,7 +77,7 @@ load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat']);
 
 hasSchnitzInd =size(Ellipses{1},2) == 9;
 
-if ~hasSchnitzInd
+if ~hasSchnitzInd & ~noAdd
     Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
 end
 
@@ -116,8 +116,10 @@ set(OriginalImage,'units', 'normalized', 'position',[0.01, .1, .75, .33]);
 originalAxes = axes(OriginalImage);
 tb = axtoolbar(overlayAxes);
 
-clrmp = hsv(length(schnitzcells));
-clrmp = clrmp(randperm(length(clrmp)), :);
+try
+    clrmp = hsv(length(schnitzcells));
+    clrmp = clrmp(randperm(length(clrmp)), :);
+end
 
 CurrentFrame=1;
 cc=1;
@@ -158,7 +160,7 @@ while (cc~='x')
         else
             schnitzInd = getSchnitz(Ellipses{CurrentFrame}(i,:), schnitzcells, CurrentFrame);
             if ~isempty(schnitzInd)
-                Ellipses{CurrentFrame}(i, 9) = schnitz;
+                Ellipses{CurrentFrame}(i, 9) = schnitzInd;
             else
                 Ellipses{CurrentFrame}(i, 9) = 0;
             end
@@ -166,7 +168,7 @@ while (cc~='x')
         if schnitzInd ~=0
             set(PlotHandle(i), 'Color', clrmp(schnitzInd, :),'Linewidth', 2);
         else
-            set(PlotHandle(i), 'Color', 'k','Linewidth', 2);
+            set(PlotHandle(i), 'Color', 'w','Linewidth', 1);
         end
     end
     %     hold(overlayAxes, 'off')
@@ -292,7 +294,15 @@ end
 
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
 close all;
-disp('Ellipses saved. Running TrackNuclei to incorporate changes.')
-TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1);
+
+%Decide whether we need to re-track
+userPrompt = 'Did you make changes to nuclei and thus require re-tracking? (y/n)';
+reTrackAnswer = inputdlg(userPrompt);
+if contains(reTrackAnswer,'n')
+    disp('Ellipses saved. Per user input, not re-tracking. Exiting.')
+else
+   TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1); 
+   disp('Ellipses saved. Running TrackNuclei to incorporate changes.')
+end
 
 end

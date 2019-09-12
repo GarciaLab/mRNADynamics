@@ -11,6 +11,9 @@ end
 if isfield(Particles,'yPos')
     Particles(OriginalParticle).yPos=[Particles(OriginalParticle).yPos,Particles(ClickedParticle).yPos];
 end
+if isfield(Particles,'zPos')
+    Particles(OriginalParticle).zPos=[Particles(OriginalParticle).zPos,Particles(ClickedParticle).zPos];
+end
 Particles(OriginalParticle).Index=[Particles(OriginalParticle).Index,Particles(ClickedParticle).Index];
 Particles(OriginalParticle).Approved=0;
 %Particles(OriginalParticle).nc=[Particles(OriginalParticle).nc,Particles(ClickedParticle).nc];

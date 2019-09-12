@@ -15,6 +15,7 @@ maxShiftCorrection = getDefaultParameters(FrameInfo,'max Shift Correction', 'tra
 nFrames = (lastFrameNumber-firstFrameNumber+1);
 % edgeClearance = getDefaultParameters(FrameInfo,'edge clearance')*diameter/space_resolution;
 
+mapping = {};
 
 % If nuclei are not provided, segment the images.
 if ~exist('xy','var') || isempty(xy)

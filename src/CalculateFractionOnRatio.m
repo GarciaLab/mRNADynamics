@@ -31,6 +31,17 @@ for i=1:length(Data)
     %We will only go ahead if we have at least a MinParticles
     %number of ellipses to check
 
+    %Look at 1 color data for now
+    ch = 1;
+    if iscell(Data(i).NParticlesAP)
+        Data(i).NParticlesAP = Data(i).NParticlesAP{ch};
+    end
+    if iscell(Data(i).EllipsesOnAP)
+        Data(i).EllipsesOnAP = Data(i).EllipsesOnAP{ch};
+    end
+    if iscell(Data(i).TotalEllipsesAP)
+        Data(i).TotalEllipsesAP = Data(i).TotalEllipsesAP{ch};
+    end
     %Max # of particles per AP bin for each nuclear cycle
     NParticlesAPMax = [max(Data(i).NParticlesAP(nc12:nc13,:),[],1);...
         max(Data(i).NParticlesAP(nc13:nc14,:),[],1);...
@@ -43,9 +54,11 @@ for i=1:length(Data)
 
     %Replace AP bins that don't have enough particles with nan
     FracOnTemp(NParticlesAPMax < MinParticles) = nan;
-
+    
     %Save fraction on
-    FracOn(i,:,:) = FracOnTemp;
+    if ~isempty(FracOnTemp)
+        FracOn(i,:,:) = FracOnTemp;
+    end
 end
 
 %Average all the embryos
