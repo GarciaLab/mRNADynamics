@@ -24,54 +24,52 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(Pr
 %
 % CONTROLS
 % Frame specific:
-% . , Move a frame forward/backward
-% > < Move five frames forward/backward
-% ; ' Move to the next empty frame within a particle
-% a z Move up/down in Z
-% t jump to a specific z-slice
-% j Jump to a specified frame
-% g b Increase/decrease histone channel contrast
-% ! @ Change the contrast in transcription channel (! increases, @ resets
+% ./, :Move a frame forward/backward
+% >/< :Move five frames forward/backward
+% ;/' :Move to the next/previous empty frame within a particle
+% a/z :Move up/down in z-slice
+%  t  :Jump to a specific z-slice
+%  j  :Jump to a specified frame
+% g/b :Increase/decrease histone channel contrast
+% !/@ :Change the contrast in transcription channel (! increases/@ resets
 %       it back to the lowest)
 %
 % Particle specific:
-% m Move to the next particle
-% n Move to the previous particle
-% k Jump to a specified particle by inputting particle number
-% \ Jump to a specified particle by clicking
-% c Connect two existing particle traces. This will join the current
-%  particle's trace to the clicked particle's trace.
-% d Separate traces forward. A new particle is created at the current frame
-%  and this particle is disconnected from the current nucleus. If this is
-%  done on a particle with only one frame then
-%  it disconnects it from its nucleus.
-%%
-% q Cycle between approved status: green - approved; yellow - approved but
-%  with conditions (drift of nucleus, for example)
-% w Disapprove a trace
-% p Identify a particle. It will also tell you the particle associated with
-%  the clicked nucleus.
-% e Approve/Disapprove a frame within a trace
-% u Move a particle detected with Threshold2 into the our structure.
-% i Move a particle detected with Threshold2 into the our structure and
-%  connect it to the current particle. This is a combination of "u" and
-%  "c". %AR 1/15/18: This is currently deprecated. Talk to HG if you need
-%  this function.
-% [ Add a spot that was not recognized originally by segmentSpots, creating
-%    a new particle if you've used '+' to zoom in on the particle of
-%    interest or adding to the current particle if you are zoomed out in
-%    'o'. Note that the command forces ZoomMode. To toggle, use 'o' or '+'
-%    depending on whether you're adding to an existing trace or creating
-%    a new trace, respectively.
-% { Same as [ but uses the exact pixel and z-plane that you click on.
-%    Useful if the algorithms get the centroid positioning wrong (i.e. your
-%    particle is put in the wrong place by '[').
-% # remove a spot from Spots and erase its frame in Particles
-%
+% m :Move to the next particle
+% n :Move to the previous particle
+% k :Jump to a specified particle by inputting particle number
+% \ :Jump to a specified particle by clicking
+% c :Connect two existing particle traces. This will join the current
+%     particle's trace to the clicked particle's trace.
+% d :Separate traces forward. A new particle is created at the current frame
+%     and this particle is disconnected from the current nucleus. If this is
+%     done on a particle with only one frame then it disconnects
+%     it from its nucleus.
+% q :Cycle between approved status: green - approved; yellow - approved but
+%     with conditions (drift of nucleus, for example)
+% w :Disapprove a trace
+% p :Identify a particle. It will also tell you the particle associated with
+%     the clicked nucleus.
+% e :Approve/Disapprove a frame within a trace
+% u :Move a particle detected with Threshold2 into the our structure.
+% i :Move a particle detected with Threshold2 into the our structure and
+%     connect it to the current particle. This is a combination of "u" and
+%     "c". %AR 1/15/18: This is currently deprecated. Talk to HG if you need
+%     this function.
+% [ :Add a spot that was not recognized originally by segmentSpots, creating
+%     a new particle if you've used '+' to zoom in on the particle of
+%     interest or adding to the current particle if you are zoomed out in
+%     'o'. Note that the command forces ZoomMode. To toggle, use 'o' or '+'
+%     depending on whether you're adding to an existing trace or creating
+%     a new trace, respectively.
+% { :Same as "[" but uses the exact pixel and z-plane that you click on.
+%     Useful if the algorithms get the centroid positioning wrong (i.e. your
+%     particle is put in the wrong place by '[').
+% # :Remove a spot from Spots and erase its frame in Particles
 %
 %
 % Nuclear tracking specific:
-% l Modify a nuclear lineage and associate a particle with a nucleus.
+% l :Modify a nuclear lineage and associate a particle with a nucleus.
 %       Usage:
 %       Click on one new nucleus + ENTER: Continue the schnitz with that nucleus.
 %       Click on the current nucleus + ENTER: Split the schnitz. This time
@@ -80,28 +78,28 @@ function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(Pr
 %       nuclei.
 %       Click on the same nucleus twice: Split the current nucleus, but
 %       with only one daughter nucleus.
-% 2 set parent of current nucleus
-% p Find the particle associated with the clicked nucleus. It will also tell
-%  you the closest particle associated you clicked on.
-% $ add particle to the nearest nucleus
+% 2 :Set parent of current nucleus
+% p :Find the particle associated with the clicked nucleus. It will also tell
+%     you the closest particle associated you clicked on.
+% $ :Add particle to the nearest nucleus
 %
 %
 % General:
-% 8 Change channels
-% t Show/hide particles from the second threshold
-% s Save the current Particles structure
-% x Save and exit
-% h Show non-approved particles yellow or dissapproved particlesz
-% y Input the frame/nc information again. This only works in the absence of
-%  the histone channel
-% r Reorder the particles according to initial frame
-% f Redo tracking. It only gets done on the non-approved particles.
-% o Zoom in/out around the particle's first frame.
-% + Zoom anywhere button. Click with the mouse to specify the position to
-%     to zoom in on after hitting this.
-% -/= Change the zoom factor when in zoom mode.
-% 0 Enter debug mode to fix things manually
-% ~ Switch figure 1 from a single plane image to a z or time projection.
+% 8 :Change channels
+% t :Show/hide particles from the second threshold
+% s :Save the current Particles structure
+% x :Save and exit
+% h :Show non-approved particles yellow or dissapproved particles
+% y :Input the frame/nc information again. This only works in the absence of
+%     the histone channel
+% r :Reorder the particles according to initial frame
+% f :Redo tracking. It only gets done on the non-approved particles.
+% o :Zoom in/out around the particle's first frame.
+% + :Zoom anywhere button. Click with the mouse to specify the position to
+%     zoom in on after hitting this.
+% -/= :Change the zoom factor when in zoom mode.
+% 0 :Enter debug mode to fix things manually
+% ~ :Switch figure 1 from a single plane image to a z or time projection.
 
 %
 % OUTPUT

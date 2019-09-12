@@ -8,22 +8,22 @@ function CheckNucleiSegmentation(varargin)
 %
 %Usage:
 %
-%.  - Move a frame forward
-%,  - Move a frame backwards
-%>  - Move 5 frames forward
-%<  - Move 5 frames backwards
-%j  - Jump to a frame
-%q  - Move a cycle forward
-%w  - Move a cycle backwards
-%d  - Delete all ellipses in the current frame
-%c  - Copy all ellipses from previous frame
-%v  - Copy all ellipses from next frame
-%s  - Save current analysis
-%m  - Increase contrast
-%n  - Decrease contrast
-%r  - Reset contrast setting
-%x  - Exit and save
-%9  - Debug mode
+% .  - Move a frame forward
+% ,  - Move a frame backwards
+% >  - Move 5 frames forward
+% <  - Move 5 frames backwards
+% j  - Jump to a frame
+% q  - Move a cycle forward
+% w  - Move a cycle backwards
+% d  - Delete all ellipses in the current frame
+% c  - Copy all ellipses from previous frame
+% v  - Copy all ellipses from next frame
+% s  - Save current analysis
+% m  - Increase contrast
+% n  - Decrease contrast
+% r  - Reset contrast setting
+% x  - Exit and save
+% 9  - Debug mode
 %
 %
 %right click  - delete region
