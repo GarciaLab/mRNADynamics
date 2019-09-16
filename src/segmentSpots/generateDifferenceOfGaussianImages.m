@@ -56,7 +56,7 @@ for channelIndex = 1:nCh
     
     
     if ~filter3D | strcmpi(gpu, 'noGPU')
-        for currentFrame = 1:numFrames
+        parfor currentFrame = 1:numFrames
             
             if ~filter3D
                 for zIndex = 1:zSize
@@ -141,10 +141,10 @@ if sum(im(:)) ~= 0
     if strcmpi(filterType, 'Difference_of_Gaussian')
         dog = filterImage(im, filterType, sigmas, 'filterSize',filterSize, 'zStep', zStep);
         if highPrecision
-            dog = (dog + 100) * 10;
+            dog = (dog + 100) * 100;
         end
     else
-        dog = (filterImage(im, filterType, sigmas, 'filterSize',filterSize) + 100) * 10;
+        dog = (filterImage(im, filterType, sigmas, 'filterSize',filterSize) + 100) * 100;
     end
     
 else
