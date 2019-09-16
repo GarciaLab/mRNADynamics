@@ -61,7 +61,7 @@ for i = 1:length(varargin)
         keepPool = 1;
     elseif strcmpi(varargin{i}, 'app')
         app{1} = varargin{i + 1};
-    elseif strcmpi(varargin{i}, 'nWorkers')
+    elseif strcmpi(varargin{i}, 'nWorkers') |  strcmpi(varargin{i}, 'numWorkers')
         
         nWorkers = varargin{i + 1};
         
