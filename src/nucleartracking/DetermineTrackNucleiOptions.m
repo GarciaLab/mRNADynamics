@@ -17,9 +17,7 @@ function [stitchSchnitz, ExpandedSpaceTolerance,...
     noStitch = false;
     
     for i = 1:length(varargin)
-        if strcmpi(varargin{i},'skipStitchSchnitz')
-           stitchSchnitz=false;
-        elseif strcmpi(varargin{i}, 'ExpandedSpaceTolerance')
+        \if strcmpi(varargin{i}, 'ExpandedSpaceTolerance')
             ExpandedSpaceTolerance = str2double(varargin{i+1});
         elseif strcmpi(varargin{i}, 'bulkShift')
             NoBulkShift = false;
