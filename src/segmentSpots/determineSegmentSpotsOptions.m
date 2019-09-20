@@ -14,7 +14,7 @@ useIntegralCenter = true;
 initialFrame = 1;
 Weka = false;
 keepProcessedData = true;
-fit3D = false;
+fit3D = 0;
 skipChannel = [];
 optionalResults = '';
 filterMovieFlag = false;
@@ -73,6 +73,8 @@ for i = 1:length(varargin)
     elseif strcmpi(varargin{i}, 'autoThresh')
         threshGUI = 1;
     elseif strcmpi(varargin{i}, 'fit3D')
+        fit3D = 2;
+    elseif strcmpi(varargin{i}, 'fit3D1Spot') && fit3D == 0
         fit3D = 1;
     elseif strcmpi(varargin{i}, 'filterMovie')
         filterMovieFlag = true;

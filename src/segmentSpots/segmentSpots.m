@@ -32,7 +32,8 @@
 % 'intScale': Scale up the radius of integration
 % 'autoThresh': Pops up a UI to help decide on a threshhold
 % 'keepProcessedData': Keeps the ProcessedData folder for the given prefix after running segment spots
-% 'fit3D': Fit 3D Gaussians to all segmented spots.
+% 'fit3D': Fit 3D Gaussians to all segmented spots (assumes 2 loci per spot).
+% 'fit3D1Spot': Fit 3D Gaussians to all segmented spots (assumes 1 locus per spot).
 % 'skipChannel': Skips segmentation of channels inputted array (e.g. [1]
 %                skips channel 1, [1, 2] skips channels 1 and 2
 % 'optionalResults': use this if you have multiple Results/Dropbox folders
@@ -158,9 +159,9 @@ end
 mkdir([DropboxFolder, filesep, Prefix]);
 save([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots', '-v7.3');
 
-if fit3D
-    disp('Fitting 3D Gaussians...')
-    fit3DGaussiansToAllSpots(Prefix, 'segmentSpots', Spots, 'nWorkers', nWorkers, saveType);
+if fit3D > 0
+    disp('Fitting 3D Gaussians (2 locus)...')
+    fit3DGaussiansToAllSpots(Prefix, fit3D, 'segmentSpots', Spots, 'nWorkers', nWorkers, saveType);
     disp('3D Gaussian fitting completed.')
 end
 

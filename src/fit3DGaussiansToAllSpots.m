@@ -1,4 +1,4 @@
-function Spots = fit3DGaussiansToAllSpots(prefix, varargin)
+function Spots = fit3DGaussiansToAllSpots(prefix, nSpots, varargin)
 %%
 optionalResults = '';
 
@@ -67,7 +67,7 @@ for ch = spotChannels
 
         nSpotsPerFrame = length(SpotsFr.Fits);
         for spot = 1:nSpotsPerFrame
-            SpotsFr = fitSnip3D(SpotsFr, ch, spot, frame, Prefix, PreProcPath, FrameInfo);
+            SpotsFr = fitSnip3D(SpotsFr, ch, spot, frame, Prefix, PreProcPath, FrameInfo, nSpots);
 %             fitSnip3D(SpotsFr, spotChannel, spot, frame, Prefix, PreProcPath, FrameInfo)
         end
         SpotsCh(frame) = SpotsFr;
