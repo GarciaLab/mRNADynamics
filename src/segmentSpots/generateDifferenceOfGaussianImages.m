@@ -29,6 +29,8 @@ if saveAsMat | strcmpi(saveType, '.mat')
     extractOpts = [extractOpts, 'mat'];
 end
 
+stacksPath = [PreProcPath, filesep, Prefix, filesep, 'stacks'];
+
 
 nCh = length(spotChannels);
 for channelIndex = 1:nCh
@@ -53,15 +55,25 @@ for channelIndex = 1:nCh
     p = 1;
     
     
-    if ~filter3D
-        for current_frame = 1:numFrames
+    if ~filter3D | strcmpi(gpu, 'noGPU')
+        parfor currentFrame = 1:numFrames
             
-            
-            for zIndex = 1:zSize
-                generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameSuffix, filterType, sigmas, filterSize, ...
-                    highPrecision, zIndex, displayFigures, app, numFrames);
+            if ~filter3D
+                for zIndex = 1:zSize
+                    generateDoGs(DogOutputFolder, PreProcPath, Prefix, currentFrame, nameSuffix, filterType,...
+                        sigmas, filterSize, ...
+                        highPrecision, zIndex, displayFigures, app, numFrames);
+                end
+            else
+                rawStackName = [stacksPath, filesep, iIndex(currentFrame, 3), nameSuffix, '.tif'];
+                im = readTiffStack(rawStackName);
+                
+                generateDoGs(DogOutputFolder, PreProcPath, Prefix, currentFrame, nameSuffix, filterType,...
+                    sigmas, filterSize, ...
+                    highPrecision, -1, displayFigures, app, numFrames, im, zSize, zStep);
             end
-            send(q, current_frame);
+            
+            send(q, currentFrame);
             
         end
         
@@ -74,11 +86,11 @@ for channelIndex = 1:nCh
         sigmas = {round(210/pixelSize), floor(800/pixelSize)};
         padSize = 2*sigmas{2};
         pixVol = format(1)*format(2)*format(3);
-        %         if ~strcmpi(gpu, 'noGPU')
-        maxMem = .8E9;
-        %         else
-        %             maxMem = 30E9;
-        %         end
+        if ~strcmpi(gpu, 'noGPU')
+            maxMem = .8E9;
+        else
+            maxMem = 30E9;
+        end
         %         maxGPUMem = evalin('base', 'maxGPUMem'); %for testing
         maxPixVol = maxMem / 4; %bytes in a single
         chunkSize = floor(maxPixVol/pixVol);
@@ -93,7 +105,7 @@ for channelIndex = 1:nCh
             dogs(:,:,:,chunks(i):chunks(i+1)-1) = extractFromGiant(gdogt, format, padSize, chunks(i), chunks(i+1)-1, Prefix, spotChannels, ProcPath, noSave, numType, extractOpts{:});
         end
         
-        %     imshow(dogs(:,:, 5, 5),[]);
+        %             imshow(dogs(:,:, 5, 5),[]); %useful line for debugging
     end
     
     close(waitbarFigure);
@@ -108,7 +120,8 @@ end
 end
 
 
-function generateDoGs(DogOutputFolder, PreProcPath, Prefix, current_frame, nameSuffix, filterType, sigmas, filterSize, highPrecision, zIndex, displayFigures, app, numFrames, varargin)
+function generateDoGs(DogOutputFolder, PreProcPath, Prefix, currentFrame, nameSuffix, filterType,...
+    sigmas, filterSize, highPrecision, zIndex, displayFigures, app, numFrames, varargin)
 
 if ~isempty(varargin)
     im = varargin{1};
@@ -116,7 +129,7 @@ if ~isempty(varargin)
     zStep = varargin{3};
     dim = 3;
 else
-    fileName = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(current_frame, 3), '_z', ...
+    fileName = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(currentFrame, 3), '_z', ...
         iIndex(zIndex, 2), nameSuffix, '.tif'];
     im = double(imread(fileName));
     dim = 2;
@@ -128,10 +141,10 @@ if sum(im(:)) ~= 0
     if strcmpi(filterType, 'Difference_of_Gaussian')
         dog = filterImage(im, filterType, sigmas, 'filterSize',filterSize, 'zStep', zStep);
         if highPrecision
-            dog = (dog + 100) * 10;
+            dog = (dog + 100) * 100;
         end
     else
-        dog = (filterImage(im, filterType, sigmas, 'filterSize',filterSize) + 100) * 10;
+        dog = (filterImage(im, filterType, sigmas, 'filterSize',filterSize) + 100) * 100;
     end
     
 else
@@ -140,7 +153,7 @@ end
 
 if dim == 2
     dog = padarray(dog(filterSize:end - filterSize - 1, filterSize:end - filterSize - 1), [filterSize, filterSize], 0,'both');
-    dog_name = ['DOG_', Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(zIndex, 2), nameSuffix, '.tif'];
+    dog_name = ['DOG_', Prefix, '_', iIndex(currentFrame, 3), '_z', iIndex(zIndex, 2), nameSuffix, '.tif'];
     dog_full_path = [DogOutputFolder, filesep, dog_name];
     imwrite(uint16(dog), dog_full_path)
 elseif dim == 3
@@ -148,7 +161,7 @@ elseif dim == 3
     dog = cat(3, zeros(size(dog, 1), size(dog, 2)), dog);
     dog(:, :, zSize) = zeros(size(dog, 1), size(dog, 2));
     for z = 1:zSize
-        dog_name = ['DOG_', Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(z, 2), nameSuffix, '.tif'];
+        dog_name = ['DOG_', Prefix, '_', iIndex(currentFrame, 3), '_z', iIndex(z, 2), nameSuffix, '.tif'];
         dog_full_path = [DogOutputFolder, filesep, dog_name];
         imwrite(uint16(dog(:,:, z)), dog_full_path);
     end
@@ -166,7 +179,7 @@ if displayFigures && dim == 2
     else
         imshow(dog(:, :, zIndex), [median(dog(:)), max(dog(:))], 'Parent', ax, 'InitialMagnification', 'fit');
     end
-    title(ax, [nameSuffix(2:end), ' frame: ', num2str(current_frame), '/', num2str(numFrames), ' z: ', num2str(zIndex)], 'Interpreter', 'none')
+    title(ax, [nameSuffix(2:end), ' frame: ', num2str(currentFrame), '/', num2str(numFrames), ' z: ', num2str(zIndex)], 'Interpreter', 'none')
     pause(.05)
 end
 

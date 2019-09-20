@@ -100,6 +100,7 @@ clear MeanFitsUp
 clear MeanLinearFitsUp
 clear Schnitzcells
 clear MeanFitsMCMC
+clear SingleParticleFitsMCMC
 
 
 
@@ -238,11 +239,18 @@ for i=1:length(CompiledSets)
                 warning('MeanFitsV3.mat not found');
             end
             
-            %Fit results assuming the same slopes
+            %Fit results using MeanFitsMCMC
             if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsMCMC.mat'],'file')
                 MeanFitsMCMC(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsMCMC.mat']);
             else
                 warning('MeanFitsMCMC.mat not found');
+            end
+            
+            %Single particle results using MeanFitsMCMC
+            if exist([DropboxFolder,filesep,Prefix,filesep,'SingleParticleFitsMCMC.mat'],'file')
+                SingleParticleFitsMCMC(i)=load([DropboxFolder,filesep,Prefix,filesep,'SingleParticleFitsMCMC.mat']);
+            else
+                warning('SingleParticleFitsMCMC.mat not found');
             end
             
             try
@@ -373,6 +381,11 @@ if ~justPrefixes
             if exist('MeanFitsMCMC','var')
                 if i<=length(MeanFitsMCMC)
                     Data(i).MeanFitsMCMC=MeanFitsMCMC(i).MCMCresults;
+                end
+            end
+            if exist('SingleParticleFitsMCMC','var')
+                if i<=length(SingleParticleFitsMCMC)
+                    Data(i).SingleParticleFitsMCMC=SingleParticleFitsMCMC(i).MCMCresults;
                 end
             end
             try

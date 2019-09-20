@@ -231,7 +231,7 @@ elseif prime == 3
     Delay=GeneLength3/ElongationRate;
 end
 
-MaxRate=max(max(MeanVectorAP))/Delay;
+MaxRate=max(max(cell2mat(MeanVectorAP)))/Delay;
 
 %Initial parameters for fits
 
@@ -356,7 +356,7 @@ end
 
 %Go through each AP bin
 FitFigure=figure;
-APBin=find(sum(NParticlesAP), 1 ); %index of the first AP bin that has a non-zero number of particles
+APBin=find(sum(cell2mat(NParticlesAP)), 1 ); %index of the first AP bin that has a non-zero number of particles
 cc=1;
 
  lsqOptions=optimset('Display','none');
@@ -378,7 +378,7 @@ while (cc~=13)
     end
     
     
-    if APDivision(CurrentNC,APBin)
+   if APDivision(CurrentNC,APBin)
         if CurrentNC~=14
             FrameWindow=APDivision(CurrentNC,APBin):APDivision(CurrentNC+1,APBin);
         else
@@ -391,11 +391,22 @@ while (cc~=13)
 
         %Check that we have the minimum number of particles for a minimum
         %amount of time
+        if iscell(NParticlesAP)
+            NParticlesAP=cell2mat(NParticlesAP);
+        end
         if (sum(NParticlesAP(FrameWindow,APBin)>=MinParticles)>=MinTimePoints)
 
             %Extract the data for this range of frames
+            if iscell(MeanVectorAP);
+                MeanVectorAP=cell2mat(MeanVectorAP);
+            end
+            
             FluoData=MeanVectorAP(FrameWindow,APBin);
+              if iscell(SDVectorAP);
+                SDVectorAP=cell2mat(SDVectorAP);
+            end
             SDFluoData=SDVectorAP(FrameWindow,APBin);
+            
             NData=NParticlesAP(FrameWindow,APBin);
             TimeData=ElapsedTime(FrameWindow);
           
@@ -581,7 +592,7 @@ while (cc~=13)
             end
 
         end
-    end
+     end
     
     title([num2str(APbinID(APBin)),' AP, TimeStart0=',num2str(FitResults(APBin,CurrentNC-11).TimeStart0),...
         ', TimeEnd0=',num2str(FitResults(APBin,CurrentNC-11).TimeEnd0),', Rate=',num2str(FitResults(APBin,CurrentNC-11).Rate0),...

@@ -2,7 +2,7 @@ function FitMeanAPMCMC_ApproveResults(varargin)
 %Last updated: 7/13/19 by Jonathan Liu
 
 %Analyzes saved MCMC results from FitMeanAPMCMC. The user has the option of
-%approving or rejecting the results of each single nucleus fit. The
+%approving or rejecting the results of each mean AP fit. The
 %approved/rejected results are saved in the same .mat file as the MCMC results.
 
 %The MCMC results should be saved as a .mat file with 2 stuctures, MCMCplot
