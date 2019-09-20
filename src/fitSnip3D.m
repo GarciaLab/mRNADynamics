@@ -44,6 +44,7 @@ end
 [GaussParams1, GaussParams2, offset, CI1, CI2, CIOffset] = fit3DGaussian2spot(snip3D,pixelSize);
 % GaussFit = fit3DGaussian(snip3D,pixelSize);
 % SpotsFr.Fits(spot).GaussFit3DSingle = GaussFit;
+
 % spot 1 position
 SpotsFr.Fits(spot).Spot1Fits3D = GaussParams1;
 SpotsFr.Fits(spot).Spot1CI3D = CI1;
@@ -51,6 +52,7 @@ x1 = GaussParams1(3) + min(single(xRange));
 y1 = GaussParams1(2) + min(single(yRange));
 z1 = GaussParams1(4) + min(single(zRange));
 SpotsFr.Fits(spot).Spot1Int3D = GaussParams1(1) * (2*pi)^1.5 * GaussParams1(5)^2 * GaussParams1(6);
+
 % spot 2 position
 SpotsFr.Fits(spot).Spot2Fits3D = GaussParams2;
 SpotsFr.Fits(spot).Spot2CI3D = CI2;
@@ -59,6 +61,7 @@ y2 = GaussParams2(2) + min(single(yRange));
 z2 = GaussParams2(4) + min(single(zRange));
 SpotsFr.Fits(spot).Spot2Int3D = GaussParams2(1) * (2*pi)^1.5 * GaussParams2(5)^2 * GaussParams2(6);
 
+% combined metrics
 SpotsFr.Fits(spot).gauss3DIntensity = SpotsFr.Fits(spot).Spot1Int3D + SpotsFr.Fits(spot).Spot2Int3D;
 SpotsFr.Fits(spot).Offset3D = offset;
 SpotsFr.Fits(spot).OffsetCI = CIOffset;
