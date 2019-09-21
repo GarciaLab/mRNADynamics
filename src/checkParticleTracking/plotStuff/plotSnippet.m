@@ -38,7 +38,7 @@ intScale = double(intScale);
 
         if ~isempty(himage)
             himage = imshow(SnippetOverlay,...
-                [],'Border','Tight','InitialMagnification',1000, 'Parent', snippetFigAxes)
+                [],'Border','Tight','InitialMagnification',1000, 'Parent', snippetFigAxes);
         else
             himage.CData = SnippetOverlay;
         end
@@ -67,56 +67,56 @@ intScale = double(intScale);
     else
         imshow(zeros(SnippetEdge), 'Parent', snippetFigAxes)
     end
-
-    if ~isempty(xTrace) && ~isempty(CurrentZIndex)
-        if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex),'gaussParams')
-            gaussParams = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussParams;
-     
-            if ~isempty(gaussParams)
-                gaussParams= double(gaussParams{CurrentZIndex});
-                if length(gaussParams) == 7
-                    gaussParams = [gaussParams, 0, 0];
-                end
-                try
-                    [y,x] = meshgrid(1:size(CurrentSnippet,2), 1:size(CurrentSnippet,1));
-                    g = gaussianForSpot(y, x, CurrentSnippet);
-                    gauss = g(gaussParams) + CurrentSnippet;
-                catch
-                    %not sure in what situation this fails. -AR
-                    %9/15/2018
-                    gauss = NaN;
-                end
-            else
-                gauss = double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{CurrentZIndex});
-            end
-
-        elseif isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex), 'gaussSpot')
-            gauss = double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{CurrentZIndex});
-        else
-            error('No Gaussian Fit Params or Gauss Snippet Found. Try Re-running segmentSpots')
-        end
-
-        if ~isnan(gauss)
-            surf(gaussianAxes, gauss);
-        end
-        title(gaussianAxes,'Gaussian fit')
-        zlimit = max(double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity));
-        zlim(gaussianAxes,[0, zlimit]);
-        surf(rawDataAxes,CurrentSnippet)
-        title(rawDataAxes,'Raw data');
-        zlim(rawDataAxes,[0, zlimit]);
-        box(gaussianAxes, 'on')
-        box(rawDataAxes, 'on')
-        %calibrate the axes
-        rawDataAxes.Children.XData = (rawDataAxes.Children.XData - max(rawDataAxes.Children.XData)/2)*xyRes;
-        rawDataAxes.Children.YData = (rawDataAxes.Children.YData -max(rawDataAxes.Children.YData)/2)*xyRes;
-        gaussianAxes.Children.XData = (gaussianAxes.Children.XData -max(gaussianAxes.Children.XData)/2)*xyRes;
-        gaussianAxes.Children.YData = (gaussianAxes.Children.YData -max(gaussianAxes.Children.YData)/2)*xyRes;
-        xlabel(rawDataAxes, '\mum'); ylabel(rawDataAxes, '\mum');
-        xlabel(gaussianAxes, '\mum'); ylabel(gaussianAxes, '\mum');
-    else
-        cla(gaussianAxes, 'reset')
-        cla(rawDataAxes, 'reset')
-    end
+% 
+%     if ~isempty(xTrace) && ~isempty(CurrentZIndex)
+%         if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex),'gaussParams')
+%             gaussParams = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussParams;
+%      
+%             if ~isempty(gaussParams)
+%                 gaussParams= double(gaussParams{CurrentZIndex});
+%                 if length(gaussParams) == 7
+%                     gaussParams = [gaussParams, 0, 0];
+%                 end
+%                 try
+%                     [y,x] = meshgrid(1:size(CurrentSnippet,2), 1:size(CurrentSnippet,1));
+%                     g = gaussianForSpot(y, x, CurrentSnippet);
+%                     gauss = g(gaussParams) + CurrentSnippet;
+%                 catch
+%                     %not sure in what situation this fails. -AR
+%                     %9/15/2018
+%                     gauss = NaN;
+%                 end
+%             else
+%                 gauss = double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{CurrentZIndex});
+%             end
+% 
+%         elseif isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex), 'gaussSpot')
+%             gauss = double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{CurrentZIndex});
+%         else
+%             error('No Gaussian Fit Params or Gauss Snippet Found. Try Re-running segmentSpots')
+%         end
+% 
+%         if ~isnan(gauss)
+%             surf(gaussianAxes, gauss);
+%         end
+%         title(gaussianAxes,'Gaussian fit')
+%         zlimit = max(double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity));
+%         zlim(gaussianAxes,[0, zlimit]);
+%         surf(rawDataAxes,CurrentSnippet)
+%         title(rawDataAxes,'Raw data');
+%         zlim(rawDataAxes,[0, zlimit]);
+%         box(gaussianAxes, 'on')
+%         box(rawDataAxes, 'on')
+%         %calibrate the axes
+%         rawDataAxes.Children.XData = (rawDataAxes.Children.XData - max(rawDataAxes.Children.XData)/2)*xyRes;
+%         rawDataAxes.Children.YData = (rawDataAxes.Children.YData -max(rawDataAxes.Children.YData)/2)*xyRes;
+%         gaussianAxes.Children.XData = (gaussianAxes.Children.XData -max(gaussianAxes.Children.XData)/2)*xyRes;
+%         gaussianAxes.Children.YData = (gaussianAxes.Children.YData -max(gaussianAxes.Children.YData)/2)*xyRes;
+%         xlabel(rawDataAxes, '\mum'); ylabel(rawDataAxes, '\mum');
+%         xlabel(gaussianAxes, '\mum'); ylabel(gaussianAxes, '\mum');
+%     else
+%         cla(gaussianAxes, 'reset')
+%         cla(rawDataAxes, 'reset')
+%     end
 end
 

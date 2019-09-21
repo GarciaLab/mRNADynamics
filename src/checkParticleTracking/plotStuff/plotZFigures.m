@@ -1,7 +1,7 @@
 function [MaxZProfile, Frames] = plotZFigures(zProfileFigAxes, zTraceAxes, ExperimentType, ...
     xTrace, Spots, CurrentFrame, CurrentChannel, CurrentParticleIndex, ZSlices, ...
     CurrentZ, CurrentZIndex, PreviousParticle, CurrentParticle, ...
-    PreviousChannel, Particles, Frames, MaxZProfile)
+    PreviousChannel, Particles, Frames, fish, MaxZProfile)
 %PLOTZFIGURES Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -39,7 +39,7 @@ if ~isempty(xTrace)
 end
 
 %%%%%    BRIGHTEST Z-TRACE PLOT   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ~strcmpi(ExperimentType,'inputoutput')
+if ~strcmpi(ExperimentType,'inputoutput') & ~fish
         
     %Only update the trace information if we have switched particles
     if (CurrentParticle~=PreviousParticle)||~exist('MaxZProfile', 'var')||CurrentChannel ~= PreviousChannel
