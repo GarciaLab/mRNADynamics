@@ -139,8 +139,11 @@ storedTimeProjection = []; % Don't need to wait for timeProjection to finish eac
 
 [sortByFrames, sortByLength, ForCompileAll, SpeedMode, ~, ...
     ncRange, projectionMode, plot3DGauss, intScale, NC, ...
-    startNC, endNC, optionalResults, nWorkers, fish] = determineCheckParticleTrackingOptions(varargin{:});
+    startNC, endNC, optionalResults, nWorkers, fish, noHisOverlay] = determineCheckParticleTrackingOptions(varargin{:});
 
+if fish
+    noHisOverlay = true;
+end
 
 %% Information about about folders
 
@@ -184,7 +187,7 @@ FilePrefix = [Prefix, '_'];
 %Add FramesApproved where necessary
 Particles = addFrameApproved(NChannels, Particles);
 
-[Ellipses, UseHistoneOverlay, UseSchnitz] = checkHistoneAndNuclearSegmentation(PreProcPath, FilePrefix, NDigits, DropboxFolder);
+[Ellipses, UseHistoneOverlay, UseSchnitz] = checkHistoneAndNuclearSegmentation(PreProcPath, FilePrefix, NDigits, DropboxFolder, noHisOverlay);
 
 % we name the variable DataFolderColumnValue to avoid shadowing previously defined DataFolder var, which is actually a subfolder inside dropbox
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution, ...
@@ -576,14 +579,14 @@ while (cc ~= 'x')
             Spots, CurrentFrame, ShowThreshold2, ...
             Overlay, CurrentChannel, CurrentParticle, ZSlices, CurrentZ, numFrames, ...
             schnitzcells, UseSchnitz, DisplayRange, Ellipses, SpotFilter, ZoomMode, GlobalZoomMode, ...
-            ZoomRange, xForZoom, yForZoom, UseHistoneOverlay, HisOverlayFigAxes, HisPath1, HisPath2, oim, ellipseHandles);
+            ZoomRange, xForZoom, yForZoom, fish, UseHistoneOverlay, HisOverlayFigAxes, HisPath1, HisPath2, oim, ellipseHandles);
         
     else
         displayOverlays(overlayAxes, Image, SpeedMode, ...
             FrameInfo, Particles, Spots, CurrentFrame, ShowThreshold2, ...
             Overlay, CurrentChannel, CurrentParticle, ZSlices, CurrentZ, numFrames, ...
             schnitzcells, UseSchnitz, DisplayRange, Ellipses, SpotFilter, ...
-            ZoomMode, GlobalZoomMode, ZoomRange, xForZoom, yForZoom, UseHistoneOverlay);
+            ZoomMode, GlobalZoomMode, ZoomRange, xForZoom, yForZoom, fish, UseHistoneOverlay);
     end
     
     if ~isempty(xTrace)
