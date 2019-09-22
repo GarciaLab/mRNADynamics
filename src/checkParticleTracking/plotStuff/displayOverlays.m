@@ -224,16 +224,12 @@ end
 
 if ApprovedParticles(CurrentParticle)==1
     set(Overlay,'Color','g')
-    %         set(TraceFig,'Color','g')
 elseif ApprovedParticles(CurrentParticle)==-1
     set(Overlay,'Color','r')
-    %         set(TraceFig,'Color','r')
 elseif ApprovedParticles(CurrentParticle)==2
     set(Overlay,'Color','y')
-    %         set(TraceFig,'Color','y')
 else
     set(Overlay,'Color','default')
-    %         set(TraceFig,'Color','default')
 end
 
 %Show the particles that were under threshold 2.
