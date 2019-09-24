@@ -56,7 +56,7 @@ for channelIndex = 1:nCh
     
     
     if ~filter3D | strcmpi(gpu, 'noGPU')
-        parfor currentFrame = 1:numFrames
+        for currentFrame = 1:numFrames
             
             if ~filter3D
                 for zIndex = 1:zSize
