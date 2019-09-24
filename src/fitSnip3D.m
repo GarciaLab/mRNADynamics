@@ -1,4 +1,9 @@
-function SpotsFr = fitSnip3D(SpotsFr, spotChannel, spot, frame, Prefix, PreProcPath, FrameInfo, nSpots)
+function SpotsFr =...
+    fitSnip3D(...
+        SpotsFr, spotChannel, spot, frame, Prefix,...
+    PreProcPath, FrameInfo, nSpots)
+
+%%
 % extract basic fit parameters
 s = SpotsFr.Fits(spot);
 xSize = FrameInfo(1).PixelsPerLine;

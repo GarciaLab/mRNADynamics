@@ -143,6 +143,7 @@ storedTimeProjection = []; % Don't need to wait for timeProjection to finish eac
 
 if fish
     noHisOverlay = true;
+    projectionMode = 'Max Z';
 end
 
 %% Information about about folders
@@ -189,6 +190,10 @@ Particles = addFrameApproved(NChannels, Particles);
 
 [Ellipses, UseHistoneOverlay, UseSchnitz] = checkHistoneAndNuclearSegmentation(PreProcPath, FilePrefix, NDigits, DropboxFolder, noHisOverlay);
 
+if fish
+    UseSchnitz = false;
+end
+
 % we name the variable DataFolderColumnValue to avoid shadowing previously defined DataFolder var, which is actually a subfolder inside dropbox
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution, ...
     Channel1, Channel2, Objective, Power, DataFolderColumnValue, ~, Comments, ...
@@ -227,12 +232,13 @@ end
 % (to prevent issues with compileparticles)
 save([DataFolder, filesep, 'FrameInfo.mat'], 'FrameInfo');
 
-%Check if we have already determined nc
-if (~isfield(FrameInfo, 'nc')) && (~UseHistoneOverlay)
-    %do nothing
+schnitzPath = [DropboxFolder, filesep, FilePrefix(1:end - 1), filesep, FilePrefix(1:end - 1), '_lin.mat'];
+
+if  exist(schnitzPath, 'file')
     
-elseif UseSchnitz
-    load([DropboxFolder, filesep, FilePrefix(1:end - 1), filesep, FilePrefix(1:end - 1), '_lin.mat']);
+    disp('Loading schnitzcells...')
+    load(schnitzPath);
+    disp('schnitzcells loaded.')
     
     %Remove the schnitz fields that can give us problems potentially if
     %present. I don't know how this came to be, but it's for fields that
@@ -672,13 +678,13 @@ while (cc ~= 'x')
         
         is_control = isa(get(Overlay, 'CurrentObject'), 'matlab.ui.control.UIControl');
         
-        if ct == 0 && cm2(1, 1) < xSize && current_axes == overlayAxes ...
-                &&~no_clicking &&~is_control
-            
-            [CurrentParticle, CurrentFrame, ManualZFlag] = toNearestParticle(Spots, ...
-                Particles, CurrentFrame, CurrentChannel, UseHistoneOverlay, ...
-                schnitzcells, [cm2(1, 1), cm2(2, 2)]);
-        end
+%         if ct == 0 && cm2(1, 1) < xSize && current_axes == overlayAxes ...
+%                 &&~no_clicking &&~is_control
+%             
+%             [CurrentParticle, CurrentFrame, ManualZFlag] = toNearestParticle(Spots, ...
+%                 Particles, CurrentFrame, CurrentChannel, UseHistoneOverlay, ...
+%                 schnitzcells, [cm2(1, 1), cm2(2, 2)]);
+%         end
     else
         cc = SkipWaitForButtonPress;
         SkipWaitForButtonPress = [];
@@ -754,16 +760,19 @@ while (cc ~= 'x')
         [CurrentParticle, CurrentFrame, ManualZFlag] = ...
             changeParticle(ParticleJump, Particles, numParticles, CurrentChannel);
         DisplayRange = [];
-    elseif cc == 'g' & UseHistoneOverlay%Increase histone channel contrast
+    elseif cc == 'g' & UseHistoneOverlay %Increase histone channel contrast
         
         if isempty(DisplayRange)'
             DisplayRange = [min(min(ImageHis)), max(max(ImageHis)) / 1.5];
         else
             DisplayRange = [DisplayRange(1), DisplayRange(2) / 1.5];
         end
+            disp('increased nuclear contrast');
+
         
-    elseif cc == 'b' & UseHistoneOverlay%Decrease histone channel contrast
+    elseif cc == 'b' & UseHistoneOverlay %Decrease histone channel contrast
         DisplayRange = [min(min(ImageHis)), max(max(ImageHis)) * 1.5];
+        disp('decreased nuclear contrast');
         
     elseif cc == '#'%remove a spot from Spots and erase its frame in Particles
         [Spots, SpotFilter,CurrentFrame, ...
@@ -911,8 +920,13 @@ while (cc ~= 'x')
             DisplayRangeSpot = [DisplayRangeSpot(1), DisplayRangeSpot(2) / 1.5];
         end
         
+        disp('increased spot contrast');
+        
     elseif cc == '@'%Decrease spot channel contrast
         DisplayRangeSpot = [min(Image(:)), max(Image(:)) * 1.5];
+        
+         disp('decreased spot contrast');
+         
     elseif cc == '$' %add particle to nucleus
             Particles = addNucleusToParticle(Particles, CurrentFrame, ...
                 CurrentChannel, UseHistoneOverlay, schnitzcells, CurrentParticle);

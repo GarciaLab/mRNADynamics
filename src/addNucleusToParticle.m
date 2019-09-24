@@ -9,7 +9,7 @@ function Particles =...
 %   Detailed explanation goes here
 
 
-if UseHistoneOverlay & isfield(Particles{CurrentChannel}, 'xPos')
+if ~isempty(schnitzcells) & isfield(Particles{CurrentChannel}, 'xPos')
     
     frames = Particles{CurrentChannel}(CurrentParticle).Frame;
     xPos = Particles{CurrentChannel}(CurrentParticle).xPos(frames == CurrentFrame);

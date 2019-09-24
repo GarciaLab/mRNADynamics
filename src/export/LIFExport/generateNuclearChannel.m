@@ -5,7 +5,10 @@
 % For MovieDatabase Channels, we should put ":Nuclear" or
 % "invertedNuclear" for those channels to be recognized for histone
 % channel generation.
-function Projection = generateNuclearChannel(numberOfFrames, LIFImages, framesIndex, seriesIndex, NSlices, NChannels, nuclearChannel, ProjectionType, ExperimentType, Channel1, Channel2, Channel3, ReferenceHist, OutputFolder, Prefix)
+function Projection = generateNuclearChannel(...
+    numberOfFrames, LIFImages, framesIndex, seriesIndex, NSlices,...
+    NChannels, nuclearChannel, ProjectionType, ExperimentType, Channel1,...
+    Channel2, Channel3, ReferenceHist, OutputFolder, Prefix, lowbit)
 
   % Check how many channels have ":Nuclear" in the MovieDatabase.csv
   NuclearChannels = [contains(Channel1, 'Nuclear', 'IgnoreCase', true), ...
@@ -132,7 +135,13 @@ function Projection = generateNuclearChannel(numberOfFrames, LIFImages, framesIn
     
   end
   
-  imwrite(uint16(Projection), [OutputFolder, filesep, Prefix, '-His_', iIndex(numberOfFrames, 3), '.tif']);
+  if lowbit
+      Projection = uint8(Projection);
+  else
+      Projection = uint16(Projection);
+  end
+  
+  imwrite(Projection, [OutputFolder, filesep, Prefix, '-His_', iIndex(numberOfFrames, 3), '.tif']);
   
 end
 

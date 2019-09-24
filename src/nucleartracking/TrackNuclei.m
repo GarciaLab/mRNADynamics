@@ -256,15 +256,15 @@ end
 
 %Save everything at this point. It will be overwritten later, but it's
 %useful for debugging purposes if there's a bug in the code below.
-mkdir([DropboxFolder,filesep,Prefix])
-save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
-save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells')
+mkdir([DropboxFolder,filesep,Prefix]);
+save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
+save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells');
 
 if ~exist([ProcPath,filesep,Prefix,'_'], 'dir')
-    mkdir([ProcPath,filesep,Prefix,'_'])
+    mkdir([ProcPath,filesep,Prefix,'_']);
 end
 if exist('dataStructure', 'var')
-    save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
+    save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure');
 end
 
 
@@ -340,7 +340,7 @@ if (strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input'))
             elseif strcmpi(ExperimentType,'input')&&(length(InputChannel))>1
                 nameSuffix=['_ch',iIndex(InputChannel(ChN),2)];
             else
-                error('Not sure what happened here. Talk to YJK or SA.')
+                error('Not sure what happened here. Talk to YJK or SA.');
             end
             % NL: should parallelize this
             
@@ -370,15 +370,15 @@ if (strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input'))
             schnitzcells = tempSchnitz;
             
             
-            close(h)
+            close(h);
         end
     else
-        error('Input channel not recognized. Check correct definition in MovieDatabase')
+        error('Input channel not recognized. Check correct definition in MovieDatabase');
     end
 end
 %Save the information
 %Now save
-mkdir([DropboxFolder,filesep,Prefix])
+mkdir([DropboxFolder,filesep,Prefix]);
 %
 %
 %
@@ -388,23 +388,23 @@ if track & ~noBreak
     [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
 end
 
-save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
+save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
 
     if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
         %Change the name of the Circle variable to make it more understandable when
         %loaded independently
         IntegrationArea=Circle;
-        save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells','IntegrationArea')
+        save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells','IntegrationArea');
     else
-        save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells')
+        save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells');
     end
     
     if ~exist([ProcPath,filesep,Prefix,'_'], 'dir')
-        mkdir([ProcPath,filesep,Prefix,'_'])
+        mkdir([ProcPath,filesep,Prefix,'_']);
     end
     if exist('dataStructure', 'var')
         
-        save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure')
+        save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure');
     end
 
 

@@ -34,6 +34,7 @@
 % 'zslicesPadding': if series have different number of z-slices, pad them
 % with blank images so every generates series has the same amount
 % 'nuclearGUI'
+% 'uint8'
 %
 % OUTPUT
 % Exported tif images are placed in the PreProcessedData folder and divided
@@ -68,7 +69,8 @@
 function Prefix = ExportDataForLivemRNA(varargin)
 
   [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs,...
-    generateTifStacks, nuclearGUI, skipExtraction, rootFolder, zslicesPadding] = exportDataForLivemRNA_processInputParameters(varargin{:});
+    generateTifStacks, nuclearGUI, skipExtraction, rootFolder, zslicesPadding,...
+    lowbit] = exportDataForLivemRNA_processInputParameters(varargin{:});
 
   [rawDataPath, ~, DropboxFolder, ~, PreProcPath, rawDataFolder, Prefix, ExperimentType, Channel1, Channel2, ~,...
     Channel3] = readMovieDatabase(Prefix);
@@ -108,7 +110,7 @@ function Prefix = ExportDataForLivemRNA(varargin)
 
   elseif strcmpi(FileMode, 'LIFExport')
     FrameInfo = processLIFExportMode(rawDataFolder, ExperimentType, ProjectionType, Channel1, Channel2, Channel3, Prefix, ...
-      OutputFolder, PreferredFileNameForTest, keepTifs, nuclearGUI, skipExtraction);
+      OutputFolder, PreferredFileNameForTest, keepTifs, nuclearGUI, skipExtraction, lowbit);
 
   elseif strcmpi(FileMode, 'DSPIN') || strcmpi(FileMode, 'DND2')
     %Nikon spinning disk confocal mode - TH/CS 2017

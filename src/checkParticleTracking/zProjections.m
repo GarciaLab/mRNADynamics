@@ -47,8 +47,8 @@ elseif strcmpi(projType, 'max')
     im = zeros(FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, 'uint16');
     proj = im;
     parfor currentZ = 2:zSlices-1
-        im = imread([PreProcPath,filesep,Prefix,filesep,...
-                Prefix,'_',iIndex(currentFrame,nDigits),'_z',iIndex(currentZ,2),'_ch0', num2str(currentChannel) ,'.tif']);
+        im = uint16(imread([PreProcPath,filesep,Prefix,filesep,...
+                Prefix,'_',iIndex(currentFrame,nDigits),'_z',iIndex(currentZ,2),'_ch0', num2str(currentChannel) ,'.tif']));
         proj = max(proj, im);
     end
 end
