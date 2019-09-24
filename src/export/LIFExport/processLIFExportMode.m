@@ -1,6 +1,7 @@
 % Added PreferredFileName so we can automate testing and bypass the user prompt when there are many files available.
 function FrameInfo = processLIFExportMode(rawDataFolder, ExperimentType, ProjectionType, Channel1, Channel2, Channel3,...
-    Prefix, OutputFolder, PreferredFileNameForTest, keepTifs, nuclearGUI, skipExtraction)
+    Prefix, OutputFolder, PreferredFileNameForTest,...
+    keepTifs, nuclearGUI, skipExtraction, lowbit)
 
 markandfind = false;
 
@@ -44,8 +45,7 @@ end
 if ~skipExtraction
     %Copy the data
     waitbarFigure = waitbar(0, 'Extracting LIFExport images');
-    %Create a blank image
-    BlankImage = uint16(zeros(size(LIFImages{1}{1,1})));
+  
     
     %Counter for number of frames
     numberOfFrames = 1;
@@ -59,9 +59,9 @@ if ~skipExtraction
     for seriesIndex = 1:NSeries
         waitbar(seriesIndex/NSeries, waitbarFigure)
         for framesIndex = 1:NFrames(seriesIndex)
-            processLIFFrame(numberOfFrames, Prefix, BlankImage, OutputFolder, LIFImages, framesIndex, seriesIndex,...
+            processLIFFrame(numberOfFrames, Prefix, OutputFolder, LIFImages, framesIndex, seriesIndex,...
                 NChannels, NSlices, ExperimentType, Channel1, Channel2, Channel3, ProjectionType, fiducialChannel,...
-                histoneChannel, ReferenceHist, coatChannel, inputProteinChannel, false); %JP: hardcode false zPadding for now
+                histoneChannel, ReferenceHist, coatChannel, inputProteinChannel, false, lowbit); %JP: hardcode false zPadding for now
             numberOfFrames = numberOfFrames + 1;
         end
     end
