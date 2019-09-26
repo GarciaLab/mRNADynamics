@@ -135,11 +135,8 @@ function Projection = generateNuclearChannel(...
     
   end
   
-  if lowbit
-      Projection = uint8(Projection);
-  else
-      Projection = uint16(Projection);
-  end
+ 
+  Projection = uint16(Projection);
   
   imwrite(Projection, [OutputFolder, filesep, Prefix, '-His_', iIndex(numberOfFrames, 3), '.tif']);
   

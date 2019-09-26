@@ -1,6 +1,6 @@
 function CorrectAPAxis(varargin)
 
-%This function allows to check and manually determine the AP axis
+%This function allows you to check and manually determine the AP axis
 
 
 %Manual:
@@ -21,8 +21,6 @@ close all
 
 %Load the folder information
 
-% ES 2013-10-29: Required for multiple users to be able to analyze data on
-% one computer
 [RawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath]=...
     DetermineLocalFolders(varargin{1});
 
@@ -97,7 +95,6 @@ while (cc~='x')
         coordA=[];
         coordP=[];
     elseif (ct~=0)&(cc=='a')	%Select anterior end
-        figure(APImageFig)
         [coordAx,CoordAy]=ginputc(1,'Color',[1,1,1]);
         coordA = [coordAx,CoordAy];
     elseif (ct~=0)&(cc=='p')    %Select posterior end
@@ -129,13 +126,11 @@ while (cc~='x')
         coordA=coordP;
         coordP=coordPTemp;
     elseif (ct~=0)&(cc=='v')
-        figure(APImageFig)
         [coordVx,CoordVy]=ginputc(1,'Color','m');
         coordV = [coordVx,CoordVy];
         saveVars = [saveVars, 'coordV'];
         dv = true;
     elseif (ct~=0)&(cc=='d')
-        figure(APImageFig)
         [coordDx,CoordDy]=ginputc(1,'Color','y');
         coordD = [coordDx,CoordDy];
         saveVars = [saveVars, 'coordD'];

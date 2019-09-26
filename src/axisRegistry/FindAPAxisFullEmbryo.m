@@ -1,5 +1,5 @@
-function [coordA,coordP,xShift,yShift]=FindAPAxisFullEmbryo(varargin)
-
+function [coordA,coordP,xShift,yShift]=FindAPAxisFullEmbryo(Prefix, varargin)
+%%
 %When we could fit the whole embryo in one image we don't do stitching.
 %Instead we do a correlation between the imaging field and the full embryo
 %to determine the shift and then find the AP axis.
@@ -12,10 +12,9 @@ function [coordA,coordP,xShift,yShift]=FindAPAxisFullEmbryo(varargin)
 %CorrectAxis- Runs a correction script after automatic detection
 
 CorrectAxis = 1;
-Prefix=varargin{1};
 optionalResults = '';
 
-for i=2:length(varargin)
+for i=1:length(varargin)
     if isnumeric(varargin{i})
         if varargin{i}==1
             FlipAP=1;
@@ -29,13 +28,6 @@ end
    
 [SourcePath, ~, DefaultDropboxFolder, DropboxFolder, ~, ~,...
 ~, ~] = DetermineAllLocalFolders(Prefix, optionalResults);
-
-if ~exist('Prefix', 'var')
-    FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
-    Dashes=strfind(FolderTemp,filesep);
-    Prefix=FolderTemp((Dashes(end)+1):end);
-end
-
 
 %If the AP axis hasn't been specified check if it was specificed in the
 %image names. Otherwise assume AP orientation
@@ -103,31 +95,25 @@ if ~exist('FlipAP', 'var')
         FlipAP=0;
     end
 end
+     
+    ChannelToLoadTemp =contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
 
+      if sum(ChannelToLoadTemp) && sum(ChannelToLoadTemp)==1
+            HisChannel=find(ChannelToLoadTemp);
+        elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>=2
+            ChannelToLoad=find(ChannelToLoadTemp);
+            HisChannel = ChannelToLoad(1);
+      end
+    if isempty(HisChannel)
+        error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
+    end
 
 
 if strcmp(FileMode,'TIF')
     MidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(MidFileIndex).name],2);
 elseif strcmp(FileMode,'LIFExport')
-    
-    %Figure out which channel to use
-    HisChannel=find(~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'mcherry'))|...
-        ~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'his')));
-    
-    %If this channel is empty, we can check whether there is Bcd-GFP, for
-    %example
-    if isempty(HisChannel)
-        HisChannel=find(~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'bcd-gfp')));
-    end    
-    
-    %Alternatively, check for an inverted nuclear signal.
-    if isempty(HisChannel)
-        HisChannel=find(~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'invertednuclear')));
-    end
-    
-    if isempty(HisChannel)
-        error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
-    end
+       
+   
     
     %Rotates the full embryo image to match the rotation of the zoomed
     %time series
@@ -167,15 +153,10 @@ elseif strcmp(FileMode,'LIFExport')
     
     evalin('base','clear rot')
     MidImage = imrotate(MidImage, -zoom_angle + full_embryo_angle);
+    
 elseif strcmp(FileMode,'LSM')
     
-    %Figure out which channel to use
-    HisChannel=find(~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'mcherry'))|...
-        ~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'his')));
-    
-    if isempty(HisChannel)
-        error('LSM Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
-    end
+   
     
     %Rotates the full embryo image to match the rotation of the zoomed
     %time series
@@ -232,8 +213,9 @@ elseif strcmp(FileMode,'LSM')
 
     MidImage = imrotate(MidImage, -zoom_angle + full_embryo_angle);
     SurfImage = imrotate(SurfImage, -zoom_angle + full_embryo_angle);
-    
+
 elseif strcmp(FileMode, 'DSPIN')        %CS20170911 This is really long-winded atm! Need to simplify.
+%%  
     %Find and open the mid-saggistal .nd files in the FullEmbryo folder
     if find(~cellfun('isempty',strfind({D.name},'ANT_mid')))>0
         SurfFileIndexAnt = find(~cellfun('isempty',strfind({D.name},'ANT_mid')));
@@ -363,7 +345,7 @@ elseif strcmp(FileMode, 'DSPIN')        %CS20170911 This is really long-winded a
     
 end
 
-
+%%
 %Save it to the Dropbox folder
 mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
 imwrite(uint16(MidImage),[DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif'],'compression','none');

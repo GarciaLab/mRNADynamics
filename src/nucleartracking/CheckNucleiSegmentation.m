@@ -1,7 +1,5 @@
 function CheckNucleiSegmentation(Prefix, varargin)
 %
-%This code allows you to check the nuclear segmentation performed by
-%Timon's code implemented in SegmentNucleiTimon.m
 %
 %To do:
 %1) Allow to edit the size and angle of an ellipse
@@ -40,11 +38,17 @@ close all
     DetermineLocalFolders;
 
 noAdd = false;
+nWorkers = 8;
+
 for i = 1:length(varargin)
-    if strcmpi(varargin{i}, 'noAdd')
+    if strcmpi(varargin{i}, 'noAdd') | strcmpi(varargin{i}, 'fish') | strcmpi(varargin{i}, 'markandfind')
         noAdd = true;
+    elseif strcmpi(varargin{i}, 'nWorkers')
+        nWorkers = varargin{i+1};
     end
 end
+
+startParallelPool(nWorkers, 1, 1);
 
 
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
@@ -108,26 +112,34 @@ for i=1:length(D)
 end
 
 Overlay=figure;
-set(Overlay,'units', 'normalized', 'position',[0.01, .55, .75, .33]);
-overlayAxes = axes(Overlay);
+% set(Overlay,'units', 'normalized', 'position',[0.01, .55, .75, .33]);
+set(Overlay,'units', 'normalized', 'position',[0.01, .2, .5, .5]);
+
+overlayAxes = axes(Overlay,'Units', 'normalized', 'Position', [0 0 1 1]);
 
 OriginalImage=figure;
-set(OriginalImage,'units', 'normalized', 'position',[0.01, .1, .75, .33]);
-originalAxes = axes(OriginalImage);
+% set(OriginalImage,'units', 'normalized', 'position',[0.01, .1, .75, .33]);
+set(OriginalImage,'units', 'normalized', 'position',[0.55, .2, .5, .5]);
+
+originalAxes = axes(OriginalImage,'Units', 'normalized', 'Position', [0 0 1 1]);
+
 tb = axtoolbar(overlayAxes);
 
 try
-    clrmp = hsv(length(schnitzcells));
+    clrmp = single(hsv(length(schnitzcells)));
     clrmp = clrmp(randperm(length(clrmp)), :);
 end
 
 CurrentFrame=1;
 cc=1;
 
-%Show the first image
+% Show the first image
 imOverlay = imshow(HisImage,DisplayRange,'Border','Tight','Parent',overlayAxes);
 imOriginal = imshow(HisImage,DisplayRange,'Border','Tight','Parent',originalAxes);
-
+% set(overlayAxes,'Units', 'normalized', 'Position', [0 0 1 1]);
+% % set(originalAxes,'Units', 'normalized', 'Position', [0 0 1 1]);
+% imOverlay = imagescUpdate(overlayAxes, HisImage, []);
+% set(overlayAxes,'Units', 'normalized', 'Position', [0 0 1 1]);
 set(0, 'CurrentFigure', Overlay)
 
 while (cc~='x')
@@ -151,10 +163,10 @@ while (cc~='x')
     %     hold(overlayAxes, 'on')
     PlotHandle=[];
     for i=1:NCentroids
-        PlotHandle=[PlotHandle,ellipse(Ellipses{CurrentFrame}(i,3),...
+        PlotHandle(i)=ellipse(Ellipses{CurrentFrame}(i,3),...
             Ellipses{CurrentFrame}(i,4),...
             Ellipses{CurrentFrame}(i,5),Ellipses{CurrentFrame}(i,1)+1,...
-            Ellipses{CurrentFrame}(i,2)+1,[],[],overlayAxes)];
+            Ellipses{CurrentFrame}(i,2)+1,[],[],overlayAxes);
         if size(Ellipses{CurrentFrame}, 2) > 8 
             schnitzInd = Ellipses{CurrentFrame}(i, 9);
         else
@@ -284,7 +296,7 @@ while (cc~='x')
         if ~isempty(previousncframes)
             CurrentFrame = previousncframes(1);
         end
-    elseif (ct~=0)&(cc=='9')    %Debug mode
+    elseif (ct~=0)&(cc=='0')    %Debug mode
         keyboard
         
     end

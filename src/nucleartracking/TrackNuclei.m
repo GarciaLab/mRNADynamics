@@ -31,10 +31,8 @@ function TrackNuclei(Prefix,varargin)
 disp(['Tracking nuclei on ', Prefix, '...']);
 
 [stitchSchnitz, ExpandedSpaceTolerance, NoBulkShift,...
-    retrack, nWorkers, track, noBreak, noStitch] = DetermineTrackNucleiOptions(varargin{:});
+    retrack, nWorkers, track, noBreak, noStitch, markandfind, fish] = DetermineTrackNucleiOptions(varargin{:});
 
-
-startParallelPool(nWorkers, 0,0);
 
 
 
@@ -249,7 +247,7 @@ end
 for i=1:length(schnitzcells)
     for j=1:length(schnitzcells(i).frames)
         schnitzcells(i).len(:)=...
-            mean(Ellipses{schnitzcells(i).frames(j)}(schnitzcells(i).cellno(j),3:4));
+            single(mean(Ellipses{schnitzcells(i).frames(j)}(schnitzcells(i).cellno(j),3:4)));
     end
 end
 
@@ -363,7 +361,7 @@ if (strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input'))
                     CurrentIndex=find(tempSchnitz(j).frames==CurrentFrame);
                     cenx=min(max(1,round(tempSchnitz(j).cenx(CurrentIndex))),PixelsPerLine);
                     ceny=min(max(1,round(tempSchnitz(j).ceny(CurrentIndex))),LinesPerFrame);
-                    tempSchnitz(j).Fluo(CurrentIndex,1:NumberSlices2,ChN) = convImage(ceny,cenx,:);
+                    tempSchnitz(j).Fluo(CurrentIndex,1:NumberSlices2,ChN) = single(convImage(ceny,cenx,:));
                 end
                 
             end
@@ -376,12 +374,13 @@ if (strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input'))
         error('Input channel not recognized. Check correct definition in MovieDatabase');
     end
 end
-%Save the information
-%Now save
+
+if fish
+    schnitzcells = rmfield(schnitzcells, {'P', 'E', 'D'});
+end
+
 mkdir([DropboxFolder,filesep,Prefix]);
-%
-%
-%
+
 ncVector=[0,0,0,0,0,0,0,0,nc9,nc10,nc11,nc12,nc13,nc14];
 [nFrames,~] = size(Ellipses); %how many frames do we have?
 if track & ~noBreak

@@ -1,6 +1,6 @@
 function [stitchSchnitz, ExpandedSpaceTolerance,...
     NoBulkShift, retrack, nWorkers, track...
-    noBreak, noStitch]...
+    noBreak, noStitch, fish, markandfind]...
     = DetermineTrackNucleiOptions(varargin)
 %
 %DETERMINETRACKNUCLEIOPTIONS Processes varargin for TrackNuclei,
@@ -15,6 +15,8 @@ function [stitchSchnitz, ExpandedSpaceTolerance,...
     track = true;
     noBreak = false;
     noStitch = false;
+    fish = false;
+    markandfind =  false;
     
     for i = 1:length(varargin)
         if strcmpi(varargin{i}, 'ExpandedSpaceTolerance')
@@ -31,11 +33,16 @@ function [stitchSchnitz, ExpandedSpaceTolerance,...
             noBreak = true;
         elseif strcmpi(varargin{i}, 'noStitch')
             noStitch = true;
-        elseif strcmpi(varargin{i}, 'markandfind')
+        elseif strcmpi(varargin{i}, 'markandfind') | strcmpi(varargin{i}, 'fish')
             noStitch = true;
             noBreak = true;
             track = true;
+            fish = true;
+            markandfind = true;
         end
     end
+    
+    startParallelPool(nWorkers, 0,1);
+
 end
 
