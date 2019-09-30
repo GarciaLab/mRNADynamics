@@ -39,16 +39,18 @@ close all
 
 noAdd = false;
 nWorkers = 8;
+fish = false;
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'noAdd') | strcmpi(varargin{i}, 'fish') | strcmpi(varargin{i}, 'markandfind')
         noAdd = true;
+        fish = true;
     elseif strcmpi(varargin{i}, 'nWorkers')
         nWorkers = varargin{i+1};
     end
 end
 
-startParallelPool(nWorkers, 1, 1);
+startParallelPool(nWorkers, 0, 1);
 
 
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
@@ -161,27 +163,40 @@ while (cc~='x')
         delete(axesHandlesToChildObjects);
     end
     %     hold(overlayAxes, 'on')
-    PlotHandle=[];
-    for i=1:NCentroids
-        PlotHandle(i)=ellipse(Ellipses{CurrentFrame}(i,3),...
-            Ellipses{CurrentFrame}(i,4),...
-            Ellipses{CurrentFrame}(i,5),Ellipses{CurrentFrame}(i,1)+1,...
-            Ellipses{CurrentFrame}(i,2)+1,[],[],overlayAxes);
-        if size(Ellipses{CurrentFrame}, 2) > 8 
-            schnitzInd = Ellipses{CurrentFrame}(i, 9);
-        else
-            schnitzInd = getSchnitz(Ellipses{CurrentFrame}(i,:), schnitzcells, CurrentFrame);
-            if ~isempty(schnitzInd)
-                Ellipses{CurrentFrame}(i, 9) = schnitzInd;
+    PlotHandle=zeros(NCentroids, 1);
+    if ~fish
+        for i=1:NCentroids
+            PlotHandle(i)=ellipse(Ellipses{CurrentFrame}(i,3),...
+                Ellipses{CurrentFrame}(i,4),...
+                Ellipses{CurrentFrame}(i,5),Ellipses{CurrentFrame}(i,1)+1,...
+                Ellipses{CurrentFrame}(i,2)+1,[],20,overlayAxes);
+            if size(Ellipses{CurrentFrame}, 2) > 8 
+                schnitzInd = Ellipses{CurrentFrame}(i, 9);
             else
-                Ellipses{CurrentFrame}(i, 9) = 0;
+                schnitzInd = getSchnitz(Ellipses{CurrentFrame}(i,:), schnitzcells, CurrentFrame);
+                if ~isempty(schnitzInd)
+                    Ellipses{CurrentFrame}(i, 9) = schnitzInd;
+                else
+                    Ellipses{CurrentFrame}(i, 9) = 0;
+                end
+            end
+            if schnitzInd ~=0
+                set(PlotHandle(i), 'Color', clrmp(schnitzInd, :),'Linewidth', 2);
+            else
+                set(PlotHandle(i), 'Color', 'w','Linewidth', 1);
             end
         end
-        if schnitzInd ~=0
-            set(PlotHandle(i), 'Color', clrmp(schnitzInd, :),'Linewidth', 2);
-        else
-            set(PlotHandle(i), 'Color', 'w','Linewidth', 1);
+    else
+        for i=1:NCentroids
+            PlotHandle(i)=ellipse(Ellipses{CurrentFrame}(i,3),...
+                Ellipses{CurrentFrame}(i,4),...
+                Ellipses{CurrentFrame}(i,5),Ellipses{CurrentFrame}(i,1)+1,...
+                Ellipses{CurrentFrame}(i,2)+1, 'g', 4,overlayAxes, .05);
+%              set(PlotHandle(i), 'Color', 'g','Linewidth', .5);
         end
+%         for i=1:NCentroids 
+%             set(PlotHandle(i), 'Color', 'w','Linewidth', .5);
+%         end
     end
     %     hold(overlayAxes, 'off')
     %     set(PlotHandle,'Color','r', 'Linewidth', 3)

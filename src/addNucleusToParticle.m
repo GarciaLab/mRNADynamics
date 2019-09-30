@@ -24,10 +24,10 @@ if ~isempty(schnitzcells) & isfield(Particles{CurrentChannel}, 'xPos')
     for j=1:length(schnitzcells)
         if sum(schnitzcells(j).frames==CurrentFrame)
             SchnitzSuspect=[SchnitzSuspect,j];
-            xPosSuspect=[xPosSuspect,...
-                schnitzcells(j).cenx((schnitzcells(j).frames)==CurrentFrame)];
-            yPosSuspect=[yPosSuspect,...
-                schnitzcells(j).ceny((schnitzcells(j).frames)==CurrentFrame)];
+            xPosSuspect=double([xPosSuspect,...
+                schnitzcells(j).cenx((schnitzcells(j).frames)==CurrentFrame)]);
+            yPosSuspect=double([yPosSuspect,...
+                schnitzcells(j).ceny((schnitzcells(j).frames)==CurrentFrame)]);
         end
     end
     

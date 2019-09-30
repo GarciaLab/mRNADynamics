@@ -34,7 +34,7 @@
 % 'zslicesPadding': if series have different number of z-slices, pad them
 % with blank images so every generates series has the same amount
 % 'nuclearGUI'
-% 'uint8'
+% 'lowbit': use uint8 for non-nuclear images
 %
 % OUTPUT
 % Exported tif images are placed in the PreProcessedData folder and divided
