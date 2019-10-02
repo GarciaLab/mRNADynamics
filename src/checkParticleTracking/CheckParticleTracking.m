@@ -159,7 +159,7 @@ DataFolder = [DropboxFolder, filesep, Prefix];
 FilePrefix = [Prefix, '_'];
 
 
-[Particles, SpotFilter, Spots, FrameInfo] = loadCheckParticleTrackingMats(DataFolder, PreProcPath);
+[Particles, SpotFilter, Spots, FrameInfo, Spots3D] = loadCheckParticleTrackingMats(DataFolder, PreProcPath);
 
 [xSize, ySize, pixelSize, zStep, snippet_size, LinesPerFrame, PixelsPerLine,...
     numFrames] = getFrameInfoParams(FrameInfo);
@@ -634,6 +634,10 @@ while (cc ~= 'x')
                 ErrorIntegral, ErrorIntegral3, backGround3, ...
                 AmpIntegralGauss3D, ErrorIntegralGauss3D, FrameIndicesToFit];
         end
+        if ~isempty(Spots3D)
+            plottrace_argin = [plottrace_argin, Spots3D];
+        end
+        
         [Frames, AmpIntegral, GaussIntegral, AmpIntegral3, ...
             ErrorIntegral, ErrorIntegral3,  backGround3, ...
             AmpIntegralGauss3D, ErrorIntegralGauss3D, PreviousParticle] =...

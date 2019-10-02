@@ -1,7 +1,13 @@
-function [SpotsMinimal, SpotsExtra, Spots3D] = makeSpotsMinimal(Spots)
+function [SpotsMinimal, SpotsExtra, Spots3D] = makeSpotsMinimal(Prefix)
 
 %Makes a smaller version of Spots. Necessary fields are in SpotsMinimal. Less
 %important fields are in SpotsExtra. 3D information is stored in Spots3D.
+
+[rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
+    rawDataFolder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder,...
+    Channel3, spotChannels, MovieDataBaseFolder, movieDatabase]...
+    = readMovieDatabase(Prefix);
+load([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots')
 
 SpotsExtra = Spots;
 Spots3D = Spots;
@@ -90,5 +96,9 @@ for t = 1:nFrames
     
     
 end
+
+save([DropboxFolder, filesep, Prefix, filesep, 'SpotsMinimal.mat'], 'SpotsMinimal');
+save([DropboxFolder, filesep, Prefix, filesep, 'SpotsExtra.mat'], 'SpotsExtra');
+save([DropboxFolder, filesep, Prefix, filesep, 'Spots3D.mat'], 'Spots3D');
 
 end
