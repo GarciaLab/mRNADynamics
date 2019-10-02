@@ -70,14 +70,14 @@ if nSpots == 2
         GaussParams2(5)^2 * GaussParams2(6));
 
     % combined metrics
-    SpotsFr.Fits(spot).gauss3DIntensity = SpotsFr.Fits(spot).Spot1Int3D + ...
-        SpotsFr.Fits(spot).Spot2Int3D;
-    SpotsFr.Fits(spot).Offset3D = offset;
-    SpotsFr.Fits(spot).OffsetCI = CIOffset;
+    SpotsFr.Fits(spot).gauss3DIntensity = single(SpotsFr.Fits(spot).Spot1Int3D + ...
+        SpotsFr.Fits(spot).Spot2Int3D);
+    SpotsFr.Fits(spot).Offset3D = single(offset);
+    SpotsFr.Fits(spot).OffsetCI = single(CIOffset);
     posArray = vertcat([x1,y1,z1],[x2,y2,z2]);
-    SpotsFr.Fits(spot).GaussPos = (SpotsFr.Fits(spot).Spot1Int3D *posArray(1,:)...
+    SpotsFr.Fits(spot).GaussPos = single((SpotsFr.Fits(spot).Spot1Int3D *posArray(1,:)...
                 + SpotsFr.Fits(spot).Spot2Int3D *posArray(2,:)) /...
-                (SpotsFr.Fits(spot).Spot1Int3D+SpotsFr.Fits(spot).Spot2Int3D);
+                (SpotsFr.Fits(spot).Spot1Int3D+SpotsFr.Fits(spot).Spot2Int3D));
             
 elseif nSpots == 1      
     GaussParams1 = fit3DGaussian(snip3D,pixelSize);

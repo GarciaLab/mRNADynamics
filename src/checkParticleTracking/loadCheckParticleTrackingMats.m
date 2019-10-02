@@ -6,8 +6,20 @@ function [Particles, SpotFilter, Spots, FrameInfo] = loadCheckParticleTrackingMa
     load([DataFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter')
     disp('Particles.mat loaded')
     disp('Loading Spots.mat...')
-    load([DataFolder, filesep, 'Spots.mat'], 'Spots')
+    
+    if exist([DataFolder, filesep, 'Spots1.mat'], 'file')
+        load([DataFolder, filesep, 'Spots1.mat'], 'Spots1');
+        Spots = Spots1;
+    else
+        load([DataFolder, filesep, 'Spots.mat'], 'Spots')
+    end
+    
+    if exist([DataFolder, filesep, 'Spots3D.mat'], 'file')
+        load([DataFolder, filesep, 'Spots3D.mat'], 'Spots3D');
+    end
+    
     disp('Spots.mat loaded')
+    
 
   %Check that FrameInfo exists
   if exist([DataFolder, filesep, 'FrameInfo.mat'], 'file')
