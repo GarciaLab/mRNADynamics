@@ -24,6 +24,9 @@ if ~isempty(varargin)
     ErrorIntegralGauss3D = varargin{8};
     FrameIndicesToFit = varargin{9};
 end
+if length(varargin)==10
+    Spots3D = varargin{10};
+end
 
 switchParticleFlag= false;
 switchFrameFlag = PreviousFrame ~= CurrentFrame;
