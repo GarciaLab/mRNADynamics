@@ -35,11 +35,11 @@ if old_centers_provided
     % If old_centers are provided, the strategy is to compare old_centers
     % and Ellipses and see which nuclei appeared/disappeared and then copy
     % the ones that are in common and add the ones that appeared.
-    for f = 1:nFrames
-        if size(old_centers{f},2) < 2
-            old_centers{f} = [inf inf];
+    for j = 1:nFrames
+        if size(old_centers{j},2) < 2
+            old_centers{j} = [inf inf];
         end
-            dist = pdist2(Ellipses{f}(:,1:2),old_centers{f});
+            dist = pdist2(Ellipses{j}(:,1:2),old_centers{j});
             % Build correspondences
             
             % First attribute nuclei that are mutually the closest
@@ -60,13 +60,13 @@ if old_centers_provided
             ind = find(Mc & Mr);
             [rowInd,colInd] = ind2sub(size(dist),ind);
             
-            centers{f} = old_centers{f}(colInd,:);
+            centers{j} = old_centers{j}(colInd,:);
             
             % Add the ones that were added
-            ind_to_add = 1:size(Ellipses{f},1);
+            ind_to_add = 1:size(Ellipses{j},1);
             ind_to_add(rowInd) = [];
             for jj = 1:numel(ind_to_add)
-                centers{f} = [centers{f}(1:ind_to_add(jj)-1,:); Ellipses{f}(ind_to_add(jj),1:2); centers{f}(ind_to_add(jj):end,:)];
+                centers{j} = [centers{j}(1:ind_to_add(jj)-1,:); Ellipses{j}(ind_to_add(jj),1:2); centers{j}(ind_to_add(jj):end,:)];
             end
             
     end
@@ -75,9 +75,9 @@ else
     % Just copy the information from Ellipses
     % I should make this and the rest of the code be able to handle empty
     % frames!
-    for f = 1:nFrames
+    for j = 1:nFrames
 %         if ~isempty(Ellipses{j})
-            centers{f} = Ellipses{f}(:,[2,1]);
+            centers{j} = Ellipses{j}(:,[2,1]);
 %         else
 %            centers{j}=[];
 %         end

@@ -1,27 +1,13 @@
 % This function loads Particles.mat, Spots.mat and FrameInfo.mat into
 % the corresponding workspace variables. 
-function [Particles, SpotFilter, Spots, FrameInfo, Spots3D] = loadCheckParticleTrackingMats(DataFolder, PreProcPath)
+function [Particles, SpotFilter, Spots, FrameInfo] = loadCheckParticleTrackingMats(DataFolder, PreProcPath)
 
-    Spots3D = [];
-    
     disp('Loading Particles.mat...')
     load([DataFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter')
     disp('Particles.mat loaded')
     disp('Loading Spots.mat...')
-    
-    if exist([DataFolder, filesep, 'SpotsMinimal.mat'], 'file')
-        load([DataFolder, filesep, 'SpotsMinimal.mat'], 'SpotsMinimal');
-        Spots = SpotsMinimal;
-    else
-        load([DataFolder, filesep, 'Spots.mat'], 'Spots')
-    end
-    
-    if exist([DataFolder, filesep, 'Spots3D.mat'], 'file')
-        load([DataFolder, filesep, 'Spots3D.mat'], 'Spots3D');
-    end
-    
+    load([DataFolder, filesep, 'Spots.mat'], 'Spots')
     disp('Spots.mat loaded')
-    
 
   %Check that FrameInfo exists
   if exist([DataFolder, filesep, 'FrameInfo.mat'], 'file')
