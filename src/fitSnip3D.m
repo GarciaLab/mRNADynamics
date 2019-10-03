@@ -1,5 +1,7 @@
-function SpotsFr = fitSnip3D(SpotsFr, spotChannel, spot, frame, Prefix,...
-                PreProcPath, FrameInfo, nSpots)
+function SpotsFr =...
+    fitSnip3D(...
+        SpotsFr, spotChannel, spot, frame, Prefix,...
+    PreProcPath, FrameInfo, nSpots)
 
 %%
 % extract basic fit parameters
@@ -44,55 +46,48 @@ end
 
 %%
 if nSpots == 2
-    [GaussParams1, SpotInt1, GaussCI1, IntCI1, GaussParams2,SpotInt2,GaussCI2,IntCI2,offset, offsetCI] = ...
+    [GaussParams1, GaussParams2, offset, CI1, CI2, CIOffset] = ...
         fit3DGaussian2spot(snip3D,pixelSize);
 
     % spot 1 position
-    SpotsFr.Fits(spot).Spot1Fits3D = single(GaussParams1);	
+    SpotsFr.Fits(spot).Spot1Fits3D = single(GaussParams1);
+    SpotsFr.Fits(spot).Spot1CI3D = single(CI1);
     x1 = single(GaussParams1(3) + min(xRange));
     y1 = single(GaussParams1(2) + min(yRange));
     z1 = single(GaussParams1(4) + min(zRange));
     SpotsFr.Fits(spot).Spot1Pos = single([x1,y1,z1]);
-    SpotsFr.Fits(spot).Spot1GaussPosCI95 = single(GaussCI1(2:4,:));
-    SpotsFr.Fits(spot).Spot1Int3D = single(SpotInt1);
-    SpotsFr.Fits(spot).Spot1Fits3DCI95 = single(IntCI1);
+    SpotsFr.Fits(spot).Spot1Int3D = single(GaussParams1(1) * (2*pi)^1.5 * ...
+        GaussParams1(5)^2 * GaussParams1(6));
 
     % spot 2 position
-    SpotsFr.Fits(spot).Spot2Fits3D = single(GaussParams2);    
+    SpotsFr.Fits(spot).Spot2Fits3D = single(GaussParams2);
+    SpotsFr.Fits(spot).Spot2CI3D = single(CI2);
     x2 = single(GaussParams2(3) + min(xRange));
     y2 = single(GaussParams2(2) + min(yRange));
     z2 = single(GaussParams2(4) + min(zRange));
     SpotsFr.Fits(spot).Spot2Pos = single([x2,y2,z2]);
-    SpotsFr.Fits(spot).Spot2GaussPosCI95 = single(GaussCI2(2:4,:));
-    SpotsFr.Fits(spot).Spot2Int3D = single(SpotInt2);
-    SpotsFr.Fits(spot).Spot2Fits3DCI95 = single(IntCI2);
+    SpotsFr.Fits(spot).Spot2Int3D = single(GaussParams2(1) * (2*pi)^1.5 * ...
+        GaussParams2(5)^2 * GaussParams2(6));
 
     % combined metrics
-    SpotsFr.Fits(spot).gauss3DIntensity = single(SpotInt1 + SpotInt2);
-    SpotsFr.Fits(spot).gauss3DIntensityCI95 = single(sqrt(IntCI1^2+IntCI2^2));
+    SpotsFr.Fits(spot).gauss3DIntensity = SpotsFr.Fits(spot).Spot1Int3D + ...
+        SpotsFr.Fits(spot).Spot2Int3D;
     SpotsFr.Fits(spot).Offset3D = offset;
-    SpotsFr.Fits(spot).OffsetCI = offsetCI;
+    SpotsFr.Fits(spot).OffsetCI = CIOffset;
     posArray = vertcat([x1,y1,z1],[x2,y2,z2]);
     SpotsFr.Fits(spot).GaussPos = (SpotsFr.Fits(spot).Spot1Int3D *posArray(1,:)...
                 + SpotsFr.Fits(spot).Spot2Int3D *posArray(2,:)) /...
                 (SpotsFr.Fits(spot).Spot1Int3D+SpotsFr.Fits(spot).Spot2Int3D);
-    % calculate error in CM position
-    PosDeltas1 = diff(GaussCI1(2:4,:)');
-    PosDeltas2 = diff(GaussCI2(2:4,:)');
-    PosDeltasTot = sqrt((SpotInt1*PosDeltas1).^2+(SpotInt2*PosDeltas2).^2);
-    SpotsFr.Fits(spot).GaussPosCI95 = [SpotsFr.Fits(spot).GaussPos-PosDeltasTot 
-        SpotsFr.Fits(spot).GaussPos+PosDeltasTot]';
-    
+            
 elseif nSpots == 1      
-    [GaussParams1, SpotIntegral, GaussCI, IntegralCI, ~] = fit3DGaussian(snip3D,pixelSize);
-    SpotsFr.Fits(spot).SpotFits3D = single(GaussParams1);    
+    GaussParams1 = fit3DGaussian(snip3D,pixelSize);
+    SpotsFr.Fits(spot).Spot1Fits3D = single(GaussParams1);    
     x1 = single(GaussParams1(3) + min(xRange));
     y1 = single(GaussParams1(2) + min(yRange));
     z1 = single(GaussParams1(4) + min(zRange));
-    SpotsFr.Fits(spot).GaussPos = single([x1,y1,z1]);
-    SpotsFr.Fits(spot).GaussPosCI95 = single(GaussCI(2:4,:));
-    SpotsFr.Fits(spot).gauss3DIntensity = single(SpotIntegral);
-    SpotsFr.Fits(spot).gauss3DIntensityCI95 = single(IntegralCI);
+    SpotsFr.Fits(spot).SpotPos = single([x1,y1,z1]);
+    SpotsFr.Fits(spot).SpotInt3D = single(GaussParams1(1) * (2*pi)^1.5 * ...
+        GaussParams1(5)^2 * GaussParams1(6));
 end    
 % [SpotsFr.Fits(spot).fits3D, SpotsFr.Fits(spot).gauss3DIntensity,...
 %     SpotsFr.Fits(spot).fits3DCI95,...

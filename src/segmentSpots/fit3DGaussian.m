@@ -1,4 +1,4 @@
-function [GaussFit, SpotIntegral, GaussCI, IntegralCI, OffsetCI] = fit3DGaussian(snip3D,PixelSize,varargin)
+function GaussFit = fit3DGaussian(snip3D,PixelSize,varargin)
     % INPUT ARGUMENTS:
     % snip3D: 3D array containing spot to fit. Should contain only one spot
     
@@ -40,18 +40,5 @@ function [GaussFit, SpotIntegral, GaussCI, IntegralCI, OffsetCI] = fit3DGaussian
     dim_vec = [yDim, xDim, zDim];    
     single3DObjective = @(params) simulate3DGaussSymmetric(dim_vec, params) - double(snip3D);     
     % attempt to fit
-    [GaussFit, ~, residual, ~, ~, ~, jacobian] = lsqnonlin(single3DObjective,initial_parameters,lb_vec,ub_vec);
-    FitCI = nlparci(GaussFit,residual,'jacobian',jacobian);
-    GaussCI = FitCI(1:6,:);
-    Deltas = diff(gaussCI');
-    OffsetCI = FitCI(end,:);
-    % perform error propagation to obtain error bounds on integral   
-    sigmaXY = GaussFit(5);
-    sigmaZ = GaussFit(6);
-    amplitude = GaussFit(1);
-    
-    SpotIntegral = amplitude * (2*pi)^1.5 * sigmaXY^2 * sigmaZ;   
-    IntError = (2*pi)^1.5 * sqrt((Deltas(1)*sigmaXY^2 * sigmaZ)^2 + (Deltas(6)*sigmaXY^2 * amplitude)^2 ...
-        + (2*Deltas(5)*amplitude * sigmaXY^2 * sigmaZ)^2);    
-    IntegralCI =  [SpotIntegral - IntError/2, SpotIntegral + IntError/2];
+    GaussFit = lsqnonlin(single3DObjective,initial_parameters,lb_vec,ub_vec);
 end
