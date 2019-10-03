@@ -121,7 +121,7 @@ indMit(indMit>=numFrames)=indMit(indMit>=numFrames)-2;
 
 %If indMit is empty this means that we didn't see any mitosis. Deal with
 %this by assigning the first frames to it
-if isempty(indMit) | markandfind
+if isempty(indMit)
     indMit=[1,2];
     %If we don't have nc14 we'll fool the code into thinking that the last
     %frame of the movie was nc14
@@ -129,7 +129,6 @@ elseif isnan(indMit(end,1))
     indMit(end,1)=numFrames-6;
     indMit(end,2)=numFrames-5;
 end
-
 
 
 %Embryo mask

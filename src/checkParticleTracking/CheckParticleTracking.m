@@ -159,7 +159,7 @@ DataFolder = [DropboxFolder, filesep, Prefix];
 FilePrefix = [Prefix, '_'];
 
 
-[Particles, SpotFilter, Spots, FrameInfo, Spots3D] = loadCheckParticleTrackingMats(DataFolder, PreProcPath, fish);
+[Particles, SpotFilter, Spots, FrameInfo, Spots3D] = loadCheckParticleTrackingMats(DataFolder, PreProcPath);
 
 [xSize, ySize, pixelSize, zStep, snippet_size, LinesPerFrame, PixelsPerLine,...
     numFrames] = getFrameInfoParams(FrameInfo);

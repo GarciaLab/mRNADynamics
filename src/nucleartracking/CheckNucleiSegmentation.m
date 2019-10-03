@@ -341,11 +341,7 @@ reTrackAnswer = inputdlg(userPrompt);
 if contains(reTrackAnswer,'n')
     disp('Ellipses saved. Per user input, not re-tracking. Exiting.')
 else
-   opts = {};
-   if fish
-       opts = [opts, 'markandfind'];
-   end
-   TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1, opts{:}); 
+   TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1); 
    disp('Ellipses saved. Running TrackNuclei to incorporate changes.')
 end
 
