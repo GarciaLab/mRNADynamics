@@ -1,4 +1,4 @@
-function [GaussParams1, GaussParams2, offset, GaussCI1, GaussCI2, offsetCI]...
+function [GaussParams1, SpotInt1, GaussCI1, IntCI1, GaussParams2,SpotInt2,GaussCI2,IntCI2,offset, offsetCI]...
         = fit3DGaussian2spot(snip3D,PixelSize, varargin)
     % INPUT ARGUMENTS:
     % snip3D: 3D array containing spot to fit. Should contain only one spot
@@ -58,6 +58,29 @@ function [GaussParams1, GaussParams2, offset, GaussCI1, GaussCI2, offsetCI]...
     % estimate confidence intervals
     FitCI = nlparci(GaussFit,residual,'jacobian',jacobian);
     GaussCI1 = FitCI(1:6,:);
+    Deltas1 = diff(GaussCI1');
     GaussCI2 = FitCI(7:12,:);
+    Deltas2 = diff(GaussCI2');
     offsetCI = FitCI(end,:);
+    % calculate spot integrals and propagate uncertainties
+    % spot 1
+    sXY1 = GaussParams1(5);
+    sZ1 = GaussParams1(6);
+    amp1 = GaussParams1(1);    
+    SpotInt1 = amp1 * (2*pi)^1.5 * sXY1^2 * sZ1;   
+    IntErr1 = (2*pi)^1.5 * sqrt((Deltas1(1)*sXY1^2 * sZ1)^2 + (Deltas1(6)*sXY1^2 * amp1)^2 ...
+        + (2*Deltas1(5)*amp1 * sXY1^2 * sZ1)^2);    
+    IntCI1 =  [SpotInt1 - IntErr1/2, SpotInt1 + IntErr1/2];
+    % spot 2
+    sXY2 = GaussParams2(5);
+    sZ2 = GaussParams2(6);
+    amp2 = GaussParams2(1);
+    SpotInt2 = amp2 * (2*pi)^1.5 * sXY2^2 * sZ2;   
+    IntErr2 = (2*pi)^1.5 * sqrt((Deltas2(1)*sXY2^2 * sZ2)^2 + (Deltas2(6)*sXY2^2 * amp2)^2 ...
+        + (2*Deltas2(5)*amp2 * sXY2^2 * sZ2)^2);    
+    IntCI2 =  [SpotInt2 - IntErr2/2, SpotInt2 + IntErr2/2];
+    % perform error propagation to obtain error bounds on integral  
+    
+    
+    
 end
