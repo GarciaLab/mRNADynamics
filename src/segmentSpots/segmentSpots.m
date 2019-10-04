@@ -160,7 +160,7 @@ mkdir([DropboxFolder, filesep, Prefix]);
 save([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots', '-v7.3');
 
 if fit3D > 0
-    disp('Fitting 3D Gaussians (2 locus)...')
+    disp('Fitting 3D Gaussians...')
     fit3DGaussiansToAllSpots(Prefix, fit3D, 'segmentSpots', Spots, 'nWorkers', nWorkers, saveType);
     disp('3D Gaussian fitting completed.')
 end

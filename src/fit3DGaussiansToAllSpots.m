@@ -8,6 +8,7 @@ nWorkers = 8;
 keepPool = false;
 dogs = [];
 saveType = '.tif';
+save_flag = true;
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'displayFigures')
@@ -17,6 +18,8 @@ for i = 1:length(varargin)
         segmentSpots = true;
     elseif strcmpi(varargin{i}, 'optionalResults')
         optionalResults = varargin{i+1};
+    elseif strcmpi(varargin{i}, 'noSave')
+        save_flag = false;
     elseif strcmpi(varargin{i}, 'nWorkers')
         nWorkers = varargin{i+1};
     elseif strcmpi(varargin{i}, 'keepPool')
@@ -86,11 +89,11 @@ if iscell(Spots) & length(Spots) < 2
     Spots = Spots{1};
 end
 
-
-save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3');
-disp('3D fitting done on all spots.')
-close(waitbarFigure);
-
+if save_flag
+    save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3');
+    disp('3D fitting done on all spots.')
+    close(waitbarFigure);
+end
     function nUpdateWaitbar(~)
         waitbar(p/numFrames, waitbarFigure);
         p = p + 1;

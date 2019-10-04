@@ -1,4 +1,4 @@
-function [GaussParams1, GaussParams2, offset, GaussCI1, GaussCI2, offsetCI]...
+function [GaussParams1, GaussParams2, offset, GaussIntVec, centroid_mean, GaussSE1, GaussSE2, offsetSE, GaussIntSEVec, centroid_se]...
         = fit3DGaussian2spot(snip3D,PixelSize, varargin)
     % INPUT ARGUMENTS:
     % snip3D: 3D array containing spot to fit. Should contain only one spot
@@ -55,9 +55,40 @@ function [GaussParams1, GaussParams2, offset, GaussCI1, GaussCI2, offsetCI]...
     GaussParams1 = GaussFit(1:6);
     GaussParams2 = GaussFit(7:12);        
     offset = GaussFit(end);
-    % estimate confidence intervals
+    
+    % estimate error in integral calculations numeriucally
     FitCI = nlparci(GaussFit,residual,'jacobian',jacobian);
-    GaussCI1 = FitCI(1:6,:);
-    GaussCI2 = FitCI(7:12,:);
-    offsetCI = FitCI(end,:);
+    FitCI(FitCI<0) = 0;
+    FitDeltas = diff(FitCI')' / 2 / 1.96;
+    paramValues = normrnd(0,1,size(FitDeltas,1),100).*FitDeltas + GaussFit';
+    paramValues(paramValues<0) = realmin;
+    
+    cov_mat = @(params) [params(5),    0,    0;
+                          0,    params(5),    0;
+                          0,    0,     params(6)];    
+    gauss_int = @(params) params(1)*(2*pi)^1.5 *sqrt(det(cov_mat(params)));    
+    gauss_int_vec1 = NaN(1,100);
+    gauss_int_vec2 = NaN(1,100);    
+    centroid_pos_vec = NaN(100,3);    
+    for i = 1:size(paramValues,2)
+        gauss_int_vec1(i) = gauss_int(paramValues(1:6,i));
+        gauss_int_vec2(i) = gauss_int(paramValues(7:12,i));        
+        centroid_pos_vec(i,:) = gauss_int_vec1(i)*paramValues(2:4,i) + ...
+            gauss_int_vec1(i)*paramValues(8:10,i);
+    end
+    % extract values to report
+    GaussIntegral1 = nanmean(gauss_int_vec1);
+    GaussIntegralSE1 = nanstd(gauss_int_vec1);
+    GaussIntegral2 = nanmean(gauss_int_vec2);
+    GaussIntegralSE2 = nanstd(gauss_int_vec2);
+    GaussIntegralTot = GaussIntegral1 + GaussIntegral2;
+    GaussIntegralSETot = sqrt(GaussIntegralSE1^2 + GaussIntegralSE2^2);
+    GaussSE1 = FitDeltas(1:6,:);
+    GaussSE2 = FitDeltas(7:12,:);
+    offsetSE = FitDeltas(end,:);
+    centroid_mean = nanmean(centroid_pos_vec);
+    centroid_se = nanstd(centroid_pos_vec);
+    % combine for simplicity
+    GaussIntVec = [GaussIntegral1 GaussIntegral2 GaussIntegralTot];
+    GaussIntSEVec = [GaussIntegralSE1 GaussIntegralSE2 GaussIntegralSETot];
 end
