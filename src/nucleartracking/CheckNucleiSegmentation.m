@@ -289,6 +289,19 @@ while (cc~='x')
         
     elseif (ct~=0)&(cc=='d')    %Delete all ellipses in the current frame
         Ellipses{CurrentFrame}=[];
+        elseif (ct~=0)&(cc=='D')    %Delete all ellipses in hand-drawn ROI
+        roi = drawrectangle(overlayAxes);
+        EllipsesCopy = Ellipses;
+        EllipsesCopy{CurrentFrame} = [];
+        for c = 1:NCentroids
+            r = [Ellipses{CurrentFrame}(c, 1), Ellipses{CurrentFrame}(c, 2)];
+            if ~inROI(roi, r(1), r(2))
+                EllipsesCopy{CurrentFrame}(c, :) = Ellipses{CurrentFrame}(c, :);
+            end
+        end
+        Ellipses = EllipsesCopy;
+        delete(roi);
+        clear EllipsesCopy;
     elseif (ct~=0)&(cc=='c') & CurrentFrame > 1 %copy nuclear information from previous frame
         Ellipses{CurrentFrame} = Ellipses{CurrentFrame-1};
     elseif (ct~=0)&(cc=='v') & CurrentFrame < TotalFrames %copy nuclear information from next frame
@@ -328,7 +341,11 @@ reTrackAnswer = inputdlg(userPrompt);
 if contains(reTrackAnswer,'n')
     disp('Ellipses saved. Per user input, not re-tracking. Exiting.')
 else
-   TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1); 
+  opts = {};
+   if fish
+       opts = [opts, 'markandfind'];
+   end
+   TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1, opts{:}); 
    disp('Ellipses saved. Running TrackNuclei to incorporate changes.')
 end
 
