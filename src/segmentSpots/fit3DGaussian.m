@@ -1,4 +1,4 @@
-function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE] = fit3DGaussian(snip3D,PixelSize,varargin)
+function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE,GaussIntegralRaw] = fit3DGaussian(snip3D,PixelDims,varargin)
     % INPUT ARGUMENTS:
     % snip3D: 3D array containing spot to fit. Should contain only one spot
     
@@ -17,7 +17,10 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE] = fit3DGaussian(s
     %        (8-10) y,x,and z sigma covariance coefficients
     %        (11) inferred background offset
     % take a guess at sigma
-    sigma_guess = 200/PixelSize;
+    sigma_guess = 200/PixelDims(1);
+    % set dimensions of integration volume for raw estimate
+    xy_sigma = 300 / PixelDims(1);
+    z_sigma = 750 / PixelDims(2);
     % define initial parameters
     xDim = size(snip3D,1);
     yDim = size(snip3D,2);
@@ -64,19 +67,14 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE] = fit3DGaussian(s
     GaussIntegral = gauss_int(GaussFit);
     GaussIntegralSE = nanstd(gauss_int_vec);
     
-    % perform some QC checks on fit
-    
-%     x_sigma = 2;
-%     y_sigma = 2;
-%     z_sigma = 2;
 %     % estimate raw fluorescence
-%     [x_ref_vol, y_ref_vol, z_ref_vol] = meshgrid(1:size(snip3D,1),1:size(snip3D,2),1:size(snip3D,3));
-%     dx = x_ref_vol - GaussFit(2);
-%     dy = y_ref_vol - GaussFit(3);
-%     dz = z_ref_vol - GaussFit(4);
+    [x_ref_vol, y_ref_vol, z_ref_vol] = meshgrid(1:size(snip3D,1),1:size(snip3D,2),1:size(snip3D,3));
+    dx = abs(x_ref_vol - GaussFit(2));
+    dy = abs(y_ref_vol - GaussFit(3));
+    dz = abs(z_ref_vol - GaussFit(4));
 %     
-%     wt_array = exp(-.5*((dx/x_sigma).^2 + (dy/y_sigma).^2 + (dz/z_sigma)^2));
+    wt_array = double((dx <= 1.96*xy_sigma).*(dy<=1.96*xy_sigma).*(dz<=1.96*z_sigma)); %
 %     wt_array = wt_array / sum(wt_array(:));
 %     
-%     GaussIntegralRaw = sum(wt_array(:).*snip3D(:)) - sum(numel(snip3D)*GaussFit(end)*(wt_array(:)));
+    GaussIntegralRaw = sum(wt_array(:).*double(snip3D(:))) - sum(GaussFit(end)*(wt_array(:)));
 end

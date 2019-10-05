@@ -92,7 +92,8 @@ if nSpots == 2
     SpotsFr.Fits(spot).GaussPos3DSE = centroid_se;
             
 elseif nSpots == 1      
-    [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE]  = fit3DGaussian(snip3D,pixelSize);
+    [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw]  = ...
+        fit3DGaussian(snip3D,[pixelSize zStep]);
     SpotsFr.Fits(spot).SpotFits3D = single(GaussFit);  
     SpotsFr.Fits(spot).SpotFits3DSE = single(FitDeltas);  
     x1 = single(GaussFit(3) + xm);
@@ -101,7 +102,7 @@ elseif nSpots == 1
     SpotsFr.Fits(spot).GaussPos3D = single([x1,y1,z1]);
     SpotsFr.Fits(spot).GaussPos3DSE = single(FitDeltas(2:4));
     SpotsFr.Fits(spot).gauss3DIntensity = single(GaussIntegral);
-%     SpotsFr.Fits(spot).gauss3DIntensityRaw = single(GaussRaw);
+    SpotsFr.Fits(spot).gauss3DIntensityRaw = single(GaussIntegralRaw);
     SpotsFr.Fits(spot).gauss3DIntensitySE = single(GaussIntegralSE);    
 end    
 % [SpotsFr.Fits(spot).fits3D, SpotsFr.Fits(spot).gauss3DIntensity,...
