@@ -54,7 +54,7 @@ end
 %% 
 % Use info from truncated structures to extract 3D snips for each spot and
 % fit Gaussians
-SpotsTrunc = fit3DGaussiansToAllSpots(Prefix, 1,'noSave','segmentSpots',SpotsTrunc);
+SpotsTrunc = fit3DGaussiansToAllSpots(Prefix, 1,'segmentSpots',SpotsTrunc);
 %%
 % compare 2D and 3D trajectories
 % First Pull 3D positions into Particles (makes use of pre-existing
