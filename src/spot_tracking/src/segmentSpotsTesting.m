@@ -76,15 +76,13 @@ for i = 1:numel(ParticlesTrunc)
         xPos3D(f) = SpotsTrunc(frame).Fits(index_ft).GaussPos3D(1);
         yPos3D(f) = SpotsTrunc(frame).Fits(index_ft).GaussPos3D(2);
         zPos3D(f) = SpotsTrunc(frame).Fits(index_ft).GaussPos3D(3);
-        Fluo3D(f) = SpotsTrunc(frame).Fits(index_ft).gauss3DIntensity;
-        Fluo3DRaw(f) = SpotsTrunc(frame).Fits(index_ft).gauss3DIntensityRaw;
+        Fluo3D(f) = SpotsTrunc(frame).Fits(index_ft).gauss3DIntensity;        
         Fluo2D(f) = SpotsTrunc(frame).Fits(index_ft).FixedAreaIntensity3;
     end
     ParticlesTrunc(i).xPos3D = xPos3D;
     ParticlesTrunc(i).yPos3D = yPos3D;
     ParticlesTrunc(i).zPos3D = zPos3D;
-    ParticlesTrunc(i).Fluo3D = Fluo3D;
-    ParticlesTrunc(i).Fluo3DSE = Fluo3DRaw;
+    ParticlesTrunc(i).Fluo3D = Fluo3D;    
     ParticlesTrunc(i).Fluo2D = Fluo2D;
 end
 

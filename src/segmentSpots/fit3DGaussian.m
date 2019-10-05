@@ -1,4 +1,4 @@
-function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw] = fit3DGaussian(snip3D,PixelSize,varargin)
+function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE] = fit3DGaussian(snip3D,PixelSize,varargin)
     % INPUT ARGUMENTS:
     % snip3D: 3D array containing spot to fit. Should contain only one spot
     
@@ -26,7 +26,7 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw]
     initial_parameters =[max(snip3D(:)), ceil(yDim/2),ceil(xDim/2), ceil(zDim/2),sigma_guess,sigma_guess,sigma_guess,.1,.1,.1,prctile(snip3D(:),25)];
     
     % initialize upper and lower parameter bounds
-    ub_vec = [Inf,yDim,xDim,zDim,xDim/4,xDim/4,xDim/4,xDim/4,xDim/4,xDim/4,Inf];
+    ub_vec = [Inf,yDim,xDim,zDim,xDim/8,xDim/8,xDim/8,xDim/8,xDim/8,xDim/8,Inf];
     lb_vec = [0,1,1,1,0,0,0,0,0,0,0];
     
     % check for additional arguments
@@ -63,17 +63,20 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw]
     % extract values to report
     GaussIntegral = gauss_int(GaussFit);
     GaussIntegralSE = nanstd(gauss_int_vec);
-    x_sigma = 2;
-    y_sigma = 2;
-    z_sigma = 2;
-    % estimate raw fluorescence
-    [x_ref_vol, y_ref_vol, z_ref_vol] = meshgrid(1:size(snip3D,1),1:size(snip3D,2),1:size(snip3D,3));
-    dx = x_ref_vol - GaussFit(2);
-    dy = y_ref_vol - GaussFit(3);
-    dz = z_ref_vol - GaussFit(4);
     
-    wt_array = exp(-.5*((dx/x_sigma).^2 + (dy/y_sigma).^2 + (dz/z_sigma).^2));
-    wt_array = wt_array / sum(wt_array(:));
+    % perform some QC checks on fit
     
-    GaussIntegralRaw = sum(wt_array(:).*snip3D(:)) - sum(GaussFit(end)*(wt_array(:)));
+%     x_sigma = 2;
+%     y_sigma = 2;
+%     z_sigma = 2;
+%     % estimate raw fluorescence
+%     [x_ref_vol, y_ref_vol, z_ref_vol] = meshgrid(1:size(snip3D,1),1:size(snip3D,2),1:size(snip3D,3));
+%     dx = x_ref_vol - GaussFit(2);
+%     dy = y_ref_vol - GaussFit(3);
+%     dz = z_ref_vol - GaussFit(4);
+%     
+%     wt_array = exp(-.5*((dx/x_sigma).^2 + (dy/y_sigma).^2 + (dz/z_sigma)^2));
+%     wt_array = wt_array / sum(wt_array(:));
+%     
+%     GaussIntegralRaw = sum(wt_array(:).*snip3D(:)) - sum(numel(snip3D)*GaussFit(end)*(wt_array(:)));
 end
