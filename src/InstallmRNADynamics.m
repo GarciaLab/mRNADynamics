@@ -8,6 +8,8 @@
 function configContents = InstallmRNADynamics(varargin)
   warning('off','MATLAB:MKDIR:DirectoryExists')
 
+  addpath('./utilities');
+
   ensureRightFolder();
   cd('..');
   MRNA_DYNAMICS_PATH = toSafeWindowsString(pwd);
