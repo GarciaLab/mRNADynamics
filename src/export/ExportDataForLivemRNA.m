@@ -31,6 +31,8 @@
 % 'skipExtraction': This doesn't extract LIF files to Tifs. Occasionally
 %                   useful if only the FrameInfo is desired. 
 % 'rootFolder': open a directory different from the default user directory
+%               if there is no given prefix. This is useful if you are
+%               opening data that is in a different project folder.
 % 'zslicesPadding': if series have different number of z-slices, pad them
 % with blank images so every generates series has the same amount
 % 'nuclearGUI'
@@ -45,7 +47,7 @@
 %
 % Author (contact): Hernan Garcia
 % Created: 01/01/2016
-% Last Updated: 8/30/2018
+% Last Updated: 10/13/2019
 %
 % Documented by: Armando Reimer (areimer@berkeley.edu)
 %
@@ -73,7 +75,7 @@ function Prefix = ExportDataForLivemRNA(varargin)
     lowbit] = exportDataForLivemRNA_processInputParameters(varargin{:});
 
   [rawDataPath, ~, DropboxFolder, ~, PreProcPath, rawDataFolder, Prefix, ExperimentType, Channel1, Channel2, ~,...
-    Channel3] = readMovieDatabase(Prefix);
+    Channel3] = readMovieDatabase(Prefix,'rootFolder', rootFolder);
 
 %   if ~isempty(rootFolder)
     [D, FileMode] = DetermineFileMode(rawDataFolder);

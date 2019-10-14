@@ -6,7 +6,10 @@ function ExportToAWS(Prefix)
     UserPreProcPath_Prefix = [UserPreProcPath,filesep,Prefix];
     UserProcPath_Prefix = [UserProcPath,filesep,Prefix,'_'];
     UserDynResPath_Prefix =[UserDynResPath,filesep,Prefix];
-        
+    CONFIG_CSV_PATH = 'ComputerFolders.csv';
+    configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');
+    DefaultDropboxFolder = getConfigValue(configValues, 'DropboxFolder');
+    
 %Generate AWS folders on the HGlab user
     [~, username] = system('echo %USERNAME%');
     username = strrep(username, sprintf('\n'),''); %removes new line
@@ -26,7 +29,7 @@ function ExportToAWS(Prefix)
         copyfile(UserProcPath_Prefix, [HGlabDataFolder,'\ProcessedData\',Prefix,'_'])
     end
     copyfile(UserDynResPath_Prefix, [HGlabDataFolder,'\DynamicsResults\',Prefix])
-    copyfile([UserDynResPath,'\MovieDatabase.csv'],...
+    copyfile([DefaultDropboxFolder,'\MovieDatabase.csv'],...
         [HGlabDataFolder,'\DynamicsResults\'])
     
 %Generate ComputerFolders.csv
