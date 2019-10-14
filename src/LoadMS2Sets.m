@@ -30,6 +30,7 @@ optionalResults = '';
 compareSettings = true;
 noCompiledNuclei = false;
 justPrefixes = false;
+inputOutputFits = false;
 
 for i= 1:length(varargin)
     if strcmpi(varargin{i},'optionalResults')
@@ -40,6 +41,10 @@ for i= 1:length(varargin)
     end
     if strcmpi(varargin{i}, 'justPrefixes')
         justPrefixes = true;
+    end
+    if strcmpi(varargin{i}, 'inputOutputFits')
+        inputOutputFits = true;
+        inputOutputModel = varargin{i+1};
     end
 end
 
@@ -100,6 +105,7 @@ clear MeanFitsUp
 clear MeanLinearFitsUp
 clear Schnitzcells
 clear MeanFitsMCMC
+clear InputOutputFits
 clear SingleParticleFitsMCMC
 
 
@@ -245,6 +251,16 @@ for i=1:length(CompiledSets)
             else
                 warning('MeanFitsMCMC.mat not found');
             end
+            %Fit results using InputOutputFits
+            if inputOutputFits
+                if exist([DropboxFolder,filesep,Prefix,filesep,'InputOutputFits_',...
+                        inputOutputModel,'.mat'],'file')
+                    InputOutputFits(i)=load([DropboxFolder,filesep,Prefix,filesep,...
+                        'InputOutputFits_',inputOutputModel,'.mat']);
+                else
+                    warning('MeanFitsMCMC.mat not found');
+                end
+            end
             
             %Single particle results using MeanFitsMCMC
             if exist([DropboxFolder,filesep,Prefix,filesep,'SingleParticleFitsMCMC.mat'],'file')
@@ -381,6 +397,11 @@ if ~justPrefixes
             if exist('MeanFitsMCMC','var')
                 if i<=length(MeanFitsMCMC)
                     Data(i).MeanFitsMCMC=MeanFitsMCMC(i).MCMCresults;
+                end
+            end
+            if exist('InputOutputFits','var')
+                if i<=length(InputOutputFits)
+                    Data(i).InputOutputFits=InputOutputFits(i).MCMCresults;
                 end
             end
             if exist('SingleParticleFitsMCMC','var')
