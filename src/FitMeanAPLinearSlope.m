@@ -702,6 +702,7 @@ while (cc~=13)
         end
         FigPath = [DropboxFolder,filesep,Prefix,filesep,'InitialFit_snapshots'];
         % Save the figures as .tif and .pdf
+        StandardFigure(FitFigure, FitFigure.CurrentAxes)
         saveas(FitFigure,[FigPath,filesep, 'InitialSlopeFit_AP=', num2str(APbinID(i)*100),'%' , '_NC',num2str(CurrentNC) , '.tif']); 
         saveas(FitFigure,[FigPath,filesep, 'InitialSlopeFit_AP=', num2str(APbinID(i)*100),'%' , '_NC',num2str(CurrentNC) , '.pdf']); 
         display('Plot for the fitted slope and raw data is saved')
