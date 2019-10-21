@@ -1,4 +1,4 @@
-function [avgNuclearFluo, totalNumNuclei] = extractNuclearFluoDosage(prefix)
+function [sumNuclearFluo, totalNumNuclei] = extractNuclearFluoDosage(prefix,displayFigures)
 
 close all
 
@@ -12,11 +12,11 @@ totalNumNuclei = 0;
 for i = 1:length(fileProperties)
     preProsImage=imread([preProcPath,filesep,prefix,filesep,fileProperties(i).name]);
 %     preProsSharpenImage = imsharpen(preProsImage);
-    [nuclearFluo,numNuclei] = integrateNuclearFluo(preProsImage);
+    [nuclearFluo,numNuclei] = integrateNuclearFluo(preProsImage,displayFigures);
     totalNuclearFluo = nuclearFluo + totalNuclearFluo;
     totalNumNuclei = numNuclei + totalNumNuclei;
 end
 
 
-avgNuclearFluo = totalNuclearFluo/totalNumNuclei;
+sumNuclearFluo = totalNuclearFluo;
 end
