@@ -44,7 +44,7 @@ LaserTolerance = 0.1;
 pinholeTolerance = 4;   % Number of decimals to which to round off the pinhole to consider settings the same
 cycleTimeTolerance = 2;   % Number of decimals to which to round off the cycleTime to consider settings the same
 pixelSizeZTolerance = 2;    % Number of decimals to which to round off the pixelSizeZ to consider settings the same
-justReady = false;
+justReady = false;          % I don't know what this was for ...
 
 for i= 1:length(varargin)
     if strcmpi(varargin{i},'LaserTolerance')
@@ -91,7 +91,7 @@ SizeDataTab = size(DataTab);
 if ~justReady
     NumDatasets = SizeDataTab(2) - 1;
 else
-    NumDatasets = length(prefixFilter)
+    NumDatasets = length(prefixFilter);
 end
 
 Prefixes = cell(1,NumDatasets);
@@ -144,7 +144,8 @@ for i = 1:NumDatasets
     % MT: only supports LIF files at the moment
     CurrRawDataPath = [RawDataPath, filesep, CurrPrefixFolder];
     try
-        [~, FileMode] = DetermineFileMode(CurrRawDataPath);
+        evalc('[~, FileMode] = DetermineFileMode(CurrRawDataPath)');    %Using evalc to repress displays to the command window from the function DetermineFileMode
+        %[~, FileMode] = DetermineFileMode(CurrRawDataPath);
     catch
         warning(['No tifs found for dataset ' num2str(i) '. Skipping settings extraction for this dataset.'])
         continue
@@ -158,8 +159,9 @@ for i = 1:NumDatasets
             tic
             xml_file_path = dir([CurrRawDataPath, filesep, 'MetaData', filesep, '*.xml']);
             xml_file = xml_file_path(1).name;   % By default, selects the first .xml file, probably not the best idea
-            [~, CurrSettingStruct] = readSettingsFromXML(CurrPrefix, [CurrRawDataPath,...
-                                             filesep, 'MetaData', filesep, xml_file]);
+            [~, CurrSettingStruct] = readSettingsFromXML(CurrPrefix, ...
+                                     [CurrRawDataPath, filesep, 'MetaData',...
+                                     filesep, xml_file]);
         else 
             warning('No MetaData folder found. Have you exportedDataForLivemRNA yet?')
         end
@@ -167,7 +169,8 @@ for i = 1:NumDatasets
         % Read in and add to CurrSettingsStruct any settings available in
         % BioFormats
         % Read in only the metadata without having to open the .lif files
-        MetaReader = bfGetReader([CurrRawDataPath, filesep, CurrLIF, '.lif']);
+        evalc('MetaReader = bfGetReader([CurrRawDataPath, filesep, CurrLIF, ''.lif''])');   %Using evalc to repress displays to the command window from the function bfGetReader
+        %MetaReader = bfGetReader([CurrRawDataPath, filesep, CurrLIF, '.lif']);
         MetaData = MetaReader.getMetadataStore(); 
         % Access the desired settings
         SeriesIndex = 0;
