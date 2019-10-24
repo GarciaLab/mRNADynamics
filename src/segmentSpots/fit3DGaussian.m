@@ -54,8 +54,8 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE,GaussIntegralRaw] 
     paramValues = normrnd(0,1,size(FitDeltas,1),100).*FitDeltas + GaussFit';
     paramValues(paramValues<0) = realmin;
 
-    chol_mat = @(params) [params(5),    0,    0;
-                          params(8),    params(6),    0;
+    chol_mat = @(params) [params(5),         0,           0;
+                          params(8),    params(6),        0;
                           params(9),    params(10),    params(7)];
     cov_mat = @(params) chol_mat(params)*transpose(chol_mat(params));   
     gauss_int = @(params) params(1)*(2*pi)^1.5 *sqrt(det(cov_mat(params)));
@@ -63,18 +63,16 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE,GaussIntegralRaw] 
     for i = 1:size(paramValues,2)
         gauss_int_vec(i) = gauss_int(paramValues(:,i));
     end
+    
     % extract values to report
     GaussIntegral = gauss_int(GaussFit);
     GaussIntegralSE = nanstd(gauss_int_vec);
     
-%     % estimate raw fluorescence
+    % estimate raw fluorescence
     [x_ref_vol, y_ref_vol, z_ref_vol] = meshgrid(1:size(snip3D,1),1:size(snip3D,2),1:size(snip3D,3));
     dx = abs(x_ref_vol - GaussFit(2));
     dy = abs(y_ref_vol - GaussFit(3));
     dz = abs(z_ref_vol - GaussFit(4));
-%     
-    wt_array = double((dx <= 1.96*xy_sigma).*(dy<=1.96*xy_sigma).*(dz<=1.96*z_sigma)); %
-%     wt_array = wt_array / sum(wt_array(:));
-%     
+    wt_array = double((dx <= 1.96*xy_sigma).*(dy<=1.96*xy_sigma).*(dz<=1.96*z_sigma)); 
     GaussIntegralRaw = sum(wt_array(:).*double(snip3D(:))) - sum(GaussFit(end)*(wt_array(:)));
 end
