@@ -8,7 +8,7 @@ function FitMeanAPAsymmetric(varargin)
 
 %This function performs fits to the mean fluorescence as a function of time
 %of a particular dataset.
-%OUTPUT: MeanFitsAsymmetric.mat
+%OUTPUT: MeanFitsAsymmetric.mat (old version made MeanFitsV2.mat)
 %It gives you n columns each representing a nuclear cycle and m rows each
 %representing a bin number
 
@@ -47,7 +47,12 @@ close all
 
 if ~isempty(varargin)
     Prefix=varargin{1};
-               
+    if length(varargin)>1
+        DropboxFolder = varargin{2};
+        existDropboxFolder = 1;
+    else
+        existDropboxFolder = 0;
+    end
 else
     FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
     Dashes=strfind(FolderTemp,'\');
@@ -55,8 +60,10 @@ else
 end
 
 %Get the relevant folders now:
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
-    DetermineLocalFolders(Prefix);
+if ~existDropboxFolder
+    [SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
+        DetermineLocalFolders(Prefix);
+end
         
 
 

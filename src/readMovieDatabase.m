@@ -4,8 +4,15 @@ function [rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
 = readMovieDatabase(Prefix, varargin)
     
     optionalResults = '';
-    if ~isempty(varargin)
-        optionalResults = varargin{1};
+    rootFolder = '';
+    k = 1;
+    while k <= length(varargin)
+        if strcmp(varargin{k},'rootFolder')
+            rootFolder = varargin{k+1};
+        elseif k == 1 %strcmp(varargin{k},'optionalResults')
+            optionalResults = varargin{1};
+        end
+        k = k+1;
     end
         
     %Figure out the initial folders. We'll update the Drobpox one later on in the code.
@@ -15,9 +22,15 @@ function [rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
 
 
     %Get the Prefix if is not already present
-    if isempty(Prefix)
-        rawDataFolder = uigetdir(rawDataPath,'Select folder with data');
+    if isempty(Prefix) && ~strcmp(rootFolder,'')
+        rawDataFolder = uigetdir(rootFolder,'Select folder with data');
 
+        %Get the information from the last two folders in the structure
+        SlashPositions = strfind(rawDataFolder,filesep);
+        Prefix = [rawDataFolder((SlashPositions(end-1)+1):(SlashPositions(end)-1)),'-',...
+            rawDataFolder((SlashPositions(end)+1):(end))];
+    elseif isempty(Prefix)
+        rawDataFolder = uigetdir(rawDataPath,'Select folder with data');
 
         %Get the information from the last two folders in the structure
         SlashPositions = strfind(rawDataFolder,filesep);

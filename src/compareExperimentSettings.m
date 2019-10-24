@@ -10,8 +10,12 @@
 %             DataStatus.xlsx file is saved
 % RawDataPath: Full path to RawDynamicsData folder, where all the sets to
 %              be compared are saved
-% DataType: This is a string that is identical to the name of the tab in
-%           DataStatus.xlsx that you wish to analyze.
+% DataType: This is a cell array of char variable(s) which are the exact 
+%           name(s) of the tab(s) in DataStatus.xlsx that you wish to 
+%           analyze.
+%           E.g. {'DataType'} for only one tab
+%           E.g. {'DataType1', 'DataType2', 'DataType3'} for multiple
+%           tabsst
 % 
 %
 % OPTIONS
@@ -58,7 +62,18 @@ end
 if isfile([DynamicsResultsPath,'\','DataStatus.xlsx']) || ...
                         isfile([DynamicsResultsPath,'\','DataStatus.csv'])  % NB: isfile doesn't let you use * to check for multiple file extensions
     DataStatusDir = dir([DynamicsResultsPath,filesep,'DataStatus.*']);
-    [~,DataTab]=xlsread([DynamicsResultsPath,filesep,DataStatusDir(1).name],DataType);
+    
+    if isa(DataType, 'char') || ~isa(DataType, 'cell')
+        error('Wrong data type for DataType. It must be a cell array of single quote string(s), e.g. {''DataType''} or {''DataType1'', ''DataType2''}')
+    end
+    
+    [~,DataTab]=xlsread([DynamicsResultsPath,filesep,DataStatusDir(1).name],DataType{1,1});
+    for i = 2:numel(DataType)
+        [~,TempDataTab]=xlsread([DynamicsResultsPath,filesep,DataStatusDir(1).name],DataType{1,i});
+        numNewSets = size(TempDataTab,2) - 1;
+        DataTab(:,end+1:end+numNewSets) = TempDataTab(:,2:end);
+    end
+        
 else
     error(['DataStatus.xlsx does not exist in the indicated folder path, ' ...
             DynamicsResultsPath, '.'])
@@ -117,6 +132,9 @@ for i = 1:NumDatasets
     % Need to regenerate the folder paths from the Prefixes
     CurrPrefix = char(Prefixes(i));
     DashPositions = strfind(CurrPrefix,'-');
+    if numel(DashPositions) < 3
+        error('Check that the Prefix entry for this dataset contains a dash (and not a slash) after the date.')
+    end
     CurrPrefixFolder = [CurrPrefix(1:(DashPositions(3)-1)),filesep,...
             CurrPrefix((DashPositions(3)+1):end)];
     PrefixFolders(i,1) = {CurrPrefixFolder};
@@ -125,7 +143,12 @@ for i = 1:NumDatasets
     % Check which type of microscopy data we have
     % MT: only supports LIF files at the moment
     CurrRawDataPath = [RawDataPath, filesep, CurrPrefixFolder];
-    [~, FileMode] = DetermineFileMode(CurrRawDataPath);
+    try
+        [~, FileMode] = DetermineFileMode(CurrRawDataPath);
+    catch
+        warning(['No tifs found for dataset ' num2str(i) '. Skipping settings extraction for this dataset.'])
+        continue
+    end
     
     if strcmpi(FileMode, 'LIFEXport')
         CurrSettingStruct = [];
