@@ -98,7 +98,7 @@ elseif nSpots == 1
     SpotsFr.Fits(spot).SpotFits3DSE = single(FitDeltas);  
     x1 = single(GaussFit(3) + xm - 1);
     y1 = single(GaussFit(2) + ym - 1);
-    z1 = single(GaussFit(4) + zm -1);
+    z1 = single(GaussFit(4) + zm - 1);
     SpotsFr.Fits(spot).GaussPos3D = single([x1,y1,z1]);
     SpotsFr.Fits(spot).GaussPos3DSE = single(FitDeltas(2:4));
     SpotsFr.Fits(spot).gauss3DIntensity = single(GaussIntegral);

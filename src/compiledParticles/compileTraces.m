@@ -168,11 +168,14 @@ for ChN=1:NChannels
                     CompiledParticles{ChN}(k).fittedTon = [];
                 end
                 %Extract position info and general Gauss3D fit info
-                [~,gx_vec,gy_vec,gz_vec,g_fits_cell]=...
+                [~,gx_vec,gy_vec,gz_vec,g_fits_cell,f3_vec,f3_raw_vec]=...
                     getGauss3DFitInfo(k,CompiledParticles{ChN},Spots{ChN});
                 if ~all(isnan(gx_vec))
                     CompiledParticles{ChN}(k).xPosGauss3D = gx_vec;
                     CompiledParticles{ChN}(k).yPosGauss3D = gy_vec;
+                    CompiledParticles{ChN}(k).zPosGauss3D = gz_vec;
+                    CompiledParticles{ChN}(k).Fluo3DGauss = f3_vec;
+                    CompiledParticles{ChN}(k).Fluo3DRaw = f3_raw_vec;
                     CompiledParticles{ChN}(k).zPosGauss3D = gz_vec;
                     CompiledParticles{ChN}(k).fitParamsGauss3D = g_fits_cell;
                 end
