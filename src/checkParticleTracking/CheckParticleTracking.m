@@ -656,7 +656,7 @@ while (cc ~= 'x')
     CurrentZ, CurrentZIndex, PreviousParticle, CurrentParticle, ...
     PreviousChannel, Particles, Frames, fish};
         if exist('MaxZProfile', 'var')
-            plotzvars = [plotzvars, 'MaxZProfile'];
+            plotzvars = [plotzvars, MaxZProfile];
         end
         [MaxZProfile, Frames] = plotZFigures(plotzvars{:});
 

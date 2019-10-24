@@ -12,7 +12,7 @@ if ~isempty(strfind(seriesPropertiesXML(1).name, 'Mark_and_Find'))
     markandfind = true;
 end
 
-[~, ~, LIFImages, LIFMeta] = loadLIFFile(rawDataFolder);
+[LIFImages, LIFMeta] = loadLIFFile(rawDataFolder);
 
 %Obtains frames information
 [NSeries, NFrames, NSlices, NPlanes, NChannels, Frame_Times] = getFrames(LIFMeta);
