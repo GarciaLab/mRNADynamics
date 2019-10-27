@@ -40,7 +40,7 @@ end
 
 %%%%%    BRIGHTEST Z-TRACE PLOT   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~strcmpi(ExperimentType,'inputoutput') & ~fish
-        
+    MaxZProfile = [];
     %Only update the trace information if we have switched particles
     if (CurrentParticle~=PreviousParticle)||~exist('MaxZProfile', 'var')||CurrentChannel ~= PreviousChannel
         PreviousParticle=CurrentParticle;
