@@ -290,7 +290,7 @@ save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
     if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
         %Change the name of the Circle variable to make it more understandable when
         %loaded independently
-        IntegrationArea=Circle;
+%         IntegrationArea=Circle;
         save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells','IntegrationArea');
     else
         save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells');
