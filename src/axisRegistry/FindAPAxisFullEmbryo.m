@@ -40,7 +40,8 @@ EmbryoName=Prefix(Dashes(3)+1:end);
 %Figure out what type of experiment we have. Note: we name the var "DateFromDateColumn" to avoid shadowing previously defined "Date" var.
 [DateFromDateColumn, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
 Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3,~,~, ~, ~]...
+    = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 %Determine whether we're dealing with 2-photon data from Princeton, LSM, or
 %LIF data. 2-photon data uses TIF files. In LSM mode multiple files will be
