@@ -28,7 +28,7 @@ numFrames = length(FrameInfo);
 %Parse the channel information for the different experiment types
 if strcmpi(ExperimentType,'inputoutput')
     
-    InputChannelTemp1 = strfind({lower(Channels{1}),lower(Channels{1}), lower(Channels{1})},'input');
+    InputChannelTemp1 = strfind({lower(Channels{1}),lower(Channels{2}), lower(Channels{3})},'input');
     InputChannelTemp2=~cellfun(@isempty,InputChannelTemp1);
     InputChannel = find(InputChannelTemp2);
     
