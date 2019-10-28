@@ -292,7 +292,7 @@ save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
         %loaded independently        
 %         IntegrationArea=Circle; NL: removed this on 2019.10.28. Not sure
 %         what it is supposed to do
-        save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells'0;%,'IntegrationArea');
+        save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells');%,'IntegrationArea');
     else
         save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells');
     end
