@@ -289,9 +289,10 @@ save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
 
     if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
         %Change the name of the Circle variable to make it more understandable when
-        %loaded independently
-%         IntegrationArea=Circle;
-        save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells','IntegrationArea');
+        %loaded independently        
+%         IntegrationArea=Circle; NL: removed this on 2019.10.28. Not sure
+%         what it is supposed to do
+        save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells'0;%,'IntegrationArea');
     else
         save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells');
     end
