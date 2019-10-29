@@ -69,7 +69,7 @@ relative_errors = single(abs(errors./single_fit));
 residual = single(residual);
 
 fits = single(single_fit);
-GaussianIntensity = single(sum(sum(singleGaussian(single_fit) + snippet - single_fit(6))));
+GaussianIntensity = single(sum(sum(singleGaussian(single_fit) + snippet - single_fit(7))));
 
 %Display
 gaussian = single(singleGaussian(single_fit));
