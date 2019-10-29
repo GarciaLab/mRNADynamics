@@ -170,7 +170,8 @@ for ChN=1:NChannels
                 %Extract position info and general Gauss3D fit info
                 [~,gx_vec,gy_vec,gz_vec,g_fits_cell,f3_vec,f3_raw_vec]=...
                     getGauss3DFitInfo(k,CompiledParticles{ChN},Spots{ChN});
-                if ~all(isnan(gx_vec))
+                threeDFlag = ~all(isnan(gx_vec));
+                if threeDFlag
                     CompiledParticles{ChN}(k).xPosGauss3D = gx_vec;
                     CompiledParticles{ChN}(k).yPosGauss3D = gy_vec;
                     CompiledParticles{ChN}(k).zPosGauss3D = gz_vec;
@@ -484,12 +485,15 @@ for ChN=1:NChannels
                         [x,y,z]=SpotsXYZ(Spots{ChN}(spotFrame));
 %                             [x,y,z]=SpotsXYZ(Spots{ChN}(spotFrame), true);
                         if ~isempty(x)
-%                             xTrace=x(CompiledParticles{ChN}(k).Index(j));
-%                             yTrace=y(CompiledParticles{ChN}(k).Index(j));
-%                             zTrace=z(CompiledParticles{ChN}(k).Index(j));
+                            if threeDFlag
                                 xTrace = round(CompiledParticles{ChN}(k).xPosGauss3D(j));
                                 yTrace = round(CompiledParticles{ChN}(k).yPosGauss3D(j));
                                 zTrace = round(CompiledParticles{ChN}(k).zPosGauss3D(j));
+                            else
+                                xTrace=x(CompiledParticles{ChN}(k).Index(j));
+                                yTrace=y(CompiledParticles{ChN}(k).Index(j));
+                                zTrace=z(CompiledParticles{ChN}(k).Index(j));
+                            end
                                 try
                             Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
                                 FilePrefix,iIndex(CompiledParticles{ChN}(k).Frame(j),NDigits),'_z',iIndex(zTrace,2),...
