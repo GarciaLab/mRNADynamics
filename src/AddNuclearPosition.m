@@ -52,11 +52,11 @@ APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
 for i=1:length(schnitzcells)
     %Angle between the x-axis and the particle using the A position as a
     %zero
-    Angles=atan2((schnitzcells(i).ceny-coordAZoom(2)),...
-        (schnitzcells(i).cenx-coordAZoom(1)));
+    Angles=atan2((double(schnitzcells(i).ceny)-coordAZoom(2)),...
+        (double(schnitzcells(i).cenx)-coordAZoom(1)));
 
     %Distance between the points and the A point
-    Distances=sqrt((coordAZoom(2)-schnitzcells(i).ceny).^2+(coordAZoom(1)-schnitzcells(i).cenx).^2);
+    Distances=sqrt((coordAZoom(2)-double(schnitzcells(i).ceny)).^2+(coordAZoom(1)-double(schnitzcells(i).cenx)).^2);
     APPositions=Distances.*cos(Angles-APAngle);
     schnitzcells(i).APpos=APPositions/APLength;
 
