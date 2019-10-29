@@ -91,7 +91,7 @@ for i=1:length(Thresholds)
                 %compare schnitz s1 and s2
                 if schnitzcells(s1).Valid == 1
                     if LastFrame1+1 == FirstFrame2 && ...
-                            pdist([FinalPosition1;InitialPosition2],'euclidean') < Radius*(threshold)
+                            pdist([double(FinalPosition1);double(InitialPosition2)],'euclidean') < Radius*(threshold) %casting to doubles to suppress obnoxious "Converting uint16 data to double" warnings
                         % display('overlapping schnitz found')
                         schnitzcells(s2).Valid = 0; %mark so we don't consider it in the future
                         schnitzcells(s2).StitchedTo = [schnitzcells(s2).StitchedTo s1];
