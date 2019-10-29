@@ -19,10 +19,12 @@ for i=1:length(PlotHandle)
     end
     
 
-    %Marker style. Do this only if we're not dealing with a histogram or
-    %bar plot
-    if ~strcmp(get(PlotHandle(i),'Type'),'histogram') && ~strcmpi(get(PlotHandle(i),'Type'),'image')...
-            &&  ~strcmp(get(PlotHandle(i),'Type'),'bar')
+    %Marker style. Do this only if we're not dealing with a histogram, bar
+    %plot, image, or area plot
+    if ~strcmp(get(PlotHandle(i),'Type'),'histogram') && ...
+                        ~strcmpi(get(PlotHandle(i),'Type'),'image') && ...
+                        ~strcmp(get(PlotHandle(i),'Type'),'bar') && ...
+                        ~strcmpi(get(PlotHandle(i),'Type'),'area')
         if ~strcmp(get(PlotHandle(i),'Marker'),'none')
             if get(PlotHandle(i),'Marker')=='.'
                 set(PlotHandle(i),'MarkerSize',15)

@@ -36,10 +36,8 @@ disp(['Tracking nuclei on ', Prefix, '...']);
 
 
 
-[~, ProcPath, DropboxFolder, ~, PreProcPath, ~, ~] = DetermineLocalFolders(Prefix);
+[~, ProcPath, DropboxFolder, ~, PreProcPath, configValues, ~] = DetermineLocalFolders(Prefix);
 
-CONFIG_CSV_PATH = 'ComputerFolders.csv';
-configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');
 DefaultDropboxFolder = getConfigValue(configValues, 'DropboxFolder');
 
 %Determine division times
