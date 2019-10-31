@@ -387,7 +387,7 @@ if APExperiment || DVExperiment
     APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
 end
 
-DVLength = APLength/2; 
+%DVLength = APLength/2; 
 EllipsePos_DV = [];
 if HistoneChannel && (APExperiment || DVExperiment)
     %The information in Ellipses is
