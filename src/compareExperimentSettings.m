@@ -19,40 +19,49 @@
 % 
 %
 % OPTIONS
+% 'CompareDecimals': Should be followed by an integer between 1 and 4,
+%                    indicating the number of decimal places you want
+%                    compared to determine if the settings match
 % 'LaserTolerance': Should be followed by a number between 0 and 1
 %                   indicating the percent tolerance that is allowed when 
 %                   comparing the laser power between datasets. The default
 %                   tolerance is 0.10.
+% 'JustReady': Only compares the settings of Prefixes that have "Ready" or
+%              "ApproveAll" in the Compile
 %
 % OUTPUT
-% ComparedSettings: Returns a ?? containing booleans indicating whether all
-%                   settings match.
-% RawSettings: Returns a table containing all the microsocpe settings for
-%           the datasets found in the indicated DataStatus tab, allowing  
-%           for easy visual comparison.
+% ComparedSettings: Returns a structure containing booleans indicating 
+%                   which settings match.                 
+% RawSettings: Returns a structure containing all the microsocpe settings 
+%           for the datasets found in the indicated DataStatus tab,   
+%           allowing for easy visual comparison.
 % 
 %
 % Author (contact): Meghan Turner (meghan_turner@berkeley.edu)
 % Created: 2019-04-30
-% Last Updated: 2019-05-07
+% Last Updated: 2019-10-31
 %
 % Documented by: Meghan Turner (meghan_turner@berkeley.edu)
 
 function [ComparedSettings,RawSettings] = compareExperimentSettings(DynamicsResultsPath,RawDataPath,DataType,varargin)
- 
-LaserTolerance = 0.1;
-pinholeTolerance = 4;   % Number of decimals to which to round off the pinhole to consider settings the same
-cycleTimeTolerance = 2;   % Number of decimals to which to round off the cycleTime to consider settings the same
-pixelSizeZTolerance = 2;    % Number of decimals to which to round off the pixelSizeZ to consider settings the same
-justReady = false;          % I don't know what this was for ...
+
+%Tolerances - number of decimals to which to round off any setting to consider settings the same
+CompareDecimals = 2;
+pinholeDecimals = 4; %This needs to be fixed
+
+LaserTolerance = 0.1;   % Percent tolerance (as opposed to decimal tolerance above)
+justReady = false;      
 
 for i= 1:length(varargin)
-    if strcmpi(varargin{i},'LaserTolerance')
+    if strcmpi(varargin{i},'CompareDecimals')
+        CompareDecimals = varargin{i+1};
+    elseif strcmpi(varargin{i},'LaserTolerance')
         LaserTolerance = varargin{i+1};
         if LaserTolerance < 0 || LaserTolerance > 1
             error('LaserTolerance must be between 0 and 1.')
         end
-    elseif strcmpi(varargin{i}, 'justReady')
+    
+    elseif strcmpi(varargin{i}, 'JustReady')
         justReady = true;
     end
 end
@@ -79,19 +88,18 @@ else
             DynamicsResultsPath, '.'])
 end
 
-CompileRow=find(strcmpi(DataTab(:,1),'AnalyzeLiveData Compile Particles')|...
-    strcmpi(DataTab(:,1),'CompileParticles')|...
-    strcmpi(DataTab(:,1),'CompileNuclearProtein'));
-prefixFilter=find(strcmpi(DataTab(CompileRow,:),'READY')|strcmpi(DataTab(CompileRow,:),'ApproveAll'));
-
 %Find and load the different prefixes
 PrefixRow = find(strcmpi(DataTab(:,1),'Prefix:'));
 SizeDataTab = size(DataTab);
-
-if ~justReady
-    NumDatasets = SizeDataTab(2) - 1;
-else
+%Check if we only need to load the datasets marked as "ready"
+if justReady
+    CompileRow=find(strcmpi(DataTab(:,1),'AnalyzeLiveData Compile Particles')|...
+                    strcmpi(DataTab(:,1),'CompileParticles')|...
+                    strcmpi(DataTab(:,1),'CompileNuclearProtein'));
+    prefixFilter=find(strcmpi(DataTab(CompileRow,:),'READY')|strcmpi(DataTab(CompileRow,:),'ApproveAll'));
     NumDatasets = length(prefixFilter);
+else
+    NumDatasets = SizeDataTab(2) - 1;
 end
 
 Prefixes = cell(1,NumDatasets);
@@ -128,6 +136,8 @@ RawSettings = struct('Prefix','', 'pixelDwellTime',[], ...                  % In
                     'xGalvoMovementModeName','', 'SizeX',[], 'SizeY',[],... 
                     'SizeZ',[], 'PixelSizeX',[], 'PixelSizeY',[], ...
                     'PixelSizeZ',[]);
+DatasetCounter = 1; %Counter only advances when dataset exists. Prevents empty entries in RawSettings, which can produce false negatives in ComparedSettings
+
 for i = 1:NumDatasets
     % Need to regenerate the folder paths from the Prefixes
     CurrPrefix = char(Prefixes(i));
@@ -147,7 +157,7 @@ for i = 1:NumDatasets
         evalc('[~, FileMode] = DetermineFileMode(CurrRawDataPath)');    %Using evalc to repress displays to the command window from the function DetermineFileMode
         %[~, FileMode] = DetermineFileMode(CurrRawDataPath);
     catch
-        warning(['No tifs found for dataset ' num2str(i) '. Skipping settings extraction for this dataset.'])
+        warning(['Either dataset does not exist or no tifs found for dataset ' num2str(i) '. Skipping settings extraction for this dataset.'])
         continue
     end
     
@@ -163,7 +173,7 @@ for i = 1:NumDatasets
                                      [CurrRawDataPath, filesep, 'MetaData',...
                                      filesep, xml_file]);
         else 
-            warning('No MetaData folder found. Have you exportedDataForLivemRNA yet?')
+            error('No MetaData folder found. Have you exportedDataForLivemRNA yet?')
         end
         
         % Read in and add to CurrSettingsStruct any settings available in
@@ -184,11 +194,11 @@ for i = 1:NumDatasets
         MetaReader.close;
         
         % Add current settings to the master RawSettings structure
-        RawSettings(i) = CurrSettingStruct;
-        
+        RawSettings(DatasetCounter) = CurrSettingStruct;
     else
         error('Only Leica datasets currently supported by this script.')
     end
+    DatasetCounter = DatasetCounter + 1;
     disp(['Settings for dataset ' num2str(i) ' of ' num2str(NumDatasets) ' extracted.'])
 end
 
@@ -202,8 +212,8 @@ ComparedSettings.lineAccumulation = isempty(nonzeros(diff([RawSettings.lineAccum
 ComparedSettings.frameAccumulation = isempty(nonzeros(diff([RawSettings.frameAccumulation])));
 ComparedSettings.frameAverage = isempty(nonzeros(diff([RawSettings.frameAverage])));
 ComparedSettings.emWaveForPinAiryCalc = isempty(nonzeros(diff([RawSettings.emWaveForPinAiryCalc])));
-ComparedSettings.pinholeAiry = isempty(nonzeros(diff([RawSettings.pinholeAiry])));
-ComparedSettings.pinhole = isempty(nonzeros(diff(round([RawSettings.pinhole],pinholeTolerance))));  %Need to round to prevent incorrect falses
+ComparedSettings.pinholeAiry = isempty(nonzeros(diff(round([RawSettings.pinholeAiry],CompareDecimals))));
+ComparedSettings.pinhole = isempty(nonzeros(diff(round([RawSettings.pinhole],pinholeDecimals))));  %Need to round to prevent incorrect falses
 ComparedSettings.rotatorAngle = isempty(nonzeros(diff([RawSettings.rotatorAngle])));
 ComparedSettings.phaseX = isempty(nonzeros(diff([RawSettings.phaseX])));
 
@@ -225,9 +235,9 @@ ComparedSettings.immersion = isempty(nonzeros(~strcmp({RawSettings.immersion}, .
 
 ComparedSettings.objectiveNumber = isempty(nonzeros(diff([RawSettings.objectiveNumber])));
 ComparedSettings.magnification = isempty(nonzeros(diff([RawSettings.magnification])));
-ComparedSettings.frameTime = isempty(nonzeros(diff([RawSettings.frameTime])));
+ComparedSettings.frameTime = isempty(nonzeros(diff(round([RawSettings.frameTime],CompareDecimals))));
 % ComparedSettings.completeTime = isempty(nonzeros(diff([RawSettings.completeTime])));
-ComparedSettings.cycleTime = isempty(nonzeros(diff(round([RawSettings.cycleTime],cycleTimeTolerance))));    %Need to round to prevent incorrect falses
+ComparedSettings.cycleTime = isempty(nonzeros(diff(round([RawSettings.cycleTime],CompareDecimals))));    %Need to round to prevent incorrect falses
 
 ComparedSettings.zStackDirectionModeName = ... 
     isempty(nonzeros(~strcmp({RawSettings.zStackDirectionModeName}, ...
@@ -244,9 +254,9 @@ ComparedSettings.SizeY = isempty(nonzeros(diff([RawSettings.SizeY])));
 ComparedSettings.SizeZ = isempty(nonzeros(diff([RawSettings.SizeZ])));
 ComparedSettings.PixelSizeX = isempty(nonzeros(diff([RawSettings.PixelSizeX])));
 ComparedSettings.PixelSizeY = isempty(nonzeros(diff([RawSettings.PixelSizeY])));
-ComparedSettings.PixelSizeZ = isempty(nonzeros(diff(round([RawSettings.PixelSizeZ],pixelSizeZTolerance)))); %Need to round to prevent incorrect falses
+ComparedSettings.PixelSizeZ = isempty(nonzeros(diff(round([RawSettings.PixelSizeZ],CompareDecimals)))); %Need to round to prevent incorrect falses
 
-% Print of comparison and final warnings
+% Display comparison structure and final warnings
 ComparedSettings
 disp('Settings compared.')
 disp('If any settings display a zero, check the RawSettings structure to identify the nonmatching dataset.')
