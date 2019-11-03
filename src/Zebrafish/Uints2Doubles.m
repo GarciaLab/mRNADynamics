@@ -52,7 +52,7 @@ for i=1:length(Spots);
 end
  disp('Saving Spots.mat...');
  save([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'],'Spots');
-%  save([DropboxFolder,filesep,Prefix,filesep,'SpotFields.mat'],'Field16s','Field8s');
+  save([DropboxFolder,filesep,Prefix,filesep,'SpotFields.mat'],'Field16s','Field8s');
  
  disp('Loading Schnitzcells.mat...');
  load([DropboxFolder,filesep,Prefix,filesep,Prefix '_lin.mat']);
@@ -72,5 +72,5 @@ end
 
  disp('Saving Schnitzcells.mat...'); 
  save([DropboxFolder,filesep,Prefix,filesep,Prefix '_lin.mat'],'schnitzcells');
-%  save([DropboxFolder,filesep,Prefix,filesep,'SchFields'],'Field16Schs')
+  save([DropboxFolder,filesep,Prefix,filesep,'SchFields'],'Field16Schs')
 end
