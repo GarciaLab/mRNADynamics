@@ -23,3 +23,4 @@ Particles(end).Approved=false;
  %this because it was causing bugs. 
 Particles(end).xPos=x;
 Particles(end).yPos=y;
+particles(end).zPos=z;
