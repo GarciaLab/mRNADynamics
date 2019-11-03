@@ -20,7 +20,7 @@ Particles(end).Approved=false;
 
  %HG + AR: We deleted this because we don't assign xPos and yPos for the
  %Particles that are detected in the first place.%AR 8/16/2018- reinstated
- %this because it was causing bugs. 
+ %this because it was causing bugs.  
 Particles(end).xPos=x;
 Particles(end).yPos=y;
-particles(end).zPos=z;
+Particles(end).zPos=z;
