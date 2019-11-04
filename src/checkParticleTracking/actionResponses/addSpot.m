@@ -172,6 +172,19 @@ else
             end
         end
     end
+    %Convert the uints to doubles
+    FitFields=fieldnames;
+    for a=1:length(Spots{1});
+    for j=1:length(Spots{1}(a).Fits);
+        for m=1:length(FitFields);
+            if isfield(Spots{1}(a).Fits(j),(FitFields{m}))
+            if isa(Spots{1}(a).Fits(j).(FitFields{m}),'uint16')||isa(Spots{1}(a).Fits(j).(FitFields{m}),'uint8');
+                Spots{1}(a).Fits(j).(FitFields{m})=double(Spots{1}(a).Fits(j).(FitFields{m}));        
+            end
+            end
+        end
+    end
+    end
 end
 clear breakflag;
 
