@@ -729,7 +729,7 @@ if ~NoAP
                 if correctDV
                     %ventral midline is dv_correction pixels away from the
                     %AP axis. 
-                    Particles{ChN}(i).DVpos=abs(DVPositions-DV_correction)/DVLength;;
+                    Particles{ChN}(i).DVpos=abs(DVPositions-DV_correction)/DVLength;
                     %so DVpos is pixels away from the ventral midline
                     %across the blastoderm.
                 else

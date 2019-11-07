@@ -92,7 +92,6 @@ end
 
 ProcessedDataFolder = [ProcPath, filesep, Prefix, '_'];
 DogOutputFolder = [ProcessedDataFolder, filesep, 'dogs'];
-mkdir(DogOutputFolder)
 
 microscope = FrameInfo(1).FileMode;
 
@@ -103,11 +102,14 @@ for i = 1:size(FrameInfo,2)
     end
 end
 
+nCh = length(spotChannels);
+
 if numFrames == 0
-    numFrames = length(FrameInfo);
+%     numFrames = length(FrameInfo);
+    d = dir([DogOutputFolder,filesep,'*.tif']);
+    numFrames = length(d)/(zSize*nCh);
 end
 
-nCh = length(spotChannels);
 
 [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, FrameInfo);
 
