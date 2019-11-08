@@ -201,15 +201,7 @@ for i=1:length(CompiledSets)
             %         elseif strcmpi(ExperimentAxis,'ap')|strcmpi(ExperimentAxis,'dv')
             %             error(['APDetection.mat not found despite this experiment being on the ',ExperimentAxis,' axis'])
             %         end
-            
-            
-            
-            if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'file')
-                APDivisions(i)=load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat']);
-            else
-                warning('APDivisions.mat not found.')
-            end
-            
+
             
             %Fit results assuming the same slopes
             if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'],'file')
@@ -322,6 +314,14 @@ for i=1:length(CompiledSets)
             end
         end
         
+        % Here are the fields that we need to load in case there's no
+        % CompiledParticles. i.e. Only CompiledNuclei.mat exists.
+        % Load APDivisions if it exists
+        if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'file')
+            APDivisions(i)=load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat']);
+        else
+            warning('APDivisions.mat not found.')
+        end
         
         %Load CompiledNuclei if it exists
         if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],'file') & ~noCompiledNuclei

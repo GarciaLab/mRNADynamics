@@ -98,6 +98,9 @@ end
 nCh = length(spotChannels);
 
 if ~Weka && ~justTifs
+     if ~exist([PreProcPath, filesep, Prefix, filesep, 'stacks'], 'dir')
+        generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,spotChannels, zSize, initialFrame);
+    end
     dogs = generateDifferenceOfGaussianImages(ProcPath, ExperimentType, FrameInfo, spotChannels,...
         numFrames, displayFigures, zSize, PreProcPath,...
         Prefix, filterType, highPrecision, sigmas, app,...

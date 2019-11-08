@@ -11,6 +11,7 @@ SpotFilter(CurrentFrame,IndexOutput)=1;
 [x,y,z]=SpotsXYZ(Spots(CurrentFrame));
 x=x(IndexOutput);
 y=y(IndexOutput);
+z=z(IndexOutput)
 
 %Add this spot as a new particle to the end of the Particles structure
 Particles(end+1).Frame=CurrentFrame;
@@ -23,3 +24,4 @@ Particles(end).Approved=false;
  %this because it was causing bugs. 
 Particles(end).xPos=x;
 Particles(end).yPos=y;
+Particles(end).zPos=z

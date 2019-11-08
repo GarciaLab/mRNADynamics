@@ -206,7 +206,9 @@ for ChN=1:NChannels
             StandardFigure(PlotHandle,gca)
             xlim([0,ElapsedTime(end)])
             ylim([0,1.01])
-            saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsTimeVsDV.tif'])
+            try
+                saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsTimeVsDV.tif'])
+            end
         end
 
 
@@ -301,8 +303,10 @@ for ChN=1:NChannels
         ylabel('Active nuclei')
         title('Number active nuclei')
         legend('nc12', 'nc13', 'nc14')
-        saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsDV_ch',...
-            iIndex(ChN,2),'.tif'])
+        try
+            saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'ProbVsDV_ch',...
+                iIndex(ChN,2),'.tif'])
+        end
 
     end
 
@@ -470,8 +474,10 @@ for ChN=1:NChannels
     %legend('nc12', 'nc13', 'nc14')
     %legend('nc13', 'nc14')
     legend('nc14')
-    saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'FracVsDV_ch',...
-            iIndex(ChN,2),'.tif'])
+    try
+        saveas(gca,[DropboxFolder,filesep,Prefix,filesep,'Probabilities',filesep,'FracVsDV_ch',...
+                iIndex(ChN,2),'.tif'])
+    end
 end
 end
 

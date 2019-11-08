@@ -30,7 +30,7 @@ for e = 1:length(allData)
     
     for s = 1:length(schnitzcells)
 		midFrame = ceil(length(schnitzcells(s).frames)/2);
-        dif = schnitzcells(s).frames(midFrame) - ncs;
+        dif = double(schnitzcells(s).frames(midFrame)) - ncs;
         cycle = max(find(dif>0));
         schnitzcells(s).cycle = cycle;    
     end

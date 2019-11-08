@@ -12,7 +12,7 @@ EmbryoName=Prefix(Dashes(3)+1:end);
 rawPrefixPath = [RawDynamicsPath,filesep,projectDate,filesep,EmbryoName,filesep];
 
 
-DTIF=dir([rawPrefixPath,'*.tif']);
+DTIF=[dir([rawPrefixPath,'*.tif']), dir([rawPrefixPath,'*.jpg'])];
 DLSM=dir([rawPrefixPath,'*.lsm']);
 DCZI=dir([rawPrefixPath,'*.czi']);
 DLIF=dir([rawPrefixPath,'*.lif']);
