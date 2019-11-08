@@ -91,6 +91,8 @@ end
 
 if save_flag
     save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3');
+    Spots3DToken = now;
+    save([DataFolder,filesep,'Spots3DToken.mat'],'Spots3DToken')
     disp('3D fitting done on all spots.')
     close(waitbarFigure);
 end
