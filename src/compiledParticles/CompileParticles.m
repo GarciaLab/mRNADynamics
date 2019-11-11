@@ -689,7 +689,8 @@ savedVariables = [savedVariables,'APFilter', 'APbinArea', 'APbinID', 'AllTracesA
 
 save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
     savedVariables{:},'-v7.3');
-
+CompiledParticlesToken = now;
+    save([DataFolder,filesep,'CompiledParticlesToken.mat'],'CompiledParticlesToken')
 
 %%
 if DVExperiment
