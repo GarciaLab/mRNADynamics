@@ -56,13 +56,13 @@ for channelIndex = 1:nCh
     
     
     if ~filter3D | strcmpi(gpu, 'noGPU')
-        for currentFrame = 1:numFrames
+        parfor currentFrame = 1:numFrames
             
             if ~filter3D
                 for zIndex = 1:zSize
                     generateDoGs(DogOutputFolder, PreProcPath, Prefix, currentFrame, nameSuffix, filterType,...
                         sigmas, filterSize, ...
-                        highPrecision, zIndex, displayFigures, app, numFrames);
+                        highPrecision, zIndex, displayFigures, app, numFrames, saveType);
                 end
             else
                 rawStackName = [stacksPath, filesep, iIndex(currentFrame, 3), nameSuffix, '.tif'];
@@ -70,7 +70,7 @@ for channelIndex = 1:nCh
                 
                 generateDoGs(DogOutputFolder, PreProcPath, Prefix, currentFrame, nameSuffix, filterType,...
                     sigmas, filterSize, ...
-                    highPrecision, -1, displayFigures, app, numFrames, im, zSize, zStep);
+                    highPrecision, -1, displayFigures, app, numFrames, saveType, im, zSize, zStep);
             end
             
             send(q, currentFrame);
@@ -121,7 +121,7 @@ end
 
 
 function generateDoGs(DogOutputFolder, PreProcPath, Prefix, currentFrame, nameSuffix, filterType,...
-    sigmas, filterSize, highPrecision, zIndex, displayFigures, app, numFrames, varargin)
+    sigmas, filterSize, highPrecision, zIndex, displayFigures, app, numFrames, saveType, varargin)
 
 if ~isempty(varargin)
     im = varargin{1};
@@ -153,17 +153,26 @@ end
 
 if dim == 2
     dog = padarray(dog(filterSize:end - filterSize - 1, filterSize:end - filterSize - 1), [filterSize, filterSize], 0,'both');
-    dog_name = ['DOG_', Prefix, '_', iIndex(currentFrame, 3), '_z', iIndex(zIndex, 2), nameSuffix, '.tif'];
+    dog_name = ['DOG_', Prefix, '_', iIndex(currentFrame, 3), '_z', iIndex(zIndex, 2), nameSuffix, saveType];
     dog_full_path = [DogOutputFolder, filesep, dog_name];
-    imwrite(uint16(dog), dog_full_path)
+    if strcmpi(saveType, '.tif')
+        imwrite(uint16(dog), dog_full_path)
+    elseif strcmpi(saveType, '.mat')
+        save(dog_full_path, 'dog');
+    end
 elseif dim == 3
     
     dog = cat(3, zeros(size(dog, 1), size(dog, 2)), dog);
     dog(:, :, zSize) = zeros(size(dog, 1), size(dog, 2));
     for z = 1:zSize
-        dog_name = ['DOG_', Prefix, '_', iIndex(currentFrame, 3), '_z', iIndex(z, 2), nameSuffix, '.tif'];
+        dog_name = ['DOG_', Prefix, '_', iIndex(currentFrame, 3), '_z', iIndex(z, 2), nameSuffix, saveType];
         dog_full_path = [DogOutputFolder, filesep, dog_name];
-        imwrite(uint16(dog(:,:, z)), dog_full_path);
+        if strcmpi(saveType, '.tif')
+            imwrite(uint16(dog(:,:, z)), dog_full_path);
+        elseif strcmpi(saveType, '.mat')
+            plane = dog(:,:,z);
+            save(dog_full_path, 'plane');
+        end
     end
 end
 

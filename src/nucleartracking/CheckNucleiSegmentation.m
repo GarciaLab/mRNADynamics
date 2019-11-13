@@ -345,8 +345,8 @@ else
    if fish
        opts = [opts, 'markandfind'];
    end
-   TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1, opts{:}); 
    disp('Ellipses saved. Running TrackNuclei to incorporate changes.')
+   TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1, opts{:}); 
 end
 
 end

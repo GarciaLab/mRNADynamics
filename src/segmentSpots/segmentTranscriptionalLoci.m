@@ -71,10 +71,10 @@ nameSuffix = ['_ch', iIndex(chh, 2)];
 if Threshold == -1 && ~Weka
     
     if ~filterMovieFlag
-        Threshold = determineThreshold(Prefix, chh);
+        Threshold = determineThreshold(Prefix, chh, 'numFrames', numFrames);
         display(['Threshold: ', num2str(Threshold)])
     else
-        Threshold = determineThreshold(Prefix, chh, 'noSave', dogs);
+        Threshold = determineThreshold(Prefix, chh, 'noSave', dogs, 'numFrames', numFrames);
     end
     
     display(['Threshold: ', num2str(Threshold)])

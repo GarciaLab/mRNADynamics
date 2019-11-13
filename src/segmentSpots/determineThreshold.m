@@ -28,6 +28,8 @@ for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'noSave')
         noSave = true;
         dogs = varargin{i+1};
+    elseif strcmpi(varargin{i}, 'numFrames')
+        numFrames = varargin{i+1};
     end
 end
 
@@ -38,9 +40,6 @@ end
 
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 zSize = FrameInfo(1).NumberSlices + 2;
-
-numFrames = length(FrameInfo);
-
 
 
 OutputFolder1=[ProcPath,filesep,Prefix,'_',filesep,'dogs',filesep];

@@ -106,7 +106,7 @@ nCh = length(spotChannels);
 
 if numFrames == 0
 %     numFrames = length(FrameInfo);
-    d = dir([DogOutputFolder,filesep,'*.tif']);
+    d = dir([DogOutputFolder,filesep,'*',saveType]);
     numFrames = length(d)/(zSize*nCh);
 end
 
