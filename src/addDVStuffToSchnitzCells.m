@@ -16,7 +16,7 @@ for e = 1:length(allData)
     DVbinID = allData(1).Particles.DVbinID;
     Ellipses = allData(e).Particles.Ellipses;
     
-    for p = 1:length(CompiledParticles)
+    for p = 1:length(CompiledParticles{ch})
         schnitzInd = CompiledParticles{ch}(p).schnitz;
         schnitzcells(schnitzInd).compiledParticle = p;
         schnitzcells(schnitzInd).dvbin = CompiledParticles{ch}(p).dvbin;

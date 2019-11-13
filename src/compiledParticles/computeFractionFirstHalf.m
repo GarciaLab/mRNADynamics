@@ -4,6 +4,12 @@ function [NEllipsesAP, OnRatioAP, MeanVectorAllAP, SEVectorAllAP,...
     computeFractionFirstHalf(Particles, ChN, CompiledParticles, Ellipses, schnitzcells,...
     APbinID, pixelSize, FrameInfo, EllipsePos, DropboxFolder, Prefix, ElapsedTime, edgeWidth, SkipAll)
 
+NEllipsesAP = [];
+OnRatioAP = [];
+MeanVectorAllAP = [];
+SEVectorAllAP = [];
+EllipsesFilteredPos = [];
+FilteredParticlesPos = [];
 ParticleCountAP = [];
 ParticleCountProbAP = [];
 EdgeWidth= edgeWidth/pixelSize;
