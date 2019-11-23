@@ -14,9 +14,20 @@ localMaximumRadius = LoGratio*nucleusDiameter/space_resolution;
 LoGradius = nucleusDiameter/space_resolution*LoGratio;
 edgeClearance = getDefaultParameters(FrameInfo,'edge clearance')*nucleusDiameter/space_resolution;
 
-if ~exist('embryoMask','var') || isempty(embryoMask)
-    embryoMask = true(size(imread(names{frameNumber})));
+% Added by NL and GM on 11/23/2019
+xDim = FrameInfo(1).PixelsPerLine * FrameInfo(1).PixelSize;
+yDim = FrameInfo(1).LinesPerFrame * FrameInfo(1).PixelSize;
+if yDim > 150 && xDim > 150
+    I = imread(names{frameNumber});
+    f_sigma = round(15 / FrameInfo(1).PixelSize);
+    I_blurred = imgaussfilt(I,f_sigma);
+    embryoMask = imbinarize(I_blurred);    
+else    
+    if ~exist('embryoMask','var') || isempty(embryoMask)
+        embryoMask = true(size(imread(names{frameNumber})));
+    end
 end
+% Added by NL and GM on 11/23/2019
 
 if nargin > 5
     targetNumber = varargin{1}; % coarse estimate of the number of nuclei that should be found.
