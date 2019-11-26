@@ -70,13 +70,13 @@ for i=1:length(Particles(CurrentParticle).Frame)
     end
     try
         AmpIntegralGauss3D(i)=...
-            double(spot.gauss3DIntensity);
+            double(spot.gauss3DIntensityRaw);
     catch
         AmpIntegralGauss3D(i)= NaN;
     end
-    if isfield(spot, 'gauss3DIntensityCI95')
+    if isfield(spot, 'gauss3DIntensitySE')
         try
-            ErrorIntegralGauss3D(i) = double(spot.gauss3DIntensityCI95);
+            ErrorIntegralGauss3D(i) = double(spot.gauss3DIntensitySE);
         catch
             ErrorIntegralGauss3D(i) = NaN;
         end

@@ -155,9 +155,10 @@ while (cc~='x')
     
     %     imshow(HisImage,DisplayRange,'Border','Tight','Parent',overlayAxes)
     imOverlay.CData = HisImage;
-    caxis(overlayAxes, DisplayRange);
-    caxis(originalAxes, DisplayRange);
-    
+    try
+        caxis(overlayAxes, DisplayRange);
+        caxis(originalAxes, DisplayRange);
+    end
     axesHandlesToChildObjects = findobj(overlayAxes, 'Type', 'line');
     if ~isempty(axesHandlesToChildObjects)
         delete(axesHandlesToChildObjects);

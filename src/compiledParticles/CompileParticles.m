@@ -173,7 +173,7 @@ FilePrefix=[Prefix,'_'];
 
 % refactor in progress, we should replace readMovieDatabase with getExperimentDataFromMovieDatabase
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoopEnd, APResolution,...
-   Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+    Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
     nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase, DVResolution] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
 
 APExperiment = strcmpi(ExperimentAxis, 'AP');
@@ -182,7 +182,7 @@ DVExperiment = strcmpi(ExperimentAxis, 'DV');
 correctDV = false;
 if DVExperiment
     correctDV = exist([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'], 'file');
-    if correctDV            
+    if correctDV
         load([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat']);
     end
 end
@@ -340,6 +340,12 @@ if ~SkipAll
     
 end
 
+%Extract the nuclear fluorescence values if we're in the right experiment
+%type
+if (strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input'))
+    Channels={Channel1{1},Channel2{1}, Channel3{1}};
+    schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, ExperimentType, Channels, PreProcPath);
+end
 
 %% Put together CompiledParticles
 
@@ -385,7 +391,7 @@ if APExperiment || DVExperiment
         error('coordPZoom not defined. Was AddParticlePosition.m run?')
     end
     APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
-    DVLength = APLength/2; 
+    DVLength = APLength/2;
 end
 
 EllipsePos_DV = [];
@@ -537,14 +543,14 @@ if ~slimVersion
     %% Information about the cytoplasm
     %If the nuclear masks are present then use them. Otherwise just calculate
     %the median of the images as a function of time
-%     if ~SkipAll
-%         [MeanCyto, SDCyto, MaxCyto, MedianCyto] =...
-%             ...
-%             getCytoplasmStatistics(...
-%             ...
-%             APExperiment, HistoneChannel, Prefix, numFrames, PreProcPath,...
-%             FrameInfo, NChannels);
-%     end
+    %     if ~SkipAll
+    %         [MeanCyto, SDCyto, MaxCyto, MedianCyto] =...
+    %             ...
+    %             getCytoplasmStatistics(...
+    %             ...
+    %             APExperiment, HistoneChannel, Prefix, numFrames, PreProcPath,...
+    %             FrameInfo, NChannels);
+    %     end
     
     %% Offset and fluctuations
     
@@ -690,13 +696,21 @@ savedVariables = [savedVariables,'APFilter', 'APbinArea', 'APbinID', 'AllTracesA
 save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
     savedVariables{:},'-v7.3');
 CompiledParticlesToken = now;
-    save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticlesToken.mat'],'CompiledParticlesToken')
+save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticlesToken.mat'],'CompiledParticlesToken')
+
+
+if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
+    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
+    save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells');%,'IntegrationArea');
+    
+end
+
 
 %%
 if DVExperiment
     alignCompiledParticlesByAnaphase(Prefix);
-%     averageDV(Prefix);
-%     plotByDorsalConc(Prefix);
+    %     averageDV(Prefix);
+    %     plotByDorsalConc(Prefix);
 end
 
 disp('CompiledParticles.mat saved.');

@@ -105,7 +105,7 @@ end
 
 figure()
 axs = {};
-for cycle = 1:2
+for cycle = 1:1
     
     axs{cycle} = subplot(1, 2, cycle);
     errorbar(dlfluobins, meanFracFluoEmbryo{cycle},seFracFluoEmbryo{cycle}, '-o');
@@ -113,43 +113,32 @@ for cycle = 1:2
     ylabel('fraction active nuclei');
     ylim([0, 1]);
     xlim([0, max(dlfluobins)*1.1]);
-    title(['nc',num2str(cycle+11)]);
+    title([DataType, ' nc',num2str(cycle+11)]);
     standardizeFigure(gca, []);
     
 end
 
 
 %stacked bar
-figure();
-for cycle = 1:2
-    subplot(1, 2, cycle)
-    bardata = cat(1,npartFluo{cycle}, nschnitzFluo{cycle});
-    bar(dlfluobins, bardata', 'stacked');
-    leg = legend('particles', 'ellipses');
-    xlabel('dorsal concentration (au)');
-    ylabel('number');
-    title(['nc',num2str(cycle+11)]);
-    standardizeFigure(gca, leg);
-end
 
 %%
 %accumulated mrna stuff
-figure()
+% figure()
 axsmrna = {};
-
-for cycle = 1:2
-    
-    axsmrna{cycle} = subplot(1, 2, cycle);
-    errorbar(dlfluobins, meanallmrnasEmbryo{cycle},seallmrnasEmbryo{cycle}, '-o');
-    xlabel('dorsal concentration (au)');
-    ylabel('mean acccumulated mRNA (au)');
-    ylim([0, max(meanallmrnasEmbryo{cycle}*1.1)]);
-    xlim([0, max(dlfluobins)*1.1]);
-    title(['nc',num2str(cycle+11)]);
-    standardizeFigure(gca, []);
-    
-end
-
+% 
+% for cycle = 1:2
+%     
+%     axsmrna{cycle} = subplot(1, 2, cycle);
+%     errorbar(dlfluobins, meanallmrnasEmbryo{cycle},seallmrnasEmbryo{cycle}, '-o');
+%     xlabel('dorsal concentration (au)');
+%     ylabel('mean acccumulated mRNA (au)');
+%     ylim([0, max(meanallmrnasEmbryo{cycle}*1.1)]);
+%     xlim([0, max(dlfluobins)*1.1]);
+%     title([DataType, ' nc',num2str(cycle+11)]);
+%     standardizeFigure(gca, []);
+%     
+% end
+% 
 
 
 

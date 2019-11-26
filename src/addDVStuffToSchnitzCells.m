@@ -1,6 +1,6 @@
 function addDVStuffToSchnitzCells(DataType)
 %%
-[allData, Prefixes, resultsFolder] = LoadMS2Sets(DataType);
+[allData, Prefixes, resultsFolder] = LoadMS2Sets(DataType, 'noCompiledNuclei');
 
 load([resultsFolder,filesep,Prefixes{1},filesep,'FrameInfo.mat'], 'FrameInfo')
 imSize = [FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine];

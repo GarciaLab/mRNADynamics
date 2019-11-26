@@ -195,7 +195,7 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),amp2(Frames==
             max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).Fluo,[],2),'r.-','DisplayName','protein')
         ylabel(traceFigAxes,'input protein intensity (a.u.)');
         hold(traceFigAxes,'on')
-        plot(traceFigAxes,Frames(~approvedParticleFrames),AmpIntegral(~approvedParticleFrames),'.r')
+        plot(traceFigAxes,traceFigTimeAxis(approvedParticleFrames),AmpIntegral(~approvedParticleFrames),'.r')
         hold(traceFigAxes,'off')
     else
         traceFigAxes.YAxis(2).Visible = 'off';
