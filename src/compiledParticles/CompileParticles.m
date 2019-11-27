@@ -345,6 +345,8 @@ end
 if (strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input'))
     Channels={Channel1{1},Channel2{1}, Channel3{1}};
     schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, ExperimentType, Channels, PreProcPath);
+    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
+    save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells');%,'IntegrationArea');
 end
 
 %% Put together CompiledParticles
@@ -698,12 +700,6 @@ save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
 CompiledParticlesToken = now;
 save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticlesToken.mat'],'CompiledParticlesToken')
 
-
-if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
-    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
-    save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells');%,'IntegrationArea');
-    
-end
 
 
 %%

@@ -99,7 +99,5 @@ if del
 
 end
 
-disp('Spot deleted successfully. Trace figures will refresh after switching particles.')
-
 end
 

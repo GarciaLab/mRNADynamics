@@ -123,6 +123,7 @@ Ellipses = [];
 correspondingNCInfo = [];
 IntegrationArea = []; %Initialized here to avoid dynamic assignment later in function
 fish = false;
+nucleiModified = false;
 
 xForZoom = 0;
 yForZoom = 0;
@@ -232,7 +233,7 @@ schnitzPath = [DropboxFolder, filesep, FilePrefix(1:end - 1), filesep, FilePrefi
 if  exist(schnitzPath, 'file')
     
     disp('Loading schnitzcells...')
-    load(schnitzPath);
+    load(schnitzPath, 'schnitzcells');
     disp('schnitzcells loaded.')
     
     %Remove the schnitz fields that can give us problems potentially if
@@ -806,7 +807,60 @@ while (cc ~= 'x')
     elseif cc == 'c'
         [PreviousParticle, Particles] = combineTraces(Spots, ...
             CurrentChannel, CurrentFrame, Particles, CurrentParticle);
-    elseif cc == 'p'%Identify a particle. It will also tell you the particle associated with
+     elseif cc == 'C'  %add ellipse
+           
+        [ConnectPositionx,ConnectPositiony] = ginput(1);
+        
+        cm = [round(ConnectPositionx), round(ConnectPositiony)];
+        [Rows, Cols] = size(ImageHis);
+         if (cm(1,2)>0)&(cm(1,1)>0)&(cm(1,2)<=Rows)&(cm(1,1)<=Cols)
+            
+            %Add a circle to this location with the mean radius of the
+            %ellipses found in this frame
+            
+            %(x, y, a, b, theta, maxcontourvalue, time,
+            %particle_id)
+            if ~isempty(Ellipses{CurrentFrame})
+                MeanRadius=mean((Ellipses{CurrentFrame}(:,3)+Ellipses{CurrentFrame}(:,4))/2);
+            elseif ~isempty(Ellipses{CurrentFrame+1})
+                MeanRadius=mean((Ellipses{CurrentFrame+1}(:,3)+Ellipses{CurrentFrame+1}(:,4))/2);
+            elseif ~isempty(Ellipses{CurrentFrame-1})
+                MeanRadius=mean((Ellipses{CurrentFrame-1}(:,3)+Ellipses{CurrentFrame-1}(:,4))/2);
+            end
+            
+            try
+                Ellipses{CurrentFrame}(end+1,:)=...
+                    [cm(1,1),cm(1,2),MeanRadius,MeanRadius,0,0,0,0,0];
+            catch
+                Ellipses{CurrentFrame}(end+1,:)=...
+                    [cm(1,1),cm(1,2),MeanRadius,MeanRadius,0,0,0,0];
+            end
+        end
+    
+         nucleiModified = true;
+         
+    elseif cc == 'V'
+        %remove ellipse
+           [ConnectPositionx,ConnectPositiony] = ginput(1);
+        
+        cm = [round(ConnectPositionx), round(ConnectPositiony)];
+        [Rows, Cols] = size(ImageHis);
+        
+          if (cm(1,2)>0)&(cm(1,1)>0)&(cm(1,2)<=Rows)&(cm(1,1)<=Cols)
+            %Find out which ellipses we clicked on so we can delete it
+            
+            %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
+            Distances=sqrt((Ellipses{CurrentFrame}(:,1)-cm(1,1)).^2+...
+                (Ellipses{CurrentFrame}(:,2)-cm(1,2)).^2);
+            [~,MinIndex]=min(Distances);
+            
+            Ellipses{CurrentFrame}=[Ellipses{CurrentFrame}(1:MinIndex-1,:);...
+                Ellipses{CurrentFrame}(MinIndex+1:end,:)];
+          end
+          
+        nucleiModified = true;
+        
+    elseif cc == 'p' % Identify a particle. It will also tell you the particle associated with
         %  the clicked nucleus.
         identifyParticle(Spots, Particles, CurrentFrame, ...
             CurrentChannel, UseHistoneOverlay, schnitzcells);
@@ -963,5 +1017,24 @@ end
 
 disp('Particles saved.')
 disp(['(Left off at Particle #', num2str(CurrentParticle), ')'])
+
+if nucleiModified 
+    
+   save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
+
+    %Decide whether we need to re-track
+    userPrompt = 'Did you make changes to nuclei and thus require re-tracking? (y/n)';
+    reTrackAnswer = inputdlg(userPrompt);
+    if contains(reTrackAnswer,'n')
+        disp('Ellipses saved. Per user input, not re-tracking. Exiting.')
+    else
+      opts = {};
+       if fish
+           opts = [opts, 'markandfind'];
+       end
+       disp('Ellipses saved. Running TrackNuclei to incorporate changes.')
+       TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1, opts{:}); 
+    end
+end
 
 end
