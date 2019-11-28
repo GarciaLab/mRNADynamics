@@ -290,7 +290,7 @@ while (cc~='x')
         
     elseif (ct~=0)&(cc=='d')    %Delete all ellipses in the current frame
         Ellipses{CurrentFrame}=[];
-        elseif (ct~=0)&(cc=='D')    %Delete all ellipses in hand-drawn ROI
+    elseif (ct~=0)&(cc=='D')    %Delete all ellipses in hand-drawn ROI
         roi = drawrectangle(overlayAxes);
         EllipsesCopy = Ellipses;
         EllipsesCopy{CurrentFrame} = [];

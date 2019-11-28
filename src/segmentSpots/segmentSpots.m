@@ -29,7 +29,6 @@
 % processing
 % 'noIntegralZ':  Don't establish center slice at position that maximizes raw fluo integral
 %                 across sliding 3 z-slice window.
-% 'intScale': Scale up the radius of integration
 % 'autoThresh': Pops up a UI to help decide on a threshhold
 % 'keepProcessedData': Keeps the ProcessedData folder for the given prefix after running segment spots
 % 'fit3D': Fit 3D Gaussians to all segmented spots (assumes 1 locus per spot).
@@ -60,7 +59,7 @@ warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
 disp('Segmenting spots...')
 
-[displayFigures, numFrames, numShadows, intScale, keepPool, ...
+[displayFigures, numFrames, numShadows, keepPool, ...
     autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData,...
     fit3D, skipChannel, optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat, saveType, nuclearMask]...
     = determineSegmentSpotsOptions(varargin{:});
@@ -134,8 +133,8 @@ for channelIndex = 1:nCh
     
     [tempSpots, dogs] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, initialFrame, numFrames, zSize, ...
         PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(channelIndex), neighborhood, ...
-        snippet_size, pixelSize, microscope, intScale, Weka,...
-        useIntegralCenter, filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, Ellipses);
+        snippet_size, pixelSize, microscope, Weka,...
+         filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, Ellipses);
 
     tempSpots = segmentSpotsZTracking(pixelSize,tempSpots);
 
