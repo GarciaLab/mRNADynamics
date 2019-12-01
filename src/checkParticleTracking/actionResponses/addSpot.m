@@ -71,10 +71,10 @@ else
                 %Get the information about the spot on this z-slice
                 if cc == '['
                     [~, Fit] = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood, snippet_size, ...
-                        pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [], '', CurrentFrame, [], z, use_integral_center);
+                        pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [], '', CurrentFrame, [], z);
                 elseif cc == '{'
                     [~, Fit] = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood, snippet_size, ...
-                        pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', CurrentFrame, [], z, use_integral_center);
+                        pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', CurrentFrame, [], z);
                 end
                 
                 FitCell{z} = Fit;
