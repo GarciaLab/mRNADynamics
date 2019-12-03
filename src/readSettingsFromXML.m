@@ -55,6 +55,24 @@ function [theStruct, settingStruct] = readSettingsFromXML(Prefix, filename)
     zStackDirectionModeName = '';
     zUseModeName = '';
     xGalvoMovementModeName = '';
+    laserLines = [];
+    isLaserLineChecked = [];
+    laserIntensityDev = [];
+    laserAOBSIntensityDev = [];
+    laserAOBSIntensityLowDev = [];
+    laserOutCheckedIntensity = [];
+    detectorName = {};
+    isDetectorActive = [];
+    detectorAcquisitionModeName = {};
+    detectorAcquisitionMode = [];
+    detectorTimeGateWavelength = [];
+    detectorTimeGatePulseEnd = [];
+    detectorTimeGatePulseStart = [];
+    detectorIsTimeGateActivated = [];
+    multibandTargetWaveLengthEnd = [];
+    multibandTargetWaveLengthBegin = [];
+    multibandChannelName = {};
+    multibandChannel = [];
 
     % Read in the .xml file
     try
@@ -65,13 +83,14 @@ function [theStruct, settingStruct] = readSettingsFromXML(Prefix, filename)
 
     % Recurse over child nodes. This could run into problems 
     % with very deeply nested trees.
-    try
+%     try
        theStruct = parseChildNodes(tree);
-    catch
-       error('Unable to parse XML file %s.',filename);
-    end
+%     catch
+%        error('Unable to parse XML file %s.',filename);
+%     end
     
     % Save settings into a structure
+    % hardware settings
     settingStruct.Prefix = Prefix;
     settingStruct.pixelDwellTime = str2double(pixelDwellTime);
     settingStruct.lineAccumulation = str2double(lineAccumulation);
@@ -98,6 +117,26 @@ function [theStruct, settingStruct] = readSettingsFromXML(Prefix, filename)
     settingStruct.zStackDirectionModeName = char(zStackDirectionModeName);
     settingStruct.zUseModeName = char(zUseModeName);
     settingStruct.xGalvoMovementModeName = char(xGalvoMovementModeName);
+    % laser line settings
+    settingStruct.laserLines = laserLines;
+    settingStruct.isLaserLineChecked = isLaserLineChecked;
+    settingStruct.laserIntensityDev = laserIntensityDev; 
+    settingStruct.laserAOBSIntensityDev = laserAOBSIntensityDev;
+    settingStruct.laserAOBSIntensityLowDev = laserAOBSIntensityLowDev;
+    settingStruct.laserOutCheckedIntensity = laserOutCheckedIntensity;
+    % detector settings
+    settingStruct.detectorName = detectorName;
+    settingStruct.isDetectorActive = isDetectorActive;
+    settingStruct.detectorAcquisitionModeName = detectorAcquisitionModeName;
+    settingStruct.detectorAcquisitionMode = detectorAcquisitionMode;
+    settingStruct.detectorTimeGateWavelength = detectorTimeGateWavelength;
+    settingStruct.detectorTimeGatePulseEnd = detectorTimeGatePulseEnd;
+    settingStruct.detectorTimeGatePulseStart = detectorTimeGatePulseStart;
+    settingStruct.detectorIsTimeGateActivated = detectorIsTimeGateActivated;
+    settingStruct.multibandTargetWaveLengthEnd = multibandTargetWaveLengthEnd;
+    settingStruct.multibandTargetWaveLengthBegin  = multibandTargetWaveLengthBegin;
+    settingStruct.multibandChannelName = multibandChannelName;
+    settingStruct.multibandChannel = multibandChannel;
 
 
     % ----- Nested function PARSECHILDNODES -----
@@ -148,77 +187,142 @@ function [theStruct, settingStruct] = readSettingsFromXML(Prefix, filename)
            allocCell = cell(1, numAttributes);
            attributes = struct('Name', allocCell, 'Value', ...
                                allocCell);
-
-           for count = 1:numAttributes
-              attrib = theAttributes.item(count-1);
-              % Settings that only occur once or are always the same
-              if strcmp(char(attrib.getName),'PixelDwellTime')
-                  pixelDwellTime = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'Line_Accumulation')
-                  lineAccumulation = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'FrameAccumulation')
-                  assignin('base', 'frameAccumulation', attrib.getValue);
-                  frameAccumulation = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'LineAverage')
-                  lineAverage = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'FrameAverage')
-                  frameAverage = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'EmissionWavelengthForPinholeAiryCalculation')
-                  emWaveForPinAiryCalc = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'PinholeAiry')
-                  pinholeAiry = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'Pinhole')
-                  pinhole = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'RotatorAngle')
-                  rotatorAngle = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'PhaseX')
-                  phaseX = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'ScanDirectionXName')
-                  scanDirectionXName = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'ScanDirectionX')
-                  scanDirectionX = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'Zoom')
-                  zoomSetting = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'ScanSpeed')
-                  scanSpeed = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'RefractionIndex')
-                  refractionIndex = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'NumericalAperture')
-                  numericalAperture = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'Immersion')
-                  immersion = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'ObjectiveNumber')
-                  objectiveNumber = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'Magnification')
-                  magnification = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'FrameTime')
-                  frameTime = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'CompleteTime')
-                  completeTime = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'CycleTime')
-                  cycleTime = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'ZStackDirectionModeName')
-                  zStackDirectionModeName = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'ZUseModeName')
-                zUseModeName = attrib.getValue;
-              elseif strcmp(char(attrib.getName),'XGalvoMovementModeName')
-                xGalvoMovementModeName = attrib.getValue;
-              end
-
-              % Settings that occur multiple times with different values
-        %       if strcmp(char(attrib.getName),'LaserLine')
-        %           if exist('laserLine','var')
-        %               newLaserLine = attrib.getValue;
-        %               newLaserLines = {laserLine, newLaserLine}
-        %               assignin('base', 'laserLine', newLaserLines);
-        %           else
-        %               assignin('base', 'laserLine', attrib.getValue);
-        %           end
-        %       elseif
-        %       end
-
-              attributes(count).Name = char(attrib.getName);
-              attributes(count).Value = char(attrib.getValue);
+           nodeName = char(theNode.getNodeName);
+           
+           % Create attributes structure for all nodes and extract
+           % attribute values for the settings we care about
+           
+           % extract most hardware settings
+           if strcmp(nodeName,'ATLConfocalSettingDefinition')
+               for count = 1:numAttributes
+                  attrib = theAttributes.item(count-1);
+                  attributes(count).Name = char(attrib.getName);
+                  attributes(count).Value = char(attrib.getValue);
+                  
+                  if strcmp(char(attrib.getName),'PixelDwellTime')
+                      pixelDwellTime = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'Line_Accumulation')
+                      lineAccumulation = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'FrameAccumulation')
+                      assignin('base', 'frameAccumulation', attrib.getValue);
+                      frameAccumulation = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'LineAverage')
+                      lineAverage = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'FrameAverage')
+                      frameAverage = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'EmissionWavelengthForPinholeAiryCalculation')
+                      emWaveForPinAiryCalc = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'PinholeAiry')
+                      pinholeAiry = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'Pinhole')
+                      pinhole = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'RotatorAngle')
+                      rotatorAngle = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'PhaseX')
+                      phaseX = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'ScanDirectionXName')
+                      scanDirectionXName = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'ScanDirectionX')
+                      scanDirectionX = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'Zoom')
+                      zoomSetting = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'ScanSpeed')
+                      scanSpeed = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'RefractionIndex')
+                      refractionIndex = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'NumericalAperture')
+                      numericalAperture = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'Immersion')
+                      immersion = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'ObjectiveNumber')
+                      objectiveNumber = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'Magnification')
+                      magnification = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'FrameTime')
+                      frameTime = attrib.getValue;
+%                   elseif strcmp(char(attrib.getName),'CompleteTime')
+%                       completeTime = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'CycleTime')
+                      cycleTime = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'ZStackDirectionModeName')
+                      zStackDirectionModeName = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'ZUseModeName')
+                    zUseModeName = attrib.getValue;
+                  elseif strcmp(char(attrib.getName),'XGalvoMovementModeName')
+                    xGalvoMovementModeName = attrib.getValue;
+                  end
+               end
+           % Get information about the lasers
+           elseif strcmp(nodeName, 'LaserLineSetting')
+               for count = 1:numAttributes
+                  attrib = theAttributes.item(count-1);
+                  attributes(count).Name = char(attrib.getName);
+                  attributes(count).Value = char(attrib.getValue);
+                  
+                  if strcmp(char(attrib.getName),'LaserLine')
+                      laserLines(end+1) = str2double(attrib.getValue);
+                  elseif strcmp(char(attrib.getName),'IsLineChecked')
+                      isLaserLineChecked(end+1) = str2double(attrib.getValue);
+                  elseif strcmp(char(attrib.getName),'IntensityDev')
+                      laserIntensityDev(end+1) = str2double(attrib.getValue);
+                  elseif strcmp(char(attrib.getName),'AOBSIntensityDev')
+                      laserAOBSIntensityDev(end+1) = str2double(attrib.getValue);
+                  elseif strcmp(char(attrib.getName),'AOBSIntensityLowDev')
+                      laserAOBSIntensityLowDev(end+1) = str2double(attrib.getValue);   
+                  elseif strcmp(char(attrib.getName),'OutCheckedIntensity')
+                      laserOutCheckedIntensity(end+1) = str2double(attrib.getValue);
+                  end
+               end
+           % extract detector settings
+           elseif strcmp(nodeName, 'Detector')
+               for count = 1:numAttributes
+                  attrib = theAttributes.item(count-1);
+                  attributes(count).Name = char(attrib.getName);
+                  attributes(count).Value = char(attrib.getValue);
+                  
+                  if strcmp(char(attrib.getName),'Name')
+                      detectorName{end+1} = char(attrib.getValue);
+                  elseif strcmp(char(attrib.getName),'IsActive')
+                      isDetectorActive(end+1) = str2double(attrib.getValue);   
+                  elseif strcmp(char(attrib.getName),'AcquisitionModeName')
+                      detectorAcquisitionModeName{end+1} = char(attrib.getValue); 
+                  elseif strcmp(char(attrib.getName),'AcquisitionMode')
+                      detectorAcquisitionMode(end+1) = str2double(attrib.getValue); 
+                  elseif strcmp(char(attrib.getName),'TimeGateWavelength')
+                      detectorTimeGateWavelength(end+1) = str2double(attrib.getValue); 
+                  elseif strcmp(char(attrib.getName),'TimeGatePulseEnd')
+                      detectorTimeGatePulseEnd(end+1) = str2double(attrib.getValue); 
+                  elseif strcmp(char(attrib.getName),'TimeGatePulseStart')
+                      detectorTimeGatePulseStart(end+1) = str2double(attrib.getValue);    
+                  elseif strcmp(char(attrib.getName),'IsTimeGateActivated')
+                      detectorIsTimeGateActivated(end+1) = str2double(attrib.getValue);
+                  end
+               end
+           % extract detector ranges, which are stored in the MultiBand
+           % element
+           elseif strcmp(nodeName, 'MultiBand')
+               for count = 1:numAttributes
+                  attrib = theAttributes.item(count-1);
+                  attributes(count).Name = char(attrib.getName);
+                  attributes(count).Value = char(attrib.getValue);
+                  
+                  if strcmp(char(attrib.getName),'RightWorld')
+                      multibandTargetWaveLengthEnd(end+1) = str2double(attrib.getValue);
+                  elseif strcmp(char(attrib.getName),'LeftWorld')
+                      multibandTargetWaveLengthBegin(end+1) = str2double(attrib.getValue);
+                  elseif strcmp(char(attrib.getName),'ChannelName')
+                      multibandChannelName{end+1} = char(attrib.getValue);
+                  elseif strcmp(char(attrib.getName),'Channel')
+                      multibandChannel(end+1) = str2double(attrib.getValue);
+                  end
+               end
+           % don't do any extraction for any other elements    
+           else
+               for count = 1:numAttributes
+                  attrib = theAttributes.item(count-1);
+                  attributes(count).Name = char(attrib.getName);
+                  attributes(count).Value = char(attrib.getValue);
+               end
            end
         end
     end
