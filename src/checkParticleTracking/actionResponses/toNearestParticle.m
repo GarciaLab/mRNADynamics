@@ -4,13 +4,13 @@ function [CurrentParticle, CurrentFrame, ManualZFlag] = toNearestParticle(Spots,
 %   Detailed explanation goes here
 
 numParticles = length(Particles{CurrentChannel});
+opts = {};
 if exist('ConnectPosition', 'var')
-    ParticleOutput = identifyParticle(Spots, Particles, CurrentFrame, ...
-        CurrentChannel, UseHistoneOverlay, schnitzcells, ConnectPosition);
-else
-    ParticleOutput = identifyParticle(Spots, Particles, CurrentFrame, ...
-        CurrentChannel, UseHistoneOverlay, schnitzcells);
+    opts = {'ConnectPosition'};
 end
+
+ParticleOutput = identifyParticle(Spots, Particles, CurrentFrame, ...
+    CurrentChannel, UseHistoneOverlay, schnitzcells, opts{:});
 
 if (floor(ParticleOutput)>0)&(ParticleOutput<=numParticles)
     [CurrentParticle,CurrentFrame, ManualZFlag] = ...
