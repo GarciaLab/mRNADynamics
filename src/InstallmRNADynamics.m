@@ -22,6 +22,7 @@ function configContents = InstallmRNADynamics(varargin)
   disp(['root directory absolute path is ', ROOT_PATH]);
 
   % default directory locations
+  DATA_ROOT_PATH = createDirInRoot('Data');
   PREPROCESSED_DATA_PATH = createDataSubDir('PreProcessedData');
   PROCESSED_DATA_PATH = createDataSubDir('ProcessedData');
   RAW_DYNAMICS_DATA_PATH = createDataSubDir('RawDynamicsData'); %(old RawData folder)
@@ -90,9 +91,12 @@ function configContents = InstallmRNADynamics(varargin)
     end
 
     contents = {
-      'Date', 'ExperimentType', 'ExperimentAxis', 'CoatProtein', 'StemLoop', 'APResolution',...
-      'Channel1', 'Channel2', 'Objective', 'Power Channel 1 (mW)', 'Power Channel 2 (mW)', 'DataFolder', 'DropboxFolder',...
-      'Comments', 'nc9', 'nc10', 'nc11', 'nc12', 'nc13', 'nc14', 'CF'
+      'Date', 'ExperimentType', 'ExperimentAxis', 'CoatProtein', ...
+      'StemLoop', 'APResolution','DVResolution', 'Channel1', 'Channel2',...
+      'Channel3', 'Objective', 'Power Channel 1 (mW)',...
+      'Power Channel 2 (mW)', 'Power Channel 3 (mW)', 'RootFolder',...
+      'DataFolder', 'DropboxFolder','Comments', 'nc9', 'nc10', 'nc11',...
+      'nc12', 'nc13', 'nc14', 'CF'
     };
 
     cell2csv(MOVIE_DATABASE_PATH, contents);
@@ -109,6 +113,7 @@ function configContents = InstallmRNADynamics(varargin)
         'PreProcPath', PREPROCESSED_DATA_PATH;
         'FISHPath', PROCESSED_DATA_PATH;
         'DropboxFolder', DYNAMICS_RESULTS_PATH;
+        'DataRoot', DATA_ROOT_PATH;
         'MS2CodePath', MS2CODE_PATH;
         'TestPath', TEST_PATH
       };
@@ -178,16 +183,18 @@ function configContents = InstallmRNADynamics(varargin)
     % directory constants
     Output{9} = ['ROOT_PATH = ''', ROOT_PATH, ''';'];
     Output{10} = ['MRNA_DYNAMICS_PATH = ''', MRNA_DYNAMICS_PATH, ''';'];
-    Output{11} = ['PREPROCESSED_DATA_PATH = ''', PREPROCESSED_DATA_PATH, ''';'];
-    Output{12} = ['PROCESSED_DATA_PATH = ''', PROCESSED_DATA_PATH, ''';'];
-    Output{13} = ['RAW_DYNAMICS_DATA_PATH = ''', RAW_DYNAMICS_DATA_PATH, ''';'];
-    Output{14} = ['DYNAMICS_RESULTS_PATH = ''', DYNAMICS_RESULTS_PATH, ''';'];
-    Output{15} = ['MS2CODE_PATH = ''', MS2CODE_PATH, ''';'];
-    Output{16} = ['MOVIE_DATABASE_PATH = ''', MOVIE_DATABASE_PATH, ''';'];
-    Output{17} = ['COMPUTER_FOLDERS_PATH = ''', COMPUTER_FOLDERS_PATH, ''';'];
-
-    Output{18} = ['disp(''Startup script executed.'');'];
-    Output{19} = ['clear all;'];
+    Output{11} = ['DATA_ROOT_PATH = ''',DATA_ROOT_PATH,''';'];
+    Output{12} = ['PREPROCESSED_DATA_PATH = ''', PREPROCESSED_DATA_PATH, ''';'];
+    Output{13} = ['PROCESSED_DATA_PATH = ''', PROCESSED_DATA_PATH, ''';'];
+    Output{14} = ['RAW_DYNAMICS_DATA_PATH = ''', RAW_DYNAMICS_DATA_PATH, ''';'];
+    Output{15} = ['DYNAMICS_RESULTS_PATH = ''', DYNAMICS_RESULTS_PATH, ''';'];
+    Output{16} = ['MS2CODE_PATH = ''', MS2CODE_PATH, ''';'];
+    Output{17} = ['MOVIE_DATABASE_PATH = ''', MOVIE_DATABASE_PATH, ''';'];
+    Output{18} = ['COMPUTER_FOLDERS_PATH = ''', COMPUTER_FOLDERS_PATH, ''';'];
+    
+    Output{19} = ['cd(MRNA_DYNAMICS_PATH);'];
+    Output{20} = ['disp(''Startup script executed.'');'];
+    Output{21} = ['clear all;'];
     
     writeStartupFile(Output);
   end
