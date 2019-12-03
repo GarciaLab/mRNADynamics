@@ -25,12 +25,13 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE,GaussIntegralRaw] 
     xDim = size(snip3D,1);
     yDim = size(snip3D,2);
     zDim = size(snip3D,3);
+    intMax = max(max(max(snip3D)));
     % initialize parameters
-    initial_parameters =[max(snip3D(:)), ceil(yDim/2),ceil(xDim/2), ceil(zDim/2),sigma_guess,sigma_guess,sigma_guess,.1,.1,.1,prctile(snip3D(:),25)];
+    initial_parameters =[intMax, ceil(yDim/2),ceil(xDim/2), ceil(zDim/2),sigma_guess,sigma_guess,sigma_guess,.1,.1,.1,prctile(snip3D(:),25)];
     
     % initialize upper and lower parameter bounds
-    ub_vec = [Inf,yDim,xDim,zDim,xDim/8,xDim/8,xDim/8,xDim/8,xDim/8,xDim/8,Inf];
-    lb_vec = [0,1,1,1,0,0,0,0,0,0,0];
+    ub_vec = [intMax*1.5,yDim,xDim,zDim,xDim/8,xDim/8,xDim/8,xDim/8,xDim/8,xDim/8,intMax];
+    lb_vec = [0,1,1,1,1,1,1,0,0,0,0];
     
     % check for additional arguments
     for i = 1:(numel(varargin)-1)  

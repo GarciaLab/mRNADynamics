@@ -263,13 +263,14 @@ if exist('dataStructure', 'var')
     save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure');
 end
 
-
-%Extract the nuclear fluorescence values if we're in the right experiment
-%type
-if (strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input'))
-    Channels={Channel1{1},Channel2{1}, Channel3{1}};
-    schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, ExperimentType, Channels, PreProcPath);
-end
+%AR 11/26/19- moved this to compileparticles to speed up tracknuclei 
+%
+% %Extract the nuclear fluorescence values if we're in the right experiment
+% %type
+% if (strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input'))
+%     Channels={Channel1{1},Channel2{1}, Channel3{1}};
+%     schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, ExperimentType, Channels, PreProcPath);
+% end
 
 if fish
     schnitzcells = rmfield(schnitzcells, {'P', 'E', 'D'});

@@ -1,5 +1,5 @@
 function [sortByFrame, sortByLength, ForCompileAll, SpeedMode, SisterMode, ...
-    ncRange, projectionMode, plot3DGauss, intScale, NC, ...
+    ncRange, projectionMode, plot3DGauss, NC, ...
     startNC, endNC, optionalResults, nWorkers, fish, noHisOverlay] = determineCheckParticleTrackingOptions(varargin)
 %DETERMINEOPTIONS Summary of this function goes here
 %   Detailed explanation goes here
@@ -28,7 +28,6 @@ nWorkers = 1;
 fish = false;
 noHisOverlay = false;
 
-intScale = 1;
 
 % these variables are meaningless if ncRange is 0
 NC = -1;
@@ -52,8 +51,6 @@ for i=1:length(varargin)
        noHisOverlay= true;
     elseif strcmpi(varargin{i}, 'sistermode')
         SisterMode = 1;
-    elseif strcmpi(varargin{i}, 'intScale')
-        intScale = varargin{i+1};
     elseif strcmpi(varargin{i}, 'optionalResults')
         optionalResults = varargin{i+1};
         elseif strcmpi(varargin{i}, 'fish')

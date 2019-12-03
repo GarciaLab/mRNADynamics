@@ -155,9 +155,10 @@ while (cc~='x')
     
     %     imshow(HisImage,DisplayRange,'Border','Tight','Parent',overlayAxes)
     imOverlay.CData = HisImage;
-    caxis(overlayAxes, DisplayRange);
-    caxis(originalAxes, DisplayRange);
-    
+    try
+        caxis(overlayAxes, DisplayRange);
+        caxis(originalAxes, DisplayRange);
+    end
     axesHandlesToChildObjects = findobj(overlayAxes, 'Type', 'line');
     if ~isempty(axesHandlesToChildObjects)
         delete(axesHandlesToChildObjects);
@@ -289,7 +290,7 @@ while (cc~='x')
         
     elseif (ct~=0)&(cc=='d')    %Delete all ellipses in the current frame
         Ellipses{CurrentFrame}=[];
-        elseif (ct~=0)&(cc=='D')    %Delete all ellipses in hand-drawn ROI
+    elseif (ct~=0)&(cc=='D')    %Delete all ellipses in hand-drawn ROI
         roi = drawrectangle(overlayAxes);
         EllipsesCopy = Ellipses;
         EllipsesCopy{CurrentFrame} = [];
@@ -345,8 +346,8 @@ else
    if fish
        opts = [opts, 'markandfind'];
    end
-   TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1, opts{:}); 
    disp('Ellipses saved. Running TrackNuclei to incorporate changes.')
+   TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1, opts{:}); 
 end
 
 end

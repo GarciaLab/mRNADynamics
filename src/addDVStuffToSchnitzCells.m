@@ -1,6 +1,6 @@
 function addDVStuffToSchnitzCells(DataType)
 %%
-[allData, Prefixes, resultsFolder] = LoadMS2Sets(DataType);
+[allData, Prefixes, resultsFolder] = LoadMS2Sets(DataType, 'noCompiledNuclei');
 
 load([resultsFolder,filesep,Prefixes{1},filesep,'FrameInfo.mat'], 'FrameInfo')
 imSize = [FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine];
@@ -16,7 +16,7 @@ for e = 1:length(allData)
     DVbinID = allData(1).Particles.DVbinID;
     Ellipses = allData(e).Particles.Ellipses;
     
-    for p = 1:length(CompiledParticles)
+    for p = 1:length(CompiledParticles{ch})
         schnitzInd = CompiledParticles{ch}(p).schnitz;
         schnitzcells(schnitzInd).compiledParticle = p;
         schnitzcells(schnitzInd).dvbin = CompiledParticles{ch}(p).dvbin;

@@ -166,8 +166,9 @@ if dv
     plot(coordD(1),coordD(2),'y.','MarkerSize',20);
 end
 hold off
-saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'APEmbryo-Manual.tif']);
-
+try
+    saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'APEmbryo-Manual.tif']);
+end
 close(diagFigure);
 
 end

@@ -4,8 +4,8 @@ function [Spots, dogs]...
     ...
     nCh, coatChannel, channelIndex, initialFrame, numFrames,...
     zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures,doFF, ffim,...
-    Threshold, neighborhood, snippet_size, pixelSize, microscope, intScale,...
-    Weka, use_integral_center, filterMovieFlag, resultsFolder, gpu, saveAsMat, saveType, Ellipses)
+    Threshold, neighborhood, snippet_size, pixelSize, microscope,...
+    Weka,filterMovieFlag, resultsFolder, gpu, saveAsMat, saveType, Ellipses)
 
 
 dogs = [];
@@ -71,10 +71,10 @@ nameSuffix = ['_ch', iIndex(chh, 2)];
 if Threshold == -1 && ~Weka
     
     if ~filterMovieFlag
-        Threshold = determineThreshold(Prefix, chh);
+        Threshold = determineThreshold(Prefix, chh, 'numFrames', numFrames);
         display(['Threshold: ', num2str(Threshold)])
     else
-        Threshold = determineThreshold(Prefix, chh, 'noSave', dogs);
+        Threshold = determineThreshold(Prefix, chh, 'noSave', dogs, 'numFrames', numFrames);
     end
     
     display(['Threshold: ', num2str(Threshold)])
@@ -216,7 +216,7 @@ parfor current_frame = initialFrame:numFrames
                 centroid = round(centroids(spotIndex).Centroid);
                 tic
                 [temp_particles(spotIndex), Fits] = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
-                    neighborhood, snippet_size, pixelSize, displayFigures, graphicsHandles, microscope, 0, centroid,MLFlag, intScale, current_frame, spotIndex, zIndex, use_integral_center);
+                    neighborhood, snippet_size, pixelSize, displayFigures, graphicsHandles, microscope, 0, centroid,MLFlag, current_frame, spotIndex, zIndex);
                 Spots(current_frame).Fits = [Spots(current_frame).Fits, Fits];
             end
             
