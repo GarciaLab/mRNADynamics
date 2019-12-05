@@ -33,7 +33,7 @@ if ~isempty(ConnectPosition)
         end
 
         %Find the closest one to the point where we clicked
-        Distance=sqrt(doule((NewNuclei(1)-xPosSuspect).^2+(NewNuclei(2)-yPosSuspect).^2));
+        Distance=sqrt((NewNuclei(1)-xPosSuspect).^2+(NewNuclei(2)-yPosSuspect).^2);
         [MinValue,ClosestNucleusIndex]=min(Distance);
 
         ClickedSchnitz=SchnitzSuspect(ClosestNucleusIndex);
