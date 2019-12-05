@@ -116,7 +116,7 @@ save_button.ButtonPushedFcn = @saveOptions;
 updateHisImage();
 uiwait(fig);
 
-    % called whenever the frame, channels, or projectio is changed. Updates
+    % called whenever the frame, channels, or projection is changed. Updates
     % the histone image the UI shows
     function updateHisImage(~, ~)
         channels_to_use = channel_list.Value;
@@ -126,7 +126,7 @@ uiwait(fig);
         frame = ceil(frame_slider.Value / skip_factor);
         channels = [];
         for i = 1:3
-            if any(strcmp(channels_to_use, ['Channel ' num2str(i)]))
+            if any(strcmp(channels_to_use, ['Channel ' num2str(i)])) 
                 channels = [channels i];
             end
         end
@@ -171,6 +171,8 @@ uiwait(fig);
                 else
                     Channel1{1} = [Channel1{1}, ':Nuclear'];
                 end
+            else
+                Channel1 = '';
             end
         end
         if ~isempty(Channel2)
@@ -180,7 +182,10 @@ uiwait(fig);
                 else
                     Channel2{1} = [Channel2{1}, ':Nuclear'];
                 end
+            else
+                Channel2 = '';
             end
+            
         end
         if ~isempty(Channel3)
             if any(strcmp(channel_list.Value, 'Channel 3'))
@@ -189,6 +194,8 @@ uiwait(fig);
                 else
                     Channel3{1} = [Channel3{1}, ':Nuclear'];
                 end
+            else
+                Channel3 = '';
             end
         end
         
@@ -231,41 +238,3 @@ uiwait(fig);
     end
 
 end
-
-function HisSlices = generateHisSlices(images, NSlices, NChannels, fiducialChannel, framesIndex, seriesIndex)
-  
-  % For all 'nuclear' channels, generate HisSlices, and do projection
-  HisSlices = zeros([size(images{seriesIndex}{1, 1}, 1), size(images{seriesIndex}{1, 1}, 2), NSlices(seriesIndex)]);
-  n = 1;
-  firstImage = (framesIndex - 1) * NSlices(seriesIndex) * NChannels + 1 + (fiducialChannel - 1);
-  lastImage = framesIndex * NSlices(seriesIndex) * NChannels;
-  
-  for imagesIndex = firstImage:NChannels:lastImage
-    HisSlices(:, :, n) = images{seriesIndex}{imagesIndex, 1};
-    n = n + 1;
-  end
-  
-end
-
-function Projection = calculateProjection(ProjectionType, NSlices, HisSlices, max_custom, min_custom)
-  % Calculate the projection (either Maximum or Median)
-  if strcmpi(ProjectionType, 'medianprojection')
-    Projection = median(HisSlices, 3);
-  elseif strcmpi(ProjectionType, 'middleprojection')
-    Projection = max(HisSlices(:, :, round(NSlices * .50):round(NSlices * .75)), [], 3);
-  elseif strcmpi(ProjectionType, 'meanprojection')
-    Projection = mean(HisSlices,3);
-  elseif strcmpi(ProjectionType, 'maxprojection')
-    Projection = max(HisSlices, [], 3);
-  else
-    SortedHisSlices = sort(HisSlices, 3, 'descend');
-    if length(size(SortedHisSlices)) > 2
-        Projection = mean(SortedHisSlices(:, :, max_custom:min_custom), 3);
-    else
-        Projection = SortedHisSlices;
-    end
-  end
-
-end
-
-
