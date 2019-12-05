@@ -11,9 +11,9 @@ function Projection = generateNuclearChannel(...
     Channel2, Channel3, ReferenceHist, OutputFolder, Prefix, lowbit)
 
   % Check how many channels have ":Nuclear" in the MovieDatabase.csv
-  NuclearChannels = [contains(Channel1, 'Nuclear', 'IgnoreCase', true), ...
-                       contains(Channel2, 'Nuclear', 'IgnoreCase', true), ...
-                       contains(Channel3, 'Nuclear', 'IgnoreCase', true)];
+  NuclearChannels = [contains(Channel1, 'Nuclear', 'IgnoreCase', true) & ~contains(Channel1, 'inverted', 'IgnoreCase', true), ...
+                       contains(Channel2, 'Nuclear', 'IgnoreCase', true)& ~contains(Channel2, 'inverted', 'IgnoreCase', true), ...
+                       contains(Channel3, 'Nuclear', 'IgnoreCase', true)& ~contains(Channel3, 'inverted', 'IgnoreCase', true)];
   nNuclearChannels = sum(NuclearChannels);
 
   InvertedChannels = [contains(Channel1, 'inverted', 'IgnoreCase', true), ...
@@ -134,9 +134,9 @@ function Projection = generateNuclearChannel(...
     end
     
   end
-  
- 
-  Projection = uint16(Projection);
+
+    Projection = uint16(Projection);
+
   
   imwrite(Projection, [OutputFolder, filesep, Prefix, '-His_', iIndex(numberOfFrames, 3), '.tif']);
   

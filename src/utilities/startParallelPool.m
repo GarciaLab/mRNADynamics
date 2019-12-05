@@ -2,6 +2,7 @@ function startParallelPool(nWorkers, displayFigures, keepPool)
 
 ps = parallel.Settings;
 ps.Pool.AutoCreate = false;
+distcomp.feature( 'LocalUseMpiexec', false )
 
 if nWorkers > 1 && ~displayFigures
     maxWorkers = nWorkers;

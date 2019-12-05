@@ -309,7 +309,7 @@ save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
 if ~noStitch
     disp('stitching schnitzes')
     try
-        StitchSchnitz(Prefix);
+        StitchSchnitz(Prefix, nWorkers);
     catch
         disp('failed to stitch schnitzes')
     end

@@ -1,4 +1,4 @@
-function schnitzcells = StitchSchnitz(Prefix)
+function schnitzcells = StitchSchnitz(Prefix, nWorkers)
 
 %This function joins schnitzcells that overlap in space and are contiguous in time.
 
@@ -194,7 +194,7 @@ close(h);
 [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
 save([DropboxFolder,filesep,Prefix,filesep,Prefix '_lin.mat'],'schnitzcells', '-append');
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-append');
-TrackNuclei(Prefix, 'NoBulkShift','ExpandedSpaceTolerance' ,1.5, 'nWorkers', 8, 'noStitch', 'retrack');
+TrackNuclei(Prefix, 'NoBulkShift','ExpandedSpaceTolerance' ,1.5, 'nWorkers', nWorkers, 'noStitch', 'retrack');
 
 %% Accesory code to check nuclear traces
 % % Does the number of schnitz make sense?
