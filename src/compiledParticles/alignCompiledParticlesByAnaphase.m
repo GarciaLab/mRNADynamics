@@ -7,7 +7,14 @@ function alignCompiledParticlesByAnaphase(Prefix)
 resultsFolder = [DropboxFolder, filesep, Prefix];
 
 load([resultsFolder, filesep, 'CompiledParticles.mat']);
-load([resultsFolder, filesep, 'APDivision.mat']);
+try
+    load([resultsFolder, filesep, 'APDivision.mat']);
+catch
+    warning('apdivision not found. making it now.')
+    CheckDivisionTimes(Prefix, 'lazy');
+    load([resultsFolder, filesep, 'APDivision.mat']);
+end
+
 
 for ch = 1:length(CompiledParticles)
     for p = 1:length(CompiledParticles{ch})
