@@ -15,6 +15,7 @@ function TrackNuclei(Prefix,varargin)
 % 'bulkShift': Runs the nuclear tracking with accounting for the bulk
 % shift between frames (greatly reduces runtime).
 % 'retrack': retrack
+% 'integrate': integrate nuclear fluorescence
 %
 % OUTPUT
 % '*_lin.mat' : Nuclei with lineages
@@ -31,7 +32,8 @@ function TrackNuclei(Prefix,varargin)
 disp(['Tracking nuclei on ', Prefix, '...']);
 
 [stitchSchnitz, ExpandedSpaceTolerance, NoBulkShift,...
-    retrack, nWorkers, track, noBreak, noStitch, markandfind, fish] = DetermineTrackNucleiOptions(varargin{:});
+    retrack, nWorkers, track, noBreak, noStitch, markandfind, fish, intFlag]...
+    = DetermineTrackNucleiOptions(varargin{:});
 
 
 
@@ -263,14 +265,12 @@ if exist('dataStructure', 'var')
     save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure');
 end
 
-%AR 11/26/19- moved this to compileparticles to speed up tracknuclei 
-%
-% %Extract the nuclear fluorescence values if we're in the right experiment
-% %type
-% if (strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input'))
-%     Channels={Channel1{1},Channel2{1}, Channel3{1}};
-%     schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, ExperimentType, Channels, PreProcPath);
-% end
+%Extract the nuclear fluorescence values if we're in the right experiment
+%type
+if intFlag && (strcmpi(ExperimentType,'inputoutput') ||strcmpi(ExperimentType,'input'))
+    Channels={Channel1{1},Channel2{1}, Channel3{1}};
+    schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, ExperimentType, Channels, PreProcPath);
+end
 
 if fish
     schnitzcells = rmfield(schnitzcells, {'P', 'E', 'D'});

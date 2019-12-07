@@ -340,15 +340,6 @@ if ~SkipAll
     
 end
 
-%Extract the nuclear fluorescence values if we're in the right experiment
-%type
-if (strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input'))
-    Channels={Channel1{1},Channel2{1}, Channel3{1}};
-    schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, ExperimentType, Channels, PreProcPath);
-    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
-    save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells');%,'IntegrationArea');
-end
-
 %% Put together CompiledParticles
 
 CompiledParticles = cell(NChannels,1);
