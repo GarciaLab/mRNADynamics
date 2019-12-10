@@ -107,7 +107,7 @@ figure()
 axs = {};
 for cycle = 1:1
     
-    axs{cycle} = subplot(1, 2, cycle);
+%     axs{cycle} = subplot(1, 2, cycle);
     errorbar(dlfluobins, meanFracFluoEmbryo{cycle},seFracFluoEmbryo{cycle}, '-o');
     xlabel('dorsal concentration (au)');
     ylabel('fraction active nuclei');
