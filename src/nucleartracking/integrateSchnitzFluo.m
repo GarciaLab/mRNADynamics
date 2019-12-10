@@ -135,7 +135,7 @@ else
 end
 
 if saveFlag
-    save(schnitzPath, 'schnitzcells');
+    save(schnitzPath);
 end
 
 end
