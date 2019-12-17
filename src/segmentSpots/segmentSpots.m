@@ -117,8 +117,9 @@ end
 % within the regions.
 
 pixelSize = FrameInfo(1).PixelSize * 1000; %nm
-neighborhood = round(1300 / pixelSize); %nm
-snippet_size = 2 * (floor(1300 / (2 * pixelSize))) + 1; % nm. note that this is forced to be odd
+neighboorhood_size = 1300;
+neighborhood = round(neighboorhood_size / pixelSize); %nm
+snippet_size = 2 * (floor(neighboorhood_size / (2 * pixelSize))) + 1; % nm. note that this is forced to be odd
 coatChannel = spotChannels;
 
 falsePositives = 0;
