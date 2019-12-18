@@ -55,6 +55,7 @@ NParticlesDV = [];
 MeanVectorAP = [];
 SDVectorAP = [];
 NParticlesAP = [];
+CompiledNuclei = [];
 
 
 % Default values for Options

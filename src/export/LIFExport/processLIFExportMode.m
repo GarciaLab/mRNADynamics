@@ -1,7 +1,7 @@
 % Added PreferredFileName so we can automate testing and bypass the user prompt when there are many files available.
 function FrameInfo = processLIFExportMode(rawDataFolder, ExperimentType, ProjectionType, Channel1, Channel2, Channel3,...
     Prefix, OutputFolder, PreferredFileNameForTest,...
-    keepTifs, nuclearGUI, skipExtraction, lowbit)
+    nuclearGUI, skipExtraction, lowbit)
 
 markandfind = false;
 

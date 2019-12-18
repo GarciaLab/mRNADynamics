@@ -38,7 +38,7 @@ close all
     DetermineLocalFolders;
 
 noAdd = false;
-nWorkers = 8;
+nWorkers = 1;
 fish = false;
 
 for i = 1:length(varargin)
@@ -48,7 +48,7 @@ for i = 1:length(varargin)
     elseif strcmpi(varargin{i}, 'nWorkers')
         nWorkers = varargin{i+1};
     end
-end
+end 
 
 startParallelPool(nWorkers, 0, 1);
 

@@ -171,7 +171,7 @@ for ChN=1:NChannels
                 try
                 [~,gx_vec,gy_vec,gz_vec,g_fits_cell,f3_vec,f3_raw_vec]=...
                     getGauss3DFitInfo(k,CompiledParticles{ChN},Spots{ChN});
-                                threeDFlag = ~all(isnan(gx_vec));
+                threeDFlag = ~all(isnan(gx_vec));
 
                 catch
                     warning('Didn''t have complete Gauss 3D info');

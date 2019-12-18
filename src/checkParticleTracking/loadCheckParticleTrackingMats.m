@@ -18,7 +18,7 @@ function [Particles, SpotFilter, Spots, FrameInfo, Spots3D] = loadCheckParticleT
     end
     
     disp('Spots.mat loaded')
-        Spots3D = [];
+    Spots3D = [];
     
     
 
