@@ -2,7 +2,7 @@ function SpotsFr = fitSnip3D(SpotsFr, spotChannel, spot, frame, Prefix,...
     PreProcPath, FrameInfo, nSpots)
 
 %%
-% check for pre-existinf 3D fit info
+% check for pre-existing 3D fit info
 % prev_flag = 0;
 
 % if ~isempty(SpotsFr(i).Fits)

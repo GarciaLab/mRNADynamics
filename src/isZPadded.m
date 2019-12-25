@@ -20,7 +20,8 @@ if ~strcmpi(saveType, 'none') | isempty(saveType)
     elseif matsPresent & ~tifsPresent
         saveType = '.mat';
     elseif matsPresent & tifsPresent
-        error('not sure which files to pick. check your processed folder.');
+%         error('both .mats and .tifs present .using .mats');
+        saveType = '.mat';
     end
     
 end

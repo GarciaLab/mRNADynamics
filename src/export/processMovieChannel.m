@@ -1,5 +1,5 @@
-function processLIFChannel(ExperimentType, channelIndex, numberOfFrames, Prefix, OutputFolder,...
-    LIFImages, framesIndex, seriesIndex, NChannels,...
+function processMovieChannel(ExperimentType, channelIndex, numberOfFrames, Prefix, OutputFolder,...
+    movieImages, framesIndex, seriesIndex, NChannels,...
     NSlices, coatChannel, inputProteinChannel, zslicesPadding, lowbit)
 
 experimentType1 = (strcmpi(ExperimentType,'1spot') || strcmp(ExperimentType,'2spot') || strcmp(ExperimentType,'2spot1color')) && channelIndex == coatChannel;
@@ -7,7 +7,7 @@ experimentType2 = strcmpi(ExperimentType,'2spot2color') || strcmpi(ExperimentTyp
 experimentType3 = strcmpi(ExperimentType, 'input') && sum(channelIndex == inputProteinChannel);
 
 %Create a blank image
-BlankImage = uint16(zeros(size(LIFImages{1}{1,1})));
+BlankImage = uint16(zeros(size(movieImages{1}{1,1})));
 
 if lowbit
     BlankImage = uint8(BlankImage);
@@ -46,9 +46,9 @@ if(experimentType1 || experimentType2 || experimentType3)
             % zSlices, because topZSlice would be min(NSlices)
             NewName = [Prefix, '_', iIndex(numberOfFrames,3), '_z', iIndex(slicesCounter + 1, 2), NameSuffix, '.tif'];
             if ~lowbit
-                imwrite(LIFImages{seriesIndex}{imageIndex,1}, [OutputFolder, filesep, NewName]);
+                imwrite(movieImages{seriesIndex}{imageIndex,1}, [OutputFolder, filesep, NewName]);
             else
-                imwrite(uint8(LIFImages{seriesIndex}{imageIndex,1}), [OutputFolder, filesep, NewName]);
+                imwrite(uint8(movieImages{seriesIndex}{imageIndex,1}), [OutputFolder, filesep, NewName]);
             end
             slicesCounter = slicesCounter + 1;
         end

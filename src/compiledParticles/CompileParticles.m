@@ -36,7 +36,6 @@ function CompileParticles(varargin)
 %           ROI1 and ROI2 are the y-position of the ROI rectangle. ROI1 is the
 %           lower boundary of ROI and ROI2 is the upper boundary of non-ROI
 %           since there is almost always scattering in the middle
-% 'intArea': Change the area (in pixels) of integration used in offset calculations
 % 'noHist': Force the code to assume there's no nuclear channel.
 % 'doSingleFits': Generate single trace fits. Added by EL&AR
 % 'manualSingleFits' : Compile values from manually generated single trace fits to
@@ -160,8 +159,9 @@ ncFilterID = [];
     DetermineLocalFolders;
 
 [Prefix, ForceAP, SkipTraces, SkipFluctuations, SkipFits, SkipMovie, ...
-    SkipAll, ApproveAll, MinParticles, minTime, ROI, intArea, noHist, ...
-    ROI1, ROI2, slimVersion, manualSingleFits, optionalResults, yToManualAlignmentPrompt, minBinSize, edgeWidth] = determineCompileParticlesOptions(varargin);
+    SkipAll, ApproveAll, MinParticles, minTime, ROI,  noHist, ...
+    ROI1, ROI2, slimVersion, manualSingleFits,...
+    optionalResults, yToManualAlignmentPrompt, minBinSize, edgeWidth] = determineCompileParticlesOptions(varargin);
 
 FilePrefix=[Prefix,'_'];
 
@@ -340,13 +340,6 @@ if ~SkipAll
     
 end
 
-%Extract the nuclear fluorescence values if we're in the right experiment
-%type
-if (strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input'))
-    Channels={Channel1{1},Channel2{1}, Channel3{1}};
-    schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, ExperimentType, Channels, PreProcPath);
-end
-
 %% Put together CompiledParticles
 
 CompiledParticles = cell(NChannels,1);
@@ -470,7 +463,7 @@ coatChannel = getCoatChannel(Channel1, Channel2, Channel3);
     NChannels, Particles, HistoneChannel, ...
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
     Spots, SkipTraces, nc9, nc10, nc11, nc12, nc13, nc14, ncFilterID, ncFilter, ...
-    ElapsedTime, intArea, Ellipses, EllipsePos, PreProcPath, ...
+    ElapsedTime, Ellipses, EllipsePos, PreProcPath, ...
     FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits, edgeWidth, pixelSize, coatChannel);
 
 %% ROI option
@@ -561,7 +554,7 @@ if ~slimVersion
             offsetAndFlux(...
             ...
             SkipFluctuations, ncFilter, ElapsedTime, CompiledParticles, DropboxFolder, ...
-            Prefix, ExperimentAxis, intArea, MeanVectorAll, SDVectorAll, MaxFrame, numFrames, SkipAll);
+            Prefix, ExperimentAxis, pixelSize, MeanVectorAll, SDVectorAll, MaxFrame, numFrames, SkipAll);
         
     end
     
@@ -698,12 +691,6 @@ save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
 CompiledParticlesToken = now;
 save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticlesToken.mat'],'CompiledParticlesToken')
 
-
-if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
-    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
-    save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells');%,'IntegrationArea');
-    
-end
 
 
 %%

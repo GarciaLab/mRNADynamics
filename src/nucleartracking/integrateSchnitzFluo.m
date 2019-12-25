@@ -1,4 +1,6 @@
-function schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, ExperimentType, Channels, PreProcPath)
+function schnitzcells =...
+    integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo,...
+    ExperimentType, Channels, PreProcPath)
 
 saveFlag = false;
 if nargin == 1
@@ -7,16 +9,22 @@ if nargin == 1
         rawDataFolder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder,...
         Channel3, spotChannels, MovieDataBaseFolder, movieDatabase]...
         = readMovieDatabase(Prefix);
+    
+    Channels = {Channel1{1},Channel2{1}, Channel3{1}};
+    
     [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution, ...
         Channel1, Channel2, Objective, Power, DataFolderColumnValue, ~, Comments, ...
         nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3, prophase, metaphase] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
-    load([DataFolder, filesep, 'FrameInfo.mat'], 'FrameInfo');
-    
+  
     DataFolder = [DropboxFolder, filesep, Prefix];
+
+     load([DataFolder, filesep, 'FrameInfo.mat'], 'FrameInfo');
+    
     FilePrefix = [Prefix, '_'];
     schnitzPath = [DropboxFolder, filesep, FilePrefix(1:end - 1), filesep, FilePrefix(1:end - 1), '_lin.mat'];
+    
     disp('Loading schnitzcells...')
-    load(schnitzPath);
+    load(schnitzPath, 'schnitzcells');
     disp('schnitzcells loaded.')
     
     saveFlag = true;
@@ -123,10 +131,11 @@ if sum(InputChannel)
         close(h);
     end
 else
-    error('Input channel not recognized. Check correct definition in MovieDatabase');
+    error('Input channel not recognized. Check correct definition in MovieDatabase. Input channels should use the :input notation.');
 end
 
 if saveFlag
     save(schnitzPath);
 end
+
 end

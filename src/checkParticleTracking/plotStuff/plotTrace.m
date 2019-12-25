@@ -8,7 +8,8 @@ function [Frames,AmpIntegral,GaussIntegral,AmpIntegral3, ...
     CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFitted, anaphaseInMins, ...
     ElapsedTime, schnitzcells, Particles, plot3DGauss, anaphase, prophase, metaphase,prophaseInMins, metaphaseInMins,Prefix, ...
     numFrames, CurrentFrame, ZSlices, CurrentZ, Spots, ...
-    correspondingNCInfo , Coefficients, ExperimentType, PreviousFrame, Frames,varargin)
+    correspondingNCInfo , Coefficients, ExperimentType, PreviousFrame, Frames,...
+    Channels, PreProcPath, DropboxFolder, varargin)
 
 %PLOTTRACE
 %plot traces in checkparticletracking
@@ -191,11 +192,21 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),amp2(Frames==
     if strcmpi(ExperimentType, 'inputoutput')
         yyaxis(traceFigAxes,'right')
         %now we'll plot the input protein intensity on the right-hand axis.
-        plot(traceFigAxes,schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames,...
-            max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).Fluo,[],2),'r.-','DisplayName','protein')
-        ylabel(traceFigAxes,'input protein intensity (a.u.)');
+        if ~isfield(schnitzcells, 'Fluo')
+%             schnitzcells =...
+%                 integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, ExperimentType, Channels, PreProcPath);
+%             FilePrefix = [Prefix, '_'];
+%             schnitzPath = [DropboxFolder, filesep, FilePrefix(1:end - 1), filesep, FilePrefix(1:end - 1), '_lin.mat']; 
+%             save(schnitzPath);
+                dummy = cell(length(schnitzcells), 1);
+                [schnitzcells.Fluo] = dummy{:};
+        else
+            plot(traceFigAxes,schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames,...
+                max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).Fluo,[],2),'r.-','DisplayName','protein')
+            ylabel(traceFigAxes,'input protein intensity (a.u.)');
+        end
         hold(traceFigAxes,'on')
-        plot(traceFigAxes,traceFigTimeAxis(approvedParticleFrames),AmpIntegral(~approvedParticleFrames),'.r')
+        plot(traceFigAxes,traceFigTimeAxis(~approvedParticleFrames),AmpIntegral(~approvedParticleFrames),'.r')
         hold(traceFigAxes,'off')
     else
         traceFigAxes.YAxis(2).Visible = 'off';

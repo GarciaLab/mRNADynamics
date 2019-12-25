@@ -26,7 +26,6 @@ for e = 1:length(allData)
         allData(e).Particles.nc12, allData(e).Particles.nc13, allData(e).Particles.nc14];
 
     nFrames = length(allData(e).Particles.ElapsedTime);
-%     [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncs, nFrames);
     
     for s = 1:length(schnitzcells)
 		midFrame = ceil(length(schnitzcells(s).frames)/2);

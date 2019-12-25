@@ -9,7 +9,7 @@ CompiledParticles = [];
 
 if ~isempty(varargin)
     if length(varargin) == 1
-        Particles = varargin{1}
+        Particles = varargin{1};
         p = true;
     elseif length(varargin) == 2
         Particles = varargin{1};

@@ -44,7 +44,7 @@ end
 FrameInfo = load([DataFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
 FrameInfo = FrameInfo.FrameInfo;
 
-% startParallelPool(nWorkers, displayFigures, keepPool);
+startParallelPool(nWorkers, displayFigures, keepPool);
 
 
 %%

@@ -1,4 +1,4 @@
-function schnitzcells = StitchSchnitz(Prefix)
+function schnitzcells = StitchSchnitz(Prefix, nWorkers)
 
 %This function joins schnitzcells that overlap in space and are contiguous in time.
 
@@ -6,21 +6,20 @@ function schnitzcells = StitchSchnitz(Prefix)
 
 %Information about about folders
 [SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
-configValues, movieDatabasePath] = DetermineAllLocalFolders(Prefix);
+    configValues, movieDatabasePath] = DetermineAllLocalFolders(Prefix);
 
 FilePrefix=[Prefix,'_'];
 
 
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
-Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
+    Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+    nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
 
 ncVector=[0,0,0,0,0,0,0,0,nc9,nc10,nc11,nc12,nc13,nc14];
 
 % Load all the nuclear segmentation and tracking information, and FrameInfo
-load([DropboxFolder,filesep,Prefix,filesep,[Prefix '_lin.mat']])
-load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'])
-load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'])
+load([DropboxFolder,filesep,Prefix,filesep,[Prefix '_lin.mat']]);
+load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses');
 
 
 %% /\/\/\/\/\/\/*\/*\/*\ END OF LOADING STEPS /*\/*\/*\/\/\/\/\/\/\/\/\/\
@@ -40,62 +39,63 @@ end
 
 Thresholds = [1.05:0.05:1.75]; %this number indicates how many radii of distance...
 %make two time-contiguous ellipses the same one
-
+nThresh = size(Thresholds);
 
 %set stitching information
 for j=1:length(schnitzcells)
-    schnitzcells(j).Valid = 1; %assume all are OK
+    schnitzcells(j).Valid = true; %assume all are OK
     schnitzcells(j).StitchedTo = []; %to know to which schnitz this one was pasted to
     schnitzcells(j).StitchedFrom = []; %to know what original schnitz were pasted to this one to form the final one
 end
 
-%% /|\/|\/|\/|\/|\ Start stitching loop /|\/|\/|\/|\/|\/|\  
+%% /|\/|\/|\/|\/|\ Start stitching loop /|\/|\/|\/|\/|\/|\
 h=waitbar(0,'Stitching broken schnitzs');
 
-for i=1:length(Thresholds)
+for i=1:nThresh
     
     waitbar(i/length(Thresholds),h);
-%     display (['Trying threshold', num2str(Thresholds(i))]);
+    %     display (['Trying threshold', num2str(Thresholds(i))]);
     %length(schnitzcells) for debugging
     threshold = Thresholds(i);
     Rule = 1;
-  
+    
     while Rule
-        for s1 = 1:length(schnitzcells) %outer loop. 
+        for s1 = 1:length(schnitzcells) %outer loop.
             %get schnitz basic time/space info
             Frames1 = schnitzcells(s1).frames;
             XPos1 = schnitzcells(s1).cenx;
             YPos1 = schnitzcells(s1).ceny;
-
+            
             %get the numbers we care about: the extremes.
             FirstFrame1 = Frames1(1);
             LastFrame1 = Frames1(end);
             InitialPosition1 = [XPos1(1),YPos1(1)] ;
             FinalPosition1 = [XPos1(end),YPos1(end)];
             Radius = Radii(LastFrame1);
-
+            
+           
             for s2 = 1:length(schnitzcells) %inner loop to make all pairwise comparisons
                 %[s1, s2]
                 %get schnitz basic time/space info
                 Frames2 = schnitzcells(s2).frames;
                 XPos2 = schnitzcells(s2).cenx;
                 YPos2 = schnitzcells(s2).ceny;
-
+                
                 %get the numbers we care about: the extremes.
                 FirstFrame2 = Frames2(1);
                 LastFrame2 = Frames2(end);
-
-                    InitialPosition2 = [XPos2(1),YPos2(1)] ;
-                    FinalPosition2 = [XPos2(end),YPos2(end)];
-
+                
+                InitialPosition2 = [XPos2(1),YPos2(1)] ;
+                FinalPosition2 = [XPos2(end),YPos2(end)];
+                
                 %compare schnitz s1 and s2
-                if schnitzcells(s1).Valid == 1
+                if schnitzcells(s1).Valid
                     if LastFrame1+1 == FirstFrame2 && ...
-                            pdist([double(FinalPosition1);double(InitialPosition2)],'euclidean') < Radius*(threshold) %casting to doubles to suppress obnoxious "Converting uint16 data to double" warnings
+                            pdist([double(FinalPosition1);double(InitialPosition2)],'euclidean') < Radius*(threshold)
                         % display('overlapping schnitz found')
-                        schnitzcells(s2).Valid = 0; %mark so we don't consider it in the future
+                        schnitzcells(s2).Valid = false; %mark so we don't consider it in the future
                         schnitzcells(s2).StitchedTo = [schnitzcells(s2).StitchedTo s1];
-
+                        
                         %paste info
                         schnitzcells(s1).StitchedFrom = [schnitzcells(s1).StitchedFrom s2];
                         schnitzcells(s1).frames = [Frames1 ; Frames2]; %stitch frames
@@ -103,32 +103,31 @@ for i=1:length(Thresholds)
                         schnitzcells(s1).ceny = [schnitzcells(s1).ceny schnitzcells(s2).ceny]; %
                         schnitzcells(s1).len = [schnitzcells(s1).len schnitzcells(s2).len]; %
                         schnitzcells(s1).cellno = [schnitzcells(s1).cellno schnitzcells(s2).cellno]; %
-
-
+                        
+                        
                         if isfield(schnitzcells,'Fluo')
-                            schnitzcells(s1).Fluo = [schnitzcells(s1).Fluo;schnitzcells(s2).Fluo]; %  
+                            schnitzcells(s1).Fluo = [schnitzcells(s1).Fluo;schnitzcells(s2).Fluo]; %
                         end
                         
-                          if isfield(schnitzcells, 'APpos')
+                        if isfield(schnitzcells, 'APpos')
                             schnitzcells(s1).APpos = [schnitzcells(s1).APpos;schnitzcells(s2).APpos];
-                          end
-                          if isfield(schnitzcells, 'APpos')
+                        end
+                        if isfield(schnitzcells, 'APpos')
                             schnitzcells(s1).DVpos =  [schnitzcells(s1).DVpos;schnitzcells(s2).DVpos];
-                          end
-                          if isfield(schnitzcells, 'FrameApproved')
+                        end
+                        if isfield(schnitzcells, 'FrameApproved')
                             schnitzcells(s1).FrameApproved =  [schnitzcells(s1).FrameApproved;schnitzcells(s2).FrameApproved];
-                          end
+                        end
                         if isfield(schnitzcells, 'FluoTimeTrace')
-                            schnitzcells(s1).FluoTimeTrace =  [schnitzcells(s1).FluoTimeTrace;schnitzcells(s2).FluoTimeTrace];
-
-                         end
-             
+                            schnitzcells(s1).FluoTimeTrace =  [schnitzcells(s1).FluoTimeTrace;schnitzcells(s2).FluoTimeTrace];    
+                        end
                         
                         
-
+                        
+                        
                     end
                 end
-            end        
+            end
         end
         %kill impostor schnitz forever
         %create new schnitzcells struct using only valid schnitz from former one
@@ -144,7 +143,8 @@ for i=1:length(Thresholds)
         
         %Go through all schnitzcells, find the references to schnitz that
         %are one index higher than each ImpostorSchnitz and subtract one.
-        for i=1:length(ImpostorSchnitz)   
+
+        for i=1:length(ImpostorSchnitz)
             for s=1:length(schnitzcells2)
                 %If this schnitz has a mother or daughters with an index
                 %over ImpostorSchnitz(i), then subtract one. If the index
@@ -181,20 +181,20 @@ for i=1:length(Thresholds)
         schnitzcells = schnitzcells2; %replace original by schnitzcells2
         clear schnitzcells2
         for k=1:length(schnitzcells)
-            schnitzcells(k).Valid = 1; %assume all are OK
+            schnitzcells(k).Valid = true; %assume all are OK
             schnitzcells(k).StitchedTo = []; %to know to which schnitz this one was pasted to
             schnitzcells(k).StitchedFrom = []; %to know what original schnitz were pasted to this one to form the final one
         end
-    end 
+    end
     %threshold %(for debugging)
 end
-close(h)
+close(h);
 
 
 [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
 save([DropboxFolder,filesep,Prefix,filesep,Prefix '_lin.mat'],'schnitzcells', '-append');
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-append');
-TrackNuclei(Prefix, 'NoBulkShift','ExpandedSpaceTolerance' ,1.5, 'nWorkers', 8, 'noStitch', 'retrack');
+TrackNuclei(Prefix, 'NoBulkShift','ExpandedSpaceTolerance' ,1.5, 'nWorkers', nWorkers, 'noStitch', 'retrack', 'integrate');
 
 %% Accesory code to check nuclear traces
 % % Does the number of schnitz make sense?

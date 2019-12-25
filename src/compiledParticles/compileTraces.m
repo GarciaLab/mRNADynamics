@@ -2,7 +2,7 @@ function [Particles, CompiledParticles, ncFilter, ncFilterID] =...
     compileTraces(NChannels, Particles, HistoneChannel, ...
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
     Spots, SkipTraces, nc9, nc10, nc11, nc12, nc13, nc14, ncFilterID, ncFilter, ...
-    ElapsedTime, intArea, Ellipses, EllipsePos, PreProcPath, ...
+    ElapsedTime, Ellipses, EllipsePos, PreProcPath, ...
     FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits, edgeWidth, pixelSize, coatChannels)
 %COMPILETRACES Summary of this function goes here
 %   Detailed explanation goes here
@@ -168,9 +168,15 @@ for ChN=1:NChannels
                     CompiledParticles{ChN}(k).fittedTon = [];
                 end
                 %Extract position info and general Gauss3D fit info
+                try
                 [~,gx_vec,gy_vec,gz_vec,g_fits_cell,f3_vec,f3_raw_vec]=...
                     getGauss3DFitInfo(k,CompiledParticles{ChN},Spots{ChN});
                 threeDFlag = ~all(isnan(gx_vec));
+
+                catch
+                    warning('Didn''t have complete Gauss 3D info');
+                    threeDFlag = false;
+                end
                 if threeDFlag
                     CompiledParticles{ChN}(k).xPosGauss3D = gx_vec;
                     CompiledParticles{ChN}(k).yPosGauss3D = gy_vec;

@@ -38,7 +38,7 @@ close all
     DetermineLocalFolders;
 
 noAdd = false;
-nWorkers = 8;
+nWorkers = 1;
 fish = false;
 
 for i = 1:length(varargin)
@@ -48,7 +48,7 @@ for i = 1:length(varargin)
     elseif strcmpi(varargin{i}, 'nWorkers')
         nWorkers = varargin{i+1};
     end
-end
+end 
 
 startParallelPool(nWorkers, 0, 1);
 
@@ -290,7 +290,7 @@ while (cc~='x')
         
     elseif (ct~=0)&(cc=='d')    %Delete all ellipses in the current frame
         Ellipses{CurrentFrame}=[];
-        elseif (ct~=0)&(cc=='D')    %Delete all ellipses in hand-drawn ROI
+    elseif (ct~=0)&(cc=='D')    %Delete all ellipses in hand-drawn ROI
         roi = drawrectangle(overlayAxes);
         EllipsesCopy = Ellipses;
         EllipsesCopy{CurrentFrame} = [];
