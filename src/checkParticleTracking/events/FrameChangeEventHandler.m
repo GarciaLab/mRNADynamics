@@ -10,19 +10,19 @@ function [textInputHandler, keyInputHandler] = FrameChangeEventHandler(cptState,
     end
 
     function keyInput(cc)
-        if cc == '.'%Move forward one frame
+        if cc == '.' %Move forward one frame
             cptState.PreviousFrame = cptState.CurrentFrame;
             [cptState.CurrentFrame, cptState.ManualZFlag] = changeFrame(cptState.CurrentFrame + 1, numValidFrames);
 
-        elseif (cc == ',')%Move backward one frame
+        elseif (cc == ',') %Move backward one frame
             cptState.PreviousFrame = cptState.CurrentFrame;
             [cptState.CurrentFrame, cptState.ManualZFlag] = changeFrame(cptState.CurrentFrame - 1, numValidFrames);
 
-        elseif (cc == '>')%Move forward five frames
+        elseif (cc == '>') %Move forward five frames
             cptState.PreviousFrame = cptState.CurrentFrame;
             [cptState.CurrentFrame, cptState.ManualZFlag] = changeFrame(cptState.CurrentFrame + 5, numValidFrames);
 
-        elseif (cc == '<')%#ok<*AND2>%Move backward five frames
+        elseif (cc == '<') %#ok<*AND2>%Move backward five frames
             cptState.PreviousFrame = cptState.CurrentFrame;
             [cptState.CurrentFrame, cptState.ManualZFlag] = changeFrame(cptState.CurrentFrame - 5, numValidFrames);
  

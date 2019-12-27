@@ -262,7 +262,6 @@ ShowThreshold2 = 1; %Whether to show particles below the threshold
 HideApprovedFlag = 0;
 ParticleToFollow = [];
 ZSlices = FrameInfo(1).NumberSlices + 2; %Note that the blank slices are included
-CurrentZ = round(ZSlices / 2);
 CurrentParticle = 1;
 PreviousParticle = 1;
 lastParticle = 0; %this gets flagged if there's a drop to one particle within the Particles structure.
@@ -270,7 +269,7 @@ CurrentFrameWithinParticle = 1;
 CurrentChannel = 1;
 PreviousChannel = CurrentChannel;
 
-cptState = CPTState(0, 0, 0); %work in progress, 2019-12, JP.
+cptState = CPTState(0, 0, 0, round(ZSlices / 2)); %work in progress, 2019-12, JP.
 
 if ~isempty(Particles{CurrentChannel})
     cptState.CurrentFrame = Particles{CurrentChannel}(CurrentParticle).Frame(CurrentFrameWithinParticle);
@@ -333,18 +332,9 @@ no_clicking = false;
 [frameChangeTextInput, frameChangeKeyInput] = FrameChangeEventHandler(cptState, Spots, robot, fake_event);
 frame_num.ValueChangedFcn = frameChangeTextInput;
 
+[zSliceChangeTextInput, zSliceChangeKeyInput] = ZSliceChangeEventHandler(cptState, ZSlices, robot, fake_event);
+z_num.ValueChangedFcn = zSliceChangeTextInput;
 
-z_num.ValueChangedFcn = @z_num_changed;
-
-    function z_num_changed(~, ~)
-        
-        figure(Overlay);
-        [CurrentZ, cptState.ManualZFlag] = changeZSlice(str2double(z_num.Value), ZSlices);
-        
-        robot.keyPress(fake_event);
-        robot.keyRelease(fake_event);
-        
-    end
 
 particle_num.ValueChangedFcn = @particle_num_changed;
 
@@ -374,7 +364,7 @@ add_spot.ButtonPushedFcn = @add_spot_pushed;
         no_clicking = true;
         [numParticles, SpotFilter, Particles, Spots, PreviousParticle, CurrentParticle] = ...
             addSpot(ZoomMode, GlobalZoomMode, Particles, CurrentChannel, ...
-            CurrentParticle, cptState.CurrentFrame, CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
+            CurrentParticle, cptState.CurrentFrame, cptState.CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
             LinesPerFrame, Spots, ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
             SpotFilter, numParticles, smart_add, xSize, ySize, NDigits, ...
             coatChannel, UseHistoneOverlay, schnitzcells, nWorkers, plot3DGauss);
@@ -526,17 +516,17 @@ while (cc ~= 'x')
     yTrace = y(CurrentParticleIndex);
     
     if (~isempty(xTrace)) && (~cptState.ManualZFlag)
-        CurrentZ = z(CurrentParticleIndex);
+        cptState.CurrentZ = z(CurrentParticleIndex);
         CurrentZIndex = find(...
             Spots{CurrentChannel}(cptState.CurrentFrame).Fits(CurrentParticleIndex).z == ...
-            CurrentZ);
+            cptState.CurrentZ);
         cptState.ManualZFlag = 0;
     end
     
     
     if strcmpi(projectionMode, 'None')
         Image = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
-            FilePrefix, iIndex(cptState.CurrentFrame, NDigits), '_z', iIndex(CurrentZ, 2), nameSuffix, '.tif']);
+            FilePrefix, iIndex(cptState.CurrentFrame, NDigits), '_z', iIndex(cptState.CurrentZ, 2), nameSuffix, '.tif']);
     elseif strcmpi(projectionMode, 'Max Z')
         Image = zProjections(Prefix, coatChannel, cptState.CurrentFrame, ZSlices, NDigits, DropboxFolder, PreProcPath, FrameInfo, 'max', nWorkers);
     elseif strcmpi(projectionMode, 'Median Z')
@@ -579,14 +569,14 @@ while (cc ~= 'x')
         
         [ImageHis, xForZoom, yForZoom, oim,ellipseHandles]= displayOverlays(overlayAxes, Image, SpeedMode, FrameInfo, Particles, ...
             Spots, cptState.CurrentFrame, ShowThreshold2, ...
-            Overlay, CurrentChannel, CurrentParticle, ZSlices, CurrentZ, numFrames, ...
+            Overlay, CurrentChannel, CurrentParticle, ZSlices, cptState.CurrentZ, numFrames, ...
             schnitzcells, UseSchnitz, DisplayRange, Ellipses, SpotFilter, ZoomMode, GlobalZoomMode, ...
             ZoomRange, xForZoom, yForZoom, fish, UseHistoneOverlay, HisOverlayFigAxes, HisPath1, HisPath2, oim, ellipseHandles);
         
     else
         displayOverlays(overlayAxes, Image, SpeedMode, ...
             FrameInfo, Particles, Spots, cptState.CurrentFrame, ShowThreshold2, ...
-            Overlay, CurrentChannel, CurrentParticle, ZSlices, CurrentZ, numFrames, ...
+            Overlay, CurrentChannel, CurrentParticle, ZSlices, cptState.CurrentZ, numFrames, ...
             schnitzcells, UseSchnitz, DisplayRange, Ellipses, SpotFilter, ...
             ZoomMode, GlobalZoomMode, ZoomRange, xForZoom, yForZoom, fish, UseHistoneOverlay);
     end
@@ -597,7 +587,7 @@ while (cc ~= 'x')
             Spots{CurrentChannel}(cptState.CurrentFrame).Fits(CurrentParticleIndex).brightestZ);
         CurrentZIndex = find(...
             Spots{CurrentChannel}(cptState.CurrentFrame).Fits(CurrentParticleIndex).z == ...
-            CurrentZ);
+            cptState.CurrentZ);
         
         if isempty(CurrentZIndex)
             %             warning('This particle has a gap in its z-profile. This is
@@ -614,7 +604,7 @@ while (cc ~= 'x')
     % PLOT SNIPPET
     
     FullSlicePath = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(cptState.CurrentFrame, 3) ...
-        , '_z' iIndex(CurrentZ, 2) '_ch' iIndex(coatChannel, 2) '.tif'];
+        , '_z' iIndex(cptState.CurrentZ, 2) '_ch' iIndex(coatChannel, 2) '.tif'];
     
         [CurrentSnippet, hImage] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
             CurrentZIndex, FullSlicePath, Spots, CurrentChannel, cptState.CurrentFrame, ...
@@ -642,7 +632,7 @@ while (cc ~= 'x')
             FrameInfo, CurrentChannel, PreviousChannel, ...
             CurrentParticle, PreviousParticle, lastParticle, HideApprovedFlag, lineFitted, anaphaseInMins, ...
             ElapsedTime, schnitzcells, Particles, plot3DGauss, anaphase, prophase, metaphase, prophaseInMins, metaphaseInMins, Prefix, ...
-            numFrames, cptState.CurrentFrame, ZSlices, CurrentZ, Spots, ...
+            numFrames, cptState.CurrentFrame, ZSlices, cptState.CurrentZ, Spots, ...
             correspondingNCInfo, Coefficients, ExperimentType,cptState.PreviousFrame, Frames,...
             Channels, PreProcPath, DropboxFolder, plottrace_argin{:});
     end
@@ -651,7 +641,7 @@ while (cc ~= 'x')
     % PLOT Z SLICE RELATED FIGURES
     plotzvars = {zProfileFigAxes, zTraceAxes, ExperimentType, ...
     xTrace, Spots, cptState.CurrentFrame, CurrentChannel, CurrentParticleIndex, ZSlices, ...
-    CurrentZ, CurrentZIndex, PreviousParticle, CurrentParticle, ...
+    cptState.CurrentZ, CurrentZIndex, PreviousParticle, CurrentParticle, ...
     PreviousChannel, Particles, Frames, fish};
         if exist('MaxZProfile', 'var')
             plotzvars = [plotzvars, MaxZProfile];
@@ -660,7 +650,7 @@ while (cc ~= 'x')
 
     
     % UPDATE UICONTROLS
-    updateControls(frame_num, z_num, particle_num, cptState.CurrentFrame, CurrentZ, CurrentParticle);
+    updateControls(frame_num, z_num, particle_num, cptState.CurrentFrame, cptState.CurrentZ, CurrentParticle);
     
     set(0, 'CurrentFigure', Overlay);
     
@@ -694,6 +684,7 @@ while (cc ~= 'x')
     numValidFrames = length({Spots{1}.Fits});
     
     frameChangeKeyInput(cc);
+    zSliceChangeKeyInput(cc);
     
     if strcmpi(cc, 'donothing')
         %do nothing
@@ -712,21 +703,8 @@ while (cc ~= 'x')
         cptState.CurrentFrame = previousSkippedFrame(Particles, CurrentChannel, ...
             CurrentParticle, cptState.CurrentFrame);
         
-    elseif (cc == 'a') & (CurrentZ < ZSlices)%Move up in Z
-        [CurrentZ, cptState.ManualZFlag] = changeZSlice(CurrentZ + 1, ZSlices);
-    elseif (cc == 'z') & (CurrentZ > 1)%Move down in Z
-        [CurrentZ, cptState.ManualZFlag] = changeZSlice(CurrentZ - 1, ZSlices);
     elseif cc == 't'
-        
-        try
-            iJump = inputdlg('z-slice to jump to:', ...
-                'Move to z-slice');
-            iJump = str2double(iJump{1});
-        catch
-            iJump = cptState.CurrentFrame;
-        end
-        [CurrentZ, cptState.ManualZFlag] = changeZSlice(iJump, ZSlices);
-        DisplayRange = [];
+        DisplayRange = []; %Temporary, sould be moved to ZSliceChangeHandler
     
     elseif cc == 'k'
         
@@ -779,7 +757,7 @@ while (cc ~= 'x')
         [numParticles, SpotFilter, Particles, Spots,...
             PreviousParticle, CurrentParticle, ZoomMode, GlobalZoomMode] = ...
             addSpot(ZoomMode, GlobalZoomMode, Particles, CurrentChannel, ...
-            CurrentParticle, cptState.CurrentFrame, CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
+            CurrentParticle, cptState.CurrentFrame, cptState.CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
             LinesPerFrame, Spots, ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
             SpotFilter, numParticles, cc, xSize, ySize, NDigits,...
            Prefix, PreProcPath, ProcPath, coatChannel, UseHistoneOverlay, schnitzcells, nWorkers, plot3DGauss);
