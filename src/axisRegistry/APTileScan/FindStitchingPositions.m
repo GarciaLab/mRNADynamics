@@ -46,74 +46,77 @@ if exist([stitchingDataFolder, filesep, ID, 'TileArray.mat'], 'file')
 else
      error('No TileArray data stored. Seed a new TileArray using "NewTileArrayFromMetadata".')  
 end
+% ERROR: NEED TO IMPLEMENT SOMETHING TO REQUIRE THAT INITIAL SEED
+% DOESN'T VIOLATE MAX OVERLAP CONDITION
 
 %% 
 
 imm2 = imstitchTile(tile_array);
 imshow(imm2)
-    % Start by moving tile1 relative to tiles 2, 3, and 4
-    % allow x and y positions that are within 100 of the current value, without
-    % failing to overlap neighbors and sstaying within prescribed limits:
-    NTiles = length(tile_array.imgs);
-    for iter=1:NIterations
-        for tA_ind=1:NTiles
-            tileA = tile_array.imgs{tA_ind};
-            [hA, wA] = size(tileA);
-            tile_array.prevrows{size(tile_array.prevrows, 2)+1} = tile_array.rows;
-            tile_array.prevcols{size(tile_array.prevcols, 2)+1} = tile_array.cols;
-            tAr = tile_array.rows{tA_ind}; tAc = tile_array.cols{tA_ind};
-            [tAr_min, tAr_max, tAc_min, tAc_max ] = ...
-                getRowColLimits(tile_array, tA_ind, MaxOverlap, MaxStep);
+% Start by moving tile1 relative to tiles 2, 3, and 4
+% allow x and y positions that are within 100 of the current value, without
+% failing to overlap neighbors and sstaying within prescribed limits:
+NTiles = length(tile_array.imgs);
+for iter=1:NIterations
+    for tA_ind=1:NTiles
+        tileA = tile_array.imgs{tA_ind};
+        [hA, wA] = size(tileA);
+        tile_array.prevrows{size(tile_array.prevrows, 2)+1} = tile_array.rows;
+        tile_array.prevcols{size(tile_array.prevcols, 2)+1} = tile_array.cols;
+        tAr = tile_array.rows{tA_ind}; tAc = tile_array.cols{tA_ind};
+        [tAr_min, tAr_max, tAc_min, tAc_max ] = ...
+            getRowColLimits(tile_array, tA_ind, MaxOverlap, MaxStep);
 
-            rmins = [tile_array.rows{:}];
-            rmins(length(rmins)+1) = tAr_min;
-            top_limit = min(rmins);
-            if top_limit < 1
-                tAr_min = tAr_min + (1-top_limit);
-                tAr_max = tAr_max + (1-top_limit); 
-                for r =1:length(tile_array.rows)
-                    tile_array.rows{r} = tile_array.rows{r} + (1-top_limit);
-                end
+        rmins = [tile_array.rows{:}];
+        rmins(length(rmins)+1) = tAr_min;
+        top_limit = min(rmins);
+        if top_limit < 1
+            tAr_min = tAr_min + (1-top_limit);
+            tAr_max = tAr_max + (1-top_limit); 
+            for r =1:length(tile_array.rows)
+                tile_array.rows{r} = tile_array.rows{r} + (1-top_limit);
             end
-
-            cmins = [tile_array.cols{:}];
-            cmins(length(cmins)+1) = tAc_min;
-            left_limit = min(cmins);
-            if left_limit < 1
-                tAc_min = tAc_min + (1-left_limit);
-                tAc_max = tAc_max + (1-left_limit); 
-                for c =1:length(tile_array.cols)
-                    tile_array.cols{c} = tile_array.cols{c} + (1-left_limit);
-                end
+        end
+        
+        cmins = [tile_array.cols{:}];
+        cmins(length(cmins)+1) = tAc_min;
+        left_limit = min(cmins);
+        if left_limit < 1
+            tAc_min = tAc_min + (1-left_limit);
+            tAc_max = tAc_max + (1-left_limit); 
+            for c =1:length(tile_array.cols)
+                tile_array.cols{c} = tile_array.cols{c} + (1-left_limit);
             end
-            tArRange = tAr_min:1:tAr_max;
-            tAcRange = tAc_min:1:tAc_max;
-            scores = zeros(length(tArRange), length(tAcRange), length(tile_array.imgs)-1);
-            areas = zeros(length(tArRange), length(tAcRange), length(tile_array.imgs)-1);
-            counter = 0;
-            %figure(2)
-            for tB_ind =1:length(tile_array.imgs)
-                if tA_ind == tB_ind
-                    continue
-                end
-                Apos = tile_array.grid_positions{tA_ind};
-                Bpos = tile_array.grid_positions{tB_ind};
-                if ~(all(abs(Apos-Bpos)<=1))
-                    continue
-                end
-                counter = counter + 1;
-                tileB = tile_array.imgs{tB_ind};
-                [hB, wB] = size(tileB);
-                tBr = tile_array.rows{tB_ind};
-                tBc = tile_array.cols{tB_ind};
+        end
+        tArRange = tAr_min:1:tAr_max;
+        tAcRange = tAc_min:1:tAc_max;
+        scores = zeros(length(tArRange), length(tAcRange), length(tile_array.imgs)-1);
+        areas = zeros(length(tArRange), length(tAcRange), length(tile_array.imgs)-1);
+        counter = 0;
+        %figure(2)
+        for tB_ind =1:length(tile_array.imgs)
+            if tA_ind == tB_ind
+                continue
+            end
+            Apos = tile_array.grid_positions{tA_ind};
+            Bpos = tile_array.grid_positions{tB_ind};
+            if ~(all(abs(Apos-Bpos)<=1))
+                continue
+            end
+            counter = counter + 1;
+            tileB = tile_array.imgs{tB_ind};
+            [hB, wB] = size(tileB);
+            tBr = tile_array.rows{tB_ind};
+            tBc = tile_array.cols{tB_ind};
 
-                pB = polyshape([tBr, tBr, tBr+ hB, tBr+hB], [tBc, tBc+wB, tBc+wB, tBc]);
-                for i=1:length(tArRange)
-                    r = tArRange(i);
-                    for j = 1:length(tAcRange)
-                        c = tAcRange(j);
-                        pA = polyshape([r, r, r+ hA, r+hA], [c, c+wA, c+wA, c]);
-                        overlap = intersect(pA, pB);
+            pB = polyshape([tBr, tBr, tBr+ hB, tBr+hB], [tBc, tBc+wB, tBc+wB, tBc]);
+            for i=1:length(tArRange)
+                r = tArRange(i);
+                for j = 1:length(tAcRange)
+                    c = tAcRange(j);
+                    pA = polyshape([r, r, r+ hA, r+hA], [c, c+wA, c+wA, c]);
+                    overlap = intersect(pA, pB);
+                    if ~isempty(overlap.Vertices) 
                         rabsmin = min(overlap.Vertices(:,1));
                         rabsmax = max(overlap.Vertices(:,1));
                         cabsmin = min(overlap.Vertices(:,2));
@@ -124,53 +127,54 @@ imshow(imm2)
                         area = (rabsmax-rabsmin)*(cabsmax-cabsmin);
                         scores(i,j, counter) = sum(diff(:));
                         areas(i,j, counter) = area;
-                    end    
-                end
+                    end
+                end    
             end
-            summed_scores = sum(scores, 3);
-            summed_areas = sum(areas, 3);
-            normed_scores = summed_scores./summed_areas;
-            [newr_ind, newc_ind] = find(normed_scores == min(min(normed_scores)));
-            newr = tArRange(newr_ind); newc= tAcRange(newc_ind);
-            tile_array.rows{tA_ind} = newr;
-            tile_array.cols{tA_ind} = newc;
-            rmins = [tile_array.rows{:}];
-            top_limit = min(rmins);
-            for rr =1:length(tile_array.rows)
-                tile_array.rows{rr} = tile_array.rows{rr} + (1-top_limit);
-            end
+        end
+        summed_scores = sum(scores, 3);
+        summed_areas = sum(areas, 3);
+        normed_scores = summed_scores./summed_areas;
+        [newr_ind, newc_ind] = find(normed_scores == min(min(normed_scores)));
+        newr = tArRange(newr_ind); newc= tAcRange(newc_ind);
+        tile_array.rows{tA_ind} = newr;
+        tile_array.cols{tA_ind} = newc;
+        rmins = [tile_array.rows{:}];
+        top_limit = min(rmins);
+        for rr =1:length(tile_array.rows)
+            tile_array.rows{rr} = tile_array.rows{rr} + (1-top_limit);
+        end
 
-            cmins = [tile_array.cols{:}];
-            left_limit = min(cmins);
-            for cc =1:length(tile_array.cols)
-                tile_array.cols{cc} = tile_array.cols{cc} + (1-left_limit);
-            end
+        cmins = [tile_array.cols{:}];
+        left_limit = min(cmins);
+        for cc =1:length(tile_array.cols)
+            tile_array.cols{cc} = tile_array.cols{cc} + (1-left_limit);
+        end
 
-        end
-        numIters = length(tile_array.prevrows);
-        oldrows = [tile_array.prevrows{numIters-(NTiles-1)}{:}];
-        oldcols = [tile_array.prevcols{numIters-(NTiles-1)}{:}];
-        newrows = [tile_array.rows{:}];
-        newcols = [tile_array.cols{:}];
-        if mod(iter, 10) == 0
-            fprintf('%d/%d', [iter, NIterations]);
-        else
-            fprintf('.');
-        end
-        if mod(iter, 50) == 0
-            fprintf('\n');
-        end
-        
-        if (isequal(oldrows, newrows) && isequal(oldcols, newcols))
-            fprintf('Done!\n');
-            imm = imstitchTile(tile_array);
-            figure            
-            imshow(imm)
-
-            break
-        end
-        
     end
+    numIters = length(tile_array.prevrows);
+    oldrows = [tile_array.prevrows{numIters-(NTiles-1)}{:}];
+    oldcols = [tile_array.prevcols{numIters-(NTiles-1)}{:}];
+    newrows = [tile_array.rows{:}];
+    newcols = [tile_array.cols{:}];
+    if mod(iter, 10) == 0
+        fprintf('%d/%d', [iter, NIterations]);
+    else
+        fprintf('.');
+    end
+    if mod(iter, 50) == 0
+        fprintf('\n');
+    end
+
+    if (isequal(oldrows, newrows) && isequal(oldcols, newcols))
+        fprintf('Done!\n');
+        imm = imstitchTile(tile_array);
+        figure            
+        imshow(imm)
+
+        break
+    end
+
+end
     if ~(isequal(oldrows, newrows) || ~isequal(oldcols, newcols))
         disp('Tile Positions failed to stabilize. Saving current stitching configuration.');
         imm = imstitchTile(tile_array);

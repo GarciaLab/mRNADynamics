@@ -74,7 +74,7 @@ if ~exist('MaxStep', 'var') && ~StitchManually
 end
 if ~exist('MaxOverlap', 'var') && ~StitchManually
     disp('Using default value of MaxOverlap=200.')
-    MaxOverlap = 200;
+    MaxOverlap = 500;
 end
 
 %% Get the relevant folders for this data set
@@ -82,7 +82,7 @@ end
 [RawDynamicsPath, ~, DefaultDropboxFolder, DropboxFolder, MS2CodePath,...
     PreProcPath,configValues,movieDatabasePath, movieDatabase] =...
     DetermineAllLocalFolders(Prefix);
-mentDataFromMovieDatabase(Prefix, movieDatabase);
+
 
 % Parse Date and EmbryoName from Prefix
 Dashes=findstr(Prefix,'-');

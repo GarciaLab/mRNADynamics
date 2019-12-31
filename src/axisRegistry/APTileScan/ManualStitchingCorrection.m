@@ -79,8 +79,12 @@ temprows = rows;
 tempcols = cols;
 temprmaxs = rmaxs;
 tempcmaxs = cmaxs;
-rshift = zeros(NTiles);
-cshift = zeros(NTiles);
+rshift = [];
+cshift = [];
+for t=1:NTiles
+    rshift(t)= 0;
+    cshift(t) = 0;
+end
 
 %% Generate a figure for viewing current stitching information 
 
@@ -289,18 +293,18 @@ while (cc~='x' && cc~='q')
     elseif (ct~=0) && (cc=='s')
         %Save the information
         outputFolder = [DropboxFolder,filesep,Prefix,filesep,'FullEmbryoStitching'];
-    if ~exist(outputFolder, 'dir')
-        mkdir(outputFolder);
-    end
+        if ~exist(outputFolder, 'dir')
+            mkdir(outputFolder);
+        end
 
-    saveVars = {};
-    saveVars = [saveVars, 'tile_array'];
-    outputDatafile = [upper(ID(1)), ID(2:end), 'TileArray.mat'];
-    save([outputFolder, filesep, outputDatafile],saveVars{:});
-    GenerateStitchedData(Prefix, ID);
+        saveVars = {};
+        saveVars = [saveVars, 'tile_array'];
+        outputDatafile = [upper(ID(1)), ID(2:end), 'TileArray.mat'];
+        save([outputFolder, filesep, outputDatafile],saveVars{:});
+        GenerateStitchedData(Prefix, ID);
     end
     rmin = min(temprows);
-    cmin = min(temprows);
+    cmin = min(tempcols);
     temprows = temprows-rmin + 1;
     tempcols = tempcols-cmin+1;
     temprmaxs = temprmaxs-rmin+1;
