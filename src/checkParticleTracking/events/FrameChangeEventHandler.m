@@ -1,7 +1,7 @@
-function [textInputHandler, keyInputHandler] = FrameChangeEventHandler(cptState, Spots, robot, fake_event)
-    numValidFrames = length({Spots{1}.Fits}); %check handle of spots is updated when is needed down the road
+function [textInputHandler, keyInputHandler] = FrameChangeEventHandler(cptState, robot, fake_event)
  
     function textInput(frame_num, event)
+        numValidFrames = length({cptState.Spots{1}.Fits}); %check handle of spots is updated when is needed down the road
         figure(ancestor(frame_num, 'figure'));
         [cptState.CurrentFrame, cptState.ManualZFlag] = changeFrame(str2double(frame_num.Value), numValidFrames);
         robot.keyPress(fake_event);
@@ -10,6 +10,8 @@ function [textInputHandler, keyInputHandler] = FrameChangeEventHandler(cptState,
     end
 
     function keyInput(cc)
+        numValidFrames = length({cptState.Spots{1}.Fits}); %check handle of spots is updated when is needed down the road
+
         if cc == '.' %Move forward one frame
             cptState.PreviousFrame = cptState.CurrentFrame;
             [cptState.CurrentFrame, cptState.ManualZFlag] = changeFrame(cptState.CurrentFrame + 1, numValidFrames);
