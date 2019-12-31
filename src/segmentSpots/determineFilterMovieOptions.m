@@ -1,6 +1,6 @@
 function [displayFigures, numFrames, initialFrame, highPrecision, filterType, keepPool,...
     sigmas, nWorkers, app, kernelSize, weka, justTifs, ignoreMemoryCheck,...
-    classifierFolder, classifierPathCh1, customML, noSave,numType, gpu,saveAsMat, saveType]...
+    classifierFolder, classifierPathCh1, customML, noSave,numType, gpu,saveAsMat, saveType, dataSet]...
     ...
     = determineFilterMovieOptions(FrameInfo,varargin)
 
@@ -31,6 +31,7 @@ numType = 'double';
 gpu = 'noGPU';
 saveAsMat = false;
 saveType = '.tif';
+dataSet = '';
 
 for i = 1:length(varargin)
     
@@ -87,6 +88,8 @@ for i = 1:length(varargin)
         numType = 'single';
     elseif strcmpi(varargin{i}, 'double')
         numType = 'double';
+    elseif strcmpi(varargin{i}, 'dataSet')
+        dataSet = varargin{i+1};
         
     elseif strcmpi(varargin{i}, 'customML')
         customML = 1;

@@ -4,6 +4,10 @@ fractionFlag = false;
 mrnaFlag = false;
 durationFlag = false;
 maxFlag = false;
+displayTiles = false;
+turnOnFlag = false;
+
+minNuclei = 3; %minimum nuclei for a bin to be plottable
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'fraction')
@@ -14,6 +18,12 @@ for i = 1:length(varargin)
         durationFlag = true;
     elseif strcmpi(varargin{i}, 'maxfluo')
         maxFlag = true;
+    elseif strcmpi(varargin{i}, 'turnOn')
+        turnOnFlag = true;
+    elseif strcmpi(varargin{i}, 'displayTiles')
+        displayTiles = true;
+        tileFig = figure();
+        holdFig = figure();
     end
 end
 
@@ -25,41 +35,44 @@ else
 end
 
 load([resultsFolder,filesep,DataType,filesep,'dlfluobins.mat'], 'dlfluobins');
+load([resultsFolder,filesep,Prefixes{1},filesep,'FrameInfo.mat'], 'FrameInfo')
 
 ch = 1;
-nbins = length(dlfluobins);
-npart = {zeros(1, nbins), zeros(1, nbins), zeros(1, nbins)};
-nschnitz = {zeros(1, nbins), zeros(1, nbins), zeros(1, nbins)};
+nEmbryos = length(allData);
+nBins = length(dlfluobins);
 
-npartFluo = {zeros(1, nbins), zeros(1, nbins), zeros(1, nbins)};
-nschnitzFluo = {zeros(1, nbins), zeros(1, nbins), zeros(1, nbins)};
-allmrnas = {zeros(1, nbins), zeros(1, nbins), zeros(1, nbins)};
-% allmrnasnomean = {zeros(1, nbins), zeros(1, nbins), zeros(1, nbins)};
-allmrnasnomean = {[], [], []};
+npartFluo = {zeros(1, nBins), zeros(1, nBins), zeros(1, nBins)};
+nschnitzFluo = {zeros(1, nBins), zeros(1, nBins), zeros(1, nBins)};
+binFilter =  {ones(1, nBins), ones(1, nBins), ones(1, nBins)};
+embryosPerBin = {zeros(1, nBins), zeros(1, nBins), zeros(1, nBins)};
+allmrnasnomean = cell(3, nBins);
 
 npartFluoEmbryo = {};
 nschnitzFluoEmbryo = {};
 fracFluoEmbryo = {};
 
-for e = 1:length(allData)
+for e = 1:nEmbryos
     
     schnitzcells = allData(e).Particles.schnitzcells;
     CompiledParticles = allData(e).Particles.CompiledParticles;
+    load([resultsFolder,filesep,Prefixes{e},filesep,'FrameInfo.mat'], 'FrameInfo')
+
+    time = [FrameInfo.Time]/60; %frame times in minutes 
     
     for nc = 12:14
-        for bin = 1:nbins
-
+        for bin = 1:nBins
+            
+            tempParticlesFluo = [];
+            accumulatedFluo = [];
+            durations = [];
+            maxFluos = [];
+            turnOnTimes = [];
+            
             if ~isempty(CompiledParticles{ch})
                 particlesFluo = find([CompiledParticles{ch}.cycle] == nc & [CompiledParticles{ch}.dlfluobin] == bin);
             end
             schnitzesFluo = find([schnitzcells.cycle] == nc & [schnitzcells.dlfluobin] == bin...
                 & [schnitzcells.Approved]);
-
-            tempParticlesFluo = [];
-            particlesFluoCopy = particlesFluo;
-            accumulatedmRNA = [];
-            durations = [];
-            maxFluos = [];
             
             for p = 1:length(particlesFluo)
                 if schnitzcells(CompiledParticles{ch}(particlesFluo(p)).schnitz).Approved
@@ -68,39 +81,69 @@ for e = 1:length(allData)
                     fluoFrames = CompiledParticles{ch}(particlesFluo(p)).Frame;
                     fluo = CompiledParticles{ch}(particlesFluo(p)).Fluo3DRaw'; %can also use .Fluo for 2d fluo
                     
-                    durations = [durations, length(fluoFrames)];
-                  
-                    maxFluos = vertcat(maxFluos, fluo(fluo>=prctile(fluo,0)));
+                    durations = [durations, time(max(fluoFrames)) - time(min(fluoFrames))];
+                    
+                    turnOnTimes = [turnOnTimes, time(min(fluoFrames))];
+                    
+                    maxFluos = vertcat(maxFluos, fluo(fluo>=prctile(fluo,95)));
                     
                     if length(fluoFrames) > 1
-                        accumulatedmRNA = [accumulatedmRNA, trapz(fluoFrames, fluo, 1)];
+                        accumulatedFluo = [accumulatedFluo, trapz(fluoFrames, fluo, 1)];
                     else
-                        accumulatedmRNA = [accumulatedmRNA, fluo];
+                        accumulatedFluo = [accumulatedFluo, fluo];
                     end
                     
+                    if displayTiles && nc==12
+%                         figure(tileFig)
+%                         nexttile;
+%                         %dorsal
+%                         yyaxis left
+%                         plot(schnitzcells(CompiledParticles{ch}(particlesFluo(p)).schnitz).frames, schnitzcells(CompiledParticles{ch}(particlesFluo(p)).schnitz).FluoTimeTrace, '-g');
+%                         xticks([]);
+%                         yticks([]);
+%                         ylim([0, max(dlfluobins)]);
+%                         yyaxis right
+%                         plot(fluoFrames, fluo, '-r'); %spot intensity
+%                         ylim([0, 1000]);
+%                         %                         plot(midCycle, schnitzcells(s).FluoFeature, 'ob');
+%                         %                         hold off
+%                         xticks([]);
+%                         yticks([]);
+%                         %                         yticks([min(schnitzcells(s).FluoTimeTrace), max(schnitzcells(s).FluoTimeTrace)]);
+                       
+                        
+                        
+                        figure(holdFig)
+                          yyaxis left
+                        plot(schnitzcells(CompiledParticles{ch}(particlesFluo(p)).schnitz).frames, schnitzcells(CompiledParticles{ch}(particlesFluo(p)).schnitz).FluoTimeTrace, '-g');
+                        ylim([0, max(dlfluobins)]);
+                        yyaxis right
+                        plot(fluoFrames, fluo, '.-r'); %spot intensity
+%                         hold on
+                        ylim([0, 1000]);
+                        waitforbuttonpress;
+                    end
                     
                 end
             end
             
             particlesFluo = tempParticlesFluo;
             
-            npartFluo{nc-11}(bin) = npartFluo{nc-11}(bin) + length(particlesFluo);
-            nschnitzFluo{nc-11}(bin) = nschnitzFluo{nc-11}(bin) + length(schnitzesFluo);
-            allmrnas{nc-11}(bin) = allmrnas{nc-11}(bin) + mean(accumulatedmRNA);
-          
-          
-             
-%              allmrnasnomean{nc-11,bin} = [allmrnasnomean{nc-11,bin}, mrnas];
+            allmrnasnomean{nc-11,bin} = [allmrnasnomean{nc-11,bin}, accumulatedFluo];
             
             npartFluoEmbryo{nc-11}(bin, e) = length(particlesFluo);
             nschnitzFluoEmbryo{nc-11}(bin, e) = length(schnitzesFluo);
-            allmrnasEmbryo{nc-11}(bin, e) = mean(accumulatedmRNA);
-            alldurationsEmbryo{nc-11}(bin, e) = mean(durations);
-            allMaxFluoEmbryo{nc-11}(bin, e) = mean(maxFluos);
+            allmrnasEmbryo{nc-11}(bin, e) = nanmean(accumulatedFluo);
+            alldurationsEmbryo{nc-11}(bin, e) = nanmean(durations);
+            allTurnOnsEmbryo{nc-11}(bin, e) = nanmean(turnOnTimes);
+            allMaxFluoEmbryo{nc-11}(bin, e) = nanmean(maxFluos);
+            
+            if nschnitzFluoEmbryo{nc-11}(bin, e) >= minNuclei
+                embryosPerBin{nc-11}(bin) = embryosPerBin{nc-11}(bin) + 1;
+            end
             
         end
         
-        fracFluo{nc-11} = npartFluo{nc-11}./nschnitzFluo{nc-11};
         
         fracFluoEmbryo{nc-11}(:, e) = npartFluoEmbryo{nc-11}(:,e)./nschnitzFluoEmbryo{nc-11}(:,e);
         
@@ -111,19 +154,27 @@ end
 
 for nc = 1:2
     
-    meanFracFluoEmbryo{nc} = nanmean(fracFluoEmbryo{nc}, 2);
-    nEmbryos = size(fracFluoEmbryo{nc}, 2);
-    seFracFluoEmbryo{nc} = nanstd(fracFluoEmbryo{nc},0, 2)./sqrt(nEmbryos);
+    binFilter{nc} =  double(embryosPerBin{nc} > 0);
+    binFilter{nc}(~binFilter{nc}) = nan;
     
-    meanallmrnasEmbryo{nc} = nanmean(allmrnasEmbryo{nc}, 2);
-    seallmrnasEmbryo{nc} = nanstd(allmrnasEmbryo{nc},0, 2)./sqrt(nEmbryos);
+    filteredMean = @(x) nanmean(x,2).*binFilter{nc}';
+    filteredSE = @(x) (nanstd(x,0, 2)./sqrt(embryosPerBin{nc}')).*binFilter{nc}';
     
-    meanalldurationsEmbryo{nc} = nanmean(alldurationsEmbryo{nc}, 2);
-     sealldurationsEmbryo{nc} = nanstd(alldurationsEmbryo{nc},0, 2)./sqrt(nEmbryos);
-     
-     meanAllMaxFluoEmbryo{nc} = nanmean(allMaxFluoEmbryo{nc}, 2);
-     seAllMaxFluoEmbryo{nc} = nanstd(allMaxFluoEmbryo{nc},0, 2)./sqrt(nEmbryos);
-
+    meanFracFluoEmbryo{nc} = filteredMean(fracFluoEmbryo{nc});
+    seFracFluoEmbryo{nc} = filteredSE(fracFluoEmbryo{nc});
+    
+    meanallmrnasEmbryo{nc} = filteredMean(allmrnasEmbryo{nc});
+    seallmrnasEmbryo{nc} = filteredSE(allmrnasEmbryo{nc});
+    
+    meanalldurationsEmbryo{nc} = filteredMean(alldurationsEmbryo{nc});
+    sealldurationsEmbryo{nc} = filteredSE(alldurationsEmbryo{nc});
+    
+    meanTurnOnsEmbryo{nc} = filteredMean(allTurnOnsEmbryo{nc});
+    seTurnOnsEmbryo{nc} = filteredSE(allTurnOnsEmbryo{nc});
+    
+    meanAllMaxFluoEmbryo{nc} = filteredMean(allMaxFluoEmbryo{nc});
+    seAllMaxFluoEmbryo{nc} = filteredSE(allMaxFluoEmbryo{nc});
+    
 end
 
 axs = {};
@@ -134,8 +185,8 @@ if fractionFlag
     figure()
     axs = {};
     for cycle = 1:1
-
-    %     axs{cycle} = subplot(1, 2, cycle);
+        
+        %     axs{cycle} = subplot(1, 2, cycle);
         errorbar(dlfluobins, meanFracFluoEmbryo{cycle},seFracFluoEmbryo{cycle}, '-o');
         xlabel('dorsal concentration (au)');
         ylabel('fraction active nuclei');
@@ -143,46 +194,44 @@ if fractionFlag
         xlim([0, max(dlfluobins)*1.1]);
         title([DataType, ' nc',num2str(cycle+11)]);
         standardizeFigure(gca, []);
-
+        
     end
 end
-% 
-% allmrnasnc12 = allmrnasnomean(1, :);
-% lens = [];
-% for b = 1:nbins
-%     lens(b) = length(allmrnasnc12{b});
-% end
-% allmrnasnc12mat = zeros(nbins, max(lens));
-% for bin = 1:nbins
-%     if ~isempty(allmrnasnc12{bin})
-%         allmrnasnc12mat(bin, :) = padarray(allmrnasnc12{bin}',max(lens)-length(allmrnasnc12{bin}),NaN, 'post');
-%     end
-% end
 
-%stacked bar
+allmrnasnc12 = allmrnasnomean(1, :);
+lens = [];
+for b = 1:nBins
+    lens(b) = length(allmrnasnc12{b});
+end
+allmrnasnc12mat = zeros(nBins, max(lens));
+for bin = 1:nBins
+    if ~isempty(allmrnasnc12{bin})
+        allmrnasnc12mat(bin, :) = padarray(allmrnasnc12{bin}',max(lens)-length(allmrnasnc12{bin}),NaN, 'post');
+    end
+end
 
-allPoints = true;
+
+allPoints = false;
 %%
-figure();
 if mrnaFlag
     %accumulated mrna stuff
-    % figure()
+    figure()
     axsmrna = {};
-
+    
     for cycle = 1:1
-
-    %     axsmrna{cycle} = subplot(1, 2, cycle);
+        
+        %     axsmrna{cycle} = subplot(1, 2, cycle);
         if ~allPoints
             errorbar(dlfluobins, meanallmrnasEmbryo{cycle},seallmrnasEmbryo{cycle}, '-o');
         else
-%             plot(dlfluobins, allmrnas{cycle}, 'ko'); %this line plots the
-%             mean within an embryo
-                plot(dlfluobins, allmrnasnc12mat, '.k');
+            %             plot(dlfluobins, allmrnas{cycle}, 'ko'); %this line plots the
+            %             mean within an embryo
+            plot(dlfluobins, allmrnasnc12mat, '.k');
+            hold on
+            for i = 1:length(dlfluobins)
+                plot(dlfluobins(i), nanmean(allmrnasnc12mat(i, :)), 'ob');
                 hold on
-                for i = 1:length(dlfluobins)
-                    plot(dlfluobins(i), nanmean(allmrnasnc12mat(i, :)), 'ob');
-                    hold on
-                end
+            end
         end
         xlabel('dorsal concentration (au)');
         ylabel('mean acccumulated mRNA from active nuclei(au)');
@@ -190,32 +239,47 @@ if mrnaFlag
         xlim([0, max(dlfluobins)*1.1]);
         title([DataType, ' nc',num2str(cycle+11)]);
         standardizeFigure(gca, []);
-
+        
     end
 end
 
-if durationFlag 
-
-        cycle = 1;
-        errorbar(dlfluobins, meanalldurationsEmbryo{cycle},sealldurationsEmbryo{cycle}, '-o');
-        xlabel('dorsal concentration (au)');
-        ylabel('duration active nuclei (frames)');
-        xlim([0, max(dlfluobins)*1.1]);
-        title([DataType, ' nc',num2str(cycle+11), ' duration']);
-        standardizeFigure(gca, []);
-
+if durationFlag
+    
+    figure()
+    cycle = 1;
+    errorbar(dlfluobins, meanalldurationsEmbryo{cycle},sealldurationsEmbryo{cycle}, '-o');
+    xlabel('dorsal concentration (au)');
+    ylabel('duration active nuclei (frames)');
+    xlim([0, max(dlfluobins)*1.1]);
+    title([DataType, ' nc',num2str(cycle+11), ' duration']);
+    standardizeFigure(gca, []);
+    
 end
 
-if maxFlag 
+if turnOnFlag
+    
+    figure()
+    cycle = 1;
+    errorbar(dlfluobins, meanTurnOnsEmbryo{cycle},seTurnOnsEmbryo{cycle}, '-o');
+    xlabel('dorsal concentration (au)');
+    ylabel('turn on times active nuclei (min)');
+    xlim([0, max(dlfluobins)*1.1]);
+    title([DataType, ' nc',num2str(cycle+11), ' turn on time']);
+    standardizeFigure(gca, []);
+    
+end
 
-        cycle = 1;
-        errorbar(dlfluobins, meanAllMaxFluoEmbryo{cycle},seAllMaxFluoEmbryo{cycle}, '-o');
-        xlabel('dorsal concentration (au)');
-        ylabel('95% intensity from spots in active nuclei (au)');
-        xlim([0, max(dlfluobins)*1.1]);
-        title([DataType, ' nc',num2str(cycle+11), ' 95% of brightest spots']);
-        standardizeFigure(gca, []);
-
+if maxFlag
+    
+    figure()
+    cycle = 1;
+    errorbar(dlfluobins, meanAllMaxFluoEmbryo{cycle},seAllMaxFluoEmbryo{cycle}, '-o');
+    xlabel('dorsal concentration (au)');
+    ylabel('95% intensity from spots in active nuclei (au)');
+    xlim([0, max(dlfluobins)*1.1]);
+    title([DataType, ' nc',num2str(cycle+11), ' 95% of brightest spots']);
+    standardizeFigure(gca, []);
+    
 end
 
 

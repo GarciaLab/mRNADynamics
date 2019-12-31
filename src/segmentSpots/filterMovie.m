@@ -82,7 +82,7 @@ load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
 
 [displayFigures, numFrames, initialFrame, highPrecision, filterType, keepPool,...
     sigmas, nWorkers, app, kernelSize, Weka, justTifs, ignoreMemoryCheck, classifierFolder, ...
-    classifierPathCh1, customML, noSave, numType, gpu, saveAsMat, saveType] = determineFilterMovieOptions(FrameInfo,varargin);
+    classifierPathCh1, customML, noSave, numType, gpu, saveAsMat, saveType, dataSet] = determineFilterMovieOptions(FrameInfo,varargin);
 
 zSize = 2;
 for i = 1:size(FrameInfo,2)

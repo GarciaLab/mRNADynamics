@@ -12,8 +12,13 @@ function FrameInfo = recordFrameInfo(NFrames, NSlices, InitialStackTime, LIFMeta
         FrameInfo(1).PixelSize = str2double(LIFMeta.getPixelsPhysicalSizeX(0));
         FrameInfo(1).ZStep = str2double(LIFMeta.getPixelsPhysicalSizeZ(0));
     else
-        FrameInfo(1).PixelSize = str2double(LIFMeta.getPixelsPhysicalSizeX(0).value);
-        FrameInfo(1).ZStep = str2double(LIFMeta.getPixelsPhysicalSizeZ(0).value);
+        try
+            FrameInfo(1).PixelSize = str2double(LIFMeta.getPixelsPhysicalSizeX(0).value);
+            FrameInfo(1).ZStep = str2double(LIFMeta.getPixelsPhysicalSizeZ(0).value);
+        catch %no idea man
+            FrameInfo(1).PixelSize = str2double(LIFMeta.getPixelsPhysicalSizeX(1).value);
+            FrameInfo(1).ZStep = str2double(LIFMeta.getPixelsPhysicalSizeZ(1).value);
+        end
     end
 
   for i = 2:sum(NFrames)
@@ -29,8 +34,13 @@ function FrameInfo = recordFrameInfo(NFrames, NSlices, InitialStackTime, LIFMeta
         FrameInfo(i).PixelSize = str2num(LIFMeta.getPixelsPhysicalSizeX(0));
         FrameInfo(i).ZStep = str2double(LIFMeta.getPixelsPhysicalSizeZ(0));
     else
-        FrameInfo(i).PixelSize = str2num(LIFMeta.getPixelsPhysicalSizeX(0).value);
-        FrameInfo(i).ZStep = str2double(LIFMeta.getPixelsPhysicalSizeZ(0).value);
+        try
+            FrameInfo(i).PixelSize = str2num(LIFMeta.getPixelsPhysicalSizeX(0).value);
+            FrameInfo(i).ZStep = str2double(LIFMeta.getPixelsPhysicalSizeZ(0).value);
+        catch %no idea man
+            FrameInfo(i).PixelSize = str2num(LIFMeta.getPixelsPhysicalSizeX(1).value);
+            FrameInfo(i).ZStep = str2double(LIFMeta.getPixelsPhysicalSizeZ(1).value);
+        end
     end
 
     %currently only correctly records frameinfo for data from the Bateman lab Leica
