@@ -965,13 +965,15 @@ if NChannels == 1
     SpotFilter = SpotFilter{1};
 end
 
+Spots = cptState.Spots; % store Spots as a local variable so we can save it
+
 if UseHistoneOverlay
     save([DataFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter', '-v7.3')
-    save([DataFolder, filesep, 'Spots.mat'], 'cptState.Spots', '-v7.3')
+    save([DataFolder, filesep, 'Spots.mat'], 'Spots', '-v7.3')
     save([DropboxFolder, filesep, FilePrefix(1:end - 1), filesep, FilePrefix(1:end - 1), '_lin.mat'], 'schnitzcells')
 else
     save([DataFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter', '-v7.3')
-    save([DataFolder, filesep, 'Spots.mat'], 'cptState.Spots', '-v7.3')
+    save([DataFolder, filesep, 'Spots.mat'], 'Spots', '-v7.3')
 end
 
 close all
