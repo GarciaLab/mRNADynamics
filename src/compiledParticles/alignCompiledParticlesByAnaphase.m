@@ -1,4 +1,4 @@
-function alignCompiledParticlesByAnaphase(Prefix)
+function alignCompiledParticlesByAnaphase(Prefix, fullEmbryo)
 
 
 
@@ -7,32 +7,39 @@ function alignCompiledParticlesByAnaphase(Prefix)
 resultsFolder = [DropboxFolder, filesep, Prefix];
 
 load([resultsFolder, filesep, 'CompiledParticles.mat']);
-try
-    load([resultsFolder, filesep, 'APDivision.mat']);
-catch
-    warning('apdivision not found. making it now.')
-    CheckDivisionTimes(Prefix, 'lazy');
-    load([resultsFolder, filesep, 'APDivision.mat']);
+if fullEmbryo
+    try
+        load([resultsFolder, filesep, 'APDivision.mat']);
+    catch
+        warning('apdivision not found. making it now.')
+        CheckDivisionTimes(Prefix, 'lazy');
+        load([resultsFolder, filesep, 'APDivision.mat']);
+    end
 end
 
 
 for ch = 1:length(CompiledParticles)
     for p = 1:length(CompiledParticles{ch})
-        apdif = CompiledParticles{ch}(p).MedianAP - APbinID;
-        [~, apbin] = min(apdif(apdif > 0));
-        dvdif = CompiledParticles{ch}(p).MedianDV - DVbinID;
-        [~, dvbin] = min(dvdif(dvdif > 0));
-        divFrames = APDivision(:, apbin);
-        if sum(divFrames) == 0
-            error('rerun checkdivisiontimes');
+        if fullEmbryo
+            apdif = CompiledParticles{ch}(p).MedianAP - APbinID;
+            [~, apbin] = min(apdif(apdif > 0));
+            dvdif = CompiledParticles{ch}(p).MedianDV - DVbinID;
+            [~, dvbin] = min(dvdif(dvdif > 0));
+            divFrames = APDivision(:, apbin);
+            if sum(divFrames) == 0
+                error('rerun checkdivisiontimes');
+            end
+            actualFrames = CompiledParticles{ch}(p).Frame;
+            inds = find(actualFrames(1) > divFrames);
+            nc = inds(end);
+            CompiledParticles{ch}(p).FramesWRTAnaphase = actualFrames - divFrames(nc);
+            CompiledParticles{ch}(p).cycle = nc;
+            CompiledParticles{ch}(p).apbin = apbin;
+            CompiledParticles{ch}(p).dvbin = dvbin;
         end
-        actualFrames = CompiledParticles{ch}(p).Frame;
-        inds = find(actualFrames(1) > divFrames);
-        nc = inds(end);
-        CompiledParticles{ch}(p).FramesWRTAnaphase = actualFrames - divFrames(nc);
+        
         CompiledParticles{ch}(p).cycle = nc;
-        CompiledParticles{ch}(p).apbin = apbin;
-        CompiledParticles{ch}(p).dvbin = dvbin;
+        
     end
 end
 

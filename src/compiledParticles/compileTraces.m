@@ -3,7 +3,7 @@ function [Particles, CompiledParticles, ncFilter, ncFilterID] =...
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
     Spots, SkipTraces, nc9, nc10, nc11, nc12, nc13, nc14, ncFilterID, ncFilter, ...
     ElapsedTime, Ellipses, EllipsePos, PreProcPath, ...
-    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits, edgeWidth, pixelSize, coatChannels)
+    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits, edgeWidth, pixelSize, coatChannels, fullEmbryo)
 %COMPILETRACES Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -81,7 +81,7 @@ for ChN=1:NChannels
             
             %See if this particle is in one of the approved AP bins
             try
-                if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
+                if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV') && fullEmbryo
                     CurrentAPbin=max(find(APbinID<mean(Particles{ChN}(i).APpos(FrameFilter))));
                     if isnan(APbinArea(CurrentAPbin))
                         AnalyzeThisParticle=0;
@@ -111,13 +111,13 @@ for ChN=1:NChannels
                 %CompiledParticles{ChN}(k).DVpos=Particles{ChN}(i).DVpos(FrameFilter);
                 CompiledParticles{ChN}(k).FrameApproved = Particles{ChN}(i).FrameApproved;
                 
-                if strcmpi(ExperimentAxis,'AP')
+                if strcmpi(ExperimentAxis,'AP') && fullEmbryo
                     CompiledParticles{ChN}(k).APpos=Particles{ChN}(i).APpos(FrameFilter);
                     
                     %Determine the particles average and median AP position
                     CompiledParticles{ChN}(k).MeanAP=mean(Particles{ChN}(i).APpos(FrameFilter));
                     CompiledParticles{ChN}(k).MedianAP=median(Particles{ChN}(i).APpos(FrameFilter));
-                elseif strcmpi(ExperimentAxis,'DV')%&isfield(Particles,'APpos')
+                elseif strcmpi(ExperimentAxis,'DV') && fullEmbryo %&isfield(Particles,'APpos')
                     %AP information:
                     CompiledParticles{ChN}(k).APpos=Particles{ChN}(i).APpos(FrameFilter);
                     CompiledParticles{ChN}(k).MeanAP=mean(Particles{ChN}(i).APpos(FrameFilter));
@@ -134,7 +134,7 @@ for ChN=1:NChannels
                 %found. If there is no nucleus (like when a particle survives
                 %past the nuclear division) we will still use the actual particle
                 %position.
-                if HistoneChannel&strcmpi(ExperimentAxis,'AP')
+                if HistoneChannel&strcmpi(ExperimentAxis,'AP') && fullEmbryo
                     %Save the original particle position
                     CompiledParticles{ChN}(k).APposParticle=CompiledParticles{ChN}(k).APpos;
                     
