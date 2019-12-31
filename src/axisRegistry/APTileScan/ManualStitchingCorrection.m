@@ -1,4 +1,7 @@
-function [tile_array]=ManualStitchingCorrection(Prefix, tile_array, ID)
+function [tile_array]=ManualStitchingCorrection(Prefix, ID)
+% author: Gabriella Martini
+% date created: 12/29/19
+% date last modified: 12/31/19
 
 %m - Choose the tile to move with the mouse
 %t - Choose the tile to move using row and column indices
@@ -10,7 +13,7 @@ function [tile_array]=ManualStitchingCorrection(Prefix, tile_array, ID)
 %< - Move the selected tile to the left by 5 columns
 %+ - Move the selected tile up by 5 rows
 %- - Move the selected tile down by 5 rows
-%s - Choose the tile to move using row and column indices
+%s - save
 %x - close
 %q - Save and close
 
@@ -19,37 +22,70 @@ function [tile_array]=ManualStitchingCorrection(Prefix, tile_array, ID)
 
 %Close existing images
 close all
+
+
+%% Parse inputs
+
+if ~exist('Prefix')
+     FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
+     Dashes=strfind(FolderTemp,filesep);
+     Prefix=FolderTemp((Dashes(end)+1):end);
+end
+if ~exist('ID', 'var')
+    prompt = ['Enter an "ID" for stitching.',...
+    'The standard inputs "Mid" and "Surf" will stitch the',...
+    'Midsagittal and Surface Full Embryo images using the',...
+    '"MidTile.lif" and "SurfTile.lif" files respectively.'];
+    ID = input(prompt,'s');
+
+end
+ID = [upper(ID(1)), ID(2:end)];
+%% Load folder information and stored TileArray Data 
+
+% relevant folder info 
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
         DetermineLocalFolders(Prefix);
-temp_array = tile_array;
+stitchingDataFolder = [DropboxFolder,filesep,Prefix,filesep,'FullEmbryoStitching'];
 
-rows = [temp_array.rows{:}];
-cols = [temp_array.cols{:}];
-tiles = temp_array.imgs;
+% load TileArray with stitching information 
+if exist([stitchingDataFolder, filesep, ID, 'TileArray.mat'], 'file')
+     load([stitchingDataFolder, filesep, ID, 'TileArray.mat']);
+else
+     error('No TileArray data stored. Seed a new TileArray using "NewTileArrayFromMetadata".')  
+end
+%% Load stitching information into memory 
+rows = [tile_array.rows{:}];
+cols = [tile_array.cols{:}];
+tiles = tile_array.imgs;
 NTiles = length(tiles);
 heights = [];
 widths = [];
 gridrows = [];
 gridcolumns = [];
-
 for t=1:NTiles
     heights(t) = size(tiles{t}, 1);
     widths(t) = size(tiles{t},2);
-    gridrows(t) = temp_array.grid_positions{t}(1);
-    gridcolumns(t) = temp_array.grid_positions{t}(2);
+    gridrows(t) = tile_array.grid_positions{t}(1);
+    gridcolumns(t) = tile_array.grid_positions{t}(2);
 end
 rmaxs = rows+heights-1;
 cmaxs = cols+widths-1;
-grid_positions = temp_array.grid_positions;
-imm2 = imstitchTileColor(temp_array);
-TempFigure = figure;
-axesTemp = axes(TempFigure);
+grid_positions = tile_array.grid_positions;
+
+%% Copy TileArray info into temporary values used to store intermediate stitiching values
+
+temp_array = tile_array;
 temprows = rows;
 tempcols = cols;
 temprmaxs = rmaxs;
 tempcmaxs = cmaxs;
 rshift = zeros(NTiles);
 cshift = zeros(NTiles);
+
+%% Generate a figure for viewing current stitching information 
+
+TempFigure = figure;
+axesTemp = axes(TempFigure);
 
 
 
@@ -75,16 +111,14 @@ while (cc~='x' && cc~='q')
             shiftinfo{lcounter} = [shiftinfo{lcounter},'$$T_{', num2str(grid_positions{t}(1)),...
                 num2str(grid_positions{t}(2)), '}$$ shift: (',...
                 num2str(rshift(t)), ',',num2str(cshift(t)),')'];
-            if mod(t,4) == 0
-                lcounter = lcounter + 1;
-            end
         else
             shiftinfo{lcounter} = [shiftinfo{lcounter},...
-                ', $$T_{', num2str(grid_positions{t}(1)),...
+                ' $$T_{', num2str(grid_positions{t}(1)),...
                 num2str(grid_positions{t}(2)), '}$$ shift: (',...
                 num2str(rshift(t)), ',',num2str(cshift(t)),')'];
             if mod(t,4) == 0
                 lcounter = lcounter + 1;
+                shiftinfo{lcounter} = '';
             end
         end
     end
@@ -254,13 +288,16 @@ while (cc~='x' && cc~='q')
         cshift(TileSelected) = cshift(TileSelected)-5;
     elseif (ct~=0) && (cc=='s')
         %Save the information
-        saveVars = {};
-        saveVars = [saveVars, 'tile_array'];
-        save([DropboxFolder,filesep,Prefix,filesep,ID,'TileStitch.mat'],saveVars{:});
-        imm2 = imstitchTile(tile_array);
-        mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
-        imwrite(imm2,[DropboxFolder,filesep,Prefix,filesep,'StitchedEmbryoImages',filesep,'FullEmbryo',ID,'.tif'],'compression','none');
-        imwrite(imm2,[DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo',ID,'.tif'],'compression','none');
+        outputFolder = [DropboxFolder,filesep,Prefix,filesep,'FullEmbryoStitching'];
+    if ~exist(outputFolder, 'dir')
+        mkdir(outputFolder);
+    end
+
+    saveVars = {};
+    saveVars = [saveVars, 'tile_array'];
+    outputDatafile = [upper(ID(1)), ID(2:end), 'TileArray.mat'];
+    save([outputFolder, filesep, outputDatafile],saveVars{:});
+    GenerateStitchedData(Prefix, ID);
     end
     rmin = min(temprows);
     cmin = min(temprows);
@@ -295,13 +332,17 @@ end
 
 if cc=='q'
     %Save the information
+    %Create the output folder if it doesn't exist 
+    outputFolder = [DropboxFolder,filesep,Prefix,filesep,'FullEmbryoStitching'];
+    if ~exist(outputFolder, 'dir')
+        mkdir(outputFolder);
+    end
+
     saveVars = {};
     saveVars = [saveVars, 'tile_array'];
-    save([DropboxFolder,filesep,Prefix,filesep,ID,'TileStitch.mat'],saveVars{:});
-    imm2 = imstitchTile(tile_array);
-    mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
-    imwrite(imm2,[DropboxFolder,filesep,Prefix,filesep,'StitchedEmbryoImages',filesep,'FullEmbryo',ID,'.tif'],'compression','none');
-    imwrite(imm2,[DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo',ID,'.tif'],'compression','none');
+    outputDatafile = [upper(ID(1)), ID(2:end), 'TileArray.mat'];
+    save([outputFolder, filesep, outputDatafile],saveVars{:});
+    GenerateStitchedData(Prefix, ID);
 end
 
 close(TempFigure)
