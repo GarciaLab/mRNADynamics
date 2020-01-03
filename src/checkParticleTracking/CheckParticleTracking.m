@@ -255,7 +255,7 @@ if  exist(schnitzPath, 'file')
     
 end
 
-[Particles] = sortParticles(sortByFrames, sortByLength, NChannels, cptState.Particles);
+[Particles] = sortParticles(sortByFrames, sortByLength, NChannels, Particles);
         
 %Some flags and initial parameters
 ShowThreshold2 = 1; %Whether to show particles below the threshold
@@ -670,6 +670,7 @@ while (cc ~= 'x')
     
     frameChangeKeyInput(cc);
     zSliceChangeKeyInput(cc);
+    particleChangeKeyInput(cc);
     
     if strcmpi(cc, 'donothing')
         %do nothing
