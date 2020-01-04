@@ -176,6 +176,7 @@ FilePrefix=[Prefix,'_'];
     Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
     nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase, DVResolution] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
 
+ncFrames = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
 APExperiment = strcmpi(ExperimentAxis, 'AP');
 DVExperiment = strcmpi(ExperimentAxis, 'DV');
 
@@ -652,6 +653,9 @@ if ~slimVersion && fullEmbryo
     end
     
 end
+
+
+CompiledParticles = addCycle(CompiledParticles, ncFrames);
 
 %% Input-output
 

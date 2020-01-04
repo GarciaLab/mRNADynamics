@@ -37,7 +37,9 @@ for e = 1:length(allData)
     for p = 1:length(CompiledParticles{ch})
         schnitzInd = CompiledParticles{ch}(p).schnitz;
         schnitzcells(schnitzInd).compiledParticle = uint16(p);
-        schnitzcells(schnitzInd).dvbin = uint8(CompiledParticles{ch}(p).dvbin);
+        if isfield(CompiledParticles{ch}(p), 'dvbin')
+            schnitzcells(schnitzInd).dvbin = uint8(CompiledParticles{ch}(p).dvbin);
+        end
     end
     
     ncs = [zeros(1,8),allData(e).Particles.nc9, allData(e).Particles.nc10, allData(e).Particles.nc11,...

@@ -223,34 +223,38 @@ for ChN=1:NChannels
                     CompiledParticles{ChN}(k).schnitz=Particles{ChN}(i).Nucleus;
                     
                     %Save lineage information in terms of particles
-                    if ~isempty(schnitzcells(Particles{ChN}(i).Nucleus).P)
-                        if isempty(find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).P))
-                            CompiledParticles{ChN}(k).PParticle=0;
+                    if isfield(schnitzcells, 'P')
+                        
+                        if ~isempty(schnitzcells(Particles{ChN}(i).Nucleus).P)
+                            if isempty(find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).P))
+                                CompiledParticles{ChN}(k).PParticle=0;
+                            else
+                                CompiledParticles{ChN}(k).PParticle=find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).P);
+                            end
                         else
-                            CompiledParticles{ChN}(k).PParticle=find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).P);
+                            CompiledParticles{ChN}(k).PParticle=[];
                         end
-                    else
-                        CompiledParticles{ChN}(k).PParticle=[];
-                    end
+
+                        if ~isempty(schnitzcells(Particles{ChN}(i).Nucleus).D)
+                            if isempty(find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).D))
+                                CompiledParticles{ChN}(k).DParticle=0;
+                            else
+                                CompiledParticles{ChN}(k).DParticle=find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).D);
+                            end
+                        else
+                            CompiledParticles{ChN}(k).DParticle=[];
+                        end
+
+                        if ~isempty(schnitzcells(Particles{ChN}(i).Nucleus).E)
+                            if isempty(find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).E))
+                                CompiledParticles{ChN}(k).EParticle=0;
+                            else
+                                CompiledParticles{ChN}(k).EParticle=find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).E);
+                            end
+                        else
+                            CompiledParticles{ChN}(k).EParticle=[];
+                        end
                     
-                    if ~isempty(schnitzcells(Particles{ChN}(i).Nucleus).D)
-                        if isempty(find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).D))
-                            CompiledParticles{ChN}(k).DParticle=0;
-                        else
-                            CompiledParticles{ChN}(k).DParticle=find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).D);
-                        end
-                    else
-                        CompiledParticles{ChN}(k).DParticle=[];
-                    end
-                    
-                    if ~isempty(schnitzcells(Particles{ChN}(i).Nucleus).E)
-                        if isempty(find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).E))
-                            CompiledParticles{ChN}(k).EParticle=0;
-                        else
-                            CompiledParticles{ChN}(k).EParticle=find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).E);
-                        end
-                    else
-                        CompiledParticles{ChN}(k).EParticle=[];
                     end
                     
                     %Save information about the nucleus birth and death

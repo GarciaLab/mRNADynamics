@@ -57,7 +57,10 @@ for e = 1:nEmbryos
     CompiledParticles = allData(e).Particles.CompiledParticles;
     load([resultsFolder,filesep,Prefixes{e},filesep,'FrameInfo.mat'], 'FrameInfo')
 
+    ncFrames = [zeros(1,8), allData(e).Particles.nc9, allData(e).Particles.nc10, allData(e).Particles.nc11, allData(e).Particles.nc12, allData(e).Particles.nc13, allData(e).Particles.nc14]; 
+    ncFrames(ncFrames==0) = 1;
     time = [FrameInfo.Time]/60; %frame times in minutes 
+    ncTimes = time(ncFrames);
     
     for nc = 12:14
         for bin = 1:nBins
@@ -83,7 +86,7 @@ for e = 1:nEmbryos
                     
                     durations = [durations, time(max(fluoFrames)) - time(min(fluoFrames))];
                     
-                    turnOnTimes = [turnOnTimes, time(min(fluoFrames))];
+                    turnOnTimes = [turnOnTimes, time(min(fluoFrames)) - ncTimes(nc)];
                     
                     maxFluos = vertcat(maxFluos, fluo(fluo>=prctile(fluo,95)));
                     

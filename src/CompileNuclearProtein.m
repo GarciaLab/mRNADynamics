@@ -244,9 +244,11 @@ for i=1:length(schnitzcells)
         if sum(FrameFilter)
         
             %Copy the filtered information
-            CompiledNuclei(k).P=schnitzcells(i).P;
-            CompiledNuclei(k).E=schnitzcells(i).E;
-            CompiledNuclei(k).D=schnitzcells(i).D;
+            if isfield(schnitzcells, 'P')
+                CompiledNuclei(k).P=schnitzcells(i).P;
+                CompiledNuclei(k).E=schnitzcells(i).E;
+                CompiledNuclei(k).D=schnitzcells(i).D;
+            end
             CompiledNuclei(k).Frames=uint16(schnitzcells(i).frames(FrameFilter));
             CompiledNuclei(k).xPos=single(schnitzcells(i).cenx(FrameFilter));
             CompiledNuclei(k).yPos=single(schnitzcells(i).ceny(FrameFilter));
