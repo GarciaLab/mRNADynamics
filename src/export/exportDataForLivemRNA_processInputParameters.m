@@ -1,5 +1,5 @@
 function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest,...
-    keepTifs, generateTifStacks, nuclearGUI, skipExtraction, rootFolder, zslicesPadding, lowbit]...
+    keepTifs, generateTifStacks, nuclearGUI, skipExtraction, rootFolder, zslicesPadding, lowbit, dataType]...
     ...
     = exportDataForLivemRNA_processInputParameters(varargin)
 
@@ -18,6 +18,7 @@ skipExtraction = false;
 rootFolder = '';
 zslicesPadding = false;
 lowbit = false;
+dataType = '';
 
 k=1;
 while k<=length(varargin)
@@ -40,6 +41,8 @@ while k<=length(varargin)
         keepTifs = true;
     elseif strcmpi(varargin{k}, 'generateTifs')
         generateTifStacks = true;
+     elseif strcmpi(varargin{k}, 'dataType')
+        dataType = varargin{k+1};
     elseif strcmpi(varargin{k}, 'nuclearGUI')
         nuclearGUI = true;
     elseif strcmpi(varargin{k}, 'skipExtraction')
@@ -51,7 +54,8 @@ while k<=length(varargin)
     elseif strcmpi(varargin{k}, 'lowbit')
         lowbit = true;
     else
-        if isempty(rootFolder)
+        %prefix can only go in first position
+        if k == 1 && isempty(rootFolder) 
             Prefix = varargin{k};
             disp(['ExportDataForLivemRNA using prefix: ', Prefix]);
         end

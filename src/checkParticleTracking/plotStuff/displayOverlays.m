@@ -151,9 +151,15 @@ if UseSchnitz
 
 
         %Show the daughter nuclei if applicable
-        DaughterE=schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).E;
-        DaughterD=schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).D;
-
+        if isfield(schnitzcells, 'E')
+            DaughterE=schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).E;
+            DaughterD=schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).D;
+            Mother=schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).P;
+        else
+            DaughterE = 0;
+            DaughterD = 0;
+            Mother = 0;
+        end
 
         if DaughterE~=0
             SchnitzIndex=find(schnitzcells(DaughterE).frames==CurrentFrame);
@@ -195,7 +201,7 @@ if UseSchnitz
         end
 
         %Show the mother nucleus if applicable
-        Mother=schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).P;
+    
 
         if Mother~=0
             SchnitzIndex=find(schnitzcells(Mother).frames==CurrentFrame);

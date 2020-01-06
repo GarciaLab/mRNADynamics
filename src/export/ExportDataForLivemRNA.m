@@ -72,10 +72,15 @@ function Prefix = ExportDataForLivemRNA(varargin)
 
   [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs,...
     generateTifStacks, nuclearGUI, skipExtraction, rootFolder, zslicesPadding,...
-    lowbit] = exportDataForLivemRNA_processInputParameters(varargin{:});
+    lowbit, dataType] = exportDataForLivemRNA_processInputParameters(varargin{:});
 
   [rawDataPath, ~, DropboxFolder, ~, PreProcPath, rawDataFolder, Prefix, ExperimentType, Channel1, Channel2, ~,...
     Channel3] = readMovieDatabase(Prefix,'rootFolder', rootFolder);
+
+if ~isempty(dataType)
+     args = varargin;
+     writeScriptArgsToDataStatus(DropboxFolder, dataType, Prefix, args, 'Ran ExportDataFor', 'ExportDataForLivemRNA')
+end
 
 %   if ~isempty(rootFolder)
     [D, FileMode] = DetermineFileMode(rawDataFolder);

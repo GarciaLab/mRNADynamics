@@ -82,7 +82,12 @@ load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
 
 [displayFigures, numFrames, initialFrame, highPrecision, filterType, keepPool,...
     sigmas, nWorkers, app, kernelSize, Weka, justTifs, ignoreMemoryCheck, classifierFolder, ...
-    classifierPathCh1, customML, noSave, numType, gpu, saveAsMat, saveType, dataSet] = determineFilterMovieOptions(FrameInfo,varargin);
+    classifierPathCh1, customML, noSave, numType, gpu, saveAsMat, saveType, DataType] = determineFilterMovieOptions(FrameInfo,varargin);
+
+if ~isempty(DataType)
+     args = varargin;
+     writeScriptArgsToDataStatus(DropboxFolder, DataType, Prefix, args, 'Made filtered spot channel files', 'filterMovie')
+end
 
 zSize = 2;
 for i = 1:size(FrameInfo,2)

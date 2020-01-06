@@ -1,6 +1,6 @@
 function [displayFigures, numFrames, numShadows, keepPool, threshGUI, initialFrame, ...
     useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel,...
-    optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat, saveType, nuclearMask]...
+    optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat, saveType, nuclearMask, dataType, track]...
     = determineSegmentSpotsOptions(varargin)
 
 % Default options
@@ -22,6 +22,8 @@ gpu = '';
 saveAsMat = false;
 saveType = '.tif';
 nuclearMask = false;
+dataType = '';
+track = false;
 
 
 for i = 1:length(varargin)
@@ -55,11 +57,15 @@ for i = 1:length(varargin)
         
     elseif strcmpi(varargin{i}, 'keepPool')
         keepPool = 1;
+     elseif strcmpi(varargin{i}, 'dataSet') | strcmpi(varargin{i}, 'dataType')
+        dataType = varargin{i+1};
     elseif strcmpi(varargin{i}, 'saveAsMat') | strcmpi(varargin{i}, '.mat')
         saveAsMat = true;
         saveType = '.mat';
      elseif strcmpi(varargin{i}, 'noGPU')
        gpu = 'noGPU';
+     elseif strcmpi(varargin{i}, 'track')
+       track = true;
     elseif strcmpi(varargin{i}, 'noIntegralZ')
         useIntegralCenter = 0;
     elseif strcmpi(varargin{i}, 'skipChannel')

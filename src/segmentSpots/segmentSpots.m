@@ -39,6 +39,7 @@
 % for the same data to specify which you'll use.
 % 'nuclearMask': Use the Ellipses structure to filter out particles
 % detected outside of nuclei. 
+%'track': track after running
 %
 % OUTPUT
 % 'Spots':  A structure array with a list of detected transcriptional loci
@@ -61,7 +62,8 @@ disp('Segmenting spots...')
 
 [displayFigures, numFrames, numShadows, keepPool, ...
     autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData,...
-    fit3D, skipChannel, optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat, saveType, nuclearMask]...
+    fit3D, skipChannel, optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat,...
+    saveType, nuclearMask, DataType, track]...
     = determineSegmentSpotsOptions(varargin{:});
 
 argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
@@ -80,6 +82,10 @@ end
 
 [~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix, optionalResults);
 
+if ~isempty(DataType)
+     args = [Prefix, Threshold, varargin];
+     writeScriptArgsToDataStatus(DropboxFolder, DataType, Prefix, args, 'Found filtered threshold', 'segmentSpots')
+end
 
 load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
 if nuclearMask
@@ -180,6 +186,10 @@ if ~keepPool
         delete(poolobj);
     end
     
+end
+
+if track
+    TrackmRNADynamics(Prefix, 'noretrack');
 end
 
 end

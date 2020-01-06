@@ -120,11 +120,11 @@ for e = 1:length(allData)
 end
 
 mkdir([resultsFolder,filesep,DataType]);
-% nbins = floor(length(DVbinID) / 2);
+% nbins = floor(length(DVbinID) / 2
 % nbins = 10;
 % dlfluobinwidth = (max(fluoFeatures) - min(fluoFeatures)) / (nbins-1);
 % dlfluobins = min(fluoFeatures):dlfluobinwidth:max(fluoFeatures);
-dlfluobins = 0:500:3500; %this is appropriate for taking instantaneous dorsal at ~50% through nc12 on the sp8
+dlfluobins = 0:250:3500; %this is appropriate for taking instantaneous dorsal at ~50% through nc12 on the sp8
 save([resultsFolder,filesep,DataType,filesep,'dlfluobins.mat'], 'dlfluobins');
 
 
