@@ -10,6 +10,7 @@ classdef CPTState < handle
         CurrentParticle
         CurrentChannel
         PreviousChannel
+        coatChannel
     end
     
     methods
