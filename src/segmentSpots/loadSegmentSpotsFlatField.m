@@ -1,4 +1,4 @@
-function [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, spotChannels)
+function [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, channelIndex)
   %Load flat-field
   
   doFF = 1;
@@ -8,7 +8,7 @@ function [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, spotChann
     prefixPath = [PreProcPath, filesep, Prefix];
     D = dir([prefixPath, filesep, Prefix, '*FF*.tif']);
     if length(D) > 1
-        nameSuffix = ['_ch', iIndex(spotChannels, 2)];
+        nameSuffix = ['_ch', iIndex(channelIndex, 2)];
         dCh = dir([prefixPath,filesep, Prefix, '*FF*', nameSuffix, '.tif']);
         ffim = imread([prefixPath,Prefix, filesep,dCh{1},name]);
     elseif length(D) == 1
