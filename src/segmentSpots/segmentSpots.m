@@ -116,8 +116,6 @@ if numFrames == 0
 end
 
 
-[ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, FrameInfo);
-
 % The spot finding algorithm first segments the image into regions that are
 % above the threshold. Then, it finds global maxima within these regions by searching in a region "neighborhood"
 % within the regions.
@@ -138,6 +136,8 @@ for channelIndex = 1:nCh
     
     tic;
     
+    [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, spotChannels);
+
     [tempSpots, dogs] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, initialFrame, numFrames, zSize, ...
         PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(channelIndex), neighborhood, ...
         snippet_size, pixelSize, microscope, Weka,...
