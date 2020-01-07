@@ -9,18 +9,28 @@ function writeScriptArgsToDataStatus(DropboxFolder, dataType, Prefix, args, func
     else
         args = args0;
     end
-        
-    D=dir([DropboxFolder,filesep,'DataStatus.*']);
-    [~,StatusTxt]=xlsread([DropboxFolder,filesep,D(1).name],dataType);
-    PrefixRow= find(strcmpi(StatusTxt(:,1),'Prefix:'));
-    functionRow=find(contains(StatusTxt(:,1),functionString1, 'IgnoreCase',true));
-    PrefixCol=find(contains(StatusTxt(PrefixRow,:),Prefix));
     
     alphabet = ['ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
     longphabet = {};
     for i = 1:26
         longphabet{i} = ['A', alphabet(i)];
     end
+
+        
+    D=dir([DropboxFolder,filesep,'DataStatus.*']);
+    [~,StatusTxt]=xlsread([DropboxFolder,filesep,D(1).name],dataType);
+    PrefixRow= find(strcmpi(StatusTxt(:,1),'Prefix:'));
+    
+    
+    functionRow=find(contains(StatusTxt(:,1),functionString1, 'IgnoreCase',true));
+    PrefixCol=find(contains(StatusTxt(PrefixRow,:),Prefix));
+    
+    if isempty(PrefixCol)
+        newPrefix = true;
+        %we can create the moviedatabase entry.
+        PrefixCol = size(StatusTxt, 2); %the column after the latest entry
+    end
+    
     if PrefixCol <= 26
         charCol = alphabet(PrefixCol);
     elseif PrefixCol > 26 && PrefixCol <= 52
@@ -42,6 +52,11 @@ function writeScriptArgsToDataStatus(DropboxFolder, dataType, Prefix, args, func
     if ~iscell(str)
         try
             xlswrite([DropboxFolder,filesep,D(1).name], {str}, dataType, charRange);
+            if newPrefix
+                prefixRange = [charCol, num2str(PrefixRow)];
+                prefixString = ['''prefix=''', Prefix, ''''];
+                xlswrite([DropboxFolder,filesep,D(1).name], {prefixString}, dataType, prefixRange);
+            end
         catch
             error('is data status open? close it then try again');
         end
