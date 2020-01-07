@@ -486,7 +486,7 @@ while (cc ~= 'x')
     %If the approved field does not exist create it
     if ~isfield(cptState.Particles{cptState.CurrentChannel}, 'Approved')
         
-        for i = 1:cptState.numParticles
+        for i = 1:cptState.numParticles()
             cptState.Particles{cptState.CurrentChannel}(i).Approved = 0;
         end
         
@@ -722,7 +722,7 @@ while (cc ~= 'x')
                 cptState.CurrentParticle, cptState.Particles, cptState.ManualZFlag, lastParticle, PreviousParticle] = ...
                 removeSpot(Frames, f, ...
                 cptState.CurrentChannel, cptState.CurrentParticle, CurrentParticleIndex, cptState.Particles, cptState.Spots, SpotFilter, ...
-                cptState.numParticles);
+                cptState.numParticles());
             
         end
     elseif cc == '[' | cc == '{' %#ok<*OR2> %Add particle and all of its shadows to cptState.Spots.
@@ -737,11 +737,11 @@ while (cc ~= 'x')
             SpotFilter, cc, xSize, ySize, NDigits,...
            Prefix, PreProcPath, ProcPath, coatChannel, UseHistoneOverlay, schnitzcells, nWorkers, plot3DGauss);
     elseif cc == 'r'
-        cptState.Particles = orderParticles(cptState.numParticles, cptState.CurrentChannel, cptState.Particles);
+        cptState.Particles = orderParticles(cptState.numParticles(), cptState.CurrentChannel, cptState.Particles);
     elseif cc == 'f'
         [cptState.Particles, schnitzcells] = redoTracking(DataFolder, ...
             UseHistoneOverlay, FrameInfo, DropboxFolder, FilePrefix, schnitzcells, ...
-            cptState.Particles, NChannels, cptState.CurrentChannel, cptState.numParticles);
+            cptState.Particles, NChannels, cptState.CurrentChannel, cptState.numParticles());
     elseif cc == 'c'
         [PreviousParticle, cptState.Particles] = combineTraces(cptState.Spots, ...
             cptState.CurrentChannel, cptState.CurrentFrame, cptState.Particles, cptState.CurrentParticle);
@@ -877,7 +877,7 @@ while (cc ~= 'x')
             GlobalZoomMode = false;
         end
         
-    elseif (cc == 'm') & (cptState.CurrentParticle < cptState.numParticles)
+    elseif (cc == 'm') & (cptState.CurrentParticle < cptState.numParticles())
         [lineFitted, cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag, DisplayRange] = ...
             goNextParticle(cptState.CurrentParticle, cptState.CurrentChannel, HideApprovedFlag, cptState.Particles);
         
