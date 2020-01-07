@@ -9,7 +9,6 @@ classdef CPTState < handle
         ZSlices
         CurrentParticle
         CurrentChannel
-        numParticles
     end
     
     methods
@@ -23,7 +22,10 @@ classdef CPTState < handle
             this.CurrentZ = round(this.ZSlices / 2);
             this.CurrentParticle = CurrentParticle;
             this.CurrentChannel = CurrentChannel;
-            this.numParticles = length(this.Particles{this.CurrentChannel});
+        end
+
+        function numParticles = numParticles(this)
+            numParticles = length(this.Particles{this.CurrentChannel});
         end
     end
 end
