@@ -55,6 +55,7 @@ NParticlesDV = [];
 MeanVectorAP = [];
 SDVectorAP = [];
 NParticlesAP = [];
+CompiledNuclei = [];
 
 
 % Default values for Options
@@ -130,6 +131,9 @@ nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Pref
 %Pre-calculating ExperimentAxis boolean for faster use in later if statements
 ExperimentAxisIsNoAP = strcmpi(ExperimentAxis, 'NoAP');
 
+
+fullEmbryo = exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'], 'file');
+
 %Do we need to convert any NaN chars into doubles?
 if strcmpi(nc14,'nan')
     nc14=nan;
@@ -158,7 +162,7 @@ NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
 
 
 %Add the APPosition to Particles if they don't exist yet
-if (~isfield(schnitzcells,'APpos'))&&(strcmpi(ExperimentAxis,'AP')||strcmpi(ExperimentAxis,'DV'))
+if (~isfield(schnitzcells,'APpos'))&&(strcmpi(ExperimentAxis,'AP')||strcmpi(ExperimentAxis,'DV')) && fullEmbryo
     %First, run this to get the alignment between the zoom-in and zoom-out
     %images:
 %     AddParticlePosition(Prefix)
@@ -240,9 +244,11 @@ for i=1:length(schnitzcells)
         if sum(FrameFilter)
         
             %Copy the filtered information
-            CompiledNuclei(k).P=schnitzcells(i).P;
-            CompiledNuclei(k).E=schnitzcells(i).E;
-            CompiledNuclei(k).D=schnitzcells(i).D;
+            if isfield(schnitzcells, 'P')
+                CompiledNuclei(k).P=schnitzcells(i).P;
+                CompiledNuclei(k).E=schnitzcells(i).E;
+                CompiledNuclei(k).D=schnitzcells(i).D;
+            end
             CompiledNuclei(k).Frames=uint16(schnitzcells(i).frames(FrameFilter));
             CompiledNuclei(k).xPos=single(schnitzcells(i).cenx(FrameFilter));
             CompiledNuclei(k).yPos=single(schnitzcells(i).ceny(FrameFilter));
@@ -253,7 +259,7 @@ for i=1:length(schnitzcells)
             %Save the information about the original schnitz
             CompiledNuclei(k).schnitz=uint16(i);
             
-            if ~ExperimentAxisIsNoAP
+            if ~ExperimentAxisIsNoAP && fullEmbryo
                 CompiledNuclei(k).MeanDV=single(mean(schnitzcells(i).DVpos(FrameFilter)));
                 CompiledNuclei(k).MedianDV=single(median(schnitzcells(i).DVpos(FrameFilter)));
                 CompiledNuclei(k).MeanAP=single(mean(schnitzcells(i).APpos(FrameFilter)));
@@ -385,7 +391,7 @@ end
 
 
 
-if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
+if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV') && fullEmbryo
     %AP filters:
 
     %Divide the AP axis into boxes of a certain AP size. We'll see which
@@ -442,7 +448,7 @@ MedianCyto = [];
 
 %% Binning and averaging data
 
-if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
+if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV') && fullEmbryo
     
 %Get the data for the individual particles in a matrix that has the frame
 %number and the particle number as dimensions. Also, get a vector that
@@ -528,7 +534,17 @@ end
 
 %% Save everything
 
+if ~fullEmbryo
+
 savedVariables = [savedVariables,...
+            'CompiledNuclei','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
+            'nc12','nc13','nc14','ncFilterID','ncFilter',...
+            'MeanVectorAll','SDVectorAll','NParticlesAll',...
+            'MaxFrame',...
+            'MeanCyto','SDCyto','MedianCyto','MaxCyto',...
+            'IntegrationArea'];
+else
+    savedVariables = [savedVariables,...
             'CompiledNuclei','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
             'nc12','nc13','nc14','ncFilterID','ncFilter','APbinID','APFilter',...
             'MeanVectorAP','SDVectorAP','NParticlesAP',...
@@ -540,6 +556,9 @@ savedVariables = [savedVariables,...
             'IntegrationArea'...
             'DVbinID','DVFilter','MeanVectorDV','SDVectorDV','NParticlesDV',...
                     'MinDVIndex','MaxDVIndex', 'AllTracesDV'];
+    
+    
+end
 
 
 save([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat',NameString_ROI],...

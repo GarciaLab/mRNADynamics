@@ -1,6 +1,6 @@
 function fillFrameGaps(prefix, varargin)
 %% Information about the script
-% fillGaps will add the particle in frames that are
+% fillFrameGaps will add the particle in frames that are
 % between frames where the particle is present.
 
 % It is strongly encouraged that you disconnect any particles that are
@@ -359,8 +359,6 @@ for currentParticle = particlesToDoubleCheck
         end
     end
 end
-% Need to redefine it again in case numberOfParticles is used later...
-% numberOfParticles = size(Particles{:},2);
 
 %% Saving Particles and Spots
 % Possible insert: Double check the particles' traces before asking to save them

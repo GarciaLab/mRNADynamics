@@ -5,20 +5,19 @@ val = [];
 
 center = [ellipse(1), ellipse(2)];
 foundIt = false;
+len = length(schnitzcells);
 s = 0;
-while ~foundIt & s < length(schnitzcells)
+
+while ~foundIt && s < len
+    
     s = s+1;
-    schnitz = schnitzcells(s);
-    schnitzFrameIndex = find(schnitz.frames == frame);
+    schnitzFrameIndex = find(schnitzcells(s).frames == frame);
     if ~isempty(schnitzFrameIndex)
-        foundIt = schnitz.ceny(schnitzFrameIndex) == center(2) & schnitz.cenx(schnitzFrameIndex) == center(1);
+        foundIt = schnitzcells(s).ceny(schnitzFrameIndex) == center(2) & schnitzcells(s).cenx(schnitzFrameIndex) == center(1);
     end
     
     if foundIt
         val = uint16(s);
-%         'hooray'
-%     else
-%         'uh oh empty'
     end
 
 end

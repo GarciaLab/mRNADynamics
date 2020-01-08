@@ -76,17 +76,17 @@ function LIFExportMode_flatFieldImage(LIFMeta, Folder, OutputFolder, Prefix, Pre
       [FFFile,FFPath] =...
           uigetfile([Folder, filesep, '*.lif'], 'Select which flat field image to use');
       FilePath = [FFPath, FFFile];
-    end;
+    end
     LIFFF = bfopen(FilePath);
   elseif isempty(FFToUse)
-    warning('No flat field image found')
+    warning('No flat field image found.')
     clear LIFFF
   else
     LIFFF = bfopen(FFPaths{FFToUse});
   end
 
   %If a flatfield image was found, process it
-  if exist('LIFFF')
+  if exist('LIFFF', 'var')
     %Find the channel with the highest counts
     for i=1:size(LIFFF{1},1)
         MaxValue(i)=max(max(LIFFF{1}{i,1}));

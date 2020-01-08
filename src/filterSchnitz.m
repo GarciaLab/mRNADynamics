@@ -1,6 +1,8 @@
 function schnitzcells = filterSchnitz(schnitzcells, imSize)
 
+%armando's criteria for good nuclei to include in dorsal analysis. 
 
+%% time thresholding
 lengths = {[], [], []};
 
 for nc = 12:14
@@ -15,10 +17,12 @@ for nc = 12:14
     
 end
 
+
+%% size thresholding
 xmax = imSize(1);
 ymax = imSize(2);
 
-thresh = .75;
+thresh = .75; % 75% of the nuclear radius
 
 
 for s = 1:length(schnitzcells)
@@ -46,6 +50,7 @@ for s = 1:length(schnitzcells)
         end
     end
     
+    %disapprove an entire nucleus if less than half the frames are good. 
     if sum(schnitzcells(s).FrameApproved) < .5*length(schnitzcells(s).frames)
         schnitzcells(s).Approved = false;
     end

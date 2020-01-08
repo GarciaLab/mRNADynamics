@@ -1,6 +1,6 @@
 
 function [temp_particles, Fits] = identifySingleSpot(particle_index, image, image_label, dog_image, searchRadius, snippet_size, ...
-    pixelSize, show_status, graphicsHandles, microscope, addition, forced_centroid, ml_string, intScale, currentFrame, spotIndex, zIndex, use_integral_center)
+    pixelSize, show_status, graphicsHandles, microscope, addition, forced_centroid, ml_string, currentFrame, spotIndex, zIndex)
 % identifySingleSpot(awholelot)
 %
 % DESCRIPTION
@@ -61,7 +61,7 @@ for y = 1:2*searchRadius
             if ML
                 possible_centroid_intensity(y,x) = sum(sum(image(row-searchRadius+y, col-searchRadius+x)));
             else
-                if addition(1) || intScale~=1
+                if addition(1) || round(pixelSize)~=212
                     %                         possible_centroid_intensity(i,j) = sum(sum(image(row-2*searchRadius+i:row+i,...
                     %                             col-2*searchRadius+j:col+j)));
                     possible_centroid_intensity(y,x) = sum(sum(image(row-searchRadius+y, col-searchRadius+x)));
@@ -149,7 +149,7 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
         
         
         gaussianArea = pi*sigma_x*sigma_y; %in pixels. this is one width away from peak
-        integration_radius = 6*intScale; %integrate 109 pixels around the spot or more optionally
+        integration_radius = 6*ceil(sqrt(212/pixelSize)); %integrate 109 pixels around the spot with 212nm pixel size
         spot_x = fits(2) - snippet_size + centroid_x; %final reported spot position
         %         spot_y = fits(4) - snippet_size + centroid_y;
         spot_y = fits(3) - snippet_size + centroid_y;

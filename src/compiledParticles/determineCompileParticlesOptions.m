@@ -1,5 +1,5 @@
 function [Prefix, ForceAP, SkipTraces, SkipFluctuations, SkipFits, SkipMovie, ...
-    SkipAll, ApproveAll, MinParticles, minTime, ROI, intArea, noHist, ...
+    SkipAll, ApproveAll, MinParticles, minTime, ROI, noHist, ...
     ROI1, ROI2, slimVersion, manualSingleFits, optionalResults,...
     yToManualAlignmentPrompt, minBinSize, edgeWidth] = determineCompileParticlesOptions(varargin)
 %DETERMINECOMPILEPARTICLESOPTIONS Summary of this function goes here
@@ -19,7 +19,6 @@ ApproveAll=0;       %Only use manually approved particles
 MinParticles=4;
 minTime = 1;
 ROI=0; % No ROI
-intArea = 109; %pixels. default for 220nm x 220nm zoom. for 70nm use 437 pixels. 
 noHist = 0; 
 slimVersion = 0;
 ROI1 = -1; % no ROI
@@ -64,18 +63,6 @@ else
                 error('Wrong input parameters. After ''MinParticles'' you should input the desired minimum number of particles per approved AP bin')
             else
                 MinParticles=varargin{i+1};
-            end
-        elseif strcmpi(varargin{i},'intArea')
-            if ~isnumeric(varargin{i+1})
-                error('Wrong input parameters. After ''intArea'' you should input the desired number of pixels for intensity integration')
-            else
-                intArea=varargin{i+1};
-            end
-            elseif strcmpi(varargin{i},'intArea')
-            if ~isnumeric(varargin{i+1})
-                error('Wrong input parameters. After ''intArea'' you should input the desired number of pixels for intensity integration')
-            else
-                intArea=varargin{i+1};
             end
         elseif strcmpi(varargin{i},'minBinSize')
             if ~isnumeric(varargin{i+1})

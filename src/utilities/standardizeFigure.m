@@ -89,6 +89,7 @@ try
             end
             if strcmpi(dataType{i}, 'errorbar')
                 %insert errorbar specific things here.
+                dataObj(i).CapSize = 0;
             end
         end
     end

@@ -1,23 +1,22 @@
-function [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, FrameInfo)
-  %Load flat-field. We need to process this file differently the images come
-  %from a laser scanning or spinning disk microscope.
+function [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, channelIndex)
+  %Load flat-field
+  
   doFF = 1;
   ffim = [];
   
-  try 
-    ffim = imread([PreProcPath, filesep, Prefix, filesep, Prefix, '_FF.tif']);
-    %If we have a spinning disk confocal
-
-    if strcmpi(FrameInfo(1).FileMode, 'dspin')
-      disp('Assuming a spinning disk confocal for flat-field correction')
-      %Note that we brought this back to the same parameters as for a
-      %LSC. We need to figure out what's going on with the flatfields on
-      %the spinning disk. If not, we can always crop the image.
-      ffim = CPsmooth(ffim, 'Gaussian Filter', 256, 0);
-      %If not, we assume we have a laser scanning confocal
+  try
+    prefixPath = [PreProcPath, filesep, Prefix];
+    D = dir([prefixPath, filesep, Prefix, '*FF*.tif']);
+    if length(D) > 1
+        nameSuffix = ['_ch', iIndex(channelIndex, 2)];
+        dCh = dir([prefixPath,filesep, Prefix, '*FF*', nameSuffix, '.tif']);
+        ffim = imread([prefixPath,Prefix, filesep,dCh{1},name]);
+    elseif length(D) == 1
+        ffim = imread([prefixPath, filesep, Prefix, '_FF.tif']);
     else 
-      ffim = CPsmooth(ffim, 'Gaussian Filter', 256, 0);
-    end 
+        doFF = 0;
+    end
+    ffim = CPsmooth(ffim, 'Gaussian Filter', 256, 0);
 
     %Normalize the image
     ffim = double(ffim) / double(max(max(ffim)));

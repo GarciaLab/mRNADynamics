@@ -14,16 +14,21 @@ PrefixCell = {...
     '2017-12-03-P2P-MCP-NoNLS-mCherry_15',...
     '2019-10-31-F_F_F_dorsal_synthetics_saturation_check',...
     '2019-11-07-F_F_F_MCP-NoNLS_x_HbP2Pv1MS2_01',...
-    '2019-11-04-F_F_3_Dlxsna_mcp_check_10umStack'...
+    '2019-11-04-F_F_3_Dlxsna_mcp_check_10umStack',...
+    '2017-09-14-P2P-MCP-NoNLS-mCherry-doubledosage2_rerun',...
+    '2019-11-11-original_Dl_Venus_MCP-NoNLS_x_HbP2Pv1MS2_01'
     };
 % logical vecorrs    
-double_vec = [1 1 1 0 0 0 0 0 0 0 0 0];
-threetwo_vec = [0 0 0 1 1 1 0 0 0 0 0];
-one_vec = [0 0 0 0 0 0 1 1 0 0 0];
-fff_vec = [0 0 0 0 0 0 0 0 1 1 0];
-ff3_vec = [0 0 0 0 0 0 0 0 0 0 1];
-plot_fluo_vec = [1 1 1 1 1 1 1 1 0 1 0];
-PlotNameCell = {'2.5x','2.5x','2.5x', '2x','2x','2x', '1x','1x', 'FFF line','FFF line','FF3 line'};
+double_vec = [1 1 1 0 0 0 0 0 0 0 0 0 0 0];
+threetwo_vec = [0 0 0 1 1 1 0 0 0 0 0 0 0];
+one_vec = [0 0 0 0 0 0 1 1 0 0 0 0 0];
+fff_vec = [0 0 0 0 0 0 0 0 1 1 0 0 0];
+ff3_vec = [0 0 0 0 0 0 0 0 0 0 1 0 0];
+dup_vec = [0 0 0 0 0 0 0 0 0 0 0 1 0];
+orig_vec = [0 0 0 0 0 0 0 0 0 0 0 0 1];
+plot_fluo_vec = [1 1 1 1 1 1 1 1 0 1 0 1 1];
+PlotNameCell = {'2x','2x','2x', '3/2x','3/2x','3/2x', '1x','1x', 'FFF line',...
+                'FFF line','FF3 line','2x (rerun)','OG line'};
 % load data to plot
 plot_struct = struct;
 plot_times = 1:25; % minutes
@@ -65,19 +70,35 @@ for p = 1:numel(PrefixCell)
         act_ft = sum(~isnan(AllTraces14))>5;
         ap_ft = ismember(round(100*[CompiledParticles.MeanAP]),ap_range);
         AllTraces14 = AllTraces14(:,ap_ft&act_ft);
+        cp14 = CompiledParticles(ap_ft&act_ft);
         % bootstrap
         ind_vec = 1:size(AllTraces14,2);       
         if ~isempty(ind_vec)
             mean_fluo_array = NaN(numel(TimeVec),n_boots);
+            mean_offset_array = NaN(numel(TimeVec),n_boots);
             max_fluo_vec = NaN(1,n_boots);
+            index_vec = 1:numel(TimeVec);
             for n = 1:n_boots
+                % sample spot fluorescence
                 s_ids = randsample(ind_vec,numel(ind_vec),true);
                 mean_fluo_array(:,n) = nanmean(AllTraces14(:,s_ids),2);
                 tr_ft = AllTraces14(:,s_ids);
-                max_fluo_vec(n) = prctile(tr_ft(:),95);
+                max_fluo_vec(n) = prctile(tr_ft(:),99);
+                % sample offset
+                cp_boot = cp14(s_ids);
+                offset_temp = NaN(numel(TimeVec),numel(s_ids));
+                for i = 1:numel(s_ids)
+                    frame_shifted = cp_boot(i).Frame - nc14 + 1;
+                    frame_ft1 = ismember(index_vec,frame_shifted);
+                    frame_ft2 = ismember(frame_shifted,index_vec);                    
+                    offset_temp(frame_ft1,i) = cp_boot(i).Off(frame_ft2);
+                end
+                mean_offset_array(:,n) = nanmean(offset_temp,2);
             end
             mean_fluo_vec = nanmean(mean_fluo_array,2)';
             mean_fluo_vec_se = nanstd(mean_fluo_array,[],2)';
+            mean_off_vec = nanmean(mean_offset_array,2)';
+            mean_off_vec_se = nanstd(mean_offset_array,[],2)';
             max_fluo = nanmean(max_fluo_vec);
             max_fluo_se = nanstd(max_fluo_vec);
             fluo_time = TimeVec;
@@ -88,6 +109,8 @@ for p = 1:numel(PrefixCell)
     end
     plot_struct(p).mean_fluo_vec = mean_fluo_vec;
     plot_struct(p).mean_fluo_vec_se = mean_fluo_vec_se;
+    plot_struct(p).mean_off_vec = mean_off_vec;
+    plot_struct(p).mean_off_vec_se = mean_off_vec_se;
     plot_struct(p).max_fluo = max_fluo;
     plot_struct(p).max_fluo_se = max_fluo_se;
     plot_struct(p).fluo_time = fluo_time;
@@ -100,6 +123,7 @@ hm_cm = brewermap(8,'set2');
 dbl_color = hm_cm(2,:);
 trtwo_color = hm_cm(1,:);
 one_color = hm_cm(3,:);
+orig_color = hm_cm(5,:);
 ff3_color = hm_cm(end,:);
 plot_color_array = NaN(numel(plot_struct),3);
 close all;
@@ -170,6 +194,29 @@ for p = find(ff3_vec)
     end
 end
 
+% double dosage re-run
+flag = true;
+for p = find(dup_vec)
+    eff4 = errorbar(plot_struct(p).time/60,plot_struct(p).mcp_data.med_mcp_mean,plot_struct(p).mcp_data.med_mcp_se,'--','Color',dbl_color,'LineWidth',1.5);
+    eff4.CapSize = 0;
+    plot_color_array(p,:) = ff3_color;
+    if flag
+        lgd_str = [lgd_str{:} {'2x (rerun)'}];
+        lgd_plt = [lgd_plt eff4];
+        flag = false;
+    end
+end
+flag = true;
+for p = find(orig_vec)
+    eff5 = errorbar(plot_struct(p).time/60,plot_struct(p).mcp_data.med_mcp_mean,plot_struct(p).mcp_data.med_mcp_se,'--','Color',orig_color,'LineWidth',1.5);
+    eff5.CapSize = 0;
+    plot_color_array(p,:) = orig_color;
+    if flag
+        lgd_str = [lgd_str{:} {'OG line'}];
+        lgd_plt = [lgd_plt eff5];
+        flag = false;
+    end
+end
 xlabel('minutes from start of nc14')
 ylabel('median MCP levels (au)')
 
@@ -188,7 +235,7 @@ max_fluo_fig = figure;
 hold on
 lgd_str = {};
 lgd_plt = [];
-plt_ind = [1 4 8 10];
+plt_ind = [1 4 8 10 12 13];
 for p = plot_indices
     mf = plot_struct(p).max_fluo;
     mf_se = plot_struct(p).max_fluo_se;

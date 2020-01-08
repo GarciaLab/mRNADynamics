@@ -72,10 +72,15 @@ function Prefix = ExportDataForLivemRNA(varargin)
 
   [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs,...
     generateTifStacks, nuclearGUI, skipExtraction, rootFolder, zslicesPadding,...
-    lowbit] = exportDataForLivemRNA_processInputParameters(varargin{:});
+    lowbit, dataType] = exportDataForLivemRNA_processInputParameters(varargin{:});
 
   [rawDataPath, ~, DropboxFolder, ~, PreProcPath, rawDataFolder, Prefix, ExperimentType, Channel1, Channel2, ~,...
     Channel3] = readMovieDatabase(Prefix,'rootFolder', rootFolder);
+
+if ~isempty(dataType)
+     args = varargin;
+     writeScriptArgsToDataStatus(DropboxFolder, dataType, Prefix, args, 'Ran ExportDataFor', 'ExportDataForLivemRNA')
+end
 
 %   if ~isempty(rootFolder)
     [D, FileMode] = DetermineFileMode(rawDataFolder);
@@ -112,7 +117,7 @@ function Prefix = ExportDataForLivemRNA(varargin)
 
   elseif strcmpi(FileMode, 'LIFExport')
     FrameInfo = processLIFExportMode(rawDataFolder, ExperimentType, ProjectionType, Channel1, Channel2, Channel3, Prefix, ...
-      OutputFolder, PreferredFileNameForTest, keepTifs, nuclearGUI, skipExtraction, lowbit);
+      OutputFolder, PreferredFileNameForTest, nuclearGUI, skipExtraction, lowbit);
 
   elseif strcmpi(FileMode, 'DSPIN') || strcmpi(FileMode, 'DND2')
     %Nikon spinning disk confocal mode - TH/CS 2017

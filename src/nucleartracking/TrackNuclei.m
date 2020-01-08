@@ -15,6 +15,7 @@ function TrackNuclei(Prefix,varargin)
 % 'bulkShift': Runs the nuclear tracking with accounting for the bulk
 % shift between frames (greatly reduces runtime).
 % 'retrack': retrack
+% 'integrate': integrate nuclear fluorescence
 %
 % OUTPUT
 % '*_lin.mat' : Nuclei with lineages
@@ -31,7 +32,8 @@ function TrackNuclei(Prefix,varargin)
 disp(['Tracking nuclei on ', Prefix, '...']);
 
 [stitchSchnitz, ExpandedSpaceTolerance, NoBulkShift,...
-    retrack, nWorkers, track, noBreak, noStitch, markandfind, fish] = DetermineTrackNucleiOptions(varargin{:});
+    retrack, nWorkers, track, noBreak, noStitch, markandfind, fish, intFlag]...
+    = DetermineTrackNucleiOptions(varargin{:});
 
 
 
@@ -252,7 +254,9 @@ end
 
 %Save everything at this point. It will be overwritten later, but it's
 %useful for debugging purposes if there's a bug in the code below.
-mkdir([DropboxFolder,filesep,Prefix]);
+if ~exist([DropboxFolder,filesep,Prefix], 'dir')
+    mkdir([DropboxFolder,filesep,Prefix]);
+end
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
 save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells');
 
@@ -263,10 +267,9 @@ if exist('dataStructure', 'var')
     save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure');
 end
 
-
 %Extract the nuclear fluorescence values if we're in the right experiment
 %type
-if (strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input'))
+if intFlag && (strcmpi(ExperimentType,'inputoutput') ||strcmpi(ExperimentType,'input'))
     Channels={Channel1{1},Channel2{1}, Channel3{1}};
     schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, ExperimentType, Channels, PreProcPath);
 end
@@ -275,7 +278,9 @@ if fish
     schnitzcells = rmfield(schnitzcells, {'P', 'E', 'D'});
 end
 
-mkdir([DropboxFolder,filesep,Prefix]);
+if ~exist([DropboxFolder,filesep,Prefix], 'dir')
+    mkdir([DropboxFolder,filesep,Prefix]);
+end
 
 ncVector=[0,0,0,0,0,0,0,0,nc9,nc10,nc11,nc12,nc13,nc14];
 
@@ -308,7 +313,7 @@ save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
 if ~noStitch
     disp('stitching schnitzes')
     try
-        StitchSchnitz(Prefix);
+        StitchSchnitz(Prefix, nWorkers);
     catch
         disp('failed to stitch schnitzes')
     end

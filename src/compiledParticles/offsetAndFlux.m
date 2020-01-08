@@ -1,7 +1,7 @@
 function [MeanOffsetVector, SDOffsetVector, NOffsetParticles] =...
     offsetAndFlux(...
     SkipFluctuations, ncFilter, ElapsedTime, CompiledParticles, DropboxFolder, ...
-    Prefix, ExperimentAxis, intArea, MeanVectorAll, SDVectorAll, MaxFrame, numFrames, SkipAll)
+    Prefix, ExperimentAxis, pixelSize, MeanVectorAll, SDVectorAll, MaxFrame, numFrames, SkipAll)
 %OFFSETANDFLUX Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -196,7 +196,8 @@ ch = 1;
         
         if strcmpi(ExperimentAxis,'AP') & ~SkipAll
             figure(8)
-            intArea=109;  %109 pixels is the default area when the pixels are assumed to be 212nm x 212 nm AR 9/3/18
+            integration_radius = 6*ceil(sqrt(212/pixelSize));
+            intArea = 3*integration_radius^2 + 1; %109 pixels is the default area when the pixels are assumed to be 212nm x 212 nm AR 9/3/18
             errorbar(1:length(MeanOffsetVector),MeanOffsetVector*intArea,...
                 SDOffsetVector*intArea,'.-r')
             hold on

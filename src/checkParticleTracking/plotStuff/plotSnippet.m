@@ -1,12 +1,11 @@
 function [CurrentSnippet, himage] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
     CurrentZIndex, FullSlicePath, Spots, CurrentChannel, CurrentFrame, ...
-    CurrentParticleIndex, ExperimentType, intScale, snippet_size, xSize, ... 
-    ySize, SnippetEdge, FrameInfo, CurrentSnippet, himage)
+    CurrentParticleIndex, ExperimentType, snippet_size, xSize, ... 
+    ySize, SnippetEdge, FrameInfo, CurrentSnippet, himage, pixelSize)
 %PLOTSNIPPET Summary of this function goes here
 %   Detailed explanation goes here
 
 % Spots = castStructNumbersToDoubles(Spots);
-intScale = double(intScale);
 
     if  ~isempty(xTrace) && ~isempty(CurrentZIndex)
         %Get the snippet and the mask, and overlay them
@@ -28,7 +27,7 @@ intScale = double(intScale);
             max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size)));
         imSnippet = mat2gray(CurrentSnippet);
         SnippetEdge=size(CurrentSnippet,1);
-        IntegrationRadius = 6*intScale; % this appears to be hard-coded into IdentifySingleSpot
+        IntegrationRadius = 6*ceil(sqrt(212/pixelSize)); %integrate 109 pixels around the spot with 212nm pixel size
         [xGrid, yGrid] = meshgrid(1:SnippetEdge,1:SnippetEdge);
         rGrid = sqrt((xGrid-ceil(SnippetEdge/2)).^2 + (yGrid-ceil(SnippetEdge/2)).^2);
         IntegrationArea= rGrid < IntegrationRadius & (rGrid+1) >= IntegrationRadius;

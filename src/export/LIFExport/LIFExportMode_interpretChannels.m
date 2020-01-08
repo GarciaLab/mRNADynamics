@@ -1,5 +1,10 @@
-function [coatChannel, histoneChannel, fiducialChannel, inputProteinChannel, FrameInfo] = LIFExportMode_interpretChannels(ExperimentType, Channel1, Channel2, Channel3, FrameInfo)
-  disp('Interpreting channels...');
+function [coatChannel, histoneChannel,...
+    fiducialChannel, inputProteinChannel, FrameInfo] =...
+    ...
+    LIFExportMode_interpretChannels(ExperimentType, Channel1, Channel2, Channel3, FrameInfo)
+ %
+%
+disp('Interpreting channels...');
   if strcmpi(ExperimentType,'1spot') || strcmpi(ExperimentType,'2spot') || strcmpi(ExperimentType,'2spot1color') || strcmpi(ExperimentType,'inputoutput')
     %Figure out the different channels
     if ~isempty(Channel3)

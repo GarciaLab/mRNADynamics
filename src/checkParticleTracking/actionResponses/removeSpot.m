@@ -3,11 +3,13 @@ function [Spots, SpotFilter, CurrentFrame, ...
     ...
     removeSpot(Frames, CurrentFrame, ...
     ...   
-    CurrentChannel, CurrentParticle, CurrentParticleIndex, Particles, Spots, SpotFilter, ...
-    numParticles)
+    CurrentChannel, CurrentParticle, CurrentParticleIndex, Particles, Spots, SpotFilter)
 %
 %REMOVESPOT removes a spot from the spots and particles structure 
 %  removes a spot from the spots and particles structure 
+
+
+numParticles = length(Particles{CurrentChannel});
 
 del = false;
 CurrentFrameWithinParticle = find(Frames==CurrentFrame);
@@ -98,8 +100,6 @@ if del
     end
 
 end
-
-disp('Spot deleted successfully. Trace figures will refresh after switching particles.')
 
 end
 

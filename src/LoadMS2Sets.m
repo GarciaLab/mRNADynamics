@@ -325,7 +325,14 @@ for i=1:length(CompiledSets)
         
         %Load CompiledNuclei if it exists
         if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],'file') & ~noCompiledNuclei
-            DataNuclei(i)=load([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat']);
+            try
+                DataNucleiTemp=load([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat']);
+                DataNucleiTemp=orderfields(DataNucleiTemp);
+                DataNuclei(i)=DataNucleiTemp;
+            catch
+                [DataNuclei, DataNucleiTemp] = addFields(DataNuclei, DataNucleiTemp);
+                DataNuclei(i) = DataNucleiTemp;
+            end
         end
         
     end

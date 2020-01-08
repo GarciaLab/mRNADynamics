@@ -1,10 +1,15 @@
-function nuclearMask = makeNuclearMask(ellipsesFrame, dim)
+function nuclearMask = makeNuclearMask(ellipsesFrame, dim, varargin)
 
 %make a mask from the ellipses structure. this is currently used for
 %segmenting loci in segmentSpots.
 
-
 radScale = 1.3;
+
+for i = 1:length(varargin)
+    if strcmpi(varargin{i}, 'radScale')
+        radScale = varargin{i+1};
+    end
+end
 
 nuclearMask = false(dim(1), dim (2));
 

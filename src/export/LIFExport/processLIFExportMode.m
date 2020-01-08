@@ -1,7 +1,7 @@
 % Added PreferredFileName so we can automate testing and bypass the user prompt when there are many files available.
 function FrameInfo = processLIFExportMode(rawDataFolder, ExperimentType, ProjectionType, Channel1, Channel2, Channel3,...
     Prefix, OutputFolder, PreferredFileNameForTest,...
-    keepTifs, nuclearGUI, skipExtraction, lowbit)
+    nuclearGUI, skipExtraction, lowbit)
 
 markandfind = false;
 
@@ -59,7 +59,7 @@ if ~skipExtraction
     for seriesIndex = 1:NSeries
         waitbar(seriesIndex/NSeries, waitbarFigure)
         for framesIndex = 1:NFrames(seriesIndex)
-            processLIFFrame(numberOfFrames, Prefix, OutputFolder, LIFImages, framesIndex, seriesIndex,...
+            processMovieFrame(numberOfFrames, Prefix, OutputFolder, LIFImages, framesIndex, seriesIndex,...
                 NChannels, NSlices, ExperimentType, Channel1, Channel2, Channel3, ProjectionType, fiducialChannel,...
                 histoneChannel, ReferenceHist, coatChannel, inputProteinChannel, false, lowbit); %JP: hardcode false zPadding for now
             numberOfFrames = numberOfFrames + 1;

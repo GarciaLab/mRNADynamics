@@ -29,7 +29,6 @@
 % processing
 % 'noIntegralZ':  Don't establish center slice at position that maximizes raw fluo integral
 %                 across sliding 3 z-slice window.
-% 'intScale': Scale up the radius of integration
 % 'autoThresh': Pops up a UI to help decide on a threshhold
 % 'keepProcessedData': Keeps the ProcessedData folder for the given prefix after running segment spots
 % 'fit3D': Fit 3D Gaussians to all segmented spots (assumes 1 locus per spot).
@@ -40,6 +39,7 @@
 % for the same data to specify which you'll use.
 % 'nuclearMask': Use the Ellipses structure to filter out particles
 % detected outside of nuclei. 
+%'track': track after running
 %
 % OUTPUT
 % 'Spots':  A structure array with a list of detected transcriptional loci
@@ -60,9 +60,10 @@ warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
 disp('Segmenting spots...')
 
-[displayFigures, numFrames, numShadows, intScale, keepPool, ...
+[displayFigures, numFrames, numShadows, keepPool, ...
     autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData,...
-    fit3D, skipChannel, optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat, saveType, nuclearMask]...
+    fit3D, skipChannel, optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat,...
+    saveType, nuclearMask, DataType, track]...
     = determineSegmentSpotsOptions(varargin{:});
 
 argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
@@ -81,6 +82,10 @@ end
 
 [~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix, optionalResults);
 
+if ~isempty(DataType)
+     args = [Prefix, Threshold, varargin];
+     writeScriptArgsToDataStatus(DropboxFolder, DataType, Prefix, args, 'Found filtered threshold', 'segmentSpots')
+end
 
 load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
 if nuclearMask
@@ -111,15 +116,14 @@ if numFrames == 0
 end
 
 
-[ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, FrameInfo);
-
 % The spot finding algorithm first segments the image into regions that are
 % above the threshold. Then, it finds global maxima within these regions by searching in a region "neighborhood"
 % within the regions.
 
 pixelSize = FrameInfo(1).PixelSize * 1000; %nm
-neighborhood = round(1300 / pixelSize); %nm
-snippet_size = 2 * (floor(1300 / (2 * pixelSize))) + 1; % nm. note that this is forced to be odd
+neighboorhood_size = 1300;
+neighborhood = round(neighboorhood_size / pixelSize); %nm
+snippet_size = 2 * (floor(neighboorhood_size / (2 * pixelSize))) + 1; % nm. note that this is forced to be odd
 coatChannel = spotChannels;
 
 falsePositives = 0;
@@ -132,10 +136,12 @@ for channelIndex = 1:nCh
     
     tic;
     
+    [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, spotChannels);
+
     [tempSpots, dogs] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, initialFrame, numFrames, zSize, ...
         PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(channelIndex), neighborhood, ...
-        snippet_size, pixelSize, microscope, intScale, Weka,...
-        useIntegralCenter, filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, Ellipses);
+        snippet_size, pixelSize, microscope, Weka,...
+         filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, Ellipses);
 
     tempSpots = segmentSpotsZTracking(pixelSize,tempSpots);
 
@@ -180,6 +186,10 @@ if ~keepPool
         delete(poolobj);
     end
     
+end
+
+if track
+    TrackmRNADynamics(Prefix, 'noretrack');
 end
 
 end

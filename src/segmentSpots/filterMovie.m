@@ -82,7 +82,12 @@ load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
 
 [displayFigures, numFrames, initialFrame, highPrecision, filterType, keepPool,...
     sigmas, nWorkers, app, kernelSize, Weka, justTifs, ignoreMemoryCheck, classifierFolder, ...
-    classifierPathCh1, customML, noSave, numType, gpu, saveAsMat, saveType] = determineFilterMovieOptions(FrameInfo,varargin);
+    classifierPathCh1, customML, noSave, numType, gpu, saveAsMat, saveType, DataType] = determineFilterMovieOptions(FrameInfo,varargin);
+
+if ~isempty(DataType)
+     args = varargin;
+     writeScriptArgsToDataStatus(DropboxFolder, DataType, Prefix, args, 'Made filtered spot channel files', 'filterMovie')
+end
 
 zSize = 2;
 for i = 1:size(FrameInfo,2)
@@ -123,7 +128,9 @@ t = toc;
 disp(['Elapsed time: ', num2str(t / 60), ' min'])
 
 if ~justTifs
-    log = writeFilterMovieLog(t, Weka, DropboxFolder, Prefix, initialFrame, numFrames, filterType, sigmas, classifierPathCh1);
+    try
+        log = writeFilterMovieLog(t, Weka, DropboxFolder, Prefix, initialFrame, numFrames, filterType, sigmas, classifierPathCh1);
+    end
 end
 
 if ~keepPool && ~Weka && ~justTifs

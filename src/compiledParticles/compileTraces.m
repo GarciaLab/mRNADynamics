@@ -2,8 +2,8 @@ function [Particles, CompiledParticles, ncFilter, ncFilterID] =...
     compileTraces(NChannels, Particles, HistoneChannel, ...
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
     Spots, SkipTraces, nc9, nc10, nc11, nc12, nc13, nc14, ncFilterID, ncFilter, ...
-    ElapsedTime, intArea, Ellipses, EllipsePos, PreProcPath, ...
-    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits, edgeWidth, pixelSize, coatChannels)
+    ElapsedTime, Ellipses, EllipsePos, PreProcPath, ...
+    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits, edgeWidth, pixelSize, coatChannels, fullEmbryo)
 %COMPILETRACES Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -81,7 +81,7 @@ for ChN=1:NChannels
             
             %See if this particle is in one of the approved AP bins
             try
-                if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')
+                if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV') && fullEmbryo
                     CurrentAPbin=max(find(APbinID<mean(Particles{ChN}(i).APpos(FrameFilter))));
                     if isnan(APbinArea(CurrentAPbin))
                         AnalyzeThisParticle=0;
@@ -111,13 +111,13 @@ for ChN=1:NChannels
                 %CompiledParticles{ChN}(k).DVpos=Particles{ChN}(i).DVpos(FrameFilter);
                 CompiledParticles{ChN}(k).FrameApproved = Particles{ChN}(i).FrameApproved;
                 
-                if strcmpi(ExperimentAxis,'AP')
+                if strcmpi(ExperimentAxis,'AP') && fullEmbryo
                     CompiledParticles{ChN}(k).APpos=Particles{ChN}(i).APpos(FrameFilter);
                     
                     %Determine the particles average and median AP position
                     CompiledParticles{ChN}(k).MeanAP=mean(Particles{ChN}(i).APpos(FrameFilter));
                     CompiledParticles{ChN}(k).MedianAP=median(Particles{ChN}(i).APpos(FrameFilter));
-                elseif strcmpi(ExperimentAxis,'DV')%&isfield(Particles,'APpos')
+                elseif strcmpi(ExperimentAxis,'DV') && fullEmbryo %&isfield(Particles,'APpos')
                     %AP information:
                     CompiledParticles{ChN}(k).APpos=Particles{ChN}(i).APpos(FrameFilter);
                     CompiledParticles{ChN}(k).MeanAP=mean(Particles{ChN}(i).APpos(FrameFilter));
@@ -134,7 +134,7 @@ for ChN=1:NChannels
                 %found. If there is no nucleus (like when a particle survives
                 %past the nuclear division) we will still use the actual particle
                 %position.
-                if HistoneChannel&strcmpi(ExperimentAxis,'AP')
+                if HistoneChannel&strcmpi(ExperimentAxis,'AP') && fullEmbryo
                     %Save the original particle position
                     CompiledParticles{ChN}(k).APposParticle=CompiledParticles{ChN}(k).APpos;
                     
@@ -168,9 +168,15 @@ for ChN=1:NChannels
                     CompiledParticles{ChN}(k).fittedTon = [];
                 end
                 %Extract position info and general Gauss3D fit info
+                try
                 [~,gx_vec,gy_vec,gz_vec,g_fits_cell,f3_vec,f3_raw_vec]=...
                     getGauss3DFitInfo(k,CompiledParticles{ChN},Spots{ChN});
                 threeDFlag = ~all(isnan(gx_vec));
+
+                catch
+                    warning('Didn''t have complete Gauss 3D info');
+                    threeDFlag = false;
+                end
                 if threeDFlag
                     CompiledParticles{ChN}(k).xPosGauss3D = gx_vec;
                     CompiledParticles{ChN}(k).yPosGauss3D = gy_vec;
@@ -217,34 +223,38 @@ for ChN=1:NChannels
                     CompiledParticles{ChN}(k).schnitz=Particles{ChN}(i).Nucleus;
                     
                     %Save lineage information in terms of particles
-                    if ~isempty(schnitzcells(Particles{ChN}(i).Nucleus).P)
-                        if isempty(find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).P))
-                            CompiledParticles{ChN}(k).PParticle=0;
+                    if isfield(schnitzcells, 'P')
+                        
+                        if ~isempty(schnitzcells(Particles{ChN}(i).Nucleus).P)
+                            if isempty(find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).P))
+                                CompiledParticles{ChN}(k).PParticle=0;
+                            else
+                                CompiledParticles{ChN}(k).PParticle=find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).P);
+                            end
                         else
-                            CompiledParticles{ChN}(k).PParticle=find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).P);
+                            CompiledParticles{ChN}(k).PParticle=[];
                         end
-                    else
-                        CompiledParticles{ChN}(k).PParticle=[];
-                    end
+
+                        if ~isempty(schnitzcells(Particles{ChN}(i).Nucleus).D)
+                            if isempty(find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).D))
+                                CompiledParticles{ChN}(k).DParticle=0;
+                            else
+                                CompiledParticles{ChN}(k).DParticle=find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).D);
+                            end
+                        else
+                            CompiledParticles{ChN}(k).DParticle=[];
+                        end
+
+                        if ~isempty(schnitzcells(Particles{ChN}(i).Nucleus).E)
+                            if isempty(find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).E))
+                                CompiledParticles{ChN}(k).EParticle=0;
+                            else
+                                CompiledParticles{ChN}(k).EParticle=find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).E);
+                            end
+                        else
+                            CompiledParticles{ChN}(k).EParticle=[];
+                        end
                     
-                    if ~isempty(schnitzcells(Particles{ChN}(i).Nucleus).D)
-                        if isempty(find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).D))
-                            CompiledParticles{ChN}(k).DParticle=0;
-                        else
-                            CompiledParticles{ChN}(k).DParticle=find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).D);
-                        end
-                    else
-                        CompiledParticles{ChN}(k).DParticle=[];
-                    end
-                    
-                    if ~isempty(schnitzcells(Particles{ChN}(i).Nucleus).E)
-                        if isempty(find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).E))
-                            CompiledParticles{ChN}(k).EParticle=0;
-                        else
-                            CompiledParticles{ChN}(k).EParticle=find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).E);
-                        end
-                    else
-                        CompiledParticles{ChN}(k).EParticle=[];
                     end
                     
                     %Save information about the nucleus birth and death
