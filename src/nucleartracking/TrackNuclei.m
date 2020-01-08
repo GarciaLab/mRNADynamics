@@ -254,7 +254,9 @@ end
 
 %Save everything at this point. It will be overwritten later, but it's
 %useful for debugging purposes if there's a bug in the code below.
-mkdir([DropboxFolder,filesep,Prefix]);
+if ~exist([DropboxFolder,filesep,Prefix], 'dir')
+    mkdir([DropboxFolder,filesep,Prefix]);
+end
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
 save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells');
 
@@ -276,7 +278,9 @@ if fish
     schnitzcells = rmfield(schnitzcells, {'P', 'E', 'D'});
 end
 
-mkdir([DropboxFolder,filesep,Prefix]);
+if ~exist([DropboxFolder,filesep,Prefix], 'dir')
+    mkdir([DropboxFolder,filesep,Prefix]);
+end
 
 ncVector=[0,0,0,0,0,0,0,0,nc9,nc10,nc11,nc12,nc13,nc14];
 

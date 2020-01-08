@@ -13,21 +13,46 @@ space_resolution = getDefaultParameters(FrameInfo,'space resolution');
 localMaximumRadius = LoGratio*nucleusDiameter/space_resolution;
 LoGradius = nucleusDiameter/space_resolution*LoGratio;
 edgeClearance = getDefaultParameters(FrameInfo,'edge clearance')*nucleusDiameter/space_resolution;
+%% 
 
 % Added by NL and GM on 11/23/2019
+% Edited by GM on 1/7/2019
 xDim = FrameInfo(1).PixelsPerLine * FrameInfo(1).PixelSize;
 yDim = FrameInfo(1).LinesPerFrame * FrameInfo(1).PixelSize;
+% if yDim > 150 && xDim > 150
+%     I = imread(names{frameNumber});
+%     f_sigma = round(15 / FrameInfo(1).PixelSize);
+%     I_blurred = imgaussfilt(I,f_sigma);
+%     embryoMask = imbinarize(I_blurred, 'global');    
+% else    
+%     if ~exist('embryoMask','var') || isempty(embryoMask)
+%         embryoMask = true(size(imread(names{frameNumber})));
+%     end
+% end
 if yDim > 150 && xDim > 150
     I = imread(names{frameNumber});
-    f_sigma = round(15 / FrameInfo(1).PixelSize);
-    I_blurred = imgaussfilt(I,f_sigma);
-    embryoMask = imbinarize(I_blurred);    
+    pixelvalues = unique(I(:));
+    thresh = pixelvalues(2);
+    f_sigma = round(nucleusDiameter / FrameInfo(1).PixelSize);
+    bwfill = imfill(I>thresh,'holes');
+    I_inside = bwselect(bwfill,round(size(bwfill,2)/2), round(size(bwfill, 1)/2));
+    I_inside=uint16((2^16-1)*I_inside);
+    I_blurred = imfilter(I_inside,...
+         fspecial('gaussian',2*f_sigma,f_sigma),'symmetric','conv');
+    level = graythresh(I_blurred);
+    embryoMask = im2bw(I_blurred,level);
+
+
 else    
     if ~exist('embryoMask','var') || isempty(embryoMask)
         embryoMask = true(size(imread(names{frameNumber})));
     end
 end
 % Added by NL and GM on 11/23/2019
+% Edited by GM on 1/7/2019
+
+
+%% 
 
 if nargin > 5
     targetNumber = varargin{1}; % coarse estimate of the number of nuclei that should be found.
