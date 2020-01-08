@@ -18,7 +18,6 @@ while x <= length(varargin)
     switch varargin{x}
         case{'keepExistingStitching'}
             keepExistingStitching = true;
-            fprintf('ID: %s\n',ID);
         case{'NIterations'}
             NIterations = varargin{x+1};
             x = x + 1;

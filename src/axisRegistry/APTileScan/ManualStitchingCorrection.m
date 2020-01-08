@@ -9,10 +9,10 @@ function [tile_array]=ManualStitchingCorrection(Prefix, ID)
 %left arrow - Move the selected tile to the left by one column 
 %up arrow - Move the selected tile up by one row
 %down arrow - Move the selected tile down by one row 
-%> - Move the selected tile to the right by 5 columns
-%< - Move the selected tile to the left by 5 columns
-%+ - Move the selected tile up by 5 rows
-%- - Move the selected tile down by 5 rows
+%> - Move the selected tile to the right by 10 columns
+%< - Move the selected tile to the left by 10 columns
+%+ - Move the selected tile up by 10 rows
+%- - Move the selected tile down by 10 rows
 %s - save
 %x - close
 %q - Save and close
@@ -260,36 +260,42 @@ while (cc~='x' && cc~='q')
             disp('No tile selected. Select tile using "m" or "t" options.');
             continue
         end
-        temprows(TileSelected) = temprows(TileSelected)-5;
-        temprmaxs(TileSelected) = temprmaxs(TileSelected)-5;
-        rshift(TileSelected) = rshift(TileSelected)-5;
+        temprows(TileSelected) = temprows(TileSelected)-10;
+        temprmaxs(TileSelected) = temprmaxs(TileSelected)-10;
+        rshift(TileSelected) = rshift(TileSelected)-10;
+
     elseif (ct~=0) && (cc_value == 45)
         %disp('+')
         if TileSelected == 0
             disp('No tile selected. Select tile using "m" or "t" options.');
             continue
         end
-        temprows(TileSelected) = temprows(TileSelected)+5;
-        temprmaxs(TileSelected) = temprmaxs(TileSelected)+5;
-        rshift(TileSelected) = rshift(TileSelected)+5;
+
+        temprows(TileSelected) = temprows(TileSelected)+10;
+        temprmaxs(TileSelected) = temprmaxs(TileSelected)+10;
+        rshift(TileSelected) = rshift(TileSelected)+10;
+
     elseif (ct~=0) && (cc_value == 62)
         %disp('>')
         if TileSelected == 0
             disp('No tile selected. Select tile using "m" or "t" options.');
             continue
         end
-        tempcols(TileSelected) = tempcols(TileSelected)+5;
-        tempcmaxs(TileSelected) = tempcmaxs(TileSelected)+5;
-        cshift(TileSelected) = cshift(TileSelected)+5;
+
+        tempcols(TileSelected) = tempcols(TileSelected)+10;
+        tempcmaxs(TileSelected) = tempcmaxs(TileSelected)+10;
+        cshift(TileSelected) = cshift(TileSelected)+10;
+
     elseif (ct~=0) && (cc_value == 60)
         %disp('<')
         if TileSelected == 0
             disp('No tile selected. Select tile using "m" or "t" options.');
             continue
         end
-        tempcols(TileSelected) = tempcols(TileSelected)-5;
-        tempcmaxs(TileSelected) = tempcmaxs(TileSelected)-5;
-        cshift(TileSelected) = cshift(TileSelected)-5;
+        tempcols(TileSelected) = tempcols(TileSelected)-10;
+        tempcmaxs(TileSelected) = tempcmaxs(TileSelected)-10;
+        cshift(TileSelected) = cshift(TileSelected)-10;
+
     elseif (ct~=0) && (cc=='s')
         %Save the information
         outputFolder = [DropboxFolder,filesep,Prefix,filesep,'FullEmbryoStitching'];

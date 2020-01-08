@@ -1,0 +1,9 @@
+Plan for writing stitching code:
+
+1) Write code for stitching two images in left right orientation of the
+same size along the stitching axis. Don't include any code specific 
+infrastructure for accessing metadata in this iteration. 
+
+2) Write code for stitching two images in top bottom orientation of the
+same size along the stitching axis. Don't include any code specific 
+infrastructure for accessing metadata in this iteration.

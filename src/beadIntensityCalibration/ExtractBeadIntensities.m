@@ -21,7 +21,16 @@ varnames2{5} = 'zcount';
 MeanBeadData = table('Size', [0 nvars],...
     'VariableTypes', vartypes,'VariableNames', varnames2);
 
-for i=10:15%length(rawDataDir)
+
+varnames3 = {'BeadIntensity','LaserPower', 'SetID', 'Replicate','MeanIntensity',...
+    'VarIntensity', 'BeadCount'};
+vartypes3 = {'double', 'double', 'string', 'int64', 'double', 'double', 'int64'};
+nvars3 = length(varnames3);
+SummaryData = table('Size', [0 nvars3],...
+    'VariableTypes', vartypes3,'VariableNames', varnames3);
+
+for i=1:length(rawDataDir)
+
 display(['i = ', num2str(i)]);
 DataDir = dir([rawDataDir(i).folder, filesep, rawDataDir(i).name, filesep, '*.lif']);
 LIFPath = fullfile(DataDir(1).folder, DataDir(1).name);
@@ -51,32 +60,41 @@ radmin = round(radius*1/2, 0);
 radmax = round(radius, 0);
 rep = 1;
 for j =1:size(LIFImages, 1)
-    NSlices = length(LIFImages{j,1});
+
+     NSlices = length(LIFImages{j,1});
+
     %images = zeros([size(LIFImages{1}{1, 1}, 1), size(LIFImages{1}{1, 1}, 2), NSlices]);
     rn = 1;
     TempBeadData = table('Size', [0 nvars],...
     'VariableTypes', vartypes,'VariableNames', varnames);
+
+    TempMeanBeadData = table('Size', [0 nvars],...
+    'VariableTypes', vartypes,'VariableNames', varnames2);
+
     MaxBeadID = 1;
     for k=1:NSlices
         %images(:,:,k) = LIFImages{j}{k,1};
         img = LIFImages{j}{k,1};
         [centers, radii] = imfindcircles(img, [radmin, radmax],...
             'Sensitivity', 0.9, 'Method','twostage');
-        keepcenters = ones(length(centers), 1);
-        for ic =1:(length(centers)-1)
-            for jc=(ic+1):length(centers)
-                d = sqrt((centers(ic, 1)-centers(jc, 1))^2+(centers(ic, 2)-centers(jc,2))^2);
-                if d < radii(ic)+radii(jc)
-                    keepcenters(jc) = 0;
+        if length(radii) > 1
+            keepcenters = ones(length(radii), 1);
+            for ic =1:(length(radii)-1)
+                for jc=(ic+1):length(radii)
+                    d = sqrt((centers(ic, 1)-centers(jc, 1))^2+(centers(ic, 2)-centers(jc,2))^2);
+                    if d <= radii(ic)+radii(jc)
+                        keepcenters(jc) = 0;
+                    end
                 end
             end
+            centers = centers(keepcenters == 1, :);
+            radii = radii(keepcenters == 1);
         end
-        centers = centers(keepcenters == 1, :);
-        radii = radii(keepcenters == 1);
-        if length(centers) == 0
+
+        if length(radii) == 0
             continue
         else
-        for l=1:length(centers)
+        for l=1:length(radii)
             [xgrid, ygrid] = meshgrid(1:size(img,1), 1:size(img,2));
             mask = ((xgrid-centers(l,1)).^2 + (ygrid-centers(l,2)).^2) <= (radii(l)/2).^2;
             values = img(mask);
@@ -104,20 +122,31 @@ for j =1:size(LIFImages, 1)
             rn = rn + 1;
         end
         end
-        if k == 21
+        if mod(k, 21) == 0
             for bid =1:max(TempBeadData.BeadID)
                 Is = TempBeadData.Intensity(TempBeadData.BeadID == bid);
                 Zcount = length(Is);
-                if Zcount > 10
+                if Zcount >= 12
+
                     MeanI = mean(maxk(Is, 5));
                     MeanRow = mean(TempBeadData.CenterRow(TempBeadData.BeadID == bid));
                     MeanCol = mean(TempBeadData.CenterCol(TempBeadData.BeadID == bid));
                     MeanRad = mean(TempBeadData.Radius(TempBeadData.BeadID == bid));
-                    MeanBeadData(height(MeanBeadData)+1,:) = {beadintensity,...
+
+                    TempMeanBeadData(height(TempMeanBeadData)+1,:) = {beadintensity,...
                         power,setID,rep, Zcount,bid,...
                         MeanRow,MeanCol, MeanRad, MeanI};
                 end
             end
+
+            CondMean = mean(TempMeanBeadData.Intensity);
+            CondVar = var(TempMeanBeadData.Intensity);
+            CondCount = height(TempMeanBeadData);
+            SummaryData(height(SummaryData)+1,:) = {beadintensity,power,...
+                setID, rep, CondMean,CondVar,CondCount};
+            SummaryData(height(SummaryData),:)
+            MeanBeadData = [MeanBeadData;TempMeanBeadData];
+
             BeadData = [BeadData; TempBeadData]; 
             MaxBeadID = 1;
             rep = rep + 1;
@@ -126,57 +155,83 @@ for j =1:size(LIFImages, 1)
                 'VariableTypes', vartypes,'VariableNames', varnames);
         end
     end
-    if k < 21
+
+    if mod(k, 21) ~= 0
+        for bid =1:max(TempBeadData.BeadID)
+            Is = TempBeadData.Intensity(TempBeadData.BeadID == bid);
+            Zcount = length(Is);
+            if Zcount >= 12
+                MeanI = mean(maxk(Is, 5));
+                MeanRow = mean(TempBeadData.CenterRow(TempBeadData.BeadID == bid));
+                MeanCol = mean(TempBeadData.CenterCol(TempBeadData.BeadID == bid));
+                MeanRad = mean(TempBeadData.Radius(TempBeadData.BeadID == bid));
+                TempMeanBeadData(height(TempMeanBeadData)+1,:) = {beadintensity,...
+                    power,setID,rep, Zcount,bid,...
+                    MeanRow,MeanCol, MeanRad, MeanI};
+            end
+        end
+        CondMean = mean(TempMeanBeadData.Intensity);
+        CondVar = var(TempMeanBeadData.Intensity);
+        CondCount = height(TempMeanBeadData);
+        SummaryData(height(SummaryData)+1,:) = {beadintensity,power,...
+            setID, rep, CondMean,CondVar,CondCount};
+        SummaryData(height(SummaryData),:)
+        BeadData = [BeadData; TempBeadData]; 
+        MeanBeadData = [MeanBeadData;TempMeanBeadData];
         rep = rep +1;
     end
-    for bid =1:max(TempBeadData.BeadID)
-        Is = TempBeadData.Intensity(TempBeadData.BeadID == bid);
-        Zcount = length(Is);
-        if Zcount > 10
-            MeanI = mean(maxk(Is, 5));
-            MeanRow = mean(TempBeadData.CenterRow(TempBeadData.BeadID == bid));
-            MeanCol = mean(TempBeadData.CenterCol(TempBeadData.BeadID == bid));
-            MeanRad = mean(TempBeadData.Radius(TempBeadData.BeadID == bid));
-            MeanBeadData(height(MeanBeadData)+1,:) = {beadintensity,...
-                power,setID,rep, Zcount,bid,...
-                MeanRow,MeanCol, MeanRad, MeanI};
-        end
-    end
-    BeadData = [BeadData; TempBeadData]; 
+
+
 end
 end
 %% 
 
 
-
+outfile = 'E:\Gabriella\LivemRNA\Data\DynamicsResults\2019-12-09-GreenBeadIntensityCalibrationMeasurements\AllBeadIntensityValues.mat';
+save(outfile, 'MeanBeadData', 'SummaryData', 'BeadData');
 
 %% 
-
-
-img = LIFImages{1}{8,1};
-
-[centers, radii] = imfindcircles(img, [radmin, radmax],...
-    'Sensitivity', 0.9, 'Method','twostage');
-
+%scatter(SummaryData.LaserPower, SummaryData.MeanIntensity, 10, SummaryData.BeadIntensity)
 figure(1)
-imshow(uint8(img))
-h = viscircles(centers, radii)
-[xgrid, ygrid] = meshgrid(1:size(img,1), 1:size(img,2));
-mask = ((xgrid-centers(1,1)).^2 + (ygrid-centers(1,2)).^2) <= radii(1).^2;
-values = img(mask);
-intensity = mean(values);
-%% 
+SubData = SummaryData(SummaryData.BeadIntensity == .3, :);
+scatter(SubData.BeadIntensity.*SubData.LaserPower,...
+    SubData.MeanIntensity, 50, 'filled')
+hold on
+SubData = SummaryData(SummaryData.BeadIntensity == 1, :);
+scatter(SubData.BeadIntensity.*SubData.LaserPower,...
+    SubData.MeanIntensity, 50,  'filled')
+SubData = SummaryData(SummaryData.BeadIntensity == 3, :);
+scatter(SubData.BeadIntensity.*SubData.LaserPower,...
+    SubData.MeanIntensity, 50,  'filled')
+SubData = SummaryData(SummaryData.BeadIntensity == 10, :);
+scatter(SubData.BeadIntensity.*SubData.LaserPower,...
+    SubData.MeanIntensity, 50,  'filled')
+xlabel('Bead Intensity * Laser power')
+ylabel('Measured Intensity')
+legend('.3', '1', '3', '10')
+hold off
 
-img2 = images(:,:,2);
-
-[centers2, radii2] = imfindcircles(img2, [radmin, radmax],...
-    'Sensitivity', 0.95);
+%scatter(SummaryData.LaserPower, SummaryData.MeanIntensity, 10, SummaryData.BeadIntensity)
 figure(2)
-imshow(images(:,:,2))
-h = viscircles(centers2, radii2)
-[xgrid, ygrid] = meshgrid(1:size(img2,1), 1:size(img2,2));
-mask = ((xgrid-centers2(1,1)).^2 + (ygrid-centers2(1,2)).^2) <= radii2(1).^2;
-values2 = img(mask);
-intensity2 = mean(values2);
+SubData = SummaryData(SummaryData.BeadIntensity == .3, :);
+scatter(SubData.LaserPower,...
+    SubData.MeanIntensity, 50, 'filled')
+hold on
+SubData = SummaryData(SummaryData.BeadIntensity == 1, :);
+scatter(SubData.LaserPower,...
+    SubData.MeanIntensity, 50,  'filled')
+SubData = SummaryData(SummaryData.BeadIntensity == 3, :);
+scatter(SubData.LaserPower,...
+    SubData.MeanIntensity, 50,  'filled')
+SubData = SummaryData(SummaryData.BeadIntensity == 10, :);
+scatter(SubData.LaserPower,...
+    SubData.MeanIntensity, 50,  'filled')
+xlabel('Laser power')
+ylabel('Measured Intensity')
+legend('.3', '1', '3', '10')
+hold off
+
+
+
 
 

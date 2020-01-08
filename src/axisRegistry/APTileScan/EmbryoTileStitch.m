@@ -23,29 +23,31 @@ ID = [upper(ID(1)), ID(2:end)];
 FullyAutomate = false;
 StitchManually = false;
 
-x = 1;
-while x <= length(varargin)
-    switch varargin{x}
-        case{'NIterations'}
-            NIterations = varargin{x+1};
-            x = x + 1;
-            fprintf('Number of Iterations: %d\n', NIterations);
-        case {'FullyAutomate'}
-            FullyAutomate = true;
-            fprintf('Stitching fully automated.\n')
-        case {'StitchManually'}
-            StitchManually = true;
-            fprintf('Stitching to be performed manually.\n')
-        case {'MaxStep'}
-            MaxStep = varargin{x+1};
-            x = x+1;
-            fprintf('Max Step Size to be used in stitching loop: %d\n', MaxStep)
-        case{'MaxOverlap'}
-            MaxOverlap = varargin{x+1};
-            x = x+1;
-            fprintf('Max overlap between adjacent tiles to be used in stitching loop: %d\n', RowMaxOverlap)
+if ~isempty(varargin)
+    x = 1;
+    while x <= length(varargin{1})
+        switch varargin{1}{x}
+            case{'NIterations'}
+                NIterations = varargin{1}{x+1};
+                x = x + 1;
+                fprintf('Number of Iterations: %d\n', NIterations);
+            case{'FullyAutomate'}
+                FullyAutomate = true;
+                fprintf('Stiarginching fully automated.\n')
+            case {'StitchManually'}
+                StitchManually = true;
+                fprintf('Stitching to be performed manually.\n')
+            case {'MaxStep'}
+                MaxStep = varargin{1}{x+1};
+                x = x+1;
+                fprintf('Max Step Size to be used in stitching loop: %d\n', MaxStep)
+            case{'MaxOverlap'}
+                MaxOverlap = varargin{1}{x+1};
+                x = x+1;
+                fprintf('Max overlap between adjacent tiles to be used in stitching loop: %d\n', MaxOverlap)
+        end
+        x = x +1;
     end
-    x = x +1;
 end
 
 if StitchManually && FullyAutomate
@@ -102,9 +104,23 @@ end
 
 % Finalize Tile Array Stitching Positions using FindStitchingPositions
 if ~StitchManually
-    FindStitchingPositions(Prefix, ID, MaxStep, MaxOverlap, NIterations);
+
+    tile_array = FindStitchingPositions(Prefix, ID, MaxStep, MaxOverlap, NIterations);
+    close all
+    imshow(imstitchTile(tile_array))
+    if ~FullyAutomate
+        prompt = ['Do you want to adjust the existing tiling and try stitching again (y/n)?'];
+        keepFitting = input(prompt,'s');
+        while keepFitting=='y'
+            ManualStitchingCorrection(Prefix, ID);
+            tile_array = FindStitchingPositions(Prefix, ID, MaxStep, MaxOverlap, NIterations);
+            close all
+            imshow(imstitchTile(tile_array))
+            prompt = ['Do you want to adjust the existing tiling and try stitching again (y/n)?'];
+            keepFitting = input(prompt,'s');
+        end
+    end
+            
 end
-
-
 
 end
