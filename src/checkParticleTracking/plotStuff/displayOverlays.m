@@ -6,7 +6,7 @@ function [ImageHis, xForZoom, yForZoom, oim, ellipseHandles] =...
     Spots, CurrentFrame, ShowThreshold2, ...
     Overlay, CurrentChannel, CurrentParticle, ZSlices, CurrentZ, numFrames, ...
     schnitzcells, UseSchnitz, DisplayRange, Ellipses, SpotFilter, ZoomMode, GlobalZoomMode, ...
-    ZoomRange, xForZoom, yForZoom, fish, UseHistoneOverlay,...
+    ZoomRange, xForZoom, yForZoom, fish, UseHistoneOverlay, multiAx,...
     HisOverlayFigAxes, HisPath1, HisPath2, oim, ellipseHandles)
 
 %PLOTFRAME Summary of this function goes here
@@ -21,6 +21,12 @@ EllipseHandleGreen=[];
 % for i = 1:length(ellipseHandles)
 %     delete(ellipseHandles{i});
 % end
+
+if ~isempty(multiAx)
+    multiView = true;
+else
+    multiView = false;
+end
 
 %Get the coordinates of all the spots in this frame
 [x,y,z]=SpotsXYZ(Spots{CurrentChannel}(CurrentFrame));
@@ -268,6 +274,14 @@ if ZoomMode
     try
         xlim(overlayAxes,[xForZoom-ZoomRange,xForZoom+ZoomRange])
         ylim(overlayAxes,[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2])
+        if multiView
+           for i = 1:length(multiAx)
+               for j = 1:length(multiAx)
+                   xlim(multiAx{i, j},[xForZoom-ZoomRange,xForZoom+ZoomRange])
+                    ylim(multiAx{i, j},[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2]) 
+               end
+           end
+        end
     catch
         %something's outside the limits of the image
     end
@@ -276,6 +290,14 @@ end
 if GlobalZoomMode
     xlim(overlayAxes,[xForZoom-ZoomRange,xForZoom+ZoomRange])
     ylim(overlayAxes,[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2])
+    if multiView
+           for i = 1:length(multiAx)
+               for j = 1:length(multiAx)
+                   xlim(multiAx{i, j},[xForZoom-ZoomRange,xForZoom+ZoomRange])
+                    ylim(multiAx{i, j},[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2]) 
+               end
+           end
+    end
 end
 
 if UseHistoneOverlay

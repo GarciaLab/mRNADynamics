@@ -144,7 +144,7 @@ storedTimeProjection = []; % Don't need to wait for timeProjection to finish eac
 
 [sortByFrames, sortByLength, ForCompileAll, SpeedMode, ~, ...
     ncRange, projectionMode, plot3DGauss, NC, ...
-    startNC, endNC, optionalResults, nWorkers, fish, noHisOverlay] = determineCheckParticleTrackingOptions(varargin{:});
+    startNC, endNC, optionalResults, nWorkers, fish, noHisOverlay, multiView] = determineCheckParticleTrackingOptions(varargin{:});
 
 if fish
     noHisOverlay = true;
@@ -281,7 +281,7 @@ nameSuffix = '';
 hImage = [];
 CurrentSnippet = [];
 oim = [];
-hIm = [];
+overlayIm = [];
 Image = [];
 ellipseHandles = {};
 spotHandles = {};
@@ -313,6 +313,12 @@ end
 %Define user interface
 [Overlay, overlayAxes, snippetFigAxes, rawDataAxes, gaussianAxes, traceFigAxes, zProfileFigAxes,...
     zTraceAxes,HisOverlayFig,HisOverlayFigAxes] = checkParticleTracking_drawGUI(UseHistoneOverlay, fish);
+
+if multiView
+    multiFig = figure;
+    multiAxes = axes(multiFig);
+end
+
 
 [controls, frame_num, z_num, particle_num, ...
     add_spot, smart_add_spot, delete_spot, ...
@@ -509,10 +515,23 @@ while (cc ~= 'x')
         cptState.ManualZFlag = 0;
     end
     
-    
+    multiImage = {};
     if strcmpi(projectionMode, 'None')
         Image = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
             FilePrefix, iIndex(cptState.CurrentFrame, NDigits), '_z', iIndex(cptState.CurrentZ, 2), nameSuffix, '.tif']);
+        if multiView
+            nSlices = FrameInfo(1).NumberSlices;
+            for i = -1:1
+                for j = -1:1
+                    if any( 1:nSlices == cptState.CurrentZ + i) && any( 1:numFrames == cptState.CurrentFrame + j)
+                        multiImage{i+2, j+2} = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
+                    FilePrefix, iIndex(cptState.CurrentFrame+j, NDigits), '_z', iIndex(cptState.CurrentZ+i, 2), nameSuffix, '.tif']);
+                    else
+                        multiImage{i+2, j+2} = zeros(FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine);
+                    end
+                end
+            end
+        end
     elseif strcmpi(projectionMode, 'Max Z')
         Image = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, FrameInfo, 'max', nWorkers);
     elseif strcmpi(projectionMode, 'Median Z')
@@ -534,13 +553,39 @@ while (cc ~= 'x')
         end
         
     end
+
     
+    if multiView && ~exist('subAx', 'var')
+         multiFig = figure();
+            n = 0;
+            for i = 1:3
+                for j = 1:3
+                    n = n + 1;
+                    subAx{i, j} = subplot(3, 3, n);
+                    title(subAx{i,j},['z: ', num2str(cptState.CurrentZ + i - 2), ' frame: ', num2str(cptState.CurrentFrame + j - 2)]) 
+                end
+            end
+    end
+    
+    if ~multiView
+        subAx = {};
+    end
     
     
     set(0, 'CurrentFigure', Overlay);
 %     if isempty(hIm)
-        hIm = imshow(Image, DisplayRangeSpot, 'Border', 'Tight', 'Parent', overlayAxes, ...
+        overlayIm = imshow(Image, DisplayRangeSpot, 'Border', 'Tight', 'Parent', overlayAxes, ...
             'InitialMagnification', 'fit');
+        if multiView 
+            for i = 1:size(multiImage, 1)
+                for j = 1:size(multiImage, 2)
+                    imshow(multiImage{i, j}, DisplayRangeSpot, 'Border', 'Tight', 'Parent', subAx{i,j},...
+                    'InitialMagnification', 'fit');
+                    title(subAx{i,j},['z: ', num2str(cptState.CurrentZ + i - 2), ' frame: ', num2str(cptState.CurrentFrame + j - 2)]) 
+
+                end
+            end
+        end
 %     else
 %         hIm.CData = Image;
 %     end
@@ -557,14 +602,15 @@ while (cc ~= 'x')
             cptState.Spots, cptState.CurrentFrame, ShowThreshold2, ...
             Overlay, cptState.CurrentChannel, cptState.CurrentParticle, cptState.ZSlices, cptState.CurrentZ, numFrames, ...
             schnitzcells, UseSchnitz, DisplayRange, Ellipses, SpotFilter, ZoomMode, GlobalZoomMode, ...
-            ZoomRange, xForZoom, yForZoom, fish, UseHistoneOverlay, HisOverlayFigAxes, HisPath1, HisPath2, oim, ellipseHandles);
+            ZoomRange, xForZoom, yForZoom, fish, UseHistoneOverlay, subAx, HisOverlayFigAxes,...
+            HisPath1, HisPath2, oim, ellipseHandles);
         
     else
         displayOverlays(overlayAxes, Image, SpeedMode, ...
             FrameInfo, cptState.Particles, cptState.Spots, cptState.CurrentFrame, ShowThreshold2, ...
             Overlay, cptState.CurrentChannel, cptState.CurrentParticle, cptState.ZSlices, cptState.CurrentZ, numFrames, ...
             schnitzcells, UseSchnitz, DisplayRange, Ellipses, SpotFilter, ...
-            ZoomMode, GlobalZoomMode, ZoomRange, xForZoom, yForZoom, fish, UseHistoneOverlay);
+            ZoomMode, GlobalZoomMode, ZoomRange, xForZoom, yForZoom, fish, UseHistoneOverlay, subAx);
     end
     
     if ~isempty(xTrace)

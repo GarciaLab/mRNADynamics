@@ -1,6 +1,6 @@
 function [sortByFrame, sortByLength, ForCompileAll, SpeedMode, SisterMode, ...
     ncRange, projectionMode, plot3DGauss, NC, ...
-    startNC, endNC, optionalResults, nWorkers, fish, noHisOverlay] = determineCheckParticleTrackingOptions(varargin)
+    startNC, endNC, optionalResults, nWorkers, fish, noHisOverlay, multiView] = determineCheckParticleTrackingOptions(varargin)
 %DETERMINEOPTIONS Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -27,6 +27,7 @@ optionalResults = '';
 nWorkers = 1;
 fish = false;
 noHisOverlay = false;
+multiView = false;
 
 
 % these variables are meaningless if ncRange is 0
@@ -36,21 +37,23 @@ endNC = -1;
 
 for i=1:length(varargin)
     if strcmpi(varargin{i},'NoSort')
-        sortByFrame=0;
+        sortByFrame=false;
     elseif strcmpi(varargin{i},'sortByLength')
-        sortByLength=1;
+        sortByLength=true;
     elseif strcmpi(varargin{i},'nWorkers')
         nWorkers = varargin{i+1};
     elseif strcmpi(varargin{i},'ForCompileAll')
-        ForCompileAll=1;
+        ForCompileAll=true;
     elseif strcmpi(varargin{i}, 'speedmode')
-        SpeedMode = 1;
+        SpeedMode = true;
+     elseif strcmpi(varargin{i}, 'multiView')
+        multiView = true;
     elseif strcmpi(varargin{i}, 'plot3DGauss')
-        plot3DGauss = 1;
+        plot3DGauss = true;
           elseif strcmpi(varargin{i}, 'noHisOverlay')
        noHisOverlay= true;
     elseif strcmpi(varargin{i}, 'sistermode')
-        SisterMode = 1;
+        SisterMode = true;
     elseif strcmpi(varargin{i}, 'optionalResults')
         optionalResults = varargin{i+1};
         elseif strcmpi(varargin{i}, 'fish')
