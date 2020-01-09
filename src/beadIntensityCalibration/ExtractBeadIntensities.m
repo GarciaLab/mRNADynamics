@@ -94,33 +94,34 @@ for j =1:size(LIFImages, 1)
         if length(radii) == 0
             continue
         else
-        for l=1:length(radii)
-            [xgrid, ygrid] = meshgrid(1:size(img,1), 1:size(img,2));
-            mask = ((xgrid-centers(l,1)).^2 + (ygrid-centers(l,2)).^2) <= (radii(l)/2).^2;
-            values = img(mask);
-            intensity = mean(values);
-            if size(TempBeadData, 1) ~= 0 && k ~= 1
-                TempBeadData.Distance = ((TempBeadData.CenterRow-centers(l,1)).^2+...
-                    (TempBeadData.CenterCol-centers(l,2)).^2).^(1/2);
-                MinD = min(TempBeadData.Distance(TempBeadData.z == k-1));
-                if MinD < radii(l)
-                    index = find((TempBeadData.Distance == min(TempBeadData.Distance)));
-                    BeadID = TempBeadData.BeadID(index);
+            
+            for l=1:length(radii)
+                [xgrid, ygrid] = meshgrid(1:size(img,1), 1:size(img,2));
+                mask = ((xgrid-centers(l,1)).^2 + (ygrid-centers(l,2)).^2) <= (radii(l)/2).^2;
+                values = img(mask);
+                intensity = mean(values);
+                if size(TempBeadData, 1) ~= 0 && k ~= 1
+                    TempBeadData.Distance = ((TempBeadData.CenterRow-centers(l,1)).^2+...
+                        (TempBeadData.CenterCol-centers(l,2)).^2).^(1/2);
+                    MinD = min(TempBeadData.Distance(TempBeadData.z == k-1));
+                    if MinD < radii(l)
+                        index = find((TempBeadData.Distance == min(TempBeadData.Distance)));
+                        BeadID = TempBeadData.BeadID(index);
+                    else
+                        BeadID = MaxBeadID;
+                        MaxBeadID = MaxBeadID + 1;
+                    end
+                    TempBeadData.Distance = [];
+                    TempBeadData(rn,:) = {beadintensity, power,setID,rep, k, BeadID,...
+                        centers(l, 1),centers(l, 2), radii(l), intensity};
                 else
                     BeadID = MaxBeadID;
                     MaxBeadID = MaxBeadID + 1;
+                    TempBeadData(rn,:) = {beadintensity, power,setID,rep, k,BeadID,...
+                        centers(l, 1),centers(l, 2), radii(l), intensity};
                 end
-                TempBeadData.Distance = [];
-                TempBeadData(rn,:) = {beadintensity, power,setID,rep, k, BeadID,...
-                    centers(l, 1),centers(l, 2), radii(l), intensity};
-            else
-                BeadID = MaxBeadID;
-                MaxBeadID = MaxBeadID + 1;
-                TempBeadData(rn,:) = {beadintensity, power,setID,rep, k,BeadID,...
-                    centers(l, 1),centers(l, 2), radii(l), intensity};
+                rn = rn + 1;
             end
-            rn = rn + 1;
-        end
         end
         if mod(k, 21) == 0
             for bid =1:max(TempBeadData.BeadID)

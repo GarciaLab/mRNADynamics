@@ -13,36 +13,36 @@ space_resolution = getDefaultParameters(FrameInfo,'space resolution');
 localMaximumRadius = LoGratio*nucleusDiameter/space_resolution;
 LoGradius = nucleusDiameter/space_resolution*LoGratio;
 edgeClearance = getDefaultParameters(FrameInfo,'edge clearance')*nucleusDiameter/space_resolution;
+
+
+% Added by GM 1/9/2019
+useMultithresh=false;
+k=1;
+while k<=length(varargin)
+    if strcmpi(varargin{k},'useMultithresh')
+        useMultithresh = true;
+        k=k+1;
+        warning('Using multithresh function to threshold nuclei during segmentation.')
+    end
+end
+% Added by GM 1/9/2019
 %% 
 
 % Added by NL and GM on 11/23/2019
 % Edited by GM on 1/7/2019
 xDim = FrameInfo(1).PixelsPerLine * FrameInfo(1).PixelSize;
 yDim = FrameInfo(1).LinesPerFrame * FrameInfo(1).PixelSize;
-% if yDim > 150 && xDim > 150
-%     I = imread(names{frameNumber});
-%     f_sigma = round(15 / FrameInfo(1).PixelSize);
-%     I_blurred = imgaussfilt(I,f_sigma);
-%     embryoMask = imbinarize(I_blurred, 'global');    
-% else    
-%     if ~exist('embryoMask','var') || isempty(embryoMask)
-%         embryoMask = true(size(imread(names{frameNumber})));
-%     end
-% end
 if yDim > 150 && xDim > 150
     I = imread(names{frameNumber});
-    pixelvalues = unique(I(:));
-    thresh = pixelvalues(2);
     f_sigma = round(nucleusDiameter / FrameInfo(1).PixelSize);
-    bwfill = imfill(I>thresh,'holes');
-    I_inside = bwselect(bwfill,round(size(bwfill,2)/2), round(size(bwfill, 1)/2));
-    I_inside=uint16((2^16-1)*I_inside);
-    I_blurred = imfilter(I_inside,...
+    I_blurred = imfilter(I,...
          fspecial('gaussian',2*f_sigma,f_sigma),'symmetric','conv');
-    level = graythresh(I_blurred);
-    embryoMask = im2bw(I_blurred,level);
-
-
+    if useMultithresh
+       levels = multithresh(I_blurred,2);
+       embryoMask = I_blurred > levels(1);
+    else
+       embryoMask = imbinarize(I_blurred);
+    end
 else    
     if ~exist('embryoMask','var') || isempty(embryoMask)
         embryoMask = true(size(imread(names{frameNumber})));
@@ -83,25 +83,36 @@ G = imfilter(filteredImg,fspecial('disk',3),'symmetric');
 ind = find(maxima>0);
 [xm,ym] = ind2sub(size(maxima),ind);
 
+imagesc(img)
+hold on 
+ax = gca();
+scatter(ax, ym,xm,100,'r','filled');
+hold off
+
 %Check whether anything was found in this image. If nothing is found,
 %this is usually the result of an empty frame
 if isempty(xm)|isempty(ym)
    error(['No nuclei found in frame ',num2str(frameNumber),'. Check that that frame is not blank.']) 
 end
 
-try
-    [v,dummy] = voronoin([xm ym]);
-catch
-    [v,dummy] = voronoin([xm ym],{'Qbb','Qz'});
+if ~useMultithresh
+    try
+        [v,dummy] = voronoin([xm ym]);
+    catch
+        [v,dummy] = voronoin([xm ym],{'Qbb','Qz'});
+    end
+
+    ind_v = v(:,1) > 0.5 & v(:,2) > 0.5 & v(:,1) < size(maxima,1) & v(:,2) < size(maxima,2);
+    background_ind = sub2ind(size(maxima),round(v(ind_v,1)),round(v(ind_v,2)));
+    sample_ind = [ind(:) ; background_ind(:)];
+    nuc1 = G(sample_ind);
+    thresh = graythresh(mat2gray(nuc1));
+    indNuclei = imbinarize(mat2gray(nuc1),thresh);
+else
+    b_points = boundary(xm,ym); 
+    index_vec = 1:numel(xm);
+    indNuclei = ~ismember(index_vec,b_points);
 end
-
-ind_v = v(:,1) > 0.5 & v(:,2) > 0.5 & v(:,1) < size(maxima,1) & v(:,2) < size(maxima,2);
-background_ind = sub2ind(size(maxima),round(v(ind_v,1)),round(v(ind_v,2)));
-sample_ind = [ind(:) ; background_ind(:)];
-nuc1 = G(sample_ind);
-
-thresh = graythresh(mat2gray(nuc1));
-indNuclei = imbinarize(mat2gray(nuc1),thresh);
 
 %% Check the segmentation if a target number was provided.
 if exist('targetNumber','var') && numel(targetNumber) == 1 && isnumeric(targetNumber) && abs(sum(indNuclei(1:numel(nuc1)))-targetNumber)/targetNumber > 0.25

@@ -1,6 +1,6 @@
 function [stitchSchnitz, ExpandedSpaceTolerance,...
     NoBulkShift, retrack, nWorkers, track...
-    noBreak, noStitch, fish, markandfind, intFlag]...
+    noBreak, noStitch, fish, markandfind, intFlag, useMultithresh]...
     = DetermineTrackNucleiOptions(varargin)
 %
 %DETERMINETRACKNUCLEIOPTIONS Processes varargin for TrackNuclei,
@@ -18,6 +18,7 @@ function [stitchSchnitz, ExpandedSpaceTolerance,...
     fish = false;
     markandfind =  false;
     intFlag = false;
+    useMultithresh=false;
     
     for i = 1:length(varargin)
         if strcmpi(varargin{i}, 'ExpandedSpaceTolerance')
@@ -42,6 +43,8 @@ function [stitchSchnitz, ExpandedSpaceTolerance,...
             markandfind = true;
         elseif strcmpi(varargin{i}, 'integrate')
             intFlag = true;
+        elseif strcmpi(varargin{i}, 'useMultithresh')
+            useMultithresh=true;
         end
     end
     

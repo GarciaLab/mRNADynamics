@@ -85,11 +85,16 @@ provided_space_resolution = NaN;
 provided_LoGratio = NaN;
 segmentationOnly = false;
 
+% Edited to include multithresh by GM on 1/9/19
+useMultithresh=false;
+% Edited to include multithresh by GM on 1/9/19
+
 % default values
 ExpandedSpaceTolerance = 1;
 NoBulkShift = 0;
-
-for j = 1:2:numel(varargin)
+ 
+% Edited to include multithresh by GM on 1/9/19
+for j=1:2:numel(varargin)
     switch lower(varargin{j})
         case {'expandedspacetolerance'}
             ExpandedSpaceTolerance = varargin{j + 1};
@@ -115,6 +120,9 @@ for j = 1:2:numel(varargin)
             provided_time_resolution = varargin{j+1};
         case {'logratio'}
             provided_LoGratio = varargin{j+1};
+        case {'usemultithresh'}
+            useMultithresh = varargin{j+1}; 
+            warning('Using multithresh function to threshold nuclei during segmentation (main tracking).')
         case {'segmentationonly', 'segmentation only'}
             if ~islogical(segmentationOnly)
                 segmentationOnly = false;
@@ -124,7 +132,6 @@ for j = 1:2:numel(varargin)
             end
         case {'data structure', 'datastructure', 'data'}
             data = varargin{j+1};
-            
             try
                 names = data.names;
             catch
@@ -162,6 +169,8 @@ for j = 1:2:numel(varargin)
             end
     end
 end
+% Edited to include multithresh by GM on 1/9/19
+
 
 if isnan(provided_space_resolution)
     clear -global provided_space_resolution
@@ -291,7 +300,11 @@ if ~exist('centers','var') || isempty(centers)
                     end
         end
         if segment
-            xy(first:last) = segmentFrames(FrameInfo, names,first,last,diameters(j),embryoMask,h_waitbar_segmentation);
+            if ~useMultithresh
+                xy(first:last) = segmentFrames(FrameInfo, names,first,last,diameters(j),embryoMask,h_waitbar_segmentation);
+            else
+                xy(first:last) = segmentFrames(FrameInfo, names,first,last,diameters(j),embryoMask,h_waitbar_segmentation, 'useMultithresh');
+            end
         end
         
         % Segment mitosis
@@ -321,7 +334,11 @@ if ~exist('centers','var') || isempty(centers)
             else
                 D = 0.5*sum(diameters(j-1:j));
             end
-            xy(first:last) = segmentFrames(FrameInfo,names,first,last,D,embryoMask,h_waitbar_segmentation);
+            if ~useMultithresh
+                xy(first:last) = segmentFrames(FrameInfo, names,first,last,diameters(j),embryoMask,h_waitbar_segmentation);
+            else
+                xy(first:last) = segmentFrames(FrameInfo, names,first,last,diameters(j),embryoMask,h_waitbar_segmentation, 'useMultithresh');
+            end
         end
         
     end
