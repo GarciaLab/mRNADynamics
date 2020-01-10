@@ -129,9 +129,6 @@ IntegrationArea = []; %Initialized here to avoid dynamic assignment later in fun
 fish = false;
 nucleiModified = false;
 
-xForZoom = 0;
-yForZoom = 0;
-
 % Parameters for fitting
 lineFitted = 0; % equals 1 if a line has been fitted
 FramesToFit = []; % actual frames of the movie that were used for fitting
@@ -271,8 +268,6 @@ else
 end
 DisplayRange = [];
 DisplayRangeSpot = [];
-ZoomMode = 0;
-GlobalZoomMode = 0;
 ZoomRange = 50;
 nameSuffix = '';
 hImage = [];
@@ -355,7 +350,7 @@ add_spot.ButtonPushedFcn = @add_spot_pushed;
         Path3 = [PreProcPath, filesep, Prefix, filesep, Prefix];
         no_clicking = true;
         [SpotFilter, cptState.Particles, cptState.Spots, PreviousParticle, cptState.CurrentParticle] = ...
-            addSpot(ZoomMode, GlobalZoomMode, cptState.Particles, cptState.CurrentChannel, ...
+            addSpot(cptState.ZoomMode, cptState.GlobalZoomMode, cptState.Particles, cptState.CurrentChannel, ...
             cptState.CurrentParticle, cptState.CurrentFrame, cptState.CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
             LinesPerFrame, cptState.Spots, cptState.ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
             SpotFilter,smart_add, xSize, ySize, NDigits, ...
@@ -370,9 +365,9 @@ delete_spot.ButtonPushedFcn = @delete_spot_pushed;
     function delete_spot_pushed(~, ~)
         no_clicking = true;
         figure(Overlay);
-        [cptState.Spots, SpotFilter, ZoomMode, GlobalZoomMode, cptState.CurrentFrame, ...
+        [cptState.Spots, SpotFilter, cptState.ZoomMode, cptState.GlobalZoomMode, cptState.CurrentFrame, ...
             cptState.CurrentParticle, cptState.Particles, cptState.ManualZFlag, DisplayRange, lastParticle, PreviousParticle] = ...
-            removeSpot(ZoomMode, GlobalZoomMode, Frames, cptState.CurrentFrame, ...
+            removeSpot(cptState.ZoomMode, cptState.GlobalZoomMode, Frames, cptState.CurrentFrame, ...
             cptState.CurrentChannel, cptState.CurrentParticle, CurrentParticleIndex, cptState.Particles, cptState.Spots, SpotFilter, ...
              cptState.ManualZFlag, DisplayRange, lastParticle, PreviousParticle);
         
@@ -573,11 +568,11 @@ while (cc ~= 'x')
         HisPath2 = [PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
             FilePrefix(1:end - 1), '_His_', iIndex(cptState.CurrentFrame, NDigits), '.tif'];
         
-        [ImageHis, xForZoom, yForZoom, oim,ellipseHandles]= displayOverlays(overlayAxes, Image, SpeedMode, FrameInfo, cptState.Particles, ...
+        [ImageHis, cptState.xForZoom, cptState.yForZoom, oim,ellipseHandles]= displayOverlays(overlayAxes, Image, SpeedMode, FrameInfo, cptState.Particles, ...
             cptState.Spots, cptState.CurrentFrame, ShowThreshold2, ...
             Overlay, cptState.CurrentChannel, cptState.CurrentParticle, cptState.ZSlices, cptState.CurrentZ, numFrames, ...
-            schnitzcells, UseSchnitz, DisplayRange, Ellipses, SpotFilter, ZoomMode, GlobalZoomMode, ...
-            ZoomRange, xForZoom, yForZoom, fish, UseHistoneOverlay, subAx, HisOverlayFigAxes,...
+            schnitzcells, UseSchnitz, DisplayRange, Ellipses, SpotFilter, cptState.ZoomMode, cptState.GlobalZoomMode, ...
+            ZoomRange, cptState.xForZoom, cptState.yForZoom, fish, UseHistoneOverlay, subAx, HisOverlayFigAxes,...
             HisPath1, HisPath2, oim, ellipseHandles);
         
     else
@@ -585,7 +580,7 @@ while (cc ~= 'x')
             FrameInfo, cptState.Particles, cptState.Spots, cptState.CurrentFrame, ShowThreshold2, ...
             Overlay, cptState.CurrentChannel, cptState.CurrentParticle, cptState.ZSlices, cptState.CurrentZ, numFrames, ...
             schnitzcells, UseSchnitz, DisplayRange, Ellipses, SpotFilter, ...
-            ZoomMode, GlobalZoomMode, ZoomRange, xForZoom, yForZoom, fish, UseHistoneOverlay, subAx);
+            cptState.ZoomMode, cptState.GlobalZoomMode, ZoomRange, cptState.xForZoom, cptState.yForZoom, fish, UseHistoneOverlay, subAx);
     end
     
     if ~isempty(xTrace)
@@ -753,8 +748,8 @@ while (cc ~= 'x')
         PathPart2 = [nameSuffix, '.tif'];
         Path3 = [PreProcPath, filesep, Prefix, filesep, Prefix];
         [SpotFilter, cptState.Particles, cptState.Spots,...
-            PreviousParticle, cptState.CurrentParticle, ZoomMode, GlobalZoomMode] = ...
-            addSpot(ZoomMode, GlobalZoomMode, cptState.Particles, cptState.CurrentChannel, ...
+            PreviousParticle, cptState.CurrentParticle, cptState.ZoomMode, cptState.GlobalZoomMode] = ...
+            addSpot(cptState.ZoomMode, cptState.GlobalZoomMode, cptState.Particles, cptState.CurrentChannel, ...
             cptState.CurrentParticle, cptState.CurrentFrame, cptState.CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
             LinesPerFrame, cptState.Spots, cptState.ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
             SpotFilter, cc, xSize, ySize, NDigits,...
@@ -880,24 +875,24 @@ while (cc ~= 'x')
         %HideApprovedFlag=~HideApprovedFlag;
     elseif cc == 'o'
         
-        if ~GlobalZoomMode
-            ZoomMode = ~ZoomMode;
-        elseif GlobalZoomMode & ~ZoomMode
-            GlobalZoomMode = false;
+        if ~cptState.GlobalZoomMode
+            cptState.ZoomMode = ~cptState.ZoomMode;
+        elseif cptState.GlobalZoomMode & ~cptState.ZoomMode
+            cptState.GlobalZoomMode = false;
         end
         
         
     elseif cc == '+'
         
-        if ~ZoomMode & ~GlobalZoomMode
+        if ~cptState.ZoomMode & ~cptState.GlobalZoomMode
                 [ConnectPositionx, ConnectPositiony] = ginput(1);
-                xForZoom = round(ConnectPositionx);
-                yForZoom = round(ConnectPositiony);
-            GlobalZoomMode = true;
-        elseif ZoomMode & ~GlobalZoomMode
-            ZoomMode = false;
-        elseif ~ZoomMode & GlobalZoomMode
-            GlobalZoomMode = false;
+                cptState.xForZoom = round(ConnectPositionx);
+                cptState.yForZoom = round(ConnectPositiony);
+            cptState.GlobalZoomMode = true;
+        elseif cptState.ZoomMode & ~cptState.GlobalZoomMode
+            cptState.ZoomMode = false;
+        elseif ~cptState.ZoomMode & cptState.GlobalZoomMode
+            cptState.GlobalZoomMode = false;
         end
         
     elseif (cc == 'm') & (cptState.CurrentParticle < cptState.numParticles())

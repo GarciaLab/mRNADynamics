@@ -14,6 +14,10 @@ classdef CPTState < handle
         FrameIndicesToFit
         Coefficients
         fitApproved
+        ZoomMode
+        GlobalZoomMode
+        xForZoom
+        yForZoom
     end
     
     methods
@@ -31,6 +35,10 @@ classdef CPTState < handle
             this.FrameIndicesToFit = 0; % index of the current particle that were used for fitting
             this.Coefficients = []; % coefficients of the fitted line
             this.fitApproved = 0; %JP: I don't think is this in use, will check.
+            this.ZoomMode = 0;
+            this.GlobalZoomMode = 0;
+            this.xForZoom = 0;
+            this.yForZoom = 0;
         end
 
         function numParticles = numParticles(this)
