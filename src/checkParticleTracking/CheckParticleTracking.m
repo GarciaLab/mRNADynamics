@@ -336,6 +336,10 @@ particle_num.ValueChangedFcn = particleChangeTextInput;
 
 channelSwitchKeyInput = ChannelSwitchEventHandler(cptState, NChannels, coatChannels, UseHistoneOverlay);
 
+zoomParticleToggleKeyInput = ZoomParticleToggleEventHandler(cptState);
+
+zoomAnywhereKeyInput = ZoomAnywhereEventHandler(cptState);
+
 add_spot.ButtonPushedFcn = @add_spot_pushed;
 
     function add_spot_pushed(~, ~)
@@ -689,6 +693,8 @@ while (cc ~= 'x')
     zSliceChangeKeyInput(cc);
     particleChangeKeyInput(cc);
     channelSwitchKeyInput(cc);
+    zoomParticleToggleKeyInput(cc);
+    zoomAnywhereKeyInput(cc);
     
     if strcmpi(cc, 'donothing')
         %do nothing
@@ -870,29 +876,6 @@ while (cc ~= 'x')
             HideApprovedFlag = 2; %Show only yellow and red traces
         elseif HideApprovedFlag == 2
             HideApprovedFlag = 0;
-        end
-        
-        %HideApprovedFlag=~HideApprovedFlag;
-    elseif cc == 'o'
-        
-        if ~cptState.GlobalZoomMode
-            cptState.ZoomMode = ~cptState.ZoomMode;
-        elseif cptState.GlobalZoomMode & ~cptState.ZoomMode
-            cptState.GlobalZoomMode = false;
-        end
-        
-        
-    elseif cc == '+'
-        
-        if ~cptState.ZoomMode & ~cptState.GlobalZoomMode
-                [ConnectPositionx, ConnectPositiony] = ginput(1);
-                cptState.xForZoom = round(ConnectPositionx);
-                cptState.yForZoom = round(ConnectPositiony);
-            cptState.GlobalZoomMode = true;
-        elseif cptState.ZoomMode & ~cptState.GlobalZoomMode
-            cptState.ZoomMode = false;
-        elseif ~cptState.ZoomMode & cptState.GlobalZoomMode
-            cptState.GlobalZoomMode = false;
         end
         
     elseif (cc == 'm') & (cptState.CurrentParticle < cptState.numParticles())
