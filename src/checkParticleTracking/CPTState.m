@@ -11,20 +11,24 @@ classdef CPTState < handle
         CurrentChannel
         PreviousChannel
         coatChannel
+        FrameIndicesToFit
+        Coefficients
     end
     
     methods
-        function this = CPTState(Spots, Particles, CurrentFrame, ManualZFlag, numberZSlices, CurrentParticle, CurrentChannel)
+        function this = CPTState(Spots, Particles, numberZSlices)
             this.Spots = Spots;
             this.Particles = Particles;
-            this.CurrentFrame = CurrentFrame;
-            this.ManualZFlag = ManualZFlag;
+            this.CurrentFrame = 0;
+            this.ManualZFlag = 0;
             this.PreviousFrame = CurrentFrame;
             this.ZSlices = numberZSlices + 2; %Note that the blank slices are included
             this.CurrentZ = round(this.ZSlices / 2);
-            this.CurrentParticle = CurrentParticle;
-            this.CurrentChannel = CurrentChannel;
+            this.CurrentParticle = 1;
+            this.CurrentChannel = 1;
             this.PreviousChannel = CurrentChannel;
+            this.FrameIndicesToFit = 0; % index of the current particle that were used for fitting
+            this.Coefficients = []; % coefficients of the fitted line
         end
 
         function numParticles = numParticles(this)
