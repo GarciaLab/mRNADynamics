@@ -13,6 +13,7 @@ classdef CPTState < handle
         coatChannel
         FrameIndicesToFit
         Coefficients
+        fitApproved
     end
     
     methods
@@ -29,6 +30,7 @@ classdef CPTState < handle
             this.PreviousChannel = CurrentChannel;
             this.FrameIndicesToFit = 0; % index of the current particle that were used for fitting
             this.Coefficients = []; % coefficients of the fitted line
+            this.fitApproved = 0; %JP: I don't think is this in use, will check.
         end
 
         function numParticles = numParticles(this)
