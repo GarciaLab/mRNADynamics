@@ -1,7 +1,7 @@
  function keyInputHandler = ZoomAnywhereEventHandler(cptState)
     
     function keyInput(cc)
- 		if cc == '+'
+ 	    if cc == '+'
 	        if ~cptState.ZoomMode & ~cptState.GlobalZoomMode
 	                [ConnectPositionx, ConnectPositiony] = ginput(1);
 	                cptState.xForZoom = round(ConnectPositionx);
@@ -11,7 +11,7 @@
 	            cptState.ZoomMode = false;
 	        elseif ~cptState.ZoomMode & cptState.GlobalZoomMode
 	            cptState.GlobalZoomMode = false;
-	        end
+            end
 	    end
     end
 

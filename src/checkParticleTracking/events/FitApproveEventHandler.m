@@ -1,4 +1,4 @@
- function inputHandler = FitApproveEventHandler(cptState)
+ function keyInputHandler = FitApproveEventHandler(cptState)
 
     function fit_approve(~, ~)
         % Define the fitApproved as true

@@ -26,12 +26,12 @@ classdef CPTState < handle
             this.Particles = Particles;
             this.CurrentFrame = 0;
             this.ManualZFlag = 0;
-            this.PreviousFrame = CurrentFrame;
+            this.PreviousFrame = this.CurrentFrame;
             this.ZSlices = numberZSlices + 2; %Note that the blank slices are included
             this.CurrentZ = round(this.ZSlices / 2);
             this.CurrentParticle = 1;
             this.CurrentChannel = 1;
-            this.PreviousChannel = CurrentChannel;
+            this.PreviousChannel = this.CurrentChannel;
             this.FrameIndicesToFit = 0; % index of the current particle that were used for fitting
             this.Coefficients = []; % coefficients of the fitted line
             this.fitApproved = 0; %JP: I don't think is this in use, will check.
