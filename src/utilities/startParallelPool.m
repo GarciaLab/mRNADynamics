@@ -6,7 +6,7 @@ if licensed
     
     ps = parallel.Settings;
     ps.Pool.AutoCreate = false;
-    distcomp.feature( 'LocalUseMpiexec', false )
+    distcomp.feature( 'LocalUseMpiexec', false );
 
     if nWorkers > 1 && ~displayFigures
         maxWorkers = nWorkers;
