@@ -24,6 +24,8 @@ function [textInputHandler, keyInputHandler] = ParticleChangeEventHandler(cptSta
             
             [cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag] = ...
                 changeParticle(ParticleJump, cptState.Particles, cptState.numParticles, cptState.CurrentChannel);
+
+            cptState.DisplayRange = [];
         end
     end
 
