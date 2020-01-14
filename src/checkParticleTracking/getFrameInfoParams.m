@@ -1,5 +1,5 @@
 function [xSize, ySize, pixelSize, zStep, snippet_size, LinesPerFrame, PixelsPerLine,...
-    numFrames, NDigits, NChannels, Particles, Spots, SpotFilter] = getFrameInfoParams(FrameInfo, Particles, Spots, SpotFilter)
+    numFrames] = getFrameInfoParams(FrameInfo)
   
   xSize = FrameInfo(1).PixelsPerLine;
   ySize = FrameInfo(1).LinesPerFrame;

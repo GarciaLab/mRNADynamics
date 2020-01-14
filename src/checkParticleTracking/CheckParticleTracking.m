@@ -905,6 +905,8 @@ while (cc ~= 'x')
     %% Main loop - end
 end
 
+% JP: we should reuse saveChanges function to do all the saving below
+
 save([DataFolder, filesep, 'FrameInfo.mat'], 'FrameInfo')
 
 %If we only have one channel bring Particles back to the legacy
