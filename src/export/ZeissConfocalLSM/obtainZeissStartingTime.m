@@ -6,6 +6,9 @@ function StartingTime = obtainZeissStartingTime(Folder, LSMIndex, LSMMeta2, NDig
   
   if ~isempty(LSMDir)
     StartingTime = LSMMeta2.get(['TimeStamp #', iIndex(1, NDigits)]); %SEANCHANGE
+    if isempty(StartingTime)
+        StartingTime = LSMMeta2.get(['TimeStamp #', iIndex(1, NDigits-1)]); %SEANCHANGE
+    end
   elseif ~isempty(CZIDir)
     TimeStampString = LSMMeta2.get('Global Information|Image|T|StartTime #1');
     TimeStampStrings{LSMIndex} = TimeStampString;
