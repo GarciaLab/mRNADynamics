@@ -2,6 +2,7 @@ classdef CPTState < handle
     properties
         Spots
         Particles
+        SpotFilter
         
         CurrentFrame
         PreviousFrame
@@ -33,9 +34,10 @@ classdef CPTState < handle
     end
     
     methods
-        function this = CPTState(Spots, Particles, numberZSlices, UseHistoneOverlay)
+        function this = CPTState(Spots, Particles, SpotFilter, numberZSlices, UseHistoneOverlay)
             this.Spots = Spots;
             this.Particles = Particles;
+            this.SpotFilter = SpotFilter;
             
             this.CurrentFrame = 0;
             this.PreviousFrame = this.CurrentFrame;
