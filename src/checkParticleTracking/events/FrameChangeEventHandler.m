@@ -39,6 +39,8 @@ function [textInputHandler, keyInputHandler] = FrameChangeEventHandler(cptState,
             end
 
             [cptState.CurrentFrame, cptState.ManualZFlag] = changeFrame(iJump, numValidFrames);
+
+            cptState.DisplayRange = [];
         end
     end
 

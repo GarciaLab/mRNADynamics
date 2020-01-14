@@ -23,6 +23,8 @@ function [textInputHandler, keyInputHandler] = ZSliceChangeEventHandler(cptState
                 iJump = cptState.CurrentFrame;
             end
             [cptState.CurrentZ, cptState.ManualZFlag] = changeZSlice(iJump, cptState.ZSlices);
+
+            cptState.DisplayRange = [];
        end
     end
 
