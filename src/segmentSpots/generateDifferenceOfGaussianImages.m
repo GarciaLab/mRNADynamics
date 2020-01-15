@@ -33,18 +33,12 @@ stacksPath = [PreProcPath, filesep, Prefix, filesep, 'stacks'];
 
 
 nCh = length(spotChannels);
-for channelIndex = 1:nCh
+for channelIndex = spotChannels
     
     waitbarFigure = waitbar(0, ['Filtering images: Channel ', num2str(channelIndex)]);
-    
-    % (MT, 2018-02-11) Added support for lattice imaging, maybe
-    % temporary - FIX LATER
-    
-    if strcmpi(ExperimentType, 'inputoutput') || strcmpi(ExperimentType, 'lattice')
-        nameSuffix = ['_ch', iIndex(spotChannels, 2)];
-    else
+   
         nameSuffix = ['_ch', iIndex(channelIndex, 2)];
-    end
+    
     
     if displayFigures && isempty(app)
         filterFig = figure();

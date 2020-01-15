@@ -12,11 +12,9 @@ function generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames,...
 
   % Make requisite TIF stacks for classification
   for channelIndex = 1:nCh
-    if strcmpi(ExperimentType, 'inputoutput')
+      
       nameSuffix = ['_ch', iIndex(coatChannel, 2)];
-    else
-      nameSuffix = ['_ch', iIndex(channelIndex, 2)];
-    end
+   
 
     currentFrameWaitbar = waitbar(0, ['Making ch0', num2str(channelIndex), ' .tif stacks for Weka classification']);
   
