@@ -157,16 +157,13 @@ FilePrefix = [Prefix, '_'];
 
 [Particles, SpotFilter, Spots, FrameInfo, Spots3D] = loadCheckParticleTrackingMats(DataFolder, PreProcPath);
 [xSize, ySize, pixelSize, zStep, snippet_size, LinesPerFrame, PixelsPerLine,...
-    numFrames] = getFrameInfoParams(FrameInfo);
+    numFrames, NDigits] = getFrameInfoParams(FrameInfo);
 
-  %See how  many frames we have and adjust the index size of the files to load accordingly
-  if numFrames < 1E3
-    NDigits = 3;
-  elseif numFrames < 1E4
-    NDigits = 4;
-  else
+if NDigits == -1
+    %JP: this validation is weird here, this is a WIP, see comment inside getFrameInfoParams
     error('No more than 10,000 frames supported.')
-  end
+end
+
   %Create the particle array. This is done so that we can support multiple
   %channels. Also figure out the number of channels
   if iscell(Particles)
@@ -257,7 +254,7 @@ HideApprovedFlag = 0;
 ParticleToFollow = [];
 CurrentFrameWithinParticle = 1;
 
-cptState = CPTState(Spots, Particles, SpotFilter, FrameInfo, UseHistoneOverlay); %work in progress, 2019-12, JP.
+cptState = CPTState(Spots, Particles, SpotFilter, schnitzcells, FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss); %work in progress, 2019-12, JP.
 
 if ~isempty(cptState.Particles{cptState.CurrentChannel})
     cptState.CurrentFrame = cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Frame(CurrentFrameWithinParticle);
@@ -266,7 +263,6 @@ else
 end
 DisplayRangeSpot = [];
 ZoomRange = 50;
-nameSuffix = '';
 hImage = [];
 CurrentSnippet = [];
 oim = [];
@@ -318,7 +314,7 @@ import java.awt.Robot;
 import java.awt.event.KeyEvent;
 robot = Robot;
 fake_event = KeyEvent.VK_T;
-no_clicking = false;
+
 
 coatChannels = [1, 2]; % JP temporary, will be used only if 2spot2color, could be refactored into cptState
 
@@ -339,34 +335,15 @@ zoomAnywhereKeyInput = ZoomAnywhereEventHandler(cptState);
 
 histoneContrastKeyInput = HistoneContrastChangeEventHandler(cptState);
 
-add_spot.ButtonPushedFcn = @add_spot_pushed;
+[addSpotTextInput, addSpotKeyInput] =...
+    AddSpotEventHandler(cptState, smart_add_spot, PreProcPath, FilePrefix, Prefix, robot, fake_event);
+add_spot.ButtonPushedFcn = addSpotTextInput;
 
-    function add_spot_pushed(~, ~)
-        figure(Overlay);
-        smart_add = '{';
-        
-        if smart_add_spot.Value
-            smart_add = '[';
-        end
-        PathPart1 = [PreProcPath, filesep, FilePrefix(1:end - 1), filesep, FilePrefix];
-        PathPart2 = [nameSuffix, '.tif'];
-        Path3 = [PreProcPath, filesep, Prefix, filesep, Prefix];
-        no_clicking = true;
-        [cptState.SpotFilter, cptState.Particles, cptState.Spots, cptState.PreviousParticle, cptState.CurrentParticle] = ...
-            addSpot(cptState.ZoomMode, cptState.GlobalZoomMode, cptState.Particles, cptState.CurrentChannel, ...
-            cptState.CurrentParticle, cptState.CurrentFrame, cptState.CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
-            LinesPerFrame, cptState.Spots, cptState.ZSlices, PathPart1, PathPart2, Path3, cptState.FrameInfo, pixelSize, ...
-            cptState.SpotFilter,smart_add, xSize, ySize, NDigits, ...
-            cptState.coatChannel, cptState.UseHistoneOverlay, schnitzcells, nWorkers, plot3DGauss);
-        robot.keyPress(fake_event);
-        robot.keyRelease(fake_event);
-        no_clicking = false;
-    end
 
 delete_spot.ButtonPushedFcn = @delete_spot_pushed;
 
     function delete_spot_pushed(~, ~)
-        no_clicking = true;
+        cptState.no_clicking = true;
         figure(Overlay);
         [cptState.Spots, cptState.SpotFilter, cptState.ZoomMode, cptState.GlobalZoomMode, cptState.CurrentFrame, ...
             cptState.CurrentParticle, cptState.Particles, cptState.ManualZFlag, cptState.DisplayRange, cptState.lastParticle, cptState.PreviousParticle] = ...
@@ -376,7 +353,7 @@ delete_spot.ButtonPushedFcn = @delete_spot_pushed;
         
         robot.keyPress(fake_event);
         robot.keyRelease(fake_event);
-        no_clicking = false;
+        cptState.no_clicking = false;
     end
 
 % The part below is added by Yang Joon Kim, for single MS2 trace linear
@@ -400,7 +377,7 @@ fit_spot.ButtonPushedFcn = @fit_spot_pushed;
         figure(Overlay);
         
         [lineFitted, cptState.Coefficients, FramesToFit, cptState.FrameIndicesToFit] = ...
-            fitInitialSlope(cptState.CurrentParticle, cptState.Particles, cptState.Spots, cptState.CurrentChannel, schnitzcells, ...
+            fitInitialSlope(cptState.CurrentParticle, cptState.Particles, cptState.Spots, cptState.CurrentChannel, cptState.schnitzcells, ...
             ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, Frames, anaphase, ...
             AveragingLength, FramesToFit, cptState.FrameIndicesToFit, lineFitted);
     end
@@ -442,7 +419,7 @@ while (cc ~= 'x')
         
         for ch = 1:length(Channels)
             if contains(Channels{ch}, 'MCP') || contains(Channels{ch}, 'PCP') || contains(Channels{ch}, 'spot') 
-                nameSuffix = ['_ch', iIndex(ch, 2)];
+                cptState.nameSuffix = ['_ch', iIndex(ch, 2)];
                 cptState.coatChannel = ch;
             end
         end
@@ -457,7 +434,7 @@ while (cc ~= 'x')
 
     %Update the name suffix
     if strcmpi(ExperimentType, '2spot2color')
-        nameSuffix = ['_ch', iIndex(cptState.coatChannel, 2)];
+        cptState.nameSuffix = ['_ch', iIndex(cptState.coatChannel, 2)];
     end
     
     %Get the coordinates of all the spots in this frame
@@ -491,14 +468,14 @@ while (cc ~= 'x')
     multiImage = {};
     if strcmpi(projectionMode, 'None')
         Image = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
-            FilePrefix, iIndex(cptState.CurrentFrame, NDigits), '_z', iIndex(cptState.CurrentZ, 2), nameSuffix, '.tif']);
+            FilePrefix, iIndex(cptState.CurrentFrame, NDigits), '_z', iIndex(cptState.CurrentZ, 2), cptState.nameSuffix, '.tif']);
         if multiView
             nSlices = cptState.FrameInfo(1).NumberSlices;
             for i = -1:1
                 for j = -1:1
                     if any( 1:nSlices == cptState.CurrentZ + i) && any( 1:numFrames == cptState.CurrentFrame + j)
                         multiImage{i+2, j+2} = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
-                    FilePrefix, iIndex(cptState.CurrentFrame+j, NDigits), '_z', iIndex(cptState.CurrentZ+i, 2), nameSuffix, '.tif']);
+                    FilePrefix, iIndex(cptState.CurrentFrame+j, NDigits), '_z', iIndex(cptState.CurrentZ+i, 2), cptState.nameSuffix, '.tif']);
                     else
                         multiImage{i+2, j+2} = zeros(cptState.FrameInfo(1).LinesPerFrame, cptState.FrameInfo(1).PixelsPerLine);
                     end
@@ -506,9 +483,9 @@ while (cc ~= 'x')
             end
         end
     elseif strcmpi(projectionMode, 'Max Z')
-        Image = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, cptState.FrameInfo, 'max', nWorkers);
+        Image = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, cptState.FrameInfo, 'max', cptState.nWorkers);
     elseif strcmpi(projectionMode, 'Median Z')
-        Image = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, cptState.FrameInfo, 'median', nWorkers);
+        Image = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, cptState.FrameInfo, 'median', cptState.nWorkers);
     elseif strcmpi(projectionMode, 'Max Z and Time')
         
         if isempty(storedTimeProjection)
@@ -574,7 +551,7 @@ while (cc ~= 'x')
         [cptState.ImageHis, cptState.xForZoom, cptState.yForZoom, oim,ellipseHandles]= displayOverlays(overlayAxes, Image, SpeedMode, cptState.FrameInfo, cptState.Particles, ...
             cptState.Spots, cptState.CurrentFrame, ShowThreshold2, ...
             Overlay, cptState.CurrentChannel, cptState.CurrentParticle, cptState.ZSlices, cptState.CurrentZ, numFrames, ...
-            schnitzcells, UseSchnitz, cptState.DisplayRange, Ellipses, cptState.SpotFilter, cptState.ZoomMode, cptState.GlobalZoomMode, ...
+            cptState.schnitzcells, UseSchnitz, cptState.DisplayRange, Ellipses, cptState.SpotFilter, cptState.ZoomMode, cptState.GlobalZoomMode, ...
             ZoomRange, cptState.xForZoom, cptState.yForZoom, fish, cptState.UseHistoneOverlay, subAx, HisOverlayFigAxes,...
             HisPath1, HisPath2, oim, ellipseHandles);
         
@@ -582,7 +559,7 @@ while (cc ~= 'x')
         displayOverlays(overlayAxes, Image, SpeedMode, ...
             cptState.FrameInfo, cptState.Particles, cptState.Spots, cptState.CurrentFrame, ShowThreshold2, ...
             Overlay, cptState.CurrentChannel, cptState.CurrentParticle, cptState.ZSlices, cptState.CurrentZ, numFrames, ...
-            schnitzcells, UseSchnitz, cptState.DisplayRange, Ellipses, cptState.SpotFilter, ...
+            cptState.schnitzcells, UseSchnitz, cptState.DisplayRange, Ellipses, cptState.SpotFilter, ...
             cptState.ZoomMode, cptState.GlobalZoomMode, ZoomRange, cptState.xForZoom, cptState.yForZoom, fish, cptState.UseHistoneOverlay, subAx);
     end
     
@@ -636,7 +613,7 @@ while (cc ~= 'x')
             ...
             cptState.FrameInfo, cptState.CurrentChannel, cptState.PreviousChannel, ...
             cptState.CurrentParticle, cptState.PreviousParticle, cptState.lastParticle, HideApprovedFlag, lineFitted, anaphaseInMins, ...
-            ElapsedTime, schnitzcells, cptState.Particles, plot3DGauss, anaphase, prophase, metaphase, prophaseInMins, metaphaseInMins, Prefix, ...
+            ElapsedTime, cptState.schnitzcells, cptState.Particles, cptState.plot3DGauss, anaphase, prophase, metaphase, prophaseInMins, metaphaseInMins, Prefix, ...
             numFrames, cptState.CurrentFrame, cptState.ZSlices, cptState.CurrentZ, cptState.Spots, ...
             correspondingNCInfo, cptState.Coefficients, ExperimentType,cptState.PreviousFrame, Frames,...
             Channels, PreProcPath, DropboxFolder, plottrace_argin{:});
@@ -673,14 +650,6 @@ while (cc ~= 'x')
         
         is_control = isa(get(Overlay, 'CurrentObject'), 'matlab.ui.control.UIControl');
         
-%         if ct == 0 && cm2(1, 1) < xSize && current_axes == overlayAxes ...
-%                 &&~no_clicking &&~is_control
-%             
-%             [cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag] = toNearestParticle(cptState.Spots, ...
-%                 cptState.Particles, cptState.CurrentFrame, cptState.CurrentChannel, cptState.UseHistoneOverlay, ...
-%                 schnitzcells, [cm2(1, 1), cm2(2, 2)]);
-%             
-%         end
     else
         cc = SkipWaitForButtonPress;
         SkipWaitForButtonPress = [];
@@ -728,7 +697,7 @@ while (cc ~= 'x')
         end
     elseif cc == '[' | cc == '{' %#ok<*OR2> %Add particle and all of its shadows to cptState.Spots.
         PathPart1 = [PreProcPath, filesep, FilePrefix(1:end - 1), filesep, FilePrefix];
-        PathPart2 = [nameSuffix, '.tif'];
+        PathPart2 = [cptState.nameSuffix, '.tif'];
         Path3 = [PreProcPath, filesep, Prefix, filesep, Prefix];
         [cptState.SpotFilter, cptState.Particles, cptState.Spots,...
             cptState.PreviousParticle, cptState.CurrentParticle, cptState.ZoomMode, cptState.GlobalZoomMode] = ...
@@ -736,12 +705,12 @@ while (cc ~= 'x')
             cptState.CurrentParticle, cptState.CurrentFrame, cptState.CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
             LinesPerFrame, cptState.Spots, cptState.ZSlices, PathPart1, PathPart2, Path3, cptState.FrameInfo, pixelSize, ...
             cptState.SpotFilter, cc, xSize, ySize, NDigits,...
-           Prefix, PreProcPath, ProcPath, cptState.coatChannel, cptState.UseHistoneOverlay, schnitzcells, nWorkers, plot3DGauss);
+           Prefix, PreProcPath, ProcPath, cptState.coatChannel, cptState.UseHistoneOverlay, cptState.schnitzcells, cptState.nWorkers, cptState.plot3DGauss);
     elseif cc == 'r'
         cptState.Particles = orderParticles(cptState.numParticles(), cptState.CurrentChannel, cptState.Particles);
     elseif cc == 'f'
-        [cptState.Particles, schnitzcells] = redoTracking(DataFolder, ...
-            cptState.UseHistoneOverlay, cptState.FrameInfo, DropboxFolder, FilePrefix, schnitzcells, ...
+        [cptState.Particles, cptState.schnitzcells] = redoTracking(DataFolder, ...
+            cptState.UseHistoneOverlay, cptState.FrameInfo, DropboxFolder, FilePrefix, cptState.schnitzcells, ...
             cptState.Particles, NChannels, cptState.CurrentChannel, cptState.numParticles());
     elseif cc == 'c'
         [cptState.PreviousParticle, cptState.Particles] = combineTraces(cptState.Spots, ...
@@ -802,10 +771,10 @@ while (cc ~= 'x')
     elseif cc == 'p' % Identify a particle. It will also tell you the particle associated with
         %  the clicked nucleus.
         identifyParticle(cptState.Spots, cptState.Particles, cptState.CurrentFrame, ...
-            cptState.CurrentChannel, cptState.UseHistoneOverlay, schnitzcells);
+            cptState.CurrentChannel, cptState.UseHistoneOverlay, cptState.schnitzcells);
     elseif cc == '\' %Moves to clicked particle.
         [cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag] = toNearestParticle(cptState.Spots, ...
-            cptState.Particles, cptState.CurrentFrame, cptState.CurrentChannel, cptState.UseHistoneOverlay, schnitzcells);
+            cptState.Particles, cptState.CurrentFrame, cptState.CurrentChannel, cptState.UseHistoneOverlay, cptState.schnitzcells);
         
     elseif cc == 'u'
         [x2, y2, z2] = SpotsXYZ(cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame));
@@ -843,7 +812,7 @@ while (cc ~= 'x')
     elseif cc == 's'
         saveChanges(NChannels, cptState.Particles, cptState.Spots, cptState.SpotFilter, DataFolder, ...
             cptState.FrameInfo, cptState.UseHistoneOverlay, FilePrefix, ...
-            schnitzcells, DropboxFolder);
+            cptState.schnitzcells, DropboxFolder);
 
     elseif cc == 'h'
         
@@ -870,10 +839,10 @@ while (cc ~= 'x')
         %Schnitzcells specific
         
     elseif cc == 'l' %Split a nucleus and select one or two daughter cells or stop the lineage
-        [cptState.Particles, cptState.PreviousParticle, schnitzcells] = splitNuclei(schnitzcells, ...
+        [cptState.Particles, cptState.PreviousParticle, cptState.schnitzcells] = splitNuclei(cptState.schnitzcells, ...
             cptState.CurrentFrame, cptState.CurrentChannel, cptState.CurrentParticle, cptState.Particles);
     elseif cc == '2' %2 set parent of current nucleus
-        schnitzcells = setParentNucleus(schnitzcells, ...
+        cptState.schnitzcells = setParentNucleus(cptState.schnitzcells, ...
             cptState.CurrentFrame, cptState.CurrentChannel, cptState.CurrentParticle, cptState.Particles);
     elseif cc == '~' %Switch projection mode
         projectionMode = chooseProjection;
@@ -896,7 +865,7 @@ while (cc ~= 'x')
          
     elseif cc == '$' %add particle to nucleus
             cptState.Particles = addNucleusToParticle(cptState.Particles, cptState.CurrentFrame, ...
-                cptState.CurrentChannel, cptState.UseHistoneOverlay, schnitzcells, cptState.CurrentParticle);
+                cptState.CurrentChannel, cptState.UseHistoneOverlay, cptState.schnitzcells, cptState.CurrentParticle);
     elseif cc == '0' %Debugging mode
         keyboard;
         
@@ -922,6 +891,7 @@ end
 Spots = cptState.Spots;
 Particles = cptState.Particles;
 SpotFilter = cptState.SpotFilter;
+schnitzcells = cptState.schnitzcells;
 
 if cptState.UseHistoneOverlay
     save([DataFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter', '-v7.3')
