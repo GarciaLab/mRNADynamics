@@ -336,7 +336,7 @@ zoomAnywhereKeyInput = ZoomAnywhereEventHandler(cptState);
 histoneContrastKeyInput = HistoneContrastChangeEventHandler(cptState);
 
 [addSpotTextInput, addSpotKeyInput] =...
-    AddSpotEventHandler(cptState, smart_add_spot, PreProcPath, FilePrefix, Prefix, robot, fake_event);
+    AddSpotEventHandler(cptState, smart_add_spot, PreProcPath, ProcPath, FilePrefix, Prefix, robot, fake_event);
 add_spot.ButtonPushedFcn = addSpotTextInput;
 
 
@@ -664,6 +664,7 @@ while (cc ~= 'x')
     zoomParticleToggleKeyInput(cc);
     zoomAnywhereKeyInput(cc);
     histoneContrastKeyInput(cc);
+    addSpotKeyInput(cc);
     
     if strcmpi(cc, 'donothing')
         %do nothing
@@ -695,17 +696,6 @@ while (cc ~= 'x')
                 cptState.numParticles());
             
         end
-    elseif cc == '[' | cc == '{' %#ok<*OR2> %Add particle and all of its shadows to cptState.Spots.
-        PathPart1 = [PreProcPath, filesep, FilePrefix(1:end - 1), filesep, FilePrefix];
-        PathPart2 = [cptState.nameSuffix, '.tif'];
-        Path3 = [PreProcPath, filesep, Prefix, filesep, Prefix];
-        [cptState.SpotFilter, cptState.Particles, cptState.Spots,...
-            cptState.PreviousParticle, cptState.CurrentParticle, cptState.ZoomMode, cptState.GlobalZoomMode] = ...
-            addSpot(cptState.ZoomMode, cptState.GlobalZoomMode, cptState.Particles, cptState.CurrentChannel, ...
-            cptState.CurrentParticle, cptState.CurrentFrame, cptState.CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
-            LinesPerFrame, cptState.Spots, cptState.ZSlices, PathPart1, PathPart2, Path3, cptState.FrameInfo, pixelSize, ...
-            cptState.SpotFilter, cc, xSize, ySize, NDigits,...
-           Prefix, PreProcPath, ProcPath, cptState.coatChannel, cptState.UseHistoneOverlay, cptState.schnitzcells, cptState.nWorkers, cptState.plot3DGauss);
     elseif cc == 'r'
         cptState.Particles = orderParticles(cptState.numParticles(), cptState.CurrentChannel, cptState.Particles);
     elseif cc == 'f'
