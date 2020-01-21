@@ -6,6 +6,7 @@ classdef CPTState < handle
         schnitzcells
         FrameInfo
         
+        Frames
         CurrentFrame
         PreviousFrame
         
@@ -13,6 +14,7 @@ classdef CPTState < handle
         ZSlices
         CurrentZ
         
+        CurrentParticleIndex
         CurrentParticle
         PreviousParticle
         lastParticle
@@ -50,6 +52,7 @@ classdef CPTState < handle
             this.schnitzcells = schnitzcells;
             this.FrameInfo = FrameInfo;
             
+            this.Frames = [];
             this.CurrentFrame = 0;
             this.PreviousFrame = this.CurrentFrame;
             

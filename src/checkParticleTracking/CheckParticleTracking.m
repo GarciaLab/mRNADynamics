@@ -273,7 +273,6 @@ spotHandles = {};
 ellipseHisHandles = {};
 
 
-Frames = [];
 
 % Changing the intial frames and particle if justNC13
 if ncRange
@@ -339,22 +338,9 @@ histoneContrastKeyInput = HistoneContrastChangeEventHandler(cptState);
     AddSpotEventHandler(cptState, smart_add_spot, PreProcPath, ProcPath, FilePrefix, Prefix, robot, fake_event);
 add_spot.ButtonPushedFcn = addSpotTextInput;
 
+[deleteSpotTextInput, deleteSpotKeyInput] = DeleteSpotEventHandler(cptState, robot, fake_event)
 
-delete_spot.ButtonPushedFcn = @delete_spot_pushed;
-
-    function delete_spot_pushed(~, ~)
-        cptState.no_clicking = true;
-        figure(Overlay);
-        [cptState.Spots, cptState.SpotFilter, cptState.ZoomMode, cptState.GlobalZoomMode, cptState.CurrentFrame, ...
-            cptState.CurrentParticle, cptState.Particles, cptState.ManualZFlag, cptState.DisplayRange, cptState.lastParticle, cptState.PreviousParticle] = ...
-            removeSpot(cptState.ZoomMode, cptState.GlobalZoomMode, Frames, cptState.CurrentFrame, ...
-            cptState.CurrentChannel, cptState.CurrentParticle, CurrentParticleIndex, cptState.Particles, cptState.Spots, cptState.SpotFilter, ...
-             cptState.ManualZFlag, cptState.DisplayRange, cptState.lastParticle, cptState.PreviousParticle);
-        
-        robot.keyPress(fake_event);
-        robot.keyRelease(fake_event);
-        cptState.no_clicking = false;
-    end
+delete_spot.ButtonPushedFcn = deleteSpotTextInput;
 
 % The part below is added by Yang Joon Kim, for single MS2 trace linear
 % fitting (for the inital slope). Contact yjkim90@berkeley.edu for further
@@ -378,7 +364,7 @@ fit_spot.ButtonPushedFcn = @fit_spot_pushed;
         
         [lineFitted, cptState.Coefficients, FramesToFit, cptState.FrameIndicesToFit] = ...
             fitInitialSlope(cptState.CurrentParticle, cptState.Particles, cptState.Spots, cptState.CurrentChannel, cptState.schnitzcells, ...
-            ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, Frames, anaphase, ...
+            ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, cptState.Frames, anaphase, ...
             AveragingLength, FramesToFit, cptState.FrameIndicesToFit, lineFitted);
     end
 
@@ -450,17 +436,17 @@ while (cc ~= 'x')
     end
     
     %Pull out the right particle if it exists in this frame
-    CurrentParticleIndex = ...
+    cptState.CurrentParticleIndex = ...
         cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Index(cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Frame == ...
         cptState.CurrentFrame);
     %This is the position of the current particle
-    xTrace = x(CurrentParticleIndex);
-    yTrace = y(CurrentParticleIndex);
+    xTrace = x(cptState.CurrentParticleIndex);
+    yTrace = y(cptState.CurrentParticleIndex);
     
     if (~isempty(xTrace)) && (~cptState.ManualZFlag)
-        cptState.CurrentZ = z(CurrentParticleIndex);
+        cptState.CurrentZ = z(cptState.CurrentParticleIndex);
         CurrentZIndex = find(...
-            cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(CurrentParticleIndex).z == ...
+            cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).z == ...
             cptState.CurrentZ);
         cptState.ManualZFlag = 0;
     end
@@ -565,10 +551,10 @@ while (cc ~= 'x')
     
     if ~isempty(xTrace)
         MaxZIndex = find(...
-            cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(CurrentParticleIndex).z == ...
-            cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(CurrentParticleIndex).brightestZ);
+            cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).z == ...
+            cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).brightestZ);
         CurrentZIndex = find(...
-            cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(CurrentParticleIndex).z == ...
+            cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).z == ...
             cptState.CurrentZ);
         
         if isempty(CurrentZIndex)
@@ -581,7 +567,7 @@ while (cc ~= 'x')
     
     %Check to see if spots structure contains multi-slice fields
     multi_slice_flag = isfield(cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits ...
-        (CurrentParticleIndex), 'IntegralZ');
+        (cptState.CurrentParticleIndex), 'IntegralZ');
     
     % PLOT SNIPPET
     
@@ -590,7 +576,7 @@ while (cc ~= 'x')
     
         [CurrentSnippet, hImage] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
             CurrentZIndex, FullSlicePath, cptState.Spots, cptState.CurrentChannel, cptState.CurrentFrame, ...
-            CurrentParticleIndex, ExperimentType, snippet_size, xSize, ...
+            cptState.CurrentParticleIndex, ExperimentType, snippet_size, xSize, ...
             ySize, SnippetEdge, cptState.FrameInfo, CurrentSnippet, hImage, pixelSize);
 
     
@@ -605,7 +591,7 @@ while (cc ~= 'x')
         if ~isempty(Spots3D)
             plottrace_argin = [plottrace_argin, Spots3D];
         end
-        [Frames, AmpIntegral, GaussIntegral, AmpIntegral3, ...
+        [cptState.Frames, AmpIntegral, GaussIntegral, AmpIntegral3, ...
             ErrorIntegral, ErrorIntegral3,  backGround3, ...
             AmpIntegralGauss3D, ErrorIntegralGauss3D, cptState.PreviousParticle] =...
             ...
@@ -615,20 +601,20 @@ while (cc ~= 'x')
             cptState.CurrentParticle, cptState.PreviousParticle, cptState.lastParticle, HideApprovedFlag, lineFitted, anaphaseInMins, ...
             ElapsedTime, cptState.schnitzcells, cptState.Particles, cptState.plot3DGauss, anaphase, prophase, metaphase, prophaseInMins, metaphaseInMins, Prefix, ...
             numFrames, cptState.CurrentFrame, cptState.ZSlices, cptState.CurrentZ, cptState.Spots, ...
-            correspondingNCInfo, cptState.Coefficients, ExperimentType,cptState.PreviousFrame, Frames,...
+            correspondingNCInfo, cptState.Coefficients, ExperimentType,cptState.PreviousFrame, cptState.Frames,...
             Channels, PreProcPath, DropboxFolder, plottrace_argin{:});
     end
 
     
     % PLOT Z SLICE RELATED FIGURES
     plotzvars = {zProfileFigAxes, zTraceAxes, ExperimentType, ...
-    xTrace, cptState.Spots, cptState.CurrentFrame, cptState.CurrentChannel, CurrentParticleIndex, cptState.ZSlices, ...
+    xTrace, cptState.Spots, cptState.CurrentFrame, cptState.CurrentChannel, cptState.CurrentParticleIndex, cptState.ZSlices, ...
     cptState.CurrentZ, CurrentZIndex, cptState.PreviousParticle, cptState.CurrentParticle, ...
-    cptState.PreviousChannel, cptState.Particles, Frames, fish};
+    cptState.PreviousChannel, cptState.Particles, cptState.Frames, fish};
         if exist('MaxZProfile', 'var')
             plotzvars = [plotzvars, MaxZProfile];
         end
-        [MaxZProfile, Frames] = plotZFigures(plotzvars{:});
+        [MaxZProfile, cptState.Frames] = plotZFigures(plotzvars{:});
 
     
     % UPDATE UICONTROLS
@@ -665,6 +651,7 @@ while (cc ~= 'x')
     zoomAnywhereKeyInput(cc);
     histoneContrastKeyInput(cc);
     addSpotKeyInput(cc);
+    deleteSpotKeyInput(cc);
     
     if strcmpi(cc, 'donothing')
         %do nothing
@@ -680,22 +667,6 @@ while (cc ~= 'x')
         cptState.CurrentFrame = previousSkippedFrame(cptState.Particles, cptState.CurrentChannel, ...
             cptState.CurrentParticle, cptState.CurrentFrame);
         
-    elseif cc == '#' %remove a spot from cptState.Spots and erase its frame in Particles
-        [cptState.Spots, cptState.SpotFilter,cptState.CurrentFrame, ...
-            cptState.CurrentParticle, cptState.Particles, cptState.ManualZFlag, cptState.lastParticle, cptState.PreviousParticle] = ...
-            removeSpot(Frames, cptState.CurrentFrame, ...
-            cptState.CurrentChannel, cptState.CurrentParticle, CurrentParticleIndex, cptState.Particles, cptState.Spots, cptState.SpotFilter ...
-            );
-        
-    elseif cc == '^' %remove a whole trace from cptState.Spots and Particles. AR 7/9/2019 a work in progress
-        for f = 1:length(Frames)
-            [cptState.Spots, cptState.SpotFilter,cptState.CurrentFrame, ...
-                cptState.CurrentParticle, cptState.Particles, cptState.ManualZFlag, cptState.lastParticle, cptState.PreviousParticle] = ...
-                removeSpot(Frames, f, ...
-                cptState.CurrentChannel, cptState.CurrentParticle, CurrentParticleIndex, cptState.Particles, cptState.Spots, cptState.SpotFilter, ...
-                cptState.numParticles());
-            
-        end
     elseif cc == 'r'
         cptState.Particles = orderParticles(cptState.numParticles(), cptState.CurrentChannel, cptState.Particles);
     elseif cc == 'f'
