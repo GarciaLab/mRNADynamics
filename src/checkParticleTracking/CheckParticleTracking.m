@@ -493,7 +493,7 @@ while (cc ~= 'x')
             FilePrefix, iIndex(cptState.CurrentFrame, NDigits), '_z', iIndex(cptState.CurrentZ, 2), nameSuffix, '.tif']);
         if multiView
             nSlices = FrameInfo(1).NumberSlices;
-            for i = -1:1
+            for i = 1:-1:-1
                 for j = -1:1
                     if any( 1:nSlices == cptState.CurrentZ + i) && any( 1:numFrames == cptState.CurrentFrame + j)
                         multiImage{i+2, j+2} = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
@@ -551,8 +551,14 @@ while (cc ~= 'x')
         if multiView 
             for i = 1:size(multiImage, 1)
                 for j = 1:size(multiImage, 2)
-                    imshow(multiImage{i, j}, DisplayRangeSpot, 'Border', 'Tight', 'Parent', subAx{i,j},...
-                    'InitialMagnification', 'fit');
+%                     imshow(multiImage{i, j}, DisplayRangeSpot, 'Border', 'Tight', 'Parent', subAx{i,j},...
+%                     'InitialMagnification', 'fit');
+                    if ~isempty(subAx{i,j}.Children)
+                        subAx{i,j}.Children.CData = multiImage{i, j};
+                    else
+                         imshow(multiImage{i, j}, DisplayRangeSpot, 'Border', 'Tight', 'Parent', subAx{i,j},...
+                   'InitialMagnification', 'fit');
+                    end
 %                     imagescUpdate(subAx{i,j}, multiImage{i, j}, []);
                     title(subAx{i,j},['z: ', num2str(cptState.CurrentZ + i - 2), ' frame: ', num2str(cptState.CurrentFrame + j - 2)]) 
                 end
