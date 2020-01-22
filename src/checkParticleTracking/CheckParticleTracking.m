@@ -338,8 +338,7 @@ histoneContrastKeyInput = HistoneContrastChangeEventHandler(cptState);
     AddSpotEventHandler(cptState, smart_add_spot, PreProcPath, ProcPath, FilePrefix, Prefix, robot, fake_event);
 add_spot.ButtonPushedFcn = addSpotTextInput;
 
-[deleteSpotTextInput, deleteSpotKeyInput] = DeleteSpotEventHandler(cptState, robot, fake_event)
-
+[deleteSpotTextInput, deleteSpotKeyInput] = DeleteSpotEventHandler(cptState, robot, fake_event);
 delete_spot.ButtonPushedFcn = deleteSpotTextInput;
 
 % The part below is added by Yang Joon Kim, for single MS2 trace linear
