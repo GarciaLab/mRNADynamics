@@ -431,9 +431,10 @@ if ~justPrefixes
 if exist('DataNuclei','var')
     for i=1:length(DataNuclei)
         DataNuclei(i).SetName=SetNames{i};
-        
-        if exist('APDivisions','var')
-            DataNuclei(i).APDivision=APDivisions(i).APDivision;
+        try
+            if exist('APDivisions','var')
+                DataNuclei(i).APDivision=APDivisions(i).APDivision;
+            end
         end
     end
 end

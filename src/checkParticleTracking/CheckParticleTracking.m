@@ -305,7 +305,6 @@ end
 
 if multiView
     multiFig = figure;
-    multiAxes = axes(multiFig);
 end
 
 
@@ -529,12 +528,12 @@ while (cc ~= 'x')
 
     
     if multiView && ~exist('subAx', 'var')
-         multiFig = figure();
+         tiles = tiledlayout(multiFig, 3, 3, 'TileSpacing', 'none', 'Padding', 'none');
             n = 0;
             for i = 1:3
                 for j = 1:3
                     n = n + 1;
-                    subAx{i, j} = subplot(3, 3, n);
+                    subAx{i, j} = nexttile(tiles, n);
                     title(subAx{i,j},['z: ', num2str(cptState.CurrentZ + i - 2), ' frame: ', num2str(cptState.CurrentFrame + j - 2)]) 
                 end
             end
@@ -554,8 +553,8 @@ while (cc ~= 'x')
                 for j = 1:size(multiImage, 2)
                     imshow(multiImage{i, j}, DisplayRangeSpot, 'Border', 'Tight', 'Parent', subAx{i,j},...
                     'InitialMagnification', 'fit');
+%                     imagescUpdate(subAx{i,j}, multiImage{i, j}, []);
                     title(subAx{i,j},['z: ', num2str(cptState.CurrentZ + i - 2), ' frame: ', num2str(cptState.CurrentFrame + j - 2)]) 
-
                 end
             end
         end

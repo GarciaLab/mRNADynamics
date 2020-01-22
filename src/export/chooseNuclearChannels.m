@@ -60,6 +60,7 @@ end
 % lays out user interface
 screen_size = get(0, 'screensize');
 dim = [screen_size(3) * 0.6, screen_size(4) * 0.75];
+dimVec = [dim(1), dim(2), dim(1), dim(2)]; %to easily normalize units
 fig = uifigure('Position', [100, 100, dim(1), dim(2)], 'Name', 'Choose Histone Channels');
 img = uiaxes(fig, 'Position', [20, 20, dim(1) - 20, dim(2) * 0.5]);
 
@@ -71,6 +72,26 @@ frame_slider = uislider(fig, 'Limits', [1, numFrames], 'Value', 1, ...
 
 frame_slider.ValueChangedFcn = @updateHisImage;
 
+%% display contrast stuff
+maxPos = dimVec .* [.7, .2, .1, .1];
+maxLabelPos = dimVec .* [.7, .225, .1, .05];
+minPos = dimVec .* [.7, .4, .1, .1];
+minLabelPos = dimVec .* [.7, .425, .1, .05];
+
+max_label = uilabel(fig,  'Text', 'max display value', 'Position', ...
+    maxLabelPos);
+max_slider = uislider(fig, 'Limits', [1, 10000], 'Value', 10000, ...
+    'Position', maxPos);
+max_slider.ValueChangedFcn = @updateHisImage;
+
+
+min_label = uilabel(fig,  'Text', 'min display value', 'Position', ...
+    minLabelPos);
+min_slider = uislider(fig, 'Limits', [0, 10000], 'Value', 1, ...
+    'Position',minPos);
+min_slider.ValueChangedFcn = @updateHisImage;
+
+%%
 channel_label = uilabel(fig, 'Position', [10, dim(2) * 0.93, dim(1) * 0.125, dim(2) * 0.05], ...
     'Text', 'Channels');
 channel_list = uilistbox(fig, 'Position', [10, dim(2) * 0.77, dim(1) * 0.125, dim(2) * 0.15], ...
@@ -123,7 +144,10 @@ uiwait(fig);
         inverted_channels = invert_list.Value;
         projection_type = proj_type_dropdown.Value;
         frame_slider.Value = ((ceil(frame_slider.Value / skip_factor) - 1) * skip_factor) + 1;
+        
         frame = ceil(frame_slider.Value / skip_factor);
+      
+        
         channels = [];
         for i = 1:3
             if any(strcmp(channels_to_use, ['Channel ' num2str(i)])) 
@@ -159,7 +183,16 @@ uiwait(fig);
         else
           Projection = ProjectionTemp;
         end
-        imshow(uint16(Projection), [], 'Parent', img);
+          
+        maxB = round(max_slider.Value);
+        minB = round(min_slider.Value);
+        
+         if minB >= maxB
+            maxB = max(max(Projection));
+            minB = median(median(Projection));
+        end
+%         imshow(uint16(Projection), [median(median(Projection)), max(max(Projection))], 'Parent', img);
+        imshow(uint16(Projection), [minB, maxB], 'Parent', img);
     end
     
     % closes UI and returns chosen options

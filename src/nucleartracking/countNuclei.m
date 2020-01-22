@@ -3,10 +3,13 @@ function nNuclei = countNuclei(Prefix, varargin)
 cycle = [];
 displayFigures = false;
 
-if length(varargin) == 1
-    cycle = varargin{1};
-elseif length(varargin) == 2
-    displayFigures = true;
+for i = 1:length(varargin)
+    if strcmpi(varargin{i}, 'cycle')
+        cycle = varargin{i+1};
+    elseif strcmpi(varargin{i}, 'displayFigures')
+        displayFigures = true;
+        figure();
+    end
 end
 
 %just returns the number of nuclei in a cycle. 
@@ -46,7 +49,6 @@ if ~isempty(cycle)
     nNuclei = nNuclei(cycle);
 end
 
-figure();
 if displayFigures
     nNucleiAllFrames = [];
     for frame = 1:length(Ellipses)
