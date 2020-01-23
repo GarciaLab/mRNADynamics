@@ -33,7 +33,6 @@ if ~isempty(xTrace)
         plot(zProfileFigAxes,CurrentZ,CurrentZ,'or')
     end
     hold(zProfileFigAxes,'off')
-%     title(zProfileFigAxes,{'z-profile:';title_string},'FontSize',10);
     set(zProfileFigAxes.Title,'String', {'z-profile:';title_string});
     zProfileFigAxes.Title.FontSize = 10;
     

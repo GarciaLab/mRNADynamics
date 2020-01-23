@@ -308,9 +308,9 @@ if multiView
 end
 
 
-[controls, frame_num, z_num, particle_num, ...
-    add_spot, smart_add_spot, delete_spot, ...
-    fit_spot, averagingLength, approve_fit] = setupControls(Overlay);
+% [controls, frame_num, z_num, particle_num, ...
+%     add_spot, smart_add_spot, delete_spot, ...
+%     fit_spot, averagingLength, approve_fit] = setupControls(Overlay);
 
 set(0, 'CurrentFigure', Overlay);
 import java.awt.Robot;
@@ -551,15 +551,12 @@ while (cc ~= 'x')
         if multiView 
             for i = 1:size(multiImage, 1)
                 for j = 1:size(multiImage, 2)
-%                     imshow(multiImage{i, j}, DisplayRangeSpot, 'Border', 'Tight', 'Parent', subAx{i,j},...
-%                     'InitialMagnification', 'fit');
                     if ~isempty(subAx{i,j}.Children)
                         subAx{i,j}.Children.CData = multiImage{i, j};
                     else
                          imshow(multiImage{i, j}, DisplayRangeSpot, 'Border', 'Tight', 'Parent', subAx{i,j},...
                    'InitialMagnification', 'fit');
                     end
-%                     imagescUpdate(subAx{i,j}, multiImage{i, j}, []);
                     title(subAx{i,j},['z: ', num2str(cptState.CurrentZ + i - 2), ' frame: ', num2str(cptState.CurrentFrame + j - 2)]) 
                 end
             end
@@ -657,10 +654,12 @@ while (cc ~= 'x')
             plotzvars = [plotzvars, MaxZProfile];
         end
         [MaxZProfile, Frames] = plotZFigures(plotzvars{:});
+        
 
     
     % UPDATE UICONTROLS
-    updateControls(frame_num, z_num, particle_num, cptState.CurrentFrame, cptState.CurrentZ, cptState.CurrentParticle);
+    %don't update since this is currently broken
+%     updateControls(frame_num, z_num, particle_num, cptState.CurrentFrame, cptState.CurrentZ, cptState.CurrentParticle);
     
     set(0, 'CurrentFigure', Overlay);
     
