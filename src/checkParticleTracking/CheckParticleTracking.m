@@ -138,7 +138,7 @@ storedTimeProjection = []; % Don't need to wait for timeProjection to finish eac
 
 [sortByFrames, sortByLength, ForCompileAll, SpeedMode, ~, ...
     ncRange, projectionMode, plot3DGauss, NC, ...
-    startNC, endNC, optionalResults, nWorkers, fish, noHisOverlay, multiView, preStructs, preMovie] = determineCheckParticleTrackingOptions(varargin{:});
+    startNC, endNC, optionalResults, nWorkers, fish, noHisOverlay, multiView, preStructs] = determineCheckParticleTrackingOptions(varargin{:});
 
 if fish
     noHisOverlay = true;
@@ -164,22 +164,17 @@ else
     FrameInfo = preStructs{5};
     Spots3D = {};
 end
-
-
 [xSize, ySize, pixelSize, zStep, snippet_size, LinesPerFrame, PixelsPerLine,...
-    nFrames, nSlices] = getFrameInfoParams(FrameInfo);
+    numFrames] = getFrameInfoParams(FrameInfo);
 
   %See how  many frames we have and adjust the index size of the files to load accordingly
-  if nFrames < 1E3
+  if numFrames < 1E3
     NDigits = 3;
-  elseif nFrames < 1E4
+  elseif numFrames < 1E4
     NDigits = 4;
   else
     error('No more than 10,000 frames supported.')
   end
-  
-  
-  
   %Create the particle array. This is done so that we can support multiple
   %channels. Also figure out the number of channels
   if iscell(Particles)
@@ -196,37 +191,19 @@ end
 %Add FramesApproved where necessary
 Particles = addFrameApproved(NChannels, Particles);
 
-[Ellipses, UseHistoneOverlay, UseSchnitz] = checkHistoneAndNuclearSegmentation(PreProcPath, FilePrefix, NDigits, DropboxFolder, noHisOverlay, fish);
+[Ellipses, UseHistoneOverlay, UseSchnitz] = checkHistoneAndNuclearSegmentation(PreProcPath, FilePrefix, NDigits, DropboxFolder, noHisOverlay);
+
+if fish
+    UseSchnitz = false;
+end
 
 [~, ExperimentType, ~, ~, ~, ~, Channel1, Channel2, ~, ~, ~, ~, ~, ...
     nc9, nc10, nc11, nc12, nc13, nc14, ~, Channel3, prophase, metaphase] =...
     getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
 
 Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
-preMovie = true;
 
-nPadding = 2; %normally we pad a blank image above and below the stack.
-                    %if a movie is unpadded this will require modification
-if preMovie
-    coats = getCoatChannel(Channel1, Channel2, Channel3);
-    movieCell = zeros(length(coats), nSlices, nFrames, xSize, ySize, 'uint16'); % ch z t x y
-    hisCell =  zeros(nFrames, xSize, ySize, 'uint16'); %t x y
-    pth = [PreProcPath, filesep, Prefix, filesep,Prefix];
-    for ch = 1:length(coats)
-        for f = 1:nFrames
-            parfor z = 1:nSlices+nPadding
-                    %reminder to squeeze the array before accessing an image
-                    movieCell(ch, z, f, :, :) = imread([pth,'_',iIndex(f, NDigits), '_z', iIndex(z, 2), ['_ch', iIndex(coats(ch), 2)], '.tif']); 
-            end
-            hisCell(f, :, :) = imread([pth,'-His_', iIndex(f, NDigits), '.tif']); 
-        end
-    end
-else
-    movieCell = [];
-    hisCell = [];
-end
-
-for i = 1:nFrames
+for i = 1:numFrames
     if i < nc9
         FrameInfo(i).nc = 8;
     elseif (i >= nc9) & (i < nc10)
@@ -245,7 +222,7 @@ for i = 1:nFrames
 end
 
 %Get the actual time corresponding to each frame, in minutes
-ElapsedTime = getFrameElapsedTime(FrameInfo, nFrames);
+ElapsedTime = getFrameElapsedTime(FrameInfo, numFrames);
 
 anaphase = [nc9, nc10, nc11, nc12, nc13, nc14];
 [anaphaseInMins, prophaseInMins, metaphaseInMins] = getPhasesDurationsInMins(anaphase, prophase, metaphase, ElapsedTime);
@@ -294,7 +271,7 @@ Frames = [];
 if ncRange
     
     if strcmpi('nc15', endNC)
-        lastNCFrame = nFrames;
+        lastNCFrame = numFrames;
     else
         lastNCFrame = eval(endNC) - 1; % This will not include the 1st frame of the next NC
     end
@@ -482,16 +459,13 @@ while (cc ~= 'x')
     
     multiImage = {};
     if strcmpi(projectionMode, 'None')
-        if ~preMovie
-            Image = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
-                FilePrefix, iIndex(cptState.CurrentFrame, NDigits), '_z', iIndex(cptState.CurrentZ, 2), nameSuffix, '.tif']);
-        else
-            Image = squeeze(movieCell(cptState.CurrentChannel,cptState.CurrentZ, cptState.CurrentFrame, :, :));
-        end
+        Image = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
+            FilePrefix, iIndex(cptState.CurrentFrame, NDigits), '_z', iIndex(cptState.CurrentZ, 2), nameSuffix, '.tif']);
         if multiView
+            nSlices = FrameInfo(1).NumberSlices;
             for i = 1:-1:-1
                 for j = -1:1
-                    if any( 1:nSlices == cptState.CurrentZ + i) && any( 1:nFrames == cptState.CurrentFrame + j)
+                    if any( 1:nSlices == cptState.CurrentZ + i) && any( 1:numFrames == cptState.CurrentFrame + j)
                         multiImage{i+2, j+2} = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
                     FilePrefix, iIndex(cptState.CurrentFrame+j, NDigits), '_z', iIndex(cptState.CurrentZ+i, 2), nameSuffix, '.tif']);
                     else
@@ -564,24 +538,22 @@ while (cc ~= 'x')
     hold(overlayAxes, 'on')
     
     if cptState.UseHistoneOverlay
-        if ~preMovie
-            HisPath = [PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
-                FilePrefix(1:end - 1), '-His_', iIndex(cptState.CurrentFrame, NDigits), '.tif'];
-            ImageHis=imread(HisPath);
-        else
-             ImageHis = squeeze(hisCell(cptState.CurrentFrame, :,:));
-        end
+        HisPath1 = [PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
+            FilePrefix(1:end - 1), '-His_', iIndex(cptState.CurrentFrame, NDigits), '.tif'];
+        HisPath2 = [PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
+            FilePrefix(1:end - 1), '_His_', iIndex(cptState.CurrentFrame, NDigits), '.tif'];
+        
         [cptState.ImageHis, cptState.xForZoom, cptState.yForZoom, oim,ellipseHandles]= displayOverlays(overlayAxes, Image, SpeedMode, FrameInfo, cptState.Particles, ...
             cptState.Spots, cptState.CurrentFrame, ShowThreshold2, ...
-            Overlay, cptState.CurrentChannel, cptState.CurrentParticle, cptState.ZSlices, cptState.CurrentZ, nFrames, ...
+            Overlay, cptState.CurrentChannel, cptState.CurrentParticle, cptState.ZSlices, cptState.CurrentZ, numFrames, ...
             schnitzcells, UseSchnitz, cptState.DisplayRange, Ellipses, cptState.SpotFilter, cptState.ZoomMode, cptState.GlobalZoomMode, ...
             ZoomRange, cptState.xForZoom, cptState.yForZoom, fish, cptState.UseHistoneOverlay, subAx, HisOverlayFigAxes,...
-            oim, ellipseHandles, ImageHis);
+            HisPath1, HisPath2, oim, ellipseHandles);
         
     else
         displayOverlays(overlayAxes, Image, SpeedMode, ...
             FrameInfo, cptState.Particles, cptState.Spots, cptState.CurrentFrame, ShowThreshold2, ...
-            Overlay, cptState.CurrentChannel, cptState.CurrentParticle, cptState.ZSlices, cptState.CurrentZ, nFrames, ...
+            Overlay, cptState.CurrentChannel, cptState.CurrentParticle, cptState.ZSlices, cptState.CurrentZ, numFrames, ...
             schnitzcells, UseSchnitz, cptState.DisplayRange, Ellipses, cptState.SpotFilter, ...
             cptState.ZoomMode, cptState.GlobalZoomMode, ZoomRange, cptState.xForZoom, cptState.yForZoom, fish, cptState.UseHistoneOverlay, subAx);
     end
@@ -607,9 +579,12 @@ while (cc ~= 'x')
         (CurrentParticleIndex), 'IntegralZ');
     
     % PLOT SNIPPET
-       
+    
+    FullSlicePath = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(cptState.CurrentFrame, 3) ...
+        , '_z' iIndex(cptState.CurrentZ, 2) '_ch' iIndex(cptState.coatChannel, 2) '.tif'];
+    
         [CurrentSnippet, hImage] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
-            CurrentZIndex, Image, cptState.Spots, cptState.CurrentChannel, cptState.CurrentFrame, ...
+            CurrentZIndex, FullSlicePath, cptState.Spots, cptState.CurrentChannel, cptState.CurrentFrame, ...
             CurrentParticleIndex, ExperimentType, snippet_size, xSize, ...
             ySize, SnippetEdge, FrameInfo, CurrentSnippet, hImage, pixelSize);
 
@@ -634,7 +609,7 @@ while (cc ~= 'x')
             FrameInfo, cptState.CurrentChannel, cptState.PreviousChannel, ...
             cptState.CurrentParticle, cptState.PreviousParticle, cptState.lastParticle, HideApprovedFlag, lineFitted, anaphaseInMins, ...
             ElapsedTime, schnitzcells, cptState.Particles, plot3DGauss, anaphase, prophase, metaphase, prophaseInMins, metaphaseInMins, Prefix, ...
-            nFrames, cptState.CurrentFrame, cptState.ZSlices, cptState.CurrentZ, cptState.Spots, ...
+            numFrames, cptState.CurrentFrame, cptState.ZSlices, cptState.CurrentZ, cptState.Spots, ...
             correspondingNCInfo, cptState.Coefficients, ExperimentType,cptState.PreviousFrame, Frames,...
             Channels, PreProcPath, DropboxFolder, plottrace_argin{:});
     end

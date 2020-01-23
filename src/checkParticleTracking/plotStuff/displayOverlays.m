@@ -7,7 +7,7 @@ function [ImageHis, xForZoom, yForZoom, oim, ellipseHandles] =...
     Overlay, CurrentChannel, CurrentParticle, ZSlices, CurrentZ, numFrames, ...
     schnitzcells, UseSchnitz, DisplayRange, Ellipses, SpotFilter, ZoomMode, GlobalZoomMode, ...
     ZoomRange, xForZoom, yForZoom, fish, UseHistoneOverlay, multiAx,...
-    HisOverlayFigAxes, oim, ellipseHandles, ImageHis)
+    HisOverlayFigAxes, HisPath1, HisPath2, oim, ellipseHandles)
 
 %PLOTFRAME Summary of this function goes here
 %   Detailed explanation goes here
@@ -301,6 +301,11 @@ if GlobalZoomMode
 end
 
 if UseHistoneOverlay
+    try
+        ImageHis=imread(HisPath1);
+    catch %Had to do this for KITP
+        ImageHis=imread(HisPath2);
+    end
 
     if isempty(DisplayRange)
         HisOverlayImage=cat(3,mat2gray(ImageHis),mat2gray(Image),zeros(size(Image)));

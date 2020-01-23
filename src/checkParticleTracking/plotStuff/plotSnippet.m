@@ -1,5 +1,5 @@
 function [CurrentSnippet, himage] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
-    CurrentZIndex, FullSlice, Spots, CurrentChannel, CurrentFrame, ...
+    CurrentZIndex, FullSlicePath, Spots, CurrentChannel, CurrentFrame, ...
     CurrentParticleIndex, ExperimentType, snippet_size, xSize, ... 
     ySize, SnippetEdge, FrameInfo, CurrentSnippet, himage, pixelSize)
 %PLOTSNIPPET Summary of this function goes here
@@ -10,6 +10,7 @@ function [CurrentSnippet, himage] = plotSnippet(snippetFigAxes, rawDataAxes, gau
     if  ~isempty(xTrace) && ~isempty(CurrentZIndex)
         %Get the snippet and the mask, and overlay them
         %(MT, 2018-02-12): lattice data could use this, changed CurrentChannel to coatChannel
+        FullSlice=imread(FullSlicePath);
         xSpot = double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xDoG(CurrentZIndex));
         ySpot = double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yDoG(CurrentZIndex));
 
