@@ -35,13 +35,13 @@ if ~fish
         str2 = 'multi-slice mRNA';
     end
     %initialize curves
-    e1 = errorbar(traceFigAxes,1, 1, 1, 'k');
+    e1 = errorbar(traceFigAxes,[0, 1], [0, 1], [1, 1], 'k.-');
     hold(traceFigAxes, 'on')
-    e2 = errorbar(traceFigAxes,1, 1, 1, 'b');
+    e2 = errorbar(traceFigAxes,[0, 1], [0, 1], [1, 1], 'b.-');
     ylabel(traceFigAxes,'integrated intensity (a.u.)')
     if strcmpi(ExperimentType, 'inputoutput')
         yyaxis(traceFigAxes,'right')
-        e3 = errorbar(traceFigAxes,1, 1, 1, 'r.-', 'DisplayName', 'protein');
+        e3 = plot(traceFigAxes,[0, 1], [0, 1], 'r.-', 'DisplayName', 'protein');
         ylabel(traceFigAxes,'input protein intensity (a.u.)');
         traceLeg = legend(traceFigAxes,[e1, e2, e3], str1,str2, 'protein', 'AutoUpdate', 'off');
     else

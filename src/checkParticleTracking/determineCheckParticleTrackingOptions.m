@@ -72,6 +72,7 @@ for i=1:length(varargin)
     end
 end
 
+startParallelPool(nWorkers, 0, 1);
 
 end
 

@@ -44,7 +44,7 @@ else
             
             FitCell = cell(1, ZSlices);
             
-            for z = 1:ZSlices
+            parfor z = 1:ZSlices
                 imAbove = [];
                 imBelow = [];
                 spotsIm = [];
@@ -84,7 +84,7 @@ else
             end
             Fits = [];
             
-            for z = 1:ZSlices
+           for z = 1:ZSlices
                 if ~isempty(FitCell{z})
                     fieldnames = fields(FitCell{z});
                     if isempty(Fits)
