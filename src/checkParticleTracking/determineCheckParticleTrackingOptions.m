@@ -28,6 +28,7 @@ nWorkers = 1;
 fish = false;
 noHisOverlay = false;
 multiView = false;
+preStructs = {};
 
 % these variables are meaningless if ncRange is 0
 NC = -1;

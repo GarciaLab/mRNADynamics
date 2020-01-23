@@ -161,6 +161,7 @@ else
     SpotFilter = preStructs{3}; 
     Spots = preStructs{2}; 
     schnitzcells = preStructs{4};
+    FrameInfo = preStructs{5};
     Spots3D = {};
 end
 [xSize, ySize, pixelSize, zStep, snippet_size, LinesPerFrame, PixelsPerLine,...
@@ -423,28 +424,10 @@ while (cc ~= 'x')
     
     %% Main loop - start
     %%
-    %Figure out channel-specific information
-    if NChannels == 1
-        
-        for ch = 1:length(Channels)
-            if contains(Channels{ch}, 'MCP') || contains(Channels{ch}, 'PCP') || contains(Channels{ch}, 'spot') 
-                nameSuffix = ['_ch', iIndex(ch, 2)];
-                cptState.coatChannel = ch;
-            end
-        end
+    
+    cptState.coatChannel = getCoatChannel(Channel1, Channel2, Channel3);
+    nameSuffix = ['_ch', iIndex(cptState.CurrentChannel, 2)];
 
-    elseif strcmpi(ExperimentType, '2spot2color')
-        %We are assuming that channels 1 and 2 are assigned to coat
-        %proteins. We should do a better job with this.
-        cptState.coatChannel = coatChannels(cptState.CurrentChannel);
-    else
-        error('Experiment type not recognized')
-    end
-
-    %Update the name suffix
-    if strcmpi(ExperimentType, '2spot2color')
-        nameSuffix = ['_ch', iIndex(cptState.coatChannel, 2)];
-    end
     
     %Get the coordinates of all the spots in this frame
     [x, y, z] = SpotsXYZ(cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame));
@@ -924,8 +907,10 @@ end
 
 close all
 
-if ishandle(controls)
-    close(controls)
+try
+    if ishandle(controls)
+        close(controls)
+    end
 end
 
 disp('Particles saved.')
@@ -950,6 +935,6 @@ if nucleiModified
     end
 end
 
-outs = {Particles, Spots, SpotFilter, schnitzcells};
+outs = {Particles, Spots, SpotFilter, schnitzcells, FrameInfo};
 
 end
