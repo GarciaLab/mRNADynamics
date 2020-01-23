@@ -6,7 +6,6 @@ disp('Loading Particles.mat...')
 load([DataFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter')
 disp('Particles.mat loaded')
 
-schnitzcells = [];
 schnitzPath = [DataFolder filesep, FilePrefix(1:end - 1), '_lin.mat'];
 if  exist(schnitzPath, 'file')
     disp('Loading schntizcells...')
