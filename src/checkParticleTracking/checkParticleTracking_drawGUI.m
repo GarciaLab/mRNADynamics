@@ -56,6 +56,11 @@ zFig = figure;
 if ~fish
     zProfileFigAxes = subplot(1, 2, 1, 'Parent', zFig);
     zTraceAxes = subplot(1, 2, 2, 'Parent', zFig);
+    ylabel(zProfileFigAxes,'intensity(au)', 'FontSize',12);
+    xlabel(zProfileFigAxes,'z-slice', 'FontSize',12);
+    xlabel(zTraceAxes,'frame')
+    ylabel(zTraceAxes,'z-slice')
+    title(zTraceAxes,'brightest Z trace')
 else
     zProfileFigAxes = axes(zFig);
 end

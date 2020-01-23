@@ -67,7 +67,7 @@ function [CurrentSnippet, himage] = plotSnippet(snippetFigAxes, rawDataAxes, gau
         if ~isempty(himage)
             imshow(zeros(SnippetEdge), 'Parent', snippetFigAxes)
         else
-            hImage.CData = zeros(SnippetEdge);
+            himage.CData = zeros(SnippetEdge);
         end
     end
 % 
