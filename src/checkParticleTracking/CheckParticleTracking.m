@@ -1,4 +1,4 @@
-function [outs, movieCell, hisCell] = CheckParticleTracking(Prefix, varargin)
+function outs = CheckParticleTracking(Prefix, varargin)
 % function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(varargin)
 %
 % DESCRIPTION
@@ -138,8 +138,7 @@ storedTimeProjection = []; % Don't need to wait for timeProjection to finish eac
 
 [sortByFrames, sortByLength, ForCompileAll, SpeedMode, ~, ...
     ncRange, projectionMode, plot3DGauss, NC, ...
-    startNC, endNC, optionalResults, nWorkers, fish,...
-    noHisOverlay, multiView, preStructs, preMovie, movieCell, hisCell] = determineCheckParticleTrackingOptions(varargin{:});
+    startNC, endNC, optionalResults, nWorkers, fish, noHisOverlay, multiView, preStructs, preMovie] = determineCheckParticleTrackingOptions(varargin{:});
 
 if fish
     noHisOverlay = true;
@@ -204,27 +203,22 @@ Particles = addFrameApproved(NChannels, Particles);
     getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
 
 Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
+preMovie = true;
 
 nPadding = 2; %normally we pad a blank image above and below the stack.
                     %if a movie is unpadded this will require modification
 if preMovie
-    if isempty(movieCell)
-        coats = getCoatChannel(Channel1, Channel2, Channel3);
-        movieCell = zeros(length(coats), nSlices, nFrames, xSize, ySize, 'uint16'); % ch z t x y
-        if UseSchnitz
-            hisCell =  zeros(nFrames, xSize, ySize, 'uint16'); %t x y
-        end
-        pth = [PreProcPath, filesep, Prefix, filesep,Prefix];
-        for ch = 1:length(coats)
-            for f = 1:nFrames
-                parfor z = 1:nSlices+nPadding
-                        %reminder to squeeze the array before accessing an image
-                        movieCell(ch, z, f, :, :) = imread([pth,'_',iIndex(f, NDigits), '_z', iIndex(z, 2), ['_ch', iIndex(coats(ch), 2)], '.tif']); 
-                end
-                if UseSchnitz
-                    hisCell(f, :, :) = imread([pth,'-His_', iIndex(f, NDigits), '.tif']);
-                end
+    coats = getCoatChannel(Channel1, Channel2, Channel3);
+    movieCell = zeros(length(coats), nSlices, nFrames, xSize, ySize, 'uint16'); % ch z t x y
+    hisCell =  zeros(nFrames, xSize, ySize, 'uint16'); %t x y
+    pth = [PreProcPath, filesep, Prefix, filesep,Prefix];
+    for ch = 1:length(coats)
+        for f = 1:nFrames
+            parfor z = 1:nSlices+nPadding
+                    %reminder to squeeze the array before accessing an image
+                    movieCell(ch, z, f, :, :) = imread([pth,'_',iIndex(f, NDigits), '_z', iIndex(z, 2), ['_ch', iIndex(coats(ch), 2)], '.tif']); 
             end
+            hisCell(f, :, :) = imread([pth,'-His_', iIndex(f, NDigits), '.tif']); 
         end
     end
 else
