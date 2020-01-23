@@ -1,4 +1,4 @@
-function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(Prefix, varargin)
+function outs = CheckParticleTracking(Prefix, varargin)
 % function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(varargin)
 %
 % DESCRIPTION
@@ -138,7 +138,7 @@ storedTimeProjection = []; % Don't need to wait for timeProjection to finish eac
 
 [sortByFrames, sortByLength, ForCompileAll, SpeedMode, ~, ...
     ncRange, projectionMode, plot3DGauss, NC, ...
-    startNC, endNC, optionalResults, nWorkers, fish, noHisOverlay, multiView] = determineCheckParticleTrackingOptions(varargin{:});
+    startNC, endNC, optionalResults, nWorkers, fish, noHisOverlay, multiView, preStructs] = determineCheckParticleTrackingOptions(varargin{:});
 
 if fish
     noHisOverlay = true;
@@ -154,8 +154,15 @@ end
 DataFolder = [DropboxFolder, filesep, Prefix];
 FilePrefix = [Prefix, '_'];
 
-
-[Particles, SpotFilter, Spots, FrameInfo, Spots3D] = loadCheckParticleTrackingMats(DataFolder, PreProcPath);
+if isempty(preStructs)
+    [Particles, SpotFilter, Spots, FrameInfo, schnitzcells, Spots3D] = loadCheckParticleTrackingMats(DataFolder, PreProcPath, FilePrefix);
+else
+    Particles = preStructs{1}; 
+    SpotFilter = preStructs{3}; 
+    Spots = preStructs{2}; 
+    schnitzcells = preStructs{4};
+    Spots3D = {};
+end
 [xSize, ySize, pixelSize, zStep, snippet_size, LinesPerFrame, PixelsPerLine,...
     numFrames] = getFrameInfoParams(FrameInfo);
 
@@ -228,26 +235,6 @@ end
 % (to prevent issues with compileparticles)
 save([DataFolder, filesep, 'FrameInfo.mat'], 'FrameInfo');
 
-schnitzPath = [DropboxFolder, filesep, FilePrefix(1:end - 1), filesep, FilePrefix(1:end - 1), '_lin.mat'];
-
-if  exist(schnitzPath, 'file')
-    
-    disp('Loading schnitzcells...')
-    load(schnitzPath, 'schnitzcells');
-    disp('schnitzcells loaded.')
-    
-    %Remove the schnitz fields that can give us problems potentially if
-    %present. I don't know how this came to be, but it's for fields that
-    %are not all that relevant. The fields are: approved, ang
-    if isfield(schnitzcells, 'approved')
-        schnitzcells = rmfield(schnitzcells, 'approved');
-    end
-    
-    if isfield(schnitzcells, 'ang')
-        schnitzcells = rmfield(schnitzcells, 'ang');
-    end
-    
-end
 
 [Particles] = sortParticles(sortByFrames, sortByLength, NChannels, Particles);
         
@@ -962,5 +949,7 @@ if nucleiModified
        TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1, opts{:}); 
     end
 end
+
+outs = {Particles, Spots, SpotFilter, schnitzcells};
 
 end
