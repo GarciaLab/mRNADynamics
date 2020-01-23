@@ -64,7 +64,11 @@ function [CurrentSnippet, himage] = plotSnippet(snippetFigAxes, rawDataAxes, gau
            double( Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yFit(CurrentZIndex)));
         hold(snippetFigAxes,'off')
     else
-        imshow(zeros(SnippetEdge), 'Parent', snippetFigAxes)
+        if ~isempty(himage)
+            imshow(zeros(SnippetEdge), 'Parent', snippetFigAxes)
+        else
+            hImage.CData = zeros(SnippetEdge);
+        end
     end
 % 
 %     if ~isempty(xTrace) && ~isempty(CurrentZIndex)

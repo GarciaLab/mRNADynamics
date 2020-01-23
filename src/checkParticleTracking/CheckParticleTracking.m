@@ -301,7 +301,7 @@ end
 
 %Define user interface
 [Overlay, overlayAxes, snippetFigAxes, rawDataAxes, gaussianAxes, traceFigAxes, zProfileFigAxes,...
-    zTraceAxes,HisOverlayFig,HisOverlayFigAxes] = checkParticleTracking_drawGUI(cptState.UseHistoneOverlay, fish);
+    zTraceAxes,HisOverlayFig,HisOverlayFigAxes] = checkParticleTracking_drawGUI(cptState.UseHistoneOverlay, fish, plot3DGauss, ExperimentType);
 
 if multiView
     multiFig = figure;
