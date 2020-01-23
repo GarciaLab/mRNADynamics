@@ -1,11 +1,13 @@
-function [CurrentSnippet, himage] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
+function [CurrentSnippet, snipImageHandle] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
     CurrentZIndex, FullSlice, Spots, CurrentChannel, CurrentFrame, ...
     CurrentParticleIndex, ExperimentType, snippet_size, xSize, ... 
-    ySize, SnippetEdge, FrameInfo, CurrentSnippet, himage, pixelSize)
+    ySize, SnippetEdge, FrameInfo, CurrentSnippet, snipImageHandle, pixelSize)
 %PLOTSNIPPET Summary of this function goes here
 %   Detailed explanation goes here
 
 % Spots = castStructNumbersToDoubles(Spots);
+
+scale = 10; %magnification of snippet
 
     if  ~isempty(xTrace) && ~isempty(CurrentZIndex)
         %Get the snippet and the mask, and overlay them
@@ -34,11 +36,11 @@ function [CurrentSnippet, himage] = plotSnippet(snippetFigAxes, rawDataAxes, gau
         SnippetOverlay=cat(3,IntegrationArea/2 + ...
             +imSnippet,imSnippet,imSnippet);
 
-        if ~isempty(himage)
-            himage = imshow(SnippetOverlay,...
-                [],'Border','Tight','InitialMagnification',1000, 'Parent', snippetFigAxes);
+        if isempty(snipImageHandle) 
+            snipImageHandle = imshow(SnippetOverlay,...
+                [],'Border','Tight','InitialMagnification',scale*100, 'Parent', snippetFigAxes);
         else
-            himage.CData = SnippetOverlay;
+            snipImageHandle.CData = SnippetOverlay;
         end
 
         hold(snippetFigAxes,'on')
@@ -63,10 +65,11 @@ function [CurrentSnippet, himage] = plotSnippet(snippetFigAxes, rawDataAxes, gau
            double( Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yFit(CurrentZIndex)));
         hold(snippetFigAxes,'off')
     else
-        if ~isempty(himage)
-            imshow(zeros(SnippetEdge), 'Parent', snippetFigAxes)
+        if isempty(snipImageHandle)
+            snipImageHandle = imshow(zeros(SnippetEdge), 'Parent', snippetFigAxes);
         else
-            himage.CData = zeros(SnippetEdge);
+            scale = 10;
+            snipImageHandle.CData = zeros(SnippetEdge*scale, SnippetEdge*scale, 3);
         end
     end
 % 

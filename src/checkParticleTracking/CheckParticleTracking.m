@@ -216,10 +216,11 @@ if preMovie
         end
         pth = [PreProcPath, filesep, Prefix, filesep,Prefix];
         for ch = 1:length(coats)
+            c = coats(ch);
             for f = 1:nFrames
                 parfor z = 1:nSlices+nPadding
                         %reminder to squeeze the array before accessing an image
-                        movieCell(ch, z, f, :, :) = imread([pth,'_',iIndex(f, NDigits), '_z', iIndex(z, 2), ['_ch', iIndex(coats(ch), 2)], '.tif']); 
+                        movieCell(ch, z, f, :, :) = imread([pth,'_',iIndex(f, NDigits), '_z', iIndex(z, 2), ['_ch', iIndex(c, 2)], '.tif']); 
                 end
                 if UseSchnitz
                     hisCell(f, :, :) = imread([pth,'-His_', iIndex(f, NDigits), '.tif']);
@@ -284,11 +285,11 @@ end
 DisplayRangeSpot = [];
 ZoomRange = 50;
 nameSuffix = '';
-hImage = [];
+snipImageHandle = [];
 CurrentSnippet = [];
 oim = [];
-overlayIm = [];
-Image = [];
+ImageHandle = [];
+ImageMat = [];
 ellipseHandles = {};
 spotHandles = {};
 ellipseHisHandles = {};
@@ -455,7 +456,11 @@ while (cc ~= 'x')
     %%
     
     cptState.coatChannel = getCoatChannel(Channel1, Channel2, Channel3);
-    nameSuffix = ['_ch', iIndex(cptState.CurrentChannel, 2)];
+    if length(cptState.coatChannel) == 1
+        nameSuffix = ['_ch', iIndex(cptState.coatChannel, 2)];
+    else
+        nameSuffix = ['_ch', iIndex(cptState.currentChannel, 2)];
+    end
 
     
     %Get the coordinates of all the spots in this frame
@@ -489,10 +494,10 @@ while (cc ~= 'x')
     multiImage = {};
     if strcmpi(projectionMode, 'None')
         if ~preMovie
-            Image = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
+            ImageMat = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
                 FilePrefix, iIndex(cptState.CurrentFrame, NDigits), '_z', iIndex(cptState.CurrentZ, 2), nameSuffix, '.tif']);
         else
-            Image = squeeze(movieCell(cptState.CurrentChannel,cptState.CurrentZ, cptState.CurrentFrame, :, :));
+            ImageMat = squeeze(movieCell(cptState.CurrentChannel,cptState.CurrentZ, cptState.CurrentFrame, :, :));
         end
         if multiView
             for i = 1:-1:-1
@@ -507,23 +512,23 @@ while (cc ~= 'x')
             end
         end
     elseif strcmpi(projectionMode, 'Max Z')
-        Image = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, FrameInfo, 'max', nWorkers);
+        ImageMat = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, FrameInfo, 'max', nWorkers);
     elseif strcmpi(projectionMode, 'Median Z')
-        Image = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, FrameInfo, 'median', nWorkers);
+        ImageMat = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, FrameInfo, 'median', nWorkers);
     elseif strcmpi(projectionMode, 'Max Z and Time')
         
         if isempty(storedTimeProjection)
             
             if ncRange
-                Image = timeProjection(Prefix, cptState.coatChannel,FrameInfo, DropboxFolder,PreProcPath, 'nc', NC);
-                storedTimeProjection = Image;
+                ImageMat = timeProjection(Prefix, cptState.coatChannel,FrameInfo, DropboxFolder,PreProcPath, 'nc', NC);
+                storedTimeProjection = ImageMat;
             else
-                Image = timeProjection(Prefix, cptState.CurrentChannel,FrameInfo, DropboxFolder,PreProcPath);
-                storedTimeProjection = Image;
+                ImageMat = timeProjection(Prefix, cptState.CurrentChannel,FrameInfo, DropboxFolder,PreProcPath);
+                storedTimeProjection = ImageMat;
             end
             
         else
-            Image = storedTimeProjection;
+            ImageMat = storedTimeProjection;
         end
         
     end
@@ -548,7 +553,7 @@ while (cc ~= 'x')
     
     set(0, 'CurrentFigure', Overlay);
 %     if isempty(hIm)
-        overlayIm = imshow(Image, DisplayRangeSpot, 'Border', 'Tight', 'Parent', overlayAxes, ...
+        ImageHandle = imshow(ImageMat, DisplayRangeSpot, 'Border', 'Tight', 'Parent', overlayAxes, ...
             'InitialMagnification', 'fit');
         if multiView 
             for i = 1:size(multiImage, 1)
@@ -573,19 +578,19 @@ while (cc ~= 'x')
         if ~preMovie
             HisPath = [PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
                 FilePrefix(1:end - 1), '-His_', iIndex(cptState.CurrentFrame, NDigits), '.tif'];
-            ImageHis=imread(HisPath);
+            ImageHisMat=imread(HisPath);
         else
-             ImageHis = squeeze(hisCell(cptState.CurrentFrame, :,:));
+             ImageHisMat = squeeze(hisCell(cptState.CurrentFrame, :,:));
         end
-        [cptState.ImageHis, cptState.xForZoom, cptState.yForZoom, oim,ellipseHandles]= displayOverlays(overlayAxes, Image, SpeedMode, FrameInfo, cptState.Particles, ...
+        [cptState.ImageHis, cptState.xForZoom, cptState.yForZoom, oim,ellipseHandles]= displayOverlays(overlayAxes, ImageMat, SpeedMode, FrameInfo, cptState.Particles, ...
             cptState.Spots, cptState.CurrentFrame, ShowThreshold2, ...
             Overlay, cptState.CurrentChannel, cptState.CurrentParticle, cptState.ZSlices, cptState.CurrentZ, nFrames, ...
             schnitzcells, UseSchnitz, cptState.DisplayRange, Ellipses, cptState.SpotFilter, cptState.ZoomMode, cptState.GlobalZoomMode, ...
             ZoomRange, cptState.xForZoom, cptState.yForZoom, fish, cptState.UseHistoneOverlay, subAx, HisOverlayFigAxes,...
-            oim, ellipseHandles, ImageHis);
+            oim, ellipseHandles, ImageHisMat);
         
     else
-        displayOverlays(overlayAxes, Image, SpeedMode, ...
+        displayOverlays(overlayAxes, ImageMat, SpeedMode, ...
             FrameInfo, cptState.Particles, cptState.Spots, cptState.CurrentFrame, ShowThreshold2, ...
             Overlay, cptState.CurrentChannel, cptState.CurrentParticle, cptState.ZSlices, cptState.CurrentZ, nFrames, ...
             schnitzcells, UseSchnitz, cptState.DisplayRange, Ellipses, cptState.SpotFilter, ...
@@ -614,10 +619,10 @@ while (cc ~= 'x')
     
     % PLOT SNIPPET
        
-        [CurrentSnippet, hImage] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
-            CurrentZIndex, Image, cptState.Spots, cptState.CurrentChannel, cptState.CurrentFrame, ...
+        [CurrentSnippet, snipImageHandle] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
+            CurrentZIndex, ImageMat, cptState.Spots, cptState.CurrentChannel, cptState.CurrentFrame, ...
             CurrentParticleIndex, ExperimentType, snippet_size, xSize, ...
-            ySize, SnippetEdge, FrameInfo, CurrentSnippet, hImage, pixelSize);
+            ySize, SnippetEdge, FrameInfo, CurrentSnippet, snipImageHandle, pixelSize);
 
     
     % PLOTS TRACE OF CURRENT PARTICLE
@@ -887,7 +892,7 @@ while (cc ~= 'x')
     elseif cc == '!' %Increase contrast in the Overlay figure
         
         if isempty(DisplayRangeSpot)
-            DisplayRangeSpot = [min(min(Image)), max(max(Image)) / 1.5];
+            DisplayRangeSpot = [min(min(ImageMat)), max(max(ImageMat)) / 1.5];
         else
             DisplayRangeSpot = [DisplayRangeSpot(1), DisplayRangeSpot(2) / 1.5];
         end
@@ -895,7 +900,7 @@ while (cc ~= 'x')
         disp('increased spot contrast');
         
     elseif cc == '@' %Decrease spot channel contrast
-        DisplayRangeSpot = [min(Image(:)), max(Image(:)) * 1.5];
+        DisplayRangeSpot = [min(ImageMat(:)), max(ImageMat(:)) * 1.5];
         
          disp('decreased spot contrast');
          

@@ -5,17 +5,15 @@ function [Ellipses, UseHistoneOverlay, UseSchnitz] = checkHistoneAndNuclearSegme
   UseHistoneOverlay = false;
   
   if exist([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
-            FilePrefix(1:end - 1), '-His_', iIndex(1, NDigits), '.tif'], 'file') || ...
-    exist([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
-        FilePrefix(1:end - 1), '_His_', iIndex(1, NDigits), '.tif'], 'file')
+            FilePrefix(1:end - 1), '-His_', iIndex(1, NDigits), '.tif'], 'file')
     %(MT, 2018-02-11) Added support for lattice imaging with bad histone
     %channel, maybe temporary - FIX LATER
     if exist([DropboxFolder, filesep, FilePrefix(1:end - 1), filesep, 'Ellipses.mat'], 'file')
       load([DropboxFolder, filesep, FilePrefix(1:end - 1), filesep, 'Ellipses.mat'], 'Ellipses');
-      UseHistoneOverlay = 1;
+      UseHistoneOverlay = true;
     else
       warning('Ellipses.mat does not exist. Proceeding as though there is no Histone channel. If you expect a Histone channel, there is something wrong.')
-      UseHistoneOverlay = 0;
+      UseHistoneOverlay = false;
       Ellipses = [];
     end
   end
