@@ -1,5 +1,4 @@
 function [outs, movieCell, hisCell] = CheckParticleTracking(Prefix, varargin)
-% function [Particles, Spots, SpotFilter, schnitzcells] = CheckParticleTracking(varargin)
 %
 % DESCRIPTION
 % The point of this function is to check the tracking of particles. The
@@ -111,6 +110,10 @@ function [outs, movieCell, hisCell] = CheckParticleTracking(Prefix, varargin)
 % Spots: A modified Spots
 % SpotFilter: A modified SpotFilter
 % schnitzcells: A modified schnitzcells
+% FrameInfo: A modified FrameInfo
+% all indice "outs" structure
+% movieCell: TBD
+% hisCell: TBD
 %
 % Author (contact): Hernan Garcia (hgarcia@berkeley.edu)
 % Created:
@@ -287,7 +290,6 @@ else
 end
 DisplayRangeSpot = [];
 ZoomRange = 50;
-nameSuffix = '';
 snipImageHandle = [];
 CurrentSnippet = [];
 oim = [];
@@ -321,7 +323,7 @@ end
 
 %Define user interface
 [Overlay, overlayAxes, snippetFigAxes, rawDataAxes, gaussianAxes, traceFigAxes, zProfileFigAxes,...
-    zTraceAxes,HisOverlayFig,HisOverlayFigAxes] = checkParticleTracking_drawGUI(cptState.UseHistoneOverlay, fish, plot3DGauss, ExperimentType);
+    zTraceAxes,HisOverlayFig,HisOverlayFigAxes] = checkParticleTracking_drawGUI(cptState.UseHistoneOverlay, fish, cptState.plot3DGauss, ExperimentType);
 
 if multiView
     multiFig = figure;
@@ -426,9 +428,9 @@ while (cc ~= 'x')
     
     cptState.coatChannel = getCoatChannel(Channel1, Channel2, Channel3);
     if length(cptState.coatChannel) == 1
-        nameSuffix = ['_ch', iIndex(cptState.coatChannel, 2)];
+        cptState.nameSuffix = ['_ch', iIndex(cptState.coatChannel, 2)];
     else
-        nameSuffix = ['_ch', iIndex(cptState.currentChannel, 2)];
+        cptState.nameSuffix = ['_ch', iIndex(cptState.currentChannel, 2)];
     end
     
     
@@ -464,7 +466,7 @@ while (cc ~= 'x')
     if strcmpi(projectionMode, 'None')
         if ~preMovie
             ImageMat = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
-                FilePrefix, iIndex(cptState.CurrentFrame, NDigits), '_z', iIndex(cptState.CurrentZ, 2), nameSuffix, '.tif']);
+                FilePrefix, iIndex(cptState.CurrentFrame, NDigits), '_z', iIndex(cptState.CurrentZ, 2), cptState.nameSuffix, '.tif']);
         else
             ImageMat = squeeze(movieCell(cptState.CurrentChannel,cptState.CurrentZ, cptState.CurrentFrame, :, :));
         end
@@ -473,7 +475,7 @@ while (cc ~= 'x')
                 for j = -1:1
                     if any( 1:nSlices == cptState.CurrentZ + i) && any( 1:nFrames == cptState.CurrentFrame + j)
                         multiImage{i+2, j+2} = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
-                            FilePrefix, iIndex(cptState.CurrentFrame+j, NDigits), '_z', iIndex(cptState.CurrentZ+i, 2), nameSuffix, '.tif']);
+                            FilePrefix, iIndex(cptState.CurrentFrame+j, NDigits), '_z', iIndex(cptState.CurrentZ+i, 2), cptState.nameSuffix, '.tif']);
                     else
                         multiImage{i+2, j+2} = zeros(cptState.FrameInfo(1).LinesPerFrame, cptState.FrameInfo(1).PixelsPerLine);
                     end
@@ -491,19 +493,19 @@ while (cc ~= 'x')
                 ImageMat = maxCell;
             end
         else
-            ImageMat = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, FrameInfo, 'max', nWorkers);
+            ImageMat = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, cptState.FrameInfo, 'max', cptState.nWorkers);
         end
     elseif strcmpi(projectionMode, 'Median Z')
-        ImageMat = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, FrameInfo, 'median', nWorkers);
+        ImageMat = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, cptState.FrameInfo, 'median', cptState.nWorkers);
     elseif strcmpi(projectionMode, 'Max Z and Time')
         
         if isempty(storedTimeProjection)
             
             if ncRange
-                ImageMat = timeProjection(Prefix, cptState.coatChannel,FrameInfo, DropboxFolder,PreProcPath, 'nc', NC);
+                ImageMat = timeProjection(Prefix, cptState.coatChannel, cptState.FrameInfo, DropboxFolder,PreProcPath, 'nc', NC);
                 storedTimeProjection = ImageMat;
             else
-                ImageMat = timeProjection(Prefix, cptState.CurrentChannel,FrameInfo, DropboxFolder,PreProcPath);
+                ImageMat = timeProjection(Prefix, cptState.CurrentChannel, cptState.FrameInfo, DropboxFolder,PreProcPath);
                 storedTimeProjection = ImageMat;
             end
             
@@ -562,18 +564,18 @@ while (cc ~= 'x')
         else
             ImageHisMat = squeeze(hisCell(cptState.CurrentFrame, :,:));
         end
-        [cptState.ImageHis, cptState.xForZoom, cptState.yForZoom, oim,ellipseHandles]= displayOverlays(overlayAxes, ImageMat, SpeedMode, FrameInfo, cptState.Particles, ...
+        [cptState.ImageHis, cptState.xForZoom, cptState.yForZoom, oim,ellipseHandles]= displayOverlays(overlayAxes, ImageMat, SpeedMode, cptState.FrameInfo, cptState.Particles, ...
             cptState.Spots, cptState.CurrentFrame, ShowThreshold2, ...
             Overlay, cptState.CurrentChannel, cptState.CurrentParticle, cptState.ZSlices, cptState.CurrentZ, nFrames, ...
-            schnitzcells, UseSchnitz, cptState.DisplayRange, Ellipses, cptState.SpotFilter, cptState.ZoomMode, cptState.GlobalZoomMode, ...
+            cptState.schnitzcells, UseSchnitz, cptState.DisplayRange, Ellipses, cptState.SpotFilter, cptState.ZoomMode, cptState.GlobalZoomMode, ...
             ZoomRange, cptState.xForZoom, cptState.yForZoom, fish, cptState.UseHistoneOverlay, subAx, HisOverlayFigAxes,...
             oim, ellipseHandles, ImageHisMat);
         
     else
         displayOverlays(overlayAxes, ImageMat, SpeedMode, ...
-            FrameInfo, cptState.Particles, cptState.Spots, cptState.CurrentFrame, ShowThreshold2, ...
+            cptState.FrameInfo, cptState.Particles, cptState.Spots, cptState.CurrentFrame, ShowThreshold2, ...
             Overlay, cptState.CurrentChannel, cptState.CurrentParticle, cptState.ZSlices, cptState.CurrentZ, nFrames, ...
-            schnitzcells, UseSchnitz, cptState.DisplayRange, Ellipses, cptState.SpotFilter, ...
+            cptState.schnitzcells, UseSchnitz, cptState.DisplayRange, Ellipses, cptState.SpotFilter, ...
             cptState.ZoomMode, cptState.GlobalZoomMode, ZoomRange, cptState.xForZoom, cptState.yForZoom, fish, cptState.UseHistoneOverlay, subAx);
     end
     
@@ -601,8 +603,8 @@ while (cc ~= 'x')
     
     [CurrentSnippet, snipImageHandle] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
         CurrentZIndex, ImageMat, cptState.Spots, cptState.CurrentChannel, cptState.CurrentFrame, ...
-        CurrentParticleIndex, ExperimentType, snippet_size, xSize, ...
-        ySize, SnippetEdge, FrameInfo, CurrentSnippet, snipImageHandle, pixelSize);
+        cptState.CurrentParticleIndex, ExperimentType, snippet_size, xSize, ...
+        ySize, SnippetEdge, cptState.FrameInfo, CurrentSnippet, snipImageHandle, pixelSize);
     
     
     % PLOTS TRACE OF CURRENT PARTICLE
@@ -624,22 +626,22 @@ while (cc ~= 'x')
             ...
             cptState.FrameInfo, cptState.CurrentChannel, cptState.PreviousChannel, ...
             cptState.CurrentParticle, cptState.PreviousParticle, cptState.lastParticle, HideApprovedFlag, lineFitted, anaphaseInMins, ...
-            ElapsedTime, schnitzcells, cptState.Particles, plot3DGauss, anaphase, prophase, metaphase, prophaseInMins, metaphaseInMins, Prefix, ...
+            ElapsedTime, cptState.schnitzcells, cptState.Particles, cptState.plot3DGauss, anaphase, prophase, metaphase, prophaseInMins, metaphaseInMins, Prefix, ...
             nFrames, cptState.CurrentFrame, cptState.ZSlices, cptState.CurrentZ, cptState.Spots, ...
-            correspondingNCInfo, cptState.Coefficients, ExperimentType,cptState.PreviousFrame, Frames,...
+            correspondingNCInfo, cptState.Coefficients, ExperimentType,cptState.PreviousFrame, cptState.Frames,...
             Channels, PreProcPath, DropboxFolder, plottrace_argin{:});
     end
     
     
     % PLOT Z SLICE RELATED FIGURES
     plotzvars = {zProfileFigAxes, zTraceAxes, ExperimentType, ...
-        xTrace, cptState.Spots, cptState.CurrentFrame, cptState.CurrentChannel, CurrentParticleIndex, cptState.ZSlices, ...
+        xTrace, cptState.Spots, cptState.CurrentFrame, cptState.CurrentChannel, cptState.CurrentParticleIndex, cptState.ZSlices, ...
         cptState.CurrentZ, CurrentZIndex, cptState.PreviousParticle, cptState.CurrentParticle, ...
-        cptState.PreviousChannel, cptState.Particles, Frames, fish};
+        cptState.PreviousChannel, cptState.Particles, cptState.Frames, fish};
     if exist('MaxZProfile', 'var')
         plotzvars = [plotzvars, MaxZProfile];
     end
-    [MaxZProfile, Frames] = plotZFigures(plotzvars{:});
+    [MaxZProfile, cptState.Frames] = plotZFigures(plotzvars{:});
     
     
     

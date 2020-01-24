@@ -40,7 +40,7 @@ classdef CPTState < handle
 
         nameSuffix
 
-	nWorkers
+	    nWorkers
         plot3DGauss
     end
     
