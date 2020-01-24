@@ -11,5 +11,4 @@ function [xSize, ySize, pixelSize, zStep, snippet_size, LinesPerFrame, PixelsPer
   PixelsPerLine = FrameInfo(1).PixelsPerLine;
   numFrames = length(FrameInfo);
   
-
 end
