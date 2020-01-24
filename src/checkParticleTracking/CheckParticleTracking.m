@@ -512,6 +512,9 @@ while (cc ~= 'x')
             end
         end
     elseif strcmpi(projectionMode, 'Max Z')
+        if preMovie
+            ch = 1; ImageMat = squeeze(max(squeeze(movieCell(ch,:, cptState.CurrentFrame, :, :)), [], 1));
+        end
         ImageMat = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, FrameInfo, 'max', nWorkers);
     elseif strcmpi(projectionMode, 'Median Z')
         ImageMat = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, FrameInfo, 'median', nWorkers);

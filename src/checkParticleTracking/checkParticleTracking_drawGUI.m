@@ -43,10 +43,10 @@ if ~fish
         yyaxis(traceFigAxes,'right')
         e3 = plot(traceFigAxes,[0, 1], [0, 1], 'r.-', 'DisplayName', 'protein');
         ylabel(traceFigAxes,'input protein intensity (a.u.)');
-        traceLeg = legend(traceFigAxes,[e1, e2, e3], str1,str2, 'protein', 'AutoUpdate', 'off');
+        traceLeg = legend(traceFigAxes,[e1, e2, e3], str1,str2, 'protein', 'AutoUpdate', 'off', 'HandleVisibility', 'off');
     else
         traceFigAxes.YAxis(2).Visible = 'off';
-        traceLeg = legend(traceFigAxes,[e1, e2], str1,str2, 'AutoUpdate', 'off');
+        traceLeg = legend(traceFigAxes,[e1, e2], str1,str2, 'AutoUpdate', 'off', 'HandleVisibility', 'off');
     end
 else
     overlayAxes = axes(Overlay);
