@@ -158,9 +158,9 @@ FilePrefix = [Prefix, '_'];
 if isempty(preStructs)
     [Particles, SpotFilter, Spots, FrameInfo, schnitzcells, Spots3D] = loadCheckParticleTrackingMats(DataFolder, PreProcPath, FilePrefix);
 else
-    Particles = preStructs{1}; 
-    SpotFilter = preStructs{3}; 
-    Spots = preStructs{2}; 
+    Particles = preStructs{1};
+    SpotFilter = preStructs{3};
+    Spots = preStructs{2};
     schnitzcells = preStructs{4};
     FrameInfo = preStructs{5};
     Spots3D = {};
@@ -170,29 +170,29 @@ end
 [xSize, ySize, pixelSize, zStep, snippet_size, LinesPerFrame, PixelsPerLine,...
     nFrames, nSlices] = getFrameInfoParams(FrameInfo);
 
-  %See how  many frames we have and adjust the index size of the files to load accordingly
-  if nFrames < 1E3
+%See how  many frames we have and adjust the index size of the files to load accordingly
+if nFrames < 1E3
     NDigits = 3;
-  elseif nFrames < 1E4
+elseif nFrames < 1E4
     NDigits = 4;
-  else
+else
     error('No more than 10,000 frames supported.')
-  end
-  
-  
-  
-  %Create the particle array. This is done so that we can support multiple
-  %channels. Also figure out the number of channels
-  if iscell(Particles)
-      NChannels = length(Particles);
-  else
-      Particles = {Particles};
-      if ~iscell(Spots)
-          Spots = {Spots};
-      end
-      SpotFilter = {SpotFilter};
-      NChannels = 1;
-  end
+end
+
+
+
+%Create the particle array. This is done so that we can support multiple
+%channels. Also figure out the number of channels
+if iscell(Particles)
+    NChannels = length(Particles);
+else
+    Particles = {Particles};
+    if ~iscell(Spots)
+        Spots = {Spots};
+    end
+    SpotFilter = {SpotFilter};
+    NChannels = 1;
+end
 
 %Add FramesApproved where necessary
 Particles = addFrameApproved(NChannels, Particles);
@@ -206,7 +206,8 @@ Particles = addFrameApproved(NChannels, Particles);
 Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
 
 nPadding = 2; %normally we pad a blank image above and below the stack.
-                    %if a movie is unpadded this will require modification
+%if a movie is unpadded this will require modification
+maxCell = [];
 if preMovie
     if isempty(movieCell)
         coats = getCoatChannel(Channel1, Channel2, Channel3);
@@ -219,18 +220,20 @@ if preMovie
             c = coats(ch);
             for f = 1:nFrames
                 parfor z = 1:nSlices+nPadding
-                        %reminder to squeeze the array before accessing an image
-                        movieCell(ch, z, f, :, :) = imread([pth,'_',iIndex(f, NDigits), '_z', iIndex(z, 2), ['_ch', iIndex(c, 2)], '.tif']); 
+                    %reminder to squeeze the array before accessing an image
+                    movieCell(ch, z, f, :, :) = imread([pth,'_',iIndex(f, NDigits), '_z', iIndex(z, 2), ['_ch', iIndex(c, 2)], '.tif']);
                 end
                 if UseSchnitz
                     hisCell(f, :, :) = imread([pth,'-His_', iIndex(f, NDigits), '.tif']);
                 end
             end
         end
+        maxCell = squeeze(max(movieCell(:,:,:,:, :), [], 2));
     end
 else
     movieCell = [];
     hisCell = [];
+    maxCell = [];
 end
 
 for i = 1:nFrames
@@ -268,7 +271,7 @@ save([DataFolder, filesep, 'FrameInfo.mat'], 'FrameInfo');
 
 
 [Particles] = sortParticles(sortByFrames, sortByLength, NChannels, Particles);
-        
+
 %Some flags and initial parameters
 ShowThreshold2 = 1; %Whether to show particles below the threshold
 HideApprovedFlag = 0;
@@ -389,7 +392,7 @@ delete_spot.ButtonPushedFcn = @delete_spot_pushed;
             cptState.CurrentParticle, cptState.Particles, cptState.ManualZFlag, cptState.DisplayRange, cptState.lastParticle, cptState.PreviousParticle] = ...
             removeSpot(cptState.ZoomMode, cptState.GlobalZoomMode, Frames, cptState.CurrentFrame, ...
             cptState.CurrentChannel, cptState.CurrentParticle, CurrentParticleIndex, cptState.Particles, cptState.Spots, cptState.SpotFilter, ...
-             cptState.ManualZFlag, cptState.DisplayRange, cptState.lastParticle, cptState.PreviousParticle);
+            cptState.ManualZFlag, cptState.DisplayRange, cptState.lastParticle, cptState.PreviousParticle);
         
         robot.keyPress(fake_event);
         robot.keyRelease(fake_event);
@@ -461,7 +464,7 @@ while (cc ~= 'x')
     else
         nameSuffix = ['_ch', iIndex(cptState.currentChannel, 2)];
     end
-
+    
     
     %Get the coordinates of all the spots in this frame
     [x, y, z] = SpotsXYZ(cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame));
@@ -504,7 +507,7 @@ while (cc ~= 'x')
                 for j = -1:1
                     if any( 1:nSlices == cptState.CurrentZ + i) && any( 1:nFrames == cptState.CurrentFrame + j)
                         multiImage{i+2, j+2} = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
-                    FilePrefix, iIndex(cptState.CurrentFrame+j, NDigits), '_z', iIndex(cptState.CurrentZ+i, 2), nameSuffix, '.tif']);
+                            FilePrefix, iIndex(cptState.CurrentFrame+j, NDigits), '_z', iIndex(cptState.CurrentZ+i, 2), nameSuffix, '.tif']);
                     else
                         multiImage{i+2, j+2} = zeros(FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine);
                     end
@@ -513,9 +516,13 @@ while (cc ~= 'x')
         end
     elseif strcmpi(projectionMode, 'Max Z')
         if preMovie
-            ch = 1; ImageMat = squeeze(max(squeeze(movieCell(ch,:, cptState.CurrentFrame, :, :)), [], 1));
+            if isempty(maxCell)
+                maxCell = squeeze(max(movieCell(:,:,:,:, :), [], 2));
+            end
+            ch=1; ImageMat = squeeze(maxCell(cptState.CurrentFrame,:,:));
+        else
+            ImageMat = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, FrameInfo, 'max', nWorkers);
         end
-        ImageMat = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, FrameInfo, 'max', nWorkers);
     elseif strcmpi(projectionMode, 'Median Z')
         ImageMat = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, FrameInfo, 'median', nWorkers);
     elseif strcmpi(projectionMode, 'Max Z and Time')
@@ -535,18 +542,18 @@ while (cc ~= 'x')
         end
         
     end
-
+    
     
     if multiView && ~exist('subAx', 'var')
-         tiles = tiledlayout(multiFig, 3, 3, 'TileSpacing', 'none', 'Padding', 'none');
-            n = 0;
-            for i = 1:3
-                for j = 1:3
-                    n = n + 1;
-                    subAx{i, j} = nexttile(tiles, n);
-                    title(subAx{i,j},['z: ', num2str(cptState.CurrentZ + i - 2), ' frame: ', num2str(cptState.CurrentFrame + j - 2)]) 
-                end
+        tiles = tiledlayout(multiFig, 3, 3, 'TileSpacing', 'none', 'Padding', 'none');
+        n = 0;
+        for i = 1:3
+            for j = 1:3
+                n = n + 1;
+                subAx{i, j} = nexttile(tiles, n);
+                title(subAx{i,j},['z: ', num2str(cptState.CurrentZ + i - 2), ' frame: ', num2str(cptState.CurrentFrame + j - 2)])
             end
+        end
     end
     
     if ~multiView
@@ -555,26 +562,26 @@ while (cc ~= 'x')
     
     
     set(0, 'CurrentFigure', Overlay);
-%     if isempty(hIm)
-        ImageHandle = imshow(ImageMat, DisplayRangeSpot, 'Border', 'Tight', 'Parent', overlayAxes, ...
-            'InitialMagnification', 'fit');
-        if multiView 
-            for i = 1:size(multiImage, 1)
-                for j = 1:size(multiImage, 2)
-                    if ~isempty(subAx{i,j}.Children)
-                        subAx{i,j}.Children.CData = multiImage{i, j};
-                    else
-                         imshow(multiImage{i, j}, DisplayRangeSpot, 'Border', 'Tight', 'Parent', subAx{i,j},...
-                   'InitialMagnification', 'fit');
-                    end
-                    title(subAx{i,j},['z: ', num2str(cptState.CurrentZ + i - 2), ' frame: ', num2str(cptState.CurrentFrame + j - 2)]) 
+    %     if isempty(hIm)
+    ImageHandle = imshow(ImageMat, DisplayRangeSpot, 'Border', 'Tight', 'Parent', overlayAxes, ...
+        'InitialMagnification', 'fit');
+    if multiView
+        for i = 1:size(multiImage, 1)
+            for j = 1:size(multiImage, 2)
+                if ~isempty(subAx{i,j}.Children)
+                    subAx{i,j}.Children.CData = multiImage{i, j};
+                else
+                    imshow(multiImage{i, j}, DisplayRangeSpot, 'Border', 'Tight', 'Parent', subAx{i,j},...
+                        'InitialMagnification', 'fit');
                 end
+                title(subAx{i,j},['z: ', num2str(cptState.CurrentZ + i - 2), ' frame: ', num2str(cptState.CurrentFrame + j - 2)])
             end
         end
-%     else
-%         hIm.CData = Image;
-%     end
-%     
+    end
+    %     else
+    %         hIm.CData = Image;
+    %     end
+    %
     hold(overlayAxes, 'on')
     
     if cptState.UseHistoneOverlay
@@ -583,7 +590,7 @@ while (cc ~= 'x')
                 FilePrefix(1:end - 1), '-His_', iIndex(cptState.CurrentFrame, NDigits), '.tif'];
             ImageHisMat=imread(HisPath);
         else
-             ImageHisMat = squeeze(hisCell(cptState.CurrentFrame, :,:));
+            ImageHisMat = squeeze(hisCell(cptState.CurrentFrame, :,:));
         end
         [cptState.ImageHis, cptState.xForZoom, cptState.yForZoom, oim,ellipseHandles]= displayOverlays(overlayAxes, ImageMat, SpeedMode, FrameInfo, cptState.Particles, ...
             cptState.Spots, cptState.CurrentFrame, ShowThreshold2, ...
@@ -621,12 +628,12 @@ while (cc ~= 'x')
         (CurrentParticleIndex), 'IntegralZ');
     
     % PLOT SNIPPET
-       
-        [CurrentSnippet, snipImageHandle] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
-            CurrentZIndex, ImageMat, cptState.Spots, cptState.CurrentChannel, cptState.CurrentFrame, ...
-            CurrentParticleIndex, ExperimentType, snippet_size, xSize, ...
-            ySize, SnippetEdge, FrameInfo, CurrentSnippet, snipImageHandle, pixelSize);
-
+    
+    [CurrentSnippet, snipImageHandle] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
+        CurrentZIndex, ImageMat, cptState.Spots, cptState.CurrentChannel, cptState.CurrentFrame, ...
+        CurrentParticleIndex, ExperimentType, snippet_size, xSize, ...
+        ySize, SnippetEdge, FrameInfo, CurrentSnippet, snipImageHandle, pixelSize);
+    
     
     % PLOTS TRACE OF CURRENT PARTICLE
     if ~fish
@@ -652,23 +659,23 @@ while (cc ~= 'x')
             correspondingNCInfo, cptState.Coefficients, ExperimentType,cptState.PreviousFrame, Frames,...
             Channels, PreProcPath, DropboxFolder, plottrace_argin{:});
     end
-
+    
     
     % PLOT Z SLICE RELATED FIGURES
     plotzvars = {zProfileFigAxes, zTraceAxes, ExperimentType, ...
-    xTrace, cptState.Spots, cptState.CurrentFrame, cptState.CurrentChannel, CurrentParticleIndex, cptState.ZSlices, ...
-    cptState.CurrentZ, CurrentZIndex, cptState.PreviousParticle, cptState.CurrentParticle, ...
-    cptState.PreviousChannel, cptState.Particles, Frames, fish};
-        if exist('MaxZProfile', 'var')
-            plotzvars = [plotzvars, MaxZProfile];
-        end
-        [MaxZProfile, Frames] = plotZFigures(plotzvars{:});
-        
-
+        xTrace, cptState.Spots, cptState.CurrentFrame, cptState.CurrentChannel, CurrentParticleIndex, cptState.ZSlices, ...
+        cptState.CurrentZ, CurrentZIndex, cptState.PreviousParticle, cptState.CurrentParticle, ...
+        cptState.PreviousChannel, cptState.Particles, Frames, fish};
+    if exist('MaxZProfile', 'var')
+        plotzvars = [plotzvars, MaxZProfile];
+    end
+    [MaxZProfile, Frames] = plotZFigures(plotzvars{:});
+    
+    
     
     % UPDATE UICONTROLS
     %don't update since this is currently broken
-%     updateControls(frame_num, z_num, particle_num, cptState.CurrentFrame, cptState.CurrentZ, cptState.CurrentParticle);
+    %     updateControls(frame_num, z_num, particle_num, cptState.CurrentFrame, cptState.CurrentZ, cptState.CurrentParticle);
     
     set(0, 'CurrentFigure', Overlay);
     
@@ -686,14 +693,14 @@ while (cc ~= 'x')
         
         is_control = isa(get(Overlay, 'CurrentObject'), 'matlab.ui.control.UIControl');
         
-%         if ct == 0 && cm2(1, 1) < xSize && current_axes == overlayAxes ...
-%                 &&~no_clicking &&~is_control
-%             
-%             [cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag] = toNearestParticle(cptState.Spots, ...
-%                 cptState.Particles, cptState.CurrentFrame, cptState.CurrentChannel, cptState.UseHistoneOverlay, ...
-%                 schnitzcells, [cm2(1, 1), cm2(2, 2)]);
-%             
-%         end
+        %         if ct == 0 && cm2(1, 1) < xSize && current_axes == overlayAxes ...
+        %                 &&~no_clicking &&~is_control
+        %
+        %             [cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag] = toNearestParticle(cptState.Spots, ...
+        %                 cptState.Particles, cptState.CurrentFrame, cptState.CurrentChannel, cptState.UseHistoneOverlay, ...
+        %                 schnitzcells, [cm2(1, 1), cm2(2, 2)]);
+        %
+        %         end
     else
         cc = SkipWaitForButtonPress;
         SkipWaitForButtonPress = [];
@@ -749,7 +756,7 @@ while (cc ~= 'x')
             cptState.CurrentParticle, cptState.CurrentFrame, cptState.CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
             LinesPerFrame, cptState.Spots, cptState.ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
             cptState.SpotFilter, cc, xSize, ySize, NDigits,...
-           Prefix, PreProcPath, ProcPath, cptState.coatChannel, cptState.UseHistoneOverlay, schnitzcells, nWorkers, plot3DGauss);
+            Prefix, PreProcPath, ProcPath, cptState.coatChannel, cptState.UseHistoneOverlay, schnitzcells, nWorkers, plot3DGauss);
     elseif cc == 'r'
         cptState.Particles = orderParticles(cptState.numParticles(), cptState.CurrentChannel, cptState.Particles);
     elseif cc == 'f'
@@ -759,13 +766,13 @@ while (cc ~= 'x')
     elseif cc == 'c'
         [cptState.PreviousParticle, cptState.Particles] = combineTraces(cptState.Spots, ...
             cptState.CurrentChannel, cptState.CurrentFrame, cptState.Particles, cptState.CurrentParticle);
-     elseif cc == 'C'  %add ellipse
-           
+    elseif cc == 'C'  %add ellipse
+        
         [ConnectPositionx,ConnectPositiony] = ginput(1);
         
         cm = [round(ConnectPositionx), round(ConnectPositiony)];
         [Rows, Cols] = size(cptState.ImageHis);
-         if (cm(1,2)>0)&(cm(1,1)>0)&(cm(1,2)<=Rows)&(cm(1,1)<=Cols)
+        if (cm(1,2)>0)&(cm(1,1)>0)&(cm(1,2)<=Rows)&(cm(1,1)<=Cols)
             
             %Add a circle to this location with the mean radius of the
             %ellipses found in this frame
@@ -788,17 +795,17 @@ while (cc ~= 'x')
                     [cm(1,1),cm(1,2),MeanRadius,MeanRadius,0,0,0,0];
             end
         end
-    
-         nucleiModified = true;
-         
+        
+        nucleiModified = true;
+        
     elseif cc == 'V'
         %remove ellipse
-           [ConnectPositionx,ConnectPositiony] = ginput(1);
+        [ConnectPositionx,ConnectPositiony] = ginput(1);
         
         cm = [round(ConnectPositionx), round(ConnectPositiony)];
         [Rows, Cols] = size(cptState.ImageHis);
         
-          if (cm(1,2)>0)&(cm(1,1)>0)&(cm(1,2)<=Rows)&(cm(1,1)<=Cols)
+        if (cm(1,2)>0)&(cm(1,1)>0)&(cm(1,2)<=Rows)&(cm(1,1)<=Cols)
             %Find out which ellipses we clicked on so we can delete it
             
             %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
@@ -808,8 +815,8 @@ while (cc ~= 'x')
             
             Ellipses{CurrentFrame}=[Ellipses{CurrentFrame}(1:MinIndex-1,:);...
                 Ellipses{CurrentFrame}(MinIndex+1:end,:)];
-          end
-          
+        end
+        
         nucleiModified = true;
         
     elseif cc == 'p' % Identify a particle. It will also tell you the particle associated with
@@ -857,7 +864,7 @@ while (cc ~= 'x')
         saveChanges(NChannels, cptState.Particles, cptState.Spots, cptState.SpotFilter, DataFolder, ...
             FrameInfo, cptState.UseHistoneOverlay, FilePrefix, ...
             schnitzcells, DropboxFolder);
-
+        
     elseif cc == 'h'
         
         if HideApprovedFlag == 0
@@ -905,11 +912,11 @@ while (cc ~= 'x')
     elseif cc == '@' %Decrease spot channel contrast
         DisplayRangeSpot = [min(ImageMat(:)), max(ImageMat(:)) * 1.5];
         
-         disp('decreased spot contrast');
-         
+        disp('decreased spot contrast');
+        
     elseif cc == '$' %add particle to nucleus
-            cptState.Particles = addNucleusToParticle(cptState.Particles, cptState.CurrentFrame, ...
-                cptState.CurrentChannel, cptState.UseHistoneOverlay, schnitzcells, cptState.CurrentParticle);
+        cptState.Particles = addNucleusToParticle(cptState.Particles, cptState.CurrentFrame, ...
+            cptState.CurrentChannel, cptState.UseHistoneOverlay, schnitzcells, cptState.CurrentParticle);
     elseif cc == '0' %Debugging mode
         keyboard;
         
@@ -955,22 +962,22 @@ end
 disp('Particles saved.')
 disp(['(Left off at Particle #', num2str(cptState.CurrentParticle), ')'])
 
-if nucleiModified 
+if nucleiModified
     
-   save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
-
+    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
+    
     %Decide whether we need to re-track
     userPrompt = 'Did you make changes to nuclei and thus require re-tracking? (y/n)';
     reTrackAnswer = inputdlg(userPrompt);
     if contains(reTrackAnswer,'n')
         disp('Ellipses saved. Per user input, not re-tracking. Exiting.')
     else
-      opts = {};
-       if fish
-           opts = [opts, 'markandfind'];
-       end
-       disp('Ellipses saved. Running TrackNuclei to incorporate changes.')
-       TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1, opts{:}); 
+        opts = {};
+        if fish
+            opts = [opts, 'markandfind'];
+        end
+        disp('Ellipses saved. Running TrackNuclei to incorporate changes.')
+        TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1, opts{:});
     end
 end
 

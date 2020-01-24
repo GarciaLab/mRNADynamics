@@ -9,7 +9,7 @@ disp('Particles.mat loaded')
 schnitzcells = [];
 schnitzPath = [DataFolder filesep, FilePrefix(1:end - 1), '_lin.mat'];
 if  exist(schnitzPath, 'file')
-    disp('Loading schntizcells...')
+    disp('Loading schnitzcells...')
     load(schnitzPath, 'schnitzcells');
     %Remove the schnitz fields that can give us problems potentially if
     %present. I don't know how this came to be, but it's for fields that
