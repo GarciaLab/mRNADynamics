@@ -353,7 +353,7 @@ zoomAnywhereKeyInput = ZoomAnywhereEventHandler(cptState);
 histoneContrastKeyInput = HistoneContrastChangeEventHandler(cptState);
 
 [~, addSpotKeyInput] =...
-    AddSpotEventHandler(cptState, PreProcPath, ProcPath, FilePrefix, Prefix, robot, fake_event);
+    AddSpotEventHandler(cptState, smart_add_spot, PreProcPath, ProcPath, Prefix, robot, fake_event);
 
 [~, deleteSpotKeyInput] = DeleteSpotEventHandler(cptState, robot, fake_event);
 

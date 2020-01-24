@@ -1,9 +1,9 @@
 function [textInputHandler, keyInputHandler] =...
-    AddSpotEventHandler(cptState, smart_add_spot, PreProcPath, ProcPath, FilePrefix, Prefix, robot, fake_event)
+    AddSpotEventHandler(cptState, smart_add_spot, PreProcPath, ProcPath, Prefix, robot, fake_event)
  %Add particle and all of its shadows to cptState.Spots.
  
-    function doAddSpot(PreProcPath, ProcPath, FilePrefix, Prefix, cc)
-        PathPart1 = [PreProcPath, filesep, FilePrefix(1:end - 1), filesep, FilePrefix];
+    function doAddSpot(PreProcPath, ProcPath,Prefix, cc)
+        PathPart1 = [PreProcPath, filesep, Prefix, filesep, Prefix, '_'];
         PathPart2 = [cptState.nameSuffix, '.tif'];
         Path3 = [PreProcPath, filesep, Prefix, filesep, Prefix];
         
@@ -30,7 +30,7 @@ function [textInputHandler, keyInputHandler] =...
 
         cptState.no_clicking = true;
 
-        doAddSpot(PreProcPath, ProcPath, FilePrefix, Prefix, cc);
+        doAddSpot(PreProcPath, ProcPath, Prefix, cc);
         
         robot.keyPress(fake_event);
         robot.keyRelease(fake_event);
@@ -39,7 +39,7 @@ function [textInputHandler, keyInputHandler] =...
 
     function keyInput(cc)
         if cc == '[' | cc == '{' %#ok<*OR2>
-            doAddSpot(PreProcPath, ProcPath, FilePrefix, Prefix, cc);
+            doAddSpot(PreProcPath, ProcPath, Prefix, cc);
         end
     end
 
