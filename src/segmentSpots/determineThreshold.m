@@ -137,12 +137,20 @@ btn = uicontrol('Style', 'pushbutton', 'String', 'Use threshold',...
     'Position', [750 5 250 20],...
     'Callback', @use_thresh);
 
+%checkbox for displaying unthresholded image
+chk = uicontrol('Style', 'checkbox', 'String', 'Display unthresholded image',...
+    'Position', [825 100 200 20],...
+    'Callback', @update_val);
+
 uiwait(f);
 
     function update_val(source, ~)
         
         zSlider.Value = round(zSlider.Value);
         frameSlider.Value = round(frameSlider.Value);
+        if frameSlider.Value <= 0 
+            frameSlider.Value = 1;
+        end
         bestZ = zSlider.Value;
         bestFrame = frameSlider.Value;
         if isempty(all_dogs{bestFrame, bestZ})
@@ -152,8 +160,15 @@ uiwait(f);
         dog_copy = all_dogs{bestFrame, bestZ};
         thresh = threshSlider.Value;
         iqr_above_median = (thresh - median_val) / iqr_val;
-        dog_copy(dog_copy < thresh) = 0;
-        im.CData = dog_copy;
+        if ~chk.Value
+            dog_copy(dog_copy < thresh) = 0;
+            im.CData = dog_copy;
+        else
+            im.CData = dog_copy;
+            im.CDataMapping = 'scaled';
+            uiAxes.CLim = [median(median(dog_copy)), max(max(dog_copy))];
+            %             im = imagescUpdate(uiAxes,dog_copy,[median(median(dog_copy)), max(max(dog_copy))]);
+        end
         
         threshVal.String = ['threshold = ' num2str(thresh) ' which is ' ...
             num2str(iqr_above_median) ' sds above the median pixel value'];

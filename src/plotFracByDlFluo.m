@@ -18,7 +18,7 @@ for i = 1:length(varargin)
         durationFlag = true;
     elseif strcmpi(varargin{i}, 'maxfluo')
         maxFlag = true;
-    elseif strcmpi(varargin{i}, 'turnOn')
+    elseif strcmpi(varargin{i}, 'turnOn') || strcmpi(varargin{i}, 'timeOn')
         turnOnFlag = true;
     elseif strcmpi(varargin{i}, 'displayTiles')
         displayTiles = true;
@@ -62,6 +62,11 @@ for e = 1:nEmbryos
     time = [FrameInfo.Time]/60; %frame times in minutes 
     ncTimes = time(ncFrames);
     
+    if ~isfield(schnitzcells, 'timeSinceAnaphase')
+        schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, ncFrames);
+    end
+
+    
     for nc = 12:14
         for bin = 1:nBins
             
@@ -72,17 +77,17 @@ for e = 1:nEmbryos
             turnOnTimes = [];
             
             if ~isempty(CompiledParticles{ch})
-                particlesFluo = find([CompiledParticles{ch}.cycle] == nc & [CompiledParticles{ch}.dlfluobin] == bin);
+                particlesOfInterest = find([CompiledParticles{ch}.cycle] == nc & [CompiledParticles{ch}.dlfluobin] == bin);
             end
             schnitzesFluo = find([schnitzcells.cycle] == nc & [schnitzcells.dlfluobin] == bin...
                 & [schnitzcells.Approved]);
             
-            for p = 1:length(particlesFluo)
-                if schnitzcells(CompiledParticles{ch}(particlesFluo(p)).schnitz).Approved
-                    tempParticlesFluo = [tempParticlesFluo, particlesFluo(p)];
+            for p = 1:length(particlesOfInterest)
+                if schnitzcells(CompiledParticles{ch}(particlesOfInterest(p)).schnitz).Approved
+                    tempParticlesFluo = [tempParticlesFluo, particlesOfInterest(p)];
                     
-                    fluoFrames = CompiledParticles{ch}(particlesFluo(p)).Frame;
-                    fluo = CompiledParticles{ch}(particlesFluo(p)).Fluo3DRaw'; %can also use .Fluo for 2d fluo
+                    fluoFrames = CompiledParticles{ch}(particlesOfInterest(p)).Frame;
+                    fluo = CompiledParticles{ch}(particlesOfInterest(p)).Fluo3DRaw'; %can also use .Fluo for 2d fluo
                     
                     durations = [durations, time(max(fluoFrames)) - time(min(fluoFrames))];
                     
@@ -91,12 +96,12 @@ for e = 1:nEmbryos
                     maxFluos = vertcat(maxFluos, fluo(fluo>=prctile(fluo,95)));
                     
                     if length(fluoFrames) > 1
-                        accumulatedFluo = [accumulatedFluo, trapz(fluoFrames, fluo, 1)];
+                        accumulatedFluo = [accumulatedFluo, trapz(fluoFrames, fluo)];
                     else
                         accumulatedFluo = [accumulatedFluo, fluo];
                     end
                     
-                    if displayTiles && nc==12
+%                     if displayTiles && nc==12
 %                         figure(tileFig)
 %                         nexttile;
 %                         %dorsal
@@ -115,26 +120,26 @@ for e = 1:nEmbryos
 %                         %                         yticks([min(schnitzcells(s).FluoTimeTrace), max(schnitzcells(s).FluoTimeTrace)]);
                        
                         
-                        
-                        figure(holdFig)
-                          yyaxis left
-                        plot(schnitzcells(CompiledParticles{ch}(particlesFluo(p)).schnitz).frames, schnitzcells(CompiledParticles{ch}(particlesFluo(p)).schnitz).FluoTimeTrace, '-g');
-                        ylim([0, max(dlfluobins)]);
-                        yyaxis right
-                        plot(fluoFrames, fluo, '.-r'); %spot intensity
-%                         hold on
-                        ylim([0, 1000]);
-                        waitforbuttonpress;
-                    end
+%                         
+%                         figure(holdFig)
+%                           yyaxis left
+%                         plot(schnitzcells(CompiledParticles{ch}(particlesOfInterest(p)).schnitz).frames, schnitzcells(CompiledParticles{ch}(particlesOfInterest(p)).schnitz).FluoTimeTrace, '-g');
+%                         ylim([0, max(dlfluobins)]);
+%                         yyaxis right
+%                         plot(fluoFrames, fluo, '.-r'); %spot intensity
+% %                         hold on
+%                         ylim([0, 1000]);
+%                         waitforbuttonpress;
+%                     end
                     
                 end
             end
             
-            particlesFluo = tempParticlesFluo;
+            particlesOfInterest = tempParticlesFluo;
             
             allmrnasnomean{nc-11,bin} = [allmrnasnomean{nc-11,bin}, accumulatedFluo];
             
-            npartFluoEmbryo{nc-11}(bin, e) = length(particlesFluo);
+            npartFluoEmbryo{nc-11}(bin, e) = length(particlesOfInterest);
             nschnitzFluoEmbryo{nc-11}(bin, e) = length(schnitzesFluo);
             allmrnasEmbryo{nc-11}(bin, e) = nanmean(accumulatedFluo);
             alldurationsEmbryo{nc-11}(bin, e) = nanmean(durations);
@@ -145,6 +150,10 @@ for e = 1:nEmbryos
                 embryosPerBin{nc-11}(bin) = embryosPerBin{nc-11}(bin) + 1;
             end
             
+             if e == 2 & bin == 3 & nc == 12
+                1
+             end
+            
         end
         
         
@@ -154,6 +163,8 @@ for e = 1:nEmbryos
     
 end
 
+nSamples = 100;
+bootSE = @(y) nanstd(bootstrp(nSamples, @(x) nanmean(x, 2), y), 0, 1);
 
 for nc = 1:2
     
@@ -161,7 +172,8 @@ for nc = 1:2
     binFilter{nc}(~binFilter{nc}) = nan;
     
     filteredMean = @(x) nanmean(x,2).*binFilter{nc}';
-    filteredSE = @(x) (nanstd(x,0, 2)./sqrt(embryosPerBin{nc}')).*binFilter{nc}';
+%     filteredSE = @(x) (nanstd(x,0, 2)./sqrt(embryosPerBin{nc}')).*binFilter{nc}';
+    filteredSE = @(x) bootSE(x.*binFilter{nc}'); %bootstrapped version
     
     meanFracFluoEmbryo{nc} = filteredMean(fracFluoEmbryo{nc});
     seFracFluoEmbryo{nc} = filteredSE(fracFluoEmbryo{nc});

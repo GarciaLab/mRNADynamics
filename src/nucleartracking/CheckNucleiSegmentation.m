@@ -126,6 +126,9 @@ set(OriginalImage,'units', 'normalized', 'position',[0.55, .2, .5, .5]);
 originalAxes = axes(OriginalImage,'Units', 'normalized', 'Position', [0 0 1 1]);
 
 tb = axtoolbar(overlayAxes);
+tb.Visible = 'off';
+tb2 = axtoolbar(originalAxes);
+tb2.Visible = 'off';
 
 try
     clrmp = single(hsv(length(schnitzcells)));
@@ -212,6 +215,12 @@ while (cc~='x')
     %     imshow(HisImage,DisplayRange,'Border','Tight''Parent',originalAxes)
     imOriginal.CData = HisImage;
     
+    
+tb = axtoolbar(overlayAxes);
+tb.Visible = 'off';
+tb2 = axtoolbar(originalAxes);
+tb2.Visible = 'off';
+
     ct=waitforbuttonpress;
     cc=get(Overlay,'currentcharacter');
     cm=get(overlayAxes,'CurrentPoint');

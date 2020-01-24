@@ -82,7 +82,6 @@ else
 end
 
 % plotting the lines and traces
-cla(traceFigAxes)
 hold(traceFigAxes, 'on')
 approvedParticleFrames = Particles{CurrentChannel}(CurrentParticle).FrameApproved;
 if isempty(ErrorIntegral)
@@ -111,10 +110,17 @@ end
 idata1 = amp1(approvedParticleFrames);
 idata2 = amp2(approvedParticleFrames);
 
-traceErrorBar1 = errorbar(traceFigAxes,traceFigTimeAxis(approvedParticleFrames),...
-    idata1, error1,'.-','Color','k');
-traceErrorBar2 = errorbar(traceFigAxes,traceFigTimeAxis(approvedParticleFrames),...
-    idata2, error2,'.-','Color','blue');
+
+traceErrorBar1 = traceFigAxes.Children(end);
+traceErrorBar2 = traceFigAxes.Children(end-1);
+set(traceErrorBar1, 'XData', traceFigTimeAxis(approvedParticleFrames),...
+    'YData', idata1,'YNegativeDelta', error1, 'YPositiveDelta', error1, 'HandleVisibility', 'off');
+set(traceErrorBar2, 'XData', traceFigTimeAxis(approvedParticleFrames),...
+    'YData', idata2,'YNegativeDelta', error2, 'YPositiveDelta', error2, 'HandleVisibility', 'off');
+
+cla(traceFigAxes);
+set(traceErrorBar2, 'HandleVisibility', 'on');
+set(traceErrorBar1, 'HandleVisibility', 'on');
 
 dPoint1 = plot(traceFigAxes,traceFigTimeAxis(~approvedParticleFrames),amp1(~approvedParticleFrames),'.r');
 cPoint1 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),amp1(Frames==CurrentFrame),'ob');
@@ -127,7 +133,9 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),amp2(Frames==
     
     % adjusting x limits
     try
+        setPlotsInvisible(traceFigAxes);
         xlim(traceFigAxes,[min(traceFigTimeAxis),max(traceFigTimeAxis)]+[-1,1]);
+        setPlotsVisible(traceFigAxes);
     end
     traceFigYLimits = [0, max(AmpIntegralGauss3D)*1.1];
     
@@ -164,30 +172,25 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),amp2(Frames==
             'LineWidth',2,'Color','yellow');
     end
     
-    % labeling plot
-    ylabel(traceFigAxes,'integrated intensity (a.u.)')
     hold(traceFigAxes, 'off')
     
     % creating legend
-    if plot3DGauss
-        str1 = '3-slice mRNA';
-        str2 = '3D-Gaussian fit mRNA';
-        if ~isnan(traceFigYLimits(2))
+    if plot3DGauss && ~isnan(traceFigYLimits(2))
+            setPlotsInvisible(traceFigAxes);
             ylim(traceFigAxes, [0, traceFigYLimits(2)]);
-        end
-    else
-        str1 = '1-slice mRNA';
-        str2 = 'multi-slice mRNA';
+            setPlotsVisible(traceFigAxes);
     end
+
     
-    if ~lineFitted
-        legend(traceFigAxes,[traceErrorBar1,traceErrorBar2],str1,str2)
-        xlabel(traceFigAxes,'frame')
-    else
+    if lineFitted
         legend(traceFigAxes,[traceErrorBar1,traceErrorBar2,lineFitHandle],str1,str2,...
             ['fit slope: ', num2str(round(Coefficients(1))), ' a.u./min',newline,'time on: ',num2str(roots(Coefficients)), ' min'])
         xlabel(traceFigAxes,'time since anaphase (min)')
     end
+    
+      hold(traceFigAxes,'on')
+      plot(traceFigAxes,traceFigTimeAxis(~approvedParticleFrames),AmpIntegral(~approvedParticleFrames),'.r')
+      hold(traceFigAxes,'off')
     
     if strcmpi(ExperimentType, 'inputoutput')
         yyaxis(traceFigAxes,'right')
@@ -201,15 +204,10 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),amp2(Frames==
                 dummy = cell(length(schnitzcells), 1);
                 [schnitzcells.Fluo] = dummy{:};
         else
-            plot(traceFigAxes,schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames,...
-                max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).Fluo,[],2),'r.-','DisplayName','protein')
-            ylabel(traceFigAxes,'input protein intensity (a.u.)');
+            proteinLine = traceFigAxes.Children(end);
+            set(proteinLine, 'XData', schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames,...
+                'YData', max(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).Fluo,[],2));
         end
-        hold(traceFigAxes,'on')
-        plot(traceFigAxes,traceFigTimeAxis(~approvedParticleFrames),AmpIntegral(~approvedParticleFrames),'.r')
-        hold(traceFigAxes,'off')
-    else
-        traceFigAxes.YAxis(2).Visible = 'off';
     end
     
     % creating axis title
@@ -231,8 +229,10 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),amp2(Frames==
     elseif HideApprovedFlag==2
         axisTitle=[axisTitle,', Showing disapproved particles'];
     end
-    title(traceFigAxes,axisTitle, 'Interpreter', 'none')
-    
+    hold(traceFigAxes, 'off');
+    setPlotsInvisible(traceFigAxes);
+    set(traceFigAxes.Title,'String', axisTitle);
+    setPlotsVisible(traceFigAxes);
 
 end
 

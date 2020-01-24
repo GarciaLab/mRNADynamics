@@ -33,13 +33,14 @@ if ~isempty(xTrace)
         plot(zProfileFigAxes,CurrentZ,CurrentZ,'or')
     end
     hold(zProfileFigAxes,'off')
-    ylabel(zProfileFigAxes,'intensity(au)', 'FontSize',12);
-    xlabel(zProfileFigAxes,'z-slice', 'FontSize',12);
-    title(zProfileFigAxes,{'z-profile:';title_string},'FontSize',10)
+    set(zProfileFigAxes.Title,'String', {'z-profile:';title_string});
+    zProfileFigAxes.Title.FontSize = 10;
+    
+    
 end
 
 %%%%%    BRIGHTEST Z-TRACE PLOT   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ~strcmpi(ExperimentType,'inputoutput') & ~fish
+if ~strcmpi(ExperimentType,'inputoutput') && ~fish
     MaxZProfile = [];
     %Only update the trace information if we have switched particles
     if (CurrentParticle~=PreviousParticle)||~exist('MaxZProfile', 'var')||CurrentChannel ~= PreviousChannel
@@ -62,9 +63,6 @@ if ~strcmpi(ExperimentType,'inputoutput') & ~fish
     catch
         %             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
     end
-    xlabel(zTraceAxes,'frame')
-    ylabel(zTraceAxes,'z-slice')
-    title(zTraceAxes,'brightest Z trace')
 else
     MaxZProfile = [];
 end
