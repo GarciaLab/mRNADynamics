@@ -3,7 +3,10 @@ classdef CPTState < handle
         Spots
         Particles
         SpotFilter
+        schnitzcells
+        FrameInfo
         
+        Frames
         CurrentFrame
         PreviousFrame
         
@@ -11,6 +14,7 @@ classdef CPTState < handle
         ZSlices
         CurrentZ
         
+        CurrentParticleIndex
         CurrentParticle
         PreviousParticle
         lastParticle
@@ -31,18 +35,29 @@ classdef CPTState < handle
         DisplayRange
         UseHistoneOverlay
         ImageHis
+
+        no_clicking
+
+        nameSuffix
+
+	    nWorkers
+        plot3DGauss
     end
     
     methods
-        function this = CPTState(Spots, Particles, SpotFilter, numberZSlices, UseHistoneOverlay)
+        function this = CPTState(Spots, Particles, SpotFilter, schnitzcells, FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss)
             this.Spots = Spots;
             this.Particles = Particles;
             this.SpotFilter = SpotFilter;
+            this.schnitzcells = schnitzcells;
+            this.FrameInfo = FrameInfo;
             
+            this.Frames = [];
             this.CurrentFrame = 0;
             this.PreviousFrame = this.CurrentFrame;
             
             this.ManualZFlag = 0;
+            numberZSlices = this.FrameInfo(1).NumberSlices;
             this.ZSlices = numberZSlices + 2; %Note that the blank slices are included
             this.CurrentZ = round(this.ZSlices / 2);
         
@@ -64,6 +79,13 @@ classdef CPTState < handle
 
             this.DisplayRange = [];
             this.UseHistoneOverlay = UseHistoneOverlay;
+
+            this.no_clicking = false;
+
+            this.nameSuffix = '';
+
+            this.nWorkers = nWorkers;
+            this.plot3DGauss = plot3DGauss;
         end
 
         function numParticles = numParticles(this)
