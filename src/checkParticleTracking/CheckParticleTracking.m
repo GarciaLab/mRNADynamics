@@ -519,7 +519,11 @@ while (cc ~= 'x')
             if isempty(maxCell)
                 maxCell = squeeze(max(movieCell(:,:,:,:, :), [], 2));
             end
-            ch=1; ImageMat = squeeze(maxCell(cptState.CurrentFrame,:,:));
+            if nFrames > 1
+                ImageMat = squeeze(maxCell(cptState.CurrentFrame,:,:));
+            else
+                ImageMat = maxCell;
+            end
         else
             ImageMat = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, FrameInfo, 'max', nWorkers);
         end
