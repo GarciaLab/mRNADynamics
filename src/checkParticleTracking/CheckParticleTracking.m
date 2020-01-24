@@ -106,12 +106,11 @@ function [outs, movieCell, hisCell] = CheckParticleTracking(Prefix, varargin)
 
 %
 % OUTPUT
-% Particles: A modified Particles
-% Spots: A modified Spots
-% SpotFilter: A modified SpotFilter
-% schnitzcells: A modified schnitzcells
-% FrameInfo: A modified FrameInfo
-% all indice "outs" structure
+% outs.Particles: A modified Particles
+% outs.Spots: A modified Spots
+% outs.SpotFilter: A modified SpotFilter
+% outs.schnitzcells: A modified schnitzcells
+% outs.FrameInfo: A modified FrameInfo
 % movieCell: TBD
 % hisCell: TBD
 %
