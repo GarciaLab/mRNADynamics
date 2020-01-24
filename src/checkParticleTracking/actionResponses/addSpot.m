@@ -121,6 +121,7 @@ else
                     Spots{CurrentChannel}(CurrentFrame).Fits = Fits;
                 end
                 %%
+                if plot3DGauss
                     nSpots = 1;
                     Spots{CurrentChannel}(CurrentFrame) =...
                         ...
@@ -128,6 +129,7 @@ else
                         ...
                         Spots{CurrentChannel}(CurrentFrame), coatChannel, SpotsIndex, CurrentFrame,...
                         Prefix, PreProcPath, FrameInfo, nSpots);
+                end
                 %%
                 %Add this to SpotFilter, which tells the code that this spot is
                 %above the threshold. First, check whether the

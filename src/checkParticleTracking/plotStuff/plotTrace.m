@@ -229,6 +229,7 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(Frames==CurrentFrame),amp2(Frames==
     elseif HideApprovedFlag==2
         axisTitle=[axisTitle,', Showing disapproved particles'];
     end
+    hold(traceFigAxes, 'off');
     setPlotsInvisible(traceFigAxes);
     set(traceFigAxes.Title,'String', axisTitle);
     setPlotsVisible(traceFigAxes);
