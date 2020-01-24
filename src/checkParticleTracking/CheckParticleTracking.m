@@ -329,10 +329,6 @@ if multiView
 end
 
 
-% [controls, frame_num, z_num, particle_num, ...
-%     add_spot, smart_add_spot, delete_spot, ...
-%     fit_spot, averagingLength, approve_fit] = setupControls(Overlay);
-
 set(0, 'CurrentFigure', Overlay);
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
@@ -342,14 +338,11 @@ fake_event = KeyEvent.VK_T;
 
 coatChannels = [1, 2]; % JP temporary, will be used only if 2spot2color, could be refactored into cptState
 
-[frameChangeTextInput, frameChangeKeyInput] = FrameChangeEventHandler(cptState, robot, fake_event);
-frame_num.ValueChangedFcn = frameChangeTextInput;
+[~, frameChangeKeyInput] = FrameChangeEventHandler(cptState, robot, fake_event);
 
-[zSliceChangeTextInput, zSliceChangeKeyInput] = ZSliceChangeEventHandler(cptState, robot, fake_event);
-z_num.ValueChangedFcn = zSliceChangeTextInput;
+[~, zSliceChangeKeyInput] = ZSliceChangeEventHandler(cptState, robot, fake_event);
 
-[particleChangeTextInput, particleChangeKeyInput] = ParticleChangeEventHandler(cptState, robot, fake_event);
-particle_num.ValueChangedFcn = particleChangeTextInput;
+[~, particleChangeKeyInput] = ParticleChangeEventHandler(cptState, robot, fake_event);
 
 channelSwitchKeyInput = ChannelSwitchEventHandler(cptState, NChannels, coatChannels, cptState.UseHistoneOverlay);
 
@@ -359,12 +352,10 @@ zoomAnywhereKeyInput = ZoomAnywhereEventHandler(cptState);
 
 histoneContrastKeyInput = HistoneContrastChangeEventHandler(cptState);
 
-[addSpotTextInput, addSpotKeyInput] =...
-    AddSpotEventHandler(cptState, smart_add_spot, PreProcPath, ProcPath, FilePrefix, Prefix, robot, fake_event);
-add_spot.ButtonPushedFcn = addSpotTextInput;
+[~, addSpotKeyInput] =...
+    AddSpotEventHandler(cptState, PreProcPath, ProcPath, FilePrefix, Prefix, robot, fake_event);
 
-[deleteSpotTextInput, deleteSpotKeyInput] = DeleteSpotEventHandler(cptState, robot, fake_event);
-delete_spot.ButtonPushedFcn = deleteSpotTextInput;
+[~, deleteSpotKeyInput] = DeleteSpotEventHandler(cptState, robot, fake_event);
 
 % The part below is added by Yang Joon Kim, for single MS2 trace linear
 % fitting (for the inital slope). Contact yjkim90@berkeley.edu for further
@@ -643,10 +634,6 @@ while (cc ~= 'x')
     [MaxZProfile, cptState.Frames] = plotZFigures(plotzvars{:});
     
     
-    
-    % UPDATE UICONTROLS
-    %don't update since this is currently broken
-    %     updateControls(frame_num, z_num, particle_num, cptState.CurrentFrame, cptState.CurrentZ, cptState.CurrentParticle);
     
     set(0, 'CurrentFigure', Overlay);
     
