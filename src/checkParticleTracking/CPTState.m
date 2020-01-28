@@ -91,6 +91,10 @@ classdef CPTState < handle
         function numParticles = numParticles(this)
             numParticles = length(this.Particles{this.CurrentChannel});
         end
+
+        function numValidFrames = numValidFrames(this)
+            numValidFrames = length({this.Spots{1}.Fits});
+        end
     end
 end
 

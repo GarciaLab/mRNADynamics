@@ -642,8 +642,6 @@ while (cc ~= 'x')
         SkipWaitForButtonPress = [];
     end
     
-    numValidFrames = length({cptState.Spots{1}.Fits});
-    
     frameChangeKeyInput(cc);
     zSliceChangeKeyInput(cc);
     particleChangeKeyInput(cc);
@@ -656,17 +654,6 @@ while (cc ~= 'x')
     
     if strcmpi(cc, 'donothing')
         %do nothing
-        
-    elseif (cc == '''') & (cptState.CurrentFrame < numValidFrames)%Move to the next skipped frame
-        %within the particle
-        cptState.PreviousFrame = cptState.CurrentFrame;
-        cptState.CurrentFrame = nextSkippedFrame(cptState.Particles, cptState.CurrentChannel, ...
-            cptState.CurrentParticle, cptState.CurrentFrame);
-    elseif (cc == ';') & (cptState.CurrentFrame > 1)%Move to the previous skipped frame
-        %within the particle
-        cptState.PreviousFrame = cptState.CurrentFrame;
-        cptState.CurrentFrame = previousSkippedFrame(cptState.Particles, cptState.CurrentChannel, ...
-            cptState.CurrentParticle, cptState.CurrentFrame);
         
     elseif cc == 'r'
         cptState.Particles = orderParticles(cptState.numParticles(), cptState.CurrentChannel, cptState.Particles);
