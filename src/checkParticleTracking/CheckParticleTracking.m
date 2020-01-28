@@ -654,9 +654,7 @@ while (cc ~= 'x')
     
     if strcmpi(cc, 'donothing')
         %do nothing
-        
-    elseif cc == 'r'
-        cptState.Particles = orderParticles(cptState.numParticles(), cptState.CurrentChannel, cptState.Particles);
+
     elseif cc == 'f'
         [cptState.Particles, cptState.schnitzcells] = redoTracking(DataFolder, ...
             cptState.UseHistoneOverlay, cptState.FrameInfo, DropboxFolder, FilePrefix, cptState.schnitzcells, ...
@@ -677,19 +675,19 @@ while (cc ~= 'x')
             
             %(x, y, a, b, theta, maxcontourvalue, time,
             %particle_id)
-            if ~isempty(Ellipses{CurrentFrame})
-                MeanRadius=mean((Ellipses{CurrentFrame}(:,3)+Ellipses{CurrentFrame}(:,4))/2);
-            elseif ~isempty(Ellipses{CurrentFrame+1})
-                MeanRadius=mean((Ellipses{CurrentFrame+1}(:,3)+Ellipses{CurrentFrame+1}(:,4))/2);
-            elseif ~isempty(Ellipses{CurrentFrame-1})
-                MeanRadius=mean((Ellipses{CurrentFrame-1}(:,3)+Ellipses{CurrentFrame-1}(:,4))/2);
+            if ~isempty(Ellipses{cptState.CurrentFrame})
+                MeanRadius=mean((Ellipses{cptState.CurrentFrame}(:,3)+Ellipses{cptState.CurrentFrame}(:,4))/2);
+            elseif ~isempty(Ellipses{cptState.CurrentFrame+1})
+                MeanRadius=mean((Ellipses{cptState.CurrentFrame+1}(:,3)+Ellipses{cptState.CurrentFrame+1}(:,4))/2);
+            elseif ~isempty(Ellipses{cptState.CurrentFrame-1})
+                MeanRadius=mean((Ellipses{cptState.CurrentFrame-1}(:,3)+Ellipses{cptState.CurrentFrame-1}(:,4))/2);
             end
             
             try
-                Ellipses{CurrentFrame}(end+1,:)=...
+                Ellipses{cptState.CurrentFrame}(end+1,:)=...
                     [cm(1,1),cm(1,2),MeanRadius,MeanRadius,0,0,0,0,0];
             catch
-                Ellipses{CurrentFrame}(end+1,:)=...
+                Ellipses{cptState.CurrentFrame}(end+1,:)=...
                     [cm(1,1),cm(1,2),MeanRadius,MeanRadius,0,0,0,0];
             end
         end
@@ -707,12 +705,12 @@ while (cc ~= 'x')
             %Find out which ellipses we clicked on so we can delete it
             
             %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
-            Distances=sqrt((Ellipses{CurrentFrame}(:,1)-cm(1,1)).^2+...
-                (Ellipses{CurrentFrame}(:,2)-cm(1,2)).^2);
+            Distances=sqrt((Ellipses{cptState.CurrentFrame}(:,1)-cm(1,1)).^2+...
+                (Ellipses{cptState.CurrentFrame}(:,2)-cm(1,2)).^2);
             [~,MinIndex]=min(Distances);
             
-            Ellipses{CurrentFrame}=[Ellipses{CurrentFrame}(1:MinIndex-1,:);...
-                Ellipses{CurrentFrame}(MinIndex+1:end,:)];
+            Ellipses{cptState.CurrentFrame}=[Ellipses{cptState.CurrentFrame}(1:MinIndex-1,:);...
+                Ellipses{cptState.CurrentFrame}(MinIndex+1:end,:)];
         end
         
         nucleiModified = true;

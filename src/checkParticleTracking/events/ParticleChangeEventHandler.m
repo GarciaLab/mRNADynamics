@@ -15,6 +15,9 @@ function keyInputHandler = ParticleChangeEventHandler(cptState)
                 changeParticle(ParticleJump, cptState.Particles, cptState.numParticles, cptState.CurrentChannel);
 
             cptState.DisplayRange = [];
+        
+        elseif cc == 'r'
+            cptState.Particles = orderParticles(cptState.numParticles(), cptState.CurrentChannel, cptState.Particles);
         end
     end
 
