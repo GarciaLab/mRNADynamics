@@ -330,32 +330,18 @@ end
 
 
 set(0, 'CurrentFigure', Overlay);
-import java.awt.Robot;
-import java.awt.event.KeyEvent;
-robot = Robot;
-fake_event = KeyEvent.VK_T;
-
 
 coatChannels = [1, 2]; % JP temporary, will be used only if 2spot2color, could be refactored into cptState
 
-[~, frameChangeKeyInput] = FrameChangeEventHandler(cptState, robot, fake_event);
-
-[~, zSliceChangeKeyInput] = ZSliceChangeEventHandler(cptState, robot, fake_event);
-
-[~, particleChangeKeyInput] = ParticleChangeEventHandler(cptState, robot, fake_event);
-
+frameChangeKeyInput = FrameChangeEventHandler(cptState);
+zSliceChangeKeyInput = ZSliceChangeEventHandler(cptState);
+particleChangeKeyInput = ParticleChangeEventHandler(cptState);
 channelSwitchKeyInput = ChannelSwitchEventHandler(cptState, NChannels, coatChannels, cptState.UseHistoneOverlay);
-
 zoomParticleToggleKeyInput = ZoomParticleToggleEventHandler(cptState);
-
 zoomAnywhereKeyInput = ZoomAnywhereEventHandler(cptState);
-
 histoneContrastKeyInput = HistoneContrastChangeEventHandler(cptState);
-
-[~, addSpotKeyInput] =...
-    AddSpotEventHandler(cptState, PreProcPath, ProcPath, Prefix, robot, fake_event);
-
-[~, deleteSpotKeyInput] = DeleteSpotEventHandler(cptState, robot, fake_event);
+addSpotKeyInput = AddSpotEventHandler(cptState, PreProcPath, ProcPath, Prefix);
+deleteSpotKeyInput = DeleteSpotEventHandler(cptState);
 
 % The part below is added by Yang Joon Kim, for single MS2 trace linear
 % fitting (for the inital slope). Contact yjkim90@berkeley.edu for further
