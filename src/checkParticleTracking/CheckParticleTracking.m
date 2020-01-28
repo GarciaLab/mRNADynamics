@@ -343,35 +343,7 @@ histoneContrastKeyInput = HistoneContrastChangeEventHandler(cptState);
 addSpotKeyInput = AddSpotEventHandler(cptState, PreProcPath, ProcPath, Prefix);
 deleteSpotKeyInput = DeleteSpotEventHandler(cptState);
 
-% The part below is added by Yang Joon Kim, for single MS2 trace linear
-% fitting (for the inital slope). Contact yjkim90@berkeley.edu for further
-% discussion or improvement.
-% Define the averaging window
 AveragingLength = 1; % Default
-averagingLength.ValueChangedFcn = @averagingLength_changed;
-
-    function averagingLength_changed(~, ~)
-        AveragingLength = str2double(averagingLength.Value);
-    end
-
-% Fit the initial slope, by clicking two points, you can define the window
-% for fitting.
-fit_spot.ButtonPushedFcn = @fit_spot_pushed;
-
-    function fit_spot_pushed(~, ~)
-        %lineFit = 0;
-        %clear lineFitHandle;
-        figure(Overlay);
-        
-        [lineFitted, cptState.Coefficients, FramesToFit, cptState.FrameIndicesToFit] = ...
-            fitInitialSlope(cptState.CurrentParticle, cptState.Particles, cptState.Spots, cptState.CurrentChannel, cptState.schnitzcells, ...
-            ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, cptState.Frames, anaphase, ...
-            AveragingLength, FramesToFit, cptState.FrameIndicesToFit, lineFitted);
-    end
-
-fitApproveInput = FitApproveEventHandler(cptState);
-approve_fit.ButtonPushedFcn = fitApproveInput;
-
 
 % Create the approved field if it does not exist
 for NCh = 1:NChannels
