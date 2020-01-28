@@ -654,9 +654,7 @@ while (cc ~= 'x')
     
     if strcmpi(cc, 'donothing')
         %do nothing
-        
-    elseif cc == 'r'
-        cptState.Particles = orderParticles(cptState.numParticles(), cptState.CurrentChannel, cptState.Particles);
+
     elseif cc == 'f'
         [cptState.Particles, cptState.schnitzcells] = redoTracking(DataFolder, ...
             cptState.UseHistoneOverlay, cptState.FrameInfo, DropboxFolder, FilePrefix, cptState.schnitzcells, ...
