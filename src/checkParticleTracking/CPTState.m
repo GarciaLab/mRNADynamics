@@ -5,6 +5,9 @@ classdef CPTState < handle
         SpotFilter
         schnitzcells
         FrameInfo
+
+        Ellipses
+        nucleiModified
         
         Frames
         CurrentFrame
@@ -45,13 +48,16 @@ classdef CPTState < handle
     end
     
     methods
-        function this = CPTState(Spots, Particles, SpotFilter, schnitzcells, FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss)
+        function this = CPTState(Spots, Particles, SpotFilter, schnitzcells, Ellipses, FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss)
             this.Spots = Spots;
             this.Particles = Particles;
             this.SpotFilter = SpotFilter;
             this.schnitzcells = schnitzcells;
             this.FrameInfo = FrameInfo;
             
+            this.Ellipses = Ellipses;
+            this.nucleiModified = false;
+
             this.Frames = [];
             this.CurrentFrame = 0;
             this.PreviousFrame = this.CurrentFrame;
@@ -90,6 +96,10 @@ classdef CPTState < handle
 
         function numParticles = numParticles(this)
             numParticles = length(this.Particles{this.CurrentChannel});
+        end
+
+        function numValidFrames = numValidFrames(this)
+            numValidFrames = length({this.Spots{1}.Fits});
         end
     end
 end

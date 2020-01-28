@@ -1,16 +1,5 @@
-function [textInputHandler, keyInputHandler] = ParticleChangeEventHandler(cptState, robot, fake_event)
+function keyInputHandler = ParticleChangeEventHandler(cptState)
     
-    function textInput(particle_num, event)
-        figure(ancestor(particle_num, 'figure'));
-        
-        [cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag] = changeParticle(...
-            str2double(particle_num.Value), cptState.Particles, cptState.numParticles, cptState.CurrentChannel);
-
-        robot.keyPress(fake_event);
-        robot.keyRelease(fake_event);
-        disp('Particle Changed.');
-    end
-
     function keyInput(cc)
         if cc == 'k'
         
@@ -26,9 +15,11 @@ function [textInputHandler, keyInputHandler] = ParticleChangeEventHandler(cptSta
                 changeParticle(ParticleJump, cptState.Particles, cptState.numParticles, cptState.CurrentChannel);
 
             cptState.DisplayRange = [];
+        
+        elseif cc == 'r'
+            cptState.Particles = orderParticles(cptState.numParticles(), cptState.CurrentChannel, cptState.Particles);
         end
     end
 
-    textInputHandler = @textInput;
     keyInputHandler = @keyInput;
 end

@@ -129,7 +129,6 @@ Ellipses = [];
 correspondingNCInfo = [];
 IntegrationArea = []; %Initialized here to avoid dynamic assignment later in function
 fish = false;
-nucleiModified = false;
 
 % Parameters for fitting
 lineFitted = 0; % equals 1 if a line has been fitted
@@ -280,7 +279,7 @@ HideApprovedFlag = 0;
 ParticleToFollow = [];
 CurrentFrameWithinParticle = 1;
 
-cptState = CPTState(Spots, Particles, SpotFilter, schnitzcells, FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss); %work in progress, 2019-12, JP.
+cptState = CPTState(Spots, Particles, SpotFilter, schnitzcells, Ellipses, FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss); %work in progress, 2019-12, JP.
 
 if ~isempty(cptState.Particles{cptState.CurrentChannel})
     cptState.CurrentFrame = cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Frame(CurrentFrameWithinParticle);
@@ -330,62 +329,21 @@ end
 
 
 set(0, 'CurrentFigure', Overlay);
-import java.awt.Robot;
-import java.awt.event.KeyEvent;
-robot = Robot;
-fake_event = KeyEvent.VK_T;
-
 
 coatChannels = [1, 2]; % JP temporary, will be used only if 2spot2color, could be refactored into cptState
 
-[~, frameChangeKeyInput] = FrameChangeEventHandler(cptState, robot, fake_event);
-
-[~, zSliceChangeKeyInput] = ZSliceChangeEventHandler(cptState, robot, fake_event);
-
-[~, particleChangeKeyInput] = ParticleChangeEventHandler(cptState, robot, fake_event);
-
+frameChangeKeyInput = FrameChangeEventHandler(cptState);
+zSliceChangeKeyInput = ZSliceChangeEventHandler(cptState);
+particleChangeKeyInput = ParticleChangeEventHandler(cptState);
 channelSwitchKeyInput = ChannelSwitchEventHandler(cptState, NChannels, coatChannels, cptState.UseHistoneOverlay);
-
 zoomParticleToggleKeyInput = ZoomParticleToggleEventHandler(cptState);
-
 zoomAnywhereKeyInput = ZoomAnywhereEventHandler(cptState);
-
 histoneContrastKeyInput = HistoneContrastChangeEventHandler(cptState);
+addSpotKeyInput = AddSpotEventHandler(cptState, PreProcPath, ProcPath, Prefix);
+deleteSpotKeyInput = DeleteSpotEventHandler(cptState);
+ellipsesKeyInput = EllipsesEventHandler(cptState);
 
-[~, addSpotKeyInput] =...
-    AddSpotEventHandler(cptState, PreProcPath, ProcPath, Prefix, robot, fake_event);
-
-[~, deleteSpotKeyInput] = DeleteSpotEventHandler(cptState, robot, fake_event);
-
-% The part below is added by Yang Joon Kim, for single MS2 trace linear
-% fitting (for the inital slope). Contact yjkim90@berkeley.edu for further
-% discussion or improvement.
-% Define the averaging window
 AveragingLength = 1; % Default
-averagingLength.ValueChangedFcn = @averagingLength_changed;
-
-    function averagingLength_changed(~, ~)
-        AveragingLength = str2double(averagingLength.Value);
-    end
-
-% Fit the initial slope, by clicking two points, you can define the window
-% for fitting.
-fit_spot.ButtonPushedFcn = @fit_spot_pushed;
-
-    function fit_spot_pushed(~, ~)
-        %lineFit = 0;
-        %clear lineFitHandle;
-        figure(Overlay);
-        
-        [lineFitted, cptState.Coefficients, FramesToFit, cptState.FrameIndicesToFit] = ...
-            fitInitialSlope(cptState.CurrentParticle, cptState.Particles, cptState.Spots, cptState.CurrentChannel, cptState.schnitzcells, ...
-            ElapsedTime, anaphaseInMins, correspondingNCInfo, traceFigAxes, cptState.Frames, anaphase, ...
-            AveragingLength, FramesToFit, cptState.FrameIndicesToFit, lineFitted);
-    end
-
-fitApproveInput = FitApproveEventHandler(cptState);
-approve_fit.ButtonPushedFcn = fitApproveInput;
-
 
 % Create the approved field if it does not exist
 for NCh = 1:NChannels
@@ -556,7 +514,7 @@ while (cc ~= 'x')
         [cptState.ImageHis, cptState.xForZoom, cptState.yForZoom, oim,ellipseHandles]= displayOverlays(overlayAxes, ImageMat, SpeedMode, cptState.FrameInfo, cptState.Particles, ...
             cptState.Spots, cptState.CurrentFrame, ShowThreshold2, ...
             Overlay, cptState.CurrentChannel, cptState.CurrentParticle, cptState.ZSlices, cptState.CurrentZ, nFrames, ...
-            cptState.schnitzcells, UseSchnitz, cptState.DisplayRange, Ellipses, cptState.SpotFilter, cptState.ZoomMode, cptState.GlobalZoomMode, ...
+            cptState.schnitzcells, UseSchnitz, cptState.DisplayRange, cptState.Ellipses, cptState.SpotFilter, cptState.ZoomMode, cptState.GlobalZoomMode, ...
             ZoomRange, cptState.xForZoom, cptState.yForZoom, fish, cptState.UseHistoneOverlay, subAx, HisOverlayFigAxes,...
             oim, ellipseHandles, ImageHisMat);
         
@@ -564,7 +522,7 @@ while (cc ~= 'x')
         displayOverlays(overlayAxes, ImageMat, SpeedMode, ...
             cptState.FrameInfo, cptState.Particles, cptState.Spots, cptState.CurrentFrame, ShowThreshold2, ...
             Overlay, cptState.CurrentChannel, cptState.CurrentParticle, cptState.ZSlices, cptState.CurrentZ, nFrames, ...
-            cptState.schnitzcells, UseSchnitz, cptState.DisplayRange, Ellipses, cptState.SpotFilter, ...
+            cptState.schnitzcells, UseSchnitz, cptState.DisplayRange, cptState.Ellipses, cptState.SpotFilter, ...
             cptState.ZoomMode, cptState.GlobalZoomMode, ZoomRange, cptState.xForZoom, cptState.yForZoom, fish, cptState.UseHistoneOverlay, subAx);
     end
     
@@ -655,8 +613,6 @@ while (cc ~= 'x')
         SkipWaitForButtonPress = [];
     end
     
-    numValidFrames = length({cptState.Spots{1}.Fits});
-    
     frameChangeKeyInput(cc);
     zSliceChangeKeyInput(cc);
     particleChangeKeyInput(cc);
@@ -666,83 +622,18 @@ while (cc ~= 'x')
     histoneContrastKeyInput(cc);
     addSpotKeyInput(cc);
     deleteSpotKeyInput(cc);
+    ellipsesKeyInput(cc);
     
     if strcmpi(cc, 'donothing')
         %do nothing
-        
-    elseif (cc == '''') & (cptState.CurrentFrame < numValidFrames)%Move to the next skipped frame
-        %within the particle
-        cptState.PreviousFrame = cptState.CurrentFrame;
-        cptState.CurrentFrame = nextSkippedFrame(cptState.Particles, cptState.CurrentChannel, ...
-            cptState.CurrentParticle, cptState.CurrentFrame);
-    elseif (cc == ';') & (cptState.CurrentFrame > 1)%Move to the previous skipped frame
-        %within the particle
-        cptState.PreviousFrame = cptState.CurrentFrame;
-        cptState.CurrentFrame = previousSkippedFrame(cptState.Particles, cptState.CurrentChannel, ...
-            cptState.CurrentParticle, cptState.CurrentFrame);
-        
-    elseif cc == 'r'
-        cptState.Particles = orderParticles(cptState.numParticles(), cptState.CurrentChannel, cptState.Particles);
+
     elseif cc == 'f'
         [cptState.Particles, cptState.schnitzcells] = redoTracking(DataFolder, ...
             cptState.UseHistoneOverlay, cptState.FrameInfo, DropboxFolder, FilePrefix, cptState.schnitzcells, ...
             cptState.Particles, NChannels, cptState.CurrentChannel, cptState.numParticles());
     elseif cc == 'c'
         [cptState.PreviousParticle, cptState.Particles] = combineTraces(cptState.Spots, ...
-            cptState.CurrentChannel, cptState.CurrentFrame, cptState.Particles, cptState.CurrentParticle);
-    elseif cc == 'C'  %add ellipse
-        
-        [ConnectPositionx,ConnectPositiony] = ginput(1);
-        
-        cm = [round(ConnectPositionx), round(ConnectPositiony)];
-        [Rows, Cols] = size(cptState.ImageHis);
-        if (cm(1,2)>0)&(cm(1,1)>0)&(cm(1,2)<=Rows)&(cm(1,1)<=Cols)
-            
-            %Add a circle to this location with the mean radius of the
-            %ellipses found in this frame
-            
-            %(x, y, a, b, theta, maxcontourvalue, time,
-            %particle_id)
-            if ~isempty(Ellipses{CurrentFrame})
-                MeanRadius=mean((Ellipses{CurrentFrame}(:,3)+Ellipses{CurrentFrame}(:,4))/2);
-            elseif ~isempty(Ellipses{CurrentFrame+1})
-                MeanRadius=mean((Ellipses{CurrentFrame+1}(:,3)+Ellipses{CurrentFrame+1}(:,4))/2);
-            elseif ~isempty(Ellipses{CurrentFrame-1})
-                MeanRadius=mean((Ellipses{CurrentFrame-1}(:,3)+Ellipses{CurrentFrame-1}(:,4))/2);
-            end
-            
-            try
-                Ellipses{CurrentFrame}(end+1,:)=...
-                    [cm(1,1),cm(1,2),MeanRadius,MeanRadius,0,0,0,0,0];
-            catch
-                Ellipses{CurrentFrame}(end+1,:)=...
-                    [cm(1,1),cm(1,2),MeanRadius,MeanRadius,0,0,0,0];
-            end
-        end
-        
-        nucleiModified = true;
-        
-    elseif cc == 'V'
-        %remove ellipse
-        [ConnectPositionx,ConnectPositiony] = ginput(1);
-        
-        cm = [round(ConnectPositionx), round(ConnectPositiony)];
-        [Rows, Cols] = size(cptState.ImageHis);
-        
-        if (cm(1,2)>0)&(cm(1,1)>0)&(cm(1,2)<=Rows)&(cm(1,1)<=Cols)
-            %Find out which ellipses we clicked on so we can delete it
-            
-            %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
-            Distances=sqrt((Ellipses{CurrentFrame}(:,1)-cm(1,1)).^2+...
-                (Ellipses{CurrentFrame}(:,2)-cm(1,2)).^2);
-            [~,MinIndex]=min(Distances);
-            
-            Ellipses{CurrentFrame}=[Ellipses{CurrentFrame}(1:MinIndex-1,:);...
-                Ellipses{CurrentFrame}(MinIndex+1:end,:)];
-        end
-        
-        nucleiModified = true;
-        
+        cptState.CurrentChannel, cptState.CurrentFrame, cptState.Particles, cptState.CurrentParticle);
     elseif cc == 'p' % Identify a particle. It will also tell you the particle associated with
         %  the clicked nucleus.
         identifyParticle(cptState.Spots, cptState.Particles, cptState.CurrentFrame, ...
@@ -887,8 +778,8 @@ end
 disp('Particles saved.')
 disp(['(Left off at Particle #', num2str(cptState.CurrentParticle), ')'])
 
-if nucleiModified
-    
+if cptState.nucleiModified
+    Ellipses = cptState.Ellipses; % assign it to a local variable so we can save it to its .mat below
     save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
     
     %Decide whether we need to re-track
