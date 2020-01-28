@@ -1,14 +1,5 @@
-function [textInputHandler, keyInputHandler] = FrameChangeEventHandler(cptState, robot, fake_event)
+function keyInputHandler = FrameChangeEventHandler(cptState)
  
-    function textInput(frame_num, event)
-        numValidFrames = length({cptState.Spots{1}.Fits}); %check handle of spots is updated when is needed down the road
-        figure(ancestor(frame_num, 'figure'));
-        [cptState.CurrentFrame, cptState.ManualZFlag] = changeFrame(str2double(frame_num.Value), numValidFrames);
-        robot.keyPress(fake_event);
-        robot.keyRelease(fake_event);
-        disp('Frame Changed.');
-    end
-
     function keyInput(cc)
         numValidFrames = length({cptState.Spots{1}.Fits}); %check handle of spots is updated when is needed down the road
 
@@ -44,6 +35,5 @@ function [textInputHandler, keyInputHandler] = FrameChangeEventHandler(cptState,
         end
     end
 
-    textInputHandler = @textInput;
     keyInputHandler = @keyInput;
 end
