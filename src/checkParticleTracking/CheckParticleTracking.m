@@ -464,8 +464,7 @@ while (cc ~= 'x')
             for i = 1:-1:-1
                 for j = -1:1
                     if any( 1:nSlices == cptState.CurrentZ + i) && any( 1:nFrames == cptState.CurrentFrame + j)
-                        multiImage{i+2, j+2} = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
-                            FilePrefix, iIndex(cptState.CurrentFrame+j, NDigits), '_z', iIndex(cptState.CurrentZ+i, 2), cptState.nameSuffix, '.tif']);
+                        ch=1; multiImage{i+2, j+2} = squeeze(movieCell(1,cptState.CurrentZ+i, cptState.CurrentFrame+j,:,:));
                     else
                         multiImage{i+2, j+2} = zeros(cptState.FrameInfo(1).LinesPerFrame, cptState.FrameInfo(1).PixelsPerLine);
                     end
@@ -505,9 +504,9 @@ while (cc ~= 'x')
         
     end
     
-    
     if multiView && ~exist('subAx', 'var')
         tiles = tiledlayout(multiFig, 3, 3, 'TileSpacing', 'none', 'Padding', 'none');
+        subAx = cell(3);
         n = 0;
         for i = 1:3
             for j = 1:3

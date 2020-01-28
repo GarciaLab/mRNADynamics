@@ -10,6 +10,7 @@ for i = 1:length(varargin)
         saveFigures = true;
     end
 end
+
 [allData, Prefixes, resultsFolder] = LoadMS2Sets(DataType, 'noCompiledNuclei');
 
 load([resultsFolder,filesep,Prefixes{1},filesep,'FrameInfo.mat'], 'FrameInfo')
@@ -163,53 +164,8 @@ for e = 1:length(allData)
     
 end
 
-mkdir([resultsFolder,filesep,DataType]);
-% nbins = floor(length(DVbinID) / 2
-% nbins = 10;
-% dlfluobinwidth = (max(fluoFeatures) - min(fluoFeatures)) / (nbins-1);
-% dlfluobins = min(fluoFeatures):dlfluobinwidth:max(fluoFeatures);
-% dlfluobins = 0:250:4000; %this is appropriate for taking instantaneous dorsal at ~50% through nc12 on the sp8
-% dlfluobins = [0:10:249, 250:250:4000];
-dlfluobins = logspace(0, 3.6, 41);
-save([resultsFolder,filesep,DataType,filesep,'dlfluobins.mat'], 'dlfluobins');
-
-
 %%
 
-[allData, Prefixes, resultsFolder] = LoadMS2Sets(DataType);
-load([resultsFolder,filesep,DataType,filesep,'dlfluobins.mat'], 'dlfluobins');
-
-dlfluobincounts = zeros(1, length(dlfluobins));
-
-for e = 1:length(allData)
-    
-    schnitzcells = allData(e).Particles.schnitzcells;
-    CompiledParticles = allData(e).Particles.CompiledParticles;
-    
-    for s = 1:length(schnitzcells)
-        dif = schnitzcells(s).FluoFeature - dlfluobins;
-        [~,dlfluobin] = min(dif(dif>0));
-        if ~isempty(dlfluobin)
-            schnitzcells(s).dlfluobin = single(dlfluobin);
-            dlfluobincounts(dlfluobin) = dlfluobincounts(dlfluobin) + 1;
-        else
-            schnitzcells(s).dlfluobin = NaN;
-        end
-    end
-    
-    
-    save([resultsFolder,filesep,Prefixes{e},filesep,Prefixes{e},'_lin.mat'], 'schnitzcells')
-    
-    for p = 1:length(CompiledParticles{ch})
-        schnitzInd = CompiledParticles{ch}(p).schnitz;
-        CompiledParticles{ch}(p).dlfluobin = single(schnitzcells(schnitzInd).dlfluobin);
-    end
-    
-    save([resultsFolder,filesep,Prefixes{e},filesep,'CompiledParticles.mat'], 'CompiledParticles', '-append');
-    
-end
-
-save([resultsFolder,filesep,DataType,filesep,'dlfluobincounts.mat'], 'dlfluobincounts');
-
+binDorsal(DataType, false);
 
 end

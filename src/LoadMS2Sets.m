@@ -82,6 +82,12 @@ end
 DropboxFolder=DropboxFolders{DataStatusToCheck};
 resultsFolder = DropboxFolder;
 
+projectFolder = [resultsFolder, filesep, DataType];
+if ~exist(projectFolder,'dir')
+    mkdir(projectFolder);
+end
+
+
 %Now, load the DataStatus.XLSX
 D=dir([DropboxFolder,filesep,'DataStatus.*']);
 [~,StatusTxt]=xlsread([DropboxFolder,filesep,D(1).name],DataType);
@@ -118,10 +124,13 @@ ExperimentAxis=[];
 APResolution=[];
 
 PrefixRow=strcmp(StatusTxt(:,1),'Prefix:');
+prefixes = cell(1, length(CompiledSets));
+
 for i=1:length(CompiledSets)
     SetName=StatusTxt{PrefixRow,CompiledSets(i)};
     Quotes=strfind(SetName,'''');
     Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
+    prefixes{i} = Prefix;
     
     [~, ExperimentTypeFromDatabase, ExperimentAxisFromDatabase, ~, ~, APResolutionFromDatabase, ~,...
         ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
@@ -167,7 +176,6 @@ for i=1:length(CompiledSets)
     SetNames{i}=SetName;
     Quotes=strfind(SetName,'''');
     Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
-    Prefixes = [Prefixes, Prefix];
     
     if ~justPrefixes
         
@@ -472,5 +480,8 @@ if noCompiledNuclei
 end
 
 end
+
+save([projectFolder, filesep, 'prefixes.mat'], 'prefixes');
+
 
 end
