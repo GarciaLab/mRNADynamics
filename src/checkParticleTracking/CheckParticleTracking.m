@@ -634,7 +634,7 @@ while (cc ~= 'x')
             cptState.Particles, NChannels, cptState.CurrentChannel, cptState.numParticles());
     elseif cc == 'c'
         [cptState.PreviousParticle, cptState.Particles] = combineTraces(cptState.Spots, ...
-        
+        cptState.CurrentChannel, cptState.CurrentFrame, cptState.Particles, cptState.CurrentParticle);
     elseif cc == 'p' % Identify a particle. It will also tell you the particle associated with
         %  the clicked nucleus.
         identifyParticle(cptState.Spots, cptState.Particles, cptState.CurrentFrame, ...
