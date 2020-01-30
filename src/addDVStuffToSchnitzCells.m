@@ -75,7 +75,7 @@ for e = 1:length(allData)
         schnitzcells(s).cycle = uint8(cycle);
     end
     
-        schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, ncFrames);
+    schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, ncFrames);
 
     schnitzcells = filterSchnitz(schnitzcells, imSize);
     

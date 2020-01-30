@@ -278,36 +278,13 @@ if fish
     schnitzcells = rmfield(schnitzcells, {'P', 'E', 'D'});
 end
 
-if ~exist([DropboxFolder,filesep,Prefix], 'dir')
-    mkdir([DropboxFolder,filesep,Prefix]);
-end
-
 ncVector=[0,0,0,0,0,0,0,0,nc9,nc10,nc11,nc12,nc13,nc14];
 
 if track & ~noBreak
     [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, numFrames);
+    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
+    save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells');
 end
-
-save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
-
-    if strcmpi(ExperimentType,'inputoutput')||strcmpi(ExperimentType,'input')
-        %Change the name of the Circle variable to make it more understandable when
-        %loaded independently        
-%         IntegrationArea=Circle; NL: removed this on 2019.10.28. Not sure
-%         what it is supposed to do
-        save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells');%,'IntegrationArea');
-    else
-        save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells');
-    end
-    
-    if ~exist([ProcPath,filesep,Prefix,'_'], 'dir')
-        mkdir([ProcPath,filesep,Prefix,'_']);
-    end
-    if exist('dataStructure', 'var')
-        
-        save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure');
-    end
-
 
 % Stitch the schnitzcells using Simon's code
 if ~noStitch

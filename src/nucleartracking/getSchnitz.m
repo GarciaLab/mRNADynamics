@@ -1,19 +1,24 @@
-function val = getSchnitz(ellipse, schnitzcells, frame)
+function val = getSchnitz(ellipse, schnitzcells, frame, varargin)
 
 
 val = [];
 
-center = [ellipse(1), ellipse(2)];
+if ~isempty(varargin)
+    cellno = varargin{1};
+end
+center = round([ellipse(1), ellipse(2)]);
 foundIt = false;
 len = length(schnitzcells);
 s = 0;
 
-while ~foundIt && s < len
+while ~foundIt & s < len
     
     s = s+1;
     schnitzFrameIndex = find(schnitzcells(s).frames == frame);
     if ~isempty(schnitzFrameIndex)
-        foundIt = schnitzcells(s).ceny(schnitzFrameIndex) == center(2) & schnitzcells(s).cenx(schnitzFrameIndex) == center(1);
+        foundIt = round(schnitzcells(s).ceny(schnitzFrameIndex)) == center(2) & round(schnitzcells(s).cenx(schnitzFrameIndex)) == center(1);
+%         foundIt = double(schnitzcells(s).cellno) == double(cellno);
+        
     end
     
     if foundIt

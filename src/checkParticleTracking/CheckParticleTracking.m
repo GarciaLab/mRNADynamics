@@ -236,6 +236,7 @@ else
     hisCell = [];
     maxCell = [];
 end
+maxTimeCell = [];
 
 for i = 1:nFrames
     if i < nc9
@@ -258,8 +259,9 @@ end
 %Get the actual time corresponding to each frame, in minutes
 ElapsedTime = getFrameElapsedTime(FrameInfo, nFrames);
 
-anaphase = [nc9, nc10, nc11, nc12, nc13, nc14];
-[anaphaseInMins, prophaseInMins, metaphaseInMins] = getPhasesDurationsInMins(anaphase, prophase, metaphase, ElapsedTime);
+ncFrames = [nc9, nc10, nc11, nc12, nc13, nc14]; %anaphases
+ncFramesFull = [zeros(1,8), ncFrames, nFrames]; %more useful for some things
+[anaphaseInMins, prophaseInMins, metaphaseInMins] = getPhasesDurationsInMins(ncFrames, prophase, metaphase, ElapsedTime);
 
 try
     correspondingNCInfo = [FrameInfo.nc]; % the assigned nc of the frames
@@ -381,7 +383,9 @@ while (cc ~= 'x')
         cptState.nameSuffix = ['_ch', iIndex(cptState.currentChannel, 2)];
     end
     
-    
+    inds = find(cptState.CurrentFrame > ncFramesFull);
+     currentNC = inds(end);     
+     
     %Get the coordinates of all the spots in this frame
     [x, y, z] = SpotsXYZ(cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame));
     
@@ -446,20 +450,27 @@ while (cc ~= 'x')
         ImageMat = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, cptState.FrameInfo, 'median', cptState.nWorkers);
     elseif strcmpi(projectionMode, 'Max Z and Time')
         
-        if isempty(storedTimeProjection)
+        if preMovie
+            if isempty(maxTimeCell)
+                ImageMat = squeeze(max(max(movieCell(:,:,ncFramesFull(currentNC):ncFramesFull(currentNC+1),:,:), [], 3), [], 2)); % ch z t x y
+            end
+        else
             
-            if ncRange
-                ImageMat = timeProjection(Prefix, cptState.coatChannel, cptState.FrameInfo, DropboxFolder,PreProcPath, 'nc', NC);
-                storedTimeProjection = ImageMat;
+            if isempty(storedTimeProjection)
+
+                if ncRange
+                    ImageMat = timeProjection(Prefix, cptState.coatChannel, cptState.FrameInfo, DropboxFolder,PreProcPath, 'nc', NC);
+                    storedTimeProjection = ImageMat;
+                else
+                    ImageMat = timeProjection(Prefix, cptState.CurrentChannel, cptState.FrameInfo, DropboxFolder,PreProcPath);
+                    storedTimeProjection = ImageMat;
+                end
+
             else
-                ImageMat = timeProjection(Prefix, cptState.CurrentChannel, cptState.FrameInfo, DropboxFolder,PreProcPath);
-                storedTimeProjection = ImageMat;
+                ImageMat = storedTimeProjection;
             end
             
-        else
-            ImageMat = storedTimeProjection;
         end
-        
     end
     
     if multiView && ~exist('subAx', 'var')
@@ -573,7 +584,7 @@ while (cc ~= 'x')
             ...
             cptState.FrameInfo, cptState.CurrentChannel, cptState.PreviousChannel, ...
             cptState.CurrentParticle, cptState.PreviousParticle, cptState.lastParticle, HideApprovedFlag, lineFitted, anaphaseInMins, ...
-            ElapsedTime, cptState.schnitzcells, cptState.Particles, cptState.plot3DGauss, anaphase, prophase, metaphase, prophaseInMins, metaphaseInMins, Prefix, ...
+            ElapsedTime, cptState.schnitzcells, cptState.Particles, cptState.plot3DGauss, ncFrames, prophase, metaphase, prophaseInMins, metaphaseInMins, Prefix, ...
             nFrames, cptState.CurrentFrame, cptState.ZSlices, cptState.CurrentZ, cptState.Spots, ...
             correspondingNCInfo, cptState.Coefficients, ExperimentType,cptState.PreviousFrame, cptState.Frames,...
             Channels, PreProcPath, DropboxFolder, plottrace_argin{:});
