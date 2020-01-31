@@ -29,6 +29,7 @@ classdef CPTState < handle
         FrameIndicesToFit
         Coefficients
         fitApproved
+        lineFitted
         
         ZoomMode
         GlobalZoomMode
@@ -38,6 +39,7 @@ classdef CPTState < handle
         DisplayRange
         UseHistoneOverlay
         ImageHis
+        HideApprovedFlag
 
         no_clicking
 
@@ -45,10 +47,12 @@ classdef CPTState < handle
 
 	    nWorkers
         plot3DGauss
+
+        projectionMode
     end
     
     methods
-        function this = CPTState(Spots, Particles, SpotFilter, schnitzcells, Ellipses, FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss)
+        function this = CPTState(Spots, Particles, SpotFilter, schnitzcells, Ellipses, FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss, projectionMode)
             this.Spots = Spots;
             this.Particles = Particles;
             this.SpotFilter = SpotFilter;
@@ -76,8 +80,9 @@ classdef CPTState < handle
            
             this.FrameIndicesToFit = 0; % index of the current particle that were used for fitting
             this.Coefficients = []; % coefficients of the fitted line
-            this.fitApproved = 0; %JP: I don't think is this in use, will check.
-            
+            this.fitApproved = 0; %JP: I think functions should use this instead of calculating fitApproved on their own
+            this.lineFitted = 0; % equals 1 if a line has been fitted
+
             this.ZoomMode = 0;
             this.GlobalZoomMode = 0;
             this.xForZoom = 0;
@@ -85,6 +90,7 @@ classdef CPTState < handle
 
             this.DisplayRange = [];
             this.UseHistoneOverlay = UseHistoneOverlay;
+            this.HideApprovedFlag = 0;
 
             this.no_clicking = false;
 
@@ -92,6 +98,8 @@ classdef CPTState < handle
 
             this.nWorkers = nWorkers;
             this.plot3DGauss = plot3DGauss;
+
+            this.projectionMode = projectionMode;
         end
 
         function numParticles = numParticles(this)
