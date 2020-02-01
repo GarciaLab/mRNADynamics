@@ -77,24 +77,25 @@ if del
         %switch to another particle just to avoid any potential weirdness with
         %checkparticletracking refreshing. simpler version of the
         %'m' button
-        
-        if (CurrentParticle+1) < numParticles
-            CurrentParticle = CurrentParticle+1;
+        NextParticle = CurrentParticle+1;
+        if NextParticle>numParticles
+            NextParticle=NextParticle-2; %go backwards one particle if the deleted particle was the last.
         end
-        
-        CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(1);
-        
         if numParticles == 1
             lastParticle = 1;
         end
-        PreviousParticle = 0; % this is done so that the trace is updated
+        CurrentParticle=NextParticle;
+        CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(1);
+        ParticleToFollow=[];
     elseif CurrentFrame > 1
         CurrentFrame=CurrentFrame-1;
         ManualZFlag=0;
+        ParticleToFollow=[];
         PreviousParticle = 0; % this is done so that the trace is updated
     elseif CurrentFrame < length({Spots{1}.Fits})
         CurrentFrame=CurrentFrame+1;
         ManualZFlag=0;
+        ParticleToFollow=[];
         PreviousParticle = 0; % this is done so that the trace is updated
     end
 
