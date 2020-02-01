@@ -11,7 +11,8 @@ for i = 1:length(varargin)
     end
 end
 
-[allData, Prefixes, resultsFolder] = LoadMS2Sets(DataType, 'noCompiledNuclei');
+[~, ~, Prefixes] = getDorsalPrefixes(DataType);
+[allData, ~, resultsFolder] = LoadMS2Sets(DataType, 'noCompiledNuclei');
 
 load([resultsFolder,filesep,Prefixes{1},filesep,'FrameInfo.mat'], 'FrameInfo')
 imSize = [FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine];
@@ -166,6 +167,6 @@ end
 
 %%
 
-binDorsal(DataType, false);
+binDorsal(DataType);
 
 end

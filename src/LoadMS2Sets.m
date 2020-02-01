@@ -1,4 +1,4 @@
-function [Data, Prefixes, resultsFolder] = LoadMS2Sets(DataType, varargin)
+function [Data, prefixes, resultsFolder] = LoadMS2Sets(DataType, varargin)
 %
 %Data = LoadMS2Sets(DataType)
 %
@@ -22,7 +22,7 @@ function [Data, Prefixes, resultsFolder] = LoadMS2Sets(DataType, varargin)
 %Created:
 %Last Updated: 1/13/2018. AR
 
-Prefixes = {};
+prefixes = {};
 Data = struct();
 resultsFolder = '';
 
