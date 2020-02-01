@@ -1,4 +1,4 @@
-function [Data, Prefixes, resultsFolder] = LoadMS2Sets(DataType, varargin)
+function [Data, prefixes, resultsFolder] = LoadMS2Sets(DataType, varargin)
 %
 %Data = LoadMS2Sets(DataType)
 %
@@ -12,7 +12,7 @@ function [Data, Prefixes, resultsFolder] = LoadMS2Sets(DataType, varargin)
 %
 %OPTIONS
 % 'noCompiledNuclei'
-% 'justPrefixes'
+% 'justprefixes'
 %
 %OUTPUT
 %Returns the Data structure containing all of the relevant datasets from your
@@ -22,14 +22,14 @@ function [Data, Prefixes, resultsFolder] = LoadMS2Sets(DataType, varargin)
 %Created:
 %Last Updated: 1/13/2018. AR
 
-Prefixes = {};
+prefixes = {};
 Data = struct();
 resultsFolder = '';
 
 optionalResults = '';
 compareSettings = true;
 noCompiledNuclei = false;
-justPrefixes = false;
+justprefixes = false;
 inputOutputFits = false;
 
 for i= 1:length(varargin)
@@ -39,8 +39,8 @@ for i= 1:length(varargin)
     if strcmpi(varargin{i}, 'noCompiledNuclei')
         noCompiledNuclei = true;
     end
-    if strcmpi(varargin{i}, 'justPrefixes')
-        justPrefixes = true;
+    if strcmpi(varargin{i}, 'justprefixes')
+        justprefixes = true;
     end
     if strcmpi(varargin{i}, 'inputOutputFits')
         inputOutputFits = true;
@@ -177,7 +177,7 @@ for i=1:length(CompiledSets)
     Quotes=strfind(SetName,'''');
     Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
     
-    if ~justPrefixes
+    if ~justprefixes
         
         %Load CompiledParticles if it exists. This constitutes the main part of
         %the Data output. However, we will later add more information to this
@@ -346,7 +346,7 @@ for i=1:length(CompiledSets)
     end
 end
 
-if ~justPrefixes
+if ~justprefixes
     %Now add the SetName and APDivision information
     if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],'file')
         for i=1:length(Data)

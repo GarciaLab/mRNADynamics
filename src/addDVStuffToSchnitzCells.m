@@ -166,6 +166,6 @@ end
 
 %%
 
-binDorsal(DataType, false);
+binDorsal(DataType);
 
 end

@@ -209,26 +209,36 @@ nPadding = 2; %normally we pad a blank image above and below the stack.
 %if a movie is unpadded this will require modification
 maxCell = [];
 if preMovie
+    pth = [PreProcPath, filesep, Prefix, filesep,Prefix];
+    
     if isempty(movieCell)
-        coats = getCoatChannel(Channel1, Channel2, Channel3);
-        movieCell = zeros(length(coats), nSlices, nFrames, xSize, ySize, 'uint16'); % ch z t x y
-        if UseSchnitz
-            hisCell =  zeros(nFrames, xSize, ySize, 'uint16'); %t x y
-        end
-        pth = [PreProcPath, filesep, Prefix, filesep,Prefix];
-        for ch = 1:length(coats)
-            c = coats(ch);
-            for f = 1:nFrames
-                parfor z = 1:nSlices+nPadding
-                    %reminder to squeeze the array before accessing an image
-                    movieCell(ch, z, f, :, :) = imread([pth,'_',iIndex(f, NDigits), '_z', iIndex(z, 2), ['_ch', iIndex(c, 2)], '.tif']);
-                end
-                if UseSchnitz
-                    hisCell(f, :, :) = imread([pth,'-His_', iIndex(f, NDigits), '.tif']);
+        if exist([pth, '_movieCell.mat'], 'file')
+            load([pth, '_movieCell.mat'],'movieCell');
+            if exist([pth, '_hisCell.mat'], 'file')
+                load([pth, '_hisCell.mat'],'hisCell');
+            end
+        else
+            coats = getCoatChannel(Channel1, Channel2, Channel3);
+            movieCell = zeros(length(coats), nSlices, nFrames, xSize, ySize, 'uint16'); % ch z t x y
+            if UseSchnitz
+                hisCell =  zeros(nFrames, xSize, ySize, 'uint16'); %t x y
+            end
+            for ch = 1:length(coats)
+                c = coats(ch);
+                for f = 1:nFrames
+                    parfor z = 1:nSlices+nPadding
+                        %reminder to squeeze the array before accessing an image
+                        movieCell(ch, z, f, :, :) = imread([pth,'_',iIndex(f, NDigits), '_z', iIndex(z, 2), ['_ch', iIndex(c, 2)], '.tif']);
+                    end
+                    if UseSchnitz
+                        hisCell(f, :, :) = imread([pth,'-His_', iIndex(f, NDigits), '.tif']);
+                    end
                 end
             end
+            maxCell = squeeze(max(movieCell(:,:,:,:, :), [], 2));
+            save([pth, '_movieCell.mat'],'movieCell', '-v7.3', '-nocompression');
+            save([pth, '_hisCell.mat'],'hisCell', '-v7.3', '-nocompression');
         end
-        maxCell = squeeze(max(movieCell(:,:,:,:, :), [], 2));
     end
 else
     movieCell = [];
@@ -385,8 +395,8 @@ while (cc ~= 'x')
     end
     
     inds = find(cptState.CurrentFrame > ncFramesFull);
-     currentNC = inds(end);     
-     
+    currentNC = inds(end);
+    
     %Get the coordinates of all the spots in this frame
     [x, y, z] = SpotsXYZ(cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame));
     
@@ -458,7 +468,7 @@ while (cc ~= 'x')
         else
             
             if isempty(storedTimeProjection)
-
+                
                 if ncRange
                     ImageMat = timeProjection(Prefix, cptState.coatChannel, cptState.FrameInfo, DropboxFolder,PreProcPath, 'nc', NC);
                     storedTimeProjection = ImageMat;
@@ -466,7 +476,7 @@ while (cc ~= 'x')
                     ImageMat = timeProjection(Prefix, cptState.CurrentChannel, cptState.FrameInfo, DropboxFolder,PreProcPath);
                     storedTimeProjection = ImageMat;
                 end
-
+                
             else
                 ImageMat = storedTimeProjection;
             end
@@ -653,7 +663,7 @@ while (cc ~= 'x')
         DisplayRangeSpot = [min(ImageMat(:)), max(ImageMat(:)) * 1.5];
         
         disp('decreased spot contrast');
-
+        
     elseif cc == '0' %Debugging mode
         keyboard;
         
