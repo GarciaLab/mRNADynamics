@@ -44,6 +44,11 @@ function keyInputHandler = FrameChangeEventHandler(cptState)
             cptState.PreviousFrame = cptState.CurrentFrame;
             cptState.CurrentFrame = previousSkippedFrame(cptState.Particles, cptState.CurrentChannel, ...
                 cptState.CurrentParticle, cptState.CurrentFrame);
+        
+        elseif cc == 'e'
+            % Approve/Disapprove a frame within a trace
+            cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).FrameApproved(cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Frame == cptState.CurrentFrame) = ...
+                ~cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).FrameApproved(cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Frame == cptState.CurrentFrame);
         end
     end
 
