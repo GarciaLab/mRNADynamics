@@ -5,6 +5,7 @@ classdef CPTState < handle
         SpotFilter
         schnitzcells
         FrameInfo
+        ImageMat
 
         Ellipses
         nucleiModified
@@ -37,11 +38,10 @@ classdef CPTState < handle
         yForZoom
 
         DisplayRange
+        DisplayRangeSpot
         UseHistoneOverlay
         ImageHis
         HideApprovedFlag
-
-        no_clicking
 
         nameSuffix
 
@@ -58,6 +58,7 @@ classdef CPTState < handle
             this.SpotFilter = SpotFilter;
             this.schnitzcells = schnitzcells;
             this.FrameInfo = FrameInfo;
+            this.ImageMat = [];
             
             this.Ellipses = Ellipses;
             this.nucleiModified = false;
@@ -89,10 +90,9 @@ classdef CPTState < handle
             this.yForZoom = 0;
 
             this.DisplayRange = [];
+            this.DisplayRangeSpot = [];
             this.UseHistoneOverlay = UseHistoneOverlay;
             this.HideApprovedFlag = 0;
-
-            this.no_clicking = false;
 
             this.nameSuffix = '';
 
