@@ -1,5 +1,6 @@
 function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest,...
-    keepTifs, generateTifStacks, nuclearGUI, skipExtraction, rootFolder, zslicesPadding, lowbit, dataType]...
+    keepTifs, generateTifStacks, nuclearGUI,...
+    skipExtraction, rootFolder, zslicesPadding, lowbit, dataType, makeMovieMats]...
     ...
     = exportDataForLivemRNA_processInputParameters(varargin)
 
@@ -19,6 +20,7 @@ rootFolder = '';
 zslicesPadding = false;
 lowbit = false;
 dataType = '';
+makeMovieMats = false;
 
 k=1;
 while k<=length(varargin)
@@ -53,6 +55,8 @@ while k<=length(varargin)
         zslicesPadding = true;
     elseif strcmpi(varargin{k}, 'lowbit')
         lowbit = true;
+     elseif strcmpi(varargin{k}, 'makeMovieMats')
+        makeMovieMats = true;
     else
         %prefix can only go in first position
         if k == 1 && isempty(rootFolder) 

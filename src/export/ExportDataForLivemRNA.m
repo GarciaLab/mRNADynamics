@@ -68,11 +68,11 @@
 %The idea of (4) being in Dropbox is that I don't need to be synchronizing
 %the part related to the manual analysis.
 
-function Prefix = ExportDataForLivemRNA(varargin)
+function [Prefix, mats ] = ExportDataForLivemRNA(varargin)
 
   [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs,...
     generateTifStacks, nuclearGUI, skipExtraction, rootFolder, zslicesPadding,...
-    lowbit, dataType] = exportDataForLivemRNA_processInputParameters(varargin{:});
+    lowbit, dataType, makeMovieMats] = exportDataForLivemRNA_processInputParameters(varargin{:});
 
   [rawDataPath, ~, DropboxFolder, ~, PreProcPath, rawDataFolder, Prefix, ExperimentType, Channel1, Channel2, ~,...
     Channel3] = readMovieDatabase(Prefix,'rootFolder', rootFolder);
@@ -139,6 +139,16 @@ end
   if generateTifStacks
     filterMovie(Prefix, 'Tifs');
     disp(['Prefix: ', Prefix]);
+  end
+  
+  mats = struct;
+
+  if makeMovieMats
+      nWorkers = 18;
+      Channels = {Channel1, Channel2, Channel3};
+      [movieMat, hisMat, maxMat, medMat, midMat]...
+    = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, Channels);
+    mats.movieMat = movieMat;  mats.hisMat = hisMat; mats.maxMat=maxMat;mats.medMat=medMat;mats.midMat = midMat;
   end
 
 end

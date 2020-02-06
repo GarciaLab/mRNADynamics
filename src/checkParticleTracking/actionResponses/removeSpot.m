@@ -71,13 +71,14 @@ if del
     spotRow(CurrentSpot) = [];
     spotRow(end+1) = NaN;
     SpotFilter{CurrentChannel}(CurrentFrame,:) = spotRow;
-    disp('Spot deleted successfully. Trace figures will refresh after switching particles.');
+    disp('Spot deleted successfully.');
     
     if onlyFrame
         %switch to another particle just to avoid any potential weirdness with
         %checkparticletracking refreshing. simpler version of the
         %'m' button
-               
+        CurrentParticle = CurrentParticle - 1; 
+        
         if (CurrentParticle+1) < numParticles
             CurrentParticle = CurrentParticle+1;
         end
