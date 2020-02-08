@@ -61,11 +61,11 @@ if ~movie
     
     startParallelPool(nWorkers, 0, 1);
 
-    movieMat = zeros(nCh, nSlices+nPadding, nFrames, xSize, ySize, 'uint16'); % ch z t x y
-    maxMat = zeros(nCh, nFrames, xSize, ySize, 'uint16'); % ch z x y
-    maxMat = zeros(nCh, nFrames, xSize, ySize, 'uint16'); % ch z x y
-    medMat = zeros(nCh, nFrames, xSize, ySize, 'uint16'); % ch z x y
-    hisMat = zeros(nFrames, xSize, ySize, 'uint16'); % f x y
+    movieMat = zeros(nCh, nSlices+nPadding, nFrames, ySize, xSize, 'uint16'); % ch z t x y
+    maxMat = zeros(nCh, nFrames, ySize, xSize, 'uint16'); % ch z x y
+    maxMat = zeros(nCh, nFrames, ySize, xSize, 'uint16'); % ch z x y
+    medMat = zeros(nCh, nFrames, ySize, xSize, 'uint16'); % ch z x y
+    hisMat = zeros(nFrames, ySize, xSize, 'uint16'); % f x y
     for ch = 1:nCh
         for f = 1:nFrames
             

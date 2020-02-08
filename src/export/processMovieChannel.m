@@ -2,10 +2,6 @@ function processMovieChannel(ExperimentType, channelIndex, numberOfFrames, Prefi
     movieImages, framesIndex, seriesIndex, NChannels,...
     NSlices, coatChannel, inputProteinChannel, zslicesPadding, lowbit)
 
-experimentType1 = (strcmpi(ExperimentType,'1spot') || strcmp(ExperimentType,'2spot') || strcmp(ExperimentType,'2spot1color')) && channelIndex == coatChannel;
-experimentType2 = strcmpi(ExperimentType,'2spot2color') || strcmpi(ExperimentType, 'inputoutput');
-experimentType3 = strcmpi(ExperimentType, 'input') && sum(channelIndex == inputProteinChannel);
-
 %Create a blank image
 BlankImage = uint16(zeros(size(movieImages{1}{1,1})));
 
@@ -18,16 +14,13 @@ else
     topZSlice = min(NSlices);
 end
 
-if(experimentType1 || experimentType2 || experimentType3)
     % Save the blank image at the beginning of the stack only for
     % type1,2,or3
     NameSuffix = ['_ch',iIndex(channelIndex,2)];
     NewName = [Prefix, '_', iIndex(numberOfFrames,3), '_z', iIndex(1,2), NameSuffix, '.tif'];
     imwrite(BlankImage, [OutputFolder, filesep, NewName]);
-end
 
 %Copy the rest of the images
-if(experimentType1 || experimentType2 || experimentType3)
     slicesCounter = 1;
     firstImage = (framesIndex-1) * NSlices(seriesIndex) * NChannels + 1 + (channelIndex - 1);
     lastImage = framesIndex * NSlices(seriesIndex) * NChannels;
@@ -53,7 +46,6 @@ if(experimentType1 || experimentType2 || experimentType3)
         imwrite(BlankImage, [OutputFolder, filesep, NewName]);
     end
     
-end
 
 
 end
