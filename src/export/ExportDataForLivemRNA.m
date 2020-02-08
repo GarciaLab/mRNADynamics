@@ -74,6 +74,8 @@ function [Prefix, mats ] = ExportDataForLivemRNA(varargin)
     generateTifStacks, nuclearGUI, skipExtraction, rootFolder, zslicesPadding,...
     lowbit, dataType, makeMovieMats] = exportDataForLivemRNA_processInputParameters(varargin{:});
 
+keepTifs = true;
+
   [rawDataPath, ~, DropboxFolder, ~, PreProcPath, rawDataFolder, Prefix, ExperimentType, Channel1, Channel2, ~,...
     Channel3] = readMovieDatabase(Prefix,'rootFolder', rootFolder);
 
@@ -142,9 +144,11 @@ end
   end
   
   mats = struct;
-
+  
+  makeMovieMats = true;
+  
   if makeMovieMats
-      nWorkers = 18;
+      nWorkers = 1;
       Channels = {Channel1, Channel2, Channel3};
       [movieMat, hisMat, maxMat, medMat, midMat]...
     = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, Channels);

@@ -9,10 +9,6 @@ experimentType3 = strcmpi(ExperimentType, 'input') && sum(channelIndex == inputP
 %Create a blank image
 BlankImage = uint16(zeros(size(movieImages{1}{1,1})));
 
-if lowbit
-    BlankImage = uint8(BlankImage);
-end
-
 % if zPadding was indicated in the arguments, we round up to the series
 % with more z-slices (because we'll pad with blank images the other series)
 if (zslicesPadding)
@@ -45,11 +41,7 @@ if(experimentType1 || experimentType2 || experimentType3)
             % if no zPadding, it will process images rounding down to the series with least
             % zSlices, because topZSlice would be min(NSlices)
             NewName = [Prefix, '_', iIndex(numberOfFrames,3), '_z', iIndex(slicesCounter + 1, 2), NameSuffix, '.tif'];
-            if ~lowbit
                 imwrite(movieImages{seriesIndex}{imageIndex,1}, [OutputFolder, filesep, NewName]);
-            else
-                imwrite(uint8(movieImages{seriesIndex}{imageIndex,1}), [OutputFolder, filesep, NewName]);
-            end
             slicesCounter = slicesCounter + 1;
         end
     end
@@ -62,4 +54,6 @@ if(experimentType1 || experimentType2 || experimentType3)
     end
     
 end
+
+
 end

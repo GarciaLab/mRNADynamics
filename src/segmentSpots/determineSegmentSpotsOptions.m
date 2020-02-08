@@ -6,9 +6,9 @@ function [displayFigures, numFrames, numShadows, keepPool, threshGUI, initialFra
 % Default options
 displayFigures = false;
 numFrames = 0;
-numShadows = 2;
+numShadows = 1;
 nWorkers = 8;
-keepPool = false;
+keepPool = true;
 threshGUI = false;
 useIntegralCenter = true;
 initialFrame = 1;
@@ -19,13 +19,13 @@ skipChannel = [];
 optionalResults = '';
 filterMovieFlag = false;
 gpu = '';
-saveAsMat = false;
-saveType = '.tif';
-nuclearMask = false;
+saveAsMat = true;
+saveType = '.mat';
+nuclearMask = true;
 dataType = '';
-track = false;
+track = true;
 
-
+  
 for i = 1:length(varargin)
     
     if strcmpi(varargin{i}, 'displayFigures')

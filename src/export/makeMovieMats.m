@@ -1,16 +1,26 @@
 function [movieMat, hisMat, maxMat, medMat, midMat]...
-    = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, Channels)
+    = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, Channels, varargin)
 
-tic
+noLoad = false;
 
-startParallelPool(nWorkers, 0, 1);
+for i = 1:length(varargin)
+    if strcmpi(varargin{i}, 'noLoad')
+        noLoad = true;
+    end
+end
 
 [xSize, ySize, ~, ~, ~,...
     nFrames, nSlices, nDigits] = getFrameInfoParams(FrameInfo);
 
 movieMat = []; hisMat = []; maxMat = [];  medMat = []; midMat = [];
 
-nCh = sum(~cellfun(@isempty, Channels));
+% nCh = sum(~cellfun(@isempty, Channels)); %this method fails if your
+% exported channels don't match your moviedatabase. 
+
+nCh = 0;
+for i = 1:3
+    nCh = nCh + ~isempty(dir([PreProcPath, filesep, Prefix,filesep,'*ch0',num2str(i),'*.tif']));
+end
 
 nPadding = 2; %normally we pad a blank image above and below the stack.
 %if a movie is unpadded this will require modification
@@ -22,21 +32,22 @@ maxmat = false;
 his = false;
 
 if exist([pth, '_movieMat.Mat'], 'file')
-    load([pth, '_movieMat.Mat'],'movieMat');
-    if ~isempty(movieMat)
-        movie = true;
+    disp('Loading movie mats...')
+    tic
+    if ~noLoad
+        load([pth, '_movieMat.Mat'],'movieMat');
     end
-end
-
-if exist([pth, '_movieMat.Mat'], 'file')
-    load([pth, '_movieMat.Mat'],'movieMat');
+    disp('Movie mats loaded.')
+    toc
     if ~isempty(movieMat)
         movie = true;
     end
 end
 
 if exist([pth, '_hisMat.Mat'], 'file')
-    load([pth, '_hisMat.Mat'],'hisMat');
+    if ~noLoad
+        load([pth, '_hisMat.Mat'],'hisMat');
+    end
     if ~isempty(hisMat)
         his = true;
     end
@@ -44,7 +55,13 @@ end
 
 
 if ~movie
-    movieMat = zeros(nCh, nSlices, nFrames, xSize, ySize, 'uint16'); % ch z t x y
+    
+    disp('Creating movie mats...')
+    tic
+    
+    startParallelPool(nWorkers, 0, 1);
+
+    movieMat = zeros(nCh, nSlices+nPadding, nFrames, xSize, ySize, 'uint16'); % ch z t x y
     maxMat = zeros(nCh, nFrames, xSize, ySize, 'uint16'); % ch z x y
     maxMat = zeros(nCh, nFrames, xSize, ySize, 'uint16'); % ch z x y
     medMat = zeros(nCh, nFrames, xSize, ySize, 'uint16'); % ch z x y
@@ -52,7 +69,7 @@ if ~movie
     for ch = 1:nCh
         for f = 1:nFrames
             
-            parfor z = 1:nSlices+nPadding
+            for z = 1:nSlices+nPadding
                 movieMat(ch, z, f, :, :) = imread([pth,'_',iIndex(f, nDigits), '_z', iIndex(z, 2), ['_ch', iIndex(ch, 2)], '.tif']);
             end
             
@@ -63,6 +80,9 @@ if ~movie
     
     save([pth, '_movieMat.Mat'],'movieMat', '-v7.3', '-nocompression');
     save([pth, '_hisMat.Mat'],'hisMat', '-v7.3', '-nocompression');
+    
+    disp('Movie mats created.')
+    toc
     
 end
 

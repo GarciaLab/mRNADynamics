@@ -9,13 +9,13 @@ pixelSize = FrameInfo(1).PixelSize;
 
 % Default options
 displayFigures = false;
-customFilter = false;
+customFilter = true;
 numFrames = 0;
-highPrecision = false;
-keepPool = false;
-filterType = 'Difference_of_Gaussian';
+highPrecision = true;
+keepPool = true;
+filterType = 'Difference_of_Gaussian_3D';
 nWorkers = 8;
-sigmas = {};
+sigmas = {2,4};
 app = {};
 kernelSize = [];
 customML = false;
@@ -29,8 +29,8 @@ classifierPathCh1 = [];
 classifierFolder = [];
 numType = 'double';
 gpu = 'noGPU';
-saveAsMat = false;
-saveType = '.tif';
+saveAsMat = true;
+saveType = '.mat';
 dataSet = '';
 
 for i = 1:length(varargin)

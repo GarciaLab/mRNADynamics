@@ -200,10 +200,12 @@ ch = coats(1); %assumes the experiment is _not_ 2spot2color
 maxTimeCell = [];
 if preMovie
     if isempty(movieMat)
+      
         [movieMat, hisMat, maxMat, ~, ~]...
             = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, Channels);
         movieMat = squeeze(movieMat(ch,:,:,:,:));
         maxMat = squeeze(maxMat(ch,:,:,:));
+
     else
         maxMat = squeeze(max(movieMat(:,:,:,:), [],1));
     end
@@ -390,9 +392,6 @@ while (cc ~= 'x')
             cptState.ImageMat = squeeze(movieMat(cptState.CurrentZ, cptState.CurrentFrame, :, :));
         end
         if multiView
-%             if cptState.CurrentParticle == 2
-                1
-%             end
             for z = 1:-1:-1
                 for f = -1:1
                     if any( 1:nSlices == cptState.CurrentZ + z) && any( 1:nFrames == cptState.CurrentFrame + f)
