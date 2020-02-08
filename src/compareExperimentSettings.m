@@ -269,8 +269,11 @@ ComparedSettings.PixelSizeX = isempty(nonzeros(diff([RawSettings.PixelSizeX])));
 ComparedSettings.PixelSizeY = isempty(nonzeros(diff([RawSettings.PixelSizeY])));
 ComparedSettings.PixelSizeZ = isempty(nonzeros(diff(round([RawSettings.PixelSizeZ],CompareDecimals)))); %Need to round to prevent incorrect falses
 
+% Save 
+save([DynamicsResultsPath,DataType,'_comparedSettings.mat'],RawSettings,ComparedSettings);
+
 % Display comparison structure and final warnings
 ComparedSettings
-disp('Settings compared.')
+disp('Settings compared and saved in your specified DynamicResults folder. ')
 disp('If any settings display a zero, check the RawSettings structure to identify the nonmatching dataset.')
 disp('For some settings, nonmatching does not necessary mean a faulty dataset. Use your own judgement.')
