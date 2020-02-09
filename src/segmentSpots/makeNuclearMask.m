@@ -20,9 +20,15 @@ for e = 1:size(ellipsesFrame, 1)
     rad = ellipsesFrame(e,3)*radScale;
     xrange = max(ceil(cenx-rad), 1) : min(ceil(cenx+rad),dim(1));
     yrange = max(ceil(ceny-rad), 1) : min(ceil(ceny+rad),dim(2));
+%     a = [xrange' yrange'];
+%     v = [cenx, ceny];
+%     d = a - v;
+%     b = meshgrid(xrange, yrange);
+%     nuclearMask(b) = 0;
     for x = xrange
         for y = yrange
-            nuclearMask(x, y) = norm([x, y] - [cenx, ceny]) < rad;
+            nuclearMask(x, y) =  sqrt(([x, y] - [cenx, ceny])*([x, y] - [cenx, ceny])') < rad;
+%             nuclearMask(x, y) = norm([x, y] - [cenx, ceny]) < rad;
         end
     end
     

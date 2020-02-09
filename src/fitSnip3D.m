@@ -1,5 +1,5 @@
 function SpotsFr = fitSnip3D(SpotsFr, spotChannel, spot, frame, Prefix,...
-    PreProcPath, FrameInfo, nSpots)
+    PreProcPath, FrameInfo, nSpots, movieMat)
 
 %%
 % check for pre-existing 3D fit info
@@ -42,26 +42,20 @@ zTop = min([zMax, bZ + snipDepth]);
 zRange = zBot:zTop;
 xRange = max([1,xSpot-snippet_size]):min([xSize,xSpot+snippet_size]);
 yRange = max([1,ySpot-snippet_size]):min([ySize,ySpot+snippet_size]);
-snip3D = NaN(numel(yRange),numel(xRange),numel(zBot:zTop));
 
-%%
-iter = 1;
-for z = zRange
-    
-    FullSlice=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(frame,3)...
-        ,'_z' iIndex(z,2) '_ch' iIndex(spotChannel,2) '.tif']);
-    snip3D(:,:,iter) = double(FullSlice(yRange,xRange)); 
-    iter = iter + 1;
 
-end
+snip3D(:,:,iter) = double(squeeze(movieMat(spotChannel, zBot:zTop, frame, yRange,xRange))); 
+
 
 %%
 xm = single(min(xRange));
 ym = single(min(yRange));
 zm = single(min(zRange));
 if nSpots == 2
-    [GaussParams1, GaussParams2, offset, GaussIntVec, centroid_mean, GaussSE1, GaussSE2, offsetSE, GaussIntSEVec, centroid_se] = ...
-        fit3DGaussian2spot(snip3D,pixelSize);
+    [GaussParams1, GaussParams2, offset, GaussIntVec,...
+        centroid_mean, GaussSE1, GaussSE2, offsetSE, GaussIntSEVec, centroid_se] = ...
+    ...    
+    fit3DGaussian2spot(snip3D,pixelSize);
     
     % spot 1 position
     SpotsFr.Fits(spot).Spot1Fits3D = single(GaussParams1);

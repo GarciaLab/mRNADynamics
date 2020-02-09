@@ -79,6 +79,8 @@ keepTifs = true;
   [rawDataPath, ~, DropboxFolder, ~, PreProcPath, rawDataFolder, Prefix, ExperimentType, Channel1, Channel2, ~,...
     Channel3] = readMovieDatabase(Prefix,'rootFolder', rootFolder);
 
+Channels = {Channel1, Channel2, Channel3};
+
 if ~isempty(dataType)
      args = varargin;
      writeScriptArgsToDataStatus(DropboxFolder, dataType, Prefix, args, 'Ran ExportDataFor', 'ExportDataForLivemRNA')
@@ -118,7 +120,7 @@ end
     Channel1, Channel2, Channel3, ProjectionType,Prefix, OutputFolder,nuclearGUI, zslicesPadding);
 
   elseif strcmpi(FileMode, 'LIFExport')
-    FrameInfo = processLIFExportMode(rawDataFolder, ExperimentType, ProjectionType, Channel1, Channel2, Channel3, Prefix, ...
+    FrameInfo = processLIFExportMode(rawDataFolder, ProjectionType, Channels, Prefix, ...
       OutputFolder, PreferredFileNameForTest, nuclearGUI, skipExtraction, lowbit);
 
   elseif strcmpi(FileMode, 'DSPIN') || strcmpi(FileMode, 'DND2')
@@ -145,7 +147,7 @@ end
   
   mats = struct;
   
-  makeMovieMats = true;
+  makeMovieMats = false;
   
   if makeMovieMats
       nWorkers = 1;

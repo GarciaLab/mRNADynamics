@@ -198,20 +198,19 @@ coats = getCoatChannel(Channel1, Channel2, Channel3);
 
 ch = coats(1); %assumes the experiment is _not_ 2spot2color
 maxTimeCell = [];
-if preMovie
-    if isempty(movieMat)
-      
-        [movieMat, hisMat, maxMat, ~, ~]...
-            = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, Channels);
-        movieMat = squeeze(movieMat(ch,:,:,:,:));
-        maxMat = squeeze(maxMat(ch,:,:,:));
+preMovie = true;
 
-    else
-        maxMat = squeeze(max(movieMat(:,:,:,:), [],1));
-    end
+if isempty(movieMat)
+    
+    [movieMat, hisMat, maxMat, ~, ~]...
+        = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo);
+    movieMat = squeeze(movieMat(ch,:,:,:,:));
+    maxMat = squeeze(maxMat(ch,:,:,:));
+    
 else
-    movieMat = []; hisMat = []; maxMat = []; 
+    maxMat = squeeze(max(movieMat(:,:,:,:), [],1));
 end
+
 
 
 
@@ -315,7 +314,7 @@ channelSwitchKeyInput = ChannelSwitchEventHandler(cptState, NChannels, cptState.
 zoomParticleToggleKeyInput = ZoomParticleToggleEventHandler(cptState);
 zoomAnywhereKeyInput = ZoomAnywhereEventHandler(cptState);
 histoneContrastKeyInput = HistoneContrastChangeEventHandler(cptState);
-addSpotKeyInput = AddSpotEventHandler(cptState, PreProcPath, ProcPath, Prefix);
+addSpotKeyInput = AddSpotEventHandler(cptState, PreProcPath, ProcPath, Prefix, movieMat);
 deleteSpotKeyInput = DeleteSpotEventHandler(cptState);
 ellipsesKeyInput = EllipsesEventHandler(cptState);
 tracesKeyInput = TracesEventHandler(cptState);
@@ -385,12 +384,9 @@ while (cc ~= 'x')
     
     multiImage = {};
     if strcmpi(cptState.projectionMode, 'None')
-        if ~preMovie
-            cptState.ImageMat = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
-                FilePrefix, iIndex(cptState.CurrentFrame, nDigits), '_z', iIndex(cptState.CurrentZ, 2), cptState.nameSuffix, '.tif']);
-        else
-            cptState.ImageMat = squeeze(movieMat(cptState.CurrentZ, cptState.CurrentFrame, :, :));
-        end
+        
+        cptState.ImageMat = squeeze(movieMat(cptState.CurrentZ, cptState.CurrentFrame, :, :));
+        
         if multiView
             for z = 1:-1:-1
                 for f = -1:1
@@ -402,36 +398,17 @@ while (cc ~= 'x')
                 end
             end
         end
+        
     elseif strcmpi(cptState.projectionMode, 'Max Z')
-        if preMovie
-            if nFrames > 1
-                cptState.ImageMat = squeeze(maxMat(cptState.CurrentFrame,:,:));
-            else
-                cptState.ImageMat = maxMat;
-            end
+        if nFrames > 1
+            cptState.ImageMat = squeeze(maxMat(cptState.CurrentFrame,:,:));
         else
-            cptState.ImageMat = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, nDigits, DropboxFolder, PreProcPath, cptState.FrameInfo, 'max', cptState.nWorkers);
+            cptState.ImageMat = maxMat;
         end
+        
     elseif strcmpi(cptState.projectionMode, 'Max Z and Time')
-        if preMovie
-            if isempty(maxTimeCell)
-                cptState.ImageMat = squeeze(max(max(movieMat(:,ncFramesFull(currentNC):ncFramesFull(currentNC+1),:,:), [], 3), [], 2)); % ch z t x y
-            end
-        else
-            if isempty(storedTimeProjection)
-                
-                if ncRange
-                    cptState.ImageMat = timeProjection(Prefix, cptState.coatChannel, cptState.FrameInfo, DropboxFolder,PreProcPath, 'nc', NC);
-                    storedTimeProjection = cptState.ImageMat;
-                else
-                    cptState.ImageMat = timeProjection(Prefix, cptState.CurrentChannel, cptState.FrameInfo, DropboxFolder,PreProcPath);
-                    storedTimeProjection = cptState.ImageMat;
-                end
-                
-            else
-                cptState.ImageMat = storedTimeProjection;
-            end
-            
+        if isempty(maxTimeCell)
+            cptState.ImageMat = squeeze(max(max(movieMat(:,ncFramesFull(currentNC):ncFramesFull(currentNC+1),:,:), [], 3), [], 2)); % ch z t x y
         end
     end
     
@@ -477,13 +454,8 @@ while (cc ~= 'x')
     hold(overlayAxes, 'on')
     
     if cptState.UseHistoneOverlay
-        if ~preMovie
-            HisPath = [PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
-                FilePrefix(1:end - 1), '-His_', iIndex(cptState.CurrentFrame, nDigits), '.tif'];
-            hisImage=imread(HisPath);
-        else
-            hisImage = squeeze(hisMat(cptState.CurrentFrame, :,:));
-        end
+        
+        hisImage = squeeze(hisMat(cptState.CurrentFrame, :,:));
         [cptState.ImageHis, cptState.xForZoom, cptState.yForZoom, oim,ellipseHandles]= displayOverlays(overlayAxes, cptState.ImageMat, SpeedMode, cptState.FrameInfo, cptState.Particles, ...
             cptState.Spots, cptState.CurrentFrame, ShowThreshold2, ...
             Overlay, cptState.CurrentChannel, cptState.CurrentParticle, cptState.ZSlices, cptState.CurrentZ, nFrames, ...
@@ -562,9 +534,9 @@ while (cc ~= 'x')
         plotzvars = [plotzvars, MaxZProfile];
     end
     [MaxZProfile, cptState.Frames] = plotZFigures(plotzvars{:});
-
+    
     set(0, 'CurrentFigure', Overlay);
-
+    
     % Wait for user input to select command to execute
     ct = waitforbuttonpress; % ct=0 for click and ct=1 for keypress
     cc = get(Overlay, 'CurrentCharacter');
@@ -592,8 +564,8 @@ end
 
 % save after exiting the main loop - the user pressed 'x'
 saveChanges(NChannels, cptState.Particles, cptState.Spots, cptState.SpotFilter, DataFolder, ...
-                cptState.FrameInfo, cptState.UseHistoneOverlay, FilePrefix, ...
-                cptState.schnitzcells, DropboxFolder);
+    cptState.FrameInfo, cptState.UseHistoneOverlay, FilePrefix, ...
+    cptState.schnitzcells, DropboxFolder);
 
 close all
 

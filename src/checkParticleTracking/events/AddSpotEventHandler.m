@@ -1,4 +1,4 @@
-function keyInputHandler = AddSpotEventHandler(cptState, PreProcPath, ProcPath, Prefix)
+function keyInputHandler = AddSpotEventHandler(cptState, PreProcPath, ProcPath, Prefix, movieMat)
 %Add particle and all of its shadows to cptState.Spots.
 
     function keyInput(cc)
@@ -17,7 +17,7 @@ function keyInputHandler = AddSpotEventHandler(cptState, PreProcPath, ProcPath, 
                 cptState.CurrentParticle, cptState.CurrentFrame, cptState.CurrentZ, snippet_size, xSize, ...
                 ySize, cptState.Spots, cptState.ZSlices, PathPart1, PathPart2, Path3, cptState.FrameInfo, pixelSize, ...
                 cptState.SpotFilter, cc, xSize, ySize, NDigits, ...
-                Prefix, PreProcPath, ProcPath, cptState.coatChannel, cptState.UseHistoneOverlay, cptState.schnitzcells, cptState.nWorkers, cptState.plot3DGauss);
+                Prefix, PreProcPath, ProcPath, cptState.coatChannel, cptState.UseHistoneOverlay, cptState.schnitzcells, cptState.nWorkers, cptState.plot3DGauss, movieMat);
         end
     end
 

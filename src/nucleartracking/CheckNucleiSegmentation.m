@@ -73,7 +73,7 @@ DataFolder=[Folder,'..',filesep,'..',filesep,'..',filesep,'Data',filesep,FilePre
 
 
 %Find out how many frames we have
-D=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His_*.tif']);
+% D=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His_*.tif']);
 
 
 
@@ -92,18 +92,30 @@ load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'schnitzcells');
 
 hasSchnitzInd =size(Ellipses{1},2) == 9;
 
-if ~hasSchnitzInd & ~noAdd
+if ~hasSchnitzInd
     Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
+    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses');
 end
 
+Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
+nCh = sum(~cellfun(@isempty, Channels));
+
+load('ReferenceHist.mat')
+preMovie = true;
+movieMat = []; hisMat= []; maxMat = [];  medMat = []; midMat = [];
+
+load([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'], 'hisMat');
+
+nFrames = size(hisMat, 1);
 %Get information about the image size
-HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(1).name]);
+% HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(1).name]);
+HisImage = squeeze(hisMat(1,:,:));
 DisplayRange=[min(min(HisImage)),max(max(HisImage))];
 
 
 
 %Make a vector containing the nc corresponding to each frame
-for i=1:length(D)
+for i=1:nFrames
     if i<nc9
         nc(i)=8;
     elseif (i>=nc9)&(i<nc10)
@@ -124,18 +136,6 @@ end
 
 
 %%
-
-Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
-nCh = sum(~cellfun(@isempty, Channels));
-
-load('ReferenceHist.mat')
-
-movieMat = []; hisMat= []; maxMat = [];  medMat = []; midMat = [];
-if preMovie
-    [movieMat, hisMat, maxMat, medMat, midMat]...
-    = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, Channels);
-end
-
 
 
 %%
@@ -179,11 +179,8 @@ while (cc~='x')
     
     %Load subsequent images
     if ~projFlag 
-        if isempty(hisMat)
-            HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(CurrentFrame).name]);
-        else
+
             HisImage = squeeze(hisMat(CurrentFrame,:, :));
-        end
     else
         HisImage = squeeze(Projection(CurrentFrame, :, :));
     end
@@ -362,11 +359,8 @@ while (cc~='x')
         
     elseif (ct~=0)&(cc=='~')
         
-        %if we didn't preload the necessary mat files yet 
-        if isempty(maxMat)
-            [~, ~, maxMat, medMat, midMat] = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, Channels);
-        end
-        
+         [~,~, maxMat, medMat, midMat]...
+                = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo);
         [ProjectionType, nonInverted, inverted] = makeNuclearProjection_CNT(nCh);
         disp('calculating projection...')
         nuclearMovie = nan(nCh, nFrames, xSize, ySize, 'double'); % ch z t x y

@@ -78,7 +78,7 @@ catch
     error(argumentErrorMessage);
 end
 
-[~, ~, ~, ~, ~, ~, ~, ExperimentType, Channel1, Channel2,~, ~, spotChannels] = readMovieDatabase(Prefix);
+[~, ~, ~, ~, ~, ~, ~, ~, ~, ~,~, ~, spotChannels] = readMovieDatabase(Prefix);
 
 [~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix, optionalResults);
 
@@ -109,12 +109,8 @@ end
 
 nCh = length(spotChannels);
 
-if numFrames == 0
-%     numFrames = length(FrameInfo);
-    d = dir([DogOutputFolder,filesep,'*',saveType]);
-    numFrames = length(d)/(zSize*nCh);
-end
-
+m = matfile([ProcPath, filesep, Prefix,  '_', filesep, Prefix, '_dogMat.mat']);
+numFrames = size(m, 'dogMat', 1);
 
 % The spot finding algorithm first segments the image into regions that are
 % above the threshold. Then, it finds global maxima within these regions by searching in a region "neighborhood"
@@ -139,7 +135,7 @@ for channelIndex = 1:nCh
     [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, spotChannels);
 
     [tempSpots, dogs] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, initialFrame, numFrames, zSize, ...
-        PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(channelIndex), neighborhood, ...
+        PreProcPath, Prefix, ProcessedDataFolder, displayFigures, doFF, ffim, Threshold(channelIndex), neighborhood, ...
         snippet_size, pixelSize, microscope, Weka,...
          filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, Ellipses);
 

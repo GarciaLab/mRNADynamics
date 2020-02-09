@@ -1,5 +1,5 @@
 function [ mapping, nextNucleiXY, score, inverse_mapping, varargout ] =...
-    frame2frameCorrespondence(FrameInfo, names, frameNumber1, frameNumber2, ...
+    frame2frameCorrespondence(FrameInfo, hisMat, frameNumber1, frameNumber2, ...
     nucleiFrame1, nucleusDiameter, precision, nucleiFrame2, manualMapping, ...
     shifts, ExpandedSpaceTolerance, NoBulkShift )
 %FRAME2FRAMECORRESPONDENCE Summary of this function goes here
@@ -13,8 +13,8 @@ maxNucleusStep = getDefaultParameters(FrameInfo,'max Interphase Displacement')..
     *time_resolution/60*nucleusDiameter/space_resolution * ExpandedSpaceTolerance;
 mapping = zeros(size(nucleiFrame1,1),1);
 
-frame1 = double(imread(names{frameNumber1}));
-frame2 = double(imread(names{frameNumber2}));
+frame1 = double(squeeze(hisMat(frameNumber1, :, :)));
+frame2 = double(squeeze(hisMat(frameNumber2, :, :)));
 
 %% 1. Find overall movements between the two frames
 if NoBulkShift
@@ -43,7 +43,7 @@ end
 
 %% 2. If not provided, find nuclei in the second frame
 if ~exist('nucleiFrame2','var') || isempty(nucleiFrame2)
-    [nextNucleiXY, intensity] = findNuclei(FrameInfo,names, frameNumber2, nucleusDiameter, true(size(frame1)), [],[1 1 1 1 1]);
+    [nextNucleiXY, intensity] = findNuclei(FrameInfo,hisMat, frameNumber2, nucleusDiameter, true(size(frame1)), [],[1 1 1 1 1]);
 else
     nextNucleiXY = nucleiFrame2;
     intensity = zeros(size(nextNucleiXY,1),1);

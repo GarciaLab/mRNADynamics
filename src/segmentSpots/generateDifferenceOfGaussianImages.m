@@ -1,9 +1,8 @@
 % Generates difference of Gaussian images
-function dogs = generateDifferenceOfGaussianImages(ProcPath, ExperimentType, FrameInfo, spotChannels,...
+function generateDifferenceOfGaussianImages(ProcPath, ExperimentType, FrameInfo, spotChannels,...
     numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision,...
     sigmas, app, kernelSize, noSave, numType, gpu, saveAsMat, saveType)
 
-dogs = [];
 
 DogOutputFolder = [ProcPath, filesep, Prefix, '_', filesep, 'dogs'];
 mkdir(DogOutputFolder)
@@ -29,15 +28,22 @@ if saveAsMat | strcmpi(saveType, '.mat')
     extractOpts = [extractOpts, 'mat'];
 end
 
-stacksPath = [PreProcPath, filesep, Prefix, filesep, 'stacks'];
+% stacksPath = [PreProcPath, filesep, Prefix, filesep, 'stacks'];
+
+load([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'], 'movieMat');
 
 
 nCh = length(spotChannels);
-for channelIndex = spotChannels
+format = [FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSize];
+
+%2 spot 2 color will break this
+dogMat = zeros(numFrames, format(1),format(2), zSize, 'uint16');
+
+for ch = spotChannels
     
-    waitbarFigure = waitbar(0, ['Filtering images: Channel ', num2str(channelIndex)]);
-   
-        nameSuffix = ['_ch', iIndex(channelIndex, 2)];
+    waitbarFigure = waitbar(0, ['Filtering images: Channel ', num2str(ch)]);
+    
+%     nameSuffix = ['_ch', iIndex(ch, 2)];
     
     
     if displayFigures && isempty(app)
@@ -49,26 +55,26 @@ for channelIndex = spotChannels
     p = 1;
     
     
-    if ~filter3D | strcmpi(gpu, 'noGPU')
-        parfor currentFrame = 1:numFrames
+    if strcmpi(gpu, 'noGPU')
+        for currentFrame = 1:numFrames
             
-            if ~filter3D
-                for zIndex = 1:zSize
-                    generateDoGs(DogOutputFolder, PreProcPath, Prefix, currentFrame, nameSuffix, filterType,...
-                        sigmas, filterSize, ...
-                        highPrecision, zIndex, displayFigures, app, numFrames, saveType);
+%             im = double(permute(squeeze(movieMat(ch,:, currentFrame,:,:)), [2,3,1]));
+            
+%             dogMat(currentFrame, :,:,:) = generateDoGs(DogOutputFolder, PreProcPath, Prefix, currentFrame, nameSuffix, filterType,...
+%                 sigmas, filterSize, ...
+%                 highPrecision, -1, displayFigures, app, numFrames, saveType, im, zSize, zStep);
+%             
+            
+                if strcmpi(filterType, 'Difference_of_Gaussian')
+                    dogMat(currentFrame, :,:,:) = uint16((filterImage(double(permute(squeeze(movieMat(ch,:, currentFrame,:,:)), [2,3,1])), filterType, sigmas, 'filterSize',filterSize, 'zStep', zStep) + 100) * 100);
+%                     if highPrecision
+%                         dogMat(currentFrame, :,:,:) = (dogMat(currentFrame, :,:,:) + 100) * 100;
+%                     end
+                else
+                    dogMat(currentFrame, :,:,:) = uint16((filterImage(double(permute(squeeze(movieMat(ch,:, currentFrame,:,:)), [2,3,1])), filterType, sigmas, 'filterSize',filterSize) + 100) * 100);
                 end
-            else
-                rawStackName = [stacksPath, filesep, iIndex(currentFrame, 3), nameSuffix, '.tif'];
-                im = readTiffStack(rawStackName);
                 
-                generateDoGs(DogOutputFolder, PreProcPath, Prefix, currentFrame, nameSuffix, filterType,...
-                    sigmas, filterSize, ...
-                    highPrecision, -1, displayFigures, app, numFrames, saveType, im, zSize, zStep);
-            end
-            
             send(q, currentFrame);
-            
         end
         
     else
@@ -111,64 +117,29 @@ end
         p = p + 1;
     end
 
+% clear movieMat;
+save([ProcPath, filesep, Prefix,'_', filesep, Prefix, '_dogMat.mat'], 'dogMat');
+% clear dogMat
+
 end
 
 
-function generateDoGs(DogOutputFolder, PreProcPath, Prefix, currentFrame, nameSuffix, filterType,...
-    sigmas, filterSize, highPrecision, zIndex, displayFigures, app, numFrames, saveType, varargin)
+function dogFrame = generateDoGs(DogOutputFolder, PreProcPath, Prefix, currentFrame, nameSuffix, filterType,...
+    sigmas, filterSize, highPrecision, zIndex, displayFigures, app, numFrames, saveType, im, zSize, zStep)
 
-if ~isempty(varargin)
-    im = varargin{1};
-    zSize = varargin{2};
-    zStep = varargin{3};
-    dim = 3;
+
+dim = 3;
+
+
+if strcmpi(filterType, 'Difference_of_Gaussian')
+    dogFrame = filterImage(im, filterType, sigmas, 'filterSize',filterSize, 'zStep', zStep);
+    if highPrecision
+        dogFrame = (dogFrame + 100) * 100;
+    end
 else
-    fileName = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(currentFrame, 3), '_z', ...
-        iIndex(zIndex, 2), nameSuffix, '.tif'];
-    im = double(imread(fileName));
-    dim = 2;
-    zStep = NaN;
+    dogFrame = (filterImage(im, filterType, sigmas, 'filterSize',filterSize) + 100) * 100;
 end
 
-if sum(im(:)) ~= 0
-    
-    if strcmpi(filterType, 'Difference_of_Gaussian')
-        dog = filterImage(im, filterType, sigmas, 'filterSize',filterSize, 'zStep', zStep);
-        if highPrecision
-            dog = (dog + 100) * 100;
-        end
-    else
-        dog = (filterImage(im, filterType, sigmas, 'filterSize',filterSize) + 100) * 100;
-    end
-    
-else
-    dog = im;
-end
-
-if dim == 2
-    dog = padarray(dog(filterSize:end - filterSize - 1, filterSize:end - filterSize - 1), [filterSize, filterSize], 0,'both');
-    dog_name = ['DOG_', Prefix, '_', iIndex(currentFrame, 3), '_z', iIndex(zIndex, 2), nameSuffix, saveType];
-    dog_full_path = [DogOutputFolder, filesep, dog_name];
-    if strcmpi(saveType, '.tif')
-        imwrite(uint16(dog), dog_full_path)
-    elseif strcmpi(saveType, '.mat')
-        save(dog_full_path, 'dog');
-    end
-elseif dim == 3
-    
-    dog = cat(3, zeros(size(dog, 1), size(dog, 2)), dog);
-    dog(:, :, zSize) = zeros(size(dog, 1), size(dog, 2));
-    for z = 1:zSize
-        dog_name = ['DOG_', Prefix, '_', iIndex(currentFrame, 3), '_z', iIndex(z, 2), nameSuffix, saveType];
-        dog_full_path = [DogOutputFolder, filesep, dog_name];
-        if strcmpi(saveType, '.tif')
-            imwrite(uint16(dog(:,:, z)), dog_full_path);
-        elseif strcmpi(saveType, '.mat')
-            plane = dog(:,:,z);
-            save(dog_full_path, 'plane');
-        end
-    end
-end
 
 if displayFigures && dim == 2
     
@@ -178,13 +149,12 @@ if displayFigures && dim == 2
         ax = gca;
     end
     if dim == 2
-        imshow(dog, [median(dog(:)), max(dog(:))], 'Parent', ax, 'InitialMagnification', 'fit');
+        imshow(dogFrame, [median(dogFrame(:)), max(dogFrame(:))], 'Parent', ax, 'InitialMagnification', 'fit');
     else
-        imshow(dog(:, :, zIndex), [median(dog(:)), max(dog(:))], 'Parent', ax, 'InitialMagnification', 'fit');
+        imshow(dogFrame(:, :, zIndex), [median(dogFrame(:)), max(dogFrame(:))], 'Parent', ax, 'InitialMagnification', 'fit');
     end
     title(ax, [nameSuffix(2:end), ' frame: ', num2str(currentFrame), '/', num2str(numFrames), ' z: ', num2str(zIndex)], 'Interpreter', 'none')
     pause(.05)
 end
 
 end
-

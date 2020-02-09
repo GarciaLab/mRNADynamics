@@ -64,7 +64,7 @@
 % Last updated: 10/08/2018 - Matías Potel Feola - Refactor filterMovie and segmentSpotsML
 %
 % Documented by: Matías Potel Feola (harrypotel@gmail.com)
-function [log, dogs] = filterMovie(Prefix, varargin)
+function log = filterMovie(Prefix, varargin)
 
 disp(['Generating filtered movie from ', Prefix,'...']);
 warning('off', 'MATLAB:MKDIR:DirectoryExists');
@@ -103,10 +103,7 @@ end
 nCh = length(spotChannels);
 
 if ~Weka && ~justTifs
-     if ~exist([PreProcPath, filesep, Prefix, filesep, 'stacks'], 'dir')
-        generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,spotChannels, zSize, initialFrame);
-    end
-    dogs = generateDifferenceOfGaussianImages(ProcPath, ExperimentType, FrameInfo, spotChannels,...
+    generateDifferenceOfGaussianImages(ProcPath, ExperimentType, FrameInfo, spotChannels,...
         numFrames, displayFigures, zSize, PreProcPath,...
         Prefix, filterType, highPrecision, sigmas, app,...
         kernelSize, noSave, numType, gpu, saveAsMat, saveType);

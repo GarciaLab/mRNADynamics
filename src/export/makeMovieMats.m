@@ -1,5 +1,5 @@
 function [movieMat, hisMat, maxMat, medMat, midMat]...
-    = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, Channels, varargin)
+    = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, varargin)
 
 noLoad = false;
 
@@ -63,8 +63,8 @@ if ~movie
 
     movieMat = zeros(nCh, nSlices+nPadding, nFrames, ySize, xSize, 'uint16'); % ch z t x y
     maxMat = zeros(nCh, nFrames, ySize, xSize, 'uint16'); % ch z x y
-    maxMat = zeros(nCh, nFrames, ySize, xSize, 'uint16'); % ch z x y
     medMat = zeros(nCh, nFrames, ySize, xSize, 'uint16'); % ch z x y
+    midMat = zeros(nCh, nFrames, ySize, xSize, 'uint16'); % ch z x y
     hisMat = zeros(nFrames, ySize, xSize, 'uint16'); % f x y
     for ch = 1:nCh
         for f = 1:nFrames

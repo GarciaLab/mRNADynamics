@@ -3,7 +3,7 @@ function [Spots, dogs]...
     = segmentTranscriptionalLoci(...
     ...
     nCh, coatChannel, channelIndex, initialFrame, numFrames,...
-    zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures,doFF, ffim,...
+    zSize, PreProcPath, Prefix, ProcPath, displayFigures,doFF, ffim,...
     Threshold, neighborhood, snippet_size, pixelSize, microscope,...
     Weka,filterMovieFlag, resultsFolder, gpu, saveAsMat, saveType, Ellipses)
 
@@ -61,20 +61,23 @@ if filterMovieFlag
 end
 
 if nCh > 1
-    chh = channelIndex;
+    ch = channelIndex;
 else
-    chh = coatChannel;
+    ch = coatChannel;
 end
 
-nameSuffix = ['_ch', iIndex(chh, 2)];
+load([ProcPath, filesep, Prefix, '_dogMat.mat'], 'dogMat');
+load([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'], 'movieMat');
+yDim = size(dogMat, 2);
+xDim = size(dogMat, 3);
 
 if Threshold == -1 && ~Weka
     
     if ~filterMovieFlag
-        Threshold = determineThreshold(Prefix, chh, 'numFrames', numFrames);
+        Threshold = determineThreshold(Prefix, ch,  dogMat, 'numFrames', numFrames);
         display(['Threshold: ', num2str(Threshold)])
     else
-        Threshold = determineThreshold(Prefix, chh, 'noSave', dogs, 'numFrames', numFrames);
+        Threshold = determineThreshold(Prefix, ch, 'noSave', dogs, 'numFrames', numFrames);
     end
     
     display(['Threshold: ', num2str(Threshold)])
@@ -86,88 +89,28 @@ q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
 
-if filterMovieFlag
-    saveType = 'none';
-end
+zPadded = zSize == size(dogMat, 4);
 
-isZPadded = false;
-
-firstdogpath = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(1, 3), '_z', iIndex(1, 2),...
-    nameSuffix];
-
-matsPresent = exist([firstdogpath, '.mat'], 'file');
-tifsPresent = exist([firstdogpath, '.tif'], 'file');
-
-if isempty(saveType)
-    if tifsPresent & ~matsPresent
-        saveType = '.tif';
-    elseif matsPresent & ~tifsPresent
-        saveType = '.mat';
-    elseif matsPresent & tifsPresent
-        error('not sure which files to pick. check your processed folder.');
-    end
-end
-
-firstdogpath = [firstdogpath, saveType];
-if strcmpi(saveType, '.tif')
-    firstDoG = imread(firstdogpath);
-elseif strcmpi(saveType, '.mat')
-    load(firstdogpath, 'plane');
-    firstDoG = plane;
-elseif strcmpi(saveType, 'none')
-    firstDoG = dogs(:, :, 1, 1);
-end
-
-if sum(firstDoG(:)) == 0
-    isZPadded = true;
-end
-
-parfor current_frame = initialFrame:numFrames
+for current_frame = initialFrame:numFrames %parfor current_frame = initialFrame:numFrames 
     
     for zIndex = 1:zSize
-        
-        imFileName = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(zIndex, 2),...
-            nameSuffix, '.tif'];
-        im = double(imread(imFileName));
+        im = double(squeeze(movieMat(ch, zIndex, current_frame, :, :)));
         try
-            imAbove = double(imread([PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(zIndex-1, 2),...
-                nameSuffix, '.tif']));
-            imBelow = double(imread([PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(zIndex+1, 2),...
-                nameSuffix, '.tif']));
+        imAbove = double(squeeze(movieMat(ch, zIndex+1, current_frame, :, :)));
+        imBelow = double(squeeze(movieMat(ch, zIndex-1, current_frame, :, :)));
         catch
             imAbove = nan(size(im,1),size(im,2));
             imBelow = nan(size(im,1),size(im,2));
         end
         
         
-        if isZPadded
+        if zPadded
             dogZ = zIndex;
         else
             dogZ = zIndex - 1;
         end
         
-%         try
-            if isZPadded | ( ~isZPadded & (zIndex~=1 & zIndex~=zSize) )
-                if strcmpi(saveType, '.tif')
-                    dogFileName = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(dogZ, 2),...
-                        nameSuffix,'.tif'];
-                    dog = double(imread(dogFileName));
-                elseif strcmpi(saveType, '.mat')
-                    dogFileName = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(dogZ, 2),...
-                        nameSuffix,'.mat'];
-                    plane = load(dogFileName, 'plane');
-                    dog = plane.plane;
-                elseif strcmpi(saveType, 'none')
-                    dog = dogs(:,:, dogZ, current_frame);
-                end
-            else
-                dog = false(size(im, 1), size(im, 2));
-            end
-%         catch
-%             error('Please run filterMovie to create DoG files.');
-%         end
-        
-        
+        dog = squeeze(dogMat(current_frame, :,:, dogZ));
         
         
         if displayFigures
@@ -192,7 +135,7 @@ parfor current_frame = initialFrame:numFrames
         % apply nuclear mask if it exists
         if ~isempty(Ellipses)
             ellipsesFrame = Ellipses{current_frame};
-            nuclearMask = makeNuclearMask(ellipsesFrame, [size(im,1), size(im,2)]);
+            nuclearMask = makeNuclearMask(ellipsesFrame, [yDim, xDim]);
     %         immask = uint16(nuclearMask).*im;
     %         imshow(immask, [])
             im_thresh = im_thresh & nuclearMask;

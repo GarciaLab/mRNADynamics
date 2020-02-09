@@ -7,7 +7,8 @@ function [SpotFilter, Particles, Spots,...
     CurrentParticle, CurrentFrame, CurrentZ, snippet_size, PixelsPerLine, ...
     LinesPerFrame, Spots, ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
     SpotFilter, cc, xSize, ySize, NDigits, ...
-    Prefix, PreProcPath, ProcPath, coatChannel, UseHistoneOverlay, schnitzcells, nWorkers, plot3DGauss)
+    Prefix, PreProcPath, ProcPath, coatChannel,...
+    UseHistoneOverlay, schnitzcells, nWorkers, plot3DGauss, movieMat)
 
 %ADDSPOT
 
@@ -45,20 +46,16 @@ else
             FitCell = cell(1, ZSlices);
             
             parfor z = 1:ZSlices
-                imAbove = [];
-                imBelow = [];
-                spotsIm = [];
-                spotsIm=imread([PathPart1,iIndex(CurrentFrame,NDigits),...
-                    '_z',iIndex(z,2),PathPart2]);
+                spotsIm = double(squeeze(movieMat(z, CurrentFrame, :, :)));
+                
                 try
-                    imAbove = double(imread([PathPart1,iIndex(CurrentFrame,NDigits),...
-                        '_z',iIndex(z-1,2),PathPart2]));
-                    imBelow = double(imread([PathPart1,iIndex(CurrentFrame,NDigits),...
-                        '_z',iIndex(z+1,2),PathPart2]));
+                    imAbove= double(squeeze(movieMat(z+1, CurrentFrame, :, :)));
+                   imBelow= double(squeeze(movieMat(z-1, CurrentFrame, :, :)));
                 catch
                     imAbove = nan(size(spotsIm,1),size(spotsIm,2));
                     imBelow = nan(size(spotsIm,1),size(spotsIm,2));
                 end
+                
                 Threshold = min(min(spotsIm));
                 dog = spotsIm;
                 im_thresh = dog >= Threshold;
@@ -128,7 +125,7 @@ else
                         fitSnip3D(...
                         ...
                         Spots{CurrentChannel}(CurrentFrame), coatChannel, SpotsIndex, CurrentFrame,...
-                        Prefix, PreProcPath, FrameInfo, nSpots);
+                        Prefix, PreProcPath, FrameInfo, nSpots, movieMat);
                 end
                 %%
                 %Add this to SpotFilter, which tells the code that this spot is

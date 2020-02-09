@@ -1,4 +1,4 @@
-function [ xy, varargout ] = findNuclei(FrameInfo, names, frameNumber, nucleusDiameter, embryoMask, varargin )
+function [ xy, varargout ] = findNuclei(FrameInfo, hisMat, frameNumber, nucleusDiameter, embryoMask, varargin )
 %FINDNUCLEI This function finds the position of nuclei within a frame which
 %is used as an initial input for the tracking algorithm.
 %   Detection is made by detecting the local maxima in a
@@ -7,7 +7,8 @@ function [ xy, varargout ] = findNuclei(FrameInfo, names, frameNumber, nucleusDi
 
 %% Initializing variables
 % Load parameters
-numberOfFrames = numel(names);
+% numberOfFrames = numel(names);
+
 LoGratio = getDefaultParameters(FrameInfo,'LoGratio');
 space_resolution = getDefaultParameters(FrameInfo,'space resolution');
 localMaximumRadius = LoGratio*nucleusDiameter/space_resolution;
@@ -30,7 +31,8 @@ yDim = FrameInfo(1).LinesPerFrame * FrameInfo(1).PixelSize;
 %     end
 % end
 if yDim > 150 && xDim > 150
-    I = imread(names{frameNumber});
+%     I = imread(names{frameNumber});
+    I = double(squeeze(hisMat(frameNumber, :, :)));
     pixelvalues = unique(I(:));
     thresh = pixelvalues(2);
     f_sigma = round(nucleusDiameter / FrameInfo(1).PixelSize);
@@ -41,11 +43,12 @@ if yDim > 150 && xDim > 150
          fspecial('gaussian',2*f_sigma,f_sigma),'symmetric','conv');
     level = graythresh(I_blurred);
     embryoMask = im2bw(I_blurred,level);
+    
 
 
 else    
     if ~exist('embryoMask','var') || isempty(embryoMask)
-        embryoMask = true(size(imread(names{frameNumber})));
+        embryoMask = true(size(hisMat(frameNumber, :,:), 3));
     end
 end
 % Added by NL and GM on 11/23/2019
@@ -57,6 +60,7 @@ end
 if nargin > 5
     targetNumber = varargin{1}; % coarse estimate of the number of nuclei that should be found.
 end
+    
 
 % Create the mask used to detect local maxima.
 localMaxMask = fspecial('disk',localMaximumRadius);
@@ -64,10 +68,10 @@ localMaxMask = imbinarize(mat2gray(localMaxMask),graythresh(mat2gray(localMaxMas
 localMaxMask(round(length(localMaxMask)/2),round(length(localMaxMask)/2))  = 0;
 
 
-%% Main body
+%% Main bodycurre
 
 % Load image
-img = double(imread(names{frameNumber}));
+img = double(squeeze(hisMat(frameNumber, :, :)));
 
 % Filter the image
 %filteredImg = imfilter(img,-fspecial('log',round(10*LoGradius),LoGradius),'symmetric');

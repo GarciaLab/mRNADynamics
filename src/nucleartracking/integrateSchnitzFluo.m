@@ -1,24 +1,20 @@
 function schnitzcells =...
     integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo,...
-    ExperimentType, Channels, PreProcPath)
+    Channels, PreProcPath)
 
 saveFlag = false;
 if nargin == 1
     
     [rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
-        rawDataFolder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder,...
+        rawDataFolder, Prefix, ~,Channel1,Channel2,OutputFolder,...
         Channel3, spotChannels, MovieDataBaseFolder, movieDatabase]...
         = readMovieDatabase(Prefix);
     
     Channels = {Channel1{1},Channel2{1}, Channel3{1}};
     
-    [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution, ...
-        Channel1, Channel2, Objective, Power, DataFolderColumnValue, ~, Comments, ...
-        nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3, prophase, metaphase] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
-  
     DataFolder = [DropboxFolder, filesep, Prefix];
-
-     load([DataFolder, filesep, 'FrameInfo.mat'], 'FrameInfo');
+    
+    load([DataFolder, filesep, 'FrameInfo.mat'], 'FrameInfo');
     
     FilePrefix = [Prefix, '_'];
     schnitzPath = [DropboxFolder, filesep, FilePrefix(1:end - 1), filesep, FilePrefix(1:end - 1), '_lin.mat'];
@@ -31,32 +27,15 @@ if nargin == 1
     
 end
 
+load([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'], 'movieMat');
 numFrames = length(FrameInfo);
 
-%Parse the channel information for the different experiment types
-if strcmpi(ExperimentType,'inputoutput')
-    
-    InputChannelTemp1 = strfind({lower(Channels{1}),lower(Channels{2}), lower(Channels{3})},'input');
-    InputChannelTemp2=~cellfun(@isempty,InputChannelTemp1);
-    InputChannel = find(InputChannelTemp2);
-    
-    
-elseif strcmpi(ExperimentType,'input')
-    %Parse the information from the different channels
-    
-    %Histone channel.
-    histoneChannel=find(~cellfun(@isempty,strfind(lower(Channels),'his')));
-    if isempty(histoneChannel)
-        histoneChannel=0;
-    end
-    
-    %Input channels
-    InputChannel=~cellfun(@isempty,Channels);
-    if histoneChannel
-        InputChannel(histoneChannel)=0;
-    end
-    InputChannel=find(InputChannel);
-end
+
+InputChannelTemp1 = strfind({lower(Channels{1}),lower(Channels{2}), lower(Channels{3})},'input');
+InputChannelTemp2=~cellfun(@isempty,InputChannelTemp1);
+InputChannel = find(InputChannelTemp2);
+
+
 
 
 %Create the circle that we'll use as the mask
@@ -81,11 +60,13 @@ if sum(InputChannel)
     PixelsPerLine=FrameInfo(1).PixelsPerLine;
     LinesPerFrame=FrameInfo(1).LinesPerFrame;
     %Number of z-slices
-    NumberSlices=FrameInfo(1).NumberSlices;
-    NumberSlices2 = NumberSlices + 2;
+        nPadding = 2;
+
+    nSlices=FrameInfo(1).NumberSlices + nPadding;
+   
     
     %Generate reference frame for edge detection
-    refFrame = ones(LinesPerFrame,PixelsPerLine,NumberSlices2);
+    refFrame = ones(LinesPerFrame,PixelsPerLine, nSlices);
     convRef = convn(refFrame, Circle, 'same');
     edgeMask = convRef~=sum(Circle(:));
     
@@ -93,13 +74,8 @@ if sum(InputChannel)
         
         h=waitbar(0,['Extracting nuclear fluorescence for channel ',num2str(ChN)]);
         
-        if strcmpi(ExperimentType,'inputoutput') || (strcmpi(ExperimentType,'input')&&(length(InputChannel))==1)
-            nameSuffix=['_ch',iIndex(InputChannel,2)];
-        elseif strcmpi(ExperimentType,'input')&&(length(InputChannel))>1
-            nameSuffix=['_ch',iIndex(InputChannel(ChN),2)];
-        else
-            error('Not sure what happened here. Talk to YJK or SA.');
-        end
+        nameSuffix=['_ch',iIndex(InputChannel,2)];
+        
         % NL: should parallelize this
         
         tempSchnitz = schnitzcells;
@@ -108,12 +84,13 @@ if sum(InputChannel)
             waitbar(CurrentFrame/numFrames,h);
             %
             %                 %Initialize the image
-            Image=zeros(LinesPerFrame,PixelsPerLine,NumberSlices2);
+%             Image=zeros(LinesPerFrame,PixelsPerLine,nSlices);
             
-            %Load the z-stack for this frame
-            for CurrentZ=1:NumberSlices2   %Note that I need to add the two extra slices manually
-                Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
-            end
+%             %Load the z-stack for this frame
+%             for CurrentZ=1:nSlices   %Note that I need to add the two extra slices manually
+%                 Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
+%             end
+            Image = permute(double(squeeze(movieMat(InputChannel,:,CurrentFrame,:,:))), [2, 3, 1]);
             
             convImage = imfilter(Image, double(Circle), 'same');
             convImage(edgeMask) = NaN;
@@ -121,7 +98,7 @@ if sum(InputChannel)
                 CurrentIndex=find(tempSchnitz(j).frames==CurrentFrame);
                 cenx=min(max(1,round(tempSchnitz(j).cenx(CurrentIndex))),PixelsPerLine);
                 ceny=min(max(1,round(tempSchnitz(j).ceny(CurrentIndex))),LinesPerFrame);
-                tempSchnitz(j).Fluo(CurrentIndex,1:NumberSlices2,ChN) = single(convImage(ceny,cenx,:));
+                tempSchnitz(j).Fluo(CurrentIndex,1:nSlices,ChN) = single(convImage(ceny,cenx,:));
             end
             
         end
@@ -133,6 +110,8 @@ if sum(InputChannel)
 else
     error('Input channel not recognized. Check correct definition in MovieDatabase. Input channels should use the :input notation.');
 end
+
+clear movieMat;
 
 if saveFlag
     save(schnitzPath);

@@ -17,7 +17,7 @@
 % Documented by: Sean Medin (smedin@berkeley.edu)
 
 
-function [thresh] = determineThreshold(Prefix, Channel, varargin)
+function [thresh] = determineThreshold(Prefix, Channel, dogMat, varargin)
 
 default_iqr = 6;
 brightest_iqr_test = 8;
@@ -45,7 +45,12 @@ zSize = FrameInfo(1).NumberSlices + 2;
 OutputFolder1=[ProcPath,filesep,Prefix,'_',filesep,'dogs',filesep];
 nameSuffix = ['_ch',iIndex(Channel,2)];
 
-[zPadded, saveType, dogProb] = isZPadded(ProcPath, Prefix, Channel, '', dogs);
+zPadded = false;
+
+if sum(sum(squeeze(dogMat(1,:,:,1)))) == 0
+    zPadded = true;
+end
+
 % says which z-slices and frames that we can scroll through
 if zPadded
     minZ = 2;
@@ -55,6 +60,9 @@ else
     maxZ = zSize - 2;
 end
 available_zs = 2:3:zSize-1;
+
+numFrames = size(dogMat, 1);
+
 available_frames = 1:4:numFrames;
 
 % loops through DOGs to find brightest one
@@ -72,7 +80,7 @@ for frame = available_frames
         else
             zInd = z-1;
         end
-        dog = loadDog(zInd, frame, saveType, dogProb);
+        dog = loadDog(zInd, frame);
         all_dogs{frame, zInd} = dog;
         non_zero_d = dog(dog ~= 0);
         val = iqr(non_zero_d(:))/2;
@@ -122,7 +130,7 @@ frameVal = uicontrol('Style','text',...
     'String',['Frame = ' num2str(bestFrame)]);
 
 % Slider for adjusting the threshold
-threshSlider = uicontrol('Style', 'slider',...
+threshSlider = uicontrol('Style', 'slider',... 332q
     'Min',min_val,'Max',max_val,'Value',thresh,...
     'Position', [250 5 500 20],...
     'Callback', @update_val);
@@ -154,7 +162,7 @@ uiwait(f);
         bestZ = zSlider.Value;
         bestFrame = frameSlider.Value;
         if isempty(all_dogs{bestFrame, bestZ})
-            dog = loadDog(bestZ,bestFrame, saveType, dogProb);
+            dog = loadDog(bestZ,bestFrame);
             all_dogs{bestFrame, bestZ} = dog;
         end
         dog_copy = all_dogs{bestFrame, bestZ};
@@ -183,18 +191,12 @@ uiwait(f);
         close(f);
     end
 
-    function dog = loadDog(zInd, frame, saveType, dogProb)
+    function dog = loadDog(zInd, frame)
         
-        dog_name = [dogProb,Prefix,'_',iIndex(frame,3),'_z',iIndex(zInd,2),nameSuffix,saveType];
         
-        if strcmpi(saveType, '.tif')
-            dog = double(imread([OutputFolder1 dog_name]));
-        elseif strcmpi(saveType, '.mat')
-            load([OutputFolder1 dog_name], 'plane');
-            dog = plane;
-        elseif strcmpi(saveType, 'none')
-            dog = dogs(:, :, zInd, frame);
-        end
+        dog = double(squeeze(dogMat(frame,:,:,zInd))); %t y x z
+     
+        
     end
 
 end

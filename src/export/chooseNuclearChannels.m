@@ -10,9 +10,8 @@
 % exportDataForLivemRNA and is only usable with Leica data (and the
 % 'nuclearGUI' option must be entered in exportDataForLivemRNA)
 
-function [Channel1, Channel2, Channel3, ProjectionType] = chooseNuclearChannels(...
-    LIFImages, NSeries, NSlices, NChannels, NFrames, ProjectionType, Channel1, Channel2, ...
-    Channel3, ReferenceHist)
+function [Channels, ProjectionType] = chooseNuclearChannels(...
+    LIFImages, NSeries, NSlices, NChannels, NFrames, ProjectionType, Channels, ReferenceHist)
 
 skip_factor = 5; % Only uses 1/skip_factor frames
 
@@ -232,6 +231,7 @@ uiwait(fig);
             end
         end
         
+        Channels = {Channel1, Channel2, Channel3};
         ProjectionType = proj_type_dropdown.Value;
         if strcmpi(ProjectionType, 'customprojection')
             ProjectionType = [ProjectionType ':' num2str(max_custom) ':' num2str(min_custom)];

@@ -7,7 +7,6 @@ displayFigures = false;
 nWorkers = 8;
 keepPool = false;
 dogs = [];
-saveType = '.tif';
 save_flag = true;
 
 for i = 1:length(varargin)
@@ -26,8 +25,6 @@ for i = 1:length(varargin)
         keepPool = true;
     elseif strcmpi(varargin{i}, 'dogs')
         dogs = varargin{i+1};
-    elseif strcmpi(varargin{i}, 'saveAsMat') | strcmpi(varargin{i}, '.mat')
-        saveType = '.mat';
     end
 end
 
@@ -43,6 +40,8 @@ end
 
 FrameInfo = load([DataFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
 FrameInfo = FrameInfo.FrameInfo;
+
+load([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat');
 
 startParallelPool(nWorkers, displayFigures, keepPool);
 
@@ -70,7 +69,7 @@ for ch = spotChannels
 
         nSpotsPerFrame = length(SpotsFr.Fits);
         for spot = 1:nSpotsPerFrame
-            SpotsFr = fitSnip3D(SpotsFr, ch, spot, frame, Prefix, PreProcPath, FrameInfo, nSpots);
+            SpotsFr = fitSnip3D(SpotsFr, ch, spot, frame, Prefix, PreProcPath, FrameInfo, nSpots, movieMat);
 %             fitSnip3D(SpotsFr, spotChannel, spot, frame, Prefix, PreProcPath, FrameInfo)
         end
         SpotsCh(frame) = SpotsFr;

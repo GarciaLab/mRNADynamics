@@ -94,12 +94,7 @@ end
 %Now do the nuclear segmentation and lineage tracking. This should be put
 %into an independent function.
 
-%Create the cell array with the names.
-D=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His_*.tif']);
-names = cell(length(D), 1);
-for i=1:length(D)
-    names{i}=[PreProcPath,filesep,Prefix,filesep,D(i).name];
-end
+load([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'], 'hisMat');
 
 
 %Pull the mitosis information from ncs.
@@ -116,8 +111,8 @@ indMit(indMit<1)=1;
 %Check whether nc14 occurred very close to the end of the movie. For those
 %frames we'll move the boundary for tracking purposes
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo')
-numFrames = length(FrameInfo);
-indMit(indMit>=numFrames)=indMit(indMit>=numFrames)-2;
+nFrames = length(FrameInfo);
+indMit(indMit>=nFrames)=indMit(indMit>=nFrames)-2;
 
 %If indMit is empty this means that we didn't see any mitosis. Deal with
 %this by assigning the first frames to it
@@ -126,13 +121,13 @@ if isempty(indMit)
     %If we don't have nc14 we'll fool the code into thinking that the last
     %frame of the movie was nc14
 elseif isnan(indMit(end,1))
-    indMit(end,1)=numFrames-6;
-    indMit(end,2)=numFrames-5;
+    indMit(end,1)=nFrames-6;
+    indMit(end,2)=nFrames-5;
 end
 
 
 %Embryo mask
-ImageTemp=imread(names{1});
+ImageTemp=squeeze(hisMat(1, :, :));
 embryo_mask=true(size(ImageTemp));
 clear ImageTemp
 
@@ -165,12 +160,12 @@ if ~retrack
     
     if track
         [nuclei, centers, ~, dataStructure] = ...
-            mainTracking(FrameInfo, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
+            mainTracking(FrameInfo, hisMat,'indMitosis',indMit,'embryoMask', embryo_mask,...
             settingArguments{:}, 'ExpandedSpaceTolerance', ExpandedSpaceTolerance, ...
             'NoBulkShift', NoBulkShift);
     else
         [nuclei, centers] = ...
-            mainTracking(FrameInfo, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
+            mainTracking(FrameInfo, hisMat,'indMitosis',indMit,'embryoMask', embryo_mask,...
             settingArguments{:}, 'ExpandedSpaceTolerance', ExpandedSpaceTolerance, ...
             'NoBulkShift', NoBulkShift, 'segmentationonly', true);
     end
@@ -180,7 +175,7 @@ if ~retrack
         % true(size(an_image_from_the_movie)) can be given as input.
          % Convert the results to compatible structures and save them
         %Put circles on the nuclei
-        [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,names,indMit);
+        [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,nFrames,indMit);
         %Convert nuclei structure into schnitzcell structure
         [schnitzcells] = convertNucleiToSchnitzcells(nuclei);
     
@@ -223,22 +218,22 @@ else
     %Re-run the tracking
     if exist('dataStructure', 'var')
         %Edit the names in dataStructure to match the current folder setup
-        dataStructure.names=names;
+        dataStructure.names='';
         
         [nuclei, centers, ~, dataStructure] = mainTracking(...
-            FrameInfo, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
+            FrameInfo, hisMat,'indMitosis',indMit,'embryoMask', embryo_mask,...
             'centers',centers,'dataStructure',dataStructure, settingArguments{:}, ...
             'ExpandedSpaceTolerance', ExpandedSpaceTolerance, ...
             'NoBulkShift', NoBulkShift);
     else
         [nuclei, centers, ~, dataStructure] = mainTracking(...
-            FrameInfo, names,'indMitosis',indMit,'embryoMask', embryo_mask,...
+            FrameInfo, hisMat,'indMitosis',indMit,'embryoMask', embryo_mask,...
             'centers',centers, settingArguments{:}, 'ExpandedSpaceTolerance', ...
             ExpandedSpaceTolerance, 'NoBulkShift', NoBulkShift);
     end
     
     %Put circles on the nuclei
-    [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,names,indMit);
+    [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,nFrames,indMit);
     %Convert nuclei structure into schnitzcell structure
     [schnitzcells] = convertNucleiToSchnitzcells(nuclei);
 end
@@ -269,9 +264,9 @@ end
 
 %Extract the nuclear fluorescence values if we're in the right experiment
 %type
-if intFlag && (strcmpi(ExperimentType,'inputoutput') ||strcmpi(ExperimentType,'input'))
+if intFlag 
     Channels={Channel1{1},Channel2{1}, Channel3{1}};
-    schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, ExperimentType, Channels, PreProcPath);
+    schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, Channels, PreProcPath);
 end
 
 if fish
@@ -281,7 +276,7 @@ end
 ncVector=[0,0,0,0,0,0,0,0,nc9,nc10,nc11,nc12,nc13,nc14];
 
 if track & ~noBreak
-    [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, numFrames);
+    [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
     save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
     save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells');
 end
