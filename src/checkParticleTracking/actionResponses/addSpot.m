@@ -45,7 +45,7 @@ else
             
             FitCell = cell(1, ZSlices);
             
-            parfor z = 1:ZSlices
+            for z = 1:ZSlices
                 spotsIm = double(squeeze(movieMat(z, CurrentFrame, :, :)));
                 
                 try

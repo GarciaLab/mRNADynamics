@@ -100,12 +100,7 @@ DogOutputFolder = [ProcessedDataFolder, filesep, 'dogs'];
 
 microscope = FrameInfo(1).FileMode;
 
-zSize = 2;
-for i = 1:size(FrameInfo,2)
-    if (FrameInfo(i).NumberSlices+2)>zSize
-        zSize = FrameInfo(i).NumberSlices + 2;
-    end
-end
+zSize = FrameInfo(1).NumberSlices;
 
 nCh = length(spotChannels);
 

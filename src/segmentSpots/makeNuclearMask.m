@@ -38,3 +38,30 @@ end
 
 
 end
+
+
+%%
+% Different algorithm i might implement later 
+
+% %Create the circle that we'll use as the mask
+% IntegrationRadius=2;       %Radius of the integration region in um
+% IntegrationRadius=floor(IntegrationRadius/FrameInfo(1).PixelSize); %Radius of the integration in pixels
+% if ~mod(IntegrationRadius,2)
+%     IntegrationRadius=IntegrationRadius+1;
+% end
+% 
+% Circle=false(3*IntegrationRadius,3*IntegrationRadius);
+% Circle=MidpointCircle(Circle,IntegrationRadius,1.5*IntegrationRadius+0.5,...
+%     1.5*IntegrationRadius+0.5,1);
+% 
+% refFrame = ones(LinesPerFrame,PixelsPerLine, nSlices);
+%     convRef = convn(refFrame, Circle, 'same');
+%     edgeMask = convRef~=sum(Circle(:)); 
+% convImage = imfilter(Image, double(Circle), 'same');
+%             convImage(edgeMask) = NaN;
+%              for j=1:length(tempSchnitz)
+%                 CurrentIndex=find(tempSchnitz(j).frames==CurrentFrame);
+%                 cenx=min(max(1,round(tempSchnitz(j).cenx(CurrentIndex))),PixelsPerLine);
+%                 ceny=min(max(1,round(tempSchnitz(j).ceny(CurrentIndex))),LinesPerFrame);
+%                 tempSchnitz(j).Fluo(CurrentIndex,1:nSlices,ChN) = single(convImage(ceny,cenx,:));
+%             end
