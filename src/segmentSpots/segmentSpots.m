@@ -127,7 +127,8 @@ for channelIndex = 1:nCh
     
     tic;
     
-    [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, spotChannels);
+    [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, spotChannels); %let's not
+    doFF = false;
 
     [tempSpots, dogs] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, initialFrame, numFrames, zSize, ...
         PreProcPath, Prefix, ProcessedDataFolder, displayFigures, doFF, ffim, Threshold(channelIndex), neighborhood, ...
