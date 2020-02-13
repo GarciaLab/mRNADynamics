@@ -39,7 +39,7 @@
 % 'generateTifs': MPF 11/11/2018 Additionally run filterMovie to generate Tifs stacks
 % 'skipExtraction': This doesn't extract LIF files to Tifs. Occasionally
 %                   useful if only the FrameInfo is desired. 
-% 'rootFolder': open a directory different from the default user directory
+% 'rootFolder',rootFolder: open a directory different from the default user directory
 %               if there is no given prefix. This is useful if you are
 %               opening data that is in a different project folder.
 % 'zslicesPadding': if series have different number of z-slices, pad them
