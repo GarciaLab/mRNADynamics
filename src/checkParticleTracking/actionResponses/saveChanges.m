@@ -1,6 +1,9 @@
-function saveChanges(NChannels, Particles, Spots, SpotFilter, DataFolder, ...
-    FrameInfo, UseHistoneOverlay, FilePrefix, ...
-    schnitzcells, DropboxFolder)
+function saveChanges(NChannels, cptState, DataFolder, FilePrefix, DropboxFolder)
+    Particles = cptState.Particles
+    Spots = cptState.Spots
+    SpotFilter = cptState.SpotFilter
+    FrameInfo = cptState.FrameInfo
+    schnitzcells = cptState.schnitzcells
 
     % If we only have one channel bring Particles back to the legacy format without any cells
     if NChannels == 1
@@ -12,7 +15,7 @@ function saveChanges(NChannels, Particles, Spots, SpotFilter, DataFolder, ...
     save([DataFolder, filesep, 'FrameInfo.mat'], 'FrameInfo')
     
     % CS20170912, saves as 7.3 version, necessary for saving mats if >2GB
-    if UseHistoneOverlay
+    if cptState.UseHistoneOverlay
         save([DataFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter', '-v7.3')
         save([DataFolder, filesep, 'Spots.mat'], 'Spots', '-v7.3') 
         save([DropboxFolder, filesep, FilePrefix(1:end-1), filesep, FilePrefix(1:end-1), '_lin.mat'], 'schnitzcells', '-v7.3')

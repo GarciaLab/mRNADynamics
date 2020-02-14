@@ -576,9 +576,7 @@ end
 %% Main loop - end
 
 % save after exiting the main loop - the user pressed 'x'
-saveChanges(NChannels, cptState.Particles, cptState.Spots, cptState.SpotFilter, DataFolder, ...
-                cptState.FrameInfo, cptState.UseHistoneOverlay, FilePrefix, ...
-                cptState.schnitzcells, DropboxFolder);
+saveChanges(NChannels, cptState, DataFolder, FilePrefix, DropboxFolder);
 
 close all
 
