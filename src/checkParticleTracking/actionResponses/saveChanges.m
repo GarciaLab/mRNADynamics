@@ -1,9 +1,9 @@
 function saveChanges(NChannels, cptState, DataFolder, FilePrefix, DropboxFolder)
-    Particles = cptState.Particles
-    Spots = cptState.Spots
-    SpotFilter = cptState.SpotFilter
-    FrameInfo = cptState.FrameInfo
-    schnitzcells = cptState.schnitzcells
+    Particles = cptState.Particles;
+    Spots = cptState.Spots;
+    SpotFilter = cptState.SpotFilter;
+    FrameInfo = cptState.FrameInfo;
+    schnitzcells = cptState.schnitzcells;
 
     % If we only have one channel bring Particles back to the legacy format without any cells
     if NChannels == 1
