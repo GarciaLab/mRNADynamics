@@ -556,7 +556,7 @@ while (cc ~= 'x')
 
     set(0, 'CurrentFigure', Overlay);
 
-    cc = getUserKeyInput();
+    cc = getUserKeyInput(Overlay);
     
     frameChangeKeyInput(cc);
     zSliceChangeKeyInput(cc);
