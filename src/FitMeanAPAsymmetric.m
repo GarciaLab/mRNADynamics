@@ -84,7 +84,19 @@ channel = 1;
 if iscell(MeanVectorAP)
     MeanVectorAP = MeanVectorAP{channel};
     SDVectorAP = SDVectorAP{channel};
-    OnRatioAP = OnRatioAP{channel};
+% For instantaneous Fraction ON considered 
+% (basically averaged spot fluo over ALL nuclei)
+%     try
+%         OnRatioAP = OnRatioAP{channel};
+%     catch
+%         error('No instantaneous fraction on. Check if it has Ellipses.mat')
+%     end
+    OnRatioAP = ones(size(MeanVectorAP));
+%     try 
+%         OnRatioAP = OnRatioAP{channel};
+%     catch
+%         OnRatioAP = ones(size(MeanVectorAP));
+%     end
     NParticlesAP = NParticlesAP{channel};
 end
 
@@ -109,13 +121,18 @@ TimeEnd014=1000;
  
 %Rough frame window to consider in the fits
 
-%Some data sets won't have nc12
-if nc12>0
+%Some data sets won't have nc12 or even nc13
+if  nc13>0 && nc12>0 % both nc12 and nc13 are captured
+    FrameWindow13=[nc13:nc14];
     FrameWindow12=[nc12:nc13];
-else
+elseif nc13>0 && nc12 ==0 % only nc13 is captured
+    FrameWindow13=[nc13:nc14];
+    FrameWindow12=[];
+elseif nc13==0 % neither nc13 nor nc12 are captured
+    FrameWindow13=[];
     FrameWindow12=[];
 end
-FrameWindow13=[nc13:nc14];
+
 FrameWindow14=[nc14:length(ElapsedTime)];      
 
 
@@ -375,6 +392,8 @@ while (cc~=13)
 
                     FitResults(i,CurrentNC-11).TimeStart=xFit(1);
                     FitResults(i,CurrentNC-11).RateFit=xFit(2);
+                    FitResults(i,CurrentNC-11).RateOffFit=nan; % just for syntax: YJK
+                    FitResults(i,CurrentNC-11).SDRateOffFit=nan; % just for syntax: YJK
 
                     %Estimate an error bar out of the confidence intervals
                     FitResults(i,CurrentNC-11).CI=nlparci(xFit,residual,'jacobian',jacobian);
