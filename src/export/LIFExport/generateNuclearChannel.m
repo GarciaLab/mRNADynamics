@@ -33,7 +33,7 @@ if nNuclearChannels ~= 0
         % For all 'nuclear' channels, generate HisSlices, and do projection
         HisSlices = generateHisSlices(movieImages, NSlices, NChannels, nuclearChannel, framesIndex, seriesIndex);
         
-        ProjectionTemp(:, :, ChannelIndex) = calculateProjection(ProjectionType, NSlices, HisSlices);
+        ProjectionTemp(:, :, ChannelIndex) = calculateProjection(ProjectionType, NSlices(seriesIndex), HisSlices);
         
         % Think about "invertedNuclear", for example, MCP-mCherry, then
         % invert the ProjectionTemp using imcomplement
@@ -100,7 +100,7 @@ else
     
     HisSlices = generateHisSlices(movieImages, NSlices, NChannels, nuclearChannel, framesIndex, seriesIndex);
     
-    Projection = calculateProjection(ProjectionType, NSlices, HisSlices);
+    Projection = calculateProjection(ProjectionType, NSlices(seriesIndex), HisSlices);
     
     %YJK : Think about the case when there is no His channel,
     %and it is inputoutput mode or 1spot mode or 2spot2color.
