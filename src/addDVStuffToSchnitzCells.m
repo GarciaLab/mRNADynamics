@@ -1,12 +1,16 @@
-function addDVStuffToSchnitzCells(DataType, varargin)
+function [dlfluobins, dlfluobincounts] = addDVStuffToSchnitzCells(DataType, varargin)
 %%
 displayFigures = false;
+saveFigures = false;
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'displayFigures')
         displayFigures = true;
+    elseif strcmpi(varargin{i}, 'saveFigures')
+        saveFigures = true;
     end
 end
+
 [allData, Prefixes, resultsFolder] = LoadMS2Sets(DataType, 'noCompiledNuclei');
 
 load([resultsFolder,filesep,Prefixes{1},filesep,'FrameInfo.mat'], 'FrameInfo')
@@ -25,8 +29,14 @@ ch = 1;
 fluoFeatures = [];
 for e = 1:length(allData)
     
-    schnitzcells = allData(e).Particles.schnitzcells;
+    load([resultsFolder,filesep,Prefixes{e},filesep,'FrameInfo.mat'], 'FrameInfo')
     
+    ncFrames = [zeros(1,8), allData(e).Particles.nc9, allData(e).Particles.nc10, allData(e).Particles.nc11, allData(e).Particles.nc12, allData(e).Particles.nc13, allData(e).Particles.nc14]; 
+
+    schnitzcells = allData(e).Particles.schnitzcells;
+    time = [FrameInfo.Time]/60; %frame times in minutes 
+    
+
     %to speed this up, remove unnecessary schnitzcells fields
     schnitzcells = removeSchnitzcellsFields(schnitzcells);
     
@@ -34,18 +44,29 @@ for e = 1:length(allData)
     DVbinID = allData(1).Particles.DVbinID;
     Ellipses = allData(e).Particles.Ellipses;
     
+    
+    %clear out any existing compiledparticle entries
+    for s = 1:length(schnitzcells)
+        schnitzcells(s).compiledParticle = [];
+    end
+        
+    
     for p = 1:length(CompiledParticles{ch})
         schnitzInd = CompiledParticles{ch}(p).schnitz;
         schnitzcells(schnitzInd).compiledParticle = uint16(p);
+        
         if isfield(CompiledParticles{ch}(p), 'dvbin')
             schnitzcells(schnitzInd).dvbin = uint8(CompiledParticles{ch}(p).dvbin);
         end
     end
     
+    
+    
     ncs = [zeros(1,8),allData(e).Particles.nc9, allData(e).Particles.nc10, allData(e).Particles.nc11,...
         allData(e).Particles.nc12, allData(e).Particles.nc13, allData(e).Particles.nc14];
     
     nFrames = length(allData(e).Particles.ElapsedTime);
+    
     
     for s = 1:length(schnitzcells)
         midFrame = ceil(length(schnitzcells(s).frames)/2);
@@ -54,7 +75,8 @@ for e = 1:length(allData)
         schnitzcells(s).cycle = uint8(cycle);
     end
     
-    
+    schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, ncFrames);
+
     schnitzcells = filterSchnitz(schnitzcells, imSize);
     
     
@@ -66,7 +88,28 @@ for e = 1:length(allData)
             midCycle = 1;
         end
         midCycleFrame = find(schnitzcells(s).frames==midCycle);
-        schnitzcells(s).FluoFeature = single(schnitzcells(s).FluoTimeTrace(midCycleFrame));
+        schnitzcells(s).midCycleFrame = find(schnitzcells(s).frames==midCycle);
+        
+%         try
+            schnitzcells(s).FluoTimeTraceSmooth = smooth(single(ExtractDlFluo(schnitzcells(s).Fluo, .5)), 5);
+%         catch
+%             schnitzcells(s).FluoTimeTraceSmooth = smooth(single(ExtractDlFluo(schnitzcells(s).Fluo, .5)));
+%         end
+        if schnitzcells(s).cycle ~= 14
+            midCycleSmooth = floor((ncs(schnitzcells(s).cycle) + ncs(schnitzcells(s).cycle+1))/2);
+        else
+            midCycleSmooth = 1;
+        end
+        midCycleFrameSmooth = find(schnitzcells(s).frames==midCycleSmooth);
+           
+        
+        %different characterizations of intensity
+        schnitzcells(s).fluoMid= single(schnitzcells(s).FluoTimeTrace(midCycleFrame)); %middle fluorescence
+        schnitzcells(s).fluoMidSmooth = single(schnitzcells(s).FluoTimeTraceSmooth(midCycleFrameSmooth)); %middle fluorescence smoothed
+        
+        schnitzcells(s).FluoFeature =  schnitzcells(s).fluoMid; %the preferred intensity
+        
+        
         
         
         
@@ -88,12 +131,14 @@ for e = 1:length(allData)
                 plot(midCycle, schnitzcells(s).FluoFeature, 'ob');
                 hold off
                 xticks([]);
-                yticks([min(schnitzcells(s).FluoTimeTrace), max(schnitzcells(s).FluoTimeTrace)]);
+                yticks([round(min(schnitzcells(s).FluoTimeTrace)), round(max(schnitzcells(s).FluoTimeTrace))]);
+%                 ylim([0, 3000]);
                 
                 figure(holdFig)
                 plot(1:length(schnitzcells(s).FluoTimeTrace), schnitzcells(s).FluoTimeTrace, '-k');
                 hold on
-                plot(midCycleFrame, schnitzcells(s).FluoFeature, 'ob');
+                plot(midCycleFram, schnitzcells(s).FluoFeature, 'ob');
+%                 ylim([0, 3000]);
                 
                 
             end
@@ -102,7 +147,7 @@ for e = 1:length(allData)
         
     end
     
-    if displayFigures
+    if displayFigures && saveFigures
         mkdir([resultsFolder, filesep, DataType]);
         
         saveas(tileFig, [resultsFolder,filesep,DataType, filesep, 'allDorsalTracesTile.png']);
@@ -119,45 +164,8 @@ for e = 1:length(allData)
     
 end
 
-mkdir([resultsFolder,filesep,DataType]);
-% nbins = floor(length(DVbinID) / 2
-% nbins = 10;
-% dlfluobinwidth = (max(fluoFeatures) - min(fluoFeatures)) / (nbins-1);
-% dlfluobins = min(fluoFeatures):dlfluobinwidth:max(fluoFeatures);
-dlfluobins = 0:250:3500; %this is appropriate for taking instantaneous dorsal at ~50% through nc12 on the sp8
-save([resultsFolder,filesep,DataType,filesep,'dlfluobins.mat'], 'dlfluobins');
-
-
 %%
 
-[allData, Prefixes, resultsFolder] = LoadMS2Sets(DataType);
-load([resultsFolder,filesep,DataType,filesep,'dlfluobins.mat'], 'dlfluobins');
-
-for e = 1:length(allData)
-    
-    schnitzcells = allData(e).Particles.schnitzcells;
-    CompiledParticles = allData(e).Particles.CompiledParticles;
-    
-    for s = 1:length(schnitzcells)
-        dif = schnitzcells(s).FluoFeature - dlfluobins;
-        [~,dlfluobin] = min(dif(dif>0));
-        if ~isempty(dlfluobin)
-            schnitzcells(s).dlfluobin = single(dlfluobin);
-        else
-            schnitzcells(s).dlfluobin = NaN;
-        end
-    end
-    
-    
-    save([resultsFolder,filesep,Prefixes{e},filesep,Prefixes{e},'_lin.mat'], 'schnitzcells')
-    
-    for p = 1:length(CompiledParticles{ch})
-        schnitzInd = CompiledParticles{ch}(p).schnitz;
-        CompiledParticles{ch}(p).dlfluobin = single(schnitzcells(schnitzInd).dlfluobin);
-    end
-    
-    save([resultsFolder,filesep,Prefixes{e},filesep,'CompiledParticles.mat'], 'CompiledParticles', '-append');
-    
-end
+binDorsal(DataType);
 
 end

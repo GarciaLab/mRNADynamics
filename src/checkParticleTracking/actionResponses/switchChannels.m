@@ -1,6 +1,6 @@
 function [CurrentChannel, PreviousChannel, coatChannel, CurrentParticle] =...
     switchChannels(CurrentChannel, CurrentParticle, Particles, ...
-    UseHistoneOverlay, coatChannels, NChannels)
+    UseHistoneOverlay, NChannels)
 %SWITCHCHANNELS Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -12,6 +12,8 @@ if CurrentChannel>NChannels
 end
 
 %Update the coatChannel
+coatChannels = [1, 2]; % JP: this looks weird, but it was this way in the main loop
+
 coatChannel=coatChannels(CurrentChannel);
 
 

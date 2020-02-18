@@ -25,6 +25,7 @@ for e = 1:size(ellipsesFrame, 1)
             nuclearMask(x, y) = norm([x, y] - [cenx, ceny]) < rad;
         end
     end
+    
 end
 
 

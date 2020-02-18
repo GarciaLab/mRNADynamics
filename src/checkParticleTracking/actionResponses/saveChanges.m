@@ -1,31 +1,29 @@
-function saveChanges(NChannels, Particles, Spots, SpotFilter, DataFolder, ...
-    FrameInfo, UseHistoneOverlay, FilePrefix, ...
-    schnitzcells, DropboxFolder)
-%SAVECHANGES Summary of this function goes here
-%   Detailed explanation goes here
+function saveChanges(NChannels, cptState, DataFolder, FilePrefix, DropboxFolder)
+    Particles = cptState.Particles;
+    Spots = cptState.Spots;
+    SpotFilter = cptState.SpotFilter;
+    FrameInfo = cptState.FrameInfo;
+    schnitzcells = cptState.schnitzcells;
 
-%If we only have one channel bring Particles back to the legacy
-%format without any cells
-if NChannels==1
-    Particles=Particles{1};
-    Spots=Spots{1};
-    SpotFilter=SpotFilter{1};
-end
+    % If we only have one channel bring Particles back to the legacy format without any cells
+    if NChannels == 1
+        Particles = Particles{1};
+        Spots = Spots{1};
+        SpotFilter = SpotFilter{1};
+    end
 
-save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo')
-if UseHistoneOverlay
-    save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter', '-v7.3')
-    save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3') %CS20170912 necessary for saving Spots.mat if >2GB
-    save([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'],'schnitzcells', '-v7.3')
-else
-    save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter', '-v7.3')
-    save([DataFolder,filesep,'Spots.mat'],'Spots','-v7.3') %CS20170912 necessary for saving Spots.mat if >2GB
-end
-disp('Particles saved.')
-if NChannels==1
-    Particles={Particles};
-    Spots = {Spots};
-    SpotFilter = {SpotFilter};
-end
+    save([DataFolder, filesep, 'FrameInfo.mat'], 'FrameInfo')
+    
+    % CS20170912, saves as 7.3 version, necessary for saving mats if >2GB
+    if cptState.UseHistoneOverlay
+        save([DataFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter', '-v7.3')
+        save([DataFolder, filesep, 'Spots.mat'], 'Spots', '-v7.3') 
+        save([DropboxFolder, filesep, FilePrefix(1:end-1), filesep, FilePrefix(1:end-1), '_lin.mat'], 'schnitzcells', '-v7.3')
+    else
+        save([DataFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter', '-v7.3')
+        save([DataFolder, filesep, 'Spots.mat'], 'Spots', '-v7.3')
+    end
+    
+    disp('Particles saved.')
 end
 

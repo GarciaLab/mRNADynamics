@@ -1,4 +1,4 @@
-function [Data, Prefixes, resultsFolder] = LoadMS2Sets(DataType, varargin)
+function [Data, prefixes, resultsFolder] = LoadMS2Sets(DataType, varargin)
 %
 %Data = LoadMS2Sets(DataType)
 %
@@ -12,7 +12,7 @@ function [Data, Prefixes, resultsFolder] = LoadMS2Sets(DataType, varargin)
 %
 %OPTIONS
 % 'noCompiledNuclei'
-% 'justPrefixes'
+% 'justprefixes'
 %
 %OUTPUT
 %Returns the Data structure containing all of the relevant datasets from your
@@ -22,14 +22,14 @@ function [Data, Prefixes, resultsFolder] = LoadMS2Sets(DataType, varargin)
 %Created:
 %Last Updated: 1/13/2018. AR
 
-Prefixes = {};
+prefixes = {};
 Data = struct();
 resultsFolder = '';
 
 optionalResults = '';
 compareSettings = true;
 noCompiledNuclei = false;
-justPrefixes = false;
+justprefixes = false;
 inputOutputFits = false;
 
 for i= 1:length(varargin)
@@ -39,8 +39,8 @@ for i= 1:length(varargin)
     if strcmpi(varargin{i}, 'noCompiledNuclei')
         noCompiledNuclei = true;
     end
-    if strcmpi(varargin{i}, 'justPrefixes')
-        justPrefixes = true;
+    if strcmpi(varargin{i}, 'justprefixes')
+        justprefixes = true;
     end
     if strcmpi(varargin{i}, 'inputOutputFits')
         inputOutputFits = true;
@@ -82,6 +82,12 @@ end
 DropboxFolder=DropboxFolders{DataStatusToCheck};
 resultsFolder = DropboxFolder;
 
+projectFolder = [resultsFolder, filesep, DataType];
+if ~exist(projectFolder,'dir')
+    mkdir(projectFolder);
+end
+
+
 %Now, load the DataStatus.XLSX
 D=dir([DropboxFolder,filesep,'DataStatus.*']);
 [~,StatusTxt]=xlsread([DropboxFolder,filesep,D(1).name],DataType);
@@ -118,10 +124,13 @@ ExperimentAxis=[];
 APResolution=[];
 
 PrefixRow=strcmp(StatusTxt(:,1),'Prefix:');
+prefixes = cell(1, length(CompiledSets));
+
 for i=1:length(CompiledSets)
     SetName=StatusTxt{PrefixRow,CompiledSets(i)};
     Quotes=strfind(SetName,'''');
     Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
+    prefixes{i} = Prefix;
     
     [~, ExperimentTypeFromDatabase, ExperimentAxisFromDatabase, ~, ~, APResolutionFromDatabase, ~,...
         ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
@@ -167,9 +176,8 @@ for i=1:length(CompiledSets)
     SetNames{i}=SetName;
     Quotes=strfind(SetName,'''');
     Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
-    Prefixes = [Prefixes, Prefix];
     
-    if ~justPrefixes
+    if ~justprefixes
         
         %Load CompiledParticles if it exists. This constitutes the main part of
         %the Data output. However, we will later add more information to this
@@ -338,7 +346,7 @@ for i=1:length(CompiledSets)
     end
 end
 
-if ~justPrefixes
+if ~justprefixes
     %Now add the SetName and APDivision information
     if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],'file')
         for i=1:length(Data)
@@ -431,9 +439,10 @@ if ~justPrefixes
 if exist('DataNuclei','var')
     for i=1:length(DataNuclei)
         DataNuclei(i).SetName=SetNames{i};
-        
-        if exist('APDivisions','var')
-            DataNuclei(i).APDivision=APDivisions(i).APDivision;
+        try
+            if exist('APDivisions','var')
+                DataNuclei(i).APDivision=APDivisions(i).APDivision;
+            end
         end
     end
 end
@@ -471,5 +480,8 @@ if noCompiledNuclei
 end
 
 end
+
+save([projectFolder, filesep, 'prefixes.mat'], 'prefixes');
+
 
 end

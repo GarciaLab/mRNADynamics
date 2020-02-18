@@ -1,16 +1,17 @@
-function [CurrentSnippet, himage] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
-    CurrentZIndex, FullSlicePath, Spots, CurrentChannel, CurrentFrame, ...
+function [CurrentSnippet, snipImageHandle] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
+    CurrentZIndex, FullSlice, Spots, CurrentChannel, CurrentFrame, ...
     CurrentParticleIndex, ExperimentType, snippet_size, xSize, ... 
-    ySize, SnippetEdge, FrameInfo, CurrentSnippet, himage, pixelSize)
+    ySize, SnippetEdge, FrameInfo, CurrentSnippet, snipImageHandle, pixelSize)
 %PLOTSNIPPET Summary of this function goes here
 %   Detailed explanation goes here
 
 % Spots = castStructNumbersToDoubles(Spots);
 
+scale = 10; %magnification of snippet
+
     if  ~isempty(xTrace) && ~isempty(CurrentZIndex)
         %Get the snippet and the mask, and overlay them
         %(MT, 2018-02-12): lattice data could use this, changed CurrentChannel to coatChannel
-        FullSlice=imread(FullSlicePath);
         xSpot = double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xDoG(CurrentZIndex));
         ySpot = double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yDoG(CurrentZIndex));
 
@@ -35,11 +36,11 @@ function [CurrentSnippet, himage] = plotSnippet(snippetFigAxes, rawDataAxes, gau
         SnippetOverlay=cat(3,IntegrationArea/2 + ...
             +imSnippet,imSnippet,imSnippet);
 
-        if ~isempty(himage)
-            himage = imshow(SnippetOverlay,...
-                [],'Border','Tight','InitialMagnification',1000, 'Parent', snippetFigAxes);
+        if isempty(snipImageHandle) 
+            snipImageHandle = imshow(SnippetOverlay,...
+                [],'Border','Tight','InitialMagnification',scale*100, 'Parent', snippetFigAxes);
         else
-            himage.CData = SnippetOverlay;
+            snipImageHandle.CData = SnippetOverlay;
         end
 
         hold(snippetFigAxes,'on')
@@ -64,7 +65,12 @@ function [CurrentSnippet, himage] = plotSnippet(snippetFigAxes, rawDataAxes, gau
            double( Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yFit(CurrentZIndex)));
         hold(snippetFigAxes,'off')
     else
-        imshow(zeros(SnippetEdge), 'Parent', snippetFigAxes)
+        if isempty(snipImageHandle)
+            snipImageHandle = imshow(zeros(SnippetEdge), 'Parent', snippetFigAxes);
+        else
+            scale = 10;
+            snipImageHandle.CData = zeros(SnippetEdge*scale, SnippetEdge*scale, 3);
+        end
     end
 % 
 %     if ~isempty(xTrace) && ~isempty(CurrentZIndex)

@@ -4,7 +4,7 @@ function [SpotFilter, Particles, Spots,...
     addSpot(...
     ...
     ZoomMode, GlobalZoomMode, Particles, CurrentChannel, ...
-    CurrentParticle, CurrentFrame, CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
+    CurrentParticle, CurrentFrame, CurrentZ, snippet_size, PixelsPerLine, ...
     LinesPerFrame, Spots, ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
     SpotFilter, cc, xSize, ySize, NDigits, ...
     Prefix, PreProcPath, ProcPath, coatChannel, UseHistoneOverlay, schnitzcells, nWorkers, plot3DGauss)
@@ -44,7 +44,7 @@ else
             
             FitCell = cell(1, ZSlices);
             
-            for z = 1:ZSlices
+            parfor z = 1:ZSlices
                 imAbove = [];
                 imBelow = [];
                 spotsIm = [];
@@ -84,7 +84,7 @@ else
             end
             Fits = [];
             
-            for z = 1:ZSlices
+           for z = 1:ZSlices
                 if ~isempty(FitCell{z})
                     fieldnames = fields(FitCell{z});
                     if isempty(Fits)
@@ -121,6 +121,7 @@ else
                     Spots{CurrentChannel}(CurrentFrame).Fits = Fits;
                 end
                 %%
+                if plot3DGauss
                     nSpots = 1;
                     Spots{CurrentChannel}(CurrentFrame) =...
                         ...
@@ -128,6 +129,7 @@ else
                         ...
                         Spots{CurrentChannel}(CurrentFrame), coatChannel, SpotsIndex, CurrentFrame,...
                         Prefix, PreProcPath, FrameInfo, nSpots);
+                end
                 %%
                 %Add this to SpotFilter, which tells the code that this spot is
                 %above the threshold. First, check whether the

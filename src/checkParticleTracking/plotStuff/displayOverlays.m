@@ -1,13 +1,13 @@
-function [ImageHis, xForZoom, yForZoom, oim, ellipseHandles] =...
+function [ImageHisMat, xForZoom, yForZoom, hisOverlayHandle, ellipseHandles] =...
     ...
     displayOverlays(...
     ...
-    overlayAxes, Image, SpeedMode, FrameInfo, Particles, ...
+    overlayAxes, ImageMat, SpeedMode, FrameInfo, Particles, ...
     Spots, CurrentFrame, ShowThreshold2, ...
     Overlay, CurrentChannel, CurrentParticle, ZSlices, CurrentZ, numFrames, ...
     schnitzcells, UseSchnitz, DisplayRange, Ellipses, SpotFilter, ZoomMode, GlobalZoomMode, ...
     ZoomRange, xForZoom, yForZoom, fish, UseHistoneOverlay, multiAx,...
-    HisOverlayFigAxes, HisPath1, HisPath2, oim, ellipseHandles)
+    HisOverlayFigAxes, hisOverlayHandle, ellipseHandles, ImageHisMat)
 
 %PLOTFRAME Summary of this function goes here
 %   Detailed explanation goes here
@@ -275,10 +275,10 @@ if ZoomMode
         xlim(overlayAxes,[xForZoom-ZoomRange,xForZoom+ZoomRange])
         ylim(overlayAxes,[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2])
         if multiView
-           for i = 1:length(multiAx)
-               for j = 1:length(multiAx)
-                   xlim(multiAx{i, j},[xForZoom-ZoomRange,xForZoom+ZoomRange])
-                    ylim(multiAx{i, j},[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2]) 
+           for z = 1:length(multiAx)
+               for f = 1:length(multiAx)
+                    xlim(multiAx{z, f},[xForZoom-ZoomRange,xForZoom+ZoomRange])
+                    ylim(multiAx{z, f},[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2]) 
                end
            end
         end
@@ -291,35 +291,30 @@ if GlobalZoomMode
     xlim(overlayAxes,[xForZoom-ZoomRange,xForZoom+ZoomRange])
     ylim(overlayAxes,[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2])
     if multiView
-           for i = 1:length(multiAx)
-               for j = 1:length(multiAx)
-                   xlim(multiAx{i, j},[xForZoom-ZoomRange,xForZoom+ZoomRange])
-                    ylim(multiAx{i, j},[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2]) 
+           for z = 1:length(multiAx)
+               for f = 1:length(multiAx)
+                   xlim(multiAx{z, f},[xForZoom-ZoomRange,xForZoom+ZoomRange])
+                    ylim(multiAx{z, f},[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2]) 
                end
            end
     end
 end
 
 if UseHistoneOverlay
-    try
-        ImageHis=imread(HisPath1);
-    catch %Had to do this for KITP
-        ImageHis=imread(HisPath2);
-    end
 
     if isempty(DisplayRange)
-        HisOverlayImage=cat(3,mat2gray(ImageHis),mat2gray(Image),zeros(size(Image)));
+        HisOverlayImageMat=cat(3,mat2gray(ImageHisMat),mat2gray(ImageMat),zeros(size(ImageMat)));
     else
-        HisOverlayImage=cat(3,mat2gray(ImageHis,double(DisplayRange)),mat2gray(Image),zeros(size(Image)));
+        HisOverlayImageMat=cat(3,mat2gray(ImageHisMat,double(DisplayRange)),mat2gray(ImageMat),zeros(size(ImageMat)));
     end
     
-%     if isempty(oim)
-        oim = imshow(HisOverlayImage,[],'Border','Tight','Parent',HisOverlayFigAxes);
+%     if isempty(hisOverlayHandle)
+        hisOverlayHandle = imshow(HisOverlayImageMat,[],'Border','Tight','Parent',HisOverlayFigAxes);
 %     else
-%         oim.CData = HisOverlayImage;
+%         hisOverlayHandle.CData = HisOverlayImageMat;
 %     end
     
-%     imagescUpdate(HisOverlayFigAxes, HisOverlayImage, []);
+%     imagescUpdate(HisOverlayFigAxes, HisOverlayImageMat, []);
     
     
     hold(HisOverlayFigAxes,'on')

@@ -1,4 +1,5 @@
-function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE,GaussIntegralRaw] = fit3DGaussian(snip3D,PixelDims,varargin)
+function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw] = ...
+                                                    fit3DGaussianCholesky(snip3D,PixelDims,varargin)
     % INPUT ARGUMENTS:
     % snip3D: 3D array containing spot to fit. Should contain only one spot
     

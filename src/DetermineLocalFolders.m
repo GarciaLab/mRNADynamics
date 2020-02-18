@@ -1,6 +1,13 @@
 function [rawDataPath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath,...
     configValues, movieDatabasePath, movieDatabaseFolder, movieDatabase] = DetermineLocalFolders(varargin)
 
+    if ~isempty(varargin) 
+        Prefix = varargin{1}; %optionally return a different dropbox folder from the default with respect to Prefix
+        if length(varargin)>1
+            optionalResults = varargin{2};
+        end
+    end
+
     optionalResults = '';
     CONFIG_CSV_PATH = 'ComputerFolders.csv';
 
@@ -31,12 +38,7 @@ function [rawDataPath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath,...
     PREFIX_REGEX = ['^.{10}', PREFIX_SEPARATOR, '.*$'];
 
     %% We need to look for the dropbox folder specified by the provided prefix
-    Prefix = varargin{1};
-    
-    if length(varargin)>1
-        optionalResults = varargin{2};
-    end
-
+  
     if isempty(regexp(Prefix, PREFIX_REGEX, 'once'))
     error('Prefix %s does not match "yyyy-mm-dd[/\\-]name". Please change it accordingly.', Prefix)
     % any 10 characters will work, not only yyyy-mm-dd,
