@@ -375,7 +375,7 @@ while (cc ~= 'x')
     
     if (~isempty(xTrace)) && (~cptState.ManualZFlag)
         cptState.CurrentZ = z(cptState.CurrentParticleIndex);
-        CurrentZIndex = find(...
+        cptState.CurrentZIndex = find(...
             cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).z == ...
             cptState.CurrentZ);
         cptState.ManualZFlag = 0;
@@ -504,16 +504,9 @@ while (cc ~= 'x')
         MaxZIndex = find(...
             cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).z == ...
             cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).brightestZ);
-        CurrentZIndex = find(...
+        cptState.CurrentZIndex = find(...
             cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).z == ...
             cptState.CurrentZ);
-        
-        if isempty(CurrentZIndex)
-            %             warning('This particle has a gap in its z-profile. This is
-            %             highly suspect.'); %this if statement should only happen
-            %             between two spots, not past the PSF boundaries
-        end
-        
     end
     
     %Check to see if spots structure contains multi-slice fields
@@ -523,7 +516,7 @@ while (cc ~= 'x')
     % PLOT SNIPPET
     
     [CurrentSnippet, snipImageHandle] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
-        CurrentZIndex, cptState.ImageMat, cptState.Spots, cptState.CurrentChannel, cptState.CurrentFrame, ...
+        cptState.CurrentZIndex, cptState.ImageMat, cptState.Spots, cptState.CurrentChannel, cptState.CurrentFrame, ...
         cptState.CurrentParticleIndex, ExperimentType, snippet_size, xSize, ...
         ySize, SnippetEdge, cptState.FrameInfo, CurrentSnippet, snipImageHandle, pixelSize);
     
@@ -555,24 +548,15 @@ while (cc ~= 'x')
     
     
     % PLOT Z SLICE RELATED FIGURES
-    plotzvars = {zProfileFigAxes, zTraceAxes, ExperimentType, ...
-        xTrace, cptState.Spots, cptState.CurrentFrame, cptState.CurrentChannel, cptState.CurrentParticleIndex, cptState.ZSlices, ...
-        cptState.CurrentZ, CurrentZIndex, cptState.PreviousParticle, cptState.CurrentParticle, ...
-        cptState.PreviousChannel, cptState.Particles, cptState.Frames, fish};
+    plotzvars = {zProfileFigAxes, zTraceAxes, ExperimentType, xTrace, cptState, fish};
     if exist('MaxZProfile', 'var')
         plotzvars = [plotzvars, MaxZProfile];
     end
-    [MaxZProfile, cptState.Frames] = plotZFigures(plotzvars{:});
+    MaxZProfile = plotZFigures(plotzvars{:});
 
     set(0, 'CurrentFigure', Overlay);
 
-    % Wait for user input to select command to execute
-    ct = waitforbuttonpress; % ct=0 for click and ct=1 for keypress
-    cc = get(Overlay, 'CurrentCharacter');
-    
-    if strcmpi(cc, '') || ct == 0
-        cc = 'donothing';
-    end
+    cc = getUserKeyInput(Overlay);
     
     frameChangeKeyInput(cc);
     zSliceChangeKeyInput(cc);
@@ -592,9 +576,7 @@ end
 %% Main loop - end
 
 % save after exiting the main loop - the user pressed 'x'
-saveChanges(NChannels, cptState.Particles, cptState.Spots, cptState.SpotFilter, DataFolder, ...
-                cptState.FrameInfo, cptState.UseHistoneOverlay, FilePrefix, ...
-                cptState.schnitzcells, DropboxFolder);
+saveChanges(NChannels, cptState, DataFolder, FilePrefix, DropboxFolder);
 
 close all
 

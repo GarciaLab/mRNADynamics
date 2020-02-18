@@ -6,9 +6,7 @@ function keyInputHandler = GeneralEventHandler(cptState, DataFolder, DropboxFold
                 cptState.UseHistoneOverlay, cptState.FrameInfo, DropboxFolder, FilePrefix, cptState.schnitzcells, ...
                 cptState.Particles, NChannels, cptState.CurrentChannel, cptState.numParticles());
         elseif cc == 's'
-            saveChanges(NChannels, cptState.Particles, cptState.Spots, cptState.SpotFilter, DataFolder, ...
-                cptState.FrameInfo, cptState.UseHistoneOverlay, FilePrefix, ...
-                cptState.schnitzcells, DropboxFolder);
+            saveChanges(NChannels, cptState, DataFolder, FilePrefix, DropboxFolder);
         elseif cc == '~'
             % Switch projection mode
             cptState.projectionMode = chooseProjection;
