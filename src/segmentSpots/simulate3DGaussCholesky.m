@@ -1,4 +1,4 @@
-function snip3D = simulate3DGaussGeneral(dim_vec, params)                                                       
+function snip3D = simulate3DGaussCholesky(dim_vec, params)                                                       
 
 % extract dim info
 xDim = dim_vec(2);

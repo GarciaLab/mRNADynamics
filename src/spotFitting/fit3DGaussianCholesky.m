@@ -26,13 +26,14 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw]
     xDim = size(snip3D,1);
     yDim = size(snip3D,2);
     zDim = size(snip3D,3);
-    intMax = max(max(max(snip3D)));
+    intMax = max(snip3D(:));
+    int25 = prctile(snip3D(:),25);
     % initialize parameters
-    initial_parameters =[intMax, ceil(yDim/2),ceil(xDim/2), ceil(zDim/2),sigma_guess,sigma_guess,sigma_guess,.1,.1,.1,prctile(snip3D(:),25)];
+    initial_parameters =[intMax, ceil(yDim/2),ceil(xDim/2), ceil(zDim/2),sigma_guess/2,sigma_guess/2,sigma_guess/2,sigma_guess/2,sigma_guess/2,sigma_guess/2, int25];
     
     % initialize upper and lower parameter bounds
-    ub_vec = [intMax*1.5,yDim,xDim,zDim,xDim/8,xDim/8,xDim/8,xDim/8,xDim/8,xDim/8,intMax];
-    lb_vec = [0,1,1,1,1,1,1,0,0,0,0];
+    ub_vec = [intMax*1.5,yDim,xDim,zDim,Inf,Inf,Inf,Inf,Inf,Inf,intMax];
+    lb_vec = [0,1,1,1,-Inf,-Inf,-Inf,-Inf,-Inf,-Inf,0];
     
     % check for additional arguments
     for i = 1:(numel(varargin)-1)  
@@ -43,7 +44,7 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw]
        
     % define objective function
     dim_vec = [yDim, xDim, zDim];    
-    single3DObjective = @(params) simulate3DGaussGeneral(dim_vec, params) + params(end) - double(snip3D);     
+    single3DObjective = @(params) simulate3DGaussCholesky(dim_vec, params) + params(end) - double(snip3D);     
     % attempt to fit
     options.Display = 'off';
     [GaussFit, ~, residual, ~, ~, ~, jacobian] = lsqnonlin(single3DObjective,initial_parameters,lb_vec,ub_vec,options);
@@ -54,8 +55,7 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw]
     FitCI(FitCI<0) = 0;
     FitDeltas = diff(FitCI')' / 2 / 1.96;
     paramValues = normrnd(0,1,size(FitDeltas,1),100).*FitDeltas + GaussFit';
-    paramValues(paramValues<0) = realmin;
-
+%     paramValues(paramValues<0) = realmin;    
     chol_mat = @(params) [params(5),         0,           0;
                           params(8),    params(6),        0;
                           params(9),    params(10),    params(7)];
@@ -65,10 +65,22 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw]
     for i = 1:size(paramValues,2)
         gauss_int_vec(i) = gauss_int(paramValues(:,i));
     end
-    
+   
     % extract values to report
     GaussIntegral = gauss_int(GaussFit);
     GaussIntegralSE = nanstd(gauss_int_vec);
+    
+    % same for covariance matrix parameters
+    cov_params = NaN(6,size(paramValues,2));   
+    for i = 1:size(paramValues,2)
+        c_mat = cov_mat(paramValues(:,i));
+        sigma_vec = sqrt(diag(c_mat));
+        % record
+        cov_params(1:3,i) = sigma_vec;
+        cov_params(4,i) = c_mat(2) / sigma_vec(1) / sigma_vec(2);
+        cov_params(5,i) = c_mat(3) / sigma_vec(1) / sigma_vec(3);
+        cov_params(6,i) = c_mat(6) / sigma_vec(2) / sigma_vec(3);
+    end
     
     % estimate raw fluorescence
     [x_ref_vol, y_ref_vol, z_ref_vol] = meshgrid(1:size(snip3D,1),1:size(snip3D,2),1:size(snip3D,3));
