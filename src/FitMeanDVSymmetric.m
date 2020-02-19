@@ -1,4 +1,4 @@
-function FitMeanAPSymmetric(varargin)
+function FitMeanDVSymmetric(varargin)
 
 %This function performs fits to the mean fluorescence as a function of time
 %of a particular dataset.
@@ -34,7 +34,7 @@ function FitMeanAPSymmetric(varargin)
 %D,C: Rate, coarse
 
 %Moving around:
-%, .: Move in AP
+%, .: Move in AP or DV
 %n,m: Move in nc
 %k,l: Change fit range from the right
 %h,j: Change fit range from the left
@@ -46,7 +46,7 @@ function FitMeanAPSymmetric(varargin)
 %SAVE: v
 
 %Parameters:
-MinParticles=1;     %Minimum number of particles in an AP bin
+MinParticles=1;     %Minimum number of particles in an DV bin
 MinTimePoints=5;    %Minimum number of time points where we'll have at least
                     %the minimum number of particles.
 ElongationRate=1.54;    %In kb/minutes.
@@ -227,7 +227,7 @@ elseif prime == 3
     Delay=GeneLength3/ElongationRate;
 end
 
-MaxRate=max(max(cell2mat(MeanVectorAP)))/Delay;
+MaxRate=max(max(cell2mat(MeanVectorDV)))/Delay;
 
 %Initial parameters for fits
 
@@ -256,19 +256,19 @@ if MultipleEmbryos
     if exist([DropboxFolder,filesep,DataType,'_Combined_MeanFits.mat'], 'file')
         load([DropboxFolder,filesep,DataType,'_Combined_MeanFits.mat']);
         if isempty(FitResults)
-            FitResults(length(APbinID),3).Rate0=[];
+            FitResults(length(DVBinID),3).Rate0=[];
         end
     else
-        FitResults(length(APbinID),3).Rate0=[];
+        FitResults(length(DVBinID),3).Rate0=[];
     end
 else
     if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'], 'file')
         load([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat']);
         if isempty(FitResults)
-            FitResults(length(APbinID),3).Rate0=[];
+            FitResults(length(DVBinID),3).Rate0=[];
         end
     else
-        FitResults(length(APbinID),3).Rate0=[];
+        FitResults(length(DVBinID),3).Rate0=[];
     end
 end
 
@@ -279,17 +279,17 @@ end
 
 %Set default starting values for nc 13 and nc14
 %nc12
-for APBin=1:length(APbinID)
-    if isempty(FitResults(APBin,1).Rate0)
-        FitResults(APBin,1).Rate0=Rate012;    
-        FitResults(APBin,1).TimeStart0=TimeStart012;
-        FitResults(APBin,1).TimeEnd0=TimeEnd012;
-        FitResults(APBin,1).FrameFilter=[];
-        FitResults(APBin,1).FitFrameRange=[];
-        if sum(NParticlesAP(FrameWindow12,APBin)>=MinParticles)>=MinTimePoints
-            FitResults(APBin,1).Approved=0;
+for DVBin=1:length(DVBinID)
+    if isempty(FitResults(DVBin,1).Rate0)
+        FitResults(DVBin,1).Rate0=Rate012;    
+        FitResults(DVBin,1).TimeStart0=TimeStart012;
+        FitResults(DVBin,1).TimeEnd0=TimeEnd012;
+        FitResults(DVBin,1).FrameFilter=[];
+        FitResults(DVBin,1).FitFrameRange=[];
+        if sum(NParticlesDV(FrameWindow12,DVBin)>=MinParticles)>=MinTimePoints
+            FitResults(DVBin,1).Approved=0;
         else
-            FitResults(APBin,1).Approved=-1;
+            FitResults(DVBin,1).Approved=-1;
         end
     end
 end
@@ -297,18 +297,18 @@ end
 %nc13
 
 
-for APBin=1:length(APbinID)
-    if isempty(FitResults(APBin,2).Rate0)
-        FitResults(APBin,2).Rate0=Rate013;    
-        FitResults(APBin,2).TimeStart0=TimeStart013;
-        FitResults(APBin,2).TimeEnd0=TimeEnd013;
-        FitResults(APBin,2).FrameFilter=[];
-        FitResults(APBin,2).FitFrameRange=[];
+for DVBin=1:length(DVBinID)
+    if isempty(FitResults(DVBin,2).Rate0)
+        FitResults(DVBin,2).Rate0=Rate013;    
+        FitResults(DVBin,2).TimeStart0=TimeStart013;
+        FitResults(DVBin,2).TimeEnd0=TimeEnd013;
+        FitResults(DVBin,2).FrameFilter=[];
+        FitResults(DVBin,2).FitFrameRange=[];
         
-        if sum(NParticlesAP(FrameWindow13,APBin)>=MinParticles)>=MinTimePoints
-            FitResults(APBin,2).Approved=0;
+        if sum(NParticlesDV(FrameWindow13,DVBin)>=MinParticles)>=MinTimePoints
+            FitResults(DVBin,2).Approved=0;
         else
-            FitResults(APBin,2).Approved=-1;
+            FitResults(DVBin,2).Approved=-1;
         end
 
     end
@@ -316,17 +316,17 @@ end
 
 %nc14
 
-for APBin=1:length(APbinID)
-    if isempty(FitResults(APBin,3).Rate0)
-        FitResults(APBin,3).Rate0=Rate014;    
-        FitResults(APBin,3).TimeStart0=TimeStart014;
-        FitResults(APBin,3).TimeEnd0=[];
-        FitResults(APBin,3).FrameFilter=[];
-        FitResults(APBin,3).FitFrameRange=[];        
-        if sum(NParticlesAP(FrameWindow14,APBin)>=MinParticles)>=MinTimePoints
-            FitResults(APBin,3).Approved=0;
+for DVBin=1:length(DVBinID)
+    if isempty(FitResults(DVBin,3).Rate0)
+        FitResults(DVBin,3).Rate0=Rate014;    
+        FitResults(DVBin,3).TimeStart0=TimeStart014;
+        FitResults(DVBin,3).TimeEnd0=[];
+        FitResults(DVBin,3).FrameFilter=[];
+        FitResults(DVBin,3).FitFrameRange=[];        
+        if sum(NParticlesDV(FrameWindow14,DVBin)>=MinParticles)>=MinTimePoints
+            FitResults(DVBin,3).Approved=0;
         else
-            FitResults(APBin,3).Approved=-1;
+            FitResults(DVBin,3).Approved=-1;
         end
     end
 end
@@ -352,7 +352,7 @@ end
 
 %Go through each AP bin
 FitFigure=figure;
-APBin=find(sum(cell2mat(NParticlesAP)), 1 ); %index of the first AP bin that has a non-zero number of particles
+DVBin=find(sum(cell2mat(NParticlesDV)), 1 ); %index of the first AP bin that has a non-zero number of particles
 cc=1;
 
  lsqOptions=optimset('Display','none');
@@ -365,20 +365,20 @@ while (cc~=13)
     figure(FitFigure)
     clf
     
-    if FitResults(APBin,CurrentNC-11).Approved==-1
+    if FitResults(DVBin,CurrentNC-11).Approved==-1
         set(gcf,'Color','r')
-    elseif FitResults(APBin,CurrentNC-11).Approved==1
+    elseif FitResults(DVBin,CurrentNC-11).Approved==1
         set(gcf,'Color','g')
     else
         set(gcf,'Color','default')
     end
     
     
-   if APDivision(CurrentNC,APBin)
+   if APDivision(CurrentNC,DVBin)
         if CurrentNC~=14
-            FrameWindow=APDivision(CurrentNC,APBin):APDivision(CurrentNC+1,APBin);
+            FrameWindow=APDivision(CurrentNC,DVBin):APDivision(CurrentNC+1,DVBin);
         else
-            FrameWindow=APDivision(CurrentNC,APBin):length(ElapsedTime);
+            FrameWindow=APDivision(CurrentNC,DVBin):length(ElapsedTime);
         end
         
         if isempty(FrameWindow)
@@ -387,23 +387,23 @@ while (cc~=13)
 
         %Check that we have the minimum number of particles for a minimum
         %amount of time
-        if iscell(NParticlesAP)
-            NParticlesAP=cell2mat(NParticlesAP);
+        if iscell(NParticlesDV)
+            NParticlesDV=cell2mat(NParticlesDV);
         end
-        if (sum(NParticlesAP(FrameWindow,APBin)>=MinParticles)>=MinTimePoints)
+        if (sum(NParticlesDV(FrameWindow,DVBin)>=MinParticles)>=MinTimePoints)
 
             %Extract the data for this range of frames
-            if iscell(MeanVectorAP);
-                MeanVectorAP=cell2mat(MeanVectorAP);
+            if iscell(MeanVectorDV)
+                MeanVectorDV=cell2mat(MeanVectorDV);
             end
             
-            FluoData=MeanVectorAP(FrameWindow,APBin);
-              if iscell(SDVectorAP);
-                SDVectorAP=cell2mat(SDVectorAP);
+            FluoData=MeanVectorDV(FrameWindow,DVBin);
+              if iscell(SDVectorDV)
+                SDVectorDV=cell2mat(SDVectorDV);
             end
-            SDFluoData=SDVectorAP(FrameWindow,APBin);
+            SDFluoData=SDVectorDV(FrameWindow,DVBin);
             
-            NData=NParticlesAP(FrameWindow,APBin);
+            NData=NParticlesDV(FrameWindow,DVBin);
             TimeData=ElapsedTime(FrameWindow);
           
             %Now filter them according the number of particles
@@ -412,14 +412,14 @@ while (cc~=13)
 
             %As an initial guess, use FrameFilter to determine the range of the
             %fit
-            if isempty(FitResults(APBin,CurrentNC-11).FitFrameRange)
+            if isempty(FitResults(DVBin,CurrentNC-11).FitFrameRange)
                 FitFrameRange=FrameWindow(FrameFilter);
                 if CurrentNC==14
-                    FitFrameRange=FitFrameRange((ElapsedTime(FitFrameRange)-ElapsedTime(APDivision(CurrentNC,APBin)))<12);
+                    FitFrameRange=FitFrameRange((ElapsedTime(FitFrameRange)-ElapsedTime(APDivision(CurrentNC,DVBin)))<12);
                 end
-                FitResults(APBin,CurrentNC-11).FitFrameRange=FitFrameRange;
+                FitResults(DVBin,CurrentNC-11).FitFrameRange=FitFrameRange;
             else
-                FitFrameRange=FitResults(APBin,CurrentNC-11).FitFrameRange;
+                FitFrameRange=FitResults(DVBin,CurrentNC-11).FitFrameRange;
             end
 
             %Filter the frames according to FitFrameRange
@@ -441,9 +441,9 @@ while (cc~=13)
 
             if CurrentNC~=14
                 %Do the fit
-                x0=[FitResults(APBin,CurrentNC-11).TimeStart0,...
-                    FitResults(APBin,CurrentNC-11).TimeEnd0,...
-                    FitResults(APBin,CurrentNC-11).Rate0];
+                x0=[FitResults(DVBin,CurrentNC-11).TimeStart0,...
+                    FitResults(DVBin,CurrentNC-11).TimeEnd0,...
+                    FitResults(DVBin,CurrentNC-11).Rate0];
 
                 
                 %Get rid of any NaN in the data
@@ -466,16 +466,16 @@ while (cc~=13)
                         FluoDataForFit(NanFilter),Delay,...
                         ElapsedTime(FrameWindow(end))-ElapsedTime(FrameWindow(1)),x),x0, lb,ub, lsqOptions);
 
-                    FitResults(APBin,CurrentNC-11).TimeStart=xFit(1);
-                    FitResults(APBin,CurrentNC-11).TimeEnd=xFit(2);
-                    FitResults(APBin,CurrentNC-11).RateFit=xFit(3);
+                    FitResults(DVBin,CurrentNC-11).TimeStart=xFit(1);
+                    FitResults(DVBin,CurrentNC-11).TimeEnd=xFit(2);
+                    FitResults(DVBin,CurrentNC-11).RateFit=xFit(3);
 
                     %Estimate an error bar out of the confidence intervals
-                    FitResults(APBin,CurrentNC-11).CI=nlparci(xFit,residual,'jacobian',jacobian);
+                    FitResults(DVBin,CurrentNC-11).CI=nlparci(xFit,residual,'jacobian',jacobian);
 
-                    FitResults(APBin,CurrentNC-11).SDTimeStart=(FitResults(APBin,CurrentNC-11).CI(1,2)-FitResults(APBin,CurrentNC-11).CI(1,1))/2;
-                    FitResults(APBin,CurrentNC-11).SDTimeEnd=(FitResults(APBin,CurrentNC-11).CI(2,2)-FitResults(APBin,CurrentNC-11).CI(2,1))/2;
-                    FitResults(APBin,CurrentNC-11).SDRateFit=(FitResults(APBin,CurrentNC-11).CI(3,2)-FitResults(APBin,CurrentNC-11).CI(3,1))/2;
+                    FitResults(DVBin,CurrentNC-11).SDTimeStart=(FitResults(DVBin,CurrentNC-11).CI(1,2)-FitResults(DVBin,CurrentNC-11).CI(1,1))/2;
+                    FitResults(DVBin,CurrentNC-11).SDTimeEnd=(FitResults(DVBin,CurrentNC-11).CI(2,2)-FitResults(DVBin,CurrentNC-11).CI(2,1))/2;
+                    FitResults(DVBin,CurrentNC-11).SDRateFit=(FitResults(DVBin,CurrentNC-11).CI(3,2)-FitResults(DVBin,CurrentNC-11).CI(3,1))/2;
 
 
 
@@ -487,9 +487,9 @@ while (cc~=13)
                         xFit(1),xFit(2),xFit(3),Delay);
                     %Plot all the data
                     PlotHandle=errorbar(ElapsedTime(FrameWindow)-ElapsedTime(FrameWindow(1)),...
-                        MeanVectorAP(FrameWindow,APBin),...
-                        SDVectorAP(FrameWindow,APBin)./...
-                        sqrt(NParticlesAP(FrameWindow,APBin)),'.-k');
+                        MeanVectorDV(FrameWindow,DVBin),...
+                        SDVectorDV(FrameWindow,DVBin)./...
+                        sqrt(NParticlesDV(FrameWindow,DVBin)),'.-k');
                     hold on
                     %Plot the data that could be used for the fit
                     PlotHandle(end+1)=plot(ElapsedTime(FrameWindow(FrameFilter))-ElapsedTime(FrameWindow(1)),...
@@ -506,22 +506,22 @@ while (cc~=13)
                     xlabel('Time into nc (min)')
                     
                     try
-                        ylim([0,max(MeanVectorAP(FrameWindow,APBin)+...
-                            SDVectorAP(FrameWindow,APBin)./...
-                            sqrt(NParticlesAP(FrameWindow,APBin)))]);
+                        ylim([0,max(MeanVectorDV(FrameWindow,DVBin)+...
+                            SDVectorDV(FrameWindow,DVBin)./...
+                            sqrt(NParticlesDV(FrameWindow,DVBin)))]);
                     catch
                         disp('Error in displaying the plot')
                     end
 
-                    legend(['tON=',num2str(FitResults(APBin,CurrentNC-11).TimeStart),' \pm ',num2str(FitResults(APBin,CurrentNC-11).SDTimeStart)],...
-                        ['tOFF=',num2str(FitResults(APBin,CurrentNC-11).TimeEnd),' \pm ',num2str(FitResults(APBin,CurrentNC-11).SDTimeEnd)],...
-                        ['Rate=',num2str(FitResults(APBin,CurrentNC-11).RateFit),' \pm ',num2str(FitResults(APBin,CurrentNC-11).SDRateFit)],...
+                    legend(['tON=',num2str(FitResults(DVBin,CurrentNC-11).TimeStart),' \pm ',num2str(FitResults(DVBin,CurrentNC-11).SDTimeStart)],...
+                        ['tOFF=',num2str(FitResults(DVBin,CurrentNC-11).TimeEnd),' \pm ',num2str(FitResults(DVBin,CurrentNC-11).SDTimeEnd)],...
+                        ['Rate=',num2str(FitResults(DVBin,CurrentNC-11).RateFit),' \pm ',num2str(FitResults(DVBin,CurrentNC-11).SDRateFit)],...
                         'Location','SouthOutside')
                 end
             elseif CurrentNC==14
                 
                 %Do the fit
-                x0=[FitResults(APBin,CurrentNC-11).TimeStart0,FitResults(APBin,CurrentNC-11).Rate0];
+                x0=[FitResults(DVBin,CurrentNC-11).TimeStart0,FitResults(DVBin,CurrentNC-11).Rate0];
 
 
                 
@@ -536,14 +536,14 @@ while (cc~=13)
                         FluoDataForFit(NanFilter),Delay,...
                         ElapsedTime(FrameWindow(end))-ElapsedTime(FrameWindow(1)),x),x0);
 
-                    FitResults(APBin,CurrentNC-11).TimeStart=xFit(1);
-                    FitResults(APBin,CurrentNC-11).RateFit=xFit(2);
+                    FitResults(DVBin,CurrentNC-11).TimeStart=xFit(1);
+                    FitResults(DVBin,CurrentNC-11).RateFit=xFit(2);
 
                     %Estimate an error bar out of the confidence intervals
-                    FitResults(APBin,CurrentNC-11).CI=nlparci(xFit,residual,'jacobian',jacobian);
+                    FitResults(DVBin,CurrentNC-11).CI=nlparci(xFit,residual,'jacobian',jacobian);
 
-                    FitResults(APBin,CurrentNC-11).SDTimeStart=(FitResults(APBin,CurrentNC-11).CI(1,2)-FitResults(APBin,CurrentNC-11).CI(1,1))/2;
-                    FitResults(APBin,CurrentNC-11).SDRateFit=(FitResults(APBin,CurrentNC-11).CI(2,2)-FitResults(APBin,CurrentNC-11).CI(2,1))/2;
+                    FitResults(DVBin,CurrentNC-11).SDTimeStart=(FitResults(DVBin,CurrentNC-11).CI(1,2)-FitResults(DVBin,CurrentNC-11).CI(1,1))/2;
+                    FitResults(DVBin,CurrentNC-11).SDRateFit=(FitResults(DVBin,CurrentNC-11).CI(2,2)-FitResults(DVBin,CurrentNC-11).CI(2,1))/2;
 
 
 
@@ -555,9 +555,9 @@ while (cc~=13)
                         xFit(1),1000,xFit(2),Delay);
                     %Plot all the data
                     PlotHandle=errorbar(ElapsedTime(FrameWindow)-ElapsedTime(FrameWindow(1)),...
-                        MeanVectorAP(FrameWindow,APBin),...
-                        SDVectorAP(FrameWindow,APBin)./...
-                        sqrt(NParticlesAP(FrameWindow,APBin)),'.-k');
+                        MeanVectorDV(FrameWindow,DVBin),...
+                        SDVectorDV(FrameWindow,DVBin)./...
+                        sqrt(NParticlesDV(FrameWindow,DVBin)),'.-k');
                     hold on
                     %Plot the data that could be used for the fit
                     PlotHandle(end+1)=plot(ElapsedTime(FrameWindow(FrameFilter))-ElapsedTime(FrameWindow(1)),...
@@ -574,15 +574,15 @@ while (cc~=13)
                     
                     
                     try
-                        ylim([0,max(MeanVectorAP(FrameWindow,APBin)+...
-                            SDVectorAP(FrameWindow,APBin)./...
-                            sqrt(NParticlesAP(FrameWindow,APBin)))])
+                        ylim([0,max(MeanVectorDV(FrameWindow,DVBin)+...
+                            SDVectorDV(FrameWindow,DVBin)./...
+                            sqrt(NParticlesDV(FrameWindow,DVBin)))])
                     catch
                         disp('Error in displaying the plot')
                     end
 
-                    legend(['tON=',num2str(FitResults(APBin,CurrentNC-11).TimeStart),' \pm ',num2str(FitResults(APBin,CurrentNC-11).SDTimeStart)],...
-                        ['Rate=',num2str(FitResults(APBin,CurrentNC-11).RateFit),' \pm ',num2str(FitResults(APBin,CurrentNC-11).SDRateFit)],...
+                    legend(['tON=',num2str(FitResults(DVBin,CurrentNC-11).TimeStart),' \pm ',num2str(FitResults(DVBin,CurrentNC-11).SDTimeStart)],...
+                        ['Rate=',num2str(FitResults(DVBin,CurrentNC-11).RateFit),' \pm ',num2str(FitResults(DVBin,CurrentNC-11).SDRateFit)],...
                         'Location','SouthOutside')
                 end
             end
@@ -590,8 +590,8 @@ while (cc~=13)
         end
      end
     
-    title([num2str(APbinID(APBin)),' AP, TimeStart0=',num2str(FitResults(APBin,CurrentNC-11).TimeStart0),...
-        ', TimeEnd0=',num2str(FitResults(APBin,CurrentNC-11).TimeEnd0),', Rate=',num2str(FitResults(APBin,CurrentNC-11).Rate0),...
+    title([num2str(DVBinID(DVBin)),' DV, TimeStart0=',num2str(FitResults(DVBin,CurrentNC-11).TimeStart0),...
+        ', TimeEnd0=',num2str(FitResults(DVBin,CurrentNC-11).TimeEnd0),', Rate=',num2str(FitResults(DVBin,CurrentNC-11).Rate0),...
         ', nc',num2str(CurrentNC)])
     
     
@@ -611,84 +611,84 @@ while (cc~=13)
     cc=get(FitFigure,'currentcharacter');
     cm=get(gca,'CurrentPoint');
     
-    %Move between AP positions
-    if (ct~=0)&(cc=='.')&(APBin<length(APbinID))
-        APBin=APBin+1;
-    elseif (ct~=0)&(cc==',')&(APBin>1)
-        APBin=APBin-1;
+    %Move between positions
+    if (ct~=0)&(cc=='.')&(DVBin<length(DVBinID))
+        DVBin=DVBin+1;
+    elseif (ct~=0)&(cc==',')&(DVBin>1)
+        DVBin=DVBin-1;
     
     %Approve, disapprove fit
     elseif (ct~=0)&(cc=='q')
-        if FitResults(APBin,CurrentNC-11).Approved~=1
-            FitResults(APBin,CurrentNC-11).Approved=1;
+        if FitResults(DVBin,CurrentNC-11).Approved~=1
+            FitResults(DVBin,CurrentNC-11).Approved=1;
         else
-            FitResults(APBin,CurrentNC-11).Approved=0;
+            FitResults(DVBin,CurrentNC-11).Approved=0;
         end
 
     
     %Disapprove, disapprove fit
     elseif (ct~=0)&(cc=='w')
-        if FitResults(APBin,CurrentNC-11).Approved~=-1
-            FitResults(APBin,CurrentNC-11).Approved=-1;
+        if FitResults(DVBin,CurrentNC-11).Approved~=-1
+            FitResults(DVBin,CurrentNC-11).Approved=-1;
         else
-            FitResults(APBin,CurrentNC-11).Approved=0;
+            FitResults(DVBin,CurrentNC-11).Approved=0;
         end
   
     
         
     %Move right range of fit
-    elseif (ct~=0)&(cc=='k')&(length(FitResults(APBin,CurrentNC-11).FitFrameRange)>2)
-        FitResults(APBin,CurrentNC-11).FitFrameRange=FitResults(APBin,CurrentNC-11).FitFrameRange(1:end-1);
-    elseif (ct~=0)&(cc=='K')&(length(FitResults(APBin,CurrentNC-11).FitFrameRange)>6)
-        FitResults(APBin,CurrentNC-11).FitFrameRange=FitResults(APBin,CurrentNC-11).FitFrameRange(1:end-5);
+    elseif (ct~=0)&(cc=='k')&(length(FitResults(DVBin,CurrentNC-11).FitFrameRange)>2)
+        FitResults(DVBin,CurrentNC-11).FitFrameRange=FitResults(DVBin,CurrentNC-11).FitFrameRange(1:end-1);
+    elseif (ct~=0)&(cc=='K')&(length(FitResults(DVBin,CurrentNC-11).FitFrameRange)>6)
+        FitResults(DVBin,CurrentNC-11).FitFrameRange=FitResults(DVBin,CurrentNC-11).FitFrameRange(1:end-5);
     elseif (ct~=0)&(cc=='l')
-        if ~isempty(find(~ismember(FrameWindow(FrameFilter),FitResults(APBin,CurrentNC-11).FitFrameRange), 1))
+        if ~isempty(find(~ismember(FrameWindow(FrameFilter),FitResults(DVBin,CurrentNC-11).FitFrameRange), 1))
             FilteredFramesTemp=FrameWindow(FrameFilter);
             %HG added
-            FilteredFramesTemp=FilteredFramesTemp(~ismember(FilteredFramesTemp,FitResults(APBin,CurrentNC-11).FitFrameRange));
-            FitResults(APBin,CurrentNC-11).FitFrameRange(end+1)=...
-                min(FilteredFramesTemp(FilteredFramesTemp>max(FitResults(APBin,CurrentNC-11).FitFrameRange)));
+            FilteredFramesTemp=FilteredFramesTemp(~ismember(FilteredFramesTemp,FitResults(DVBin,CurrentNC-11).FitFrameRange));
+            FitResults(DVBin,CurrentNC-11).FitFrameRange(end+1)=...
+                min(FilteredFramesTemp(FilteredFramesTemp>max(FitResults(DVBin,CurrentNC-11).FitFrameRange)));
         end
     %Move left range of fit
-    elseif (ct~=0)&(cc=='j')&(length(FitResults(APBin,CurrentNC-11).FitFrameRange)>2)
-        FitResults(APBin,CurrentNC-11).FitFrameRange=FitResults(APBin,CurrentNC-11).FitFrameRange(2:end);
-    elseif (ct~=0)&(cc=='J')&(length(FitResults(APBin,CurrentNC-11).FitFrameRange)>6)
-        FitResults(APBin,CurrentNC-11).FitFrameRange=FitResults(APBin,CurrentNC-11).FitFrameRange(6:end);
+    elseif (ct~=0)&(cc=='j')&(length(FitResults(DVBin,CurrentNC-11).FitFrameRange)>2)
+        FitResults(DVBin,CurrentNC-11).FitFrameRange=FitResults(DVBin,CurrentNC-11).FitFrameRange(2:end);
+    elseif (ct~=0)&(cc=='J')&(length(FitResults(DVBin,CurrentNC-11).FitFrameRange)>6)
+        FitResults(DVBin,CurrentNC-11).FitFrameRange=FitResults(DVBin,CurrentNC-11).FitFrameRange(6:end);
     elseif (ct~=0)&(cc=='h')
-        if ~isempty(find(~ismember(FrameWindow(FrameFilter),FitResults(APBin,CurrentNC-11).FitFrameRange)))
+        if ~isempty(find(~ismember(FrameWindow(FrameFilter),FitResults(DVBin,CurrentNC-11).FitFrameRange)))
             FilteredFramesTemp=FrameWindow(FrameFilter);
             %Modified HG
-            FitResults(APBin,CurrentNC-11).FitFrameRange=...
-                [max(FilteredFramesTemp(FilteredFramesTemp<min(FitResults(APBin,CurrentNC-11).FitFrameRange))),...
-                FitResults(APBin,CurrentNC-11).FitFrameRange];
+            FitResults(DVBin,CurrentNC-11).FitFrameRange=...
+                [max(FilteredFramesTemp(FilteredFramesTemp<min(FitResults(DVBin,CurrentNC-11).FitFrameRange))),...
+                FitResults(DVBin,CurrentNC-11).FitFrameRange];
         end
     %Reset frame fit range
      elseif (ct~=0)&(cc=='r')   
-        FitResults(APBin,CurrentNC-11).FitFrameRange=FrameWindow(FrameFilter);
+        FitResults(DVBin,CurrentNC-11).FitFrameRange=FrameWindow(FrameFilter);
 
         
         
     %Change the initial parameters
     %TimeStart
-    elseif (ct~=0)&(cc=='a')&((CurrentNC==14)|(CurrentNC~=14&FitResults(APBin,CurrentNC-11).TimeStart0<FitResults(APBin,CurrentNC-11).TimeEnd0))
-        FitResults(APBin,CurrentNC-11).TimeStart0=FitResults(APBin,CurrentNC-11).TimeStart0+1;
-    elseif (ct~=0)&(cc=='z')&(FitResults(APBin,CurrentNC-11).TimeStart0>1)
-        FitResults(APBin,CurrentNC-11).TimeStart0=FitResults(APBin,CurrentNC-11).TimeStart0-1;
+    elseif (ct~=0)&(cc=='a')&((CurrentNC==14)|(CurrentNC~=14&FitResults(DVBin,CurrentNC-11).TimeStart0<FitResults(DVBin,CurrentNC-11).TimeEnd0))
+        FitResults(DVBin,CurrentNC-11).TimeStart0=FitResults(DVBin,CurrentNC-11).TimeStart0+1;
+    elseif (ct~=0)&(cc=='z')&(FitResults(DVBin,CurrentNC-11).TimeStart0>1)
+        FitResults(DVBin,CurrentNC-11).TimeStart0=FitResults(DVBin,CurrentNC-11).TimeStart0-1;
     %TimeEnd
-    elseif (ct~=0)&(cc=='s')&(FitResults(APBin,CurrentNC-11).TimeEnd0<ElapsedTime(FrameWindow(end))-ElapsedTime(FrameWindow(1)))
-        FitResults(APBin,CurrentNC-11).TimeEnd0=FitResults(APBin,CurrentNC-11).TimeEnd0+1;
-    elseif (ct~=0)&(cc=='x')&(FitResults(APBin,CurrentNC-11).TimeEnd0>FitResults(APBin,CurrentNC-11).TimeStart0)
-        FitResults(APBin,CurrentNC-11).TimeEnd0=FitResults(APBin,CurrentNC-11).TimeEnd0-1;
+    elseif (ct~=0)&(cc=='s')&(FitResults(DVBin,CurrentNC-11).TimeEnd0<ElapsedTime(FrameWindow(end))-ElapsedTime(FrameWindow(1)))
+        FitResults(DVBin,CurrentNC-11).TimeEnd0=FitResults(DVBin,CurrentNC-11).TimeEnd0+1;
+    elseif (ct~=0)&(cc=='x')&(FitResults(DVBin,CurrentNC-11).TimeEnd0>FitResults(DVBin,CurrentNC-11).TimeStart0)
+        FitResults(DVBin,CurrentNC-11).TimeEnd0=FitResults(DVBin,CurrentNC-11).TimeEnd0-1;
     %Rate, fine
-    elseif (ct~=0)&(cc=='c')&(FitResults(APBin,CurrentNC-11).Rate0>100)
-        FitResults(APBin,CurrentNC-11).Rate0=FitResults(APBin,CurrentNC-11).Rate0-10;
+    elseif (ct~=0)&(cc=='c')&(FitResults(DVBin,CurrentNC-11).Rate0>100)
+        FitResults(DVBin,CurrentNC-11).Rate0=FitResults(DVBin,CurrentNC-11).Rate0-10;
     elseif (ct~=0)&(cc=='d')
-        FitResults(APBin,CurrentNC-11).Rate0=FitResults(APBin,CurrentNC-11).Rate0+10;    
+        FitResults(DVBin,CurrentNC-11).Rate0=FitResults(DVBin,CurrentNC-11).Rate0+10;    
     %Rate, coarse
-    elseif (ct~=0)&(cc=='C')&(FitResults(APBin,CurrentNC-11).Rate0>100)
-        FitResults(APBin,CurrentNC-11).Rate0=FitResults(APBin,CurrentNC-11).Rate0-100;
+    elseif (ct~=0)&(cc=='C')&(FitResults(DVBin,CurrentNC-11).Rate0>100)
+        FitResults(DVBin,CurrentNC-11).Rate0=FitResults(DVBin,CurrentNC-11).Rate0-100;
     elseif (ct~=0)&(cc=='D')
-        FitResults(APBin,CurrentNC-11).Rate0=FitResults(APBin,CurrentNC-11).Rate0+100; 
+        FitResults(DVBin,CurrentNC-11).Rate0=FitResults(DVBin,CurrentNC-11).Rate0+100; 
     
     %Switch NCs
     elseif (ct~=0)&(cc=='m')&CurrentNC<14
