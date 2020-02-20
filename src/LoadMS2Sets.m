@@ -25,6 +25,7 @@ function [Data, prefixes, resultsFolder] = LoadMS2Sets(DataType, varargin)
 prefixes = {};
 Data = struct();
 resultsFolder = '';
+dStatus = struct;
 
 optionalResults = '';
 compareSettings = true;
@@ -90,8 +91,13 @@ end
 
 %Now, load the DataStatus.XLSX
 D=dir([DropboxFolder,filesep,'DataStatus.*']);
-[~,StatusTxt]=xlsread([DropboxFolder,filesep,D(1).name],DataType);
-
+% sheets = sheetnames([DropboxFolder,filesep,D(1).name]);
+% wholeStatus = cell(1, length(sheets));
+% for i = 1:length(sheets)
+%     wholeStatus{i} =readcell([DropboxFolder,filesep,D(1).name], 'Sheet', sheets{i});
+% end
+D=dir([DropboxFolder,filesep,'DataStatus.*']);
+StatusTxt = readcell([DropboxFolder,filesep,D(1).name], 'Sheet', DataType);
 
 %Which data sets are approved?
 CompileRow=find(strcmpi(StatusTxt(:,1),'AnalyzeLiveData Compile Particles')|...
