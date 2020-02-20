@@ -78,7 +78,7 @@ function configContents = InstallmRNADynamics(varargin)
   end
 
   function ensureRightFolder()
-    while ~strfind(pwd, 'src')
+    while ~contains(pwd, 'src')
       warning('This script must be run from the ''mRNADynamics/src'' directory.');
       cd(uigetdir);
     end
@@ -222,7 +222,8 @@ function userName = getUserName
 end
 
 function computerName = getComputerName
-  %Find out the computer name
+  %Find out the computer name. This will probably fail for nonwindows but
+  %that's easily fixable if required
   [ret, computerName] = system('hostname');  
   if ret ~= 0,  
      if ispc
