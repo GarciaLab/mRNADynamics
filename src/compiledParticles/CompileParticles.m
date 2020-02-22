@@ -530,6 +530,10 @@ if fullEmbryo
     APFilter, ROI, CompiledParticles_ROI, CompiledParticles_nonROI, ...
     APFilter_ROI, APFilter_nonROI, NewCyclePos, DVFilter_ROI, ...
     DVFilter_nonROI, DVFilter);
+else
+    AllTracesVector = {};
+    AllTracesVector{1} =...
+            createAllTracesVector(FrameInfo,CompiledParticles{1},'NoAP');
 end
 if ~slimVersion && fullEmbryo
     %% Instantaneous rate of change
