@@ -42,7 +42,7 @@ function MaxZProfile = plotZFigures(zProfileFigAxes, zTraceAxes, ExperimentType,
         % Only update the trace information if we have switched particles
         if (CurrentParticle ~= cptState.PreviousParticle) || ~exist('MaxZProfile', 'var') || cptState.CurrentChannel ~= cptState.PreviousChannel
             cptState.PreviousParticle = CurrentParticle;
-            cptState.Frames = PlotParticleTrace(CurrentParticle, CurrentParticles, CurrentSpots, 'noSpline');
+            cptState.Frames = PlotParticleTrace(cptState, true);
         end
 
         for i = 1:length(cptState.Frames)

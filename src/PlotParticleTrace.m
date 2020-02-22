@@ -1,44 +1,32 @@
-function [Frames,AmpIntegral,AmpGaussian,AmpIntegral3,...
-    ErrorIntegral, ErrorIntegral3, ...
-    backGround3,AmpIntegralGauss3D, ErrorIntegralGauss3D]=...
-    ...
-    PlotParticleTrace(...
-    ...
-    CurrentParticle,Particles,Spots, varargin)
+function PlotParticleTrace(cptState, noSpline)
+    % noSpline displays the particle trace as well as a montage of the images
 
-%This displays the particle trace as well as a montage of the images
-noSpline = '';
+    CurrentParticle = cptState.CurrentParticle;
+    Particles = cptState.getCurrentChannelParticles();
+    Spots = cptState.getCurrentChannelSpots();
 
-for i = 1:length(varargin)
-    if strcmpi('noSpline', varargin{i})
-        noSpline = 'noSpline';
+    [Frame,AmpIntegral,AmpIntegral3,AmpGaussian,Offset,...
+        ErrorIntegral,ErrorGauss,~, ~,ErrorIntegral3,...
+        backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D]=...
+        ...
+        GetParticleTrace(CurrentParticle, Particles, Spots, noSpline);
+
+    cptState.Frames = Particles(CurrentParticle).Frame;
+    Indexes = Particles(CurrentParticle).Index;
+
+    for i=1:length(Frames)
+        
+        CurrentFrame = Frames(i);
+
+        %Get the coordinates taking the margins into account
+        [x,y,z] = SpotsXYZ(Spots(CurrentFrame));
+        
+        %Pull out the right particle if it exists in this frame
+        CurrentParticleIndex = Particles(CurrentParticle).Index(Particles(CurrentParticle).Frame == CurrentFrame);
+        
+        %This is the position of the current particle
+        xTrace = round(x(CurrentParticleIndex));
+        yTrace = round(y(CurrentParticleIndex));
+        zTrace = round(z(CurrentParticleIndex));
     end
 end
-
-[Frame,AmpIntegral,AmpIntegral3,AmpGaussian,Offset,...
-    ErrorIntegral,ErrorGauss,~, ~,ErrorIntegral3,...
-    backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D]=...
-    ...
-    GetParticleTrace(CurrentParticle,Particles,Spots, noSpline);
-
-Frames=Particles(CurrentParticle).Frame;
-Indexes=Particles(CurrentParticle).Index;
-
-
-for i=1:length(Frames)
-    
-    CurrentFrame=Frames(i);
-
-    %Get the coordinates taking the margins into account
-    [x,y,z]=SpotsXYZ(Spots(CurrentFrame));
-    
-    %Pull out the right particle if it exists in this frame
-    CurrentParticleIndex=Particles(CurrentParticle).Index(Particles(CurrentParticle).Frame==CurrentFrame);
-    
-    %This is the position of the current particle
-    xTrace=round(x(CurrentParticleIndex));
-    yTrace=round(y(CurrentParticleIndex));
-    zTrace=round(z(CurrentParticleIndex));
-    
-end
-

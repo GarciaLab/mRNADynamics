@@ -119,6 +119,11 @@ classdef CPTState < handle
             currentParticles = this.Particles{this.CurrentChannel};
         end
 
+        function currentParticle = getCurrentParticle(this)
+            currentParticles = this.getCurrentChannelParticles()
+            currentParticle = currentParticles(this.CurrentParticle)
+        end
+
         function currentParticleFit = getCurrentParticleFit(this)
             currentSpots = this.getCurrentChannelSpots();
             currentParticleFit = currentSpots(this.CurrentFrame).Fits(this.CurrentParticleIndex);

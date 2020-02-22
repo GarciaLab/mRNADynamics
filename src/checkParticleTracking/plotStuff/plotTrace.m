@@ -1,35 +1,19 @@
-function [AmpIntegral, GaussIntegral, AmpIntegral3, ErrorIntegral, ErrorIntegral3,backGround3, ...
-    AmpIntegralGauss3D, ErrorIntegralGauss3D] = plotTrace(traceFigAxes, cptState,...
-        anaphaseInMins, ElapsedTime, anaphase, prophase, metaphase,prophaseInMins, metaphaseInMins,Prefix, ...
-    numFrames, correspondingNCInfo, ExperimentType, Channels, PreProcPath, DropboxFolder, varargin)
+function plotTrace(traceFigAxes, cptState, anaphaseInMins, ElapsedTime,...
+    anaphase, prophase, metaphase,prophaseInMins, metaphaseInMins,Prefix,...
+    numFrames, correspondingNCInfo, ExperimentType, Channels, PreProcPath, DropboxFolder,...
+    plotTraceSettings)
 %PLOTTRACE
 %plot traces in checkparticletracking
-
-if ~isempty(varargin)
-    AmpIntegral = varargin{1};
-    GaussIntegral = varargin{2};
-    AmpIntegral3 = varargin{3};
-    ErrorIntegral = varargin{4};
-    ErrorIntegral3 = varargin{5};
-    backGround3 = varargin{6};
-    AmpIntegralGauss3D = varargin{7};
-    ErrorIntegralGauss3D = varargin{8};
-end
-if length(varargin) == 9
-    Spots3D = varargin{9};
-end
 
 switchParticleFlag= false;
 switchFrameFlag = cptState.PreviousFrame ~= cptState.CurrentFrame;
 
 % Only update the trace information if we have switched particles
-if cptState.CurrentParticle ~= cptState.PreviousParticle || ~exist('AmpIntegral', 'var') || cptState.CurrentChannel ~= cptState.PreviousChannel || cptState.lastParticle
+if cptState.CurrentParticle ~= cptState.PreviousParticle || ~isempty(plotTraceSettings.AmpIntegral) || cptState.CurrentChannel ~= cptState.PreviousChannel || cptState.lastParticle
     switchParticleFlag = true;
     switchFrameFlag = true;
     cptState.PreviousParticle = cptState.CurrentParticle;
-    [cptState.Frames,AmpIntegral,GaussIntegral,AmpIntegral3,...
-        ErrorIntegral, ErrorIntegral3, backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D]= ...
-        PlotParticleTrace(cptState.CurrentParticle,cptState.Particles{cptState.CurrentChannel},cptState.Spots{cptState.CurrentChannel}, 'noSpline');
+    PlotParticleTrace(cptState, true);
 end
 
 
@@ -37,14 +21,14 @@ end
 if cptState.lineFitted
     fittedXFrames = cptState.FrameIndicesToFit;
 elseif  isfield(cptState.Particles{cptState.CurrentChannel},'fitApproved') && ...
-        ~isempty(cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).fitApproved)
+        ~isempty(cptState.getCurrentParticle().fitApproved)
     approvedFit = 1;
 
     % JP: are this changes to lineFitted and Coefficients supposed to be visible
     % from outside this function? (ie. change it on global cptState property?)
     cptState.lineFitted = 1;
-    cptState.Coefficients = cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Coefficients;
-    fittedXFrames = cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).fittedFrames;
+    cptState.Coefficients = cptState.getCurrentParticle().Coefficients;
+    fittedXFrames = cptState.getCurrentParticle().fittedFrames;
 else
     lineFitHandle = [];
     approvedFit = 0;
@@ -60,9 +44,9 @@ else
     ncPresent = unique(correspondingNCInfo(cptState.Frames));
     priorAnaphaseInMins = anaphaseInMins(ncPresent(1)-8); %min  subtracts 8 because the first element corresponds to nc 9
     priorAnaphase = anaphase(ncPresent(1)-8); %frame
-    if ~isempty(cptState.schnitzcells) && ~isempty(cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Nucleus)
+    if ~isempty(cptState.schnitzcells) && ~isempty(cptStategetCurrentParticle().Nucleus)
         nucleusFirstTimePoint = ElapsedTime(...
-            cptState.schnitzcells(cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Nucleus).frames(1)); %min
+            cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).frames(1)); %min
     else
         nucleusFirstTimePoint = ElapsedTime(priorAnaphase); %min
         warning('No nucleus assigned to this particle. Using anaphase from moviedatabase as the first timepoint.')
@@ -75,7 +59,7 @@ end
 
 % plotting the lines and traces
 hold(traceFigAxes, 'on')
-approvedParticleFrames = cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).FrameApproved;
+approvedParticleFrames = cptState.getCurrentParticle().FrameApproved;
 if isempty(ErrorIntegral)
     ErrorIntegral = 0;
     ErrorIntegral3 =0;
@@ -192,8 +176,8 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(cptState.Frames==cptState.CurrentFr
                 [cptState.schnitzcells.Fluo] = dummy{:};
         else
             proteinLine = traceFigAxes.Children(end);
-            set(proteinLine, 'XData', cptState.schnitzcells(cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Nucleus).frames,...
-                'YData', max(cptState.schnitzcells(cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Nucleus).Fluo,[],2));
+            set(proteinLine, 'XData', cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).frames,...
+                'YData', max(cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).Fluo,[],2));
         end
     end
     

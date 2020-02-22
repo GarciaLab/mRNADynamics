@@ -340,6 +340,8 @@ if ForCompileAll
     cc = 'x';
 end
 
+plotTraceSettings = PlotTraceSettings();
+
 %% Main loop - start
 while (cc ~= 'x')
     
@@ -523,20 +525,9 @@ while (cc ~= 'x')
     
     % PLOTS TRACE OF CURRENT PARTICLE
     if ~fish
-        plottrace_argin = {};
-        if exist('AmpIntegral', 'var')
-            plottrace_argin = [plottrace_argin, AmpIntegral, GaussIntegral, AmpIntegral3,  ...
-                ErrorIntegral, ErrorIntegral3, backGround3, ...
-                AmpIntegralGauss3D, ErrorIntegralGauss3D];
-        end
-        if ~isempty(Spots3D)
-            plottrace_argin = [plottrace_argin, Spots3D];
-        end
-        [AmpIntegral, GaussIntegral, AmpIntegral3, ErrorIntegral, ErrorIntegral3, backGround3, ...
-            AmpIntegralGauss3D, ErrorIntegralGauss3D] =...
-            plotTrace(traceFigAxes, cptState, anaphaseInMins, ElapsedTime, ncFrames, prophase, metaphase, prophaseInMins,...
+        plotTrace(traceFigAxes, cptState, anaphaseInMins, ElapsedTime, ncFrames, prophase, metaphase, prophaseInMins,...
             metaphaseInMins, Prefix, nFrames, correspondingNCInfo, ExperimentType, Channels, PreProcPath, DropboxFolder,...
-            plottrace_argin{:});
+            plotTraceSettings);
     end
     
     
