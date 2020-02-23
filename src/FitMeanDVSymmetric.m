@@ -3,13 +3,13 @@ function FitMeanDVSymmetric(varargin)
 %This function performs fits to the mean fluorescence as a function of time
 %of a particular dataset.
 
-%MT, 2016-11-0: This function now provides the option to fit a single 
+%MT, 2016-11-0: This function now provides the option to fit a single
 %dataset or to combine multiple datasets and fit the resulting dataset.
 %Multiple datasets are combined by calling CombineMultipleEmbryos and the
 %resulting dataset is fit by this script just like a single dataset.
 %OPTIONAL INPUT: varargin{1} = Prefix
 %                varargin{2} = 'multiple'
-%                               Include string, 'multiple', if you need to 
+%                               Include string, 'multiple', if you need to
 %                               combine multiple embryos before fitting the
 %                               data with mean. If you are fitting a single
 %                               embryo dataset, do not include.
@@ -19,7 +19,7 @@ function FitMeanDVSymmetric(varargin)
 %                               of the embryo datasets you wish to analyze.
 %                               DataType is the name of the tab in the
 %                               DataStatus Excel file, which should include
-%                               all the information for the datasets you 
+%                               all the information for the datasets you
 %                               want to combine.
 %NB: If you do not enter a Prefix, but enter 'multiple' and a DataType, the
 %code is still able to handle this type of input.
@@ -47,18 +47,18 @@ function FitMeanDVSymmetric(varargin)
 
 %Parameters:
 MinParticles=1;     %Minimum number of particles in an DV bin
-MinTimePoints=5;    %Minimum number of time points where we'll have at least
-                    %the minimum number of particles.
+MinTimePoints=1;    %Minimum number of time points where we'll have at least
+%the minimum number of particles.
 ElongationRate=1.54;    %In kb/minutes.
 GeneLength5=5.296;      %Distance from the first MS2 site to the end of the
-                        %TUB3'UTR in kb for the 5' constrcut.
+%TUB3'UTR in kb for the 5' constrcut.
 GeneLength3=1.941;      %Distance from the first MS2 site to the end of the
-                        %TUB3'UTR in kb for the 3' constrcut.                        
+%TUB3'UTR in kb for the 3' constrcut.
 
-MultipleEmbryos = 0;    %Keeps track of whether or not multiple embryos 
-                        %need to be combined before performing the fits
-                                                                   
-                                    
+MultipleEmbryos = 0;    %Keeps track of whether or not multiple embryos
+%need to be combined before performing the fits
+
+
 close all
 
 %Find out which computer this is. That will determine the folder structure.
@@ -88,7 +88,7 @@ if ~isempty(varargin)
             else
                 DataType = strtrim(userInput);
             end
-        %Case where Prefix is provided for a single embryo
+            %Case where Prefix is provided for a single embryo
         else
             Prefix = varargin{1};
         end
@@ -99,8 +99,8 @@ if ~isempty(varargin)
             Dashes=strfind(FolderTemp,filesep);
             Prefix=FolderTemp((Dashes(end)+1):end);
             MultipleEmbryos = 1;
-        %Case where Prefix is provided and 'multiple' is indicated, but no
-        %DataType is provided
+            %Case where Prefix is provided and 'multiple' is indicated, but no
+            %DataType is provided
         elseif strcmp(varargin{2},'multiple')
             Prefix = varargin{1};
             MultipleEmbryos = 1;
@@ -114,19 +114,29 @@ if ~isempty(varargin)
             end
         end
     elseif length(varargin) == 3
-        %Case where Prefix is provided, 'multiple' is indicated, and 
+        %Case where Prefix is provided, 'multiple' is indicated, and
         %DataType is provided
         if strcmp(varargin{2},'multiple')
             Prefix = varargin{1};
             MultipleEmbryos = 1;
             DataType = varargin{3};
         end
-    end          
+    end
 end
 
 
 [~,~,DropboxFolder,~,~]=...
     DetermineLocalFolders(Prefix);
+
+[~,~,~,~, ~,~, ~, ~,~,~,~,~, ~, ~, movieDatabase]...
+    = readMovieDatabase(Prefix);
+
+[~, ~, ~, ~, ~, ~, Channel1, Channel2, ~, ~, ~, ~, ~, ...
+    nc9, nc10, nc11, nc12, nc13, nc14, ~, Channel3, ~, ~] =...
+    getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
+
+ncs = [zeros(1, 8), nc9, nc10, nc11, nc12, nc13, nc14];
+
 %Fitting:
 %a,z: On time
 %s,x: Off time
@@ -147,37 +157,37 @@ end
 
 buttonFig = figure('units', 'normalized', 'Position',[.3 .3 .3 .3]);
 pb = uicontrol(buttonFig,'Style','text','String',['Controls-',...
-'a,z: On time',...
-'s,x: Off time',...
-'d,c: Rate, fine',...
-'D,C: Rate, coarse',...
-...
-'Moving around:',...
-', .: Move in AP',...
-'n,m: Move in nc',...
-'k,l: Change fit range from the right',...
-'h,j: Change fit range from the left',...
-...
-'Approve/Reject:',...
-'You need to approve or reject fits',...
-'w: reject; q: approve. Enter saves MeanFits.mat.'],...
-'units', 'normalized', 'Position',[0 0 1 1]);
+    'a,z: On time',...
+    's,x: Off time',...
+    'd,c: Rate, fine',...
+    'D,C: Rate, coarse',...
+    ...
+    'Moving around:',...
+    ', .: Move in AP',...
+    'n,m: Move in nc',...
+    'k,l: Change fit range from the right',...
+    'h,j: Change fit range from the left',...
+    ...
+    'Approve/Reject:',...
+    'You need to approve or reject fits',...
+    'w: reject; q: approve. Enter saves MeanFits.mat.'],...
+    'units', 'normalized', 'Position',[0 0 1 1]);
+% 
+% %Run CombineMultipleEmbryos if required
+% if MultipleEmbryos
+%     saveFolder = CombineMultipleEmbryosDV(DataType);
+%     disp('Embryos successfully combined')
+% end
+saveFolder = [DropboxFolder, filesep, DataType, '_combinedEmbryo'];
 
-%Run CombineMultipleEmbryos if required
-if MultipleEmbryos
-    saveFolder = CombineMultipleEmbryos(DataType);
-    disp('Embryos successfully combined')
-end
-
-                                    
 %Load the complied particles and the division information
 if MultipleEmbryos
     load([saveFolder,filesep,DataType,'_Combined_CompiledParticles.mat'])
-
+    
     if exist([saveFolder,filesep,DataType,'_Combined_APDivision.mat'], 'file')
         load([saveFolder,filesep,DataType,'_Combined_APDivision.mat'])
     else
-        error('Could not load Combined_APDivision.mat. Make sure to have done the manual check of division.')
+%         error('Could not load Combined_APDivision.mat. Make sure to have done the manual check of division.')
     end
 else
     load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'])
@@ -185,13 +195,15 @@ else
     if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'], 'file')
         load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'], 'APDivision')
     else
-        error('Could not load APDivision.mat. Make sure to have done the manual check of division.')
+%         error('Could not load APDivision.mat. Make sure to have done the manual check of division.')
     end
 end
-                                  
- 
-%Rough frame window to consider in the fits
 
+
+%Rough frame window to consider in the fits
+nc12 = combinedStart12DV;
+nc13 = combinedStart13DV;
+nc14 = combinedStart14DV;
 %Some data sets won't have nc12
 if nc12>0
     FrameWindow12=nc12:nc13;
@@ -208,7 +220,7 @@ end
 
 
 
-FrameWindow14=nc14:length(ElapsedTime);      
+FrameWindow14=nc14:length(ElapsedTime);
 
 prime = 5;
 
@@ -226,8 +238,8 @@ if prime == 5
 elseif prime == 3
     Delay=GeneLength3/ElongationRate;
 end
-
-MaxRate=max(max(cell2mat(MeanVectorDV)))/Delay;
+% MaxRate=max(max(cell2mat(MeanVectorDV)))/Delay;
+MaxRate=max(max(MeanVectorDV))/Delay;
 
 %Initial parameters for fits
 
@@ -236,12 +248,12 @@ TimeStart012=3;
 TimeEnd012=7;
 
 Rate013=MaxRate;     %Rate per minute
-TimeStart013=5; 
+TimeStart013=5;
 TimeEnd013=10;
 
 Rate014=MaxRate;     %Rate per minute
 TimeStart014=5;
-TimeEnd014=1000;  
+TimeEnd014=1000;
 
 if prime == 3
     TimeStart013 = TimeStart013 + 2.5;
@@ -256,19 +268,19 @@ if MultipleEmbryos
     if exist([DropboxFolder,filesep,DataType,'_Combined_MeanFits.mat'], 'file')
         load([DropboxFolder,filesep,DataType,'_Combined_MeanFits.mat']);
         if isempty(FitResults)
-            FitResults(length(DVBinID),3).Rate0=[];
+            FitResults(length(DVbinID),3).Rate0=[];
         end
     else
-        FitResults(length(DVBinID),3).Rate0=[];
+        FitResults(length(DVbinID),3).Rate0=[];
     end
 else
     if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'], 'file')
         load([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat']);
         if isempty(FitResults)
-            FitResults(length(DVBinID),3).Rate0=[];
+            FitResults(length(DVbinID),3).Rate0=[];
         end
     else
-        FitResults(length(DVBinID),3).Rate0=[];
+        FitResults(length(DVbinID),3).Rate0=[];
     end
 end
 
@@ -279,9 +291,9 @@ end
 
 %Set default starting values for nc 13 and nc14
 %nc12
-for DVBin=1:length(DVBinID)
+for DVBin=1:length(DVbinID)
     if isempty(FitResults(DVBin,1).Rate0)
-        FitResults(DVBin,1).Rate0=Rate012;    
+        FitResults(DVBin,1).Rate0=Rate012;
         FitResults(DVBin,1).TimeStart0=TimeStart012;
         FitResults(DVBin,1).TimeEnd0=TimeEnd012;
         FitResults(DVBin,1).FrameFilter=[];
@@ -297,9 +309,9 @@ end
 %nc13
 
 
-for DVBin=1:length(DVBinID)
+for DVBin=1:length(DVbinID)
     if isempty(FitResults(DVBin,2).Rate0)
-        FitResults(DVBin,2).Rate0=Rate013;    
+        FitResults(DVBin,2).Rate0=Rate013;
         FitResults(DVBin,2).TimeStart0=TimeStart013;
         FitResults(DVBin,2).TimeEnd0=TimeEnd013;
         FitResults(DVBin,2).FrameFilter=[];
@@ -310,19 +322,19 @@ for DVBin=1:length(DVBinID)
         else
             FitResults(DVBin,2).Approved=-1;
         end
-
+        
     end
 end
 
 %nc14
 
-for DVBin=1:length(DVBinID)
+for DVBin=1:length(DVbinID)
     if isempty(FitResults(DVBin,3).Rate0)
-        FitResults(DVBin,3).Rate0=Rate014;    
+        FitResults(DVBin,3).Rate0=Rate014;
         FitResults(DVBin,3).TimeStart0=TimeStart014;
         FitResults(DVBin,3).TimeEnd0=[];
         FitResults(DVBin,3).FrameFilter=[];
-        FitResults(DVBin,3).FitFrameRange=[];        
+        FitResults(DVBin,3).FitFrameRange=[];
         if sum(NParticlesDV(FrameWindow14,DVBin)>=MinParticles)>=MinTimePoints
             FitResults(DVBin,3).Approved=0;
         else
@@ -352,10 +364,11 @@ end
 
 %Go through each AP bin
 FitFigure=figure;
-DVBin=find(sum(cell2mat(NParticlesDV)), 1 ); %index of the first AP bin that has a non-zero number of particles
+% DVBin=find(sum(cell2mat(NParticlesDV)), 1 ); %index of the first AP bin that has a non-zero number of particles
+DVBin=find(sum(NParticlesDV), 1 ); %index of the first AP bin that has a non-zero number of particles
 cc=1;
 
- lsqOptions=optimset('Display','none');
+lsqOptions=optimset('Display','none');
 
 minRate = 0;
 maxRate = Inf;
@@ -374,112 +387,115 @@ while (cc~=13)
     end
     
     
-   if APDivision(CurrentNC,DVBin)
-        if CurrentNC~=14
-            FrameWindow=APDivision(CurrentNC,DVBin):APDivision(CurrentNC+1,DVBin);
+    if true
+        if CurrentNC==12
+            FrameWindow=nc12:nc13;
+        elseif CurrentNC==13
+            FrameWindow = nc13:nc14;
         else
-            FrameWindow=APDivision(CurrentNC,DVBin):length(ElapsedTime);
+            FrameWindow=nc14:length(ElapsedTime);
         end
+        
         
         if isempty(FrameWindow)
             error('There might be a problem with the division times. Check in CheckDivisionTimes.m')
         end
-
+        
         %Check that we have the minimum number of particles for a minimum
         %amount of time
         if iscell(NParticlesDV)
             NParticlesDV=cell2mat(NParticlesDV);
         end
         if (sum(NParticlesDV(FrameWindow,DVBin)>=MinParticles)>=MinTimePoints)
-
+            
             %Extract the data for this range of frames
             if iscell(MeanVectorDV)
                 MeanVectorDV=cell2mat(MeanVectorDV);
             end
             
             FluoData=MeanVectorDV(FrameWindow,DVBin);
-              if iscell(SDVectorDV)
+            if iscell(SDVectorDV)
                 SDVectorDV=cell2mat(SDVectorDV);
             end
             SDFluoData=SDVectorDV(FrameWindow,DVBin);
             
             NData=NParticlesDV(FrameWindow,DVBin);
             TimeData=ElapsedTime(FrameWindow);
-          
+            
             %Now filter them according the number of particles
             FrameFilter=NData>=MinParticles;
-
-
+            
+            
             %As an initial guess, use FrameFilter to determine the range of the
             %fit
             if isempty(FitResults(DVBin,CurrentNC-11).FitFrameRange)
                 FitFrameRange=FrameWindow(FrameFilter);
                 if CurrentNC==14
-                    FitFrameRange=FitFrameRange((ElapsedTime(FitFrameRange)-ElapsedTime(APDivision(CurrentNC,DVBin)))<12);
+                    FitFrameRange=FitFrameRange((ElapsedTime(FitFrameRange)-ElapsedTime(ncs(CurrentNC)))<12);
                 end
                 FitResults(DVBin,CurrentNC-11).FitFrameRange=FitFrameRange;
             else
                 FitFrameRange=FitResults(DVBin,CurrentNC-11).FitFrameRange;
             end
-
+            
             %Filter the frames according to FitFrameRange
             FitFrameFilter=ismember(FrameWindow,FitFrameRange);
             
-           
-
+            
+            
             FluoDataForFit=FluoData(FitFrameFilter);
             SDFluoDataForFit=SDFluoData(FitFrameFilter);
             NDataForFit=NData(FitFrameFilter);
             TimeDataForFit=TimeData(FitFrameFilter);
             
-
-
+            
+            
             FluoData=FluoData(FrameFilter);
             SDFluoData=SDFluoData(FrameFilter);
             NData=NData(FrameFilter);
             TimeData=TimeData(FrameFilter);
-
+            
             if CurrentNC~=14
                 %Do the fit
                 x0=[FitResults(DVBin,CurrentNC-11).TimeStart0,...
                     FitResults(DVBin,CurrentNC-11).TimeEnd0,...
                     FitResults(DVBin,CurrentNC-11).Rate0];
-
+                
                 
                 %Get rid of any NaN in the data
                 NanFilter=~isnan(FluoDataForFit);
-
+                
                 if ~isempty(TimeDataForFit(NanFilter))
                     
-                 
-                   if CurrentNC == 12
+                    
+                    if CurrentNC == 12
                         lb = [3, 4, minRate];
                         ub = [12 12 maxRate];
-                   elseif CurrentNC == 13
-                        lb = [3, 4, maxRate];
-                        ub = [20 20 minRate];
-                   end
-
+                    elseif CurrentNC == 13
+                        lb = [3, 4, minRate];
+                        ub = [20 20 maxRate];
+                    end
+                    
                     [xFit,resnorm,residual,exitflag,output,lambda,jacobian]=...
                         lsqnonlin(@(x) lsqnonlinFitFluorescenceCurve(TimeDataForFit(NanFilter)-...
                         ElapsedTime(FrameWindow(1)),...
                         FluoDataForFit(NanFilter),Delay,...
                         ElapsedTime(FrameWindow(end))-ElapsedTime(FrameWindow(1)),x),x0, lb,ub, lsqOptions);
-
+                    
                     FitResults(DVBin,CurrentNC-11).TimeStart=xFit(1);
                     FitResults(DVBin,CurrentNC-11).TimeEnd=xFit(2);
                     FitResults(DVBin,CurrentNC-11).RateFit=xFit(3);
-
+                    
                     %Estimate an error bar out of the confidence intervals
                     FitResults(DVBin,CurrentNC-11).CI=nlparci(xFit,residual,'jacobian',jacobian);
-
+                    
                     FitResults(DVBin,CurrentNC-11).SDTimeStart=(FitResults(DVBin,CurrentNC-11).CI(1,2)-FitResults(DVBin,CurrentNC-11).CI(1,1))/2;
                     FitResults(DVBin,CurrentNC-11).SDTimeEnd=(FitResults(DVBin,CurrentNC-11).CI(2,2)-FitResults(DVBin,CurrentNC-11).CI(2,1))/2;
                     FitResults(DVBin,CurrentNC-11).SDRateFit=(FitResults(DVBin,CurrentNC-11).CI(3,2)-FitResults(DVBin,CurrentNC-11).CI(3,1))/2;
-
-
-
-
+                    
+                    
+                    
+                    
                     %Plot the results
                     %Get the corresponding fitted curve
                     [TimeFit,FluoFit]=FluorescenceCurve(ElapsedTime(FrameWindow(end))-...
@@ -512,7 +528,7 @@ while (cc~=13)
                     catch
                         disp('Error in displaying the plot')
                     end
-
+                    
                     legend(['tON=',num2str(FitResults(DVBin,CurrentNC-11).TimeStart),' \pm ',num2str(FitResults(DVBin,CurrentNC-11).SDTimeStart)],...
                         ['tOFF=',num2str(FitResults(DVBin,CurrentNC-11).TimeEnd),' \pm ',num2str(FitResults(DVBin,CurrentNC-11).SDTimeEnd)],...
                         ['Rate=',num2str(FitResults(DVBin,CurrentNC-11).RateFit),' \pm ',num2str(FitResults(DVBin,CurrentNC-11).SDRateFit)],...
@@ -522,32 +538,32 @@ while (cc~=13)
                 
                 %Do the fit
                 x0=[FitResults(DVBin,CurrentNC-11).TimeStart0,FitResults(DVBin,CurrentNC-11).Rate0];
-
-
+                
+                
                 
                 %Get rid of any NaN in the data
                 NanFilter=~isnan(FluoDataForFit);
-
+                
                 if ~isempty(TimeData(NanFilter))
-
+                    
                     [xFit,resnorm,residual,exitflag,output,lambda,jacobian]=...
                         lsqnonlin(@(x) lsqnonlinFitFluorescenceCurveNC14(TimeDataForFit(NanFilter)-...
                         ElapsedTime(FrameWindow(1)),...
                         FluoDataForFit(NanFilter),Delay,...
                         ElapsedTime(FrameWindow(end))-ElapsedTime(FrameWindow(1)),x),x0);
-
+                    
                     FitResults(DVBin,CurrentNC-11).TimeStart=xFit(1);
                     FitResults(DVBin,CurrentNC-11).RateFit=xFit(2);
-
+                    
                     %Estimate an error bar out of the confidence intervals
                     FitResults(DVBin,CurrentNC-11).CI=nlparci(xFit,residual,'jacobian',jacobian);
-
+                    
                     FitResults(DVBin,CurrentNC-11).SDTimeStart=(FitResults(DVBin,CurrentNC-11).CI(1,2)-FitResults(DVBin,CurrentNC-11).CI(1,1))/2;
                     FitResults(DVBin,CurrentNC-11).SDRateFit=(FitResults(DVBin,CurrentNC-11).CI(2,2)-FitResults(DVBin,CurrentNC-11).CI(2,1))/2;
-
-
-
-
+                    
+                    
+                    
+                    
                     %Plot the results
                     %Get the corresponding fitted curve
                     [TimeFit,FluoFit]=FluorescenceCurve(ElapsedTime(FrameWindow(end))-...
@@ -580,17 +596,17 @@ while (cc~=13)
                     catch
                         disp('Error in displaying the plot')
                     end
-
+                    
                     legend(['tON=',num2str(FitResults(DVBin,CurrentNC-11).TimeStart),' \pm ',num2str(FitResults(DVBin,CurrentNC-11).SDTimeStart)],...
                         ['Rate=',num2str(FitResults(DVBin,CurrentNC-11).RateFit),' \pm ',num2str(FitResults(DVBin,CurrentNC-11).SDRateFit)],...
                         'Location','SouthOutside')
                 end
             end
-
+            
         end
-     end
+    end
     
-    title([num2str(DVBinID(DVBin)),' DV, TimeStart0=',num2str(FitResults(DVBin,CurrentNC-11).TimeStart0),...
+    title([num2str(DVbinID(DVBin)),' DV, TimeStart0=',num2str(FitResults(DVBin,CurrentNC-11).TimeStart0),...
         ', TimeEnd0=',num2str(FitResults(DVBin,CurrentNC-11).TimeEnd0),', Rate=',num2str(FitResults(DVBin,CurrentNC-11).Rate0),...
         ', nc',num2str(CurrentNC)])
     
@@ -612,31 +628,31 @@ while (cc~=13)
     cm=get(gca,'CurrentPoint');
     
     %Move between positions
-    if (ct~=0)&(cc=='.')&(DVBin<length(DVBinID))
+    if (ct~=0)&(cc=='.')&(DVBin<length(DVbinID))
         DVBin=DVBin+1;
     elseif (ct~=0)&(cc==',')&(DVBin>1)
         DVBin=DVBin-1;
-    
-    %Approve, disapprove fit
+        
+        %Approve, disapprove fit
     elseif (ct~=0)&(cc=='q')
         if FitResults(DVBin,CurrentNC-11).Approved~=1
             FitResults(DVBin,CurrentNC-11).Approved=1;
         else
             FitResults(DVBin,CurrentNC-11).Approved=0;
         end
-
-    
-    %Disapprove, disapprove fit
+        
+        
+        %Disapprove, disapprove fit
     elseif (ct~=0)&(cc=='w')
         if FitResults(DVBin,CurrentNC-11).Approved~=-1
             FitResults(DVBin,CurrentNC-11).Approved=-1;
         else
             FitResults(DVBin,CurrentNC-11).Approved=0;
         end
-  
-    
         
-    %Move right range of fit
+        
+        
+        %Move right range of fit
     elseif (ct~=0)&(cc=='k')&(length(FitResults(DVBin,CurrentNC-11).FitFrameRange)>2)
         FitResults(DVBin,CurrentNC-11).FitFrameRange=FitResults(DVBin,CurrentNC-11).FitFrameRange(1:end-1);
     elseif (ct~=0)&(cc=='K')&(length(FitResults(DVBin,CurrentNC-11).FitFrameRange)>6)
@@ -649,7 +665,7 @@ while (cc~=13)
             FitResults(DVBin,CurrentNC-11).FitFrameRange(end+1)=...
                 min(FilteredFramesTemp(FilteredFramesTemp>max(FitResults(DVBin,CurrentNC-11).FitFrameRange)));
         end
-    %Move left range of fit
+        %Move left range of fit
     elseif (ct~=0)&(cc=='j')&(length(FitResults(DVBin,CurrentNC-11).FitFrameRange)>2)
         FitResults(DVBin,CurrentNC-11).FitFrameRange=FitResults(DVBin,CurrentNC-11).FitFrameRange(2:end);
     elseif (ct~=0)&(cc=='J')&(length(FitResults(DVBin,CurrentNC-11).FitFrameRange)>6)
@@ -662,49 +678,49 @@ while (cc~=13)
                 [max(FilteredFramesTemp(FilteredFramesTemp<min(FitResults(DVBin,CurrentNC-11).FitFrameRange))),...
                 FitResults(DVBin,CurrentNC-11).FitFrameRange];
         end
-    %Reset frame fit range
-     elseif (ct~=0)&(cc=='r')   
+        %Reset frame fit range
+    elseif (ct~=0)&(cc=='r')
         FitResults(DVBin,CurrentNC-11).FitFrameRange=FrameWindow(FrameFilter);
-
         
         
-    %Change the initial parameters
-    %TimeStart
+        
+        %Change the initial parameters
+        %TimeStart
     elseif (ct~=0)&(cc=='a')&((CurrentNC==14)|(CurrentNC~=14&FitResults(DVBin,CurrentNC-11).TimeStart0<FitResults(DVBin,CurrentNC-11).TimeEnd0))
         FitResults(DVBin,CurrentNC-11).TimeStart0=FitResults(DVBin,CurrentNC-11).TimeStart0+1;
     elseif (ct~=0)&(cc=='z')&(FitResults(DVBin,CurrentNC-11).TimeStart0>1)
         FitResults(DVBin,CurrentNC-11).TimeStart0=FitResults(DVBin,CurrentNC-11).TimeStart0-1;
-    %TimeEnd
+        %TimeEnd
     elseif (ct~=0)&(cc=='s')&(FitResults(DVBin,CurrentNC-11).TimeEnd0<ElapsedTime(FrameWindow(end))-ElapsedTime(FrameWindow(1)))
         FitResults(DVBin,CurrentNC-11).TimeEnd0=FitResults(DVBin,CurrentNC-11).TimeEnd0+1;
     elseif (ct~=0)&(cc=='x')&(FitResults(DVBin,CurrentNC-11).TimeEnd0>FitResults(DVBin,CurrentNC-11).TimeStart0)
         FitResults(DVBin,CurrentNC-11).TimeEnd0=FitResults(DVBin,CurrentNC-11).TimeEnd0-1;
-    %Rate, fine
+        %Rate, fine
     elseif (ct~=0)&(cc=='c')&(FitResults(DVBin,CurrentNC-11).Rate0>100)
         FitResults(DVBin,CurrentNC-11).Rate0=FitResults(DVBin,CurrentNC-11).Rate0-10;
     elseif (ct~=0)&(cc=='d')
-        FitResults(DVBin,CurrentNC-11).Rate0=FitResults(DVBin,CurrentNC-11).Rate0+10;    
-    %Rate, coarse
+        FitResults(DVBin,CurrentNC-11).Rate0=FitResults(DVBin,CurrentNC-11).Rate0+10;
+        %Rate, coarse
     elseif (ct~=0)&(cc=='C')&(FitResults(DVBin,CurrentNC-11).Rate0>100)
         FitResults(DVBin,CurrentNC-11).Rate0=FitResults(DVBin,CurrentNC-11).Rate0-100;
     elseif (ct~=0)&(cc=='D')
-        FitResults(DVBin,CurrentNC-11).Rate0=FitResults(DVBin,CurrentNC-11).Rate0+100; 
-    
-    %Switch NCs
+        FitResults(DVBin,CurrentNC-11).Rate0=FitResults(DVBin,CurrentNC-11).Rate0+100;
+        
+        %Switch NCs
     elseif (ct~=0)&(cc=='m')&CurrentNC<14
         CurrentNC=CurrentNC+1;
     elseif (ct~=0)&(cc=='n')&CurrentNC>MinNC
         CurrentNC=CurrentNC-1;
         
-    %Set lower and upper bounds for fitting the initiation rate
+        %Set lower and upper bounds for fitting the initiation rate
     elseif (ct~=0)&(cc=='g')
         
         inRates = inputdlg({'Select min rate:', ...
-                'Select max rate'});
+            'Select max rate'});
         minRate = str2double(inRates{1});
-        maxRate = str2double(inRates{2}); 
+        maxRate = str2double(inRates{2});
         
-    %Save
+        %Save
     elseif ct~=0 & cc=='v'
         if MultipleEmbryos
             save([saveFolder,filesep,DataType,'_Combined_MeanFits.mat'],...
@@ -716,10 +732,10 @@ while (cc~=13)
             disp('MeanFits.mat saved')
         end
         
-    %Debug mode
+        %Debug mode
     elseif (ct~=0)&(cc=='9')
         keyboard
-    
+        
     end
     
 end
@@ -733,7 +749,7 @@ if MultipleEmbryos
 else
     save([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'],...
         'FitResults')
-    disp('MeanFits.mat saved')        
+    disp('MeanFits.mat saved')
 end
 
 close(pb);
