@@ -31,9 +31,7 @@ load([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'], 'movieMat
 numFrames = length(FrameInfo);
 
 
-InputChannelTemp1 = strfind({lower(Channels{1}),lower(Channels{2}), lower(Channels{3})},'input');
-InputChannelTemp2=~cellfun(@isempty,InputChannelTemp1);
-InputChannel = find(InputChannelTemp2);
+InputChannel = find(contains(Channels, 'input', 'IgnoreCase', true));
 
 
 
