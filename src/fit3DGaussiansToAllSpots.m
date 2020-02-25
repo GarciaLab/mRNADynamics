@@ -41,7 +41,7 @@ end
 FrameInfo = load([DataFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
 FrameInfo = FrameInfo.FrameInfo;
 
-load([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat');
+load([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat'], 'movieMat');
 
 startParallelPool(nWorkers, displayFigures, keepPool);
 

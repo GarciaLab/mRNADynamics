@@ -65,7 +65,8 @@ for i=1:length(DropboxFolders)
     if length(DDataStatus)>1
         error(['More than one DataStatus.XLS found in folder ',DropboxFolders{i}])
     elseif length(DDataStatus)==1
-        [~,Sheets] = xlsfinfo([DropboxFolders{i},filesep,DDataStatus(1).name]);
+%         [~,Sheets] = xlsfinfo([DropboxFolders{i},filesep,DDataStatus(1).name]);
+        Sheets = sheetnames([DropboxFolders{i},filesep,DDataStatus(1).name]);
         FindSheets=strcmpi(Sheets,DataType);
         if sum(FindSheets)==1
             DataStatusToCheck=[DataStatusToCheck,i];
