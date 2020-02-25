@@ -44,7 +44,7 @@ xRange = max([1,xSpot-snippet_size]):min([xSize,xSpot+snippet_size]);
 yRange = max([1,ySpot-snippet_size]):min([ySize,ySpot+snippet_size]);
 
 
-snip3D(:,:,iter) = double(squeeze(movieMat(spotChannel, zBot:zTop, frame, yRange,xRange))); 
+snip3D = double(squeeze(movieMat(spotChannel, zRange, frame, yRange,xRange))); 
 
 
 %%

@@ -21,6 +21,7 @@ function movieMat = CheckNucleiSegmentation(Prefix, varargin)
 % m  - Increase contrast
 % n  - Decrease contrast
 % r  - Reset contrast setting
+% / - Adjust ellipse centroids
 % x  - Exit and save
 % 9  - Debug mode
 %
@@ -35,7 +36,7 @@ function movieMat = CheckNucleiSegmentation(Prefix, varargin)
 close all
 
 %Load the folder information
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
+[SourcePath,ProcPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
     DetermineLocalFolders;
 
 noAdd = false;
@@ -58,12 +59,12 @@ end
 startParallelPool(nWorkers, 0, 1);
 
 
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
+[~,ProcPath,DropboxFolder,~,PreProcPath]=...
     DetermineLocalFolders(Prefix);
 
 
 %Set the source folders
-Folder=[FISHPath,filesep,Prefix,'_',filesep,'preanalysis',filesep];
+Folder=[ProcPath,filesep,Prefix,'_',filesep,'preanalysis',filesep];
 FileName=['CompactResults_',Prefix,'_.mat'];
 
 %Set the destination folders
@@ -81,7 +82,7 @@ DataFolder=[Folder,'..',filesep,'..',filesep,'..',filesep,'Data',filesep,FilePre
     Channel1, Channel2, Objective, Power, DataFolderFromDataColumn, DropboxFolderName, Comments,...
     nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
-load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']);
+load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 
 [xSize, ySize, ~, ~, ~,...
     nFrames, ~, ~] = getFrameInfoParams(FrameInfo);
@@ -411,6 +412,10 @@ while (cc~='x')
         if ~isempty(previousncframes)
             CurrentFrame = previousncframes(1);
         end
+    elseif (ct~=0)&(cc=='/')  %adjust ellipse centroids
+       
+        Ellipses{CurrentFrame} = adjustEllipseCentroidsFrame(Ellipses{CurrentFrame}, squeeze(hisMat(CurrentFrame, :, :)));
+
     elseif (ct~=0)&(cc=='0')    %Debug mode
         keyboard
         

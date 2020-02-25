@@ -262,6 +262,11 @@ if exist('dataStructure', 'var')
     save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure');
 end
 
+%fix the nuclear centers
+    
+Ellipses = adjustAllEllipseCentroids(Prefix);
+
+
 %Extract the nuclear fluorescence values if we're in the right experiment
 %type
 if intFlag 

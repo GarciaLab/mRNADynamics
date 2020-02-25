@@ -144,7 +144,7 @@ for k=1:maxk
         an=ang(fix((k-1)/size(x0,1))+1);
         xpos=x0(rem(k-1,size(x0,1))+1);
         ypos=y0(rem(k-1,size(y0,1))+1);
-    end;
+    end
     
     co=cos(an);
     si=sin(an);
