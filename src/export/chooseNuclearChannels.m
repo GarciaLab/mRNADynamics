@@ -22,6 +22,7 @@ middle_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
 custom_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
 mean_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
 
+Channel1 = Channels{1}; Channel2 = Channels{2}; Channel3 = Channels{3};
 
 % default custom projection parameters
 max_custom = 1; % highest histone channel slice used

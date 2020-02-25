@@ -148,13 +148,13 @@ end
   mats = struct;
   
   makeMovieMats = false;
-  
-  if makeMovieMats
-      nWorkers = 1;
-      Channels = {Channel1, Channel2, Channel3};
-      [movieMat, hisMat, maxMat, medMat, midMat]...
-    = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, Channels);
-    mats.movieMat = movieMat;  mats.hisMat = hisMat; mats.maxMat=maxMat;mats.medMat=medMat;mats.midMat = midMat;
-  end
+%   
+%   if makeMovieMats
+%       nWorkers = 1;
+%       Channels = {Channel1, Channel2, Channel3};
+%       [movieMat, hisMat, maxMat, medMat, midMat]...
+%     = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, Channels);
+%     mats.movieMat = movieMat;  mats.hisMat = hisMat; mats.maxMat=maxMat;mats.medMat=medMat;mats.midMat = midMat;
+%   end
 
 end

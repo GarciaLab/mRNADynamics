@@ -34,6 +34,7 @@ load([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'], 'movieMat
 
 
 nCh = length(spotChannels);
+
 format = [FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSize];
 
 %2 spot 2 color will break this
@@ -118,7 +119,7 @@ end
     end
 
 % clear movieMat;
-save([ProcPath, filesep, Prefix,'_', filesep, Prefix, '_dogMat.mat'], 'dogMat');
+save([ProcPath, filesep, Prefix,'_', filesep, Prefix, '_dogMat.mat'], 'dogMat', '-v7.3', '-nocompression');
 % clear dogMat
 
 end

@@ -89,7 +89,7 @@ q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
 
-zPadded = zSize == size(dogMat, 4);
+zPadded = zSize ~= size(dogMat, 4);
 
 for current_frame = initialFrame:numFrames %parfor current_frame = initialFrame:numFrames 
     

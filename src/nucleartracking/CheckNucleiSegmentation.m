@@ -100,11 +100,8 @@ end
 Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
 nCh = sum(~cellfun(@isempty, Channels));
 
-load('ReferenceHist.mat')
-preMovie = true;
-movieMat = []; hisMat= []; maxMat = [];  medMat = []; midMat = [];
-
-load([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'], 'hisMat');
+  [~,hisMat, ~, ~, ~]...
+                = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo);
 
 nFrames = size(hisMat, 1);
 %Get information about the image size
