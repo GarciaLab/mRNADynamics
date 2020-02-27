@@ -56,12 +56,12 @@ for f = 1:nFrames
     for r = 1:nRegions
         
         maskTemp = (d(f).label0 == r) .* d(f).hisSmooth;
-        imagesc(maskTemp);
         hold on;
         [~,ind] = max(maskTemp,[],'all','linear');
         [y1, x1] = ind2sub([yDim, xDim],ind);
         
        if displayFigures
+            figure(1);
             imagesc(maskTemp, [min(min(maskTemp(maskTemp>0))), max(maskTemp(:))]);
             hold on;
             plot(y1, x1, 'xk', 'LineWidth', 2);

@@ -28,7 +28,7 @@ nPadding = 2; %normally we pad a blank image above and below the stack.
 pth = [PreProcPath, filesep, Prefix, filesep,Prefix];
 
 movie = false;
-maxmat = false;
+projmat = true;
 his = false;
 
 if exist([pth, '_movieMat.Mat'], 'file')
@@ -103,13 +103,13 @@ if exist([pth, '_maxMat.Mat'], 'file') && exist([pth, '_medMat.Mat'], 'file') &&
     load([pth, '_medMat.Mat'],'medMat');
     load([pth, '_midMat.Mat'],'midMat');
     
-    if ~isempty(maxMat)
-        maxmat = true;
+    if isempty(maxMat) | isempty(midMat)
+        projmat = false;
     end
     
 end
 
-if ~maxmat
+if ~projmat
     maxMat = squeeze(max(movieMat(:,:,:,:, :), [], 2)); % ch z t x y
     medMat = []; %median is so slow. %     medMat = squeeze(median(movieMat(:,:,:,:, :), 2));
     midMat = squeeze(max(movieMat(:,round(nSlices * .50):round(nSlices * .75),:,:, :), [], 2));

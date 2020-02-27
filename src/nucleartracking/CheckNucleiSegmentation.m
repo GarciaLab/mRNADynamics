@@ -84,12 +84,14 @@ DataFolder=[Folder,'..',filesep,'..',filesep,'..',filesep,'Data',filesep,FilePre
 
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 
-[xSize, ySize, ~, ~, ~,...
+[xSize, ySize, pixelSize, ~, ~,...
     nFrames, ~, ~] = getFrameInfoParams(FrameInfo);
 
 %Get the nuclei segmentation data
 load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses');
 load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'schnitzcells');
+%Load the reference histogram for the fake histone channel
+load('ReferenceHist.mat')
 
 hasSchnitzInd =size(Ellipses{1},2) == 9;
 
@@ -101,7 +103,7 @@ end
 Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
 nCh = sum(~cellfun(@isempty, Channels));
 
-  [~,hisMat, ~, ~, ~]...
+  [~,hisMat, maxMat, medMat, midMat]...
                 = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo);
 
 nFrames = size(hisMat, 1);
@@ -350,16 +352,16 @@ while (cc~='x')
     elseif (ct~=0)&(cc=='{') %resegment from scratch 
         
         Ellipses{CurrentFrame}=[];
-        [centers, radii, mask] = maskNuclei2(HisImage);
+%         [centers, radii, mask] = maskNuclei2(HisImage);
+         [centers, radii, mask] = findEllipsesByKMeans(HisImage, 'displayFigures', false);
+
         for i = 1:length(radii)
             Ellipses{CurrentFrame}(i, :) = [centers(i,1),centers(i,2),radii(i),radii(i),0,0,0,0];
         end
         
     elseif (ct~=0)&(cc=='~')
-        
-         [~,~, maxMat, medMat, midMat]...
-                = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo);
-        [ProjectionType, nonInverted, inverted] = makeNuclearProjection_CNT(nCh);
+ 
+         [ProjectionType, nonInverted, inverted] = makeNuclearProjection_CNT(nCh);
         disp('calculating projection...')
         nuclearMovie = nan(nCh, nFrames, xSize, ySize, 'double'); % ch z t x y
         %ch z t x y
@@ -414,7 +416,7 @@ while (cc~='x')
         end
     elseif (ct~=0)&(cc=='/')  %adjust ellipse centroids
        
-        Ellipses{CurrentFrame} = adjustEllipseCentroidsFrame(Ellipses{CurrentFrame}, squeeze(hisMat(CurrentFrame, :, :)));
+        Ellipses{CurrentFrame} = adjustEllipseCentroidsFrame(Ellipses{CurrentFrame}, squeeze(hisMat(CurrentFrame, :, :)), 'pixelSize', pixelSize);
 
     elseif (ct~=0)&(cc=='0')    %Debug mode
         keyboard
