@@ -17,6 +17,7 @@ classdef CPTState < handle
         ManualZFlag
         ZSlices
         CurrentZ
+        CurrentZIndex
         
         CurrentParticleIndex
         CurrentParticle
@@ -108,6 +109,19 @@ classdef CPTState < handle
 
         function numValidFrames = numValidFrames(this)
             numValidFrames = length({this.Spots{1}.Fits});
+        end
+
+        function currentSpots = getCurrentChannelSpots(this)
+            currentSpots = this.Spots{this.CurrentChannel};
+        end
+
+        function currentParticles = getCurrentChannelParticles(this)
+            currentParticles = this.Particles{this.CurrentChannel};
+        end
+
+        function currentParticleFit = getCurrentParticleFit(this)
+            currentSpots = this.getCurrentChannelSpots();
+            currentParticleFit = currentSpots(this.CurrentFrame).Fits(this.CurrentParticleIndex);
         end
     end
 end

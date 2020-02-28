@@ -275,10 +275,10 @@ if ZoomMode
         xlim(overlayAxes,[xForZoom-ZoomRange,xForZoom+ZoomRange])
         ylim(overlayAxes,[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2])
         if multiView
-           for i = 1:length(multiAx)
-               for j = 1:length(multiAx)
-                   xlim(multiAx{i, j},[xForZoom-ZoomRange,xForZoom+ZoomRange])
-                    ylim(multiAx{i, j},[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2]) 
+           for z = 1:length(multiAx)
+               for f = 1:length(multiAx)
+                    xlim(multiAx{z, f},[xForZoom-ZoomRange,xForZoom+ZoomRange])
+                    ylim(multiAx{z, f},[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2]) 
                end
            end
         end
@@ -291,10 +291,10 @@ if GlobalZoomMode
     xlim(overlayAxes,[xForZoom-ZoomRange,xForZoom+ZoomRange])
     ylim(overlayAxes,[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2])
     if multiView
-           for i = 1:length(multiAx)
-               for j = 1:length(multiAx)
-                   xlim(multiAx{i, j},[xForZoom-ZoomRange,xForZoom+ZoomRange])
-                    ylim(multiAx{i, j},[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2]) 
+           for z = 1:length(multiAx)
+               for f = 1:length(multiAx)
+                   xlim(multiAx{z, f},[xForZoom-ZoomRange,xForZoom+ZoomRange])
+                    ylim(multiAx{z, f},[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2]) 
                end
            end
     end

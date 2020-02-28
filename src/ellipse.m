@@ -83,7 +83,7 @@ if isempty(rb),rb=1;end;
 if isempty(ang),ang=0;end;
 if isempty(x0),x0=0;end;
 if isempty(y0),y0=0;end;
-if isempty(Nb),Nb=300;end;
+if isempty(Nb),Nb=20;end %AR 2/2/20- changed from 300 to 20 to maybe? speed up drawing 
 if isempty(C),C=get(gca,'colororder');end;
 
 % work on the variable sizes

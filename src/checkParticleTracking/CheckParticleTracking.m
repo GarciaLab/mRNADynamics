@@ -1,4 +1,4 @@
-function [outs, movieCell, hisCell] = CheckParticleTracking(Prefix, varargin)
+function [outs, movieMat, hisMat] = CheckParticleTracking(Prefix, varargin)
 %
 % DESCRIPTION
 % The point of this function is to check the tracking of particles. The
@@ -139,7 +139,7 @@ storedTimeProjection = []; % Don't need to wait for timeProjection to finish eac
 [sortByFrames, sortByLength, ForCompileAll, SpeedMode, ~, ...
     ncRange, projectionMode, plot3DGauss, NC, ...
     startNC, endNC, optionalResults, nWorkers, fish,...
-    noHisOverlay, multiView, preStructs, preMovie, movieCell, hisCell] = determineCheckParticleTrackingOptions(varargin{:});
+    noHisOverlay, multiView, preStructs, preMovie, movieMat, hisMat] = determineCheckParticleTrackingOptions(varargin{:});
 
 if fish
     noHisOverlay = true;
@@ -167,20 +167,10 @@ else
 end
 
 
-[xSize, ySize, pixelSize, zStep, snippet_size, LinesPerFrame, PixelsPerLine,...
-    nFrames, nSlices] = getFrameInfoParams(FrameInfo);
+[xSize, ySize, pixelSize, zStep, snippet_size,...
+    nFrames, nSlices, nDigits] = getFrameInfoParams(FrameInfo);
 
-%See how  many frames we have and adjust the index size of the files to load accordingly
-if nFrames < 1E3
-    NDigits = 3;
-elseif nFrames < 1E4
-    NDigits = 4;
-else
-    error('No more than 10,000 frames supported.')
-end
-
-
-
+nSlices = nSlices + 2; %due to padding;
 %Create the particle array. This is done so that we can support multiple
 %channels. Also figure out the number of channels
 if iscell(Particles)
@@ -197,55 +187,31 @@ end
 %Add FramesApproved where necessary
 Particles = addFrameApproved(NChannels, Particles);
 
-[Ellipses, UseHistoneOverlay, UseSchnitz] = checkHistoneAndNuclearSegmentation(PreProcPath, FilePrefix, NDigits, DropboxFolder, noHisOverlay, fish);
+[Ellipses, UseHistoneOverlay, UseSchnitz] = checkHistoneAndNuclearSegmentation(PreProcPath, FilePrefix, nDigits, DropboxFolder, noHisOverlay, fish);
 
 [~, ExperimentType, ~, ~, ~, ~, Channel1, Channel2, ~, ~, ~, ~, ~, ...
     nc9, nc10, nc11, nc12, nc13, nc14, ~, Channel3, prophase, metaphase] =...
     getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
 
 Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
+coats = getCoatChannel(Channel1, Channel2, Channel3);
 
-nPadding = 2; %normally we pad a blank image above and below the stack.
-%if a movie is unpadded this will require modification
-maxCell = [];
+ch = coats(1); %assumes the experiment is _not_ 2spot2color
+maxTimeCell = [];
 if preMovie
-    pth = [PreProcPath, filesep, Prefix, filesep,Prefix];
-    
-    if isempty(movieCell)
-        if exist([pth, '_movieCell.mat'], 'file')
-            load([pth, '_movieCell.mat'],'movieCell');
-            if exist([pth, '_hisCell.mat'], 'file')
-                load([pth, '_hisCell.mat'],'hisCell');
-            end
-        else
-            coats = getCoatChannel(Channel1, Channel2, Channel3);
-            movieCell = zeros(length(coats), nSlices, nFrames, xSize, ySize, 'uint16'); % ch z t x y
-            if UseSchnitz
-                hisCell =  zeros(nFrames, xSize, ySize, 'uint16'); %t x y
-            end
-            for ch = 1:length(coats)
-                c = coats(ch);
-                for f = 1:nFrames
-                    parfor z = 1:nSlices+nPadding
-                        %reminder to squeeze the array before accessing an image
-                        movieCell(ch, z, f, :, :) = imread([pth,'_',iIndex(f, NDigits), '_z', iIndex(z, 2), ['_ch', iIndex(c, 2)], '.tif']);
-                    end
-                    if UseSchnitz
-                        hisCell(f, :, :) = imread([pth,'-His_', iIndex(f, NDigits), '.tif']);
-                    end
-                end
-            end
-            maxCell = squeeze(max(movieCell(:,:,:,:, :), [], 2));
-            save([pth, '_movieCell.mat'],'movieCell', '-v7.3', '-nocompression');
-            save([pth, '_hisCell.mat'],'hisCell', '-v7.3', '-nocompression');
-        end
+    if isempty(movieMat)
+        [movieMat, hisMat, maxMat, ~, ~]...
+            = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, Channels);
+        movieMat = squeeze(movieMat(ch,:,:,:,:));
+        maxMat = squeeze(maxMat(ch,:,:,:));
+    else
+        maxMat = squeeze(max(movieMat(:,:,:,:), [],1));
     end
 else
-    movieCell = [];
-    hisCell = [];
-    maxCell = [];
+    movieMat = []; hisMat = []; maxMat = []; 
 end
-maxTimeCell = [];
+
+
 
 for i = 1:nFrames
     if i < nc9
@@ -334,6 +300,7 @@ end
 
 if multiView
     multiFig = figure;
+    blankImage = zeros(cptState.FrameInfo(1).LinesPerFrame, cptState.FrameInfo(1).PixelsPerLine);
 end
 
 
@@ -408,7 +375,7 @@ while (cc ~= 'x')
     
     if (~isempty(xTrace)) && (~cptState.ManualZFlag)
         cptState.CurrentZ = z(cptState.CurrentParticleIndex);
-        CurrentZIndex = find(...
+        cptState.CurrentZIndex = find(...
             cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).z == ...
             cptState.CurrentZ);
         cptState.ManualZFlag = 0;
@@ -418,44 +385,40 @@ while (cc ~= 'x')
     if strcmpi(cptState.projectionMode, 'None')
         if ~preMovie
             cptState.ImageMat = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
-                FilePrefix, iIndex(cptState.CurrentFrame, NDigits), '_z', iIndex(cptState.CurrentZ, 2), cptState.nameSuffix, '.tif']);
+                FilePrefix, iIndex(cptState.CurrentFrame, nDigits), '_z', iIndex(cptState.CurrentZ, 2), cptState.nameSuffix, '.tif']);
         else
-            cptState.ImageMat = squeeze(movieCell(cptState.CurrentChannel,cptState.CurrentZ, cptState.CurrentFrame, :, :));
+            cptState.ImageMat = squeeze(movieMat(cptState.CurrentZ, cptState.CurrentFrame, :, :));
         end
         if multiView
-            for i = 1:-1:-1
-                for j = -1:1
-                    if any( 1:nSlices == cptState.CurrentZ + i) && any( 1:nFrames == cptState.CurrentFrame + j)
-                        ch=1; multiImage{i+2, j+2} = squeeze(movieCell(1,cptState.CurrentZ+i, cptState.CurrentFrame+j,:,:));
+%             if cptState.CurrentParticle == 2
+                1
+%             end
+            for z = 1:-1:-1
+                for f = -1:1
+                    if any( 1:nSlices == cptState.CurrentZ + z) && any( 1:nFrames == cptState.CurrentFrame + f)
+                        multiImage{z+2, f+2} = squeeze(movieMat(cptState.CurrentZ+z, cptState.CurrentFrame+f,:,:));
                     else
-                        multiImage{i+2, j+2} = zeros(cptState.FrameInfo(1).LinesPerFrame, cptState.FrameInfo(1).PixelsPerLine);
+                        multiImage{z+2, f+2} = blankImage;
                     end
                 end
             end
         end
     elseif strcmpi(cptState.projectionMode, 'Max Z')
         if preMovie
-            if isempty(maxCell)
-                maxCell = squeeze(max(movieCell(:,:,:,:, :), [], 2));
-            end
             if nFrames > 1
-                cptState.ImageMat = squeeze(maxCell(cptState.CurrentFrame,:,:));
+                cptState.ImageMat = squeeze(maxMat(cptState.CurrentFrame,:,:));
             else
-                cptState.ImageMat = maxCell;
+                cptState.ImageMat = maxMat;
             end
         else
-            cptState.ImageMat = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, cptState.FrameInfo, 'max', cptState.nWorkers);
+            cptState.ImageMat = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, nDigits, DropboxFolder, PreProcPath, cptState.FrameInfo, 'max', cptState.nWorkers);
         end
-    elseif strcmpi(cptState.projectionMode, 'Median Z')
-        cptState.ImageMat = zProjections(Prefix, cptState.coatChannel, cptState.CurrentFrame, cptState.ZSlices, NDigits, DropboxFolder, PreProcPath, cptState.FrameInfo, 'median', cptState.nWorkers);
     elseif strcmpi(cptState.projectionMode, 'Max Z and Time')
-        
         if preMovie
             if isempty(maxTimeCell)
-                cptState.ImageMat = squeeze(max(max(movieCell(:,:,ncFramesFull(currentNC):ncFramesFull(currentNC+1),:,:), [], 3), [], 2)); % ch z t x y
+                cptState.ImageMat = squeeze(max(max(movieMat(:,ncFramesFull(currentNC):ncFramesFull(currentNC+1),:,:), [], 3), [], 2)); % ch z t x y
             end
         else
-            
             if isempty(storedTimeProjection)
                 
                 if ncRange
@@ -477,11 +440,11 @@ while (cc ~= 'x')
         tiles = tiledlayout(multiFig, 3, 3, 'TileSpacing', 'none', 'Padding', 'none');
         subAx = cell(3);
         n = 0;
-        for i = 1:3
-            for j = 1:3
+        for z = 1:3
+            for f = 1:3
                 n = n + 1;
-                subAx{i, j} = nexttile(tiles, n);
-                title(subAx{i,j},['z: ', num2str(cptState.CurrentZ + i - 2), ' frame: ', num2str(cptState.CurrentFrame + j - 2)])
+                subAx{z, f} = nexttile(tiles, n);
+                title(subAx{z,f},['z: ', num2str(cptState.CurrentZ + z - 2), ' frame: ', num2str(cptState.CurrentFrame + f - 2)])
             end
         end
     end
@@ -496,15 +459,15 @@ while (cc ~= 'x')
     ImageHandle = imshow(cptState.ImageMat, cptState.DisplayRangeSpot, 'Border', 'Tight', 'Parent', overlayAxes, ...
         'InitialMagnification', 'fit');
     if multiView
-        for i = 1:size(multiImage, 1)
-            for j = 1:size(multiImage, 2)
-                if ~isempty(subAx{i,j}.Children)
-                    subAx{i,j}.Children.CData = multiImage{i, j};
+        for z = 1:size(multiImage, 1)
+            for f= 1:size(multiImage, 2)
+                if ~isempty(subAx{z,f}.Children)
+                    subAx{z,f}.Children.CData = multiImage{z, f};
                 else
-                    imshow(multiImage{i, j}, cptState.DisplayRangeSpot, 'Border', 'Tight', 'Parent', subAx{i,j},...
+                    imshow(multiImage{z, f}, cptState.DisplayRangeSpot, 'Border', 'Tight', 'Parent', subAx{z,f},...
                         'InitialMagnification', 'fit');
                 end
-                title(subAx{i,j},['z: ', num2str(cptState.CurrentZ + i - 2), ' frame: ', num2str(cptState.CurrentFrame + j - 2)])
+                title(subAx{z,f},['z: ', num2str(cptState.CurrentZ + z - 2), ' frame: ', num2str(cptState.CurrentFrame + f - 2)])
             end
         end
     end
@@ -517,17 +480,17 @@ while (cc ~= 'x')
     if cptState.UseHistoneOverlay
         if ~preMovie
             HisPath = [PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
-                FilePrefix(1:end - 1), '-His_', iIndex(cptState.CurrentFrame, NDigits), '.tif'];
-            ImageHisMat=imread(HisPath);
+                FilePrefix(1:end - 1), '-His_', iIndex(cptState.CurrentFrame, nDigits), '.tif'];
+            hisImage=imread(HisPath);
         else
-            ImageHisMat = squeeze(hisCell(cptState.CurrentFrame, :,:));
+            hisImage = squeeze(hisMat(cptState.CurrentFrame, :,:));
         end
         [cptState.ImageHis, cptState.xForZoom, cptState.yForZoom, oim,ellipseHandles]= displayOverlays(overlayAxes, cptState.ImageMat, SpeedMode, cptState.FrameInfo, cptState.Particles, ...
             cptState.Spots, cptState.CurrentFrame, ShowThreshold2, ...
             Overlay, cptState.CurrentChannel, cptState.CurrentParticle, cptState.ZSlices, cptState.CurrentZ, nFrames, ...
             cptState.schnitzcells, UseSchnitz, cptState.DisplayRange, cptState.Ellipses, cptState.SpotFilter, cptState.ZoomMode, cptState.GlobalZoomMode, ...
             ZoomRange, cptState.xForZoom, cptState.yForZoom, fish, cptState.UseHistoneOverlay, subAx, HisOverlayFigAxes,...
-            oim, ellipseHandles, ImageHisMat);
+            oim, ellipseHandles, hisImage);
         
     else
         displayOverlays(overlayAxes, cptState.ImageMat, SpeedMode, ...
@@ -541,16 +504,9 @@ while (cc ~= 'x')
         MaxZIndex = find(...
             cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).z == ...
             cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).brightestZ);
-        CurrentZIndex = find(...
+        cptState.CurrentZIndex = find(...
             cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).z == ...
             cptState.CurrentZ);
-        
-        if isempty(CurrentZIndex)
-            %             warning('This particle has a gap in its z-profile. This is
-            %             highly suspect.'); %this if statement should only happen
-            %             between two spots, not past the PSF boundaries
-        end
-        
     end
     
     %Check to see if spots structure contains multi-slice fields
@@ -560,7 +516,7 @@ while (cc ~= 'x')
     % PLOT SNIPPET
     
     [CurrentSnippet, snipImageHandle] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
-        CurrentZIndex, cptState.ImageMat, cptState.Spots, cptState.CurrentChannel, cptState.CurrentFrame, ...
+        cptState.CurrentZIndex, cptState.ImageMat, cptState.Spots, cptState.CurrentChannel, cptState.CurrentFrame, ...
         cptState.CurrentParticleIndex, ExperimentType, snippet_size, xSize, ...
         ySize, SnippetEdge, cptState.FrameInfo, CurrentSnippet, snipImageHandle, pixelSize);
     
@@ -592,24 +548,15 @@ while (cc ~= 'x')
     
     
     % PLOT Z SLICE RELATED FIGURES
-    plotzvars = {zProfileFigAxes, zTraceAxes, ExperimentType, ...
-        xTrace, cptState.Spots, cptState.CurrentFrame, cptState.CurrentChannel, cptState.CurrentParticleIndex, cptState.ZSlices, ...
-        cptState.CurrentZ, CurrentZIndex, cptState.PreviousParticle, cptState.CurrentParticle, ...
-        cptState.PreviousChannel, cptState.Particles, cptState.Frames, fish};
+    plotzvars = {zProfileFigAxes, zTraceAxes, ExperimentType, xTrace, cptState, fish};
     if exist('MaxZProfile', 'var')
         plotzvars = [plotzvars, MaxZProfile];
     end
-    [MaxZProfile, cptState.Frames] = plotZFigures(plotzvars{:});
+    MaxZProfile = plotZFigures(plotzvars{:});
 
     set(0, 'CurrentFigure', Overlay);
 
-    % Wait for user input to select command to execute
-    ct = waitforbuttonpress; % ct=0 for click and ct=1 for keypress
-    cc = get(Overlay, 'CurrentCharacter');
-    
-    if strcmpi(cc, '') || ct == 0
-        cc = 'donothing';
-    end
+    cc = getUserKeyInput(Overlay);
     
     frameChangeKeyInput(cc);
     zSliceChangeKeyInput(cc);
@@ -629,9 +576,7 @@ end
 %% Main loop - end
 
 % save after exiting the main loop - the user pressed 'x'
-saveChanges(NChannels, cptState.Particles, cptState.Spots, cptState.SpotFilter, DataFolder, ...
-                cptState.FrameInfo, cptState.UseHistoneOverlay, FilePrefix, ...
-                cptState.schnitzcells, DropboxFolder);
+saveChanges(NChannels, cptState, DataFolder, FilePrefix, DropboxFolder);
 
 close all
 

@@ -2,6 +2,8 @@ function schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, n
 
 
     ncFrames(ncFrames==0) = 1;
+    ind = find(isnan(ncFrames));
+    ncFrames(ind) = ncFrames(ind-1);
     time = [FrameInfo.Time]/60; %frame times in minutes 
     ncTimes = time(ncFrames);
     

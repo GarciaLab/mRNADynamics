@@ -1,8 +1,8 @@
-function [Overlay, overlayAxes, snippetFigAxes, rawDataAxes, gaussianAxes, traceFigAxes, zProfileFigAxes,...
+function [OverlayFig, overlayAxes, snippetFigAxes, rawDataAxes, gaussianAxes, traceFigAxes, zProfileFigAxes,...
     zTraceAxes, HisOverlayFig,HisOverlayFigAxes] = checkParticleTracking_drawGUI(UseHistoneOverlay, fish, plot3DGauss, ExperimentType)
 
 
-Overlay = figure;
+OverlayFig = figure;
 HisOverlayFig = [];
 HisOverlayFigAxes = [];
 traceFigAxes = [];
@@ -19,9 +19,9 @@ end
 
 
 if ~fish
-    overlayAxes = subplot(1, 2, 1, 'Parent', Overlay);
+    overlayAxes = subplot(1, 2, 1, 'Parent', OverlayFig);
     tb = axtoolbar(overlayAxes);
-    traceFigAxes = subplot(1, 2, 2, 'Parent', Overlay);
+    traceFigAxes = subplot(1, 2, 2, 'Parent', OverlayFig);
     xlabel(traceFigAxes,'frame')
     title(traceFigAxes, '', 'Interpreter', 'none');
 %     traceFigAxes.Title.Interpreter = 'none';
@@ -49,7 +49,7 @@ if ~fish
         traceLeg = legend(traceFigAxes,[e1, e2], str1,str2, 'AutoUpdate', 'off', 'HandleVisibility', 'off');
     end
 else
-    overlayAxes = axes(Overlay);
+    overlayAxes = axes(OverlayFig);
 end
 
 zFig = figure;
@@ -76,7 +76,8 @@ if UseHistoneOverlay
 end
 
 if ~fish
-    set(Overlay, 'units', 'normalized', 'position', [0.01, .45, .82, .33]);
+    overlayDim = [.82, .45];
+    set(OverlayFig, 'units', 'normalized', 'OuterPosition', [0,1-overlayDim(2), overlayDim(1), overlayDim(2)]);
     set(overlayAxes, 'units', 'normalized', 'position', [-.25 .06 .9 .9])
     set(traceFigAxes, 'units', 'normalized', 'position', [.48 .17 .48 .63])
     set(snipFig, 'units', 'normalized', 'position', [0.355, 0.15, 3 * (.2 / 2), .33 / 2]);

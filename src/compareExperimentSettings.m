@@ -13,9 +13,9 @@
 % DataType: This is a cell array of char variable(s) which are the exact 
 %           name(s) of the tab(s) in DataStatus.xlsx that you wish to 
 %           analyze.
-%           E.g. {'DataType'} for only one tab
-%           E.g. {'DataType1', 'DataType2', 'DataType3'} for multiple
-%           tabsst
+%           E.g. DataType = {'DataType1'} for only one tab
+%           E.g. DataType = {'DataType1', 'DataType2', 'DataType3'} for 
+%               multiple tabs
 % 
 %
 % OPTIONS
@@ -271,6 +271,17 @@ ComparedSettings.PixelSizeZ = isempty(nonzeros(diff(round([RawSettings.PixelSize
 
 % Display comparison structure and final warnings
 ComparedSettings
-disp('Settings compared.')
+disp('Settings compared and saved in your specified DynamicResults folder. ')
 disp('If any settings display a zero, check the RawSettings structure to identify the nonmatching dataset.')
 disp('For some settings, nonmatching does not necessary mean a faulty dataset. Use your own judgement.')
+
+% Save structure for later use
+DataTypeName = '';
+for i = 1:numel(DataType)
+   if i < numel(DataType)
+       DataTypeName = [DataTypeName, DataType{i}, '-'];
+   else
+       DataTypeName = [DataTypeName, DataType{i}];
+   end
+end
+save([DynamicsResultsPath,DataTypeName,'_comparedSettings.mat'],'RawSettings','ComparedSettings');

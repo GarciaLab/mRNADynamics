@@ -1,5 +1,6 @@
 function Projection = calculateProjection(ProjectionType, NSlices, HisSlices, varargin)
 % Calculate the projection (either Maximum or Median)
+
 if strcmpi(ProjectionType, 'medianprojection')
     Projection = median(HisSlices, 3);
 elseif strcmpi(ProjectionType, 'middleprojection')

@@ -11,6 +11,15 @@
 % [Options]: See below.
 %
 % OPTIONS
+%
+% Prefix: If you want to avoid the user input selection of the data folder,
+%           you can pass your desired Prefix as the first option. It MUST 
+%           be the first option, and you CANNOT use the 'rootFolder'
+%           option with this option, otherwise it will break.
+%           Prefix standard format is 'YYYY-MM-DD-YOURPROJECTNAME'.
+%           E.g. ExportDataForLivemRNA('2020-02-03-Dl_Ven_snaBAC_mCh_01',
+%                                       'medianprojection')
+%
 % 'medianprojection': Uses a median projection in the nuclear channel rather
 %                  than the default maximum projection
 % 'middleprojection': Uses a max projection in the nuclear channel, but only
@@ -30,7 +39,7 @@
 % 'generateTifs': MPF 11/11/2018 Additionally run filterMovie to generate Tifs stacks
 % 'skipExtraction': This doesn't extract LIF files to Tifs. Occasionally
 %                   useful if only the FrameInfo is desired. 
-% 'rootFolder': open a directory different from the default user directory
+% 'rootFolder',rootFolder: open a directory different from the default user directory
 %               if there is no given prefix. This is useful if you are
 %               opening data that is in a different project folder.
 % 'zslicesPadding': if series have different number of z-slices, pad them
@@ -68,11 +77,11 @@
 %The idea of (4) being in Dropbox is that I don't need to be synchronizing
 %the part related to the manual analysis.
 
-function Prefix = ExportDataForLivemRNA(varargin)
+function [Prefix, mats ] = ExportDataForLivemRNA(varargin)
 
   [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs,...
     generateTifStacks, nuclearGUI, skipExtraction, rootFolder, zslicesPadding,...
-    lowbit, dataType] = exportDataForLivemRNA_processInputParameters(varargin{:});
+    lowbit, dataType, makeMovieMats] = exportDataForLivemRNA_processInputParameters(varargin{:});
 
   [rawDataPath, ~, DropboxFolder, ~, PreProcPath, rawDataFolder, Prefix, ExperimentType, Channel1, Channel2, ~,...
     Channel3] = readMovieDatabase(Prefix,'rootFolder', rootFolder);
@@ -139,6 +148,16 @@ end
   if generateTifStacks
     filterMovie(Prefix, 'Tifs');
     disp(['Prefix: ', Prefix]);
+  end
+  
+  mats = struct;
+
+  if makeMovieMats
+      nWorkers = 18;
+      Channels = {Channel1, Channel2, Channel3};
+      [movieMat, hisMat, maxMat, medMat, midMat]...
+    = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, Channels);
+    mats.movieMat = movieMat;  mats.hisMat = hisMat; mats.maxMat=maxMat;mats.medMat=medMat;mats.midMat = midMat;
   end
 
 end
