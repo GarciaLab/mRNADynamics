@@ -13,7 +13,7 @@ function ExportToAWS(Prefix)
 %Generate AWS folders on the HGlab user
     [~, username] = system('echo %USERNAME%');
     username = strrep(username, sprintf('\n'),''); %removes new line
-    HGlabLivemRNAFolder = ['E:\HGlab\Dropbox\',username,'\LivemRNA'];
+    HGlabLivemRNAFolder = ['D:\HGlab\Dropbox\',username,'\LivemRNA'];
     HGlabDataFolder = [HGlabLivemRNAFolder,'\Data'];
     warning('off','MATLAB:MKDIR:DirectoryExists');
     warning('off','MATLAB:legend:IgnoringExtraEntries');
@@ -24,7 +24,7 @@ function ExportToAWS(Prefix)
     
 %Copy Relevant Folders 
     %Should I change this to movefile() instead?
-    copyfile(UserPreProcPath_Prefix, [HGlabDataFolder,'\PreProcessedData\',Prefix])
+    copyfile(UserPreProcPath_Prefix, [HGlabDataFolder,'\PreProcessedData\',Prefix],'f')
     if exist(UserProcPath_Prefix)
         copyfile(UserProcPath_Prefix, [HGlabDataFolder,'\ProcessedData\',Prefix,'_'])
     end
