@@ -24,7 +24,7 @@ function ExportToAWS(Prefix)
     
 %Copy Relevant Folders 
     %Should I change this to movefile() instead?
-    copyfile(UserPreProcPath_Prefix, [HGlabDataFolder,'\PreProcessedData\',Prefix])
+    copyfile(UserPreProcPath_Prefix, [HGlabDataFolder,'\PreProcessedData\',Prefix],'f')
     if exist(UserProcPath_Prefix)
         copyfile(UserProcPath_Prefix, [HGlabDataFolder,'\ProcessedData\',Prefix,'_'])
     end
