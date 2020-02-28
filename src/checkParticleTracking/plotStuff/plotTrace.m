@@ -9,7 +9,7 @@ switchParticleFlag= false;
 switchFrameFlag = cptState.PreviousFrame ~= cptState.CurrentFrame;
 
 % Only update the trace information if we have switched particles
-if cptState.CurrentParticle ~= cptState.PreviousParticle || ~isempty(plotTraceSettings.AmpIntegral) || cptState.CurrentChannel ~= cptState.PreviousChannel || cptState.lastParticle
+if cptState.CurrentParticle ~= cptState.PreviousParticle || isempty(plotTraceSettings.AmpIntegral) || cptState.CurrentChannel ~= cptState.PreviousChannel || cptState.lastParticle
     switchParticleFlag = true;
     switchFrameFlag = true;
     cptState.PreviousParticle = cptState.CurrentParticle;
