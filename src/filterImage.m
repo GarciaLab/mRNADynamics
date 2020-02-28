@@ -194,7 +194,9 @@ switch filterType
     case {'Std', 'Variance'}
         if dim==2
             im = imgaussfilt(im,s1);
-            im = stdfilt(im,ones(filterSizeXY, filterSizeXY), numType,'gpuArray');
+            opts = {};
+%             opts  = [opts, 'gpuArray'];
+            im = stdfilt(im,ones(filterSizeXY, filterSizeXY), opts{:});
         elseif dim==3
             %this blurs with sigma and sigmaZ, then stdfilts with sizes
             %dictated by sigma and sigma z.

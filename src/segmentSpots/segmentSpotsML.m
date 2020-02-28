@@ -62,7 +62,7 @@ function segmentSpotsML(Prefix, Threshold, varargin)
   [~, ~, ~, ~, ~, ~, ~, ExperimentType, Channel1, Channel2, ~] = readMovieDatabase(Prefix);
   [~, FISHPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix);
 
-  load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat']);
+  load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
 
   microscope = FrameInfo(1).FileMode;
   zSize = FrameInfo(1).NumberSlices + 2;
@@ -77,14 +77,13 @@ function segmentSpotsML(Prefix, Threshold, varargin)
 
   nCh = 1;
 
-  if strcmpi(ExperimentType, '2spot2color')
-    nCh = 2;
-  end
 
   coatChannel = getCoatChannel(ExperimentType, Channel1, Channel2);
 
+  nCh = length(coatChannel); 
+  
   %Load and apply flat-field correction
-  doFF = 1;
+  doFF = true;
 
   try
     ffim = imread([PreProcPath, filesep, Prefix, filesep, Prefix, '_FF.tif']);
