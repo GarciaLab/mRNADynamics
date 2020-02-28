@@ -13,7 +13,7 @@ function ExportToAWS(Prefix)
 %Generate AWS folders on the HGlab user
     [~, username] = system('echo %USERNAME%');
     username = strrep(username, sprintf('\n'),''); %removes new line
-    HGlabLivemRNAFolder = ['D:\HGlab\Dropbox\',username,'\LivemRNA'];
+    HGlabLivemRNAFolder = ['E:\HGlab\Dropbox\',username,'\LivemRNA'];
     HGlabDataFolder = [HGlabLivemRNAFolder,'\Data'];
     warning('off','MATLAB:MKDIR:DirectoryExists');
     warning('off','MATLAB:legend:IgnoringExtraEntries');
