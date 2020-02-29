@@ -1,20 +1,15 @@
-function PlotParticleTrace(cptState, noSpline)
+function PlotParticleTrace(cptState, plotTraceSettings, noSpline)
     % noSpline displays the particle trace as well as a montage of the images
 
     CurrentParticle = cptState.CurrentParticle;
     Particles = cptState.getCurrentChannelParticles();
     Spots = cptState.getCurrentChannelSpots();
 
-    [Frame,AmpIntegral,AmpIntegral3,AmpGaussian,Offset,...
-        ErrorIntegral,ErrorGauss,~, ~,ErrorIntegral3,...
-        backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D]=...
-        ...
-        GetParticleTrace(CurrentParticle, Particles, Spots, noSpline);
+    GetParticleTrace(CurrentParticle, Particles, Spots, plotTraceSettings, noSpline);
 
     cptState.Frames = Particles(CurrentParticle).Frame;
-    Indexes = Particles(CurrentParticle).Index;
-
-    for i=1:length(Frames)
+%{    
+    for i=1:length(cptState.Frames)
         
         CurrentFrame = Frames(i);
 
@@ -29,4 +24,5 @@ function PlotParticleTrace(cptState, noSpline)
         yTrace = round(y(CurrentParticleIndex));
         zTrace = round(z(CurrentParticleIndex));
     end
+%}
 end

@@ -13,7 +13,7 @@ if cptState.CurrentParticle ~= cptState.PreviousParticle || isempty(plotTraceSet
     switchParticleFlag = true;
     switchFrameFlag = true;
     cptState.PreviousParticle = cptState.CurrentParticle;
-    PlotParticleTrace(cptState, true);
+    PlotParticleTrace(cptState, plotTraceSettings, true);
 end
 
 

@@ -532,7 +532,7 @@ while (cc ~= 'x')
     
     
     % PLOT Z SLICE RELATED FIGURES
-    plotzvars = {zProfileFigAxes, zTraceAxes, ExperimentType, xTrace, cptState, fish};
+    plotzvars = {zProfileFigAxes, zTraceAxes, ExperimentType, xTrace, cptState, plotTraceSettings, fish};
     if exist('MaxZProfile', 'var')
         plotzvars = [plotzvars, MaxZProfile];
     end

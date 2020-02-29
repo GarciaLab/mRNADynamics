@@ -1,4 +1,4 @@
-function MaxZProfile = plotZFigures(zProfileFigAxes, zTraceAxes, ExperimentType, xTrace, cptState, fish, MaxZProfile)
+function MaxZProfile = plotZFigures(zProfileFigAxes, zTraceAxes, ExperimentType, xTrace, cptState, plotTraceSettings, fish, MaxZProfile)
 
     if ~isempty(xTrace)
         % Get the z-DoG profile
@@ -42,7 +42,7 @@ function MaxZProfile = plotZFigures(zProfileFigAxes, zTraceAxes, ExperimentType,
         % Only update the trace information if we have switched particles
         if (CurrentParticle ~= cptState.PreviousParticle) || ~exist('MaxZProfile', 'var') || cptState.CurrentChannel ~= cptState.PreviousChannel
             cptState.PreviousParticle = CurrentParticle;
-            cptState.Frames = PlotParticleTrace(cptState, true);
+            PlotParticleTrace(cptState, plotTraceSettings, true);
         end
 
         for i = 1:length(cptState.Frames)

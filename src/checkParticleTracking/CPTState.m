@@ -120,8 +120,8 @@ classdef CPTState < handle
         end
 
         function currentParticle = getCurrentParticle(this)
-            currentParticles = this.getCurrentChannelParticles()
-            currentParticle = currentParticles(this.CurrentParticle)
+            currentParticles = this.getCurrentChannelParticles();
+            currentParticle = currentParticles(this.CurrentParticle);
         end
 
         function currentParticleFit = getCurrentParticleFit(this)
