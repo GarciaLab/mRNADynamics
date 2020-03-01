@@ -39,8 +39,12 @@ for i = 1:2:(numel(varargin)-1)
     end
 end
 
-xDim=size(im, 2); yDim = size(im, 1);
-ni = xDim*yDim;
+xDim=size(im, 2); yDim = size(im, 1); 
+dim = length(size(im));
+if dim==3
+    zDim = size(im, 3);
+end
+ni = numel(im);
 
 warning('off', 'MATLAB:Java:DuplicateClass');
 warning('off', 'MATLAB:javaclasspath:jarAlreadySpecified');
@@ -146,11 +150,13 @@ for i = 1:nInstances
     
 end
 
+if dim == 2
+    pMap = reshape(pLin, [yDim xDim]);
+elseif dim == 3
+     pMap = reshape(pLin, [yDim xDim zDim]);
+end
 
-pMap = reshape(pLin, [yDim xDim]);
-
-
-if displayFigures
+if displayFigures & dim==2
     figure(1); imshowpair(im, pMap, 'montage');
 end
 
