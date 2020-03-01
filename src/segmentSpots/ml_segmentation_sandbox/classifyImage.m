@@ -24,7 +24,11 @@ function pMap = classifyImage(im, training, varargin)
 %% PARAMS, OPTIONS
 
 displayFigures = false;
-tempPath = fileparts(training);
+if ischar(training)
+    tempPath = fileparts(training);
+else
+    tempPath = '';
+end
 classifierPath = '';
 classifierObj = [];
 reSc = false;
@@ -39,15 +43,20 @@ xDim=size(im, 2); yDim = size(im, 1);
 ni = xDim*yDim;
 
 warning('off', 'MATLAB:Java:DuplicateClass');
+warning('off', 'MATLAB:javaclasspath:jarAlreadySpecified');
 
 %% initialize weka
 javaaddpath('C:\Program Files\Weka-3-8-4\weka.jar','-end');
 
 %% load up training data
-arffloader = javaObject('weka.core.converters.ArffLoader'); %this constructs an object of  the arffloader class
-arffloader.setFile(javaObject('java.io.File',training)); %construct an arff file object
-trainingData= arffloader.getDataSet;
-trainingData.setClassIndex(trainingData.numAttributes - 1);
+if ischar(training)
+    arffloader = javaObject('weka.core.converters.ArffLoader'); %this constructs an object of  the arffloader class
+    arffloader.setFile(javaObject('java.io.File',training)); %construct an arff file object
+    trainingData= arffloader.getDataSet;
+    trainingData.setClassIndex(trainingData.numAttributes - 1);
+else
+    trainingData = training;
+end
 
 
 %normalize data to the max of the training set for better classification
@@ -63,7 +72,12 @@ elseif ~isempty(classifierPath)
     classifier = weka.core.SerializationHelper.read(classifierPath);
 else
     classifier = weka.classifiers.trees.RandomForest;
-    options = {'-I', '200', '-num-slots', '28', '-K', '2', '-S', '-1650757608'};
+    options = {'-I', '64', '-K', '2', '-S', '-1650757608', '-depth', 20};
+    javaaddpath('C:\Users\Armando\Desktop\fast random forest\fastrandomforest-2019.12.3.jar ')
+   
+%     classifier = javaObject('hr.irb.fastRandomForest.FastRandomForest');
+%     options = {'-I', '20', '-threads', '1', '-K', '2', '-S', '-1650757608'};
+%     
     classifier.setOptions(options);
     classifier.buildClassifier(trainingData);
     if displayFigures
@@ -122,6 +136,9 @@ end
 
 %this step is unbearably slow. ~1min per frame. needs a massive overhaul
 pLin = zeros(testData.numInstances, 1);
+
+% testData_constant = parallel.pool.Constant(testData);
+% classifier_constant = parallel.pool.Constant(classifier);
 
 for i = 1:nInstances
     

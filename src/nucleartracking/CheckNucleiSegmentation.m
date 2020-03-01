@@ -426,7 +426,7 @@ end
 
 
 
-save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
+save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v7.3', '-nocompression')
 close all;
 
 %Decide whether we need to re-track
@@ -435,10 +435,7 @@ reTrackAnswer = inputdlg(userPrompt);
 if contains(reTrackAnswer,'n')
     disp('Ellipses saved. Per user input, not re-tracking. Exiting.')
 else
-    opts = {};
-    if fish
-        opts = [opts, 'markandfind'];
-    end
+    opts = {};  if fish opts = [opts, 'markandfind']; end
     disp('Ellipses saved. Running TrackNuclei to incorporate changes.')
     TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1, opts{:});
 end
