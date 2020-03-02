@@ -5,6 +5,7 @@ keepPool = false;
 nWorkers = 1;
 reSc = false;
 thresh = .5;
+fish = false;
 algo = 'FastRandomForest';
 maxDepth = 20;
 nTrees = 64;
@@ -82,21 +83,22 @@ wb = waitbar(0, 'Classifying frames');
 for f = 1:nFrames
     
     tic
-    meandT = movmean(dT, [3, 0]);
-    meandT = meandT(end);
+    mean_dT = movmean(dT, [3, 0]);
+    if f~=1, mean_dT = mean_dT(end); end
     
     if f~=1, tic, disp(['Making probability map for frame: ', num2str(f),...
-            '. Estimated ', num2str(meandT*(nFrames-f)), ' minutes remaining.'])
+            '. Estimated ', num2str(mean_dT*(nFrames-f)), ' minutes remaining.'])
     end
     im = squeeze(hisMat(f, :, :));
-    pMap(f, :, :) = classifyImage(im, trainingData,'tempPath', ramDrive, 'reSc', reSc, 'classifierObj', classifier);
-    waitbar(f/nFrames, wb);
+    pMap(f, :, :) = classifyImage(im, trainingData,'tempPath', ramDrive, 'reSc', reSc, 'classifierObj', classifier, 'arffLoader', arffLoader);
+    try waitbar(f/nFrames, wb); end
     dT(f)=toc/60;
     
 end
 
-close(wb);
+try close(wb); end
 
+mkdir([ProcPath, filesep, Prefix, filesep, Prefix]);
 save([ProcPath, filesep, Prefix, filesep, Prefix, '_probHis.mat'], 'pMap', '-v7.3', '-nocompression');
 
 
@@ -112,32 +114,14 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'] ,'file')
         %do morphology analysis to reduce our probability maps to a list of
         %ellipses
         
-        nuclearMask = pMap > thresh;
+        Ellipses = makeEllipses(pMap, thresh);
         
-        for f = 1:nFrames
-            
-            mask = squeeze(nuclearMask(f, :, :)) > thresh;
-            pim = squeeze(pMap(f, :, :));
-            
-            ellipseStats = regionprops(mask, pim, {...
-                'WeightedCentroid',...
-                'MajorAxisLength',...
-                'MinorAxisLength',...
-                'Orientation'});
-            
-            mjx = [ellipseStats.MajorAxisLength];
-            mnx = [ellipseStats.MinorAxisLength];
-            ori =  [ellipseStats.Orientation];
-            wcs= zeros(length(ellipseStats), 2);
-            
-            for r = 1:length(ellipseStats)
-                wcs(r, :) = ellipseStats(r).WeightedCentroid;
-            end
-            
-            %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
-            Ellipses{f} = [wcs(r,2),wcs(r,1),mjx(r),mnx(r),ori(r),0,0,0];
-            
-        end
+        %track nuclei will complain if there are frames with no ellipses,
+        %so we'll fake it for now. 
+        fakeFrame = Ellipses(~cellfun(@isempty, Ellipses));
+        fakeFrame =  fakeFrame{1};
+        
+        Ellipses(cellfun(@isempty, Ellipses)) = {fakeFrame};
         
         save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses', '-v7.3', '-nocompression');
         
@@ -145,7 +129,7 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'] ,'file')
     
 end
 
-%%
+%% Tracking
 %Decide whether we need to re-track
 userPrompt = 'Do you want to track nuclei now?';
 

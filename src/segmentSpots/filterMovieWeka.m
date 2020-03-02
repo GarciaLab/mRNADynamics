@@ -3,6 +3,7 @@ function filterMovieWeka(Prefix, varargin)
 displayFigures = false;
 keepPool = false;
 nWorkers = 1;
+optionalResults = '';
 reSc = false;
 algo = 'FastRandomForest';
 maxDepth = 20;
@@ -27,7 +28,24 @@ end
 %%
 disp(['Filtering ', Prefix, '...']);
 
-[~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix);
+% [~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix);
+
+[~,ProcPath,DropboxFolder,~, PreProcPath,~, Prefix, ~,~,~,~,~, ~, ~, movieDatabase]...
+    = readMovieDatabase(Prefix, optionalResults);
+
+[~, ~, ~, ~, ~, ~, Channel1, Channel2, ~, ~, ~, ~, ~, ...
+    ~, ~, ~, ~, ~, ~, ~, Channel3, ~, ~] =...
+    getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
+
+coats = getCoatChannel(Channel1, Channel2, Channel3);
+
+nCh = length(coats); 
+
+if nCh > 1
+    error('2spot2color not supported yet. Talk to AR.')
+end
+
+ch = coats(1); %assumes the experiment is _not_ 2spot2color
 
 dataRoot = fileparts(PreProcPath);
 mlFolder = [dataRoot, filesep, 'training_data_and_classifiers', filesep];
@@ -83,24 +101,23 @@ save([trainingFolder, filesep, trainingName, '_', suffix '.model'], 'classifier'
 dT = [];
 wb = waitbar(0, 'Classifying frames');
 
-ch = 1;
 for f = 1:nFrames
     
     tic
-    meandT = movmean(dT, [3, 0]);
-    meandT = meandT(end);
+    mean_dT = movmean(dT, [3, 0]);
+    if f~=1, mean_dT = mean_dT(end); end
     
     if f~=1, tic, disp(['Making probability map for frame: ', num2str(f),...
-            '. Estimated ', num2str(meandT*(nFrames-f)), ' minutes remaining.'])
+            '. Estimated ', num2str(mean_dT*(nFrames-f)), ' minutes remaining.'])
     end
     im = squeeze(movieMat(ch,:,f, :, :));
     pMap(:, :, :, f) = classifyImage(im, trainingData,'tempPath', ramDrive, 'reSc', reSc, 'classifierObj', classifier);
-    waitbar(f/nFrames, wb);
+    try waitbar(f/nFrames, wb); end
     dT(f)=toc/60;
     
 end
 
-close(wb);
+try close(wb); end
 
 save([ProcPath, filesep, Prefix, filesep, Prefix, '_probSpot.mat'], 'pMap', '-v7.3', '-nocompression');
       

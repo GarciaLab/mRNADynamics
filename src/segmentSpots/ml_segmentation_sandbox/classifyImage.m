@@ -24,14 +24,14 @@ function pMap = classifyImage(im, training, varargin)
 %% PARAMS, OPTIONS
 
 displayFigures = false;
-if ischar(training)
-    tempPath = fileparts(training);
-else
-    tempPath = '';
-end
+
+if ischar(training), tempPath = fileparts(training);
+else, tempPath = ''; end
+
 classifierPath = '';
 classifierObj = [];
 reSc = false;
+arffLoader = [];
 
 for i = 1:2:(numel(varargin)-1)
     if i ~= numel(varargin)
@@ -54,9 +54,9 @@ javaaddpath('C:\Program Files\Weka-3-8-4\weka.jar','-end');
 
 %% load up training data
 if ischar(training)
-    arffloader = javaObject('weka.core.converters.ArffLoader'); %this constructs an object of  the arffloader class
-    arffloader.setFile(javaObject('java.io.File',training)); %construct an arff file object
-    trainingData= arffloader.getDataSet;
+    arffLoader = javaObject('weka.core.converters.ArffLoader'); %this constructs an object of  the arffloader class
+    arffLoader.setFile(javaObject('java.io.File',training)); %construct an arff file object
+    trainingData= arffLoader.getDataSet;
     trainingData.setClassIndex(trainingData.numAttributes - 1);
 else
     trainingData = training;
@@ -95,22 +95,55 @@ end
 % waitbarFigure = waitbar(0, 'filtering image');
 % set(waitbarFigure, 'units', 'normalized', 'position', [0.4, .15, .25,.1]);
 
-testMatrix = zeros(ni, trainingData.numAttributes-1);
+%create a new data set with the header copied from the training data. 
+
+% testMatrix = zeros(ni, trainingData.numAttributes-1);
+
 attributes = {};
 nAtt = trainingData.numAttributes()-2;
-for i = 0:nAtt
+for i = 0:nAtt+1
     attributes{i+1} = char(trainingData.attribute(i).name());
-    attribute = trainingData.attribute(i);
-    %might error with attributes with 2 sigmas. need to fix -AR
-    if i
-        filterType = regexp(attributes{i+1}, '.*(?=_)', 'match');
-        sigma =  flip(num2str(sscanf(flip(attributes{i+1}), '%f')));
-        fim = filterImage(im, filterType{1}, {sigma});
-    else
-        fim = im;
-    end
+end
+
+testData = arffLoader.getStructure;
+for i = 1:ni 
+    inst = weka.core.DenseInstance(nAtt+1);
+    testData.add(inst);   
+end
+
+name = 'segment'; %hardcoded. change later. 
+
+
+for i = 0:nAtt-1 %don't do the class label
+    attributes{i+1} = char(trainingData.attribute(i).name());
+    att = attributes{i+1};
+    %might error with some attribtes. it'd be nice to write a filter that
+    %removes attributes that aren't supported in matlab so the models and
+    %classifiers will still work 
     
-    testMatrix(:,i+1) = fim(:);
+    disp(['Generating feature ', num2str((i+1)), '/', num2str(nAtt+1) , ': ', att]);
+    
+    if i > 0
+        filterType = regexp(att, '.*(?=_\d)', 'match');
+        sigmas = regexp(att, '(\d[.]\d)|(\d\d[.]\d)', 'match');
+        filteredIm = filterImage(im, filterType{1}, sigmas);
+    else
+        filteredIm = im;
+   end
+    
+%     testDataTemp = mat2instances(attributes, name, filteredIm(:));
+       filteredIm = filteredIm(:);
+     
+
+       for k = 1:numel(filteredIm)
+           
+            testData = setInstancesVal(testData, k-1, i, filteredIm(k));
+            
+       end
+        
+    %     testMatrix(:,i+1) = filteredIm(:);
+    
+%     testData.add(filteredIm(:));
     
 %      waitbar(i/nAtt, waitbarFigure);
     
@@ -119,17 +152,17 @@ end
 % close(waitbarFigure);
 
 %now turn data matrix into weka arff
-tempFile = [tempPath, filesep, 'temp.data'];
-save(tempFile,var2str(testMatrix),'-ascii');
-loader = javaObject("weka.core.converters.MatlabLoader");
-loader.setFile(javaObject('java.io.File',tempFile));
-testData = loader.getDataSet;
-testData.insertAttributeAt(trainingData.classAttribute,trainingData.classIndex);
+% tempFile = [tempPath, filesep, 'temp.data'];
+% save(tempFile,var2str(testMatrix),'-ascii');
+% loader = javaObject("weka.core.converters.MatlabLoader");
+% loader.setFile(javaObject('java.io.File',tempFile));
+% testData = loader.getDataSet;
+% testData.insertAttributeAt(trainingData.classAttribute,trainingData.classIndex);
 testData.setClassIndex(testData.numAttributes-1);
 
-f = javaObject('weka.filters.unsupervised.attribute.Remove');
-f.setInputFormat(trainingData);
-testData = javaMethod('useFilter','weka.filters.Filter', testData, f); %match test header to training header
+% f = javaObject('weka.filters.unsupervised.attribute.Remove');
+% f.setInputFormat(trainingData);
+% testData = javaMethod('useFilter','weka.filters.Filter', testData, f); %match test header to training header
 
 nInstances = testData.numInstances;
 
