@@ -7,6 +7,7 @@ reSc = false;
 thresh = .5;
 fish = false;
 algo = 'TreeBagger';
+NumPredictorsToSample = 2;
 maxDepth = 20;
 nTrees = 64;
 hisMat = [];
@@ -65,7 +66,11 @@ numAttributes = classIndex - 1;
 trainingResponse = trainingMat(:, classIndex);
 trainingMat = trainingMat(:, 1:numAttributes);
 
-classifier = TreeBagger(64,trainingMat,trainingResponse,'OOBPredictorImportance','Off', 'Method','classification');
+rng(1650757608);
+classifier = TreeBagger(64,trainingMat,trainingResponse,...
+    'OOBPredictorImportance','Off', 'Method','classification',...
+    'NumPredictorsToSample', NumPredictorsToSample,...
+    'MaxDepth', maxDepth, 'Reproducible', true, 'MinLeafSize', 1);
 
 suffix = strrep(strrep(char(datetime(now,'ConvertFrom','datenum')), ' ', '_'), ':', '-');
 save([trainingFolder, filesep, trainingName, '_', suffix '.model'], 'classifier')
