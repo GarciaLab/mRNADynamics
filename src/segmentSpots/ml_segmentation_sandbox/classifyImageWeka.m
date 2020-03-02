@@ -120,11 +120,8 @@ for i = 0:lastInd
     att = attributes{i+1};
 %     disp(['Generating feature ', num2str((i+1)), '/', num2str(nAtt+1) , ': ', att]);
     
-    
     if i > 0
-        filterType = regexp(att, '.*(?=_\d)', 'match');
-        sigmas = regexp(att, '(\d[.]\d)|(\d\d[.]\d)', 'match');
-        filteredIm = filterImage(im, filterType{1}, sigmas);
+        [filteredIm, sucessFlag]  = filterAttribute(att, im);
     else
         filteredIm = im;
     end

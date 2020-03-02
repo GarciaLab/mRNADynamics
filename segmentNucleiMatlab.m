@@ -1,4 +1,4 @@
-function segmentNucleiMatlab(Prefix, varargin)
+function pMap = segmentNucleiMatlab(Prefix, varargin)
 
 displayFigures = false;
 keepPool = false;
@@ -70,7 +70,7 @@ rng(1650757608);
 classifier = TreeBagger(64,trainingMat,trainingResponse,...
     'OOBPredictorImportance','Off', 'Method','classification',...
     'NumPredictorsToSample', NumPredictorsToSample,...
-    'MaxDepth', maxDepth, 'Reproducible', true, 'MinLeafSize', 1);
+    'Reproducible', true, 'MinLeafSize', 1);
 
 suffix = strrep(strrep(char(datetime(now,'ConvertFrom','datenum')), ' ', '_'), ':', '-');
 save([trainingFolder, filesep, trainingName, '_', suffix '.model'], 'classifier')

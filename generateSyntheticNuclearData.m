@@ -1,4 +1,10 @@
-function D = generateSyntheticNuclearData(Prefix, varargin)
+function D = generateSyntheticNuclearData(Prefix, varargin)\
+%
+%references- https://github.com/lapis-zero09/MUNGE
+% https://www.cs.cornell.edu/~caruana/compression.kdd06.pdf
+
+
+
 
 nWorkers = 1;
 displayFigures = false;
@@ -6,8 +12,8 @@ keepPool = true;
 
 
 k = 2;
-p = .3;
-s = .2;
+p = .5;
+s = 10;
 
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.

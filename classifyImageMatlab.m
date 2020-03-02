@@ -93,13 +93,11 @@ testMatrix = zeros(numInstances, numAttributes);
 for i = 1:numAttributes
     
     att = attributes{i};
-    disp(['Generating feature ', num2str((i)), '/', num2str(numAttributes) , ': ', att]);
+%     disp(['Generating feature ', num2str((i)), '/', num2str(numAttributes) , ': ', att]);
     
     
     if i > 1
-        filterType = regexp(att, '.*(?=_\d)', 'match');
-        sigmas = regexp(att, '(\d[.]\d)|(\d\d[.]\d)', 'match');
-        filteredIm = filterImage(im, filterType{1}, sigmas);
+        [filteredIm, sucessFlag]  = filterAttribute(att, im);
     else
         filteredIm = im;
     end
@@ -114,9 +112,9 @@ end
 %pLin = cellfun(@str2num, mask)
 
 if dim == 2
-    pMap = reshape(pLin(:, 2), [yDim xDim]);
+    pMap = reshape(pLin(:, 1), [yDim xDim]);
 elseif dim == 3
-    pMap = reshape(pLin, [yDim xDim zDim]);
+    pMap = reshape(pLin(:,1), [yDim xDim zDim]);
 end
 
 if displayFigures & dim==2

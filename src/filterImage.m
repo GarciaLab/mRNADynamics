@@ -1,36 +1,24 @@
 function [im, successFlag] = filterImage(im, filterType, sigmas, varargin)
 
-% persistent dh; persistent dh3;
-% % dh = memoize(@DoG); dh3 = memoize(@DoG3);
-% dh3 = @DoG3;
-% persistent g3;
-% % g3 = memoize(@gauss3D);
-persistent Gx; persistent Gy; persistent Gz;
-grad = memoize(@gradient);
-persistent Gxx; persistent Gxy; persistent Gxz; persistent Gyy; persistent Gyz; persistent Gzz;
-
 zStep = 400; %nm. default.
-
-%initialize
-filterSizeZ = NaN; s1 = NaN; s2 = NaN; sigmaZ = NaN; filterSizeXY = NaN;
+filterSizeZ = NaN;
+s1 = NaN; 
+s2 = NaN; 
+sigmaZ = NaN; 
+filterSizeXY = NaN;
 succesFlag = true;
-gpu = strcmpi(class(im), 'gpuArray');
 numType = 'double';
-
 padding = 'symmetric';
-for args = 1:length(varargin)
-    if strcmpi(varargin{args}, 'filterSize')
-        filterSizeXY = round(varargin{args+1});
-    elseif strcmpi(varargin{args}, 'zStep')
-        zStep = varargin{args+1};
-    elseif strcmpi(varargin{args}, 'padding')
-        padding = varargin{args+1};
-     elseif strcmpi(varargin{args},'single')
-        numType = 'single';
-    elseif strcmpi(varargin{args}, 'double')
-        numType = 'double';
+
+%options must be specified as name, value pairs. unpredictable errors will
+%occur, otherwise.
+for i = 1:2:(numel(varargin)-1)
+    if i ~= numel(varargin)
+        eval([varargin{i} '=varargin{i+1};']);
     end
 end
+
+gpu = strcmpi(class(im), 'gpuArray');
 
 getSigmasAndFilterSizes;
 
@@ -42,6 +30,7 @@ if dim==3
 end
 
 switch filterType
+    
     case 'Identity'
         %return the image
     case 'Gaussian_blur'
@@ -96,7 +85,7 @@ switch filterType
     case {'Structure_smallest', 'Structure_largest'}
         if dim==2
             G=fspecial('gauss',[filterSizeXY, filterSizeXY], s1);
-            [Gx,Gy] = grad(G);
+            [Gx,Gy] = gradient(G);
             %Compute Gaussian partial derivatives
             Dx = conv2(im, Gx,'same');
             Dy = conv2(im, Gy, 'same');
@@ -118,7 +107,7 @@ switch filterType
             end
         elseif dim==3
             G = imgaussfilt3(im, [s1, s1, sigmaZ]);
-            [Gx,Gy,Gz] = grad(G);
+            [Gx,Gy,Gz] = gradient(G);
             %Compute Gaussian partial derivatives
             Dx = imfilter(im, Gx, 'corr', 'same', 'symmetric');
             Dy = imfilter(im, Gy, 'corr', 'same', 'symmetric');
@@ -217,9 +206,9 @@ switch filterType
     case {'Hessian_smallest', 'Hessian_largest'}
         if dim==2
             G = fspecial('gauss',[filterSizeXY, filterSizeXY], s1);
-            [Gx,Gy] = grad(G);
-            [Gxx, Gxy] = grad(Gx);
-            [Gyy, ~] = grad(Gy);
+            [Gx,Gy] = gradient(G);
+            [Gxx, Gxy] = gradient(Gx);
+            [Gyy, ~] = gradient(Gy);
             %Compute elements of the Hessian matrix
             H11 = conv2(im,Gxx,'same');
             H12 = conv2(im,Gxy,'same');
@@ -238,10 +227,10 @@ switch filterType
             end
         elseif dim ==3
             G1 = og3(s1, sigmaZ);
-            [Gx,Gy,Gz] = grad(G1);
-            [Gxx, Gxy, Gxz] = grad(Gx);
-            [Gyy, ~, Gyz] = grad(Gy);
-            [~, ~, Gzz] = grad(Gz);
+            [Gx,Gy,Gz] = gradient(G1);
+            [Gxx, Gxy, Gxz] = gradient(Gx);
+            [Gyy, ~, Gyz] = gradient(Gy);
+            [~, ~, Gzz] = gradient(Gz);
             %Compute elements of the Hessian matrix
             H11 = imfilter(im, Gxx, 'corr', 'same', 'symmetric');
             H12 = imfilter(im, Gxy, 'corr', 'same', 'symmetric');
