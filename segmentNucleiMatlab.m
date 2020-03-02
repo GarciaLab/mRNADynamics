@@ -1,4 +1,4 @@
-function segmentNuclei(Prefix, varargin)
+function segmentNucleiMatlab(Prefix, varargin)
 
 displayFigures = false;
 keepPool = false;
@@ -6,10 +6,10 @@ nWorkers = 1;
 reSc = false;
 thresh = .5;
 fish = false;
-algo = 'FastRandomForest';
+algo = 'TreeBagger';
 maxDepth = 20;
 nTrees = 64;
-matlabLoader = true;
+hisMat = [];
 
 
 %options must be specified as name, value pairs. unpredictable errors will
@@ -20,9 +20,12 @@ for i = 1:2:(numel(varargin)-1)
     end
 end
 
+tic
+
 startParallelPool(nWorkers, displayFigures, keepPool);
 warning('off', 'MATLAB:Java:DuplicateClass');
 warning('off', 'MATLAB:javaclasspath:jarAlreadySpecified');
+javaaddpath('C:\Program Files\Weka-3-8-4\weka.jar','-end');
 
 %%
 disp(['Segmenting nuclei on ', Prefix, '...']);
@@ -38,13 +41,11 @@ trainingFile = [trainingFolder, filesep, trainingNameExt];
 
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 
-[~,hisMat] = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo);
-
-% load([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'], 'hisMat');
-hisMat = double(hisMat);
-
-%need to change this later. will be loaded from computerfolders
-ramDrive = 'R:\';
+if isempty(hisMat)
+    [~,hisMat] = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo);
+    % load([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'], 'hisMat');
+    hisMat = double(hisMat);
+end
 
 nFrames = size(hisMat, 1);
 
@@ -59,21 +60,13 @@ arffLoader.setFile(javaObject('java.io.File',trainingFile)); %construct an arff 
 trainingData= arffLoader.getDataSet;
 trainingData.setClassIndex(trainingData.numAttributes - 1);
 
-classifier = javaObject('hr.irb.fastRandomForest.FastRandomForest');
-options = {'-I', num2str(nTrees), '-threads', num2str(nWorkers), '-K', '2', '-S', '-1650757608', '-depth', num2str(maxDepth)};
+[trainingMat,~,classIndex] = weka2matlab(trainingData);
+numAttributes = classIndex - 1;
+trainingResponse = trainingMat(:, classIndex);
+trainingMat = trainingMat(:, 1:numAttributes);
 
-switch algo
-    case 'FastRandomForest'
-        %default
-    case 'RandomForest'
-        classifier = weka.classifiers.trees.RandomForest;
-        options = {'-I', num2str(nTrees), '-K', '2', '-S', '-1650757608','-depth', num2str(maxDepth)};
-    otherwise
-        warning('classification algorithm not recognized. defaulting to fast random forest');
-end
+classifier = TreeBagger(64,trainingMat,trainingResponse,'OOBPredictorImportance','Off', 'Method','classification');
 
-classifier.setOptions(options);
-classifier.buildClassifier(trainingData);
 suffix = strrep(strrep(char(datetime(now,'ConvertFrom','datenum')), ' ', '_'), ':', '-');
 save([trainingFolder, filesep, trainingName, '_', suffix '.model'], 'classifier')
 
@@ -81,22 +74,29 @@ save([trainingFolder, filesep, trainingName, '_', suffix '.model'], 'classifier'
 dT = [];
 wb = waitbar(0, 'Classifying frames');
 
-for f = 1:nFrames
+hisMat = parallel.pool.Constant(hisMat);
+trainingData = parallel.pool.Constant(trainingData);
+classifier = parallel.pool.Constant(classifier);
+
+parfor f = 1:nFrames
     
-    tic
-    mean_dT = movmean(dT, [3, 0]);
-    if f~=1, mean_dT = mean_dT(end); end
+%     tic
+%     mean_dT = movmean(dT, [3, 0]);
+%     if f~=1, mean_dT = mean_dT(end); end
     
-    if f~=1, tic, disp(['Making probability map for frame: ', num2str(f),...
-            '. Estimated ', num2str(mean_dT*(nFrames-f)), ' minutes remaining.'])
-    end
-    im = squeeze(hisMat(f, :, :));
-    pMap(f, :, :) = classifyImageWeka(im, trainingData,'tempPath', ramDrive,...
-        'reSc', reSc, 'classifierObj', classifier, 'arffLoader', arffLoader, 'matlabLoader', matlabLoader);
-    try waitbar(f/nFrames, wb); end
-    dT(f)=toc/60;
+%     if f~=1, tic, disp(['Making probability map for frame: ', num2str(f),...
+%             '. Estimated ', num2str(mean_dT*(nFrames-f)), ' minutes remaining.'])
+%     end
+    im = squeeze(hisMat.Value(f, :, :));
+    pMap(f, :, :) = classifyImageMatlab(im, trainingData.Value,...
+        'reSc', reSc, 'classifierObj', classifier.Value);
+%     try waitbar(f/nFrames, wb); end
+%     dT(f)=toc/60;
+%         toc/60
     
 end
+
+toc
 
 try close(wb); end
 
@@ -143,5 +143,6 @@ else
     disp('Ellipses saved. Running TrackNuclei.')
     TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1, opts{:});
 end
+
 
 end

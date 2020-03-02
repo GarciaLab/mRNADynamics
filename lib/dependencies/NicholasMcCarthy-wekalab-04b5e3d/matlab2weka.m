@@ -74,8 +74,8 @@ end
     
 %% Code
 
-FastVector = weka.core.FastVector();
-instances = weka.core.Instances(name,FastVector,size(data,1));
+arrayList = java.util.ArrayList;
+instances = weka.core.Instances(name,arrayList,size(data,1));
 
 % CELL MATRIX
 if iscell(data)         
@@ -88,17 +88,17 @@ if iscell(data)
             
             % Collect unique strings and add to values vector
             attvals = unique(data(:,i)); 
-            values = weka.core.FastVector();
+            values = java.util.ArrayList;
             
             for j = 1:numel(attvals)
                values.addElement(java.lang.String(attvals{j}));
             end
             
             % Add new attribute with nominal values
-            FastVector.addElement(weka.core.Attribute(attributes{i},values));
+            arrayList.addElement(weka.core.Attribute(attributes{i},values));
         else
             % Otherwise add attribute 
-            FastVector.addElement(weka.core.Attribute(attributes{i})); 
+            arrayList.addElement(weka.core.Attribute(attributes{i})); 
         end
     end 
     
@@ -123,7 +123,7 @@ else
     
     % ADDING ATTRIBUTES
     for i = 1:numel(attributes)
-        FastVector.addElement(weka.core.Attribute(attributes{i})); 
+        arrayList.addElement(weka.core.Attribute(attributes{i})); 
     end
     
     % ADDING OBSERVATIONS

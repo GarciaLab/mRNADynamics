@@ -111,7 +111,7 @@ for f = 1:nFrames
             '. Estimated ', num2str(mean_dT*(nFrames-f)), ' minutes remaining.'])
     end
     im = squeeze(movieMat(ch,:,f, :, :));
-    pMap(:, :, :, f) = classifyImage(im, trainingData,'tempPath', ramDrive, 'reSc', reSc, 'classifierObj', classifier);
+    pMap(:, :, :, f) = classifyImageWeka(im, trainingData,'tempPath', ramDrive, 'reSc', reSc, 'classifierObj', classifier);
     try waitbar(f/nFrames, wb); end
     dT(f)=toc/60;
     

@@ -9,10 +9,3 @@ function mat2instance(attList, val)
     end
     
 end
-
-row = 1;
-inst = isTrainingSet.instance(row);
-col = 4;
-val = 6;
-inst.setValue(col, val)
-isTrainingSet.set(row, inst)
