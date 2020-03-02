@@ -42,6 +42,18 @@ trainingData.setClassIndex(trainingData.numAttributes - 1);
 
 trainingMat = weka2matlab(trainingData);
 
+A = trainingMat(:, 1:end-1);
+
+if min(A(:)) ~= 0 || max(A(:)) ~= 1
+    
+    warning('data not normalized to [0, 1]. normalizing now.');
+    A = normalize(A, 'range'); %this normalizes each column separately. 
+    
+end
+
+trainingMat(:, 1:end-1) = A; 
+
+
 D = munge(trainingMat, k, p, s);
 
 end
