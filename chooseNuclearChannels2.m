@@ -27,9 +27,9 @@ for i = 1:2:(numel(varargin)-1)
     end
 end
 
-NSlices = size(movieMat, 2);
-NFrames = size(movieMat, 3);
-NChannels = size(movieMat, 1);
+NSlices = size(movieMat, 3);
+NFrames = size(movieMat, 4);
+NChannels = size(movieMat, 5);
 
 % initializes cell arrays for all the histone projections
 median_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
@@ -46,7 +46,7 @@ idx = 1;
         if mod(idx, skip_factor) == 1
             for channelIndex = 1:NChannels
                 
-                HisSlices = squeeze(movieMat(channelIndex,:,framesIndex, :, : )); %ch z t y x 
+                HisSlices = squeeze(movieMat(:, :, :, framesIndex,channelIndex)); %ch z t y x 
                 
                 median_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
                     'medianprojection', NSlices, HisSlices);
@@ -274,7 +274,7 @@ uiwait(fig);
                 if mod(idx2, skip_factor) == 1
                     for channelIndex = 1:NChannels
                         
-                        HisSlices = squeeze(movieMat(channelIndex,:,framesIndex, :, : )); %ch z t y x 
+                        HisSlices = squeeze(movieMat(:, :, :, framesIndex,channelIndex)); %ch z t y x 
 
                         custom_proj{channelIndex, ceil(idx2 / skip_factor)} = calculateProjection(...
                             'customprojection', NSlices, HisSlices, max_custom, min_custom);

@@ -204,11 +204,11 @@ if isempty(movieMat)
     
     [movieMat, hisMat, maxMat, ~, ~]...
         = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo);
-    movieMat = squeeze(movieMat(ch,:,:,:,:));
-    maxMat = squeeze(maxMat(ch,:,:,:));
+    movieMat = squeeze(movieMat(:,:,:,:,ch));
+    maxMat = squeeze(maxMat(:,:,:, ch));
     
 else
-    maxMat = squeeze(max(movieMat(:,:,:,:), [],1));
+    maxMat = squeeze(max(movieMat(:,:,:,:), [],3));
 end
 
 
@@ -385,13 +385,13 @@ while (cc ~= 'x')
     multiImage = {};
     if strcmpi(cptState.projectionMode, 'None')
         
-        cptState.ImageMat = squeeze(movieMat(cptState.CurrentZ, cptState.CurrentFrame, :, :));
+        cptState.ImageMat = squeeze(movieMat(:, :, cptState.CurrentZ, cptState.CurrentFrame));
         
         if multiView
             for z = 1:-1:-1
                 for f = -1:1
                     if any( 1:nSlices == cptState.CurrentZ + z) && any( 1:nFrames == cptState.CurrentFrame + f)
-                        multiImage{z+2, f+2} = squeeze(movieMat(cptState.CurrentZ+z, cptState.CurrentFrame+f,:,:));
+                        multiImage{z+2, f+2} = squeeze(movieMat(:, :, cptState.CurrentZ+z, cptState.CurrentFrame+f));
                     else
                         multiImage{z+2, f+2} = blankImage;
                     end
@@ -401,13 +401,14 @@ while (cc ~= 'x')
         
     elseif strcmpi(cptState.projectionMode, 'Max Z')
         if nFrames > 1
-            cptState.ImageMat = squeeze(maxMat(cptState.CurrentFrame,:,:));
+            cptState.ImageMat = squeeze(maxMat(:, :, cptState.CurrentFrame));
         else
             cptState.ImageMat = maxMat;
         end
         
     elseif strcmpi(cptState.projectionMode, 'Max Z and Time')
         if isempty(maxTimeCell)
+            %wrong movimeat format
             cptState.ImageMat = squeeze(max(max(movieMat(:,ncFramesFull(currentNC):ncFramesFull(currentNC+1),:,:), [], 3), [], 2)); % ch z t x y
         end
     end
@@ -455,7 +456,7 @@ while (cc ~= 'x')
     
     if cptState.UseHistoneOverlay
         
-        hisImage = squeeze(hisMat(cptState.CurrentFrame, :,:));
+        hisImage = squeeze(hisMat(:, :, cptState.CurrentFrame));
         [cptState.ImageHis, cptState.xForZoom, cptState.yForZoom, oim,ellipseHandles]= displayOverlays(overlayAxes, cptState.ImageMat, SpeedMode, cptState.FrameInfo, cptState.Particles, ...
             cptState.Spots, cptState.CurrentFrame, ShowThreshold2, ...
             Overlay, cptState.CurrentChannel, cptState.CurrentParticle, cptState.ZSlices, cptState.CurrentZ, nFrames, ...

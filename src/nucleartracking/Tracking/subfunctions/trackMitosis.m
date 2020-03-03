@@ -9,7 +9,7 @@ if numel(varargin) > 0
 end
 
 space_resolution = getDefaultParameters(FrameInfo,'space resolution');
-totalNumberOfFrames = size(hisMat,1);
+totalNumberOfFrames = size(hisMat,3);
 maxNucleusStep = 40*0.22/space_resolution;
 maxShiftCorrection = getDefaultParameters(FrameInfo,'max Shift Correction', 'trackToTheNextFrame')*diameter/space_resolution;
 nFrames = (lastFrameNumber-firstFrameNumber+1);

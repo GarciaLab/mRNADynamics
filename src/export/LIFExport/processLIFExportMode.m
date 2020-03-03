@@ -68,8 +68,8 @@ if ~skipExtraction
     %     BlankImage = uint16(zeros(ySize, xSize));
     
     nPadding = 2;
-    movieMat = zeros(NChannels, max(NSlices)+nPadding, sum(NFrames), ySize, xSize, 'uint16'); % ch z t x y
-    hisMat = zeros(sum(NFrames), ySize, xSize, 'uint16'); % f x y
+    movieMat = zeros(ySize, xSize,max(NSlices)+nPadding, sum(NFrames),NChannels, 'uint16'); % ch z t x y
+    hisMat = zeros(ySize, xSize, sum(NFrames), 'uint16'); % f x y
     
     
     %     zslicesPadding = false;
@@ -101,7 +101,7 @@ if ~skipExtraction
                         % if zPadding, it will process all images (because topZSlice would be max(NSlices)
                         % if no zPadding, it will process images rounding down to the series with least
                         % zSlices, because topZSlice would be min(NSlices)
-                        movieMat(channelIndex, slicesCounter + 1, numberOfFrames, :, :) = LIFImages{seriesIndex}{imageIndex,1};
+                        movieMat(:, :,slicesCounter + 1,  numberOfFrames, channelIndex) = LIFImages{seriesIndex}{imageIndex,1};
                         %                         NewName = [Prefix, '_', iIndex(numberOfFrames,3), '_z', iIndex(slicesCounter + 1, 2), NameSuffix, '.tif'];
                         %                         imwrite(LIFImages{seriesIndex}{imageIndex,1}, [PreProcFolder, filesep, NewName]);
                         slicesCounter = slicesCounter + 1;
@@ -121,7 +121,7 @@ if ~skipExtraction
             end
             
             %Now copy nuclear tracking images
-            hisMat(numberOfFrames, :, :) = generateNuclearChannel(numberOfFrames, LIFImages,...
+            hisMat(:, :, numberOfFrames) = generateNuclearChannel(numberOfFrames, LIFImages,...
                 framesIndex, seriesIndex, NSlices, NChannels,ProjectionType,...
                 Channels, ReferenceHist, PreProcFolder, Prefix, lowbit);
             

@@ -43,6 +43,8 @@ noAdd = false;
 nWorkers = 1;
 fish = false;
 preMovie = false;
+chooseHis = false;
+map = gray;
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'noAdd') | strcmpi(varargin{i}, 'fish') | strcmpi(varargin{i}, 'markandfind')
@@ -50,6 +52,10 @@ for i = 1:length(varargin)
         fish = true;
     elseif strcmpi(varargin{i}, 'nWorkers')
         nWorkers = varargin{i+1};
+    elseif strcmpi(varargin{i}, 'chooseHis')
+        chooseHis = varargin{i+1};
+    elseif strcmpi(varargin{i}, 'colormap')
+        map = varargin{i+1};  
     elseif strcmpi(varargin{i}, 'premovie')
         preMovie = true;
         movieMat = varargin{i+1};
@@ -91,7 +97,7 @@ load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses');
 load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'schnitzcells');
 %Load the reference histogram for the fake histone channel
-load('ReferenceHist.mat')
+load('ReferenceHist.mat', 'ReferenceHist')
 
 hasSchnitzInd =size(Ellipses{1},2) == 9;
 
@@ -103,13 +109,27 @@ end
 Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
 nCh = sum(~cellfun(@isempty, Channels));
 
-  [~,hisMat, maxMat, medMat, midMat]...
-                = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo);
+if chooseHis
+    uiopen([ProcPath, filesep, Prefix,'_',filesep,'*.mat']);
+    if exist('probHis_fiji', 'var')
+        hisMat = probHis_fiji;
+        clear probHis_fiji;
+    elseif exist('probHis_matlab', 'var')
+         hisMat = probHis_matlab;
+         clear probHis_matlab;
+     elseif exist('probHis', 'var')
+         hisMat = probHis;
+         clear probHis;
+    end
+else
+    [~,hisMat, maxMat, medMat, midMat]...
+                = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, 'loadMovie', false);
+end
 
-nFrames = size(hisMat, 1);
+nFrames = size(hisMat, 3);
 %Get information about the image size
 % HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(1).name]);
-HisImage = squeeze(hisMat(1,:,:));
+HisImage = squeeze(hisMat(:,:,1));
 DisplayRange=[min(min(HisImage)),max(max(HisImage))];
 
 
@@ -166,6 +186,7 @@ cc=1;
 
 % Show the first image
 imOverlay = imshow(HisImage,DisplayRange,'Border','Tight','Parent',overlayAxes);
+% colormap(overlayAxes,map);
 imOriginal = imshow(HisImage,DisplayRange,'Border','Tight','Parent',originalAxes);
 % set(overlayAxes,'Units', 'normalized', 'Position', [0 0 1 1]);
 % % set(originalAxes,'Units', 'normalized', 'Position', [0 0 1 1]);
@@ -180,9 +201,9 @@ while (cc~='x')
     %Load subsequent images
     if ~projFlag 
 
-            HisImage = squeeze(hisMat(CurrentFrame,:, :));
+            HisImage = squeeze(hisMat(:, :, CurrentFrame));
     else
-        HisImage = squeeze(Projection(CurrentFrame, :, :));
+        HisImage = squeeze(Projection(:, :,CurrentFrame));
     end
     
     
@@ -220,7 +241,9 @@ while (cc~='x')
             if schnitzInd ~=0
                 set(PlotHandle(i), 'Color', clrmp(schnitzInd, :),'Linewidth', 2);
             else
-                set(PlotHandle(i), 'Color', 'w','Linewidth', 1);
+                set(PlotHandle(i), 'Color', 'w','Linewidth', 3);
+                new_handle = copyobj(PlotHandle(i),overlayAxes);
+                set(new_handle, 'Color', 'k','Linewidth', 2);
             end
         end
     else
@@ -247,7 +270,7 @@ while (cc~='x')
     
     %     imshow(HisImage,DisplayRange,'Border','Tight''Parent',originalAxes)
     imOriginal.CData = HisImage;
-    
+   
     
     tb = axtoolbar(overlayAxes);
     tb.Visible = 'off';
@@ -363,37 +386,37 @@ while (cc~='x')
  
          [ProjectionType, nonInverted, inverted] = makeNuclearProjection_CNT(nCh);
         disp('calculating projection...')
-        nuclearMovie = nan(nCh, nFrames, xSize, ySize, 'double'); % ch z t x y
+        nuclearMovie = nan(xSize, ySize, nFrames, nCh, 'double'); % ch z t x y
         %ch z t x y
         for ch = 1:nCh
             if inverted(ch)
                 if strcmpi(ProjectionType, 'maxprojection')
-                    nuclearMovie(ch, :, :, :) = imcomplement(maxMat(ch, :, :, :));
+                    nuclearMovie(:, :, :, ch) = imcomplement(maxMat(:, :, :, ch));
                 elseif strcmpi(ProjectionType, 'medianprojection')
-                    nuclearMovie(ch, :, :, :) = imcomplement(medMat(ch, :, :, :));
+                    nuclearMovie(:, :, :, ch) = imcomplement(medMat(:, :, :, ch));
                 elseif strcmpi(ProjectionType, 'midprojection')
-                    nuclearMovie(ch, :, :, :) = imcomplement(midMat(ch, :, :, :));
+                    nuclearMovie(:, :, :, ch) = imcomplement(midMat(:, :, :, ch));
                 end
             end
             if nonInverted(ch) & ~inverted(ch)
                 if strcmpi(ProjectionType, 'maxprojection')
-                    nuclearMovie(ch, :, :, :) = maxMat(ch, :, :, :);
+                    nuclearMovie(:, :, :, ch) = maxMat(:, :, :, ch);
                 elseif strcmpi(ProjectionType, 'medprojection')
-                    nuclearMovie(ch, :, :, :) = medMat(ch, :, :, :);
+                    nuclearMovie(:, :, :, ch) = medMat(:, :, :, ch);
                 elseif strcmpi(ProjectionType, 'midprojection')
-                    nuclearMovie(ch, :, :, :) = midMat(ch, :, :, :);
+                    nuclearMovie(:, :, :, ch) = midMat(:, :, :, ch);
                 end
             end
             % Use the reference histogram to scale the Projection (This part
             % might need some more optimization later-YJK)
-            nuclearMovie(ch, :, :, :) = histeq(mat2gray(nuclearMovie(ch,:,:,:)), ReferenceHist);
+            nuclearMovie(:, :, :, ch) = histeq(mat2gray(nuclearMovie(:, :, :, ch)), ReferenceHist);
         end
         
         % Get average of all Projections
         Projection = squeeze(nanmean(nuclearMovie, 1));
         projFlag = true;
         
-        DisplayRange = [mean(mean(squeeze(Projection(CurrentFrame, :, :)))), max(max(squeeze(Projection(CurrentFrame, :, :)))) ];
+        DisplayRange = [mean(mean(squeeze(Projection(:, :, CurrentFrame)))), max(max(squeeze(Projection(:, :, CurrentFrame)))) ];
         disp('changed projection');
         
     elseif (ct~=0)&(cc=='g')  %copy nuclear information from next frame
@@ -416,7 +439,7 @@ while (cc~='x')
         end
     elseif (ct~=0)&(cc=='/')  %adjust ellipse centroids
        
-        Ellipses{CurrentFrame} = adjustEllipseCentroidsFrame(Ellipses{CurrentFrame}, squeeze(hisMat(CurrentFrame, :, :)), 'pixelSize', pixelSize);
+        Ellipses{CurrentFrame} = adjustEllipseCentroidsFrame(Ellipses{CurrentFrame}, squeeze(hisMat(:, :, CurrentFrame)), 'pixelSize', pixelSize);
 
     elseif (ct~=0)&(cc=='0')    %Debug mode
         keyboard

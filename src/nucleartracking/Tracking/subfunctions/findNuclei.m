@@ -32,7 +32,7 @@ yDim = FrameInfo(1).LinesPerFrame * FrameInfo(1).PixelSize;
 % end
 if yDim > 150 && xDim > 150
 %     I = imread(names{frameNumber});
-    I = double(squeeze(hisMat(frameNumber, :, :)));
+    I = double(squeeze(hisMat(:, :, frameNumber)));
     pixelvalues = unique(I(:));
     thresh = pixelvalues(2);
     f_sigma = round(nucleusDiameter / FrameInfo(1).PixelSize);
@@ -48,7 +48,7 @@ if yDim > 150 && xDim > 150
 
 else    
     if ~exist('embryoMask','var') || isempty(embryoMask)
-        embryoMask = true(size(hisMat(frameNumber, :,:), 3));
+        embryoMask = true(size(hisMat(:, :, frameNumber), 1));
     end
 end
 % Added by NL and GM on 11/23/2019
@@ -71,7 +71,7 @@ localMaxMask(round(length(localMaxMask)/2),round(length(localMaxMask)/2))  = 0;
 %% Main bodycurre
 
 % Load image
-img = double(squeeze(hisMat(frameNumber, :, :)));
+img = double(squeeze(hisMat(:, :, frameNumber)));
 
 % Filter the image
 %filteredImg = imfilter(img,-fspecial('log',round(10*LoGradius),LoGradius),'symmetric');

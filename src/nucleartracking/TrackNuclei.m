@@ -32,7 +32,7 @@ function TrackNuclei(Prefix,varargin)
 disp(['Tracking nuclei on ', Prefix, '...']);
 
 [stitchSchnitz, ExpandedSpaceTolerance, NoBulkShift,...
-    retrack, nWorkers, track, noBreak, noStitch, markandfind, fish, intFlag]...
+    retrack, nWorkers, track, noBreak, noStitch, markandfind, fish, intFlag, chooseHis]...
     = DetermineTrackNucleiOptions(varargin{:});
 
 
@@ -94,7 +94,21 @@ end
 %Now do the nuclear segmentation and lineage tracking. This should be put
 %into an independent function.
 
+if chooseHis
+    uiopen([ProcPath, filesep, Prefix,'_',filesep,'*.mat']);
+    if exist('probHis_fiji', 'var')
+        hisMat = probHis_fiji;
+        clear probHis_fiji;
+    elseif exist('probHis_matlab', 'var')
+         hisMat = probHis_matlab;
+         clear probHis_matlab;
+     elseif exist('probHis', 'var')
+         hisMat = probHis;
+         clear probHis;
+    end
+else
 load([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'], 'hisMat');
+end
 
 
 %Pull the mitosis information from ncs.
@@ -127,7 +141,7 @@ end
 
 
 %Embryo mask
-ImageTemp=squeeze(hisMat(1, :, :));
+ImageTemp=squeeze(hisMat(:, :, 1));
 embryo_mask=true(size(ImageTemp));
 clear ImageTemp
 

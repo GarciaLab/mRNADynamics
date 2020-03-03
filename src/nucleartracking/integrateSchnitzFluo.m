@@ -88,7 +88,8 @@ if sum(InputChannel)
 %             for CurrentZ=1:nSlices   %Note that I need to add the two extra slices manually
 %                 Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
 %             end
-            Image = permute(double(squeeze(movieMat(InputChannel,:,CurrentFrame,:,:))), [2, 3, 1]);
+
+            Image = double(squeeze(movieMat(:,:,:, CurrentFrame, InputChannel)));
             
             convImage = imfilter(Image, double(Circle), 'same');
             convImage(edgeMask) = NaN;

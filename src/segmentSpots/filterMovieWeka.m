@@ -63,10 +63,10 @@ movieMat = double(movieMat);
 %need to change this later. will be loaded from computerfolders
 ramDrive = 'R:\';
 
-nFrames = size(movieMat, 3);
-nSlices = size(movieMat, 2);
-yDim = size(movieMat, 4);
-xDim = size(movieMat, 5);
+nFrames = size(movieMat, 4);
+nSlices = size(movieMat, 3);
+yDim = size(movieMat, 1);
+xDim = size(movieMat, 2);
 
 pMap = zeros(yDim, xDim, nSlices, nFrames); % y x z f
 
@@ -110,7 +110,7 @@ for f = 1:nFrames
     if f~=1, tic, disp(['Making probability map for frame: ', num2str(f),...
             '. Estimated ', num2str(mean_dT*(nFrames-f)), ' minutes remaining.'])
     end
-    im = squeeze(movieMat(ch,:,f, :, :));
+    im = squeeze(movieMat(:, :, :,f, ch));
     pMap(:, :, :, f) = classifyImageWeka(im, trainingData,'tempPath', ramDrive, 'reSc', reSc, 'classifierObj', classifier);
     try waitbar(f/nFrames, wb); end
     dT(f)=toc/60;
@@ -119,6 +119,6 @@ end
 
 try close(wb); end
 
-save([ProcPath, filesep, Prefix, filesep, Prefix, '_probSpot.mat'], 'pMap', '-v7.3', '-nocompression');
+save([ProcPath, filesep, Prefix, '_', filesep, Prefix, '_probSpot.mat'], 'pMap', '-v7.3', '-nocompression');
       
 end

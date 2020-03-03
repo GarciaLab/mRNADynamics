@@ -8,7 +8,7 @@ function [SpotFilter, Particles, Spots,...
     LinesPerFrame, Spots, ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
     SpotFilter, cc, xSize, ySize, NDigits, ...
     Prefix, PreProcPath, ProcPath, coatChannel,...
-    UseHistoneOverlay, schnitzcells, nWorkers, plot3DGauss, movieMat)
+    UseHistoneOverlay, schnitzcells, nWorkers, plot3DGauss, movieMatCh)
 
 %ADDSPOT
 
@@ -46,11 +46,11 @@ else
             FitCell = cell(1, ZSlices);
             
             for z = 1:ZSlices
-                spotsIm = double(squeeze(movieMat(z, CurrentFrame, :, :)));
-                
+                spotsIm = double(squeeze(movieMatCh(:, :, z, CurrentFrame)));
+
                 try
-                    imAbove= double(squeeze(movieMat(z+1, CurrentFrame, :, :)));
-                   imBelow= double(squeeze(movieMat(z-1, CurrentFrame, :, :)));
+                    imAbove= double(squeeze(movieMatCh(:, :, z+1, CurrentFrame)));
+                   imBelow= double(squeeze(movieMatCh(:, :, z-1, CurrentFrame)));
                 catch
                     imAbove = nan(size(spotsIm,1),size(spotsIm,2));
                     imBelow = nan(size(spotsIm,1),size(spotsIm,2));
@@ -125,7 +125,7 @@ else
                         fitSnip3D(...
                         ...
                         Spots{CurrentChannel}(CurrentFrame), coatChannel, SpotsIndex, CurrentFrame,...
-                        Prefix, PreProcPath, FrameInfo, nSpots, movieMat);
+                        Prefix, PreProcPath, FrameInfo, nSpots, movieMatCh);
                 end
                 %%
                 %Add this to SpotFilter, which tells the code that this spot is

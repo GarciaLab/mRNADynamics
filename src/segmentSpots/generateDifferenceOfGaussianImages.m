@@ -38,13 +38,13 @@ nCh = length(spotChannels);
 format = [FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSize];
 
 %2 spot 2 color will break this
-dogMat = zeros(numFrames, format(1),format(2), zSize, 'uint16');
+dogMat = zeros(format(1),format(2), zSize, numFrames,  'uint16');
 
 for ch = spotChannels
     
     waitbarFigure = waitbar(0, ['Filtering images: Channel ', num2str(ch)]);
     
-%     nameSuffix = ['_ch', iIndex(ch, 2)];
+    %     nameSuffix = ['_ch', iIndex(ch, 2)];
     
     
     if displayFigures && isempty(app)
@@ -59,22 +59,24 @@ for ch = spotChannels
     if strcmpi(gpu, 'noGPU')
         for currentFrame = 1:numFrames
             
-%             im = double(permute(squeeze(movieMat(ch,:, currentFrame,:,:)), [2,3,1]));
+            %             im = double(permute(squeeze(movieMat(ch,:, currentFrame,:,:)), [2,3,1]));
             
-%             dogMat(currentFrame, :,:,:) = generateDoGs(DogOutputFolder, PreProcPath, Prefix, currentFrame, nameSuffix, filterType,...
-%                 sigmas, filterSize, ...
-%                 highPrecision, -1, displayFigures, app, numFrames, saveType, im, zSize, zStep);
-%             
+            %             dogMat(currentFrame, :,:,:) = generateDoGs(DogOutputFolder, PreProcPath, Prefix, currentFrame, nameSuffix, filterType,...
+            %                 sigmas, filterSize, ...
+            %                 highPrecision, -1, displayFigures, app, numFrames, saveType, im, zSize, zStep);
+            %
             
-                if strcmpi(filterType, 'Difference_of_Gaussian')
-                    dogMat(currentFrame, :,:,:) = uint16((filterImage(double(permute(squeeze(movieMat(ch,:, currentFrame,:,:)), [2,3,1])), filterType, sigmas, 'filterSize',filterSize, 'zStep', zStep) + 100) * 100);
-%                     if highPrecision
-%                         dogMat(currentFrame, :,:,:) = (dogMat(currentFrame, :,:,:) + 100) * 100;
-%                     end
-                else
-                    dogMat(currentFrame, :,:,:) = uint16((filterImage(double(permute(squeeze(movieMat(ch,:, currentFrame,:,:)), [2,3,1])), filterType, sigmas, 'filterSize',filterSize) + 100) * 100);
+            if strcmpi(filterType, 'Difference_of_Gaussian')
+                dogMat(:, :,:,currentFrame) = uint16((filterImage(double(squeeze(movieMat(:, :, :, currentFrame, ch))), filterType, sigmas, 'filterSize',filterSize, 'zStep', zStep) + 100) * 100);
+                %
+                if highPrecision
+                    %                         dogMat(currentFrame, :,:,:) = (dogMat(currentFrame, :,:,:) + 100) * 100;
+                    %                     end
                 end
-                
+            else
+                dogMat(:, :,:,currentFrame)  = uint16((filterImage(double(squeeze(movieMat(:, :, :, currentFrame, ch))), filterType, sigmas, 'filterSize',filterSize) + 100) * 100);
+            end
+            
             send(q, currentFrame);
         end
         

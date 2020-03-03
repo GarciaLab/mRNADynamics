@@ -43,12 +43,12 @@ trainingFile = [trainingFolder, filesep, trainingNameExt];
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 
 if isempty(hisMat)
-%     [~,hisMat] = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, 'loadMovie', false);
+    %     [~,hisMat] = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, 'loadMovie', false);
     load([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'], 'hisMat');
     hisMat = double(hisMat);
 end
 
-nFrames = size(hisMat, 1);
+nFrames = size(hisMat, 3);
 
 pMap = zeros(size(hisMat, 1), size(hisMat, 2), size(hisMat, 3));
 
@@ -67,59 +67,60 @@ if isempty(classifier)
     numAttributes = classIndex - 1;
     trainingResponse = trainingMat(:, classIndex);
     trainingMat = trainingMat(:, 1:numAttributes);
-
+    
     rng(1650757608);
     paroptions = statset('UseParallel',nWorkers>1);
     classifier = TreeBagger(64,trainingMat,trainingResponse,...
         'OOBPredictorImportance','Off', 'Method','classification',...
         'NumPredictorsToSample', NumPredictorsToSample,...
         'Reproducible', true, 'MinLeafSize', 1, 'Surrogate','On', 'Options',paroptions);
-
+    
     suffix = strrep(strrep(char(datetime(now,'ConvertFrom','datenum')), ' ', '_'), ':', '-');
     save([trainingFolder, filesep, trainingName, '_', suffix '_classifier.mat'], 'classifier')
     
 end
 
-%%
-dT = [];
-wb = waitbar(0, 'Classifying frames');
+%% make probability maps for each frame
 
-startParallelPool(nWorkers, displayFigures, keepPool);
-hisMat = parallel.pool.Constant(hisMat);
-trainingData = parallel.pool.Constant(trainingData);
-classifier = parallel.pool.Constant(classifier);
-% 
-% profile off
-% profile on
-parfor f = 1:nFrames
- %% parallel version
-
-    im = squeeze(hisMat.Value(f, :, :));
-    pMap(f, :, :) = classifyImageMatlab(im, trainingData.Value,...
-        'reSc', reSc, 'classifierObj', classifier.Value);
-
-
-%% non parallel /debugging version
-%     tic
-%     mean_dT = movmean(dT, [3, 0]);
-%     if f~=1, mean_dT = mean_dT(end); end
-%     
-%     if f~=1, tic, disp(['Making probability map for frame: ', num2str(f),...
-%             '. Estimated ', num2str(mean_dT*(nFrames-f)), ' minutes remaining.'])
-%     end
-%     im = squeeze(hisMat(f, :, :));
-%     pMap(f, :, :) = classifyImageMatlab(im, trainingData, 'reSc', reSc, 'classifierObj', classifier);
-%     try waitbar(f/nFrames, wb); end
-%     dT(f)=toc/60;
-%     toc/60
-
+if nWorkers > 1
+    %parallel version
+    startParallelPool(nWorkers, displayFigures, keepPool);
+    hisMat = parallel.pool.Constant(hisMat);
+    trainingData = parallel.pool.Constant(trainingData);
+    classifier = parallel.pool.Constant(classifier);
+    parfor f = 1:nFrames
+        im = squeeze(hisMat.Value(:, :, f));
+        pMap(:, :, f) = classifyImageMatlab(im, trainingData.Value,...
+            'reSc', reSc, 'classifierObj', classifier.Value);
+    end
+else
+    %non-parallel version
+    dT = [];
+    wb = waitbar(0, 'Classifying frames');
+    profile off
+    profile on
+    for f = 1:nFrames
+        
+        tic
+        mean_dT = movmean(dT, [3, 0]);
+        if f~=1, mean_dT = mean_dT(end); end
+        
+        if f~=1, tic, disp(['Making probability map for frame: ', num2str(f),...
+                '. Estimated ', num2str(mean_dT*(nFrames-f)), ' minutes remaining.'])
+        end
+        im = squeeze(hisMat(:, :, f));
+        pMap(:, :, f) = classifyImageMatlab(im, trainingData, 'reSc', reSc, 'classifierObj', classifier);
+        try waitbar(f/nFrames, wb); end
+        dT(f)=toc/60;
+    end
+    
 end
 
-
+profile off; profile viewer;
 try close(wb); end
 
 mkdir([ProcPath, filesep, Prefix, filesep, Prefix]);
-save([ProcPath, filesep, Prefix, filesep, Prefix, '_probHis.mat'], 'pMap', '-v7.3', '-nocompression');
+save([ProcPath, filesep, Prefix, '_', filesep, Prefix, '_probHis.mat'], 'pMap', '-v7.3', '-nocompression');
 
 
 %% Get Ellipses
@@ -137,7 +138,7 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'] ,'file')
         Ellipses = makeEllipses(pMap, thresh);
         
         %track nuclei will complain if there are frames with no ellipses,
-        %so we'll fake it for now. 
+        %so we'll fake it for now.
         fakeFrame = Ellipses(~cellfun(@isempty, Ellipses));
         fakeFrame =  fakeFrame{1};
         

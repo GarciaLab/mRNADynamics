@@ -63,7 +63,8 @@ end
 
 %normalize data to the max of the training set for better classification
 if reSc
-    im = 5*im./max(max(im));
+    scale = 5; %ar hardcoded temporarily til i figure out a non-sketch way to do this. do i standardize or normalize?
+    im = scale*im./max(max(im));
 end
 
 %% load or build classifier from training data
@@ -89,6 +90,8 @@ attributes = getAttributes(trainingData);
 numAttributes = numel(classifier.PredictorNames);
 testMatrix = zeros(numInstances, numAttributes);
 
+usedFeatures = {};
+ignoredFeatures = {};
 
 for i = 1:numAttributes
     
@@ -101,16 +104,20 @@ for i = 1:numAttributes
     else
         filteredIm = im;
         successFlag = true;
-        
     end
     
     if successFlag
         testMatrix(:,i) = filteredIm(:);
+        usedFeatures = [usedFeatures, att];
     else
         testMatrix(:,i) = nan(numel(im),1);
+        ignoredFeatures = [ignoredFeatures, att];
     end
     
 end
+
+disp(['features used: ', usedFeatures])
+disp(['features ignored: ', ignoredFeatures])
 
 [~, pLin] = predict(classifier,testMatrix);
 
@@ -122,8 +129,11 @@ elseif dim == 3
     pMap = reshape(pLin(:,1), [yDim xDim zDim]);
 end
 
-if displayFigures & dim==2
-    figure(1); imshowpair(im, pMap, 'montage');
+if displayFigures 
+    if dim==2
+        figure(1); imshowpair(im, pMap, 'montage');
+    elseif dim==3
+        figure(1); imshowpair(max(im, [], 3),max(pMap, [], 3), 'montage');
 end
 
 

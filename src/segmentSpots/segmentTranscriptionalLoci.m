@@ -68,8 +68,8 @@ end
 
 load([ProcPath, filesep, Prefix, '_dogMat.mat'], 'dogMat');
 load([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'], 'movieMat');
-yDim = size(dogMat, 2);
-xDim = size(dogMat, 3);
+yDim = size(dogMat, 1);
+xDim = size(dogMat, 2);
 
 if Threshold == -1 && ~Weka
     
@@ -89,15 +89,15 @@ q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
 
-zPadded = zSize ~= size(dogMat, 4);
+zPadded = zSize ~= size(dogMat, 3);
 
 for current_frame = initialFrame:numFrames %parfor current_frame = initialFrame:numFrames 
     
     for zIndex = 1:zSize
-        im = double(squeeze(movieMat(ch, zIndex, current_frame, :, :)));
+        im = double(squeeze(movieMat(:, :, zIndex, current_frame, ch)));
         try
-        imAbove = double(squeeze(movieMat(ch, zIndex+1, current_frame, :, :)));
-        imBelow = double(squeeze(movieMat(ch, zIndex-1, current_frame, :, :)));
+         imAbove = double(sliceMovieMat(movieMat, ch, zIndex+1, current_frame));
+         imBelow= double(sliceMovieMat(movieMat, ch, zIndex-1, current_frame));
         catch
             imAbove = nan(size(im,1),size(im,2));
             imBelow = nan(size(im,1),size(im,2));
@@ -110,7 +110,7 @@ for current_frame = initialFrame:numFrames %parfor current_frame = initialFrame:
             dogZ = zIndex - 1;
         end
         
-        dog = squeeze(dogMat(current_frame, :,:, dogZ));
+        dog = squeeze(dogMat(:,:, dogZ, current_frame));
         
         
         if displayFigures

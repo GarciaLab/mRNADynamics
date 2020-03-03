@@ -14,12 +14,12 @@ end
 
 startingFrame = previousMitosisInd;
 
-totalNumberOfFrames = size(hisMat, 1);
+totalNumberOfFrames = size(hisMat, 3);
 numberOfFrames = nextMitosisInd-previousMitosisInd+1;
 time_resolution = getDefaultParameters(FrameInfo,'time resolution');
 space_resolution = getDefaultParameters(FrameInfo,'space resolution');
 edgeClearance = getDefaultParameters(FrameInfo,'edge clearance')*nucleusDiameter/space_resolution;
-img = squeeze(hisMat(startingFrame, :, :));
+img = squeeze(hisMat(:, :, startingFrame));
 marginBeforeMitosis = ceil(getDefaultParameters(FrameInfo,'increased precision before mitosis')/time_resolution);
 marginAfterMitosis = ceil(getDefaultParameters(FrameInfo,'increased precision after mitosis')/time_resolution);
 %This looks like it decides to use existing data that was passed to it, and
