@@ -1,12 +1,11 @@
 function [im, successFlag] = filterImage(im, filterType, sigmas, varargin)
 
-zStep = 400; %nm. default.
-filterSizeZ = NaN;
-s1 = NaN; 
-s2 = NaN; 
-sigmaZ = NaN; 
-filterSizeXY = NaN;
-succesFlag = true;
+zStep = 400; %nm/voxel
+rad = 3; %rule of thumb is kernel size is 3x the Gaussian sigma
+sigmaZ = 280 / zStep; %280 nm. don't remember why i picked this, but it works for my data -AR
+filterSizeZ = ceil(sigmaZ*rad);
+
+successFlag = true;
 numType = 'double';
 padding = 'symmetric';
 
@@ -20,13 +19,28 @@ end
 
 gpu = strcmpi(class(im), 'gpuArray');
 
-getSigmasAndFilterSizes;
+[s1, s2] = ...
+    getSigmas(sigmas);
 
+if isnan(s1)
+    successFlag = false;
+%     warning('FilterImage: Filter not recognized. Returning original image.')
+    return
+end
 
-yDim=size(im, 1); xDim = size(im, 2); 
+filterSizeXY = round(rad*s1);
+if ~mod(filterSizeXY,2)
+    filterSizeXY = filterSizeXY + 1;
+end
+
+s1Mat = [s1 s1];
+s2Mat = [s2 s2];
+
+yDim=size(im, 1); xDim = size(im, 2);
 dim = length(size(im));
 if dim==3
     zDim = size(im, 3);
+    s1Mat = [s1Mat, sigmaZ];
 end
 
 switch filterType
@@ -40,6 +54,24 @@ switch filterType
             d = og3(s1, sigmaZ);
             im = imfilter(im, d, 'same', padding);
         end
+    case 'Anisotropic_diffusion'
+        if dim == 2
+            im = imdiffusefilt(im,'NumberOfIterations', 20);
+            %this probably will not produce the same results as the fiji
+            %implementation. 
+        elseif dim == 3
+           %not supported
+           successFlag = false;
+        end
+    case 'bilateral'
+        if dim == 2
+            im = imbilatfilt(im, 'Padding','symmetric');
+            %this probably will not produce the same results as the fiji
+            %implementation. 
+        elseif dim == 3
+           %not supported
+           successFlag = false;
+        end
     case 'bright_spot_psf'
         if dim == 2
             %21 x 21
@@ -49,11 +81,14 @@ switch filterType
     case 'dim_spot_psf'
         %             f = spotfilt(im,s1, dim, 'small');
     case 'Edges'
+        im = canny(im, s1Mat);
+    case 'Sobel'
         if dim == 2
-            im = edge(im, 'canny', s1);
+            im = edge(imgaussfilt(im,s1), 'Sobel');
         elseif dim == 3
-            im = canny(im, [s1, s1, sigmaZ]);
-        end
+           %not supported
+           successFlag = false;
+        end    
     case 'Difference_of_Gaussian'
         if s2 < s1
             error('DoG filter requires sigma 1 < sigma 2')
@@ -63,7 +98,7 @@ switch filterType
             d = DoG(filterSizeXY, s1, s2);
             im = imfilter(im, d, 'same', padding);
         elseif dim == 3
-                d = DoG3(s1, s2, sigmaZ);
+            d = DoG3(s1, s2, sigmaZ);
             im = imfilter(im, d, 'same', padding);
         end
     case 'Laplacian'
@@ -138,7 +173,7 @@ switch filterType
             end
         end
     case 'Median'
-            im = gather(im);
+        im = gather(im);
         
         if dim==2
             %             f = imgaussfilt(im,s1);
@@ -187,12 +222,12 @@ switch filterType
         if dim==2
             im = imgaussfilt(im,s1);
             opts = {};
-%             opts  = [opts, 'gpuArray'];
+            %             opts  = [opts, 'gpuArray'];
             im = stdfilt(im,ones(filterSizeXY, filterSizeXY), opts{:});
         elseif dim==3
             %this blurs with sigma and sigmaZ, then stdfilts with sizes
             %dictated by sigma and sigma z.
-                im = gather(im);
+            im = gather(im);
             im = stdfilt(imgaussfilt3(im, [s1, s1, sigmaZ]), ones(filterSizeXY, filterSizeXY, ceil(3*sigmaZ)));
             if gpu
                 im = gpuArray(im);
@@ -257,7 +292,7 @@ switch filterType
         end
         
     otherwise
-        disp('Requested filter not supported. Returning original image.');
+%     warning('FilterImage: Filter not recognized. Returning original image.')
         successFlag = false;
 end
 
@@ -294,9 +329,10 @@ end
         og = fspecial3('gaussian',[filterSizeXY, filterSizeXY, filterSizeZ], [s1,s1,ceil(sigmaZ*4)]);
     end
 
-    function getSigmasAndFilterSizes
-        rad = 3; %rule of thumb is kernel size is 3x the Gaussian sigma
-        zStep = 400; %nm. default.
+    function [s1, s2] = ...
+            getSigmas(sigmas)
+        s1 = NaN;
+        s2 = NaN;
         if ~iscell(sigmas)
             sigmas = {sigmas};
         end
@@ -320,16 +356,6 @@ end
                 s2 = sigmas{2};
             otherwise
                 s1 = str2double(sigmas{end});
-        end
-        if exist('s1','var')
-            filterSizeXY = round(rad*s1);
-        end
-        
-        sigmaZ = 280 / zStep;
-        filterSizeZ = ceil(sigmaZ*3);
-        
-        if ~mod(filterSizeXY,2)
-            filterSizeXY = filterSizeXY + 1;
         end
     end
 

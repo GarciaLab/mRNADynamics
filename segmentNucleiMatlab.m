@@ -11,6 +11,7 @@ NumPredictorsToSample = 2;
 maxDepth = 20;
 nTrees = 64;
 hisMat = [];
+classifier = [];
 
 
 %options must be specified as name, value pairs. unpredictable errors will
@@ -23,7 +24,6 @@ end
 
 tic
 
-startParallelPool(nWorkers, displayFigures, keepPool);
 warning('off', 'MATLAB:Java:DuplicateClass');
 warning('off', 'MATLAB:javaclasspath:jarAlreadySpecified');
 javaaddpath('C:\Program Files\Weka-3-8-4\weka.jar','-end');
@@ -36,15 +36,15 @@ disp(['Segmenting nuclei on ', Prefix, '...']);
 dataRoot = fileparts(PreProcPath);
 mlFolder = [dataRoot, filesep, 'training_data_and_classifiers', filesep];
 
-[trainingNameExt, trainingFolder] = uigetfile([mlFolder, filesep, '*.*']);
+[trainingNameExt, trainingFolder] = uigetfile([mlFolder, filesep, '*.arff*']);
 trainingFile = [trainingFolder, filesep, trainingNameExt];
 [~ ,trainingName] = fileparts(trainingNameExt);
 
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 
 if isempty(hisMat)
-    [~,hisMat] = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo);
-    % load([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'], 'hisMat');
+%     [~,hisMat] = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, 'loadMovie', false);
+    load([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'], 'hisMat');
     hisMat = double(hisMat);
 end
 
@@ -61,47 +61,60 @@ arffLoader.setFile(javaObject('java.io.File',trainingFile)); %construct an arff 
 trainingData= arffLoader.getDataSet;
 trainingData.setClassIndex(trainingData.numAttributes - 1);
 
-[trainingMat,~,classIndex] = weka2matlab(trainingData);
-numAttributes = classIndex - 1;
-trainingResponse = trainingMat(:, classIndex);
-trainingMat = trainingMat(:, 1:numAttributes);
+if isempty(classifier)
+    
+    [trainingMat,~,classIndex] = weka2matlab(trainingData);
+    numAttributes = classIndex - 1;
+    trainingResponse = trainingMat(:, classIndex);
+    trainingMat = trainingMat(:, 1:numAttributes);
 
-rng(1650757608);
-classifier = TreeBagger(64,trainingMat,trainingResponse,...
-    'OOBPredictorImportance','Off', 'Method','classification',...
-    'NumPredictorsToSample', NumPredictorsToSample,...
-    'Reproducible', true, 'MinLeafSize', 1);
+    rng(1650757608);
+    paroptions = statset('UseParallel',nWorkers>1);
+    classifier = TreeBagger(64,trainingMat,trainingResponse,...
+        'OOBPredictorImportance','Off', 'Method','classification',...
+        'NumPredictorsToSample', NumPredictorsToSample,...
+        'Reproducible', true, 'MinLeafSize', 1, 'Surrogate','On', 'Options',paroptions);
 
-suffix = strrep(strrep(char(datetime(now,'ConvertFrom','datenum')), ' ', '_'), ':', '-');
-save([trainingFolder, filesep, trainingName, '_', suffix '.model'], 'classifier')
+    suffix = strrep(strrep(char(datetime(now,'ConvertFrom','datenum')), ' ', '_'), ':', '-');
+    save([trainingFolder, filesep, trainingName, '_', suffix '_classifier.mat'], 'classifier')
+    
+end
 
 %%
 dT = [];
 wb = waitbar(0, 'Classifying frames');
 
+startParallelPool(nWorkers, displayFigures, keepPool);
 hisMat = parallel.pool.Constant(hisMat);
 trainingData = parallel.pool.Constant(trainingData);
 classifier = parallel.pool.Constant(classifier);
-
+% 
+% profile off
+% profile on
 parfor f = 1:nFrames
-    
-%     tic
-%     mean_dT = movmean(dT, [3, 0]);
-%     if f~=1, mean_dT = mean_dT(end); end
-    
-%     if f~=1, tic, disp(['Making probability map for frame: ', num2str(f),...
-%             '. Estimated ', num2str(mean_dT*(nFrames-f)), ' minutes remaining.'])
-%     end
+ %% parallel version
+
     im = squeeze(hisMat.Value(f, :, :));
     pMap(f, :, :) = classifyImageMatlab(im, trainingData.Value,...
         'reSc', reSc, 'classifierObj', classifier.Value);
+
+
+%% non parallel /debugging version
+%     tic
+%     mean_dT = movmean(dT, [3, 0]);
+%     if f~=1, mean_dT = mean_dT(end); end
+%     
+%     if f~=1, tic, disp(['Making probability map for frame: ', num2str(f),...
+%             '. Estimated ', num2str(mean_dT*(nFrames-f)), ' minutes remaining.'])
+%     end
+%     im = squeeze(hisMat(f, :, :));
+%     pMap(f, :, :) = classifyImageMatlab(im, trainingData, 'reSc', reSc, 'classifierObj', classifier);
 %     try waitbar(f/nFrames, wb); end
 %     dT(f)=toc/60;
-%         toc/60
-    
+%     toc/60
+
 end
 
-toc
 
 try close(wb); end
 

@@ -47,22 +47,32 @@ if ~skipExtraction
     %Counter for number of frames
     numberOfFrames = 1;
     %Load the reference histogram for the fake histone channel
-    load('ReferenceHist.mat')
+    load('ReferenceHist.mat', 'ReferenceHist');
     if nuclearGUI
+%         for seriesIndex = 1:NSeries
+%             for framesIndex = 1:NFrames(seriesIndex)
+%                 if mod(idx, skip_factor) == 1
+%                     for channelIndex = 1:NChannels
+%                         HisSlices = generateHisSlices(LIFImages, NSlices, NChannels, ...
+%                             channelIndex, framesIndex, seriesIndex);
+%                     end
+%                 end
+%             end
+%         end
         [Channels, ProjectionType] = chooseNuclearChannels(...
             LIFImages, NSeries, NSlices, NChannels, NFrames, ProjectionType, Channels, ReferenceHist);
     end
     
     ySize = size(LIFImages{1}{1,1}, 1);
     xSize = size(LIFImages{1}{1,1}, 2);
-%     BlankImage = uint16(zeros(ySize, xSize));
+    %     BlankImage = uint16(zeros(ySize, xSize));
     
     nPadding = 2;
     movieMat = zeros(NChannels, max(NSlices)+nPadding, sum(NFrames), ySize, xSize, 'uint16'); % ch z t x y
-   hisMat = zeros(sum(NFrames), ySize, xSize, 'uint16'); % f x y
-
+    hisMat = zeros(sum(NFrames), ySize, xSize, 'uint16'); % f x y
     
-%     zslicesPadding = false;
+    
+    %     zslicesPadding = false;
     
     for seriesIndex = 1:NSeries
         waitbar(seriesIndex/NSeries, waitbarFigure)
@@ -70,13 +80,13 @@ if ~skipExtraction
             
             for channelIndex = 1:NChannels
                 
-               
+                
                 topZSlice = min(NSlices);
                 
                 
-%                 NameSuffix = ['_ch',iIndex(channelIndex,2)];
-%                 NewName = [Prefix, '_', iIndex(numberOfFrames,3), '_z', iIndex(1,2), NameSuffix, '.tif'];
-%                 imwrite(BlankImage, [PreProcFolder, filesep, NewName]);
+                %                 NameSuffix = ['_ch',iIndex(channelIndex,2)];
+                %                 NewName = [Prefix, '_', iIndex(numberOfFrames,3), '_z', iIndex(1,2), NameSuffix, '.tif'];
+                %                 imwrite(BlankImage, [PreProcFolder, filesep, NewName]);
                 
                 %Copy the rest of the images
                 slicesCounter = 1;
@@ -92,18 +102,18 @@ if ~skipExtraction
                         % if no zPadding, it will process images rounding down to the series with least
                         % zSlices, because topZSlice would be min(NSlices)
                         movieMat(channelIndex, slicesCounter + 1, numberOfFrames, :, :) = LIFImages{seriesIndex}{imageIndex,1};
-%                         NewName = [Prefix, '_', iIndex(numberOfFrames,3), '_z', iIndex(slicesCounter + 1, 2), NameSuffix, '.tif'];
-%                         imwrite(LIFImages{seriesIndex}{imageIndex,1}, [PreProcFolder, filesep, NewName]);
+                        %                         NewName = [Prefix, '_', iIndex(numberOfFrames,3), '_z', iIndex(slicesCounter + 1, 2), NameSuffix, '.tif'];
+                        %                         imwrite(LIFImages{seriesIndex}{imageIndex,1}, [PreProcFolder, filesep, NewName]);
                         slicesCounter = slicesCounter + 1;
                     end
                 end
                 
                 % Save as many blank images at the end of the stack are needed
                 % (depending on zPadding being active or not)
-%                 for zPaddingIndex = slicesCounter+1:topZSlice+2
-%                     NewName = [Prefix, '_', iIndex(numberOfFrames,3), '_z', iIndex(zPaddingIndex, 2), NameSuffix, '.tif'];
-%                     imwrite(BlankImage, [PreProcFolder, filesep, NewName]);
-%                 end
+                %                 for zPaddingIndex = slicesCounter+1:topZSlice+2
+                %                     NewName = [Prefix, '_', iIndex(numberOfFrames,3), '_z', iIndex(zPaddingIndex, 2), NameSuffix, '.tif'];
+                %                     imwrite(BlankImage, [PreProcFolder, filesep, NewName]);
+                %                 end
                 %
                 %                 processMovieChannel(channelIndex, numberOfFrames, Prefix, OutputFolder,...
                 %                     LIFImages, framesIndex, seriesIndex, NChannels, NSlices,...
@@ -121,7 +131,7 @@ if ~skipExtraction
     
     save([PreProcFolder,filesep, Prefix, '_movieMat.mat'],'movieMat', '-v7.3', '-nocompression');
     save([PreProcFolder, filesep, Prefix, '_hisMat.mat'],'hisMat', '-v7.3', '-nocompression');
-
+    
     close(waitbarFigure)
     
 end

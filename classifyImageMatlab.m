@@ -71,7 +71,7 @@ if ~isempty(classifierObj)
     classifier = classifierObj;
 elseif ~isempty(classifierPath)
     classifier = uiopen;
-else   
+else
     [data,attributes,classIndex] = weka2matlab(trainingData);
     numAttributes = classIndex - 1;
     trainingResponse = data(:, classIndex);
@@ -93,17 +93,22 @@ testMatrix = zeros(numInstances, numAttributes);
 for i = 1:numAttributes
     
     att = attributes{i};
-%     disp(['Generating feature ', num2str((i)), '/', num2str(numAttributes) , ': ', att]);
+    %     disp(['Generating feature ', num2str((i)), '/', num2str(numAttributes) , ': ', att]);
     
     
     if i > 1
-        [filteredIm, sucessFlag]  = filterAttribute(att, im);
+        [filteredIm, successFlag]  = filterAttribute(att, im);
     else
         filteredIm = im;
+        successFlag = true;
+        
     end
     
-   
-    testMatrix(:,i) = filteredIm(:);
+    if successFlag
+        testMatrix(:,i) = filteredIm(:);
+    else
+        testMatrix(:,i) = nan(numel(im),1);
+    end
     
 end
 
