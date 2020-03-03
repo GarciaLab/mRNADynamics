@@ -1,19 +1,23 @@
 function [CurrentSnippet, snipImageHandle] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
-    CurrentZIndex, FullSlice, Spots, CurrentChannel, CurrentFrame, ...
-    CurrentParticleIndex, ExperimentType, snippet_size, xSize, ... 
-    ySize, SnippetEdge, FrameInfo, CurrentSnippet, snipImageHandle, pixelSize)
+    cptState, ExperimentType, snippet_size, xSize, ... 
+    ySize, SnippetEdge, CurrentSnippet, snipImageHandle, pixelSize)
 %PLOTSNIPPET Summary of this function goes here
 %   Detailed explanation goes here
+
+plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
+        cptState.CurrentZIndex, cptState.ImageMat, cptState.Spots, cptState.CurrentChannel, cptState.CurrentFrame, ...
+        cptState.CurrentParticleIndex, ExperimentType, snippet_size, xSize, ...
+        ySize, SnippetEdge, cptState.FrameInfo, CurrentSnippet, snipImageHandle, pixelSize);
 
 % Spots = castStructNumbersToDoubles(Spots);
 
 scale = 10; %magnification of snippet
 
-    if  ~isempty(xTrace) && ~isempty(CurrentZIndex)
-        %Get the snippet and the mask, and overlay them
-        %(MT, 2018-02-12): lattice data could use this, changed CurrentChannel to coatChannel
-        xSpot = double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xDoG(CurrentZIndex));
-        ySpot = double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yDoG(CurrentZIndex));
+    if  ~isempty(xTrace) && ~isempty(cptState.CurrentZIndex)
+        % Get the snippet and the mask, and overlay them
+        % (MT, 2018-02-12): lattice data could use this, changed CurrentChannel to coatChannel
+        xSpot = cptState.getCurrentXDoG();
+        ySpot = cptState.getCurrentYDoG();
 
         if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex), 'snippet_size') && ~isempty(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).snippet_size)
             
@@ -57,12 +61,10 @@ scale = 10; %magnification of snippet
         %intensity calculations. the center may differ from the circle in
         %the overlay figure, which indicates the x-y center of the spot
         %within the brightest z-slice.
-        SnippetX=(SnippetEdge-1)/2+1-...
-            double(((Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xDoG(CurrentZIndex)))-...
-            double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).xFit(CurrentZIndex)));
-        SnippetY=(SnippetEdge-1)/2+1-...
-           double( (Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yDoG(CurrentZIndex))-...
-           double( Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).yFit(CurrentZIndex)));
+
+        %JP says: re-check operator precedence here
+        SnippetX = (SnippetEdge - 1)/2+1 - cptState.getCurrentXDoG() - cptState.getCurrentXFit();
+        SnippetY = (SnippetEdge - 1)/2+1 - cptState.getCurrentYDoG() - cptState.getCurrentYFit();
         hold(snippetFigAxes,'off')
     else
         if isempty(snipImageHandle)
@@ -72,56 +74,4 @@ scale = 10; %magnification of snippet
             snipImageHandle.CData = zeros(SnippetEdge*scale, SnippetEdge*scale, 3);
         end
     end
-% 
-%     if ~isempty(xTrace) && ~isempty(CurrentZIndex)
-%         if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex),'gaussParams')
-%             gaussParams = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussParams;
-%      
-%             if ~isempty(gaussParams)
-%                 gaussParams= double(gaussParams{CurrentZIndex});
-%                 if length(gaussParams) == 7
-%                     gaussParams = [gaussParams, 0, 0];
-%                 end
-%                 try
-%                     [y,x] = meshgrid(1:size(CurrentSnippet,2), 1:size(CurrentSnippet,1));
-%                     g = gaussianForSpot(y, x, CurrentSnippet);
-%                     gauss = g(gaussParams) + CurrentSnippet;
-%                 catch
-%                     %not sure in what situation this fails. -AR
-%                     %9/15/2018
-%                     gauss = NaN;
-%                 end
-%             else
-%                 gauss = double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{CurrentZIndex});
-%             end
-% 
-%         elseif isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex), 'gaussSpot')
-%             gauss = double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).gaussSpot{CurrentZIndex});
-%         else
-%             error('No Gaussian Fit Params or Gauss Snippet Found. Try Re-running segmentSpots')
-%         end
-% 
-%         if ~isnan(gauss)
-%             surf(gaussianAxes, gauss);
-%         end
-%         title(gaussianAxes,'Gaussian fit')
-%         zlimit = max(double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).CentralIntensity));
-%         zlim(gaussianAxes,[0, zlimit]);
-%         surf(rawDataAxes,CurrentSnippet)
-%         title(rawDataAxes,'Raw data');
-%         zlim(rawDataAxes,[0, zlimit]);
-%         box(gaussianAxes, 'on')
-%         box(rawDataAxes, 'on')
-%         %calibrate the axes
-%         rawDataAxes.Children.XData = (rawDataAxes.Children.XData - max(rawDataAxes.Children.XData)/2)*xyRes;
-%         rawDataAxes.Children.YData = (rawDataAxes.Children.YData -max(rawDataAxes.Children.YData)/2)*xyRes;
-%         gaussianAxes.Children.XData = (gaussianAxes.Children.XData -max(gaussianAxes.Children.XData)/2)*xyRes;
-%         gaussianAxes.Children.YData = (gaussianAxes.Children.YData -max(gaussianAxes.Children.YData)/2)*xyRes;
-%         xlabel(rawDataAxes, '\mum'); ylabel(rawDataAxes, '\mum');
-%         xlabel(gaussianAxes, '\mum'); ylabel(gaussianAxes, '\mum');
-%     else
-%         cla(gaussianAxes, 'reset')
-%         cla(rawDataAxes, 'reset')
-%     end
 end
-

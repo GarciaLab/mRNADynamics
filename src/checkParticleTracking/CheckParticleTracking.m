@@ -518,9 +518,7 @@ while (cc ~= 'x')
     % PLOT SNIPPET
     
     [CurrentSnippet, snipImageHandle] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
-        cptState.CurrentZIndex, cptState.ImageMat, cptState.Spots, cptState.CurrentChannel, cptState.CurrentFrame, ...
-        cptState.CurrentParticleIndex, ExperimentType, snippet_size, xSize, ...
-        ySize, SnippetEdge, cptState.FrameInfo, CurrentSnippet, snipImageHandle, pixelSize);
+        cptState, ExperimentType, snippet_size, xSize, ySize, SnippetEdge, CurrentSnippet, snipImageHandle, pixelSize);
     
     
     % PLOTS TRACE OF CURRENT PARTICLE
