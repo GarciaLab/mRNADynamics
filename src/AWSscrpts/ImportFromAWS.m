@@ -8,7 +8,7 @@ function ImportFromAWS(Prefix)
     UserDynResPath_Prefix =[UserDynResPath,filesep,Prefix];
     [~, username] = system('echo %USERNAME%');
     username = strrep(username, sprintf('\n'),''); %removes new line
-    HGlabDataFolder = ['E:\HGlab\Dropbox\',username,'\LivemRNA\Data'];
+    HGlabDataFolder = ['S:\HGlab\Dropbox\',username,'\LivemRNA\Data'];
     HGlabPreProcPath_Prefix = [HGlabDataFolder,filesep,'PreProcessedData\',Prefix];
     HGlabProcPath_Prefix = [HGlabDataFolder,filesep,'ProcessedData\',Prefix,'_'];
     HGlabDynResPath_Prefix = [HGlabDataFolder,filesep,'DynamicsResults\',Prefix];
