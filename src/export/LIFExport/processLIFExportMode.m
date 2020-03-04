@@ -48,20 +48,7 @@ if ~skipExtraction
     numberOfFrames = 1;
     %Load the reference histogram for the fake histone channel
     load('ReferenceHist.mat', 'ReferenceHist');
-    if nuclearGUI
-%         for seriesIndex = 1:NSeries
-%             for framesIndex = 1:NFrames(seriesIndex)
-%                 if mod(idx, skip_factor) == 1
-%                     for channelIndex = 1:NChannels
-%                         HisSlices = generateHisSlices(LIFImages, NSlices, NChannels, ...
-%                             channelIndex, framesIndex, seriesIndex);
-%                     end
-%                 end
-%             end
-%         end
-        [Channels, ProjectionType] = chooseNuclearChannels(...
-            LIFImages, NSeries, NSlices, NChannels, NFrames, ProjectionType, Channels, ReferenceHist);
-    end
+    
     
     ySize = size(LIFImages{1}{1,1}, 1);
     xSize = size(LIFImages{1}{1,1}, 2);
@@ -70,7 +57,7 @@ if ~skipExtraction
     nPadding = 2;
     movieMat = zeros(ySize, xSize,max(NSlices)+nPadding, sum(NFrames),NChannels, 'uint16'); % ch z t x y
     hisMat = zeros(ySize, xSize, sum(NFrames), 'uint16'); % f x y
-    
+
     
     %     zslicesPadding = false;
     
@@ -121,12 +108,21 @@ if ~skipExtraction
             end
             
             %Now copy nuclear tracking images
-            hisMat(:, :, numberOfFrames) = generateNuclearChannel(numberOfFrames, LIFImages,...
-                framesIndex, seriesIndex, NSlices, NChannels,ProjectionType,...
-                Channels, ReferenceHist, PreProcFolder, Prefix, lowbit);
+            if ~nuclearGUI
+                hisMat(:, :, numberOfFrames) = generateNuclearChannel(numberOfFrames, LIFImages,...
+                    framesIndex, seriesIndex, NSlices, NChannels,ProjectionType,...
+                    Channels, ReferenceHist, PreProcFolder, Prefix, lowbit);
+            end
             
             numberOfFrames = numberOfFrames + 1;
         end
+    end
+    
+    if nuclearGUI
+              
+        [~, ~, hisMat] = chooseNuclearChannels2(...
+            movieMat, 'ProjectionType', ProjectionType,'Channels',Channels,'ReferenceHist', ReferenceHist);
+        
     end
     
     save([PreProcFolder,filesep, Prefix, '_movieMat.mat'],'movieMat', '-v7.3', '-nocompression');

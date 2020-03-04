@@ -13,19 +13,13 @@
 function [Channels, ProjectionType] = chooseNuclearChannels(...
     LIFImages, NSeries, NSlices, NChannels, NFrames, ProjectionType, Channels, ReferenceHist, varargin)
 
+warning('off', 'MATLAB:ui:Slider:fixedHeight')
+
 skip_factor = 5; % Only uses 1/skip_factor frames
 
 % default custom projection parameters
 max_custom = 1; % highest histone channel slice used
 min_custom = 5; % lowest histone channel slice used
-
-%options must be specified as name, value pairs. unpredictable errors will
-%occur, otherwise.
-for i = 1:2:(numel(varargin)-1)
-    if i ~= numel(varargin)
-        eval([varargin{i} '=varargin{i+1};']);
-    end
-end
 
 
 % initializes cell arrays for all the histone projections

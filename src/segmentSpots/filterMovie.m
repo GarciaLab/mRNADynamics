@@ -109,12 +109,12 @@ if ~Weka && ~justTifs
         kernelSize, noSave, numType, gpu, saveAsMat, saveType);
 elseif Weka
     if ~exist([PreProcPath, filesep, Prefix, filesep, 'stacks'], 'dir')
-        generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,spotChannels, zSize, initialFrame);
+        generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,spotChannels, zSize, initialFrame, FrameInfo);
     end
     generateDogsWeka(Prefix, ProcPath, MS2CodePath, PreProcPath, ExperimentType, spotChannels, zSize, numFrames, nCh,...
         initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder);
 elseif justTifs
-    generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,spotChannels, zSize, initialFrame);
+    generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,spotChannels, zSize, initialFrame, FrameInfo);
 elseif customML
     generateProbMapsCustomML(Prefix, ProcPath, MS2CodePath, PreProcPath, ExperimentType, coatChannel, zSize, numFrames, nCh,...
         initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder);

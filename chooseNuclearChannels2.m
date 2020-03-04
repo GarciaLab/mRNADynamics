@@ -10,26 +10,35 @@
 % exportDataForLivemRNA and is only usable with Leica data (and the
 % 'nuclearGUI' option must be entered in exportDataForLivemRNA)
 
-function [Channels, ProjectionType] = chooseNuclearChannels2(...
-    movieMat, ProjectionType, Channels, ReferenceHist, varargin)
+function [Channels, ProjectionType, hisMat] = chooseNuclearChannels2(movieMat, varargin)
 
-skip_factor = 5; % Only uses 1/skip_factor frames
+warning('off', 'MATLAB:ui:Slider:fixedHeight')
+
+skip_factor = 1; % Only uses 1/skip_factor frames
 
 % default custom projection parameters
 max_custom = 1; % highest histone channel slice used
 min_custom = 5; % lowest histone channel slice used
 
+
+ProjectionType = 'midsumprojection';
+Channels = {'', '', ''};
+load('ReferenceHist.mat', 'ReferenceHist');
+
+
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.
-for i = 1:2:(numel(varargin)-1)
-    if i ~= numel(varargin)
-        eval([varargin{i} '=varargin{i+1};']);
+for arg = 1:2:(numel(varargin)-1)
+    if arg ~= numel(varargin)
+        eval([varargin{arg} '=varargin{arg+1};']);
     end
 end
 
 NSlices = size(movieMat, 3);
 NFrames = size(movieMat, 4);
 NChannels = size(movieMat, 5);
+yDim = size(movieMat, 1);
+xDim = size(movieMat, 2);
 
 % initializes cell arrays for all the histone projections
 median_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
@@ -41,30 +50,46 @@ custom_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
 Channel1 = Channels{1}; Channel2 = Channels{2}; Channel3 = Channels{3};
 
 % creates and stores histone slices
-idx = 1;
+% idx = 1;
     for framesIndex = 1:NFrames
-        if mod(idx, skip_factor) == 1
+%         if mod(idx, skip_factor) == 1
             for channelIndex = 1:NChannels
                 
                 HisSlices = squeeze(movieMat(:, :, :, framesIndex,channelIndex)); %ch z t y x 
+%                 
+%                 median_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
+%                     'medianprojection', NSlices, HisSlices);
+%                 max_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
+%                     'maxprojection', NSlices, HisSlices);
+%                 middle_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
+%                     'middleprojection', NSlices, HisSlices);
+%                 midsum_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
+%                     'midsumprojection', NSlices, HisSlices);
+%                 custom_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
+%                     'customprojection', NSlices, HisSlices, max_custom, min_custom);
                 
-                median_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
-                    'medianprojection', NSlices, HisSlices);
-                max_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
-                    'maxprojection', NSlices, HisSlices);
-                middle_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
-                    'middleprojection', NSlices, HisSlices);
-                midsum_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
+%                  median_proj{channelIndex, framesIndex} = calculateProjection(...
+%                     'medianprojection', NSlices, HisSlices);
+                median_proj{channelIndex, framesIndex} = calculateProjection(...
                     'midsumprojection', NSlices, HisSlices);
-                custom_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
+                max_proj{channelIndex, framesIndex} = calculateProjection(...
+                    'maxprojection', NSlices, HisSlices);
+                middle_proj{channelIndex, framesIndex} = calculateProjection(...
+                    'middleprojection', NSlices, HisSlices);
+                midsum_proj{channelIndex, framesIndex} = calculateProjection(...
+                    'midsumprojection', NSlices, HisSlices);
+                custom_proj{channelIndex, framesIndex} = calculateProjection(...
                     'customprojection', NSlices, HisSlices, max_custom, min_custom);
-                
             end       
-        idx = idx + 1;
-    end
+       
+%         end
+%      idx = idx + 1;
 end
 
-numFrames = idx - 1;
+% numFrames = idx - 1;
+numFrames = NFrames;
+frame = 1;
+
 
 % sets up channel dropdown options
 options = cell(1, NChannels);
@@ -77,13 +102,15 @@ screen_size = get(0, 'screensize');
 dim = [screen_size(3) * 0.6, screen_size(4) * 0.75];
 dimVec = [dim(1), dim(2), dim(1), dim(2)]; %to easily normalize units
 fig = uifigure('Position', [100, 100, dim(1), dim(2)], 'Name', 'Choose Histone Channels');
-img = uiaxes(fig, 'Position', [20, 20, dim(1) - 20, dim(2) * 0.5]);
-
-frame_label = uilabel(fig,  'Text', 'Frame', 'Position', ...
-    [dim(1) * 0.5, dim(2) * 0.65, dim(1) * 0.1, dim(2) * 0.05]);
+imgAxis = uiaxes(fig, 'Position', [20, 20, dim(1) - 20, dim(2) * 0.5]);
+blank = zeros(yDim, xDim);
+himage = imshow(uint16(blank), [], 'Parent', imgAxis);
 
 frame_slider = uislider(fig, 'Limits', [1, numFrames], 'Value', 1, ...
     'Position', [dim(1) * 0.25, dim(2) * 0.6, dim(1) * 0.5, dim(2) * 0.1]);
+
+frame_label = uilabel(fig,  'Text', ['Frame: ', num2str(frame)] , 'Position', ...
+    [dim(1) * 0.5, dim(2) * 0.65, dim(1) * 0.1, dim(2) * 0.05]);
 
 frame_slider.ValueChangedFcn = @updateHisImage;
 
@@ -161,7 +188,7 @@ uiwait(fig);
         frame_slider.Value = ((ceil(frame_slider.Value / skip_factor) - 1) * skip_factor) + 1;
         
         frame = ceil(frame_slider.Value / skip_factor);
-      
+        frame_label.Text=  ['Frame: ', num2str(frame)];
         
         channels = [];
         for i = 1:3
@@ -177,7 +204,7 @@ uiwait(fig);
             elseif strcmpi(projection_type, 'middleprojection')
                 ProjectionTemp(:, :, i) = middle_proj{cIndex, frame};
             elseif strcmpi(projection_type, 'midsumprojection')
-                ProjectionTemp(:,:, i) = midsum_proj(cIndex,frame);
+                ProjectionTemp(:,:, i) = midsum_proj{cIndex,frame};
             elseif strcmpi(projection_type, 'maxprojection')
                 ProjectionTemp(:, :, i) = max_proj{cIndex, frame};
             else
@@ -206,8 +233,11 @@ uiwait(fig);
             maxB = max(max(Projection));
             minB = median(median(Projection));
         end
-%         imshow(uint16(Projection), [median(median(Projection)), max(max(Projection))], 'Parent', img);
-        imshow(uint16(Projection), [minB, maxB], 'Parent', img);
+%       himage =  imshow(uint16(Projection), [median(median(Projection)), max(max(Projection))], 'Parent', img);
+%         himage = imshow(uint16(Projection), [minB, maxB], 'Parent', imgAxis);
+         himage.CData = Projection;
+         imgAxis.CLim = [minB, maxB];
+         
     end
     
     % closes UI and returns chosen options
@@ -252,6 +282,17 @@ uiwait(fig);
         if strcmpi(ProjectionType, 'customprojection')
             ProjectionType = [ProjectionType ':' num2str(max_custom) ':' num2str(min_custom)];
         end
+        
+        if nargout > 2
+            
+            hisMat = zeros(ySize, xSize, sum(NFrames), 'uint16'); % f x y
+
+            for f = 1:NFrames
+                hisMat(:, :, f) = generateNuclearChannel2(ProjectionType, Channels, ReferenceHist, movieMat, f);
+            end
+            
+        end
+        
         close(fig);
     end
 

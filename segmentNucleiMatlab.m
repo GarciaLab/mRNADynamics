@@ -63,6 +63,13 @@ trainingData.setClassIndex(trainingData.numAttributes - 1);
 
 if isempty(classifier)
     
+    [~,attributes,~] = weka2matlab(trainingData);
+    
+    %remove the features matlab we can't (currently) generate in matlab
+    dim = 2;
+    [~, ~, keepIndices, ~] = validateAttributes(attributes, dim);
+    trainingData = cleanArff(trainingData, keepIndices);
+    
     [trainingMat,~,classIndex] = weka2matlab(trainingData);
     numAttributes = classIndex - 1;
     trainingResponse = trainingMat(:, classIndex);

@@ -384,39 +384,11 @@ while (cc~='x')
         
     elseif (ct~=0)&(cc=='~')
  
-         [ProjectionType, nonInverted, inverted] = makeNuclearProjection_CNT(nCh);
-        disp('calculating projection...')
-        nuclearMovie = nan(xSize, ySize, nFrames, nCh, 'double'); % ch z t x y
-        %ch z t x y
-        for ch = 1:nCh
-            if inverted(ch)
-                if strcmpi(ProjectionType, 'maxprojection')
-                    nuclearMovie(:, :, :, ch) = imcomplement(maxMat(:, :, :, ch));
-                elseif strcmpi(ProjectionType, 'medianprojection')
-                    nuclearMovie(:, :, :, ch) = imcomplement(medMat(:, :, :, ch));
-                elseif strcmpi(ProjectionType, 'midprojection')
-                    nuclearMovie(:, :, :, ch) = imcomplement(midMat(:, :, :, ch));
-                end
-            end
-            if nonInverted(ch) & ~inverted(ch)
-                if strcmpi(ProjectionType, 'maxprojection')
-                    nuclearMovie(:, :, :, ch) = maxMat(:, :, :, ch);
-                elseif strcmpi(ProjectionType, 'medprojection')
-                    nuclearMovie(:, :, :, ch) = medMat(:, :, :, ch);
-                elseif strcmpi(ProjectionType, 'midprojection')
-                    nuclearMovie(:, :, :, ch) = midMat(:, :, :, ch);
-                end
-            end
-            % Use the reference histogram to scale the Projection (This part
-            % might need some more optimization later-YJK)
-            nuclearMovie(:, :, :, ch) = histeq(mat2gray(nuclearMovie(:, :, :, ch)), ReferenceHist);
-        end
-        
-        % Get average of all Projections
-        Projection = squeeze(nanmean(nuclearMovie, 1));
-        projFlag = true;
+        [~, ~, Projection] = chooseNuclearChannels2(...
+            movieMat, 'ProjectionType', ProjectionType,'Channels',Channels,'ReferenceHist', ReferenceHist);
         
         DisplayRange = [mean(mean(squeeze(Projection(:, :, CurrentFrame)))), max(max(squeeze(Projection(:, :, CurrentFrame)))) ];
+        
         disp('changed projection');
         
     elseif (ct~=0)&(cc=='g')  %copy nuclear information from next frame
