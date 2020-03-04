@@ -17,5 +17,7 @@ function ImportFromAWS(Prefix)
     movefile(HGlabPreProcPath_Prefix, UserPreProcPath)
     movefile(HGlabProcPath_Prefix, UserProcPath)
     movefile(HGlabDynResPath_Prefix, UserDynResPath)
+    
+    disp(['Import from AWS for ' Prefix ' complete.']);
 
 end
