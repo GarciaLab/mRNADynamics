@@ -93,7 +93,7 @@ if makeMovie
     for ch = 1:nCh
         for f = 1:nFrames
             
-            parfor z = 1:nSlices+nPadding
+            for z = 1:nSlices+nPadding
                 movieMat(:, :, z, f, ch) = imread([pth,'_',iIndex(f, nDigits), '_z', iIndex(z, 2), ['_ch', iIndex(ch, 2)], '.tif']);
             end
             
@@ -115,7 +115,7 @@ if  makeHis && ~makeMovie
     
     hisMat = zeros(xSize, ySize,nFrames, 'uint16'); % f x y
     
-    parfor f = 1:nFrames
+    for f = 1:nFrames
         hisMat(:, :, f) = imread([pth,'-His_', iIndex(f, nDigits), '.tif']);
     end
     

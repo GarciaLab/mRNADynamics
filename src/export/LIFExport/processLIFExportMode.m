@@ -3,7 +3,13 @@ function FrameInfo = processLIFExportMode(rawDataFolder, ProjectionType, Channel
     Prefix, PreProcFolder, PreferredFileNameForTest,...
     nuclearGUI, skipExtraction, lowbit, exportNuclearProjections, exportMovieFiles)
 
-if exportMovieFiles || (exportNuclearProjections && ~exist([PreProcFolder,filesep, Prefix, '_movieMat.mat'],'file'))
+
+%Load the reference histogram for the fake histone channel
+    load('ReferenceHist.mat', 'ReferenceHist');
+    
+makeMovieMat = exportMovieFiles || (exportNuclearProjections && ~exist([PreProcFolder,filesep, Prefix, '_movieMat.mat'],'file'));
+
+if makeMovieMat
     
     markandfind = false;
     
@@ -44,28 +50,30 @@ if exportMovieFiles || (exportNuclearProjections && ~exist([PreProcFolder,filese
 end
 
 if ~skipExtraction
-    %Copy the data
-    waitbarFigure = waitbar(0, 'Extracting LIFExport images');
-    
-    
-    %Counter for number of frames
-    numberOfFrames = 1;
-    %Load the reference histogram for the fake histone channel
-    load('ReferenceHist.mat', 'ReferenceHist');
-    
-    
-    ySize = size(LIFImages{1}{1,1}, 1);
-    xSize = size(LIFImages{1}{1,1}, 2);
-    %     BlankImage = uint16(zeros(ySize, xSize));
-    
-    nPadding = 2;
-    movieMat = zeros(ySize, xSize,max(NSlices)+nPadding, sum(NFrames),NChannels, 'uint16'); % ch z t x y
-    hisMat = zeros(ySize, xSize, sum(NFrames), 'uint16'); % f x y
-    
+    if makeMovieMat
+        %Copy the data
+        waitbarFigure = waitbar(0, 'Extracting LIFExport images');
+        
+        
+        %Counter for number of frames
+        numberOfFrames = 1;
+     
+        
+        
+        ySize = size(LIFImages{1}{1,1}, 1);
+        xSize = size(LIFImages{1}{1,1}, 2);
+        %     BlankImage = uint16(zeros(ySize, xSize));
+        
+        nPadding = 2;
+        hisMat = zeros(ySize, xSize, sum(NFrames), 'uint16'); % f x y
+        
+    end
     
     %     zslicesPadding = false;
     
     if exportMovieFiles
+        
+        movieMat = zeros(ySize, xSize,max(NSlices)+nPadding, sum(NFrames),NChannels, 'uint16'); % ch z t x y
         
         for seriesIndex = 1:NSeries
             waitbar(seriesIndex/NSeries, waitbarFigure)
@@ -132,7 +140,12 @@ if ~skipExtraction
     if nuclearGUI && exportNuclearProjections
         if ~exportMovieFiles
             load([PreProcFolder,filesep, Prefix, '_movieMat.mat'],'movieMat');
+            ySize = size(movieMat, 1);
+            xSize = size(movieMat, 2);
+            NFrames = size(movieMat, 4);
         end
+        hisMat = zeros(ySize, xSize, sum(NFrames), 'uint16'); % f x y
+
         [~, ~, hisMat] = chooseNuclearChannels2(...
             movieMat, 'ProjectionType', ProjectionType,'Channels',Channels,'ReferenceHist', ReferenceHist);
         

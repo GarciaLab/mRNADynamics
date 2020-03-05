@@ -12,6 +12,8 @@ maxDepth = 20;
 nTrees = 64;
 hisMat = [];
 classifier = [];
+balance = true; %resample to balance classes
+cleanAttributes = true;
 
 
 %options must be specified as name, value pairs. unpredictable errors will
@@ -43,7 +45,7 @@ trainingFile = [trainingFolder, filesep, trainingNameExt];
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 
 if isempty(hisMat)
-    %     [~,hisMat] = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, 'loadMovie', false);
+%         [~,hisMat] = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, 'loadMovie', false);
     load([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'], 'hisMat');
     hisMat = double(hisMat);
 end
@@ -56,20 +58,19 @@ pMap = zeros(size(hisMat, 1), size(hisMat, 2), size(hisMat, 3));
 %only need to make the classifier from training data
 %once and not every frame
 
-arffLoader = javaObject('weka.core.converters.ArffLoader'); %this constructs an object of the arffloader class
-arffLoader.setFile(javaObject('java.io.File',trainingFile)); %construct an arff file object
-trainingData= arffLoader.getDataSet;
-trainingData.setClassIndex(trainingData.numAttributes - 1);
+trainingData = loadArff(trainingFile, 'balance', balance);
+
 
 if isempty(classifier)
     
-    [~,attributes,~] = weka2matlab(trainingData);
-    
-    %remove the features matlab we can't (currently) generate in matlab
-    dim = 2;
-    [~, ~, keepIndices, ~] = validateAttributes(attributes, dim);
-    trainingData = cleanArff(trainingData, keepIndices);
-    
+    if cleanAttributes
+        [~,attributes,~] = weka2matlab(trainingData);
+        %remove the features matlab we can't (currently) generate in matlab
+        dim = 2;
+        [~, ~, keepIndices, ~] = validateAttributes(attributes, dim);
+        trainingData = cleanArff(trainingData, keepIndices);
+    end
+
     [trainingMat,~,classIndex] = weka2matlab(trainingData);
     numAttributes = classIndex - 1;
     trainingResponse = trainingMat(:, classIndex);

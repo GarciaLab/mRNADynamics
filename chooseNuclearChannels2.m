@@ -41,6 +41,14 @@ NChannels = size(movieMat, 5);
 yDim = size(movieMat, 1);
 xDim = size(movieMat, 2);
 
+%construct cell to store projections for each frame separately 
+projCell = cell(NFrames, 1);
+chCell = cell(NFrames, 1);
+for ff = 1:NFrames
+    projCell{ff} = ProjectionType;
+    chCell{ff} = {'Channel1', 'Channel2', 'Channel3'};
+end
+
 % initializes cell arrays for all the histone projections
 median_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
 max_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
@@ -218,6 +226,8 @@ uiwait(fig);
               % might need some more optimization later-YJK)
               ProjectionTemp(:, :, i) = histeq(mat2gray(ProjectionTemp(:, :, i)), ReferenceHist);
               ProjectionTemp(:, :, i) = ProjectionTemp(:, :, i) * 10000;
+              
+              
         end
 
         % Getting average of all Projections
@@ -234,61 +244,29 @@ uiwait(fig);
             maxB = max(max(Projection));
             minB = median(median(Projection));
         end
-%       himage =  imshow(uint16(Projection), [median(median(Projection)), max(max(Projection))], 'Parent', img);
-%         himage = imshow(uint16(Projection), [minB, maxB], 'Parent', imgAxis);
+
          himage.CData = Projection;
          imgAxis.CLim = [minB, maxB];
          
+       projCell{frame} = projection_type;
+       chCell{frame} = getChannels;
+
+                  
     end
     
     % closes UI and returns chosen options
     function saveOptions(~, ~)
-        if ~isempty(Channel1)
-            if any(strcmp(channel_list.Value, 'Channel 1'))
-                if any(strcmp(invert_list.Value, 'Channel 1'))
-                    Channel1{1} = [Channel1{1}, ':invertedNuclear'];
-                else
-                    Channel1{1} = [Channel1{1}, ':Nuclear'];
-                end
-            else
-                Channel1 = '';
-            end
-        end
-        if ~isempty(Channel2)
-            if any(strcmp(channel_list.Value, 'Channel 2'))
-                if any(strcmp(invert_list.Value, 'Channel 2'))
-                    Channel2{1} = [Channel2{1}, ':invertedNuclear'];
-                else
-                    Channel2{1} = [Channel2{1}, ':Nuclear'];
-                end
-            else
-                Channel2 = '';
-            end
-            
-        end
-        if ~isempty(Channel3)
-            if any(strcmp(channel_list.Value, 'Channel 3'))
-                if any(strcmp(invert_list.Value, 'Channel 3'))
-                    Channel3{1} = [Channel3{1}, ':invertedNuclear'];
-                else
-                    Channel3{1} = [Channel3{1}, ':Nuclear'];
-                end
-            else
-                Channel3 = '';
-            end
-        end
-        
-        Channels = {Channel1, Channel2, Channel3};
         ProjectionType = proj_type_dropdown.Value;
         if strcmpi(ProjectionType, 'customprojection')
             ProjectionType = [ProjectionType ':' num2str(max_custom) ':' num2str(min_custom)];
         end
-        
+               
         if returnHisMat
             
-            hisMat = zeros(ySize, xSize, sum(NFrames), 'uint16'); % f x y
+            hisMat = zeros(yDim, xDim, sum(NFrames), 'uint16'); % f x y
 
             for f = 1:NFrames
+%                 hisMat(:, :, f) = generateNuclearChannel2(projCell{f}, chCell{f}, ReferenceHist, movieMat, f);
                 hisMat(:, :, f) = generateNuclearChannel2(ProjectionType, Channels, ReferenceHist, movieMat, f);
             end
             
@@ -326,6 +304,47 @@ uiwait(fig);
             end
         
         updateHisImage();
+    end
+
+    function Channels = getChannels()
+        
+        if ~isempty(Channel1)
+            if any(strcmp(channel_list.Value, 'Channel 1'))
+                if any(strcmp(invert_list.Value, 'Channel 1'))
+                    Channel1{1} = [Channel1{1}, ':invertedNuclear'];
+                else
+                    Channel1{1} = [Channel1{1}, ':Nuclear'];
+                end
+            else
+                Channel1 = '';
+            end
+        end
+        if ~isempty(Channel2)
+            if any(strcmp(channel_list.Value, 'Channel 2'))
+                if any(strcmp(invert_list.Value, 'Channel 2'))
+                    Channel2{1} = [Channel2{1}, ':invertedNuclear'];
+                else
+                    Channel2{1} = [Channel2{1}, ':Nuclear'];
+                end
+            else
+                Channel2 = '';
+            end
+            
+        end
+        if ~isempty(Channel3)
+            if any(strcmp(channel_list.Value, 'Channel 3'))
+                if any(strcmp(invert_list.Value, 'Channel 3'))
+                    Channel3{1} = [Channel3{1}, ':invertedNuclear'];
+                else
+                    Channel3{1} = [Channel3{1}, ':Nuclear'];
+                end
+            else
+                Channel3 = '';
+            end
+        end
+        
+        Channels = {Channel1, Channel2, Channel3};
+        
     end
 
 end

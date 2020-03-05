@@ -116,8 +116,8 @@ for i = 1:numAttributes
     
 end
 
-disp(['features used: ', usedFeatures])
-disp(['features ignored: ', ignoredFeatures])
+% disp(['features used: ', usedFeatures])
+% disp(['features ignored: ', ignoredFeatures])
 
 [~, pLin] = predict(classifier,testMatrix);
 

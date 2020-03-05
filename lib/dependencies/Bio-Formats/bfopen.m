@@ -146,7 +146,7 @@ for s = 1:numSeries
         if mod(i, 72) == 1
             fprintf('\n    ');
         end
-        fprintf('.');
+%         fprintf('.');
         arr = bfGetPlane(r, i, varargin{:});
 
         % retrieve color map data

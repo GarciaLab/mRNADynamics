@@ -1,4 +1,4 @@
-function pMap = classifyImageWeka(im, training, varargin)
+function pMap = classifyImageWeka(im, trainingData, varargin)
 %classifyImage Converts image to probability map.
 %   pmap = classifyImage(im, training, varargin) Converts image to probability map.
 %
@@ -29,7 +29,7 @@ if ischar(training), tempPath = fileparts(training);
 else, tempPath = ''; end
 
 classifierPath = '';
-classifierObj = [];
+classifier= [];
 reSc = false;
 arffLoader = [];
 matlabLoader = true;
@@ -40,6 +40,8 @@ for i = 1:2:(numel(varargin)-1)
         eval([varargin{i} '=varargin{i+1};']);
     end
 end
+
+clear varargin;
 
 xDim=size(im, 2); yDim = size(im, 1);
 dim = length(size(im));
@@ -61,8 +63,6 @@ if ischar(training)
     arffLoader.setFile(javaObject('java.io.File',training)); %construct an arff file object
     trainingData= arffLoader.getDataSet;
     trainingData.setClassIndex(trainingData.numAttributes - 1);
-else
-    trainingData = training;
 end
 
 
@@ -73,9 +73,7 @@ if reSc
 end
 
 %% load or build classifier from training data
-if ~isempty(classifierObj)
-    classifier = classifierObj;
-elseif ~isempty(classifierPath)
+if isempty(classifier) && ~isempty(classifierPath)
     classifier = weka.core.SerializationHelper.read(classifierPath);
 else
     classifier = weka.classifiers.trees.RandomForest;
@@ -146,6 +144,7 @@ end
 if matlabLoader
     testData = mat2ascii2dataSet(testMatrix, tempPath, trainingData);
 end
+clear testMatrix; clear filteredIm; 
 
 compatible = testData.equalHeaders(trainingData); %check compatability between arff and data
 if ~compatible
@@ -185,10 +184,12 @@ end
 end
 
 function p = classifyInstance(ind, testData, classifier)
+
 k = ind - 1;
 inst = testData.instance(k);
 temp = classifier.distributionForInstance(inst);
 p = temp(1);
+
 end
 
 function testData = initializeEmptyDataSet(arffLoader, numInstances)
@@ -204,7 +205,8 @@ end
 
 function testData = mat2ascii2dataSet(mat, tempPath, trainingData)
 
-tempFile = [tempname(tempPath),'.data'];
+% tempFile = [tempname(tempPath),'.data'];
+tempFile = [tempPath,filesep, 'temp.data'];
 save(tempFile,var2str(mat),'-ascii');
 loader = javaObject("weka.core.converters.MatlabLoader");
 loader.setFile(javaObject('java.io.File',tempFile));

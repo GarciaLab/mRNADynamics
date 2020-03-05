@@ -11,6 +11,8 @@
 % [Options]: See below.
 %
 % OPTIONS
+%exportNuclearProjections 
+%exportMovieFiles
 % 'medianprojection': Uses a median projection in the nuclear channel rather
 %                  than the default maximum projection
 % 'middleprojection': Uses a max projection in the nuclear channel, but only

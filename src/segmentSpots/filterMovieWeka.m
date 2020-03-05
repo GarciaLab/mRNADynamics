@@ -110,7 +110,6 @@ save([trainingFolder, filesep, trainingName, '_', suffix '.model'], 'classifier'
 if parFrame
     
     %parallel version
-    startParallelPool(nWorkers, displayFigures, keepPool);
     movieMat = parallel.pool.Constant(movieMat);
     trainingData = parallel.pool.Constant(trainingData);
     classifier = parallel.pool.Constant(classifier);
