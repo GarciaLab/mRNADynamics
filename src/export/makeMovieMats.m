@@ -33,16 +33,23 @@ end
 [xSize, ySize, ~, ~, ~,...
     nFrames, nSlices, nDigits] = getFrameInfoParams(FrameInfo);
 
+[~,~,~,~, ~,...
+    ~, ~, ~,Channel1,Channel2,~,...
+    Channel3]...
+= readMovieDatabase(Prefix, varargin);
+Channels = {Channel1, Channel2, Channel3};
 
 movieMat = []; hisMat = []; maxMat = [];  medMat = []; midMat = [];
 
-% nCh = sum(~cellfun(@isempty, Channels)); %this method fails if your
+nChDatabase = sum(~cellfun(@isempty, Channels)); %this method fails if your
 % exported channels don't match your moviedatabase.
 
-nCh = 0;
+nChTifs = 0;
 for i = 1:3
-    nCh = nCh + ~isempty(dir([PreProcPath, filesep, Prefix,filesep,'*ch0',num2str(i),'*.tif']));
+    nChTifs = nChTifs + ~isempty(dir([PreProcPath, filesep, Prefix,filesep,'*ch0',num2str(i),'*.tif']));
 end
+
+nCh = max(nChTifs, nChDatabase);
 
 pth = [PreProcPath, filesep, Prefix, filesep,Prefix];
 

@@ -59,6 +59,12 @@ arffLoader.setFile(javaObject('java.io.File',trainingFile)); %construct an arff 
 trainingData= arffLoader.getDataSet;
 trainingData.setClassIndex(trainingData.numAttributes - 1);
 
+%remove the features matlab we can't (currently) generate in matlab
+dim = 3;
+[~,attributes,~] = weka2matlab(trainingData);
+[~, ~, keepIndices, ~] = validateAttributes(attributes, dim);
+trainingData = cleanArff(trainingData, keepIndices);
+
 classifier = javaObject('hr.irb.fastRandomForest.FastRandomForest');
 options = {'-I', num2str(nTrees), '-threads', num2str(nWorkers), '-K', '2', '-S', '-1650757608', '-depth', num2str(maxDepth)};
 

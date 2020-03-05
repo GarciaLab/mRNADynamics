@@ -25,6 +25,7 @@ ProjectionType = 'midsumprojection';
 Channels = {'', '', ''};
 load('ReferenceHist.mat', 'ReferenceHist');
 
+returnHisMat = nargout > 2;
 
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.
@@ -283,7 +284,7 @@ uiwait(fig);
             ProjectionType = [ProjectionType ':' num2str(max_custom) ':' num2str(min_custom)];
         end
         
-        if nargout > 2
+        if returnHisMat
             
             hisMat = zeros(ySize, xSize, sum(NFrames), 'uint16'); % f x y
 

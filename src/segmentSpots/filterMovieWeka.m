@@ -8,6 +8,8 @@ reSc = false;
 algo = 'FastRandomForest';
 maxDepth = 20;
 nTrees = 64;
+parFrame = false;
+parInstances = true;
 
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.
@@ -16,6 +18,7 @@ for i = 1:2:(numel(varargin)-1)
         eval([varargin{i} '=varargin{i+1};']);
     end
 end
+
 startParallelPool(nWorkers, displayFigures, keepPool);
 
 warning('off', 'MATLAB:Java:DuplicateClass');
@@ -50,15 +53,15 @@ ch = coats(1); %assumes the experiment is _not_ 2spot2color
 dataRoot = fileparts(PreProcPath);
 mlFolder = [dataRoot, filesep, 'training_data_and_classifiers', filesep];
 
-[trainingNameExt, trainingFolder] = uigetfile([mlFolder, filesep, '*.*']);
+[trainingNameExt, trainingFolder] = uigetfile([mlFolder, filesep, '*.arff']);
 trainingFile = [trainingFolder, filesep, trainingNameExt];
 [~ ,trainingName] = fileparts(trainingNameExt);
 
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 
-movieMat = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo); %ch z t y x
+movieMat = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo); %y x z t ch
 
-movieMat = double(movieMat);
+movieMat = double(squeeze(movieMat(:, :, :, :, ch)));
 
 %need to change this later. will be loaded from computerfolders
 ramDrive = 'R:\';
@@ -79,6 +82,12 @@ arffLoader.setFile(javaObject('java.io.File',trainingFile)); %construct an arff 
 trainingData= arffLoader.getDataSet;
 trainingData.setClassIndex(trainingData.numAttributes - 1);
 
+%remove the features matlab we can't (currently) generate in matlab
+dim = 3;
+[~,attributes,~] = weka2matlab(trainingData);
+[~, ~, keepIndices, ~] = validateAttributes(attributes, dim);
+trainingData = cleanArff(trainingData, keepIndices);
+
 classifier = javaObject('hr.irb.fastRandomForest.FastRandomForest');
 options = {'-I', num2str(nTrees), '-threads', num2str(nWorkers), '-K', '2', '-S', '-1650757608', '-depth', num2str(maxDepth)};
 
@@ -98,26 +107,44 @@ suffix = strrep(strrep(char(datetime(now,'ConvertFrom','datenum')), ' ', '_'), '
 save([trainingFolder, filesep, trainingName, '_', suffix '.model'], 'classifier')
 
 %%
-dT = [];
-wb = waitbar(0, 'Classifying frames');
-
-for f = 1:nFrames
+if parFrame
     
-    tic
-    mean_dT = movmean(dT, [3, 0]);
-    if f~=1, mean_dT = mean_dT(end); end
-    
-    if f~=1, tic, disp(['Making probability map for frame: ', num2str(f),...
-            '. Estimated ', num2str(mean_dT*(nFrames-f)), ' minutes remaining.'])
+    %parallel version
+    startParallelPool(nWorkers, displayFigures, keepPool);
+    movieMat = parallel.pool.Constant(movieMat);
+    trainingData = parallel.pool.Constant(trainingData);
+    classifier = parallel.pool.Constant(classifier);
+    parfor f = 1:nFrames
+        im = squeeze(movieMat.Value(:, :, :,f));
+        pMap(:, :, f) = classifyImageMatlab(im, trainingData.Value,...
+            'reSc', reSc, 'classifierObj', classifier.Value);
     end
-    im = squeeze(movieMat(:, :, :,f, ch));
-    pMap(:, :, :, f) = classifyImageWeka(im, trainingData,'tempPath', ramDrive, 'reSc', reSc, 'classifierObj', classifier);
-    try waitbar(f/nFrames, wb); end
-    dT(f)=toc/60;
     
-end
+else
+    
+    dT = [];
+    wb = waitbar(0, 'Classifying frames');
 
-try close(wb); end
+    for f = 1:nFrames
+
+        tic
+        mean_dT = movmean(dT, [3, 0]);
+        if f~=1, mean_dT = mean_dT(end); end
+
+        if f~=1, tic, disp(['Making probability map for frame: ', num2str(f),...
+                '. Estimated ', num2str(mean_dT*(nFrames-f)), ' minutes remaining.'])
+        end
+        im = squeeze(movieMat(:, :, :,f));
+        pMap(:, :, :, f) = classifyImageWeka(im, trainingData,'tempPath',...
+            ramDrive, 'reSc', reSc, 'classifierObj', classifier, 'par', parInstances);
+        try waitbar(f/nFrames, wb); end
+        dT(f)=toc/60;
+
+    end
+    
+    try close(wb); end
+
+end
 
 save([ProcPath, filesep, Prefix, '_', filesep, Prefix, '_probSpot.mat'], 'pMap', '-v7.3', '-nocompression');
       

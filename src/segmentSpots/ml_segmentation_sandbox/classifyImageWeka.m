@@ -33,6 +33,7 @@ classifierObj = [];
 reSc = false;
 arffLoader = [];
 matlabLoader = true;
+par = false;
 
 for i = 1:2:(numel(varargin)-1)
     if i ~= numel(varargin)
@@ -155,12 +156,19 @@ end
 nInstances = testData.numInstances;
 pLin = zeros(nInstances, 1);
 
-% testData_constant = parallel.pool.Constant(testData);
-% classifier_constant = parallel.pool.Constant(classifier);
-
-for i = 1:nInstances
+if par
     
-    pLin(i) = classifyInstance(i, testData, classifier);
+    testData = parallel.pool.Constant(testData);
+    classifier = parallel.pool.Constant(classifier);
+    parfor i = 1:nInstances
+        pLin(i) = classifyInstance(i, testData.Value, classifier.Value);
+    end
+    
+else
+    
+    for i = 1:nInstances
+        pLin(i) = classifyInstance(i, testData, classifier);
+    end
     
 end
 
