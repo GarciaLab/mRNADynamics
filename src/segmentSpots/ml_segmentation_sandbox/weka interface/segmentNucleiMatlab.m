@@ -14,7 +14,7 @@ hisMat = [];
 classifier = [];
 balance = true; %resample to balance classes
 cleanAttributes = true;
-
+frameRange = [];
 
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.
@@ -46,8 +46,11 @@ load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 
 if isempty(hisMat)
 %         [~,hisMat] = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, 'loadMovie', false);
-    load([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'], 'hisMat');
-    hisMat = double(hisMat);
+%     load([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'], 'hisMat');
+
+    hisFile = [PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'];
+    hisMat = double(loadHisMat(hisFile, frameRange));
+    
 end
 
 nFrames = size(hisMat, 3);
@@ -62,29 +65,12 @@ trainingData = loadArff(trainingFile, 'balance', balance);
 
 
 if isempty(classifier)
-    
-    if cleanAttributes
-        [~,attributes,~] = weka2matlab(trainingData);
-        %remove the features matlab we can't (currently) generate in matlab
-        dim = 2;
-        [~, ~, keepIndices, ~] = validateAttributes(attributes, dim);
-        trainingData = cleanArff(trainingData, keepIndices);
-    end
-
-    [trainingMat,~,classIndex] = weka2matlab(trainingData);
-    numAttributes = classIndex - 1;
-    trainingResponse = trainingMat(:, classIndex);
-    trainingMat = trainingMat(:, 1:numAttributes);
-    
-    rng(1650757608);
-    paroptions = statset('UseParallel',nWorkers>1);
-    classifier = TreeBagger(64,trainingMat,trainingResponse,...
-        'OOBPredictorImportance','Off', 'Method','classification',...
-        'NumPredictorsToSample', NumPredictorsToSample,...
-        'Reproducible', true, 'MinLeafSize', 1, 'Surrogate','On', 'Options',paroptions);
+  
+    [classifier, trainingData] = loadClassifier(trainingData, 'cleanAttributes', cleanAttributes,...
+        'NumPredictorsToSample', NumPredictorsToSample, 'nTrees', nTrees);
     
     suffix = strrep(strrep(char(datetime(now,'ConvertFrom','datenum')), ' ', '_'), ':', '-');
-    save([trainingFolder, filesep, trainingName, '_', suffix '_classifier.mat'], 'classifier')
+    save([trainingFolder, filesep, trainingName, '_', suffix '_classifier.mat'], 'classifier', '-v7.3', '-nocompression')
     
 end
 
@@ -172,4 +158,4 @@ else
 end
 
 
-end
+enda 

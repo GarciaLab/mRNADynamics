@@ -28,8 +28,7 @@ displayFigures = false;
 if ischar(training), tempPath = fileparts(training);
 else, tempPath = ''; end
 
-classifierPath = '';
-classifierObj = [];
+classifier = [];
 reSc = false;
 arffLoader = [];
 
@@ -68,9 +67,9 @@ if reSc
 end
 
 %% load or build classifier from training data
-if ~isempty(classifierObj)
-    classifier = classifierObj;
-elseif ~isempty(classifierPath)
+if ischar(classifier)
+    load(classifier);
+elseif isempty(classifier)
     classifier = uiopen;
 else
     [data,attributes,classIndex] = weka2matlab(trainingData);

@@ -1,4 +1,12 @@
 function [im, successFlag] = filterImage(im, filterType, sigmas, varargin)
+%
+%
+%
+% supportedFilters = {'Gaussian_blur', 'Identity', 'Anisotropic_diffusion', 'bilateral',...
+%     'Edges', 'Sobel', 'Difference_of_Gaussian', 'Laplacian', 'Mean', 'Structure_smallest', 'Structure_largest',...
+%     'Median',  'Maximum', 'Minimum', 'Std', 'Variance', 'Hessian_smallest', 'Hessian_largest'};
+%
+
 
 zStep = 400; %nm/voxel
 rad = 3; %rule of thumb is kernel size is 3x the Gaussian sigma
@@ -112,7 +120,7 @@ switch filterType
     case 'Mean'
         if dim == 2
             h = fspecial('average', s1);
-            im = imfilter(im, h);
+            im = imfilter(im, h,  'same', padding);
         elseif dim == 3
             h = fspecial3('average',filterSizeXY);
             im = imfilter(im, h, 'symmetric', 'same');
@@ -178,9 +186,9 @@ switch filterType
         if dim==2
             %             f = imgaussfilt(im,s1);
             %             f = ordfilt2(f,ceil(filterSizeXY*filterSizeXY/2),ones(filterSizeXY,filterSizeXY));
-            im = medfilt2(im, [filterSizeXY, filterSizeXY]);
+            im = medfilt2(im, [filterSizeXY, filterSizeXY], padding);
         elseif dim==3
-            im = medfilt3(im, [filterSizeXY, filterSizeXY, filterSizeZ]);
+            im = medfilt3(im, [filterSizeXY, filterSizeXY, filterSizeZ], padding);
         end
         if gpu
             im = gpuArray(im);
@@ -217,7 +225,18 @@ switch filterType
                 im = gpuArray(im);
             end
         end
-        
+    case {'Entropy'}
+        if dim==2
+            im = entropyfilt(im);
+        elseif dim==3
+           successFlag = false;
+        end
+      case {'Range'}
+        if dim==2
+            im = rangefilt(im);
+        elseif dim==3
+            successFlag = false;
+        end
     case {'Std', 'Variance'}
         if dim==2
             im = imgaussfilt(im,s1);
