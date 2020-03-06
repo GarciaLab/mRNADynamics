@@ -516,10 +516,8 @@ while (cc ~= 'x')
         (cptState.CurrentParticleIndex), 'IntegralZ');
     
     % PLOT SNIPPET
-    
     [CurrentSnippet, snipImageHandle] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
         cptState, ExperimentType, snippet_size, xSize, ySize, SnippetEdge, CurrentSnippet, snipImageHandle, pixelSize);
-    
     
     % PLOTS TRACE OF CURRENT PARTICLE
     if ~fish

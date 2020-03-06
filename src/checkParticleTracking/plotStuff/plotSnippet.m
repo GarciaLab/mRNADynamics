@@ -1,15 +1,6 @@
 function [CurrentSnippet, snipImageHandle] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
     cptState, ExperimentType, snippet_size, xSize, ... 
     ySize, SnippetEdge, CurrentSnippet, snipImageHandle, pixelSize)
-%PLOTSNIPPET Summary of this function goes here
-%   Detailed explanation goes here
-
-plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
-        cptState.CurrentZIndex, cptState.ImageMat, cptState.Spots, cptState.CurrentChannel, cptState.CurrentFrame, ...
-        cptState.CurrentParticleIndex, ExperimentType, snippet_size, xSize, ...
-        ySize, SnippetEdge, cptState.FrameInfo, CurrentSnippet, snipImageHandle, pixelSize);
-
-% Spots = castStructNumbersToDoubles(Spots);
 
 scale = 10; %magnification of snippet
 
@@ -19,16 +10,16 @@ scale = 10; %magnification of snippet
         xSpot = cptState.getCurrentXDoG();
         ySpot = cptState.getCurrentYDoG();
 
-        if isfield(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex), 'snippet_size') && ~isempty(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).snippet_size)
+        if isfield(cptState.getCurrentParticleFit(), 'snippet_size') && ~isempty(cptState.getCurrentParticleFit().snippet_size)
             
-            snippet_size = double(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).snippet_size);
-            %(MT, 2018-02-12): Hacky fix to get this to run with lattice data -
-            %FIX LATER
+            snippet_size = double(cptState.getCurrentParticleFit().snippet_size);
+            % (MT, 2018-02-12): Hacky fix to get this to run with lattice data -
+            % FIX LATER
         elseif strcmpi(ExperimentType,'lattice')
             snippet_size = 13; %pixels
         end
         snippet_size = snippet_size(1);
-        CurrentSnippet = double(FullSlice(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
+        CurrentSnippet = double(cptState.ImageMat(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
             max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size)));
         imSnippet = mat2gray(CurrentSnippet);
         SnippetEdge=size(CurrentSnippet,1);
@@ -52,7 +43,7 @@ scale = 10; %magnification of snippet
         scaleBarLength = 6; 
         scaleBarX = 29; scaleBarY = 30;
         plot(snippetFigAxes,[scaleBarX; scaleBarX+scaleBarLength], [scaleBarY;scaleBarY], '-w','LineWidth', 3) %scale bar
-        xyRes = FrameInfo(1).PixelSize;
+        xyRes = cptState.FrameInfo(1).PixelSize;
         scaleBarTxt = [num2str(xyRes*(scaleBarLength+1),3), ' \mum'];
         text(snippetFigAxes,scaleBarX-5,scaleBarY+5, scaleBarTxt, 'Color', 'white', 'FontSize', 5)
 

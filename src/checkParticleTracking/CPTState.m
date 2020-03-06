@@ -115,6 +115,11 @@ classdef CPTState < handle
             currentSpots = this.Spots{this.CurrentChannel};
         end
 
+        function currentFrameSpots = getCurrentFrameSpots(this)
+            currentSpots = getCurrentChannelSpots();
+            currentFrameSpots = currentSpots(this.CurrentFrame);
+        end
+
         function currentParticles = getCurrentChannelParticles(this)
             currentParticles = this.Particles{this.CurrentChannel};
         end
@@ -126,7 +131,8 @@ classdef CPTState < handle
 
         function currentParticleFit = getCurrentParticleFit(this)
             currentSpots = this.getCurrentChannelSpots();
-            currentParticleFit = currentSpots(this.CurrentFrame).Fits(this.CurrentParticleIndex);
+            currentFrameSpots = this.getCurrentFrameSpots();
+            currentParticleFit = currentFrameSpots.Fits(this.CurrentParticleIndex);
         end
 
         function currentXDoG = getCurrentXDoG(this)
