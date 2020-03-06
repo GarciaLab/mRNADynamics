@@ -62,9 +62,8 @@ scale = 10; %magnification of snippet
         %the overlay figure, which indicates the x-y center of the spot
         %within the brightest z-slice.
 
-        %JP says: re-check operator precedence here
-        SnippetX = (SnippetEdge - 1)/2+1 - cptState.getCurrentXDoG() - cptState.getCurrentXFit();
-        SnippetY = (SnippetEdge - 1)/2+1 - cptState.getCurrentYDoG() - cptState.getCurrentYFit();
+        SnippetX = (SnippetEdge - 1)/2 + 1 - (cptState.getCurrentXDoG() - cptState.getCurrentXFit());
+        SnippetY = (SnippetEdge - 1)/2 + 1 - (cptState.getCurrentYDoG() - cptState.getCurrentYFit());
         hold(snippetFigAxes,'off')
     else
         if isempty(snipImageHandle)
