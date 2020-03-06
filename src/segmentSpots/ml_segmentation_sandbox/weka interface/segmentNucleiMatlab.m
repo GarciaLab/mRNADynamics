@@ -45,8 +45,6 @@ trainingFile = [trainingFolder, filesep, trainingNameExt];
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 
 if isempty(hisMat)
-%         [~,hisMat] = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, 'loadMovie', false);
-%     load([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'], 'hisMat');
 
     hisFile = [PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'];
     hisMat = double(loadHisMat(hisFile, frameRange));

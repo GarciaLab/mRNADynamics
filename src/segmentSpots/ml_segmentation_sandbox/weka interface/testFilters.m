@@ -7,7 +7,7 @@ supportedFilters = {'Gaussian_blur', 'Identity', 'Anisotropic_diffusion', 'bilat
 s = 16;
 % s = {16, 32};
     
-fim = filterImage(im, supportedFilters{19}, s);
+fim = filterImage(im, supportedFilters{8}, s);
 
 figure(1); imshowpair(im, fim, 'montage');
 
