@@ -116,7 +116,7 @@ classdef CPTState < handle
         end
 
         function currentFrameSpots = getCurrentFrameSpots(this)
-            currentSpots = getCurrentChannelSpots();
+            currentSpots = this.getCurrentChannelSpots();
             currentFrameSpots = currentSpots(this.CurrentFrame);
         end
 
@@ -130,7 +130,6 @@ classdef CPTState < handle
         end
 
         function currentParticleFit = getCurrentParticleFit(this)
-            currentSpots = this.getCurrentChannelSpots();
             currentFrameSpots = this.getCurrentFrameSpots();
             currentParticleFit = currentFrameSpots.Fits(this.CurrentParticleIndex);
         end
