@@ -1,42 +1,24 @@
-function [Frame,AmpIntegral,AmpIntegral3,AmpGaussian,Offset,...
-    ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3, backGround3,...
-    AmpIntegralGauss3D, ErrorIntegralGauss3D, AmpDog, AmpDogMax, ampdog3, ampdog3Max] =...
-    ...
-    GetParticleTrace(...
-    ...
-    CurrentParticle,Particles,Spots, varargin)
+function [Frame, AmpGaussian,Offset, ErrorGauss,optFit,FitType,...
+    AmpDog, AmpDogMax, ampdog3, ampdog3Max] =...
+    GetParticleTrace(CurrentParticle, Particles, Spots, plotTraceSettings, noSpline)
+% This function uses the total intensity mask to calculate the particles
+% intensity and subtracts the background obtained from the fit.
 
-%function [Frame,AmpIntegral,AmpIntegral3,AmpIntegral5,AmpGaussian,Offset,...
-%    ErrorIntegral,ErrorGauss,optFit,FitType,ErrorIntegral3, ErrorIntegral5]=...
-%    GetParticleTrace(CurrentParticle,Particles,Spots)
-%
-%This function uses the total intensity mask to calculate the particles
-%intensity and subtracts the background obtained from the fit.
-%
+% First, get the different intensity values corresponding to this particle.
 
+plotTraceSettings.ErrorIntegral = NaN;
+plotTraceSettings.ErrorIntegral3 = NaN;
+plotTraceSettings.backGround3 = NaN;
+plotTraceSettings.AmpIntegralGauss3D = NaN;
+plotTraceSettings.ErrorIntegralGauss3D = NaN;
 
+doSpline = ~noSpline;
 
-%
-%First, get the different intensity values corresponding to this particle.
-
-ErrorIntegral = NaN;
-ErrorIntegral3 = NaN;
-backGround3 = NaN;
-AmpIntegralGauss3D = NaN;
-ErrorIntegralGauss3D = NaN;
 ampdog3 = NaN;
 ampdog3Max = NaN;
-doSpline = true;
 optFit = [];
 FitType = [];
-ErrorGauss=[];
-
-
-for i = 1:length(varargin)
-    if strcmpi('noSpline', varargin{i})
-        doSpline = false;
-    end
-end
+ErrorGauss = [];
 
 defaultArea = 109; %109 pixels is the default area when the pixels are assumed to be 212nm x 212 nm AR 9/3/18
 
@@ -55,7 +37,7 @@ for i=1:length(Particles(CurrentParticle).Frame)
     %Intensity obtained by integrating over the area. This has
     %magnitude already has the offset (obtained from the Gaussian fit)
     %subtracted.
-    AmpIntegral(i) = double(spot.FixedAreaIntensity(zIndex));
+    plotTraceSettings.AmpIntegral(i) = double(spot.FixedAreaIntensity(zIndex));
     %Intensity obtained by integrating over the Gaussian fit. This
     %already has subtracted the offset.
     AmpGaussian(i)= double(spot.GaussianIntensity(zIndex));
@@ -64,25 +46,24 @@ for i=1:length(Particles(CurrentParticle).Frame)
     %Check to see it multi-slice integration was performed for this set
     fields = fieldnames(spot);
     try
-        AmpIntegral3(i) = double(spot.FixedAreaIntensity3);
+        plotTraceSettings.AmpIntegral3(i) = double(spot.FixedAreaIntensity3);
     catch
-        AmpIntegral3(i)= NaN;
+        plotTraceSettings.AmpIntegral3(i)= NaN;
     end
     try
-        AmpIntegralGauss3D(i)=...
+        plotTraceSettings.AmpIntegralGauss3D(i)=...
             double(spot.gauss3DIntensityRaw);
     catch
-        AmpIntegralGauss3D(i)= NaN;
+        plotTraceSettings.AmpIntegralGauss3D(i)= NaN;
     end
     if isfield(spot, 'gauss3DIntensitySE')
         try
-            ErrorIntegralGauss3D(i) = double(spot.gauss3DIntensitySE);
+            plotTraceSettings.ErrorIntegralGauss3D(i) = double(spot.gauss3DIntensitySE);
         catch
-            ErrorIntegralGauss3D(i) = NaN;
+            plotTraceSettings.ErrorIntegralGauss3D(i) = NaN;
         end
     else
-        ErrorIntegralGauss3D(i) = NaN;
-%         warning('gauss3d intensities calculated but not their errors. Re-run fit3dgaussianstoallspots if this is desired.');
+        plotTraceSettings.ErrorIntegralGauss3D(i) = NaN;
     end
   
     try
@@ -125,10 +106,10 @@ if doSpline
             %Calculate the error in the offset
             OffsetError=std(Offset-OffsetFit);
         catch
-            ErrorGauss=[];
-            ErrorIntegral=[];
-            ErrorIntegral3=[];
-            optFit=[];
+            ErrorGauss = [];
+            plotTraceSettings.ErrorIntegral = [];
+            plotTraceSettings.ErrorIntegral3 = [];
+            optFit = [];
         end
 
 
@@ -175,14 +156,14 @@ if exist('OffsetError', 'var')
     %constant for all time points.
     if isfield(spot, 'intArea') && ~isempty(spot.intArea)
         intArea = double(spot.intArea(1));
-        ErrorIntegral=OffsetError*sqrt(2)*intArea;
-        if ~isnan(AmpIntegral3(i))
-            backGround3 = 3*Offset*intArea;
-            ErrorIntegral3=OffsetError*sqrt(2)*3*intArea;%since this integration is actually done as a mean over the available slices, multiplying by 5 is definitely wrong. this error should be taken with
+        plotTraceSettings.ErrorIntegral = OffsetError*sqrt(2)*intArea;
+        if ~isnan(plotTraceSettings.AmpIntegral3(i))
+            plotTraceSettings.backGround3 = 3*Offset*intArea;
+            plotTraceSettings.ErrorIntegral3 = OffsetError*sqrt(2)*3*intArea; % since this integration is actually done as a mean over the available slices, multiplying by 5 is definitely wrong. this error should be taken with
             %a grain of salt. AR 9/3/18
         end
     else
-        ErrorIntegral=OffsetError*sqrt(2)*defaultArea;
+        plotTraceSettings.ErrorIntegral = OffsetError*sqrt(2)*defaultArea;
     end
     
 end

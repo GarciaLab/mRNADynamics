@@ -115,13 +115,43 @@ classdef CPTState < handle
             currentSpots = this.Spots{this.CurrentChannel};
         end
 
+        function currentFrameSpots = getCurrentFrameSpots(this)
+            currentSpots = this.getCurrentChannelSpots();
+            currentFrameSpots = currentSpots(this.CurrentFrame);
+        end
+
         function currentParticles = getCurrentChannelParticles(this)
             currentParticles = this.Particles{this.CurrentChannel};
         end
 
+        function currentParticle = getCurrentParticle(this)
+            currentParticles = this.getCurrentChannelParticles();
+            currentParticle = currentParticles(this.CurrentParticle);
+        end
+
         function currentParticleFit = getCurrentParticleFit(this)
-            currentSpots = this.getCurrentChannelSpots();
-            currentParticleFit = currentSpots(this.CurrentFrame).Fits(this.CurrentParticleIndex);
+            currentFrameSpots = this.getCurrentFrameSpots();
+            currentParticleFit = currentFrameSpots.Fits(this.CurrentParticleIndex);
+        end
+
+        function currentXDoG = getCurrentXDoG(this)
+            currentFit = this.getCurrentParticleFit();
+            currentXDoG = double(currentFit.xDoG(this.CurrentZIndex));
+        end
+
+        function currentYDoG = getCurrentYDoG(this)
+            currentFit = this.getCurrentParticleFit();
+            currentYDoG = double(currentFit.yDoG(this.CurrentZIndex));
+        end
+
+        function currentXFit = getCurrentXFit(this)
+            currentFit = this.getCurrentParticleFit();
+            currentXFit = double(currentFit.xFit(this.CurrentZIndex));
+        end
+
+        function currentYFit = getCurrentYFit(this)
+            currentFit = this.getCurrentParticleFit();
+            currentYFit = double(currentFit.yFit(this.CurrentZIndex));
         end
     end
 end

@@ -37,13 +37,13 @@ for seriesIndex = 1:NSeries
                 HisSlices = generateHisSlices(LIFImages, NSlices, NChannels, ...
                     channelIndex, framesIndex, seriesIndex);
                 median_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
-                    'medianprojection', NSlices, HisSlices);
+                    'medianprojection', NSlices(seriesIndex), HisSlices);
                 max_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
-                    'maxprojection', NSlices, HisSlices);
+                    'maxprojection', NSlices(seriesIndex), HisSlices);
                 middle_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
-                    'middleprojection', NSlices, HisSlices);
+                    'middleprojection', NSlices(seriesIndex), HisSlices);
                 custom_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
-                    'customprojection', NSlices, HisSlices, max_custom, min_custom);
+                    'customprojection', NSlices(seriesIndex), HisSlices, max_custom, min_custom);
             end       
         end
         idx = idx + 1;
