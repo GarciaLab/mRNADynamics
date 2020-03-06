@@ -4,7 +4,8 @@ function [im, successFlag] = filterImage(im, filterType, sigmas, varargin)
 %
 % supportedFilters = {'Gaussian_blur', 'Identity', 'Anisotropic_diffusion', 'bilateral',...
 %     'Edges', 'Sobel', 'Difference_of_Gaussian', 'Laplacian', 'Mean', 'Structure_smallest', 'Structure_largest',...
-%     'Median',  'Maximum', 'Minimum', 'Std', 'Variance', 'Hessian_smallest', 'Hessian_largest', 'Entropy', 'Range', 'imsegkmeans'};
+%     'Median',  'Maximum', 'Minimum', 'Std', 'Variance',...
+%       'Hessian_smallest', 'Hessian_largest', 'Entropy', 'Range', 'imsegkmeans'};
 %
 
 
@@ -89,7 +90,7 @@ switch filterType
     case 'imsegkmeans'
          if dim==2
              k = 2;
-             im = imsegkmeans(imgaussfilt(im,s1), k);
+             im = imcomplement(imsegkmeans(imgaussfilt(single(im),s1), k));
          else
              successFlag = false;
          end
