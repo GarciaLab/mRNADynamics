@@ -2,16 +2,10 @@ function [fit, model] = plotDorsalActivity(x, y,activity, nc, DataType, ymean, s
 
     xx = repmat(x, size(y,2), 1)';
 
-    opts = {};
-    if strcmpi(activity, 'fraction active')
-        opts = [opts, 'fraction'];
-    end
-    if ~isempty(varargin)
-        opts = [opts, varargin{1}, varargin{2}];
-    end
-    
+    fitOpts = varargin;
+       
     %p(1)=rate coefficient, p(2)=kd, p(3)=hill coefficient p(4) y offset
-    [fit, model] = fitDorsalActivity(xx, y, DataType, opts{:});
+    [fit, model] = fitDorsalActivity(xx, y, DataType, fitOpts{:});
     idx = ~any(isnan(ymean),2);
     x4 = xx(idx);
     xxx = min(x(:)):1:max(x4(end)*1.1,fit(2)*2.5);
