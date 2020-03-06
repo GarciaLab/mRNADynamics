@@ -1,4 +1,4 @@
-function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw, np_flag] = ...
+function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw, np_flag, int_dims] = ...
                                                     fit3DGaussianRho(snip3D,PixelDims,varargin)
     % INPUT ARGUMENTS:
     % snip3D: 3D array containing spot to fit. Should contain only one spot
@@ -22,8 +22,9 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw,
     % take a guess at sigma
     sigma_guess = 200/PixelDims(1);
     % set dimensions of integration volume for raw estimate
-    xy_sigma = 300 / PixelDims(1);
-    z_sigma = 750 / PixelDims(2);
+    xy_sigma = 230 / PixelDims(1);
+    z_sigma = 620 / PixelDims(2);
+    int_dims = 1.96*[xy_sigma z_sigma];
     % define initial parameters
     xDim = size(snip3D,1);
     yDim = size(snip3D,2);
@@ -95,10 +96,11 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw,
 %         GaussIntegral = nanmean(gauss_int_vec);
     end                           
     bkg_inf = GaussFit(11) + GaussFit(12)*x_ref_vol + GaussFit(13)*y_ref_vol + GaussFit(14)*z_ref_vol ;
+    
     % estimate raw fluorescence    
     dx = abs(x_ref_vol - GaussFit(2));
     dy = abs(y_ref_vol - GaussFit(3));
     dz = abs(z_ref_vol - GaussFit(4));
-    wt_array = double((dx <= 1.96*xy_sigma).*(dy<=1.96*xy_sigma).*(dz<=1.96*z_sigma)); 
-    GaussIntegralRaw = sum(wt_array(:).*double(snip3D(:))) - sum(bkg_inf(:).*wt_array(:));
+    wt_array = double((dx <= int_dims(1)).*(dy<=int_dims(1)).*(dz<=int_dims(2))); 
+    GaussIntegralRaw = (sum(wt_array(:).*double(snip3D(:))) - sum(bkg_inf(:).*wt_array(:)));
 end

@@ -137,7 +137,9 @@ for channelIndex = 1:nCh
     tic;
     
     [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, spotChannels);
-
+    if doFF
+        error('wtff')
+    end
     [tempSpots, dogs] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, initialFrame, numFrames, zSize, ...
         PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(channelIndex), neighborhood, ...
         snippet_size, pixelSize, microscope, Weka,...

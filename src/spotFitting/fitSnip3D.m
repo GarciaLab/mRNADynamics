@@ -2,17 +2,6 @@ function SpotsFr = fitSnip3D(SpotsFr, spotChannel, spot, frame, Prefix,...
     PreProcPath, FrameInfo, nSpots)
 
 %%
-% check for pre-existing 3D fit info
-% prev_flag = 0;
-
-% if ~isempty(SpotsFr(i).Fits)
-%     fnames = fieldnames(SpotsFr(i).Fits);
-%     prev_indices = contains(fnames,'3D');
-%     SpotsFr(i).Fits = rmfield(SpotsFr(i).Fits,fnames(prev_indices));
-%     if any(prev_indices) && prev_flag == 1
-%         warning('previous 3D fit info detected. Removing...')
-%     end
-% end
 
 
 % extract basic fit parameters
@@ -46,19 +35,22 @@ snip3D = NaN(numel(yRange),numel(xRange),numel(zBot:zTop));
 
 %%
 iter = 1;
-for z = zRange
-    
+for z = zRange    
     FullSlice=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(frame,3)...
         ,'_z' iIndex(z,2) '_ch' iIndex(spotChannel,2) '.tif']);
     snip3D(:,:,iter) = double(FullSlice(yRange,xRange)); 
     iter = iter + 1;
-
 end
 
 %%
 xm = single(min(xRange));
 ym = single(min(yRange));
 zm = single(min(zRange));
+% disable two-spot fits for now
+if nSpots == 2
+    warning('two spot fitting not currently supported. Performing single spot fit')
+    nSpots = 1;
+end
 if nSpots == 2
     [GaussParams1, GaussParams2, offset, GaussIntVec, centroid_mean, GaussSE1, GaussSE2, offsetSE, GaussIntSEVec, centroid_se] = ...
         fit3DGaussian2spot(snip3D,pixelSize);
@@ -90,16 +82,20 @@ if nSpots == 2
     SpotsFr.Fits(spot).Offset3DSE = offsetSE;   
     SpotsFr.Fits(spot).GaussPos3D = centroid_mean;
     SpotsFr.Fits(spot).GaussPos3DSE = centroid_se;
-            
+
+% single spot fit    
 elseif nSpots == 1      
-    [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw]  = ...
-        fit3DGaussian(snip3D,[pixelSize zStep]);
+    [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw,np_flag,int_dims]  = ...
+        fit3DGaussianRho(snip3D,[pixelSize zStep]);  
+                                                
     SpotsFr.Fits(spot).SpotFits3D = single(GaussFit);  
     SpotsFr.Fits(spot).SpotFits3DSE = single(FitDeltas);  
     x1 = single(GaussFit(3) + xm - 1);
     y1 = single(GaussFit(2) + ym - 1);
     z1 = single(GaussFit(4) + zm - 1);
     SpotsFr.Fits(spot).GaussPos3D = single([x1,y1,z1]);
+    SpotsFr.Fits(spot).npFlag = np_flag;
+    SpotsFr.Fits(spot).int_dims = int_dims;
     SpotsFr.Fits(spot).GaussPos3DSE = single(FitDeltas(2:4));
     SpotsFr.Fits(spot).gauss3DIntensity = single(GaussIntegral);
     SpotsFr.Fits(spot).gauss3DIntensityRaw = single(GaussIntegralRaw);

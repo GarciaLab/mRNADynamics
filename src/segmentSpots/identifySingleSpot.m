@@ -130,8 +130,7 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
             widthGuess = 200 / pixelSize; %nm
             offsetGuess = median(snippet(:)); %intensity
         end
-        
-        
+          
         [fits, relative_errors, ~, confidence_intervals, gaussianIntensity, gaussian, mesh] =  ...
             fitSingleGaussian(snippet, neighborhood_Size, maxThreshold, ...
             widthGuess, offsetGuess, show_status, graphicsHandles);
