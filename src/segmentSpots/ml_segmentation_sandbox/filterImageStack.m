@@ -1,8 +1,8 @@
 % Function to apply selected filters to specified frame of a time series
 function featureTable = filterImageStack(Prefix,frame,sigmaVec,featureCell,varargin)
 
-Training = false;
-movieMatCh = [];
+trainingFlag = false;
+featureTable = [];
 
 [~,~,DropboxFolder,~, PreProcPath,...
     ~, Prefix, ~,~,~,~,...
@@ -58,7 +58,7 @@ for i = 1:numel(featureCell)
         end
         
         featureName = [feature '_s' num2str(sigmaVec(j))];
-        if Training
+        if trainingFlag
             % initialize field if it's not already present
             if ~ismember(featureName,featureTable.Properties.VariableNames)
                 featureTable.(featureName) = NaN(size(featureTable,1),1);
