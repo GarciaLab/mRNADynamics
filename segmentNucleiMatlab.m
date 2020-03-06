@@ -49,7 +49,7 @@ if isempty(hisMat)
 %     load([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'], 'hisMat');
 
     hisFile = [PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'];
-    hisMat = double(loadHisMat(hisFile, frameRange));
+    hisMat = double(loadHisMat(hisFile, 'frameRange', frameRange));
     
 end
 
@@ -103,7 +103,7 @@ else
                 '. Estimated ', num2str(mean_dT*(nFrames-f)), ' minutes remaining.'])
         end
         im = squeeze(hisMat(:, :, f));
-        pMap(:, :, f) = classifyImageMatlab(im, trainingData, 'reSc', reSc, 'classifierObj', classifier);
+        pMap(:, :, f) = classifyImageMatlab(im, trainingData, 'reSc', reSc, 'classifier', classifier);
         try waitbar(f/nFrames, wb); end
         dT(f)=toc/60;
     end

@@ -68,7 +68,7 @@ end
 
 %% load or build classifier from training data
 if ischar(classifier)
-    load(classifier);
+    load(classifier, 'classifier');
 elseif isempty(classifier)
     classifier = uiopen;
 else
@@ -79,7 +79,7 @@ else
     
     classifier = TreeBagger(64,data,trainingResponse,'OOBPredictorImportance','Off', 'Method','classification');
     
-    clear data; clear trainingResponse; clear trainingData; clear arffLoader;
+    clear data; clear trainingResponse; clear arffLoader;
 end
 
 %% generate test data by filtering the image

@@ -4,7 +4,7 @@ function [im, successFlag] = filterImage(im, filterType, sigmas, varargin)
 %
 % supportedFilters = {'Gaussian_blur', 'Identity', 'Anisotropic_diffusion', 'bilateral',...
 %     'Edges', 'Sobel', 'Difference_of_Gaussian', 'Laplacian', 'Mean', 'Structure_smallest', 'Structure_largest',...
-%     'Median',  'Maximum', 'Minimum', 'Std', 'Variance', 'Hessian_smallest', 'Hessian_largest'};
+%     'Median',  'Maximum', 'Minimum', 'Std', 'Variance', 'Hessian_smallest', 'Hessian_largest', 'Entropy', 'Range'};
 %
 
 
@@ -227,13 +227,13 @@ switch filterType
         end
     case {'Entropy'}
         if dim==2
-            im = entropyfilt(im);
+            im = entropyfilt(imgaussfilt(im,s1));
         elseif dim==3
            successFlag = false;
         end
       case {'Range'}
         if dim==2
-            im = rangefilt(im);
+            im = rangefilt(imgaussfilt(im,s1));
         elseif dim==3
             successFlag = false;
         end
