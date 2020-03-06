@@ -1,10 +1,12 @@
 % Function to apply selected filters to specified frame of a time series
 function featureTable = filterImageStack(Prefix,frame,sigmaVec,featureCell,varargin)
-trainingFlag = 0;
 
-[SourcePath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
-    Folder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder,...
-    Channel3, spotChannels] = readMovieDatabase(Prefix);
+Training = false;
+movieMatCh = [];
+
+[~,~,DropboxFolder,~, PreProcPath,...
+    ~, Prefix, ~,~,~,~,...
+    ~, spotChannels] = readMovieDatabase(Prefix);
 
 if length(spotChannels) > 1
     error('nope. talk to nick');
@@ -20,14 +22,11 @@ pixVol = xDim*yDim*zDim;
 
 numType = 'double';
 
-for i = 1:numel(varargin)
-    if strcmpi(varargin{i},'Training')
-        trainingFlag = 1;
-        featureTable = varargin{i+1};
-    elseif strcmpi(varargin{i},'single')
-        numType = 'single';
-    elseif strcmpi(varargin{i}, 'double')
-        numType = 'double';
+%options must be specified as name, value pairs. unpredictable errors will
+%occur, otherwise.
+for i = 1:2:(numel(varargin)-1)
+    if i ~= numel(varargin)
+        eval([varargin{i} '=varargin{i+1};']);
     end
 end
 
@@ -35,12 +34,16 @@ gp = gpuDevice;
 if gp.AvailableMemory < 1E9
     gpuDevice(1);
 end
+
 % load stack
 raw_stack = zeros(yDim,xDim,zDim, numType,'gpuArray');
-
-for z = 1:zDim
-    fileName = [Prefix '_' sprintf('%03d',frame) '_z' sprintf('%02d',z)  '_ch' sprintf('%02d',spotChannels) '.tif'];
-    raw_stack(:,:,z) = imread([PreProcPath '/' Prefix '/' fileName]);
+if ~isempty(movieMatCh)
+    raw_stack = movieMatCh(:, :, :, frame);
+else
+    for z = 1:zDim
+        fileName = [Prefix '_' sprintf('%03d',frame) '_z' sprintf('%02d',z)  '_ch' sprintf('%02d',spotChannels) '.tif'];
+        raw_stack(:,:,z) = imread([PreProcPath '/' Prefix '/' fileName]);
+    end
 end
 
 % apply filters
@@ -55,7 +58,7 @@ for i = 1:numel(featureCell)
         end
         
         featureName = [feature '_s' num2str(sigmaVec(j))];
-        if trainingFlag
+        if Training
             % initialize field if it's not already present
             if ~ismember(featureName,featureTable.Properties.VariableNames)
                 featureTable.(featureName) = NaN(size(featureTable,1),1);

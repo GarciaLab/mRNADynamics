@@ -1,4 +1,4 @@
-function ggiantIm = makeGiantImage(imIn, format, padSize,firstFrame, lastFrame, Prefix, channel, varargin)
+function ggiantIm = makeGiantImage(imFile, format, padSize, frameRange, Prefix, channel, varargin)
 
 %imDir is the folder where images are located
 % format is like [numrows, numcolumns, num z slices]
@@ -7,17 +7,18 @@ function ggiantIm = makeGiantImage(imIn, format, padSize,firstFrame, lastFrame, 
 numType = 'single';
 gpu = true;
 processor = 'gpu';
+movieMatCh = [];
 
-for i = 1:length(varargin)
-    if strcmpi(varargin{i}, 'single')
-        numType = 'single';
-    elseif strcmpi(varargin{i}, 'double')
-        numType = 'double';
-    elseif strcmpi(varargin{i}, 'noGPU')
-        gpu = false;
-        processor = 'cpu';
+%options must be specified as name, value pairs. unpredictable errors will
+%occur, otherwise.
+for i = 1:2:(numel(varargin)-1)
+    if i ~= numel(varargin)
+        eval([varargin{i} '=varargin{i+1};']);
     end
 end
+
+firstFrame = frameRange(1);
+lastFrame  = frameRange(end);
 
 if gpu
     argin = tryGPU;
@@ -32,15 +33,15 @@ dim = length(format);
 frameInterval = padSize+format(2);
 
 stacks = false;
-if contains(imIn, lower('stacks'))
+if contains(imFile, lower('stacks'))
     stacks = true;
 end
 
 if stacks
     if dim == 2
-        d = dir([imIn, '\*z*.tif']);
+        d = dir([imFile, '\*z*.tif']);
     elseif dim == 3
-        d = dir([imIn, filesep,'*.tif']);
+        d = dir([imFile, filesep,'*.tif']);
     end
 end
 
@@ -55,20 +56,23 @@ end
 
 fcnt = 1;
 for frame = firstFrame:lastFrame
-    
-    if stacks
-        imPath = [imIn,filesep, d(frame).name];
-        if dim == 2
-            im = single(imread(imPath));
-        elseif dim == 3
-            im = single(readTiffStack(imPath));
+    if isempty(movieMatCh)
+        if stacks
+            imPath = [imFile,filesep, d(frame).name];
+            if dim == 2
+                im = single(imread(imPath));
+            elseif dim == 3
+                im = single(readTiffStack(imPath));
+            end
+        else
+             if dim == 2
+                im = single(imread(imFile));
+            elseif dim == 3
+                im = single(readPlanes(imFile, format, frame, Prefix, channel));
+             end
         end
     else
-         if dim == 2
-            im = single(imread(imIn));
-        elseif dim == 3
-            im = single(readPlanes(imIn, format, frame, Prefix, channel));
-         end
+        im = movieMatCh(:, :, :, frame);
     end
     
 %     gim = gpuArray(im);
