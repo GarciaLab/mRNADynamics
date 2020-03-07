@@ -32,7 +32,7 @@
 % 'autoThresh': Pops up a UI to help decide on a threshhold
 % 'keepProcessedData': Keeps the ProcessedData folder for the given prefix after running segment spots
 % 'fit3D': Fit 3D Gaussians to all segmented spots (assumes 1 locus per spot).
-% 'fit3D2Spot': Fit 3D Gaussians to all segmented spots (assumes 2 loci per spot).
+% 'fit3DOnly': Skip segmentation step and perform 3D fits
 % 'skipChannel': Skips segmentation of channels inputted array (e.g. [1]
 %                skips channel 1, [1, 2] skips channels 1 and 2
 % 'optionalResults': use this if you have multiple Results/Dropbox folders
@@ -58,12 +58,11 @@ function log = segmentSpots(Prefix, Threshold, varargin)
 
 warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
-disp('Segmenting spots...')
 
 [displayFigures, numFrames, numShadows, keepPool, ...
     autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData,...
     fit3D, skipChannel, optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat,...
-    saveType, nuclearMask, DataType, track]...
+    saveType, nuclearMask, DataType, track, skipSegmentation]...
     = determineSegmentSpotsOptions(varargin{:});
 
 argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
@@ -127,39 +126,44 @@ snippet_size = 2 * (floor(neighboorhood_size / (2 * pixelSize))) + 1; % nm. note
 coatChannel = spotChannels;
 
 falsePositives = 0;
-Spots = cell(1, nCh);
+if ~skipSegmentation
+    disp('Segmenting spots...')
+    Spots = cell(1, nCh);
 
-for channelIndex = 1:nCh
-    if ismember(channelIndex, skipChannel)
-        continue
-    end
-    
-    tic;
-    
-    [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, spotChannels);
-    if doFF
-        error('wtff')
-    end
-    [tempSpots, dogs] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, initialFrame, numFrames, zSize, ...
-        PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(channelIndex), neighborhood, ...
-        snippet_size, pixelSize, microscope, Weka,...
-         filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, Ellipses);
+    for channelIndex = 1:nCh
+        if ismember(channelIndex, skipChannel)
+            continue
+        end
 
-    tempSpots = segmentSpotsZTracking(pixelSize,tempSpots);
+        tic;
 
-    [~, falsePositives, tempSpots] = findBrightestZ([], numShadows, useIntegralCenter, 0, tempSpots, 'dogs', dogs);
-                        
-    Spots{channelIndex} = tempSpots;
-    
-    timeElapsed = toc;
-    disp(['Elapsed time: ', num2str(timeElapsed / 60), ' min'])
-    try %#ok<TRYNC>
-        log = logSegmentSpots(DropboxFolder, Prefix, timeElapsed, [], numFrames, Spots, falsePositives, Threshold, channelIndex, numShadows, intScale, fit3D);
-        display(log);
+        [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, spotChannels);
+        if doFF
+            error('wtff')
+        end
+        [tempSpots, dogs] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, initialFrame, numFrames, zSize, ...
+            PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(channelIndex), neighborhood, ...
+            snippet_size, pixelSize, microscope, Weka,...
+             filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, Ellipses);
+
+        tempSpots = segmentSpotsZTracking(pixelSize,tempSpots);
+
+        [~, falsePositives, tempSpots] = findBrightestZ([], numShadows, useIntegralCenter, 0, tempSpots, 'dogs', dogs);
+
+        Spots{channelIndex} = tempSpots;
+
+        timeElapsed = toc;
+        disp(['Elapsed time: ', num2str(timeElapsed / 60), ' min'])
+        try %#ok<TRYNC>
+            log = logSegmentSpots(DropboxFolder, Prefix, timeElapsed, [], numFrames, Spots, falsePositives, Threshold, channelIndex, numShadows, intScale, fit3D);
+            display(log);
+        end
+
     end
-    
+else
+    disp('loading Spots.mat structure for 3D fitting...')
+    load([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots');
 end
-
 %If we only have one channel, then convert Spots to a
 %standard structure.
 if nCh == 1 && iscell(Spots)
