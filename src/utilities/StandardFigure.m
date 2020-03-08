@@ -70,7 +70,7 @@ for i=1:length(PlotHandle)
         end
     elseif strcmp(get(PlotHandle(i),'Type'),'errorbar')
         ChangeColorPBoC2(PlotHandle(i),'Color')
-    elseif strcmp(get(PlotHandle(i),'Type'),'plot')
+    elseif strcmp(get(PlotHandle(i),'Type'),'line')
         ChangeColorPBoC2(PlotHandle(i),'Color')
     elseif strcmp(get(PlotHandle(i),'Type'),'histogram')
         ChangeColorPBoC2(PlotHandle(i),'FaceColor')
