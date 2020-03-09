@@ -66,14 +66,15 @@ if ~skipExtraction
         
         nPadding = 2;
         hisMatic = newmatic([PreProcFolder, filesep, Prefix, '_hisMat.mat'], true,...
-            newmatic_variable('hisMat', 'uint16', [ySize, xSize, sum(NFrames)], [ySize, xSize, 1]));        
+            newmatic_variable('hisMat', 'uint16', [ySize, xSize, sum(NFrames)], [ySize, xSize, 1]));   
+        hisMat =zeros( ySize, xSize, sum(NFrames), 'uint16');
     end
     
     %     zslicesPadding = false;
     
     if exportMovieFiles
         
-       
+        movieMat = zeros(ySize, xSize, max(NSlices)+nPadding, sum(NFrames),NChannels, 'uint16');
         movieMatic = newmatic([PreProcFolder, filesep, Prefix, '_movieMat.mat'],true,...
             newmatic_variable('movieMat', 'uint16',...
             [ySize, xSize, max(NSlices)+nPadding, sum(NFrames),NChannels],...
@@ -106,7 +107,7 @@ if ~skipExtraction
                             % if zPadding, it will process all images (because topZSlice would be max(NSlices)
                             % if no zPadding, it will process images rounding down to the series with least
                             % zSlices, because topZSlice would be min(NSlices)
-                            movieMatic.movieMat(:, :,slicesCounter + 1,  numberOfFrames, channelIndex) = LIFImages{seriesIndex}{imageIndex,1};
+                            movieMat(:, :,slicesCounter + 1,  numberOfFrames, channelIndex) = LIFImages{seriesIndex}{imageIndex,1};
                             %                         NewName = [Prefix, '_', iIndex(numberOfFrames,3), '_z', iIndex(slicesCounter + 1, 2), NameSuffix, '.tif'];
                             %                         imwrite(LIFImages{seriesIndex}{imageIndex,1}, [PreProcFolder, filesep, NewName]);
                             slicesCounter = slicesCounter + 1;
@@ -127,7 +128,7 @@ if ~skipExtraction
                 
                 %Now copy nuclear tracking images
                 if ~nuclearGUI
-                    hisMatic.hisMat(:, :, numberOfFrames) = generateNuclearChannel(numberOfFrames, LIFImages,...
+                    hisMat(:, :, numberOfFrames) = generateNuclearChannel(numberOfFrames, LIFImages,...
                         framesIndex, seriesIndex, NSlices, NChannels,ProjectionType,...
                         Channels, ReferenceHist, PreProcFolder, Prefix, lowbit);
                 end
