@@ -10,6 +10,11 @@ algo = 'FastRandomForest';
 maxDepth = 20;
 nTrees = 64;
 matlabLoader = true;
+makeEllipses=false;
+doTracking = false;
+frameRange = [];
+hisMat = [];
+
 
 
 %options must be specified as name, value pairs. unpredictable errors will
@@ -38,11 +43,16 @@ trainingFile = [trainingFolder, filesep, trainingNameExt];
 
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 
-[~,hisMat] = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo);
+[xSize, ySize, pixelSize, zStep, snippet_size,...
+    totalFrames, nSlices, nDigits] = getFrameInfoParams(FrameInfo)
 
-% load([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'], 'hisMat');
-hisMat = double(hisMat);
+if isempty(hisMat)
 
+    hisFile = [PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'];
+    hisMat = double(loadHisMat(hisFile, [ySize, xSize, totalFrames],'frameRange', frameRange));
+    
+end
+   
 %need to change this later. will be loaded from computerfolders
 ramDrive = 'R:\';
 
@@ -81,7 +91,7 @@ end
 classifier.setOptions(options);
 classifier.buildClassifier(trainingData);
 suffix = strrep(strrep(char(datetime(now,'ConvertFrom','datenum')), ' ', '_'), ':', '-');
-save([trainingFolder, filesep, trainingName, '_', suffix '.model'], 'classifier')
+save([trainingFolder, filesep, trainingName, '_', suffix '.model'], 'classifier', '-v6')
 
 %%
 dT = [];
@@ -106,48 +116,54 @@ end
 
 try close(wb); end
 
-mkdir([ProcPath, filesep, Prefix, filesep, Prefix]);
-save([ProcPath, filesep, Prefix, filesep, Prefix, '_probHis.mat'], 'pMap', '-v7.3', '-nocompression');
+mkdir([ProcPath, filesep, Prefix, '_']);
+newmatic([ProcPath, filesep, Prefix, '_', filesep, Prefix, '_probHis.mat'],...
+            newmatic_variable('pMap', 'double', [yDim, xDim, nFrames], [ySize, xSize, 1]));
 
 
 %% Get Ellipses
 
-if exist([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'] ,'file')
-    
-    ellipsePrompt = ('Ellipses.mat already exists. Do you want to overwrite?');
-    ellipseAnswer = inputdlg(ellipsePrompt);
-    
-    if contains(ellipseAnswer,'y')
-        
-        %do morphology analysis to reduce our probability maps to a list of
-        %ellipses
-        
-        Ellipses = makeEllipses(pMap, thresh);
-        
-        %track nuclei will complain if there are frames with no ellipses,
-        %so we'll fake it for now. 
-        fakeFrame = Ellipses(~cellfun(@isempty, Ellipses));
-        fakeFrame =  fakeFrame{1};
-        
-        Ellipses(cellfun(@isempty, Ellipses)) = {fakeFrame};
-        
-        save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses', '-v7.3', '-nocompression');
-        
+if makeEllipses
+    if exist([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'] ,'file')
+
+        ellipsePrompt = ('Ellipses.mat already exists. Do you want to overwrite?');
+        ellipseAnswer = inputdlg(ellipsePrompt);
+
+        if contains(ellipseAnswer,'y')
+
+            %do morphology analysis to reduce our probability maps to a list of
+            %ellipses
+
+            Ellipses = makeEllipses(pMap, thresh);
+
+            %track nuclei will complain if there are frames with no ellipses,
+            %so we'll fake it for now. 
+            fakeFrame = Ellipses(~cellfun(@isempty, Ellipses));
+            fakeFrame =  fakeFrame{1};
+
+            Ellipses(cellfun(@isempty, Ellipses)) = {fakeFrame};
+
+            save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses', '-v6');
+
+        end
+
     end
-    
 end
 
-%% Tracking
-%Decide whether we need to re-track
-userPrompt = 'Do you want to track nuclei now?';
+if doTracking
+    %% Tracking
+    %Decide whether we need to re-track
+    userPrompt = 'Do you want to track nuclei now?';
 
-trackAnswer = inputdlg(userPrompt);
-if contains(trackAnswer,'n')
-    disp('Ellipses saved. Per user input, not tracking. Exiting.')
-else
-    opts = {};  if fish, opts = [opts, 'markandfind']; end
-    disp('Ellipses saved. Running TrackNuclei.')
-    TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1, opts{:});
+    trackAnswer = inputdlg(userPrompt);
+    if contains(trackAnswer,'n')
+        disp('Ellipses saved. Per user input, not tracking. Exiting.')
+    else
+        opts = {};  if fish, opts = [opts, 'markandfind']; end
+        disp('Ellipses saved. Running TrackNuclei.')
+        TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1, opts{:});
+    end
+    
 end
 
 end

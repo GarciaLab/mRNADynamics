@@ -1,4 +1,4 @@
-function movieMat = loadMovieMat(movieFile, varargin)
+function movieMat = loadMovieMat(movieFile, dims, varargin)
 
 zRange = [];
 frameRange = [];
@@ -13,9 +13,14 @@ for i = 1:2:(numel(varargin)-1)
     end
 end
 
-moviematfile = matfile(movieFile, 'Writable', isWritable);
+ySize = dims(1);
+xSize = dims(2);
+zSize = dims(3);
+nFrames = dims(4);
+nCh = dims(5);
 
-dims = size(moviematfile.movieMat);
+movieMatic = newmatic(movieFile,...
+            newmatic_variable('movieMat', 'uint16', [ySize, xSize, zSize, nFrames,  nCh], [ySize, xSize, 1, 1, 1]));
 
 if isempty(frameRange)
     frameRange = 1:dims(4);
@@ -35,6 +40,6 @@ else
     chRange = chRange(1):chRange(end);
 end
 
-movieMat = moviematfile.movieMat(:, :, zRange, frameRange, chRange);
+movieMat = movieMatic.movieMat(:, :, zRange, frameRange, chRange);
 
 end
