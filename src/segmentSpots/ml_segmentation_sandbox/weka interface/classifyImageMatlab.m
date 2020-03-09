@@ -73,9 +73,6 @@ elseif isempty(classifier)
   
     [classifier, trainingData] = loadClassifier(trainingData);
     
-    suffix = strrep(strrep(char(datetime(now,'ConvertFrom','datenum')), ' ', '_'), ':', '-');
-    save([trainingFolder, filesep, trainingName, '_', suffix '_classifier.mat'], 'classifier', '-v7.3', '-nocompression')
-    
 end
 
 clear arffLoader;

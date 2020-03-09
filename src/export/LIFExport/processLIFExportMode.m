@@ -65,7 +65,7 @@ if ~skipExtraction
         %     BlankImage = uint16(zeros(ySize, xSize));
         
         nPadding = 2;
-        hisMatic = newmatic([PreProcFolder, filesep, Prefix, '_hisMat.mat'],...
+        hisMatic = newmatic([PreProcFolder, filesep, Prefix, '_hisMat.mat'], true,...
             newmatic_variable('hisMat', 'uint16', [ySize, xSize, sum(NFrames)], [ySize, xSize, 1]));        
     end
     
@@ -74,9 +74,9 @@ if ~skipExtraction
     if exportMovieFiles
         
        
-        movieMatic = newmatic([PreProcFolder, filesep, Prefix, '_movieMat.mat'],...
+        movieMatic = newmatic([PreProcFolder, filesep, Prefix, '_movieMat.mat'],true,...
             newmatic_variable('movieMat', 'uint16',...
-            [ySize, xSize, NSlices, max(NSlices)+nPadding, sum(NFrames),NChannels],...
+            [ySize, xSize, max(NSlices)+nPadding, sum(NFrames),NChannels],...
             [ySize, xSize, 1, 1, 1]));
         
         for seriesIndex = 1:NSeries
@@ -154,7 +154,7 @@ if ~skipExtraction
     
     if  exportNuclearProjections
         
-       hisMatic = newmatic([PreProcFolder, filesep, Prefix, '_hisMat.mat'],...
+       hisMatic = newmatic([PreProcFolder, filesep, Prefix, '_hisMat.mat'],true,...
             newmatic_variable('hisMat', 'uint16', [ySize, xSize, sum(NFrames)], [ySize, xSize, 1]));
         hisMatic.hisMat = hisMat;
         

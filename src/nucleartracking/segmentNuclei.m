@@ -114,7 +114,7 @@ end
 try close(wb); end
 
 mkdir([ProcPath, filesep, Prefix, '_']);
-newmatic([ProcPath, filesep, Prefix, '_', filesep, Prefix, '_probHis.mat'],...
+newmatic([ProcPath, filesep, Prefix, '_', filesep, Prefix, '_probHis.mat'],true,...
             newmatic_variable('pMap', 'double', [yDim, xDim, nFrames], [ySize, xSize, 1]));
 
 

@@ -14,6 +14,7 @@ for i = 1:2:(numel(varargin)-1)
 end
 
 hismatfile = matfile(hisFile, 'Writable', isWritable);
+dims = size(hismatfile.hisMat);
 
 
 if isempty(frameRange)
