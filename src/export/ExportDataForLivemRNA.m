@@ -136,7 +136,7 @@ end
   DropboxFolderName = [DropboxFolder, filesep, Prefix];
   disp(['Creating folder: ', DropboxFolderName]);
   mkdir(DropboxFolderName);
-  save([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
+  save([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo', '-v6');
 
   if strcmpi(FileMode, 'LIFExport') & ~keepTifs
     removeUnwantedTIFs(rawDataFolder);

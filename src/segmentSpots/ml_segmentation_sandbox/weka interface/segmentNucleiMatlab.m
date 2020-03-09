@@ -44,10 +44,13 @@ trainingFile = [trainingFolder, filesep, trainingNameExt];
 
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 
+[xSize, ySize, pixelSize, zStep, snippet_size,...
+    totalFrames, nSlices, nDigits] = getFrameInfoParams(FrameInfo)
+
 if isempty(hisMat)
 
     hisFile = [PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'];
-    hisMat = double(loadHisMat(hisFile, frameRange));
+    hisMat = double(loadHisMat(hisFile, [ySize, xSize, totalFrames],'frameRange', frameRange));
     
 end
 
@@ -68,7 +71,7 @@ if isempty(classifier)
         'NumPredictorsToSample', NumPredictorsToSample, 'nTrees', nTrees);
     
     suffix = strrep(strrep(char(datetime(now,'ConvertFrom','datenum')), ' ', '_'), ':', '-');
-    save([trainingFolder, filesep, trainingName, '_', suffix '_classifier.mat'], 'classifier', '-v7.3', '-nocompression')
+    save([trainingFolder, filesep, trainingName, '_', suffix '_classifier.mat'], 'classifier', '-v6');
     
 end
 
@@ -111,8 +114,9 @@ end
 profile off; profile viewer;
 try close(wb); end
 
-mkdir([ProcPath, filesep, Prefix, filesep, Prefix]);
-save([ProcPath, filesep, Prefix, '_', filesep, Prefix, '_probHis.mat'], 'pMap', '-v7.3', '-nocompression');
+mkdir([ProcPath, filesep, Prefix, '_']);
+newmatic([ProcPath, filesep, Prefix, '_', filesep, Prefix, '_probHis.mat'],...
+            newmatic_variable('pMap', 'double', [yDim, xDim, nFrames], [ySize, xSize, 1]));
 
 
 %% Get Ellipses
@@ -136,7 +140,7 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'] ,'file')
         
         Ellipses(cellfun(@isempty, Ellipses)) = {fakeFrame};
         
-        save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses', '-v7.3', '-nocompression');
+        save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses', '-v6');
         
     end
     

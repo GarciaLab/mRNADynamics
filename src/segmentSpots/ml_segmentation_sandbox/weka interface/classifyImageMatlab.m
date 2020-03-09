@@ -70,17 +70,15 @@ end
 if ischar(classifier)
     load(classifier, 'classifier');
 elseif isempty(classifier)
-    classifier = uiopen;
-else
-    [data,attributes,classIndex] = weka2matlab(trainingData);
-    numAttributes = classIndex - 1;
-    trainingResponse = data(:, classIndex);
-    data = data(:, 1:numAttributes);
+  
+    [classifier, trainingData] = loadClassifier(trainingData);
     
-    classifier = TreeBagger(64,data,trainingResponse,'OOBPredictorImportance','Off', 'Method','classification');
+    suffix = strrep(strrep(char(datetime(now,'ConvertFrom','datenum')), ' ', '_'), ':', '-');
+    save([trainingFolder, filesep, trainingName, '_', suffix '_classifier.mat'], 'classifier', '-v7.3', '-nocompression')
     
-    clear data; clear trainingResponse; clear arffLoader;
 end
+
+clear arffLoader;
 
 %% generate test data by filtering the image
 
