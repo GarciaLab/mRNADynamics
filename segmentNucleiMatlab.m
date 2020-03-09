@@ -15,6 +15,8 @@ classifier = [];
 balance = true; %resample to balance classes
 cleanAttributes = false;
 frameRange = [];
+makeEllipses=false;
+doTracking = false;
 
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.
@@ -45,12 +47,16 @@ trainingFile = [trainingFolder, filesep, trainingNameExt];
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 
 if isempty(hisMat)
+%         [~,hisMat] = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, 'loadMovie', false);
+%     load([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'], 'hisMat');
 
     hisFile = [PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'];
-    hisMat = double(loadHisMat(hisFile,'frameRange', frameRange));
+    hisMat = double(loadHisMat(hisFile, 'frameRange', frameRange));
     
 end
 
+ySize = size(hisMat, 1);
+xSize = size(hisMat, 2);
 nFrames = size(hisMat, 3);
 
 pMap = zeros(size(hisMat, 1), size(hisMat, 2), size(hisMat, 3));
@@ -68,8 +74,7 @@ if isempty(classifier)
         'NumPredictorsToSample', NumPredictorsToSample, 'nTrees', nTrees);
     
     suffix = strrep(strrep(char(datetime(now,'ConvertFrom','datenum')), ' ', '_'), ':', '-');
-    save([trainingFolder, filesep, trainingName, '_', suffix '_classifier.mat'], 'classifier', '-v6');
-    
+    save([trainingFolder, filesep, trainingName, '_', suffix '_classifier.mat'], 'classifier', '-v6')
 end
 
 %% make probability maps for each frame
@@ -101,7 +106,7 @@ else
                 '. Estimated ', num2str(mean_dT*(nFrames-f)), ' minutes remaining.'])
         end
         im = squeeze(hisMat(:, :, f));
-        pMap(:, :, f) = classifyImageMatlab(im, trainingData, 'reSc', reSc, 'classifierObj', classifier);
+        pMap(:, :, f) = classifyImageMatlab(im, trainingData, 'reSc', reSc, 'classifier', classifier);
         try waitbar(f/nFrames, wb); end
         dT(f)=toc/60;
     end
@@ -113,10 +118,11 @@ try close(wb); end
 
 mkdir([ProcPath, filesep, Prefix, '_']);
 newmatic([ProcPath, filesep, Prefix, '_', filesep, Prefix, '_probHis.mat'],...
-            newmatic_variable('pMap', 'double', [yDim, xDim, nFrames], [ySize, xSize, 1]));
+            newmatic_variable('pMap', 'double', [ySize, xSize, nFrames], [ySize, xSize, 1]));
 
 
 %% Get Ellipses
+if makeEllipses
 
 if exist([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'] ,'file')
     
@@ -142,7 +148,8 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'] ,'file')
     end
     
 end
-
+end
+if doTracking
 %% Tracking
 %Decide whether we need to re-track
 userPrompt = 'Do you want to track nuclei now?';
@@ -155,6 +162,6 @@ else
     disp('Ellipses saved. Running TrackNuclei.')
     TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1, opts{:});
 end
-
+end
 
 enda 

@@ -1,6 +1,9 @@
-function hisMat = loadHisMat(hisFile,  dims, varargin)
+function hisMat = loadHisMat(hisFile,  varargin)
+
+disp('Loading nuclear movie....');
 
 frameRange = [];
+isWritable = false;
 
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.
@@ -10,17 +13,18 @@ for i = 1:2:(numel(varargin)-1)
     end
 end
 
-ySize = dims(1);
-xSize = dims(2);
-nFrames = dims(4);
+hismatfile = matfile(hisFile, 'Writable', isWritable);
 
-hisMatic = newmatic(hisFile,...
-            newmatic_variable('hisMat', 'uint16', [ySize, xSize, nFrames], [ySize, xSize, 1]));
 
-    if ~isempty(frameRange)
-        hisMat = hisMatic.hisMat(:, :, frameRange);
-    else
-        hisMat = hisMatic.hisMat;
-    end
+if isempty(frameRange)
+    frameRange = 1:dims(3);
+else
+    frameRange = frameRange(1):frameRange(end);
+end
+
+hisMat = hismatfile.hisMat(:, :, frameRange);
+
+disp('Nuclear movie loaded.');
+
 
 end

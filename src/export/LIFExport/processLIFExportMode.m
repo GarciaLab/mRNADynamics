@@ -65,15 +65,19 @@ if ~skipExtraction
         %     BlankImage = uint16(zeros(ySize, xSize));
         
         nPadding = 2;
-        hisMat = zeros(ySize, xSize, sum(NFrames), 'uint16'); % f x y
-        
+        hisMatic = newmatic([PreProcFolder, filesep, Prefix, '_hisMat.mat'],...
+            newmatic_variable('hisMat', 'uint16', [ySize, xSize, sum(NFrames)], [ySize, xSize, 1]));        
     end
     
     %     zslicesPadding = false;
     
     if exportMovieFiles
         
-        movieMat = zeros(ySize, xSize,max(NSlices)+nPadding, sum(NFrames),NChannels, 'uint16'); % ch z t x y
+       
+        movieMatic = newmatic([PreProcFolder, filesep, Prefix, '_movieMat.mat'],...
+            newmatic_variable('movieMat', 'uint16',...
+            [ySize, xSize, NSlices, max(NSlices)+nPadding, sum(NFrames),NChannels],...
+            [ySize, xSize, 1, 1, 1]));
         
         for seriesIndex = 1:NSeries
             waitbar(seriesIndex/NSeries, waitbarFigure)
@@ -102,7 +106,7 @@ if ~skipExtraction
                             % if zPadding, it will process all images (because topZSlice would be max(NSlices)
                             % if no zPadding, it will process images rounding down to the series with least
                             % zSlices, because topZSlice would be min(NSlices)
-                            movieMat(:, :,slicesCounter + 1,  numberOfFrames, channelIndex) = LIFImages{seriesIndex}{imageIndex,1};
+                            movieMatic.movieMat(:, :,slicesCounter + 1,  numberOfFrames, channelIndex) = LIFImages{seriesIndex}{imageIndex,1};
                             %                         NewName = [Prefix, '_', iIndex(numberOfFrames,3), '_z', iIndex(slicesCounter + 1, 2), NameSuffix, '.tif'];
                             %                         imwrite(LIFImages{seriesIndex}{imageIndex,1}, [PreProcFolder, filesep, NewName]);
                             slicesCounter = slicesCounter + 1;
@@ -123,7 +127,7 @@ if ~skipExtraction
                 
                 %Now copy nuclear tracking images
                 if ~nuclearGUI
-                    hisMat(:, :, numberOfFrames) = generateNuclearChannel(numberOfFrames, LIFImages,...
+                    hisMatic.hisMat(:, :, numberOfFrames) = generateNuclearChannel(numberOfFrames, LIFImages,...
                         framesIndex, seriesIndex, NSlices, NChannels,ProjectionType,...
                         Channels, ReferenceHist, PreProcFolder, Prefix, lowbit);
                 end
@@ -132,19 +136,16 @@ if ~skipExtraction
             end
         end
         
-        save([PreProcFolder,filesep, Prefix, '_movieMat.mat'],'movieMat', '-v7.3', '-nocompression');
-        
     end
     
     
     if nuclearGUI && exportNuclearProjections
         if ~exportMovieFiles
-            load([PreProcFolder,filesep, Prefix, '_movieMat.mat'],'movieMat');
+            movieMat = loadMovieMat([PreProcFolder, filesep, Prefix, '_movieMat.mat']);
             ySize = size(movieMat, 1);
             xSize = size(movieMat, 2);
             NFrames = size(movieMat, 4);
         end
-        hisMat = zeros(ySize, xSize, sum(NFrames), 'uint16'); % f x y
 
         [~, ~, hisMat] = chooseNuclearChannels2(...
             movieMat, 'ProjectionType', ProjectionType,'Channels',Channels,'ReferenceHist', ReferenceHist);
@@ -152,7 +153,11 @@ if ~skipExtraction
     end
     
     if  exportNuclearProjections
-        save([PreProcFolder, filesep, Prefix, '_hisMat.mat'],'hisMat', '-v7.3', '-nocompression');
+        
+       hisMatic = newmatic([PreProcFolder, filesep, Prefix, '_hisMat.mat'],...
+            newmatic_variable('hisMat', 'uint16', [ySize, xSize, sum(NFrames)], [ySize, xSize, 1]));
+        hisMatic.hisMat = hisMat;
+        
     end
     
     close(waitbarFigure)

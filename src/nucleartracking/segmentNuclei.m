@@ -43,13 +43,10 @@ trainingFile = [trainingFolder, filesep, trainingNameExt];
 
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 
-[xSize, ySize, pixelSize, zStep, snippet_size,...
-    totalFrames, nSlices, nDigits] = getFrameInfoParams(FrameInfo)
-
 if isempty(hisMat)
 
     hisFile = [PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'];
-    hisMat = double(loadHisMat(hisFile, [ySize, xSize, totalFrames],'frameRange', frameRange));
+    hisMat = double(loadHisMat(hisFile, 'frameRange', frameRange));
     
 end
    
