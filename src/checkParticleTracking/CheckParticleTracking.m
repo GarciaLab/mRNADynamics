@@ -198,14 +198,17 @@ coats = getCoatChannel(Channel1, Channel2, Channel3);
 
 ch = coats(1); %assumes the experiment is _not_ 2spot2color
 maxTimeCell = [];
-preMovie = true;
 
 if isempty(movieMat)
     
-    [movieMat, hisMat, maxMat, ~, ~]...
-        = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo);
-    movieMat = squeeze(movieMat(:,:,:,:,ch));
-    maxMat = squeeze(maxMat(:,:,:, ch));
+%     [movieMat, hisMat, maxMat, ~, ~]...
+%         = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo);
+    hisMat = loadHisMat([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat']);
+    movieMat = loadMovieMat([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'], ch);
+    maxMat = squeeze(max(movieMat(:,:,:,:), [],3));
+
+%     movieMat = squeeze(movieMat(:,:,:,:,ch));
+%     maxMat = squeeze(maxMat(:,:,:, ch));
     
 else
     maxMat = squeeze(max(movieMat(:,:,:,:), [],3));

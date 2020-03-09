@@ -27,13 +27,11 @@ if nargin == 1
     
 end
 
-load([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'], 'movieMat');
-numFrames = length(FrameInfo);
-
-
 InputChannel = find(contains(Channels, 'input', 'IgnoreCase', true));
 
-
+% load([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'], 'movieMat');
+movieMat = double(loadMovieMat([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'], 'chRange', InputChannel));
+numFrames = length(FrameInfo);
 
 
 %Create the circle that we'll use as the mask
@@ -43,8 +41,8 @@ if ~mod(IntegrationRadius,2)
     IntegrationRadius=IntegrationRadius+1;
 end
 Circle=false(3*IntegrationRadius,3*IntegrationRadius);
-Circle=MidpointCircle(Circle,IntegrationRadius,1.5*IntegrationRadius+0.5,...
-    1.5*IntegrationRadius+0.5,1);
+Circle=double(MidpointCircle(Circle,IntegrationRadius,1.5*IntegrationRadius+0.5,...
+    1.5*IntegrationRadius+0.5,1));
 
 %Initialize fields
 schnitzcells(1).Fluo = [];
@@ -58,10 +56,10 @@ if sum(InputChannel)
     PixelsPerLine=FrameInfo(1).PixelsPerLine;
     LinesPerFrame=FrameInfo(1).LinesPerFrame;
     %Number of z-slices
-        nPadding = 2;
-
+    nPadding = 2;
+    
     nSlices=FrameInfo(1).NumberSlices + nPadding;
-   
+    
     
     %Generate reference frame for edge detection
     refFrame = ones(LinesPerFrame,PixelsPerLine, nSlices);
@@ -82,22 +80,30 @@ if sum(InputChannel)
             waitbar(CurrentFrame/numFrames,h);
             %
             %                 %Initialize the image
-%             Image=zeros(LinesPerFrame,PixelsPerLine,nSlices);
+            %             Image=zeros(LinesPerFrame,PixelsPerLine,nSlices);
             
-%             %Load the z-stack for this frame
-%             for CurrentZ=1:nSlices   %Note that I need to add the two extra slices manually
-%                 Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
-%             end
-
-            Image = double(squeeze(movieMat(:,:,:, CurrentFrame, InputChannel)));
+            %             %Load the z-stack for this frame
+            %             for CurrentZ=1:nSlices   %Note that I need to add the two extra slices manually
+            %                 Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
+            %             end
             
-            convImage = imfilter(Image, double(Circle), 'same');
+            
+            convImage = imfilter(movieMat(:,:,:, CurrentFrame), Circle, 'same');
             convImage(edgeMask) = NaN;
+            
             for j=1:length(tempSchnitz)
-                CurrentIndex=find(tempSchnitz(j).frames==CurrentFrame);
-                cenx=min(max(1,round(tempSchnitz(j).cenx(CurrentIndex))),PixelsPerLine);
-                ceny=min(max(1,round(tempSchnitz(j).ceny(CurrentIndex))),LinesPerFrame);
-                tempSchnitz(j).Fluo(CurrentIndex,1:nSlices,ChN) = single(convImage(ceny,cenx,:));
+%                 CurrentIndex=find(tempSchnitz(j).frames==CurrentFrame);
+%                 cenx=min(max(1,round(tempSchnitz(j).cenx(CurrentIndex))),PixelsPerLine);
+%                 ceny=min(max(1,round(tempSchnitz(j).ceny(CurrentIndex))),LinesPerFrame);
+%                 tempSchnitz(j).Fluo(CurrentIndex,1:nSlices,ChN) = single(convImage(ceny,cenx,:));
+
+
+                    %trying faster method
+                    cenx=min(max(1,round(tempSchnitz(j).cenx(tempSchnitz(j).frames==CurrentFrame))),PixelsPerLine);
+                    ceny=min(max(1,round(tempSchnitz(j).ceny(tempSchnitz(j).frames==CurrentFrame))),LinesPerFrame);
+                    tempSchnitz(j).Fluo(tempSchnitz(j).frames==CurrentFrame,:,ChN) = single(convImage(ceny,cenx,:));
+                    
+                    
             end
             
         end
@@ -113,7 +119,12 @@ end
 clear movieMat;
 
 if saveFlag
-    save(schnitzPath);
+    if whos(var2str(schnitzcells)).bytes < 2E9
+        save(schnitzPath, 'schnitzcells', '-v6');
+    else
+        save(schnitzPath, 'schnitzcells', '-v7.3', '-nocompression');
+    end
+    
 end
 
 end

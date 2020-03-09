@@ -43,8 +43,11 @@ zRange = zBot:zTop;
 xRange = max([1,xSpot-snippet_size]):min([xSize,xSpot+snippet_size]);
 yRange = max([1,ySpot-snippet_size]):min([ySize,ySpot+snippet_size]);
 
-
-snip3D = double(squeeze(movieMat(yRange,xRange, zRange, frame, spotChannel))); 
+if numel(size(movieMat)) == 5 
+    snip3D = double(squeeze(movieMat(yRange,xRange, zRange, frame, spotChannel))); 
+else
+    snip3D = double(squeeze(movieMat(yRange,xRange, zRange, frame))); 
+end
 
 
 %%

@@ -100,14 +100,16 @@ if chooseHis
         hisMat = probHis_fiji;
         clear probHis_fiji;
     elseif exist('probHis_matlab', 'var')
-         hisMat = probHis_matlab;
-         clear probHis_matlab;
-     elseif exist('probHis', 'var')
-         hisMat = probHis;
-         clear probHis;
+        hisMat = probHis_matlab;
+        clear probHis_matlab;
+    elseif exist('probHis', 'var')
+        hisMat = probHis;
+        clear probHis;
     end
 else
-load([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'], 'hisMat');
+    
+   hisMat =  loadHisMat([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat']);
+   
 end
 
 
@@ -183,15 +185,15 @@ if ~retrack
             settingArguments{:}, 'ExpandedSpaceTolerance', ExpandedSpaceTolerance, ...
             'NoBulkShift', NoBulkShift, 'segmentationonly', true);
     end
-        % names is a cell array containing the names of all frames in the movie in order.
-        % indMitosis is an nx2 array containing the first and last frame of mitosis in every row.
-        % embryoMask is the possible mask of the embryo. If no embryo edge is visible,
-        % true(size(an_image_from_the_movie)) can be given as input.
-         % Convert the results to compatible structures and save them
-        %Put circles on the nuclei
-        [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,nFrames,indMit);
-        %Convert nuclei structure into schnitzcell structure
-        [schnitzcells] = convertNucleiToSchnitzcells(nuclei);
+    % names is a cell array containing the names of all frames in the movie in order.
+    % indMitosis is an nx2 array containing the first and last frame of mitosis in every row.
+    % embryoMask is the possible mask of the embryo. If no embryo edge is visible,
+    % true(size(an_image_from_the_movie)) can be given as input.
+    % Convert the results to compatible structures and save them
+    %Put circles on the nuclei
+    [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,nFrames,indMit);
+    %Convert nuclei structure into schnitzcell structure
+    [schnitzcells] = convertNucleiToSchnitzcells(nuclei);
     
 else
     %Do re-tracking
@@ -266,8 +268,14 @@ end
 if ~exist([DropboxFolder,filesep,Prefix], 'dir')
     mkdir([DropboxFolder,filesep,Prefix]);
 end
+
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
-save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells');
+
+if whos(var2str(schnitzcells)).bytes < 2E9
+    save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v6');
+else
+    save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v7.3');
+end
 
 if ~exist([ProcPath,filesep,Prefix,'_'], 'dir')
     mkdir([ProcPath,filesep,Prefix,'_']);
@@ -277,13 +285,13 @@ if exist('dataStructure', 'var')
 end
 
 %fix the nuclear centers
-    
+
 Ellipses = adjustAllEllipseCentroids(Prefix);
 
 
 %Extract the nuclear fluorescence values if we're in the right experiment
 %type
-if intFlag 
+if intFlag
     Channels={Channel1{1},Channel2{1}, Channel3{1}};
     schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, Channels, PreProcPath);
 end
@@ -297,7 +305,13 @@ ncVector=[0,0,0,0,0,0,0,0,nc9,nc10,nc11,nc12,nc13,nc14];
 if track & ~noBreak
     [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
     save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
-    save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells');
+    if (whos(var2str(schnitzcells)).bytes < 2E9)
+        
+        save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v6');
+    else
+        save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v7.3', '-nocompression');
+        
+    end
 end
 
 % Stitch the schnitzcells using Simon's code

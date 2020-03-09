@@ -66,11 +66,11 @@ for ch = spotChannels
     % iterate through frames
     for frame = 1:numFrames %frames
         SpotsFr = SpotsCh(frame);
-
+        
         nSpotsPerFrame = length(SpotsFr.Fits);
         for spot = 1:nSpotsPerFrame
             SpotsFr = fitSnip3D(SpotsFr, ch, spot, frame, Prefix, PreProcPath, FrameInfo, nSpots, movieMat);
-%             fitSnip3D(SpotsFr, spotChannel, spot, frame, Prefix, PreProcPath, FrameInfo)
+            %             fitSnip3D(SpotsFr, spotChannel, spot, frame, Prefix, PreProcPath, FrameInfo)
         end
         SpotsCh(frame) = SpotsFr;
         send(q, frame); %update the waitbar
@@ -89,7 +89,13 @@ if iscell(Spots) & length(Spots) < 2
 end
 
 if save_flag
-    save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3');
+    isBigFile = whos(var2str(Spots)).bytes > 2E9; %save to v7.3 only if struct is larger than 2GB
+    if ~isBigFile
+        save([DataFolder,filesep,'Spots.mat'],'Spots', '-v6');
+    else
+        save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3', '-nocompression');
+    end
+    
     Spots3DToken = now;
     save([DataFolder,filesep,'Spots3DToken.mat'],'Spots3DToken')
     disp('3D fitting done on all spots.')

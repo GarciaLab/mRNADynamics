@@ -65,8 +65,6 @@ if ~skipExtraction
         %     BlankImage = uint16(zeros(ySize, xSize));
         
         nPadding = 2;
-        hisMatic = newmatic([PreProcFolder, filesep, Prefix, '_hisMat.mat'], true,...
-            newmatic_variable('hisMat', 'uint16', [ySize, xSize, sum(NFrames)], [ySize, xSize, 1]));   
         hisMat =zeros( ySize, xSize, sum(NFrames), 'uint16');
     end
     
