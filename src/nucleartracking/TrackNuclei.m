@@ -95,17 +95,12 @@ end
 %into an independent function.
 
 if chooseHis
-    uiopen([ProcPath, filesep, Prefix,'_',filesep,'*.mat']);
-    if exist('probHis_fiji', 'var')
-        hisMat = probHis_fiji;
-        clear probHis_fiji;
-    elseif exist('probHis_matlab', 'var')
-        hisMat = probHis_matlab;
-        clear probHis_matlab;
-    elseif exist('probHis', 'var')
-        hisMat = probHis;
-        clear probHis;
-    end
+    
+    [hisFile, hisPath] = uigetfile([ProcPath, filesep, Prefix,'_',filesep,'*.mat']);
+    hisStruct = load([hisPath, hisFile]);
+    hisField = fieldnames(hisStruct);
+    hisMat = hisStruct.(hisField);
+    
 else
     
    hisMat =  loadHisMat([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat']);
