@@ -1,26 +1,21 @@
-function [ImageHisMat, xForZoom, yForZoom, hisOverlayHandle, ellipseHandles] =...
-    ...
-    displayOverlays(...
-    ...
-    overlayAxes, ImageMat, SpeedMode, FrameInfo, Particles, ...
-    Spots, CurrentFrame, ShowThreshold2, ...
-    Overlay, CurrentChannel, CurrentParticle, ZSlices, CurrentZ, numFrames, ...
-    schnitzcells, UseSchnitz, DisplayRange, Ellipses, SpotFilter, ZoomMode, GlobalZoomMode, ...
-    ZoomRange, xForZoom, yForZoom, fish, UseHistoneOverlay, multiAx,...
+function [hisOverlayHandle, ellipseHandles] =...
+    displayOverlays(overlayAxes, cptState, SpeedMode, ShowThreshold2,...
+    Overlay, numFrames, UseSchnitz, ZoomRange, fish, multiAx,...
     HisOverlayFigAxes, hisOverlayHandle, ellipseHandles, ImageHisMat)
 
-%PLOTFRAME Summary of this function goes here
-%   Detailed explanation goes here
-
+% JP: refactor this references to call new CPTState methods
+Particles = cptState.Particles;
+CurrentFrame = cptState.CurrentFrame;
+CurrentChannel = cptState.CurrentChannel;
+CurrentParticle = cptState.CurrentParticle;
+schnitzcells = cptState.schnitzcells;
+Ellipses = cptState.Ellipses;
 
 EllipseHandle=[];
 EllipseHandleYellow=[];
 EllipseHandleBlue=[];
 EllipseHandleWhite=[];
 EllipseHandleGreen=[];
-% for i = 1:length(ellipseHandles)
-%     delete(ellipseHandles{i});
-% end
 
 if ~isempty(multiAx)
     multiView = true;
@@ -29,7 +24,7 @@ else
 end
 
 %Get the coordinates of all the spots in this frame
-[x,y,z]=SpotsXYZ(Spots{CurrentChannel}(CurrentFrame));
+[x,y,z]=SpotsXYZ(cptState.Spots{CurrentChannel}(CurrentFrame));
 %Pull out the right particle if it exists in this frame
 CurrentParticleIndex=...
     Particles{CurrentChannel}(CurrentParticle).Index(Particles{CurrentChannel}(CurrentParticle).Frame==...
@@ -94,10 +89,10 @@ end
 plot(overlayAxes,xTrace,yTrace,'og')
 hold(overlayAxes,'off')
 
-if isfield(FrameInfo, 'nc')
+if isfield(cptState.FrameInfo, 'nc')
     set(Overlay,'Name',['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles),...
         ', Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),...
-        ', Z: ',num2str(CurrentZ),'/',num2str(ZSlices),' nc: ', num2str(FrameInfo(CurrentFrame).nc),...
+        ', Z: ',num2str(cptState.CurrentZ),'/',num2str(cptState.ZSlices),' nc: ', num2str(cptState.FrameInfo(CurrentFrame).nc),...
         ', Ch: ',num2str(CurrentChannel)])
 end
 if UseSchnitz
@@ -228,7 +223,7 @@ if UseSchnitz
         end
 
     else
-        if UseHistoneOverlay
+        if cptState.UseHistoneOverlay
             warning('This particle does not have an associated nucleus.');
         end
     end
@@ -247,10 +242,10 @@ end
 %Show the particles that were under threshold 2.
 if ShowThreshold2
     %Get the positions of all the spots in this frame
-    [x2,y2]=SpotsXYZ(Spots{CurrentChannel}(CurrentFrame));
+    [x2,y2]=SpotsXYZ(cptState.Spots{CurrentChannel}(CurrentFrame));
     %Filter those that were under threshold 2.
     CurrentSpotFilter=...
-        ~logical(SpotFilter{CurrentChannel}(CurrentFrame,~isnan(SpotFilter{CurrentChannel}(CurrentFrame,:))));
+        ~logical(cptState.SpotFilter{CurrentChannel}(CurrentFrame,~isnan(cptState.SpotFilter{CurrentChannel}(CurrentFrame,:))));
     x2=x2(CurrentSpotFilter);
     y2=y2(CurrentSpotFilter);
 
@@ -259,26 +254,26 @@ if ShowThreshold2
     hold(overlayAxes,'off')
 end
 
-if ZoomMode
+if cptState.ZoomMode
     %Find the closest frame
     [~,MinIndex]=min((Particles{CurrentChannel}(CurrentParticle).Frame-CurrentFrame).^2);
     if length(MinIndex)>1
         MinIndex=MinIndex(1);
     end
-    [xForZoom,yForZoom]=...
-        SpotsXYZ(Spots{CurrentChannel}(Particles{CurrentChannel}(CurrentParticle).Frame(MinIndex)));
+    [cptState.xForZoom,cptState.yForZoom]=...
+        SpotsXYZ(cptState.Spots{CurrentChannel}(Particles{CurrentChannel}(CurrentParticle).Frame(MinIndex)));
 
-    xForZoom=xForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
-    yForZoom=yForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
+    cptState.xForZoom=cptState.xForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
+    cptState.yForZoom=cptState.yForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
 
     try
-        xlim(overlayAxes,[xForZoom-ZoomRange,xForZoom+ZoomRange])
-        ylim(overlayAxes,[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2])
+        xlim(overlayAxes,[cptState.xForZoom-ZoomRange,cptState.xForZoom+ZoomRange])
+        ylim(overlayAxes,[cptState.yForZoom-ZoomRange/2,cptState.yForZoom+ZoomRange/2])
         if multiView
            for z = 1:length(multiAx)
                for f = 1:length(multiAx)
-                    xlim(multiAx{z, f},[xForZoom-ZoomRange,xForZoom+ZoomRange])
-                    ylim(multiAx{z, f},[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2]) 
+                    xlim(multiAx{z, f},[cptState.xForZoom-ZoomRange,cptState.xForZoom+ZoomRange])
+                    ylim(multiAx{z, f},[cptState.yForZoom-ZoomRange/2,cptState.yForZoom+ZoomRange/2]) 
                end
            end
         end
@@ -287,35 +282,28 @@ if ZoomMode
     end
 end
 
-if GlobalZoomMode
-    xlim(overlayAxes,[xForZoom-ZoomRange,xForZoom+ZoomRange])
-    ylim(overlayAxes,[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2])
+if cptState.GlobalZoomMode
+    xlim(overlayAxes,[cptState.xForZoom-ZoomRange,cptState.xForZoom+ZoomRange])
+    ylim(overlayAxes,[cptState.yForZoom-ZoomRange/2,cptState.yForZoom+ZoomRange/2])
     if multiView
            for z = 1:length(multiAx)
                for f = 1:length(multiAx)
-                   xlim(multiAx{z, f},[xForZoom-ZoomRange,xForZoom+ZoomRange])
-                    ylim(multiAx{z, f},[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2]) 
+                   xlim(multiAx{z, f},[cptState.xForZoom-ZoomRange,cptState.xForZoom+ZoomRange])
+                    ylim(multiAx{z, f},[cptState.yForZoom-ZoomRange/2,cptState.yForZoom+ZoomRange/2]) 
                end
            end
     end
 end
 
-if UseHistoneOverlay
+if cptState.UseHistoneOverlay
 
-    if isempty(DisplayRange)
-        HisOverlayImageMat=cat(3,mat2gray(ImageHisMat),mat2gray(ImageMat),zeros(size(ImageMat)));
+    if isempty(cptState.DisplayRange)
+        HisOverlayImageMat=cat(3,mat2gray(ImageHisMat),mat2gray(cptState.ImageMat),zeros(size(cptState.ImageMat)));
     else
-        HisOverlayImageMat=cat(3,mat2gray(ImageHisMat,double(DisplayRange)),mat2gray(ImageMat),zeros(size(ImageMat)));
+        HisOverlayImageMat=cat(3,mat2gray(ImageHisMat,double(cptState.DisplayRange)),mat2gray(cptState.ImageMat),zeros(size(cptState.ImageMat)));
     end
     
-%     if isempty(hisOverlayHandle)
-        hisOverlayHandle = imshow(HisOverlayImageMat,[],'Border','Tight','Parent',HisOverlayFigAxes);
-%     else
-%         hisOverlayHandle.CData = HisOverlayImageMat;
-%     end
-    
-%     imagescUpdate(HisOverlayFigAxes, HisOverlayImageMat, []);
-    
+    hisOverlayHandle = imshow(HisOverlayImageMat,[],'Border','Tight','Parent',HisOverlayFigAxes);
     
     hold(HisOverlayFigAxes,'on')
     if ~SpeedMode
@@ -342,15 +330,10 @@ if UseHistoneOverlay
 
     end
 
-    %         set(HisOverlayFigAxes,'Name',['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles),...
-    %             ', Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),...
-    %             ', Z: ',num2str(CurrentZ),'/',num2str(ZSlices),' nc: ', num2str(FrameInfo(CurrentFrame).nc),...
-    %             ' Ch: ',num2str(CurrentChannel)])
-
-    if ZoomMode || GlobalZoomMode
+    if cptState.ZoomMode || cptState.GlobalZoomMode
         try
-            xlim(HisOverlayFigAxes,[xForZoom-ZoomRange,xForZoom+ZoomRange])
-            ylim(HisOverlayFigAxes,[yForZoom-ZoomRange/2,yForZoom+ZoomRange/2])
+            xlim(HisOverlayFigAxes,[cptState.xForZoom-ZoomRange,cptState.xForZoom+ZoomRange])
+            ylim(HisOverlayFigAxes,[cptState.yForZoom-ZoomRange/2,cptState.yForZoom+ZoomRange/2])
         catch
             %something's outside the limits of the image
         end

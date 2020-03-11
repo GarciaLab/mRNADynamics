@@ -153,6 +153,14 @@ classdef CPTState < handle
             currentFit = this.getCurrentParticleFit();
             currentYFit = double(currentFit.yFit(this.CurrentZIndex));
         end
+
+        function updateCurrentZIndex(this)
+            this.CurrentZIndex = find(this.getCurrentParticleFit().z == this.CurrentZ);
+        end
+
+        function maxZIndex = getMaxZIndex(this)
+            maxZIndex = find(this.getCurrentParticleFit().z == this.getCurrentParticleFit().brightestZ)
+        end
     end
 end
 
