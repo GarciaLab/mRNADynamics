@@ -1,7 +1,7 @@
 function movieMat = loadMovieMat(movieFile, varargin)
 
 disp('Loading movie...');
-
+tic;
 
 zRange = [];
 frameRange = [];
@@ -18,7 +18,7 @@ end
 
 moviematfile = matfile(movieFile, 'Writable', isWritable);
 
-dims = size(moviematfile.movieMat);
+dims = size(moviematfile, 'movieMat');
 
 
 if isempty(frameRange)
@@ -41,7 +41,7 @@ end
 
 movieMat = moviematfile.movieMat(:, :, zRange, frameRange, chRange);
 
-disp('Movie loaded.');
+disp(['Movie loaded- ', num2str(toc)]);
 
 
 end

@@ -3,9 +3,10 @@ function FrameInfo = processLIFExportMode(rawDataFolder, ProjectionType, Channel
     Prefix, PreProcFolder, PreferredFileNameForTest,...
     nuclearGUI, skipExtraction, lowbit, exportNuclearProjections, exportMovieFiles)
 
+disp('Exporting movie file...');
 
 %Load the reference histogram for the fake histone channel
-    load('ReferenceHist.mat', 'ReferenceHist');
+load('ReferenceHist.mat', 'ReferenceHist');
     
 makeMovieMat = exportMovieFiles || (exportNuclearProjections && ~exist([PreProcFolder,filesep, Prefix, '_movieMat.mat'],'file'));
 
@@ -73,10 +74,7 @@ if ~skipExtraction
     if exportMovieFiles
         
         movieMat = zeros(ySize, xSize, max(NSlices)+nPadding, sum(NFrames),NChannels, 'uint16');
-        movieMatic = newmatic([PreProcFolder, filesep, Prefix, '_movieMat.mat'],true,...
-            newmatic_variable('movieMat', 'uint16',...
-            [ySize, xSize, max(NSlices)+nPadding, sum(NFrames),NChannels],...
-            [ySize, xSize, 1, 1, 1]));
+        
         
         for seriesIndex = 1:NSeries
             waitbar(seriesIndex/NSeries, waitbarFigure)
@@ -123,7 +121,9 @@ if ~skipExtraction
                     %                     LIFImages, framesIndex, seriesIndex, NChannels, NSlices,...
                     %                     zslicesPadding, lowbit);
                 end
+             
                 
+            
                 %Now copy nuclear tracking images
                 if ~nuclearGUI
                     hisMat(:, :, numberOfFrames) = generateNuclearChannel(numberOfFrames, LIFImages,...
@@ -135,10 +135,20 @@ if ~skipExtraction
             end
         end
         
+            if max(movieMat(:)) < 256, dataType = 'uint8'; 
+            else dataType = 'uint16'; end
+            
+            movieMatic = newmatic([PreProcFolder, filesep, Prefix, '_movieMat.mat'],true,...
+            newmatic_variable('movieMat', dataType,...
+            [ySize, xSize, max(NSlices)+nPadding, sum(NFrames),NChannels],...
+            [ySize, xSize, 1, 1, 1]));
+            movieMatic.movieMat = movieMat;
+        
     end
     
     
     if nuclearGUI && exportNuclearProjections
+        
         if ~exportMovieFiles
             movieMat = loadMovieMat([PreProcFolder, filesep, Prefix, '_movieMat.mat']);
             ySize = size(movieMat, 1);
@@ -162,5 +172,9 @@ if ~skipExtraction
     close(waitbarFigure)
     
 end
+
+
+disp('Movie files exported.');
+
 
 end

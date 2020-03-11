@@ -3,11 +3,9 @@ function smoothTile(im, sigmaRange, nTiles, varargin)
 clrmp = 'hsv';
 fun = @(x) x;
 
-for i = 1:(numel(varargin)-1)
+for i = 1:2:(numel(varargin)-1)
     if i ~= numel(varargin)
-        if ~ischar(varargin{i+1})
-            eval([varargin{i} '=varargin{i+1};']);
-        end
+        eval([varargin{i} '=varargin{i+1};']);
     end
 end
 

@@ -18,8 +18,8 @@ df = displayFigures;
 
 %invert the image polarity if necessary. not sure if this is the best
 %metric. size or euler number could also work
-stats =  regionprops(logical(b), 'all');
-statsInvert =  regionprops(logical(~b), 'all');
+stats =  regionprops(logical(b), 'EulerNumber');
+statsInvert =  regionprops(logical(~b), 'EulerNumber');
 if min([statsInvert.EulerNumber]) < min([stats.EulerNumber])
     b=~b;
 end
