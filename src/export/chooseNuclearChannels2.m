@@ -56,7 +56,30 @@ middle_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
 midsum_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
 custom_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
 
+
+truncateAtColon = @(str) str(1:strfind(str, ':')-1);
+
+
 Channel1 = Channels{1}; Channel2 = Channels{2}; Channel3 = Channels{3};
+
+ch1pre =  truncateAtColon(Channel1{1});
+ch2pre =  truncateAtColon(Channel2{1});
+ch3pre =  truncateAtColon(Channel3{1});
+
+if ~isempty(strfind(Channel1{1}, ':'))
+    Channel1{1} = truncateAtColon(Channel1{1});
+end
+if ~isempty(strfind(Channel2{1}, ':'))
+    Channel2{1} = truncateAtColon(Channel2{1});
+end
+if ~isempty(strfind(Channel3{1}, ':'))
+    Channel3{1} = truncateAtColon(Channel3{1});
+end
+
+Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
+
+
+
 
 % creates and stores histone slices
 % idx = 1;
@@ -112,8 +135,8 @@ dim = [screen_size(3) * 0.6, screen_size(4) * 0.75];
 dimVec = [dim(1), dim(2), dim(1), dim(2)]; %to easily normalize units
 fig = uifigure('Position', [100, 100, dim(1), dim(2)], 'Name', 'Choose Histone Channels');
 imgAxis = uiaxes(fig, 'Position', [20, 20, dim(1) - 20, dim(2) * 0.5]);
-blank = zeros(yDim, xDim);
-himage = imshow(uint16(blank), [], 'Parent', imgAxis);
+blank = zeros(yDim, xDim, 'uint8');
+himage = imshow(blank, [], 'Parent', imgAxis);
 
 frame_slider = uislider(fig, 'Limits', [1, numFrames], 'Value', 1, ...
     'Position', [dim(1) * 0.25, dim(2) * 0.6, dim(1) * 0.5, dim(2) * 0.1]);
@@ -131,14 +154,14 @@ minLabelPos = dimVec .* [.7, .425, .1, .05];
 
 max_label = uilabel(fig,  'Text', 'max display value', 'Position', ...
     maxLabelPos);
-max_slider = uislider(fig, 'Limits', [1, 10000], 'Value', 10000, ...
+max_slider = uislider(fig, 'Limits', [1, 256], 'Value', 256, ...
     'Position', maxPos);
 max_slider.ValueChangedFcn = @updateHisImage;
 
 
 min_label = uilabel(fig,  'Text', 'min display value', 'Position', ...
     minLabelPos);
-min_slider = uislider(fig, 'Limits', [0, 10000], 'Value', 1, ...
+min_slider = uislider(fig, 'Limits', [0, 256], 'Value', 1, ...
     'Position',minPos);
 min_slider.ValueChangedFcn = @updateHisImage;
 
@@ -225,7 +248,7 @@ uiwait(fig);
             % Use the reference histogram to scale the Projection (This part
             % might need some more optimization later-YJK)
             ProjectionTemp(:, :, i) = histeq(mat2gray(ProjectionTemp(:, :, i)), ReferenceHist);
-            ProjectionTemp(:, :, i) = ProjectionTemp(:, :, i) * 10000;
+            ProjectionTemp(:, :, i) = ProjectionTemp(:, :, i) * 256;
             
             
         end
@@ -249,8 +272,11 @@ uiwait(fig);
         try imgAxis.CLim = [minDisplayIntensity, maxDisplayIntensity]; end
         
         projCell{frame} = projection_type;
-        chCell{frame} = getChannels;
-
+        %         chCell{frame} = getChannels;
+        Channels = getChannels;
+        Channel1 = Channels{1}; Channel2 = Channels{2}; Channel3 = Channels{3};
+        
+        
     end
 
 % closes UI and returns chosen options
@@ -261,10 +287,11 @@ uiwait(fig);
         end
         
         Channels = getChannels;
+        Channel1 = Channels{1}; Channel2 = Channels{2}; Channel3 = Channels{3};
         
         if returnHisMat
             
-            hisMat = zeros(yDim, xDim, sum(NFrames), 'uint16'); % f x y
+            hisMat = zeros(yDim, xDim, sum(NFrames), 'uint8'); % f x y
             
             for f = 1:NFrames
                 %                 hisMat(:, :, f) = generateNuclearChannel2(projCell{f}, chCell{f}, ReferenceHist, movieMat, f);
@@ -309,61 +336,54 @@ uiwait(fig);
 
     function Channels = getChannels()
         
-        truncateAtColon = @(str) str(1:strfind(str, ':')-1);
         
-        if ~isempty(Channel1)
-            
-            if ~isempty(strfind(Channel1{1}, ':'))
-                Channel1{1} = truncateAtColon(Channel1{1});
-            end
-            
-            if any(strcmp(channel_list.Value, 'Channel 1'))
-                if any(strcmp(invert_list.Value, 'Channel 1'))
-                    Channel1{1} = [Channel1{1}, ':invertedNuclear'];
-                else
-                    Channel1{1} = [Channel1{1}, ':Nuclear'];
-                end
-            else
-                Channel1 = '';
-            end
-            
+        
+        if ~isempty(strfind(Channel1{1}, ':'))
+            Channel1{1} = truncateAtColon(Channel1{1});
         end
-               
-        if ~isempty(Channel2)
-            
-            if ~isempty(strfind(Channel2{1}, ':'))
-                Channel2{1} = truncateAtColon(Channel2{1});
-            end
-            
-            if any(strcmp(channel_list.Value, 'Channel 2'))
-                if any(strcmp(invert_list.Value, 'Channel 2'))
-                    Channel2{1} = [Channel2{1}, ':invertedNuclear'];
-                else
-                    Channel2{1} = [Channel2{1}, ':Nuclear'];
-                end
+        
+        if any(strcmp(channel_list.Value, 'Channel 1'))
+            if any(strcmp(invert_list.Value, 'Channel 1'))
+                Channel1{1} = [ch1pre, ':invertedNuclear'];
             else
-                Channel2 = '';
+                Channel1{1} = [ch1pre, ':Nuclear'];
             end
-            
+        else
+            Channel1{1} = '';
         end
-            
-          if ~isempty(Channel3)
-            
-            if ~isempty(strfind(Channel3{1}, ':'))
-                Channel3{1} = truncateAtColon(Channel3{1});
-            end
-            
-            if any(strcmp(channel_list.Value, 'Channel 3'))
-                if any(strcmp(invert_list.Value, 'Channel 3'))
-                    Channel3{1} = [Channel3{1}, ':invertedNuclear'];
-                else
-                    Channel3{1} = [Channel3{1}, ':Nuclear'];
-                end
+        
+        
+        
+        if ~isempty(strfind(Channel2{1}, ':'))
+            Channel2{1} = truncateAtColon(Channel2{1});
+        end
+        
+        if any(strcmp(channel_list.Value, 'Channel 2'))
+            if any(strcmp(invert_list.Value, 'Channel 2'))
+                Channel2{1} = [ch2pre, ':invertedNuclear'];
             else
-                Channel3 = '';
+                Channel2{1} = [ch2pre, ':Nuclear'];
             end
-            
+        else
+            Channel2{1} = '';
         end
+        
+        
+        
+        if ~isempty(strfind(Channel3{1}, ':'))
+            Channel3{1} = truncateAtColon(Channel3{1});
+        end
+        
+        if any(strcmp(channel_list.Value, 'Channel 3'))
+            if any(strcmp(invert_list.Value, 'Channel 3'))
+                Channel3{1} = [ch3pre, ':invertedNuclear'];
+            else
+                Channel3{1} = [ch3pre, ':Nuclear'];
+            end
+        else
+            Channel3{1} = '';
+        end
+        
         
         Channels = {Channel1, Channel2, Channel3};
         

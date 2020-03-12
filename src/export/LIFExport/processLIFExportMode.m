@@ -66,14 +66,14 @@ if ~skipExtraction
         %     BlankImage = uint16(zeros(ySize, xSize));
         
         nPadding = 2;
-        hisMat = false(ySize, xSize, sum(NFrames));
+        hisMat = zeros(ySize, xSize, sum(NFrames), 'uint8');
     end
     
     %     zslicesPadding = false;
     
     if exportMovieFiles
         
-        movieMat = false(ySize, xSize, max(NSlices)+nPadding, sum(NFrames),NChannels);
+        movieMat = zeros(ySize, xSize, max(NSlices)+nPadding, sum(NFrames),NChannels, 'uint16');
         
         
         for seriesIndex = 1:NSeries
@@ -135,8 +135,18 @@ if ~skipExtraction
             end
         end
         
-            if max(movieMat(:)) < 256, dataType = 'uint8'; 
-            else dataType = 'uint16'; end
+%             shouldIgnoreCh3 = false;
+%             
+%             if shouldIgnoreCh3 
+%                 movieMat = movieMat(:, :, :, :, 1:2);
+%             end
+%             
+%             if max(movieMat(:)) < 256, dataType = 'uint8'; 
+%             else dataType = 'uint16'; end
+            
+            dataType = 'uint8';
+            movieMat = uint8(movieMat);
+            
             
             movieMatic = newmatic([PreProcFolder, filesep, Prefix, '_movieMat.mat'],true,...
             newmatic_variable('movieMat', dataType,...
@@ -164,7 +174,7 @@ if ~skipExtraction
     if  exportNuclearProjections
         
        hisMatic = newmatic([PreProcFolder, filesep, Prefix, '_hisMat.mat'],true,...
-            newmatic_variable('hisMat', 'uint16', [ySize, xSize, sum(NFrames)], [ySize, xSize, 1]));
+            newmatic_variable('hisMat', 'uint8', [ySize, xSize, sum(NFrames)], [ySize, xSize, 1]));
         hisMatic.hisMat = hisMat;
         
     end

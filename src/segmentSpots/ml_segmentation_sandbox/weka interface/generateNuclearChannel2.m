@@ -23,7 +23,7 @@ InvertedChannels = [contains(Channel1, 'inverted', 'IgnoreCase', true), ...
     contains(Channel3, 'inverted', 'IgnoreCase', true)];
 AllChannels = {Channel1,Channel2,Channel3}; %Cell array of channel labels
 
-ProjectionTemp = false(yDim, xDim, nNuclearChannels);
+ProjectionTemp = zeros(yDim, xDim, nNuclearChannels);
 
 if nNuclearChannels ~= 0
     
@@ -49,7 +49,7 @@ if nNuclearChannels ~= 0
         % Use the reference histogram to scale the Projection (This part
         % might need some more optimization later-YJK)
         ProjectionTemp(:, :, ChannelIndex) = histeq(mat2gray(ProjectionTemp(:, :, ChannelIndex)), ReferenceHist);
-        ProjectionTemp(:, :, ChannelIndex) = ProjectionTemp(:, :, ChannelIndex) * 10000;
+        ProjectionTemp(:, :, ChannelIndex) = ProjectionTemp(:, :, ChannelIndex) * 256;
         
         % Check if we are excluding this frame from this nuclear channel
         excludeFrames = 0;
@@ -101,7 +101,7 @@ if nNuclearChannels ~= 0
     end
    
 
-Projection = uint16(Projection);
+Projection = uint8(Projection);
 
 
 % imwrite(Projection, [OutputFolder, filesep, Prefix, '-His_', iIndex(numberOfFrames, 3), '.tif']);
