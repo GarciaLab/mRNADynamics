@@ -18,12 +18,29 @@ else
 end
 
 ellipse = cell(nFrames,1);
+
+%(y, x, major axis, minor axis, orientation angle, maxcontourvalue, time,
+%particle_id %optionally, schnitz id 
+%only the first 4 columns are used, so we'll just set the rest to 0.
+
+for frame = 1:nFrames
+    
+    nEllipses = size(centers{frame}, 1);
+    ellipse{frame} = zeros(nEllipses,8);
+    
+    for ellipseIndex = 1:size(centers{frame},1)
         
-for j = 1:nFrames
-    ellipse{j} = zeros(size(centers{j},1),8);
-    for jj = 1:size(centers{j},1)
-            ellipse{j}(jj,:) = [fliplr(centers{j}(jj,:)) 0.5*diameters(j)*ones(1,2) 0 0 0 0];
+            centroid = fliplr(centers{frame}(ellipseIndex,:));
+            majorAxis = 0.5*diameters(frame);
+            minorAxis = 0.5*diameters(frame);
+            orientationAngle = 0;
+            maxContourValue = 0;
+            time = 0;
+            particleID = 0;
+            ellipse{frame}(ellipseIndex,:) = [centroid, majorAxis, minorAxis,...
+                orientationAngle, maxContourValue, time, particleID];
     end
+    
 end
 
 
