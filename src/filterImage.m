@@ -18,11 +18,11 @@ successFlag = true;
 numType = 'double';
 padding = 'symmetric';
 
-%options must be specified as name, value pairs. unpredictable errors will
-%occur, otherwise.
-for i = 1:2:(numel(varargin)-1)
-    if i ~= numel(varargin)
-        eval([varargin{i} '=varargin{i+1};']);
+for arg = 1:length(varargin)
+    if strcmpi(varargin{arg}, 'filterSize')
+        filterSizeXY = varargin{arg+1};
+    elseif strcmpi(varargin{arg}, 'zStep')
+        zStep  = varargin{arg+1};
     end
 end
 
@@ -37,7 +37,10 @@ if isnan(s1)
     return
 end
 
-filterSizeXY = round(rad*s1);
+if ~exist('filterSizeXY', 'var')
+    filterSizeXY = round(rad*s1);
+end
+
 if ~mod(filterSizeXY,2)
     filterSizeXY = filterSizeXY + 1;
 end
