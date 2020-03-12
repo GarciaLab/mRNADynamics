@@ -66,14 +66,14 @@ if ~skipExtraction
         %     BlankImage = uint16(zeros(ySize, xSize));
         
         nPadding = 2;
-        hisMat =zeros( ySize, xSize, sum(NFrames), 'uint16');
+        hisMat = false(ySize, xSize, sum(NFrames));
     end
     
     %     zslicesPadding = false;
     
     if exportMovieFiles
         
-        movieMat = zeros(ySize, xSize, max(NSlices)+nPadding, sum(NFrames),NChannels, 'uint16');
+        movieMat = false(ySize, xSize, max(NSlices)+nPadding, sum(NFrames),NChannels);
         
         
         for seriesIndex = 1:NSeries
@@ -169,7 +169,7 @@ if ~skipExtraction
         
     end
     
-    close(waitbarFigure)
+    try close(waitbarFigure); end
     
 end
 

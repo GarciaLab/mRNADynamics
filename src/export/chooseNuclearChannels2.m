@@ -2,7 +2,7 @@
 % This function generates a GUI to explore different ways of generating a
 % nuclear channel. You can invert a channel and you can combine multiple
 % together. You can also change the projectiontype that is used. The final
-% combination of channels and projection type used when pressing 'Save 
+% combination of channels and projection type used when pressing 'Save
 % Channel Selection' will be what will be used when forming the
 % nuclear/histone channel. Note that this does not change your
 % MovieDatabase entry--just the nuclear/histone images generated. At the
@@ -41,7 +41,7 @@ NChannels = size(movieMat, 5);
 yDim = size(movieMat, 1);
 xDim = size(movieMat, 2);
 
-%construct cell to store projections for each frame separately 
+%construct cell to store projections for each frame separately
 projCell = cell(NFrames, 1);
 chCell = cell(NFrames, 1);
 for ff = 1:NFrames
@@ -60,39 +60,39 @@ Channel1 = Channels{1}; Channel2 = Channels{2}; Channel3 = Channels{3};
 
 % creates and stores histone slices
 % idx = 1;
-    for framesIndex = 1:NFrames
-%         if mod(idx, skip_factor) == 1
-            for channelIndex = 1:NChannels
-                
-                HisSlices = squeeze(movieMat(:, :, :, framesIndex,channelIndex)); %ch z t y x 
-%                 
-%                 median_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
-%                     'medianprojection', NSlices, HisSlices);
-%                 max_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
-%                     'maxprojection', NSlices, HisSlices);
-%                 middle_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
-%                     'middleprojection', NSlices, HisSlices);
-%                 midsum_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
-%                     'midsumprojection', NSlices, HisSlices);
-%                 custom_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
-%                     'customprojection', NSlices, HisSlices, max_custom, min_custom);
-                
-%                  median_proj{channelIndex, framesIndex} = calculateProjection(...
-%                     'medianprojection', NSlices, HisSlices);
-                median_proj{channelIndex, framesIndex} = calculateProjection(...
-                    'midsumprojection', NSlices, HisSlices);
-                max_proj{channelIndex, framesIndex} = calculateProjection(...
-                    'maxprojection', NSlices, HisSlices);
-                middle_proj{channelIndex, framesIndex} = calculateProjection(...
-                    'middleprojection', NSlices, HisSlices);
-                midsum_proj{channelIndex, framesIndex} = calculateProjection(...
-                    'midsumprojection', NSlices, HisSlices);
-                custom_proj{channelIndex, framesIndex} = calculateProjection(...
-                    'customprojection', NSlices, HisSlices, max_custom, min_custom);
-            end       
-       
-%         end
-%      idx = idx + 1;
+for framesIndex = 1:NFrames
+    %         if mod(idx, skip_factor) == 1
+    for channelIndex = 1:NChannels
+        
+        HisSlices = squeeze(movieMat(:, :, :, framesIndex,channelIndex)); %ch z t y x
+        %
+        %                 median_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
+        %                     'medianprojection', NSlices, HisSlices);
+        %                 max_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
+        %                     'maxprojection', NSlices, HisSlices);
+        %                 middle_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
+        %                     'middleprojection', NSlices, HisSlices);
+        %                 midsum_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
+        %                     'midsumprojection', NSlices, HisSlices);
+        %                 custom_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
+        %                     'customprojection', NSlices, HisSlices, max_custom, min_custom);
+        
+        %                  median_proj{channelIndex, framesIndex} = calculateProjection(...
+        %                     'medianprojection', NSlices, HisSlices);
+        median_proj{channelIndex, framesIndex} = calculateProjection(...
+            'midsumprojection', NSlices, HisSlices);
+        max_proj{channelIndex, framesIndex} = calculateProjection(...
+            'maxprojection', NSlices, HisSlices);
+        middle_proj{channelIndex, framesIndex} = calculateProjection(...
+            'middleprojection', NSlices, HisSlices);
+        midsum_proj{channelIndex, framesIndex} = calculateProjection(...
+            'midsumprojection', NSlices, HisSlices);
+        custom_proj{channelIndex, framesIndex} = calculateProjection(...
+            'customprojection', NSlices, HisSlices, max_custom, min_custom);
+    end
+    
+    %         end
+    %      idx = idx + 1;
 end
 
 % numFrames = idx - 1;
@@ -188,8 +188,8 @@ save_button.ButtonPushedFcn = @saveOptions;
 updateHisImage();
 uiwait(fig);
 
-    % called whenever the frame, channels, or projection is changed. Updates
-    % the histone image the UI shows
+% called whenever the frame, channels, or projection is changed. Updates
+% the histone image the UI shows
     function updateHisImage(~, ~)
         channels_to_use = channel_list.Value;
         inverted_channels = invert_list.Value;
@@ -201,7 +201,7 @@ uiwait(fig);
         
         channels = [];
         for i = 1:3
-            if any(strcmp(channels_to_use, ['Channel ' num2str(i)])) 
+            if any(strcmp(channels_to_use, ['Channel ' num2str(i)]))
                 channels = [channels i];
             end
         end
@@ -223,50 +223,51 @@ uiwait(fig);
                 ProjectionTemp(:, :, i) = imcomplement(ProjectionTemp(:, :, i));
             end
             % Use the reference histogram to scale the Projection (This part
-              % might need some more optimization later-YJK)
-              ProjectionTemp(:, :, i) = histeq(mat2gray(ProjectionTemp(:, :, i)), ReferenceHist);
-              ProjectionTemp(:, :, i) = ProjectionTemp(:, :, i) * 10000;
-              
-              
+            % might need some more optimization later-YJK)
+            ProjectionTemp(:, :, i) = histeq(mat2gray(ProjectionTemp(:, :, i)), ReferenceHist);
+            ProjectionTemp(:, :, i) = ProjectionTemp(:, :, i) * 10000;
+            
+            
         end
-
+        
         % Getting average of all Projections
         if length(channels) > 1
-          Projection = nanmean(ProjectionTemp, 3);
+            Projection = nanmean(ProjectionTemp, 3);
         else
-          Projection = ProjectionTemp;
+            Projection = ProjectionTemp;
         end
-          
-        maxB = round(max_slider.Value);
-        minB = round(min_slider.Value);
         
-         if minB >= maxB
-            maxB = max(max(Projection));
-            minB = median(median(Projection));
+        maxDisplayIntensity = round(max_slider.Value);
+        minDisplayIntensity = round(min_slider.Value);
+        
+        if minDisplayIntensity >= maxDisplayIntensity
+            maxDisplayIntensity = max(max(Projection));
+            minDisplayIntensity = median(median(Projection));
         end
+        
+        himage.CData = Projection;
+        try imgAxis.CLim = [minDisplayIntensity, maxDisplayIntensity]; end
+        
+        projCell{frame} = projection_type;
+        chCell{frame} = getChannels;
 
-         himage.CData = Projection;
-         imgAxis.CLim = [minB, maxB];
-         
-       projCell{frame} = projection_type;
-       chCell{frame} = getChannels;
-
-                  
     end
-    
-    % closes UI and returns chosen options
+
+% closes UI and returns chosen options
     function saveOptions(~, ~)
         ProjectionType = proj_type_dropdown.Value;
         if strcmpi(ProjectionType, 'customprojection')
             ProjectionType = [ProjectionType ':' num2str(max_custom) ':' num2str(min_custom)];
         end
-               
+        
+        Channels = getChannels;
+        
         if returnHisMat
             
             hisMat = zeros(yDim, xDim, sum(NFrames), 'uint16'); % f x y
-
+            
             for f = 1:NFrames
-%                 hisMat(:, :, f) = generateNuclearChannel2(projCell{f}, chCell{f}, ReferenceHist, movieMat, f);
+                %                 hisMat(:, :, f) = generateNuclearChannel2(projCell{f}, chCell{f}, ReferenceHist, movieMat, f);
                 hisMat(:, :, f) = generateNuclearChannel2(ProjectionType, Channels, ReferenceHist, movieMat, f);
             end
             
@@ -290,25 +291,32 @@ uiwait(fig);
         
         %redoes projection for custom_proj
         idx2 = 1;
-            for framesIndex = 1:NFrames
-                if mod(idx2, skip_factor) == 1
-                    for channelIndex = 1:NChannels
-                        
-                        HisSlices = squeeze(movieMat(:, :, :, framesIndex,channelIndex)); %ch z t y x 
-
-                        custom_proj{channelIndex, ceil(idx2 / skip_factor)} = calculateProjection(...
-                            'customprojection', NSlices, HisSlices, max_custom, min_custom);
-                    end       
+        for framesIndex = 1:NFrames
+            if mod(idx2, skip_factor) == 1
+                for channelIndex = 1:NChannels
+                    
+                    HisSlices = squeeze(movieMat(:, :, :, framesIndex,channelIndex)); %ch z t y x
+                    
+                    custom_proj{channelIndex, ceil(idx2 / skip_factor)} = calculateProjection(...
+                        'customprojection', NSlices, HisSlices, max_custom, min_custom);
                 end
-                idx2 = idx2 + 1;
             end
+            idx2 = idx2 + 1;
+        end
         
         updateHisImage();
     end
 
     function Channels = getChannels()
         
+        truncateAtColon = @(str) str(1:strfind(str, ':')-1);
+        
         if ~isempty(Channel1)
+            
+            if ~isempty(strfind(Channel1{1}, ':'))
+                Channel1{1} = truncateAtColon(Channel1{1});
+            end
+            
             if any(strcmp(channel_list.Value, 'Channel 1'))
                 if any(strcmp(invert_list.Value, 'Channel 1'))
                     Channel1{1} = [Channel1{1}, ':invertedNuclear'];
@@ -318,8 +326,15 @@ uiwait(fig);
             else
                 Channel1 = '';
             end
+            
         end
+               
         if ~isempty(Channel2)
+            
+            if ~isempty(strfind(Channel2{1}, ':'))
+                Channel2{1} = truncateAtColon(Channel2{1});
+            end
+            
             if any(strcmp(channel_list.Value, 'Channel 2'))
                 if any(strcmp(invert_list.Value, 'Channel 2'))
                     Channel2{1} = [Channel2{1}, ':invertedNuclear'];
@@ -331,7 +346,13 @@ uiwait(fig);
             end
             
         end
-        if ~isempty(Channel3)
+            
+          if ~isempty(Channel3)
+            
+            if ~isempty(strfind(Channel3{1}, ':'))
+                Channel3{1} = truncateAtColon(Channel3{1});
+            end
+            
             if any(strcmp(channel_list.Value, 'Channel 3'))
                 if any(strcmp(invert_list.Value, 'Channel 3'))
                     Channel3{1} = [Channel3{1}, ':invertedNuclear'];
@@ -341,6 +362,7 @@ uiwait(fig);
             else
                 Channel3 = '';
             end
+            
         end
         
         Channels = {Channel1, Channel2, Channel3};

@@ -54,8 +54,7 @@ while k<=length(varargin)
         rootFolder = varargin{k+1};
     elseif strcmpi(varargin{k}, 'zslicesPadding')
         zslicesPadding = true;
-    elseif strcmpi(varargin{k}, 'lowbit')
-        lowbit = true;
+ 
    elseif strcmpi(varargin{k}, 'exportNuclearProjections')
         exportNuclearProjections= varargin{k+1};
     elseif strcmpi(varargin{k}, 'exportMovieFiles')

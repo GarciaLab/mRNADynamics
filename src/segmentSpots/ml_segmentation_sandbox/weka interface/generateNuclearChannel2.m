@@ -6,6 +6,8 @@
 %
 function Projection = generateNuclearChannel2(ProjectionType, Channels, ReferenceHist, movieMat, frame)
 
+yDim = size(movieMat, 1);
+xDim = size(movieMat, 2);
 NSlices = size(movieMat, 3);
 
 Channel1=Channels{1}; Channel2 = Channels{2}; Channel3 = Channels{3};
@@ -20,6 +22,8 @@ InvertedChannels = [contains(Channel1, 'inverted', 'IgnoreCase', true), ...
     contains(Channel2, 'inverted', 'IgnoreCase', true), ...
     contains(Channel3, 'inverted', 'IgnoreCase', true)];
 AllChannels = {Channel1,Channel2,Channel3}; %Cell array of channel labels
+
+ProjectionTemp = false(yDim, xDim, nNuclearChannels);
 
 if nNuclearChannels ~= 0
     
