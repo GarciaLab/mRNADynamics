@@ -117,9 +117,13 @@ profile off; profile viewer;
 try close(wb); end
 
 mkdir([ProcPath, filesep, Prefix, '_']);
-newmatic([ProcPath, filesep, Prefix, '_', filesep, Prefix, '_probHis.mat'],true,...
+probHisFile = [ProcPath, filesep, Prefix, '_', filesep, Prefix, '_probHis.mat'];
+if whos(var2str(pMap)).bytes < 2E9
+    save(probHisFile, 'pMap', '-v6')
+else
+newmatic(probHisFile,true,...
             newmatic_variable('pMap', 'double', [ySize, xSize, nFrames], [ySize, xSize, 1]));
-
+end
 
 %% Get Ellipses
 if makeEllipses
@@ -149,6 +153,7 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'] ,'file')
     
 end
 end
+
 if doTracking
 %% Tracking
 %Decide whether we need to re-track

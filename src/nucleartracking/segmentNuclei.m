@@ -53,7 +53,7 @@ end
 %need to change this later. will be loaded from computerfolders
 ramDrive = 'R:\';
 
-nFrames = size(hisMat, 1);
+nFrames = size(hisMat, 3);
 
 pMap = zeros(size(hisMat, 1), size(hisMat, 2), size(hisMat, 3));
 
@@ -103,8 +103,8 @@ for f = 1:nFrames
     if f~=1, tic, disp(['Making probability map for frame: ', num2str(f),...
             '. Estimated ', num2str(mean_dT*(nFrames-f)), ' minutes remaining.'])
     end
-    im = squeeze(hisMat(f, :, :));
-    pMap(f, :, :) = classifyImageWeka(im, trainingData,'tempPath', ramDrive,...
+    im = squeeze(hisMat(:, :, f));
+    pMap(:, :, f) = classifyImageWeka(im, trainingData,'tempPath', ramDrive,...
         'reSc', reSc, 'classifierObj', classifier, 'arffLoader', arffLoader, 'matlabLoader', matlabLoader);
     try waitbar(f/nFrames, wb); end
     dT(f)=toc/60;
@@ -114,9 +114,13 @@ end
 try close(wb); end
 
 mkdir([ProcPath, filesep, Prefix, '_']);
-newmatic([ProcPath, filesep, Prefix, '_', filesep, Prefix, '_probHis.mat'],true,...
-            newmatic_variable('pMap', 'double', [yDim, xDim, nFrames], [ySize, xSize, 1]));
-
+probHisFile = [ProcPath, filesep, Prefix, '_', filesep, Prefix, '_probHis.mat'];
+if whos(var2str(pMap)).bytes < 2E9
+    save(probHisFile, 'pMap', '-v6')
+else
+newmatic(probHisFile,true,...
+            newmatic_variable('pMap', 'double', [ySize, xSize, nFrames], [ySize, xSize, 1]));
+end
 
 %% Get Ellipses
 

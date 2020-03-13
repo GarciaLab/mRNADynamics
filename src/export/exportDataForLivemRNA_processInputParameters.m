@@ -1,6 +1,7 @@
 function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest,...
     keepTifs, generateTifStacks, nuclearGUI,...
-    skipExtraction, rootFolder, zslicesPadding, lowbit, dataType,exportNuclearProjections, exportMovieFiles]...
+    skipExtraction, rootFolder, zslicesPadding, lowbit,...
+    dataType,exportNuclearProjections, exportMovieFiles, ignoreCh3]...
     ...
     = exportDataForLivemRNA_processInputParameters(varargin)
 
@@ -22,6 +23,7 @@ lowbit = false;
 dataType = '';
 exportNuclearProjections = true;
 exportMovieFiles = true;
+ignoreCh3 = false;
 
 k=1;
 while k<=length(varargin)
@@ -48,6 +50,8 @@ while k<=length(varargin)
         dataType = varargin{k+1};
     elseif strcmpi(varargin{k}, 'nuclearGUI')
         nuclearGUI = true;
+         elseif strcmpi(varargin{k}, 'ignoreCh3')
+        ignoreCh3 = true;
     elseif strcmpi(varargin{k}, 'skipExtraction')
         skipExtraction = true;
     elseif strcmpi(varargin{k}, 'rootFolder')

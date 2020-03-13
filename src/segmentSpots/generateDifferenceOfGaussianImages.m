@@ -120,9 +120,13 @@ end
         p = p + 1;
     end
 
-% clear movieMat;
-save([ProcPath, filesep, Prefix,'_', filesep, Prefix, '_dogMat.mat'], 'dogMat', '-v7.3', '-nocompression');
-% clear dogMat
+dogFile = [ProcPath, filesep, Prefix,'_', filesep, Prefix, '_dogMat.mat'];
+
+if whos(var2str(dogMat)).bytes < 2E9
+    save(dogFile, 'dogMat', '-v6');
+else
+    save(dogFile, 'dogMat', '-v7.3', '-nocompression');
+end
 
 end
 

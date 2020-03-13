@@ -145,6 +145,15 @@ else
 
 end
 
-save([ProcPath, filesep, Prefix, '_', filesep, Prefix, '_probSpot.mat'], 'pMap', '-v7.3', '-nocompression');
+mkdir([ProcPath, filesep, Prefix, '_']);
+
+probSpotFile = [ProcPath, filesep, Prefix, '_', filesep, Prefix, '_probSpot.mat'];
+if whos(var2str(pMap)).bytes < 2E9
+    save(probSpotFile, 'pMap', '-v6')
+else
+newmatic(probSpotFile,true,...
+            newmatic_variable('pMap', 'double', [ySize, xSize, zSize, nFrames], [ySize, xSize, 1, 1]));
+end
+
       
 end

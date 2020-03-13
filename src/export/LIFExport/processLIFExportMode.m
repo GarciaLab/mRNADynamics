@@ -1,9 +1,13 @@
 % Added PreferredFileName so we can automate testing and bypass the user prompt when there are many files available.
 function FrameInfo = processLIFExportMode(rawDataFolder, ProjectionType, Channels,...
     Prefix, PreProcFolder, PreferredFileNameForTest,...
-    nuclearGUI, skipExtraction, lowbit, exportNuclearProjections, exportMovieFiles)
+    nuclearGUI, skipExtraction, lowbit, exportNuclearProjections, exportMovieFiles, ignoreCh3)
 
 disp('Exporting movie file...');
+
+if ~exportMovieFiles
+    FrameInfo = [];
+end
 
 %Load the reference histogram for the fake histone channel
 load('ReferenceHist.mat', 'ReferenceHist');
@@ -134,25 +138,35 @@ if ~skipExtraction
                 numberOfFrames = numberOfFrames + 1;
             end
         end
-        
-%             shouldIgnoreCh3 = false;
-%             
-%             if shouldIgnoreCh3 
-%                 movieMat = movieMat(:, :, :, :, 1:2);
-%             end
-%             
-%             if max(movieMat(:)) < 256, dataType = 'uint8'; 
-%             else dataType = 'uint16'; end
+
+         %losslessly compress the movie if we're able 
+         
+            if ignoreCh3
+                movieMat = movieMat(:, :, :, :, 1:2);
+                NChannels = NChannels - 1;
+            end
             
-            dataType = 'uint8';
-            movieMat = uint8(movieMat);
+              if max(movieMat(:)) < 256
+                  dataType = 'uint8'; 
+                  movieMat = uint8(movieMat);
+              else
+                  dataType = 'uint16';
+                  movieMat = uint16(movieMat);
+              end
             
-            
-            movieMatic = newmatic([PreProcFolder, filesep, Prefix, '_movieMat.mat'],true,...
-            newmatic_variable('movieMat', dataType,...
-            [ySize, xSize, max(NSlices)+nPadding, sum(NFrames),NChannels],...
-            [ySize, xSize, 1, 1, 1]));
-            movieMatic.movieMat = movieMat;
+            if  whos(var2str(movieMat)).bytes < 2E9
+
+                save([PreProcFolder, filesep, Prefix, '_movieMat.mat'], 'movieMat', '-v6');
+                
+            else
+                
+                movieMatic = newmatic([PreProcFolder, filesep, Prefix, '_movieMat.mat'],true,...
+                newmatic_variable('movieMat', dataType,...
+                [ySize, xSize, max(NSlices)+nPadding, sum(NFrames),NChannels],...
+                [ySize, xSize, 1, 1, 1]));
+                movieMatic.movieMat = movieMat;
+                
+            end
         
     end
     
@@ -172,10 +186,14 @@ if ~skipExtraction
     end
     
     if  exportNuclearProjections
-        
-       hisMatic = newmatic([PreProcFolder, filesep, Prefix, '_hisMat.mat'],true,...
-            newmatic_variable('hisMat', 'uint8', [ySize, xSize, sum(NFrames)], [ySize, xSize, 1]));
-        hisMatic.hisMat = hisMat;
+       
+        if whos(var2str(hisMat)).bytes < 2E9
+            save([PreProcFolder, filesep, Prefix, '_hisMat.mat'], 'hisMat', '-v6');
+        else
+             hisMatic = newmatic([PreProcFolder, filesep, Prefix, '_hisMat.mat'],true,...
+                newmatic_variable('hisMat', 'uint8', [ySize, xSize, sum(NFrames)], [ySize, xSize, 1]));
+            hisMatic.hisMat = hisMat;
+        end
         
     end
     

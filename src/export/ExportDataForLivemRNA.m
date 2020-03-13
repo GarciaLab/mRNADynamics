@@ -73,7 +73,7 @@ function Prefix = ExportDataForLivemRNA(varargin)
 
   [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs,...
     generateTifStacks, nuclearGUI, skipExtraction, rootFolder, zslicesPadding,...
-    lowbit, dataType, exportNuclearProjections, exportMovieFiles] = exportDataForLivemRNA_processInputParameters(varargin{:});
+    lowbit, dataType, exportNuclearProjections, exportMovieFiles, ignoreCh3] = exportDataForLivemRNA_processInputParameters(varargin{:});
 
 keepTifs = true;
 
@@ -122,7 +122,8 @@ end
 
   elseif strcmpi(FileMode, 'LIFExport')
     FrameInfo = processLIFExportMode(rawDataFolder, ProjectionType, Channels, Prefix, ...
-      OutputFolder, PreferredFileNameForTest, nuclearGUI, skipExtraction, lowbit,  exportNuclearProjections, exportMovieFiles);
+      OutputFolder, PreferredFileNameForTest, nuclearGUI, skipExtraction, lowbit,...
+      exportNuclearProjections, exportMovieFiles, ignoreCh3);
 
   elseif strcmpi(FileMode, 'DSPIN') || strcmpi(FileMode, 'DND2')
     %Nikon spinning disk confocal mode - TH/CS 2017
@@ -131,11 +132,13 @@ end
 
   doFrameSkipping(SkipFrames, FrameInfo, OutputFolder);
 
-  %Save the information about the various frames
-  DropboxFolderName = [DropboxFolder, filesep, Prefix];
-  disp(['Creating folder: ', DropboxFolderName]);
-  mkdir(DropboxFolderName);
-  save([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo', '-v6');
+  if exportMovieFiles
+      %Save the information about the various frames
+      DropboxFolderName = [DropboxFolder, filesep, Prefix];
+      disp(['Creating folder: ', DropboxFolderName]);
+      mkdir(DropboxFolderName);
+      save([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo', '-v6');
+  end
 
   if strcmpi(FileMode, 'LIFExport') & ~keepTifs
     removeUnwantedTIFs(rawDataFolder);
