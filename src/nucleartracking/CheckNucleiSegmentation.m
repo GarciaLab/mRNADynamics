@@ -62,8 +62,6 @@ for i = 1:length(varargin)
     end
 end
 
-startParallelPool(nWorkers, 0, 1);
-
 
 [~,ProcPath,DropboxFolder,~,PreProcPath]=...
     DetermineLocalFolders(Prefix);
@@ -103,7 +101,7 @@ hasSchnitzInd =size(Ellipses{1},2) == 9;
 
 if ~hasSchnitzInd
     Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
-    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses');
+    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses', '-v6');
 end
 
 Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
@@ -122,8 +120,8 @@ if chooseHis
          clear probHis;
     end
 else
-    [~,hisMat, maxMat, medMat, midMat]...
-                = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, 'loadMovie', false);
+hisMat = loadHisMat([PreProcPath, filesep, ...
+    Prefix, filesep, Prefix, '_hisMat.mat']);
 end
 
 nFrames = size(hisMat, 3);
@@ -293,7 +291,7 @@ while (cc~='x')
     elseif (ct~=0)&(cc=='<')&(CurrentFrame-4>1)
         CurrentFrame=CurrentFrame-5;
     elseif (ct~=0)&(cc=='s')
-        save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
+        save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v6')
         disp('Ellipses saved.')
     elseif (ct==0)&(strcmp(get(Overlay,'SelectionType'),'normal'))
         cc=1;
@@ -379,15 +377,20 @@ while (cc~='x')
          [centers, radii, mask] = findEllipsesByKMeans(HisImage, 'displayFigures', false);
 
         for i = 1:length(radii)
-            Ellipses{CurrentFrame}(i, :) = [centers(i,1),centers(i,2),radii(i),radii(i),0,0,0,0];
+            Ellipses{CurrentFrame}(i, :) = [centers(i,1),centers(i,2),radii(i),radii(i),...
+                0,0,0,0];
         end
         
     elseif (ct~=0)&(cc=='~')
- 
-        [~, ~, Projection] = chooseNuclearChannels2(...
-            movieMat, 'ProjectionType', ProjectionType,'Channels',Channels,'ReferenceHist', ReferenceHist);
         
-        DisplayRange = [mean(mean(squeeze(Projection(:, :, CurrentFrame)))), max(max(squeeze(Projection(:, :, CurrentFrame)))) ];
+        ProjectionType = 'midsumprojection';
+        
+        [~, ~, Projection] = chooseNuclearChannels2(...
+            movieMat, 'ProjectionType', ProjectionType,'Channels',...
+            Channels,'ReferenceHist', ReferenceHist);
+        
+        DisplayRange = [mean(mean(squeeze(Projection(:, :, CurrentFrame)))),...
+            max(max(squeeze(Projection(:, :, CurrentFrame)))) ];
         
         disp('changed projection');
         
@@ -421,7 +424,7 @@ end
 
 
 
-save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v7.3', '-nocompression')
+save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v6')
 close all;
 
 %Decide whether we need to re-track

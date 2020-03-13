@@ -1,5 +1,7 @@
 function movieMat = loadMovieMat(movieFile, varargin)
 
+warning('off', 'MATLAB:MatFile:OlderFormat')
+
 disp('Loading movie...');
 tic;
 
@@ -17,7 +19,6 @@ for i = 1:2:(numel(varargin)-1)
 end
 
 moviematfile = matfile(movieFile, 'Writable', isWritable);
-
 dims = size(moviematfile, 'movieMat');
 
 

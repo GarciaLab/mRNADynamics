@@ -12,7 +12,8 @@ end
 %Load the reference histogram for the fake histone channel
 load('ReferenceHist.mat', 'ReferenceHist');
     
-makeMovieMat = exportMovieFiles || (exportNuclearProjections && ~exist([PreProcFolder,filesep, Prefix, '_movieMat.mat'],'file'));
+makeMovieMat = exportMovieFiles || (exportNuclearProjections &&...
+    ~exist([PreProcFolder,filesep, Prefix, '_movieMat.mat'],'file'));
 
 if makeMovieMat
     
@@ -139,7 +140,7 @@ if ~skipExtraction
             end
         end
 
-         %losslessly compress the movie if we're able 
+         %losslessly compactify the movie if we're able 
          
             if ignoreCh3
                 movieMat = movieMat(:, :, :, :, 1:2);

@@ -118,7 +118,8 @@ function [outs, movieMat, hisMat] = CheckParticleTracking(Prefix, varargin)
 % Created:
 % Last Updated: 1/13/2018
 
-close all
+cleanupObj = onCleanup(@closeFigs);
+
 
 warning('off', 'MATLAB:nargchk:deprecated')
 warning('off', 'MATLAB:mir_warning_maybe_uninitialized_temporary')
@@ -578,5 +579,11 @@ disp(['(Left off at Particle #', num2str(cptState.CurrentParticle), ')'])
 outs = {cptState.Particles, cptState.Spots, cptState.SpotFilter, cptState.schnitzcells, cptState.FrameInfo};
 
 CheckNucleiModified(cptState, DropboxFolder, Prefix, fish)
+
+end
+
+function closeFigs()
+
+close all force;
 
 end

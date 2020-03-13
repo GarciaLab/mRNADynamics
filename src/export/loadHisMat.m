@@ -1,5 +1,7 @@
 function hisMat = loadHisMat(hisFile,  varargin)
 
+warning('off', 'MATLAB:MatFile:OlderFormat')
+
 disp('Loading nuclear movie....');
 
 frameRange = [];
@@ -13,8 +15,8 @@ for i = 1:2:(numel(varargin)-1)
     end
 end
 
-hismatfile = matfile(hisFile, 'Writable', isWritable);
 
+hismatfile = matfile(hisFile, 'Writable', isWritable);
 dims = size(hismatfile, 'hisMat');
 
 

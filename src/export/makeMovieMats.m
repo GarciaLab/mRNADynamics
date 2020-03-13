@@ -82,19 +82,20 @@ if makeMovie
     
     disp('Creating movie mats...')
     
-    startParallelPool(nWorkers, 0, 1);
+%     startParallelPool(nWorkers, 0, 1);
     
     movieMat = zeros(ySize, xSize,nSlices+nPadding, nFrames, nCh, 'uint16'); % ch z t x y
     
     if makeHis
-        hisMat = zeros(ySize, xSize, nFrames, 'uint16'); % f x y
+        hisMat = zeros(ySize, xSize, nFrames, 'uint8'); % f x y
     end
     
     for ch = 1:nCh
         for f = 1:nFrames
             
             for z = 1:nSlices+nPadding
-                movieMat(:, :, z, f, ch) = imread([pth,'_',iIndex(f, nDigits), '_z', iIndex(z, 2), ['_ch', iIndex(ch, 2)], '.tif']);
+                movieMat(:, :, z, f, ch) = imread([pth,'_',iIndex(f, nDigits),...
+                    '_z', iIndex(z, 2), ['_ch', iIndex(ch, 2)], '.tif']);
             end
             
             if makeHis
@@ -104,8 +105,8 @@ if makeMovie
         end
     end
     
-    save([pth, '_movieMat.Mat'],'movieMat', '-v7.3', '-nocompression');
-    save([pth, '_hisMat.Mat'],'hisMat', '-v7.3', '-nocompression');
+%     save([pth, '_movieMat.Mat'],'movieMat', '-v7.3', '-nocompression');
+%     save([pth, '_hisMat.Mat'],'hisMat', '-v7.3', '-nocompression');
     
     disp(['Movie mats created.' , num2str(toc), ' s elapsed.'])
     
@@ -119,7 +120,7 @@ if  makeHis && ~makeMovie
         hisMat(:, :, f) = imread([pth,'-His_', iIndex(f, nDigits), '.tif']);
     end
     
-    save([pth, '_hisMat.Mat'],'hisMat', '-v7.3', '-nocompression');
+%     save([pth, '_hisMat.Mat'],'hisMat', '-v7.3', '-nocompression');
     
 end
 
@@ -138,8 +139,8 @@ if loadProjs
     end
     
     if makeProjs
-        maxMat = squeeze(max(movieMat(:,:,:,:, :), [], 3)); % y x z t ch
-        midMat = squeeze(max(movieMat(:,:,round(nSlices * .50):round(nSlices * .75),:, :), [], 3));
+%         maxMat = squeeze(max(movieMat(:,:,:,:, :), [], 3)); % y x z t ch
+%         midMat = squeeze(max(movieMat(:,:,round(nSlices * .50):round(nSlices * .75),:, :), [], 3));
         save([pth, '_maxMat.Mat'],'maxMat', '-v7.3', '-nocompression');
         save([pth, '_midMat.Mat'],'maxMat', '-v7.3', '-nocompression');
     end

@@ -40,16 +40,13 @@ if nNuclearChannels ~= 0
         
         ProjectionTemp(:, :, ChannelIndex) = calculateProjection(ProjectionType, NSlices, HisSlices);
         
-        % Think about "invertedNuclear", for example, MCP-mCherry, then
-        % invert the ProjectionTemp using imcomplement
         if InvertedChannels(nuclearChannel) == 1
-            ProjectionTemp(:, :, ChannelIndex) = imcomplement(ProjectionTemp(:, :, ChannelIndex));
+            ProjectionTemp(:, :, ChannelIndex) =...
+                imcomplement(ProjectionTemp(:, :, ChannelIndex));
         end
         
-        % Use the reference histogram to scale the Projection (This part
-        % might need some more optimization later-YJK)
-        ProjectionTemp(:, :, ChannelIndex) = histeq(mat2gray(ProjectionTemp(:, :, ChannelIndex)), ReferenceHist);
-        ProjectionTemp(:, :, ChannelIndex) = ProjectionTemp(:, :, ChannelIndex) * 256;
+        ProjectionTemp(:, :, ChannelIndex) = 256*...
+            histeq(mat2gray(ProjectionTemp(:, :, ChannelIndex)), ReferenceHist);
         
         % Check if we are excluding this frame from this nuclear channel
         excludeFrames = 0;

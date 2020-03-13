@@ -25,8 +25,8 @@ load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 
 load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses');
 
-[~,hisMat, ~, ~, ~]...
-    = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo);
+hisFile = [PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'];
+hisMat = loadHisMat(hisFile);
 
 hisMat = double(hisMat);
 
@@ -36,7 +36,7 @@ EllipsesNew = Ellipses;
 
 for f = 1:nFrames
     
-    d(f).hisImage = squeeze(hisMat(f, :, :));
+    d(f).hisImage = squeeze(hisMat(:, :, f));
         
     rad0 = median(Ellipses{f}(:, 3), 1);  %3 and 4 are the semimajor/minor axes of the ellipses
     
@@ -94,6 +94,6 @@ end
 
 Ellipses = EllipsesNew;
 
-save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses', '-v7.3', '-nocompression');
+save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses', '-v6');
 
 end
