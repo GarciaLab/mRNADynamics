@@ -389,7 +389,11 @@ while (cc ~= 'x')
             cptState.ImageMat = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
                 FilePrefix, iIndex(cptState.CurrentFrame, nDigits), '_z', iIndex(cptState.CurrentZ, 2), cptState.nameSuffix, '.tif']);
         else
-            cptState.ImageMat = squeeze(movieMat(cptState.CurrentZ, cptState.CurrentFrame, :, :));
+            if nFrames > 1
+                cptState.ImageMat = squeeze(movieMat(cptState.CurrentZ, cptState.CurrentFrame, :, :));
+            else
+                cptState.ImageMat = squeeze(movieMat(cptState.CurrentZ, :, :));
+            end
         end
         if multiView
 %             if cptState.CurrentParticle == 2
