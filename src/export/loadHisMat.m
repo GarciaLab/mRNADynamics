@@ -1,8 +1,8 @@
-function hisMat = loadHisMat(hisFile,  varargin)
+function hisMat = loadHisMat(inputString, varargin)
 
 warning('off', 'MATLAB:MatFile:OlderFormat')
 
-disp('Loading nuclear movie....');
+disp(['Loading nuclear movie: ',inputString,'...']);
 
 frameRange = [];
 isWritable = false;
@@ -16,7 +16,19 @@ for i = 1:2:(numel(varargin)-1)
 end
 
 
-hismatfile = matfile(hisFile, 'Writable', isWritable);
+%either pass the moviefile path directly or...
+% load with the project prefix
+if ~contains(inputString, '.mat')
+    Prefix = inputString;
+    [~, ~, ~, ~, PreProcPath] = DetermineLocalFolders(Prefix);
+    inputString = [PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'];
+else
+    inputString = inputString;
+end
+
+
+
+hismatfile = matfile(inputString, 'Writable', isWritable);
 dims = size(hismatfile, 'hisMat');
 
 
@@ -28,7 +40,7 @@ end
 
 hisMat = hismatfile.hisMat(:, :, frameRange);
 
-disp('Nuclear movie loaded.');
+disp(['Nuclear movie loaded- ', num2str(toc), 's']);
 
 
 end

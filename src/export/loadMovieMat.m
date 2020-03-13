@@ -1,8 +1,8 @@
-function movieMat = loadMovieMat(movieFile, varargin)
+function movieMat = loadMovieMat(inputString, varargin)
 
 warning('off', 'MATLAB:MatFile:OlderFormat')
 
-disp('Loading movie...');
+disp(['Loading movie: ',inputString,'...']);
 tic;
 
 zRange = [];
@@ -17,6 +17,18 @@ for i = 1:2:(numel(varargin)-1)
         eval([varargin{i} '=varargin{i+1};']);
     end
 end
+
+
+%either pass the moviefile path directly or...
+% load with the project prefix
+if ~contains(inputString, '.mat')
+    Prefix = inputString;
+    [~, ~, ~, ~, PreProcPath] = DetermineLocalFolders(Prefix);
+    movieFile = [PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'];
+else
+    movieFile = inputString;
+end
+    
 
 moviematfile = matfile(movieFile, 'Writable', isWritable);
 dims = size(moviematfile, 'movieMat');
@@ -42,7 +54,7 @@ end
 
 movieMat = moviematfile.movieMat(:, :, zRange, frameRange, chRange);
 
-disp(['Movie loaded- ', num2str(toc)]);
+disp(['Movie loaded- ', num2str(toc), 's']);
 
 
 end
