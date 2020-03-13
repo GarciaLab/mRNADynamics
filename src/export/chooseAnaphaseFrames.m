@@ -10,7 +10,7 @@
 % exportDataForLivemRNA and is only usable with Leica data (and the
 % 'nuclearGUI' option must be entered in exportDataForLivemRNA)
 
-function [Channels, ProjectionType, hisMat] = chooseAnaphaseFrames(Prefix, varargin)
+function [anaphaseFrames, Channels, ProjectionType, hisMat] = chooseAnaphaseFrames(Prefix, varargin)
 
 warning('off', 'MATLAB:ui:Slider:fixedHeight')
 
@@ -37,19 +37,32 @@ end
 
 
 if ~isempty(Prefix)
-
+    
     [~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix);
     
     [~,~,DropboxFolder,~, PreProcPath,...
-    ~, ~, ~,Channel1,Channel2,~,...
-    Channel3, ~, movieDatabaseFolder, movieDatabase]...
-                    = readMovieDatabase(Prefix);
-                
-   movieFile = [PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'];
-   
-   movieMat = loadMovieMat(movieFile);
+        ~, ~, ~,Channel1,Channel2,~,...
+        Channel3, ~, movieDatabaseFolder, movieDatabase]...
+        = readMovieDatabase(Prefix); 
+        
+    movieFile = [PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'];
     
-    Channels = {Channel1, Channel2, Channel3};  
+    movieMat = loadMovieMat(movieFile);
+    
+    projectionTypeFile = [DropboxFolder,filesep,Prefix,filesep, 'ProjectionType.mat'];
+    channelsFile = [DropboxFolder,filesep,Prefix,filesep, 'Channels.mat'];
+    
+    if exist(channelsFile, 'file')
+        load(channelsFile, 'Channels')
+    else
+        Channels = {Channel1, Channel2, Channel3};
+    end
+    
+    if exist(projectionTypeFile, 'file')
+        load(projectionTypeFile, 'ProjectionType')       
+    else
+        ProjectionType = 'midsumprojection';
+    end
     
     anaphaseFile = [DropboxFolder,filesep,Prefix,filesep, 'anaphaseFrames.mat'];
     if exist(anaphaseFile, 'file')
@@ -59,9 +72,9 @@ if ~isempty(Prefix)
     end
     anaphaseFramesInitial = anaphaseFrames;
     
-    load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
+    %     load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
     
-%     hisFolder = [PreProcPath, filesep, Prefix, filesep, Prefix];
+    %     hisFolder = [PreProcPath, filesep, Prefix, filesep, Prefix];
     
 end
 
@@ -83,8 +96,9 @@ custom_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
 
 truncateAtColon = @(str) str(1:strfind(str, ':')-1);
 
-
+try
 Channel1 = Channels{1}; Channel2 = Channels{2}; Channel3 = Channels{3};
+end
 
 ch1pre =  truncateAtColon(Channel1{1});
 ch2pre =  truncateAtColon(Channel2{1});
@@ -212,7 +226,7 @@ invert_list = uilistbox(fig, 'Position', [dim(1) * 0.2, dim(2) * 0.77, dim(1) * 
     'Value', {});
 
 psa_label = uilabel(fig, 'Position', [10, dim(2) * .7, dim(1) * .5, dim(2) * .07], ...
-    'Text', 'You can unselect a channel or select multiple channels by holding down Ctrl');
+    'Text', sprintf('%s \n %s', 'You can unselect a channel or','select multiple channels by holding down Ctrl'));
 
 invert_list.ValueChangedFcn = @updateHisImage;
 
@@ -221,7 +235,7 @@ proj_type_label = uilabel(fig, 'Position', [dim(1) * 0.4, dim(2) * 0.93, dim(1) 
 proj_type_dropdown = uidropdown(fig, 'Position', ...
     [dim(1) * 0.4, dim(2) * 0.85, dim(1) * 0.125, dim(2) * 0.08], ...
     'Items', {'maxprojection', 'medianprojection', 'middleprojection', 'midsumprojection', 'customprojection'}, ...
-    'Value', {'maxprojection'});
+    'Value', {'midsumprojection'});
 
 proj_type_dropdown.ValueChangedFcn = @updateHisImage;
 
@@ -232,13 +246,13 @@ if ~isempty(Prefix)
     
     saveFolderLabel = uilabel(fig, 'Position', [dim(1) * 0.3, dim(2) * 0.06, dim(1) * 0.5, dim(2) * 0.05], ...
         'Text', ['Project directory: ', PreProcPath, filesep]);
-%     saveFolderLabel = uilabel(fig, 'Position', [dim(1) * 0.3, dim(2) * 0.1, dim(1) * 0.5, dim(2) * 0.05], ...
-%                 'Text', ['Save folder: ',hisFolder]);
-%              sprintf('%s\n%s','Save folder: ',PreProcPath, filesep));
+    %     saveFolderLabel = uilabel(fig, 'Position', [dim(1) * 0.3, dim(2) * 0.1, dim(1) * 0.5, dim(2) * 0.05], ...
+    %                 'Text', ['Save folder: ',hisFolder]);
+    %              sprintf('%s\n%s','Save folder: ',PreProcPath, filesep));
     
     PrefixLabel = uilabel(fig, 'Position', [dim(1) * 0.3, dim(2) * 0.01, dim(1) * 0.5, dim(2) * 0.05], ...
         'Text', ['Project: ', Prefix]);
-        
+    
 end
 
 % record anaphase frames
@@ -258,9 +272,9 @@ if ~isempty(Prefix)
     
     
     saveAnaphasesButton = uibutton(fig, 'Text', 'Save anaphase frames', 'Position', ...
-    [dim(1) * 0.05, dim(2) * 0.08, dim(1) * 0.2, dim(2) * 0.05],...
-    'ButtonPushedFcn', @saveAnaphasesButtonPushed);
-            
+        [dim(1) * 0.05, dim(2) * 0.08, dim(1) * 0.2, dim(2) * 0.05],...
+        'ButtonPushedFcn', @saveAnaphasesButtonPushed);
+    
 end
 
 %keyboard
@@ -276,7 +290,7 @@ keyboardButton = uibutton(fig, 'Text', 'keyboard', 'Position', ...
 %     'Text', 'Averaging Range');
 % custom_edit_text = uieditfield(fig, 'Position', [dim(1) * 0.525, dim(2) * 0.75, dim(1) * 0.125, dim(2) * 0.05],...
 %     'Value', [num2str(max_custom) ':' num2str(min_custom)]);
-% 
+%
 % custom_change_confirmation = uibutton(fig, 'Text', 'Update Custom Projection', ...
 %     'Position', [dim(1) * .7, dim(2) * 0.75, dim(1) * 0.2, dim(2) * 0.05]);
 % custom_change_confirmation.ButtonPushedFcn = @updatedCustom;
@@ -351,7 +365,7 @@ uiwait(fig);
         
         projCell{frame} = projection_type;
         %         chCell{frame} = getChannels;
-        Channels = getChannels;
+        Channels = retrieveChannels;
         Channel1 = Channels{1}; Channel2 = Channels{2}; Channel3 = Channels{3};
         
         
@@ -364,7 +378,7 @@ uiwait(fig);
             ProjectionType = [ProjectionType ':' num2str(max_custom) ':' num2str(min_custom)];
         end
         
-        Channels = getChannels;
+        Channels = retrieveChannels;
         Channel1 = Channels{1}; Channel2 = Channels{2}; Channel3 = Channels{3};
         
         if returnHisMat
@@ -378,13 +392,13 @@ uiwait(fig);
             
         end
         
-        projectionTypeFile = [DropboxFolder,filesep,Prefix,filesep, 'ProjectionType.mat'];
-        channelsFile = [DropboxFolder,filesep,Prefix,filesep, 'ProjectionType.mat'];
-
+        
+        
         save(projectionTypeFile,'ProjectionType','-v6')
         save(channelsFile,'Channels','-v6')
         
         close(fig);
+        
     end
 
     function updatedCustom(~, ~)
@@ -418,7 +432,7 @@ uiwait(fig);
         updateHisImage();
     end
 
-    function Channels = getChannels()
+    function Channels = retrieveChannels()
         
         
         
@@ -473,17 +487,17 @@ uiwait(fig);
         
     end
 
-       function tableUpdated(src,event)
-            anaphaseFrames = anaphaseTable.Data;
-       end
-    
-        function keyboardButtonPushed(src,event)
-            keyboard;
-        end
-    
-     function saveAnaphasesButtonPushed(src,event)
-            save(anaphaseFile, 'anaphaseFrames', '-v6')
-        end
-    
+    function tableUpdated(src,event)
+        anaphaseFrames = anaphaseTable.Data;
+    end
+
+    function keyboardButtonPushed(src,event)
+        keyboard;
+    end
+
+    function saveAnaphasesButtonPushed(src,event)
+        save(anaphaseFile, 'anaphaseFrames', '-v6')
+    end
+
 
 end

@@ -50,19 +50,6 @@ DefaultDropboxFolder = getConfigValue(configValues, 'DropboxFolder');
     Channel3,prophase,metaphase, anaphase, DVResolution] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 
-if exist([DropboxFolder,filesep,Prefix,filesep, 'anaphaseFrames.mat'], 'file')
-    
-    load([DropboxFolder,filesep,Prefix,filesep, 'anaphaseFrames.mat'], 'anaphaseFrames')
-    
-    nc9=anaphaseFrames(9);
-    nc10=anaphaseFrames(10);
-    nc11=anaphaseFrames(11);
-    nc12=anaphaseFrames(12);
-    nc13=anaphaseFrames(13);
-    nc14=anaphaseFrames(14);
-    
-end
-
 %If Channel2 was left empty, it would contain a NaN, which will cause
 %problems below. In that case, replace it by an empty string.
 if isnan(Channel2{1})
