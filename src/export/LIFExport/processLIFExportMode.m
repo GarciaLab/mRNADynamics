@@ -183,7 +183,7 @@ if ~skipExtraction
             NFrames = size(movieMat, 4);
         end
 
-        [~, ~, hisMat] = chooseAnaphaseFrames(...
+        [~, ~, ~, hisMat] = chooseAnaphaseFrames(...
             Prefix, 'ProjectionType', ProjectionType,'Channels',Channels,'ReferenceHist', ReferenceHist);
         
     end

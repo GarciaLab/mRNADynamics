@@ -66,16 +66,12 @@ if ~isempty(Prefix)
         ProjectionType = 'midsumprojection';
     end
     
-    anaphaseFile = [DropboxFolder,filesep,Prefix,filesep, 'anaphaseFrames.mat'];
-    if exist(anaphaseFile, 'file')
-        load(anaphaseFile, 'anaphaseFrames')
-    else
-        [   ~, ~, ~, ~, ~, ~, ~,~,~, ~,  ~, ~, ~,...
-            nc9, nc10, nc11, nc12, nc13, nc14,]...
-            = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
-        anaphaseFrames = [nc9; nc10; nc11; nc12; nc13; nc14];
-    end
+    
+    
+    [anaphaseFrames, anaphaseFile] = retrieveAnaphaseFrames(Prefix);
     anaphaseFramesInitial = anaphaseFrames;
+    
+    
     
     isUnhealthyFile = [DropboxFolder,filesep,Prefix,filesep, 'isUnhealthy.mat'];
     if exist(isUnhealthyFile, 'file')
@@ -453,9 +449,7 @@ uiwait(fig);
     end
 
     function Channels = retrieveChannels()
-        
-        
-        
+
         if ~isempty(strfind(Channel1{1}, ':'))
             Channel1{1} = truncateAtColon(Channel1{1});
         end
@@ -507,6 +501,9 @@ uiwait(fig);
         
     end
 
+
+
+
     function tableUpdated(src,event)
         anaphaseFrames = anaphaseTable.Data;
     end
@@ -537,7 +534,6 @@ uiwait(fig);
     end
 
 
-% Create the function for the ValueChangedFcn callback:
     function cBoxChanged(src, event)
         
         isUnhealthy= src.Value;

@@ -10,12 +10,12 @@ SkipFrames = [];
 Prefix = '';
 %Default setting for z-projection is maximum-based.
 %This may fail when high intensity reflections are present
-ProjectionType = 'maxprojection';
+ProjectionType = 'midsumprojection';
 %Added new argument to specify a preferred file name and enable automatic testing
 PreferredFileNameForTest = '';
 keepTifs = false;
 generateTifStacks = false;
-nuclearGUI = false;
+nuclearGUI = true;
 skipExtraction = false;
 rootFolder = '';
 zslicesPadding = false;
@@ -31,14 +31,8 @@ while k<=length(varargin)
         SkipFrames=varargin{k+1};
         k=k+1;
         warning('SkipFrame mode.')
-    elseif strcmpi(varargin{k},'maxprojection')
-        ProjectionType = 'maxprojection';
-    elseif strcmpi(varargin{k},'medianprojection')
-        ProjectionType = 'medianprojection';
-    elseif strcmpi(varargin{k}, 'meanprojection')
-        ProjectionType = 'meanprojection';
-    elseif strcmpi(varargin{k},'middleprojection')
-        ProjectionType = 'middleprojection';
+    elseif strcmpi(varargin{k},'ProjectionType')
+        ProjectionType = varargin{k+1};
     elseif isobject(varargin{k}) && isa(varargin{k}, 'PreferredFileForTest')
         PreferredFileForTest = varargin{k};
         PreferredFileNameForTest = PreferredFileForTest.fileName;
@@ -49,7 +43,7 @@ while k<=length(varargin)
      elseif strcmpi(varargin{k}, 'dataType')
         dataType = varargin{k+1};
     elseif strcmpi(varargin{k}, 'nuclearGUI')
-        nuclearGUI = true;
+        nuclearGUI = varargin{k+1};
          elseif strcmpi(varargin{k}, 'ignoreCh3')
         ignoreCh3 = true;
     elseif strcmpi(varargin{k}, 'skipExtraction')

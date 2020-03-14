@@ -30,19 +30,19 @@ end
   nc12 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'nc12'));
   nc13 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'nc13'));
   nc14 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'nc14'));
-  anaphaseFrames = [zeros(8, 1); nc9; nc10; nc11; nc12; nc14];
+  anaphaseFrames = [nc9; nc10; nc11; nc12; nc14];
   CF = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'CF'));
   
   
     anaphaseFile = [DropboxFolder,filesep,Prefix,filesep, 'anaphaseFrames.mat'];
     if exist(anaphaseFile, 'file')
         load(anaphaseFile, 'anaphaseFrames')
-        nc9 = anaphaseFrames(9);
-        nc10 = anaphaseFrames(10);
-        nc11 = anaphaseFrames(11);
-        nc12 = anaphaseFrames(12);
-        nc13 = anaphaseFrames(13);
-        nc14 = anaphaseFrames(14);
+        nc9 = anaphaseFrames(1);
+        nc10 = anaphaseFrames(2);
+        nc11 = anaphaseFrames(3);
+        nc12 = anaphaseFrames(4);
+        nc13 = anaphaseFrames(5);
+        nc14 = anaphaseFrames(6);
     end
   
   
