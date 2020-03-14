@@ -4,6 +4,7 @@ function ExportToAWS(Prefix)
     [~,UserProcPath,UserDynResPath,~,UserPreProcPath] = ...
         DetermineLocalFolders(Prefix);
     UserPreProcPath_Prefix = [UserPreProcPath,filesep,Prefix];
+    UserPreProcPath_Prefix_stacks = [UserPreProcPath_Prefix,filesep,'stacks'];
     UserProcPath_Prefix = [UserProcPath,filesep,Prefix,'_'];
     UserDynResPath_Prefix =[UserDynResPath,filesep,Prefix];
     CONFIG_CSV_PATH = 'ComputerFolders.csv';
@@ -18,13 +19,13 @@ function ExportToAWS(Prefix)
     warning('off','MATLAB:MKDIR:DirectoryExists');
     warning('off','MATLAB:legend:IgnoringExtraEntries');
     mkdir(HGlabDataFolder)
-    mkdir(HGlabDataFolder, ['\PreProcessedData\',Prefix])
+    mkdir(HGlabDataFolder, ['\PreProcessedData\',Prefix,'\stacks'])
     mkdir(HGlabDataFolder, ['\ProcessedData\',Prefix,'_'])
     mkdir(HGlabDataFolder, ['\DynamicsResults\',Prefix])
     
 %Copy Relevant Folders 
     %Should I change this to movefile() instead?
-    copyfile(UserPreProcPath_Prefix, [HGlabDataFolder,'\PreProcessedData\',Prefix],'f')
+    copyfile(UserPreProcPath_Prefix_stacks, [HGlabDataFolder,'\PreProcessedData\',Prefix,'\stacks'])
     if exist(UserProcPath_Prefix)
         copyfile(UserProcPath_Prefix, [HGlabDataFolder,'\ProcessedData\',Prefix,'_'])
     end
@@ -55,5 +56,7 @@ function ExportToAWS(Prefix)
 
         cell2csv([HGlabLivemRNAFolder,filesep,'ComputerFolders.csv'],ComputerFolder);
     end
+    
+    disp(['Export for AWS for ' Prefix ' complete.']);
     
 end
