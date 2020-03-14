@@ -7,7 +7,7 @@ if ischar(movieDatabase) %accept the input as either the database itself or a pa
   movieDatabase = csv2cell([movieDatabase, '/MovieDatabase.csv'], 'fromfile');
 end
 
-  [~, ~, PrefixRow] = getDropboxFolderFromMovieDatabase(movieDatabase, Prefix, '[\\\\/-]');
+  [~, PrefixRow, ~] = getDropboxFolderFromMovieDatabase(movieDatabase, Prefix, '[\\\\/-]');
     
   [~, ~, DropboxFolder, ~, ~] = DetermineLocalFolders(Prefix);
 

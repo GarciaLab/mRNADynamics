@@ -10,9 +10,11 @@
 % exportDataForLivemRNA and is only usable with Leica data (and the
 % 'nuclearGUI' option must be entered in exportDataForLivemRNA)
 
-function [anaphaseFrames, Channels, ProjectionType, hisMat] = chooseAnaphaseFrames(Prefix, varargin)
+function [anaphaseFrames, Channels, ProjectionType, hisMat] =...
+    chooseAnaphaseFrames(Prefix, varargin)
 
 warning('off', 'MATLAB:ui:Slider:fixedHeight')
+warning('off', 'MATLAB:audiovideo:audioplayer:noAudioOutputDevice');
 
 skip_factor = 1; % Only uses 1/skip_factor frames
 
@@ -43,8 +45,8 @@ if ~isempty(Prefix)
     [~,~,DropboxFolder,~, PreProcPath,...
         ~, ~, ~,Channel1,Channel2,~,...
         Channel3, ~, movieDatabaseFolder, movieDatabase]...
-        = readMovieDatabase(Prefix); 
-        
+        = readMovieDatabase(Prefix);
+    
     movieFile = [PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'];
     
     movieMat = loadMovieMat(movieFile);
@@ -59,7 +61,7 @@ if ~isempty(Prefix)
     end
     
     if exist(projectionTypeFile, 'file')
-        load(projectionTypeFile, 'ProjectionType')       
+        load(projectionTypeFile, 'ProjectionType')
     else
         ProjectionType = 'midsumprojection';
     end
@@ -68,9 +70,22 @@ if ~isempty(Prefix)
     if exist(anaphaseFile, 'file')
         load(anaphaseFile, 'anaphaseFrames')
     else
-        anaphaseFrames = [0; 0; 0; 0; 0; 0];
+        [   ~, ~, ~, ~, ~, ~, ~,~,~, ~,  ~, ~, ~,...
+            nc9, nc10, nc11, nc12, nc13, nc14,]...
+            = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
+        anaphaseFrames = [nc9; nc10; nc11; nc12; nc13; nc14];
     end
     anaphaseFramesInitial = anaphaseFrames;
+    
+    isUnhealthyFile = [DropboxFolder,filesep,Prefix,filesep, 'isUnhealthy.mat'];
+    if exist(isUnhealthyFile, 'file')
+        load(isUnhealthyFile, 'isUnhealthy');
+    end
+    
+    if exist('C:\Users\Armando\Desktop\embryo_recorded_as_unhealthy.m4a', 'file')
+        [y, Fs] = audioread('C:\Users\Armando\Desktop\embryo_recorded_as_unhealthy.m4a');
+    end
+    
     
     %     load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
     
@@ -97,7 +112,7 @@ custom_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
 truncateAtColon = @(str) str(1:strfind(str, ':')-1);
 
 try
-Channel1 = Channels{1}; Channel2 = Channels{2}; Channel3 = Channels{3};
+    Channel1 = Channels{1}; Channel2 = Channels{2}; Channel3 = Channels{3};
 end
 
 ch1pre =  truncateAtColon(Channel1{1});
@@ -178,6 +193,7 @@ screen_size = get(0, 'screensize');
 dim = [screen_size(3) * 0.6, screen_size(4) * 0.75];
 dimVec = [dim(1), dim(2), dim(1), dim(2)]; %to easily normalize units
 fig = uifigure('Position', [100, 100, dim(1), dim(2)], 'Name', 'Choose Histone Channels');
+set(fig,'KeyPressFcn',@keycall)
 imgAxis = uiaxes(fig, 'Position', [20, 20, dim(1) - 20, dim(2) * 0.5]);
 blank = zeros(yDim, xDim, 'uint8');
 himage = imshow(blank, [], 'Parent', imgAxis);
@@ -270,7 +286,6 @@ if ~isempty(Prefix)
         ...
         'Data',anaphaseFramesInitial);
     
-    
     saveAnaphasesButton = uibutton(fig, 'Text', 'Save anaphase frames', 'Position', ...
         [dim(1) * 0.05, dim(2) * 0.08, dim(1) * 0.2, dim(2) * 0.05],...
         'ButtonPushedFcn', @saveAnaphasesButtonPushed);
@@ -283,6 +298,11 @@ keyboardButton = uibutton(fig, 'Text', 'keyboard', 'Position', ...
     [dim(1) * 0.85, dim(2) * .05, dim(1) * 0.1, dim(2) * 0.05],...
     'ButtonPushedFcn', @keyboardButtonPushed);
 
+
+% Create a check box:
+cbx = uicheckbox(fig,'Position', [dim(1) * 0.85, dim(2) * .05, dim(1) * 0.2, dim(2) * 0.2],...
+    'ValueChangedFcn',@cBoxChanged, 'Text',...
+    sprintf('%s \n %s', 'Flag embryo', 'as unhealthy'));
 
 
 
@@ -497,7 +517,40 @@ uiwait(fig);
 
     function saveAnaphasesButtonPushed(src,event)
         save(anaphaseFile, 'anaphaseFrames', '-v6')
+        disp('Anaphase frames saved.');
     end
 
+    function keycall(h,e)
+        
+        if strcmpi(e.Key, 'rightarrow')
+            if frame_slider.Value + 1 <= NFrames
+                frame_slider.Value = frame_slider.Value + 1;
+                updateHisImage;
+            end
+        elseif strcmpi(e.Key, 'leftarrow')
+            if frame_slider.Value - 1 >= 1
+                frame_slider.Value = frame_slider.Value - 1;
+                updateHisImage;
+            end
+        end
+        
+    end
+
+
+% Create the function for the ValueChangedFcn callback:
+    function cBoxChanged(src, event)
+        
+        isUnhealthy= src.Value;
+        
+        save(isUnhealthyFile, 'isUnhealthy','-v6');
+        
+        if isUnhealthy
+            disp('Embryo recorded as unhealthy.');
+            nBits = 16;
+            sound(y, Fs, nBits);
+        else
+            disp('Embryo recorded as healthy.');
+        end
+    end
 
 end
