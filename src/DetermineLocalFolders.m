@@ -1,5 +1,7 @@
-function [rawDataPath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath,...
-    configValues, movieDatabasePath, movieDatabaseFolder, movieDatabase] = DetermineLocalFolders(varargin)
+function [rawDataPath, ProcPath, DropboxFolder,...
+    MS2CodePath, PreProcPath,...
+    configValues, movieDatabasePath,...
+    movieDatabaseFolder, movieDatabase] = DetermineLocalFolders(varargin)
 
     if ~isempty(varargin) 
         Prefix = varargin{1}; %optionally return a different dropbox folder from the default with respect to Prefix
@@ -8,9 +10,15 @@ function [rawDataPath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath,...
         end
     end
 
+        
     optionalResults = '';
-    CONFIG_CSV_PATH = 'ComputerFolders.csv';
-
+    initialFolder = pwd;
+    thisScriptFolder = fileparts(matlab.desktop.editor.getActiveFilename);
+    cd(thisScriptFolder)
+    cd ../..
+    CONFIG_CSV_PATH = [pwd, filesep, 'ComputerFolders.csv'];
+    cd(initialFolder)
+    
     configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');
     
     DropboxFolder = getConfigValue(configValues, 'DropboxFolder');
