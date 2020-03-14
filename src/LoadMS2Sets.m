@@ -1,4 +1,4 @@
-function [Data, prefixes, resultsFolder] = LoadMS2Sets(DataType, varargin)
+function [Data, prefixes, resultsFolder, ignoredPrefixes] = LoadMS2Sets(DataType, varargin)
 %
 %Data = LoadMS2Sets(DataType)
 %
@@ -15,9 +15,14 @@ function [Data, prefixes, resultsFolder] = LoadMS2Sets(DataType, varargin)
 % 'justprefixes'
 %
 %OUTPUT
-%Returns the Data structure containing all of the relevant datasets from your
-%DataType tab in dataStatus.xlsx
+%Data: Returns the Data structure containing all of the relevant datasets from your
+%           DataType tab in dataStatus.xlsx
+% prefixes: List of prefixes associated with the tab
+% resultsFolder: location of the data
+% ignoredPrefixes: list of prefixes not used to compile data
 %
+
+
 %Author (contact): Hernan Garcia (hgarcia@berkeley.edu)
 %Created:
 %Last Updated: 1/13/2018. AR
@@ -106,6 +111,20 @@ CompileRow=find(strcmpi(StatusTxt(:,1),'AnalyzeLiveData Compile Particles')|...
     strcmpi(StatusTxt(:,1),'CompileNuclearProtein'));
 CompiledSets=find(strcmpi(StatusTxt(CompileRow,:),'READY')|strcmpi(StatusTxt(CompileRow,:),'ApproveAll'));
 
+ignoredSets=find( (~strcmpi(StatusTxt(CompileRow,:),'READY')) & (~strcmpi(StatusTxt(CompileRow,:),'ApproveAll')));
+ignoredSets = ignoredSets(2:end);
+
+PrefixRow=strcmp(StatusTxt(:,1),'Prefix:');
+
+ignoredPrefixes = cell(1, length(ignoredSets));
+
+for i=1:length(ignoredSets)
+    SetName=StatusTxt{PrefixRow,ignoredSets(i)};
+    Quotes=strfind(SetName,'''');
+    ignoredPrefixes{i} = SetName((Quotes(1)+1):(Quotes(end)-1));
+end
+    
+    
 if isempty(CompiledSets)
     error('No ApproveAll or READY sets found')
 end
@@ -130,7 +149,6 @@ ExperimentType=[];
 ExperimentAxis=[];
 APResolution=[];
 
-PrefixRow=strcmp(StatusTxt(:,1),'Prefix:');
 prefixes = cell(1, length(CompiledSets));
 
 for i=1:length(CompiledSets)

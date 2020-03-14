@@ -7,13 +7,15 @@ classdef liveProject
         Project = '';
         includedExperimentNames = {};
         includedExperiments = {};
+
+        ignoredExperimentNames = {};
         
     end
     
     properties (Hidden = true)
+        
         ignoredExperiments = {};
-        
-        
+
     end
     
     methods
@@ -25,15 +27,19 @@ classdef liveProject
             %   Detailed explanation goes here
             obj.Project = Project;
             
-            [~, experiment, ~] = LoadMS2Sets(Project, 'justPrefixes', 'noCompiledNuclei');
+            [~, experiment, ~, ignoredExperiment] = LoadMS2Sets(Project, 'justPrefixes', 'noCompiledNuclei');
             
             obj.includedExperimentNames = experiment;
+            obj.ignoredExperimentNames = ignoredExperiment;
+
             
             for i = 1:length(experiment)
                 obj.includedExperiments{i} = liveExperiment(experiment{i});
             end
             
-            obj.ignoredExperiments = {};
+            for j = 1:length(ignoredExperiment)
+                obj.ignoredExperiments{j} = liveExperiment(ignoredExperiment{j});
+            end
             
         end
         
@@ -41,11 +47,8 @@ classdef liveProject
         
         
         %% Methods
-        function outputArg = method1(obj,inputArg)
-            %METHOD1 Summary of this method goes here
-            %   Detailed explanation goes here
-            outputArg = obj.Property1 + inputArg;
-        end
+                
+        
     end
 end
 
