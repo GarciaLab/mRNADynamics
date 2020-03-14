@@ -5,18 +5,25 @@ classdef liveExperiment
     properties
         
         Prefix = '';
-        isUnhealthy = false;
-        
-        anaphaseFrames = [0; 0; 0; 0; 0; 0];
-        project = '';
-        
-        rawExportedDirectory = '';
-        processedDirectory = '';
-        resultsDirectory = '';
-        
         preFolder = '';
         procFolder = '';
         resultsFolder = '';
+        project = '';
+        
+        
+        isUnhealthy = false;
+        
+        anaphaseFrames = [0; 0; 0; 0; 0; 0];
+        
+        
+        
+        
+    end
+    
+    properties (Hidden = true)
+        rawExportedDirectory = '';
+        processedDirectory = '';
+        resultsDirectory = '';
         
         hasCompiledParticlesFile = false;
         hasSchnitzcellsFile = false;
@@ -38,7 +45,7 @@ classdef liveExperiment
         
         %%Constructors
         
-        function obj = livemRNAExperiment(Prefix)
+        function obj = liveExperiment(Prefix)
             %livemRNAExperiment Construct an instance of this class
             
             obj.Prefix = Prefix;
@@ -124,6 +131,35 @@ classdef liveExperiment
             end
             
         end
+        
+        function CompiledParticles = getCompiledParticles(obj)
+            
+            compiledParticlesFile = [obj.resultsFolder, 'CompiledParticles.mat'];
+            if obj.hasCompiledParticlesFile
+                CompiledParticles = load(compiledParticlesFile);
+            end
+            
+        end
+        
+        function Spots = getSpots(obj)
+            
+            spotsFile = [obj.resultsFolder, 'Spots.mat'];
+            if obj.hasSpotsFile
+                Spots = load(spotsFile);
+            end
+            
+        end
+        
+        function Particles = getParticles(obj)
+            
+            particlesFile = [obj.resultsFolder, 'Particles.mat'];
+            if obj.hasParticlesFile
+                Particles = load(particlesFile);
+            end
+            
+        end
+        
+        
         
     end
     
