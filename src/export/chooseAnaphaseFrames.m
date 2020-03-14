@@ -284,7 +284,7 @@ if ~isempty(Prefix)
     
     saveAnaphasesButton = uibutton(fig, 'Text', 'Save anaphase frames', 'Position', ...
         [dim(1) * 0.05, dim(2) * 0.08, dim(1) * 0.2, dim(2) * 0.05],...
-        'ButtonPushedFcn', @saveAnaphasesButtonPushed);
+        'ButtonPushedFcn', @saveEmbryoHealthButtonPushed);
     
 end
 
@@ -296,9 +296,17 @@ keyboardButton = uibutton(fig, 'Text', 'keyboard', 'Position', ...
 
 
 % Create a check box:
-cbx = uicheckbox(fig,'Position', [dim(1) * 0.85, dim(2) * .05, dim(1) * 0.2, dim(2) * 0.2],...
-    'ValueChangedFcn',@cBoxChanged, 'Text',...
+% cbx = uicheckbox(fig,'Position', [dim(1) * 0.85, dim(2) * .3, dim(1) * 0.2, dim(2) * 0.05],...
+%     'ValueChangedFcn',@cBoxChanged, 'Text',...
+%     sprintf('%s \n %s', 'Flag embryo', 'as unhealthy'));
+cbx = uicheckbox(fig,'Position', [dim(1) * 0.85, dim(2) * .3, dim(1) * 0.2, dim(2) * 0.05],...
+    'Text',...
     sprintf('%s \n %s', 'Flag embryo', 'as unhealthy'));
+
+embryoHealthButton = uibutton(fig, 'Text', sprintf('%s \n %s', 'Save embryo', 'health status'),...
+    'Position', [dim(1) * 0.85, dim(2) * .2, dim(1) * 0.15, dim(2) * 0.1],...
+    'ButtonPushedFcn', @saveEmbryoHealthButtonPushed);
+
 
 
 
@@ -517,6 +525,21 @@ uiwait(fig);
         disp('Anaphase frames saved.');
     end
 
+    function saveEmbryoHealthButtonPushed(src,event)
+        
+        isUnhealthy = cbx.Value;
+        save(isUnhealthyFile, 'isUnhealthy','-v6');
+        
+        if isUnhealthy
+            disp('Embryo recorded as unhealthy.');
+            nBits = 16;
+            sound(y, Fs, nBits);
+        else
+            disp('Embryo recorded as healthy.');
+        end
+    end
+
+
     function keycall(h,e)
         
         if strcmpi(e.Key, 'rightarrow')
@@ -533,20 +556,5 @@ uiwait(fig);
         
     end
 
-
-    function cBoxChanged(src, event)
-        
-        isUnhealthy= src.Value;
-        
-        save(isUnhealthyFile, 'isUnhealthy','-v6');
-        
-        if isUnhealthy
-            disp('Embryo recorded as unhealthy.');
-            nBits = 16;
-            sound(y, Fs, nBits);
-        else
-            disp('Embryo recorded as healthy.');
-        end
-    end
 
 end

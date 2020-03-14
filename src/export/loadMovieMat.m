@@ -44,8 +44,11 @@ if ~contains(inputString, '.mat')
             load([PreProcFolder, filesep, movieChDir(ch).name]);
         end
         
-        movieMat = squeeze(cat(5, movieMatCh1, movieMatCh2, movieMatCh3));
+        try movieMat = squeeze(cat(5, movieMatCh1, movieMatCh2, movieMatCh3));
+        catch movieMat =  squeeze(cat(5, movieMatCh1, movieMatCh2)); end
+        
         dims = size(movieMat);
+        
     else
         movieFile = [PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'];
     end

@@ -16,11 +16,9 @@ classdef liveExperiment
         anaphaseFrames = [0; 0; 0; 0; 0; 0];
         
         
-        
-        
     end
     
-    properties (Hidden = true)
+    properties (Hidden)
         rawExportedDirectory = '';
         processedDirectory = '';
         resultsDirectory = '';
@@ -39,6 +37,21 @@ classdef liveExperiment
         hasAnaphaseFile = false;
         
     end
+    
+    properties (Dependent, AbortSet, Transient)
+        
+        movieMat = [];
+        hisMat
+        
+        Ellipses
+        schnitzcells
+        
+        Spots
+        Particles
+        CompiledParticles
+         
+    end
+    
     
     methods
         
@@ -91,6 +104,8 @@ classdef liveExperiment
             
             obj.hasChannelsFile =sum(contains(obj.resultsDirectory{:, 1}, 'Channels'));
             
+%             obj.movieMat = [];
+%                         
             
         end
         
@@ -102,19 +117,19 @@ classdef liveExperiment
         %Methods
         
         
-        function movieMat = getMovieMat(obj)
+        function movieMat = get.movieMat(obj)
             
             movieMat = loadMovieMat(obj.Prefix);
-            
+
         end
         
-        function hisMat = getHisMat(obj)
+        function hisMat = get.hisMat(obj)
             
             hisMat = loadHisMat(obj.Prefix);
             
         end
         
-        function schnitzcells = getSchnitzcells(obj)
+        function schnitzcells = get.schnitzcells(obj)
             
             schnitzcellsFile = [obj.resultsFolder, obj.Prefix, '_lin.mat'];
             if obj.hasSchnitzcellsFile
@@ -123,7 +138,7 @@ classdef liveExperiment
             
         end
         
-        function Ellipses = getEllipses(obj)
+        function Ellipses = get.Ellipses(obj)
             
             ellipsesFile = [obj.resultsFolder, 'Ellipses.mat'];
             if obj.hasEllipsesFile
@@ -132,7 +147,7 @@ classdef liveExperiment
             
         end
         
-        function CompiledParticles = getCompiledParticles(obj)
+        function CompiledParticles = get.CompiledParticles(obj)
             
             compiledParticlesFile = [obj.resultsFolder, 'CompiledParticles.mat'];
             if obj.hasCompiledParticlesFile
@@ -141,7 +156,7 @@ classdef liveExperiment
             
         end
         
-        function Spots = getSpots(obj)
+        function Spots = get.Spots(obj)
             
             spotsFile = [obj.resultsFolder, 'Spots.mat'];
             if obj.hasSpotsFile
@@ -150,7 +165,7 @@ classdef liveExperiment
             
         end
         
-        function Particles = getParticles(obj)
+        function Particles = get.Particles(obj)
             
             particlesFile = [obj.resultsFolder, 'Particles.mat'];
             if obj.hasParticlesFile
@@ -159,9 +174,20 @@ classdef liveExperiment
             
         end
         
+         function obj = set.movieMat(obj, ~)
+            
+           obj.movieMat = [];
+            
+        end
         
         
     end
+    
+      methods(Access = private)
+          function obj = updateMovieMat(obj)
+              obj.movieMat = loadMovieMat(obj.Prefix);
+          end
+      end
     
     
     
