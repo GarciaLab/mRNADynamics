@@ -168,6 +168,8 @@ if ~skipExtraction
                 movieMatic.movieMat = movieMat;
                 
             end
+            
+            makeMovieMatChannels(Prefix);
         
     end
     
@@ -181,8 +183,8 @@ if ~skipExtraction
             NFrames = size(movieMat, 4);
         end
 
-        [~, ~, hisMat] = chooseNuclearChannels2(...
-            movieMat, 'ProjectionType', ProjectionType,'Channels',Channels,'ReferenceHist', ReferenceHist);
+        [~, ~, hisMat] = chooseAnaphaseFrames(...
+            Prefix, 'ProjectionType', ProjectionType,'Channels',Channels,'ReferenceHist', ReferenceHist);
         
     end
     
