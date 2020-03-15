@@ -30,9 +30,6 @@ function movieMat = CheckNucleiSegmentation(Prefix, varargin)
 %left click - add region with default nc radius and angle
 %
 
-
-
-
 close all
 
 %Load the folder information
@@ -44,7 +41,6 @@ nWorkers = 1;
 fish = false;
 preMovie = false;
 chooseHis = false;
-map = gray;
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'noAdd') | strcmpi(varargin{i}, 'fish') | strcmpi(varargin{i}, 'markandfind')
@@ -55,7 +51,7 @@ for i = 1:length(varargin)
     elseif strcmpi(varargin{i}, 'chooseHis')
         chooseHis = varargin{i+1};
     elseif strcmpi(varargin{i}, 'colormap')
-        map = varargin{i+1};  
+        cmap = varargin{i+1};  
     elseif strcmpi(varargin{i}, 'premovie')
         preMovie = true;
         movieMat = varargin{i+1};

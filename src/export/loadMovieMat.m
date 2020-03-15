@@ -39,7 +39,7 @@ if ~contains(inputString, '.mat')
     
     if numChannelsToLoad > 0
         isDividedIntoChannels = true;
-
+        
         for ch = 1:numChannelsToLoad
             load([PreProcFolder, filesep, movieChDir(ch).name]);
         end
@@ -55,6 +55,10 @@ if ~contains(inputString, '.mat')
     
 else
     movieFile = inputString;
+    if ~exist(movieFile, 'file')
+        error('try again');
+    end
+    
 end
 
 if ~isDividedIntoChannels

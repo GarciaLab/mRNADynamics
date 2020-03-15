@@ -50,7 +50,7 @@ if ~isempty(Prefix)
     movieFile = [PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'];
     
     if ~exist('movieMat', 'var')
-        movieMat = loadMovieMat(movieFile);
+        movieMat = loadMovieMat(Prefix);
     end
     
     projectionTypeFile = [DropboxFolder,filesep,Prefix,filesep, 'ProjectionType.mat'];
@@ -286,7 +286,7 @@ if ~isempty(Prefix)
     
     saveAnaphasesButton = uibutton(fig, 'Text', 'Save anaphase frames', 'Position', ...
         [dim(1) * 0.05, dim(2) * 0.08, dim(1) * 0.2, dim(2) * 0.05],...
-        'ButtonPushedFcn', @saveEmbryoHealthButtonPushed);
+        'ButtonPushedFcn', @saveAnaphasesButtonPushed);
     
 end
 

@@ -11,7 +11,7 @@ function [stitchSchnitz, ExpandedSpaceTolerance,...
     ExpandedSpaceTolerance = 1.5;
     NoBulkShift = true;
     retrack = false;
-    nWorkers = 8;
+    nWorkers = 1;
     track = true;
     noBreak = false;
     noStitch = false;

@@ -205,7 +205,7 @@ if isempty(movieMat)
 %     [movieMat, hisMat, maxMat, ~, ~]...
 %         = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo);
     hisMat = loadHisMat([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat']);
-    movieMat = loadMovieMat([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'], ch);
+    movieMat = loadMovieMat(Prefix, 'chRange', ch);
     maxMat = squeeze(max(movieMat(:,:,:,:), [],3));
 
 %     movieMat = squeeze(movieMat(:,:,:,:,ch));

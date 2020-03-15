@@ -26,9 +26,7 @@ load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses');
 
 hisFile = [PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'];
-hisMat = loadHisMat(hisFile);
-
-hisMat = double(hisMat);
+hisMat = double(loadHisMat(hisFile));
 
 d = struct;
 

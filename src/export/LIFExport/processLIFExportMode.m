@@ -5,6 +5,8 @@ function FrameInfo = processLIFExportMode(rawDataFolder, ProjectionType, Channel
 
 disp('Exporting movie file...');
 
+cleanupObj = onCleanup(@myCleanupFun);
+
 if ~exportMovieFiles
     FrameInfo = [];
 end
@@ -237,4 +239,10 @@ end
 disp('Movie files exported.');
 
 
+end
+
+function myCleanupFun()
+
+delete(findall(0));
+    
 end

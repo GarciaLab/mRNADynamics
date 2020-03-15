@@ -265,7 +265,7 @@ if ~exist([DropboxFolder,filesep,Prefix], 'dir')
     mkdir([DropboxFolder,filesep,Prefix]);
 end
 
-save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
+save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v6');
 
 if whos(var2str(schnitzcells)).bytes < 2E9
     save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v6');
@@ -313,11 +313,11 @@ end
 % Stitch the schnitzcells using Simon's code
 if ~noStitch
     disp('stitching schnitzes')
-    try
+%     try
         StitchSchnitz(Prefix, nWorkers);
-    catch
-        disp('failed to stitch schnitzes')
-    end
+%     catch
+%         disp('failed to stitch schnitzes')
+%     end
 end
 
 

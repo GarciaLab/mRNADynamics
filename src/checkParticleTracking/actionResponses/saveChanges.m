@@ -13,7 +13,7 @@ save([DataFolder, filesep, 'FrameInfo.mat'], 'FrameInfo', '-v6')
 save([DataFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter', '-v6')
 
 if whos(var2str(Spots)).bytes < 2E9
-    save([DataFolder, filesep, 'Spots.mat'], 'Spots', '-6')
+    save([DataFolder, filesep, 'Spots.mat'], 'Spots', '-v6')
 else
     save([DataFolder, filesep, 'Spots.mat'], 'Spots', '-v7.3', '-nocompression')
 end

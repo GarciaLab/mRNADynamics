@@ -30,7 +30,8 @@ end
 InputChannel = find(contains(Channels, 'input', 'IgnoreCase', true));
 
 % load([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'], 'movieMat');
-movieMat = double(loadMovieMat([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'], 'chRange', InputChannel));
+
+movieMat = double(loadMovieMat(Prefix, 'chRange', InputChannel));
 numFrames = length(FrameInfo);
 
 

@@ -105,7 +105,11 @@ zSize = FrameInfo(1).NumberSlices;
 nCh = length(spotChannels);
 
 dog_matfile = matfile([ProcPath, filesep, Prefix,  '_', filesep, Prefix, '_dogMat.mat']);
-numFrames = size(dog_matfile, 'dogMat', 4);
+if exist(dog_matfile.Properties.Source, 'file')
+    try numFrames = size(dog_matfile, 'dogMat', 4); end
+else
+    numFrames = numel(FrameInfo);
+end
 
 % The spot finding algorithm first segments the image into regions that are
 % above the threshold. Then, it finds global maxima within these regions by searching in a region "neighborhood"

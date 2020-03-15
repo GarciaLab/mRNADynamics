@@ -30,10 +30,15 @@ end
 
 % stacksPath = [PreProcPath, filesep, Prefix, filesep, 'stacks'];
 
-load([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'], 'movieMat');
+movieMat = loadMovieMat(Prefix);
 
+saveAsStacks = true;
+
+dogStr = 'dogStack_';
 
 nCh = length(spotChannels);
+
+nameSuffix = ['_ch', iIndex(spotChannels, 2)];
 
 format = [FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSize];
 
@@ -75,6 +80,13 @@ for ch = spotChannels
                 end
             else
                 dogMat(:, :,:,currentFrame)  = uint16((filterImage(double(squeeze(movieMat(:, :, :, currentFrame, ch))), filterType, sigmas, 'filterSize',filterSize) + 100) * 100);
+            end
+            
+            if saveAsStacks
+                dogStack = squeeze(dogMat(:, :, :, currentFrame));
+                dogStackFile = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(currentFrame, 3),...
+                    nameSuffix,'.mat'];
+                save(dogStackFile, 'dogStack','-v6');
             end
             
             send(q, currentFrame);

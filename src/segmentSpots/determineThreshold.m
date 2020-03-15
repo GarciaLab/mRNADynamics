@@ -17,7 +17,7 @@
 % Documented by: Sean Medin (smedin@berkeley.edu)
 
 
-function [thresh] = determineThreshold(Prefix, Channel, dogMat, varargin)
+function [thresh] = determineThreshold(Prefix, Channel, varargin)
 
 default_iqr = 6;
 brightest_iqr_test = 8;
@@ -41,16 +41,18 @@ end
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 zSize = FrameInfo(1).NumberSlices + 2;
 
+dogStr = 'dogStack_';
 
 OutputFolder1=[ProcPath,filesep,Prefix,'_',filesep,'dogs',filesep];
 nameSuffix = ['_ch',iIndex(Channel,2)];
 
-zPadded = false;
 
-if sum(sum(squeeze(dogMat(1,:,:,1)))) == 0
-    zPadded = true;
-end
+firstDogStackFile = [OutputFolder1, filesep, dogStr, Prefix, '_', iIndex(1, 3),...
+    nameSuffix,'.mat'];
+load(firstDogStackFile, 'dogStack');
 
+zPadded = zSize ~= size(dogStack, 3);
+        
 % says which z-slices and frames that we can scroll through
 if zPadded
     minZ = 2;
@@ -61,7 +63,11 @@ else
 end
 available_zs = 2:3:zSize-1;
 
-numFrames = size(dogMat, 1);
+try
+    numFrames = numel(dir([OutputFolder1, '*.mat']));
+catch
+    numFrames = numel(FrameInfo);
+end
 
 available_frames = 1:4:numFrames;
 
@@ -193,8 +199,13 @@ uiwait(f);
 
     function dog = loadDog(zInd, frame)
         
+        dogStackFile = [OutputFolder1, filesep, dogStr, Prefix, '_', iIndex(frame, 3),...
+            nameSuffix,'.mat'];
+        load(dogStackFile, 'dogStack');
         
-        dog = double(squeeze(dogMat(frame,:,:,zInd))); %t y x z
+        dog = dogStack(:, :, zInd);
+        
+%         dog = double(squeeze(dogMat(:, :, zInd, frame)));
      
         
     end

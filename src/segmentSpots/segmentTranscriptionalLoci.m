@@ -66,18 +66,29 @@ else
     ch = coatChannel;
 end
 
-load([ProcPath, filesep, Prefix, '_dogMat.mat'], 'dogMat');
-load([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'], 'movieMat');
-yDim = size(dogMat, 1);
-xDim = size(dogMat, 2);
+nameSuffix = ['_ch', iIndex(ch, 2)];
+
+movieMat = loadMovieMat(Prefix);
+
+yDim = size(movieMat, 1);
+xDim = size(movieMat, 2);
+nSlices = size(movieMat, 3);
+nFrames = size(movieMat, 4);
+
+loadAsStacks = true;
+dogStr = 'dogStack_';
+
+
+% dogMat = loadDogMat(Prefix);
 
 if Threshold == -1 && ~Weka
+     
     
     if ~filterMovieFlag
-        Threshold = determineThreshold(Prefix, ch,  dogMat, 'numFrames', numFrames);
+        Threshold = determineThreshold(Prefix, ch,  'numFrames', numFrames);
         display(['Threshold: ', num2str(Threshold)])
     else
-        Threshold = determineThreshold(Prefix, ch, 'noSave', dogs, 'numFrames', numFrames);
+        Threshold = determineThreshold(Prefix, ch, 'noSave',  'numFrames', numFrames);
     end
     
     display(['Threshold: ', num2str(Threshold)])
@@ -89,15 +100,20 @@ q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
 
-zPadded = zSize ~= size(dogMat, 3);
+DogOutputFolder=[ProcPath,filesep,'dogs',filesep];
 
-for current_frame = initialFrame:numFrames %parfor current_frame = initialFrame:numFrames 
+
+zPadded = size(movieMat, 3) ~= zSize;
+
+
+for currentFrame = initialFrame:numFrames %parfor current_frame = initialFrame:numFrames 
     
     for zIndex = 1:zSize
-        im = double(squeeze(movieMat(:, :, zIndex, current_frame, ch)));
+        
+        im = double(squeeze(movieMat(:, :, zIndex, currentFrame, ch)));
         try
-         imAbove = double(sliceMovieMat(movieMat, ch, zIndex+1, current_frame));
-         imBelow= double(sliceMovieMat(movieMat, ch, zIndex-1, current_frame));
+         imAbove = double(sliceMovieMat(movieMat, ch, zIndex+1, currentFrame));
+         imBelow= double(sliceMovieMat(movieMat, ch, zIndex-1, currentFrame));
         catch
             imAbove = nan(size(im,1),size(im,2));
             imBelow = nan(size(im,1),size(im,2));
@@ -109,10 +125,17 @@ for current_frame = initialFrame:numFrames %parfor current_frame = initialFrame:
         else
             dogZ = zIndex - 1;
         end
+            
+        if loadAsStacks  
+            dogStackFile = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(currentFrame, 3),...
+                nameSuffix,'.mat'];
+            load(dogStackFile, 'dogStack');
+            dog = dogStack(:, :, dogZ);
+        else
+%             dog = squeeze(dogMat(:,:, dogZ, current_frame));
+        end
         
-        dog = squeeze(dogMat(:,:, dogZ, current_frame));
-        
-        
+
         if displayFigures
             dogO = im(:);
             lLim = median(dogO);
@@ -134,7 +157,7 @@ for current_frame = initialFrame:numFrames %parfor current_frame = initialFrame:
         
         % apply nuclear mask if it exists
         if ~isempty(Ellipses)
-            ellipsesFrame = Ellipses{current_frame};
+            ellipsesFrame = Ellipses{currentFrame};
             nuclearMask = makeNuclearMask(ellipsesFrame, [yDim, xDim]);
     %         immask = uint16(nuclearMask).*im;
     %         imshow(immask, [])
@@ -159,15 +182,15 @@ for current_frame = initialFrame:numFrames %parfor current_frame = initialFrame:
                 centroid = round(centroids(spotIndex).Centroid);
                 tic
                 [temp_particles(spotIndex), Fits] = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
-                    neighborhood, snippet_size, pixelSize, displayFigures, graphicsHandles, microscope, 0, centroid,MLFlag, current_frame, spotIndex, zIndex);
-                Spots(current_frame).Fits = [Spots(current_frame).Fits, Fits];
+                    neighborhood, snippet_size, pixelSize, displayFigures, graphicsHandles, microscope, 0, centroid,MLFlag, currentFrame, spotIndex, zIndex);
+                Spots(currentFrame).Fits = [Spots(currentFrame).Fits, Fits];
             end
             
         end
         
     end
     
-    send(q, current_frame);
+    send(q, currentFrame);
     
 end
 
