@@ -112,8 +112,8 @@ firstdogpath = [firstdogpath, saveType];
 if strcmpi(saveType, '.tif')
     firstDoG = imread(firstdogpath);
 elseif strcmpi(saveType, '.mat')
-    load(firstdogpath, 'plane');
-    firstDoG = plane;
+    load(firstdogpath, 'plane', 'dog');
+    try firstDoG = plane; catch firstDoG = dog; end
 elseif strcmpi(saveType, 'none')
     firstDoG = dogs(:, :, 1, 1);
 end
@@ -155,8 +155,8 @@ parfor current_frame = initialFrame:numFrames
                 elseif strcmpi(saveType, '.mat')
                     dogFileName = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(dogZ, 2),...
                         nameSuffix,'.mat'];
-                    plane = load(dogFileName, 'plane');
-                    dog = plane.plane;
+                    plane = load(dogFileName);
+                    try dog = plane.plane; catch dog = plane.dog; end
                 elseif strcmpi(saveType, 'none')
                     dog = dogs(:,:, dogZ, current_frame);
                 end

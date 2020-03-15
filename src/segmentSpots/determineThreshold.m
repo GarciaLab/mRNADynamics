@@ -190,8 +190,8 @@ uiwait(f);
         if strcmpi(saveType, '.tif')
             dog = double(imread([OutputFolder1 dog_name]));
         elseif strcmpi(saveType, '.mat')
-            load([OutputFolder1 dog_name], 'plane');
-            dog = plane;
+            load([OutputFolder1 dog_name], 'plane', 'dog');
+            try dog = plane; end
         elseif strcmpi(saveType, 'none')
             dog = dogs(:, :, zInd, frame);
         end
