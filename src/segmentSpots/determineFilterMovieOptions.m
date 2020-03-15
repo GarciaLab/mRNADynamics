@@ -10,13 +10,13 @@ pixelSize = mean([FrameInfo.PixelSize]);
 
 % Default options
 displayFigures = false;
-customFilter = false;
+customFilter = true;
 numFrames = 0;
-highPrecision = false;
+highPrecision = true;
 keepPool = false;
-filterType = 'Difference_of_Gaussian';
-nWorkers = 8;
-sigmas = {};
+filterType = 'Difference_of_Gaussian_3D';
+nWorkers = 1;
+sigmas = {2, 4};
 app = {};
 kernelSize = [];
 customML = false;

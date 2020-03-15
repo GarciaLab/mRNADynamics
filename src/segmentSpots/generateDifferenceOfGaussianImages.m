@@ -5,6 +5,8 @@ function dogs = generateDifferenceOfGaussianImages(ProcPath, ExperimentType, Fra
 
 dogs = [];
 
+gpu = 'noGPU';
+
 DogOutputFolder = [ProcPath, filesep, Prefix, '_', filesep, 'dogs'];
 mkdir(DogOutputFolder)
 
@@ -152,7 +154,7 @@ if dim == 2
     if strcmpi(saveType, '.tif')
         imwrite(uint16(dog), dog_full_path)
     elseif strcmpi(saveType, '.mat')
-        save(dog_full_path, 'dog');
+        save(dog_full_path, 'dog', '-v6');
     end
 elseif dim == 3
     
@@ -164,8 +166,8 @@ elseif dim == 3
         if strcmpi(saveType, '.tif')
             imwrite(uint16(dog(:,:, z)), dog_full_path);
         elseif strcmpi(saveType, '.mat')
-            plane = dog(:,:,z);
-            save(dog_full_path, 'plane');
+            dog = dog(:,:,z);
+            save(dog_full_path, 'dog', '-v6');
         end
     end
 end
