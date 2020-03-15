@@ -175,8 +175,11 @@ save([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots', '-v7.3');
 
 if fit3D > 0
     disp('Fitting 3D Gaussians...')
+    tic;
     fit3DGaussiansToAllSpots(Prefix, fit3D, 'segmentSpots', Spots, 'nWorkers', nWorkers, saveType);
     disp('3D Gaussian fitting completed.')
+    fit3DTimeElapsed = toc;
+    disp(['Elapsed time: ', num2str(fit3DTimeElapsed / 60), ' min'])
 end
 
 if ~keepProcessedData
