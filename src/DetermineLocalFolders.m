@@ -12,12 +12,16 @@ function [rawDataPath, ProcPath, DropboxFolder,...
 
         
     optionalResults = '';
-    initialFolder = pwd;
-    thisScriptFolder = fileparts(matlab.desktop.editor.getActiveFilename);
-    cd(thisScriptFolder)
-    cd ../..
-    CONFIG_CSV_PATH = [pwd, filesep, 'ComputerFolders.csv'];
-    cd(initialFolder)
+%     initialFolder = pwd;
+%     thisScriptFolder = fileparts(matlab.desktop.editor.getActiveFilename);
+%     cd(thisScriptFolder)
+%     cd ..\..
+%     CONFIG_CSV_PATH = [pwd, filesep, 'ComputerFolders.csv'];
+%     cd(initialFolder)
+
+%
+
+    CONFIG_CSV_PATH =  'ComputerFolders.csv';
     
     configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');
     
