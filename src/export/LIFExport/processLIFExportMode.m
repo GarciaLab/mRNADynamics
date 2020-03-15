@@ -144,33 +144,61 @@ if ~skipExtraction
          
             if ignoreCh3
                 movieMat = movieMat(:, :, :, :, 1:2);
-                NChannels = NChannels - 1;
             end
-            
-              if max(movieMat(:)) < 256
-                  dataType = 'uint8'; 
-                  movieMat = uint8(movieMat);
-              else
-                  dataType = 'uint16';
-                  movieMat = uint16(movieMat);
-              end
-            
-            if  whos(var2str(movieMat)).bytes < 2E9
 
-                save([PreProcFolder, filesep, Prefix, '_movieMat.mat'], 'movieMat', '-v6');
-                
-            else
-                
-                movieMatic = newmatic([PreProcFolder, filesep, Prefix, '_movieMat.mat'],true,...
-                newmatic_variable('movieMat', dataType,...
-                [ySize, xSize, max(NSlices)+nPadding, sum(NFrames),NChannels],...
-                [ySize, xSize, 1, 1, 1]));
-                movieMatic.movieMat = movieMat;
-                
+            movieMatCh1 = squeeze(movieMat(:, :, :, :, 1));
+            if max(movieMatCh1(:)) < 256
+                movieMatCh1 = uint8(movieMatCh1);
             end
+            save([PreProcFolder, filesep, Prefix, '_movieMatCh1.mat'], 'movieMatCh1', '-v6');
+
+            if size(movieMat, 5) > 1
+                movieMatCh2 = squeeze(movieMat(:, :, :, :, 2));
+                if max(movieMatCh2(:)) < 256
+                    movieMatCh2 = uint8(movieMatCh2);
+                end
+                save([PreProcFolder, filesep, Prefix, '_movieMatCh2.mat'], 'movieMatCh2', '-v6');
+            end
+
+            if size(movieMat, 5) == 3
+
+                movieMatCh3 = squeeze(movieMat(:, :, :, :, 3));
+                if max(movieMatCh3(:)) < 256
+                    movieMatCh3 = uint8(movieMatCh3);
+                end
+
+                save([PreProcFolder, filesep, Prefix, '_movieMatCh3.mat'], 'movieMatCh3', '-v6');
+
+            elseif size(movieMat,5) > 3
+                error('movie has greater than 3 channels. not sure how to handle this.');
+            end
+
+    
             
-            makeMovieMatChannels(Prefix);
-        
+%               if max(movieMat(:)) < 256
+%                   dataType = 'uint8'; 
+%                   movieMat = uint8(movieMat);
+%               else
+%                   dataType = 'uint16';
+%                   movieMat = uint16(movieMat);
+%               end
+% %             
+%             if  whos(var2str(movieMat)).bytes < 2E9
+% 
+%                 save([PreProcFolder, filesep, Prefix, '_movieMat.mat'], 'movieMat', '-v6');
+%                 
+%             else
+%                 
+%                 movieMatic = newmatic([PreProcFolder, filesep, Prefix, '_movieMat.mat'],true,...
+%                 newmatic_variable('movieMat', dataType,...
+%                 [ySize, xSize, max(NSlices)+nPadding, sum(NFrames),NChannels],...
+%                 [ySize, xSize, 1, 1, 1]));
+%                 movieMatic.movieMat = movieMat;
+%                 
+%             end
+%             
+%             makeMovieMatChannels(Prefix);
+%         
     end
     
     
@@ -184,7 +212,8 @@ if ~skipExtraction
         end
 
         [~, ~, ~, hisMat] = chooseAnaphaseFrames(...
-            Prefix, 'ProjectionType', ProjectionType,'Channels',Channels,'ReferenceHist', ReferenceHist);
+            Prefix, 'ProjectionType', ProjectionType,'Channels',...
+            Channels,'ReferenceHist', ReferenceHist, 'movieMat', movieMat);
         
     end
     

@@ -49,7 +49,9 @@ if ~isempty(Prefix)
     
     movieFile = [PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'];
     
-    movieMat = loadMovieMat(movieFile);
+    if ~exist('movieMat', 'var')
+        movieMat = loadMovieMat(movieFile);
+    end
     
     projectionTypeFile = [DropboxFolder,filesep,Prefix,filesep, 'ProjectionType.mat'];
     channelsFile = [DropboxFolder,filesep,Prefix,filesep, 'Channels.mat'];
