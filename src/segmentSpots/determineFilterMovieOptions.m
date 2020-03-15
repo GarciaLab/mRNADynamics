@@ -5,7 +5,8 @@ function [displayFigures, numFrames, initialFrame, highPrecision, filterType, ke
     = determineFilterMovieOptions(FrameInfo,varargin)
 
 varargin = varargin{1};
-pixelSize = FrameInfo(10).PixelSize;
+
+pixelSize = mean([FrameInfo.PixelSize]);
 
 % Default options
 displayFigures = false;
