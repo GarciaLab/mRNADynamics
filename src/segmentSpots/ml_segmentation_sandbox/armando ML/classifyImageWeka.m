@@ -1,4 +1,4 @@
-function pMap = classifyImageWeka(im, trainingData, varargin)
+function pMap = classifyImageWeka(im, training, varargin)
 %classifyImage Converts image to probability map.
 %   pmap = classifyImage(im, training, varargin) Converts image to probability map.
 %
@@ -63,19 +63,25 @@ if ischar(training)
     arffLoader.setFile(javaObject('java.io.File',training)); %construct an arff file object
     trainingData= arffLoader.getDataSet;
     trainingData.setClassIndex(trainingData.numAttributes - 1);
+else
+    trainingData = training;
 end
 
 
 %normalize data to the max of the training set for better classification
 if reSc
-    v = trainingData.attributeToDoubleArray(0);
+%     v = trainingData.attributeToDoubleArray(0);
     im = 5*im./max(max(im));
 end
 
-%% load or build classifier from training data
-if isempty(classifier) && ~isempty(classifierPath)
+%% load or build classifier from training data if needed
+
+shouldLoadClassifier = isempty(classifier) && ~isempty(classifierPath);
+shouldCreateClassifier = isempty(classifier) && isempty(classifierPath);
+
+if shouldLoadClassifier
     classifier = weka.core.SerializationHelper.read(classifierPath);
-else
+elseif shouldCreateClassifier
     classifier = weka.classifiers.trees.RandomForest;
     options = {'-I', '64', '-K', '2', '-S', '-1650757608', '-depth', 20};
     javaaddpath('C:\Users\Armando\Desktop\fast random forest\fastrandomforest-2019.12.3.jar ')
@@ -88,7 +94,6 @@ else
     if displayFigures
         classifier.toString
     end
-    
 end
 
 %% generate test data by filtering the image

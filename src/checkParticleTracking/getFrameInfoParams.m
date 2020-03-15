@@ -1,12 +1,12 @@
-function [xSize, ySize, pixelSize, zStep, snippet_size,...
+function [xSize, ySize, pixelSize_nm, zStep, snippet_size,...
     nFrames, nSlices, nDigits] = getFrameInfoParams(FrameInfo)
   
-  xSize = FrameInfo(1).PixelsPerLine;
-  ySize = FrameInfo(1).LinesPerFrame;
-  pixelSize = FrameInfo(1).PixelSize * 1000; %nm
-  zStep = FrameInfo(1).ZStep;
-  nSlices = FrameInfo(1).NumberSlices;
-  snippet_size = 2 * (floor(1300 / (2 * pixelSize))) + 1; % nm. note that this is forced to be odd
+  xSize = mean([FrameInfo.PixelsPerLine]);
+  ySize = mean([FrameInfo(1).LinesPerFrame]);
+  pixelSize_nm = mean([FrameInfo.PixelSize]) * 1000; %nm
+  zStep = mean([FrameInfo(1).ZStep]);
+  nSlices = mean([FrameInfo(1).NumberSlices]);
+  snippet_size = 2 * (floor(1300 / (2 * pixelSize_nm))) + 1; % nm. note that this is forced to be odd
   nFrames = length(FrameInfo);
   
   

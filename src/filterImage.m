@@ -137,10 +137,10 @@ switch filterType
     case {'Structure_smallest', 'Structure_largest'}
         if dim==2
             G=fspecial('gauss',[filterSizeXY, filterSizeXY], s1);
-            [Gx,Gy] = abs(gradient(G));
+            [Gx,Gy] = gradient(G);
             %Compute Gaussian partial derivatives
-            Dx = conv2(im, Gx,'same');
-            Dy = conv2(im, Gy, 'same');
+            Dx = conv2(im, abs(Gx),'same');
+            Dy = conv2(im, abs(Gy), 'same');
             %Smooth elements of the structure tensor
             S11 = conv2(Dx.^2,G,'same');
             S12 = conv2(Dx.*Dy,G,'same');
@@ -159,11 +159,11 @@ switch filterType
             end
         elseif dim==3
             G = imgaussfilt3(im, [s1, s1, sigmaZ]);
-            [Gx,Gy,Gz] = abs(gradient(G));
+            [Gx,Gy,Gz] = gradient(G);
             %Compute Gaussian partial derivatives
-            Dx = imfilter(im, Gx, 'corr', 'same', 'symmetric');
-            Dy = imfilter(im, Gy, 'corr', 'same', 'symmetric');
-            Dz = imfilter(im, Gz, 'corr', 'same', 'symmetric');
+            Dx = imfilter(im, abs(Gx), 'corr', 'same', 'symmetric');
+            Dy = imfilter(im, abs(Gy), 'corr', 'same', 'symmetric');
+            Dz = imfilter(im, abs(Gz), 'corr', 'same', 'symmetric');
             
             %Smooth elements of the structure tensor
             S11 = imgaussfilt3(Dx.^2, [s1, s1, sigmaZ]);
@@ -269,14 +269,14 @@ switch filterType
     case {'Hessian_smallest', 'Hessian_largest'}
         if dim==2
             G = fspecial('gauss',[filterSizeXY, filterSizeXY], s1);
-            [Gx,Gy] = abs(gradient(G));
-            [Gxx, Gxy] = abs(gradient(Gx));
-            [Gyy, ~] = abs(gradient(Gy));
+            [Gx,Gy] =gradient(G);
+            [Gxx, Gxy] = gradient(Gx);
+            [Gyy, ~] = gradient(Gy);
             %Compute elements of the Hessian matrix
-            H11 = conv2(im,Gxx,'same');
-            H12 = conv2(im,Gxy,'same');
+            H11 = conv2(im,abs(Gxx),'same');
+            H12 = conv2(im,abs(Gxy),'same');
             H21 = H12;
-            H22 = conv2(im,Gyy,'same');
+            H22 = conv2(im,abs(Gyy),'same');
             %Make eigenimages from the Hessian
             for y = 1:yDim
                 for x = 1:xDim
@@ -290,17 +290,17 @@ switch filterType
             end
         elseif dim ==3
             G1 = og3(s1, sigmaZ);
-            [Gx,Gy,Gz] = abs(gradient(G1));
-            [Gxx, Gxy, Gxz] = abs(gradient(Gx));
-            [Gyy, ~, Gyz] = abs(gradient(Gy));
-            [~, ~, Gzz] = abs(gradient(Gz));
+            [Gx,Gy,Gz] = gradient(G1);
+            [Gxx, Gxy, Gxz] = gradient(Gx);
+            [Gyy, ~, Gyz] = gradient(Gy);
+            [~, ~, Gzz] = gradient(Gz);
             %Compute elements of the Hessian matrix
-            H11 = imfilter(im, Gxx, 'corr', 'same', 'symmetric');
-            H12 = imfilter(im, Gxy, 'corr', 'same', 'symmetric');
-            H13 = imfilter(im, Gxz, 'corr', 'same', 'symmetric');
-            H22 = imfilter(im, Gyy, 'corr', 'same', 'symmetric');
-            H23 = imfilter(im, Gyz, 'corr', 'same', 'symmetric');
-            H33 = imfilter(im, Gzz, 'corr', 'same', 'symmetric');
+            H11 = imfilter(im, abs(Gxx), 'corr', 'same', 'symmetric');
+            H12 = imfilter(im, abs(Gxy), 'corr', 'same', 'symmetric');
+            H13 = imfilter(im, abs(Gxz), 'corr', 'same', 'symmetric');
+            H22 = imfilter(im, abs(Gyy), 'corr', 'same', 'symmetric');
+            H23 = imfilter(im, abs(Gyz), 'corr', 'same', 'symmetric');
+            H33 = imfilter(im, abs(Gzz), 'corr', 'same', 'symmetric');
             %Make eigenimages from the Hessian
             im = zeros(yDim,xDim,zDim);
             parfor y = 1:yDim

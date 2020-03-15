@@ -8,6 +8,13 @@ reSc = false;
 algo = 'FastRandomForest';
 maxDepth = 20;
 nTrees = 64;
+balance = false; %resample to balance classes
+cleanAttributes = false;
+frameRange = [];
+ramDrive = 'R:\';
+classifyWithMatlab = false;
+classifyWithWeka = true;
+matlabLoader = true;
 parFrame = false;
 parInstances = true;
 
@@ -31,16 +38,17 @@ end
 %%
 disp(['Filtering ', Prefix, '...']);
 
-% [~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix);
+thisExperiment = liveExperiment(Prefix);
 
 [~,ProcPath,DropboxFolder,~, PreProcPath,~, Prefix, ~,~,~,~,~, ~, ~, movieDatabase]...
     = readMovieDatabase(Prefix, optionalResults);
+% 
+% [~, ~, ~, ~, ~, ~, Channel1, Channel2, ~, ~, ~, ~, ~, ...
+%     ~, ~, ~, ~, ~, ~, ~, Channel3, ~, ~] =...
+%     getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
 
-[~, ~, ~, ~, ~, ~, Channel1, Channel2, ~, ~, ~, ~, ~, ...
-    ~, ~, ~, ~, ~, ~, ~, Channel3, ~, ~] =...
-    getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
-
-coats = getCoatChannel(Channel1, Channel2, Channel3);
+% coats = getCoatChannel(Channel1, Channel2, Channel3);
+coats = thisExperiment.spotChannels;
 
 nCh = length(coats); 
 
@@ -50,8 +58,8 @@ end
 
 ch = coats(1); %assumes the experiment is _not_ 2spot2color
 
-dataRoot = fileparts(PreProcPath);
-mlFolder = [dataRoot, filesep, 'training_data_and_classifiers', filesep];
+mlFolder = thisExperiment.MLFolder;
+
 
 [trainingNameExt, trainingFolder] = uigetfile([mlFolder, filesep, '*.arff']);
 trainingFile = [trainingFolder, filesep, trainingNameExt];
@@ -59,12 +67,11 @@ trainingFile = [trainingFolder, filesep, trainingNameExt];
 
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 
-movieMat = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo); %y x z t ch
+movieMat = getMovieMat(thisExperiment);
 
 movieMat = double(squeeze(movieMat(:, :, :, :, ch)));
 
 %need to change this later. will be loaded from computerfolders
-ramDrive = 'R:\';
 
 nFrames = size(movieMat, 4);
 nSlices = size(movieMat, 3);
@@ -83,10 +90,12 @@ trainingData= arffLoader.getDataSet;
 trainingData.setClassIndex(trainingData.numAttributes - 1);
 
 %remove the features matlab we can't (currently) generate in matlab
-dim = 3;
-[~,attributes,~] = weka2matlab(trainingData);
-[~, ~, keepIndices, ~] = validateAttributes(attributes, dim);
-trainingData = cleanArff(trainingData, keepIndices);
+if cleanAttributes
+    dim = 3;
+    [~,attributes,~] = weka2matlab(trainingData);
+    [~, ~, keepIndices, ~] = validateAttributes(attributes, dim);
+    trainingData = cleanArff(trainingData, keepIndices);
+end
 
 classifier = javaObject('hr.irb.fastRandomForest.FastRandomForest');
 options = {'-I', num2str(nTrees), '-threads', num2str(nWorkers), '-K', '2', '-S', '-1650757608', '-depth', num2str(maxDepth)};
@@ -104,7 +113,7 @@ end
 classifier.setOptions(options);
 classifier.buildClassifier(trainingData);
 suffix = strrep(strrep(char(datetime(now,'ConvertFrom','datenum')), ' ', '_'), ':', '-');
-save([trainingFolder, filesep, trainingName, '_', suffix '.model'], 'classifier')
+save([trainingFolder, filesep, trainingName, '_', suffix '.model'], 'classifier', '-v7.3')
 
 %%
 if parFrame
@@ -116,7 +125,7 @@ if parFrame
     parfor f = 1:nFrames
         im = squeeze(movieMat.Value(:, :, :,f));
         pMap(:, :, f) = classifyImageMatlab(im, trainingData.Value,...
-            'reSc', reSc, 'classifierObj', classifier.Value);
+            'reSc', reSc, 'classifier', classifier.Value);
     end
     
 else
@@ -135,7 +144,7 @@ else
         end
         im = squeeze(movieMat(:, :, :,f));
         pMap(:, :, :, f) = classifyImageWeka(im, trainingData,'tempPath',...
-            ramDrive, 'reSc', reSc, 'classifierObj', classifier, 'par', parInstances);
+            ramDrive, 'reSc', reSc, 'classifier', classifier, 'par', parInstances);
         try waitbar(f/nFrames, wb); end
         dT(f)=toc/60;
 

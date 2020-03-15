@@ -8,8 +8,10 @@ classdef liveExperiment
         preFolder = '';
         procFolder = '';
         resultsFolder = '';
+        MLFolder = '';
         project = '';
         
+        spotChannel = [];
         
         isUnhealthy = false;
         
@@ -37,22 +39,17 @@ classdef liveExperiment
         hasChannelsFile = false;
         hasAnaphaseFile = false;
         
+        yDim = 0;
+        xDim = 0;
+        zDim = 0;
+        nFrames = 0;
+        
+        zStep = 0;
+        nDigits = 0;
+        pixelSize_nm = 0;
+        
+        
     end
-    
-    properties (Dependent, AbortSet, Transient)
-        
-        movieMat
-        hisMat
-        
-        Ellipses
-        schnitzcells
-        
-        Spots
-        Particles
-        CompiledParticles
-         
-    end
-    
     
     methods
         
@@ -70,6 +67,8 @@ classdef liveExperiment
             obj.preFolder = [PreProcPath, filesep, Prefix, filesep];
             obj.procFolder = [ProcPath, filesep, Prefix, '_', filesep];
             obj.resultsFolder = [DropboxFolder, filesep, Prefix, filesep];
+            dataRoot = fileparts(PreProcPath);
+            obj.MLFolder = [dataRoot, filesep, 'training_data_and_classifiers', filesep];
             
             [rawDir, procDir, resultsDir] = browseExperiment(obj.Prefix);
             obj.rawExportedDirectory = rawDir;
@@ -105,8 +104,32 @@ classdef liveExperiment
             
             obj.hasChannelsFile =sum(contains(obj.resultsDirectory{:, 1}, 'Channels'));
             
-%             obj.movieMat = [];
-%                         
+            
+            [~,~,~,~, ~,...
+                ~, ~, ~,~,~,~,...
+                ~, ~, ~, movieDatabase]...
+                = readMovieDatabase(Prefix);
+            
+            [~, ~, ~, ~, ~, ~,...
+                Channel1, Channel2,~, ~,  ~, ~, ~,...
+                ~, ~, ~, ~, ~, ~, ~, Channel3,~,~, ~, ~]...
+                = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
+            
+            FrameInfo = getFrameInfo(obj);
+            
+            [xSize, ySize, pixelSize_nm, zStep, snippet_size,...
+                nFrames, nSlices, nDigits] = getFrameInfoParams(FrameInfo);
+            
+            obj.xDim = xSize;
+            obj.yDim = ySize;
+            obj.zDim = nSlices;
+            obj.nFrames = nFrames;
+            obj.zStep = zStep;
+            obj.nDigits = nDigits;
+            obj.pixelSize_nm = pixelSize_nm;
+            
+            obj.spotChannel = getCoatChannel(Channel1, Channel2, Channel3);
+            
             
         end
         
@@ -121,12 +144,18 @@ classdef liveExperiment
         function movieMat = getMovieMat(obj)
             
             movieMat = loadMovieMat(obj.Prefix);
-
+            
         end
         
         function hisMat = getHisMat(obj)
             
             hisMat = loadHisMat(obj.Prefix);
+            
+        end
+        
+        function FrameInfo = getFrameInfo(obj)
+            
+            load([obj.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
             
         end
         
@@ -174,11 +203,11 @@ classdef liveExperiment
             end
             
         end
-                
+        
         
     end
     
-       
+    
     
 end
 
