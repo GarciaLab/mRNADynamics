@@ -3,19 +3,11 @@ function [hisOverlayHandle, ellipseHandles] =...
     Overlay, numFrames, UseSchnitz, ZoomRange, fish, multiAx,...
     HisOverlayFigAxes, hisOverlayHandle, ellipseHandles, ImageHisMat)
 
-% JP: refactor this references to call new CPTState methods
-Particles = cptState.Particles;
-CurrentFrame = cptState.CurrentFrame;
-CurrentChannel = cptState.CurrentChannel;
-CurrentParticle = cptState.CurrentParticle;
-schnitzcells = cptState.schnitzcells;
-Ellipses = cptState.Ellipses;
-
-EllipseHandle=[];
-EllipseHandleYellow=[];
-EllipseHandleBlue=[];
-EllipseHandleWhite=[];
-EllipseHandleGreen=[];
+EllipseHandle = [];
+EllipseHandleYellow = [];
+EllipseHandleBlue = [];
+EllipseHandleWhite = [];
+EllipseHandleGreen = [];
 
 if ~isempty(multiAx)
     multiView = true;
@@ -23,139 +15,106 @@ else
     multiView = false;
 end
 
-%Get the coordinates of all the spots in this frame
-[x,y,z]=SpotsXYZ(cptState.Spots{CurrentChannel}(CurrentFrame));
-%Pull out the right particle if it exists in this frame
-CurrentParticleIndex=...
-    Particles{CurrentChannel}(CurrentParticle).Index(Particles{CurrentChannel}(CurrentParticle).Frame==...
-    CurrentFrame);
-xTrace=x(CurrentParticleIndex);
-yTrace=y(CurrentParticleIndex);
+% Get the coordinates of all the spots in this frame
+[x,y,z] = SpotsXYZ(cptState.getCurrentFrameSpots());
+% Pull out the right particle if it exists in this frame
+CurrentParticleIndex = cptState.getCurrentParticleIndex();
+xTrace = x(CurrentParticleIndex);
+yTrace = y(CurrentParticleIndex);
 
-numParticles = length(Particles{CurrentChannel});
+numParticles = cptState.numParticles();
 
-ApprovedParticles=[Particles{CurrentChannel}.Approved];
+ApprovedParticles = [cptState.getCurrentChannelParticles().Approved];
 
-%These are the positions of all the approved, disapproved and
-%unflagged particles
+% Approved particles
+[xApproved, yApproved] = cptState.getApprovedParticles();
 
-%Approved particles
-IndexApprovedParticles=[];
-for i=1:numParticles
-    if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&&...
-            sum(Particles{CurrentChannel}(i).Approved==1)
-        IndexApprovedParticles=[IndexApprovedParticles,...
-            Particles{CurrentChannel}(i).Index(Particles{CurrentChannel}(i).Frame==CurrentFrame)];
-    end
-end
-xApproved=x(IndexApprovedParticles);
-yApproved=y(IndexApprovedParticles);
+% Disapproved particles
+[xDisapproved, yDisapproved] = cptState.getDisapprovedParticles();
 
-%Disapproved particles
-IndexDisapprovedParticles=[];
-for i=1:numParticles
-    if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&&sum(Particles{CurrentChannel}(i).Approved==-1)
-        IndexDisapprovedParticles=[IndexDisapprovedParticles,...
-            Particles{CurrentChannel}(i).Index(Particles{CurrentChannel}(i).Frame==CurrentFrame)];
-    end
-end
-xDisapproved=x(IndexDisapprovedParticles);
-yDisapproved=y(IndexDisapprovedParticles);
+% Non-flagged particles (these are particles that have not been processed)
+[xNonFlagged, yNonFlagged] = cptState.getNonFlaggedParticles();
 
-%Non-flagged particles (these are particles that have not been
-%processed)
-IndexNonFlaggedParticles=[];
-for i=1:numParticles
-    if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&&...
-            ~(sum(Particles{CurrentChannel}(i).Approved==-1)||sum(Particles{CurrentChannel}(i).Approved==1))
-        IndexNonFlaggedParticles=[IndexNonFlaggedParticles,...
-            Particles{CurrentChannel}(i).Index(Particles{CurrentChannel}(i).Frame==CurrentFrame)];
-    end
-end
-xNonFlagged=x(IndexNonFlaggedParticles);
-yNonFlagged=y(IndexNonFlaggedParticles);
-
-%Show all particles in regular mode
+% Show all particles in regular mode
 if ~SpeedMode
     plot(overlayAxes,xNonFlagged,yNonFlagged,'ow')
     plot(overlayAxes,xApproved,yApproved,'ob')
     plot(overlayAxes,xDisapproved,yDisapproved,'^r')
-    %plot(overlayAxes,x, y, 'sw')
 end
-%Always show current particle. this indicates the x-y center of the spot
-%within the brightest z-slice and may differ from the position
-%shown in the snippet image, which is centered at the position with
-%the current z-slice.
+% Always show current particle. this indicates the x-y center of the spot
+% within the brightest z-slice and may differ from the position
+% shown in the snippet image, which is centered at the position with
+% the current z-slice.
 plot(overlayAxes,xTrace,yTrace,'og')
 hold(overlayAxes,'off')
 
 if isfield(cptState.FrameInfo, 'nc')
-    set(Overlay,'Name',['Particle: ',num2str(CurrentParticle),'/',num2str(numParticles),...
-        ', Frame: ',num2str(CurrentFrame),'/',num2str(numFrames),...
-        ', Z: ',num2str(cptState.CurrentZ),'/',num2str(cptState.ZSlices),' nc: ', num2str(cptState.FrameInfo(CurrentFrame).nc),...
-        ', Ch: ',num2str(CurrentChannel)])
+    set(Overlay,'Name',['Particle: ',num2str(cptState.CurrentParticle),'/',num2str(numParticles),...
+        ', Frame: ',num2str(cptState.CurrentFrame),'/',num2str(numFrames),...
+        ', Z: ',num2str(cptState.CurrentZ),'/',num2str(cptState.ZSlices),' nc: ', num2str(cptState.FrameInfo(cptState.CurrentFrame).nc),...
+        ', Ch: ',num2str(cptState.CurrentChannel)])
 end
 if UseSchnitz
-    %Show all the nuclei in regular mode
+    % Show all the nuclei in regular mode
     if ~SpeedMode
         hold(overlayAxes,'on')
         
-        EllipseHandle=notEllipse(Ellipses{CurrentFrame}(:,3),...
-            Ellipses{CurrentFrame}(:,4),...
-            Ellipses{CurrentFrame}(:,5),...
-            Ellipses{CurrentFrame}(:,1)+1,...
-            Ellipses{CurrentFrame}(:,2)+1,'r',10, overlayAxes);
+        EllipseHandle=notEllipse(cptState.Ellipses{cptState.CurrentFrame}(:,3),...
+            cptState.Ellipses{cptState.CurrentFrame}(:,4),...
+            cptState.Ellipses{cptState.CurrentFrame}(:,5),...
+            cptState.Ellipses{cptState.CurrentFrame}(:,1)+1,...
+            cptState.Ellipses{cptState.CurrentFrame}(:,2)+1,'r',10, overlayAxes);
         hold(overlayAxes,'off')
 
 
-        %Show the ones that have been approved
+        % Show the ones that have been approved
 
         hold(overlayAxes,'on')
         schnitzCellNo=[];
         for i=1:numParticles
-            if Particles{CurrentChannel}(i).Approved==1
+            if cptState.getCurrentChannelParticles()(i).Approved == 1
                 try
-                    schnitzIndex=find((schnitzcells(Particles{CurrentChannel}(i).Nucleus).frames)==CurrentFrame);
-                    schnitzCellNo=[schnitzCellNo,schnitzcells(Particles{CurrentChannel}(i).Nucleus).cellno(schnitzIndex)];
+                    schnitzIndex=find((cptState.schnitzcells(cptState.getCurrentChannelParticles()(i).Nucleus).frames) == cptState.CurrentFrame);
+                    schnitzCellNo=[schnitzCellNo,cptState.schnitzcells(cptState.getCurrentChannelParticles()(i).Nucleus).cellno(schnitzIndex)];
                 catch
-                    %can't identify the nucleus for this particle.
+                    % can't identify the nucleus for this particle.
                 end
             end
         end
 
-        EllipseHandleBlue=notEllipse(Ellipses{CurrentFrame}(schnitzCellNo,3),...
-            Ellipses{CurrentFrame}(schnitzCellNo,4),...
-            Ellipses{CurrentFrame}(schnitzCellNo,5),...
-            Ellipses{CurrentFrame}(schnitzCellNo,1)+1,...
-            Ellipses{CurrentFrame}(schnitzCellNo,2)+1,'b',10, overlayAxes);
+        EllipseHandleBlue=notEllipse(cptState.Ellipses{cptState.CurrentFrame}(schnitzCellNo,3),...
+            cptState.Ellipses{cptState.CurrentFrame}(schnitzCellNo,4),...
+            cptState.Ellipses{cptState.CurrentFrame}(schnitzCellNo,5),...
+            cptState.Ellipses{cptState.CurrentFrame}(schnitzCellNo,1)+1,...
+            cptState.Ellipses{cptState.CurrentFrame}(schnitzCellNo,2)+1,'b',10, overlayAxes);
         hold(overlayAxes,'off')
     end
 
-    %Show the corresponding nucleus
-    if ~isempty(Particles{CurrentChannel}(CurrentParticle).Nucleus) && Particles{CurrentChannel}(CurrentParticle).Nucleus > 0
-        SchnitzIndex=find(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames==CurrentFrame);
-        NucleusIndex=schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).cellno(SchnitzIndex);
+    % Show the corresponding nucleus
+    if ~isempty(cptState.getCurrentParticle().Nucleus) && cptState.getCurrentParticle().Nucleus > 0
+        SchnitzIndex = find(cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).frames == cptState.CurrentFrame);
+        NucleusIndex = cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).cellno(SchnitzIndex);
 
         if ~isempty(NucleusIndex)
             hold(overlayAxes,'on')
-            EllipseHandleGreen=ellipse(Ellipses{CurrentFrame}(NucleusIndex,3),...
-                Ellipses{CurrentFrame}(NucleusIndex,4),...
-                Ellipses{CurrentFrame}(NucleusIndex,5),...
-                Ellipses{CurrentFrame}(NucleusIndex,1)+1,...
-                Ellipses{CurrentFrame}(NucleusIndex,2)+1,[],10, overlayAxes);
+            EllipseHandleGreen=ellipse(cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,3),...
+                cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,4),...
+                cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,5),...
+                cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,1)+1,...
+                cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,2)+1,[],10, overlayAxes);
             set(EllipseHandleGreen,'Color','g')
             hold(overlayAxes,'off')
         else
-            %('Error: Particle without an associated nucleus?')
+            % ('Error: Particle without an associated nucleus?')
         end
 
 
 
-        %Show the daughter nuclei if applicable
-        if isfield(schnitzcells, 'E')
-            DaughterE=schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).E;
-            DaughterD=schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).D;
-            Mother=schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).P;
+        % Show the daughter nuclei if applicable
+        if isfield(cptState.schnitzcells, 'E')
+            DaughterE = cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).E;
+            DaughterD = cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).D;
+            Mother = cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).P;
         else
             DaughterE = 0;
             DaughterD = 0;
@@ -163,16 +122,16 @@ if UseSchnitz
         end
 
         if DaughterE~=0
-            SchnitzIndex=find(schnitzcells(DaughterE).frames==CurrentFrame);
-            NucleusIndex=schnitzcells(DaughterE).cellno(SchnitzIndex);
+            SchnitzIndex = find(cptState.schnitzcells(DaughterE).frames == cptState.CurrentFrame);
+            NucleusIndex = cptState.schnitzcells(DaughterE).cellno(SchnitzIndex);
 
             if ~isempty(NucleusIndex)
                 hold(overlayAxes,'on')
-                EllipseHandleWhite=[EllipseHandleWhite,ellipse(Ellipses{CurrentFrame}(NucleusIndex,3),...
-                    Ellipses{CurrentFrame}(NucleusIndex,4),...
-                    Ellipses{CurrentFrame}(NucleusIndex,5),...
-                    Ellipses{CurrentFrame}(NucleusIndex,1)+1,...
-                    Ellipses{CurrentFrame}(NucleusIndex,2)+1, [],10,overlayAxes)];
+                EllipseHandleWhite=[EllipseHandleWhite,ellipse(cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,3),...
+                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,4),...
+                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,5),...
+                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,1)+1,...
+                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,2)+1, [],10,overlayAxes)];
 
                 hold(overlayAxes,'off')
             else
@@ -181,16 +140,16 @@ if UseSchnitz
         end
 
         if DaughterD~=0
-            SchnitzIndex=find(schnitzcells(DaughterD).frames==CurrentFrame);
-            NucleusIndex=schnitzcells(DaughterD).cellno(SchnitzIndex);
+            SchnitzIndex = find(cptState.schnitzcells(DaughterD).frames == cptState.CurrentFrame);
+            NucleusIndex = cptState.schnitzcells(DaughterD).cellno(SchnitzIndex);
 
             if ~isempty(NucleusIndex)
                 hold(overlayAxes,'on')
-                EllipseHandleWhite=[EllipseHandleWhite,ellipse(Ellipses{CurrentFrame}(NucleusIndex,3),...
-                    Ellipses{CurrentFrame}(NucleusIndex,4),...
-                    Ellipses{CurrentFrame}(NucleusIndex,5),...
-                    Ellipses{CurrentFrame}(NucleusIndex,1)+1,...
-                    Ellipses{CurrentFrame}(NucleusIndex,2)+1,[],10,overlayAxes)];
+                EllipseHandleWhite=[EllipseHandleWhite,ellipse(cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,3),...
+                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,4),...
+                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,5),...
+                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,1)+1,...
+                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,2)+1,[],10,overlayAxes)];
                 hold(overlayAxes,'off')
             else
                 %('Error: Particle without an associated nucleus?')
@@ -205,16 +164,16 @@ if UseSchnitz
     
 
         if Mother~=0
-            SchnitzIndex=find(schnitzcells(Mother).frames==CurrentFrame);
-            NucleusIndex=schnitzcells(Mother).cellno(SchnitzIndex);
+            SchnitzIndex = find(cptState.schnitzcells(Mother).frames == cptState.CurrentFrame);
+            NucleusIndex = cptState.schnitzcells(Mother).cellno(SchnitzIndex);
 
             if ~isempty(NucleusIndex)
                 hold(overlayAxes,'on')
-                EllipseHandleYellow=ellipse(Ellipses{CurrentFrame}(NucleusIndex,3),...
-                    Ellipses{CurrentFrame}(NucleusIndex,4),...
-                    Ellipses{CurrentFrame}(NucleusIndex,5),...
-                    Ellipses{CurrentFrame}(NucleusIndex,1)+1,...
-                    Ellipses{CurrentFrame}(NucleusIndex,2)+1,[],10,overlayAxes);
+                EllipseHandleYellow=ellipse(cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,3),...
+                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,4),...
+                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,5),...
+                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,1)+1,...
+                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,2)+1,[],10,overlayAxes);
                 set(EllipseHandleYellow,'Color','y')
                 hold(overlayAxes,'off')
             else
@@ -229,11 +188,11 @@ if UseSchnitz
     end
 end
 
-if ApprovedParticles(CurrentParticle)==1
+if ApprovedParticles(cptState.CurrentParticle) == 1
     set(Overlay,'Color','g')
-elseif ApprovedParticles(CurrentParticle)==-1
+elseif ApprovedParticles(cptState.CurrentParticle) == -1
     set(Overlay,'Color','r')
-elseif ApprovedParticles(CurrentParticle)==2
+elseif ApprovedParticles(cptState.CurrentParticle) == 2
     set(Overlay,'Color','y')
 else
     set(Overlay,'Color','default')
@@ -242,10 +201,10 @@ end
 %Show the particles that were under threshold 2.
 if ShowThreshold2
     %Get the positions of all the spots in this frame
-    [x2,y2]=SpotsXYZ(cptState.Spots{CurrentChannel}(CurrentFrame));
+    [x2,y2]=SpotsXYZ(cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame));
     %Filter those that were under threshold 2.
     CurrentSpotFilter=...
-        ~logical(cptState.SpotFilter{CurrentChannel}(CurrentFrame,~isnan(cptState.SpotFilter{CurrentChannel}(CurrentFrame,:))));
+        ~logical(cptState.SpotFilter{cptState.CurrentChannel}(cptState.CurrentFrame,~isnan(cptState.SpotFilter{cptState.CurrentChannel}(cptState.CurrentFrame,:))));
     x2=x2(CurrentSpotFilter);
     y2=y2(CurrentSpotFilter);
 
@@ -255,16 +214,16 @@ if ShowThreshold2
 end
 
 if cptState.ZoomMode
-    %Find the closest frame
-    [~,MinIndex]=min((Particles{CurrentChannel}(CurrentParticle).Frame-CurrentFrame).^2);
+    % Find the closest frame
+    [~,MinIndex]=min((cptState.getCurrentParticle().Frame - cptState.CurrentFrame).^2);
     if length(MinIndex)>1
         MinIndex=MinIndex(1);
     end
     [cptState.xForZoom,cptState.yForZoom]=...
-        SpotsXYZ(cptState.Spots{CurrentChannel}(Particles{CurrentChannel}(CurrentParticle).Frame(MinIndex)));
+        SpotsXYZ(cptState.getCurrentChannelSpots()(cptState.getCurrentParticle().Frame(MinIndex)));
 
-    cptState.xForZoom=cptState.xForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
-    cptState.yForZoom=cptState.yForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
+    cptState.xForZoom = cptState.xForZoom(cptState.getCurrentParticle().Index(MinIndex));
+    cptState.yForZoom = cptState.yForZoom(cptState.getCurrentParticle().Index(MinIndex));
 
     try
         xlim(overlayAxes,[cptState.xForZoom-ZoomRange,cptState.xForZoom+ZoomRange])
