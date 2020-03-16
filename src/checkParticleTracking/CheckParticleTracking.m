@@ -200,15 +200,18 @@ ch = coats(1); %assumes the experiment is _not_ 2spot2color
 maxTimeCell = [];
 if preMovie
     if isempty(movieMat)
-        [movieMat, hisMat, maxMat, ~, ~]...
+        [movieMat, hisMat, ~, ~, ~]...
             = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, Channels);
         movieMat = squeeze(movieMat(ch,:,:,:,:));
-        maxMat = squeeze(maxMat(ch,:,:,:));
-    else
+    end
+    
+    if nFrames >1
         maxMat = squeeze(max(movieMat(:,:,:,:), [],1));
+    else
+        maxMat = squeeze(max(movieMat(:, :, :), [], 1));
     end
 else
-    movieMat = []; hisMat = []; maxMat = []; 
+    movieMat = []; hisMat = []; maxMat = [];
 end
 
 
@@ -389,12 +392,16 @@ while (cc ~= 'x')
             cptState.ImageMat = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
                 FilePrefix, iIndex(cptState.CurrentFrame, nDigits), '_z', iIndex(cptState.CurrentZ, 2), cptState.nameSuffix, '.tif']);
         else
-            cptState.ImageMat = squeeze(movieMat(cptState.CurrentZ, cptState.CurrentFrame, :, :));
+            if nFrames > 1
+                cptState.ImageMat = squeeze(movieMat(cptState.CurrentZ, cptState.CurrentFrame, :, :));
+            else
+                cptState.ImageMat = squeeze(movieMat(cptState.CurrentZ, :, :));
+            end
         end
         if multiView
-%             if cptState.CurrentParticle == 2
-                1
-%             end
+            %             if cptState.CurrentParticle == 2
+            1
+            %             end
             for z = 1:-1:-1
                 for f = -1:1
                     if any( 1:nSlices == cptState.CurrentZ + z) && any( 1:nFrames == cptState.CurrentFrame + f)
@@ -516,9 +523,9 @@ while (cc ~= 'x')
         plotzvars = [plotzvars, MaxZProfile];
     end
     MaxZProfile = plotZFigures(plotzvars{:});
-
+    
     set(0, 'CurrentFigure', Overlay);
-
+    
     cc = getUserKeyInput(Overlay);
     
     frameChangeKeyInput(cc);

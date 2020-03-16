@@ -34,11 +34,16 @@ function generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames,...
             nameSuffix, '.tif'];
           rawStackArray(:, :, i) = imread(fileName);
         end
-    
-        imwrite(uint16(rawStackArray(:, :, 1)), rawStackName);
+         if max(rawStackArray(:)) < 256 %max uint8 value
+                rawStackArray = uint8(rawStackArray);
+         else
+             rawStackArray = uint16(rawStackArray);
+         end
+        
+        imwrite(rawStackArray(:, :, 1), rawStackName);
     
         for k = 2:size(rawStackArray, 3)
-          imwrite(uint16(rawStackArray(:, :, k)), rawStackName, 'WriteMode', 'append');
+          imwrite(rawStackArray(:, :, k), rawStackName, 'WriteMode', 'append');
         end
     
         clear rawStackArray;
