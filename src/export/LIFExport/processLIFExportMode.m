@@ -240,9 +240,3 @@ disp('Movie files exported.');
 
 
 end
-
-function myCleanupFun()
-
-delete(findall(0));
-    
-end

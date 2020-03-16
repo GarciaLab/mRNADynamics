@@ -21,6 +21,9 @@ function pMap = classifyImageWeka(im, training, varargin)
 %
 %   See also GENERATEDOGSWEKA, GENERATEDOGS
 
+
+cleanupObj = onCleanup(@myCleanupFun);
+
 %% PARAMS, OPTIONS
 
 displayFigures = false;

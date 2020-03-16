@@ -67,8 +67,7 @@ classdef liveExperiment
             obj.preFolder = [PreProcPath, filesep, Prefix, filesep];
             obj.procFolder = [ProcPath, filesep, Prefix, '_', filesep];
             obj.resultsFolder = [DropboxFolder, filesep, Prefix, filesep];
-            dataRoot = fileparts(PreProcPath);
-            obj.MLFolder = [dataRoot, filesep, 'training_data_and_classifiers', filesep];
+            obj.MLFolder = [DropboxFolder, filesep, 'training_data_and_classifiers', filesep];
             
             [rawDir, procDir, resultsDir] = browseExperiment(obj.Prefix);
             obj.rawExportedDirectory = rawDir;
@@ -210,4 +209,3 @@ classdef liveExperiment
     
     
 end
-

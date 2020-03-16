@@ -5,13 +5,11 @@ function generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames,...
 
 mm = false;
 
-% if exist([PreProcPath, filesep, Prefix, filesep, Prefix,'_movieMatCh', coatChannel, '.Mat'], 'file')
-%     load([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMatCh', coatChannel, '.Mat']);
-%     mm = true;
-% else
+
+movieChFile = [PreProcPath, filesep, Prefix, filesep, Prefix,'_movieMatCh', num2str(coatChannel), '.mat'];
 movieFile = [PreProcPath, filesep, Prefix, filesep, Prefix,'_movieMat.mat'];
-if exist(movieFile, 'file')
-    movieMat = loadMovieMat(movieFile);
+if exist(movieFile, 'file') || exist(movieChFile, 'file')
+    movieMat = loadMovieMat(Prefix);
     mm=true;
 end
 

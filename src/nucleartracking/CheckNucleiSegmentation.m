@@ -408,10 +408,19 @@ while (cc~='x')
         if ~isempty(previousncframes)
             CurrentFrame = previousncframes(1);
         end
-    elseif (ct~=0)&(cc=='/')  %adjust ellipse centroids
-       
-        Ellipses{CurrentFrame} = adjustEllipseCentroidsFrame(Ellipses{CurrentFrame}, squeeze(hisMat(:, :, CurrentFrame)), 'pixelSize', pixelSize);
-
+%     elseif (ct~=0)&(cc=='/')  %adjust ellipse centroids
+%        
+%         Ellipses{CurrentFrame} = adjustEllipseCentroidsFrame(Ellipses{CurrentFrame}, squeeze(hisMat(:, :, CurrentFrame)), 'pixelSize', pixelSize);
+%     
+    elseif (ct~=0)&(cc=='\')  %resegment with ksnakecircles
+        
+         [~, circles] = kSnakeCircles(HisImage, pixelSize/1000);    
+        circles(:, 4) = circles(:, 3);
+        circles(:, 5:9) = zeros(size(circles, 1), 5);
+        Ellipses{CurrentFrame} = circles;
+        
+        
+         
     elseif (ct~=0)&(cc=='0')    %Debug mode
         keyboard
         

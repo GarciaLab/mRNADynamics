@@ -5,4 +5,5 @@ function cleanedData= cleanArff(data, keepIndices)
     removeFilter.setInvertSelection(true);
     removeFilter.setInputFormat(data);
     cleanedData= weka.filters.Filter.useFilter(data, removeFilter);
+    
 end

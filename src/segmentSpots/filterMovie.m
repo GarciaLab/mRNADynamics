@@ -69,6 +69,8 @@ function log = filterMovie(Prefix, varargin)
 disp(['Generating filtered movie from ', Prefix,'...']);
 warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
+cleanupObj = onCleanup(@myCleanupFun);
+
 dogs = [];
 
 % Start timer

@@ -38,6 +38,8 @@ end
 %%
 disp(['Filtering ', Prefix, '...']);
 
+cleanupObj = onCleanup(@myCleanupFun);
+
 thisExperiment = liveExperiment(Prefix);
 
 [~,ProcPath,DropboxFolder,~, PreProcPath,~, Prefix, ~,~,~,~,~, ~, ~, movieDatabase]...
@@ -48,7 +50,7 @@ thisExperiment = liveExperiment(Prefix);
 %     getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
 
 % coats = getCoatChannel(Channel1, Channel2, Channel3);
-coats = thisExperiment.spotChannels;
+coats = thisExperiment.spotChannel;
 
 nCh = length(coats); 
 
@@ -65,7 +67,8 @@ mlFolder = thisExperiment.MLFolder;
 trainingFile = [trainingFolder, filesep, trainingNameExt];
 [~ ,trainingName] = fileparts(trainingNameExt);
 
-load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
+% load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
+FrameInfo = getFrameInfo(thisExperiment);
 
 movieMat = getMovieMat(thisExperiment);
 
