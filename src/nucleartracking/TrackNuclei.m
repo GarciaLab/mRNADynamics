@@ -256,6 +256,17 @@ for i=1:length(schnitzcells)
     end
 end
 
+expandedAnaphaseFrames = [zeros(1,8),thisExperiment.anaphaseFrames'];
+
+for s = 1:length(schnitzcells)
+    midFrame = ceil(length(schnitzcells(s).frames)/2);
+    dif = double(schnitzcells(s).frames(midFrame)) - expandedAnaphaseFrames;
+    cycle = find(dif>0, 1, 'last' );
+    schnitzcells(s).cycle = uint8(cycle);
+end
+
+schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, expandedAnaphaseFrames);
+
 
 %Save everything at this point. It will be overwritten later, but it's
 %useful for debugging purposes if there's a bug in the code below.
@@ -294,10 +305,9 @@ if fish
     schnitzcells = rmfield(schnitzcells, {'P', 'E', 'D'});
 end
 
-ncVector=[zeros(1, 8), thisExperiment.anaphaseFrames'];
 
 if track & ~noBreak
-    [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
+    [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, expandedAnaphaseFrames, nFrames);
     save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
     if (whos(var2str(schnitzcells)).bytes < 2E9) 
         save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v6');
