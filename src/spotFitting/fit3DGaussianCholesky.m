@@ -29,7 +29,8 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw]
     intMax = max(snip3D(:));
     int25 = prctile(snip3D(:),25);
     % initialize parameters
-    initial_parameters =[intMax, ceil(yDim/2),ceil(xDim/2), ceil(zDim/2),sigma_guess/2,sigma_guess/2,sigma_guess/2,sigma_guess/2,sigma_guess/2,sigma_guess/2, int25];
+    initial_parameters =[intMax, ceil(yDim/2),ceil(xDim/2), ceil(zDim/2),sigma_guess/2,sigma_guess/2,...
+        sigma_guess/2,sigma_guess/2,sigma_guess/2,sigma_guess/2, int25];
     
     % initialize upper and lower parameter bounds
     ub_vec = [intMax*1.5,yDim,xDim,zDim,Inf,Inf,Inf,Inf,Inf,Inf,intMax];
