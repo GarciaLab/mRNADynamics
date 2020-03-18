@@ -41,6 +41,7 @@ nWorkers = 1;
 fish = false;
 preMovie = false;
 chooseHis = false;
+yToRetrackPrompt = true;
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'noAdd') | strcmpi(varargin{i}, 'fish') | strcmpi(varargin{i}, 'markandfind')
@@ -55,6 +56,8 @@ for i = 1:length(varargin)
     elseif strcmpi(varargin{i}, 'premovie')
         preMovie = true;
         movieMat = varargin{i+1};
+    elseif strcmpi(varargin{i}, 'yToRetrackPrompt')
+        yToRetrackPrompt = true;
     end
 end
 
@@ -80,7 +83,8 @@ DataFolder=[Folder,'..',filesep,'..',filesep,'..',filesep,'Data',filesep,FilePre
 
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
     Channel1, Channel2, Objective, Power, DataFolderFromDataColumn, DropboxFolderName, Comments,...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+    nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3] =...
+    getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 
@@ -435,8 +439,13 @@ save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v6')
 close all;
 
 %Decide whether we need to re-track
-userPrompt = 'Did you make changes to nuclei and thus require re-tracking? (y/n)';
-reTrackAnswer = inputdlg(userPrompt);
+if yToRetrackPrompt 
+    reTrackAnswer = true;
+else
+    userPrompt = 'Did you make changes to nuclei and thus require re-tracking? (y/n)';
+    reTrackAnswer = inputdlg(userPrompt);
+end
+
 if contains(reTrackAnswer,'n')
     disp('Ellipses saved. Per user input, not re-tracking. Exiting.')
 else

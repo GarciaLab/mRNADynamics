@@ -164,7 +164,7 @@ classdef liveExperiment
             
             schnitzcellsFile = [obj.resultsFolder, obj.Prefix, '_lin.mat'];
             if obj.hasSchnitzcellsFile
-                schnitzcells = load(schnitzcellsFile);
+                load(schnitzcellsFile, 'schnitzcells');
             end
             
         end
@@ -173,7 +173,7 @@ classdef liveExperiment
             
             ellipsesFile = [obj.resultsFolder, 'Ellipses.mat'];
             if obj.hasEllipsesFile
-                Ellipses = load(ellipsesFile);
+                load(ellipsesFile, 'Ellipses');
             end
             
         end
@@ -191,16 +191,16 @@ classdef liveExperiment
             
             spotsFile = [obj.resultsFolder, 'Spots.mat'];
             if obj.hasSpotsFile
-                Spots = load(spotsFile);
+               load(spotsFile, 'Spots');
             end
             
         end
         
-        function Particles = getParticles(obj)
+        function [Particles, SpotFilter] = getParticles(obj)
             
             particlesFile = [obj.resultsFolder, 'Particles.mat'];
             if obj.hasParticlesFile
-                Particles = load(particlesFile);
+                load(particlesFile, 'Particles', 'SpotFilter');
             end
             
         end
