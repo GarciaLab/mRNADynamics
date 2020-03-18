@@ -1,4 +1,4 @@
-function ggiantIm = makeGiantImage(imFile, format, padSize, frameRange, Prefix, channel, varargin)
+function giantImage = makeGiantImage(Prefix, imFile, format, padSize, frameRange, channel, varargin)
 
 %imDir is the folder where images are located
 % format is like [numrows, numcolumns, num z slices]
@@ -17,9 +17,6 @@ for i = 1:2:(numel(varargin)-1)
     end
 end
 
-firstFrame = frameRange(1);
-lastFrame  = frameRange(end);
-
 if gpu
     argin = tryGPU;
 else
@@ -27,7 +24,7 @@ else
     processor = 'cpu';
 end
 
-numFrames = (lastFrame - firstFrame) + 1;
+numFrames = (frameRange(end) - frameRange(1)) + 1;
 
 dim = length(format);
 frameInterval = padSize+format(2);
@@ -49,20 +46,20 @@ nPads = numFrames;
 
 
 if dim == 2
-    ggiantIm = zeros(format(1), (format(2)*numFrames) + (padSize*nPads), numType, argin);
+    giantImage = zeros(format(1), (format(2)*numFrames) + (padSize*nPads), numType, argin);
 elseif dim == 3
-    ggiantIm = zeros(format(1), (format(2)*numFrames) + (padSize*nPads),format(3)-2, numType,argin{:});
+    giantImage = zeros(format(1), (format(2)*numFrames) + (padSize*nPads),format(3)-2, numType,argin{:});
 end
 
 fcnt = 1;
-for frame = firstFrame:lastFrame
+for frame = frameRange
     if isempty(movieMatCh)
         if stacks
             imPath = [imFile,filesep, d(frame).name];
             if dim == 2
                 im = single(imread(imPath));
             elseif dim == 3
-                im = single(readTiffStack(imPath));
+                im = single(imreadStack(imPath));
             end
         else
              if dim == 2
@@ -91,7 +88,7 @@ end
     if dim == 2
 %         ggiantIm(:,ind1:ind2) = padarray(gpuArray(im), [0,padSize, 0], 0, 'post');
     elseif dim == 3
-        ggiantIm(:,ind1:ind2, :) = padarray(im, [0,padSize, 0], 0, 'post');
+        giantImage(:,ind1:ind2, :) = padarray(im, [0,padSize, 0], 0, 'post');
     end
     
     fcnt = fcnt + 1;

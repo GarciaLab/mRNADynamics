@@ -9,6 +9,13 @@ function [Spots, dogs]...
 
 
 dogs = [];
+DogOutputFolder=[ProcPath,filesep,'dogs',filesep];
+
+%the underscore is to remove . and .. from the output structure
+dogDir = dir([DogOutputFolder, '*_*']);
+
+loadAsStacks = ~contains(dogDir(1).name, '_z');
+Weka = startsWith(dogDir(1).name, 'prob');
 
 waitbarFigure = waitbar(0, 'Segmenting spots');
 set(waitbarFigure, 'units', 'normalized', 'position', [0.4, .15, .25,.1]);
@@ -39,10 +46,16 @@ if Weka
         warning('Increasing threshold to 5000. For Weka ML, you are thresholding on probability maps so the threshold shouldn''t be set below 50% = 5000.')
         Threshold = 5000;
     end
+elseif loadAsStacks
+    MLFlag = '';
+%     dogStr = 'dogStack_';
+    dogStr = 'DOG_';
+    Threshold = 5000;
 else
     MLFlag = '';
     dogStr = 'DOG_';
 end
+
 
 %Check how many coat channels we have and segment the appropriate channel
 %accordingly
@@ -75,9 +88,6 @@ xDim = size(movieMat, 2);
 nSlices = size(movieMat, 3);
 nFrames = size(movieMat, 4);
 
-loadAsStacks = true;
-dogStr = 'dogStack_';
-
 
 % dogMat = loadDogMat(Prefix);
 
@@ -100,14 +110,36 @@ q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
 
-DogOutputFolder=[ProcPath,filesep,'dogs',filesep];
 
 
 zPadded = size(movieMat, 3) ~= zSize;
 
 
 for currentFrame = initialFrame:numFrames %parfor current_frame = initialFrame:numFrames 
+     
+    if loadAsStacks  
+        
+            dogStackFile = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(currentFrame, 3),...
+                nameSuffix];
+            if exist([dogStackFile, '.tif.mat'], 'file')             
+                
+                
+                load([dogStackFile,'.tif.mat'], 'dogStack');
+                
+                dogStack = uint16(dogStack*10000);
+                dogStackFile = strrep(dogStackFile, 'DOG_', 'prob');
+                save([dogStackFile, '.mat'], 'dogStack', '-v6')                   
+            
+            
+            elseif exist([dogStackFile, '.tif'], 'file')
+                dogStack = imreadStack([dogStackFile, '.tif']);
+            end
+            
+            
+    end
     
+    
+     
     for zIndex = 1:zSize
         
         im = double(squeeze(movieMat(:, :, zIndex, currentFrame, ch)));
@@ -125,15 +157,13 @@ for currentFrame = initialFrame:numFrames %parfor current_frame = initialFrame:n
         else
             dogZ = zIndex - 1;
         end
-            
-        if loadAsStacks  
-            dogStackFile = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(currentFrame, 3),...
-                nameSuffix,'.mat'];
-            load(dogStackFile, 'dogStack');
+%             
+        if loadAsStacks
             dog = dogStack(:, :, dogZ);
-        else
-%             dog = squeeze(dogMat(:,:, dogZ, current_frame));
         end
+%        if ~loadAsStacks
+%             dog = squeeze(dogMat(:,:, dogZ, current_frame));
+%         end
         
 
         if displayFigures
@@ -155,7 +185,7 @@ for currentFrame = initialFrame:numFrames %parfor current_frame = initialFrame:n
         
         im_thresh = dog >= Threshold;
         
-        % apply nuclear mask if it exists
+        % apply nuclear mask if it exists 
         if ~isempty(Ellipses)
             ellipsesFrame = Ellipses{currentFrame};
             nuclearMask = makeNuclearMask(ellipsesFrame, [yDim, xDim]);
@@ -195,10 +225,10 @@ for currentFrame = initialFrame:numFrames %parfor current_frame = initialFrame:n
 end
 
 
-close(waitbarFigure);
+try close(waitbarFigure); end
 
     function nUpdateWaitbar(~)
-        waitbar(p/numFrames, waitbarFigure);
+        try waitbar(p/numFrames, waitbarFigure); end
         p = p + 1;
     end
 
