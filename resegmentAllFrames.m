@@ -18,7 +18,7 @@ parfor CurrentFrame = 1:thisExperiment.nFrames
         Ellipses{CurrentFrame} = circles;
                 
         %report progress every tenth frame
-        if ~mod(CurrentFrame, 10), disp(num2str(CurrentFrame)); end
+        if ~mod(CurrentFrame, 10), disp(['Segmenting frame: ' num2str(CurrentFrame), '...']); end
         
 end
 

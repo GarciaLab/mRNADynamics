@@ -13,7 +13,7 @@ end
 
 %Load the reference histogram for the fake histone channel
 load('ReferenceHist.mat', 'ReferenceHist');
-    
+
 makeMovieMat = exportMovieFiles || (exportNuclearProjections &&...
     ~exist([PreProcFolder,filesep, Prefix, '_movieMat.mat'],'file'));
 
@@ -65,7 +65,7 @@ if ~skipExtraction
         
         %Counter for number of frames
         numberOfFrames = 1;
-     
+        
         
         
         ySize = size(LIFImages{1}{1,1}, 1);
@@ -128,9 +128,9 @@ if ~skipExtraction
                     %                     LIFImages, framesIndex, seriesIndex, NChannels, NSlices,...
                     %                     zslicesPadding, lowbit);
                 end
-             
                 
-            
+                
+                
                 %Now copy nuclear tracking images
                 if ~nuclearGUI
                     hisMat(:, :, numberOfFrames) = generateNuclearChannel(numberOfFrames, LIFImages,...
@@ -141,66 +141,54 @@ if ~skipExtraction
                 numberOfFrames = numberOfFrames + 1;
             end
         end
-
-         %losslessly compactify the movie if we're able 
-         
-            if ignoreCh3
-                movieMat = movieMat(:, :, :, :, 1:2);
+        
+        %losslessly compactify the movie if we're able
+        
+        if ignoreCh3
+            movieMat = movieMat(:, :, :, :, 1:2);
+        end
+        
+        movieMatCh1 = squeeze(movieMat(:, :, :, :, 1));
+        if max(movieMatCh1(:)) < 256
+            movieMatCh1 = uint8(movieMatCh1);
+        end
+        save([PreProcFolder, filesep, Prefix, '_movieMatCh1.mat'], 'movieMatCh1', '-v6');
+        
+        if size(movieMat, 5) > 1
+            movieMatCh2 = squeeze(movieMat(:, :, :, :, 2));
+            if max(movieMatCh2(:)) < 256
+                movieMatCh2 = uint8(movieMatCh2);
             end
-
-            movieMatCh1 = squeeze(movieMat(:, :, :, :, 1));
-            if max(movieMatCh1(:)) < 256
-                movieMatCh1 = uint8(movieMatCh1);
-            end
-            save([PreProcFolder, filesep, Prefix, '_movieMatCh1.mat'], 'movieMatCh1', '-v6');
-
-            if size(movieMat, 5) > 1
-                movieMatCh2 = squeeze(movieMat(:, :, :, :, 2));
-                if max(movieMatCh2(:)) < 256
-                    movieMatCh2 = uint8(movieMatCh2);
-                end
-                save([PreProcFolder, filesep, Prefix, '_movieMatCh2.mat'], 'movieMatCh2', '-v6');
-            end
-
-            if size(movieMat, 5) == 3
-
-                movieMatCh3 = squeeze(movieMat(:, :, :, :, 3));
-                if max(movieMatCh3(:)) < 256
-                    movieMatCh3 = uint8(movieMatCh3);
-                end
-
-                save([PreProcFolder, filesep, Prefix, '_movieMatCh3.mat'], 'movieMatCh3', '-v6');
-
-            elseif size(movieMat,5) > 3
-                error('movie has greater than 3 channels. not sure how to handle this.');
-            end
-
-    
+            save([PreProcFolder, filesep, Prefix, '_movieMatCh2.mat'], 'movieMatCh2', '-v6');
+        end
+        
+        if size(movieMat, 5) == 3
             
-%               if max(movieMat(:)) < 256
-%                   dataType = 'uint8'; 
-%                   movieMat = uint8(movieMat);
-%               else
-%                   dataType = 'uint16';
-%                   movieMat = uint16(movieMat);
-%               end
-% %             
-%             if  whos(var2str(movieMat)).bytes < 2E9
-% 
-%                 save([PreProcFolder, filesep, Prefix, '_movieMat.mat'], 'movieMat', '-v6');
-%                 
-%             else
-%                 
-%                 movieMatic = newmatic([PreProcFolder, filesep, Prefix, '_movieMat.mat'],true,...
-%                 newmatic_variable('movieMat', dataType,...
-%                 [ySize, xSize, max(NSlices)+nPadding, sum(NFrames),NChannels],...
-%                 [ySize, xSize, 1, 1, 1]));
-%                 movieMatic.movieMat = movieMat;
-%                 
-%             end
-%             
-%             makeMovieMatChannels(Prefix);
-%         
+            movieMatCh3 = squeeze(movieMat(:, :, :, :, 3));
+            
+            if max(movieMatCh3(:)) < 256
+                movieMatCh3 = uint8(movieMatCh3);
+                precision = 'uint8';
+            else
+                precision = 'uint16';
+            end
+            
+            if whos(var2str(movieMatCh3)).bytes < 2E9
+                
+                save([PreProcFolder, filesep, Prefix, '_movieMatCh3.mat'], 'movieMatCh3', '-v6');
+            else                
+                
+                movieMatic = newmatic([PreProcFolder, filesep, Prefix, '_movieMatCh3.mat'],true,...
+                    newmatic_variable('movieMatCh3', precision, [ySize, xSize,...
+                    max(NSlices)+nPadding, sum(NFrames)], [ySize, xSize, 1, 1]));
+                movieMatic.movieMatCh3 = movieMatCh3;
+                
+            end
+            
+        elseif size(movieMat,5) > 3
+            error('movie has greater than 3 channels. not sure how to handle this.');
+        end
+        
     end
     
     
@@ -212,7 +200,7 @@ if ~skipExtraction
             xSize = size(movieMat, 2);
             NFrames = size(movieMat, 4);
         end
-
+        
         [~, ~, ~, hisMat] = chooseAnaphaseFrames(...
             Prefix, 'ProjectionType', ProjectionType,'Channels',...
             Channels,'ReferenceHist', ReferenceHist, 'movieMat', movieMat);
@@ -220,11 +208,11 @@ if ~skipExtraction
     end
     
     if  exportNuclearProjections
-       
+        
         if whos(var2str(hisMat)).bytes < 2E9
             save([PreProcFolder, filesep, Prefix, '_hisMat.mat'], 'hisMat', '-v6');
         else
-             hisMatic = newmatic([PreProcFolder, filesep, Prefix, '_hisMat.mat'],true,...
+            hisMatic = newmatic([PreProcFolder, filesep, Prefix, '_hisMat.mat'],true,...
                 newmatic_variable('hisMat', 'uint8', [ySize, xSize, sum(NFrames)], [ySize, xSize, 1]));
             hisMatic.hisMat = hisMat;
         end

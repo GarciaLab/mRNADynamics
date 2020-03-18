@@ -40,20 +40,26 @@ for s = 1:length(schnitzcells)
                 (schnitz.ceny(f) - r*thresh  ) < 0 )
             
             schnitzcells(s).FrameApproved(f) = false;
-            
+        else
+             schnitzcells(s).FrameApproved(f) = true;           
         end
         
     end
     
     for nc = 12:14
-        if schnitzcells(s).cycle == nc && length(schnitzcells(s).frames) < frameCutoff(nc-11)
+        if schnitzcells(s).cycle == nc &&...
+            length(schnitzcells(s).frames) < frameCutoff(nc-11)      
             schnitzcells(s).Approved = false;
+        else
+            schnitzcells(s).Approved = true;
         end
     end
     
     %disapprove an entire nucleus if less than half the frames are good. 
     if sum(schnitzcells(s).FrameApproved) < .5*length(schnitzcells(s).frames)
         schnitzcells(s).Approved = false;
+    else
+        schnitzcells(s).Approved = true;
     end
     
 end

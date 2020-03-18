@@ -30,7 +30,14 @@ function TrackNuclei(Prefix,varargin)
 %
 %
 
+
+cleanupObj = onCleanup(@myCleanupFun);
+
+
 disp(['Tracking nuclei on ', Prefix, '...']);
+
+
+
 
 [stitchSchnitz, ExpandedSpaceTolerance, NoBulkShift,...
     retrack, nWorkers, track, noBreak, noStitch,...
@@ -270,7 +277,7 @@ end
 schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, expandedAnaphaseFrames);
 
 %perform some quality control
-schnitzcells = filterSchnitz(schnitzcells, imSize);
+schnitzcells = filterSchnitz(schnitzcells, [thisExperiment.yDim, thisExperiment.xDim]);
 
 %Save everything at this point. It will be overwritten later, but it's
 %useful for debugging purposes if there's a bug in the code below.

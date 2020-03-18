@@ -61,6 +61,7 @@ for i = 1:length(varargin)
     end
 end
 
+thisExperiment = liveExperiment(Prefix);
 
 [~,ProcPath,DropboxFolder,~,PreProcPath]=...
     DetermineLocalFolders(Prefix);
@@ -85,6 +86,15 @@ DataFolder=[Folder,'..',filesep,'..',filesep,'..',filesep,'Data',filesep,FilePre
     Channel1, Channel2, Objective, Power, DataFolderFromDataColumn, DropboxFolderName, Comments,...
     nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3] =...
     getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+
+anaphaseFrames = thisExperiment.anaphaseFrames;
+nc9 = anaphaseFrames(1);
+nc10 = anaphaseFrames(2);
+nc11 = anaphaseFrames(3);
+nc12 = anaphaseFrames(4);
+nc13 = anaphaseFrames(5);
+nc14 = anaphaseFrames(6);
+
 
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 
