@@ -3,11 +3,11 @@ function resegmentAllFrames(Prefix, varargin)
 thisExperiment = liveExperiment(Prefix);
 
 hisMat = getHisMat(thisExperiment);
-if exist([thisExperiment.resultsFolder, filesep, 'Ellipses.mat'], 'file')
-    Ellipses = getEllipses(thisExperiment);
-else
-    Ellipses = cell(thisExperiment.nFrames, 1);
-end
+% if exist([thisExperiment.resultsFolder, filesep, 'Ellipses.mat'], 'file')
+%     Ellipses = getEllipses(thisExperiment);
+% else
+Ellipses = cell(thisExperiment.nFrames, 1);
+% end
 
 parfor CurrentFrame = 1:thisExperiment.nFrames
         

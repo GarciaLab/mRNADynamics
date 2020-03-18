@@ -161,8 +161,7 @@ if nCh == 1 && iscell(Spots)
 end
 
 mkdir([DropboxFolder, filesep, Prefix]);
-isBigFile = whos(var2str(Spots)).bytes > 2E9; %save to v7.3 only if struct is larger than 2GB
-if ~isBigFile
+if whos(var2str(Spots)).bytes < 2E9
     save([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots', '-v6');
 else
     save([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots', '-v7.3', '-nocompression');
@@ -170,7 +169,7 @@ end
 
 if fit3D > 0
     disp('Fitting 3D Gaussians...')
-    fit3DGaussiansToAllSpots(Prefix, fit3D, 'segmentSpots', Spots, 'nWorkers', nWorkers, saveType);
+    fit3DGaussiansToAllSpots(Prefix, 'nSpots', fit3D, 'segmentSpots', Spots, 'nWorkers', nWorkers, saveType);
     disp('3D Gaussian fitting completed.')
 end
 

@@ -8,6 +8,8 @@ function [Spots, dogs]...
     Weka,filterMovieFlag, resultsFolder, gpu, saveAsMat, saveType, Ellipses)
 
 
+cleanupObj = onCleanup(@myCleanupFun);
+
 dogs = [];
 DogOutputFolder=[ProcPath,filesep,'dogs',filesep];
 
@@ -48,9 +50,7 @@ if Weka
     end
 elseif loadAsStacks
     MLFlag = '';
-%     dogStr = 'dogStack_';
-    dogStr = 'DOG_';
-    Threshold = 5000;
+    dogStr = 'dogStack_';
 else
     MLFlag = '';
     dogStr = 'DOG_';
@@ -92,7 +92,7 @@ nFrames = size(movieMat, 4);
 % dogMat = loadDogMat(Prefix);
 
 if Threshold == -1 && ~Weka
-     
+    
     
     if ~filterMovieFlag
         Threshold = determineThreshold(Prefix, ch,  'numFrames', numFrames);
@@ -115,37 +115,37 @@ p = 1;
 zPadded = size(movieMat, 3) ~= zSize;
 
 
-for currentFrame = initialFrame:numFrames %parfor current_frame = initialFrame:numFrames 
-     
-    if loadAsStacks  
+parfor currentFrame = initialFrame:numFrames %parfor current_frame = initialFrame:numFrames
+    
+    %report progress every tenth frame
+    if ~mod(currentFrame, 10), disp(num2str(currentFrame)); end
+    
+    if loadAsStacks
         
-            dogStackFile = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(currentFrame, 3),...
-                nameSuffix];
-            if exist([dogStackFile, '.tif.mat'], 'file')             
-                
-                
-                load([dogStackFile,'.tif.mat'], 'dogStack');
-                
-                dogStack = uint16(dogStack*10000);
-                dogStackFile = strrep(dogStackFile, 'DOG_', 'prob');
-                save([dogStackFile, '.mat'], 'dogStack', '-v6')                   
+        dogStackFile = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(currentFrame, 3),...
+            nameSuffix];
+        if exist([dogStackFile, '.mat'], 'file')
             
+            dogStack = load([dogStackFile,'.mat'], 'dogStack');
+            dogStack = dogStack.dogStack;
             
-            elseif exist([dogStackFile, '.tif'], 'file')
-                dogStack = imreadStack([dogStackFile, '.tif']);
-            end
+        elseif exist([dogStackFile, '.tif'], 'file')
             
+            dogStack = imreadStack([dogStackFile, '.tif']);
             
+        end
+        
+        
     end
     
     
-     
+    
     for zIndex = 1:zSize
         
         im = double(squeeze(movieMat(:, :, zIndex, currentFrame, ch)));
         try
-         imAbove = double(sliceMovieMat(movieMat, ch, zIndex+1, currentFrame));
-         imBelow= double(sliceMovieMat(movieMat, ch, zIndex-1, currentFrame));
+            imAbove = double(sliceMovieMat(movieMat, ch, zIndex+1, currentFrame));
+            imBelow= double(sliceMovieMat(movieMat, ch, zIndex-1, currentFrame));
         catch
             imAbove = nan(size(im,1),size(im,2));
             imBelow = nan(size(im,1),size(im,2));
@@ -157,15 +157,15 @@ for currentFrame = initialFrame:numFrames %parfor current_frame = initialFrame:n
         else
             dogZ = zIndex - 1;
         end
-%             
+        %
         if loadAsStacks
             dog = dogStack(:, :, dogZ);
         end
-%        if ~loadAsStacks
-%             dog = squeeze(dogMat(:,:, dogZ, current_frame));
-%         end
+        %        if ~loadAsStacks
+        %             dog = squeeze(dogMat(:,:, dogZ, current_frame));
+        %         end
         
-
+        
         if displayFigures
             dogO = im(:);
             lLim = median(dogO);
@@ -185,12 +185,12 @@ for currentFrame = initialFrame:numFrames %parfor current_frame = initialFrame:n
         
         im_thresh = dog >= Threshold;
         
-        % apply nuclear mask if it exists 
+        % apply nuclear mask if it exists
         if ~isempty(Ellipses)
             ellipsesFrame = Ellipses{currentFrame};
             nuclearMask = makeNuclearMask(ellipsesFrame, [yDim, xDim]);
-    %         immask = uint16(nuclearMask).*im;
-    %         imshow(immask, [])
+            %         immask = uint16(nuclearMask).*im;
+            %         imshow(immask, [])
             im_thresh = im_thresh & nuclearMask;
         end
         

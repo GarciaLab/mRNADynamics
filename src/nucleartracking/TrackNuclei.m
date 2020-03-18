@@ -16,6 +16,7 @@ function TrackNuclei(Prefix,varargin)
 % shift between frames (greatly reduces runtime).
 % 'retrack': retrack
 % 'integrate': integrate nuclear fluorescence
+% 'segmentBetter': segment the nuclei well. 
 %
 % OUTPUT
 % '*_lin.mat' : Nuclei with lineages
@@ -33,17 +34,21 @@ disp(['Tracking nuclei on ', Prefix, '...']);
 
 [stitchSchnitz, ExpandedSpaceTolerance, NoBulkShift,...
     retrack, nWorkers, track, noBreak, noStitch,...
-    markandfind, fish, intFlag, chooseHis]...
+    markandfind, fish, intFlag, chooseHis, segmentBetter]...
     = DetermineTrackNucleiOptions(varargin{:});
 
 
-
+if segmentBetter
+    resegmentAllFrames(Prefix);
+    retrack = true;
+end
 
 thisExperiment = liveExperiment(Prefix);
 
 FrameInfo = getFrameInfo(thisExperiment);
 
-[~, ProcPath, DropboxFolder, ~, PreProcPath, ~, ~] = DetermineLocalFolders(Prefix);
+[~, ProcPath, DropboxFolder, ~, PreProcPath] =...
+    DetermineLocalFolders(Prefix);
 
 anaphaseFrames = thisExperiment.anaphaseFrames';
 nc9 = anaphaseFrames(1);
