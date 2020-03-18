@@ -21,7 +21,7 @@ function xy = segmentFrames(FrameInfo,names,firstFrame,lastFrame,nucleusDiameter
             end
             k=k+1;
         end
-         % Added.adapted by GM 1/9/19 to include mutlithresh option 
+         % Added/adapted by GM 1/9/19 to include mutlithresh option 
         
     end
     nFrames = lastFrame-firstFrame+1;
@@ -30,7 +30,11 @@ function xy = segmentFrames(FrameInfo,names,firstFrame,lastFrame,nucleusDiameter
     
     update_waitbar = false;
     
-    parfor j = 1:nFrames
+    if useMultithresh
+        
+    end
+    %parfor j = 1:nFrames
+    for j = 1:nFrames   
         if ~useMultithresh
             [xy{j}, ~] = findNuclei(FrameInfo,names, frameNum(j), nucleusDiameter, embryoMask);
         else

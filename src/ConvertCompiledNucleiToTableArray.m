@@ -7,7 +7,7 @@ function ConvertCompiledNucleiToTableArray(Prefix, varargin)
 %
 % ARGUMENTS
 % Prefix: prefix string of the data set to analyze. 
-% varargin: A cell in which the first element is the prefix string of the data set
+% varargin: A cell in which the first element nis the prefix string of the data set
 %           to analyze. Subsequent elements can be the options below.
 % 
 % Author (contact): Gabriella Martini (martini@berkeley.edu)

@@ -18,24 +18,20 @@ while x <= length(varargin)
     switch varargin{x}
         case{'keepExistingStitching'}
             keepExistingStitching = true;
-        case{'NIterations'}
-            NIterations = varargin{x+1};
-            x = x + 1;
-            fprintf('Number of Iterations: %d\n', NIterations);
         case {'FullyAutomate'}
             FullyAutomate = true;
             fprintf('Stitching fully automated.\n')
         case {'StitchManually'}
             StitchManually = true;
             fprintf('Stitching to be performed manually.\n')
-        case {'MaxStep'}
-            MaxStep = varargin{x+1};
+        case {'MaxDeltaR'}
+            MaxDeltaR = varargin{1}{x+1};
             x = x+1;
-            fprintf('Max Step Size to be used in stitching loop: %d\n', MaxStep)
-        case{'MaxOverlap'}
-            MaxOverlap = varargin{x+1};
+            fprintf('Max change in row overlap to be used in stitching loop: %d\n', MaxDeltaR)
+        case{'MaxDeltaC'}
+            MaxDeltaC = varargin{1}{x+1};
             x = x+1;
-            fprintf('Max overlap between adjacent tiles to be used in stitching loop: %d\n', RowMaxOverlap)
+            fprintf('Max change in column overlap to be used in stitching loop: %d\n', MaxDeltaC)
     end
     x = x +1;
 end
@@ -51,17 +47,13 @@ if ~keepExistingStitching
     if StitchManually 
         varargin2{length(varargin2) + 1} = 'StitchManually';
     end
-    if exist('NIterations', 'var')
-        varargin2{length(varargin2) + 1} = 'NIterations';
-        varargin2{length(varargin2) + 1} = NIterations;
+    if exist('MaxDeltaR', 'var')
+        varargin2{length(varargin2) + 1} = 'MaxDeltaR';
+        varargin2{length(varargin2) + 1} = MaxDeltaR;
     end
-    if exist('MaxStep', 'var')
-        varargin2{length(varargin2) + 1} = 'MaxStep';
-        varargin2{length(varargin2) + 1} = MaxStep;
-    end
-    if exist('MaxOverlap', 'var')
-        varargin2{length(varargin2) + 1} = 'MaxOverlap';
-        varargin2{length(varargin2) + 1} = MaxOverlap;
+    if exist('MaxDeltaC', 'var')
+        varargin2{length(varargin2) + 1} = 'MaxDeltaC';
+        varargin2{length(varargin2) + 1} = MaxDeltaC;
     end
     if length(varargin2) > 0
         EmbryoTileStitch(Prefix, 'Surf', varargin2);

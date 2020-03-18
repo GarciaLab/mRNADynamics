@@ -18,7 +18,7 @@ configValues, movieDatabasePath] = DetermineAllLocalFolders(Prefix);
 %Load the information about the nc from moviedatabase file
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
 Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder)
+nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 DataFolder=[DropboxFolder,filesep,Prefix];
 FilePrefix=[DataFolder(length(DropboxFolder)+2:end),'_'];
 load([DropboxFolder,filesep, Prefix,'\CompiledNucleiTable.mat'])
@@ -54,7 +54,7 @@ for f = 0:max(cnt14.FrameNC)
     for b = 0:(numBins-1)
         APbin = b*APResolution;
         sub14 = cnt14((cnt14.FrameNC == f) & (abs(cnt14.APbin- APbin) < 0.0001), :);
-        cutoff = quantile(sub14.Fluo, .75);
+        cutoff = quantile(sub14.Fluo, .1);
         fluoVector = sub14.Fluo(sub14.Fluo >= cutoff);
         MeanFluo = mean(fluoVector);
         StdFluo = std(fluoVector);
@@ -68,7 +68,7 @@ for f = 0:max(cnt14.FrameNC)
     
     %histogram(sub14.Fluo)
     xlabel('Fraction Embryo Length')
-    ylabel('Fluo (AP)')
+    ylabel('Fluo (AU)')
     ylim([0, 1600])
     xlim([0, 0.95])
     %CurrentFrame = sub14.Frame(1);
@@ -100,7 +100,7 @@ for b = 0:(numBins-1)
     
     %histogram(sub14.Fluo)
     xlabel('Frame')
-    ylabel('Fluo (AP)')
+    ylabel('Fluo (AU)')
     ylim([0, 1600])
     %xlim([0.05, 0.95])
     %CurrentFrame = sub14.Frame(1);

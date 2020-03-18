@@ -22,34 +22,9 @@ while k<=length(varargin)
     if strcmpi(varargin{k},'useMultithresh')
         useMultithresh = true;
         k=k+1;
-        warning('Using multithresh function to threshold nuclei during segmentation.')
     end
 end
 % Added by GM 1/9/2019
-%% 
-
-% Added by NL and GM on 11/23/2019
-% Edited by GM on 1/7/2019
-xDim = FrameInfo(1).PixelsPerLine * FrameInfo(1).PixelSize;
-yDim = FrameInfo(1).LinesPerFrame * FrameInfo(1).PixelSize;
-if yDim > 150 && xDim > 150
-    I = imread(names{frameNumber});
-    f_sigma = round(nucleusDiameter / FrameInfo(1).PixelSize);
-    I_blurred = imfilter(I,...
-         fspecial('gaussian',2*f_sigma,f_sigma),'symmetric','conv');
-    if useMultithresh
-       levels = multithresh(I_blurred,2);
-       embryoMask = I_blurred > levels(1);
-    else
-       embryoMask = imbinarize(I_blurred);
-    end
-else    
-    if ~exist('embryoMask','var') || isempty(embryoMask)
-        embryoMask = true(size(imread(names{frameNumber})));
-    end
-end
-% Added by NL and GM on 11/23/2019
-% Edited by GM on 1/7/2019
 
 
 %% 
@@ -83,11 +58,6 @@ G = imfilter(filteredImg,fspecial('disk',3),'symmetric');
 ind = find(maxima>0);
 [xm,ym] = ind2sub(size(maxima),ind);
 
-imagesc(img)
-hold on 
-ax = gca();
-scatter(ax, ym,xm,100,'r','filled');
-hold off
 
 %Check whether anything was found in this image. If nothing is found,
 %this is usually the result of an empty frame
@@ -110,9 +80,15 @@ if ~useMultithresh
     indNuclei = imbinarize(mat2gray(nuc1),thresh);
 else
     b_points = boundary(xm,ym); 
-    index_vec = 1:numel(xm);
+    index_vec = 1:numel(xm);    
     indNuclei = ~ismember(index_vec,b_points);
 end
+imagesc(img)
+hold on 
+ax = gca();
+scatter(ax, ym,xm,80,'r','filled');
+scatter(ax, ym(indNuclei),xm(indNuclei),80,'g','filled');
+hold off
 
 %% Check the segmentation if a target number was provided.
 if exist('targetNumber','var') && numel(targetNumber) == 1 && isnumeric(targetNumber) && abs(sum(indNuclei(1:numel(nuc1)))-targetNumber)/targetNumber > 0.25

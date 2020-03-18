@@ -276,7 +276,9 @@ if ~exist('centers','var') || isempty(centers)
     h_waitbar_segmentation = waitbar(0,'Segmentation...');
     xy = cell(numberOfFrames,1);
     mitosisStartingPoint = [];
-    
+    if useMultithresh
+        embryoMask = getMultithreshEmbryoMask(FrameInfo, names, diameters);
+    end
     for j = 1:(size(indMitosis,1)-1)
         
         % Segment interphases
