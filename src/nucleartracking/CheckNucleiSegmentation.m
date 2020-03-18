@@ -428,8 +428,10 @@ while (cc~='x')
 end
 
 
+Ellipses = adjustAllEllipseCentroids(Prefix, 'Ellipses', Ellipses);
 
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v6')
+
 close all;
 
 %Decide whether we need to re-track

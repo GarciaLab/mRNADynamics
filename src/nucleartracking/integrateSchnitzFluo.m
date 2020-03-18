@@ -1,6 +1,6 @@
 function schnitzcells =...
     integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo,...
-    Channels, PreProcPath)
+   PreProcPath)
 
 saveFlag = false;
 if nargin == 1

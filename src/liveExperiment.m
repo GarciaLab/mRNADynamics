@@ -10,7 +10,7 @@ classdef liveExperiment
         resultsFolder = '';
         MLFolder = '';
         project = '';
-        
+        Channels = {};
         spotChannel = [];
         
         isUnhealthy = false;
@@ -113,6 +113,8 @@ classdef liveExperiment
                 Channel1, Channel2,~, ~,  ~, ~, ~,...
                 ~, ~, ~, ~, ~, ~, ~, Channel3,~,~, ~, ~]...
                 = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
+            
+            obj.Channels = {Channel1, Channel2, Channel3};
             
             FrameInfo = getFrameInfo(obj);
             

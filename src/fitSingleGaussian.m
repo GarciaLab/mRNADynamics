@@ -38,7 +38,8 @@ lb_offset = 1/10; %this is empirical. corresponds to a weak background of 1 pixe
 
 % @(A, x0, y0, rho, sigma_x, sigma_y, offset, offset_x, offset_y)
 lb = [0, 0, 0, -1, 0, 0,lb_offset, 0, 0];
-ub = [max(snippet(:))*1.5, size(snippet, 2), size(snippet, 1), 1, size(snippet, 2), size(snippet, 1), max(snippet(:)),med/2, med/2];
+ub = [max(snippet(:))*1.5, size(snippet, 2), size(snippet, 1), 1,...
+    size(snippet, 2), size(snippet, 1), max(snippet(:)),med/2, med/2];
 
 
 [single_fit, ~, residual, ~, ~, ~, jacobian] = lsqnonlin(singleGaussian, ...
@@ -73,7 +74,7 @@ GaussianIntensity = single(sum(sum(singleGaussian(single_fit) + snippet - single
 
 %Display
 gaussian = single(singleGaussian(single_fit));
-mesh = {uint8(y), uint8(x)};
+mesh = {uint16(y), uint16(x)};
 
 if show_status && ~isempty(graphicsHandles)
     gAx = graphicsHandles(4);

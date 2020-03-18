@@ -35,24 +35,46 @@ end
 
 % loads information needed to loop through DOGs
 
-[SourcePath,ProcPath,DropboxFolder,MS2CodePath,PreProcPath]=...
+[~,ProcPath,DropboxFolder,~,~]=...
     DetermineLocalFolders(Prefix);
 
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 zSize = FrameInfo(1).NumberSlices + 2;
 
-dogStr = 'dogStack_';
-
 OutputFolder1=[ProcPath,filesep,Prefix,'_',filesep,'dogs',filesep];
+
+DogOutputFolder= OutputFolder1;
+
+%the underscore is to remove . and .. from the output structure
+dogDir = dir([DogOutputFolder, '*_*']);
+
+loadAsStacks = ~contains(dogDir(1).name, '_z');
+Weka = startsWith(dogDir(1).name, 'prob');
+loadAsMat = endsWith(dogDir(1).name, '.mat');
+% dogStr = 'dogStack_';
+
+if Weka
+    dogStr = 'prob';
+elseif loadAsStacks
+    dogStr = 'dogStack_';
+else
+    dogStr = 'DOG_';
+end
+
+
 nameSuffix = ['_ch',iIndex(Channel,2)];
 
 
 firstDogStackFile = [OutputFolder1, filesep, dogStr, Prefix, '_', iIndex(1, 3),...
-    nameSuffix,'.mat'];
-load(firstDogStackFile, 'dogStack');
+    nameSuffix];
+if loadAsMat
+    load([firstDogStackFile, '.mat'], 'dogStack');
+else
+    dogStack = imreadStack([firstDogStackFile, '.tif']);
+end
 
 zPadded = zSize ~= size(dogStack, 3);
-        
+
 % says which z-slices and frames that we can scroll through
 if zPadded
     minZ = 2;
@@ -63,9 +85,11 @@ else
 end
 available_zs = 2:3:zSize-1;
 
-try
-    numFrames = numel(dir([OutputFolder1, '*.mat']));
-catch
+
+
+numFrames = numel(dogDir);
+
+if numFrames == 0
     numFrames = numel(FrameInfo);
 end
 
@@ -162,7 +186,7 @@ uiwait(f);
         
         zSlider.Value = round(zSlider.Value);
         frameSlider.Value = round(frameSlider.Value);
-        if frameSlider.Value <= 0 
+        if frameSlider.Value <= 0
             frameSlider.Value = 1;
         end
         bestZ = zSlider.Value;
@@ -200,13 +224,17 @@ uiwait(f);
     function dog = loadDog(zInd, frame)
         
         dogStackFile = [OutputFolder1, filesep, dogStr, Prefix, '_', iIndex(frame, 3),...
-            nameSuffix,'.mat'];
-        load(dogStackFile, 'dogStack');
+            nameSuffix];
+        if loadAsMat
+            load([dogStackFile, '.mat'], 'dogStack');
+        else
+            dogStack = imreadStack([dogStackFile, '.tif']);
+        end
         
         dog = dogStack(:, :, zInd);
         
-%         dog = double(squeeze(dogMat(:, :, zInd, frame)));
-     
+        %         dog = double(squeeze(dogMat(:, :, zInd, frame)));
+        
         
     end
 

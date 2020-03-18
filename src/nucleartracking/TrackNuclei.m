@@ -38,23 +38,19 @@ disp(['Tracking nuclei on ', Prefix, '...']);
 
 
 
-[~, ProcPath, DropboxFolder, ~, PreProcPath, configValues, ~] = DetermineLocalFolders(Prefix);
+thisExperiment = liveExperiment(Prefix);
 
-DefaultDropboxFolder = getConfigValue(configValues, 'DropboxFolder');
+FrameInfo = getFrameInfo(thisExperiment);
 
-%Determine division times
-%Load the information about the nc from moviedatabase file
-[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
-    Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF,...
-    Channel3,prophase,metaphase, anaphase, DVResolution] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+[~, ProcPath, DropboxFolder, ~, PreProcPath, ~, ~] = DetermineLocalFolders(Prefix);
 
-
-%If Channel2 was left empty, it would contain a NaN, which will cause
-%problems below. In that case, replace it by an empty string.
-if isnan(Channel2{1})
-    Channel2{1}='';
-end
+anaphaseFrames = thisExperiment.anaphaseFrames';
+nc9 = anaphaseFrames(1);
+nc10 = anaphaseFrames(2);
+nc11 = anaphaseFrames(3);
+nc12 = anaphaseFrames(4);
+nc13 = anaphaseFrames(5);
+nc14 = anaphaseFrames(6);
 
 if ~exist('nc9','var')
     error('Cannot find nuclear cycle values. Were they defined in MovieDatabase?')
@@ -81,14 +77,11 @@ if strcmpi(nc9,'nan')
 end
 
 %This checks whether all ncs have been defined
-ncCheck=[nc9,nc10,nc11,nc12,nc13,nc14];
-if length(ncCheck)~=6
+if length(anaphaseFrames)~=6
     error('Check the nc frames in the MovieDatabase entry. Some might be missing')
 end
 
-ncs=[nc9,nc10,nc11,nc12,nc13,nc14];
-
-if (length(find(isnan(ncs)))==length(ncs))||(length(ncs)<6)
+if (length(find(isnan(anaphaseFrames)))==length(anaphaseFrames))||(length(anaphaseFrames)<6)
     error('Have the ncs been defined in MovieDatabase?')
 end
 
@@ -110,11 +103,11 @@ end
 
 
 %Pull the mitosis information from ncs.
-ncs=ncs(ncs~=0);
+anaphaseFrames=anaphaseFrames(anaphaseFrames~=0);
 
 %Note that I'm adding a range of two frames frames before and after the
 %determines mitosis
-indMit=[ncs'-2,ncs'+2];
+indMit=[anaphaseFrames'-2,anaphaseFrames'+2];
 
 %Make sure no indices are negative. This could happen is the nuclear cycle
 %started at frame 1, for example.
@@ -122,7 +115,6 @@ indMit(indMit<1)=1;
 
 %Check whether nc14 occurred very close to the end of the movie. For those
 %frames we'll move the boundary for tracking purposes
-load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo')
 nFrames = length(FrameInfo);
 indMit(indMit>=nFrames)=indMit(indMit>=nFrames)-2;
 
@@ -265,7 +257,13 @@ if ~exist([DropboxFolder,filesep,Prefix], 'dir')
     mkdir([DropboxFolder,filesep,Prefix]);
 end
 
-save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v6');
+if whos(var2str(Ellipses)).bytes < 2E9
+
+    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v6');
+else
+        save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v7.3');
+
+end
 
 if whos(var2str(schnitzcells)).bytes < 2E9
     save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v6');
@@ -280,33 +278,25 @@ if exist('dataStructure', 'var')
     save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure');
 end
 
-%fix the nuclear centers
-
-Ellipses = adjustAllEllipseCentroids(Prefix);
-
-
 %Extract the nuclear fluorescence values if we're in the right experiment
 %type
 if intFlag
-    Channels={Channel1{1},Channel2{1}, Channel3{1}};
-    schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, Channels, PreProcPath);
+    schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, PreProcPath);
 end
 
 if fish
     schnitzcells = rmfield(schnitzcells, {'P', 'E', 'D'});
 end
 
-ncVector=[0,0,0,0,0,0,0,0,nc9,nc10,nc11,nc12,nc13,nc14];
+ncVector=[zeros(1, 8), thisExperiment.anaphaseFrames'];
 
 if track & ~noBreak
     [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
     save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
-    if (whos(var2str(schnitzcells)).bytes < 2E9)
-        
+    if (whos(var2str(schnitzcells)).bytes < 2E9) 
         save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v6');
     else
-        save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v7.3', '-nocompression');
-        
+        save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v7.3', '-nocompression');        
     end
 end
 
