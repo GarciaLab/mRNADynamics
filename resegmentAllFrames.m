@@ -3,21 +3,28 @@ function resegmentAllFrames(Prefix, varargin)
 thisExperiment = liveExperiment(Prefix);
 
 hisMat = getHisMat(thisExperiment);
-Ellipses = getEllipses(thisExperiment);
+if exist([thisExperiment.resultsFolder, filesep, 'Ellipses.mat'], 'file')
+    Ellipses = getEllipses(thisExperiment);
+else
+    Ellipses = cell(thisExperiment.nFrames, 1);
+end
 
-for CurrentFrame = 1:thisExperiment.nFrames 
+parfor CurrentFrame = 1:thisExperiment.nFrames
         
         HisImage = hisMat(:, :, CurrentFrame);
         [~, circles] = kSnakeCircles(HisImage, thisExperiment.pixelSize_nm/1000);    
         circles(:, 4) = circles(:, 3);
         circles(:, 5:9) = zeros(size(circles, 1), 5);
         Ellipses{CurrentFrame} = circles;
+                
+        %report progress every tenth frame
+        if ~mod(CurrentFrame, 10), disp(num2str(CurrentFrame)); end
         
 end
 
-save([thisExperiment.DropboxFolder, 'Ellipses.mat'],'Ellipses', '-v6');
+save([thisExperiment.resultsFolder, 'Ellipses.mat'],'Ellipses', '-v6');
 
-TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack');
+TrackNuclei(Prefix,'retrack');
 
 
 end

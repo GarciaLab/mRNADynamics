@@ -238,7 +238,7 @@ else
     end
     
     %Put circles on the nuclei
-    [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,nFrames,indMit);
+%     [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,nFrames,indMit);
     %Convert nuclei structure into schnitzcell structure
     [schnitzcells] = convertNucleiToSchnitzcells(nuclei);
 end

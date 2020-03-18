@@ -432,15 +432,13 @@ while (cc~='x')
 end
 
 
-Ellipses = adjustAllEllipseCentroids(Prefix, 'Ellipses', Ellipses);
-
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v6')
 
 close all;
 
 %Decide whether we need to re-track
 if yToRetrackPrompt 
-    reTrackAnswer = true;
+    reTrackAnswer = 'y';
 else
     userPrompt = 'Did you make changes to nuclei and thus require re-tracking? (y/n)';
     reTrackAnswer = inputdlg(userPrompt);
@@ -451,7 +449,7 @@ if contains(reTrackAnswer,'n')
 else
     opts = {};  if fish opts = [opts, 'markandfind']; end
     disp('Ellipses saved. Running TrackNuclei to incorporate changes.')
-    TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1, opts{:});
+    TrackNuclei(Prefix,'retrack', 'nWorkers', 1, opts{:});
 end
 
 end
