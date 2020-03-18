@@ -16,7 +16,7 @@ function TrackNuclei(Prefix,varargin)
 % shift between frames (greatly reduces runtime).
 % 'retrack': retrack
 % 'integrate': integrate nuclear fluorescence
-% 'segmentBetter': segment the nuclei well. 
+% 'segmentBetter': segment the nuclei well.
 %
 % OUTPUT
 % '*_lin.mat' : Nuclei with lineages
@@ -39,7 +39,9 @@ disp(['Tracking nuclei on ', Prefix, '...']);
 
 
 if segmentBetter
-    resegmentAllFrames(Prefix);
+    if ~retrack
+        resegmentAllFrames(Prefix);
+    end
     retrack = true;
 end
 
@@ -103,8 +105,8 @@ if chooseHis
     
 else
     
-   hisMat =  loadHisMat([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat']);
-   
+    hisMat =  loadHisMat([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat']);
+    
 end
 
 
@@ -243,7 +245,7 @@ else
     end
     
     %Put circles on the nuclei
-%     [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,nFrames,indMit);
+    %     [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,nFrames,indMit);
     %Convert nuclei structure into schnitzcell structure
     [schnitzcells] = convertNucleiToSchnitzcells(nuclei);
 end
@@ -267,6 +269,8 @@ end
 
 schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, expandedAnaphaseFrames);
 
+%perform some quality control
+schnitzcells = filterSchnitz(schnitzcells, imSize);
 
 %Save everything at this point. It will be overwritten later, but it's
 %useful for debugging purposes if there's a bug in the code below.
@@ -275,11 +279,11 @@ if ~exist([DropboxFolder,filesep,Prefix], 'dir')
 end
 
 if whos(var2str(Ellipses)).bytes < 2E9
-
+    
     save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v6');
 else
-        save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v7.3');
-
+    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v7.3');
+    
 end
 
 if whos(var2str(schnitzcells)).bytes < 2E9
@@ -309,21 +313,21 @@ end
 if track & ~noBreak
     [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, expandedAnaphaseFrames, nFrames);
     save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
-    if (whos(var2str(schnitzcells)).bytes < 2E9) 
+    if (whos(var2str(schnitzcells)).bytes < 2E9)
         save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v6');
     else
-        save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v7.3', '-nocompression');        
+        save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v7.3', '-nocompression');
     end
 end
 
 % Stitch the schnitzcells using Simon's code
 if ~noStitch
     disp('stitching schnitzes')
-%     try
-        StitchSchnitz(Prefix, nWorkers);
-%     catch
-%         disp('failed to stitch schnitzes')
-%     end
+    %     try
+    StitchSchnitz(Prefix, nWorkers);
+    %     catch
+    %         disp('failed to stitch schnitzes')
+    %     end
 end
 
 

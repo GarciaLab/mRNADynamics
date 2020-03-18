@@ -546,7 +546,7 @@ end
 
 schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, expandedAnaphaseFrames);
 
-
+ schnitzcells = filterSchnitz(schnitzcells, [ thisExperiment.yDim, thisExperiment.xDim]);
 
 %% Save everything
 

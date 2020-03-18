@@ -422,6 +422,9 @@ uiwait(fig);
         
         save(projectionTypeFile,'ProjectionType','-v6')
         save(channelsFile,'Channels','-v6')
+        save(anaphaseFile, 'anaphaseFrames', '-v6')
+        isUnhealthy = cbx.Value;
+        save(isUnhealthyFile, 'isUnhealthy','-v6');
         
         close(fig);
         
