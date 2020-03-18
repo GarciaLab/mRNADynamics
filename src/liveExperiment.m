@@ -114,7 +114,7 @@ classdef liveExperiment
                 ~, ~, ~, ~, ~, ~, ~, Channel3,~,~, ~, ~]...
                 = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
             
-            obj.Channels = {Channel1, Channel2, Channel3};
+            obj.Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
             
             FrameInfo = getFrameInfo(obj);
             

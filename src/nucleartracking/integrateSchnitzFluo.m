@@ -3,6 +3,9 @@ function schnitzcells =...
    PreProcPath)
 
 saveFlag = false;
+
+thisExperiment = liveExperiment(Prefix);
+
 if nargin == 1
     
     [rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
@@ -26,6 +29,8 @@ if nargin == 1
     saveFlag = true;
     
 end
+
+Channels = thisExperiment.Channels;
 
 InputChannel = find(contains(Channels, 'input', 'IgnoreCase', true));
 
