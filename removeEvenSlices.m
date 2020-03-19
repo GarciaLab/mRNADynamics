@@ -1,7 +1,6 @@
 function removeEvenSlices(Prefix, varargin)
 
-saveAsMat = true;
-saveAsStack = true;
+saveType = 'mat3D';
 
 for i = 1:2:(numel(varargin)-1)
     if i ~= numel(varargin)
@@ -19,7 +18,7 @@ for id = 1:length(files)
     
     imFile = files(id).name;
     
-    dogStackOld = readTiffStack([dogFolder, filesep, imFile]);
+    dogStackOld = imreadStack([dogFolder, filesep, imFile]);
     
     ySize = size(dogStackOld, 1);
     xSize = size(dogStackOld, 2);
@@ -33,25 +32,29 @@ for id = 1:length(files)
         n = n + 1;
         dogStack(:, :, n) = dogStackOld(:, :, zOdd);
         
-        if ~saveAsStack && ~saveAsMat
+        %if we're saving as individual planes, do this inside the loop
+        if ~strcmpi(saveType, 'mat3D')
             
-            imName = strrep(imFile, '_ch', ['_z', iIndex(n, 2),'_ch']);
+            imName = strrep(imFile(1:end-4), '_ch', ['_z', iIndex(n, 2),'_ch']);
             if n == 1
                 imwrite(uint16(dogStack*10000), [dogFolder,filesep, imName, '.tif']);
             else
                 imwrite(uint16(dogStack*10000), [dogFolder,filesep, imName, '.tif'], 'WriteMode','append');
             end
+            
         end
         
-    end
+    end %loop over planes
     
-    if saveAsMat
+    
+    %if we're saving as a stack, save here
+    if strcmpi(saveType, 'mat3D')
         dogStack = uint16(dogStack*10000);
-        save([dogFolder,filesep, imFile, '.mat'], 'dogStack', '-v6');
+        save([dogFolder,filesep, imFile(1:end-4), '.mat'], 'dogStack', '-v6');
     end
     
     
-end
+end %loop over frames
 
 
 

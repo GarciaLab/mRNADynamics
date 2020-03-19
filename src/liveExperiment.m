@@ -48,6 +48,14 @@ classdef liveExperiment
         nDigits = 0;
         pixelSize_nm = 0;
         
+        nc9 = 0;
+        nc10 = 0;
+        nc11 = 0;
+        nc12 = 0;
+        nc13 = 0;
+        nc14 = 0;
+        
+        
         
     end
     
@@ -131,6 +139,13 @@ classdef liveExperiment
             
             obj.spotChannel = getCoatChannel(Channel1, Channel2, Channel3);
             
+            obj.nc9 = obj.anaphaseFrames(1);
+            obj.nc10 = obj.anaphaseFrames(2);
+            obj.nc11 = obj.anaphaseFrames(3);
+            obj.nc12 = obj.anaphaseFrames(4);
+            obj.nc13 = obj.anaphaseFrames(5);
+            obj.nc14 = obj.anaphaseFrames(6);
+            
             
         end
         
@@ -142,9 +157,15 @@ classdef liveExperiment
         %Methods
         
         
-        function movieMat = getMovieMat(obj)
+        function out = getMovieMat(obj)
             
-            movieMat = loadMovieMat(obj.Prefix);
+            persistent movieMat;
+            %load movie only if it hasn't been loaded or if we've switched
+            %Prefixes (determined by num frames)
+             if isempty(movieMat) || ~isequal( size(movieMat, 4), obj.nFrames)
+                movieMat = loadMovieMat(obj.Prefix);
+             end
+            out = movieMat;
             
         end
         
@@ -191,7 +212,7 @@ classdef liveExperiment
             
             spotsFile = [obj.resultsFolder, 'Spots.mat'];
             if obj.hasSpotsFile
-               load(spotsFile, 'Spots');
+                load(spotsFile, 'Spots');
             end
             
         end

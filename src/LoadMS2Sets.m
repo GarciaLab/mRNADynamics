@@ -1,4 +1,5 @@
-function [Data, prefixes, resultsFolder, ignoredPrefixes] = LoadMS2Sets(DataType, varargin)
+function [Data, prefixes, resultsFolder,...
+    ignoredPrefixes, StatusTxt] = LoadMS2Sets(DataType, varargin)
 %
 %Data = LoadMS2Sets(DataType)
 %

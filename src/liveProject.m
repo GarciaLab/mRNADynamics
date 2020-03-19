@@ -10,6 +10,9 @@ classdef liveProject
 
         ignoredExperimentNames = {};
         
+        dataStatus = {};
+        
+        
     end
     
     properties (Hidden = true)
@@ -27,7 +30,8 @@ classdef liveProject
             %   Detailed explanation goes here
             obj.Project = Project;
             
-            [~, experiment, ~, ignoredExperiment] = LoadMS2Sets(Project, 'justPrefixes', 'noCompiledNuclei');
+            [~, experiment, ~, ignoredExperiment, obj.dataStatus] =...
+                LoadMS2Sets(Project, 'justPrefixes', 'noCompiledNuclei');
             
             obj.includedExperimentNames = experiment;
             obj.ignoredExperimentNames = ignoredExperiment;
@@ -40,6 +44,9 @@ classdef liveProject
             for j = 1:length(ignoredExperiment)
                 obj.ignoredExperiments{j} = liveExperiment(ignoredExperiment{j});
             end
+            
+            
+            
             
         end
         

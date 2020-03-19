@@ -30,10 +30,10 @@ function movieMat = CheckNucleiSegmentation(Prefix, varargin)
 %left click - add region with default nc radius and angle
 %
 
-close all
+cleanupObj = onCleanup(@myCleanupFun);
 
 %Load the folder information
-[SourcePath,ProcPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
+[~,~,DefaultDropboxFolder,~,~]=...
     DetermineLocalFolders;
 
 noAdd = false;

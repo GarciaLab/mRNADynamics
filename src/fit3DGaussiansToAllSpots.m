@@ -5,7 +5,7 @@ cleanupObj = onCleanup(@myCleanupFun);
 
 optionalResults = '';
 
-segmentSpots = false;
+segmentSpots = [];
 displayFigures = false;
 nWorkers = 8;
 keepPool = false;
@@ -47,7 +47,7 @@ DataFolder = thisExperiment.resultsFolder;
 PreProcPath = thisExperiment.preFolder;
 spotChannels = thisExperiment.spotChannel;
 
-if ~segmentSpots
+if ~isempty(segmentSpots)
     Spots = getSpots(thisExperiment);
 end
 

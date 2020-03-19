@@ -103,11 +103,15 @@ microscope = FrameInfo(1).FileMode;
 zSize = FrameInfo(1).NumberSlices;
 
 nCh = length(spotChannels);
+DogOutputFolder=[ProcPath,filesep,'dogs',filesep];
+%the underscore is to remove . and .. from the output structure
+% dogDir = dir([DogOutputFolder, '*_*']);
 
-dog_matfile = matfile([ProcPath, filesep, Prefix,  '_', filesep, Prefix, '_dogMat.mat']);
-if exist(dog_matfile.Properties.Source, 'file')
-    try numFrames = size(dog_matfile, 'dogMat', 4); end
-else
+% dog_matfile = matfile([ProcPath, filesep, Prefix,  '_', filesep, Prefix, '_dogMat.mat']);
+% if exist(dog_matfile.Properties.Source, 'file')
+%     try numFrames = size(dog_matfile, 'dogMat', 4); end
+try numFrames = numel(dir([DogOutputFolder, '*_*']));
+catch
     numFrames = numel(FrameInfo);
 end
 
