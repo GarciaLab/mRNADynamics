@@ -422,7 +422,10 @@ uiwait(fig);
         
         save(projectionTypeFile,'ProjectionType','-v6')
         save(channelsFile,'Channels','-v6')
+        
         save(anaphaseFile, 'anaphaseFrames', '-v6')
+        anaphaseFrames'
+        
         isUnhealthy = cbx.Value;
         save(isUnhealthyFile, 'isUnhealthy','-v6');
         
@@ -527,6 +530,7 @@ uiwait(fig);
 
     function saveAnaphasesButtonPushed(src,event)
         save(anaphaseFile, 'anaphaseFrames', '-v6')
+        anaphaseFrames'
         disp('Anaphase frames saved.');
     end
 

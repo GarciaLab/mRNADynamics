@@ -53,7 +53,7 @@ end
 
 FrameInfo = getFrameInfo(thisExperiment);
 
-movieMat = getMovieMat(thisExperiment);
+getMovieMat(thisExperiment);
 
 startParallelPool(nWorkers, displayFigures, keepPool);
 

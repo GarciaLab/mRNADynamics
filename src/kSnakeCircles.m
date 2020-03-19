@@ -19,11 +19,15 @@ image = wiener2(image);
 
 %assuming the right class is 3 here. sometimes that might be wrong.
 %it's hard to decide which one is right automatically.
-kmask = imsegkmeans(single(imgaussfilt(image,sigmaK)),3)==3;
+%choose kMask does this. 
+kLabel= imsegkmeans(single(imgaussfilt(image,sigmaK)),3);
+
+kMask = kLabel == chooseKLabel(kLabel);
+
 %sometimes snakes destroys blobs. if it does, it'd be nice to add back in
 %regions from kmask.
 
-snakesFun = @(b, s, sigma) activecontour(imgaussfilt(image, sigma), kmask, 'Chan-Vese', 'ContractionBias', b, 'SmoothFactor', s);
+snakesFun = @(b, s, sigma) activecontour(imgaussfilt(image, sigma), kMask, 'Chan-Vese', 'ContractionBias', b, 'SmoothFactor', s);
 kMaskRefined = snakesFun(b, s, sigmaK);
 %same issue here. sometimes the watershed is inverted. hard to pick
 %whether it should be or not automatically
@@ -31,7 +35,13 @@ kMaskRefined = snakesFun(b, s, sigmaK);
 mask = bwareafilt(wshed(kMaskRefined), areaFilter);
 
 %fit with circles instead of convex hulls
-[mask, ellipseFrame] = fitCirclesToNuclei(mask, kmask);
+[mask, ellipseFrame] = fitCirclesToNuclei(mask, kMask);
+
+if isempty(ellipseFrame)
+    
+    'wat'
+    
+end
 
 
 end
