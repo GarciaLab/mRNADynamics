@@ -22,7 +22,7 @@ function [Data, prefixes, resultsFolder] = LoadMS2Sets(DataType, varargin)
 %
 %Author (contact): Hernan Garcia (hgarcia@berkeley.edu)
 %Created:
-%Last Updated: 1/13/2018. AR
+%Last Updated: 3/18/2020 JL.
 
 prefixes = {};
 Data = struct();
