@@ -160,14 +160,12 @@ settingArguments{4}=FrameInfo(1).PixelSize;
 
 schnitzFileExists = exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file');
 
-if schnitzFileExists & ~retrack &track
+if schnitzFileExists && ~retrack && track
     answer=input('Previous tracking detected. Proceed with retracking? (y/n):','s');
     if strcmpi(answer,'y')
         retrack = true;
     elseif strcmpi(answer, 'n')
         retrack = false;
-    else
-        %do nothing
     end
 end
 
@@ -317,7 +315,7 @@ if fish
 end
 
 
-if track & ~noBreak
+if track && ~noBreak
     [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, expandedAnaphaseFrames, nFrames);
     save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
     if (whos(var2str(schnitzcells)).bytes < 2E9)
@@ -330,11 +328,7 @@ end
 % Stitch the schnitzcells using Simon's code
 if ~noStitch
     disp('stitching schnitzes')
-    %     try
     StitchSchnitz(Prefix, nWorkers);
-    %     catch
-    %         disp('failed to stitch schnitzes')
-    %     end
 end
 
 

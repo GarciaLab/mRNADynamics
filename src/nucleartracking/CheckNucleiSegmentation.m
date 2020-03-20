@@ -395,11 +395,12 @@ while (cc~='x')
             HisImage, hisMat(:, :, CurrentFrame+1));
         
         
-    elseif (ct~=0)&(cc=='{') %resegment from scratch
+    elseif (ct~=0)&(cc=='{') 
+        %resegment from scratch
         
         Ellipses{CurrentFrame}=[];
         %         [centers, radii, mask] = maskNuclei2(HisImage);
-        [centers, radii, mask] =...
+        [centers, radii, ~] =...
             findEllipsesByKMeans(HisImage, 'displayFigures', false);
         
         for i = 1:length(radii)
