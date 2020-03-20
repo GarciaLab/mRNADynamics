@@ -162,16 +162,22 @@ classdef liveExperiment
             persistent movieMat;
             %load movie only if it hasn't been loaded or if we've switched
             %Prefixes (determined by num frames)
-             if isempty(movieMat) || ~isequal( size(movieMat, 4), obj.nFrames)
+            if isempty(movieMat) || ~isequal( size(movieMat, 4), obj.nFrames)
                 movieMat = loadMovieMat(obj.Prefix);
-             end
+            end
             out = movieMat;
             
         end
         
-        function hisMat = getHisMat(obj)
+        function out = getHisMat(obj)
             
-            hisMat = loadHisMat(obj.Prefix);
+            persistent hisMat;
+            %load histone movie only if it hasn't been loaded or if we've switched
+            %Prefixes (determined by num frames)
+            if isempty(hisMat) || ~isequal( size(hisMat, 4), obj.nFrames)
+                hisMat = loadHisMat(obj.Prefix);
+            end
+            out = hisMat;
             
         end
         

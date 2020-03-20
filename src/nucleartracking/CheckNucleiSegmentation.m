@@ -52,7 +52,7 @@ for i = 1:length(varargin)
     elseif strcmpi(varargin{i}, 'chooseHis')
         chooseHis = varargin{i+1};
     elseif strcmpi(varargin{i}, 'colormap')
-        cmap = varargin{i+1};  
+        cmap = varargin{i+1};
     elseif strcmpi(varargin{i}, 'premovie')
         preMovie = true;
         movieMat = varargin{i+1};
@@ -123,15 +123,14 @@ if chooseHis
         hisMat = probHis_fiji;
         clear probHis_fiji;
     elseif exist('probHis_matlab', 'var')
-         hisMat = probHis_matlab;
-         clear probHis_matlab;
-     elseif exist('probHis', 'var')
-         hisMat = probHis;
-         clear probHis;
+        hisMat = probHis_matlab;
+        clear probHis_matlab;
+    elseif exist('probHis', 'var')
+        hisMat = probHis;
+        clear probHis;
     end
 else
-hisMat = loadHisMat([PreProcPath, filesep, ...
-    Prefix, filesep, Prefix, '_hisMat.mat']);
+    hisMat = getHisMat(thisExperiment);
 end
 
 nFrames = size(hisMat, 3);
@@ -207,9 +206,9 @@ set(0, 'CurrentFigure', Overlay)
 while (cc~='x')
     
     %Load subsequent images
-    if ~projFlag 
-
-            HisImage = squeeze(hisMat(:, :, CurrentFrame));
+    if ~projFlag
+        
+        HisImage = squeeze(hisMat(:, :, CurrentFrame));
     else
         HisImage = squeeze(Projection(:, :,CurrentFrame));
     end
@@ -278,7 +277,7 @@ while (cc~='x')
     
     %     imshow(HisImage,DisplayRange,'Border','Tight''Parent',originalAxes)
     imOriginal.CData = HisImage;
-   
+    
     
     tb = axtoolbar(overlayAxes);
     tb.Visible = 'off';
@@ -380,12 +379,12 @@ while (cc~='x')
         Ellipses{CurrentFrame} = Ellipses{CurrentFrame-1};
     elseif (ct~=0)&(cc=='v') & CurrentFrame < nFrames %copy nuclear information from next frame
         Ellipses{CurrentFrame} = Ellipses{CurrentFrame+1};
-    elseif (ct~=0)&(cc=='{') %resegment from scratch 
+    elseif (ct~=0)&(cc=='{') %resegment from scratch
         
         Ellipses{CurrentFrame}=[];
-%         [centers, radii, mask] = maskNuclei2(HisImage);
-         [centers, radii, mask] = findEllipsesByKMeans(HisImage, 'displayFigures', false);
-
+        %         [centers, radii, mask] = maskNuclei2(HisImage);
+        [centers, radii, mask] = findEllipsesByKMeans(HisImage, 'displayFigures', false);
+        
         for i = 1:length(radii)
             Ellipses{CurrentFrame}(i, :) = [centers(i,1),centers(i,2),radii(i),radii(i),...
                 0,0,0,0];
@@ -422,19 +421,70 @@ while (cc~='x')
         if ~isempty(previousncframes)
             CurrentFrame = previousncframes(1);
         end
-%     elseif (ct~=0)&(cc=='/')  %adjust ellipse centroids
-%        
-%         Ellipses{CurrentFrame} = adjustEllipseCentroidsFrame(Ellipses{CurrentFrame}, squeeze(hisMat(:, :, CurrentFrame)), 'pixelSize', pixelSize);
-%     
+        %     elseif (ct~=0)&(cc=='/')  %adjust ellipse centroids
+        %
+        %         Ellipses{CurrentFrame} = adjustEllipseCentroidsFrame(Ellipses{CurrentFrame}, squeeze(hisMat(:, :, CurrentFrame)), 'pixelSize', pixelSize);
+        %
     elseif (ct~=0)&(cc=='\')  %resegment with ksnakecircles
         
-         [~, circles] = kSnakeCircles(HisImage, pixelSize/1000);    
+        [~, circles] = kSnakeCircles(HisImage, pixelSize/1000);
         circles(:, 4) = circles(:, 3);
         circles(:, 5:9) = zeros(size(circles, 1), 5);
         Ellipses{CurrentFrame} = circles;
         
+    elseif (ct~=0)&(cc=='@')  %register the image from the past
         
-         
+        moving = HisImage;
+        fixed = hisMat(:, :, CurrentFrame - 1);
+        [movingReg.DisplacementField,~] = imregdemons(moving, fixed,100,'AccumulatedFieldSmoothing',1.0,'PyramidLevels',3);
+        Dx = movingReg.DisplacementField(:, :, 1); %displacement left to right
+        Dy = movingReg.DisplacementField(:, :, 2); %displacement top to bottom
+
+        
+        for i = 1:length(Ellipses{CurrentFrame})
+            xOld = Ellipses{CurrentFrame}(i, 1);
+            xOldSub = round(xOld);
+            yOld = Ellipses{CurrentFrame}(i, 2);
+            yOldSub = round(yOld);
+            Ellipses{CurrentFrame}(i, 1) = xOld + Dx(yOldSub, xOldSub);
+            Ellipses{CurrentFrame}(i, 2) = yOld + Dy(yOldSub, xOldSub);
+
+        end
+        
+    elseif (ct~=0)&(cc=='#')   %register the image from the future
+        
+%         sigma = 4;
+        moving = HisImage;
+        fixed = hisMat(:, :, CurrentFrame + 1);
+%         moving = imgaussfilt(moving, sigma);
+%         fixed = imgaussfilt(fixed, sigma);
+        [movingReg.DisplacementField,~] = imregdemons(moving, fixed,100,'AccumulatedFieldSmoothing',1.0,'PyramidLevels',3);
+
+%         movingReg = registerImages(moving, fixed);
+%         T = movingReg.Transformation.T;
+%         dy = T(3, 1);
+%         dx = T(3, 2);
+        
+        Dx = movingReg.DisplacementField(:, :, 1); %displacement left to right
+        Dy = movingReg.DisplacementField(:, :, 2); %displacement top to bottom
+%         Dx = imgaussfilt(Dx, .1);
+%         Dy = imgaussfilt(Dy, .1);
+%         Dx = imgaussfilt(imregdemons(:, :, 1), 4);
+%         Dy = imgaussfilt(movingReg.DisplacementField(:, :, 2), 4);
+        
+        for i = 1:length(Ellipses{CurrentFrame})
+            xOld = Ellipses{CurrentFrame}(i, 1);
+            xOldSub = round(xOld);
+            yOld = Ellipses{CurrentFrame}(i, 2);
+            yOldSub = round(yOld);
+%             Ellipses{CurrentFrame}(i, 1) = xOld + dx;
+%             Ellipses{CurrentFrame}(i, 2) = yOld  + dy;
+            Ellipses{CurrentFrame}(i, 1) = xOld + Dx(yOldSub, xOldSub);
+            Ellipses{CurrentFrame}(i, 2) = yOld + Dy(yOldSub, xOldSub);
+
+        end
+        
+        
     elseif (ct~=0)&(cc=='0')    %Debug mode
         keyboard
         
@@ -444,10 +494,9 @@ end
 
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v6')
 
-close all;
 
 %Decide whether we need to re-track
-if yToRetrackPrompt 
+if yToRetrackPrompt
     reTrackAnswer = 'y';
 else
     userPrompt = 'Did you make changes to nuclei and thus require re-tracking? (y/n)';

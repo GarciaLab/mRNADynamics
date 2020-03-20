@@ -37,11 +37,5 @@ mask = bwareafilt(wshed(kMaskRefined), areaFilter);
 %fit with circles instead of convex hulls
 [mask, ellipseFrame] = fitCirclesToNuclei(mask, kMask);
 
-if isempty(ellipseFrame)
-    
-    'wat'
-    
-end
-
 
 end
