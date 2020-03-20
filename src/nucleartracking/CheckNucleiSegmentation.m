@@ -380,22 +380,27 @@ while (cc~='x')
         %copy nuclear information from previous frame
         
         Ellipses{CurrentFrame} = Ellipses{CurrentFrame-1};
+        tic
         Ellipses{CurrentFrame} =...
-            registerEllipses(Ellipses{CurrentFrame}, HisImage, hisMat(:, :, CurrentFrame-1));
+            registerEllipses(Ellipses{CurrentFrame},...
+            HisImage, hisMat(:, :, CurrentFrame-1));
+        toc
         
     elseif (ct~=0)&(cc=='v') & CurrentFrame < nFrames 
         %copy nuclear information from next frame
         
         Ellipses{CurrentFrame} = Ellipses{CurrentFrame+1};           
         Ellipses{CurrentFrame} =...
-            registerEllipses(Ellipses{CurrentFrame}, HisImage, hisMat(:, :, CurrentFrame+1));
+            registerEllipses(Ellipses{CurrentFrame},...
+            HisImage, hisMat(:, :, CurrentFrame+1));
         
         
     elseif (ct~=0)&(cc=='{') %resegment from scratch
         
         Ellipses{CurrentFrame}=[];
         %         [centers, radii, mask] = maskNuclei2(HisImage);
-        [centers, radii, mask] = findEllipsesByKMeans(HisImage, 'displayFigures', false);
+        [centers, radii, mask] =...
+            findEllipsesByKMeans(HisImage, 'displayFigures', false);
         
         for i = 1:length(radii)
             Ellipses{CurrentFrame}(i, :) = [centers(i,1),centers(i,2),radii(i),radii(i),...
