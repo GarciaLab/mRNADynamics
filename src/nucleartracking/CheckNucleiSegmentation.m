@@ -375,10 +375,22 @@ while (cc~='x')
         Ellipses = EllipsesCopy;
         delete(roi);
         clear EllipsesCopy;
-    elseif (ct~=0)&(cc=='c') & CurrentFrame > 1 %copy nuclear information from previous frame
+    
+    elseif (ct~=0)&(cc=='c') & CurrentFrame > 1
+        %copy nuclear information from previous frame
+        
         Ellipses{CurrentFrame} = Ellipses{CurrentFrame-1};
-    elseif (ct~=0)&(cc=='v') & CurrentFrame < nFrames %copy nuclear information from next frame
-        Ellipses{CurrentFrame} = Ellipses{CurrentFrame+1};
+        Ellipses{CurrentFrame} =...
+            registerEllipses(Ellipses{CurrentFrame}, HisImage, hisMat(:, :, CurrentFrame-1));
+        
+    elseif (ct~=0)&(cc=='v') & CurrentFrame < nFrames 
+        %copy nuclear information from next frame
+        
+        Ellipses{CurrentFrame} = Ellipses{CurrentFrame+1};           
+        Ellipses{CurrentFrame} =...
+            registerEllipses(Ellipses{CurrentFrame}, HisImage, hisMat(:, :, CurrentFrame+1));
+        
+        
     elseif (ct~=0)&(cc=='{') %resegment from scratch
         
         Ellipses{CurrentFrame}=[];
@@ -431,59 +443,6 @@ while (cc~='x')
         circles(:, 4) = circles(:, 3);
         circles(:, 5:9) = zeros(size(circles, 1), 5);
         Ellipses{CurrentFrame} = circles;
-        
-    elseif (ct~=0)&(cc=='@')  %register the image from the past
-        
-        moving = HisImage;
-        fixed = hisMat(:, :, CurrentFrame - 1);
-        [movingReg.DisplacementField,~] = imregdemons(moving, fixed,100,'AccumulatedFieldSmoothing',1.0,'PyramidLevels',3);
-        Dx = movingReg.DisplacementField(:, :, 1); %displacement left to right
-        Dy = movingReg.DisplacementField(:, :, 2); %displacement top to bottom
-
-        
-        for i = 1:length(Ellipses{CurrentFrame})
-            xOld = Ellipses{CurrentFrame}(i, 1);
-            xOldSub = round(xOld);
-            yOld = Ellipses{CurrentFrame}(i, 2);
-            yOldSub = round(yOld);
-            Ellipses{CurrentFrame}(i, 1) = xOld + Dx(yOldSub, xOldSub);
-            Ellipses{CurrentFrame}(i, 2) = yOld + Dy(yOldSub, xOldSub);
-
-        end
-        
-    elseif (ct~=0)&(cc=='#')   %register the image from the future
-        
-%         sigma = 4;
-        moving = HisImage;
-        fixed = hisMat(:, :, CurrentFrame + 1);
-%         moving = imgaussfilt(moving, sigma);
-%         fixed = imgaussfilt(fixed, sigma);
-        [movingReg.DisplacementField,~] = imregdemons(moving, fixed,100,'AccumulatedFieldSmoothing',1.0,'PyramidLevels',3);
-
-%         movingReg = registerImages(moving, fixed);
-%         T = movingReg.Transformation.T;
-%         dy = T(3, 1);
-%         dx = T(3, 2);
-        
-        Dx = movingReg.DisplacementField(:, :, 1); %displacement left to right
-        Dy = movingReg.DisplacementField(:, :, 2); %displacement top to bottom
-%         Dx = imgaussfilt(Dx, .1);
-%         Dy = imgaussfilt(Dy, .1);
-%         Dx = imgaussfilt(imregdemons(:, :, 1), 4);
-%         Dy = imgaussfilt(movingReg.DisplacementField(:, :, 2), 4);
-        
-        for i = 1:length(Ellipses{CurrentFrame})
-            xOld = Ellipses{CurrentFrame}(i, 1);
-            xOldSub = round(xOld);
-            yOld = Ellipses{CurrentFrame}(i, 2);
-            yOldSub = round(yOld);
-%             Ellipses{CurrentFrame}(i, 1) = xOld + dx;
-%             Ellipses{CurrentFrame}(i, 2) = yOld  + dy;
-            Ellipses{CurrentFrame}(i, 1) = xOld + Dx(yOldSub, xOldSub);
-            Ellipses{CurrentFrame}(i, 2) = yOld + Dy(yOldSub, xOldSub);
-
-        end
-        
         
     elseif (ct~=0)&(cc=='0')    %Debug mode
         keyboard
