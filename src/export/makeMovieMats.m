@@ -30,6 +30,10 @@ elseif nargout == 2
     loadProjs = false;
 end
 
+loadProjs = false; makeProjs = false;
+
+thisExperiment = liveExperiment(Prefix);
+
 [xSize, ySize, ~, ~, ~,...
     nFrames, nSlices, nDigits] = getFrameInfoParams(FrameInfo);
 
@@ -57,7 +61,7 @@ tic
 
 if loadMovie && exist([pth, '_movieMat.Mat'], 'file')
     disp('Loading movie mats...')
-        load([pth, '_movieMat.Mat'],'movieMat');
+       movieMat = getMovieMat(thisExperiment);
     disp(['Movie mats loaded. ', num2str(toc), ' s elapsed.'])
     if isempty(movieMat)
         makeMovie = true;
@@ -68,7 +72,8 @@ if loadHis && exist([pth, '_hisMat.Mat'], 'file')
     
     disp('Loading nuclear mats...')
 
-    load([pth, '_hisMat.Mat'],'hisMat');
+    
+    hisMat = getHisMat(thisExperiment);
     disp(['Nuclear mats loaded. ', num2str(toc), ' s elapsed.'])
     
     if isempty(hisMat)
@@ -84,10 +89,10 @@ if makeMovie
     
 %     startParallelPool(nWorkers, 0, 1);
     
-    movieMat = zeros(ySize, xSize,nSlices+nPadding, nFrames, nCh, 'uint16'); % ch z t x y
+    movieMat = zeros(ySize, xSize,nSlices+nPadding, nFrames, nCh, 'uint16'); % y x z t ch
     
     if makeHis
-        hisMat = zeros(ySize, xSize, nFrames, 'uint8'); % f x y
+        hisMat = zeros(ySize, xSize, nFrames, 'uint8'); % y x t
     end
     
     for ch = 1:nCh
@@ -114,7 +119,7 @@ end
 
 if  makeHis && ~makeMovie
     
-    hisMat = zeros(xSize, ySize,nFrames, 'uint16'); % f x y
+    hisMat = zeros(xSize, ySize,nFrames, 'uint8'); % y x t
     
     for f = 1:nFrames
         hisMat(:, :, f) = imread([pth,'-His_', iIndex(f, nDigits), '.tif']);

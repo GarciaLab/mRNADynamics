@@ -1,5 +1,8 @@
 function pMap = segmentNuclei(Prefix, varargin)
 
+cleanupObj = onCleanup(@myCleanupFun);
+
+
 displayFigures = false;
 keepPool = false;
 nWorkers = 1;
@@ -19,7 +22,7 @@ makeEllipses=false;
 doTracking = false;
 classifyWithMatlab = true;
 classifyWithWeka = false;
-ramDrive = 'R:\';
+tempPath = 'S:\Armando\tempPath\';
 matlabLoader = true;
 
 
@@ -164,7 +167,7 @@ else
             pMap(:, :, f) = classifyImageMatlab(im, trainingData, 'reSc', reSc, 'classifier', classifier);
             
         elseif classifyWithWeka
-            pMap(:, :, f) = classifyImageWeka(im, trainingData,'tempPath', ramDrive,...
+            pMap(:, :, f) = classifyImageWeka(im, trainingData,'tempPath', tempPath,...
                 'reSc', reSc, 'classifier', classifier, 'arffLoader', arffLoader, 'matlabLoader', matlabLoader);
             
         end
@@ -213,21 +216,6 @@ if makeEllipses
             
         end
         
-    end
-end
-
-if doTracking
-    %% Tracking
-    %Decide whether we need to re-track
-    userPrompt = 'Do you want to track nuclei now?';
-    
-    trackAnswer = inputdlg(userPrompt);
-    if contains(trackAnswer,'n')
-        disp('Ellipses saved. Per user input, not tracking. Exiting.')
-    else
-        opts = {};  if fish, opts = [opts, 'markandfind']; end
-        disp('Ellipses saved. Running TrackNuclei.')
-        TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1, opts{:});
     end
 end
 

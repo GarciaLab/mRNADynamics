@@ -9,7 +9,7 @@ mm = false;
 movieChFile = [PreProcPath, filesep, Prefix, filesep, Prefix,'_movieMatCh', num2str(coatChannel), '.mat'];
 movieFile = [PreProcPath, filesep, Prefix, filesep, Prefix,'_movieMat.mat'];
 if exist(movieFile, 'file') || exist(movieChFile, 'file')
-    movieMat = loadMovieMat(Prefix);
+    movieMat = loadMovieMat(Prefix, 'chRange', coatChannel);
     mm=true;
 end
 
@@ -49,7 +49,11 @@ for channelIndex = 1:nCh
                 
             else
                 
-                rawStackArray = squeeze(movieMat(:, :, :, currentFrame, coatChannel));
+                if numel(size(movieMat))==5
+                    rawStackArray = squeeze(movieMat(:, :, :, currentFrame, coatChannel));
+                elseif numel(size(movieMat))==4
+                    rawStackArray = squeeze(movieMat(:, :, :, currentFrame));
+                end
                 
             end
             

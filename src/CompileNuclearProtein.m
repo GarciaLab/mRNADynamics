@@ -105,7 +105,7 @@ end
     DetermineLocalFolders(Prefix);
 
 
-
+thisExperiment = liveExperiment(Prefix);
 
 %Load all the information
 load([DropboxFolder,filesep,Prefix,'\Ellipses.mat'], 'Ellipses')
@@ -126,7 +126,7 @@ end
 % refactor in progress, we should replace readMovieDatabase with getExperimentDataFromMovieDatabase
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
     Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase)
+    nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
 
 %Pre-calculating ExperimentAxis boolean for faster use in later if statements
 ExperimentAxisIsNoAP = strcmpi(ExperimentAxis, 'NoAP');
@@ -278,7 +278,7 @@ for i=1:length(schnitzcells)
                 CompiledNuclei(k).FluoMin=single(squeeze(min(DV_Fluo(DV_Fluo>0),[],2)));
                 CompiledNuclei(k).FluoMean=single(squeeze(mean(DV_Fluo(DV_Fluo>0),2)));
                 %the 'p' field is a parabola fit of DV fluorescence over
-                %time
+                %time.
                 %                 for frame = 1:size(DV_Fluo, 1)
                 %                     CompiledNuclei(k).parabolaFit{frame} = polyfit(1:size(DV_Fluo,2),DV_Fluo(frame,:),2);
                 %                 end
@@ -531,6 +531,22 @@ end
 %
 % [~,MaxIndex]=max(MeanVectorAll(NewCyclePos(i):end));
 % MaxFrame=[MaxFrame,NewCyclePos(i)+MaxIndex-1];
+
+%% add some things to schnitzcells for convenience
+
+
+expandedAnaphaseFrames = [zeros(1,8),thisExperiment.anaphaseFrames'];
+
+for s = 1:length(schnitzcells)
+    midFrame = ceil(length(schnitzcells(s).frames)/2);
+    dif = double(schnitzcells(s).frames(midFrame)) - expandedAnaphaseFrames;
+    cycle = find(dif>0, 1, 'last' );
+    schnitzcells(s).cycle = uint8(cycle);
+end
+
+schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, expandedAnaphaseFrames);
+
+ schnitzcells = filterSchnitz(schnitzcells, [ thisExperiment.yDim, thisExperiment.xDim]);
 
 %% Save everything
 

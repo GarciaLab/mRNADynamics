@@ -10,7 +10,7 @@ classdef liveExperiment
         resultsFolder = '';
         MLFolder = '';
         project = '';
-        
+        Channels = {};
         spotChannel = [];
         
         isUnhealthy = false;
@@ -47,6 +47,14 @@ classdef liveExperiment
         zStep = 0;
         nDigits = 0;
         pixelSize_nm = 0;
+        
+        nc9 = 0;
+        nc10 = 0;
+        nc11 = 0;
+        nc12 = 0;
+        nc13 = 0;
+        nc14 = 0;
+        
         
         
     end
@@ -114,6 +122,8 @@ classdef liveExperiment
                 ~, ~, ~, ~, ~, ~, ~, Channel3,~,~, ~, ~]...
                 = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
             
+            obj.Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
+            
             FrameInfo = getFrameInfo(obj);
             
             [xSize, ySize, pixelSize_nm, zStep, snippet_size,...
@@ -129,6 +139,13 @@ classdef liveExperiment
             
             obj.spotChannel = getCoatChannel(Channel1, Channel2, Channel3);
             
+            obj.nc9 = obj.anaphaseFrames(1);
+            obj.nc10 = obj.anaphaseFrames(2);
+            obj.nc11 = obj.anaphaseFrames(3);
+            obj.nc12 = obj.anaphaseFrames(4);
+            obj.nc13 = obj.anaphaseFrames(5);
+            obj.nc14 = obj.anaphaseFrames(6);
+            
             
         end
         
@@ -140,15 +157,27 @@ classdef liveExperiment
         %Methods
         
         
-        function movieMat = getMovieMat(obj)
+        function out = getMovieMat(obj)
             
-            movieMat = loadMovieMat(obj.Prefix);
+            persistent movieMat;
+            %load movie only if it hasn't been loaded or if we've switched
+            %Prefixes (determined by num frames)
+            if isempty(movieMat) || ~isequal( size(movieMat, 4), obj.nFrames)
+                movieMat = loadMovieMat(obj.Prefix);
+            end
+            out = movieMat;
             
         end
         
-        function hisMat = getHisMat(obj)
+        function out = getHisMat(obj)
             
-            hisMat = loadHisMat(obj.Prefix);
+            persistent hisMat;
+            %load histone movie only if it hasn't been loaded or if we've switched
+            %Prefixes (determined by num frames)
+            if isempty(hisMat) || ~isequal( size(hisMat, 4), obj.nFrames)
+                hisMat = loadHisMat(obj.Prefix);
+            end
+            out = hisMat;
             
         end
         
@@ -162,7 +191,7 @@ classdef liveExperiment
             
             schnitzcellsFile = [obj.resultsFolder, obj.Prefix, '_lin.mat'];
             if obj.hasSchnitzcellsFile
-                schnitzcells = load(schnitzcellsFile);
+                load(schnitzcellsFile, 'schnitzcells');
             end
             
         end
@@ -171,7 +200,7 @@ classdef liveExperiment
             
             ellipsesFile = [obj.resultsFolder, 'Ellipses.mat'];
             if obj.hasEllipsesFile
-                Ellipses = load(ellipsesFile);
+                load(ellipsesFile, 'Ellipses');
             end
             
         end
@@ -189,16 +218,16 @@ classdef liveExperiment
             
             spotsFile = [obj.resultsFolder, 'Spots.mat'];
             if obj.hasSpotsFile
-                Spots = load(spotsFile);
+                load(spotsFile, 'Spots');
             end
             
         end
         
-        function Particles = getParticles(obj)
+        function [Particles, SpotFilter] = getParticles(obj)
             
             particlesFile = [obj.resultsFolder, 'Particles.mat'];
             if obj.hasParticlesFile
-                Particles = load(particlesFile);
+                load(particlesFile, 'Particles', 'SpotFilter');
             end
             
         end

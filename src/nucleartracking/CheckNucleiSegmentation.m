@@ -30,10 +30,10 @@ function movieMat = CheckNucleiSegmentation(Prefix, varargin)
 %left click - add region with default nc radius and angle
 %
 
-close all
+cleanupObj = onCleanup(@myCleanupFun);
 
 %Load the folder information
-[SourcePath,ProcPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
+[~,~,DefaultDropboxFolder,~,~]=...
     DetermineLocalFolders;
 
 noAdd = false;
@@ -41,6 +41,7 @@ nWorkers = 1;
 fish = false;
 preMovie = false;
 chooseHis = false;
+yToRetrackPrompt = true;
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'noAdd') | strcmpi(varargin{i}, 'fish') | strcmpi(varargin{i}, 'markandfind')
@@ -51,13 +52,16 @@ for i = 1:length(varargin)
     elseif strcmpi(varargin{i}, 'chooseHis')
         chooseHis = varargin{i+1};
     elseif strcmpi(varargin{i}, 'colormap')
-        cmap = varargin{i+1};  
+        cmap = varargin{i+1};
     elseif strcmpi(varargin{i}, 'premovie')
         preMovie = true;
         movieMat = varargin{i+1};
+    elseif strcmpi(varargin{i}, 'yToRetrackPrompt')
+        yToRetrackPrompt = true;
     end
 end
 
+thisExperiment = liveExperiment(Prefix);
 
 [~,ProcPath,DropboxFolder,~,PreProcPath]=...
     DetermineLocalFolders(Prefix);
@@ -80,7 +84,17 @@ DataFolder=[Folder,'..',filesep,'..',filesep,'..',filesep,'Data',filesep,FilePre
 
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
     Channel1, Channel2, Objective, Power, DataFolderFromDataColumn, DropboxFolderName, Comments,...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+    nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3] =...
+    getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+
+anaphaseFrames = thisExperiment.anaphaseFrames;
+nc9 = anaphaseFrames(1);
+nc10 = anaphaseFrames(2);
+nc11 = anaphaseFrames(3);
+nc12 = anaphaseFrames(4);
+nc13 = anaphaseFrames(5);
+nc14 = anaphaseFrames(6);
+
 
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
 
@@ -109,15 +123,14 @@ if chooseHis
         hisMat = probHis_fiji;
         clear probHis_fiji;
     elseif exist('probHis_matlab', 'var')
-         hisMat = probHis_matlab;
-         clear probHis_matlab;
-     elseif exist('probHis', 'var')
-         hisMat = probHis;
-         clear probHis;
+        hisMat = probHis_matlab;
+        clear probHis_matlab;
+    elseif exist('probHis', 'var')
+        hisMat = probHis;
+        clear probHis;
     end
 else
-hisMat = loadHisMat([PreProcPath, filesep, ...
-    Prefix, filesep, Prefix, '_hisMat.mat']);
+    hisMat = getHisMat(thisExperiment);
 end
 
 nFrames = size(hisMat, 3);
@@ -193,9 +206,9 @@ set(0, 'CurrentFigure', Overlay)
 while (cc~='x')
     
     %Load subsequent images
-    if ~projFlag 
-
-            HisImage = squeeze(hisMat(:, :, CurrentFrame));
+    if ~projFlag
+        
+        HisImage = squeeze(hisMat(:, :, CurrentFrame));
     else
         HisImage = squeeze(Projection(:, :,CurrentFrame));
     end
@@ -264,7 +277,7 @@ while (cc~='x')
     
     %     imshow(HisImage,DisplayRange,'Border','Tight''Parent',originalAxes)
     imOriginal.CData = HisImage;
-   
+    
     
     tb = axtoolbar(overlayAxes);
     tb.Visible = 'off';
@@ -362,16 +375,34 @@ while (cc~='x')
         Ellipses = EllipsesCopy;
         delete(roi);
         clear EllipsesCopy;
-    elseif (ct~=0)&(cc=='c') & CurrentFrame > 1 %copy nuclear information from previous frame
+    
+    elseif (ct~=0)&(cc=='c') & CurrentFrame > 1
+        %copy nuclear information from previous frame
+        
         Ellipses{CurrentFrame} = Ellipses{CurrentFrame-1};
-    elseif (ct~=0)&(cc=='v') & CurrentFrame < nFrames %copy nuclear information from next frame
-        Ellipses{CurrentFrame} = Ellipses{CurrentFrame+1};
-    elseif (ct~=0)&(cc=='{') %resegment from scratch 
+        tic
+        Ellipses{CurrentFrame} =...
+            registerEllipses(Ellipses{CurrentFrame},...
+            HisImage, hisMat(:, :, CurrentFrame-1));
+        toc
+        
+    elseif (ct~=0)&(cc=='v') & CurrentFrame < nFrames 
+        %copy nuclear information from next frame
+        
+        Ellipses{CurrentFrame} = Ellipses{CurrentFrame+1};           
+        Ellipses{CurrentFrame} =...
+            registerEllipses(Ellipses{CurrentFrame},...
+            HisImage, hisMat(:, :, CurrentFrame+1));
+        
+        
+    elseif (ct~=0)&(cc=='{') 
+        %resegment from scratch
         
         Ellipses{CurrentFrame}=[];
-%         [centers, radii, mask] = maskNuclei2(HisImage);
-         [centers, radii, mask] = findEllipsesByKMeans(HisImage, 'displayFigures', false);
-
+        %         [centers, radii, mask] = maskNuclei2(HisImage);
+        [centers, radii, ~] =...
+            findEllipsesByKMeans(HisImage, 'displayFigures', false);
+        
         for i = 1:length(radii)
             Ellipses{CurrentFrame}(i, :) = [centers(i,1),centers(i,2),radii(i),radii(i),...
                 0,0,0,0];
@@ -408,19 +439,17 @@ while (cc~='x')
         if ~isempty(previousncframes)
             CurrentFrame = previousncframes(1);
         end
-%     elseif (ct~=0)&(cc=='/')  %adjust ellipse centroids
-%        
-%         Ellipses{CurrentFrame} = adjustEllipseCentroidsFrame(Ellipses{CurrentFrame}, squeeze(hisMat(:, :, CurrentFrame)), 'pixelSize', pixelSize);
-%     
+        %     elseif (ct~=0)&(cc=='/')  %adjust ellipse centroids
+        %
+        %         Ellipses{CurrentFrame} = adjustEllipseCentroidsFrame(Ellipses{CurrentFrame}, squeeze(hisMat(:, :, CurrentFrame)), 'pixelSize', pixelSize);
+        %
     elseif (ct~=0)&(cc=='\')  %resegment with ksnakecircles
         
-         [~, circles] = kSnakeCircles(HisImage, pixelSize/1000);    
+        [~, circles] = kSnakeCircles(HisImage, pixelSize/1000);
         circles(:, 4) = circles(:, 3);
         circles(:, 5:9) = zeros(size(circles, 1), 5);
         Ellipses{CurrentFrame} = circles;
         
-        
-         
     elseif (ct~=0)&(cc=='0')    %Debug mode
         keyboard
         
@@ -428,19 +457,23 @@ while (cc~='x')
 end
 
 
-
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v6')
-close all;
+
 
 %Decide whether we need to re-track
-userPrompt = 'Did you make changes to nuclei and thus require re-tracking? (y/n)';
-reTrackAnswer = inputdlg(userPrompt);
+if yToRetrackPrompt
+    reTrackAnswer = 'y';
+else
+    userPrompt = 'Did you make changes to nuclei and thus require re-tracking? (y/n)';
+    reTrackAnswer = inputdlg(userPrompt);
+end
+
 if contains(reTrackAnswer,'n')
     disp('Ellipses saved. Per user input, not re-tracking. Exiting.')
 else
     opts = {};  if fish opts = [opts, 'markandfind']; end
     disp('Ellipses saved. Running TrackNuclei to incorporate changes.')
-    TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1, opts{:});
+    TrackNuclei(Prefix,'retrack', 'nWorkers', 1, opts{:});
 end
 
 end

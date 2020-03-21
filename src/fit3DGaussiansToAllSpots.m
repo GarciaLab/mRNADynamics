@@ -1,47 +1,59 @@
-function Spots = fit3DGaussiansToAllSpots(prefix, nSpots, varargin)
+function Spots = fit3DGaussiansToAllSpots(Prefix, varargin)
 %%
+
+cleanupObj = onCleanup(@myCleanupFun);
+
 optionalResults = '';
 
-segmentSpots = false;
+segmentSpots = [];
 displayFigures = false;
 nWorkers = 8;
 keepPool = false;
 dogs = [];
 save_flag = true;
+nSpots = 1;
 
-for i = 1:length(varargin)
-    if strcmpi(varargin{i}, 'displayFigures')
-        displayFigures = true;
-    elseif strcmpi(varargin{i}, 'segmentSpots')
-        Spots = varargin{i+1};
-        segmentSpots = true;
-    elseif strcmpi(varargin{i}, 'optionalResults')
-        optionalResults = varargin{i+1};
-    elseif strcmpi(varargin{i}, 'noSave')
-        save_flag = false;
-    elseif strcmpi(varargin{i}, 'nWorkers')
-        nWorkers = varargin{i+1};
-    elseif strcmpi(varargin{i}, 'keepPool')
-        keepPool = true;
-    elseif strcmpi(varargin{i}, 'dogs')
-        dogs = varargin{i+1};
+
+%options must be specified as name, value pairs. unpredictable errors will
+%occur, otherwise.
+for i = 1:2:(numel(varargin)-1)
+    if i ~= numel(varargin)
+        eval([varargin{i} '=varargin{i+1};']);
     end
 end
+% 
+% for i = 1:length(varargin)
+%     if strcmpi(varargin{i}, 'displayFigures')
+%         displayFigures = true;
+%     elseif strcmpi(varargin{i}, 'segmentSpots')
+%         Spots = varargin{i+1};
+%         segmentSpots = true;
+%     elseif strcmpi(varargin{i}, 'optionalResults')
+%         optionalResults = varargin{i+1};
+%     elseif strcmpi(varargin{i}, 'noSave')
+%         save_flag = false;
+%     elseif strcmpi(varargin{i}, 'nWorkers')
+%         nWorkers = varargin{i+1};
+%     elseif strcmpi(varargin{i}, 'keepPool')
+%         keepPool = true;
+%     elseif strcmpi(varargin{i}, 'dogs')
+%         dogs = varargin{i+1};
+%     end
+% end
 
-[~,ProcPath,DropboxFolder,~, PreProcPath,...
-    ~, Prefix, ~,Channel1,Channel2,~, Channel3, spotChannels] = readMovieDatabase(prefix, optionalResults);
+thisExperiment = liveExperiment(Prefix);
 
+DataFolder = thisExperiment.resultsFolder;
+PreProcPath = thisExperiment.preFolder;
+spotChannels = thisExperiment.spotChannel;
 
-DataFolder=[DropboxFolder,filesep,prefix];
-
-if ~segmentSpots
-    load([DataFolder,filesep,'Spots.mat'], 'Spots');
+if ~isempty(segmentSpots)
+    Spots = getSpots(thisExperiment);
 end
 
-FrameInfo = load([DataFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
-FrameInfo = FrameInfo.FrameInfo;
+FrameInfo = getFrameInfo(thisExperiment);
 
-load([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat'], 'movieMat');
+getMovieMat(thisExperiment);
 
 startParallelPool(nWorkers, displayFigures, keepPool);
 
@@ -68,15 +80,14 @@ for ch = spotChannels
         SpotsFr = SpotsCh(frame);
         
         nSpotsPerFrame = length(SpotsFr.Fits);
-        for spot = 1:nSpotsPerFrame
-            SpotsFr = fitSnip3D(SpotsFr, ch, spot, frame, Prefix, PreProcPath, FrameInfo, nSpots, movieMat);
-            %             fitSnip3D(SpotsFr, spotChannel, spot, frame, Prefix, PreProcPath, FrameInfo)
+        for spotIndex = 1:nSpotsPerFrame
+            SpotsFr = fitSnip3D(SpotsFr, ch, spotIndex, frame, Prefix, PreProcPath, FrameInfo, nSpots, movieMat);
         end
         SpotsCh(frame) = SpotsFr;
         send(q, frame); %update the waitbar
     end
     
-    if iscell(Spots) & length(Spots) > 1
+    if iscell(Spots) && length(Spots) > 1
         Spots{ch} = SpotsCh;
     else
         Spots = SpotsCh;
@@ -89,8 +100,8 @@ if iscell(Spots) & length(Spots) < 2
 end
 
 if save_flag
-    isBigFile = whos(var2str(Spots)).bytes > 2E9; %save to v7.3 only if struct is larger than 2GB
-    if ~isBigFile
+    
+    if whos(var2str(Spots)).bytes < 2E9
         save([DataFolder,filesep,'Spots.mat'],'Spots', '-v6');
     else
         save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3', '-nocompression');
@@ -99,10 +110,12 @@ if save_flag
     Spots3DToken = now;
     save([DataFolder,filesep,'Spots3DToken.mat'],'Spots3DToken')
     disp('3D fitting done on all spots.')
-    close(waitbarFigure);
+    try close(waitbarFigure); end
+    
 end
+
     function nUpdateWaitbar(~)
-        waitbar(p/numFrames, waitbarFigure);
+        try waitbar(p/numFrames, waitbarFigure); end
         p = p + 1;
     end
 

@@ -1,4 +1,4 @@
-function imStack = readTiffStack(imPath, varargin)
+function imStack = imreadStack(imPath, varargin)
         
     info = imfinfo(imPath);
     zInitial = 1; zFinal = length(info);

@@ -1,6 +1,7 @@
 function schnitzcells = filterSchnitz(schnitzcells, imSize)
 
-%armando's criteria for good nuclei to include in dorsal analysis. 
+% Disapprove spurious nuclei that are too near edges
+% and don't last long. 
 
 %% time thresholding
 lengths = {[], [], []};
@@ -19,10 +20,10 @@ end
 
 
 %% size thresholding
-xmax = imSize(1);
-ymax = imSize(2);
+ymax = imSize(1);
+xmax = imSize(2);
 
-thresh = .75; % 75% of the nuclear radius
+thresh = .5; %     50% of the nuclear radius
 
 
 for s = 1:length(schnitzcells)
@@ -33,26 +34,32 @@ for s = 1:length(schnitzcells)
         
         r  = schnitz.len(f);
         
-        if ( (schnitz.cenx(f) + r*thresh ) > xmax |...
-                (schnitz.ceny(f) + r*thresh ) > ymax |...
-                (schnitz.cenx(f) - r*thresh  ) < 0 |...
+        if ( (schnitz.cenx(f) + r*thresh ) > xmax ||...
+                (schnitz.ceny(f) + r*thresh ) > ymax ||...
+                (schnitz.cenx(f) - r*thresh  ) < 0 ||...
                 (schnitz.ceny(f) - r*thresh  ) < 0 )
             
             schnitzcells(s).FrameApproved(f) = false;
-            
+        else
+             schnitzcells(s).FrameApproved(f) = true;           
         end
         
     end
     
     for nc = 12:14
-        if schnitzcells(s).cycle == nc & length(schnitzcells(s).frames) < frameCutoff(nc-11)
+        if schnitzcells(s).cycle == nc &&...
+            length(schnitzcells(s).frames) < frameCutoff(nc-11)      
             schnitzcells(s).Approved = false;
+        else
+            schnitzcells(s).Approved = true;
         end
     end
     
     %disapprove an entire nucleus if less than half the frames are good. 
     if sum(schnitzcells(s).FrameApproved) < .5*length(schnitzcells(s).frames)
         schnitzcells(s).Approved = false;
+    else
+        schnitzcells(s).Approved = true;
     end
     
 end

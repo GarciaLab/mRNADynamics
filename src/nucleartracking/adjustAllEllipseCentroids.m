@@ -11,6 +11,7 @@ max_rad_um = 7; %this needs to be 6um for nc12. 4um for nc14
 bouncingFig = [];
 T = [];
 tileFig = [];
+Ellipses = [];
 
 
 
@@ -39,7 +40,9 @@ maxRad_px = max_rad_um / PixelSize_um;
 minArea_px = round(pi*minRad_px^2);
 maxArea_px = round(pi*maxRad_px^2);
 
-load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses');
+if isempty(Ellipses)
+    load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses');
+end
 
 hisFile = [PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'];
 hisMat = double(loadHisMat(hisFile));

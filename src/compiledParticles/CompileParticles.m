@@ -154,6 +154,8 @@ ncFilter = [];
 ncFilterID = [];
 %%
 
+
+
 %Information about about folders
 [~,~,DefaultDropboxFolder,~,~]=...
     DetermineLocalFolders;
@@ -162,6 +164,9 @@ ncFilterID = [];
     SkipAll, ApproveAll, MinParticles, minTime, ROI,  noHist, ...
     ROI1, ROI2, slimVersion, manualSingleFits,...
     optionalResults, yToManualAlignmentPrompt, minBinSize, edgeWidth] = determineCompileParticlesOptions(varargin);
+
+
+thisExperiment = liveExperiment(Prefix);
 
 FilePrefix=[Prefix,'_'];
 
@@ -250,7 +255,7 @@ end
 
 %See if we had any lineage/nuclear information
 if exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file') && ~noHist
-    load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'schnitzcells')
     HistoneChannel=1;
 else
     disp('No lineage / nuclear information found. Proceeding without it.');
@@ -469,9 +474,10 @@ coatChannel = getCoatChannel(Channel1, Channel2, Channel3);
     ...
     NChannels, Particles, HistoneChannel, ...
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
-    Spots, SkipTraces, nc9, nc10, nc11, nc12, nc13, nc14, ncFilterID, ncFilter, ...
+    Spots, SkipTraces, ncFilterID, ncFilter, ...
     ElapsedTime, Ellipses, EllipsePos, PreProcPath, ...
-    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits, edgeWidth, pixelSize, coatChannel, fullEmbryo);
+    FilePrefix, Prefix, DropboxFolder, numFrames,...
+    manualSingleFits, edgeWidth, pixelSize, coatChannel, fullEmbryo);
 
 %% ROI option
 % This option is separating the CompiledParticles defined above into
@@ -703,12 +709,12 @@ savedVariables = [savedVariables,'APFilter', 'APbinArea', 'APbinID', 'AllTracesA
     'ncFilterID', 'rateOnAPManual', 'rateOnAPCellManual', 'timeOnOnAPManual', 'timeOnOnAPCellManual'...
     'MeanVector3DAP', 'MeanVector3DAll'];
 
+CompiledParticlesFile = [DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'];
+
 try
-    save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
-        savedVariables{:},'-v6');
+    save(CompiledParticlesFile, savedVariables{:},'-v6');
 catch %save as 7.3 only if we really need to
-    save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],...
-        savedVariables{:},'-v7.3', '-nocompression');
+    save(CompiledParticlesFile, savedVariables{:},'-v7.3', '-nocompression');
 end
 
 CompiledParticlesToken = now;

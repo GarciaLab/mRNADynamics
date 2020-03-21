@@ -14,7 +14,7 @@ if length(ncTimes) < 14
     ncTimes(end+1:14) = nan;
 end
 
-load([resultsFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
+load([resultsFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'schnitzcells')
 load([resultsFolder,filesep,Prefix,filesep,'CompiledParticles.mat'], 'CompiledParticles')
 
 if iscell(CompiledParticles)
@@ -24,7 +24,9 @@ end
 for s = 1:length(schnitzcells)
     schnitzcells(s).timeSinceAnaphase = time(schnitzcells(s).frames) - ncTimes(schnitzcells(s).cycle);
 end
+
 clear s;
+
 for p = 1:length(CompiledParticles)
     s = CompiledParticles(p).Nucleus;
     CompiledParticles(p).timeSinceAnaphase = time(CompiledParticles(p).Frame) - ncTimes(schnitzcells(s).cycle);

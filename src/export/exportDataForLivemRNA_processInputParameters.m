@@ -1,11 +1,12 @@
 function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest,...
     keepTifs, generateTifStacks, nuclearGUI,...
     skipExtraction, rootFolder, zslicesPadding, lowbit,...
-    dataType,exportNuclearProjections, exportMovieFiles, ignoreCh3]...
+    dataType,exportNuclearProjections, exportMovieFiles, ignoreCh3, shouldTrackNuclei]...
     ...
     = exportDataForLivemRNA_processInputParameters(varargin)
 
 %Look at parameters
+shouldTrackNuclei = true;
 SkipFrames = [];
 Prefix = '';
 %Default setting for z-projection is maximum-based.
@@ -50,6 +51,8 @@ while k<=length(varargin)
         skipExtraction = true;
     elseif strcmpi(varargin{k}, 'rootFolder')
         rootFolder = varargin{k+1};
+      elseif strcmpi(varargin{k}, 'shouldTrackNuclei')
+        shouldTrackNuclei = varargin{k+1};
     elseif strcmpi(varargin{k}, 'zslicesPadding')
         zslicesPadding = true;
  

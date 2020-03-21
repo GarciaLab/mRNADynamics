@@ -73,11 +73,14 @@ function Prefix = ExportDataForLivemRNA(varargin)
 
   [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs,...
     generateTifStacks, nuclearGUI, skipExtraction, rootFolder, zslicesPadding,...
-    lowbit, dataType, exportNuclearProjections, exportMovieFiles, ignoreCh3] = exportDataForLivemRNA_processInputParameters(varargin{:});
+    lowbit, dataType, exportNuclearProjections,...
+    exportMovieFiles, ignoreCh3, shouldTrackNuclei] = ...
+    ...
+    exportDataForLivemRNA_processInputParameters(varargin{:});
 
 keepTifs = true;
 
-  [rawDataPath, ~, DropboxFolder, ~, PreProcPath, rawDataFolder, Prefix, ExperimentType, Channel1, Channel2, ~,...
+  [rawDataPath, ProcPath, DropboxFolder, ~, PreProcPath, rawDataFolder, Prefix, ExperimentType, Channel1, Channel2, ~,...
     Channel3] = readMovieDatabase(Prefix,'rootFolder', rootFolder);
 
 Channels = {Channel1, Channel2, Channel3};
@@ -139,6 +142,10 @@ end
       mkdir(DropboxFolderName);
       save([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo', '-v6');
   end
+  
+  %make folders we'll need later
+  DogOutputFolder=[ProcPath,filesep,Prefix, '_', filesep, 'dogs',filesep];
+  mkdir(DogOutputFolder);
 
   if strcmpi(FileMode, 'LIFExport') & ~keepTifs
     removeUnwantedTIFs(rawDataFolder);
@@ -149,5 +156,9 @@ end
     disp(['Prefix: ', Prefix]);
   end
   
+  if shouldTrackNuclei
+      try batch(@TrackNuclei, 0, {Prefix});
+      catch TrackNuclei(Prefix); end
+  end
  
 end

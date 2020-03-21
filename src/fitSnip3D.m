@@ -14,6 +14,8 @@ function SpotsFr = fitSnip3D(SpotsFr, spotChannel, spot, frame, Prefix,...
 %     end
 % end
 
+thisExperiment = liveExperiment(Prefix);
+FrameInfo = getFrameInfo(thisExperiment);
 
 % extract basic fit parameters
 s = SpotsFr.Fits(spot);
@@ -23,6 +25,7 @@ pixelSize = FrameInfo(1).PixelSize*1000; %nm
 zStep = FrameInfo(1).ZStep*1000;
 zMax = FrameInfo(1).NumberSlices+2;
 snipDepth = uint8(ceil(2500/zStep));
+
 
 % NL: Need to make this independent of 2D fit info 
 bZ = s.brightestZ;
@@ -44,16 +47,18 @@ xRange = max([1,xSpot-snippet_size]):min([xSize,xSpot+snippet_size]);
 yRange = max([1,ySpot-snippet_size]):min([ySize,ySpot+snippet_size]);
 
 if numel(size(movieMat)) == 5 
-    snip3D = double(squeeze(movieMat(yRange,xRange, zRange, frame, spotChannel))); 
+    snip3D = double(squeeze(movieMat(yRange,xRange, zRange,...
+        frame, spotChannel))); 
 else
-    snip3D = double(squeeze(movieMat(yRange,xRange, zRange, frame))); 
+    snip3D = double(squeeze(movieMat(yRange,xRange,...
+        zRange, frame))); 
 end
 
 
 %%
-xm = single(min(xRange));
-ym = single(min(yRange));
-zm = single(min(zRange));
+xMinimum = single(min(xRange));
+yMinimum = single(min(yRange));
+zMinimum = single(min(zRange));
 if nSpots == 2
     [GaussParams1, GaussParams2, offset, GaussIntVec,...
         centroid_mean, GaussSE1, GaussSE2, offsetSE, GaussIntSEVec, centroid_se] = ...
@@ -63,9 +68,9 @@ if nSpots == 2
     % spot 1 position
     SpotsFr.Fits(spot).Spot1Fits3D = single(GaussParams1);
     SpotsFr.Fits(spot).Spot1FitsSE3D = single(GaussSE1);
-    x1 = single(GaussParams1(3) + xm - 1);
-    y1 = single(GaussParams1(2) + ym - 1);
-    z1 = single(GaussParams1(4) + zm - 1);
+    x1 = single(GaussParams1(3) + xMinimum - 1);
+    y1 = single(GaussParams1(2) + yMinimum - 1);
+    z1 = single(GaussParams1(4) + zMinimum - 1);
     SpotsFr.Fits(spot).Spot1Pos3D = single([x1,y1,z1]);
     SpotsFr.Fits(spot).Spot1Int3D = GaussIntVec(1);
     SpotsFr.Fits(spot).Spot1IntSE3D = GaussIntSEVec(1);
@@ -73,9 +78,9 @@ if nSpots == 2
     % spot 2 position
     SpotsFr.Fits(spot).Spot2Fits3D = single(GaussParams2);
     SpotsFr.Fits(spot).Spot2CI3D = single(GaussSE2);
-    x2 = single(GaussParams2(3) + xm - 1);
-    y2 = single(GaussParams2(2) + ym - 1);
-    z2 = single(GaussParams2(4) + zm - 1);
+    x2 = single(GaussParams2(3) + xMinimum - 1);
+    y2 = single(GaussParams2(2) + yMinimum - 1);
+    z2 = single(GaussParams2(4) + zMinimum - 1);
     SpotsFr.Fits(spot).Spot2Pos3D = single([x2,y2,z2]);
     SpotsFr.Fits(spot).Spot2Int3D = GaussIntVec(2);
     SpotsFr.Fits(spot).Spot2IntSE3D = GaussIntSEVec(2);
@@ -93,9 +98,9 @@ elseif nSpots == 1
         fit3DGaussian(snip3D,[pixelSize zStep]);
     SpotsFr.Fits(spot).SpotFits3D = single(GaussFit);  
     SpotsFr.Fits(spot).SpotFits3DSE = single(FitDeltas);  
-    x1 = single(GaussFit(3) + xm - 1);
-    y1 = single(GaussFit(2) + ym - 1);
-    z1 = single(GaussFit(4) + zm - 1);
+    x1 = single(GaussFit(3) + xMinimum - 1);
+    y1 = single(GaussFit(2) + yMinimum - 1);
+    z1 = single(GaussFit(4) + zMinimum - 1);
     SpotsFr.Fits(spot).GaussPos3D = single([x1,y1,z1]);
     SpotsFr.Fits(spot).GaussPos3DSE = single(FitDeltas(2:4));
     SpotsFr.Fits(spot).gauss3DIntensity = single(GaussIntegral);
