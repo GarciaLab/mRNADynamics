@@ -55,6 +55,8 @@ classdef liveExperiment
         nc13 = 0;
         nc14 = 0;
         
+        experimentType = '';
+        
         
         
     end
@@ -117,7 +119,7 @@ classdef liveExperiment
                 ~, ~, ~, movieDatabase]...
                 = readMovieDatabase(Prefix);
             
-            [~, ~, ~, ~, ~, ~,...
+            [~, obj.experimentType, ~, ~, ~, ~,...
                 Channel1, Channel2,~, ~,  ~, ~, ~,...
                 ~, ~, ~, ~, ~, ~, ~, Channel3,~,~, ~, ~]...
                 = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
@@ -126,16 +128,9 @@ classdef liveExperiment
             
             FrameInfo = getFrameInfo(obj);
             
-            [xSize, ySize, pixelSize_nm, zStep, snippet_size,...
-                nFrames, nSlices, nDigits] = getFrameInfoParams(FrameInfo);
+            [obj.xDim, obj.yDim, obj.pixelSize_nm, obj.zStep, snippet_size,...
+                obj.nFrames, obj.zDim, obj.nDigits] = getFrameInfoParams(FrameInfo);
             
-            obj.xDim = xSize;
-            obj.yDim = ySize;
-            obj.zDim = nSlices;
-            obj.nFrames = nFrames;
-            obj.zStep = zStep;
-            obj.nDigits = nDigits;
-            obj.pixelSize_nm = pixelSize_nm;
             
             obj.spotChannel = getCoatChannel(Channel1, Channel2, Channel3);
             
@@ -163,7 +158,11 @@ classdef liveExperiment
             %load movie only if it hasn't been loaded or if we've switched
             %Prefixes (determined by num frames)
             if isempty(movieMat) || ~isequal( size(movieMat, 4), obj.nFrames)
-                movieMat = loadMovieMat(obj.Prefix);
+                if obj.hasMovieMatFile
+                    movieMat = loadMovieMat(obj.Prefix);
+                else
+                    movieMat = makeMovieMats(obj.Prefix, [], [], [], 'loadHis', false);
+                end
             end
             out = movieMat;
             
@@ -175,7 +174,11 @@ classdef liveExperiment
             %load histone movie only if it hasn't been loaded or if we've switched
             %Prefixes (determined by num frames)
             if isempty(hisMat) || ~isequal( size(hisMat, 4), obj.nFrames)
-                hisMat = loadHisMat(obj.Prefix);
+                 if obj.hasHisMatFile
+                    hisMat = loadHisMat(obj.Prefix);
+                 else
+                    [~,hisMat] = makeMovieMats(obj.Prefix, [], [], [], 'loadMovie', false);
+                 end
             end
             out = hisMat;
             

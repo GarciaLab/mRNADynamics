@@ -41,7 +41,15 @@ if ~contains(inputString, '.mat')
         isDividedIntoChannels = true;
         
         for ch = 1:numChannelsToLoad
-            load([PreProcFolder, filesep, movieChDir(ch).name]);
+            im = load([PreProcFolder, filesep, movieChDir(ch).name]);
+            varName = fieldnames(im);
+            if ch==1
+                movieMatCh1 = im.(varName{1});
+            elseif ch==2
+                movieMatCh2= im.(varName{1});
+            elseif ch==3
+                movieMatCh3= im.(varName{1});
+            end
         end
         
         try movieMat = squeeze(cat(5, movieMatCh1, movieMatCh2, movieMatCh3));
@@ -54,9 +62,10 @@ if ~contains(inputString, '.mat')
     end
     
 else
+    
     movieFile = inputString;
     if ~exist(movieFile, 'file')
-        error('try again');
+        movieMat = makeMovieMats(Prefix);
     end
     
 end

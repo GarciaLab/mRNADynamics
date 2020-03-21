@@ -1,17 +1,14 @@
-function [movieMat, hisMat, maxMat, medMat, midMat]...
-    = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, varargin)
+function [movieMat, hisMat]...
+    = makeMovieMats(Prefix, ~, ~, ~, varargin)
 
 makeHis = false;
 makeMovie = false;
-makeProjs = false;
 
 loadHis = true;
 loadMovie = true;
-loadProjs = true;
 
 nPadding = 2; %normally we pad a blank image above and below the stack.
 %if a movie is unpadded this will require modification
-
 
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.
@@ -23,45 +20,40 @@ end
 
 %don't load things that aren't requested as outputs
 if nargout == 0
-    loadMovie = false; loadHis = false; loadProjs = false;
+    loadMovie = false; loadHis = false;
 elseif nargout == 1
-    loadHis = false; loadProjs = false;
-elseif nargout == 2
-    loadProjs = false;
+    loadHis = false;
 end
 
-loadProjs = false; makeProjs = false;
-
 thisExperiment = liveExperiment(Prefix);
+FrameInfo = getFrameInfo(thisExperiment);
+preFolder = thisExperiment.preFolder;
 
 [xSize, ySize, ~, ~, ~,...
     nFrames, nSlices, nDigits] = getFrameInfoParams(FrameInfo);
 
-[~,~,~,~, ~,...
-    ~, ~, ~,Channel1,Channel2,~,...
-    Channel3]...
-= readMovieDatabase(Prefix, varargin);
-Channels = {Channel1, Channel2, Channel3};
+Channels = thisExperiment.Channels;
 
-movieMat = []; hisMat = []; maxMat = [];  medMat = []; midMat = [];
+movieMat = []; hisMat = [];
 
 nChDatabase = sum(~cellfun(@isempty, Channels)); %this method fails if your
 % exported channels don't match your moviedatabase.
 
 nChTifs = 0;
 for i = 1:3
-    nChTifs = nChTifs + ~isempty(dir([PreProcPath, filesep, Prefix,filesep,'*ch0',num2str(i),'*.tif']));
+    nChTifs = nChTifs +...
+        ~isempty(dir([preFolder, filesep,'*ch0',num2str(i),'*.tif']));
 end
 
 nCh = max(nChTifs, nChDatabase);
 
-pth = [PreProcPath, filesep, Prefix, filesep,Prefix];
+pth = [preFolder, filesep,Prefix];
 
 tic
 
 if loadMovie && exist([pth, '_movieMat.Mat'], 'file')
     disp('Loading movie mats...')
-       movieMat = getMovieMat(thisExperiment);
+    movieMat = getMovieMat(thisExperiment);
     disp(['Movie mats loaded. ', num2str(toc), ' s elapsed.'])
     if isempty(movieMat)
         makeMovie = true;
@@ -71,7 +63,6 @@ end
 if loadHis && exist([pth, '_hisMat.Mat'], 'file')
     
     disp('Loading nuclear mats...')
-
     
     hisMat = getHisMat(thisExperiment);
     disp(['Nuclear mats loaded. ', num2str(toc), ' s elapsed.'])
@@ -87,7 +78,7 @@ if makeMovie
     
     disp('Creating movie mats...')
     
-%     startParallelPool(nWorkers, 0, 1);
+    %     startParallelPool(nWorkers, 0, 1);
     
     movieMat = zeros(ySize, xSize,nSlices+nPadding, nFrames, nCh, 'uint16'); % y x z t ch
     
@@ -110,8 +101,18 @@ if makeMovie
         end
     end
     
-%     save([pth, '_movieMat.Mat'],'movieMat', '-v7.3', '-nocompression');
-%     save([pth, '_hisMat.Mat'],'hisMat', '-v7.3', '-nocompression');
+    livemRNAImageMatSaver([PreProcFolder, filesep, Prefix, '_movieMatCh1.mat'],...
+        movieMat(:, :, :, :, 1));
+    if size(movieMat, 5) > 1
+        livemRNAImageMatSaver([PreProcFolder, filesep, Prefix, '_movieMatCh2.mat'],...
+            movieMat(:, :, :, :, 2));
+    end
+    if size(movieMat, 5) == 3
+        livemRNAImageMatSaver([PreProcFolder, filesep, Prefix, '_movieMatCh3.mat'],...
+            movieMat(:, :, :, :, 3));
+    end
+    
+    livemRNAImageMatSaver([pth, '_hisMat.mat'], hisMat);
     
     disp(['Movie mats created.' , num2str(toc), ' s elapsed.'])
     
@@ -125,32 +126,8 @@ if  makeHis && ~makeMovie
         hisMat(:, :, f) = imread([pth,'-His_', iIndex(f, nDigits), '.tif']);
     end
     
-%     save([pth, '_hisMat.Mat'],'hisMat', '-v7.3', '-nocompression');
+    livemRNAImageMatSaver([pth, '_hisMat.mat'], hisMat);
     
 end
-
-if loadProjs
-    
-    if exist([pth, '_maxMat.Mat'], 'file') && exist([pth, '_midMat.Mat'], 'file')
-        
-        load([pth, '_maxMat.Mat'],'maxMat');
-        %     load([pth, '_medMat.Mat'],'medMat');
-        load([pth, '_midMat.Mat'],'midMat');
-        
-        if isempty(maxMat) || isempty(midMat)
-            makeProjs = true;
-        end
-        
-    end
-    
-    if makeProjs
-%         maxMat = squeeze(max(movieMat(:,:,:,:, :), [], 3)); % y x z t ch
-%         midMat = squeeze(max(movieMat(:,:,round(nSlices * .50):round(nSlices * .75),:, :), [], 3));
-        save([pth, '_maxMat.Mat'],'maxMat', '-v7.3', '-nocompression');
-        save([pth, '_midMat.Mat'],'maxMat', '-v7.3', '-nocompression');
-    end
-    
-end
-
 
 end

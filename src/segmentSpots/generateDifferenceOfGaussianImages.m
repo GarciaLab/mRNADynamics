@@ -1,7 +1,11 @@
 % Generates difference of Gaussian images
-function generateDifferenceOfGaussianImages(ProcPath, ExperimentType, FrameInfo, spotChannels,...
+function generateDifferenceOfGaussianImages(ProcPath, spotChannels,...
     numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision,...
     sigmas, app, kernelSize, noSave, numType, gpu, saveAsMat, saveType)
+
+thisExperiment = liveExperiment(Prefix);
+
+FrameInfo = getFrameInfo(thisExperiment);
 
 
 DogOutputFolder = [ProcPath, filesep, Prefix, '_', filesep, 'dogs'];

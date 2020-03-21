@@ -28,9 +28,12 @@ else
 end
 
 
+load(hisFile, 'movieMat');
+hisMat = movieMat;
 
-hismatfile = matfile(hisFile, 'Writable', isWritable);
-dims = size(hismatfile, 'hisMat');
+% hismatfile = matfile(hisFile, 'Writable', isWritable);
+% dims = size(hismatfile, 'hisMat');
+dims = size(hisMat);
 
 
 if isempty(frameRange)
@@ -39,7 +42,9 @@ else
     frameRange = frameRange(1):frameRange(end);
 end
 
-hisMat = hismatfile.hisMat(:, :, frameRange);
+% hisMat = hismatfile.hisMat(:, :, frameRange);
+
+hisMat = hisMat(:, :, frameRange);
 
 disp(['Nuclear movie loaded- ', num2str(toc), 's']);
 

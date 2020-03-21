@@ -1,8 +1,12 @@
 % Generates differences of gaussians files that will be later used to run segment spots ML, requires a classifier.
 function generateDogsWeka(Prefix, ProcPath,...
-    MS2CodePath, PreProcPath, ExperimentType, coatChannel, zSize,...
+    MS2CodePath, PreProcPath, coatChannel, zSize,...
     numFrames, nCh, initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder)
 
+  thisExperiment = liveExperiment(Prefix);
+
+  ExperimentType = thisExperiment.experimentType;
+  
   cd(MS2CodePath);
   OutputFolder1 = [ProcPath, filesep, Prefix, '_', filesep, 'dogs'];
   mkdir(OutputFolder1)

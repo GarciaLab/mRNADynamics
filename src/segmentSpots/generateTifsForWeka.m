@@ -65,9 +65,9 @@ for channelIndex = 1:nCh
             
             imwrite(rawStackArray(:, :, 1), rawStackName);
             
-            for k = 2:size(rawStackArray, 3)
+            for z = 2:size(rawStackArray, 3)
                 
-                imwrite(rawStackArray(:, :, k), rawStackName, 'WriteMode', 'append');
+                imwrite(rawStackArray(:, :, z), rawStackName, 'WriteMode', 'append');
                 
             end
             

@@ -40,12 +40,14 @@ if nNuclearChannels ~= 0
         % Think about "invertedNuclear", for example, MCP-mCherry, then
         % invert the ProjectionTemp using imcomplement
         if InvertedChannels(nuclearChannel) == 1
-            ProjectionTemp(:, :, ChannelIndex) = imcomplement(ProjectionTemp(:, :, ChannelIndex));
+            ProjectionTemp(:, :, ChannelIndex) = imcomplement(...
+                ProjectionTemp(:, :, ChannelIndex));
         end
         
         % Use the reference histogram to scale the Projection (This part
         % might need some more optimization later-YJK)
-        ProjectionTemp(:, :, ChannelIndex) = histeq(mat2gray(ProjectionTemp(:, :, ChannelIndex)), ReferenceHist);
+        ProjectionTemp(:, :, ChannelIndex) = histeq(mat2gray(...
+            ProjectionTemp(:, :, ChannelIndex)), ReferenceHist);
         ProjectionTemp(:, :, ChannelIndex) = ProjectionTemp(:, :, ChannelIndex) * 10000;
         
         % Check if we are excluding this frame from this nuclear channel
