@@ -154,6 +154,7 @@ ncFilter = [];
 ncFilterID = [];
 %%
 
+cleanupObj = onCleanup(@myCleanupFun);
 
 
 %Information about about folders

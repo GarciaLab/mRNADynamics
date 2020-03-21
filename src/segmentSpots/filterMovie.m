@@ -66,6 +66,10 @@
 % Documented by: Matías Potel Feola (harrypotel@gmail.com)
 function log = filterMovie(Prefix, varargin)
 
+
+processType = 'basic';
+
+
 disp(['Generating filtered movie from ', Prefix,'...']);
 warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
@@ -104,22 +108,48 @@ end
 
 nCh = length(spotChannels);
 
-if ~Weka && ~justTifs
-    generateDifferenceOfGaussianImages(ProcPath, ExperimentType, FrameInfo, spotChannels,...
+%generate tif stacks
+
+stacksFolder = [PreProcPath, filesep, Prefix, filesep, 'stacks'];
+stacksExist = exist(stacksFolder, 'dir') &&...
+    ~isempty(dir(stacksFolder, filesep, '*.tif'));
+
+if (Weka || justTifs) && ~stacksExist
+    generateTifsForWeka(Prefix, PreProcPath, numFrames,...
+        nCh,spotChannels, zSize, initialFrame);
+end
+
+if Weka 
+    processType = 'weka';
+elseif customML
+    processType = 'customML';
+end
+
+
+switch processType
+    
+case  'basic'
+    
+    generateDifferenceOfGaussianImages(ProcPath,...
+        ExperimentType, FrameInfo, spotChannels,...
         numFrames, displayFigures, zSize, PreProcPath,...
         Prefix, filterType, highPrecision, sigmas, app,...
         kernelSize, noSave, numType, gpu, saveAsMat, saveType);
-elseif Weka
-    if ~exist([PreProcPath, filesep, Prefix, filesep, 'stacks'], 'dir')
-        generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,spotChannels, zSize, initialFrame, FrameInfo);
-    end
+    
+    case 'weka'
+        
     generateDogsWeka(Prefix, ProcPath, MS2CodePath, PreProcPath, ExperimentType, spotChannels, zSize, numFrames, nCh,...
         initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder);
-elseif justTifs
-    generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,spotChannels, zSize, initialFrame, FrameInfo);
-elseif customML
+    
+    case 'customML'
+        
     generateProbMapsCustomML(Prefix, ProcPath, MS2CodePath, PreProcPath, ExperimentType, coatChannel, zSize, numFrames, nCh,...
         initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder);
+    
+    otherwise
+        
+        error('Processing type not recognized.')
+    
 end
 
 t = toc;
@@ -127,9 +157,7 @@ t = toc;
 disp(['Elapsed time: ', num2str(t / 60), ' min'])
 
 if ~justTifs
-    try
-        log = writeFilterMovieLog(t, Weka, DropboxFolder, Prefix, initialFrame, numFrames, filterType, sigmas, classifierPathCh1);
-    end
+      try log = writeFilterMovieLog(t, Weka, DropboxFolder, Prefix, initialFrame, numFrames, filterType, sigmas, classifierPathCh1); end
 end
 
 if ~keepPool && ~Weka && ~justTifs
@@ -140,4 +168,5 @@ if ~keepPool && ~Weka && ~justTifs
 end
 
 disp([Prefix, ' filtered.']);
+
 end

@@ -31,6 +31,9 @@ function [Particles, SpotFilter] = AddParticlePosition(Prefix, varargin)
 %V2: Changed this function to use a correlation in order to center the
 %images.
 
+cleanupObj = onCleanup(@myCleanupFun);
+
+
 %Default set of variables to save
 saveVars={'coordA','coordP','coordAZoom','coordPZoom'};
 

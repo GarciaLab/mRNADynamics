@@ -57,9 +57,9 @@ for i = 1:length(varargin)
         
     elseif strcmpi(varargin{i}, 'keepPool')
         keepPool = 1;
-     elseif strcmpi(varargin{i}, 'dataSet') | strcmpi(varargin{i}, 'dataType')
+     elseif strcmpi(varargin{i}, 'dataSet') || strcmpi(varargin{i}, 'dataType')
         dataType = varargin{i+1};
-    elseif strcmpi(varargin{i}, 'saveAsMat') | strcmpi(varargin{i}, '.mat')
+    elseif strcmpi(varargin{i}, 'saveAsMat') || strcmpi(varargin{i}, '.mat')
         saveAsMat = true;
         saveType = '.mat';
      elseif strcmpi(varargin{i}, 'noGPU')

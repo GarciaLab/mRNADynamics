@@ -4,12 +4,16 @@ function [coordA,coordP,xShift,yShift]=FindAPAxisFullEmbryo(Prefix, varargin)
 %Instead we do a correlation between the imaging field and the full embryo
 %to determine the shift and then find the AP axis.
 
+cleanupObj = onCleanup(@myCleanupFun);
+
 
 %Parameters:
 %First, the prefix.
 %There after:
 %FlipAP- Switches anterior and posterior poles
 %CorrectAxis- Runs a correction script after automatic detection
+
+
 
 CorrectAxis = 1;
 optionalResults = '';

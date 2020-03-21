@@ -1,4 +1,5 @@
-function [cleanedAttributes, rejectedAttributes, keepIndices, removeIndices] = validateAttributes(attributes, dim)
+function [cleanedAttributes, rejectedAttributes,...
+    keepIndices, removeIndices] = validateAttributes(attributes, dim)
 
 %pass dummy images through "filterImage" to see if they can be successfully
 %filtered. 
@@ -20,7 +21,7 @@ for i = 1:numAttributes
     
     att = attributes{i};   
     
-    if ~strcmpi(att, 'original') & ~strcmpi(att, 'class')
+    if ~strcmpi(att, 'original') && ~strcmpi(att, 'class')
         [~, successFlag]  = filterAttribute(att, sampleImage);
     else
         successFlag = true;

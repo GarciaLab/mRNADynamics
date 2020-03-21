@@ -44,7 +44,6 @@ tic
 
 warning('off', 'MATLAB:Java:DuplicateClass');
 warning('off', 'MATLAB:javaclasspath:jarAlreadySpecified');
-javaaddpath('C:\Program Files\Weka-3-8-4\weka.jar','-end');
 
 %%
 disp(['Segmenting nuclei on ', Prefix, '...']);
@@ -59,6 +58,8 @@ mlFolder = thisExperiment.MLFolder;
 
 % dataRoot = fileparts(PreProcPath);
 % mlFolder = [dataRoot, filesep, 'training_data_and_classifiers', filesep];
+
+javaaddpath('C:\Program Files\Weka-3-8-4\weka.jar','-end');
 
 [trainingNameExt, trainingFolder] = uigetfile([mlFolder, filesep, '*.arff*']);
 trainingFile = [trainingFolder, filesep, trainingNameExt];
