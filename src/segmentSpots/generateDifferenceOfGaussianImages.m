@@ -114,10 +114,10 @@ for ch = spotChannels
         for i = 1:length(chunks)-1
             waitbar(chunks(i) / numFrames, waitbarFigure);
             g = makeGiantImage(Prefix, PreProcPath, format, padSize, chunks(i), chunks(i+1)-1, spotChannels, numType, gpu);
-            gt = permute(g, [2 1 3]);
-            gdog = filterImage(gt, filterType, sigmas, 'zStep', zStep, numType);
-            gdogt = permute(gdog, [2 1 3]);
-            dogs(:,:,:,chunks(i):chunks(i+1)-1) = extractFromGiant(gdogt, format, padSize, chunks(i), chunks(i+1)-1, Prefix, spotChannels, ProcPath, noSave, numType, extractOpts{:});
+            g = permute(g, [2 1 3]);
+            g = filterImage(g, filterType, sigmas, 'zStep', zStep, numType);
+            g = permute(g, [2 1 3]);
+            dogs(:,:,:,chunks(i):chunks(i+1)-1) = extractFromGiant(g, format, padSize, chunks(i), chunks(i+1)-1, Prefix, spotChannels, ProcPath, noSave, numType, extractOpts{:});
         end
         
         %             imshow(dogs(:,:, 5, 5),[]); %useful line for debugging
