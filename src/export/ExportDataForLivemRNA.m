@@ -11,8 +11,15 @@
 % [Options]: See below.
 %
 % OPTIONS
-%exportNuclearProjections 
-%exportMovieFiles
+%
+% Prefix: If you want to avoid the user input selection of the data folder,
+%           you can pass your desired Prefix as the first option. It MUST 
+%           be the first option, and you CANNOT use the 'rootFolder'
+%           option with this option, otherwise it will break.
+%           Prefix standard format is 'YYYY-MM-DD-YOURPROJECTNAME'.
+%           E.g. ExportDataForLivemRNA('2020-02-03-Dl_Ven_snaBAC_mCh_01',
+%                                       'medianprojection')
+%
 % 'medianprojection': Uses a median projection in the nuclear channel rather
 %                  than the default maximum projection
 % 'middleprojection': Uses a max projection in the nuclear channel, but only
