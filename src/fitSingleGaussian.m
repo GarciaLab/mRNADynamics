@@ -41,10 +41,8 @@ lb = [0, 0, 0, -1, 0, 0,lb_offset, 0, 0];
 ub = [max(snippet(:))*1.5, size(snippet, 2), size(snippet, 1), 1,...
     size(snippet, 2), size(snippet, 1), max(snippet(:)),med/2, med/2];
 
-
 [single_fit, ~, residual, ~, ~, ~, jacobian] = lsqnonlin(singleGaussian, ...
     initial_parameters,lb,ub, lsqOptions);
-
 
 %quality control. probably just noisy background so amplitude
 %should be close to offset in this case.

@@ -14,6 +14,8 @@ function [Data, prefixes, resultsFolder,...
 %OPTIONS
 % 'noCompiledNuclei'
 % 'justprefixes'
+% 'LocalMovieDatabase' - use MovieDatabase in same local directory as
+% DataStatus file
 %
 %OUTPUT
 %Data: Returns the Data structure containing all of the relevant datasets from your
@@ -26,7 +28,7 @@ function [Data, prefixes, resultsFolder,...
 
 %Author (contact): Hernan Garcia (hgarcia@berkeley.edu)
 %Created:
-%Last Updated: 1/13/2018. AR
+%Last Updated: 3/18/2020 JL.
 
 prefixes = {};
 Data = struct();
@@ -38,6 +40,7 @@ compareSettings = true;
 noCompiledNuclei = false;
 justprefixes = false;
 inputOutputFits = false;
+LocalMovieDatabase = false;
 
 for i= 1:length(varargin)
     if strcmpi(varargin{i},'optionalResults')
@@ -53,6 +56,9 @@ for i= 1:length(varargin)
         inputOutputFits = true;
         inputOutputModel = varargin{i+1};
     end
+    if strcmpi(varargin{i}, 'LocalMovieDatabase')
+        LocalMovieDatabase = true;
+    end
 end
 
 %Get some of the default folders
@@ -66,8 +72,12 @@ DropboxFolders=configValues(DropboxRows,2);
 %Look in DataStatus.XLSX in each DropboxFolder and find the tab given by
 %the input variable DataType.
 DataStatusToCheck=[];
+DataStatusNames = {'DataStatus.*','Data Status.*'}; %Possible data status spreadsheet names
 for i=1:length(DropboxFolders)
-    DDataStatus=dir([DropboxFolders{i},filesep,'DataStatus.*']);
+    DDataStatus=dir([DropboxFolders{i},filesep,DataStatusNames{1}]);
+    if isempty(DDataStatus)
+        DDataStatus=dir([DropboxFolders{i},filesep,DataStatusNames{2}]);
+    end
     if length(DDataStatus)>1
         error(['More than one DataStatus.XLS found in folder ',DropboxFolders{i}])
     elseif length(DDataStatus)==1
@@ -92,19 +102,27 @@ resultsFolder = DropboxFolder;
 
 projectFolder = [resultsFolder, filesep, DataType];
 if ~exist(projectFolder,'dir')
-    mkdir(projectFolder);
+    try
+        mkdir(projectFolder);
+    catch
+    end
+end
+
+%Redefine the MovieDatabase according to the DropboxFolder we're using if
+%using the LocalMovieDatabase option
+if LocalMovieDatabase
+    movieDatabasePath = [DropboxFolder,'\MovieDatabase.csv'];
+    movieDatabase = csv2cell(movieDatabasePath, 'fromfile');
 end
 
 
 %Now, load the DataStatus.XLSX
-D=dir([DropboxFolder,filesep,'DataStatus.*']);
-% sheets = sheetnames([DropboxFolder,filesep,D(1).name]);
-% wholeStatus = cell(1, length(sheets));
-% for i = 1:length(sheets)
-%     wholeStatus{i} =readcell([DropboxFolder,filesep,D(1).name], 'Sheet', sheets{i});
-% end
-D=dir([DropboxFolder,filesep,'DataStatus.*']);
-StatusTxt = readcell([DropboxFolder,filesep,D(1).name], 'Sheet', DataType);
+D=dir([DropboxFolder,filesep,DataStatusNames{1}]);
+if isempty(D)
+    D=dir([DropboxFolder,filesep,DataStatusNames{2}]);
+end
+[~,StatusTxt]=readcell([DropboxFolder,filesep,D(1).name],DataType);
+
 
 %Which data sets are approved?
 CompileRow=find(strcmpi(StatusTxt(:,1),'AnalyzeLiveData Compile Particles')|...

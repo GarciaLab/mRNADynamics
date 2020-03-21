@@ -191,22 +191,23 @@ for ChN=1:NChannels
                     CompiledParticles{ChN}(k).fitParamsGauss3D = g_fits_cell;
                 end
                 %Extract information from Spots about fluorescence and background
-                [Frame,AmpIntegral, AmpIntegral3, AmpGaussian,...
-                    Off, ErrorIntegral,ErrorGauss,optFit1, FitType, ErrorIntegral3,...
-                    backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D,...
+                plotTraceSettings = PlotTraceSettings();
+
+                [Frame, AmpGaussian, Off, ErrorGauss, optFit1, FitType,...
                     AmpDog, AmpDogMax, ampdog3, ampdog3Max]...
-                    = GetParticleTrace(k,CompiledParticles{ChN},Spots{ChN});
-                CompiledParticles{ChN}(k).Fluo= AmpIntegral;
-                CompiledParticles{ChN}(k).Fluo3= AmpIntegral3;
+                    = GetParticleTrace(k,CompiledParticles{ChN},Spots{ChN}, plotTraceSettings, false);
+                CompiledParticles{ChN}(k).Fluo = plotTraceSettings.AmpIntegral;
+                CompiledParticles{ChN}(k).Fluo3 = plotTraceSettings.AmpIntegral3;
                 CompiledParticles{ChN}(k).FluoGauss= AmpGaussian;
                 CompiledParticles{ChN}(k).Off=Off;
-                CompiledParticles{ChN}(k).FluoError=ErrorIntegral(1); % SEANCHANGED
+                CompiledParticles{ChN}(k).FluoError = plotTraceSettings.ErrorIntegral(1); % SEANCHANGED
                 CompiledParticles{ChN}(k).optFit1=optFit1;
                 CompiledParticles{ChN}(k).FitType=FitType;
                 CompiledParticles{ChN}(k).FluoDog = AmpDog;
                 CompiledParticles{ChN}(k).FluoDogMax = AmpDogMax;
-                CompiledParticles{ChN}(k).FluoGauss3D = AmpIntegralGauss3D';
-                CompiledParticles{ChN}(k).FluoGauss3DError = ErrorIntegralGauss3D;
+                ampIntegralGauss3DAux = plotTraceSettings.AmpIntegralGauss3D
+                CompiledParticles{ChN}(k).FluoGauss3D = ampIntegralGauss3DAux';
+                CompiledParticles{ChN}(k).FluoGauss3DError = plotTraceSettings.ErrorIntegralGauss3D;
                 CompiledParticles{ChN}(k).ampdog3 = ampdog3;
                 CompiledParticles{ChN}(k).ampdog3Max = ampdog3Max;
                 

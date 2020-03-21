@@ -35,7 +35,7 @@ if nNuclearChannels ~= 0
         % For all 'nuclear' channels, generate HisSlices, and do projection
         HisSlices = generateHisSlices(movieImages, NSlices, NChannels, nuclearChannel, framesIndex, seriesIndex);
         
-        ProjectionTemp(:, :, ChannelIndex) = calculateProjection(ProjectionType, NSlices, HisSlices);
+        ProjectionTemp(:, :, ChannelIndex) = calculateProjection(ProjectionType, NSlices(seriesIndex), HisSlices);
         
         % Think about "invertedNuclear", for example, MCP-mCherry, then
         % invert the ProjectionTemp using imcomplement
@@ -46,9 +46,9 @@ if nNuclearChannels ~= 0
         
         % Use the reference histogram to scale the Projection (This part
         % might need some more optimization later-YJK)
-        ProjectionTemp(:, :, ChannelIndex) = histeq(mat2gray(...
-            ProjectionTemp(:, :, ChannelIndex)), ReferenceHist);
-        ProjectionTemp(:, :, ChannelIndex) = ProjectionTemp(:, :, ChannelIndex) * 10000;
+
+        ProjectionTemp(:, :, ChannelIndex) = histeq(mat2gray(ProjectionTemp(:, :, ChannelIndex)), ReferenceHist);
+        ProjectionTemp(:, :, ChannelIndex) = ProjectionTemp(:, :, ChannelIndex) * 256;
         
         % Check if we are excluding this frame from this nuclear channel
         excludeFrames = 0;
@@ -98,9 +98,8 @@ if nNuclearChannels ~= 0
     elseif nNuclearChannels == 1
         Projection = ProjectionTemp;
     end
-   
 
-Projection = uint16(Projection);
+Projection = uint8(Projection);
 
 
 % imwrite(Projection, [OutputFolder, filesep, Prefix, '-His_', iIndex(numberOfFrames, 3), '.tif']);

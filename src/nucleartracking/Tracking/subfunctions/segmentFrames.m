@@ -17,6 +17,7 @@ function xy = segmentFrames(FrameInfo,hisMat,firstFrame,lastFrame,nucleusDiamete
     
     for j = 1:nFrames %parfor j = 1:nFrames
 
+
         [xy{j}, ~] = findNuclei(FrameInfo,hisMat, frameNum(j), nucleusDiameter, embryoMask);
 
         if update_waitbar

@@ -229,6 +229,15 @@ uiwait(f);
             load([dogStackFile, '.mat'], 'dogStack');
         else
             dogStack = imreadStack([dogStackFile, '.tif']);
+%         dog_name = [dogProb,Prefix,'_',iIndex(frame,3),'_z',iIndex(zInd,2),nameSuffix,saveType];
+        
+%         if strcmpi(saveType, '.tif')
+%             dog = double(imread([OutputFolder1 dog_name]));
+%         elseif strcmpi(saveType, '.mat')
+%             load([OutputFolder1 dog_name], 'plane', 'dog');
+%             try dog = plane; end
+%         elseif strcmpi(saveType, 'none')
+%             dog = dogs(:, :, zInd, frame);
         end
         
         dog = dogStack(:, :, zInd);

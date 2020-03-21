@@ -40,15 +40,16 @@ for seriesIndex = 1:NSeries
                 HisSlices = generateHisSlices(LIFImages, NSlices, NChannels, ...
                     channelIndex, framesIndex, seriesIndex);
                 median_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
-                    'medianprojection', NSlices, HisSlices);
+                    'medianprojection', NSlices(seriesIndex), HisSlices);
                 max_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
-                    'maxprojection', NSlices, HisSlices);
+                    'maxprojection', NSlices(seriesIndex), HisSlices);
                 middle_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
                     'middleprojection', NSlices, HisSlices);
                 midsum_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
                     'midsumprojection', NSlices, HisSlices);
+
                 custom_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
-                    'customprojection', NSlices, HisSlices, max_custom, min_custom);
+                    'customprojection', NSlices(seriesIndex), HisSlices, max_custom, min_custom);
             end       
         end
         idx = idx + 1;
@@ -86,14 +87,14 @@ minLabelPos = dimVec .* [.7, .425, .1, .05];
 
 max_label = uilabel(fig,  'Text', 'max display value', 'Position', ...
     maxLabelPos);
-max_slider = uislider(fig, 'Limits', [1, 10000], 'Value', 10000, ...
+max_slider = uislider(fig, 'Limits', [1, 256], 'Value', 256, ...
     'Position', maxPos);
 max_slider.ValueChangedFcn = @updateHisImage;
 
 
 min_label = uilabel(fig,  'Text', 'min display value', 'Position', ...
     minLabelPos);
-min_slider = uislider(fig, 'Limits', [0, 10000], 'Value', 1, ...
+min_slider = uislider(fig, 'Limits', [0, 256], 'Value', 1, ...
     'Position',minPos);
 min_slider.ValueChangedFcn = @updateHisImage;
 
@@ -180,7 +181,7 @@ uiwait(fig);
             % Use the reference histogram to scale the Projection (This part
               % might need some more optimization later-YJK)
               ProjectionTemp(:, :, i) = histeq(mat2gray(ProjectionTemp(:, :, i)), ReferenceHist);
-              ProjectionTemp(:, :, i) = ProjectionTemp(:, :, i) * 10000;
+              ProjectionTemp(:, :, i) = ProjectionTemp(:, :, i) * 256;
         end
 
         % Getting average of all Projections
@@ -189,6 +190,8 @@ uiwait(fig);
         else
           Projection = ProjectionTemp;
         end
+        
+        Projection = uint8(Projection);
           
         maxB = round(max_slider.Value);
         minB = round(min_slider.Value);
@@ -197,8 +200,7 @@ uiwait(fig);
             maxB = max(max(Projection));
             minB = median(median(Projection));
         end
-%         imshow(uint16(Projection), [median(median(Projection)), max(max(Projection))], 'Parent', img);
-        imshow(uint16(Projection), [minB, maxB], 'Parent', img);
+        imshow(Projection, [minB, maxB], 'Parent', img);
     end
     
     % closes UI and returns chosen options

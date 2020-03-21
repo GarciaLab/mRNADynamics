@@ -1,6 +1,7 @@
 function [displayFigures, numFrames, numShadows, keepPool, threshGUI, initialFrame, ...
     useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel,...
-    optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat, saveType, nuclearMask, dataType, track]...
+    optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat, saveType, ...
+    nuclearMask, dataType, track, skipSegmentation]...
     = determineSegmentSpotsOptions(varargin)
 
 % Default options
@@ -15,6 +16,7 @@ initialFrame = 1;
 Weka = false;
 keepProcessedData = true;
 fit3D = 1;
+skipSegmentation = false;
 skipChannel = [];
 optionalResults = '';
 filterMovieFlag = false;
@@ -78,6 +80,9 @@ for i = 1:length(varargin)
         threshGUI = 1;
     elseif strcmpi(varargin{i}, 'fit3D')
         fit3D = 1;
+    elseif strcmpi(varargin{i}, 'fit3DOnly')
+        fit3D = 1;
+        skipSegmentation = 1;
     elseif strcmpi(varargin{i}, 'fit3D2Spot') && fit3D == 0
         fit3D = 2;
     elseif strcmpi(varargin{i}, 'filterMovie')

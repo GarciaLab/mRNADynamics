@@ -1,26 +1,29 @@
-function [rawDataPath, ProcPath, DropboxFolder,...
-    MS2CodePath, PreProcPath,...
-    configValues, movieDatabasePath,...
-    movieDatabaseFolder, movieDatabase] = DetermineLocalFolders(varargin)
-
+function [rawDataPath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath,...
+    configValues, movieDatabasePath, movieDatabaseFolder, movieDatabase] = DetermineLocalFolders(varargin)
+    %Variable arguments - always have Prefix first if doing this
+    %   Prefix - sets Dropbox folder to be from specified prefix
+    %   'LocalMovieDatabase', LocalDropboxFolder - loads a MovieDatabase
+    %   file from a specified alternate dropbox folder string, as defined
+    %   in ComputerFolders
+    useLocalMovieDatabase = false; %Use default MovieDatabase by default
+    
     if ~isempty(varargin) 
         Prefix = varargin{1}; %optionally return a different dropbox folder from the default with respect to Prefix
         if length(varargin)>1
-            optionalResults = varargin{2};
+            otherOptions = varargin(2:end);
+            for j = 1:length(otherOptions)
+                %Option to load a local dropbox folder's MovieDatabase
+                %instead of default
+                if strcmpi(otherOptions{j},'LocalMovieDatabase')
+                    useLocalMovieDatabase = true;
+                    LocalDropboxFolderString = otherOptions{j+1};
+                end
+            end
         end
     end
+    optionalResults = ''; %No optional results by default
 
         
-    optionalResults = '';
-%     initialFolder = pwd;
-%     thisScriptFolder = fileparts(matlab.desktop.editor.getActiveFilename);
-%     cd(thisScriptFolder)
-%     cd ..\..
-%     CONFIG_CSV_PATH = [pwd, filesep, 'ComputerFolders.csv'];
-%     cd(initialFolder)
-
-%
-
     CONFIG_CSV_PATH =  'ComputerFolders.csv';
     
     configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');
@@ -38,8 +41,13 @@ function [rawDataPath, ProcPath, DropboxFolder,...
         PreProcPath = getConfigValue(configValues, 'PreProcPath');
     end
     
-    movieDatabaseFolder = DropboxFolder;
-    movieDatabasePath = [DropboxFolder,'\MovieDatabase.csv'];
+    if useLocalMovieDatabase
+        LocalDropboxFolder = getConfigValue(configValues, LocalDropboxFolderString);
+        movieDatabaseFolder = LocalDropboxFolder;
+    else
+        movieDatabaseFolder = DropboxFolder;
+    end
+    movieDatabasePath = [movieDatabaseFolder,'\MovieDatabase.csv'];
     movieDatabase = csv2cell(movieDatabasePath, 'fromfile');
     
     if isempty(varargin) || isempty(varargin{1})

@@ -115,7 +115,7 @@ p = 1;
 zPadded = size(movieMat, 3) ~= zSize;
 
 
-parfor currentFrame = initialFrame:numFrames %parfor current_frame = initialFrame:numFrames
+parfor currentFrame = initialFrame:numFrames 
     
     %report progress every tenth frame
     if ~mod(currentFrame, 10), disp(num2str(currentFrame)); end
@@ -138,8 +138,6 @@ parfor currentFrame = initialFrame:numFrames %parfor current_frame = initialFram
         
     end
     
-    
-    
     for zIndex = 1:zSize
         
         im = double(squeeze(movieMat(:, :, zIndex, currentFrame, ch)));
@@ -157,13 +155,27 @@ parfor currentFrame = initialFrame:numFrames %parfor current_frame = initialFram
         else
             dogZ = zIndex - 1;
         end
-        %
+        
         if loadAsStacks
             dog = dogStack(:, :, dogZ);
         end
-        %        if ~loadAsStacks
-        %             dog = squeeze(dogMat(:,:, dogZ, current_frame));
-        %         end
+% =======
+%             if isZPadded | ( ~isZPadded & (zIndex~=1 & zIndex~=zSize) )
+%                 if strcmpi(saveType, '.tif')
+%                     dogFileName = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(dogZ, 2),...
+%                         nameSuffix,'.tif'];
+%                     dog = double(imread(dogFileName));
+%                 elseif strcmpi(saveType, '.mat')
+%                     dogFileName = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(dogZ, 2),...
+%                         nameSuffix,'.mat'];
+%                     plane = load(dogFileName);
+%                     try dog = plane.plane; catch dog = plane.dog; end
+%                 elseif strcmpi(saveType, 'none')
+%                     dog = dogs(:,:, dogZ, current_frame);
+%                 end
+%             else
+%                 dog = false(size(im, 1), size(im, 2));
+%             end
         
         
         if displayFigures

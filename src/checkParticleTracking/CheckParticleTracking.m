@@ -118,7 +118,7 @@ function [outs, movieMat, hisMat] = CheckParticleTracking(Prefix, varargin)
 % Created:
 % Last Updated: 1/13/2018
 
-cleanupObj = onCleanup(@closeFigs);
+cleanupObj = onCleanup(@myCleanupFun);
 
 
 warning('off', 'MATLAB:nargchk:deprecated')
@@ -345,6 +345,8 @@ if ForCompileAll
     cc = 'x';
 end
 
+plotTraceSettings = PlotTraceSettings();
+
 %% Main loop - start
 while (cc ~= 'x')
     
@@ -380,7 +382,7 @@ while (cc ~= 'x')
     
     if (~isempty(xTrace)) && (~cptState.ManualZFlag)
         cptState.CurrentZ = z(cptState.CurrentParticleIndex);
-        CurrentZIndex = find(...
+        cptState.CurrentZIndex = find(...
             cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).z == ...
             cptState.CurrentZ);
         cptState.ManualZFlag = 0;
@@ -388,7 +390,7 @@ while (cc ~= 'x')
     
     multiImage = {};
     if strcmpi(cptState.projectionMode, 'None')
-        
+       
         cptState.ImageMat = squeeze(movieMat(:, :, cptState.CurrentZ, cptState.CurrentFrame));
         
         if multiView
@@ -480,16 +482,9 @@ while (cc ~= 'x')
         MaxZIndex = find(...
             cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).z == ...
             cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).brightestZ);
-        CurrentZIndex = find(...
+        cptState.CurrentZIndex = find(...
             cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).z == ...
             cptState.CurrentZ);
-        
-        if isempty(CurrentZIndex)
-            %             warning('This particle has a gap in its z-profile. This is
-            %             highly suspect.'); %this if statement should only happen
-            %             between two spots, not past the PSF boundaries
-        end
-        
     end
     
     %Check to see if spots structure contains multi-slice fields
@@ -497,58 +492,28 @@ while (cc ~= 'x')
         (cptState.CurrentParticleIndex), 'IntegralZ');
     
     % PLOT SNIPPET
-    
     [CurrentSnippet, snipImageHandle] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
-        CurrentZIndex, cptState.ImageMat, cptState.Spots, cptState.CurrentChannel, cptState.CurrentFrame, ...
-        cptState.CurrentParticleIndex, ExperimentType, snippet_size, xSize, ...
-        ySize, SnippetEdge, cptState.FrameInfo, CurrentSnippet, snipImageHandle, pixelSize);
-    
+        cptState, ExperimentType, snippet_size, xSize, ySize, SnippetEdge, CurrentSnippet, snipImageHandle, pixelSize);
     
     % PLOTS TRACE OF CURRENT PARTICLE
     if ~fish
-        plottrace_argin = {};
-        if exist('AmpIntegral', 'var')
-            plottrace_argin = [plottrace_argin, AmpIntegral, GaussIntegral, AmpIntegral3,  ...
-                ErrorIntegral, ErrorIntegral3, backGround3, ...
-                AmpIntegralGauss3D, ErrorIntegralGauss3D, cptState.FrameIndicesToFit];
-        end
-        if ~isempty(Spots3D)
-            plottrace_argin = [plottrace_argin, Spots3D];
-        end
-        [cptState.Frames, AmpIntegral, GaussIntegral, AmpIntegral3, ...
-            ErrorIntegral, ErrorIntegral3,  backGround3, ...
-            AmpIntegralGauss3D, ErrorIntegralGauss3D, cptState.PreviousParticle] =...
-            ...
-            plotTrace(traceFigAxes, ...
-            ...
-            cptState.FrameInfo, cptState.CurrentChannel, cptState.PreviousChannel, ...
-            cptState.CurrentParticle, cptState.PreviousParticle, cptState.lastParticle, cptState.HideApprovedFlag, cptState.lineFitted, anaphaseInMins, ...
-            ElapsedTime, cptState.schnitzcells, cptState.Particles, cptState.plot3DGauss, ncFrames, prophase, metaphase, prophaseInMins, metaphaseInMins, Prefix, ...
-            nFrames, cptState.CurrentFrame, cptState.ZSlices, cptState.CurrentZ, cptState.Spots, ...
-            correspondingNCInfo, cptState.Coefficients, ExperimentType,cptState.PreviousFrame, cptState.Frames,...
-            Channels, PreProcPath, DropboxFolder, plottrace_argin{:});
+        plotTrace(traceFigAxes, cptState, anaphaseInMins, ElapsedTime, ncFrames, prophase, metaphase, prophaseInMins,...
+            metaphaseInMins, Prefix, nFrames, correspondingNCInfo, ExperimentType, Channels, PreProcPath, DropboxFolder,...
+            plotTraceSettings);
     end
     
     
     % PLOT Z SLICE RELATED FIGURES
-    plotzvars = {zProfileFigAxes, zTraceAxes, ExperimentType, ...
-        xTrace, cptState.Spots, cptState.CurrentFrame, cptState.CurrentChannel, cptState.CurrentParticleIndex, cptState.ZSlices, ...
-        cptState.CurrentZ, CurrentZIndex, cptState.PreviousParticle, cptState.CurrentParticle, ...
-        cptState.PreviousChannel, cptState.Particles, cptState.Frames, fish};
+    plotzvars = {zProfileFigAxes, zTraceAxes, ExperimentType, xTrace, cptState, plotTraceSettings, fish};
     if exist('MaxZProfile', 'var')
         plotzvars = [plotzvars, MaxZProfile];
     end
-    [MaxZProfile, cptState.Frames] = plotZFigures(plotzvars{:});
+
+    MaxZProfile = plotZFigures(plotzvars{:});
     
     set(0, 'CurrentFigure', Overlay);
     
-    % Wait for user input to select command to execute
-    ct = waitforbuttonpress; % ct=0 for click and ct=1 for keypress
-    cc = get(Overlay, 'CurrentCharacter');
-    
-    if strcmpi(cc, '') || ct == 0
-        cc = 'donothing';
-    end
+    cc = getUserKeyInput(Overlay);
     
     frameChangeKeyInput(cc);
     zSliceChangeKeyInput(cc);
@@ -568,22 +533,13 @@ end
 %% Main loop - end
 
 % save after exiting the main loop - the user pressed 'x'
-saveChanges(NChannels, cptState.Particles, cptState.Spots, cptState.SpotFilter, DataFolder, ...
-    cptState.FrameInfo, cptState.UseHistoneOverlay, FilePrefix, ...
-    cptState.schnitzcells, DropboxFolder);
 
-close all
+saveChanges(NChannels, cptState, DataFolder, FilePrefix, DropboxFolder);
 
 disp(['(Left off at Particle #', num2str(cptState.CurrentParticle), ')'])
 
 outs = {cptState.Particles, cptState.Spots, cptState.SpotFilter, cptState.schnitzcells, cptState.FrameInfo};
 
 CheckNucleiModified(cptState, DropboxFolder, Prefix, fish)
-
-end
-
-function closeFigs()
-
-close all force;
 
 end

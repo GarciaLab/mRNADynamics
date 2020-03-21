@@ -8,6 +8,8 @@ thisExperiment = liveExperiment(Prefix);
 FrameInfo = getFrameInfo(thisExperiment);
 
 
+gpu = 'noGPU';
+
 DogOutputFolder = [ProcPath, filesep, Prefix, '_', filesep, 'dogs'];
 mkdir(DogOutputFolder)
 
@@ -163,6 +165,31 @@ else
     dogFrame = (filterImage(im, filterType, sigmas, 'filterSize',filterSize) + 100) * 100;
 end
 
+
+% if dim == 2
+%     dog = padarray(dog(filterSize:end - filterSize - 1, filterSize:end - filterSize - 1), [filterSize, filterSize], 0,'both');
+%     dog_name = ['DOG_', Prefix, '_', iIndex(currentFrame, 3), '_z', iIndex(zIndex, 2), nameSuffix, saveType];
+%     dog_full_path = [DogOutputFolder, filesep, dog_name];
+%     if strcmpi(saveType, '.tif')
+%         imwrite(uint16(dog), dog_full_path)
+%     elseif strcmpi(saveType, '.mat')
+%         save(dog_full_path, 'dog', '-v6');
+%     end
+% elseif dim == 3
+%     
+%     dog = cat(3, zeros(size(dog, 1), size(dog, 2)), dog);
+%     dog(:, :, zSize) = zeros(size(dog, 1), size(dog, 2));
+%     for z = 1:zSize
+%         dog_name = ['DOG_', Prefix, '_', iIndex(currentFrame, 3), '_z', iIndex(z, 2), nameSuffix, saveType];
+%         dog_full_path = [DogOutputFolder, filesep, dog_name];
+%         if strcmpi(saveType, '.tif')
+%             imwrite(uint16(dog(:,:, z)), dog_full_path);
+%         elseif strcmpi(saveType, '.mat')
+%             dog = dog(:,:,z);
+%             save(dog_full_path, 'dog', '-v6');
+%         end
+%     end
+% end
 
 if displayFigures && dim == 2
     

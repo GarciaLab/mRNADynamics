@@ -25,7 +25,6 @@ for channelIndex = 1:nCh
     
     nameSuffix = ['_ch', iIndex(coatChannel, 2)];
     
-    
     currentFrameWaitbar = waitbar(0, ['Making ch0', num2str(channelIndex), ' .tif stacks for Weka classification']);
     
     for currentFrame = initialFrame:numFrames
@@ -72,6 +71,7 @@ for channelIndex = 1:nCh
             end
             
             clear rawStackArray;
+
         end
         
     end
