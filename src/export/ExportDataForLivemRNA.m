@@ -78,8 +78,6 @@ function Prefix = ExportDataForLivemRNA(varargin)
     ...
     exportDataForLivemRNA_processInputParameters(varargin{:});
 
-keepTifs = true;
-
   [rawDataPath, ProcPath, DropboxFolder, ~, PreProcPath, rawDataFolder, Prefix, ExperimentType, Channel1, Channel2, ~,...
     Channel3] = readMovieDatabase(Prefix,'rootFolder', rootFolder);
 
@@ -147,7 +145,7 @@ end
   DogOutputFolder=[ProcPath,filesep,Prefix, '_', filesep, 'dogs',filesep];
   mkdir(DogOutputFolder);
 
-  if strcmpi(FileMode, 'LIFExport') & ~keepTifs
+  if strcmpi(FileMode, 'LIFExport')
     removeUnwantedTIFs(rawDataFolder);
   end
   
