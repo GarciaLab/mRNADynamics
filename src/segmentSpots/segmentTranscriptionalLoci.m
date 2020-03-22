@@ -5,13 +5,20 @@ function [Spots, dogs]...
     nCh, coatChannel, channelIndex, initialFrame, numFrames,...
     zSize, PreProcPath, Prefix, ProcPath, displayFigures,doFF, ffim,...
     Threshold, neighborhood, snippet_size, pixelSize, microscope,...
-    Weka,filterMovieFlag, resultsFolder, gpu, saveAsMat, saveType, Ellipses)
+    Weka,filterMovieFlag, resultsFolder, gpu, saveAsMat, saveType, nuclearMask)
 
 
 cleanupObj = onCleanup(@myCleanupFun);
 
 
 thisExperiment = liveExperiment(Prefix); 
+
+if nuclearMask
+    if thisExperiment.hasEllipsesFile, Ellipses = getEllipses(thisExperiment); end
+else
+    Ellipses = [];
+end
+
 
 dogs = [];
 DogOutputFolder=[ProcPath,filesep,'dogs',filesep];

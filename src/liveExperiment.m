@@ -44,9 +44,10 @@ classdef liveExperiment
         zDim = 0;
         nFrames = 0;
         
-        zStep = 0;
+        zStep_um = 0;
         nDigits = 0;
         pixelSize_nm = 0;
+        pixelSize_um = 0;
         
         nc9 = 0;
         nc10 = 0;
@@ -71,9 +72,9 @@ classdef liveExperiment
             
             obj.Prefix = Prefix;
             
-            [rawDataPath, ProcPath, DropboxFolder, ~, PreProcPath,...
-                ~, ~, ~, ~]= DetermineLocalFolders(obj.Prefix);
-            
+            [~, ProcPath, DropboxFolder, ~, PreProcPath,...
+                ~, ~, ~, movieDatabase]= DetermineLocalFolders(obj.Prefix);
+
             obj.preFolder = [PreProcPath, filesep, Prefix, filesep];
             obj.procFolder = [ProcPath, filesep, Prefix, '_', filesep];
             obj.resultsFolder = [DropboxFolder, filesep, Prefix, filesep];
@@ -103,22 +104,13 @@ classdef liveExperiment
             obj.hasSchnitzcellsFile = sum(contains(obj.resultsDirectory{:, 1}, '_lin'));
             obj.hasSpotsFile = sum(contains(obj.resultsDirectory{:, 1}, 'Spots'));
             obj.hasParticlesFile = sum(contains(obj.resultsDirectory{:, 1}, 'Particles'));
-            obj.hasEllipsesFile = sum(contains(obj.resultsDirectory{:, 1}, 'Ellipses'));
-            
+            obj.hasEllipsesFile = sum(contains(obj.resultsDirectory{:, 1}, 'Ellipses'));   
             obj.hasDoGs = sum(contains(obj.processedDirectory{:, 1}, 'dog', 'IgnoreCase', true));
             obj.hasRawStacks = sum(contains(obj.rawExportedDirectory{:, 1}, 'stacks', 'IgnoreCase', true));
             obj.hasMovieMatFile = sum(contains(obj.rawExportedDirectory{:, 1}, 'movieMat', 'IgnoreCase', true));
             obj.hasHisMatFile = sum(contains(obj.rawExportedDirectory{:, 1}, 'hisMat', 'IgnoreCase', true));
-            
-            
             obj.hasChannelsFile =sum(contains(obj.resultsDirectory{:, 1}, 'Channels'));
-            
-            
-            [~,~,~,~, ~,...
-                ~, ~, ~,~,~,~,...
-                ~, ~, ~, movieDatabase]...
-                = readMovieDatabase(Prefix);
-            
+
             [~, obj.experimentType, ~, ~, ~, ~,...
                 Channel1, Channel2,~, ~,  ~, ~, ~,...
                 ~, ~, ~, ~, ~, ~, ~, Channel3,~,~, ~, ~]...
@@ -128,9 +120,10 @@ classdef liveExperiment
             
             FrameInfo = getFrameInfo(obj);
             
-            [obj.xDim, obj.yDim, obj.pixelSize_nm, obj.zStep, snippet_size,...
+            [obj.xDim, obj.yDim, obj.pixelSize_nm, obj.zStep_um, ~,...
                 obj.nFrames, obj.zDim, obj.nDigits] = getFrameInfoParams(FrameInfo);
             
+            obj.pixelSize_um = obj.pixelSize_nm/1000;
             
             obj.spotChannel = getCoatChannel(Channel1, Channel2, Channel3);
             
@@ -140,6 +133,7 @@ classdef liveExperiment
             obj.nc12 = obj.anaphaseFrames(4);
             obj.nc13 = obj.anaphaseFrames(5);
             obj.nc14 = obj.anaphaseFrames(6);
+            
             
             
         end

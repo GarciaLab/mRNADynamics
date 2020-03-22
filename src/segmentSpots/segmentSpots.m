@@ -60,6 +60,7 @@ cleanupObj = onCleanup(@myCleanupFun);
 
 warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
+thisExperiment = liveExperiment(Prefix);
 
 [displayFigures, numFrames, numShadows, keepPool, ...
     autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData,...
@@ -79,7 +80,7 @@ catch
     error(argumentErrorMessage);
 end
 
-[~, ~, ~, ~, ~, ~, ~, ~, ~, ~,~, ~, spotChannels] = readMovieDatabase(Prefix);
+spotChannels = thisExperiment.getSpotChannel;
 
 [~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix, optionalResults);
 
@@ -88,42 +89,28 @@ if ~isempty(DataType)
      writeScriptArgsToDataStatus(DropboxFolder, DataType, Prefix, args, 'Found filtered threshold', 'segmentSpots')
 end
 
-load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
-if nuclearMask
-    load([DropboxFolder, filesep, Prefix, filesep, 'Ellipses.mat'], 'Ellipses');
-else
-    Ellipses = {};
-end
+FrameInfo = getFrameInfo(thisExperiment);
 
-
-ProcessedDataFolder = [ProcPath, filesep, Prefix, '_'];
-DogOutputFolder = [ProcessedDataFolder, filesep, 'dogs'];
+ProcessedDataFolder = thisExperiment.procFolder;
+DogOutputFolder=[ProcessedDataFolder,filesep,'dogs',filesep];
 
 microscope = FrameInfo(1).FileMode;
 
 zSize = FrameInfo(1).NumberSlices;
 
 nCh = length(spotChannels);
-DogOutputFolder=[ProcPath,filesep,'dogs',filesep];
-%the underscore is to remove . and .. from the output structure
-% dogDir = dir([DogOutputFolder, '*_*']);
 
-% dog_matfile = matfile([ProcPath, filesep, Prefix,  '_', filesep, Prefix, '_dogMat.mat']);
-% if exist(dog_matfile.Properties.Source, 'file')
-%     try numFrames = size(dog_matfile, 'dogMat', 4); end
 try numFrames = numel(dir([DogOutputFolder, '*_*']));
-catch
-    numFrames = numel(FrameInfo);
-end
-
+catch numFrames = numel(FrameInfo); end
+ 
 % The spot finding algorithm first segments the image into regions that are
 % above the threshold. Then, it finds global maxima within these regions by searching in a region "neighborhood"
 % within the regions.
 
-pixelSize = FrameInfo(1).PixelSize * 1000; %nm
-neighboorhood_size = 1300;
-neighborhood = round(neighboorhood_size / pixelSize); %nm
-snippet_size = 2 * (floor(neighboorhood_size / (2 * pixelSize))) + 1; % nm. note that this is forced to be odd
+pixelSize_nm = FrameInfo(1).PixelSize * 1000; %nm
+neighboorhood_nm = 1300;
+neighborhood_px = round(neighboorhood_nm / pixelSize_nm); %nm
+snippetSize_px = 2 * (floor(neighboorhood_nm / (2 * pixelSize_nm))) + 1; % nm. note that this is forced to be odd
 coatChannel = spotChannels;
 
 falsePositives = 0;
@@ -143,11 +130,11 @@ if ~skipSegmentation
             error('wtff')
         end
         [tempSpots, dogs] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, initialFrame, numFrames, zSize, ...
-            PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(channelIndex), neighborhood, ...
-            snippet_size, pixelSize, microscope, Weka,...
-             filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, Ellipses);
+            PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(channelIndex), neighborhood_px, ...
+            snippetSize_px, pixelSize_nm, microscope, Weka,...
+             filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, nuclearMask);
 
-        tempSpots = segmentSpotsZTracking(pixelSize,tempSpots);
+        tempSpots = segmentSpotsZTracking(pixelSize_nm,tempSpots);
 
         [~, falsePositives, tempSpots] = findBrightestZ([], numShadows, useIntegralCenter, 0, tempSpots, 'dogs', dogs);
 
