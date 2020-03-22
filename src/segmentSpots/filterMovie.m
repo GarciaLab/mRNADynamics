@@ -112,7 +112,7 @@ nCh = length(spotChannels);
 
 stacksFolder = [PreProcPath, filesep, Prefix, filesep, 'stacks'];
 stacksExist = exist(stacksFolder, 'dir') &&...
-    ~isempty(dir(stacksFolder, filesep, '*.tif'));
+    ~isempty(dir([stacksFolder, filesep, '*.tif']));
 
 if (Weka || justTifs) && ~stacksExist
     generateTifsForWeka(Prefix, PreProcPath, numFrames,...
@@ -125,32 +125,35 @@ elseif customML
     processType = 'customML';
 end
 
+if ~justTifs
 
-switch processType
-    
-case  'basic'
-    
-    generateDifferenceOfGaussianImages(ProcPath,...
-        spotChannels,...
-        numFrames, displayFigures, zSize, PreProcPath,...
-        Prefix, filterType, highPrecision, sigmas, app,...
-        kernelSize, noSave, numType, gpu, saveAsMat, saveType);
-    
-    case 'weka'
-        
-    generateDogsWeka(Prefix, ProcPath, MS2CodePath,...
-        PreProcPath, spotChannels, zSize, numFrames, nCh,...
-        initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder);
-    
-    case 'customML'
-        
-    generateProbMapsCustomML(Prefix, ProcPath,...
-    MS2CodePath, PreProcPath, ExperimentType, coatChannel, zSize, numFrames, nCh,...
-        initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder);
-    
-    otherwise
-        
-        error('Processing type not recognized.')
+    switch processType
+
+    case  'basic'
+
+        generateDifferenceOfGaussianImages(ProcPath,...
+            spotChannels,...
+            numFrames, displayFigures, zSize, PreProcPath,...
+            Prefix, filterType, highPrecision, sigmas, app,...
+            kernelSize, noSave, numType, gpu, saveAsMat, saveType);
+
+        case 'weka'
+
+        generateDogsWeka(Prefix, ProcPath, MS2CodePath,...
+            PreProcPath, spotChannels, zSize, numFrames, nCh,...
+            initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder);
+
+        case 'customML'
+
+        generateProbMapsCustomML(Prefix, ProcPath,...
+        MS2CodePath, PreProcPath, ExperimentType, coatChannel, zSize, numFrames, nCh,...
+            initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder);
+
+        otherwise
+
+            error('Processing type not recognized.')
+
+    end
     
 end
 
