@@ -112,7 +112,7 @@ if chooseHis
     
 else
     
-    hisMat =  loadHisMat([PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat']);
+    hisMat =  getHisMat(thisExperiment);
     
 end
 

@@ -1,5 +1,8 @@
 function Spots = fit3DGaussiansToAllSpots(prefix, nSpots, varargin)
 %%
+
+cleanupObj = onCleanup(@myCleanupFun);
+
 optionalResults = '';
 
 segmentSpots = false;
@@ -31,6 +34,9 @@ for i = 1:length(varargin)
     end
 end
 
+
+thisExperiment = liveExperiment(Prefix);
+
 [~,ProcPath,DropboxFolder,~, PreProcPath,...
     ~, Prefix, ~,Channel1,Channel2,~, Channel3, spotChannels] = readMovieDatabase(prefix, optionalResults);
 
@@ -38,11 +44,10 @@ end
 DataFolder=[DropboxFolder,filesep,prefix];
 
 if ~segmentSpots
-    load([DataFolder,filesep,'Spots.mat'], 'Spots');
+    Spots = getSpots(thisExperiment);
 end
 
-FrameInfo = load([DataFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
-FrameInfo = FrameInfo.FrameInfo;
+FrameInfo = getFrameInfo(thisExperiment);
 
 startParallelPool(nWorkers, displayFigures, keepPool);
 
@@ -71,7 +76,6 @@ for ch = spotChannels
         nSpotsPerFrame = length(SpotsFr.Fits);
         for spot = 1:nSpotsPerFrame
             SpotsFr = fitSnip3D(SpotsFr, ch, spot, frame, Prefix, PreProcPath, FrameInfo, nSpots);
-%             fitSnip3D(SpotsFr, spotChannel, spot, frame, Prefix, PreProcPath, FrameInfo)
         end
         SpotsCh(frame) = SpotsFr;
         send(q, frame); %update the waitbar
@@ -90,14 +94,19 @@ if iscell(Spots) & length(Spots) < 2
 end
 
 if save_flag
-    save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3');
+    if whos(var2str(Spots)).bytes < 2E9
+        save([DataFolder,filesep,'Spots.mat'],'Spots', '-v6');
+    else
+        save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3', '-nocompression');
+    end
     Spots3DToken = now;
-    save([DataFolder,filesep,'Spots3DToken.mat'],'Spots3DToken')
+    save([DataFolder,filesep,'Spots3DToken.mat'],'Spots3DToken', '-v6')
     disp('3D fitting done on all spots.')
-    close(waitbarFigure);
+    try close(waitbarFigure); end
+    
 end
     function nUpdateWaitbar(~)
-        waitbar(p/numFrames, waitbarFigure);
+        try waitbar(p/numFrames, waitbarFigure); end
         p = p + 1;
     end
 

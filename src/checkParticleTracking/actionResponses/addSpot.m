@@ -12,6 +12,14 @@ function [SpotFilter, Particles, Spots,...
 
 %ADDSPOT
 
+
+thisExperiment = liveExperiment(Prefix);
+
+movieMatCh = getMovieMat(thisExperiment);
+movieMatCh = movieMatCh(:, :, :, coatChannel);
+
+FrameInfo = getFrameInfo(thisExperiment);
+
 numParticles = length(Particles{CurrentChannel});
 startParallelPool(nWorkers, 0, 1);
 
@@ -63,7 +71,7 @@ else
                 microscope = FrameInfo(1).FileMode;
                 show_status = 0;
                 fig = [];
-                k = 1; %This is supposed to be the index for the partiles in an image.
+                k = 1; %This is supposed to be the index for the particles in an image.
                 %However, this image only contains one particle
                 neighborhood = round(1300 / pixelSize); %nm
                 %Get the information about the spot on this z-slice

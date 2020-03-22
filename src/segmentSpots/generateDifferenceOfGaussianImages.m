@@ -30,13 +30,13 @@ else
 end
 
 extractOpts = {};
-if saveAsMat | strcmpi(saveType, '.mat')
+if saveAsMat || strcmpi(saveType, '.mat')
     extractOpts = [extractOpts, 'mat'];
 end
 
 % stacksPath = [PreProcPath, filesep, Prefix, filesep, 'stacks'];
 
-movieMat = loadMovieMat(Prefix);
+movieMat = getMovieMat(thisExperiment);
 
 saveAsStacks = true;
 

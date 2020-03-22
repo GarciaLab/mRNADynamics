@@ -10,6 +10,9 @@ function [Spots, dogs]...
 
 cleanupObj = onCleanup(@myCleanupFun);
 
+
+thisExperiment = liveExperiment(Prefix); 
+
 dogs = [];
 DogOutputFolder=[ProcPath,filesep,'dogs',filesep];
 
@@ -81,7 +84,7 @@ end
 
 nameSuffix = ['_ch', iIndex(ch, 2)];
 
-movieMat = loadMovieMat(Prefix);
+movieMat = getMovieMat(thisExperiment);
 
 yDim = size(movieMat, 1);
 xDim = size(movieMat, 2);

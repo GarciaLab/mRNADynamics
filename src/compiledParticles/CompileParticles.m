@@ -308,7 +308,7 @@ if ~HistoneChannel
     addParticleArgs = [addParticleArgs, 'SkipAlignment'];
 end
 
-if APExperiment | DVExperiment
+if APExperiment || DVExperiment
     if (~isfield(Particles{1},'APpos')) || ForceAP
         try
             [Particles, SpotFilter] = AddParticlePosition(addParticleArgs{:});

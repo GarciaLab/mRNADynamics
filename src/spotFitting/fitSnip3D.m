@@ -1,17 +1,21 @@
-function SpotsFr = fitSnip3D(SpotsFr, spotChannel, spot, frame, Prefix,...
-    PreProcPath, FrameInfo, nSpots)
+function SpotsFr = fitSnip3D(SpotsFr, spotChannel,...
+    spot, frame, Prefix,~, ~, nSpots)
 
 %%
+
+thisExperiment = liveExperiment(Prefix);
+FrameInfo = getFrameInfo(thisExperiment);
+preFolder = thisExperiment.preFolder;
 
 
 % extract basic fit parameters
 s = SpotsFr.Fits(spot);
 xSize = FrameInfo(1).PixelsPerLine;
 ySize = FrameInfo(1).LinesPerFrame;
-pixelSize = FrameInfo(1).PixelSize*1000; %nm
-zStep = FrameInfo(1).ZStep*1000;
+pixelSize_nm = FrameInfo(1).PixelSize*1000; %nm
+zStep_nm = FrameInfo(1).ZStep*1000; %nm
 zMax = FrameInfo(1).NumberSlices+2;
-snipDepth = uint8(ceil(2500/zStep));
+snipDepth = uint8(ceil(2500/zStep_nm));
 
 % NL: Need to make this independent of 2D fit info 
 bZ = s.brightestZ;
@@ -21,7 +25,7 @@ ySpot = s.yDoG(s.z==bZ);
 if isfield(s, 'snippet_size') && ~isempty(s.snippet_size)
     snippet_size = s.snippet_size;
 else
-    snippet_size = round(1500/pixelSize); % (in pixels)set to be around 1.5 um 
+    snippet_size = round(1500/pixelSize_nm); % (in pixels)set to be around 1.5 um 
 end
 snippet_size = uint16(snippet_size(1));
 
@@ -36,7 +40,7 @@ snip3D = NaN(numel(yRange),numel(xRange),numel(zBot:zTop));
 %%
 iter = 1;
 for z = zRange    
-    FullSlice=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(frame,3)...
+    FullSlice=imread([preFolder, filesep,Prefix,'_',iIndex(frame,3)...
         ,'_z' iIndex(z,2) '_ch' iIndex(spotChannel,2) '.tif']);
     snip3D(:,:,iter) = double(FullSlice(yRange,xRange)); 
     iter = iter + 1;
@@ -54,7 +58,7 @@ end
 if nSpots == 2
     [GaussParams1, GaussParams2, offset, GaussIntVec, centroid_mean,...
         GaussSE1, GaussSE2, offsetSE, GaussIntSEVec, centroid_se] = ...
-        fit3DGaussian2spot(snip3D,pixelSize);
+        fit3DGaussian2spot(snip3D,pixelSize_nm);
     
     % spot 1 position
     SpotsFr.Fits(spot).Spot1Fits3D = single(GaussParams1);
@@ -87,7 +91,7 @@ if nSpots == 2
 % single spot fit    
 elseif nSpots == 1      
     [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw,np_flag,int_dims]  = ...
-        fit3DGaussianRho(snip3D,[pixelSize zStep]);  
+        fit3DGaussianRho(snip3D,[pixelSize_nm zStep_nm]);  
                                                 
     SpotsFr.Fits(spot).SpotFits3D = single(GaussFit);  
     SpotsFr.Fits(spot).SpotFits3DSE = single(FitDeltas);  
