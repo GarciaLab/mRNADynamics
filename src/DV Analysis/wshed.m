@@ -1,11 +1,17 @@
-function bin = wshed(b, varargin)
+function maskOut = wshed(maskIn, varargin)
+
+arguments
+    maskIn (:,:) logical
+end
+arguments (Repeating)
+    varargin
+end
 
 %wrapper function for watersheeding. main input parameter would be
 %distThresh;
 
 displayFigures = false;
 distThresh = 3;
-invert = false;
 
 for i = 1:(numel(varargin)-1)
     if i ~= numel(varargin)
@@ -14,34 +20,37 @@ for i = 1:(numel(varargin)-1)
         end
     end
 end
-df = displayFigures;
 
+maskInOriginal = maskIn;
 %invert the image polarity if necessary. not sure if this is the best
 %metric. size or euler number could also work
-stats =  regionprops(logical(b), 'EulerNumber');
-statsInvert =  regionprops(logical(~b), 'EulerNumber');
-if min([statsInvert.EulerNumber]) < min([stats.EulerNumber])
-    b=~b;
+% stats =  regionprops(maskIn, 'EulerNumber');
+% statsInvert =  regionprops(~maskIn, 'EulerNumber');
+% maskIn = gpuArray(maskIn);
+if chooseKLabel(maskIn)
+    maskIn=~maskIn;
 end
 
-bw = ~b;
-D = bwdist(~bw);
-D = -D;
+% if min([statsInvert.EulerNumber]) < min([stats.EulerNumber])
+%     maskIn=~maskIn;
+% end
 
-%qc
-mask = imextendedmin(D,distThresh);
-D2 = imimposemin(D,mask);
-%
+%get distance transform
+D = -bwdist(maskIn);
 
-L = watershed(D2);
-L(~bw) = 0;
+%quality control
+D = imimposemin(D, imextendedmin( D, distThresh ));
 
-if df
-    figure();
-    rgb = label2rgb(L,'jet',[.5 .5 .5]);
-    imshow(rgb, []); colorbar;
+%perform the actual watershed
+maskOut = ~~watershed(D);
+maskOut(maskIn) = 0;
+% 
+% if ~chooseKLabel(maskOut)
+%     maskOut=~maskOut;
+% end
+
+if displayFigures
+    imshowpair(maskInOriginal, maskOut, 'montage');    
 end
-
-bin = ~~L;
 
 end

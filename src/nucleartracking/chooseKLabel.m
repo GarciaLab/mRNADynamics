@@ -1,6 +1,11 @@
 function k = chooseKLabel(kLabel)
 
-kMax = max(kLabel(:));
+subt = false;
+if islogical(kLabel)
+    kLabel = uint8(kLabel) + 1;
+    subt = true;
+end
+kMax = uint8(max(kLabel(:)));
 stats = cell(1, kMax);
 descriptorCell = cell(1, kMax);
 stds = zeros(1, kMax);
@@ -18,7 +23,16 @@ end
 %of our chosen descriptor. We'll decide this is the
 %least weird label. 
 
+if subt
+    stds(stds==0) = nan;
+end
+
+
 [~, k] = min(stds);
+
+if subt
+    k = k - 1;
+end
 
 
 

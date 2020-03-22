@@ -28,8 +28,9 @@ else
 end
 
 
-load(hisFile, 'movieMat');
-hisMat = movieMat;
+im = load(hisFile);
+varName = fieldnames(im);
+hisMat = im.(varName{1});
 
 % hismatfile = matfile(hisFile, 'Writable', isWritable);
 % dims = size(hismatfile, 'hisMat');

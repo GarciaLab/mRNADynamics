@@ -46,7 +46,8 @@ kMaskRefined= gather( chenvese( ...
 mask = bwareafilt(wshed(kMaskRefined), areaFilter);
 
 %fit with circles instead of convex hulls
-[mask, ellipseFrame] = fitCirclesToNuclei(mask, kMask);
+% [mask, ellipseFrame] = fitCirclesToNuclei(mask, kMask);
 
+[mask, ellipseFrame] = fitCirclesToNuclei(mask, kMask);
 
 end
