@@ -24,6 +24,8 @@ function pMap = classifyImageMatlab(im, training, varargin)
 %% PARAMS, OPTIONS
 
 displayFigures = false;
+addJavaPathsForLivemRNA()
+
 
 if ischar(training), tempPath = fileparts(training);
 else, tempPath = ''; end

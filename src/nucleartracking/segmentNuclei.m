@@ -45,6 +45,8 @@ tic
 warning('off', 'MATLAB:Java:DuplicateClass');
 warning('off', 'MATLAB:javaclasspath:jarAlreadySpecified');
 
+addJavaPathsForLivemRNA()
+
 %%
 disp(['Segmenting nuclei on ', Prefix, '...']);
 

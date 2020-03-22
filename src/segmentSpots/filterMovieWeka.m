@@ -39,6 +39,7 @@ end
 disp(['Filtering ', Prefix, '...']);
 
 cleanupObj = onCleanup(@myCleanupFun);
+addJavaPathsForLivemRNA()
 
 thisExperiment = liveExperiment(Prefix);
 

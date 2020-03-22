@@ -23,6 +23,7 @@ function pMap = classifyImageWeka(im, training, varargin)
 
 
 cleanupObj = onCleanup(@myCleanupFun);
+addJavaPathsForLivemRNA()
 
 %% PARAMS, OPTIONS
 

@@ -157,7 +157,8 @@ DataFolder = [DropboxFolder, filesep, Prefix];
 FilePrefix = [Prefix, '_'];
 
 if isempty(preStructs)
-    [Particles, SpotFilter, Spots, FrameInfo, schnitzcells, Spots3D] = loadCheckParticleTrackingMats(DataFolder, PreProcPath, FilePrefix);
+    [Particles, SpotFilter, Spots, FrameInfo, schnitzcells, Spots3D] =...
+        loadCheckParticleTrackingMats(DataFolder, PreProcPath, FilePrefix);
 else
     Particles = preStructs{1};
     SpotFilter = preStructs{3};
