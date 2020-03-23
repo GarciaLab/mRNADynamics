@@ -34,6 +34,12 @@ Channels = thisExperiment.Channels;
 
 InputChannel = find(contains(Channels, 'input', 'IgnoreCase', true));
 
+if isempty(InputChannel)
+    warning(['No input channel found. Check correct definition in MovieDatabase.',...
+        'Input channels should use the :input notation.'])
+    return;
+end
+
 % load([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'], 'movieMat');
 
 movieMat = double(loadMovieMat(Prefix, 'chRange', InputChannel));
@@ -119,7 +125,7 @@ if sum(InputChannel)
         close(h);
     end
 else
-    error('Input channel not recognized. Check correct definition in MovieDatabase. Input channels should use the :input notation.');
+    error('Input channel not recognized. Check correct definition in MovieDatabase.Input channels should use the :input notation.');
 end
 
 clear movieMat;

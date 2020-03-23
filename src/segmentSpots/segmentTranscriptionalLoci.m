@@ -5,7 +5,7 @@ function [Spots, dogs]...
     nCh, coatChannel, channelIndex, initialFrame, numFrames,...
     zSize, PreProcPath, Prefix, ProcPath, displayFigures,doFF, ffim,...
     Threshold, neighborhood, snippet_size, pixelSize, microscope,...
-    Weka,filterMovieFlag, resultsFolder, gpu, saveAsMat, saveType, nuclearMask)
+    Weka,filterMovieFlag, resultsFolder, gpu, saveAsMat, saveType, shouldMaskNuclei)
 
 
 cleanupObj = onCleanup(@myCleanupFun);
@@ -13,7 +13,7 @@ cleanupObj = onCleanup(@myCleanupFun);
 
 thisExperiment = liveExperiment(Prefix); 
 
-if nuclearMask
+if shouldMaskNuclei
     if thisExperiment.hasEllipsesFile, Ellipses = getEllipses(thisExperiment); end
 else
     Ellipses = [];
@@ -21,7 +21,7 @@ end
 
 
 dogs = [];
-DogOutputFolder=[ProcPath,filesep,'dogs',filesep];
+DogOutputFolder=[ProcPath,filesep];
 
 %the underscore is to remove . and .. from the output structure
 dogDir = dir([DogOutputFolder, '*_*']);
@@ -125,7 +125,7 @@ p = 1;
 zPadded = size(movieMat, 3) ~= zSize;
 
 
-parfor currentFrame = initialFrame:numFrames 
+for currentFrame = initialFrame:numFrames 
     
     %report progress every tenth frame
     if ~mod(currentFrame, 10), disp(num2str(currentFrame)); end
@@ -208,7 +208,7 @@ parfor currentFrame = initialFrame:numFrames
         im_thresh = dog >= Threshold;
         
         % apply nuclear mask if it exists
-        if ~isempty(Ellipses)
+        if shouldMaskNuclei && ~isempty(Ellipses)
             ellipsesFrame = Ellipses{currentFrame};
             nuclearMask = makeNuclearMask(ellipsesFrame, [yDim, xDim]);
             %         immask = uint16(nuclearMask).*im;

@@ -19,7 +19,7 @@ if displayFigures
 end
 
 % figure; imagesc(bw);
-xDim = size(mask, 1);
+xDim = size(mask, 2);
 yDim = size(mask, 1);
 
 boundaryCell = bwboundaries(mask, 8, 'noholes');
@@ -30,7 +30,7 @@ borderThresh = averageEquivRadius;
 border = borderImage(mask);
 borderDist = bwdist(border);
 
-edgeMask = false(xDim, yDim);
+edgeMask = false(yDim, xDim);
 
 ellipseFrame = [];
 edgeEllipseFrame = [];

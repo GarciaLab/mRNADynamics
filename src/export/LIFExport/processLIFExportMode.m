@@ -1,7 +1,7 @@
 % Added PreferredFileName so we can automate testing and bypass the user prompt when there are many files available.
 function FrameInfo = processLIFExportMode(rawDataFolder, ProjectionType, Channels,...
     Prefix, PreProcFolder, PreferredFileNameForTest,...
-    nuclearGUI, skipExtraction, lowbit,...
+    nuclearGUI, skipExtraction,...
     shouldExportNuclearProjections, shouldExportMovieFiles, ignoreCh3)
 
 disp('Exporting movie file...');
@@ -35,7 +35,8 @@ if shouldMakeMovieMat
     [NSeries, NFrames, NSlices, NPlanes, NChannels, Frame_Times] = getFrames(LIFMeta);
     
     if sum(NFrames)~=0
-        [Frame_Times, First_Time] = obtainFrameTimes(XMLFolder, seriesPropertiesXML, NSeries, NFrames, NSlices, NChannels);
+        [Frame_Times, First_Time] = obtainFrameTimes(XMLFolder, seriesPropertiesXML,...
+            NSeries, NFrames, NSlices, NChannels);
         [InitialStackTime, zPosition] = getFirstSliceTimestamp(NSlices, NSeries, NPlanes, NChannels, Frame_Times, XMLFolder, seriesXML);
     else
         InitialStackTime = [];
@@ -127,7 +128,7 @@ if ~skipExtraction
                     %
                     %                 processMovieChannel(channelIndex, numberOfFrames, Prefix, OutputFolder,...
                     %                     LIFImages, framesIndex, seriesIndex, NChannels, NSlices,...
-                    %                     zslicesPadding, lowbit);
+                    %                     zslicesPadding);
                 end
                 
                 
@@ -137,7 +138,7 @@ if ~skipExtraction
                     hisMat(:, :, numberOfFrames) = generateNuclearChannel(...
                         numberOfFrames, LIFImages,...
                         framesIndex, seriesIndex, NSlices, NChannels,ProjectionType,...
-                        Channels, ReferenceHist, PreProcFolder, Prefix, lowbit);
+                        Channels, ReferenceHist, PreProcFolder, Prefix);
                 end
                 
                 numberOfFrames = numberOfFrames + 1;

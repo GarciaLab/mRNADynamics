@@ -80,7 +80,7 @@ catch
     error(argumentErrorMessage);
 end
 
-spotChannels = thisExperiment.getSpotChannel;
+spotChannels = thisExperiment.spotChannel;
 
 [~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix, optionalResults);
 

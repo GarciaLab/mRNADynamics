@@ -8,7 +8,7 @@ border= false(yDim, xDim);
 for x = 1:xDim
     for y = 1:yDim
         if x==1 || y==1 || x==xDim || y==yDim
-            border(x,y) = true;
+            border(y, x) = true;
         end
     end
 end

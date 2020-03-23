@@ -1,4 +1,4 @@
-function Spots = fit3DGaussiansToAllSpots(prefix, nSpots, varargin)
+function Spots = fit3DGaussiansToAllSpots(Prefix, nSpots, varargin)
 %%
 
 cleanupObj = onCleanup(@myCleanupFun);
@@ -29,7 +29,7 @@ for i = 1:length(varargin)
         keepPool = true;
     elseif strcmpi(varargin{i}, 'dogs')
         dogs = varargin{i+1};
-    elseif strcmpi(varargin{i}, 'saveAsMat') | strcmpi(varargin{i}, '.mat')
+    elseif strcmpi(varargin{i}, 'saveAsMat') || strcmpi(varargin{i}, '.mat')
         saveType = '.mat';
     end
 end
@@ -38,10 +38,10 @@ end
 thisExperiment = liveExperiment(Prefix);
 
 [~,ProcPath,DropboxFolder,~, PreProcPath,...
-    ~, Prefix, ~,Channel1,Channel2,~, Channel3, spotChannels] = readMovieDatabase(prefix, optionalResults);
+    ~, Prefix, ~,Channel1,Channel2,~, Channel3, spotChannels] = readMovieDatabase(Prefix, optionalResults);
 
 
-DataFolder=[DropboxFolder,filesep,prefix];
+DataFolder=[DropboxFolder,filesep,Prefix];
 
 if ~segmentSpots
     Spots = getSpots(thisExperiment);
@@ -70,7 +70,8 @@ for ch = spotChannels
     numFrames = length(SpotsCh);
     
     % iterate through frames
-    parfor frame = 1:numFrames %frames
+%     parfor frame = 1:numFrames
+    for frame = 1:numFrames %frames
         SpotsFr = SpotsCh(frame);
 
         nSpotsPerFrame = length(SpotsFr.Fits);

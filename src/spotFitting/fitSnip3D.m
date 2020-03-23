@@ -7,6 +7,7 @@ thisExperiment = liveExperiment(Prefix);
 FrameInfo = getFrameInfo(thisExperiment);
 preFolder = thisExperiment.preFolder;
 
+movieMat = getMovieMat(thisExperiment);
 
 % extract basic fit parameters
 s = SpotsFr.Fits(spot);
@@ -38,12 +39,20 @@ yRange = max([1,ySpot-snippet_size]):min([ySize,ySpot+snippet_size]);
 snip3D = NaN(numel(yRange),numel(xRange),numel(zBot:zTop));
 
 %%
-iter = 1;
-for z = zRange    
-    FullSlice=imread([preFolder, filesep,Prefix,'_',iIndex(frame,3)...
-        ,'_z' iIndex(z,2) '_ch' iIndex(spotChannel,2) '.tif']);
-    snip3D(:,:,iter) = double(FullSlice(yRange,xRange)); 
-    iter = iter + 1;
+
+if exist('movieMat', 'var') && ~isempty(movieMat)
+    
+  snip3D = movieMat(yRange, xRange, :, frame, spotChannel);
+  
+else
+    
+    iter = 1;
+    for z = zRange    
+        FullSlice=imread([preFolder, filesep,Prefix,'_',iIndex(frame,3)...
+            ,'_z' iIndex(z,2) '_ch' iIndex(spotChannel,2) '.tif']);
+        snip3D(:,:,iter) = double(FullSlice(yRange,xRange)); 
+        iter = iter + 1;
+    end
 end
 
 %%

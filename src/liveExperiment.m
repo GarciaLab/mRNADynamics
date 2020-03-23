@@ -95,9 +95,6 @@ classdef liveExperiment
             obj.isUnhealthy = isUnhealthy;
             
             
-            obj.anaphaseFrames = retrieveAnaphaseFrames(obj.Prefix);
-            obj.hasAnaphaseFile=sum(contains(obj.resultsDirectory{:, 1}, 'anaphaseFrames'));
-            
             obj.project = '';
             
             obj.hasCompiledParticlesFile = sum(contains(obj.resultsDirectory{:, 1}, 'CompiledParticles'));
@@ -118,15 +115,19 @@ classdef liveExperiment
             
             obj.Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
             
-            FrameInfo = getFrameInfo(obj);
-            
-            [obj.xDim, obj.yDim, obj.pixelSize_nm, obj.zStep_um, ~,...
-                obj.nFrames, obj.zDim, obj.nDigits] = getFrameInfoParams(FrameInfo);
-            
-            obj.pixelSize_um = obj.pixelSize_nm/1000;
+            try
+                FrameInfo = getFrameInfo(obj);       
+                [obj.xDim, obj.yDim, obj.pixelSize_nm, obj.zStep_um, ~,...
+                    obj.nFrames, obj.zDim, obj.nDigits] = getFrameInfoParams(FrameInfo);
+                obj.pixelSize_um = obj.pixelSize_nm/1000;
+            catch
+                warning('FrameInfo not found.')
+            end
             
             obj.spotChannel = getCoatChannel(Channel1, Channel2, Channel3);
             
+            obj.anaphaseFrames = retrieveAnaphaseFrames(obj.Prefix);
+            obj.hasAnaphaseFile=sum(contains(obj.resultsDirectory{:, 1}, 'anaphaseFrames'));
             obj.nc9 = obj.anaphaseFrames(1);
             obj.nc10 = obj.anaphaseFrames(2);
             obj.nc11 = obj.anaphaseFrames(3);

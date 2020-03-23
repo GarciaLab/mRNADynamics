@@ -16,8 +16,8 @@ schnitzcells = struct('cenx', [], 'ceny', [],...
 
 pixelSize_um = thisExperiment.pixelSize_um;
 nFrames = thisExperiment.nFrames;
-memoMasker = memoize (@(x, y) kSnakeCircles(x, y));
-memoMasker.CacheSize = nFrames;
+% memoMasker = memoize (@(x, y) kSnakeCircles(x, y));
+% memoMasker.CacheSize = nFrames;
 
 % Ellipses = getEllipses(thisExperiment)
 obj = setupSystemObjects(hisVideoFile);
@@ -60,8 +60,8 @@ function [centroids, bboxes, mask] = detectObjects(frame)
 % Detect foreground.
 % mask = obj.detector.step(frame);
 
-% [mask, ~] = kSnakeCircles(frame, pixelSize_um);
-[mask, ~] = memoMasker(frame, pixelSize_um);
+[mask, ~] = kSnakeCircles(frame, pixelSize_um);
+% [mask, ~] = memoMasker(frame, pixelSize_um);
 
 mask = ~~mask;
 % Perform blob analysis to find connected components.

@@ -53,8 +53,8 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw,
             params(12)*xMesh + params(13)*yMesh + params(14)*zMesh - double(snip3D);     
     % attempt to fit
     options.Display = 'off';
-    [GaussFit, ~, residual, ~, ~, ~, jacobian] = lsqnonlin(single3DObjective,initial_parameters,...
-        lowerBoundVector,upperBoundVector,options);
+    [GaussFit, ~, residual, ~, ~, ~, jacobian] = lsqnonlin(single3DObjective,double(initial_parameters),...
+        double(lowerBoundVector),double(upperBoundVector),options);
     % check that inferred covariance matrix is positive semi-definite
     covarianceMatrix = @(params) [params(5)^2,    params(8)*params(5)*params(6),    params(9)*params(5)*params(7);
                    params(8)*params(5)*params(6),    params(6)^2,    params(10)*params(6)*params(7);

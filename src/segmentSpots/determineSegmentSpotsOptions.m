@@ -75,7 +75,7 @@ for i = 1:length(varargin)
     elseif strcmpi(varargin{i}, 'nWorkers')
         nWorkers = varargin{i + 1};        
     elseif strcmpi(varargin{i}, 'nuclearMask')
-        nuclearMask = true;
+        nuclearMask = varargin{i+1};
     elseif strcmpi(varargin{i}, 'autoThresh')
         threshGUI = 1;
     elseif strcmpi(varargin{i}, 'fit3D')
