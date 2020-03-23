@@ -1,4 +1,4 @@
-function tracks = TrackNuclei_computervision(Prefix)
+function schnitzcells = TrackNuclei_computervision(Prefix)
 
 load('ReferenceHist.mat', 'ReferenceHist');
 
@@ -11,18 +11,25 @@ if ~exist(hisVideoFile, 'file')
     exportTifStackToAvi(hisMat, hisVideoFile)
 end
 
+schnitzcells = struct('cenx', [], 'ceny', [],...
+    'frames', []);
 
 pixelSize_um = thisExperiment.pixelSize_um;
+nFrames = thisExperiment.nFrames;
 memoMasker = memoize (@(x, y) kSnakeCircles(x, y));
-memoMasker.cacheSize = nFrames;
+memoMasker.CacheSize = nFrames;
 
 % Ellipses = getEllipses(thisExperiment)
-tracks = setupSystemObjects(hisVideoFile);
+obj = setupSystemObjects(hisVideoFile);
 tracks = initializeTracks(); % Create an empty array of tracks.
 nextId = 1; % ID of the next track
 % Detect moving objects, and track them across video frames.
-while hasFrame(tracks.reader)
-    frame = readFrame(tracks.reader);
+frameIndex = 0;
+
+% while hasFrame(obj.reader)
+for f = 1:nFrames
+    frameIndex = frameIndex + 1;
+    frame = readFrame(obj.reader);
     [centroids, bboxes, mask] = detectObjects(frame);
     predictNewLocationsOfTracks();
     [assignments, unassignedTracks, unassignedDetections] = ...
@@ -34,6 +41,7 @@ while hasFrame(tracks.reader)
     createNewTracks();
    
     displayTrackingResults();
+    
 end
 
 
@@ -57,7 +65,10 @@ function [centroids, bboxes, mask] = detectObjects(frame)
 
 mask = ~~mask;
 % Perform blob analysis to find connected components.
-[~, centroids, bboxes] = tracks.blobAnalyser.step(mask);
+[~, centroids, bboxes] = obj.blobAnalyser.step(mask);
+
+%bbox is x y w h
+
 end
 
 function predictNewLocationsOfTracks()
@@ -71,6 +82,9 @@ for i = 1:length(tracks)
     % the predicted location.
     predictedCentroid = int32(predictedCentroid) - bbox(3:4) / 2;
     tracks(i).bbox = [predictedCentroid, bbox(3:4)];
+    
+%     tracks(i).cenx = predictedCentroid(2);
+%     tracks(i).ceny = predictedCentroid(1);
 end
 end
 
@@ -207,9 +221,26 @@ if ~isempty(tracks)
     if ~isempty(reliableTracks)
         % Get bounding boxes.
         bboxes = cat(1, reliableTracks.bbox);
-        
+        cenxs = (bboxes(:, 1) + bboxes(:, 3))/2;
+        cenys = (bboxes(:, 2) + bboxes(:, 4))/2;
         % Get ids.
         ids = int32([reliableTracks(:).id]);
+        
+        for i = 1:length(ids)
+            if length(schnitzcells) < i
+                
+            schnitzcells(i).cenx(1) = cenxs(i);
+            schnitzcells(i).ceny(1) = cenys(i);
+            schnitzcells(i).frames(1) = frameIndex;
+            
+            else
+                
+            schnitzcells(i).cenx(end+1) = cenxs(i);
+            schnitzcells(i).ceny(end+1) = cenys(i);
+            schnitzcells(i).frames(end+1) = frameIndex;
+            
+            end
+        end
         
         % Create labels for objects indicating the ones for
         % which we display the predicted rather than the actual
@@ -233,8 +264,8 @@ if ~isempty(tracks)
 end
 
 % Display the mask and the frame.
-tracks.maskPlayer.step(mask);
-tracks.videoPlayer.step(frame);
+obj.maskPlayer.step(mask);
+obj.videoPlayer.step(frame);
 
 end
 
