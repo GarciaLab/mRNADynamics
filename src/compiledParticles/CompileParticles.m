@@ -384,10 +384,10 @@ if ApproveAll
     end
 end
 
-fullEmbryo = exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'], 'file');
+fullEmbryoExists = exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'], 'file');
 
 %First, figure out the AP position of each of the nuclei.
-if (APExperiment || DVExperiment) && fullEmbryo
+if (APExperiment || DVExperiment) && fullEmbryoExists
     %Load the AP detection information
     load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
     %Angle between the x-axis and the AP-axis
@@ -401,7 +401,7 @@ if (APExperiment || DVExperiment) && fullEmbryo
 end
 
 EllipsePos_DV = [];
-if HistoneChannel && (APExperiment || DVExperiment) && fullEmbryo
+if HistoneChannel && (APExperiment || DVExperiment) && fullEmbryoExists
     %The information in Ellipses is
     %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
     for i=1:length(Ellipses)
@@ -454,12 +454,12 @@ end
 ElapsedTime=ElapsedTime/60;     %Time is in minutes
 
 %Divide the AP and DV axes into bins for generating means, etc.
-if APExperiment || DVExperiment && fullEmbryo
+if APExperiment || DVExperiment && fullEmbryoExists
     [APbinID, APbinArea] = binAxis(APResolution, FrameInfo, ...
         coordAZoom, APAngle, APLength, minBinSize, 'AP');
 end
 
-if DVExperiment && fullEmbryo
+if DVExperiment && fullEmbryoExists
     if isempty(DVResolution)
         DVResolution = 100;
     end
@@ -478,7 +478,7 @@ coatChannel = getCoatChannel(Channel1, Channel2, Channel3);
     Spots, SkipTraces, ncFilterID, ncFilter, ...
     ElapsedTime, Ellipses, EllipsePos, PreProcPath, ...
     FilePrefix, Prefix, DropboxFolder, numFrames,...
-    manualSingleFits, edgeWidth, pixelSize, coatChannel, fullEmbryo);
+    manualSingleFits, edgeWidth, pixelSize, coatChannel, fullEmbryoExists);
 
 %% ROI option
 % This option is separating the CompiledParticles defined above into
@@ -509,7 +509,7 @@ end
 
 APFilter_ROI = []; APFilter_nonROI = []; DVFilter_ROI = []; DVFilter_nonROI = [];
 
-if fullEmbryo
+if fullEmbryoExists
     [ncFilterID, ncFilter, APFilter, APFilter_ROI, APFilter_nonROI, ...
         DVFilter, DVFilter_ROI, DVFilter_nonROI] =...
         ...
@@ -523,7 +523,7 @@ end
 
 
 %% Averaging data
-if fullEmbryo
+if fullEmbryoExists
     [AllTracesVector, AllTracesAP, AllTracesDV, MeanVectorAP_ROI, ...
         SDVectorAP_ROI, NParticlesAP_ROI, MeanVectorAP_nonROI, SDVectorAP_nonROI, ...
         NParticlesAP_nonROI, MeanVectorAP, SDVectorAP, NParticlesAP, MeanVectorDV_ROI, ...
@@ -542,7 +542,7 @@ else
     AllTracesVector{1} =...
         createAllTracesVector(FrameInfo,CompiledParticles{1},'NoAP');
 end
-if ~slimVersion && fullEmbryo
+if ~slimVersion && fullEmbryoExists
     %% Instantaneous rate of change
     
     [CompiledParticles, MeanSlopeVectorAP, SDSlopeVectorAP, NSlopeAP]...
@@ -614,7 +614,7 @@ if ~slimVersion && fullEmbryo
     
     %% Probability of being on
     
-    if HistoneChannel && (APExperiment || DVExperiment) && fullEmbryo
+    if HistoneChannel && (APExperiment || DVExperiment) && fullEmbryoExists
         
         [NEllipsesAP, MeanVectorAllAP, SEVectorAllAP, EllipsesFilteredPos, ...
             FilteredParticlesPos, OnRatioAP, ParticleCountAP, ParticleCountProbAP, ...
@@ -633,7 +633,7 @@ if ~slimVersion && fullEmbryo
     
     % DV version. This should instead be smoothly integrated with the AP
     % version since there's a lot of duplicate code here.
-    if HistoneChannel && DVExperiment && fullEmbryo %JAKE: Need to change this later
+    if HistoneChannel && DVExperiment && fullEmbryoExists %JAKE: Need to change this later
         
         [NEllipsesDV, MeanVectorAllDV, SEVectorAllDV, OnRatioDV, ParticleCountDV, ...
             ParticleCountProbDV, TotalEllipsesDV, EllipsesOnDV, EllipsesFilteredPos, ...
@@ -658,7 +658,7 @@ if ~slimVersion && fullEmbryo
     %a function of time. In order to make life easier I'll just export to a
     %folder. I can then load everything in ImageJ.
     
-    if ~SkipMovie && APExperiment && fullEmbryo
+    if ~SkipMovie && APExperiment && fullEmbryoExists
         APProfileMovie(MeanVectorAP, NParticlesAP, MinParticles, ...
             APbinID, SDVectorAP, FrameInfo, ElapsedTime, DropboxFolder, Prefix, nc9, nc10, nc11, nc12, nc13, nc14)
     end
@@ -724,8 +724,8 @@ save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticlesToken.mat'],'Compil
 
 
 %%
-if DVExperiment && fullEmbryo
-    alignCompiledParticlesByAnaphase(Prefix, fullEmbryo);
+if DVExperiment && fullEmbryoExists
+    alignCompiledParticlesByAnaphase(Prefix, fullEmbryoExists);
     %     averageDV(Prefix);
     %     plotByDorsalConc(Prefix);
 end

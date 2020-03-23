@@ -32,6 +32,11 @@ im = load(hisFile);
 varName = fieldnames(im);
 hisMat = im.(varName{1});
 
+if isempty(hisMat)
+    [~,hisMat] = makeMovieMats(Prefix, [], [], [], 'loadMovie', false,  'loadHis', false, 'makeMovie', false, 'makeHis', true);
+    return;
+end
+
 % hismatfile = matfile(hisFile, 'Writable', isWritable);
 % dims = size(hismatfile, 'hisMat');
 dims = size(hisMat);

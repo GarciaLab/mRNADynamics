@@ -156,7 +156,7 @@ classdef liveExperiment
                 if obj.hasMovieMatFile
                     movieMat = loadMovieMat(obj.Prefix);
                 else
-                    movieMat = makeMovieMats(obj.Prefix, [], [], [], 'loadHis', false);
+                    movieMat = makeMovieMats(obj.Prefix, [], [], [], 'loadHis', false, 'makeMovie', true, 'loadMovie', false);
                 end
             end
             out = movieMat;
@@ -172,7 +172,7 @@ classdef liveExperiment
                  if obj.hasHisMatFile
                     hisMat = loadHisMat(obj.Prefix);
                  else
-                    [~,hisMat] = makeMovieMats(obj.Prefix, [], [], [], 'loadMovie', false);
+                    [~,hisMat] = makeMovieMats(obj.Prefix, [], [], [], 'loadMovie', false,  'loadHis', false, 'makeMovie', false, 'makeHis', true);
                  end
             end
             out = hisMat;

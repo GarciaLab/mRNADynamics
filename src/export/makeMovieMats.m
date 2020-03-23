@@ -42,16 +42,14 @@ nChDatabase = sum(~cellfun(@isempty, Channels)); %this method fails if your
 nChTifs = 0;
 for i = 1:3
     nChTifs = nChTifs +...
-        ~isempty(dir([preFolder, filesep,'*ch0',num2str(i),'*.tif']));
+        ~isempty(dir([preFolder, filesep,Prefix,'*ch0',num2str(i),'*.tif']));
 end
 
 nCh = max(nChTifs, nChDatabase);
 
-pth = [preFolder, filesep,Prefix];
-
 tic
 
-if loadMovie && exist([pth, '_movieMat.Mat'], 'file')
+if loadMovie && exist([preFolder,filesep,Prefix, '_movieMat.Mat'], 'file')
     disp('Loading movie mats...')
     movieMat = getMovieMat(thisExperiment);
     disp(['Movie mats loaded. ', num2str(toc), ' s elapsed.'])
@@ -60,7 +58,7 @@ if loadMovie && exist([pth, '_movieMat.Mat'], 'file')
     end
 end
 
-if loadHis && exist([pth, '_hisMat.Mat'], 'file')
+if loadHis && exist([preFolder,filesep, Prefix, '_hisMat.Mat'], 'file')
     
     disp('Loading nuclear mats...')
     
@@ -90,29 +88,29 @@ if makeMovie
         for f = 1:nFrames
             
             for z = 1:nSlices+nPadding
-                movieMat(:, :, z, f, ch) = imread([pth,'_',iIndex(f, nDigits),...
+                movieMat(:, :, z, f, ch) = imread([preFolder, filesep, Prefix, '_',iIndex(f, nDigits),...
                     '_z', iIndex(z, 2), ['_ch', iIndex(ch, 2)], '.tif']);
             end
             
             if makeHis
-                hisMat(:, :, f) = imread([pth,'-His_', iIndex(f, nDigits), '.tif']);
+                hisMat(:, :, f) = imread([preFolder, filesep, Prefix, '-His_', iIndex(f, nDigits), '.tif']);
             end
             
         end
     end
     
-    livemRNAImageMatSaver([PreProcFolder, filesep, Prefix, '_movieMatCh1.mat'],...
+    livemRNAImageMatSaver([preFolder, filesep, Prefix, '_movieMatCh1.mat'],...
         movieMat(:, :, :, :, 1));
     if size(movieMat, 5) > 1
-        livemRNAImageMatSaver([PreProcFolder, filesep, Prefix, '_movieMatCh2.mat'],...
+        livemRNAImageMatSaver([preFolder, filesep, Prefix, '_movieMatCh2.mat'],...
             movieMat(:, :, :, :, 2));
     end
     if size(movieMat, 5) == 3
-        livemRNAImageMatSaver([PreProcFolder, filesep, Prefix, '_movieMatCh3.mat'],...
+        livemRNAImageMatSaver([preFolder, filesep, Prefix, '_movieMatCh3.mat'],...
             movieMat(:, :, :, :, 3));
     end
     
-    livemRNAImageMatSaver([pth, '_hisMat.mat'], hisMat);
+    livemRNAImageMatSaver([preFolder,filesep, Prefix, '_hisMat.mat'], hisMat);
     
     disp(['Movie mats created.' , num2str(toc), ' s elapsed.'])
     
@@ -120,13 +118,13 @@ end
 
 if  makeHis && ~makeMovie
     
-    hisMat = zeros(xSize, ySize,nFrames, 'uint8'); % y x t
+    hisMat = zeros(ySize, xSize,nFrames, 'uint8'); % y x t
     
     for f = 1:nFrames
-        hisMat(:, :, f) = imread([pth,'-His_', iIndex(f, nDigits), '.tif']);
+        hisMat(:, :, f) = imread([preFolder, filesep, Prefix, '-His_', iIndex(f, nDigits), '.tif']);
     end
     
-    livemRNAImageMatSaver([pth, '_hisMat.mat'], hisMat);
+    livemRNAImageMatSaver([preFolder,filesep, Prefix, '_hisMat.mat'], hisMat);
     
 end
 
