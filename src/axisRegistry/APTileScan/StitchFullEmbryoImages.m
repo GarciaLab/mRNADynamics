@@ -1,7 +1,7 @@
 function StitchFullEmbryoImages(Prefix, varargin)
 % author: Gabriella Martini
 % date created: 12/30/19
-% date last modified: 12/30/19
+% date last modified: 3/20/20
 
 %% Parse Inputs 
 if ~exist('Prefix')

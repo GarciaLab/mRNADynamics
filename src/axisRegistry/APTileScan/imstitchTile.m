@@ -45,12 +45,29 @@ numcols = max(cbounds);
 imm2 = zeros(numrows, numcols);
 imcounts = zeros(numrows, numcols);
 for n =1:NTiles
+    tn = tiles{n};
     r = tile_array.rows{n};
     c = tile_array.cols{n};
-    [h, w] = size(tiles{n});
-    imcounts(r:(r+h-1),c:(c+w-1)) = imcounts(r:(r+h-1),c:(c+w-1)) +1;
-    imm2(r:(r+h-1), c:(c+w-1)) =...
-        imm2(r:(r+h-1), c:(c+w-1))+tiles{n};
+    gr = tile_array.grid_positions{n}(1);
+    gc = tile_array.grid_positions{n}(2);
+    rmin = r;
+    cmin = c;
+    rmax = r + h -1;
+    cmax = c + w -1;
+    for m=1:NTiles
+        if (gr == grid_positions{m}(1)) & (gc == grid_positions{m}(2) -1 )
+        end
+    end
+    [h, w] = size(tn);
+    imsub = imm2(r:(r+h-1), c:(c+w-1));
+    [ovlp_rows, ovlp_cols] = find(imsub > 0);
+    rowOvlp = max(ovlp_rows) - min(ovlp_rows) + 1;
+    colOvlp = max(ovlp_rows) - min(ovlp_rows) + 1;
+    %pA = polyshape([r, r, r+ hA, r+hA], [c, c+wA, c+wA, c]);
+    %overlap = intersect(pA, pB);
+    imcounts(r:(r+h-1),c:(c+w-1)) = n;%imcounts(r:(r+h-1),c:(c+w-1)) +1;
+    imm2(r:(r+h-1), c:(c+w-1)) = tiles{n};%...
+        %imm2(r:(r+h-1), c:(c+w-1))+tiles{n};
 end
 % Image pixel intensity is normalized by the number of tiles contributing
 % to each pixel
