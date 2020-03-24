@@ -44,7 +44,6 @@ dogStr = 'dogStack_';
 
 nCh = length(spotChannels);
 
-nameSuffix = ['_ch', iIndex(spotChannels, 2)];
 
 format = [FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSize];
 
@@ -53,6 +52,8 @@ dogMat = zeros(format(1),format(2), zSize, numFrames,  'uint16');
 
 for ch = spotChannels
     
+    nameSuffix = ['_ch', iIndex(ch, 2)];
+
     waitbarFigure = waitbar(0, ['Filtering images: Channel ', num2str(ch)]);
     
     %     nameSuffix = ['_ch', iIndex(ch, 2)];
@@ -140,11 +141,11 @@ end
 
 dogFile = [ProcPath, filesep, Prefix,'_', filesep, Prefix, '_dogMat.mat'];
 
-if whos(var2str(dogMat)).bytes < 2E9
-    save(dogFile, 'dogMat', '-v6');
-else
-    save(dogFile, 'dogMat', '-v7.3', '-nocompression');
-end
+% if whos(var2str(dogMat)).bytes < 2E9
+%     save(dogFile, 'dogMat', '-v6');
+% else
+%     save(dogFile, 'dogMat', '-v7.3', '-nocompression');
+% end
 
 end
 
