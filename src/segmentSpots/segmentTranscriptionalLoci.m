@@ -3,8 +3,8 @@ function [Spots, dogs]...
     = segmentTranscriptionalLoci(...
     ...
     ~, ~, channelIndex, initialFrame, lastFrame,...
-    zSize, ~, Prefix, ProcPath, shouldDisplayFigures,doFF, ffim,...
-    Threshold, neighborhood, snippet_size, pixelSize, microscope,...
+    zSize, ~, Prefix, ~, shouldDisplayFigures,doFF, ffim,...
+    Threshold, neighborhood, snippet_size, ~, microscope,...
     ~,filterMovieFlag, resultsFolder, gpu, saveAsMat, ~, shouldMaskNuclei)
 
 
@@ -12,6 +12,7 @@ cleanupObj = onCleanup(@myCleanupFun);
 
 
 thisExperiment = liveExperiment(Prefix); 
+pixelSize_nm = thisExperiment.pixelSize_nm;
 
 if shouldMaskNuclei
     if thisExperiment.hasEllipsesFile, Ellipses = getEllipses(thisExperiment); end
@@ -70,7 +71,8 @@ end
 
 if filterMovieFlag
     filterType = 'Difference_of_Gaussian_3D';
-    sigmas = {round(200/pixelSize),round(800/pixelSize)};
+    sigmas = {round(200/thisExperiment.pixelSize_nm),...
+        round(800/thisExperiment.pixelSize_nm)};
     filterOpts = {'nWorkers', 1, 'highPrecision', 'customFilter', filterType,...
         sigmas, 'double', 'keepPool', gpu};
     if saveAsMat
@@ -87,8 +89,6 @@ movieMat = getMovieMat(thisExperiment);
 
 yDim = size(movieMat, 1);
 xDim = size(movieMat, 2);
-nSlices = size(movieMat, 3);
-nFrames = size(movieMat, 4);
 
 % dogMat = loadDogMat(Prefix);
 
@@ -110,7 +110,7 @@ isZPadded = size(movieMat, 3) ~= zSize;
 q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
-for currentFrame = initialFrame:lastFrame 
+parfor currentFrame = initialFrame:lastFrame 
     
     %report progress every tenth frame
     if ~mod(currentFrame, 10), disp(['Segmenting frame ', num2str(currentFrame)]); end
@@ -191,13 +191,12 @@ for currentFrame = initialFrame:lastFrame
         
         % apply nuclear mask if it exists
         if shouldMaskNuclei && ~isempty(Ellipses)
-            ellipsesFrame = Ellipses{currentFrame};
-            nuclearMask = makeNuclearMask(ellipsesFrame, [yDim, xDim]);
-            %         immask = uint16(nuclearMask).*im;
-            %         imshow(immask, [])
+            nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim, xDim]);
             im_thresh = im_thresh & nuclearMask;
         end
         
+        %probability map regions usually look different from dog regions and
+        %require some mophological finesse
         if isFileProbMap
             se = strel('square', 3);
             im_thresh = imdilate(im_thresh, se); %thresholding from this classified probability map can produce non-contiguous, spurious Spots{channelIndex}. This fixes that and hopefully does not combine real Spots{channelIndex} from different nuclei
@@ -207,17 +206,20 @@ for currentFrame = initialFrame:lastFrame
         [im_label, n_spots] = bwlabel(im_thresh);
         centroids = regionprops(im_thresh, 'centroid');
         
-        temp_frames = {};
         temp_particles = cell(1, n_spots);
         
         if n_spots ~= 0
             
             for spotIndex = 1:n_spots
                 centroid = round(centroids(spotIndex).Centroid);
-                tic
-                [temp_particles(spotIndex), Fits] = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
-                    neighborhood, snippet_size, pixelSize, shouldDisplayFigures, graphicsHandles, microscope, 0, centroid,MLFlag, currentFrame, spotIndex, zIndex);
+                
+                [temp_particles(spotIndex), Fits] = identifySingleSpot(spotIndex,...
+                    {im,imAbove,imBelow}, im_label, dog, ...
+                    neighborhood, snippet_size, pixelSize_nm, shouldDisplayFigures,...
+                    graphicsHandles, microscope, 0, centroid,MLFlag, currentFrame, spotIndex, zIndex);
+                
                 Spots(currentFrame).Fits = [Spots(currentFrame).Fits, Fits];
+                
             end
             
         end
