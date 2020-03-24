@@ -119,15 +119,12 @@ for currentFrame = initialFrame:lastFrame
         
         dogStackFile = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(currentFrame, 3),...
             nameSuffix];
+        
         if exist([dogStackFile, '.mat'], 'file')
-            
             dogStack = load([dogStackFile,'.mat'], 'dogStack');
             dogStack = dogStack.dogStack;
-            
-        elseif exist([dogStackFile, '.tif'], 'file')
-            
+        elseif exist([dogStackFile, '.tif'], 'file')   
             dogStack = imreadStack([dogStackFile, '.tif']);
-            
         end
         
         

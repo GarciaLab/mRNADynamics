@@ -9,7 +9,10 @@ function [fits, relative_errors, residual, confidence_intervals, GaussianIntensi
 warning('off','MATLAB:singularMatrix')
 
 snippet = double(snippet);
-[y,x] = meshgrid(1:size(snippet,2), 1:size(snippet,1));
+
+%let's cache this for efficiency
+persistent y x
+if isempty(y), [y,x] = meshgrid(1:size(snippet,2), 1:size(snippet,1)); end
 
 med = median(snippet(:));
 %fits: [amplitude, x position, x width, y position, y width, offset, angle]
@@ -17,16 +20,8 @@ med = median(snippet(:));
 singleGaussian = gaussianForSpot(y, x, snippet);
 
 %Define some more initial parameters for fitting
-
-% initial_parameters = [max(snippet(:)), round(length(snippet)/2), widthGuess, round(length(snippet)/2), ...
-%     widthGuess,median(snippet(:)), 0, 0, 0];
-
-
 initial_parameters = [max(snippet(:)), round(size(snippet, 2)/2), round(size(snippet, 1)/2), ...
     0, widthGuess, widthGuess,median(snippet(:)), 0, 0];
-
-
-lsqOptions=optimset('Display','none');
 
 %fits: [amplitude, x position, x width, y position, y width, offset, angle]
 lb_offset = 1/10; %this is empirical. corresponds to a weak background of 1 pixel per ten having a value of 1.
@@ -40,6 +35,10 @@ lb_offset = 1/10; %this is empirical. corresponds to a weak background of 1 pixe
 lb = [0, 0, 0, -1, 0, 0,lb_offset, 0, 0];
 ub = [max(snippet(:))*1.5, size(snippet, 2), size(snippet, 1), 1,...
     size(snippet, 2), size(snippet, 1), max(snippet(:)),med/2, med/2];
+
+%let's cache this for efficiency
+persistent lsqOptions 
+if isempty(lsqOptions), lsqOptions=optimset('Display','none'); end
 
 [single_fit, ~, residual, ~, ~, ~, jacobian] = lsqnonlin(singleGaussian, ...
     initial_parameters,lb,ub, lsqOptions);
