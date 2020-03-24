@@ -104,10 +104,15 @@ end
 %     [D, FileMode] = DetermineFileMode(rootFolder);
 %   end
 
-  %Create the output folder
-  OutputFolder = [PreProcPath, filesep, Prefix];
-  disp(['Creating folder: ', OutputFolder]);
-  mkdir(OutputFolder)
+%Create the output folder
+OutputFolder = [PreProcPath, filesep, Prefix];
+disp(['Creating folder: ', OutputFolder]);
+mkdir(OutputFolder)
+  
+%Create the results folder
+DropboxFolderName = [DropboxFolder, filesep, Prefix];
+disp(['Creating folder: ', DropboxFolderName]);
+mkdir(DropboxFolderName);
 
   %Generate FrameInfo
   FrameInfo = struct('LinesPerFrame', {}, 'PixelsPerLine', {}, ...
@@ -145,9 +150,6 @@ end
 
   if exportMovieFiles
       %Save the information about the various frames
-      DropboxFolderName = [DropboxFolder, filesep, Prefix];
-      disp(['Creating folder: ', DropboxFolderName]);
-      mkdir(DropboxFolderName);
       save([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo', '-v6');
   end
   
