@@ -130,12 +130,12 @@ for ch = spotChannels
         %             imshow(dogs(:,:, 5, 5),[]); %useful line for debugging
     end
     
-    close(waitbarFigure);
+    try close(waitbarFigure); end
     
 end
 
     function nUpdateWaitbar(~)
-        waitbar(p/numFrames, waitbarFigure);
+        try waitbar(p/numFrames, waitbarFigure); end
         p = p + 1;
     end
 

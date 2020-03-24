@@ -16,7 +16,7 @@ function [SpotFilter, Particles, Spots,...
 thisExperiment = liveExperiment(Prefix);
 
 movieMatCh = getMovieMat(thisExperiment);
-movieMatCh = movieMatCh(:, :, :, coatChannel);
+movieMatCh = movieMatCh(:, :, :, :, CurrentChannel);
 
 FrameInfo = getFrameInfo(thisExperiment);
 

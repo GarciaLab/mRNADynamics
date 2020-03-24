@@ -353,7 +353,7 @@ while (cc ~= 'x')
     if length(cptState.coatChannel) == 1
         cptState.nameSuffix = ['_ch', iIndex(cptState.coatChannel, 2)];
     else
-        cptState.nameSuffix = ['_ch', iIndex(cptState.currentChannel, 2)];
+        cptState.nameSuffix = ['_ch', iIndex(cptState.CurrentChannel, 2)];
     end
     
     inds = find(cptState.CurrentFrame > ncFramesFull);

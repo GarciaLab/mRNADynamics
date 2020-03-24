@@ -119,8 +119,11 @@ falsePositives = 0;
 if ~skipSegmentation
     disp('Segmenting spots...')
     Spots = cell(1, nCh);
+    n = 0;
     for channelIndex = spotChannels
-        
+    
+        n = n + 1;    
+    
         if ismember(channelIndex, skipChannel)
             continue
         end
@@ -132,7 +135,7 @@ if ~skipSegmentation
             error('wtff')
         end
         [tempSpots, dogs] = segmentTranscriptionalLoci(nCh, spotChannels, channelIndex, initialFrame, lastFrame, zSize, ...
-            PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(channelIndex), neighborhood_px, ...
+            PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(n), neighborhood_px, ...
             snippetSize_px, pixelSize_nm, microscope, Weka,...
              filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, nuclearMask);
 
@@ -140,7 +143,7 @@ if ~skipSegmentation
 
         [~, falsePositives, tempSpots] = findBrightestZ([], numShadows, useIntegralCenter, 0, tempSpots, 'dogs', dogs);
 
-        Spots{channelIndex} = tempSpots;
+        Spots{n} = tempSpots;
 
         timeElapsed = toc;
         disp(['Elapsed time: ', num2str(timeElapsed / 60), ' min'])
