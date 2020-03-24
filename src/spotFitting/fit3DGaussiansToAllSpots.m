@@ -29,7 +29,7 @@ for i = 1:length(varargin)
         keepPool = true;
     elseif strcmpi(varargin{i}, 'dogs')
         dogs = varargin{i+1};
-    elseif strcmpi(varargin{i}, 'saveAsMat') || strcmpi(varargin{i}, '.mat')
+    elseif strcmpi(varargin{i}, 'saveAsMat') | strcmpi(varargin{i}, '.mat')
         saveType = '.mat';
     end
 end

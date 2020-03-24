@@ -45,8 +45,7 @@ OutputFolder1=[ProcPath,filesep,Prefix,'_',filesep,'dogs',filesep];
 
 DogOutputFolder= OutputFolder1;
 
-%the underscore is to remove . and .. from the output structure
-dogDir = dir([DogOutputFolder, '*_*']);
+dogDir = dir([OutputFolder1, filesep, '*_ch0', num2str(Channel), '.*']);
 
 loadAsStacks = ~contains(dogDir(1).name, '_z');
 Weka = startsWith(dogDir(1).name, 'prob');
@@ -86,7 +85,6 @@ end
 available_zs = 2:3:zSize-1;
 
 
-
 numFrames = numel(dogDir);
 
 if numFrames == 0
@@ -102,7 +100,6 @@ bestFrame = 1;
 bestVal = 0;
 max_val = 0;
 all_dogs = cell(numFrames, zSize - 2);
-dogDir = dir(OutputFolder1);
 for frame = available_frames
     for z = available_zs
         if zPadded

@@ -62,7 +62,7 @@ warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
 thisExperiment = liveExperiment(Prefix);
 
-[displayFigures, numFrames, numShadows, keepPool, ...
+[displayFigures, lastFrame, numShadows, keepPool, ...
     autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData,...
     fit3D, skipChannel, optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat,...
     saveType, nuclearMask, DataType, track, skipSegmentation]...
@@ -100,8 +100,11 @@ zSize = FrameInfo(1).NumberSlices;
 
 nCh = length(spotChannels);
 
-try numFrames = numel(dir([DogOutputFolder, '*_*']));
-catch numFrames = numel(FrameInfo); end
+% try numFrames = numel(dir([DogOutputFolder, '*_*']));
+% catch numFrames = numel(FrameInfo); end
+if lastFrame==0
+    lastFrame = numel(FrameInfo);
+end
  
 % The spot finding algorithm first segments the image into regions that are
 % above the threshold. Then, it finds global maxima within these regions by searching in a region "neighborhood"
@@ -111,13 +114,12 @@ pixelSize_nm = FrameInfo(1).PixelSize * 1000; %nm
 neighboorhood_nm = 1300;
 neighborhood_px = round(neighboorhood_nm / pixelSize_nm); %nm
 snippetSize_px = 2 * (floor(neighboorhood_nm / (2 * pixelSize_nm))) + 1; % nm. note that this is forced to be odd
-coatChannel = spotChannels;
 
 falsePositives = 0;
 if ~skipSegmentation
     disp('Segmenting spots...')
     Spots = cell(1, nCh);
-    for channelIndex = 1:nCh
+    for channelIndex = spotChannels
         
         if ismember(channelIndex, skipChannel)
             continue
@@ -129,7 +131,7 @@ if ~skipSegmentation
         if doFF
             error('wtff')
         end
-        [tempSpots, dogs] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, initialFrame, numFrames, zSize, ...
+        [tempSpots, dogs] = segmentTranscriptionalLoci(nCh, spotChannels, channelIndex, initialFrame, lastFrame, zSize, ...
             PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(channelIndex), neighborhood_px, ...
             snippetSize_px, pixelSize_nm, microscope, Weka,...
              filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, nuclearMask);
@@ -143,7 +145,7 @@ if ~skipSegmentation
         timeElapsed = toc;
         disp(['Elapsed time: ', num2str(timeElapsed / 60), ' min'])
         try %#ok<TRYNC>
-            log = logSegmentSpots(DropboxFolder, Prefix, timeElapsed, [], numFrames, Spots, falsePositives, Threshold, channelIndex, numShadows, intScale, fit3D);
+            log = logSegmentSpots(DropboxFolder, Prefix, timeElapsed, [], lastFrame, Spots, falsePositives, Threshold, channelIndex, numShadows, intScale, fit3D);
             display(log);
         end
 
@@ -167,7 +169,7 @@ end
 
 if fit3D > 0
     disp('Fitting 3D Gaussians...')
-    fit3DGaussiansToAllSpots(Prefix, 'nSpots', fit3D, 'segmentSpots', Spots, 'nWorkers', nWorkers, saveType);
+    fit3DGaussiansToAllSpots(Prefix, fit3D, 'segmentSpots', Spots, 'nWorkers', nWorkers, saveType);
     disp('3D Gaussian fitting completed.')
 end
 

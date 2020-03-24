@@ -1,4 +1,4 @@
-function [displayFigures, numFrames, numShadows, keepPool, threshGUI, initialFrame, ...
+function [displayFigures, lastFrame, numShadows, keepPool, threshGUI, initialFrame, ...
     useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel,...
     optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat, saveType, ...
     nuclearMask, dataType, track, skipSegmentation]...
@@ -6,7 +6,7 @@ function [displayFigures, numFrames, numShadows, keepPool, threshGUI, initialFra
 
 % Default options
 displayFigures = false;
-numFrames = 0;
+lastFrame = 0;
 numShadows = 1;
 nWorkers = 8;
 keepPool = true;
@@ -46,7 +46,7 @@ for i = 1:length(varargin)
         if ~isnumeric(varargin{i + 1}) || varargin{i + 1} < 1
             error('Wrong input parameters. After ''Frames'' you should input the number of frames')
         else
-            numFrames = varargin{i + 1};
+            lastFrame = varargin{i + 1};
         end
         
     elseif strcmpi(varargin{i}, 'InitialFrame')

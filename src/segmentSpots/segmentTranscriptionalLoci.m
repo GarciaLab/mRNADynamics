@@ -2,10 +2,10 @@ function [Spots, dogs]...
     ...
     = segmentTranscriptionalLoci(...
     ...
-    nCh, coatChannel, channelIndex, initialFrame, numFrames,...
-    zSize, PreProcPath, Prefix, ProcPath, displayFigures,doFF, ffim,...
+    ~, ~, channelIndex, initialFrame, lastFrame,...
+    zSize, ~, Prefix, ProcPath, shouldDisplayFigures,doFF, ffim,...
     Threshold, neighborhood, snippet_size, pixelSize, microscope,...
-    Weka,filterMovieFlag, resultsFolder, gpu, saveAsMat, saveType, shouldMaskNuclei)
+    ~,filterMovieFlag, resultsFolder, gpu, saveAsMat, ~, shouldMaskNuclei)
 
 
 cleanupObj = onCleanup(@myCleanupFun);
@@ -15,26 +15,24 @@ thisExperiment = liveExperiment(Prefix);
 
 if shouldMaskNuclei
     if thisExperiment.hasEllipsesFile, Ellipses = getEllipses(thisExperiment); end
-else
-    Ellipses = [];
-end
-
+else Ellipses = []; end
 
 dogs = [];
-DogOutputFolder=[ProcPath,filesep];
 
-%the underscore is to remove . and .. from the output structure
-dogDir = dir([DogOutputFolder, '*_*']);
+DogOutputFolder = [thisExperiment.procFolder, filesep, 'dogs', filesep];
 
-loadAsStacks = ~contains(dogDir(1).name, '_z');
-Weka = startsWith(dogDir(1).name, 'prob');
+dogDir = dir([DogOutputFolder, '*_ch0', num2str(channelIndex), '.*']);
+
+shouldLoadAsStacks = ~contains(dogDir(1).name, '_z');
+
+isFileProbMap = startsWith(dogDir(1).name, 'prob');
 
 waitbarFigure = waitbar(0, 'Segmenting spots');
 set(waitbarFigure, 'units', 'normalized', 'position', [0.4, .15, .25,.1]);
 
-Spots = repmat(struct('Fits', []), 1, numFrames);
+Spots = repmat(struct('Fits', []), 1, lastFrame);
 
-if displayFigures
+if shouldDisplayFigures
     %left bottom width height
     dogFig = figure('units', 'normalized', 'position',[.4, .5, .4, .4]);
     dogAx = axes(dogFig, 'Visible', 'off');
@@ -51,14 +49,14 @@ else
     dogAx = 0;
 end
 
-if Weka
+if isFileProbMap
     MLFlag = 'ML';
     dogStr = 'prob';
     if Threshold < 5000
         warning('Increasing threshold to 5000. For Weka ML, you are thresholding on probability maps so the threshold shouldn''t be set below 50% = 5000.')
         Threshold = 5000;
     end
-elseif loadAsStacks
+elseif shouldLoadAsStacks
     MLFlag = '';
     dogStr = 'dogStack_';
 else
@@ -83,13 +81,7 @@ if filterMovieFlag
     [~, dogs] = filterMovie(Prefix,'optionalResults', resultsFolder, filterOpts{:});
 end
 
-if nCh > 1
-    ch = channelIndex;
-else
-    ch = coatChannel;
-end
-
-nameSuffix = ['_ch', iIndex(ch, 2)];
+nameSuffix = ['_ch', iIndex(channelIndex, 2)];
 
 movieMat = getMovieMat(thisExperiment);
 
@@ -98,39 +90,32 @@ xDim = size(movieMat, 2);
 nSlices = size(movieMat, 3);
 nFrames = size(movieMat, 4);
 
-
 % dogMat = loadDogMat(Prefix);
 
-if Threshold == -1 && ~Weka
+if Threshold == -1 && ~isFileProbMap
     
     
     if ~filterMovieFlag
-        Threshold = determineThreshold(Prefix, ch,  'numFrames', numFrames);
+        Threshold = determineThreshold(Prefix, channelIndex,  'numFrames', lastFrame);
         display(['Threshold: ', num2str(Threshold)])
     else
-        Threshold = determineThreshold(Prefix, ch, 'noSave',  'numFrames', numFrames);
+        Threshold = determineThreshold(Prefix, channelIndex, 'noSave',  'numFrames', lastFrame);
     end
     
     display(['Threshold: ', num2str(Threshold)])
     
 end
-
+isZPadded = size(movieMat, 3) ~= zSize;
 
 q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
-
-
-
-zPadded = size(movieMat, 3) ~= zSize;
-
-
-for currentFrame = initialFrame:numFrames 
+for currentFrame = initialFrame:lastFrame 
     
     %report progress every tenth frame
-    if ~mod(currentFrame, 10), disp(num2str(currentFrame)); end
+    if ~mod(currentFrame, 10), disp(['Segmenting frame ', num2str(currentFrame)]); end
     
-    if loadAsStacks
+    if shouldLoadAsStacks
         
         dogStackFile = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(currentFrame, 3),...
             nameSuffix];
@@ -150,23 +135,23 @@ for currentFrame = initialFrame:numFrames
     
     for zIndex = 1:zSize
         
-        im = double(squeeze(movieMat(:, :, zIndex, currentFrame, ch)));
+        im = double(squeeze(movieMat(:, :, zIndex, currentFrame, channelIndex)));
         try
-            imAbove = double(sliceMovieMat(movieMat, ch, zIndex+1, currentFrame));
-            imBelow= double(sliceMovieMat(movieMat, ch, zIndex-1, currentFrame));
+            imAbove = double(sliceMovieMat(movieMat, channelIndex, zIndex+1, currentFrame));
+            imBelow= double(sliceMovieMat(movieMat, channelIndex, zIndex-1, currentFrame));
         catch
             imAbove = nan(size(im,1),size(im,2));
             imBelow = nan(size(im,1),size(im,2));
         end
         
         
-        if zPadded
+        if isZPadded
             dogZ = zIndex;
         else
             dogZ = zIndex - 1;
         end
         
-        if loadAsStacks
+        if shouldLoadAsStacks
             dog = dogStack(:, :, dogZ);
         end
 % =======
@@ -188,7 +173,7 @@ for currentFrame = initialFrame:numFrames
 %             end
         
         
-        if displayFigures
+        if shouldDisplayFigures
             dogO = im(:);
             lLim = median(dogO);
             uLim = max(dogO);
@@ -216,7 +201,7 @@ for currentFrame = initialFrame:numFrames
             im_thresh = im_thresh & nuclearMask;
         end
         
-        if Weka
+        if isFileProbMap
             se = strel('square', 3);
             im_thresh = imdilate(im_thresh, se); %thresholding from this classified probability map can produce non-contiguous, spurious Spots{channelIndex}. This fixes that and hopefully does not combine real Spots{channelIndex} from different nuclei
             im_thresh = im_thresh > 0;
@@ -234,7 +219,7 @@ for currentFrame = initialFrame:numFrames
                 centroid = round(centroids(spotIndex).Centroid);
                 tic
                 [temp_particles(spotIndex), Fits] = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
-                    neighborhood, snippet_size, pixelSize, displayFigures, graphicsHandles, microscope, 0, centroid,MLFlag, currentFrame, spotIndex, zIndex);
+                    neighborhood, snippet_size, pixelSize, shouldDisplayFigures, graphicsHandles, microscope, 0, centroid,MLFlag, currentFrame, spotIndex, zIndex);
                 Spots(currentFrame).Fits = [Spots(currentFrame).Fits, Fits];
             end
             
@@ -250,7 +235,7 @@ end
 try close(waitbarFigure); end
 
     function nUpdateWaitbar(~)
-        try waitbar(p/numFrames, waitbarFigure); end
+        try waitbar(p/lastFrame, waitbarFigure); end
         p = p + 1;
     end
 
