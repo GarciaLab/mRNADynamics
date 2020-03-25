@@ -263,20 +263,6 @@ for i=1:length(schnitzcells)
     end
 end
 
-expandedAnaphaseFrames = [zeros(1,8),thisExperiment.anaphaseFrames'];
-
-for s = 1:length(schnitzcells)
-    midFrame = ceil(length(schnitzcells(s).frames)/2);
-    dif = double(schnitzcells(s).frames(midFrame)) - expandedAnaphaseFrames;
-    cycle = find(dif>0, 1, 'last' );
-    schnitzcells(s).cycle = uint8(cycle);
-end
-
-schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, expandedAnaphaseFrames);
-
-%perform some quality control
-schnitzcells = filterSchnitz(schnitzcells, [thisExperiment.yDim, thisExperiment.xDim]);
-
 %Save everything at this point. It will be overwritten later, but it's
 %useful for debugging purposes if there's a bug in the code below.
 if ~exist([DropboxFolder,filesep,Prefix], 'dir')
@@ -310,10 +296,7 @@ if intFlag
     schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, PreProcPath);
 end
 
-if fish
-    schnitzcells = rmfield(schnitzcells, {'P', 'E', 'D'});
-end
-
+if fish schnitzcells = rmfield(schnitzcells, {'P', 'E', 'D'}); end
 
 if track && ~noBreak
     [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, expandedAnaphaseFrames, nFrames);
@@ -329,6 +312,34 @@ end
 if ~noStitch
     disp('stitching schnitzes')
     StitchSchnitz(Prefix, nWorkers);
+end
+
+expandedAnaphaseFrames = [zeros(1,8),thisExperiment.anaphaseFrames'];
+
+for s = 1:length(schnitzcells)
+    midFrame = ceil(length(schnitzcells(s).frames)/2);
+    dif = double(schnitzcells(s).frames(midFrame)) - expandedAnaphaseFrames;
+    cycle = find(dif>0, 1, 'last' );
+    schnitzcells(s).cycle = uint8(cycle);
+end
+
+schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, expandedAnaphaseFrames);
+
+%perform some quality control
+schnitzcells = filterSchnitz(schnitzcells, [thisExperiment.yDim, thisExperiment.xDim]);
+
+try 
+    Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
+    if shouldConvertToAP
+       [EllipsePos, APAngle, APLength]...
+       = convertToFractionalEmbryoLength(Prefix);
+    end
+    for s = 1:length(schnitzcells)
+        for f = 1:length(schnitzcells(s).frames)
+            ellipseInd = schnitzcells(s).cellno(f);
+            schnitzcells(s).APPos(f) = EllipsePos{f}(ellipseInd);
+        end
+    end
 end
 
 

@@ -167,16 +167,15 @@ ncFilterID = [];
 
 thisExperiment = liveExperiment(Prefix);
 FilePrefix=[Prefix,'_'];
-movieDatabase = getMovieDatabase;
-[~, ExperimentType, ExperimentAxis, ~, ~, APResolution,...
-    ~, ~, ~, ~, ~, ~, ~,...
-    ~, ~, ~, ~, ~, ~, ~,~,~,~, ~, DVResolution] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
 
+ExperimentType = thisExperiment.experimentType;
+ExperimentAxis = thisExperiment.experimentAxis;
+APResolution = thisExperiment.APResolution;
+DVResolution = thisExperiment.DVResolution;
 nc9=thisExperiment.nc9; nc10=thisExperiment.nc10; 
 nc11=thisExperiment.nc11;nc12=thisExperiment.nc12;
 nc13=thisExperiment.nc13;nc14=thisExperiment.nc14;
 
-Channels = thisExperiment.Channels;
 Channel1 = thisExperiment.Channel1;
 Channel2 = thisExperiment.Channel2;
 Channel3 = thisExperiment.Channel3;
@@ -198,17 +197,7 @@ ElapsedTime = elapsedTime_min;
 APExperiment = strcmpi(ExperimentAxis, 'AP');
 DVExperiment = strcmpi(ExperimentAxis, 'DV');
 
-correctDV = false;
-if DVExperiment
-    correctDV = exist([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'], 'file');
-    if correctDV
-        load([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat']);
-    end
-end
-
-
-
-%Load all the information
+%Load Spots and Particles
 disp('Loading Particles.mat...');
 [Particles, SpotFilter] = getParticles(thisExperiment);
 disp('Particles loaded.');
@@ -221,7 +210,6 @@ if isempty(Particles)
     SkipFits=1;
     SkipMovie=1;
 end
-
 
 %Delete the files in folder where we'll write again.
 if ~SkipTraces
@@ -287,15 +275,10 @@ if ~haveHistoneChannel
 end
 
 if APExperiment || DVExperiment
-    if (~isfield(Particles{1},'APpos')) || ForceAP
-        try
-            [Particles, SpotFilter] = AddParticlePosition(addParticleArgs{:});
-        catch
-            warning('Failed to add particle position. Is there no full embryo?');
-        end
-    else
-        disp('Using saved AP information (results from AddParticlePosition)')
-    end
+    if ~isfield(Particles{1},'APpos') || ForceAP
+        try [Particles, SpotFilter] = AddParticlePosition(addParticleArgs{:});
+        catch warning('Failed to add particle position. Is there no full embryo?'); end
+    else disp('Using saved AP information (results from AddParticlePosition)'); end
 end
 
 %Create the particle array. This is done so that we can support multiple
@@ -334,7 +317,7 @@ shouldConvertToAP =  haveHistoneChannel...
 
 %Figure out the AP position of each of the nuclei.
 if shouldConvertToAP
-   [EllipsePos, APAngle]...
+   [EllipsePos, APAngle, APLength]...
    = convertToFractionalEmbryoLength(Prefix);
 end
 
@@ -433,6 +416,7 @@ else
     AllTracesVector{1} =...
         createAllTracesVector(FrameInfo,CompiledParticles{1},'NoAP');
 end
+
 if ~slimVersion && fullEmbryoExists
     %% Instantaneous rate of change
     
@@ -607,7 +591,7 @@ catch
 end
 
 CompiledParticlesToken = now;
-save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticlesToken.mat'],'CompiledParticlesToken')
+save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticlesToken.mat'],'CompiledParticlesToken', '-v6')
 
 %%
 if DVExperiment && fullEmbryoExists

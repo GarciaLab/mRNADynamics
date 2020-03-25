@@ -13,8 +13,8 @@ function [Particles, SpotFilter] = AddParticlePosition(Prefix, varargin)
 %                       embyro images
 % 'NoAP': Just adds X and Y information
 % 'SelectChannel': Prompts user to select the channel to use for alignment
-% 'optionalResults': 
-% 'yToManualAlignmentPrompt': 
+% 'optionalResults':
+% 'yToManualAlignmentPrompt':
 % 'correctDV': If you want the DV shift calculated
 %
 % MANUAL ALIGNMENT CONTROLS
@@ -50,26 +50,28 @@ correctDV = false;
 close all
 
 
-    for i=1:length(varargin)
-        switch varargin{i}
-            case {'SkipAlignment'}
-                disp('Skipping alignment step')
-                SkipAlignment=1;
-            case {'ManualAlignment'}
-                ManualAlignment=1;
-            case {'NoAP'}
-                NoAP=1;
-            case {'SelectChannel'}
-                SelectChannel=1;
-            case {'optionalResults'}
-                optionalResults = varargin{i+1};
-            case {'yToManualAlignmentPrompt'}
-                yToManualAlignmentPrompt = 1;
-            case {'correctDV'}
-                correctDV = true;
-        end
+for i=1:length(varargin)
+    switch varargin{i}
+        case {'SkipAlignment'}
+            disp('Skipping alignment step')
+            SkipAlignment=1;
+        case {'ManualAlignment'}
+            ManualAlignment=1;
+        case {'NoAP'}
+            NoAP=1;
+        case {'SelectChannel'}
+            SelectChannel=1;
+        case {'optionalResults'}
+            optionalResults = varargin{i+1};
+        case {'yToManualAlignmentPrompt'}
+            yToManualAlignmentPrompt = 1;
+        case {'correctDV'}
+            correctDV = true;
     end
-    
+end
+
+thisExperiment = liveExperiment(Prefix);
+
 %Get the relevant folders for this data set
 [RawDynamicsPath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
     configValues,...
@@ -217,12 +219,12 @@ if ~NoAP
         % resolutions, though...
         ZoomRatio = ResizeFactor;
         
-    else         
+    else
         SurfName=[];
         
         %Figure out the different channels
         %NuclearChannel=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
-
+        
         
         if any(contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true))
             if SelectChannel
@@ -449,7 +451,7 @@ if ~NoAP
         ZoomImage = max(RawImage3M, [], 3) / 256;
     end
     
-
+    
     
     %Do a correlation between the zoomed in and zoomed out surface images
     %to figure out the shift.
@@ -471,10 +473,10 @@ if ~NoAP
             im1 = ZoomImage;
             im2 = SurfImageResized;
             
-%             if InvertHis
-%                 im1 = imcomplement(im1);
-%                 im2 = imcomplement(im2);
-%             end
+            %             if InvertHis
+            %                 im1 = imcomplement(im1);
+            %                 im2 = imcomplement(im2);
+            %             end
             
             %             try
             %                 C = gather(normxcorr2(gpuArray(im1), gpuArray(im2)));
@@ -559,7 +561,7 @@ if ~NoAP
                 NucMaskZoomIn=GetNuclearMask(ZoomImage,8,2);
                 ImOverlayMask=cat(3,mat2gray(NucMaskZoomOutResizedCropped),...
                     +mat2gray(NucMaskZoomIn),zeros(size(NucMaskZoomOutResizedCropped)));
-
+                
                 alOvFig = figure(1);
                 imOv = subplot(2,1,1);
                 imshow(ImOverlay, 'Parent', imOv)
@@ -588,7 +590,7 @@ if ~NoAP
             end
             
         else
-            warning('Not able to do the cross correlation. Switching to manual alignment mode.')     
+            warning('Not able to do the cross correlation. Switching to manual alignment mode.')
             ManualAlignment=true;
         end
         
@@ -614,9 +616,9 @@ if ~NoAP
     BottomRight=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
         ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
     coordAZoom=(coordA-[TopLeft(2),TopLeft(1)])*ZoomRatio;
-	coordPZoom=(coordP-[TopLeft(2),TopLeft(1)])*ZoomRatio;
+    coordPZoom=(coordP-[TopLeft(2),TopLeft(1)])*ZoomRatio;
     if exist('coordD', 'var')
-         coordDZoom=(coordD-[TopLeft(2),TopLeft(1)])*ZoomRatio;
+        coordDZoom=(coordD-[TopLeft(2),TopLeft(1)])*ZoomRatio;
         coordVZoom=(coordV-[TopLeft(2),TopLeft(1)])*ZoomRatio;
     end
     
@@ -630,7 +632,7 @@ if ~NoAP
     plot([coordA(1),coordP(1)],[coordA(2),coordP(2)],'-b')
     hold(fullAxes, 'off')
     saveas(fullFigure, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoArea.tif']);
-       
+    
     zoomImageFigure = figure(9);
     zoomImageAxes = axes(zoomImageFigure);
     imshow(imadjust(ZoomImage),[], 'Parent', zoomImageAxes)
@@ -651,13 +653,13 @@ if ~NoAP
     %Angle between the x-axis and the AP-axis
     APAngle=atan2((coordPZoom(2)-coordAZoom(2)),(coordPZoom(1)-coordAZoom(1)));
     APLength = norm(coordAZoom-coordPZoom);
-        if exist('coordD', 'var')
-            DVLength = norm(coordDZoom-coordVZoom);
-        else
-            DVLength = APLength/2; %rough estimate but surprisingly accurate
-        end
+    if exist('coordD', 'var')
+        DVLength = norm(coordDZoom-coordVZoom);
+    else
+        DVLength = APLength/2; %rough estimate but surprisingly accurate
+    end
     saveVars = [saveVars, 'APLength', 'DVLength'];
-
+    
     APPosImage=zeros(size(ZoomImage));
     [Rows,Columns]=size(ZoomImage);
     
@@ -710,7 +712,7 @@ if ~NoAP
             end
             save([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'],'DV_correction');
         end
-            saveVars = [saveVars, 'DV_correction'];
+        saveVars = [saveVars, 'DV_correction'];
     end
     DVLength = APLength/2;
     if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
@@ -728,10 +730,10 @@ if ~NoAP
                 
                 %Determine the distance perpendicular to the AP axis. This is a
                 %proxy for a DV axis.
-                DVPositions = Distances.*sin(Angles-APAngle); %units of pixels on the surface of blastoderm. 
+                DVPositions = Distances.*sin(Angles-APAngle); %units of pixels on the surface of blastoderm.
                 if correctDV
                     %ventral midline is dv_correction pixels away from the
-                    %AP axis. 
+                    %AP axis.
                     Particles{ChN}(i).DVpos=abs(DVPositions-DV_correction)/DVLength;
                     %so DVpos is pixels away from the ventral midline
                     %across the blastoderm.
@@ -784,7 +786,31 @@ end
 
 if correctDV
     CheckDivisionTimes(Prefix, 'lazy');
-    %for convenience. 
+    %for convenience.
 end
+
+Ellipses = getEllipses(thisExperiment);
+schnitzcells = getSchnitzcells(thisExperiment);
+
+Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
+if shouldConvertToAP
+    [EllipsePos, APAngle, APLength]...
+        = convertToFractionalEmbryoLength(Prefix);
+end
+for s = 1:length(schnitzcells)
+    for f = 1:length(schnitzcells(s).frames)
+        ellipseInd = schnitzcells(s).cellno(f);
+        schnitzcells(s).APPos(f) = EllipsePos{f}(ellipseInd);
+    end
+end
+
+save([thisExperiment.resultsFolder, filesep,'Ellipses.mat'],'Ellipses');
+if (whos(var2str(schnitzcells)).bytes < 2E9)
+    save([thisExperiment.resultsFolder, filesep,Prefix,'_lin.mat'],'schnitzcells', '-v6');
+else
+    save([thisExperiment.resultsFolder, filesep,Prefix,'_lin.mat'],'schnitzcells', '-v7.3', '-nocompression');
+end
+
+
 
 end

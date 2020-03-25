@@ -58,6 +58,9 @@ classdef liveExperiment
         nc14 = 0;
         
         experimentType = '';
+        experimentAxis = '';
+        APResolution = '';
+        DVResolution = '';
         
         
         
@@ -75,7 +78,7 @@ classdef liveExperiment
             
             [~, ProcPath, DropboxFolder, ~, PreProcPath,...
                 ~, ~, ~, movieDatabase]= DetermineLocalFolders(obj.Prefix);
-
+            
             obj.preFolder = [PreProcPath, filesep, Prefix, filesep];
             obj.procFolder = [ProcPath, filesep, Prefix, '_', filesep];
             obj.resultsFolder = [DropboxFolder, filesep, Prefix, filesep];
@@ -102,22 +105,22 @@ classdef liveExperiment
             obj.hasSchnitzcellsFile = sum(contains(obj.resultsDirectory{:, 1}, '_lin'));
             obj.hasSpotsFile = sum(contains(obj.resultsDirectory{:, 1}, 'Spots'));
             obj.hasParticlesFile = sum(contains(obj.resultsDirectory{:, 1}, 'Particles'));
-            obj.hasEllipsesFile = sum(contains(obj.resultsDirectory{:, 1}, 'Ellipses'));   
+            obj.hasEllipsesFile = sum(contains(obj.resultsDirectory{:, 1}, 'Ellipses'));
             obj.hasDoGs = sum(contains(obj.processedDirectory{:, 1}, 'dog', 'IgnoreCase', true));
             obj.hasRawStacks = sum(contains(obj.rawExportedDirectory{:, 1}, 'stacks', 'IgnoreCase', true));
             obj.hasMovieMatFile = sum(contains(obj.rawExportedDirectory{:, 1}, 'movieMat', 'IgnoreCase', true));
             obj.hasHisMatFile = sum(contains(obj.rawExportedDirectory{:, 1}, 'hisMat', 'IgnoreCase', true));
             obj.hasChannelsFile =sum(contains(obj.resultsDirectory{:, 1}, 'Channels'));
-
-            [~, obj.experimentType, ~, ~, ~, ~,...
-                Channel1, Channel2,~, ~,  ~, ~, ~,...
-                ~, ~, ~, ~, ~, ~, ~, Channel3,~,~, ~, ~]...
-                = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
             
+            [~, obj.experimentType, obj.experimentAxis, ~, ~, obj.APResolution,...
+                Channel1, Channel2,~, ~,  ~, ~, ~,...
+                ~, ~, ~, ~, ~, ~, ~, Channel3,~,~, ~, obj.DVResolution]...
+                = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
+                        
             obj.Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
             
             try
-                FrameInfo = getFrameInfo(obj);       
+                FrameInfo = getFrameInfo(obj);
                 [obj.xDim, obj.yDim, obj.pixelSize_nm, obj.zStep_um, obj.snippetSize_px,...
                     obj.nFrames, obj.zDim, obj.nDigits] = getFrameInfoParams(FrameInfo);
                 obj.pixelSize_um = obj.pixelSize_nm/1000;
@@ -170,11 +173,11 @@ classdef liveExperiment
             %load histone movie only if it hasn't been loaded or if we've switched
             %Prefixes (determined by num frames)
             if isempty(hisMat) || ~isequal( size(hisMat, 3), obj.nFrames)
-                 if obj.hasHisMatFile
+                if obj.hasHisMatFile
                     hisMat = loadHisMat(obj.Prefix);
-                 else
+                else
                     [~,hisMat] = makeMovieMats(obj.Prefix, [], [], [], 'loadMovie', false,  'loadHis', false, 'makeMovie', false, 'makeHis', true);
-                 end
+                end
             end
             out = hisMat;
             
@@ -230,15 +233,24 @@ classdef liveExperiment
             end
             
         end
-                
+        
+        function APDetection = getAPDetection(obj)
+            
+            APDetectionFile = [obj.resultsFolder, 'APDetection.mat'];
+            if exist(APDetectionFile, 'file')
+                APDetection =  load(APDetectionFile);
+            end
+            
+        end
+        
     end
     
     methods(Static)
         
-           function movieDatabase = getMovieDatabase
-                      [~, ~, ~, ~, ~,...
+        function movieDatabase = getMovieDatabase
+            [~, ~, ~, ~, ~,...
                 ~, ~, ~, movieDatabase] = DetermineLocalFolders;
-         end
+        end
         
     end
     
