@@ -1,32 +1,34 @@
-function Ellipses = makeEllipses(pMap, thresh)
+function Ellipses = makeEllipses(probabilityMap, probabilityThreshold)
 
 
-nuclearMask = pMap > thresh;
-nFrames = size(nuclearMask, 1);
+nuclearMask = probabilityMap > probabilityThreshold;
+nFrames = size(nuclearMask, 3);
 
 Ellipses = cell(nFrames, 1);
 
 for f = 1:nFrames
     
-    mask = squeeze(nuclearMask(f, :, :)) > thresh;
-    pim = squeeze(pMap(f, :, :));
+     nuclearMaskFrame= nuclearMask(:, :, f);
+    probabilityMapFrame = probabilityMap(:, :, f);
     
-    ellipseStats = regionprops(mask, pim, {...
+    ellipseStats = regionprops(nuclearMaskFrame, probabilityMapFrame, {...
         'WeightedCentroid',...
         'MajorAxisLength',...
         'MinorAxisLength',...
         'Orientation'});
     
-    Ellipses{f, 1} = zeros(length(ellipseStats), 8);   %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
+    % Ellipses are definied as
+    % x, y, a, b, theta, maxcontourvalue, time, particle_id)
+    Ellipses{f, 1} = zeros(length(ellipseStats), 8);   
     
     mjx = [ellipseStats.MajorAxisLength];
     mnx = [ellipseStats.MinorAxisLength];
     ori =  [ellipseStats.Orientation];
     wcs= zeros(length(ellipseStats), 2);
     
-    for r = 1:length(ellipseStats)
-        wcs(r, :) = ellipseStats(r).WeightedCentroid;
-        Ellipses{f, 1}(r, :) = [wcs(r,2),wcs(r,1),mjx(r),mnx(r),ori(r),0,0,0];     %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
+    for region = 1:length(ellipseStats)
+        wcs(region, :) = ellipseStats(region).WeightedCentroid;
+        Ellipses{f, 1}(region, :) = [wcs(region,2),wcs(region,1),mjx(region),mnx(region),ori(region),0,0,0];   
     end
     
     

@@ -34,7 +34,7 @@ else, tempPath = ''; end
 
 classifierPath = '';
 classifier= [];
-reSc = false;
+shouldRescaleTrainingData = false;
 arffLoader = [];
 matlabLoader = true;
 par = false;
@@ -73,7 +73,7 @@ end
 
 
 %normalize data to the max of the training set for better classification
-if reSc
+if shouldRescaleTrainingData
 %     v = trainingData.attributeToDoubleArray(0);
     im = 5*im./max(max(im));
 end

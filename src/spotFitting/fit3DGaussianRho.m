@@ -1,5 +1,7 @@
-function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw, np_flag, integralDimensions] = ...
-                                                    fit3DGaussianRho(snip3D,PixelDims,varargin)
+function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw,...
+    isSymmetricPositiveDefinite, integralDimensions] = ...
+    ...
+    fit3DGaussianRho(snip3D,PixelDims,varargin)
     % INPUT ARGUMENTS:
     % snip3D: 3D array containing spot to fit. Should contain only one spot
     
@@ -60,8 +62,8 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw,
                    params(8)*params(5)*params(6),    params(6)^2,    params(10)*params(6)*params(7);
                    params(9)*params(5)*params(7),    params(10)*params(6)*params(7),    params(7)^2];
                
-    [~, np_flag] = chol(covarianceMatrix(GaussFit));
-    if np_flag 
+    [~, isSymmetricPositiveDefinite] = chol(covarianceMatrix(GaussFit));
+    if isSymmetricPositiveDefinite 
         % find nearest SPD matrix
         covarianceMatrixNew = nearestSPD(covarianceMatrix(GaussFit));
         % update parameters
@@ -85,7 +87,7 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw,
     GaussIntegralSE = NaN;
     GaussIntegral = gaussIntegralFunction(GaussFit);  
     FitDeltas = NaN(size(GaussFit));
-    if ~np_flag
+    if ~isSymmetricPositiveDefinite
         FitCI = nlparci(GaussFit,residual,'jacobian',jacobian);
         FitCI(FitCI<0) = 0;
         FitDeltas = diff(FitCI')' / 2 / 1.96;

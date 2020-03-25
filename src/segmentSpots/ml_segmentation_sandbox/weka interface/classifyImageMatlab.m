@@ -31,7 +31,7 @@ if ischar(training), tempPath = fileparts(training);
 else, tempPath = ''; end
 
 classifier = [];
-reSc = false;
+shouldRescaleTrainingData = false;
 arffLoader = [];
 
 for i = 1:2:(numel(varargin)-1)
@@ -63,7 +63,7 @@ end
 
 
 %normalize data to the max of the training set for better classification
-if reSc
+if shouldRescaleTrainingData
     scale = 5; %ar hardcoded temporarily til i figure out a non-sketch way to do this. do i standardize or normalize?
     im = scale*im./max(max(im));
 end

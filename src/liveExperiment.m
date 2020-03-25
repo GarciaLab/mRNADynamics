@@ -48,6 +48,7 @@ classdef liveExperiment
         nDigits = 0;
         pixelSize_nm = 0;
         pixelSize_um = 0;
+        snippetSize_px = 0;
         
         nc9 = 0;
         nc10 = 0;
@@ -117,7 +118,7 @@ classdef liveExperiment
             
             try
                 FrameInfo = getFrameInfo(obj);       
-                [obj.xDim, obj.yDim, obj.pixelSize_nm, obj.zStep_um, ~,...
+                [obj.xDim, obj.yDim, obj.pixelSize_nm, obj.zStep_um, obj.snippetSize_px,...
                     obj.nFrames, obj.zDim, obj.nDigits] = getFrameInfoParams(FrameInfo);
                 obj.pixelSize_um = obj.pixelSize_nm/1000;
             catch
@@ -168,7 +169,7 @@ classdef liveExperiment
             persistent hisMat;
             %load histone movie only if it hasn't been loaded or if we've switched
             %Prefixes (determined by num frames)
-            if isempty(hisMat) || ~isequal( size(hisMat, 4), obj.nFrames)
+            if isempty(hisMat) || ~isequal( size(hisMat, 3), obj.nFrames)
                  if obj.hasHisMatFile
                     hisMat = loadHisMat(obj.Prefix);
                  else

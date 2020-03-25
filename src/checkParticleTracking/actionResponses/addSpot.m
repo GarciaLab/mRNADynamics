@@ -4,11 +4,10 @@ function [SpotFilter, Particles, Spots,...
     addSpot(...
     ...
     ZoomMode, GlobalZoomMode, Particles, CurrentChannel, ...
-    CurrentParticle, CurrentFrame, CurrentZ, snippet_size, PixelsPerLine, ...
-    LinesPerFrame, Spots, ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
-    SpotFilter, cc, xSize, ySize, NDigits, ...
-    Prefix, PreProcPath, ProcPath, coatChannel,...
-    UseHistoneOverlay, schnitzcells, nWorkers, plot3DGauss, movieMatCh)
+    CurrentParticle, CurrentFrame, CurrentZ, Spots,...
+    SpotFilter, cc,  ...
+    Prefix,...
+    UseHistoneOverlay, schnitzcells, nWorkers, plot3DGauss)
 
 %ADDSPOT
 
@@ -19,6 +18,13 @@ movieMatCh = getMovieMat(thisExperiment);
 movieMatCh = movieMatCh(:, :, :, :, CurrentChannel);
 
 FrameInfo = getFrameInfo(thisExperiment);
+LinesPerFrame = thisExperiment.yDim;
+PixelsPerLine = thisExperiment.xDim;
+pixelSize_nm = thisExperiment.pixelSize_nm;
+PreProcPath = thisExperiment.preFolder;
+snippetSize_px = thisExperiment.snippetSize_px;
+nSlices = thisExperiment.zDim;
+
 
 numParticles = length(Particles{CurrentChannel});
 startParallelPool(nWorkers, 0, 1);
@@ -45,15 +51,15 @@ else
         
         % check that the clicked particle isn't too close to the
         % edge of the frame
-        if (ConnectPositionx > snippet_size/2) && (ConnectPositionx + snippet_size/2 < PixelsPerLine)...
-                && (ConnectPositiony > snippet_size/2) && (ConnectPositiony + snippet_size/2 < LinesPerFrame)
+        if (ConnectPositionx > snippetSize_px/2) && (ConnectPositionx + snippetSize_px/2 < PixelsPerLine)...
+                && (ConnectPositiony > snippetSize_px/2) && (ConnectPositiony + snippetSize_px/2 < LinesPerFrame)
             SpotsIndex = length(Spots{CurrentChannel}(CurrentFrame).Fits)+1;
             breakflag = 0; %this catches when the spot addition was unsuccessful and allows checkparticletracking to keep running and not error out
             use_integral_center = 1;
             
-            FitCell = cell(1, ZSlices);
+            FitCell = cell(1, nSlices);
             
-            for z = 1:ZSlices
+            for z = 1:nSlices
                 spotsIm = double(squeeze(movieMatCh(:, :, z, CurrentFrame)));
 
                 try
@@ -73,14 +79,14 @@ else
                 fig = [];
                 k = 1; %This is supposed to be the index for the particles in an image.
                 %However, this image only contains one particle
-                neighborhood = round(1300 / pixelSize); %nm
+                neighborhood_px = round(1300 / pixelSize_nm); %nm
                 %Get the information about the spot on this z-slice
                 if cc == '['
-                    [~, Fit] = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood, snippet_size, ...
-                        pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [], '', CurrentFrame, [], z);
+                    [~, Fit] = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood_px, snippetSize_px, ...
+                        pixelSize_nm, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [], '', CurrentFrame, [], z);
                 elseif cc == '{'
-                    [~, Fit] = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood, snippet_size, ...
-                        pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', CurrentFrame, [], z);
+                    [~, Fit] = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood_px, snippetSize_px, ...
+                        pixelSize_nm, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', CurrentFrame, [], z);
                 end
                 
                 FitCell{z} = Fit;
@@ -89,7 +95,7 @@ else
             end
             Fits = [];
             
-           for z = 1:ZSlices
+           for z = 1:nSlices
                 if ~isempty(FitCell{z})
                     fieldnames = fields(FitCell{z});
                     if isempty(Fits)
