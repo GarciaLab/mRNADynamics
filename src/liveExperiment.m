@@ -230,10 +230,17 @@ classdef liveExperiment
             end
             
         end
-        
-        
+                
     end
     
+    methods(Static)
+        
+           function movieDatabase = getMovieDatabase
+                      [~, ~, ~, ~, ~,...
+                ~, ~, ~, movieDatabase] = DetermineLocalFolders;
+         end
+        
+    end
     
     
 end
