@@ -68,17 +68,12 @@ thisExperiment = liveExperiment(Prefix);
     saveType, nuclearMask, DataType, track, skipSegmentation]...
     = determineSegmentSpotsOptions(varargin{:});
 
-argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
+argumentErrorMessage = ['Please use filterMovie(Prefix, options)',...
+    'instead of segmentSpots with the argument "[]" to generate DoG images'];
 try
-    if autoThresh
-        Threshold = -1;
-    elseif isempty(Threshold)
-        error(argumentErrorMessage);
-    end
-    
-catch
-    error(argumentErrorMessage);
-end
+    if autoThresh, Threshold = -1;
+    elseif isempty(Threshold), error(argumentErrorMessage); end
+catch, error(argumentErrorMessage); end
 
 spotChannels = thisExperiment.spotChannel;
 
@@ -131,9 +126,6 @@ if ~skipSegmentation
         tic;
 
         [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, spotChannels);
-        if doFF
-            error('wtff')
-        end
         [tempSpots, dogs] = segmentTranscriptionalLoci(nCh, spotChannels, channelIndex, initialFrame, lastFrame, zSize, ...
             PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(n), neighborhood_px, ...
             snippetSize_px, pixelSize_nm, microscope, Weka,...
@@ -191,8 +183,6 @@ if ~keepPool
     
 end
 
-if track
-    TrackmRNADynamics(Prefix, 'noretrack');
-end
+if track, TrackmRNADynamics(Prefix, 'noretrack'); end
 
 end

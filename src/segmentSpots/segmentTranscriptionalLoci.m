@@ -75,11 +75,8 @@ if filterMovieFlag
         round(800/thisExperiment.pixelSize_nm)};
     filterOpts = {'nWorkers', 1, 'highPrecision', 'customFilter', filterType,...
         sigmas, 'double', 'keepPool', gpu};
-    if saveAsMat
-        filterOpts = [filterOpts, 'saveAsMat'];
-    else
-        filterOpts = [filterOpts, 'noSave'];
-    end
+    if saveAsMat, filterOpts = [filterOpts, 'saveAsMat'];
+        else, filterOpts = [filterOpts, 'noSave']; end
     [~, dogs] = filterMovie(Prefix,'optionalResults', resultsFolder, filterOpts{:});
 end
 
@@ -110,7 +107,7 @@ isZPadded = size(movieMat, 3) ~= zSize;
 q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
-parfor currentFrame = initialFrame:lastFrame 
+for currentFrame = initialFrame:lastFrame 
     
     %report progress every tenth frame
     if ~mod(currentFrame, 10), disp(['Segmenting frame ', num2str(currentFrame)]); end
@@ -142,15 +139,10 @@ parfor currentFrame = initialFrame:lastFrame
         end
         
         
-        if isZPadded
-            dogZ = zIndex;
-        else
-            dogZ = zIndex - 1;
-        end
+        if isZPadded, dogZ = zIndex;
+        else, dogZ = zIndex - 1; end
         
-        if shouldLoadAsStacks
-            dog = dogStack(:, :, dogZ);
-        end
+        if shouldLoadAsStacks, dog = dogStack(:, :, dogZ); end
 % =======
 %             if isZPadded | ( ~isZPadded & (zIndex~=1 & zIndex~=zSize) )
 %                 if strcmpi(saveType, '.tif')

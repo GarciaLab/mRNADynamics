@@ -33,7 +33,7 @@ for i = 1:length(varargin)
     end
 end
 
-% loads information needed to loop through DOGs
+% loads information needed to loop through DoGs
 
 [~,ProcPath,DropboxFolder,~,~]=...
     DetermineLocalFolders(Prefix);
@@ -45,6 +45,14 @@ OutputFolder1=[ProcPath,filesep,Prefix,'_',filesep,'dogs',filesep];
 
 DogOutputFolder= OutputFolder1;
 
+if nargin < 2
+    spotChannels = thisExperiment.getSpotChannels; 
+    if numel(spotChannels)==1 
+        Channel = spotChannels;
+    else
+        error('Please supply the spot channel as a second argument.');
+    end
+end
 dogDir = dir([OutputFolder1, filesep, '*_ch0', num2str(Channel), '.*']);
 
 loadAsStacks = ~contains(dogDir(1).name, '_z');
@@ -130,6 +138,8 @@ dog_copy = all_dogs{bestFrame, bestZ};
 min_val = min(non_zero_dog(:));
 thresh = min(median_val + default_iqr * iqr_val, max_val - 1);
 dog_copy(dog_copy < thresh) = 0;
+
+
 f = figure();
 uiAxes = axes(f);
 im = imshow(dog_copy, [], 'Parent', uiAxes);
@@ -240,8 +250,7 @@ uiwait(f);
         dog = dogStack(:, :, zInd);
         
         %         dog = double(squeeze(dogMat(:, :, zInd, frame)));
-        
-        
+
     end
 
 end

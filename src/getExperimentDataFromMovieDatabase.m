@@ -39,6 +39,9 @@ end
     anaphaseFile = [DropboxFolder,filesep,Prefix,filesep, 'anaphaseFrames.mat'];
     if exist(anaphaseFile, 'file')
         load(anaphaseFile, 'anaphaseFrames')
+        if numel(anaphaseFrames) < 6
+            anaphaseFrames = vertcat(anaphaseFrames, nan(6-numel(anaphaseFrames), 1));
+        end
         nc9 = anaphaseFrames(1);
         nc10 = anaphaseFrames(2);
         nc11 = anaphaseFrames(3);

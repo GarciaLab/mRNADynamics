@@ -37,7 +37,7 @@ for arg = 1:2:(numel(varargin)-1)
 end
 
 
-
+thisExperiment = liveExperiment(Prefix);
 if ~isempty(Prefix)
     
     [~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix);
@@ -46,21 +46,14 @@ if ~isempty(Prefix)
         ~, ~, ~,Channel1,Channel2,~,...
         Channel3, ~, movieDatabaseFolder, movieDatabase]...
         = readMovieDatabase(Prefix);
-    
-    movieFile = [PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'];
-    
-    if ~exist('movieMat', 'var')
-        movieMat = loadMovieMat(Prefix);
-    end
+       
+    movieMat = getMovieMat(thisExperiment);
     
     projectionTypeFile = [DropboxFolder,filesep,Prefix,filesep, 'ProjectionType.mat'];
     channelsFile = [DropboxFolder,filesep,Prefix,filesep, 'Channels.mat'];
     
-    if exist(channelsFile, 'file')
-        load(channelsFile, 'Channels')
-    else
-        Channels = {Channel1, Channel2, Channel3};
-    end
+    if exist(channelsFile, 'file'), load(channelsFile, 'Channels') 
+    else, Channels = {Channel1, Channel2, Channel3}; end
     
     if exist(projectionTypeFile, 'file')
         load(projectionTypeFile, 'ProjectionType')

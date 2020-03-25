@@ -11,7 +11,7 @@ classdef liveExperiment
         MLFolder = '';
         project = '';
         Channels = {};
-        spotChannel = [];
+        spotChannels = [];
         
         isUnhealthy = false;
         
@@ -128,10 +128,13 @@ classdef liveExperiment
                 warning('FrameInfo not found.')
             end
             
-            obj.spotChannel = getCoatChannel(Channel1, Channel2, Channel3);
+            obj.spotChannels = getCoatChannel(Channel1, Channel2, Channel3);
             
             obj.anaphaseFrames = retrieveAnaphaseFrames(obj.Prefix);
             obj.hasAnaphaseFile=sum(contains(obj.resultsDirectory{:, 1}, 'anaphaseFrames'));
+            if numel(obj.anaphaseFrames) < 6
+                obj.anaphaseFrames = vertcat(obj.anaphaseFrames, nan(6-numel(obj.anaphaseFrames), 1));
+            end
             obj.nc9 = obj.anaphaseFrames(1);
             obj.nc10 = obj.anaphaseFrames(2);
             obj.nc11 = obj.anaphaseFrames(3);
