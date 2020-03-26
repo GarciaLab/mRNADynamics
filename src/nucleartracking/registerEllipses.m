@@ -9,7 +9,7 @@ Dx = movingReg.DisplacementField(:, :, 1); %displacement left to right
 Dy = movingReg.DisplacementField(:, :, 2); %displacement top to bottom
 
 
-for i = 1:length(ellipsesFrame)
+for i = 1:size(ellipsesFrame, 1)
     xOld = ellipsesFrame(i, 1);
     xOldSub = min(max(round(xOld), 1), xDim);
     yOld = ellipsesFrame(i, 2);
