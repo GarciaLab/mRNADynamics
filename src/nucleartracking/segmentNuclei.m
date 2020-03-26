@@ -26,6 +26,9 @@ if ~exist(tempPath, 'dir')
     mkdir(tempPath);
 end
 matlabLoader = true;
+parFrame = false;
+parInstances = true;
+
 
 
 %options must be specified as name, value pairs. unpredictable errors will
@@ -129,7 +132,7 @@ end
 
 %% make probability maps for each frame
 
-if nWorkers > 1
+if parFrame
     %parallel version
     startParallelPool(nWorkers, displayFigures, keepPool);
     hisMat = parallel.pool.Constant(hisMat);
@@ -168,7 +171,8 @@ else
             
         elseif classifyWithWeka
             pMap(:, :, f) = classifyImageWeka(hisFrame, trainingData,'tempPath', tempPath,...
-                'reSc', shouldRescaleTrainingData, 'classifier', classifier, 'arffLoader', arffLoader, 'matlabLoader', matlabLoader);
+                'reSc', shouldRescaleTrainingData, 'classifier', classifier,...
+                'arffLoader', arffLoader, 'matlabLoader', matlabLoader, 'par', parInstances);
             
         end
         deltaT(f)=toc/60;

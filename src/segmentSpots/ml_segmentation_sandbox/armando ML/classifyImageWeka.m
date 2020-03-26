@@ -166,10 +166,11 @@ pLin = zeros(nInstances, 1);
 
 if par
     
-    testData = parallel.pool.Constant(testData);
-    classifier = parallel.pool.Constant(classifier);
+    testDataConstant = parallel.pool.Constant(testData);
+    classifierConstant = parallel.pool.Constant(classifier);
     parfor i = 1:nInstances
-        pLin(i) = classifyInstance(i, testData.Value, classifier.Value);
+        pLin(i) = classifyInstance(i, testDataConstant.Value,...
+            classifierConstant.Value);
     end
     
 else
