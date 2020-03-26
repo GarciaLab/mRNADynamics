@@ -22,6 +22,9 @@ doTracking = false;
 classifyWithMatlab = true;
 classifyWithWeka = false;
 tempPath = 'S:\livemRNATempPath\';
+if ~exist(tempPath, 'dir')
+    mkdir(tempPath);
+end
 matlabLoader = true;
 
 
@@ -61,9 +64,12 @@ mlFolder = thisExperiment.MLFolder;
 trainingFile = [trainingFolder, filesep, trainingNameExt];
 [~ ,trainingName] = fileparts(trainingNameExt);
 
+
+if isempty(frameRange)
+    frameRange = [1, thisExperiment.nFrames];
+end
 if isempty(hisMat)
-    hisMat = getHisMat(thisExperiment);
-    hisMat = hisMat(:, :, frameRange);    
+    hisMat = getHisMat(thisExperiment);  
 end
 
 ySize = size(hisMat, 1);
@@ -94,7 +100,7 @@ elseif classifyWithWeka
     trainingData= arffLoader.getDataSet;
     trainingData.setClassIndex(trainingData.numAttributes - 1);
     
-    %remove the features matlab we can't (currently) generate in matlab
+    %remove the features we can't (currently) generate in matlab
     dim = 2;
     [~,attributes,~] = weka2matlab(trainingData);
     [~, ~, keepIndices, ~] = validateAttributes(attributes, dim);
