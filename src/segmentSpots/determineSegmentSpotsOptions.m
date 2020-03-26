@@ -1,7 +1,7 @@
 function [displayFigures, lastFrame, numShadows, keepPool, threshGUI, initialFrame, ...
     useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel,...
     optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat, saveType, ...
-    nuclearMask, dataType, track, skipSegmentation]...
+    nuclearMask, dataType, track, skipSegmentation, frameRange]...
     = determineSegmentSpotsOptions(varargin)
 
 % Default options
@@ -26,6 +26,7 @@ saveType = '.mat';
 nuclearMask = true;
 dataType = '';
 track = true;
+frameRange = [nan nan];
 
   
 for i = 1:length(varargin)
@@ -99,6 +100,8 @@ for i = 1:length(varargin)
     end
     
 end
+
+frameRange = [initialFrame, lastFrame]; 
 
 startParallelPool(nWorkers, displayFigures, keepPool);
     

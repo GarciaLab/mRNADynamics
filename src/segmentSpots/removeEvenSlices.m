@@ -40,6 +40,7 @@ for id = 1:length(files)
                 imwrite(uint16(dogStack*10000), [dogFolder,filesep, imName, '.tif']);
             else
                 imwrite(uint16(dogStack*10000), [dogFolder,filesep, imName, '.tif'], 'WriteMode','append');
+                delete([dogFolder, filesep, imFile]);
             end
             
         end
