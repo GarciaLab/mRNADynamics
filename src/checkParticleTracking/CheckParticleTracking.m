@@ -172,7 +172,7 @@ end
 xSize = thisExperiment.xDim;
 ySize = thisExperiment.yDim;
 pixelSize = thisExperiment.pixelSize_nm;
-snippet_size = thisExperiment.snippetSize_nm;
+snippet_size = thisExperiment.snippetSize_px;
 nFrames = thisExperiment.nFrames;
 nSlices = thisExperiment.zDim;
 nDigits = thisExperiment.nDigits;
