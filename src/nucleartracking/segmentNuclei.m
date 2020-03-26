@@ -13,16 +13,22 @@ NumPredictorsToSample = 2;
 maxDepth = 20;
 nTrees = 64;
 hisMat = [];
-classifier = [];
 balance = false; %resample to balance classes
 cleanAttributes = false;
 frameRange = [];
 makeEllipses=false;
 doTracking = false;
+persistent classifier
 classifyWithMatlab = true;
 classifyWithWeka = false;
 tempPath = 'S:\livemRNATempPath\';
+if ~exist(tempPath, 'dir')
+    mkdir(tempPath);
+end
 matlabLoader = true;
+parFrame = false;
+parInstances = true;
+
 
 
 %options must be specified as name, value pairs. unpredictable errors will
@@ -61,10 +67,14 @@ mlFolder = thisExperiment.MLFolder;
 trainingFile = [trainingFolder, filesep, trainingNameExt];
 [~ ,trainingName] = fileparts(trainingNameExt);
 
-if isempty(hisMat)
-    hisMat = getHisMat(thisExperiment);
-    hisMat = hisMat(:, :, frameRange);    
+
+if isempty(frameRange)
+    frameRange = [1, thisExperiment.nFrames];
 end
+if isempty(hisMat)
+    hisMat = getHisMat(thisExperiment);  
+end
+
 
 ySize = size(hisMat, 1);
 xSize = size(hisMat, 2);
@@ -81,10 +91,11 @@ if classifyWithMatlab
     if isempty(classifier)
         
         [classifier, trainingData] = loadClassifier(trainingData, 'cleanAttributes', cleanAttributes,...
-            'NumPredictorsToSample', NumPredictorsToSample, 'nTrees', nTrees);
+            'NumPredictorsToSample', NumPredictorsToSample, 'nTrees', nTrees, 'nWorkers', nWorkers);
         
         suffix = strrep(strrep(char(datetime(now,'ConvertFrom','datenum')), ' ', '_'), ':', '-');
         save([trainingFolder, filesep, trainingName, '_', suffix '_classifier.mat'], 'classifier', '-v7.3')
+        
     end
     
 elseif classifyWithWeka
@@ -94,7 +105,7 @@ elseif classifyWithWeka
     trainingData= arffLoader.getDataSet;
     trainingData.setClassIndex(trainingData.numAttributes - 1);
     
-    %remove the features matlab we can't (currently) generate in matlab
+    %remove the features we can't (currently) generate in matlab
     dim = 2;
     [~,attributes,~] = weka2matlab(trainingData);
     [~, ~, keepIndices, ~] = validateAttributes(attributes, dim);
@@ -123,7 +134,7 @@ end
 
 %% make probability maps for each frame
 
-if nWorkers > 1
+if parFrame
     %parallel version
     startParallelPool(nWorkers, displayFigures, keepPool);
     hisMat = parallel.pool.Constant(hisMat);
@@ -158,11 +169,15 @@ else
         hisFrame = hisMat(:, :, f);
         
         if classifyWithMatlab
-            pMap(:, :, f) = classifyImageMatlab(hisFrame, trainingData, 'reSc', shouldRescaleTrainingData, 'classifier', classifier);
+            pMap(:, :, f) = classifyImageMatlab(hisFrame, trainingData, 'reSc',...,
+                shouldRescaleTrainingData, 'classifier',...
+            classifier, 'displayFigures', displayFigures);
             
         elseif classifyWithWeka
             pMap(:, :, f) = classifyImageWeka(hisFrame, trainingData,'tempPath', tempPath,...
-                'reSc', shouldRescaleTrainingData, 'classifier', classifier, 'arffLoader', arffLoader, 'matlabLoader', matlabLoader);
+                'reSc', shouldRescaleTrainingData, 'classifier', classifier,...
+                'arffLoader', arffLoader, 'matlabLoader', matlabLoader,...
+                    'par', parInstances, 'displayFigures', displayFigures);
             
         end
         deltaT(f)=toc/60;
@@ -186,10 +201,10 @@ end
 
 %% Make ellipses from generated probability maps 
 if makeEllipses
-    if exist([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'] ,'file')
-        ellipsePrompt = ('Ellipses.mat already exists. Do you want to overwrite?');
-        ellipseAnswer = inputdlg(ellipsePrompt);
-        if contains(ellipseAnswer,'y')
+%     if exist([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'] ,'file')
+%         ellipsePrompt = ('Ellipses.mat already exists. Do you want to overwrite?');
+%         ellipseAnswer = inputdlg(ellipsePrompt);
+%         if contains(ellipseAnswer,'y')
             %do morphology analysis to reduce our probability maps to a list of
             %ellipses
             Ellipses = makeEllipses(pMap, probabilityThreshold);
@@ -199,8 +214,9 @@ if makeEllipses
             fakeFrame =  fakeFrame{1};     
             Ellipses(cellfun(@isempty, Ellipses)) = {fakeFrame};
             save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses', '-v6');  
-        end      
-    end
+            TrackNuclei(Prefix, 'retrack');
+%         end      
+%     end
 end
 
 end

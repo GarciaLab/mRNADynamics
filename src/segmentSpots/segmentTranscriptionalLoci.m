@@ -20,7 +20,7 @@ else Ellipses = []; end
 
 dogs = [];
 
-DogOutputFolder = [thisExperiment.procFolder, filesep, 'dogs', filesep];
+DogOutputFolder = [thisExperiment.procFolder, 'dogs', filesep];
 
 dogDir = dir([DogOutputFolder, '*_ch0', num2str(channelIndex), '.*']);
 
@@ -57,12 +57,15 @@ if isFileProbMap
         warning('Increasing threshold to 5000. For Weka ML, you are thresholding on probability maps so the threshold shouldn''t be set below 50% = 5000.')
         Threshold = 5000;
     end
-elseif shouldLoadAsStacks
-    MLFlag = '';
-    dogStr = 'dogStack_';
 else
-    MLFlag = '';
-    dogStr = 'DOG_';
+        MLFlag = '';
+
+    if shouldLoadAsStacks
+        dogStr = 'dogStack_';
+    else
+        
+        dogStr = 'DOG_';
+    end
 end
 
 
@@ -114,7 +117,7 @@ for currentFrame = initialFrame:lastFrame
     
     if shouldLoadAsStacks
         
-        dogStackFile = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(currentFrame, 3),...
+        dogStackFile = [DogOutputFolder, dogStr, Prefix, '_', iIndex(currentFrame, 3),...
             nameSuffix];
         
         if exist([dogStackFile, '.mat'], 'file')

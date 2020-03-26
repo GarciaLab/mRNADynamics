@@ -41,16 +41,11 @@ disp(['Tracking nuclei on ', Prefix, '...']);
 
 [stitchSchnitz, ExpandedSpaceTolerance, NoBulkShift,...
     retrack, nWorkers, track, noBreak, noStitch,...
-    markandfind, fish, intFlag, chooseHis, segmentBetter]...
+    markandfind, fish,...
+    intFlag, chooseHis, segmentBetter, min_rad_um,...
+             max_rad_um]...
     = DetermineTrackNucleiOptions(varargin{:});
 
-
-if segmentBetter
-    if ~retrack
-        resegmentAllFrames(Prefix);
-    end
-    retrack = true;
-end
 
 thisExperiment = liveExperiment(Prefix);
 
@@ -108,12 +103,21 @@ if chooseHis
     [hisFile, hisPath] = uigetfile([ProcPath, filesep, Prefix,'_',filesep,'*.mat']);
     hisStruct = load([hisPath, hisFile]);
     hisField = fieldnames(hisStruct);
-    hisMat = hisStruct.(hisField);
+    hisMat = hisStruct.(hisField{1});
     
 else
     
     hisMat =  getHisMat(thisExperiment);
     
+end
+
+if segmentBetter
+    if ~retrack
+        resegmentAllFrames(Prefix, 'hisMat', hisMat,...
+            'min_rad_um', min_rad_um,...
+            'max_rad_um', max_rad_um);
+    end
+    retrack = true;
 end
 
 

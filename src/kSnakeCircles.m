@@ -1,4 +1,5 @@
-function [mask, ellipseFrame] = kSnakeCircles(image, PixelSize_um)
+function [mask, ellipseFrame] = kSnakeCircles(image,...
+    PixelSize_um, varargin)
 
 %parameters i've found to be broadly applicable
 sigmaK= 8; 
@@ -7,10 +8,18 @@ b = -.4;
 s = .1;
 nIterSnakes = 100;
 mu = .1;
-
-
 min_rad_um = 2; % set min and max acceptable area for nucleus segmentation
 max_rad_um = 6; %this needs to be 6um for nc12. 4um for nc14
+
+%options must be specified as name, value pairs. unpredictable errors will
+%occur, otherwise.
+for i = 1:2:(numel(varargin)-1)
+    if i ~= numel(varargin)
+        eval([varargin{i} '=varargin{i+1};']);
+    end
+end
+
+
 minArea_px = round(pi*(min_rad_um ./ PixelSize_um).^2);
 maxArea_px = round(pi*(max_rad_um ./ PixelSize_um).^2);
 

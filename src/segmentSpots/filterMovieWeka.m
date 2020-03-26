@@ -45,13 +45,8 @@ thisExperiment = liveExperiment(Prefix);
 
 [~,ProcPath,DropboxFolder,~, PreProcPath,~, Prefix, ~,~,~,~,~, ~, ~, movieDatabase]...
     = readMovieDatabase(Prefix, optionalResults);
-% 
-% [~, ~, ~, ~, ~, ~, Channel1, Channel2, ~, ~, ~, ~, ~, ...
-%     ~, ~, ~, ~, ~, ~, ~, Channel3, ~, ~] =...
-%     getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
 
-% coats = getCoatChannel(Channel1, Channel2, Channel3);
-coats = thisExperiment.spotChannel;
+coats = thisExperiment.spotChannels;
 
 nCh = length(coats); 
 
@@ -68,12 +63,8 @@ mlFolder = thisExperiment.MLFolder;
 trainingFile = [trainingFolder, filesep, trainingNameExt];
 [~ ,trainingName] = fileparts(trainingNameExt);
 
-% load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
-FrameInfo = getFrameInfo(thisExperiment);
-
 movieMat = getMovieMat(thisExperiment);
-
-movieMat = double(squeeze(movieMat(:, :, :, :, ch)));
+movieMat = double(movieMat(:, :, :, :, ch));
 
 %need to change this later. will be loaded from computerfolders
 

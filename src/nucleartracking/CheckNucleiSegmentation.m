@@ -380,11 +380,9 @@ while (cc~='x')
         %copy nuclear information from previous frame
         
         Ellipses{CurrentFrame} = Ellipses{CurrentFrame-1};
-        tic
         Ellipses{CurrentFrame} =...
             registerEllipses(Ellipses{CurrentFrame},...
             HisImage, hisMat(:, :, CurrentFrame-1));
-        toc
         
     elseif (ct~=0)&(cc=='v') & CurrentFrame < nFrames 
         %copy nuclear information from next frame
