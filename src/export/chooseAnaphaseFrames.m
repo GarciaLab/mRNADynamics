@@ -186,7 +186,7 @@ dimVec = [dim(1), dim(2), dim(1), dim(2)]; %to easily normalize units
 fig = uifigure('Position', [100, 100, dim(1), dim(2)], 'Name', 'Choose Histone Channels');
 set(fig,'KeyPressFcn',@keycall)
 imgAxis = uiaxes(fig, 'Position', [20, 20, dim(1) - 20, dim(2) * 0.5]);
-blank = zeros(yDim, xDim, 'uint16');
+blank = zeros(yDim, xDim, 'uint8');
 himage = imshow(blank, [], 'Parent', imgAxis);
 
 frame_slider = uislider(fig, 'Limits', [1, numFrames], 'Value', 1, ...
@@ -402,12 +402,15 @@ uiwait(fig);
         
         if returnHisMat
             
-            hisMat = zeros(yDim, xDim, sum(NFrames), 'uint16'); % f x y
+            hisMat = zeros(yDim, xDim, sum(NFrames), 'uint8'); % f x y
             
             for f = 1:NFrames
                 %                 hisMat(:, :, f) = generateNuclearChannel2(projCell{f}, chCell{f}, ReferenceHist, movieMat, f);
                 hisMat(:, :, f) = generateNuclearChannel2(ProjectionType, Channels, ReferenceHist, movieMat, f);
             end
+            
+             livemRNAImageMatSaver([thisExperiment.preFolder, Prefix, '_hisMat.mat'],...
+            hisMat);
             
         end
         

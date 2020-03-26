@@ -75,7 +75,7 @@ if ~skipExtraction
         %     BlankImage = uint16(zeros(ySize, xSize));
         
         nPadding = 2;
-        hisMat = zeros(ySize, xSize, sum(NFrames), 'uint16');
+        hisMat = zeros(ySize, xSize, sum(NFrames), 'uint8');
     end
     
     %     zslicesPadding = false;
@@ -145,7 +145,10 @@ if ~skipExtraction
             end
         end
         
-        %save the channels as separate mat files. 
+        livemRNAImageMatSaver([PreProcFolder, filesep, Prefix, '_hisMat.mat'],...
+            hisMat);
+        
+        %save the channels as separate mat files.
         
         livemRNAImageMatSaver([PreProcFolder, filesep, Prefix, '_movieMatCh1.mat'],...
             movieMat(:, :, :, :, 1));
@@ -175,12 +178,6 @@ if ~skipExtraction
         
     end
     
-    if  shouldExportNuclearProjections
-        
-           livemRNAImageMatSaver([PreProcFolder, filesep, Prefix, '_hisMat.mat'],...
-            hisMat);
-        
-    end
     
     try close(waitbarFigure); end
     
