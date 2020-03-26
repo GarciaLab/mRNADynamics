@@ -75,7 +75,7 @@ try
     elseif isempty(Threshold), error(argumentErrorMessage); end
 catch, error(argumentErrorMessage); end
 
-spotChannels = thisExperiment.spotChannel;
+spotChannels = thisExperiment.spotChannels;
 
 [~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix, optionalResults);
 
