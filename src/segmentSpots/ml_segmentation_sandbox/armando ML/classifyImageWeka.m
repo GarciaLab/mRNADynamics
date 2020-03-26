@@ -58,9 +58,6 @@ numInstances = numel(im);
 warning('off', 'MATLAB:Java:DuplicateClass');
 warning('off', 'MATLAB:javaclasspath:jarAlreadySpecified');
 
-%% initialize weka
-javaaddpath('C:\Program Files\Weka-3-8-4\weka.jar','-end');
-
 %% load up training data
 if ischar(training)
     arffLoader = javaObject('weka.core.converters.ArffLoader'); %this constructs an object of  the arffloader class
@@ -86,13 +83,8 @@ shouldCreateClassifier = isempty(classifier) && isempty(classifierPath);
 if shouldLoadClassifier
     classifier = weka.core.SerializationHelper.read(classifierPath);
 elseif shouldCreateClassifier
-    classifier = weka.classifiers.trees.RandomForest;
-    options = {'-I', '64', '-K', '2', '-S', '-1650757608', '-depth', 20};
-    javaaddpath('C:\Users\Armando\Desktop\fast random forest\fastrandomforest-2019.12.3.jar ')
-    
-    %     classifier = javaObject('hr.irb.fastRandomForest.FastRandomForest');
-    %     options = {'-I', '20', '-threads', '1', '-K', '2', '-S', '-1650757608'};
-    %
+    classifier = hr.irb.fastRandomForest.FastRandomForest;
+    options = {'-I', '20', '-threads', '1', '-K', '2', '-S', '-1650757608'};
     classifier.setOptions(options);
     classifier.buildClassifier(trainingData);
     if displayFigures
@@ -103,22 +95,14 @@ end
 %% generate test data by filtering the image
 
 attributes = getAttributes(trainingData);
-nAtt = length(attributes);
 
 if matlabLoader
-    
-    
     testMatrix = zeros(numInstances, trainingData.numAttributes-1);
     lastInd = numel(attributes) - 2;
-    
 else
-    
     testData = initializeEmptyDataSet(arffLoader, numInstances);
     testData.setClassIndex(testData.numAttributes-1);
-    
-    lastInd = numel(attributes) - 1;
-    
-    
+    lastInd = numel(attributes) - 1; 
 end
 
 
@@ -132,6 +116,7 @@ for i = 0:lastInd
         [filteredIm, sucessFlag]  = filterAttribute(att, im);
     else
         filteredIm = im;
+        successFlag = true;
     end
     
     filteredIm = filteredIm(:);

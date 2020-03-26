@@ -13,12 +13,12 @@ NumPredictorsToSample = 2;
 maxDepth = 20;
 nTrees = 64;
 hisMat = [];
-classifier = [];
 balance = false; %resample to balance classes
 cleanAttributes = false;
 frameRange = [];
 makeEllipses=false;
 doTracking = false;
+persistent classifier
 classifyWithMatlab = true;
 classifyWithWeka = false;
 tempPath = 'S:\livemRNATempPath\';
@@ -75,6 +75,7 @@ if isempty(hisMat)
     hisMat = getHisMat(thisExperiment);  
 end
 
+
 ySize = size(hisMat, 1);
 xSize = size(hisMat, 2);
 nFrames = size(hisMat, 3);
@@ -90,10 +91,11 @@ if classifyWithMatlab
     if isempty(classifier)
         
         [classifier, trainingData] = loadClassifier(trainingData, 'cleanAttributes', cleanAttributes,...
-            'NumPredictorsToSample', NumPredictorsToSample, 'nTrees', nTrees);
+            'NumPredictorsToSample', NumPredictorsToSample, 'nTrees', nTrees, 'nWorkers', nWorkers);
         
         suffix = strrep(strrep(char(datetime(now,'ConvertFrom','datenum')), ' ', '_'), ':', '-');
         save([trainingFolder, filesep, trainingName, '_', suffix '_classifier.mat'], 'classifier', '-v7.3')
+        
     end
     
 elseif classifyWithWeka
@@ -199,10 +201,10 @@ end
 
 %% Make ellipses from generated probability maps 
 if makeEllipses
-    if exist([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'] ,'file')
-        ellipsePrompt = ('Ellipses.mat already exists. Do you want to overwrite?');
-        ellipseAnswer = inputdlg(ellipsePrompt);
-        if contains(ellipseAnswer,'y')
+%     if exist([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'] ,'file')
+%         ellipsePrompt = ('Ellipses.mat already exists. Do you want to overwrite?');
+%         ellipseAnswer = inputdlg(ellipsePrompt);
+%         if contains(ellipseAnswer,'y')
             %do morphology analysis to reduce our probability maps to a list of
             %ellipses
             Ellipses = makeEllipses(pMap, probabilityThreshold);
@@ -212,8 +214,9 @@ if makeEllipses
             fakeFrame =  fakeFrame{1};     
             Ellipses(cellfun(@isempty, Ellipses)) = {fakeFrame};
             save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses', '-v6');  
-        end      
-    end
+            TrackNuclei(Prefix, 'retrack');
+%         end      
+%     end
 end
 
 end
