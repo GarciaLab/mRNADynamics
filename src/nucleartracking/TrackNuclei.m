@@ -144,6 +144,7 @@ elseif isnan(indMit(end,1))
     indMit(end,2)=nFrames-5;
 end
 
+expandedAnaphaseFrames = [zeros(1,8),thisExperiment.anaphaseFrames'];
 
 %Embryo mask
 ImageTemp=squeeze(hisMat(:, :, 1));
@@ -314,7 +315,6 @@ if ~noStitch
     StitchSchnitz(Prefix, nWorkers);
 end
 
-expandedAnaphaseFrames = [zeros(1,8),thisExperiment.anaphaseFrames'];
 
 for s = 1:length(schnitzcells)
     midFrame = ceil(length(schnitzcells(s).frames)/2);
