@@ -33,6 +33,7 @@ for i = 1:length(varargin)
     end
 end
 
+thisExperiment = liveExperiment(Prefix);
 % loads information needed to loop through DoGs
 
 [~,ProcPath,DropboxFolder,~,~]=...
@@ -43,10 +44,8 @@ zSize = FrameInfo(1).NumberSlices + 2;
 
 OutputFolder1=[ProcPath,filesep,Prefix,'_',filesep,'dogs',filesep];
 
-DogOutputFolder= OutputFolder1;
-
 if nargin < 2
-    spotChannels = thisExperiment.getSpotChannels; 
+    spotChannels = thisExperiment.spotChannels; 
     if numel(spotChannels)==1 
         Channel = spotChannels;
     else
