@@ -313,7 +313,7 @@ while (cc~='x')
             %particle_id)
             if ~isempty(Ellipses{CurrentFrame})
                 MeanRadius=mean((Ellipses{CurrentFrame}(:,3)+Ellipses{CurrentFrame}(:,4))/2);
-            elseif ~isempty(Ellipses{CurrentFrame+1})'c'
+            elseif ~isempty(Ellipses{CurrentFrame+1})
                 MeanRadius=mean((Ellipses{CurrentFrame+1}(:,3)+Ellipses{CurrentFrame+1}(:,4))/2);
             elseif ~isempty(Ellipses{CurrentFrame-1})
                 MeanRadius=mean((Ellipses{CurrentFrame-1}(:,3)+Ellipses{CurrentFrame-1}(:,4))/2);

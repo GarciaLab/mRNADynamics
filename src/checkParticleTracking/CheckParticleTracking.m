@@ -172,7 +172,7 @@ end
 xSize = thisExperiment.xDim;
 ySize = thisExperiment.yDim;
 pixelSize = thisExperiment.pixelSize_nm;
-snippet_size = thisExperiment.snippetSize_nm;
+snippetSize_px = thisExperiment.snippetSize_px;
 nFrames = thisExperiment.nFrames;
 nSlices = thisExperiment.zDim;
 nDigits = thisExperiment.nDigits;
@@ -473,7 +473,7 @@ while (cc ~= 'x')
     
     % PLOT SNIPPET
     [CurrentSnippet, snipImageHandle] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
-        cptState, ExperimentType, snippet_size, xSize, ySize, SnippetEdge, CurrentSnippet, snipImageHandle, pixelSize);
+        cptState, ExperimentType, snippetSize_px, xSize, ySize, SnippetEdge, CurrentSnippet, snipImageHandle, pixelSize);
     
     % PLOTS TRACE OF CURRENT PARTICLE
     if ~fish

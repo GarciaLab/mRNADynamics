@@ -45,7 +45,7 @@ disp(['Tracking nuclei on ', Prefix, '...']);
     = DetermineTrackNucleiOptions(varargin{:});
 
 
-if segmentBetter
+if segmentBetter && ~chooseHis
     if ~retrack
         resegmentAllFrames(Prefix);
     end

@@ -32,17 +32,16 @@ end
 
 Channels = thisExperiment.Channels;
 
-InputChannel = find(contains(Channels, 'input', 'IgnoreCase', true));
+InputChannels = find(contains(Channels, 'input', 'IgnoreCase', true));
 
-if isempty(InputChannel)
+if isempty(InputChannels)
     warning(['No input channel found. Check correct definition in MovieDatabase.',...
-        'Input channels should use the :input notation.'])
+        ' Input channels should use the :input notation.'])
     return;
 end
 
-% load([PreProcPath, filesep, Prefix, filesep, Prefix, '_movieMat.mat'], 'movieMat');
-
-movieMat = double(loadMovieMat(Prefix, 'chRange', InputChannel));
+movieMat = getMovieMat(thisExperiment);
+movieMat = double(movieMat(:, :, :, :, InputChannels));
 numFrames = length(FrameInfo);
 
 
@@ -59,7 +58,7 @@ Circle=double(MidpointCircle(Circle,IntegrationRadius,1.5*IntegrationRadius+0.5,
 %Initialize fields
 schnitzcells(1).Fluo = [];
 
-if sum(InputChannel)
+if sum(InputChannels)
     
     %Extract the fluroescence of each schnitz, for each channel,
     %at each time point
@@ -77,19 +76,19 @@ if sum(InputChannel)
     refFrame = ones(LinesPerFrame,PixelsPerLine, nSlices);
     convRef = convn(refFrame, Circle, 'same');
     edgeMask = convRef~=sum(Circle(:));
-    
-    for ChN=1:length(InputChannel)
-        
+    chIndex = 0;
+    for ChN=InputChannels
+        chIndex = chIndex+1;
         h=waitbar(0,['Extracting nuclear fluorescence for channel ',num2str(ChN)]);
         
-        nameSuffix=['_ch',iIndex(InputChannel,2)];
+%         nameSuffix=['_ch',iIndex(ChN,2)];
         
         % NL: should parallelize this
         
         tempSchnitz = schnitzcells;
         for CurrentFrame=1:numFrames
             
-            waitbar(CurrentFrame/numFrames,h);
+            try waitbar(CurrentFrame/numFrames,h); end
             %
             %                 %Initialize the image
             %             Image=zeros(LinesPerFrame,PixelsPerLine,nSlices);
@@ -113,22 +112,25 @@ if sum(InputChannel)
                     %trying faster method
                     cenx=min(max(1,round(tempSchnitz(j).cenx(tempSchnitz(j).frames==CurrentFrame))),PixelsPerLine);
                     ceny=min(max(1,round(tempSchnitz(j).ceny(tempSchnitz(j).frames==CurrentFrame))),LinesPerFrame);
-                    tempSchnitz(j).Fluo(tempSchnitz(j).frames==CurrentFrame,:,ChN) = single(convImage(ceny,cenx,:));
+                    tempSchnitz(j).Fluo(tempSchnitz(j).frames==CurrentFrame,:,chIndex) = single(convImage(ceny,cenx,:));
                     
                     
-            end
+            end %loop of nuclei in a frame
             
-        end
+        end %loop over frames
+        
         schnitzcells = tempSchnitz;
         
         
-        close(h);
-    end
-else
+        try close(h); end
+    
+    end %loop over channels
+    
+else 
+    
     error('Input channel not recognized. Check correct definition in MovieDatabase.Input channels should use the :input notation.');
-end
 
-clear movieMat;
+end 
 
 if saveFlag
     if whos(var2str(schnitzcells)).bytes < 2E9
