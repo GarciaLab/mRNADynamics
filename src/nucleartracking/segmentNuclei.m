@@ -61,13 +61,9 @@ mlFolder = thisExperiment.MLFolder;
 trainingFile = [trainingFolder, filesep, trainingNameExt];
 [~ ,trainingName] = fileparts(trainingNameExt);
 
-load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
-
 if isempty(hisMat)
-    
-    hisFile = [PreProcPath, filesep, Prefix, filesep, Prefix, '_hisMat.mat'];
-    hisMat = double(loadHisMat(hisFile, 'frameRange', frameRange));
-    
+    hisMat = getHisMat(thisExperiment);
+    hisMat = hisMat(:, :, frameRange);    
 end
 
 ySize = size(hisMat, 1);

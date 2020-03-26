@@ -11,5 +11,7 @@ if ~exist([userpath, filesep, 'javaclasspath.txt'], 'file')
     fprintf(fileID,'%s \n %s \n %s', path1, path2, path3);
     
     fclose(fileID);
+    
+    warning('Added Java class paths to Matlab startup folder. You''ll need to restart Matlab before continuing.');
 
 end
