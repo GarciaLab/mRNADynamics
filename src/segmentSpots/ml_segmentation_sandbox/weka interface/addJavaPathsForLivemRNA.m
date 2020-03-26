@@ -1,6 +1,7 @@
 function addJavaPathsForLivemRNA()
 
 if ~exist([userpath, filesep, 'javaclasspath.txt'], 'file')
+    
     path1 = 'C:\Program Files\Weka-3-8-4\weka.jar';
     
     path2 = 'X:\Armando\LivemRNA\mRNADynamics\lib\dependencies\fast random forest\fastrandomforest-2019.12.3.jar';

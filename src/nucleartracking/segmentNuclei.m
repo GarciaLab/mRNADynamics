@@ -167,12 +167,15 @@ else
         hisFrame = hisMat(:, :, f);
         
         if classifyWithMatlab
-            pMap(:, :, f) = classifyImageMatlab(hisFrame, trainingData, 'reSc', shouldRescaleTrainingData, 'classifier', classifier);
+            pMap(:, :, f) = classifyImageMatlab(hisFrame, trainingData, 'reSc',...,
+                shouldRescaleTrainingData, 'classifier',...
+            classifier, 'displayFigures', displayFigures);
             
         elseif classifyWithWeka
             pMap(:, :, f) = classifyImageWeka(hisFrame, trainingData,'tempPath', tempPath,...
                 'reSc', shouldRescaleTrainingData, 'classifier', classifier,...
-                'arffLoader', arffLoader, 'matlabLoader', matlabLoader, 'par', parInstances);
+                'arffLoader', arffLoader, 'matlabLoader', matlabLoader,...
+                    'par', parInstances, 'displayFigures', displayFigures);
             
         end
         deltaT(f)=toc/60;

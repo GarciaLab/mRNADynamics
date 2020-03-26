@@ -313,7 +313,7 @@ while (cc~='x')
             %particle_id)
             if ~isempty(Ellipses{CurrentFrame})
                 MeanRadius=mean((Ellipses{CurrentFrame}(:,3)+Ellipses{CurrentFrame}(:,4))/2);
-            elseif ~isempty(Ellipses{CurrentFrame+1})
+            elseif ~isempty(Ellipses{CurrentFrame+1})'c'
                 MeanRadius=mean((Ellipses{CurrentFrame+1}(:,3)+Ellipses{CurrentFrame+1}(:,4))/2);
             elseif ~isempty(Ellipses{CurrentFrame-1})
                 MeanRadius=mean((Ellipses{CurrentFrame-1}(:,3)+Ellipses{CurrentFrame-1}(:,4))/2);
@@ -380,11 +380,9 @@ while (cc~='x')
         %copy nuclear information from previous frame
         
         Ellipses{CurrentFrame} = Ellipses{CurrentFrame-1};
-        tic
         Ellipses{CurrentFrame} =...
             registerEllipses(Ellipses{CurrentFrame},...
             HisImage, hisMat(:, :, CurrentFrame-1));
-        toc
         
     elseif (ct~=0)&(cc=='v') & CurrentFrame < nFrames 
         %copy nuclear information from next frame
