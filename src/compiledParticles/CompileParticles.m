@@ -74,6 +74,7 @@ DVbinID = [];
 ElapsedTime = [];
 elapsedTime_min = [];
 EllipsePos = {};
+EllipsePos_DV = {};
 EllipsesFilteredPos = [];
 EllipsesOnAP = {};
 EllipsesOnDV = {};
@@ -168,6 +169,10 @@ ncFilterID = [];
 thisExperiment = liveExperiment(Prefix);
 FilePrefix=[Prefix,'_'];
 
+[~, ~, DropboxFolder, ~, PreProcPath,...
+    ~, ~, ~, ~] = DetermineLocalFolders(Prefix);
+
+
 ExperimentType = thisExperiment.experimentType;
 ExperimentAxis = thisExperiment.experimentAxis;
 APResolution = thisExperiment.APResolution;
@@ -176,9 +181,10 @@ nc9=thisExperiment.nc9; nc10=thisExperiment.nc10;
 nc11=thisExperiment.nc11;nc12=thisExperiment.nc12;
 nc13=thisExperiment.nc13;nc14=thisExperiment.nc14;
 
-Channel1 = thisExperiment.Channel1;
-Channel2 = thisExperiment.Channel2;
-Channel3 = thisExperiment.Channel3;
+Channels = thisExperiment.Channels;
+Channel1 = Channels{1};
+Channel2 = Channels{2};
+Channel3 = Channels{3};
 
 ncFrames = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
 
@@ -311,9 +317,10 @@ end
 
 
 %% Binning the axes into AP and DV
+fullEmbryoExists = exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'], 'file');
 shouldConvertToAP =  haveHistoneChannel...
     && (APExperiment || DVExperiment)...
-    && exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'], 'file');
+    && fullEmbryoExists;
 
 %Figure out the AP position of each of the nuclei.
 if shouldConvertToAP
