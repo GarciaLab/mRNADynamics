@@ -110,7 +110,7 @@ nCh = length(spotChannels);
 
 %generate tif stacks
 
-stacksFolder = [PreProcPath, filesep, Prefix, filesep, 'stacks'];
+stacksFolder = strrep([PreProcPath, filesep, Prefix, filesep, 'stacks'], '\\', '\');
 stacksExist = exist(stacksFolder, 'dir') &&...
     ~isempty(dir([stacksFolder, filesep, '*.tif']));
 

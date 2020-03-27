@@ -229,8 +229,8 @@ uiwait(f);
 
     function dog = loadDog(zInd, frame)
         
-        dogStackFile = [OutputFolder1, filesep, dogStr, Prefix, '_', iIndex(frame, 3),...
-            nameSuffix];
+        dogStackFile = strrep([OutputFolder1, filesep, dogStr, Prefix, '_', iIndex(frame, 3),...
+            nameSuffix], '\\', '\');
         if loadAsMat
             load([dogStackFile, '.mat'], 'dogStack');
         else
