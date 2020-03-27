@@ -10,7 +10,7 @@ FrameInfo = getFrameInfo(thisExperiment);
 
 gpu = 'noGPU';
 
-DogOutputFolder = [ProcPath, filesep, Prefix, '_', filesep, 'dogs'];
+DogOutputFolder = strrep([ProcPath, filesep, Prefix, '_', filesep, 'dogs'], '\\', '\');
 mkdir(DogOutputFolder)
 
 if contains(filterType, '_3D','IgnoreCase',true)
@@ -34,7 +34,6 @@ if saveAsMat || strcmpi(saveType, '.mat')
     extractOpts = [extractOpts, 'mat'];
 end
 
-% stacksPath = [PreProcPath, filesep, Prefix, filesep, 'stacks'];
 
 movieMat = getMovieMat(thisExperiment);
 
@@ -91,8 +90,8 @@ for ch = spotChannels
             
             if saveAsStacks
                 dogStack = squeeze(dogMat(:, :, :, currentFrame));
-                dogStackFile = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(currentFrame, 3),...
-                    nameSuffix,'.mat'];
+                dogStackFile = strrep([DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(currentFrame, 3),...
+                    nameSuffix,'.mat'], '\\', '\');
                 save(dogStackFile, 'dogStack','-v6');
             end
             
@@ -139,7 +138,7 @@ end
         p = p + 1;
     end
 
-dogFile = [ProcPath, filesep, Prefix,'_', filesep, Prefix, '_dogMat.mat'];
+dogFile = strrep([ProcPath, filesep, Prefix,'_', filesep, Prefix, '_dogMat.mat'], '\\', '\');
 
 % if whos(var2str(dogMat)).bytes < 2E9
 %     save(dogFile, 'dogMat', '-v6');
