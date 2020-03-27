@@ -69,7 +69,6 @@ else
 end
 
 warning('on','MATLAB:MKDIR:DirectoryExists');
-startup;
 
 %%
 %% nested sub-functions
