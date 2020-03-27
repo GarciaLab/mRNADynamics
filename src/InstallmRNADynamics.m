@@ -40,7 +40,8 @@ if shouldOnlyMakeStartupFile
     
     disp('Updating MATLAB startup script');
     createStartupFile();
-    startup;
+    msgbox('Run "startup" from the command line or restart Matlab to finish the installation');
+
     
 elseif exist(COMPUTER_FOLDERS_PATH, 'file')
     
@@ -62,10 +63,8 @@ else
     createMovieDatabaseFile();
     
     createStartupFile();
-    
-    startup;
-    
-%     msgbox('Run "startup" from the command line or restart Matlab to finish the installation');
+        
+    msgbox('Run "startup" from the command line or restart Matlab to finish the installation');
     
 end
 
