@@ -13,22 +13,20 @@ NumPredictorsToSample = 2;
 maxDepth = 20;
 nTrees = 64;
 hisMat = [];
-balance = false; %resample to balance classes
+shouldBalanceClasses = false; %resample to balance classes
 cleanAttributes = false;
 frameRange = [];
 makeEllipses=false;
 doTracking = false;
 persistent classifier
-classifyWithMatlab = true;
-classifyWithWeka = false;
+classifyMethod = 'matlab';
 tempPath = 'S:\livemRNATempPath\';
 if ~exist(tempPath, 'dir')
     mkdir(tempPath);
 end
 matlabLoader = true;
 parFrame = false;
-parInstances = true;
-
+parInstances = false;
 
 
 %options must be specified as name, value pairs. unpredictable errors will
@@ -39,9 +37,8 @@ for i = 1:2:(numel(varargin)-1)
     end
 end
 
-if classifyWithWeka
+if strcmpi(classifyMethod, 'weka')
     classificationAlgorithm = 'FastRandomForest';
-    classifyWithMatlab = false;
 end
 
 
@@ -57,10 +54,6 @@ disp(['Segmenting nuclei on ', Prefix, '...']);
 
 thisExperiment = liveExperiment(Prefix);
 
-[~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix);
-% ProcPath = thisExperiment.procFolder;
-% PreProcPath = thisExperiment.preFolder;
-% DropboxFolder = thisExperiment.resultsFolder;
 mlFolder = thisExperiment.MLFolder;
 
 [trainingNameExt, trainingFolder] = uigetfile([mlFolder, filesep, '*.arff*']);
@@ -72,7 +65,7 @@ if isempty(frameRange)
     frameRange = [1, thisExperiment.nFrames];
 end
 if isempty(hisMat)
-    hisMat = getHisMat(thisExperiment);  
+    hisMat = getHisMat(thisExperiment);
 end
 
 
@@ -85,9 +78,10 @@ pMap = zeros(size(hisMat, 1), size(hisMat, 2), size(hisMat, 3));
 %%
 %only need to make the classifier from training data
 %once and not every frame
-if classifyWithMatlab
+if strcmpi(classifyMethod, 'matlab')
     
-    trainingData = loadArff(trainingFile, 'balance', balance);
+    trainingData = loadArff(trainingFile, 'balance', shouldBalanceClasses);
+    arffLoader = [];
     if isempty(classifier)
         
         [classifier, trainingData] = loadClassifier(trainingData, 'cleanAttributes', cleanAttributes,...
@@ -98,10 +92,10 @@ if classifyWithMatlab
         
     end
     
-elseif classifyWithWeka
+elseif strcmpi(classifyMethod, 'weka')
     
-    arffLoader = javaObject('weka.core.converters.ArffLoader'); %this constructs an object of the arffloader class
-    arffLoader.setFile(javaObject('java.io.File',trainingFile)); %construct an arff file object
+    arffLoader = weka.core.converters.ArffLoader; %this constructs an object of the arffloader class
+    arffLoader.setFile( java.io.File(trainingFile) ); %construct an arff file object
     trainingData= arffLoader.getDataSet;
     trainingData.setClassIndex(trainingData.numAttributes - 1);
     
@@ -141,22 +135,19 @@ if parFrame
     trainingData = parallel.pool.Constant(trainingData);
     classifier = parallel.pool.Constant(classifier);
     parfor f = 1:nFrames
+        
         hisFrame = hisMat.Value(:, :, f);
-        if classifyWithMatlab
-            pMap(:, :, f) = classifyImageMatlab(hisFrame, trainingData.Value,...
-                'shouldRescaleTrainingData', shouldRescaleTrainingData, 'classifierObj', classifier.Value);
-        elseif classifyWithWeka
-            pMap(:, :, f) = classifyImageWeka(hisFrame, trainingData.Value,...
-                'tempPath', tempPath,...
-                'shouldRescaleTrainingData', shouldRescaleTrainingData, 'classifierObj',...
-                classifier.Value, 'arffLoader', arffLoader, 'matlabLoader', matlabLoader);
-        end
+        pMap(:, :, f) = classifyImageNuclear(hisFrame, trainingData.Value,...
+            'tempPath', tempPath,...
+            'shouldRescaleTrainingData', shouldRescaleTrainingData, 'classifierObj',...
+            classifier.Value, 'arffLoader', arffLoader, 'matlabLoader', matlabLoader,...
+            'classifyMethod', classifyMethod);
+        
     end
+    
 else
     %non-parallel version
     deltaT = [];
-    profile off
-    profile on
     for f = 1:nFrames
         
         tic
@@ -164,31 +155,24 @@ else
         if f~=1, mean_dT = mean_dT(end); end
         
         if f~=1, tic, disp(['Making probability map for frame: ', num2str(f),...
-                '. Estimated ', num2str(mean_dT*(nFrames-f)), ' minutes remaining.'])
-        end
+                '. Estimated ', num2str(mean_dT*(nFrames-f)), ' minutes remaining.']); end
+        
         hisFrame = hisMat(:, :, f);
         
-        if classifyWithMatlab
-            pMap(:, :, f) = classifyImageMatlab(hisFrame, trainingData, 'reSc',...,
-                shouldRescaleTrainingData, 'classifier',...
-            classifier, 'displayFigures', displayFigures);
-            
-        elseif classifyWithWeka
-            pMap(:, :, f) = classifyImageWeka(hisFrame, trainingData,'tempPath', tempPath,...
-                'reSc', shouldRescaleTrainingData, 'classifier', classifier,...
-                'arffLoader', arffLoader, 'matlabLoader', matlabLoader,...
-                    'par', parInstances, 'displayFigures', displayFigures);
-            
-        end
+        pMap(:, :, f) = classifyImageNuclear(hisFrame, trainingData,'tempPath', tempPath,...
+            'reSc', shouldRescaleTrainingData, 'classifier', classifier,...
+            'arffLoader', arffLoader, 'matlabLoader', matlabLoader,...
+            'par', parInstances, 'displayFigures', displayFigures,...
+            'classifyMethod', classifyMethod);
+        
         deltaT(f)=toc/60;
+        
     end
     
 end
 
-profile off; profile viewer;
-
-mkdir([ProcPath, filesep, Prefix, '_']);
-probHisFile = [ProcPath, filesep, Prefix, '_', filesep, Prefix, '_probHis.mat'];
+mkdir([thisExperiment.procFolder, '_']);
+probHisFile = [thisExperiment.procFolder, '_', filesep, Prefix, '_probHis.mat'];
 if whos(var2str(pMap)).bytes < 2E9
     save(probHisFile, 'pMap', '-v6')
 else
@@ -199,24 +183,24 @@ end
 
 
 
-%% Make ellipses from generated probability maps 
+%% Make ellipses from generated probability maps
 if makeEllipses
-%     if exist([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'] ,'file')
-%         ellipsePrompt = ('Ellipses.mat already exists. Do you want to overwrite?');
-%         ellipseAnswer = inputdlg(ellipsePrompt);
-%         if contains(ellipseAnswer,'y')
-            %do morphology analysis to reduce our probability maps to a list of
-            %ellipses
-            Ellipses = makeEllipses(pMap, probabilityThreshold);
-            %track nuclei will complain if there are frames with no ellipses,
-            %so we'll fake it for now.
-            fakeFrame = Ellipses(~cellfun(@isempty, Ellipses));
-            fakeFrame =  fakeFrame{1};     
-            Ellipses(cellfun(@isempty, Ellipses)) = {fakeFrame};
-            save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses', '-v6');  
-            TrackNuclei(Prefix, 'retrack');
-%         end      
-%     end
+    %     if exist([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'] ,'file')
+    %         ellipsePrompt = ('Ellipses.mat already exists. Do you want to overwrite?');
+    %         ellipseAnswer = inputdlg(ellipsePrompt);
+    %         if contains(ellipseAnswer,'y')
+    %do morphology analysis to reduce our probability maps to a list of
+    %ellipses
+    Ellipses = makeEllipses(pMap, probabilityThreshold);
+    %track nuclei will complain if there are frames with no ellipses,
+    %so we'll fake it for now.
+    fakeFrame = Ellipses(~cellfun(@isempty, Ellipses));
+    fakeFrame =  fakeFrame{1};
+    Ellipses(cellfun(@isempty, Ellipses)) = {fakeFrame};
+    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses', '-v6');
+    TrackNuclei(Prefix, 'retrack');
+    %         end
+    %     end
 end
 
 end

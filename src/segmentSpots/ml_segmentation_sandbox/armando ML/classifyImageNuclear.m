@@ -20,7 +20,6 @@ function pMap = classifyImageNuclear(im, training, varargin)
 %       pMap = classifyImage(im, arffFile)
 %
 %   See also GENERATEDOGSWEKA, GENERATEDOGS
-cleanupObj = onCleanup(@myCleanupFun);
 addJavaPathsForLivemRNA()
 %% PARAMS, OPTIONS
 displayFigures = false;
@@ -28,11 +27,15 @@ classifier = [];
 classifierPath = '';
 arffLoader = [];
 shouldRescaleTrainingData = false;
-matlabLoader = true;
+useMatlabLoader = true;
 par = false;
 classifyMethod = 'matlab'; %also accepts 'weka'
 if ischar(training), tempPath = fileparts(training);
 else, tempPath = ''; end
+
+if ~displayFigures
+    cleanupObj = onCleanup(@myCleanupFun);
+end
 
 for i = 1:2:(numel(varargin)-1)
     if i ~= numel(varargin)
@@ -56,8 +59,8 @@ addJavaPathsForLivemRNA()
 
 %% load up training data
 if ischar(training)
-    arffLoader = javaObject('weka.core.converters.ArffLoader'); %this constructs an object of  the arffloader class
-    arffLoader.setFile(javaObject('java.io.File',training)); %construct an arff file object
+    arffLoader = weka.core.converters.ArffLoader; %this constructs an object of  the arffloader class
+    arffLoader.setFile(java.io.File,training); %construct an arff file object
     trainingData= arffLoader.getDataSet;
     trainingData.setClassIndex(trainingData.numAttributes - 1);
 else
@@ -105,7 +108,7 @@ if strcmpi(classifyMethod, 'matlab')
     lastInd = numel(classifier.PredictorNames);
     testMatrix = zeros(numInstances, lastInd);
 elseif strcmpi(classifyMethod, 'weka')
-    if matlabLoader
+    if useMatlabLoader
         testMatrix = zeros(numInstances, trainingData.numAttributes-1);
         lastInd = numel(attributes) - 2;
     else
@@ -119,11 +122,11 @@ end
 usedFeatures = {};
 ignoredFeatures = {};
 
-firstInd = strcmpi(classifyMethod, 'matlab');
+firstInd = double(strcmpi(classifyMethod, 'matlab'));
 
 for i = firstInd:lastInd
     
-    att = attributes{i};
+    att = attributes{i + ~firstInd};
     
     if i > firstInd
         [filteredIm, successFlag]  = filterAttribute(att, im);
@@ -132,7 +135,7 @@ for i = firstInd:lastInd
         successFlag = true;
     end
     
-    if strcmpi('classifyMethod', 'matlab')
+    if strcmpi(classifyMethod, 'matlab')
         
         if successFlag
             testMatrix(:,i) = filteredIm(:);
@@ -142,11 +145,11 @@ for i = firstInd:lastInd
             ignoredFeatures = [ignoredFeatures, att];
         end
         
-    elseif strcmpi('classifyMethod', 'weka')
+    elseif strcmpi(classifyMethod, 'weka')
         
         
-        if matlabLoader
-            testMatrix(:,i+1) = filteredIm;
+        if useMatlabLoader
+            testMatrix(:,i+1) = filteredIm(:);
         else
             for k = 1:numel(filteredIm)
                 testData = setInstancesVal(testData, k-1, i, filteredIm(k));
@@ -157,7 +160,7 @@ for i = firstInd:lastInd
     
 end
 
-if strcmpi('classifyMethod', 'matlab')
+if strcmpi(classifyMethod, 'matlab')
     
     [~, pLin] = predict(classifier,testMatrix);
     
@@ -167,11 +170,11 @@ if strcmpi('classifyMethod', 'matlab')
         pMap = reshape(pLin(:,1), [yDim xDim zDim]);
     end
     
-elseif strcmpi('classifyMethod', 'weka')
+elseif strcmpi(classifyMethod, 'weka')
     
     %now turn data matrix into weka arff
     
-    if matlabLoader
+    if useMatlabLoader
         testData = mat2ascii2dataSet(testMatrix, tempPath, trainingData);
     end
     clear testMatrix; clear filteredIm;
@@ -247,10 +250,11 @@ end
 function testData = mat2ascii2dataSet(mat, tempPath, trainingData)
 
 % tempFile = [tempname(tempPath),'.data'];
-tempFile = [tempPath,filesep, 'temp.data'];
+tempFile = [tempPath, 'temp.data'];
 save(tempFile,var2str(mat),'-ascii');
 loader = weka.core.converters.MatlabLoader;
-loader.setFile(java.io.File,tempFile);
+loader.setFile( java.io.File(tempFile) );
+
 testData = loader.getDataSet;
 testData.insertAttributeAt(trainingData.classAttribute,trainingData.classIndex);
 testData.setClassIndex(testData.numAttributes-1);

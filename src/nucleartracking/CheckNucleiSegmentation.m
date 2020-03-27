@@ -311,12 +311,16 @@ while (cc~='x')
             
             %(x, y, a, b, theta, maxcontourvalue, time,
             %particle_id)
+            
+            
             if ~isempty(Ellipses{CurrentFrame})
                 MeanRadius=mean((Ellipses{CurrentFrame}(:,3)+Ellipses{CurrentFrame}(:,4))/2);
-            elseif ~isempty(Ellipses{CurrentFrame+1})
+            elseif CurrentFrame+1 < nFrames && ~isempty(Ellipses{CurrentFrame+1})
                 MeanRadius=mean((Ellipses{CurrentFrame+1}(:,3)+Ellipses{CurrentFrame+1}(:,4))/2);
-            elseif ~isempty(Ellipses{CurrentFrame-1})
+            elseif CurrentFrame-1 >1 && ~isempty(Ellipses{CurrentFrame-1})
                 MeanRadius=mean((Ellipses{CurrentFrame-1}(:,3)+Ellipses{CurrentFrame-1}(:,4))/2);
+            else
+                MeanRadius = 40; %magic number just to avoid errors in weird situations (units of pixels)
             end
             
             try
