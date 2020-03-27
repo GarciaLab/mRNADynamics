@@ -1,4 +1,4 @@
-function data = loadArff(file, varargin)
+function [data, arffLoader] = loadArff(file, varargin)
 
 balance = false;
 

@@ -1,8 +1,10 @@
 function pMap = segmentNuclei(Prefix, varargin)
 
-cleanupObj = onCleanup(@myCleanupFun);
+% cleanupObj = onCleanup(@myCleanupFun);
+warning('off', 'MATLAB:Java:DuplicateClass');
+warning('off', 'MATLAB:javaclasspath:jarAlreadySpecified');
 
-
+%% Initialize variables
 displayFigures = false;
 keepPool = false;
 nWorkers = 1;
@@ -44,9 +46,6 @@ end
 
 tic
 
-warning('off', 'MATLAB:Java:DuplicateClass');
-warning('off', 'MATLAB:javaclasspath:jarAlreadySpecified');
-
 addJavaPathsForLivemRNA()
 
 %%
@@ -86,18 +85,15 @@ if strcmpi(classifyMethod, 'matlab')
         
         [classifier, trainingData] = loadClassifier(trainingData, 'cleanAttributes', cleanAttributes,...
             'NumPredictorsToSample', NumPredictorsToSample, 'nTrees', nTrees, 'nWorkers', nWorkers);
-        
+        compactClassifier = compact(classifier);
         suffix = strrep(strrep(char(datetime(now,'ConvertFrom','datenum')), ' ', '_'), ':', '-');
-        save([trainingFolder, filesep, trainingName, '_', suffix '_classifier.mat'], 'classifier', '-v7.3')
+        save([trainingFolder, filesep, trainingName, '_', suffix '_classifier.mat'], 'compactClassifier', '-v7')
         
     end
     
 elseif strcmpi(classifyMethod, 'weka')
     
-    arffLoader = weka.core.converters.ArffLoader; %this constructs an object of the arffloader class
-    arffLoader.setFile( java.io.File(trainingFile) ); %construct an arff file object
-    trainingData= arffLoader.getDataSet;
-    trainingData.setClassIndex(trainingData.numAttributes - 1);
+    [trainingData, arffLoader] = loadArff(file, 'balance', shouldBalanceClasses);
     
     %remove the features we can't (currently) generate in matlab
     dim = 2;
@@ -160,7 +156,7 @@ else
         hisFrame = hisMat(:, :, f);
         
         pMap(:, :, f) = classifyImageNuclear(hisFrame, trainingData,'tempPath', tempPath,...
-            'reSc', shouldRescaleTrainingData, 'classifier', classifier,...
+            'shouldRescaleTrainingData', shouldRescaleTrainingData, 'classifier', classifier,...
             'arffLoader', arffLoader, 'matlabLoader', matlabLoader,...
             'par', parInstances, 'displayFigures', displayFigures,...
             'classifyMethod', classifyMethod);

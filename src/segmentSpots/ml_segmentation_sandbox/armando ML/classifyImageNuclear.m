@@ -59,10 +59,7 @@ addJavaPathsForLivemRNA()
 
 %% load up training data
 if ischar(training)
-    arffLoader = weka.core.converters.ArffLoader; %this constructs an object of  the arffloader class
-    arffLoader.setFile(java.io.File,training); %construct an arff file object
-    trainingData= arffLoader.getDataSet;
-    trainingData.setClassIndex(trainingData.numAttributes - 1);
+    [trainingData, arffLoader] = loadArff(training);
 else
     trainingData = training;
 end
@@ -164,11 +161,8 @@ if strcmpi(classifyMethod, 'matlab')
     
     [~, pLin] = predict(classifier,testMatrix);
     
-    if dim == 2
-        pMap = reshape(pLin(:, 1), [yDim xDim]);
-    elseif dim == 3
-        pMap = reshape(pLin(:,1), [yDim xDim zDim]);
-    end
+    pLin = pLin(:, 1);
+    
     
 elseif strcmpi(classifyMethod, 'weka')
     
@@ -205,15 +199,16 @@ elseif strcmpi(classifyMethod, 'weka')
         
     end
     
-    if dim == 2
-        pMap = reshape(pLin, [yDim xDim]);
-    elseif dim == 3
-        pMap = reshape(pLin, [yDim xDim zDim]);
-    end
+    
     
     
 end
 
+if dim == 2
+    pMap = reshape(pLin, [yDim xDim]);
+elseif dim == 3
+    pMap = reshape(pLin, [yDim xDim zDim]);
+end
 
 
 if displayFigures
