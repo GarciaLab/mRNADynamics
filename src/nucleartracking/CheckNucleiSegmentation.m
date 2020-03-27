@@ -320,7 +320,7 @@ while (cc~='x')
             elseif CurrentFrame-1 >1 && ~isempty(Ellipses{CurrentFrame-1})
                 MeanRadius=mean((Ellipses{CurrentFrame-1}(:,3)+Ellipses{CurrentFrame-1}(:,4))/2);
             else
-                MeanRadius = 40; %magic number just to avoid errors in weird situations (units of pixels)
+                MeanRadius = 20; %magic number just to avoid errors in weird situations (units of pixels)
             end
             
             try
