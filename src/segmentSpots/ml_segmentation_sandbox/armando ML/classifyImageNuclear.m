@@ -28,7 +28,7 @@ classifierPath = '';
 arffLoader = [];
 shouldRescaleTrainingData = false;
 useMatlabLoader = true;
-par = false;
+parallelizeInstances = false;
 classifyMethod = 'matlab'; %also accepts 'weka'
 if ischar(training), tempPath = fileparts(training);
 else, tempPath = ''; end
@@ -119,43 +119,39 @@ end
 usedFeatures = {};
 ignoredFeatures = {};
 
-firstInd = double(strcmpi(classifyMethod, 'matlab'));
+oneIndexingFlag = double(strcmpi(classifyMethod, 'matlab'));
 
-for i = firstInd:lastInd
+for i = oneIndexingFlag:lastInd
     
-    att = attributes{i + ~firstInd};
+    att = attributes{i + ~oneIndexingFlag};
     
-    if i > firstInd
+    if i > oneIndexingFlag
         [filteredIm, successFlag]  = filterAttribute(att, im);
     else
         filteredIm = im;
         successFlag = true;
     end
     
-    if strcmpi(classifyMethod, 'matlab')
+    if strcmpi(classifyMethod, 'matlab') || useMatlabLoader
         
         if successFlag
-            testMatrix(:,i) = filteredIm(:);
+            testMatrix(:,i+~oneIndexingFlag) = filteredIm(:);
             usedFeatures = [usedFeatures, att];
         else
-            testMatrix(:,i) = nan(numel(im),1);
+            testMatrix(:,i+~oneIndexingFlag) = nan(numel(im),1);
             ignoredFeatures = [ignoredFeatures, att];
         end
         
-    elseif strcmpi(classifyMethod, 'weka')
+    elseif strcmpi(classifyMethod, 'weka') && ~useMatlabLoader
         
-        
-        if useMatlabLoader
-            testMatrix(:,i+1) = filteredIm(:);
-        else
-            for k = 1:numel(filteredIm)
-                testData = setInstancesVal(testData, k-1, i, filteredIm(k));
-            end
+        for k = 1:numel(filteredIm)
+            testData = setInstancesVal(testData, k-1, i, filteredIm(k));
         end
         
-    end
+    end %classifymethod conditional
     
-end
+end %feature loop 
+
 
 if strcmpi(classifyMethod, 'matlab')
     
@@ -182,7 +178,7 @@ elseif strcmpi(classifyMethod, 'weka')
     nInstances = testData.numInstances;
     pLin = zeros(nInstances, 1);
     
-    if par
+    if parallelizeInstances
         
         testDataConstant = parallel.pool.Constant(testData);
         classifierConstant = parallel.pool.Constant(classifier);
@@ -197,26 +193,16 @@ elseif strcmpi(classifyMethod, 'weka')
             pLin(i) = classifyInstance(i, testData, classifier);
         end
         
-    end
-    
-    
-    
-    
-end
+    end %parallelize instances conditional
+        
+end %classifymethod conditional
 
 if dim == 2
     pMap = reshape(pLin, [yDim xDim]);
+    if displayFigures,  figure; imshowpair(im, pMap, 'montage'); end
 elseif dim == 3
     pMap = reshape(pLin, [yDim xDim zDim]);
-end
-
-
-if displayFigures
-    if dim==2
-        figure(1); imshowpair(im, pMap, 'montage');
-    elseif dim==3
-        figure(1); imshowpair(max(im, [], 3),max(pMap, [], 3), 'montage');
-    end
+    if displayFigures, figure; imshowpair(max(im, [], 3),max(pMap, [], 3), 'montage'); end
 end
 
 end
@@ -244,9 +230,8 @@ end
 
 function testData = mat2ascii2dataSet(mat, tempPath, trainingData)
 
-% tempFile = [tempname(tempPath),'.data'];
 tempFile = [tempPath, 'temp.data'];
-save(tempFile,var2str(mat),'-ascii');
+save(tempFile,var2str(mat),'-ascii', '-double');
 loader = weka.core.converters.MatlabLoader;
 loader.setFile( java.io.File(tempFile) );
 
@@ -255,7 +240,7 @@ testData.insertAttributeAt(trainingData.classAttribute,trainingData.classIndex);
 testData.setClassIndex(testData.numAttributes-1);
 
 
-f = javaObject('weka.filters.unsupervised.attribute.Remove');
+f = weka.filters.unsupervised.attribute.Remove;
 f.setInputFormat(trainingData);
 testData = javaMethod('useFilter','weka.filters.Filter', testData, f); %match test header to training header
 

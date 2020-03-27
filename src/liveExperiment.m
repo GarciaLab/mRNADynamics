@@ -12,6 +12,7 @@ classdef liveExperiment
         project = '';
         Channels = {};
         spotChannels = [];
+        inputChannels = [];
         
         isUnhealthy = false;
         
@@ -61,6 +62,7 @@ classdef liveExperiment
         experimentAxis = '';
         APResolution = '';
         DVResolution = '';
+        
         
         
         
@@ -127,6 +129,8 @@ classdef liveExperiment
             catch
                 warning('FrameInfo not found.')
             end
+            
+            obj.inputChannels = find(contains(obj.Channels, 'input', 'IgnoreCase', true));
             
             obj.spotChannels = getCoatChannel(Channel1, Channel2, Channel3);
             

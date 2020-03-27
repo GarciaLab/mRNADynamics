@@ -19,8 +19,7 @@ shouldBalanceClasses = false; %resample to balance classes
 cleanAttributes = false;
 frameRange = [];
 makeEllipses=false;
-doTracking = false;
-persistent classifier
+classifier = [];
 classifyMethod = 'matlab';
 tempPath = 'S:\livemRNATempPath\';
 if ~exist(tempPath, 'dir')
@@ -81,7 +80,7 @@ if strcmpi(classifyMethod, 'matlab')
     
     trainingData = loadArff(trainingFile, 'balance', shouldBalanceClasses);
     arffLoader = [];
-    if isempty(classifier)
+    if ~exist(classifier, 'var') || isempty(classifier)
         
         [classifier, trainingData] = loadClassifier(trainingData, 'cleanAttributes', cleanAttributes,...
             'NumPredictorsToSample', NumPredictorsToSample, 'nTrees', nTrees, 'nWorkers', nWorkers);
@@ -93,7 +92,7 @@ if strcmpi(classifyMethod, 'matlab')
     
 elseif strcmpi(classifyMethod, 'weka')
     
-    [trainingData, arffLoader] = loadArff(file, 'balance', shouldBalanceClasses);
+    [trainingData, arffLoader] = loadArff(trainingFile, 'balance', shouldBalanceClasses);
     
     %remove the features we can't (currently) generate in matlab
     dim = 2;
@@ -117,7 +116,7 @@ elseif strcmpi(classifyMethod, 'weka')
     classifier.setOptions(options);
     classifier.buildClassifier(trainingData);
     suffix = strrep(strrep(char(datetime(now,'ConvertFrom','datenum')), ' ', '_'), ':', '-');
-    save([trainingFolder, filesep, trainingName, '_', suffix '.model'], 'classifier', '-v7.3')
+%     save([trainingFolder, filesep, trainingName, '_', suffix '.model'], 'classifier', '-v7.3')
     
 end
 
@@ -158,7 +157,7 @@ else
         pMap(:, :, f) = classifyImageNuclear(hisFrame, trainingData,'tempPath', tempPath,...
             'shouldRescaleTrainingData', shouldRescaleTrainingData, 'classifier', classifier,...
             'arffLoader', arffLoader, 'matlabLoader', matlabLoader,...
-            'par', parInstances, 'displayFigures', displayFigures,...
+            'parallelizeInstances', parInstances, 'displayFigures', displayFigures,...
             'classifyMethod', classifyMethod);
         
         deltaT(f)=toc/60;
@@ -167,36 +166,24 @@ else
     
 end
 
-mkdir([thisExperiment.procFolder, '_']);
-probHisFile = [thisExperiment.procFolder, '_', filesep, Prefix, '_probHis.mat'];
-if whos(var2str(pMap)).bytes < 2E9
-    save(probHisFile, 'pMap', '-v6')
-else
-    newmatic(probHisFile,true,...
-        newmatic_variable('pMap', 'double', [ySize, xSize, nFrames], [ySize, xSize, 1]));
-end
+[~, ProcPath] = DetermineLocalFolders(obj.Prefix);
+procFolder = [ProcPath, filesep, Prefix, '_'];
+mkdir(procFolder);
+probHisFile = [procFolder, filesep, Prefix, '_probHis.mat'];
 
-
-
-
+livemRNAImageMatSaver([procFolder, filesep, Prefix, '_probHis.mat'],...
+            pMap);
+        
 %% Make ellipses from generated probability maps
 if makeEllipses
-    %     if exist([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'] ,'file')
-    %         ellipsePrompt = ('Ellipses.mat already exists. Do you want to overwrite?');
-    %         ellipseAnswer = inputdlg(ellipsePrompt);
-    %         if contains(ellipseAnswer,'y')
-    %do morphology analysis to reduce our probability maps to a list of
-    %ellipses
     Ellipses = makeEllipses(pMap, probabilityThreshold);
     %track nuclei will complain if there are frames with no ellipses,
     %so we'll fake it for now.
     fakeFrame = Ellipses(~cellfun(@isempty, Ellipses));
     fakeFrame =  fakeFrame{1};
     Ellipses(cellfun(@isempty, Ellipses)) = {fakeFrame};
-    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses', '-v6');
+    save([thisExperiment.resultsFolder, 'Ellipses.mat'], 'Ellipses', '-v6');
     TrackNuclei(Prefix, 'retrack');
-    %         end
-    %     end
 end
 
 end
