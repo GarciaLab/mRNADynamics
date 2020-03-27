@@ -13,9 +13,9 @@ max_rad_um = 6; %this needs to be 6um for nc12. 4um for nc14
 
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.
-for i = 1:2:(numel(varargin)-1)
-    if i ~= numel(varargin)
-        eval([varargin{i} '=varargin{i+1};']);
+for k = 1:2:(numel(varargin)-1)
+    if k ~= numel(varargin)
+        eval([varargin{k} '=varargin{k+1};']);
     end
 end
 

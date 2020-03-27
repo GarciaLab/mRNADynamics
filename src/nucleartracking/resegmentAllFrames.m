@@ -30,8 +30,8 @@ parfor CurrentFrame = 1:thisExperiment.nFrames
         [~, circles] = kSnakeCircles(HisImage,...
             thisExperiment.pixelSize_nm/1000, 'min_rad_um', min_rad_um,...
             'max_rad_um', max_rad_um);    
-        circles(:, 4) = circles(:, 3);
-        circles(:, 5:9) = zeros(size(circles, 1), 5);
+%         circles(:, 4) = circles(:, 3);
+        circles(:, 6:9) = zeros(size(circles, 1), 4);
         Ellipses{CurrentFrame} = circles;
                 
         %report progress every tenth frame

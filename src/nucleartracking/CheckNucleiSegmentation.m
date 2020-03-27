@@ -43,20 +43,20 @@ preMovie = false;
 chooseHis = false;
 yToRetrackPrompt = true;
 
-for i = 1:length(varargin)
-    if strcmpi(varargin{i}, 'noAdd') | strcmpi(varargin{i}, 'fish') | strcmpi(varargin{i}, 'markandfind')
+for k = 1:length(varargin)
+    if strcmpi(varargin{k}, 'noAdd') | strcmpi(varargin{k}, 'fish') | strcmpi(varargin{k}, 'markandfind')
         noAdd = true;
         fish = true;
-    elseif strcmpi(varargin{i}, 'nWorkers')
-        nWorkers = varargin{i+1};
-    elseif strcmpi(varargin{i}, 'chooseHis')
-        chooseHis = varargin{i+1};
-    elseif strcmpi(varargin{i}, 'colormap')
-        cmap = varargin{i+1};
-    elseif strcmpi(varargin{i}, 'premovie')
+    elseif strcmpi(varargin{k}, 'nWorkers')
+        nWorkers = varargin{k+1};
+    elseif strcmpi(varargin{k}, 'chooseHis')
+        chooseHis = varargin{k+1};
+    elseif strcmpi(varargin{k}, 'colormap')
+        cmap = varargin{k+1};
+    elseif strcmpi(varargin{k}, 'premovie')
         preMovie = true;
-        movieMat = varargin{i+1};
-    elseif strcmpi(varargin{i}, 'yToRetrackPrompt')
+        movieMat = varargin{k+1};
+    elseif strcmpi(varargin{k}, 'yToRetrackPrompt')
         yToRetrackPrompt = true;
     end
 end
@@ -142,21 +142,21 @@ DisplayRange=[min(min(HisImage)),max(max(HisImage))];
 
 
 %Make a vector containing the nc corresponding to each frame
-for i=1:nFrames
-    if i<nc9
-        nc(i)=8;
-    elseif (i>=nc9)&(i<nc10)
-        nc(i)=9;
-    elseif (i>=nc10)&(i<nc11)
-        nc(i)=10;
-    elseif (i>=nc11)&(i<nc12)
-        nc(i)=11;
-    elseif (i>=nc12)&(i<nc13)
-        nc(i)=12;
-    elseif (i>=nc13)&(i<nc14) %#ok<*AND2>
-        nc(i)=13;
-    elseif i>=nc14
-        nc(i)=14;
+for k=1:nFrames
+    if k<nc9
+        nc(k)=8;
+    elseif (k>=nc9)&(k<nc10)
+        nc(k)=9;
+    elseif (k>=nc10)&(k<nc11)
+        nc(k)=10;
+    elseif (k>=nc11)&(k<nc12)
+        nc(k)=11;
+    elseif (k>=nc12)&(k<nc13)
+        nc(k)=12;
+    elseif (k>=nc13)&(k<nc14) %#ok<*AND2>
+        nc(k)=13;
+    elseif k>=nc14
+        nc(k)=14;
     end
 end
 
@@ -230,35 +230,35 @@ while (cc~='x')
     %     hold(overlayAxes, 'on')
     PlotHandle=zeros(NCentroids, 1);
     if ~fish
-        for i=1:NCentroids
-            PlotHandle(i)=ellipse(Ellipses{CurrentFrame}(i,3),...
-                Ellipses{CurrentFrame}(i,4),...
-                Ellipses{CurrentFrame}(i,5),Ellipses{CurrentFrame}(i,1)+1,...
-                Ellipses{CurrentFrame}(i,2)+1,[],20,overlayAxes);
+        for k=1:NCentroids
+            PlotHandle(k)=ellipse(Ellipses{CurrentFrame}(k,3),...
+                Ellipses{CurrentFrame}(k,4),...
+                pi - Ellipses{CurrentFrame}(k,5),Ellipses{CurrentFrame}(k,1)+1,...
+                Ellipses{CurrentFrame}(k,2)+1,[],20,overlayAxes);
             if size(Ellipses{CurrentFrame}, 2) > 8
-                schnitzInd = Ellipses{CurrentFrame}(i, 9);
+                schnitzInd = Ellipses{CurrentFrame}(k, 9);
             else
-                schnitzInd = getSchnitz(Ellipses{CurrentFrame}(i,:), schnitzcells, CurrentFrame);
+                schnitzInd = getSchnitz(Ellipses{CurrentFrame}(k,:), schnitzcells, CurrentFrame);
                 if ~isempty(schnitzInd)
-                    Ellipses{CurrentFrame}(i, 9) = schnitzInd;
+                    Ellipses{CurrentFrame}(k, 9) = schnitzInd;
                 else
-                    Ellipses{CurrentFrame}(i, 9) = 0;
+                    Ellipses{CurrentFrame}(k, 9) = 0;
                 end
             end
             if schnitzInd ~=0
-                set(PlotHandle(i), 'Color', clrmp(schnitzInd, :),'Linewidth', 2);
+                set(PlotHandle(k), 'Color', clrmp(schnitzInd, :),'Linewidth', 2);
             else
-                set(PlotHandle(i), 'Color', 'w','Linewidth', 3);
-                new_handle = copyobj(PlotHandle(i),overlayAxes);
+                set(PlotHandle(k), 'Color', 'w','Linewidth', 3);
+                new_handle = copyobj(PlotHandle(k),overlayAxes);
                 set(new_handle, 'Color', 'k','Linewidth', 2);
             end
         end
     else
-        for i=1:NCentroids
-            PlotHandle(i)=ellipse(Ellipses{CurrentFrame}(i,3),...
-                Ellipses{CurrentFrame}(i,4),...
-                Ellipses{CurrentFrame}(i,5),Ellipses{CurrentFrame}(i,1)+1,...
-                Ellipses{CurrentFrame}(i,2)+1, 'g', 4,overlayAxes, .05);
+        for k=1:NCentroids
+            PlotHandle(k)=ellipse(Ellipses{CurrentFrame}(k,3),...
+                Ellipses{CurrentFrame}(k,4),...
+                pi-Ellipses{CurrentFrame}(k,5),Ellipses{CurrentFrame}(k,1)+1,...
+                Ellipses{CurrentFrame}(k,2)+1, 'g', 4,overlayAxes, .05);
             %              set(PlotHandle(i), 'Color', 'g','Linewidth', .5);
         end
         %         for i=1:NCentroids
@@ -405,8 +405,8 @@ while (cc~='x')
         [centers, radii, ~] =...
             findEllipsesByKMeans(HisImage, 'displayFigures', false);
         
-        for i = 1:length(radii)
-            Ellipses{CurrentFrame}(i, :) = [centers(i,1),centers(i,2),radii(i),radii(i),...
+        for k = 1:length(radii)
+            Ellipses{CurrentFrame}(k, :) = [centers(k,1),centers(k,2),radii(k),radii(k),...
                 0,0,0,0];
         end
         
@@ -448,8 +448,8 @@ while (cc~='x')
     elseif (ct~=0)&(cc=='\')  %resegment with ksnakecircles
         
         [~, circles] = kSnakeCircles(HisImage, pixelSize/1000);
-        circles(:, 4) = circles(:, 3);
-        circles(:, 5:9) = zeros(size(circles, 1), 5);
+%         circles(:, 4) = circles(:, 3);
+        circles(:, 6:9) = zeros(size(circles, 1), 4);
         Ellipses{CurrentFrame} = circles;
         
     elseif (ct~=0)&(cc=='0')    %Debug mode

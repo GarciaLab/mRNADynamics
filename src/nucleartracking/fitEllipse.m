@@ -1,4 +1,4 @@
-function geometricEllipseParameters = fitEllipse(data_points)
+function out = fitEllipse(data_points)
 %wrapper function  for ellipse fitting from 
 %https://github.com/zygmuntszpak/guaranteed-ellipse-fitting-with-a-confidence-region-and-an-uncertainty-measure
 %output is [xCenter,yCenter, majAxis, minAxis, orientation (radians)]
@@ -12,7 +12,12 @@ geometricEllipseParameters = ...
             fromAlgebraicToGeometricParameters(theta_fastguaranteed);
  
 %rearrange the output a bit
-geometricEllipseParameters = permute(geometricEllipseParameters, [3 4 1 2 5]);
+out = [];
+out(1) = geometricEllipseParameters(3);
+out(2) = geometricEllipseParameters(4);
+out(3) = geometricEllipseParameters(1);
+out(4) = geometricEllipseParameters(2);
+out(5) = geometricEllipseParameters(5);
 
 
 % fprintf('Covariance matrix of geometric parameters: \n')

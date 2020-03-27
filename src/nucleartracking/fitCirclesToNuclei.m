@@ -1,13 +1,14 @@
 function [cMask, ellipseFrameWithEdges] = fitCirclesToNuclei(mask, varargin)
 
 displayFigures = false;
+doEllipse = true;
 image = [];
 
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.
-for i = 1:2:(numel(varargin)-1)
-    if i ~= numel(varargin)
-        eval([varargin{i} '=varargin{i+1};']);
+for k = 1:2:(numel(varargin)-1)
+    if k ~= numel(varargin)
+        eval([varargin{k} '=varargin{k+1};']);
     end
 end
 
@@ -31,20 +32,32 @@ border = borderImage(mask);
 borderDist = bwdist(border);
 
 edgeMask = false(yDim, xDim);
+cMask =  false(yDim, xDim);
 
 ellipseFrame = [];
 edgeEllipseFrame = [];
 
 n = 0;
 m = 0;
-for i = 1:numel(boundaryCell)
+for k = 1:numel(boundaryCell)
     %     hold on
-    xs = boundaryCell{i}(:, 1);
-    ys = boundaryCell{i}(:, 2);
+    xs = boundaryCell{k}(:, 1);
+    ys = boundaryCell{k}(:, 2);
     %     plot(xs, ys, 'g.');
     
-    %[x center y center R]
-    [xfit,yfit, Rfit]= circfit(xs,ys);
+    if ~doEllipse
+        %[x center y center R]
+        [xfit,yfit, Rfit]= circfit(xs,ys);
+    else
+        ellipseParams = fitEllipse(boundaryCell{k});
+        xfit = ellipseParams(1);
+        yfit = ellipseParams(2);
+        afit = ellipseParams(3);
+        bfit = ellipseParams(4);
+        thetafit = ellipseParams(5);
+        Rfit = mean([afit, bfit]);
+    end
+    
     xSub = min(round(abs(xfit)), xDim);
     ySub = min(round(abs(yfit)), yDim);
     
@@ -59,7 +72,19 @@ for i = 1:numel(boundaryCell)
         
         ellipseFrame(n, 2) = xfit;
         ellipseFrame(n, 1) = yfit;
-        ellipseFrame(n, 3) = Rfit;
+        if ~doEllipse
+            ellipseFrame(n, 3) = Rfit;
+        else
+            ellipseFrame(n, 3) = afit;
+            ellipseFrame(n, 4) = bfit;
+            ellipseFrame(n, 5) = thetafit + pi/2;
+            h = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
+            'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)),'StripeColor','m');
+%                  h = images.roi.Ellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
+%               'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)),'StripeColor','m');
+%             cMask = cMask + createMask(h);  
+            cMask = cMask + poly2mask(h.Vertices(:, 1), h.Vertices(:, 2), size(cMask, 1), size(cMask, 2));
+        end
         
     else
         
@@ -67,13 +92,17 @@ for i = 1:numel(boundaryCell)
         edgeEllipseFrame(m, 2) = xfit;
         edgeEllipseFrame(m, 1) = yfit;
         edgeEllipseFrame(m, 3) = Rfit;
+        if doEllipse
+            edgeEllipseFrame(m, 4) = Rfit;
+            edgeEllipseFrame(m, 5) = 0;
+        end
         
-        reg = stats(i).Image;
+        reg = stats(k).Image;
         %         figure(87); imagesc(reg);
         reg = reg(:);
         % %             figure(88); imagesc(edgeMask);
-        a = [stats(i).SubarrayIdx];
-        sz = size(stats(i).Image);
+        a = [stats(k).SubarrayIdx];
+        sz = size(stats(k).Image);
         for xx = 1:numel(a{2})
             for yy = 1:numel(a{1})
                 edgeMask(a{1}(yy), a{2}(xx)) = reg(sub2ind(sz,yy, xx));
@@ -88,10 +117,14 @@ for i = 1:numel(boundaryCell)
 end
 
 
-
-cMask = makeNuclearMask(ellipseFrame, [size(mask, 1), size(mask, 2)], 'radiusScale', 1);
+if ~doEllipse
+    cMask = makeNuclearMask(ellipseFrame, [size(mask, 1), size(mask, 2)], 'radiusScale', 1);
+end
 
 ellipseFrameWithEdges = cat(1, ellipseFrame, edgeEllipseFrame);
 
+if ~isreal(ellipseFrameWithEdges)
+    keyboard
+end
 cMask = cMask + edgeMask;
 % figure; imshowpair(bw, cMask, 'montage');

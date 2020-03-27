@@ -261,10 +261,13 @@ else
 end
 
 %Add the radius information to the schnitz
-for i=1:length(schnitzcells)
-    for j=1:length(schnitzcells(i).frames)
-        schnitzcells(i).len(:)=...
-            single(mean(Ellipses{schnitzcells(i).frames(j)}(schnitzcells(i).cellno(j),3:4)));
+for schnitz=1:length(schnitzcells)
+    for f=1:length(schnitzcells(schnitz).frames)
+        r = single(mean(Ellipses{schnitzcells(schnitz).frames(f)}(schnitzcells(schnitz).cellno(f),3:4)));
+        schnitzcells(schnitz).len(:)=r;
+        if ~isreal(r)
+            keyboard
+        end
     end
 end
 

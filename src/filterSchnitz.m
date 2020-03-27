@@ -9,8 +9,8 @@ lengths = {[], [], []};
 for nc = 12:14
     
     snc = schnitzcells([schnitzcells.cycle] == nc);
-    for i = 1:length(snc)
-        lengths{nc-11} = [lengths{nc-11}, length(snc(i).frames)];
+    for k = 1:length(snc)
+        lengths{nc-11} = [lengths{nc-11}, length(snc(k).frames)];
     end
     
     frameCutoff(nc-11) = .5*median(lengths{nc-11}); %if a nucleus exists for less than half the median lifetime, disapprove it.
