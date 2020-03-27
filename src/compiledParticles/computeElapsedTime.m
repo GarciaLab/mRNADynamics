@@ -5,6 +5,8 @@ function elapsedTime_min = computeElapsedTime(FrameInfo)
 elapsedTime_min = [];
 numFrames = length(FrameInfo);
 
+isPrinceton2Photon = ~isfield(FrameInfo,'FileMode') || strcmp(FrameInfo(end).FileMode,'TIF');
+
 for f=1:numFrames
      if ~isPrinceton2Photon
          elapsedTime_min(f)=FrameInfo(f).Time-FrameInfo(1).Time;
