@@ -223,18 +223,22 @@ while (cc~='x')
         caxis(overlayAxes, DisplayRange);
         caxis(originalAxes, DisplayRange);
     end
-    axesHandlesToChildObjects = findobj(overlayAxes, 'Type', 'line');
-    if ~isempty(axesHandlesToChildObjects)
-        delete(axesHandlesToChildObjects);
+    
+    %refresh ellipses plots by destroying and remaking
+    if exist('PlotHandle', 'var')
+        cellfun(@delete, PlotHandle); 
     end
-    %     hold(overlayAxes, 'on')
-    PlotHandle=zeros(NCentroids, 1);
+    
+    PlotHandle = cell(NCentroids, 1);
+    ellipseFrame = Ellipses{CurrentFrame};
     if ~fish
         for k=1:NCentroids
-            PlotHandle(k)=ellipse(Ellipses{CurrentFrame}(k,3),...
-                Ellipses{CurrentFrame}(k,4),...
-                pi - Ellipses{CurrentFrame}(k,5),Ellipses{CurrentFrame}(k,1)+1,...
-                Ellipses{CurrentFrame}(k,2)+1,[],20,overlayAxes);
+            n = k;
+            PlotHandle{k} = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
+                'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
+            'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)), 'FaceAlpha', 0,...
+            'InteractionsAllowed', 'none');
+
             if size(Ellipses{CurrentFrame}, 2) > 8
                 schnitzInd = Ellipses{CurrentFrame}(k, 9);
             else
@@ -246,29 +250,24 @@ while (cc~='x')
                 end
             end
             if schnitzInd ~=0
-                set(PlotHandle(k), 'Color', clrmp(schnitzInd, :),'Linewidth', 2);
+                set(PlotHandle{k}, 'StripeColor', clrmp(schnitzInd, :), 'Color', clrmp(schnitzInd, :),'Linewidth', 2);
             else
-                set(PlotHandle(k), 'Color', 'w','Linewidth', 3);
-                new_handle = copyobj(PlotHandle(k),overlayAxes);
-                set(new_handle, 'Color', 'k','Linewidth', 2);
+                set(PlotHandle{k}, 'StripeColor', 'w', 'Color', 'w','Linewidth', 2);
+%                 new_handle = copyobj(PlotHandle{k},overlayAxes);
+%                 set(new_handle, 'StripeColor', 'k', 'Color', 'k', 'Linewidth', 2);
             end
         end
     else
         for k=1:NCentroids
-            PlotHandle(k)=ellipse(Ellipses{CurrentFrame}(k,3),...
-                Ellipses{CurrentFrame}(k,4),...
-                pi-Ellipses{CurrentFrame}(k,5),Ellipses{CurrentFrame}(k,1)+1,...
-                Ellipses{CurrentFrame}(k,2)+1, 'g', 4,overlayAxes, .05);
-            %              set(PlotHandle(i), 'Color', 'g','Linewidth', .5);
+            n = k;
+              
+            PlotHandle{k} = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
+                'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
+            'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)), 'FaceAlpha', 0,...
+            'InteractionsAllowed', 'none');
+        
         end
-        %         for i=1:NCentroids
-        %             set(PlotHandle(i), 'Color', 'w','Linewidth', .5);
-        %         end
     end
-    %     hold(overlayAxes, 'off')
-    %     set(PlotHandle,'Color','r', 'Linewidth', 3)
-    
-    
     
     FigureTitle=['Frame: ',num2str(CurrentFrame),'/',num2str(nFrames),...
         ', nc: ',num2str(nc(CurrentFrame))];

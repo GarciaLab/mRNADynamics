@@ -76,7 +76,7 @@ for ch = spotChannels
 
         nSpotsPerFrame = length(SpotsFr.Fits);
         for spot = 1:nSpotsPerFrame
-            SpotsFr = fitSnip3D(SpotsFr, ch, spot, frame, Prefix, PreProcPath, FrameInfo, nSpots);
+            SpotsFr = fitSnip3D(SpotsFr, ch, spot, frame, thisExperiment, PreProcPath, FrameInfo, nSpots);
         end
         SpotsCh(frame) = SpotsFr;
         send(q, frame); %update the waitbar
@@ -84,9 +84,7 @@ for ch = spotChannels
     
     if iscell(Spots) & length(Spots) > 1
         Spots{ch} = SpotsCh;
-    else
-        Spots = SpotsCh;
-    end
+    else Spots = SpotsCh; end
     
 end
 
@@ -106,6 +104,7 @@ if save_flag
     try close(waitbarFigure); end
     
 end
+
     function nUpdateWaitbar(~)
         try waitbar(p/numFrames, waitbarFigure); end
         p = p + 1;

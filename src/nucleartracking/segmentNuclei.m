@@ -166,7 +166,7 @@ else
     
 end
 
-[~, ProcPath] = DetermineLocalFolders(obj.Prefix);
+[~, ProcPath] = DetermineLocalFolders(Prefix);
 procFolder = [ProcPath, filesep, Prefix, '_'];
 mkdir(procFolder);
 probHisFile = [procFolder, filesep, Prefix, '_probHis.mat'];

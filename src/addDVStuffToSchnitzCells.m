@@ -3,10 +3,10 @@ function [dlfluobins, dlfluobincounts] = addDVStuffToSchnitzCells(DataType, vara
 displayFigures = false;
 saveFigures = false;
 
-for i = 1:length(varargin)
-    if strcmpi(varargin{i}, 'displayFigures')
+for k = 1:length(varargin)
+    if strcmpi(varargin{k}, 'displayFigures')
         displayFigures = true;
-    elseif strcmpi(varargin{i}, 'saveFigures')
+    elseif strcmpi(varargin{k}, 'saveFigures')
         saveFigures = true;
     end
 end

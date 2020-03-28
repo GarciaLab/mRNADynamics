@@ -11,8 +11,9 @@ function [Spots, dogs]...
 
 cleanupObj = onCleanup(@myCleanupFun);
 
+radiusScale = 1.3; %dilate the nuclear mask by this factor
 
-thisExperiment = liveExperiment(Prefix); 
+thisExperiment = liveExperiment(Prefix);
 pixelSize_nm = thisExperiment.pixelSize_nm;
 
 if shouldMaskNuclei
@@ -44,7 +45,7 @@ if shouldDisplayFigures
     snipAx = axes(snipFig);
     rawFig = figure('units', 'normalized', 'position',[.01, .1, .33, .33]);
     rawAx = axes(rawFig);
-    
+    maskFig = figure;
     graphicsHandles = [dogFig, dogAx, gFig, gAx, snipFig, snipAx, rawFig, rawAx];
 else
     graphicsHandles = [];
@@ -59,8 +60,8 @@ if isFileProbMap
         Threshold = 5000;
     end
 else
-        MLFlag = '';
-
+    MLFlag = '';
+    
     if shouldLoadAsStacks
         dogStr = 'dogStack_';
     else
@@ -80,7 +81,7 @@ if filterMovieFlag
     filterOpts = {'nWorkers', 1, 'highPrecision', 'customFilter', filterType,...
         sigmas, 'double', 'keepPool', gpu};
     if saveAsMat, filterOpts = [filterOpts, 'saveAsMat'];
-        else, filterOpts = [filterOpts, 'noSave']; end
+    else, filterOpts = [filterOpts, 'noSave']; end
     [~, dogs] = filterMovie(Prefix,'optionalResults', resultsFolder, filterOpts{:});
 end
 
@@ -110,7 +111,7 @@ isZPadded = size(movieMat, 3) ~= zSize;
 q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
-for currentFrame = initialFrame:lastFrame 
+for currentFrame = initialFrame:lastFrame
     
     %report progress every tenth frame
     if ~mod(currentFrame, 10), disp(['Segmenting frame ', num2str(currentFrame), '...']); end
@@ -123,7 +124,7 @@ for currentFrame = initialFrame:lastFrame
         if exist([dogStackFile, '.mat'], 'file')
             dogStack = load([dogStackFile,'.mat'], 'dogStack');
             dogStack = dogStack.dogStack;
-        elseif exist([dogStackFile, '.tif'], 'file')   
+        elseif exist([dogStackFile, '.tif'], 'file')
             dogStack = imreadStack([dogStackFile, '.tif']);
         end
         
@@ -146,23 +147,23 @@ for currentFrame = initialFrame:lastFrame
         else, dogZ = zIndex - 1; end
         
         if shouldLoadAsStacks, dog = dogStack(:, :, dogZ); end
-% =======
-%             if isZPadded | ( ~isZPadded & (zIndex~=1 & zIndex~=zSize) )
-%                 if strcmpi(saveType, '.tif')
-%                     dogFileName = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(dogZ, 2),...
-%                         nameSuffix,'.tif'];
-%                     dog = double(imread(dogFileName));
-%                 elseif strcmpi(saveType, '.mat')
-%                     dogFileName = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(dogZ, 2),...
-%                         nameSuffix,'.mat'];
-%                     plane = load(dogFileName);
-%                     try dog = plane.plane; catch dog = plane.dog; end
-%                 elseif strcmpi(saveType, 'none')
-%                     dog = dogs(:,:, dogZ, current_frame);
-%                 end
-%             else
-%                 dog = false(size(im, 1), size(im, 2));
-%             end
+        % =======
+        %             if isZPadded | ( ~isZPadded & (zIndex~=1 & zIndex~=zSize) )
+        %                 if strcmpi(saveType, '.tif')
+        %                     dogFileName = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(dogZ, 2),...
+        %                         nameSuffix,'.tif'];
+        %                     dog = double(imread(dogFileName));
+        %                 elseif strcmpi(saveType, '.mat')
+        %                     dogFileName = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(dogZ, 2),...
+        %                         nameSuffix,'.mat'];
+        %                     plane = load(dogFileName);
+        %                     try dog = plane.plane; catch dog = plane.dog; end
+        %                 elseif strcmpi(saveType, 'none')
+        %                     dog = dogs(:,:, dogZ, current_frame);
+        %                 end
+        %             else
+        %                 dog = false(size(im, 1), size(im, 2));
+        %             end
         
         
         if shouldDisplayFigures
@@ -170,9 +171,9 @@ for currentFrame = initialFrame:lastFrame
             lLim = median(dogO);
             uLim = max(dogO);
             if lLim ~= uLim
-                imagescUpdate(dogAx, im, [lLim, uLim]);
+                imagescUpdate(dogAx, im, [lLim, uLim], 'cmap', 'gray');
             else
-                imagescUpdate(dogAx, im, []);
+                imagescUpdate(dogAx, im, [], 'cmap', 'gray');
             end
             drawnow;
         end
@@ -186,8 +187,12 @@ for currentFrame = initialFrame:lastFrame
         
         % apply nuclear mask if it exists
         if shouldMaskNuclei && ~isempty(Ellipses)
-            nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim, xDim]);
+            
+            nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim xDim], radiusScale);
             im_thresh = im_thresh & nuclearMask;
+            
+            if shouldDisplayFigures, figure(maskFig); imshowpair(nuclearMask, dog, 'montage'); end
+            
         end
         
         %probability map regions usually look different from dog regions and

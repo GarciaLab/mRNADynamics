@@ -4,6 +4,10 @@ function [CurrentChannel, PreviousChannel, coatChannel, CurrentParticle] =...
 %SWITCHCHANNELS Summary of this function goes here
 %   Detailed explanation goes here
 
+%NB Armando 3/28/2020-
+%I think this is completely broken. Needs a rewrite using
+%CurrentChannelIndex and CurrentChannel
+
 %Update the channel number
 PreviousChannel=CurrentChannel;
 CurrentChannel=CurrentChannel+1;
@@ -43,5 +47,6 @@ if UseHistoneOverlay
 elseif numParticlesCurrCh<CurrentParticle
     CurrentParticle=numParticlesCurrCh;
 end
+
 end
 
