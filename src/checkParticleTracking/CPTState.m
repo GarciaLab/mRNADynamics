@@ -25,6 +25,7 @@ classdef CPTState < handle
         lastParticle
 
         CurrentChannel
+        CurrentChannelIndex
         PreviousChannel
         coatChannel
         
@@ -53,7 +54,9 @@ classdef CPTState < handle
     end
     
     methods
-        function this = CPTState(Spots, Particles, SpotFilter, schnitzcells, Ellipses, FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss, projectionMode)
+        function this = CPTState(Spots, Particles, SpotFilter, schnitzcells, Ellipses,...
+                FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss, projectionMode)
+            
             this.Spots = Spots;
             this.Particles = Particles;
             this.SpotFilter = SpotFilter;
@@ -78,6 +81,7 @@ classdef CPTState < handle
             this.lastParticle = 0; %this gets flagged if there's a drop to one particle within the Particles structure.
 
             this.CurrentChannel = 1;
+            this.CurrentChannelIndex = 1;
             this.PreviousChannel = this.CurrentChannel;
            
             this.FrameIndicesToFit = 0; % index of the current particle that were used for fitting
@@ -104,7 +108,7 @@ classdef CPTState < handle
         end
 
         function numParticles = numParticles(this)
-            numParticles = length(this.Particles{this.CurrentChannel});
+            numParticles = length(this.Particles{this.CurrentChannelIndex});
         end
 
         function numValidFrames = numValidFrames(this)
@@ -112,7 +116,7 @@ classdef CPTState < handle
         end
 
         function currentSpots = getCurrentChannelSpots(this)
-            currentSpots = this.Spots{this.CurrentChannel};
+            currentSpots = this.Spots{this.CurrentChannelIndex};
         end
 
         function currentFrameSpots = getCurrentFrameSpots(this)
@@ -121,7 +125,7 @@ classdef CPTState < handle
         end
 
         function currentParticles = getCurrentChannelParticles(this)
-            currentParticles = this.Particles{this.CurrentChannel};
+            currentParticles = this.Particles{this.CurrentChannelIndex};
         end
 
         function currentParticle = getCurrentParticle(this)

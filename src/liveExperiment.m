@@ -95,11 +95,9 @@ classdef liveExperiment
             isUnhealthyFile = [DropboxFolder,filesep,obj.Prefix,filesep, 'isUnhealthy.mat'];
             if exist(isUnhealthyFile, 'file')
                 load(isUnhealthyFile, 'isUnhealthy');
-            else
-                isUnhealthy = NaN;
-            end
+            else isUnhealthy = NaN; end;
+
             obj.isUnhealthy = isUnhealthy;
-            
             
             obj.project = '';
             
@@ -126,9 +124,8 @@ classdef liveExperiment
                 [obj.xDim, obj.yDim, obj.pixelSize_nm, obj.zStep_um, obj.snippetSize_px,...
                     obj.nFrames, obj.zDim, obj.nDigits] = getFrameInfoParams(FrameInfo);
                 obj.pixelSize_um = obj.pixelSize_nm/1000;
-            catch
-                warning('FrameInfo not found.')
-            end
+            catch warning('FrameInfo not found.'); end
+                
             
             obj.inputChannels = find(contains(obj.Channels, 'input', 'IgnoreCase', true));
             

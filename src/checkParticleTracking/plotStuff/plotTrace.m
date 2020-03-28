@@ -9,7 +9,7 @@ switchParticleFlag= false;
 switchFrameFlag = cptState.PreviousFrame ~= cptState.CurrentFrame;
 
 % Only update the trace information if we have switched particles
-if cptState.CurrentParticle ~= cptState.PreviousParticle || isempty(plotTraceSettings.AmpIntegral) || cptState.CurrentChannel ~= cptState.PreviousChannel || cptState.lastParticle
+if cptState.CurrentParticle ~= cptState.PreviousParticle || isempty(plotTraceSettings.AmpIntegral) || cptState.CurrentChannelIndex ~= cptState.PreviousChannel || cptState.lastParticle
     switchParticleFlag = true;
     switchFrameFlag = true;
     cptState.PreviousParticle = cptState.CurrentParticle;
@@ -20,7 +20,7 @@ end
 % Check if this particle has a saved manual fit or if fitInitialSlope ran
 if cptState.lineFitted
     fittedXFrames = cptState.FrameIndicesToFit;
-elseif  isfield(cptState.Particles{cptState.CurrentChannel},'fitApproved') && ...
+elseif  isfield(cptState.Particles{cptState.CurrentChannelIndex},'fitApproved') && ...
         ~isempty(cptState.getCurrentParticle().fitApproved)
     approvedFit = 1;
 
@@ -190,10 +190,10 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(cptState.Frames==cptState.CurrentFr
     end
     
     % creating axis title
-    numParticles = length(cptState.Particles{cptState.CurrentChannel});
+    numParticles = length(cptState.Particles{cptState.CurrentChannelIndex});
     firstLine = [Prefix,'    Particle: ',num2str(cptState.CurrentParticle),'/',num2str(numParticles)];
     secondLine = ['Frame: ',num2str(cptState.CurrentFrame),'/',num2str(numFrames),'    ',num2str(round(cptState.FrameInfo(cptState.CurrentFrame).Time)), 's'];
-    thirdLine = ['Z: ',num2str(cptState.CurrentZ),'/',num2str(cptState.ZSlices),', Ch: ',num2str(cptState.CurrentChannel)];
+    thirdLine = ['Z: ',num2str(cptState.CurrentZ),'/',num2str(cptState.ZSlices),', Ch: ',num2str(cptState.CurrentChannelIndex)];
     
     if isfield(cptState.FrameInfo, 'nc')
         axisTitle={firstLine,...

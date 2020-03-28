@@ -12,40 +12,40 @@ function keyInputHandler = ParticleChangeEventHandler(cptState)
             end
             
             [cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag] = ...
-                changeParticle(ParticleJump, cptState.Particles, cptState.numParticles, cptState.CurrentChannel);
+                changeParticle(ParticleJump, cptState.Particles, cptState.numParticles, cptState.CurrentChannelIndex);
 
             cptState.DisplayRange = [];
         
         elseif cc == 'r'
-            cptState.Particles = orderParticles(cptState.numParticles(), cptState.CurrentChannel, cptState.Particles);
+            cptState.Particles = orderParticles(cptState.numParticles(), cptState.CurrentChannelIndex, cptState.Particles);
         
         elseif cc == 'p'
             % Identify a particle. It will also tell you the particle associated with the clicked nucleus.
             identifyParticle(cptState.Spots, cptState.Particles, cptState.CurrentFrame, ...
-                cptState.CurrentChannel, cptState.UseHistoneOverlay, cptState.schnitzcells);
+                cptState.CurrentChannelIndex, cptState.UseHistoneOverlay, cptState.schnitzcells);
         
         elseif cc == '\'
             % Moves to clicked particle.
             [cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag] = toNearestParticle(cptState.Spots, ...
-                cptState.Particles, cptState.CurrentFrame, cptState.CurrentChannel, cptState.UseHistoneOverlay, cptState.schnitzcells);
+                cptState.Particles, cptState.CurrentFrame, cptState.CurrentChannelIndex, cptState.UseHistoneOverlay, cptState.schnitzcells);
         
         elseif cc == 'u'
-            [x2, ~, ~] = SpotsXYZ(cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame));
+            [x2, ~, ~] = SpotsXYZ(cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame));
             
             if ~isempty(x2)
                 ClickedSpot = ginput(1);
                 
-                UnfilterSpot(cptState.Spots{cptState.CurrentChannel}, cptState.SpotFilter{cptState.CurrentChannel}, ...
-                    ClickedSpot, cptState.Particles{cptState.CurrentChannel}, cptState.CurrentFrame)
+                UnfilterSpot(cptState.Spots{cptState.CurrentChannelIndex}, cptState.SpotFilter{cptState.CurrentChannelIndex}, ...
+                    ClickedSpot, cptState.Particles{cptState.CurrentChannelIndex}, cptState.CurrentFrame)
             end
 
         elseif (cc == 'm') & (cptState.CurrentParticle < cptState.numParticles())
             [cptState.lineFitted, cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag, cptState.DisplayRange] = ...
-                goNextParticle(cptState.CurrentParticle, cptState.CurrentChannel, cptState.HideApprovedFlag, cptState.Particles);
+                goNextParticle(cptState.CurrentParticle, cptState.CurrentChannelIndex, cptState.HideApprovedFlag, cptState.Particles);
         
         elseif (cc == 'n') & (cptState.CurrentParticle > 1)
             [cptState.lineFitted, cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag, cptState.DisplayRange] = ...
-                goPreviousParticle(cptState.CurrentParticle, cptState.CurrentChannel, cptState.HideApprovedFlag, cptState.Particles);
+                goPreviousParticle(cptState.CurrentParticle, cptState.CurrentChannelIndex, cptState.HideApprovedFlag, cptState.Particles);
 
         elseif cc == 'i'
             warning(' AR 1/15/18: This is currently deprecated. Talk to HG if you need this function.')

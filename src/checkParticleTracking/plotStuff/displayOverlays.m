@@ -7,7 +7,7 @@ function [ImageHisMat, xForZoom, yForZoom, hisOverlayHandle, ellipseHandles] =..
     Overlay, CurrentChannel, CurrentParticle, ZSlices, CurrentZ, numFrames, ...
     schnitzcells, UseSchnitz, DisplayRange, Ellipses, SpotFilter, ZoomMode, GlobalZoomMode, ...
     ZoomRange, xForZoom, yForZoom, fish, UseHistoneOverlay, multiAx,...
-    HisOverlayFigAxes, hisOverlayHandle, ellipseHandles, ImageHisMat)
+    HisOverlayFigAxes, hisOverlayHandle, ellipseHandles, ImageHisMat, cptState)
 
 %PLOTFRAME Summary of this function goes here
 %   Detailed explanation goes here
@@ -28,18 +28,19 @@ else
     multiView = false;
 end
 
+CurrentChannelIndex = cptState.CurrentChannelIndex;
 %Get the coordinates of all the spots in this frame
-[x,y,z]=SpotsXYZ(Spots{CurrentChannel}(CurrentFrame));
+[x,y,z]=SpotsXYZ(Spots{CurrentChannelIndex}(CurrentFrame));
 %Pull out the right particle if it exists in this frame
 CurrentParticleIndex=...
-    Particles{CurrentChannel}(CurrentParticle).Index(Particles{CurrentChannel}(CurrentParticle).Frame==...
+    Particles{CurrentChannelIndex}(CurrentParticle).Index(Particles{CurrentChannelIndex}(CurrentParticle).Frame==...
     CurrentFrame);
 xTrace=x(CurrentParticleIndex);
 yTrace=y(CurrentParticleIndex);
 
-numParticles = length(Particles{CurrentChannel});
+numParticles = length(Particles{CurrentChannelIndex});
 
-ApprovedParticles=[Particles{CurrentChannel}.Approved];
+ApprovedParticles=[Particles{CurrentChannelIndex}.Approved];
 
 %These are the positions of all the approved, disapproved and
 %unflagged particles
@@ -47,10 +48,10 @@ ApprovedParticles=[Particles{CurrentChannel}.Approved];
 %Approved particles
 IndexApprovedParticles=[];
 for i=1:numParticles
-    if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&&...
-            sum(Particles{CurrentChannel}(i).Approved==1)
+    if sum(Particles{CurrentChannelIndex}(i).Frame==CurrentFrame)&&...
+            sum(Particles{CurrentChannelIndex}(i).Approved==1)
         IndexApprovedParticles=[IndexApprovedParticles,...
-            Particles{CurrentChannel}(i).Index(Particles{CurrentChannel}(i).Frame==CurrentFrame)];
+            Particles{CurrentChannelIndex}(i).Index(Particles{CurrentChannelIndex}(i).Frame==CurrentFrame)];
     end
 end
 xApproved=x(IndexApprovedParticles);
@@ -59,9 +60,9 @@ yApproved=y(IndexApprovedParticles);
 %Disapproved particles
 IndexDisapprovedParticles=[];
 for i=1:numParticles
-    if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&&sum(Particles{CurrentChannel}(i).Approved==-1)
+    if sum(Particles{CurrentChannelIndex}(i).Frame==CurrentFrame)&&sum(Particles{CurrentChannelIndex}(i).Approved==-1)
         IndexDisapprovedParticles=[IndexDisapprovedParticles,...
-            Particles{CurrentChannel}(i).Index(Particles{CurrentChannel}(i).Frame==CurrentFrame)];
+            Particles{CurrentChannelIndex}(i).Index(Particles{CurrentChannelIndex}(i).Frame==CurrentFrame)];
     end
 end
 xDisapproved=x(IndexDisapprovedParticles);
@@ -71,10 +72,10 @@ yDisapproved=y(IndexDisapprovedParticles);
 %processed)
 IndexNonFlaggedParticles=[];
 for i=1:numParticles
-    if sum(Particles{CurrentChannel}(i).Frame==CurrentFrame)&&...
-            ~(sum(Particles{CurrentChannel}(i).Approved==-1)||sum(Particles{CurrentChannel}(i).Approved==1))
+    if sum(Particles{CurrentChannelIndex}(i).Frame==CurrentFrame)&&...
+            ~(sum(Particles{CurrentChannelIndex}(i).Approved==-1)||sum(Particles{CurrentChannelIndex}(i).Approved==1))
         IndexNonFlaggedParticles=[IndexNonFlaggedParticles,...
-            Particles{CurrentChannel}(i).Index(Particles{CurrentChannel}(i).Frame==CurrentFrame)];
+            Particles{CurrentChannelIndex}(i).Index(Particles{CurrentChannelIndex}(i).Frame==CurrentFrame)];
     end
 end
 xNonFlagged=x(IndexNonFlaggedParticles);
@@ -107,7 +108,7 @@ if UseSchnitz
         
         EllipseHandle=notEllipse(Ellipses{CurrentFrame}(:,3),...
             Ellipses{CurrentFrame}(:,4),...
-            Ellipses{CurrentFrame}(:,5),...
+            pi - Ellipses{CurrentFrame}(:,5),...
             Ellipses{CurrentFrame}(:,1)+1,...
             Ellipses{CurrentFrame}(:,2)+1,'r',10, overlayAxes);
         hold(overlayAxes,'off')
@@ -118,10 +119,10 @@ if UseSchnitz
         hold(overlayAxes,'on')
         schnitzCellNo=[];
         for i=1:numParticles
-            if Particles{CurrentChannel}(i).Approved==1
+            if Particles{CurrentChannelIndex}(i).Approved==1
                 try
-                    schnitzIndex=find((schnitzcells(Particles{CurrentChannel}(i).Nucleus).frames)==CurrentFrame);
-                    schnitzCellNo=[schnitzCellNo,schnitzcells(Particles{CurrentChannel}(i).Nucleus).cellno(schnitzIndex)];
+                    schnitzIndex=find((schnitzcells(Particles{CurrentChannelIndex}(i).Nucleus).frames)==CurrentFrame);
+                    schnitzCellNo=[schnitzCellNo,schnitzcells(Particles{CurrentChannelIndex}(i).Nucleus).cellno(schnitzIndex)];
                 catch
                     %can't identify the nucleus for this particle.
                 end
@@ -130,16 +131,16 @@ if UseSchnitz
 
         EllipseHandleBlue=notEllipse(Ellipses{CurrentFrame}(schnitzCellNo,3),...
             Ellipses{CurrentFrame}(schnitzCellNo,4),...
-            Ellipses{CurrentFrame}(schnitzCellNo,5),...
+            pi - Ellipses{CurrentFrame}(schnitzCellNo,5),...
             Ellipses{CurrentFrame}(schnitzCellNo,1)+1,...
             Ellipses{CurrentFrame}(schnitzCellNo,2)+1,'b',10, overlayAxes);
         hold(overlayAxes,'off')
     end
 
     %Show the corresponding nucleus
-    if ~isempty(Particles{CurrentChannel}(CurrentParticle).Nucleus) && Particles{CurrentChannel}(CurrentParticle).Nucleus > 0
-        SchnitzIndex=find(schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).frames==CurrentFrame);
-        NucleusIndex=schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).cellno(SchnitzIndex);
+    if ~isempty(Particles{CurrentChannelIndex}(CurrentParticle).Nucleus) && Particles{CurrentChannelIndex}(CurrentParticle).Nucleus > 0
+        SchnitzIndex=find(schnitzcells(Particles{CurrentChannelIndex}(CurrentParticle).Nucleus).frames==CurrentFrame);
+        NucleusIndex=schnitzcells(Particles{CurrentChannelIndex}(CurrentParticle).Nucleus).cellno(SchnitzIndex);
 
         if ~isempty(NucleusIndex)
             hold(overlayAxes,'on')
@@ -158,9 +159,9 @@ if UseSchnitz
 
         %Show the daughter nuclei if applicable
         if isfield(schnitzcells, 'E')
-            DaughterE=schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).E;
-            DaughterD=schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).D;
-            Mother=schnitzcells(Particles{CurrentChannel}(CurrentParticle).Nucleus).P;
+            DaughterE=schnitzcells(Particles{CurrentChannelIndex}(CurrentParticle).Nucleus).E;
+            DaughterD=schnitzcells(Particles{CurrentChannelIndex}(CurrentParticle).Nucleus).D;
+            Mother=schnitzcells(Particles{CurrentChannelIndex}(CurrentParticle).Nucleus).P;
         else
             DaughterE = 0;
             DaughterD = 0;
@@ -247,10 +248,10 @@ end
 %Show the particles that were under threshold 2.
 if ShowThreshold2
     %Get the positions of all the spots in this frame
-    [x2,y2]=SpotsXYZ(Spots{CurrentChannel}(CurrentFrame));
+    [x2,y2]=SpotsXYZ(Spots{CurrentChannelIndex}(CurrentFrame));
     %Filter those that were under threshold 2.
     CurrentSpotFilter=...
-        ~logical(SpotFilter{CurrentChannel}(CurrentFrame,~isnan(SpotFilter{CurrentChannel}(CurrentFrame,:))));
+        ~logical(SpotFilter{CurrentChannelIndex}(CurrentFrame,~isnan(SpotFilter{CurrentChannelIndex}(CurrentFrame,:))));
     x2=x2(CurrentSpotFilter);
     y2=y2(CurrentSpotFilter);
 
@@ -261,15 +262,15 @@ end
 
 if ZoomMode
     %Find the closest frame
-    [~,MinIndex]=min((Particles{CurrentChannel}(CurrentParticle).Frame-CurrentFrame).^2);
+    [~,MinIndex]=min((Particles{CurrentChannelIndex}(CurrentParticle).Frame-CurrentFrame).^2);
     if length(MinIndex)>1
         MinIndex=MinIndex(1);
     end
     [xForZoom,yForZoom]=...
-        SpotsXYZ(Spots{CurrentChannel}(Particles{CurrentChannel}(CurrentParticle).Frame(MinIndex)));
+        SpotsXYZ(Spots{CurrentChannelIndex}(Particles{CurrentChannelIndex}(CurrentParticle).Frame(MinIndex)));
 
-    xForZoom=xForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
-    yForZoom=yForZoom(Particles{CurrentChannel}(CurrentParticle).Index(MinIndex));
+    xForZoom=xForZoom(Particles{CurrentChannelIndex}(CurrentParticle).Index(MinIndex));
+    yForZoom=yForZoom(Particles{CurrentChannelIndex}(CurrentParticle).Index(MinIndex));
 
     try
         xlim(overlayAxes,[xForZoom-ZoomRange,xForZoom+ZoomRange])

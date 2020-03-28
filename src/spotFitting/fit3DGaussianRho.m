@@ -39,8 +39,11 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw,
     
     % initialize upper and lower parameter bounds
     upperBoundVector = [intensityMax*1.5,yDim,xDim,zDim,xDim/8,...
-        xDim/8,xDim/8,1,1,1,intensityMax,intensityMax/yDim,intensityMax/xDim,intensityMax/zDim];
-    lowerBoundVector = [0,1,1,1,1,1,1,-1,-1,-1,0,-intensityMax/yDim,-intensityMax/xDim,-intensityMax/zDim];
+        xDim/8,xDim/8,1,1,1,...
+		intensityMax,intensityMax/yDim,intensityMax/xDim,intensityMax/zDim];
+		
+    lowerBoundVector = [0,1,1,1,1,1,1,-1,-1,-1,0,...
+	-intensityMax/yDim,-intensityMax/xDim,-intensityMax/zDim];
     
     % check for additional arguments
     for i = 1:(numel(varargin)-1)  
@@ -54,7 +57,10 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw,
     single3DObjective = @(params) simulate3DGaussianRho(dimensionVector, params) + params(11) + ...
             params(12)*xMesh + params(13)*yMesh + params(14)*zMesh - double(snip3D);     
     % attempt to fit
-    options.Display = 'off';
+	persistent options;
+	if isempty(options)
+		options.Display = 'off';
+	end
     [GaussFit, ~, residual, ~, ~, ~, jacobian] = lsqnonlin(single3DObjective,double(initial_parameters),...
         double(lowerBoundVector),double(upperBoundVector),options);
     % check that inferred covariance matrix is positive semi-definite

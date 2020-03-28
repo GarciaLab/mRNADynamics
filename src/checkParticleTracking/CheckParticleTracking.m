@@ -1,4 +1,4 @@
-function [outs, movieMat, hisMat] = CheckParticleTracking(Prefix, varargin)
+function CheckParticleTracking(Prefix, varargin)
 %
 % DESCRIPTION
 % The point of this function is to check the tracking of particles. The
@@ -106,21 +106,12 @@ function [outs, movieMat, hisMat] = CheckParticleTracking(Prefix, varargin)
 
 %
 % OUTPUT
-% outs.Particles: A modified Particles
-% outs.Spots: A modified Spots
-% outs.SpotFilter: A modified SpotFilter
-% outs.schnitzcells: A modified schnitzcells
-% outs.FrameInfo: A modified FrameInfo
-% movieCell: TBD
-% hisCell: TBD
-%
+%none
 % Author (contact): Hernan Garcia (hgarcia@berkeley.edu)
 % Created:
 % Last Updated: 1/13/2018
 
 cleanupObj = onCleanup(@myCleanupFun);
-
-
 warning('off', 'MATLAB:nargchk:deprecated')
 warning('off', 'MATLAB:mir_warning_maybe_uninitialized_temporary')
 
@@ -141,7 +132,7 @@ storedTimeProjection = []; % Don't need to wait for timeProjection to finish eac
 [sortByFrames, sortByLength, ForCompileAll, SpeedMode, ~, ...
     ncRange, projectionMode, plot3DGauss, NC, ...
     startNC, endNC, optionalResults, nWorkers, fish,...
-    noHisOverlay, multiView, preStructs, preMovie, movieMat, hisMat] = determineCheckParticleTrackingOptions(varargin{:});
+    noHisOverlay, multiView, preStructs, preMovie] = determineCheckParticleTrackingOptions(varargin{:});
 
 if fish
     noHisOverlay = true;
@@ -181,29 +172,28 @@ nSlices = nSlices + 2; %due to padding;
 %Create the particle array. This is done so that we can support multiple
 %channels. Also figure out the number of channels
 if iscell(Particles)
-    NChannels = length(Particles);
+    numSpotChannels = length(Particles);
 else
     Particles = {Particles};
     if ~iscell(Spots)
         Spots = {Spots};
     end
     SpotFilter = {SpotFilter};
-    NChannels = 1;
+    numSpotChannels = 1;
 end
 
 %Add FramesApproved where necessary
-Particles = addFrameApproved(NChannels, Particles);
+Particles = addFrameApproved(numSpotChannels, Particles);
 
-[Ellipses, UseHistoneOverlay, UseSchnitz] = checkHistoneAndNuclearSegmentation(PreProcPath, FilePrefix, nDigits, DropboxFolder, noHisOverlay, fish);
+[Ellipses, UseHistoneOverlay, UseSchnitz] = checkHistoneAndNuclearSegmentation(...
+    PreProcPath, FilePrefix, nDigits, DropboxFolder, noHisOverlay, fish);
 
 [~, ExperimentType, ~, ~, ~, ~, Channel1, Channel2, ~, ~, ~, ~, ~, ...
     nc9, nc10, nc11, nc12, nc13, nc14, ~, Channel3, prophase, metaphase] =...
     getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
 
 Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
-coats = getCoatChannel(Channel1, Channel2, Channel3);
 
-ch = coats(1); %assumes the experiment is _not_ 2spot2color
 maxTimeCell = [];
 
 for i = 1:nFrames
@@ -234,7 +224,7 @@ ncFramesFull = [zeros(1,8), ncFrames, nFrames]; %more useful for some things
 
 try correspondingNCInfo = [FrameInfo.nc]; end
 
-[Particles] = sortParticles(sortByFrames, sortByLength, NChannels, Particles);
+[Particles] = sortParticles(sortByFrames, sortByLength, numSpotChannels, Particles);
 
 %Some flags and initial parameters
 ShowThreshold2 = 1; %Whether to show particles below the threshold
@@ -244,15 +234,22 @@ CurrentFrameWithinParticle = 1;
 cptState = CPTState(Spots, Particles, SpotFilter, schnitzcells, Ellipses,...
     FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss, projectionMode); %work in progress, 2019-12, JP.
 
-if ~isempty(cptState.Particles{cptState.CurrentChannel})
-    cptState.CurrentFrame = cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Frame(CurrentFrameWithinParticle);
-else error('Looks like the Particles structure is empty. There''s nothing to check.');
+try
+    spotChannels = thisExperiment.spotChannels; 
+    cptState.CurrentChannel = spotChannels(1);
+    cptState.CurrentChannelIndex= 1;
 end
+
+
+if ~isempty(cptState.Particles{cptState.CurrentChannelIndex})
+    cptState.CurrentFrame = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Frame(CurrentFrameWithinParticle);
+
+else error('Looks like the Particles structure is empty. There''s nothing to check.'); end
 
 %load the movies
 movieMat = getMovieMat(thisExperiment);
 hisMat = getHisMat(thisExperiment);
-maxMat = squeeze(max(movieMat(:,:,:,:), [],3));
+maxMat = max(movieMat(:,:,:,:), [],3);
 
 
 ZoomRange = 50;
@@ -300,7 +297,7 @@ set(0, 'CurrentFigure', Overlay);
 frameChangeKeyInput = FrameChangeEventHandler(cptState);
 zSliceChangeKeyInput = ZSliceChangeEventHandler(cptState);
 particleChangeKeyInput = ParticleChangeEventHandler(cptState);
-channelSwitchKeyInput = ChannelSwitchEventHandler(cptState, NChannels, cptState.UseHistoneOverlay);
+channelSwitchKeyInput = ChannelSwitchEventHandler(cptState, numSpotChannels, cptState.UseHistoneOverlay);
 zoomParticleToggleKeyInput = ZoomParticleToggleEventHandler(cptState);
 zoomAnywhereKeyInput = ZoomAnywhereEventHandler(cptState);
 histoneContrastKeyInput = HistoneContrastChangeEventHandler(cptState);
@@ -309,15 +306,15 @@ deleteSpotKeyInput = DeleteSpotEventHandler(cptState);
 ellipsesKeyInput = EllipsesEventHandler(cptState);
 tracesKeyInput = TracesEventHandler(cptState);
 nuclearTrackingKeyInput = NuclearTrackingEventHandler(cptState);
-generalKeyInput = GeneralEventHandler(cptState, DataFolder, DropboxFolder, FilePrefix, NChannels);
+generalKeyInput = GeneralEventHandler(cptState, DataFolder, DropboxFolder, FilePrefix, numSpotChannels);
 
 % Create the approved field if it does not exist
-for NCh = 1:NChannels
+for k = 1:numSpotChannels
     
-    if ~isfield(cptState.Particles{NCh}, 'Approved')
+    if ~isfield(cptState.Particles{k}, 'Approved')
         
-        for i = 1:length(cptState.Particles{NCh})
-            cptState.Particles{NCh}(i).Approved = 0;
+        for i = 1:length(cptState.Particles{k})
+            cptState.Particles{k}(i).Approved = 0;
         end
         
     end
@@ -337,30 +334,28 @@ plotTraceSettings = PlotTraceSettings();
 while (cc ~= 'x')
     
     cptState.coatChannel = getCoatChannel(Channel1, Channel2, Channel3);
-    if length(cptState.coatChannel) == 1
-        cptState.nameSuffix = ['_ch', iIndex(cptState.coatChannel, 2)];
-    else
-        cptState.nameSuffix = ['_ch', iIndex(cptState.CurrentChannel, 2)];
-    end
+   
+    cptState.nameSuffix = ['_ch', iIndex(cptState.CurrentChannel, 2)];
     
     inds = find(cptState.CurrentFrame > ncFramesFull);
     currentNC = inds(end);
     
     %Get the coordinates of all the spots in this frame
-    [x, y, z] = SpotsXYZ(cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame));
+    [x, y, z] = SpotsXYZ(cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame));
     
     %If the approved field does not exist create it
-    if ~isfield(cptState.Particles{cptState.CurrentChannel}, 'Approved')
+    if ~isfield(cptState.Particles{cptState.CurrentChannelIndex}, 'Approved')
         
         for i = 1:cptState.numParticles()
-            cptState.Particles{cptState.CurrentChannel}(i).Approved = 0;
+            cptState.Particles{cptState.CurrentChannelIndex}(i).Approved = 0;
         end
         
     end
     
     %Pull out the right particle if it exists in this frame
     cptState.CurrentParticleIndex = ...
-        cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Index(cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Frame == ...
+        cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Index(...
+        cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Frame == ...
         cptState.CurrentFrame);
     %This is the position of the current particle
     xTrace = x(cptState.CurrentParticleIndex);
@@ -369,7 +364,8 @@ while (cc ~= 'x')
     if (~isempty(xTrace)) && (~cptState.ManualZFlag)
         cptState.CurrentZ = z(cptState.CurrentParticleIndex);
         cptState.CurrentZIndex = find(...
-            cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).z == ...
+            cptState.Spots{cptState.CurrentChannelIndex}(...
+            cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).z == ...
             cptState.CurrentZ);
         cptState.ManualZFlag = 0;
     end
@@ -377,13 +373,13 @@ while (cc ~= 'x')
     multiImage = {};
     if strcmpi(cptState.projectionMode, 'None')
        
-        cptState.ImageMat = squeeze(movieMat(:, :, cptState.CurrentZ, cptState.CurrentFrame));
+        cptState.ImageMat = movieMat(:, :, cptState.CurrentZ, cptState.CurrentFrame, cptState.CurrentChannel);
         
         if multiView
             for z = 1:-1:-1
                 for f = -1:1
                     if any( 1:nSlices == cptState.CurrentZ + z) && any( 1:nFrames == cptState.CurrentFrame + f)
-                        multiImage{z+2, f+2} = squeeze(movieMat(:, :, cptState.CurrentZ+z, cptState.CurrentFrame+f));
+                        multiImage{z+2, f+2} = movieMat(:, :, cptState.CurrentZ+z, cptState.CurrentFrame+f, cptState.CurrentChannel);
                     else
                         multiImage{z+2, f+2} = blankImage;
                     end
@@ -393,13 +389,14 @@ while (cc ~= 'x')
         
     elseif strcmpi(cptState.projectionMode, 'Max Z')
         
-        if nFrames > 1, cptState.ImageMat = squeeze(maxMat(:, :, cptState.CurrentFrame));
+        if nFrames > 1, cptState.ImageMat = maxMat(:, :, cptState.CurrentFrame);
         else cptState.ImageMat = maxMat; end
         
     elseif strcmpi(cptState.projectionMode, 'Max Z and Time')
         if isempty(maxTimeCell)
-            %wrong movimeat format
-            cptState.ImageMat = squeeze(max(max(movieMat(:,ncFramesFull(currentNC):ncFramesFull(currentNC+1),:,:), [], 3), [], 2)); % ch z t x y
+            cptState.ImageMat = max(max(movieMat(...
+                :,:,:, ncFramesFull(currentNC):ncFramesFull(currentNC+1),...
+                cptState.CurrentChannel), [], 2), [], 3); % ch z t x y
         end
     end
     
@@ -448,27 +445,29 @@ while (cc ~= 'x')
             Overlay, cptState.CurrentChannel, cptState.CurrentParticle, cptState.ZSlices, cptState.CurrentZ, nFrames, ...
             cptState.schnitzcells, UseSchnitz, cptState.DisplayRange, cptState.Ellipses, cptState.SpotFilter, cptState.ZoomMode, cptState.GlobalZoomMode, ...
             ZoomRange, cptState.xForZoom, cptState.yForZoom, fish, cptState.UseHistoneOverlay, subAx, HisOverlayFigAxes,...
-            oim, ellipseHandles, hisImage);
+            oim, ellipseHandles, hisImage, cptState);
         
     else
         displayOverlays(overlayAxes, cptState.ImageMat, SpeedMode, ...
             cptState.FrameInfo, cptState.Particles, cptState.Spots, cptState.CurrentFrame, ShowThreshold2, ...
             Overlay, cptState.CurrentChannel, cptState.CurrentParticle, cptState.ZSlices, cptState.CurrentZ, nFrames, ...
             cptState.schnitzcells, UseSchnitz, cptState.DisplayRange, cptState.Ellipses, cptState.SpotFilter, ...
-            cptState.ZoomMode, cptState.GlobalZoomMode, ZoomRange, cptState.xForZoom, cptState.yForZoom, fish, cptState.UseHistoneOverlay, subAx);
+            cptState.ZoomMode, cptState.GlobalZoomMode, ZoomRange,...
+            cptState.xForZoom, cptState.yForZoom, fish, cptState.UseHistoneOverlay, subAx, cptState...
+            );
     end
     
     if ~isempty(xTrace)
         MaxZIndex = find(...
-            cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).z == ...
-            cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).brightestZ);
+            cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).z == ...
+            cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).brightestZ);
         cptState.CurrentZIndex = find(...
-            cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).z == ...
+            cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).z == ...
             cptState.CurrentZ);
     end
     
     %Check to see if spots structure contains multi-slice fields
-    multi_slice_flag = isfield(cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits ...
+    multi_slice_flag = isfield(cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame).Fits ...
         (cptState.CurrentParticleIndex), 'IntegralZ');
     
     % PLOT SNIPPET
@@ -514,11 +513,9 @@ end
 
 % save after exiting the main loop - the user pressed 'x'
 
-saveChanges(NChannels, cptState, DataFolder, FilePrefix, DropboxFolder);
+saveChanges(numSpotChannels, cptState, DataFolder, FilePrefix, DropboxFolder);
 
 disp(['(Left off at Particle #', num2str(cptState.CurrentParticle), ')'])
-
-outs = {cptState.Particles, cptState.Spots, cptState.SpotFilter, cptState.schnitzcells, cptState.FrameInfo};
 
 CheckNucleiModified(cptState, DropboxFolder, Prefix, fish)
 
