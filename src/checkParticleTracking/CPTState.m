@@ -27,6 +27,7 @@ classdef CPTState < handle
         CurrentChannel
         CurrentChannelIndex
         PreviousChannel
+        PreviousChannelIndex
         coatChannel
         
         FrameIndicesToFit
@@ -83,6 +84,8 @@ classdef CPTState < handle
             this.CurrentChannel = 1;
             this.CurrentChannelIndex = 1;
             this.PreviousChannel = this.CurrentChannel;
+            this.PreviousChannelIndex = this.CurrentChannelIndex;
+
            
             this.FrameIndicesToFit = 0; % index of the current particle that were used for fitting
             this.Coefficients = []; % coefficients of the fitted line

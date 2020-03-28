@@ -1,6 +1,7 @@
-function [CurrentChannel, PreviousChannel, coatChannel, CurrentParticle] =...
+function [CurrentChannel, PreviousChannel, CurrentParticle,...
+    CurrentChannelIndex, PreviousChannelIndex] =...
     switchChannels(CurrentChannel, CurrentParticle, Particles, ...
-    UseHistoneOverlay, NChannels)
+    UseHistoneOverlay, NChannels, CurrentChannelIndex)
 %SWITCHCHANNELS Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -8,31 +9,31 @@ function [CurrentChannel, PreviousChannel, coatChannel, CurrentParticle] =...
 %I think this is completely broken. Needs a rewrite using
 %CurrentChannelIndex and CurrentChannel
 
+coatChannel = nan;
+
 %Update the channel number
 PreviousChannel=CurrentChannel;
+PreviousChannelIndex = CurrentChannelIndex;
 CurrentChannel=CurrentChannel+1;
+CurrentChannelIndex = CurrentChannelIndex + 1;
 if CurrentChannel>NChannels
     CurrentChannel=1;
+    CurrentChannelIndex = 1;
 end
-
-%Update the coatChannel
-coatChannels = [1, 2]; % JP: this looks weird, but it was this way in the main loop
-
-coatChannel=coatChannels(CurrentChannel);
 
 
 %Do we have a histone channel? If so, we can find the particle in
 %the next channel corresponding to this nucleus.
-numParticlesCurrCh = length(Particles{CurrentChannel});
+numParticlesCurrCh = length(Particles{CurrentChannelIndex});
 if UseHistoneOverlay
     %If a particle is associated with this same nucleus in the new
     %channel then change to it
-    AssignedNucleusPreviousChannel=Particles{PreviousChannel}(CurrentParticle).Nucleus;
+    AssignedNucleusPreviousChannel=Particles{PreviousChannelIndex}(CurrentParticle).Nucleus;
     %Now, find its associated particle
     AssignedNucleusNewChannel=[];
     for i=1:numParticlesCurrCh
-        if ~isempty(Particles{CurrentChannel}(i).Nucleus)
-            AssignedNucleusNewChannel(i)=Particles{CurrentChannel}(i).Nucleus;
+        if ~isempty(Particles{CurrentChannelIndex}(i).Nucleus)
+            AssignedNucleusNewChannel(i)=Particles{CurrentChannelIndex}(i).Nucleus;
         else
             AssignedNucleusNewChannel(i)=nan;
         end

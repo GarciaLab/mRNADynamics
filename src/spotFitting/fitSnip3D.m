@@ -5,6 +5,8 @@ function spotsFrame= fitSnip3D(spotsFrame, spotChannel,...
 
 if ischar(Prefix)
     thisExperiment = liveExperiment(Prefix);
+else
+    thisExperiment = Prefix;
 end
 
 FrameInfo = getFrameInfo(thisExperiment);
