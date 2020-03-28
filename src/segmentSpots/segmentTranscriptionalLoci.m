@@ -5,7 +5,8 @@ function [Spots, dogs]...
     ~, ~, channelIndex, initialFrame, lastFrame,...
     zSize, ~, Prefix, ~, shouldDisplayFigures,doFF, ffim,...
     Threshold, neighborhood, snippet_size, ~, microscope,...
-    ~,filterMovieFlag, resultsFolder, gpu, saveAsMat, ~, shouldMaskNuclei)
+    ~,filterMovieFlag, resultsFolder, gpu, saveAsMat, ~, shouldMaskNuclei,...
+    autoThresh)
 
 
 cleanupObj = onCleanup(@myCleanupFun);
@@ -53,7 +54,7 @@ end
 if isFileProbMap
     MLFlag = 'ML';
     dogStr = 'prob';
-    if Threshold < 5000
+    if isnan(Threshold) || Threshold < 5000
         warning('Increasing threshold to 5000. For Weka ML, you are thresholding on probability maps so the threshold shouldn''t be set below 50% = 5000.')
         Threshold = 5000;
     end
@@ -92,19 +93,18 @@ xDim = size(movieMat, 2);
 
 % dogMat = loadDogMat(Prefix);
 
-if Threshold == -1 && ~isFileProbMap
     
-    
-    if ~filterMovieFlag
-        Threshold = determineThreshold(Prefix, channelIndex,  'numFrames', lastFrame);
-        display(['Threshold: ', num2str(Threshold)])
-    else
-        Threshold = determineThreshold(Prefix, channelIndex, 'noSave',  'numFrames', lastFrame);
+    if autoThresh
+        if ~filterMovieFlag
+            Threshold = determineThreshold(Prefix, channelIndex,  'numFrames', lastFrame);
+            display(['Threshold: ', num2str(Threshold)])
+        else
+            Threshold = determineThreshold(Prefix, channelIndex, 'noSave',  'numFrames', lastFrame);
+        end
     end
     
-    display(['Threshold: ', num2str(Threshold)])
-    
-end
+    display(['Spot intensity threshold: ', num2str(Threshold)])
+        
 isZPadded = size(movieMat, 3) ~= zSize;
 
 q = parallel.pool.DataQueue;
@@ -113,7 +113,7 @@ p = 1;
 for currentFrame = initialFrame:lastFrame 
     
     %report progress every tenth frame
-    if ~mod(currentFrame, 10), disp(['Segmenting frame ', num2str(currentFrame)]); end
+    if ~mod(currentFrame, 10), disp(['Segmenting frame ', num2str(currentFrame), '...']); end
     
     if shouldLoadAsStacks
         

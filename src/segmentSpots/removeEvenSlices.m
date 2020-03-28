@@ -40,7 +40,6 @@ for id = 1:length(files)
                 imwrite(uint16(dogStack*10000), [dogFolder,filesep, imName, '.tif']);
             else
                 imwrite(uint16(dogStack*10000), [dogFolder,filesep, imName, '.tif'], 'WriteMode','append');
-                delete([dogFolder, filesep, imFile]);
             end
             
         end
@@ -54,6 +53,8 @@ for id = 1:length(files)
         save([dogFolder,filesep, imFile(1:end-4), '.mat'], 'dogStack', '-v6');
     end
     
+    %delete the old file now that we're done with it
+    delete([dogFolder, filesep, imFile]);
     
 end %loop over frames
 

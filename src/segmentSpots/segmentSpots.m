@@ -68,12 +68,10 @@ thisExperiment = liveExperiment(Prefix);
     saveType, nuclearMask, DataType, track, skipSegmentation, frameRange]...
     = determineSegmentSpotsOptions(varargin{:});
 
-argumentErrorMessage = ['Please use filterMovie(Prefix, options)',...
-    'instead of segmentSpots with the argument "[]" to generate DoG images'];
-try
-    if autoThresh, Threshold = -1;
-    elseif isempty(Threshold), error(argumentErrorMessage); end
-catch, error(argumentErrorMessage); end
+%validate the Threshold argument
+if isempty(Threshold)
+    Threshold = NaN;
+end
 
 spotChannels = thisExperiment.spotChannels;
 
@@ -129,7 +127,7 @@ if ~skipSegmentation
         [tempSpots, dogs] = segmentTranscriptionalLoci(nCh, spotChannels, channelIndex, initialFrame, lastFrame, zSize, ...
             PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(n), neighborhood_px, ...
             snippetSize_px, pixelSize_nm, microscope, Weka,...
-             filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, nuclearMask);
+             filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, nuclearMask, autoThresh);
 
         tempSpots = segmentSpotsZTracking(pixelSize_nm,tempSpots);
 
@@ -162,11 +160,11 @@ else
     save([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots', '-v7.3', '-nocompression');
 end
 
-if fit3D > 0
-    disp('Fitting 3D Gaussians...')
-    fit3DGaussiansToAllSpots(Prefix, fit3D, 'segmentSpots', Spots, 'nWorkers', nWorkers, saveType);
-    disp('3D Gaussian fitting completed.')
-end
+% if fit3D > 0
+%     disp('Fitting 3D Gaussians...')
+%     fit3DGaussiansToAllSpots(Prefix, fit3D, 'segmentSpots', Spots, 'nWorkers', nWorkers, saveType);
+%     disp('3D Gaussian fitting completed.')
+% end
 
 if ~keepProcessedData
     deleteProcessedDataFolder(ProcessedDataFolder, Prefix);
