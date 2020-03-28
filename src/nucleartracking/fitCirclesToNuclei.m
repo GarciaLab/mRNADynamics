@@ -78,12 +78,14 @@ for k = 1:numel(boundaryCell)
             ellipseFrame(n, 3) = afit;
             ellipseFrame(n, 4) = bfit;
             ellipseFrame(n, 5) = thetafit + pi/2;
-%             h = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
-%             'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)),'StripeColor','m');
+
                  h = images.roi.Ellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
               'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)),'StripeColor','m');
+              cMask = cMask + poly2mask(h.Vertices(:, 1), h.Vertices(:, 2), size(cMask, 1), size(cMask, 2));
+%             h = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
+%             'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)),'StripeColor','m');
 %             cMask = cMask + createMask(h);  
-            cMask = cMask + poly2mask(h.Vertices(:, 1), h.Vertices(:, 2), size(cMask, 1), size(cMask, 2));
+
         end
         
     else

@@ -1,5 +1,5 @@
 classdef liveExperiment
-    %livemRNAExperiment Object to organize data related to a live imaging
+    %livemRNAExperiment object to organize data related to a live imaging
     %experiment
     
     properties

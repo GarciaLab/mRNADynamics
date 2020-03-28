@@ -1,6 +1,5 @@
 function h = imagescUpdate(ax,im, lims, varargin)
 
-
 cmap = 'parula';
 
 for i = 1:2:(numel(varargin)-1)

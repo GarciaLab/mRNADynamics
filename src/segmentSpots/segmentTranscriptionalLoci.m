@@ -43,7 +43,7 @@ if shouldDisplayFigures
     snipAx = axes(snipFig);
     rawFig = figure('units', 'normalized', 'position',[.01, .1, .33, .33]);
     rawAx = axes(rawFig);
-    
+    maskFig = figure;
     graphicsHandles = [dogFig, dogAx, gFig, gAx, snipFig, snipAx, rawFig, rawAx];
 else
     graphicsHandles = [];
@@ -170,9 +170,9 @@ for currentFrame = initialFrame:lastFrame
             lLim = median(dogO);
             uLim = max(dogO);
             if lLim ~= uLim
-                imagescUpdate(dogAx, im, [lLim, uLim]);
+                imagescUpdate(dogAx, im, [lLim, uLim], 'cmap', 'gray');
             else
-                imagescUpdate(dogAx, im, []);
+                imagescUpdate(dogAx, im, [], 'cmap', 'gray');
             end
             drawnow;
         end
@@ -186,8 +186,13 @@ for currentFrame = initialFrame:lastFrame
         
         % apply nuclear mask if it exists
         if shouldMaskNuclei && ~isempty(Ellipses)
-            nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim, xDim]);
-            im_thresh = im_thresh & nuclearMask;
+            
+            radiusScale = 1.3;
+            nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim xDim], radiusScale);
+             im_thresh = im_thresh & nuclearMask;
+            
+            if shouldDisplayFigures, figure(maskFig); imshowpair(nuclearMask, dog, 'montage'); end
+            
         end
         
         %probability map regions usually look different from dog regions and

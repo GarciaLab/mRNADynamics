@@ -37,9 +37,9 @@ if ~displayFigures
     cleanupObj = onCleanup(@myCleanupFun);
 end
 
-for i = 1:2:(numel(varargin)-1)
-    if i ~= numel(varargin)
-        eval([varargin{i} '=varargin{i+1};']);
+for k = 1:2:(numel(varargin)-1)
+    if k ~= numel(varargin)
+        eval([varargin{k} '=varargin{k+1};']);
     end
 end
 clear varargin;
@@ -121,11 +121,11 @@ ignoredFeatures = {};
 
 oneIndexingFlag = double(strcmpi(classifyMethod, 'matlab'));
 
-for i = oneIndexingFlag:lastInd
+for k = oneIndexingFlag:lastInd
     
-    att = attributes{i + ~oneIndexingFlag};
+    att = attributes{k + ~oneIndexingFlag};
     
-    if i > oneIndexingFlag
+    if k > oneIndexingFlag
         [filteredIm, successFlag]  = filterAttribute(att, im);
     else
         filteredIm = im;
@@ -135,17 +135,17 @@ for i = oneIndexingFlag:lastInd
     if strcmpi(classifyMethod, 'matlab') || useMatlabLoader
         
         if successFlag
-            testMatrix(:,i+~oneIndexingFlag) = filteredIm(:);
+            testMatrix(:,k+~oneIndexingFlag) = filteredIm(:);
             usedFeatures = [usedFeatures, att];
         else
-            testMatrix(:,i+~oneIndexingFlag) = nan(numel(im),1);
+            testMatrix(:,k+~oneIndexingFlag) = nan(numel(im),1);
             ignoredFeatures = [ignoredFeatures, att];
         end
         
     elseif strcmpi(classifyMethod, 'weka') && ~useMatlabLoader
         
         for k = 1:numel(filteredIm)
-            testData = setInstancesVal(testData, k-1, i, filteredIm(k));
+            testData = setInstancesVal(testData, k-1, k, filteredIm(k));
         end
         
     end %classifymethod conditional
@@ -182,15 +182,15 @@ elseif strcmpi(classifyMethod, 'weka')
         
         testDataConstant = parallel.pool.Constant(testData);
         classifierConstant = parallel.pool.Constant(classifier);
-        parfor i = 1:nInstances
-            pLin(i) = classifyInstance(i, testDataConstant.Value,...
+        parfor k = 1:nInstances
+            pLin(k) = classifyInstance(k, testDataConstant.Value,...
                 classifierConstant.Value);
         end
         
     else
         
-        for i = 1:nInstances
-            pLin(i) = classifyInstance(i, testData, classifier);
+        for k = 1:nInstances
+            pLin(k) = classifyInstance(k, testData, classifier);
         end
         
     end %parallelize instances conditional
