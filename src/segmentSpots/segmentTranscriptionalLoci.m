@@ -26,9 +26,11 @@ DogOutputFolder = [thisExperiment.procFolder, 'dogs', filesep];
 
 dogDir = dir([DogOutputFolder, '*_ch0', num2str(channelIndex), '.*']);
 
-shouldLoadAsStacks = ~contains(dogDir(1).name, '_z');
+haveStacks = any(cellfun(@(x) contains(x, 'dogStack'), {dogDir.name}));
 
-isFileProbMap = startsWith(dogDir(1).name, 'prob');
+havePlanes = any(cellfun(@(x) contains(x, '_z'), {dogDir.name}));
+
+haveProbs = any(cellfun(@(x) contains(x, 'prob'), {dogDir.name}));
 
 waitbarFigure = waitbar(0, 'Segmenting spots');
 set(waitbarFigure, 'units', 'normalized', 'position', [0.4, .15, .25,.1]);
@@ -52,7 +54,7 @@ else
     dogAx = 0;
 end
 
-if isFileProbMap
+if haveProbs
     MLFlag = 'ML';
     dogStr = 'prob';
     if isnan(Threshold) || Threshold < 5000
@@ -62,7 +64,7 @@ if isFileProbMap
 else
     MLFlag = '';
     
-    if shouldLoadAsStacks
+    if haveStacks
         dogStr = 'dogStack_';
     else
         
@@ -113,7 +115,7 @@ isZPadded = size(movieMat, 3) ~= zSize;
 q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
-parfor currentFrame = initialFrame:lastFrame
+for currentFrame = initialFrame:lastFrame
     
     imStack = movieMatCh(:, :, :, currentFrame);
     if shouldMaskNuclei && ~isempty(Ellipses)
@@ -123,7 +125,7 @@ parfor currentFrame = initialFrame:lastFrame
     %report progress every tenth frame
     if ~mod(currentFrame, 10), disp(['Segmenting frame ', num2str(currentFrame), '...']); end
     
-    if shouldLoadAsStacks
+    if haveStacks
         
         dogStackFile = [DogOutputFolder, dogStr, Prefix, '_', iIndex(currentFrame, 3),...
             nameSuffix];
@@ -154,7 +156,7 @@ parfor currentFrame = initialFrame:lastFrame
         if isZPadded, dogZ = zIndex;
         else, dogZ = zIndex - 1; end
         
-        if shouldLoadAsStacks, dog = dogStack(:, :, dogZ); end
+        if haveStacks, dog = dogStack(:, :, dogZ); end
         % =======
         %             if isZPadded | ( ~isZPadded & (zIndex~=1 & zIndex~=zSize) )
         %                 if strcmpi(saveType, '.tif')
@@ -208,7 +210,7 @@ parfor currentFrame = initialFrame:lastFrame
         
         %probability map regions usually look different from dog regions and
         %require some mophological finesse
-        if isFileProbMap
+        if haveProbs
             se = strel('square', 3);
             im_thresh = imdilate(im_thresh, se); %thresholding from this classified probability map can produce non-contiguous, spurious Spots{channelIndex}. This fixes that and hopefully does not combine real Spots{channelIndex} from different nuclei
             im_thresh = im_thresh > 0;
