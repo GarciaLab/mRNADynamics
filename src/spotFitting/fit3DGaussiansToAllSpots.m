@@ -8,7 +8,7 @@ optionalResults = '';
 segmentSpots = false;
 displayFigures = false;
 nWorkers = 8;
-keepPool = false;
+keepPool = true;
 dogs = [];
 saveType = '.tif';
 save_flag = true;
@@ -40,7 +40,7 @@ thisExperiment = liveExperiment(Prefix);
 [~,ProcPath,DropboxFolder,~, PreProcPath,...
     ~, Prefix, ~,Channel1,Channel2,~, Channel3, spotChannels] = readMovieDatabase(Prefix, optionalResults);
 
-
+movieMat = getMovieMat(thisExperiment);
 DataFolder=[DropboxFolder,filesep,Prefix];
 
 if ~segmentSpots
@@ -67,16 +67,22 @@ for ch = spotChannels
         SpotsCh = Spots;
     end
     
+    movieMatCh = double(movieMat(:, :, :, :, ch));
+    
     numFrames = length(SpotsCh);
     
     % iterate through frames
 %     parfor frame = 1:numFrames
-    for frame = 1:numFrames %frames
+    parfor frame = 1:numFrames %frames
+        
         SpotsFr = SpotsCh(frame);
-
+        
+        imStack = movieMatCh(:, :, :, frame); 
+        
         nSpotsPerFrame = length(SpotsFr.Fits);
-        for spot = 1:nSpotsPerFrame
-            SpotsFr = fitSnip3D(SpotsFr, ch, spot, frame, thisExperiment, PreProcPath, FrameInfo, nSpots);
+       for spot = 1:nSpotsPerFrame
+            SpotsFr = fitSnip3D(SpotsFr, ch, spot, frame,...
+                thisExperiment, PreProcPath, FrameInfo, nSpots, imStack);
         end
         SpotsCh(frame) = SpotsFr;
         send(q, frame); %update the waitbar

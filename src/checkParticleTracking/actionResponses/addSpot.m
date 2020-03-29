@@ -7,15 +7,15 @@ function [SpotFilter, Particles, Spots,...
     CurrentParticle, CurrentFrame, CurrentZ, Spots,...
     SpotFilter, cc,  ...
     Prefix,...
-    UseHistoneOverlay, schnitzcells, nWorkers, plot3DGauss)
+    UseHistoneOverlay, schnitzcells, nWorkers, plot3DGauss, imStack)
 
 %ADDSPOT
 
 
 thisExperiment = liveExperiment(Prefix);
-
-movieMatCh = getMovieMat(thisExperiment);
-movieMatCh = movieMatCh(:, :, :, :, CurrentChannel);
+% 
+% movieMat = getMovieMat(thisExperiment);
+% imStack = movieMat(:, :, :, CurrentFrame, CurrentChannel);
 
 FrameInfo = getFrameInfo(thisExperiment);
 LinesPerFrame = thisExperiment.yDim;
@@ -60,11 +60,10 @@ else
             FitCell = cell(1, nSlices);
             
             for z = 1:nSlices
-                spotsIm = double(squeeze(movieMatCh(:, :, z, CurrentFrame)));
-
+                spotsIm = imStack(:, :, z);
                 try
-                    imAbove= double(squeeze(movieMatCh(:, :, z+1, CurrentFrame)));
-                   imBelow= double(squeeze(movieMatCh(:, :, z-1, CurrentFrame)));
+                    imAbove= imStack(:, :, z+1);
+                   imBelow= imStack(:, :, z-1);
                 catch
                     imAbove = nan(size(spotsIm,1),size(spotsIm,2));
                     imBelow = nan(size(spotsIm,1),size(spotsIm,2));
@@ -83,10 +82,12 @@ else
                 %Get the information about the spot on this z-slice
                 if cc == '['
                     [~, Fit] = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood_px, snippetSize_px, ...
-                        pixelSize_nm, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [], '', CurrentFrame, [], z);
+                        pixelSize_nm, show_status, fig, microscope,...
+                        [1, ConnectPositionx, ConnectPositiony], [], '', CurrentFrame, [], z);
                 elseif cc == '{'
                     [~, Fit] = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood_px, snippetSize_px, ...
-                        pixelSize_nm, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', CurrentFrame, [], z);
+                        pixelSize_nm, show_status, fig, microscope,...
+                        [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', CurrentFrame, [], z);
                 end
                 
                 FitCell{z} = Fit;
@@ -139,7 +140,7 @@ else
                         fitSnip3D(...
                         ...
                         Spots{CurrentChannel}(CurrentFrame), CurrentChannel, SpotsIndex, CurrentFrame,...
-                        Prefix, PreProcPath, FrameInfo, nSpots);
+                        Prefix, PreProcPath, FrameInfo, nSpots, imStack);
                 end
                 %%
                 %Add this to SpotFilter, which tells the code that this spot is

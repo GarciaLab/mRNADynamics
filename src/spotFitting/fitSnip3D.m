@@ -1,5 +1,5 @@
 function spotsFrame= fitSnip3D(spotsFrame, spotChannel,...
-    spotIndex, frame, Prefix,~, ~, nSpots)
+    spotIndex, frame, Prefix,~, ~, nSpots, imStack)
 
 %%
 
@@ -12,7 +12,10 @@ end
 FrameInfo = getFrameInfo(thisExperiment);
 preFolder = thisExperiment.preFolder;
 
-movieMat = getMovieMat(thisExperiment);
+if nargin < 9
+    movieMat = getMovieMat(thisExperiment);
+    imStack = movieMat(:, :, :, frame, spotChannel);
+end
 
 % extract basic fit parameters
 spot = spotsFrame.Fits(spotIndex);
@@ -45,9 +48,9 @@ snip3D = NaN(numel(yRange),numel(xRange),numel(zBot:zTop));
 
 %%
 
-if exist('movieMat', 'var') && ~isempty(movieMat)
+if exist('imStack', 'var') && ~isempty(imStack)
     
-  snip3D = movieMat(yRange, xRange, :, frame, spotChannel);
+  snip3D = imStack(yRange, xRange);
   
 else
     
