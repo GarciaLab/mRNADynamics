@@ -78,18 +78,18 @@ for ch = spotChannels
             %
             
             if strcmpi(filterType, 'Difference_of_Gaussian')
-                dogMat(:, :,:,currentFrame) = uint16((filterImage(double(squeeze(movieMat(:, :, :, currentFrame, ch))), filterType, sigmas, 'filterSize',filterSize, 'zStep', zStep) + 100) * 100);
+                dogMat(:, :,:,currentFrame) = uint16((filterImage(double(movieMat(:, :, :, currentFrame, ch)), filterType, sigmas, 'filterSize',filterSize, 'zStep', zStep) + 100) * 100);
                 %
                 if highPrecision
                     %                         dogMat(currentFrame, :,:,:) = (dogMat(currentFrame, :,:,:) + 100) * 100;
                     %                     end
                 end
             else
-                dogMat(:, :,:,currentFrame)  = uint16((filterImage(double(squeeze(movieMat(:, :, :, currentFrame, ch))), filterType, sigmas, 'filterSize',filterSize) + 100) * 100);
+                dogMat(:, :,:,currentFrame)  = uint16((filterImage(double(movieMat(:, :, :, currentFrame, ch)), filterType, sigmas, 'filterSize',filterSize) + 100) * 100);
             end
             
             if saveAsStacks
-                dogStack = squeeze(dogMat(:, :, :, currentFrame));
+                dogStack = dogMat(:, :, :, currentFrame);
                 dogStackFile = strrep([DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(currentFrame, 3),...
                     nameSuffix,'.mat'], '\\', '\');
                 save(dogStackFile, 'dogStack','-v6');
