@@ -23,6 +23,7 @@ default_iqr = 6;
 brightest_iqr_test = 8;
 noSave = false;
 dogs = [];
+numFrames = 0;
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'noSave')
