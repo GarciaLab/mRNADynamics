@@ -39,6 +39,24 @@ parfor CurrentFrame = 1:thisExperiment.nFrames
         
 end
 
+   %to prevent errors later on, let's fill in empty frames. 
+    if sum(cellfun(@(x) size(x,1),Ellipses)==0)
+        %Find the frames where we have issues
+        FramesToFix = find(cellfun(@(x) size(x,1),Ellipses)==0);
+        for i=1:length(FramesToFix)
+            if FramesToFix(i)==1
+                FrameToCopy=1;
+                while sum(FramesToFix==NextFrameToCopy)
+                    FrameToCopy=FrameToCopy+1;
+                end
+            else
+                FrameToCopy=FramesToFix(i)-1;
+            end
+            Ellipses{FramesToFix(i)}=Ellipses{FrameToCopy};
+        end
+    end
+
+
 save([thisExperiment.resultsFolder, 'Ellipses.mat'],'Ellipses', '-v6');
 
 TrackNuclei(Prefix,'retrack');

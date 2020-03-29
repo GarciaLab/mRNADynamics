@@ -325,12 +325,12 @@ if ~exist('centers','var') || isempty(centers)
     
     close(h_waitbar_segmentation)
     
-    %If the XY contains only one or zero nuclei then there's probably something
+    %If the xy contains only one or zero nuclei then there's probably something
     %wrong. In that case just copy the information from the previous good
     %frame.
-    if sum(cellfun(@(x) size(x,1),xy)<0)
+    if sum(cellfun(@(x) size(x,1),xy) < 1)
         %Find the frames where we have issues
-        FramesToFix=find(cellfun(@(x) size(x,1),xy)<0);
+        FramesToFix=find(cellfun(@(x) size(x,1),xy) < 1 );
         for i=1:length(FramesToFix)
             if FramesToFix(i)==1
                 FrameToCopy=1;
@@ -360,7 +360,9 @@ numberOfNuclei = size(xy{1},1);
 totalNumberOfFrames = size(hisMat, 3);
 
 % initialize array
-nuclei = struct('position',nan(totalNumberOfFrames,2),'indXY',mat2cell([1:numberOfNuclei; zeros(totalNumberOfFrames-1,numberOfNuclei)],totalNumberOfFrames,ones(numberOfNuclei,1)),'P',[],'D',[],'E',[],'approved',0);
+nuclei = struct('position',nan(totalNumberOfFrames,2),'indXY',...
+    mat2cell([1:numberOfNuclei; zeros(totalNumberOfFrames-1,numberOfNuclei)],...
+    totalNumberOfFrames,ones(numberOfNuclei,1)),'P',[],'D',[],'E',[],'approved',0);
 
 for j = 1:numel(nuclei)
      nuclei(j).position(1,:) = xy{1}(j,:);

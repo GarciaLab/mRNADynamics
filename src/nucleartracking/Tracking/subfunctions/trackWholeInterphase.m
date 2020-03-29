@@ -25,20 +25,33 @@ marginAfterMitosis = ceil(getDefaultParameters(FrameInfo,'increased precision af
 %This looks like it decides to use existing data that was passed to it, and
 %if none was provided makes it itself. 
 if exist('xy','var') && ~isempty(xy)
+    
     skip_segmentation = true;
-    %Seriously? XY versus xy?
-    XY = xy(previousMitosisInd:nextMitosisInd);
+    
+    xyInterphase = xy(previousMitosisInd:nextMitosisInd);
+    
 else
     skip_segmentation = false;
-    XY = cell(numberOfFrames,1);
-    XY{startingFrame-previousMitosisInd+1} = findNuclei(FrameInfo,hisMat,startingFrame,nucleusDiameter, embryoMask, [],[1 1 1 1 1]);
+    xyInterphase = cell(numberOfFrames,1);
+    xyInterphase{startingFrame-previousMitosisInd+1} = findNuclei(FrameInfo,hisMat,startingFrame,nucleusDiameter, embryoMask, [],[1 1 1 1 1]);
 end
+
+%the code down below will break if frames are empty. 
+%let's fix that now. 
+emptyFrames = find(cellfun(@isempty, xyInterphase));
+
+% fh = @(x) fillmissing(x, 'previous');
+for f = 1:length(emptyFrames)
+    xyInterphase{emptyFrames(f)} = [0 0];
+end
+
+
 if ~exist('shifts','var') || isempty(shifts)
     shifts = cell(totalNumberOfFrames-1,1);
 end
 %this startingFrame variable appears to be a holdover from an older version of the
-%code. This like invariably returns size(XY{1},1);
-numberOfNuclei = size(XY{startingFrame-previousMitosisInd+1},1);
+%code. This like invariably returns size(xyInterphase{1},1);
+numberOfNuclei = size(xyInterphase{startingFrame-previousMitosisInd+1},1);
 
 % initialize array
 % nuclei = struct('position',nan(totalNumberOfFrames,2),'indXY',mat2cell([zeros(startingFrame-1,numberOfNuclei); 1:numberOfNuclei; zeros(totalNumberOfFrames-startingFrame,numberOfNuclei)],totalNumberOfFrames,ones(numberOfNuclei,1)),'score',nan(totalNumberOfFrames,1),'P',[],'D',[],'E',[],'approved',0);
@@ -56,9 +69,9 @@ numberOfNuclei = size(XY{startingFrame-previousMitosisInd+1},1);
 %position index as it did at the start, the nuclei are the same. If there
 %is a similar structure in the mitosis code, this might account for some of
 %the errors
-ind = true(length(XY{startingFrame-previousMitosisInd+1}),1);
-nucleiIndices = nan(size(XY{1},1),1);
-for j = 1:size(XY{1},1)
+ind = true(length(xyInterphase{startingFrame-previousMitosisInd+1}),1);
+nucleiIndices = nan(size(xyInterphase{1},1),1);
+for j = 1:size(xyInterphase{1},1)
     for jj = 1:numel(nuclei)
         if nuclei(jj).indXY(previousMitosisInd) == j
             nucleiIndices(j) = jj;
@@ -78,20 +91,17 @@ for j = 1:(nextMitosisInd-startingFrame)%[]%1:(nextMitosisInd-startingFrame)
     currentFrameInd = startingFrame-previousMitosisInd+j; % Index in the XY cell array.
     newFrameNumber = startingFrame+j; % Number of the new frame to analyze (corresponds to current frame number +1 because we're tracking forwards).
     newFrameInd = startingFrame-previousMitosisInd+j+1; % Index in the XY cell array.
-    
-    %Added by HG
-    [currentFrameNumber,currentFrameInd,newFrameNumber,newFrameInd];
-    
+        
     if skip_segmentation
         [mapping{currentFrameInd},~,~,ind, shifts{currentFrameNumber}] =...
             frame2frameCorrespondence(FrameInfo, hisMat, currentFrameNumber,...
-            newFrameNumber,XY{currentFrameInd},nucleusDiameter,1,XY{newFrameInd},...
+            newFrameNumber,xyInterphase{currentFrameInd},nucleusDiameter,1,xyInterphase{newFrameInd},...
             mapping{currentFrameNumber},shifts{currentFrameNumber}, ...
             ExpandedSpaceTolerance, NoBulkShift);%, embryoMask, targetNumber, [1 1 1]);
     else
-        [mapping{currentFrameInd},XY{newFrameInd},dummy,ind, shifts{currentFrameNumber}]...
+        [mapping{currentFrameInd},xyInterphase{newFrameInd},dummy,ind, shifts{currentFrameNumber}]...
             = frame2frameCorrespondence(FrameInfo,hisMat,currentFrameNumber,...
-            newFrameNumber,XY{currentFrameInd},nucleusDiameter,1,[],...
+            newFrameNumber,xyInterphase{currentFrameInd},nucleusDiameter,1,[],...
             shifts{currentFrameNumber}, ExpandedSpaceTolerance, NoBulkShift);%, embryoMask, [],[1 1 0]);
     end
     
@@ -103,7 +113,7 @@ for j = 1:(nextMitosisInd-startingFrame)%[]%1:(nextMitosisInd-startingFrame)
         end
         
         nuclei(nucleiIndices(jj)).indXY(startingFrame+j) = mapping{currentFrameInd}(jj);
-        nuclei(nucleiIndices(jj)).position(startingFrame+j,:) = XY{newFrameInd}(mapping{currentFrameInd}(jj),:);
+        nuclei(nucleiIndices(jj)).position(startingFrame+j,:) = xyInterphase{newFrameInd}(mapping{currentFrameInd}(jj),:);
 
         %nuclei(nucleiIndices(jj)).score(startingFrame+j) = score(jj);
         nucInd(mapping{currentFrameInd}(jj)) = nucleiIndices(jj);
@@ -114,15 +124,15 @@ for j = 1:(nextMitosisInd-startingFrame)%[]%1:(nextMitosisInd-startingFrame)
     orphanNuclei = find(ind == 0);
     indToDelete = [];
     for jj = 1:numel(orphanNuclei)
-        xpos = XY{newFrameInd}(orphanNuclei(jj),1);
-        ypos = XY{newFrameInd}(orphanNuclei(jj),2);
+        xpos = xyInterphase{newFrameInd}(orphanNuclei(jj),1);
+        ypos = xyInterphase{newFrameInd}(orphanNuclei(jj),2);
         
         %if xpos >= 1+edgeClearance && xpos <= size(img,1)-edgeClearance && ypos >= 1+edgeClearance && ypos <= size(img,2)-edgeClearance
             
             IND = numel(nuclei)+1;
             nuclei(IND).position = nan(totalNumberOfFrames,2);
             nuclei(IND).indXY = zeros(totalNumberOfFrames,1);
-            nuclei(IND).position(startingFrame+j,:) = XY{newFrameInd}(orphanNuclei(jj),:);
+            nuclei(IND).position(startingFrame+j,:) = xyInterphase{newFrameInd}(orphanNuclei(jj),:);
             nuclei(IND).indXY(startingFrame+j) = orphanNuclei(jj);
             %            nuclei(IND).score(startingFrame+j) = score(orphanNuclei(jj));
             nucInd(orphanNuclei(jj)) = IND;
@@ -130,7 +140,7 @@ for j = 1:(nextMitosisInd-startingFrame)%[]%1:(nextMitosisInd-startingFrame)
 %             indToDelete = [indToDelete jj];
 %         end
     end
-    XY{newFrameInd}(orphanNuclei(indToDelete),:) = [];
+    xyInterphase{newFrameInd}(orphanNuclei(indToDelete),:) = [];
     nucInd(orphanNuclei(indToDelete)) = [];
     nucleiIndices = nucInd;
     
@@ -139,7 +149,7 @@ for j = 1:(nextMitosisInd-startingFrame)%[]%1:(nextMitosisInd-startingFrame)
 end
 
 
-varargout{1} = XY;
+varargout{1} = xyInterphase;
 varargout{2} = shifts;
 
 end
