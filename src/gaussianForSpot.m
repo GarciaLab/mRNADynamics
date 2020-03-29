@@ -26,4 +26,5 @@ singleGaussian = @(p) p(1).*...
     - double(snippet);
 
 
+
 end

@@ -89,6 +89,8 @@ nameSuffix = ['_ch', iIndex(channelIndex, 2)];
 
 movieMat = getMovieMat(thisExperiment);
 
+movieMatCh = double(movieMat(:, :, :, :, channelIndex));
+
 yDim = size(movieMat, 1);
 xDim = size(movieMat, 2);
 
@@ -111,7 +113,12 @@ isZPadded = size(movieMat, 3) ~= zSize;
 q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
-for currentFrame = initialFrame:lastFrame
+parfor currentFrame = initialFrame:lastFrame
+    
+    imStack = movieMatCh(:, :, :, currentFrame);
+    if shouldMaskNuclei && ~isempty(Ellipses)
+        ellipseFrame = Ellipses{currentFrame};
+    end
     
     %report progress every tenth frame
     if ~mod(currentFrame, 10), disp(['Segmenting frame ', num2str(currentFrame), '...']); end
@@ -133,10 +140,11 @@ for currentFrame = initialFrame:lastFrame
     
     for zIndex = 1:zSize
         
-        im = double(squeeze(movieMat(:, :, zIndex, currentFrame, channelIndex)));
+        im = imStack(:, :, zIndex);
+        
         try
-            imAbove = double(sliceMovieMat(movieMat, channelIndex, zIndex+1, currentFrame));
-            imBelow= double(sliceMovieMat(movieMat, channelIndex, zIndex-1, currentFrame));
+            imAbove = imStack(:, :, zIndex+1);
+            imBelow= imStack(:, :, zIndex-1);
         catch
             imAbove = nan(size(im,1),size(im,2));
             imBelow = nan(size(im,1),size(im,2));
@@ -188,10 +196,13 @@ for currentFrame = initialFrame:lastFrame
         % apply nuclear mask if it exists
         if shouldMaskNuclei && ~isempty(Ellipses)
             
-            nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim xDim], radiusScale);
+            nuclearMask = makeNuclearMask(ellipseFrame, [yDim xDim], radiusScale);
             im_thresh = im_thresh & nuclearMask;
             
-            if shouldDisplayFigures, figure(maskFig); imshowpair(nuclearMask, dog, 'montage'); end
+%             if shouldDisplayFigures
+%                 figure(maskFig);
+%                 imshowpair(nuclearMask, dog, 'montage'); 
+%             end
             
         end
         
