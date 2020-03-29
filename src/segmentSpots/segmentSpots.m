@@ -160,11 +160,11 @@ else
     save([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots', '-v7.3', '-nocompression');
 end
 
-% if fit3D > 0
-%     disp('Fitting 3D Gaussians...')
-%     fit3DGaussiansToAllSpots(Prefix, fit3D, 'segmentSpots', Spots, 'nWorkers', nWorkers, saveType);
-%     disp('3D Gaussian fitting completed.')
-% end
+if fit3D > 0
+    disp('Fitting 3D Gaussians...')
+    fit3DGaussiansToAllSpots(Prefix, fit3D, 'segmentSpots', Spots, 'nWorkers', nWorkers, saveType);
+    disp('3D Gaussian fitting completed.')
+end
 
 if ~keepProcessedData
     deleteProcessedDataFolder(ProcessedDataFolder, Prefix);

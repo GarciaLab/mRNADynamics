@@ -25,6 +25,7 @@ default_iqr = 6;
 brightest_iqr_test = 8;
 noSave = false;
 dogs = [];
+numFrames = 0;
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'noSave')
@@ -54,16 +55,22 @@ if nargin < 2
         error('Please supply the spot channel as a second argument.');
     end
 end
+
 dogDir = dir([OutputFolder1, filesep, '*_ch0', num2str(Channel), '.*']);
 
-loadAsStacks = ~contains(dogDir(1).name, '_z');
-Weka = startsWith(dogDir(1).name, 'prob');
-loadAsMat = endsWith(dogDir(1).name, '.mat');
+haveStacks = any(cellfun(@(x) contains(x, 'dogStack'), {dogDir.name}));
+
+havePlanes = any(cellfun(@(x) contains(x, '_z'), {dogDir.name}));
+
+haveProbs = any(cellfun(@(x) contains(x, 'prob'), {dogDir.name}));
+
+loadAsMat = any(cellfun(@(x) contains(x, '.mat'), {dogDir.name}));
+
 % dogStr = 'dogStack_';
 
-if Weka
+if haveProbs
     dogStr = 'prob';
-elseif loadAsStacks
+elseif haveStacks
     dogStr = 'dogStack_';
 else
     dogStr = 'DOG_';
@@ -94,7 +101,7 @@ end
 available_zs = 2:3:zSize-1;
 
 
-numFrames = numel(dogDir);
+% numFrames = numel(dogDir);
 
 if numFrames == 0
     numFrames = numel(FrameInfo);
