@@ -13,6 +13,7 @@
 function [anaphaseFrames, Channels, ProjectionType, hisMat] =...
     chooseAnaphaseFrames(Prefix, varargin)
 
+cleanupObj = onCleanup(@myCleanupFun);
 warning('off', 'MATLAB:ui:Slider:fixedHeight')
 warning('off', 'MATLAB:audiovideo:audioplayer:noAudioOutputDevice');
 

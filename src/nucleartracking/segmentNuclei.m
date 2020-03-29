@@ -1,6 +1,6 @@
 function pMap = segmentNuclei(Prefix, varargin)
 
-% cleanupObj = onCleanup(@myCleanupFun);
+cleanupObj = onCleanup(@myCleanupFun);
 warning('off', 'MATLAB:Java:DuplicateClass');
 warning('off', 'MATLAB:javaclasspath:jarAlreadySpecified');
 

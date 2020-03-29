@@ -165,10 +165,10 @@ mkdir(DropboxFolderName);
     filterMovie(Prefix, 'Tifs');
     disp(['Prefix: ', Prefix]);
   end
-  
-  if shouldTrackNuclei
-      try batch(@TrackNuclei, 0, {Prefix});
-      catch TrackNuclei(Prefix); end
-  end
+%   
+%   if shouldTrackNuclei
+%       try batch(@TrackNuclei, 0, {Prefix});
+%       catch TrackNuclei(Prefix); end
+%   end
  
 end

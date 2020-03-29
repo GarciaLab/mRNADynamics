@@ -19,6 +19,8 @@
 
 function [thresh] = determineThreshold(Prefix, Channel, varargin)
 
+cleanupObj = onCleanup(@myCleanupFun);
+
 default_iqr = 6;
 brightest_iqr_test = 8;
 noSave = false;
@@ -125,10 +127,11 @@ for frame = available_frames
             bestZ = zInd;
             bestFrame = frame;
         end
-        max_val = max(max(dog(:)), max_val);
+        max_val = max( max( dog(:) ), max_val);
     end
 end
-% generates UI for picking threshold
+%%
+% get the image we'll display 
 bestDOG = all_dogs{bestFrame, bestZ};
 non_zero_dog = bestDOG(bestDOG ~= 0);
 median_val = median(non_zero_dog(:));
@@ -138,11 +141,18 @@ min_val = min(non_zero_dog(:));
 thresh = min(median_val + default_iqr * iqr_val, max_val - 1);
 dog_copy(dog_copy < thresh) = 0;
 
-
-f = figure();
-uiAxes = axes(f);
+%%
+% generates UI for picking threshold
+fig = figure();
+uiAxes = axes(fig);
 im = imshow(dog_copy, [], 'Parent', uiAxes);
-set(f, 'Position', [100, 100, 1000, 600])
+
+% lays out user interface
+screen_size = get(0, 'screensize');
+dim = [screen_size(3) * 0.6, screen_size(4) * 0.75];
+dimVec = [dim(1), dim(2), dim(1), dim(2)]; %to easily normalize units
+
+set(fig, 'Position', [100, 100, 1000, 600])
 
 % Slider for changing the z slice
 zStep = 1.0 / (zSize - 2);
@@ -166,7 +176,7 @@ frameVal = uicontrol('Style','text',...
     'String',['Frame = ' num2str(bestFrame)]);
 
 % Slider for adjusting the threshold
-threshSlider = uicontrol('Style', 'slider',... 332q
+threshSlider = uicontrol('Style', 'slider',...
     'Min',min_val,'Max',max_val,'Value',thresh,...
     'Position', [250 5 500 20],...
     'Callback', @update_val);
@@ -181,12 +191,41 @@ btn = uicontrol('Style', 'pushbutton', 'String', 'Use threshold',...
     'Position', [750 5 250 20],...
     'Callback', @use_thresh);
 
+
+%% display contrast stuff
+maxPos =  [.75, .3, .2, .03];
+maxLabelPos =[maxPos(1), maxPos(2)+.025,...
+    maxPos(3)/2, maxPos(4)+.02];
+%make sure the display range sliders and labels
+%move and resize as a group
+minPos =  [maxPos(1), maxPos(2) + .1, maxPos(3), maxPos(4)];
+minLabelPos = [minPos(1), minPos(2)+.025,...
+    maxLabelPos(3), maxLabelPos(4)];
+
+display_range = double([min_val, max_val]);
+
+max_label = uicontrol(fig,  'Style','text', 'String', 'max display value',...
+    'Units', 'normalized', 'Position', maxLabelPos);
+max_slider = uicontrol(fig, 'Style', 'slider', 'Min', display_range(1),...
+    'Max', display_range(2), 'Value', display_range(2), ...
+    'Units', 'normalized', 'Position', maxPos,...
+    'Callback', @update_val);
+
+min_label = uicontrol(fig,  'Style','text', 'String', 'min display value', ...
+    'Units', 'normalized', 'Position', ...
+    minLabelPos);
+min_slider = uicontrol(fig, 'Style', 'slider', 'Min', display_range(1),...
+    'Max', display_range(2), 'Value', display_range(1), ...
+    'Units', 'normalized', 'Position', minPos,...
+    'Callback', @update_val);
+
+
 %checkbox for displaying unthresholded image
 chk = uicontrol('Style', 'checkbox', 'String', 'Display unthresholded image',...
     'Position', [825 100 200 20],...
     'Callback', @update_val);
-
-uiwait(f);
+%%
+uiwait(fig);
 
     function update_val(source, ~)
         
@@ -204,18 +243,27 @@ uiwait(f);
         dog_copy = all_dogs{bestFrame, bestZ};
         thresh = threshSlider.Value;
         iqr_above_median = (thresh - median_val) / iqr_val;
+        
+        maxDisplayIntensity = round(max_slider.Value);
+        minDisplayIntensity = round(min_slider.Value);
+        
+        if minDisplayIntensity >= maxDisplayIntensity
+            maxDisplayIntensity = max(max(dog_copy));
+            minDisplayIntensity = median(median(dog_copy));
+        end
+        
         if ~chk.Value
             dog_copy(dog_copy < thresh) = 0;
             im.CData = dog_copy;
         else
             im.CData = dog_copy;
             im.CDataMapping = 'scaled';
-            uiAxes.CLim = [median(median(dog_copy)), max(max(dog_copy))];
+            uiAxes.CLim = [minDisplayIntensity, maxDisplayIntensity];
             %             im = imagescUpdate(uiAxes,dog_copy,[median(median(dog_copy)), max(max(dog_copy))]);
         end
         
         threshVal.String = ['threshold = ' num2str(thresh) ' which is ' ...
-            num2str(iqr_above_median) ' sds above the median pixel value'];
+            num2str(iqr_above_median) ' IQRs above the median pixel value'];
         zVal.String = ['Z-slice = ' num2str(bestZ)];
         frameVal.String = ['Frame = ' num2str(bestFrame)];
         
@@ -223,8 +271,8 @@ uiwait(f);
 
 
     function use_thresh(source, ~)
-        uiresume(f);
-        close(f);
+        uiresume(fig);
+        close(fig);
     end
 
     function dog = loadDog(zInd, frame)
@@ -248,7 +296,7 @@ uiwait(f);
         
         dog = dogStack(:, :, zInd);
         
-        %         dog = double(squeeze(dogMat(:, :, zInd, frame)));
+        %         dog = double(dogMat(:, :, zInd, frame));
 
     end
 

@@ -6,9 +6,9 @@ max_rad_um = 6;
 
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.
-for i = 1:2:(numel(varargin)-1)
-    if i ~= numel(varargin)
-        eval([varargin{i} '=varargin{i+1};']);
+for k = 1:2:(numel(varargin)-1)
+    if k ~= numel(varargin)
+        eval([varargin{k} '=varargin{k+1};']);
     end
 end
 
@@ -43,16 +43,16 @@ end
     if sum(cellfun(@(x) size(x,1),Ellipses)==0)
         %Find the frames where we have issues
         FramesToFix = find(cellfun(@(x) size(x,1),Ellipses)==0);
-        for i=1:length(FramesToFix)
-            if FramesToFix(i)==1
+        for k=1:length(FramesToFix)
+            if FramesToFix(k)==1
                 FrameToCopy=1;
                 while sum(FramesToFix==NextFrameToCopy)
                     FrameToCopy=FrameToCopy+1;
                 end
             else
-                FrameToCopy=FramesToFix(i)-1;
+                FrameToCopy=FramesToFix(k)-1;
             end
-            Ellipses{FramesToFix(i)}=Ellipses{FrameToCopy};
+            Ellipses{FramesToFix(k)}=Ellipses{FrameToCopy};
         end
     end
 
