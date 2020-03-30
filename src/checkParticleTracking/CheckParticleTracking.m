@@ -491,15 +491,17 @@ while (cc ~= 'x')
             plotTraceSettings);
     end
     
-    
-    % PLOT Z SLICE RELATED FIGURES
+
+ %AR- disabled until it's fast enough to be useful.
+ %too slow at present.
+ 
+%     % PLOT Z SLICE RELATED FIGURES
     plotzvars = {zProfileFigAxes, zTraceAxes, ExperimentType, xTrace, cptState, plotTraceSettings, fish};
     if exist('MaxZProfile', 'var')
         plotzvars = [plotzvars, MaxZProfile];
     end
-
     MaxZProfile = plotZFigures(plotzvars{:});
-    
+%     
     set(0, 'CurrentFigure', Overlay);
     
     cc = getUserKeyInput(Overlay);
