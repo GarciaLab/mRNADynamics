@@ -27,6 +27,10 @@ classdef liveExperiment
         processedDirectory = '';
         resultsDirectory = '';
         
+        userPreFolder = '';
+        userProcFolder = '';
+        userResultsFolder = '';
+        
         hasCompiledParticlesFile = false;
         hasSchnitzcellsFile = false;
         hasSpotsFile = false;
@@ -81,6 +85,10 @@ classdef liveExperiment
             [~, ProcPath, DropboxFolder, ~, PreProcPath,...
                 ~, ~, ~, movieDatabase]= DetermineLocalFolders(obj.Prefix);
             
+            obj.userPreFolder = PreProcPath;
+            obj.userProcFolder = ProcPath;
+            obj.userResultsFolder = DropboxFolder;
+            
             obj.preFolder = [PreProcPath, filesep, Prefix, filesep];
             obj.procFolder = [ProcPath, filesep, Prefix, '_', filesep];
             obj.resultsFolder = [DropboxFolder, filesep, Prefix, filesep];
@@ -95,7 +103,7 @@ classdef liveExperiment
             isUnhealthyFile = [DropboxFolder,filesep,obj.Prefix,filesep, 'isUnhealthy.mat'];
             if exist(isUnhealthyFile, 'file')
                 load(isUnhealthyFile, 'isUnhealthy');
-            else isUnhealthy = NaN; end;
+            else isUnhealthy = NaN; end
 
             obj.isUnhealthy = isUnhealthy;
             
