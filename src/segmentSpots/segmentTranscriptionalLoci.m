@@ -16,9 +16,6 @@ radiusScale = 1.3; %dilate the nuclear mask by this factor
 thisExperiment = liveExperiment(Prefix);
 pixelSize_nm = thisExperiment.pixelSize_nm;
 
-if shouldMaskNuclei
-    if thisExperiment.hasEllipsesFile, Ellipses = getEllipses(thisExperiment); end
-else Ellipses = []; end
 
 dogs = [];
 
@@ -98,6 +95,13 @@ movieMatCh = double(movieMat(:, :, :, :, channelIndex));
 
 yDim = size(movieMat, 1);
 xDim = size(movieMat, 2);
+
+if shouldMaskNuclei
+    if thisExperiment.hasEllipsesFile
+        Ellipses = getEllipses(thisExperiment); 
+        Ellipses = filterEllipses(Ellipses, [yDim, xDim]);
+    end
+else Ellipses = []; end
 
 % dogMat = loadDogMat(Prefix);
 
@@ -200,10 +204,6 @@ for currentFrame = initialFrame:lastFrame
         
         % apply nuclear mask if it exists
         if shouldMaskNuclei && ~isempty(Ellipses)
-            
-    if currentFrame == 40
-        'stop here'
-    end
     
             nuclearMask = makeNuclearMask(ellipseFrame, [yDim xDim], radiusScale);
             im_thresh = im_thresh & nuclearMask;

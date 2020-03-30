@@ -48,8 +48,8 @@ zSize = FrameInfo(1).NumberSlices + 2;
 OutputFolder1=[ProcPath,filesep,Prefix,'_',filesep,'dogs',filesep];
 
 if nargin < 2
-    spotChannels = thisExperiment.spotChannels; 
-    if numel(spotChannels)==1 
+    spotChannels = thisExperiment.spotChannels;
+    if numel(spotChannels)==1
         Channel = spotChannels;
     else
         error('Please supply the spot channel as a second argument.');
@@ -59,14 +59,10 @@ end
 dogDir = dir([OutputFolder1, filesep, '*_ch0', num2str(Channel), '.*']);
 
 haveStacks = any(cellfun(@(x) contains(x, 'dogStack'), {dogDir.name}));
-
 havePlanes = any(cellfun(@(x) contains(x, '_z'), {dogDir.name}));
-
 haveProbs = any(cellfun(@(x) contains(x, 'prob'), {dogDir.name}));
-
 loadAsMat = any(cellfun(@(x) contains(x, '.mat'), {dogDir.name}));
 
-% dogStr = 'dogStack_';
 
 if haveProbs
     dogStr = 'prob';
@@ -82,6 +78,7 @@ nameSuffix = ['_ch',iIndex(Channel,2)];
 
 firstDogStackFile = [OutputFolder1, filesep, dogStr, Prefix, '_', iIndex(1, 3),...
     nameSuffix];
+
 if loadAsMat
     load([firstDogStackFile, '.mat'], 'dogStack');
 else
@@ -98,16 +95,17 @@ else
     minZ = 1;
     maxZ = zSize - 2;
 end
-available_zs = 2:3:zSize-1;
 
+skipZFactor = 1;
+available_zs = 2:skipZFactor:zSize-1;
 
-% numFrames = numel(dogDir);
 
 if numFrames == 0
     numFrames = numel(FrameInfo);
 end
 
-available_frames = 1:4:numFrames;
+skipFrameFactor = 4;
+available_frames = 1:skipFrameFactor:numFrames;
 
 % loops through DOGs to find brightest one
 % does this by choosing DOG with most pixels above brightest_iqr_test sds
@@ -115,6 +113,7 @@ bestZ = 2;
 bestFrame = 1;
 bestVal = 0;
 max_val = 0;
+
 all_dogs = cell(numFrames, zSize - 2);
 for frame = available_frames
     for z = available_zs
@@ -138,7 +137,7 @@ for frame = available_frames
     end
 end
 %%
-% get the image we'll display 
+% get the image we'll display
 bestDOG = all_dogs{bestFrame, bestZ};
 non_zero_dog = bestDOG(bestDOG ~= 0);
 median_val = median(non_zero_dog(:));
@@ -146,13 +145,15 @@ iqr_val = iqr(non_zero_dog(:))/2;
 dog_copy = all_dogs{bestFrame, bestZ};
 min_val = min(non_zero_dog(:));
 thresh = min(median_val + default_iqr * iqr_val, max_val - 1);
-dog_copy(dog_copy < thresh) = 0;
+dog_copy = dog_copy > thresh;
+
+nSpotsEstimate = length(regionprops(dog_copy));
 
 %%
 % generates UI for picking threshold
 fig = figure();
-uiAxes = axes(fig);
-im = imshow(dog_copy, [], 'Parent', uiAxes);
+uiAx = axes(fig);
+im = imshow(dog_copy, [], 'Parent', uiAx);
 
 % lays out user interface
 screen_size = get(0, 'screensize');
@@ -225,11 +226,17 @@ min_slider = uicontrol(fig, 'Style', 'slider', 'Min', display_range(1),...
     'Max', display_range(2), 'Value', display_range(1), ...
     'Units', 'normalized', 'Position', minPos,...
     'Callback', @update_val);
+%%
+cboxPos = [825 100 200 20];
 
+nSpotsLabel = uicontrol(fig, 'Style', 'text','String',...
+    ['Estimated number of spots: ', num2str(nSpotsEstimate) ],...
+    'Units', 'normalized', 'Position', [minPos(1),...
+    minLabelPos(2)+.1, minLabelPos(3), minLabelPos(4)]);
 
 %checkbox for displaying unthresholded image
 chk = uicontrol('Style', 'checkbox', 'String', 'Display unthresholded image',...
-    'Position', [825 100 200 20],...
+    'Position',cboxPos,...
     'Callback', @update_val);
 %%
 uiwait(fig);
@@ -260,12 +267,13 @@ uiwait(fig);
         end
         
         if ~chk.Value
-            dog_copy(dog_copy < thresh) = 0;
+            %             dog_copy(dog_copy < thresh) = 0;
+            dog_copy = dog_copy > thresh;
             im.CData = dog_copy;
         else
             im.CData = dog_copy;
             im.CDataMapping = 'scaled';
-            uiAxes.CLim = [minDisplayIntensity, maxDisplayIntensity];
+            uiAx.CLim = [minDisplayIntensity, maxDisplayIntensity];
             %             im = imagescUpdate(uiAxes,dog_copy,[median(median(dog_copy)), max(max(dog_copy))]);
         end
         
@@ -290,21 +298,21 @@ uiwait(fig);
             load([dogStackFile, '.mat'], 'dogStack');
         else
             dogStack = imreadStack([dogStackFile, '.tif']);
-%         dog_name = [dogProb,Prefix,'_',iIndex(frame,3),'_z',iIndex(zInd,2),nameSuffix,saveType];
-        
-%         if strcmpi(saveType, '.tif')
-%             dog = double(imread([OutputFolder1 dog_name]));
-%         elseif strcmpi(saveType, '.mat')
-%             load([OutputFolder1 dog_name], 'plane', 'dog');
-%             try dog = plane; end
-%         elseif strcmpi(saveType, 'none')
-%             dog = dogs(:, :, zInd, frame);
+            %         dog_name = [dogProb,Prefix,'_',iIndex(frame,3),'_z',iIndex(zInd,2),nameSuffix,saveType];
+            
+            %         if strcmpi(saveType, '.tif')
+            %             dog = double(imread([OutputFolder1 dog_name]));
+            %         elseif strcmpi(saveType, '.mat')
+            %             load([OutputFolder1 dog_name], 'plane', 'dog');
+            %             try dog = plane; end
+            %         elseif strcmpi(saveType, 'none')
+            %             dog = dogs(:, :, zInd, frame);
         end
         
         dog = dogStack(:, :, zInd);
         
         %         dog = double(dogMat(:, :, zInd, frame));
-
+        
     end
 
 end

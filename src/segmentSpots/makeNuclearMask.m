@@ -11,16 +11,10 @@ end
 yDim = imageDims(1);
 xDim = imageDims(2);
 
-%validate sizes. the ellipse masker handles
-%very large objects poorly, to say the least.
-largeAxisIndex = ellipseFrame(:, 3) > max([xDim, yDim])...
-    | ellipseFrame(3) > max([xDim, yDim]);
-ellipseFrame(largeAxisIndex, :) = [];
-
-
 nuclearMask = false(yDim, xDim);
 
 nEllipses = size(ellipseFrame, 1);
+
 for n = 1:nEllipses
     h = images.roi.Ellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
         'SemiAxes', radiusScale*[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...

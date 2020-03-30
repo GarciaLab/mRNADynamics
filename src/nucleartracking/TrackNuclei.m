@@ -261,7 +261,7 @@ for schnitz=1:length(schnitzcells)
         r = single(mean(Ellipses{schnitzcells(schnitz).frames(f)}(schnitzcells(schnitz).cellno(f),3:4)));
         schnitzcells(schnitz).len(:)=r;
         if ~isreal(r)
-            keyboard
+            error('non real radii returned for schnitz. not sure what happened here.');
         end
     end
 end
@@ -273,11 +273,9 @@ if ~exist([DropboxFolder,filesep,Prefix], 'dir')
 end
 
 if whos(var2str(Ellipses)).bytes < 2E9
-    
     save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v6');
 else
-    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v7.3');
-    
+    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v7.3');    
 end
 
 if whos(var2str(schnitzcells)).bytes < 2E9
@@ -329,6 +327,8 @@ schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, expandedAn
 
 %perform some quality control
 schnitzcells = filterSchnitz(schnitzcells, [thisExperiment.yDim, thisExperiment.xDim]);
+Ellipses = filterEllipses(Ellipses, [thisExperiment.yDim, thisExperiment.xDim]);
+
 
 try 
     Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
