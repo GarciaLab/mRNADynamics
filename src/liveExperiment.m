@@ -157,15 +157,20 @@ classdef liveExperiment
         
         function out = getMovieMat(obj)
             
+            %optionally only grab certain channels
             persistent movieMat;
             %load movie only if it hasn't been loaded or if we've switched
             %Prefixes (determined by num frames)
-            if isempty(movieMat) || ~isequal( size(movieMat, 4), obj.nFrames)
+            if isempty(movieMat) ||...
+                    ~isequal( size(movieMat, 4), obj.nFrames)
+                
                 if obj.hasMovieMatFile
                     movieMat = loadMovieMat(obj.Prefix);
                 else
-                    movieMat = makeMovieMats(obj.Prefix, [], [], [], 'loadHis', false, 'makeMovie', true, 'loadMovie', false);
+                    movieMat = makeMovieMats(obj.Prefix, [], [], [],...
+                        'loadHis', false, 'makeMovie', true, 'loadMovie', false);
                 end
+                
             end
             out = movieMat;
             

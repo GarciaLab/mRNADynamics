@@ -19,7 +19,7 @@ numberOfFrames = nextMitosisInd-previousMitosisInd+1;
 time_resolution = getDefaultParameters(FrameInfo,'time resolution');
 space_resolution = getDefaultParameters(FrameInfo,'space resolution');
 edgeClearance = getDefaultParameters(FrameInfo,'edge clearance')*nucleusDiameter/space_resolution;
-img = squeeze(hisMat(:, :, startingFrame));
+img = hisMat(:, :, startingFrame);
 marginBeforeMitosis = ceil(getDefaultParameters(FrameInfo,'increased precision before mitosis')/time_resolution);
 marginAfterMitosis = ceil(getDefaultParameters(FrameInfo,'increased precision after mitosis')/time_resolution);
 %This looks like it decides to use existing data that was passed to it, and
@@ -33,7 +33,8 @@ if exist('xy','var') && ~isempty(xy)
 else
     skip_segmentation = false;
     xyInterphase = cell(numberOfFrames,1);
-    xyInterphase{startingFrame-previousMitosisInd+1} = findNuclei(FrameInfo,hisMat,startingFrame,nucleusDiameter, embryoMask, [],[1 1 1 1 1]);
+    xyInterphase{startingFrame-previousMitosisInd+1} = findNuclei(FrameInfo,hisMat,startingFrame,...
+        nucleusDiameter, embryoMask, [],[1 1 1 1 1]);
 end
 
 %the code down below will break if frames are empty. 
@@ -82,7 +83,7 @@ end
 if any(isnan(nucleiIndices))
     error(' NAN ')
 end
-    %nucleiIndices = 1:numel(nuclei); % Temporar vector that contains the mapping between 'XY' rows and 'nuclei' elements, i.e. XY{frame}(j,:) = nuclei(nucleiIndices(j)).position(frame,:);
+    %nucleiIndices = 1:numel(nuclei); % Temporary vector that contains the mapping between 'XY' rows and 'nuclei' elements, i.e. XY{frame}(j,:) = nuclei(nucleiIndices(j)).position(frame,:);
 targetNumber = numel(nuclei);
 %% Track forwards
 for j = 1:(nextMitosisInd-startingFrame)%[]%1:(nextMitosisInd-startingFrame)
@@ -112,8 +113,8 @@ for j = 1:(nextMitosisInd-startingFrame)%[]%1:(nextMitosisInd-startingFrame)
             continue;
         end
         
-        nuclei(nucleiIndices(jj)).indXY(startingFrame+j) = mapping{currentFrameInd}(jj);
-        nuclei(nucleiIndices(jj)).position(startingFrame+j,:) = xyInterphase{newFrameInd}(mapping{currentFrameInd}(jj),:);
+        nuclei(nucleiIndices(jj) ).indXY(startingFrame+j) = mapping{currentFrameInd}(jj);
+        nuclei(nucleiIndices(jj) ).position(startingFrame+j,:) = xyInterphase{newFrameInd}(mapping{currentFrameInd}(jj),:);
 
         %nuclei(nucleiIndices(jj)).score(startingFrame+j) = score(jj);
         nucInd(mapping{currentFrameInd}(jj)) = nucleiIndices(jj);
@@ -145,7 +146,10 @@ for j = 1:(nextMitosisInd-startingFrame)%[]%1:(nextMitosisInd-startingFrame)
     nucleiIndices = nucInd;
     
     
-    waitbar((j+startingFrame-1)/(totalNumberOfFrames-1), h_waitbar_tracking, ['Tracking progress : processing frames ' num2str(j+startingFrame-1) ' and ' num2str(j+startingFrame) ' out of ' num2str(totalNumberOfFrames) '...']);
+    waitbar((j+startingFrame-1)/(totalNumberOfFrames-1), h_waitbar_tracking,...
+        ['Tracking progress : processing frames ' num2str(j+startingFrame-1),...
+        ' and ' num2str(j+startingFrame) ' out of ' num2str(totalNumberOfFrames) '...']);
+    
 end
 
 

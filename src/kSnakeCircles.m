@@ -59,4 +59,12 @@ mask = bwareafilt(wshed(kMaskRefined), areaFilter);
 
 [mask, ellipseFrame] = fitCirclesToNuclei(mask, kMask);
 
+
+%validate sizes. the ellipse masker handles
+%very large objects poorly, to say the least.
+largeAxisIndex = ellipseFrame(:, 3) > max(size(image))...
+    | ellipseFrame(3) > max(size(image));
+ellipseFrame(largeAxisIndex, :) = [];
+
+
 end

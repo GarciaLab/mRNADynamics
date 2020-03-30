@@ -29,14 +29,9 @@ function TrackNuclei(Prefix,varargin)
 % Documented by: Armando Reimer (areimer@berkeley.edu)
 %
 %
-
-
 cleanupObj = onCleanup(@myCleanupFun);
 
-
 disp(['Tracking nuclei on ', Prefix, '...']);
-
-
 
 
 [stitchSchnitz, ExpandedSpaceTolerance, NoBulkShift,...
@@ -92,7 +87,7 @@ if length(anaphaseFrames)~=6
 end
 
 if (length(find(isnan(anaphaseFrames)))==length(anaphaseFrames))||(length(anaphaseFrames)<6)
-    error('Have the ncs been defined in MovieDatabase?')
+    error('Have the ncs been defined in MovieDatabase or anaphaseFrames.mat?')
 end
 
 %Now do the nuclear segmentation and lineage tracking. This should be put
