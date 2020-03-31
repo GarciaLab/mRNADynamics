@@ -153,6 +153,68 @@ classdef CPTState < handle
             currentFit = this.getCurrentParticleFit();
             currentYFit = double(currentFit.yFit(this.CurrentZIndex));
         end
+
+        function updateCurrentZIndex(this)
+            this.CurrentZIndex = find(this.getCurrentParticleFit().z == this.CurrentZ);
+        end
+
+        function maxZIndex = getMaxZIndex(this)
+            maxZIndex = find(this.getCurrentParticleFit().z == this.getCurrentParticleFit().brightestZ);
+        end
+
+        function currentParticleIndex = getCurrentParticleIndex(this)
+            currentParticleIndex = this.getCurrentParticle().Index(this.getCurrentParticle().Frame == this.CurrentFrame);
+        end
+
+        function [xApproved, yApproved] = getApprovedParticles(this, x, y)
+            IndexApprovedParticles = [];
+            numParticles = this.numParticles();
+            currentChannelParticles = this.getCurrentChannelParticles();
+            
+            for i = 1:numParticles
+                if sum(currentChannelParticles(i).Frame == this.CurrentFrame) &&...
+                        sum(currentChannelParticles(i).Approved == 1)
+                    IndexApprovedParticles = [IndexApprovedParticles,...
+                        currentChannelParticles(i).Index(currentChannelParticles(i).Frame == this.CurrentFrame)];
+                end
+            end
+            
+            xApproved = x(IndexApprovedParticles);
+            yApproved = y(IndexApprovedParticles);
+        end
+
+        function [xDisapproved, yDisapproved] = getDisapprovedParticles(this, x, y)
+            IndexDisapprovedParticles=[];
+            numParticles = this.numParticles();
+            currentChannelParticles = this.getCurrentChannelParticles();
+
+            for i = 1:numParticles
+                if sum(currentChannelParticles(i).Frame == this.CurrentFrame) && sum(currentChannelParticles(i).Approved == -1)
+                    IndexDisapprovedParticles=[IndexDisapprovedParticles,...
+                        currentChannelParticles(i).Index(currentChannelParticles(i).Frame == this.CurrentFrame)];
+                end
+            end
+
+            xDisapproved = x(IndexDisapprovedParticles);
+            yDisapproved = y(IndexDisapprovedParticles);
+        end
+
+        function [xNonFlagged, yNonFlagged] = getNonFlaggedParticles(this, x, y)
+            IndexNonFlaggedParticles = [];
+            numParticles = this.numParticles();
+            currentChannelParticles = this.getCurrentChannelParticles();
+
+            for i = 1:numParticles
+                if sum(currentChannelParticles(i).Frame == this.CurrentFrame) &&...
+                        ~(sum(currentChannelParticles(i).Approved == -1) || sum(currentChannelParticles(i).Approved == 1))
+                    IndexNonFlaggedParticles=[IndexNonFlaggedParticles,...
+                        currentChannelParticles(i).Index(currentChannelParticles(i).Frame == this.CurrentFrame)];
+                end
+            end
+
+            xNonFlagged = x(IndexNonFlaggedParticles);
+            yNonFlagged = y(IndexNonFlaggedParticles);
+        end
     end
 end
 
