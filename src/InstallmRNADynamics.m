@@ -34,7 +34,7 @@ TEST_PATH =  createDirInRoot('ExpectedData');
 COMPUTER_FOLDERS_PATH = [ROOT_PATH, filesep, 'ComputerFolders.csv'];
 
 shouldOnlyMakeStartupFile = ~isempty(varargin) &&...
-        contains(varargin, 'updateStartupScript', 'IgnoreCase', true);
+        contains(varargin, 'updateStartup', 'IgnoreCase', true);
     
 if shouldOnlyMakeStartupFile
     

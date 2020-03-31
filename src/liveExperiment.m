@@ -67,6 +67,10 @@ classdef liveExperiment
         APResolution = '';
         DVResolution = '';
         
+        Channel1 = '';
+        Channel2 = '';
+        Channel3 = '';
+        
         
         
         
@@ -136,6 +140,9 @@ classdef liveExperiment
                 = getExperimentDataFromMovieDatabase(Prefix, movieDatabase, obj.userResultsFolder);
                         
             obj.Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
+            obj.Channel1 = Channel1{1};
+            obj.Channel2 = Channel2{1};
+            obj.Channel3 = Channel3{1};
             
             try
                 FrameInfo = getFrameInfo(obj);
