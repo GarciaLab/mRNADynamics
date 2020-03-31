@@ -39,13 +39,13 @@ end
 thisExperiment = liveExperiment(Prefix);
 % loads information needed to loop through DoGs
 
-[~,ProcPath,DropboxFolder,~,~]=...
-    DetermineLocalFolders(Prefix);
+ProcPath = thisExperiment.userProcPath;
 
-load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
+FrameInfo = thisExperiment.Prefix;
+
 zSize = FrameInfo(1).NumberSlices + 2;
 
-OutputFolder1=[ProcPath,filesep,Prefix,'_',filesep,'dogs',filesep];
+dogFolder=[ProcPath,filesep,Prefix,'_',filesep,'dogs',filesep];
 
 if nargin < 2
     spotChannels = thisExperiment.spotChannels;
@@ -56,13 +56,14 @@ if nargin < 2
     end
 end
 
-dogDir = dir([OutputFolder1, filesep, '*_ch0', num2str(Channel), '.*']);
+dogDir = dir([dogFolder, filesep, '*_ch0', num2str(Channel), '.*']);
 
 haveStacks = any(cellfun(@(x) contains(x, 'dogStack'), {dogDir.name}));
-havePlanes = any(cellfun(@(x) contains(x, '_z'), {dogDir.name}));
+% havePlanes = any(cellfun(@(x) contains(x, '_z'), {dogDir.name}));
 haveProbs = any(cellfun(@(x) contains(x, 'prob'), {dogDir.name}));
 loadAsMat = any(cellfun(@(x) contains(x, '.mat'), {dogDir.name}));
 
+clear dogDir;
 
 if haveProbs
     dogStr = 'prob';
@@ -72,11 +73,10 @@ else
     dogStr = 'DOG_';
 end
 
-
 nameSuffix = ['_ch',iIndex(Channel,2)];
 
 
-firstDogStackFile = [OutputFolder1, filesep, dogStr, Prefix, '_', iIndex(1, 3),...
+firstDogStackFile = [dogFolder, filesep, dogStr, Prefix, '_', iIndex(1, 3),...
     nameSuffix];
 
 if loadAsMat
@@ -124,16 +124,18 @@ for frame = available_frames
         end
         dog = loadDog(zInd, frame);
         all_dogs{frame, zInd} = dog;
-        non_zero_d = dog(dog ~= 0);
-        val = iqr(non_zero_d(:))/2;
-        median_val = median(non_zero_d(:));
-        num_above = sum(non_zero_d(:) > (val * brightest_iqr_test + median_val));
+        non_zero_d = dog~=0;
+        val = (1/2) * iqr( non_zero_d(:) );
+        median_val = median( non_zero_d(:) );
+        num_above = sum( non_zero_d(:) >...
+            (val * brightest_iqr_test + median_val) );
         if num_above > bestVal
             bestVal = num_above;
             bestZ = zInd;
             bestFrame = frame;
         end
         max_val = max( max( dog(:) ), max_val);
+        
     end
 end
 %%
@@ -227,12 +229,19 @@ min_slider = uicontrol(fig, 'Style', 'slider', 'Min', display_range(1),...
     'Units', 'normalized', 'Position', minPos,...
     'Callback', @update_val);
 %%
-cboxPos = [825 100 200 20];
+
+nSpotsLabelPos =  [minPos(1),...
+    minLabelPos(2)+.1, minLabelPos(3), minLabelPos(4)];
 
 nSpotsLabel = uicontrol(fig, 'Style', 'text','String',...
     ['Estimated number of spots: ', num2str(nSpotsEstimate) ],...
-    'Units', 'normalized', 'Position', [minPos(1),...
-    minLabelPos(2)+.1, minLabelPos(3), minLabelPos(4)]);
+    'Units', 'normalized', 'Position', nSpotsLabelPos);
+
+
+nSpotsAxes = axes(fig, 'Units', 'normalized', 'Position', [nSpotsLabelPos(1),...
+    nSpotsLabelPos(2)+.075,  .2, .2]);
+
+cboxPos = [825 100 200 20];
 
 %checkbox for displaying unthresholded image
 chk = uicontrol('Style', 'checkbox', 'String', 'Display unthresholded image',...
@@ -266,15 +275,47 @@ uiwait(fig);
             minDisplayIntensity = median(median(dog_copy));
         end
         
+        dogbw = dog_copy > thresh;
+        
+        
+        nSpotsF = zeros(1, length(available_frames));
+        for f = available_frames
+            nSpotsZ = zeros(1, length(available_zs));
+            for iz = available_zs
+                if zPadded
+                    zIndex = iz;
+                else
+                    zIndex = iz-1;
+                end
+                if isempty(all_dogs{f, zIndex})
+                    dog = loadDog(f, zIndex);
+                    all_dogs{f, zIndex} = dog;
+                end
+                nSpotsZ(zIndex) = length(regionprops(all_dogs{f, zIndex} > thresh));
+                
+            end
+            nSpotsF(f)= max(nSpotsZ);
+        end
+        nSpotsEstimate = length(regionprops(dogbw));
+        nSpotsLabel.String = ['Estimated number of spots: ', num2str(nSpotsEstimate) ];
+        
+        if ~isempty(nSpotsAxes.Children)
+            nSpotsAxes.Children(1).YData = nSpotsF(available_frames);
+            nSpotsAxes.Children(1).XData = available_frames;
+        else
+            line(nSpotsAxes, available_frames, nSpotsF(available_frames))
+        end
+        drawnow;
+        
         if ~chk.Value
-            %             dog_copy(dog_copy < thresh) = 0;
-            dog_copy = dog_copy > thresh;
+            dog_copy = dogbw;
             im.CData = dog_copy;
+            drawnow;
         else
             im.CData = dog_copy;
             im.CDataMapping = 'scaled';
             uiAx.CLim = [minDisplayIntensity, maxDisplayIntensity];
-            %             im = imagescUpdate(uiAxes,dog_copy,[median(median(dog_copy)), max(max(dog_copy))]);
+            drawnow;
         end
         
         threshVal.String = ['threshold = ' num2str(thresh) ' which is ' ...
@@ -292,7 +333,7 @@ uiwait(fig);
 
     function dog = loadDog(zInd, frame)
         
-        dogStackFile = strrep([OutputFolder1, filesep, dogStr, Prefix, '_', iIndex(frame, 3),...
+        dogStackFile = strrep([dogFolder, filesep, dogStr, Prefix, '_', iIndex(frame, 3),...
             nameSuffix], '\\', '\');
         if loadAsMat
             load([dogStackFile, '.mat'], 'dogStack');

@@ -142,8 +142,10 @@ end
 %% Information about about folders
 
 % Get the folders
-[~,ProcPath,DropboxFolder,~, PreProcPath,~, Prefix, ~,~,~,~,~, ~, ~, movieDatabase]...
+[~,~,DropboxFolder,~, ~,~, ~, ~,~,~,~,~, ~, ~, movieDatabase]...
     = readMovieDatabase(Prefix, optionalResults);
+
+PreProcPath = thisExperiment.userPreFolder;
 
 DataFolder = [DropboxFolder, filesep, Prefix];
 FilePrefix = [Prefix, '_'];
@@ -188,11 +190,23 @@ Particles = addFrameApproved(numSpotChannels, Particles);
 [Ellipses, UseHistoneOverlay, UseSchnitz] = checkHistoneAndNuclearSegmentation(...
     PreProcPath, FilePrefix, nDigits, DropboxFolder, noHisOverlay, fish);
 
-[~, ExperimentType, ~, ~, ~, ~, Channel1, Channel2, ~, ~, ~, ~, ~, ...
-    nc9, nc10, nc11, nc12, nc13, nc14, ~, Channel3, prophase, metaphase] =...
+[~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ...
+    ~, ~, ~, ~, ~, ~, ~, ~, prophase, metaphase] =...
     getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
 
-Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
+ExperimentType = thisExperiment.ExperimentType;
+Channels = thisExperiment.Channels;
+Channel1 = thisExperiment.Channel1;
+Channel2 = thisExperiment.Channel2;
+Channel3 = thisExperiment.Channel3;
+nc9 = thisExperiment.nc9;
+nc10 = thisExperiment.nc10;
+nc11 = thisExperiment.nc11;
+nc12 = thisExperiment.nc12;
+nc13 = thisExperiment.nc13;
+nc14 = thisExperiment.nc14;
+
+
 
 maxTimeCell = [];
 
@@ -220,7 +234,8 @@ ElapsedTime = getFrameElapsedTime(FrameInfo, nFrames);
 
 ncFrames = [nc9, nc10, nc11, nc12, nc13, nc14]; %anaphases
 ncFramesFull = [zeros(1,8), ncFrames, nFrames]; %more useful for some things
-[anaphaseInMins, prophaseInMins, metaphaseInMins] = getPhasesDurationsInMins(ncFrames, prophase, metaphase, ElapsedTime);
+[anaphaseInMins, prophaseInMins, metaphaseInMins] =...
+    getPhasesDurationsInMins(ncFrames, prophase, metaphase, ElapsedTime);
 
 try correspondingNCInfo = [FrameInfo.nc]; end
 
@@ -242,7 +257,8 @@ end
 
 
 if ~isempty(cptState.Particles{cptState.CurrentChannelIndex})
-    cptState.CurrentFrame = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Frame(CurrentFrameWithinParticle);
+    cptState.CurrentFrame =...
+        cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Frame(CurrentFrameWithinParticle);
 
 else, error('Looks like the Particles structure is empty. There''s nothing to check.'); end
 

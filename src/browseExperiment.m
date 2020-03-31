@@ -31,15 +31,4 @@ resultsDirectory = swapColumns(dirtab(resultsFolder));
 % disp({resultsDirectory.name}');
 
 
-
-
-
-
-%     [~,~,DropboxFolder,~, PreProcPath,...
-%         ~, ~, ~,Channel1,Channel2,~,...
-%         Channel3, ~, movieDatabaseFolder, movieDatabase]...
-%         = readMovieDatabase(Prefix);
-
-
-
 end

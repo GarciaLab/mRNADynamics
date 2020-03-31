@@ -82,8 +82,15 @@ classdef liveExperiment
             
             obj.Prefix = Prefix;
             
+            %caching the results of this function since
+            %its csv2cell call is the 
+            %most time-consuming part of
+            %project initialization and the output
+            %is not memory intensive
+            memoizedDetermineLocalFolders = memoize(@DetermineLocalFolders);  
+            
             [~, ProcPath, DropboxFolder, ~, PreProcPath,...
-                ~, ~, ~, movieDatabase]= DetermineLocalFolders(obj.Prefix);
+                ~, ~, ~, movieDatabase]= memoizedDetermineLocalFolders(obj.Prefix);
             
             obj.userPreFolder = PreProcPath;
             obj.userProcFolder = ProcPath;
@@ -94,10 +101,10 @@ classdef liveExperiment
             obj.resultsFolder = [DropboxFolder, filesep, Prefix, filesep];
             obj.MLFolder = [DropboxFolder, filesep, 'training_data_and_classifiers', filesep];
             
-            [rawDir, procDir, resultsDir] = browseExperiment(obj.Prefix);
-            obj.rawExportedDirectory = rawDir;
-            obj.processedDirectory = procDir;
-            obj.resultsDirectory = resultsDir;
+%             [rawDir, procDir, resultsDir] = browseExperiment(obj.Prefix);
+%             obj.rawExportedDirectory = rawDir;
+%             obj.processedDirectory = procDir;
+%             obj.resultsDirectory = resultsDir;
             
             
             isUnhealthyFile = [DropboxFolder,filesep,obj.Prefix,filesep, 'isUnhealthy.mat'];
@@ -109,21 +116,24 @@ classdef liveExperiment
             
             obj.project = '';
             
-            obj.hasCompiledParticlesFile = sum(contains(obj.resultsDirectory{:, 1}, 'CompiledParticles'));
-            obj.hasSchnitzcellsFile = sum(contains(obj.resultsDirectory{:, 1}, '_lin'));
-            obj.hasSpotsFile = sum(contains(obj.resultsDirectory{:, 1}, 'Spots'));
-            obj.hasParticlesFile = sum(contains(obj.resultsDirectory{:, 1}, 'Particles'));
-            obj.hasEllipsesFile = sum(contains(obj.resultsDirectory{:, 1}, 'Ellipses'));
-            obj.hasDoGs = sum(contains(obj.processedDirectory{:, 1}, 'dog', 'IgnoreCase', true));
-            obj.hasRawStacks = sum(contains(obj.rawExportedDirectory{:, 1}, 'stacks', 'IgnoreCase', true));
-            obj.hasMovieMatFile = sum(contains(obj.rawExportedDirectory{:, 1}, 'movieMat', 'IgnoreCase', true));
-            obj.hasHisMatFile = sum(contains(obj.rawExportedDirectory{:, 1}, 'hisMat', 'IgnoreCase', true));
-            obj.hasChannelsFile =sum(contains(obj.resultsDirectory{:, 1}, 'Channels'));
+            obj.hasCompiledParticlesFile = exist([obj.resultsFolder, 'CompiledParticles.mat'] , 'file');
+            obj.hasSchnitzcellsFile = exist([obj.resultsFolder,Prefix, '_lin.mat'] , 'file');
+            obj.hasSpotsFile = exist([obj.resultsFolder, 'Spots.mat'] , 'file');
+            obj.hasParticlesFile = exist([obj.resultsFolder, 'Particles.mat'] , 'file');
+            obj.hasEllipsesFile = exist([obj.resultsFolder, 'Ellipses.mat'] , 'file');
+            obj.hasChannelsFile =exist([obj.resultsFolder, 'Channels.mat'] , 'file');
+            obj.hasAnaphaseFile=exist([obj.resultsFolder, 'anaphaseFrames.mat'] , 'file');
+
+            obj.hasDoGs = exist([obj.procFolder, 'dogs'], 'dir');
+            
+            obj.hasRawStacks = exist([obj.preFolder, 'stacks'], 'dir');
+            obj.hasMovieMatFile = exist([obj.preFolder, 'movieMatCh1.mat'], 'file');
+            obj.hasHisMatFile = exist([obj.preFolder, 'hisMat.mat'], 'file');
             
             [~, obj.experimentType, obj.experimentAxis, ~, ~, obj.APResolution,...
                 Channel1, Channel2,~, ~,  ~, ~, ~,...
                 ~, ~, ~, ~, ~, ~, ~, Channel3,~,~, ~, obj.DVResolution]...
-                = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
+                = getExperimentDataFromMovieDatabase(Prefix, movieDatabase, obj.userResultsFolder);
                         
             obj.Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
             
@@ -139,8 +149,7 @@ classdef liveExperiment
             
             obj.spotChannels = getCoatChannel(Channel1, Channel2, Channel3);
             
-            obj.anaphaseFrames = retrieveAnaphaseFrames(obj.Prefix);
-            obj.hasAnaphaseFile=sum(contains(obj.resultsDirectory{:, 1}, 'anaphaseFrames'));
+            obj.anaphaseFrames = retrieveAnaphaseFrames(obj.Prefix, obj.userResultsFolder);
             if numel(obj.anaphaseFrames) < 6
                 obj.anaphaseFrames = vertcat(obj.anaphaseFrames, nan(6-numel(obj.anaphaseFrames), 1));
             end

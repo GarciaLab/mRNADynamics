@@ -1,6 +1,8 @@
-function [anaphaseFrames, anaphaseFile] = retrieveAnaphaseFrames(Prefix)
+function [anaphaseFrames, anaphaseFile] = retrieveAnaphaseFrames(Prefix, DropboxFolder)
 
-[~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix);
+if nargin < 2
+    [~, ~, DropboxFolder] = DetermineLocalFolders(Prefix);
+end
 
 anaphaseFile = [DropboxFolder,filesep,Prefix,filesep, 'anaphaseFrames.mat'];
 

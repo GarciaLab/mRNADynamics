@@ -1,5 +1,6 @@
 classdef testExport_2015_07_25_P2P_75uW_bi_short < matlab.unittest.TestCase
-%runs the export data process and compares preprocessed data with a known result set
+%runs the export data process and
+%compares preprocessed data with a known result set
 
   properties
       %Hardcoded with the path of the experiment that the test will use
@@ -22,4 +23,3 @@ classdef testExport_2015_07_25_P2P_75uW_bi_short < matlab.unittest.TestCase
 
   end
 end
-
