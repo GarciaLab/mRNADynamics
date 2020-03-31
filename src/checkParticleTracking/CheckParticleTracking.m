@@ -373,9 +373,9 @@ while (cc ~= 'x')
     cptState.updateCurrentParticleIndex();
 
     %This is the position of the current particle
-    [xTrace, yTrace] = cptState.getXYTraces();
+    [xTrace, yTrace] = cptState.getXYTraces(x, y);
     
-    cptState.updateZIndex(z);
+    cptState.updateZIndex(x, y, z);
     
     cptState.processImageMatrices(multiView, nFrames, nSlices, nDigits, blankImage, currentNC,...
             ncRange, NC, preMovie, movieMat, maxMat, PreProcPath, FilePrefix, Prefix, DropboxFolder);
