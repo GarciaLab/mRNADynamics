@@ -127,8 +127,8 @@ classdef liveExperiment
             obj.hasDoGs = exist([obj.procFolder, 'dogs'], 'dir');
             
             obj.hasRawStacks = exist([obj.preFolder, 'stacks'], 'dir');
-            obj.hasMovieMatFile = exist([obj.preFolder, 'movieMatCh1.mat'], 'file');
-            obj.hasHisMatFile = exist([obj.preFolder, 'hisMat.mat'], 'file');
+            obj.hasMovieMatFile = exist([obj.preFolder, filesep, Prefix, '_movieMatCh1.mat'], 'file');
+            obj.hasHisMatFile = exist([obj.preFolder, filesep, Prefix, '_hisMat.mat'], 'file');
             
             [~, obj.experimentType, obj.experimentAxis, ~, ~, obj.APResolution,...
                 Channel1, Channel2,~, ~,  ~, ~, ~,...

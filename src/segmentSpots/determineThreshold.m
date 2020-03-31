@@ -39,9 +39,9 @@ end
 thisExperiment = liveExperiment(Prefix);
 % loads information needed to loop through DoGs
 
-ProcPath = thisExperiment.userProcPath;
+ProcPath = thisExperiment.userProcFolder;
 
-FrameInfo = thisExperiment.Prefix;
+FrameInfo = getFrameInfo(thisExperiment);
 
 zSize = FrameInfo(1).NumberSlices + 2;
 

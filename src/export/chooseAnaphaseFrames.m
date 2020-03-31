@@ -39,15 +39,17 @@ end
 
 
 thisExperiment = liveExperiment(Prefix);
-if ~isempty(Prefix)
+
+if ~isempty(Prefix) 
+   
+      
+    Channel1 = thisExperiment.Channel1;
+    Channel2 = thisExperiment.Channel2;
+    Channel3 = thisExperiment.Channel3;
     
-    [~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix);
+    DropboxFolder = thisExperiment.userResultsFolder;
+    PreProcPath = thisExperiment.userPreFolder;
     
-    [~,~,DropboxFolder,~, PreProcPath,...
-        ~, ~, ~,Channel1,Channel2,~,...
-        Channel3, ~, movieDatabaseFolder, movieDatabase]...
-        = readMovieDatabase(Prefix);
-       
     movieMat = getMovieMat(thisExperiment);
     
     projectionTypeFile = [DropboxFolder,filesep,Prefix,filesep, 'ProjectionType.mat'];
@@ -77,11 +79,6 @@ if ~isempty(Prefix)
     if exist('C:\Users\Armando\Desktop\embryo_recorded_as_unhealthy.m4a', 'file')
         [y, Fs] = audioread('C:\Users\Armando\Desktop\embryo_recorded_as_unhealthy.m4a');
     end
-    
-    
-    %     load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo');
-    
-    %     hisFolder = [PreProcPath, filesep, Prefix, filesep, Prefix];
     
 end
 

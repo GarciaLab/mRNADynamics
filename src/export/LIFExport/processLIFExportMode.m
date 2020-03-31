@@ -169,7 +169,8 @@ if ~skipExtraction
     if nuclearGUI && shouldExportNuclearProjections
         
         if ~shouldExportMovieFiles
-            movieMat = loadMovieMat([PreProcFolder, filesep, Prefix, '_movieMat.mat']);
+%             movieMat = loadMovieMat([PreProcFolder, filesep, Prefix, '_movieMat.mat']);
+            movieMat = getMovieMat(liveExperiment(Prefix));
         end
         
         [~, ~, ~, hisMat] = chooseAnaphaseFrames(...

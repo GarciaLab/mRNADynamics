@@ -13,8 +13,8 @@ maxNucleusStep = getDefaultParameters(FrameInfo,'max Interphase Displacement')..
     *time_resolution/60*nucleusDiameter/space_resolution * ExpandedSpaceTolerance;
 mapping = zeros(size(nucleiFrame1,1),1);
 
-frame1 = double(squeeze(hisMat(:, :, frameNumber1)));
-frame2 = double(squeeze(hisMat(:, :, frameNumber2)));
+frame1 = double(hisMat(:, :, frameNumber1));
+frame2 = double(hisMat(:, :, frameNumber2));
 
 xDim = size(frame1, 2);
 yDim = size(frame1, 1);
