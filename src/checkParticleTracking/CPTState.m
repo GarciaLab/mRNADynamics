@@ -232,7 +232,7 @@ classdef CPTState < handle
             end
         end
 
-        function processImageMatrices(this, multiView, nFrames, nSlices, nDigits, blankImage, currentNC...
+        function processImageMatrices(this, multiView, nFrames, nSlices, nDigits, blankImage, currentNC,...
             ncRange, NC, preMovie, movieMat, maxMat, PreProcPath, FilePrefix, Prefix, DropboxFolder)
             if strcmpi(this.projectionMode, 'None')
                 if ~preMovie

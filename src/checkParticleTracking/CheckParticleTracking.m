@@ -301,6 +301,8 @@ end
 if multiView
     multiFig = figure;
     blankImage = zeros(cptState.FrameInfo(1).LinesPerFrame, cptState.FrameInfo(1).PixelsPerLine);
+else
+    blankImage = []; % dummy, to enable calling CTPState for this later
 end
 
 
@@ -383,7 +385,7 @@ while (cc ~= 'x')
         cptState.ManualZFlag = 0;
     end
     
-    cptState.processImageMatrices(multiView, nFrames, nSlices, nDigits, blankImage, currentNC...
+    cptState.processImageMatrices(multiView, nFrames, nSlices, nDigits, blankImage, currentNC,...
             ncRange, NC, preMovie, movieMat, maxMat, PreProcPath, FilePrefix, Prefix, DropboxFolder);
     
     if multiView && ~exist('subAx', 'var')
