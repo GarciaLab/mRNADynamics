@@ -269,9 +269,7 @@ end
 ZoomRange = 50;
 snipImageHandle = [];
 CurrentSnippet = [];
-oim = [];
 ImageHandle = [];
-ellipseHandles = {};
 spotHandles = {};
 ellipseHisHandles = {};
 
@@ -490,8 +488,8 @@ while (cc ~= 'x')
         else
             hisImage = squeeze(hisMat(cptState.CurrentFrame, :,:));
         end
-        [oim, ellipseHandles] = displayOverlays(overlayAxes, cptState, SpeedMode, ShowThreshold2, Overlay, nFrames, UseSchnitz, ZoomRange, fish, subAx,...
-            HisOverlayFigAxes, oim, ellipseHandles, hisImage);
+        displayOverlays(overlayAxes, cptState, SpeedMode, ShowThreshold2, Overlay, nFrames, UseSchnitz, ZoomRange, fish, subAx,...
+            HisOverlayFigAxes, hisImage);
         
     else
         displayOverlays(overlayAxes, cptState, SpeedMode, ShowThreshold2, Overlay, nFrames, UseSchnitz, ZoomRange, fish, subAx);

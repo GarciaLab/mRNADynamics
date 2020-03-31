@@ -215,6 +215,18 @@ classdef CPTState < handle
             xNonFlagged = x(IndexNonFlaggedParticles);
             yNonFlagged = y(IndexNonFlaggedParticles);
         end
+
+        function [DaughterE, DaughterD, Mother] = getMotherDaughters(this)
+            if isfield(this.schnitzcells, 'E')
+                DaughterE = this.schnitzcells(this.getCurrentParticle().Nucleus).E;
+                DaughterD = this.schnitzcells(this.getCurrentParticle().Nucleus).D;
+                Mother = this.schnitzcells(this.getCurrentParticle().Nucleus).P;
+            else
+                DaughterE = 0;
+                DaughterD = 0;
+                Mother = 0;
+            end
+        end
     end
 end
 

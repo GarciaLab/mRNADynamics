@@ -1,7 +1,6 @@
-function [hisOverlayHandle, ellipseHandles] =...
-    displayOverlays(overlayAxes, cptState, SpeedMode, ShowThreshold2,...
+function displayOverlays(overlayAxes, cptState, SpeedMode, ShowThreshold2,...
     Overlay, numFrames, UseSchnitz, ZoomRange, fish, multiAx,...
-    HisOverlayFigAxes, hisOverlayHandle, ellipseHandles, ImageHisMat)
+    HisOverlayFigAxes, ImageHisMat)
 
 EllipseHandle = [];
 EllipseHandleYellow = [];
@@ -21,8 +20,6 @@ end
 CurrentParticleIndex = cptState.getCurrentParticleIndex();
 xTrace = x(CurrentParticleIndex);
 yTrace = y(CurrentParticleIndex);
-
-numParticles = cptState.numParticles();
 
 ApprovedParticles = [cptState.getCurrentChannelParticles().Approved];
 
@@ -49,7 +46,7 @@ plot(overlayAxes,xTrace,yTrace,'og')
 hold(overlayAxes,'off')
 
 if isfield(cptState.FrameInfo, 'nc')
-    set(Overlay,'Name',['Particle: ',num2str(cptState.CurrentParticle),'/',num2str(numParticles),...
+    set(Overlay,'Name',['Particle: ',num2str(cptState.CurrentParticle),'/',num2str(cptState.numParticles()),...
         ', Frame: ',num2str(cptState.CurrentFrame),'/',num2str(numFrames),...
         ', Z: ',num2str(cptState.CurrentZ),'/',num2str(cptState.ZSlices),' nc: ', num2str(cptState.FrameInfo(cptState.CurrentFrame).nc),...
         ', Ch: ',num2str(cptState.CurrentChannel)])
@@ -57,22 +54,12 @@ end
 if UseSchnitz
     % Show all the nuclei in regular mode
     if ~SpeedMode
-        hold(overlayAxes,'on')
-        
-        EllipseHandle=notEllipse(cptState.Ellipses{cptState.CurrentFrame}(:,3),...
-            cptState.Ellipses{cptState.CurrentFrame}(:,4),...
-            cptState.Ellipses{cptState.CurrentFrame}(:,5),...
-            cptState.Ellipses{cptState.CurrentFrame}(:,1)+1,...
-            cptState.Ellipses{cptState.CurrentFrame}(:,2)+1,'r',10, overlayAxes);
-        hold(overlayAxes,'off')
-
+        EllipseHandle = notEllipseCPT(cptState, 'r', 10, overlayAxes);
 
         % Show the ones that have been approved
-
-        hold(overlayAxes,'on')
         schnitzCellNo=[];
         
-        for i=1:numParticles
+        for i=1:cptState.numParticles()
             currentChannelParticles = cptState.getCurrentChannelParticles();
             if currentChannelParticles(i).Approved == 1
                 try
@@ -84,12 +71,7 @@ if UseSchnitz
             end
         end
 
-        EllipseHandleBlue=notEllipse(cptState.Ellipses{cptState.CurrentFrame}(schnitzCellNo,3),...
-            cptState.Ellipses{cptState.CurrentFrame}(schnitzCellNo,4),...
-            cptState.Ellipses{cptState.CurrentFrame}(schnitzCellNo,5),...
-            cptState.Ellipses{cptState.CurrentFrame}(schnitzCellNo,1)+1,...
-            cptState.Ellipses{cptState.CurrentFrame}(schnitzCellNo,2)+1,'b',10, overlayAxes);
-        hold(overlayAxes,'off')
+        EllipseHandleBlue = notEllipseCellCPT(cptState, schnitzCellNo, 'b', 10, overlayAxes);
     end
 
     % Show the corresponding nucleus
@@ -98,46 +80,18 @@ if UseSchnitz
         NucleusIndex = cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).cellno(SchnitzIndex);
 
         if ~isempty(NucleusIndex)
-            hold(overlayAxes,'on')
-            EllipseHandleGreen=ellipse(cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,3),...
-                cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,4),...
-                cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,5),...
-                cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,1)+1,...
-                cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,2)+1,[],10, overlayAxes);
-            set(EllipseHandleGreen,'Color','g')
-            hold(overlayAxes,'off')
-        else
-            % ('Error: Particle without an associated nucleus?')
+            EllipseHandleGreen = ellipseCellCPT(cptState, NucleusIndex, 'g', 10, overlayAxes);
         end
-
-
 
         % Show the daughter nuclei if applicable
-        if isfield(cptState.schnitzcells, 'E')
-            DaughterE = cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).E;
-            DaughterD = cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).D;
-            Mother = cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).P;
-        else
-            DaughterE = 0;
-            DaughterD = 0;
-            Mother = 0;
-        end
+        [DaughterE, DaughterD, Mother] = cptState.getMotherDaughters();
 
         if DaughterE~=0
             SchnitzIndex = find(cptState.schnitzcells(DaughterE).frames == cptState.CurrentFrame);
             NucleusIndex = cptState.schnitzcells(DaughterE).cellno(SchnitzIndex);
 
             if ~isempty(NucleusIndex)
-                hold(overlayAxes,'on')
-                EllipseHandleWhite=[EllipseHandleWhite,ellipse(cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,3),...
-                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,4),...
-                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,5),...
-                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,1)+1,...
-                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,2)+1, [],10,overlayAxes)];
-
-                hold(overlayAxes,'off')
-            else
-                %('Error: Particle without an associated nucleus?')
+                EllipseHandleWhite = [EllipseHandleWhite,ellipseCellCPT(cptState, NucleusIndex, 'w', 10, overlayAxes)];
             end
         end
 
@@ -146,40 +100,17 @@ if UseSchnitz
             NucleusIndex = cptState.schnitzcells(DaughterD).cellno(SchnitzIndex);
 
             if ~isempty(NucleusIndex)
-                hold(overlayAxes,'on')
-                EllipseHandleWhite=[EllipseHandleWhite,ellipse(cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,3),...
-                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,4),...
-                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,5),...
-                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,1)+1,...
-                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,2)+1,[],10,overlayAxes)];
-                hold(overlayAxes,'off')
-            else
-                %('Error: Particle without an associated nucleus?')
+                EllipseHandleWhite = [EllipseHandleWhite,ellipseCellCPT(cptState, NucleusIndex, 'w', 10, overlayAxes)];
             end
         end
 
-        if ~isempty(EllipseHandleWhite)
-            set(EllipseHandleWhite,'Color','w')
-        end
-
         %Show the mother nucleus if applicable
-    
-
         if Mother~=0
             SchnitzIndex = find(cptState.schnitzcells(Mother).frames == cptState.CurrentFrame);
             NucleusIndex = cptState.schnitzcells(Mother).cellno(SchnitzIndex);
 
             if ~isempty(NucleusIndex)
-                hold(overlayAxes,'on')
-                EllipseHandleYellow=ellipse(cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,3),...
-                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,4),...
-                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,5),...
-                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,1)+1,...
-                    cptState.Ellipses{cptState.CurrentFrame}(NucleusIndex,2)+1,[],10,overlayAxes);
-                set(EllipseHandleYellow,'Color','y')
-                hold(overlayAxes,'off')
-            else
-                %('Error: Particle without an associated nucleus?')
+                EllipseHandleYellow=ellipseCellCPT(cptState, NucleusIndex, 'y', 10, overlayAxes);
             end
         end
 
@@ -265,7 +196,7 @@ if cptState.UseHistoneOverlay
         HisOverlayImageMat=cat(3,mat2gray(ImageHisMat,double(cptState.DisplayRange)),mat2gray(cptState.ImageMat),zeros(size(cptState.ImageMat)));
     end
     
-    hisOverlayHandle = imshow(HisOverlayImageMat,[],'Border','Tight','Parent',HisOverlayFigAxes);
+    imshow(HisOverlayImageMat,[],'Border','Tight','Parent',HisOverlayFigAxes);
     
     hold(HisOverlayFigAxes,'on')
     if ~SpeedMode
@@ -303,7 +234,4 @@ if cptState.UseHistoneOverlay
 
 end
 
-ellipseHandles = {EllipseHandle,EllipseHandleYellow,EllipseHandleBlue,EllipseHandleWhite,EllipseHandleGreen};
-
 end
-
