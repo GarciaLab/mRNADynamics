@@ -6,6 +6,8 @@ classdef CPTState < handle
         schnitzcells
         FrameInfo
         ImageMat
+        storedTimeProjection
+        multiImage
 
         Ellipses
         nucleiModified
@@ -60,6 +62,8 @@ classdef CPTState < handle
             this.schnitzcells = schnitzcells;
             this.FrameInfo = FrameInfo;
             this.ImageMat = [];
+            this.storedTimeProjection = []; % Don't need to wait for timeProjection to finish each time its called
+            this.multiImage = {};
             
             this.Ellipses = Ellipses;
             this.nucleiModified = false;
@@ -225,6 +229,64 @@ classdef CPTState < handle
                 DaughterE = 0;
                 DaughterD = 0;
                 Mother = 0;
+            end
+        end
+
+        function processImageMatrices(this, multiView, nFrames, nSlices, nDigits, blankImage, currentNC...
+            ncRange, NC, preMovie, movieMat, maxMat, PreProcPath, FilePrefix, Prefix, DropboxFolder)
+            if strcmpi(this.projectionMode, 'None')
+                if ~preMovie
+                    this.ImageMat = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
+                        FilePrefix, iIndex(this.CurrentFrame, nDigits), '_z', iIndex(this.CurrentZ, 2), this.nameSuffix, '.tif']);
+                else
+                    if nFrames > 1
+                        this.ImageMat = squeeze(movieMat(this.CurrentZ, this.CurrentFrame, :, :));
+                    else
+                        this.ImageMat = squeeze(movieMat(this.CurrentZ, :, :));
+                    end
+                end
+                if multiView
+                    for z = 1:-1:-1
+                        for f = -1:1
+                            if any( 1:nSlices == this.CurrentZ + z) && any( 1:nFrames == this.CurrentFrame + f)
+                                this.multiImage{z+2, f+2} = squeeze(movieMat(this.CurrentZ+z, this.CurrentFrame+f,:,:));
+                            else
+                                this.multiImage{z+2, f+2} = blankImage;
+                            end
+                        end
+                    end
+                end
+            elseif strcmpi(this.projectionMode, 'Max Z')
+                if preMovie
+                    if nFrames > 1
+                        this.ImageMat = squeeze(maxMat(this.CurrentFrame,:,:));
+                    else
+                        this.ImageMat = maxMat;
+                    end
+                else
+                    this.ImageMat = zProjections(Prefix, this.coatChannel, this.CurrentFrame, this.ZSlices, nDigits, DropboxFolder, PreProcPath, this.FrameInfo, 'max', this.nWorkers);
+                end
+            elseif strcmpi(this.projectionMode, 'Max Z and Time')
+                if preMovie
+                    if isempty(maxTimeCell)
+                        this.ImageMat = squeeze(max(max(movieMat(:,ncFramesFull(currentNC):ncFramesFull(currentNC+1),:,:), [], 3), [], 2)); % ch z t x y
+                    end
+                else
+                    if isempty(this.storedTimeProjection)
+                        
+                        if ncRange
+                            this.ImageMat = timeProjection(Prefix, this.coatChannel, this.FrameInfo, DropboxFolder, PreProcPath, 'nc', NC);
+                            this.storedTimeProjection = this.ImageMat;
+                        else
+                            this.ImageMat = timeProjection(Prefix, this.CurrentChannel, this.FrameInfo, DropboxFolder, PreProcPath);
+                            this.storedTimeProjection = this.ImageMat;
+                        end
+                        
+                    else
+                        this.ImageMat = this.storedTimeProjection;
+                    end
+                    
+                end
             end
         end
     end
