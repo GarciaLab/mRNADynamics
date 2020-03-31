@@ -1,7 +1,6 @@
-function [hisOverlayHandle, ellipseHandles] =...
-    displayOverlays(overlayAxes, cptState, SpeedMode, ShowThreshold2,...
+function displayOverlays(overlayAxes, cptState, SpeedMode, ShowThreshold2,...
     Overlay, numFrames, UseSchnitz, ZoomRange, fish, multiAx,...
-    HisOverlayFigAxes, hisOverlayHandle, ellipseHandles, ImageHisMat)
+    HisOverlayFigAxes, ImageHisMat)
 
 EllipseHandle = [];
 EllipseHandleYellow = [];
@@ -197,7 +196,7 @@ if cptState.UseHistoneOverlay
         HisOverlayImageMat=cat(3,mat2gray(ImageHisMat,double(cptState.DisplayRange)),mat2gray(cptState.ImageMat),zeros(size(cptState.ImageMat)));
     end
     
-    hisOverlayHandle = imshow(HisOverlayImageMat,[],'Border','Tight','Parent',HisOverlayFigAxes);
+    imshow(HisOverlayImageMat,[],'Border','Tight','Parent',HisOverlayFigAxes);
     
     hold(HisOverlayFigAxes,'on')
     if ~SpeedMode
@@ -235,7 +234,4 @@ if cptState.UseHistoneOverlay
 
 end
 
-ellipseHandles = {EllipseHandle,EllipseHandleYellow,EllipseHandleBlue,EllipseHandleWhite,EllipseHandleGreen};
-
 end
-
