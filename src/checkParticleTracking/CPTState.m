@@ -289,6 +289,25 @@ classdef CPTState < handle
                 end
             end
         end
+
+        function [xTrace, yTrace] = getXYTraces(this, x, y)
+            xTrace = x(this.CurrentParticleIndex);
+            yTrace = y(this.CurrentParticleIndex);
+        end
+
+        function updateZIndex(this, x, y, z)
+            [xTrace, yTrace] = this.getXYTraces(x, y);
+            
+            if (~isempty(xTrace)) && (~this.ManualZFlag)
+                this.CurrentZ = z(this.CurrentParticleIndex);
+                this.CurrentZIndex = find(this.getCurrentParticleFit().z == this.CurrentZ);
+                this.ManualZFlag = 0;
+            end
+        end
+
+        function updateCurrentParticleIndex(this)
+            this.CurrentParticleIndex = this.getCurrentParticleIndex();
+        end
     end
 end
 

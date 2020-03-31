@@ -358,7 +358,7 @@ while (cc ~= 'x')
     currentNC = inds(end);
     
     %Get the coordinates of all the spots in this frame
-    [x, y, z] = SpotsXYZ(cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame));
+    [x, y, z] = SpotsXYZ(cptState.getCurrentFrameSpots());
     
     %If the approved field does not exist create it
     if ~isfield(cptState.Particles{cptState.CurrentChannel}, 'Approved')
@@ -370,20 +370,12 @@ while (cc ~= 'x')
     end
     
     %Pull out the right particle if it exists in this frame
-    cptState.CurrentParticleIndex = ...
-        cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Index(cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Frame == ...
-        cptState.CurrentFrame);
+    cptState.updateCurrentParticleIndex();
+
     %This is the position of the current particle
-    xTrace = x(cptState.CurrentParticleIndex);
-    yTrace = y(cptState.CurrentParticleIndex);
+    [xTrace, yTrace] = cptState.getXYTraces(x, y);
     
-    if (~isempty(xTrace)) && (~cptState.ManualZFlag)
-        cptState.CurrentZ = z(cptState.CurrentParticleIndex);
-        cptState.CurrentZIndex = find(...
-            cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame).Fits(cptState.CurrentParticleIndex).z == ...
-            cptState.CurrentZ);
-        cptState.ManualZFlag = 0;
-    end
+    cptState.updateZIndex(x, y, z);
     
     cptState.processImageMatrices(multiView, nFrames, nSlices, nDigits, blankImage, currentNC,...
             ncRange, NC, preMovie, movieMat, maxMat, PreProcPath, FilePrefix, Prefix, DropboxFolder);
