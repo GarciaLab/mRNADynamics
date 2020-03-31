@@ -56,7 +56,7 @@
 
 function log = segmentSpots(Prefix, Threshold, varargin)
 
-cleanupObj = onCleanup(@myCleanupFun);
+% cleanupObj = onCleanup(@myCleanupFun);
 
 warning('off', 'MATLAB:MKDIR:DirectoryExists');
 

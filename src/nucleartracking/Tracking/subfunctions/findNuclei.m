@@ -68,7 +68,7 @@ localMaxMask = imbinarize(mat2gray(localMaxMask),graythresh(mat2gray(localMaxMas
 localMaxMask(round(length(localMaxMask)/2),round(length(localMaxMask)/2))  = 0;
 
 
-%% Main bodycurre
+%% Main body
 
 % Load image
 img = double(squeeze(hisMat(:, :, frameNumber)));
@@ -108,7 +108,8 @@ thresh = graythresh(mat2gray(nuc1));
 indNuclei = imbinarize(mat2gray(nuc1),thresh);
 
 %% Check the segmentation if a target number was provided.
-if exist('targetNumber','var') && numel(targetNumber) == 1 && isnumeric(targetNumber) && abs(sum(indNuclei(1:numel(nuc1)))-targetNumber)/targetNumber > 0.25
+if exist('targetNumber','var') && numel(targetNumber) == 1 &&...
+    isnumeric(targetNumber) && abs(sum(indNuclei(1:numel(nuc1)))-targetNumber)/targetNumber > 0.25
     % Enforce a certain number of nuclei on the current frame, plus or
     % minus 'perc' percent
     perc = 25;

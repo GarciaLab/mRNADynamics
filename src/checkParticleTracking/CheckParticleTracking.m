@@ -244,12 +244,15 @@ end
 if ~isempty(cptState.Particles{cptState.CurrentChannelIndex})
     cptState.CurrentFrame = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Frame(CurrentFrameWithinParticle);
 
-else error('Looks like the Particles structure is empty. There''s nothing to check.'); end
+else, error('Looks like the Particles structure is empty. There''s nothing to check.'); end
 
 %load the movies
 movieMat = getMovieMat(thisExperiment);
 hisMat = getHisMat(thisExperiment);
-maxMat = max(movieMat(:,:,:,:), [],3);
+persistent maxMat
+if isempty(maxMat) || size(maxMat, 4) ~= nFrames
+    maxMat = max(movieMat(:,:,:,:), [],3);
+end
 
 
 ZoomRange = 50;
@@ -420,15 +423,22 @@ while (cc ~= 'x')
     
     set(0, 'CurrentFigure', Overlay);
     %     if isempty(hIm)
-    ImageHandle = imshow(cptState.ImageMat, cptState.DisplayRangeSpot, 'Border', 'Tight', 'Parent', overlayAxes, ...
+    ImageHandle = imshow(cptState.ImageMat,...
+        cptState.DisplayRangeSpot, 'Border', 'Tight', 'Parent', overlayAxes, ...
         'InitialMagnification', 'fit');
     if multiView
+        displayRangeSpot = cptState.DisplayRangeSpot;
+        if isempty(displayRangeSpot)
+            displayRangeSpot = [median(cptState.ImageMat(:)), max(cptState.ImageMat(:))];
+            cptState.DisplayRangeSpot = displayRangeSpot;
+        end
         for z = 1:size(multiImage, 1)
             for f= 1:size(multiImage, 2)
                 if ~isempty(subAx{z,f}.Children)
                     subAx{z,f}.Children.CData = multiImage{z, f};
+                    subAx{z, f}.CLim = displayRangeSpot;                   
                 else
-                    imshow(multiImage{z, f}, cptState.DisplayRangeSpot, 'Border', 'Tight', 'Parent', subAx{z,f},...
+                    imshow(multiImage{z, f}, displayRangeSpot, 'Border', 'Tight', 'Parent', subAx{z,f},...
                         'InitialMagnification', 'fit');
                 end
                 title(subAx{z,f},['z: ', num2str(cptState.CurrentZ + z - 2), ' frame: ', num2str(cptState.CurrentFrame + f - 2)])
@@ -481,15 +491,17 @@ while (cc ~= 'x')
             plotTraceSettings);
     end
     
-    
-    % PLOT Z SLICE RELATED FIGURES
+
+ %AR- disabled until it's fast enough to be useful.
+ %too slow at present.
+ 
+%     % PLOT Z SLICE RELATED FIGURES
     plotzvars = {zProfileFigAxes, zTraceAxes, ExperimentType, xTrace, cptState, plotTraceSettings, fish};
     if exist('MaxZProfile', 'var')
         plotzvars = [plotzvars, MaxZProfile];
     end
-
     MaxZProfile = plotZFigures(plotzvars{:});
-    
+%     
     set(0, 'CurrentFigure', Overlay);
     
     cc = getUserKeyInput(Overlay);

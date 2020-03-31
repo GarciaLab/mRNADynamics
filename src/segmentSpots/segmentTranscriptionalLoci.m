@@ -16,9 +16,6 @@ radiusScale = 1.3; %dilate the nuclear mask by this factor
 thisExperiment = liveExperiment(Prefix);
 pixelSize_nm = thisExperiment.pixelSize_nm;
 
-if shouldMaskNuclei
-    if thisExperiment.hasEllipsesFile, Ellipses = getEllipses(thisExperiment); end
-else Ellipses = []; end
 
 dogs = [];
 
@@ -26,11 +23,14 @@ DogOutputFolder = [thisExperiment.procFolder, 'dogs', filesep];
 
 dogDir = dir([DogOutputFolder, '*_ch0', num2str(channelIndex), '.*']);
 
-haveStacks = any(cellfun(@(x) contains(x, 'dogStack'), {dogDir.name}));
-
-havePlanes = any(cellfun(@(x) contains(x, '_z'), {dogDir.name}));
-
 haveProbs = any(cellfun(@(x) contains(x, 'prob'), {dogDir.name}));
+%stacks won't be indexed by _z
+haveStacks = any(cellfun(@(x) ~contains(x, '_z'), {dogDir.name}));
+
+% havePlanes = any(cellfun(@(x) contains(x, '_z'), {dogDir.name}));
+% haveMats = any(cellfun(@(x) contains(x, '.mat'), {dogDir.name}));
+% haveTifs = any(cellfun(@(x) contains(x, '.tif'), {dogDir.name}));
+% haveDogPlanes = any(cellfun(@(x) contains(x, 'dog_'), {dogDir.name}));
 
 waitbarFigure = waitbar(0, 'Segmenting spots');
 set(waitbarFigure, 'units', 'normalized', 'position', [0.4, .15, .25,.1]);
@@ -95,6 +95,13 @@ movieMatCh = double(movieMat(:, :, :, :, channelIndex));
 
 yDim = size(movieMat, 1);
 xDim = size(movieMat, 2);
+
+if shouldMaskNuclei
+    if thisExperiment.hasEllipsesFile
+        Ellipses = getEllipses(thisExperiment); 
+        Ellipses = filterEllipses(Ellipses, [yDim, xDim]);
+    end
+else Ellipses = []; end
 
 % dogMat = loadDogMat(Prefix);
 
@@ -197,7 +204,7 @@ for currentFrame = initialFrame:lastFrame
         
         % apply nuclear mask if it exists
         if shouldMaskNuclei && ~isempty(Ellipses)
-            
+    
             nuclearMask = makeNuclearMask(ellipseFrame, [yDim xDim], radiusScale);
             im_thresh = im_thresh & nuclearMask;
             

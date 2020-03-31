@@ -136,7 +136,7 @@ end
 nFrames = size(hisMat, 3);
 %Get information about the image size
 % HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(1).name]);
-HisImage = squeeze(hisMat(:,:,1));
+HisImage = hisMat(:,:,1);
 DisplayRange=[min(min(HisImage)),max(max(HisImage))];
 
 
@@ -226,7 +226,7 @@ while (cc~='x')
     
     %refresh ellipses plots by destroying and remaking
     if exist('PlotHandle', 'var')
-        cellfun(@delete, PlotHandle); 
+        cellfun(@delete, PlotHandle);
     end
     
     PlotHandle = cell(NCentroids, 1);
@@ -236,9 +236,9 @@ while (cc~='x')
             n = k;
             PlotHandle{k} = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
                 'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
-            'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)), 'FaceAlpha', 0,...
-            'InteractionsAllowed', 'none');
-
+                'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)), 'FaceAlpha', 0,...
+                'InteractionsAllowed', 'none');
+            
             if size(Ellipses{CurrentFrame}, 2) > 8
                 schnitzInd = Ellipses{CurrentFrame}(k, 9);
             else
@@ -253,19 +253,19 @@ while (cc~='x')
                 set(PlotHandle{k}, 'StripeColor', clrmp(schnitzInd, :), 'Color', clrmp(schnitzInd, :),'Linewidth', 2);
             else
                 set(PlotHandle{k}, 'StripeColor', 'w', 'Color', 'w','Linewidth', 2);
-%                 new_handle = copyobj(PlotHandle{k},overlayAxes);
-%                 set(new_handle, 'StripeColor', 'k', 'Color', 'k', 'Linewidth', 2);
+                %                 new_handle = copyobj(PlotHandle{k},overlayAxes);
+                %                 set(new_handle, 'StripeColor', 'k', 'Color', 'k', 'Linewidth', 2);
             end
         end
     else
         for k=1:NCentroids
             n = k;
-              
+            
             PlotHandle{k} = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
                 'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
-            'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)), 'FaceAlpha', 0,...
-            'InteractionsAllowed', 'none');
-        
+                'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)), 'FaceAlpha', 0,...
+                'InteractionsAllowed', 'none');
+            
         end
     end
     
@@ -378,7 +378,7 @@ while (cc~='x')
         Ellipses = EllipsesCopy;
         delete(roi);
         clear EllipsesCopy;
-    
+        
     elseif (ct~=0)&(cc=='c') & CurrentFrame > 1
         %copy nuclear information from previous frame
         
@@ -387,16 +387,16 @@ while (cc~='x')
             registerEllipses(Ellipses{CurrentFrame},...
             HisImage, hisMat(:, :, CurrentFrame-1));
         
-    elseif (ct~=0)&(cc=='v') & CurrentFrame < nFrames 
+    elseif (ct~=0)&(cc=='v') & CurrentFrame < nFrames
         %copy nuclear information from next frame
         
-        Ellipses{CurrentFrame} = Ellipses{CurrentFrame+1};           
+        Ellipses{CurrentFrame} = Ellipses{CurrentFrame+1};
         Ellipses{CurrentFrame} =...
             registerEllipses(Ellipses{CurrentFrame},...
             HisImage, hisMat(:, :, CurrentFrame+1));
         
         
-    elseif (ct~=0)&(cc=='{') 
+    elseif (ct~=0)&(cc=='{')
         %resegment from scratch
         
         Ellipses{CurrentFrame}=[];
@@ -447,7 +447,7 @@ while (cc~='x')
     elseif (ct~=0)&(cc=='\')  %resegment with ksnakecircles
         
         [~, circles] = kSnakeCircles(HisImage, pixelSize/1000);
-%         circles(:, 4) = circles(:, 3);
+        %         circles(:, 4) = circles(:, 3);
         circles(:, 6:9) = zeros(size(circles, 1), 4);
         Ellipses{CurrentFrame} = circles;
         
@@ -457,6 +457,7 @@ while (cc~='x')
     end
 end
 
+Ellipses = filterEllipses(Ellipses, [thisExperiment.yDim, thisExperiment.xDim]);
 
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v6')
 
