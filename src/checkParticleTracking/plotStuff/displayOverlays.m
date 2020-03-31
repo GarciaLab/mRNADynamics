@@ -27,13 +27,13 @@ numParticles = cptState.numParticles();
 ApprovedParticles = [cptState.getCurrentChannelParticles().Approved];
 
 % Approved particles
-[xApproved, yApproved] = cptState.getApprovedParticles();
+[xApproved, yApproved] = cptState.getApprovedParticles(x, y);
 
 % Disapproved particles
-[xDisapproved, yDisapproved] = cptState.getDisapprovedParticles();
+[xDisapproved, yDisapproved] = cptState.getDisapprovedParticles(x, y);
 
 % Non-flagged particles (these are particles that have not been processed)
-[xNonFlagged, yNonFlagged] = cptState.getNonFlaggedParticles();
+[xNonFlagged, yNonFlagged] = cptState.getNonFlaggedParticles(x, y);
 
 % Show all particles in regular mode
 if ~SpeedMode
@@ -71,11 +71,13 @@ if UseSchnitz
 
         hold(overlayAxes,'on')
         schnitzCellNo=[];
+        
         for i=1:numParticles
-            if cptState.getCurrentChannelParticles()(i).Approved == 1
+            currentChannelParticles = cptState.getCurrentChannelParticles();
+            if currentChannelParticles(i).Approved == 1
                 try
-                    schnitzIndex=find((cptState.schnitzcells(cptState.getCurrentChannelParticles()(i).Nucleus).frames) == cptState.CurrentFrame);
-                    schnitzCellNo=[schnitzCellNo,cptState.schnitzcells(cptState.getCurrentChannelParticles()(i).Nucleus).cellno(schnitzIndex)];
+                    schnitzIndex = find((cptState.schnitzcells(currentChannelParticles(i).Nucleus).frames) == cptState.CurrentFrame);
+                    schnitzCellNo = [schnitzCellNo,cptState.schnitzcells(currentChannelParticles(i).Nucleus).cellno(schnitzIndex)];
                 catch
                     % can't identify the nucleus for this particle.
                 end
@@ -219,8 +221,9 @@ if cptState.ZoomMode
     if length(MinIndex)>1
         MinIndex=MinIndex(1);
     end
+    currentChannelSpots = cptState.getCurrentChannelSpots();
     [cptState.xForZoom,cptState.yForZoom]=...
-        SpotsXYZ(cptState.getCurrentChannelSpots()(cptState.getCurrentParticle().Frame(MinIndex)));
+        SpotsXYZ(currentChannelSpots(cptState.getCurrentParticle().Frame(MinIndex)));
 
     cptState.xForZoom = cptState.xForZoom(cptState.getCurrentParticle().Index(MinIndex));
     cptState.yForZoom = cptState.yForZoom(cptState.getCurrentParticle().Index(MinIndex));

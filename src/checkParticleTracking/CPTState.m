@@ -159,22 +159,23 @@ classdef CPTState < handle
         end
 
         function maxZIndex = getMaxZIndex(this)
-            maxZIndex = find(this.getCurrentParticleFit().z == this.getCurrentParticleFit().brightestZ)
+            maxZIndex = find(this.getCurrentParticleFit().z == this.getCurrentParticleFit().brightestZ);
         end
 
         function currentParticleIndex = getCurrentParticleIndex(this)
-            return this.getCurrentParticle().Index(this.getCurrentParticle().Frame == this.CurrentFrame)
+            currentParticleIndex = this.getCurrentParticle().Index(this.getCurrentParticle().Frame == this.CurrentFrame);
         end
 
-        function [xApproved, yApproved] = getApprovedParticles(this)
+        function [xApproved, yApproved] = getApprovedParticles(this, x, y)
             IndexApprovedParticles = [];
             numParticles = this.numParticles();
+            currentChannelParticles = this.getCurrentChannelParticles();
             
             for i = 1:numParticles
-                if sum(this.getCurrentChannelParticles()(i).Frame == this.CurrentFrame) &&...
-                        sum(this.getCurrentChannelParticles()(i).Approved == 1)
+                if sum(currentChannelParticles(i).Frame == this.CurrentFrame) &&...
+                        sum(currentChannelParticles(i).Approved == 1)
                     IndexApprovedParticles = [IndexApprovedParticles,...
-                        this.getCurrentChannelParticles()(i).Index(this.getCurrentChannelParticles()(i).Frame == this.CurrentFrame)];
+                        currentChannelParticles(i).Index(currentChannelParticles(i).Frame == this.CurrentFrame)];
                 end
             end
             
@@ -182,14 +183,15 @@ classdef CPTState < handle
             yApproved = y(IndexApprovedParticles);
         end
 
-        function [xDisapproved, yDisapproved] = getDisapprovedParticles(this)
+        function [xDisapproved, yDisapproved] = getDisapprovedParticles(this, x, y)
             IndexDisapprovedParticles=[];
             numParticles = this.numParticles();
+            currentChannelParticles = this.getCurrentChannelParticles();
 
             for i = 1:numParticles
-                if sum(this.getCurrentChannelParticles()(i).Frame == this.CurrentFrame) && sum(this.getCurrentChannelParticles()(i).Approved == -1)
+                if sum(currentChannelParticles(i).Frame == this.CurrentFrame) && sum(currentChannelParticles(i).Approved == -1)
                     IndexDisapprovedParticles=[IndexDisapprovedParticles,...
-                        this.getCurrentChannelParticles()(i).Index(this.getCurrentChannelParticles()(i).Frame == this.CurrentFrame)];
+                        currentChannelParticles(i).Index(currentChannelParticles(i).Frame == this.CurrentFrame)];
                 end
             end
 
@@ -197,15 +199,16 @@ classdef CPTState < handle
             yDisapproved = y(IndexDisapprovedParticles);
         end
 
-        function [xNonFlagged, yNonFlagged] = getNonFlaggedParticles(this)
+        function [xNonFlagged, yNonFlagged] = getNonFlaggedParticles(this, x, y)
             IndexNonFlaggedParticles = [];
             numParticles = this.numParticles();
+            currentChannelParticles = this.getCurrentChannelParticles();
 
             for i = 1:numParticles
-                if sum(this.getCurrentChannelParticles()(i).Frame == this.CurrentFrame) &&...
-                        ~(sum(this.getCurrentChannelParticles()(i).Approved == -1) || sum(this.getCurrentChannelParticles()(i).Approved == 1))
+                if sum(currentChannelParticles(i).Frame == this.CurrentFrame) &&...
+                        ~(sum(currentChannelParticles(i).Approved == -1) || sum(currentChannelParticles(i).Approved == 1))
                     IndexNonFlaggedParticles=[IndexNonFlaggedParticles,...
-                        this.getCurrentChannelParticles()(i).Index(this.getCurrentChannelParticles()(i).Frame == this.CurrentFrame)];
+                        currentChannelParticles(i).Index(currentChannelParticles(i).Frame == this.CurrentFrame)];
                 end
             end
 
