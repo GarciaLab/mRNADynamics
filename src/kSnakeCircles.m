@@ -2,14 +2,14 @@ function [mask, ellipseFrame] = kSnakeCircles(image,...
     PixelSize_um, varargin)
 
 %parameters i've found to be broadly applicable
-sigmaK= 8; 
-sigmaSnake = sigmaK;
-b = -.4; 
-s = .1;
-nIterSnakes = 100;
-mu = .1;
+sigmaK_um = .85;
+sigmaK_px = sigmaK_um / pixelSize_um;
+mu = .1; %weight of length term for chen vese  algorithm. honestly don't know what this controls
 min_rad_um = 2; % set min and max acceptable area for nucleus segmentation
 max_rad_um = 6; %this needs to be 6um for nc12. 4um for nc14
+nIterSnakes = 100;
+% b = -.4; 
+% s = .1;
 
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.
@@ -32,7 +32,7 @@ image = wiener2(image);
 %assuming the right class is 3 here. sometimes that might be wrong.
 %it's hard to decide which one is right automatically.
 %choose kMask does this. 
-kLabel= imsegkmeans(single(imgaussfilt(image,sigmaK)),3);
+kLabel= imsegkmeans(single(imgaussfilt(image,sigmaK_px)),3);
 
 kMask = kLabel == chooseKLabel(kLabel);
 
@@ -46,7 +46,7 @@ kMask = kLabel == chooseKLabel(kLabel);
 
 
 kMaskRefined= gather( chenvese( ...
-    imgaussfilt( gpuArray(image), sigmaK),...
+    imgaussfilt( gpuArray(image), sigmaK_px),...
     gpuArray(kMask), nIterSnakes, mu, 'chan') );
 
 %same issue here. sometimes the watershed is inverted. hard to pick
