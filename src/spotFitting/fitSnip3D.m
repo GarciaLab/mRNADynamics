@@ -52,7 +52,8 @@ if nSpots == 2
     nSpots = 1;
 end
 if nSpots == 2
-    [GaussParams1, GaussParams2, offset, GaussIntVec, centroid_mean, GaussSE1, GaussSE2, offsetSE, GaussIntSEVec, centroid_se] = ...
+    [GaussParams1, GaussParams2, offset, GaussIntVec, centroid_mean,...
+        GaussSE1, GaussSE2, offsetSE, GaussIntSEVec, centroid_se] = ...
         fit3DGaussian2spot(snip3D,pixelSize);
     
     % spot 1 position
