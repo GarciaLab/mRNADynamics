@@ -104,21 +104,21 @@ try
     Channel1 = Channels{1}; Channel2 = Channels{2}; Channel3 = Channels{3};
 end
 
-ch1pre =  truncateAtColon(Channel1{1});
-ch2pre =  truncateAtColon(Channel2{1});
-ch3pre =  truncateAtColon(Channel3{1});
+ch1pre =  truncateAtColon(Channel1);
+ch2pre =  truncateAtColon(Channel2);
+ch3pre =  truncateAtColon(Channel3);
 
-if ~isempty(strfind(Channel1{1}, ':'))
-    Channel1{1} = truncateAtColon(Channel1{1});
+if ~isempty(strfind(Channel1, ':'))
+    Channel1 = truncateAtColon(Channel1);
 end
-if ~isempty(strfind(Channel2{1}, ':'))
-    Channel2{1} = truncateAtColon(Channel2{1});
+if ~isempty(strfind(Channel2, ':'))
+    Channel2 = truncateAtColon(Channel2);
 end
-if ~isempty(strfind(Channel3{1}, ':'))
-    Channel3{1} = truncateAtColon(Channel3{1});
+if ~isempty(strfind(Channel3, ':'))
+    Channel3 = truncateAtColon(Channel3);
 end
 
-Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
+Channels = {Channel1, Channel2, Channel3};
 
 %construct cell to store projections for each frame separately
 projCell = cell(NFrames, 1);
@@ -460,50 +460,50 @@ uiwait(fig);
 
     function Channels = retrieveChannels()
 
-        if ~isempty(strfind(Channel1{1}, ':'))
-            Channel1{1} = truncateAtColon(Channel1{1});
+        if ~isempty(strfind(Channel1, ':'))
+            Channel1 = truncateAtColon(Channel1);
         end
         
         if any(strcmp(channel_list.Value, 'Channel 1'))
             if any(strcmp(invert_list.Value, 'Channel 1'))
-                Channel1{1} = [ch1pre, ':invertedNuclear'];
+                Channel1 = [ch1pre, ':invertedNuclear'];
             else
-                Channel1{1} = [ch1pre, ':Nuclear'];
+                Channel1 = [ch1pre, ':Nuclear'];
             end
         else
-            Channel1{1} = '';
+            Channel1 = '';
         end
         
         
         
-        if ~isempty(strfind(Channel2{1}, ':'))
-            Channel2{1} = truncateAtColon(Channel2{1});
+        if ~isempty(strfind(Channel2, ':'))
+            Channel2 = truncateAtColon(Channel2);
         end
         
         if any(strcmp(channel_list.Value, 'Channel 2'))
             if any(strcmp(invert_list.Value, 'Channel 2'))
-                Channel2{1} = [ch2pre, ':invertedNuclear'];
+                Channel2 = [ch2pre, ':invertedNuclear'];
             else
-                Channel2{1} = [ch2pre, ':Nuclear'];
+                Channel2 = [ch2pre, ':Nuclear'];
             end
         else
-            Channel2{1} = '';
+            Channel2 = '';
         end
         
         
         
-        if ~isempty(strfind(Channel3{1}, ':'))
-            Channel3{1} = truncateAtColon(Channel3{1});
+        if ~isempty(strfind(Channel3, ':'))
+            Channel3 = truncateAtColon(Channel3);
         end
         
         if any(strcmp(channel_list.Value, 'Channel 3'))
             if any(strcmp(invert_list.Value, 'Channel 3'))
-                Channel3{1} = [ch3pre, ':invertedNuclear'];
+                Channel3 = [ch3pre, ':invertedNuclear'];
             else
-                Channel3{1} = [ch3pre, ':Nuclear'];
+                Channel3 = [ch3pre, ':Nuclear'];
             end
         else
-            Channel3{1} = '';
+            Channel3 = '';
         end
         
         
