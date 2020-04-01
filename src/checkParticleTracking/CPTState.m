@@ -6,6 +6,9 @@ classdef CPTState < handle
         schnitzcells
         FrameInfo
         ImageMat
+        storedTimeProjection
+        multiImage
+        maxTimeCell
 
         Ellipses
         nucleiModified
@@ -64,6 +67,9 @@ classdef CPTState < handle
             this.schnitzcells = schnitzcells;
             this.FrameInfo = FrameInfo;
             this.ImageMat = [];
+            this.storedTimeProjection = []; % Don't need to wait for timeProjection to finish each time its called
+            this.multiImage = {};
+            this.maxTimeCell = [];
             
             this.Ellipses = Ellipses;
             this.nucleiModified = false;
@@ -159,6 +165,133 @@ classdef CPTState < handle
         function currentYFit = getCurrentYFit(this)
             currentFit = this.getCurrentParticleFit();
             currentYFit = double(currentFit.yFit(this.CurrentZIndex));
+        end
+
+        function updateCurrentZIndex(this)
+            this.CurrentZIndex = find(this.getCurrentParticleFit().z == this.CurrentZ);
+        end
+
+        function maxZIndex = getMaxZIndex(this)
+            maxZIndex = find(this.getCurrentParticleFit().z == this.getCurrentParticleFit().brightestZ);
+        end
+
+        function currentParticleIndex = getCurrentParticleIndex(this)
+            currentParticleIndex = this.getCurrentParticle().Index(this.getCurrentParticle().Frame == this.CurrentFrame);
+        end
+
+        function [xApproved, yApproved] = getApprovedParticles(this, x, y)
+            IndexApprovedParticles = [];
+            numParticles = this.numParticles();
+            currentChannelParticles = this.getCurrentChannelParticles();
+            
+            for i = 1:numParticles
+                if sum(currentChannelParticles(i).Frame == this.CurrentFrame) &&...
+                        sum(currentChannelParticles(i).Approved == 1)
+                    IndexApprovedParticles = [IndexApprovedParticles,...
+                        currentChannelParticles(i).Index(currentChannelParticles(i).Frame == this.CurrentFrame)];
+                end
+            end
+            
+            xApproved = x(IndexApprovedParticles);
+            yApproved = y(IndexApprovedParticles);
+        end
+
+        function [xDisapproved, yDisapproved] = getDisapprovedParticles(this, x, y)
+            IndexDisapprovedParticles=[];
+            numParticles = this.numParticles();
+            currentChannelParticles = this.getCurrentChannelParticles();
+
+            for i = 1:numParticles
+                if sum(currentChannelParticles(i).Frame == this.CurrentFrame) && sum(currentChannelParticles(i).Approved == -1)
+                    IndexDisapprovedParticles=[IndexDisapprovedParticles,...
+                        currentChannelParticles(i).Index(currentChannelParticles(i).Frame == this.CurrentFrame)];
+                end
+            end
+
+            xDisapproved = x(IndexDisapprovedParticles);
+            yDisapproved = y(IndexDisapprovedParticles);
+        end
+
+        function [xNonFlagged, yNonFlagged] = getNonFlaggedParticles(this, x, y)
+            IndexNonFlaggedParticles = [];
+            numParticles = this.numParticles();
+            currentChannelParticles = this.getCurrentChannelParticles();
+
+            for i = 1:numParticles
+                if sum(currentChannelParticles(i).Frame == this.CurrentFrame) &&...
+                        ~(sum(currentChannelParticles(i).Approved == -1) || sum(currentChannelParticles(i).Approved == 1))
+                    IndexNonFlaggedParticles=[IndexNonFlaggedParticles,...
+                        currentChannelParticles(i).Index(currentChannelParticles(i).Frame == this.CurrentFrame)];
+                end
+            end
+
+            xNonFlagged = x(IndexNonFlaggedParticles);
+            yNonFlagged = y(IndexNonFlaggedParticles);
+        end
+
+        function [DaughterE, DaughterD, Mother] = getMotherDaughters(this)
+            if isfield(this.schnitzcells, 'E')
+                DaughterE = this.schnitzcells(this.getCurrentParticle().Nucleus).E;
+                DaughterD = this.schnitzcells(this.getCurrentParticle().Nucleus).D;
+                Mother = this.schnitzcells(this.getCurrentParticle().Nucleus).P;
+            else
+                DaughterE = 0;
+                DaughterD = 0;
+                Mother = 0;
+            end
+        end
+
+        function processImageMatrices(this, multiView, nFrames, nSlices, nDigits, blankImage, currentNC,...
+            ncRange, NC, ncFramesFull, preMovie, movieMat, maxMat, PreProcPath, FilePrefix, Prefix, DropboxFolder)
+            if strcmpi(this.projectionMode, 'None')
+       
+                this.ImageMat = movieMat(:, :, this.CurrentZ, this.CurrentFrame, this.CurrentChannel);
+                
+                if multiView
+                    for z = 1:-1:-1
+                        for f = -1:1
+                            if any( 1:nSlices == this.CurrentZ + z) && any( 1:nFrames == this.CurrentFrame + f)
+                                this.multiImage{z+2, f+2} = movieMat(:, :, this.CurrentZ+z, this.CurrentFrame+f, this.CurrentChannel);
+                            else
+                                this.multiImage{z+2, f+2} = blankImage;
+                            end
+                        end
+                    end
+                end
+                
+            elseif strcmpi(this.projectionMode, 'Max Z')
+                if nFrames > 1
+                    this.ImageMat = maxMat(:, :, this.CurrentFrame);
+                else
+                    this.ImageMat = maxMat;
+                end
+                
+            elseif strcmpi(this.projectionMode, 'Max Z and Time')
+                if isempty(this.maxTimeCell)
+                    this.ImageMat = max(max(movieMat(...
+                        :,:,:, ncFramesFull(currentNC):ncFramesFull(currentNC+1),...
+                        this.CurrentChannel), [], 2), [], 3); % ch z t x y
+                end
+            end
+        end
+
+        function [xTrace, yTrace] = getXYTraces(this, x, y)
+            xTrace = x(this.CurrentParticleIndex);
+            yTrace = y(this.CurrentParticleIndex);
+        end
+
+        function updateZIndex(this, x, y, z)
+            [xTrace, yTrace] = this.getXYTraces(x, y);
+            
+            if (~isempty(xTrace)) && (~this.ManualZFlag)
+                this.CurrentZ = z(this.CurrentParticleIndex);
+                this.CurrentZIndex = find(this.getCurrentParticleFit().z == this.CurrentZ);
+                this.ManualZFlag = 0;
+            end
+        end
+
+        function updateCurrentParticleIndex(this)
+            this.CurrentParticleIndex = this.getCurrentParticleIndex();
         end
     end
 end
