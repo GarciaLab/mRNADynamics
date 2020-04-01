@@ -32,7 +32,7 @@ preFolder = thisExperiment.preFolder;
 [xSize, ySize, ~, ~, ~,...
     nFrames, nSlices, nDigits] = getFrameInfoParams(FrameInfo);
 
-Channels = thisExperiment.Channels;
+Channels = thisExperiment.getChannels();
 
 movieMat = []; hisMat = [];
 

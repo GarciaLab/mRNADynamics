@@ -178,6 +178,16 @@ classdef liveExperiment
         
         %Methods
         
+        function Channels = getChannels(this)
+            % JP: This is filtering out NaN, empty Strings and Channels
+            % beginning with 'His'. As discussed with armando, it's
+            % probably better to get the channels from PreProcess data. If
+            % we do that, this method would be the place to implement that
+            filteredChannels = this.Channels(~strcmp(this.Channels, 'NaN'));
+            filteredChannels = filteredChannels(~strcmp(filteredChannels, ''));
+            filteredChannels = filteredChannels(~startsWith(filteredChannels, 'His'));
+            Channels = filteredChannels;
+        end
         
         function out = getMovieMat(obj)
             
