@@ -8,7 +8,10 @@ classdef CPTState < handle
         ImageMat
         storedTimeProjection
         multiImage
+<<<<<<< HEAD
         maxTimeCell
+=======
+>>>>>>> master
 
         Ellipses
         nucleiModified
@@ -69,7 +72,10 @@ classdef CPTState < handle
             this.ImageMat = [];
             this.storedTimeProjection = []; % Don't need to wait for timeProjection to finish each time its called
             this.multiImage = {};
+<<<<<<< HEAD
             this.maxTimeCell = [];
+=======
+>>>>>>> master
             
             this.Ellipses = Ellipses;
             this.nucleiModified = false;
