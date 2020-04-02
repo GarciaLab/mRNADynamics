@@ -53,10 +53,13 @@
 % Last Updated: 8/23/2018
 %
 % Documented by: Armando Reimer (areimer@berkeley.edu)
-
 function log = segmentSpots(Prefix, Threshold, varargin)
 
-% cleanupObj = onCleanup(@myCleanupFun);
+cleanupObj = onCleanup(@myCleanupFun);
+
+%this function uses persistent (static) variables to speed computation.
+%if not cleared, this could lead to errors 
+clear fitSingleGaussian
 
 warning('off', 'MATLAB:MKDIR:DirectoryExists');
 

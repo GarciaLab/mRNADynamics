@@ -1,7 +1,11 @@
-function [Particles, SpotFilter] = performTracking(Particles, scurrentChannelitzcells, NCh, Spots, app, SpotFilter, PreProcPath, Prefix, UseHistone, ParticlesFig, SpotsChannel, NucleiFig, particlesAxes, nucAxes, Ellipses, PixelSize, SearchRadius, ExperimentType, FrameInfo, retrack, displayFigures)
+function [Particles, SpotFilter] =...
+    performTracking(Particles, scurrentChannelitzcells, NCh, Spots, app,...
+    SpotFilter, PreProcPath, Prefix, UseHistone, ParticlesFig,...
+    SpotsChannel, NucleiFig, particlesAxes, nucAxes,...
+    Ellipses, PixelSize, SearchRadius, ExperimentType,...
+    FrameInfo, retrack, displayFigures, thisExperiment)
 
-
-NDigits = adjustIndexSizeAccordingToFrames(FrameInfo);
+NDigits = thisExperiment.NDigits;
 
 
 % Iterate over all channels
@@ -17,16 +21,22 @@ for Channel = 1:NCh
         end
         
         % Get the filter for this frame
-        CurrentFrameFilter = logical(SpotFilter{Channel}(CurrentFrame, ~isnan(SpotFilter{Channel}(CurrentFrame, :))));
+        CurrentFrameFilter = logical(SpotFilter{Channel}(CurrentFrame,...
+            ~isnan(SpotFilter{Channel}(CurrentFrame, :))));
         
-        xPos = displayParticlesFigure(app, particlesAxes, ParticlesFig, Spots, Channel, CurrentFrame, ...
+        xPos = displayParticlesFigure(app, particlesAxes,...
+            ParticlesFig, Spots, Channel, CurrentFrame, ...
             CurrentFrameFilter, PreProcPath, Prefix, SpotsChannel, FrameInfo, displayFigures);
         
         if UseHistone
-            [Particles, SpotFilter] = trackParticlesBasedOnNuclei(PreProcPath, Prefix, CurrentFrame, NDigits, app, nucAxes, Ellipses, ...
-                ExperimentType, Channel, scurrentChannelitzcells, Particles, Spots, SpotFilter, PixelSize, SearchRadius, retrack, displayFigures);
+            [Particles, SpotFilter] = trackParticlesBasedOnNuclei(PreProcPath, Prefix,...
+                CurrentFrame, NDigits, app, nucAxes, Ellipses, ...
+                ExperimentType, Channel, scurrentChannelitzcells, Particles, Spots,...
+                SpotFilter, PixelSize, SearchRadius, retrack, displayFigures, thisExperiment);
         else
-            [Particles] = trackParticlesBasedOnProximity(Particles, Spots, xPos, SpotFilter, Channel, CurrentFrame, PixelSize, SearchRadius, retrack, displayFigures);
+            [Particles] = trackParticlesBasedOnProximity(Particles, Spots,...
+                xPos, SpotFilter, Channel, CurrentFrame, PixelSize, SearchRadius,...
+                retrack, displayFigures);
         end
         
     end
@@ -35,9 +45,7 @@ end
 
 if isempty(app) && displayFigures
     close(ParticlesFig)
-    if UseHistone
-        close(NucleiFig)
-    end
+    if UseHistone, close(NucleiFig); end
 end
 
 
@@ -61,20 +69,8 @@ for currentChannel = 1:NCh
         
     end
     
-    %AR: add x, y and z positions to the Particles structure. This was
-    %originally only added by addParticlePosition, but it it's more useful
-    %early on in the pipeline.
     
-    for particle=1:length(Particles{currentChannel})
-        for frame=1:length(Particles{currentChannel}(particle).Frame)
-            [x,y,z]=SpotsXYZ(Spots{currentChannel}(Particles{currentChannel}(particle).Frame(frame)));
-            if ~isempty(x)
-                Particles{currentChannel}(particle).xPos(frame)=x(Particles{currentChannel}(particle).Index(frame));
-                Particles{currentChannel}(particle).yPos(frame)=y(Particles{currentChannel}(particle).Index(frame));
-                Particles{currentChannel}(particle).zPos(frame)=z(Particles{currentChannel}(particle).Index(frame));
-            end
-        end
-    end
+    Particles = addPositionsToParticles(Particles, Spots, currentChannel);
     
 end
 
@@ -84,19 +80,6 @@ if NCh == 1
     Particles = Particles{1};
 end
 
-end
 
-
-% See how  many frames we have and adjust the index size of the files to
-% load accordingly
-function NDigits = adjustIndexSizeAccordingToFrames(FrameInfo)
-
-if length(FrameInfo) < 1E3
-    NDigits = 3;
-elseif length(FrameInfo) < 1E4
-    NDigits = 4;
-else
-    error('No more than 10,000 frames supported. Change this in the code')
-end
 
 end

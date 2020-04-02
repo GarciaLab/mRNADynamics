@@ -47,8 +47,6 @@ optionalResults = '';
 yToManualAlignmentPrompt = false;
 correctDV = false;
 
-close all
-
 
 for i=1:length(varargin)
     switch varargin{i}
@@ -72,18 +70,18 @@ end
 
 thisExperiment = liveExperiment(Prefix);
 
-%Get the relevant folders for this data set
-[RawDynamicsPath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
-    configValues,...
-    movieDatabasePath, movieDatabase] = DetermineAllLocalFolders(Prefix, optionalResults);
+DropboxFolder = userResultsFolder;
+PreProcPath = thisExperiment.userPreFolder;
+RawDynamicsPath = thisExperiment.userRawFolder;
 
-[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoopEnd, APResolution,...
-    Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
+Channel1 = thisExperiment.Channel1;
+Channel2 = thisExperiment.Channel2;
+Channel3 = thisExperiment.Channel3;
 
+APResolution = thisExperiment.APResolution;
 
 if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
-    load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'Particles', 'SpotFilter')
     load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots')
     
     %Create the particle array. This is done so that we can support multiple
@@ -98,22 +96,14 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
     
     %Now, get the particle positions (if they're not there already).
     for ChN=1:NChannels
-        for i=1:length(Particles{ChN})
-            for j=1:length(Particles{ChN}(i).Frame)
-                [x,y,z]=SpotsXYZ(Spots{ChN}(Particles{ChN}(i).Frame(j)));
-                if ~isempty(x)
-                    Particles{ChN}(i).xPos(j)=x(Particles{ChN}(i).Index(j));
-                    Particles{ChN}(i).yPos(j)=y(Particles{ChN}(i).Index(j));
-                    Particles{ChN}(i).zPos(j)=z(Particles{ChN}(i).Index(j));
-                end
-            end
-        end
-        if isfield(Particles{ChN},'DVpos')
-            warning('Particles.mat already has DV positions stored. They will be rewritten')
-        end
-        if isfield(Particles{ChN},'APpos')
-            warning('Particles.mat already has AP positions stored. They will be rewritten')
-        end
+        Particles = addPositionsToParticles(Particles, Spots, ChN);
+    end
+    
+    if isfield(Particles{ChN},'DVpos')
+        warning('Particles.mat already has DV positions stored. They will be rewritten')
+    end
+    if isfield(Particles{ChN},'APpos')
+        warning('Particles.mat already has AP positions stored. They will be rewritten')
     end
     
 else
@@ -135,39 +125,11 @@ end
 rawPrefixPath = [RawDynamicsPath,filesep,projectDate,filesep,EmbryoName,filesep];
 fullEmbryoPath = [rawPrefixPath, 'FullEmbryo', filesep];
 
-
 if ~NoAP
-    %If you want to select which channel to load as alignment.
-    if SelectChannel
-        list = string({Channel1,Channel2,Channel3});
-        [indx,tf] = listdlg('PromptString','Select the channel to use for alignment:','ListString',list);
-        ChannelToLoad = indx;
-    else
-        % From now, we will use a better way to define the channel for
-        % alignment (used for cross-correlation).
-        % Find channels with ":Nuclear"
-        ChannelToLoadTemp=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
-        
-        % Define the Channel to load, for calculating the cross-correlation
-        % In future, we can think about combining multiple channels for
-        % calculating the cross-correlation to get more accurate estimates.
-        % For now, let's pick only one channel for this. For multiple
-        % channels, let's first pick the first channel. This can be fine in
-        % most cases, since we normally use lower wavelength for sth we
-        % care more, or we get better signal from those.
-        if sum(ChannelToLoadTemp) && sum(ChannelToLoadTemp)==1
-            ChannelToLoad=find(ChannelToLoadTemp);
-        elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>=2
-            ChannelToLoad=find(ChannelToLoadTemp);
-            ChannelToLoad = ChannelToLoad(1);
-        else
-            error('No histone channel found. Was it defined in MovieDatabase as :Nuclear or :InvertedNuclear?')
-        end
-        
-    end
+    %If you want to select which channel to load as alignment
+    ChannelToLoad = determineChannelToLoad(SelectChannel, thisExperiment.Channels);
     
     %Get information about all images. This depends on the microscope used.
-    
     
     %Get the information about the zoom
     if strcmp(FileMode,'TIF')
@@ -176,7 +138,7 @@ if ~NoAP
         
         %Figure out the zoom factor
         MovieZoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
-        MovieZoom=str2num(MovieZoom);
+        MovieZoom=str2double(MovieZoom);
         
         
         %Get the zoomed out surface image and its dimensions from the FullEmbryo folder
@@ -407,7 +369,7 @@ if ~NoAP
         SurfRows=surf_size(1);
         ZoomRatio = MovieZoom / SurfZoom;
     end
-    
+    %%
     
     
     %Get the information about the AP axis as well as the image shifts
@@ -697,7 +659,6 @@ if ~NoAP
     hold(zoomOverlayAxes,'off')
     
     DV_correction = 0;
-    
     if exist([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'Classified_image.tif'], 'file')
         correctDV = 1;
     end
@@ -714,6 +675,8 @@ if ~NoAP
         end
         saveVars = [saveVars, 'DV_correction'];
     end
+    
+    
     DVLength = APLength/2;
     if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
         for ChN=1:NChannels
@@ -780,8 +743,13 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
     if NChannels==1
         Particles=Particles{1};
     end
-    
-    save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','SpotFilter');
+    try
+        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],...
+            'Particles','SpotFilter', '-v6');
+    catch
+        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],...
+            'Particles','SpotFilter', '-v7.3', '-nocompression');
+    end
 end
 
 if correctDV
@@ -812,5 +780,41 @@ else
 end
 
 
+
+end
+
+function ChannelToLoad = determineChannelToLoad(SelectChannel, Channels)
+
+if SelectChannel
+    list = string(Channels);
+    [indx,tf] = listdlg('PromptString','Select the channel to use for alignment:','ListString',list);
+    ChannelToLoad = indx;
+else
+    % From now, we will use a better way to define the channel for
+    % alignment (used for cross-correlation).
+    % Find channels with ":Nuclear"
+    ChannelToLoadTemp=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
+    
+    % Define the Channel to load, for calculating the cross-correlation
+    % In future, we can think about combining multiple channels for
+    % calculating the cross-correlation to get more accurate estimates.
+    % For now, let's pick only one channel for this. For multiple
+    % channels, let's first pick the first channel. This can be fine in
+    % most cases, since we normally use lower wavelength for sth we
+    % care more, or we get better signal from those.
+    if sum(ChannelToLoadTemp) && sum(ChannelToLoadTemp)==1
+        ChannelToLoad=find(ChannelToLoadTemp);
+    elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>=2
+        ChannelToLoad=find(ChannelToLoadTemp);
+        ChannelToLoad = ChannelToLoad(1);
+    else
+        error('No histone channel found. Was it defined in MovieDatabase as :Nuclear or :InvertedNuclear?')
+    end
+    
+end
+
+end
+
+function zoom = getZoom(FileMode, rawPrefixPath)
 
 end

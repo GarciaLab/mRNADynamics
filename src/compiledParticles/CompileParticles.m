@@ -169,10 +169,8 @@ ncFilterID = [];
 thisExperiment = liveExperiment(Prefix);
 FilePrefix=[Prefix,'_'];
 
-[~, ~, DropboxFolder, ~, PreProcPath,...
-    ~, ~, ~, ~] = DetermineLocalFolders(Prefix);
-
-
+DropboxFolder = thisExperiment.userResultsFolder;
+PreProcPath = thisExperiment.userPreFolder;
 ExperimentType = thisExperiment.experimentType;
 ExperimentAxis = thisExperiment.experimentAxis;
 APResolution = thisExperiment.APResolution;
@@ -266,6 +264,18 @@ NewCyclePos=NewCyclePos(~(NewCyclePos==0));
 NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
 
 
+
+%Create the particle array. This is done so that we can support multiple
+%channels. Also figure out the number of channels
+if iscell(Particles)
+    nSpotChannels=length(Particles);
+else
+    Particles={Particles};
+    nSpotChannels=1;
+    Spots={Spots};
+    SpotFilter={SpotFilter};
+end
+
 %Add the APPosition to Particles if they don't exist yet. Do this only if
 %we took AP data. Otherwise just add x and y pixel coordinates
 
@@ -285,17 +295,6 @@ if APExperiment || DVExperiment
         try [Particles, SpotFilter] = AddParticlePosition(addParticleArgs{:});
         catch warning('Failed to add particle position. Is there no full embryo?'); end
     else disp('Using saved AP information (results from AddParticlePosition)'); end
-end
-
-%Create the particle array. This is done so that we can support multiple
-%channels. Also figure out the number of channels
-if iscell(Particles)
-    nSpotChannels=length(Particles);
-else
-    Particles={Particles};
-    nSpotChannels=1;
-    Spots={Spots};
-    SpotFilter={SpotFilter};
 end
 
 if haveHistoneChannel, Ellipses = getEllipses(thisExperiment); end
@@ -554,11 +553,13 @@ CompiledParticles = addCycle(CompiledParticles, ncFrames);
 
 %Compile the nuclear fluorescence information if we have the appropriate
 %experiment type and axis
+try
+    if strcmpi(ExperimentType,'inputoutput')
+        if ~ROI, CompileNuclearProtein(Prefix);
+        else, CompileNuclearProtein(Prefix,'ROI',ROI1,ROI2); end
+    end
+catch, warning('Couldn''t run CompileNuclearProtein.'); end
 
-if strcmpi(ExperimentType,'inputoutput')
-    if ~ROI, CompileNuclearProtein(Prefix);
-    else, CompileNuclearProtein(Prefix,'ROI',ROI1,ROI2); end
-end
 
 
 %% Save everything

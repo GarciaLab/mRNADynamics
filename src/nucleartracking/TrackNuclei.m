@@ -46,8 +46,9 @@ thisExperiment = liveExperiment(Prefix);
 
 FrameInfo = getFrameInfo(thisExperiment);
 
-[~, ProcPath, DropboxFolder, ~, PreProcPath] =...
-    DetermineLocalFolders(Prefix);
+ProcPath = thisExperiment.userProcFolder;
+DropboxFolder = thisExperiment.userResultsFolder;
+PreProcPath = thisExperiment.preFolder;
 
 anaphaseFrames = thisExperiment.anaphaseFrames';
 nc9 = anaphaseFrames(1);
@@ -58,7 +59,7 @@ nc13 = anaphaseFrames(5);
 nc14 = anaphaseFrames(6);
 
 if ~exist('nc9','var')
-    error('Cannot find nuclear cycle values. Were they defined in MovieDatabase?')
+    error('Cannot find nuclear cycle values. Were they defined in MovieDatabase or anaphaseFrames.mat?')
 end
 
 %Do we need to convert any NaN chars into doubles?
