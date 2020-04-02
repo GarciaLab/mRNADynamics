@@ -1,4 +1,5 @@
 classdef CPTState < handle
+    
     properties
         Spots
         Particles
@@ -241,17 +242,24 @@ classdef CPTState < handle
             end
         end
 
-        function processImageMatrices(this, multiView, nFrames, nSlices, nDigits, blankImage, currentNC,...
-            ncRange, NC, ncFramesFull, preMovie, movieMat, maxMat, PreProcPath, FilePrefix, Prefix, DropboxFolder)
+        function processImageMatrices(this, multiView, nFrames,...
+                nSlices, nDigits, blankImage, currentNC,...
+            ncRange, NC, ncFramesFull, preMovie, movieMat, maxMat,...
+            PreProcPath, FilePrefix, Prefix, DropboxFolder)
+        
             if strcmpi(this.projectionMode, 'None')
        
-                this.ImageMat = movieMat(:, :, this.CurrentZ, this.CurrentFrame, this.CurrentChannel);
+                this.ImageMat = movieMat(:, :, this.CurrentZ,...
+                    this.CurrentFrame, this.CurrentChannel);
                 
                 if multiView
                     for z = 1:-1:-1
                         for f = -1:1
-                            if any( 1:nSlices == this.CurrentZ + z) && any( 1:nFrames == this.CurrentFrame + f)
-                                this.multiImage{z+2, f+2} = movieMat(:, :, this.CurrentZ+z, this.CurrentFrame+f, this.CurrentChannel);
+                            if any( 1:nSlices == this.CurrentZ + z) &&...
+                                    any( 1:nFrames == this.CurrentFrame + f)
+                                this.multiImage{z+2, f+2} =...
+                                    movieMat(:, :, this.CurrentZ+z,...
+                                    this.CurrentFrame+f, this.CurrentChannel);
                             else
                                 this.multiImage{z+2, f+2} = blankImage;
                             end

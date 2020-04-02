@@ -5,7 +5,7 @@ function [Particles, SpotFilter] =...
     Ellipses, PixelSize, SearchRadius, ExperimentType,...
     FrameInfo, retrack, displayFigures, thisExperiment)
 
-NDigits = thisExperiment.NDigits;
+NDigits = thisExperiment.nDigits;
 
 
 % Iterate over all channels
