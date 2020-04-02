@@ -23,10 +23,14 @@ classdef liveExperiment
     
     properties (Hidden)
         
+        
+        rawFolder = '';
+        
         rawExportedDirectory = '';
         processedDirectory = '';
         resultsDirectory = '';
         
+        userRawFolder = '';
         userPreFolder = '';
         userProcFolder = '';
         userResultsFolder = '';
@@ -71,6 +75,7 @@ classdef liveExperiment
         Channel2 = '';
         Channel3 = '';
         
+        MS2CodePath = '';
         
         
         
@@ -87,35 +92,39 @@ classdef liveExperiment
             obj.Prefix = Prefix;
             
             %caching the results of this function since
-            %its csv2cell call is the 
+            %its csv2cell call is the
             %most time-consuming part of
             %project initialization and the output
             %is not memory intensive
-            memoizedDetermineLocalFolders = memoize(@DetermineLocalFolders);  
+            memoizedDetermineLocalFolders = memoize(@DetermineLocalFolders);
             
-            [~, ProcPath, DropboxFolder, ~, PreProcPath,...
+            [rawPath, ProcPath, DropboxFolder, obj.MS2CodePath, PreProcPath,...
                 ~, ~, ~, movieDatabase]= memoizedDetermineLocalFolders(obj.Prefix);
+            
             
             obj.userPreFolder = PreProcPath;
             obj.userProcFolder = ProcPath;
             obj.userResultsFolder = DropboxFolder;
+            obj.userRawFolder =  rawPath;
+            Subfolder = [obj.Prefix(1:10),filesep,obj.Prefix(12:length(obj.Prefix))];
             
+            obj.rawFolder = strcat(obj.userRawFolder,filesep,Subfolder);
             obj.preFolder = [PreProcPath, filesep, Prefix, filesep];
             obj.procFolder = [ProcPath, filesep, Prefix, '_', filesep];
             obj.resultsFolder = [DropboxFolder, filesep, Prefix, filesep];
             obj.MLFolder = [DropboxFolder, filesep, 'training_data_and_classifiers', filesep];
             
-%             [rawDir, procDir, resultsDir] = browseExperiment(obj.Prefix);
-%             obj.rawExportedDirectory = rawDir;
-%             obj.processedDirectory = procDir;
-%             obj.resultsDirectory = resultsDir;
+            %             [rawDir, procDir, resultsDir] = browseExperiment(obj.Prefix);
+            %             obj.rawExportedDirectory = rawDir;
+            %             obj.processedDirectory = procDir;
+            %             obj.resultsDirectory = resultsDir;
             
             
             isUnhealthyFile = [DropboxFolder,filesep,obj.Prefix,filesep, 'isUnhealthy.mat'];
             if exist(isUnhealthyFile, 'file')
                 load(isUnhealthyFile, 'isUnhealthy');
             else isUnhealthy = NaN; end
-
+            
             obj.isUnhealthy = isUnhealthy;
             
             obj.project = '';
@@ -127,7 +136,7 @@ classdef liveExperiment
             obj.hasEllipsesFile = exist([obj.resultsFolder, 'Ellipses.mat'] , 'file');
             obj.hasChannelsFile =exist([obj.resultsFolder, 'Channels.mat'] , 'file');
             obj.hasAnaphaseFile=exist([obj.resultsFolder, 'anaphaseFrames.mat'] , 'file');
-
+            
             obj.hasDoGs = exist([obj.procFolder, 'dogs'], 'dir');
             
             obj.hasRawStacks = exist([obj.preFolder, 'stacks'], 'dir');
@@ -138,7 +147,7 @@ classdef liveExperiment
                 Channel1, Channel2,~, ~,  ~, ~, ~,...
                 ~, ~, ~, ~, ~, ~, ~, Channel3,~,~, ~, obj.DVResolution]...
                 = getExperimentDataFromMovieDatabase(Prefix, movieDatabase, obj.userResultsFolder);
-                        
+            
             obj.Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
             obj.Channel1 = Channel1{1};
             obj.Channel2 = Channel2{1};
@@ -150,7 +159,7 @@ classdef liveExperiment
                     obj.nFrames, obj.zDim, obj.nDigits] = getFrameInfoParams(FrameInfo);
                 obj.pixelSize_um = obj.pixelSize_nm/1000;
             catch warning('FrameInfo not found.'); end
-                
+            
             
             obj.inputChannels = find(contains(obj.Channels, 'input', 'IgnoreCase', true));
             

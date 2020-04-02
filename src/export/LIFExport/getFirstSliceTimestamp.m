@@ -1,5 +1,6 @@
 %Get the time stamp corresponding to the first slice of each Z-stack
-function [InitialStackTime, zPosition] = getFirstSliceTimestamp(NSlices, NSeries, NPlanes, NChannels, Frame_Times, XMLFolder, seriesXML)
+function [InitialStackTime, zPosition] = getFirstSliceTimestamp(NSlices, NSeries,...
+    NPlanes, NChannels, Frame_Times, XMLFolder, seriesXML)
   
   m = 1;
   

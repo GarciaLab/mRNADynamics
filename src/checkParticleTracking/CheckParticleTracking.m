@@ -193,7 +193,7 @@ Particles = addFrameApproved(numSpotChannels, Particles);
     ~, ~, ~, ~, ~, ~, ~, ~, prophase, metaphase] =...
     getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
 
-ExperimentType = thisExperiment.ExperimentType;
+ExperimentType = thisExperiment.experimentType;
 Channels = thisExperiment.Channels;
 Channel1 = thisExperiment.Channel1;
 Channel2 = thisExperiment.Channel2;

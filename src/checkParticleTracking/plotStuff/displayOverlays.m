@@ -134,10 +134,10 @@ end
 %Show the particles that were under threshold 2.
 if ShowThreshold2
     %Get the positions of all the spots in this frame
-    [x2,y2]=SpotsXYZ(cptState.Spots{cptState.CurrentChannel}(cptState.CurrentFrame));
+    [x2,y2]=SpotsXYZ(cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame));
     %Filter those that were under threshold 2.
     CurrentSpotFilter=...
-        ~logical(cptState.SpotFilter{cptState.CurrentChannel}(cptState.CurrentFrame,~isnan(cptState.SpotFilter{cptState.CurrentChannel}(cptState.CurrentFrame,:))));
+        ~logical(cptState.SpotFilter{cptState.CurrentChannelIndex}(cptState.CurrentFrame,~isnan(cptState.SpotFilter{cptState.CurrentChannelIndex}(cptState.CurrentFrame,:))));
     x2=x2(CurrentSpotFilter);
     y2=y2(CurrentSpotFilter);
 

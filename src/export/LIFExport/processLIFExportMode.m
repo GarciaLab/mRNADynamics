@@ -37,7 +37,8 @@ if shouldMakeMovieMat
     if sum(NFrames)~=0
         [Frame_Times, First_Time] = obtainFrameTimes(XMLFolder, seriesPropertiesXML,...
             NSeries, NFrames, NSlices, NChannels);
-        [InitialStackTime, zPosition] = getFirstSliceTimestamp(NSlices, NSeries, NPlanes, NChannels, Frame_Times, XMLFolder, seriesXML);
+        [InitialStackTime, zPosition] = getFirstSliceTimestamp(NSlices,...
+            NSeries, NPlanes, NChannels, Frame_Times, XMLFolder, seriesXML);
     else
         InitialStackTime = [];
         zPosition = [];

@@ -277,34 +277,36 @@ uiwait(fig);
         
         dogbw = dog_copy > thresh;
         
-        
-        nSpotsF = zeros(1, length(available_frames));
-        for f = available_frames
-            nSpotsZ = zeros(1, length(available_zs));
-            for iz = available_zs
-                if zPadded
-                    zIndex = iz;
-                else
-                    zIndex = iz-1;
-                end
-                if isempty(all_dogs{f, zIndex})
-                    dog = loadDog(f, zIndex);
-                    all_dogs{f, zIndex} = dog;
-                end
-                nSpotsZ(zIndex) = length(regionprops(all_dogs{f, zIndex} > thresh));
-                
-            end
-            nSpotsF(f)= max(nSpotsZ);
-        end
-        nSpotsEstimate = length(regionprops(dogbw));
-        nSpotsLabel.String = ['Estimated number of spots: ', num2str(nSpotsEstimate) ];
-        
-        if ~isempty(nSpotsAxes.Children)
-            nSpotsAxes.Children(1).YData = nSpotsF(available_frames);
-            nSpotsAxes.Children(1).XData = available_frames;
-        else
-            line(nSpotsAxes, available_frames, nSpotsF(available_frames))
-        end
+%         %%
+%         nSpotsF = zeros(1, length(available_frames));
+%         for f = available_frames
+%             nSpotsZ = zeros(1, length(available_zs));
+%             for iz = available_zs
+%                 if zPadded
+%                     zIndex = iz;
+%                 else
+%                     zIndex = iz-1;
+%                 end
+%                 if isempty(all_dogs{f, zIndex})
+%                     dog = loadDog(f, zIndex);
+%                     all_dogs{f, zIndex} = dog;
+%                 end
+%                 nSpotsZ(zIndex) = length(regionprops(all_dogs{f, zIndex} > thresh));
+%                 
+%             end
+%             nSpotsF(f)= max(nSpotsZ);
+%         end
+%         nSpotsEstimate = length(regionprops(dogbw));
+%         nSpotsLabel.String = ['Estimated number of spots: ', num2str(nSpotsEstimate) ];
+%         
+%         if ~isempty(nSpotsAxes.Children)
+%             nSpotsAxes.Children(1).YData = nSpotsF(available_frames);
+%             nSpotsAxes.Children(1).XData = available_frames;
+%         else
+%             line(nSpotsAxes, available_frames, nSpotsF(available_frames))
+%         end
+%         
+        %%
         drawnow;
         
         if ~chk.Value
