@@ -459,7 +459,7 @@ while (cc ~= 'x')
     if exist('MaxZProfile', 'var')
         plotzvars = [plotzvars, MaxZProfile];
     end
-    MaxZProfile = plotZFigures(plotzvars{:});
+%    MaxZProfile = plotZFigures(plotzvars{:});
 %     
     set(0, 'CurrentFigure', Overlay);
     
