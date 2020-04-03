@@ -9,6 +9,7 @@ filterMovie(Prefix, 'Tifs', 'nWorkers', nWorkers);
 TrackNuclei(Prefix, 'nWorkers', nWorkers);
 filterMovie(Prefix, 'nWorkers', nWorkers);
 segmentSpots(Prefix, 10018, 'nWorkers', nWorkers);
+TrackmRNADynamics(Prefix);
 CompileParticles(Prefix, 'SkipAll', 'ApproveAll')
 toc
 

@@ -51,6 +51,9 @@ for id = 1:length(files)
     if strcmpi(saveType, 'mat3D')
         dogStack = uint16(dogStack*10000);
         save([dogFolder,filesep, imFile(1:end-4), '.mat'], 'dogStack', '-v6');
+    elseif strcmpi(saveType, 'tif3D')
+        dogStack = uint16(dogStack*10000);
+        imwrite([dogFolder,filesep, imFile(1:end-4), '.tif'], 'dogStack', '-v6');
     end
     
     %delete the old file now that we're done with it
