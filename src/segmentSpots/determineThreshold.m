@@ -114,15 +114,25 @@ bestFrame = 1;
 bestVal = 0;
 max_val = 0;
 
+disp('Loading dogs...')
 all_dogs = cell(numFrames, zSize - 2);
 for frame = available_frames
+    if haveStacks
+        dogStackFile = strrep([dogFolder, filesep, dogStr, Prefix, '_', iIndex(frame, 3),...
+            nameSuffix], '\\', '\');
+            dogStack = imreadStack([dogStackFile, '.tif']);
+    end
     for z = available_zs
         if zPadded
             zInd = z;
         else
             zInd = z-1;
         end
-        dog = loadDog(zInd, frame);
+        if ~haveStacks
+            dog = loadDog(zInd, frame);
+        else
+            dog = dogStack(:, :, zInd);
+        end
         all_dogs{frame, zInd} = dog;
         non_zero_d = dog~=0;
         val = (1/2) * iqr( non_zero_d(:) );
@@ -138,6 +148,7 @@ for frame = available_frames
         
     end
 end
+disp('Dogs loaded.');
 %%
 % get the image we'll display
 bestDOG = all_dogs{bestFrame, bestZ};
