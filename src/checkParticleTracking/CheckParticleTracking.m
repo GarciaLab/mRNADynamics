@@ -407,13 +407,13 @@ while (cc ~= 'x')
             displayRangeSpot = [median(cptState.ImageMat(:)), max(cptState.ImageMat(:))];
             cptState.DisplayRangeSpot = displayRangeSpot;
         end
-        for z = 1:size(multiImage, 1)
-            for f= 1:size(multiImage, 2)
+        for z = 1:size(cptState.multiImage, 1)
+            for f= 1:size(cptState.multiImage, 2)
                 if ~isempty(subAx{z,f}.Children)
-                    subAx{z,f}.Children.CData = multiImage{z, f};
+                    subAx{z,f}.Children.CData = cptState.multiImage{z, f};
                     subAx{z, f}.CLim = displayRangeSpot;                   
                 else
-                    imshow(multiImage{z, f}, displayRangeSpot, 'Border', 'Tight', 'Parent', subAx{z,f},...
+                    imshow(cptState.multiImage{z, f}, displayRangeSpot, 'Border', 'Tight', 'Parent', subAx{z,f},...
                         'InitialMagnification', 'fit');
                 end
                 title(subAx{z,f},['z: ', num2str(cptState.CurrentZ + z - 2), ' frame: ', num2str(cptState.CurrentFrame + f - 2)])
