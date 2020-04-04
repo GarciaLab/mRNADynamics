@@ -57,7 +57,7 @@ end
 if haveProbs
     MLFlag = 'ML';
     dogStr = 'prob';
-    if isnan(Threshold) || Threshold < 5000
+    if isnan(Threshold) || isempty(Threshold)
         warning('Increasing threshold to 5000. For Weka ML, you are thresholding on probability maps so the threshold shouldn''t be set below 50% = 5000.')
         Threshold = 5000;
     end
@@ -100,6 +100,8 @@ if shouldMaskNuclei
     if thisExperiment.hasEllipsesFile
         Ellipses = getEllipses(thisExperiment); 
         Ellipses = filterEllipses(Ellipses, [yDim, xDim]);
+    else
+        shouldMaskNuclei = false;
     end
 else Ellipses = []; end
 
@@ -125,7 +127,7 @@ p = 1;
 for currentFrame = initialFrame:lastFrame
     
     imStack = movieMatCh(:, :, :, currentFrame);
-    if shouldMaskNuclei && ~isempty(Ellipses)
+    if shouldMaskNuclei && exist('Ellipses', 'var') && ~isempty(Ellipses)
         ellipseFrame = Ellipses{currentFrame};
     end
     
