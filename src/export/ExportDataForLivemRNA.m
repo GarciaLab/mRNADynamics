@@ -95,7 +95,8 @@ Channels = {Channel1, Channel2, Channel3};
 
 if ~isempty(dataType)
      args = varargin;
-     writeScriptArgsToDataStatus(DropboxFolder, dataType, Prefix, args, 'Ran ExportDataFor', 'ExportDataForLivemRNA')
+     writeScriptArgsToDataStatus(DropboxFolder,...
+         dataType, Prefix, args, 'Ran ExportDataFor', 'ExportDataForLivemRNA')
 end
 
 %   if ~isempty(rootFolder)

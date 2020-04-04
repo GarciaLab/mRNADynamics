@@ -198,20 +198,56 @@ classdef liveExperiment
             Channels = filteredChannels;
         end
         
-        function out = getMovieMat(obj)
+        function out = getMovieMat(this)
             
-            %optionally only grab certain channels
+            persistent preTifDir;
+            if isempty(preTifDir) ||...
+                    ~isequal( length(preTifDir), this.nFrames)
+            preTifDir = dir([this.preFolder, '*_ch0*.tif']);
+            end
+            
+            exportedChannels = [];
+            %i don't see channel number going beyond 6 any time soon. 
+            for k = 0:5
+                exportedChannels(k+1) =  any(cellfun(@(x) contains(x, ['_ch0',num2str(k)]),...
+                    {preTifDir.name}));
+            end
+            channelsToRead = find(exportedChannels);
+     
+            
+            haveTifStacks = any(cellfun(@(x) ~contains(x, '_z'),...
+                {preTifDir.name}));
+            
+            
             persistent movieMat;
             %load movie only if it hasn't been loaded or if we've switched
             %Prefixes (determined by num frames)
             if isempty(movieMat) ||...
-                    ~isequal( size(movieMat, 4), obj.nFrames)
+                    ~isequal( size(movieMat, 4), this.nFrames)
                 
-                if obj.hasMovieMatFile
-                    movieMat = loadMovieMat(obj.Prefix);
-                else
-                    movieMat = makeMovieMats(obj.Prefix, [], [], [],...
+                if this.hasMovieMatFile
+%                 if false
+                    movieMat = loadMovieMat(this.Prefix);
+                elseif ~haveTifStacks
+                    movieMat = makeMovieMats(this.Prefix, [], [], [],...
                         'loadHis', false, 'makeMovie', true, 'loadMovie', false);
+                elseif haveTifStacks
+                    chIndex = 0;
+                    for ch = channelsToRead
+                        chIndex = chIndex + 1;
+                        
+                        preChDir = preTifDir(cellfun(@(x) ~contains(x,...
+                            ['ch0', num2str(ch)]), {preTifDir.name}));
+                        
+                        for f = 1:this.nFrames
+                            imfile = [this.preFolder, filesep, preChDir(f).name];
+                            imStack = imreadStack(imfile);
+                            movieMat(:, :, :, f, chIndex) = imStack;      
+                        end
+                        
+                    end
+                else
+                    error('can''t load movie.')
                 end
                 
             end
@@ -221,12 +257,17 @@ classdef liveExperiment
         
         function out = getHisMat(obj)
             
+            if exist([obj.preFolder, filesep,obj.Prefix, '-His.tif'], 'file')
+                haveHisTifStack = true;
+            end
             persistent hisMat;
             %load histone movie only if it hasn't been loaded or if we've switched
             %Prefixes (determined by num frames)
             if isempty(hisMat) || ~isequal( size(hisMat, 3), obj.nFrames)
                 if obj.hasHisMatFile
                     hisMat = loadHisMat(obj.Prefix);
+                elseif haveHisTifStack
+                    hisMat = imreadStack([obj.preFolder, filesep,obj.Prefix, '-His.tif']);
                 else
                     [~,hisMat] = makeMovieMats(obj.Prefix, [], [], [], 'loadMovie', false,  'loadHis', false, 'makeMovie', false, 'makeHis', true);
                 end

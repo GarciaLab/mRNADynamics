@@ -91,8 +91,16 @@ for ch = spotChannels
             if saveAsStacks
                 dogStack = dogMat(:, :, :, currentFrame);
                 dogStackFile = strrep([DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(currentFrame, 3),...
-                    nameSuffix,'.mat'], '\\', '\');
-                save(dogStackFile, 'dogStack','-v6');
+                    nameSuffix,'.tif'], '\\', '\');
+%                 save(dogStackFile, 'dogStack','-v6');
+                for z = 1:zSize
+                    slice = dogStack(:, :, z);
+                 if z == 1
+                    imwrite(slice, dogStackFile, 'Compression', 'none');
+                 else
+                     imwrite(slice, dogStackFile,'WriteMode', 'append', 'Compression', 'none');
+                 end
+                end
             end
             
             send(q, currentFrame);

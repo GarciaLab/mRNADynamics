@@ -8,7 +8,7 @@ ExportDataForLivemRNA(Prefix, 'nuclearGUI', false);
 filterMovie(Prefix, 'Tifs', 'nWorkers', nWorkers);
 TrackNuclei(Prefix, 'nWorkers', nWorkers);
 filterMovie(Prefix, 'nWorkers', nWorkers);
-segmentSpots(Prefix, 10018, 'nWorkers', nWorkers);
+segmentSpots(Prefix, 10030, 'nWorkers', nWorkers);
 TrackmRNADynamics(Prefix);
 CompileParticles(Prefix, 'SkipAll', 'ApproveAll')
 toc
@@ -21,7 +21,7 @@ ExportDataForLivemRNA(Prefix, 'nuclearGUI', false);
 filterMovie(Prefix, 'Tifs', 'nWorkers', nWorkers);
 TrackNuclei(Prefix, 'nWorkers', nWorkers);
 filterMovie(Prefix, 'nWorkers', nWorkers);
-segmentSpots(Prefix, 10018, 'nWorkers', nWorkers);
+segmentSpots(Prefix, 10030, 'nWorkers', nWorkers);
 CompileParticles(Prefix, 'SkipAll', 'ApproveAll')
 toc
 
