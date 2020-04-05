@@ -20,14 +20,18 @@ end
 
 Ellipses = cell(thisExperiment.nFrames, 1);
 
-parfor CurrentFrame = 1:thisExperiment.nFrames
+for CurrentFrame = 1:thisExperiment.nFrames
         
         HisImage = hisMat(:, :, CurrentFrame);
-        [~, circles] = kSnakeCircles(HisImage,...
-            thisExperiment.pixelSize_nm/1000, 'min_rad_um', min_rad_um,...
-            'max_rad_um', max_rad_um);    
-        circles(:, 6:9) = zeros(size(circles, 1), 4);
-        Ellipses{CurrentFrame} = circles;
+        if max(max(HisImage))~=0
+            [~, circles] = kSnakeCircles(HisImage,...
+                thisExperiment.pixelSize_nm/1000, 'min_rad_um', min_rad_um,...
+                'max_rad_um', max_rad_um);    
+            circles(:, 6:9) = zeros(size(circles, 1), 4);
+            Ellipses{CurrentFrame} = circles;
+        else
+            Ellipses{CurrentFrame} = zeros(1, 9);
+        end
                 
         %report progress every tenth frame
         if ~mod(CurrentFrame, 10), disp(['Segmenting frame: ' num2str(CurrentFrame), '...']); end
