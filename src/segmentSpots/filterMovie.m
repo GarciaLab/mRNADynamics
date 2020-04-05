@@ -119,10 +119,10 @@ stacksFolder = strrep([PreProcPath, filesep, Prefix, filesep, 'stacks'], '\\', '
 stacksExist = exist(stacksFolder, 'dir') &&...
     ~isempty(dir([stacksFolder, filesep, '*.tif']));
 
-% if (Weka || justTifs) && ~stacksExist
-%     generateTifsForWeka(Prefix, PreProcPath, numFrames,...
-%         nSpotChannels,spotChannels, zSize, initialFrame);
-% end
+if (Weka || justTifs) && ~stacksExist
+    generateTifsForWeka(Prefix, PreProcPath, numFrames,...
+        nSpotChannels,spotChannels, zSize, initialFrame);
+end
 
 if Weka
     processType = 'weka';

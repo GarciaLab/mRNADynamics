@@ -103,7 +103,15 @@ truncateAtColon = @(str) str(1:strfind(str, ':')-1);
 try
     Channel1 = Channels{1}; Channel2 = Channels{2}; Channel3 = Channels{3};
 end
-
+if iscell(Channel1)
+    Channel1 = Channel1{1};
+end
+if iscell(Channel2)
+    Channel2 = Channel2{1};
+end
+if iscell(Channel3)
+    Channel3 = Channel3{1};
+end
 ch1pre =  truncateAtColon(Channel1);
 ch2pre =  truncateAtColon(Channel2);
 ch3pre =  truncateAtColon(Channel3);
