@@ -143,7 +143,8 @@ for currentFrame = initialFrame:lastFrame
             dogStack = load([dogStackFile,'.mat'], 'dogStack');
             dogStack = dogStack.dogStack;
         elseif exist([dogStackFile, '.tif'], 'file')
-            dogStack = imreadStack([dogStackFile, '.tif']);
+            dogStack = imreadStack2([dogStackFile, '.tif'], thisExperiment.yDim,...
+                thisExperiment.xDim, thisExperiment.zDim);
         end
         
         

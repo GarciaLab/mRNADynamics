@@ -232,7 +232,13 @@ classdef liveExperiment
                     movieMat = makeMovieMats(this.Prefix, [], [], [],...
                         'loadHis', false, 'makeMovie', true, 'loadMovie', false);
                 elseif haveTifStacks
+                    nPadding = 2;
+                    
+                    movieMat = zeros(this.yDim, this.xDim,...
+                        this.zDim+nPadding, this.nFrames, length(channelsToRead), 'uint8'); % y x z t ch
+                    
                     chIndex = 0;
+                   
                     for ch = channelsToRead
                         chIndex = chIndex + 1;
                         
@@ -240,9 +246,9 @@ classdef liveExperiment
                             ['ch0', num2str(ch)]), {preTifDir.name}));
                         
                         for f = 1:this.nFrames
-                            imfile = [this.preFolder, filesep, preChDir(f).name];
-                            imStack = imreadStack(imfile);
-                            movieMat(:, :, :, f, chIndex) = imStack;      
+                            movieMat(:, :, :, f, chIndex) =...
+                                imreadStack2([this.preFolder, filesep, preChDir(f).name],...
+                                this.yDim, this.xDim, this.zDim+nPadding);     
                         end
                         
                     end
@@ -267,7 +273,8 @@ classdef liveExperiment
                 if obj.hasHisMatFile
                     hisMat = loadHisMat(obj.Prefix);
                 elseif haveHisTifStack
-                    hisMat = imreadStack([obj.preFolder, filesep,obj.Prefix, '-His.tif']);
+                    
+                    hisMat = imreadStack2([obj.preFolder, filesep,obj.Prefix, '-His.tif'], obj.yDim, obj.xDim, obj.nFrames);
                 else
                     [~,hisMat] = makeMovieMats(obj.Prefix, [], [], [], 'loadMovie', false,  'loadHis', false, 'makeMovie', false, 'makeHis', true);
                 end
