@@ -201,8 +201,8 @@ if ~skipExtraction
         end
         
         [~, ~, ~, hisMat] = chooseAnaphaseFrames(...
-            Prefix, 'ProjectionType', ProjectionType,'Channels',...
-            Channels,'ReferenceHist', ReferenceHist, 'movieMat', movieMat);
+            Prefix, 'ProjectionType', ProjectionType,...
+            'ReferenceHist', ReferenceHist, 'movieMat', movieMat);
         
     end
     

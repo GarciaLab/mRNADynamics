@@ -11,8 +11,9 @@ classdef liveExperiment
         MLFolder = '';
         project = '';
         Channels = {};
-        spotChannels = [];
-        inputChannels = [];
+        spotChannelIndices = [];
+        inputChannelIndices = [];
+        nuclearChannels = {};
         
         isUnhealthy = false;
         
@@ -158,12 +159,12 @@ classdef liveExperiment
                 [obj.xDim, obj.yDim, obj.pixelSize_nm, obj.zStep_um, obj.snippetSize_px,...
                     obj.nFrames, obj.zDim, obj.nDigits] = getFrameInfoParams(FrameInfo);
                 obj.pixelSize_um = obj.pixelSize_nm/1000;
-            catch warning('FrameInfo not found.'); end
+            catch, warning('FrameInfo not found.'); end
             
             
-            obj.inputChannels = find(contains(obj.Channels, 'input', 'IgnoreCase', true));
+            obj.inputChannelIndices = find(contains(obj.Channels, 'input', 'IgnoreCase', true));
             
-            obj.spotChannels = getCoatChannel(Channel1, Channel2, Channel3);
+            obj.spotChannelIndices = getCoatChannel(Channel1, Channel2, Channel3);
             
             obj.anaphaseFrames = retrieveAnaphaseFrames(obj.Prefix, obj.userResultsFolder);
             if numel(obj.anaphaseFrames) < 6
@@ -208,8 +209,8 @@ classdef liveExperiment
             
             exportedChannels = [];
             %i don't see channel number going beyond 6 any time soon. 
-            for k = 0:5
-                exportedChannels(k+1) =  any(cellfun(@(x) contains(x, ['_ch0',num2str(k)]),...
+            for k = 1:5
+                exportedChannels(k) =  any(cellfun(@(x) contains(x, ['_ch0',num2str(k)]),...
                     {preTifDir.name}));
             end
             channelsToRead = find(exportedChannels);

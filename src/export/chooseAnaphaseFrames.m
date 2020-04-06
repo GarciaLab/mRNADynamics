@@ -10,7 +10,7 @@
 % exportDataForLivemRNA and is only usable with Leica data (and the
 % 'nuclearGUI' option must be entered in exportDataForLivemRNA)
 
-function [anaphaseFrames, Channels, ProjectionType, hisMat] =...
+function [anaphaseFrames, projectionChannels, ProjectionType, hisMat] =...
     chooseAnaphaseFrames(Prefix, varargin)
 
 cleanupObj = onCleanup(@myCleanupFun);
@@ -47,16 +47,14 @@ if ~isempty(Prefix)
     Channel2 = thisExperiment.Channel2;
     Channel3 = thisExperiment.Channel3;
     
+    projectionChannels = {Channel1, Channel2, Channel3};
+    
     DropboxFolder = thisExperiment.userResultsFolder;
     PreProcPath = thisExperiment.userPreFolder;
     
     movieMat = getMovieMat(thisExperiment);
     
     projectionTypeFile = [DropboxFolder,filesep,Prefix,filesep, 'ProjectionType.mat'];
-    channelsFile = [DropboxFolder,filesep,Prefix,filesep, 'Channels.mat'];
-    
-    if exist(channelsFile, 'file'), load(channelsFile, 'Channels') 
-    else, Channels = {Channel1, Channel2, Channel3}; end
     
     if exist(projectionTypeFile, 'file')
         load(projectionTypeFile, 'ProjectionType')
@@ -69,7 +67,8 @@ if ~isempty(Prefix)
     [anaphaseFrames, anaphaseFile] = retrieveAnaphaseFrames(Prefix);
     anaphaseFramesInitial = anaphaseFrames;
     
-    
+    channelsFile = [DropboxFolder,filesep,Prefix,filesep, 'Channels.mat'];
+
     
     isUnhealthyFile = [DropboxFolder,filesep,Prefix,filesep, 'isUnhealthy.mat'];
     if exist(isUnhealthyFile, 'file')
@@ -100,9 +99,7 @@ custom_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
 
 truncateAtColon = @(str) str(1:strfind(str, ':')-1);
 
-try
-    Channel1 = Channels{1}; Channel2 = Channels{2}; Channel3 = Channels{3};
-end
+
 if iscell(Channel1)
     Channel1 = Channel1{1};
 end
@@ -126,7 +123,7 @@ if ~isempty(strfind(Channel3, ':'))
     Channel3 = truncateAtColon(Channel3);
 end
 
-Channels = {Channel1, Channel2, Channel3};
+projectionChannels = {Channel1, Channel2, Channel3};
 
 %construct cell to store projections for each frame separately
 projCell = cell(NFrames, 1);
@@ -390,8 +387,8 @@ uiwait(fig);
         
         projCell{frame} = projection_type;
         %         chCell{frame} = getChannels;
-        Channels = retrieveChannels;
-        Channel1 = Channels{1}; Channel2 = Channels{2}; Channel3 = Channels{3};
+        projectionChannels = retrieveChannels;
+        Channel1 = projectionChannels{1}; Channel2 = projectionChannels{2}; Channel3 = projectionChannels{3};
         
         
     end
@@ -403,8 +400,8 @@ uiwait(fig);
             ProjectionType = [ProjectionType ':' num2str(max_custom) ':' num2str(min_custom)];
         end
         
-        Channels = retrieveChannels;
-        Channel1 = Channels{1}; Channel2 = Channels{2}; Channel3 = Channels{3};
+        projectionChannels = retrieveChannels;
+        Channel1 = projectionChannels{1}; Channel2 = projectionChannels{2}; Channel3 = projectionChannels{3};
         
         if returnHisMat
             
@@ -412,21 +409,20 @@ uiwait(fig);
             
             for f = 1:NFrames
                 %                 hisMat(:, :, f) = generateNuclearChannel2(projCell{f}, chCell{f}, ReferenceHist, movieMat, f);
-                hisMat(:, :, f) = generateNuclearChannel2(ProjectionType, Channels, ReferenceHist, movieMat, f);
+                hisMat(:, :, f) = generateNuclearChannel2(ProjectionType, projectionChannels, ReferenceHist, movieMat, f);
             end
             
-             livemRNAImageMatSaver([thisExperiment.preFolder, Prefix, '_hisMat.mat'],...
-            hisMat);
+%              livemRNAImageMatSaver([thisExperiment.preFolder, Prefix, '_hisMat.mat'],...
+%             hisMat);
             
         end
         
         
         
         save(projectionTypeFile,'ProjectionType','-v6')
-        save(channelsFile,'Channels','-v6')
+        save(channelsFile,'projectionChannels','-v6')
         
         save(anaphaseFile, 'anaphaseFrames', '-v6')
-        anaphaseFrames'
         
         isUnhealthy = cbx.Value;
         save(isUnhealthyFile, 'isUnhealthy','-v6');
@@ -532,7 +528,7 @@ uiwait(fig);
 
     function saveAnaphasesButtonPushed(src,event)
         save(anaphaseFile, 'anaphaseFrames', '-v6')
-        anaphaseFrames'
+        disp(num2str(anaphaseFrames'));
         disp('Anaphase frames saved.');
     end
 
