@@ -81,12 +81,11 @@ if ~isempty(Prefix)
     
 end
 
-NSlices = size(movieMat, 3);
-NFrames = size(movieMat, 4);
+NFrames = thisExperiment.nFrames;
+NSlices = thisExperiment.zDim;
 NChannels = size(movieMat, 5);
-yDim = size(movieMat, 1);
-xDim = size(movieMat, 2);
-
+yDim = thisExperiment.yDim; 
+xDim = thisExperiment.xDim;
 
 
 % initializes cell arrays for all the histone projections

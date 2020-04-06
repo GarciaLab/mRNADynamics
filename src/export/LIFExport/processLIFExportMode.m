@@ -10,6 +10,10 @@ cleanupObj = onCleanup(@myCleanupFun);
 
 mm = false;
 
+thisExperiment = liveExperiment(Prefix);
+
+resultsFolder = thisExperiment.resultsFolder;
+
 if ~shouldExportMovieFiles
     FrameInfo = [];
 end
@@ -48,12 +52,13 @@ if shouldMakeMovieMat
     end
     
     FrameInfo = recordFrameInfo(NFrames, NSlices, InitialStackTime, LIFMeta, zPosition);
-    
+
     if markandfind
         FrameInfo = repmat(FrameInfo, NSeries, 1);
     end
     
-    
+    save([resultsFolder, filesep, 'FrameInfo.mat'], 'FrameInfo', '-v6');
+
     %Find the flat field (FF) information
     LIFExportMode_flatFieldImage(LIFMeta,...
         rawDataFolder, PreProcFolder, Prefix, PreferredFileNameForTest);

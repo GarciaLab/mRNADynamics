@@ -208,16 +208,16 @@ classdef liveExperiment
             end
             
             exportedChannels = [];
-            %i don't see channel number going beyond 6 any time soon. 
-            for k = 1:5
+            % find what channels were exported           
+            for k = 1:5  %i don't see channel number going beyond 6 any time soon. 
                 exportedChannels(k) =  any(cellfun(@(x) contains(x, ['_ch0',num2str(k)]),...
                     {preTifDir.name}));
             end
             channelsToRead = find(exportedChannels);
      
-            
+            % this is for backwards compatibility, exported tiffs used to be one per z slice.
             haveTifStacks = any(cellfun(@(x) ~contains(x, '_z'),...
-                {preTifDir.name}));
+                {preTifDir.name})); 
             
             
             persistent movieMat;
@@ -243,7 +243,7 @@ classdef liveExperiment
                     for ch = channelsToRead
                         chIndex = chIndex + 1;
                         
-                        preChDir = preTifDir(cellfun(@(x) ~contains(x,...
+                        preChDir = preTifDir(cellfun(@(x) contains(x,...
                             ['ch0', num2str(ch)]), {preTifDir.name}));
                         
                         for f = 1:this.nFrames
