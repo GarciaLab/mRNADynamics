@@ -15,11 +15,45 @@ function [Particles, SpotFilter] = AddParticlePositionTile(Prefix, varargin)
 
 %% 
 
+
 %Default set of variables to save
 saveVars={'coordA','coordP','coordAZoom','coordPZoom'};
 
-close all
 
+SkipAlignment=false;
+ManualAlignment=false;
+NoAP=false;
+SelectChannel=0;
+InvertHis=false;
+optionalResults = '';
+yToManualAlignmentPrompt = false;
+correctDV = false;
+
+close all
+%% 
+
+
+    for i=1:length(varargin)
+        switch varargin{i}
+            case {'SkipAlignment'}
+                disp('Skipping alignment step')
+                SkipAlignment=1;
+            case {'ManualAlignment'}
+                ManualAlignment=1;
+            case {'NoAP'}
+                NoAP=1;
+            case {'SelectChannel'}
+                SelectChannel=1;
+            case {'optionalResults'}
+                optionalResults = varargin{i+1};
+            case {'yToManualAlignmentPrompt'}
+                yToManualAlignmentPrompt = 1;
+            case {'correctDV'}
+                correctDV = true;
+        end
+    end
+    %% 
+    
 %Get the relevant folders for this data set
 [RawDynamicsPath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
     configValues,...
@@ -28,7 +62,6 @@ close all
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoopEnd, APResolution,...
     Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
     nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
-
 
 if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
     load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
@@ -144,162 +177,108 @@ end
 %Find the full embryo pixel size and load the image
 D=dir([fullEmbryoPath,filesep,'*surf*.',FileMode(1:3)]);
 
-    ImageTemp=bfopen([fullEmbryoPath,filesep,D(end).name]);
-    MetaFullEmbryo= ImageTemp{:, 4};
-    PixelSizeFullEmbryoSurf=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0) );
-    try
-        PixelSizeFullEmbryoSurf=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0).value);
-    catch
-        PixelSizeFullEmbryoSurf=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
-    end
+ImageTemp=bfopen([fullEmbryoPath,filesep,D(end).name]);
+MetaFullEmbryo= ImageTemp{:, 4};
+try
+    PixelSizeFullEmbryo=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0).value);
+catch
+    PixelSizeFullEmbryo=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
+end
 
-    %Check that the surface and midsaggital images have the same zoom
-    midDirectory=dir([fullEmbryoPath,'*mid*.',FileMode(1:3)]);
-    if strcmp(FileMode, 'DSPIN')            %CS20170912
-        midDirectory=dir([fullEmbryoPath,'*surf*']);
-    end
-    ImageTempMid=bfopen([fullEmbryoPath,midDirectory(end).name]);
-    MetaFullEmbryoMid= ImageTempMid{:, 4};
+%Check that the surface and midsaggital images have the same zoom
+midDirectory=dir([fullEmbryoPath,'*mid*.',FileMode(1:3)]);
+ImageTempMid=bfopen([fullEmbryoPath,midDirectory(end).name]);
+MetaFullEmbryoMid= ImageTempMid{:, 4};
 
-    %This if for BioFormats backwards compatibility
-    if ~isempty(str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0)))
-        PixelSizeFullEmbryoMid=str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0));
-    else
-        PixelSizeFullEmbryoMid=str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0).value);
-    end
+%This if for BioFormats backwards compatibility
+try
+    PixelSizeFullEmbryoMid=str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0).value);
+catch
+    PixelSizeFullEmbryoMid=str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0));
+end
 
 
-    %In principle, we would be comparing PixelSizeFullEmbryo==PixelSizeFullEmbryoMid
-    %However, some issues of machine precision made this not work
-    %sometimes.
-    if abs(PixelSizeFullEmbryoSurf/PixelSizeFullEmbryoMid-1)>0.01
-        error('The surface and midsaggital images were not taken with the same pixel size')
-    end
+
+%In principle, we would be comparing PixelSizeFullEmbryo==PixelSizeFullEmbryoMid
+%However, some issues of machine precision made this not work
+%sometimes.
+if abs(PixelSizeFullEmbryo/PixelSizeFullEmbryoMid-1)>0.01
+    error('The surface and midsaggital images were not taken with the same pixel size')
+end
+%% Load Full Embryo Image 
+stitchingDataFolder = [DropboxFolder,filesep,Prefix,filesep,'FullEmbryoStitching'];
 
 
-    %How many channels and slices do we have?
-    NChannelsMeta=MetaFullEmbryo.getChannelCount(0);
-    NSlices=str2double(MetaFullEmbryo.getPixelsSizeZ(0));
-    clear MaxTemp
 
-    %Do a maximum projection
-
-    %Look for the image with the largest size. In this way, we avoid
-    %loading individual tiles in the case of a tile scan.
-    for i=1:size(ImageTemp,1)
-        SizesImages(i)=size(ImageTemp{i,1}{1,1},1);
-    end
-    [~,ImageCellToUse]=max(SizesImages);
+SurfImage = imread([stitchingDataFolder, filesep, 'SurfTileStitch_MaxPadded.tif']);
+%% 
 
 
-    %By looking at the last image we make sure we're avoiding the
-    %individual tiles if we're dealing with tile scan
-    for i=HisChannel:NChannelsMeta:size(ImageTemp{ImageCellToUse,1},1)
-        MaxTemp(:,:,i)=ImageTemp{ImageCellToUse,1}{i,1};
-    end
+%How many channels and slices do we have?
+% NChannelsMeta=MetaFullEmbryo.getChannelCount(0);
+% NSlices=str2double(MetaFullEmbryo.getPixelsSizeZ(0));
+% clear MaxTemp
 
-    if InvertHis
-        SurfImage=MaxTemp(:,:,HisChannel+round(NSlices/2)*NChannelsMeta);
-    else
-        SurfImage=max(MaxTemp,[],3);
-    end
-
-    %For Nikon spinnind disk data load the stitched surface image that
-    %was made by FindAPAxisFullEmbryo
-    if strcmp(FileMode,'DSPIN')
-        SurfImage = bfopen([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoSurf.tif']);
-        SurfImage = SurfImage{1}{1};
-    end
     %%
-    %Rotates the full embryo image to match the rotation of the zoomed
-    %time series
-    zoom_angle = 0;
-    full_embryo_angle = 0;
+%Rotates the full embryo image to match the rotation of the zoomed
+%time series
+zoom_angle = 0;
+full_embryo_angle = 0;
 
-    if strcmp(FileMode,'LIFExport')
-        if isfolder([rawPrefixPath, 'MetaData'])
-            xml_file_path = dir([rawPrefixPath,'MetaData', filesep, '*.xml']);
-            xml_file = xml_file_path(1).name;
-            xDoc = searchXML([rawPrefixPath,'MetaData', filesep, xml_file]);
-            zoom_angle = str2double(evalin('base','rot'));
-        else
-            warning('No time series metadata found.')
-        end
-        if isfolder([fullEmbryoPath,'MetaData'])
-            xml_file_path2 = dir([fullEmbryoPath,'MetaData', filesep,'*Surf*.xml']);
-            xml_file2 = xml_file_path2(1).name;
-            xDoc2 = searchXML([fullEmbryoPath,'MetaData', filesep, xml_file2]);
-            full_embryo_angle = str2double(evalin('base','rot'));
-        else
-            warning('No full embryo metadata found.')
-        end
+if isfolder([rawPrefixPath, 'MetaData'])
+    xml_file_path = dir([rawPrefixPath,'MetaData', filesep, '*.xml']);
+    xml_file = xml_file_path(1).name;
+    xDoc = searchXML([rawPrefixPath,'MetaData', filesep, xml_file]);
+    zoom_angle = str2double(evalin('base','rot'));
+else
+    warning('No time series metadata found.')
+end
+if isfolder([fullEmbryoPath,'MetaData'])
+    xml_file_path2 = dir([fullEmbryoPath,'MetaData', filesep,'*Surf*.xml']);
+    xml_file2 = xml_file_path2(1).name;
+    xDoc2 = searchXML([fullEmbryoPath,'MetaData', filesep, xml_file2]);
+    full_embryo_angle = str2double(evalin('base','rot'));
+else
+    warning('No full embryo metadata found.')
+end
 
-        evalin('base','clear rot')
-    elseif strcmp(FileMode,'LSM')|strcmp(FileMode,'CZI')|strcmp(FileMode,'DSPIN') %CS20170912
-        LSMSurf=bfopen([fullEmbryoPath,D(1).name]);
-        LSMMeta=LSMSurf{:,4};
-        LSMMeta2=LSMSurf{:,2};
+evalin('base','clear rot')
 
-        %Get the surface image
-        %SurfImage=LSMSurf{1}{HisChannel,1};
-
-        %Get the metadata about rotation. This will depend on whether
-        %we have a LSM or CZI file
-        if strcmp(FileMode,'LSM')
-            %Figure out the rotation of the full embryo image
-            full_embryo_angle = LSMMeta2.get('Recording Rotation #1');
-
-            %Figure out the rotation of the zoomed-in image
-            DLSMZoom=dir([rawPrefixPath,'*.lsm']);
-            LSMZoom=bfopen([rawPrefixPath, DLSMZoom(1).name]);
-            LSMMetaZoom2=LSMZoom{:,2};
-            zoom_angle=LSMMetaZoom2.get('Recording Rotation #1');
-        elseif strcmp(FileMode,'CZI')
-            %Figure out the rotation of the full embryo image
-            full_embryo_angle=str2num(LSMMeta2.get('Global HardwareSetting|ParameterCollection|RoiRotation #1'));
-
-            %Figure out the rotation of the zoomed-in image
-            DLSMZoom=dir([rawPrefixPath,'*.czi']);
-            LSMZoom=bfopen([rawPrefixPath,...
-                DLSMZoom(1).name]);
-            LSMMetaZoom2=LSMZoom{:,2};
-            zoom_angle=str2double(LSMMetaZoom2.get('Global HardwareSetting|ParameterCollection|RoiRotation #1'));
-        end
-    end
     %%
-    SurfImage = imrotate(SurfImage, -zoom_angle + full_embryo_angle);
-
+SurfImage = imrotate(SurfImage, -zoom_angle + full_embryo_angle);
+if ~exist([DropboxFolder,filesep,Prefix, filesep, 'DV'], 'dir')
     mkdir([DropboxFolder,filesep,Prefix, filesep, 'DV']);
-    maxSurfSavePath = [DropboxFolder,filesep,Prefix, filesep, 'DV', filesep, 'surf_max.tif'];
-    imwrite(SurfImage,maxSurfSavePath);
+end
+maxSurfSavePath = [DropboxFolder,filesep,Prefix, filesep, 'DV', filesep, 'surf_max.tif'];
+imwrite(SurfImage,maxSurfSavePath);
 
 
-    clear ImageTemp
 
-    %Zoom factor
-    MovieZoom=PixelSizeFullEmbryoSurf(1)/PixelSizeZoom(1);
-    SurfZoom=1;     %We'll call the zoom of the full embryo image 1
+%Zoom factor
+MovieZoom=PixelSizeFullEmbryo(1)/PixelSizeZoom(1);
+SurfZoom=1;     %We'll call the zoom of the full embryo image 1
 
-    %Get the size of the zoom image
-    Columns = str2double(MetaZoom.getPixelsSizeX(0));
-    Rows = str2double(MetaZoom.getPixelsSizeY(0));
-    surf_size = size(SurfImage);
-    SurfColumns= surf_size(2);
-    SurfRows=surf_size(1);
-    ZoomRatio = MovieZoom / SurfZoom;
+%Get the size of the zoom image
+Columns = str2double(MetaZoom.getPixelsSizeX(0));
+Rows = str2double(MetaZoom.getPixelsSizeY(0));
+surf_size = size(SurfImage);
+SurfColumns= surf_size(2);
+SurfRows=surf_size(1);
+ZoomRatio = MovieZoom / SurfZoom;
 
-    
-    
-    
-    %Get the information about the AP axis as well as the image shifts
-    %used for the stitching of the two halves of the embryo
-    load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
-    
-    
-    %Make a folder to store the images
-    mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
-    
-    
+
+
+
+%Get the information about the AP axis as well as the image shifts
+%used for the stitching of the two halves of the embryo
+load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+
+
+%Make a folder to store the images
+mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
+
+%% 
+
     
     % Load the last frame of the zoomed-in image, for calculating the
     % cross-correlation. This part now only requires the same
@@ -345,7 +324,94 @@ D=dir([fullEmbryoPath,filesep,'*surf*.',FileMode(1:3)]);
         NucMaskZoomIn = false(size(ZoomImage));
         NucMaskZoomOut = false(size(SurfImage));
         
-        if ZoomRatio < 24  %ZoomRatio > 1 && ZoomRatio < 24. AR 12/4/17- where did this number come from
+        if ZoomRatio < 1
+            ZoomImageResized = imresize(ZoomImage, 1/ZoomRatio);
+            im1 = ZoomImageResized;
+            im2 = SurfImage;
+            C = normxcorr2(im1, im2);
+            [Max2,MaxRows]=max(C);
+            [~,MaxColumn]=max(Max2);
+            MaxRow=MaxRows(MaxColumn);
+            [CRows,CColumns]=size(C);
+            ShiftRow=round((MaxRow-(CRows/2+1)));
+            ShiftColumn=round((MaxColumn-(CColumns/2+1)));
+            
+            %How well did we do with the alignment?
+            [RowsSurf,ColumnsSurf]=size(SurfImage);
+            [RowsZoomResized,ColumnsZoomResized]=size(ZoomImageResized);
+                        %If we can, we'll crop the surface image to center the overlay
+            %on the area of acquisition. If not, we'll just show both images
+            %without cropping.
+            
+            [ypeak,xpeak] = find(C==max(C(:)));
+
+            yoffSet = ypeak-size(im1,1);
+            xoffSet = xpeak-size(im1,2);
+
+            imshow(im2)
+            drawrectangle(gca,'Position',[xoffSet,yoffSet,size(im1,2),size(im1,1)], ...
+                'FaceAlpha',0);
+            
+            if ((round(RowsSurf/2-RowsZoomResized/2+ShiftRow))>0)&...
+                    (round(RowsSurf/2+RowsZoomResized/2-1+ShiftRow)<=RowsSurf)&...
+                    (round(ColumnsSurf/2-ColumnsZoomResized/2+ShiftColumn)>0)&...
+                    (round(ColumnsSurf/2+ColumnsZoomResized/2-1+ShiftColumn)<=ColumnsSurf)
+                RowsSurfRange=...
+                    round(RowsSurf/2-RowsZoomResized/2+ShiftRow):...
+                    round(RowsSurf/2+RowsZoomResized/2-1+ShiftRow);
+                ColumnsSurfRange=...
+                    round(ColumnsSurf/2-ColumnsZoomResized/2+ShiftColumn):...
+                    round(ColumnsSurf/2+ColumnsZoomResized/2-1+ShiftColumn);
+            else
+                RowsSurfRange=1:RowsSurf;
+                ColumnsSurfRange=1:ColumnsSurf;
+            end
+            try
+                %Real image overlay
+                %Crop the zoomed out image to match the zoomed in one
+                SurfImageResize=...
+                    SurfImage(RowsSurfRange,ColumnsSurfRange);
+                ImOverlay=cat(3,mat2gray(SurfImageResize),...
+                    +mat2gray(ZoomImageResized),zeros(size(SurfImageResize)));
+                
+                %Nuclear mask overlay
+                NucMaskZoomOut= GetNuclearMask(SurfImage,2.5,0);
+                NucMaskZoomOutResized=imresize(NucMaskZoomOut, ZoomRatio);
+                NucMaskZoomOutResizedCropped=...
+                    NucMaskZoomOutResized(RowsResizedRange,ColumnsResizedRange);
+                NucMaskZoomIn=GetNuclearMask(ZoomImage,8,2);
+                ImOverlayMask=cat(3,mat2gray(NucMaskZoomOutResizedCropped),...
+                    +mat2gray(NucMaskZoomIn),zeros(size(NucMaskZoomOutResizedCropped)));
+
+                alOvFig = figure(1);
+                imOv = subplot(2,1,1);
+                imshow(ImOverlay, 'Parent', imOv)
+                imOvMask = subplot(2,1,2);
+                imshow(ImOverlayMask, 'Parent', imOvMask)
+                saveas(alOvFig, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentOverlay.tif']);
+                
+                
+                
+                
+                %Show the correlation image, but crop it a little bit
+                contFig = figure(2);
+                contAxes = axes(contFig);
+                %HG: Note that I changed the ranges here by two pixels at
+                %least.
+                lX = uint16((CRows+1)/2-RowsZoom+1);
+                uX = uint16((CRows-1)/2+RowsZoom);
+                lY = uint16((CColumns+1)/2-ColumnsZoom+1);
+                uY = uint16((CColumns-1)/2+ColumnsZoom);
+                
+                contourf(contAxes,imresize(abs(C(lX:uX,lY:uY)),.5));
+                saveas(contFig, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentCorrelation.tif']);
+            catch
+                warning('Could not generate correlation image. Switching to manual alignment')
+                ManualAlignment=true;
+            end
+            
+            
+        elseif ZoomRatio > 1 && ZoomRation < 24  %ZoomRatio > 1 && ZoomRatio < 24. AR 12/4/17- where did this number come from
             
             %Enlarge the zoomed out image so we can do the cross-correlation
             SurfImageResized=imresize(SurfImage, ZoomRatio);
@@ -353,6 +419,7 @@ D=dir([fullEmbryoPath,filesep,'*surf*.',FileMode(1:3)]);
             %Calculate the correlation matrix and find the maximum
             im1 = ZoomImage;
             im2 = SurfImageResized;
+            
             
 %             if InvertHis
 %                 im1 = imcomplement(im1);

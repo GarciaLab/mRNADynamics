@@ -12,31 +12,6 @@ if ~exist('Prefix')
 end 
 
 
-% Parse inputs
-x = 1;
-while x <= length(varargin)
-    switch varargin{x}
-        case{'NIterations'}
-            NIterations = varargin{x+1};
-            x = x + 1;
-            fprintf('Number of Iterations: %d\n', NIterations);
-        case {'FullyAutomate'}
-            FullyAutomate = true;
-            fprintf('Stitching fully automated.\n')
-        case {'StitchManually'}
-            StitchManually = true;
-            fprintf('Stitching to be performed manually.\n')
-        case {'MaxStep'}
-            MaxStep = varargin{x+1};
-            x = x+1;
-            fprintf('Max Step Size to be used in stitching loop: %d\n', MaxStep)
-        case{'MaxOverlap'}
-            MaxOverlap = varargin{x+1};
-            x = x+1;
-            fprintf('Max overlap between adjacent tiles to be used in stitching loop: %d\n', RowMaxOverlap)
-    end
-    x = x +1;
-end
 
 
 

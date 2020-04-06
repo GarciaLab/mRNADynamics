@@ -63,12 +63,12 @@ if ~exist('ID', 'var')
     end
 end
 if ~exist('MaxDeltaR', 'var') && ~StitchManually
-    disp('Using default value of MaxDeltaR=50.')
-    MaxDeltaR = 50;
+    disp('Using default value of MaxDeltaR=100.')
+    MaxDeltaR = 100;
 end
 if ~exist('MaxDeltaC', 'var') && ~StitchManually
-    disp('Using default value of MaxDeltaC=50.')
-    MaxDeltaC = 50;
+    disp('Using default value of MaxDeltaC=100.')
+    MaxDeltaC = 100;
 end
 
 
@@ -88,12 +88,12 @@ EmbryoName=Prefix(Dashes(3)+1:end);
 %% Generate Stitching Information
 
 % Generate Initial Tile Array from Metadata files and raw data
-NewTileArrayFromMetadata(Prefix, ID);
-
-% Get user input to improve initial seed for tile stitching
-if ~FullyAutomate
-    ManualStitchingCorrection(Prefix, ID);
-end
+% NewTileArrayFromMetadata(Prefix, ID);
+% 
+% % Get user input to improve initial seed for tile stitching
+% if ~FullyAutomate
+%     ManualStitchingCorrection(Prefix, ID);
+% end
 
 % Finalize Tile Array Stitching Positions using FindStitchingPositions
 if ~StitchManually

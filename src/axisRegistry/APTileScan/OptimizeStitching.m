@@ -124,13 +124,13 @@ for m=2:NTiles
                     areas(i,j, counter) = area;
                 %end
             end
-            if mod(i, 50) == 0
-                fprintf('%d/%d\n', [i, length(tArRange)]);
-            elseif mod(i, 25) == 0
-                fprintf('%d/%d', [i, length(tArRange)]);
-            else
-                fprintf('.');
-            end
+%             if mod(i, 50) == 0
+%                 fprintf('%d/%d\n', [i, length(tArRange)]);
+%             elseif mod(i, 25) == 0
+%                 fprintf('%d/%d', [i, length(tArRange)]);
+%             else
+%                 fprintf('.');
+%             end
         end
     end
     summed_scores = sum(scores, 3);
@@ -147,11 +147,13 @@ for m=2:NTiles
         tile_array.rows{rr} = tile_array.rows{rr} + (1-top_limit);
     end
 
-    cmins = [tile_array.cols{:}];
+    cmins = [tile_array.cols{:}]; 
     left_limit = min(cmins);
     for cc =1:length(tile_array.cols)
         tile_array.cols{cc} = tile_array.cols{cc} + (1-left_limit);
     end
+    rmins = rmins;
+    
 end
 
 

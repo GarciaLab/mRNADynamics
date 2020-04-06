@@ -81,15 +81,15 @@ for n=1:NTiles
     ZStacks{n} = ImageSlices;
 end
 
-MaxProjImgs = tile_array.tiles;
-GaussFiltImgs = tile_array.imgs;
+%MaxProjImgs = tile_array.tiles;
+%GaussFiltImgs = tile_array.imgs;
 %% Generate stitched images
 % Stitched Max-projected image
 StitchedMaxImm = imstitchTile(tile_array, 'NoFilter', true);
-
-%Stitched gaussian filtered max-projected images
-StitchedGaussImm = imstitchTile(tile_array);
-
+PixelSize = double(LIFMeta.getPixelsPhysicalSizeX(1).value);% units: microns
+sigma = .6/PixelSize;
+StitchedGaussImm = imgaussfilt(StitchedMaxImm, sigma);
+StitchedZStacks = imstitchTile(tile_array, 'ZStack', true);
 % Stitched raw data z stacks 
 hs = [];
 ws = [];
@@ -104,18 +104,7 @@ rbounds = rs + hs-1;
 cbounds = cs + ws-1;
 numrows = max(rbounds);
 numcols = max(cbounds);
-StitchedZStacks = zeros(numrows, numcols, NSlices(1));
-imcounts = zeros(numrows, numcols, NSlices(1));
 
-for n =1:NTiles
-    r = tile_array.rows{n};
-    c = tile_array.cols{n};
-    [h, w] = size(tile_array.imgs{n});
-    imcounts(r:(r+h-1),c:(c+w-1),:) = imcounts(r:(r+h-1),c:(c+w-1),:) +1;
-    StitchedZStacks(r:(r+h-1), c:(c+w-1),:) =...
-        StitchedZStacks(r:(r+h-1), c:(c+w-1),:)+ZStacks{n};
-end
-StitchedZStacks = StitchedZStacks./imcounts;
 
 
 %% Save stitched data in tif files

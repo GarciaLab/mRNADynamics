@@ -25,11 +25,11 @@ while x <= length(varargin)
             StitchManually = true;
             fprintf('Stitching to be performed manually.\n')
         case {'MaxDeltaR'}
-            MaxDeltaR = varargin{1}{x+1};
+            MaxDeltaR = varargin{x+1};
             x = x+1;
             fprintf('Max change in row overlap to be used in stitching loop: %d\n', MaxDeltaR)
         case{'MaxDeltaC'}
-            MaxDeltaC = varargin{1}{x+1};
+            MaxDeltaC = varargin{x+1};
             x = x+1;
             fprintf('Max change in column overlap to be used in stitching loop: %d\n', MaxDeltaC)
     end
@@ -140,10 +140,12 @@ LIFSurf=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',
 MIDMeta = LIFMid{:, 4};
 SURFMeta = LIFSurf{:,4};
 %% 
-[SurfNSeries, SurfNFrames, SurfNSlices, SurfNPlanes, SurfNChannels, SurfFrame_Times] = getFrames(SURFMeta);
-SurfNTiles = SurfNSeries;
-[MidNSeries, MidNFrames, MidNSlices, MidNPlanes, MidNChannels, MidFrame_Times] = getFrames(MIDMeta);
-MidNTiles = MidNSeries;
+[SurfNTiles, SurfNFrames, SurfNSlices, SurfNPlanes, SurfNChannels,...
+    SurfFrame_Times] = getFrames(SURFMeta);
+
+[MidNTiles, MidNFrames, MidNSlices, MidNPlanes, MidNChannels,...
+    MidFrame_Times] = getFrames(MIDMeta);
+
 
 
 PixelSize = double(MIDMeta.getPixelsPhysicalSizeX(1).value);% units: microns
@@ -185,12 +187,12 @@ if ~all(size(MidImageNoPadding) == size(SurfImageNoPadding))
     nrows = max(size(MidImageNoPadding, 1), size(SurfImageNoPadding, 1));
     ncols = max(size(MidImageNoPadding, 2), size(SurfImageNoPadding, 2));
     nz = size(MidImageNoPadding, 3);
-    MidImage = zeros(nrows, ncols, nz);
-    SurfImage = zeros(nrows, ncols, nz);
-    MidMaxImage = zeros(nrows, ncols);
-    SurfMaxImage = zeros(nrows, ncols);
-    MidFilteredImage = zeros(nrows, ncols);
-    SurfFilteredImage = zeros(nrows, ncols);
+    MidImage = zeros(nrows, ncols, nz, 'uint8');
+    SurfImage = zeros(nrows, ncols, nz, 'uint8');
+    MidMaxImage = zeros(nrows, ncols, 'uint8');
+    SurfMaxImage = zeros(nrows, ncols, 'uint8');
+    MidFilteredImage = zeros(nrows, ncols, 'uint8');
+    SurfFilteredImage = zeros(nrows, ncols, 'uint8');
     [hm, wm] = size(MidImageNoPadding, 1:2);
     [hs, ws] = size(SurfImageNoPadding, 1:2);
     if DeltaR > 0
@@ -216,15 +218,15 @@ if ~all(size(MidImageNoPadding) == size(SurfImageNoPadding))
             SurfImage(1:hs, DeltaC+1:DeltaC+ws,:) = SurfImageNoPadding;
             MidMaxImage(DeltaR+1:DeltaR+hm, 1:wm) = MidImageMaxNoPadding;
             SurfMaxImage(1:hs, DeltaC+1:DeltaC+ws) = SurfImageMaxNoPadding;
-            MidFilteredImage(DeltaR+1:DeltaR+hm, 1:wm) = MidImageFilteredNoPadding;
+            MidFilteredImage(DeltaR+1:DeltaR+hm, 1: wm) = MidImageFilteredNoPadding;
             SurfFilteredImage(1:hs, DeltaC+1:DeltaC+ws) = SurfImageFilteredNoPadding;
         else
             MidImage(DeltaR + 1:DeltaR + hm, DeltaC + 1:DeltaC + wm,:) = MidImageNoPadding;
-            SurfImage = SurfImageNoPadding;
+            SurfImage(1:hs, 1:ws,:) = SurfImageNoPadding;
             MidMaxImage(DeltaR + 1:DeltaR + hm, DeltaC + 1:DeltaC + wm) = MidImageMaxNoPadding;
-            SurfMaxImage = SurfImageMaxNoPadding;
+            SurfMaxImage(1:hs, 1:ws) = SurfImageMaxNoPadding;
             MidFilteredImage(DeltaR + 1:DeltaR + hm, DeltaC + 1:DeltaC + wm) = MidImageFilteredNoPadding;
-            SurfFilteredImage = SurfImageFilteredNoPadding;
+            SurfFilteredImage(1:hs, 1:ws) = SurfImageFilteredNoPadding;
         end
     end
     
