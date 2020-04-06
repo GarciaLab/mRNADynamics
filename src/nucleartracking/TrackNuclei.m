@@ -259,11 +259,14 @@ end
 %Add the radius information to the schnitz
 for schnitz=1:length(schnitzcells)
     for f=1:length(schnitzcells(schnitz).frames)
-        r = single(mean(Ellipses{schnitzcells(schnitz).frames(f)}(schnitzcells(schnitz).cellno(f),3:4)));
-        schnitzcells(schnitz).len(:)=r;
+        r = single(mean(Ellipses{schnitzcells(schnitz).frames(f)}(...
+            schnitzcells(schnitz).cellno(f),3:4)));
         if ~isreal(r)
-            error('non real radii returned for schnitz. not sure what happened here.');
+            r = nan;
+            warning('non real radii returned for schnitz. not sure what happened here.');
         end
+        schnitzcells(schnitz).len(:)=r;
+        
     end
 end
 

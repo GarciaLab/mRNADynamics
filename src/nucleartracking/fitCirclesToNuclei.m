@@ -126,7 +126,9 @@ end
 ellipseFrameWithEdges = cat(1, ellipseFrame, edgeEllipseFrame);
 
 if ~isreal(ellipseFrameWithEdges)
-    keyboard
+    warning('complex ellipse semiaxes computed. not great. removing those ellipses.')
+    ellipseFrameWithEdges(~isreal(ellipseFrameWithEdges)) = [];
 end
+
 cMask = cMask + edgeMask;
 % figure; imshowpair(bw, cMask, 'montage');

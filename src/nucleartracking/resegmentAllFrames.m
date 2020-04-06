@@ -20,7 +20,7 @@ end
 
 Ellipses = cell(thisExperiment.nFrames, 1);
 
-for CurrentFrame = 1:thisExperiment.nFrames
+parfor CurrentFrame = 1:thisExperiment.nFrames
         
         HisImage = hisMat(:, :, CurrentFrame);
         if max(max(HisImage))~=0
