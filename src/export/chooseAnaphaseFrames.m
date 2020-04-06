@@ -75,17 +75,19 @@ if ~isempty(Prefix)
         load(isUnhealthyFile, 'isUnhealthy');
     end
     
-    if exist('C:\Users\Armando\Desktop\embryo_recorded_as_unhealthy.m4a', 'file')
-        [y, Fs] = audioread('C:\Users\Armando\Desktop\embryo_recorded_as_unhealthy.m4a');
+    audioFile = 'X:\Armando\LivemRNA\mRNADynamics\lib\audio\embryo_recorded_as_unhealthy.m4a';
+    if exist(audioFile, 'file')
+        [y, Fs] = audioread(audioFile);
     end
     
 end
 
 NFrames = thisExperiment.nFrames;
 NSlices = thisExperiment.zDim;
-NChannels = size(movieMat, 5);
 yDim = thisExperiment.yDim; 
 xDim = thisExperiment.xDim;
+
+NChannels = size(movieMat, 5);
 
 
 % initializes cell arrays for all the histone projections
@@ -112,13 +114,13 @@ ch1pre =  truncateAtColon(Channel1);
 ch2pre =  truncateAtColon(Channel2);
 ch3pre =  truncateAtColon(Channel3);
 
-if ~isempty(strfind(Channel1, ':'))
+if contains(Channel1, ':')
     Channel1 = truncateAtColon(Channel1);
 end
-if ~isempty(strfind(Channel2, ':'))
+if contains(Channel2, ':')
     Channel2 = truncateAtColon(Channel2);
 end
-if ~isempty(strfind(Channel3, ':'))
+if contains(Channel3, ':')
     Channel3 = truncateAtColon(Channel3);
 end
 
@@ -139,7 +141,7 @@ for framesIndex = 1:NFrames
     %         if mod(idx, skip_factor) == 1
     for channelIndex = 1:NChannels
         
-        HisSlices = squeeze(movieMat(:, :, :, framesIndex,channelIndex)); %ch z t y x
+        HisSlices = movieMat(:, :, :, framesIndex,channelIndex); %ch z t y x
         %
         %                 median_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
         %                     'medianprojection', NSlices, HisSlices);
@@ -404,15 +406,14 @@ uiwait(fig);
         
         if returnHisMat
             
-            hisMat = zeros(yDim, xDim, sum(NFrames), 'uint8'); % f x y
+            hisMat = zeros(yDim, xDim, sum(NFrames), 'uint8'); % y x f
             
             for f = 1:NFrames
                 %                 hisMat(:, :, f) = generateNuclearChannel2(projCell{f}, chCell{f}, ReferenceHist, movieMat, f);
                 hisMat(:, :, f) = generateNuclearChannel2(ProjectionType, projectionChannels, ReferenceHist, movieMat, f);
             end
             
-%              livemRNAImageMatSaver([thisExperiment.preFolder, Prefix, '_hisMat.mat'],...
-%             hisMat);
+            saveNuclearProjection(hisMat, [thisExperiment.preFolder, filesep, Prefix, '-His.tif']);
             
         end
         
@@ -463,7 +464,7 @@ uiwait(fig);
 
     function Channels = retrieveChannels()
 
-        if ~isempty(strfind(Channel1, ':'))
+        if contains(Channel1, ':')
             Channel1 = truncateAtColon(Channel1);
         end
         
@@ -479,7 +480,7 @@ uiwait(fig);
         
         
         
-        if ~isempty(strfind(Channel2, ':'))
+        if contains(Channel2, ':')
             Channel2 = truncateAtColon(Channel2);
         end
         
@@ -495,7 +496,7 @@ uiwait(fig);
         
         
         
-        if ~isempty(strfind(Channel3, ':'))
+        if contains(Channel3, ':')
             Channel3 = truncateAtColon(Channel3);
         end
         

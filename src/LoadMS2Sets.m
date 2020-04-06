@@ -121,7 +121,8 @@ D=dir([DropboxFolder,filesep,DataStatusNames{1}]);
 if isempty(D)
     D=dir([DropboxFolder,filesep,DataStatusNames{2}]);
 end
-[~,StatusTxt]=readcell([DropboxFolder,filesep,D(1).name],DataType);
+
+StatusTxt=readcell([DropboxFolder,filesep,D(1).name],'Sheet', DataType);
 
 
 %Which data sets are approved?

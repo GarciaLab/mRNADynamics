@@ -199,25 +199,29 @@ classdef liveExperiment
             Channels = filteredChannels;
         end
         
+        
+        
         function out = getMovieMat(this)
             
             persistent preTifDir;
             if isempty(preTifDir) ||...
                     ~isequal( length(preTifDir), this.nFrames)
-            preTifDir = dir([this.preFolder, '*_ch0*.tif']);
+                preTifDir = dir([this.preFolder, '*_ch0*.tif']);
             end
             
             exportedChannels = [];
-            % find what channels were exported           
-            for k = 1:5  %i don't see channel number going beyond 6 any time soon. 
-                exportedChannels(k) =  any(cellfun(@(x) contains(x, ['_ch0',num2str(k)]),...
-                    {preTifDir.name}));
+            % find what channels were exported
+            for k = 1:5  %i don't see channel number going beyond 6 any time soon.
+                exportedChannels(k) =  any(contains(...
+                    string({preTifDir.name}), ['_ch0',num2str(k)]));
+               
             end
             channelsToRead = find(exportedChannels);
-     
-            % this is for backwards compatibility, exported tiffs used to be one per z slice.
-            haveTifStacks = any(cellfun(@(x) ~contains(x, '_z'),...
-                {preTifDir.name})); 
+            
+            % this is for backwards compatibility,
+            %exported tiffs used to be one per z slice.
+            haveTifStacks = any(~contains(...
+                string({preTifDir.name}), '_z'));
             
             
             persistent movieMat;
@@ -227,38 +231,49 @@ classdef liveExperiment
                     ~isequal( size(movieMat, 4), this.nFrames)
                 
                 if this.hasMovieMatFile
-%                 if false
+                    %load in .mat file 
                     movieMat = loadMovieMat(this.Prefix);
                 elseif ~haveTifStacks
+                    %load movie from individual tif slices
                     movieMat = makeMovieMats(this.Prefix, [], [], [],...
                         'loadHis', false, 'makeMovie', true, 'loadMovie', false);
                 elseif haveTifStacks
-                    nPadding = 2;
-                    
-                    movieMat = zeros(this.yDim, this.xDim,...
-                        this.zDim+nPadding, this.nFrames, length(channelsToRead), 'uint8'); % y x z t ch
-                    
-                    chIndex = 0;
-                   
-                    for ch = channelsToRead
-                        chIndex = chIndex + 1;
-                        
-                        preChDir = preTifDir(cellfun(@(x) contains(x,...
-                            ['ch0', num2str(ch)]), {preTifDir.name}));
-                        
-                        for f = 1:this.nFrames
-                            movieMat(:, :, :, f, chIndex) =...
-                                imreadStack2([this.preFolder, filesep, preChDir(f).name],...
-                                this.yDim, this.xDim, this.zDim+nPadding);     
-                        end
-                        
-                    end
+                    movieMat = makeMovieMatFromTifStacks(this, preTifDir, channelsToRead);
                 else
                     error('can''t load movie.')
                 end
                 
             end
             out = movieMat;
+            
+        end
+        
+        
+        
+        function movieMat = makeMovieMatFromTifStacks(this, preTifDir, channelsToRead)
+            
+            nPadding = 2;
+            
+            movieMat = zeros(this.yDim, this.xDim,...
+                this.zDim+nPadding, this.nFrames,...
+                length(channelsToRead), 'uint8'); % y x z t ch
+            
+            chIndex = 0;
+            
+            for ch = channelsToRead
+                
+                chIndex = chIndex + 1;
+                
+                preChDir = preTifDir(contains(...
+                    string({preTifDir.name}), ['ch0', num2str(ch)]));
+                
+                for f = 1:this.nFrames
+                    movieMat(:, :, :, f, chIndex) =...
+                        imreadStack2([this.preFolder, filesep, preChDir(f).name],...
+                        this.yDim, this.xDim, this.zDim+nPadding);
+                end
+                
+            end
             
         end
         
@@ -272,12 +287,19 @@ classdef liveExperiment
             %Prefixes (determined by num frames)
             if isempty(hisMat) || ~isequal( size(hisMat, 3), obj.nFrames)
                 if obj.hasHisMatFile
+                    %load up .mat histone file
                     hisMat = loadHisMat(obj.Prefix);
-                elseif haveHisTifStack
                     
-                    hisMat = imreadStack2([obj.preFolder, filesep,obj.Prefix, '-His.tif'], obj.yDim, obj.xDim, obj.nFrames);
+                elseif haveHisTifStack
+                    %load in sequential tif stacks
+                    hisMat = imreadStack2([obj.preFolder, filesep,...
+                        obj.Prefix, '-His.tif'], obj.yDim, obj.xDim, obj.nFrames);
                 else
-                    [~,hisMat] = makeMovieMats(obj.Prefix, [], [], [], 'loadMovie', false,  'loadHis', false, 'makeMovie', false, 'makeHis', true);
+                    %load in individual tif slices
+                    [~,hisMat] = makeMovieMats(obj.Prefix, [], [], [],...
+                        'loadMovie', false,  'loadHis', false,...
+                        'makeMovie', false, 'makeHis', true);
+                    
                 end
             end
             out = hisMat;

@@ -6,7 +6,7 @@ t = Tiff(file,'r');
 stack = zeros(yDim, xDim, nPages);
 
 
-for z = 1:nPages-1
+parfor z = 1:nPages-1
     
     stack(:, :, z) = read(t); 
     nextDirectory(t);
