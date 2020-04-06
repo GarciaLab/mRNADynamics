@@ -11,8 +11,8 @@ classdef liveExperiment
         MLFolder = '';
         project = '';
         Channels = {};
-        spotChannelIndices = [];
-        inputChannelIndices = [];
+        spotChannels = [];
+        inputChannels = [];
         nuclearChannels = {};
         
         isUnhealthy = false;
@@ -162,9 +162,9 @@ classdef liveExperiment
             catch, warning('FrameInfo not found.'); end
             
             
-            obj.inputChannelIndices = find(contains(obj.Channels, 'input', 'IgnoreCase', true));
+            obj.inputChannels = find(contains(obj.Channels, 'input', 'IgnoreCase', true));
             
-            obj.spotChannelIndices = getCoatChannel(Channel1, Channel2, Channel3);
+            obj.spotChannels = getCoatChannel(Channel1, Channel2, Channel3);
             
             obj.anaphaseFrames = retrieveAnaphaseFrames(obj.Prefix, obj.userResultsFolder);
             if numel(obj.anaphaseFrames) < 6
