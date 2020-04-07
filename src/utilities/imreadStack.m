@@ -1,6 +1,6 @@
 function imStack = imreadStack(imPath, varargin)
         
-use_imread = false;
+use_imread = true;
 tic
 
     for i = 1:length(varargin)
