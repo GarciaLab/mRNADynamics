@@ -37,7 +37,7 @@ kLabel= imsegkmeans(single(imgaussfilt(image,sigmaK_px)),3);
 kMask = kLabel == chooseKLabel(kLabel);
 
 %sometimes snakes destroys blobs. if it does, it'd be nice to add back in
-%regions from kmask.
+%regions from kMask.
 
 % snakesFun = @(b, s, sigma) activecontour(imgaussfilt(image, sigma), kMask, 'Chan-Vese', 'ContractionBias', b, 'SmoothFactor', s);
 % snakesFun = @(b, s, sigma) gather( chenvese( ...

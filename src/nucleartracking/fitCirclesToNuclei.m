@@ -50,6 +50,11 @@ for k = 1:numel(boundaryCell)
         [xfit,yfit, Rfit]= circfit(xs,ys);
     else
         ellipseParams = fitEllipse(boundaryCell{k});
+        if ~isreal(ellipseParams)
+            %not sure why this happens. we'll skip this ellipse 
+            %in this case. 
+            continue;
+        end
         xfit = ellipseParams(1);
         yfit = ellipseParams(2);
         afit = ellipseParams(3);
