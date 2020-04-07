@@ -1,7 +1,6 @@
 function runBigTest()
 
 %% Setup
-clear all;
 nWorkers = 1;
 Prefix = '2020-01-21-1Dg-8D_EfEfEf_9_sandbox';
 
@@ -32,5 +31,4 @@ toc
 %% Verify
 
 %% Teardown
-clear all;
 end

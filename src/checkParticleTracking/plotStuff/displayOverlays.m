@@ -75,9 +75,12 @@ if UseSchnitz
     end
 
     % Show the corresponding nucleus
-    if ~isempty(cptState.getCurrentParticle().Nucleus) && cptState.getCurrentParticle().Nucleus > 0
-        SchnitzIndex = find(cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).frames == cptState.CurrentFrame);
-        NucleusIndex = cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).cellno(SchnitzIndex);
+    if ~isempty(cptState.getCurrentParticle().Nucleus) &&...
+            cptState.getCurrentParticle().Nucleus > 0
+        SchnitzIndex = cptState.schnitzcells(...
+            cptState.getCurrentParticle().Nucleus).frames == cptState.CurrentFrame;
+        NucleusIndex = cptState.schnitzcells(...
+            cptState.getCurrentParticle().Nucleus).cellno(SchnitzIndex);
 
         if ~isempty(NucleusIndex)
             EllipseHandleGreen = ellipseCellCPT(cptState, NucleusIndex, 'g', 10, overlayAxes);

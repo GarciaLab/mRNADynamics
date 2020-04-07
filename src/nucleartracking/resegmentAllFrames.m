@@ -1,4 +1,4 @@
-function resegmentAllFrames(Prefix, varargin)
+function Ellipses = resegmentAllFrames(Prefix, varargin)
 
 hisMat = [];
 min_rad_um = 2; %default. good for fly embryos. 
@@ -30,11 +30,12 @@ parfor CurrentFrame = 1:thisExperiment.nFrames
             circles(:, 6:9) = zeros(size(circles, 1), 4);
             Ellipses{CurrentFrame} = circles;
         else
-            Ellipses{CurrentFrame} = zeros(1, 9);
+            Ellipses{CurrentFrame} = [];
         end
                 
         %report progress every tenth frame
-        if ~mod(CurrentFrame, 10), disp(['Segmenting frame: ' num2str(CurrentFrame), '...']); end
+        if ~mod(CurrentFrame, 10),...
+                disp(['Segmenting frame: ' num2str(CurrentFrame), '...']); end
         
 end
 

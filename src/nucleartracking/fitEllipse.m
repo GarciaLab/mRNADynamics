@@ -10,7 +10,8 @@ function out = fitEllipse(data_points)
 % fprintf('(majAxis, minAxis, xCenter,yCenter, orientation (radians)): \n')
 geometricEllipseParameters = ...
             fromAlgebraicToGeometricParameters(theta_fastguaranteed);
- 
+        
+        
 %rearrange the output a bit
 out = [];
 out(1) = geometricEllipseParameters(3);

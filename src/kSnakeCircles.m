@@ -37,7 +37,7 @@ kLabel= imsegkmeans(single(imgaussfilt(image,sigmaK_px)),3);
 kMask = kLabel == chooseKLabel(kLabel);
 
 %sometimes snakes destroys blobs. if it does, it'd be nice to add back in
-%regions from kmask.
+%regions from kMask.
 
 % snakesFun = @(b, s, sigma) activecontour(imgaussfilt(image, sigma), kMask, 'Chan-Vese', 'ContractionBias', b, 'SmoothFactor', s);
 % snakesFun = @(b, s, sigma) gather( chenvese( ...
@@ -59,12 +59,13 @@ mask = bwareafilt(wshed(kMaskRefined), areaFilter);
 
 [mask, ellipseFrame] = fitCirclesToNuclei(mask, kMask);
 
-
 %validate sizes. the ellipse masker handles
-%very large objects poorly, to say the least.
-largeAxisIndex = ellipseFrame(:, 3) > max(size(image))...
-    | ellipseFrame(3) > max(size(image));
-ellipseFrame(largeAxisIndex, :) = [];
+%very large objects poorly
+if ~isempty(ellipseFrame)
+    largeAxisIndex = ellipseFrame(:, 3) > max(size(image))...
+        | ellipseFrame(3) > max(size(image));
+    ellipseFrame(largeAxisIndex, :) = [];
+end
 
 
 end

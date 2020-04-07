@@ -16,6 +16,8 @@ function [anaphaseFrames, projectionChannels, ProjectionType, hisMat] =...
 cleanupObj = onCleanup(@myCleanupFun);
 warning('off', 'MATLAB:ui:Slider:fixedHeight')
 warning('off', 'MATLAB:audiovideo:audioplayer:noAudioOutputDevice');
+clear getHisMat;
+
 
 skip_factor = 1; % Only uses 1/skip_factor frames
 
