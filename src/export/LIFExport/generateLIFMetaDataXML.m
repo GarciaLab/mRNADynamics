@@ -52,13 +52,15 @@ filesize = s.bytes;
 
 % xmlEnd = 1E6; %roughly the size of the first xml subfile in the .lif
 
-%seems unlikely the metadata is over a third of the file
-xmlEnd = filesize/3;
-[~, asc] = hexdump(lifFile, xmlEnd);
+%seems unlikely the metadata is over a fourth of the file
+xmlEnd = filesize/4;
 
-%every character in the xml subfile is divided by 00 bytes, not sure why.
-%let's get rid of them. remember to replace this with something
-%in the future that won't destroy decimal places (ie, valid '.' characters)
+%wrapping statement w/ evalc to suppress long, annoying output of hexdump
+evalc('[~, asc] = hexdump(lifFile, xmlEnd)'); 
+
+%every character in the xml subfile is divided
+%by 00 bytes, not sure why.
+%let's get rid of them. 
 cleanasc = strrep(asc, '...', '@');
 cleanasc = strrep(cleanasc, '.', '');
 cleanasc = strrep(cleanasc, '@', '.');
