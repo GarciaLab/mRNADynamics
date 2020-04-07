@@ -76,11 +76,11 @@ else
     % I should make this and the rest of the code be able to handle empty
     % frames!
     for j = 1:nFrames
-%         if ~isempty(Ellipses{j})
+        if ~isempty(Ellipses{j})
             centers{j} = Ellipses{j}(:,[2,1]);
-%         else
-%            centers{j}=[];
-%         end
+        else
+           centers{j}=[];
+        end
     end
     
     
