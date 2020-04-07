@@ -124,7 +124,8 @@ classdef liveExperiment
             isUnhealthyFile = [DropboxFolder,filesep,obj.Prefix,filesep, 'isUnhealthy.mat'];
             if exist(isUnhealthyFile, 'file')
                 load(isUnhealthyFile, 'isUnhealthy');
-            else isUnhealthy = NaN; end
+            else, isUnhealthy = NaN;
+            end
             
             obj.isUnhealthy = isUnhealthy;
             
@@ -267,10 +268,19 @@ classdef liveExperiment
                 preChDir = preTifDir(contains(...
                     string({preTifDir.name}), ['ch0', num2str(ch)]));
                 
-                for f = 1:this.nFrames
+                %making these temporary variables to avoid passing all of
+                %liveExperiment to the parforloop
+                this_nFrames = this.nFrames;
+                this_yDim = this.yDim;
+                this_preFolder = this.preFolder;
+                this_xDim = this.xDim;
+                this_zDim = this.zDim;
+                
+                parfor f = 1:this_nFrames
+                    
                     movieMat(:, :, :, f, chIndex) =...
-                        imreadStack2([this.preFolder, filesep, preChDir(f).name],...
-                        this.yDim, this.xDim, this.zDim+nPadding);
+                        imreadStack2([this_preFolder, filesep, preChDir(f).name],...
+                        this_yDim, this_xDim, this_zDim+nPadding);
                 end
                 
             end
