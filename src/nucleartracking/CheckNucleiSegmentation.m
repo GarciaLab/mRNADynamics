@@ -276,17 +276,8 @@ while (cc~='x')
             %(x, y, a, b, theta, maxcontourvalue, time,
             %particle_id)
             
-            
-            if ~isempty(Ellipses{CurrentFrame})
-                MeanRadius=mean((Ellipses{CurrentFrame}(:,3)+Ellipses{CurrentFrame}(:,4))/2);
-            elseif CurrentFrame+1 < nFrames && ~isempty(Ellipses{CurrentFrame+1})
-                MeanRadius=mean((Ellipses{CurrentFrame+1}(:,3)+Ellipses{CurrentFrame+1}(:,4))/2);
-            elseif CurrentFrame-1 >1 && ~isempty(Ellipses{CurrentFrame-1})
-                MeanRadius=mean((Ellipses{CurrentFrame-1}(:,3)+Ellipses{CurrentFrame-1}(:,4))/2);
-            else
-                MeanRadius = 20; %magic number just to avoid errors in weird situations (units of pixels)
-            end
-            
+            MeanRadius = computeMeanRadius(Ellipses, CurrentFrame);
+           
             try
                 Ellipses{CurrentFrame}(end+1,:)=...
                     [cm(1,1),cm(1,2),MeanRadius,MeanRadius,0,0,0,0,0];
@@ -437,4 +428,37 @@ else
     TrackNuclei(Prefix,'retrack', 'nWorkers', 1, opts{:});
 end
 
+end
+
+
+ function MeanRadius = computeMeanRadius(Ellipses, CurrentFrame)
+ 
+ radius = @(x,f) nanmean( (1/2)*(x{f}(:, 3) + x{f}(:, 4)) );
+ 
+ if ~isempty(Ellipses{CurrentFrame})
+     for k = 1:size(Ellipses{CurrentFrame}, 1)
+         if Ellipses{CurrentFrame}(k, 3) == 0
+             Ellipses{CurrentFrame}(k, :) = nan;
+         end
+     end
+     MeanRadius = radius(Ellipses, CurrentFrame);
+ elseif CurrentFrame+1 < nFrames && ~isempty(Ellipses{CurrentFrame+1})
+     for k = 1:size(Ellipses{CurrentFrame+1}, 1)
+         if Ellipses{CurrentFrame+1}(k, 3) == 0
+             Ellipses{CurrentFrame+1}(k, :) = nan;
+         end
+     end
+     MeanRadius = radius(Ellipses, CurrentFrame+1);
+     
+ elseif CurrentFrame-1 >1 && ~isempty(Ellipses{CurrentFrame-1})
+     for k = 1:size(Ellipses{CurrentFrame-1}, 1)
+         if Ellipses{CurrentFrame-1}(k, 3) == 0
+             Ellipses{CurrentFrame-1}(k, :) = nan;
+         end
+     end
+     MeanRadius = radius(Ellipses, CurrentFrame-1);
+ else
+     MeanRadius = 20; %magic number just to avoid errors in weird situations (units of pixels)
+ end
+                
 end
