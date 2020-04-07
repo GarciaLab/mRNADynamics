@@ -48,7 +48,8 @@ end
 function cleanasc = getAscii(lifFile)
 
 xmlEnd = 1E6; %roughly the size of the first xml subfile in the .lif
-[~, asc] = hexdump(lifFile, xmlEnd);
+
+evalc('[~, asc] = hexdump(lifFile, xmlEnd)');  %wrapping statement w/ evalc to suppress long, annoying output of hexdump
 
 %every character in the xml subfile is divided by 00 bytes, not sure why.
 %let's get rid of them. remember to replace this with something
