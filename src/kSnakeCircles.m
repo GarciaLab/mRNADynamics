@@ -62,9 +62,11 @@ mask = bwareafilt(wshed(kMaskRefined), areaFilter);
 
 %validate sizes. the ellipse masker handles
 %very large objects poorly, to say the least.
-largeAxisIndex = ellipseFrame(:, 3) > max(size(image))...
-    | ellipseFrame(3) > max(size(image));
-ellipseFrame(largeAxisIndex, :) = [];
+if ~isempty(ellipseFrame)
+    largeAxisIndex = ellipseFrame(:, 3) > max(size(image))...
+        | ellipseFrame(3) > max(size(image));
+    ellipseFrame(largeAxisIndex, :) = [];
+end
 
 
 end
