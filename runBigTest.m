@@ -22,7 +22,6 @@ nWorkers = 12;
 tic;
 ExportDataForLivemRNA(Prefix, 'nuclearGUI', false);
 % filterMovie(Prefix, 'Tifs', 'nWorkers', nWorkers);
-TrackNuclei(Prefix, 'nWorkers', nWorkers);
 filterMovie(Prefix, 'nWorkers', nWorkers);
 segmentSpots(Prefix, 10030, 'nWorkers', nWorkers);
 CompileParticles(Prefix, 'SkipAll', 'ApproveAll')
