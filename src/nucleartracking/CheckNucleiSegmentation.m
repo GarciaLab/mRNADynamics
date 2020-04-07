@@ -276,7 +276,7 @@ while (cc~='x')
             %(x, y, a, b, theta, maxcontourvalue, time,
             %particle_id)
             
-            MeanRadius = computeMeanRadius(Ellipses, CurrentFrame);
+            MeanRadius = computeMeanRadius(Ellipses, CurrentFrame, nFrames);
            
             try
                 Ellipses{CurrentFrame}(end+1,:)=...
@@ -431,7 +431,7 @@ end
 end
 
 
- function MeanRadius = computeMeanRadius(Ellipses, CurrentFrame)
+ function MeanRadius = computeMeanRadius(Ellipses, CurrentFrame, nFrames)
  
  radius = @(x,f) nanmean( (1/2)*(x{f}(:, 3) + x{f}(:, 4)) );
  
