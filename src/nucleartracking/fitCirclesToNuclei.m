@@ -26,8 +26,10 @@ yDim = size(mask, 1);
 boundaryCell = bwboundaries(mask, 8, 'noholes');
 stats = regionprops(~~mask, 'EquivDiameter', 'SubarrayIdx', 'Image');
 averageEquivRadius = median([stats.EquivDiameter]/2);
-%if an object is within borderThresh px of the image edge, let's not fit a circle to it and leave it be
-borderThresh = averageEquivRadius; 
+
+%if an object is within borderThresh px of the image edge,
+%let's not fit a circle to it and leave it be
+borderThresh = averageEquivRadius;
 border = borderImage(mask);
 borderDist = bwdist(border);
 
@@ -51,8 +53,8 @@ for k = 1:numel(boundaryCell)
     else
         ellipseParams = fitEllipse(boundaryCell{k});
         if ~isreal(ellipseParams)
-            %not sure why this happens. we'll skip this ellipse 
-            %in this case. 
+            %not sure why this happens. we'll skip this ellipse
+            %in this case.
             continue;
         end
         xfit = ellipseParams(1);
@@ -83,14 +85,14 @@ for k = 1:numel(boundaryCell)
             ellipseFrame(n, 3) = afit;
             ellipseFrame(n, 4) = bfit;
             ellipseFrame(n, 5) = thetafit + pi/2;
-
-                 h = images.roi.Ellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
-              'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)),'StripeColor','m');
-              cMask = cMask + poly2mask(h.Vertices(:, 1), h.Vertices(:, 2), size(cMask, 1), size(cMask, 2));
-%             h = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
-%             'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)),'StripeColor','m');
-%             cMask = cMask + createMask(h);  
-
+            
+            h = images.roi.Ellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
+                'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)),'StripeColor','m');
+            cMask = cMask + poly2mask(h.Vertices(:, 1), h.Vertices(:, 2), size(cMask, 1), size(cMask, 2));
+            %             h = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
+            %             'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)),'StripeColor','m');
+            %             cMask = cMask + createMask(h);
+            
         end
         
     else
@@ -117,23 +119,22 @@ for k = 1:numel(boundaryCell)
         end
         
     end
-        
-    %make circle with center
-    %     rectangle('position',[xfit-Rfit,yfit-Rfit,Rfit*2,Rfit*2],...
-    %     'curvature',[1,1],'linestyle','-','edgecolor','r');
+    
 end
 
-
+%this is here for backwards compatibility. 
+%it's being deprecated. 
 if ~doEllipse
-    cMask = makeNuclearMask(ellipseFrame, [size(mask, 1), size(mask, 2)], 'radiusScale', 1);
+    cMask = makeNuclearMask(ellipseFrame,...
+        [size(mask, 1), size(mask, 2)], 'radiusScale', 1);
 end
 
 ellipseFrameWithEdges = cat(1, ellipseFrame, edgeEllipseFrame);
 
-if ~isreal(ellipseFrameWithEdges)
-    warning('complex ellipse semiaxes computed. not great. removing those ellipses.')
-    ellipseFrameWithEdges(~isreal(ellipseFrameWithEdges)) = [];
-end
-
 cMask = cMask + edgeMask;
+
+
 % figure; imshowpair(bw, cMask, 'montage');
+
+
+end

@@ -194,8 +194,6 @@ if ~retrack
     % Convert the results to compatible structures and save them
     %Put circles on the nuclei
     [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,nFrames,indMit);
-    %Convert nuclei structure into schnitzcell structure
-    [schnitzcells] = convertNucleiToSchnitzcells(nuclei);
     
 else
     %Do re-tracking
@@ -250,25 +248,27 @@ else
             ExpandedSpaceTolerance, 'NoBulkShift', NoBulkShift);
     end
     
-    %Put circles on the nuclei
-    %     [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,nFrames,indMit);
-    %Convert nuclei structure into schnitzcell structure
-    [schnitzcells] = convertNucleiToSchnitzcells(nuclei);
 end
 
-%Add the radius information to the schnitz
-for schnitz=1:length(schnitzcells)
-    for f=1:length(schnitzcells(schnitz).frames)
-        r = single(mean(Ellipses{schnitzcells(schnitz).frames(f)}(...
-            schnitzcells(schnitz).cellno(f),3:4)));
-        if ~isreal(r)
-            r = nan;
-            warning('non real radii returned for schnitz. not sure what happened here.');
-        end
-        schnitzcells(schnitz).len(:)=r;
-        
-    end
-end
+%Convert nuclei structure into schnitzcell structure
+[schnitzcells] = convertNucleiToSchnitzcells(nuclei);
+
+
+%Broken- fix it if you want this so- add a
+%conditional statement to skip empty frames. 
+% %Add the radius information to the schnitz
+% for schnitz=1:length(schnitzcells)
+%     for f=1:length(schnitzcells(schnitz).frames)
+%         r = single(mean(Ellipses{schnitzcells(schnitz).frames(f)}(...
+%             schnitzcells(schnitz).cellno(f),3:4)));
+%         if ~isreal(r)
+%             r = nan;
+%             warning('non real radii returned for schnitz. not sure what happened here.');
+%         end
+%         schnitzcells(schnitz).len(:)=r;
+%         
+%     end
+% end
 
 %Save everything at this point. It will be overwritten later, but it's
 %useful for debugging purposes if there's a bug in the code below.

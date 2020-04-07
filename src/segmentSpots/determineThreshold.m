@@ -25,14 +25,18 @@ default_iqr = 6;
 brightest_iqr_test = 8;
 noSave = false;
 dogs = [];
-numFrames = 0;
+firstFrame = 1;
+lastFrame = 0;
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'noSave')
         noSave = true;
         dogs = varargin{i+1};
-    elseif strcmpi(varargin{i}, 'numFrames')
-        numFrames = varargin{i+1};
+    elseif strcmpi(varargin{i}, 'numFrames') ||...
+            strcmpi(varargin{i}, 'lastFrame')
+        lastFrame = varargin{i+1};
+    elseif strcmpi(varargin{i}, 'firstFrame')
+        firstFrame = varargin{i+1};
     end
 end
 
@@ -63,6 +67,7 @@ haveStacks = any(cellfun(@(x) contains(x, 'dogStack'), {dogDir.name}));
 haveProbs = any(cellfun(@(x) contains(x, 'prob'), {dogDir.name}));
 loadAsMat = any(cellfun(@(x) contains(x, '.mat'), {dogDir.name}));
 
+
 clear dogDir;
 
 if haveProbs
@@ -76,7 +81,8 @@ end
 nameSuffix = ['_ch',iIndex(Channel,2)];
 
 
-firstDogStackFile = [dogFolder, filesep, dogStr, Prefix, '_', iIndex(1, 3),...
+firstDogStackFile = [dogFolder, filesep, dogStr,...
+    Prefix, '_', iIndex(firstFrame, 3),...
     nameSuffix];
 
 if loadAsMat
@@ -100,12 +106,12 @@ skipZFactor = 1;
 available_zs = 2:skipZFactor:zSize-1;
 
 
-if numFrames == 0
-    numFrames = numel(FrameInfo);
+if lastFrame == 0
+    lastFrame = numel(FrameInfo);
 end
 
 skipFrameFactor = 4;
-available_frames = 1:skipFrameFactor:numFrames;
+available_frames = firstFrame:skipFrameFactor:lastFrame;
 
 % loops through DOGs to find brightest one
 % does this by choosing DOG with most pixels above brightest_iqr_test sds
@@ -115,12 +121,17 @@ bestVal = 0;
 max_val = 0;
 
 disp('Loading dogs...')
-all_dogs = cell(numFrames, zSize - 2);
+all_dogs = cell(lastFrame, zSize - 2);
 for frame = available_frames
     if haveStacks
         dogStackFile = strrep([dogFolder, filesep, dogStr, Prefix, '_', iIndex(frame, 3),...
             nameSuffix], '\\', '\');
-            dogStack = imreadStack([dogStackFile, '.tif']);
+        
+        if loadAsMat
+            load([firstDogStackFile, '.mat'], 'dogStack');
+        else
+            dogStack = imreadStack([firstDogStackFile, '.tif']);
+        end
     end
     for z = available_zs
         if zPadded
@@ -134,7 +145,7 @@ for frame = available_frames
             dog = dogStack(:, :, zInd);
         end
         all_dogs{frame, zInd} = dog;
-        non_zero_d = dog~=0;
+        non_zero_d = dog(dog~=0);
         val = (1/2) * iqr( non_zero_d(:) );
         median_val = median( non_zero_d(:) );
         num_above = sum( non_zero_d(:) >...
@@ -187,9 +198,9 @@ zVal = uicontrol('Style','text',...
     'String',['Z-slice = ' num2str(bestZ)]);
 
 % Slider for changing the frame
-fStep = 1.0 / numFrames;
+fStep = 1.0 / lastFrame;
 frameSlider = uicontrol('Style', 'slider', 'Min', 1, ...
-    'Max', numFrames, 'Value', bestFrame, 'SliderStep', [fStep, fStep], ...
+    'Max', lastFrame, 'Value', bestFrame, 'SliderStep', [fStep, fStep], ...
     'Position', [60 50 20 500], 'Callback', @update_val);
 
 frameVal = uicontrol('Style','text',...

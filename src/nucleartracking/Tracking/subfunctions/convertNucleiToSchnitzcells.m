@@ -1,4 +1,6 @@
-function [ schnitzcells, varargout ] = convertNucleiToSchnitzcells( nuclei, approvedCenters, approvedSchnitzcell, previousSchnitzcell)
+function [ schnitzcells, varargout ] =...
+    convertNucleiToSchnitzcells( nuclei, approvedCenters,...
+    approvedSchnitzcell, previousSchnitzcell)
 %CONVERTMAPPINGANDCENTERTOSCHNITZCELLS 
 
 approvedSchnitz = false(numel(nuclei),1);
@@ -48,3 +50,5 @@ if exist('approvedSchnitzcell','var')
     
 end
 
+
+end

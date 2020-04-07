@@ -110,7 +110,8 @@ else Ellipses = []; end
     
     if autoThresh
         if ~filterMovieFlag
-            Threshold = determineThreshold(Prefix, channelIndex,  'numFrames', lastFrame);
+            Threshold = determineThreshold(Prefix,...
+                channelIndex,  'numFrames', lastFrame, 'firstFrame', initialFrame);
             display(['Threshold: ', num2str(Threshold)])
         else
             Threshold = determineThreshold(Prefix, channelIndex, 'noSave',  'numFrames', lastFrame);
@@ -124,10 +125,10 @@ isZPadded = size(movieMat, 3) ~= zSize;
 q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
-for currentFrame = initialFrame:lastFrame
+parfor currentFrame = initialFrame:lastFrame
     
     imStack = movieMatCh(:, :, :, currentFrame);
-    if shouldMaskNuclei && exist('Ellipses', 'var') && ~isempty(Ellipses)
+    if shouldMaskNuclei
         ellipseFrame = Ellipses{currentFrame};
     end
     
