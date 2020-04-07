@@ -1,16 +1,16 @@
 function [val, substr] = generateLIFMetaDataXML(Prefix, str)
 
-if nargin < 2
-    str = 'Rot';
-end
+    if nargin < 2
+        str = 'Rot';
+    end
 
-[lifFile, metafile] = getFiles(Prefix);
+    [lifFile, metafile] = getFiles(Prefix);
 
-cleanasc = getAscii(lifFile);
+    cleanasc = getAscii(lifFile);
 
-[val, substr] = getMetaDataValue(cleanasc, str);
+    [val, substr] = getMetaDataValue(cleanasc, str);
 
-writeMetaXML(cleanasc, metafile);
+    writeMetaXML(cleanasc, metafile);
 
 end
 
@@ -47,7 +47,13 @@ end
 
 function cleanasc = getAscii(lifFile)
 
-xmlEnd = 1E6; %roughly the size of the first xml subfile in the .lif
+s = dir(lifFile);         
+filesize = s.bytes;
+
+% xmlEnd = 1E6; %roughly the size of the first xml subfile in the .lif
+
+%seems unlikely the metadata is over a third of the file
+xmlEnd = filesize/3;
 [~, asc] = hexdump(lifFile, xmlEnd);
 
 %every character in the xml subfile is divided by 00 bytes, not sure why.
