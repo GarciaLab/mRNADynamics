@@ -5,7 +5,8 @@ function [val, substr] = generateLIFMetaDataXML(Prefix, str)
     end
 
     [lifFile, metafile] = getFiles(Prefix);
-
+    
+    
     cleanasc = getAscii(lifFile);
 
     [val, substr] = getMetaDataValue(cleanasc, str);
@@ -53,15 +54,23 @@ filesize = s.bytes;
 % xmlEnd = 1E6; %roughly the size of the first xml subfile in the .lif
 
 %seems unlikely the metadata is over a fourth of the file
-xmlEnd = filesize/4;
+% xmlEnd = filesize/10;
+xmlEnd = filesize;
 
 %wrapping statement w/ evalc to suppress long, annoying output of hexdump
-evalc('[~, asc] = hexdump(lifFile, xmlEnd)'); 
+fid = fopen(lifFile, 'r');
+[A,count] = fread(fid, xmlEnd, 'uchar');
+asc = repmat('.',1, count);
+idx = find(double(A)>=32);
+asc(idx) = char(A(idx));
+% [~, asc] = hexdump(lifFile, xmlEnd)
+% evalc('[~, asc] = hexdump(lifFile, xmlEnd)'); 
 
 %every character in the xml subfile is divided
 %by 00 bytes, not sure why.
 %let's get rid of them. 
 cleanasc = strrep(asc, '...', '@');
+% cleanasc = strrep(asc, ' ', '');
 cleanasc = strrep(cleanasc, '.', '');
 cleanasc = strrep(cleanasc, '@', '.');
 
