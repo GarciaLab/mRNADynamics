@@ -51,11 +51,11 @@ function cleanasc = getAscii(lifFile)
 s = dir(lifFile);         
 filesize = s.bytes;
 
-% xmlEnd = 1E6; %roughly the size of the first xml subfile in the .lif
+xmlEnd = min(100E6, filesize); %roughly the size of the first xml subfile in the .lif. 
+%this should cover even very large files
 
 %seems unlikely the metadata is over a fourth of the file
 % xmlEnd = filesize/10;
-xmlEnd = filesize;
 
 %wrapping statement w/ evalc to suppress long, annoying output of hexdump
 fid = fopen(lifFile, 'r');
