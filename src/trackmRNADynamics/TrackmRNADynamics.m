@@ -15,7 +15,7 @@
 %
 % 'noRetracking': Use this to track from scratch instead of retracking if
 %                trackmRNADynamics has been run before.
-% 'displayFigures': don't display figures while tracking
+% 'displayFigures': display figures while tracking
 %
 %
 % OUTPUT
@@ -44,7 +44,8 @@ disp(['Running TrackmRNADynamics on ', varargin{1}, '...']);
 % What type of experiment are we dealing with? Get this out of MovieDatabase
 [~, ExperimentType, ~, ~, ~, ~, Channel1, Channel2, ~, ~, ~, ~, ~, ...
     nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3,...
-    prophase,metaphase, anaphase, DVResolution] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+    prophase, metaphase, anaphase, DVResolution] = ...
+    getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
 spotChannels = getCoatChannel(Channel1, Channel2, Channel3);
 NCh = length(spotChannels);

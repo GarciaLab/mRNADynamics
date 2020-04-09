@@ -41,6 +41,7 @@ else
 end
 
 [Particles{Channel}, SpotFilter{Channel}] = AssignParticle2Nucleus(scurrentChannelitzcells, Ellipses, ...
-    Particles{Channel}, Spots{Channel}, SpotFilter{Channel}, CurrentFrame, PixelSize, SpotsPerNucleus, retrack);
+    Particles{Channel}, Spots{Channel}, SpotFilter{Channel}, CurrentFrame, PixelSize, ...
+    SpotsPerNucleus, retrack);
 
 end
