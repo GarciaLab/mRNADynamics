@@ -163,10 +163,12 @@ mkdir(DropboxFolderName);
   %make folders we'll need later
   DogOutputFolder=[ProcPath,filesep,Prefix, '_', filesep, 'dogs',filesep];
   mkdir(DogOutputFolder);
-
+    
+  try
   if strcmpi(FileMode, 'LIFExport')
     removeUnwantedTIFs(rawDataFolder);
   end
+  catch; end
   
   if generateTifStacks
     filterMovie(Prefix, 'Tifs');

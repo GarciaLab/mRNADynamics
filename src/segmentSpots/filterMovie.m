@@ -92,8 +92,10 @@ PreProcPath = thisExperiment.userPreFolder;
 FrameInfo = getFrameInfo(thisExperiment);
 
 [displayFigures, numFrames, initialFrame, highPrecision, filterType, keepPool,...
-    sigmas, nWorkers, app, kernelSize, Weka, justTifs, ignoreMemoryCheck, classifierFolder, ...
-    classifierPathCh1, customML, noSave, numType, gpu, saveAsMat, saveType, DataType] = determineFilterMovieOptions(FrameInfo,varargin);
+    sigmas, nWorkers, app, kernelSize, Weka, justTifs,...
+    ignoreMemoryCheck, classifierFolder, ...
+    classifierPathCh1, customML, noSave, numType, gpu,...
+    saveAsMat, saveType, DataType] = determineFilterMovieOptions(FrameInfo,varargin);
 
 if ~isempty(DataType)
     args = varargin;
@@ -115,7 +117,7 @@ nSpotChannels = length(spotChannels);
 
 %generate tif stacks
 
-stacksFolder = strrep([PreProcPath, filesep, Prefix, filesep, 'stacks'], '\\', '\');
+stacksFolder = [PreProcPath, filesep, Prefix, filesep, 'stacks'];
 stacksExist = exist(stacksFolder, 'dir') &&...
     ~isempty(dir([stacksFolder, filesep, '*.tif']));
 

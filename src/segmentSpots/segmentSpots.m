@@ -55,15 +55,20 @@
 % Documented by: Armando Reimer (areimer@berkeley.edu)
 function log = segmentSpots(Prefix, Threshold, varargin)
 
-cleanupObj = onCleanup(@myCleanupFun);
 
-%this function uses persistent (static) variables to speed computation.
-%if not cleared, this could lead to errors 
-clear fitSingleGaussian
 
-warning('off', 'MATLAB:MKDIR:DirectoryExists');
+%% Argument validation
 
-thisExperiment = liveExperiment(Prefix);
+
+arguments   
+    Prefix char
+    Threshold (1,:) double
+end
+
+arguments (Repeating)
+    varargin
+end
+
 
 [displayFigures, lastFrame, numShadows, keepPool, ...
     autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData,...
@@ -76,9 +81,36 @@ if isempty(Threshold)
     Threshold = NaN;
 end
 
+
+
+
+%% Setup
+
+
+
+
+
+cleanupObj = onCleanup(@myCleanupFun);
+%this function uses persistent (static) variables to speed computation.
+%if not cleared, this could lead to errors 
+clear fitSingleGaussian
+warning('off', 'MATLAB:MKDIR:DirectoryExists');
+
+
+
+
+%% Main code
+
+
+
+
+thisExperiment = liveExperiment(Prefix);
+
 spotChannels = thisExperiment.spotChannels;
 
-[~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix, optionalResults);
+[~, ~, DropboxFolder, ~, ~] = DetermineLocalFolders(Prefix, optionalResults);
+
+PreProcPath = thisExperiment.userPreFolder;
 
 if ~isempty(DataType)
      args = [Prefix, Threshold, varargin];
@@ -131,7 +163,7 @@ if ~skipSegmentation
         
         [tempSpots, dogs] = segmentTranscriptionalLoci(nCh, spotChannels, channelIndex, initialFrame, lastFrame, zSize, ...
             PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(n), neighborhood_px, ...
-            snippetSize_px, pixelSize_nm, microscope, Weka,...
+            snippetSize_px, pixelSize_nm, microscope, [],...
              filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, nuclearMask, autoThresh);
 
         tempSpots = segmentSpotsZTracking(pixelSize_nm,tempSpots);
@@ -160,9 +192,11 @@ end
 
 mkdir([DropboxFolder, filesep, Prefix]);
 if whos(var2str(Spots)).bytes < 2E9
-    save([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots', '-v6');
+    save([DropboxFolder, filesep, Prefix,...
+        filesep, 'Spots.mat'], 'Spots', '-v6');
 else
-    save([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots', '-v7.3', '-nocompression');
+    save([DropboxFolder, filesep, Prefix,...
+        filesep, 'Spots.mat'], 'Spots', '-v7.3', '-nocompression');
 end
 
 if fit3D > 0
@@ -171,19 +205,11 @@ if fit3D > 0
     disp('3D Gaussian fitting completed.')
 end
 
-if ~keepProcessedData
-    deleteProcessedDataFolder(ProcessedDataFolder, Prefix);
-else
-    disp('keepProcessedData parameter sent. ProcessedData folder will not be removed.');
-end
-
-if ~keepPool
-    
+if ~keepPool    
     try  %#ok<TRYNC>
         poolobj = gcp('nocreate');
         delete(poolobj);
     end
-    
 end
 
 if track, TrackmRNADynamics(Prefix, 'noretrack'); end

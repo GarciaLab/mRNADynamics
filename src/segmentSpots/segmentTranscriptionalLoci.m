@@ -101,14 +101,10 @@ if shouldMaskNuclei
     if thisExperiment.hasEllipsesFile
         Ellipses = getEllipses(thisExperiment); 
         Ellipses = filterEllipses(Ellipses, [yDim, xDim]);
-    else
-        shouldMaskNuclei = false;
-    end
-else Ellipses = []; end
+    else, shouldMaskNuclei = false; end
+end
 
-% dogMat = loadDogMat(Prefix);
-
-    
+   
     if autoThresh
         if ~filterMovieFlag
             Threshold = determineThreshold(Prefix,...
@@ -127,7 +123,7 @@ isZPadded = size(movieMat, 3) ~= zSize;
 q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
-for currentFrame = initialFrame:lastFrame
+parfor currentFrame = initialFrame:lastFrame
     
     imStack = movieMatCh(:, :, :, currentFrame);
     if shouldMaskNuclei
@@ -172,24 +168,7 @@ for currentFrame = initialFrame:lastFrame
         else, dogZ = zIndex - 1; end
         
         if haveStacks, dog = dogStack(:, :, dogZ); end
-        % =======
-        %             if isZPadded | ( ~isZPadded & (zIndex~=1 & zIndex~=zSize) )
-        %                 if strcmpi(saveType, '.tif')
-        %                     dogFileName = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(dogZ, 2),...
-        %                         nameSuffix,'.tif'];
-        %                     dog = double(imread(dogFileName));
-        %                 elseif strcmpi(saveType, '.mat')
-        %                     dogFileName = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(dogZ, 2),...
-        %                         nameSuffix,'.mat'];
-        %                     plane = load(dogFileName);
-        %                     try dog = plane.plane; catch dog = plane.dog; end
-        %                 elseif strcmpi(saveType, 'none')
-        %                     dog = dogs(:,:, dogZ, current_frame);
-        %                 end
-        %             else
-        %                 dog = false(size(im, 1), size(im, 2));
-        %             end
-        
+      
         
         if shouldDisplayFigures
             dogO = im(:);
@@ -211,7 +190,7 @@ for currentFrame = initialFrame:lastFrame
         im_thresh = dog >= Threshold;
         
         % apply nuclear mask if it exists
-        if shouldMaskNuclei && ~isempty(Ellipses)
+        if shouldMaskNuclei
     
             nuclearMask = makeNuclearMask(ellipseFrame, [yDim xDim], radiusScale);
             im_thresh = im_thresh & nuclearMask;
@@ -259,10 +238,10 @@ for currentFrame = initialFrame:lastFrame
 end
 
 
-try close(waitbarFigure); end
+try close(waitbarFigure); catch; end
 
     function nUpdateWaitbar(~)
-        try waitbar(p/lastFrame, waitbarFigure); end
+        try waitbar(p/lastFrame, waitbarFigure); catch; end
         p = p + 1;
     end
 

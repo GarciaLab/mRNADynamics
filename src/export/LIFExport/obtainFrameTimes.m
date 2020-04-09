@@ -39,28 +39,3 @@ function [Frame_Times, First_Time] = obtainFrameTimes(XMLFolder,...
     end
   end
 end
-
-
-function obtainFrameTimes2(timeStampList, NSeries)
-
-
-xDoc = xmlread([XMLFolder,filesep,seriesPropertiesXML(seriesIndex).name]);
-
-
-Frame_Times = [];
-
-for s = 1:NSeries
-   
-   timeStampList = [];
-   
-   if s == 1
-    first_time = hex2dec(timeStampList(1));
-   end
-   
-   for f = 1:NFrames(s)
-       FrameTimes(end+1) = hex2dec(timeStampList(f)) - first_time;
-   end
-    
-end
-
-end

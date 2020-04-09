@@ -88,7 +88,7 @@ if sum(InputChannels)
         tempSchnitz = schnitzcells;
         for CurrentFrame=1:numFrames
             
-            try waitbar(CurrentFrame/numFrames,h); end
+            try waitbar(CurrentFrame/numFrames,h); catch; end
             %
             %                 %Initialize the image
             %             Image=zeros(LinesPerFrame,PixelsPerLine,nSlices);

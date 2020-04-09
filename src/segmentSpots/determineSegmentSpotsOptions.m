@@ -2,6 +2,7 @@ function [displayFigures, lastFrame, numShadows, keepPool, threshGUI, initialFra
     useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel,...
     optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat, saveType, ...
     nuclearMask, dataType, track, skipSegmentation, frameRange]...
+    ...
     = determineSegmentSpotsOptions(varargin)
 
 % Default options
@@ -26,7 +27,6 @@ saveType = '.mat';
 nuclearMask = true;
 dataType = '';
 track = true;
-frameRange = [nan nan];
 
   
 for i = 1:length(varargin)
@@ -59,7 +59,7 @@ for i = 1:length(varargin)
         end
         
     elseif strcmpi(varargin{i}, 'keepPool')
-        keepPool = 1;
+        keepPool = true;
      elseif strcmpi(varargin{i}, 'dataSet') || strcmpi(varargin{i}, 'dataType')
         dataType = varargin{i+1};
     elseif strcmpi(varargin{i}, 'saveAsMat') || strcmpi(varargin{i}, '.mat')
@@ -77,7 +77,8 @@ for i = 1:length(varargin)
         nWorkers = varargin{i + 1};        
     elseif strcmpi(varargin{i}, 'nuclearMask')
         nuclearMask = varargin{i+1};
-    elseif strcmpi(varargin{i}, 'autoThresh')
+    elseif strcmpi(varargin{i}, 'autoThresh')...
+        || strcmpi(varargin{i}, 'determineThreshold')
         threshGUI = 1;
     elseif strcmpi(varargin{i}, 'fit3D')
         fit3D = 1;
@@ -88,13 +89,8 @@ for i = 1:length(varargin)
         fit3D = 2;
     elseif strcmpi(varargin{i}, 'filterMovie')
         filterMovieFlag = true;
-    elseif strcmpi(varargin{i}, 'Weka')
-        Weka = 1;
     elseif strcmpi(varargin{i}, 'optionalResults')
         optionalResults = varargin{i+1};
-    elseif strcmpi(varargin{i}, 'tifs')
-        error('Tifs generation is no longer supported from segmentSpotsML, try filterMovie(Prefix, ''Tifs'') instead.');  
-  
     elseif strcmpi(varargin{i}, 'keepProcessedData')
       keepProcessedData = true;  
     end

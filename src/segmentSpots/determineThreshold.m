@@ -41,12 +41,8 @@ for i = 1:length(varargin)
 end
 
 thisExperiment = liveExperiment(Prefix);
-% loads information needed to loop through DoGs
-
 ProcPath = thisExperiment.userProcFolder;
-
 FrameInfo = getFrameInfo(thisExperiment);
-
 zSize = FrameInfo(1).NumberSlices + 2;
 
 dogFolder=[ProcPath,filesep,Prefix,'_',filesep,'dogs',filesep];
@@ -80,13 +76,17 @@ end
 
 nameSuffix = ['_ch',iIndex(Channel,2)];
 
-
 firstDogStackFile = [dogFolder, filesep, dogStr,...
     Prefix, '_', iIndex(firstFrame, 3),...
     nameSuffix];
 
 if loadAsMat
+    try
     load([firstDogStackFile, '.mat'], 'dogStack');
+    catch
+        dogDir = dir([dogFolder, filesep,'*',dogStr,'*.*']);
+        load([dogFolder, filesep, dogDir(1).name]);
+    end
 else
     dogStack = imreadStack([firstDogStackFile, '.tif']);
 end
@@ -134,11 +134,10 @@ for frame = available_frames
         end
     end
     for z = available_zs
-        if zPadded
-            zInd = z;
-        else
-            zInd = z-1;
-        end
+        
+        if zPadded,  zInd = z;
+        else, zInd = z-1; end
+        
         if ~haveStacks
             dog = loadDog(zInd, frame);
         else
@@ -334,6 +333,7 @@ uiwait(fig);
         if ~chk.Value
             dog_copy = dogbw;
             im.CData = dog_copy;
+            uiAx.CLim = [0, 1];
             drawnow;
         else
             im.CData = dog_copy;
