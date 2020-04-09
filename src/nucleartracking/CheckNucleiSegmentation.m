@@ -1,8 +1,6 @@
 function movieMat = CheckNucleiSegmentation(Prefix, varargin)
 %
 %
-%To do:
-%1) Allow to edit the size and angle of an ellipse
 %
 %Usage:
 %
@@ -21,6 +19,7 @@ function movieMat = CheckNucleiSegmentation(Prefix, varargin)
 % m  - Increase contrast
 % n  - Decrease contrast
 % r  - Reset contrast setting
+% / - Adjust ellipse centroids
 % x  - Exit and save
 % 9  - Debug mode
 %
@@ -29,124 +28,124 @@ function movieMat = CheckNucleiSegmentation(Prefix, varargin)
 %left click - add region with default nc radius and angle
 %
 
-
-
-
-close all
+cleanupObj = onCleanup(@myCleanupFun);
 
 %Load the folder information
-[SourcePath,FISHPath,DefaultDropboxFolder,MS2CodePath,PreProcPath]=...
+[~,~,DefaultDropboxFolder,~,~]=...
     DetermineLocalFolders;
 
 noAdd = false;
 nWorkers = 1;
 fish = false;
 preMovie = false;
+chooseHis = false;
+yToRetrackPrompt = true;
 
-for i = 1:length(varargin)
-    if strcmpi(varargin{i}, 'noAdd') | strcmpi(varargin{i}, 'fish') | strcmpi(varargin{i}, 'markandfind')
+for k = 1:length(varargin)
+    if strcmpi(varargin{k}, 'noAdd') | strcmpi(varargin{k}, 'fish') | strcmpi(varargin{k}, 'markandfind')
         noAdd = true;
         fish = true;
-    elseif strcmpi(varargin{i}, 'nWorkers')
-        nWorkers = varargin{i+1};
-    elseif strcmpi(varargin{i}, 'premovie')
+    elseif strcmpi(varargin{k}, 'nWorkers')
+        nWorkers = varargin{k+1};
+    elseif strcmpi(varargin{k}, 'chooseHis')
+        chooseHis = varargin{k+1};
+    elseif strcmpi(varargin{k}, 'colormap')
+        cmap = varargin{k+1};
+    elseif strcmpi(varargin{k}, 'premovie')
         preMovie = true;
-        movieMat = varargin{i+1};
+        movieMat = varargin{k+1};
+    elseif strcmpi(varargin{k}, 'yToRetrackPrompt')
+        yToRetrackPrompt = true;
     end
 end
 
-startParallelPool(nWorkers, 0, 1);
+thisExperiment = liveExperiment(Prefix);
 
+ProcPath = thisExperiment.userProcFolder;
+DropboxFolder = thisExperiment.userResultsFolder;
 
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath,PreProcPath]=...
-    DetermineLocalFolders(Prefix);
+Channel1 = thisExperiment.Channel1;
+Channel2 = thisExperiment.Channel2;
+Channel3 = thisExperiment.Channel3;
+anaphaseFrames = thisExperiment.anaphaseFrames;
+nc9 = anaphaseFrames(1);
+nc10 = anaphaseFrames(2);
+nc11 = anaphaseFrames(3);
+nc12 = anaphaseFrames(4);
+nc13 = anaphaseFrames(5);
+nc14 = anaphaseFrames(6);
 
-
-%Set the source folders
-Folder=[FISHPath,filesep,Prefix,'_',filesep,'preanalysis',filesep];
-FileName=['CompactResults_',Prefix,'_.mat'];
-
-%Set the destination folders
-OutputFolder=[DropboxFolder,filesep,Prefix];
-FilePrefix=FileName(16:end-4);
-DataFolder=[Folder,'..',filesep,'..',filesep,'..',filesep,'Data',filesep,FilePrefix(1:end-1)];
-
-
-%Find out how many frames we have
-D=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His_*.tif']);
-
-
-
-[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
-    Channel1, Channel2, Objective, Power, DataFolderFromDataColumn, DropboxFolderName, Comments,...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
-
-load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']);
-
-[xSize, ySize, ~, ~, ~,...
-    nFrames, ~, ~] = getFrameInfoParams(FrameInfo);
+xSize = thisExperiment.xDim;
+ySize = thisExperiment.yDim;
+pixelSize_um = thisExperiment.pixelSize_um;
 
 %Get the nuclei segmentation data
-load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses');
-load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'schnitzcells');
+Ellipses = getEllipses(thisExperiment);
+schnitzcells = getSchnitzcells(thisExperiment);
+%Load the reference histogram for the fake histone channel
+load('ReferenceHist.mat', 'ReferenceHist')
 
 hasSchnitzInd =size(Ellipses{1},2) == 9;
 
-if ~hasSchnitzInd & ~noAdd
+if ~hasSchnitzInd
     Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
+    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses', '-v6');
 end
 
+Channels = {Channel1, Channel2, Channel3};
+
+if chooseHis
+    uiopen([ProcPath, filesep, Prefix,'_',filesep,'*.mat']);
+    if exist('probHis_fiji', 'var')
+        hisMat = probHis_fiji;
+        clear probHis_fiji;
+    elseif exist('probHis_matlab', 'var')
+        hisMat = probHis_matlab;
+        clear probHis_matlab;
+    elseif exist('probHis', 'var')
+        hisMat = probHis;
+        clear probHis;
+    end
+else
+    hisMat = getHisMat(thisExperiment);
+end
+
+nFrames = size(hisMat, 3);
 %Get information about the image size
-HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(1).name]);
+% HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(1).name]);
+HisImage = hisMat(:,:,1);
 DisplayRange=[min(min(HisImage)),max(max(HisImage))];
 
 
 
 %Make a vector containing the nc corresponding to each frame
-for i=1:length(D)
-    if i<nc9
-        nc(i)=8;
-    elseif (i>=nc9)&(i<nc10)
-        nc(i)=9;
-    elseif (i>=nc10)&(i<nc11)
-        nc(i)=10;
-    elseif (i>=nc11)&(i<nc12)
-        nc(i)=11;
-    elseif (i>=nc12)&(i<nc13)
-        nc(i)=12;
-    elseif (i>=nc13)&(i<nc14) %#ok<*AND2>
-        nc(i)=13;
-    elseif i>=nc14
-        nc(i)=14;
+for k=1:nFrames
+    if k<nc9
+        nc(k)=8;
+    elseif (k>=nc9)&(k<nc10)
+        nc(k)=9;
+    elseif (k>=nc10)&(k<nc11)
+        nc(k)=10;
+    elseif (k>=nc11)&(k<nc12)
+        nc(k)=11;
+    elseif (k>=nc12)&(k<nc13)
+        nc(k)=12;
+    elseif (k>=nc13)&(k<nc14) %#ok<*AND2>
+        nc(k)=13;
+    elseif k>=nc14
+        nc(k)=14;
     end
-end
-
-
-
-%%
-
-Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
-nCh = sum(~cellfun(@isempty, Channels));
-
-load('ReferenceHist.mat')
-
-movieMat = []; hisMat= []; maxMat = [];  medMat = []; midMat = [];
-if preMovie
-    [movieMat, hisMat, maxMat, medMat, midMat]...
-    = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, Channels);
 end
 
 
 
 %%
 Overlay=figure;
-% set(Overlay,'units', 'normalized', 'position',[0.01, .55, .75, .33]);
 set(Overlay,'units', 'normalized', 'position',[0.01, .2, .5, .5]);
 
 overlayAxes = axes(Overlay,'Units', 'normalized', 'Position', [0 0 1 1]);
 
 OriginalImage=figure;
-% set(OriginalImage,'units', 'normalized', 'position',[0.01, .1, .75, .33]);
 set(OriginalImage,'units', 'normalized', 'position',[0.55, .2, .5, .5]);
 
 originalAxes = axes(OriginalImage,'Units', 'normalized', 'Position', [0 0 1 1]);
@@ -159,6 +158,8 @@ tb2.Visible = 'off';
 try
     clrmp = single(hsv(length(schnitzcells)));
     clrmp = clrmp(randperm(length(clrmp)), :);
+catch
+%in case the user doesn't have this colormap, just keep going.
 end
 
 CurrentFrame=1;
@@ -167,10 +168,6 @@ cc=1;
 % Show the first image
 imOverlay = imshow(HisImage,DisplayRange,'Border','Tight','Parent',overlayAxes);
 imOriginal = imshow(HisImage,DisplayRange,'Border','Tight','Parent',originalAxes);
-% set(overlayAxes,'Units', 'normalized', 'Position', [0 0 1 1]);
-% % set(originalAxes,'Units', 'normalized', 'Position', [0 0 1 1]);
-% imOverlay = imagescUpdate(overlayAxes, HisImage, []);
-% set(overlayAxes,'Units', 'normalized', 'Position', [0 0 1 1]);
 
 projFlag = false;
 set(0, 'CurrentFigure', Overlay)
@@ -178,77 +175,71 @@ set(0, 'CurrentFigure', Overlay)
 while (cc~='x')
     
     %Load subsequent images
-    if ~projFlag 
-        if isempty(hisMat)
-            HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(CurrentFrame).name]);
-        else
-            HisImage = squeeze(hisMat(CurrentFrame,:, :));
-        end
+    if ~projFlag
+        HisImage = hisMat(:, :, CurrentFrame);
     else
-        HisImage = squeeze(Projection(CurrentFrame, :, :));
+        HisImage = Projection(:, :,CurrentFrame);
     end
     
     
     %Get the information about the centroids
     [NCentroids,~]=size(Ellipses{CurrentFrame});
     
-    %     imshow(HisImage,DisplayRange,'Border','Tight','Parent',overlayAxes)
+
     imOverlay.CData = HisImage;
     try
         caxis(overlayAxes, DisplayRange);
         caxis(originalAxes, DisplayRange);
     end
-    axesHandlesToChildObjects = findobj(overlayAxes, 'Type', 'line');
-    if ~isempty(axesHandlesToChildObjects)
-        delete(axesHandlesToChildObjects);
+    
+    %refresh ellipses plots by destroying and remaking
+    if exist('PlotHandle', 'var')
+        cellfun(@delete, PlotHandle);
     end
-    %     hold(overlayAxes, 'on')
-    PlotHandle=zeros(NCentroids, 1);
+    
+    PlotHandle = cell(NCentroids, 1);
+    ellipseFrame = Ellipses{CurrentFrame};
     if ~fish
-        for i=1:NCentroids
-            PlotHandle(i)=ellipse(Ellipses{CurrentFrame}(i,3),...
-                Ellipses{CurrentFrame}(i,4),...
-                Ellipses{CurrentFrame}(i,5),Ellipses{CurrentFrame}(i,1)+1,...
-                Ellipses{CurrentFrame}(i,2)+1,[],20,overlayAxes);
+        for k=1:NCentroids
+            n = k;
+            PlotHandle{k} = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
+                'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
+                'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)), 'FaceAlpha', 0,...
+                'InteractionsAllowed', 'none');
+            
             if size(Ellipses{CurrentFrame}, 2) > 8
-                schnitzInd = Ellipses{CurrentFrame}(i, 9);
+                schnitzInd = Ellipses{CurrentFrame}(k, 9);
             else
-                schnitzInd = getSchnitz(Ellipses{CurrentFrame}(i,:), schnitzcells, CurrentFrame);
+                schnitzInd = getSchnitz(Ellipses{CurrentFrame}(k,:), schnitzcells, CurrentFrame);
                 if ~isempty(schnitzInd)
-                    Ellipses{CurrentFrame}(i, 9) = schnitzInd;
+                    Ellipses{CurrentFrame}(k, 9) = schnitzInd;
                 else
-                    Ellipses{CurrentFrame}(i, 9) = 0;
+                    Ellipses{CurrentFrame}(k, 9) = 0;
                 end
             end
             if schnitzInd ~=0
-                set(PlotHandle(i), 'Color', clrmp(schnitzInd, :),'Linewidth', 2);
+                set(PlotHandle{k}, 'StripeColor', clrmp(schnitzInd, :), 'Color', clrmp(schnitzInd, :),'Linewidth', 2);
             else
-                set(PlotHandle(i), 'Color', 'w','Linewidth', 1);
+                set(PlotHandle{k}, 'StripeColor', 'w', 'Color', 'w','Linewidth', 2);
             end
         end
     else
-        for i=1:NCentroids
-            PlotHandle(i)=ellipse(Ellipses{CurrentFrame}(i,3),...
-                Ellipses{CurrentFrame}(i,4),...
-                Ellipses{CurrentFrame}(i,5),Ellipses{CurrentFrame}(i,1)+1,...
-                Ellipses{CurrentFrame}(i,2)+1, 'g', 4,overlayAxes, .05);
-            %              set(PlotHandle(i), 'Color', 'g','Linewidth', .5);
+        for k=1:NCentroids
+            n = k;
+            
+            PlotHandle{k} = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
+                'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
+                'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)), 'FaceAlpha', 0,...
+                'InteractionsAllowed', 'none');
+            
         end
-        %         for i=1:NCentroids
-        %             set(PlotHandle(i), 'Color', 'w','Linewidth', .5);
-        %         end
     end
-    %     hold(overlayAxes, 'off')
-    %     set(PlotHandle,'Color','r', 'Linewidth', 3)
-    
-    
     
     FigureTitle=['Frame: ',num2str(CurrentFrame),'/',num2str(nFrames),...
         ', nc: ',num2str(nc(CurrentFrame))];
     set(Overlay,'Name',FigureTitle)
     
     
-    %     imshow(HisImage,DisplayRange,'Border','Tight''Parent',originalAxes)
     imOriginal.CData = HisImage;
     
     
@@ -273,7 +264,7 @@ while (cc~='x')
     elseif (ct~=0)&(cc=='<')&(CurrentFrame-4>1)
         CurrentFrame=CurrentFrame-5;
     elseif (ct~=0)&(cc=='s')
-        save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
+        save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v6')
         disp('Ellipses saved.')
     elseif (ct==0)&(strcmp(get(Overlay,'SelectionType'),'normal'))
         cc=1;
@@ -284,14 +275,9 @@ while (cc~='x')
             
             %(x, y, a, b, theta, maxcontourvalue, time,
             %particle_id)
-            if ~isempty(Ellipses{CurrentFrame})
-                MeanRadius=mean((Ellipses{CurrentFrame}(:,3)+Ellipses{CurrentFrame}(:,4))/2);
-            elseif ~isempty(Ellipses{CurrentFrame+1})
-                MeanRadius=mean((Ellipses{CurrentFrame+1}(:,3)+Ellipses{CurrentFrame+1}(:,4))/2);
-            elseif ~isempty(Ellipses{CurrentFrame-1})
-                MeanRadius=mean((Ellipses{CurrentFrame-1}(:,3)+Ellipses{CurrentFrame-1}(:,4))/2);
-            end
             
+            MeanRadius = computeMeanRadius(Ellipses, CurrentFrame, nFrames);
+           
             try
                 Ellipses{CurrentFrame}(end+1,:)=...
                     [cm(1,1),cm(1,2),MeanRadius,MeanRadius,0,0,0,0,0];
@@ -348,58 +334,47 @@ while (cc~='x')
         Ellipses = EllipsesCopy;
         delete(roi);
         clear EllipsesCopy;
-    elseif (ct~=0)&(cc=='c') & CurrentFrame > 1 %copy nuclear information from previous frame
+        
+    elseif (ct~=0)&(cc=='c') & CurrentFrame > 1
+        %copy nuclear information from previous frame
+        
         Ellipses{CurrentFrame} = Ellipses{CurrentFrame-1};
-    elseif (ct~=0)&(cc=='v') & CurrentFrame < nFrames %copy nuclear information from next frame
+        Ellipses{CurrentFrame} =...
+            registerEllipses(Ellipses{CurrentFrame},...
+            HisImage, hisMat(:, :, CurrentFrame-1));
+        
+    elseif (ct~=0)&(cc=='v') & CurrentFrame < nFrames
+        %copy nuclear information from next frame
+        
         Ellipses{CurrentFrame} = Ellipses{CurrentFrame+1};
-    elseif (ct~=0)&(cc=='{') %resegment from scratch 
+        Ellipses{CurrentFrame} =...
+            registerEllipses(Ellipses{CurrentFrame},...
+            HisImage, hisMat(:, :, CurrentFrame+1));
+        
+        
+    elseif (ct~=0)&(cc=='{')
+        %resegment from scratch
         
         Ellipses{CurrentFrame}=[];
-        [centers, radii, mask] = maskNuclei2(HisImage);
-        for i = 1:length(radii)
-            Ellipses{CurrentFrame}(i, :) = [centers(i,1),centers(i,2),radii(i),radii(i),0,0,0,0];
+        [centers, radii, ~] =...
+            findEllipsesByKMeans(HisImage, 'displayFigures', false);
+        
+        for k = 1:length(radii)
+            Ellipses{CurrentFrame}(k, :) = [centers(k,1),centers(k,2),radii(k),radii(k),...
+                0,0,0,0];
         end
         
     elseif (ct~=0)&(cc=='~')
         
-        %if we didn't preload the necessary mat files yet 
-        if isempty(maxMat)
-            [~, ~, maxMat, medMat, midMat] = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, Channels);
-        end
+        ProjectionType = 'midsumprojection';
         
-        [ProjectionType, nonInverted, inverted] = makeNuclearProjection_CNT(nCh);
-        disp('calculating projection...')
-        nuclearMovie = nan(nCh, nFrames, xSize, ySize, 'double'); % ch z t x y
-        %ch z t x y
-        for ch = 1:nCh
-            if inverted(ch)
-                if strcmpi(ProjectionType, 'maxprojection')
-                    nuclearMovie(ch, :, :, :) = imcomplement(maxMat(ch, :, :, :));
-                elseif strcmpi(ProjectionType, 'medianprojection')
-                    nuclearMovie(ch, :, :, :) = imcomplement(medMat(ch, :, :, :));
-                elseif strcmpi(ProjectionType, 'midprojection')
-                    nuclearMovie(ch, :, :, :) = imcomplement(midMat(ch, :, :, :));
-                end
-            end
-            if nonInverted(ch) & ~inverted(ch)
-                if strcmpi(ProjectionType, 'maxprojection')
-                    nuclearMovie(ch, :, :, :) = maxMat(ch, :, :, :);
-                elseif strcmpi(ProjectionType, 'medprojection')
-                    nuclearMovie(ch, :, :, :) = medMat(ch, :, :, :);
-                elseif strcmpi(ProjectionType, 'midprojection')
-                    nuclearMovie(ch, :, :, :) = midMat(ch, :, :, :);
-                end
-            end
-            % Use the reference histogram to scale the Projection (This part
-            % might need some more optimization later-YJK)
-            nuclearMovie(ch, :, :, :) = histeq(mat2gray(nuclearMovie(ch,:,:,:)), ReferenceHist);
-        end
+        [~, ~, Projection] = chooseNuclearChannels2(...
+            movieMat, 'ProjectionType', ProjectionType,'Channels',...
+            Channels,'ReferenceHist', ReferenceHist);
         
-        % Get average of all Projections
-        Projection = squeeze(nanmean(nuclearMovie, 1));
-        projFlag = true;
+        DisplayRange = [mean(mean(squeeze(Projection(:, :, CurrentFrame)))),...
+            max(max(squeeze(Projection(:, :, CurrentFrame)))) ];
         
-        DisplayRange = [mean(mean(squeeze(Projection(CurrentFrame, :, :)))), max(max(squeeze(Projection(CurrentFrame, :, :)))) ];
         disp('changed projection');
         
     elseif (ct~=0)&(cc=='g')  %copy nuclear information from next frame
@@ -420,29 +395,70 @@ while (cc~='x')
         if ~isempty(previousncframes)
             CurrentFrame = previousncframes(1);
         end
+    elseif (ct~=0)&(cc=='\')  %resegment with ksnakecircles
+        
+        [~, circles] = kSnakeCircles(HisImage, pixelSize_um);
+        circles(:, 6:9) = zeros(size(circles, 1), 4);
+        Ellipses{CurrentFrame} = circles;
+        
     elseif (ct~=0)&(cc=='0')    %Debug mode
         keyboard
         
     end
 end
 
+Ellipses = filterEllipses(Ellipses, [thisExperiment.yDim, thisExperiment.xDim]);
 
+save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v6')
 
-save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
-close all;
 
 %Decide whether we need to re-track
-userPrompt = 'Did you make changes to nuclei and thus require re-tracking? (y/n)';
-reTrackAnswer = inputdlg(userPrompt);
+if yToRetrackPrompt
+    reTrackAnswer = 'y';
+else
+    userPrompt = 'Did you make changes to nuclei and thus require re-tracking? (y/n)';
+    reTrackAnswer = inputdlg(userPrompt);
+end
+
 if contains(reTrackAnswer,'n')
     disp('Ellipses saved. Per user input, not re-tracking. Exiting.')
 else
-    opts = {};
-    if fish
-        opts = [opts, 'markandfind'];
-    end
+    opts = {};  if fish opts = [opts, 'markandfind']; end
     disp('Ellipses saved. Running TrackNuclei to incorporate changes.')
-    TrackNuclei(Prefix,'NoBulkShift','ExpandedSpaceTolerance', 1.5, 'retrack', 'nWorkers', 1, opts{:});
+    TrackNuclei(Prefix,'retrack', 'nWorkers', 1, opts{:});
 end
 
+end
+
+
+ function MeanRadius = computeMeanRadius(Ellipses, CurrentFrame, nFrames)
+ 
+ radius = @(x,f) nanmean( (1/2)*(x{f}(:, 3) + x{f}(:, 4)) );
+ 
+ if ~isempty(Ellipses{CurrentFrame})
+     for k = 1:size(Ellipses{CurrentFrame}, 1)
+         if Ellipses{CurrentFrame}(k, 3) == 0
+             Ellipses{CurrentFrame}(k, :) = nan;
+         end
+     end
+     MeanRadius = radius(Ellipses, CurrentFrame);
+ elseif CurrentFrame+1 < nFrames && ~isempty(Ellipses{CurrentFrame+1})
+     for k = 1:size(Ellipses{CurrentFrame+1}, 1)
+         if Ellipses{CurrentFrame+1}(k, 3) == 0
+             Ellipses{CurrentFrame+1}(k, :) = nan;
+         end
+     end
+     MeanRadius = radius(Ellipses, CurrentFrame+1);
+     
+ elseif CurrentFrame-1 >1 && ~isempty(Ellipses{CurrentFrame-1})
+     for k = 1:size(Ellipses{CurrentFrame-1}, 1)
+         if Ellipses{CurrentFrame-1}(k, 3) == 0
+             Ellipses{CurrentFrame-1}(k, :) = nan;
+         end
+     end
+     MeanRadius = radius(Ellipses, CurrentFrame-1);
+ else
+     MeanRadius = 20; %magic number just to avoid errors in weird situations (units of pixels)
+ end
+                
 end

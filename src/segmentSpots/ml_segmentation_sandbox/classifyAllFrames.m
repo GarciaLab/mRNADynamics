@@ -1,4 +1,4 @@
-function classifyAllFrames(Prefix, trainingFeatures, sigmaVec, beta)
+function classifyAllFrames(Prefix, trainingFeatures, sigmaVec, beta, varargin)
 
 [~,ProcPath,DropboxFolder,~, PreProcPath,...
     ~, Prefix, ~,~,~,~,...
@@ -8,7 +8,7 @@ if length(spotChannels) > 1
     error('nope. talk to nick');
 end
 % determine size of image stack
-load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat']);
+load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
 zDim = FrameInfo(1).NumberSlices + 2;
 yDim = FrameInfo(1).LinesPerFrame;
 xDim = FrameInfo(1).PixelsPerLine;
@@ -19,6 +19,8 @@ zMax = zDim - 2;
 nameSuffix = ['_ch', iIndex(spotChannels, 2)];
 
 filterImageFrames(Prefix,sigmaVec,trainingFeatures, beta);
+
+
 % % label full stack
 % pihat = mnrval(beta,tData);
 % probStack = reshape(pihat(:,2),[yDim, xDim, zMax, nFrames]);

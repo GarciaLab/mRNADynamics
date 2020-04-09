@@ -1,4 +1,4 @@
-function [ xy, mapping, nuclei ] = trackMitosis(FrameInfo, names, firstFrameNumber, lastFrameNumber, shifts, diameter, embryoMask, xy, manualMapping, nuclei, varargin )
+function [ xy, mapping, nuclei ] = trackMitosis(FrameInfo, hisMat, firstFrameNumber, lastFrameNumber, shifts, diameter, embryoMask, xy, manualMapping, nuclei, varargin )
 %BACKTRACKMITOSIS This function tracks the nuclei through mitosis. The main
 % difference with respect to the tracking through interphases is that here,
 % nuclei can be mapped to two nuclei on the next frame.
@@ -9,7 +9,7 @@ if numel(varargin) > 0
 end
 
 space_resolution = getDefaultParameters(FrameInfo,'space resolution');
-totalNumberOfFrames = numel(names);
+totalNumberOfFrames = size(hisMat,3);
 maxNucleusStep = 40*0.22/space_resolution;
 maxShiftCorrection = getDefaultParameters(FrameInfo,'max Shift Correction', 'trackToTheNextFrame')*diameter/space_resolution;
 nFrames = (lastFrameNumber-firstFrameNumber+1);
@@ -21,7 +21,7 @@ mapping = {};
 if ~exist('xy','var') || isempty(xy)
     for j = 1:nFrames
         
-        tmp = findNuclei(FrameInfo,names,firstFrameNumber-1+j,diameter,embryoMask);
+        tmp = findNuclei(FrameInfo,hisMat,firstFrameNumber-1+j,diameter,embryoMask);
         
         xy{j} = tmp;%+repmat(sum(shifts(firstFrameNumber:firstFrameNumber-1+j,:),1),size(tmp,1),1);
         

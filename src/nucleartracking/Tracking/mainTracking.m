@@ -1,4 +1,4 @@
-function [ nuclei, varargout ] = mainTracking(FrameInfo, names, varargin)
+function [ nuclei, varargout ] = mainTracking(FrameInfo, hisMat, varargin)
 %MAINTRACKING Run the full segmentation and tracking of a movie.
 % Optionally, call again with more arguments to enforce manual
 % corrections.
@@ -126,11 +126,6 @@ for j = 1:2:numel(varargin)
             data = varargin{j+1};
             
             try
-                names = data.names;
-            catch
-                error('Unable to load the variable ''names'' from the provided data structure.')
-            end
-            try
                 provided_time_resolution = data.time_resolution;
             catch
                 error('Unable to load the variable ''time_resolution'' from the provided data structure.')
@@ -173,12 +168,13 @@ if isnan(provided_LoGratio)
     clear -global provided_LoGratio
 end
 
+numberOfFrames = size(hisMat, 3);
 
 waitbar(0.2,h_waitbar_initialization);
-
-if ~exist('embryoMask','var') || isempty(embryoMask)
-    embryoMask = getEmbryoMaskLive(names);
-end
+% 
+% if ~exist('embryoMask','var') || isempty(embryoMask)
+%     embryoMask = getEmbryoMaskLive(names);
+% end
 
 waitbar(0.3,h_waitbar_initialization)
 
@@ -189,7 +185,7 @@ if (~exist('centers','var') || isempty(centers) ) && exist('mapping','var')
 end
 
 if ~exist('mapping','var') || isempty(mapping)
-    mapping = cell(numel(names)-1,1);
+    mapping = cell(numberOfFrames-1,1);
 end
 
 if ~exist('interpolatedShifts','var') || isempty(interpolatedShifts)
@@ -200,7 +196,7 @@ end
 time_resolution = getDefaultParameters(FrameInfo,'time resolution');
 space_resolution = getDefaultParameters(FrameInfo,'space resolution');
 
-numberOfFrames = numel(names);
+numberOfFrames = size(hisMat, 3);
 %margin = ceil(getDefaultParameters('margin mitosis')/time_resolution);
 
 
@@ -212,7 +208,7 @@ waitbar(0.35,h_waitbar_initialization);
 
 % Measure the average shift of the nuclei from one frame to the next.
 if ~exist('shifts','var') || isempty('shifts')
-    shifts = measureAllShifts(names,h_waitbar_initialization);
+    shifts = measureAllShifts(hisMat,h_waitbar_initialization);
 end
 
 waitbar(0.8,h_waitbar_initialization)
@@ -220,12 +216,12 @@ waitbar(0.8,h_waitbar_initialization)
 % If not provided, find the mitosis.
 if ~exist('indMitosis','var') || isempty('indMitosis')
     % Indices of putative mitosis:
-    [indMitosis, dummy] = findMitosis(names,shifts);
+%     [indMitosis, dummy] = findMitosis(names,shifts);
     % Reshape in a correctly sized structure:
     tmp = zeros(numel(indMitosis,2));
     for j = 1:numel(indMitosis)
         tmp(j,1) = max(1,indMitosis(j)-4);
-        tmp(j,2) = min(numel(names),indMitosis(j)+4);
+        tmp(j,2) = min(numberOfFrames,indMitosis(j)+4);
     end
     indMitosis = tmp;
     indMitosis = [0 1; indMitosis; numberOfFrames 0];
@@ -291,7 +287,7 @@ if ~exist('centers','var') || isempty(centers)
                     end
         end
         if segment
-            xy(first:last) = segmentFrames(FrameInfo, names,first,last,diameters(j),embryoMask,h_waitbar_segmentation);
+            xy(first:last) = segmentFrames(FrameInfo, hisMat,first,last,diameters(j),embryoMask,h_waitbar_segmentation);
         end
         
         % Segment mitosis
@@ -321,7 +317,7 @@ if ~exist('centers','var') || isempty(centers)
             else
                 D = 0.5*sum(diameters(j-1:j));
             end
-            xy(first:last) = segmentFrames(FrameInfo,names,first,last,D,embryoMask,h_waitbar_segmentation);
+            xy(first:last) = segmentFrames(FrameInfo,hisMat,first,last,D,embryoMask,h_waitbar_segmentation);
         end
         
     end
@@ -329,12 +325,12 @@ if ~exist('centers','var') || isempty(centers)
     
     close(h_waitbar_segmentation)
     
-    %If the XY contains only one or zero nuclei then there's probably something
+    %If the xy contains only one or zero nuclei then there's probably something
     %wrong. In that case just copy the information from the previous good
     %frame.
-    if sum(cellfun(@(x) size(x,1),xy)<0)
+    if sum(cellfun(@(x) size(x,1),xy) < 1)
         %Find the frames where we have issues
-        FramesToFix=find(cellfun(@(x) size(x,1),xy)<0);
+        FramesToFix=find(cellfun(@(x) size(x,1),xy) < 1 );
         for i=1:length(FramesToFix)
             if FramesToFix(i)==1
                 FrameToCopy=1;
@@ -361,10 +357,12 @@ end
 
 % Initialize output
 numberOfNuclei = size(xy{1},1);
-totalNumberOfFrames = numel(names);
+totalNumberOfFrames = size(hisMat, 3);
 
 % initialize array
-nuclei = struct('position',nan(totalNumberOfFrames,2),'indXY',mat2cell([1:numberOfNuclei; zeros(totalNumberOfFrames-1,numberOfNuclei)],totalNumberOfFrames,ones(numberOfNuclei,1)),'P',[],'D',[],'E',[],'approved',0);
+nuclei = struct('position',nan(totalNumberOfFrames,2),'indXY',...
+    mat2cell([1:numberOfNuclei; zeros(totalNumberOfFrames-1,numberOfNuclei)],...
+    totalNumberOfFrames,ones(numberOfNuclei,1)),'P',[],'D',[],'E',[],'approved',0);
 
 for j = 1:numel(nuclei)
      nuclei(j).position(1,:) = xy{1}(j,:);
@@ -445,7 +443,7 @@ for j = 1:numberOfPhases
             fprintf(['Processing mitosis between nuclear cycle ' num2str(nucCyc(0.5*(j+1))-1) ' and ' num2str(nucCyc(0.5*(j+1))) '... ']);
         end
         
-        [ xy(first:last), mapping(first:last-1), nuclei ] = trackMitosis(FrameInfo, names, first, last, shifts, diameters(j), embryoMask, xy(first:last), mapping(first:last-1), nuclei,h_waitbar_tracking );
+        [ xy(first:last), mapping(first:last-1), nuclei ] = trackMitosis(FrameInfo, hisMat, first, last, shifts, diameters(j), embryoMask, xy(first:last), mapping(first:last-1), nuclei,h_waitbar_tracking );
         
         fprintf('Done!\n')
     
@@ -460,7 +458,7 @@ for j = 1:numberOfPhases
         end
         %This trackingStatingPoint(1) looks like it might be a magic number
         %and does not appear to be used
-        [nuclei, ~, interpolatedShifts] = trackWholeInterphase(FrameInfo,names,...
+        [nuclei, ~, interpolatedShifts] = trackWholeInterphase(FrameInfo,hisMat,...
             trackingStartingPoints(1),first,last,diameters(j), embryoMask, ...
             xy, mapping,nuclei, interpolatedShifts, h_waitbar_tracking, ...
             ExpandedSpaceTolerance, NoBulkShift);
@@ -505,7 +503,7 @@ if nargout > 1
         
         if nargout > 3
             
-            data.names = names;
+            data.names = '';
             data.time_resolution = getDefaultParameters(FrameInfo,'time resolution');
             data.space_resolution = getDefaultParameters(FrameInfo,'space resolution');
             data.interpolatedShifts = interpolatedShifts;

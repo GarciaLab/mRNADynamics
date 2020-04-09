@@ -105,7 +105,7 @@ end
     DetermineLocalFolders(Prefix);
 
 
-
+thisExperiment = liveExperiment(Prefix);
 
 %Load all the information
 load([DropboxFolder,filesep,Prefix,'\Ellipses.mat'], 'Ellipses')
@@ -125,8 +125,8 @@ end
 
 % refactor in progress, we should replace readMovieDatabase with getExperimentDataFromMovieDatabase
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
-Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase)
+    Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
+    nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
 
 %Pre-calculating ExperimentAxis boolean for faster use in later if statements
 ExperimentAxisIsNoAP = strcmpi(ExperimentAxis, 'NoAP');
@@ -165,7 +165,7 @@ NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
 if (~isfield(schnitzcells,'APpos'))&&(strcmpi(ExperimentAxis,'AP')||strcmpi(ExperimentAxis,'DV')) && fullEmbryo
     %First, run this to get the alignment between the zoom-in and zoom-out
     %images:
-%     AddParticlePosition(Prefix)
+    %     AddParticlePosition(Prefix)
     %Now, add the nuclear position
     AddNuclearPosition(Prefix)
     load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
@@ -194,7 +194,7 @@ else
         ElapsedTime(j)=etime(datevec(FrameInfo(j).TimeString),datevec(FrameInfo(1).TimeString));
     end
 end
-    
+
 
 ElapsedTime=ElapsedTime/60;     %Time is in minutes
 
@@ -224,7 +224,7 @@ h=waitbar(0,'Compiling nuclear traces');
 k=1;
 for i=1:length(schnitzcells)
     
-
+    
     waitbar(i/length(schnitzcells),h)
     
     if schnitzcells(i).Approved
@@ -242,7 +242,7 @@ for i=1:length(schnitzcells)
         end
         
         if sum(FrameFilter)
-        
+            
             %Copy the filtered information
             if isfield(schnitzcells, 'P')
                 CompiledNuclei(k).P=schnitzcells(i).P;
@@ -266,9 +266,9 @@ for i=1:length(schnitzcells)
                 CompiledNuclei(k).MedianAP=single(median(schnitzcells(i).APpos(FrameFilter)));
             end
             
-           FluoTimeTrace = ExtractDlFluo(schnitzcells(i).Fluo, .5);
-           CompiledNuclei(k).FluoTimeTrace=single(FluoTimeTrace);
-
+            FluoTimeTrace = ExtractDlFluo(schnitzcells(i).Fluo, .5);
+            CompiledNuclei(k).FluoTimeTrace=single(FluoTimeTrace);
+            
             %Copy and extract the fluorescence information
             CompiledNuclei(k).FluoMax=single(squeeze(max(schnitzcells(i).Fluo(FrameFilter,:,:),[],2)));
             %For DV case, need to calculate more
@@ -278,24 +278,24 @@ for i=1:length(schnitzcells)
                 CompiledNuclei(k).FluoMin=single(squeeze(min(DV_Fluo(DV_Fluo>0),[],2)));
                 CompiledNuclei(k).FluoMean=single(squeeze(mean(DV_Fluo(DV_Fluo>0),2)));
                 %the 'p' field is a parabola fit of DV fluorescence over
-                %time
-%                 for frame = 1:size(DV_Fluo, 1)
-%                     CompiledNuclei(k).parabolaFit{frame} = polyfit(1:size(DV_Fluo,2),DV_Fluo(frame,:),2);
-%                 end
-                    
+                %time.
+                %                 for frame = 1:size(DV_Fluo, 1)
+                %                     CompiledNuclei(k).parabolaFit{frame} = polyfit(1:size(DV_Fluo,2),DV_Fluo(frame,:),2);
+                %                 end
+                
             end
-
+            
             %If there was only one time point and multiple channels,
             %squeeze can lead to a weird shape of the matrix
             if (NChannels>1)&&(size(CompiledNuclei(k).FluoMax,2)==1)
-                CompiledNuclei(k).FluoMax=CompiledNuclei(k).FluoMax';                
+                CompiledNuclei(k).FluoMax=CompiledNuclei(k).FluoMax';
             end
             
             k=k+1;
         end
     end
 end
-close(h)     
+close(h)
 
 %% ROI option
 % This option is sorting the CompiledNuclei that are within the ROI region
@@ -360,7 +360,7 @@ ncFilterID=[min(ncFilterID)-1,ncFilterID];
 ncFilter=false(length(CompiledNuclei),length(ncFilterID));
 for i=1:length(CompiledNuclei)
     if ~isempty(CompiledNuclei(i).Frames)
-    
+        
         if ~isempty(CompiledNuclei(i).nc)
             ncFilter(i,find(CompiledNuclei(i).nc==ncFilterID))=true;
         else
@@ -384,7 +384,7 @@ for i=1:length(CompiledNuclei)
                 CompiledNuclei(i).nc=14;
                 ncFilter(i,ncFilterID==14)=true;
             end
-
+            
         end
     end
 end
@@ -393,12 +393,12 @@ end
 
 if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV') && fullEmbryo
     %AP filters:
-
+    
     %Divide the AP axis into boxes of a certain AP size. We'll see which
     %particle falls where.
-
+    
     APbinID=0:APResolution:1;
-
+    
     APFilter=false(length(CompiledNuclei),length(APbinID));
     
     for i=1:length(CompiledNuclei)
@@ -431,7 +431,7 @@ MedianCyto = [];
 %     else
 %         nameSuffix=['_ch',iIndex(2,2)]; %assuming input channel is channel two. obviously this is going to be wrong in general.
 %     end
-%     
+%
 %     MedianCyto = zeros(numFrames);
 %     h=waitbar(0,'Calculating the median cyto intentisy');
 %     for frame=1:numFrames
@@ -443,27 +443,27 @@ MedianCyto = [];
 %         MedianCyto(frame)=median(double(ImageMax(:)));
 %     end
 %     close(h)
-% end  
+% end
 
 
 %% Binning and averaging data
 
 if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV') && fullEmbryo
     
-%Get the data for the individual particles in a matrix that has the frame
-%number and the particle number as dimensions. Also, get a vector that
-%reports the mean position.
-[AllTracesVector,AllTracesAP, AllTracesDV]=AllTracesNuclei(FrameInfo,CompiledNuclei);
-
-
-
+    %Get the data for the individual particles in a matrix that has the frame
+    %number and the particle number as dimensions. Also, get a vector that
+    %reports the mean position.
+    [AllTracesVector,AllTracesAP, AllTracesDV]=AllTracesNuclei(FrameInfo,CompiledNuclei);
+    
+    
+    
     %Mean plot for different AP positions
-
+    
     %Figure out the AP range to use
     MinAPIndex=1;%min(find(sum(APFilter)));
     MaxAPIndex=size(APFilter,2);%max(find(sum(APFilter)));
     
-    %Get the corresponding mean information 
+    %Get the corresponding mean information
     k=1;
     for ap=MinAPIndex:MaxAPIndex
         [MeanVectorAPTemp,SDVectorAPTemp,NParticlesAPTemp]=AverageTracesNuclei(FrameInfo,...
@@ -473,7 +473,7 @@ if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV') && fullEmbryo
         NParticlesAPCell{k}=NParticlesAPTemp';
         k=k+1;
     end
-
+    
     %Turn the information into useful structures
     if NChannels>1
         for ch=1:NChannels
@@ -483,7 +483,7 @@ if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV') && fullEmbryo
                 NParticlesAPCell2{ch,ap}=NParticlesAPCell{ap}{ch};
             end
         end
-
+        
         for ch=1:NChannels
             MeanVectorAP{ch}=cell2mat({MeanVectorAPCell2{ch,:}}')';
             SDVectorAP{ch}=cell2mat({SDVectorAPCell2{ch,:}}')';
@@ -495,20 +495,20 @@ if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV') && fullEmbryo
             SDVectorAPCell2{ap}=double(SDVectorAPCell{ap});
             NParticlesAPCell2{ap}=double(NParticlesAPCell{ap});
         end
-
+        
         MeanVectorAP=cell2mat(MeanVectorAPCell2);
         SDVectorAP=cell2mat(SDVectorAPCell2);
         NParticlesAP=cell2mat(NParticlesAPCell2);
     end
-
-
+    
+    
 elseif strcmpi(ExperimentAxis,'NoAP')
     %Get the data for the individual particles in a matrix that has the frame
     %number and the particle number as dimensions. Also, get a vector that
     %reports the mean position.
     [AllTracesVector,AllTracesAP, AllTracesDV]=AllTracesNuclei(FrameInfo,CompiledNuclei,'NoAP');
 end
-    
+
 
 
 
@@ -517,7 +517,7 @@ end
 
 
 % %Now find the different maxima in each nc
-% 
+%
 % MaxFrame=[];
 % for i=1:length(NewCyclePos)
 %     if i==1
@@ -528,40 +528,65 @@ end
 %         MaxFrame=[MaxFrame,NewCyclePos(i-1)+MaxIndex-1];
 %     end
 % end
-% 
+%
 % [~,MaxIndex]=max(MeanVectorAll(NewCyclePos(i):end));
 % MaxFrame=[MaxFrame,NewCyclePos(i)+MaxIndex-1];
+
+%% add some things to schnitzcells for convenience
+
+
+expandedAnaphaseFrames = [zeros(1,8),thisExperiment.anaphaseFrames'];
+
+for s = 1:length(schnitzcells)
+    midFrame = ceil(length(schnitzcells(s).frames)/2);
+    dif = double(schnitzcells(s).frames(midFrame)) - expandedAnaphaseFrames;
+    cycle = find(dif>0, 1, 'last' );
+    schnitzcells(s).cycle = uint8(cycle);
+end
+
+schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, expandedAnaphaseFrames);
+
+ schnitzcells = filterSchnitz(schnitzcells, [ thisExperiment.yDim, thisExperiment.xDim]);
 
 %% Save everything
 
 if ~fullEmbryo
-
-savedVariables = [savedVariables,...
-            'CompiledNuclei','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
-            'nc12','nc13','nc14','ncFilterID','ncFilter',...
-            'MeanVectorAll','SDVectorAll','NParticlesAll',...
-            'MaxFrame',...
-            'MeanCyto','SDCyto','MedianCyto','MaxCyto',...
-            'IntegrationArea'];
+    
+    savedVariables = [savedVariables,...
+        'CompiledNuclei','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
+        'nc12','nc13','nc14','ncFilterID','ncFilter',...
+        'MeanVectorAll','SDVectorAll','NParticlesAll',...
+        'MaxFrame',...
+        'MeanCyto','SDCyto','MedianCyto','MaxCyto',...
+        'IntegrationArea'];
 else
     savedVariables = [savedVariables,...
-            'CompiledNuclei','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
-            'nc12','nc13','nc14','ncFilterID','ncFilter','APbinID','APFilter',...
-            'MeanVectorAP','SDVectorAP','NParticlesAP',...
-            'MeanVectorAll','SDVectorAll','NParticlesAll',...
-            'MaxFrame',...
-            'AllTracesVector','AllTracesAP',...
-            'MeanCyto','SDCyto','MedianCyto','MaxCyto',...
-            'MeanCytoAPProfile','SDCytoAPProfile','SECytoAPProfile',...
-            'IntegrationArea'...
-            'DVbinID','DVFilter','MeanVectorDV','SDVectorDV','NParticlesDV',...
-                    'MinDVIndex','MaxDVIndex', 'AllTracesDV'];
+        'CompiledNuclei','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
+        'nc12','nc13','nc14','ncFilterID','ncFilter','APbinID','APFilter',...
+        'MeanVectorAP','SDVectorAP','NParticlesAP',...
+        'MeanVectorAll','SDVectorAll','NParticlesAll',...
+        'MaxFrame',...
+        'AllTracesVector','AllTracesAP',...
+        'MeanCyto','SDCyto','MedianCyto','MaxCyto',...
+        'MeanCytoAPProfile','SDCytoAPProfile','SECytoAPProfile',...
+        'IntegrationArea'...
+        'DVbinID','DVFilter','MeanVectorDV','SDVectorDV','NParticlesDV',...
+        'MinDVIndex','MaxDVIndex', 'AllTracesDV'];
     
     
 end
 
+try
+    save([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat',NameString_ROI],...
+        savedVariables{:},'-v6');
+catch
+    save([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat',NameString_ROI],...
+        savedVariables{:},'-v7.3', '-nocompression');
+end
 
-save([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat',NameString_ROI],...
-        savedVariables{:},'-v7.3');
-
-save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v7.3')
+if whos(var2str(schnitzcells)).bytes < 2E9
+    save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v6')
+else
+    save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v7.3', '-nocompression')
+    
+end

@@ -1,4 +1,4 @@
-function xy = segmentFrames(FrameInfo,names,firstFrame,lastFrame,nucleusDiameter, embryoMask, varargin)
+function xy = segmentFrames(FrameInfo,hisMat,firstFrame,lastFrame,nucleusDiameter, embryoMask, varargin)
 
     update_waitbar = false;
     if nargin > 6
@@ -15,9 +15,10 @@ function xy = segmentFrames(FrameInfo,names,firstFrame,lastFrame,nucleusDiameter
     
     update_waitbar = false;
     
-    for j = 1:nFrames
+    for j = 1:nFrames %parfor j = 1:nFrames
 
-        [xy{j}, ~] = findNuclei(FrameInfo,names, frameNum(j), nucleusDiameter, embryoMask);
+
+        [xy{j}, ~] = findNuclei(FrameInfo,hisMat, frameNum(j), nucleusDiameter, embryoMask);
 
         if update_waitbar
             waitbar(j/nFrames,h_waitbar_segmentation, ['Segmentation progress : ', num2str(j), ' frames processed out of ', num2str(nFrames)]);

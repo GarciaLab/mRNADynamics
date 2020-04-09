@@ -1,4 +1,4 @@
-% function [theStruct, settingStruct] = readSettingsFromXML(filename)
+% function [theStruct, settingStruct] = readSettingsFromXML(Prefix, filename)
 %
 % DESCRIPTION
 % Searches Leica XML files for the following microscope settings and  

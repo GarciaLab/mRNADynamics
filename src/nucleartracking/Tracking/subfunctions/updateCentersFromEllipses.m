@@ -17,7 +17,12 @@ function [ centers ] = updateCentersFromEllipses(FrameInfo, Ellipses, varargin )
 
 space_resolution = getDefaultParameters(FrameInfo,'space resolution');
 
-THRESHOLD_DISTANCE = 2; % in micrometers. Only used when the old centers strucutre is provided too. Maximum offset allowed between a nucleus's position in the Ellipses struct and the centers struct for them to be considered the same nucleus.
+%Only used when the old centers strucutre is provided too. 
+%Maximum offset allowed between a nucleus's position in the
+%Ellipses struct and the centers struct for them to be
+%considered the same nucleus.
+THRESHOLD_DISTANCE = 2; % in micrometers. 
+
 THRESHOLD_DISTANCE = THRESHOLD_DISTANCE/space_resolution;
 
 if nargin > 2
@@ -76,11 +81,11 @@ else
     % I should make this and the rest of the code be able to handle empty
     % frames!
     for j = 1:nFrames
-%         if ~isempty(Ellipses{j})
+        if ~isempty(Ellipses{j})
             centers{j} = Ellipses{j}(:,[2,1]);
-%         else
-%            centers{j}=[];
-%         end
+        else
+           centers{j}=[];
+        end
     end
     
     

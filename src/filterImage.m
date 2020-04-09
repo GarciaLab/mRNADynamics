@@ -1,42 +1,62 @@
-function im = filterImage(im, filterType, sigmas, varargin)
+function [im, successFlag] = filterImage(im, filterType, sigmas, varargin)
+%
+%
+%
+% supportedFilters = {'Gaussian_blur', 'Identity', 'Anisotropic_diffusion', 'bilateral',...
+%     'Edges', 'Sobel', 'Difference_of_Gaussian', 'Laplacian', 'Mean', 'Structure_smallest', 'Structure_largest',...
+%     'Median',  'Maximum', 'Minimum', 'Std', 'Variance',...
+%       'Hessian_smallest', 'Hessian_largest', 'Entropy', 'Range', 'imsegkmeans'};
+%
 
-% persistent dh; persistent dh3;
-% % dh = memoize(@DoG); dh3 = memoize(@DoG3);
-% dh3 = @DoG3;
-% persistent g3;
-% % g3 = memoize(@gauss3D);
-persistent Gx; persistent Gy; persistent Gz;
-grad = memoize(@gradient);
-persistent Gxx; persistent Gxy; persistent Gxz; persistent Gyy; persistent Gyz; persistent Gzz;
 
-zStep = 400; %nm. default.
+zStep = 400; %nm/voxel
+rad = 3; %rule of thumb is kernel size is 3x the Gaussian sigma
+sigmaZ = 280 / zStep; %280 nm. don't remember why i picked this, but it works for my data -AR
+filterSizeZ = ceil(sigmaZ*rad);
 
-%initialize
-filterSizeZ = NaN; s1 = NaN; s2 = NaN; sigmaZ = NaN; filterSizeXY = NaN;
-
-gpu = strcmpi(class(im), 'gpuArray');
+successFlag = true;
 numType = 'double';
-
 padding = 'symmetric';
-for args = 1:length(varargin)
-    if strcmpi(varargin{args}, 'filterSize')
-        filterSizeXY = round(varargin{args+1});
-    elseif strcmpi(varargin{args}, 'zStep')
-        zStep = varargin{args+1};
-    elseif strcmpi(varargin{args}, 'padding')
-        padding = varargin{args+1};
-     elseif strcmpi(varargin{args},'single')
-        numType = 'single';
-    elseif strcmpi(varargin{args}, 'double')
-        numType = 'double';
+
+for arg = 1:length(varargin)
+    if strcmpi(varargin{arg}, 'filterSize')
+        filterSizeXY = varargin{arg+1};
+    elseif strcmpi(varargin{arg}, 'zStep')
+        zStep  = varargin{arg+1};
     end
 end
 
-getSigmasAndFilterSizes;
+gpu = strcmpi(class(im), 'gpuArray');
 
+[s1, s2] = ...
+    getSigmas(sigmas);
+
+if isnan(s1)
+    successFlag = false;
+%     warning('FilterImage: Filter not recognized. Returning original image.')
+    return
+end
+
+if ~exist('filterSizeXY', 'var')
+    filterSizeXY = round(rad*s1);
+end
+
+if ~mod(filterSizeXY,2)
+    filterSizeXY = filterSizeXY + 1;
+end
+
+s1Mat = [s1 s1];
+s2Mat = [s2 s2];
+
+yDim=size(im, 1); xDim = size(im, 2);
 dim = length(size(im));
+if dim==3
+    zDim = size(im, 3);
+    s1Mat = [s1Mat, sigmaZ];
+end
 
 switch filterType
+    
     case 'Identity'
         %return the image
     case 'Gaussian_blur'
@@ -46,23 +66,46 @@ switch filterType
             d = og3(s1, sigmaZ);
             im = imfilter(im, d, 'same', padding);
         end
+    case 'Anisotropic_diffusion'
+        if dim == 2
+            im = imdiffusefilt(im,'NumberOfIterations', 20);
+            %this probably will not produce the same results as the fiji
+            %implementation. 
+        elseif dim == 3
+           %not supported
+           successFlag = false;
+        end
+    case 'bilateral'
+        if dim == 2
+            im = imbilatfilt(im, 'Padding','symmetric');
+            %this probably will not produce the same results as the fiji
+            %implementation. 
+        elseif dim == 3
+           %not supported
+           successFlag = false;
+        end
     case 'bright_spot_psf'
         if dim == 2
-            %21 x 21
-            spotfilt = [0,0.150000000000000,0.0500000000000000,0,0.0500000000000000,0,0.100000000000000,0.100000000000000,0,0.100000000000000,0.0500000000000000,0.0500000000000000,0,0.100000000000000,0,0,0,0,0.0500000000000000,0.100000000000000,0.100000000000000;0.0500000000000000,0.0500000000000000,0,0,0.100000000000000,0,0.0500000000000000,0,0,0,0.0500000000000000,0.0500000000000000,0,0,0.100000000000000,0.150000000000000,0,0,0.200000000000000,0.100000000000000,0.100000000000000;0.0500000000000000,0.0500000000000000,0,0.0500000000000000,0.0500000000000000,0,0,0,0.100000000000000,0.0500000000000000,0,0.0500000000000000,0,0.0500000000000000,0,0,0.200000000000000,0,0.100000000000000,0.100000000000000,0;0.0500000000000000,0.0500000000000000,0,0.0500000000000000,0,0.100000000000000,0,0.150000000000000,0,0.0500000000000000,0.0500000000000000,0,0.0500000000000000,0.0500000000000000,0,0.0500000000000000,0,0.100000000000000,0,0.100000000000000,0.0500000000000000;0,0,0.100000000000000,0.150000000000000,0.0500000000000000,0.100000000000000,0,0.150000000000000,0.0500000000000000,0.100000000000000,0.100000000000000,0.0500000000000000,0.100000000000000,0.150000000000000,0,0.150000000000000,0.0500000000000000,0,0,0.0500000000000000,0;0,0.100000000000000,0.200000000000000,0.100000000000000,0,0,0.100000000000000,0.100000000000000,0.200000000000000,0.300000000000000,0.150000000000000,0,0.200000000000000,0,0.150000000000000,0,0.0500000000000000,0,0.0500000000000000,0,0.100000000000000;0,0.0500000000000000,0,0,0,0.0500000000000000,0,0.150000000000000,0.100000000000000,0.150000000000000,0.150000000000000,0.200000000000000,0.250000000000000,0.200000000000000,0.250000000000000,0.0500000000000000,0.150000000000000,0,0.0500000000000000,0.0500000000000000,0.0500000000000000;0.0500000000000000,0.0500000000000000,0.100000000000000,0.0500000000000000,0.0500000000000000,0.0500000000000000,0.200000000000000,0.0500000000000000,0.200000000000000,0.250000000000000,0.300000000000000,0.300000000000000,0.0500000000000000,0.350000000000000,0.200000000000000,0.150000000000000,0.150000000000000,0.0500000000000000,0.0500000000000000,0.0500000000000000,0.0500000000000000;0.0500000000000000,0.100000000000000,0.0500000000000000,0.0500000000000000,0.150000000000000,0.150000000000000,0.550000000000000,0.200000000000000,0.250000000000000,0.650000000000000,0.550000000000000,0.500000000000000,0.550000000000000,0.250000000000000,0.350000000000000,0.0500000000000000,0.100000000000000,0.200000000000000,0.150000000000000,0.150000000000000,0;0.0500000000000000,0,0.100000000000000,0.200000000000000,0.200000000000000,0.250000000000000,0.0500000000000000,0.150000000000000,0.300000000000000,1,0.500000000000000,0.650000000000000,0.750000000000000,0.450000000000000,0.350000000000000,0.150000000000000,0.150000000000000,0.100000000000000,0.100000000000000,0,0.0500000000000000;0,0,0.0500000000000000,0,0.250000000000000,0.100000000000000,0.400000000000000,0.200000000000000,0.600000000000000,0.500000000000000,0.750000000000000,0.700000000000000,0.550000000000000,0.400000000000000,0.250000000000000,0.0500000000000000,0,0.150000000000000,0.200000000000000,0.0500000000000000,0.0500000000000000;0.0500000000000000,0.0500000000000000,0.0500000000000000,0.100000000000000,0.150000000000000,0.150000000000000,0.500000000000000,0.500000000000000,0.400000000000000,0.550000000000000,0.600000000000000,0.600000000000000,0.650000000000000,0.500000000000000,0.150000000000000,0.150000000000000,0.150000000000000,0.0500000000000000,0.100000000000000,0,0.100000000000000;0,0.200000000000000,0,0.0500000000000000,0.0500000000000000,0.250000000000000,0.150000000000000,0.300000000000000,0.450000000000000,0.400000000000000,0.600000000000000,0.550000000000000,0.350000000000000,0.300000000000000,0.200000000000000,0.100000000000000,0.0500000000000000,0.0500000000000000,0.100000000000000,0.0500000000000000,0;0.100000000000000,0.100000000000000,0.0500000000000000,0.100000000000000,0.100000000000000,0.300000000000000,0.0500000000000000,0.350000000000000,0.250000000000000,0.750000000000000,0.450000000000000,0.500000000000000,0.550000000000000,0.250000000000000,0.150000000000000,0.0500000000000000,0.0500000000000000,0.200000000000000,0,0.100000000000000,0.0500000000000000;0.0500000000000000,0.0500000000000000,0.100000000000000,0.0500000000000000,0.250000000000000,0.150000000000000,0.250000000000000,0.150000000000000,0.200000000000000,0.350000000000000,0.250000000000000,0.300000000000000,0.150000000000000,0.100000000000000,0,0.0500000000000000,0.100000000000000,0.150000000000000,0.100000000000000,0,0;0,0.100000000000000,0.0500000000000000,0.0500000000000000,0.0500000000000000,0,0.0500000000000000,0.200000000000000,0.200000000000000,0.100000000000000,0.300000000000000,0.100000000000000,0.200000000000000,0,0.150000000000000,0.0500000000000000,0.100000000000000,0,0.100000000000000,0.150000000000000,0;0,0.100000000000000,0.150000000000000,0,0.0500000000000000,0.0500000000000000,0.0500000000000000,0.250000000000000,0.0500000000000000,0.100000000000000,0.100000000000000,0.0500000000000000,0.0500000000000000,0,0,0,0.0500000000000000,0.0500000000000000,0.0500000000000000,0.100000000000000,0.0500000000000000;0,0,0.0500000000000000,0.0500000000000000,0.100000000000000,0.100000000000000,0.100000000000000,0.150000000000000,0.0500000000000000,0,0.100000000000000,0.0500000000000000,0.0500000000000000,0.150000000000000,0.0500000000000000,0,0.150000000000000,0.100000000000000,0,0.200000000000000,0.150000000000000;0.0500000000000000,0.150000000000000,0.100000000000000,0.0500000000000000,0.100000000000000,0.100000000000000,0,0.0500000000000000,0.150000000000000,0.100000000000000,0.100000000000000,0.0500000000000000,0,0.100000000000000,0.0500000000000000,0.0500000000000000,0.0500000000000000,0,0.0500000000000000,0,0.150000000000000;0,0,0.0500000000000000,0,0.0500000000000000,0.150000000000000,0.100000000000000,0.0500000000000000,0.100000000000000,0.0500000000000000,0.150000000000000,0.0500000000000000,0,0.150000000000000,0.0500000000000000,0.100000000000000,0,0.0500000000000000,0.0500000000000000,0.0500000000000000,0.0500000000000000;0.0500000000000000,0.0500000000000000,0.0500000000000000,0,0,0,0.0500000000000000,0.150000000000000,0.0500000000000000,0,0.100000000000000,0.100000000000000,0.0500000000000000,0.100000000000000,0,0,0.0500000000000000,0.0500000000000000,0.100000000000000,0.100000000000000,0.0500000000000000];
-            im = conv2(im, spotfilt, 'same');
+            im = filtBrightSpot;
         else
-            im = im;
+            successFlag = false;
         end
-    case 'dim_spot_psf'
-        %             f = spotfilt(im,s1, dim, 'small');
-        im = im;
+    case 'imsegkmeans'
+         if dim==2
+             k = 2;
+             im = imcomplement(imsegkmeans(imgaussfilt(single(im),s1), k));
+         else
+             successFlag = false;
+         end
     case 'Edges'
+        im = canny(im, s1Mat);
+    case 'Sobel'
         if dim == 2
-            im = edge(im, 'canny', s1);
+            im = edge(imgaussfilt(im,s1), 'Sobel');
         elseif dim == 3
-            im = canny(im, [s1, s1, sigmaZ]);
-        end
+           %not supported
+           successFlag = false;
+        end    
     case 'Difference_of_Gaussian'
         if s2 < s1
             error('DoG filter requires sigma 1 < sigma 2')
@@ -72,7 +115,7 @@ switch filterType
             d = DoG(filterSizeXY, s1, s2);
             im = imfilter(im, d, 'same', padding);
         elseif dim == 3
-                d = DoG3(s1, s2, sigmaZ);
+            d = DoG3(s1, s2, sigmaZ);
             im = imfilter(im, d, 'same', padding);
         end
     case 'Laplacian'
@@ -86,7 +129,7 @@ switch filterType
     case 'Mean'
         if dim == 2
             h = fspecial('average', s1);
-            im = imfilter(im, h);
+            im = imfilter(im, h,  'same', padding);
         elseif dim == 3
             h = fspecial3('average',filterSizeXY);
             im = imfilter(im, h, 'symmetric', 'same');
@@ -94,33 +137,33 @@ switch filterType
     case {'Structure_smallest', 'Structure_largest'}
         if dim==2
             G=fspecial('gauss',[filterSizeXY, filterSizeXY], s1);
-            [Gx,Gy] = grad(G);
+            [Gx,Gy] = gradient(G);
             %Compute Gaussian partial derivatives
-            Dx = conv2(im, Gx,'same');
-            Dy = conv2(im, Gy, 'same');
+            Dx = conv2(im, abs(Gx),'same');
+            Dy = conv2(im, abs(Gy), 'same');
             %Smooth elements of the structure tensor
             S11 = conv2(Dx.^2,G,'same');
             S12 = conv2(Dx.*Dy,G,'same');
             S21 = S12;
             S22 = conv2(Dy.^2,G,'same');
             %Make eigenimages from the structure tensors
-            for p = 1:size(im, 1)
-                for q = 1:size(im, 2)
-                    S = [S11(p, q), S12(p, q); S21(p, q), S22(p,q)];
+            for y = 1:yDim
+                for x = 1:xDim
+                    S = [S11(y, x), S12(y, x); S21(y, x), S22(y,x)];
                     if strcmpi(filterType, 'Structure_smallest')
-                        im(p,q) = min(eig(S));
+                        im(y,x) = min(eig(S));
                     elseif strcmpi(filterType, 'Structure_largest')
-                        im(p,q) = max(eig(S));
+                        im(y,x) = max(eig(S));
                     end
                 end
             end
         elseif dim==3
             G = imgaussfilt3(im, [s1, s1, sigmaZ]);
-            [Gx,Gy,Gz] = grad(G);
+            [Gx,Gy,Gz] = gradient(G);
             %Compute Gaussian partial derivatives
-            Dx = imfilter(im, Gx, 'corr', 'same', 'symmetric');
-            Dy = imfilter(im, Gy, 'corr', 'same', 'symmetric');
-            Dz = imfilter(im, Gz, 'corr', 'same', 'symmetric');
+            Dx = imfilter(im, abs(Gx), 'corr', 'same', 'symmetric');
+            Dy = imfilter(im, abs(Gy), 'corr', 'same', 'symmetric');
+            Dz = imfilter(im, abs(Gz), 'corr', 'same', 'symmetric');
             
             %Smooth elements of the structure tensor
             S11 = imgaussfilt3(Dx.^2, [s1, s1, sigmaZ]);
@@ -130,36 +173,36 @@ switch filterType
             S23 = imgaussfilt3(Dy.*Dz, [s1, s1, sigmaZ]);
             S33 = imgaussfilt3(Dz.^2, [s1, s1, sigmaZ]);
             %Make eigenimages from the structure tensors
-            l = size(im, 1); m = size(im, 2); n = size(im, 3);
-            im = zeros(l,m,n);
-            parfor p = 1:l
-                for q = 1:m
-                    for r = 1:n
-                        S = [S11(p,q,r), S12(p,q,r), S13(p,q,r);...
-                            S12(p,q,r), S22(p,q,r), S23(p,q,r);...
-                            S13(p,q,r), S23(p,q,r), S33(p,q,r)];
+            im = zeros(yDim,xDim,zDim);
+            parfor y = 1:yDim
+                for x = 1:xDim
+                    for z = 1:zDim
+                        S = [S11(y,x,z), S12(y,x,z), S13(y,x,z);...
+                            S12(y,x,z), S22(y,x,z), S23(y,x,z);...
+                            S13(y,x,z), S23(y,x,z), S33(y,x,z)];
                         if strcmpi(filterType, 'Structure_smallest')
-                            im(p,q,r) = min(eig(S));
+                            im(y,x,z) = min(eig(S));
                         elseif strcmpi(filterType, 'Structure_largest')
-                            im(p,q,r) = max(eig(S));
+                            im(y,x,z) = max(eig(S));
                         end
                     end
                 end
             end
         end
     case 'Median'
-            im = gather(im);
+        im = gather(im);
         
         if dim==2
             %             f = imgaussfilt(im,s1);
             %             f = ordfilt2(f,ceil(filterSizeXY*filterSizeXY/2),ones(filterSizeXY,filterSizeXY));
-            im = medfilt2(im, [filterSizeXY, filterSizeXY]);
+            im = medfilt2(im, [filterSizeXY, filterSizeXY], padding);
         elseif dim==3
-            im = medfilt3(im, [filterSizeXY, filterSizeXY, filterSizeZ]);
+            im = medfilt3(im, [filterSizeXY, filterSizeXY, filterSizeZ], padding);
         end
         if gpu
             im = gpuArray(im);
         end
+        
     case 'Maximum'
         if dim==2
             im = imgaussfilt(im,s1);
@@ -191,14 +234,28 @@ switch filterType
                 im = gpuArray(im);
             end
         end
+    case {'Entropy'}
+        if dim==2
+            im = entropyfilt(imgaussfilt(im,s1));
+        elseif dim==3
+           successFlag = false;
+        end
+      case {'Range'}
+        if dim==2
+            im = rangefilt(imgaussfilt(im,s1));
+        elseif dim==3
+            successFlag = false;
+        end
     case {'Std', 'Variance'}
         if dim==2
             im = imgaussfilt(im,s1);
-            im = stdfilt(im,ones(filterSizeXY, filterSizeXY), numType,'gpuArray');
+            opts = {};
+            %             opts  = [opts, 'gpuArray'];
+            im = stdfilt(im,ones(filterSizeXY, filterSizeXY), opts{:});
         elseif dim==3
             %this blurs with sigma and sigmaZ, then stdfilts with sizes
             %dictated by sigma and sigma z.
-                im = gather(im);
+            im = gather(im);
             im = stdfilt(imgaussfilt3(im, [s1, s1, sigmaZ]), ones(filterSizeXY, filterSizeXY, ceil(3*sigmaZ)));
             if gpu
                 im = gpuArray(im);
@@ -208,54 +265,54 @@ switch filterType
         if strcmpi(filterType, 'Variance')
             im = im.^2;
         end
+        
     case {'Hessian_smallest', 'Hessian_largest'}
         if dim==2
             G = fspecial('gauss',[filterSizeXY, filterSizeXY], s1);
-            [Gx,Gy] = grad(G);
-            [Gxx, Gxy] = grad(Gx);
-            [Gyy, ~] = grad(Gy);
+            [Gx,Gy] =gradient(G);
+            [Gxx, Gxy] = gradient(Gx);
+            [Gyy, ~] = gradient(Gy);
             %Compute elements of the Hessian matrix
-            H11 = conv2(im,Gxx,'same');
-            H12 = conv2(im,Gxy,'same');
+            H11 = conv2(im,abs(Gxx),'same');
+            H12 = conv2(im,abs(Gxy),'same');
             H21 = H12;
-            H22 = conv2(im,Gyy,'same');
+            H22 = conv2(im,abs(Gyy),'same');
             %Make eigenimages from the Hessian
-            for p = 1:size(im, 1)
-                for q = 1:size(im, 2)
-                    H = [H11(p, q), H12(p, q); H21(p, q), H22(p,q)];
+            for y = 1:yDim
+                for x = 1:xDim
+                    H = [H11(y, x), H12(y, x); H21(y, x), H22(y,x)];
                     if strcmpi(filterType, 'Hessian_smallest')
-                        im(p,q) = -min(eig(H));
+                        im(y,x) = -min(eig(H));
                     elseif strcmpi(filterType, 'Hessian_largest')
-                        im(p,q) = max(eig(H));
+                        im(y,x) = max(eig(H));
                     end
                 end
             end
         elseif dim ==3
-            G1 = DoG3(s1, s2, sigmaZ);
-            [Gx,Gy,Gz] = grad(G1);
-            [Gxx, Gxy, Gxz] = grad(Gx);
-            [Gyy, ~, Gyz] = grad(Gy);
-            [~, ~, Gzz] = grad(Gz);
+            G1 = og3(s1, sigmaZ);
+            [Gx,Gy,Gz] = gradient(G1);
+            [Gxx, Gxy, Gxz] = gradient(Gx);
+            [Gyy, ~, Gyz] = gradient(Gy);
+            [~, ~, Gzz] = gradient(Gz);
             %Compute elements of the Hessian matrix
-            H11 = imfilter(im, Gxx, 'corr', 'same', 'symmetric');
-            H12 = imfilter(im, Gxy, 'corr', 'same', 'symmetric');
-            H13 = imfilter(im, Gxz, 'corr', 'same', 'symmetric');
-            H22 = imfilter(im, Gyy, 'corr', 'same', 'symmetric');
-            H23 = imfilter(im, Gyz, 'corr', 'same', 'symmetric');
-            H33 = imfilter(im, Gzz, 'corr', 'same', 'symmetric');
+            H11 = imfilter(im, abs(Gxx), 'corr', 'same', 'symmetric');
+            H12 = imfilter(im, abs(Gxy), 'corr', 'same', 'symmetric');
+            H13 = imfilter(im, abs(Gxz), 'corr', 'same', 'symmetric');
+            H22 = imfilter(im, abs(Gyy), 'corr', 'same', 'symmetric');
+            H23 = imfilter(im, abs(Gyz), 'corr', 'same', 'symmetric');
+            H33 = imfilter(im, abs(Gzz), 'corr', 'same', 'symmetric');
             %Make eigenimages from the Hessian
-            l = size(im, 1); m = size(im, 2); n = size(im, 3);
-            im = zeros(l,m,n);
-            parfor p = 1:l
-                for q = 1:m
-                    for r = 1:n
-                        H = [H11(p, q, r), H12(p, q, r), H13(p, q, r);...
-                            H12(p, q, r), H22(p,q, r), H23(p,q,r);...
-                            H13(p,q,r), H23(p,q,r), H33(p,q,r)];
+            im = zeros(yDim,xDim,zDim);
+            parfor y = 1:yDim
+                for x = 1:xDim
+                    for z = 1:zDim
+                        H = [H11(y, x, z), H12(y, x, z), H13(y, x, z);...
+                            H12(y, x, z), H22(y,x, z), H23(y,x,z);...
+                            H13(y,x,z), H23(y,x,z), H33(y,x,z)];
                         if strcmpi(filterType, 'Hessian_smallest')
-                            im(p,q,r) = -min(eig(H));
+                            im(y,x,z) = -min(eig(H));
                         elseif strcmpi(filterType, 'Hessian_largest')
-                            im(p,q,r) = max(eig(H));
+                            im(y,x,z) = max(eig(H));
                         end
                     end
                 end
@@ -263,7 +320,8 @@ switch filterType
         end
         
     otherwise
-        %do nothing
+%     warning('FilterImage: Filter not recognized. Returning original image.')
+        successFlag = false;
 end
 
 %this ended up altering the image in some circumstances, so it's
@@ -299,9 +357,10 @@ end
         og = fspecial3('gaussian',[filterSizeXY, filterSizeXY, filterSizeZ], [s1,s1,ceil(sigmaZ*4)]);
     end
 
-    function getSigmasAndFilterSizes
-        rad = 3; %rule of thumb is kernel size is 3x the Gaussian sigma
-        zStep = 400; %nm. default.
+    function [s1, s2] = ...
+            getSigmas(sigmas)
+        s1 = NaN;
+        s2 = NaN;
         if ~iscell(sigmas)
             sigmas = {sigmas};
         end
@@ -325,16 +384,6 @@ end
                 s2 = sigmas{2};
             otherwise
                 s1 = str2double(sigmas{end});
-        end
-        if exist('s1','var')
-            filterSizeXY = round(rad*s1);
-        end
-        
-        sigmaZ = 280 / zStep;
-        filterSizeZ = ceil(sigmaZ*3);
-        
-        if ~mod(filterSizeXY,2)
-            filterSizeXY = filterSizeXY + 1;
         end
     end
 

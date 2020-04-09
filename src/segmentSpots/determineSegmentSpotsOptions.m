@@ -1,33 +1,34 @@
-function [displayFigures, numFrames, numShadows, keepPool, threshGUI, initialFrame, ...
+function [displayFigures, lastFrame, numShadows, keepPool, threshGUI, initialFrame, ...
     useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel,...
     optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat, saveType, ...
-    nuclearMask, dataType, track, skipSegmentation]...
+    nuclearMask, dataType, track, skipSegmentation, frameRange]...
+    ...
     = determineSegmentSpotsOptions(varargin)
 
 % Default options
 displayFigures = false;
-numFrames = 0;
-numShadows = 2;
+lastFrame = 0;
+numShadows = 1;
 nWorkers = 8;
-keepPool = false;
+keepPool = true;
 threshGUI = false;
 useIntegralCenter = true;
 initialFrame = 1;
 Weka = false;
 keepProcessedData = true;
-fit3D = 0;
-skipSegmentation = 0;
+fit3D = 1;
+skipSegmentation = false;
 skipChannel = [];
 optionalResults = '';
 filterMovieFlag = false;
 gpu = '';
-saveAsMat = false;
-saveType = '.tif';
-nuclearMask = false;
+saveAsMat = true;
+saveType = '.mat';
+nuclearMask = true;
 dataType = '';
-track = false;
+track = true;
 
-
+  
 for i = 1:length(varargin)
     
     if strcmpi(varargin{i}, 'displayFigures')
@@ -46,7 +47,7 @@ for i = 1:length(varargin)
         if ~isnumeric(varargin{i + 1}) || varargin{i + 1} < 1
             error('Wrong input parameters. After ''Frames'' you should input the number of frames')
         else
-            numFrames = varargin{i + 1};
+            lastFrame = varargin{i + 1};
         end
         
     elseif strcmpi(varargin{i}, 'InitialFrame')
@@ -58,10 +59,10 @@ for i = 1:length(varargin)
         end
         
     elseif strcmpi(varargin{i}, 'keepPool')
-        keepPool = 1;
-     elseif strcmpi(varargin{i}, 'dataSet') | strcmpi(varargin{i}, 'dataType')
+        keepPool = true;
+     elseif strcmpi(varargin{i}, 'dataSet') || strcmpi(varargin{i}, 'dataType')
         dataType = varargin{i+1};
-    elseif strcmpi(varargin{i}, 'saveAsMat') | strcmpi(varargin{i}, '.mat')
+    elseif strcmpi(varargin{i}, 'saveAsMat') || strcmpi(varargin{i}, '.mat')
         saveAsMat = true;
         saveType = '.mat';
      elseif strcmpi(varargin{i}, 'noGPU')
@@ -75,8 +76,9 @@ for i = 1:length(varargin)
     elseif strcmpi(varargin{i}, 'nWorkers')
         nWorkers = varargin{i + 1};        
     elseif strcmpi(varargin{i}, 'nuclearMask')
-        nuclearMask = true;
-    elseif strcmpi(varargin{i}, 'autoThresh')
+        nuclearMask = varargin{i+1};
+    elseif strcmpi(varargin{i}, 'autoThresh')...
+        || strcmpi(varargin{i}, 'determineThreshold')
         threshGUI = 1;
     elseif strcmpi(varargin{i}, 'fit3D')
         fit3D = 1;
@@ -87,18 +89,15 @@ for i = 1:length(varargin)
         fit3D = 2;
     elseif strcmpi(varargin{i}, 'filterMovie')
         filterMovieFlag = true;
-    elseif strcmpi(varargin{i}, 'Weka')
-        Weka = 1;
     elseif strcmpi(varargin{i}, 'optionalResults')
         optionalResults = varargin{i+1};
-    elseif strcmpi(varargin{i}, 'tifs')
-        error('Tifs generation is no longer supported from segmentSpotsML, try filterMovie(Prefix, ''Tifs'') instead.');  
-  
     elseif strcmpi(varargin{i}, 'keepProcessedData')
       keepProcessedData = true;  
     end
     
 end
+
+frameRange = [initialFrame, lastFrame]; 
 
 startParallelPool(nWorkers, displayFigures, keepPool);
     

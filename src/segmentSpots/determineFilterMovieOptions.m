@@ -13,10 +13,10 @@ displayFigures = false;
 customFilter = true;
 numFrames = 0;
 highPrecision = true;
-keepPool = false;
+keepPool = true;
 filterType = 'Difference_of_Gaussian_3D';
-nWorkers = 1;
-sigmas = {2, 4};
+nWorkers = 8;
+sigmas = {2,4};
 app = {};
 kernelSize = [];
 customML = false;
@@ -30,8 +30,8 @@ classifierPathCh1 = [];
 classifierFolder = [];
 numType = 'double';
 gpu = 'noGPU';
-saveAsMat = false;
-saveType = '.tif';
+saveAsMat = true;
+saveType = '.mat';
 dataSet = '';
 
 for i = 1:length(varargin)
@@ -39,7 +39,7 @@ for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'displayFigures')
         displayFigures = 1;
         
-    elseif strcmp(varargin{i}, 'Frames') | strcmpi(varargin{i}, 'LastFrame')
+    elseif strcmp(varargin{i}, 'Frames') || strcmpi(varargin{i}, 'LastFrame')
         
         if ~ isnumeric(varargin{i + 1})
             error('Wrong input parameters. After ''Frames'' you should input the number of frames')
@@ -60,10 +60,10 @@ for i = 1:length(varargin)
       elseif strcmpi(varargin{i}, 'noGPU')
         gpu = 'noGPU';
     elseif strcmpi(varargin{i}, 'keepPool')
-        keepPool = 1;
+        keepPool = true;
     elseif strcmpi(varargin{i}, 'app')
         app{1} = varargin{i + 1};
-    elseif strcmpi(varargin{i}, 'nWorkers') |  strcmpi(varargin{i}, 'numWorkers')
+    elseif strcmpi(varargin{i}, 'nWorkers') ||  strcmpi(varargin{i}, 'numWorkers')
         
         nWorkers = varargin{i + 1};
         
@@ -80,7 +80,7 @@ for i = 1:length(varargin)
     elseif strcmpi(varargin{i}, 'noSave')
         noSave = true;      
         saveType = 'none';
-    elseif strcmpi(varargin{i}, 'saveAsMat') | strcmpi(varargin{i}, '.mat')
+    elseif strcmpi(varargin{i}, 'saveAsMat') || strcmpi(varargin{i}, '.mat')
         saveAsMat = true;
         saveType = '.mat';
     elseif strcmpi(varargin{i}, 'weka')
