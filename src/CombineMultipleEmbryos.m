@@ -50,9 +50,12 @@ else
     DataType = inputname(1);
 end
 
+[~,~,~,~, ~,~, ~, ~,~,~,~,~, ~, ~, movieDatabase]...
+    = readMovieDatabase(Prefixes{1});
+
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
     Channel1, Channel2,Objective, Power,  DataFolder, DropboxFolderName, Comments,...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3,prophase,metaphase, anaphase, DVResolution] = getExperimentDataFromMovieDatabase(Prefixes{1}, resultsFolder);
+    nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3,prophase,metaphase, anaphase, DVResolution] = getExperimentDataFromMovieDatabase(Prefixes{1}, movieDatabase);
 
 dv = strcmpi(ExperimentAxis, 'DV');
 if dv
@@ -87,7 +90,7 @@ for embryo = 1:numEmbryos
     if ~isempty(allData(embryo).MaxDVIndex)
         maxDVIndex(embryo) = allData(embryo).MaxDVIndex;
     else
-        maxDVIndex(embryo) = 20; %assume standard DV resolution if unspecified.
+        maxDVIndex(embryo) = 21; %assume standard DV resolution if unspecified.
     end
     maxTime(embryo) = allData(embryo).ElapsedTime(numFrames(embryo));
 end
@@ -105,18 +108,17 @@ if dv
 end
 
 %Store all variables to be combined in a single structure.
+if ~dv
 combinedData = struct('APDivision',{},'ElapsedTime',{},'NParticlesAP',{},...
     'MeanVectorAP',{},'SDVectorAP',{}, ...
     'OnRatioLineageAP',{});
-
-if dv
-    combinedData.DVDivision = {};
-    combinedData.NParticlesDV = {};
-    combinedData.MeanVectorDV = {};
-    combinedData.SDVectorDV = {};
-    combinedData.OnRatioLineageDV = {};
+else
+    combinedData = struct('APDivision',{},'ElapsedTime',{},'NParticlesAP',{},...
+    'MeanVectorAP',{},'SDVectorAP',{}, ...
+    'OnRatioLineageAP',{}, 'DVDivision',{},'NParticlesDV',{},...
+    'MeanVectorDV',{},'SDVectorDV',{}, ...
+    'OnRatioLineageDV',{});
 end
-
 %% ALIGN ElapsedTime AND SHIFT OTHER VARIABLE TO MATCH NEW TIME VECTOR
 
 % Define the new ElapsedTime vector for the combined embryo. This
@@ -125,9 +127,10 @@ end
 maxElapsedTime = max(ceil(maxTime./timeStep));
 ElapsedTime = timeStep*(0:maxElapsedTime);
 
-spotChannels = getCoatChannel(Channel1, Channel2, varargin);
+spotChannels = getCoatChannel(Channel1, Channel2, Channel3);
 if length(spotChannels) == 1
-    ch = spotChannels;
+%     ch = spotChannels;
+    ch = 1;
 else
     error('uh oh too many spot channels.')
 end
@@ -189,14 +192,15 @@ for embryo = 1:numEmbryos
         combinedData(embryo).SDVectorAP(1:size(allData(embryo).SDVectorAP,1),:)...
             = allData(embryo).SDVectorAP;
         
-        combinedData(embryo).SDVectorDV = NaN((maxElapsedTime + 1), numAPBins);
+        combinedData(embryo).SDVectorDV = NaN((maxElapsedTime + 1), numDVBins);
         combinedData(embryo).SDVectorDV(1:size(allData(embryo).SDVectorDV,1),:)...
             = allData(embryo).SDVectorDV;
         
         %APDivision
         combinedData(embryo).APDivision = allData(embryo).APDivision;
-        
-        combinedData(embryo).DVDivision = allData(embryo).DVDivision;
+        try
+            combinedData(embryo).DVDivision = allData(embryo).DVDivision;
+        end
         
         
     end

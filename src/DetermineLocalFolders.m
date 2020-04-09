@@ -6,6 +6,7 @@ function [rawDataPath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath,...
     %   file from a specified alternate dropbox folder string, as defined
     %   in ComputerFolders
     useLocalMovieDatabase = false; %Use default MovieDatabase by default
+    
     if ~isempty(varargin) 
         Prefix = varargin{1}; %optionally return a different dropbox folder from the default with respect to Prefix
         if length(varargin)>1
@@ -22,8 +23,9 @@ function [rawDataPath, ProcPath, DropboxFolder, MS2CodePath, PreProcPath,...
     end
     optionalResults = ''; %No optional results by default
 
-    CONFIG_CSV_PATH = 'ComputerFolders.csv';
-
+        
+    CONFIG_CSV_PATH =  'ComputerFolders.csv';
+    
     configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');
     
     DropboxFolder = getConfigValue(configValues, 'DropboxFolder');

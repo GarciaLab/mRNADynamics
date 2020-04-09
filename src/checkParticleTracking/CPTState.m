@@ -1,4 +1,5 @@
 classdef CPTState < handle
+    
     properties
         Spots
         Particles
@@ -8,6 +9,7 @@ classdef CPTState < handle
         ImageMat
         storedTimeProjection
         multiImage
+        maxTimeCell
 
         Ellipses
         nucleiModified
@@ -27,7 +29,9 @@ classdef CPTState < handle
         lastParticle
 
         CurrentChannel
+        CurrentChannelIndex
         PreviousChannel
+        PreviousChannelIndex
         coatChannel
         
         FrameIndicesToFit
@@ -55,7 +59,9 @@ classdef CPTState < handle
     end
     
     methods
-        function this = CPTState(Spots, Particles, SpotFilter, schnitzcells, Ellipses, FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss, projectionMode)
+        function this = CPTState(Spots, Particles, SpotFilter, schnitzcells, Ellipses,...
+                FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss, projectionMode)
+            
             this.Spots = Spots;
             this.Particles = Particles;
             this.SpotFilter = SpotFilter;
@@ -64,6 +70,7 @@ classdef CPTState < handle
             this.ImageMat = [];
             this.storedTimeProjection = []; % Don't need to wait for timeProjection to finish each time its called
             this.multiImage = {};
+            this.maxTimeCell = [];
             
             this.Ellipses = Ellipses;
             this.nucleiModified = false;
@@ -82,7 +89,10 @@ classdef CPTState < handle
             this.lastParticle = 0; %this gets flagged if there's a drop to one particle within the Particles structure.
 
             this.CurrentChannel = 1;
+            this.CurrentChannelIndex = 1;
             this.PreviousChannel = this.CurrentChannel;
+            this.PreviousChannelIndex = this.CurrentChannelIndex;
+
            
             this.FrameIndicesToFit = 0; % index of the current particle that were used for fitting
             this.Coefficients = []; % coefficients of the fitted line
@@ -108,7 +118,7 @@ classdef CPTState < handle
         end
 
         function numParticles = numParticles(this)
-            numParticles = length(this.Particles{this.CurrentChannel});
+            numParticles = length(this.Particles{this.CurrentChannelIndex});
         end
 
         function numValidFrames = numValidFrames(this)
@@ -116,7 +126,7 @@ classdef CPTState < handle
         end
 
         function currentSpots = getCurrentChannelSpots(this)
-            currentSpots = this.Spots{this.CurrentChannel};
+            currentSpots = this.Spots{this.CurrentChannelIndex};
         end
 
         function currentFrameSpots = getCurrentFrameSpots(this)
@@ -125,7 +135,7 @@ classdef CPTState < handle
         end
 
         function currentParticles = getCurrentChannelParticles(this)
-            currentParticles = this.Particles{this.CurrentChannel};
+            currentParticles = this.Particles{this.CurrentChannelIndex};
         end
 
         function currentParticle = getCurrentParticle(this)
@@ -232,60 +242,43 @@ classdef CPTState < handle
             end
         end
 
-        function processImageMatrices(this, multiView, nFrames, nSlices, nDigits, blankImage, currentNC,...
-            ncRange, NC, preMovie, movieMat, maxMat, PreProcPath, FilePrefix, Prefix, DropboxFolder)
+        function processImageMatrices(this, multiView, nFrames,...
+                nSlices, nDigits, blankImage, currentNC,...
+            ncRange, NC, ncFramesFull, preMovie, movieMat, maxMat,...
+            PreProcPath, FilePrefix, Prefix, DropboxFolder)
+        
             if strcmpi(this.projectionMode, 'None')
-                if ~preMovie
-                    this.ImageMat = imread([PreProcPath, filesep, FilePrefix(1:end - 1), filesep, ...
-                        FilePrefix, iIndex(this.CurrentFrame, nDigits), '_z', iIndex(this.CurrentZ, 2), this.nameSuffix, '.tif']);
-                else
-                    if nFrames > 1
-                        this.ImageMat = squeeze(movieMat(this.CurrentZ, this.CurrentFrame, :, :));
-                    else
-                        this.ImageMat = squeeze(movieMat(this.CurrentZ, :, :));
-                    end
-                end
+       
+                this.ImageMat = movieMat(:, :, this.CurrentZ,...
+                    this.CurrentFrame, this.CurrentChannel);
+                
                 if multiView
                     for z = 1:-1:-1
                         for f = -1:1
-                            if any( 1:nSlices == this.CurrentZ + z) && any( 1:nFrames == this.CurrentFrame + f)
-                                this.multiImage{z+2, f+2} = squeeze(movieMat(this.CurrentZ+z, this.CurrentFrame+f,:,:));
+                            if any( 1:nSlices == this.CurrentZ + z) &&...
+                                    any( 1:nFrames == this.CurrentFrame + f)
+                                this.multiImage{z+2, f+2} =...
+                                    movieMat(:, :, this.CurrentZ+z,...
+                                    this.CurrentFrame+f, this.CurrentChannel);
                             else
                                 this.multiImage{z+2, f+2} = blankImage;
                             end
                         end
                     end
                 end
+                
             elseif strcmpi(this.projectionMode, 'Max Z')
-                if preMovie
-                    if nFrames > 1
-                        this.ImageMat = squeeze(maxMat(this.CurrentFrame,:,:));
-                    else
-                        this.ImageMat = maxMat;
-                    end
+                if nFrames > 1
+                    this.ImageMat = maxMat(:, :, this.CurrentFrame);
                 else
-                    this.ImageMat = zProjections(Prefix, this.coatChannel, this.CurrentFrame, this.ZSlices, nDigits, DropboxFolder, PreProcPath, this.FrameInfo, 'max', this.nWorkers);
+                    this.ImageMat = maxMat;
                 end
+                
             elseif strcmpi(this.projectionMode, 'Max Z and Time')
-                if preMovie
-                    if isempty(maxTimeCell)
-                        this.ImageMat = squeeze(max(max(movieMat(:,ncFramesFull(currentNC):ncFramesFull(currentNC+1),:,:), [], 3), [], 2)); % ch z t x y
-                    end
-                else
-                    if isempty(this.storedTimeProjection)
-                        
-                        if ncRange
-                            this.ImageMat = timeProjection(Prefix, this.coatChannel, this.FrameInfo, DropboxFolder, PreProcPath, 'nc', NC);
-                            this.storedTimeProjection = this.ImageMat;
-                        else
-                            this.ImageMat = timeProjection(Prefix, this.CurrentChannel, this.FrameInfo, DropboxFolder, PreProcPath);
-                            this.storedTimeProjection = this.ImageMat;
-                        end
-                        
-                    else
-                        this.ImageMat = this.storedTimeProjection;
-                    end
-                    
+                if isempty(this.maxTimeCell)
+                    this.ImageMat = max(max(movieMat(...
+                        :,:,:, ncFramesFull(currentNC):ncFramesFull(currentNC+1),...
+                        this.CurrentChannel), [], 2), [], 3); % ch z t x y
                 end
             end
         end

@@ -30,7 +30,8 @@ for i = 3:length(preDir)
         for k = 1:nFiles
             stackName = stacksDir(k).name;
             fullPath = [stacksPath, filesep, stackName];
-            delete(fullPath)
+%             delete(fullPath)
+            java.io.File(fullPath).delete()
         end
         rmdir(stacksPath);
         

@@ -1,6 +1,7 @@
 function [rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
     rawDataFolder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder,...
     Channel3, spotChannels, movieDatabaseFolder, movieDatabase]...
+    ...
 = readMovieDatabase(Prefix, varargin)
     
     optionalResults = '';
@@ -74,6 +75,8 @@ function [rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
     
     %Set the destination folders
     OutputFolder = [DropboxFolder, filesep, Prefix];
+    
+    
     
     %Determine the spot channel(s)
     spotChannels = getCoatChannel(Channel1, Channel2, Channel3);

@@ -31,20 +31,31 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
 
 disp(['Running TrackmRNADynamics on ', varargin{1}, '...']);
 
-[~, ~, DefaultDropboxFolder, ~, ~] = DetermineLocalFolders;
+Prefix = varargin{1};
+thisExperiment = liveExperiment(Prefix);
 
-[Prefix, app, retrack, optionalResults, displayFigures] = parseTrackmRNADynamicsArguments(DefaultDropboxFolder, varargin{:});
-
-% Get the actual folder now that we have the Prefix
-
-
-[~, ~, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix, optionalResults);
+[app, retrack, optionalResults, displayFigures] =...
+    parseTrackmRNADynamicsArguments(varargin{:});
 
 
-% What type of experiment are we dealing with? Get this out of MovieDatabase
-[~, ExperimentType, ~, ~, ~, ~, Channel1, Channel2, ~, ~, ~, ~, ~, ...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3,...
-    prophase,metaphase, anaphase, DVResolution] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+DropboxFolder = thisExperiment.userResultsFolder;
+PreProcPath = thisExperiment.userPreFolder;
+
+ExperimentType = thisExperiment.experimentType;
+
+Channels = thisExperiment.Channels;
+Channel1 = Channels{1};
+Channel2 = Channels{2};
+Channel3 = Channels{3};
+
+anaphaseFrames = thisExperiment.anaphaseFrames';
+nc9 = anaphaseFrames(1);
+nc10 = anaphaseFrames(2);
+nc11 = anaphaseFrames(3);
+nc12 = anaphaseFrames(4);
+nc13 = anaphaseFrames(5);
+nc14 = anaphaseFrames(6);
+
 
 spotChannels = getCoatChannel(Channel1, Channel2, Channel3);
 NCh = length(spotChannels);
@@ -58,13 +69,13 @@ SearchRadiusMicrons = 3; % Search radius in um
 % Load the information about this image
 % Check if we have FrameInfo otherwise try to get the information straight
 % from the file.
-[FrameInfo, PixelSize] = loadFrameInfo(OutputFolder, PreProcPath, Prefix);
+[FrameInfo, PixelSize_um] = loadFrameInfo(OutputFolder, PreProcPath, Prefix);
 
-SearchRadius = ceil(SearchRadiusMicrons / PixelSize);
+SearchRadius = ceil(SearchRadiusMicrons / PixelSize_um);
 
 % Check if we have tracked the lineages of the nuclei
 if exist([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'file')
-    UseHistone = 1;
+    UseHistone = true;
     
     % Load the nuclei segmentation information
     load([DropboxFolder, filesep, Prefix, filesep, 'Ellipses.mat'], 'Ellipses')
@@ -73,7 +84,7 @@ if exist([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'file')
     load([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'schnitzcells')
     
 else
-    UseHistone = 0;
+    UseHistone = false;
     schnitzcells = [];
     Ellipses = [];
     warning('Warning: No nuclei lineage tracking found. Proceeding with tracking particles only.')
@@ -91,13 +102,20 @@ else
     ParticlesFig = []; particlesAxes = []; NucleiFig = []; nucAxes = [];
 end
 
-[Particles, SpotFilter] = performTracking(Particles, schnitzcells, NCh, Spots, app, SpotFilter, PreProcPath, ...
-    Prefix, UseHistone, ParticlesFig, spotChannels, NucleiFig, particlesAxes, nucAxes, Ellipses, ...
-    PixelSize, SearchRadius, ExperimentType, FrameInfo, retrack, displayFigures);
+[Particles, SpotFilter] = performTracking(Particles, schnitzcells,...
+    NCh, Spots, app, SpotFilter, PreProcPath, ...
+    Prefix, UseHistone, ParticlesFig, spotChannels,...
+    NucleiFig, particlesAxes, nucAxes, Ellipses, ...
+    PixelSize_um, SearchRadius, ExperimentType,...
+    FrameInfo, retrack, displayFigures, thisExperiment);
 
 mkdir([OutputFolder, filesep]);
 
-save([OutputFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter', '-v7.3');
+try
+    save([OutputFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter', '-v6');
+catch
+    save([OutputFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter', '-v7.3', '-nocompression');
+end
 
 createFieldNCAndSaveFrameInfo(FrameInfo, OutputFolder, nc9, nc10, nc11, nc12, nc13, nc14);
 

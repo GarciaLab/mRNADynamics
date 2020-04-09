@@ -122,10 +122,6 @@ if ~isempty(varargin)
             DataType = varargin{3};
         end
     end          
-else
-    FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
-    Dashes=strfind(FolderTemp,filesep);
-    Prefix=FolderTemp((Dashes(end)+1):end);
 end
 
 

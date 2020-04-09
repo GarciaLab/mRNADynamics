@@ -1,14 +1,17 @@
-function dogs = extractFromGiant(giantIm, format, padSize, firstFrame, lastFrame,...
+function dwarfImage = extractFromGiant(giantImage, format, padSize, frameRange, ...
     Prefix, channel, outPath, noSave, varargin)
 
-dim = length(size(giantIm));
+dim = length(size(giantImage));
 frameInterval = padSize+format(2);
-dogs = zeros(format(1), format(2), format(3)-2, lastFrame - firstFrame + 1);
+firstFrame = frameRange(1);
+lastFrame = frameRange(2);
+dwarfImage = zeros(format(1), format(2), format(3)-2, lastFrame - firstFrame + 1);
 padZ = false;
 probs = false;
 numType = 'single';
 mat = false;
-saveType = '.tif';
+% saveType = '.tif';
+saveType = '5D';
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'single')
@@ -28,25 +31,26 @@ for i = 1:length(varargin)
     end
 end
 
+
 fcnt = 1;
 for frame = firstFrame:lastFrame
     ind1 = frameInterval*(fcnt-1) + 1;
     ind2 = frameInterval + (frameInterval*(fcnt-1)) - padSize;
     
     if dim == 2
-        im = giantIm(:,ind1:ind2);
+        im = giantImage(:,ind1:ind2);
     elseif dim == 3
         
         switch saveType
             case '.tif'
                 if probs
-                    im = gather(uint16(giantIm(:,ind1:ind2, :)));
+                    im = gather(uint16(giantImage(:,ind1:ind2, :)));
                     %             imshow(im(:,:,5),[median(im(:)),max(im(:))]);
                 else
-                    im = gather(uint16((giantIm(:,ind1:ind2, :) + 100)*10));
+                    im = gather(uint16((giantImage(:,ind1:ind2, :) + 100)*10));
                 end
             case {'.mat', 'none'}
-                im = gather(giantIm(:,ind1:ind2, :));
+                im = gather(giantImage(:,ind1:ind2, :));
         end
         
         
@@ -61,7 +65,7 @@ for frame = firstFrame:lastFrame
             im(:,:,format(3)) = zeros(size(im,1), size(im,2));
         end
         
-        dogs(:, :, :, fcnt) = im;
+        dwarfImage(:, :, :, fcnt) = im;
         
         if probs
             fldr = 'custProbs';
@@ -72,22 +76,26 @@ for frame = firstFrame:lastFrame
         
         mkdir([outPath, filesep,Prefix,'_',filesep,fldr]);
         
-        
-        for z = 1:size(im,3)
+        if strcmpi(saveType, '5D')
+            save([outPath, filesep,Prefix,'_',filesep,'_dogMat.mat'], dwarfImage, '-v7.3', '-nocompression');
+        else
             
-            plane = im(:,:,z);
-            dog_name = ['DOG_', Prefix, '_', iIndex(frame, 3), '_z', iIndex(z, 2), nameSuffix];
-            dog_full_path = [outPath, filesep,Prefix,'_',filesep,fldr,filesep,dog_name];
-            
-            switch saveType
-                case '.tif'
-                    imwrite(plane,[dog_full_path, saveType]);
-                case '.mat'
-                    save([dog_full_path,saveType], 'plane');
-                case 'none'
-                    %do nothing
+            for z = 1:size(im,3)
+                
+                plane = im(:,:,z);
+                dog_name = ['DOG_', Prefix, '_', iIndex(frame, 3), '_z', iIndex(z, 2), nameSuffix];
+                dog_full_path = [outPath, filesep,Prefix,'_',filesep,fldr,filesep,dog_name];
+                
+                switch saveType
+                    case '.tif'
+                        imwrite(plane,[dog_full_path, saveType]);
+                    case '.mat'
+                        save([dog_full_path,saveType], 'plane');
+                    case 'none'
+                        %do nothing
+                end
+                
             end
-            
         end
         
     end
