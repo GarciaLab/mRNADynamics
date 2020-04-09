@@ -13,8 +13,8 @@ function [Particles, SpotFilter] = AddParticlePosition(Prefix, varargin)
 %                       embyro images
 % 'NoAP': Just adds X and Y information
 % 'SelectChannel': Prompts user to select the channel to use for alignment
-% 'optionalResults': 
-% 'yToManualAlignmentPrompt': 
+% 'optionalResults':
+% 'yToManualAlignmentPrompt':
 % 'correctDV': If you want the DV shift calculated
 %
 % MANUAL ALIGNMENT CONTROLS
@@ -31,6 +31,9 @@ function [Particles, SpotFilter] = AddParticlePosition(Prefix, varargin)
 %V2: Changed this function to use a correlation in order to center the
 %images.
 
+cleanupObj = onCleanup(@myCleanupFun);
+
+
 %Default set of variables to save
 saveVars={'coordA','coordP','coordAZoom','coordPZoom'};
 
@@ -44,41 +47,41 @@ optionalResults = '';
 yToManualAlignmentPrompt = false;
 correctDV = false;
 
-close all
 
-
-    for i=1:length(varargin)
-        switch varargin{i}
-            case {'SkipAlignment'}
-                disp('Skipping alignment step')
-                SkipAlignment=1;
-            case {'ManualAlignment'}
-                ManualAlignment=1;
-            case {'NoAP'}
-                NoAP=1;
-            case {'SelectChannel'}
-                SelectChannel=1;
-            case {'optionalResults'}
-                optionalResults = varargin{i+1};
-            case {'yToManualAlignmentPrompt'}
-                yToManualAlignmentPrompt = 1;
-            case {'correctDV'}
-                correctDV = true;
-        end
+for i=1:length(varargin)
+    switch varargin{i}
+        case {'SkipAlignment'}
+            disp('Skipping alignment step')
+            SkipAlignment=1;
+        case {'ManualAlignment'}
+            ManualAlignment=1;
+        case {'NoAP'}
+            NoAP=1;
+        case {'SelectChannel'}
+            SelectChannel=1;
+        case {'optionalResults'}
+            optionalResults = varargin{i+1};
+        case {'yToManualAlignmentPrompt'}
+            yToManualAlignmentPrompt = 1;
+        case {'correctDV'}
+            correctDV = true;
     end
-    
-%Get the relevant folders for this data set
-[RawDynamicsPath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
-    configValues,...
-    movieDatabasePath, movieDatabase] = DetermineAllLocalFolders(Prefix, optionalResults);
+end
 
-[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoopEnd, APResolution,...
-    Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
+thisExperiment = liveExperiment(Prefix);
 
+DropboxFolder = userResultsFolder;
+PreProcPath = thisExperiment.userPreFolder;
+RawDynamicsPath = thisExperiment.userRawFolder;
+
+Channel1 = thisExperiment.Channel1;
+Channel2 = thisExperiment.Channel2;
+Channel3 = thisExperiment.Channel3;
+
+APResolution = thisExperiment.APResolution;
 
 if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
-    load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'Particles', 'SpotFilter')
     load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots')
     
     %Create the particle array. This is done so that we can support multiple
@@ -93,22 +96,14 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
     
     %Now, get the particle positions (if they're not there already).
     for ChN=1:NChannels
-        for i=1:length(Particles{ChN})
-            for j=1:length(Particles{ChN}(i).Frame)
-                [x,y,z]=SpotsXYZ(Spots{ChN}(Particles{ChN}(i).Frame(j)));
-                if ~isempty(x)
-                    Particles{ChN}(i).xPos(j)=x(Particles{ChN}(i).Index(j));
-                    Particles{ChN}(i).yPos(j)=y(Particles{ChN}(i).Index(j));
-                    Particles{ChN}(i).zPos(j)=z(Particles{ChN}(i).Index(j));
-                end
-            end
-        end
-        if isfield(Particles{ChN},'DVpos')
-            warning('Particles.mat already has DV positions stored. They will be rewritten')
-        end
-        if isfield(Particles{ChN},'APpos')
-            warning('Particles.mat already has AP positions stored. They will be rewritten')
-        end
+        Particles = addPositionsToParticles(Particles, Spots, ChN);
+    end
+    
+    if isfield(Particles{ChN},'DVpos')
+        warning('Particles.mat already has DV positions stored. They will be rewritten')
+    end
+    if isfield(Particles{ChN},'APpos')
+        warning('Particles.mat already has AP positions stored. They will be rewritten')
     end
     
 else
@@ -130,39 +125,11 @@ end
 rawPrefixPath = [RawDynamicsPath,filesep,projectDate,filesep,EmbryoName,filesep];
 fullEmbryoPath = [rawPrefixPath, 'FullEmbryo', filesep];
 
-
 if ~NoAP
-    %If you want to select which channel to load as alignment.
-    if SelectChannel
-        list = string({Channel1,Channel2,Channel3});
-        [indx,tf] = listdlg('PromptString','Select the channel to use for alignment:','ListString',list);
-        ChannelToLoad = indx;
-    else
-        % From now, we will use a better way to define the channel for
-        % alignment (used for cross-correlation).
-        % Find channels with ":Nuclear"
-        ChannelToLoadTemp=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
-        
-        % Define the Channel to load, for calculating the cross-correlation
-        % In future, we can think about combining multiple channels for
-        % calculating the cross-correlation to get more accurate estimates.
-        % For now, let's pick only one channel for this. For multiple
-        % channels, let's first pick the first channel. This can be fine in
-        % most cases, since we normally use lower wavelength for sth we
-        % care more, or we get better signal from those.
-        if sum(ChannelToLoadTemp) && sum(ChannelToLoadTemp)==1
-            ChannelToLoad=find(ChannelToLoadTemp);
-        elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>=2
-            ChannelToLoad=find(ChannelToLoadTemp);
-            ChannelToLoad = ChannelToLoad(1);
-        else
-            error('No histone channel found. Was it defined in MovieDatabase as :Nuclear or :InvertedNuclear?')
-        end
-        
-    end
+    %If you want to select which channel to load as alignment
+    ChannelToLoad = determineChannelToLoad(SelectChannel, thisExperiment.Channels);
     
     %Get information about all images. This depends on the microscope used.
-    
     
     %Get the information about the zoom
     if strcmp(FileMode,'TIF')
@@ -171,7 +138,7 @@ if ~NoAP
         
         %Figure out the zoom factor
         MovieZoom=ExtractInformationField(ImageInfo(1),'state.acq.zoomFactor=');
-        MovieZoom=str2num(MovieZoom);
+        MovieZoom=str2double(MovieZoom);
         
         
         %Get the zoomed out surface image and its dimensions from the FullEmbryo folder
@@ -214,12 +181,12 @@ if ~NoAP
         % resolutions, though...
         ZoomRatio = ResizeFactor;
         
-    else         
+    else
         SurfName=[];
         
         %Figure out the different channels
         %NuclearChannel=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
-
+        
         
         if any(contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true))
             if SelectChannel
@@ -255,10 +222,12 @@ if ~NoAP
         %Find the full embryo pixel size and load the image
         D=dir([fullEmbryoPath,filesep,'*surf*.',FileMode(1:3)]);
         if strcmp(FileMode, 'DSPIN')            %CS20170912
-            D=dir([RawDynamicsPath,filesep,projectDate,filesep,EmbryoName, filesep,'FullEmbryo',filesep,'*surf*']);
+            D=dir([RawDynamicsPath,filesep,projectDate,filesep,...
+                EmbryoName, filesep,'FullEmbryo',filesep,'*surf*']);
         end
         
-        ImageTemp=bfopen([fullEmbryoPath,filesep,D(end).name]);
+        surfFile = [fullEmbryoPath,filesep,D(end).name];
+        ImageTemp=bfopen(surfFile);
         MetaFullEmbryo= ImageTemp{:, 4};
         PixelSizeFullEmbryoSurf=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0) );
         try
@@ -331,24 +300,13 @@ if ~NoAP
         full_embryo_angle = 0;
         
         if strcmp(FileMode,'LIFExport')
-            if isfolder([rawPrefixPath, 'MetaData'])
-                xml_file_path = dir([rawPrefixPath,'MetaData', filesep, '*.xml']);
-                xml_file = xml_file_path(1).name;
-                xDoc = searchXML([rawPrefixPath,'MetaData', filesep, xml_file]);
-                zoom_angle = str2double(evalin('base','rot'));
-            else
-                warning('No time series metadata found.')
-            end
-            if isfolder([fullEmbryoPath,'MetaData'])
-                xml_file_path2 = dir([fullEmbryoPath,'MetaData', filesep,'*Surf*.xml']);
-                xml_file2 = xml_file_path2(1).name;
-                xDoc2 = searchXML([fullEmbryoPath,'MetaData', filesep, xml_file2]);
-                full_embryo_angle = str2double(evalin('base','rot'));
-            else
-                warning('No full embryo metadata found.')
-            end
             
-            evalin('base','clear rot')
+            zoom_angle = getZoomAngle(Prefix, rawPrefixPath);
+            
+            full_embryo_angle = getFullEmbryoAngle(fullEmbryoPath,...
+                surfFile, Prefix, 'Surf');
+            
+            
         elseif strcmp(FileMode,'LSM')|strcmp(FileMode,'CZI')|strcmp(FileMode,'DSPIN') %CS20170912
             LSMSurf=bfopen([fullEmbryoPath,D(1).name]);
             LSMMeta=LSMSurf{:,4};
@@ -402,7 +360,7 @@ if ~NoAP
         SurfRows=surf_size(1);
         ZoomRatio = MovieZoom / SurfZoom;
     end
-    
+    %%
     
     
     %Get the information about the AP axis as well as the image shifts
@@ -446,7 +404,7 @@ if ~NoAP
         ZoomImage = max(RawImage3M, [], 3) / 256;
     end
     
-
+    
     
     %Do a correlation between the zoomed in and zoomed out surface images
     %to figure out the shift.
@@ -468,10 +426,10 @@ if ~NoAP
             im1 = ZoomImage;
             im2 = SurfImageResized;
             
-%             if InvertHis
-%                 im1 = imcomplement(im1);
-%                 im2 = imcomplement(im2);
-%             end
+            %             if InvertHis
+            %                 im1 = imcomplement(im1);
+            %                 im2 = imcomplement(im2);
+            %             end
             
             %             try
             %                 C = gather(normxcorr2(gpuArray(im1), gpuArray(im2)));
@@ -556,7 +514,7 @@ if ~NoAP
                 NucMaskZoomIn=GetNuclearMask(ZoomImage,8,2);
                 ImOverlayMask=cat(3,mat2gray(NucMaskZoomOutResizedCropped),...
                     +mat2gray(NucMaskZoomIn),zeros(size(NucMaskZoomOutResizedCropped)));
-
+                
                 alOvFig = figure(1);
                 imOv = subplot(2,1,1);
                 imshow(ImOverlay, 'Parent', imOv)
@@ -585,7 +543,7 @@ if ~NoAP
             end
             
         else
-            warning('Not able to do the cross correlation. Switching to manual alignment mode.')     
+            warning('Not able to do the cross correlation. Switching to manual alignment mode.')
             ManualAlignment=true;
         end
         
@@ -611,9 +569,9 @@ if ~NoAP
     BottomRight=[ImageCenter(1)+Rows/ZoomRatio/2+ShiftRow,...
         ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
     coordAZoom=(coordA-[TopLeft(2),TopLeft(1)])*ZoomRatio;
-	coordPZoom=(coordP-[TopLeft(2),TopLeft(1)])*ZoomRatio;
+    coordPZoom=(coordP-[TopLeft(2),TopLeft(1)])*ZoomRatio;
     if exist('coordD', 'var')
-         coordDZoom=(coordD-[TopLeft(2),TopLeft(1)])*ZoomRatio;
+        coordDZoom=(coordD-[TopLeft(2),TopLeft(1)])*ZoomRatio;
         coordVZoom=(coordV-[TopLeft(2),TopLeft(1)])*ZoomRatio;
     end
     
@@ -627,7 +585,7 @@ if ~NoAP
     plot([coordA(1),coordP(1)],[coordA(2),coordP(2)],'-b')
     hold(fullAxes, 'off')
     saveas(fullFigure, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoArea.tif']);
-       
+    
     zoomImageFigure = figure(9);
     zoomImageAxes = axes(zoomImageFigure);
     imshow(imadjust(ZoomImage),[], 'Parent', zoomImageAxes)
@@ -648,13 +606,13 @@ if ~NoAP
     %Angle between the x-axis and the AP-axis
     APAngle=atan2((coordPZoom(2)-coordAZoom(2)),(coordPZoom(1)-coordAZoom(1)));
     APLength = norm(coordAZoom-coordPZoom);
-        if exist('coordD', 'var')
-            DVLength = norm(coordDZoom-coordVZoom);
-        else
-            DVLength = APLength/2; %rough estimate but surprisingly accurate
-        end
+    if exist('coordD', 'var')
+        DVLength = norm(coordDZoom-coordVZoom);
+    else
+        DVLength = APLength/2; %rough estimate but surprisingly accurate
+    end
     saveVars = [saveVars, 'APLength', 'DVLength'];
-
+    
     APPosImage=zeros(size(ZoomImage));
     [Rows,Columns]=size(ZoomImage);
     
@@ -692,7 +650,6 @@ if ~NoAP
     hold(zoomOverlayAxes,'off')
     
     DV_correction = 0;
-    
     if exist([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'Classified_image.tif'], 'file')
         correctDV = 1;
     end
@@ -707,8 +664,10 @@ if ~NoAP
             end
             save([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'],'DV_correction');
         end
-            saveVars = [saveVars, 'DV_correction'];
+        saveVars = [saveVars, 'DV_correction'];
     end
+    
+    
     DVLength = APLength/2;
     if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
         for ChN=1:NChannels
@@ -725,10 +684,10 @@ if ~NoAP
                 
                 %Determine the distance perpendicular to the AP axis. This is a
                 %proxy for a DV axis.
-                DVPositions = Distances.*sin(Angles-APAngle); %units of pixels on the surface of blastoderm. 
+                DVPositions = Distances.*sin(Angles-APAngle); %units of pixels on the surface of blastoderm.
                 if correctDV
                     %ventral midline is dv_correction pixels away from the
-                    %AP axis. 
+                    %AP axis.
                     Particles{ChN}(i).DVpos=abs(DVPositions-DV_correction)/DVLength;
                     %so DVpos is pixels away from the ventral midline
                     %across the blastoderm.
@@ -775,13 +734,76 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
     if NChannels==1
         Particles=Particles{1};
     end
-    
-    save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','SpotFilter');
+    try
+        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],...
+            'Particles','SpotFilter', '-v6');
+    catch
+        save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],...
+            'Particles','SpotFilter', '-v7.3', '-nocompression');
+    end
 end
 
 if correctDV
     CheckDivisionTimes(Prefix, 'lazy');
-    %for convenience. 
+    %for convenience.
 end
+
+Ellipses = getEllipses(thisExperiment);
+schnitzcells = getSchnitzcells(thisExperiment);
+
+Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
+if shouldConvertToAP
+    [EllipsePos, APAngle, APLength]...
+        = convertToFractionalEmbryoLength(Prefix);
+end
+for s = 1:length(schnitzcells)
+    for f = 1:length(schnitzcells(s).frames)
+        ellipseInd = schnitzcells(s).cellno(f);
+        schnitzcells(s).APPos(f) = EllipsePos{f}(ellipseInd);
+    end
+end
+
+save([thisExperiment.resultsFolder, filesep,'Ellipses.mat'],'Ellipses');
+if (whos(var2str(schnitzcells)).bytes < 2E9)
+    save([thisExperiment.resultsFolder, filesep,Prefix,'_lin.mat'],'schnitzcells', '-v6');
+else
+    save([thisExperiment.resultsFolder, filesep,Prefix,'_lin.mat'],'schnitzcells', '-v7.3', '-nocompression');
+end
+
+
+
+end
+
+function ChannelToLoad = determineChannelToLoad(SelectChannel, Channels)
+
+if SelectChannel
+    list = string(Channels);
+    [indx,tf] = listdlg('PromptString','Select the channel to use for alignment:','ListString',list);
+    ChannelToLoad = indx;
+else
+    % From now, we will use a better way to define the channel for
+    % alignment (used for cross-correlation).
+    % Find channels with ":Nuclear"
+    ChannelToLoadTemp=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
+    
+    % Define the Channel to load, for calculating the cross-correlation
+    % In future, we can think about combining multiple channels for
+    % calculating the cross-correlation to get more accurate estimates.
+    % For now, let's pick only one channel for this. For multiple
+    % channels, let's first pick the first channel. This can be fine in
+    % most cases, since we normally use lower wavelength for sth we
+    % care more, or we get better signal from those.
+    if sum(ChannelToLoadTemp) && sum(ChannelToLoadTemp)==1
+        ChannelToLoad=find(ChannelToLoadTemp);
+    elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>=2
+        ChannelToLoad=find(ChannelToLoadTemp);
+        ChannelToLoad = ChannelToLoad(1);
+    else
+        error('No histone channel found. Was it defined in MovieDatabase as :Nuclear or :InvertedNuclear?')
+    end
+    
+end
+
+
 
 end

@@ -81,8 +81,6 @@ clear col;
 %Compute some preliminary properties of the located spots
 temp_particles = {[]};
 
-
-
 if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)) ~= 0
     
     [intensity, centroid_index] = max(possible_centroid_intensity(:));
@@ -156,12 +154,7 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
         if show_status && ~isempty(graphicsHandles)
             dogAx = graphicsHandles(2);
             ellipse(searchRadius/2,searchRadius/2,0,centroid_x, centroid_y,'r',[],dogAx);
-            pause(.05) %Ellipses won't be plotted correctly without this pause.
-            %figure(5)
-            %imshow(image,[])
-            %ellipse(searchRadius/2,searchRadius/2,0,spot_x,spot_y,'r');
-            %pause(.1) %Ellipses won't be plotted correctly without this pause.
-            
+            drawnow;
         end
         
         %disp(rel_errors);
@@ -236,6 +229,7 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
                     rethrow(exceptionMaxDOG);
                 end
             end
+            
             temp_particles = {{fixedAreaIntensity, spot_x, spot_y, offset, snippet, ...
                 gaussianArea, sigma_x, sigma_y, centroid_y, centroid_x, gaussianIntensity,intensity,...
                 max_dog, snippet_mask, sigma_x2, sigma_y2, relative_errors, confidence_intervals, gaussian, mesh,fits, maskArea, fixedAreaIntensityCyl3}};

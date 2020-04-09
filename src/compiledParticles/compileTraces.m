@@ -1,21 +1,25 @@
 function [Particles, CompiledParticles, ncFilter, ncFilterID] =...
+    ...
     compileTraces(NChannels, Particles, HistoneChannel, ...
+    ...
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
-    Spots, SkipTraces, nc9, nc10, nc11, nc12, nc13, nc14, ncFilterID, ncFilter, ...
+    Spots, SkipTraces, ncFilterID, ncFilter, ...
     ElapsedTime, Ellipses, EllipsePos, PreProcPath, ...
-    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits, edgeWidth, pixelSize, coatChannels, fullEmbryo)
+    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits,...
+    edgeWidth, pixelSize, coatChannels, fullEmbryo)
+
 %COMPILETRACES Summary of this function goes here
 %   Detailed explanation goes here
 
-%See how  many frames we have and adjust the index size of the files to
-%load accordingly
-if numFrames<1E3
-    NDigits=3;
-elseif numFrames<1E4
-    NDigits=4;
-else
-    error('No more than 10,000 frames currently supported.')
-end
+thisExperiment = liveExperiment(Prefix);
+
+FrameInfo = getFrameInfo(thisExperiment);
+
+anaphaseFrames = thisExperiment.anaphaseFrames';
+nc9 = anaphaseFrames(1); nc10 = anaphaseFrames(2); nc11 = anaphaseFrames(3);
+nc12 = anaphaseFrames(4); nc13 = anaphaseFrames(5); nc14 = anaphaseFrames(6);
+
+NDigits = thisExperiment.nDigits;
 
 pixelSize = pixelSize * 1000; %nm
 SnippetSize = 2 * (floor(1300 / (2 * pixelSize))) + 1; % nm. note that this is forced to be odd
@@ -26,7 +30,7 @@ h = waitbar(0,'Compiling traces');
 for ChN=1:NChannels
     k=1;
     for i=1:length(Particles{ChN})
-        waitbar(i/length(Particles{ChN}),h)
+        try waitbar(i/length(Particles{ChN}),h); end
         if (Particles{ChN}(i).Approved==1)
             
             for NCh=1:NChannels
@@ -201,7 +205,7 @@ for ChN=1:NChannels
                 CompiledParticles{ChN}(k).FitType=FitType;
                 CompiledParticles{ChN}(k).FluoDog = AmpDog;
                 CompiledParticles{ChN}(k).FluoDogMax = AmpDogMax;
-                ampIntegralGauss3DAux = plotTraceSettings.AmpIntegralGauss3D
+                ampIntegralGauss3DAux = plotTraceSettings.AmpIntegralGauss3D;
                 CompiledParticles{ChN}(k).FluoGauss3D = ampIntegralGauss3DAux';
                 CompiledParticles{ChN}(k).FluoGauss3DError = plotTraceSettings.ErrorIntegralGauss3D;
                 CompiledParticles{ChN}(k).ampdog3 = ampdog3;
@@ -213,7 +217,7 @@ for ChN=1:NChannels
                 %Determine the nc where this particle was born
                 try
                     CompiledParticles{ChN}(k).nc=FrameInfo(CompiledParticles{ChN}(k).Frame(1)).nc;
-                catch
+                    CompiledParticles{ChN}(k).cycle=FrameInfo(CompiledParticles{ChN}(k).Frame(1)).nc;
                 end
                 
                 if HistoneChannel
@@ -558,6 +562,6 @@ for ChN=1:NChannels
         end
     end
 end
-close(h)
+try close(h); end
 end
 

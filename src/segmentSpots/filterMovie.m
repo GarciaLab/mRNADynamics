@@ -64,29 +64,42 @@
 % Last updated: 10/08/2018 - Matías Potel Feola - Refactor filterMovie and segmentSpotsML
 %
 % Documented by: Matías Potel Feola (harrypotel@gmail.com)
-function [log, dogs] = filterMovie(Prefix, varargin)
+function log = filterMovie(Prefix, varargin)
+
+
+processType = 'basic';
+
 
 disp(['Generating filtered movie from ', Prefix,'...']);
 warning('off', 'MATLAB:MKDIR:DirectoryExists');
+
+cleanupObj = onCleanup(@myCleanupFun);
 
 dogs = [];
 
 % Start timer
 tic;
 
-[~, ~, ~, ~, ~, ~, ~, ExperimentType, ~, ~, ~, ~, spotChannels] = readMovieDatabase(Prefix);
+thisExperiment = liveExperiment(Prefix);
 
-[~, ProcPath, DropboxFolder, MS2CodePath, PreProcPath] = DetermineLocalFolders(Prefix);
+ExperimentType = thisExperiment.experimentType;
+spotChannels = thisExperiment.spotChannels;
+ProcPath = thisExperiment.userProcFolder;
+DropboxFolder = thisExperiment.userResultsFolder;
+MS2CodePath = thisExperiment.MS2CodePath;
+PreProcPath = thisExperiment.userPreFolder;
 
-load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
+FrameInfo = getFrameInfo(thisExperiment);
 
 [displayFigures, numFrames, initialFrame, highPrecision, filterType, keepPool,...
-    sigmas, nWorkers, app, kernelSize, Weka, justTifs, ignoreMemoryCheck, classifierFolder, ...
-    classifierPathCh1, customML, noSave, numType, gpu, saveAsMat, saveType, DataType] = determineFilterMovieOptions(FrameInfo,varargin);
+    sigmas, nWorkers, app, kernelSize, Weka, justTifs,...
+    ignoreMemoryCheck, classifierFolder, ...
+    classifierPathCh1, customML, noSave, numType, gpu,...
+    saveAsMat, saveType, DataType] = determineFilterMovieOptions(FrameInfo,varargin);
 
 if ~isempty(DataType)
-     args = varargin;
-     writeScriptArgsToDataStatus(DropboxFolder, DataType, Prefix, args, 'Made filtered spot channel files', 'filterMovie')
+    args = varargin;
+    writeScriptArgsToDataStatus(DropboxFolder, DataType, Prefix, args, 'Made filtered spot channel files', 'filterMovie')
 end
 
 zSize = 2;
@@ -100,27 +113,55 @@ if numFrames == 0
     numFrames = length(FrameInfo);
 end
 
-nCh = length(spotChannels);
+nSpotChannels = length(spotChannels);
 
-if ~Weka && ~justTifs
-     if ~exist([PreProcPath, filesep, Prefix, filesep, 'stacks'], 'dir')
-        generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,spotChannels, zSize, initialFrame);
-    end
-    dogs = generateDifferenceOfGaussianImages(ProcPath, ExperimentType, FrameInfo, spotChannels,...
-        numFrames, displayFigures, zSize, PreProcPath,...
-        Prefix, filterType, highPrecision, sigmas, app,...
-        kernelSize, noSave, numType, gpu, saveAsMat, saveType);
-elseif Weka
-    if ~exist([PreProcPath, filesep, Prefix, filesep, 'stacks'], 'dir')
-        generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,spotChannels, zSize, initialFrame);
-    end
-    generateDogsWeka(Prefix, ProcPath, MS2CodePath, PreProcPath, ExperimentType, spotChannels, zSize, numFrames, nCh,...
-        initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder);
-elseif justTifs
-    generateTifsForWeka(Prefix, ExperimentType, PreProcPath, numFrames, nCh,spotChannels, zSize, initialFrame);
+%generate tif stacks
+
+stacksFolder = [PreProcPath, filesep, Prefix, filesep, 'stacks'];
+stacksExist = exist(stacksFolder, 'dir') &&...
+    ~isempty(dir([stacksFolder, filesep, '*.tif']));
+
+if (Weka || justTifs) && ~stacksExist
+    generateTifsForWeka(Prefix, PreProcPath, numFrames,...
+        nSpotChannels,spotChannels, zSize, initialFrame);
+end
+
+if Weka
+    processType = 'weka';
 elseif customML
-    generateProbMapsCustomML(Prefix, ProcPath, MS2CodePath, PreProcPath, ExperimentType, coatChannel, zSize, numFrames, nCh,...
-        initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder);
+    processType = 'customML';
+end
+
+if ~justTifs
+    
+    switch processType
+        
+        case  'basic'
+            
+            generateDifferenceOfGaussianImages(ProcPath,...
+                spotChannels,...
+                numFrames, displayFigures, zSize, PreProcPath,...
+                Prefix, filterType, highPrecision, sigmas, app,...
+                kernelSize, noSave, numType, gpu, saveAsMat, saveType);
+            
+        case 'weka'
+            
+            generateDogsWeka(Prefix, ProcPath, MS2CodePath,...
+                PreProcPath, spotChannels, zSize, numFrames, nSpotChannels,...
+                initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder);
+            
+        case 'customML'
+            
+            generateProbMapsCustomML(Prefix, ProcPath,...
+                MS2CodePath, PreProcPath, ExperimentType, coatChannel, zSize, numFrames, nSpotChannels,...
+                initialFrame, ignoreMemoryCheck, classifierPathCh1, classifierFolder);
+            
+        otherwise
+            
+            error('Processing type not recognized.')
+            
+    end
+    
 end
 
 t = toc;
@@ -128,9 +169,8 @@ t = toc;
 disp(['Elapsed time: ', num2str(t / 60), ' min'])
 
 if ~justTifs
-    try
-        log = writeFilterMovieLog(t, Weka, DropboxFolder, Prefix, initialFrame, numFrames, filterType, sigmas, classifierPathCh1);
-    end
+    try log = writeFilterMovieLog(t, Weka, DropboxFolder, Prefix,...
+            initialFrame, numFrames, filterType, sigmas, classifierPathCh1); end
 end
 
 if ~keepPool && ~Weka && ~justTifs
@@ -141,4 +181,5 @@ if ~keepPool && ~Weka && ~justTifs
 end
 
 disp([Prefix, ' filtered.']);
+
 end

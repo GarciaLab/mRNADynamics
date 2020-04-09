@@ -9,25 +9,25 @@ varargin = varargin{1};
 
 %Look at the input parameters and use defaults if missing
 Prefix='';
-ForceAP=0;      %Force AP detection even if it's already there
-SkipTraces=0;   %Do not output the individual traces.
-SkipFluctuations=0;  %Do not generate the plots of correlations of fluctuations and offset
-SkipFits=0;         %Do not run and savegenerate the 
-SkipMovie=0;        %Do not generate the movie
-SkipAll=0;          %Do not do other things 
-ApproveAll=0;       %Only use manually approved particles
+ForceAP=false;      %Force AP detection even if it's already there
+SkipTraces=false;   %Do not output the individual traces.
+SkipFluctuations=false;  %Do not generate the plots of correlations of fluctuations and offset
+SkipFits=false;         %Do not run and savegenerate the 
+SkipMovie=false;        %Do not generate the movie
+SkipAll=false;          %Do not do other things 
+ApproveAll=false;       %Only use manually approved particles
 MinParticles=4;
 minTime = 1;
-ROI=0; % No ROI
-noHist = 0; 
-slimVersion = 0;
+ROI=false; % No ROI
+noHist = false; 
+slimVersion = false;
 ROI1 = -1; % no ROI
 ROI2 = -1; % no ROI
-manualSingleFits = 0; % no manually fitted single fits
+manualSingleFits = false; % no manually fitted single fits
 optionalResults = ''; %different dropbox folder
-yToManualAlignmentPrompt = 0; %this is an option for addparticleposition
+yToManualAlignmentPrompt = false; %this is an option for addparticleposition
 minBinSize = .7; % fraction of the median bin size allowed
-edgeWidth = 2.12; 
+edgeWidth = 2.12; %um?
 
 
 % Checking Varargin 

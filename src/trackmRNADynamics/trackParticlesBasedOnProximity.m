@@ -1,4 +1,6 @@
-function [Particles] = trackParticlesBasedOnProximity(Particles, Spots, xPos, SpotFilter, Channel, CurrentFrame, PixelSize, SearchRadius, retrack, displayFigures)
+function [Particles] = trackParticlesBasedOnProximity(...
+    Particles, Spots, xPos, SpotFilter, Channel, CurrentFrame,...
+    PixelSize, SearchRadius, retrack, displayFigures)
   
   %This function is used by the performTracking subfunction of
   %trackmRNADynamics to track particles in the event there's no nuclear

@@ -1,11 +1,14 @@
-function Spots = fit3DGaussiansToAllSpots(prefix, nSpots, varargin)
+function Spots = fit3DGaussiansToAllSpots(Prefix, nSpots, varargin)
 %%
+
+cleanupObj = onCleanup(@myCleanupFun);
+
 optionalResults = '';
 
 segmentSpots = false;
 displayFigures = false;
 nWorkers = 8;
-keepPool = false;
+keepPool = true;
 dogs = [];
 saveType = '.tif';
 save_flag = true;
@@ -31,18 +34,20 @@ for i = 1:length(varargin)
     end
 end
 
+
+thisExperiment = liveExperiment(Prefix);
+
 [~,ProcPath,DropboxFolder,~, PreProcPath,...
-    ~, Prefix, ~,Channel1,Channel2,~, Channel3, spotChannels] = readMovieDatabase(prefix, optionalResults);
+    ~, Prefix, ~,Channel1,Channel2,~, Channel3, spotChannels] = readMovieDatabase(Prefix, optionalResults);
 
-
-DataFolder=[DropboxFolder,filesep,prefix];
+movieMat = getMovieMat(thisExperiment);
+DataFolder=[DropboxFolder,filesep,Prefix];
 
 if ~segmentSpots
-    load([DataFolder,filesep,'Spots.mat'], 'Spots');
+    Spots = getSpots(thisExperiment);
 end
 
-FrameInfo = load([DataFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
-FrameInfo = FrameInfo.FrameInfo;
+FrameInfo = getFrameInfo(thisExperiment);
 
 startParallelPool(nWorkers, displayFigures, keepPool);
 
@@ -62,16 +67,22 @@ for ch = spotChannels
         SpotsCh = Spots;
     end
     
+    movieMatCh = double(movieMat(:, :, :, :, ch));
+    
     numFrames = length(SpotsCh);
     
     % iterate through frames
+%     parfor frame = 1:numFrames
     parfor frame = 1:numFrames %frames
+        
         SpotsFr = SpotsCh(frame);
-
+        
+        imStack = movieMatCh(:, :, :, frame); 
+        
         nSpotsPerFrame = length(SpotsFr.Fits);
-        for spot = 1:nSpotsPerFrame
-            SpotsFr = fitSnip3D(SpotsFr, ch, spot, frame, Prefix, PreProcPath, FrameInfo, nSpots);
-%             fitSnip3D(SpotsFr, spotChannel, spot, frame, Prefix, PreProcPath, FrameInfo)
+       for spot = 1:nSpotsPerFrame
+            SpotsFr = fitSnip3D(SpotsFr, ch, spot, frame,...
+                thisExperiment, PreProcPath, FrameInfo, nSpots, imStack);
         end
         SpotsCh(frame) = SpotsFr;
         send(q, frame); %update the waitbar
@@ -79,9 +90,7 @@ for ch = spotChannels
     
     if iscell(Spots) & length(Spots) > 1
         Spots{ch} = SpotsCh;
-    else
-        Spots = SpotsCh;
-    end
+    else Spots = SpotsCh; end
     
 end
 
@@ -90,14 +99,20 @@ if iscell(Spots) & length(Spots) < 2
 end
 
 if save_flag
-    save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3');
+    if whos(var2str(Spots)).bytes < 2E9
+        save([DataFolder,filesep,'Spots.mat'],'Spots', '-v6');
+    else
+        save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3', '-nocompression');
+    end
     Spots3DToken = now;
-    save([DataFolder,filesep,'Spots3DToken.mat'],'Spots3DToken')
+    save([DataFolder,filesep,'Spots3DToken.mat'],'Spots3DToken', '-v6')
     disp('3D fitting done on all spots.')
-    close(waitbarFigure);
+    try close(waitbarFigure); end
+    
 end
+
     function nUpdateWaitbar(~)
-        waitbar(p/numFrames, waitbarFigure);
+        try waitbar(p/numFrames, waitbarFigure); end
         p = p + 1;
     end
 
