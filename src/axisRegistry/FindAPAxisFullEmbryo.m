@@ -81,7 +81,7 @@ end
 MidFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'mid')));
 SurfFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'surf')));
 
-if (length(MidFileIndex)>1)& strcmpi(FileMode, ~'DSPIN')
+if length(MidFileIndex)>1 && strcmpi(FileMode, ~'DSPIN')
     error('Too many midsagittal files in FullEmbryo folder')
 end
 
@@ -123,10 +123,13 @@ elseif strcmp(FileMode,'LIFExport')
     %Rotates the full embryo image to match the rotation of the zoomed
     %time series
     zoom_angle = 0;
-    full_embryo_angle = 0;
+    mid_angle = 0;
     
-    LIFMid=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(MidFileIndex).name]);
-    LIFSurf=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(SurfFileIndex).name]);
+    midFile = [SourcePath,filesep,Date,filesep,EmbryoName,...
+        filesep,'FullEmbryo',filesep,D(MidFileIndex).name];
+    LIFMid=bfopen(midFile);
+    LIFSurf=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,...
+        filesep,'FullEmbryo',filesep,D(SurfFileIndex).name]);
 
     %By looking at the last image we make sure we're avoiding the
     %individual tiles if we're dealing with tile scan
@@ -135,29 +138,14 @@ elseif strcmp(FileMode,'LIFExport')
     if size(MidImage) ~= size(SurfImage)
             MidImage = imresize(MidImage,length(SurfImage)/length(MidImage));
     end
-    if isfolder([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData'])
-        xml_file_path = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, '*.xml']);
-        xml_file = xml_file_path(1).name;
-        xDoc = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, xml_file]);
-        zoom_angle = str2double(evalin('base','rot'));
-    else 
-        warning('No time series metadata found.')
-    end
-    if isfolder([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo', filesep...
-            'MetaData'])     
-        xml_file_path2 = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo',...
-            filesep, 'MetaData', filesep,'*Mid*.xml']);
-        xml_file2 = xml_file_path2(1).name;
-        evalin('base','clear rot')
-        xDoc2 = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep,'FullEmbryo', filesep,...
-                'MetaData', filesep, xml_file2]);
-         full_embryo_angle = str2double(evalin('base','rot'));
-    else 
-        warning('No full embryo metadata found.')
-    end
     
-    evalin('base','clear rot')
-    MidImage = imrotate(MidImage, -zoom_angle + full_embryo_angle);
+    rawPrefixPath = [SourcePath, filesep, Date, filesep, EmbryoName];
+    zoom_angle = getZoomAngle(Prefix, rawPrefixPath);
+    
+    fullEmbryoPath = [SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo'];
+    mid_angle = getFullEmbryoAngle(fullEmbryoPath, midFile, Prefix);
+    
+    MidImage = imrotate(MidImage, -zoom_angle + mid_angle);
     
 elseif strcmp(FileMode,'LSM')
     
@@ -166,7 +154,7 @@ elseif strcmp(FileMode,'LSM')
     %Rotates the full embryo image to match the rotation of the zoomed
     %time series
     zoom_angle = NaN;        %Set defaults to NaN so we can tell if the 
-    full_embryo_angle = NaN;     %angles were successfully extracted
+    mid_angle = NaN;     %angles were successfully extracted
     
     LSMMid=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(MidFileIndex).name]);
     LSMSurf = bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(SurfFileIndex).name]);
@@ -187,12 +175,12 @@ elseif strcmp(FileMode,'LSM')
     
     %Figure out the rotation of the full embryo image
     %This works for LSM files
-    full_embryo_angle = LSMMeta2.get('Recording Rotation #1');
+    mid_angle = LSMMeta2.get('Recording Rotation #1');
     %If full_embryo_angle is empty, chances are we have a CZI file
-    if isempty(full_embryo_angle)
-        full_embryo_angle=str2num(LSMMeta2.get('Global HardwareSetting|ParameterCollection|RoiRotation #1'));
+    if isempty(mid_angle)
+        mid_angle=str2num(LSMMeta2.get('Global HardwareSetting|ParameterCollection|RoiRotation #1'));
     %Check if angle was successfully extracted
-    elseif isnan(full_embryo_angle)
+    elseif isnan(mid_angle)
         error('Could not extract rotation of FullEmbryo images')
     end
     
@@ -216,8 +204,8 @@ elseif strcmp(FileMode,'LSM')
         error('Could not extract rotation of FullEmbryo images')
     end
 
-    MidImage = imrotate(MidImage, -zoom_angle + full_embryo_angle);
-    SurfImage = imrotate(SurfImage, -zoom_angle + full_embryo_angle);
+    MidImage = imrotate(MidImage, -zoom_angle + mid_angle);
+    SurfImage = imrotate(SurfImage, -zoom_angle + mid_angle);
 
 elseif strcmp(FileMode, 'DSPIN')        %CS20170911 This is really long-winded atm! Need to simplify.
 %%  

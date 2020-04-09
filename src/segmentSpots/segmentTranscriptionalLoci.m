@@ -93,8 +93,9 @@ movieMat = getMovieMat(thisExperiment);
 
 movieMatCh = double(movieMat(:, :, :, :, channelIndex));
 
-yDim = size(movieMat, 1);
-xDim = size(movieMat, 2);
+yDim = thisExperiment.yDim;
+xDim = thisExperiment.xDim;
+zDim = thisExperiment.zDim;
 
 if shouldMaskNuclei
     if thisExperiment.hasEllipsesFile
@@ -114,7 +115,8 @@ else Ellipses = []; end
                 channelIndex,  'numFrames', lastFrame, 'firstFrame', initialFrame);
             display(['Threshold: ', num2str(Threshold)])
         else
-            Threshold = determineThreshold(Prefix, channelIndex, 'noSave',  'numFrames', lastFrame);
+            Threshold = determineThreshold(Prefix,...
+                channelIndex, 'noSave', 'numFrames', lastFrame);
         end
     end
     
@@ -125,7 +127,7 @@ isZPadded = size(movieMat, 3) ~= zSize;
 q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
-parfor currentFrame = initialFrame:lastFrame
+for currentFrame = initialFrame:lastFrame
     
     imStack = movieMatCh(:, :, :, currentFrame);
     if shouldMaskNuclei
@@ -133,19 +135,21 @@ parfor currentFrame = initialFrame:lastFrame
     end
     
     %report progress every tenth frame
-    if ~mod(currentFrame, 10), disp(['Segmenting frame ', num2str(currentFrame), '...']); end
+    if ~mod(currentFrame, 10), disp(['Segmenting frame ',...
+            num2str(currentFrame), '...']); end
     
     if haveStacks
         
-        dogStackFile = [DogOutputFolder, dogStr, Prefix, '_', iIndex(currentFrame, 3),...
+        dogStackFile = [DogOutputFolder, dogStr, Prefix, '_',...
+            iIndex(currentFrame, 3),...
             nameSuffix];
         
         if exist([dogStackFile, '.mat'], 'file')
             dogStack = load([dogStackFile,'.mat'], 'dogStack');
             dogStack = dogStack.dogStack;
         elseif exist([dogStackFile, '.tif'], 'file')
-            dogStack = imreadStack2([dogStackFile, '.tif'], thisExperiment.yDim,...
-                thisExperiment.xDim, thisExperiment.zDim);
+            dogStack = imreadStack2([dogStackFile, '.tif'], yDim,...
+                xDim, zDim);
         end
         
         

@@ -19,7 +19,8 @@ for nucleus = 1:numel(nuclei)
         schnitzcells(nucleus).len(jj) = NaN;
         schnitzcells(nucleus).cellno(jj) = uint16(nuclei(nucleus).indXY(frameInd));
         
-        if exist('approvedCenters','var') && approvedCenters{frameInd}(nuclei(nucleus).indXY(frameInd))
+        if exist('approvedCenters','var') &&...
+                approvedCenters{frameInd}(nuclei(nucleus).indXY(frameInd))
             approvedSchnitz(nucleus) = true;
         else
             approvedSchnitz(nucleus) = false;

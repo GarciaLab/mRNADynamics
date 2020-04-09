@@ -1,17 +1,33 @@
-function [val, substr] = generateLIFMetaDataXML(Prefix, str)
+function metadataXML = generateLIFMetaDataXML(in, out)
 
-    if nargin < 2
-        str = 'Rot';
+%input here can be either a Prefix or a direct 
+%path to a .lif file.  
+%
+%the output is optional. if specified, this is the
+%path to where the metadata will be saved. else,
+%the metadata gets saved in the project's 
+%raw metadata folder. 
+
+  arguments
+        in char
+        out char = '';
+  end
+
+    if ~isfile(in)
+        [lifFile, metafile] = getFiles(in);
+    else
+        lifFile = in;
     end
-
-    [lifFile, metafile] = getFiles(Prefix);
+    
+    if ~isempty(out)
+        metafile = out;
+    end
     
     
+      
     cleanasc = getAscii(lifFile);
 
-    [val, substr] = getMetaDataValue(cleanasc, str);
-
-    writeMetaXML(cleanasc, metafile);
+    metadataXML = writeMetaXML(cleanasc, metafile);
 
 end
 
@@ -22,27 +38,24 @@ end
 
 
 
-function writeMetaXML(text, metafile)
-
+function wholeXML = writeMetaXML(text, metafile)
+  
+    arguments
+        text char 
+        metafile char
+    end
+  
 xmlStart = min(strfind(text, '<'));
 trueXMLEnd = max(strfind(text, '>'));
 wholeXML = text(xmlStart:trueXMLEnd);
-metafid = fopen(metafile, 'w');
-fprintf(metafid, '%c', wholeXML);
-fclose(metafid);
-dom = xmlread(metafile);
-xmlwrite(metafile, dom);
 
+if ~isempty(metafile)
+    metafid = fopen(metafile, 'w');
+    fprintf(metafid, '%c', wholeXML);
+    fclose(metafid);
+    dom = xmlread(metafile);
+    xmlwrite(metafile, dom);
 end
-
-function [val, substr] = getMetaDataValue(text, str)
-
-loc = strfind(text, str);
-delta = 40; %roughly the number of characters you need to get the whole key value pair
-substr = text(loc:loc+delta);
-% cleansubstr = strrep(substr, '.', '');
-valCell = extractBetween(substr,'"', '"');
-val = str2double(valCell{1});
 
 end
 
@@ -51,26 +64,19 @@ function cleanasc = getAscii(lifFile)
 s = dir(lifFile);         
 filesize = s.bytes;
 
-xmlEnd = min(100E6, filesize); %roughly the size of the first xml subfile in the .lif. 
-%this should cover even very large files
+xmlEnd = min(100E6, filesize); %this should cover even very large files
 
-%seems unlikely the metadata is over a fourth of the file
-% xmlEnd = filesize/10;
-
-%wrapping statement w/ evalc to suppress long, annoying output of hexdump
 fid = fopen(lifFile, 'r');
 [A,count] = fread(fid, xmlEnd, 'uchar');
+
 asc = repmat('.',1, count);
 idx = find(double(A)>=32);
 asc(idx) = char(A(idx));
-% [~, asc] = hexdump(lifFile, xmlEnd)
-% evalc('[~, asc] = hexdump(lifFile, xmlEnd)'); 
 
 %every character in the xml subfile is divided
 %by 00 bytes, not sure why.
 %let's get rid of them. 
 cleanasc = strrep(asc, '...', '@');
-% cleanasc = strrep(asc, ' ', '');
 cleanasc = strrep(cleanasc, '.', '');
 cleanasc = strrep(cleanasc, '@', '.');
 

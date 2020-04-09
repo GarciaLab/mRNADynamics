@@ -8,7 +8,8 @@ function FrameInfo = recordFrameInfo(NFrames, NSlices, InitialStackTime, LIFMeta
     FrameInfo(1).NumberSlices = min(NSlices);    
     FrameInfo(1).FileMode = 'LIFExport';
     FrameInfo(1).Time = 0;
-    if ~isempty(str2double(LIFMeta.getPixelsPhysicalSizeX(0))) & ~isnan(str2double(LIFMeta.getPixelsPhysicalSizeX(0)))
+    if ~isempty(str2double(LIFMeta.getPixelsPhysicalSizeX(0))) &...
+            ~isnan(str2double(LIFMeta.getPixelsPhysicalSizeX(0)))
         FrameInfo(1).PixelSize = str2double(LIFMeta.getPixelsPhysicalSizeX(0));
         FrameInfo(1).ZStep = str2double(LIFMeta.getPixelsPhysicalSizeZ(0));
     else

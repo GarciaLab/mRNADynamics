@@ -222,10 +222,12 @@ if ~NoAP
         %Find the full embryo pixel size and load the image
         D=dir([fullEmbryoPath,filesep,'*surf*.',FileMode(1:3)]);
         if strcmp(FileMode, 'DSPIN')            %CS20170912
-            D=dir([RawDynamicsPath,filesep,projectDate,filesep,EmbryoName, filesep,'FullEmbryo',filesep,'*surf*']);
+            D=dir([RawDynamicsPath,filesep,projectDate,filesep,...
+                EmbryoName, filesep,'FullEmbryo',filesep,'*surf*']);
         end
         
-        ImageTemp=bfopen([fullEmbryoPath,filesep,D(end).name]);
+        surfFile = [fullEmbryoPath,filesep,D(end).name];
+        ImageTemp=bfopen(surfFile);
         MetaFullEmbryo= ImageTemp{:, 4};
         PixelSizeFullEmbryoSurf=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0) );
         try
@@ -298,24 +300,13 @@ if ~NoAP
         full_embryo_angle = 0;
         
         if strcmp(FileMode,'LIFExport')
-            if isfolder([rawPrefixPath, 'MetaData'])
-                xml_file_path = dir([rawPrefixPath,'MetaData', filesep, '*.xml']);
-                xml_file = xml_file_path(1).name;
-                xDoc = searchXML([rawPrefixPath,'MetaData', filesep, xml_file]);
-                zoom_angle = str2double(evalin('base','rot'));
-            else
-                warning('No time series metadata found.')
-            end
-            if isfolder([fullEmbryoPath,'MetaData'])
-                xml_file_path2 = dir([fullEmbryoPath,'MetaData', filesep,'*Surf*.xml']);
-                xml_file2 = xml_file_path2(1).name;
-                xDoc2 = searchXML([fullEmbryoPath,'MetaData', filesep, xml_file2]);
-                full_embryo_angle = str2double(evalin('base','rot'));
-            else
-                warning('No full embryo metadata found.')
-            end
             
-            evalin('base','clear rot')
+            zoom_angle = getZoomAngle(Prefix, rawPrefixPath);
+            
+            full_embryo_angle = getFullEmbryoAngle(fullEmbryoPath,...
+                surfFile, Prefix, 'Surf');
+            
+            
         elseif strcmp(FileMode,'LSM')|strcmp(FileMode,'CZI')|strcmp(FileMode,'DSPIN') %CS20170912
             LSMSurf=bfopen([fullEmbryoPath,D(1).name]);
             LSMMeta=LSMSurf{:,4};
@@ -813,8 +804,6 @@ else
     
 end
 
-end
 
-function zoom = getZoom(FileMode, rawPrefixPath)
 
 end
