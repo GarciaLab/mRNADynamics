@@ -7,7 +7,7 @@ function h=ellipse(ra,rb,ang,x0,y0,C,Nb, ax, varargin)
 %
 %
 % ELLIPSE(ra,rb,ang,x0,y0) adds an ellipse with semimajor axis of ra,
-% a semimajor axis of radius rb, a semimajor axis of ang, centered at
+% a semiminor axis of radius rb, a semimajor axis of ang, centered at
 % the point x0,y0.
 %
 % The length of ra, rb, and ang should be the same.
@@ -144,7 +144,7 @@ for k=1:maxk
         an=ang(fix((k-1)/size(x0,1))+1);
         xpos=x0(rem(k-1,size(x0,1))+1);
         ypos=y0(rem(k-1,size(y0,1))+1);
-    end;
+    end
     
     co=cos(an);
     si=sin(an);

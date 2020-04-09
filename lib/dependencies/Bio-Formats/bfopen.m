@@ -133,7 +133,7 @@ result = cell(numSeries, 2);
 globalMetadata = r.getGlobalMetadata();
 
 for s = 1:numSeries
-    fprintf('Reading series #%d', s);
+    fprintf(['Reading series #%d', '...', '\n'], s);
     r.setSeries(s - 1);
     pixelType = r.getPixelType();
     bpp = javaMethod('getBytesPerPixel', 'loci.formats.FormatTools', ...
@@ -143,10 +143,6 @@ for s = 1:numSeries
     imageList = cell(numImages, 2);
     colorMaps = cell(numImages);
     for i = 1:numImages
-        if mod(i, 72) == 1
-            fprintf('\n    ');
-        end
-        fprintf('.');
         arr = bfGetPlane(r, i, varargin{:});
 
         % retrieve color map data
@@ -221,6 +217,5 @@ for s = 1:numSeries
     result{s, 2} = seriesMetadata;
     result{s, 3} = colorMaps;
     result{s, 4} = r.getMetadataStore();
-    fprintf('\n');
 end
 r.close();

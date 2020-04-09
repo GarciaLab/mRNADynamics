@@ -1,5 +1,7 @@
-function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw, np_flag, integralDimensions] = ...
-                                                    fit3DGaussianRho(snip3D,PixelDims,varargin)
+function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw,...
+    isSymmetricPositiveDefinite, integralDimensions] = ...
+    ...
+    fit3DGaussianRho(snip3D,PixelDims,varargin)
     % INPUT ARGUMENTS:
     % snip3D: 3D array containing spot to fit. Should contain only one spot
     
@@ -37,8 +39,11 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw,
     
     % initialize upper and lower parameter bounds
     upperBoundVector = [intensityMax*1.5,yDim,xDim,zDim,xDim/8,...
-        xDim/8,xDim/8,1,1,1,intensityMax,intensityMax/yDim,intensityMax/xDim,intensityMax/zDim];
-    lowerBoundVector = [0,1,1,1,1,1,1,-1,-1,-1,0,-intensityMax/yDim,-intensityMax/xDim,-intensityMax/zDim];
+        xDim/8,xDim/8,1,1,1,...
+		intensityMax,intensityMax/yDim,intensityMax/xDim,intensityMax/zDim];
+		
+    lowerBoundVector = [0,1,1,1,1,1,1,-1,-1,-1,0,...
+	-intensityMax/yDim,-intensityMax/xDim,-intensityMax/zDim];
     
     % check for additional arguments
     for i = 1:(numel(varargin)-1)  
@@ -52,16 +57,19 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw,
     single3DObjective = @(params) simulate3DGaussianRho(dimensionVector, params) + params(11) + ...
             params(12)*xMesh + params(13)*yMesh + params(14)*zMesh - double(snip3D);     
     % attempt to fit
-    options.Display = 'off';
-    [GaussFit, ~, residual, ~, ~, ~, jacobian] = lsqnonlin(single3DObjective,initial_parameters,...
-        lowerBoundVector,upperBoundVector,options);
+	persistent options;
+	if isempty(options)
+		options.Display = 'off';
+	end
+    [GaussFit, ~, residual, ~, ~, ~, jacobian] = lsqnonlin(single3DObjective,double(initial_parameters),...
+        double(lowerBoundVector),double(upperBoundVector),options);
     % check that inferred covariance matrix is positive semi-definite
     covarianceMatrix = @(params) [params(5)^2,    params(8)*params(5)*params(6),    params(9)*params(5)*params(7);
                    params(8)*params(5)*params(6),    params(6)^2,    params(10)*params(6)*params(7);
                    params(9)*params(5)*params(7),    params(10)*params(6)*params(7),    params(7)^2];
                
-    [~, np_flag] = chol(covarianceMatrix(GaussFit));
-    if np_flag 
+    [~, isSymmetricPositiveDefinite] = chol(covarianceMatrix(GaussFit));
+    if isSymmetricPositiveDefinite 
         % find nearest SPD matrix
         covarianceMatrixNew = nearestSPD(covarianceMatrix(GaussFit));
         % update parameters
@@ -85,7 +93,7 @@ function [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE, GaussIntegralRaw,
     GaussIntegralSE = NaN;
     GaussIntegral = gaussIntegralFunction(GaussFit);  
     FitDeltas = NaN(size(GaussFit));
-    if ~np_flag
+    if ~isSymmetricPositiveDefinite
         FitCI = nlparci(GaussFit,residual,'jacobian',jacobian);
         FitCI(FitCI<0) = 0;
         FitDeltas = diff(FitCI')' / 2 / 1.96;

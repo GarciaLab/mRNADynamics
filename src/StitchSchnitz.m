@@ -34,11 +34,15 @@ Radii = []; %a vector of length = frames that will contain ellipse radius per fr
 %we want to use size info as a threshold to decide if two schnitz in two contiguous frames
 %correspond to the same nucleus.
 for fr = 1:nFrames
-    Radius = Ellipses{fr}(1,3); %the third column contains size info. by definition all ellipses/frame are equal in size
-    Radii = [Radii Radius];
+    if ~isempty(Ellipses{fr})
+        Radius = Ellipses{fr}(1,3); %the third column contains size info. by definition all ellipses/frame are equal in size
+    else
+        Radius = nan;
+    end
+        Radii = [Radii Radius];
 end
 
-Thresholds = [1.05:0.05:1.75]; %this number indicates how many radii of distance...
+Thresholds = 1.05:0.05:1.75; %this number indicates how many radii of distance...
 %make two time-contiguous ellipses the same one
 nThresh = size(Thresholds);
 
@@ -117,7 +121,10 @@ for i=1:nThresh
                             schnitzcells(s1).DVpos =  [schnitzcells(s1).DVpos;schnitzcells(s2).DVpos];
                         end
                         if isfield(schnitzcells, 'FrameApproved')
-                            schnitzcells(s1).FrameApproved =  [schnitzcells(s1).FrameApproved;schnitzcells(s2).FrameApproved];
+                            schnitzcells(s1).FrameApproved =  [schnitzcells(s1).FrameApproved,schnitzcells(s2).FrameApproved];
+                        end
+                        if isfield(schnitzcells, 'Approved')
+                            schnitzcells(s1).Approved =  [schnitzcells(s1).Approved || schnitzcells(s2).Approved];
                         end
                         if isfield(schnitzcells, 'FluoTimeTrace')
                             schnitzcells(s1).FluoTimeTrace =  [schnitzcells(s1).FluoTimeTrace;schnitzcells(s2).FluoTimeTrace];    
@@ -195,7 +202,7 @@ close(h);
 [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
 save([DropboxFolder,filesep,Prefix,filesep,Prefix '_lin.mat'],'schnitzcells', '-append');
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-append');
-TrackNuclei(Prefix, 'NoBulkShift','ExpandedSpaceTolerance' ,1.5, 'nWorkers', nWorkers, 'noStitch', 'retrack', 'integrate');
+TrackNuclei(Prefix,'nWorkers', nWorkers, 'noStitch', 'retrack', 'integrate');
 
 %% Accesory code to check nuclear traces
 % % Does the number of schnitz make sense?

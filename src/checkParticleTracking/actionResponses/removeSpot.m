@@ -3,13 +3,13 @@ function [Spots, SpotFilter, CurrentFrame, ...
     ...
     removeSpot(Frames, CurrentFrame, ...
     ...   
-    CurrentChannel, CurrentParticle, CurrentParticleIndex, Particles, Spots, SpotFilter)
+    CurrentChannelIndex, CurrentParticle, CurrentParticleIndex, Particles, Spots, SpotFilter)
 %
 %REMOVESPOT removes a spot from the spots and particles structure 
 %  removes a spot from the spots and particles structure 
 
 
-numParticles = length(Particles{CurrentChannel});
+numParticles = length(Particles{CurrentChannelIndex});
 
 del = false;
 CurrentFrameWithinParticle = find(Frames==CurrentFrame);
@@ -32,28 +32,28 @@ end
 
 if del
     
-    ind = Particles{CurrentChannel}(CurrentParticle).Index(CurrentFrameWithinParticle);
-    onlyFrame = length(Particles{CurrentChannel}(CurrentParticle).Frame) == 1;
+    ind = Particles{CurrentChannelIndex}(CurrentParticle).Index(CurrentFrameWithinParticle);
+    onlyFrame = length(Particles{CurrentChannelIndex}(CurrentParticle).Frame) == 1;
     if onlyFrame
-        Particles{CurrentChannel}(CurrentParticle) = [];
+        Particles{CurrentChannelIndex}(CurrentParticle) = [];
         numParticles = numParticles - 1;
     else
-        particleFields = fieldnames(Particles{CurrentChannel});
+        particleFields = fieldnames(Particles{CurrentChannelIndex});
         for i = 1:numel(particleFields)
             if ~strcmpi(particleFields{i},'Nucleus') && ~strcmpi(particleFields{i},'Approved')
                 try
-                    Particles{CurrentChannel}(CurrentParticle).(particleFields{i})(CurrentFrameWithinParticle) = [];
+                    Particles{CurrentChannelIndex}(CurrentParticle).(particleFields{i})(CurrentFrameWithinParticle) = [];
                 end
             end
         end
     end
     %and this part changes the the index of other particles
     %in the frame.
-    for i=1:length(Particles{CurrentChannel})
-        for j = 1:length(Particles{CurrentChannel}(i).Frame)
-            if Particles{CurrentChannel}(i).Frame(j) == CurrentFrame
-                if Particles{CurrentChannel}(i).Index(j) > ind
-                    Particles{CurrentChannel}(i).Index(j) = Particles{CurrentChannel}(i).Index(j) - 1;
+    for i=1:length(Particles{CurrentChannelIndex})
+        for j = 1:length(Particles{CurrentChannelIndex}(i).Frame)
+            if Particles{CurrentChannelIndex}(i).Frame(j) == CurrentFrame
+                if Particles{CurrentChannelIndex}(i).Index(j) > ind
+                    Particles{CurrentChannelIndex}(i).Index(j) = Particles{CurrentChannelIndex}(i).Index(j) - 1;
                 end
             end
         end
@@ -61,16 +61,16 @@ if del
     
     %and this part deletes from the spots structure.
     CurrentSpot = CurrentParticleIndex; %renaming this to make it clear what it actually is
-    Spots{CurrentChannel}(CurrentFrame).Fits(CurrentSpot)= [];
-    if isempty(Spots{CurrentChannel}(CurrentFrame).Fits)
-        Spots{CurrentChannel}(CurrentFrame).Fits = [];
+    Spots{CurrentChannelIndex}(CurrentFrame).Fits(CurrentSpot)= [];
+    if isempty(Spots{CurrentChannelIndex}(CurrentFrame).Fits)
+        Spots{CurrentChannelIndex}(CurrentFrame).Fits = [];
     end
     
     %now delete from spotfilter
-    spotRow = SpotFilter{CurrentChannel}(CurrentFrame,:);
+    spotRow = SpotFilter{CurrentChannelIndex}(CurrentFrame,:);
     spotRow(CurrentSpot) = [];
     spotRow(end+1) = NaN;
-    SpotFilter{CurrentChannel}(CurrentFrame,:) = spotRow;
+    SpotFilter{CurrentChannelIndex}(CurrentFrame,:) = spotRow;
     disp('Spot deleted successfully.');
     
     if onlyFrame
@@ -87,7 +87,7 @@ if del
             lastParticle = 1;
         end
         
-        CurrentFrame=Particles{CurrentChannel}(CurrentParticle).Frame(1);
+        CurrentFrame=Particles{CurrentChannelIndex}(CurrentParticle).Frame(1);
         PreviousParticle = 0; % this is done so that the trace is updated
     elseif CurrentFrame > 1
         CurrentFrame=CurrentFrame-1;

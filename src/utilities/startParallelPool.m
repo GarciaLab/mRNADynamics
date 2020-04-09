@@ -8,7 +8,7 @@ if licensed
     ps.Pool.AutoCreate = false;
     distcomp.feature( 'LocalUseMpiexec', false );
 
-    if nWorkers > 1 && ~displayFigures
+    if nWorkers > 1 & ~displayFigures
         maxWorkers = nWorkers;
         ps.Pool.AutoCreate = true;
 

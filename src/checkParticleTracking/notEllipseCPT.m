@@ -1,7 +1,7 @@
 function ellipseHandle = notEllipseCPT(cptState, color, pointsToDraw, overlayAxes)
 	ra = cptState.Ellipses{cptState.CurrentFrame}(:,3);
 	rb = cptState.Ellipses{cptState.CurrentFrame}(:,4);
-	ang = cptState.Ellipses{cptState.CurrentFrame}(:,5);
+	ang = pi - cptState.Ellipses{cptState.CurrentFrame}(:,5);
 	x0 = cptState.Ellipses{cptState.CurrentFrame}(:,1) + 1;
 	y0 = cptState.Ellipses{cptState.CurrentFrame}(:,2) + 1;
 

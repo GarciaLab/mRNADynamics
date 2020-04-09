@@ -76,18 +76,33 @@
 %The idea of (4) being in Dropbox is that I don't need to be synchronizing
 %the part related to the manual analysis.
 
-function [Prefix, mats ] = ExportDataForLivemRNA(varargin)
+function Prefix = ExportDataForLivemRNA(varargin)
 
-  [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs,...
+cleanupObj = onCleanup(@myCleanupFun);
+clear getMovieMat;
+clear getHisMat;
+warning('off', 'MATLAB:MKDIR:DirectoryExists');
+
+
+
+
+
+  [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, ~,...
     generateTifStacks, nuclearGUI, skipExtraction, rootFolder, zslicesPadding,...
-    lowbit, dataType, makeMovieMats] = exportDataForLivemRNA_processInputParameters(varargin{:});
+    dataType, exportNuclearProjections,...
+    exportMovieFiles, ignoreCh3, shouldTrackNuclei] = ...
+    ...
+    exportDataForLivemRNA_processInputParameters(varargin{:});
 
-  [rawDataPath, ~, DropboxFolder, ~, PreProcPath, rawDataFolder, Prefix, ExperimentType, Channel1, Channel2, ~,...
+  [rawDataPath, ProcPath, DropboxFolder, ~, PreProcPath, rawDataFolder, Prefix, ExperimentType, Channel1, Channel2, ~,...
     Channel3] = readMovieDatabase(Prefix,'rootFolder', rootFolder);
+
+Channels = {Channel1, Channel2, Channel3};
 
 if ~isempty(dataType)
      args = varargin;
-     writeScriptArgsToDataStatus(DropboxFolder, dataType, Prefix, args, 'Ran ExportDataFor', 'ExportDataForLivemRNA')
+     writeScriptArgsToDataStatus(DropboxFolder,...
+         dataType, Prefix, args, 'Ran ExportDataFor', 'ExportDataForLivemRNA')
 end
 
 %   if ~isempty(rootFolder)
@@ -96,10 +111,15 @@ end
 %     [D, FileMode] = DetermineFileMode(rootFolder);
 %   end
 
-  %Create the output folder
-  OutputFolder = [PreProcPath, filesep, Prefix];
-  disp(['Creating folder: ', OutputFolder]);
-  mkdir(OutputFolder)
+%Create the output folder
+OutputFolder = [PreProcPath, filesep, Prefix];
+disp(['Creating folder: ', OutputFolder]);
+mkdir(OutputFolder)
+  
+%Create the results folder
+DropboxFolderName = [DropboxFolder, filesep, Prefix];
+disp(['Creating folder: ', DropboxFolderName]);
+mkdir(DropboxFolderName);
 
   %Generate FrameInfo
   FrameInfo = struct('LinesPerFrame', {}, 'PixelsPerLine', {}, ...
@@ -124,8 +144,9 @@ end
     Channel1, Channel2, Channel3, ProjectionType,Prefix, OutputFolder,nuclearGUI, zslicesPadding);
 
   elseif strcmpi(FileMode, 'LIFExport')
-    FrameInfo = processLIFExportMode(rawDataFolder, ExperimentType, ProjectionType, Channel1, Channel2, Channel3, Prefix, ...
-      OutputFolder, PreferredFileNameForTest, nuclearGUI, skipExtraction, lowbit);
+    FrameInfo = processLIFExportMode(rawDataFolder, ProjectionType, Channels, Prefix, ...
+      OutputFolder, PreferredFileNameForTest, nuclearGUI, skipExtraction,...
+      exportNuclearProjections, exportMovieFiles, ignoreCh3);
 
   elseif strcmpi(FileMode, 'DSPIN') || strcmpi(FileMode, 'DND2')
     %Nikon spinning disk confocal mode - TH/CS 2017
@@ -134,29 +155,29 @@ end
 
   doFrameSkipping(SkipFrames, FrameInfo, OutputFolder);
 
-  %Save the information about the various frames
-  DropboxFolderName = [DropboxFolder, filesep, Prefix];
-  disp(['Creating folder: ', DropboxFolderName]);
-  mkdir(DropboxFolderName);
-  save([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
-
-  if strcmpi(FileMode, 'LIFExport') & ~keepTifs
+  if exportMovieFiles
+      %Save the information about the various frames
+      save([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo', '-v6');
+  end
+  
+  %make folders we'll need later
+  DogOutputFolder=[ProcPath,filesep,Prefix, '_', filesep, 'dogs',filesep];
+  mkdir(DogOutputFolder);
+    
+  try
+  if strcmpi(FileMode, 'LIFExport')
     removeUnwantedTIFs(rawDataFolder);
   end
+  catch; end
   
   if generateTifStacks
     filterMovie(Prefix, 'Tifs');
     disp(['Prefix: ', Prefix]);
   end
-  
-  mats = struct;
-
-  if makeMovieMats
-      nWorkers = 18;
-      Channels = {Channel1, Channel2, Channel3};
-      [movieMat, hisMat, maxMat, medMat, midMat]...
-    = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, Channels);
-    mats.movieMat = movieMat;  mats.hisMat = hisMat; mats.maxMat=maxMat;mats.medMat=medMat;mats.midMat = midMat;
-  end
-
+%   
+%   if shouldTrackNuclei
+%       try batch(@TrackNuclei, 0, {Prefix});
+%       catch TrackNuclei(Prefix); end
+%   end
+ 
 end

@@ -1,6 +1,8 @@
 % Compares two folders, one with expected data and the other with real values after execution.
 % Takes subfolders into account.
-function testCase = compareExpectedDataDir(testCase, dataFolder, expectedDataFolder)
+function testCase = compareExpectedDataDir(...
+    testCase,dataFolder, expectedDataFolder)
+
   %Get file names to compare in preprocessed data folder
   disp(dataFolder);
   cd(dataFolder);

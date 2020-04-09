@@ -24,7 +24,7 @@ if exist([OutputFolder, filesep, 'FrameInfo.mat'], 'file')
         
     end
     
-    save([OutputFolder, filesep, 'FrameInfo.mat'], 'FrameInfo')
+    save([OutputFolder, filesep, 'FrameInfo.mat'], 'FrameInfo', '-v6')
 else
     warning('Tried to save nc frame information, but could not since there is no FrameInfo.mat')
 end
