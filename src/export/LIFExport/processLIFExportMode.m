@@ -29,36 +29,61 @@ if shouldMakeMovieMat
     
     markandfind = false;
     
-    %Loads file and metadata
-    [XMLFolder, seriesPropertiesXML, seriesXML] = getSeriesFiles(rawDataFolder);
-    
-    if ~isempty(strfind(seriesPropertiesXML(1).name, 'Mark_and_Find'))
-        markandfind = true;
+    %%
+    %this section is being deprecated
+    try
+        %Loads file and metadata
+        [XMLFolder, seriesPropertiesXML, seriesXML] = getSeriesFiles(rawDataFolder);
+    catch
+        XMLFolder = '';
+        seriesPropertiesXML = '';
+        seriesXML = '';
     end
     
+    try
+        if contains(seriesPropertiesXML(1).name, 'Mark_and_Find')
+            markandfind = true;
+        end
+    catch % do nothing
+    end
+    %%
     [LIFImages, LIFMeta] = loadLIFFile(rawDataFolder);
     
     %Obtains frames information
-    [NSeries, NFrames, NSlices, NPlanes, NChannels, Frame_Times] = getFrames(LIFMeta);
-    
+    [NSeries, NFrames, NSlices,...
+        NPlanes, NChannels, Frame_Times] = getFrames(LIFMeta);
+     InitialStackTime = [];
+        zPosition = [];
     if sum(NFrames)~=0
-        [Frame_Times, ~] = obtainFrameTimes(XMLFolder, seriesPropertiesXML,...
-            NSeries, NFrames, NSlices, NChannels);
+        
+        try
+            %new method
+            
+            xml_file = [thisExperiment.rawFolder, filesep, 'lifMeta.xml'];
+            
+            generateLIFMetaDataXML(Prefix, xml_file);
+            
+            InitialStackTime = getTimeStampsFromLifXML(xml_file);
+            
+        catch
+            %old method
+            [Frame_Times, ~] = obtainFrameTimes(XMLFolder, seriesPropertiesXML,...
+                NSeries, NFrames, NSlices, NChannels);
+        
+        
         [InitialStackTime, zPosition] = getFirstSliceTimestamp(NSlices,...
             NSeries, NPlanes, NChannels, Frame_Times, XMLFolder, seriesXML);
-    else
-        InitialStackTime = [];
-        zPosition = [];
+        end
     end
     
     FrameInfo = recordFrameInfo(NFrames, NSlices, InitialStackTime, LIFMeta, zPosition);
-
+    
     if markandfind
         FrameInfo = repmat(FrameInfo, NSeries, 1);
     end
     
     save([resultsFolder, filesep, 'FrameInfo.mat'], 'FrameInfo', '-v6');
-
+    
     %Find the flat field (FF) information
     LIFExportMode_flatFieldImage(LIFMeta,...
         rawDataFolder, PreProcFolder, Prefix, PreferredFileNameForTest);
@@ -175,8 +200,8 @@ if ~skipExtraction
             end
         end
         
-%         livemRNAImageMatSaver([PreProcFolder, filesep, Prefix, '_hisMat.mat'],...
-%             hisMat);
+        %         livemRNAImageMatSaver([PreProcFolder, filesep, Prefix, '_hisMat.mat'],...
+        %             hisMat);
         
         if mm
             %save the channels as separate mat files.

@@ -166,8 +166,8 @@ for framesIndex = 1:NFrames
             'middleprojection', NSlices, HisSlices);
         midsum_proj{channelIndex, framesIndex} = calculateProjection(...
             'midsumprojection', NSlices, HisSlices);
-        custom_proj{channelIndex, framesIndex} = calculateProjection(...
-            'customprojection', NSlices, HisSlices, max_custom, min_custom);
+%         custom_proj{channelIndex, framesIndex} = calculateProjection(...
+%             'customprojection', NSlices, HisSlices, max_custom, min_custom);
     end
     
     %         end
