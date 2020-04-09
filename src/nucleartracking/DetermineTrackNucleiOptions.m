@@ -10,7 +10,7 @@ function [stitchSchnitz, ExpandedSpaceTolerance,...
 
 sigmaK_um = 0.85; %good for Dorsal synthetics settings
 mu = 0.1; %good for Dorsal synthetics settings
-nIterSnakes = 100; %good for Dorsal synthetics settings
+nInterSnakes = 100; %good for Dorsal synthetics settings
 min_rad_um = 2; %good for early fly embryos
 max_rad_um = 6; %good for early fly embryos
 stitchSchnitz=true;
@@ -47,7 +47,7 @@ for i = 1:length(varargin)
     elseif strcmpi(varargin{i}, 'mu')
         mu = varargin{i+1};
     elseif strcmpi(varargin{i}, 'nIterSnakes')
-        nIterSnakes = varargin{i+1};        
+        nInterSnakes = varargin{i+1};        
     elseif strcmpi(varargin{i}, 'noBreak')
         noBreak = true;
     elseif strcmpi(varargin{i}, 'chooseHis')
