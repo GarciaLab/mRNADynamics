@@ -26,7 +26,8 @@ parfor CurrentFrame = 1:thisExperiment.nFrames
         if max(max(HisImage))~=0
             [~, circles] = kSnakeCircles(HisImage,...
                 thisExperiment.pixelSize_nm/1000, 'min_rad_um', min_rad_um,...
-                'max_rad_um', max_rad_um);    
+                'max_rad_um', max_rad_um,'sigmaK_um',sigmaK_um,'mu', mu,...
+            'nInterSnakes',nInterSnakes);    
             circles(:, 6:9) = zeros(size(circles, 1), 4);
             Ellipses{CurrentFrame} = circles;
         else
