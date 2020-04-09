@@ -2,12 +2,15 @@ function [mask, ellipseFrame] = kSnakeCircles(image,...
     PixelSize_um, varargin)
 
 %parameters i've found to be broadly applicable
-sigmaK_um = .85;
+sigmaK_um = .1;
+mu = .05; %weight of length term for chen vese  algorithm. honestly don't know what this controls
+min_rad_um = .5; % set min and max acceptable area for nucleus segmentation
+max_rad_um = 8; %this needs to be 6um for nc12. 4um for nc14
+nIterSnakes = 200;
+
+
 sigmaK_px = sigmaK_um / PixelSize_um;
-mu = .1; %weight of length term for chen vese  algorithm. honestly don't know what this controls
-min_rad_um = 2; % set min and max acceptable area for nucleus segmentation
-max_rad_um = 6; %this needs to be 6um for nc12. 4um for nc14
-nIterSnakes = 100;
+
 % b = -.4; 
 % s = .1;
 
