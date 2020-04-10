@@ -190,8 +190,8 @@ warning('on','MATLAB:MKDIR:DirectoryExists');
         Output{6} = ['path(''', DYNAMICS_RESULTS_PATH, ''',path);'];
         Output{7} = ['addpath(genpath(''', testFolder, '''));'];
         Output{8} = ['addpath(genpath(''', DependenciesFolder, '''));'];
-        Output{19} = ['cd(', MRNA_DYNAMICS_PATH, ');'];
-        Output{20} = ['disp(''Startup script executed.'');'];
+        Output{10} = ['cd(''', MRNA_DYNAMICS_PATH, ''');'];
+        Output{11} = ['disp(''Startup script executed.'');'];
         
         writeStartupFile(Output);
                 
