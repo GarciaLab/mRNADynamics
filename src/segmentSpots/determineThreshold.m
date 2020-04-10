@@ -59,10 +59,15 @@ end
 dogDir = dir([dogFolder, filesep, '*_ch0', num2str(Channel), '.*']);
 
 haveStacks = any(cellfun(@(x) contains(x, 'dogStack'), {dogDir.name}));
-% havePlanes = any(cellfun(@(x) contains(x, '_z'), {dogDir.name}));
+havePlanes = any(cellfun(@(x) contains(x, '_z'), {dogDir.name}));
 haveProbs = any(cellfun(@(x) contains(x, 'prob'), {dogDir.name}));
 loadAsMat = any(cellfun(@(x) contains(x, '.mat'), {dogDir.name}));
 
+if loadAsMat 
+    ext = '.mat';
+else
+    ext ='.tif';
+end
 
 clear dogDir;
 
@@ -80,6 +85,9 @@ firstDogStackFile = [dogFolder, filesep, dogStr,...
     Prefix, '_', iIndex(firstFrame, 3),...
     nameSuffix];
 
+dogDir = dir([dogFolder, filesep, dogStr, '*_ch0',...
+    num2str(Channel), ext]);
+
 if loadAsMat
     try
     load([firstDogStackFile, '.mat'], 'dogStack');
@@ -88,7 +96,9 @@ if loadAsMat
         load([dogFolder, filesep, dogDir(1).name]);
     end
 else
+    try
     dogStack = imreadStack([firstDogStackFile, '.tif']);
+    end
 end
 
 zPadded = zSize ~= size(dogStack, 3);
