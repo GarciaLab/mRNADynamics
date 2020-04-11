@@ -1,8 +1,8 @@
 function schnitzcells = TrackNuclei_computervision(Prefix)
 
 load('ReferenceHist.mat', 'ReferenceHist');
-
 thisExperiment = liveExperiment(Prefix);
+
 
 hisVideoFile = [thisExperiment.preFolder, filesep, 'hisVideo.avi'];
 
@@ -173,15 +173,22 @@ for i = 1:size(centroids, 1)
     bbox = bboxes(i, :);
     
     % Create a Kalman filter object.
-    InitialEstimateError = [50, 50];
-    MotionNoise = [25, 25];
+    InitialEstimateError = [50, 50, 50];
+    MotionNoise = [25, 25, 25];
     MeasurementNoise = 50; %pixel variance of 100
     
 %     kalmanFilter = configureKalmanFilter(MotionModel,InitialLocation,InitialEstimateError,...
 %         MotionNoise,MeasurementNoise)
-    kalmanFilter = configureKalmanFilter('ConstantVelocity', ...
-        centroid, InitialEstimateError , MotionNoise,  MeasurementNoise );
-    
+    kalmanFilter = configureKalmanFilter('ConstantAcceleration', ...
+        [centroid, size(bbox, 1)], InitialEstimateError , MotionNoise,  MeasurementNoise );
+    A_n = [1 1 .5
+                0 1 1
+                0   0 1];
+    %one block for x, one for y, one for radius       
+%     MotionModel = blkdiag(A_n, A_n, A_n);
+%     kalmanFilter = vision.kalmanFilter(MotionModel,[centroid, size(bbox, 1)],InitialEstimateError,...
+%         MotionNoise,MeasurementNoise);
+% 
     % Create a new track.
     newTrack = struct(...
         'id', nextId, ...

@@ -200,26 +200,7 @@ if ~skipExtraction
             end
         end
         
-        %         livemRNAImageMatSaver([PreProcFolder, filesep, Prefix, '_hisMat.mat'],...
-        %             hisMat);
-        
-        if mm
-            %save the channels as separate mat files.
-            
-            livemRNAImageMatSaver([PreProcFolder, filesep, Prefix, '_movieMatCh1.mat'],...
-                movieMat(:, :, :, :, 1));
-            
-            if size(movieMat, 5) > 1
-                livemRNAImageMatSaver([PreProcFolder, filesep, Prefix, '_movieMatCh2.mat'],...
-                    movieMat(:, :, :, :, 2));
-            end
-            
-            if size(movieMat, 5) == 3 && ~ignoreCh3
-                livemRNAImageMatSaver([PreProcFolder, filesep, Prefix, '_movieMatCh3.mat'],...
-                    movieMat(:, :, :, :, 3));
-            end
-        end
-        
+         
     end
     
     
