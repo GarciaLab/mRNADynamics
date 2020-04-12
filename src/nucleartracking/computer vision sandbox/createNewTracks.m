@@ -1,4 +1,6 @@
-    function tracks = createNewTracks(tracks, centroids, bboxes, radii)
+    function tracks = createNewTracks(tracks, centroids,...
+        bboxes, radii, unassignedDetections, nextId)
+       
         centroids = centroids(unassignedDetections, :);
         bboxes = bboxes(unassignedDetections, :);
         
@@ -7,6 +9,7 @@
             centroid = centroids(i,:);
             radius = radii(i);
             bbox = bboxes(i, :);
+            measurement = [centroid, radius]; 
             
             % Create a Kalman filter object.
             
@@ -17,7 +20,7 @@
             %     kalmanFilter = configureKalmanFilter(MotionModel,InitialLocation,InitialEstimateError,...
             %         MotionNoise,MeasurementNoise)
             kalmanFilter = configureKalmanFilter('ConstantAcceleration', ...
-                [centroid, radius], InitialEstimateError , MotionNoise,  MeasurementNoise );
+                measurement, InitialEstimateError , MotionNoise,  MeasurementNoise );
             
             % Create a new track.
             newTrack = struct(...

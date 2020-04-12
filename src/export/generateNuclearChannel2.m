@@ -36,7 +36,7 @@ if nNuclearChannels ~= 0
         
         % For all 'nuclear' channels, generate HisSlices, and do projection
         
-        HisSlices = squeeze(movieMat(:, :, :, frame, nuclearChannel));
+        HisSlices = movieMat(:, :, :, frame, nuclearChannel);
         
         ProjectionTemp(:, :, ChannelIndex) = calculateProjection(ProjectionType, NSlices, HisSlices);
         

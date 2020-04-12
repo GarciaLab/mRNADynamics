@@ -5,6 +5,8 @@ thisExperiment = liveExperiment(Prefix);
 pixelSize_um = thisExperiment.pixelSize_um;
 nFrames = thisExperiment.nFrames;
 hisVideoFile = [thisExperiment.preFolder, filesep, 'hisVideo.avi'];
+schnitzcells = struct('cenx', [], 'ceny', [],...
+    'frames', [], 'len', []);
 
 if ~exist(hisVideoFile, 'file')
     hisMat = getHisMat(thisExperiment);
@@ -30,22 +32,25 @@ for f = 1:nFrames
     [centroids, radii, bboxes, mask] =...
         detectObjects(obj, frame, pixelSize_um);
     
+    measurements = [centroids, radii]; 
+    
     tracks = predictNewLocationsOfTracks(tracks);
     
     [assignments, unassignedTracks,...
         unassignedDetections] = ...
-        detectionToTrackAssignment(tracks, centroids);
+        detectionToTrackAssignment(tracks, measurements);
     
     tracks = updateAssignedTracks(tracks, assignments, bboxes,...
-        centroids);
+        measurements);
     
     tracks = updateUnassignedTracks(tracks, unassignedTracks);
     tracks = deleteLostTracks(tracks);
     
-    tracks = createNewTracks(tracks, centroids, bboxes, radii);
+    tracks = createNewTracks(tracks, centroids,...
+        bboxes, radii, unassignedDetections, nextId);
     
     schnitzcells = displayTrackingResults(tracks, obj, frame,...
-        mask, ReferenceHist);
+        mask, ReferenceHist, schnitzcells, frameIndex);
     
 end
 

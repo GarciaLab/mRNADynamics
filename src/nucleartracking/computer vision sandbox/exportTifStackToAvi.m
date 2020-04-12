@@ -12,7 +12,9 @@ else
     stack = fileIn;
 end
 
-stack = uint8(stack);
+g = @(y) arrayfun(@(x) histeq(mat2gray(y), ReferenceHist), 3, 'UniformOutput',false);
+tempStack = g(stack); 
+stack = uint8(round(256*tempStack{1}));
 nFrames = size(stack, 3);
 
 outputVideo = VideoWriter(fileOut, 'Grayscale AVI');

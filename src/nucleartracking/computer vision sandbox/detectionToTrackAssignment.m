@@ -1,13 +1,13 @@
     function [assignments, unassignedTracks, unassignedDetections] = ...
-            detectionToTrackAssignment(tracks, centroids)
+            detectionToTrackAssignment(tracks, measurements)
         
         nTracks = length(tracks);
-        nDetections = size(centroids, 1);
+        nDetections = size(measurements, 1); 
         
         % Compute the cost of assigning each detection to each track.
         cost = zeros(nTracks, nDetections);
         for i = 1:nTracks
-            cost(i, :) = distance(tracks(i).kalmanFilter, centroids);
+            cost(i, :) = distance(tracks(i).kalmanFilter, measurements);
         end
         
         % Solve the assignment problem.

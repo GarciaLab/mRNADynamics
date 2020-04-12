@@ -1,8 +1,8 @@
 
     function schnitzcells = displayTrackingResults(tracks, obj, frame,...
-            mask, ReferenceHist)
+            mask, ReferenceHist, schnitzcells, frameIndex)
         % Convert the frame and the mask to uint8 RGB.
-        
+        % from logical.
         mask = histeq(uint8(mask), ReferenceHist);
         
         minVisibleCount = 0;
@@ -28,7 +28,8 @@
                 % Get ids.
                 ids = int32([reliableTracks(:).id]);
                 
-                schnitzcells = genSchnitzCellsFromIDs(ids, cenxs, cenys, len);
+                schnitzcells = genSchnitzCellsFromIDs(schnitzcells, ids,...
+                   frameIndex ,cenxs, cenys, len);
                 
                 % Create labels for objects indicating the ones for
                 % which we display the predicted rather than the actual

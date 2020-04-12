@@ -1,5 +1,5 @@
     function tracks= updateAssignedTracks(tracks, assignments, bboxes,...
-            centroids)
+            measurements)
         
         numAssignedTracks = size(assignments, 1);
         
@@ -7,12 +7,12 @@
             
             trackIdx = assignments(i, 1);
             detectionIdx = assignments(i, 2);
-            centroid = centroids(detectionIdx, :);
+            measurement = measurements(detectionIdx, :);
             bbox = bboxes(detectionIdx, :);
             
             % Correct the estimate of the object's location
             % using the new detection.
-            correct(tracks(trackIdx).kalmanFilter, centroid);
+            correct(tracks(trackIdx).kalmanFilter, measurement);
             
             % Replace predicted bounding box with detected
             % bounding box.
