@@ -97,10 +97,12 @@ classdef liveExperiment
             %most time-consuming part of
             %project initialization and the output
             %is not memory intensive
-            memoizedDetermineLocalFolders = memoize(@DetermineLocalFolders);
-            
-            [rawPath, ProcPath, DropboxFolder, obj.MS2CodePath, PreProcPath,...
-                ~, ~, ~, movieDatabase]= memoizedDetermineLocalFolders(obj.Prefix);
+%             memoizedDetermineLocalFolders = memoize(@DetermineLocalFolders);
+%             [rawPath, ProcPath, DropboxFolder, obj.MS2CodePath, PreProcPath,...
+%                 ~, ~, ~, movieDatabase]= memoizedDetermineLocalFolders(obj.Prefix);
+       
+[rawPath, ProcPath, DropboxFolder, obj.MS2CodePath, PreProcPath,...
+                ~, ~, ~, movieDatabase]= DetermineLocalFolders(obj.Prefix);
             
             
             obj.userPreFolder = PreProcPath;
@@ -300,6 +302,8 @@ classdef liveExperiment
             
             if exist([obj.preFolder, filesep,obj.Prefix, '-His.tif'], 'file')
                 haveHisTifStack = true;
+            else
+                haveHisTifStack = false;
             end
             persistent hisMat;
             %load histone movie only if it hasn't been loaded or if we've switched

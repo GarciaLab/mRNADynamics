@@ -1,5 +1,6 @@
 function exportTifStackToAvi(fileIn, fileOut, varargin)
 
+% AR 4/2020
 
 %fileIn can be either a path to a file or a .mat  imagestack
 
