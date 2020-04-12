@@ -7,7 +7,8 @@ min_rad_um = 2;
 max_rad_um = 6;
 sigmaK_um = 0.85;
 mu = 0.1;
-nInterSnakes = 100;
+nIterSnakes = 100;
+
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.
 for k = 1:2:(numel(varargin)-1)
@@ -17,23 +18,26 @@ for k = 1:2:(numel(varargin)-1)
 end
 
 thisExperiment = liveExperiment(Prefix);
+pixelSize_um = thisExperiment.pixelSize_um;
+hisMat = getHisMat(thisExperiment);
 
-if isempty(hisMat)    
-    hisMat = getHisMat(thisExperiment);
-end
 
 Ellipses = cell(thisExperiment.nFrames, 1);
 
 parfor CurrentFrame = 1:thisExperiment.nFrames
         
+        
         HisImage = hisMat(:, :, CurrentFrame);
+        
+        %segment current frame if nonempty
+        %and add ellipse information to Ellipses
         if max(max(HisImage))~=0
-            [~, circles] = kSnakeCircles(HisImage,...
-                thisExperiment.pixelSize_nm/1000, 'min_rad_um', min_rad_um,...
+            [~, ellipseFrame] = kSnakeCircles(HisImage,...
+                pixelSize_um, 'min_rad_um', min_rad_um,...
                 'max_rad_um', max_rad_um,'sigmaK_um',sigmaK_um,'mu', mu,...
-            'nInterSnakes',nInterSnakes);    
-            circles(:, 6:9) = zeros(size(circles, 1), 4);
-            Ellipses{CurrentFrame} = circles;
+            'nIterSnakes',nIterSnakes);    
+            ellipseFrame(:, 6:9) = zeros(size(ellipseFrame, 1), 4);
+            Ellipses{CurrentFrame} = ellipseFrame;
         else
             Ellipses{CurrentFrame} = [];
         end
@@ -44,6 +48,10 @@ parfor CurrentFrame = 1:thisExperiment.nFrames
         
 end
 
-save([thisExperiment.resultsFolder, 'Ellipses.mat'],'Ellipses', '-v6');
+if whos(var2str(Ellipses)).bytes < 2E9
+    save([thisExperiment.resultsFolder, 'Ellipses.mat'],var2str(Ellipses), '-v6');
+else
+    save([thisExperiment.resultsFolder, 'Ellipses.mat'],var2str(Ellipses), '-v7.3', '-nocompression');
+end
 
 end

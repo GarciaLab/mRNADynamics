@@ -30,7 +30,7 @@ frameIndex = 0;
 for f = 1:nFrames
     frameIndex = frameIndex + 1;
     frame = readFrame(obj.reader);
-    [centroids, bboxes, mask] = detectObjects(frame);
+    [centroids, radii, bboxes, mask] = detectObjects(frame);
     predictNewLocationsOfTracks();
     [assignments, unassignedTracks, unassignedDetections] = ...
         detectionToTrackAssignment();
@@ -56,17 +56,22 @@ tracks = struct(...
     'consecutiveInvisibleCount', {});
 end
 
-function [centroids, bboxes, mask] = detectObjects(frame)
+function [centroids,  radii, bboxes, mask] = detectObjects(frame)
 % Detect foreground.
 % mask = obj.detector.step(frame);
 
-[mask, ~] = kSnakeCircles(frame, pixelSize_um);
+[mask, ellipseFrame] = kSnakeCircles(frame, pixelSize_um);
+
 % [mask, ~] = memoMasker(frame, pixelSize_um);
 
 mask = ~~mask;
 % Perform blob analysis to find connected components.
-[~, centroids, bboxes] = obj.blobAnalyser.step(mask);
+[~, ~, bboxes] = obj.blobAnalyser.step(mask);
 
+centroids = ellipseFrame(:, 1:2); 
+
+radii = (1/2) * mean(ellipseFrame(:, 3:4), 2);
+        
 %bbox is x y w h
 
 end
@@ -170,6 +175,7 @@ bboxes = bboxes(unassignedDetections, :);
 for i = 1:size(centroids, 1)
     
     centroid = centroids(i,:);
+    radius = radii(i); 
     bbox = bboxes(i, :);
     
     % Create a Kalman filter object.
@@ -180,15 +186,8 @@ for i = 1:size(centroids, 1)
 %     kalmanFilter = configureKalmanFilter(MotionModel,InitialLocation,InitialEstimateError,...
 %         MotionNoise,MeasurementNoise)
     kalmanFilter = configureKalmanFilter('ConstantAcceleration', ...
-        [centroid, size(bbox, 1)], InitialEstimateError , MotionNoise,  MeasurementNoise );
-    A_n = [1 1 .5
-                0 1 1
-                0   0 1];
-    %one block for x, one for y, one for radius       
-%     MotionModel = blkdiag(A_n, A_n, A_n);
-%     kalmanFilter = vision.kalmanFilter(MotionModel,[centroid, size(bbox, 1)],InitialEstimateError,...
-%         MotionNoise,MeasurementNoise);
-% 
+        [centroid, radius], InitialEstimateError , MotionNoise,  MeasurementNoise );
+    
     % Create a new track.
     newTrack = struct(...
         'id', nextId, ...
@@ -230,12 +229,13 @@ if ~isempty(tracks)
         bboxes = cat(1, reliableTracks.bbox);
         cenxs = (bboxes(:, 1) + bboxes(:, 3))/2;
         cenys = (bboxes(:, 2) + bboxes(:, 4))/2;
+        
         % Get ids.
         ids = int32([reliableTracks(:).id]);
         
         for i = 1:length(ids)
             if length(schnitzcells) < i
-                
+            
             schnitzcells(i).cenx(1) = cenxs(i);
             schnitzcells(i).ceny(1) = cenys(i);
             schnitzcells(i).frames(1) = frameIndex;
