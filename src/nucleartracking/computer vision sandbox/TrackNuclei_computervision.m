@@ -14,8 +14,6 @@ if ~exist(hisVideoFile, 'file')
 end
 
 
-% memoMasker = memoize (@(x, y) kSnakeCircles(x, y));
-% memoMasker.CacheSize = nFrames;
 
 obj = setupSystemObjects(hisVideoFile);
 tracks = initializeTracks(); % Create an empty array of tracks.
@@ -28,14 +26,20 @@ for f = 1:nFrames
     frameIndex = frameIndex + 1;
     
     frame = readFrame(obj.reader);
-    
+%% Measurement
+
+    %Segment the nuclei to create measurements
+    %that will be fed into Kalman filter. 
     [centroids, radii, bboxes, mask] =...
-        detectObjects(obj, frame, pixelSize_um);
-    
+        detectObjects(frame, pixelSize_um, nFrames);
     measurements = [centroids, radii]; 
     
+%% Prediction
+
     tracks = predictNewLocationsOfTracks(tracks);
-    
+
+%% Correction
+
     [assignments, unassignedTracks,...
         unassignedDetections] = ...
         detectionToTrackAssignment(tracks, measurements);
@@ -44,10 +48,11 @@ for f = 1:nFrames
         measurements);
     
     tracks = updateUnassignedTracks(tracks, unassignedTracks);
+    
     tracks = deleteLostTracks(tracks);
     
-    tracks = createNewTracks(tracks, centroids,...
-        bboxes, radii, unassignedDetections, nextId);
+    [tracks, nextId] = createNewTracks(tracks, measurements,...
+        bboxes, unassignedDetections, nextId);
     
     schnitzcells = displayTrackingResults(tracks, obj, frame,...
         mask, ReferenceHist, schnitzcells, frameIndex);

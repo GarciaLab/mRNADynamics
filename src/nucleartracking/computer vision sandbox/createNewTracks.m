@@ -1,15 +1,16 @@
-    function tracks = createNewTracks(tracks, centroids,...
-        bboxes, radii, unassignedDetections, nextId)
+    function [tracks, nextId] = createNewTracks(tracks, measurements,...
+        bboxes, unassignedDetections, nextId)
        
-        centroids = centroids(unassignedDetections, :);
+        %measurements. should be cated
+        measurements = measurements(...
+        unassignedDetections, :);
+
         bboxes = bboxes(unassignedDetections, :);
         
-        for i = 1:size(centroids, 1)
+        for i = 1:size(measurements, 1)
             
-            centroid = centroids(i,:);
-            radius = radii(i);
             bbox = bboxes(i, :);
-            measurement = [centroid, radius]; 
+            measurement = measurements(i, :);
             
             % Create a Kalman filter object.
             

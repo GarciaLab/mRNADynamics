@@ -11,7 +11,13 @@
         end
         
         % Solve the assignment problem.
-        costOfNonAssignment = 20;
+        
+        %AR- i don't know how to properly adjust
+        %this number. 
+        costOfNonAssignment = 10; 
         [assignments, unassignedTracks, unassignedDetections] = ...
             assignDetectionsToTracks(cost, costOfNonAssignment);
+        
+        
+        
     end
