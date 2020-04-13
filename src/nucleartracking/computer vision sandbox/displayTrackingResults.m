@@ -20,14 +20,15 @@ if ~isempty(tracks)
     % Display the objects. If an object has not been detected
     % in this frame, display its predicted bounding box.
     if ~isempty(reliableTracks)
-        % Get bounding boxes.
+        % Get bounding boxes: [
+        %[topleft_x, topleft_y,  width,  height]
         bboxes = cat(1, reliableTracks.bbox);
      
         % Get ids.
         ids = int32([reliableTracks(:).id]);
         
         schnitzcells = genSchnitzCellsFromIDs(schnitzcells, tracks,...
-            frameIndex);
+           frameIndex);
         
         % Create labels for objects indicating the ones for
         % which we display the predicted rather than the actual

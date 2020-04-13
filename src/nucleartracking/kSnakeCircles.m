@@ -2,11 +2,12 @@ function [mask, ellipseFrame] = kSnakeCircles(image,...
     PixelSize_um, varargin)
 
 %parameters i've found to be broadly applicable
-sigmaK_um = .1;
-mu = .05; %weight of length term for chen vese  algorithm. honestly don't know what this controls
-min_rad_um = 4; % set min and max acceptable area for nucleus segmentation
+sigmaK_um = .2;
+mu = .1; %weight of length term for chen vese  algorithm. honestly don't know what this controls
+min_rad_um = 2; % set min and max acceptable area for nucleus segmentation
 max_rad_um = 8; %this needs to be 6um for nc12. 4um for nc14
-nIterSnakes = 200;
+nIterSnakes = 100;
+maxAspectRatio = 4;
 
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.
@@ -44,13 +45,16 @@ kMaskRefined= gather( chenvese( ...
 %whether it should be or not automatically
 
 kMaskRefined= imfill(kMaskRefined, 'holes');
-% mask = bwareafilt(wshed(kMaskRefined), areaFilter);
-mask = wshed(bwareafilt(kMaskRefined, areaFilter));
+mask = bwareafilt(wshed(kMaskRefined), areaFilter);
+
+% mask = wshed(bwareafilt(kMaskRefined, areaFilter));
 
 %morphologically clean up the mask
 mask = imfill(bwmorph(mask, 'bridge'), 'holes');
 
 [mask, ellipseFrame] = fitCirclesToNuclei(mask, kMask);
+
+% mask = bwpropfilt(mask, '
 
 %validate sizes. the ellipse masker handles
 %very large objects poorly

@@ -13,11 +13,11 @@ end
 % cost(cost > gatingThresh) = 1 + gatingCost;
 
 %visualize cost matrix
-% figure(3) ; imagesc(cost); colorbar;
-% title('cost matrix')
-% xlabel('prediction')
-% ylabel('detection')
-% set(gca,'ColorScale','log')
+figure(3) ; imagesc(cost); colorbar;
+title('cost matrix')
+xlabel('prediction')
+ylabel('detection')
+set(gca,'ColorScale','log')
 
 
 
@@ -27,7 +27,7 @@ end
 
 %AR- i don't know how to properly adjust
 %this number.
-costOfNonAssignment = 20;
+costOfNonAssignment = 65;
 [assignments, unassignedTracks, unassignedDetections] = ...
     assignDetectionsToTracks(cost, costOfNonAssignment);
 % 
