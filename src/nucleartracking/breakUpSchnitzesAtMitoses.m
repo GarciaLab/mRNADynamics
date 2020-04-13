@@ -63,10 +63,12 @@ for s = 1:nNuclei
             tempSchnitzcells(newInd).frames = sc.frames(newFrames);
             tempSchnitzcells(newInd).cenx = sc.cenx(newFrames);
             tempSchnitzcells(newInd).ceny = sc.ceny(newFrames);
-            tempSchnitzcells(newInd).len = sc.len(newFrames);
             tempSchnitzcells(newInd).cellno = sc.cellno(newFrames);
             tempSchnitzcells(newInd).deleteMe = false;
             
+            if isfield(tempSchnitzcells, 'len')
+                tempSchnitzcells(newInd).len = sc.len(newFrames, :);
+            end
             
             if isfield(tempSchnitzcells, 'Fluo')
                 tempSchnitzcells(newInd).Fluo = sc.Fluo(newFrames, :);

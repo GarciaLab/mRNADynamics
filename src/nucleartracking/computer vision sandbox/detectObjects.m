@@ -1,4 +1,4 @@
-    function [centroids,  radii, bboxes, mask] =...
+    function [measurements, bboxes, mask] =...
         detectObjects(frame, pixelSize_um, nFrames)
                 
         %memoized for quicker debugging 
@@ -9,8 +9,10 @@
         [mask, ellipseFrame] = kSnakeCircles(frame, pixelSize_um);
 
         mask = ~~mask; %binarize the mask
-        centroids = ellipseFrame(:, 1:2);
-        radii = (1/2) * mean(ellipseFrame(:, 3:4), 2);
+%         radii = (1/2) * mean(ellipseFrame(:, 3:4), 2);
+        
+        %ceny, cenx, smaj, smin, angle
+        measurements = ellipseFrame(:, 1:5); 
         
         %this code is silly, but i don't know how to 
         %shape the bbox matrix more elegantly.

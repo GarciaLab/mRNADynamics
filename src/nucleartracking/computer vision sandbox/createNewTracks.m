@@ -1,7 +1,9 @@
     function [tracks, nextId] = createNewTracks(tracks, measurements,...
         bboxes, unassignedDetections, nextId)
        
-        %measurements. should be cated
+        %ceny, cenx, smaj, smin, angle
+        nStates = 5;
+    
         measurements = measurements(...
         unassignedDetections, :);
 
@@ -13,10 +15,14 @@
             measurement = measurements(i, :);
             
             % Create a Kalman filter object.
+            centroidError_pxSq = 4^2;
+            radiusError_pxSq = 5^2;
+            angleError_radSq = (pi/2)^2;
             
-            InitialEstimateError = [50, 50, 50];
-            MotionNoise = [25, 25, 25];
-            MeasurementNoise = 50; %pixel variance of 100
+            InitialEstimateError = [1 1 1]*1e5;
+            MotionNoise = [centroidError_pxSq, centroidError_pxSq ,...
+                radiusError_pxSq];
+            MeasurementNoise = radiusError_pxSq;
             
             %     kalmanFilter = configureKalmanFilter(MotionModel,InitialLocation,InitialEstimateError,...
             %         MotionNoise,MeasurementNoise)
@@ -29,6 +35,7 @@
                 'bbox', bbox, ...
                 'kalmanFilter', kalmanFilter, ...
                 'age', 1, ...
+                'idxHistory', nextId,...
                 'totalVisibleCount', 1, ...
                 'consecutiveInvisibleCount', 0);
             
