@@ -62,12 +62,12 @@ dogDir = dir([dogFolder, filesep, '*_ch0', num2str(Channel), '.*']);
 isDogFolder = true;
 dogDir = getImageFiletypes(dogDir, isDogFolder);
 
-firstDogStack = loadDogStack(1);
+firstDogStack = imreadStack([dogFolder, dogDir(1).name]);
 
 zPadded = zSize ~= size(firstDogStack, 3);
 
 
-haveStacks = any(~contains(x, '_z'), string({dogDir.name}));
+haveStacks = any(~contains(string({dogDir.name}), '_z'));
 
 % determines which z-slices and
 %frames that we can scroll through
@@ -103,7 +103,8 @@ all_dogs = cell(lastFrame, zSize - 2);
 for frame = available_frames
     
     if haveStacks
-        dogStack = loadDogStack(frame);
+        try dogStack = loadDogStack(frame);
+        catch, continue; end
     end
     
     for z = available_zs
@@ -255,7 +256,11 @@ uiwait(fig);
         bestZ = zSlider.Value;
         bestFrame = frameSlider.Value;
         if isempty(all_dogs{bestFrame, bestZ})
+            try
             dog = loadDogPlane(bestZ,bestFrame);
+            catch, return; 
+            end
+            
             all_dogs{bestFrame, bestZ} = dog;
         end
         dog_copy = all_dogs{bestFrame, bestZ};
@@ -333,21 +338,21 @@ uiwait(fig);
         
         if haveStacks
             
-            filenameIndex = contains(string(dogDir.name), iIndex(frame, 3));
+            filenameIndex = contains(string({dogDir.name}), iIndex(frame, 3));
             file = [dogFolder, dogDir(filenameIndex).name];
             dogStack = imreadStack(file);
             dog = dogStack(:, :, zInd);
             
         else
             
-            filenameIndex = contains(string(dogDir.name), iIndex(frame, 3)) &...
+            filenameIndex = contains(string({dogDir.name}), iIndex(frame, 3)) &...
             contains(string(dogDir.name), iIndex(zInd, 2));
             file = [dogFolder, dogDir(filenameIndex).name];
             
             if contains(file, '.tif')
                 dog = double(imread(file));
             elseif contains(file, '.mat')
-                load(file, 'plane', 'dog');
+                load(file, 'plane');
                 try dog = plane; 
                 catch, load(file, 'dog'); end
             end
@@ -358,7 +363,7 @@ uiwait(fig);
 
     function dogStack = loadDogStack(frame)
         
-            filenameIndex = contains(string(dogDir.name), iIndex(frame, 3));
+            filenameIndex = contains(string({dogDir.name}), iIndex(frame, 3));
             file = [dogFolder, dogDir(filenameIndex).name];
             dogStack = imreadStack(file);
             

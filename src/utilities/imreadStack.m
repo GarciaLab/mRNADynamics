@@ -35,4 +35,6 @@ elseif contains(imPath, '.mat')
     imStack = imStack.(varName{1});
 end
 
+assert(logical(exist('imStack', 'var')));
+
 end
