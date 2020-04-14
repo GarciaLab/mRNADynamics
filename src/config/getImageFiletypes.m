@@ -63,7 +63,7 @@ if haveStacks
     cleanDir = imageDir(isStack);
 end
 
-if haveTif
+if haveTifs
     %we'll not include mats (if they exist)
     cleanDir = imageDir(isTif);
 end
