@@ -39,7 +39,7 @@ saveVars={'coordA','coordP','coordAZoom','coordPZoom'};
 
 
 SkipAlignment=false;
-ManualAlignment=false;
+ManualAlignment=true;
 NoAP=false;
 SelectChannel=0;
 InvertHis=false;
@@ -54,7 +54,7 @@ for i=1:length(varargin)
             disp('Skipping alignment step')
             SkipAlignment=1;
         case {'ManualAlignment'}
-            ManualAlignment=1;
+            ManualAlignment=true;
         case {'NoAP'}
             NoAP=1;
         case {'SelectChannel'}

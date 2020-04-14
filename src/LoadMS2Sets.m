@@ -260,7 +260,6 @@ for i=1:length(CompiledSets)
             if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'],'file')
                 MeanFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat']);
             else
-                warning('MeanFits.mat not found');
             end
             
             %Linear slope fit results
@@ -272,14 +271,12 @@ for i=1:length(CompiledSets)
             if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV2.mat'],'file')
                 MeanFitsV2(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV2.mat']);
             else
-                warning('MeanFitsV2.mat not found');
             end
             
             % Fit results from the MeanFitAPAsymmetric.m
             if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsAsymmetric.mat'],'file')
                 MeanFitsAsymmetric(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsAsymmetric.mat']);
             else
-                warning('MeanFitsAsymmetric.mat not found');
             end
             
             
@@ -287,14 +284,12 @@ for i=1:length(CompiledSets)
             if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV3.mat'],'file')
                 MeanFitsV3(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV3.mat']);
             else
-                warning('MeanFitsV3.mat not found');
             end
             
             %Fit results using MeanFitsMCMC
             if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsMCMC.mat'],'file')
                 MeanFitsMCMC(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsMCMC.mat']);
             else
-                warning('MeanFitsMCMC.mat not found');
             end
             %Fit results using InputOutputFits
             if inputOutputFits
@@ -303,7 +298,6 @@ for i=1:length(CompiledSets)
                     InputOutputFits(i)=load([DropboxFolder,filesep,Prefix,filesep,...
                         'InputOutputFits_',inputOutputModel,'.mat']);
                 else
-                    warning('MeanFitsMCMC.mat not found');
                 end
             end
             
@@ -311,13 +305,11 @@ for i=1:length(CompiledSets)
             if exist([DropboxFolder,filesep,Prefix,filesep,'SingleParticleFitsMCMC.mat'],'file')
                 SingleParticleFitsMCMC(i)=load([DropboxFolder,filesep,Prefix,filesep,'SingleParticleFitsMCMC.mat']);
             else
-                warning('SingleParticleFitsMCMC.mat not found');
             end
             
             try
                 Schnitzcells(i)=load([DropboxFolder,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat'], 'schnitzcells');
             catch
-                warning('_lin.mat not found.');
             end
             
             
@@ -351,7 +343,6 @@ for i=1:length(CompiledSets)
             try
                 Ellipses(i)=load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses');
             catch
-                warning('Ellipses.mat not found.')
             end
             
             % Load Particles
@@ -373,7 +364,6 @@ for i=1:length(CompiledSets)
         if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'file')
             APDivisions(i)=load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat']);
         else
-            warning('APDivisions.mat not found.')
         end
         
         %Load CompiledNuclei if it exists
@@ -473,7 +463,6 @@ if ~justprefixes
                 Data(i).schnitzcells=Schnitzcells(i).schnitzcells;
                 Data(i).Ellipses=Ellipses(i).Ellipses;
             catch
-                warning('No schnitzcells or ellipses');
             end
             
             Data(i).Particles=ParticleTemp(i).Particles;

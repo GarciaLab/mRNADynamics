@@ -81,6 +81,9 @@ for e = 1:length(allData)
     
     
     for s = 1:length(schnitzcells)
+        if ~isfield('schnitzcells', 'Fluo')
+            integrateSchnitzFluo(Prefixes{e}); 
+        end
         schnitzcells(s).FluoTimeTrace = single(ExtractDlFluo(schnitzcells(s).Fluo, .5));
         if schnitzcells(s).cycle ~= 14
             midCycle = floor((ncs(schnitzcells(s).cycle) + ncs(schnitzcells(s).cycle+1))/2);

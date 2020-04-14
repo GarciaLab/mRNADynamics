@@ -601,13 +601,6 @@ end
 CompiledParticlesToken = now;
 save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticlesToken.mat'],'CompiledParticlesToken', '-v6')
 
-%%
-if DVExperiment && fullEmbryoExists
-    alignCompiledParticlesByAnaphase(Prefix, fullEmbryoExists);
-    %     averageDV(Prefix);
-    %     plotByDorsalConc(Prefix);
-end
-
 disp('CompiledParticles.mat saved.');
 
 end

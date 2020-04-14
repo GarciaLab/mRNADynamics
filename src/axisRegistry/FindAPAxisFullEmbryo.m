@@ -15,7 +15,7 @@ cleanupObj = onCleanup(@myCleanupFun);
 
 
 
-CorrectAxis = 1;
+CorrectAxis = true;
 optionalResults = '';
 
 for i=1:length(varargin)
@@ -24,7 +24,7 @@ for i=1:length(varargin)
             FlipAP=1;
         end
     elseif strcmp(varargin{i},'CorrectAxis')
-        CorrectAxis = 1;
+        CorrectAxis = true;
     elseif strcmp(varargin{i},'optionalResults')
         optionalResults = varargin{i+1};
     end

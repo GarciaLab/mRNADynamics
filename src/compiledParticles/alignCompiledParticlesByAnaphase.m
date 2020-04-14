@@ -1,4 +1,4 @@
-function alignCompiledParticlesByAnaphase(Prefix, fullEmbryo)
+function alignCompiledParticlesByAnaphase(Prefix)
 
 
 
@@ -6,8 +6,10 @@ function alignCompiledParticlesByAnaphase(Prefix, fullEmbryo)
     ~, ~, ~, ~, ~,~] = readMovieDatabase(Prefix);
 resultsFolder = [DropboxFolder, filesep, Prefix];
 
+fullEmbryoExists =  exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'], 'file');
+
 load([resultsFolder, filesep, 'CompiledParticles.mat']);
-if fullEmbryo
+if fullEmbryoExists
     try
         load([resultsFolder, filesep, 'APDivision.mat']);
     catch
@@ -20,7 +22,7 @@ end
 
 for ch = 1:length(CompiledParticles)
     for p = 1:length(CompiledParticles{ch})
-        if fullEmbryo
+        if fullEmbryoExists
             apdif = CompiledParticles{ch}(p).MedianAP - APbinID;
             [~, apbin] = min(apdif(apdif > 0));
             dvdif = CompiledParticles{ch}(p).MedianDV - DVbinID;
