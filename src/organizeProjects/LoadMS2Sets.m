@@ -7,18 +7,19 @@ function [Data, prefixes, resultsFolder,...
 %Loads all data sets of a certain type and outputs them into the structure
 %Data
 %
-%PARAMETERS
-%DataType: This is a string that is identical to the name of the tab in
-%dataStatus.xlsx that you wish to analyze.
+% PARAMETERS
+% DataType: This is a string that is identical to the name of the tab in
+% dataStatus.xlsx that you wish to analyze.
 %
-%OPTIONS
+% OPTIONS
 % 'noCompiledNuclei'
 % 'justprefixes'
 % 'LocalMovieDatabase' - use MovieDatabase in same local directory as
 % DataStatus file
+% 'dataStatusFolder', dataStatusFolder: 
 %
-%OUTPUT
-%Data: Returns the Data structure containing all of the relevant datasets from your
+% OUTPUT
+% Data: Returns the Data structure containing all of the relevant datasets from your
 %           DataType tab in dataStatus.xlsx
 % prefixes: List of prefixes associated with the tab
 % resultsFolder: location of the data
@@ -41,6 +42,7 @@ noCompiledNuclei = false;
 justprefixes = false;
 inputOutputFits = false;
 LocalMovieDatabase = false;
+dataStatusFolder = '';
 
 for i= 1:length(varargin)
     if strcmpi(varargin{i},'optionalResults')
@@ -59,6 +61,9 @@ for i= 1:length(varargin)
     if strcmpi(varargin{i}, 'LocalMovieDatabase')
         LocalMovieDatabase = true;
     end
+    if strcmpi(varargin{i}, 'dataStatusFolder')
+        dataStatusFolder = varargin{i+1};
+    end
 end
 
 %Get some of the default folders
@@ -66,23 +71,18 @@ end
     configValues, movieDatabasePath, movieDatabaseFolder, movieDatabase] =  DetermineLocalFolders;
 
 %Now, get a list of all possible other Dropbox folders
-DropboxRows=contains(configValues(:,1),'Dropbox');
+DropboxRows=contains(configValues(:,1),'Dropbox') | contains(configValues(:,1),'Results');
 DropboxFolders=configValues(DropboxRows,2);
 
 %Look in DataStatus.XLSX in each DropboxFolder and find the tab given by
 %the input variable DataType.
-DataStatusToCheck=[];
-DataStatusNames = {'DataStatus.*','Data Status.*'}; %Possible data status spreadsheet names
+DataStatusToCheck = [];
 for i=1:length(DropboxFolders)
-    DDataStatus=dir([DropboxFolders{i},filesep,DataStatusNames{1}]);
-    if isempty(DDataStatus)
-        DDataStatus=dir([DropboxFolders{i},filesep,DataStatusNames{2}]);
-    end
-    if length(DDataStatus)>1
-        error(['More than one DataStatus.XLS found in folder ',DropboxFolders{i}])
-    elseif length(DDataStatus)==1
+    currDataStatus = findDataStatus(DropboxFolders{i});
+    
+    if ~isemmpty(currDataStatus)
 %         [~,Sheets] = xlsfinfo([DropboxFolders{i},filesep,DDataStatus(1).name]);
-        Sheets = sheetnames([DropboxFolders{i},filesep,DDataStatus(1).name]);
+        Sheets = sheetnames([DropboxFolders{i},filesep,currDataStatusDir(1).name]);
         FindSheets=strcmpi(Sheets,DataType);
         if sum(FindSheets)==1
             DataStatusToCheck=[DataStatusToCheck,i];
