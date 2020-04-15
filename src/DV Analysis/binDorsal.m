@@ -65,9 +65,9 @@ for e = 1:length(Prefixes)
     if ~cpFlag
         schnitzcells = allData(e).Particles.schnitzcells;
         CompiledParticles = allData(e).Particles.CompiledParticles;
-        approvedIndices = [schnitzcells.Approved];
+        approvedSchnitzes = find([schnitzcells.Approved]);
         
-        for s = find(approvedIndices)
+        for s = approvedSchnitzes
             dif = schnitzcells(s).FluoFeature - dlfluobins;
             [~,dlfluobin] = min(dif(dif>0));
             if ~isempty(dlfluobin)
@@ -93,23 +93,30 @@ for e = 1:length(Prefixes)
         
     else
         load([resultsFolder,filesep,Prefixes{e},filesep,'compiledProject.mat'], 'compiledProject');
+        
         for s = 1:length(compiledProject)
+            
             dlfluo = compiledProject(s).dorsalFluoFeature;
+            
             if ~isnan(dlfluo)
                 allDorsal = [allDorsal, dlfluo];
             end
+            
             if ~strcmpi(DataType, '1Dg')
                 dif = dlfluo - dlfluobins;
             else
                 dif = (2*dlfluo) - dlfluobins;
             end
+            
             [~,dlfluobin] = min(dif(dif>0));
+            
             if ~isempty(dlfluobin)
                 compiledProject(s).dorsalFluoBin = single(dlfluobin);
                 dlfluobincounts(dlfluobin) = dlfluobincounts(dlfluobin) + 1;
             else
                 compiledProject(s).dorsalFluoBin = NaN;
             end
+            
         end
         
         save([resultsFolder,filesep,Prefixes{e},filesep,'compiledProject.mat'], 'compiledProject');

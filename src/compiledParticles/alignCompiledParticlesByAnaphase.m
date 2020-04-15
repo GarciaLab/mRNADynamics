@@ -40,7 +40,11 @@ for ch = 1:length(CompiledParticles)
             CompiledParticles{ch}(p).dvbin = dvbin;
         end
         
+        try
         CompiledParticles{ch}(p).cycle = nc;
+        catch
+           CompiledParticles{ch}(p).cycle = CompiledParticles{ch}(p).nc;
+        end
         
     end
 end

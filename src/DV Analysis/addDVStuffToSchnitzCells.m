@@ -32,17 +32,18 @@ for e = 1:length(allData)
     
     load([resultsFolder,filesep,Prefixes{e},filesep,'FrameInfo.mat'], 'FrameInfo')
     
-    ncFrames = [zeros(1,8), allData(e).Particles.nc9, allData(e).Particles.nc10, allData(e).Particles.nc11, allData(e).Particles.nc12, allData(e).Particles.nc13, allData(e).Particles.nc14];
+    ncFrames = [zeros(1,8), allData(e).Particles.nc9,...
+        allData(e).Particles.nc10, allData(e).Particles.nc11,...
+        allData(e).Particles.nc12, allData(e).Particles.nc13,...
+        allData(e).Particles.nc14];
     
     schnitzcells = allData(e).Particles.schnitzcells;
-    time = [FrameInfo.Time]/60; %frame times in minutes
     
     
     %to speed this up, remove unnecessary schnitzcells fields
     schnitzcells = removeSchnitzcellsFields(schnitzcells);
     
     CompiledParticles = allData(e).Particles.CompiledParticles;
-    DVbinID = allData(1).Particles.DVbinID;
     Ellipses = allData(e).Particles.Ellipses;
     
     
@@ -53,26 +54,33 @@ for e = 1:length(allData)
     
     
     for p = 1:length(CompiledParticles{ch})
+        
         schnitzInd = CompiledParticles{ch}(p).schnitz;
+        
+        %not sure where the misassignment to compileparticles happens
+        
+        assert(schnitzInd < length(schnitzcells));
+        
         schnitzcells(schnitzInd).compiledParticle = uint16(p);
         
         if isfield(CompiledParticles{ch}(p), 'dvbin')
-            schnitzcells(schnitzInd).dvbin = uint8(CompiledParticles{ch}(p).dvbin);
+            schnitzcells(schnitzInd).dvbin = ...
+                uint8(CompiledParticles{ch}(p).dvbin);
         end
     end
     
     
     
-    ncs = [zeros(1,8),allData(e).Particles.nc9, allData(e).Particles.nc10, allData(e).Particles.nc11,...
-        allData(e).Particles.nc12, allData(e).Particles.nc13, allData(e).Particles.nc14];
-    
-    nFrames = length(allData(e).Particles.ElapsedTime);
+    ncs = [zeros(1,8),allData(e).Particles.nc9,...
+        allData(e).Particles.nc10, allData(e).Particles.nc11,...
+        allData(e).Particles.nc12, allData(e).Particles.nc13,...
+        allData(e).Particles.nc14];
     
     
     for s = 1:length(schnitzcells)
         midFrame = ceil(length(schnitzcells(s).frames)/2);
         dif = double(schnitzcells(s).frames(midFrame)) - ncs;
-        cycle = max(find(dif>0));
+        cycle = find(dif>0, 1, 'last' );
         schnitzcells(s).cycle = uint8(cycle);
     end
     
@@ -81,12 +89,13 @@ for e = 1:length(allData)
     %do some general QC filtering
     schnitzcells = filterSchnitz(schnitzcells, imSize);
     
-    %do some dv specific filtering
-    schnitzcells = filterSchnitzFurther(schnitzcells);
+    %do some dv specific filtering on the approved schnitzes
+    schnitzcells = filterSchnitzFurther(...
+        schnitzcells([schnitzcells.Approved]));
     
-    approvedIndices = [schnitzcells.Approved];
+    approvedSchnitzes = find([schnitzcells.Approved]);
     
-    for s = find(approvedIndices)
+    for s = approvedSchnitzes
         
         schnitzcells(s).FluoTimeTrace = single(ExtractDlFluo(schnitzcells(s).Fluo, .5));
         
@@ -98,11 +107,8 @@ for e = 1:length(allData)
         midCycleFrame = find(schnitzcells(s).frames==midCycle);
         schnitzcells(s).midCycleFrame = find(schnitzcells(s).frames==midCycle);
         
-        %         try
         schnitzcells(s).FluoTimeTraceSmooth = smooth(single(ExtractDlFluo(schnitzcells(s).Fluo, .5)), 5);
-        %         catch
-        %             schnitzcells(s).FluoTimeTraceSmooth = smooth(single(ExtractDlFluo(schnitzcells(s).Fluo, .5)));
-        %         end
+        
         if schnitzcells(s).cycle ~= 14
             midCycleSmooth = floor((ncs(schnitzcells(s).cycle) + ncs(schnitzcells(s).cycle+1))/2);
         else
@@ -148,6 +154,13 @@ for e = 1:length(allData)
         
     end
     
+    save([resultsFolder,filesep,Prefixes{e},filesep,Prefixes{e},'_lin.mat'], 'schnitzcells');
+    save([resultsFolder,filesep,Prefixes{e},filesep,'Ellipses.mat'], 'Ellipses');
+    
+    
+    
+    
+    
     if displayFigures && saveFigures
         mkdir([resultsFolder, filesep, DataType]);
         
@@ -160,13 +173,9 @@ for e = 1:length(allData)
         saveas(holdFig, [resultsFolder,filesep,DataType, filesep, 'allDorsalTraces.eps']);
     end
     
-    save([resultsFolder,filesep,Prefixes{e},filesep,Prefixes{e},'_lin.mat'], 'schnitzcells');
-    save([resultsFolder,filesep,Prefixes{e},filesep,'Ellipses.mat'], 'Ellipses');
+    
     
 end
 
-%%
-
-binDorsal(DataType);
 
 end
