@@ -4,13 +4,19 @@ function dorsalResults = compileAllProjects(DataType)
 
 compiledProjects = cell(1, length(prefixes));
 for k = 1:length(prefixes)
-    CompileParticles(prefixes{k},  'minBinSize', 0, 'MinParticles', 0, 'yToManualAlignmentPrompt');
-    addDVStuffToSchnitzCells(DataType)
+    TrackmRNADynamics(prefixes{k}, 'noretrack');
+    CompileParticles(prefixes{k},  'minBinSize', 0, 'MinParticles', 0,...
+        'yToManualAlignmentPrompt');
     alignCompiledParticlesByAnaphase(prefixes{k});
-    compiledProjects{k} = makeCompiledProject(prefixes{k});
 end
 
-binDorsal(DataType, true)
+addDVStuffToSchnitzCells(DataType)
+
+binDorsal(DataType, false)
+
+for k = 1:length(prefixes)
+    compiledProjects{k} = makeCompiledProject(prefixes{k});
+end
 
 dorsalResults = plotFracByDlFluo2(DataType); 
 

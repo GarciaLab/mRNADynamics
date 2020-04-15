@@ -218,7 +218,8 @@ while (cc~='x')
                 end
             end
             if schnitzInd ~=0
-                set(PlotHandle{k}, 'StripeColor', clrmp(schnitzInd, :), 'Color', clrmp(schnitzInd, :),'Linewidth', 2);
+                set(PlotHandle{k}, 'StripeColor', clrmp(schnitzInd, :),...
+                    'Color', clrmp(schnitzInd, :),'Linewidth', 2);
             else
                 set(PlotHandle{k}, 'StripeColor', 'w', 'Color', 'w','Linewidth', 2);
             end

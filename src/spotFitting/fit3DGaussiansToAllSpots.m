@@ -17,6 +17,11 @@ for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'displayFigures')
         displayFigures = true;
     elseif strcmpi(varargin{i}, 'segmentSpots')
+        
+        %in the future, this should just be
+        %replaced with a call to dbstack to check
+        %if the caller is segmentSpots
+       
         Spots = varargin{i+1};
         segmentSpots = true;
     elseif strcmpi(varargin{i}, 'optionalResults')

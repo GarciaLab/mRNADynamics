@@ -67,7 +67,7 @@ for s = 1:nNuclei
             tempSchnitzcells(newInd).deleteMe = false;
             
             if isfield(tempSchnitzcells, 'len')
-                tempSchnitzcells(newInd).len = sc.len(newFrames, :);
+                tempSchnitzcells(newInd).len = sc.len(newFrames);
             end
             
             if isfield(tempSchnitzcells, 'Fluo')

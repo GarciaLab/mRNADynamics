@@ -1,8 +1,7 @@
-function binDorsal(DataType, varargin)
+function binDorsal(DataType, cpFlag)
 
-cpFlag = false;
-if ~isempty(varargin)
-    cpFlag = true;
+if nargin < 2
+    cpFlag = false;
 end
 
 
@@ -68,6 +67,7 @@ for e = 1:length(Prefixes)
         approvedSchnitzes = find([schnitzcells.Approved]);
         
         for s = approvedSchnitzes
+            
             dif = schnitzcells(s).FluoFeature - dlfluobins;
             [~,dlfluobin] = min(dif(dif>0));
             if ~isempty(dlfluobin)
@@ -76,6 +76,7 @@ for e = 1:length(Prefixes)
             else
                 schnitzcells(s).dorsalFluoBin = NaN;
             end
+            
         end
         
         

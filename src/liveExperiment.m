@@ -170,9 +170,7 @@ classdef liveExperiment
             obj.spotChannels = getCoatChannel(Channel1, Channel2, Channel3);
             
             obj.anaphaseFrames = retrieveAnaphaseFrames(obj.Prefix, obj.userResultsFolder);
-            if numel(obj.anaphaseFrames) < 6
-                obj.anaphaseFrames = vertcat(obj.anaphaseFrames, nan(6-numel(obj.anaphaseFrames), 1));
-            end
+            
             obj.nc9 = obj.anaphaseFrames(1);
             obj.nc10 = obj.anaphaseFrames(2);
             obj.nc11 = obj.anaphaseFrames(3);

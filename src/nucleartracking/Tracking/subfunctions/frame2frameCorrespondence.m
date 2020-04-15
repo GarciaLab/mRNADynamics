@@ -84,6 +84,8 @@ mappedNuc1 = [];
 mappedNuc2 = [];
 
 
+% manualMapping = [];
+
 %% 5. If manual data is provided, set them first.
 if exist('manualMapping','var') && ~isempty(manualMapping)
     ind0 = find(manualMapping < 0); % Values below 0 enforce nuclei not to be mapped to anything on the next frame.

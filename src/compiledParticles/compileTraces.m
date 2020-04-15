@@ -224,10 +224,13 @@ for ChN=1:NChannels
                 
                 if HistoneChannel
                     CompiledParticles{ChN}(k).Nucleus=Particles{ChN}(i).Nucleus;
+                    
                     %We have two fields with the same information:
                     %"Nucleus" and "schnitz". In future versions we'll get rid of
                     %"Nucleus"
                     CompiledParticles{ChN}(k).schnitz=Particles{ChN}(i).Nucleus;
+                    
+                    assert(CompiledParticles{ChN}(k).schnitz <= length(schnitzcells));
                     
                     %Save lineage information in terms of particles
                     if isfield(schnitzcells, 'P')

@@ -1,4 +1,4 @@
-function CompileParticles(varargin)
+function CompiledParticles = CompileParticles(varargin)
 % CompileParticles(varargin)
 %
 % DESCRIPTION
