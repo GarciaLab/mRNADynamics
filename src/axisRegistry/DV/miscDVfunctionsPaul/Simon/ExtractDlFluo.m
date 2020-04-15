@@ -37,6 +37,13 @@ function FluoTimeTrace = extractDorsalFluo(FluoMatrix, Thresh)
 %% Fit fluo(z) to a parabola, plot the data and the fit
 
 %FluoMatrix = schnitzcells(1086).Fluo;
+
+FluoTimeTrace = [];
+
+if isempty(FluoMatrix)
+    return;
+end
+
 Frames = size(FluoMatrix,1);
 
 for f = 1:Frames

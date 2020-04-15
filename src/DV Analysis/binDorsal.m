@@ -65,8 +65,9 @@ for e = 1:length(Prefixes)
     if ~cpFlag
         schnitzcells = allData(e).Particles.schnitzcells;
         CompiledParticles = allData(e).Particles.CompiledParticles;
-
-        for s = 1:length(schnitzcells)
+        approvedIndices = [schnitzcells.Approved];
+        
+        for s = find(approvedIndices)
             dif = schnitzcells(s).FluoFeature - dlfluobins;
             [~,dlfluobin] = min(dif(dif>0));
             if ~isempty(dlfluobin)
@@ -76,22 +77,24 @@ for e = 1:length(Prefixes)
                 schnitzcells(s).dorsalFluoBin = NaN;
             end
         end
-
-
+        
+        
         save([resultsFolder,filesep,Prefixes{e},filesep,Prefixes{e},'_lin.mat'], 'schnitzcells')
         
         ch=1;
         for p = 1:length(CompiledParticles{ch})
             schnitzInd = CompiledParticles{ch}(p).schnitz;
-            CompiledParticles{ch}(p).dorsalFluoBin = single(schnitzcells(schnitzInd).dorsalFluoBin);
+            if schnitzcells(schnitzInd).Approved
+                CompiledParticles{ch}(p).dorsalFluoBin = single(schnitzcells(schnitzInd).dorsalFluoBin);
+            end
         end
-
+        
         save([resultsFolder,filesep,Prefixes{e},filesep,'CompiledParticles.mat'], 'CompiledParticles', '-append');
         
     else
         load([resultsFolder,filesep,Prefixes{e},filesep,'compiledProject.mat'], 'compiledProject');
-         for s = 1:length(compiledProject)
-             dlfluo = compiledProject(s).dorsalFluoFeature;
+        for s = 1:length(compiledProject)
+            dlfluo = compiledProject(s).dorsalFluoFeature;
             if ~isnan(dlfluo)
                 allDorsal = [allDorsal, dlfluo];
             end
@@ -107,13 +110,13 @@ for e = 1:length(Prefixes)
             else
                 compiledProject(s).dorsalFluoBin = NaN;
             end
-         end
-         
-         save([resultsFolder,filesep,Prefixes{e},filesep,'compiledProject.mat'], 'compiledProject');
-
+        end
+        
+        save([resultsFolder,filesep,Prefixes{e},filesep,'compiledProject.mat'], 'compiledProject');
+        
     end
 end
-% 
+%
 % sortedDorsal = sort(allDorsal);
 % figure
 % bar(sortedDorsal)

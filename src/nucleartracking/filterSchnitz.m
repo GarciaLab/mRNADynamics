@@ -1,7 +1,7 @@
 function schnitzcells = filterSchnitz(schnitzcells, imSize)
 
 % Disapprove spurious nuclei that are too near edges
-% and don't last long. 
+% and don't last long.
 
 %% time thresholding
 lengths = {[], [], []};
@@ -41,21 +41,21 @@ for s = 1:length(schnitzcells)
             
             schnitzcells(s).FrameApproved(f) = false;
         else
-             schnitzcells(s).FrameApproved(f) = true;           
+            schnitzcells(s).FrameApproved(f) = true;
         end
         
     end
     
     for nc = 12:14
         if schnitzcells(s).cycle == nc &&...
-            length(schnitzcells(s).frames) < frameCutoff(nc-11)      
+                length(schnitzcells(s).frames) < frameCutoff(nc-11)
             schnitzcells(s).Approved = false;
         else
             schnitzcells(s).Approved = true;
         end
     end
     
-    %disapprove an entire nucleus if less than half the frames are good. 
+    %disapprove an entire nucleus if less than half the frames are good.
     if sum(schnitzcells(s).FrameApproved) < .5*length(schnitzcells(s).frames)
         schnitzcells(s).Approved = false;
     else

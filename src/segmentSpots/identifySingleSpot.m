@@ -1,5 +1,5 @@
 
-function [temp_particles, Fits] = identifySingleSpot(particle_index, image, image_label, dog_image, searchRadius, snippet_size, ...
+function Fits = identifySingleSpot(particle_index, image, image_label, dog_image, searchRadius, snippet_size, ...
     pixelSize, show_status, graphicsHandles, microscope, addition, forced_centroid, ml_string, currentFrame, spotIndex, zIndex)
 % identifySingleSpot(awholelot)
 %
@@ -12,7 +12,7 @@ function [temp_particles, Fits] = identifySingleSpot(particle_index, image, imag
 % This is a massive list that, honestly, just needs to be refactored. (AR)
 %
 % OUTPUT
-% tempParticles:  Returns a structure containing properties of the
+% tFits:  Returns a structure containing properties of the
 %                 transcriptional locus such as the intensity, size, position, etc.
 %
 % Author (contact): Armando Reimer (areimer@berkeley.edu)
@@ -24,14 +24,14 @@ function [temp_particles, Fits] = identifySingleSpot(particle_index, image, imag
 
 Fits = [];
 
-ML = 0;
+ML = false;
 if strcmp(ml_string, 'ML')
-    ML = 1;
+    ML = true;
 end
 
-doCyl = 0;
+doCyl = false;
 if iscell(image)
-    doCyl = 1;
+    doCyl = true;
     imageAbove = image{2};
     imageBelow = image{3};
     image = image{1};
@@ -62,12 +62,8 @@ for y = 1:2*searchRadius
                 possible_centroid_intensity(y,x) = sum(sum(image(row-searchRadius+y, col-searchRadius+x)));
             else
                 if addition(1) || round(pixelSize)~=212
-                    %                         possible_centroid_intensity(i,j) = sum(sum(image(row-2*searchRadius+i:row+i,...
-                    %                             col-2*searchRadius+j:col+j)));
-                    possible_centroid_intensity(y,x) = sum(sum(image(row-searchRadius+y, col-searchRadius+x)));
+                                possible_centroid_intensity(y,x) = sum(sum(image(row-searchRadius+y, col-searchRadius+x)));
                 else
-                    %using the max pixel value will be wrong in some cases. integral
-                    %would be better
                     possible_centroid_intensity(y,x) = sum(sum(image(row-searchRadius+y, col-searchRadius+x)));
                 end
             end
@@ -79,7 +75,6 @@ clear row;
 clear col;
 
 %Compute some preliminary properties of the located spots
-temp_particles = {[]};
 
 if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)) ~= 0
     
@@ -229,12 +224,7 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
                     rethrow(exceptionMaxDOG);
                 end
             end
-            
-            temp_particles = {{fixedAreaIntensity, spot_x, spot_y, offset, snippet, ...
-                gaussianArea, sigma_x, sigma_y, centroid_y, centroid_x, gaussianIntensity,intensity,...
-                max_dog, snippet_mask, sigma_x2, sigma_y2, relative_errors, confidence_intervals, gaussian, mesh,fits, maskArea, fixedAreaIntensityCyl3}};
-            
-            
+                        
             Fits.FixedAreaIntensity = single(fixedAreaIntensity);
             Fits.xFit = single(spot_x);
             Fits.yFit = single(spot_y);
@@ -257,7 +247,6 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
             Fits.brightestZ =[];
             Fits.snippet_size = uint8(snippet_size);
         else
-            temp_particles = {{}};
             Fits = [];
         end
         

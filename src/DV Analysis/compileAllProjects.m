@@ -4,7 +4,7 @@ function dorsalResults = compileAllProjects(DataType)
 
 compiledProjects = cell(1, length(prefixes));
 for k = 1:length(prefixes)
-    CompileParticles(prefixes{k}, 'SkipAll', 'ApproveAll', 'minBinSize', 0, 'MinParticles', 0, 'yToManualAlignmentPrompt');
+    CompileParticles(prefixes{k},  'minBinSize', 0, 'MinParticles', 0, 'yToManualAlignmentPrompt');
     addDVStuffToSchnitzCells(DataType)
     alignCompiledParticlesByAnaphase(prefixes{k});
     compiledProjects{k} = makeCompiledProject(prefixes{k});

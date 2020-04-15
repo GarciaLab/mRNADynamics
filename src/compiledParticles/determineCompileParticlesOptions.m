@@ -10,10 +10,10 @@ varargin = varargin{1};
 %Look at the input parameters and use defaults if missing
 Prefix='';
 ForceAP=false;      %Force AP detection even if it's already there
-SkipTraces=false;   %Do not output the individual traces.
-SkipFluctuations=false;  %Do not generate the plots of correlations of fluctuations and offset
-SkipFits=false;         %Do not run and savegenerate the 
-SkipMovie=false;        %Do not generate the movie
+SkipTraces=true;   %Do not output the individual traces.
+SkipFluctuations=true;  %Do not generate the plots of correlations of fluctuations and offset
+SkipFits=true;        %Do not run and savegenerate the 
+SkipMovie=true;        %Do not generate the movie
 SkipAll=true;         %Do not do other things 
 ApproveAll= true;       %Only use manually approved particles
 MinParticles=4;

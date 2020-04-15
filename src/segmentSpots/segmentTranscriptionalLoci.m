@@ -27,11 +27,6 @@ haveProbs = any(cellfun(@(x) contains(x, 'prob'), {dogDir.name}));
 %stacks won't be indexed by _z
 haveStacks = any(cellfun(@(x) ~contains(x, '_z'), {dogDir.name}));
 
-% havePlanes = any(cellfun(@(x) contains(x, '_z'), {dogDir.name}));
-% haveMats = any(cellfun(@(x) contains(x, '.mat'), {dogDir.name}));
-% haveTifs = any(cellfun(@(x) contains(x, '.tif'), {dogDir.name}));
-% haveDogPlanes = any(cellfun(@(x) contains(x, 'dog_'), {dogDir.name}));
-
 waitbarFigure = waitbar(0, 'Segmenting spots');
 set(waitbarFigure, 'units', 'normalized', 'position', [0.4, .15, .25,.1]);
 
@@ -66,8 +61,7 @@ else
     
     if haveStacks
         dogStr = 'dogStack_';
-    else
-        
+    else      
         dogStr = 'DOG_';
     end
 end
@@ -80,10 +74,10 @@ if filterMovieFlag
     filterType = 'Difference_of_Gaussian_3D';
     sigmas = {round(200/thisExperiment.pixelSize_nm),...
         round(800/thisExperiment.pixelSize_nm)};
-    filterOpts = {'nWorkers', 1, 'highPrecision', 'customFilter', filterType,...
+    filterOpts = {'nWorkers', 1, 'highPrecision',...
+         'noSave', 'customFilter', filterType,...
         sigmas, 'double', 'keepPool', gpu};
-    if saveAsMat, filterOpts = [filterOpts, 'saveAsMat'];
-    else, filterOpts = [filterOpts, 'noSave']; end
+  
     [~, dogs] = filterMovie(Prefix,'optionalResults', resultsFolder, filterOpts{:});
 end
 
@@ -213,17 +207,17 @@ parfor currentFrame = initialFrame:lastFrame
         [im_label, n_spots] = bwlabel(im_thresh);
         centroids = regionprops(im_thresh, 'centroid');
         
-        temp_particles = cell(1, n_spots);
         
         if n_spots ~= 0
             
             for spotIndex = 1:n_spots
                 centroid = round(centroids(spotIndex).Centroid);
                 
-                [temp_particles(spotIndex), Fits] = identifySingleSpot(spotIndex,...
+                 Fits = identifySingleSpot(spotIndex,...
                     {im,imAbove,imBelow}, im_label, dog, ...
                     neighborhood, snippet_size, pixelSize_nm, shouldDisplayFigures,...
-                    graphicsHandles, microscope, 0, centroid,MLFlag, currentFrame, spotIndex, zIndex);
+                    graphicsHandles, microscope, 0,...
+                    centroid,MLFlag, currentFrame, spotIndex, zIndex);
                 
                 Spots(currentFrame).Fits = [Spots(currentFrame).Fits, Fits];
                 

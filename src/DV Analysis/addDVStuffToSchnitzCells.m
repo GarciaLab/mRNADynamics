@@ -1,4 +1,5 @@
-function [dlfluobins, dlfluobincounts] = addDVStuffToSchnitzCells(DataType, varargin)
+function [dlfluobins, dlfluobincounts] =...
+    addDVStuffToSchnitzCells(DataType, varargin)
 %%
 displayFigures = false;
 saveFigures = false;
@@ -31,12 +32,12 @@ for e = 1:length(allData)
     
     load([resultsFolder,filesep,Prefixes{e},filesep,'FrameInfo.mat'], 'FrameInfo')
     
-    ncFrames = [zeros(1,8), allData(e).Particles.nc9, allData(e).Particles.nc10, allData(e).Particles.nc11, allData(e).Particles.nc12, allData(e).Particles.nc13, allData(e).Particles.nc14]; 
-
-    schnitzcells = allData(e).Particles.schnitzcells;
-    time = [FrameInfo.Time]/60; %frame times in minutes 
+    ncFrames = [zeros(1,8), allData(e).Particles.nc9, allData(e).Particles.nc10, allData(e).Particles.nc11, allData(e).Particles.nc12, allData(e).Particles.nc13, allData(e).Particles.nc14];
     
-
+    schnitzcells = allData(e).Particles.schnitzcells;
+    time = [FrameInfo.Time]/60; %frame times in minutes
+    
+    
     %to speed this up, remove unnecessary schnitzcells fields
     schnitzcells = removeSchnitzcellsFields(schnitzcells);
     
@@ -49,7 +50,7 @@ for e = 1:length(allData)
     for s = 1:length(schnitzcells)
         schnitzcells(s).compiledParticle = [];
     end
-        
+    
     
     for p = 1:length(CompiledParticles{ch})
         schnitzInd = CompiledParticles{ch}(p).schnitz;
@@ -76,15 +77,19 @@ for e = 1:length(allData)
     end
     
     schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, ncFrames);
-
+    
+    %do some general QC filtering
     schnitzcells = filterSchnitz(schnitzcells, imSize);
     
+    %do some dv specific filtering
+    schnitzcells = filterSchnitzFurther(schnitzcells);
     
-    for s = 1:length(schnitzcells)
-        if ~isfield('schnitzcells', 'Fluo')
-            integrateSchnitzFluo(Prefixes{e}); 
-        end
+    approvedIndices = [schnitzcells.Approved];
+    
+    for s = find(approvedIndices)
+        
         schnitzcells(s).FluoTimeTrace = single(ExtractDlFluo(schnitzcells(s).Fluo, .5));
+        
         if schnitzcells(s).cycle ~= 14
             midCycle = floor((ncs(schnitzcells(s).cycle) + ncs(schnitzcells(s).cycle+1))/2);
         else
@@ -93,18 +98,18 @@ for e = 1:length(allData)
         midCycleFrame = find(schnitzcells(s).frames==midCycle);
         schnitzcells(s).midCycleFrame = find(schnitzcells(s).frames==midCycle);
         
-%         try
-            schnitzcells(s).FluoTimeTraceSmooth = smooth(single(ExtractDlFluo(schnitzcells(s).Fluo, .5)), 5);
-%         catch
-%             schnitzcells(s).FluoTimeTraceSmooth = smooth(single(ExtractDlFluo(schnitzcells(s).Fluo, .5)));
-%         end
+        %         try
+        schnitzcells(s).FluoTimeTraceSmooth = smooth(single(ExtractDlFluo(schnitzcells(s).Fluo, .5)), 5);
+        %         catch
+        %             schnitzcells(s).FluoTimeTraceSmooth = smooth(single(ExtractDlFluo(schnitzcells(s).Fluo, .5)));
+        %         end
         if schnitzcells(s).cycle ~= 14
             midCycleSmooth = floor((ncs(schnitzcells(s).cycle) + ncs(schnitzcells(s).cycle+1))/2);
         else
             midCycleSmooth = 1;
         end
         midCycleFrameSmooth = find(schnitzcells(s).frames==midCycleSmooth);
-           
+        
         
         %different characterizations of intensity
         schnitzcells(s).fluoMid= single(schnitzcells(s).FluoTimeTrace(midCycleFrame)); %middle fluorescence
@@ -112,41 +117,34 @@ for e = 1:length(allData)
         
         schnitzcells(s).FluoFeature =  schnitzcells(s).fluoMid; %the preferred intensity
         
-        
-        
-        
-        
-        
         if isempty(schnitzcells(s).FluoFeature)
             schnitzcells(s).FluoFeature = NaN;
         end
         
-        if schnitzcells(s).Approved
+        
+        fluoFeatures = [fluoFeatures, schnitzcells(s).FluoFeature];
+        
+        if displayFigures && schnitzcells(s).cycle == 12 && ~isnan(schnitzcells(s).FluoFeature)
             
-            fluoFeatures = [fluoFeatures, schnitzcells(s).FluoFeature];
+            figure(tileFig)
+            nexttile;
+            plot(schnitzcells(s).frames, schnitzcells(s).FluoTimeTrace, '-k');
+            hold on
+            plot(midCycle, schnitzcells(s).FluoFeature, 'ob');
+            hold off
+            xticks([]);
+            yticks([round(min(schnitzcells(s).FluoTimeTrace)), round(max(schnitzcells(s).FluoTimeTrace))]);
+            %                 ylim([0, 3000]);
             
-            if displayFigures && schnitzcells(s).cycle == 12 && ~isnan(schnitzcells(s).FluoFeature)
-                
-                figure(tileFig)
-                nexttile;
-                plot(schnitzcells(s).frames, schnitzcells(s).FluoTimeTrace, '-k');
-                hold on
-                plot(midCycle, schnitzcells(s).FluoFeature, 'ob');
-                hold off
-                xticks([]);
-                yticks([round(min(schnitzcells(s).FluoTimeTrace)), round(max(schnitzcells(s).FluoTimeTrace))]);
-%                 ylim([0, 3000]);
-                
-                figure(holdFig)
-                plot(1:length(schnitzcells(s).FluoTimeTrace), schnitzcells(s).FluoTimeTrace, '-k');
-                hold on
-                plot(midCycleFram, schnitzcells(s).FluoFeature, 'ob');
-%                 ylim([0, 3000]);
-                
-                
-            end
+            figure(holdFig)
+            plot(1:length(schnitzcells(s).FluoTimeTrace), schnitzcells(s).FluoTimeTrace, '-k');
+            hold on
+            plot(midCycleFram, schnitzcells(s).FluoFeature, 'ob');
+            %                 ylim([0, 3000]);
+            
             
         end
+        
         
     end
     

@@ -30,22 +30,24 @@ cmap = single(summer(nPlots));
 cmap2 = single(spring(1));
 
 dorsalResults = dorsalResults{nc-11};
-x = dorsalResults.dorsalFluoBins;
+dorsalFluoBins = dorsalResults.dorsalFluoBins;
 
-y = dorsalResults.fracFluoEmbryo;
-ymean = dorsalResults.meanFracFluoEmbryo;
-se = dorsalResults.seFracFluoEmbryo;
+dorsalActivity = dorsalResults.fracFluoEmbryo;
+dorsalActivity_mean = dorsalResults.meanFracFluoEmbryo;
+dorsalActivity_SE = dorsalResults.seFracFluoEmbryo;
 
 %%
 
 for plotIndex = 1:nPlots
     
-    plotScatter = plotIndex == 1;
+    %the data gets a scatter plot and 
+    %fits get a line plot
+    shouldPlotScatter= plotIndex == 1;
     
     param= paramSearch(plotIndex);
     
-    plotDorsalActivity(x, y,activityType, nc,...
-        dataType, ymean, se, plotScatter,...
+    plotDorsalActivity(dorsalFluoBins, dorsalActivity,activityType, nc,...
+        dataType, dorsalActivity_mean, dorsalActivity_SE, shouldPlotScatter,...
         'modelType', modelType,...
         'fix1', R, 'fix4', 0, 'fix5', param);
     
