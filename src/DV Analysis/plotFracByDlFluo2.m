@@ -1,4 +1,4 @@
-function dorsalResults = plotFracByDlFluo2(DataType, varargin)
+function dorsalResults = createDorsalResults(DataType, varargin)
 
 displayTiles = false;
 
@@ -175,6 +175,6 @@ end
 %     end
 % end
 
-save([resultsFolder,filesep,DataType,filesep,'dorsalResults.mat'], 'dorsalResults', '-v7.3')
+save([resultsFolder,filesep,DataType,filesep,'dorsalResults.mat'], 'dorsalResults', '-v6')
 
 end

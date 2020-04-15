@@ -57,7 +57,7 @@ for j = 1:length(activities)
         if j == 1
             compileAllProjects(dataTypes{i})
         end
-        plotFracByDlFluo2(dataTypes{i}, activities{j});
+        createDorsalResults(dataTypes{i}, activities{j});
 %         xlim([0, 3000])
         if i == 1
             ax1dg =gca;

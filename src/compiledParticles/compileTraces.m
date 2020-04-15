@@ -6,7 +6,7 @@ function [Particles, CompiledParticles, ncFilter, ncFilterID] =...
     Spots, SkipTraces, ncFilterID, ncFilter, ...
     ElapsedTime, Ellipses, EllipsePos, PreProcPath, ...
     FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits,...
-    edgeWidth, pixelSize, coatChannels, fullEmbryo)
+    edgeWidth, pixelSize_nm, coatChannels, fullEmbryoExists, thisExperiment)
 
 %COMPILETRACES Summary of this function goes here
 %   Detailed explanation goes here
@@ -21,8 +21,10 @@ nc12 = anaphaseFrames(4); nc13 = anaphaseFrames(5); nc14 = anaphaseFrames(6);
 
 NDigits = thisExperiment.nDigits;
 
-pixelSize = pixelSize * 1000; %nm
-SnippetSize = 2 * (floor(1300 / (2 * pixelSize))) + 1; % nm. note that this is forced to be odd
+DropboxFolder = thisExperiment.userResultsFolder;
+PreProcPath = thisExperiment.userPreFolder;
+pixelSize_nm = thisExperiment.pixelSize_nm;
+SnippetSize = 2 * (floor(1300 / (2 * pixelSize_nm))) + 1; % nm. note that this is forced to be odd
 
 NChannels = length(coatChannels);
 
@@ -85,7 +87,7 @@ for ChN=1:NChannels
             
             %See if this particle is in one of the approved AP bins
             try
-                if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV') && fullEmbryo
+                if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV') && fullEmbryoExists
                     CurrentAPbin=max(find(APbinID<mean(Particles{ChN}(i).APpos(FrameFilter))));
                     if isnan(APbinArea(CurrentAPbin))
                         AnalyzeThisParticle=0;
@@ -115,13 +117,13 @@ for ChN=1:NChannels
                 %CompiledParticles{ChN}(k).DVpos=Particles{ChN}(i).DVpos(FrameFilter);
                 CompiledParticles{ChN}(k).FrameApproved = Particles{ChN}(i).FrameApproved;
                 
-                if strcmpi(ExperimentAxis,'AP') && fullEmbryo
+                if strcmpi(ExperimentAxis,'AP') && fullEmbryoExists
                     CompiledParticles{ChN}(k).APpos=Particles{ChN}(i).APpos(FrameFilter);
                     
                     %Determine the particles average and median AP position
                     CompiledParticles{ChN}(k).MeanAP=mean(Particles{ChN}(i).APpos(FrameFilter));
                     CompiledParticles{ChN}(k).MedianAP=median(Particles{ChN}(i).APpos(FrameFilter));
-                elseif strcmpi(ExperimentAxis,'DV') && fullEmbryo %&isfield(Particles,'APpos')
+                elseif strcmpi(ExperimentAxis,'DV') && fullEmbryoExists %&isfield(Particles,'APpos')
                     %AP information:
                     CompiledParticles{ChN}(k).APpos=Particles{ChN}(i).APpos(FrameFilter);
                     CompiledParticles{ChN}(k).MeanAP=mean(Particles{ChN}(i).APpos(FrameFilter));
@@ -138,7 +140,7 @@ for ChN=1:NChannels
                 %found. If there is no nucleus (like when a particle survives
                 %past the nuclear division) we will still use the actual particle
                 %position.
-                if HistoneChannel&strcmpi(ExperimentAxis,'AP') && fullEmbryo
+                if HistoneChannel&strcmpi(ExperimentAxis,'AP') && fullEmbryoExists
                     %Save the original particle position
                     CompiledParticles{ChN}(k).APposParticle=CompiledParticles{ChN}(k).APpos;
                     
@@ -510,8 +512,8 @@ for ChN=1:NChannels
                                 zTrace=z(CompiledParticles{ChN}(k).Index(j));
                             end
                                 try
-                            Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                                FilePrefix,iIndex(CompiledParticles{ChN}(k).Frame(j),NDigits),'_z',iIndex(zTrace,2),...
+                            Image=imread([PreProcPath,filesep,Prefix,filesep,...
+                                Prefix,'_',iIndex(CompiledParticles{ChN}(k).Frame(j),NDigits),'_z',iIndex(zTrace,2),...
                                 '_ch',iIndex(coatChannels(ChN),2),'.tif']);
                            
                             [ImRows,ImCols]=size(Image);

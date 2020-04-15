@@ -12,7 +12,7 @@ for j = 1:length(activities)
 %             compileAllProjects(dataTypes{i})
 % %             binDorsal(dataTypes{i}, true)
         end
-        plotFracByDlFluo2(dataTypes{i}, activities{j});
+        createDorsalResults(dataTypes{i}, activities{j});
         if i == 1
             ax1 =gca;
             for k = 1:length(ax1.Children)

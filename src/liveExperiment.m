@@ -97,10 +97,12 @@ classdef liveExperiment
             %most time-consuming part of
             %project initialization and the output
             %is not memory intensive
-            memoizedDetermineLocalFolders = memoize(@DetermineLocalFolders);
-            
-            [rawPath, ProcPath, DropboxFolder, obj.MS2CodePath, PreProcPath,...
-                ~, ~, ~, movieDatabase]= memoizedDetermineLocalFolders(obj.Prefix);
+%             memoizedDetermineLocalFolders = memoize(@DetermineLocalFolders);
+%             [rawPath, ProcPath, DropboxFolder, obj.MS2CodePath, PreProcPath,...
+%                 ~, ~, ~, movieDatabase]= memoizedDetermineLocalFolders(obj.Prefix);
+       
+[rawPath, ProcPath, DropboxFolder, obj.MS2CodePath, PreProcPath,...
+                ~, ~, ~, movieDatabase]= DetermineLocalFolders(obj.Prefix);
             
             
             obj.userPreFolder = PreProcPath;
@@ -265,10 +267,13 @@ classdef liveExperiment
                 
                 chIndex = chIndex + 1;
                 
-                preChDir = preTifDir(contains(...
-                    string({preTifDir.name}), ['ch0', num2str(ch)]));
+                preChDir = preTifDir( ...
+                    contains(...
+                    string({preTifDir.name}), ['ch0', num2str(ch)]) &...
+                ~contains(string({preTifDir.name}), '_z') );
                 
-                %making these temporary variables to avoid passing all of
+                %making these temporary variables to avoid passing all
+                %of
                 %liveExperiment to the parforloop
                 this_nFrames = this.nFrames;
                 this_yDim = this.yDim;
@@ -276,12 +281,18 @@ classdef liveExperiment
                 this_xDim = this.xDim;
                 this_zDim = this.zDim;
                 
-                parfor f = 1:this_nFrames
-                    
+                for f = 1:this_nFrames
+%                 try
                     movieMat(:, :, :, f, chIndex) =...
                         imreadStack2([this_preFolder, filesep, preChDir(f).name],...
                         this_yDim, this_xDim, this_zDim+nPadding);
+%                 catch
+%                   movieMat(:, :, :, f, chIndex) =...
+%                       imreadStack([this_preFolder, filesep, preChDir(f).name]);
+%                 end
+                
                 end
+                
                 
             end
             
@@ -291,6 +302,8 @@ classdef liveExperiment
             
             if exist([obj.preFolder, filesep,obj.Prefix, '-His.tif'], 'file')
                 haveHisTifStack = true;
+            else
+                haveHisTifStack = false;
             end
             persistent hisMat;
             %load histone movie only if it hasn't been loaded or if we've switched

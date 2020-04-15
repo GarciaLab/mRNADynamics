@@ -116,7 +116,7 @@ nFrames = size(hisMat, 3);
 HisImage = hisMat(:,:,1);
 DisplayRange=[min(min(HisImage)),max(max(HisImage))];
 
-
+nc = [];
 
 %Make a vector containing the nc corresponding to each frame
 for k=1:nFrames
@@ -185,7 +185,7 @@ while (cc~='x')
     %Get the information about the centroids
     [NCentroids,~]=size(Ellipses{CurrentFrame});
     
-
+        
     imOverlay.CData = HisImage;
     try
         caxis(overlayAxes, DisplayRange);
@@ -235,8 +235,13 @@ while (cc~='x')
         end
     end
     
+    try
     FigureTitle=['Frame: ',num2str(CurrentFrame),'/',num2str(nFrames),...
         ', nc: ',num2str(nc(CurrentFrame))];
+    catch
+          FigureTitle=['Frame: ',num2str(CurrentFrame),'/',num2str(nFrames)];
+    end
+    
     set(Overlay,'Name',FigureTitle)
     
     

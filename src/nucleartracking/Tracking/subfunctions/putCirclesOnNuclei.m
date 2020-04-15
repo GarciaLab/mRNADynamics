@@ -5,7 +5,7 @@ function [ ellipse ] = putCirclesOnNuclei(FrameInfo,centers, nFrames, indMitosis
 % of fitting ellipses by doing it only once all the tracks have been 
 % approved.
 
-if nargin > 4
+if nargin == 5
     diameters = varargin{1};
     if numel(diameters) == 1
         diameters = repmat(diameters,nFrames,1);
@@ -13,8 +13,10 @@ if nargin > 4
     if numel(diameters) ~= nFrames
         error('Invalid diameters argument. The diameters vector has to contain as many elements as there are images.')
     end
-else
+elseif nargin == 4
     diameters = getDiameters(FrameInfo,nFrames,indMitosis);
+else
+    error('not enough input arguments');
 end
 
 ellipse = cell(nFrames,1);

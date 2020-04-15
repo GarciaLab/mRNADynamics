@@ -45,7 +45,6 @@ ProcPath = thisExperiment.userProcFolder;
 FrameInfo = getFrameInfo(thisExperiment);
 zSize = FrameInfo(1).NumberSlices + 2;
 
-dogFolder=[ProcPath,filesep,Prefix,'_',filesep,'dogs',filesep];
 
 if nargin < 2
     spotChannels = thisExperiment.spotChannels;
@@ -56,44 +55,22 @@ if nargin < 2
     end
 end
 
+dogFolder=[ProcPath,filesep,Prefix,'_',filesep,'dogs',filesep];
 dogDir = dir([dogFolder, filesep, '*_ch0', num2str(Channel), '.*']);
+%get a cleaner directory with only preferred
+%filetypes
+isDogFolder = true;
+dogDir = getImageFiletypes(dogDir, isDogFolder);
 
-haveStacks = any(cellfun(@(x) contains(x, 'dogStack'), {dogDir.name}));
-% havePlanes = any(cellfun(@(x) contains(x, '_z'), {dogDir.name}));
-haveProbs = any(cellfun(@(x) contains(x, 'prob'), {dogDir.name}));
-loadAsMat = any(cellfun(@(x) contains(x, '.mat'), {dogDir.name}));
+firstDogStack = imreadStack([dogFolder, dogDir(1).name]);
+
+zPadded = zSize ~= size(firstDogStack, 3);
 
 
-clear dogDir;
+haveStacks = any(~contains(string({dogDir.name}), '_z'));
 
-if haveProbs
-    dogStr = 'prob';
-elseif haveStacks
-    dogStr = 'dogStack_';
-else
-    dogStr = 'DOG_';
-end
-
-nameSuffix = ['_ch',iIndex(Channel,2)];
-
-firstDogStackFile = [dogFolder, filesep, dogStr,...
-    Prefix, '_', iIndex(firstFrame, 3),...
-    nameSuffix];
-
-if loadAsMat
-    try
-    load([firstDogStackFile, '.mat'], 'dogStack');
-    catch
-        dogDir = dir([dogFolder, filesep,'*',dogStr,'*.*']);
-        load([dogFolder, filesep, dogDir(1).name]);
-    end
-else
-    dogStack = imreadStack([firstDogStackFile, '.tif']);
-end
-
-zPadded = zSize ~= size(dogStack, 3);
-
-% says which z-slices and frames that we can scroll through
+% determines which z-slices and
+%frames that we can scroll through
 if zPadded
     minZ = 2;
     maxZ = zSize - 1;
@@ -114,7 +91,8 @@ skipFrameFactor = 4;
 available_frames = firstFrame:skipFrameFactor:lastFrame;
 
 % loops through DOGs to find brightest one
-% does this by choosing DOG with most pixels above brightest_iqr_test sds
+% does this by choosing DOG
+%with most pixels above brightest_iqr_test sds
 bestZ = 2;
 bestFrame = 1;
 bestVal = 0;
@@ -123,26 +101,23 @@ max_val = 0;
 disp('Loading dogs...')
 all_dogs = cell(lastFrame, zSize - 2);
 for frame = available_frames
+    
     if haveStacks
-        dogStackFile = strrep([dogFolder, filesep, dogStr, Prefix, '_', iIndex(frame, 3),...
-            nameSuffix], '\\', '\');
-        
-        if loadAsMat
-            load([firstDogStackFile, '.mat'], 'dogStack');
-        else
-            dogStack = imreadStack([firstDogStackFile, '.tif']);
-        end
+        try dogStack = loadDogStack(frame);
+        catch, continue; end
     end
+    
     for z = available_zs
         
         if zPadded,  zInd = z;
         else, zInd = z-1; end
         
         if ~haveStacks
-            dog = loadDog(zInd, frame);
+            dog = loadDogPlane(zInd, frame);
         else
             dog = dogStack(:, :, zInd);
         end
+        
         all_dogs{frame, zInd} = dog;
         non_zero_d = dog(dog~=0);
         val = (1/2) * iqr( non_zero_d(:) );
@@ -281,7 +256,11 @@ uiwait(fig);
         bestZ = zSlider.Value;
         bestFrame = frameSlider.Value;
         if isempty(all_dogs{bestFrame, bestZ})
-            dog = loadDog(bestZ,bestFrame);
+            try
+            dog = loadDogPlane(bestZ,bestFrame);
+            catch, return; 
+            end
+            
             all_dogs{bestFrame, bestZ} = dog;
         end
         dog_copy = all_dogs{bestFrame, bestZ};
@@ -298,35 +277,35 @@ uiwait(fig);
         
         dogbw = dog_copy > thresh;
         
-%         %%
-%         nSpotsF = zeros(1, length(available_frames));
-%         for f = available_frames
-%             nSpotsZ = zeros(1, length(available_zs));
-%             for iz = available_zs
-%                 if zPadded
-%                     zIndex = iz;
-%                 else
-%                     zIndex = iz-1;
-%                 end
-%                 if isempty(all_dogs{f, zIndex})
-%                     dog = loadDog(f, zIndex);
-%                     all_dogs{f, zIndex} = dog;
-%                 end
-%                 nSpotsZ(zIndex) = length(regionprops(all_dogs{f, zIndex} > thresh));
-%                 
-%             end
-%             nSpotsF(f)= max(nSpotsZ);
-%         end
-%         nSpotsEstimate = length(regionprops(dogbw));
-%         nSpotsLabel.String = ['Estimated number of spots: ', num2str(nSpotsEstimate) ];
-%         
-%         if ~isempty(nSpotsAxes.Children)
-%             nSpotsAxes.Children(1).YData = nSpotsF(available_frames);
-%             nSpotsAxes.Children(1).XData = available_frames;
-%         else
-%             line(nSpotsAxes, available_frames, nSpotsF(available_frames))
-%         end
-%         
+        %         %%
+        %         nSpotsF = zeros(1, length(available_frames));
+        %         for f = available_frames
+        %             nSpotsZ = zeros(1, length(available_zs));
+        %             for iz = available_zs
+        %                 if zPadded
+        %                     zIndex = iz;
+        %                 else
+        %                     zIndex = iz-1;
+        %                 end
+        %                 if isempty(all_dogs{f, zIndex})
+        %                     dog = loadDogPlane(f, zIndex);
+        %                     all_dogs{f, zIndex} = dog;
+        %                 end
+        %                 nSpotsZ(zIndex) = length(regionprops(all_dogs{f, zIndex} > thresh));
+        %
+        %             end
+        %             nSpotsF(f)= max(nSpotsZ);
+        %         end
+        %         nSpotsEstimate = length(regionprops(dogbw));
+        %         nSpotsLabel.String = ['Estimated number of spots: ', num2str(nSpotsEstimate) ];
+        %
+        %         if ~isempty(nSpotsAxes.Children)
+        %             nSpotsAxes.Children(1).YData = nSpotsF(available_frames);
+        %             nSpotsAxes.Children(1).XData = available_frames;
+        %         else
+        %             line(nSpotsAxes, available_frames, nSpotsF(available_frames))
+        %         end
+        %
         %%
         drawnow;
         
@@ -355,30 +334,39 @@ uiwait(fig);
         close(fig);
     end
 
-    function dog = loadDog(zInd, frame)
+    function dog = loadDogPlane(zInd, frame)
         
-        dogStackFile = strrep([dogFolder, filesep, dogStr, Prefix, '_', iIndex(frame, 3),...
-            nameSuffix], '\\', '\');
-        if loadAsMat
-            load([dogStackFile, '.mat'], 'dogStack');
-        else
-            dogStack = imreadStack([dogStackFile, '.tif']);
-            %         dog_name = [dogProb,Prefix,'_',iIndex(frame,3),'_z',iIndex(zInd,2),nameSuffix,saveType];
+        if haveStacks
             
-            %         if strcmpi(saveType, '.tif')
-            %             dog = double(imread([OutputFolder1 dog_name]));
-            %         elseif strcmpi(saveType, '.mat')
-            %             load([OutputFolder1 dog_name], 'plane', 'dog');
-            %             try dog = plane; end
-            %         elseif strcmpi(saveType, 'none')
-            %             dog = dogs(:, :, zInd, frame);
+            filenameIndex = contains(string({dogDir.name}), iIndex(frame, 3));
+            file = [dogFolder, dogDir(filenameIndex).name];
+            dogStack = imreadStack(file);
+            dog = dogStack(:, :, zInd);
+            
+        else
+            
+            filenameIndex = contains(string({dogDir.name}), iIndex(frame, 3)) &...
+            contains(string(dogDir.name), iIndex(zInd, 2));
+            file = [dogFolder, dogDir(filenameIndex).name];
+            
+            if contains(file, '.tif')
+                dog = double(imread(file));
+            elseif contains(file, '.mat')
+                load(file, 'plane');
+                try dog = plane; 
+                catch, load(file, 'dog'); end
+            end
+            
         end
-        
-        dog = dogStack(:, :, zInd);
-        
-        %         dog = double(dogMat(:, :, zInd, frame));
         
     end
 
-end
+    function dogStack = loadDogStack(frame)
+        
+            filenameIndex = contains(string({dogDir.name}), iIndex(frame, 3));
+            file = [dogFolder, dogDir(filenameIndex).name];
+            dogStack = imreadStack(file);
+            
+    end 
 
+end

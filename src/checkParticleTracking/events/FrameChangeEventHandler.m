@@ -36,13 +36,13 @@ function keyInputHandler = FrameChangeEventHandler(cptState)
         elseif (cc == '''') & (cptState.CurrentFrame < cptState.numValidFrames())
             % Move to the next skipped frame within the particle
             cptState.PreviousFrame = cptState.CurrentFrame;
-            cptState.CurrentFrame = nextSkippedFrame(cptState.Particles, cptState.CurrentChannel, ...
+            cptState.CurrentFrame = nextSkippedFrame(cptState.Particles, cptState.CurrentChannelIndex, ...
                 cptState.CurrentParticle, cptState.CurrentFrame);
         
         elseif (cc == ';') & (cptState.CurrentFrame > 1)
             % Move to the previous skipped frame within the particle
             cptState.PreviousFrame = cptState.CurrentFrame;
-            cptState.CurrentFrame = previousSkippedFrame(cptState.Particles, cptState.CurrentChannel, ...
+            cptState.CurrentFrame = previousSkippedFrame(cptState.Particles, cptState.CurrentChannelIndex, ...
                 cptState.CurrentParticle, cptState.CurrentFrame);
         
         elseif cc == 'e'

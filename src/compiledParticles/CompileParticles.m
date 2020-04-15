@@ -358,7 +358,7 @@ Particles = approveParticles(Particles,...
     Spots, SkipTraces, ncFilterID, ncFilter, ...
     elapsedTime_min, Ellipses, EllipsePos, PreProcPath, ...
     FilePrefix, Prefix, DropboxFolder, numFrames,...
-    manualSingleFits, edgeWidth, pixelSize, coatChannels, fullEmbryoExists);
+    manualSingleFits, edgeWidth, pixelSize, coatChannels, fullEmbryoExists, thisExperiment);
 
 %% ROI option
 % This option is separating the CompiledParticles defined above into
@@ -600,13 +600,6 @@ end
 
 CompiledParticlesToken = now;
 save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticlesToken.mat'],'CompiledParticlesToken', '-v6')
-
-%%
-if DVExperiment && fullEmbryoExists
-    alignCompiledParticlesByAnaphase(Prefix, fullEmbryoExists);
-    %     averageDV(Prefix);
-    %     plotByDorsalConc(Prefix);
-end
 
 disp('CompiledParticles.mat saved.');
 

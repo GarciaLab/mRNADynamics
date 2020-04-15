@@ -192,7 +192,8 @@ dimVec = [dim(1), dim(2), dim(1), dim(2)]; %to easily normalize units
 fig = uifigure('Position', [100, 100, dim(1), dim(2)], 'Name', 'Choose Histone Channels');
 set(fig,'KeyPressFcn',@keycall)
 imgAxis = uiaxes(fig, 'Position', [20, 20, dim(1) - 20, dim(2) * 0.5]);
-blank = zeros(yDim, xDim, 'uint8');
+precision = 'uint8';
+blank = zeros(yDim, xDim, precision);
 himage = imshow(blank, [], 'Parent', imgAxis);
 
 frame_slider = uislider(fig, 'Limits', [1, numFrames], 'Value', 1, ...
@@ -365,7 +366,7 @@ uiwait(fig);
             % Use the reference histogram to scale the Projection (This part
             % might need some more optimization later-YJK)
             ProjectionTemp(:, :, i) = histeq(mat2gray(ProjectionTemp(:, :, i)), ReferenceHist);
-            ProjectionTemp(:, :, i) = ProjectionTemp(:, :, i) * 256;
+            ProjectionTemp(:, :, i) = ProjectionTemp(:, :, i) *256;
             
             
         end
@@ -408,7 +409,7 @@ uiwait(fig);
         
         if returnHisMat
             
-            hisMat = zeros(yDim, xDim, sum(NFrames), 'uint8'); % y x f
+            hisMat = zeros(yDim, xDim, sum(NFrames), precision); % y x f
             
             for f = 1:NFrames
                 %                 hisMat(:, :, f) = generateNuclearChannel2(projCell{f}, chCell{f}, ReferenceHist, movieMat, f);

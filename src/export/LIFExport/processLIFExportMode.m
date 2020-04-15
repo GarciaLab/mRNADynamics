@@ -17,6 +17,8 @@ resultsFolder = thisExperiment.resultsFolder;
 if ~shouldExportMovieFiles
     FrameInfo = [];
 end
+moviePrecision = 'uint16';
+hisPrecision = 'uint8';
 
 %Load the reference histogram for the fake histone channel
 load('ReferenceHist.mat', 'ReferenceHist');
@@ -110,7 +112,7 @@ if ~skipExtraction
         BlankImage = uint16(zeros(ySize, xSize));
         
         nPadding = 2;
-        hisMat = zeros(ySize, xSize, sum(NFrames), 'uint8');
+        hisMat = zeros(ySize, xSize, sum(NFrames), hisPrecision);
     end
     
     %         zslicesPadding = false;
@@ -120,7 +122,7 @@ if ~skipExtraction
         topZSlice = min(NSlices);
         
         movieMat = zeros(ySize, xSize,...
-            max(NSlices)+nPadding, sum(NFrames),NChannels, 'uint16');
+            max(NSlices)+nPadding, sum(NFrames),NChannels, moviePrecision);
         
         
         for seriesIndex = 1:NSeries
@@ -200,26 +202,7 @@ if ~skipExtraction
             end
         end
         
-        %         livemRNAImageMatSaver([PreProcFolder, filesep, Prefix, '_hisMat.mat'],...
-        %             hisMat);
-        
-        if mm
-            %save the channels as separate mat files.
-            
-            livemRNAImageMatSaver([PreProcFolder, filesep, Prefix, '_movieMatCh1.mat'],...
-                movieMat(:, :, :, :, 1));
-            
-            if size(movieMat, 5) > 1
-                livemRNAImageMatSaver([PreProcFolder, filesep, Prefix, '_movieMatCh2.mat'],...
-                    movieMat(:, :, :, :, 2));
-            end
-            
-            if size(movieMat, 5) == 3 && ~ignoreCh3
-                livemRNAImageMatSaver([PreProcFolder, filesep, Prefix, '_movieMatCh3.mat'],...
-                    movieMat(:, :, :, :, 3));
-            end
-        end
-        
+         
     end
     
     

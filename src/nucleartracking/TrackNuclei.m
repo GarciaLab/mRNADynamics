@@ -50,6 +50,10 @@ ProcPath = thisExperiment.userProcFolder;
 DropboxFolder = thisExperiment.userResultsFolder;
 PreProcPath = thisExperiment.preFolder;
 
+
+ellipsesFile = [DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'];
+schnitzcellsFile = [DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat']; 
+
 anaphaseFrames = thisExperiment.anaphaseFrames';
 nc9 = anaphaseFrames(1);
 nc10 = anaphaseFrames(2);
@@ -277,17 +281,9 @@ if ~exist([DropboxFolder,filesep,Prefix], 'dir')
     mkdir([DropboxFolder,filesep,Prefix]);
 end
 
-if whos(var2str(Ellipses)).bytes < 2E9
-    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v6');
-else
-    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v7.3');    
-end
 
-if whos(var2str(schnitzcells)).bytes < 2E9
-    save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v6');
-else
-    save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v7.3');
-end
+save2(ellipsesFile, Ellipses); 
+save2(schnitzcellsFile, schnitzcells); 
 
 if ~exist([ProcPath,filesep,Prefix,'_'], 'dir')
     mkdir([ProcPath,filesep,Prefix,'_']);
@@ -305,13 +301,9 @@ end
 if fish schnitzcells = rmfield(schnitzcells, {'P', 'E', 'D'}); end
 
 if track && ~noBreak
-    [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, expandedAnaphaseFrames, nFrames);
-    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses');
-    if (whos(var2str(schnitzcells)).bytes < 2E9)
-        save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v6');
-    else
-        save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v7.3', '-nocompression');
-    end
+    [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, expandedAnaphaseFrames, nFrames);  
+    save2(ellipsesFile, Ellipses); 
+    save2(schnitzcellsFile, schnitzcells); 
 end
 
 % Stitch the schnitzcells using Simon's code

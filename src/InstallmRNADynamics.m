@@ -6,6 +6,8 @@
 %
 % Author (contact): Hernan Garcia (hgarcia@berkeley.edu)
 function configContents = InstallmRNADynamics(varargin)
+
+
 warning('off','MATLAB:MKDIR:DirectoryExists')
 
 addpath('./utilities');
@@ -43,7 +45,9 @@ if shouldOnlyMakeStartupFile
     msgbox('Run "startup" from the command line or restart Matlab to finish the installation');
 
     
-elseif exist(COMPUTER_FOLDERS_PATH, 'file')
+elseif exist(COMPUTER_FOLDERS_PATH, 'file') &&...
+        contains(COMPUTER_FOLDERS_PATH, '.xls')
+    
     
     disp(['Existing installation detected (', COMPUTER_FOLDERS_PATH,...
         ' exists). Will try to update configurations to CSV format.']);
@@ -63,9 +67,7 @@ else
     createMovieDatabaseFile();
     
     createStartupFile();
-        
-    msgbox('Run "startup" from the command line or restart Matlab to finish the installation');
-    
+            
 end
 
 warning('on','MATLAB:MKDIR:DirectoryExists');
@@ -83,20 +85,19 @@ warning('on','MATLAB:MKDIR:DirectoryExists');
 
     function dirPath = createDirInRoot(folderName)
         dirPath = [ROOT_PATH, filesep, folderName];
-        if ~exist(dirPath)
+        if ~exist(dirPath, 'file')
             mkdir(dirPath);
         end
     end
 
     function ensureRightFolder()
         while ~contains(pwd, 'src')
-            warning('This script must be run from the ''mRNADynamics/src'' directory.');
-            cd(uigetdir);
+            cd(fileparts(mfilename('fullpath')))
         end
     end
 
     function createMovieDatabaseFile()
-        if exist(MOVIE_DATABASE_PATH)
+        if exist(MOVIE_DATABASE_PATH, 'file')
             warning([MOVIE_DATABASE_PATH, ' already exists. Not overwriting.']);
             return
         end
@@ -148,18 +149,18 @@ warning('on','MATLAB:MKDIR:DirectoryExists');
     end
 
     function contents = migrateFileToCSV(fromXLSPath, toCSVPath, types)
-        if exist(toCSVPath)
+        if exist(toCSVPath, 'file')
             warning([toCSVPath, ' already exists. Not overwriting.']);
         else
-            if(exist(fromXLSPath))
+            if exist(fromXLSPath, 'file')
                 disp([fromXLSPath, ' exists in XLS format. Will try to convert it to CSV format.']);
-                [numericData, textData, rawData] = xlsread(fromXLSPath);
+                [~, ~, rawData] = xlsread(fromXLSPath);
                 [excelRows, excelColumns] = size(rawData);
                 disp(['Excel size is ', num2str(excelRows), ' rows x ', num2str(excelColumns), ' columns'])
                 
                 if(excelColumns > 26)
                     warning('Warning, number of columns exceeds maximum supported. Will truncate at column 26 (Z)')
-                    [numericData, textData, rawData] = xlsread(fromXLSPath, strcat('A1:Z', num2str(excelRows)));
+                    [~, ~, rawData] = xlsread(fromXLSPath, strcat('A1:Z', num2str(excelRows)));
                 end
                 disp('XLS file read OK. Starting conversion to CSV.');
                 cell2csv(toCSVPath, rawData, ',', types);
@@ -176,6 +177,8 @@ warning('on','MATLAB:MKDIR:DirectoryExists');
         % Add the right folders to the path.
         % This will be done as a startup file in the user's folder
         
+        
+        
         srcFolder = [MRNA_DYNAMICS_PATH, filesep, 'src'];
         libFolder = [MRNA_DYNAMICS_PATH, filesep, 'lib'];
         DependenciesFolder = [MRNA_DYNAMICS_PATH, filesep, 'lib/dependencies'];
@@ -191,7 +194,7 @@ warning('on','MATLAB:MKDIR:DirectoryExists');
         Output{7} = ['addpath(genpath(''', testFolder, '''));'];
         Output{8} = ['addpath(genpath(''', DependenciesFolder, '''));'];
         Output{10} = ['cd(''', MRNA_DYNAMICS_PATH, ''');'];
-        Output{11} = ['disp(''Startup script executed.'');'];
+        Output{11} = 'disp(''Startup script executed.'');';
         
         writeStartupFile(Output);
                 
@@ -199,7 +202,7 @@ warning('on','MATLAB:MKDIR:DirectoryExists');
 end
 
 function safeString = toSafeWindowsString(aPath)
-% replaces any '\' with '/', since MATLAB hand handle '/' in Windows Paths as well,
+% replaces any '\' with '/', since MATLAB can handle '/' in Windows Paths as well,
 % so we don't need to handle linux or windows paths differently
 safeString = strrep(aPath, '\', '/');
 end
@@ -215,7 +218,7 @@ elseif ispc
     % found it on the net elsewhere, you might want to verify)
 end
 
-userName = strrep(userName, sprintf('\n'),'');
+userName = strrep(userName, newline,'');
 userName = toSafeWindowsString(userName);
 end
 
@@ -223,7 +226,7 @@ function computerName = getComputerName
 %Find out the computer name. This will probably fail for nonwindows but
 %that's easily fixable if required
 [ret, computerName] = system('hostname');
-if ret ~= 0,
+if ret ~= 0
     if ispc
         computerName = getenv('COMPUTERNAME');
     else
@@ -231,13 +234,10 @@ if ret ~= 0,
     end
 end
 
-computerName = strrep(lower(computerName), sprintf('\n'),'');
+computerName = strrep(lower(computerName), newline,'');
 end
 
 function writeStartupFile(contents)
-
-disp('Will create startup.m with these contents: ');
-disp(contents);
 
 %Create the startup.m file
 StartUpPath = userpath;
@@ -248,11 +248,23 @@ if isempty(userpath)
     userpath(StartUpPath);
 end
 
-disp([StartUpPath(1:end-1), '/startup.m']);
-fid = fopen([StartUpPath(1:end-1), '/startup.m'], 'w');
+startupFile = [StartUpPath, '/startup.m']; 
+
+if exist(startupFile, 'file')
+    warning([startupFile, ' already exists. Not overwriting.']);
+    return
+end
+
+disp('Will create startup.m with these contents: ');
+disp(contents);
+
+
+
+disp(startupFile);
+fid = fopen(startupFile, 'w');
 errmsg = '';
 if fid < 0
-    fid = fopen([StartUpPath, '/startup.m'], 'w');
+    fid = fopen(startupFile, 'w');
 end
 while fid < 0
     disp(errmsg);
@@ -265,5 +277,8 @@ for i=1:length(contents)
     fprintf(fid, '%s \n', contents{i});
 end
 fclose(fid);
+
+msgbox('Run "startup" from the command line to finish the installation.');
+
 
 end
