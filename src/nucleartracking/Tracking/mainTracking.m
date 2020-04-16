@@ -443,7 +443,10 @@ for j = 1:numberOfPhases
             fprintf(['Processing mitosis between nuclear cycle ' num2str(nucCyc(0.5*(j+1))-1) ' and ' num2str(nucCyc(0.5*(j+1))) '... ']);
         end
         
-        [ xy(first:last), mapping(first:last-1), nuclei ] = trackMitosis(FrameInfo, hisMat, first, last, shifts, diameters(j), embryoMask, xy(first:last), mapping(first:last-1), nuclei,h_waitbar_tracking );
+        [ xy(first:last), mapping(first:last-1), nuclei ] =...
+            trackMitosis(FrameInfo, hisMat, first, last, shifts,...
+            diameters(j), embryoMask, xy(first:last),...
+            mapping(first:last-1), nuclei, h_waitbar_tracking );
         
         fprintf('Done!\n')
     

@@ -80,13 +80,16 @@ for j = 1:size(xyInterphase{1},1)
         end
     end
 end
+
+
 if any(isnan(nucleiIndices))
     error(' NAN ')
 end
-    %nucleiIndices = 1:numel(nuclei); % Temporary vector that contains the mapping between 'XY' rows and 'nuclei' elements, i.e. XY{frame}(j,:) = nuclei(nucleiIndices(j)).position(frame,:);
+
 targetNumber = numel(nuclei);
+
 %% Track forwards
-for j = 1:(nextMitosisInd-startingFrame)%[]%1:(nextMitosisInd-startingFrame)
+for j = 1:(nextMitosisInd-startingFrame)
     
     currentFrameNumber = startingFrame+j-1; % Frame that was just analyzed before.
     currentFrameInd = startingFrame-previousMitosisInd+j; % Index in the XY cell array.
@@ -98,12 +101,12 @@ for j = 1:(nextMitosisInd-startingFrame)%[]%1:(nextMitosisInd-startingFrame)
             frame2frameCorrespondence(FrameInfo, hisMat, currentFrameNumber,...
             newFrameNumber,xyInterphase{currentFrameInd},nucleusDiameter,1,xyInterphase{newFrameInd},...
             mapping{currentFrameNumber},shifts{currentFrameNumber}, ...
-            ExpandedSpaceTolerance, NoBulkShift);%, embryoMask, targetNumber, [1 1 1]);
+            ExpandedSpaceTolerance, NoBulkShift);
     else
         [mapping{currentFrameInd},xyInterphase{newFrameInd},dummy,ind, shifts{currentFrameNumber}]...
             = frame2frameCorrespondence(FrameInfo,hisMat,currentFrameNumber,...
             newFrameNumber,xyInterphase{currentFrameInd},nucleusDiameter,1,[],...
-            shifts{currentFrameNumber}, ExpandedSpaceTolerance, NoBulkShift);%, embryoMask, [],[1 1 0]);
+            shifts{currentFrameNumber}, ExpandedSpaceTolerance, NoBulkShift);
     end
     
     % Put the output in the nuclei structure.

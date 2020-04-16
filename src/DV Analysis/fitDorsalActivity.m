@@ -1,5 +1,12 @@
 function [fit, model] = fitDorsalActivity(dlfluobins, activity, varargin)
 %possible model types- {'hill', 'simpleWithPol', 'mcwNoPol'}
+arguments
+    dlfluobins double
+    activity double
+end
+arguments(Repeating)
+    varargin
+end
 
 modelType = 'hill';
 % xScale =10^-(round(log10(max(x(:)))));

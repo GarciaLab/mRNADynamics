@@ -3,9 +3,9 @@ function Ellipses = resegmentAllFrames(Prefix, varargin)
 hisMat = [];
 %defaults. good for fly embryos (Dorsal synthetics settings)
 % to change use them as options in TrackNuclei
+sigmaK_um = 0.2;
 min_rad_um = 2; 
 max_rad_um = 6;
-sigmaK_um = 0.85;
 mu = 0.1;
 nIterSnakes = 100;
 

@@ -13,7 +13,8 @@ for nc = 12:14
         lengths{nc-11} = [lengths{nc-11}, length(snc(k).frames)];
     end
     
-    frameCutoff(nc-11) = .5*median(lengths{nc-11}); %if a nucleus exists for less than half the median lifetime, disapprove it.
+    %if a nucleus exists for less than half the median lifetime, disapprove it.
+    frameCutoff(nc-11) = .5*median(lengths{nc-11}); 
     
     
 end

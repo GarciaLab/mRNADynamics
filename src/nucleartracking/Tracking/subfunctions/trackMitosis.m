@@ -171,11 +171,8 @@ for j = 2:nFrames%:-1:2
         mappedNuc2 = [mappedNuc2; remainingNuclei2(ind2(ind2(:,2) > 0,2),:)];
         
         indMappedTo2Nuclei = all(mapp ~= 0,2);
-try
         remainingNuclei1(indMappedTo2Nuclei | ind0,:) = [];
-catch
-    1
-end
+
         remainingNuclei2(ind2(ind2>0),:) = [];
         shiftedXY1(indMappedTo2Nuclei | ind0,:) = [];
         
@@ -193,7 +190,8 @@ end
     
     while keep_looping
         
-        [dist, ix] = pdist2(remainingNuclei2,shiftedXY1,'euclidean','Smallest',size(remainingNuclei2,1));
+        [dist, ix] = pdist2(remainingNuclei2,...
+            shiftedXY1,'euclidean','Smallest',size(remainingNuclei2,1));
         % dist is an m x n array where m is the numer of nuclei in
         % remainingNuclei2 (frame j) and n is the number of nuclei in
         % shiftedXY1 (frame j-1).

@@ -50,6 +50,7 @@ for e = 1:nEmbryos
             
             nucleiOfInterest= find( [compiledProject.cycle] == nc & [compiledProject.dorsalFluoBin] == bin );
             
+            
             particlesOfInterest = 0;
             for n = 1:length(nucleiOfInterest)
                 
@@ -86,8 +87,12 @@ for e = 1:nEmbryos
             
             %             npartFluoEmbryo{nc-11}(bin, e) = particlesOfInterest;
             %             nschnitzFluoEmbryo{nc-11}(bin, e) = length(nucleiOfInterest);
-            nschnitzFluoEmbryo{nc-11}(bin, e) = length(find( [compiledProject.cycle] == nc & [compiledProject.dorsalFluoBin] == bin ));
-            npartFluoEmbryo{nc-11}(bin, e) = length(find([compiledProject.cycle] == nc & [compiledProject.dorsalFluoBin] == bin  & ~cellfun(@isempty, {compiledProject.particleFrames})));
+            
+            nschnitzFluoEmbryo{nc-11}(bin, e) = length(find( [compiledProject.cycle] == nc...
+                & [compiledProject.dorsalFluoBin] == bin ));
+            npartFluoEmbryo{nc-11}(bin, e) = length(find([compiledProject.cycle] ==...
+                nc & [compiledProject.dorsalFluoBin] == bin  & ~cellfun(@isempty,...
+                {compiledProject.particleFrames})));
             dorsalResults{nc-11}.allmrnasEmbryo(bin, e) = nanmean(spotAccumulatedFluo);
             dorsalResults{nc-11}.alldurationsEmbryo(bin, e) = nanmean(spotDurations);
            dorsalResults{nc-11}. allTurnOnsEmbryo(bin, e) = nanmean(spotTurnOnTimes);

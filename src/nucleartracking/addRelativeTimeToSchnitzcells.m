@@ -1,4 +1,4 @@
-function schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, ncFrames)
+function [schnitzcells, ncTimes] = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, ncFrames)
 
 
     ncFrames(ncFrames==0) = 1;

@@ -2,18 +2,7 @@ function compiledProject = makeCompiledProject(Prefix)
 
 [~, resultsFolder] = getDorsalFolders;
 
-ncFrames = getNCFrames(Prefix, resultsFolder);
-
 load([resultsFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo')
-
-ncFrames(ncFrames==0) = 1;
-time = [FrameInfo.Time]/60; %frame times in minutes
-ncFrames(isnan(ncFrames)) = [];
-ncTimes = time(ncFrames);
-if length(ncTimes) < 14
-    ncTimes(end+1:14) = nan;
-end
-
 load([resultsFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'schnitzcells')
 load([resultsFolder,filesep,Prefix,filesep,'CompiledParticles.mat'], 'CompiledParticles')
 
@@ -21,27 +10,30 @@ if iscell(CompiledParticles)
     CompiledParticles = CompiledParticles{1};
 end
 
-for s = 1:length(schnitzcells)
-    schnitzcells(s).timeSinceAnaphase = time(schnitzcells(s).frames) - ncTimes(schnitzcells(s).cycle);
+
+
+if ~isfield(schnitzcells, 'TimeSinceAnaphase')
+    
+    ncFrames = getNCFrames(Prefix, resultsFolder);
+    schnitzcells = addRelativeTimeToSchnitzcells(...
+        schnitzcells, FrameInfo, ncFrames);
+    
+    CompiledParticles = addRelativeTimeToCompiledParticles(...
+        schnitzcells, CompiledParticles, ncFrames, FrameInfo);
 end
 
-clear s;
 
-for p = 1:length(CompiledParticles)
-    s = CompiledParticles(p).Nucleus;
-    CompiledParticles(p).timeSinceAnaphase = time(CompiledParticles(p).Frame) - ncTimes(schnitzcells(s).cycle);
-    if CompiledParticles(p).timeSinceAnaphase == 0 & schnitzcells(s).cycle == 12
-        'stop'
-    end
-end
 
 
 compiledProject = [];
+
+approvedSchnitzes = find([schnitzcells.Approved]);
+
 n = 0;
-for s = 1:length(schnitzcells)
-    if schnitzcells(s).Approved
+for s = approvedSchnitzes
+    
         n = n + 1;
-        %nuclear stuff
+        %nuclear compilation
         compiledProject(n).nuclearFrames = schnitzcells(s).frames;
         compiledProject(n).cycle = schnitzcells(s).cycle;
         compiledProject(n).compiledParticle = schnitzcells(s).compiledParticle;
@@ -51,10 +43,12 @@ for s = 1:length(schnitzcells)
         compiledProject(n).nuclearTimeSinceAnaphase = schnitzcells(s).timeSinceAnaphase;
         
         
-        %particle stuff
+        %particle compilation
         p = schnitzcells(s).compiledParticle;
         if ~isempty(p)
+            
             if CompiledParticles(p).Approved
+                
                 compiledProject(n).particleFrames = CompiledParticles(p).Frame;
                 compiledProject(n).particleTimeSinceAnaphase = CompiledParticles(p).timeSinceAnaphase;
                 
@@ -80,6 +74,7 @@ for s = 1:length(schnitzcells)
                 end
                 
             else
+                
                 compiledProject(n).particleFrames = [];
                 compiledProject(n).particleFluo= [];
                 compiledProject(n).particleFluo3Slice = [];
@@ -89,9 +84,9 @@ for s = 1:length(schnitzcells)
                 compiledProject(n).particleFluo95= [];
                 compiledProject(n).particleTimeOn = [];
                 compiledProject(n).particleAccumulatedFluo = [];
+                
             end
         end
-    end
 end
 
 

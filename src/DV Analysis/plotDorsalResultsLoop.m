@@ -1,4 +1,5 @@
-function plotDorsalResultsLoop(dataType, activityType, varargin)
+function plotDorsalResultsLoop(dataType,...
+    activityType, paramSearch)
 % valid activites-
 % 1. fraction
 % 2. timeon
@@ -6,10 +7,12 @@ function plotDorsalResultsLoop(dataType, activityType, varargin)
 % 4. duration
 % 5. max
 
+% paramSearch %list of parameter values to plot. keep small (<10)
+
+
 %%
 nc = 12;
-paramSearch = [];
-R = 1;
+R = 1; %the rate/amplitude parameter of the models in fitDorsalActivity
 xRange = [0 4000];
 legendVisible = 'off';
 modelType = 'hill';
@@ -23,7 +26,7 @@ end
 
 %%
 [~, resultsFolder, ~] = getDorsalPrefixes(dataType);
-load([resultsFolder,filesep,DataType,filesep,'dorsalResults.mat'], 'dorsalResults')
+load([resultsFolder,filesep,dataType,filesep,'dorsalResults.mat'], 'dorsalResults')
 
 nPlots = numel(paramSearch);
 cmap = single(summer(nPlots));
@@ -44,9 +47,9 @@ for plotIndex = 1:nPlots
     %fits get a line plot
     shouldPlotScatter= plotIndex == 1;
     
-    param= paramSearch(plotIndex);
+    param = paramSearch(plotIndex);
     
-    plotDorsalActivity(dorsalFluoBins, dorsalActivity,activityType, nc,...
+    plotDorsalActivity(dorsalFluoBins, dorsalActivity, activityType, nc,...
         dataType, dorsalActivity_mean, dorsalActivity_SE, shouldPlotScatter,...
         'modelType', modelType,...
         'fix1', R, 'fix4', 0, 'fix5', param);
