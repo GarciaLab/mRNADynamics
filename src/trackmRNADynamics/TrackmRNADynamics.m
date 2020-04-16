@@ -64,7 +64,7 @@ NCh = length(spotChannels);
 OutputFolder = [DropboxFolder, filesep, Prefix];
 
 % Determine the search radius based on the imaging conditions
-SearchRadiusMicrons = 3; % Search radius in um
+SearchRadiusMicrons = 0.5; % Search radius in um
 
 % Load the information about this image
 % Check if we have FrameInfo otherwise try to get the information straight
