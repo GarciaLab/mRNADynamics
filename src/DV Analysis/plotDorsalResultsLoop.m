@@ -6,8 +6,15 @@ function plotDorsalResultsLoop(dataType,...
 % 3. mRNA
 % 4. duration
 % 5. max
-
+%
 % paramSearch %list of parameter values to plot. keep small (<10)
+
+arguments
+    
+    dataType char
+    activityType char
+    paramSearch double
+end
 
 
 %%
@@ -43,7 +50,7 @@ dorsalActivity_SE = dorsalResults.seFracFluoEmbryo;
 
 for plotIndex = 1:nPlots
     
-    %the data gets a scatter plot and 
+    %the data gets a scatter plot and
     %fits get a line plot
     shouldPlotScatter= plotIndex == 1;
     
@@ -61,7 +68,7 @@ for plotIndex = 1:nPlots
         plotInLoop(plotIndex, cmap, 'xRange',...
             xRange, 'ax1', ax1, 'legendVisible', legendVisible);
     end
-
+    
 end
 
 

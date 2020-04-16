@@ -29,7 +29,8 @@ function [fit, model] = plotDorsalActivity(x, y,activity, nc,...
     
     figure('Units', 'points', 'Position', [0, 0, 200, 200]);
     clr = 'r';
-    plot(xxx, model(fit,xxx), '-', 'DisplayName',['fit: ',num2str(round(fit))], 'LineWidth', 2, 'Color', clr);
+    plot(xxx, model(fit,xxx), '-', 'DisplayName',['fit: ',num2str(round(fit))],...
+        'LineWidth', 2, 'Color', clr);
     set(gca,'Units', 'normalized', 'OuterPosition', [0, 0, 1, 1]);
     axis square
     hold on

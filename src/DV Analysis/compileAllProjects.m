@@ -1,6 +1,17 @@
 function dorsalResults = compileAllProjects(DataType)
 
+
 thisProject = liveProject(DataType);
+
+
+%% Validate experiments included in the analysis
+hasAllPushed = [thisProject.hasSpots, thisProject.hasParticles,...
+    thisProject.hasSchnitzcells, thisProject.hasCompiledParticles,...
+    thisProject.hasAnaphaseFramesAnnotated];
+
+assert( all(hasAllPushed) ); 
+
+%%
 
 prefixes = thisProject.includedExperimentNames;
 
