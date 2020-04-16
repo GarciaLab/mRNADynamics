@@ -20,6 +20,8 @@ function CheckParticleTracking(Prefix, varargin)
 %    % Also, this option shows you the max projection.
 % plot3DGauss: plot 3D gaussian fitting intensities in tracefig
 % sortByLength: sort particles by duration instead of time observed
+% nWorkers: number of parallel pools
+
 %
 % CONTROLS
 % Frame specific:
