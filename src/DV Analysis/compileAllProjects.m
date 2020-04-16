@@ -1,8 +1,11 @@
 function dorsalResults = compileAllProjects(DataType)
 
-[~, ~, prefixes] = getDorsalPrefixes(DataType);
+thisProject = liveProject(DataType);
+
+prefixes = thisProject.includedExperimentNames;
 
 compiledProjects = cell(1, length(prefixes));
+
 for k = 1:length(prefixes)
     TrackmRNADynamics(prefixes{k}, 'noretrack');
     CompileParticles(prefixes{k},  'minBinSize', 0, 'MinParticles', 0,...
@@ -18,7 +21,7 @@ for k = 1:length(prefixes)
     compiledProjects{k} = makeCompiledProject(prefixes{k});
 end
 
-plotFracByDlFluo2(DataType); 
+dorsalResults = plotFracByDlFluo2(DataType); 
 
 activity = '';
 plotDorsalResultsLoop(DataType, activity)
