@@ -50,6 +50,7 @@ for e = 1:nEmbryos
             
             nucleiOfInterest= find( [compiledProject.cycle] == nc & [compiledProject.dorsalFluoBin] == bin );
             
+            
             particlesOfInterest = 0;
             for n = 1:length(nucleiOfInterest)
                 

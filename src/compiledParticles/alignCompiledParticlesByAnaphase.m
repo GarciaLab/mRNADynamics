@@ -41,9 +41,9 @@ for ch = 1:length(CompiledParticles)
         end
         
         try
-        CompiledParticles{ch}(p).cycle = nc;
+            CompiledParticles{ch}(p).cycle = nc;
         catch
-           CompiledParticles{ch}(p).cycle = CompiledParticles{ch}(p).nc;
+            CompiledParticles{ch}(p).cycle = CompiledParticles{ch}(p).nc;
         end
         
     end

@@ -18,7 +18,7 @@ for k = 1:length(prefixes)
     compiledProjects{k} = makeCompiledProject(prefixes{k});
 end
 
-dorsalResults = plotFracByDlFluo2(DataType); 
+plotFracByDlFluo2(DataType); 
 
 activity = '';
 plotDorsalResultsLoop(DataType, activity)

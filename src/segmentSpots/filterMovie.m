@@ -170,7 +170,8 @@ disp(['Elapsed time: ', num2str(t / 60), ' min'])
 
 if ~justTifs
     try log = writeFilterMovieLog(t, Weka, DropboxFolder, Prefix,...
-            initialFrame, numFrames, filterType, sigmas, classifierPathCh1); end
+            initialFrame, numFrames, filterType, sigmas, classifierPathCh1);
+    end
 end
 
 if ~keepPool && ~Weka && ~justTifs

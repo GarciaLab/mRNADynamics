@@ -72,7 +72,6 @@ end
 
 %% 4. Find the distance between each nuclei pair and build correspondences.
 % Compute the distances between all nuclei
-keep_looping = true;
 remainingNuclei1 = nucleiFrame1;
 remainingNuclei2 = nextNucleiXY;
 shiftedXY1 = currentNucleiShiftedXY;
@@ -111,6 +110,7 @@ if exist('manualMapping','var') && ~isempty(manualMapping)
     
 end
 
+keep_looping = true;
 while keep_looping
     [dist] = pdist2(shiftedXY1,remainingNuclei2,'euclidean');
     
