@@ -3,20 +3,15 @@
 % returns the value corresponding to the property "propertyName".
 %% 
 function value = getConfigValue(configuration, propertyName)
-
-arguments
-    configuration string
-    propertyName string
-end
-
-configColumn = configuration(:, 1);
-configIndex = find(configColumn == propertyName); 
+  configColumn = configuration(:, 1);
+  configIndexArray = strfind(configColumn, propertyName);
+  configIndex = find(not(cellfun('isempty', configIndexArray)));
 
   if isempty(configIndex)
     error(['Property ''', propertyName, ''' not found in configuration. ',...
       'Check ComputerFolders and/or MovieDatabase.'])
   end
-  
-  %cast to char for compatibility
-  value = char(configuration(configIndex, 2)); 
+
+  valueCell = configuration(configIndex, 2);
+  value = valueCell{1};
 end
