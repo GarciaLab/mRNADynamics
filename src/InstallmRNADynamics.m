@@ -1,12 +1,23 @@
+function configContents = InstallmRNADynamics(varargin)
+% DESCRIPTION
 % This function creates all the required folders to run the MS2 movie
-% analysis pipeline.
+% analysis pipeline for new installations. For existing installations, it
+% will update the MATLAB startup.m script.
+%
+% PARAMETERS
+% None
+%
+% OPTIONS
+% 'updateStartup': Will only update MATLAB's startup.m script. This is a 
+%                  redundant option, as this function will automatically
+%                  update startup.m whenever it detects an existing
+%                  installation
 %
 % OUTPUT
 % configContents: A cell containing information within ComputerFolders configuration
 %
 % Author (contact): Hernan Garcia (hgarcia@berkeley.edu)
-function configContents = InstallmRNADynamics(varargin)
-
+% Last updated: 4/17/2020 by Meghan Turner (meghan_turner@berkeley.edu)
 
 warning('off','MATLAB:MKDIR:DirectoryExists')
 
@@ -35,6 +46,11 @@ TEST_PATH =  createDirInRoot('ExpectedData');
 
 COMPUTER_FOLDERS_PATH = [ROOT_PATH, filesep, 'ComputerFolders.csv'];
 
+existingInstallationDetected = exist(COMPUTER_FOLDERS_PATH, 'file') &&...
+        contains(COMPUTER_FOLDERS_PATH, '.csv') && ...
+        exist(MOVIE_DATABASE_PATH, 'file') &&...
+        exist(MOVIE_DATABASE_PATH, 'file');
+
 shouldOnlyMakeStartupFile = ~isempty(varargin) &&...
         contains(varargin, 'updateStartup', 'IgnoreCase', true);
     
@@ -44,6 +60,11 @@ if shouldOnlyMakeStartupFile
     createStartupFile();
     msgbox('Run "startup" from the command line or restart Matlab to finish the installation');
 
+elseif existingInstallationDetected
+    disp('Existing installation detected.')
+    disp('Only updataing MATALB startup script')
+    createStartupFile();
+    msgbox('Run "startup" from the command line or restart Matlab to finish the installation');
     
 elseif exist(COMPUTER_FOLDERS_PATH, 'file') &&...
         contains(COMPUTER_FOLDERS_PATH, '.xls')
@@ -57,7 +78,6 @@ elseif exist(COMPUTER_FOLDERS_PATH, 'file') &&...
     migrateMovieDatabaseToCSV(getConfigValue(configContents, 'DropboxFolder'));
     
     disp('Existing installation files successfully updated to CSV format.');
-    
 else
     
     disp('New installation detected. Will create required configurations and folder structures.');
@@ -196,7 +216,9 @@ warning('on','MATLAB:MKDIR:DirectoryExists');
         Output{10} = ['cd(''', MRNA_DYNAMICS_PATH, ''');'];
         Output{11} = 'disp(''Startup script executed.'');';
         
-        writeStartupFile(Output);
+        
+        updateStartupFile = existingInstallationDetected || shouldOnlyMakeStartupFile;
+        writeStartupFile(Output,updateStartupFile);
                 
     end
 end
@@ -237,7 +259,7 @@ end
 computerName = strrep(lower(computerName), newline,'');
 end
 
-function writeStartupFile(contents)
+function writeStartupFile(contents,updateStartupFile)
 
 %Create the startup.m file
 StartUpPath = userpath;
@@ -250,7 +272,7 @@ end
 
 startupFile = [StartUpPath, '/startup.m']; 
 
-if exist(startupFile, 'file')
+if exist(startupFile, 'file') && ~updateStartupFile
     warning([startupFile, ' already exists. Not overwriting.']);
     return
 end
