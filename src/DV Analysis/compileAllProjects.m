@@ -1,7 +1,7 @@
 function dorsalResults = compileAllProjects(DataType)
 
 
-thisProject = liveProject(DataType);
+thisProject = liveProject(DataType) %#ok<NOPRT>
 
 
 %% Validate experiments included in the analysis
@@ -35,6 +35,7 @@ end
 dorsalResults = plotFracByDlFluo2(DataType); 
 
 activity = '';
+plotDorsalResultsLoop(DataType,  'fraction', [.1], 'legendVisible', 'on', 'modelType', 'simpleWithPol')
 plotDorsalResultsLoop(DataType, activity)
 
 end
