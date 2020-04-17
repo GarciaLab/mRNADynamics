@@ -11,12 +11,12 @@ import trainableSegmentation.utils.Utils;
 import ij.io.FileSaver;
 import ij.IJ;
 import ij.ImagePlus;
+import ij.ImageStack;
+import ij.process.ImageProcessor;
+import java.lang.Math;
 
 //argument validation
 //remove white spaces 
-inputDir = inputDir.trim();
-outputDir = outputDir.trim();
-modelPath = modelPath.trim();
 Prefix = Prefix.trim();
 
 // starting time
@@ -56,18 +56,22 @@ for (i = initialFrame-1; i < lastFrame; i++ )
 
 			//let's get rid of the slices we don't like
 
-			ImageStack oddResult = new ImageStack(result.getWidth(), result.getHeight());
-			for (int k = 0; k < result.getStackSize(); k++) {
-      			if (k%2 != 0) {
+			ImageStack result_class1 = new ImageStack(result.getWidth(), result.getHeight());
+			
+			for (j = 1; j <= result.getStackSize(); j++) {
+				
+      			if (Math.floorMod(j,2) != 0) {
       				//addslice accepts an imageprocessor object as input, 
-					//so we'll stuff results into one of those
+					//so we'll stuff result into one of those
       				//and imageprocesser requires an imagestack, so we'll stuff
       				//result into that 
-      				oddResult.addSlice( result.getStack().getProcessor(k) );
+      				stack = result.getStack();
+      				ip = stack.getProcessor(j);
+      				result_class1.addSlice(ip);
       			}
 			}
 			 
-    		ImagePlus result = new ImagePlus("Classification result", oddResult);
+    		ImagePlus result = new ImagePlus("Classification result", result_class1);
         
              
             // save result as TIFF in output folder
