@@ -8,10 +8,8 @@ function configContents = InstallmRNADynamics(varargin)
 % None
 %
 % OPTIONS
-% 'updateStartup': Will only update MATLAB's startup.m script. This is a 
-%                  redundant option, as this function will automatically
-%                  update startup.m whenever it detects an existing
-%                  installation
+% 'updateStartup': Updates MATLAB's startup.m script, but doesn't do
+%                  any of the other setup steps
 %
 % OUTPUT
 % configContents: A cell containing information within ComputerFolders configuration
@@ -62,9 +60,8 @@ if shouldOnlyMakeStartupFile
 
 elseif existingInstallationDetected
     disp('Existing installation detected.')
-    disp('Only updataing MATALB startup script')
+    disp('Will not overwrite ComputerFolders.csv or MovieDatabase.csv')
     createStartupFile();
-    msgbox('Run "startup" from the command line or restart Matlab to finish the installation');
     
 elseif exist(COMPUTER_FOLDERS_PATH, 'file') &&...
         contains(COMPUTER_FOLDERS_PATH, '.xls')
@@ -216,9 +213,7 @@ warning('on','MATLAB:MKDIR:DirectoryExists');
         Output{10} = ['cd(''', MRNA_DYNAMICS_PATH, ''');'];
         Output{11} = 'disp(''Startup script executed.'');';
         
-        
-        updateStartupFile = existingInstallationDetected || shouldOnlyMakeStartupFile;
-        writeStartupFile(Output,updateStartupFile);
+        writeStartupFile(Output,shouldOnlyMakeStartupFile);
                 
     end
 end
