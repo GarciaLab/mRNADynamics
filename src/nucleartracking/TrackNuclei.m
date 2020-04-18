@@ -324,8 +324,10 @@ schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, expandedAn
 
 %perform some quality control
 schnitzcells = filterSchnitz(schnitzcells, [thisExperiment.yDim, thisExperiment.xDim]);
-Ellipses = filterEllipses(Ellipses, [thisExperiment.yDim, thisExperiment.xDim]);
+% Ellipses = filterEllipses(Ellipses, [thisExperiment.yDim, thisExperiment.xDim]);
 
+save2(ellipsesFile, Ellipses); 
+save2(schnitzcellsFile, schnitzcells); 
 
 try 
     Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
@@ -341,6 +343,9 @@ try
     end
 end
 
+
+save2(ellipsesFile, Ellipses); 
+save2(schnitzcellsFile, schnitzcells); 
 
 
 end

@@ -1,4 +1,20 @@
-function [fit, model] = plotDorsalActivity(x, y,activity, nc, DataType, ymean, se, plotScatter, varargin)
+function [fit, model] = plotDorsalActivity(x, y,activity, nc,...
+    DataType, ymean, se, plotScatter, varargin)
+
+    arguments
+       x double
+       y double
+       activity string
+       nc double
+       DataType string
+       ymean double
+       se double
+       plotScatter logical      
+    end
+    
+    arguments(Repeating)
+        varargin
+    end
    
     xx = repmat(x, size(y,2), 1)';
 

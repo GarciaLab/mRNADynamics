@@ -50,7 +50,9 @@ mask = bwareafilt(wshed(kMaskRefined), areaFilter);
 % mask = wshed(bwareafilt(kMaskRefined, areaFilter));
 
 %morphologically clean up the mask
-mask = imfill(bwmorph(mask, 'bridge'), 'holes');
+%removed because it introduces weird artifacts that connect
+%far away regions
+% mask = imfill(bwmorph(mask, 'bridge'), 'holes');
 
 [mask, ellipseFrame] = fitCirclesToNuclei(mask, kMask);
 
