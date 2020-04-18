@@ -1,4 +1,5 @@
-function projection = calculateProjection(projectionType, nSlices, imageStack, varargin)
+function projection = calculateProjection(...
+    projectionType, nSlices, imageStack, varargin)
 
 % Calculate projection for a nuclear channel
 lowerSlice = 1;
