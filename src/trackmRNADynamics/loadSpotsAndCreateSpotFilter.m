@@ -1,4 +1,4 @@
-function [Spots, SpotFilter] = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefix, NCh)
+function Spots = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefix, NCh)
 
 disp('Loading Spots.mat...')
 if ~exist('Spots', 'var')
