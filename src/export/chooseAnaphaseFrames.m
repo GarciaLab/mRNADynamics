@@ -192,8 +192,8 @@ dimVec = [dim(1), dim(2), dim(1), dim(2)]; %to easily normalize units
 fig = uifigure('Position', [100, 100, dim(1), dim(2)], 'Name', 'Choose Histone Channels');
 set(fig,'KeyPressFcn',@keycall)
 imgAxis = uiaxes(fig, 'Position', [20, 20, dim(1) - 20, dim(2) * 0.5]);
-precision = 'uint8';
-blank = zeros(yDim, xDim, precision);
+hisPrecision = 'uint8';
+blank = zeros(yDim, xDim, hisPrecision);
 himage = imshow(blank, [], 'Parent', imgAxis);
 
 frame_slider = uislider(fig, 'Limits', [1, numFrames], 'Value', 1, ...
@@ -213,14 +213,14 @@ minLabelPos = dimVec .* [.7, .425, .1, .05];
 
 max_label = uilabel(fig,  'Text', 'max display value', 'Position', ...
     maxLabelPos);
-max_slider = uislider(fig, 'Limits', [1, 256], 'Value', 256, ...
+max_slider = uislider(fig, 'Limits', [0, 255], 'Value', 255, ...
     'Position', maxPos);
 max_slider.ValueChangedFcn = @updateHisImage;
 
 
 min_label = uilabel(fig,  'Text', 'min display value', 'Position', ...
     minLabelPos);
-min_slider = uislider(fig, 'Limits', [0, 256], 'Value', 1, ...
+min_slider = uislider(fig, 'Limits', [0, 255], 'Value', 0, ...
     'Position',minPos);
 min_slider.ValueChangedFcn = @updateHisImage;
 
@@ -366,7 +366,7 @@ uiwait(fig);
             % Use the reference histogram to scale the Projection (This part
             % might need some more optimization later-YJK)
             ProjectionTemp(:, :, i) = histeq(mat2gray(ProjectionTemp(:, :, i)), ReferenceHist);
-            ProjectionTemp(:, :, i) = ProjectionTemp(:, :, i) *256;
+            ProjectionTemp(:, :, i) = ProjectionTemp(:, :, i) *255;
             
             
         end
@@ -387,12 +387,14 @@ uiwait(fig);
         end
         
         himage.CData = Projection;
-        try imgAxis.CLim = [minDisplayIntensity, maxDisplayIntensity]; end
+        try imgAxis.CLim = [minDisplayIntensity, maxDisplayIntensity]; catch; end
         
         projCell{frame} = projection_type;
         %         chCell{frame} = getChannels;
         projectionChannels = retrieveChannels;
-        Channel1 = projectionChannels{1}; Channel2 = projectionChannels{2}; Channel3 = projectionChannels{3};
+        Channel1 = projectionChannels{1}; 
+        Channel2 = projectionChannels{2};
+        Channel3 = projectionChannels{3};
         
         
     end
@@ -405,15 +407,17 @@ uiwait(fig);
         end
         
         projectionChannels = retrieveChannels;
-        Channel1 = projectionChannels{1}; Channel2 = projectionChannels{2}; Channel3 = projectionChannels{3};
+        Channel1 = projectionChannels{1};
+        Channel2 = projectionChannels{2}; 
+        Channel3 = projectionChannels{3};
         
         if returnHisMat
             
-            hisMat = zeros(yDim, xDim, sum(NFrames), precision); % y x f
+            hisMat = zeros(yDim, xDim, sum(NFrames), hisPrecision); % y x f
             
             for f = 1:NFrames
-                %                 hisMat(:, :, f) = generateNuclearChannel2(projCell{f}, chCell{f}, ReferenceHist, movieMat, f);
-                hisMat(:, :, f) = generateNuclearChannel2(ProjectionType, projectionChannels, ReferenceHist, movieMat, f);
+                hisMat(:, :, f) = generateNuclearChannel2(ProjectionType,...
+                    projectionChannels, ReferenceHist, movieMat, f);
             end
             
             saveNuclearProjection(hisMat, [thisExperiment.preFolder, filesep, Prefix, '-His.tif']);
@@ -449,13 +453,13 @@ uiwait(fig);
         
         %redoes projection for custom_proj
         idx2 = 1;
-        for framesIndex = 1:NFrames
+        for frameIndex = 1:NFrames
             if mod(idx2, skip_factor) == 1
-                for channelIndex = 1:NChannels
+                for chanIndex = 1:NChannels
                     
-                    HisSlices = squeeze(movieMat(:, :, :, framesIndex,channelIndex)); %ch z t y x
+                    HisSlices = squeeze(movieMat(:, :, :, frameIndex,chanIndex)); %ch z t y x
                     
-                    custom_proj{channelIndex, ceil(idx2 / skip_factor)} = calculateProjection(...
+                    custom_proj{chanIndex, ceil(idx2 / skip_factor)} = calculateProjection(...
                         'customprojection', NSlices, HisSlices, max_custom, min_custom);
                 end
             end
