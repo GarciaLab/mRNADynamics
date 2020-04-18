@@ -1,5 +1,5 @@
-function [Particles] = track01_ParticleProximity(...
-    Particles, Spots, xPos, Channel, CurrentFrame,...
+function [Particles] = track01ParticleProximity(...
+    Particles, Spots, xPos, Channel,...
     PixelSize, SearchRadius, retrack, displayFigures)
   
   %This function is used by the performTracking subfunction of
@@ -9,9 +9,10 @@ function [Particles] = track01_ParticleProximity(...
   if displayFigures
     drawnow
   end
-  % Get the particles detected in the frame
-
-  if ~isempty(xPos)
+  
+  
+  for CurrentFrame = 1:length(Spots{Channel})
+  
       
     % Get the positions of ALL spots (approved and disapproved)
     [NewSpotsX, NewSpotsY] = SpotsXYZ(Spots{Channel}(CurrentFrame));
