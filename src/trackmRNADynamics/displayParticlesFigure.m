@@ -1,4 +1,4 @@
-function x = displayParticlesFigure(app, particlesAxes, ParticlesFig, Spots, Channel, CurrentFrame, CurrentFrameFilter, PreProcPath, Prefix, SpotsChannel, FrameInfo, displayFigures)
+function x = displayParticlesFigure(app, particlesAxes, ParticlesFig, Spots, Channel, CurrentFrame, PreProcPath, Prefix, SpotsChannel, FrameInfo, displayFigures)
 
 % Get the positions of the spots in this frame
 [x, y, ~] = SpotsXYZ(Spots{Channel}(CurrentFrame));
@@ -30,8 +30,8 @@ if displayFigures
     
     imshow(particleImage, [], 'Parent', ax1, 'InitialMagnification', 'fit')
     hold(ax1, 'on')
-    plot(ax1, x(CurrentFrameFilter), y(CurrentFrameFilter), 'or', 'MarkerSize', 10)
-    plot(ax1, x(~CurrentFrameFilter), y(~CurrentFrameFilter), 'ow', 'MarkerSize', 10)
+    plot(ax1, x, y, 'or', 'MarkerSize', 10)
+%     plot(ax1, x(~CurrentFrameFilter), y(~CurrentFrameFilter), 'ow', 'MarkerSize', 10)
     hold(ax1, 'off')
 end
 

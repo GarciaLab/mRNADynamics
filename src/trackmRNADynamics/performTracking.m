@@ -7,7 +7,6 @@ function Particles =...
 
 NDigits = thisExperiment.nDigits;
 
-
 % Iterate over all channels
 
 for Channel = 1:NCh
@@ -20,13 +19,13 @@ for Channel = 1:NCh
             set(ParticlesFig, 'units', 'normalized', 'position', [0.01, .55, .33, .33]);
         end
         
-        % Get the filter for this frame
-        CurrentFrameFilter = logical(SpotFilter{Channel}(CurrentFrame,...
-            ~isnan(SpotFilter{Channel}(CurrentFrame, :))));
+%         % Get the filter for this frame
+%         CurrentFrameFilter = logical(SpotFilter{Channel}(CurrentFrame,...
+%             ~isnan(SpotFilter{Channel}(CurrentFrame, :))));
         
         xPos = displayParticlesFigure(app, particlesAxes,...
             ParticlesFig, Spots, Channel, CurrentFrame, ...
-            CurrentFrameFilter, PreProcPath, Prefix, SpotsChannel, FrameInfo, displayFigures);
+            PreProcPath, Prefix, SpotsChannel, FrameInfo, displayFigures);
         
         if UseHistone
             [Particles, SpotFilter] = trackParticlesBasedOnNuclei(PreProcPath, Prefix,...
