@@ -94,7 +94,7 @@ validateExperimentTypeSupported(ExperimentType);
 
 Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh, retrack);
 
-[Spots, SpotFilter] = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefix, NCh);
+Spots = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefix, NCh);
 
 if displayFigures
     [ParticlesFig, particlesAxes, NucleiFig, nucAxes] = generateTrackingFigures(app, UseHistone);
