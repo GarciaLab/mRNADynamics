@@ -1,12 +1,5 @@
 function removeEvenSlices(Prefix, varargin)
 
-saveType = 'mat3D';
-
-for i = 1:2:(numel(varargin)-1)
-    if i ~= numel(varargin)
-        eval([varargin{i} '=varargin{i+1};']);
-    end
-end
 
 [~, ProcPath] = DetermineLocalFolders(Prefix);
 
@@ -31,36 +24,17 @@ for id = 1:length(files)
         
         n = n + 1;
         dogStack(:, :, n) = dogStackOld(:, :, zOdd);
+        dogStack = uint16(dogStack*10000);
         
-        %if we're saving as individual planes, do this inside the loop
-        if ~strcmpi(saveType, 'mat3D')
+        if n == 1
+            imwrite(dogStack, [dogFolder,filesep, imFile], 'WriteMode', 'overwrite');
             
-            imName = strrep(imFile(1:end-4), '_ch', ['_z', iIndex(n, 2),'_ch']);
-            if n == 1
-                imwrite(uint16(dogStack*10000), [dogFolder,filesep, imName, '.tif']);
-            else
-                imwrite(uint16(dogStack*10000), [dogFolder,filesep, imName, '.tif'], 'WriteMode','append');
-            end
-            
+        else
+            imwrite(dogStack, [dogFolder,filesep, imFile], 'WriteMode','append');
         end
         
-    end %loop over planes
-    
-    
-    %if we're saving as a stack, save here
-    if strcmpi(saveType, 'mat3D')
-        dogStack = uint16(dogStack*10000);
-        save([dogFolder,filesep, imFile(1:end-4), '.mat'], 'dogStack', '-v6');
-    elseif strcmpi(saveType, 'tif3D')
-        dogStack = uint16(dogStack*10000);
-        imwrite([dogFolder,filesep, imFile(1:end-4), '.tif'], 'dogStack', '-v6');
+        
     end
     
-    %delete the old file now that we're done with it
-    delete([dogFolder, filesep, imFile]);
     
-end %loop over frames
-
-
-
 end
