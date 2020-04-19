@@ -64,14 +64,12 @@ NCh = length(spotChannels);
 OutputFolder = [DropboxFolder, filesep, Prefix];
 
 % Determine the search radius based on the imaging conditions
-SearchRadiusMicrons = 0.5; % Search radius in um
+SearchRadiusMicrons = 0.5 / sqrt(20); % Search radius in um
 
 % Load the information about this image
 % Check if we have FrameInfo otherwise try to get the information straight
 % from the file.
 [FrameInfo, PixelSize_um] = loadFrameInfo(OutputFolder, PreProcPath, Prefix);
-
-SearchRadius = ceil(SearchRadiusMicrons / PixelSize_um);
 
 % Check if we have tracked the lineages of the nuclei
 if exist([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'file')
@@ -106,7 +104,7 @@ Particles = performTracking(Particles, schnitzcells,...
     NCh, Spots, app, PreProcPath, ...
     Prefix, UseHistone, ParticlesFig, spotChannels,...
     NucleiFig, particlesAxes, nucAxes, Ellipses, ...
-    PixelSize_um, SearchRadius, ExperimentType,...
+    PixelSize_um, SearchRadiusMicrons, ExperimentType,...
     FrameInfo, retrack, displayFigures, thisExperiment);
 
 mkdir([OutputFolder, filesep]);
