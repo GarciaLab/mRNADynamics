@@ -1,4 +1,5 @@
-function [ParticleOutput,IndexOutput]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots,Particles)
+function [ParticleOutput,IndexOutput]=...
+    FindClickedParticle(ConnectPosition,CurrentFrame,Spots,Particles)
 
 %Find the particle index of the particle the user clicked on
 
