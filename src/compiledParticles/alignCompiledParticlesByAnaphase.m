@@ -1,7 +1,5 @@
 function alignCompiledParticlesByAnaphase(Prefix)
 
-
-
 [~,~,DropboxFolder,~, PreProcPath,...
     ~, ~, ~, ~, ~,~] = readMovieDatabase(Prefix);
 resultsFolder = [DropboxFolder, filesep, Prefix];
