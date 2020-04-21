@@ -3,7 +3,7 @@ function ax1 = plotInLoop(plotIndex, cmap, varargin)
 xRange = [];
 yRange = [];
 ax1= [];
-legendVisible = 'off';
+legendVisible = 'on';
 
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.

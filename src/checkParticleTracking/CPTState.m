@@ -15,24 +15,24 @@ classdef CPTState < handle
         nucleiModified
         
         Frames
-        CurrentFrame (1,1) uint16
-        PreviousFrame (1,1) uint16
+        CurrentFrame {mustBeEmptyOrScalar(CurrentFrame)} 
+        PreviousFrame {mustBeEmptyOrScalar} 
         
         ManualZFlag
         ZSlices
-        CurrentZ (1,1) uint8
-        CurrentZIndex (1,1) uint8
+        CurrentZ {mustBeEmptyOrScalar} 
+        CurrentZIndex {mustBeEmptyOrScalar} 
         
-        CurrentParticleIndex (1,1) uint8
-        CurrentParticle (1,1) uint16
-        PreviousParticle (1,1) uint16
-        lastParticle (1,1) uint16
+        CurrentParticleIndex {mustBeEmptyOrScalar} 
+        CurrentParticle {mustBeEmptyOrScalar} 
+        PreviousParticle {mustBeEmptyOrScalar} 
+        lastParticle {mustBeEmptyOrScalar} 
  
-        CurrentChannel (1,1) uint8
-        CurrentChannelIndex (1,1) uint8
-        PreviousChannel (1,1) uint8
-        PreviousChannelIndex (1,1) uint8
-        coatChannel (1,:) uint8
+        CurrentChannel {mustBeEmptyOrScalar} 
+        CurrentChannelIndex {mustBeEmptyOrScalar} 
+        PreviousChannel {mustBeEmptyOrScalar} 
+        PreviousChannelIndex {mustBeEmptyOrScalar} 
+        coatChannel {mustBeEmptyOrScalar} 
         
         FrameIndicesToFit
         Coefficients
@@ -303,6 +303,13 @@ classdef CPTState < handle
             this.CurrentParticleIndex = this.getCurrentParticleIndex();
         end
     end
+end
+
+function mustBeEmptyOrScalar(in)
+   if numel(in) > 1
+      error(['Value assigned to property is not'...
+          'scalar or empty']);
+   end
 end
  
 
