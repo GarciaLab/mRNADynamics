@@ -85,7 +85,7 @@ if makeMovie
     end
     
     for ch = 1:nCh
-        for f = 1:nFrames
+        parfor f = 1:nFrames
             
             for z = 1:nSlices+nPadding
                 movieMat(:, :, z, f, ch) = imread([preFolder, filesep, Prefix, '_',iIndex(f, nDigits),...
