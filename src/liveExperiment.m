@@ -284,7 +284,7 @@ classdef liveExperiment
                 this_xDim = this.xDim;
                 this_zDim = this.zDim;
                 
-                for f = 1:this_nFrames
+                parfor f = 1:this_nFrames
                     movieMat(:, :, :, f, chIndex) =...
                         imreadStack2([this_preFolder, filesep, preChDir(f).name],...
                         this_yDim, this_xDim, this_zDim+nPadding);

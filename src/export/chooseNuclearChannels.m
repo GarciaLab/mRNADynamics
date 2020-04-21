@@ -87,14 +87,14 @@ minLabelPos = dimVec .* [.7, .425, .1, .05];
 
 max_label = uilabel(fig,  'Text', 'max display value', 'Position', ...
     maxLabelPos);
-max_slider = uislider(fig, 'Limits', [1, 256], 'Value', 256, ...
+max_slider = uislider(fig, 'Limits', [0, 255], 'Value', 255, ...
     'Position', maxPos);
 max_slider.ValueChangedFcn = @updateHisImage;
 
 
 min_label = uilabel(fig,  'Text', 'min display value', 'Position', ...
     minLabelPos);
-min_slider = uislider(fig, 'Limits', [0, 256], 'Value', 1, ...
+min_slider = uislider(fig, 'Limits', [0, 255], 'Value', 0, ...
     'Position',minPos);
 min_slider.ValueChangedFcn = @updateHisImage;
 
@@ -181,7 +181,7 @@ uiwait(fig);
             % Use the reference histogram to scale the Projection (This part
               % might need some more optimization later-YJK)
               ProjectionTemp(:, :, i) = histeq(mat2gray(ProjectionTemp(:, :, i)), ReferenceHist);
-              ProjectionTemp(:, :, i) = ProjectionTemp(:, :, i) * 256;
+              ProjectionTemp(:, :, i) = ProjectionTemp(:, :, i) * 255;
         end
 
         % Getting average of all Projections

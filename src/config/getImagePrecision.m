@@ -3,7 +3,7 @@ function [precision, image] = getImagePrecision(image)
 isInteger = sum(mod(image(:), 1));
 
 if isInteger
-    if max(image(:)) > 256
+    if max(image(:)) > 255
         precision = 'uint16';
     else
         precision = 'uint8';
