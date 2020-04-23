@@ -3,7 +3,8 @@ function [Spots, SpotFilter, CurrentFrame, ...
     ...
     removeSpot(Frames, CurrentFrame, ...
     ...   
-    CurrentChannelIndex, CurrentParticle, CurrentParticleIndex, Particles, Spots, SpotFilter)
+    CurrentChannelIndex, CurrentParticle,...
+    CurrentParticleIndex, Particles, Spots, SpotFilter, shouldQueryUser)
 %
 %REMOVESPOT removes a spot from the spots and particles structure 
 %  removes a spot from the spots and particles structure 
@@ -18,6 +19,7 @@ lastParticle = CurrentParticle;
 PreviousParticle = CurrentParticle;
 ManualZFlag = false;
 
+if shouldQueryUser
 if ~isempty(CurrentFrameWithinParticle)
     choice = questdlg('Are you sure you want to delete this spot? This can''t be undone.', ...
         '', 'Delete spot','Cancel','Cancel');
@@ -28,6 +30,7 @@ if ~isempty(CurrentFrameWithinParticle)
         case 'Cancel'
             disp 'Spot deletion cancelled.'
     end
+end
 end
 
 if del
@@ -42,7 +45,9 @@ if del
         for i = 1:numel(particleFields)
             if ~strcmpi(particleFields{i},'Nucleus') && ~strcmpi(particleFields{i},'Approved')
                 try
-                    Particles{CurrentChannelIndex}(CurrentParticle).(particleFields{i})(CurrentFrameWithinParticle) = [];
+                    Particles{CurrentChannelIndex}...
+                        (CurrentParticle).(particleFields{i})...
+                        (CurrentFrameWithinParticle) = [];
                 end
             end
         end
@@ -73,31 +78,6 @@ if del
     SpotFilter{CurrentChannelIndex}(CurrentFrame,:) = spotRow;
     disp('Spot deleted successfully.');
     
-    if onlyFrame
-        %switch to another particle just to avoid any potential weirdness with
-        %checkparticletracking refreshing. simpler version of the
-        %'m' button
-        CurrentParticle = CurrentParticle - 1; 
-        
-        if (CurrentParticle+1) < numParticles
-            CurrentParticle = CurrentParticle+1;
-        end
-        
-        if numParticles == 1
-            lastParticle = 1;
-        end
-        
-        CurrentFrame=Particles{CurrentChannelIndex}(CurrentParticle).Frame(1);
-        PreviousParticle = 0; % this is done so that the trace is updated
-    elseif CurrentFrame > 1
-        CurrentFrame=CurrentFrame-1;
-        ManualZFlag=0;
-        PreviousParticle = 0; % this is done so that the trace is updated
-    elseif CurrentFrame < length({Spots{1}.Fits})
-        CurrentFrame=CurrentFrame+1;
-        ManualZFlag=0;
-        PreviousParticle = 0; % this is done so that the trace is updated
-    end
 
 end
 

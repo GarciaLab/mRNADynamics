@@ -16,23 +16,23 @@ classdef CPTState < handle
         
         Frames
         CurrentFrame {mustBeEmptyOrScalar(CurrentFrame)} 
-        PreviousFrame {mustBeEmptyOrScalar} 
+        PreviousFrame {mustBeEmptyOrScalar(PreviousFrame)} 
         
         ManualZFlag
         ZSlices
-        CurrentZ {mustBeEmptyOrScalar} 
-        CurrentZIndex {mustBeEmptyOrScalar} 
+        CurrentZ {mustBeEmptyOrScalar(CurrentZ)} 
+        CurrentZIndex {mustBeEmptyOrScalar(CurrentZIndex)} 
         
-        CurrentParticleIndex {mustBeEmptyOrScalar} 
-        CurrentParticle {mustBeEmptyOrScalar} 
-        PreviousParticle {mustBeEmptyOrScalar} 
-        lastParticle {mustBeEmptyOrScalar} 
+        CurrentParticleIndex {mustBeEmptyOrScalar(CurrentParticleIndex)} 
+        CurrentParticle {mustBeEmptyOrScalar(CurrentParticle)} 
+        PreviousParticle {mustBeEmptyOrScalar(PreviousParticle)} 
+        lastParticle {mustBeEmptyOrScalar(lastParticle)} 
  
-        CurrentChannel {mustBeEmptyOrScalar} 
-        CurrentChannelIndex {mustBeEmptyOrScalar} 
-        PreviousChannel {mustBeEmptyOrScalar} 
-        PreviousChannelIndex {mustBeEmptyOrScalar} 
-        coatChannel {mustBeEmptyOrScalar} 
+        CurrentChannel {mustBeEmptyOrScalar(CurrentChannel)} 
+        CurrentChannelIndex {mustBeEmptyOrScalar(CurrentChannelIndex)} 
+        PreviousChannel {mustBeEmptyOrScalar(PreviousChannel)} 
+        PreviousChannelIndex {mustBeEmptyOrScalar(PreviousChannelIndex)} 
+        coatChannel {mustBeEmptyOrScalar(coatChannel)} 
         
         FrameIndicesToFit
         Coefficients
