@@ -254,7 +254,7 @@ classdef CPTState < handle
                 
                 if multiView
                     for z = 1:-1:-1
-                        for f = -1:1
+                        for f = -1:1:1
                             if any( 1:nSlices == this.CurrentZ + z) &&...
                                     any( 1:nFrames == this.CurrentFrame + f)
                                 this.multiImage{z+2, f+2} =...
@@ -263,9 +263,9 @@ classdef CPTState < handle
                             else
                                 this.multiImage{z+2, f+2} = blankImage;
                             end
-                        end
-                    end
-                end
+                        end % loop over frames
+                    end % loop over z slices
+                end 
                 
             elseif strcmpi(this.projectionMode, 'Max Z')
                 if nFrames > 1

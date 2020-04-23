@@ -97,11 +97,11 @@ classdef liveExperiment
             %most time-consuming part of
             %project initialization and the output
             %is not memory intensive
-%             memoizedDetermineLocalFolders = memoize(@DetermineLocalFolders);
-%             [rawPath, ProcPath, DropboxFolder, obj.MS2CodePath, PreProcPath,...
-%                 ~, ~, ~, movieDatabase]= memoizedDetermineLocalFolders(obj.Prefix);
-       
-[rawPath, ProcPath, DropboxFolder, obj.MS2CodePath, PreProcPath,...
+            %             memoizedDetermineLocalFolders = memoize(@DetermineLocalFolders);
+            %             [rawPath, ProcPath, DropboxFolder, obj.MS2CodePath, PreProcPath,...
+            %                 ~, ~, ~, movieDatabase]= memoizedDetermineLocalFolders(obj.Prefix);
+            
+            [rawPath, ProcPath, DropboxFolder, obj.MS2CodePath, PreProcPath,...
                 ~, ~, ~, movieDatabase]= DetermineLocalFolders(obj.Prefix);
             
             
@@ -215,7 +215,7 @@ classdef liveExperiment
             for k = 1:5  %i don't see channel number going beyond 6 any time soon.
                 exportedChannels(k) =  any(contains(...
                     string({preTifDir.name}), ['_ch0',num2str(k)]));
-               
+                
             end
             channelsToRead = find(exportedChannels);
             
@@ -232,7 +232,7 @@ classdef liveExperiment
                     ~isequal( size(movieMat, 4), this.nFrames)
                 
                 if this.hasMovieMatFile
-                    %load in .mat file 
+                    %load in .mat file
                     movieMat = loadMovieMat(this.Prefix);
                 elseif ~haveTifStacks
                     %load movie from individual tif slices
@@ -273,7 +273,7 @@ classdef liveExperiment
                 preChDir = preTifDir( ...
                     contains(...
                     string({preTifDir.name}), ['ch0', num2str(ch)]) &...
-                ~contains(string({preTifDir.name}), '_z') );
+                    ~contains(string({preTifDir.name}), '_z') );
                 
                 %making these temporary variables to avoid passing all
                 %of
