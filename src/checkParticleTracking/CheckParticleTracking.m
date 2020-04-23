@@ -256,7 +256,8 @@ end
 
 if ~isempty(cptState.Particles{cptState.CurrentChannelIndex})
     cptState.CurrentFrame =...
-        cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Frame(CurrentFrameWithinParticle);
+        cptState.Particles{cptState.CurrentChannelIndex}...
+        (cptState.CurrentParticle).Frame(CurrentFrameWithinParticle);
 
 else, error('Looks like the Particles structure is empty. There''s nothing to check.'); end
 

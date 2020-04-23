@@ -85,10 +85,10 @@ if makeMovie
     end
     
     for ch = 1:nCh
-        for f = 1:nFrames
+        parfor f = 1:nFrames
             
             zRange = 1:nSlices + nPadding;
-            parfor z = zRange
+            for z = zRange
                 movieMat(:, :, z, f, ch) = imread([preFolder, filesep, Prefix, '_',iIndex(f, nDigits),...
                     '_z', iIndex(z, 2), ['_ch', iIndex(ch, 2)], '.tif']);
             end
