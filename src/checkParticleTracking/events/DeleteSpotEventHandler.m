@@ -1,6 +1,6 @@
 function keyInputHandler = DeleteSpotEventHandler(cptState)
 
-    function switchedParticlesFlag = doDeleteSpot(frame, shouldQueryUser)
+    function switchedParticlesFlag = doDeleteSpot(shouldQueryUser)
         
         switchedParticlesFlag = false;
         isOnlyFrame = length(cptState.Particles{cptState.CurrentChannelIndex}...
@@ -9,12 +9,12 @@ function keyInputHandler = DeleteSpotEventHandler(cptState)
         disp(['Removing frame ', num2str(cptState.CurrentFrame),...
             ' from particle ' num2str(cptState.CurrentParticle)])
         
-        cptState = ...
+        cptState =...
             ...
-            removeSpot(cptState, frame, shouldQueryUser);
+            removeSpot(cptState, shouldQueryUser);
         
-        cptState.PreviousParticle = 0; % this is done so that the trace is updated
 
+        
         if isOnlyFrame
             
             
@@ -35,7 +35,7 @@ function keyInputHandler = DeleteSpotEventHandler(cptState)
             switchedParticlesFlag = true;
             
         elseif cptState.CurrentFrame > 1
-            cptState.CurrentFrame = cptState.CurrentFrame-1;
+            cptState.CurrentFrame = getCurrentParticle(cptState).Frame(1);
             cptState.ManualZFlag=0;
         elseif cptState.CurrentFrame < length({cptState.Spots{1}.Fits})
             cptState.CurrentFrame= cptState.CurrentFrame+1;
@@ -48,8 +48,10 @@ function keyInputHandler = DeleteSpotEventHandler(cptState)
     end
 
     function keyInput(cc)
+        
         if cc == '#' %remove a spot from cptState.Spots and erase its frame in Particles
-            doDeleteSpot(cptState.CurrentFrame, true);
+            
+            doDeleteSpot(true);
             
         elseif cc == '^' %remove a whole trace from cptState.Spots and Particles. AR 7/9/2019 a work in progress
             
@@ -57,8 +59,7 @@ function keyInputHandler = DeleteSpotEventHandler(cptState)
             
             while ~switchedParticlesFlag
                 
-                switchedParticlesFlag = doDeleteSpot( cptState.Particles{cptState.CurrentChannelIndex}...
-                    (cptState.CurrentParticle).Frame(1), false);
+                switchedParticlesFlag = doDeleteSpot(false);
                 
             end
             
