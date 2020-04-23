@@ -17,8 +17,9 @@ for p = 1:length(CompiledParticles)
     
     %why did this particle start at the beginning of anaphase? it's 
     %suspicious.
-     if CompiledParticles(p).timeSinceAnaphase == 0 & schnitzcells(s).cycle == 12
-        warning('stop')
+     if CompiledParticles(p).timeSinceAnaphase(1) == 0 && schnitzcells(s).cycle == 12
+        warning('found nc12 particle starting at t=0. obviously bad. disapproving.')
+        CompiledParticles(p).Approved = false;
      end
     
 end

@@ -1,23 +1,22 @@
-function [Spots, SpotFilter, CurrentFrame, ...
-    CurrentParticle, Particles, ManualZFlag, lastParticle, PreviousParticle] =...
+function cptState =...
     ...
-    removeSpot(Frames, CurrentFrame, ...
-    ...   
-    CurrentChannelIndex, CurrentParticle, CurrentParticleIndex, Particles, Spots, SpotFilter)
+    removeSpot(cptState, shouldQueryUser)
+%
 %
 %REMOVESPOT removes a spot from the spots and particles structure 
 %  removes a spot from the spots and particles structure 
 
-
-numParticles = length(Particles{CurrentChannelIndex});
+cptState.numParticles;
 
 del = false;
-CurrentFrameWithinParticle = find(Frames==CurrentFrame);
+CurrentFrameWithinParticle = find(cptState.Particles{cptState.CurrentChannelIndex}...
+    (cptState.CurrentParticle).Frames==cptState.CurrentFrame);
 
-lastParticle = CurrentParticle;
-PreviousParticle = CurrentParticle;
-ManualZFlag = false;
+cptState.lastParticle = cptState.CurrentParticle;
+cptState.PreviousParticle = cptState.CurrentParticle;
+cptState.ManualZFlag = false;
 
+if shouldQueryUser
 if ~isempty(CurrentFrameWithinParticle)
     choice = questdlg('Are you sure you want to delete this spot? This can''t be undone.', ...
         '', 'Delete spot','Cancel','Cancel');
@@ -29,75 +28,58 @@ if ~isempty(CurrentFrameWithinParticle)
             disp 'Spot deletion cancelled.'
     end
 end
+end
 
 if del
     
-    ind = Particles{CurrentChannelIndex}(CurrentParticle).Index(CurrentFrameWithinParticle);
-    onlyFrame = length(Particles{CurrentChannelIndex}(CurrentParticle).Frame) == 1;
+    ind = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Index(CurrentFrameWithinParticle);
+    
+    onlyFrame = length(cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Frame) == 1;
+    
     if onlyFrame
-        Particles{CurrentChannelIndex}(CurrentParticle) = [];
-        numParticles = numParticles - 1;
+        cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle) = [];
+        cptState.numParticles = cptState.numParticles - 1;
     else
-        particleFields = fieldnames(Particles{CurrentChannelIndex});
+        particleFields = fieldnames(cptState.Particles{cptState.CurrentChannelIndex});
         for i = 1:numel(particleFields)
             if ~strcmpi(particleFields{i},'Nucleus') && ~strcmpi(particleFields{i},'Approved')
                 try
-                    Particles{CurrentChannelIndex}(CurrentParticle).(particleFields{i})(CurrentFrameWithinParticle) = [];
+                    cptState.Particles{cptState.CurrentChannelIndex}...
+                        (cptState.CurrentParticle).(particleFields{i})...
+                        (CurrentFrameWithinParticle) = [];
                 end
             end
         end
     end
     %and this part changes the the index of other particles
     %in the frame.
-    for i=1:length(Particles{CurrentChannelIndex})
-        for j = 1:length(Particles{CurrentChannelIndex}(i).Frame)
-            if Particles{CurrentChannelIndex}(i).Frame(j) == CurrentFrame
-                if Particles{CurrentChannelIndex}(i).Index(j) > ind
-                    Particles{CurrentChannelIndex}(i).Index(j) = Particles{CurrentChannelIndex}(i).Index(j) - 1;
+    for i=1:length(cptState.Particles{cptState.CurrentChannelIndex})
+        for j = 1:length(cptState.Particles{cptState.CurrentChannelIndex}(i).Frame)
+            
+            if cptState.Particles{cptState.CurrentChannelIndex}(i).Frame(j) == cptState.CurrentFrame
+                if cptState.Particles{cptState.CurrentChannelIndex}(i).Index(j) > ind
+                    cptState.Particles{cptState.CurrentChannelIndex}(i).Index(j) =...
+                        cptState.Particles{cptState.CurrentChannelIndex}(i).Index(j) - 1;
                 end
             end
+            
         end
     end
     
     %and this part deletes from the spots structure.
-    CurrentSpot = CurrentParticleIndex; %renaming this to make it clear what it actually is
-    Spots{CurrentChannelIndex}(CurrentFrame).Fits(CurrentSpot)= [];
-    if isempty(Spots{CurrentChannelIndex}(CurrentFrame).Fits)
-        Spots{CurrentChannelIndex}(CurrentFrame).Fits = [];
+   CurrentSpot = cptState.CurrentParticleIndex; 
+    cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame).Fits(cptState.CurrentSpot)= [];
+    if isempty(cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame).Fits)
+        cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame).Fits = [];
     end
     
     %now delete from spotfilter
-    spotRow = SpotFilter{CurrentChannelIndex}(CurrentFrame,:);
+    spotRow = cptState.SpotFilter{cptState.CurrentChannelIndex}(cptState.CurrentFrame,:);
     spotRow(CurrentSpot) = [];
     spotRow(end+1) = NaN;
-    SpotFilter{CurrentChannelIndex}(CurrentFrame,:) = spotRow;
+    cptState.SpotFilter{cptState.CurrentChannelIndex}(cptState.CurrentFrame,:) = spotRow;
     disp('Spot deleted successfully.');
     
-    if onlyFrame
-        %switch to another particle just to avoid any potential weirdness with
-        %checkparticletracking refreshing. simpler version of the
-        %'m' button
-        CurrentParticle = CurrentParticle - 1; 
-        
-        if (CurrentParticle+1) < numParticles
-            CurrentParticle = CurrentParticle+1;
-        end
-        
-        if numParticles == 1
-            lastParticle = 1;
-        end
-        
-        CurrentFrame=Particles{CurrentChannelIndex}(CurrentParticle).Frame(1);
-        PreviousParticle = 0; % this is done so that the trace is updated
-    elseif CurrentFrame > 1
-        CurrentFrame=CurrentFrame-1;
-        ManualZFlag=0;
-        PreviousParticle = 0; % this is done so that the trace is updated
-    elseif CurrentFrame < length({Spots{1}.Fits})
-        CurrentFrame=CurrentFrame+1;
-        ManualZFlag=0;
-        PreviousParticle = 0; % this is done so that the trace is updated
-    end
 
 end
 
