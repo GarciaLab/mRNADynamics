@@ -119,7 +119,7 @@ warning('off', 'MATLAB:mir_warning_maybe_uninitialized_temporary')
 
 %% Initialization
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
 schnitzcells = [];
 Ellipses = [];
@@ -146,7 +146,7 @@ end
 [~,~,DropboxFolder,~, ~,~, ~, ~,~,~,~,~, ~, ~, movieDatabase]...
     = readMovieDatabase(Prefix, optionalResults);
 
-PreProcPath = thisExperiment.userPreFolder;
+PreProcPath = liveExperiment.userPreFolder;
 
 DataFolder = [DropboxFolder, filesep, Prefix];
 FilePrefix = [Prefix, '_'];
@@ -163,13 +163,13 @@ else
     Spots3D = {};
 end
 
-xSize = thisExperiment.xDim;
-ySize = thisExperiment.yDim;
-pixelSize_nm = thisExperiment.pixelSize_nm;
-snippetSize_px = thisExperiment.snippetSize_px;
-nFrames = thisExperiment.nFrames;
-nSlices = thisExperiment.zDim;
-nDigits = thisExperiment.nDigits;
+xSize = liveExperiment.xDim;
+ySize = liveExperiment.yDim;
+pixelSize_nm = liveExperiment.pixelSize_nm;
+snippetSize_px = liveExperiment.snippetSize_px;
+nFrames = liveExperiment.nFrames;
+nSlices = liveExperiment.zDim;
+nDigits = liveExperiment.nDigits;
 
 nSlices = nSlices + 2; %due to padding;
 %Create the particle array. This is done so that we can support multiple
@@ -196,17 +196,17 @@ Particles = addFrameApproved(numSpotChannels, Particles);
     ~, ~, ~, ~, ~, ~, ~, ~, prophase, metaphase] =...
     getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
 
-ExperimentType = thisExperiment.experimentType;
-Channels = thisExperiment.Channels;
-Channel1 = thisExperiment.Channel1;
-Channel2 = thisExperiment.Channel2;
-Channel3 = thisExperiment.Channel3;
-nc9 = thisExperiment.nc9;
-nc10 = thisExperiment.nc10;
-nc11 = thisExperiment.nc11;
-nc12 = thisExperiment.nc12;
-nc13 = thisExperiment.nc13;
-nc14 = thisExperiment.nc14;
+ExperimentType = liveExperiment.experimentType;
+Channels = liveExperiment.Channels;
+Channel1 = liveExperiment.Channel1;
+Channel2 = liveExperiment.Channel2;
+Channel3 = liveExperiment.Channel3;
+nc9 = liveExperiment.nc9;
+nc10 = liveExperiment.nc10;
+nc11 = liveExperiment.nc11;
+nc12 = liveExperiment.nc12;
+nc13 = liveExperiment.nc13;
+nc14 = liveExperiment.nc14;
 
 
 for i = 1:nFrames
@@ -249,7 +249,7 @@ cptState = CPTState(Spots, Particles, SpotFilter, schnitzcells, Ellipses,...
     FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss, projectionMode); %work in progress, 2019-12, JP.
 
 try
-    spotChannels = thisExperiment.spotChannels; 
+    spotChannels = liveExperiment.spotChannels; 
     cptState.CurrentChannel = spotChannels(1);
     cptState.CurrentChannelIndex= 1;
 end
@@ -263,8 +263,8 @@ if ~isempty(cptState.Particles{cptState.CurrentChannelIndex})
 else, error('Looks like the Particles structure is empty. There''s nothing to check.'); end
 
 %load the movies
-movieMat = getMovieMat(thisExperiment);
-hisMat = getHisMat(thisExperiment);
+movieMat = getMovieMat(liveExperiment);
+hisMat = getHisMat(liveExperiment);
 persistent maxMat
 if isempty(maxMat) || size(maxMat, 4) ~= nFrames
     maxMat = max(movieMat(:,:,:,:), [],3);
@@ -301,13 +301,14 @@ end
 %Define user interface
 [Overlay, overlayAxes, snippetFigAxes,...
     rawDataAxes, gaussianAxes, traceFigAxes, zProfileFigAxes,...
-    zTraceAxes,HisOverlayFig,HisOverlayFigAxes]...
+    zTraceAxes,HisOverlayFig,HisOverlayFigAxes, multiFig]...
+    ...
     = checkParticleTracking_drawGUI(...
+    ...
     cptState.UseHistoneOverlay, fish,...
-    cptState.plot3DGauss, ExperimentType);
+    cptState.plot3DGauss, ExperimentType, multiView);
 
 if multiView
-    multiFig = figure;
     blankImage = zeros(cptState.FrameInfo(1).LinesPerFrame,...
         cptState.FrameInfo(1).PixelsPerLine);
 else
@@ -384,9 +385,9 @@ while (cc ~= 'x')
     cptState.updateZIndex(x, y, z);
     
     cptState.processImageMatrices(multiView, nFrames, nSlices,...
-        nDigits, blankImage, currentNC,...
-            ncRange, NC, ncFramesFull, preMovie, movieMat,...
-            maxMat, PreProcPath, FilePrefix, Prefix, DropboxFolder);
+         blankImage, currentNC,...
+            ncFramesFull, movieMat,...
+            maxMat);
     
     if multiView && ~exist('subAx', 'var')
         tiles = tiledlayout(multiFig, 3, 3, 'TileSpacing', 'none', 'Padding', 'none');

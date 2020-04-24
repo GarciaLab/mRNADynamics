@@ -10,9 +10,9 @@ cleanupObj = onCleanup(@myCleanupFun);
 
 mm = false;
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
-resultsFolder = thisExperiment.resultsFolder;
+resultsFolder = liveExperiment.resultsFolder;
 
 if ~shouldExportMovieFiles
     FrameInfo = [];
@@ -61,7 +61,7 @@ if shouldMakeMovieMat
         try
             %new method
             
-            xml_file = [thisExperiment.rawFolder, filesep, 'lifMeta.xml'];
+            xml_file = [liveExperiment.rawFolder, filesep, 'lifMeta.xml'];
             
             generateLIFMetaDataXML(Prefix, xml_file);
             
@@ -191,7 +191,7 @@ if ~skipExtraction
     if nuclearGUI && shouldExportNuclearProjections
         
         if ~shouldExportMovieFiles
-            movieMat = getMovieMat(liveExperiment(Prefix));
+            movieMat = getMovieMat(LiveExperiment(Prefix));
         end
         
         [~, ~, ~, hisMat] = chooseAnaphaseFrames(...

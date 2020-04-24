@@ -1,5 +1,9 @@
-function [OverlayFig, overlayAxes, snippetFigAxes, rawDataAxes, gaussianAxes, traceFigAxes, zProfileFigAxes,...
-    zTraceAxes, HisOverlayFig,HisOverlayFigAxes] = checkParticleTracking_drawGUI(UseHistoneOverlay, fish, plot3DGauss, ExperimentType)
+function [OverlayFig, overlayAxes, snippetFigAxes, rawDataAxes,...
+    gaussianAxes, traceFigAxes, zProfileFigAxes,...
+    zTraceAxes, HisOverlayFig,HisOverlayFigAxes, multiFig]...
+    ...
+    = checkParticleTracking_drawGUI(UseHistoneOverlay,...
+    fish, plot3DGauss, ExperimentType, multiView)
 
 
 OverlayFig = figure;
@@ -24,7 +28,7 @@ if ~fish
     traceFigAxes = subplot(1, 2, 2, 'Parent', OverlayFig);
     xlabel(traceFigAxes,'frame')
     title(traceFigAxes, '', 'Interpreter', 'none');
-%     traceFigAxes.Title.Interpreter = 'none';
+    %     traceFigAxes.Title.Interpreter = 'none';
     yyaxis(traceFigAxes,'left')
     % creating legend
     if plot3DGauss
@@ -85,6 +89,12 @@ if ~fish
 else
     set(snipFig, 'units', 'normalized', 'position', [0.355, 0.05, 3 * (.2 / 2), .33 / 2]);
     set(zFig, 'units', 'normalized', 'position', [0.67, 0.05, .2, .33 / 2]);
+end
+
+
+if multiView
+    
+    multiFig = figure('units', 'normalized', 'Position', [.6,.08, .8*overlayDim(2), overlayDim(2)]);
 end
 
 end

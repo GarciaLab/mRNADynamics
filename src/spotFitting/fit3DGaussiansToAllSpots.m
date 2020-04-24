@@ -40,19 +40,19 @@ for i = 1:length(varargin)
 end
 
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
 [~,ProcPath,DropboxFolder,~, PreProcPath,...
     ~, Prefix, ~,Channel1,Channel2,~, Channel3, spotChannels] = readMovieDatabase(Prefix, optionalResults);
 
-movieMat = getMovieMat(thisExperiment);
+movieMat = getMovieMat(liveExperiment);
 DataFolder=[DropboxFolder,filesep,Prefix];
 
 if ~segmentSpots
-    Spots = getSpots(thisExperiment);
+    Spots = getSpots(liveExperiment);
 end
 
-FrameInfo = getFrameInfo(thisExperiment);
+FrameInfo = getFrameInfo(liveExperiment);
 
 startParallelPool(nWorkers, displayFigures, keepPool);
 
@@ -87,7 +87,7 @@ for ch = spotChannels
         nSpotsPerFrame = length(SpotsFr.Fits);
        for spot = 1:nSpotsPerFrame
             SpotsFr = fitSnip3D(SpotsFr, ch, spot, frame,...
-                thisExperiment, PreProcPath, FrameInfo, nSpots, imStack);
+                liveExperiment, PreProcPath, FrameInfo, nSpots, imStack);
         end
         SpotsCh(frame) = SpotsFr;
         send(q, frame); %update the waitbar

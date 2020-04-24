@@ -2,18 +2,18 @@ function [schnitzcells, Ellipses] = TrackNuclei_computervision(Prefix)
 
 %AR 4/2020
 load('ReferenceHist.mat', 'ReferenceHist');
-thisExperiment = liveExperiment(Prefix);
-pixelSize_um = thisExperiment.pixelSize_um;
-nFrames = thisExperiment.nFrames;
-hisVideoFile = [thisExperiment.preFolder, filesep, 'hisVideo.avi'];
-schnitzcellsFile = [thisExperiment.resultsFolder, filesep,Prefix,'_lin.mat'];
-ellipsesFile = [thisExperiment.resultsFolder, filesep 'Ellipses.mat'];
+liveExperiment = LiveExperiment(Prefix);
+pixelSize_um = liveExperiment.pixelSize_um;
+nFrames = liveExperiment.nFrames;
+hisVideoFile = [liveExperiment.preFolder, filesep, 'hisVideo.avi'];
+schnitzcellsFile = [liveExperiment.resultsFolder, filesep,Prefix,'_lin.mat'];
+ellipsesFile = [liveExperiment.resultsFolder, filesep 'Ellipses.mat'];
 schnitzcells = struct('cenx', [], 'ceny', [],...
     'frames', [], 'smaj', [], 'smin', [],...
     'orientationAngle', []);
 
 if ~exist(hisVideoFile, 'file')
-    hisMat = getHisMat(thisExperiment);
+    hisMat = getHisMat(liveExperiment);
     exportTifStackToAvi(hisMat, hisVideoFile)
 end
 
@@ -70,11 +70,11 @@ save2(ellipsesFile, Ellipses);
 save2(schnitzcellsFile, schnitzcells);
 
 schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells,...
-    getFrameInfo(thisExperiment), thisExperiment.userPreFolder);
+    getFrameInfo(liveExperiment), liveExperiment.userPreFolder);
 
 %%
 try
-expandedAnaphaseFrames = [zeros(1,8),thisExperiment.anaphaseFrames'];
+expandedAnaphaseFrames = [zeros(1,8),liveExperiment.anaphaseFrames'];
 [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(...
     schnitzcells, Ellipses, expandedAnaphaseFrames, nFrames);
 save2(ellipsesFile, Ellipses);

@@ -40,21 +40,21 @@ for arg = 1:2:(numel(varargin)-1)
 end
 
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
 if ~isempty(Prefix) 
    
       
-    Channel1 = thisExperiment.Channel1;
-    Channel2 = thisExperiment.Channel2;
-    Channel3 = thisExperiment.Channel3;
+    Channel1 = liveExperiment.Channel1;
+    Channel2 = liveExperiment.Channel2;
+    Channel3 = liveExperiment.Channel3;
     
     projectionChannels = {Channel1, Channel2, Channel3};
     
-    DropboxFolder = thisExperiment.userResultsFolder;
-    PreProcPath = thisExperiment.userPreFolder;
+    DropboxFolder = liveExperiment.userResultsFolder;
+    PreProcPath = liveExperiment.userPreFolder;
     
-    movieMat = getMovieMat(thisExperiment);
+    movieMat = getMovieMat(liveExperiment);
     
     projectionTypeFile = [DropboxFolder,filesep,Prefix,filesep, 'ProjectionType.mat'];
     
@@ -84,10 +84,10 @@ if ~isempty(Prefix)
     
 end
 
-NFrames = thisExperiment.nFrames;
-NSlices = thisExperiment.zDim;
-yDim = thisExperiment.yDim; 
-xDim = thisExperiment.xDim;
+NFrames = liveExperiment.nFrames;
+NSlices = liveExperiment.zDim;
+yDim = liveExperiment.yDim; 
+xDim = liveExperiment.xDim;
 
 NChannels = size(movieMat, 5);
 
@@ -420,7 +420,7 @@ uiwait(fig);
                     projectionChannels, ReferenceHist, movieMat, f);
             end
             
-            saveNuclearProjection(hisMat, [thisExperiment.preFolder, filesep, Prefix, '-His.tif']);
+            saveNuclearProjection(hisMat, [liveExperiment.preFolder, filesep, Prefix, '-His.tif']);
             
         end
         

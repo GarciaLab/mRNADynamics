@@ -85,9 +85,9 @@ end
 
 function [lifFile, metafile] = getFiles(Prefix)
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
-rawFolder = thisExperiment.rawFolder;
+rawFolder = liveExperiment.rawFolder;
 DLIF = dir([rawFolder,filesep,'*.lif']);
 lifFile = [rawFolder, filesep, DLIF(1).name];
 

@@ -3,9 +3,9 @@ function generateDifferenceOfGaussianImages(ProcPath, spotChannels,...
     numFrames, displayFigures, zSize, PreProcPath, Prefix, filterType, highPrecision,...
     sigmas, app, kernelSize, noSave, numType, gpu, saveAsMat, saveType)
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
-FrameInfo = getFrameInfo(thisExperiment);
+FrameInfo = getFrameInfo(liveExperiment);
 
 
 gpu = 'noGPU';
@@ -35,7 +35,7 @@ if saveAsMat || strcmpi(saveType, '.mat')
 end
 
 
-movieMat = getMovieMat(thisExperiment);
+movieMat = getMovieMat(liveExperiment);
 
 saveAsStacks = true;
 

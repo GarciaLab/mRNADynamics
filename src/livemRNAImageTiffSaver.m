@@ -8,9 +8,9 @@ if strcmpi(precision, 'double')
     error('Error trying to save double precision file to Tif.')
 end
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
-preFolder = thisExperiment.preFolder;
+preFolder = liveExperiment.preFolder;
 
 numDims = numel(size(image));
 nCh = 1;
