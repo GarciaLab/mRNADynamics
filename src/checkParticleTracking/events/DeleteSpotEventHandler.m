@@ -48,10 +48,10 @@ function keyInputHandler = DeleteSpotEventHandler(cptState)
     end
 
     function keyInput(cc)
-        if cc == '#' %remove a spot from cptState.Spots and erase its frame in Particles
+        if cc == '#' %remove a spot from Spots and erase its frame in Particles and SpotFilter.
             doDeleteSpot(cptState.CurrentFrame, true);
             
-        elseif cc == '^' %remove a whole trace from cptState.Spots and Particles. AR 7/9/2019 a work in progress
+        elseif cc == '^' %remove a whole trace from Spots, Particles, and SpotFilter.
             
             switchedParticlesFlag = false;
             
