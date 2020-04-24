@@ -13,13 +13,13 @@ cleanupObj = onCleanup(@myCleanupFun);
 
 radiusScale = 1.3; %dilate the nuclear mask by this factor
 
-thisExperiment = liveExperiment(Prefix);
-pixelSize_nm = thisExperiment.pixelSize_nm;
+liveExperiment = LiveExperiment(Prefix);
+pixelSize_nm = liveExperiment.pixelSize_nm;
 
 
 dogs = [];
 
-DogOutputFolder = [thisExperiment.procFolder, 'dogs', filesep];
+DogOutputFolder = [liveExperiment.procFolder, 'dogs', filesep];
 
 dogDir = dir([DogOutputFolder, '*_ch0', num2str(channelIndex), '.*']);
 
@@ -72,8 +72,8 @@ end
 
 if filterMovieFlag
     filterType = 'Difference_of_Gaussian_3D';
-    sigmas = {round(200/thisExperiment.pixelSize_nm),...
-        round(800/thisExperiment.pixelSize_nm)};
+    sigmas = {round(200/liveExperiment.pixelSize_nm),...
+        round(800/liveExperiment.pixelSize_nm)};
     filterOpts = {'nWorkers', 1, 'highPrecision',...
          'noSave', 'customFilter', filterType,...
         sigmas, 'double', 'keepPool', gpu};
@@ -83,17 +83,17 @@ end
 
 nameSuffix = ['_ch', iIndex(channelIndex, 2)];
 
-movieMat = getMovieMat(thisExperiment);
+movieMat = getMovieMat(liveExperiment);
 
 movieMatCh = double(movieMat(:, :, :, :, channelIndex));
 
-yDim = thisExperiment.yDim;
-xDim = thisExperiment.xDim;
-zDim = thisExperiment.zDim;
+yDim = liveExperiment.yDim;
+xDim = liveExperiment.xDim;
+zDim = liveExperiment.zDim;
 
 if shouldMaskNuclei
-    if thisExperiment.hasEllipsesFile
-        Ellipses = getEllipses(thisExperiment); 
+    if liveExperiment.hasEllipsesFile
+        Ellipses = getEllipses(liveExperiment); 
         Ellipses = filterEllipses(Ellipses, [yDim, xDim]);
     else, shouldMaskNuclei = false; end
 end

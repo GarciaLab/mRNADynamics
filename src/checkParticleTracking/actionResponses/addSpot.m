@@ -11,18 +11,18 @@ function [SpotFilter, Particles, Spots,...
 %ADDSPOT
 
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 % 
 % movieMat = getMovieMat(thisExperiment);
 % imStack = movieMat(:, :, :, CurrentFrame, CurrentChannel);
 
-FrameInfo = getFrameInfo(thisExperiment);
-LinesPerFrame = thisExperiment.yDim;
-PixelsPerLine = thisExperiment.xDim;
-pixelSize_nm = thisExperiment.pixelSize_nm;
-PreProcPath = thisExperiment.preFolder;
-snippetSize_px = thisExperiment.snippetSize_px;
-nSlices = thisExperiment.zDim;
+FrameInfo = getFrameInfo(liveExperiment);
+LinesPerFrame = liveExperiment.yDim;
+PixelsPerLine = liveExperiment.xDim;
+pixelSize_nm = liveExperiment.pixelSize_nm;
+PreProcPath = liveExperiment.preFolder;
+snippetSize_px = liveExperiment.snippetSize_px;
+nSlices = liveExperiment.zDim;
 
 
 numParticles = length(Particles{CurrentChannel});

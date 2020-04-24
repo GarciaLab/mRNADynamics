@@ -166,20 +166,20 @@ ncFilterID = [];
     optionalResults, yToManualAlignmentPrompt, minBinSize, edgeWidth] = determineCompileParticlesOptions(varargin);
 
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 FilePrefix=[Prefix,'_'];
 
-DropboxFolder = thisExperiment.userResultsFolder;
-PreProcPath = thisExperiment.userPreFolder;
-ExperimentType = thisExperiment.experimentType;
-ExperimentAxis = thisExperiment.experimentAxis;
-APResolution = thisExperiment.APResolution;
-DVResolution = thisExperiment.DVResolution;
-nc9=thisExperiment.nc9; nc10=thisExperiment.nc10; 
-nc11=thisExperiment.nc11;nc12=thisExperiment.nc12;
-nc13=thisExperiment.nc13;nc14=thisExperiment.nc14;
+DropboxFolder = liveExperiment.userResultsFolder;
+PreProcPath = liveExperiment.userPreFolder;
+ExperimentType = liveExperiment.experimentType;
+ExperimentAxis = liveExperiment.experimentAxis;
+APResolution = liveExperiment.APResolution;
+DVResolution = liveExperiment.DVResolution;
+nc9=liveExperiment.nc9; nc10=liveExperiment.nc10; 
+nc11=liveExperiment.nc11;nc12=liveExperiment.nc12;
+nc13=liveExperiment.nc13;nc14=liveExperiment.nc14;
 
-Channels = thisExperiment.Channels;
+Channels = liveExperiment.Channels;
 Channel1 = Channels{1};
 Channel2 = Channels{2};
 Channel3 = Channels{3};
@@ -187,9 +187,9 @@ Channel3 = Channels{3};
 ncFrames = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
 
 
-FrameInfo = getFrameInfo(thisExperiment);
-pixelSize = thisExperiment.pixelSize_nm;
-numFrames = thisExperiment.nFrames;
+FrameInfo = getFrameInfo(liveExperiment);
+pixelSize = liveExperiment.pixelSize_nm;
+numFrames = liveExperiment.nFrames;
 coatChannels = getCoatChannel(Channel1, Channel2, Channel3);
 
 
@@ -203,10 +203,10 @@ DVExperiment = strcmpi(ExperimentAxis, 'DV');
 
 %Load Spots and Particles
 disp('Loading Particles.mat...');
-[Particles, SpotFilter] = getParticles(thisExperiment);
+[Particles, SpotFilter] = getParticles(liveExperiment);
 disp('Particles loaded.');
 disp('Loading Spots.mat...');
-Spots = getSpots(thisExperiment);
+Spots = getSpots(liveExperiment);
 disp('Spots loaded.');
 if isempty(Particles)
     SkipTraces=1;
@@ -297,7 +297,7 @@ if APExperiment || DVExperiment
     else disp('Using saved AP information (results from AddParticlePosition)'); end
 end
 
-if haveHistoneChannel, Ellipses = getEllipses(thisExperiment); end
+if haveHistoneChannel, Ellipses = getEllipses(liveExperiment); end
 
 %Folders for reports
 if APExperiment
@@ -358,7 +358,7 @@ Particles = approveParticles(Particles,...
     Spots, SkipTraces, ncFilterID, ncFilter, ...
     elapsedTime_min, Ellipses, EllipsePos, PreProcPath, ...
     FilePrefix, Prefix, DropboxFolder, numFrames,...
-    manualSingleFits, edgeWidth, pixelSize, coatChannels, fullEmbryoExists, thisExperiment);
+    manualSingleFits, edgeWidth, pixelSize, coatChannels, fullEmbryoExists, liveExperiment);
 
 %% ROI option
 % This option is separating the CompiledParticles defined above into

@@ -41,12 +41,12 @@ disp(['Filtering ', Prefix, '...']);
 cleanupObj = onCleanup(@myCleanupFun);
 addJavaPathsForLivemRNA()
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
 [~,ProcPath,DropboxFolder,~, PreProcPath,~, Prefix, ~,~,~,~,~, ~, ~, movieDatabase]...
     = readMovieDatabase(Prefix, optionalResults);
 
-coats = thisExperiment.spotChannels;
+coats = liveExperiment.spotChannels;
 
 nCh = length(coats); 
 
@@ -56,14 +56,14 @@ end
 
 ch = coats(1); %assumes the experiment is _not_ 2spot2color
 
-mlFolder = thisExperiment.MLFolder;
+mlFolder = liveExperiment.MLFolder;
 
 
 [trainingNameExt, trainingFolder] = uigetfile([mlFolder, filesep, '*.arff']);
 trainingFile = [trainingFolder, filesep, trainingNameExt];
 [~ ,trainingName] = fileparts(trainingNameExt);
 
-movieMat = getMovieMat(thisExperiment);
+movieMat = getMovieMat(liveExperiment);
 movieMat = double(movieMat(:, :, :, :, ch));
 
 %need to change this later. will be loaded from computerfolders

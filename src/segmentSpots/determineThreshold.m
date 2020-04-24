@@ -40,14 +40,14 @@ for i = 1:length(varargin)
     end
 end
 
-thisExperiment = liveExperiment(Prefix);
-ProcPath = thisExperiment.userProcFolder;
-FrameInfo = getFrameInfo(thisExperiment);
+liveExperiment = LiveExperiment(Prefix);
+ProcPath = liveExperiment.userProcFolder;
+FrameInfo = getFrameInfo(liveExperiment);
 zSize = FrameInfo(1).NumberSlices + 2;
 
 
 if nargin < 2
-    spotChannels = thisExperiment.spotChannels;
+    spotChannels = liveExperiment.spotChannels;
     if numel(spotChannels)==1
         Channel = spotChannels;
     else

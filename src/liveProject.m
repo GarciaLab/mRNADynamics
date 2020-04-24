@@ -47,7 +47,7 @@ classdef liveProject
             this.ignoredExperimentNames = string(ignoredExperiment);
             
             for i = 1:length(experiment)
-                this.includedExperiments{i} = liveExperiment(experiment{i});
+                this.includedExperiments{i} = LiveExperiment(experiment{i});
                 isUnhealthy = this.includedExperiments{i}.isUnhealthy;
                 if ~isnan(isUnhealthy) && isUnhealthy
                     this.unhealthyNames = [ this.unhealthyNames,...
@@ -56,7 +56,7 @@ classdef liveProject
             end
             
             for j = 1:length(ignoredExperiment)
-                this.ignoredExperiments{j} = liveExperiment(ignoredExperiment{j});
+                this.ignoredExperiments{j} = LiveExperiment(ignoredExperiment{j});
             end
             
             this.hasSpots = haveSpots(this);

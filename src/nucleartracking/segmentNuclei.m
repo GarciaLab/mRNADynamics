@@ -50,9 +50,9 @@ addJavaPathsForLivemRNA()
 %%
 disp(['Segmenting nuclei on ', Prefix, '...']);
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
-mlFolder = thisExperiment.MLFolder;
+mlFolder = liveExperiment.MLFolder;
 
 [trainingNameExt, trainingFolder] = uigetfile([mlFolder, filesep, '*.arff*']);
 trainingFile = [trainingFolder, filesep, trainingNameExt];
@@ -60,10 +60,10 @@ trainingFile = [trainingFolder, filesep, trainingNameExt];
 
 
 if isempty(frameRange)
-    frameRange = [1, thisExperiment.nFrames];
+    frameRange = [1, liveExperiment.nFrames];
 end
 if isempty(hisMat)
-    hisMat = getHisMat(thisExperiment);
+    hisMat = getHisMat(liveExperiment);
 end
 
 
@@ -182,7 +182,7 @@ if makeEllipses
     fakeFrame = Ellipses(~cellfun(@isempty, Ellipses));
     fakeFrame =  fakeFrame{1};
     Ellipses(cellfun(@isempty, Ellipses)) = {fakeFrame};
-    save([thisExperiment.resultsFolder, 'Ellipses.mat'], 'Ellipses', '-v6');
+    save([liveExperiment.resultsFolder, 'Ellipses.mat'], 'Ellipses', '-v6');
     TrackNuclei(Prefix, 'retrack');
 end
 

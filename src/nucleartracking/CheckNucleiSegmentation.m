@@ -59,15 +59,15 @@ for k = 1:length(varargin)
     end
 end
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
-ProcPath = thisExperiment.userProcFolder;
-DropboxFolder = thisExperiment.userResultsFolder;
+ProcPath = liveExperiment.userProcFolder;
+DropboxFolder = liveExperiment.userResultsFolder;
 
-Channel1 = thisExperiment.Channel1;
-Channel2 = thisExperiment.Channel2;
-Channel3 = thisExperiment.Channel3;
-anaphaseFrames = thisExperiment.anaphaseFrames;
+Channel1 = liveExperiment.Channel1;
+Channel2 = liveExperiment.Channel2;
+Channel3 = liveExperiment.Channel3;
+anaphaseFrames = liveExperiment.anaphaseFrames;
 nc9 = anaphaseFrames(1);
 nc10 = anaphaseFrames(2);
 nc11 = anaphaseFrames(3);
@@ -75,13 +75,13 @@ nc12 = anaphaseFrames(4);
 nc13 = anaphaseFrames(5);
 nc14 = anaphaseFrames(6);
 
-xSize = thisExperiment.xDim;
-ySize = thisExperiment.yDim;
-pixelSize_um = thisExperiment.pixelSize_um;
+xSize = liveExperiment.xDim;
+ySize = liveExperiment.yDim;
+pixelSize_um = liveExperiment.pixelSize_um;
 
 %Get the nuclei segmentation data
-Ellipses = getEllipses(thisExperiment);
-schnitzcells = getSchnitzcells(thisExperiment);
+Ellipses = getEllipses(liveExperiment);
+schnitzcells = getSchnitzcells(liveExperiment);
 %Load the reference histogram for the fake histone channel
 load('ReferenceHist.mat', 'ReferenceHist')
 
@@ -107,7 +107,7 @@ if chooseHis
         clear probHis;
     end
 else
-    hisMat = getHisMat(thisExperiment);
+    hisMat = getHisMat(liveExperiment);
 end
 
 nFrames = size(hisMat, 3);
@@ -413,7 +413,7 @@ while (cc~='x')
     end
 end
 
-Ellipses = filterEllipses(Ellipses, [thisExperiment.yDim, thisExperiment.xDim]);
+Ellipses = filterEllipses(Ellipses, [liveExperiment.yDim, liveExperiment.xDim]);
 
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v6')
 

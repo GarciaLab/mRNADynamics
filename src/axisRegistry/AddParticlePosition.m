@@ -68,17 +68,17 @@ for i=1:length(varargin)
     end
 end
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
 DropboxFolder = userResultsFolder;
-PreProcPath = thisExperiment.userPreFolder;
-RawDynamicsPath = thisExperiment.userRawFolder;
+PreProcPath = liveExperiment.userPreFolder;
+RawDynamicsPath = liveExperiment.userRawFolder;
 
-Channel1 = thisExperiment.Channel1;
-Channel2 = thisExperiment.Channel2;
-Channel3 = thisExperiment.Channel3;
+Channel1 = liveExperiment.Channel1;
+Channel2 = liveExperiment.Channel2;
+Channel3 = liveExperiment.Channel3;
 
-APResolution = thisExperiment.APResolution;
+APResolution = liveExperiment.APResolution;
 
 if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
     load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'Particles', 'SpotFilter')
@@ -127,7 +127,7 @@ fullEmbryoPath = [rawPrefixPath, 'FullEmbryo', filesep];
 
 if ~NoAP
     %If you want to select which channel to load as alignment
-    ChannelToLoad = determineChannelToLoad(SelectChannel, thisExperiment.Channels);
+    ChannelToLoad = determineChannelToLoad(SelectChannel, liveExperiment.Channels);
     
     %Get information about all images. This depends on the microscope used.
     
@@ -748,8 +748,8 @@ if correctDV
     %for convenience.
 end
 
-Ellipses = getEllipses(thisExperiment);
-schnitzcells = getSchnitzcells(thisExperiment);
+Ellipses = getEllipses(liveExperiment);
+schnitzcells = getSchnitzcells(liveExperiment);
 
 Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
 if shouldConvertToAP
@@ -763,11 +763,11 @@ for s = 1:length(schnitzcells)
     end
 end
 
-save([thisExperiment.resultsFolder, filesep,'Ellipses.mat'],'Ellipses');
+save([liveExperiment.resultsFolder, filesep,'Ellipses.mat'],'Ellipses');
 if (whos(var2str(schnitzcells)).bytes < 2E9)
-    save([thisExperiment.resultsFolder, filesep,Prefix,'_lin.mat'],'schnitzcells', '-v6');
+    save([liveExperiment.resultsFolder, filesep,Prefix,'_lin.mat'],'schnitzcells', '-v6');
 else
-    save([thisExperiment.resultsFolder, filesep,Prefix,'_lin.mat'],'schnitzcells', '-v7.3', '-nocompression');
+    save([liveExperiment.resultsFolder, filesep,Prefix,'_lin.mat'],'schnitzcells', '-v7.3', '-nocompression');
 end
 
 

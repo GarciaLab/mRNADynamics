@@ -42,19 +42,19 @@ disp(['Tracking nuclei on ', Prefix, '...']);
     = DetermineTrackNucleiOptions(varargin{:});
 
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
-FrameInfo = getFrameInfo(thisExperiment);
+FrameInfo = getFrameInfo(liveExperiment);
 
-ProcPath = thisExperiment.userProcFolder;
-DropboxFolder = thisExperiment.userResultsFolder;
-PreProcPath = thisExperiment.preFolder;
+ProcPath = liveExperiment.userProcFolder;
+DropboxFolder = liveExperiment.userResultsFolder;
+PreProcPath = liveExperiment.preFolder;
 
 
 ellipsesFile = [DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'];
 schnitzcellsFile = [DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat']; 
 
-anaphaseFrames = thisExperiment.anaphaseFrames';
+anaphaseFrames = liveExperiment.anaphaseFrames';
 nc9 = anaphaseFrames(1);
 nc10 = anaphaseFrames(2);
 nc11 = anaphaseFrames(3);
@@ -107,7 +107,7 @@ if chooseHis
     
 else
     
-    hisMat =  getHisMat(thisExperiment);
+    hisMat =  getHisMat(liveExperiment);
     
 end
 
@@ -149,7 +149,7 @@ elseif isnan(indMit(end,1))
     indMit(end,2)=nFrames-5;
 end
 
-expandedAnaphaseFrames = [zeros(1,8),thisExperiment.anaphaseFrames'];
+expandedAnaphaseFrames = [zeros(1,8),liveExperiment.anaphaseFrames'];
 
 %Embryo mask
 ImageTemp=squeeze(hisMat(:, :, 1));
@@ -323,7 +323,7 @@ end
 schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, expandedAnaphaseFrames);
 
 %perform some quality control
-schnitzcells = filterSchnitz(schnitzcells, [thisExperiment.yDim, thisExperiment.xDim]);
+schnitzcells = filterSchnitz(schnitzcells, [liveExperiment.yDim, liveExperiment.xDim]);
 % Ellipses = filterEllipses(Ellipses, [thisExperiment.yDim, thisExperiment.xDim]);
 
 save2(ellipsesFile, Ellipses); 

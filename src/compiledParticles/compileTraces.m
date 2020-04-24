@@ -6,24 +6,24 @@ function [Particles, CompiledParticles, ncFilter, ncFilterID] =...
     Spots, SkipTraces, ncFilterID, ncFilter, ...
     ElapsedTime, Ellipses, EllipsePos, PreProcPath, ...
     FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits,...
-    edgeWidth, pixelSize_nm, coatChannels, fullEmbryoExists, thisExperiment)
+    edgeWidth, pixelSize_nm, coatChannels, fullEmbryoExists, liveExperiment)
 
 %COMPILETRACES Summary of this function goes here
 %   Detailed explanation goes here
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
-FrameInfo = getFrameInfo(thisExperiment);
+FrameInfo = getFrameInfo(liveExperiment);
 
-anaphaseFrames = thisExperiment.anaphaseFrames';
+anaphaseFrames = liveExperiment.anaphaseFrames';
 nc9 = anaphaseFrames(1); nc10 = anaphaseFrames(2); nc11 = anaphaseFrames(3);
 nc12 = anaphaseFrames(4); nc13 = anaphaseFrames(5); nc14 = anaphaseFrames(6);
 
-NDigits = thisExperiment.nDigits;
+NDigits = liveExperiment.nDigits;
 
-DropboxFolder = thisExperiment.userResultsFolder;
-PreProcPath = thisExperiment.userPreFolder;
-pixelSize_nm = thisExperiment.pixelSize_nm;
+DropboxFolder = liveExperiment.userResultsFolder;
+PreProcPath = liveExperiment.userPreFolder;
+pixelSize_nm = liveExperiment.pixelSize_nm;
 SnippetSize = 2 * (floor(1300 / (2 * pixelSize_nm))) + 1; % nm. note that this is forced to be odd
 
 NChannels = length(coatChannels);

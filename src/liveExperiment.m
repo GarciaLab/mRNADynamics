@@ -1,4 +1,4 @@
-classdef liveExperiment
+classdef LiveExperiment
     %livemRNAExperiment object to organize data related to a live imaging
     %experiment
     
@@ -87,7 +87,7 @@ classdef liveExperiment
         
         %%Constructors
         
-        function obj = liveExperiment(Prefix)
+        function obj = LiveExperiment(Prefix)
             %livemRNAExperiment Construct an instance of this class
             
             obj.Prefix = Prefix;

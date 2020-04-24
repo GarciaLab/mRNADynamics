@@ -4,7 +4,7 @@ function schnitzcells =...
 
 saveFlag = false;
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
 if nargin == 1
     
@@ -30,7 +30,7 @@ if nargin == 1
     
 end
 
-Channels = thisExperiment.Channels;
+Channels = liveExperiment.Channels;
 
 InputChannels = find(contains(Channels, 'input', 'IgnoreCase', true));
 
@@ -40,7 +40,7 @@ if isempty(InputChannels)
     return;
 end
 
-movieMat = getMovieMat(thisExperiment);
+movieMat = getMovieMat(liveExperiment);
 movieMat = double(movieMat(:, :, :, :, InputChannels));
 numFrames = length(FrameInfo);
 
