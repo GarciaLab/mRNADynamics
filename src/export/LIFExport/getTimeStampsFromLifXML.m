@@ -36,9 +36,15 @@ stampList = unique(stampList);
 %so we can do numeric operations on them.
 stampList_dec = hex2dec(char(stampList));
 
-%get elapsed time in seconds since the first frame. 
+%get elapsed time in minutes since the first frame. 
 %for downstream uses, let's also transpose this to 
 %a row vector. 
-stampElapsed = 1E-7 *( stampList_dec - stampList_dec(1) )';
+
+conversionFactor = 1E-4 / 60; %order of magnitude / minutes to seconds
+% stampElapsed = 1E-6*( stampList_dec - stampList_dec(1) )';
+
+
+stampElapsed = (conversionFactor*stampList_dec -...
+    conversionFactor*stampList_dec(1))';
 
 end
