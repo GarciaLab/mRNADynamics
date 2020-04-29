@@ -11,7 +11,7 @@ TimeEnd0=x0(2);
 Rate0=x0(3);
 RateOff0=x0(4);
 
-
+FluoPrediction = zeros(1,length(TimeData));
 for i=1:length(TimeData)
     if TimeData(i)<=TimeStart0
         FluoPrediction(i)=0;
