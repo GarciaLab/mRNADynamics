@@ -58,7 +58,7 @@ if shouldMakeMovieMat
     zPosition = [];
     if sum(NFrames)~=0
         
-        try
+        if false
             %new method
             
             xml_file = [liveExperiment.rawFolder, filesep, 'lifMeta.xml'];
@@ -67,7 +67,7 @@ if shouldMakeMovieMat
             
             InitialStackTime = getTimeStampsFromLifXML(xml_file);
             
-        catch
+        else
             %old method
             [Frame_Times, ~] = obtainFrameTimes(XMLFolder, seriesPropertiesXML,...
                 NSeries, NFrames, NSlices, NChannels);

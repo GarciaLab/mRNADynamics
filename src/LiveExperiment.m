@@ -1,5 +1,5 @@
 classdef LiveExperiment
-    %livemRNAExperiment object to organize data related to a live imaging
+    %LivemRNAExperiment object to organize data related to a live imaging
     %experiment
     
     properties
@@ -31,10 +31,14 @@ classdef LiveExperiment
         processedDirectory = '';
         resultsDirectory = '';
         
+        experimentFolder = '';
+        
         userRawFolder = '';
         userPreFolder = '';
         userProcFolder = '';
         userResultsFolder = '';
+        userLivemRNAFolder = '';
+        userExperimentsFolder = '';
         
         hasCompiledParticlesFile = false;
         hasSchnitzcellsFile = false;
@@ -87,96 +91,99 @@ classdef LiveExperiment
         
         %%Constructors
         
-        function obj = LiveExperiment(Prefix)
+        function this = LiveExperiment(Prefix)
             %livemRNAExperiment Construct an instance of this class
             
-            obj.Prefix = Prefix;
+            this.Prefix = Prefix;
             
             %caching the results of this function since
             %its csv2cell call is the
             %most time-consuming part of
             %project initialization and the output
             %is not memory intensive
-            %             memoizedDetermineLocalFolders = memoize(@DetermineLocalFolders);
-            %             [rawPath, ProcPath, DropboxFolder, obj.MS2CodePath, PreProcPath,...
-            %                 ~, ~, ~, movieDatabase]= memoizedDetermineLocalFolders(obj.Prefix);
+            %             DetermineLocalFolders = memoize(@DetermineLocalFolders);
             
-            [rawPath, ProcPath, DropboxFolder, obj.MS2CodePath, PreProcPath,...
-                ~, ~, ~, movieDatabase]= DetermineLocalFolders(obj.Prefix);
+            [this.userRawFolder, this.userProcFolder, this.userResultsFolder,...
+                this.MS2CodePath, this.userPreFolder,...
+                ~, ~, ~, movieDatabase]= DetermineLocalFolders(this.Prefix);
+
+            dateString = this.Prefix(1:10);
+            experimentName = this.Prefix(12:length(this.Prefix));
+            rawSubFolder = [dateString,filesep,experimentName];
+            
+            liveFolderIndex = strfind(lower(this.userPreFolder), lower('LivemRNA'))...
+                +  length('livemRNA') - 1;
+            
+            this.userLivemRNAFolder = this.userPreFolder(1:liveFolderIndex); 
+            
+            this.userExperimentsFolder = [this.userLivemRNAFolder, filesep, 'Experiments']; 
+            
+           
+            if exist( this.userExperimentsFolder, 'dir')
+                this.experimentFolder = [this.userExperimentsFolder, filesep, Prefix];
+            end
+            
+            this.rawFolder = strcat(this.userRawFolder,filesep,rawSubFolder);
+            this.preFolder = [this.userPreFolder, filesep, this.Prefix, filesep];
+            this.procFolder = [this.userProcFolder, filesep, this.Prefix, '_', filesep];
+            this.resultsFolder = [this.userResultsFolder, filesep, this.Prefix, filesep];
+            this.MLFolder = [this.userResultsFolder, filesep, 'training_data_and_classifiers', filesep];
             
             
-            obj.userPreFolder = PreProcPath;
-            obj.userProcFolder = ProcPath;
-            obj.userResultsFolder = DropboxFolder;
-            obj.userRawFolder =  rawPath;
-            Subfolder = [obj.Prefix(1:10),filesep,obj.Prefix(12:length(obj.Prefix))];
-            
-            obj.rawFolder = strcat(obj.userRawFolder,filesep,Subfolder);
-            obj.preFolder = [PreProcPath, filesep, Prefix, filesep];
-            obj.procFolder = [ProcPath, filesep, Prefix, '_', filesep];
-            obj.resultsFolder = [DropboxFolder, filesep, Prefix, filesep];
-            obj.MLFolder = [DropboxFolder, filesep, 'training_data_and_classifiers', filesep];
-            
-            %             [rawDir, procDir, resultsDir] = browseExperiment(obj.Prefix);
-            %             obj.rawExportedDirectory = rawDir;
-            %             obj.processedDirectory = procDir;
-            %             obj.resultsDirectory = resultsDir;
-            
-            
-            isUnhealthyFile = [DropboxFolder,filesep,obj.Prefix,filesep, 'isUnhealthy.mat'];
+            isUnhealthyFile = [this.userResultsFolder,filesep,this.Prefix,filesep, 'isUnhealthy.mat'];
             if exist(isUnhealthyFile, 'file')
                 load(isUnhealthyFile, 'isUnhealthy');
             else, isUnhealthy = NaN;
             end
             
-            obj.isUnhealthy = isUnhealthy;
+            this.isUnhealthy = isUnhealthy;
             
-            obj.project = '';
+            this.project = '';
             
-            obj.hasCompiledParticlesFile = exist([obj.resultsFolder, 'CompiledParticles.mat'] , 'file');
-            obj.hasSchnitzcellsFile = exist([obj.resultsFolder,Prefix, '_lin.mat'] , 'file');
-            obj.hasSpotsFile = exist([obj.resultsFolder, 'Spots.mat'] , 'file');
-            obj.hasParticlesFile = exist([obj.resultsFolder, 'Particles.mat'] , 'file');
-            obj.hasEllipsesFile = exist([obj.resultsFolder, 'Ellipses.mat'] , 'file');
-            obj.hasChannelsFile =exist([obj.resultsFolder, 'Channels.mat'] , 'file');
-            obj.hasAnaphaseFile=exist([obj.resultsFolder, 'anaphaseFrames.mat'] , 'file');
+            this.hasCompiledParticlesFile = exist([this.resultsFolder, 'CompiledParticles.mat'] , 'file');
+            this.hasSchnitzcellsFile = exist([this.resultsFolder,this.Prefix, '_lin.mat'] , 'file');
+            this.hasSpotsFile = exist([this.resultsFolder, 'Spots.mat'] , 'file');
+            this.hasParticlesFile = exist([this.resultsFolder, 'Particles.mat'] , 'file');
+            this.hasEllipsesFile = exist([this.resultsFolder, 'Ellipses.mat'] , 'file');
+            this.hasChannelsFile =exist([this.resultsFolder, 'Channels.mat'] , 'file');
+            this.hasAnaphaseFile=exist([this.resultsFolder, 'anaphaseFrames.mat'] , 'file');
             
-            obj.hasDoGs = exist([obj.procFolder, 'dogs'], 'dir');
+            this.hasDoGs = exist([this.procFolder, 'dogs'], 'dir');
             
-            obj.hasRawStacks = exist([obj.preFolder, 'stacks'], 'dir');
-            obj.hasMovieMatFile = exist([obj.preFolder, filesep, Prefix, '_movieMatCh1.mat'], 'file');
-            obj.hasHisMatFile = exist([obj.preFolder, filesep, Prefix, '_hisMat.mat'], 'file');
+            this.hasRawStacks = exist([this.preFolder, 'stacks'], 'dir');
+            this.hasMovieMatFile = exist([this.preFolder, filesep, Prefix, '_movieMatCh1.mat'], 'file');
+            this.hasHisMatFile = exist([this.preFolder, filesep, Prefix, '_hisMat.mat'], 'file');
             
-            [~, obj.experimentType, obj.experimentAxis, ~, ~, obj.APResolution,...
+            [~, this.experimentType, this.experimentAxis, ~, ~, this.APResolution,...
                 Channel1, Channel2,~, ~,  ~, ~, ~,...
-                ~, ~, ~, ~, ~, ~, ~, Channel3,~,~, ~, obj.DVResolution]...
-                = getExperimentDataFromMovieDatabase(Prefix, movieDatabase, obj.userResultsFolder);
+                ~, ~, ~, ~, ~, ~, ~, Channel3,~,~, ~, this.DVResolution]...
+                = getExperimentDataFromMovieDatabase(this.Prefix, movieDatabase, this.userResultsFolder);
             
-            obj.Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
-            obj.Channel1 = Channel1{1};
-            obj.Channel2 = Channel2{1};
-            obj.Channel3 = Channel3{1};
+            this.Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
+            this.Channel1 = Channel1{1};
+            this.Channel2 = Channel2{1};
+            this.Channel3 = Channel3{1};
             
             try
-                FrameInfo = getFrameInfo(obj);
-                [obj.xDim, obj.yDim, obj.pixelSize_nm, obj.zStep_um, obj.snippetSize_px,...
-                    obj.nFrames, obj.zDim, obj.nDigits] = getFrameInfoParams(FrameInfo);
-                obj.pixelSize_um = obj.pixelSize_nm/1000;
-            catch, warning('FrameInfo not found.'); end
+                [this.xDim, this.yDim, this.pixelSize_nm, this.zStep_um, this.snippetSize_px,...
+                    this.nFrames, this.zDim, this.nDigits] = getFrameInfoParams(getFrameInfo(this));
+                this.pixelSize_um = this.pixelSize_nm/1000;
+            catch, warning('FrameInfo not found.');
+            end
             
             
-            obj.inputChannels = find(contains(obj.Channels, 'input', 'IgnoreCase', true));
+            this.inputChannels = find(contains(this.Channels, 'input', 'IgnoreCase', true));
             
-            obj.spotChannels = getCoatChannel(Channel1, Channel2, Channel3);
+            this.spotChannels = getCoatChannel(Channel1, Channel2, Channel3);
             
-            obj.anaphaseFrames = retrieveAnaphaseFrames(obj.Prefix, obj.userResultsFolder);
+            this.anaphaseFrames = retrieveAnaphaseFrames(this.Prefix, this.userResultsFolder);
             
-            obj.nc9 = obj.anaphaseFrames(1);
-            obj.nc10 = obj.anaphaseFrames(2);
-            obj.nc11 = obj.anaphaseFrames(3);
-            obj.nc12 = obj.anaphaseFrames(4);
-            obj.nc13 = obj.anaphaseFrames(5);
-            obj.nc14 = obj.anaphaseFrames(6);
+            this.nc9 = this.anaphaseFrames(1);
+            this.nc10 = this.anaphaseFrames(2);
+            this.nc11 = this.anaphaseFrames(3);
+            this.nc12 = this.anaphaseFrames(4);
+            this.nc13 = this.anaphaseFrames(5);
+            this.nc14 = this.anaphaseFrames(6);
             
             
             
@@ -194,7 +201,7 @@ classdef LiveExperiment
             % beginning with 'His'. As discussed with armando, it's
             % probably better to get the channels from PreProcess data. If
             % we do that, this method would be the place to implement that
-            filteredChannels = this.Channels(~strcmp(this.Channels, 'NaN'));
+            filteredChannels = this.Channels(~strcmpi(this.Channels, 'NaN'));
             filteredChannels = filteredChannels(~strcmp(filteredChannels, ''));
             filteredChannels = filteredChannels(~startsWith(filteredChannels, 'His'));
             Channels = filteredChannels;
@@ -215,7 +222,6 @@ classdef LiveExperiment
             for k = 1:5  %i don't see channel number going beyond 6 any time soon.
                 exportedChannels(k) =  any(contains(...
                     string({preTifDir.name}), ['_ch0',num2str(k)]));
-                
             end
             channelsToRead = find(exportedChannels);
             
@@ -295,9 +301,9 @@ classdef LiveExperiment
             
         end
         
-        function out = getHisMat(obj)
+        function out = getHisMat(this)
             
-            if exist([obj.preFolder, filesep,obj.Prefix, '-His.tif'], 'file')
+            if exist([this.preFolder, filesep,this.Prefix, '-His.tif'], 'file')
                 haveHisTifStack = true;
             else
                 haveHisTifStack = false;
@@ -305,18 +311,18 @@ classdef LiveExperiment
             persistent hisMat;
             %load histone movie only if it hasn't been loaded or if we've switched
             %Prefixes (determined by num frames)
-            if isempty(hisMat) || ~isequal( size(hisMat, 3), obj.nFrames)
-                if obj.hasHisMatFile
+            if isempty(hisMat) || ~isequal( size(hisMat, 3), this.nFrames)
+                if this.hasHisMatFile
                     %load up .mat histone file
-                    hisMat = loadHisMat(obj.Prefix);
+                    hisMat = loadHisMat(this.Prefix);
                     
                 elseif haveHisTifStack
                     %load in sequential tif stacks
-                    hisMat = imreadStack2([obj.preFolder, filesep,...
-                        obj.Prefix, '-His.tif'], obj.yDim, obj.xDim, obj.nFrames);
+                    hisMat = imreadStack2([this.preFolder, filesep,...
+                        this.Prefix, '-His.tif'], this.yDim, this.xDim, this.nFrames);
                 else
                     %load in individual tif slices
-                    [~,hisMat] = makeMovieMats(obj.Prefix, [], [], [],...
+                    [~,hisMat] = makeMovieMats(this.Prefix, [], [], [],...
                         'loadMovie', false,  'loadHis', false,...
                         'makeMovie', false, 'makeHis', true);
                     
@@ -330,60 +336,60 @@ classdef LiveExperiment
             
         end
         
-        function FrameInfo = getFrameInfo(obj)
+        function FrameInfo = getFrameInfo(this)
             
-            load([obj.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
+            load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
             
         end
         
-        function schnitzcells = getSchnitzcells(obj)
+        function schnitzcells = getSchnitzcells(this)
             
-            schnitzcellsFile = [obj.resultsFolder, obj.Prefix, '_lin.mat'];
-            if obj.hasSchnitzcellsFile
+            schnitzcellsFile = [this.resultsFolder, this.Prefix, '_lin.mat'];
+            if this.hasSchnitzcellsFile
                 load(schnitzcellsFile, 'schnitzcells');
             end
             
         end
         
-        function Ellipses = getEllipses(obj)
+        function Ellipses = getEllipses(this)
             
-            ellipsesFile = [obj.resultsFolder, 'Ellipses.mat'];
-            if obj.hasEllipsesFile
+            ellipsesFile = [this.resultsFolder, 'Ellipses.mat'];
+            if this.hasEllipsesFile
                 load(ellipsesFile, 'Ellipses');
             end
             
         end
         
-        function CompiledParticles = getCompiledParticles(obj)
+        function CompiledParticles = getCompiledParticles(this)
             
-            compiledParticlesFile = [obj.resultsFolder, 'CompiledParticles.mat'];
-            if obj.hasCompiledParticlesFile
+            compiledParticlesFile = [this.resultsFolder, 'CompiledParticles.mat'];
+            if this.hasCompiledParticlesFile
                 CompiledParticles = load(compiledParticlesFile);
             end
             
         end
         
-        function Spots = getSpots(obj)
+        function Spots = getSpots(this)
             
-            spotsFile = [obj.resultsFolder, 'Spots.mat'];
-            if obj.hasSpotsFile
+            spotsFile = [this.resultsFolder, 'Spots.mat'];
+            if this.hasSpotsFile
                 load(spotsFile, 'Spots');
             end
             
         end
         
-        function [Particles, SpotFilter] = getParticles(obj)
+        function [Particles, SpotFilter] = getParticles(this)
             
-            particlesFile = [obj.resultsFolder, 'Particles.mat'];
-            if obj.hasParticlesFile
+            particlesFile = [this.resultsFolder, 'Particles.mat'];
+            if this.hasParticlesFile
                 load(particlesFile, 'Particles', 'SpotFilter');
             end
             
         end
         
-        function APDetection = getAPDetection(obj)
+        function APDetection = getAPDetection(this)
             
-            APDetectionFile = [obj.resultsFolder, 'APDetection.mat'];
+            APDetectionFile = [this.resultsFolder, 'APDetection.mat'];
             if exist(APDetectionFile, 'file')
                 APDetection =  load(APDetectionFile);
             end

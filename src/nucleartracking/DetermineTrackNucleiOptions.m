@@ -25,7 +25,7 @@ fish = false;
 markandfind =  false;
 intFlag = false;
 chooseHis = false;
-segmentBetter = true;
+segmentBetter = false;
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'ExpandedSpaceTolerance')
