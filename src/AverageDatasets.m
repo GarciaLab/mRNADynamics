@@ -252,8 +252,8 @@ for j=1:numAPBins
             % In case there's no histone marker.
             %warning('No Fraction ON data. Check whether there is His channel.')
             warning('Calculating the spot density, not using number of nuclei')
-            APbinAreaTemp = Data(i).
-            NEllipsesAPTemp = ones(size(MeanVectorAPTemp));
+            APbinAreaTemp = Data(i).APbinArea;
+            NEllipsesAPTemp = ones(size(MeanVectorAPTemp))./APbinAreaTemp;
         else
             NEllipsesAPTemp =Data(i).NEllipsesAP;  %Data(i).NEllipsesAP;
         end
