@@ -8,8 +8,6 @@ disp('Exporting movie file...');
 
 cleanupObj = onCleanup(@myCleanupFun);
 
-mm = false;
-
 liveExperiment = LiveExperiment(Prefix);
 
 resultsFolder = liveExperiment.resultsFolder;
