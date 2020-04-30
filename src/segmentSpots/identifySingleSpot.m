@@ -246,6 +246,7 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
             Fits.FixedAreaIntensity3  = [];
             Fits.brightestZ =[];
             Fits.snippet_size = uint8(snippet_size);
+            Fits.Approved = 0; 
         else
             Fits = [];
         end
