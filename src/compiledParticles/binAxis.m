@@ -18,7 +18,7 @@ for i=1:Rows
         end
         Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
         if strcmpi(axis, 'AP')
-            position=Distance.*cos(Angle-axisAngle);
+            position=Distance.*abs(cos(Angle-axisAngle));
             posImage(i,j)=position/axisLength;
         elseif strcmpi(axis, 'DV') 
             position = Distance.*sin(Angle-axisAngle);
