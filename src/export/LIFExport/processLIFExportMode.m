@@ -65,19 +65,19 @@ if shouldMakeMovieMat
                 generateLIFMetaDataXML(Prefix, xml_file);
             end
             
-            InitialStackTime = getTimeStampsFromLifXML(xml_file);
+            Frame_Times = getTimeStampsFromLifXML(xml_file);
             
         else
             %old method
             [Frame_Times, ~] = obtainFrameTimes(XMLFolder, seriesPropertiesXML,...
                 NSeries, NFrames, NSlices, NChannels);
-            
-            
-            [InitialStackTime, zPosition] = getFirstSliceTimestamp(NSlices,...
-                NSeries, NPlanes, NChannels, Frame_Times, XMLFolder, seriesXML);
+
         end
     end
     
+    [InitialStackTime, zPosition] = getFirstSliceTimestamp(NSlices,...
+                NSeries, NPlanes, NChannels, Frame_Times, XMLFolder, seriesXML);
+            
     FrameInfo = recordFrameInfo(NFrames, NSlices, InitialStackTime, LIFMeta, zPosition);
     
     if markandfind
