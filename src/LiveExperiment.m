@@ -123,9 +123,16 @@ classdef LiveExperiment
                 this.experimentFolder = [this.userExperimentsFolder, filesep, Prefix];
             end
             
-            this.rawFolder = strcat(this.userRawFolder,filesep,rawSubFolder);
-            this.preFolder = [this.userPreFolder, filesep, this.Prefix, filesep];
-            this.procFolder = [this.userProcFolder, filesep, this.Prefix, '_', filesep];
+            this = setExperimentFolders(this);
+            
+            if isempty(this.preFolder) || isempty(this.procFolder) || isempty(this.rawFolder)
+                
+                this.rawFolder = strcat(this.userRawFolder,filesep,rawSubFolder);
+                this.preFolder = [this.userPreFolder, filesep, this.Prefix, filesep];
+                this.procFolder = [this.userProcFolder, filesep, this.Prefix, '_', filesep];
+                
+            end
+            
             this.resultsFolder = [this.userResultsFolder, filesep, this.Prefix, filesep];
             this.MLFolder = [this.userResultsFolder, filesep, 'training_data_and_classifiers', filesep];
             
@@ -168,7 +175,7 @@ classdef LiveExperiment
                 [this.xDim, this.yDim, this.pixelSize_nm, this.zStep_um, this.snippetSize_px,...
                     this.nFrames, this.zDim, this.nDigits] = getFrameInfoParams(getFrameInfo(this));
                 this.pixelSize_um = this.pixelSize_nm/1000;
-            catch, warning('FrameInfo not found.');
+            catch %nothing to see here
             end
             
             
@@ -195,6 +202,21 @@ classdef LiveExperiment
         
         
         %Methods
+        
+        function this = setExperimentFolders(this)
+
+                expFolder = [this.userExperimentsFolder, filesep, this.Prefix];
+                
+                if isfolder(expFolder)
+
+                    this.preFolder = [expFolder, filesep, 'PreProcessedData'];
+                    this.procFolder = [expFolder, filesep, 'ProcessedData'];
+                    this.rawFolder = [expFolder, filesep, 'RawDynamicsData'];
+
+                end
+                
+        end
+        
         
         function Channels = getChannels(this)
             % JP: This is filtering out NaN, empty Strings and Channels

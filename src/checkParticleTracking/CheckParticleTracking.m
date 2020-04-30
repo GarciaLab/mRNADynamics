@@ -438,7 +438,7 @@ while (cc ~= 'x')
     hold(overlayAxes, 'on')
     
     if cptState.UseHistoneOverlay
-        hisImage = squeeze(hisMat(:, :, cptState.CurrentFrame));
+        hisImage = hisMat(:, :, cptState.CurrentFrame);
 
         displayOverlays(overlayAxes, cptState, SpeedMode, ShowThreshold2, Overlay, nFrames, UseSchnitz, ZoomRange, fish, subAx,...
             HisOverlayFigAxes, hisImage);

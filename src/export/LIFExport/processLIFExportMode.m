@@ -63,7 +63,9 @@ if shouldMakeMovieMat
             
             xml_file = [liveExperiment.rawFolder, filesep, 'lifMeta.xml'];
             
-            generateLIFMetaDataXML(Prefix, xml_file);
+            if ~exist(xml_file, 'file')
+                generateLIFMetaDataXML(Prefix, xml_file);
+            end
             
             InitialStackTime = getTimeStampsFromLifXML(xml_file);
             
