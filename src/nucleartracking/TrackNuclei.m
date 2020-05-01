@@ -34,12 +34,21 @@ cleanupObj = onCleanup(@myCleanupFun);
 disp(['Tracking nuclei on ', Prefix, '...']);
 
 
-[stitchSchnitz, ExpandedSpaceTolerance, NoBulkShift,...
+[ExpandedSpaceTolerance, NoBulkShift,...
     retrack, nWorkers, track, noBreak, noStitch,...
     markandfind, fish,...
     intFlag, chooseHis, segmentBetter, min_rad_um,...
              max_rad_um, sigmaK_um, mu, nIterSnakes]...
     = DetermineTrackNucleiOptions(varargin{:});
+
+
+postTrackingSettings = struct; 
+postTrackingSettings.noStitch = noStitch;
+postTrackingSettings.fish = fish;
+postTrackingSettings.intFlag = intFlag;
+postTrackingSettings.noBreak = noBreak;
+postTrackingSettings.track = track;
+postTrackingSettings.shouldConvertToAP = true;
 
 
 liveExperiment = LiveExperiment(Prefix);
@@ -236,7 +245,7 @@ else
         settingArguments = {};
     end
     
-    
+    clear dataStructure;
     %Re-run the tracking
     if exist('dataStructure', 'var')
         %Edit the names in dataStructure to match the current folder setup
@@ -293,59 +302,9 @@ if exist('dataStructure', 'var')
     save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure');
 end
 
-%Extract the nuclear fluorescence values if we're in the right experiment
-%type
-if intFlag
-    schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, PreProcPath);
-end
-
-if fish schnitzcells = rmfield(schnitzcells, {'P', 'E', 'D'}); end
-
-if track && ~noBreak
-    [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, expandedAnaphaseFrames, nFrames);  
-    save2(ellipsesFile, Ellipses); 
-    save2(schnitzcellsFile, schnitzcells); 
-end
-
-% Stitch the schnitzcells using Simon's code
-if ~noStitch
-    disp('stitching schnitzes')
-    StitchSchnitz(Prefix, nWorkers);
-end
-
-
-for s = 1:length(schnitzcells)
-    midFrame = ceil(length(schnitzcells(s).frames)/2);
-    dif = double(schnitzcells(s).frames(midFrame)) - expandedAnaphaseFrames;
-    cycle = find(dif>0, 1, 'last' );
-    schnitzcells(s).cycle = uint8(cycle);
-end
-
-schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, expandedAnaphaseFrames);
-
-%perform some quality control
-schnitzcells = filterSchnitz(schnitzcells, [liveExperiment.yDim, liveExperiment.xDim]);
-
-save2(ellipsesFile, Ellipses); 
-save2(schnitzcellsFile, schnitzcells); 
-
-try 
-    Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
-    if shouldConvertToAP
-       [EllipsePos, APAngle, APLength]...
-       = convertToFractionalEmbryoLength(Prefix);
-    end
-    for s = 1:length(schnitzcells)
-        for f = 1:length(schnitzcells(s).frames)
-            ellipseInd = schnitzcells(s).cellno(f);
-            schnitzcells(s).APPos(f) = EllipsePos{f}(ellipseInd);
-        end
-    end
-end
-
-
-save2(ellipsesFile, Ellipses); 
-save2(schnitzcellsFile, schnitzcells); 
-
+%perform very important stuff subsequent to tracking proper
+performPostNuclearTracking(Prefix,...
+    expandedAnaphaseFrames, nWorkers, schnitzcellsFile,...
+    ellipsesFile, postTrackingSettings)
 
 end

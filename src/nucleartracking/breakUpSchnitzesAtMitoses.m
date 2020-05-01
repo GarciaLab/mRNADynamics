@@ -38,7 +38,7 @@ nNuclei = length(schnitzcells);
 j = 1;
 for s = 1:nNuclei
     
-     schnitzcells(s).deleteMe = false;
+    schnitzcells(s).deleteMe = false;
     sc  = schnitzcells(s);
     tempSchnitzcells(s).deleteMe = false;
     schnitzcells(s).deleteMe = false;
@@ -114,6 +114,8 @@ if isfield(tempSchnitzcells, 'Valid')
 else
     tempSchnitzcells = rmfield(tempSchnitzcells, {'deleteMe'});
 end
+
 schnitzcells = tempSchnitzcells;
+
 Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
 

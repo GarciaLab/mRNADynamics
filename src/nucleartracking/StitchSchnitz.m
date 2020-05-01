@@ -103,7 +103,9 @@ for i=1:nThresh
                         schnitzcells(s1).frames = [Frames1 ; Frames2]; %stitch frames
                         schnitzcells(s1).cenx = [schnitzcells(s1).cenx schnitzcells(s2).cenx]; %
                         schnitzcells(s1).ceny = [schnitzcells(s1).ceny schnitzcells(s2).ceny]; %
-                        schnitzcells(s1).len = [schnitzcells(s1).len schnitzcells(s2).len]; %
+                        if isfield(schnitzcells, 'len')
+                            schnitzcells(s1).len = [schnitzcells(s1).len schnitzcells(s2).len]; %
+                        end
                         schnitzcells(s1).cellno = [schnitzcells(s1).cellno schnitzcells(s2).cellno]; %
                         
                         

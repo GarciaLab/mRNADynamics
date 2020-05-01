@@ -316,19 +316,21 @@ end
 
 
 %% Binning the axes into AP and DV
-fullEmbryoExists = exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'], 'file');
+APDetectionFile = [DropboxFolder,filesep,Prefix,filesep,'APDetection.mat']; 
+fullEmbryoExists = exist(APDetectionFile, 'file');
 shouldConvertToAP =  haveHistoneChannel...
     && (APExperiment || DVExperiment)...
     && fullEmbryoExists;
 
 %Figure out the AP position of each of the nuclei.
 if shouldConvertToAP
-   [EllipsePos, APAngle, APLength,~, coordAZoom]...
+   [EllipsePos, APAngle, APLength]...
    = convertToFractionalEmbryoLength(Prefix, DVExperiment);
 end
 
 %Divide the AP and DV axes into bins for generating means
 if APExperiment || DVExperiment && fullEmbryoExists
+    load(APDetectionFile)
     [APbinID, APbinArea] = binAxis(APResolution, FrameInfo, ...
         coordAZoom, APAngle, APLength, minBinSize, 'AP');
 end

@@ -1,6 +1,5 @@
 function schnitzcells =...
-    integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo,...
-   PreProcPath)
+    integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo)
 
 saveFlag = false;
 
@@ -19,7 +18,7 @@ if nargin == 1
     
 end
 
-schnitzPath = [DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'];
+schnitzPath = [liveExperiment.resultsFolder, filesep, Prefix, '_lin.mat'];
 
 Channels = liveExperiment.Channels;
 
