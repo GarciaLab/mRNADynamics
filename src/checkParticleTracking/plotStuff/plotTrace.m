@@ -184,8 +184,13 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(cptState.Frames==cptState.CurrentFr
                 [cptState.schnitzcells.Fluo] = dummy{:};
         else
             proteinLine = traceFigAxes.Children(end);
-            set(proteinLine, 'XData', cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).frames,...
-                'YData', max(cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).Fluo,[],2));
+            proteinFluo = cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).Fluo;
+            if ~isempty(proteinFluo)
+                set(proteinLine, 'XData', cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).frames,...
+                    'YData', max(proteinFluo,[],2));
+            else
+                warning('protein fluo empty. maybe rerun integrateschnitzfluo?');
+            end
         end
     end
     

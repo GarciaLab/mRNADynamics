@@ -38,6 +38,6 @@ for seriesIndex = 1:NSeries
     
 end
 
-Frame_Times= days2seconds * (Frame_Times - Frame_Times(1));
+Frame_Times = days2seconds * (Frame_Times - Frame_Times(1));
 
 end

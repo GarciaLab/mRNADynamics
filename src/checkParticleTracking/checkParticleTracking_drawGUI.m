@@ -7,6 +7,7 @@ function [OverlayFig, overlayAxes, snippetFigAxes, rawDataAxes,...
 
 
 OverlayFig = figure;
+multiFig = [];
 HisOverlayFig = [];
 HisOverlayFigAxes = [];
 traceFigAxes = [];
