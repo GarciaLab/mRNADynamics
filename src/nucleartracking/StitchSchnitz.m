@@ -64,9 +64,9 @@ for i=1:nThresh %loop over shnrinking distance thresholds
     Rule = 1;
     
     while Rule
-        for s1 = 1:length(schnitzcells) % outer loop, for the 'stitched from' schnitz
+        for s1 = 1:length(schnitzcells) % outer loop, for the 'stitched to' schnitz
             %get schnitz basic time/space info
-            %the number '1' in these variable names refer to the outer loop, 'stitched from' schnitz
+            %the number '1' in these variable names refer to the outer loop, 'stitched to' schnitz
             Frames1 = schnitzcells(s1).frames;
             XPos1 = schnitzcells(s1).cenx;
             YPos1 = schnitzcells(s1).ceny;
@@ -83,14 +83,14 @@ for i=1:nThresh %loop over shnrinking distance thresholds
            
             % now we'll do all possible pairwise comparisons to the rest of
             % the schnitz
-            for s2 = 1:length(schnitzcells) %inner loop for the 'stitched to' schnitz
+            for s2 = 1:length(schnitzcells) %inner loop for the 'stitched from' schnitz
                 % get schnitz basic time/space info
-                % the number '2' in these variable names refer to the inner loop, 'stitched to' schnitz
+                % the number '2' in these variable names refer to the inner loop, 'stitched from' schnitz
                 Frames2 = schnitzcells(s2).frames;
                 XPos2 = schnitzcells(s2).cenx;
                 YPos2 = schnitzcells(s2).ceny;
                 
-                %get the numbers we care about: first frame.
+                %get the numbers we care about: the first frame.
                 FirstFrame2 = Frames2(1);          
                 InitialPosition2 = [XPos2(1),YPos2(1)] ;
                 
@@ -104,15 +104,16 @@ for i=1:nThresh %loop over shnrinking distance thresholds
                         schnitzcells(s2).Valid = false; %mark so we don't consider it in the future
                         schnitzcells(s2).StitchedTo = [schnitzcells(s2).StitchedTo s1];
                         
-                        %paste fields' info
+                        %pass fields' info by concatenating them to the
+                        %outer loop schnitz ones
                         schnitzcells(s1).StitchedFrom = [schnitzcells(s1).StitchedFrom s2];
-                        schnitzcells(s1).frames = [Frames1 ; Frames2]; %stitch frames
-                        schnitzcells(s1).cenx = [schnitzcells(s1).cenx schnitzcells(s2).cenx]; %
-                        schnitzcells(s1).ceny = [schnitzcells(s1).ceny schnitzcells(s2).ceny]; %
+                        schnitzcells(s1).frames = [Frames1 ; Frames2]; 
+                        schnitzcells(s1).cenx = [schnitzcells(s1).cenx schnitzcells(s2).cenx]; 
+                        schnitzcells(s1).ceny = [schnitzcells(s1).ceny schnitzcells(s2).ceny]; 
                         if isfield(schnitzcells, 'len')
-                            schnitzcells(s1).len = [schnitzcells(s1).len schnitzcells(s2).len]; %
+                            schnitzcells(s1).len = [schnitzcells(s1).len schnitzcells(s2).len]; 
                         end
-                        schnitzcells(s1).cellno = [schnitzcells(s1).cellno schnitzcells(s2).cellno]; %            
+                        schnitzcells(s1).cellno = [schnitzcells(s1).cellno schnitzcells(s2).cellno];            
                         if isfield(schnitzcells,'Fluo')
                             schnitzcells(s1).Fluo = [schnitzcells(s1).Fluo;schnitzcells(s2).Fluo]; %
                         end                
@@ -133,67 +134,44 @@ for i=1:nThresh %loop over shnrinking distance thresholds
                         end                       
                     end
                 end
-            end
-        end
-        
-        %kill impostor schnitz forever
-        %create new schnitzcells struct using only valid schnitz from former one
+            end  %end of inner loop
+        end  %end of outer loop
+        % by now we have 'valid' schnitz, which are the ones that have gotten extended into the future by being concatenated to others 
+        % and also 'not valid' schnitz, the ones whose info has been added to a valid one. These we must get rid of:
         ImpostorSchnitz = find ([schnitzcells.Valid] == 0);
+        %If we couldn't find any shcnitz to stitch, finish the while loop and continue with the next threshold
         if isempty(ImpostorSchnitz)
-            Rule = 0; %finish the while loop if can't find more. Continue with next threshold
+            Rule = 0; 
         end
-        
-        %Create a new schnitzcells structure. We'll get rid of the
-        %impostors here.
+        % But if there were stitched schnitz we have to permanently delete them.
+        % Create a new schnitzcells structure. We'll get rid of the
+        % impostors here.
         schnitzcells2=schnitzcells;
         
         %Go through all schnitzcells, find the references to schnitz that
         %are one index higher than each ImpostorSchnitz and subtract one.
 
         for i=1:length(ImpostorSchnitz)
-            for s=1:length(schnitzcells2)
-                %If this schnitz has a mother or daughters with an index
-                %over ImpostorSchnitz(i), then subtract one. If the index
-                %is ImpostorSchnitz(i), then leave this empty.
-                
-                %Parent cell
-                if schnitzcells2(s).P>ImpostorSchnitz(i)
-                    schnitzcells2(s).P=schnitzcells2(s).P-1;
-                elseif schnitzcells2(s).P==ImpostorSchnitz(i)
-                    schnitzcells2(s).P=[];
-                end
-                %Daughter cell E
-                if schnitzcells2(s).E>ImpostorSchnitz(i)
-                    schnitzcells2(s).E=schnitzcells2(s).E-1;
-                elseif schnitzcells2(s).E==ImpostorSchnitz(i)
-                    schnitzcells2(s).E=[];
-                end
-                %Daughter cell D
-                if schnitzcells2(s).D>ImpostorSchnitz(i)
-                    schnitzcells2(s).D=schnitzcells2(s).D-1;
-                elseif schnitzcells2(s).D==ImpostorSchnitz(i)
-                    schnitzcells2(s).D=[];
-                end
-            end
-            
             %Now that we have re-indexed all schnitzs, delete the
-            %ImpostorSchnitz(i) one.
-            schnitzcells2=schnitzcells2([1:ImpostorSchnitz(i)-1,...
-                ImpostorSchnitz(i)+1:end]);
-            %Finally, we also need to shift all ImpostorSchnitzses by one
+            %ImpostorSchnitz(i) one. We do this by selecting all the rows
+            %before and after the 'ith' one, without including it.
+            schnitzcells2 = schnitzcells2([1:ImpostorSchnitz(i)-1,ImpostorSchnitz(i)+1:end]);          
+            % We also need to shift all ImpostorSchnitzses by one since in
+            % the new schnitzcells all indices after this impostor schnitz
+            % got reduced by 1 after we deleted it.
             ImpostorSchnitz=ImpostorSchnitz-1;
         end
         
         schnitzcells = schnitzcells2; %replace original by schnitzcells2
         clear schnitzcells2
+        % re-initialize the schnitzcell struct to start all over again
         for k=1:length(schnitzcells)
-            schnitzcells(k).Valid = true; %assume all are OK
+            schnitzcells(k).Valid = true; %assume all are OK again before using the next, slightly larger distance threshold
             schnitzcells(k).StitchedTo = []; %to know to which schnitz this one was pasted to
             schnitzcells(k).StitchedFrom = []; %to know what original schnitz were pasted to this one to form the final one
         end
     end
-    %threshold %(for debugging)
-end
+end %end of thresholds loop
 
 try close(h); catch; end
 
