@@ -2,26 +2,23 @@ function schnitzcells = StitchSchnitz(Prefix, nWorkers)
 
 %This function joins schnitzcells that overlap in space and are contiguous in time.
 
+liveExperiment = LiveExperiment(Prefix);
 
+DropboxFolder = liveExperiment.resultsFolder;
+anaphaseFrames = liveExperiment.anaphaseFrames';
 
-%Information about about folders
-[SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
-    configValues, movieDatabasePath] = DetermineAllLocalFolders(Prefix);
-
-FilePrefix=[Prefix,'_'];
-
-
-[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
-Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+nc9 = anaphaseFrames(1);
+nc10 = anaphaseFrames(2);
+nc11 = anaphaseFrames(3);
+nc12 = anaphaseFrames(4);
+nc13 = anaphaseFrames(5);
+nc14 = anaphaseFrames(6);
 
 
 ncVector=[0,0,0,0,0,0,0,0,nc9,nc10,nc11,nc12,nc13,nc14];
 
-% Load all the nuclear segmentation and tracking information, and FrameInfo
-load([DropboxFolder,filesep,Prefix,filesep,[Prefix '_lin.mat']]);
-load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses');
-
+Ellipses = getEllipses(liveExperiment);
+schnitzcells = getSchnitzcells(liveExperiment); 
 
 %% /\/\/\/\/\/\/*\/*\/*\ END OF LOADING STEPS /*\/*\/*\/\/\/\/\/\/\/\/\/\
 
@@ -58,7 +55,7 @@ h=waitbar(0,'Stitching broken schnitzs');
 
 for i=1:nThresh
     
-    waitbar(i/length(Thresholds),h);
+    try waitbar(i/length(Thresholds),h); catch; end
     %     display (['Trying threshold', num2str(Thresholds(i))]);
     %length(schnitzcells) for debugging
     threshold = Thresholds(i);
@@ -196,12 +193,13 @@ for i=1:nThresh
     end
     %threshold %(for debugging)
 end
-close(h);
+
+try close(h); catch; end
 
 
 [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
-save([DropboxFolder,filesep,Prefix,filesep,Prefix '_lin.mat'],'schnitzcells', '-append');
-save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-append');
+save([DropboxFolder,filesep,Prefix '_lin.mat'],'schnitzcells', '-append');
+save([DropboxFolder,filesep,'Ellipses.mat'],'Ellipses', '-append');
 TrackNuclei(Prefix,'nWorkers', nWorkers, 'noStitch', 'retrack', 'integrate');
 
 %% Accesory code to check nuclear traces

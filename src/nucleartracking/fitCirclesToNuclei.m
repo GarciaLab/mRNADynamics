@@ -2,7 +2,8 @@ function [cMask, ellipseFrameWithEdges] = fitCirclesToNuclei(mask, varargin)
 
 displayFigures = false;
 doEllipse = true;
-image = [];
+image = []; %#ok<NASGU>
+maxAspectRatio = 4; %quality control to remove bad ellipses. major/minor
 
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.
@@ -14,7 +15,7 @@ end
 
 if displayFigures
     
-    figure('Units', 'normalized', 'Position',[0.6441 0.0744 0.3184 0.3844]);
+    figure('Units', 'normalized', 'Position',[0.6441 0.0744 0.3184 0.3844]); %#ok<*UNRCH>
     tiledlayout('flow', 'TileSpacing', 'none', 'Padding', 'none')
     
 end
@@ -52,17 +53,23 @@ for k = 1:numel(boundaryCell)
         [xfit,yfit, Rfit]= circfit(xs,ys);
     else
         ellipseParams = fitEllipse(boundaryCell{k});
-        if ~isreal(ellipseParams)
-            %not sure why this happens. we'll skip this ellipse
-            %in this case.
+        %not sure why complex parameters happen. we'll skip this ellipse
+        %in this case. also ensure good aspect ratios here. 
+        if ~isreal(ellipseParams) ||...
+            ellipseParams(3)/ellipseParams(4) > maxAspectRatio ||...
+            ellipseParams(4)/ellipseParams(3) > maxAspectRatio
+     
             continue;
+            
         end
+        
         xfit = ellipseParams(1);
         yfit = ellipseParams(2);
         afit = ellipseParams(3);
         bfit = ellipseParams(4);
         thetafit = ellipseParams(5);
         Rfit = mean([afit, bfit]);
+        
     end
     
     xSub = min(round(abs(xfit)), xDim);
@@ -77,7 +84,7 @@ for k = 1:numel(boundaryCell)
         
         n = n + 1;
         
-        ellipseFrame(n, 2) = xfit;
+        ellipseFrame(n, 2) = xfit; %#ok<*AGROW>
         ellipseFrame(n, 1) = yfit;
         if ~doEllipse
             ellipseFrame(n, 3) = Rfit;
@@ -106,15 +113,15 @@ for k = 1:numel(boundaryCell)
             edgeEllipseFrame(m, 5) = 0;
         end
         
-        reg = stats(k).Image;
+        region = stats(k).Image;
         %         figure(87); imagesc(reg);
-        reg = reg(:);
+        region = region(:);
         % %             figure(88); imagesc(edgeMask);
         a = [stats(k).SubarrayIdx];
         sz = size(stats(k).Image);
         for xx = 1:numel(a{2})
             for yy = 1:numel(a{1})
-                edgeMask(a{1}(yy), a{2}(xx)) = reg(sub2ind(sz,yy, xx));
+                edgeMask(a{1}(yy), a{2}(xx)) = region(sub2ind(sz,yy, xx));
             end
         end
         

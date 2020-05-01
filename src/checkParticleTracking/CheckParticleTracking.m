@@ -226,7 +226,7 @@ for i = 1:nFrames
         FrameInfo(i).nc = 14;
     end
 end
-save([DataFolder, filesep, 'FrameInfo.mat'], 'FrameInfo');
+save([DataFolder, filesep, 'FrameInfo.mat'], 'FrameInfo', '-v6');
 
 %Get the actual time corresponding to each frame, in minutes
 ElapsedTime = getFrameElapsedTime(FrameInfo, nFrames);

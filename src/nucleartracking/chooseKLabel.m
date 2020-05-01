@@ -1,21 +1,24 @@
 function k = chooseKLabel(kLabel)
 
-subt = false;
+subt = false; %i forgot what this flag is supposed to represent, but i think it's important
+
+
 if islogical(kLabel)
     kLabel = uint8(kLabel) + 1;
     subt = true;
 end
-kMax = uint8(max(kLabel(:)));
-stats = cell(1, kMax);
-descriptorCell = cell(1, kMax);
-stds = zeros(1, kMax);
 
-for i = 1:kMax
+maxLabel = uint8(max(kLabel(:)));
+stats = cell(1, maxLabel);
+descriptorCell = cell(1, maxLabel);
+stds = zeros(1, maxLabel);
+
+for label = 1:maxLabel
     
     descriptor= 'Area';
-    stats{i} = regionprops(kLabel==i, descriptor);
-    descriptorCell{i} = [stats{i}.(descriptor)];
-    stds(i) = std(descriptorCell{i});
+    stats{label} = regionprops(kLabel==label, descriptor);
+    descriptorCell{label} = [stats{label}.(descriptor)];
+    stds(label) = std(descriptorCell{label});
     
 end
 

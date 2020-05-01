@@ -91,7 +91,8 @@ if length(anaphaseFrames)~=6
     error('Check the nc frames in the MovieDatabase entry. Some might be missing')
 end
 
-if (length(find(isnan(anaphaseFrames)))==length(anaphaseFrames))||(length(anaphaseFrames)<6)
+if length( find(isnan(anaphaseFrames))) ==...
+        length(anaphaseFrames) || length(anaphaseFrames) < 6
     error('Have the ncs been defined in MovieDatabase or anaphaseFrames.mat?')
 end
 
@@ -100,7 +101,7 @@ end
 
 if chooseHis
     
-    [hisFile, hisPath] = uigetfile([ProcPath, filesep, Prefix,'_',filesep,'*.mat']);
+    [hisFile, hisPath] = uigetfile([ProcPath, filesep, Prefix,'_',filesep,'*.*']);
     hisStruct = load([hisPath, hisFile]);
     hisField = fieldnames(hisStruct);
     hisMat = hisStruct.(hisField{1});
@@ -324,7 +325,6 @@ schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, expandedAn
 
 %perform some quality control
 schnitzcells = filterSchnitz(schnitzcells, [liveExperiment.yDim, liveExperiment.xDim]);
-% Ellipses = filterEllipses(Ellipses, [thisExperiment.yDim, thisExperiment.xDim]);
 
 save2(ellipsesFile, Ellipses); 
 save2(schnitzcellsFile, schnitzcells); 

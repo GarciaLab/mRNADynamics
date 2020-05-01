@@ -7,7 +7,7 @@ mu = .1; %weight of length term for chen vese  algorithm. honestly don't know wh
 min_rad_um = 1; % set min and max acceptable area for nucleus segmentation
 max_rad_um = 6; %this needs to be 6um for nc12. 4um for nc14
 nIterSnakes = 100;
-maxAspectRatio = 4;
+maxAspectRatio = 3;
 
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.
