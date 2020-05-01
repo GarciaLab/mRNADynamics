@@ -1,4 +1,4 @@
-function schnitzcells = StitchSchnitz(Prefix, nWorkers)
+function [schnitzcells, Ellipses] = StitchSchnitz(Prefix, nWorkers)
 
 %This function joins schnitzcells that overlap in space and are contiguous in time.
 
@@ -41,9 +41,9 @@ end
 
 % we'll do a dynamic thresholding to prioritize first the schnitz that are very
 % close.
-Thresholds = 1.05:0.05:1.75; 
+Thresholds = 1:0.5:2.5; 
 %these numbers indicate how many radii of distance make two time-contiguous ellipses be considered the same one
-nThresh = size(Thresholds);
+nThresh = size(Thresholds,2);
 
 %initialize information about the stitching state of each schnitz
 for j=1:length(schnitzcells)
@@ -55,12 +55,12 @@ end
 %% /|\/|\/|\/|\/|\ Start stitching loop /|\/|\/|\/|\/|\/|\
 h=waitbar(0,'Stitching broken schnitzs');
 
-for i=1:nThresh %loop over shnrinking distance thresholds
+for i=1:nThresh %loop over expanding distance thresholds
     
     try waitbar(i/length(Thresholds),h); catch; end
     %     display (['Trying threshold', num2str(Thresholds(i))]);
     %length(schnitzcells) for debugging
-    threshold = Thresholds(i);
+    threshold = Thresholds(i)
     Rule = 1;
     
     while Rule
@@ -97,10 +97,10 @@ for i=1:nThresh %loop over shnrinking distance thresholds
                 %compare schnitz s1 and s2
                 if schnitzcells(s1).Valid %
                     % if they are contiguous in time and closer than
-                    % 'thresh' in space:
+                    % radius scaled by 'threshold' in space:
                     if LastFrame1+1 == FirstFrame2 && ...
                             pdist([double(FinalPosition1);double(InitialPosition2)],'euclidean') < Radius*(threshold)
-                        % display('overlapping schnitz found')
+                        display(num2str(Radius*(threshold)))
                         schnitzcells(s2).Valid = false; %mark so we don't consider it in the future
                         schnitzcells(s2).StitchedTo = [schnitzcells(s2).StitchedTo s1];
                         
@@ -176,8 +176,9 @@ end %end of thresholds loop
 try close(h); catch; end
 
 
-[schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
-save([DropboxFolder,filesep,Prefix '_lin.mat'],'schnitzcells', '-append');
-save([DropboxFolder,filesep,'Ellipses.mat'],'Ellipses', '-append');
-TrackNuclei(Prefix,'nWorkers', nWorkers, 'noStitch', 'retrack', 'integrate');
+% [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
+Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
+save([DropboxFolder,filesep,Prefix '_lin.mat'],'schnitzcells');
+save([DropboxFolder,filesep,'Ellipses.mat'],'Ellipses');
+%TrackNuclei(Prefix,'nWorkers', nWorkers, 'noStitch', 'retrack', 'integrate');
 
