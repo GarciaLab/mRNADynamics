@@ -52,8 +52,7 @@ if shouldMakeMovieMat
     %Obtains frames information
     [NSeries, NFrames, NSlices,...
         NPlanes, NChannels, Frame_Times] = getFrames(LIFMeta);
-    InitialStackTime = [];
-    zPosition = [];
+
     if sum(NFrames)~=0
         
         if false
@@ -69,7 +68,7 @@ if shouldMakeMovieMat
             
         else
             %old method
-            [Frame_Times, ~] = obtainFrameTimes(XMLFolder, seriesPropertiesXML,...
+            Frame_Times = obtainFrameTimes(XMLFolder, seriesPropertiesXML,...
                 NSeries, NFrames, NSlices, NChannels);
 
         end
