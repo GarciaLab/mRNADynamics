@@ -52,8 +52,7 @@ if shouldMakeMovieMat
     %Obtains frames information
     [NSeries, NFrames, NSlices,...
         NPlanes, NChannels, Frame_Times] = getFrames(LIFMeta);
-    InitialStackTime = [];
-    zPosition = [];
+    
     
     timeStampRetrievalMethod = 'lasx';
     
