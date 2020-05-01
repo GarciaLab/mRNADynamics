@@ -12,7 +12,8 @@ function keyInputHandler = NuclearTrackingEventHandler(cptState)
         elseif cc == '$'
             % Add particle to nucleus
             cptState.Particles = addNucleusToParticle(cptState.Particles, cptState.CurrentFrame, ...
-                cptState.CurrentChannel, cptState.UseHistoneOverlay, cptState.schnitzcells, cptState.CurrentParticle);
+                cptState.CurrentChannelIndex, cptState.UseHistoneOverlay,...
+                cptState.schnitzcells, cptState.CurrentParticle);
         end
     end
 

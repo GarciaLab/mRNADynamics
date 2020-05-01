@@ -4,7 +4,8 @@ function nuclearMask = makeNuclearMask(ellipseFrame, imageDims, radiusScale)
 %segmenting loci in segmentSpots.
 
 if nargin < 3
-    radiusScale = 1.3; %be more lenient with the size of ellipses in the nuclear mask                               %so spots don't get excluded inappropriately
+    radiusScale = 1.3; %be more lenient with the size of ellipses in the nuclear mask   
+    %so spots don't get excluded inappropriately
 end
 
 yDim = imageDims(1);

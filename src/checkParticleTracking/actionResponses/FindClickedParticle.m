@@ -4,7 +4,6 @@ function [ParticleOutput,IndexOutput]=...
 %Find the particle index of the particle the user clicked on
 
 
-
 %Find the closest particle and its index
 [x,y]=SpotsXYZ(Spots(CurrentFrame));
 Distances=sqrt((x-ConnectPosition(1)).^2+(y-ConnectPosition(2)).^2);
@@ -17,11 +16,11 @@ if isempty(Distances)
     ParticleOutput=[];
     IndexOutput=[];
 else
-    for i=1:nParticles
-        particle = Particles(i);
-        FrameFilter=(particle.Frame==CurrentFrame);
-        if particle.Index(FrameFilter)==IndexOutput
-            ParticleOutput=i;
+    for p = 1 : nParticles
+        particle = Particles(p);
+        FrameFilter= particle.Frame == CurrentFrame;
+        if particle.Index(FrameFilter) == IndexOutput
+            ParticleOutput = p;
             break;
         end
     end
