@@ -30,7 +30,7 @@ end
 
 %clean the list of empty strings and repeated elements
 stampList(stampList=="") = [];
-stampList = unique(stampList);
+% stampList = unique(stampList);
 
 %the time stamps are in hex. let's convert them to decimal
 %so we can do numeric operations on them.

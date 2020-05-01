@@ -54,30 +54,40 @@ if shouldMakeMovieMat
         NPlanes, NChannels, Frame_Times] = getFrames(LIFMeta);
     InitialStackTime = [];
     zPosition = [];
+    
+    timeStampRetrievalMethod = 'lasx';
+    
     if sum(NFrames)~=0
         
-        if false
-            %new method
+        switch timeStampRetrievalMethod
             
-            xml_file = [liveExperiment.rawFolder, filesep, 'lifMeta.xml'];
-            
-            if ~exist(xml_file, 'file')
-                generateLIFMetaDataXML(Prefix, xml_file);
-            end
-            
-            Frame_Times = getTimeStampsFromLifXML(xml_file);
-            
-        else
-            %old method
-            [Frame_Times, ~] = obtainFrameTimes(XMLFolder, seriesPropertiesXML,...
-                NSeries, NFrames, NSlices, NChannels);
-
+            case 'manual'
+                
+                xml_file = [liveExperiment.rawFolder, filesep, 'lifMeta.xml'];
+                
+                if ~exist(xml_file, 'file')
+                    generateLIFMetaDataXML(Prefix, xml_file);
+                end
+                
+                Frame_Times = getTimeStampsFromLifXML(xml_file);
+                
+            case 'lasx'
+                
+                Frame_Times = obtainFrameTimes(XMLFolder, seriesPropertiesXML,...
+                    NSeries, NFrames, NSlices, NChannels);
+                
+            case 'bioformats'
+                
+                Frame_Times = getFrameTimesFromBioFormats(LIFMeta);
+                
+            otherwise, error('what?');
+                
         end
     end
     
     [InitialStackTime, zPosition] = getFirstSliceTimestamp(NSlices,...
-                NSeries, NPlanes, NChannels, Frame_Times, XMLFolder, seriesXML);
-            
+        NSeries, NPlanes, NChannels, Frame_Times, XMLFolder, seriesXML);
+    
     FrameInfo = recordFrameInfo(NFrames, NSlices, InitialStackTime, LIFMeta, zPosition);
     
     if markandfind
@@ -131,7 +141,7 @@ if ~skipExtraction
                 for channelIndex = 1:NChannels
                     
                     NameSuffix = ['_ch',iIndex(channelIndex,2)];
-
+                    
                     NewName = [Prefix, '_', iIndex(numberOfFrames,3),...
                         NameSuffix, '.tif'];
                     

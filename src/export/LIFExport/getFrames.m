@@ -22,6 +22,6 @@ function [NSeries, NFrames, NSlices, NPlanes, NChannels, Frame_Times] = getFrame
 
   %Get rid of the last frame as it is always incomplete because that's when we stopped it
   NFrames = NFrames - 1;
-  NPlanes = NPlanes - NSlices * NChannels;      
+  NPlanes = NPlanes - (NSlices * NChannels);      
   Frame_Times = zeros(1, sum(NFrames.*NSlices));
 end
