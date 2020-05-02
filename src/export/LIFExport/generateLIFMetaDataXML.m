@@ -64,7 +64,7 @@ function cleanasc = getAscii(lifFile)
 s = dir(lifFile);         
 filesize = s.bytes;
 
-xmlEnd = min(100E6, filesize); %this should cover even very large files
+xmlEnd = min(100E6, filesize); %100MB should cover even very large files
 
 fid = fopen(lifFile, 'r');
 [A,count] = fread(fid, xmlEnd, 'uchar');
