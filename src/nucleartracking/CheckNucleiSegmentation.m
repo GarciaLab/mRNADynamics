@@ -85,13 +85,12 @@ schnitzcells = getSchnitzcells(liveExperiment);
 %Load the reference histogram for the fake histone channel
 load('ReferenceHist.mat', 'ReferenceHist')
 
-hasSchnitzInd =size(Ellipses{1},2) == 9;
 
+schnitzcellsFile = [liveExperiment.resultsFolder, filesep, Prefix, '_lin.mat'];
 
-% if ~hasSchnitzInd
-    Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
-    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses', '-v6');
-% end
+[Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
+save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses', '-v6');
+save2(schnitzcellsFile, schnitzcells)
 
 Channels = {Channel1, Channel2, Channel3};
 
@@ -413,8 +412,6 @@ while (cc~='x')
         
     end
 end
-
-Ellipses = filterEllipses(Ellipses, [liveExperiment.yDim, liveExperiment.xDim]);
 
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v6')
 

@@ -11,7 +11,7 @@ foundIt = false;
 len = length(schnitzcells);
 s = 0;
 
-while ~foundIt & s < len
+while ~foundIt && s < len
     
     s = s+1;
     schnitzFrameIndex = find(schnitzcells(s).frames == frame);

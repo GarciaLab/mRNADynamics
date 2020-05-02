@@ -79,7 +79,7 @@ for i=1:nThresh %loop over expanding distance thresholds
             EllipseIndex = schnitzcells(s1).cellno;
             EllipseIndex = EllipseIndex(end);
             %Radius = Radii(LastFrame1); 
-            Radius = mean([Ellipses{LastFrame1,1}(EllipseIndex,3),Ellipses{LastFrame1,1}(EllipseIndex,4)]);
+            Radius = mean([Ellipses{LastFrame1}(EllipseIndex,3),Ellipses{LastFrame1}(EllipseIndex,4)]);
            
             % now we'll do all possible pairwise comparisons to the rest of
             % the schnitz
@@ -177,7 +177,7 @@ try close(h); catch; end
 
 
 [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
-Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
+[Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
 save([DropboxFolder,filesep,Prefix '_lin.mat'],'schnitzcells');
 save([DropboxFolder,filesep,'Ellipses.mat'],'Ellipses');
 %TrackNuclei(Prefix,'nWorkers', nWorkers, 'noStitch', 'retrack', 'integrate');
