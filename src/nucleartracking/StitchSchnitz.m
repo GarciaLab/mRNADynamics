@@ -176,7 +176,7 @@ end %end of thresholds loop
 try close(h); catch; end
 
 
-% [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
+[schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
 Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
 save([DropboxFolder,filesep,Prefix '_lin.mat'],'schnitzcells');
 save([DropboxFolder,filesep,'Ellipses.mat'],'Ellipses');

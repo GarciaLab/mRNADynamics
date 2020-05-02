@@ -13,8 +13,6 @@ FrameInfo = getFrameInfo(liveExperiment);
 schnitzcells = getSchnitzcells(liveExperiment);
 Ellipses = getEllipses(liveExperiment);
 
-nFrames = length(Ellipses);
-
 if postTrackingSettings.fish
     schnitzcells = rmfield(schnitzcells, {'P', 'E', 'D'});
 end
