@@ -325,7 +325,7 @@ shouldConvertToAP =  haveHistoneChannel...
 %Figure out the AP position of each of the nuclei.
 if shouldConvertToAP
    [EllipsePos, APAngle, APLength]...
-   = convertToFractionalEmbryoLength(Prefix, DVExperiment);
+   = convertToFractionalEmbryoLength(Prefix);
 end
 
 %Divide the AP and DV axes into bins for generating means
