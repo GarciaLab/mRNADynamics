@@ -87,10 +87,11 @@ load('ReferenceHist.mat', 'ReferenceHist')
 
 hasSchnitzInd =size(Ellipses{1},2) == 9;
 
-if ~hasSchnitzInd
+
+% if ~hasSchnitzInd
     Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
     save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses', '-v6');
-end
+% end
 
 Channels = {Channel1, Channel2, Channel3};
 

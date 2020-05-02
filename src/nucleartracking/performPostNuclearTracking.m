@@ -13,32 +13,21 @@ FrameInfo = getFrameInfo(liveExperiment);
 schnitzcells = getSchnitzcells(liveExperiment);
 Ellipses = getEllipses(liveExperiment);
 
-nFrames = length(Ellipses);
+if postTrackingSettings.fish
+    schnitzcells = rmfield(schnitzcells, {'P', 'E', 'D'});
+end
 
+% Stitch the schnitzcells using Simon's code
+if ~postTrackingSettings.noStitch
+    disp('stitching schnitzes')
+    [schnitzcells, Ellipses] = StitchSchnitz(Prefix, nWorkers);
+end
 
 %Extract the nuclear fluorescence values if we're in the right experiment
 %type
 if postTrackingSettings.intFlag
     schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo);
 end
-
-if postTrackingSettings.fish
-    schnitzcells = rmfield(schnitzcells, {'P', 'E', 'D'});
-end
-
-if postTrackingSettings.track && ~postTrackingSettings.noBreak
-    [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(...
-        schnitzcells, Ellipses, expandedAnaphaseFrames, nFrames);
-    save2(ellipsesFile, Ellipses);
-    save2(schnitzcellsFile, schnitzcells);
-end
-
-% Stitch the schnitzcells using Simon's code
-if ~postTrackingSettings.noStitch
-    disp('stitching schnitzes')
-    StitchSchnitz(Prefix, nWorkers);
-end
-
 
 for s = 1:length(schnitzcells)
     midFrame = ceil(length(schnitzcells(s).frames)/2);
@@ -53,11 +42,6 @@ schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells,...
 %perform some quality control
 schnitzcells = filterSchnitz(schnitzcells,...
     [liveExperiment.yDim, liveExperiment.xDim]);
-
-save2(ellipsesFile, Ellipses);
-save2(schnitzcellsFile, schnitzcells);
-
-Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
 
 if ~exist([liveExperiment.resultsFolder,filesep,'APDetection.mat'], 'file')
     postTrackingSettings.shouldConvertToAP = false;
