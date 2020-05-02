@@ -1,7 +1,8 @@
-function stampElapsed = getTimeStampsFromLifXML(file)
+function stampElapsed = getTimeStampsFromLifXML(file, LIFMeta)
 
-arguments 
-    file string  
+arguments
+    file string
+    LIFMeta
 end
 
 if ~isfile(file)
@@ -18,11 +19,20 @@ fclose(fid);
 timeStampStrings = extractBetween(str,"NumberOfTimeStamps","/TimeStamp");
 NSeries = length(timeStampStrings);
 stampList = [];
+nPlanes = extractBetween(str,"NumberOfTimeStamps=""",""">");
+nChannels = LIFMeta.getChannelCount(0);
+
+nSlices = [];
+for seriesIndex = 1:NSeries
+  nSlices(seriesIndex) = str2double(LIFMeta.getPixelsSizeZ(seriesIndex-1));
+end
+  
+nFrames = NPlanes./nSlices/NChannels;
+
+
 
 for seriesIndex = 1:NSeries
-        
-    for framesIndex = 0 : finalIndex
-        
+    
     %refine the text string
     cleanStr = extractBetween(timeStampStrings(seriesIndex), ">", "<");
     %divide the string into an array of time stamps
@@ -38,9 +48,9 @@ stampList(stampList=="") = [];
 %so we can do numeric operations on them.
 stampList_dec = hex2dec(char(stampList));
 
-%get elapsed time in seconds since the first frame. 
-%for downstream uses, let's also transpose this to 
-%a row vector. 
+%get elapsed time in seconds since the first frame.
+%for downstream uses, let's also transpose this to
+%a row vector.
 
 conversionFactor = 1E-7; %honestly not sure why this number, but it works
 

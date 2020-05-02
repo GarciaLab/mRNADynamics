@@ -54,7 +54,7 @@ if shouldMakeMovieMat
         NPlanes, NChannels, Frame_Times] = getFrames(LIFMeta);
     
     
-    timeStampRetrievalMethod = 'lasx';
+    timeStampRetrievalMethod = 'bioformats';
     
     if sum(NFrames)~=0
         
@@ -77,7 +77,7 @@ if shouldMakeMovieMat
                 
             case 'bioformats'
                 
-                Frame_Times = getFrameTimesFromBioFormats(LIFMeta);
+                Frame_Times = getFrameTimesFromBioFormats(LIFMeta, NSlices);
                 
             otherwise, error('what?');
                 
