@@ -258,16 +258,15 @@ classdef LiveExperiment
             %Prefixes (determined by num frames)
             if isempty(movieMat) ||...
                     ~isequal( size(movieMat, 4), this.nFrames)
-                
-                if this.hasMovieMatFile
+                if haveTifStacks
+                    movieMat = makeMovieMatFromTifStacks(this, preTifDir, channelsToRead);
+                elseif this.hasMovieMatFile
                     %load in .mat file
                     movieMat = loadMovieMat(this.Prefix);
                 elseif ~haveTifStacks
                     %load movie from individual tif slices
                     movieMat = makeMovieMats(this.Prefix, [], [], [],...
                         'loadHis', false, 'makeMovie', true, 'loadMovie', false);
-                elseif haveTifStacks
-                    movieMat = makeMovieMatFromTifStacks(this, preTifDir, channelsToRead);
                 else
                     error('can''t load movie.')
                 end
@@ -334,14 +333,17 @@ classdef LiveExperiment
             %load histone movie only if it hasn't been loaded or if we've switched
             %Prefixes (determined by num frames)
             if isempty(hisMat) || ~isequal( size(hisMat, 3), this.nFrames)
-                if this.hasHisMatFile
-                    %load up .mat histone file
-                    hisMat = loadHisMat(this.Prefix);
-                    
-                elseif haveHisTifStack
+                if haveHisTifStack
                     %load in sequential tif stacks
                     hisMat = imreadStack2([this.preFolder, filesep,...
                         this.Prefix, '-His.tif'], this.yDim, this.xDim, this.nFrames);
+                
+                %deprecated filetype. here for backwards compatibility
+                elseif this.hasHisMatFile
+                    %load up .mat histone file
+                    hisMat = loadHisMat(this.Prefix);
+                    
+                %deprecated filetype. here for backwards compatibility
                 else
                     %load in individual tif slices
                     [~,hisMat] = makeMovieMats(this.Prefix, [], [], [],...
