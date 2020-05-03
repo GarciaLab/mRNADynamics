@@ -34,7 +34,7 @@ save2(schnitzcellsFile, schnitzcells);
 % Stitch the schnitzcells using Simon's fantastic and clever code
 if ~postTrackingSettings.noStitch
     disp('stitching schnitzes')
-    [schnitzcells, Ellipses] = StitchSchnitzv2(Prefix, nWorkers);
+    [schnitzcells, Ellipses] = StitchSchnitz(Prefix, nWorkers);
 end
 
 %making copies for validation later on

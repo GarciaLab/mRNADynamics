@@ -1,4 +1,4 @@
-function [schnitzcells, Ellipses] = StitchSchnitzv2(Prefix, nWorkers)
+function [schnitzcells, Ellipses] = StitchSchnitz(Prefix, nWorkers)
 
 %This function joins schnitzcells that overlap in space and are contiguous in time.
 
@@ -49,11 +49,10 @@ Original_schnitzcells = schnitzcells; % save the original state before running t
 save([DropboxFolder,filesep,Prefix '_PreStitched.mat'],'Original_schnitzcells');
 %% Start stitching loop 
 
-h=waitbar(0,'Stitching broken schnitzs');
 
 
 for thresh = Thresholds %loop over expanding distance thresholds 
-    %thresh
+    h=waitbar(0,['Stitching broken schnitzs using ' num2str(thresh) ' radii of distance']);
     RunOutToStitch_withThisThresh = 1;     
     while RunOutToStitch_withThisThresh
         
@@ -76,7 +75,7 @@ for thresh = Thresholds %loop over expanding distance thresholds
                 %compare schnitz s1 and s2 if s2 hasn't been used already
                 if schnitzcells(s2).AlreadyUsed == false && LastFrame1+1 == FirstFrame2 && ...
                      pdist([double(FinalXYPos1);double(InitialXYPos2)],'euclidean') < RadiusThisFrame*(thresh)
-                    %disp('found something to stitch!!')
+                    disp('found something to stitch!!')
                     
                     LastFrame1 = schnitzcells(s2).frames(end);
                     FinalXYPos1 = [schnitzcells(s2).cenx(end),schnitzcells(s2).ceny(end)];
