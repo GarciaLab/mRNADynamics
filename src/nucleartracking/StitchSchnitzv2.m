@@ -73,6 +73,11 @@ for thresh = Thresholds %loop over expanding distance thresholds
                 if schnitzcells(s2).AlreadyUsed == false && LastFrame1+1 == FirstFrame2 && ...
                      pdist([double(FinalXYPos1);double(InitialXYPos2)],'euclidean') < RadiusThisFrame*(thresh)
                     disp('found something to stitch!!')
+                    
+                    LastFrame1 = schnitzcells(s2).frames(end);
+                    FinalXYPos1 = [schnitzcells(s2).cenx(end),schnitzcells(s2).ceny(end)];
+                    RadiusThisFrame = RadiusPerFrame(LastFrame1); 
+                    
                     FoundSomethingToStitch = FoundSomethingToStitch+1;
                     schnitzcells(s2).AlreadyUsed = true;                    
                     schnitzcells(s2).StitchedTo = [schnitzcells(s2).StitchedTo s1];
