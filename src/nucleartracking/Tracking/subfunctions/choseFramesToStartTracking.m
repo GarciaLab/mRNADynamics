@@ -18,12 +18,12 @@ function [ trackingStartingPoints ] = choseFramesToStartTracking(FrameInfo, indM
 time_resolution = getDefaultParameters(FrameInfo,'time resolution');
 delta_time_tracking = getDefaultParameters(FrameInfo,'delta t','choseFramesToStartTracking')/time_resolution;
 
-%indicesMitosis = unique([1;indMitosis]);
 
-trackingStartingPoints = round(0.5*(indMitosis(2:end-1,1)+[1; indMitosis(2:end-2,2)]));
+trackingStartingPoints = round(0.5*(indMitosis(2:end-1,1) + [1; indMitosis(2:end-2,2)]));
 
 if size(indMitosis,1) > 1
-    trackingStartingPoints(end+1) = min(numberOfFrames, round(indMitosis(end-1,2)+delta_time_tracking));
+    trackingStartingPoints(end+1) = ...
+        min(numberOfFrames, round(indMitosis(end-1,2) + delta_time_tracking));
 end
     
 end
