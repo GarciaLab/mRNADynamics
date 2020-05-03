@@ -32,9 +32,8 @@ Radii = []; %a vector of length = frames that will contain ellipse radius per fr
 %correspond to the same nucleus.
 for fr = 1:nFrames
     if ~isempty(Ellipses{fr})
-        Radius = Ellipses{fr}(1,3); %the third column contains size info. by definition all ellipses/frame are equal in size
-    else
-        Radius = nan;
+        Radius = mean(Ellipses{fr}(:,3)); %the third column contains size info. by definition all ellipses/frame are equal in size
+        Radius = Radius(Radius>0);
     end
         Radii = [Radii Radius];
 end
@@ -60,7 +59,7 @@ for i=1:nThresh %loop over expanding distance thresholds
     try waitbar(i/length(Thresholds),h); catch; end
     %     display (['Trying threshold', num2str(Thresholds(i))]);
     %length(schnitzcells) for debugging
-    threshold = Thresholds(i)
+    threshold = Thresholds(i);
     Rule = 1;
     
     while Rule
@@ -78,8 +77,8 @@ for i=1:nThresh %loop over expanding distance thresholds
             % the mean radii of all ellipses in this frame:
             EllipseIndex = schnitzcells(s1).cellno;
             EllipseIndex = EllipseIndex(end);
-            %Radius = Radii(LastFrame1); 
-            Radius = mean([Ellipses{LastFrame1,1}(EllipseIndex,3),Ellipses{LastFrame1,1}(EllipseIndex,4)]);
+            Radius = Radii(LastFrame1); 
+            %Radius = mean([Ellipses{LastFrame1}(EllipseIndex,3),Ellipses{LastFrame1}(EllipseIndex,4)]);
            
             % now we'll do all possible pairwise comparisons to the rest of
             % the schnitz
@@ -109,11 +108,14 @@ for i=1:nThresh %loop over expanding distance thresholds
                         schnitzcells(s1).StitchedFrom = [schnitzcells(s1).StitchedFrom s2];
                         schnitzcells(s1).frames = [Frames1 ; Frames2]; 
                         schnitzcells(s1).cenx = [schnitzcells(s1).cenx schnitzcells(s2).cenx]; 
-                        schnitzcells(s1).ceny = [schnitzcells(s1).ceny schnitzcells(s2).ceny]; 
+                        schnitzcells(s1).ceny = [schnitzcells(s1).ceny schnitzcells(s2).ceny];
+                        
                         if isfield(schnitzcells, 'len')
                             schnitzcells(s1).len = [schnitzcells(s1).len schnitzcells(s2).len]; 
                         end
-                        schnitzcells(s1).cellno = [schnitzcells(s1).cellno schnitzcells(s2).cellno];            
+                        
+                        schnitzcells(s1).cellno = [schnitzcells(s1).cellno schnitzcells(s2).cellno];
+                        
                         if isfield(schnitzcells,'Fluo')
                             schnitzcells(s1).Fluo = [schnitzcells(s1).Fluo;schnitzcells(s2).Fluo]; %
                         end                
@@ -177,7 +179,7 @@ try close(h); catch; end
 
 
 [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
-Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
+[Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
 save([DropboxFolder,filesep,Prefix '_lin.mat'],'schnitzcells');
 save([DropboxFolder,filesep,'Ellipses.mat'],'Ellipses');
 %TrackNuclei(Prefix,'nWorkers', nWorkers, 'noStitch', 'retrack', 'integrate');

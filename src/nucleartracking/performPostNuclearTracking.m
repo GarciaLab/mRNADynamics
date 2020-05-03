@@ -13,9 +13,20 @@ FrameInfo = getFrameInfo(liveExperiment);
 schnitzcells = getSchnitzcells(liveExperiment);
 Ellipses = getEllipses(liveExperiment);
 
+
+
 if postTrackingSettings.fish
     schnitzcells = rmfield(schnitzcells, {'P', 'E', 'D'});
 end
+
+%the cellno field of schnitzcells is hugely problematic. let's delete it 
+%and rebuild it with addschnitzindextoellipses
+schnitzcells = rmfield(schnitzcells, 'cellno'); 
+
+
+%we'll make sure cellnos and ellipses correspond well.
+[Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
+
 
 % Stitch the schnitzcells using Simon's code
 if ~postTrackingSettings.noStitch
@@ -23,25 +34,67 @@ if ~postTrackingSettings.noStitch
     [schnitzcells, Ellipses] = StitchSchnitz(Prefix, nWorkers);
 end
 
+%making copies for validation later on
+ellipsesOld = Ellipses;
+schnitzcellsOld = schnitzcells;
+
+
+%add the length field to schnitzcells
+for schnitzIndex = 1:length(schnitzcells)
+    framesPerSchnitz = length(schnitzcells(schnitzIndex).frames);
+    for frameIndex = 1:framesPerSchnitz
+        radius = single(mean(Ellipses{schnitzcells(schnitzIndex).frames(frameIndex)}(...
+            schnitzcells(schnitzIndex).cellno(frameIndex),3:4)));
+        if ~isreal(radius)
+            radius = nan;
+            warning('non real radii returned for schnitz. not sure what happened here.');
+        end
+        schnitzcells(schnitzIndex).len = radius*ones(1, framesPerSchnitz);
+    end
+end
+
+
+ellipsesSizeUnchanged(ellipsesOld, Ellipses);
+schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells);
+
 %Extract the nuclear fluorescence values if we're in the right experiment
 %type
 if postTrackingSettings.intFlag
     schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo);
 end
 
-for s = 1:length(schnitzcells)
-    midFrame = ceil(length(schnitzcells(s).frames)/2);
-    dif = double(schnitzcells(s).frames(midFrame)) - expandedAnaphaseFrames;
+
+ellipsesSizeUnchanged(ellipsesOld, Ellipses);
+schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells);
+
+for schnitzIndex = 1:length(schnitzcells)
+    midFrame = ceil(length(schnitzcells(schnitzIndex).frames)/2);
+    dif = double(schnitzcells(schnitzIndex).frames(midFrame)) - expandedAnaphaseFrames;
     cycle = find(dif>0, 1, 'last' );
-    schnitzcells(s).cycle = uint8(cycle);
+    schnitzcells(schnitzIndex).cycle = uint8(cycle);
 end
+
+
+
+ellipsesSizeUnchanged(ellipsesOld, Ellipses);
+schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells);
 
 schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells,...
     FrameInfo, expandedAnaphaseFrames);
 
+
+
+ellipsesSizeUnchanged(ellipsesOld, Ellipses);
+schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells);
+
 %perform some quality control
 schnitzcells = filterSchnitz(schnitzcells,...
     [liveExperiment.yDim, liveExperiment.xDim]);
+
+
+
+ellipsesSizeUnchanged(ellipsesOld, Ellipses);
+schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells);
 
 if ~exist([liveExperiment.resultsFolder,filesep,'APDetection.mat'], 'file')
     postTrackingSettings.shouldConvertToAP = false;
@@ -51,14 +104,23 @@ if postTrackingSettings.shouldConvertToAP
     [EllipsePos, APAngle, APLength]...
         = convertToFractionalEmbryoLength(Prefix);
     
-    for s = 1:length(schnitzcells)
-        for f = 1:length(schnitzcells(s).frames)
-            ellipseInd = schnitzcells(s).cellno(f);
-            schnitzcells(s).APPos(f) = EllipsePos{f}(ellipseInd);
+    
+    
+    ellipsesSizeUnchanged(ellipsesOld, Ellipses);
+    schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells);
+    
+    for schnitzIndex = 1:length(schnitzcells)
+        for frameIndex = 1:length(schnitzcells(schnitzIndex).frames)
+            frame = schnitzcells(schnitzIndex).frames(frameIndex);
+            ellipseInd = schnitzcells(schnitzIndex).cellno(frameIndex);
+            schnitzcells(schnitzIndex).APPos(frameIndex) = EllipsePos{frame}(ellipseInd);
         end
     end
 end
 
+
+ellipsesSizeUnchanged(ellipsesOld, Ellipses);
+schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells);
 
 save2(ellipsesFile, Ellipses);
 save2(schnitzcellsFile, schnitzcells);

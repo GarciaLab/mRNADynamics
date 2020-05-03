@@ -318,6 +318,7 @@ if ~exist('centers','var') || isempty(centers)
     
     close(h_waitbar_segmentation)
     
+
     %If the xy contains only one or zero nuclei then there's probably something
     %wrong. In that case just copy the information from the previous good
     %frame.

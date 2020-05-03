@@ -1,9 +1,12 @@
 function [EllipsePosAP, APAngle,...
     APLength, EllipsePosDV]...
-    = convertToFractionalEmbryoLength(Prefix, DVExperiment)
+    = convertToFractionalEmbryoLength(Prefix)
 
 liveExperiment = LiveExperiment(Prefix);
 resultsFolder = liveExperiment.resultsFolder;
+
+DVExperiment = strcmpi(liveExperiment.experimentAxis, 'DV');
+
 load([resultsFolder,filesep,'APDetection.mat'])
 Ellipses = getEllipses(liveExperiment);
 correctDV = exist([resultsFolder, filesep,'DV',filesep,'DV_correction.mat'], 'file');
