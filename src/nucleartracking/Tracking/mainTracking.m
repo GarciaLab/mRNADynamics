@@ -322,7 +322,7 @@ if ~exist('centers','var') || isempty(centers)
     %If the xy contains only one or zero nuclei then there's probably something
     %wrong. In that case just copy the information from the previous good
     %frame.
-    xy = fillEmptyXYFrames(xy);
+%     xy = fillEmptyXYFrames(xy);
     
 else
     xy = centers;
@@ -428,14 +428,14 @@ for j = 1:numberOfPhases
             fprintf(['Processing mitosis between nuclear cycle ' num2str(nucCyc(0.5*(j+1))-1) ' and ' num2str(nucCyc(0.5*(j+1))) '... ']);
         end
         
-        try
+%         try
             [ xy(first:last), mapping(first:last-1), nuclei ] =...
                 trackMitosis(FrameInfo, hisMat, first, last, shifts,...
                 diameters(j), embryoMask, xy(first:last),...
                 mapping(first:last-1), nuclei, h_waitbar_tracking );
-        catch
-            warning('couldn''t track this mitosis')
-        end
+%         catch
+%             warning('couldn''t track this mitosis')
+%         end
         
         fprintf('Done!\n')
         
@@ -449,14 +449,14 @@ for j = 1:numberOfPhases
             fprintf(['Processing nuclear cycle ' num2str(nucCyc(0.5*j)) '... ']);
         end
         
-        try
+%         try
             [nuclei, ~, interpolatedShifts] = trackWholeInterphase(FrameInfo,hisMat,...
                 trackingStartingPoints(1),first,last,diameters(j), embryoMask, ...
                 xy, mapping,nuclei, interpolatedShifts, h_waitbar_tracking, ...
                 ExpandedSpaceTolerance, NoBulkShift);
-        catch
-            warning('skipping this interphase');
-        end
+%         catch
+%             warning('skipping this interphase');
+%         end
         
         fprintf('Done!\n')
         

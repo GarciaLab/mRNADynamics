@@ -48,6 +48,8 @@ parfor CurrentFrame = 1:liveExperiment.nFrames
         
 end
 
+Ellipses = fillEmptyXYFrames(Ellipses);
+
 if whos(var2str(Ellipses)).bytes < 2E9
     save([liveExperiment.resultsFolder, 'Ellipses.mat'],var2str(Ellipses), '-v6');
 else

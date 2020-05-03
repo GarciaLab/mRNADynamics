@@ -15,6 +15,10 @@ while ~foundIt && s < len
     
     s = s+1;
     schnitzFrameIndex = find(schnitzcells(s).frames == frame);
+    
+    %check for repeated frames.
+    assert(length(schnitzFrameIndex) == 1 || isempty(schnitzFrameIndex));
+    
     if ~isempty(schnitzFrameIndex)
         foundIt = round(schnitzcells(s).ceny(schnitzFrameIndex)) == center(2) & round(schnitzcells(s).cenx(schnitzFrameIndex)) == center(1);
 %         foundIt = double(schnitzcells(s).cellno) == double(cellno);

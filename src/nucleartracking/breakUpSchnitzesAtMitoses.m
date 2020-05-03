@@ -86,11 +86,18 @@ for s = 1:nNuclei
                 tempSchnitzcells(newInd).FrameApproved = sc.FrameApproved(newFrames);
             end
             
-            if isfield(tempSchnitzcells, 'FluoTimeTrace')
-                
+            if isfield(tempSchnitzcells, 'FluoTimeTrace')               
                 tempSchnitzcells(newInd).FluoTimeTrace = sc.FluoTimeTrace(newFrames);
             end
             
+            if isfield(tempSchnitzcells, 'StitchedFrom')               
+                tempSchnitzcells(newInd).StitchedFrom = sc.StitchedFrom;
+            end
+            
+            if isfield(tempSchnitzcells, 'StitchedTo')               
+                tempSchnitzcells(newInd).StitchedTo = sc.StitchedTo;
+            end
+                  
             if cp
                 CompiledParticles(cpInd).Nucleus = newInd;
                 CompiledParticles(cpInd).schnitz = newInd;
@@ -110,7 +117,7 @@ end
 
 tempSchnitzcells([tempSchnitzcells.deleteMe]) = [];
 if isfield(tempSchnitzcells, 'Valid')
-    tempSchnitzcells = rmfield(tempSchnitzcells, {'deleteMe', 'StitchedTo', 'StitchedFrom', 'Valid'});
+    tempSchnitzcells = rmfield(tempSchnitzcells, {'deleteMe', 'Valid'});
 else
     tempSchnitzcells = rmfield(tempSchnitzcells, {'deleteMe'});
 end

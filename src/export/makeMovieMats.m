@@ -85,7 +85,7 @@ if makeMovie
     end
     
     for ch = 1:nCh
-        parfor f = 1:nFrames
+        for f = 1:nFrames
             
             zRange = 1:nSlices + nPadding;
             for z = zRange

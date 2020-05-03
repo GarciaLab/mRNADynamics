@@ -33,7 +33,7 @@ for s = 1:length(schnitzcells)
     
     for frameIndex = 1:length(schnitz.frames)
         
-        radius  = schnitz.len(frameIndex);
+        radius  = double(schnitz.len(frameIndex));
         
         if ( (schnitz.cenx(frameIndex) + radius*thresh ) > xmax ||...
                 (schnitz.ceny(frameIndex) + radius*thresh ) > ymax ||...

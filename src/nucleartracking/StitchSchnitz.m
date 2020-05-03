@@ -51,7 +51,11 @@ for j=1:length(schnitzcells)
     schnitzcells(j).StitchedFrom = []; %to know what original schnitz were pasted to this one to form the final one
 end
 
+Original_schnitzcells = schnitzcells;
+save([DropboxFolder,filesep,Prefix '_PreStitched.mat'],'Original_schnitzcells');
 %% /|\/|\/|\/|\/|\ Start stitching loop /|\/|\/|\/|\/|\/|\
+
+
 h=waitbar(0,'Stitching broken schnitzs');
 
 for i=1:nThresh %loop over expanding distance thresholds
@@ -99,7 +103,7 @@ for i=1:nThresh %loop over expanding distance thresholds
                     % radius scaled by 'threshold' in space:
                     if LastFrame1+1 == FirstFrame2 && ...
                             pdist([double(FinalPosition1);double(InitialPosition2)],'euclidean') < Radius*(threshold)
-                        display(num2str(Radius*(threshold)))
+                        %display(num2str(Radius*(threshold)))
                         schnitzcells(s2).Valid = false; %mark so we don't consider it in the future
                         schnitzcells(s2).StitchedTo = [schnitzcells(s2).StitchedTo s1];
                         
@@ -143,7 +147,7 @@ for i=1:nThresh %loop over expanding distance thresholds
         ImpostorSchnitz = find ([schnitzcells.Valid] == 0);
         %If we couldn't find any shcnitz to stitch, finish the while loop and continue with the next threshold
         if isempty(ImpostorSchnitz)
-            Rule = 0; 
+            Rule = 0;
         end
         % But if there were stitched schnitz we have to permanently delete them.
         % Create a new schnitzcells structure. We'll get rid of the
@@ -153,11 +157,11 @@ for i=1:nThresh %loop over expanding distance thresholds
         %Go through all schnitzcells, find the references to schnitz that
         %are one index higher than each ImpostorSchnitz and subtract one.
 
-        for i=1:length(ImpostorSchnitz)
+        for k=1:length(ImpostorSchnitz)
             %Now that we have re-indexed all schnitzs, delete the
             %ImpostorSchnitz(i) one. We do this by selecting all the rows
             %before and after the 'ith' one, without including it.
-            schnitzcells2 = schnitzcells2([1:ImpostorSchnitz(i)-1,ImpostorSchnitz(i)+1:end]);          
+            schnitzcells2 = schnitzcells2([1:ImpostorSchnitz(k)-1,ImpostorSchnitz(k)+1:end]);          
             % We also need to shift all ImpostorSchnitzses by one since in
             % the new schnitzcells all indices after this impostor schnitz
             % got reduced by 1 after we deleted it.
@@ -169,18 +173,23 @@ for i=1:nThresh %loop over expanding distance thresholds
         % re-initialize the schnitzcell struct to start all over again
         for k=1:length(schnitzcells)
             schnitzcells(k).Valid = true; %assume all are OK again before using the next, slightly larger distance threshold
-            schnitzcells(k).StitchedTo = []; %to know to which schnitz this one was pasted to
-            schnitzcells(k).StitchedFrom = []; %to know what original schnitz were pasted to this one to form the final one
+%            schnitzcells(k).StitchedTo = []; %to know to which schnitz this one was pasted to
+%            schnitzcells(k).StitchedFrom = []; %to know what original schnitz were pasted to this one to form the final one
         end
     end
 end %end of thresholds loop
 
 try close(h); catch; end
 
+%% Save everything and break schnitzs at mitosis
+Stitched_before_breakup = schnitzcells;
+save([DropboxFolder,filesep,Prefix '_PreStitched.mat'],'Stitched_before_breakup');
 
-[schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
+%[schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
 [Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
 save([DropboxFolder,filesep,Prefix '_lin.mat'],'schnitzcells');
 save([DropboxFolder,filesep,'Ellipses.mat'],'Ellipses');
 %TrackNuclei(Prefix,'nWorkers', nWorkers, 'noStitch', 'retrack', 'integrate');
+
+end
 

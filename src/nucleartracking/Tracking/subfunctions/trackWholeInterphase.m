@@ -37,14 +37,14 @@ else
         nucleusDiameter, embryoMask, [],[1 1 1 1 1]);
 end
 
-%the code down below will break if frames are empty. 
-%let's fix that now. 
-emptyFrames = find(cellfun(@isempty, xyInterphase));
-
-% fh = @(x) fillmissing(x, 'previous');
-for f = 1:length(emptyFrames)
-    xyInterphase{emptyFrames(f)} = [0 0];
-end
+% %the code down below will break if frames are empty. 
+% %let's fix that now. 
+% emptyFrames = find(cellfun(@isempty, xyInterphase));
+% 
+% % fh = @(x) fillmissing(x, 'previous');
+% for f = 1:length(emptyFrames)
+%     xyInterphase{emptyFrames(f)} = [0 0];
+% end
 
 
 if ~exist('shifts','var') || isempty(shifts)

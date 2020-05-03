@@ -24,10 +24,11 @@
         
         assert(size(measurements, 1) == numel(props));
             
+            
         bboxes = [];
-        a = {props.BoundingBox}; 
-        for k = 1:numel(a)
-            bboxes(k, :) = a{k};
+        boundingBoxCell = {props.BoundingBox}; 
+        for k = 1:numel(boundingBoxCell)
+            bboxes(k, :) = boundingBoxCell{k};
         end
         bboxes = int32(round(bboxes));
                           

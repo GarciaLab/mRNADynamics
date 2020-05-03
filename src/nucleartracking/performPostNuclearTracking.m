@@ -27,11 +27,14 @@ schnitzcells = rmfield(schnitzcells, 'cellno');
 %we'll make sure cellnos and ellipses correspond well.
 [Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
 
+save2(ellipsesFile, Ellipses);
+save2(schnitzcellsFile, schnitzcells);
 
-% Stitch the schnitzcells using Simon's code
+
+% Stitch the schnitzcells using Simon's fantastic and clever code
 if ~postTrackingSettings.noStitch
     disp('stitching schnitzes')
-    [schnitzcells, Ellipses] = StitchSchnitz(Prefix, nWorkers);
+    [schnitzcells, Ellipses] = StitchSchnitzv2(Prefix, nWorkers);
 end
 
 %making copies for validation later on
@@ -54,7 +57,7 @@ for schnitzIndex = 1:length(schnitzcells)
 end
 
 
-ellipsesSizeUnchanged(ellipsesOld, Ellipses);
+ellipsesSizeUnchanged(ellipsesOld, Ellipses); %just a test, not sure if it works
 schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells);
 
 %Extract the nuclear fluorescence values if we're in the right experiment
