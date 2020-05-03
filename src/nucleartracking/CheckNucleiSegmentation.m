@@ -214,12 +214,14 @@ while (cc~='x')
                     Ellipses{CurrentFrame}(k, 9) = 0;
                 end
             end
+            
             if schnitzInd ~= 0
                 set(PlotHandle{k}, 'StripeColor', clrmp(schnitzInd, :),...
                     'Color', clrmp(schnitzInd, :),'Linewidth', 2);
             else
                 set(PlotHandle{k}, 'StripeColor', 'w', 'Color', 'w','Linewidth', 2);
             end
+            
         end
     else
         for k=1:NCentroids

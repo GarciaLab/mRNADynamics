@@ -84,6 +84,7 @@ nexttile; imagesc(image);
 nexttile; imagesc(kMask);
 nexttile; imagesc(kMaskRefined);
 nexttile; imagesc(mask);
+drawnow;
 
 
 end

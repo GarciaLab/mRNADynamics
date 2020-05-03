@@ -264,6 +264,9 @@ else
     end
     
 end
+
+disp('Finished main tracking.'); 
+
 %Convert nuclei structure into schnitzcell structure
 [schnitzcells] = convertNucleiToSchnitzcells(nuclei);
 

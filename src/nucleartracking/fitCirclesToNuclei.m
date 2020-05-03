@@ -156,9 +156,12 @@ if ~isempty(areaFilter)
                 ellipseAspectRatio < maxAspectRatio &&...
                 (1/ellipseAspectRatio) < maxAspectRatio
                 
-            ellipseFrameWithEdgesTemp = [ellipseFrameWithEdgesTemp; ellipseFrameWithEdges];
+            ellipseFrameWithEdgesTemp = [ellipseFrameWithEdgesTemp; ellipseFrameWithEdges(n, :)];
             
         end
+        
+        assert(size(ellipseFrameWithEdgesTemp, 1) <= size(ellipseFrameWithEdges, 1));
+        
     end
 end
 

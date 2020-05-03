@@ -7,6 +7,8 @@ function performPostNuclearTracking(Prefix,...
 %mistakes, 3) Adding useful relative times and positions for downstream
 %analysis
 
+disp('Starting post-tracking procedures...')
+
 liveExperiment = LiveExperiment(Prefix);
 
 FrameInfo = getFrameInfo(liveExperiment);
@@ -99,11 +101,8 @@ schnitzcells = filterSchnitz(schnitzcells,...
 ellipsesSizeUnchanged(ellipsesOld, Ellipses);
 schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells);
 
-if ~exist([liveExperiment.resultsFolder,filesep,'APDetection.mat'], 'file')
-    postTrackingSettings.shouldConvertToAP = false;
-end
 
-if postTrackingSettings.shouldConvertToAP
+if exist([liveExperiment.resultsFolder,filesep,'APDetection.mat'], 'file')
     [EllipsePos, APAngle, APLength]...
         = convertToFractionalEmbryoLength(Prefix);
     

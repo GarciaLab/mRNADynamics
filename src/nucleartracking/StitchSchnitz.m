@@ -117,9 +117,9 @@ Stitched_before_breakup = schnitzcells;
 save([DropboxFolder,filesep,Prefix '_PreBroken.mat'],'Stitched_before_breakup');
 [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
 [Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
-save([DropboxFolder,filesep,Prefix '_lin.mat'],'schnitzcells');
-save([DropboxFolder,filesep,'Ellipses.mat'],'Ellipses');
-%TrackNuclei(Prefix,'nWorkers', nWorkers, 'noStitch', 'retrack', 'integrate');
+save2([DropboxFolder,filesep,Prefix '_lin.mat'],schnitzcells);
+save2([DropboxFolder,filesep,'Ellipses.mat'],Ellipses);
+% TrackNuclei(Prefix,'nWorkers', nWorkers, 'noStitch', 'retrack', 'integrate');
 
 end
 

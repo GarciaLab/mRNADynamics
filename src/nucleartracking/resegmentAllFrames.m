@@ -48,12 +48,24 @@ parfor CurrentFrame = 1:liveExperiment.nFrames
         
 end
 
+%TrackNuclei handles empty frames poorly, so let's fill them in. 
 Ellipses = fillEmptyXYFrames(Ellipses);
 
-if whos(var2str(Ellipses)).bytes < 2E9
-    save([liveExperiment.resultsFolder, 'Ellipses.mat'],var2str(Ellipses), '-v6');
-else
-    save([liveExperiment.resultsFolder, 'Ellipses.mat'],var2str(Ellipses), '-v7.3', '-nocompression');
-end
+save2([liveExperiment.resultsFolder, 'Ellipses.mat'], Ellipses);
 
+ellipsesStats = getEllipsesStatistics(Ellipses);
+
+% 
+% figure(2); tiledlayout('flow');
+% nexttile;
+% hist(ellipsesStats.cenxList);
+% nexttile;
+% hist(ellipsesStats.cenyList);
+% nexttile;
+% hist(ellipsesStats.semiMajList);
+% nexttile;
+% hist(ellipsesStats.semiMinList);
+% nexttile;
+% hist(ellipsesStats.orientationAngleList);
+% 
 end
