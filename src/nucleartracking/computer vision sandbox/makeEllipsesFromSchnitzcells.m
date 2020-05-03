@@ -23,8 +23,12 @@ for frame = 1:nFrames
             %take care of Ellipses columns 1 to 5
             for k = 1:length(schnitzcellsFieldsToTranscribe)
                 schnitzField = schnitzcells(schnitzIndex).(schnitzcellsFieldsToTranscribe{k});
+                assert(length(schnitzField) == length(schnitzcells(schnitzIndex).frames));
                 ellipseRow = [ellipseRow, schnitzField(frameIndex)];
             end
+            
+            %have had problems here in the past. 
+            assert(ellipseRow(5) <= 2*pi)
             
             %expand Ellipses to have columns 6, 7, 8, 9
             ellipseRow =[ellipseRow,...

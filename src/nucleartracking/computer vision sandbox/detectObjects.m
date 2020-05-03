@@ -4,12 +4,11 @@ function [measurements, bboxes, mask] =...
 %memoized for quicker debugging
 %so we won't have to calculate this on
 %repeated tracking calls
-%         kSnakeCircles = memoize(@kSnakeCircles);
-%         kSnakeCircles.CacheSize = nFrames;
+% kSnakeCircles = memoize(@kSnakeCircles);
+% kSnakeCircles.CacheSize = nFrames;
 [mask, ellipseFrame] = kSnakeCircles(frameImage, pixelSize_um);
 
 mask = ~~mask; %binarize the mask
-%         radii = (1/2) * mean(ellipseFrame(:, 3:4), 2);
 
 if any(mask(:))
     %ceny, cenx, smaj, smin, angle

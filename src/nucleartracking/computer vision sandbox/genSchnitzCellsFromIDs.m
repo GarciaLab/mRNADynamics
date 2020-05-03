@@ -27,10 +27,21 @@ for k = 1:length(tracks)
         
         
     end
+    
+    %doublecheck consistency. smaj should be representative of the other fields
+    assert(length(schnitzcells(k).smaj) == length(schnitzcells(k).frames)); 
+    
+    try
+        assert(schnitzcells(k).orientationAngle(end) <= 2*pi)
+    catch
+        if length(schnitzcells(k).orientationAngle) > 1
+            schnitzcells(k).orientationAngle(end) = schnitzcells(k).orientationAngle(end-1); 
+        else
+            schnitzcells(k).orientationAngle(end) = mod(schnitzcells(k).orientationAngle(end), 2*pi); 
+        end
+    end
+    
 end
-
-%doublecheck consistency. smaj should be representative of the other fields
-assert(length(schnitzcells(k).smaj) == length(schnitzcells(k).frames)); 
 
 
 end

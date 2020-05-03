@@ -36,7 +36,7 @@ nextId = 1; % ID of the next track
 
 
 % Detect moving objects, and track them across video frames.
-for frameIndex = frameRange
+for frameIndex = frameRange(1):frameRange(2)
         
     frameImage = readFrame(playerObj.reader);
     %% Measurement
