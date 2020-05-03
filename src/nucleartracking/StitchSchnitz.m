@@ -52,7 +52,7 @@ save([DropboxFolder,filesep,Prefix '_PreStitched.mat'],'Original_schnitzcells');
 
 
 for thresh = Thresholds %loop over expanding distance thresholds 
-    h=waitbar(0,['Stitching broken schnitzs using ' num2str(thresh) ' radii of distance']);
+    h = waitbar(0,['Stitching broken schnitzs using ' num2str(thresh) ' radii of distance']);
     RunOutToStitch_withThisThresh = 1;     
     while RunOutToStitch_withThisThresh
         
@@ -98,9 +98,9 @@ for thresh = Thresholds %loop over expanding distance thresholds
             RunOutToStitch_withThisThresh = false;
         end
     end %end of while
+    try close(h); catch; end
 end
 
-try close(h); catch; end
 
 
 %%
