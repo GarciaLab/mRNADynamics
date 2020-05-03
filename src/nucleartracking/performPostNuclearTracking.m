@@ -19,6 +19,15 @@ if postTrackingSettings.fish
     schnitzcells = rmfield(schnitzcells, {'P', 'E', 'D'});
 end
 
+%the cellno field of schnitzcells is hugely problematic. let's delete it 
+%and rebuild it with addschnitzindextoellipses
+schnitzcells = rmfield(schnitzcells, 'cellno'); 
+
+
+%we'll make sure cellnos and ellipses correspond well.
+[Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
+
+
 % Stitch the schnitzcells using Simon's code
 if ~postTrackingSettings.noStitch
     disp('stitching schnitzes')

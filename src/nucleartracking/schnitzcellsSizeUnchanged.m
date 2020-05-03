@@ -6,7 +6,7 @@ function out = schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcellsNew)
 out = struct;
 
 out.nSchnitzesOld = length(schnitzcellsOld);
-out.nFramesOld = nan(nFramesOld, 1);
+out.nFramesOld = nan(out.nSchnitzesOld, 1);
 
 for schnitzIndex = 1:out.nSchnitzesOld
     
@@ -16,7 +16,7 @@ end
 
 
 out.nSchnitzesNew = length(schnitzcellsNew);
-out.nFramesNew = nan(nFramesNew, 1);
+out.nFramesNew = nan(out.nSchnitzesNew, 1);
 
 for schnitzIndex = 1:out.nSchnitzesNew
     

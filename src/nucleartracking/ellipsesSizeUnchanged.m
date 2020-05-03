@@ -4,7 +4,7 @@ function out = ellipsesSizeUnchanged(EllipsesOld, EllipsesNew)
 out = struct;
 
 out.nFramesOld = length(EllipsesOld);
-out.nEllipsesOld = nan(nFramesOld, 1);
+out.nEllipsesOld = nan(out.nFramesOld, 1);
 
 for frameIndex = 1:length(EllipsesOld)
     
@@ -13,7 +13,7 @@ for frameIndex = 1:length(EllipsesOld)
 end
 
 out.nFramesNew = length(EllipsesNew);
-out.nEllipsesNew = nan(nFramesNew, 1);
+out.nEllipsesNew = nan(out.nFramesNew, 1);
 
 for frameIndex = 1:length(EllipsesNew)
     

@@ -325,24 +325,24 @@ if ~exist('centers','var') || isempty(centers)
     
     close(h_waitbar_segmentation)
     
-    %If the xy contains only one or zero nuclei then there's probably something
-    %wrong. In that case just copy the information from the previous good
-    %frame.
-    if sum(cellfun(@(x) size(x,1),xy) < 1)
-        %Find the frames where we have issues
-        FramesToFix=find(cellfun(@(x) size(x,1),xy) < 1 );
-        for i=1:length(FramesToFix)
-            if FramesToFix(i)==1
-                FrameToCopy=1;
-                while sum(FramesToFix==NextFrameToCopy)
-                    FrameToCopy=FrameToCopy+1;
-                end
-            else
-                FrameToCopy=FramesToFix(i)-1;
-            end
-            xy{FramesToFix(i)}=xy{FrameToCopy};
-        end
-    end
+%     %If the xy contains only one or zero nuclei then there's probably something
+%     %wrong. In that case just copy the information from the previous good
+%     %frame.
+%     if sum(cellfun(@(x) size(x,1),xy) < 1)
+%         %Find the frames where we have issues
+%         FramesToFix=find(cellfun(@(x) size(x,1),xy) < 1 );
+%         for i=1:length(FramesToFix)
+%             if FramesToFix(i)==1
+%                 FrameToCopy=1;
+%                 while sum(FramesToFix==NextFrameToCopy)
+%                     FrameToCopy=FrameToCopy+1;
+%                 end
+%             else
+%                 FrameToCopy=FramesToFix(i)-1;
+%             end
+%             xy{FramesToFix(i)}=xy{FrameToCopy};
+%         end
+%     end
    
 else
     xy = centers;

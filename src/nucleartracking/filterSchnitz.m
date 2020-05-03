@@ -31,18 +31,18 @@ for s = 1:length(schnitzcells)
     
     schnitz = schnitzcells(s);
     
-    for f = 1:length(schnitz.frames)
+    for frameIndex = 1:length(schnitz.frames)
         
-        r  = schnitz.len(f);
+        radius  = schnitz.len(frameIndex);
         
-        if ( (schnitz.cenx(f) + r*thresh ) > xmax ||...
-                (schnitz.ceny(f) + r*thresh ) > ymax ||...
-                (schnitz.cenx(f) - r*thresh  ) < 0 ||...
-                (schnitz.ceny(f) - r*thresh  ) < 0 )
+        if ( (schnitz.cenx(frameIndex) + radius*thresh ) > xmax ||...
+                (schnitz.ceny(frameIndex) + radius*thresh ) > ymax ||...
+                (schnitz.cenx(frameIndex) - radius*thresh  ) < 0 ||...
+                (schnitz.ceny(frameIndex) - radius*thresh  ) < 0 )
             
-            schnitzcells(s).FrameApproved(f) = false;
+            schnitzcells(s).FrameApproved(frameIndex) = false;
         else
-            schnitzcells(s).FrameApproved(f) = true;
+            schnitzcells(s).FrameApproved(frameIndex) = true;
         end
         
     end
