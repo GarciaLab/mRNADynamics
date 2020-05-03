@@ -20,7 +20,8 @@ while ~foundIt && s < len
     assert(length(schnitzFrameIndex) == 1 || isempty(schnitzFrameIndex));
     
     if ~isempty(schnitzFrameIndex)
-        foundIt = round(schnitzcells(s).ceny(schnitzFrameIndex)) == center(2) & round(schnitzcells(s).cenx(schnitzFrameIndex)) == center(1);
+        foundIt = round(schnitzcells(s).ceny(schnitzFrameIndex)) == center(2) &...
+            round(schnitzcells(s).cenx(schnitzFrameIndex)) == center(1);
 %         foundIt = double(schnitzcells(s).cellno) == double(cellno);
         
     end

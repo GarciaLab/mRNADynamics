@@ -30,9 +30,6 @@ function movieMat = CheckNucleiSegmentation(Prefix, varargin)
 
 cleanupObj = onCleanup(@myCleanupFun);
 
-%Load the folder information
-[~,~,DefaultDropboxFolder,~,~]=...
-    DetermineLocalFolders;
 
 noAdd = false;
 nWorkers = 1;
@@ -89,7 +86,7 @@ load('ReferenceHist.mat', 'ReferenceHist')
 schnitzcellsFile = [liveExperiment.resultsFolder, filesep, Prefix, '_lin.mat'];
 
 [Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
-save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses', '-v6');
+save2([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], Ellipses);
 save2(schnitzcellsFile, schnitzcells)
 
 Channels = {Channel1, Channel2, Channel3};
