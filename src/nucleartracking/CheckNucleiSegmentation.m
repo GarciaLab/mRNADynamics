@@ -30,9 +30,6 @@ function movieMat = CheckNucleiSegmentation(Prefix, varargin)
 
 cleanupObj = onCleanup(@myCleanupFun);
 
-%Load the folder information
-[~,~,DefaultDropboxFolder,~,~]=...
-    DetermineLocalFolders;
 
 noAdd = false;
 nWorkers = 1;
