@@ -34,11 +34,11 @@ if isfield(schnitzcells, 'FluoTimeTrace')
     schnitzcells(row1).FluoTimeTrace =  [schnitzcells(row1).FluoTimeTrace;schnitzcells(row2).FluoTimeTrace];    
 end                       
 
-
-
-
+if isfield(schnitzcells,'ExtendedIntoFutureWithThisThresh')
+    schnitzcells(row1).ExtendedIntoFutureWithThisThresh = schnitzcells(row1).ExtendedIntoFutureWithThisThresh;
 end
 
+end
 
 
 

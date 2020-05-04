@@ -123,6 +123,3 @@ else
 end
 
 schnitzcells = tempSchnitzcells;
-
-Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
-

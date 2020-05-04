@@ -35,7 +35,7 @@ end
 
 % we'll do a dynamic thresholding to prioritize first the schnitz that are very
 % close and then incrementally search further away.
-Thresholds = 1:0.5:2.5; %this is a multiplicative factor, 'how many radii' away from the center.
+Thresholds = 1:0.5:2; %this is a multiplicative factor, 'how many radii' away from the center.
 nThresh = size(Thresholds,2);
 
 %initialize information about the stitching state of each schnitz
@@ -65,30 +65,32 @@ for thresh = Thresholds %loop over expanding distance thresholds
             FinalXYPos1 = [schnitzcells(s1).cenx(end),schnitzcells(s1).ceny(end)];
             RadiusThisFrame = RadiusPerFrame(LastFrame1); 
            
+            SchnitzThatStartNextFrame = [];
+            for s2 = 1:length(schnitzcells)
+                frames = schnitzcells(s2).frames;
+                if frames(1) == LastFrame1+1
+                    SchnitzThatStartNextFrame = [SchnitzThatStartNextFrame s2];
+                end
+            end                        
             % now we'll do all possible pairwise comparisons to the rest of
             % the schnitzs
-            for s2 = 1:length(schnitzcells)
-                
-                FirstFrame2 = schnitzcells(s2).frames(1);          
-                InitialXYPos2 = [schnitzcells(s2).cenx(1),schnitzcells(s2).ceny(1)] ;
-               
-                %compare schnitz s1 and s2 if s2 hasn't been used already
-                if schnitzcells(s2).AlreadyUsed == false && LastFrame1+1 == FirstFrame2 && ...
+            for s3 = SchnitzThatStartNextFrame
+                InitialXYPos2 = [schnitzcells(s3).cenx(1),schnitzcells(s3).ceny(1)] ;              
+                %compare schnitz s1 and s3 if s3 hasn't been used already
+                if schnitzcells(s3).AlreadyUsed == false && ...
                      pdist([double(FinalXYPos1);double(InitialXYPos2)],'euclidean') < RadiusThisFrame*(thresh)
-                    %disp('found something to stitch!!')
-                    
-                    LastFrame1 = schnitzcells(s2).frames(end);
-                    FinalXYPos1 = [schnitzcells(s2).cenx(end),schnitzcells(s2).ceny(end)];
-                    RadiusThisFrame = RadiusPerFrame(LastFrame1); 
+%                     %update the last frame info of the s1 schnitz
+%                     LastFrame1 = schnitzcells(s3).frames(end);
+%                     FinalXYPos1 = [schnitzcells(s3).cenx(end),schnitzcells(s3).ceny(end)];
+%                     RadiusThisFrame = RadiusPerFrame(LastFrame1); 
                     
                     FoundSomethingToStitch = FoundSomethingToStitch+1;
-                    schnitzcells(s2).AlreadyUsed = true;                    
-                    schnitzcells(s2).StitchedTo = [schnitzcells(s2).StitchedTo s1];
-                    schnitzcells(s1).StitchedFrom = [schnitzcells(s1).StitchedFrom s2];
+                    schnitzcells(s3).AlreadyUsed = true;                    
+                    schnitzcells(s3).StitchedTo = [schnitzcells(s3).StitchedTo s1];
+                    schnitzcells(s1).StitchedFrom = [schnitzcells(s1).StitchedFrom s3];
                     %pass fields' info by appending them to the right
                     %of the outer loop schnitz ones                       
-                    schnitzcells = AppendSchnitzcellsData(schnitzcells,s1,s2);
-                       
+                    schnitzcells = AppendSchnitzcellsData(schnitzcells,s1,s3);                      
                 end
             end
 
