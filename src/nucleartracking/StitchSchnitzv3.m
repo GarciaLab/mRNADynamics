@@ -112,14 +112,16 @@ while ThingsHaveChangedFlag
 
             % append the schnitz from the future into the one from the past
             if ~isempty(BeginNextFrameAndNear) && ~schnitzcells(s1).ExtendedIntoFutureAlready...
-                    && ~schnitzcells(ClosestSchnitzNextFrame).AlreadyUsed
-
+                    && ~schnitzcells(s1).AlreadyUsed &&...
+                    ~schnitzcells(ClosestSchnitzNextFrame).AlreadyUsed
+                
+                assert(schnitzcells(s1).AlreadyUsed == false)
                 schnitzcells(s1).ExtendedIntoFutureAlready = true;
-                schnitzcells(ClosestSchnitzNextFrame).AlreadyUsed = true;
                 schnitzcells(s1).StitchedFrom = [schnitzcells(ClosestSchnitzNextFrame).StitchedFrom s1];
                 SomethingToStitchFound = [SomethingToStitchFound 1];
 %                     length(SomethingToStitchFound);
                 schnitzcells = AppendSchnitzcellsData(schnitzcells,s1,ClosestSchnitzNextFrame);
+                schnitzcells(ClosestSchnitzNextFrame).AlreadyUsed = true;
 
             end
         end
