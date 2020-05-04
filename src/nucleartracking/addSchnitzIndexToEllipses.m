@@ -17,7 +17,9 @@ for frame = 1:length(Ellipses)
     if ~isempty(ellipseFrame)
         
         %reset the schnitzIndex column of Ellipses to be safe. 
-        Ellipses{frame}(:, 9) = [];
+        if size(Ellipses, 2) == 9
+            Ellipses{frame}(:, 9) = [];
+        end
         
         for ellipseIndex = 1:size(ellipseFrame, 1)
             
@@ -26,12 +28,12 @@ for frame = 1:length(Ellipses)
             
             if ~isempty(schnitzIndex)
                 
-                assert(schnitzIndex <= length(schnitzcells));
-                
+                assert(schnitzIndex <= length(schnitzcells));               
                 Ellipses{frame}(ellipseIndex, 9) = uint16(schnitzIndex);
                 schnitzcells(schnitzIndex).cellno(schnitzcells(...
                     schnitzIndex).frames == frame) = uint16(ellipseIndex);
-                
+            else
+                Ellipses{frame}(ellipseIndex, 9) = 0;
                 
             end
         end
