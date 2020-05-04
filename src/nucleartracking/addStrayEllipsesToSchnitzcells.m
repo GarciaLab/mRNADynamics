@@ -1,13 +1,15 @@
 function [Ellipses, schnitzcells] = addStrayEllipsesToSchnitzcells(Ellipses, schnitzcells)
 
 
-assert( size(Ellipses, 2) > 8 )
 
 
 schnitzcellsOld = schnitzcells;
 
 
 for f = 1:length(Ellipses)
+   
+   assert( size(Ellipses{f}, 2) > 8 )
+
     
    strayEllipseIndexes = find(Ellipses{f}(:, 9) == 0);
    

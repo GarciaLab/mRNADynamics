@@ -1,4 +1,6 @@
-function [schnitzcells, Ellipses] = StitchSchnitz(Prefix, nWorkers)
+
+
+function [schnitzcells, Ellipses] = StitchSchnitz_original_one(Prefix, nWorkers)
 
 %This function joins schnitzcells that overlap in space and are contiguous in time.
 
