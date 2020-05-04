@@ -162,7 +162,7 @@ save([DropboxFolder,filesep,Prefix '_PreBroken.mat'],'Stitched_before_breakup');
 [Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
 save2([DropboxFolder,filesep,Prefix '_lin.mat'],schnitzcells);
 save2([DropboxFolder,filesep,'Ellipses.mat'],Ellipses);
-% TrackNuclei(Prefix,'nWorkers', nWorkers, 'noStitch', 'retrack', 'integrate');
+TrackNuclei(Prefix,'nWorkers', nWorkers, 'noStitch', 'retrack', 'integrate');
 
 end
 
