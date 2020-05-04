@@ -21,13 +21,10 @@ if postTrackingSettings.fish
     schnitzcells = rmfield(schnitzcells, {'P', 'E', 'D'});
 end
 
-%the cellno field of schnitzcells is hugely problematic. let's delete it 
-%and rebuild it with addschnitzindextoellipses
-schnitzcells = rmfield(schnitzcells, 'cellno'); 
-
-
 %we'll make sure cellnos and ellipses correspond well.
 [Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
+
+[Ellipses, schnitzcells] = addStrayEllipsesToSchnitzcells(Ellipses, schnitzcells);
 
 save2(ellipsesFile, Ellipses);
 save2(schnitzcellsFile, schnitzcells);

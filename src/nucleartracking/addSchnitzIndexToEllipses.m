@@ -6,6 +6,11 @@ disp('Ensuring consistency between Ellipses and schnitzcells...');
 ellipsesOld = Ellipses;
 schnitzcellsOld = schnitzcells;
 
+%reset the cellno field of schnitzcells
+
+schnitzcells = rmfield(schnitzcells, 'cellno');
+
+
 for frame = 1:length(Ellipses)
     
     ellipseFrame = cell2mat(Ellipses(frame));
@@ -40,6 +45,13 @@ for frame = 1:length(Ellipses)
     end
     
 end
+
+
+%validation
+for s = 1:length(schnitzcells)
+    assert(length(schnitzcells(s).cellno) == length(schnitzcells(s).frames));
+end
+
 
 ellipsesSizeUnchanged(ellipsesOld, Ellipses);
 schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells); 
