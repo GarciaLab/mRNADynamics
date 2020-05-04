@@ -30,6 +30,13 @@ for frame = 1:length(Ellipses)
                 
             end
         end
+        
+        %make sure no ellipses are assigned to the same schnitz in each
+        %frame. multiple zeros are okay. 
+        schnitzReferences = Ellipses{frame}(:, 9);
+        nonZeroSchnitzReferences = schnitzReferences(schnitzReferences ~= 0); 
+        assert( length(unique(nonZeroSchnitzReferences) ) == length(nonZeroSchnitzReferences) );
+        
     end
     
 end
