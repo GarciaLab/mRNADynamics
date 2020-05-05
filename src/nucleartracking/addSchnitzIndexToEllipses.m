@@ -58,7 +58,7 @@ end
 ellipsesSizeUnchanged(ellipsesOld, Ellipses);
 schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells); 
 
-disp('Schnitzcells and ellipses successfully inter-referenced.');
+% disp('Schnitzcells and ellipses successfully inter-referenced.');
 
 
 end

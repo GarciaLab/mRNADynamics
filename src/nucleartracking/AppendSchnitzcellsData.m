@@ -39,23 +39,3 @@ if isfield(schnitzcells,'ExtendedIntoFutureWithThisThresh')
 end
 
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-%
-% F = getfield(S,FIELD) returns the contents of the specified field. For
-%     example, if S.a = 1, then getfield(S,'a') returns 1. FIELD can be a
-%     character vector or string scalar.
-%
-%         NAMES = fieldnames(S) returns a cell array of character vectors
-%     containing the names of the fields in structure S.
