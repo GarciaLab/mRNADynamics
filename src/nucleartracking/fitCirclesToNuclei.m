@@ -143,29 +143,29 @@ end
 ellipseFrameWithEdges = cat(1, ellipseFrame, edgeEllipseFrame);
 
 cMask = cMask + edgeMask;
+% 
+% ellipseFrameWithEdgesTemp = [];
+% %quality control
+% if ~isempty(areaFilter)
+%     for n = 1:size(ellipseFrameWithEdges, 1)
+%         ellipseArea = pi*ellipseFrameWithEdges(n, 3)*ellipseFrameWithEdges(n, 4);
+%         ellipseAspectRatio = ellipseFrameWithEdges(n, 3) / ellipseFrameWithEdges(n, 4); 
+%         
+%         if ellipseArea > areaFilter(1) &&...
+%                ellipseArea < areaFilter(2) &&...
+%                 ellipseAspectRatio < maxAspectRatio &&...
+%                 (1/ellipseAspectRatio) < maxAspectRatio
+%                 
+%             ellipseFrameWithEdgesTemp = [ellipseFrameWithEdgesTemp; ellipseFrameWithEdges(n, :)];
+%             
+%         end
+%         
+%         assert(size(ellipseFrameWithEdgesTemp, 1) <= size(ellipseFrameWithEdges, 1));
+%         
+%     end
+% end
 
-ellipseFrameWithEdgesTemp = [];
-%quality control
-if ~isempty(areaFilter)
-    for n = 1:size(ellipseFrameWithEdges, 1)
-        ellipseArea = pi*ellipseFrameWithEdges(n, 3)*ellipseFrameWithEdges(n, 4);
-        ellipseAspectRatio = ellipseFrameWithEdges(n, 3) / ellipseFrameWithEdges(n, 4); 
-        
-        if ellipseArea > areaFilter(1) &&...
-               ellipseArea < areaFilter(2) &&...
-                ellipseAspectRatio < maxAspectRatio &&...
-                (1/ellipseAspectRatio) < maxAspectRatio
-                
-            ellipseFrameWithEdgesTemp = [ellipseFrameWithEdgesTemp; ellipseFrameWithEdges(n, :)];
-            
-        end
-        
-        assert(size(ellipseFrameWithEdgesTemp, 1) <= size(ellipseFrameWithEdges, 1));
-        
-    end
-end
-
-ellipseFrameWithEdges = ellipseFrameWithEdgesTemp;
+% ellipseFrameWithEdges = ellipseFrameWithEdgesTemp;
 
 if ~isempty(ellipseFrameWithEdges)
     assert( all(ellipseFrameWithEdges(:, 5) <= 2*pi) );

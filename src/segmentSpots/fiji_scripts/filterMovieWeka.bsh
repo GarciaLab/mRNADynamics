@@ -5,6 +5,7 @@
 #@ Integer(label="Number of workers") numWorkers
 #@ Integer(label="Initial frame", value=1) initialFrame
 #@ Integer(label="Last frame") lastFrame
+#@ Integer(label="Channel") channel
 
 import trainableSegmentation.WekaSegmentation;
 import trainableSegmentation.utils.Utils;
@@ -28,8 +29,23 @@ getProbs = resultMode.equals( "Probabilities" );
 segmentator = new WekaSegmentation(true);
 // load classifier
 segmentator.loadClassifier( modelPath.getCanonicalPath() );
+
+
+// This filter will only include files ending with the right channel
+FileFilter filter = new FileFilter() {
+        //@Override
+        public boolean accept(File file) {
+            return file.getName().contains("_ch0" + Integer.toString(channel));
+        }
+    };
+
+// This is how to apply the filter
+listOfFiles = inputDir.listFiles(filter);
+
+
+
 // get list of input images
-listOfFiles = inputDir.listFiles();
+//listOfFiles = inputDir.listFiles();
 
 if (lastFrame == 0) {
 	lastFrame = listOfFiles.length;
@@ -39,6 +55,8 @@ if (lastFrame == 0) {
 for (i = initialFrame-1; i < lastFrame; i++ )
 {
 	IJ.log("Processing frame: " + (i+1) + "..." );
+	IJ.log("Filename: " + listOfFiles[i].getName());
+	
     // process only files (do not go into sub-folders)
     if( listOfFiles[ i ].isFile() )
     {
@@ -75,7 +93,7 @@ for (i = initialFrame-1; i < lastFrame; i++ )
         
              
             // save result as TIFF in output folder
-            outputFileName = "prob" + Prefix + "_" +listOfFiles[ i ].getName().replaceFirst("[.][^.]+$", "") + ".tif";
+            outputFileName = "prob" + listOfFiles[ i ].getName().replaceFirst("[.][^.]+$", "") + ".tif";
             new FileSaver( result ).saveAsTiff( outputDir.getPath() + File.separator + outputFileName );
   
             // force garbage collection (important for large images)

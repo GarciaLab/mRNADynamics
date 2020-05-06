@@ -53,8 +53,14 @@ if shouldMakeMovieMat
     [NSeries, NFrames, NSlices,...
         NPlanes, NChannels, Frame_Times] = getFrames(LIFMeta);
     
-    
-    timeStampRetrievalMethod = 'bioformats';
+    %use the old method(exported from lasx) if the files are exported
+    %already. if they're not, just use bioformats. the lasx method is being
+    %deprecated.
+    if ~isempty(XMLFolder)
+        timeStampRetrievalMethod = 'lasx';
+    else
+        timeStampRetrievalMethod = 'bioformats';
+    end
     
     if sum(NFrames)~=0
         
