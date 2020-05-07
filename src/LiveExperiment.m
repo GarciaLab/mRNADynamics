@@ -17,9 +17,13 @@ classdef LiveExperiment
         
         isUnhealthy = false;
         
-        anaphaseFrames = [0; 0; 0; 0; 0; 0];
+        anaphaseFrames (:, 1) uint16 = [0; 0; 0; 0; 0; 0];
         
         
+    end
+    
+    properties (Access = private)
+                
     end
     
     properties (Hidden)
@@ -417,6 +421,13 @@ classdef LiveExperiment
             if exist(APDetectionFile, 'file')
                 APDetection =  load(APDetectionFile);
             end
+            
+        end
+        
+        
+        function anaphaseFrames = getAnaphaseFrames(this)
+            
+           anaphaseFrames = this.anaphaseFrames;
             
         end
         

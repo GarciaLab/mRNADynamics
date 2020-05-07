@@ -52,7 +52,7 @@ nSchnitz = length(schnitzcells);
 % number of frames
 for OGSchnitz = 1:length(schnitzcells)
     FrameLength = numel([schnitzcells(OGSchnitz).frames]);
-    assert(length(schnitzcells(OGSchnitz).cellno) == FrameLength);
+%     assert(length(schnitzcells(OGSchnitz).cellno) == FrameLength);
     assert(length(schnitzcells(OGSchnitz).cenx) == FrameLength);
     assert(length(schnitzcells(OGSchnitz).ceny) == FrameLength);
     assert(length(schnitzcells(OGSchnitz).len) == FrameLength);
@@ -136,7 +136,7 @@ disp('done stitching!')
 % number of frames
 for OGSchnitz = 1:length(schnitzcells)
     FrameLength = numel([schnitzcells(OGSchnitz).frames]);
-    assert(length(schnitzcells(OGSchnitz).cellno) == FrameLength);
+%     assert(length(schnitzcells(OGSchnitz).cellno) == FrameLength);
     assert(length(schnitzcells(OGSchnitz).cenx) == FrameLength);
     assert(length(schnitzcells(OGSchnitz).ceny) == FrameLength);
     assert(length(schnitzcells(OGSchnitz).len) == FrameLength);

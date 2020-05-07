@@ -62,7 +62,9 @@ schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells);
 %Extract the nuclear fluorescence values if we're in the right experiment
 %type
 % if postTrackingSettings.intFlag
+if ~isempty(liveExperiment.inputChannels)
     schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo);
+end
 % end
 
 

@@ -63,7 +63,8 @@ PreProcPath = liveExperiment.preFolder;
 ellipsesFile = [DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'];
 schnitzcellsFile = [DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat']; 
 
-anaphaseFrames = liveExperiment.anaphaseFrames';
+anaphaseFrames = getAnaphaseFrames(liveExperiment); 
+
 nc9 = anaphaseFrames(1);
 nc10 = anaphaseFrames(2);
 nc11 = anaphaseFrames(3);
@@ -93,6 +94,10 @@ if strcmpi(nc10,'nan')
 end
 if strcmpi(nc9,'nan')
     nc9=nan;
+end
+
+if iscolumn(anaphaseFrames)
+    anaphaseFrames = anaphaseFrames';
 end
 
 %This checks whether all ncs have been defined

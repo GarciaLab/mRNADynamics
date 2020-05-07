@@ -177,7 +177,7 @@ if ~skipExtraction
                     %Save as many blank images at the end of the stack are needed
                     %(depending on zPadding being active or not)
                     for zPaddingIndex = slicesCounter+1:topZSlice+2
-                        imwrite(BlankImage, [PreProcFolder, filesep, NewName], 'WriteMode', 'append', 'Compression', 'none');
+                        imwrite(BlankImage, [PreProcFolder, filesep, NewName], 'WriteMode', 'append');
                     end
                     %
                     %                                     processMovieChannel(channelIndex, numberOfFrames, Prefix, OutputFolder,...

@@ -83,11 +83,14 @@ schnitzcells = getSchnitzcells(liveExperiment);
 load('ReferenceHist.mat', 'ReferenceHist')
 
 
-schnitzcellsFile = [liveExperiment.resultsFolder, filesep, Prefix, '_lin.mat'];
+%i may bring this back later -AR
+if false
+    schnitzcellsFile = [liveExperiment.resultsFolder, filesep, Prefix, '_lin.mat'];
 
-[Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
-save2([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], Ellipses);
-save2(schnitzcellsFile, schnitzcells)
+    [Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
+    save2([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], Ellipses);
+    save2(schnitzcellsFile, schnitzcells)
+end
 
 Channels = {Channel1, Channel2, Channel3};
 
@@ -156,7 +159,7 @@ try
     clrmp = single(hsv(length(schnitzcells)));
     clrmp = clrmp(randperm(length(clrmp)), :);
 catch
-%in case the user doesn't have this colormap, just keep going.
+    %in case the user doesn't have this colormap, just keep going.
 end
 
 CurrentFrame=1;
@@ -182,7 +185,7 @@ while (cc~='x')
     %Get the information about the centroids
     [NCentroids,~]=size(Ellipses{CurrentFrame});
     
-        
+    
     imOverlay.CData = HisImage;
     try
         caxis(overlayAxes, DisplayRange);
@@ -196,14 +199,14 @@ while (cc~='x')
     
     PlotHandle = cell(NCentroids, 1);
     ellipseFrame = Ellipses{CurrentFrame};
-    if ~fish
-        for k=1:NCentroids
-            n = k;
-            PlotHandle{k} = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
-                'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
-                'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)), 'FaceAlpha', 0,...
-                'InteractionsAllowed', 'none');
-            
+    for k=1:NCentroids
+        n = k;
+        PlotHandle{k} = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
+            'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
+            'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)), 'FaceAlpha', 0,...
+            'InteractionsAllowed', 'none', 'LabelVisible', 'hover', 'Label', num2str(ellipseFrame(n, 9)));
+        
+        if ~fish
             if size(Ellipses{CurrentFrame}, 2) > 8
                 schnitzInd = Ellipses{CurrentFrame}(k, 9);
             else
@@ -221,25 +224,15 @@ while (cc~='x')
             else
                 set(PlotHandle{k}, 'StripeColor', 'w', 'Color', 'w','Linewidth', 2);
             end
-            
-        end
-    else
-        for k=1:NCentroids
-            n = k;
-            
-            PlotHandle{k} = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
-                'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
-                'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)), 'FaceAlpha', 0,...
-                'InteractionsAllowed', 'none');
-            
         end
     end
     
+    
     try
-    FigureTitle=['Frame: ',num2str(CurrentFrame),'/',num2str(nFrames),...
-        ', nc: ',num2str(nc(CurrentFrame))];
+        FigureTitle=['Frame: ',num2str(CurrentFrame),'/',num2str(nFrames),...
+            ', nc: ',num2str(nc(CurrentFrame))];
     catch
-          FigureTitle=['Frame: ',num2str(CurrentFrame),'/',num2str(nFrames)];
+        FigureTitle=['Frame: ',num2str(CurrentFrame),'/',num2str(nFrames)];
     end
     
     set(Overlay,'Name',FigureTitle)
@@ -282,7 +275,7 @@ while (cc~='x')
             %particle_id)
             
             MeanRadius = computeMeanRadius(Ellipses, CurrentFrame, nFrames);
-           
+            
             try
                 Ellipses{CurrentFrame}(end+1,:)=...
                     [cm(1,1),cm(1,2),MeanRadius,MeanRadius,0,0,0,0,0];
@@ -434,34 +427,34 @@ end
 end
 
 
- function MeanRadius = computeMeanRadius(Ellipses, CurrentFrame, nFrames)
- 
- radius = @(x,f) nanmean( (1/2)*(x{f}(:, 3) + x{f}(:, 4)) );
- 
- if ~isempty(Ellipses{CurrentFrame})
-     for k = 1:size(Ellipses{CurrentFrame}, 1)
-         if Ellipses{CurrentFrame}(k, 3) == 0
-             Ellipses{CurrentFrame}(k, :) = nan;
-         end
-     end
-     MeanRadius = radius(Ellipses, CurrentFrame);
- elseif CurrentFrame+1 < nFrames && ~isempty(Ellipses{CurrentFrame+1})
-     for k = 1:size(Ellipses{CurrentFrame+1}, 1)
-         if Ellipses{CurrentFrame+1}(k, 3) == 0
-             Ellipses{CurrentFrame+1}(k, :) = nan;
-         end
-     end
-     MeanRadius = radius(Ellipses, CurrentFrame+1);
-     
- elseif CurrentFrame-1 >1 && ~isempty(Ellipses{CurrentFrame-1})
-     for k = 1:size(Ellipses{CurrentFrame-1}, 1)
-         if Ellipses{CurrentFrame-1}(k, 3) == 0
-             Ellipses{CurrentFrame-1}(k, :) = nan;
-         end
-     end
-     MeanRadius = radius(Ellipses, CurrentFrame-1);
- else
-     MeanRadius = 20; %magic number just to avoid errors in weird situations (units of pixels)
- end
-                
+function MeanRadius = computeMeanRadius(Ellipses, CurrentFrame, nFrames)
+
+radius = @(x,f) nanmean( (1/2)*(x{f}(:, 3) + x{f}(:, 4)) );
+
+if ~isempty(Ellipses{CurrentFrame})
+    for k = 1:size(Ellipses{CurrentFrame}, 1)
+        if Ellipses{CurrentFrame}(k, 3) == 0
+            Ellipses{CurrentFrame}(k, :) = nan;
+        end
+    end
+    MeanRadius = radius(Ellipses, CurrentFrame);
+elseif CurrentFrame+1 < nFrames && ~isempty(Ellipses{CurrentFrame+1})
+    for k = 1:size(Ellipses{CurrentFrame+1}, 1)
+        if Ellipses{CurrentFrame+1}(k, 3) == 0
+            Ellipses{CurrentFrame+1}(k, :) = nan;
+        end
+    end
+    MeanRadius = radius(Ellipses, CurrentFrame+1);
+    
+elseif CurrentFrame-1 >1 && ~isempty(Ellipses{CurrentFrame-1})
+    for k = 1:size(Ellipses{CurrentFrame-1}, 1)
+        if Ellipses{CurrentFrame-1}(k, 3) == 0
+            Ellipses{CurrentFrame-1}(k, :) = nan;
+        end
+    end
+    MeanRadius = radius(Ellipses, CurrentFrame-1);
+else
+    MeanRadius = 20; %magic number just to avoid errors in weird situations (units of pixels)
+end
+
 end
