@@ -112,7 +112,7 @@ end
 
 
 %See if we had any lineage/nuclear information
-hisDir=dir([PreProcPath,filesep,Prefix,filesep,'*-His_*']);
+hisDir=dir([PreProcPath,filesep,Prefix,filesep,'*-His*']);
 if ~isempty(hisDir)
     histoneChannelPresent = true;
 else
@@ -387,7 +387,14 @@ if ~NoAP
     % that.
     DHis=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
     if ~isempty(DHis)
-        ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis(end-1).name]);
+        try
+            %3D stack
+            hisMat = imreadStack([PreProcPath,filesep,Prefix,filesep,Prefix,'-His.tif']);
+            ZoomImage = hisMat(:, :, end-1);    
+        catch
+            %single planes
+            ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis(end-1).name]);
+        end
     else
         disp('Did you run ExportDataForLivemRNA again, after editing the MovieDatabase.csv with ":Nuclear" ("invertedNuclear")?')
         % This might be the case, for instance, if you're just trying
