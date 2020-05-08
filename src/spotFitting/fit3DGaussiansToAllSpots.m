@@ -40,6 +40,8 @@ for i = 1:length(varargin)
 end
 
 
+disp(['Fitting 3D Gaussians to: ', Prefix]);
+
 liveExperiment = LiveExperiment(Prefix);
 
 [~,ProcPath,DropboxFolder,~, PreProcPath,...

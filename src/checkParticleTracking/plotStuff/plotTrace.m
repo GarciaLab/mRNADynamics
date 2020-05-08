@@ -130,7 +130,7 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(cptState.Frames==cptState.CurrentFr
         else
             currentAnaphaseBoundary = anaphaseInMins(i) - priorAnaphaseInMins;
         end
-        plot(traceFigAxes,ones(1,2).*currentAnaphaseBoundary,traceFigYLimits,...
+        plot(traceFigAxes,ones(1,2).*double(currentAnaphaseBoundary),traceFigYLimits,...
             'LineWidth',2,'Color','black', 'Marker', 'none');
     end
     
