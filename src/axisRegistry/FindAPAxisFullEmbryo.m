@@ -123,6 +123,7 @@ elseif strcmp(FileMode,'LIFExport')
     %Rotates the full embryo image to match the rotation of the zoomed
     %time series
     zoom_angle = 0;
+ 
     mid_angle = 0;
     
     midFile = [SourcePath,filesep,Date,filesep,EmbryoName,...
@@ -142,7 +143,7 @@ elseif strcmp(FileMode,'LIFExport')
     rawPrefixPath = [SourcePath, filesep, Date, filesep, EmbryoName];
     zoom_angle = getZoomAngle(Prefix, rawPrefixPath);
     
-    fullEmbryoPath = [SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo'];
+    fullEmbryoPath = [SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo', filesep];
     mid_angle = getFullEmbryoAngle(fullEmbryoPath, midFile, Prefix);
     
     MidImage = imrotate(MidImage, -zoom_angle + mid_angle);

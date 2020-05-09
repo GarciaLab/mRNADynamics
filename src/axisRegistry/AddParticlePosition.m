@@ -70,7 +70,7 @@ end
 
 liveExperiment = LiveExperiment(Prefix);
 
-DropboxFolder = userResultsFolder;
+DropboxFolder = liveExperiment.userResultsFolder;
 PreProcPath = liveExperiment.userPreFolder;
 RawDynamicsPath = liveExperiment.userRawFolder;
 
@@ -304,7 +304,7 @@ if ~NoAP
             zoom_angle = getZoomAngle(Prefix, rawPrefixPath);
             
             full_embryo_angle = getFullEmbryoAngle(fullEmbryoPath,...
-                surfFile, Prefix, 'Surf');
+                surfFile, Prefix);
             
             
         elseif strcmp(FileMode,'LSM')|strcmp(FileMode,'CZI')|strcmp(FileMode,'DSPIN') %CS20170912
@@ -393,7 +393,7 @@ if ~NoAP
             ZoomImage = hisMat(:, :, end-1);    
         catch
             %single planes
-            ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis(end-1).name]);
+            ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis.name]);
         end
     else
         disp('Did you run ExportDataForLivemRNA again, after editing the MovieDatabase.csv with ":Nuclear" ("invertedNuclear")?')
@@ -791,7 +791,7 @@ else
     % From now, we will use a better way to define the channel for
     % alignment (used for cross-correlation).
     % Find channels with ":Nuclear"
-    ChannelToLoadTemp=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
+    ChannelToLoadTemp= contains([Channels(1),Channels(2),Channels(3)],'nuclear','IgnoreCase',true);
     
     % Define the Channel to load, for calculating the cross-correlation
     % In future, we can think about combining multiple channels for
