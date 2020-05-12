@@ -112,7 +112,7 @@ end
 
 
 %See if we had any lineage/nuclear information
-hisDir=dir([PreProcPath,filesep,Prefix,filesep,'*-His*']);
+hisDir=dir([PreProcPath,filesep,Prefix,filesep,'*his*']);
 if ~isempty(hisDir)
     histoneChannelPresent = true;
 else
@@ -385,31 +385,32 @@ if ~NoAP
     % MovieDatabase after you ran the ExportDataForLivemRNA, then run this
     % script, the code might freak out. I'll put a warning message about
     % that.
-    DHis=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
-    if ~isempty(DHis)
-        try
-            %3D stack
-            hisMat = imreadStack([PreProcPath,filesep,Prefix,filesep,Prefix,'-His.tif']);
-            ZoomImage = hisMat(:, :, end-1);    
-        catch
-            %single planes
-            ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis.name]);
-        end
-    else
-        disp('Did you run ExportDataForLivemRNA again, after editing the MovieDatabase.csv with ":Nuclear" ("invertedNuclear")?')
-        % This might be the case, for instance, if you're just trying
-        % to find AP information about an image without using FISH
-        % code. In that case, just extract the nuclei from the last
-        % raw image.
-        DGFP = dir([rawPrefixPath, '*.tif']);
-        ImageInfo = imfinfo([rawPrefixPath, DGFP(end).name]);
-        NumFramesAndSlices = length(ImageInfo)/2;
-        RawImage3M = NaN(Rows, Columns, NumFramesAndSlices);
-        for lImageIndex = 1:NumFramesAndSlices
-            RawImage3M(:, :, lImageIndex) = imread([rawPrefixPath,DGFP(end).name],'Index', 2*(lImageIndex-1) + ChannelToLoad);
-        end
-        ZoomImage = max(RawImage3M, [], 3) / 256;
-    end
+    %     DHis=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
+    hisMat = getHisMat(liveExperiment);
+    %     if ~isempty(DHis)
+    %         try
+    %3D stack
+    %             hisMat = imreadStack([PreProcPath,filesep,Prefix,filesep,Prefix,'-His.tif']);
+    ZoomImage = hisMat(:, :, end-1);
+    %         catch
+    %             %single planes
+    %             ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis.name]);
+    %         end
+    %     else
+    %         disp('Did you run ExportDataForLivemRNA again, after editing the MovieDatabase.csv with ":Nuclear" ("invertedNuclear")?')
+    % This might be the case, for instance, if you're just trying
+    % to find AP information about an image without using FISH
+    % code. In that case, just extract the nuclei from the last
+    % raw image.
+    %         DGFP = dir([rawPrefixPath, '*.tif']);
+    %         ImageInfo = imfinfo([rawPrefixPath, DGFP(end).name]);
+    %         NumFramesAndSlices = length(ImageInfo)/2;
+    %         RawImage3M = NaN(Rows, Columns, NumFramesAndSlices);
+    %         for lImageIndex = 1:NumFramesAndSlices
+    %             RawImage3M(:, :, lImageIndex) = imread([rawPrefixPath,DGFP(end).name],'Index', 2*(lImageIndex-1) + ChannelToLoad);
+    %         end
+    %         ZoomImage = max(RawImage3M, [], 3) / 255;
+    %     end
     
     
     
@@ -755,28 +756,27 @@ if correctDV
     %for convenience.
 end
 
-Ellipses = getEllipses(liveExperiment);
-schnitzcells = getSchnitzcells(liveExperiment);
-
-Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
-if shouldConvertToAP
-    [EllipsePos, APAngle, APLength]...
-        = convertToFractionalEmbryoLength(Prefix);
-end
-for s = 1:length(schnitzcells)
-    for f = 1:length(schnitzcells(s).frames)
-        ellipseInd = schnitzcells(s).cellno(f);
-        schnitzcells(s).APPos(f) = EllipsePos{f}(ellipseInd);
+try
+    Ellipses = getEllipses(liveExperiment);
+    schnitzcells = getSchnitzcells(liveExperiment);
+    
+    if shouldConvertToAP
+        [EllipsePos, APAngle, APLength]...
+            = convertToFractionalEmbryoLength(Prefix);
     end
+    for s = 1:length(schnitzcells)
+        for f = 1:length(schnitzcells(s).frames)
+            ellipseInd = schnitzcells(s).cellno(f);
+            schnitzcells(s).APPos(f) = EllipsePos{f}(ellipseInd);
+        end
+    end
+    
+    save2([liveExperiment.resultsFolder, filesep,'Ellipses.mat'], Ellipses);
+    save2([liveExperiment.resultsFolder, filesep,Prefix,'_lin.mat'], schnitzcells);
+    
+catch
+    warning('failed to add AP positions to nuclear structures.')
 end
-
-save([liveExperiment.resultsFolder, filesep,'Ellipses.mat'],'Ellipses');
-if (whos(var2str(schnitzcells)).bytes < 2E9)
-    save([liveExperiment.resultsFolder, filesep,Prefix,'_lin.mat'],'schnitzcells', '-v6');
-else
-    save([liveExperiment.resultsFolder, filesep,Prefix,'_lin.mat'],'schnitzcells', '-v7.3', '-nocompression');
-end
-
 
 
 end

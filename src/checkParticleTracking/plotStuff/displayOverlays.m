@@ -110,7 +110,7 @@ if UseSchnitz
         try
             %Show the mother nucleus if applicable
             if Mother~=0
-                SchnitzIndex = find(cptState.schnitzcells(Mother).frames == cptState.CurrentFrame);
+                SchnitzIndex = cptState.schnitzcells(Mother).frames == cptState.CurrentFrame;
                 NucleusIndex = cptState.schnitzcells(Mother).cellno(SchnitzIndex);
 
                 if ~isempty(NucleusIndex)

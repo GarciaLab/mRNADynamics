@@ -1,7 +1,6 @@
 function full_embryo_angle = getFullEmbryoAngle(...
     fullEmbryoPath, surfFile, Prefix)
 
-if isfolder([fullEmbryoPath,'MetaData'])
     %deprecated
 %     xml_file_dir_surf = dir([fullEmbryoPath,...
 %         'MetaData', filesep,'*', surfOrMidStr, '*.xml']);
