@@ -106,15 +106,19 @@ if UseSchnitz
                 EllipseHandleWhite = [EllipseHandleWhite,ellipseCellCPT(cptState, NucleusIndex, 'w', 10, overlayAxes)];
             end
         end
+        
+        try
+            %Show the mother nucleus if applicable
+            if Mother~=0
+                SchnitzIndex = find(cptState.schnitzcells(Mother).frames == cptState.CurrentFrame);
+                NucleusIndex = cptState.schnitzcells(Mother).cellno(SchnitzIndex);
 
-        %Show the mother nucleus if applicable
-        if Mother~=0
-            SchnitzIndex = find(cptState.schnitzcells(Mother).frames == cptState.CurrentFrame);
-            NucleusIndex = cptState.schnitzcells(Mother).cellno(SchnitzIndex);
-
-            if ~isempty(NucleusIndex)
-                EllipseHandleYellow=ellipseCellCPT(cptState, NucleusIndex, 'y', 10, overlayAxes);
+                if ~isempty(NucleusIndex)
+                    EllipseHandleYellow=ellipseCellCPT(cptState, NucleusIndex, 'y', 10, overlayAxes);
+                end
             end
+        catch
+            warning('inconsistency found in schnitzcells. proceeding anyway.');
         end
 
     else

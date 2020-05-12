@@ -1,7 +1,7 @@
 function stack = imreadStack2(file, yDim, xDim, nPages)
 
 if contains(file, '.tif')
-    if true
+    if false
         t = Tiff(file,'r');
         
         stack = zeros(yDim, xDim, nPages);

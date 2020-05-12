@@ -71,9 +71,13 @@ for ch = spotChannels
         for currentFrame = 1:numFrames
             
             if strcmpi(filterType, 'Difference_of_Gaussian')
-                dogMat(:, :,:,currentFrame) = uint16((filterImage(double(movieMat(:, :, :, currentFrame, ch)), filterType, sigmas, 'filterSize',filterSize, 'zStep', zStep) + 100) * 100);
+                dogMat(:, :,:,currentFrame) = uint16((filterImage(double(movieMat(...
+                    :, :, :, currentFrame, ch)), filterType, sigmas,...
+                    'filterSize',filterSize, 'zStep', zStep) + 100) * 100);
             else
-                dogMat(:, :,:,currentFrame)  = uint16((filterImage(double(movieMat(:, :, :, currentFrame, ch)), filterType, sigmas, 'filterSize',filterSize) + 100) * 100);
+                dogMat(:, :,:,currentFrame)  = uint16((filterImage(double(...
+                    movieMat(:, :, :, currentFrame, ch)), filterType, sigmas,...
+                    'filterSize',filterSize) + 100) * 100);
             end
             
             if saveAsStacks
@@ -83,9 +87,9 @@ for ch = spotChannels
                 for z = 1:zSize
                     slice = dogStack(:, :, z);
                  if z == 1
-                    imwrite(slice, dogStackFile, 'Compression', 'none');
+                    imwrite(slice, dogStackFile);
                  else
-                     imwrite(slice, dogStackFile,'WriteMode', 'append', 'Compression', 'none');
+                     imwrite(slice, dogStackFile,'WriteMode', 'append');
                  end
                 end
             end

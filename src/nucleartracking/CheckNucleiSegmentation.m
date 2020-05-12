@@ -366,12 +366,13 @@ while (cc~='x')
         
         ProjectionType = 'midsumprojection';
         
+        movieMat = getMovieMat(liveExperiment); 
         [~, ~, Projection] = chooseNuclearChannels2(...
             movieMat, 'ProjectionType', ProjectionType,'Channels',...
             Channels,'ReferenceHist', ReferenceHist);
         
-        DisplayRange = [mean(mean(squeeze(Projection(:, :, CurrentFrame)))),...
-            max(max(squeeze(Projection(:, :, CurrentFrame)))) ];
+        DisplayRange = [mean(mean(Projection(:, :, CurrentFrame))),...
+            max(max(Projection(:, :, CurrentFrame))) ];
         
         disp('changed projection');
         

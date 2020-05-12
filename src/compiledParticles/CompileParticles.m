@@ -1,5 +1,5 @@
 function CompiledParticles = CompileParticles(varargin)
-% CompileParticles(varargin)
+% CompiledParticles = CompileParticles(varargin)
 %
 % DESCRIPTION
 % This function puts together all the information we have about particles.

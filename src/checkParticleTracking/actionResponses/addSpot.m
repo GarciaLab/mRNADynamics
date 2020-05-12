@@ -155,10 +155,15 @@ else
                 
                 %Turn this spot into a new particle. This is the equivalent of
                 %the 'u' command.
-                [SpotFilter{CurrentChannel},Particles{CurrentChannel}]=...
-                    TransferParticle(Spots{CurrentChannel},...
-                    SpotFilter{CurrentChannel},Particles{CurrentChannel},...
-                    CurrentFrame,SpotsIndex);
+                try
+                    [SpotFilter{CurrentChannel},Particles{CurrentChannel}]=...
+                        TransferParticle(Spots{CurrentChannel},...
+                        SpotFilter{CurrentChannel},Particles{CurrentChannel},...
+                        CurrentFrame,SpotsIndex);
+                catch
+                    warning('failed to add spot for unknown reason.')
+                    return;
+                end
                 numParticles = numParticles + 1;
                 
                 %Connect this particle to the CurrentParticle. This is

@@ -142,7 +142,7 @@ median_val = median(non_zero_dog(:));
 iqr_val = iqr(non_zero_dog(:))/2;
 dog_copy = all_dogs{bestFrame, bestZ};
 min_val = min(non_zero_dog(:));
-thresh = min(median_val + default_iqr * iqr_val, max_val - 1);
+thresh = min( median_val + (default_iqr * iqr_val), max_val);
 dog_copy = dog_copy > thresh;
 
 nSpotsEstimate = length(regionprops(dog_copy));
@@ -233,9 +233,9 @@ nSpotsLabel = uicontrol(fig, 'Style', 'text','String',...
     ['Estimated number of spots: ', num2str(nSpotsEstimate) ],...
     'Units', 'normalized', 'Position', nSpotsLabelPos);
 
-
-nSpotsAxes = axes(fig, 'Units', 'normalized', 'Position', [nSpotsLabelPos(1),...
-    nSpotsLabelPos(2)+.075,  .2, .2]);
+% 
+% nSpotsAxes = axes(fig, 'Units', 'normalized', 'Position', [nSpotsLabelPos(1),...
+%     nSpotsLabelPos(2)+.075,  .2, .2]);
 
 cboxPos = [825 100 200 20];
 
