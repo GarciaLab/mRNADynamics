@@ -1,16 +1,52 @@
-function [rawDataPath, ProcPath,...
-    DropboxFolder, MS2CodePath, PreProcPath,...
-    configValues, movieDatabasePath,...
-    movieDatabaseFolder, movieDatabase, experimentsFolder]...
-    ...
-    = DetermineLocalFolders(varargin)
+function [rawDataPath, ProcPath, defaultDropboxFolder, MS2CodePath, ...
+            PreProcPath, computerFoldersValues, movieDatabasePath,...
+            movieDatabaseFolder, movieDatabase, allDropboxFolders, ...
+            experimentsFolder] = DetermineLocalFolders(varargin)
+        
+% [rawDataPath, ProcPath, defaultDropboxFolder, MS2CodePath, PreProcPath, 
+%   configValues, movieDatabasePath, movieDatabaseFolder, movieDatabase, 
+%   allDropboxFolders, experimentsFolder] = DetermineLocalFolders(varargin)
+%
+% DESCRIPTION
+% Extracts folder paths from the user's ComputerFolders.csv file.
+%
+% PARAMETERS
+% None
+%
+% OPTIONS
+% Prefix: Sets Dropbox folder to be from specified prefix. Must be the
+%         first option.
+% 'localMovieDatabase', localDropboxFolder: Always have Prefix as first 
+%       input parameter if using this option. Loads the MovieDatabase.csv
+%       file from the specified alternate dropbox folder string, as defined
+%       in ComputerFolders.csv
+%
+% OUTPUT
+% rawDataPath: Location of the RawDynamicsData folder 
+% ProcPath: Location of the ProcessedData folder 
+% defaultDropboxFolder: Location of the default DynamicsResults folder (as  
+%                       specified by 'DropboxFolder' in
+%                       ComputerFolders.csv)
+% MS2CodePath: Location of the mRNADynamics code
+% PreProcPath: Location of the PreProcessedData folder 
+% computerFoldersValues: (formerly configValues) cell array of the contents
+%                         of ComputerFolders.csv
+% movieDatabasePath: Path pointing directly to the MovieDatabase.csv file 
+% movieDatabaseFolder: Location of the folder containing MovieDatabase.csv
+% movieDatabase: Cell array of the contents of MovieDatabase.csv
+% allDropboxFolders: Locations of all results folders defined in
+%                    ComputerFolders.csv.
+%                    Useful if you want to find multiple MovieDatabase.csv 
+%                    or DataStatus.csv files.
+% experimentsFolder: Unknown, not used in this function as of 5/13/2020
 %
 %
-%Variable arguments - always have Prefix first if doing this
-    %   Prefix - sets Dropbox folder to be from specified prefix
-    %   'LocalMovieDatabase', LocalDropboxFolder - loads a MovieDatabase
-    %   file from a specified alternate dropbox folder string, as defined
-    %   in ComputerFolders
+% Author (contact): Hernan Garcia (hggarcia@berkeley.edu)
+% Created: ????
+% Last Updated: 5/13/2020 MT (previously 3/18/2020 JL)
+%
+% Documented by: Meghan Turner (meghan_turner@berkeley.edu)
+
     useLocalMovieDatabase = false; %Use default MovieDatabase by default
     
     if ~isempty(varargin) 
@@ -32,27 +68,34 @@ function [rawDataPath, ProcPath,...
         
     CONFIG_CSV_PATH =  'ComputerFolders.csv';
     
-    configValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');
+    computerFoldersValues = csv2cell(CONFIG_CSV_PATH, 'fromfile');
     
-    DropboxFolder = getConfigValue(configValues, 'DropboxFolder');
-    MS2CodePath = getConfigValue(configValues, 'MS2CodePath');      
+    defaultDropboxFolder = getConfigValue(computerFoldersValues, 'DropboxFolder');
+    % Find all the other results folders
+    allDropboxRows = contains(computerFoldersValues(:,1),'Dropbox') | ... 
+                     contains(computerFoldersValues(:,1),'Results');
+    allDropboxFolders = computerFoldersValues(allDropboxRows,2);
+    
+    MS2CodePath = getConfigValue(computerFoldersValues, 'MS2CodePath');      
     try
-        DataRoot = getConfigValue(configValues, 'DataRoot');
+        DataRoot = getConfigValue(computerFoldersValues, 'DataRoot');
         rawDataPath = [DataRoot,filesep,'RawDynamicsData'];
         PreProcPath = [DataRoot,filesep, 'PreProcessedData'];
         ProcPath = [DataRoot, filesep,'ProcessedData'];
     catch  
-        rawDataPath = getConfigValue(configValues, 'SourcePath');
-        ProcPath = getConfigValue(configValues, 'FISHPath');
-        PreProcPath = getConfigValue(configValues, 'PreProcPath');
+        rawDataPath = getConfigValue(computerFoldersValues, 'SourcePath');
+        ProcPath = getConfigValue(computerFoldersValues, 'FISHPath');
+        PreProcPath = getConfigValue(computerFoldersValues, 'PreProcPath');
     end
     
+    % Find local MovieDatabase.csv
     if useLocalMovieDatabase
-        LocalDropboxFolder = getConfigValue(configValues, LocalDropboxFolderString);
+        LocalDropboxFolder = getConfigValue(computerFoldersValues, LocalDropboxFolderString);
         movieDatabaseFolder = LocalDropboxFolder;
     else
-        movieDatabaseFolder = DropboxFolder;
+        movieDatabaseFolder = defaultDropboxFolder;
     end
+    
     movieDatabasePath = [movieDatabaseFolder,'\MovieDatabase.csv'];
     movieDatabase = csv2cell(movieDatabasePath, 'fromfile');
     
@@ -83,7 +126,7 @@ function [rawDataPath, ProcPath,...
         if strcmpi(rootFolderName,'default') || isempty(rootFolderName)
             rootFolderName = 'DataRoot';
         end
-        DataRoot = getConfigValue(configValues, rootFolderName);        
+        DataRoot = getConfigValue(computerFoldersValues, rootFolderName);        
         rawDataPath = [DataRoot '/RawDynamicsData'];
         PreProcPath = [DataRoot '/PreProcessedData'];
         ProcPath = [DataRoot '/ProcessedData'];
@@ -93,6 +136,6 @@ function [rawDataPath, ProcPath,...
         dropboxFolderName = 'DropboxFolder';
     end
 
-    DropboxFolder = getConfigValue(configValues, dropboxFolderName);
+    defaultDropboxFolder = getConfigValue(computerFoldersValues, dropboxFolderName);
 
 end
