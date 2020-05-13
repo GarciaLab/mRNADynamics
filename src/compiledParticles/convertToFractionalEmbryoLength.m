@@ -2,6 +2,8 @@ function [EllipsePosAP, APAngle,...
     APLength, EllipsePosDV]...
     = convertToFractionalEmbryoLength(Prefix)
 
+EllipsePosDV = [];
+
 liveExperiment = LiveExperiment(Prefix);
 resultsFolder = liveExperiment.resultsFolder;
 

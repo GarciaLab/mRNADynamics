@@ -11,13 +11,14 @@ function CheckDivisionTimes(Prefix, varargin)
 %x  : Save and quit
 
 
-close all
-
 %Find out which computer this is. That will determine the folder structure.
 %Information about about folders
 
+liveExperiment = LiveExperiment(Prefix);
+
 [SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
     configValues, movieDatabasePath] = DetermineAllLocalFolders(Prefix);
+
 
 lazy = false;
 for arg = 1:length(varargin)
@@ -41,9 +42,17 @@ end
 
 
 
-
+try 
+    hisMat = getHisMat(liveExperiment); 
+    ZoomImage = hisMat(end);
+    nFrames = size(hisMat, 3);
+catch
+    
 D=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
 ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,D(end).name]);
+nFrames = length(D);
+end
+
 
 
 
@@ -149,7 +158,11 @@ if ~lazy
     
     
     if ~isnan(CurrentFrame)
-        HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(CurrentFrame).name]);
+        try
+            HisImage = hisMat(:, :, CurrentFrame);
+        catch
+            HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(CurrentFrame).name]);
+        end
     end
     
     
@@ -188,7 +201,7 @@ if ~lazy
     
     imshow(HisOverlay, 'Parent', axOverlay)
     
-    set(figureOverlay,'Name',(['Frame: ',num2str(CurrentFrame),'/',num2str(length(D)),...
+    set(figureOverlay,'Name',(['Frame: ',num2str(CurrentFrame),'/',num2str(nFrames),...
         '. Current nc:',num2str(CurrentNC)]));
     
     
@@ -198,11 +211,11 @@ if ~lazy
     cm=get(axOverlay,'CurrentPoint');
     
     %Move frames
-    if (ct~=0)&(cc=='.')&(CurrentFrame<length(D))
+    if (ct~=0)&(cc=='.')&(CurrentFrame<nFrames)
         CurrentFrame=CurrentFrame+1;
     elseif (ct~=0)&(cc==',')&(CurrentFrame>1)
         CurrentFrame=CurrentFrame-1;
-    elseif (ct~=0)&(cc=='>')& (CurrentFrame+10)< length(D)
+    elseif (ct~=0)&(cc=='>')& (CurrentFrame+10)< nFrames
         CurrentFrame=CurrentFrame+10;
     elseif (ct~=0)&(cc=='<')&( CurrentFrame-10) > 1
         CurrentFrame=CurrentFrame-10;

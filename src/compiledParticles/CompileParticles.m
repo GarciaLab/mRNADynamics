@@ -175,7 +175,7 @@ ExperimentType = liveExperiment.experimentType;
 ExperimentAxis = liveExperiment.experimentAxis;
 APResolution = liveExperiment.APResolution;
 DVResolution = liveExperiment.DVResolution;
-nc9=liveExperiment.nc9; nc10=liveExperiment.nc10; 
+nc9=liveExperiment.nc9; nc10=liveExperiment.nc10;
 nc11=liveExperiment.nc11;nc12=liveExperiment.nc12;
 nc13=liveExperiment.nc13;nc14=liveExperiment.nc14;
 
@@ -293,6 +293,13 @@ end
 if APExperiment || DVExperiment
     if ~isfield(Particles{1},'APpos') || ForceAP
         try [Particles, SpotFilter] = AddParticlePosition(addParticleArgs{:});
+            
+            if ~iscell(Particles)
+                Particles={Particles};
+                SpotFilter={SpotFilter};
+            end
+            
+            
         catch warning('Failed to add particle position. Is there no full embryo?'); end
     else disp('Using saved AP information (results from AddParticlePosition)'); end
 end
@@ -316,7 +323,7 @@ end
 
 
 %% Binning the axes into AP and DV
-APDetectionFile = [DropboxFolder,filesep,Prefix,filesep,'APDetection.mat']; 
+APDetectionFile = [DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'];
 fullEmbryoExists = exist(APDetectionFile, 'file');
 shouldConvertToAP =  haveHistoneChannel...
     && (APExperiment || DVExperiment)...
@@ -324,8 +331,8 @@ shouldConvertToAP =  haveHistoneChannel...
 
 %Figure out the AP position of each of the nuclei.
 if shouldConvertToAP
-   [EllipsePos, APAngle, APLength]...
-   = convertToFractionalEmbryoLength(Prefix);
+    [EllipsePos, APAngle, APLength, EllipsePos_DV]...
+        = convertToFractionalEmbryoLength(Prefix);
 end
 
 %Divide the AP and DV axes into bins for generating means

@@ -469,6 +469,7 @@ if ~NoAP
                         Answer=input('Would you like to use them (y/n)? ','s');
                     else
                         Answer = 'y';
+                        ManualAlignment = false;
                     end
                     if strcmpi(Answer,'y')
                         load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
