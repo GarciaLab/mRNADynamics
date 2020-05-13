@@ -1,11 +1,11 @@
 function [Data, prefixes, resultsFolder,...
     ignoredPrefixes, StatusTxt] = LoadMS2Sets(DataType, varargin)
 %
-%Data = LoadMS2Sets(DataType)
+% Data = LoadMS2Sets(DataType)
 %
-%DESCRIPTION
-%Loads all data sets of a certain type and outputs them into the structure
-%Data
+% DESCRIPTION
+% Loads all data sets of a certain type and outputs them into the structure
+% Data
 %
 % PARAMETERS
 % DataType: This is a string that is identical to the name of the tab in
@@ -29,60 +29,31 @@ function [Data, prefixes, resultsFolder,...
 
 %Author (contact): Hernan Garcia (hgarcia@berkeley.edu)
 %Created:
-%Last Updated: 3/18/2020 JL.
+%Last Updated: 5/13/2020 MT (previously 3/18/2020 JL)
 
+% Initialize
 prefixes = {};
 Data = struct();
 resultsFolder = '';
-dStatus = struct;
 
-optionalResults = '';
-compareSettings = true;
-noCompiledNuclei = false;
-justprefixes = false;
-inputOutputFits = false;
-LocalMovieDatabase = false;
-dataStatusFolder = '';
-
-for i= 1:length(varargin)
-    if strcmpi(varargin{i},'optionalResults')
-        optionalResults = varargin{i+1};
-    end
-    if strcmpi(varargin{i}, 'noCompiledNuclei')
-        noCompiledNuclei = true;
-    end
-    if strcmpi(varargin{i}, 'justprefixes')
-        justprefixes = true;
-    end
-    if strcmpi(varargin{i}, 'inputOutputFits')
-        inputOutputFits = true;
-        inputOutputModel = varargin{i+1};
-    end
-    if strcmpi(varargin{i}, 'LocalMovieDatabase')
-        LocalMovieDatabase = true;
-    end
-    if strcmpi(varargin{i}, 'dataStatusFolder')
-        dataStatusFolder = varargin{i+1};
-    end
-end
+% Process the options
+[noCompiledNuclei, justPrefixes, inputOutputFits, inputOutputModel, ... 
+    localMovieDatabase,dataStatusFolder] = determineLoadMS2SetsOptions(varargin);
 
 %Get some of the default folders
-[rawDataPath, ProcPath, DefaultDropboxFolder, MS2CodePath, PreProcPath,...
-    configValues, movieDatabasePath, movieDatabaseFolder, movieDatabase] =  DetermineLocalFolders;
-
-%Now, get a list of all possible other Dropbox folders
-DropboxRows=contains(configValues(:,1),'Dropbox') | contains(configValues(:,1),'Results');
-DropboxFolders=configValues(DropboxRows,2);
+[rawDataPath, ProcPath, ~, MS2CodePath, PreProcPath,...
+    configValues, movieDatabasePath, movieDatabaseFolder, movieDatabase, ...
+    allDropboxFolders] =  DetermineLocalFolders;
 
 %Look in DataStatus.XLSX in each DropboxFolder and find the tab given by
 %the input variable DataType.
 DataStatusToCheck = [];
-for i=1:length(DropboxFolders)
-    currDataStatus = findDataStatus(DropboxFolders{i});
+for i=1:length(allDropboxFolders)
+    currDataStatus = findDataStatus(allDropboxFolders{i});
     
     if ~isemmpty(currDataStatus)
 %         [~,Sheets] = xlsfinfo([DropboxFolders{i},filesep,DDataStatus(1).name]);
-        Sheets = sheetnames([DropboxFolders{i},filesep,currDataStatusDir(1).name]);
+        Sheets = sheetnames([allDropboxFolders{i},filesep,currDataStatusDir(1).name]);
         FindSheets=strcmpi(Sheets,DataType);
         if sum(FindSheets)==1
             DataStatusToCheck=[DataStatusToCheck,i];
@@ -97,7 +68,7 @@ elseif isempty(DataStatusToCheck)
 end
 
 %Redefine the DropboxFolder according to the DataStatus.XLSX we'll use
-DropboxFolder=DropboxFolders{DataStatusToCheck};
+DropboxFolder=allDropboxFolders{DataStatusToCheck};
 resultsFolder = DropboxFolder;
 
 projectFolder = [resultsFolder, filesep, DataType];
