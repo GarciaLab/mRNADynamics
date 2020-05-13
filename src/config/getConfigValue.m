@@ -18,5 +18,5 @@ configIndex = find(configColumn == propertyName);
   end
   
   %cast to char for compatibility
-  value = char(configuration(configIndex, 2)); 
+  value = char(strtrim(configuration(configIndex, 2))); 
 end

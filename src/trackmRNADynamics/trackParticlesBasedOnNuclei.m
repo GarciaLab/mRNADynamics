@@ -40,7 +40,7 @@ if displayFigures
     drawnow
 end
 
-if strcmp(ExperimentType, '2spot')
+if strcmpi(ExperimentType, '2spot')
     SpotsPerNucleus = 2;
 else
     SpotsPerNucleus = 1;

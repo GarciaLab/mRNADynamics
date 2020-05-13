@@ -12,12 +12,12 @@ end
 
 % cost(cost > gatingThresh) = 1 + gatingCost;
 
-%visualize cost matrix
-figure(3) ; imagesc(cost); colorbar;
-title('cost matrix')
-xlabel('prediction')
-ylabel('detection')
-set(gca,'ColorScale','log')
+% %visualize cost matrix
+% figure(3) ; imagesc(cost); colorbar;
+% title('cost matrix')
+% xlabel('prediction')
+% ylabel('detection')
+% set(gca,'ColorScale','log')
 
 
 

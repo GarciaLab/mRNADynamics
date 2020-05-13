@@ -104,22 +104,22 @@ warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
 
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
-spotChannels = thisExperiment.spotChannels;
+spotChannels = liveExperiment.spotChannels;
 
 [~, ~, DropboxFolder, ~, ~] = DetermineLocalFolders(Prefix, optionalResults);
 
-PreProcPath = thisExperiment.userPreFolder;
+PreProcPath = liveExperiment.userPreFolder;
 
 if ~isempty(DataType)
      args = [Prefix, Threshold, varargin];
      writeScriptArgsToDataStatus(DropboxFolder, DataType, Prefix, args, 'Found filtered threshold', 'segmentSpots')
 end
 
-FrameInfo = getFrameInfo(thisExperiment);
+FrameInfo = getFrameInfo(liveExperiment);
 
-ProcessedDataFolder = thisExperiment.procFolder;
+ProcessedDataFolder = liveExperiment.procFolder;
 DogOutputFolder=[ProcessedDataFolder,filesep,'dogs',filesep];
 
 microscope = FrameInfo(1).FileMode;

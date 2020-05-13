@@ -1,4 +1,4 @@
-%[Particles,schnitzcells]=TrackmRNADynamics(varargin)
+function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
 %
 % DESCRIPTION
 % %This function tracks transcription loci over time after
@@ -13,8 +13,10 @@
 % 'app': This is used exclusively by the livemRNAApp to change the location
 % of the display figures
 %
-% 'noRetracking': Use this to track from scratch instead of retracking if
-%                trackmRNADynamics has been run before.
+% 'retrack': use this to retrack from previously generated
+%              trackmRNADynamics results. The default is tracking from
+%              scratch every time this function is called
+%
 % 'displayFigures': don't display figures while tracking
 %
 %
@@ -27,28 +29,27 @@
 % Last Updated: 9/11/2018
 %
 % Documented by: Armando Reimer (areimer@berkeley.edu)
-function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
 
 disp(['Running TrackmRNADynamics on ', varargin{1}, '...']);
 
 Prefix = varargin{1};
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
 [app, retrack, optionalResults, displayFigures] =...
     parseTrackmRNADynamicsArguments(varargin{:});
 
 
-DropboxFolder = thisExperiment.userResultsFolder;
-PreProcPath = thisExperiment.userPreFolder;
+DropboxFolder = liveExperiment.userResultsFolder;
+PreProcPath = liveExperiment.userPreFolder;
 
-ExperimentType = thisExperiment.experimentType;
+ExperimentType = liveExperiment.experimentType;
 
-Channels = thisExperiment.Channels;
+Channels = liveExperiment.Channels;
 Channel1 = Channels{1};
 Channel2 = Channels{2};
 Channel3 = Channels{3};
 
-anaphaseFrames = thisExperiment.anaphaseFrames';
+anaphaseFrames = liveExperiment.anaphaseFrames';
 nc9 = anaphaseFrames(1);
 nc10 = anaphaseFrames(2);
 nc11 = anaphaseFrames(3);
@@ -107,7 +108,7 @@ end
     Prefix, UseHistone, ParticlesFig, spotChannels,...
     NucleiFig, particlesAxes, nucAxes, Ellipses, ...
     PixelSize_um, SearchRadius, ExperimentType,...
-    FrameInfo, retrack, displayFigures, thisExperiment);
+    FrameInfo, retrack, displayFigures, liveExperiment);
 
 mkdir([OutputFolder, filesep]);
 

@@ -1,4 +1,4 @@
-function [stitchSchnitz, ExpandedSpaceTolerance,...
+function [ExpandedSpaceTolerance,...
     NoBulkShift, retrack, nWorkers, track,...
     noBreak, noStitch, fish,...
     markandfind, intFlag, chooseHis, segmentBetter,...
@@ -13,7 +13,6 @@ mu = 0.1; %good for Dorsal synthetics settings
 nIterSnakes = 100; %good for Dorsal synthetics settings
 min_rad_um = 2; %good for early fly embryos
 max_rad_um = 6; %good for early fly embryos
-stitchSchnitz=true;
 ExpandedSpaceTolerance = 1.5;
 NoBulkShift = true;
 retrack = false;
@@ -25,7 +24,7 @@ fish = false;
 markandfind =  false;
 intFlag = false;
 chooseHis = false;
-segmentBetter = true;
+segmentBetter = false;
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'ExpandedSpaceTolerance')

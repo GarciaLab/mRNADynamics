@@ -2,3 +2,4 @@
 .vscode/settings.json
 *.mdmp
 *.log
+src/utilities/vmStressTester.m

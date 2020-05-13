@@ -4,9 +4,9 @@ function generateDogsWeka(Prefix, ProcPath,...
     numFrames, nCh, initialFrame,...
     ignoreMemoryCheck, classifierPathCh1, classifierFolder)
 
-  thisExperiment = liveExperiment(Prefix);
+  liveExperiment = LiveExperiment(Prefix);
 
-  ExperimentType = thisExperiment.experimentType;
+  ExperimentType = liveExperiment.experimentType;
   
   cd(MS2CodePath);
   OutputFolder1 = [ProcPath, filesep, Prefix, '_', filesep, 'dogs'];

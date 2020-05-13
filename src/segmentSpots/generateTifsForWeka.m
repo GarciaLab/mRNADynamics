@@ -56,7 +56,7 @@ for channelIndex = 1:nCh
                 
             end
             
-            if max(rawStackArray(:)) < 256 %max uint8 value
+            if max(rawStackArray(:)) < 255 %max uint8 value
                 rawStackArray = uint8(rawStackArray);
             else
                 rawStackArray = uint16(rawStackArray);

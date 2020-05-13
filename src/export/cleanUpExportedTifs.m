@@ -33,8 +33,8 @@ for i = 1:length(rawDir)
         for k = 2:nFiles
             projName = projDir(k).name;
             fullPath = [projPath, filesep, projName];
-%             delete(fullPath)
-            java.io.File(fullPath).delete()
+            delete(fullPath)
+%             java.io.File(fullPath).delete();
         end        
     end   
 end

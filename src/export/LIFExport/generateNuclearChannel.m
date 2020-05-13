@@ -33,9 +33,11 @@ if nNuclearChannels ~= 0
         nuclearChannel = AllNuclearChannels(ChannelIndex);
         
         % For all 'nuclear' channels, generate HisSlices, and do projection
-        HisSlices = generateHisSlices(movieImages, NSlices, NChannels, nuclearChannel, framesIndex, seriesIndex);
+        HisSlices = generateHisSlices(movieImages,...
+            NSlices, NChannels, nuclearChannel, framesIndex, seriesIndex);
         
-        ProjectionTemp(:, :, ChannelIndex) = calculateProjection(ProjectionType, NSlices(seriesIndex), HisSlices);
+        ProjectionTemp(:, :, ChannelIndex) =...
+            calculateProjection(ProjectionType, NSlices(seriesIndex), HisSlices);
         
         % Think about "invertedNuclear", for example, MCP-mCherry, then
         % invert the ProjectionTemp using imcomplement
@@ -48,7 +50,7 @@ if nNuclearChannels ~= 0
         % might need some more optimization later-YJK)
 
         ProjectionTemp(:, :, ChannelIndex) = histeq(mat2gray(ProjectionTemp(:, :, ChannelIndex)), ReferenceHist);
-        ProjectionTemp(:, :, ChannelIndex) = ProjectionTemp(:, :, ChannelIndex) * 256;
+        ProjectionTemp(:, :, ChannelIndex) = ProjectionTemp(:, :, ChannelIndex) * 255;
         
         % Check if we are excluding this frame from this nuclear channel
         excludeFrames = 0;

@@ -54,7 +54,7 @@ elseif ~isempty(DND2)
     D=DND2;
     FileMode='DND2';
 else
-    error('File type not recognized. For LIF files, were they exported to TIF?')
+    error('File type not recognized.')
 end
 
 

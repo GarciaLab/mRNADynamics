@@ -10,7 +10,9 @@ if ~isempty([Spots.Fits])
     for currentFrame = 1:numFrames
         waitbar(currentFrame / numFrames, waitbarFigure)
         if ~isempty(Spots(currentFrame).Fits)
+            
             changes = 1;
+            
             while changes ~= 0
                 changes = 0;
 
@@ -22,14 +24,19 @@ if ~isempty([Spots.Fits])
                         yDist = Spots(currentFrame).Fits(spotIndex).yFit(end) - Spots(currentFrame).Fits(spotIndex2).yFit(end);
                         dist = sqrt(xDist^2 + yDist^2);
 
-                        if dist < neighborhood && Spots(currentFrame).Fits(spotIndex).z(end) ~= Spots(currentFrame).Fits(spotIndex2).z(end)
+                        if dist < neighborhood &&...
+                                Spots(currentFrame).Fits(spotIndex).z(end) ~= Spots(currentFrame).Fits(spotIndex2).z(end)
                             for m = 1:numel(fields)
                                 if strcmpi(fields{m}, 'r')
                                     Spots(currentFrame).Fits(spotIndex2).r = 1;
-                                elseif strcmpi(fields{m}, 'frame') | strcmpi(fields{m}, 'IntegralZ') | strcmpi(fields{m}, 'intArea') | strcmpi(fields{m}, 'snippet_size')                     
+                                elseif strcmpi(fields{m}, 'frame') ||...
+                                        strcmpi(fields{m}, 'IntegralZ') ||...
+                                        strcmpi(fields{m}, 'intArea') ||...
+                                        strcmpi(fields{m}, 'snippet_size')                     
                                     %do nothing
                                 else
-                                    Spots(currentFrame).Fits(spotIndex).(fields{m}) = [Spots(currentFrame).Fits(spotIndex).(fields{m}),Spots(currentFrame).Fits(spotIndex2).(fields{m}) ];
+                                    Spots(currentFrame).Fits(spotIndex).(fields{m}) =...
+                                        [Spots(currentFrame).Fits(spotIndex).(fields{m}),Spots(currentFrame).Fits(spotIndex2).(fields{m}) ];
                                 end
                                 changes = changes + 1;
                             end

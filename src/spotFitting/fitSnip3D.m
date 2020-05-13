@@ -4,16 +4,16 @@ function spotsFrame= fitSnip3D(spotsFrame, spotChannel,...
 %%
 
 if ischar(Prefix)
-    thisExperiment = liveExperiment(Prefix);
+    liveExperiment = LiveExperiment(Prefix);
 else
-    thisExperiment = Prefix;
+    liveExperiment = Prefix;
 end
 
-FrameInfo = getFrameInfo(thisExperiment);
-preFolder = thisExperiment.preFolder;
+FrameInfo = getFrameInfo(liveExperiment);
+preFolder = liveExperiment.preFolder;
 
 if nargin < 9
-    movieMat = getMovieMat(thisExperiment);
+    movieMat = getMovieMat(liveExperiment);
     imStack = movieMat(:, :, :, frame, spotChannel);
 end
 
@@ -57,7 +57,7 @@ else
     n = 1;
     for z = zRange    
         
-        FullSlice=imread([preFolder, filesep,thisExperiment.Prefix,'_',iIndex(frame,3)...
+        FullSlice=imread([preFolder, filesep,liveExperiment.Prefix,'_',iIndex(frame,3)...
             ,'_z' iIndex(z,2) '_ch' iIndex(spotChannel,2) '.tif']);
         
         snip3D(:,:,n) = double(FullSlice(yRange,xRange)); 

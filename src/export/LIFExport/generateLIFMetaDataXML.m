@@ -1,4 +1,4 @@
-function metadataXML = generateLIFMetaDataXML(in, out)
+function metadataXML = generateLIFMetaDataXML(in, out, xmlSize)
 
 %input here can be either a Prefix or a direct 
 %path to a .lif file.  
@@ -11,8 +11,10 @@ function metadataXML = generateLIFMetaDataXML(in, out)
   arguments
         in char
         out char = '';
+        xmlSize double = 100E6;
   end
-
+ 
+  
     if ~isfile(in)
         [lifFile, metafile] = getFiles(in);
     else
@@ -25,9 +27,19 @@ function metadataXML = generateLIFMetaDataXML(in, out)
     
     
       
-    cleanasc = getAscii(lifFile);
-
-    metadataXML = writeMetaXML(cleanasc, metafile);
+    cleanasc = getAscii(lifFile, xmlSize);
+    
+    try
+        metadataXML = writeMetaXML(cleanasc, metafile);
+    catch
+        %occasionally, the original xml file length was too long and
+        %produced an error. let's try again with a shorter xml. this is nec
+        %essary because it's hard to determine the true offset of the 
+        %end of the xml within the .lif binary. 
+        shorterXMLSize = xmlSize/10;
+        metadataXML = generateLIFMetaDataXML(in, out, shorterXMLSize);
+        return;
+    end
 
 end
 
@@ -54,17 +66,23 @@ if ~isempty(metafile)
     fprintf(metafid, '%c', wholeXML);
     fclose(metafid);
     dom = xmlread(metafile);
+    
+        
     xmlwrite(metafile, dom);
 end
 
 end
 
-function cleanasc = getAscii(lifFile)
+function cleanasc = getAscii(lifFile, optionalXMLSize)
 
 s = dir(lifFile);         
 filesize = s.bytes;
 
-xmlEnd = min(100E6, filesize); %this should cover even very large files
+xmlSize = 100E6; 
+if nargin > 1
+    xmlSize = optionalXMLSize;
+end
+xmlEnd = min(xmlSize, filesize); %100MB should cover even very large files
 
 fid = fopen(lifFile, 'r');
 [A,count] = fread(fid, xmlEnd, 'uchar');
@@ -85,9 +103,9 @@ end
 
 function [lifFile, metafile] = getFiles(Prefix)
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
-rawFolder = thisExperiment.rawFolder;
+rawFolder = liveExperiment.rawFolder;
 DLIF = dir([rawFolder,filesep,'*.lif']);
 lifFile = [rawFolder, filesep, DLIF(1).name];
 

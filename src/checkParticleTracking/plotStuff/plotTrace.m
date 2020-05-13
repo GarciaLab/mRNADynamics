@@ -130,7 +130,7 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(cptState.Frames==cptState.CurrentFr
         else
             currentAnaphaseBoundary = anaphaseInMins(i) - priorAnaphaseInMins;
         end
-        plot(traceFigAxes,ones(1,2).*currentAnaphaseBoundary,traceFigYLimits,...
+        plot(traceFigAxes,ones(1,2).*double(currentAnaphaseBoundary),traceFigYLimits,...
             'LineWidth',2,'Color','black', 'Marker', 'none');
     end
     
@@ -184,8 +184,13 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(cptState.Frames==cptState.CurrentFr
                 [cptState.schnitzcells.Fluo] = dummy{:};
         else
             proteinLine = traceFigAxes.Children(end);
-            set(proteinLine, 'XData', cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).frames,...
-                'YData', max(cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).Fluo,[],2));
+            proteinFluo = cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).Fluo;
+            if ~isempty(proteinFluo)
+                set(proteinLine, 'XData', cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).frames,...
+                    'YData', max(proteinFluo,[],2));
+            else
+                warning('protein fluo empty. maybe rerun integrateschnitzfluo?');
+            end
         end
     end
     

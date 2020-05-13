@@ -1,47 +1,38 @@
 function schnitzcells =...
-    integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo,...
-   PreProcPath)
+    integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo)
 
 saveFlag = false;
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
 if nargin == 1
+        
+    DropboxFolder = liveExperiment.userResultsFolder;
+    Channels = liveExperiment.Channels;
     
-    [rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
-        rawDataFolder, Prefix, ~,Channel1,Channel2,OutputFolder,...
-        Channel3, spotChannels, MovieDataBaseFolder, movieDatabase]...
-        = readMovieDatabase(Prefix);
+    FrameInfo = getFrameInfo(liveExperiment); 
     
-    Channels = {Channel1{1},Channel2{1}, Channel3{1}};
-    
-    DataFolder = [DropboxFolder, filesep, Prefix];
-    
-    load([DataFolder, filesep, 'FrameInfo.mat'], 'FrameInfo');
-    
-    FilePrefix = [Prefix, '_'];
-    schnitzPath = [DropboxFolder, filesep, FilePrefix(1:end - 1), filesep, FilePrefix(1:end - 1), '_lin.mat'];
-    
-    disp('Loading schnitzcells...')
-    load(schnitzPath, 'schnitzcells');
-    disp('schnitzcells loaded.')
-    
+    schnitzcells = getSchnitzcells(liveExperiment);
+
     saveFlag = true;
     
 end
 
-Channels = thisExperiment.Channels;
+schnitzPath = [liveExperiment.resultsFolder, filesep, Prefix, '_lin.mat'];
 
-InputChannels = find(contains(Channels, 'input', 'IgnoreCase', true));
+Channels = liveExperiment.Channels;
 
-if isempty(InputChannels)
+InputChannelIndexes = find(contains(Channels, 'input', 'IgnoreCase', true));
+
+if isempty(InputChannelIndexes)
     warning(['No input channel found. Check correct definition in MovieDatabase.',...
         ' Input channels should use the :input notation.'])
     return;
 end
 
-movieMat = getMovieMat(thisExperiment);
-movieMat = double(movieMat(:, :, :, :, InputChannels));
+movieMat = getMovieMat(liveExperiment);
+%assume there's just one input channel
+movieMat = double(movieMat(:, :, :, :, InputChannelIndexes));
 numFrames = length(FrameInfo);
 
 
@@ -58,7 +49,7 @@ Circle=double(MidpointCircle(Circle,IntegrationRadius,1.5*IntegrationRadius+0.5,
 %Initialize fields
 schnitzcells(1).Fluo = [];
 
-if sum(InputChannels)
+if sum(InputChannelIndexes)
     
     %Extract the fluroescence of each schnitz, for each channel,
     %at each time point
@@ -77,7 +68,7 @@ if sum(InputChannels)
     convRef = convn(refFrame, Circle, 'same');
     edgeMask = convRef~=sum(Circle(:));
     chIndex = 0;
-    for ChN=InputChannels
+    for ChN=InputChannelIndexes
         chIndex = chIndex+1;
         h=waitbar(0,['Extracting nuclear fluorescence for channel ',num2str(ChN)]);
         
@@ -103,16 +94,10 @@ if sum(InputChannels)
             convImage(edgeMask) = NaN;
             
             for j=1:length(tempSchnitz)
-%                 CurrentIndex=find(tempSchnitz(j).frames==CurrentFrame);
-%                 cenx=min(max(1,round(tempSchnitz(j).cenx(CurrentIndex))),PixelsPerLine);
-%                 ceny=min(max(1,round(tempSchnitz(j).ceny(CurrentIndex))),LinesPerFrame);
-%                 tempSchnitz(j).Fluo(CurrentIndex,1:nSlices,ChN) = single(convImage(ceny,cenx,:));
-
-
-                    %trying faster method
-                    cenx=min(max(1,round(tempSchnitz(j).cenx(tempSchnitz(j).frames==CurrentFrame))),PixelsPerLine);
-                    ceny=min(max(1,round(tempSchnitz(j).ceny(tempSchnitz(j).frames==CurrentFrame))),LinesPerFrame);
-                    tempSchnitz(j).Fluo(tempSchnitz(j).frames==CurrentFrame,:,chIndex) = single(convImage(ceny,cenx,:));
+                
+                cenx=min(max(1,round(tempSchnitz(j).cenx(tempSchnitz(j).frames==CurrentFrame))),PixelsPerLine);
+                ceny=min(max(1,round(tempSchnitz(j).ceny(tempSchnitz(j).frames==CurrentFrame))),LinesPerFrame);
+                tempSchnitz(j).Fluo(tempSchnitz(j).frames==CurrentFrame,:,chIndex) = single(convImage(ceny,cenx,:));
                     
                     
             end %loop of nuclei in a frame

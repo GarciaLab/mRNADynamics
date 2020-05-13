@@ -105,7 +105,7 @@ end
     DetermineLocalFolders(Prefix);
 
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
 %Load all the information
 load([DropboxFolder,filesep,Prefix,'\Ellipses.mat'], 'Ellipses')
@@ -535,7 +535,7 @@ end
 %% add some things to schnitzcells for convenience
 
 
-expandedAnaphaseFrames = [zeros(1,8),thisExperiment.anaphaseFrames'];
+expandedAnaphaseFrames = [zeros(1,8),liveExperiment.anaphaseFrames'];
 
 for s = 1:length(schnitzcells)
     midFrame = ceil(length(schnitzcells(s).frames)/2);
@@ -546,7 +546,7 @@ end
 
 schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, expandedAnaphaseFrames);
 
- schnitzcells = filterSchnitz(schnitzcells, [ thisExperiment.yDim, thisExperiment.xDim]);
+ schnitzcells = filterSchnitz(schnitzcells, [ liveExperiment.yDim, liveExperiment.xDim]);
 
 %% Save everything
 

@@ -8,17 +8,15 @@ disp('Exporting movie file...');
 
 cleanupObj = onCleanup(@myCleanupFun);
 
-mm = false;
+liveExperiment = LiveExperiment(Prefix);
 
-thisExperiment = liveExperiment(Prefix);
-
-resultsFolder = thisExperiment.resultsFolder;
+resultsFolder = liveExperiment.resultsFolder;
 
 if ~shouldExportMovieFiles
     FrameInfo = [];
 end
 moviePrecision = 'uint16';
-hisPrecision = 'uint8';
+hisPrecision = 'uint16';
 
 %Load the reference histogram for the fake histone channel
 load('ReferenceHist.mat', 'ReferenceHist');
@@ -54,29 +52,46 @@ if shouldMakeMovieMat
     %Obtains frames information
     [NSeries, NFrames, NSlices,...
         NPlanes, NChannels, Frame_Times] = getFrames(LIFMeta);
-     InitialStackTime = [];
-        zPosition = [];
+    
+    %use the old method(exported from lasx) if the files are exported
+    %already. if they're not, just use bioformats. the lasx method is being
+    %deprecated.
+    if ~isempty(XMLFolder)
+        timeStampRetrievalMethod = 'lasx';
+    else
+        timeStampRetrievalMethod = 'bioformats';
+    end
+    
     if sum(NFrames)~=0
         
-        try
-            %new method
+        switch timeStampRetrievalMethod
             
-            xml_file = [thisExperiment.rawFolder, filesep, 'lifMeta.xml'];
-            
-            generateLIFMetaDataXML(Prefix, xml_file);
-            
-            InitialStackTime = getTimeStampsFromLifXML(xml_file);
-            
-        catch
-            %old method
-            [Frame_Times, ~] = obtainFrameTimes(XMLFolder, seriesPropertiesXML,...
-                NSeries, NFrames, NSlices, NChannels);
-        
-        
-        [InitialStackTime, zPosition] = getFirstSliceTimestamp(NSlices,...
-            NSeries, NPlanes, NChannels, Frame_Times, XMLFolder, seriesXML);
+            case 'manual'
+                
+                xml_file = [liveExperiment.rawFolder, filesep, 'lifMeta.xml'];
+                
+                if ~exist(xml_file, 'file')
+                    generateLIFMetaDataXML(Prefix, xml_file);
+                end
+                
+                Frame_Times = getTimeStampsFromLifXML(xml_file);
+                
+            case 'lasx'
+                
+                Frame_Times = obtainFrameTimes(XMLFolder, seriesPropertiesXML,...
+                    NSeries, NFrames, NSlices, NChannels);
+                
+            case 'bioformats'
+                
+                Frame_Times = getFrameTimesFromBioFormats(LIFMeta, NSlices);
+                
+            otherwise, error('what?');
+                
         end
     end
+    
+    [InitialStackTime, zPosition] = getFirstSliceTimestamp(NSlices,...
+        NSeries, NPlanes, NChannels, Frame_Times, XMLFolder, seriesXML);
     
     FrameInfo = recordFrameInfo(NFrames, NSlices, InitialStackTime, LIFMeta, zPosition);
     
@@ -115,7 +130,6 @@ if ~skipExtraction
         hisMat = zeros(ySize, xSize, sum(NFrames), hisPrecision);
     end
     
-    %         zslicesPadding = false;
     
     if shouldExportMovieFiles
         
@@ -132,16 +146,11 @@ if ~skipExtraction
                 for channelIndex = 1:NChannels
                     
                     NameSuffix = ['_ch',iIndex(channelIndex,2)];
-                    plane = false;
-                    if plane
-                        NewName = [Prefix, '_', iIndex(numberOfFrames,3),...
-                            '_z', iIndex(1,2), NameSuffix, '.tif'];
-                    else
-                        NewName = [Prefix, '_', iIndex(numberOfFrames,3),...
-                            NameSuffix, '.tif'];
-                    end
                     
-                    imwrite(BlankImage, [PreProcFolder, filesep, NewName], 'Compression', 'none');
+                    NewName = [Prefix, '_', iIndex(numberOfFrames,3),...
+                        NameSuffix, '.tif'];
+                    
+                    imwrite(BlankImage, [PreProcFolder, filesep, NewName]);
                     %
                     %Copy the rest of the images
                     slicesCounter = 1;
@@ -159,28 +168,16 @@ if ~skipExtraction
                             % zSlices, because topZSlice would be min(NSlices)
                             movieMat(:, :,slicesCounter + 1,  numberOfFrames,...
                                 channelIndex) = LIFImages{seriesIndex}{imageIndex,1};
-                            if plane
-                                NewName = [Prefix, '_', iIndex(numberOfFrames,3),...
-                                    '_z', iIndex(slicesCounter + 1, 2), NameSuffix, '.tif'];
-                                imwrite(LIFImages{seriesIndex}{imageIndex,1},...
-                                    [PreProcFolder, filesep, NewName]);
-                            else
-                                imwrite(LIFImages{seriesIndex}{imageIndex,1},...
-                                    [PreProcFolder, filesep, NewName], 'WriteMode', 'append', 'Compression', 'none');
-                            end
+                            imwrite(LIFImages{seriesIndex}{imageIndex,1},...
+                                [PreProcFolder, filesep, NewName], 'WriteMode', 'append');
                             slicesCounter = slicesCounter + 1;
                         end
                     end
                     
-                    %                     Save as many blank images at the end of the stack are needed
-                    %                     (depending on zPadding being active or not)
+                    %Save as many blank images at the end of the stack are needed
+                    %(depending on zPadding being active or not)
                     for zPaddingIndex = slicesCounter+1:topZSlice+2
-                        if plane
-                            NewName = [Prefix, '_', iIndex(numberOfFrames,3), '_z', iIndex(zPaddingIndex, 2), NameSuffix, '.tif'];
-                            imwrite(BlankImage, [PreProcFolder, filesep, NewName]);
-                        else
-                            imwrite(BlankImage, [PreProcFolder, filesep, NewName], 'WriteMode', 'append', 'Compression', 'none');
-                        end
+                        imwrite(BlankImage, [PreProcFolder, filesep, NewName], 'WriteMode', 'append');
                     end
                     %
                     %                                     processMovieChannel(channelIndex, numberOfFrames, Prefix, OutputFolder,...
@@ -202,15 +199,14 @@ if ~skipExtraction
             end
         end
         
-         
+        
     end
     
     
     if nuclearGUI && shouldExportNuclearProjections
         
         if ~shouldExportMovieFiles
-            %             movieMat = loadMovieMat([PreProcFolder, filesep, Prefix, '_movieMat.mat']);
-            movieMat = getMovieMat(liveExperiment(Prefix));
+            movieMat = getMovieMat(LiveExperiment(Prefix));
         end
         
         [~, ~, ~, hisMat] = chooseAnaphaseFrames(...
@@ -223,7 +219,7 @@ if ~skipExtraction
         saveNuclearProjection(hisMat, [PreProcFolder, filesep, Prefix, '-His.tif']);
     end
     
-    try close(waitbarFigure); end
+    try close(waitbarFigure); catch; end
     
 end
 
