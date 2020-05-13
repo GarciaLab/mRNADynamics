@@ -136,6 +136,9 @@ mkdir(DropboxFolderName);
   elseif strcmpi(FileMode, 'TIF')
 
     FrameInfo = process2PhotonPrincetonData(rawDataFolder, D, FrameInfo, Channel2, OutputFolder);
+  elseif strcmpi(FileMode, 'HyperTIF')
+
+    FrameInfo = processTiffHyperStackData(rawDataFolder, D, FrameInfo, Channel1, Channel2, OutputFolder, Prefix);
   elseif strcmpi(FileMode, 'LAT')
     FrameInfo = processLatticeLightSheetData(rawDataFolder, D, Channel1, Channel2, ProjectionType, Prefix, OutputFolder);
 

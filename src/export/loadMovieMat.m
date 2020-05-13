@@ -75,6 +75,9 @@ if ~isDividedIntoChannels
     dims = size(moviematfile, 'movieMat');
 end
 
+if length(dims) == 4
+    dims(5) = 1;
+end
 
 if isempty(frameRange)
     frameRange = 1:dims(4);
