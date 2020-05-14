@@ -369,6 +369,7 @@ Particles = approveParticles(Particles,...
     FilePrefix, Prefix, DropboxFolder, numFrames,...
     manualSingleFits, edgeWidth, pixelSize, coatChannels, fullEmbryoExists, liveExperiment);
 
+
 %% ROI option
 % This option is separating the CompiledParticles defined above into
 % CompiledParticles_ROI and COmpiledParticles_nonROI
@@ -569,7 +570,7 @@ try
     end
 catch, warning('Couldn''t run CompileNuclearProtein.'); end
 
-
+checkSchnitzcellsCompiledParticlesConsistency(schnitzcells, CompiledParticles)
 
 %% Save everything
 

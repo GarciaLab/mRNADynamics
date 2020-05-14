@@ -49,15 +49,7 @@ for ChN=1:NChannels
             %condition?
             FirstFrame=Particles{ChN}(i).Frame(min(find(Particles{ChN}(i).FrameApproved)));
             
-            %Check that for the remaining frames we got a good z-profile
-            %                 for j=1:length(Particles{ChN}(i).Frame)
-            %                     ZProfile=fad(ChN).channels(Particles{ChN}(i).Frame(j)).fits.shadowsDog{Particles{ChN}(i).Index(j)};
-            %                     [Dummy,ZMax]=max(ZProfile);
-            %                     if (ZMax==1)|(ZMax==length(ZProfile))
-            %                         FrameFilter(j)=0;
-            %                     end
-            %                 end
-            
+
             %Should I only keep traces of a certain length? We also just keep
             %the ones that have a real schnitz associated with them
             AnalyzeThisParticle=1;      %Flag to see if this particle should be analyzed.
