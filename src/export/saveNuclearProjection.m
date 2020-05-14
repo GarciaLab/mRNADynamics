@@ -2,6 +2,12 @@ function saveNuclearProjection(hisMat, file)
 
 nFrames = size(hisMat, 3);
 
+if max(hisMat(:)) < 255
+    hisMat = uint8(hisMat);
+else
+    hisMat = uint16(hisMat);
+end
+
 for f = 1:nFrames
     
     image = hisMat(:, :, f);

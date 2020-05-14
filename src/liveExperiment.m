@@ -247,6 +247,10 @@ classdef liveExperiment
             end
             out = movieMat;
             
+            if max(movieMat(:)) < 255
+                movieMat = uint8(movieMat);
+            end
+            
         end
         
         
@@ -255,9 +259,10 @@ classdef liveExperiment
             
             nPadding = 2;
             
+            moviePrecision = 'uint16';
             movieMat = zeros(this.yDim, this.xDim,...
                 this.zDim+nPadding, this.nFrames,...
-                length(channelsToRead), 'uint8'); % y x z t ch
+                length(channelsToRead), moviePrecision); % y x z t ch
             
             chIndex = 0;
             
@@ -280,15 +285,9 @@ classdef liveExperiment
                 this_zDim = this.zDim;
                 
                 for f = 1:this_nFrames
-%                 try
                     movieMat(:, :, :, f, chIndex) =...
                         imreadStack2([this_preFolder, filesep, preChDir(f).name],...
                         this_yDim, this_xDim, this_zDim+nPadding);
-%                 catch
-%                   movieMat(:, :, :, f, chIndex) =...
-%                       imreadStack([this_preFolder, filesep, preChDir(f).name]);
-%                 end
-                
                 end
                 
                 
@@ -324,6 +323,10 @@ classdef liveExperiment
                 end
             end
             out = hisMat;
+            
+            if max(hisMat(:)) < 255
+                hisMat = uint8(hisMat);
+            end
             
         end
         

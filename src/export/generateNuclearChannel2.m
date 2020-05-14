@@ -4,7 +4,8 @@
 % "invertedNuclear" for those channels to be recognized for histone
 % channel generation.
 %
-function Projection = generateNuclearChannel2(ProjectionType, Channels, ReferenceHist, movieMat, frame)
+function Projection = generateNuclearChannel2(ProjectionType,...
+    Channels, ReferenceHist, movieMat, frame)
 
 yDim = size(movieMat, 1);
 xDim = size(movieMat, 2);
@@ -45,7 +46,7 @@ if nNuclearChannels ~= 0
                 imcomplement(ProjectionTemp(:, :, ChannelIndex));
         end
         
-        ProjectionTemp(:, :, ChannelIndex) = 256*...
+        ProjectionTemp(:, :, ChannelIndex) = 255*...
             histeq(mat2gray(ProjectionTemp(:, :, ChannelIndex)), ReferenceHist);
         
         % Check if we are excluding this frame from this nuclear channel
