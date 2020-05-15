@@ -1,5 +1,5 @@
 function [Data, prefixes, resultsFolder,...
-    ignoredPrefixes, StatusTxt] = LoadMS2Sets(DataType, varargin)
+    ignoredPrefixes, dataTypeTabContents] = LoadMS2Sets(dataType, varargin)
 %
 % Data = LoadMS2Sets(DataType)
 %
@@ -13,8 +13,8 @@ function [Data, prefixes, resultsFolder,...
 %
 % OPTIONS
 % 'noCompiledNuclei'
-% 'justprefixes'
-% 'LocalMovieDatabase' - use MovieDatabase in same local directory as
+% 'justPrefixes'
+% 'localMovieDatabase' - use MovieDatabase in same local directory as
 % DataStatus file
 % 'dataStatusFolder', dataStatusFolder: 
 %
@@ -35,6 +35,7 @@ function [Data, prefixes, resultsFolder,...
 prefixes = {};
 Data = struct();
 resultsFolder = '';
+dataStatusFilename = 'DataStatus.*';    %NB: This naming convention is now enforced inside findDataStatus.m
 
 % Process the options
 [noCompiledNuclei, justPrefixes, inputOutputFits, inputOutputModel, ... 
@@ -45,72 +46,56 @@ resultsFolder = '';
     configValues, movieDatabasePath, movieDatabaseFolder, movieDatabase, ...
     allDropboxFolders] =  DetermineLocalFolders;
 
-%Look in DataStatus.XLSX in each DropboxFolder and find the tab given by
-%the input variable DataType.
-DataStatusToCheck = [];
-for i=1:length(allDropboxFolders)
-    currDataStatus = findDataStatus(allDropboxFolders{i});
-    
-    if ~isemmpty(currDataStatus)
-%         [~,Sheets] = xlsfinfo([DropboxFolders{i},filesep,DDataStatus(1).name]);
-        Sheets = sheetnames([allDropboxFolders{i},filesep,currDataStatusDir(1).name]);
-        FindSheets=strcmpi(Sheets,DataType);
-        if sum(FindSheets)==1
-            DataStatusToCheck=[DataStatusToCheck,i];
-        end
-    end
-end
-%Check that there aren't two DataStatus files with the same tab name
-if length(DataStatusToCheck)>1
-    error(['More than one DataStatus.XLSX found with a tab named ',DataType])
-elseif isempty(DataStatusToCheck)
-    error(['No DataStatus.XLSX found with a tab named ',DataType])
-end
+% Find all DataStatus.xlsx files in all DropboxFolders
+dataStatusFolders = findDataStatus(allDropboxFolders);
 
-%Redefine the DropboxFolder according to the DataStatus.XLSX we'll use
-DropboxFolder=allDropboxFolders{DataStatusToCheck};
-resultsFolder = DropboxFolder;
+%Look in all DataStatus.xlsx files to find the tab specified by the dataType
+%user input
+dataStatusWithDataTypeFolder = findDataStatusTab(dataStatusFolders, dataType);
 
-projectFolder = [resultsFolder, filesep, DataType];
+%Redefine the DropboxFolder according to the DataStatus.xlsx we'll use
+dropboxFolder = dataStatusWithDataTypeFolder;
+resultsFolder = dropboxFolder;
+
+%Create a subfolder in the resutlsFolder for the project specified by the
+%dataType variable
+projectFolder = [resultsFolder, filesep, dataType];
 if ~exist(projectFolder,'dir')
     try
         mkdir(projectFolder);
     catch
+        warning(['Failed to create new directory ', projectFolder])
     end
 end
 
 %Redefine the MovieDatabase according to the DropboxFolder we're using if
 %using the LocalMovieDatabase option
-if LocalMovieDatabase
-    movieDatabasePath = [DropboxFolder,'\MovieDatabase.csv'];
+if localMovieDatabase
+    movieDatabasePath = [dropboxFolder,'\MovieDatabase.csv'];
     movieDatabase = csv2cell(movieDatabasePath, 'fromfile');
 end
 
 
-%Now, load the DataStatus.XLSX
-D=dir([DropboxFolder,filesep,DataStatusNames{1}]);
-if isempty(D)
-    D=dir([DropboxFolder,filesep,DataStatusNames{2}]);
-end
-
-StatusTxt=readcell([DropboxFolder,filesep,D(1).name],'Sheet', DataType);
+%Now, load the contents of the DataStatus.XLSX tab we just found
+dataStatusDir = dir([dropboxFolder,filesep,dataStatusFilename]);
+dataTypeTabContents = readcell([dropboxFolder,filesep,dataStatusDir(1).name],'Sheet', dataType);
 
 
 %Which data sets are approved?
-CompileRow=find(strcmpi(StatusTxt(:,1),'AnalyzeLiveData Compile Particles')|...
-    strcmpi(StatusTxt(:,1),'CompileParticles')|...
-    strcmpi(StatusTxt(:,1),'CompileNuclearProtein'));
-CompiledSets=find(strcmpi(StatusTxt(CompileRow,:),'READY')|strcmpi(StatusTxt(CompileRow,:),'ApproveAll'));
+CompileRow=find(strcmpi(dataTypeTabContents(:,1),'AnalyzeLiveData Compile Particles')|...
+    strcmpi(dataTypeTabContents(:,1),'CompileParticles')|...
+    strcmpi(dataTypeTabContents(:,1),'CompileNuclearProtein'));
+CompiledSets=find(strcmpi(dataTypeTabContents(CompileRow,:),'READY')|strcmpi(dataTypeTabContents(CompileRow,:),'ApproveAll'));
 
-ignoredSets=find( (~strcmpi(StatusTxt(CompileRow,:),'READY')) & (~strcmpi(StatusTxt(CompileRow,:),'ApproveAll')));
+ignoredSets=find( (~strcmpi(dataTypeTabContents(CompileRow,:),'READY')) & (~strcmpi(dataTypeTabContents(CompileRow,:),'ApproveAll')));
 ignoredSets = ignoredSets(2:end);
 
-PrefixRow=strcmp(StatusTxt(:,1),'Prefix:');
+PrefixRow=strcmp(dataTypeTabContents(:,1),'Prefix:');
 
 ignoredPrefixes = cell(1, length(ignoredSets));
 
 for i=1:length(ignoredSets)
-    SetName=StatusTxt{PrefixRow,ignoredSets(i)};
+    SetName=dataTypeTabContents{PrefixRow,ignoredSets(i)};
     Quotes=strfind(SetName,'''');
     ignoredPrefixes{i} = SetName((Quotes(1)+1):(Quotes(end)-1));
 end
@@ -143,7 +128,7 @@ APResolution=[];
 prefixes = cell(1, length(CompiledSets));
 
 for i=1:length(CompiledSets)
-    SetName=StatusTxt{PrefixRow,CompiledSets(i)};
+    SetName=dataTypeTabContents{PrefixRow,CompiledSets(i)};
     Quotes=strfind(SetName,'''');
     Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
     prefixes{i} = Prefix;
@@ -184,28 +169,28 @@ end
 %[~,~,DropboxFolder] = readMovieDatabase(Prefix, optionalResults);
 
 %Find and load the different prefixes
-PrefixRow=find(strcmpi(StatusTxt(:,1),'Prefix:'));
+PrefixRow=find(strcmpi(dataTypeTabContents(:,1),'Prefix:'));
 for i=1:length(CompiledSets)
     
     
-    SetName=StatusTxt{PrefixRow,CompiledSets(i)};
+    SetName=dataTypeTabContents{PrefixRow,CompiledSets(i)};
     SetNames{i}=SetName;
     Quotes=strfind(SetName,'''');
     Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
     
-    if ~justprefixes
+    if ~justPrefixes
         
         %Load CompiledParticles if it exists. This constitutes the main part of
         %the Data output. However, we will later add more information to this
         %structure as well as use it to check the consistency of the analysis
         %performed with the different data sets.
         
-        if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],'file')
+        if exist([dropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],'file')
             %Need to try this in case there's some incompatibility in terms of the
             %structures. This is because we might have xls sets that have been
             %compiled using different versions of CompileParticles.m
             try
-                DataTemp=load([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
+                DataTemp=load([dropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
                 DataTemp=orderfields(DataTemp);
                 Data(i)=DataTemp;
             catch
@@ -228,71 +213,71 @@ for i=1:length(CompiledSets)
 
             
             %Fit results assuming the same slopes
-            if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'],'file')
-                MeanFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFits.mat']);
+            if exist([dropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'],'file')
+                MeanFits(i)=load([dropboxFolder,filesep,Prefix,filesep,'MeanFits.mat']);
             else
             end
             
             %Linear slope fit results
-            if exist([DropboxFolder,filesep,Prefix,filesep,'MeanLinearFits.mat'],'file')
-                MeanLinearFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanLinearFits.mat']);
+            if exist([dropboxFolder,filesep,Prefix,filesep,'MeanLinearFits.mat'],'file')
+                MeanLinearFits(i)=load([dropboxFolder,filesep,Prefix,filesep,'MeanLinearFits.mat']);
             end
             
             % Fit results from the MeanFitAPAsymmetric.m
-            if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV2.mat'],'file')
-                MeanFitsV2(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV2.mat']);
+            if exist([dropboxFolder,filesep,Prefix,filesep,'MeanFitsV2.mat'],'file')
+                MeanFitsV2(i)=load([dropboxFolder,filesep,Prefix,filesep,'MeanFitsV2.mat']);
             else
             end
             
             % Fit results from the MeanFitAPAsymmetric.m
-            if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsAsymmetric.mat'],'file')
-                MeanFitsAsymmetric(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsAsymmetric.mat']);
+            if exist([dropboxFolder,filesep,Prefix,filesep,'MeanFitsAsymmetric.mat'],'file')
+                MeanFitsAsymmetric(i)=load([dropboxFolder,filesep,Prefix,filesep,'MeanFitsAsymmetric.mat']);
             else
             end
             
             
             % Fit results from the FitTiltedTrapezoids_4Clicks.m
-            if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV3.mat'],'file')
-                MeanFitsV3(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsV3.mat']);
+            if exist([dropboxFolder,filesep,Prefix,filesep,'MeanFitsV3.mat'],'file')
+                MeanFitsV3(i)=load([dropboxFolder,filesep,Prefix,filesep,'MeanFitsV3.mat']);
             else
             end
             
             %Fit results using MeanFitsMCMC
-            if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsMCMC.mat'],'file')
-                MeanFitsMCMC(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsMCMC.mat']);
+            if exist([dropboxFolder,filesep,Prefix,filesep,'MeanFitsMCMC.mat'],'file')
+                MeanFitsMCMC(i)=load([dropboxFolder,filesep,Prefix,filesep,'MeanFitsMCMC.mat']);
             else
             end
             %Fit results using InputOutputFits
             if inputOutputFits
-                if exist([DropboxFolder,filesep,Prefix,filesep,'InputOutputFits_',...
+                if exist([dropboxFolder,filesep,Prefix,filesep,'InputOutputFits_',...
                         inputOutputModel,'.mat'],'file')
-                    InputOutputFits(i)=load([DropboxFolder,filesep,Prefix,filesep,...
+                    InputOutputFits(i)=load([dropboxFolder,filesep,Prefix,filesep,...
                         'InputOutputFits_',inputOutputModel,'.mat']);
                 else
                 end
             end
             
             %Single particle results using MeanFitsMCMC
-            if exist([DropboxFolder,filesep,Prefix,filesep,'SingleParticleFitsMCMC.mat'],'file')
-                SingleParticleFitsMCMC(i)=load([DropboxFolder,filesep,Prefix,filesep,'SingleParticleFitsMCMC.mat']);
+            if exist([dropboxFolder,filesep,Prefix,filesep,'SingleParticleFitsMCMC.mat'],'file')
+                SingleParticleFitsMCMC(i)=load([dropboxFolder,filesep,Prefix,filesep,'SingleParticleFitsMCMC.mat']);
             else
             end
             
             try
-                Schnitzcells(i)=load([DropboxFolder,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat'], 'schnitzcells');
+                Schnitzcells(i)=load([dropboxFolder,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat'], 'schnitzcells');
             catch
             end
             
             
             %Fit to the integrals
-            if exist([DropboxFolder,filesep,Prefix,filesep,'FitIntegralResults.mat'],'file')
-                IntegralFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'FitIntegralResults.mat']);
+            if exist([dropboxFolder,filesep,Prefix,filesep,'FitIntegralResults.mat'],'file')
+                IntegralFits(i)=load([dropboxFolder,filesep,Prefix,filesep,'FitIntegralResults.mat']);
             end
             
             
             %Fits to individual traces
-            if exist([DropboxFolder,filesep,Prefix,filesep,'IndividualFits.mat'],'file')
-                IndividualFits(i)=load([DropboxFolder,filesep,Prefix,filesep,'IndividualFits.mat']);
+            if exist([dropboxFolder,filesep,Prefix,filesep,'IndividualFits.mat'],'file')
+                IndividualFits(i)=load([dropboxFolder,filesep,Prefix,filesep,'IndividualFits.mat']);
             end
             
             %Integrated amount accounting from degradation. This is generated using
@@ -301,27 +286,27 @@ for i=1:length(CompiledSets)
             %         AccumulationData(i)=load([DropboxFolder,filesep,Prefix,filesep,'AccumulationData.mat']);
             %     end
             
-            if exist([DropboxFolder,filesep,Prefix,filesep,'MeanFitsUp.mat'],'file')
-                MeanFitsUp(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanFitsUp.mat']);
+            if exist([dropboxFolder,filesep,Prefix,filesep,'MeanFitsUp.mat'],'file')
+                MeanFitsUp(i)=load([dropboxFolder,filesep,Prefix,filesep,'MeanFitsUp.mat']);
             end
             
-            if exist([DropboxFolder,filesep,Prefix,filesep,'MeanLinearFitsUp.mat'],'file')
-                MeanLinearFitsUp(i)=load([DropboxFolder,filesep,Prefix,filesep,'MeanLinearFitsUp.mat']);
+            if exist([dropboxFolder,filesep,Prefix,filesep,'MeanLinearFitsUp.mat'],'file')
+                MeanLinearFitsUp(i)=load([dropboxFolder,filesep,Prefix,filesep,'MeanLinearFitsUp.mat']);
             end
             
             
             %Load Ellipses
             try
-                Ellipses(i)=load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses');
+                Ellipses(i)=load([dropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses');
             catch
             end
             
             % Load Particles
-            load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat']);
+            load([dropboxFolder,filesep,Prefix,filesep,'Particles.mat']);
             ParticleTemp(i).Particles=Particles;
             %Count ellipses
-            if exist([DropboxFolder,filesep,Prefix,filesep,'CountEllipses.mat'],'file')
-                CountEllipses(i)=load([DropboxFolder,filesep,Prefix,filesep,'CountEllipses.mat']);
+            if exist([dropboxFolder,filesep,Prefix,filesep,'CountEllipses.mat'],'file')
+                CountEllipses(i)=load([dropboxFolder,filesep,Prefix,filesep,'CountEllipses.mat']);
             else
                 %This is not the smarter way to do this. It relies on having at the
                 %end a set that has been analyzed
@@ -332,15 +317,15 @@ for i=1:length(CompiledSets)
         % Here are the fields that we need to load in case there's no
         % CompiledParticles. i.e. Only CompiledNuclei.mat exists.
         % Load APDivisions if it exists
-        if exist([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'file')
-            APDivisions(i)=load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat']);
+        if exist([dropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'file')
+            APDivisions(i)=load([dropboxFolder,filesep,Prefix,filesep,'APDivision.mat']);
         else
         end
         
         %Load CompiledNuclei if it exists
-        if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],'file') & ~noCompiledNuclei
+        if exist([dropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],'file') & ~noCompiledNuclei
             try
-                DataNucleiTemp=load([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat']);
+                DataNucleiTemp=load([dropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat']);
                 DataNucleiTemp=orderfields(DataNucleiTemp);
                 DataNuclei(i)=DataNucleiTemp;
             catch
@@ -352,9 +337,9 @@ for i=1:length(CompiledSets)
     end
 end
 
-if ~justprefixes
+if ~justPrefixes
     %Now add the SetName and APDivision information
-    if exist([DropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],'file')
+    if exist([dropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],'file')
         for i=1:length(Data)
             Data(i).SetName=SetNames{i};
             
