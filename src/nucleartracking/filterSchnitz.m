@@ -3,6 +3,8 @@ function schnitzcells = filterSchnitz(schnitzcells, imSize)
 % Disapprove spurious nuclei that are too near edges
 % and don't last long.
 
+schnitzcellsOld = schnitzcells; %for validation later
+
 %% time thresholding
 lengths = {[], [], []};
 
@@ -64,5 +66,7 @@ for s = 1:length(schnitzcells)
     end
     
 end
+
+schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells);
 
 end

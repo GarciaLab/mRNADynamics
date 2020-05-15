@@ -4,6 +4,8 @@ function alignCompiledParticlesByAnaphase(Prefix)
     ~, ~, ~, ~, ~,~] = readMovieDatabase(Prefix);
 resultsFolder = [DropboxFolder, filesep, Prefix];
 
+liveExperiment = LiveExperiment(Prefix);
+
 fullEmbryoExists =  exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'], 'file');
 
 load([resultsFolder, filesep, 'CompiledParticles.mat']);
@@ -49,6 +51,8 @@ for ch = 1:length(CompiledParticles)
     end
 end
 
-
+checkSchnitzcellsCompiledParticlesConsistency(...
+    getSchnitzcells(liveExperiment),...
+    CompiledParticles)
 
 save([resultsFolder, filesep, 'CompiledParticles.mat'],'CompiledParticles','-append');
