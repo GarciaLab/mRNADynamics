@@ -6,6 +6,8 @@ function [Data, prefixes, resultsFolder,...
 % DESCRIPTION
 % Loads all data sets of a certain type and outputs them into the structure
 % Data
+% Note: This function will automatically search through any results or  
+%       dropbox folders that are listed in your ComputerFolder.csv file
 %
 % PARAMETERS
 % DataType: This is a string that is identical to the name of the tab in
@@ -15,8 +17,7 @@ function [Data, prefixes, resultsFolder,...
 % 'noCompiledNuclei'
 % 'justPrefixes'
 % 'localMovieDatabase' - use MovieDatabase in same local directory as
-% DataStatus file
-% 'dataStatusFolder', dataStatusFolder: 
+%                        DataStatus file
 %
 % OUTPUT
 % Data: Returns the Data structure containing all of the relevant datasets from your
@@ -25,26 +26,28 @@ function [Data, prefixes, resultsFolder,...
 % resultsFolder: location of the data
 % ignoredPrefixes: list of prefixes not used to compile data
 %
-
-
-%Author (contact): Hernan Garcia (hgarcia@berkeley.edu)
-%Created:
-%Last Updated: 5/13/2020 MT (previously 3/18/2020 JL)
+%
+% Author (contact): Hernan Garcia (hgarcia@berkeley.edu)
+% Created:
+% Last Updated: 5/13/2020 MT (previously 3/18/2020 JL)
+%
 
 % Initialize
 prefixes = {};
 Data = struct();
-resultsFolder = '';
 dataStatusFilename = 'DataStatus.*';    %NB: This naming convention is now enforced inside findDataStatus.m
 
 % Process the options
 [noCompiledNuclei, justPrefixes, inputOutputFits, inputOutputModel, ... 
-    localMovieDatabase,dataStatusFolder] = determineLoadMS2SetsOptions(varargin);
+    localMovieDatabase] = determineLoadMS2SetsOptions(varargin);
 
 %Get some of the default folders
-[rawDataPath, ProcPath, ~, MS2CodePath, PreProcPath,...
-    configValues, movieDatabasePath, movieDatabaseFolder, movieDatabase, ...
+[rawDataPath, ProcPath, ~, MS2CodePath, PreProcPath,configValues, ...
+    movieDatabasePath, movieDatabaseFolder, movieDatabase, ...
     allDropboxFolders] =  DetermineLocalFolders;
+
+
+%% FIND CORRECT PROJECT TAB IN DATASTATUS
 
 % Find all DataStatus.xlsx files in all DropboxFolders
 dataStatusFolders = findDataStatus(allDropboxFolders);
@@ -75,6 +78,8 @@ if localMovieDatabase
     movieDatabase = csv2cell(movieDatabasePath, 'fromfile');
 end
 
+
+%% EXTRACT CONTENTS OF PROJECT TAB
 
 %Now, load the contents of the DataStatus.XLSX tab we just found
 dataStatusDir = dir([dropboxFolder,filesep,dataStatusFilename]);

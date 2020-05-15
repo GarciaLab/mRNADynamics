@@ -46,7 +46,9 @@ end
 % Check that we found the tab name in one, and only one, DataStatus.xlsx
 % file
 if isempty(dataStatusToCheck)
-    error(['No DataStatus.xlsx found with a tab named ', dataType, '.'])
+    errormsg = ['No DataStatus.xlsx found with a tab named ', dataType,...
+                '. \nDo you have the folder containing the DataStatus file listed as a ''Results'' or ''Dropbox'' folder in ComputerFolders.csv?'];
+    error(sprintf(errormsg)) %need sprintf to get line break in error message
 elseif length(dataStatusToCheck) > 1
     error(['More than one DataStatus.xlsx found with a tab named ', dataType, '.'])
 else
