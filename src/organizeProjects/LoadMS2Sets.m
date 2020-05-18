@@ -1,5 +1,5 @@
-function [Data, prefixes, resultsFolder,...
-    ignoredPrefixes, dataTypeTabContents] = LoadMS2Sets(dataType, varargin)
+function [Data, readyPrefixes, resultsFolder,...
+    ignoredPrefixes, dataTypeTabContents, allPrefixes] = LoadMS2Sets(dataType, varargin)
 %
 % Data = LoadMS2Sets(DataType)
 %
@@ -33,18 +33,21 @@ function [Data, prefixes, resultsFolder,...
 %
 
 % Initialize
-prefixes = {};
 Data = struct();
+readyPrefixes = {};
+resultsFolder = '';
+ignoredPrefixes = {};
+% dataTypeTabContents = ;
+allPrefixes = {};
+
 dataStatusFilename = 'DataStatus.*';    %NB: This naming convention is now enforced inside findDataStatus.m
 
 % Process the options
 [noCompiledNuclei, justPrefixes, inputOutputFits, inputOutputModel, ... 
     localMovieDatabase] = determineLoadMS2SetsOptions(varargin);
 
-%Get some of the default folders
-[rawDataPath, ProcPath, ~, MS2CodePath, PreProcPath,configValues, ...
-    movieDatabasePath, movieDatabaseFolder, movieDatabase, ...
-    allDropboxFolders] =  DetermineLocalFolders;
+% Get MovieData contents and Dropbox/Results folders
+[~, ~, ~, ~, ~, ~, ~, ~, movieDatabase, allDropboxFolders] =  DetermineLocalFolders;
 
 
 %% FIND CORRECT PROJECT TAB IN DATASTATUS
@@ -83,34 +86,36 @@ end
 
 %Now, load the contents of the DataStatus.XLSX tab we just found
 dataStatusDir = dir([dropboxFolder,filesep,dataStatusFilename]);
-dataTypeTabContents = readcell([dropboxFolder,filesep,dataStatusDir(1).name],'Sheet', dataType);
+dataTypeTabContents = readcell([dropboxFolder,filesep,dataStatusDir(1).name], ...
+                               'Sheet', dataType);
+
+%Get the Prefixes for all datasets
+[allPrefixes,prefixCellText] = getPrefixesFromDataStatusTab(dataTypeTabContents);   %prefixCellText was previously called SetNames
 
 
-%Which data sets are approved?
-CompileRow=find(strcmpi(dataTypeTabContents(:,1),'AnalyzeLiveData Compile Particles')|...
-    strcmpi(dataTypeTabContents(:,1),'CompileParticles')|...
-    strcmpi(dataTypeTabContents(:,1),'CompileNuclearProtein'));
-CompiledSets=find(strcmpi(dataTypeTabContents(CompileRow,:),'READY')|strcmpi(dataTypeTabContents(CompileRow,:),'ApproveAll'));
+%Find which datasets are "ready" or "approved". All others are "ignored".
+compileRow = find(strcmpi(dataTypeTabContents(:,1),'AnalyzeLiveData Compile Particles') |...
+                  strcmpi(dataTypeTabContents(:,1),'CompileParticles') |...
+                  strcmpi(dataTypeTabContents(:,1),'CompileNuclearProtein'));
 
-ignoredSets=find( (~strcmpi(dataTypeTabContents(CompileRow,:),'READY')) & (~strcmpi(dataTypeTabContents(CompileRow,:),'ApproveAll')));
-ignoredSets = ignoredSets(2:end);
+readySets = find(strcmpi(dataTypeTabContents(compileRow,:),'READY') | ...
+               strcmpi(dataTypeTabContents(compileRow,:),'ApproveAll'));
+readySets = readySets - 1;  %shift to excluded the label column
 
-PrefixRow=strcmp(dataTypeTabContents(:,1),'Prefix:');
-
-ignoredPrefixes = cell(1, length(ignoredSets));
-
-for i=1:length(ignoredSets)
-    SetName=dataTypeTabContents{PrefixRow,ignoredSets(i)};
-    Quotes=strfind(SetName,'''');
-    ignoredPrefixes{i} = SetName((Quotes(1)+1):(Quotes(end)-1));
-end
-    
-    
-if isempty(CompiledSets)
-    error('No ApproveAll or READY sets found')
+if isempty(readySets)
+    error('No ApproveAll or READY sets found.')
 end
 
-clear SetNames
+ignoredSets = find( (~strcmpi(dataTypeTabContents(compileRow,:),'READY')) & ...
+                    (~strcmpi(dataTypeTabContents(compileRow,:),'ApproveAll')) );
+ignoredSets = ignoredSets(2:end) - 1;   %shifts to exclude the label column
+
+%Save the ready and ignored prefixes separately
+readyPrefixes = allPrefixes(readySets);
+ignoredPrefixes = allPrefixes(ignoredSets);
+
+
+%MT 5/17/20: I don't know why this is necessary ...
 clear APDivisions
 clear MeanFits
 clear MeanLinearFits
@@ -122,66 +127,39 @@ clear InputOutputFits
 clear SingleParticleFitsMCMC
 
 
-
 %Check the consistency between all the data acquired and analyzed in terms
 %of ExperimentType, ExperimentAxis, and APResolution. Get this out of
 %MovieDatabase
-ExperimentType=[];
-ExperimentAxis=[];
-APResolution=[];
+experimentTypes = cell(1,length(readyPrefixes));
+experimentAxes = cell(1,length(readyPrefixes));
+APResolutions = zeros(1,length(readyPrefixes));
 
-prefixes = cell(1, length(CompiledSets));
-
-for i=1:length(CompiledSets)
-    SetName=dataTypeTabContents{PrefixRow,CompiledSets(i)};
-    Quotes=strfind(SetName,'''');
-    Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
-    prefixes{i} = Prefix;
+for i=1:length(readyPrefixes)
+    Prefix = readyPrefixes{i};
     
-    [~, ExperimentTypeFromDatabase, ExperimentAxisFromDatabase, ~, ~, APResolutionFromDatabase, ~,...
-        ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
+    [~, currExperimentType, currExperimentAxis, ~, ~, currAPResolution, ...
+     ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~] ...
+        = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
     
-    
-    %Load and check the experiment details consistency
-    if ~isempty(ExperimentType)
-        if ~strcmpi(ExperimentType, ExperimentTypeFromDatabase)
-            error('Inconsistent experiment types found among the data sets.')
-        end
-    else
-        ExperimentType = ExperimentTypeFromDatabase;
-    end
-    if ~isempty(ExperimentAxis)
-        if ~strcmpi(ExperimentAxis, ExperimentAxisFromDatabase)
-            error('Inconsistent experiment axis found among the data sets.')
-        end
-    else
-        ExperimentAxis = ExperimentAxisFromDatabase;
-    end
-    if ~isempty(APResolution)
-        if APResolution ~= APResolutionFromDatabase
-            error('Inconsistent axis resolution found among the data sets.')
-        end
-    else
-        APResolution = APResolutionFromDatabase;
-    end
+    experimentTypes{i} = currExperimentType;
+    experimentAxes{i} = currExperimentAxis;
+    APResolutions(i) = currAPResolution;
 end
 
-%7/15/19 JL: DropboxFolder was already defined above, why do we need this
-%line here? I'm running into issues where I'm trying to load data from a
-%different folder than my normal DynamicsResults, and using
-%readMovieDatabase defaults my DropboxFolder to my normal DynamicsResults,
-%resulting in a failure to load the datasets I want.
-%[~,~,DropboxFolder] = readMovieDatabase(Prefix, optionalResults);
+%Compare all other experiements to the first experiment. 
+if min(strcmpi(experimentTypes,experimentTypes{1})) == 0  %will be true if strcmpi returns '0' (false) for any position in experimentTypes
+    error('Inconsistent ExperimentType found among the data sets.')
+elseif min(strcmpi(experimentAxes,experimentAxes{1})) == 0
+    error('Inconsistent ExperimentAxis found among the data sets.')
+elseif min(diff(APResolutions)) == 0 | isempty(diff(APResolutions))
+    error('Inconsistent APResolution found among the data sets.')
+end
 
-%Find and load the different prefixes
-PrefixRow=find(strcmpi(dataTypeTabContents(:,1),'Prefix:'));
-for i=1:length(CompiledSets)
-    
-    
-    SetName=dataTypeTabContents{PrefixRow,CompiledSets(i)};
-    SetNames{i}=SetName;
-    Quotes=strfind(SetName,'''');
-    Prefix=SetName((Quotes(1)+1):(Quotes(end)-1));
+%% LOAD DATA
+
+% Load the data from the various prefixes
+for i=1:length(readyPrefixes)
+    currPrefix = readyPrefixes{i};
     
     if ~justPrefixes
         
@@ -190,12 +168,12 @@ for i=1:length(CompiledSets)
         %structure as well as use it to check the consistency of the analysis
         %performed with the different data sets.
         
-        if exist([dropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],'file')
+        if exist([dropboxFolder,filesep,currPrefix,filesep,'CompiledParticles.mat'],'file')
             %Need to try this in case there's some incompatibility in terms of the
             %structures. This is because we might have xls sets that have been
             %compiled using different versions of CompileParticles.m
             try
-                DataTemp=load([dropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat']);
+                DataTemp=load([dropboxFolder,filesep,currPrefix,filesep,'CompiledParticles.mat']);
                 DataTemp=orderfields(DataTemp);
                 Data(i)=DataTemp;
             catch
@@ -218,71 +196,71 @@ for i=1:length(CompiledSets)
 
             
             %Fit results assuming the same slopes
-            if exist([dropboxFolder,filesep,Prefix,filesep,'MeanFits.mat'],'file')
-                MeanFits(i)=load([dropboxFolder,filesep,Prefix,filesep,'MeanFits.mat']);
+            if exist([dropboxFolder,filesep,currPrefix,filesep,'MeanFits.mat'],'file')
+                MeanFits(i)=load([dropboxFolder,filesep,currPrefix,filesep,'MeanFits.mat']);
             else
             end
             
             %Linear slope fit results
-            if exist([dropboxFolder,filesep,Prefix,filesep,'MeanLinearFits.mat'],'file')
-                MeanLinearFits(i)=load([dropboxFolder,filesep,Prefix,filesep,'MeanLinearFits.mat']);
+            if exist([dropboxFolder,filesep,currPrefix,filesep,'MeanLinearFits.mat'],'file')
+                MeanLinearFits(i)=load([dropboxFolder,filesep,currPrefix,filesep,'MeanLinearFits.mat']);
             end
             
             % Fit results from the MeanFitAPAsymmetric.m
-            if exist([dropboxFolder,filesep,Prefix,filesep,'MeanFitsV2.mat'],'file')
-                MeanFitsV2(i)=load([dropboxFolder,filesep,Prefix,filesep,'MeanFitsV2.mat']);
+            if exist([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsV2.mat'],'file')
+                MeanFitsV2(i)=load([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsV2.mat']);
             else
             end
             
             % Fit results from the MeanFitAPAsymmetric.m
-            if exist([dropboxFolder,filesep,Prefix,filesep,'MeanFitsAsymmetric.mat'],'file')
-                MeanFitsAsymmetric(i)=load([dropboxFolder,filesep,Prefix,filesep,'MeanFitsAsymmetric.mat']);
+            if exist([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsAsymmetric.mat'],'file')
+                MeanFitsAsymmetric(i)=load([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsAsymmetric.mat']);
             else
             end
             
             
             % Fit results from the FitTiltedTrapezoids_4Clicks.m
-            if exist([dropboxFolder,filesep,Prefix,filesep,'MeanFitsV3.mat'],'file')
-                MeanFitsV3(i)=load([dropboxFolder,filesep,Prefix,filesep,'MeanFitsV3.mat']);
+            if exist([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsV3.mat'],'file')
+                MeanFitsV3(i)=load([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsV3.mat']);
             else
             end
             
             %Fit results using MeanFitsMCMC
-            if exist([dropboxFolder,filesep,Prefix,filesep,'MeanFitsMCMC.mat'],'file')
-                MeanFitsMCMC(i)=load([dropboxFolder,filesep,Prefix,filesep,'MeanFitsMCMC.mat']);
+            if exist([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsMCMC.mat'],'file')
+                MeanFitsMCMC(i)=load([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsMCMC.mat']);
             else
             end
             %Fit results using InputOutputFits
             if inputOutputFits
-                if exist([dropboxFolder,filesep,Prefix,filesep,'InputOutputFits_',...
+                if exist([dropboxFolder,filesep,currPrefix,filesep,'InputOutputFits_',...
                         inputOutputModel,'.mat'],'file')
-                    InputOutputFits(i)=load([dropboxFolder,filesep,Prefix,filesep,...
+                    InputOutputFits(i)=load([dropboxFolder,filesep,currPrefix,filesep,...
                         'InputOutputFits_',inputOutputModel,'.mat']);
                 else
                 end
             end
             
             %Single particle results using MeanFitsMCMC
-            if exist([dropboxFolder,filesep,Prefix,filesep,'SingleParticleFitsMCMC.mat'],'file')
-                SingleParticleFitsMCMC(i)=load([dropboxFolder,filesep,Prefix,filesep,'SingleParticleFitsMCMC.mat']);
+            if exist([dropboxFolder,filesep,currPrefix,filesep,'SingleParticleFitsMCMC.mat'],'file')
+                SingleParticleFitsMCMC(i)=load([dropboxFolder,filesep,currPrefix,filesep,'SingleParticleFitsMCMC.mat']);
             else
             end
             
             try
-                Schnitzcells(i)=load([dropboxFolder,filesep,Prefix(1:end),filesep,Prefix(1:end),'_lin.mat'], 'schnitzcells');
+                Schnitzcells(i)=load([dropboxFolder,filesep,currPrefix(1:end),filesep,currPrefix(1:end),'_lin.mat'], 'schnitzcells');
             catch
             end
             
             
             %Fit to the integrals
-            if exist([dropboxFolder,filesep,Prefix,filesep,'FitIntegralResults.mat'],'file')
-                IntegralFits(i)=load([dropboxFolder,filesep,Prefix,filesep,'FitIntegralResults.mat']);
+            if exist([dropboxFolder,filesep,currPrefix,filesep,'FitIntegralResults.mat'],'file')
+                IntegralFits(i)=load([dropboxFolder,filesep,currPrefix,filesep,'FitIntegralResults.mat']);
             end
             
             
             %Fits to individual traces
-            if exist([dropboxFolder,filesep,Prefix,filesep,'IndividualFits.mat'],'file')
-                IndividualFits(i)=load([dropboxFolder,filesep,Prefix,filesep,'IndividualFits.mat']);
+            if exist([dropboxFolder,filesep,currPrefix,filesep,'IndividualFits.mat'],'file')
+                IndividualFits(i)=load([dropboxFolder,filesep,currPrefix,filesep,'IndividualFits.mat']);
             end
             
             %Integrated amount accounting from degradation. This is generated using
@@ -291,27 +269,27 @@ for i=1:length(CompiledSets)
             %         AccumulationData(i)=load([DropboxFolder,filesep,Prefix,filesep,'AccumulationData.mat']);
             %     end
             
-            if exist([dropboxFolder,filesep,Prefix,filesep,'MeanFitsUp.mat'],'file')
-                MeanFitsUp(i)=load([dropboxFolder,filesep,Prefix,filesep,'MeanFitsUp.mat']);
+            if exist([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsUp.mat'],'file')
+                MeanFitsUp(i)=load([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsUp.mat']);
             end
             
-            if exist([dropboxFolder,filesep,Prefix,filesep,'MeanLinearFitsUp.mat'],'file')
-                MeanLinearFitsUp(i)=load([dropboxFolder,filesep,Prefix,filesep,'MeanLinearFitsUp.mat']);
+            if exist([dropboxFolder,filesep,currPrefix,filesep,'MeanLinearFitsUp.mat'],'file')
+                MeanLinearFitsUp(i)=load([dropboxFolder,filesep,currPrefix,filesep,'MeanLinearFitsUp.mat']);
             end
             
             
             %Load Ellipses
             try
-                Ellipses(i)=load([dropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses');
+                Ellipses(i)=load([dropboxFolder,filesep,currPrefix,filesep,'Ellipses.mat'], 'Ellipses');
             catch
             end
             
             % Load Particles
-            load([dropboxFolder,filesep,Prefix,filesep,'Particles.mat']);
+            load([dropboxFolder,filesep,currPrefix,filesep,'Particles.mat']);
             ParticleTemp(i).Particles=Particles;
             %Count ellipses
-            if exist([dropboxFolder,filesep,Prefix,filesep,'CountEllipses.mat'],'file')
-                CountEllipses(i)=load([dropboxFolder,filesep,Prefix,filesep,'CountEllipses.mat']);
+            if exist([dropboxFolder,filesep,currPrefix,filesep,'CountEllipses.mat'],'file')
+                CountEllipses(i)=load([dropboxFolder,filesep,currPrefix,filesep,'CountEllipses.mat']);
             else
                 %This is not the smarter way to do this. It relies on having at the
                 %end a set that has been analyzed
@@ -322,15 +300,15 @@ for i=1:length(CompiledSets)
         % Here are the fields that we need to load in case there's no
         % CompiledParticles. i.e. Only CompiledNuclei.mat exists.
         % Load APDivisions if it exists
-        if exist([dropboxFolder,filesep,Prefix,filesep,'APDivision.mat'],'file')
-            APDivisions(i)=load([dropboxFolder,filesep,Prefix,filesep,'APDivision.mat']);
+        if exist([dropboxFolder,filesep,currPrefix,filesep,'APDivision.mat'],'file')
+            APDivisions(i)=load([dropboxFolder,filesep,currPrefix,filesep,'APDivision.mat']);
         else
         end
         
         %Load CompiledNuclei if it exists
-        if exist([dropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],'file') & ~noCompiledNuclei
+        if exist([dropboxFolder,filesep,currPrefix,filesep,'CompiledNuclei.mat'],'file') & ~noCompiledNuclei
             try
-                DataNucleiTemp=load([dropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat']);
+                DataNucleiTemp=load([dropboxFolder,filesep,currPrefix,filesep,'CompiledNuclei.mat']);
                 DataNucleiTemp=orderfields(DataNucleiTemp);
                 DataNuclei(i)=DataNucleiTemp;
             catch
@@ -344,9 +322,9 @@ end
 
 if ~justPrefixes
     %Now add the SetName and APDivision information
-    if exist([dropboxFolder,filesep,Prefix,filesep,'CompiledParticles.mat'],'file')
+    if exist([dropboxFolder,filesep,currPrefix,filesep,'CompiledParticles.mat'],'file')
         for i=1:length(Data)
-            Data(i).SetName=SetNames{i};
+            Data(i).SetName=prefixCellText{i};
             
             if exist('ImageRotation','var')
                 Data(i).ImageRotation=ImageRotation(i);
@@ -430,49 +408,49 @@ if ~justPrefixes
         end
     end
     
-% Add information to DataNuclei if it exists
-if exist('DataNuclei','var')
-    for i=1:length(DataNuclei)
-        DataNuclei(i).SetName=SetNames{i};
-        try
-            if exist('APDivisions','var')
-                DataNuclei(i).APDivision=APDivisions(i).APDivision;
+    % Add information to DataNuclei if it exists
+    if exist('DataNuclei','var')
+        for i=1:length(DataNuclei)
+            DataNuclei(i).SetName=prefixCellText{i};
+            try
+                if exist('APDivisions','var')
+                    DataNuclei(i).APDivision=APDivisions(i).APDivision;
+                end
             end
         end
     end
-end
 
 
 
-%If we have both particles and nuclei, then combine everything
-%First, check to see if we have empty structures and clear them if we do
-if exist('Data','var') && isempty(fieldnames(Data))
-    clear Data
-end
-if exist('DataNuclei','var') && isempty(fieldnames(DataNuclei))
-    clear DataNuclei
-end
-
-if exist('Data','var') && exist('DataNuclei','var')
-    DataTemp=Data;
-    clear Data
-    for i=1:length(DataTemp)
-        Data(i).Particles=DataTemp(i);
-        Data(i).Nuclei=DataNuclei(i);
+    %If we have both particles and nuclei, then combine everything
+    %First, check to see if we have empty structures and clear them if we do
+    if exist('Data','var') && isempty(fieldnames(Data))
+        clear Data
     end
-elseif (~exist('Data', 'var')) && exist('DataNuclei', 'var')
-    Data=DataNuclei;
-elseif  (~exist('Data','var')) && (~exist('DataNuclei','var'))
-    error('No CompiledParticles found. Check DynamicsResults folder as well as DataStatus.XLSX.')
-end
-
-if noCompiledNuclei
-    DataTemp = Data;
-    clear Data
-    for i=1:length(DataTemp)
-        Data(i).Particles=DataTemp(i);
+    if exist('DataNuclei','var') && isempty(fieldnames(DataNuclei))
+        clear DataNuclei
     end
-end
+
+    if exist('Data','var') && exist('DataNuclei','var')
+        DataTemp=Data;
+        clear Data
+        for i=1:length(DataTemp)
+            Data(i).Particles=DataTemp(i);
+            Data(i).Nuclei=DataNuclei(i);
+        end
+    elseif (~exist('Data', 'var')) && exist('DataNuclei', 'var')
+        Data=DataNuclei;
+    elseif  (~exist('Data','var')) && (~exist('DataNuclei','var'))
+        error('No CompiledParticles found. Check DynamicsResults folder as well as DataStatus.XLSX.')
+    end
+
+    if noCompiledNuclei
+        DataTemp = Data;
+        clear Data
+        for i=1:length(DataTemp)
+            Data(i).Particles=DataTemp(i);
+        end
+    end
 
 end
 
@@ -480,3 +458,4 @@ save([projectFolder, filesep, 'prefixes.mat'], 'prefixes');
 
 
 end
+
