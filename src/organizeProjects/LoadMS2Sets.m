@@ -147,15 +147,17 @@ for i=1:length(readyPrefixes)
 end
 
 %Compare all other experiements to the first experiment. 
-if min(strcmpi(experimentTypes,experimentTypes{1})) == 0  %will be true if strcmpi returns '0' (false) for any position in experimentTypes
+if min(strcmpi(experimentTypes,experimentTypes{1})) == 0  %will be true if strcmpi returns '0' (false), instead of '1' (true), for any position in experimentTypes
     error('Inconsistent ExperimentType found among the data sets.')
 elseif min(strcmpi(experimentAxes,experimentAxes{1})) == 0
     error('Inconsistent ExperimentAxis found among the data sets.')
-elseif min(abs(diff(APResolutions))) == 0 | isempty(diff(APResolutions))
+elseif min(abs(diff(APResolutions))) == 0
     error('Inconsistent APResolution found among the data sets.')
 end
 
+
 %% LOAD DATA
+% MT 5/17/20: Yikes, this is a mess and so hard to follow ...
 
 % Load the data from the various prefixes
 for i=1:length(readyPrefixes)
