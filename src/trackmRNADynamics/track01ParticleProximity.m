@@ -10,7 +10,7 @@ function [Particles] = track01ParticleProximity(...
   %this
   
   if displayFigures
-    drawnow
+    drawnowgl
   end
   % Extract Time Vector
   TimeVec = [FrameInfo.Time];
