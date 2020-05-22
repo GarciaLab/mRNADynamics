@@ -75,6 +75,8 @@ classdef LiveExperiment
         nc13 = 0;
         nc14 = 0;
         
+        fileMode = '';
+        
         experimentType = '';
         experimentAxis = '';
         APResolution = '';
@@ -196,6 +198,7 @@ classdef LiveExperiment
             this.nc13 = this.anaphaseFrames(5);
             this.nc14 = this.anaphaseFrames(6);
             
+            evalc('[~, this.fileMode] = DetermineFileMode(this.rawFolder)');    %Using evalc to supress displays to the command window from the function DetermineFileMode
             
             
         end
@@ -429,6 +432,17 @@ classdef LiveExperiment
             
            anaphaseFrames = this.anaphaseFrames;
             
+        end
+        
+        function rawDataFile = getRawDataFile(this)
+            dashPositions = strfind(this.Prefix,'-');
+            rawFileName= this.Prefix((dashPositions(3)+1):end);
+            
+            if strcmpi(this.fileMode, 'LIFExport')
+                rawDataFile = [this.rawFolder, filesep, rawFileName, '.lif'];
+            else
+                error('getRawDataFile function only supports LIF files right now')
+            end
         end
         
     end
