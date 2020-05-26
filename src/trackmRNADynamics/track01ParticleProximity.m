@@ -6,25 +6,24 @@ function [Particles] = track01ParticleProximity(...
   %used throughout tracking process and takes a first pass at linking spots
   %into particles based on proximity alone
   
-  %NOTE: currently not supporting a retracking option. Need to think about
-  %this
+  %NOTE: currently not supporting a retracking option or displayFigures option.
+  % Need to think about this
   
-  if displayFigures
-    drawnowgl
-  end
   % Extract Time Vector
   TimeVec = [FrameInfo.Time];
+  
   % Check to see if we have nucleus tracking info
   UseNuclei = ~isempty(schnitzcells);
   SlidingWindowSize = 2; % size of window used for time averaging
   
   for Channel = 1:NCh
+    
     for CurrentFrame = 1:length(Spots{Channel})
       
       % Get the positions of ALL spots (approved and disapproved)
       [NewSpotsX, NewSpotsY, NewSpotsZ] = SpotsXYZ(Spots{Channel}(CurrentFrame));            
       
-      if CurrentFrame == 1 && ~isempty(NewSpotsX)
+      if CurrentFrame==1 && ~isempty(NewSpotsX)
         %Initialize the Particles structure 
         for j = 1:length(NewSpotsX)
           Particles{Channel}(j).Frame = CurrentFrame;
@@ -38,14 +37,15 @@ function [Particles] = track01ParticleProximity(...
         end
 
       elseif ~isempty(NewSpotsX)
-        %If not the first frame, then we must link current particles to
+        %If particle structure is not empty, then we must link current particles to
         %prev particles wherever possible
         dT = TimeVec(CurrentFrame)-TimeVec(CurrentFrame-1);
         SearchRadius = SearchRadiusMicrons * sqrt(dT);
+        
         % if we have nulceus tracking info, calculate average
         % frame-over-frame shift
-        if UseNuclei        
-          %find nuclei that were present this frame and last
+        if UseNuclei
+          % use sliding window to estimate average nucleus movement
           NucleiDxVec = [];
           NucleiDyVec = [];
           NewNucleiX = [];
@@ -74,6 +74,7 @@ function [Particles] = track01ParticleProximity(...
           SpotBulkDxVec = zeros(size(NewSpotsX));
           SpotBulkDyVec = zeros(size(NewSpotsY));
         end
+        
         %Get a list of the particles that were present in
         %the previous frame and of their positions.
         ExtantParticles = [];
@@ -89,12 +90,13 @@ function [Particles] = track01ParticleProximity(...
           end
 
         end
-
+ 
         % If there were particles present in the previous frame,
         % then we find their distances to the spots present in
         % the current frame. Otherwise, we create new particles
         % for each new spot.
-        % We keep track of which spots goes to a new or old
+        
+        % We keep track of which spots go to a new or old
         % particle using the NewParticle array.
         NewParticleFlag = true(size(NewSpotsX));
 
@@ -109,8 +111,9 @@ function [Particles] = track01ParticleProximity(...
           % Find existing particles and new spots are close enough to be 
           % linked. In cases of degenerate assignemnt, take pairt that
           % minimizes jump distance
-          [MatchIndices,~,~] = matchpairs(DistanceMat,.5*SearchRadius);
-          NewParticleFlag(MatchIndices(:,1)) = false;          
+          [MatchIndices,~,~] = matchpairs(DistanceMat,0.5*SearchRadius);
+          NewParticleFlag(MatchIndices(:,1)) = false;         
+          
           % Assign matchesd spots to existing particles
           for j = 1:size(MatchIndices)
             ParticleIndex = ExtantParticles(MatchIndices(j,2));
@@ -141,6 +144,30 @@ function [Particles] = track01ParticleProximity(...
         end
       end
 
+    end
+    
+    % adjust for z stack shifts
+    if isfield(FrameInfo,'seriesFlag')      
+      % need to incorporate this into export scripts
+    else
+      % get list of all frames and corresponding z positions
+      frameVec = [Particles{Channel}.Frame];
+      zPosVec = [Particles{Channel}.zPos];
+      
+      % get iteratable frame  list
+      frameIndex = unique(frameVec);
+      avgZProfile = NaN(size(frameIndex));
+      
+      for f = 1:length(frameIndex)
+        avgZProfile(f) = nanmean(zPosVec(frameVec==frameIndex(f)));
+      end
+      
+      % generate new det-trended z variable
+      for p = 1:length(Particles{Channel})
+        fVec = Particles{Channel}(p).Frame;
+        Particles{Channel}(p).zPosDetrended = Particles{Channel}(p).zPos - avgZProfile(ismember(frameIndex,fVec));
+      end
+      
     end
   end
 end
