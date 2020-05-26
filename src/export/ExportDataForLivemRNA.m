@@ -81,6 +81,9 @@ function Prefix = ExportDataForLivemRNA(varargin)
 cleanupObj = onCleanup(@myCleanupFun);
 clear getMovieMat;
 clear getHisMat;
+clear hisMat;
+clear movieMat;
+
 warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
 

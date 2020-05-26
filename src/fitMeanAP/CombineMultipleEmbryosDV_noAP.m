@@ -74,7 +74,7 @@ end
 
 %Find number of embryos being combined
 
-allData(cellfun(@isempty,{allData.AllTracesVector})) = []; %don't include embryos that have no particles
+allData(cellfun(@isempty,{allData.NParticlesAP})) = []; %don't include embryos that have no particles
 numEmbryos = size(allData,2);
 
 %Find the total number of frames for each embryo
@@ -100,15 +100,12 @@ for embryo = 1:numEmbryos
     maxTime(embryo) = allData(embryo).ElapsedTime(numFrames(embryo));
 end
 
-try
-    allData(isempty(allData(embryo).NParticlesAP)) = [];
-end
+
+allData(isempty(allData(embryo).NParticlesAP)) = [];
 numEmbryos = length(allData);
 
 %Store the number of AP bins (this should always be 41).
-try
-    numAPBins = maxAPIndex(1);
-end
+numAPBins = maxAPIndex(1);
 timeStep = median(diff([allData.ElapsedTime]));
 
 if dv
@@ -147,13 +144,13 @@ end
 %This inserts the variables to be combined into a structure such that there
 %is room to shift the elements around as needed to align by ElapsedTime.
 for embryo = 1:numEmbryos
-    if ~isempty(allData(embryo).AllTracesVector)
+    if ~isempty(allData(embryo).NParticlesAP)
         %ElapsedTime
         combinedData(embryo).ElapsedTime = NaN(1,maxElapsedTime + 1);
         combinedData(embryo).ElapsedTime(1,1:length(allData(embryo).ElapsedTime))...
             = allData(embryo).ElapsedTime;
         %NParticlesAP
-        if iscell(allData(embryo).NParticlesAP) && ~isempty(allData(embryo).NParticlesAP{ch})
+        if iscell(allData(embryo).NParticlesAP)
             allData(embryo).NParticlesAP = allData(embryo).NParticlesAP{ch};
             allData(embryo).NParticlesDV = allData(embryo).NParticlesDV{ch};
             

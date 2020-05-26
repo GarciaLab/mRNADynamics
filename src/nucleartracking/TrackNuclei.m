@@ -16,7 +16,8 @@ function TrackNuclei(Prefix,varargin)
 % shift between frames (greatly reduces runtime).
 % 'retrack': retrack
 % 'integrate': integrate nuclear fluorescence
-% 'segmentBetter': segment the nuclei well.
+% 'mixedPolaritySegmentation': different segmentation method that works
+% better when there are nuclei of mixed polarity (some dark, some bright)
 %
 % OUTPUT
 % '*_lin.mat' : Nuclei with lineages
@@ -37,7 +38,7 @@ disp(['Tracking nuclei on ', Prefix, '...']);
 [ExpandedSpaceTolerance, NoBulkShift,...
     retrack, nWorkers, track, noBreak, noStitch,...
     markandfind, fish,...
-    intFlag, chooseHis, segmentBetter, min_rad_um,...
+    intFlag, chooseHis, mixedPolaritySegmentation, min_rad_um,...
              max_rad_um, sigmaK_um, mu, nIterSnakes]...
     = DetermineTrackNucleiOptions(varargin{:});
 
@@ -126,7 +127,7 @@ else
     
 end
 
-if segmentBetter
+if mixedPolaritySegmentation
     if ~retrack
         resegmentAllFrames(Prefix, 'hisMat', hisMat,...
             'min_rad_um', min_rad_um,...

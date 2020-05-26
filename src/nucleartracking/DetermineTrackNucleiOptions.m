@@ -1,7 +1,7 @@
 function [ExpandedSpaceTolerance,...
     NoBulkShift, retrack, nWorkers, track,...
     noBreak, noStitch, fish,...
-    markandfind, intFlag, chooseHis, segmentBetter,...
+    markandfind, intFlag, chooseHis, mixedPolaritySegmentation,...
     min_rad_um, max_rad_um, sigmaK_um, mu, nIterSnakes]...
     = DetermineTrackNucleiOptions(varargin)
 %
@@ -24,7 +24,7 @@ fish = false;
 markandfind =  false;
 intFlag = false;
 chooseHis = false;
-segmentBetter = false;
+mixedPolaritySegmentation = false;
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'ExpandedSpaceTolerance')
@@ -51,8 +51,8 @@ for i = 1:length(varargin)
         noBreak = true;
     elseif strcmpi(varargin{i}, 'chooseHis')
         chooseHis = true;
-    elseif strcmpi(varargin{i}, 'segmentBetter')
-        segmentBetter = varargin{i+1};
+    elseif strcmpi(varargin{i}, 'mixedPolaritySegmentation')
+        mixedPolaritySegmentation = varargin{i+1};
     elseif strcmpi(varargin{i}, 'noStitch')
         noStitch = true;
     elseif strcmpi(varargin{i}, 'markandfind') || strcmpi(varargin{i}, 'fish')

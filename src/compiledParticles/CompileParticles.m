@@ -201,18 +201,24 @@ ElapsedTime = elapsedTime_min;
 APExperiment = strcmpi(ExperimentAxis, 'AP');
 DVExperiment = strcmpi(ExperimentAxis, 'DV');
 
-%Load Spots and Particles
-disp('Loading Particles.mat...');
-[Particles, SpotFilter] = getParticles(liveExperiment);
-disp('Particles loaded.');
-disp('Loading Spots.mat...');
-Spots = getSpots(liveExperiment);
-disp('Spots loaded.');
-if isempty(Particles)
-    SkipTraces=1;
-    SkipFluctuations=1;
-    SkipFits=1;
-    SkipMovie=1;
+if ~strcmpi(liveExperiment.experimentType, 'input')
+    %Load Spots and Particles
+        disp('Loading Particles.mat...');
+    if liveExperiment.hasParticlesFile
+        [Particles, SpotFilter] = getParticles(liveExperiment);
+    end
+    disp('Particles loaded.');
+    disp('Loading Spots.mat...');
+    if liveExperiment.hasSpotsFile
+        Spots = getSpots(liveExperiment);
+    end
+    disp('Spots loaded.');
+    if isempty(Particles)
+        SkipTraces=1;
+        SkipFluctuations=1;
+        SkipFits=1;
+        SkipMovie=1;
+    end
 end
 
 %Delete the files in folder where we'll write again.
@@ -399,7 +405,7 @@ end
 
 APFilter_ROI = []; APFilter_nonROI = []; DVFilter_ROI = []; DVFilter_nonROI = [];
 
-if fullEmbryoExists
+% if fullEmbryoExists
     [ncFilterID, ncFilter, APFilter, APFilter_ROI, APFilter_nonROI, ...
         DVFilter, DVFilter_ROI, DVFilter_nonROI] =...
         ...
@@ -407,13 +413,13 @@ if fullEmbryoExists
         ...
         nc9, nc10, nc11, nc12,...
         nc13, nc14, nSpotChannels, CompiledParticles, ExperimentAxis, ROI,...
-        APbinID, DVbinID, CompiledParticles_ROI, CompiledParticles_nonROI);
+        APbinID, DVbinID, CompiledParticles_ROI, CompiledParticles_nonROI, fullEmbryoExists);
     
-end
+% end
 
 
 %% Averaging data
-if fullEmbryoExists
+% if fullEmbryoExists
     [AllTracesVector, AllTracesAP, AllTracesDV, MeanVectorAP_ROI, ...
         SDVectorAP_ROI, NParticlesAP_ROI, MeanVectorAP_nonROI, SDVectorAP_nonROI, ...
         NParticlesAP_nonROI, MeanVectorAP, SDVectorAP, NParticlesAP, MeanVectorDV_ROI, ...
@@ -426,12 +432,12 @@ if fullEmbryoExists
         nSpotChannels, CompiledParticles, FrameInfo, ExperimentAxis, ...
         APFilter, ROI, CompiledParticles_ROI, CompiledParticles_nonROI, ...
         APFilter_ROI, APFilter_nonROI, NewCyclePos, DVFilter_ROI, ...
-        DVFilter_nonROI, DVFilter);
-else
-    AllTracesVector = {};
-    AllTracesVector{1} =...
-        createAllTracesVector(FrameInfo,CompiledParticles{1},'NoAP');
-end
+        DVFilter_nonROI, DVFilter, fullEmbryoExists);
+% else
+%     AllTracesVector = {};
+%     AllTracesVector{1} =...
+%         createAllTracesVector(FrameInfo,CompiledParticles{1},'NoAP');
+% end
 
 if ~slimVersion && fullEmbryoExists
     %% Instantaneous rate of change

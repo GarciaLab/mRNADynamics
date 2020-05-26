@@ -761,16 +761,23 @@ try
     Ellipses = getEllipses(liveExperiment);
     schnitzcells = getSchnitzcells(liveExperiment);
     
-    if shouldConvertToAP
-        [EllipsePos, APAngle, APLength]...
-            = convertToFractionalEmbryoLength(Prefix);
-    end
+    ellipsesOld = Ellipses;
+    schnitzcellsOld = schnitzcells; 
+    
+    [EllipsePos, APAngle, APLength]...
+        = convertToFractionalEmbryoLength(Prefix);
+    
     for s = 1:length(schnitzcells)
         for f = 1:length(schnitzcells(s).frames)
             ellipseInd = schnitzcells(s).cellno(f);
-            schnitzcells(s).APPos(f) = EllipsePos{f}(ellipseInd);
+            schnitzcells(s).APpos(f) = EllipsePos{f}(ellipseInd);
         end
     end
+    
+    ellipsesSizeUnchanged(ellipsesOld, Ellipses);
+    schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells);
+    
+    
     
     save2([liveExperiment.resultsFolder, filesep,'Ellipses.mat'], Ellipses);
     save2([liveExperiment.resultsFolder, filesep,Prefix,'_lin.mat'], schnitzcells);

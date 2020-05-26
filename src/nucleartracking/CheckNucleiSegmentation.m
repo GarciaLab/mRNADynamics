@@ -141,14 +141,28 @@ end
 
 %%
 Overlay=figure;
-set(Overlay,'units', 'normalized', 'position',[0.01, .2, .5, .5]);
+set(Overlay,'units', 'normalized', 'position',[0.01, .5, .4, .4]);
 
 overlayAxes = axes(Overlay,'Units', 'normalized', 'Position', [0 0 1 1]);
 
+%%
 OriginalImage=figure;
-set(OriginalImage,'units', 'normalized', 'position',[0.55, .2, .5, .5]);
-
+set(OriginalImage,'units', 'normalized', 'position',[0.01, 0.05, .4, .4]);
 originalAxes = axes(OriginalImage,'Units', 'normalized', 'Position', [0 0 1 1]);
+set(OriginalImage,'menubar','none')
+set(OriginalImage,'NumberTitle','off');
+%%
+
+schnitzTrackingFigure = figure;
+t = tiledlayout(schnitzTrackingFigure, 1, 2);
+schnitzXTrackingAxes = nexttile(t);
+schnitzYTrackingAxes = nexttile(t);
+set(schnitzTrackingFigure,'units', 'normalized', 'position',[0.6, .2, .3, .5]);
+title(schnitzXTrackingAxes, 'X over time')
+xlabel(t, 'frame')
+title(schnitzYTrackingAxes, 'Y over time')
+ylabel(t, 'centroid (pixels)')
+%%
 
 tb = axtoolbar(overlayAxes);
 tb.Visible = 'off';
@@ -225,8 +239,25 @@ while (cc~='x')
                 set(PlotHandle{k}, 'StripeColor', 'w', 'Color', 'w','Linewidth', 2);
             end
         end
+        
+        try
+            %plot tracking information in the third figure
+            plot(schnitzXTrackingAxes, ...
+                schnitzcells(schnitzInd).frames, schnitzcells(schnitzInd).cenx,...
+            'Color',  clrmp(schnitzInd, :), 'Linewidth', 3)
+            hold(schnitzXTrackingAxes, 'on');
+            plot(schnitzYTrackingAxes, ...
+                schnitzcells(schnitzInd).frames, schnitzcells(schnitzInd).ceny,...
+                'Color',  clrmp(schnitzInd, :), 'Linewidth', 3)
+            hold(schnitzYTrackingAxes, 'on');
+        catch
+        end
+        
+        
     end
     
+    hold(schnitzXTrackingAxes, 'off');
+    hold(schnitzYTrackingAxes, 'off');
     
     try
         FigureTitle=['Frame: ',num2str(CurrentFrame),'/',num2str(nFrames),...
@@ -240,6 +271,11 @@ while (cc~='x')
     
     imOriginal.CData = HisImage;
     
+     
+    
+    
+    
+    %%
     
     tb = axtoolbar(overlayAxes);
     tb.Visible = 'off';

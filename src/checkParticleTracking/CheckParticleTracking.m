@@ -451,9 +451,7 @@ while (cc ~= 'x')
         cptState.updateCurrentZIndex()
     end
     
-    %Check to see if spots structure contains multi-slice fields
-    multi_slice_flag = isfield(cptState.getCurrentParticleFit(), 'IntegralZ');
-    
+     
     % PLOT SNIPPET
     [CurrentSnippet, snipImageHandle] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
         cptState, ExperimentType, snippetSize_px, xSize, ySize, SnippetEdge, CurrentSnippet, snipImageHandle, pixelSize_nm);
@@ -467,18 +465,18 @@ while (cc ~= 'x')
             plotTraceSettings);
     end
     
-
- %AR- disabled until it's fast enough to be useful.
- %too slow at present.
- 
+%%
+% %AR- disabled until it's fast enough to be useful.
+% %too slow at present.
+% 
 %     % PLOT Z SLICE RELATED FIGURES
-    plotzvars = {zProfileFigAxes, zTraceAxes, ExperimentType,...
-        xTrace, cptState, plotTraceSettings, fish};
-    if exist('MaxZProfile', 'var')
-        plotzvars = [plotzvars, MaxZProfile];
-    end
+%     plotzvars = {zProfileFigAxes, zTraceAxes, ExperimentType,...
+%         xTrace, cptState, plotTraceSettings, fish};
+%     if exist('MaxZProfile', 'var')
+%         plotzvars = [plotzvars, MaxZProfile];
+%     end
 %    MaxZProfile = plotZFigures(plotzvars{:});
-
+%%
     set(0, 'CurrentFigure', Overlay);
     
     cc = getUserKeyInput(Overlay);
