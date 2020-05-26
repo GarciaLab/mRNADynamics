@@ -1,4 +1,4 @@
-classdef liveProject
+classdef LiveProject
     %liveProject Summary of this class goes here
     %   Detailed explanation goes here
     
@@ -27,6 +27,12 @@ classdef liveProject
     properties (Hidden = true)
         
         ignoredExperiments = {};
+        
+    end
+    
+    properties (Dependent = true)
+        
+        experimentComparisons;
         
     end
     
@@ -138,7 +144,11 @@ classdef liveProject
             
         end
         
-        
+        function  comparedSettings  = get.experimentComparisons(Project)
+            
+                [comparedSettings,rawSettings] = compareExperimentSettings(Project);
+                
+        end
         
     end
 end

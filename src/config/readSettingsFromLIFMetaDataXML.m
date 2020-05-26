@@ -1,4 +1,6 @@
-% function [theStruct, settingStruct] = readSettingsFromXML(Prefix, filename)
+function [theStruct, settingStruct] = readSettingsFromLIFMetaDataXML(Prefix, filename)
+
+% function [theStruct, settingStruct] = readSettingsFromLIFMetaDataXML(Prefix, filename)
 %
 % DESCRIPTION
 % Searches Leica XML files for the following microscope settings and  
@@ -28,7 +30,7 @@
 %
 % Documented by: Meghan Turner (meghan_turner@berkeley.edu)
 
-function [theStruct, settingStruct] = readSettingsFromXML(Prefix, filename)
+
     % Initilaize variables so they're accessible in the nested functions
     pixelDwellTime = [];
     lineAccumulation = [];
@@ -91,7 +93,7 @@ function [theStruct, settingStruct] = readSettingsFromXML(Prefix, filename)
     
     % Save settings into a structure
     % hardware settings
-    settingStruct.Prefix = Prefix;
+    settingStruct.experimentName = Prefix;
     settingStruct.pixelDwellTime = str2double(pixelDwellTime);
     settingStruct.lineAccumulation = str2double(lineAccumulation);
     settingStruct.frameAccumulation = str2double(frameAccumulation);
