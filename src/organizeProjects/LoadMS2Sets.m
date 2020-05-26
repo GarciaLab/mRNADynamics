@@ -1,7 +1,7 @@
 function [Data, readyPrefixes, resultsFolder,...
     ignoredPrefixes, dataTypeTabContents, allPrefixes] = LoadMS2Sets(dataType, varargin)
 %
-% Data = LoadMS2Sets(DataType)
+% Data = LoadMS2Sets(dataType)
 %
 % DESCRIPTION
 % Loads all data sets of a certain type and outputs them into the structure
@@ -10,7 +10,7 @@ function [Data, readyPrefixes, resultsFolder,...
 %       dropbox folders that are listed in your ComputerFolder.csv file
 %
 % PARAMETERS
-% DataType: This is a string that is identical to the name of the tab in
+% dataType: This is a string that is identical to the name of the tab in
 % dataStatus.xlsx that you wish to analyze.
 %
 % OPTIONS

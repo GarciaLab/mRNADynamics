@@ -30,6 +30,12 @@ classdef LiveProject
         
     end
     
+    properties (Dependent = true)
+        
+        experimentComparisons;
+        
+    end
+    
     methods
         %% Constructors
         
@@ -138,7 +144,11 @@ classdef LiveProject
             
         end
         
-        
+        function  comparedSettings  = get.experimentComparisons(Project)
+            
+                [comparedSettings,rawSettings] = compareExperimentSettings(Project);
+                
+        end
         
     end
 end

@@ -1,6 +1,6 @@
 function [comparedSettings,rawSettings] = compareExperimentSettings(dataTypes,varargin)
 
-% function [ComparedSettings,RawSettings] = compareExperimentSettings(DynamicsResultsPath,RawDataPath,DataType,varargin)
+% function [ComparedSettings,RawSettings] = compareExperimentSettings(dataTypes,varargin)
 %
 % DESCRIPTION
 % Compares the experimental settings (aka metadata) for multiple datasets
@@ -8,13 +8,13 @@ function [comparedSettings,rawSettings] = compareExperimentSettings(dataTypes,va
 % Leica datasets at the moment.
 %
 % PARAMETERS
-% dataType: This is a cell array of char variable(s) which are the exact 
+% dataTypes: This is a cell array of char variable(s) which are the exact 
 %           name(s) of the tab(s) in DataStatus.xlsx that you wish to 
 %           analyze. Single dataType can also be passed as a string (char
 %           array).
-%           E.g. dataType = {'dataType1'} OR dataType = 'dataType1' for 
+%           E.g. dataTypes = {'dataType1'} OR dataType = 'dataType1' for 
 %                only one tab
-%           E.g. dataType = {'dataType1', 'dataType2', 'dataType3'} for 
+%           E.g. dataTypes = {'dataType1', 'dataType2', 'dataType3'} for 
 %                multiple tabs
 % 
 %
