@@ -3,7 +3,7 @@ function [OverlayFig, overlayAxes, snippetFigAxes, rawDataAxes,...
     zTraceAxes, HisOverlayFig,HisOverlayFigAxes, multiFig]...
     ...
     = checkParticleTracking_drawGUI(UseHistoneOverlay,...
-    fish, plot3DGauss, ExperimentType, multiView)
+    fish, plot3DGauss, ExperimentType, multiView, xSize, ySize)
 %% Description
 % This script is for 
 
@@ -83,11 +83,20 @@ if UseHistoneOverlay
 end
 
 % Define the size of the figures/subplots
-% This can be edited to take into account of different formats of movies (Yang Joon
-% Kim, 05/27/2020)
 if ~fish
-    overlayDim = [.82, .45];
+    %overlayDim = [.82, .45];
+    % Define the size of the overlayFig using the format of the
+    % movie/image (xSize, ySize)
+    % The figure looks inconvenient if the height is smaller than 0.4, so
+    % we will fix that height, and adjust the width depending on the ratio
+    % of xSize and ySize.
+    yDim = 0.4;
+    ratio = xSize/ySize;
+    xDim = min([0.8 yDim*ratio]);
+    % maxSize = max(xSize, ySize);
+    overlayDim = [xDim yDim];
     set(OverlayFig, 'units', 'normalized', 'OuterPosition', [0,1-overlayDim(2), overlayDim(1), overlayDim(2)]);
+    %set(OverlayFig, 'units', 'normalized', 'position', [0,1-overlayDim(2), overlayDim(1), overlayDim(2)]);
     set(traceFig, 'units', 'normalized', 'position', [0.7, 0.3 .3 .3])
     %set(overlayAxes, 'units', 'normalized', 'position', [-.25 .06 .9 .9])
     %set(traceFigAxes, 'units', 'normalized', 'position', [.48 .17 .48 .63])
