@@ -1,12 +1,14 @@
 function [OverlayFig, overlayAxes, snippetFigAxes, rawDataAxes,...
-    gaussianAxes, traceFigAxes, zProfileFigAxes,...
+    gaussianAxes, traceFig, traceFigAxes, zProfileFigAxes,...
     zTraceAxes, HisOverlayFig,HisOverlayFigAxes, multiFig]...
     ...
     = checkParticleTracking_drawGUI(UseHistoneOverlay,...
     fish, plot3DGauss, ExperimentType, multiView)
-
+%% Description
+% This script is for 
 
 OverlayFig = figure;
+traceFig = figure;
 multiFig = [];
 HisOverlayFig = [];
 HisOverlayFigAxes = [];
@@ -22,11 +24,13 @@ if UseHistoneOverlay
     HisOverlayFigAxes = axes(HisOverlayFig);
 end
 
+% Define the overlayAxes
+overlayAxes = axes(OverlayFig);
+%tb = axtoolbar(overlayAxes);
 
+% Separate the traceFig
 if ~fish
-    overlayAxes = subplot(1, 2, 1, 'Parent', OverlayFig);
-    tb = axtoolbar(overlayAxes);
-    traceFigAxes = subplot(1, 2, 2, 'Parent', OverlayFig);
+    traceFigAxes = axes(traceFig);
     xlabel(traceFigAxes,'frame')
     title(traceFigAxes, '', 'Interpreter', 'none');
     %     traceFigAxes.Title.Interpreter = 'none';
@@ -53,8 +57,6 @@ if ~fish
         traceFigAxes.YAxis(2).Visible = 'off';
         traceLeg = legend(traceFigAxes,[e1, e2], str1,str2, 'AutoUpdate', 'off', 'HandleVisibility', 'off');
     end
-else
-    overlayAxes = axes(OverlayFig);
 end
 
 zFig = figure;
@@ -80,11 +82,15 @@ if UseHistoneOverlay
     set(HisOverlayFig, 'units', 'normalized', 'position', [0.01, 0.1, .33, .33]);
 end
 
+% Define the size of the figures/subplots
+% This can be edited to take into account of different formats of movies (Yang Joon
+% Kim, 05/27/2020)
 if ~fish
     overlayDim = [.82, .45];
     set(OverlayFig, 'units', 'normalized', 'OuterPosition', [0,1-overlayDim(2), overlayDim(1), overlayDim(2)]);
-    set(overlayAxes, 'units', 'normalized', 'position', [-.25 .06 .9 .9])
-    set(traceFigAxes, 'units', 'normalized', 'position', [.48 .17 .48 .63])
+    set(traceFig, 'units', 'normalized', 'position', [0.7, 0.3 .3 .3])
+    %set(overlayAxes, 'units', 'normalized', 'position', [-.25 .06 .9 .9])
+    %set(traceFigAxes, 'units', 'normalized', 'position', [.48 .17 .48 .63])
     set(snipFig, 'units', 'normalized', 'position', [0.355, 0.15, 3 * (.2 / 2), .33 / 2]);
     set(zFig, 'units', 'normalized', 'position', [0.67, 0.15, .2, .33 / 2]);
 else
