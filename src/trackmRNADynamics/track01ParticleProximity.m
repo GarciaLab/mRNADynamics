@@ -15,7 +15,7 @@ function [Particles] = track01ParticleProximity(...
   ncVec = [FrameInfo.nc];
   % Check to see if we have nucleus tracking info
   UseNuclei = ~isempty(schnitzcells);
-  SlidingWindowSize = 2; % size of window used for time averaging
+  SlidingWindowSize = 2; % size of window used for time averaging of nuclear movements
   
   for Channel = 1:NCh    
     for CurrentFrame = 1:length(Spots{Channel})
