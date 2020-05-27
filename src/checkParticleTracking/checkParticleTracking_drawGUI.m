@@ -90,14 +90,14 @@ if ~fish
     % The figure looks inconvenient if the height is smaller than 0.4, so
     % we will fix that height, and adjust the width depending on the ratio
     % of xSize and ySize.
-    yDim = 0.4;
+    yDim = 0.45;
     ratio = xSize/ySize;
-    xDim = min([0.8 yDim*ratio]);
+    xDim = min([0.6 yDim*ratio]);
     % maxSize = max(xSize, ySize);
     overlayDim = [xDim yDim];
     set(OverlayFig, 'units', 'normalized', 'OuterPosition', [0,1-overlayDim(2), overlayDim(1), overlayDim(2)]);
     %set(OverlayFig, 'units', 'normalized', 'position', [0,1-overlayDim(2), overlayDim(1), overlayDim(2)]);
-    set(traceFig, 'units', 'normalized', 'position', [0.7, 0.3 .3 .3])
+    set(traceFig, 'units', 'normalized', 'position', [overlayDim(1)+0.05, 0.65, .3 .3])
     %set(overlayAxes, 'units', 'normalized', 'position', [-.25 .06 .9 .9])
     %set(traceFigAxes, 'units', 'normalized', 'position', [.48 .17 .48 .63])
     set(snipFig, 'units', 'normalized', 'position', [0.355, 0.15, 3 * (.2 / 2), .33 / 2]);
