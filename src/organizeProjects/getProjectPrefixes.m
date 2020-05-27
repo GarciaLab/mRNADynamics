@@ -15,6 +15,7 @@ function prefixes = getProjectPrefixes(dataType,varargin)
 % 'onlyApproved': Limits the prefixes returned by this function to only
 %                 those that have been marked 'ready' or 'ApproveAll' in
 %                 the CompileParticles row of the DataStatus tab
+% 'onlyUnapproved': As above but Unapproved
 %
 % OUTPUT
 % prefixes: n x 1 cell array containing the Prefixes for this project tab
@@ -23,14 +24,17 @@ function prefixes = getProjectPrefixes(dataType,varargin)
 % Created: 5/17/2020
 % Last Updated: N/A
 
-onlyApproved = false;
-prefixes = {};
+onlyApproved = false; 
+onlyUnapproved = false;
+prefixes = {}; %#ok<NASGU>
 dataStatusFilename = 'DataStatus.*';    %This naming convention is now enforced inside findDataStatus.m
 
 % Determine if 'onlyApproved' option applies
 for i= 1:length(varargin)
     if strcmpi(varargin{i}, 'onlyApproved')
-        onlyApproved = true;
+        onlyApproved = true; 
+    elseif strcmpi(varargin{i}, 'onlyUnapproved')
+        onlyUnapproved = true;
     end
 end
 
@@ -55,24 +59,40 @@ dataTypeTabContents = readcell([dropboxFolder,filesep,dataStatusDir(1).name], ..
 %Get the Prefixes for all datasets
 [allPrefixes,~] = getPrefixesFromDataStatusTab(dataTypeTabContents);
 
-%% 'onlyApproved' Option
-if onlyApproved
+%% 'onlyApproved' or 'onlyUnapproved' Option
+if onlyApproved || onlyUnapproved
+    
     %Find which datasets are "ready" or "approved". All others are "ignored".
     compileRow = find(strcmpi(dataTypeTabContents(:,1),'AnalyzeLiveData Compile Particles') |...
                       strcmpi(dataTypeTabContents(:,1),'CompileParticles') |...
                       strcmpi(dataTypeTabContents(:,1),'CompileNuclearProtein'));
+    
+    readyLogicalArray = strcmpi(dataTypeTabContents(compileRow, 2:end),'READY') | ...
+                   strcmpi(dataTypeTabContents(compileRow, 2:end),'ApproveAll');
 
-    readySets = find(strcmpi(dataTypeTabContents(compileRow,:),'READY') | ...
-                   strcmpi(dataTypeTabContents(compileRow,:),'ApproveAll'));
-    readySets = readySets - 1;  %shift to excluded the label column
+    if onlyApproved
+        
+        outSets = find(readyLogicalArray);
 
-    if isempty(readySets)
-        error('No ApproveAll or READY sets found.')
+        if isempty(outSets)
+            warning('No ApproveAll or READY sets found.')
+        end
+        
+    elseif onlyUnapproved
+        outSets = find(~readyLogicalArray);
     end
+        
+    outPrefixes = allPrefixes(outSets);
     
-    readyPrefixes = allPrefixes(readySets);
+    prefixes = outPrefixes;
     
-    prefixes = readyPrefixes;
 else
+    
     prefixes = allPrefixes;
+    
+end
+
+
+
+
 end

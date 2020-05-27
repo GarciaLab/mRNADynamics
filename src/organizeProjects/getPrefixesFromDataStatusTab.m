@@ -25,16 +25,14 @@ function [prefixes,prefixCellText] = getPrefixesFromDataStatusTab(dataTypeTabCon
 %         written by Hernan Garcia (hggarcia@berkeley.edu)
 % Last Updated: N/A
 
-prefixes = {};
+prefixes = {}; %#ok<*NASGU>
 prefixCellText = {};
 
 % Locate the prefix cells within the tab
-prefixRow = find(strcmp(dataTypeTabContents(:,1),'Prefix:') | ...
-                 strcmp(dataTypeTabContents(:,1),'prefix:'));
-prefixColumns = find(contains(dataTypeTabContents(prefixRow,:),'Prefix = ') | ...
-                     contains(dataTypeTabContents(prefixRow,:),'Prefix=') |...
-                     contains(dataTypeTabContents(prefixRow,:),'prefix = ') | ...
-                     contains(dataTypeTabContents(prefixRow,:),'prefix='));                
+prefixRow = find(strcmpi(dataTypeTabContents(:,1),'prefix:'));
+prefixColumns = find( contains(...
+    strrep( dataTypeTabContents(prefixRow,:) , ' ', ''), 'prefix=', 'IgnoreCase', true) ); 
+                 
 if isempty(prefixRow) || isempty(prefixColumns)
     error('Unable to find Prefixes in DataStatus.xslx tab. Could be missing or incorrectly formatted.')
 end

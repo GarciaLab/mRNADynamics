@@ -11,9 +11,7 @@ classdef LiveProject
         unhealthyNames = [];
         
         ignoredExperimentNames = [];
-        
-        dataStatus = {};
-        
+                
         hasSpots = [];
         hasParticles = [];
         hasSchnitzcells = [];
@@ -45,24 +43,20 @@ classdef LiveProject
             %   Detailed explanation goes here
             this.Project = Project;
             
-            [~, experiment, ~, ignoredExperiment, this.dataStatus] =...
-                LoadMS2Sets(Project, 'justPrefixes', 'noCompiledNuclei');
+            this.includedExperimentNames = string( getProjectPrefixes(Project, 'onlyApproved') );
+            this.ignoredExperimentNames = string( getProjectPrefixes(Project, 'onlyUnapproved') ); 
             
-            this.dataStatus = string(this.dataStatus);
-            this.includedExperimentNames = string(experiment);
-            this.ignoredExperimentNames = string(ignoredExperiment);
-            
-            for i = 1:length(experiment)
-                this.includedExperiments{i} = LiveExperiment(experiment{i});
+            for i = 1:length(this.includedExperimentNames)
+                this.includedExperiments{i} = LiveExperiment(this.includedExperimentNames{i});
                 isUnhealthy = this.includedExperiments{i}.isUnhealthy;
                 if ~isnan(isUnhealthy) && isUnhealthy
                     this.unhealthyNames = [ this.unhealthyNames,...
-                        string(experiment{i})];
+                        this.includedExperimentNames{i}];
                 end
             end
             
-            for j = 1:length(ignoredExperiment)
-                this.ignoredExperiments{j} = LiveExperiment(ignoredExperiment{j});
+            for j = 1:length(this.ignoredExperimentNames)
+                this.ignoredExperiments{j} = LiveExperiment( this.ignoredExperimentNames{j} );
             end
             
             this.hasSpots = haveSpots(this);
