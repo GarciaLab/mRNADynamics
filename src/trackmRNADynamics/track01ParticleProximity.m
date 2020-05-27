@@ -111,6 +111,7 @@ function [Particles] = track01ParticleProximity(...
           % Find existing particles and new spots are close enough to be 
           % linked. In cases of degenerate assignemnt, take pairt that
           % minimizes jump distance
+          
           [MatchIndices,~,~] = matchpairs(DistanceMat,0.5*SearchRadius);
           NewParticleFlag(MatchIndices(:,1)) = false;         
           
@@ -147,8 +148,16 @@ function [Particles] = track01ParticleProximity(...
     end
     
     % adjust for z stack shifts
-    if isfield(FrameInfo,'seriesFlag')      
-      % need to incorporate this into export scripts
+    if isfield(FrameInfo,'zPosition')      
+      % need to make sure this field is now a permanent feature
+      zPosVec = [FrameInfo.zPosition]*1e6 / FrameInfo(1).ZStep;
+      zPosVec = zPosVec - zPosVec(1);
+      frameIndex = 1:length(zPosVec);
+      % generate new det-trended z variable
+      for p = 1:length(Particles{Channel})
+        fVec = Particles{Channel}(p).Frame;
+        Particles{Channel}(p).zPosDetrended = Particles{Channel}(p).zPos - zPosVec(ismember(frameIndex,fVec));
+      end
     else
       % get list of all frames and corresponding z positions
       frameVec = [Particles{Channel}.Frame];
