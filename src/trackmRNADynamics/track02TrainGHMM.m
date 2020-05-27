@@ -17,69 +17,88 @@ function RawParticles = track02TrainGHMM(...
   NumCoeff = 1;          %Number of coefficients in a vector (always 1) 
   NumMixtures = 1;          %Number of distinct gaussian emission types for each state
   NumStates = 3;          %Number of motion states (this is an arbitrary but should be >=3 and <=10
+  pixelSize = FrameInfo(1).PixelSize;
+  zSize = FrameInfo(1).ZStep;
   CovarianceType = 'diag'; % assume no covariance between different state emissions
   maxIter = 500;
   
   % minimum # time points in trace fragment for inclusion
   minLen = 10; 
+  % num channels
   NCh = length(RawParticles);
+  % specify order of variables in HMM strtuctures
+  varNameCell = {'xPos','yPos','zPosDetrended'};
+  unitFactors = [1 1 1]; % (model seems to do best when things are in pixel units)
+  
+  
   for Channel = 1:NCh
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Generate list of suitably long tracks
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
 
     % initialize data vectors
-    DataCell = {};
+    dataCell = {};
     trackLenVec = [];
-    longIDVec = [];
-    iter = 1;
-    for p = 1:length(RawParticles{Channel})
-      Frames = RawParticles{Channel}(p).Frame;         
-      if length(Frames)>=minLen+1
-        dF = diff(Frames);
-        % check for discontinuities
-        if any(dF>1)
-          error('Multi-frame jump detected. Issue with initial particle stitching')
-        end        
   
-        % record
-        longIDVec(iter) = p;
-        trackLenVec(iter) = length(dF);
-        DataCell{iter,1} = diff(RawParticles{Channel}(p).xPos);
-        DataCell{iter,2} = diff(RawParticles{Channel}(p).yPos);
-        DataCell{iter,3} = diff(RawParticles{Channel}(p).zPosDetrended);
-        iter = iter + 1;
-         
+    for p = 1:length(RawParticles{Channel})
+      Frames = RawParticles{Channel}(p).Frame;               
+      dF = diff(Frames);
+      % check for discontinuities
+      if any(dF>1)
+        error('Multi-frame jump detected. Issue with initial particle stitching')
+      end        
+
+      % record
+      trackLenVec(p) = length(dF);
+      for v = 1:length(varNameCell)
+        dataCell{p,v} = unitFactors(v)*diff(RawParticles{Channel}(p).(varNameCell{v}));         
       end
     end
+    longIDVec = find(trackLenVec>minLen);
+    % If we have at least one sufficiently long fragment, then train global
+    % parameters
+    if ~isempty(longIDVec)
+      % Find longest fragment to use for initialization
+      [~, initID] = max(trackLenVec);
 
-    % Find longest fragment to use for initialization
-    [~, initID] = max(trackLenVec);
+      % initial guess of parameters
+      prior0 = normalise(rand(NumStates,1));
+      transmat0 = mk_stochastic(rand(NumStates,NumStates));
 
-    % initial guess of parameters
-    prior0 = normalise(rand(NumStates,1));
-    transmat0 = mk_stochastic(rand(NumStates,NumStates));
+      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      %%% Use all available data to infer global avg motion parameters
+      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      globalModelStruct = struct;
+      % loop through x,y, and z data
+      for i = 1:size(dataCell,2)
+        % initialize key inference params
+        [mu0, Sigma0] = mixgauss_init(NumStates*NumMixtures, dataCell{initID,i}, CovarianceType);
+        mu0 = reshape(mu0, [NumCoeff NumStates NumMixtures]);
+        Sigma0 = reshape(Sigma0, [NumCoeff NumCoeff NumStates NumMixtures]);
+        mixmat0 = mk_stochastic(rand(NumStates,NumMixtures));
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %%% Use all available data to infer global avg motion parameters
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    globalModelStruct = struct;
-    % loop through x,y, and z data
-    for i = 1:size(DataCell,2)
-      % initialize key inference params
-      [mu0, Sigma0] = mixgauss_init(NumStates*NumMixtures, DataCell{initID,i}, CovarianceType);
-      mu0 = reshape(mu0, [NumCoeff NumStates NumMixtures]);
-      Sigma0 = reshape(Sigma0, [NumCoeff NumCoeff NumStates NumMixtures]);
-      mixmat0 = mk_stochastic(rand(NumStates,NumMixtures));
+        % conduct EM inference of HMM parameters
+        [globalModelStruct(i).LL, globalModelStruct(i).Prior,globalModelStruct(i).Transmat, ...
+          globalModelStruct(i).Mu, globalModelStruct(i).Sigma, globalModelStruct(i).Mixmat] = ...
+            mhmm_em(dataCell(longIDVec,i), prior0, transmat0, mu0, Sigma0, mixmat0, ...
+                                        'verbose', 0, 'max_iter', maxIter);
 
-      % conduct EM inference of HMM parameters
-      [globalModelStruct(i).LL, globalModelStruct(i).Prior,globalModelStruct(i).Transmat, ...
-        globalModelStruct(i).Mu, globalModelStruct(i).Sigma, globalModelStruct(i).Mixmat] = ...
-          mhmm_em(DataCell(:,i), prior0, transmat0, mu0, Sigma0, mixmat0, ...
-                                      'verbose', 0, 'max_iter', maxIter);
-            
+      end
+    % otherwise supply generic parameters
+    else
+      for v = 1:length(varNameCell)
+        % calculate basic drift stats
+        meanDrift = mean([dataCell{:,v}]);
+        stdDrift = std([dataCell{:,v}]);
+        % generate hmm vars
+        globalModelStruct(v).Prior = ones(1,NumStates)/NumStates;
+        globalModelStruct(v).Mixmat = globalModelStruct(v).Prior; 
+        globalModelStruct(v).Transmat = ones(NumStates,NumStates)./repelem(NumStates,NumStates)';
+        globalModelStruct(v).Mu = [meanDrift-stdDrift meanDrift meanDrift+stdDrift];
+        globalModelStruct(v).Sigma = repmat(stdDrift,1,1,3);
+        globalModelStruct(v).LL = NaN;
+      end
     end
-    
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Re-Infer particle-specific transition matrices
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -87,22 +106,24 @@ function RawParticles = track02TrainGHMM(...
     for p = 1:length(RawParticles{Channel})
       % refit transition matrix if particle is long enough
       if ismember(p,longIDVec)
-        hmmStruct = struct;
-        for i = 1:size(DataCell,2)           
+        hmmModel = struct;
+        for i = 1:size(dataCell,2)           
           % conduct EM inference of HMM parameters
-          [hmmStruct(i).LL, hmmStruct(i).Prior,hmmStruct(i).Transmat, ...
-            hmmStruct(i).Mu, hmmStruct(i).Sigma, hmmStruct(i).Mixmat] = ...
-              ... % initialize with global parameters
-              mhmm_em(DataCell{iter,i}, globalModelStruct(i).Prior, globalModelStruct(i).Transmat, ...
+          [hmmModel(i).LL, hmmModel(i).Prior,hmmModel(i).Transmat, ...
+            hmmModel(i).Mu, hmmModel(i).Sigma, hmmModel(i).Mixmat] = ...
+              ... % initialize using global param values
+              mhmm_em(dataCell{p,i}, globalModelStruct(i).Prior, globalModelStruct(i).Transmat, ...
               globalModelStruct(i).Mu, globalModelStruct(i).Sigma, globalModelStruct(i).Mixmat, ...
-                'verbose', 0, 'max_iter', maxIter,'adj_mix',0,'adj_mu',0,'adj_sigma',0);
-                         
+                'verbose', 0, 'max_iter', maxIter,'adj_mix',0,'adj_mu',0,'adj_sigma',0);                        
         end
         iter = iter + 1;
       % otherwise just use global paramters
       else
-        hmmStruct = globalModelStruct;
+        hmmModel = globalModelStruct;
       end
-      RawParticles{Channel}(p).hmmStruct = hmmStruct;
+      for v = 1:length(varNameCell)
+        hmmModel(v).var = varNameCell{v};
+      end
+      RawParticles{Channel}(p).hmmModel = hmmModel;
     end
   end
