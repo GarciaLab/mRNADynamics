@@ -14,7 +14,7 @@ function zoom_angle = getZoomAngle(Prefix, rawPrefixPath)
         generateLIFMetaDataXML(Prefix, xml_file);
         
         [~, settingStruct] =...
-            readSettingsFromXML(Prefix, xml_file);
+            readSettingsFromLIFMetaDataXML(Prefix, xml_file);
         
         zoom_angle = settingStruct.rotatorAngle;
 %     catch

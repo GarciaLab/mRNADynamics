@@ -14,7 +14,7 @@ function full_embryo_angle = getFullEmbryoAngle(...
         generateLIFMetaDataXML(surfFile, xml_file_surf);
         
         [~, settingStruct] =...
-            readSettingsFromXML(Prefix, xml_file_surf);
+            readSettingsFromLIFMetaDataXML(Prefix, xml_file_surf);
         
         full_embryo_angle = settingStruct.rotatorAngle;
 %     catch

@@ -148,11 +148,11 @@ end
 
 %Compare all other experiements to the first experiment. 
 if min(strcmpi(experimentTypes,experimentTypes{1})) == 0  %will be true if strcmpi returns '0' (false), instead of '1' (true), for any position in experimentTypes
-    error('Inconsistent ExperimentType found among the data sets.')
+    warning('Inconsistent ExperimentType found among the data sets.')
 elseif min(strcmpi(experimentAxes,experimentAxes{1})) == 0
-    error('Inconsistent ExperimentAxis found among the data sets.')
+    warning('Inconsistent ExperimentAxis found among the data sets.')
 elseif min(abs(diff(APResolutions))) == 0
-    error('Inconsistent APResolution found among the data sets.')
+    warning('Inconsistent APResolution found among the data sets.')
 end
 
 
@@ -455,9 +455,6 @@ if ~justPrefixes
     end
 
 end
-
-save([projectFolder, filesep, 'prefixes.mat'], 'prefixes');
-
 
 end
 
