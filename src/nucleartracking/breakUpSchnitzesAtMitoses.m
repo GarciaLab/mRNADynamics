@@ -19,18 +19,23 @@ if ~isempty(varargin)
     end
 end
 
+%% create a vector annotating which cycle each frame belongs to
 cycleFrames = nan(1,nFrames);
 
 for i = 1:length(ncs)
     if i==14
-        cycleFrames(ncs(i):end) = 14;
+        %handle the situation where the movie ends before nc14
+        if ncs(i)~=0 && ~isnan(ncs(i))
+            cycleFrames(ncs(i):end) = 14;
+        end
+        %handle nuclear cycles occurring before the start of the movie
     elseif ncs(i) == 0
         cycleFrames(1:ncs(i+1)) = i;
     else
         cycleFrames(ncs(i):ncs(i+1)) = i;
     end
 end
-
+%%
 
 tempSchnitzcells = schnitzcells;
 nNuclei = length(schnitzcells);
