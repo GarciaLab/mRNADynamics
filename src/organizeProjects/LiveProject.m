@@ -38,7 +38,7 @@ classdef LiveProject
         %% Constructors
         
         
-        function this = LiveProject(Project)
+        function this = liveProject(Project)
             %liveProject Construct an instance of this class
             %   Detailed explanation goes here
             this.Project = Project;
