@@ -101,14 +101,7 @@ classdef LiveExperiment
             %livemRNAExperiment Construct an instance of this class
             
             this.Prefix = Prefix;
-            
-            %caching the results of this function since
-            %its csv2cell call is the
-            %most time-consuming part of
-            %project initialization and the output
-            %is not memory intensive
-            %             DetermineLocalFolders = memoize(@DetermineLocalFolders);
-            
+                      
             [this.userRawFolder, this.userProcFolder, this.userResultsFolder,...
                 this.MS2CodePath, this.userPreFolder,...
                 ~, ~, ~, movieDatabase]= DetermineLocalFolders(this.Prefix);
@@ -246,6 +239,15 @@ classdef LiveExperiment
                 preTifDir = dir([this.preFolder, '*_ch0*.tif']);
             end
             
+            %just return an empty array if we can't load the movie. 
+            %leave the handling to the caller, presumably by enabling 
+            %sequential file loading.
+            if ~haveSufficientMemory(preTifDir)
+               out = []; 
+               return;
+            end
+            
+            
             exportedChannels = [];
             % find what channels were exported
             for k = 1:5  %i don't see channel number going beyond 6 any time soon.
@@ -331,25 +333,29 @@ classdef LiveExperiment
         
         function out = getHisMat(this)
             
-            if exist([this.preFolder, filesep,this.Prefix, '-His.tif'], 'file')
+            hisFile = [this.preFolder, filesep,this.Prefix, '-His.tif']; 
+            if exist(hisFile, 'file')
                 haveHisTifStack = true;
             else
                 haveHisTifStack = false;
             end
+            
+            %just return an empty array if we can't load the movie. 
+            %leave the handling to the caller, presumably by enabling 
+            %sequential file loading.
+            if ~haveSufficientMemory(dir(hisFile))
+               out = []; 
+               return;
+            end
+            
             persistent hisMat;
             %load histone movie only if it hasn't been loaded or if we've switched
             %Prefixes (determined by num frames)
             if isempty(hisMat) || ~isequal( size(hisMat, 3), this.nFrames)
-                if haveHisTifStack
+                if haveHisTifStack || this.hasHisMatFile
                     %load in sequential tif stacks
-                    hisMat = imreadStack2([this.preFolder, filesep,...
-                        this.Prefix, '-His.tif'], this.yDim, this.xDim, this.nFrames);
+                    hisMat = imreadStack2(hisFile, this.yDim, this.xDim, this.nFrames);
                 
-                %deprecated filetype. here for backwards compatibility
-                elseif this.hasHisMatFile
-                    %load up .mat histone file
-                    hisMat = loadHisMat(this.Prefix);
-                    
                 %deprecated filetype. here for backwards compatibility
                 else
                     %load in individual tif slices
