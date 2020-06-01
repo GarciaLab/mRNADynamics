@@ -2,7 +2,7 @@
 function FrameInfo = processLIFExportMode(rawDataFolder, ProjectionType, Channels,...
     Prefix, PreProcFolder, PreferredFileNameForTest,...
     nuclearGUI, skipExtraction,...
-    shouldExportNuclearProjections, shouldExportMovieFiles, ignoreCh3)
+    shouldExportNuclearProjections, shouldExportMovieFiles)
 
 disp('Exporting movie file...');
 
@@ -179,20 +179,20 @@ if ~skipExtraction
                     for zPaddingIndex = slicesCounter+1:topZSlice+2
                         imwrite(BlankImage, [PreProcFolder, filesep, NewName], 'WriteMode', 'append');
                     end
-                    %
-                    %                                     processMovieChannel(channelIndex, numberOfFrames, Prefix, OutputFolder,...
-                    %                     LIFImages, framesIndex, seriesIndex, NChannels, NSlices,...
-                    %                     zslicesPadding);
                 end
                 
                 
                 
-                %Now copy nuclear tracking images
+                %Now create nuclear projection movies
                 if ~nuclearGUI
+                    
                     hisMat(:, :, numberOfFrames) = generateNuclearChannel(...
                         numberOfFrames, LIFImages,...
                         framesIndex, seriesIndex, NSlices, NChannels,ProjectionType,...
                         Channels, ReferenceHist, PreProcFolder, Prefix);
+                    
+                    saveNuclearProjection(hisMat, [PreProcFolder, filesep, Prefix, '-His.tif']);
+                    
                 end
                 
                 numberOfFrames = numberOfFrames + 1;
@@ -205,18 +205,14 @@ if ~skipExtraction
     
     if nuclearGUI && shouldExportNuclearProjections
         
-        if ~shouldExportMovieFiles
+        if ~exist(movieMat, 'var')
             movieMat = getMovieMat(LiveExperiment(Prefix));
         end
         
-        [~, ~, ~, hisMat] = chooseAnaphaseFrames(...
+        chooseAnaphaseFrames(...
             Prefix, 'ProjectionType', ProjectionType,...
             'ReferenceHist', ReferenceHist, 'movieMat', movieMat);
         
-    end
-    
-    if shouldExportNuclearProjections
-        saveNuclearProjection(hisMat, [PreProcFolder, filesep, Prefix, '-His.tif']);
     end
     
     try close(waitbarFigure); catch; end

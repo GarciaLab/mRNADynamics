@@ -149,7 +149,7 @@ mkdir(DropboxFolderName);
   elseif strcmpi(FileMode, 'LIFExport')
     FrameInfo = processLIFExportMode(rawDataFolder, ProjectionType, Channels, Prefix, ...
       OutputFolder, PreferredFileNameForTest, nuclearGUI, skipExtraction,...
-      exportNuclearProjections, exportMovieFiles, ignoreCh3);
+      exportNuclearProjections, exportMovieFiles);
 
   elseif strcmpi(FileMode, 'DSPIN') || strcmpi(FileMode, 'DND2')
     %Nikon spinning disk confocal mode - TH/CS 2017
@@ -167,20 +167,5 @@ mkdir(DropboxFolderName);
   DogOutputFolder=[ProcPath,filesep,Prefix, '_', filesep, 'dogs',filesep];
   mkdir(DogOutputFolder);
     
-  try
-  if strcmpi(FileMode, 'LIFExport')
-    removeUnwantedTIFs(rawDataFolder);
-  end
-  catch; end
-  
-  if generateTifStacks
-    filterMovie(Prefix, 'Tifs');
-    disp(['Prefix: ', Prefix]);
-  end
-%   
-%   if shouldTrackNuclei
-%       try batch(@TrackNuclei, 0, {Prefix});
-%       catch TrackNuclei(Prefix); end
-%   end
- 
+
 end

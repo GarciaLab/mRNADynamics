@@ -23,9 +23,7 @@ classdef LiveProject
     end
     
     properties (Hidden = true)
-        
-        ignoredExperiments = {};
-        
+                
     end
     
     properties (Dependent = true)
@@ -55,9 +53,6 @@ classdef LiveProject
                 end
             end
             
-            for j = 1:length(this.ignoredExperimentNames)
-                this.ignoredExperiments{j} = LiveExperiment( this.ignoredExperimentNames{j} );
-            end
             
             this.hasSpots = haveSpots(this);
             this.hasParticles = haveParticles(this);
