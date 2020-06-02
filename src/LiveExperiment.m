@@ -23,7 +23,7 @@ classdef LiveExperiment
     end
     
     properties (Access = private)
-                
+        
     end
     
     properties (Hidden)
@@ -101,11 +101,11 @@ classdef LiveExperiment
             %livemRNAExperiment Construct an instance of this class
             
             this.Prefix = Prefix;
-                      
+            
             [this.userRawFolder, this.userProcFolder, this.userResultsFolder,...
                 this.MS2CodePath, this.userPreFolder,...
                 ~, ~, ~, movieDatabase]= DetermineLocalFolders(this.Prefix);
-
+            
             dateString = this.Prefix(1:10);
             experimentName = this.Prefix(12:length(this.Prefix));
             rawSubFolder = [dateString,filesep,experimentName];
@@ -113,11 +113,11 @@ classdef LiveExperiment
             liveFolderIndex = strfind(lower(this.userPreFolder), lower('LivemRNA'))...
                 +  length('livemRNA') - 1;
             
-            this.userLivemRNAFolder = this.userPreFolder(1:liveFolderIndex); 
+            this.userLivemRNAFolder = this.userPreFolder(1:liveFolderIndex);
             
-            this.userExperimentsFolder = [this.userLivemRNAFolder, filesep, 'Experiments']; 
+            this.userExperimentsFolder = [this.userLivemRNAFolder, filesep, 'Experiments'];
             
-           
+            
             if exist( this.userExperimentsFolder, 'dir')
                 this.experimentFolder = [this.userExperimentsFolder, filesep, Prefix];
             end
@@ -204,17 +204,17 @@ classdef LiveExperiment
         %Methods
         
         function this = setExperimentFolders(this)
-
-                expFolder = [this.userExperimentsFolder, filesep, this.Prefix];
+            
+            expFolder = [this.userExperimentsFolder, filesep, this.Prefix];
+            
+            if isfolder(expFolder)
                 
-                if isfolder(expFolder)
-
-                    this.preFolder = [expFolder, filesep, 'PreProcessedData'];
-                    this.procFolder = [expFolder, filesep, 'ProcessedData'];
-                    this.rawFolder = [expFolder, filesep, 'RawDynamicsData'];
-
-                end
+                this.preFolder = [expFolder, filesep, 'PreProcessedData'];
+                this.procFolder = [expFolder, filesep, 'ProcessedData'];
+                this.rawFolder = [expFolder, filesep, 'RawDynamicsData'];
                 
+            end
+            
         end
         
         
@@ -239,12 +239,12 @@ classdef LiveExperiment
                 preTifDir = dir([this.preFolder, '*_ch0*.tif']);
             end
             
-            %just return an empty array if we can't load the movie. 
-            %leave the handling to the caller, presumably by enabling 
+            %just return an empty array if we can't load the movie.
+            %leave the handling to the caller, presumably by enabling
             %sequential file loading.
             if ~haveSufficientMemory(preTifDir)
-               out = []; 
-               return;
+                out = [];
+                return;
             end
             
             
@@ -333,30 +333,35 @@ classdef LiveExperiment
         
         function out = getHisMat(this)
             
-            hisFile = [this.preFolder, filesep,this.Prefix, '-His.tif']; 
+            hisFile = [this.preFolder, filesep,this.Prefix, '-His.tif'];
             if exist(hisFile, 'file')
                 haveHisTifStack = true;
             else
                 haveHisTifStack = false;
             end
             
-            %just return an empty array if we can't load the movie. 
-            %leave the handling to the caller, presumably by enabling 
+            %just return an empty array if we can't load the movie.
+            %leave the handling to the caller, presumably by enabling
             %sequential file loading.
             if ~haveSufficientMemory(dir(hisFile))
-               out = []; 
-               return;
+                out = [];
+                return;
             end
             
             persistent hisMat;
             %load histone movie only if it hasn't been loaded or if we've switched
             %Prefixes (determined by num frames)
             if isempty(hisMat) || ~isequal( size(hisMat, 3), this.nFrames)
-                if haveHisTifStack || this.hasHisMatFile
-                    %load in sequential tif stacks
-                    hisMat = imreadStack2(hisFile, this.yDim, this.xDim, this.nFrames);
                 
-                %deprecated filetype. here for backwards compatibility
+                if haveHisTifStack
+                    %load in sequential tif stacks
+                    hisMat = imreadStack2([this.preFolder, filesep,...
+                        this.Prefix, '-His.tif'], this.yDim, this.xDim, this.nFrames);
+                    
+                    %deprecated filetype. here for backwards compatibility
+                elseif this.hasHisMatFile
+                    %load up .mat histone file
+                    hisMat = loadHisMat(this.Prefix);
                 else
                     %load in individual tif slices
                     [~,hisMat] = makeMovieMats(this.Prefix, [], [], [],...
@@ -364,6 +369,7 @@ classdef LiveExperiment
                         'makeMovie', false, 'makeHis', true);
                     
                 end
+                
             end
             out = hisMat;
             
@@ -436,7 +442,7 @@ classdef LiveExperiment
         
         function anaphaseFrames = getAnaphaseFrames(this)
             
-           anaphaseFrames = this.anaphaseFrames;
+            anaphaseFrames = this.anaphaseFrames;
             
         end
         
