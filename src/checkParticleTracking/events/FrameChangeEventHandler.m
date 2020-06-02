@@ -1,7 +1,7 @@
 function keyInputHandler = FrameChangeEventHandler(cptState)
  
     function keyInput(cc)
-        numValidFrames = length({cptState.Spots{1}.Fits}); %check handle of spots is updated when is needed down the road
+        numValidFrames = length({cptState.Spots{cptState.CurrentChannelIndex}.Fits}); %check handle of spots is updated when is needed down the road
 
         if cc == '.' %Move forward one frame
             cptState.PreviousFrame = cptState.CurrentFrame;

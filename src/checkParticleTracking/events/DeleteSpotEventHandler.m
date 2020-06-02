@@ -37,7 +37,7 @@ function keyInputHandler = DeleteSpotEventHandler(cptState)
         elseif cptState.CurrentFrame > 1
             cptState.CurrentFrame = getCurrentParticle(cptState).Frame(1);
             cptState.ManualZFlag=0;
-        elseif cptState.CurrentFrame < length({cptState.Spots{1}.Fits})
+        elseif cptState.CurrentFrame < length({cptState.Spots{cptState.CurrentChannelIndex}.Fits})
             cptState.CurrentFrame= cptState.CurrentFrame+1;
             cptState.ManualZFlag=0;
         end
