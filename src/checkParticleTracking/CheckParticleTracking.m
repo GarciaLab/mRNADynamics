@@ -345,17 +345,17 @@ for k = 1:numSpotChannels
     
 end
 
-cc = 1;
+currentCharacter = 1;
 
 if ForCompileAll
     %we just want to save the data, we set 'x' as user command
-    cc = 'x';
+    currentCharacter = 'x';
 end
 
 plotTraceSettings = PlotTraceSettings();
 
 %% Main loop - start
-while (cc ~= 'x')
+while (currentCharacter ~= 'x')
     
     cptState.coatChannel = getCoatChannel(Channel1, Channel2, Channel3);
    
@@ -479,21 +479,21 @@ while (cc ~= 'x')
 %%
     set(0, 'CurrentFigure', Overlay);
     
-    cc = getUserKeyInput(Overlay);
+    currentCharacter = getUserKeyInput(Overlay);
     
-    frameChangeKeyInput(cc);
-    zSliceChangeKeyInput(cc);
-    particleChangeKeyInput(cc);
-    channelSwitchKeyInput(cc);
-    zoomParticleToggleKeyInput(cc);
-    zoomAnywhereKeyInput(cc);
-    histoneContrastKeyInput(cc);
-    addSpotKeyInput(cc);
-    deleteSpotKeyInput(cc);
-    ellipsesKeyInput(cc);
-    tracesKeyInput(cc);
-    nuclearTrackingKeyInput(cc);
-    generalKeyInput(cc);
+    frameChangeKeyInput(currentCharacter);
+    zSliceChangeKeyInput(currentCharacter);
+    particleChangeKeyInput(currentCharacter);
+    channelSwitchKeyInput(currentCharacter);
+    zoomParticleToggleKeyInput(currentCharacter);
+    zoomAnywhereKeyInput(currentCharacter);
+    histoneContrastKeyInput(currentCharacter);
+    addSpotKeyInput(currentCharacter);
+    deleteSpotKeyInput(currentCharacter);
+    ellipsesKeyInput(currentCharacter);
+    tracesKeyInput(currentCharacter);
+    nuclearTrackingKeyInput(currentCharacter);
+    generalKeyInput(currentCharacter);
     
 end
 %% Main loop - end

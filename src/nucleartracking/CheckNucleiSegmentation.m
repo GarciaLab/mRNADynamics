@@ -177,7 +177,7 @@ catch
 end
 
 CurrentFrame=1;
-cc=1;
+currentCharacter=1;
 
 % Show the first image
 imOverlay = imshow(HisImage,DisplayRange,'Border','Tight','Parent',overlayAxes);
@@ -186,7 +186,7 @@ imOriginal = imshow(HisImage,DisplayRange,'Border','Tight','Parent',originalAxes
 projFlag = false;
 set(0, 'CurrentFigure', Overlay)
 
-while (cc~='x')
+while (currentCharacter~='x')
     
     %Load subsequent images
     if ~projFlag
@@ -283,26 +283,26 @@ while (cc~='x')
     tb2.Visible = 'off';
     
     ct=waitforbuttonpress;
-    cc=get(Overlay,'currentcharacter');
-    cm=get(overlayAxes,'CurrentPoint');
+    currentCharacter=get(Overlay,'currentcharacter');
+    currentMouse=get(overlayAxes,'CurrentPoint');
     
     
     
     
-    if (ct~=0)&(cc=='.')&(CurrentFrame<nFrames)
+    if (ct~=0)&(currentCharacter=='.')&(CurrentFrame<nFrames)
         CurrentFrame=CurrentFrame+1;
-    elseif (ct~=0)&(cc==',')&(CurrentFrame>1)
+    elseif (ct~=0)&(currentCharacter==',')&(CurrentFrame>1)
         CurrentFrame=CurrentFrame-1;
-    elseif (ct~=0)&(cc=='>')&(CurrentFrame+5<nFrames)
+    elseif (ct~=0)&(currentCharacter=='>')&(CurrentFrame+5<nFrames)
         CurrentFrame=CurrentFrame+5;
-    elseif (ct~=0)&(cc=='<')&(CurrentFrame-4>1)
+    elseif (ct~=0)&(currentCharacter=='<')&(CurrentFrame-4>1)
         CurrentFrame=CurrentFrame-5;
-    elseif (ct~=0)&(cc=='s')
+    elseif (ct~=0)&(currentCharacter=='s')
         save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v6')
         disp('Ellipses saved.')
     elseif (ct==0)&(strcmp(get(Overlay,'SelectionType'),'normal'))
-        cc=1;
-        if (cm(1,2)>0)&(cm(1,1)>0)&(cm(1,2)<=ySize)&(cm(1,1)<=xSize)
+        currentCharacter=1;
+        if (currentMouse(1,2)>0)&(currentMouse(1,1)>0)&(currentMouse(1,2)<=ySize)&(currentMouse(1,1)<=xSize)
             
             %Add a circle to this location with the mean radius of the
             %ellipses found in this frame
@@ -314,10 +314,10 @@ while (cc~='x')
             
             try
                 Ellipses{CurrentFrame}(end+1,:)=...
-                    [cm(1,1),cm(1,2),MeanRadius,MeanRadius,0,0,0,0,0];
+                    [currentMouse(1,1),currentMouse(1,2),MeanRadius,MeanRadius,0,0,0,0,0];
             catch
                 Ellipses{CurrentFrame}(end+1,:)=...
-                    [cm(1,1),cm(1,2),MeanRadius,MeanRadius,0,0,0,0];
+                    [currentMouse(1,1),currentMouse(1,2),MeanRadius,MeanRadius,0,0,0,0];
             end
         end
         
@@ -325,37 +325,37 @@ while (cc~='x')
         
         
     elseif (ct==0)&(strcmp(get(Overlay,'SelectionType'),'alt'))
-        cc=1;
-        if (cm(1,2)>0)&(cm(1,1)>0)&(cm(1,2)<=ySize)&(cm(1,1)<=xSize)
+        currentCharacter=1;
+        if (currentMouse(1,2)>0)&(currentMouse(1,1)>0)&(currentMouse(1,2)<=ySize)&(currentMouse(1,1)<=xSize)
             %Find out which ellipses we clicked on so we can delete it
             
             %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
-            Distances=sqrt((Ellipses{CurrentFrame}(:,1)-cm(1,1)).^2+...
-                (Ellipses{CurrentFrame}(:,2)-cm(1,2)).^2);
+            Distances=sqrt((Ellipses{CurrentFrame}(:,1)-currentMouse(1,1)).^2+...
+                (Ellipses{CurrentFrame}(:,2)-currentMouse(1,2)).^2);
             [~,MinIndex]=min(Distances);
             
             Ellipses{CurrentFrame}=[Ellipses{CurrentFrame}(1:MinIndex-1,:);...
                 Ellipses{CurrentFrame}(MinIndex+1:end,:)];
         end
         
-    elseif (ct~=0)&(cc=='j')
+    elseif (ct~=0)&(currentCharacter=='j')
         iJump=input('Frame to jump to: ');
         if (floor(iJump)>0)&(iJump<=nFrames)
             CurrentFrame=iJump;
         end
         
-    elseif (ct~=0)&(cc=='m')    %Increase contrast
+    elseif (ct~=0)&(currentCharacter=='m')    %Increase contrast
         DisplayRange(2)=DisplayRange(2)/1.5;
         
-    elseif (ct~=0)&(cc=='n')    %Decrease contrast
+    elseif (ct~=0)&(currentCharacter=='n')    %Decrease contrast
         DisplayRange(2)=DisplayRange(2)*1.5;
         
-    elseif (ct~=0)&(cc=='r')    %Reset the contrast
+    elseif (ct~=0)&(currentCharacter=='r')    %Reset the contrast
         DisplayRange=[min(min(HisImage)),max(max(HisImage))];
         
-    elseif (ct~=0)&(cc=='d')    %Delete all ellipses in the current frame
+    elseif (ct~=0)&(currentCharacter=='d')    %Delete all ellipses in the current frame
         Ellipses{CurrentFrame}=[];
-    elseif (ct~=0)&(cc=='D')    %Delete all ellipses in hand-drawn ROI
+    elseif (ct~=0)&(currentCharacter=='D')    %Delete all ellipses in hand-drawn ROI
         roi = drawrectangle(overlayAxes);
         EllipsesCopy = Ellipses;
         EllipsesCopy{CurrentFrame} = [];
@@ -369,7 +369,7 @@ while (cc~='x')
         delete(roi);
         clear EllipsesCopy;
         
-    elseif (ct~=0)&(cc=='c') & CurrentFrame > 1
+    elseif (ct~=0)&(currentCharacter=='c') & CurrentFrame > 1
         %copy nuclear information from previous frame
         
         Ellipses{CurrentFrame} = Ellipses{CurrentFrame-1};
@@ -377,7 +377,7 @@ while (cc~='x')
             registerEllipses(Ellipses{CurrentFrame},...
             HisImage, hisMat(:, :, CurrentFrame-1));
         
-    elseif (ct~=0)&(cc=='v') & CurrentFrame < nFrames
+    elseif (ct~=0)&(currentCharacter=='v') & CurrentFrame < nFrames
         %copy nuclear information from next frame
         
         Ellipses{CurrentFrame} = Ellipses{CurrentFrame+1};
@@ -386,7 +386,7 @@ while (cc~='x')
             HisImage, hisMat(:, :, CurrentFrame+1));
         
         
-    elseif (ct~=0)&(cc=='{')
+    elseif (ct~=0)&(currentCharacter=='{')
         %resegment from scratch
         
         Ellipses{CurrentFrame}=[];
@@ -398,7 +398,7 @@ while (cc~='x')
                 0,0,0,0];
         end
         
-    elseif (ct~=0)&(cc=='~')
+    elseif (ct~=0)&(currentCharacter=='~')
         
         ProjectionType = 'midsumprojection';
         
@@ -412,7 +412,7 @@ while (cc~='x')
         
         disp('changed projection');
         
-    elseif (ct~=0)&(cc=='g')  %copy nuclear information from next frame
+    elseif (ct~=0)&(currentCharacter=='g')  %copy nuclear information from next frame
         mitDuration = 10; % ~10 frames before and after anaphase
         for frame = CurrentFrame - mitDuration:CurrentFrame
             Ellipses{frame} = Ellipses{CurrentFrame-mitDuration-1};
@@ -420,23 +420,23 @@ while (cc~='x')
         for frame = CurrentFrame + 1:CurrentFrame + mitDuration
             Ellipses{frame} = Ellipses{CurrentFrame+mitDuration+1};
         end
-    elseif (ct~=0)&(cc=='q') %go to next nc
+    elseif (ct~=0)&(currentCharacter=='q') %go to next nc
         nextncframes = find(nc == (nc(CurrentFrame)+1));
         if ~isempty(nextncframes)
             CurrentFrame = nextncframes(1);
         end
-    elseif (ct~=0)&(cc=='w') %go to previous nc
+    elseif (ct~=0)&(currentCharacter=='w') %go to previous nc
         previousncframes = find(nc == (nc(CurrentFrame)-1));
         if ~isempty(previousncframes)
             CurrentFrame = previousncframes(1);
         end
-    elseif (ct~=0)&(cc=='\')  %resegment with ksnakecircles
+    elseif (ct~=0)&(currentCharacter=='\')  %resegment with ksnakecircles
         
         [~, circles] = kSnakeCircles(HisImage, pixelSize_um);
         circles(:, 6:9) = zeros(size(circles, 1), 4);
         Ellipses{CurrentFrame} = circles;
         
-    elseif (ct~=0)&(cc=='0')    %Debug mode
+    elseif (ct~=0)&(currentCharacter=='0')    %Debug mode
         keyboard
         
     end
