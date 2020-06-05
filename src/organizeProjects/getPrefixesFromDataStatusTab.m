@@ -31,8 +31,11 @@ prefixCellText = {};
 % Locate the prefix cells within the tab
 prefixRow = find(strcmpi(dataTypeTabContents(:,1),'prefix:'));
 prefixColumns = find( contains(...
-    strrep( dataTypeTabContents(prefixRow,:) , ' ', ''), 'prefix=', 'IgnoreCase', true) ); 
-                 
+    strrep( dataTypeTabContents(prefixRow,:) , ' ', ''), 'prefix', 'IgnoreCase', true) ); 
+
+%the first column is a header
+prefixColumns = prefixColumns(2:end);
+
 if isempty(prefixRow) || isempty(prefixColumns)
     error('Unable to find Prefixes in DataStatus.xslx tab. Could be missing or incorrectly formatted.')
 end
