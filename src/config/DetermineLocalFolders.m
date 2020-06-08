@@ -96,7 +96,7 @@ function [rawDataPath, ProcPath, defaultDropboxFolder, MS2CodePath, ...
         movieDatabaseFolder = defaultDropboxFolder;
     end
     
-    movieDatabasePath = [movieDatabaseFolder,'\MovieDatabase.csv'];
+    movieDatabasePath = [movieDatabaseFolder,'/MovieDatabase.csv'];
     movieDatabase = csv2cell(movieDatabasePath, 'fromfile');
     
     if isempty(varargin) || isempty(varargin{1})
