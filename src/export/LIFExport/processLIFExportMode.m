@@ -205,7 +205,7 @@ if ~skipExtraction
     
     if nuclearGUI && shouldExportNuclearProjections
         
-        if ~exist(movieMat, 'var')
+        if ~exist('movieMat', 'var')
             movieMat = getMovieMat(LiveExperiment(Prefix));
         end
         
