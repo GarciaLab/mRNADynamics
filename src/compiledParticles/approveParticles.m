@@ -13,10 +13,10 @@ if shouldApproveAll
             end
         end
         
-        for i=1:length(Particles{ChN})
-            %Make sure the particle has an associated nucleus if we are in
-            %HistoneChannel mode
-            if haveHistoneChannel
+        %Make sure the particle has an associated nucleus if we are in
+        %HistoneChannel mode
+        if haveHistoneChannel
+            for i=1:length(Particles{ChN})
                 if ~isempty(Particles{ChN}(i).Nucleus)
                     %If a particle has been explicitly rejected then don't
                     %approve it!
@@ -24,8 +24,14 @@ if shouldApproveAll
                         Particles{ChN}(i).Approved=1;
                     end
                 end
-            else
-                Particles{ChN}(i).Approved=1;
+            end
+        else % in case there's no histone channel
+            for i=1:length(Particles{ChN})
+                %If a particle has been explicitly rejected then don't
+                %approve it!
+                if Particles{ChN}(i).Approved~=-1
+                    Particles{ChN}(i).Approved=1;
+                end
             end
         end
     end
