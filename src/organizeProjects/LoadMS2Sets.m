@@ -151,7 +151,7 @@ if min(strcmpi(experimentTypes,experimentTypes{1})) == 0  %will be true if strcm
     warning('Inconsistent ExperimentType found among the data sets.')
 elseif min(strcmpi(experimentAxes,experimentAxes{1})) == 0
     warning('Inconsistent ExperimentAxis found among the data sets.')
-elseif min(abs(diff(APResolutions))) == 0
+elseif min(abs(diff(APResolutions))) ~= 0
     warning('Inconsistent APResolution found among the data sets.')
 end
 
