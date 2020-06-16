@@ -13,7 +13,7 @@ configColumn = configuration(:, 1);
 configIndex = find(configColumn == propertyName); 
 
   if isempty(configIndex)
-    error(['Property ''', propertyName, ''' not found in configuration. ',...
+    error(['Property ''', char(propertyName), ''' not found in configuration. ',...
       'Check ComputerFolders and/or MovieDatabase.'])
   end
   
