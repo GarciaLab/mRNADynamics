@@ -34,20 +34,18 @@ cleanupObj = onCleanup(@myCleanupFun);
 
 disp(['Tracking nuclei on ', Prefix, '...']);
 
+postTrackingSettings = struct; 
 
 [ExpandedSpaceTolerance, NoBulkShift,...
-    retrack, nWorkers, track, noBreak, noStitch,...
-    markandfind, fish,...
-    intFlag, chooseHis, mixedPolaritySegmentation, min_rad_um,...
-             max_rad_um, sigmaK_um, mu, nIterSnakes]...
+    retrack, nWorkers, track, postTrackingSettings.noBreak,...
+    postTrackingSettings.noStitch,...
+    markandfind, postTrackingSettings.fish,...
+    postTrackingSettings.intFlag, chooseHis, mixedPolaritySegmentation, min_rad_um,...
+             max_rad_um, sigmaK_um, mu, nIterSnakes,...
+             postTrackingSettings.doAdjustNuclearContours]...
     = DetermineTrackNucleiOptions(varargin{:});
 
 
-postTrackingSettings = struct; 
-postTrackingSettings.noStitch = noStitch;
-postTrackingSettings.fish = fish;
-postTrackingSettings.intFlag = intFlag;
-postTrackingSettings.noBreak = noBreak;
 postTrackingSettings.track = track;
 postTrackingSettings.shouldConvertToAP = true;
 
@@ -65,37 +63,6 @@ ellipsesFile = [DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'];
 schnitzcellsFile = [DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat']; 
 
 anaphaseFrames = getAnaphaseFrames(liveExperiment); 
-
-nc9 = anaphaseFrames(1);
-nc10 = anaphaseFrames(2);
-nc11 = anaphaseFrames(3);
-nc12 = anaphaseFrames(4);
-nc13 = anaphaseFrames(5);
-nc14 = anaphaseFrames(6);
-
-if ~exist('nc9','var')
-    error('Cannot find nuclear cycle values. Were they defined in MovieDatabase or anaphaseFrames.mat?')
-end
-
-%Do we need to convert any NaN chars into doubles?
-if strcmpi(nc14,'nan')
-    nc14=nan;
-end
-if strcmpi(nc13,'nan')
-    nc13=nan;
-end
-if strcmpi(nc12,'nan')
-    nc12=nan;
-end
-if strcmpi(nc11,'nan')
-    nc11=nan;
-end
-if strcmpi(nc10,'nan')
-    nc10=nan;
-end
-if strcmpi(nc9,'nan')
-    nc9=nan;
-end
 
 if iscolumn(anaphaseFrames)
     anaphaseFrames = anaphaseFrames';
@@ -183,17 +150,17 @@ settingArguments{4}=FrameInfo(1).PixelSize;
 schnitzFileExists = exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file');
 
 if schnitzFileExists && ~retrack && track
-    answer=input('Previous tracking detected. Proceed with retracking? (y/n):','s');
-    if strcmpi(answer,'y')
+    answer=input('Previous tracking detected. Erase existing segmentation? (y/n):','s');
+    if strcmpi(answer,'n')
         retrack = true;
-    elseif strcmpi(answer, 'n')
+    elseif strcmpi(answer, 'y')
         retrack = false;
     end
 end
 
 
 
-%Do the tracking for the first time
+%Perform both segmentation and tracking with the "MainTracking" script
 if ~retrack
     
     
@@ -217,7 +184,7 @@ if ~retrack
     [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,nFrames,indMit);
     
 else
-    %Do re-tracking
+    %Retrack: Use "MainTracking" for tracking but not segmentation. 
     disp 'Re-tracking...'
     warning('Re-tracking.') %This code needs to be able to handle approved schnitz still
     

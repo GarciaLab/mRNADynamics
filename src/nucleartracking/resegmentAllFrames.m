@@ -53,8 +53,7 @@ Ellipses = fillEmptyXYFrames(Ellipses);
 
 save2([liveExperiment.resultsFolder, 'Ellipses.mat'], Ellipses);
 
-ellipsesStats = getEllipsesStatistics(Ellipses);
-
+% ellipsesStats = getEllipsesStatistics(Ellipses);
 % 
 % figure(2); tiledlayout('flow');
 % nexttile;

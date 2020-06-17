@@ -74,7 +74,7 @@ nc14 = anaphaseFrames(6);
 
 xSize = liveExperiment.xDim;
 ySize = liveExperiment.yDim;
-pixelSize_um = liveExperiment.pixelSize_um;
+PixelSize_um = liveExperiment.pixelSize_um;
 
 %Get the nuclei segmentation data
 Ellipses = getEllipses(liveExperiment);
@@ -342,6 +342,8 @@ while (currentCharacter~='x')
         iJump=input('Frame to jump to: ');
         if (floor(iJump)>0)&(iJump<=nFrames)
             CurrentFrame=iJump;
+        else
+            disp('Frame out of range.');
         end
         
     elseif (ct~=0)&(currentCharacter=='m')    %Increase contrast
@@ -432,10 +434,16 @@ while (currentCharacter~='x')
         end
     elseif (ct~=0)&(currentCharacter=='\')  %resegment with ksnakecircles
         
-        [~, circles] = kSnakeCircles(HisImage, pixelSize_um);
+        [~, circles] = kSnakeCircles(HisImage, PixelSize_um);
         circles(:, 6:9) = zeros(size(circles, 1), 4);
         Ellipses{CurrentFrame} = circles;
         
+    elseif (ct~=0)&(currentCharacter=='`')  %perform active contouring
+        
+    Ellipses{CurrentFrame} = adjustNuclearContours(...
+        Ellipses{CurrentFrame}, HisImage, liveExperiment.pixelSize_um);
+
+
     elseif (ct~=0)&(currentCharacter=='0')    %Debug mode
         keyboard
         

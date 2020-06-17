@@ -15,11 +15,27 @@ FrameInfo = getFrameInfo(liveExperiment);
 schnitzcells = getSchnitzcells(liveExperiment);
 Ellipses = getEllipses(liveExperiment);
 
-
-
 if postTrackingSettings.fish
     schnitzcells = rmfield(schnitzcells, {'P', 'E', 'D'});
 end
+
+%Optionally, tighten the nuclear contours and convert the circles to
+%true ellipses
+if postTrackingSettings.doAdjustNuclearContours
+    
+    hisMat = getHisMat(liveExperiment);
+    
+    for frame = 1:length(Ellipses)
+        Ellipses{frame} = adjustNuclearContours(Ellipses{frame},...
+            hisMat(:, :, frame), liveExperiment.pixelSize_um);    
+    end
+    
+    save2(ellipsesFile, Ellipses);
+    TrackNuclei(Prefix, 'nWorkers', 1, 'retrack')
+    return;
+    
+end
+
 
 %we'll make sure cellnos and ellipses correspond well.
 [Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);

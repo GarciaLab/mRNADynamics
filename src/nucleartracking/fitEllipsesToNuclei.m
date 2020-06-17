@@ -1,98 +1,186 @@
 function [cMask, ellipseFrameWithEdges] = fitEllipsesToNuclei(mask, varargin)
 
 displayFigures = false;
+doEllipse = true;
+image = []; %#ok<NASGU>
+maxAspectRatio = 4; %quality control to remove bad ellipses. major/minor
+areaFilter = [];
 
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.
-for i = 1:2:(numel(varargin)-1)
-    if i ~= numel(varargin)
-        eval([varargin{i} '=varargin{i+1};']);
+for k = 1:2:(numel(varargin)-1)
+    if k ~= numel(varargin)
+        eval([varargin{k} '=varargin{k+1};']);
     end
 end
 
 if displayFigures
     
-    figure('Units', 'normalized', 'Position',[0.6441 0.0744 0.3184 0.3844]);
+    figure('Units', 'normalized', 'Position',[0.6441 0.0744 0.3184 0.3844]); %#ok<*UNRCH>
     tiledlayout('flow', 'TileSpacing', 'none', 'Padding', 'none')
     
 end
 
 % figure; imagesc(bw);
-xDim = size(mask, 1);
+xDim = size(mask, 2);
 yDim = size(mask, 1);
 
 boundaryCell = bwboundaries(mask, 8, 'noholes');
 stats = regionprops(~~mask, 'EquivDiameter', 'SubarrayIdx', 'Image');
 averageEquivRadius = median([stats.EquivDiameter]/2);
-%if an object is within borderThresh px of the image edge, let's not fit a circle to it and leave it be
-borderThresh = averageEquivRadius; 
+
+%if an object is within borderThresh px of the image edge,
+%let's not fit a circle to it and leave it be
+% borderThresh = averageEquivRadius;
+borderThresh = -Inf; %AR: i'm removing this feature because i want to see
+%if the ellipse fitting can handle border nuclei. may add borderThresh back
+%in later
 border = borderImage(mask);
 borderDist = bwdist(border);
 
-edgeMask = false(xDim, yDim);
+edgeMask = false(yDim, xDim);
+cMask =  false(yDim, xDim);
 
-ellipseFrame = zeros(numel(boundaryCell), 3);
+ellipseFrame = [];
 edgeEllipseFrame = [];
 
-for i = 1:numel(boundaryCell)
+n = 0;
+m = 0;
+for k = 1:numel(boundaryCell)
     %     hold on
-    xs = boundaryCell{i}(:, 1);
-    ys = boundaryCell{i}(:, 2);
+    xs = boundaryCell{k}(:, 1);
+    ys = boundaryCell{k}(:, 2);
     %     plot(xs, ys, 'g.');
     
-    %[x center y center R]
-%     [xfit,yfit, Rfit]= circfit(xs,ys);
-    ellipse_t = fit_ellipse(xs, ys);
+    if ~doEllipse
+        %[x center y center R]
+        [xfit,yfit, Rfit]= circfit(xs,ys);
+    else
+        try
+            ellipseParams = fitEllipse(boundaryCell{k});
+        catch
+            continue;
+        end
+        %not sure why complex parameters happen. we'll skip this ellipse
+        %in this case. also ensure good aspect ratios here.
+        if ~isreal(ellipseParams) ||...
+                ellipseParams(3)/ellipseParams(4) > maxAspectRatio ||...
+                ellipseParams(4)/ellipseParams(3) > maxAspectRatio
+            
+            continue;
+            
+        end
+        
+        xfit = ellipseParams(1);
+        yfit = ellipseParams(2);
+        afit = ellipseParams(3);
+        bfit = ellipseParams(4);
+        thetafit = ellipseParams(5);
+        Rfit = mean([afit, bfit]);
+        
+    end
     
-    yFit = ellipse_t.Y0_in;
-    xFit = ellipse_t.X0_in;
+    xSub = min(round(abs(xfit)), xDim);
+    ySub = min(round(abs(yfit)), yDim);
     
-    xSub = min(round(abs(xFit)), xDim);
-    ySub = min(round(abs(yFit)), yDim);
-    phi = ellipse_t.phi;
-    longAxis = ellipse_t.long_axis;
-    shortAxis = ellipse_t.short_axis;
-    
+    xSub = max(xSub, 1);
+    ySub = max(ySub, 1);
     
     isFarFromBorder =  borderDist(ySub, xSub) > borderThresh;
     
     if isFarFromBorder
         
-        ellipseFrame(i, 1) = yfit;
-        ellipseFrame(i, 2) = xfit;
-        ellipseFrame(i, 3) = longAxis;
-        ellipseFrame(i, 4) = shortAxis;
-        ellipseFrame(i, 5) = phi;
+        n = n + 1;
+        
+        ellipseFrame(n, 2) = xfit; %#ok<*AGROW>
+        ellipseFrame(n, 1) = yfit;
+        if ~doEllipse
+            ellipseFrame(n, 3) = Rfit;
+            ellipseFrame(n, 5) = 0; %angle
+        else
+            ellipseFrame(n, 3) = afit;
+            ellipseFrame(n, 4) = bfit;
+            ellipseFrame(n, 5) = mod(thetafit + pi/2, 2*pi); %rotate theta to match
+            %what roi.Ellipse expects
+            
+            h = images.roi.Ellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
+                'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
+                'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)),'StripeColor','m');
+            cMask = cMask + poly2mask(h.Vertices(:, 1), h.Vertices(:, 2), size(cMask, 1), size(cMask, 2));
+            %             h = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
+            %             'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)),'StripeColor','m');
+            %             cMask = cMask + createMask(h);
+            
+        end
         
     else
-        edgeEllipseFrame(i, 1) = yfit;
-        edgeEllipseFrame(i, 2) = xfit;
-        edgeEllipseFrame(i, 3) = longAxis;
-        edgeEllipseFrame(i, 4) = shortAxis;
-        edgeEllipseFrame(i, 5) = phi;        
         
-        reg = stats(i).Image;
+        m = m + 1;
+        edgeEllipseFrame(m, 2) = xfit;
+        edgeEllipseFrame(m, 1) = yfit;
+        edgeEllipseFrame(m, 3) = Rfit;
+        if doEllipse
+            edgeEllipseFrame(m, 4) = Rfit;
+            edgeEllipseFrame(m, 5) = 0;
+        end
+        
+        region = stats(k).Image;
         %         figure(87); imagesc(reg);
-        reg = reg(:);
+        region = region(:);
         % %             figure(88); imagesc(edgeMask);
-        a = [stats(i).SubarrayIdx];
-        sz = size(stats(i).Image);
+        a = [stats(k).SubarrayIdx];
+        sz = size(stats(k).Image);
         for xx = 1:numel(a{2})
             for yy = 1:numel(a{1})
-                edgeMask(a{1}(yy), a{2}(xx)) = reg(sub2ind(sz,yy, xx));
+                edgeMask(a{1}(yy), a{2}(xx)) = region(sub2ind(sz,yy, xx));
             end
         end
         
     end
-        
-    %make circle with center
-    %     rectangle('position',[xfit-Rfit,yfit-Rfit,Rfit*2,Rfit*2],...
-    %     'curvature',[1,1],'linestyle','-','edgecolor','r');
+    
 end
 
-cMask = makeNuclearMask(ellipseFrame, [size(mask, 1), size(mask, 2)], 'radiusScale', 1);
+%this is here for backwards compatibility.
+%it's being deprecated.
+if ~doEllipse
+    cMask = makeNuclearMask(ellipseFrame,...
+        [size(mask, 1), size(mask, 2)], 'radiusScale', 1);
+end
 
 ellipseFrameWithEdges = cat(1, ellipseFrame, edgeEllipseFrame);
 
 cMask = cMask + edgeMask;
+% 
+% ellipseFrameWithEdgesTemp = [];
+% %quality control
+% if ~isempty(areaFilter)
+%     for n = 1:size(ellipseFrameWithEdges, 1)
+%         ellipseArea = pi*ellipseFrameWithEdges(n, 3)*ellipseFrameWithEdges(n, 4);
+%         ellipseAspectRatio = ellipseFrameWithEdges(n, 3) / ellipseFrameWithEdges(n, 4); 
+%         
+%         if ellipseArea > areaFilter(1) &&...
+%                ellipseArea < areaFilter(2) &&...
+%                 ellipseAspectRatio < maxAspectRatio &&...
+%                 (1/ellipseAspectRatio) < maxAspectRatio
+%                 
+%             ellipseFrameWithEdgesTemp = [ellipseFrameWithEdgesTemp; ellipseFrameWithEdges(n, :)];
+%             
+%         end
+%         
+%         assert(size(ellipseFrameWithEdgesTemp, 1) <= size(ellipseFrameWithEdges, 1));
+%         
+%     end
+% end
+
+% ellipseFrameWithEdges = ellipseFrameWithEdgesTemp;
+
+%double-check orientation angles are kosher
+if ~isempty(ellipseFrameWithEdges)
+    assert( all(ellipseFrameWithEdges(:, 5) <= 2*pi) );
+end
+
+
 % figure; imshowpair(bw, cMask, 'montage');
+
+
+end

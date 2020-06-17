@@ -58,7 +58,8 @@ mask = bwareafilt(wshed(kMaskRefined), areaFilter);
 %far away regions
 % mask = imfill(bwmorph(mask, 'bridge'), 'holes');
 
-[mask, ellipseFrame] = fitCirclesToNuclei(mask, 'areaFilter', areaFilter, 'maxAspectRatio', maxAspectRatio);
+[mask, ellipseFrame] = fitEllipsesToNuclei(...
+    mask, 'areaFilter', areaFilter, 'maxAspectRatio', maxAspectRatio);
 
 mask = logical(mask); 
 
