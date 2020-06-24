@@ -7,11 +7,27 @@ function Particles =...
 
 NDigits = thisExperiment.nDigits;
 
-
+% [Particles] = track02KalmanTesting(...
+%     FrameInfo, Spots, NCh, PixelSize, SearchRadiusMicrons, retrack, displayFigures)
+  
 tic
-Particles = track01ParticleProximity(...
+disp('Performing intitial particle linking...')
+RawParticles = track01ParticleProximity(...
     FrameInfo, Spots, schnitzcells, NCh, PixelSize, SearchRadiusMicrons, retrack, displayFigures);
+toc 
+tic
+disp('Inferring particle motion model...')
+HMMParticles = track02TrainGHMM(RawParticles, FrameInfo, retrack, displayFigures);
 toc
+tic
+disp('Simulating particle tracks...')
+SimParticles = track03PredictParticlePaths(HMMParticles, FrameInfo, retrack, displayFigures);
+toc
+tic
+disp('Stitching particle tracks...')
+StitchedParticles = track04StitchTrackNoNuclei(...
+                          SimParticles, FrameInfo, retrack, displayFigures);
+toc                        
 % Iterate over all channels
 for Channel = 1:NCh
     
