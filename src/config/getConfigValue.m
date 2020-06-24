@@ -4,13 +4,13 @@
 %% 
 function value = getConfigValue(configuration, propertyName)
 
-arguments
-    configuration string
-    propertyName string
-end
+% arguments
+%     configuration string
+%     propertyName string
+% end
 
 configColumn = configuration(:, 1);
-configIndex = find(configColumn == propertyName); 
+configIndex = find(strcmp(configColumn,propertyName)); 
 
   if isempty(configIndex)
     error(['Property ''', propertyName, ''' not found in configuration. ',...

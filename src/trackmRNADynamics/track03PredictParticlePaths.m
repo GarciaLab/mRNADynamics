@@ -71,7 +71,7 @@ function RawParticles = track03PredictParticlePaths(...
         pdBkdSE1 = cumsum(fliplr(sum(bkdArray.*Sigma)));
         pdBkdSE2 = cumsum(fliplr(sum(bkdArray.*(Mu.^2))-sum((bkdArray.*Mu).^2))); % variance of expectation
         pdBkdSE = fliplr(sqrt(pdBkdSE1 + pdBkdSE2));
-        
+
         % generate aggregate path and helper vectors
         hmmModel(h).pathVec = [pdBkdMean+varPos(1) varPos pdFwdMean+varPos(end)];
         hmmModel(h).sigmaVec = [pdBkdSE zeros(size(varPos)) pdFwdSE];

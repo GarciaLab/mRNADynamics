@@ -68,8 +68,8 @@ function [Particles] = track01ParticleProximity(...
             % use sliding window to estimate average nucleus movement
             NucleiDxVec = [];
             NucleiDyVec = [];
-            NewNucleiX = [];
-            NewNucleiY = [];
+            ExtantNucleiX = [];
+            ExtantNucleiY = [];
             StopFrame = min([length(Spots{Channel}),CurrentFrame+SlidingWindowSize]);
             StartFrame = max([1,CurrentFrame-SlidingWindowSize]);
             for i = 1:length(schnitzcells)             
@@ -78,15 +78,17 @@ function [Particles] = track01ParticleProximity(...
               if sum(FrameFT)==2
                 NucleiDxVec = [NucleiDxVec diff(schnitzcells(i).cenx(FrameFT))];
                 NucleiDyVec = [NucleiDyVec diff(schnitzcells(i).ceny(FrameFT))];
-                NewNucleiX = [NewNucleiX schnitzcells(i).cenx(CurrFT)];
-                NewNucleiY = [NewNucleiY schnitzcells(i).ceny(CurrFT)];
+                ExtantNucleiX = [ExtantNucleiX schnitzcells(i).cenx(CurrFT)];
+                ExtantNucleiY = [ExtantNucleiY schnitzcells(i).ceny(CurrFT)];
               end
             end
 
             % calculate distance to each nucleus 
-            NucleusWeightMat = NaN(length(NewSpotsX),length(NewNucleiX));
+            NucleusWeightMat = NaN(length(NewSpotsX),length(ExtantNucleiX));
+            NucleusDistMat = NaN(length(NewSpotsX),length(ExtantNucleiX));
             for i = 1:length(NewSpotsX)
-              NucleusWeightMat(i,:) = (rand(numel(NewNucleiX),1)*0.05+vecnorm([NewSpotsX(i) NewSpotsY(i)]  - [NewNucleiX' NewNucleiY'], 2, 2)).^-2;
+              NucleusWeightMat(i,:) = (rand(numel(ExtantNucleiX),1)*0.05+vecnorm([NewSpotsX(i) NewSpotsY(i)]  - [ExtantNucleiX' ExtantNucleiY'], 2, 2)).^-2;
+              NucleusDistMat(i,:) = vecnorm([NewSpotsX(i) NewSpotsY(i)]  - [ExtantNucleiX' ExtantNucleiY'],2,2);
             end
             % assign weighted mean bulk displacement to particles
             SpotBulkDxVec = (sum(repmat(NucleiDxVec,length(NewSpotsX),1).*NucleusWeightMat,2) ./ sum(NucleusWeightMat,2) / (StopFrame-StartFrame+1))';
@@ -102,7 +104,7 @@ function [Particles] = track01ParticleProximity(...
           
           % Adjust for nuclear movements
           DistanceMat = sqrt((NewSpotsX'-SpotBulkDxVec'- PrevSpotsX).^2 + (NewSpotsY'-SpotBulkDyVec' - PrevSpotsY).^2)*PixelSize;
-
+     
           % Find existing particles and new spots are close enough to be 
           % linked. In cases of degenerate assignemnt, take pairt that
           % minimizes jump distance
@@ -123,7 +125,7 @@ function [Particles] = track01ParticleProximity(...
           end                        
 
         end
-
+   
         % See which spots weren't assigned and add them to the structure as new particles
         NewParticles = find(NewParticleFlag);
         TotalParticles = 0;
