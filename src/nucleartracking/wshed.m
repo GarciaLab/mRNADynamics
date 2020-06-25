@@ -12,6 +12,7 @@ end
 
 displayFigures = false;
 distThresh = 3;
+checkPolarity = true;
 
 for i = 1:(numel(varargin)-1)
     if i ~= numel(varargin)
@@ -22,18 +23,20 @@ for i = 1:(numel(varargin)-1)
 end
 
 maskInOriginal = maskIn;
+
 %invert the image polarity if necessary. not sure if this is the best
 %metric. size or euler number could also work
-% stats =  regionprops(maskIn, 'EulerNumber');
-% statsInvert =  regionprops(~maskIn, 'EulerNumber');
-% maskIn = gpuArray(maskIn);
-if chooseKLabel(maskIn)
-    maskIn=~maskIn;
+if checkPolarity
+    if chooseKLabel(maskIn)
+        maskIn=~maskIn;
+    end
+    % stats =  regionprops(maskIn, 'EulerNumber');
+    % statsInvert =  regionprops(~maskIn, 'EulerNumber');
+    % maskIn = gpuArray(maskIn);
+    % if min([statsInvert.EulerNumber]) < min([stats.EulerNumber])
+    %     maskIn=~maskIn;
+    % end
 end
-
-% if min([statsInvert.EulerNumber]) < min([stats.EulerNumber])
-%     maskIn=~maskIn;
-% end
 
 %get distance transform
 D = -bwdist(maskIn);

@@ -21,13 +21,13 @@ function [ nuclei, varargout ] = mainTracking(FrameInfo, hisMat, varargin)
 %       - embryoMask : logical array of the same size as the images that
 %       is 'true' for values inside the embryo and 'false' outside. When no
 %       edge of the embryo is visible, the mask can be set with
-%       'true(size(one_image_from_the_movie))'. Everything outside the 
+%       'true(size(one_image_from_the_movie))'. Everything outside the
 %       embryo is simply ignored. If not provided,
 %       the program will try to detect it on its own.
 %
 %       Outputs :
 %       -nuclei : a structure containing the results from the tracking. The
-%       structure contains the following fields, where n is the number of 
+%       structure contains the following fields, where n is the number of
 %       frames in the movie :
 %           - position : an nx2 array defining the position of the nucleus
 %           on every frame. Rows are filled with NaNs if the nucleus is not
@@ -41,7 +41,7 @@ function [ nuclei, varargout ] = mainTracking(FrameInfo, hisMat, varargin)
 %
 %
 %        2. [nuclei] = mainTracking(names, 'centers', centers, 'mapping', map,...)
-%       
+%
 %        This usage is the same as before, but instead of segmenting the
 %        nuclei from the images, the centers array is used. When correcting
 %        tracking, the 'mapping' argument defining the matches to enforce
@@ -55,16 +55,16 @@ function [ nuclei, varargout ] = mainTracking(FrameInfo, hisMat, varargin)
 %       correction has to be done. E.g. if map{2}(5,:) = [6 9], this means
 %       that on frame 2, the nucleus with position 'centers(5,:)' is
 %       dividing and its daughters are the nuclei with positions
-%       'centers(6,:)' and 'centers(9,:)' on frame 3. If 
+%       'centers(6,:)' and 'centers(9,:)' on frame 3. If
 %       map{2}(5,:) = [6 -1], nucleus 5 on frame 2 is forced to be mapped
-%       nucleus 6 on frame 3 only. The -1 impairs the program to assume a 
+%       nucleus 6 on frame 3 only. The -1 impairs the program to assume a
 %       division happened and map it to a second nucleus. On the other hand
-%       map{2}(5,:) = [6 0] means that the nucleus number 6 on frame 3 
-%       corresponds to the nucleus number 5 on frame 2 and, because of the 
-%       0, if these frames are within a division, the program could decide 
+%       map{2}(5,:) = [6 0] means that the nucleus number 6 on frame 3
+%       corresponds to the nucleus number 5 on frame 2 and, because of the
+%       0, if these frames are within a division, the program could decide
 %       that the nucleus divided and assign a second nucleus to the
 %       mapping.
-%       
+%
 %
 %       All the parameters used by the different functions are defined in
 %       the function 'getDefaultParameters'. Typically, the pixel size,
@@ -171,10 +171,6 @@ end
 numberOfFrames = size(hisMat, 3);
 
 waitbar(0.2,h_waitbar_initialization);
-% 
-% if ~exist('embryoMask','var') || isempty(embryoMask)
-%     embryoMask = getEmbryoMaskLive(names);
-% end
 
 waitbar(0.3,h_waitbar_initialization)
 
@@ -197,9 +193,6 @@ time_resolution = getDefaultParameters(FrameInfo,'time resolution');
 space_resolution = getDefaultParameters(FrameInfo,'space resolution');
 
 numberOfFrames = size(hisMat, 3);
-%margin = ceil(getDefaultParameters('margin mitosis')/time_resolution);
-
-
 
 
 %% 1. Start the segmentation if necessary.
@@ -216,7 +209,7 @@ waitbar(0.8,h_waitbar_initialization)
 % If not provided, find the mitosis.
 if ~exist('indMitosis','var') || isempty('indMitosis')
     % Indices of putative mitosis:
-%     [indMitosis, dummy] = findMitosis(names,shifts);
+    %     [indMitosis, dummy] = findMitosis(names,shifts);
     % Reshape in a correctly sized structure:
     tmp = zeros(numel(indMitosis,2));
     for j = 1:numel(indMitosis)
@@ -267,7 +260,7 @@ if ~exist('centers','var') || isempty(centers)
     for j = 1:(size(indMitosis,1)-1)
         
         % Segment interphases
-    
+        
         segment = true;
         if size(indMitosis,1) == 1 % there is only one phase (mitosis or interphase) in the movie
             if indMitosis(1,1) ~= 1 % the only phase is an interphase
@@ -278,13 +271,13 @@ if ~exist('centers','var') || isempty(centers)
             end
         else
             first = max(indMitosis(j,2),1);
-                    if ~isempty(xy{first})
-                        first = first+1;
-                    end
+            if ~isempty(xy{first})
+                first = first+1;
+            end
             last = min(indMitosis(j+1,1),numberOfFrames);
-                    if ~isempty(xy{last})
-                        last = last-1;
-                    end
+            if ~isempty(xy{last})
+                last = last-1;
+            end
         end
         if segment
             xy(first:last) = segmentFrames(FrameInfo, hisMat,first,last,diameters(j),embryoMask,h_waitbar_segmentation);
@@ -303,13 +296,13 @@ if ~exist('centers','var') || isempty(centers)
                 end
             else
                 first = max(indMitosis(j,1),1);
-                    if ~isempty(xy{first})
-                        first = first+1;
-                    end
+                if ~isempty(xy{first})
+                    first = first+1;
+                end
                 last = min(indMitosis(j,2),numberOfFrames);
-                    if ~isempty(xy{last})
-                        last = last-1;
-                    end
+                if ~isempty(xy{last})
+                    last = last-1;
+                end
             end
             mitosisStartingPoint(end+1) = first;
             if j == 1 || size(indMitosis,1)
@@ -325,25 +318,12 @@ if ~exist('centers','var') || isempty(centers)
     
     close(h_waitbar_segmentation)
     
+
     %If the xy contains only one or zero nuclei then there's probably something
     %wrong. In that case just copy the information from the previous good
     %frame.
-    if sum(cellfun(@(x) size(x,1),xy) < 1)
-        %Find the frames where we have issues
-        FramesToFix=find(cellfun(@(x) size(x,1),xy) < 1 );
-        for i=1:length(FramesToFix)
-            if FramesToFix(i)==1
-                FrameToCopy=1;
-                while sum(FramesToFix==NextFrameToCopy)
-                    FrameToCopy=FrameToCopy+1;
-                end
-            else
-                FrameToCopy=FramesToFix(i)-1;
-            end
-            xy{FramesToFix(i)}=xy{FrameToCopy};
-        end
-    end
-   
+%     xy = fillEmptyXYFrames(xy);
+    
 else
     xy = centers;
 end
@@ -357,15 +337,14 @@ end
 
 % Initialize output
 numberOfNuclei = size(xy{1},1);
-totalNumberOfFrames = size(hisMat, 3);
 
 % initialize array
-nuclei = struct('position',nan(totalNumberOfFrames,2),'indXY',...
-    mat2cell([1:numberOfNuclei; zeros(totalNumberOfFrames-1,numberOfNuclei)],...
-    totalNumberOfFrames,ones(numberOfNuclei,1)),'P',[],'D',[],'E',[],'approved',0);
+nuclei = struct('position',nan(numberOfFrames,2),'indXY',...
+    mat2cell([1:numberOfNuclei; zeros(numberOfFrames-1,numberOfNuclei)],...
+    numberOfFrames,ones(numberOfNuclei,1)),'P',[],'D',[],'E',[],'approved',0);
 
 for j = 1:numel(nuclei)
-     nuclei(j).position(1,:) = xy{1}(j,:);
+    nuclei(j).position(1,:) = xy{1}(j,:);
 end
 
 if segmentationOnly
@@ -397,9 +376,9 @@ end
 if firstFrameIsAnInterphase
     offset = 1;
 else
-	offset = 0;
+    offset = 0;
 end
-%Define the frames in each phase. 
+%Define the frames in each phase.
 for j = 1:numberOfPhases
     %Gives the index of the most recent mitosis
     index = round((j+offset)/2);
@@ -422,34 +401,44 @@ else
     nuclearCycle = 14;
 end
 for j = numel(indInterphases):-1:1
+    
     diameters(indInterphases(j)) = getDefaultParameters(FrameInfo,['d' num2str(max(nuclearCycle,10))]);
     previousNuclearCycle = nuclearCycle;
     nucCyc(j) = nuclearCycle;
     nuclearCycleFloored = max(nuclearCycle-1,10);
     if indInterphases(j) > 1
-        diameters(indInterphases(j)-1) = 0.5* (getDefaultParameters(FrameInfo,['d' num2str(nuclearCycleFloored)])+getDefaultParameters(FrameInfo, ['d' num2str(previousNuclearCycle)])) ;
+        diameters(indInterphases(j)-1) = 0.5 *...
+            (getDefaultParameters(FrameInfo,['d' num2str(nuclearCycleFloored)])...
+            + getDefaultParameters(FrameInfo, ['d' num2str(previousNuclearCycle)])) ;
     end
     nuclearCycle = nuclearCycle-1;
+    
 end
 for j = 1:numberOfPhases
     %Sets the range of this phase based on the break up frames from above
     %(again checking for index out of bounds errors in advance)
+    
     first = max(breakUpsFrames(j,1),1);
     last = min(breakUpsFrames(j,2),numberOfFrames);
-    if phaseIsAMitosis(j)       
+    
+    if phaseIsAMitosis(j)
         if firstFrameIsAnInterphase
             fprintf(['Processing mitosis between nuclear cycle ' num2str(nucCyc(0.5*j)) ' and ' num2str(nucCyc(0.5*j)+1) '... ']);
         else
             fprintf(['Processing mitosis between nuclear cycle ' num2str(nucCyc(0.5*(j+1))-1) ' and ' num2str(nucCyc(0.5*(j+1))) '... ']);
         end
         
-        [ xy(first:last), mapping(first:last-1), nuclei ] =...
-            trackMitosis(FrameInfo, hisMat, first, last, shifts,...
-            diameters(j), embryoMask, xy(first:last),...
-            mapping(first:last-1), nuclei, h_waitbar_tracking );
+%         try
+            [ xy(first:last), mapping(first:last-1), nuclei ] =...
+                trackMitosis(FrameInfo, hisMat, first, last, shifts,...
+                diameters(j), embryoMask, xy(first:last),...
+                mapping(first:last-1), nuclei, h_waitbar_tracking );
+%         catch
+%             warning('couldn''t track this mitosis')
+%         end
         
         fprintf('Done!\n')
-    
+        
         
     else
         
@@ -459,12 +448,15 @@ for j = 1:numberOfPhases
         else
             fprintf(['Processing nuclear cycle ' num2str(nucCyc(0.5*j)) '... ']);
         end
-        %This trackingStatingPoint(1) looks like it might be a magic number
-        %and does not appear to be used
-        [nuclei, ~, interpolatedShifts] = trackWholeInterphase(FrameInfo,hisMat,...
-            trackingStartingPoints(1),first,last,diameters(j), embryoMask, ...
-            xy, mapping,nuclei, interpolatedShifts, h_waitbar_tracking, ...
-            ExpandedSpaceTolerance, NoBulkShift);
+        
+%         try
+            [nuclei, ~, interpolatedShifts] = trackWholeInterphase(FrameInfo,hisMat,...
+                trackingStartingPoints(1),first,last,diameters(j), embryoMask, ...
+                xy, mapping,nuclei, interpolatedShifts, h_waitbar_tracking, ...
+                ExpandedSpaceTolerance, NoBulkShift);
+%         catch
+%             warning('skipping this interphase');
+%         end
         
         fprintf('Done!\n')
         
@@ -477,7 +469,7 @@ close(h_waitbar_tracking)
 if nargout > 1
     varargout{1} = xy;
     
-    if nargout > 2 
+    if nargout > 2
         if ~exist('approvedNuclei','var') || isempty(approvedNuclei)
             approvedNuclei = false(numel(nuclei),1);
         else
@@ -501,7 +493,7 @@ if nargout > 1
                     end
                 end
             end
-                
+            
         end
         
         if nargout > 3

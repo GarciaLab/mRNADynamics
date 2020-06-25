@@ -12,9 +12,9 @@ for f = 1:nFrames
     
     image = hisMat(:, :, f);
     if f == 1
-        imwrite(image,file, 'Compression', 'none');
+        imwrite(image,file);
     else
-        imwrite(image,file,'WriteMode', 'append', 'Compression', 'none');
+        imwrite(image,file,'WriteMode', 'append');
     end
      
 end

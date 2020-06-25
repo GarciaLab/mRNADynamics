@@ -17,14 +17,14 @@ for k = 1:2:(numel(varargin)-1)
     end
 end
 
-thisExperiment = liveExperiment(Prefix);
-pixelSize_um = thisExperiment.pixelSize_um;
-hisMat = getHisMat(thisExperiment);
+liveExperiment = LiveExperiment(Prefix);
+pixelSize_um = liveExperiment.pixelSize_um;
+hisMat = getHisMat(liveExperiment);
 
 
-Ellipses = cell(thisExperiment.nFrames, 1);
+Ellipses = cell(liveExperiment.nFrames, 1);
 
-parfor CurrentFrame = 1:thisExperiment.nFrames
+parfor CurrentFrame = 1:liveExperiment.nFrames
         
         
         HisImage = hisMat(:, :, CurrentFrame);
@@ -48,10 +48,23 @@ parfor CurrentFrame = 1:thisExperiment.nFrames
         
 end
 
-if whos(var2str(Ellipses)).bytes < 2E9
-    save([thisExperiment.resultsFolder, 'Ellipses.mat'],var2str(Ellipses), '-v6');
-else
-    save([thisExperiment.resultsFolder, 'Ellipses.mat'],var2str(Ellipses), '-v7.3', '-nocompression');
-end
+%TrackNuclei handles empty frames poorly, so let's fill them in. 
+Ellipses = fillEmptyXYFrames(Ellipses);
 
+save2([liveExperiment.resultsFolder, 'Ellipses.mat'], Ellipses);
+
+% ellipsesStats = getEllipsesStatistics(Ellipses);
+% 
+% figure(2); tiledlayout('flow');
+% nexttile;
+% hist(ellipsesStats.cenxList);
+% nexttile;
+% hist(ellipsesStats.cenyList);
+% nexttile;
+% hist(ellipsesStats.semiMajList);
+% nexttile;
+% hist(ellipsesStats.semiMinList);
+% nexttile;
+% hist(ellipsesStats.orientationAngleList);
+% 
 end

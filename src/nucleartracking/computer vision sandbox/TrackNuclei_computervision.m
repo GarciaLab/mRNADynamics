@@ -1,39 +1,50 @@
-function [schnitzcells, Ellipses] = TrackNuclei_computervision(Prefix)
+function [schnitzcells, Ellipses] = TrackNuclei_computervision(Prefix, frameRange)
+
+arguments
+   Prefix char 
+   frameRange (1, 2) double = [1 inf]
+end
 
 %AR 4/2020
 load('ReferenceHist.mat', 'ReferenceHist');
-thisExperiment = liveExperiment(Prefix);
-pixelSize_um = thisExperiment.pixelSize_um;
-nFrames = thisExperiment.nFrames;
-hisVideoFile = [thisExperiment.preFolder, filesep, 'hisVideo.avi'];
-schnitzcellsFile = [thisExperiment.resultsFolder, filesep,Prefix,'_lin.mat'];
-ellipsesFile = [thisExperiment.resultsFolder, filesep 'Ellipses.mat'];
+liveExperiment = LiveExperiment(Prefix);
+pixelSize_um = liveExperiment.pixelSize_um;
+
+%if no frameRange upper limit was passed, change the upper limit 
+%to the total number of frames in the movie
+nFrames = liveExperiment.nFrames;
+if isinf(frameRange(2))
+    frameRange(2) = nFrames;
+end
+
+
+hisVideoFile = [liveExperiment.preFolder, filesep, 'hisVideo.avi'];
+schnitzcellsFile = [liveExperiment.resultsFolder, filesep,Prefix,'_lin.mat'];
+ellipsesFile = [liveExperiment.resultsFolder, filesep 'Ellipses.mat'];
 schnitzcells = struct('cenx', [], 'ceny', [],...
     'frames', [], 'smaj', [], 'smin', [],...
     'orientationAngle', []);
 
 if ~exist(hisVideoFile, 'file')
-    hisMat = getHisMat(thisExperiment);
+    hisMat = getHisMat(liveExperiment);
     exportTifStackToAvi(hisMat, hisVideoFile)
 end
 
-obj = setupSystemObjects(hisVideoFile);
+playerObj = setupSystemObjects(hisVideoFile);
 tracks = initializeTracks(); % Create an empty array of tracks.
 nextId = 1; % ID of the next track
-% Detect moving objects, and track them across video frames.
-frameIndex = 0;
 
-for f = 1:nFrames
-    
-    frameIndex = frameIndex + 1;
-    
-    frame = readFrame(obj.reader);
+
+% Detect moving objects, and track them across video frames.
+for frameIndex = frameRange(1):frameRange(2)
+        
+    frameImage = readFrame(playerObj.reader);
     %% Measurement
     
     %Segment the nuclei to create measurements
     %that will be fed into Kalman filter.
     [measurements, bboxes, mask] =...
-        detectObjects(frame, pixelSize_um, nFrames);
+        detectObjects(frameImage, pixelSize_um, nFrames);
     
     %% Prediction
     
@@ -57,8 +68,7 @@ for f = 1:nFrames
     [tracks, nextId] = createNewTracks(tracks, measurements,...
         bboxes, unassignedDetections, nextId);
     
-    pause(.5);
-    schnitzcells = displayTrackingResults(tracks, obj, frame,...
+    schnitzcells = displayTrackingResults(tracks, playerObj, frameImage,...
         mask, ReferenceHist, schnitzcells, frameIndex);
     
 end
@@ -68,19 +78,19 @@ end
 
 save2(ellipsesFile, Ellipses);
 save2(schnitzcellsFile, schnitzcells);
-
-schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells,...
-    getFrameInfo(thisExperiment), thisExperiment.userPreFolder);
-
-%%
-try
-expandedAnaphaseFrames = [zeros(1,8),thisExperiment.anaphaseFrames'];
-[schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(...
-    schnitzcells, Ellipses, expandedAnaphaseFrames, nFrames);
-save2(ellipsesFile, Ellipses);
-save2(schnitzcellsFile, schnitzcells);
-catch, warning('did not break up at mitoses');
-end
+% 
+% schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells,...
+%     getFrameInfo(liveExperiment));
+% 
+% %%
+% try
+% expandedAnaphaseFrames = [zeros(1,8),liveExperiment.anaphaseFrames'];
+% [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(...
+%     schnitzcells, Ellipses, expandedAnaphaseFrames, nFrames);
+% save2(ellipsesFile, Ellipses);
+% save2(schnitzcellsFile, schnitzcells);
+% catch, warning('did not break up at mitoses');
+% end
 %%
 
 %validate tracks

@@ -13,10 +13,10 @@ configColumn = configuration(:, 1);
 configIndex = find(strcmp(configColumn,propertyName)); 
 
   if isempty(configIndex)
-    error(['Property ''', propertyName, ''' not found in configuration. ',...
+    error(['Property ''', char(propertyName), ''' not found in configuration. ',...
       'Check ComputerFolders and/or MovieDatabase.'])
   end
   
   %cast to char for compatibility
-  value = char(configuration(configIndex, 2)); 
+  value = char(strtrim(configuration(configIndex, 2))); 
 end

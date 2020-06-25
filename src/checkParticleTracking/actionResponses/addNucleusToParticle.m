@@ -3,17 +3,17 @@ function Particles =...
     addNucleusToParticle(...
     ...
     Particles, CurrentFrame, ...
-    CurrentChannel, UseHistoneOverlay, schnitzcells, CurrentParticle)
+    CurrentChannelIndex, UseHistoneOverlay, schnitzcells, CurrentParticle)
 
 %addNucleusToParticle Summary of this function goes here
 %   Detailed explanation goes here
 
 
-if ~isempty(schnitzcells) & isfield(Particles{CurrentChannel}, 'xPos')
+if ~isempty(schnitzcells) && isfield(Particles{CurrentChannelIndex}, 'xPos')
     
-    frames = Particles{CurrentChannel}(CurrentParticle).Frame;
-    xPos = Particles{CurrentChannel}(CurrentParticle).xPos(frames == CurrentFrame);
-    yPos = Particles{CurrentChannel}(CurrentParticle).yPos(frames == CurrentFrame);
+    frames = Particles{CurrentChannelIndex}(CurrentParticle).Frame;
+    xPos = Particles{CurrentChannelIndex}(CurrentParticle).xPos(frames == CurrentFrame);
+    yPos = Particles{CurrentChannelIndex}(CurrentParticle).yPos(frames == CurrentFrame);
     
     NewNuclei=[xPos, yPos];
     
@@ -37,7 +37,7 @@ if ~isempty(schnitzcells) & isfield(Particles{CurrentChannel}, 'xPos')
     
     ClickedSchnitz=SchnitzSuspect(ClosestNucleusIndex);
     
-    Particles{CurrentChannel}(CurrentParticle).Nucleus = ClickedSchnitz;
+    Particles{CurrentChannelIndex}(CurrentParticle).Nucleus = ClickedSchnitz;
 else
     disp('Failed to connect particle to a nucleus. Either histone channel isn''t present or AddParticlePosition has not yet been run.');
 end

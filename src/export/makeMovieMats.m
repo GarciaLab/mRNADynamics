@@ -25,14 +25,14 @@ elseif nargout == 1
     loadHis = false;
 end
 
-thisExperiment = liveExperiment(Prefix);
-FrameInfo = getFrameInfo(thisExperiment);
-preFolder = thisExperiment.preFolder;
+liveExperiment = LiveExperiment(Prefix);
+FrameInfo = getFrameInfo(liveExperiment);
+preFolder = liveExperiment.preFolder;
 
 [xSize, ySize, ~, ~, ~,...
     nFrames, nSlices, nDigits] = getFrameInfoParams(FrameInfo);
 
-Channels = thisExperiment.getChannels();
+Channels = liveExperiment.getChannels();
 
 movieMat = []; hisMat = [];
 
@@ -51,7 +51,7 @@ tic
 
 if loadMovie && exist([preFolder,filesep,Prefix, '_movieMat.Mat'], 'file')
     disp('Loading movie mats...')
-    movieMat = getMovieMat(thisExperiment);
+    movieMat = getMovieMat(liveExperiment);
     disp(['Movie mats loaded. ', num2str(toc), ' s elapsed.'])
     if isempty(movieMat)
         makeMovie = true;
@@ -62,7 +62,7 @@ if loadHis && exist([preFolder,filesep, Prefix, '_hisMat.Mat'], 'file')
     
     disp('Loading nuclear mats...')
     
-    hisMat = getHisMat(thisExperiment);
+    hisMat = getHisMat(liveExperiment);
     disp(['Nuclear mats loaded. ', num2str(toc), ' s elapsed.'])
     
     if isempty(hisMat)
@@ -87,7 +87,8 @@ if makeMovie
     for ch = 1:nCh
         for f = 1:nFrames
             
-            for z = 1:nSlices+nPadding
+            zRange = 1:nSlices + nPadding;
+            for z = zRange
                 movieMat(:, :, z, f, ch) = imread([preFolder, filesep, Prefix, '_',iIndex(f, nDigits),...
                     '_z', iIndex(z, 2), ['_ch', iIndex(ch, 2)], '.tif']);
             end

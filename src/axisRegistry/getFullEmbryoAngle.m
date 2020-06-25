@@ -1,7 +1,6 @@
 function full_embryo_angle = getFullEmbryoAngle(...
     fullEmbryoPath, surfFile, Prefix)
 
-if isfolder([fullEmbryoPath,'MetaData'])
     %deprecated
 %     xml_file_dir_surf = dir([fullEmbryoPath,...
 %         'MetaData', filesep,'*', surfOrMidStr, '*.xml']);
@@ -15,7 +14,7 @@ if isfolder([fullEmbryoPath,'MetaData'])
         generateLIFMetaDataXML(surfFile, xml_file_surf);
         
         [~, settingStruct] =...
-            readSettingsFromXML(Prefix, xml_file_surf);
+            readSettingsFromLIFMetaDataXML(Prefix, xml_file_surf);
         
         full_embryo_angle = settingStruct.rotatorAngle;
 %     catch

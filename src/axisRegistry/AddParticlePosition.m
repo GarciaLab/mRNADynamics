@@ -68,17 +68,17 @@ for i=1:length(varargin)
     end
 end
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
-DropboxFolder = userResultsFolder;
-PreProcPath = thisExperiment.userPreFolder;
-RawDynamicsPath = thisExperiment.userRawFolder;
+DropboxFolder = liveExperiment.userResultsFolder;
+PreProcPath = liveExperiment.userPreFolder;
+RawDynamicsPath = liveExperiment.userRawFolder;
 
-Channel1 = thisExperiment.Channel1;
-Channel2 = thisExperiment.Channel2;
-Channel3 = thisExperiment.Channel3;
+Channel1 = liveExperiment.Channel1;
+Channel2 = liveExperiment.Channel2;
+Channel3 = liveExperiment.Channel3;
 
-APResolution = thisExperiment.APResolution;
+APResolution = liveExperiment.APResolution;
 
 if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
     load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'Particles', 'SpotFilter')
@@ -112,7 +112,7 @@ end
 
 
 %See if we had any lineage/nuclear information
-hisDir=dir([PreProcPath,filesep,Prefix,filesep,'*-His_*']);
+hisDir=dir([PreProcPath,filesep,Prefix,filesep,'*his*']);
 if ~isempty(hisDir)
     histoneChannelPresent = true;
 else
@@ -127,7 +127,7 @@ fullEmbryoPath = [rawPrefixPath, 'FullEmbryo', filesep];
 
 if ~NoAP
     %If you want to select which channel to load as alignment
-    ChannelToLoad = determineChannelToLoad(SelectChannel, thisExperiment.Channels);
+    ChannelToLoad = determineChannelToLoad(SelectChannel, liveExperiment.Channels);
     
     %Get information about all images. This depends on the microscope used.
     
@@ -304,7 +304,7 @@ if ~NoAP
             zoom_angle = getZoomAngle(Prefix, rawPrefixPath);
             
             full_embryo_angle = getFullEmbryoAngle(fullEmbryoPath,...
-                surfFile, Prefix, 'Surf');
+                surfFile, Prefix);
             
             
         elseif strcmp(FileMode,'LSM')|strcmp(FileMode,'CZI')|strcmp(FileMode,'DSPIN') %CS20170912
@@ -385,24 +385,32 @@ if ~NoAP
     % MovieDatabase after you ran the ExportDataForLivemRNA, then run this
     % script, the code might freak out. I'll put a warning message about
     % that.
-    DHis=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
-    if ~isempty(DHis)
-        ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis(end-1).name]);
-    else
-        disp('Did you run ExportDataForLivemRNA again, after editing the MovieDatabase.csv with ":Nuclear" ("invertedNuclear")?')
-        % This might be the case, for instance, if you're just trying
-        % to find AP information about an image without using FISH
-        % code. In that case, just extract the nuclei from the last
-        % raw image.
-        DGFP = dir([rawPrefixPath, '*.tif']);
-        ImageInfo = imfinfo([rawPrefixPath, DGFP(end).name]);
-        NumFramesAndSlices = length(ImageInfo)/2;
-        RawImage3M = NaN(Rows, Columns, NumFramesAndSlices);
-        for lImageIndex = 1:NumFramesAndSlices
-            RawImage3M(:, :, lImageIndex) = imread([rawPrefixPath,DGFP(end).name],'Index', 2*(lImageIndex-1) + ChannelToLoad);
-        end
-        ZoomImage = max(RawImage3M, [], 3) / 256;
-    end
+    %     DHis=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
+    hisMat = getHisMat(liveExperiment);
+    %     if ~isempty(DHis)
+    %         try
+    %3D stack
+    %             hisMat = imreadStack([PreProcPath,filesep,Prefix,filesep,Prefix,'-His.tif']);
+    ZoomImage = hisMat(:, :, end-1);
+    %         catch
+    %             %single planes
+    %             ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis.name]);
+    %         end
+    %     else
+    %         disp('Did you run ExportDataForLivemRNA again, after editing the MovieDatabase.csv with ":Nuclear" ("invertedNuclear")?')
+    % This might be the case, for instance, if you're just trying
+    % to find AP information about an image without using FISH
+    % code. In that case, just extract the nuclei from the last
+    % raw image.
+    %         DGFP = dir([rawPrefixPath, '*.tif']);
+    %         ImageInfo = imfinfo([rawPrefixPath, DGFP(end).name]);
+    %         NumFramesAndSlices = length(ImageInfo)/2;
+    %         RawImage3M = NaN(Rows, Columns, NumFramesAndSlices);
+    %         for lImageIndex = 1:NumFramesAndSlices
+    %             RawImage3M(:, :, lImageIndex) = imread([rawPrefixPath,DGFP(end).name],'Index', 2*(lImageIndex-1) + ChannelToLoad);
+    %         end
+    %         ZoomImage = max(RawImage3M, [], 3) / 255;
+    %     end
     
     
     
@@ -461,6 +469,7 @@ if ~NoAP
                         Answer=input('Would you like to use them (y/n)? ','s');
                     else
                         Answer = 'y';
+                        ManualAlignment = false;
                     end
                     if strcmpi(Answer,'y')
                         load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
@@ -748,28 +757,34 @@ if correctDV
     %for convenience.
 end
 
-Ellipses = getEllipses(thisExperiment);
-schnitzcells = getSchnitzcells(thisExperiment);
-
-Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
-if shouldConvertToAP
+try
+    Ellipses = getEllipses(liveExperiment);
+    schnitzcells = getSchnitzcells(liveExperiment);
+    
+    ellipsesOld = Ellipses;
+    schnitzcellsOld = schnitzcells; 
+    
     [EllipsePos, APAngle, APLength]...
         = convertToFractionalEmbryoLength(Prefix);
-end
-for s = 1:length(schnitzcells)
-    for f = 1:length(schnitzcells(s).frames)
-        ellipseInd = schnitzcells(s).cellno(f);
-        schnitzcells(s).APPos(f) = EllipsePos{f}(ellipseInd);
+    
+    for s = 1:length(schnitzcells)
+        for f = 1:length(schnitzcells(s).frames)
+            ellipseInd = schnitzcells(s).cellno(f);
+            schnitzcells(s).APpos(f) = EllipsePos{f}(ellipseInd);
+        end
     end
+    
+    ellipsesSizeUnchanged(ellipsesOld, Ellipses);
+    schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells);
+    
+    
+    
+    save2([liveExperiment.resultsFolder, filesep,'Ellipses.mat'], Ellipses);
+    save2([liveExperiment.resultsFolder, filesep,Prefix,'_lin.mat'], schnitzcells);
+    
+catch
+    warning('failed to add AP positions to nuclear structures.')
 end
-
-save([thisExperiment.resultsFolder, filesep,'Ellipses.mat'],'Ellipses');
-if (whos(var2str(schnitzcells)).bytes < 2E9)
-    save([thisExperiment.resultsFolder, filesep,Prefix,'_lin.mat'],'schnitzcells', '-v6');
-else
-    save([thisExperiment.resultsFolder, filesep,Prefix,'_lin.mat'],'schnitzcells', '-v7.3', '-nocompression');
-end
-
 
 
 end
@@ -784,7 +799,7 @@ else
     % From now, we will use a better way to define the channel for
     % alignment (used for cross-correlation).
     % Find channels with ":Nuclear"
-    ChannelToLoadTemp=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
+    ChannelToLoadTemp= contains([Channels(1),Channels(2),Channels(3)],'nuclear','IgnoreCase',true);
     
     % Define the Channel to load, for calculating the cross-correlation
     % In future, we can think about combining multiple channels for

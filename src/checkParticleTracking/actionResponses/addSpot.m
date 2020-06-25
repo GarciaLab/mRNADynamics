@@ -5,24 +5,24 @@ function [SpotFilter, Particles, Spots,...
     ...
     ZoomMode, GlobalZoomMode, Particles, CurrentChannel, ...
     CurrentParticle, CurrentFrame, CurrentZ, Spots,...
-    SpotFilter, cc, Prefix,mUseHistoneOverlay,...
+    SpotFilter, cc, Prefix,UseHistoneOverlay,...
     schnitzcells, nWorkers, plot3DGauss, imStack)
 
 %ADDSPOT
 
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 % 
 % movieMat = getMovieMat(thisExperiment);
 % imStack = movieMat(:, :, :, CurrentFrame, CurrentChannel);
 
-FrameInfo = getFrameInfo(thisExperiment);
-LinesPerFrame = thisExperiment.yDim;
-PixelsPerLine = thisExperiment.xDim;
-pixelSize_nm = thisExperiment.pixelSize_nm;
-PreProcPath = thisExperiment.preFolder;
-snippetSize_px = thisExperiment.snippetSize_px;
-nSlices = thisExperiment.zDim;
+FrameInfo = getFrameInfo(liveExperiment);
+LinesPerFrame = liveExperiment.yDim;
+PixelsPerLine = liveExperiment.xDim;
+pixelSize_nm = liveExperiment.pixelSize_nm;
+PreProcPath = liveExperiment.preFolder;
+snippetSize_px = liveExperiment.snippetSize_px;
+nSlices = liveExperiment.zDim;
 
 
 numParticles = length(Particles{CurrentChannel});
@@ -155,10 +155,15 @@ else
                 
                 %Turn this spot into a new particle. This is the equivalent of
                 %the 'u' command.
-                [SpotFilter{CurrentChannel},Particles{CurrentChannel}]=...
-                    TransferParticle(Spots{CurrentChannel},...
-                    SpotFilter{CurrentChannel},Particles{CurrentChannel},...
-                    CurrentFrame,SpotsIndex);
+                try
+                    [SpotFilter{CurrentChannel},Particles{CurrentChannel}]=...
+                        TransferParticle(Spots{CurrentChannel},...
+                        SpotFilter{CurrentChannel},Particles{CurrentChannel},...
+                        CurrentFrame,SpotsIndex);
+                catch
+                    warning('failed to add spot for unknown reason.')
+                    return;
+                end
                 numParticles = numParticles + 1;
                 
                 %Connect this particle to the CurrentParticle. This is

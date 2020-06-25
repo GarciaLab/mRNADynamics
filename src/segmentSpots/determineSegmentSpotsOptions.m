@@ -1,7 +1,7 @@
 function [displayFigures, lastFrame, numShadows, keepPool, threshGUI, initialFrame, ...
     useIntegralCenter, Weka, keepProcessedData, fit3D, skipChannel,...
     optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat, saveType, ...
-    nuclearMask, dataType, track, skipSegmentation, frameRange]...
+    nuclearMask, dataType, runTrackmRNADynamics, skipSegmentation, frameRange]...
     ...
     = determineSegmentSpotsOptions(varargin)
 
@@ -26,7 +26,7 @@ saveAsMat = true;
 saveType = '.mat';
 nuclearMask = true;
 dataType = '';
-track = true;
+runTrackmRNADynamics = true;
 
   
 for i = 1:length(varargin)
@@ -68,7 +68,7 @@ for i = 1:length(varargin)
      elseif strcmpi(varargin{i}, 'noGPU')
        gpu = 'noGPU';
      elseif strcmpi(varargin{i}, 'track')
-       track = true;
+       runTrackmRNADynamics = true;
     elseif strcmpi(varargin{i}, 'noIntegralZ')
         useIntegralCenter = 0;
     elseif strcmpi(varargin{i}, 'skipChannel')

@@ -43,6 +43,8 @@ for i = 1:length(varargin)
     end
 end
 
+
+%accept input as either project string or the dataset itself
 if ischar(DataType)
     [allData, Prefixes, resultsFolder] = LoadMS2Sets(DataType);
 else
@@ -50,12 +52,16 @@ else
     DataType = inputname(1);
 end
 
-[~,~,~,~, ~,~, ~, ~,~,~,~,~, ~, ~, movieDatabase]...
-    = readMovieDatabase(Prefixes{1});
+thisProject = liveProject(DataType);
 
-[Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
-    Channel1, Channel2,Objective, Power,  DataFolder, DropboxFolderName, Comments,...
-    nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3,prophase,metaphase, anaphase, DVResolution] = getExperimentDataFromMovieDatabase(Prefixes{1}, movieDatabase);
+firstExperimentPrefix = thisProject.includedExperimentNames{1};
+firstExperiment = LiveExperiment(firstExperimentPrefix);
+
+ExperimentAxis = firstExperiment.experimentAxis;
+Channel1 = firstExperiment.Channel1;
+Channel2 = firstExperiment.Channel2;
+Channel3 = firstExperiment.Channel3;
+
 dv = strcmpi(ExperimentAxis, 'DV');
 if dv
     allDataParticles = [allData.Particles];
@@ -68,7 +74,7 @@ end
 
 %Find number of embryos being combined
 
-allData(cellfun(@isempty,{allData.NParticlesAP})) = []; %don't include embryos that have no particles
+allData(cellfun(@isempty,{allData.AllTracesVector})) = []; %don't include embryos that have no particles
 numEmbryos = size(allData,2);
 
 %Find the total number of frames for each embryo
@@ -89,17 +95,20 @@ for embryo = 1:numEmbryos
     if ~isempty(allData(embryo).MaxDVIndex)
         maxDVIndex(embryo) = allData(embryo).MaxDVIndex;
     else
-        maxDVIndex(embryo) = 21; %assume standard DV resolution if unspecified.
+        maxDVIndex(embryo) = 19; %assume standard DV resolution if unspecified.
     end
     maxTime(embryo) = allData(embryo).ElapsedTime(numFrames(embryo));
 end
 
-
-allData(isempty(allData(embryo).NParticlesAP)) = [];
+try
+    allData(isempty(allData(embryo).NParticlesAP)) = [];
+end
 numEmbryos = length(allData);
 
 %Store the number of AP bins (this should always be 41).
-numAPBins = maxAPIndex(1);
+try
+    numAPBins = maxAPIndex(1);
+end
 timeStep = median(diff([allData.ElapsedTime]));
 
 if dv
@@ -108,27 +117,27 @@ end
 
 %Store all variables to be combined in a single structure.
 if ~dv
-combinedData = struct('APDivision',{},'ElapsedTime',{},'NParticlesAP',{},...
-    'MeanVectorAP',{},'SDVectorAP',{}, ...
-    'OnRatioLineageAP',{});
+    combinedData = struct('APDivision',{},'ElapsedTime',{},'NParticlesAP',{},...
+        'MeanVectorAP',{},'SDVectorAP',{}, ...
+        'OnRatioLineageAP',{});
 else
     combinedData = struct('APDivision',{},'ElapsedTime',{},'NParticlesAP',{},...
-    'MeanVectorAP',{},'SDVectorAP',{}, ...
-    'OnRatioLineageAP',{}, 'DVDivision',{},'NParticlesDV',{},...
-    'MeanVectorDV',{},'SDVectorDV',{}, ...
-    'OnRatioLineageDV',{});
+        'MeanVectorAP',{},'SDVectorAP',{}, ...
+        'OnRatioLineageAP',{}, 'DVDivision',{},'NParticlesDV',{},...
+        'MeanVectorDV',{},'SDVectorDV',{}, ...
+        'OnRatioLineageDV',{});
 end
 %% ALIGN ElapsedTime AND SHIFT OTHER VARIABLE TO MATCH NEW TIME VECTOR
 
 % Define the new ElapsedTime vector for the combined embryo. This
-% ElapsedTime variable has evenly spaces time points  and is long enough to accomodate all the data for the longest
+% ElapsedTime variable has evenly spaced time points  and is long enough to accomodate all the data for the longest
 % running embryo
 maxElapsedTime = max(ceil(maxTime./timeStep));
 ElapsedTime = timeStep*(0:maxElapsedTime);
 
 spotChannels = getCoatChannel(Channel1, Channel2, Channel3);
 if length(spotChannels) == 1
-%     ch = spotChannels;
+    %     ch = spotChannels;
     ch = 1;
 else
     error('uh oh too many spot channels.')
@@ -138,13 +147,13 @@ end
 %This inserts the variables to be combined into a structure such that there
 %is room to shift the elements around as needed to align by ElapsedTime.
 for embryo = 1:numEmbryos
-    if ~isempty(allData(embryo).NParticlesAP)
+    if ~isempty(allData(embryo).AllTracesVector)
         %ElapsedTime
         combinedData(embryo).ElapsedTime = NaN(1,maxElapsedTime + 1);
         combinedData(embryo).ElapsedTime(1,1:length(allData(embryo).ElapsedTime))...
             = allData(embryo).ElapsedTime;
         %NParticlesAP
-        if iscell(allData(embryo).NParticlesAP)
+        if iscell(allData(embryo).NParticlesAP) && ~isempty(allData(embryo).NParticlesAP{ch})
             allData(embryo).NParticlesAP = allData(embryo).NParticlesAP{ch};
             allData(embryo).NParticlesDV = allData(embryo).NParticlesDV{ch};
             
@@ -244,7 +253,7 @@ for embryo = 1:numEmbryos
             combinedData(embryo).SDVectorDV((index+1):(maxElapsedTime+1),:) = ...
                 combinedData(embryo).SDVectorDV(index:(maxElapsedTime+1-1),:);
             combinedData(embryo).SDVectorDV(index, :) = NaN;
-         
+            
         end
     end
 end
@@ -282,18 +291,22 @@ for APBin = 1:max(maxAPIndex)
     
     for embryo = 1:numEmbryos
         
-[~,~,~,~, ~,~, ~, ~,~,~,~,~, ~, ~, movieDatabase]...
-    = readMovieDatabase(Prefixes{embryo});
-[~, ~, ~, ~, ~, ~,...
-    ~, ~,~, ~,  ~, ~, ~,...
-    nc9, nc10, nc11, nc12, nc13, nc14, ~, ~,~,~, ~, ~] = getExperimentDataFromMovieDatabase(Prefixes{embryo}, movieDatabase);
-ncs = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
+        
+        [~,~,~,~, ~,~, ~, ~,~,~,~,~, ~, ~, movieDatabase]...
+            = readMovieDatabase(Prefixes{embryo});
+        
+        [~, ~, ~, ~, ~, ~,...
+            ~, ~,~, ~,  ~, ~, ~,...
+            nc9, nc10, nc11, nc12, nc13, nc14, ~, ~,~,~, ~, ~] = getExperimentDataFromMovieDatabase(Prefixes{embryo}, movieDatabase);
+        ncs = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
+        
         startFrames12(1,embryo) = ncs(12);
         endFrames12(1,embryo) = ncs(13)-1;
         
         startFrames13(1,embryo) = ncs(13);
         endFrames13(1,embryo) = ncs(14)-1;
     end
+    
     combinedStart13 = max(startFrames13);
     combinedEnd13 = combinedStart13 + max(endFrames13 - startFrames13);
     
@@ -306,18 +319,18 @@ ncs = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
     %Only add embryos' data to the combined variables if at least one
     %embryo exists in this AP bin
     if combinedStart13 ~= 0
-      
+        
         
         %Align and combine the embryos' data for this AP bin
         for embryo = 1:numEmbryos
             
-[~,~,~,~, ~,~, ~, ~,~,~,~,~, ~, ~, movieDatabase]...
-    = readMovieDatabase(Prefixes{embryo});
-[~, ~, ~, ~, ~, ~,...
-    ~, ~,~, ~,  ~, ~, ~,...
-    nc9, nc10, nc11, nc12, nc13, nc14, ~, ~,~,~, ~, ~] = getExperimentDataFromMovieDatabase(Prefixes{embryo}, movieDatabase);
-ncs = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
-
+            [~,~,~,~, ~,~, ~, ~,~,~,~,~, ~, ~, movieDatabase]...
+                = readMovieDatabase(Prefixes{embryo});
+            [~, ~, ~, ~, ~, ~,...
+                ~, ~,~, ~,  ~, ~, ~,...
+                nc9, nc10, nc11, nc12, nc13, nc14, ~, ~,~,~, ~, ~] = getExperimentDataFromMovieDatabase(Prefixes{embryo}, movieDatabase);
+            ncs = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
+            
             begin13 = ncs(13);
             end13 = ncs(14)-1;
             length13 = end13 - begin13;
@@ -377,13 +390,13 @@ ncs = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
         for embryo = 1:numEmbryos
             
             
-[~,~,~,~, ~,~, ~, ~,~,~,~,~, ~, ~, movieDatabase]...
-    = readMovieDatabase(Prefixes{embryo});
-[~, ~, ~, ~, ~, ~,...
-    ~, ~,~, ~,  ~, ~, ~,...
-    nc9, nc10, nc11, nc12, nc13, nc14, ~, ~,~,~, ~, ~] = getExperimentDataFromMovieDatabase(Prefixes{embryo}, movieDatabase);
-ncs = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
-
+            [~,~,~,~, ~,~, ~, ~,~,~,~,~, ~, ~, movieDatabase]...
+                = readMovieDatabase(Prefixes{embryo});
+            [~, ~, ~, ~, ~, ~,...
+                ~, ~,~, ~,  ~, ~, ~,...
+                nc9, nc10, nc11, nc12, nc13, nc14, ~, ~,~,~, ~, ~] = getExperimentDataFromMovieDatabase(Prefixes{embryo}, movieDatabase);
+            ncs = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
+            
             begin12 = ncs(12);
             end12 =ncs(13)-1;
             length12 = end12 - begin12;
@@ -447,12 +460,12 @@ for DVBin = 1:max(maxDVIndex)
     
     for embryo = 1:numEmbryos
         
-[~,~,~,~, ~,~, ~, ~,~,~,~,~, ~, ~, movieDatabase]...
-    = readMovieDatabase(Prefixes{embryo});
-[~, ~, ~, ~, ~, ~,...
-    ~, ~,~, ~,  ~, ~, ~,...
-    nc9, nc10, nc11, nc12, nc13, nc14, ~, ~,~,~, ~, ~] = getExperimentDataFromMovieDatabase(Prefixes{embryo}, movieDatabase);
-ncs = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
+        [~,~,~,~, ~,~, ~, ~,~,~,~,~, ~, ~, movieDatabase]...
+            = readMovieDatabase(Prefixes{embryo});
+        [~, ~, ~, ~, ~, ~,...
+            ~, ~,~, ~,  ~, ~, ~,...
+            nc9, nc10, nc11, nc12, nc13, nc14, ~, ~,~,~, ~, ~] = getExperimentDataFromMovieDatabase(Prefixes{embryo}, movieDatabase);
+        ncs = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
         startFrames12DV(1,embryo) = ncs(12);
         endFrames12DV(1,embryo) = ncs(13) - 1;
         
@@ -476,12 +489,12 @@ ncs = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
         %Align and combine the embryos' data for this DV bin
         for embryo = 1:numEmbryos
             
-[~,~,~,~, ~,~, ~, ~,~,~,~,~, ~, ~, movieDatabase]...
-    = readMovieDatabase(Prefixes{embryo});
-[~, ~, ~, ~, ~, ~,...
-    ~, ~,~, ~,  ~, ~, ~,...
-    nc9, nc10, nc11, nc12, nc13, nc14, ~, ~,~,~, ~, ~] = getExperimentDataFromMovieDatabase(Prefixes{embryo}, movieDatabase);
-ncs = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
+            [~,~,~,~, ~,~, ~, ~,~,~,~,~, ~, ~, movieDatabase]...
+                = readMovieDatabase(Prefixes{embryo});
+            [~, ~, ~, ~, ~, ~,...
+                ~, ~,~, ~,  ~, ~, ~,...
+                nc9, nc10, nc11, nc12, nc13, nc14, ~, ~,~,~, ~, ~] = getExperimentDataFromMovieDatabase(Prefixes{embryo}, movieDatabase);
+            ncs = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
             begin13DV = ncs(13);
             end13DV = ncs(14) - 1;
             length13DV = end13DV - begin13DV;
@@ -538,12 +551,12 @@ ncs = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
         %Align and combine the embryos' data for this DV bin
         for embryo = 1:numEmbryos
             
-[~,~,~,~, ~,~, ~, ~,~,~,~,~, ~, ~, movieDatabase]...
-    = readMovieDatabase(Prefixes{embryo});
-[~, ~, ~, ~, ~, ~,...
-    ~, ~,~, ~,  ~, ~, ~,...
-    nc9, nc10, nc11, nc12, nc13, nc14, ~, ~,~,~, ~, ~] = getExperimentDataFromMovieDatabase(Prefixes{embryo}, movieDatabase);
-ncs = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
+            [~,~,~,~, ~,~, ~, ~,~,~,~,~, ~, ~, movieDatabase]...
+                = readMovieDatabase(Prefixes{embryo});
+            [~, ~, ~, ~, ~, ~,...
+                ~, ~,~, ~,  ~, ~, ~,...
+                nc9, nc10, nc11, nc12, nc13, nc14, ~, ~,~,~, ~, ~] = getExperimentDataFromMovieDatabase(Prefixes{embryo}, movieDatabase);
+            ncs = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
             
             begin12DV = ncs(12);
             end12DV = ncs(13) - 1;
@@ -681,7 +694,7 @@ for embryo = 1:numEmbryos
     [~, ~, ~, ~, ~, ~,...
         ~, ~,~, ~,  ~, ~, ~,...
         nc9, nc10, nc11, nc12, nc13, nc14, ~, ~,~,~, ~, ~] = getExperimentDataFromMovieDatabase(Prefixes{embryo}, movieDatabase);
-    ncs = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];  
+    ncs = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
     ncs12(embryo) = nc12;
     ncs13(embryo) = nc13;
     ncs14(embryo) = nc14;
@@ -730,7 +743,7 @@ saveVars = [saveVars, 'nc12','nc13', 'nc14','NParticlesAP', 'MeanVectorAP', 'SDV
     'ElapsedTime','APbinID', 'OnRatioLineageAP'];
 if dv
     saveVars = [saveVars, 'nc12DV','nc13DV', 'nc14DV','NParticlesDV', 'MeanVectorDV', 'SDVectorDV', ...
-    'ElapsedTime','DVbinID', 'OnRatioLineageDV', 'combinedStart12DV', 'combinedStart13DV', 'combinedStart14DV'];
+        'ElapsedTime','DVbinID', 'OnRatioLineageDV', 'combinedStart12DV', 'combinedStart13DV', 'combinedStart14DV'];
 end
 save([saveFolder,filesep,[DataType,'_Combined_CompiledParticles.mat']],...
     saveVars{:});

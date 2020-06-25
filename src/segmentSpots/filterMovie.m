@@ -80,16 +80,16 @@ dogs = [];
 % Start timer
 tic;
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
-ExperimentType = thisExperiment.experimentType;
-spotChannels = thisExperiment.spotChannels;
-ProcPath = thisExperiment.userProcFolder;
-DropboxFolder = thisExperiment.userResultsFolder;
-MS2CodePath = thisExperiment.MS2CodePath;
-PreProcPath = thisExperiment.userPreFolder;
+ExperimentType = liveExperiment.experimentType;
+spotChannels = liveExperiment.spotChannels;
+ProcPath = liveExperiment.userProcFolder;
+DropboxFolder = liveExperiment.userResultsFolder;
+MS2CodePath = liveExperiment.MS2CodePath;
+PreProcPath = liveExperiment.userPreFolder;
 
-FrameInfo = getFrameInfo(thisExperiment);
+FrameInfo = getFrameInfo(liveExperiment);
 
 [displayFigures, numFrames, initialFrame, highPrecision, filterType, keepPool,...
     sigmas, nWorkers, app, kernelSize, Weka, justTifs,...

@@ -1,32 +1,40 @@
 function [Ellipses, schnitzcells] = makeEllipsesFromSchnitzcells(schnitzcells, nFrames)
 
 Ellipses = cell(nFrames, 1);
-names = string(fieldnames(schnitzcells));
-names = names(names~='frames'...
-& names~='Fluo'...
-& names~='cellno');
+schnitzcellsFieldsToTranscribe = ["cenx"
+    "ceny"
+    "smaj"
+    "smin"
+    "orientationAngle"];
 
 
-for f = 1:nFrames
+for frame = 1:nFrames
    
     ellipseFrame = [];
     
-    for s = 1:length(schnitzcells)
+    for schnitzIndex = 1:length(schnitzcells)
         
-        frameIndex = find(schnitzcells(s).frames == f);
+        frameIndex = find(schnitzcells(schnitzIndex).frames == frame);
         
         if ~isempty(frameIndex)
             
             ellipseRow = [];
             
-            for k = 1:length(names)
-                schnitzField = schnitzcells(s).(names{k});
+            %take care of Ellipses columns 1 to 5
+            for k = 1:length(schnitzcellsFieldsToTranscribe)
+                schnitzField = schnitzcells(schnitzIndex).(schnitzcellsFieldsToTranscribe{k});
+                assert(length(schnitzField) == length(schnitzcells(schnitzIndex).frames));
                 ellipseRow = [ellipseRow, schnitzField(frameIndex)];
             end
             
-            ellipseRow =[ellipseRow,...
-                0, 0, 0, s];
+            %have had problems here in the past. 
+            assert(ellipseRow(5) <= 2*pi)
             
+            %expand Ellipses to have columns 6, 7, 8, 9
+            ellipseRow =[ellipseRow,...
+                0, 0, 0, uint16(schnitzIndex)];
+            
+            %add this Ellipse to the current frame of Ellipses
             if isempty(ellipseFrame)
                 ellipseFrame = ellipseRow;
             else
@@ -34,12 +42,14 @@ for f = 1:nFrames
                     ellipseRow];
             end
             
-            schnitzcells(s).cellno(frameIndex) =...
-                size(ellipseFrame, 1);
+            %add cellno field to make sure schnitzcells and Ellipses
+            %correspond correctly
+            schnitzcells(schnitzIndex).cellno(frameIndex) =...
+                uint16(size(ellipseFrame, 1));
         end
     end
     
-    Ellipses{f} = ellipseFrame;
+    Ellipses{frame} = ellipseFrame;
 end
 
 end

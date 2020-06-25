@@ -2,8 +2,8 @@ function Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh,retra
 % Check if particle tracking has already been done on this dataset
 
 %initialize Particles. replace if it already exists.
-for Channel = 1:NCh
-    Particles{Channel} = []; % This is the structure where we'll be tracking all particles.
+for ch = 1:NCh
+    Particles{ch} = []; % This is the structure where we'll be tracking all particles.
 end
 
 if exist([OutputFolder, filesep, 'Particles.mat'], 'file')
@@ -17,31 +17,32 @@ if exist([OutputFolder, filesep, 'Particles.mat'], 'file')
         Particles = {Particles};
     end
     
-    for Channel = 1:NCh
+    for ch = 1:NCh
         
-        if isfield(Particles{1}, 'Approved') && retrack
-            display(['Performing retracking on channel ', num2str(Channel)])
+        if isfield(Particles{ch}, 'Approved') && retrack
+            
+            display(['Performing retracking on channel ', num2str(ch)])
             
             %Only keep the approved particles and start the tracking from there
             k = 1;
             
-            for i = 1:length(Particles{Channel})
+            for p = 1:length(Particles{ch})
                 
-                if Particles{Channel}(i).Approved ~= 0
-                    NewParticles{Channel}(k) = Particles{Channel}(i);
+                if Particles{ch}(p).Approved
+                    NewParticles{ch}(k) = Particles{ch}(p);
                     k = k + 1;
                 end
                 
             end
             
             if exist('NewParticles', 'var')
-                Particles{Channel} = NewParticles{Channel};
+                Particles{ch} = NewParticles{ch};
             else
-                Particles{Channel} = [];
+                Particles{ch} = [];
             end
             
         else
-            Particles{Channel} = [];
+            Particles{ch} = [];
         end
         
     end

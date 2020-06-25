@@ -29,6 +29,11 @@ else
     
 end
 
+%for compatibility
+if isrow(anaphaseFrames)
+    anaphaseFrames = anaphaseFrames';
+end
+
 if numel(anaphaseFrames) < 6
     anaphaseFrames = vertcat(anaphaseFrames, nan(6-numel(anaphaseFrames), 1));
 end

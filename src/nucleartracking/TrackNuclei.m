@@ -16,7 +16,8 @@ function TrackNuclei(Prefix,varargin)
 % shift between frames (greatly reduces runtime).
 % 'retrack': retrack
 % 'integrate': integrate nuclear fluorescence
-% 'segmentBetter': segment the nuclei well.
+% 'mixedPolaritySegmentation': different segmentation method that works
+% better when there are nuclei of mixed polarity (some dark, some bright)
 %
 % OUTPUT
 % '*_lin.mat' : Nuclei with lineages
@@ -33,57 +34,38 @@ cleanupObj = onCleanup(@myCleanupFun);
 
 disp(['Tracking nuclei on ', Prefix, '...']);
 
+postTrackingSettings = struct; 
 
-[stitchSchnitz, ExpandedSpaceTolerance, NoBulkShift,...
-    retrack, nWorkers, track, noBreak, noStitch,...
-    markandfind, fish,...
-    intFlag, chooseHis, segmentBetter, min_rad_um,...
-             max_rad_um, sigmaK_um, mu, nIterSnakes]...
+[ExpandedSpaceTolerance, NoBulkShift,...
+    retrack, nWorkers, track, postTrackingSettings.noBreak,...
+    postTrackingSettings.noStitch,...
+    markandfind, postTrackingSettings.fish,...
+    postTrackingSettings.intFlag, chooseHis, mixedPolaritySegmentation, min_rad_um,...
+             max_rad_um, sigmaK_um, mu, nIterSnakes,...
+             postTrackingSettings.doAdjustNuclearContours]...
     = DetermineTrackNucleiOptions(varargin{:});
 
 
-thisExperiment = liveExperiment(Prefix);
+postTrackingSettings.track = track;
+postTrackingSettings.shouldConvertToAP = true;
 
-FrameInfo = getFrameInfo(thisExperiment);
 
-ProcPath = thisExperiment.userProcFolder;
-DropboxFolder = thisExperiment.userResultsFolder;
-PreProcPath = thisExperiment.preFolder;
+liveExperiment = LiveExperiment(Prefix);
+
+FrameInfo = getFrameInfo(liveExperiment);
+
+ProcPath = liveExperiment.userProcFolder;
+DropboxFolder = liveExperiment.userResultsFolder;
+PreProcPath = liveExperiment.preFolder;
 
 
 ellipsesFile = [DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'];
 schnitzcellsFile = [DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat']; 
 
-anaphaseFrames = thisExperiment.anaphaseFrames';
-nc9 = anaphaseFrames(1);
-nc10 = anaphaseFrames(2);
-nc11 = anaphaseFrames(3);
-nc12 = anaphaseFrames(4);
-nc13 = anaphaseFrames(5);
-nc14 = anaphaseFrames(6);
+anaphaseFrames = getAnaphaseFrames(liveExperiment); 
 
-if ~exist('nc9','var')
-    error('Cannot find nuclear cycle values. Were they defined in MovieDatabase or anaphaseFrames.mat?')
-end
-
-%Do we need to convert any NaN chars into doubles?
-if strcmpi(nc14,'nan')
-    nc14=nan;
-end
-if strcmpi(nc13,'nan')
-    nc13=nan;
-end
-if strcmpi(nc12,'nan')
-    nc12=nan;
-end
-if strcmpi(nc11,'nan')
-    nc11=nan;
-end
-if strcmpi(nc10,'nan')
-    nc10=nan;
-end
-if strcmpi(nc9,'nan')
-    nc9=nan;
+if iscolumn(anaphaseFrames)
+    anaphaseFrames = anaphaseFrames';
 end
 
 %This checks whether all ncs have been defined
@@ -91,7 +73,8 @@ if length(anaphaseFrames)~=6
     error('Check the nc frames in the MovieDatabase entry. Some might be missing')
 end
 
-if (length(find(isnan(anaphaseFrames)))==length(anaphaseFrames))||(length(anaphaseFrames)<6)
+if length( find(isnan(anaphaseFrames))) ==...
+        length(anaphaseFrames) || length(anaphaseFrames) < 6
     error('Have the ncs been defined in MovieDatabase or anaphaseFrames.mat?')
 end
 
@@ -100,18 +83,18 @@ end
 
 if chooseHis
     
-    [hisFile, hisPath] = uigetfile([ProcPath, filesep, Prefix,'_',filesep,'*.mat']);
+    [hisFile, hisPath] = uigetfile([ProcPath, filesep, Prefix,'_',filesep,'*.*']);
     hisStruct = load([hisPath, hisFile]);
     hisField = fieldnames(hisStruct);
     hisMat = hisStruct.(hisField{1});
     
 else
     
-    hisMat =  getHisMat(thisExperiment);
+    hisMat =  getHisMat(liveExperiment);
     
 end
 
-if segmentBetter
+if mixedPolaritySegmentation
     if ~retrack
         resegmentAllFrames(Prefix, 'hisMat', hisMat,...
             'min_rad_um', min_rad_um,...
@@ -149,7 +132,7 @@ elseif isnan(indMit(end,1))
     indMit(end,2)=nFrames-5;
 end
 
-expandedAnaphaseFrames = [zeros(1,8),thisExperiment.anaphaseFrames'];
+expandedAnaphaseFrames = [zeros(1,8),liveExperiment.anaphaseFrames'];
 
 %Embryo mask
 ImageTemp=squeeze(hisMat(:, :, 1));
@@ -167,17 +150,17 @@ settingArguments{4}=FrameInfo(1).PixelSize;
 schnitzFileExists = exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file');
 
 if schnitzFileExists && ~retrack && track
-    answer=input('Previous tracking detected. Proceed with retracking? (y/n):','s');
-    if strcmpi(answer,'y')
+    answer=input('Previous tracking detected. Erase existing segmentation? (y/n):','s');
+    if strcmpi(answer,'n')
         retrack = true;
-    elseif strcmpi(answer, 'n')
+    elseif strcmpi(answer, 'y')
         retrack = false;
     end
 end
 
 
 
-%Do the tracking for the first time
+%Perform both segmentation and tracking with the "MainTracking" script
 if ~retrack
     
     
@@ -201,7 +184,7 @@ if ~retrack
     [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,nFrames,indMit);
     
 else
-    %Do re-tracking
+    %Retrack: Use "MainTracking" for tracking but not segmentation. 
     disp 'Re-tracking...'
     warning('Re-tracking.') %This code needs to be able to handle approved schnitz still
     
@@ -235,7 +218,7 @@ else
         settingArguments = {};
     end
     
-    
+    clear dataStructure;
     %Re-run the tracking
     if exist('dataStructure', 'var')
         %Edit the names in dataStructure to match the current folder setup
@@ -255,25 +238,13 @@ else
     
 end
 
+disp('Finished main tracking.'); 
+
 %Convert nuclei structure into schnitzcell structure
 [schnitzcells] = convertNucleiToSchnitzcells(nuclei);
 
 
-%Broken- fix it if you want this so- add a
-%conditional statement to skip empty frames. 
-% %Add the radius information to the schnitz
-% for schnitz=1:length(schnitzcells)
-%     for f=1:length(schnitzcells(schnitz).frames)
-%         r = single(mean(Ellipses{schnitzcells(schnitz).frames(f)}(...
-%             schnitzcells(schnitz).cellno(f),3:4)));
-%         if ~isreal(r)
-%             r = nan;
-%             warning('non real radii returned for schnitz. not sure what happened here.');
-%         end
-%         schnitzcells(schnitz).len(:)=r;
-%         
-%     end
-% end
+
 
 %Save everything at this point. It will be overwritten later, but it's
 %useful for debugging purposes if there's a bug in the code below.
@@ -292,60 +263,9 @@ if exist('dataStructure', 'var')
     save([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'],'dataStructure');
 end
 
-%Extract the nuclear fluorescence values if we're in the right experiment
-%type
-if intFlag
-    schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, PreProcPath);
-end
-
-if fish schnitzcells = rmfield(schnitzcells, {'P', 'E', 'D'}); end
-
-if track && ~noBreak
-    [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, expandedAnaphaseFrames, nFrames);  
-    save2(ellipsesFile, Ellipses); 
-    save2(schnitzcellsFile, schnitzcells); 
-end
-
-% Stitch the schnitzcells using Simon's code
-if ~noStitch
-    disp('stitching schnitzes')
-    StitchSchnitz(Prefix, nWorkers);
-end
-
-
-for s = 1:length(schnitzcells)
-    midFrame = ceil(length(schnitzcells(s).frames)/2);
-    dif = double(schnitzcells(s).frames(midFrame)) - expandedAnaphaseFrames;
-    cycle = find(dif>0, 1, 'last' );
-    schnitzcells(s).cycle = uint8(cycle);
-end
-
-schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, expandedAnaphaseFrames);
-
-%perform some quality control
-schnitzcells = filterSchnitz(schnitzcells, [thisExperiment.yDim, thisExperiment.xDim]);
-% Ellipses = filterEllipses(Ellipses, [thisExperiment.yDim, thisExperiment.xDim]);
-
-save2(ellipsesFile, Ellipses); 
-save2(schnitzcellsFile, schnitzcells); 
-
-try 
-    Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
-    if shouldConvertToAP
-       [EllipsePos, APAngle, APLength]...
-       = convertToFractionalEmbryoLength(Prefix);
-    end
-    for s = 1:length(schnitzcells)
-        for f = 1:length(schnitzcells(s).frames)
-            ellipseInd = schnitzcells(s).cellno(f);
-            schnitzcells(s).APPos(f) = EllipsePos{f}(ellipseInd);
-        end
-    end
-end
-
-
-save2(ellipsesFile, Ellipses); 
-save2(schnitzcellsFile, schnitzcells); 
-
+%perform very important stuff subsequent to tracking proper
+performPostNuclearTracking(Prefix,...
+    expandedAnaphaseFrames, nWorkers, schnitzcellsFile,...
+    ellipsesFile, postTrackingSettings)
 
 end

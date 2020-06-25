@@ -1,7 +1,7 @@
 function keyInputHandler = FrameChangeEventHandler(cptState)
  
     function keyInput(cc)
-        numValidFrames = length({cptState.Spots{1}.Fits}); %check handle of spots is updated when is needed down the road
+        numValidFrames = length({cptState.Spots{cptState.CurrentChannelIndex}.Fits}); %check handle of spots is updated when is needed down the road
 
         if cc == '.' %Move forward one frame
             cptState.PreviousFrame = cptState.CurrentFrame;
@@ -47,8 +47,12 @@ function keyInputHandler = FrameChangeEventHandler(cptState)
         
         elseif cc == 'e'
             % Approve/Disapprove a frame within a trace
-            cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).FrameApproved(cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Frame == cptState.CurrentFrame) = ...
-                ~cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).FrameApproved(cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Frame == cptState.CurrentFrame);
+            cptState.Particles{cptState.CurrentChannel}...
+                (cptState.CurrentParticle).FrameApproved(cptState.Particles{cptState.CurrentChannel}...
+                (cptState.CurrentParticle).Frame == cptState.CurrentFrame) = ...
+                ...
+                ~cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).FrameApproved(...
+                cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Frame == cptState.CurrentFrame);
         end
     end
 

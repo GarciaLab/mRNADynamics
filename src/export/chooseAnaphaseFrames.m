@@ -17,6 +17,7 @@ cleanupObj = onCleanup(@myCleanupFun);
 warning('off', 'MATLAB:ui:Slider:fixedHeight')
 warning('off', 'MATLAB:audiovideo:audioplayer:noAudioOutputDevice');
 clear getHisMat;
+clear hisMat;
 
 
 skip_factor = 1; % Only uses 1/skip_factor frames
@@ -29,8 +30,6 @@ min_custom = 5; % lowest histone channel slice used
 ProjectionType = 'midsumprojection';
 load('ReferenceHist.mat', 'ReferenceHist');
 
-returnHisMat = nargout > 2;
-
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.
 for arg = 1:2:(numel(varargin)-1)
@@ -40,54 +39,52 @@ for arg = 1:2:(numel(varargin)-1)
 end
 
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
-if ~isempty(Prefix) 
-   
-      
-    Channel1 = thisExperiment.Channel1;
-    Channel2 = thisExperiment.Channel2;
-    Channel3 = thisExperiment.Channel3;
-    
-    projectionChannels = {Channel1, Channel2, Channel3};
-    
-    DropboxFolder = thisExperiment.userResultsFolder;
-    PreProcPath = thisExperiment.userPreFolder;
-    
-    movieMat = getMovieMat(thisExperiment);
-    
-    projectionTypeFile = [DropboxFolder,filesep,Prefix,filesep, 'ProjectionType.mat'];
-    
-    if exist(projectionTypeFile, 'file')
-        load(projectionTypeFile, 'ProjectionType')
-    else
-        ProjectionType = 'midsumprojection';
-    end
-    
-    
-    
-    [anaphaseFrames, anaphaseFile] = retrieveAnaphaseFrames(Prefix);
-    anaphaseFramesInitial = anaphaseFrames;
-    
-    channelsFile = [DropboxFolder,filesep,Prefix,filesep, 'Channels.mat'];
 
-    
-    isUnhealthyFile = [DropboxFolder,filesep,Prefix,filesep, 'isUnhealthy.mat'];
-    if exist(isUnhealthyFile, 'file')
-        load(isUnhealthyFile, 'isUnhealthy');
-    end
-    
-    audioFile = 'X:\Armando\LivemRNA\mRNADynamics\lib\audio\embryo_recorded_as_unhealthy.m4a';
-    if exist(audioFile, 'file')
-        [y, Fs] = audioread(audioFile);
-    end
-    
+Channel1 = liveExperiment.Channel1;
+Channel2 = liveExperiment.Channel2;
+Channel3 = liveExperiment.Channel3;
+
+projectionChannels = {Channel1, Channel2, Channel3};
+
+DropboxFolder = liveExperiment.userResultsFolder;
+PreProcPath = liveExperiment.userPreFolder;
+
+if ~exist('movieMat', 'var')
+    movieMat = getMovieMat(liveExperiment);
 end
 
-NFrames = thisExperiment.nFrames;
-NSlices = thisExperiment.zDim;
-yDim = thisExperiment.yDim; 
-xDim = thisExperiment.xDim;
+projectionTypeFile = [DropboxFolder,filesep,Prefix,filesep, 'ProjectionType.mat'];
+
+if exist(projectionTypeFile, 'file')
+    load(projectionTypeFile, 'ProjectionType')
+else
+    ProjectionType = 'midsumprojection';
+end
+
+
+
+[anaphaseFrames, anaphaseFile] = retrieveAnaphaseFrames(Prefix);
+anaphaseFramesInitial = anaphaseFrames;
+
+channelsFile = [DropboxFolder,filesep,Prefix,filesep, 'Channels.mat'];
+
+
+isUnhealthyFile = [DropboxFolder,filesep,Prefix,filesep, 'isUnhealthy.mat'];
+if exist(isUnhealthyFile, 'file')
+    load(isUnhealthyFile, 'isUnhealthy');
+end
+
+audioFile = 'X:\Armando\LivemRNA\mRNADynamics\lib\audio\embryo_recorded_as_unhealthy.m4a';
+if exist(audioFile, 'file')
+    [y, Fs] = audioread(audioFile);
+end
+
+NFrames = liveExperiment.nFrames;
+NSlices = liveExperiment.zDim;
+yDim = liveExperiment.yDim;
+xDim = liveExperiment.xDim;
 
 NChannels = size(movieMat, 5);
 
@@ -166,8 +163,8 @@ for framesIndex = 1:NFrames
             'middleprojection', NSlices, HisSlices);
         midsum_proj{channelIndex, framesIndex} = calculateProjection(...
             'midsumprojection', NSlices, HisSlices);
-%         custom_proj{channelIndex, framesIndex} = calculateProjection(...
-%             'customprojection', NSlices, HisSlices, max_custom, min_custom);
+        %         custom_proj{channelIndex, framesIndex} = calculateProjection(...
+        %             'customprojection', NSlices, HisSlices, max_custom, min_custom);
     end
     
     %         end
@@ -392,7 +389,7 @@ uiwait(fig);
         projCell{frame} = projection_type;
         %         chCell{frame} = getChannels;
         projectionChannels = retrieveChannels;
-        Channel1 = projectionChannels{1}; 
+        Channel1 = projectionChannels{1};
         Channel2 = projectionChannels{2};
         Channel3 = projectionChannels{3};
         
@@ -408,21 +405,19 @@ uiwait(fig);
         
         projectionChannels = retrieveChannels;
         Channel1 = projectionChannels{1};
-        Channel2 = projectionChannels{2}; 
+        Channel2 = projectionChannels{2};
         Channel3 = projectionChannels{3};
         
-        if returnHisMat
-            
-            hisMat = zeros(yDim, xDim, sum(NFrames), hisPrecision); % y x f
-            
-            for f = 1:NFrames
-                hisMat(:, :, f) = generateNuclearChannel2(ProjectionType,...
-                    projectionChannels, ReferenceHist, movieMat, f);
-            end
-            
-            saveNuclearProjection(hisMat, [thisExperiment.preFolder, filesep, Prefix, '-His.tif']);
-            
+        
+        hisMat = zeros(yDim, xDim, sum(NFrames), hisPrecision); % y x f
+        
+        for f = 1:NFrames
+            hisMat(:, :, f) = generateNuclearChannel2(ProjectionType,...
+                projectionChannels, ReferenceHist, movieMat, f);
         end
+        
+        saveNuclearProjection(hisMat, [liveExperiment.preFolder, filesep, Prefix, '-His.tif']);
+        
         
         
         
@@ -470,7 +465,7 @@ uiwait(fig);
     end
 
     function Channels = retrieveChannels()
-
+        
         if contains(Channel1, ':')
             Channel1 = truncateAtColon(Channel1);
         end

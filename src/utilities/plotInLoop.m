@@ -3,7 +3,7 @@ function ax1 = plotInLoop(plotIndex, cmap, varargin)
 xRange = [];
 yRange = [];
 ax1= [];
-legendVisible = 'off';
+legendVisible = 'on';
 
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.
@@ -25,7 +25,7 @@ if plotIndex == 1 && isempty(ax1)
         end
     end
     ax = gca;
-    ax.Color = [253 249 207] /256;
+    ax.Color = [253 249 207] /255;
 
     
 else
@@ -50,7 +50,7 @@ else
     leg = get(gca, 'Legend'); w=.02;h=.01;set(leg, 'Units', 'normalized', 'Position', [1-w, 1-h,w, h], 'Box','off');
     set(leg, 'Visible', legendVisible);
     ax = gca;
-     ax.Color = [253 249 207] /256;
+     ax.Color = [253 249 207] /255;
     
 end
 

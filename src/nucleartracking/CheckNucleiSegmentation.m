@@ -30,9 +30,6 @@ function movieMat = CheckNucleiSegmentation(Prefix, varargin)
 
 cleanupObj = onCleanup(@myCleanupFun);
 
-%Load the folder information
-[~,~,DefaultDropboxFolder,~,~]=...
-    DetermineLocalFolders;
 
 noAdd = false;
 nWorkers = 1;
@@ -59,15 +56,15 @@ for k = 1:length(varargin)
     end
 end
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
-ProcPath = thisExperiment.userProcFolder;
-DropboxFolder = thisExperiment.userResultsFolder;
+ProcPath = liveExperiment.userProcFolder;
+DropboxFolder = liveExperiment.userResultsFolder;
 
-Channel1 = thisExperiment.Channel1;
-Channel2 = thisExperiment.Channel2;
-Channel3 = thisExperiment.Channel3;
-anaphaseFrames = thisExperiment.anaphaseFrames;
+Channel1 = liveExperiment.Channel1;
+Channel2 = liveExperiment.Channel2;
+Channel3 = liveExperiment.Channel3;
+anaphaseFrames = liveExperiment.anaphaseFrames;
 nc9 = anaphaseFrames(1);
 nc10 = anaphaseFrames(2);
 nc11 = anaphaseFrames(3);
@@ -75,21 +72,24 @@ nc12 = anaphaseFrames(4);
 nc13 = anaphaseFrames(5);
 nc14 = anaphaseFrames(6);
 
-xSize = thisExperiment.xDim;
-ySize = thisExperiment.yDim;
-pixelSize_um = thisExperiment.pixelSize_um;
+xSize = liveExperiment.xDim;
+ySize = liveExperiment.yDim;
+PixelSize_um = liveExperiment.pixelSize_um;
 
 %Get the nuclei segmentation data
-Ellipses = getEllipses(thisExperiment);
-schnitzcells = getSchnitzcells(thisExperiment);
+Ellipses = getEllipses(liveExperiment);
+schnitzcells = getSchnitzcells(liveExperiment);
 %Load the reference histogram for the fake histone channel
 load('ReferenceHist.mat', 'ReferenceHist')
 
-hasSchnitzInd =size(Ellipses{1},2) == 9;
 
-if ~hasSchnitzInd
-    Ellipses = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
-    save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], 'Ellipses', '-v6');
+%i may bring this back later -AR
+if false
+    schnitzcellsFile = [liveExperiment.resultsFolder, filesep, Prefix, '_lin.mat'];
+
+    [Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
+    save2([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], Ellipses);
+    save2(schnitzcellsFile, schnitzcells)
 end
 
 Channels = {Channel1, Channel2, Channel3};
@@ -107,7 +107,7 @@ if chooseHis
         clear probHis;
     end
 else
-    hisMat = getHisMat(thisExperiment);
+    hisMat = getHisMat(liveExperiment);
 end
 
 nFrames = size(hisMat, 3);
@@ -141,14 +141,28 @@ end
 
 %%
 Overlay=figure;
-set(Overlay,'units', 'normalized', 'position',[0.01, .2, .5, .5]);
+set(Overlay,'units', 'normalized', 'position',[0.01, .5, .4, .4]);
 
 overlayAxes = axes(Overlay,'Units', 'normalized', 'Position', [0 0 1 1]);
 
+%%
 OriginalImage=figure;
-set(OriginalImage,'units', 'normalized', 'position',[0.55, .2, .5, .5]);
-
+set(OriginalImage,'units', 'normalized', 'position',[0.01, 0.05, .4, .4]);
 originalAxes = axes(OriginalImage,'Units', 'normalized', 'Position', [0 0 1 1]);
+set(OriginalImage,'menubar','none')
+set(OriginalImage,'NumberTitle','off');
+%%
+
+schnitzTrackingFigure = figure;
+t = tiledlayout(schnitzTrackingFigure, 1, 2);
+schnitzXTrackingAxes = nexttile(t);
+schnitzYTrackingAxes = nexttile(t);
+set(schnitzTrackingFigure,'units', 'normalized', 'position',[0.6, .2, .3, .5]);
+title(schnitzXTrackingAxes, 'X over time')
+xlabel(t, 'frame')
+title(schnitzYTrackingAxes, 'Y over time')
+ylabel(t, 'centroid (pixels)')
+%%
 
 tb = axtoolbar(overlayAxes);
 tb.Visible = 'off';
@@ -159,11 +173,11 @@ try
     clrmp = single(hsv(length(schnitzcells)));
     clrmp = clrmp(randperm(length(clrmp)), :);
 catch
-%in case the user doesn't have this colormap, just keep going.
+    %in case the user doesn't have this colormap, just keep going.
 end
 
 CurrentFrame=1;
-cc=1;
+currentCharacter=1;
 
 % Show the first image
 imOverlay = imshow(HisImage,DisplayRange,'Border','Tight','Parent',overlayAxes);
@@ -172,7 +186,7 @@ imOriginal = imshow(HisImage,DisplayRange,'Border','Tight','Parent',originalAxes
 projFlag = false;
 set(0, 'CurrentFigure', Overlay)
 
-while (cc~='x')
+while (currentCharacter~='x')
     
     %Load subsequent images
     if ~projFlag
@@ -185,7 +199,7 @@ while (cc~='x')
     %Get the information about the centroids
     [NCentroids,~]=size(Ellipses{CurrentFrame});
     
-        
+    
     imOverlay.CData = HisImage;
     try
         caxis(overlayAxes, DisplayRange);
@@ -199,14 +213,14 @@ while (cc~='x')
     
     PlotHandle = cell(NCentroids, 1);
     ellipseFrame = Ellipses{CurrentFrame};
-    if ~fish
-        for k=1:NCentroids
-            n = k;
-            PlotHandle{k} = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
-                'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
-                'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)), 'FaceAlpha', 0,...
-                'InteractionsAllowed', 'none');
-            
+    for k=1:NCentroids
+        n = k;
+        PlotHandle{k} = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
+            'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
+            'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)), 'FaceAlpha', 0,...
+            'InteractionsAllowed', 'none', 'LabelVisible', 'hover', 'Label', num2str(ellipseFrame(n, 9)));
+        
+        if ~fish
             if size(Ellipses{CurrentFrame}, 2) > 8
                 schnitzInd = Ellipses{CurrentFrame}(k, 9);
             else
@@ -217,30 +231,39 @@ while (cc~='x')
                     Ellipses{CurrentFrame}(k, 9) = 0;
                 end
             end
-            if schnitzInd ~=0
+            
+            if schnitzInd ~= 0
                 set(PlotHandle{k}, 'StripeColor', clrmp(schnitzInd, :),...
                     'Color', clrmp(schnitzInd, :),'Linewidth', 2);
             else
                 set(PlotHandle{k}, 'StripeColor', 'w', 'Color', 'w','Linewidth', 2);
             end
         end
-    else
-        for k=1:NCentroids
-            n = k;
-            
-            PlotHandle{k} = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
-                'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
-                'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)), 'FaceAlpha', 0,...
-                'InteractionsAllowed', 'none');
-            
+        
+        try
+            %plot tracking information in the third figure
+            plot(schnitzXTrackingAxes, ...
+                schnitzcells(schnitzInd).frames, schnitzcells(schnitzInd).cenx,...
+            'Color',  clrmp(schnitzInd, :), 'Linewidth', 3)
+            hold(schnitzXTrackingAxes, 'on');
+            plot(schnitzYTrackingAxes, ...
+                schnitzcells(schnitzInd).frames, schnitzcells(schnitzInd).ceny,...
+                'Color',  clrmp(schnitzInd, :), 'Linewidth', 3)
+            hold(schnitzYTrackingAxes, 'on');
+        catch
         end
+        
+        
     end
     
+    hold(schnitzXTrackingAxes, 'off');
+    hold(schnitzYTrackingAxes, 'off');
+    
     try
-    FigureTitle=['Frame: ',num2str(CurrentFrame),'/',num2str(nFrames),...
-        ', nc: ',num2str(nc(CurrentFrame))];
+        FigureTitle=['Frame: ',num2str(CurrentFrame),'/',num2str(nFrames),...
+            ', nc: ',num2str(nc(CurrentFrame))];
     catch
-          FigureTitle=['Frame: ',num2str(CurrentFrame),'/',num2str(nFrames)];
+        FigureTitle=['Frame: ',num2str(CurrentFrame),'/',num2str(nFrames)];
     end
     
     set(Overlay,'Name',FigureTitle)
@@ -248,6 +271,11 @@ while (cc~='x')
     
     imOriginal.CData = HisImage;
     
+     
+    
+    
+    
+    %%
     
     tb = axtoolbar(overlayAxes);
     tb.Visible = 'off';
@@ -255,26 +283,26 @@ while (cc~='x')
     tb2.Visible = 'off';
     
     ct=waitforbuttonpress;
-    cc=get(Overlay,'currentcharacter');
-    cm=get(overlayAxes,'CurrentPoint');
+    currentCharacter=get(Overlay,'currentcharacter');
+    currentMouse=get(overlayAxes,'CurrentPoint');
     
     
     
     
-    if (ct~=0)&(cc=='.')&(CurrentFrame<nFrames)
+    if (ct~=0)&(currentCharacter=='.')&(CurrentFrame<nFrames)
         CurrentFrame=CurrentFrame+1;
-    elseif (ct~=0)&(cc==',')&(CurrentFrame>1)
+    elseif (ct~=0)&(currentCharacter==',')&(CurrentFrame>1)
         CurrentFrame=CurrentFrame-1;
-    elseif (ct~=0)&(cc=='>')&(CurrentFrame+5<nFrames)
+    elseif (ct~=0)&(currentCharacter=='>')&(CurrentFrame+5<nFrames)
         CurrentFrame=CurrentFrame+5;
-    elseif (ct~=0)&(cc=='<')&(CurrentFrame-4>1)
+    elseif (ct~=0)&(currentCharacter=='<')&(CurrentFrame-4>1)
         CurrentFrame=CurrentFrame-5;
-    elseif (ct~=0)&(cc=='s')
+    elseif (ct~=0)&(currentCharacter=='s')
         save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v6')
         disp('Ellipses saved.')
     elseif (ct==0)&(strcmp(get(Overlay,'SelectionType'),'normal'))
-        cc=1;
-        if (cm(1,2)>0)&(cm(1,1)>0)&(cm(1,2)<=ySize)&(cm(1,1)<=xSize)
+        currentCharacter=1;
+        if (currentMouse(1,2)>0)&(currentMouse(1,1)>0)&(currentMouse(1,2)<=ySize)&(currentMouse(1,1)<=xSize)
             
             %Add a circle to this location with the mean radius of the
             %ellipses found in this frame
@@ -283,13 +311,13 @@ while (cc~='x')
             %particle_id)
             
             MeanRadius = computeMeanRadius(Ellipses, CurrentFrame, nFrames);
-           
+            
             try
                 Ellipses{CurrentFrame}(end+1,:)=...
-                    [cm(1,1),cm(1,2),MeanRadius,MeanRadius,0,0,0,0,0];
+                    [currentMouse(1,1),currentMouse(1,2),MeanRadius,MeanRadius,0,0,0,0,0];
             catch
                 Ellipses{CurrentFrame}(end+1,:)=...
-                    [cm(1,1),cm(1,2),MeanRadius,MeanRadius,0,0,0,0];
+                    [currentMouse(1,1),currentMouse(1,2),MeanRadius,MeanRadius,0,0,0,0];
             end
         end
         
@@ -297,37 +325,39 @@ while (cc~='x')
         
         
     elseif (ct==0)&(strcmp(get(Overlay,'SelectionType'),'alt'))
-        cc=1;
-        if (cm(1,2)>0)&(cm(1,1)>0)&(cm(1,2)<=ySize)&(cm(1,1)<=xSize)
+        currentCharacter=1;
+        if (currentMouse(1,2)>0)&(currentMouse(1,1)>0)&(currentMouse(1,2)<=ySize)&(currentMouse(1,1)<=xSize)
             %Find out which ellipses we clicked on so we can delete it
             
             %(x, y, a, b, theta, maxcontourvalue, time, particle_id)
-            Distances=sqrt((Ellipses{CurrentFrame}(:,1)-cm(1,1)).^2+...
-                (Ellipses{CurrentFrame}(:,2)-cm(1,2)).^2);
+            Distances=sqrt((Ellipses{CurrentFrame}(:,1)-currentMouse(1,1)).^2+...
+                (Ellipses{CurrentFrame}(:,2)-currentMouse(1,2)).^2);
             [~,MinIndex]=min(Distances);
             
             Ellipses{CurrentFrame}=[Ellipses{CurrentFrame}(1:MinIndex-1,:);...
                 Ellipses{CurrentFrame}(MinIndex+1:end,:)];
         end
         
-    elseif (ct~=0)&(cc=='j')
+    elseif (ct~=0)&(currentCharacter=='j')
         iJump=input('Frame to jump to: ');
         if (floor(iJump)>0)&(iJump<=nFrames)
             CurrentFrame=iJump;
+        else
+            disp('Frame out of range.');
         end
         
-    elseif (ct~=0)&(cc=='m')    %Increase contrast
+    elseif (ct~=0)&(currentCharacter=='m')    %Increase contrast
         DisplayRange(2)=DisplayRange(2)/1.5;
         
-    elseif (ct~=0)&(cc=='n')    %Decrease contrast
+    elseif (ct~=0)&(currentCharacter=='n')    %Decrease contrast
         DisplayRange(2)=DisplayRange(2)*1.5;
         
-    elseif (ct~=0)&(cc=='r')    %Reset the contrast
+    elseif (ct~=0)&(currentCharacter=='r')    %Reset the contrast
         DisplayRange=[min(min(HisImage)),max(max(HisImage))];
         
-    elseif (ct~=0)&(cc=='d')    %Delete all ellipses in the current frame
+    elseif (ct~=0)&(currentCharacter=='d')    %Delete all ellipses in the current frame
         Ellipses{CurrentFrame}=[];
-    elseif (ct~=0)&(cc=='D')    %Delete all ellipses in hand-drawn ROI
+    elseif (ct~=0)&(currentCharacter=='D')    %Delete all ellipses in hand-drawn ROI
         roi = drawrectangle(overlayAxes);
         EllipsesCopy = Ellipses;
         EllipsesCopy{CurrentFrame} = [];
@@ -341,7 +371,7 @@ while (cc~='x')
         delete(roi);
         clear EllipsesCopy;
         
-    elseif (ct~=0)&(cc=='c') & CurrentFrame > 1
+    elseif (ct~=0)&(currentCharacter=='c') & CurrentFrame > 1
         %copy nuclear information from previous frame
         
         Ellipses{CurrentFrame} = Ellipses{CurrentFrame-1};
@@ -349,7 +379,7 @@ while (cc~='x')
             registerEllipses(Ellipses{CurrentFrame},...
             HisImage, hisMat(:, :, CurrentFrame-1));
         
-    elseif (ct~=0)&(cc=='v') & CurrentFrame < nFrames
+    elseif (ct~=0)&(currentCharacter=='v') & CurrentFrame < nFrames
         %copy nuclear information from next frame
         
         Ellipses{CurrentFrame} = Ellipses{CurrentFrame+1};
@@ -358,7 +388,7 @@ while (cc~='x')
             HisImage, hisMat(:, :, CurrentFrame+1));
         
         
-    elseif (ct~=0)&(cc=='{')
+    elseif (ct~=0)&(currentCharacter=='{')
         %resegment from scratch
         
         Ellipses{CurrentFrame}=[];
@@ -370,20 +400,21 @@ while (cc~='x')
                 0,0,0,0];
         end
         
-    elseif (ct~=0)&(cc=='~')
+    elseif (ct~=0)&(currentCharacter=='~')
         
         ProjectionType = 'midsumprojection';
         
+        movieMat = getMovieMat(liveExperiment); 
         [~, ~, Projection] = chooseNuclearChannels2(...
             movieMat, 'ProjectionType', ProjectionType,'Channels',...
             Channels,'ReferenceHist', ReferenceHist);
         
-        DisplayRange = [mean(mean(squeeze(Projection(:, :, CurrentFrame)))),...
-            max(max(squeeze(Projection(:, :, CurrentFrame)))) ];
+        DisplayRange = [mean(mean(Projection(:, :, CurrentFrame))),...
+            max(max(Projection(:, :, CurrentFrame))) ];
         
         disp('changed projection');
         
-    elseif (ct~=0)&(cc=='g')  %copy nuclear information from next frame
+    elseif (ct~=0)&(currentCharacter=='g')  %copy nuclear information from next frame
         mitDuration = 10; % ~10 frames before and after anaphase
         for frame = CurrentFrame - mitDuration:CurrentFrame
             Ellipses{frame} = Ellipses{CurrentFrame-mitDuration-1};
@@ -391,29 +422,33 @@ while (cc~='x')
         for frame = CurrentFrame + 1:CurrentFrame + mitDuration
             Ellipses{frame} = Ellipses{CurrentFrame+mitDuration+1};
         end
-    elseif (ct~=0)&(cc=='q') %go to next nc
+    elseif (ct~=0)&(currentCharacter=='q') %go to next nc
         nextncframes = find(nc == (nc(CurrentFrame)+1));
         if ~isempty(nextncframes)
             CurrentFrame = nextncframes(1);
         end
-    elseif (ct~=0)&(cc=='w') %go to previous nc
+    elseif (ct~=0)&(currentCharacter=='w') %go to previous nc
         previousncframes = find(nc == (nc(CurrentFrame)-1));
         if ~isempty(previousncframes)
             CurrentFrame = previousncframes(1);
         end
-    elseif (ct~=0)&(cc=='\')  %resegment with ksnakecircles
+    elseif (ct~=0)&(currentCharacter=='\')  %resegment with ksnakecircles
         
-        [~, circles] = kSnakeCircles(HisImage, pixelSize_um);
+        [~, circles] = kSnakeCircles(HisImage, PixelSize_um);
         circles(:, 6:9) = zeros(size(circles, 1), 4);
         Ellipses{CurrentFrame} = circles;
         
-    elseif (ct~=0)&(cc=='0')    %Debug mode
+    elseif (ct~=0)&(currentCharacter=='`')  %perform active contouring
+        
+    Ellipses{CurrentFrame} = adjustNuclearContours(...
+        Ellipses{CurrentFrame}, HisImage, liveExperiment.pixelSize_um);
+
+
+    elseif (ct~=0)&(currentCharacter=='0')    %Debug mode
         keyboard
         
     end
 end
-
-Ellipses = filterEllipses(Ellipses, [thisExperiment.yDim, thisExperiment.xDim]);
 
 save([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses', '-v6')
 
@@ -437,34 +472,34 @@ end
 end
 
 
- function MeanRadius = computeMeanRadius(Ellipses, CurrentFrame, nFrames)
- 
- radius = @(x,f) nanmean( (1/2)*(x{f}(:, 3) + x{f}(:, 4)) );
- 
- if ~isempty(Ellipses{CurrentFrame})
-     for k = 1:size(Ellipses{CurrentFrame}, 1)
-         if Ellipses{CurrentFrame}(k, 3) == 0
-             Ellipses{CurrentFrame}(k, :) = nan;
-         end
-     end
-     MeanRadius = radius(Ellipses, CurrentFrame);
- elseif CurrentFrame+1 < nFrames && ~isempty(Ellipses{CurrentFrame+1})
-     for k = 1:size(Ellipses{CurrentFrame+1}, 1)
-         if Ellipses{CurrentFrame+1}(k, 3) == 0
-             Ellipses{CurrentFrame+1}(k, :) = nan;
-         end
-     end
-     MeanRadius = radius(Ellipses, CurrentFrame+1);
-     
- elseif CurrentFrame-1 >1 && ~isempty(Ellipses{CurrentFrame-1})
-     for k = 1:size(Ellipses{CurrentFrame-1}, 1)
-         if Ellipses{CurrentFrame-1}(k, 3) == 0
-             Ellipses{CurrentFrame-1}(k, :) = nan;
-         end
-     end
-     MeanRadius = radius(Ellipses, CurrentFrame-1);
- else
-     MeanRadius = 20; %magic number just to avoid errors in weird situations (units of pixels)
- end
-                
+function MeanRadius = computeMeanRadius(Ellipses, CurrentFrame, nFrames)
+
+radius = @(x,f) nanmean( (1/2)*(x{f}(:, 3) + x{f}(:, 4)) );
+
+if ~isempty(Ellipses{CurrentFrame})
+    for k = 1:size(Ellipses{CurrentFrame}, 1)
+        if Ellipses{CurrentFrame}(k, 3) == 0
+            Ellipses{CurrentFrame}(k, :) = nan;
+        end
+    end
+    MeanRadius = radius(Ellipses, CurrentFrame);
+elseif CurrentFrame+1 < nFrames && ~isempty(Ellipses{CurrentFrame+1})
+    for k = 1:size(Ellipses{CurrentFrame+1}, 1)
+        if Ellipses{CurrentFrame+1}(k, 3) == 0
+            Ellipses{CurrentFrame+1}(k, :) = nan;
+        end
+    end
+    MeanRadius = radius(Ellipses, CurrentFrame+1);
+    
+elseif CurrentFrame-1 >1 && ~isempty(Ellipses{CurrentFrame-1})
+    for k = 1:size(Ellipses{CurrentFrame-1}, 1)
+        if Ellipses{CurrentFrame-1}(k, 3) == 0
+            Ellipses{CurrentFrame-1}(k, :) = nan;
+        end
+    end
+    MeanRadius = radius(Ellipses, CurrentFrame-1);
+else
+    MeanRadius = 20; %magic number just to avoid errors in weird situations (units of pixels)
+end
+
 end

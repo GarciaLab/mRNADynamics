@@ -1,8 +1,8 @@
-function [stitchSchnitz, ExpandedSpaceTolerance,...
+function [ExpandedSpaceTolerance,...
     NoBulkShift, retrack, nWorkers, track,...
     noBreak, noStitch, fish,...
-    markandfind, intFlag, chooseHis, segmentBetter,...
-    min_rad_um, max_rad_um, sigmaK_um, mu, nIterSnakes]...
+    markandfind, intFlag, chooseHis, mixedPolaritySegmentation,...
+    min_rad_um, max_rad_um, sigmaK_um, mu, nIterSnakes, doAdjustNuclearContours]...
     = DetermineTrackNucleiOptions(varargin)
 %
 %DETERMINETRACKNUCLEIOPTIONS Processes varargin for TrackNuclei,
@@ -13,7 +13,6 @@ mu = 0.1; %good for Dorsal synthetics settings
 nIterSnakes = 100; %good for Dorsal synthetics settings
 min_rad_um = 2; %good for early fly embryos
 max_rad_um = 6; %good for early fly embryos
-stitchSchnitz=true;
 ExpandedSpaceTolerance = 1.5;
 NoBulkShift = true;
 retrack = false;
@@ -25,7 +24,8 @@ fish = false;
 markandfind =  false;
 intFlag = false;
 chooseHis = false;
-segmentBetter = true;
+mixedPolaritySegmentation = false;
+doAdjustNuclearContours = false;
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'ExpandedSpaceTolerance')
@@ -50,10 +50,13 @@ for i = 1:length(varargin)
         nIterSnakes = varargin{i+1};        
     elseif strcmpi(varargin{i}, 'noBreak')
         noBreak = true;
+     elseif strcmpi(varargin{i}, 'adjustNuclearContours')
+        doAdjustNuclearContours = true;
     elseif strcmpi(varargin{i}, 'chooseHis')
         chooseHis = true;
-    elseif strcmpi(varargin{i}, 'segmentBetter')
-        segmentBetter = varargin{i+1};
+    elseif strcmpi(varargin{i}, 'mixedPolarity')...
+            || strcmpi(varargin{i}, 'mixedPolaritySegmentation')
+        mixedPolaritySegmentation = varargin{i+1};
     elseif strcmpi(varargin{i}, 'noStitch')
         noStitch = true;
     elseif strcmpi(varargin{i}, 'markandfind') || strcmpi(varargin{i}, 'fish')

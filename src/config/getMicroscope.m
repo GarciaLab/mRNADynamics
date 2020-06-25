@@ -1,6 +1,7 @@
 function [FileMode, EmbryoName, projectDate] = getMicroscope(Prefix)
 
-RawDynamicsPath= DetermineAllLocalFolders(Prefix)
+RawDynamicsPath= DetermineAllLocalFolders(Prefix);
+disp(RawDynamicsPath);
 
 %Determine whether we're dealing with 2-photon data from Princeton or LSM
 %data. 2-photon data uses TIF files. In LSM mode multiple files will be
@@ -26,18 +27,16 @@ OMETIFF = dir([rawPrefixPath,'*.ome']);
 if ~isempty(OMETIFF)
     disp('OME-TIFF with .ome XML companion file mode')
     FileMode = 'OMETIFF';
+elseif ~isempty(DLIF)
+    disp('LIF export mode')
+    FileMode='LIFExport';
 elseif ~isempty(DTIF) & isempty(DLSM)& isempty(DSPIN)
-    if isempty(DLIF)
-        if isempty(DLAT)
-            disp('2-photon @ Princeton data mode')
-            FileMode='TIF';
-        else
-            disp('Lattice Light Sheet data mode')
-            FileMode='LAT';
-        end
+    if isempty(DLAT)
+        disp('2-photon @ Princeton data mode')
+        FileMode='TIF';
     else
-        disp('LIF export mode')
-        FileMode='LIFExport';
+        disp('Lattice Light Sheet data mode')
+        FileMode='LAT';
     end
 elseif (isempty(DTIF))&(~isempty(DLSM))
     disp('LSM mode')

@@ -6,10 +6,10 @@ Ellipses = [];
 UseHistoneOverlay = false;
 Prefix = FilePrefix(1:end-1);
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
 try
-    Ellipses = getEllipses(thisExperiment);
+    Ellipses = getEllipses(liveExperiment);
     UseHistoneOverlay = true;
 catch
     Ellipses = [];

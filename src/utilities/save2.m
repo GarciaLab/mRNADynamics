@@ -9,7 +9,7 @@ function save2(file, var)
 
 
 varStr = inputname(2); 
-eval([varStr, '=var']);
+eval([varStr, '=var;']);
 
 if whos(varStr).bytes < 2E9
     save(file, varStr,  '-v6');

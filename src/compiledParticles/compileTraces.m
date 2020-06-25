@@ -6,24 +6,24 @@ function [Particles, CompiledParticles, ncFilter, ncFilterID] =...
     Spots, SkipTraces, ncFilterID, ncFilter, ...
     ElapsedTime, Ellipses, EllipsePos, PreProcPath, ...
     FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits,...
-    edgeWidth, pixelSize_nm, coatChannels, fullEmbryoExists, thisExperiment)
+    edgeWidth, pixelSize_nm, coatChannels, fullEmbryoExists, liveExperiment)
 
 %COMPILETRACES Summary of this function goes here
 %   Detailed explanation goes here
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 
-FrameInfo = getFrameInfo(thisExperiment);
+FrameInfo = getFrameInfo(liveExperiment);
 
-anaphaseFrames = thisExperiment.anaphaseFrames';
+anaphaseFrames = liveExperiment.anaphaseFrames';
 nc9 = anaphaseFrames(1); nc10 = anaphaseFrames(2); nc11 = anaphaseFrames(3);
 nc12 = anaphaseFrames(4); nc13 = anaphaseFrames(5); nc14 = anaphaseFrames(6);
 
-NDigits = thisExperiment.nDigits;
+NDigits = liveExperiment.nDigits;
 
-DropboxFolder = thisExperiment.userResultsFolder;
-PreProcPath = thisExperiment.userPreFolder;
-pixelSize_nm = thisExperiment.pixelSize_nm;
+DropboxFolder = liveExperiment.userResultsFolder;
+PreProcPath = liveExperiment.userPreFolder;
+pixelSize_nm = liveExperiment.pixelSize_nm;
 SnippetSize = 2 * (floor(1300 / (2 * pixelSize_nm))) + 1; % nm. note that this is forced to be odd
 
 NChannels = length(coatChannels);
@@ -49,15 +49,7 @@ for ChN=1:NChannels
             %condition?
             FirstFrame=Particles{ChN}(i).Frame(min(find(Particles{ChN}(i).FrameApproved)));
             
-            %Check that for the remaining frames we got a good z-profile
-            %                 for j=1:length(Particles{ChN}(i).Frame)
-            %                     ZProfile=fad(ChN).channels(Particles{ChN}(i).Frame(j)).fits.shadowsDog{Particles{ChN}(i).Index(j)};
-            %                     [Dummy,ZMax]=max(ZProfile);
-            %                     if (ZMax==1)|(ZMax==length(ZProfile))
-            %                         FrameFilter(j)=0;
-            %                     end
-            %                 end
-            
+
             %Should I only keep traces of a certain length? We also just keep
             %the ones that have a real schnitz associated with them
             AnalyzeThisParticle=1;      %Flag to see if this particle should be analyzed.

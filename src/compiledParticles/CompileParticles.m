@@ -1,5 +1,5 @@
 function CompiledParticles = CompileParticles(varargin)
-% CompileParticles(varargin)
+% CompiledParticles = CompileParticles(varargin)
 %
 % DESCRIPTION
 % This function puts together all the information we have about particles.
@@ -166,20 +166,20 @@ ncFilterID = [];
     optionalResults, yToManualAlignmentPrompt, minBinSize, edgeWidth] = determineCompileParticlesOptions(varargin);
 
 
-thisExperiment = liveExperiment(Prefix);
+liveExperiment = LiveExperiment(Prefix);
 FilePrefix=[Prefix,'_'];
 
-DropboxFolder = thisExperiment.userResultsFolder;
-PreProcPath = thisExperiment.userPreFolder;
-ExperimentType = thisExperiment.experimentType;
-ExperimentAxis = thisExperiment.experimentAxis;
-APResolution = thisExperiment.APResolution;
-DVResolution = thisExperiment.DVResolution;
-nc9=thisExperiment.nc9; nc10=thisExperiment.nc10; 
-nc11=thisExperiment.nc11;nc12=thisExperiment.nc12;
-nc13=thisExperiment.nc13;nc14=thisExperiment.nc14;
+DropboxFolder = liveExperiment.userResultsFolder;
+PreProcPath = liveExperiment.userPreFolder;
+ExperimentType = liveExperiment.experimentType;
+ExperimentAxis = liveExperiment.experimentAxis;
+APResolution = liveExperiment.APResolution;
+DVResolution = liveExperiment.DVResolution;
+nc9=liveExperiment.nc9; nc10=liveExperiment.nc10;
+nc11=liveExperiment.nc11;nc12=liveExperiment.nc12;
+nc13=liveExperiment.nc13;nc14=liveExperiment.nc14;
 
-Channels = thisExperiment.Channels;
+Channels = liveExperiment.Channels;
 Channel1 = Channels{1};
 Channel2 = Channels{2};
 Channel3 = Channels{3};
@@ -187,9 +187,9 @@ Channel3 = Channels{3};
 ncFrames = [zeros(1,8), nc9, nc10, nc11, nc12, nc13, nc14];
 
 
-FrameInfo = getFrameInfo(thisExperiment);
-pixelSize = thisExperiment.pixelSize_nm;
-numFrames = thisExperiment.nFrames;
+FrameInfo = getFrameInfo(liveExperiment);
+pixelSize = liveExperiment.pixelSize_nm;
+numFrames = liveExperiment.nFrames;
 coatChannels = getCoatChannel(Channel1, Channel2, Channel3);
 
 
@@ -201,18 +201,24 @@ ElapsedTime = elapsedTime_min;
 APExperiment = strcmpi(ExperimentAxis, 'AP');
 DVExperiment = strcmpi(ExperimentAxis, 'DV');
 
-%Load Spots and Particles
-disp('Loading Particles.mat...');
-[Particles, SpotFilter] = getParticles(thisExperiment);
-disp('Particles loaded.');
-disp('Loading Spots.mat...');
-Spots = getSpots(thisExperiment);
-disp('Spots loaded.');
-if isempty(Particles)
-    SkipTraces=1;
-    SkipFluctuations=1;
-    SkipFits=1;
-    SkipMovie=1;
+if ~strcmpi(liveExperiment.experimentType, 'input')
+    %Load Spots and Particles
+        disp('Loading Particles.mat...');
+    if liveExperiment.hasParticlesFile
+        [Particles, SpotFilter] = getParticles(liveExperiment);
+    end
+    disp('Particles loaded.');
+    disp('Loading Spots.mat...');
+    if liveExperiment.hasSpotsFile
+        Spots = getSpots(liveExperiment);
+    end
+    disp('Spots loaded.');
+    if isempty(Particles)
+        SkipTraces=1;
+        SkipFluctuations=1;
+        SkipFits=1;
+        SkipMovie=1;
+    end
 end
 
 %Delete the files in folder where we'll write again.
@@ -293,11 +299,18 @@ end
 if APExperiment || DVExperiment
     if ~isfield(Particles{1},'APpos') || ForceAP
         try [Particles, SpotFilter] = AddParticlePosition(addParticleArgs{:});
+            
+            if ~iscell(Particles)
+                Particles={Particles};
+                SpotFilter={SpotFilter};
+            end
+            
+            
         catch warning('Failed to add particle position. Is there no full embryo?'); end
     else disp('Using saved AP information (results from AddParticlePosition)'); end
 end
 
-if haveHistoneChannel, Ellipses = getEllipses(thisExperiment); end
+if haveHistoneChannel, Ellipses = getEllipses(liveExperiment); end
 
 %Folders for reports
 if APExperiment
@@ -316,19 +329,21 @@ end
 
 
 %% Binning the axes into AP and DV
-fullEmbryoExists = exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'], 'file');
+APDetectionFile = [DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'];
+fullEmbryoExists = exist(APDetectionFile, 'file');
 shouldConvertToAP =  haveHistoneChannel...
     && (APExperiment || DVExperiment)...
     && fullEmbryoExists;
 
 %Figure out the AP position of each of the nuclei.
 if shouldConvertToAP
-   [EllipsePos, APAngle, APLength]...
-   = convertToFractionalEmbryoLength(Prefix);
+    [EllipsePos, APAngle, APLength, EllipsePos_DV]...
+        = convertToFractionalEmbryoLength(Prefix);
 end
 
 %Divide the AP and DV axes into bins for generating means
 if APExperiment || DVExperiment && fullEmbryoExists
+    load(APDetectionFile)
     [APbinID, APbinArea] = binAxis(APResolution, FrameInfo, ...
         coordAZoom, APAngle, APLength, minBinSize, 'AP');
 end
@@ -358,7 +373,8 @@ Particles = approveParticles(Particles,...
     Spots, SkipTraces, ncFilterID, ncFilter, ...
     elapsedTime_min, Ellipses, EllipsePos, PreProcPath, ...
     FilePrefix, Prefix, DropboxFolder, numFrames,...
-    manualSingleFits, edgeWidth, pixelSize, coatChannels, fullEmbryoExists, thisExperiment);
+    manualSingleFits, edgeWidth, pixelSize, coatChannels, fullEmbryoExists, liveExperiment);
+
 
 %% ROI option
 % This option is separating the CompiledParticles defined above into
@@ -397,7 +413,7 @@ if fullEmbryoExists
         ...
         nc9, nc10, nc11, nc12,...
         nc13, nc14, nSpotChannels, CompiledParticles, ExperimentAxis, ROI,...
-        APbinID, DVbinID, CompiledParticles_ROI, CompiledParticles_nonROI);
+        APbinID, DVbinID, CompiledParticles_ROI, CompiledParticles_nonROI, fullEmbryoExists);
     
 end
 
@@ -416,7 +432,7 @@ if fullEmbryoExists
         nSpotChannels, CompiledParticles, FrameInfo, ExperimentAxis, ...
         APFilter, ROI, CompiledParticles_ROI, CompiledParticles_nonROI, ...
         APFilter_ROI, APFilter_nonROI, NewCyclePos, DVFilter_ROI, ...
-        DVFilter_nonROI, DVFilter);
+        DVFilter_nonROI, DVFilter, fullEmbryoExists);
 else
     AllTracesVector = {};
     AllTracesVector{1} =...
@@ -560,7 +576,7 @@ try
     end
 catch, warning('Couldn''t run CompileNuclearProtein.'); end
 
-
+checkSchnitzcellsCompiledParticlesConsistency(schnitzcells, CompiledParticles)
 
 %% Save everything
 

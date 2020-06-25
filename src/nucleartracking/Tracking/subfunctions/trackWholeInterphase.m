@@ -37,14 +37,14 @@ else
         nucleusDiameter, embryoMask, [],[1 1 1 1 1]);
 end
 
-%the code down below will break if frames are empty. 
-%let's fix that now. 
-emptyFrames = find(cellfun(@isempty, xyInterphase));
-
-% fh = @(x) fillmissing(x, 'previous');
-for f = 1:length(emptyFrames)
-    xyInterphase{emptyFrames(f)} = [0 0];
-end
+% %the code down below will break if frames are empty. 
+% %let's fix that now. 
+% emptyFrames = find(cellfun(@isempty, xyInterphase));
+% 
+% % fh = @(x) fillmissing(x, 'previous');
+% for f = 1:length(emptyFrames)
+%     xyInterphase{emptyFrames(f)} = [0 0];
+% end
 
 
 if ~exist('shifts','var') || isempty(shifts)
@@ -54,22 +54,7 @@ end
 %code. This like invariably returns size(xyInterphase{1},1);
 numberOfNuclei = size(xyInterphase{startingFrame-previousMitosisInd+1},1);
 
-% initialize array
-% nuclei = struct('position',nan(totalNumberOfFrames,2),'indXY',mat2cell([zeros(startingFrame-1,numberOfNuclei); 1:numberOfNuclei; zeros(totalNumberOfFrames-startingFrame,numberOfNuclei)],totalNumberOfFrames,ones(numberOfNuclei,1)),'score',nan(totalNumberOfFrames,1),'P',[],'D',[],'E',[],'approved',0);
-% 
-% 
-% for j = 1:numberOfNuclei
-%     
-%     nuclei(j).position(startingFrame,:) = XY{startingFrame-previousMitosisInd+1}(j,:);
-%     
-% end
 
-
-%This might be the problem? Beyond using j vs jj as the iterating
-%variables. It seems like it says that if the nucleus at jj had the same
-%position index as it did at the start, the nuclei are the same. If there
-%is a similar structure in the mitosis code, this might account for some of
-%the errors
 ind = true(length(xyInterphase{startingFrame-previousMitosisInd+1}),1);
 nucleiIndices = nan(size(xyInterphase{1},1),1);
 for j = 1:size(xyInterphase{1},1)
@@ -86,7 +71,6 @@ if any(isnan(nucleiIndices))
     error(' NAN ')
 end
 
-targetNumber = numel(nuclei);
 
 %% Track forwards
 for j = 1:(nextMitosisInd-startingFrame)
