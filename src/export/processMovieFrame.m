@@ -11,6 +11,6 @@ end
   %Now copy nuclear tracking images
     generateNuclearChannel(nFrames, movieImages,...
         framesIndex, seriesIndex, NSlices, NChannels,ProjectionType,...
-         Channels, ReferenceHist, OutputFolder, Prefix, lowbit);
+         Channels, ReferenceHist, OutputFolder, Prefix);
   
 end
