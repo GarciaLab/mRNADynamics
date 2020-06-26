@@ -103,7 +103,9 @@ function RawParticles = track02TrainGHMM(...
     %%% Re-Infer particle-specific transition matrices
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     iter = 1;
+    f = waitbar(0,['Training motion model (channel ' num2str(Channel) ')']);
     for p = 1:length(RawParticles{Channel})
+      waitbar(p/length(RawParticles{Channel}),f);
       % refit transition matrix if particle is long enough
       if ismember(p,longIDVec)
         hmmModel = struct;
@@ -126,4 +128,5 @@ function RawParticles = track02TrainGHMM(...
       end
       RawParticles{Channel}(p).hmmModel = hmmModel;
     end
+    close(f);
   end

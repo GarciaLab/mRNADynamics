@@ -12,7 +12,9 @@ function RawParticles = track03PredictParticlePaths(...
   frameIndex = 1:length(ncVec);
   
   for Channel = 1:NCh
+%     f = waitbar(0,['Simulating particle paths (channel ' num2str(Channel) ')']);
     for p = 1:length(RawParticles{Channel})
+%       waitbar(p/length(RawParticles{Channel}),f);
       % calculate forward and backward frames to calculate
       frameVec = RawParticles{Channel}(p).Frame;
       nc = ncVec(frameVec(1)==frameIndex);
@@ -79,5 +81,6 @@ function RawParticles = track03PredictParticlePaths(...
       end
       RawParticles{Channel}(p).hmmModel = hmmModel;
     end
+%     close(f);
   end
   

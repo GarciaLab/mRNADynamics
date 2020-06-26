@@ -23,8 +23,8 @@ SimParticles = track03PredictParticlePaths(HMMParticles, FrameInfo, retrack, dis
 toc
 tic
 disp('Stitching particle tracks...')
-StitchedParticles = track04StitchTrackNoNuclei(...
-                          SimParticles, FrameInfo, retrack, displayFigures);
+StitchedParticles = track04StitchTracks(...
+                          SimParticles, FrameInfo,ExperimentType, retrack, displayFigures);
 toc                        
 % Iterate over all channels
 for Channel = 1:NCh
