@@ -62,7 +62,7 @@ function FrameInfo = processLSMData(Folder, D, FrameInfo, ExperimentType, ...
       FrameInfo(frameInfoIndex).NumberSlices = topZSlice;
     end
   
-    close(waitbarFigure);
+    try close(waitbarFigure); catch; end
     
     [coatChannel, histoneChannel, fiducialChannel, inputProteinChannel, FrameInfo] =...
     LIFExportMode_interpretChannels(ExperimentType, Channels{1}, Channels{2}, Channels{3}, FrameInfo);
