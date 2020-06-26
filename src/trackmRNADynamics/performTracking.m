@@ -11,7 +11,7 @@ function Particles =...
 tic
 disp('Performing intitial particle linking...')
 RawParticles = track01ParticleProximity(...
-    FrameInfo, Spots, schnitzcells, NCh, PixelSize, SearchRadiusMicrons, retrack, displayFigures);
+    FrameInfo, Spots, schnitzcells, NCh, PixelSize, SearchRadiusMicrons, UseHistone, retrack, displayFigures);
 toc 
 tic
 disp('Inferring particle motion model...')
@@ -23,80 +23,63 @@ SimParticles = track03PredictParticlePaths(HMMParticles, FrameInfo, retrack, dis
 toc
 tic
 disp('Stitching particle tracks...')
-StitchedParticles = track04StitchTracks(...
-                          SimParticles, FrameInfo,ExperimentType, retrack, displayFigures);
+Particles = track04StitchTracks(...
+                          SimParticles, FrameInfo, ExperimentType, UseHistone, retrack, displayFigures);
 toc                        
-% Iterate over all channels
+disp('Adding QC fields...')
+% Iterate over all channels and generate additional QC flags
+maxCost = 3;
+ncDistPrctile = 99.5;
 for Channel = 1:NCh
+  allDistanceVec = [Particles{Channel}.NucleusDist];  
+  threshDist = prctile(allDistanceVec,ncDistPrctile);
+  for p = 1:length(Particles{Channel})
+    % flag particles anomalously far from their respective nuclei
+    ncDistVec = Particles{Channel}(p).NucleusDist;
+%     frameVec = Particles{Channel}(p).Frame;
+%     ncID = Particles{Channel}(p).NucleusID;
+%     cellNo = schnitzcells(ncID).cellno;
+%     meanRadiusVec = NaN(size(frameVec));
+%     for f = 1:length(frameVec) 
+%       meanRadiusVec(f) = mean(Ellipses{frameVec(f)}(cellNo(f),[3 4]));
+%     end
+    % flag cases when particle is far away from nearest nucleus
+    Particles{Channel}(p).ncDistFlags = ncDistVec>threshDist;
     
-    % Iterate over all frames
-    for CurrentFrame = 1:length(Spots{Channel})
-        
-        if isempty(app) && displayFigures
-            figure(ParticlesFig)
-            set(ParticlesFig, 'units', 'normalized', 'position', [0.01, .55, .33, .33]);
-        end
-        
-%         % Get the filter for this frame
-%         CurrentFrameFilter = logical(SpotFilter{Channel}(CurrentFrame,...
-%             ~isnan(SpotFilter{Channel}(CurrentFrame, :))));
-        
-        xPos = displayParticlesFigure(app, particlesAxes,...
-            ParticlesFig, Spots, Channel, CurrentFrame, ...
-            PreProcPath, Prefix, SpotsChannel, FrameInfo, displayFigures);
-        
-        if UseHistone
-            [Particles, SpotFilter] = trackParticlesBasedOnNuclei(PreProcPath, Prefix,...
-                CurrentFrame, NDigits, app, nucAxes, Ellipses, ...
-                ExperimentType, Channel, schnitzcells, Particles, Spots,...
-                SpotFilter, PixelSize, SearchRadius, retrack, displayFigures);
-        else
-            [Particles] = trackParticlesBasedOnProximity(Particles, Spots,...
-                xPos, Channel, CurrentFrame, PixelSize, SearchRadius,...
-                retrack, displayFigures);
-        end
-        
-    end
-    
-end
-
-if isempty(app) && displayFigures
-    close(ParticlesFig)
-    if UseHistone, close(NucleiFig); end
+    % flag unlikely linkages
+    Particles{Channel}(p).linkFlags = Particles{Channel}(p).linkCosts>maxCost;    
+  end    
 end
 
 
-for currentChannel = 1:NCh
-    
-    if ~isfield(Particles{currentChannel}, 'FrameApproved')
-        
-        for particle = 1:length(Particles{currentChannel})
-            Particles{currentChannel}(particle).FrameApproved = true(size(Particles{currentChannel}(particle).Frame));
-        end
-        
-    else
-        
-        for particle = 1:length(Particles{currentChannel})
-            
-            if isempty(Particles{currentChannel}(particle).FrameApproved)
-                Particles{currentChannel}(particle).FrameApproved = true(size(Particles{currentChannel}(particle).Frame));
-            end
-            
-        end
-        
-    end
-    
-    
-    Particles = addPositionsToParticles(Particles, Spots, currentChannel);
-    
-end
+% for currentChannel = 1:NCh
+%     
+%     if ~isfield(Particles{currentChannel}, 'FrameApproved')
+%         
+%         for particle = 1:length(Particles{currentChannel})
+%             Particles{currentChannel}(particle).FrameApproved = true(size(Particles{currentChannel}(particle).Frame));
+%         end
+%         
+%     else
+%         
+%         for particle = 1:length(Particles{currentChannel})
+%             
+%             if isempty(Particles{currentChannel}(particle).FrameApproved)
+%                 Particles{currentChannel}(particle).FrameApproved = true(size(Particles{currentChannel}(particle).Frame));
+%             end
+%             
+%         end
+%         
+%     end
+%     
+%     
+%     Particles = addPositionsToParticles(Particles, Spots, currentChannel);
+%     
+% end
 
 % If we only have one channel, then convert SpotFilter and Particles to a standard structure.
 if NCh == 1
-    SpotFilter = SpotFilter{1};
     Particles = Particles{1};
 end
-
-
 
 end
