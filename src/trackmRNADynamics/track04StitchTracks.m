@@ -1,230 +1,153 @@
 function StitchedParticles = track04StitchTracks(...
-                          RawParticles, FrameInfo, ExperimentType, retrack, displayFigures)
-
+                          RawParticles, FrameInfo, ExperimentType, UseHistone, retrack, displayFigures)
+                        
+  UseHistone = false;
   % set useful parameters
   NCh = length(RawParticles);
   ncVec = [FrameInfo.nc];
   frameIndex = 1:length(ncVec);
-  maxDist = sum(ncVec==mode(ncVec)); % max time gap between linkable points (in frames)
-  matchCostMax = 3; % maximum number of sigmas away (the 0.5 factor is an adjustment for 
-  % cost such that all fragments are matched
-  if ismember(ExperimentType,{'inputoutput','1spot','2spot'}) %&& UseNuclei
+  matchCostMax = 3; % maximum number of sigmas away (this is reset to Inf if we have nuclei)
+  spotsPerNucleus = Inf;
+  if ismember(ExperimentType,{'inputoutput','1spot'}) && UseHistone
+    spotsPerNucleus = 1;
     matchCostMax = realmax;
-  end   
-%   matchCostMin = 0.5; % cost for initial pair matching (pairs must be within 1/2 sigma to be matched)
-%   nMatchRounds = sum(ncVec==mode(ncVec)); % number of distinct match costs to iterate through
-%   costVec = linspace(matchCostMin,matchCostMax,nMatchRounds);  
+  elseif ismember(ExperimentType,{'2spot'}) && UseHistone
+    spotsPerNucleus = 2;
+    matchCostMax = realmax;
+  end
   
   % initialize data structure
   StitchedParticles = cell(1,NCh);
-  for Channel = 1:NCh     
-    % check to see if we have nucleus info
-    UseNuclei = all([RawParticles{Channel}.NucleusID]==1);
-    % record extant frames
-    rightPointVec = NaN(length(RawParticles{Channel}),1);    
-    leftPointVec = NaN(length(RawParticles{Channel}),1);
-    segmentIDVec = NaN(length(RawParticles{Channel}),1);
-    for p = 1:length(RawParticles{Channel})
-      rightPointVec(p) = RawParticles{Channel}(p).LastFrame;
-      leftPointVec(p) = RawParticles{Channel}(p).FirstFrame;
-      segmentIDVec(p) = p;
-    end
+  for Channel = 1:NCh                                     
     
-    % now store particle positions and positional errors in arrays
-    nDims = length(RawParticles{Channel}(1).hmmModel);
-    pathArray = Inf(length(frameIndex),length(RawParticles{Channel}),nDims);   
-    sigmaArray = Inf(length(frameIndex),length(RawParticles{Channel}),nDims); 
-    NucleusIDVec = NaN(1,length(RawParticles{Channel}));
-    for p = 1:length(RawParticles{Channel})      
-      nc_ft = ismember(ncVec,ncVec(RawParticles{Channel}(p).FirstFrame));
-      for n = 1:nDims
-        pathArray(nc_ft,p,n) = RawParticles{Channel}(p).hmmModel(n).pathVec;
-        sigmaArray(nc_ft,p,n) = RawParticles{Channel}(p).hmmModel(n).sigmaVec;        
+    % number of distinct parameters we're using for linking
+    nParams = length(RawParticles{Channel}(1).hmmModel);
+    
+    % determine nucleus each fragment corresponds to
+    nucleusIDVec = NaN(1,length(RawParticles{Channel})); 
+    if UseHistone
+      for p = 1:length(RawParticles{Channel})   
+        nucleusIDVec(p) = RawParticles{Channel}(p).NucleusID(1);
       end
-      NucleusIDVec(p) = RawParticles{Channel}(p).NucleusID(1);
+    else
+      nucleusIDVec(:) = 1;
     end
-    extantArray = sigmaArray(:,:,1)==0;
+    % see how many unique nucleus groups we have
+    nucleusIDIndex = unique(nucleusIDVec);    
+    % initialize cell structure to temporatily store results for each
+    % assignment group
+    tempParticles = struct;
+    nIter = 1;
+    % we only need to perform cost-based tracking within each nucleus group
+    f = waitbar(0,'Stitching particle fragments');
+    for n = 1:length(nucleusIDIndex)
+      waitbar(n/length(nucleusIDIndex),f);
+      NucleusID = nucleusIDIndex(n);
+      
+      [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDArray, linkCostArray, mDistanceMatrix] = performParticleStitching(...
+              NucleusID,nucleusIDVec,frameIndex,RawParticles,Channel,ncVec,matchCostMax);
 
-    % for each particle generate list of overlapping (incompatible)
-    % particles
-    avoidanceCell = cell(1,length(RawParticles{Channel}));
-    nucleusIDCell = cell(1,length(RawParticles{Channel}));
-    activeFrameCell = cell(1,length(RawParticles{Channel}));
-    origIDCell = cell(1,length(RawParticles{Channel}));
-    linkIDCell = cell(1,length(RawParticles{Channel}));
-    costCell = cell(1,length(RawParticles{Channel}));
-    particleIndexCell = cell(1,length(RawParticles{Channel}));
-    for p = 1:length(RawParticles{Channel})
-      overlapVec = max(extantArray(extantArray(:,p),:),[],1)==1;
-%       ncMismatchVec = NucleusIDVec~=NucleusIDVec(p);
-      nucleusIDCell{p} = RawParticles{Channel}(p).NucleusID;
-      avoidanceCell{p} = find(overlapVec);
-      activeFrameCell{p} = RawParticles{Channel}(p).Frame;
-      origIDCell{p} = repelem(p,length(activeFrameCell{p}));
-      linkIDCell{p} = repelem(1,length(activeFrameCell{p}));
-      costCell{p} = repelem(0,length(activeFrameCell{p}));
-      particleIndexCell{p} = RawParticles{Channel}(p).Index;
-    end
-    %%% calculate Mahalanobis Distance between particles in likelihood space
-    forwardDistanceMat = Inf(length(RawParticles{Channel}),length(RawParticles{Channel}));   
-    backwardDistanceMat = Inf(length(RawParticles{Channel}),length(RawParticles{Channel}));   
-    for p = 1:length(RawParticles{Channel})
-      % calculate forward distances
-      rpFrame = rightPointVec(p);
-      rpDelta = pathArray(rpFrame,p,:)-pathArray(rpFrame,:,:);      
-      lpSigVec = sigmaArray(rpFrame,:,:);
-      forwardDistanceMat(:,p) = mean((rpDelta ./ lpSigVec).^2,3);
-      forwardDistanceMat(leftPointVec-rpFrame<=0|leftPointVec-rpFrame>maxDist,p) = Inf;
-      forwardDistanceMat(avoidanceCell{p},p) = Inf;
-      % calculate backwards distances 
-      lpFrame = leftPointVec(p);
-      lpDelta = pathArray(lpFrame,p,:) - pathArray(lpFrame,:,:);      
-      rpSigVec = sigmaArray(lpFrame,:,:);
-      backwardDistanceMat(p,:) = mean((lpDelta ./ rpSigVec).^2,3);
-      backwardDistanceMat(p,rightPointVec-lpFrame>=0|rightPointVec-lpFrame<-maxDist) = Inf;
-      backwardDistanceMat(p,avoidanceCell{p}) = Inf;
-    end    
-    % if there are a fixed number of spots per nucleus, increase the max
-    mDistanceMat = sqrt((backwardDistanceMat + forwardDistanceMat)/2);
-    mDistanceMat(isnan(mDistanceMat)) = Inf;
-    maxStitchNum = size(mDistanceMat,1)-1; % maximum number of stitches possible    
+      % generate local structure to store results       
+      assigmentFlags = UseHistone & (sum(extantFrameArray,2)>spotsPerNucleus)';
+      rmVec = [];
+      % check for degenerate particle-nucleus assignments
+      if any(assigmentFlags)        
+        localKernel = 10; % number of leading and trailing frames to examine
+        % find problematic frames
+        errorIndices = find(assigmentFlags);
+        clusterIndices = find([1 diff(errorIndices)>1 1]);
+        % initialize vector to track particle IDs to remove        
+        % iterate through these and guess which spots are anamolous based
+        % on local connectivity
+        for e = 1:length(clusterIndices)-1
+          % get problematic frame list
+          cFrames = errorIndices(clusterIndices(e):clusterIndices(e+1)-1);          
+          % get list of correspnding particles
+          ptList = nanmax(particleIDArray(cFrames,:),[],1);
+          
+          ff = max([1,cFrames(1)-localKernel]);
+          lf = min([length(frameIndex),cFrames(end)+localKernel]);          
+          lcVec = ff:lf;
+          lcVec = lcVec(~ismember(lcVec,cFrames));
+          localCounts = sum(extantFrameArray(lcVec,:));
+          [~,rankVec] = sort(localCounts);
+          % add lowest ranking indices
+          rmVec = [rmVec ptList(rankVec(1:end-spotsPerNucleus))];
+        end
+        % reset nucleus ID values for these particles to NaN
+        nucleusIDVecNew = nucleusIDVec;
+        nucleusIDVecNew(rmVec) = NaN;           
+                
+        % reset values to originals
+        for p = 1:length(rmVec)
+          % approval 
+          tempParticles(nIter).Approved = false;
+          % extant frames
+          tempParticles(nIter).Frame = RawParticles{Channel}(rmVec(p)).Frame;
+          % position info
+          tempParticles(nIter).xPos = RawParticles{Channel}(rmVec(p)).xPos;
+          tempParticles(nIter).yPos = RawParticles{Channel}(rmVec(p)).yPos;
+          tempParticles(nIter).zPosDetrended = RawParticles{Channel}(rmVec(p)).zPosDetrended;
+          % full projected path and error          
+          tempParticles(nIter).pathArray = NaN(length(frameIndex),nParams);
+          tempParticles(nIter).sigmaArray = NaN(length(frameIndex),nParams);
+          nc_ft = ismember(ncVec,ncVec(RawParticles{Channel}(rmVec(p)).FirstFrame));
+          for np = 1:nParams
+            tempParticles(nIter).pathArray(nc_ft,np) = RawParticles{Channel}(rmVec(p)).hmmModel(np).pathVec;
+            tempParticles(nIter).sigmaArray(nc_ft,np) = RawParticles{Channel}(rmVec(p)).hmmModel(np).sigmaVec;        
+          end 
+          % record info vectors
+          tempParticles(nIter).origIDs = rmVec(p);
+          tempParticles(nIter).NucleusID = NaN;
+          tempParticles(nIter).NucleusIDOrig = NucleusID;
+          tempParticles(nIter).linkIDs = zeros(1,length(RawParticles{Channel}(rmVec(p)).Frame));
+          tempParticles(nIter).linkCosts = zeros(1,length(RawParticles{Channel}(rmVec(p)).Frame));
+          tempParticles(nIter).assigmentFlags = assigmentFlags;
+          tempParticles(nIter).NucleusDist = RawParticles{Channel}(rmVec(p)).NucleusDist;
+          % increment
+          nIter = nIter + 1;
+        end 
         
-    % iterate through cost layers
-    f = waitbar(0,['Stitching particle tracks (channel ' num2str(Channel) ')']);
-    for m = 1:maxStitchNum
-      % udate waitbar
-      waitbar(m/maxStitchNum,f);
-      % calculate  current lowest cost
-      minCost = min(mDistanceMat(:));
-      if minCost > matchCostMax
-        break
-      end
-      % get coordinates of minimum
-      [pDrop,pKeep]=find(mDistanceMat==minCost,1);
-      if ismember(pKeep,avoidanceCell{pDrop})
-        error('WTF')
-      end
-      % update ID vec
-      toID = segmentIDVec(pKeep);
-      fromID = segmentIDVec(pDrop);
-      segmentIDVec(segmentIDVec==fromID) = toID;
-      toFilter = segmentIDVec==toID;        
-
-      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-      % update info tracking cells
-      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-      avoidanceCell(toFilter) = {unique([avoidanceCell{[pKeep pDrop]}])}; % tracks incompatible segments
-
-      [activeFrames,si] = unique([activeFrameCell{[pKeep pDrop]}]); % tracks active frames             
-
-      ptIndices = [particleIndexCell{[pKeep pDrop]}]; % tracks index of particles within Spots
-      particleIndexCell(toFilter) = {ptIndices(si)};
-
-      nucleusIDs = [nucleusIDCell{[pKeep pDrop]}];        
-      nucleusIDCell(toFilter) = {nucleusIDs(si)};
-
-      currentLinks = [linkIDCell{pKeep} repelem(max(linkIDCell{pKeep})+1,length(activeFrameCell{pDrop}))]; % track ordering of links
-      linkIDCell(toFilter) = {currentLinks(si)};
-
-      currentCosts = [costCell{pKeep} repelem(minCost,length(activeFrameCell{pDrop}))]; % linking cosst
-      costCell(toFilter) = {currentCosts(si)};
-
-      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-      % generate updated combined path using variance-weighted average 
-      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-      firstFrame = activeFrames(1);
-      lastFrame = activeFrames(end);
-      midVec = firstFrame:lastFrame;
-      gapVec = midVec(~ismember(midVec,activeFrames));
-
-      % calculate variance weights
-      sg1 = sigmaArray(:,pKeep,:).^-2;
-      sg2 = sigmaArray(:,pDrop,:).^-2;
-
-      % first assign known points
-      newPath = NaN(size(sigmaArray(:,1,:)));
-      newPath(activeFrameCell{pDrop},:,:) = pathArray(activeFrameCell{pDrop},pDrop,:);
-      newPath(activeFrameCell{pKeep},:,:) = pathArray(activeFrameCell{pKeep},pKeep,:);
-
-      pathArray(activeFrameCell{pDrop},toFilter,:) = repmat(pathArray(activeFrameCell{pDrop},pDrop,:),1,sum(toFilter),1);
-      pathArray(activeFrameCell{pKeep},toFilter,:) = repmat(pathArray(activeFrameCell{pKeep},pKeep,:),1,sum(toFilter),1);
-
-      %%% next calculate projections for missing points that are between
-        
-      % existing points
-      newPath(gapVec,:,:) = (pathArray(gapVec,pKeep,:).*sg1(gapVec') ...
-                                    + pathArray(gapVec,pDrop,:).*sg2(gapVec')) ...
-                                    ./ (sg1(gapVec') + sg2(gapVec'));
-
-      %%% calculate projections for backwards and forwards trajectories
-
-      % forward
-      mFrame = max(frameIndex);
-      df1 = pathArray(lastFrame+1:mFrame,pKeep,:)-pathArray(lastFrame:mFrame-1,pKeep,:);
-      df2 = pathArray(lastFrame+1:mFrame,pDrop,:)-pathArray(lastFrame:mFrame-1,pDrop,:);
-      dfMean = (df1.*sg1(lastFrame+1:mFrame)'+df2.*sg2(lastFrame+1:mFrame)')./(sg1(lastFrame+1:mFrame)' + sg2(lastFrame+1:mFrame)');
-      newPath(lastFrame+1:mFrame,:,:) = newPath(lastFrame,:,:)+cumsum(dfMean,1);
-
-      % backward
-      db1 = pathArray(1:firstFrame-1,pKeep,:)-pathArray(2:firstFrame,pKeep,:);
-      db2 = pathArray(1:firstFrame-1,pDrop,:)-pathArray(2:firstFrame,pDrop,:);
-      dbMean = (db1.*sg1(1:firstFrame-1)'+db2.*sg2(1:firstFrame-1)')./(sg1(1:firstFrame-1)' + sg2(1:firstFrame-1)');
-      newPath(1:firstFrame-1,:,:) = newPath(firstFrame,:,:)+flipud(cumsum(flipud(dbMean),1));
-
-      % update variance and path arrays
-      sigmaArray(:,toFilter,:) = repmat(sqrt(1 ./ (sg1 + sg2)),1,sum(toFilter),1);
-      pathArray(:,toFilter,:) = repmat(newPath,1,sum(toFilter),1);
-
-      % update list of active frames
-      activeFrameCell(toFilter) = {activeFrames};      
-
-      % update distance array       
-      for p = find(toFilter)'
-        % calculate forward distances
-        rpFrame = rightPointVec(p);
-        rpDelta = pathArray(rpFrame,p,:)-pathArray(rpFrame,:,:);      
-        lpSigVec = sigmaArray(rpFrame,:,:);
-        forwardDistanceMat(:,p) = mean((rpDelta ./ lpSigVec).^2,3);
-        forwardDistanceMat(leftPointVec-rpFrame<=0|leftPointVec-rpFrame>maxDist,p) = Inf;
-        forwardDistanceMat(avoidanceCell{p},p) = Inf;
-
-        % calculate backwards distances 
-        lpFrame = leftPointVec(p);
-        lpDelta = pathArray(lpFrame,p,:) - pathArray(lpFrame,:,:);      
-        rpSigVec = sigmaArray(lpFrame,:,:);
-        backwardDistanceMat(p,:) = mean((lpDelta ./ rpSigVec).^2,3);
-        backwardDistanceMat(p,rightPointVec-lpFrame>=0|rightPointVec-lpFrame<-maxDist) = Inf;
-        backwardDistanceMat(p,avoidanceCell{p}) = Inf;
+        % aaaaaaand rerun the assignment steps
+        [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDArray, linkCostArray, mDistanceMatrix]  = performParticleStitching(...
+              NucleusID,nucleusIDVecNew,frameIndex,RawParticles,Channel,ncVec,matchCostMax);
+         if size(extantFrameArray,2)~=spotsPerNucleus
+           error('problem with spot-nucleus reassigment')
+         end
       end
       
-      mDistanceMat = sqrt((backwardDistanceMat + forwardDistanceMat)/2);
-      mDistanceMat(isnan(mDistanceMat)) = Inf;
-    end    
-    close(f);
-    % generate new stitched particles struct
-    newParticleIndex = unique(segmentIDVec);    
-    
-    StitchedParticlesSub = struct;
-    for p = 1:length(newParticleIndex)
-      matchIndices = find(segmentIDVec==newParticleIndex(p));
-      % approval 
-      StitchedParticlesSub(p).Approved = false;
-      % extant frames
-      StitchedParticlesSub(p).Frame = activeFrameCell{matchIndices(1)};
-      % position info
-      StitchedParticlesSub(p).xPos = pathArray(StitchedParticlesSub(p).Frame,matchIndices(1),1);
-      StitchedParticlesSub(p).yPos = pathArray(StitchedParticlesSub(p).Frame,matchIndices(1),2);
-      StitchedParticlesSub(p).zPosDetrended = pathArray(StitchedParticlesSub(p).Frame,matchIndices(1),3);
-      % full projected path and error
-      StitchedParticlesSub(p).pathArray = reshape(pathArray(:,matchIndices(1),:),[],3);
-      StitchedParticlesSub(p).sigmaArray = reshape(sigmaArray(:,matchIndices(1),:),[],3);
-      % record info vectors
-      StitchedParticlesSub(p).origIDs = origIDCell{matchIndices(1)};
-      StitchedParticlesSub(p).linkIDs = linkIDCell{matchIndices(1)};
-      StitchedParticlesSub(p).linkCosts = costCell{matchIndices(1)};
-      StitchedParticlesSub(p).particleIndices = particleIndexCell{matchIndices(1)};
-      StitchedParticlesSub(p).NucleusID = nucleusIDCell{matchIndices(1)};
-    end    
-    StitchedParticles{Channel} = StitchedParticlesSub;
+      % add particles to structure
+      for p = 1:size(extantFrameArray,2)
+        % approval 
+        tempParticles(nIter).Approved = false;
+        % extant frames
+        tempParticles(nIter).Frame = find(extantFrameArray(:,p)');
+        % position info
+        tempParticles(nIter).xPos = pathArray(tempParticles(nIter).Frame,p,1)';
+        tempParticles(nIter).yPos = pathArray(tempParticles(nIter).Frame,p,2)';
+        tempParticles(nIter).zPosDetrended = pathArray(tempParticles(p).Frame,p,3)';
+        % full projected path and error
+        tempParticles(nIter).pathArray = reshape(pathArray(:,p,:),[],3);
+        tempParticles(nIter).sigmaArray = reshape(sigmaArray(:,p,:),[],3);
+        % record info vectors
+        tempParticles(nIter).origIDs = particleIDArray(tempParticles(nIter).Frame,p)';
+        tempParticles(nIter).linkIDs = linkIDArray(tempParticles(nIter).Frame,p)';
+        tempParticles(nIter).linkCosts = linkCostArray(tempParticles(nIter).Frame,p)';
+        tempParticles(nIter).NucleusID = NucleusID;
+        tempParticles(nIter).NucleusIDOrig = NucleusID;
+        tempParticles(nIter).assigmentFlags = assigmentFlags;
+        % add other info from original particles
+        particleVec = unique(tempParticles(nIter).origIDs,'stable');
+        particleVec = particleVec(~isnan(particleVec));  
+        ncDist = [];
+        for o = particleVec
+          ncDist = [ncDist RawParticles{Channel}(o).NucleusDist];
+        end
+        tempParticles(nIter).NucleusDist = ncDist;
+        % increment
+        nIter = nIter + 1;
+      end   
+    end
+    close(f)       
+    StitchedParticles{Channel} = tempParticles;
   end
