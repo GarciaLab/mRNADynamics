@@ -36,13 +36,7 @@ for Channel = 1:NCh
   for p = 1:length(Particles{Channel})
     % flag particles anomalously far from their respective nuclei
     ncDistVec = Particles{Channel}(p).NucleusDist;
-%     frameVec = Particles{Channel}(p).Frame;
-%     ncID = Particles{Channel}(p).NucleusID;
-%     cellNo = schnitzcells(ncID).cellno;
-%     meanRadiusVec = NaN(size(frameVec));
-%     for f = 1:length(frameVec) 
-%       meanRadiusVec(f) = mean(Ellipses{frameVec(f)}(cellNo(f),[3 4]));
-%     end
+
     % flag cases when particle is far away from nearest nucleus
     Particles{Channel}(p).ncDistFlags = ncDistVec>threshDist;
     
@@ -76,6 +70,8 @@ end
 %     Particles = addPositionsToParticles(Particles, Spots, currentChannel);
 %     
 % end
+
+
 
 % If we only have one channel, then convert SpotFilter and Particles to a standard structure.
 if NCh == 1
