@@ -1,5 +1,5 @@
 function [Particles] = track01ParticleProximity(...
-    FrameInfo, Spots, schnitzcells, NCh, PixelSize, SearchRadiusMicrons, retrack, displayFigures)
+    FrameInfo, Spots, schnitzcells, NCh, PixelSize, SearchRadiusMicrons, UseHistone, retrack, displayFigures)
   
   %This function is the first stage of tracking performed by the 
   %performTracking subfunction. It initializes temporary data structures
@@ -12,9 +12,7 @@ function [Particles] = track01ParticleProximity(...
   % Extract Time Vector
   TimeVec = [FrameInfo.Time];
   % Extract vector indicating nuclear cleavage cycle for each frame
-  ncVec = [FrameInfo.nc];
-  % Check to see if we have nucleus tracking info
-  UseNuclei = ~isempty(schnitzcells);
+  ncVec = [FrameInfo.nc];  
   SlidingWindowSize = 2; % size of window used for time averaging of nuclear movements
   
   for Channel = 1:NCh    
@@ -36,7 +34,7 @@ function [Particles] = track01ParticleProximity(...
         %possible                        
         ptFlag = exist('Particles');
         % if we have nucleus info, assign each spot to a nucleus
-        if UseNuclei     
+        if UseHistone     
           ExtantNucleiX = [];
           ExtantNucleiY = [];
           ncIDVec = [];
@@ -53,10 +51,11 @@ function [Particles] = track01ParticleProximity(...
             NucleusDistMat(i,:) = vecnorm([NewSpotsX(i) NewSpotsY(i)]  - [ExtantNucleiX' ExtantNucleiY'],2,2);
           end
           % assign spots to nearest neighbors
-          [~, minIndices] = min(NucleusDistMat,[],2); % note that I'm not enforcing unique assignment at this stage. Will do this later on in the process
+          [NewSpotDistances, minIndices] = min(NucleusDistMat,[],2); % note that I'm not enforcing unique assignment at this stage. Will do this later on in the process
           NewSpotNucleusIDs = ncIDVec(minIndices); 
         else
           NewSpotNucleusIDs = ones(size(NewSpotsX)); % if no nucleus info, then we set all ID values to dummy val
+          NewSpotDistances = zeros(size(NewSpotsX));
         end
         %Get a list of the particles that were present in
         %the previous frame and of their positions.
@@ -70,7 +69,7 @@ function [Particles] = track01ParticleProximity(...
               ExtantParticles = [ExtantParticles, j];            
               PrevSpotsX = [PrevSpotsX, Particles{Channel}(j).xPos(end)];
               PrevSpotsY = [PrevSpotsY, Particles{Channel}(j).yPos(end)];
-              PrevNuclei = [PrevNuclei, Particles{Channel}(j).NucleusID(end)];
+              PrevNuclei = [PrevNuclei, Particles{Channel}(j).NucleusID];
             end
           end
         end
@@ -90,7 +89,7 @@ function [Particles] = track01ParticleProximity(...
           
           % if we have nulceus tracking info, calculate average
           % frame-over-frame shift
-          if UseNuclei            
+          if UseHistone            
             % use sliding window to estimate average nucleus movement
             NucleiDxVec = [];
             NucleiDyVec = []; 
@@ -138,7 +137,7 @@ function [Particles] = track01ParticleProximity(...
           [MatchIndices,~,~] = matchpairs(DistanceMat,0.5*SearchRadius);
           NewParticleFlag(MatchIndices(:,1)) = false;         
 
-          % Assign matchesd spots to existing particles
+          % Assign matched spots to existing particles
           for j = 1:size(MatchIndices)
             ParticleIndex = ExtantParticles(MatchIndices(j,2));
             NewSpotIndex = MatchIndices(j,1);
@@ -148,7 +147,7 @@ function [Particles] = track01ParticleProximity(...
             Particles{Channel}(ParticleIndex).xPos(end + 1) = NewSpotsX(NewSpotIndex);
             Particles{Channel}(ParticleIndex).yPos(end + 1) = NewSpotsY(NewSpotIndex);
             Particles{Channel}(ParticleIndex).zPos(end + 1) = NewSpotsZ(NewSpotIndex);      
-            Particles{Channel}(ParticleIndex).NucleusID(end + 1) = NewSpotNucleusIDs(NewSpotIndex);
+            Particles{Channel}(ParticleIndex).NucleusDist(end + 1) = NewSpotDistances(NewSpotIndex);
           end                        
 
         end
@@ -170,6 +169,7 @@ function [Particles] = track01ParticleProximity(...
           Particles{Channel}(TotalParticles).yPos = NewSpotsY(j);
           Particles{Channel}(TotalParticles).zPos = NewSpotsZ(j);          
           Particles{Channel}(TotalParticles).NucleusID = NewSpotNucleusIDs(j); 
+          Particles{Channel}(TotalParticles).NucleusDist = NewSpotDistances(j); 
         end
       end
 
