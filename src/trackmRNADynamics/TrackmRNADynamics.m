@@ -92,9 +92,9 @@ end
 validateExperimentTypeSupported(ExperimentType);
 
 Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh, retrack);
-tic % NL: be sure to remove
+
 Spots = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefix, NCh);
-toc
+
 if displayFigures
     [ParticlesFig, particlesAxes, NucleiFig, nucAxes] = generateTrackingFigures(app, UseHistone);
 else
