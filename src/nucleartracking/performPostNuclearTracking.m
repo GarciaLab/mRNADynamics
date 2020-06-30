@@ -24,11 +24,15 @@ end
 if postTrackingSettings.doAdjustNuclearContours
     
     hisMat = getHisMat(liveExperiment);
+    pixelSize_um = liveExperiment.pixelSize_um;
     
-    for frame = 1:length(Ellipses)
+    parfor frame = 1:length(Ellipses)
         Ellipses{frame} = adjustNuclearContours(Ellipses{frame},...
-            hisMat(:, :, frame), liveExperiment.pixelSize_um);    
+            hisMat(:, :, frame), pixelSize_um);    
     end
+    
+    %TrackNuclei handles empty frames poorly, so let's fill them in. 
+    Ellipses = fillEmptyXYFrames(Ellipses);
     
     save2(ellipsesFile, Ellipses);
     TrackNuclei(Prefix, 'nWorkers', 1, 'retrack')
