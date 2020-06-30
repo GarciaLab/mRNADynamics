@@ -8,7 +8,7 @@ function Particles = performTracking(Prefix,varargin)
 % Get all the required data for this Prefix
 liveExperiment = LiveExperiment(Prefix);
 
-nCh = numel(liveExperiment.Channels);
+nCh = numel(liveExperiment.spotChannels);   %Only grabbing the spot channels - might cause issues if spot channels aren't the first n channels
 pixelSize = liveExperiment.pixelSize_um;    %NL says pixel size is in um
 experimentType = liveExperiment.experimentType;
 FrameInfo = getFrameInfo(liveExperiment);
