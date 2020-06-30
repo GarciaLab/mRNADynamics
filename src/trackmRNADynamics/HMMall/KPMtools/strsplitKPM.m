@@ -1,5 +1,10 @@
-function parts = strsplit(splitstr, str, option)
+function parts = strsplitKPM(splitstr, str, option)
 %STRSPLIT Split string into pieces.
+%   ***MT 2020-06-30: As of 2020, MATLAB has it's own builtin function 
+%      named strsplit, which is shadowed by this function. To solve this, I
+%      renamed this function to STRSPLITKPM. This shouldn't have any impact
+%      given that no other function in the KPMstats, KPMtools, or netlab3.3
+%      folders call this function, as far as I can tell.***
 %
 %   STRSPLIT(SPLITSTR, STR, OPTION) splits the string STR at every occurrence
 %   of SPLITSTR and returns the result as a cell array of strings.  By default,
@@ -16,6 +21,7 @@ function parts = strsplit(splitstr, str, option)
 %   Time-stamp:  2004-09-22 08:48:01 +0200
 %   E-mail:      pjacklam@online.no
 %   URL:         http://home.online.no/~pjacklam
+%   Modified:    Meghan Turner (meghan_turner@berkeley), 2020-06-30
 
    nargsin = nargin;
    error(nargchk(2, 3, nargsin));
