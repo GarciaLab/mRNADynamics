@@ -1,36 +1,52 @@
-function Particles =...
-    performTracking(Particles, schnitzcells, NCh, Spots, app,...
-    PreProcPath, Prefix, UseHistone, ParticlesFig,...
-    SpotsChannel, NucleiFig, particlesAxes, nucAxes,...
-    Ellipses, PixelSize, SearchRadiusMicrons, ExperimentType,...
-    FrameInfo, retrack, displayFigures)
+function Particles = performTracking(Prefix,varargin)
+
+% Process user options
+% searchRadiusMicrons = 5; by default
+[useHistone,searchRadiusMicrons,retrack,displayFigures] = ...
+            determinePerformTrackingOptions(varargin);
+
+% Get all the required data for this Prefix
+liveExperiment = LiveExperiment(Prefix);
+
+nCh = numel(liveExperiment.Channels);
+pixelSize = liveExperiment.pixelSize_um;    %NL says pixel size is in um
+experimentType = liveExperiment.experimentType;
+FrameInfo = getFrameInfo(liveExperiment);
+Spots = getSpots(liveExperiment);
+schnitzCells = getSchnitzcells(liveExperiment);
+
 
 % [Particles] = track02KalmanTesting(...
 %     FrameInfo, Spots, NCh, PixelSize, SearchRadiusMicrons, retrack, displayFigures)
   
 tic
 disp('Performing intitial particle linking...')
-RawParticles = track01ParticleProximity(...
-    FrameInfo, Spots, schnitzcells, NCh, PixelSize, SearchRadiusMicrons, UseHistone, retrack, displayFigures);
-toc 
+RawParticles = track01ParticleProximity(FrameInfo, Spots, schnitzCells, ...
+                nCh, pixelSize, searchRadiusMicrons, useHistone, retrack, ...
+                displayFigures);
+toc
+
 tic
 disp('Inferring particle motion model...')
 HMMParticles = track02TrainGHMM(RawParticles, FrameInfo, retrack, displayFigures);
 toc
+
 tic
 disp('Simulating particle tracks...')
 SimParticles = track03PredictParticlePaths(HMMParticles, FrameInfo, retrack, displayFigures);
 toc
+
 tic
 disp('Stitching particle tracks...')
-Particles = track04StitchTracks(...
-                          SimParticles, FrameInfo, ExperimentType, UseHistone, retrack, displayFigures);
-toc                        
+Particles = track04StitchTracks(SimParticles, FrameInfo, experimentType,...
+                                useHistone, retrack, displayFigures);
+toc 
+
 disp('Adding QC fields...')
 % Iterate over all channels and generate additional QC flags
 maxCost = 3;
 ncDistPrctile = 99.5;
-for Channel = 1:NCh
+for Channel = 1:nCh
   allDistanceVec = [Particles{Channel}.NucleusDist];  
   threshDist = prctile(allDistanceVec,ncDistPrctile);
   for p = 1:length(Particles{Channel})
@@ -46,7 +62,7 @@ for Channel = 1:NCh
 end
 
 
-% for currentChannel = 1:NCh
+% for currentChannel = 1:nCh
 %     
 %     if ~isfield(Particles{currentChannel}, 'FrameApproved')
 %         
@@ -74,7 +90,7 @@ end
 
 
 % If we only have one channel, then convert SpotFilter and Particles to a standard structure.
-if NCh == 1
+if nCh == 1
     Particles = Particles{1};
 end
 
