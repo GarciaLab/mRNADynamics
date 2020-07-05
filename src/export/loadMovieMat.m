@@ -33,10 +33,6 @@ if ~contains(inputString, '.mat')
     movieChDir = dir([PreProcFolder, filesep, Prefix, '_movieMatCh*.mat']);
     numChannelsToLoad = numel(movieChDir);
     
-%     if ~isempty(chRange) && max(chRange) < 3
-%         numChannelsToLoad = numChannelsToLoad-1;
-%     end
-    
     if numChannelsToLoad > 0
         isDividedIntoChannels = true;
         
