@@ -23,7 +23,7 @@ mapping = {};
 if ~exist('xy','var') || isempty(xy)
     for j = 1:nFrames
         
-        tmp = findNuclei(FrameInfo,hisMat,firstFrameNumber-1+j,diameter,embryoMask);
+        tmp = findNuclei(FrameInfo, hisMat(:, :, firstFrameNumber-1+j),diameter,embryoMask);
         
         xy{j} = tmp;
         

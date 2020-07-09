@@ -17,7 +17,7 @@ classdef LiveExperiment
         
         isUnhealthy = false;
         
-        anaphaseFrames (:, 1) uint16 = [0; 0; 0; 0; 0; 0];
+        anaphaseFrames = [0; 0; 0; 0; 0; 0];
         
         
     end

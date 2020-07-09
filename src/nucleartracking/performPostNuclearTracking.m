@@ -26,7 +26,8 @@ if postTrackingSettings.doAdjustNuclearContours
     hisMat = getHisMat(liveExperiment);
     pixelSize_um = liveExperiment.pixelSize_um;
     
-    parfor frame = 1:length(Ellipses)
+  parfor frame = 1:length(Ellipses)
+%     for frame = 1:length(Ellipses)
         Ellipses{frame} = adjustNuclearContours(Ellipses{frame},...
             hisMat(:, :, frame), pixelSize_um);    
     end
