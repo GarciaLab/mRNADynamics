@@ -122,7 +122,6 @@ for j=1:2:numel(varargin)
             provided_LoGratio = varargin{j+1};
         case {'usemultithresh'}
             useMultithresh = varargin{j+1}; 
-            warning('Using multithresh function to threshold nuclei during segmentation (main tracking).')
         case {'segmentationonly', 'segmentation only'}
             if ~islogical(segmentationOnly)
                 segmentationOnly = false;
