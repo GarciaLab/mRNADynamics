@@ -14,7 +14,7 @@ function metadataXML = generateLIFMetaDataXML(in, out, xmlSize)
         xmlSize double = 100E6;
   end
  
-  
+    disp('Exporting LIF MetaData as XML ...')
     if ~isfile(in)
         [lifFile, metafile] = getFiles(in);
     else
