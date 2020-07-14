@@ -540,9 +540,11 @@ uiwait(fig);
         save(isUnhealthyFile, 'isUnhealthy','-v6');
         
         if isUnhealthy
-            disp('Embryo recorded as unhealthy.');
-            nBits = 16;
-            sound(y, Fs, nBits);
+            try
+                disp('Embryo recorded as unhealthy.');
+                nBits = 16;
+                sound(y, Fs, nBits);
+            end
         else
             disp('Embryo recorded as healthy.');
         end

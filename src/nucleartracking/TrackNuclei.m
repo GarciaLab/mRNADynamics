@@ -18,6 +18,8 @@ function TrackNuclei(Prefix,varargin)
 % 'integrate': integrate nuclear fluorescence
 % 'mixedPolaritySegmentation': different segmentation method that works
 % better when there are nuclei of mixed polarity (some dark, some bright)
+% 'adjustNuclearContours': fit ellipses tightly around nuclei (done by
+% adjusting regular segmentation)
 %
 % OUTPUT
 % '*_lin.mat' : Nuclei with lineages

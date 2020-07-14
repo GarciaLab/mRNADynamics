@@ -50,7 +50,8 @@ for i = 1:length(varargin)
         nIterSnakes = varargin{i+1};        
     elseif strcmpi(varargin{i}, 'noBreak')
         noBreak = true;
-     elseif strcmpi(varargin{i}, 'adjustNuclearContours')
+     elseif strcmpi(varargin{i}, 'adjustNuclearContours') ||...
+             strcmpi(varargin{i}, 'adjustNuclearBoundaries')
         doAdjustNuclearContours = true;
     elseif strcmpi(varargin{i}, 'chooseHis')
         chooseHis = true;
