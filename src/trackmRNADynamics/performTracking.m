@@ -37,7 +37,7 @@ toc
 
 tic
 disp('Stitching particle tracks...')
-Particles = track04StitchTracks(SimParticles, FrameInfo, experimentType,...
+Particles = track04StitchTracks(SimParticles, Prefix,...
                                 useHistone, retrack, displayFigures);
 toc 
 
@@ -60,7 +60,14 @@ for Channel = 1:nCh
   end    
 end
 
+
 % make figures if desired
+if displayFigures
+    makeTrackingFigures = true;
+else
+    makeTrackingFigures = false;
+end
+
 if makeTrackingFigures
   trackFigFolder = [DropboxFolder Prefix '\TrackingFigures\'];
   mkdir(trackFigFolder)

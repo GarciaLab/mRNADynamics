@@ -1,25 +1,54 @@
 function StitchedParticles = track04StitchTracks(...
-                          RawParticles, FrameInfo, ExperimentType, UseHistone, retrack, displayFigures)
+                          RawParticles, Prefix, UseHistone, retrack, displayFigures)
                         
-  UseHistone = false;
+%   UseHistone = false;
+  % grab useful info for experiment
+  liveExperiment = LiveExperiment(Prefix);
+  ExperimentType = liveExperiment.experimentType;
+  FrameInfo = getFrameInfo(liveExperiment);
   % set useful parameters
-  NCh = length(RawParticles);
   ncVec = [FrameInfo.nc];
   frameIndex = 1:length(ncVec);
+  NCh = length(RawParticles);
   matchCostMax = 3; % maximum number of sigmas away (this is reset to Inf if we have nuclei)
   
-  spotsPerNucleus = Inf; % max spots per nucleus per frame
-  if ismember(ExperimentType,{'inputoutput','1spot'}) && UseHistone
+  % Set max spots per nucleus per frame, can be different between channels
+  spotsPerNucleus = inf(1,NCh); 
+  if ismember(ExperimentType,{'1spot'}) && UseHistone
     spotsPerNucleus = 1;
     matchCostMax = realmax;
   elseif ismember(ExperimentType,{'2spot'}) && UseHistone
     spotsPerNucleus = 2;
     matchCostMax = realmax;
+  elseif ismember(ExperimentType,{'2spot2color'}) && UseHistone
+    spotsPerNucleus = [1,1];
+    matchCostMax = realmax;
+  elseif ismember(ExperimentType,{'inputoutput'}) && UseHistone
+    % Do we have TF clusters in the input channel?
+    % No clusters:
+    if NCh == 1
+        spotsPerNucleus = 1;
+    % Clusters:
+    elseif NCh == 2
+        % Figure out which channel is the cluster channel
+        spotsChannels = liveExperiment.spotChannels;
+        inputChannels = liveExperiment.inputChannels;
+        clusterChannel = find(spotsChannels == intersect(inputChannels, spotsChannels));
+        outputChannel = find(spotsChannels ~= intersect(inputChannels, spotsChannels));
+        % Cluster channel not limited in spotsPerNucleus
+        spotsPerNucleus(clusterChannel) = Inf; %#ok<FNDSB>
+        spotsPerNucleus(outputChannel) = 1; %#ok<FNDSB>
+    else
+        error('No spot channels, or too many, detected.')
+    end
+    matchCostMax = realmax;
+  else
+      error(['''',ExperimentType,''' ExperimentType not supported by track04StitchTracks'])
   end
   
   % initialize data structure
   StitchedParticles = cell(1,NCh);
-  for Channel = 1:NCh                                     
+  for Channel = 1:NCh
     
     % number of distinct parameters we're using for linking
     nParams = length(RawParticles{Channel}(1).hmmModel);
@@ -50,7 +79,7 @@ function StitchedParticles = track04StitchTracks(...
           NucleusID, nucleusIDVec, frameIndex, RawParticles, Channel, ncVec, matchCostMax);
 
       % generate local structure to store results       
-      assigmentFlags = UseHistone & (sum(extantFrameArray,2)>spotsPerNucleus)';
+      assigmentFlags = UseHistone & (sum(extantFrameArray,2)>spotsPerNucleus(Channel))';
       rmVec = [];
       % check for degenerate particle-nucleus assignments
       if any(assigmentFlags)        
@@ -74,7 +103,7 @@ function StitchedParticles = track04StitchTracks(...
           localCounts = sum(extantFrameArray(lcVec,:));
           [~,rankVec] = sort(localCounts);
           % add lowest ranking indices
-          rmVec = [rmVec ptList(rankVec(1:end-spotsPerNucleus))];
+          rmVec = [rmVec ptList(rankVec(1:end-spotsPerNucleus(Channel)))];
           rmVec = rmVec(~isnan(rmVec));
         end
         % reset nucleus ID values for these particles to NaN
@@ -114,7 +143,7 @@ function StitchedParticles = track04StitchTracks(...
         % aaaaaaand rerun the assignment steps
         [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDArray, linkCostArray, mDistanceMatrix]  = performParticleStitching(...
               NucleusID,nucleusIDVecNew,frameIndex,RawParticles,Channel,ncVec,matchCostMax);
-         if size(extantFrameArray,2)~=spotsPerNucleus
+         if size(extantFrameArray,2) ~= spotsPerNucleus(Channel)
            error('problem with spot-nucleus reassigment')
          end
       end
