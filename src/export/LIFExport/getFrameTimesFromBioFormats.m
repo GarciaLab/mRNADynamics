@@ -7,6 +7,7 @@ nChannels = LIFMeta.getChannelCount(0);
 nSeries = LIFMeta.getImageCount();
 
 Frame_Times = [];
+movieT0 = nan;
 
 for seriesIndex = 0:nSeries-1
     
@@ -19,8 +20,9 @@ for seriesIndex = 0:nSeries-1
         seriesStamp_char = seriesStamp.getValue();
         seriesT0 = DateTools.getTime(seriesStamp_char, DateTools.ISO8601_FORMAT) / 1000; %unix epoch ms -> s
         
-        if seriesIndex == 0
-            movieT0 = seriesT0;
+        %most of the time this will occur at series 0 but not always
+        if isnan(movieT0)
+            movieT0 = seriesT0; 
         end
         
         
@@ -37,6 +39,9 @@ for seriesIndex = 0:nSeries-1
     
     
 end
+
+%double check moviet0 was properly assigned
+assert(~isnan(movieT0));
 
 Frame_Times = Frame_Times - movieT0;
 
