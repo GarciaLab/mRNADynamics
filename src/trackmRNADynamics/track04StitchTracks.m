@@ -7,7 +7,8 @@ function StitchedParticles = track04StitchTracks(...
   ncVec = [FrameInfo.nc];
   frameIndex = 1:length(ncVec);
   matchCostMax = 3; % maximum number of sigmas away (this is reset to Inf if we have nuclei)
-  spotsPerNucleus = Inf;
+  
+  spotsPerNucleus = Inf; % max spots per nucleus per frame
   if ismember(ExperimentType,{'inputoutput','1spot'}) && UseHistone
     spotsPerNucleus = 1;
     matchCostMax = realmax;
@@ -74,6 +75,7 @@ function StitchedParticles = track04StitchTracks(...
           [~,rankVec] = sort(localCounts);
           % add lowest ranking indices
           rmVec = [rmVec ptList(rankVec(1:end-spotsPerNucleus))];
+          rmVec = rmVec(~isnan(rmVec));
         end
         % reset nucleus ID values for these particles to NaN
         nucleusIDVecNew = nucleusIDVec;

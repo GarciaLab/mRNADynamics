@@ -1,5 +1,5 @@
 function FrameInfo = processLSMData(Folder, D, FrameInfo, ExperimentType, ...
-    Channel1, Channel2, Channel3, ProjectionType,Prefix, OutputFolder,nuclearGUI, zslicesPadding)
+    Channels, ProjectionType,Prefix, OutputFolder,nuclearGUI, zslicesPadding)
   % What type of experiment do we have?
 
     NSeries = length(D);
@@ -62,10 +62,10 @@ function FrameInfo = processLSMData(Folder, D, FrameInfo, ExperimentType, ...
       FrameInfo(frameInfoIndex).NumberSlices = topZSlice;
     end
   
-    close(waitbarFigure);
+    try close(waitbarFigure); catch; end
     
     [coatChannel, histoneChannel, fiducialChannel, inputProteinChannel, FrameInfo] =...
-    LIFExportMode_interpretChannels(ExperimentType, Channel1, Channel2, Channel3, FrameInfo);
+    LIFExportMode_interpretChannels(ExperimentType, Channels{1}, Channels{2}, Channels{3}, FrameInfo);
 
     numberOfFrames = 1;
     %at the moment, this doesn't work. it would be nice to correctly
@@ -77,10 +77,10 @@ function FrameInfo = processLSMData(Folder, D, FrameInfo, ExperimentType, ...
 %     end
     for seriesIndex = 1:NSeries
         for framesIndex = 1:NFrames(seriesIndex) 
+
           processMovieFrame(numberOfFrames, Prefix, OutputFolder,...
               AllLSMImages, framesIndex, seriesIndex, NChannels(1), NSlices, ...
-              ExperimentType, Channel1, Channel2, Channel3, ProjectionType, ...
-              fiducialChannel, histoneChannel, ReferenceHist, coatChannel, inputProteinChannel, zslicesPadding,0);
+              Channels, ProjectionType, ReferenceHist, zslicesPadding, 0);
           
           numberOfFrames = numberOfFrames + 1;
         end

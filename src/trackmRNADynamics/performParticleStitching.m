@@ -37,28 +37,25 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDArray,
   end    
 
   %%% calculate Mahalanobis Distance between particles in likelihood space
-  mDistanceMatRaw = Inf(nFragments,nFragments);      
+  cumActivityArray = cumsum(extantFrameArray);
+  mDistanceMatRaw = Inf(nFragments,nFragments);     
+  maxFrame = max(frameIndex); 
   for m = 1:nFragments
     % pull activity indicators
-    epFrameVec1 = find(endpointFrameArray(:,m));    
-    f1 = epFrameVec1(1);
-    f2 = epFrameVec1(end);
+    epFrameVec = unique([1 find(endpointFrameArray(:,m)') maxFrame]);      
     % flag overlaps
     optionVec = max(extantFrameArray(extantFrameArray(:,m),:),[],1)==0; 
     if any(optionVec)
-      % we want to exclude exterior-most points from intersection of
-      % segments. perform calculations to determine which points to
-      % exclude in each case
-      excludeMat = false(length(epFrameVec1),size(extantFrameArray,2));
-      if f1<f2        
-        excludeMat(1,:) = max(extantFrameArray(1:f1,:),[],1)~=1;
-        excludeMat(end,:) = max(extantFrameArray(f2:end,:),[],1)~=1;
-      end
+      % we want to exclude points that are not at an interface with another
+      % fragment            
+      includeMat = diff(cumActivityArray(epFrameVec,optionVec))>0;
+      includeMat = includeMat(1:end-1,:) | includeMat(2:end,:);
+    
       % calculate distances
-      deltaMat = (pathArray(epFrameVec1,m,:) - pathArray(epFrameVec1,optionVec,:)).^2;        
-      sigmaMat = sigmaArray(epFrameVec1,optionVec,:).^2;
+      deltaMat = (pathArray(epFrameVec,m,:) - pathArray(epFrameVec,optionVec,:)).^2;        
+      sigmaMat = sigmaArray(epFrameVec,optionVec,:).^2;
       distanceMat = deltaMat./sigmaMat;
-      distanceMat(excludeMat(:,optionVec)) = NaN;        
+      distanceMat(~includeMat) = NaN;        
       mDistanceMatRaw(m,optionVec) = nanmean(nanmean(distanceMat,1),3);
     end
   end
@@ -112,50 +109,77 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDArray,
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % generate updated combined path using variance-weighted average 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    activeFrames = sort([afKeep afDrop]);
-    firstFrame = activeFrames(1);
-    lastFrame = activeFrames(end);
-    midVec = firstFrame:lastFrame;
-    gapVec = midVec(~ismember(midVec,activeFrames));
+    
+    % identify gaps where different fragments meet
+    [activeFrames, si] = sort([afKeep afDrop]);
+    cbIDVec = [ones(size(afKeep)) 2*ones(size(afDrop))];
+    cbIDVec = cbIDVec(si);         
+    
+    activeFrames = [0 activeFrames maxFrame+1];
+    cbIDVec = [cbIDVec(1) cbIDVec cbIDVec(end)];
+    
+    dfGapFlags = find(diff(cbIDVec)~=0);    
+    smGapFlags = find(diff(cbIDVec)==0&diff(activeFrames)>1);
 
     % calculate variance weights
-    sg1 = sigmaArray(:,pKeep,:).^-2;
-    sg2 = sigmaArray(:,pDrop,:).^-2;
+    nK = 1;%length(afKeep);
+    nD = 1;%length(afDrop);
+    sg1 = nK*sigmaArray(:,pKeep,:).^-2;
+    sg2 = nD*sigmaArray(:,pDrop,:).^-2;
 
-    % first assign known points
+    % initialize arrays
     newPath = NaN(size(sigmaArray(:,1,:)));
+    newSigma = NaN(size(sigmaArray(:,1,:)));
+    
+    % assign detected points        
     newPath(afDrop,:,:) = pathArray(afDrop,pDrop,:);
     newPath(afKeep,:,:) = pathArray(afKeep,pKeep,:);
-
-    %%% next calculate projections for missing points that are between
-
-    % existing points
-    newPath(gapVec,:,:) = (pathArray(gapVec,pKeep,:).*sg1(gapVec') ...
-                                  + pathArray(gapVec,pDrop,:).*sg2(gapVec')) ...
-                                  ./ (sg1(gapVec') + sg2(gapVec'));
-
-    %%% calculate projections for backwards and forwards trajectories
-
-    % forward
-    mFrame = max(frameIndex);
-    df1 = pathArray(lastFrame+1:mFrame,pKeep,:)-pathArray(lastFrame:mFrame-1,pKeep,:);
-    df2 = pathArray(lastFrame+1:mFrame,pDrop,:)-pathArray(lastFrame:mFrame-1,pDrop,:);
-    dfMean = (df1.*sg1(lastFrame+1:mFrame)'+df2.*sg2(lastFrame+1:mFrame)')./(sg1(lastFrame+1:mFrame)' + sg2(lastFrame+1:mFrame)');
-    newPath(lastFrame+1:mFrame,:,:) = newPath(lastFrame,:,:)+cumsum(dfMean,1);
-
-    % backward
-    db1 = pathArray(1:firstFrame-1,pKeep,:)-pathArray(2:firstFrame,pKeep,:);
-    db2 = pathArray(1:firstFrame-1,pDrop,:)-pathArray(2:firstFrame,pDrop,:);
-    dbMean = (db1.*sg1(1:firstFrame-1)'+db2.*sg2(1:firstFrame-1)')./(sg1(1:firstFrame-1)' + sg2(1:firstFrame-1)');
-    newPath(1:firstFrame-1,:,:) = newPath(firstFrame,:,:)+flipud(cumsum(flipud(dbMean),1));
-
+    newSigma(afDrop,:,:) = sigmaArray(afDrop,pDrop,:);
+    newSigma(afKeep,:,:) = sigmaArray(afKeep,pKeep,:);
+    
+    %%% next calculate updated projections for gaps between interfaces of
+    %%% the two joined fragments (use variance-weighted mean) 
+    cFrames = [];
+    for f = 1:length(dfGapFlags)
+      cFrames = [cFrames activeFrames(dfGapFlags(f))+1:activeFrames(dfGapFlags(f)+1)-1]; 
+    end
+    % update path info
+    newPath(cFrames,:,:) = (pathArray(cFrames,pKeep,:).*sg1(cFrames,:,:) ...
+                                  + pathArray(cFrames,pDrop,:).*sg2(cFrames,:,:)) ...
+                                  ./ (sg1(cFrames,:,:) + sg2(cFrames,:,:));
+    % update error info
+    newSigma(cFrames,:,:) = sqrt(1 ./ (sg1(cFrames,:,:) + sg2(cFrames,:,:)));
+    % determine which indices to use from each parent
+    kFrames = [];
+    dFrames = [];
+    for f = 1:length(smGapFlags)
+      % extract relevant frames
+      frameIndices = activeFrames(smGapFlags(f))+1:activeFrames(smGapFlags(f)+1)-1;      
+      if cbIDVec(smGapFlags(f)) == 1
+        kFrames = [kFrames frameIndices];
+      else
+        dFrames = [dFrames frameIndices];
+      end      
+    end
+    
+    %%% update 
+    newPath(kFrames,:,:) = pathArray(kFrames,pKeep,:);
+    newPath(dFrames,:,:) = pathArray(dFrames,pDrop,:);
+    newSigma(kFrames,:,:) = sigmaArray(kFrames,pKeep,:);
+    newSigma(dFrames,:,:) = sigmaArray(dFrames,pDrop,:);   
+    
+    tVec = [afKeep afDrop kFrames dFrames cFrames];
+    if length(unique(tVec))~=length(frameIndex) || length(unique(tVec))~=length(tVec)
+      error('inconsistent update indices')
+    end
     % update variance and path arrays
-    sigmaArray(:,pKeep,:) = sqrt(1 ./ (sg1 + sg2));
+    sigmaArray(:,pKeep,:) = newSigma;
     pathArray(:,pKeep,:) = newPath;
 
     % condense path arrays
     sigmaArray = sigmaArray(:,[1:pDrop-1 pDrop+1:end],:);
     pathArray = pathArray(:,[1:pDrop-1 pDrop+1:end],:);
+    
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % update cost matrix 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%            
@@ -164,31 +188,24 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDArray,
     %%% paths FROM new particle first
     for p = find(validIndices)
       % pull activity indicators
-      epFrameVec1 = find(endpointFrameArray(:,p));    
-      f1 = epFrameVec1(1);
-      f2 = epFrameVec1(end);
+      epFrameVec = unique([1 find(endpointFrameArray(:,p)') maxFrame]);      
+      
+      % we want to exclude points that are not at an interface with another
+      % fragment            
+      includeMat = diff(cumActivityArray(epFrameVec,pKeep))>0;
+      includeMat = includeMat(1:end-1,:) | includeMat(2:end,:);
 
-      % we want to exclude exterior-most points from intersection of
-      % segments. perform calculations to determine which points to
-      % exclude in each case
-      excludeVec = false(length(epFrameVec1),1);
-      if f1<f2        
-        excludeVec(1,:) = max(extantFrameArray(1:f1,pKeep),[],1)~=1;
-        excludeVec(end,:) = max(extantFrameArray(f2:end,pKeep),[],1)~=1;
-      end
       % calculate distances
-      deltaMat = (pathArray(epFrameVec1,pKeep,:) - pathArray(epFrameVec1,p,:)).^2;
-      sigmaMat = sigmaArray(epFrameVec1,pKeep,:).^2;
+      deltaMat = (pathArray(epFrameVec,pKeep,:) - pathArray(epFrameVec,p,:)).^2;        
+      sigmaMat = sigmaArray(epFrameVec,pKeep,:).^2;
       distanceMat = deltaMat./sigmaMat;
-      distanceMat(excludeVec) = NaN;        
-      newDistCol(p) = nanmean(nanmean(distanceMat,1),3);                               
-    end
+      distanceMat(~includeMat) = NaN;        
+      newDistCol(p) = nanmean(nanmean(distanceMat,1),3); 
+    end       
 
     %%% next paths TO new particle from existing particles      
     % pull activity indicators
-    epFrameVec1 = find(endpointFrameArray(:,pKeep));    
-    f1 = epFrameVec1(1);
-    f2 = epFrameVec1(end);
+    epFrameVec = unique([1 find(endpointFrameArray(:,pKeep)') maxFrame]);    
     newDistRow = Inf(1,size(extantFrameArray,2));
     % flag overlaps
     optionVec = max(extantFrameArray(extantFrameArray(:,pKeep),:),[],1)==0;    
@@ -196,16 +213,14 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDArray,
       % we want to exclude exterior-most points from intersection of
       % segments. perform calculations to determine which points to
       % exclude in each case
-      excludeMat = false(length(epFrameVec1),size(extantFrameArray,2));
-      if f1<f2        
-        excludeMat(1,:) = max(extantFrameArray(1:f1,:),[],1)~=1;
-        excludeMat(end,:) = max(extantFrameArray(f2:end,:),[],1)~=1;
-      end
+      includeMat = diff(cumActivityArray(epFrameVec,optionVec))>0;
+      includeMat = includeMat(1:end-1,:) | includeMat(2:end,:);
+    
       % calculate distances
-      deltaMat = (pathArray(epFrameVec1,pKeep,:) - pathArray(epFrameVec1,optionVec,:)).^2;
-      sigmaMat = sigmaArray(epFrameVec1,optionVec,:).^2;
+      deltaMat = (pathArray(epFrameVec,pKeep,:) - pathArray(epFrameVec,optionVec,:)).^2;
+      sigmaMat = sigmaArray(epFrameVec,optionVec,:).^2;
       distanceMat = deltaMat./sigmaMat;
-      distanceMat(excludeMat(:,optionVec)) = NaN;        
+      distanceMat(~includeMat) = NaN;        
       newDistRow(optionVec) = nanmean(nanmean(distanceMat,1),3);
     end
     % incorporate into existing distance array

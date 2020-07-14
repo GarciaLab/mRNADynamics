@@ -144,7 +144,7 @@ mkdir(DropboxFolderName);
 
   elseif strcmpi(FileMode, 'LSM')
     FrameInfo = processLSMData(rawDataFolder, D, FrameInfo, ExperimentType, ...
-    Channel1, Channel2, Channel3, ProjectionType,Prefix, OutputFolder,nuclearGUI, zslicesPadding);
+    Channels, ProjectionType, Prefix, OutputFolder,nuclearGUI, zslicesPadding);
 
   elseif strcmpi(FileMode, 'LIFExport')
     FrameInfo = processLIFExportMode(rawDataFolder, ProjectionType, Channels, Prefix, ...

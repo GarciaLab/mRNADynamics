@@ -34,6 +34,7 @@ disp(['Running TrackmRNADynamics on ', varargin{1}, '...']);
 
 Prefix = varargin{1};
 liveExperiment = LiveExperiment(Prefix);
+makeTrackingFigures = true;
 
 [app, retrack, optionalResults, displayFigures] =...
     parseTrackmRNADynamicsArguments(varargin{:});
@@ -106,7 +107,8 @@ Particles = performTracking(Particles, schnitzcells,...
     Prefix, UseHistone, ParticlesFig, spotChannels,...
     NucleiFig, particlesAxes, nucAxes, Ellipses, ...
     PixelSize_um, SearchRadiusMicrons, ExperimentType,...
-    FrameInfo, retrack, displayFigures);
+    FrameInfo, retrack, displayFigures, makeTrackingFigures, DropboxFolder);
+
 
 mkdir([OutputFolder, filesep]);
 
