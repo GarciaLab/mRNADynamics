@@ -70,7 +70,7 @@ elseif exist(xmlFile, 'file')
 %Otherwise, generate and use a new lifMeta.xml file
 else
     disp('Generating new lifMeta file for settings extraction...')
-    generateLIFMetaDataXML(currExperiment, xmlFile);
+    generateLIFMetaDataXML(experimentName, xmlFile);
     [~, settingsStruct] = readSettingsFromLIFMetaDataXML(experimentName, xmlFile);
 end
 
