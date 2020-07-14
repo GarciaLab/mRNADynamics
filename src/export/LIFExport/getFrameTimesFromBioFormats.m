@@ -13,7 +13,9 @@ for seriesIndex = 0:nSeries-1
     
     nPlanes = LIFMeta.getPlaneCount(seriesIndex);
     
-    nPlanes = nPlanes - (NSlices(seriesIndex+1)*nChannels);
+    if nSeries ~= 1
+        nPlanes = nPlanes - (NSlices(seriesIndex+1)*nChannels);
+    end
     
     if nPlanes > 0
         seriesStamp = LIFMeta.getImageAcquisitionDate(seriesIndex);
