@@ -10,7 +10,8 @@ function StitchedParticles = track04StitchTracks(...
   ncVec = [FrameInfo.nc];
   frameIndex = 1:length(ncVec);
   NCh = length(RawParticles);
-  matchCostMax = 3; % maximum number of sigmas away (this is reset to Inf if we have nuclei)
+  matchCostMaxDefault = 3; % maximum number of sigmas away (this is reset to Inf if we have nuclei)
+  matchCostMax = matchCostMaxDefault * ones(1,NCh); % can be different between channels
   
   % Set max spots per nucleus per frame, can be different between channels
   spotsPerNucleus = inf(1,NCh); 
@@ -22,12 +23,13 @@ function StitchedParticles = track04StitchTracks(...
     matchCostMax = realmax;
   elseif ismember(ExperimentType,{'2spot2color'}) && UseHistone
     spotsPerNucleus = [1,1];
-    matchCostMax = realmax;
+    matchCostMax = [realmax,realmax];
   elseif ismember(ExperimentType,{'inputoutput'}) && UseHistone
     % Do we have TF clusters in the input channel?
     % No clusters:
     if NCh == 1
         spotsPerNucleus = 1;
+        matchCostMax = realmax;
     % Clusters:
     elseif NCh == 2
         % Figure out which channel is the cluster channel
@@ -38,10 +40,13 @@ function StitchedParticles = track04StitchTracks(...
         % Cluster channel not limited in spotsPerNucleus
         spotsPerNucleus(clusterChannel) = Inf; %#ok<FNDSB>
         spotsPerNucleus(outputChannel) = 1; %#ok<FNDSB>
+        % Cluster channel should still have a sigma limit on fragment
+        % matching
+        matchCostMax(clusterChannel) = matchCostMaxDefault;
+        matchCostMax(outputChannel) = realmax;
     else
         error('No spot channels, or too many, detected.')
     end
-    matchCostMax = realmax;
   else
       error(['''',ExperimentType,''' ExperimentType not supported by track04StitchTracks'])
   end
@@ -76,7 +81,7 @@ function StitchedParticles = track04StitchTracks(...
       
       [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDArray, ...
           linkCostArray, mDistanceMatrix] = performParticleStitching(...
-          NucleusID, nucleusIDVec, frameIndex, RawParticles, Channel, ncVec, matchCostMax);
+          NucleusID, nucleusIDVec, frameIndex, RawParticles, Channel, ncVec, matchCostMax(Channel));
 
       % generate local structure to store results       
       assigmentFlags = UseHistone & (sum(extantFrameArray,2)>spotsPerNucleus(Channel))';
@@ -142,7 +147,7 @@ function StitchedParticles = track04StitchTracks(...
         
         % aaaaaaand rerun the assignment steps
         [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDArray, linkCostArray, mDistanceMatrix]  = performParticleStitching(...
-              NucleusID,nucleusIDVecNew,frameIndex,RawParticles,Channel,ncVec,matchCostMax);
+              NucleusID,nucleusIDVecNew,frameIndex,RawParticles,Channel,ncVec,matchCostMax(Channel));
          if size(extantFrameArray,2) ~= spotsPerNucleus(Channel)
            error('problem with spot-nucleus reassigment')
          end
