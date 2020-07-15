@@ -246,7 +246,8 @@ while (currentCharacter~='x')
                  set(PlotHandle{k},...
                     'Color', clrmp(schnitzInd, :),'Linewidth', 1);
             else
-                set(PlotHandle{k}, 'StripeColor', 'w', 'Color', 'w','Linewidth', 1);
+%                 set(PlotHandle{k}, 'StripeColor', 'w', 'Color', 'w','Linewidth', 1);
+                set(PlotHandle{k}, 'Color', 'w','Linewidth', 1);
             end
         end
         
