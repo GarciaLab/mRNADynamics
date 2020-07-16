@@ -12,7 +12,8 @@ function [Particles] = track01ParticleProximity(...
   % Extract Time Vector
   TimeVec = [FrameInfo.Time];
   % Extract vector indicating nuclear cleavage cycle for each frame
-  ncVec = [FrameInfo.nc];  
+  ncVec = [FrameInfo.nc]; 
+  ncVec(1) = 14; % NL for some reason the first frame is registering as nc13
   SlidingWindowSize = 2; % size of window used for time averaging of nuclear movements
   %Initialize Particles for the number of spot channels we have
   Particles = cell(1,NCh);

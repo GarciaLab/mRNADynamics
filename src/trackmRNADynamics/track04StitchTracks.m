@@ -8,6 +8,7 @@ function StitchedParticles = track04StitchTracks(...
   FrameInfo = getFrameInfo(liveExperiment);
   % set useful parameters
   ncVec = [FrameInfo.nc];
+  ncVec(1) = 14; % NL for some reason the first frame is registering as nc13
   frameIndex = 1:length(ncVec);
   NCh = length(RawParticles);
   matchCostMaxDefault = 3; % maximum number of sigmas away (this is reset to Inf if we have nuclei)
@@ -97,10 +98,13 @@ function StitchedParticles = track04StitchTracks(...
         % on local connectivity
         for e = 1:length(clusterIndices)-1
           % get problematic frame list
-          cFrames = errorIndices(clusterIndices(e):clusterIndices(e+1)-1);          
-          % get list of correspnding particles
-          ptList = nanmax(particleIDArray(cFrames,:),[],1);
+          cFrames = errorIndices(clusterIndices(e):clusterIndices(e+1)-1); 
           
+          % get list of correspnding particles
+%           ptList = nanmax(particleIDArray(cFrames,:),[],1);
+          
+          % calculate first and last frames over which to conduct
+          % comparison on connectivity (i.e. number of detections)
           ff = max([1,cFrames(1)-localKernel]);
           lf = min([length(frameIndex),cFrames(end)+localKernel]);          
           lcVec = ff:lf;
@@ -108,7 +112,8 @@ function StitchedParticles = track04StitchTracks(...
           localCounts = sum(extantFrameArray(lcVec,:));
           [~,rankVec] = sort(localCounts);
           % add lowest ranking indices
-          rmVec = [rmVec ptList(rankVec(1:end-spotsPerNucleus(Channel)))];
+          ptList = reshape(unique(particleIDArray(cFrames,rankVec(1:end-spotsPerNucleus(Channel)))),1,[]);          
+          rmVec = [rmVec ptList];
           rmVec = rmVec(~isnan(rmVec));
         end
         % reset nucleus ID values for these particles to NaN

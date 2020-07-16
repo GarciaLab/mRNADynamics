@@ -15,6 +15,8 @@ FrameInfo = getFrameInfo(liveExperiment);
 Spots = getSpots(liveExperiment);
 schnitzCells = getSchnitzcells(liveExperiment);
 
+% NL: added this to circumvent an error I don't currently want to address
+useHistone =true;
 % [Particles] = track02KalmanTesting(...
 %     FrameInfo, Spots, NCh, PixelSize, SearchRadiusMicrons, retrack, displayFigures)
   

@@ -42,18 +42,20 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDArray,
   maxFrame = max(frameIndex); 
   for m = 1:nFragments
     % pull activity indicators
-    epFrameVec = unique([1 find(endpointFrameArray(:,m)') maxFrame]);      
+    calcFrames = find(endpointFrameArray(:,m)'); 
+    epFrameVec = ([1 calcFrames maxFrame]);   
+      
     % flag overlaps
     optionVec = max(extantFrameArray(extantFrameArray(:,m),:),[],1)==0; 
     if any(optionVec)
       % we want to exclude points that are not at an interface with another
       % fragment            
       includeMat = diff(cumActivityArray(epFrameVec,optionVec))>0;
-      includeMat = includeMat(1:end-1,:) | includeMat(2:end,:);
-    
-      % calculate distances
-      deltaMat = (pathArray(epFrameVec,m,:) - pathArray(epFrameVec,optionVec,:)).^2;        
-      sigmaMat = sigmaArray(epFrameVec,optionVec,:).^2;
+      includeMat = repmat(includeMat(1:end-1,:) | includeMat(2:end,:),1,1,nParams);          
+      
+      % calculate distances      
+      deltaMat = (pathArray(calcFrames,m,:) - pathArray(calcFrames,optionVec,:)).^2;        
+      sigmaMat = sigmaArray(calcFrames,optionVec,:).^2;
       distanceMat = deltaMat./sigmaMat;
       distanceMat(~includeMat) = NaN;        
       mDistanceMatRaw(m,optionVec) = nanmean(nanmean(distanceMat,1),3);
@@ -188,24 +190,26 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDArray,
     %%% paths FROM new particle first
     for p = find(validIndices)
       % pull activity indicators
-      epFrameVec = unique([1 find(endpointFrameArray(:,p)') maxFrame]);      
+      calcFrames = find(endpointFrameArray(:,p)'); 
+      epFrameVec = [1 find(endpointFrameArray(:,p)') maxFrame];      
       
       % we want to exclude points that are not at an interface with another
       % fragment            
       includeMat = diff(cumActivityArray(epFrameVec,pKeep))>0;
-      includeMat = includeMat(1:end-1,:) | includeMat(2:end,:);
+      includeMat = repmat(includeMat(1:end-1,:) | includeMat(2:end,:),1,1,nParams);
 
       % calculate distances
-      deltaMat = (pathArray(epFrameVec,pKeep,:) - pathArray(epFrameVec,p,:)).^2;        
-      sigmaMat = sigmaArray(epFrameVec,pKeep,:).^2;
+      deltaMat = (pathArray(calcFrames,pKeep,:) - pathArray(calcFrames,p,:)).^2;        
+      sigmaMat = sigmaArray(calcFrames,pKeep,:).^2;
       distanceMat = deltaMat./sigmaMat;
       distanceMat(~includeMat) = NaN;        
       newDistCol(p) = nanmean(nanmean(distanceMat,1),3); 
     end       
-
+    
     %%% next paths TO new particle from existing particles      
     % pull activity indicators
-    epFrameVec = unique([1 find(endpointFrameArray(:,pKeep)') maxFrame]);    
+    calcFrames = find(endpointFrameArray(:,pKeep)');    
+    epFrameVec = [1 calcFrames maxFrame];    
     newDistRow = Inf(1,size(extantFrameArray,2));
     % flag overlaps
     optionVec = max(extantFrameArray(extantFrameArray(:,pKeep),:),[],1)==0;    
@@ -214,11 +218,11 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDArray,
       % segments. perform calculations to determine which points to
       % exclude in each case
       includeMat = diff(cumActivityArray(epFrameVec,optionVec))>0;
-      includeMat = includeMat(1:end-1,:) | includeMat(2:end,:);
+      includeMat = repmat(includeMat(1:end-1,:) | includeMat(2:end,:),1,1,nParams);
     
       % calculate distances
-      deltaMat = (pathArray(epFrameVec,pKeep,:) - pathArray(epFrameVec,optionVec,:)).^2;
-      sigmaMat = sigmaArray(epFrameVec,optionVec,:).^2;
+      deltaMat = (pathArray(calcFrames,pKeep,:) - pathArray(calcFrames,optionVec,:)).^2;
+      sigmaMat = sigmaArray(calcFrames,optionVec,:).^2;
       distanceMat = deltaMat./sigmaMat;
       distanceMat(~includeMat) = NaN;        
       newDistRow(optionVec) = nanmean(nanmean(distanceMat,1),3);
