@@ -14,6 +14,8 @@ experimentType = liveExperiment.experimentType;
 FrameInfo = getFrameInfo(liveExperiment);
 Spots = getSpots(liveExperiment);
 schnitzCells = getSchnitzcells(liveExperiment);
+dropboxFolder = liveExperiment.userResultsFolder;
+resultsFolder = liveExperiment.resultsFolder;
 
 % NL: added this to circumvent an error I don't currently want to address
 useHistone =true;
@@ -71,80 +73,82 @@ else
 end
 
 if makeTrackingFigures
-  trackFigFolder = [DropboxFolder Prefix '\TrackingFigures\'];
-  mkdir(trackFigFolder)
-  xDim = FrameInfo(1).PixelsPerLine;
-  yDim = FrameInfo(1).LinesPerFrame;
-  % figure showing just detection points
-  f0 = figure('Position',[0 0 1024 1024]);
-  hold on
-  scatter([RawParticles{Channel}.xPos],[RawParticles{Channel}.yPos],4,'k','filled');
-  xlabel('x position (pixels)')
-  ylabel('y position (pixels)')
-  set(gca,'Fontsize',14)
-  xlim([0 xDim])
-  ylim([0 yDim])
-  saveas(f0,[trackFigFolder 'detection_events.png'])
-  
-  % figure shoing initial linkages
-  f1 = figure('Position',[0 0 1024 1024]);
-  hold on  
-  scatter([RawParticles{Channel}.xPos],[RawParticles{Channel}.yPos],4,'k','filled','MarkerFaceAlpha',1,'MarkerEdgeAlpha',0);
-  for i = 1:length(RawParticles{Channel})
-    plot(RawParticles{Channel}(i).xPos,RawParticles{Channel}(i).yPos,'LineWidth',1.25);
-  end
-  xlabel('x position (pixels)')
-  ylabel('y position (pixels)')
-  set(gca,'Fontsize',14)
-  xlim([0 xDim])
-  ylim([0 yDim])
-  saveas(f1,[trackFigFolder 'initial_linkages.png'])
-  
-  % show simulated paths 
-  f3 = figure('Position',[0 0 1024 1024]);
-  nPlot = min([length(SimParticles{Channel}), 25]);
-  rng(123);
-  errIndices = randsample(1:length(SimParticles{Channel}),nPlot,false);  
-  hold on
-  scatter([RawParticles{Channel}.xPos],[RawParticles{Channel}.yPos],4,'k','filled','MarkerFaceAlpha',.3,'MarkerEdgeAlpha',0);
-  for i = errIndices 
-    x = SimParticles{Channel}(i).hmmModel(1).pathVec;
-    y = SimParticles{Channel}(i).hmmModel(2).pathVec;
-    dx = SimParticles{Channel}(i).hmmModel(1).sigmaVec;
-    dy = SimParticles{Channel}(i).hmmModel(2).sigmaVec;
-    r = mean([dx' dy'],2);
-    viscircles([x',y'],r,'Color',[0.3 0.3 0.3 0.05]);
-  end
-  for i = 1:length(RawParticles{Channel})
-    plot(RawParticles{Channel}(i).xPos,RawParticles{Channel}(i).yPos,'k');
-  end
-  for i = errIndices
-    plot(RawParticles{Channel}(i).xPos,RawParticles{Channel}(i).yPos,'LineWidth',1.5);
-  end
-  
-  xlabel('x position (pixels)')
-  ylabel('y position (pixels)')
-  set(gca,'Fontsize',14)
-  xlim([0 xDim])
-  ylim([0 yDim])
-  saveas(f3,[trackFigFolder 'projected_paths.png'])
-  
-  f4 = figure('Position',[0 0 1024 1024]);
-  hold on  
-  for i = 1:length(Particles{Channel})
-    extantFilter = min(Particles{Channel}(i).Frame):max(Particles{Channel}(i).Frame);
-    plot(Particles{Channel}(i).pathArray(extantFilter,1),Particles{Channel}(i).pathArray(extantFilter,2),'LineWidth',1.25);
-  end
-  scatter([RawParticles{Channel}.xPos],[RawParticles{Channel}.yPos],4,'k','filled','MarkerFaceAlpha',.5,'MarkerEdgeAlpha',0);
-  % for i = 1:length(Particles{Channel})
-  %   plot(Particles{Channel}(i).xPos,Particles{Channel}(i).yPos);
-  % end
-  xlabel('x position (pixels)')
-  ylabel('y position (pixels)')
-  set(gca,'Fontsize',14)
-  xlim([0 xDim])
-  ylim([0 yDim])
-  saveas(f4,[trackFigFolder 'final_paths.png'])
+    for Channel = 1:nCh
+          trackFigFolder = [dropboxFolder filesep Prefix '\TrackingFigures\'];
+          mkdir(trackFigFolder)
+          xDim = FrameInfo(1).PixelsPerLine;
+          yDim = FrameInfo(1).LinesPerFrame;
+          % figure showing just detection points
+          f0 = figure('Position',[0 0 1024 1024]);
+          hold on
+          scatter([RawParticles{Channel}.xPos],[RawParticles{Channel}.yPos],4,'k','filled');
+          xlabel('x position (pixels)')
+          ylabel('y position (pixels)')
+          set(gca,'Fontsize',14)
+          xlim([0 xDim])
+          ylim([0 yDim])
+          saveas(f0,[trackFigFolder 'detection_events_ch' num2str(Channel) '.png'])
+
+          % figure showing initial linkages
+          f1 = figure('Position',[0 0 1024 1024]);
+          hold on  
+          scatter([RawParticles{Channel}.xPos],[RawParticles{Channel}.yPos],4,'k','filled','MarkerFaceAlpha',1,'MarkerEdgeAlpha',0);
+          for i = 1:length(RawParticles{Channel})
+            plot(RawParticles{Channel}(i).xPos,RawParticles{Channel}(i).yPos,'LineWidth',1.25);
+          end
+          xlabel('x position (pixels)')
+          ylabel('y position (pixels)')
+          set(gca,'Fontsize',14)
+          xlim([0 xDim])
+          ylim([0 yDim])
+          saveas(f1,[trackFigFolder 'initial_linkages_ch' num2str(Channel) '.png'])
+
+          % show simulated paths 
+          f3 = figure('Position',[0 0 1024 1024]);
+          nPlot = min([length(SimParticles{Channel}), 25]);
+          rng(123);
+          errIndices = randsample(1:length(SimParticles{Channel}),nPlot,false);  
+          hold on
+          scatter([RawParticles{Channel}.xPos],[RawParticles{Channel}.yPos],4,'k','filled','MarkerFaceAlpha',.3,'MarkerEdgeAlpha',0);
+          for i = errIndices 
+            x = SimParticles{Channel}(i).hmmModel(1).pathVec;
+            y = SimParticles{Channel}(i).hmmModel(2).pathVec;
+            dx = SimParticles{Channel}(i).hmmModel(1).sigmaVec;
+            dy = SimParticles{Channel}(i).hmmModel(2).sigmaVec;
+            r = mean([dx' dy'],2);
+            viscircles([x',y'],r,'Color',[0.3 0.3 0.3 0.05]);
+          end
+          for i = 1:length(RawParticles{Channel})
+            plot(RawParticles{Channel}(i).xPos,RawParticles{Channel}(i).yPos,'k');
+          end
+          for i = errIndices
+            plot(RawParticles{Channel}(i).xPos,RawParticles{Channel}(i).yPos,'LineWidth',1.5);
+          end
+
+          xlabel('x position (pixels)')
+          ylabel('y position (pixels)')
+          set(gca,'Fontsize',14)
+          xlim([0 xDim])
+          ylim([0 yDim])
+          saveas(f3,[trackFigFolder 'projected_paths_ch' num2str(Channel) '.png'])
+
+          f4 = figure('Position',[0 0 1024 1024]);
+          hold on  
+          for i = 1:length(Particles{Channel})
+            extantFilter = min(Particles{Channel}(i).Frame):max(Particles{Channel}(i).Frame);
+            plot(Particles{Channel}(i).pathArray(extantFilter,1),Particles{Channel}(i).pathArray(extantFilter,2),'LineWidth',1.25);
+          end
+          scatter([RawParticles{Channel}.xPos],[RawParticles{Channel}.yPos],4,'k','filled','MarkerFaceAlpha',.5,'MarkerEdgeAlpha',0);
+          % for i = 1:length(Particles{Channel})
+          %   plot(Particles{Channel}(i).xPos,Particles{Channel}(i).yPos);
+          % end
+          xlabel('x position (pixels)')
+          ylabel('y position (pixels)')
+          set(gca,'Fontsize',14)
+          xlim([0 xDim])
+          ylim([0 yDim])
+          saveas(f4,[trackFigFolder 'final_paths_ch' num2str(Channel) '.png'])
+    end
   
 end
 
@@ -179,5 +183,7 @@ end
 if nCh == 1
     Particles = Particles{1};
 end
+
+save([resultsFolder, filesep, 'Particles_beta.mat'],'RawParticles','HMMParticles', 'SimParticles','Particles')
 
 end
