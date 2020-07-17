@@ -22,17 +22,21 @@ end
 %Optionally, tighten the nuclear contours and convert the circles to
 %true ellipses
 if postTrackingSettings.doAdjustNuclearContours
-    
-    hisMat = getHisMat(liveExperiment);
+    if postTrackingSettings.chooseHis
+        [hisFile, hisPath] = uigetfile([liveExperiment.procFolder, filesep,'*.*']);
+        hisMat = imreadStack([hisPath, filesep, hisFile]);
+    else
+        hisMat = getHisMat(liveExperiment);
+    end
     pixelSize_um = liveExperiment.pixelSize_um;
     
-  parfor frame = 1:length(Ellipses)
-%     for frame = 1:length(Ellipses)
+    parfor frame = 1:length(Ellipses)
+        %     for frame = 1:length(Ellipses)
         Ellipses{frame} = adjustNuclearContours(Ellipses{frame},...
-            hisMat(:, :, frame), pixelSize_um);    
+            hisMat(:, :, frame), pixelSize_um);
     end
     
-    %TrackNuclei handles empty frames poorly, so let's fill them in. 
+    %TrackNuclei handles empty frames poorly, so let's fill them in.
     Ellipses = fillEmptyXYFrames(Ellipses);
     
     save2(ellipsesFile, Ellipses);
