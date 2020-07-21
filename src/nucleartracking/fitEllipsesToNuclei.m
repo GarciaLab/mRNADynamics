@@ -33,10 +33,7 @@ averageEquivRadius = median([stats.EquivDiameter]/2);
 
 %if an object is within borderThresh px of the image edge,
 %let's not fit a circle to it and leave it be
-% borderThresh = averageEquivRadius;
-borderThresh = -Inf; %AR: i'm removing this feature because i want to see
-%if the ellipse fitting can handle border nuclei. may add borderThresh back
-%in later
+borderThresh = averageEquivRadius;
 border = borderImage(mask);
 borderDist = bwdist(border);
 

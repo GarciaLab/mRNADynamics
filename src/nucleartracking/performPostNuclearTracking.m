@@ -32,8 +32,13 @@ if postTrackingSettings.doAdjustNuclearContours
     
     parfor frame = 1:length(Ellipses)
         %     for frame = 1:length(Ellipses)
+        disp('Adjusting nuclear contours...');
+
         Ellipses{frame} = adjustNuclearContours(Ellipses{frame},...
             hisMat(:, :, frame), pixelSize_um);
+        
+        disp('Nuclear contours adjusted.');
+
     end
     
     %TrackNuclei handles empty frames poorly, so let's fill them in.

@@ -1,5 +1,5 @@
 function ellipseFrame = adjustNuclearContours(ellipseFrame, HisImage, PixelSize_um)
-    
+        
     nuclearMask = makeNuclearMask(ellipseFrame,...
         size(HisImage), 1.0);
 
@@ -36,7 +36,9 @@ function ellipseFrame = adjustNuclearContours(ellipseFrame, HisImage, PixelSize_
         ellipseFrame(largeAxisIndex, 4) = median(ellipseFrame(:, 4));
     end
 
-    ellipseFrame(:, 6:9) = zeros(size(ellipseFrame, 1), 4);    
+    ellipseFrame(:, 6:9) = zeros(size(ellipseFrame, 1), 4);  
+    
+
 
 
 end
