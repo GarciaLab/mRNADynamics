@@ -44,7 +44,8 @@
 %               opening data that is in a different project folder.
 % 'zslicesPadding': if series have different number of z-slices, pad them
 % with blank images so every generates series has the same amount
-% 'nuclearGUI'
+% 'nuclearGUI': accepts true (default) or false if you want to open the
+% nuclear channel / anaphase frame choosing GUI 
 %
 % OUTPUT
 % Exported tif images are placed in the PreProcessedData folder and divided
