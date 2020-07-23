@@ -132,22 +132,26 @@ ellipsesSizeUnchanged(ellipsesOld, Ellipses);
 schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells);
 
 
-if exist([liveExperiment.resultsFolder,filesep,'APDetection.mat'], 'file')
-    [EllipsePos, APAngle, APLength]...
-        = convertToFractionalEmbryoLength(Prefix);
-    
-    
-    
-    ellipsesSizeUnchanged(ellipsesOld, Ellipses);
-    schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells);
-    
-    for schnitzIndex = 1:length(schnitzcells)
-        for frameIndex = 1:length(schnitzcells(schnitzIndex).frames)
-            frame = schnitzcells(schnitzIndex).frames(frameIndex);
-            ellipseInd = schnitzcells(schnitzIndex).cellno(frameIndex);
-            schnitzcells(schnitzIndex).APPos(frameIndex) = EllipsePos{frame}(ellipseInd);
+try
+    if exist([liveExperiment.resultsFolder,filesep,'APDetection.mat'], 'file')
+        [EllipsePos, APAngle, APLength]...
+            = convertToFractionalEmbryoLength(Prefix);
+
+
+
+        ellipsesSizeUnchanged(ellipsesOld, Ellipses);
+        schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells);
+
+        for schnitzIndex = 1:length(schnitzcells)
+            for frameIndex = 1:length(schnitzcells(schnitzIndex).frames)
+                frame = schnitzcells(schnitzIndex).frames(frameIndex);
+                ellipseInd = schnitzcells(schnitzIndex).cellno(frameIndex);
+                schnitzcells(schnitzIndex).APPos(frameIndex) = EllipsePos{frame}(ellipseInd);
+            end
         end
     end
+catch
+    warning('Failed to update nuclear AP positions for unknown reason.')
 end
 
 
