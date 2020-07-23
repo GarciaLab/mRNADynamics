@@ -49,10 +49,9 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDArray,
       % we want to exclude points that are not at an interface with another
       % fragment            
       includeMat = diff(cumActivityArray(epFrameVec,optionVec))>0;
-      includeMat = repmat(includeMat(1:end-1,:) | includeMat(2:end,:),1,1,nParams);
+      includeMat = includeMat(1:end-1,:) | includeMat(2:end,:);
     
       % calculate distances
-      epFrameVec = epFrameVec(2:end-1);
       deltaMat = (pathArray(epFrameVec,m,:) - pathArray(epFrameVec,optionVec,:)).^2;        
       sigmaMat = sigmaArray(epFrameVec,optionVec,:).^2;
       distanceMat = deltaMat./sigmaMat;

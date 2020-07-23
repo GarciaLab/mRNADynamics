@@ -1,7 +1,7 @@
 function StitchedParticles = track04StitchTracks(...
                           RawParticles, FrameInfo, ExperimentType, UseHistone, retrack, displayFigures)
                         
-  UseHistone = false;
+%   UseHistone = false;
   % set useful parameters
   NCh = length(RawParticles);
   ncVec = [FrameInfo.nc];
