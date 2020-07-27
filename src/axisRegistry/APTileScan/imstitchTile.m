@@ -1,21 +1,21 @@
 function imm2 = imstitchTile(tile_array, varargin)
 % author: Gabriella Martini
 % date created: 12/26/19
-% date last modified: 12/31/19
+% date last modified: 7/27/20
 % 
 % Takes a tile_array input and uses its stitching configuration to position
 % tiles in a stitched image. 
 %
 % output: imm2 is a stitched image. 
 %% Parse User input 
-NoFilter = false;
+Filter = false;
 ZStack = false;
 if ~isempty(varargin)
     x = 1;
     while x <= length(varargin)
         switch varargin{x}
-            case{'NoFilter'}
-                NoFilter = varargin{x+1};
+            case{'Filter'}
+                Filter = varargin{x+1};
                 x = x+1;
             case{'ZStack'}
                 ZStack = varargin{x+1};
@@ -28,7 +28,7 @@ end
 if ZStack % Creates stitched image using max-projected raw data
     tiles = tile_array.zstacks;
     numz = size(tile_array.zstacks{1}, 3);
-elseif NoFilter
+elseif ~Filter
     tiles = tile_array.tiles;
     numz = 1;
 else % Creates stitched image using gaussian filtered max projections of the raw data
@@ -51,8 +51,8 @@ rbounds = rows + heights-1;
 cbounds = cols + widths-1;
 numrows = max(rbounds);
 numcols = max(cbounds);
-imm2 = zeros(numrows, numcols, numz);
-imcounts = zeros(numrows, numcols, numz);
+imm2 = zeros(numrows, numcols, numz, 'uint16');
+imcounts = zeros(numrows, numcols, numz, 'uint16');
 for n =1:NTiles
     tn = tiles{n};
     r = rows(n);
@@ -63,7 +63,7 @@ for n =1:NTiles
     imm2(r:(r+h-1),c:(c+w-1), :) = imm2(r:(r+h-1),c:(c+w-1), :) +tn;
 end
 imm2 = imm2./imcounts;
-imcounts = zeros(numrows, numcols);
+imcounts = zeros(numrows, numcols, 'uint16');
 for n =1:NTiles
     tn = tiles{n};
     r = rows(n);

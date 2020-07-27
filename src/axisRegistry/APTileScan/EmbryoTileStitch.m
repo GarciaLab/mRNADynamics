@@ -1,7 +1,7 @@
 function EmbryoTileStitch(Prefix, ID, varargin)
 % author: Gabriella Martini
 % date: 12/30/19
-% last modified: 1/30/20
+% last modified: 7/26/20
 % Function takes full embryo images taken as tile scans on the Leica SP8
 % and stitches them into tifs to be used for defining the AP axis
 % and indentifying AP position. 
@@ -41,6 +41,8 @@ if ~isempty(varargin)
                 MaxDeltaC = varargin{1}{x+1};
                 x = x+1;
                 fprintf('Max change in column overlap to be used in stitching loop: %d\n', MaxDeltaC)
+            case{'manualStitchOrder'}
+                manualStitchOrder = true;
         end
         x = x +1;
     end
@@ -97,9 +99,12 @@ EmbryoName=Prefix(Dashes(3)+1:end);
 
 % Finalize Tile Array Stitching Positions using FindStitchingPositions
 if ~StitchManually
-
-    tile_array = OptimizeStitching(Prefix, ID, MaxDeltaR, MaxDeltaC);
-    imshow(imstitchTile(tile_array))        
+    if ~manualStitchOrder
+        tile_array = OptimizeStitching(Prefix, ID, MaxDeltaR, MaxDeltaC);
+    else
+        tile_array = OptimizeStitching(Prefix, ID, MaxDeltaR, MaxDeltaC, 'manualStitchOrder');
+    end
+    imshow(uint8(imstitchTile(tile_array)))       
 end
 
 end

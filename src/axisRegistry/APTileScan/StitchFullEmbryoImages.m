@@ -1,7 +1,7 @@
 function StitchFullEmbryoImages(Prefix, varargin)
 % author: Gabriella Martini
 % date created: 12/30/19
-% date last modified: 3/20/20
+% date last modified: 7/26/20
 
 %% Parse Inputs 
 if ~exist('Prefix')
@@ -13,6 +13,7 @@ end
 FullyAutomate = false;
 StitchManually = false;
 keepExistingStitching = false;
+manualStitchOrder = false;
 x = 1;
 while x <= length(varargin)
     switch varargin{x}
@@ -32,6 +33,8 @@ while x <= length(varargin)
             MaxDeltaC = varargin{x+1};
             x = x+1;
             fprintf('Max change in column overlap to be used in stitching loop: %d\n', MaxDeltaC)
+        case{'manualStitchOrder'}
+            manualStitchOrder = true;
     end
     x = x +1;
 end
@@ -46,6 +49,9 @@ if ~keepExistingStitching
     end
     if StitchManually 
         varargin2{length(varargin2) + 1} = 'StitchManually';
+    end
+    if manualStitchOrder
+        varargin2{length(varargin2) + 1} = 'manualStitchOrder';
     end
     if exist('MaxDeltaR', 'var')
         varargin2{length(varargin2) + 1} = 'MaxDeltaR';
@@ -187,12 +193,12 @@ if ~all(size(MidImageNoPadding) == size(SurfImageNoPadding))
     nrows = max(size(MidImageNoPadding, 1), size(SurfImageNoPadding, 1));
     ncols = max(size(MidImageNoPadding, 2), size(SurfImageNoPadding, 2));
     nz = size(MidImageNoPadding, 3);
-    MidImage = zeros(nrows, ncols, nz, 'uint8');
-    SurfImage = zeros(nrows, ncols, nz, 'uint8');
-    MidMaxImage = zeros(nrows, ncols, 'uint8');
-    SurfMaxImage = zeros(nrows, ncols, 'uint8');
-    MidFilteredImage = zeros(nrows, ncols, 'uint8');
-    SurfFilteredImage = zeros(nrows, ncols, 'uint8');
+    MidImage = zeros(nrows, ncols, nz, 'uint16');
+    SurfImage = zeros(nrows, ncols, nz, 'uint16');
+    MidMaxImage = zeros(nrows, ncols, 'uint16');
+    SurfMaxImage = zeros(nrows, ncols, 'uint16');
+    MidFilteredImage = zeros(nrows, ncols, 'uint16');
+    SurfFilteredImage = zeros(nrows, ncols, 'uint16');
     [hm, wm] = size(MidImageNoPadding, 1:2);
     [hs, ws] = size(SurfImageNoPadding, 1:2);
     if DeltaR > 0

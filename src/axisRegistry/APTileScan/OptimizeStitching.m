@@ -1,8 +1,8 @@
-function tile_array = OptimizeStitching(Prefix, ID, MaxDeltaR, MaxDeltaC)
+function tile_array = OptimizeStitching(Prefix, ID, MaxDeltaR, MaxDeltaC, varargin)
 % OptimizeStitching.m 
 % Gabriella Martini
 % 1/21/2020
-% Last Modifed: 1/30/2020
+% Last Modifed: 7/25/2020
 
  %% Load existing tile array information and relevant folder info 
 
@@ -19,6 +19,18 @@ if exist([stitchingDataFolder, filesep, ID, 'TileArray.mat'], 'file')
 else
      error('No TileArray data stored. Seed a new TileArray using "NewTileArrayFromMetadata".')  
 end
+
+
+manualStitchOrder = false;
+x = 1;
+while x <= length(varargin)
+    switch varargin{x}
+        case{'manualStitchOrder'}
+            manualStitchOrder = true;
+    end
+    x = x +1;
+end
+
 % ERROR: NEED TO IMPLEMENT SOMETHING TO REQUIRE THAT INITIAL SEED
 % DOESN'T VIOLATE MAX OVERLAP CONDITION
 
@@ -28,7 +40,11 @@ imshow(imm2)
 %% 
 
 NTiles = length(tile_array.imgs);
-stitchOrder = getStitchingOrder(tile_array);
+if ~manualStitchOrder
+    stitchOrder = getStitchingOrder(tile_array);
+else 
+    stitchOrder = ManualStitchOrder(Prefix, ID)
+end
 
 for m=2:NTiles
     fprintf('Stitching Tile %d of %d\n', [m, NTiles]);
@@ -37,7 +53,7 @@ for m=2:NTiles
     gc = tile_array.grid_positions{tA_ind}(2);
     tileA = tile_array.imgs{tA_ind};
     [hA, wA] = size(tileA);
-    tile_array.preverows{size(tile_array.prevrows, 2)+1} = tile_array.rows;
+    tile_array.prevrows{size(tile_array.prevrows, 2)+1} = tile_array.rows;
     tile_array.prevcols{size(tile_array.prevcols, 2)+1} = tile_array.cols;
     tAr = tile_array.rows{tA_ind}; 
     tAc = tile_array.cols{tA_ind};

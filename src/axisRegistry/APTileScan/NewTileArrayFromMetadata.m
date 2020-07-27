@@ -58,8 +58,8 @@ function tile_array = NewTileArrayFromMetadata(Prefix, ID)
         ImageSlices = generateHisSlicesTileScan(LIFImages, NSlices(n),...
             NChannels, fiducialChannel, framesIndex, n);
         temp = max(ImageSlices, [], 3);
-        zstacks{n} = ImageSlices;
-        tiles{n} = temp;
+        zstacks{n} = uint16(ImageSlices);
+        tiles{n} = uint16(temp);
     end
 
 
