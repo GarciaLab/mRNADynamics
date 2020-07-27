@@ -98,7 +98,7 @@ end
 Channels = {Channel1, Channel2, Channel3};
 
 if chooseHis
-    imreadStack([thisExperiment.procPath, filesep, 'probHis.tif']);
+    hisMat = imreadStack([liveExperiment.procFolder, filesep, 'probHis.tif']);
 else
     hisMat = getHisMat(liveExperiment);
 end
