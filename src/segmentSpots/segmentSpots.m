@@ -122,6 +122,10 @@ FrameInfo = getFrameInfo(liveExperiment);
 ProcessedDataFolder = liveExperiment.procFolder;
 DogOutputFolder=[ProcessedDataFolder,filesep,'dogs',filesep];
 
+if length(dir(DogOutputFolder)) <= 2
+    error('Filtered movie files not found. Did you run FilterMovie?')
+end
+
 microscope = FrameInfo(1).FileMode;
 
 zSize = FrameInfo(1).NumberSlices;
