@@ -1,9 +1,32 @@
 function movieMat = CheckNucleiSegmentation(Prefix, varargin)
+%%
+% DESCRIPTION
+% Opens a user interface that allows for manual curation of nuclear
+% segmentation and tracking results
+%
+% PARAMETERS
+% Prefix: Prefix of the dataset being analyzed
+%
+% OPTIONS
+% 'yToRetrackPrompt', true/false: If followed by true, will automatically 
+%                                 rerun TrackNuclei upon exiting the GUI. 
+%                                 If followed by false, will open a user
+%                                 dialog that asks whether or not you need
+%                                 to rerun TrackNuclei. By default, the 
+%                                 former happens.
+% 'chooseHis': If you used Weka for classifying nuclei, this option will
+%              plot the probHis.tif files instead of the raw His.tif images
+%              for easier manual curation
+% 'nWorkers': set the number of workers for a parallel pool (as of
+%             2020-07-27, this option does nothing)
+% 'noAdd', 'fish', or 'markandfind': changes some things for compatibility
+%                                    with mark-and-find Leica data (e.g.
+%                                    FISH experiments)
+% 'drawTraces': no idea what this does
+% 'premovie', movieMat: as of 2020-7-27, this option seems to do nothing
 %
 %
-%
-%Usage:
-%
+% GUI COMMANDS
 % .  - Move a frame forward
 % ,  - Move a frame backwards
 % >  - Move 5 frames forward
@@ -11,6 +34,8 @@ function movieMat = CheckNucleiSegmentation(Prefix, varargin)
 % j  - Jump to a frame
 % q  - Move a cycle forward
 % w  - Move a cycle backwards
+% right click  - delete region
+% left click - add region with default nc radius and angle
 % d  - Delete all ellipses in the current frame
 % c  - Copy all ellipses from previous frame
 % v  - Copy all ellipses from next frame
@@ -24,8 +49,14 @@ function movieMat = CheckNucleiSegmentation(Prefix, varargin)
 % 9  - Debug mode
 %
 %
-%right click  - delete region
-%left click - add region with default nc radius and angle
+% OUTPUT
+% Ellipses.mat: saved to the folder 'Dropbox\Prefix\'
+%
+%
+% Author (contact): uknown (hggarcia@berkeley.edu)
+% Created: XXXX-XX-XX
+% Last Updated: XXXX-XX-XX
+% Documented by: Meghan Turner (meghan_turner@berkeley.edu)
 %
 
 cleanupObj = onCleanup(@myCleanupFun);
@@ -46,14 +77,14 @@ for k = 1:length(varargin)
     elseif strcmpi(varargin{k}, 'nWorkers')
         nWorkers = varargin{k+1};
     elseif strcmpi(varargin{k}, 'chooseHis')
-        chooseHis = varargin{k+1};
-    elseif strcmpi(varargin{k}, 'colormap')
-        cmap = varargin{k+1};
+        chooseHis = true;
+%     elseif strcmpi(varargin{k}, 'colormap')
+%         cmap = varargin{k+1};
     elseif strcmpi(varargin{k}, 'premovie')
         preMovie = true;
         movieMat = varargin{k+1};
     elseif strcmpi(varargin{k}, 'yToRetrackPrompt')
-        yToRetrackPrompt = true;
+        yToRetrackPrompt = varargin{k+1};
     elseif strcmpi(varargin{k}, 'drawTraces')
         drawTraces = true;
     end
