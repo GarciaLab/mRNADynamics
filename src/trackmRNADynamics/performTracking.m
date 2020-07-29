@@ -1,8 +1,8 @@
 function Particles = performTracking(Prefix,useHistone,varargin)
-
+close all force
 % Process user options
 % searchRadiusMicrons = 5; by default
-[~,searchRadiusMicrons,retrack,displayFigures] = ...
+[~,maxSearchRadiusMicrons,retrack,displayFigures] = ...
             determinePerformTrackingOptions(varargin);
 
 % Get all the required data for this Prefix
@@ -23,7 +23,7 @@ resultsFolder = liveExperiment.resultsFolder;
 tic
 disp('Performing intitial particle linking...')
 RawParticles = track01ParticleProximity(FrameInfo, Spots, schnitzCells, ...
-                nCh, pixelSize, searchRadiusMicrons, useHistone, retrack, ...
+                Prefix, pixelSize, maxSearchRadiusMicrons, useHistone, retrack, ...
                 displayFigures);
 toc
 
@@ -150,38 +150,9 @@ if makeTrackingFigures
   
 end
 
-% for currentChannel = 1:nCh
-%     
-%     if ~isfield(Particles{currentChannel}, 'FrameApproved')
-%         
-%         for particle = 1:length(Particles{currentChannel})
-%             Particles{currentChannel}(particle).FrameApproved = true(size(Particles{currentChannel}(particle).Frame));
-%         end
-%         
-%     else
-%         
-%         for particle = 1:length(Particles{currentChannel})
-%             
-%             if isempty(Particles{currentChannel}(particle).FrameApproved)
-%                 Particles{currentChannel}(particle).FrameApproved = true(size(Particles{currentChannel}(particle).Frame));
-%             end
-%             
-%         end
-%         
-%     end
-%     
-%     
-%     Particles = addPositionsToParticles(Particles, Spots, currentChannel);
-%     
-% end
-
-
 
 % If we only have one channel, then convert SpotFilter and Particles to a standard structure.
-if nCh == 1
-    Particles = Particles{1};
-end
 
-save([resultsFolder, filesep, 'Particles_beta.mat'],'RawParticles','HMMParticles', 'SimParticles','Particles')
+save([resultsFolder, filesep, 'ParticlesFull.mat'],'RawParticles','HMMParticles', 'SimParticles','Particles')
 
 end

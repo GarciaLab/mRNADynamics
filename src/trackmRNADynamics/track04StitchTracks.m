@@ -8,7 +8,7 @@ function StitchedParticles = track04StitchTracks(...
   FrameInfo = getFrameInfo(liveExperiment);
   % set useful parameters
   ncVec = [FrameInfo.nc];
-  ncVec(1) = 14; % NL for some reason the first frame is registering as nc13
+%   ncVec(1) = 14; % NL for some reason the first frame is registering as nc13
   frameIndex = 1:length(ncVec);
   NCh = length(RawParticles);
   matchCostMaxDefault = 3; % maximum number of sigmas away (this is reset to Inf if we have nuclei)

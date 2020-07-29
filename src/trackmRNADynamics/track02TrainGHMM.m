@@ -17,8 +17,8 @@ function RawParticles = track02TrainGHMM(...
   NumCoeff = 1;          %Number of coefficients in a vector (always 1) 
   NumMixtures = 1;          %Number of distinct gaussian emission types for each state
   NumStates = 3;          %Number of motion states (this is an arbitrary but should be >=3 and <=10
-  pixelSize = FrameInfo(1).PixelSize;
-  zSize = FrameInfo(1).ZStep;
+%   pixelSize = FrameInfo(1).PixelSize;
+%   zSize = FrameInfo(1).ZStep;
   CovarianceType = 'diag'; % assume no covariance between different state emissions
   maxIter = 500;
   

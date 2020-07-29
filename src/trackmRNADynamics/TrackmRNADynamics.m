@@ -102,21 +102,11 @@ else
     ParticlesFig = []; particlesAxes = []; NucleiFig = []; nucAxes = [];
 end
 
-Particles = performTracking(Prefix, useHistone); %Particles, schnitzcells,...
-%     NCh, Spots, app, PreProcPath, ...
-%     UseHistone, ParticlesFig, spotChannels,...
-%     NucleiFig, particlesAxes, nucAxes, Ellipses, ...
-%     PixelSize_um, SearchRadiusMicrons, ExperimentType,...
-%     FrameInfo, retrack, displayFigures, makeTrackingFigures, DropboxFolder);
-
+Particles = performTracking(Prefix, useHistone); 
 
 mkdir([OutputFolder, filesep]);
+save([OutputFolder, filesep, 'Particles.mat'], 'Particles');
 
-try
-    save([OutputFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter', '-v6');
-catch
-    save([OutputFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter', '-v7.3', '-nocompression');
-end
 
 createFieldNCAndSaveFrameInfo(FrameInfo, OutputFolder, nc9, nc10, nc11, nc12, nc13, nc14);
 
