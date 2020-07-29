@@ -1,5 +1,7 @@
 function [cMask, ellipseFrameWithEdges] = fitEllipsesToNuclei(mask, varargin)
 
+warning('off','all'); %disabling all of the linear algebra spam
+
 displayFigures = false;
 doEllipse = true;
 image = []; %#ok<NASGU>
@@ -31,10 +33,7 @@ averageEquivRadius = median([stats.EquivDiameter]/2);
 
 %if an object is within borderThresh px of the image edge,
 %let's not fit a circle to it and leave it be
-% borderThresh = averageEquivRadius;
-borderThresh = -Inf; %AR: i'm removing this feature because i want to see
-%if the ellipse fitting can handle border nuclei. may add borderThresh back
-%in later
+borderThresh = averageEquivRadius;
 border = borderImage(mask);
 borderDist = bwdist(border);
 
@@ -61,11 +60,12 @@ for k = 1:numel(boundaryCell)
         catch
             continue;
         end
-        %not sure why complex parameters happen. we'll skip this ellipse
+        %not sure why complex parameters or NaNs happen. we'll skip this ellipse
         %in this case. also ensure good aspect ratios here.
         if ~isreal(ellipseParams) ||...
                 ellipseParams(3)/ellipseParams(4) > maxAspectRatio ||...
-                ellipseParams(4)/ellipseParams(3) > maxAspectRatio
+                ellipseParams(4)/ellipseParams(3) > maxAspectRatio ||...
+                any(isnan(ellipseParams))
             
             continue;
             

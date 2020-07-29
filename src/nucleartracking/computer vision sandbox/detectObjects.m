@@ -1,15 +1,26 @@
 function [measurements, bboxes, mask] =...
-    detectObjects(frameImage, pixelSize_um, nFrames)
+    detectObjects(frameImage, pixelSize_um, nFrames, nuclearCycle, FrameInfo)
 
+%%
 %memoized for quicker debugging
 %so we won't have to calculate this on
 %repeated tracking calls
 % kSnakeCircles = memoize(@kSnakeCircles);
 % kSnakeCircles.CacheSize = nFrames;
-[mask, ellipseFrame] = kSnakeCircles(frameImage, pixelSize_um);
 
-mask = ~~mask; %binarize the mask
 
+% first version of segmentation. 
+% [mask, ellipseFrame] = kSnakeCircles(frameImage, pixelSize_um);
+% 
+% mask = ~~mask; %binarize the mask
+%%
+
+ellipseFrame = findNuclearXYthenAdjustContours(...
+    FrameInfo, frameImage, pixelSize_um, nuclearCycle);
+
+mask = ~~makeNuclearMask(ellipseFrame,...
+        size(frameImage), 1.0);
+    
 if any(mask(:))
     %ceny, cenx, smaj, smin, angle
     measurements = ellipseFrame(:, 1:5);

@@ -153,7 +153,11 @@ resultsFolder = resultsFolder(1:filesepPositions(end-1));
 %Name is the first project from projectList plus an indicator of whether 
 %other projects were also compared
 if numel(projectList) == 1
-    saveName = [projectList{1}, filesep, 'comparedSettings_', projectList{1}];
+    resultsFolder = [resultsFolder, projectList{1}, filesep];
+    if ~exist(resultsFolder,'dir')
+        mkdir(resultsFolder)
+    end
+    saveName = ['comparedSettings_', projectList{1}];
 else
     saveName = ['comparedSettings_', projectList{1}, '_plusOtherProjects'];
 end

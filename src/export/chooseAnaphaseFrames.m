@@ -193,8 +193,10 @@ hisPrecision = 'uint8';
 blank = zeros(yDim, xDim, hisPrecision);
 himage = imshow(blank, [], 'Parent', imgAxis);
 
-frame_slider = uislider(fig, 'Limits', [1, numFrames], 'Value', 1, ...
-    'Position', [dim(1) * 0.25, dim(2) * 0.6, dim(1) * 0.5, dim(2) * 0.1]);
+if numFrames > 1
+    frame_slider = uislider(fig, 'Limits', [1, numFrames], 'Value', 1, ...
+        'Position', [dim(1) * 0.25, dim(2) * 0.6, dim(1) * 0.5, dim(2) * 0.1]);
+end
 
 frame_label = uilabel(fig,  'Text', ['Frame: ', num2str(frame)] , 'Position', ...
     [dim(1) * 0.5, dim(2) * 0.65, dim(1) * 0.1, dim(2) * 0.05]);
@@ -332,10 +334,16 @@ uiwait(fig);
         channels_to_use = channel_list.Value;
         inverted_channels = invert_list.Value;
         projection_type = proj_type_dropdown.Value;
-        frame_slider.Value = ((ceil(frame_slider.Value / skip_factor) - 1) * skip_factor) + 1;
         
-        frame = ceil(frame_slider.Value / skip_factor);
-        frame_label.Text=  ['Frame: ', num2str(frame)];
+        if numFrames > 1
+            
+            frame_slider.Value = ((ceil(frame_slider.Value / skip_factor) - 1) * skip_factor) + 1;
+            frame = ceil(frame_slider.Value / skip_factor);
+            frame_label.Text=  ['Frame: ', num2str(frame)];
+            
+        else
+            frame = 1;
+        end
         
         channels = [];
         for i = 1:3
@@ -540,9 +548,11 @@ uiwait(fig);
         save(isUnhealthyFile, 'isUnhealthy','-v6');
         
         if isUnhealthy
-            disp('Embryo recorded as unhealthy.');
-            nBits = 16;
-            sound(y, Fs, nBits);
+            try
+                disp('Embryo recorded as unhealthy.');
+                nBits = 16;
+                sound(y, Fs, nBits);
+            end
         else
             disp('Embryo recorded as healthy.');
         end

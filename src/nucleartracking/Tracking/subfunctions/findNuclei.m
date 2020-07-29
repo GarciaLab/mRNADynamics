@@ -1,5 +1,5 @@
-function [ xy, varargout ] = findNuclei(FrameInfo, hisMat,...
-    frameNumber, nucleusDiameter, embryoMask, varargin )
+function [ xy, varargout ] = findNuclei(FrameInfo, hisImage,...
+nucleusDiameter, embryoMask, varargin )
 %FINDNUCLEI This function finds the position of nuclei within a frame which
 %is used as an initial input for the tracking algorithm.
 %   Detection is made by detecting the local maxima in a
@@ -21,7 +21,7 @@ edgeClearance = getDefaultParameters(FrameInfo,'edge clearance')*nucleusDiameter
 xDim = FrameInfo(1).PixelsPerLine * FrameInfo(1).PixelSize;
 yDim = FrameInfo(1).LinesPerFrame * FrameInfo(1).PixelSize;
 if yDim > 150 && xDim > 150
-    I = double(hisMat(:, :, frameNumber));
+    I = double(hisImage);
     pixelvalues = unique(I(:));
     thresh = pixelvalues(2);
     f_sigma = round(nucleusDiameter / FrameInfo(1).PixelSize);
@@ -34,7 +34,7 @@ if yDim > 150 && xDim > 150
     embryoMask = im2bw(I_blurred,level);
 else    
     if ~exist('embryoMask','var') || isempty(embryoMask)
-        embryoMask = true(size(hisMat(:, :, frameNumber), 1));
+        embryoMask = true(size(hisImage, 1));
     end
 end
 
@@ -54,7 +54,7 @@ localMaxMask(round(length(localMaxMask)/2),round(length(localMaxMask)/2))  = 0;
 %% Main body
 
 % Load image
-img = double(hisMat(:, :, frameNumber));
+img = double(hisImage);
 
 % Filter the image
 filteredImg = fourierFilterWithSymmetricBoundaryConditions(img,-fspecial('log',round(10*LoGradius),LoGradius));
@@ -69,9 +69,9 @@ ind = find(maxima>0);
 
 %Check whether anything was found in this image. If nothing is found,
 %this is usually the result of an empty frame
-if isempty(xm) || isempty(ym)
-   error(['No nuclei found in frame ',num2str(frameNumber),'. Check that that frame is not blank.']) 
-end
+% if isempty(xm) || isempty(ym)
+%    error(['No nuclei found in frame ',num2str(frameNumber),'. Check that that frame is not blank.']) 
+% end
 
 try
     [v,~] = voronoin([xm ym]);

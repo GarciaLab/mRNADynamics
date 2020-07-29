@@ -22,13 +22,28 @@ end
 %Optionally, tighten the nuclear contours and convert the circles to
 %true ellipses
 if postTrackingSettings.doAdjustNuclearContours
-    
-    hisMat = getHisMat(liveExperiment);
-    
-    for frame = 1:length(Ellipses)
-        Ellipses{frame} = adjustNuclearContours(Ellipses{frame},...
-            hisMat(:, :, frame), liveExperiment.pixelSize_um);    
+    if postTrackingSettings.chooseHis
+        [hisFile, hisPath] = uigetfile([liveExperiment.procFolder, filesep,'*.*']);
+        hisMat = imreadStack([hisPath, filesep, hisFile]);
+    else
+        hisMat = getHisMat(liveExperiment);
     end
+    pixelSize_um = liveExperiment.pixelSize_um;
+    
+    disp('Adjusting nuclear contours...');
+
+    parfor frame = 1:length(Ellipses)
+        %     for frame = 1:length(Ellipses)
+
+        Ellipses{frame} = adjustNuclearContours(Ellipses{frame},...
+            hisMat(:, :, frame), pixelSize_um);
+        
+    end
+    
+    disp('Nuclear contours adjusted.');
+
+    %TrackNuclei handles empty frames poorly, so let's fill them in.
+    Ellipses = fillEmptyXYFrames(Ellipses);
     
     save2(ellipsesFile, Ellipses);
     TrackNuclei(Prefix, 'nWorkers', 1, 'retrack')
@@ -117,22 +132,26 @@ ellipsesSizeUnchanged(ellipsesOld, Ellipses);
 schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells);
 
 
-if exist([liveExperiment.resultsFolder,filesep,'APDetection.mat'], 'file')
-    [EllipsePos, APAngle, APLength]...
-        = convertToFractionalEmbryoLength(Prefix);
-    
-    
-    
-    ellipsesSizeUnchanged(ellipsesOld, Ellipses);
-    schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells);
-    
-    for schnitzIndex = 1:length(schnitzcells)
-        for frameIndex = 1:length(schnitzcells(schnitzIndex).frames)
-            frame = schnitzcells(schnitzIndex).frames(frameIndex);
-            ellipseInd = schnitzcells(schnitzIndex).cellno(frameIndex);
-            schnitzcells(schnitzIndex).APPos(frameIndex) = EllipsePos{frame}(ellipseInd);
+try
+    if exist([liveExperiment.resultsFolder,filesep,'APDetection.mat'], 'file')
+        [EllipsePos, APAngle, APLength]...
+            = convertToFractionalEmbryoLength(Prefix);
+
+
+
+        ellipsesSizeUnchanged(ellipsesOld, Ellipses);
+        schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells);
+
+        for schnitzIndex = 1:length(schnitzcells)
+            for frameIndex = 1:length(schnitzcells(schnitzIndex).frames)
+                frame = schnitzcells(schnitzIndex).frames(frameIndex);
+                ellipseInd = schnitzcells(schnitzIndex).cellno(frameIndex);
+                schnitzcells(schnitzIndex).APPos(frameIndex) = EllipsePos{frame}(ellipseInd);
+            end
         end
     end
+catch
+    warning('Failed to update nuclear AP positions for unknown reason.')
 end
 
 

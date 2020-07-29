@@ -18,6 +18,8 @@ function TrackNuclei(Prefix,varargin)
 % 'integrate': integrate nuclear fluorescence
 % 'mixedPolaritySegmentation': different segmentation method that works
 % better when there are nuclei of mixed polarity (some dark, some bright)
+% 'adjustNuclearContours': fit ellipses tightly around nuclei (done by
+% adjusting regular segmentation)
 %
 % OUTPUT
 % '*_lin.mat' : Nuclei with lineages
@@ -40,9 +42,10 @@ postTrackingSettings = struct;
     retrack, nWorkers, track, postTrackingSettings.noBreak,...
     postTrackingSettings.noStitch,...
     markandfind, postTrackingSettings.fish,...
-    postTrackingSettings.intFlag, chooseHis, mixedPolaritySegmentation, min_rad_um,...
+    postTrackingSettings.intFlag, postTrackingSettings.chooseHis,...
+    mixedPolaritySegmentation, min_rad_um,...
              max_rad_um, sigmaK_um, mu, nIterSnakes,...
-             postTrackingSettings.doAdjustNuclearContours]...
+             postTrackingSettings.doAdjustNuclearContours, radiusScale]...
     = DetermineTrackNucleiOptions(varargin{:});
 
 
@@ -81,12 +84,10 @@ end
 %Now do the nuclear segmentation and lineage tracking. This should be put
 %into an independent function.
 
-if chooseHis
+if postTrackingSettings.chooseHis
     
     [hisFile, hisPath] = uigetfile([ProcPath, filesep, Prefix,'_',filesep,'*.*']);
-    hisStruct = load([hisPath, hisFile]);
-    hisField = fieldnames(hisStruct);
-    hisMat = hisStruct.(hisField{1});
+    hisMat = imreadStack([hisPath, filesep, hisFile]);
     
 else
     
@@ -181,7 +182,7 @@ if ~retrack
     % true(size(an_image_from_the_movie)) can be given as input.
     % Convert the results to compatible structures and save them
     %Put circles on the nuclei
-    [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,nFrames,indMit);
+    [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,nFrames,indMit, radiusScale);
     
 else
     %Retrack: Use "MainTracking" for tracking but not segmentation. 

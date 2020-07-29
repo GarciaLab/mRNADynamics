@@ -14,7 +14,7 @@ end
 
 if cleanAttributes
     [~,attributes,~] = weka2matlab(trainingData);
-    %remove the features matlab we can't (currently) generate in matlab
+    %remove the features we can't (currently) generate in matlab
     dim = 2;
     [~, ~, keepIndices, ~] = validateAttributes(attributes, dim);
     trainingData = cleanArff(trainingData, keepIndices);

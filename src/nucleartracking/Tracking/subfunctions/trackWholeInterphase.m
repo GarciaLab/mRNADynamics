@@ -33,7 +33,8 @@ if exist('xy','var') && ~isempty(xy)
 else
     skip_segmentation = false;
     xyInterphase = cell(numberOfFrames,1);
-    xyInterphase{startingFrame-previousMitosisInd+1} = findNuclei(FrameInfo,hisMat,startingFrame,...
+    xyInterphase{startingFrame-previousMitosisInd+1} =...
+        findNuclei(FrameInfo,hisMat(:, :, startingFrame),...
         nucleusDiameter, embryoMask, [],[1 1 1 1 1]);
 end
 

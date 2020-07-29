@@ -2,7 +2,8 @@ function [ExpandedSpaceTolerance,...
     NoBulkShift, retrack, nWorkers, track,...
     noBreak, noStitch, fish,...
     markandfind, intFlag, chooseHis, mixedPolaritySegmentation,...
-    min_rad_um, max_rad_um, sigmaK_um, mu, nIterSnakes, doAdjustNuclearContours]...
+    min_rad_um, max_rad_um, sigmaK_um, mu, nIterSnakes,...
+    doAdjustNuclearContours, radiusScale]...
     = DetermineTrackNucleiOptions(varargin)
 %
 %DETERMINETRACKNUCLEIOPTIONS Processes varargin for TrackNuclei,
@@ -26,12 +27,15 @@ intFlag = false;
 chooseHis = false;
 mixedPolaritySegmentation = false;
 doAdjustNuclearContours = false;
+radiusScale = 1.0;
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'ExpandedSpaceTolerance')
         ExpandedSpaceTolerance = str2double(varargin{i+1});
     elseif strcmpi(varargin{i}, 'bulkShift')
         NoBulkShift = false;
+    elseif strcmpi(varargin{i}, 'radiusScale')
+        radiusScale = varargin{i+1};
     elseif strcmpi(varargin{i}, 'retrack')
         retrack = true;
     elseif strcmpi(varargin{i}, 'nWorkers')
@@ -50,7 +54,8 @@ for i = 1:length(varargin)
         nIterSnakes = varargin{i+1};        
     elseif strcmpi(varargin{i}, 'noBreak')
         noBreak = true;
-     elseif strcmpi(varargin{i}, 'adjustNuclearContours')
+     elseif strcmpi(varargin{i}, 'adjustNuclearContours') ||...
+             strcmpi(varargin{i}, 'adjustNuclearBoundaries')
         doAdjustNuclearContours = true;
     elseif strcmpi(varargin{i}, 'chooseHis')
         chooseHis = true;

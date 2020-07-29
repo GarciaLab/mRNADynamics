@@ -43,7 +43,9 @@ end
 
 %% 2. If not provided, find nuclei in the second frame
 if ~exist('nucleiFrame2','var') || isempty(nucleiFrame2)
-    [nextNucleiXY, intensity] = findNuclei(FrameInfo,hisMat, frameNumber2, nucleusDiameter, true(size(frame1)), [],[1 1 1 1 1]);
+    [nextNucleiXY, intensity] =...
+        findNuclei(FrameInfo, hisMat(:, :, frameNumber2), nucleusDiameter,...
+        true(size(frame1)), [],[1 1 1 1 1]);
 else
     nextNucleiXY = nucleiFrame2;
     intensity = zeros(size(nextNucleiXY,1),1);

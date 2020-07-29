@@ -11,17 +11,25 @@ nWorkers = 1;
 shouldRescaleTrainingData = false;
 probabilityThreshold = .5;
 classificationAlgorithm = 'TreeBagger';
-NumPredictorsToSample = 2;
-maxDepth = 20;
-nTrees = 64;
+NumPredictorsToSample = 2; % default value works well
+maxDepth = 20; %RF tree height. generally default is fine
+nTrees = 64; % generally fine.
 hisMat = [];
-shouldBalanceClasses = false; %resample to balance classes
+
+%resample to balance classes. 
+%currently produces poor results. not recommended
+shouldBalanceClasses = false; 
+
+%not recommended. 
 cleanAttributes = false;
 frameRange = [];
+
+%untested. not recommended.
 makeEllipses=false;
+
 classifier = [];
-classifyMethod = 'matlab';
-tempPath = 'S:\livemRNATempPath\';
+classifyMethod = 'weka'; %matlab is faster. weka is more accurate
+tempPath = 'S:\livemRNATempPath\'; 
 if ~exist(tempPath, 'dir')
     mkdir(tempPath);
 end
@@ -66,9 +74,6 @@ if isempty(hisMat)
     hisMat = getHisMat(liveExperiment);
 end
 
-
-ySize = size(hisMat, 1);
-xSize = size(hisMat, 2);
 nFrames = size(hisMat, 3);
 
 pMap = zeros(size(hisMat, 1), size(hisMat, 2), size(hisMat, 3));
