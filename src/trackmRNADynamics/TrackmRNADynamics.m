@@ -75,7 +75,7 @@ SearchRadiusMicrons = 0.75 / sqrt(20); % Search radius in um
 
 % Check if we have tracked the lineages of the nuclei
 if exist([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'file')
-    UseHistone = true;
+    useHistone = true;
     
     % Load the nuclei segmentation information
     load([DropboxFolder, filesep, Prefix, filesep, 'Ellipses.mat'], 'Ellipses')
@@ -84,7 +84,7 @@ if exist([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'file')
     load([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'schnitzcells')
     
 else
-    UseHistone = false;
+    useHistone = false;
     schnitzcells = [];
     Ellipses = [];
     warning('Warning: No nuclei lineage tracking found. Proceeding with tracking particles only.')
@@ -97,17 +97,17 @@ Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh, retrack);
 Spots = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefix, NCh);
 
 if displayFigures
-    [ParticlesFig, particlesAxes, NucleiFig, nucAxes] = generateTrackingFigures(app, UseHistone);
+    [ParticlesFig, particlesAxes, NucleiFig, nucAxes] = generateTrackingFigures(app, useHistone);
 else
     ParticlesFig = []; particlesAxes = []; NucleiFig = []; nucAxes = [];
 end
 
-Particles = performTracking(Particles, schnitzcells,...
-    NCh, Spots, app, PreProcPath, ...
-    Prefix, UseHistone, ParticlesFig, spotChannels,...
-    NucleiFig, particlesAxes, nucAxes, Ellipses, ...
-    PixelSize_um, SearchRadiusMicrons, ExperimentType,...
-    FrameInfo, retrack, displayFigures, makeTrackingFigures, DropboxFolder);
+Particles = performTracking(Prefix, useHistone); %Particles, schnitzcells,...
+%     NCh, Spots, app, PreProcPath, ...
+%     UseHistone, ParticlesFig, spotChannels,...
+%     NucleiFig, particlesAxes, nucAxes, Ellipses, ...
+%     PixelSize_um, SearchRadiusMicrons, ExperimentType,...
+%     FrameInfo, retrack, displayFigures, makeTrackingFigures, DropboxFolder);
 
 
 mkdir([OutputFolder, filesep]);

@@ -1,8 +1,8 @@
-function Particles = performTracking(Prefix,varargin)
+function Particles = performTracking(Prefix,useHistone,varargin)
 
 % Process user options
 % searchRadiusMicrons = 5; by default
-[useHistone,searchRadiusMicrons,retrack,displayFigures] = ...
+[~,searchRadiusMicrons,retrack,displayFigures] = ...
             determinePerformTrackingOptions(varargin);
 
 % Get all the required data for this Prefix
@@ -13,14 +13,12 @@ pixelSize = liveExperiment.pixelSize_um;    %NL: pixel size is in um
 experimentType = liveExperiment.experimentType;
 FrameInfo = getFrameInfo(liveExperiment);
 Spots = getSpots(liveExperiment);
+if ~iscell(Spots)% NL: added for backwards compatibility
+  Spots = {Spots};
+end
 schnitzCells = getSchnitzcells(liveExperiment);
 dropboxFolder = liveExperiment.userResultsFolder;
 resultsFolder = liveExperiment.resultsFolder;
-
-% NL: added this to circumvent an error I don't currently want to address
-useHistone =true;
-% [Particles] = track02KalmanTesting(...
-%     FrameInfo, Spots, NCh, PixelSize, SearchRadiusMicrons, retrack, displayFigures)
   
 tic
 disp('Performing intitial particle linking...')
