@@ -101,17 +101,17 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     nucleusIDVec = nucleusIDVec([1:pDrop-1 pDrop+1:end]);
     
     % condense link ID tracker
-    newLinkEntry = {[linkIDCell{pKeep}{end} linkIDCell{pDrop}{end}]};
-    linkIDCell{pKeep} = [linkIDCell{pKeep} linkIDCell{pDrop}];
-    linkIDCell{pKeep}(end+1) = newLinkEntry;
+    newLinkEntry = {[linkIDCell{pKeep}{end} linkIDCell{pDrop}{end}]};   
+    linkIDCell{pKeep} = [linkIDCell{pKeep} linkIDCell{pDrop} newLinkEntry];
     linkIDCell = linkIDCell(1,[1:pDrop-1 pDrop+1:end]);
     
     % condense link cost trackers
     linkCostCell{pKeep} = [linkCostCell{pKeep} linkCostCell{pDrop} minCost];
     linkCostCell = linkCostCell(1,[1:pDrop-1 pDrop+1:end]);
     
+    
     % condense node hierarchy tracker
-    newLevel = max([linkLevelCell{pKeep} linkLevelCell{pKeep}])+1;
+    newLevel = max([linkLevelCell{pKeep} linkLevelCell{pDrop}])+1;
     linkLevelCell{pKeep} = [linkLevelCell{pKeep} linkLevelCell{pDrop} newLevel];
     linkLevelCell = linkLevelCell(1,[1:pDrop-1 pDrop+1:end]);
     
