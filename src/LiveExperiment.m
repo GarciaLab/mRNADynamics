@@ -236,17 +236,17 @@ classdef LiveExperiment
             %we're going to check if this is a new prefix by verifying the
             %exact equality of frame times in frameinfo. i don't think
             %these should ever be precisely identical in different movies
-            persistent FrameInfoMovie;
+            persistent FrameInfo_movie;
             tempInfo = load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
             
-            isNewMovie = isempty(FrameInfoMovie) ||...
-                any([tempInfo.FrameInfo.Time] ~= [FrameInfoMovie.Time]);
+            isNewMovie = isempty(FrameInfo_movie) ||...
+                any([tempInfo.FrameInfo.Time] ~= [FrameInfo_movie.Time]);
             
             persistent preTifDir;
             if isempty(preTifDir) ||...
                     ~isequal( length(preTifDir), this.nFrames) ||...
                     isNewMovie
-                FrameInfoMovie = tempInfo.FrameInfo;
+                FrameInfo_movie = tempInfo.FrameInfo;
                 preTifDir = dir([this.preFolder, '*_ch0*.tif']);
             end
             
@@ -363,16 +363,16 @@ classdef LiveExperiment
             end
             
             persistent hisMat;
-            persistent FrameInfoHis;
+            persistent FrameInfo_His;
             tempInfo = load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
 
             %load histone movie only if it hasn't been loaded or if we've switched
             %Prefixes (determined by num frames)
             if isempty(hisMat) || ~isequal( size(hisMat, 3), this.nFrames) ||...
-                    isempty(FrameInfoHis) ||...
-                    any([tempInfo.FrameInfo.Time] ~= [FrameInfoHis.Time])
+                    isempty(FrameInfo_His) ||...
+                    any([tempInfo.FrameInfo.Time] ~= [FrameInfo_His.Time])
                 
-                FrameInfoHis = tempInfo.FrameInfo; 
+                FrameInfo_His = tempInfo.FrameInfo; 
                 
                 if haveHisTifStack
                     %load in sequential tif stacks
