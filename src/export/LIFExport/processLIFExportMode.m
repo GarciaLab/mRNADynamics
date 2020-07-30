@@ -49,6 +49,10 @@ if shouldMakeMovieMat
     %%
     [LIFImages, LIFMeta] = loadLIFFile(rawDataFolder);
     
+    %obtain precision from meta data
+%     moviePrecision = char(LIFMeta.getPixelsType(0).getValue());
+%     hisPrecision = char(LIFMeta.getPixelsType(0).getValue());
+%     
     %Obtains frames information
     [NSeries, NFrames, NSlices,...
         NPlanes, NChannels, Frame_Times] = getFrames(LIFMeta);
@@ -124,7 +128,7 @@ if ~skipExtraction
         
         ySize = size(LIFImages{1}{1,1}, 1);
         xSize = size(LIFImages{1}{1,1}, 2);
-        BlankImage = uint16(zeros(ySize, xSize));
+        BlankImage = cast(zeros(ySize, xSize),moviePrecision);
         
         nPadding = 2;
         hisMat = zeros(ySize, xSize, sum(NFrames), hisPrecision);
@@ -166,9 +170,10 @@ if ~skipExtraction
                             % if zPadding, it will process all images (because topZSlice would be max(NSlices)
                             % if no zPadding, it will process images rounding down to the series with least
                             % zSlices, because topZSlice would be min(NSlices)
+                            imSlice = cast(LIFImages{seriesIndex}{imageIndex,1},moviePrecision);
                             movieMat(:, :,slicesCounter + 1,  numberOfFrames,...
-                                channelIndex) = LIFImages{seriesIndex}{imageIndex,1};
-                            imwrite(LIFImages{seriesIndex}{imageIndex,1},...
+                                channelIndex) = imSlice;
+                            imwrite(imSlice,...uint16(LIFImages{seriesIndex}{imageIndex,1}),...
                                 [PreProcFolder, filesep, NewName], 'WriteMode', 'append');
                             slicesCounter = slicesCounter + 1;
                         end
