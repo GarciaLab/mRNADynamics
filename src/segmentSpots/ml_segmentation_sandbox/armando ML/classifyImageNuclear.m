@@ -88,11 +88,11 @@ elseif shouldCreateClassifier
         case 'matlab'
             [classifier, trainingData] = loadClassifier(trainingData);
         case 'weka'
-            classifier = hr.irb.fastRandomForest.FastRandomForest;
+            classifier = javaObject('hr.irb.fastRandomForest.FastRandomForest');
             options = {'-I', '20', '-threads', '1', '-K', '2', '-S', '-1650757608'};
             classifier.setOptions(options);
             classifier.buildClassifier(trainingData);
-            if displayFigures, classifier.toString, end
+            if displayFigures, classifier.toString, end %#ok<*UNRCH>
     end
 end
 clear arffLoader;
@@ -155,9 +155,9 @@ end %feature loop
 
 if strcmpi(classifyMethod, 'matlab')
     
-    [~, pLin] = predict(classifier,testMatrix);
+    [~, pLinear] = predict(classifier,testMatrix);
     
-    pLin = pLin(:, 1);
+    pLinear = pLinear(:, 1);
     
     
 elseif strcmpi(classifyMethod, 'weka')
@@ -169,28 +169,29 @@ elseif strcmpi(classifyMethod, 'weka')
     end
     clear testMatrix; clear filteredIm;
     
-    compatible = testData.equalHeaders(trainingData); %check compatability between arff and data
+    %check compatability between arff and data
+    compatible = testData.equalHeaders(trainingData); 
     if ~compatible
         error(char(testData.equalHeadersMsg(trainingData)));
     end
     
     %this step is unbearably slow. ~1min per frame. needs a massive overhaul
     nInstances = testData.numInstances;
-    pLin = zeros(nInstances, 1);
+    pLinear = zeros(nInstances, 1);
     
     if parallelizeInstances
         
         testDataConstant = parallel.pool.Constant(testData);
         classifierConstant = parallel.pool.Constant(classifier);
         parfor k = 1:nInstances
-            pLin(k) = classifyInstance(k, testDataConstant.Value,...
+            pLinear(k) = classifyInstance(k, testDataConstant.Value,...
                 classifierConstant.Value);
         end
         
     else
         
         for k = 1:nInstances
-            pLin(k) = classifyInstance(k, testData, classifier);
+            pLinear(k) = classifyInstance(k, testData, classifier);
         end
         
     end %parallelize instances conditional
@@ -198,22 +199,25 @@ elseif strcmpi(classifyMethod, 'weka')
 end %classifymethod conditional
 
 if dim == 2
-    pMap = reshape(pLin, [yDim xDim]);
-    if displayFigures,  figure; imshowpair(im, pMap, 'montage'); end
+    pMap = reshape(pLinear, [yDim xDim]);
+    if displayFigures, figure; imshowpair(im, pMap, 'montage'); end
 elseif dim == 3
-    pMap = reshape(pLin, [yDim xDim zDim]);
-    if displayFigures, figure; imshowpair(max(im, [], 3),max(pMap, [], 3), 'montage'); end
+    pMap = reshape(pLinear, [yDim xDim zDim]);
+    if displayFigures
+        figure; 
+        imshowpair(max(im, [], 3),max(pMap, [], 3), 'montage'); 
+    end
 end
 
 end
 
 
-function p = classifyInstance(ind, testData, classifier)
+function probability = classifyInstance(instanceIndex, testData, classifier)
 
-k = ind - 1;
-inst = testData.instance(k);
-temp = classifier.distributionForInstance(inst);
-p = temp(1);
+k = instanceIndex - 1;
+instance = testData.instance(k);
+temp = classifier.distributionForInstance(instance);
+probability = temp(1); 
 
 end
 
@@ -242,6 +246,7 @@ testData.setClassIndex(testData.numAttributes-1);
 
 f = weka.filters.unsupervised.attribute.Remove;
 f.setInputFormat(trainingData);
-testData = javaMethod('useFilter','weka.filters.Filter', testData, f); %match test header to training header
+%match test header to training header
+testData = javaMethod('useFilter','weka.filters.Filter', testData, f); 
 
 end

@@ -5,16 +5,22 @@ warning('off', 'MATLAB:Java:DuplicateClass');
 warning('off', 'MATLAB:javaclasspath:jarAlreadySpecified');
 
 %% Initialize variables
+
+%note that currently the parallelized code is buggy, so it's recommended to
+%avoid it. 
 displayFigures = false;
 keepPool = false;
 nWorkers = 1;
+parFrame = false;
+parInstances = false;
+
+
 shouldRescaleTrainingData = false;
 probabilityThreshold = .5;
 classificationAlgorithm = 'TreeBagger';
 NumPredictorsToSample = 2; % default value works well
 maxDepth = 20; %RF tree height. generally default is fine
 nTrees = 64; % generally fine.
-hisMat = [];
 
 %resample to balance classes. 
 %currently produces poor results. not recommended
@@ -29,13 +35,12 @@ makeEllipses=false;
 
 classifier = [];
 classifyMethod = 'weka'; %matlab is faster. weka is more accurate
-tempPath = 'S:\livemRNATempPath\'; 
+tempPath = 'S:\livemRNATempPath\';
 if ~exist(tempPath, 'dir')
     mkdir(tempPath);
 end
 matlabLoader = true;
-parFrame = false;
-parInstances = false;
+
 
 
 %options must be specified as name, value pairs. unpredictable errors will
@@ -68,15 +73,12 @@ trainingFile = [trainingFolder, filesep, trainingNameExt];
 
 
 if isempty(frameRange)
-    frameRange = [1, liveExperiment.nFrames];
-end
-if isempty(hisMat)
-    hisMat = getHisMat(liveExperiment);
+    frameRange = [1,liveExperiment.nFrames]; %#ok<*NASGU>
 end
 
-nFrames = size(hisMat, 3);
+hisMat = getHisMat(liveExperiment);
 
-pMap = zeros(size(hisMat, 1), size(hisMat, 2), size(hisMat, 3));
+pMap = zeros(size(hisMat, 1), size(hisMat, 2), frameRange(2)-frameRange(1)+1);
 
 %%
 %only need to make the classifier from training data
@@ -105,7 +107,7 @@ elseif strcmpi(classifyMethod, 'weka')
     [~, ~, keepIndices, ~] = validateAttributes(attributes, dim);
     trainingData = cleanArff(trainingData, keepIndices);
     
-    classifier =hr.irb.fastRandomForest.FastRandomForest;
+    classifier = javaObject('hr.irb.fastRandomForest.FastRandomForest');
     options = {'-I', num2str(nTrees), '-threads', num2str(nWorkers), '-K', '2', '-S', '-1650757608', '-depth', num2str(maxDepth)};
     
     switch classificationAlgorithm
@@ -130,16 +132,16 @@ end
 
 if parFrame
     %parallel version
-    startParallelPool(nWorkers, displayFigures, keepPool);
+    startParallelPool(nWorkers, displayFigures, keepPool); %#ok<*UNRCH>
     hisMat = parallel.pool.Constant(hisMat);
     trainingData = parallel.pool.Constant(trainingData);
     classifier = parallel.pool.Constant(classifier);
-    parfor f = 1:nFrames
+    parfor f = frameRange
         
         hisFrame = hisMat.Value(:, :, f);
         pMap(:, :, f) = classifyImageNuclear(hisFrame, trainingData.Value,...
             'tempPath', tempPath,...
-            'shouldRescaleTrainingData', shouldRescaleTrainingData, 'classifierObj',...
+            'shouldRescaleTrainingData', shouldRescaleTrainingData, 'classifier',...
             classifier.Value, 'arffLoader', arffLoader, 'matlabLoader', matlabLoader,...
             'classifyMethod', classifyMethod);
         
@@ -148,24 +150,26 @@ if parFrame
 else
     %non-parallel version
     deltaT = [];
-    for f = 1:nFrames
+    n = 0;
+    for f = frameRange(1):frameRange(2)
         
+        n = n + 1;
         tic
         mean_dT = movmean(deltaT, [3, 0]);
-        if f~=1, mean_dT = mean_dT(end); end
+        if n~=1, mean_dT = mean_dT(end); end
         
-        if f~=1, tic, disp(['Making probability map for frame: ', num2str(f),...
-                '. Estimated ', num2str(mean_dT*(nFrames-f)), ' minutes remaining.']); end
+        if n~=1, tic, disp(['Making probability map for frame: ', num2str(f),...
+                '. Estimated ', num2str(mean_dT*(frameRange(2)-frameRange(1)-n)), ' minutes remaining.']); end
         
         hisFrame = hisMat(:, :, f);
         
-        pMap(:, :, f) = classifyImageNuclear(hisFrame, trainingData,'tempPath', tempPath,...
+        pMap(:, :, n) = classifyImageNuclear(hisFrame, trainingData,'tempPath', tempPath,...
             'shouldRescaleTrainingData', shouldRescaleTrainingData, 'classifier', classifier,...
             'arffLoader', arffLoader, 'matlabLoader', matlabLoader,...
             'parallelizeInstances', parInstances, 'displayFigures', displayFigures,...
             'classifyMethod', classifyMethod);
         
-        deltaT(f)=toc/60;
+        deltaT(n)=toc/60;
         
     end
     
@@ -174,10 +178,16 @@ end
 [~, ProcPath] = DetermineLocalFolders(Prefix);
 procFolder = [ProcPath, filesep, Prefix, '_'];
 mkdir(procFolder);
-probHisFile = [procFolder, filesep, Prefix, '_probHis.mat'];
+probHisFile = [procFolder, filesep, 'probHis.tif'];
 
-livemRNAImageMatSaver([procFolder, filesep, Prefix, '_probHis.mat'],...
-            pMap);
+imwrite(pMap(:, :, 1), probHisFile);
+            
+for f = 2:size(pMap, 3)
+
+    imwrite(pMap(:, :, f), probHisFile, 'WriteMode', 'append');
+
+end
+            
         
 %% Make ellipses from generated probability maps
 if makeEllipses
