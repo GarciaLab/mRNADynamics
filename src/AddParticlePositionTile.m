@@ -1,7 +1,7 @@
 function [Particles, SpotFilter] = AddParticlePositionTile(Prefix, varargin)
 %% author: Gabriella Martini
 % date created: 1/29/20
-% date last modified: 3/19/20
+% date last modified: 7/30/20
 %Default set of variables to save
 
 % DESCRIPTION
@@ -33,25 +33,25 @@ close all
 %% 
 
 
-    for i=1:length(varargin)
-        switch varargin{i}
-            case {'SkipAlignment'}
-                disp('Skipping alignment step')
-                SkipAlignment=1;
-            case {'ManualAlignment'}
-                ManualAlignment=1;
-            case {'NoAP'}
-                NoAP=1;
-            case {'SelectChannel'}
-                SelectChannel=1;
-            case {'optionalResults'}
-                optionalResults = varargin{i+1};
-            case {'yToManualAlignmentPrompt'}
-                yToManualAlignmentPrompt = 1;
-            case {'correctDV'}
-                correctDV = true;
-        end
+for i=1:length(varargin)
+    switch varargin{i}
+        case {'SkipAlignment'}
+            disp('Skipping alignment step')
+            SkipAlignment=1;
+        case {'ManualAlignment'}
+            ManualAlignment=1;
+        case {'NoAP'}
+            NoAP=1;
+        case {'SelectChannel'}
+            SelectChannel=1;
+        case {'optionalResults'}
+            optionalResults = varargin{i+1};
+        case {'yToManualAlignmentPrompt'}
+            yToManualAlignmentPrompt = 1;
+        case {'correctDV'}
+            correctDV = true;
     end
+end
     %% 
     
 %Get the relevant folders for this data set
