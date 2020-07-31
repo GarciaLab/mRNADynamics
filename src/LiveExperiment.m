@@ -244,9 +244,7 @@ classdef LiveExperiment
                 any([tempInfo.FrameInfo.Time] ~= [FrameInfo_movie.Time]);
             
             persistent preTifDir;
-            if isempty(preTifDir) ||...
-                    ~isequal( length(preTifDir), this.nFrames) ||...
-                    isNewMovie
+            if isempty(preTifDir) || isNewMovie
                 FrameInfo_movie = tempInfo.FrameInfo;
                 preTifDir = dir([this.preFolder, '*_ch0*.tif']);
             end
@@ -278,9 +276,7 @@ classdef LiveExperiment
             %load movie only if it hasn't been loaded or if we've switched
             %Prefixes (determined by num frames) or if the old FrameInfo doesn't match
             %the new FrameInfo
-            if isempty(movieMat) ||...
-                    ~isequal( size(movieMat, 4), this.nFrames) ||...
-                    isNewMovie
+            if isempty(movieMat) || isNewMovie
                 
                 if haveTifStacks
                     movieMat = makeMovieMatFromTifStacks(this, preTifDir, channelsToRead);
@@ -298,6 +294,7 @@ classdef LiveExperiment
             end
             out = movieMat;
             
+            %let's reduce the memory footprint of the movie if we can
             if max(movieMat(:)) < 255
                 movieMat = uint8(movieMat);
             end
@@ -367,11 +364,14 @@ classdef LiveExperiment
             persistent FrameInfo_His;
             tempInfo = load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
 
+            isNewMovie = isempty(FrameInfo_His) ||...
+            size([tempInfo.FrameInfo.Time],2) ~= size([FrameInfo_His.Time],2) || ...
+            any([tempInfo.FrameInfo.Time] ~= [FrameInfo_His.Time]);
+
+
             %load histone movie only if it hasn't been loaded or if we've switched
             %Prefixes (determined by num frames)
-            if isempty(hisMat) || ~isequal( size(hisMat, 3), this.nFrames) ||...
-                    isempty(FrameInfo_His) ||...
-                    any([tempInfo.FrameInfo.Time] ~= [FrameInfo_His.Time])
+            if isempty(hisMat) || isNewMovie
                 
                 FrameInfo_His = tempInfo.FrameInfo; 
                 
@@ -395,6 +395,7 @@ classdef LiveExperiment
             end
             out = hisMat;
             
+            %let's reduce the memory footprint of the movie if we can
             if max(hisMat(:)) < 255
                 hisMat = uint8(hisMat);
             end
