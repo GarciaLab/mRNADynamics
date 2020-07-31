@@ -1,5 +1,5 @@
 function [Particles] = track01ParticleProximity(...
-    FrameInfo, Spots, schnitzcells, NCh, PixelSize, SearchRadiusMicrons, UseHistone, retrack, displayFigures)
+    FrameInfo, Spots, schnitzcells, Prefix, PixelSize, MaxSearchRadiusMicrons, UseHistone, retrack, displayFigures)
   
   %This function is the first stage of tracking performed by the 
   %performTracking subfunction. It initializes temporary data structures
@@ -9,17 +9,36 @@ function [Particles] = track01ParticleProximity(...
   %NOTE: currently not supporting a retracking option or displayFigures option.
   % Need to think about this
   
+  % get number of channels
+  NCh = length(Spots);
+  
+  % get experiment type
+  liveExperiment = LiveExperiment(Prefix);
+  ExperimentType = liveExperiment.experimentType;
   % Extract Time Vector
   TimeVec = [FrameInfo.Time];
   % Extract vector indicating nuclear cleavage cycle for each frame
   ncVec = [FrameInfo.nc]; 
-  ncVec(1) = 14; % NL for some reason the first frame is registering as nc13
   SlidingWindowSize = 2; % size of window used for time averaging of nuclear movements
   %Initialize Particles for the number of spot channels we have
   Particles = cell(1,NCh);
   
+  if ismember(ExperimentType,{'inputoutput'}) && NCh == 2    
+    % Figure out which channel is the cluster channel
+    spotsChannels = liveExperiment.spotChannels;
+    inputChannels = liveExperiment.inputChannels;
+    matchPercent(spotsChannels == intersect(inputChannels, spotsChannels)) = 50;
+    matchPercent(spotsChannels ~= intersect(inputChannels, spotsChannels)) = 75;    
+  else  % No clusters:
+    matchPercent(1:NCh) = 75;
+  end
+  
   for Channel = 1:NCh    
     f = waitbar(0,['Stitching particle tracks (channel ' num2str(Channel) ')']);
+    % calculate jump dist threshold
+    SearchRadiusMicrons = estimateSearchRadius(Spots,ncVec,MaxSearchRadiusMicrons,PixelSize,matchPercent,Channel);
+    SearchRadiusMicrons = max([0.5,SearchRadiusMicrons]); % should be at least 0.5um
+    
     for CurrentFrame = 1:length(Spots{Channel})
       waitbar(CurrentFrame/length(Spots{Channel}),f);
       % Get the positions of ALL spots (approved and disapproved)
@@ -86,9 +105,8 @@ function [Particles] = track01ParticleProximity(...
         NewParticleFlag = true(size(NewSpotsX));
         
         if ~isempty(ExtantParticles) && ~NewNCFlag
-          % Generate maximum allowed jump radius between spots
-          dT = TimeVec(CurrentFrame)-TimeVec(CurrentFrame-1);
-          SearchRadius = SearchRadiusMicrons * sqrt(dT);
+          % Generate maximum allowed jump radius between spots          
+          SearchRadius = SearchRadiusMicrons;
           
           % if we have nulceus tracking info, calculate average
           % frame-over-frame shift
