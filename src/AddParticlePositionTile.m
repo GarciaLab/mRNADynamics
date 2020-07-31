@@ -5,12 +5,27 @@ function [Particles, SpotFilter] = AddParticlePositionTile(Prefix, varargin)
 %Default set of variables to save
 
 % DESCRIPTION
-% Locates particles from a zoomed-in movie within full embryo images created 
+% Aligns movie with full embryo image created 
 % by stitching tiled images using spatial cross-correlation.
 %
 % ARGUMENTS
 % Prefix: Prefix of the data set to analyze
-%
+% 
+% OPTIONS
+% 'SkipAlignment': If you want to skip alignment
+% 'ManualAlignment': If you want to manually align the zoomed in and full
+%                       embyro images
+% 'NoAP': Just adds X and Y information
+% 'SelectChannel': Prompts user to select the channel to use for alignment
+% 'optionalResults': 
+% 'UseFullEmbryoBoundaries': restrict zoomed in movie to be completely
+% contained by the boundaries of the full embryo image.
+% 'ImposeEmbryoMask': restruct zoomed in movie to be completely contained
+% within the boundaries of the embryo with some tolerance. 
+% 'embryo_mask_tolerance': number between 0 and 1 which corresponds to the
+% percentage of the movie that must be contained within the embryo when
+% using the 'ImposeEmbryoMask' flag
+
 
 
 %% 
@@ -18,42 +33,42 @@ function [Particles, SpotFilter] = AddParticlePositionTile(Prefix, varargin)
 
 %Default set of variables to save
 saveVars={'coordA','coordP','coordAZoom','coordPZoom'};
+ 
 
-
-SkipAlignment=false;
-ManualAlignment=false;
 NoAP=false;
 SelectChannel=0;
 InvertHis=false;
 optionalResults = '';
-yToManualAlignmentPrompt = false;
-correctDV = false;
+UseFullEmbryoBoundaries = false;
+ImposeEmbryoMask = false; % Note that this won't work if a lot of zoomImage is outside of embryo. Use embryo_mask_tolerance to adjust how rigid this feature is.
+embryo_mask_tolerance = .9; %Change value using varargin
+ImposeManualBounds = false;
 
 close all
 %% 
 
-
 for i=1:length(varargin)
     switch varargin{i}
-        case {'SkipAlignment'}
-            disp('Skipping alignment step')
-            SkipAlignment=1;
-        case {'ManualAlignment'}
-            ManualAlignment=1;
         case {'NoAP'}
             NoAP=1;
         case {'SelectChannel'}
             SelectChannel=1;
         case {'optionalResults'}
             optionalResults = varargin{i+1};
-        case {'yToManualAlignmentPrompt'}
-            yToManualAlignmentPrompt = 1;
-        case {'correctDV'}
-            correctDV = true;
+        case {'UseFullEmbryoBoundaries'}
+            UseFullEmbryoBoundaries = true;
+        case {'ImposeEmbryoMask'}
+            ImposeEmbryoMask = true;
+        case {'ImposeManualBounds'}
+            ImposeManualBounds = true;
+        case {'embryo_mask_tolerance'}
+            embryo_mask_tolerance = varargin{i+1};
     end
 end
-    %% 
-    
+%% 
+
+
+
 %Get the relevant folders for this data set
 [RawDynamicsPath, ~, DefaultDropboxFolder, DropboxFolder, ~, PreProcPath,...
     configValues,...
@@ -62,6 +77,8 @@ end
 [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoopEnd, APResolution,...
     Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
     nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
+
+%% 
 
 if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
     load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'])
@@ -89,9 +106,7 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
                 end
             end
         end
-        if isfield(Particles{ChN},'DVpos')
-            warning('Particles.mat already has DV positions stored. They will be rewritten')
-        end
+
         if isfield(Particles{ChN},'APpos')
             warning('Particles.mat already has AP positions stored. They will be rewritten')
         end
@@ -101,6 +116,7 @@ else
     warning('No Particles.mat found. Just updating APDetection.mat')
 end
 
+%% 
 
 %See if we had any lineage/nuclear information
 hisDir=dir([PreProcPath,filesep,Prefix,filesep,'*-His_*']);
@@ -116,169 +132,187 @@ end
 rawPrefixPath = [RawDynamicsPath,filesep,projectDate,filesep,EmbryoName,filesep];
 fullEmbryoPath = [rawPrefixPath, 'FullEmbryo', filesep];
 
+%% 
 
-% From now, we will use a better way to define the channel for
-% alignment (used for cross-correlation).
-% Find channels with ":Nuclear"
-ChannelToLoadTemp=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
-        
-% Define the Channel to load, for calculating the cross-correlation
-% In future, we can think about combining multiple channels for
-% calculating the cross-correlation to get more accurate estimates.
-% For now, let's pick only one channel for this. For multiple
-% channels, let's first pick the first channel. This can be fine in
-% most cases, since we normally use lower wavelength for sth we
-% care more, or we get better signal from those.
-if sum(ChannelToLoadTemp) && sum(ChannelToLoadTemp)==1
-    ChannelToLoad=find(ChannelToLoadTemp);
-elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>=2
-    ChannelToLoad=find(ChannelToLoadTemp);
-    ChannelToLoad = ChannelToLoad(1);
-else
-    error('No histone channel found. Was it defined in MovieDatabase as :Nuclear or :InvertedNuclear?')
+
+if ~strcmp(FileMode,'LIFExport')
+    msg = 'Non_LIFExport filetypes not supported.';
+    error(msg)
 end
+    
 
-%Get information about all images. This depends on the microscope used.
-
-
-SurfName=[];
-
-%Figure out the different channels
-%NuclearChannel=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
-
-
-if any(contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true))
+if ~NoAP
+    %If you want to select which channel to load as alignment.
     if SelectChannel
-        HisChannel = ChannelToLoad;
-        InvertHis=0;
-    elseif ~any(contains([Channel1,Channel2,Channel3],'inverted','IgnoreCase',true))
-        HisChannel = ChannelToLoad;
-        InvertHis=0;
-    elseif any(contains([Channel1,Channel2,Channel3],'inverted','IgnoreCase',true))
-        HisChannel= ChannelToLoad;
-        InvertHis=1;
+        list = string({Channel1,Channel2,Channel3});
+        [indx,tf] = listdlg('PromptString','Select the channel to use for alignment:','ListString',list);
+        ChannelToLoad = indx;
     else
-        error('You should check the MovieDatabase.csv to see whether ":Nuclear" or "invertedNuclear" is plugged into your channels.')
+        % From now, we will use a better way to define the channel for
+        % alignment (used for cross-correlation).
+        % Find channels with ":Nuclear"
+        ChannelToLoadTemp=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
+        
+        % Define the Channel to load, for calculating the cross-correlation
+        % In future, we can think about combining multiple channels for
+        % calculating the cross-correlation to get more accurate estimates.
+        % For now, let's pick only one channel for this. For multiple
+        % channels, let's first pick the first channel. This can be fine in
+        % most cases, since we normally use lower wavelength for sth we
+        % care more, or we get better signal from those.
+        if sum(ChannelToLoadTemp) && sum(ChannelToLoadTemp)==1
+            ChannelToLoad=find(ChannelToLoadTemp);
+        elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>=2
+            ChannelToLoad=find(ChannelToLoadTemp);
+            ChannelToLoad = ChannelToLoad(1);
+        else
+            error('No histone channel found. Was it defined in MovieDatabase as :Nuclear or :InvertedNuclear?')
+        end
+        
     end
-end
-
-%Find the zoomed movie pixel size
-D=dir([rawPrefixPath,'*.',FileMode(1:3)]);
-
-%Load only the metadata from the zoomed images
-MetaReader=bfGetReader([rawPrefixPath,D(end).name]);
-MetaZoom=MetaReader.getMetadataStore();
-try
-    PixelSizeZoom=str2double(MetaZoom.getPixelsPhysicalSizeX(0).value);
-catch
-    PixelSizeZoom=str2double(MetaZoom.getPixelsPhysicalSizeX(0));
-end
-
-%Find the full embryo pixel size and load the image
-D=dir([fullEmbryoPath,filesep,'*surf*.',FileMode(1:3)]);
-
-ImageTemp=bfopen([fullEmbryoPath,filesep,D(end).name]);
-MetaFullEmbryo= ImageTemp{:, 4};
-try
-    PixelSizeFullEmbryo=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0).value);
-catch
-    PixelSizeFullEmbryo=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
-end
-
-%Check that the surface and midsaggital images have the same zoom
-midDirectory=dir([fullEmbryoPath,'*mid*.',FileMode(1:3)]);
-ImageTempMid=bfopen([fullEmbryoPath,midDirectory(end).name]);
-MetaFullEmbryoMid= ImageTempMid{:, 4};
-
-%This if for BioFormats backwards compatibility
-try
-    PixelSizeFullEmbryoMid=str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0).value);
-catch
-    PixelSizeFullEmbryoMid=str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0));
-end
+    
+    %Get information about all images. This depends on the microscope used.
+    
 
 
+    SurfName=[];
 
-%In principle, we would be comparing PixelSizeFullEmbryo==PixelSizeFullEmbryoMid
-%However, some issues of machine precision made this not work
-%sometimes.
-if abs(PixelSizeFullEmbryo/PixelSizeFullEmbryoMid-1)>0.01
-    error('The surface and midsaggital images were not taken with the same pixel size')
-end
-%% Load Full Embryo Image 
-stitchingDataFolder = [DropboxFolder,filesep,Prefix,filesep,'FullEmbryoStitching'];
+    %Figure out the different channels
+    %NuclearChannel=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
 
 
+    if any(contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true))
+        if SelectChannel
+            HisChannel = ChannelToLoad;
+            InvertHis=0;
+        elseif ~any(contains([Channel1,Channel2,Channel3],'inverted','IgnoreCase',true))
+            HisChannel = ChannelToLoad;
+            InvertHis=0;
+        elseif any(contains([Channel1,Channel2,Channel3],'inverted','IgnoreCase',true))
+            HisChannel= ChannelToLoad;
+            InvertHis=1;
+        else
+            error('You should check the MovieDatabase.csv to see whether ":Nuclear" or "invertedNuclear" is plugged into your channels.')
+        end
+    end
 
-SurfImage = imread([stitchingDataFolder, filesep, 'SurfTileStitch_MaxPadded.tif']);
-%% 
+    %Find the zoomed movie pixel size
+    D=dir([rawPrefixPath,'*.',FileMode(1:3)]);
 
 
-%How many channels and slices do we have?
-% NChannelsMeta=MetaFullEmbryo.getChannelCount(0);
-% NSlices=str2double(MetaFullEmbryo.getPixelsSizeZ(0));
-% clear MaxTemp
+    %Load only the metadata from the zoomed images
+    MetaReader=bfGetReader([rawPrefixPath,D(end).name]);
+    MetaZoom=MetaReader.getMetadataStore();
+    try
+        PixelSizeZoom=str2double(MetaZoom.getPixelsPhysicalSizeX(0).value);
+    catch
+        PixelSizeZoom=str2double(MetaZoom.getPixelsPhysicalSizeX(0));
+    end
+
+    %Find the full embryo pixel size and load the image
+    D=dir([fullEmbryoPath,filesep,'*surf*.',FileMode(1:3)]);
+
+    ImageTemp=bfopen([fullEmbryoPath,filesep,D(end).name]);
+    MetaFullEmbryo= ImageTemp{:, 4};
+    try
+        PixelSizeFullEmbryoSurf=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0).value);
+    catch
+        PixelSizeFullEmbryoSurf=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0));
+    end
+
+    %Check that the surface and midsaggital images have the same zoom
+    midDirectory=dir([fullEmbryoPath,filesep,'*mid*.',FileMode(1:3)]);
+
+    ImageTempMid=bfopen([fullEmbryoPath,filesep,midDirectory(end).name]);
+    MetaFullEmbryoMid= ImageTempMid{:, 4};
+
+    %This if for BioFormats backwards compatibility
+    % Note 7/27/20: This is returning NaN so the check below doesn't
+    % actually do anything. 
+    if ~isempty(str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0)))
+        PixelSizeFullEmbryoMid=str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0).value);
+    else
+        PixelSizeFullEmbryoMid=str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0));
+    end
+
+
+    %In principle, we would be comparing PixelSizeFullEmbryo==PixelSizeFullEmbryoMid
+    %However, some issues of machine precision made this not work
+    %sometimes.
+    if abs(PixelSizeFullEmbryoSurf/PixelSizeFullEmbryoMid-1)>0.01
+        error('The surface and midsaggital images were not taken with the same pixel size')
+    end
+
+
+    %How many channels and slices do we have?
+    NChannelsMeta=MetaFullEmbryo.getChannelCount(0);
+    NSlices=str2double(MetaFullEmbryo.getPixelsSizeZ(0));
+    clear MaxTemp
+
+
+
+    %MidImage =imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
+    SurfImage = imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoSurf.tif']);
+
 
     %%
-%Rotates the full embryo image to match the rotation of the zoomed
-%time series
-zoom_angle = 0;
-full_embryo_angle = 0;
+    %Rotates the full embryo image to match the rotation of the zoomed
+    %time series
+    zoom_angle = 0;
+    full_embryo_angle = 0;
 
-if isfolder([rawPrefixPath, 'MetaData'])
-    xml_file_path = dir([rawPrefixPath,'MetaData', filesep, '*.xml']);
-    xml_file = xml_file_path(1).name;
-    xDoc = searchXML([rawPrefixPath,'MetaData', filesep, xml_file]);
-    zoom_angle = str2double(evalin('base','rot'));
-else
-    warning('No time series metadata found.')
-end
-if isfolder([fullEmbryoPath,'MetaData'])
-    xml_file_path2 = dir([fullEmbryoPath,'MetaData', filesep,'*Surf*.xml']);
-    xml_file2 = xml_file_path2(1).name;
-    xDoc2 = searchXML([fullEmbryoPath,'MetaData', filesep, xml_file2]);
-    full_embryo_angle = str2double(evalin('base','rot'));
-else
-    warning('No full embryo metadata found.')
-end
 
-evalin('base','clear rot')
+    if isfolder([rawPrefixPath, 'MetaData'])
+        xml_file_path = dir([rawPrefixPath,'MetaData', filesep, '*.xml']);
+        xml_file = xml_file_path(1).name;
+        xDoc = searchXML([rawPrefixPath,'MetaData', filesep, xml_file]);
+        zoom_angle = str2double(evalin('base','rot'));
+    else
+        warning('No time series metadata found.')
+    end
+    if isfolder([fullEmbryoPath,'MetaData'])
+        xml_file_path2 = dir([fullEmbryoPath,'MetaData', filesep,'*Surf*.xml']);
+        xml_file2 = xml_file_path2(1).name;
+        xDoc2 = searchXML([fullEmbryoPath,'MetaData', filesep, xml_file2]);
+        full_embryo_angle = str2double(evalin('base','rot'));
+    else
+        warning('No full embryo metadata found.')
+    end
+
+    evalin('base','clear rot')
 
     %%
-SurfImage = imrotate(SurfImage, -zoom_angle + full_embryo_angle);
-if ~exist([DropboxFolder,filesep,Prefix, filesep, 'DV'], 'dir')
-    mkdir([DropboxFolder,filesep,Prefix, filesep, 'DV']);
-end
-maxSurfSavePath = [DropboxFolder,filesep,Prefix, filesep, 'DV', filesep, 'surf_max.tif'];
-imwrite(SurfImage,maxSurfSavePath);
+    SurfImage = imrotate(SurfImage, -zoom_angle + full_embryo_angle);
+     
+    maxSurfSavePath = [DropboxFolder,filesep,Prefix, filesep, 'DV', filesep, 'surf_max.tif'];
+    imwrite(SurfImage,maxSurfSavePath);
 
+    % This is the original z stack full embryo surface image file from bfopen 
+    clear ImageTemp
 
+    %Zoom factor
+    MovieZoom=PixelSizeFullEmbryoSurf(1)/PixelSizeZoom(1);
+    SurfZoom=1;     %We'll call the zoom of the full embryo image 1
 
-%Zoom factor
-MovieZoom=PixelSizeFullEmbryo(1)/PixelSizeZoom(1);
-SurfZoom=1;     %We'll call the zoom of the full embryo image 1
+    %Get the size of the zoom image
+    Columns = str2double(MetaZoom.getPixelsSizeX(0));
+    Rows = str2double(MetaZoom.getPixelsSizeY(0));
+    surf_size = size(SurfImage);
+    SurfColumns= surf_size(2);
+    SurfRows=surf_size(1);
+    ZoomRatio = MovieZoom / SurfZoom;
 
-%Get the size of the zoom image
-Columns = str2double(MetaZoom.getPixelsSizeX(0));
-Rows = str2double(MetaZoom.getPixelsSizeY(0));
-surf_size = size(SurfImage);
-SurfColumns= surf_size(2);
-SurfRows=surf_size(1);
-ZoomRatio = MovieZoom / SurfZoom;
-
-
-
-
-%Get the information about the AP axis as well as the image shifts
-%used for the stitching of the two halves of the embryo
-load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
-
-
-%Make a folder to store the images
-mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
-
-%% 
-
+    
+    
+    %Get the information about the AP axis as well as the image shifts
+    %used for the stitching of the two halves of the embryo
+    load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+    
+    
+    %Make a folder to store the images
+    mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
+    
+    
     
     % Load the last frame of the zoomed-in image, for calculating the
     % cross-correlation. This part now only requires the same
@@ -296,61 +330,97 @@ mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
     if ~isempty(DHis)
         ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis(end-1).name]);
     else
-        disp('Did you run ExportDataForLivemRNA again, after editing the MovieDatabase.csv with ":Nuclear" ("invertedNuclear")?')
-        % This might be the case, for instance, if you're just trying
-        % to find AP information about an image without using FISH
-        % code. In that case, just extract the nuclei from the last
-        % raw image.
-        DGFP = dir([rawPrefixPath, '*.tif']);
-        ImageInfo = imfinfo([rawPrefixPath, DGFP(end).name]);
-        NumFramesAndSlices = length(ImageInfo)/2;
-        RawImage3M = NaN(Rows, Columns, NumFramesAndSlices);
-        for lImageIndex = 1:NumFramesAndSlices
-            RawImage3M(:, :, lImageIndex) = imread([rawPrefixPath,DGFP(end).name],'Index', 2*(lImageIndex-1) + ChannelToLoad);
-        end
-        ZoomImage = max(RawImage3M, [], 3) / 256;
+        error('Did you run ExportDataForLivemRNA again, after editing the MovieDatabase.csv with ":Nuclear" ("invertedNuclear")?')
     end
     
 
     
     %Do a correlation between the zoomed in and zoomed out surface images
     %to figure out the shift.
-    FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
     
-    if ~SkipAlignment && histoneChannelPresent
+    % This is the mid-saggital image
+    FullEmbryo=imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
+    %% 
+    
+    if histoneChannelPresent
         
         ShiftColumn=0;
         ShiftRow=0;
         NucMaskZoomIn = false(size(ZoomImage));
         NucMaskZoomOut = false(size(SurfImage));
         
-        if ZoomRatio < 1
+        
+        if ZoomRatio <= 1
             ZoomImageResized = imresize(ZoomImage, 1/ZoomRatio);
             im1 = ZoomImageResized;
             im2 = SurfImage;
             C = normxcorr2(im1, im2);
+            [CRows,CColumns]=size(C);
+            [RowsSurf,ColumnsSurf]=size(SurfImage);
+            [RowsZoomResized,ColumnsZoomResized]=size(ZoomImageResized);
+            %             end
+            if UseFullEmbryoBoundaries
+                row_subset = RowsZoomResized:(CRows-RowsZoomResized);
+                col_subset = ColumnsZoomResized:(CColumns-ColumnsZoomResized);
+                Csub = C(row_subset, col_subset);
+                [Max2sub,MaxRowsSub]=max(Csub);
+                [~,MaxColumnSub]=max(Max2sub);
+                MaxRowSub=MaxRowsSub(MaxColumnSub);
+            end
+            if ImposeEmbryoMask
+                load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo')
+                % change to be flexible nucleus diameter 
+                nucleusDiameter = getDefaultParameters(FrameInfo,['d14']);
+                im2_padded = zeros(SurfRows+10-rem(SurfRows, 10), SurfColumns+10-rem(SurfColumns, 10), 'uint16');
+                im2_padded(1:SurfRows, 1:SurfColumns) = im2;
+                I_resize = imresize(im2_padded, .1);
+                f_sigma_resize = round(nucleusDiameter /( PixelSizeFullEmbryoSurf*10));
+                I_blurred_resize = imfilter(I_resize,...
+                     fspecial('gaussian',2*f_sigma_resize,f_sigma_resize),'symmetric','conv');
+                embryoMask_resized = imbinarize(I_blurred_resize);
+
+                SubRowSize = (RowsZoomResized-rem(RowsZoomResized, 10))/10;
+                SubColumnSize = (ColumnsZoomResized-rem(ColumnsZoomResized, 10))/10;
+                temp_mask = zeros(size(embryoMask_resized, 1)-SubRowSize+1, size(embryoMask_resized, 2)-SubColumnSize+1);
+
+                ZoomImageSize = SubRowSize*SubColumnSize;
+                for r=1:size(temp_mask, 1)
+                    for c=1:size(temp_mask, 2)
+                        ZoomMask = zeros(size(embryoMask_resized));
+                        ZoomMask(r:(r+SubRowSize-1), c:(c+SubColumnSize-1)) = 1;
+                        if sum(sum(and(ZoomMask,embryoMask_resized))) >= embryo_mask_tolerance*ZoomImageSize
+                            temp_mask(r, c) = 1;
+                        end
+
+                    end
+                end
+                CMask_sub = imresize(temp_mask, 10);
+                CMask_sub(CMask_sub > 0) = 1;
+                CMask_sub_ch = bwconvhull(CMask_sub);
+                CMask = zeros(size(C));
+                CMask(RowsZoomResized:(RowsZoomResized+size(CMask_sub_ch, 1)-1),ColumnsZoomResized:(ColumnsZoomResized+size(CMask_sub_ch, 2)-1))=CMask_sub_ch;
+                C(CMask == 0) = min(min(C));
+            end
+            
+            
             [Max2,MaxRows]=max(C);
             [~,MaxColumn]=max(Max2);
             MaxRow=MaxRows(MaxColumn);
-            [CRows,CColumns]=size(C);
-            ShiftRow=round((MaxRow-(CRows/2+1)));
-            ShiftColumn=round((MaxColumn-(CColumns/2+1)));
+            
+            
+            %This shift kept in the zoom in coordinates (full embryo image coordinates).
+            %If we want to translate to the zoomed out coordinates we need to
+            %divide (I think!) again by ZoomRatio.
+            ShiftRow=round((MaxRow-(CRows-1)/2));
+            ShiftColumn=round((MaxColumn-(CColumns-1)/2));
             
             %How well did we do with the alignment?
-            [RowsSurf,ColumnsSurf]=size(SurfImage);
-            [RowsZoomResized,ColumnsZoomResized]=size(ZoomImageResized);
-                        %If we can, we'll crop the surface image to center the overlay
+            
+            
+            
+            %If we can, we'll crop the surface image to center the overlay
             %on the area of acquisition. If not, we'll just show both images
             %without cropping.
-            
-            [ypeak,xpeak] = find(C==max(C(:)));
-
-            yoffSet = ypeak-size(im1,1);
-            xoffSet = xpeak-size(im1,2);
-
-            imshow(im2)
-            drawrectangle(gca,'Position',[xoffSet,yoffSet,size(im1,2),size(im1,1)], ...
-                'FaceAlpha',0);
             
             if ((round(RowsSurf/2-RowsZoomResized/2+ShiftRow))>0)&...
                     (round(RowsSurf/2+RowsZoomResized/2-1+ShiftRow)<=RowsSurf)&...
@@ -366,22 +436,27 @@ mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
                 RowsSurfRange=1:RowsSurf;
                 ColumnsSurfRange=1:ColumnsSurf;
             end
+            
+            
+            %Make an overlay of the zoomed in and zoomed out real
+            %images as well as of a quickly segmented nuclear mask. 
+            
             try
                 %Real image overlay
                 %Crop the zoomed out image to match the zoomed in one
-                SurfImageResize=...
+                SurfImageCrop=...
                     SurfImage(RowsSurfRange,ColumnsSurfRange);
-                ImOverlay=cat(3,mat2gray(SurfImageResize),...
-                    +mat2gray(ZoomImageResized),zeros(size(SurfImageResize)));
+                ImOverlay=cat(3,mat2gray(SurfImageCrop),...
+                    +mat2gray(ZoomImageResized),zeros(size(SurfImageCrop)));
                 
+                load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo')
+                nucleusDiameter = getDefaultParameters(FrameInfo,['d14']);
+                NucMaskPixelSize = min([PixelSizeFullEmbryoMid, PixelSizeZoom]);
                 %Nuclear mask overlay
-                NucMaskZoomOut= GetNuclearMask(SurfImage,2.5,0);
-                NucMaskZoomOutResized=imresize(NucMaskZoomOut, ZoomRatio);
-                NucMaskZoomOutResizedCropped=...
-                    NucMaskZoomOutResized(RowsResizedRange,ColumnsResizedRange);
-                NucMaskZoomIn=GetNuclearMask(ZoomImage,8,2);
-                ImOverlayMask=cat(3,mat2gray(NucMaskZoomOutResizedCropped),...
-                    +mat2gray(NucMaskZoomIn),zeros(size(NucMaskZoomOutResizedCropped)));
+                NucMaskSurf= GetNuclearMaskTile(SurfImageCrop,nucleusDiameter,NucMaskPixelSize, ImposeEmbryoMask);
+                NucMaskZoomResized=GetNuclearMaskTile(ZoomImageResized,nucleusDiameter, NucMaskPixelSize,ImposeEmbryoMask);
+                ImOverlayMask=cat(3,mat2gray(NucMaskSurf),...
+                    +mat2gray(NucMaskZoomResized),zeros(size(NucMaskSurf)));
 
                 alOvFig = figure(1);
                 imOv = subplot(2,1,1);
@@ -398,20 +473,17 @@ mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
                 contAxes = axes(contFig);
                 %HG: Note that I changed the ranges here by two pixels at
                 %least.
-                lX = uint16((CRows+1)/2-RowsZoom+1);
-                uX = uint16((CRows-1)/2+RowsZoom);
-                lY = uint16((CColumns+1)/2-ColumnsZoom+1);
-                uY = uint16((CColumns-1)/2+ColumnsZoom);
+                lX = uint16((CRows+1)/2-RowsZoomResized+1);
+                uX = uint16((CRows-1)/2+RowsZoomResized);
+                lY = uint16((CColumns+1)/2-ColumnsZoomResized+1);
+                uY = uint16((CColumns-1)/2+ColumnsZoomResized);
                 
                 contourf(contAxes,imresize(abs(C(lX:uX,lY:uY)),.5));
                 saveas(contFig, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentCorrelation.tif']);
             catch
-                warning('Could not generate correlation image. Switching to manual alignment')
-                ManualAlignment=true;
+                warning('Could not generate correlation image.')
             end
-            
-            
-        elseif ZoomRatio > 1 && ZoomRation < 24  %ZoomRatio > 1 && ZoomRatio < 24. AR 12/4/17- where did this number come from
+        elseif ZoomRatio < 24  %ZoomRatio > 1 && ZoomRatio < 24. AR 12/4/17- where did this number come from
             
             %Enlarge the zoomed out image so we can do the cross-correlation
             SurfImageResized=imresize(SurfImage, ZoomRatio);
@@ -419,7 +491,6 @@ mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
             %Calculate the correlation matrix and find the maximum
             im1 = ZoomImage;
             im2 = SurfImageResized;
-            
             
 %             if InvertHis
 %                 im1 = imcomplement(im1);
@@ -429,6 +500,8 @@ mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
             %             try
             %                 C = gather(normxcorr2(gpuArray(im1), gpuArray(im2)));
             %             catch
+            
+            % Smaller image is first variable
             C = normxcorr2(im1, im2);
             %             end
             
@@ -441,34 +514,14 @@ mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
             %This shift is now converted to the zoom out distances. If we
             %want to translate to the zoomed in coordinates we need to
             %multiply again by ZoomRatio.
-            ShiftRow=round((MaxRow-(CRows/2+1))/ZoomRatio);
-            ShiftColumn=round((MaxColumn-(CColumns/2+1))/ZoomRatio);
+            ShiftRow=round((MaxRow-(CRows-1)/2)/ZoomRatio);
+            ShiftColumn=round((MaxColumn-(CColumns-1)/2)/ZoomRatio);
             
             %How well did we do with the alignment?
             [RowsResized,ColumnsResized]=size(SurfImageResized);
             [RowsZoom,ColumnsZoom]=size(ZoomImage);
             
-            %If manual alignment was done before then load the results
-            if exist('ManualAlignmentDone', 'var')
-                if ManualAlignmentDone
-                    disp('Manual alignment results saved.')
-                    if ~yToManualAlignmentPrompt
-                        Answer=input('Would you like to use them (y/n)? ','s');
-                    else
-                        Answer = 'y';
-                    end
-                    if strcmpi(Answer,'y')
-                        load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'ShiftRow','ShiftColumn')
-                    elseif strcmpi(Answer,'n')
-                        disp('Deleting manual alignment results')
-                        clear ManualAlignmentDone
-                    else
-                        msgbox('Error: Answer not recognized');
-                        error('Answer not recognized')
-                    end
-                end
-            end
-            
+   
             %If we can, we'll crop the surface image to center the overlay
             %on the area of acquisition. If not, we'll just show both images
             %without cropping.
@@ -496,17 +549,16 @@ mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
             try
                 %Real image overlay
                 %Crop the zoomed out image to match the zoomed in one
-                SurfImageResizeZoom=...
+                SurfImageResizeCrop=...
                     SurfImageResized(RowsResizedRange,ColumnsResizedRange);
                 ImOverlay=cat(3,mat2gray(SurfImageResizeZoom),...
                     +mat2gray(ZoomImage),zeros(size(SurfImageResizeZoom)));
-                
+                load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo')
+                nucleusDiameter = getDefaultParameters(FrameInfo,['d14']);
+                NucMaskPixelSize = min([PixelSizeFullEmbryoMid, PixelSizeZoom]);
                 %Nuclear mask overlay
-                NucMaskZoomOut= GetNuclearMask(SurfImage,2.5,0);
-                NucMaskZoomOutResized=imresize(NucMaskZoomOut, ZoomRatio);
-                NucMaskZoomOutResizedCropped=...
-                    NucMaskZoomOutResized(RowsResizedRange,ColumnsResizedRange);
-                NucMaskZoomIn=GetNuclearMask(ZoomImage,8,2);
+                NucMaskSurfResized= GetNuclearMaskTile(SurfImageResizeCrop,nucleusDiameter,NucMaskPixelSize, ImposeEmbryoMask);
+                NucMaskZoom=GetNuclearMaskTile(ZoomImage,nucleusDiameter, NucMaskPixelSize,ImposeEmbryoMask);
                 ImOverlayMask=cat(3,mat2gray(NucMaskZoomOutResizedCropped),...
                     +mat2gray(NucMaskZoomIn),zeros(size(NucMaskZoomOutResizedCropped)));
 
@@ -533,29 +585,21 @@ mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
                 contourf(contAxes,imresize(abs(C(lX:uX,lY:uY)),.5));
                 saveas(contFig, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentCorrelation.tif']);
             catch
-                warning('Could not generate correlation image. Switching to manual alignment')
-                ManualAlignment=true;
+                warning('Could not generate correlation image.')
             end
             
         else
-            warning('Not able to do the cross correlation. Switching to manual alignment mode.')     
-            ManualAlignment=true;
+            warning('Not able to do the cross correlation.')     
         end
         
         
-        %See if we need the manual alignment
-        if ManualAlignment
-            %See if we need to load the previous manual alignment results
-            [ShiftColumn,ShiftRow]=ManualAPCorrection(SurfImage,ZoomImage,C,ZoomRatio,ShiftRow,ShiftColumn,...
-                FullEmbryo, ZoomRatio, SurfRows,Rows, Columns, coordA, coordP, SurfColumns);
-            ManualAlignmentDone = true;
-        end
+
         
     else
         warning('Not able to do the cross correlation. Assuming no shift between surface-level and movie-level images.')
     end
     
-    
+    % Need to figure out unit conversion here 
     ImageCenter=[SurfRows/2,SurfColumns/2];
     
     %This is for the acquisition/zoom image
@@ -565,11 +609,7 @@ mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
         ImageCenter(2)+Columns/ZoomRatio/2+ShiftColumn];
     coordAZoom=(coordA-[TopLeft(2),TopLeft(1)])*ZoomRatio;
 	coordPZoom=(coordP-[TopLeft(2),TopLeft(1)])*ZoomRatio;
-    if exist('coordD', 'var')
-         coordDZoom=(coordD-[TopLeft(2),TopLeft(1)])*ZoomRatio;
-        coordVZoom=(coordV-[TopLeft(2),TopLeft(1)])*ZoomRatio;
-    end
-    
+
     fullFigure = figure(7);
     fullAxes = axes(fullFigure);
     imshow(imadjust(mat2gray(FullEmbryo)),'DisplayRange',[],'InitialMagnification',100,'Parent', fullAxes)
@@ -601,12 +641,8 @@ mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
     %Angle between the x-axis and the AP-axis
     APAngle=atan2((coordPZoom(2)-coordAZoom(2)),(coordPZoom(1)-coordAZoom(1)));
     APLength = norm(coordAZoom-coordPZoom);
-        if exist('coordD', 'var')
-            DVLength = norm(coordDZoom-coordVZoom);
-        else
-            DVLength = APLength/2; %rough estimate but surprisingly accurate
-        end
-    saveVars = [saveVars, 'APLength', 'DVLength'];
+
+    saveVars = [saveVars, 'APLength'];
 
     APPosImage=zeros(size(ZoomImage));
     [Rows,Columns]=size(ZoomImage);
@@ -643,26 +679,9 @@ mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
     plot(zoomOverlayAxes,[coordAZoom(1)+1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'--r')
     plot(zoomOverlayAxes,[coordAZoom(1)-1,coordPZoom(1)],[coordAZoom(2),coordPZoom(2)],'-.g')
     hold(zoomOverlayAxes,'off')
-    
-    DV_correction = 0;
-    
-    if exist([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'Classified_image.tif'], 'file')
-        correctDV = 1;
-    end
-    if correctDV
-        if exist([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'], 'file')
-            load([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'],'DV_correction');
-        else
-            try
-                DV_correction = FindDVShift_full(Prefix);
-            catch
-                disp('failed to apply dv correction');
-            end
-            save([DropboxFolder,filesep,Prefix,filesep,'DV',filesep,'DV_correction.mat'],'DV_correction');
-        end
-            saveVars = [saveVars, 'DV_correction'];
-    end
-    DVLength = APLength/2;
+
+
+
     if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
         for ChN=1:NChannels
             for i=1:length(Particles{ChN})
@@ -676,18 +695,6 @@ mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
                 APPositions=Distances.*cos(Angles-APAngle);
                 Particles{ChN}(i).APpos=APPositions/APLength;
                 
-                %Determine the distance perpendicular to the AP axis. This is a
-                %proxy for a DV axis.
-                DVPositions = Distances.*sin(Angles-APAngle); %units of pixels on the surface of blastoderm. 
-                if correctDV
-                    %ventral midline is dv_correction pixels away from the
-                    %AP axis. 
-                    Particles{ChN}(i).DVpos=abs(DVPositions-DV_correction)/DVLength;
-                    %so DVpos is pixels away from the ventral midline
-                    %across the blastoderm.
-                else
-                    Particles{ChN}(i).DVpos=DVPositions/DVLength;
-                end
             end
         end
     end
@@ -716,6 +723,7 @@ mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
         end
     end
     
+end
 
 
 
@@ -731,9 +739,5 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
     save([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'],'Particles','SpotFilter');
 end
 
-if correctDV
-    CheckDivisionTimes(Prefix, 'lazy');
-    %for convenience. 
-end
 
-end
+
