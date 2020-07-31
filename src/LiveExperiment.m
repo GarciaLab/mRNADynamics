@@ -240,6 +240,7 @@ classdef LiveExperiment
             tempInfo = load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
             
             isNewMovie = isempty(FrameInfo_movie) ||...
+                size([tempInfo.FrameInfo.Time],2) ~= size([FrameInfo_movie.Time],2) || ...
                 any([tempInfo.FrameInfo.Time] ~= [FrameInfo_movie.Time]);
             
             persistent preTifDir;
