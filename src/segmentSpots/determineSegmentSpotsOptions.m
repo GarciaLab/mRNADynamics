@@ -24,7 +24,7 @@ filterMovieFlag = false;
 gpu = '';
 saveAsMat = true;
 saveType = '.mat';
-nuclearMask = true;
+nuclearMask = false;
 dataType = '';
 runTrackmRNADynamics = true;
 
@@ -76,7 +76,11 @@ for i = 1:length(varargin)
     elseif strcmpi(varargin{i}, 'nWorkers')
         nWorkers = varargin{i + 1};        
     elseif strcmpi(varargin{i}, 'nuclearMask')
-        nuclearMask = varargin{i+1};
+        if islogical(varargin{i+1})
+            nuclearMask = varargin{i+1};
+        else
+            nuclearMask = true;
+        end
     elseif strcmpi(varargin{i}, 'autoThresh')...
         || strcmpi(varargin{i}, 'determineThreshold')
         threshGUI = 1;

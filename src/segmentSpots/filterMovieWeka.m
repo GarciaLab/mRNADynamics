@@ -5,14 +5,14 @@ keepPool = false;
 nWorkers = 1;
 optionalResults = '';
 reSc = false;
-algo = 'FastRandomForest';
+classificationAlgorithm = 'FastRandomForest';
 maxDepth = 20;
 nTrees = 64;
 balance = false; %resample to balance classes
 cleanAttributes = false;
 frameRange = [];
 ramDrive = 'R:\';
-classifyWithMatlab = false;
+classifyWithMatlab = false; %#ok<*NASGU>
 classifyWithWeka = true;
 matlabLoader = true;
 parFrame = false;
@@ -43,7 +43,7 @@ addJavaPathsForLivemRNA()
 
 liveExperiment = LiveExperiment(Prefix);
 
-[~,ProcPath,DropboxFolder,~, PreProcPath,~, Prefix, ~,~,~,~,~, ~, ~, movieDatabase]...
+[~,ProcPath,~,~, ~,~, Prefix, ~,~,~,~,~, ~, ~, ~]...
     = readMovieDatabase(Prefix, optionalResults);
 
 coats = liveExperiment.spotChannels;
@@ -84,7 +84,7 @@ arffLoader.setFile(javaObject('java.io.File',trainingFile)); %construct an arff 
 trainingData= arffLoader.getDataSet;
 trainingData.setClassIndex(trainingData.numAttributes - 1);
 
-%remove the features matlab we can't (currently) generate in matlab
+%remove the features we can't (currently) generate in matlab
 if cleanAttributes
     dim = 3;
     [~,attributes,~] = weka2matlab(trainingData);
@@ -95,7 +95,7 @@ end
 classifier = javaObject('hr.irb.fastRandomForest.FastRandomForest');
 options = {'-I', num2str(nTrees), '-threads', num2str(nWorkers), '-K', '2', '-S', '-1650757608', '-depth', num2str(maxDepth)};
 
-switch algo
+switch classificationAlgorithm
     case 'FastRandomForest'
         %default
     case 'RandomForest'
@@ -114,11 +114,11 @@ save([trainingFolder, filesep, trainingName, '_', suffix '.model'], 'classifier'
 if parFrame
     
     %parallel version
-    movieMat = parallel.pool.Constant(movieMat);
+    movieMat = parallel.pool.Constant(movieMat); %#ok<*UNRCH>
     trainingData = parallel.pool.Constant(trainingData);
     classifier = parallel.pool.Constant(classifier);
     parfor f = 1:nFrames
-        im = squeeze(movieMat.Value(:, :, :,f));
+        im = movieMat.Value(:, :, :,f);
         pMap(:, :, f) = classifyImageMatlab(im, trainingData.Value,...
             'reSc', reSc, 'classifier', classifier.Value);
     end
@@ -129,7 +129,8 @@ else
     wb = waitbar(0, 'Classifying frames');
 
     for f = 1:nFrames
-
+        
+        %use a moving average to estimate remaining time for notifications
         tic
         mean_dT = movmean(dT, [3, 0]);
         if f~=1, mean_dT = mean_dT(end); end
@@ -137,12 +138,20 @@ else
         if f~=1, tic, disp(['Making probability map for frame: ', num2str(f),...
                 '. Estimated ', num2str(mean_dT*(nFrames-f)), ' minutes remaining.'])
         end
-        im = squeeze(movieMat(:, :, :,f));
+        
+        
+        
+        im = movieMat(:, :, :,f);
         pMap(:, :, :, f) = classifyImageWeka(im, trainingData,'tempPath',...
             ramDrive, 'reSc', reSc, 'classifier', classifier, 'par', parInstances);
+        
+        
+        
+        
         try waitbar(f/nFrames, wb); end
         dT(f)=toc/60;
 
+        
     end
     
     try close(wb); end

@@ -22,10 +22,14 @@ end
 cycleFrames = nan(1,nFrames);
 
 for i = 1:length(ncs)
-    if i==14
+    if i==14 && ~isnan(ncs(i))
         cycleFrames(ncs(i):end) = 14;
+    elseif i==14 && isnan(ncs(i))
+        %do nothing
     elseif ncs(i) == 0
         cycleFrames(1:ncs(i+1)) = i;
+    elseif i~=14 && isnan(ncs(i+1))
+        cycleFrames(ncs(i):end) = i;
     else
         cycleFrames(ncs(i):ncs(i+1)) = i;
     end

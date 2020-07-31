@@ -51,7 +51,7 @@ for channelIndex = 1:nCh
                 if numel(size(movieMat))==5
                     rawStackArray = squeeze(movieMat(:, :, :, currentFrame, coatChannel));
                 elseif numel(size(movieMat))==4
-                    rawStackArray = squeeze(movieMat(:, :, :, currentFrame));
+                    rawStackArray = movieMat(:, :, :, currentFrame);
                 end
                 
             end

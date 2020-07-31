@@ -17,7 +17,7 @@ classdef LiveExperiment
         
         isUnhealthy = false;
         
-        anaphaseFrames (:, 1) uint16 = [0; 0; 0; 0; 0; 0];
+        anaphaseFrames = [0; 0; 0; 0; 0; 0];
         
         
     end
@@ -233,9 +233,19 @@ classdef LiveExperiment
         
         function out = getMovieMat(this)
             
+            %we're going to check if this is a new prefix by verifying the
+            %exact equality of frame times in frameinfo. i don't think
+            %these should ever be precisely identical in different movies
+            persistent FrameInfo_movie;
+            tempInfo = load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
+            
+            isNewMovie = isempty(FrameInfo_movie) ||...
+                size([tempInfo.FrameInfo.Time],2) ~= size([FrameInfo_movie.Time],2) || ...
+                any([tempInfo.FrameInfo.Time] ~= [FrameInfo_movie.Time]);
+            
             persistent preTifDir;
-            if isempty(preTifDir) ||...
-                    ~isequal( length(preTifDir), this.nFrames)
+            if isempty(preTifDir) || isNewMovie
+                FrameInfo_movie = tempInfo.FrameInfo;
                 preTifDir = dir([this.preFolder, '*_ch0*.tif']);
             end
             
@@ -264,9 +274,10 @@ classdef LiveExperiment
             
             persistent movieMat;
             %load movie only if it hasn't been loaded or if we've switched
-            %Prefixes (determined by num frames)
-            if isempty(movieMat) ||...
-                    ~isequal( size(movieMat, 4), this.nFrames)
+            %Prefixes (determined by num frames) or if the old FrameInfo doesn't match
+            %the new FrameInfo
+            if isempty(movieMat) || isNewMovie
+                
                 if haveTifStacks
                     movieMat = makeMovieMatFromTifStacks(this, preTifDir, channelsToRead);
                 elseif this.hasMovieMatFile
@@ -283,6 +294,7 @@ classdef LiveExperiment
             end
             out = movieMat;
             
+            %let's reduce the memory footprint of the movie if we can
             if max(movieMat(:)) < 255
                 movieMat = uint8(movieMat);
             end
@@ -320,7 +332,7 @@ classdef LiveExperiment
                 this_xDim = this.xDim;
                 this_zDim = this.zDim;
                 
-                parfor f = 1:this_nFrames
+                for f = 1:this_nFrames
                     movieMat(:, :, :, f, chIndex) =...
                         imreadStack2([this_preFolder, filesep, preChDir(f).name],...
                         this_yDim, this_xDim, this_zDim+nPadding);
@@ -349,9 +361,19 @@ classdef LiveExperiment
             end
             
             persistent hisMat;
+            persistent FrameInfo_His;
+            tempInfo = load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
+
+            isNewMovie = isempty(FrameInfo_His) ||...
+            size([tempInfo.FrameInfo.Time],2) ~= size([FrameInfo_His.Time],2) || ...
+            any([tempInfo.FrameInfo.Time] ~= [FrameInfo_His.Time]);
+
+
             %load histone movie only if it hasn't been loaded or if we've switched
             %Prefixes (determined by num frames)
-            if isempty(hisMat) || ~isequal( size(hisMat, 3), this.nFrames)
+            if isempty(hisMat) || isNewMovie
+                
+                FrameInfo_His = tempInfo.FrameInfo; 
                 
                 if haveHisTifStack
                     %load in sequential tif stacks
@@ -373,6 +395,7 @@ classdef LiveExperiment
             end
             out = hisMat;
             
+            %let's reduce the memory footprint of the movie if we can
             if max(hisMat(:)) < 255
                 hisMat = uint8(hisMat);
             end

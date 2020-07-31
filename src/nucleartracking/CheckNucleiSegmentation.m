@@ -1,9 +1,32 @@
 function movieMat = CheckNucleiSegmentation(Prefix, varargin)
+%%
+% DESCRIPTION
+% Opens a user interface that allows for manual curation of nuclear
+% segmentation and tracking results
+%
+% PARAMETERS
+% Prefix: Prefix of the dataset being analyzed
+%
+% OPTIONS
+% 'yToRetrackPrompt', true/false: If followed by true, will automatically 
+%                                 rerun TrackNuclei upon exiting the GUI. 
+%                                 If followed by false, will open a user
+%                                 dialog that asks whether or not you need
+%                                 to rerun TrackNuclei. By default, the 
+%                                 former happens.
+% 'chooseHis': If you used Weka for classifying nuclei, this option will
+%              plot the probHis.tif files instead of the raw His.tif images
+%              for easier manual curation
+% 'nWorkers': set the number of workers for a parallel pool (as of
+%             2020-07-27, this option does nothing)
+% 'noAdd', 'fish', or 'markandfind': changes some things for compatibility
+%                                    with mark-and-find Leica data (e.g.
+%                                    FISH experiments)
+% 'drawTraces': no idea what this does
+% 'premovie', movieMat: as of 2020-7-27, this option seems to do nothing
 %
 %
-%
-%Usage:
-%
+% GUI COMMANDS
 % .  - Move a frame forward
 % ,  - Move a frame backwards
 % >  - Move 5 frames forward
@@ -11,6 +34,8 @@ function movieMat = CheckNucleiSegmentation(Prefix, varargin)
 % j  - Jump to a frame
 % q  - Move a cycle forward
 % w  - Move a cycle backwards
+% right click  - delete region
+% left click - add region with default nc radius and angle
 % d  - Delete all ellipses in the current frame
 % c  - Copy all ellipses from previous frame
 % v  - Copy all ellipses from next frame
@@ -24,8 +49,14 @@ function movieMat = CheckNucleiSegmentation(Prefix, varargin)
 % 9  - Debug mode
 %
 %
-%right click  - delete region
-%left click - add region with default nc radius and angle
+% OUTPUT
+% Ellipses.mat: saved to the folder 'Dropbox\Prefix\'
+%
+%
+% Author (contact): uknown (hggarcia@berkeley.edu)
+% Created: XXXX-XX-XX
+% Last Updated: XXXX-XX-XX
+% Documented by: Meghan Turner (meghan_turner@berkeley.edu)
 %
 
 cleanupObj = onCleanup(@myCleanupFun);
@@ -37,6 +68,7 @@ fish = false;
 preMovie = false;
 chooseHis = false;
 yToRetrackPrompt = true;
+drawTraces = false;
 
 for k = 1:length(varargin)
     if strcmpi(varargin{k}, 'noAdd') | strcmpi(varargin{k}, 'fish') | strcmpi(varargin{k}, 'markandfind')
@@ -45,14 +77,16 @@ for k = 1:length(varargin)
     elseif strcmpi(varargin{k}, 'nWorkers')
         nWorkers = varargin{k+1};
     elseif strcmpi(varargin{k}, 'chooseHis')
-        chooseHis = varargin{k+1};
-    elseif strcmpi(varargin{k}, 'colormap')
-        cmap = varargin{k+1};
+        chooseHis = true;
+%     elseif strcmpi(varargin{k}, 'colormap')
+%         cmap = varargin{k+1};
     elseif strcmpi(varargin{k}, 'premovie')
         preMovie = true;
         movieMat = varargin{k+1};
     elseif strcmpi(varargin{k}, 'yToRetrackPrompt')
-        yToRetrackPrompt = true;
+        yToRetrackPrompt = varargin{k+1};
+    elseif strcmpi(varargin{k}, 'drawTraces')
+        drawTraces = true;
     end
 end
 
@@ -95,17 +129,7 @@ end
 Channels = {Channel1, Channel2, Channel3};
 
 if chooseHis
-    uiopen([ProcPath, filesep, Prefix,'_',filesep,'*.mat']);
-    if exist('probHis_fiji', 'var')
-        hisMat = probHis_fiji;
-        clear probHis_fiji;
-    elseif exist('probHis_matlab', 'var')
-        hisMat = probHis_matlab;
-        clear probHis_matlab;
-    elseif exist('probHis', 'var')
-        hisMat = probHis;
-        clear probHis;
-    end
+    hisMat = imreadStack([liveExperiment.procFolder, filesep, 'probHis.tif']);
 else
     hisMat = getHisMat(liveExperiment);
 end
@@ -152,16 +176,17 @@ originalAxes = axes(OriginalImage,'Units', 'normalized', 'Position', [0 0 1 1]);
 set(OriginalImage,'menubar','none')
 set(OriginalImage,'NumberTitle','off');
 %%
-
-schnitzTrackingFigure = figure;
-t = tiledlayout(schnitzTrackingFigure, 1, 2);
-schnitzXTrackingAxes = nexttile(t);
-schnitzYTrackingAxes = nexttile(t);
-set(schnitzTrackingFigure,'units', 'normalized', 'position',[0.6, .2, .3, .5]);
-title(schnitzXTrackingAxes, 'X over time')
-xlabel(t, 'frame')
-title(schnitzYTrackingAxes, 'Y over time')
-ylabel(t, 'centroid (pixels)')
+if drawTraces
+    schnitzTrackingFigure = figure;
+    t = tiledlayout(schnitzTrackingFigure, 1, 2);
+    schnitzXTrackingAxes = nexttile(t);
+    schnitzYTrackingAxes = nexttile(t);
+    set(schnitzTrackingFigure,'units', 'normalized', 'position',[0.6, .2, .3, .5]);
+    title(schnitzXTrackingAxes, 'X over time')
+    xlabel(t, 'frame')
+    title(schnitzYTrackingAxes, 'Y over time')
+    ylabel(t, 'centroid (pixels)')
+end
 %%
 
 tb = axtoolbar(overlayAxes);
@@ -215,10 +240,14 @@ while (currentCharacter~='x')
     ellipseFrame = Ellipses{CurrentFrame};
     for k=1:NCentroids
         n = k;
-        PlotHandle{k} = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
-            'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
-            'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)), 'FaceAlpha', 0,...
-            'InteractionsAllowed', 'none', 'LabelVisible', 'hover', 'Label', num2str(ellipseFrame(n, 9)));
+%         PlotHandle{k} = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
+%             'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
+%             'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)), 'FaceAlpha', 0,...
+%             'InteractionsAllowed', 'none', 'LabelVisible', 'hover', 'Label', num2str(ellipseFrame(n, 9)));
+        
+        PlotHandle{k} = ellipse(ellipseFrame(n, 3), ellipseFrame(n, 4),...
+            ellipseFrame(n, 5) * (360/(2*pi)), ellipseFrame(n, 1),...
+            ellipseFrame(n, 2), 'k', 10, overlayAxes);
         
         if ~fish
             if size(Ellipses{CurrentFrame}, 2) > 8
@@ -233,14 +262,17 @@ while (currentCharacter~='x')
             end
             
             if schnitzInd ~= 0
-                set(PlotHandle{k}, 'StripeColor', clrmp(schnitzInd, :),...
-                    'Color', clrmp(schnitzInd, :),'Linewidth', 2);
+%                 set(PlotHandle{k}, 'StripeColor', clrmp(schnitzInd, :),...
+%                     'Color', clrmp(schnitzInd, :),'Linewidth', 1);
+                 set(PlotHandle{k},...
+                    'Color', clrmp(schnitzInd, :),'Linewidth', 1);
             else
-                set(PlotHandle{k}, 'StripeColor', 'w', 'Color', 'w','Linewidth', 2);
+%                 set(PlotHandle{k}, 'StripeColor', 'w', 'Color', 'w','Linewidth', 1);
+                set(PlotHandle{k}, 'Color', 'w','Linewidth', 1);
             end
         end
         
-        try
+        if drawTraces
             %plot tracking information in the third figure
             plot(schnitzXTrackingAxes, ...
                 schnitzcells(schnitzInd).frames, schnitzcells(schnitzInd).cenx,...
@@ -250,14 +282,15 @@ while (currentCharacter~='x')
                 schnitzcells(schnitzInd).frames, schnitzcells(schnitzInd).ceny,...
                 'Color',  clrmp(schnitzInd, :), 'Linewidth', 3)
             hold(schnitzYTrackingAxes, 'on');
-        catch
         end
         
         
     end
     
-    hold(schnitzXTrackingAxes, 'off');
-    hold(schnitzYTrackingAxes, 'off');
+    if drawTraces
+        hold(schnitzXTrackingAxes, 'off');
+        hold(schnitzYTrackingAxes, 'off');
+    end
     
     try
         FigureTitle=['Frame: ',num2str(CurrentFrame),'/',num2str(nFrames),...

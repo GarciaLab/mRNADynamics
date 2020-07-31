@@ -17,6 +17,10 @@ if isinf(frameRange(2))
     frameRange(2) = nFrames;
 end
 
+ncFrames = [zeros(1,8)'; liveExperiment.anaphaseFrames];
+
+FrameInfo = getFrameInfo(liveExperiment);
+
 
 hisVideoFile = [liveExperiment.preFolder, filesep, 'hisVideo.avi'];
 schnitzcellsFile = [liveExperiment.resultsFolder, filesep,Prefix,'_lin.mat'];
@@ -37,14 +41,23 @@ nextId = 1; % ID of the next track
 
 % Detect moving objects, and track them across video frames.
 for frameIndex = frameRange(1):frameRange(2)
-        
+    
+    %figure out the nuclear cycle
+    ncInds = find(frameIndex < ncFrames); %find anaphases occuring after first frame of trace
+    if isempty(ncInds)
+        nuclearCycle = ncFrames(end); %edge case for 14th cycle
+    else 
+        nuclearCycle = ncInds(1) - 1;
+    end
+    
     frameImage = readFrame(playerObj.reader);
+    
     %% Measurement
     
     %Segment the nuclei to create measurements
     %that will be fed into Kalman filter.
     [measurements, bboxes, mask] =...
-        detectObjects(frameImage, pixelSize_um, nFrames);
+        detectObjects(frameImage, pixelSize_um, nFrames, nuclearCycle, FrameInfo);
     
     %% Prediction
     

@@ -35,110 +35,110 @@ saveType = '.mat';
 dataSet = '';
 
 for i = 1:length(varargin)
-    
-    if strcmpi(varargin{i}, 'displayFigures')
-        displayFigures = 1;
-        
-    elseif strcmp(varargin{i}, 'Frames') || strcmpi(varargin{i}, 'LastFrame')
-        
-        if ~ isnumeric(varargin{i + 1})
-            error('Wrong input parameters. After ''Frames'' you should input the number of frames')
-        else
-            numFrames = varargin{i + 1};
-        end
-        
-    elseif strcmpi(varargin{i}, 'InitialFrame')
-        
-        if ~ isnumeric( varargin{i + 1}) || (varargin{i + 1} < 1)
-            error('Wrong input parameter for initial frame.')
-        else
-            initialFrame = varargin{i + 1};
-        end
-        
-    elseif strcmpi(varargin{i}, 'highPrecision')
-        highPrecision = 1;
-      elseif strcmpi(varargin{i}, 'noGPU')
-        gpu = 'noGPU';
-    elseif strcmpi(varargin{i}, 'keepPool')
-        keepPool = true;
-    elseif strcmpi(varargin{i}, 'app')
-        app{1} = varargin{i + 1};
-    elseif strcmpi(varargin{i}, 'nWorkers') ||  strcmpi(varargin{i}, 'numWorkers')
-        
-        nWorkers = varargin{i + 1};
-        
-    elseif strcmpi(varargin{i}, 'kernelSize')
-        
-        kernelSize = varargin{i + 1};
-        
-    elseif strcmpi(varargin{i}, 'ignoreMemoryCheck')
-        ignoreMemoryCheck = true;
-        
-    elseif strcmpi(varargin{i}, 'tifs')
-        justTifs = true;
-        
-    elseif strcmpi(varargin{i}, 'noSave')
-        noSave = true;      
-        saveType = 'none';
-    elseif strcmpi(varargin{i}, 'saveAsMat') || strcmpi(varargin{i}, '.mat')
-        saveAsMat = true;
-        saveType = '.mat';
-    elseif strcmpi(varargin{i}, 'weka')
-        weka = true;
-    elseif strcmpi(varargin{i}, 'single')
-        numType = 'single';
-    elseif strcmpi(varargin{i}, 'double')
-        numType = 'double';
-    elseif strcmpi(varargin{i}, 'dataSet')
-        dataSet = varargin{i+1};
-        
-    elseif strcmpi(varargin{i}, 'customML')
-        customML = 1;
-        
-    elseif isobject(varargin{i}) && isa(varargin{i}, 'ClassifierForTest')
-        ClassifierForTest = varargin{i};
-        classifierFolder = ClassifierForTest.classifierFolder;
-        classifierPathCh1 = ClassifierForTest.classifierPathCh1;
-        
-    elseif strcmpi(varargin{i}, 'customFilter') 
-        customFilter = 1;
-        try
-            filterType = varargin{i + 1};
-            
-            if length(varargin) > i+1
-                if iscell(varargin{i + 2})
-                    sigmas = varargin{i + 2};
-                else
-                    error('Entered sigma(s) not recognized. Make sure the sigma(s) are entered as numbers in a cell {}')
-                end
-                
-                if contains(filterType, 'Difference_of_Gaussian') || ...
-                        contains(filterType, 'Structure_largest') || ...
-                        contains(filterType, 'Structure_smallest')
-                    
-                    if length(sigmas) ~= 2
-                        error('DoG and Structure filters require two sigma values e.g.{lower_sigma,higher_sigma}')
-                    end
-                    
-                else
-                    
-                    if length(sigmas) ~= 1
-                        error('All filters besides DoG and Structure require only 1 sigma value')
-                    end
-                    
-                end
-                
+    if isstring(varargin{i})
+        if strcmpi(varargin{i}, 'displayFigures')
+            displayFigures = 1;
+
+        elseif strcmp(varargin{i}, 'Frames') || strcmpi(varargin{i}, 'LastFrame')
+
+            if ~ isnumeric(varargin{i + 1})
+                error('Wrong input parameters. After ''Frames'' you should input the number of frames')
             else
-                error('You did not give your desired sigma(s).')
+                numFrames = varargin{i + 1};
             end
-            
-        catch
-            warning('Entered filter not recognized. Defaulting to DoG')
+
+        elseif strcmpi(varargin{i}, 'InitialFrame')
+
+            if ~ isnumeric( varargin{i + 1}) || (varargin{i + 1} < 1)
+                error('Wrong input parameter for initial frame.')
+            else
+                initialFrame = varargin{i + 1};
+            end
+
+        elseif strcmpi(varargin{i}, 'highPrecision')
+            highPrecision = 1;
+          elseif strcmpi(varargin{i}, 'noGPU')
+            gpu = 'noGPU';
+        elseif strcmpi(varargin{i}, 'keepPool')
+            keepPool = true;
+        elseif strcmpi(varargin{i}, 'app')
+            app{1} = varargin{i + 1};
+        elseif strcmpi(varargin{i}, 'nWorkers') ||  strcmpi(varargin{i}, 'numWorkers')
+
+            nWorkers = varargin{i + 1};
+
+        elseif strcmpi(varargin{i}, 'kernelSize')
+
+            kernelSize = varargin{i + 1};
+
+        elseif strcmpi(varargin{i}, 'ignoreMemoryCheck')
+            ignoreMemoryCheck = true;
+
+        elseif strcmpi(varargin{i}, 'tifs')
+            justTifs = true;
+
+        elseif strcmpi(varargin{i}, 'noSave')
+            noSave = true;      
+            saveType = 'none';
+        elseif strcmpi(varargin{i}, 'saveAsMat') || strcmpi(varargin{i}, '.mat')
+            saveAsMat = true;
+            saveType = '.mat';
+        elseif strcmpi(varargin{i}, 'weka')
+            weka = true;
+        elseif strcmpi(varargin{i}, 'single')
+            numType = 'single';
+        elseif strcmpi(varargin{i}, 'double')
+            numType = 'double';
+        elseif strcmpi(varargin{i}, 'dataSet')
+            dataSet = varargin{i+1};
+
+        elseif strcmpi(varargin{i}, 'customML')
+            customML = 1;
+
+        elseif isobject(varargin{i}) && isa(varargin{i}, 'ClassifierForTest')
+            ClassifierForTest = varargin{i};
+            classifierFolder = ClassifierForTest.classifierFolder;
+            classifierPathCh1 = ClassifierForTest.classifierPathCh1;
+
+        elseif strcmpi(varargin{i}, 'customFilter') 
+            customFilter = 1;
+            try
+                filterType = varargin{i + 1};
+
+                if length(varargin) > i+1
+                    if iscell(varargin{i + 2})
+                        sigmas = varargin{i + 2};
+                    else
+                        error('Entered sigma(s) not recognized. Make sure the sigma(s) are entered as numbers in a cell {}')
+                    end
+
+                    if contains(filterType, 'Difference_of_Gaussian') || ...
+                            contains(filterType, 'Structure_largest') || ...
+                            contains(filterType, 'Structure_smallest')
+
+                        if length(sigmas) ~= 2
+                            error('DoG and Structure filters require two sigma values e.g.{lower_sigma,higher_sigma}')
+                        end
+
+                    else
+
+                        if length(sigmas) ~= 1
+                            error('All filters besides DoG and Structure require only 1 sigma value')
+                        end
+
+                    end
+
+                else
+                    error('You did not give your desired sigma(s).')
+                end
+
+            catch
+                warning('Entered filter not recognized. Defaulting to DoG')
+            end
+
+
         end
-        
-        
     end
-    
 end
 
 if weka
