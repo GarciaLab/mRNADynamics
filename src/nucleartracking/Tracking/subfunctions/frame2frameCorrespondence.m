@@ -27,7 +27,8 @@ if NoBulkShift
     varargout{1}(:,:,2) = vy;
 else
     if ~exist('shifts','var') || isempty(shifts)
-        [x,y,vx,vy] = interpolatedShift(FrameInfo, frame1, frame2, maxShiftCorrection, [], [], precision);
+        [x,y,vx,vy] = interpolatedShift(...
+            FrameInfo, frame1, frame2, maxShiftCorrection, [], [], precision);
         varargout{1}(:,:,1) = vx;
         varargout{1}(:,:,2) = vy;
     else
@@ -85,7 +86,6 @@ mappedNuc1 = [];
 mappedNuc2 = [];
 
 
-% manualMapping = [];
 
 %% 5. If manual data is provided, set them first.
 if exist('manualMapping','var') && ~isempty(manualMapping)
@@ -119,14 +119,14 @@ while keep_looping
     % Build correspondences
     
     % First attribute nuclei that are mutually the closest
-    [mc,ic] = min(dist,[],1);
-    [mr,ir] = min(dist,[],2);
+    [c_min_value,c_min_index] = min(dist,[],1);
+    [r_min_value,r_min_index] = min(dist,[],2);
     
-    indc = sub2ind(size(dist),ic,1:numel(ic));
-    indr = sub2ind(size(dist),1:numel(ir),ir');
+    indc = sub2ind(size(dist),c_min_index,1:numel(c_min_index));
+    indr = sub2ind(size(dist),1:numel(r_min_index),r_min_index');
     
-    indc(mc>maxNucleusStep) = [];
-    indr(mr>maxNucleusStep) = [];
+    indc(c_min_value>maxNucleusStep) = [];
+    indr(r_min_value>maxNucleusStep) = [];
     
     Mc = zeros(size(dist));
     Mc(indc) = 1;
@@ -160,7 +160,8 @@ while keep_looping
     end
     
     
-    if isempty(remainingNuclei1) || isempty(remainingNuclei2) || ~any(attributedIndices)
+    if isempty(remainingNuclei1) || isempty(remainingNuclei2)...
+            || ~any(attributedIndices)
         keep_looping = false;
     end
     
@@ -169,19 +170,7 @@ end % while loop
 if nargout > 2
     
     score = nan(size(nucleiFrame1,1),1);
-    %projectedXY = fnval(st,nucleiFrame1');
-    %dist = sqrt(sum( (projectedXY(:,mapping~=0)'-nextNucleiXY(mapping(mapping~=0),:)),2));
-    
-    %score(mapping~=0) = mvnpdf(dist , 0, maxNucleusStep).*intensity(mapping(mapping~=0));
-    
-    if nargout > 4
-        
-        %         naive_score = nan(size(nucleiFrame1,1),1);
-        %         projectedXY = fnval(st,nucleiFrame1');
-        %         dist = sqrt(sum( (projectedXY(mapping~=0,:)-nextNucleiXY(mapping(mapping~=0),:)),2));
-        %         naive_score(mapping~=0) = mvnpdf(dist , 0, maxNucleusStep).*intensity(mapping(mapping~=0));
-        
-    end
+
 end
 
 end % function
