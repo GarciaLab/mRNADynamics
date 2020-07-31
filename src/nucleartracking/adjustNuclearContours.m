@@ -6,7 +6,7 @@ function ellipseFrame = adjustNuclearContours(ellipseFrame, HisImage, PixelSize_
     %parameters i've found to be broadly applicable
     sigmaSnakes_um = .5;
     mu = .1; %weight of length term for chen vese  algorithm. honestly don't know what this controls
-    min_rad_um = .1; % set min and max acceptable area for nucleus segmentation
+    min_rad_um = 1; % set min and max acceptable area for nucleus segmentation
     max_rad_um = 6; %this needs to be 6um for nc12. 4um for nc14
     nIterSnakes = 100;
     maxAspectRatio = 4;
@@ -26,17 +26,24 @@ function ellipseFrame = adjustNuclearContours(ellipseFrame, HisImage, PixelSize_
         nuclearMaskSuperRefined, 'areaFilter', areaFilter,...
         'maxAspectRatio', maxAspectRatio);
 
-    %validate sizes. the ellipse masker handles
-    %very large objects poorly
+    %filter nuclei out by size
 
     if ~isempty(ellipseFrame)
-        largeAxisIndex = ellipseFrame(:, 3) > min(size(HisImage))...
-            | ellipseFrame(3) > min(size(HisImage));
-        ellipseFrame(largeAxisIndex, 3) = median(ellipseFrame(:, 3)); 
-        ellipseFrame(largeAxisIndex, 4) = median(ellipseFrame(:, 4));
+        
+        largeAxisIndex = ellipseFrame(:, 3) > max_rad_um/PixelSize_um...
+            | ellipseFrame(:, 4) > max_rad_um/PixelSize_um;
+        ellipseFrame(largeAxisIndex, :) = [];
+        
+        smallAxisIndex = ellipseFrame(:, 3) < min_rad_um/PixelSize_um |...
+            ellipseFrame(:, 4) < min_rad_um/PixelSize_um;
+        ellipseFrame(smallAxisIndex, :) = [];
+        
     end
+    
 
+   
     ellipseFrame(:, 6:9) = zeros(size(ellipseFrame, 1), 4);  
+    
     
 
 

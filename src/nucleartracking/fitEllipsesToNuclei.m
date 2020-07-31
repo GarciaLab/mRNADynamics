@@ -61,11 +61,12 @@ for k = 1:numel(boundaryCell)
             continue;
         end
         %not sure why complex parameters or NaNs happen. we'll skip this ellipse
-        %in this case. also ensure good aspect ratios here.
+        %in this case. also ensure good aspect ratios here
         if ~isreal(ellipseParams) ||...
                 ellipseParams(3)/ellipseParams(4) > maxAspectRatio ||...
                 ellipseParams(4)/ellipseParams(3) > maxAspectRatio ||...
                 any(isnan(ellipseParams))
+            
             
             continue;
             
