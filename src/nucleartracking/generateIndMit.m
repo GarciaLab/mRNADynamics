@@ -46,8 +46,8 @@ if isempty(indMit)
     %If we don't have nc14 we'll fool the code into thinking that the last
     %frame of the movie was nc14
 elseif isnan(indMit(end,1))
-    indMit(end,1)=nFrames-3;
-    indMit(end,2)=nFrames-2;
+    indMit(end,1)=nFrames-2;
+    indMit(end,2)=nFrames-1;
 end
 
 end
