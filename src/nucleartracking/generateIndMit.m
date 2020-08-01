@@ -20,7 +20,7 @@ end
 %opaque errors down the road
 for k = 2:length(anaphaseFrames)
     if ~isnan(anaphaseFrames(k)) && isnan(anaphaseFrames(k-1))
-        error(['NaN entry cannot preceed non-NaN mitosis entries. Please correct',...
+        warning(['NaN entry cannot preceed non-NaN mitosis entries. Please correct ',...
             'this in chooseanaphaseframes or moviedatabase.']);
     end
 end

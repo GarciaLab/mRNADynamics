@@ -6,7 +6,7 @@ function ellipseFrame = adjustNuclearContours(ellipseFrame, HisImage, PixelSize_
     %parameters i've found to be broadly applicable
     sigmaSnakes_um = .5;
     mu = .1; %weight of length term for chen vese  algorithm. honestly don't know what this controls
-    min_rad_um = 1; % set min and max acceptable area for nucleus segmentation
+    min_rad_um = 2; % set min and max acceptable area for nucleus segmentation
     max_rad_um = 6; %this needs to be 6um for nc12. 4um for nc14
     nIterSnakes = 100;
     maxAspectRatio = 4;

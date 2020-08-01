@@ -14,14 +14,15 @@ function TrackNuclei(Prefix,varargin)
 % recommended to set this to 1.5 if you use NoBulkShift.
 % 'bulkShift': Runs the nuclear tracking with accounting for the bulk
 % shift between frames (greatly reduces runtime).
-% 'retrack': retrack
+% 'retrack': Use existing segmentation for tracking and bypass the prompt.
 % 'integrate': integrate nuclear fluorescence
+% 'noToRetrack': Don't retrack and don't prompt. 
 % 'mixedPolaritySegmentation': different segmentation method that works
 % better when there are nuclei of mixed polarity (some dark, some bright)
 % 'adjustNuclearContours': fit ellipses tightly around nuclei (done by
 % adjusting regular segmentation)
 %
-% OUTPUT
+% OUTPUT.
 % '*_lin.mat' : Nuclei with lineages
 % 'Ellipses.mat' : Just nuclei
 %
@@ -45,7 +46,8 @@ postTrackingSettings = struct;
     postTrackingSettings.intFlag, postTrackingSettings.chooseHis,...
     mixedPolaritySegmentation, min_rad_um,...
              max_rad_um, sigmaK_um, mu, nIterSnakes,...
-             postTrackingSettings.doAdjustNuclearContours, radiusScale]...
+             postTrackingSettings.doAdjustNuclearContours, radiusScale,...
+             doNotRetrack]...
     = DetermineTrackNucleiOptions(varargin{:});
 
 
@@ -105,7 +107,7 @@ settingArguments{4}=FrameInfo(1).PixelSize;
 
 schnitzFileExists = exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file');
 
-if schnitzFileExists && ~retrack && track
+if schnitzFileExists && ~retrack && track && ~doNotRetrack
     answer=input('Previous tracking detected. Erase existing segmentation? (y/n):','s');
     if strcmpi(answer,'n')
         retrack = true;
