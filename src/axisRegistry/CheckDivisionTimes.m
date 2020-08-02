@@ -44,7 +44,7 @@ end
 
 try 
     hisMat = getHisMat(liveExperiment); 
-    ZoomImage = hisMat(end);
+    ZoomImage = hisMat(:,:,end);
     nFrames = size(hisMat, 3);
 catch
     
@@ -69,11 +69,12 @@ if ~lazy
 end
 
 %Angle between the x-axis and the AP-axis
-APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
+% APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
+ APAngle=atan2((coordPZoom(2)-coordAZoom(2)),(coordPZoom(1)-coordAZoom(1)));
 %Correction for if APAngle is in quadrants II or III
-if coordPZoom(1)-coordAZoom(1) < 0
-    APAngle = APAngle + pi;
-end
+% if coordPZoom(1)-coordAZoom(1) < 0
+%     APAngle = APAngle + pi;
+% end
 APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
 
 
@@ -82,11 +83,12 @@ APPosImage=zeros(size(ZoomImage));
 
 for i=1:Rows
     for j=1:Columns
-        Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
+        %Angle=atan2((i-coordAZoom(2))./(j-coordAZoom(1)));
+        Angle = atan2((i-coordAZoom(2)),(j-coordAZoom(1)));
         % Correction for if Angle is in quadrant II
-        if (j-coordAZoom(1) < 0)
-            Angle = Angle + pi;
-        end
+%         if (j-coordAZoom(1) < 0)
+%             Angle = Angle + pi;
+%         end
         
         
         Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
