@@ -337,21 +337,22 @@ while (currentCharacter~='x')
         currentCharacter=1;
         if (currentMouse(1,2)>0)&(currentMouse(1,1)>0)&(currentMouse(1,2)<=ySize)&(currentMouse(1,1)<=xSize)
             
-            %Add a circle to this location with the mean radius of the
+            %Add a circle to this location with the median radius of the
             %ellipses found in this frame
             
             %(x, y, a, b, theta, maxcontourvalue, time,
             %particle_id)
             
-            MeanRadius = computeMeanRadius(Ellipses, CurrentFrame, nFrames);
+            averageRadius = computeAverageRadius(Ellipses, CurrentFrame, nFrames);
             
             try
                 Ellipses{CurrentFrame}(end+1,:)=...
-                    [currentMouse(1,1),currentMouse(1,2),MeanRadius,MeanRadius,0,0,0,0,0];
+                    [currentMouse(1,1),currentMouse(1,2),averageRadius,averageRadius,0,0,0,0,0];
             catch
                 Ellipses{CurrentFrame}(end+1,:)=...
-                    [currentMouse(1,1),currentMouse(1,2),MeanRadius,MeanRadius,0,0,0,0];
+                    [currentMouse(1,1),currentMouse(1,2),averageRadius,averageRadius,0,0,0,0];
             end
+            
         end
         
         
@@ -505,9 +506,9 @@ end
 end
 
 
-function MeanRadius = computeMeanRadius(Ellipses, CurrentFrame, nFrames)
+function averageRadius = computeAverageRadius(Ellipses, CurrentFrame, nFrames)
 
-radius = @(x,f) nanmean( (1/2)*(x{f}(:, 3) + x{f}(:, 4)) );
+radius = @(x,f) nanmedian( (1/2)*(x{f}(:, 3) + x{f}(:, 4)) );
 
 if ~isempty(Ellipses{CurrentFrame})
     for k = 1:size(Ellipses{CurrentFrame}, 1)
@@ -515,14 +516,17 @@ if ~isempty(Ellipses{CurrentFrame})
             Ellipses{CurrentFrame}(k, :) = nan;
         end
     end
-    MeanRadius = radius(Ellipses, CurrentFrame);
+    
+    averageRadius = radius(Ellipses, CurrentFrame);
+    
 elseif CurrentFrame+1 < nFrames && ~isempty(Ellipses{CurrentFrame+1})
     for k = 1:size(Ellipses{CurrentFrame+1}, 1)
         if Ellipses{CurrentFrame+1}(k, 3) == 0
             Ellipses{CurrentFrame+1}(k, :) = nan;
         end
     end
-    MeanRadius = radius(Ellipses, CurrentFrame+1);
+    
+    averageRadius = radius(Ellipses, CurrentFrame+1);
     
 elseif CurrentFrame-1 >1 && ~isempty(Ellipses{CurrentFrame-1})
     for k = 1:size(Ellipses{CurrentFrame-1}, 1)
@@ -530,9 +534,11 @@ elseif CurrentFrame-1 >1 && ~isempty(Ellipses{CurrentFrame-1})
             Ellipses{CurrentFrame-1}(k, :) = nan;
         end
     end
-    MeanRadius = radius(Ellipses, CurrentFrame-1);
+    
+    averageRadius = radius(Ellipses, CurrentFrame-1);
+    
 else
-    MeanRadius = 20; %magic number just to avoid errors in weird situations (units of pixels)
+    averageRadius = 20; %magic number just to avoid errors in weird situations (units of pixels)
 end
 
 end

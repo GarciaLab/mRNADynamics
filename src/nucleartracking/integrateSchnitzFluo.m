@@ -30,9 +30,9 @@ if isempty(InputChannelIndexes)
     return;
 end
 
-movieMat = getMovieMat(liveExperiment);
+movie = getMovieMat(liveExperiment);
 %assume there's just one input channel
-movieMat = double(movieMat(:, :, :, :, InputChannelIndexes));
+movie = double(movie(:, :, :, :, InputChannelIndexes));
 numFrames = length(FrameInfo);
 
 
@@ -90,7 +90,7 @@ if sum(InputChannelIndexes)
             %             end
             
             
-            convImage = imfilter(movieMat(:,:,:, CurrentFrame), Circle, 'same');
+            convImage = imfilter(movie(:,:,:, CurrentFrame), Circle, 'same');
             convImage(edgeMask) = NaN;
             
             for j=1:length(tempSchnitz)
