@@ -43,6 +43,8 @@ Particles = track04StitchTracks(SimParticles, Prefix,...
                                 useHistone, retrack, displayFigures);
 toc 
 
+newParticles = dynamicStitchBeta(Particles,SimParticles,FrameInfo,2);
+
 disp('Adding QC fields...')
 % Iterate over all channels and generate additional QC flags
 maxCost = 3;

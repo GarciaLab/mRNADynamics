@@ -1,5 +1,5 @@
 function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, ...
-              linkCostCell, linkLevelCell, mDistanceMat] = performParticleStitching(...
+              linkCostVec, LinkAdditionCell, mDistanceMat] = performParticleStitching(...
               NucleusID,nucleusIDVec,frameIndex,RawParticles,Channel,ncVec,matchCostMax)
   
   nParams = length(RawParticles{Channel}(1).hmmModel);
@@ -19,8 +19,8 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
   % particle ID tracker
   particleIDArray = NaN(length(frameIndex),nFragments);
   linkIDCell = cell(1,nFragments);
-  linkCostCell = cell(1,nFragments);
-  linkLevelCell = cell(1,nFragments);
+  LinkAdditionCell = {};
+  linkCostVec = [];
   
   % add fragment info
   i_pass = 1;
@@ -28,9 +28,9 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     endpointFrameArray([RawParticles{Channel}(p).FirstFrame,RawParticles{Channel}(p).LastFrame],i_pass) = true;
     extantFrameArray(RawParticles{Channel}(p).FirstFrame:RawParticles{Channel}(p).LastFrame,i_pass) = true;      
     particleIDArray(RawParticles{Channel}(p).FirstFrame:RawParticles{Channel}(p).LastFrame,i_pass) = p;
-    linkIDCell{i_pass} = {p};
-    linkCostCell{i_pass} = [0];
-    linkLevelCell{i_pass} = [0];
+    linkIDCell{i_pass} = num2str(p);
+%     linkCostVec{i_pass} = 0;
+%     linkedFragmentlCell{i_pass} = [0];
     nc_ft = ismember(ncVec,ncVec(RawParticles{Channel}(p).FirstFrame));
     for np = 1:nParams
       pathArray(nc_ft,i_pass,np) = RawParticles{Channel}(p).hmmModel(np).pathVec;
@@ -98,25 +98,26 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     particleIDArray(afDrop,pKeep) = particleIDArray(afDrop,pDrop);
     particleIDArray = particleIDArray(:,[1:pDrop-1 pDrop+1:end]);
 
-    nucleusIDVec = nucleusIDVec([1:pDrop-1 pDrop+1:end]);
+    nucleusIDVec = nucleusIDVec([1:pDrop-1 pDrop+1:end]);                          
     
     % condense link ID tracker
-    newLinkEntry = {[linkIDCell{pKeep}{end} linkIDCell{pDrop}{end}]};   
-    linkIDCell{pKeep} = [linkIDCell{pKeep} linkIDCell{pDrop} newLinkEntry];
-    linkIDCell = linkIDCell(1,[1:pDrop-1 pDrop+1:end]);
+    index_vec = 1:length(linkIDCell);
+%     newLinkEntry = {[linkIDCell{pKeep}{end} linkIDCell{pDrop}{end}]};
+    divNum = max([diff(find(diff(linkIDCell{pKeep}~='|')~=0)) diff(find(diff(linkIDCell{pDrop}~='|')~=0))]);
+    if isempty(divNum)
+      divNum = 0;
+    end
+    linkIDCell{pKeep} = [ linkIDCell{pKeep} repelem('|',divNum+1) linkIDCell{pDrop} ];
+    linkIDCell = linkIDCell(~ismember(index_vec,pDrop));
     
-    % condense link cost trackers
-    linkCostCell{pKeep} = [linkCostCell{pKeep} linkCostCell{pDrop} minCost];
-    linkCostCell = linkCostCell(1,[1:pDrop-1 pDrop+1:end]);
+    % same for link cost cell (use nesting logic here as well
+    linkCostVec = [linkCostVec minCost];    
     
-    
-    % condense node hierarchy tracker
-    newLevel = max([linkLevelCell{pKeep} linkLevelCell{pDrop}])+1;
-    linkLevelCell{pKeep} = [linkLevelCell{pKeep} linkLevelCell{pDrop} newLevel];
-    linkLevelCell = linkLevelCell(1,[1:pDrop-1 pDrop+1:end]);
+    % add new link 
+    LinkAdditionCell{length(linkCostVec)} = linkIDCell{pKeep};
     
     % condense distance array
-    mDistanceMat = mDistanceMat([1:pDrop-1 pDrop+1:end],[1:pDrop-1 pDrop+1:end]);
+    mDistanceMat = mDistanceMat(~ismember(index_vec,pDrop),~ismember(index_vec,pDrop));
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % generate updated combined path using variance-weighted average 
