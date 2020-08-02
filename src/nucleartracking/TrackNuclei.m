@@ -93,7 +93,7 @@ end
 
 %%
 %Load anaphase timing, validate, and modify it
-indMit = generateIndMit(anaphaseFrames, nFrames);
+indMitosis = generateIndMit(anaphaseFrames, nFrames);
 
 %Embryo mask
 embryo_mask=true(size(hisMat(:, :, 1)));
@@ -124,12 +124,12 @@ if ~retrack
     
     if track
         [nuclei, centers, ~, dataStructure] = ...
-            mainTracking(FrameInfo, hisMat,'indMitosis',indMit,'embryoMask', embryo_mask,...
+            mainTracking(FrameInfo, hisMat,'indMitosis',indMitosis,'embryoMask', embryo_mask,...
             settingArguments{:}, 'ExpandedSpaceTolerance', ExpandedSpaceTolerance, ...
             'NoBulkShift', NoBulkShift);
     else
         [nuclei, centers] = ...
-            mainTracking(FrameInfo, hisMat,'indMitosis',indMit,'embryoMask', embryo_mask,...
+            mainTracking(FrameInfo, hisMat,'indMitosis',indMitosis,'embryoMask', embryo_mask,...
             settingArguments{:}, 'ExpandedSpaceTolerance', ExpandedSpaceTolerance, ...
             'NoBulkShift', NoBulkShift, 'segmentationonly', true);
     end
@@ -139,7 +139,7 @@ if ~retrack
     % true(size(an_image_from_the_movie)) can be given as input.
     % Convert the results to compatible structures and save them
     %Put circles on the nuclei
-    [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,nFrames,indMit, radiusScale);
+    [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,nFrames,indMitosis, radiusScale);
     
 else
     %Retrack: Use "MainTracking" for tracking but not segmentation. 
@@ -183,13 +183,13 @@ else
         dataStructure.names='';
         
         [nuclei, centers, ~, dataStructure] = mainTracking(...
-            FrameInfo, hisMat,'indMitosis',indMit,'embryoMask', embryo_mask,...
+            FrameInfo, hisMat,'indMitosis',indMitosis,'embryoMask', embryo_mask,...
             'centers',centers,'dataStructure',dataStructure, settingArguments{:}, ...
             'ExpandedSpaceTolerance', ExpandedSpaceTolerance, ...
             'NoBulkShift', NoBulkShift);
     else
         [nuclei, centers, ~, dataStructure] = mainTracking(...
-            FrameInfo, hisMat,'indMitosis',indMit,'embryoMask', embryo_mask,...
+            FrameInfo, hisMat,'indMitosis',indMitosis,'embryoMask', embryo_mask,...
             'centers',centers, settingArguments{:}, 'ExpandedSpaceTolerance', ...
             ExpandedSpaceTolerance, 'NoBulkShift', NoBulkShift);
     end
@@ -199,7 +199,7 @@ end
 disp('Finished main tracking.'); 
 
 %Convert nuclei structure into schnitzcell structure
-[schnitzcells] = convertNucleiToSchnitzcells(nuclei);
+schnitzcells = convertNucleiToSchnitzcells(nuclei);
 
 
 
