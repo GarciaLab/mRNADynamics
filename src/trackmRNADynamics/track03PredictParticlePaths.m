@@ -9,7 +9,6 @@ function RawParticles = track03PredictParticlePaths(...
   
   NCh = length(RawParticles);
   ncVec = [FrameInfo.nc];
-%   ncVec(1) = 14; % NL for some reason the first frame is registering as nc13
   frameIndex = 1:length(ncVec);
   
   for Channel = 1:NCh

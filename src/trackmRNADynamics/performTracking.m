@@ -11,6 +11,8 @@ liveExperiment = LiveExperiment(Prefix);
 nCh = numel(liveExperiment.spotChannels);   %Only grabbing the spot channels - might cause issues if spot channels aren't the first n channels
 pixelSize = liveExperiment.pixelSize_um;    %NL: pixel size is in um
 experimentType = liveExperiment.experimentType;
+channels = liveExperiment.Channels;
+channelNames = cell(1,nCh);                 %Will fill this in the plotting loop
 FrameInfo = getFrameInfo(liveExperiment);
 Spots = getSpots(liveExperiment);
 if ~iscell(Spots)% NL: added for backwards compatibility
@@ -74,6 +76,15 @@ end
 
 if makeTrackingFigures
     for Channel = 1:nCh
+          %Get names of channels for labeling the plots
+          colonPos = strfind(channels{Channel},':');
+          if isempty(colonPos)
+              channelNames{Channel} = channels{Channel};
+          else
+              channelNames{Channel} = channels{Channel}(1:colonPos(1)-1);
+          end
+          
+          %Make the plots
           trackFigFolder = [dropboxFolder filesep Prefix '\TrackingFigures\'];
           mkdir(trackFigFolder)
           xDim = FrameInfo(1).PixelsPerLine;
@@ -84,6 +95,7 @@ if makeTrackingFigures
           scatter([RawParticles{Channel}.xPos],[RawParticles{Channel}.yPos],4,'k','filled');
           xlabel('x position (pixels)')
           ylabel('y position (pixels)')
+          title(['Channel ' num2str(Channel) ': ' channelNames{Channel}])
           set(gca,'Fontsize',14)
           xlim([0 xDim])
           ylim([0 yDim])
@@ -98,6 +110,7 @@ if makeTrackingFigures
           end
           xlabel('x position (pixels)')
           ylabel('y position (pixels)')
+          title(['Channel ' num2str(Channel) ': ' channelNames{Channel}])
           set(gca,'Fontsize',14)
           xlim([0 xDim])
           ylim([0 yDim])
@@ -127,6 +140,7 @@ if makeTrackingFigures
 
           xlabel('x position (pixels)')
           ylabel('y position (pixels)')
+          title(['Channel ' num2str(Channel) ': ' channelNames{Channel}])
           set(gca,'Fontsize',14)
           xlim([0 xDim])
           ylim([0 yDim])
@@ -144,6 +158,7 @@ if makeTrackingFigures
           % end
           xlabel('x position (pixels)')
           ylabel('y position (pixels)')
+          title(['Channel ' num2str(Channel) ': ' channelNames{Channel}])
           set(gca,'Fontsize',14)
           xlim([0 xDim])
           ylim([0 yDim])

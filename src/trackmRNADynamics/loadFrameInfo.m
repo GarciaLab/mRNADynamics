@@ -21,7 +21,9 @@ else
     
     DZoom = dir([PreProcPath, filesep, Prefix, filesep, '*z*.tif']);
     ImageInfo = imfinfo([PreProcPath, filesep, Prefix, filesep, DZoom(1).name]);
-    PixelSize_um = 1 / ImageInfo.XResolution;
+    xRes = [ImageInfo.XResolution];
+    PixelSize_um = 1 / xRes(1);
+    FrameInfo = [];
 end
 
 end
