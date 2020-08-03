@@ -77,7 +77,7 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
       NucleusID = nucleusIDIndex(n);
       
       [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, ...
-              linkCostVec, linkAdditionCell, ~] = performParticleStitching(...
+              linkCostVec, linkAdditionCell, linkCostArray] = performParticleStitching(...
           NucleusID, nucleusIDVec, frameIndex, SimParticles, Channel, ncVec, matchCostMax(Channel));
 
       % check for conflicts (cases where there are more detections per frame than ins permitted)    
@@ -135,7 +135,9 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
           end 
           % record info vectors
           tempParticles(nIter).idVec = NaN(1,size(particleIDArray,1));
-          tempParticles(nIter).idVec(tempParticles(nIter).Frame) = rmVec(p);           
+          tempParticles(nIter).idVec(tempParticles(nIter).Frame) = rmVec(p);   
+          tempParticles(nIter).linkCostVec = NaN(1,size(particleIDArray,1));
+          tempParticles(nIter).linkCostVec(tempParticles(nIter).Frame) = 0;
           tempParticles(nIter).NucleusID = NaN;
           tempParticles(nIter).NucleusIDOrig = NucleusID;
           tempParticles(nIter).linkStateString = num2str(rmVec(p));          
@@ -171,6 +173,7 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
         tempParticles(nIter).sigmaArray = reshape(sigmaArray(:,p,:),[],3);
         % record info vectors
         tempParticles(nIter).idVec = particleIDArray(:,p)';
+        tempParticles(nIter).linkCostVec = linkCostArray(:,p)';
         tempParticles(nIter).linkStateString = linkIDCell{p};
         tempParticles(nIter).NucleusID = NucleusID;
         tempParticles(nIter).NucleusIDOrig = NucleusID;

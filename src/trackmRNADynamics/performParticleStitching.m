@@ -1,5 +1,5 @@
 function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, ...
-              linkCostVec, LinkAdditionCell, mDistanceMat] = performParticleStitching(...
+              linkCostVec, LinkAdditionCell, linkCostArray] = performParticleStitching(...
               NucleusID,nucleusIDVec,frameIndex,RawParticles,Channel,ncVec,matchCostMax)
   
   nParams = length(RawParticles{Channel}(1).hmmModel);
@@ -11,7 +11,7 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
   % arrays to track active frames (dynamically updated throughout)
   endpointFrameArray = false(length(frameIndex),nFragments);
   extantFrameArray = false(length(frameIndex),nFragments);
-
+  linkCostArray = NaN(size(extantFrameArray));
   % arrays to track projected particle positions
   pathArray = NaN(length(frameIndex),nFragments,nParams);   
   sigmaArray = NaN(length(frameIndex),nFragments,nParams); 
@@ -36,7 +36,7 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     end     
     i_pass = i_pass + 1;
   end    
-
+  linkCostArray(endpointFrameArray) = 0;
   %%% calculate Mahalanobis Distance between particles in likelihood space
   cumActivityArray = cumsum(extantFrameArray);
   mDistanceMatRaw = Inf(nFragments,nFragments);     
@@ -46,7 +46,7 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     calcFrames = find(endpointFrameArray(:,m)'); 
     epFrameVec = ([1 calcFrames maxFrame]);   
       
-    % flag overlaps
+    % find non-overlapping segments
     optionVec = max(extantFrameArray(extantFrameArray(:,m),:),[],1)==0; 
     if any(optionVec)
       % we want to exclude points that are not at an interface with another
@@ -81,9 +81,21 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
 
     % pull active frames
-    afKeep = find(extantFrameArray(:,pKeep))';
     afDrop = find(extantFrameArray(:,pDrop))';
-
+    
+    % update link cost array
+    activeFrames = [find(endpointFrameArray(:,pKeep)') find(endpointFrameArray(:,pDrop)')];
+    keepFrames = ([1 find(endpointFrameArray(:,pKeep)') maxFrame]);
+    includeVecKeep = diff(cumActivityArray(keepFrames,pDrop)')>0;
+    includeVecKeep = includeVecKeep(1:end-1) | includeVecKeep(2:end);
+    
+    dropFrames = ([1 find(endpointFrameArray(:,pKeep)') maxFrame]);
+    includeVecDrop = diff(cumActivityArray(dropFrames,pKeep)')>0;
+    includeVecDrop = includeVecDrop(1:end-1) | includeVecDrop(2:end);
+    
+    linkCostArray(activeFrames([includeVecKeep includeVecDrop]),pKeep) = minCost;    
+    linkCostArray = linkCostArray(:,[1:pDrop-1 pDrop+1:end]);
+    
     % condense active frame trackers
     endpointFrameArray(:,pKeep) = endpointFrameArray(:,pKeep) | endpointFrameArray(:,pDrop);
     endpointFrameArray = endpointFrameArray(:,[1:pDrop-1 pDrop+1:end]);
@@ -105,10 +117,10 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     linkIDCell{pKeep} = [ linkIDCell{pKeep} repelem('|',divNum+1) linkIDCell{pDrop} ];
     linkIDCell = linkIDCell(~ismember(index_vec,pDrop));
     
-    % same for link cost cell (use nesting logic here as well
+    % add link cost
     linkCostVec = [linkCostVec minCost];    
     
-    % add new link 
+    % add new link info
     LinkAdditionCell{length(linkCostVec)} = linkIDCell{pKeep};
     
     % condense distance array
@@ -128,11 +140,12 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % update cost matrix 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%            
-    validIndices = max(extantFrameArray(extantFrameArray(:,pKeep),:),[],1)==0;% & nucleusIDVec(pKeep)==nucleusIDVec;
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
+    
+    optionVec = max(extantFrameArray(extantFrameArray(:,pKeep),:),[],1)==0;%
     newDistCol = Inf(size(extantFrameArray,2),1);
     %%% paths FROM new particle first
-    for p = find(validIndices)
+    for p = find(optionVec)
       % pull activity indicators
       calcFrames = find(endpointFrameArray(:,p)'); 
       epFrameVec = [1 find(endpointFrameArray(:,p)') maxFrame];      
@@ -151,16 +164,14 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     end       
     
     %%% next paths TO new particle from existing particles      
-    % pull activity indicators
+    % here the endpoint frames are fixed
     calcFrames = find(endpointFrameArray(:,pKeep)');    
     epFrameVec = [1 calcFrames maxFrame];    
     newDistRow = Inf(1,size(extantFrameArray,2));
-    % flag overlaps
-    optionVec = max(extantFrameArray(extantFrameArray(:,pKeep),:),[],1)==0;    
+   
     if any(optionVec)
-      % we want to exclude exterior-most points from intersection of
-      % segments. perform calculations to determine which points to
-      % exclude in each case
+      % we want to exclude endpoints that are not at interface with other
+      % fragments
       includeMat = diff(cumActivityArray(epFrameVec,optionVec))>0;
       includeMat = repmat(includeMat(1:end-1,:) | includeMat(2:end,:),1,1,nParams);
     

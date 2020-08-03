@@ -17,7 +17,7 @@ function NewParticles = dynamicStitchBeta(FullParticles,SimParticles,ParticleSti
   % order additions by level of linkage (max # of consecutive | characters)
   [~, sortOrder] = sort(levelVec,'descend');
   additionCellOrig = additionCellOrig(sortOrder);
-  constVecOrig = costVecOrig(sortOrder);
+  costVecOrig = costVecOrig(sortOrder);
   % identify links that are above desired threshold
   linkFlags = costVecOrig>matchCostMax;
   linksToBreak = find(linkFlags);
@@ -110,6 +110,7 @@ function NewParticles = dynamicStitchBeta(FullParticles,SimParticles,ParticleSti
       temp.assignmentFlags = zeros(size(NewParticles{Channel}(oldInd).assignmentFlags));
       temp.assignmentFlags(ismember(particleVec,ptIDs)) = NewParticles{Channel}(oldInd).assignmentFlags(ismember(particleVec,ptIDs));
       temp.Approved = 0;
+      
       % incorporate into structure
       NewParticles{Channel}(length(NewParticles{Channel})+1) = temp;
     end

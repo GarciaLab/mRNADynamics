@@ -53,20 +53,47 @@ toc
 
 disp('Adding QC fields...')
 % Iterate over all channels and generate additional QC flags
-maxCost = 3;
-ncDistPrctile = 99.5;
-for Channel = 1:NCh
-  allDistanceVec = [Particles{Channel}.NucleusDist];  
-  threshDist = prctile(allDistanceVec,ncDistPrctile);
-  for p = 1:length(Particles{Channel})
-    % flag particles anomalously far from their respective nuclei
-    ncDistVec = Particles{Channel}(p).NucleusDist;
 
+%%% flag long time gaps
+Time = [FrameInfo.Time];
+% dT = median(diff(Time));
+timeThresh = 5*60;
+%%% flag distance gaps 
+distThresh = 2.5; % um
+PixelSize = FrameInfo(1).PixelSize;
+zSize = FrameInfo(1).ZStep;
+%%% flag unlikely linkages 
+if useHistone
+  costThresh = repelem(matchCostMax,NCh);
+else  
+  costThresh = 0.95*matchCostVec;
+end
+%%% flag spots that are far from their assigned nuclei
+ncDistPrctile = 99.5;
+
+for Channel = 1:NCh
+  if useHistone
+    allDistanceVec = [Particles{Channel}.NucleusDist];  
+    threshDist = prctile(allDistanceVec,ncDistPrctile);
+  end
+  for p = 1:length(Particles{Channel})
     % flag cases when particle is far away from nearest nucleus
-    Particles{Channel}(p).ncDistFlags = ncDistVec>threshDist;
-    
+    if useHistone
+      Particles{Channel}(p).ncDistFlags = Particles{Channel}(p).NucleusDist>threshDist;
+    else
+      Particles{Channel}(p).ncDistFlags = false(size(Particles{Channel}(p).Frame));
+    end
+    %%% distance
+    dx = diff(Particles{Channel}(p).xPos)*PixelSize;
+    dy = diff(Particles{Channel}(p).yPos)*PixelSize;
+    dz = diff(Particles{Channel}(p).zPosDetrended)*zSize;
+    dr = sqrt(dx.^2+dy.^2+dz.^2)>distThresh;
+    Particles{Channel}(p).distShiftFlags = [false dr] | [dr false];
+    %%% time 
+    dt = diff(Time(Particles{Channel}(p).Frame)) > timeThresh;
+    Particles{Channel}(p).timeShiftFlags = [false dt] |  [dt false];
     % flag unlikely linkages
-    Particles{Channel}(p).linkFlags = Particles{Channel}(p).linkCosts>maxCost;    
+%     Particles{Channel}(p).linkFlags = Particles{Channel}(p).linkCosts>matchCostMax;    
   end    
 end
 
@@ -143,7 +170,7 @@ if displayFigures
           ylim([0 yDim])
           saveas(f3,[trackFigFolder 'projected_paths_ch' num2str(Channel) '.png'])
 
-          f4 = figure('Position',[0 0 1024 1024]);
+          f4 = figure('Position',[0 0 856 856]);
           hold on  
           for i = 1:length(Particles{Channel})
             extantFilter = min(Particles{Channel}(i).Frame):max(Particles{Channel}(i).Frame);
