@@ -103,7 +103,9 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     % condense link ID tracker
     index_vec = 1:length(linkIDCell);
 %     newLinkEntry = {[linkIDCell{pKeep}{end} linkIDCell{pDrop}{end}]};
-    divNum = max([diff(find(diff(linkIDCell{pKeep}~='|')~=0)) diff(find(diff(linkIDCell{pDrop}~='|')~=0))]);
+    nKeep = max(diff(find(linkIDCell{pKeep}~='|')))-1;
+    nDrop = max(diff(find(linkIDCell{pDrop}~='|')))-1;
+    divNum = max([nKeep nDrop]);
     if isempty(divNum)
       divNum = 0;
     end

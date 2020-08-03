@@ -7,12 +7,11 @@ close all force
 
 % Get all the required data for this Prefix
 liveExperiment = LiveExperiment(Prefix);
-
-nCh = numel(liveExperiment.spotChannels);   %Only grabbing the spot channels - might cause issues if spot channels aren't the first n channels
+matchCostMax = 3;
+NCh = numel(liveExperiment.spotChannels);   %Only grabbing the spot channels - might cause issues if spot channels aren't the first n channels
 pixelSize = liveExperiment.pixelSize_um;    %NL: pixel size is in um
-experimentType = liveExperiment.experimentType;
 channels = liveExperiment.Channels;
-channelNames = cell(1,nCh);                 %Will fill this in the plotting loop
+channelNames = cell(1,NCh);                 %Will fill this in the plotting loop
 FrameInfo = getFrameInfo(liveExperiment);
 Spots = getSpots(liveExperiment);
 if ~iscell(Spots)% NL: added for backwards compatibility
@@ -41,17 +40,22 @@ toc
 
 tic
 disp('Stitching particle tracks...')
-Particles = track04StitchTracks(SimParticles, Prefix,...
+[FullParticles,ParticleStitchInfo] = track04StitchTracks(SimParticles, Prefix,...
                                 useHistone, retrack, displayFigures);
 toc 
 
-newParticles = dynamicStitchBeta(Particles,SimParticles,FrameInfo,2);
+tic
+matchCostVec = determineMatchOptions(Prefix,useHistone,matchCostMax);
+for Channel = 1:NCh
+  Particles = dynamicStitchBeta(FullParticles,SimParticles,ParticleStitchInfo,Prefix,1,Channel);
+end
+toc
 
 disp('Adding QC fields...')
 % Iterate over all channels and generate additional QC flags
 maxCost = 3;
 ncDistPrctile = 99.5;
-for Channel = 1:nCh
+for Channel = 1:NCh
   allDistanceVec = [Particles{Channel}.NucleusDist];  
   threshDist = prctile(allDistanceVec,ncDistPrctile);
   for p = 1:length(Particles{Channel})
@@ -66,16 +70,9 @@ for Channel = 1:nCh
   end    
 end
 
-
 % make figures if desired
 if displayFigures
-    makeTrackingFigures = true;
-else
-    makeTrackingFigures = false;
-end
-
-if makeTrackingFigures
-    for Channel = 1:nCh
+    for Channel = 1:NCh
           %Get names of channels for labeling the plots
           colonPos = strfind(channels{Channel},':');
           if isempty(colonPos)
@@ -150,7 +147,7 @@ if makeTrackingFigures
           hold on  
           for i = 1:length(Particles{Channel})
             extantFilter = min(Particles{Channel}(i).Frame):max(Particles{Channel}(i).Frame);
-            plot(Particles{Channel}(i).pathArray(extantFilter,1),Particles{Channel}(i).pathArray(extantFilter,2),'LineWidth',1.25);
+            plot(Particles{Channel}(i).xPos,Particles{Channel}(i).pathArray(extantFilter,2),'LineWidth',1.25);
           end
           scatter([RawParticles{Channel}.xPos],[RawParticles{Channel}.yPos],4,'k','filled','MarkerFaceAlpha',.5,'MarkerEdgeAlpha',0);
           % for i = 1:length(Particles{Channel})
