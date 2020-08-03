@@ -57,20 +57,34 @@ function NewParticles = dynamicStitchBeta(FullParticles,SimParticles,ParticleSti
       newTraces = temp;
     end
 %     newTraces = strsplit(fullTrace,repelem('|',min(maxDivFull,maxDivFrag)));
-    
+    % extract linkage info cells
+    linkFrameCell = NewParticles{Channel}(oldInd).linkFrameCell;
+    linkCostCell = NewParticles{Channel}(oldInd).linkCostCell;
+    linkParticleCell = NewParticles{Channel}(oldInd).linkParticleCell;
     % extract particle vec
     particleVec = NewParticles{Channel}(oldInd).idVec;
     particleVecNN = particleVec(~isnan(particleVec));
-
+    ptIDsFull = unique(particleVecNN);
     % get atom ids for each child particle
     for j = 1:length(newTraces)
 
       % initialize structure
       temp = struct;
 
-      % add frame fields
+      % add id fields
       temp.idVec =  NaN(size(particleVec));    
       ptIDs = cellfun(@str2num,strsplit(newTraces{j},'|')); % get particleIDs
+      
+      % determine subset of link cells to bring along
+      ptIDsAlt = ptIDsFull(~ismember(ptIDsFull,ptIDs));
+      inVec = cellfun(@(x) any(intersect(ptIDs,x)), linkParticleCell , 'UniformOutput', true);
+      exVec = cellfun(@(x) any(intersect(ptIDsAlt,x)), linkParticleCell , 'UniformOutput', true);
+      keepFilter = inVec&~exVec;
+      
+      temp.linkFrameCell = linkFrameCell(keepFilter);
+      temp.linkCostCell = linkCostCell(keepFilter);
+      temp.linkParticleCell = linkParticleCell(keepFilter);
+      
       temp.idVec(ismember(particleVec,ptIDs)) = particleVec(ismember(particleVec,ptIDs));
       temp.Frame = find(~isnan(temp.idVec));
 

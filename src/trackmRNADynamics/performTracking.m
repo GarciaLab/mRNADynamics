@@ -47,7 +47,7 @@ toc
 tic
 matchCostVec = determineMatchOptions(Prefix,useHistone,matchCostMax);
 for Channel = 1:NCh
-  Particles = dynamicStitchBeta(FullParticles,SimParticles,ParticleStitchInfo,Prefix,matchCostVec,Channel);
+  Particles = dynamicStitchBeta(FullParticles,SimParticles,ParticleStitchInfo,Prefix,3,Channel);
 end
 toc
 

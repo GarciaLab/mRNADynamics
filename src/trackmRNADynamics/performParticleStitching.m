@@ -1,5 +1,5 @@
 function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, ...
-              linkCostVec, LinkAdditionCell, linkCostArray] = performParticleStitching(...
+              linkCostVec, LinkAdditionCell, linkCostCell, linkFrameCell, linkParticleCell] = performParticleStitching(...
               NucleusID,nucleusIDVec,frameIndex,RawParticles,Channel,ncVec,matchCostMax)
   
   nParams = length(RawParticles{Channel}(1).hmmModel);
@@ -11,7 +11,9 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
   % arrays to track active frames (dynamically updated throughout)
   endpointFrameArray = false(length(frameIndex),nFragments);
   extantFrameArray = false(length(frameIndex),nFragments);
-  linkCostArray = NaN(size(extantFrameArray));
+  linkCostCell = cell(1,size(extantFrameArray,2));
+  linkFrameCell = cell(1,size(extantFrameArray,2));
+  linkParticleCell = cell(1,size(extantFrameArray,2));
   % arrays to track projected particle positions
   pathArray = NaN(length(frameIndex),nFragments,nParams);   
   sigmaArray = NaN(length(frameIndex),nFragments,nParams); 
@@ -29,6 +31,9 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     extantFrameArray(RawParticles{Channel}(p).FirstFrame:RawParticles{Channel}(p).LastFrame,i_pass) = true;      
     particleIDArray(RawParticles{Channel}(p).FirstFrame:RawParticles{Channel}(p).LastFrame,i_pass) = p;
     linkIDCell{i_pass} = num2str(p);
+    linkCostCell{i_pass} = [0];
+    linkFrameCell{i_pass} = {unique([RawParticles{Channel}(p).FirstFrame,RawParticles{Channel}(p).LastFrame])};
+    linkParticleCell{i_pass} = {p};
     nc_ft = ismember(ncVec,ncVec(RawParticles{Channel}(p).FirstFrame));  
     for np = 1:nParams
       pathArray(nc_ft,i_pass,np) = RawParticles{Channel}(p).hmmModel(np).pathVec;
@@ -36,7 +41,6 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     end     
     i_pass = i_pass + 1;
   end    
-  linkCostArray(endpointFrameArray) = 0;
   %%% calculate Mahalanobis Distance between particles in likelihood space
   cumActivityArray = cumsum(extantFrameArray);
   mDistanceMatRaw = Inf(nFragments,nFragments);     
@@ -83,28 +87,37 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     % pull active frames
     afDrop = find(extantFrameArray(:,pDrop))';
     
-    % update link cost array
+    % condense particle and nucleus trackers
+    particleIDArray(afDrop,pKeep) = particleIDArray(afDrop,pDrop);
+    particleIDArray = particleIDArray(:,[1:pDrop-1 pDrop+1:end]);
+
+    nucleusIDVec = nucleusIDVec([1:pDrop-1 pDrop+1:end]);
+    
+    %%%%%%%%%%%%%%%%%%
+    % update link info array
     activeFrames = [find(endpointFrameArray(:,pKeep)') find(endpointFrameArray(:,pDrop)')];
     keepFrames = ([1 find(endpointFrameArray(:,pKeep)') maxFrame]);
     includeVecKeep = diff(cumActivityArray(keepFrames,pDrop)')>0;
     includeVecKeep = includeVecKeep(1:end-1) | includeVecKeep(2:end);
     
-    dropFrames = ([1 find(endpointFrameArray(:,pKeep)') maxFrame]);
-    includeVecDrop = diff(cumActivityArray(dropFrames,pKeep)')>0;
+    dropFrames = ([1 find(endpointFrameArray(:,pDrop)') maxFrame]);
+    includeVecDrop = diff(cumActivityArray(dropFrames,pDrop)')>0;
     includeVecDrop = includeVecDrop(1:end-1) | includeVecDrop(2:end);
     
-    linkCostArray(activeFrames([includeVecKeep includeVecDrop]),pKeep) = minCost;    
-    linkCostArray = linkCostArray(:,[1:pDrop-1 pDrop+1:end]);
-    
+    % frames
+    linkFrameCell{pKeep} = [linkFrameCell{pKeep} linkFrameCell{pDrop} {activeFrames([includeVecKeep includeVecDrop])}]; 
+    linkFrameCell = linkFrameCell (:,[1:pDrop-1 pDrop+1:end]);
+    % cost
+    linkCostCell{pKeep} = [linkCostCell{pKeep} linkCostCell{pDrop} minCost];
+    linkCostCell = linkCostCell(:,[1:pDrop-1 pDrop+1:end]);
+    % particles 
+    ptIDs = unique(particleIDArray(~isnan(particleIDArray(:,pKeep)),pKeep))';
+    linkParticleCell{pKeep} = [linkParticleCell{pKeep} linkParticleCell{pDrop} {ptIDs}];
+    linkParticleCell = linkParticleCell(:,[1:pDrop-1 pDrop+1:end]);
+
     % condense active frame trackers
     endpointFrameArray(:,pKeep) = endpointFrameArray(:,pKeep) | endpointFrameArray(:,pDrop);
-    endpointFrameArray = endpointFrameArray(:,[1:pDrop-1 pDrop+1:end]);
-    
-    % condense particle and nucleus trackers
-    particleIDArray(afDrop,pKeep) = particleIDArray(afDrop,pDrop);
-    particleIDArray = particleIDArray(:,[1:pDrop-1 pDrop+1:end]);
-
-    nucleusIDVec = nucleusIDVec([1:pDrop-1 pDrop+1:end]);                          
+    endpointFrameArray = endpointFrameArray(:,[1:pDrop-1 pDrop+1:end]);                                  
     
     % condense link ID tracker
     index_vec = 1:length(linkIDCell);
