@@ -246,12 +246,8 @@ end
 for j = 1:numel(trackingStartingPoints)
     diameters(j) = getDefaultParameters(FrameInfo,['d' num2str(nucCyc(j))]);
 end
-if ~exist('diameters','var') || isempty(diameters)
-    % diameters is empty if there is no interphase in the movie (so all the
-    %frames are from a single interphase). Assume the nucleus diameter
-    %is between nc13 and nc14.
-    diameters = 0.5*(getDefaultParameters(FrameInfo,'d13')+...
-        getDefaultParameters(FrameInfo,'d14'));
+if ~exist('diameters','var') || isempty(diameters) % diameters is empty if there is no interphase in the movie (so all the frames are from a single interphase). Assume the nucleus diameter is between nc13 and nc14.
+    diameters = 0.5*(getDefaultParameters(FrameInfo,'d13')+getDefaultParameters(FrameInfo,'d14'));
 end
 
 close(h_waitbar_initialization);
@@ -326,9 +322,6 @@ if ~exist('centers','var') || isempty(centers)
     %If the xy contains only one or zero nuclei then there's probably something
     %wrong. In that case just copy the information from the previous good
     %frame.
-    
-    %Edit AR 7/28/2020- this is commented out because it wreaks havoc
-    %downstream in the tracking code for unknown reasons.
 %     xy = fillEmptyXYFrames(xy);
     
 else

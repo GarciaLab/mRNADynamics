@@ -12,7 +12,7 @@ balance = false; %resample to balance classes
 cleanAttributes = false;
 frameRange = [];
 ramDrive = 'R:\';
-classifyWithMatlab = false; %#ok<*NASGU>
+classifyWithMatlab = false;
 classifyWithWeka = true;
 matlabLoader = true;
 parFrame = false;
@@ -43,7 +43,7 @@ addJavaPathsForLivemRNA()
 
 liveExperiment = LiveExperiment(Prefix);
 
-[~,ProcPath,~,~, ~,~, Prefix, ~,~,~,~,~, ~, ~, ~]...
+[~,ProcPath,DropboxFolder,~, PreProcPath,~, Prefix, ~,~,~,~,~, ~, ~, movieDatabase]...
     = readMovieDatabase(Prefix, optionalResults);
 
 coats = liveExperiment.spotChannels;
@@ -114,11 +114,11 @@ save([trainingFolder, filesep, trainingName, '_', suffix '.model'], 'classifier'
 if parFrame
     
     %parallel version
-    movieMat = parallel.pool.Constant(movieMat); %#ok<*UNRCH>
+    movieMat = parallel.pool.Constant(movieMat);
     trainingData = parallel.pool.Constant(trainingData);
     classifier = parallel.pool.Constant(classifier);
     parfor f = 1:nFrames
-        im = movieMat.Value(:, :, :,f);
+        im = squeeze(movieMat.Value(:, :, :,f));
         pMap(:, :, f) = classifyImageMatlab(im, trainingData.Value,...
             'reSc', reSc, 'classifier', classifier.Value);
     end

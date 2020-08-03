@@ -12,7 +12,9 @@ function [SpotFilter, Particles, Spots,...
 
 
 liveExperiment = LiveExperiment(Prefix);
-
+% 
+% movieMat = getMovieMat(thisExperiment);
+% imStack = movieMat(:, :, :, CurrentFrame, CurrentChannel);
 
 FrameInfo = getFrameInfo(liveExperiment);
 LinesPerFrame = liveExperiment.yDim;
