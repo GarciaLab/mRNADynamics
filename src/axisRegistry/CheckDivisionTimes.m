@@ -27,14 +27,30 @@ for arg = 1:length(varargin)
     end
 end
 
+
+%Find out the date it was taken
+Dashes=findstr(Prefix,'-');
+Date=Prefix(1:Dashes(3)-1);
+EmbryoName=Prefix(Dashes(3)+1:end);
+
+
+%See if we're dealing with a Bcd case
+if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
+        (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
+    SourcePath=[SourcePath,filesep,'..',filesep,'..',filesep,'Bcd-GFP'];
+end
+
+
+
 try 
     hisMat = getHisMat(liveExperiment); 
     ZoomImage = hisMat(:,:,end);
     nFrames = size(hisMat, 3);
-catch 
-    D=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
-    ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,D(end).name]);
-    nFrames = length(D);
+catch
+    
+D=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
+ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,D(end).name]);
+nFrames = length(D);
 end
 
 
@@ -53,8 +69,12 @@ if ~lazy
 end
 
 %Angle between the x-axis and the AP-axis
-APAngle=atan2((coordPZoom(2)-coordAZoom(2)),(coordPZoom(1)-coordAZoom(1)));
-
+% APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
+ APAngle=atan2((coordPZoom(2)-coordAZoom(2)),(coordPZoom(1)-coordAZoom(1)));
+%Correction for if APAngle is in quadrants II or III
+% if coordPZoom(1)-coordAZoom(1) < 0
+%     APAngle = APAngle + pi;
+% end
 APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
 
 
@@ -63,7 +83,14 @@ APPosImage=zeros(size(ZoomImage));
 
 for i=1:Rows
     for j=1:Columns
+        %Angle=atan2((i-coordAZoom(2))./(j-coordAZoom(1)));
         Angle = atan2((i-coordAZoom(2)),(j-coordAZoom(1)));
+        % Correction for if Angle is in quadrant II
+%         if (j-coordAZoom(1) < 0)
+%             Angle = Angle + pi;
+%         end
+        
+        
         Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
         APPosition=Distance.*cos(Angle-APAngle);
         APPosImage(i,j)=APPosition/APLength;

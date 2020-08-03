@@ -1,4 +1,4 @@
-function [ nuclei, varargout ] = mainTracking(FrameInfo, hisMovie, varargin)
+function [ nuclei, varargout ] = mainTracking(FrameInfo, hisMat, varargin)
 %MAINTRACKING Run the full segmentation and tracking of a movie.
 % Optionally, call again with more arguments to enforce manual
 % corrections.
@@ -168,31 +168,7 @@ if isnan(provided_LoGratio)
     clear -global provided_LoGratio
 end
 
-%%
-
-
-nFrames = size(hisMovie, 3);
-
-%If we don't have nc14 we'll fool the code into thinking that the last
-    %frame of the movie was nc14
-if isnan(indMitosis(end,1))
-    
-    indMitosis(end,1)= nFrames-2;
-    indMitosis(end,2)= nFrames-1;
-    
-    if nFrames - indMitosis(end, end) < 5
-        for k = 1:5
-            hisMovie(:, :, end+1) = hisMovie(:, :, nFrames);
-        end
-        
-        indMitosis(end,1) = indMitosis(end,1) + 5;
-        indMitosis(end,2) = indMitosis(end,2) + 5;
-
-        nFrames = size(hisMovie, 3);
-    end 
-       
-end
-%%
+numberOfFrames = size(hisMat, 3);
 
 waitbar(0.2,h_waitbar_initialization);
 
@@ -205,7 +181,7 @@ if (~exist('centers','var') || isempty(centers) ) && exist('mapping','var')
 end
 
 if ~exist('mapping','var') || isempty(mapping)
-    mapping = cell(nFrames-1,1);
+    mapping = cell(numberOfFrames-1,1);
 end
 
 if ~exist('interpolatedShifts','var') || isempty(interpolatedShifts)
@@ -216,6 +192,7 @@ end
 time_resolution = getDefaultParameters(FrameInfo,'time resolution');
 space_resolution = getDefaultParameters(FrameInfo,'space resolution');
 
+numberOfFrames = size(hisMat, 3);
 
 
 %% 1. Start the segmentation if necessary.
@@ -224,7 +201,7 @@ waitbar(0.35,h_waitbar_initialization);
 
 % Measure the average shift of the nuclei from one frame to the next.
 if ~exist('shifts','var') || isempty('shifts')
-    shifts = measureAllShifts(hisMovie,h_waitbar_initialization);
+    shifts = measureAllShifts(hisMat,h_waitbar_initialization);
 end
 
 waitbar(0.8,h_waitbar_initialization)
@@ -237,10 +214,10 @@ if ~exist('indMitosis','var') || isempty('indMitosis')
     tmp = zeros(numel(indMitosis,2));
     for j = 1:numel(indMitosis)
         tmp(j,1) = max(1,indMitosis(j)-4);
-        tmp(j,2) = min(nFrames,indMitosis(j)+4);
+        tmp(j,2) = min(numberOfFrames,indMitosis(j)+4);
     end
     indMitosis = tmp;
-    indMitosis = [0 1; indMitosis; nFrames 0];
+    indMitosis = [0 1; indMitosis; numberOfFrames 0];
 else
     % If the movie doesn't start within a mitosis, the first row has to be
     % [0,1] for the program to know it is an interphase.
@@ -249,8 +226,8 @@ else
     end
     % Similarly, if the movie doesn't end in a mitosis, the last row has to
     % be [numberOfFrames 0] for the program to know it is an interphase.
-    if all(indMitosis(end,:) < nFrames)
-        indMitosis = [indMitosis; nFrames 0];
+    if all(indMitosis(end,:) < numberOfFrames)
+        indMitosis = [indMitosis; numberOfFrames 0];
     end
 end
 
@@ -258,7 +235,7 @@ waitbar(0.9,h_waitbar_initialization);
 
 % Define the starting points for the tracking (at the middle of the
 % interphase).
-trackingStartingPoints = choseFramesToStartTracking(FrameInfo,indMitosis,nFrames);
+trackingStartingPoints = choseFramesToStartTracking(FrameInfo,indMitosis,numberOfFrames);
 
 % Determine the nuclear cycle of the interphases:
 nucCyc = zeros(numel(trackingStartingPoints),1);
@@ -281,7 +258,7 @@ close(h_waitbar_initialization);
 
 if ~exist('centers','var') || isempty(centers)
     h_waitbar_segmentation = waitbar(0,'Segmentation...');
-    xy = cell(nFrames,1);
+    xy = cell(numberOfFrames,1);
     mitosisStartingPoint = [];
     
     for j = 1:(size(indMitosis,1)-1)
@@ -292,7 +269,7 @@ if ~exist('centers','var') || isempty(centers)
         if size(indMitosis,1) == 1 % there is only one phase (mitosis or interphase) in the movie
             if indMitosis(1,1) ~= 1 % the only phase is an interphase
                 first = 1;
-                last = nFrames;
+                last = numberOfFrames;
             else
                 segment = false;
             end
@@ -301,13 +278,13 @@ if ~exist('centers','var') || isempty(centers)
             if ~isempty(xy{first})
                 first = first+1;
             end
-            last = min(indMitosis(j+1,1),nFrames);
+            last = min(indMitosis(j+1,1),numberOfFrames);
             if ~isempty(xy{last})
                 last = last-1;
             end
         end
         if segment
-            xy(first:last) = segmentFrames(FrameInfo, hisMovie,first,last,diameters(j),embryoMask,h_waitbar_segmentation);
+            xy(first:last) = segmentFrames(FrameInfo, hisMat,first,last,diameters(j),embryoMask,h_waitbar_segmentation);
         end
         
         % Segment mitosis
@@ -326,7 +303,7 @@ if ~exist('centers','var') || isempty(centers)
                 if ~isempty(xy{first})
                     first = first+1;
                 end
-                last = min(indMitosis(j,2),nFrames);
+                last = min(indMitosis(j,2),numberOfFrames);
                 if ~isempty(xy{last})
                     last = last-1;
                 end
@@ -337,7 +314,7 @@ if ~exist('centers','var') || isempty(centers)
             else
                 D = 0.5*sum(diameters(j-1:j));
             end
-            xy(first:last) = segmentFrames(FrameInfo,hisMovie,first,last,D,embryoMask,h_waitbar_segmentation);
+            xy(first:last) = segmentFrames(FrameInfo,hisMat,first,last,D,embryoMask,h_waitbar_segmentation);
         end
         
     end
@@ -369,9 +346,9 @@ end
 numberOfNuclei = size(xy{1},1);
 
 % initialize array
-nuclei = struct('position',nan(nFrames,2),'indXY',...
-    mat2cell([1:numberOfNuclei; zeros(nFrames-1,numberOfNuclei)],...
-    nFrames,ones(numberOfNuclei,1)),'P',[],'D',[],'E',[],'approved',0);
+nuclei = struct('position',nan(numberOfFrames,2),'indXY',...
+    mat2cell([1:numberOfNuclei; zeros(numberOfFrames-1,numberOfNuclei)],...
+    numberOfFrames,ones(numberOfNuclei,1)),'P',[],'D',[],'E',[],'approved',0);
 
 for j = 1:numel(nuclei)
     nuclei(j).position(1,:) = xy{1}(j,:);
@@ -449,7 +426,7 @@ for j = 1:numberOfPhases
     %(again checking for index out of bounds errors in advance)
     
     first = max(breakUpsFrames(j,1),1);
-    last = min(breakUpsFrames(j,2),nFrames);
+    last = min(breakUpsFrames(j,2),numberOfFrames);
     
     if phaseIsAMitosis(j)
         if firstFrameIsAnInterphase
@@ -460,7 +437,7 @@ for j = 1:numberOfPhases
         
 %         try
             [ xy(first:last), mapping(first:last-1), nuclei ] =...
-                trackMitosis(FrameInfo, hisMovie, first, last, shifts,...
+                trackMitosis(FrameInfo, hisMat, first, last, shifts,...
                 diameters(j), embryoMask, xy(first:last),...
                 mapping(first:last-1), nuclei, h_waitbar_tracking );
 %         catch
@@ -480,7 +457,7 @@ for j = 1:numberOfPhases
         end
         
 %         try
-            [nuclei, ~, interpolatedShifts] = trackWholeInterphase(FrameInfo,hisMovie,...
+            [nuclei, ~, interpolatedShifts] = trackWholeInterphase(FrameInfo,hisMat,...
                 trackingStartingPoints(1),first,last,diameters(j), embryoMask, ...
                 xy, mapping,nuclei, interpolatedShifts, h_waitbar_tracking, ...
                 ExpandedSpaceTolerance, NoBulkShift);
