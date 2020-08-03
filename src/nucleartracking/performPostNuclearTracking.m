@@ -47,7 +47,7 @@ if postTrackingSettings.doAdjustNuclearContours
     Ellipses = fillEmptyXYFrames(Ellipses);
     
     save2(ellipsesFile, Ellipses);
-    TrackNuclei(Prefix, 'nWorkers', nWorkers, 'retrack')
+    TrackNuclei(Prefix, 'nWorkers', 1, 'retrack')
     return;
     
 end
@@ -64,6 +64,7 @@ save2(schnitzcellsFile, schnitzcells);
 
 % Stitch the schnitzcells using Simon's fantastic and clever code
 if ~postTrackingSettings.noStitch
+    disp('stitching schnitzes')
     [schnitzcells, Ellipses] = StitchSchnitzv3(Prefix, nWorkers);
 end
 
