@@ -59,8 +59,6 @@ liveExperiment = LiveExperiment(Prefix);
 
 FrameInfo = getFrameInfo(liveExperiment);
 
-nFrames = length(FrameInfo);
-
 ProcPath = liveExperiment.userProcFolder;
 DropboxFolder = liveExperiment.userResultsFolder;
 PreProcPath = liveExperiment.preFolder;
@@ -71,15 +69,33 @@ schnitzcellsFile = [DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'];
 
 anaphaseFrames = getAnaphaseFrames(liveExperiment); 
 
-
-if postTrackingSettings.chooseHis
-    [hisFile, hisPath] = uigetfile([ProcPath, filesep, Prefix,'_',filesep,'*.*']);
-    hisMat = imreadStack([hisPath, filesep, hisFile]);
-else    
-    hisMat =  getHisMat(liveExperiment);
+if iscolumn(anaphaseFrames)
+    anaphaseFrames = anaphaseFrames';
 end
 
+%This checks whether all ncs have been defined
+if length(anaphaseFrames)~=6
+    error('Check the nc frames in the MovieDatabase entry. Some might be missing')
+end
 
+if length( find(isnan(anaphaseFrames))) ==...
+        length(anaphaseFrames) || length(anaphaseFrames) < 6
+    error('Have the ncs been defined in MovieDatabase or anaphaseFrames.mat?')
+end
+
+%Now do the nuclear segmentation and lineage tracking. This should be put
+%into an independent function.
+
+if postTrackingSettings.chooseHis
+    
+    [hisFile, hisPath] = uigetfile([ProcPath, filesep, Prefix,'_',filesep,'*.*']);
+    hisMat = imreadStack([hisPath, filesep, hisFile]);
+    
+else
+    
+    hisMat =  getHisMat(liveExperiment);
+    
+end
 
 if mixedPolaritySegmentation
     if ~retrack
@@ -91,12 +107,41 @@ if mixedPolaritySegmentation
     retrack = true;
 end
 
-%%
-%Load anaphase timing, validate, and modify it
-indMit = generateIndMit(anaphaseFrames, nFrames);
+
+%Pull the mitosis information from ncs.
+anaphaseFrames=anaphaseFrames(anaphaseFrames~=0);
+
+%Note that I'm adding a range of two frames frames before and after the
+%determines mitosis
+indMit=[anaphaseFrames'-2,anaphaseFrames'+2];
+
+%Make sure no indices are negative. This could happen is the nuclear cycle
+%started at frame 1, for example.
+indMit(indMit<1)=1;
+
+%Check whether nc14 occurred very close to the end of the movie. For those
+%frames we'll move the boundary for tracking purposes
+nFrames = length(FrameInfo);
+indMit(indMit>=nFrames)=indMit(indMit>=nFrames)-2;
+
+%If indMit is empty this means that we didn't see any mitosis. Deal with
+%this by assigning the first frames to it
+if isempty(indMit)
+    indMit=[1,2];
+    %If we don't have nc14 we'll fool the code into thinking that the last
+    %frame of the movie was nc14
+elseif isnan(indMit(end,1))
+    indMit(end,1)=nFrames-6;
+    indMit(end,2)=nFrames-5;
+end
+
+expandedAnaphaseFrames = [zeros(1,8),liveExperiment.anaphaseFrames'];
 
 %Embryo mask
-embryo_mask=true(size(hisMat(:, :, 1)));
+ImageTemp=squeeze(hisMat(:, :, 1));
+embryo_mask=true(size(ImageTemp));
+clear ImageTemp
+
 
 
 %Get information about the spatial and temporal resolution
@@ -222,8 +267,6 @@ if exist('dataStructure', 'var')
 end
 
 %perform very important stuff subsequent to tracking proper
-expandedAnaphaseFrames = [zeros(1,8),liveExperiment.anaphaseFrames'];
-
 performPostNuclearTracking(Prefix,...
     expandedAnaphaseFrames, nWorkers, schnitzcellsFile,...
     ellipsesFile, postTrackingSettings)

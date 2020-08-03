@@ -91,12 +91,12 @@ yDim = liveExperiment.yDim;
 xDim = liveExperiment.xDim;
 zDim = liveExperiment.zDim;
 
-if shouldMaskNuclei
-    if liveExperiment.hasEllipsesFile
-        Ellipses = getEllipses(liveExperiment); 
-        Ellipses = filterEllipses(Ellipses, [yDim, xDim]);
-    else, shouldMaskNuclei = false; end
-end
+% if shouldMaskNuclei
+%     if liveExperiment.hasEllipsesFile
+%         Ellipses = getEllipses(liveExperiment); 
+%         Ellipses = filterEllipses(Ellipses, [yDim, xDim]);
+%     else, shouldMaskNuclei = false; end
+% end
 
    
     if autoThresh
@@ -120,9 +120,9 @@ p = 1;
 parfor currentFrame = initialFrame:lastFrame
     
     imStack = movieMatCh(:, :, :, currentFrame);
-    if shouldMaskNuclei
-        ellipseFrame = Ellipses{currentFrame};
-    end
+%     if shouldMaskNuclei
+%         ellipseFrame = Ellipses{currentFrame};
+%     end
     
     %report progress every tenth frame
     if ~mod(currentFrame, 10), disp(['Segmenting frame ',...
@@ -184,17 +184,17 @@ parfor currentFrame = initialFrame:lastFrame
         im_thresh = dog >= Threshold;
         
         % apply nuclear mask if it exists
-        if shouldMaskNuclei
-    
-            nuclearMask = makeNuclearMask(ellipseFrame, [yDim xDim], radiusScale);
-            im_thresh = im_thresh & nuclearMask;
-            
-%             if shouldDisplayFigures
-%                 figure(maskFig);
-%                 imshowpair(nuclearMask, dog, 'montage'); 
-%             end
-            
-        end
+%         if shouldMaskNuclei
+%     
+%             nuclearMask = makeNuclearMask(ellipseFrame, [yDim xDim], radiusScale);
+%             im_thresh = im_thresh & nuclearMask;
+%             
+% %             if shouldDisplayFigures
+% %                 figure(maskFig);
+% %                 imshowpair(nuclearMask, dog, 'montage'); 
+% %             end
+%             
+%         end
         
         %probability map regions usually look different from dog regions and
         %require some mophological finesse
