@@ -1,4 +1,4 @@
-function [innerMask, ellipseFrameWithEdges] = fitEllipsesToNuclei(mask, varargin)
+function [cMask, ellipseFrameWithEdges] = fitEllipsesToNuclei(mask, varargin)
 
 warning('off','all'); %disabling all of the linear algebra spam
 
@@ -38,7 +38,7 @@ border = borderImage(mask);
 borderDist = bwdist(border);
 
 edgeMask = false(yDim, xDim);
-innerMask =  false(yDim, xDim);
+cMask =  false(yDim, xDim);
 
 ellipseFrame = [];
 edgeEllipseFrame = [];
@@ -80,8 +80,11 @@ for k = 1:numel(boundaryCell)
         
     end
     
-    xSub = max(min(round(abs(xfit)), xDim), 1);
-    ySub = max(min(round(abs(yfit)), yDim), 1);
+    xSub = min(round(abs(xfit)), xDim);
+    ySub = min(round(abs(yfit)), yDim);
+    
+    xSub = max(xSub, 1);
+    ySub = max(ySub, 1);
     
     isFarFromBorder =  borderDist(ySub, xSub) > borderThresh;
     
@@ -89,7 +92,7 @@ for k = 1:numel(boundaryCell)
         
         n = n + 1;
         
-        ellipseFrame(n, 2) = xfit;
+        ellipseFrame(n, 2) = xfit; %#ok<*AGROW>
         ellipseFrame(n, 1) = yfit;
         if ~doEllipse
             ellipseFrame(n, 3) = Rfit;
@@ -103,7 +106,7 @@ for k = 1:numel(boundaryCell)
             h = images.roi.Ellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
                 'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
                 'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)),'StripeColor','m');
-            innerMask = innerMask + poly2mask(h.Vertices(:, 1), h.Vertices(:, 2), size(innerMask, 1), size(innerMask, 2));
+            cMask = cMask + poly2mask(h.Vertices(:, 1), h.Vertices(:, 2), size(cMask, 1), size(cMask, 2));
             %             h = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
             %             'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)),'StripeColor','m');
             %             cMask = cMask + createMask(h);
@@ -140,14 +143,13 @@ end
 %this is here for backwards compatibility.
 %it's being deprecated.
 if ~doEllipse
-    innerMask = makeNuclearMask(ellipseFrame,...
+    cMask = makeNuclearMask(ellipseFrame,...
         [size(mask, 1), size(mask, 2)], 'radiusScale', 1);
 end
 
-% ellipseFrameWithEdges = cat(1, ellipseFrame, edgeEllipseFrame);
-ellipseFrameWithEdges = ellipseFrame;
+ellipseFrameWithEdges = cat(1, ellipseFrame, edgeEllipseFrame);
 
-innerMask = innerMask + edgeMask;
+cMask = cMask + edgeMask;
 % 
 % ellipseFrameWithEdgesTemp = [];
 % %quality control

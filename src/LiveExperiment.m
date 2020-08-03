@@ -237,14 +237,11 @@ classdef LiveExperiment
             %exact equality of frame times in frameinfo. i don't think
             %these should ever be precisely identical in different movies
             persistent FrameInfo_movie;
-            persistent movieMat;
-
             tempInfo = load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
             
             isNewMovie = isempty(FrameInfo_movie) ||...
-                length([tempInfo.FrameInfo.Time]) ~= length([FrameInfo_movie.Time]) || ...
-                any([tempInfo.FrameInfo.Time] ~= [FrameInfo_movie.Time]) ||...
-                size(movieMat, 5) ~= this.nFrames;
+                size([tempInfo.FrameInfo.Time],2) ~= size([FrameInfo_movie.Time],2) || ...
+                any([tempInfo.FrameInfo.Time] ~= [FrameInfo_movie.Time]);
             
             persistent preTifDir;
             if isempty(preTifDir) || isNewMovie
@@ -275,6 +272,7 @@ classdef LiveExperiment
                 string({preTifDir.name}), '_z'));
             
             
+            persistent movieMat;
             %load movie only if it hasn't been loaded or if we've switched
             %Prefixes (determined by num frames) or if the old FrameInfo doesn't match
             %the new FrameInfo
@@ -368,8 +366,7 @@ classdef LiveExperiment
 
             isNewMovie = isempty(FrameInfo_His) ||...
             size([tempInfo.FrameInfo.Time],2) ~= size([FrameInfo_His.Time],2) || ...
-            any([tempInfo.FrameInfo.Time] ~= [FrameInfo_His.Time]) ||...
-            size(hisMat, 3) ~= this.nFrames;
+            any([tempInfo.FrameInfo.Time] ~= [FrameInfo_His.Time]);
 
 
             %load histone movie only if it hasn't been loaded or if we've switched
