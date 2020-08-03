@@ -150,12 +150,12 @@ else
     load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
     centers = updateCentersFromEllipses(FrameInfo, Ellipses);
     
-    %Load the dataStructure to speed up retracking if it exists
-    if exist([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'], 'file')
-        load([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'])
-    elseif exist([ProcPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'], 'file')
-        load([ProcPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'])
-    end
+%     %Load the dataStructure to speed up retracking if it exists
+%     if exist([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'], 'file')
+%         load([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'])
+%     elseif exist([ProcPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'], 'file')
+%         load([ProcPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'])
+%     end
     
     % look for a settings file in the Raw Data folder.
     if exist([PreProcPath,filesep,Prefix,filesep,Prefix,'-AcquisitionSettings.mat'],'file')

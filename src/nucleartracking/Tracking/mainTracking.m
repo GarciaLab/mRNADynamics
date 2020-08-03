@@ -172,6 +172,7 @@ end
 
 
 nFrames = size(hisMovie, 3);
+originalNFrames = nFrames;
 
 %If we don't have nc14 we'll fool the code into thinking that the last
     %frame of the movie was nc14
@@ -180,17 +181,26 @@ if isnan(indMitosis(end,1))
     indMitosis(end,1)= nFrames-2;
     indMitosis(end,2)= nFrames-1;
     
-    if nFrames - indMitosis(end, end) < 5
-        for k = 1:5
-            hisMovie(:, :, end+1) = hisMovie(:, :, nFrames);
-        end
-        
-        indMitosis(end,1) = indMitosis(end,1) + 5;
-        indMitosis(end,2) = indMitosis(end,2) + 5;
+%     if nFrames - indMitosis(end, end) < 4
+%         for k = 1:5
+%             hisMovie(:, :, end+1) = zeros(size(hisMovie, 1), size(hisMovie, 2));
+%             if exist('centers', 'var')
+%                 centers(end+1) = centers(nFrames);
+%             end
+%         end
+%         
+%         indMitosis(end,1) = indMitosis(end,1) + 5;
+%         indMitosis(end,2) = indMitosis(end,2) + 5;
 
-        nFrames = size(hisMovie, 3);
-    end 
-       
+%         nFrames = size(hisMovie, 3);
+%     end 
+%     
+%     if exist('centers', 'var') && size(centers, 1) > nFrames
+%         while size(centers, 1) > nFrames
+%            centers(end) = []; 
+%         end
+%     end
+%        
 end
 %%
 
@@ -541,7 +551,6 @@ if nargout > 1
     end
     
 end
-
 
 
 end

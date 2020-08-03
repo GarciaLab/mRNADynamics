@@ -59,7 +59,9 @@ localMaxMask(round(length(localMaxMask)/2),round(length(localMaxMask)/2))  = 0;
 filteredImg = fourierFilterWithSymmetricBoundaryConditions(...
     hisImage,-fspecial('log',round(10*LoGradius),LoGradius));
 
-filteredImg = abs(filteredImg);
+if false 
+    filteredImg = abs(filteredImg);
+end
 
 % Find local maxima
 maxima = (filteredImg > imdilate(filteredImg,localMaxMask) ) & embryoMask;
