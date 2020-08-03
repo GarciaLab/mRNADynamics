@@ -47,7 +47,7 @@ toc
 tic
 matchCostVec = determineMatchOptions(Prefix,useHistone,matchCostMax);
 for Channel = 1:NCh
-  Particles = dynamicStitchBeta(FullParticles,SimParticles,ParticleStitchInfo,Prefix,1,Channel);
+  Particles = dynamicStitchBeta(FullParticles,SimParticles,ParticleStitchInfo,Prefix,matchCostVec,Channel);
 end
 toc
 
@@ -147,7 +147,7 @@ if displayFigures
           hold on  
           for i = 1:length(Particles{Channel})
             extantFilter = min(Particles{Channel}(i).Frame):max(Particles{Channel}(i).Frame);
-            plot(Particles{Channel}(i).xPos,Particles{Channel}(i).pathArray(extantFilter,2),'LineWidth',1.25);
+            plot(Particles{Channel}(i).xPos,Particles{Channel}(i).yPos,'LineWidth',1.25);
           end
           scatter([RawParticles{Channel}.xPos],[RawParticles{Channel}.yPos],4,'k','filled','MarkerFaceAlpha',.5,'MarkerEdgeAlpha',0);
           % for i = 1:length(Particles{Channel})

@@ -114,14 +114,6 @@ function NewParticles = dynamicStitchBeta(FullParticles,SimParticles,ParticleSti
       NewParticles{Channel}(length(NewParticles{Channel})+1) = temp;
     end
     NewParticles{Channel} = NewParticles{Channel}([1:oldInd-1 oldInd+1:end]);   
-%     NewParticlesTemp{Channel} = NewParticles{Channel}([1:oldInd-1 oldInd+1:end]);   
-%     test = {NewParticlesTemp{Channel}.linkStateString};
-%     if any(find(contains(currStateCell,testString))) && ~any(find(contains(test,testString)))
-%       error('wtf')
-%     elseif ~any(find(contains(currStateCell,testString))) 
-%       error('wtfwtf')
-%     end
-%     NewParticles = NewParticlesTemp;
   end
   for i = 1:length(NewParticles{Channel})
     NewParticles{Channel}(i).matchCost = matchCostMax;

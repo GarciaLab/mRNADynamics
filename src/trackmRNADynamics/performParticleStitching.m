@@ -13,8 +13,8 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
   extantFrameArray = false(length(frameIndex),nFragments);
 
   % arrays to track projected particle positions
-  pathArray = Inf(length(frameIndex),nFragments,nParams);   
-  sigmaArray = Inf(length(frameIndex),nFragments,nParams); 
+  pathArray = NaN(length(frameIndex),nFragments,nParams);   
+  sigmaArray = NaN(length(frameIndex),nFragments,nParams); 
 
   % particle ID tracker
   particleIDArray = NaN(length(frameIndex),nFragments);
@@ -29,9 +29,7 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     extantFrameArray(RawParticles{Channel}(p).FirstFrame:RawParticles{Channel}(p).LastFrame,i_pass) = true;      
     particleIDArray(RawParticles{Channel}(p).FirstFrame:RawParticles{Channel}(p).LastFrame,i_pass) = p;
     linkIDCell{i_pass} = num2str(p);
-%     linkCostVec{i_pass} = 0;
-%     linkedFragmentlCell{i_pass} = [0];
-    nc_ft = ismember(ncVec,ncVec(RawParticles{Channel}(p).FirstFrame));
+    nc_ft = ismember(ncVec,ncVec(RawParticles{Channel}(p).FirstFrame));  
     for np = 1:nParams
       pathArray(nc_ft,i_pass,np) = RawParticles{Channel}(p).hmmModel(np).pathVec;
       sigmaArray(nc_ft,i_pass,np) = RawParticles{Channel}(p).hmmModel(np).sigmaVec;        
@@ -67,8 +65,7 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
 
   % calculate cost matrix
   mDistanceMat = tril(sqrt((mDistanceMatRaw+mDistanceMatRaw')/2));
-  mDistanceMat(mDistanceMat==0) = Inf;    
-  %       maxStitchNum = size(mDistanceMat,1)-1; % maximum number of stitches possible    
+  mDistanceMat(mDistanceMat==0) = Inf;       
   % calculate  current lowest cost
   minCost = min(mDistanceMat(:));  
   % iterate through cost layers
@@ -90,10 +87,7 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     % condense active frame trackers
     endpointFrameArray(:,pKeep) = endpointFrameArray(:,pKeep) | endpointFrameArray(:,pDrop);
     endpointFrameArray = endpointFrameArray(:,[1:pDrop-1 pDrop+1:end]);
-
-    extantFrameArray(:,pKeep) = extantFrameArray(:,pKeep) | extantFrameArray(:,pDrop);
-    extantFrameArray = extantFrameArray(:,[1:pDrop-1 pDrop+1:end]);
-
+    
     % condense particle and nucleus trackers
     particleIDArray(afDrop,pKeep) = particleIDArray(afDrop,pDrop);
     particleIDArray = particleIDArray(:,[1:pDrop-1 pDrop+1:end]);
@@ -102,7 +96,6 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     
     % condense link ID tracker
     index_vec = 1:length(linkIDCell);
-%     newLinkEntry = {[linkIDCell{pKeep}{end} linkIDCell{pDrop}{end}]};
     nKeep = max(diff(find(linkIDCell{pKeep}~='|')))-1;
     nDrop = max(diff(find(linkIDCell{pDrop}~='|')))-1;
     divNum = max([nKeep nDrop]);
@@ -119,81 +112,19 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     LinkAdditionCell{length(linkCostVec)} = linkIDCell{pKeep};
     
     % condense distance array
-    mDistanceMat = mDistanceMat(~ismember(index_vec,pDrop),~ismember(index_vec,pDrop));
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % generate updated combined path using variance-weighted average 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    % identify gaps where different fragments meet
-    [activeFrames, si] = sort([afKeep afDrop]);
-    cbIDVec = [ones(size(afKeep)) 2*ones(size(afDrop))];
-    cbIDVec = cbIDVec(si);         
-    
-    activeFrames = [0 activeFrames maxFrame+1];
-    cbIDVec = [cbIDVec(1) cbIDVec cbIDVec(end)];
-    
-    dfGapFlags = find(diff(cbIDVec)~=0);    
-    smGapFlags = find(diff(cbIDVec)==0&diff(activeFrames)>1);
-
-    % calculate variance weights
-    nK = 1;%length(afKeep);
-    nD = 1;%length(afDrop);
-    sg1 = nK*sigmaArray(:,pKeep,:).^-2;
-    sg2 = nD*sigmaArray(:,pDrop,:).^-2;
-
-    % initialize arrays
-    newPath = NaN(size(sigmaArray(:,1,:)));
-    newSigma = NaN(size(sigmaArray(:,1,:)));
-    
-    % assign detected points        
-    newPath(afDrop,:,:) = pathArray(afDrop,pDrop,:);
-    newPath(afKeep,:,:) = pathArray(afKeep,pKeep,:);
-    newSigma(afDrop,:,:) = sigmaArray(afDrop,pDrop,:);
-    newSigma(afKeep,:,:) = sigmaArray(afKeep,pKeep,:);
-    
-    %%% next calculate updated projections for gaps between interfaces of
-    %%% the two joined fragments (use variance-weighted mean) 
-    cFrames = [];
-    for f = 1:length(dfGapFlags)
-      cFrames = [cFrames activeFrames(dfGapFlags(f))+1:activeFrames(dfGapFlags(f)+1)-1]; 
-    end
-    % update path info
-    newPath(cFrames,:,:) = (pathArray(cFrames,pKeep,:).*sg1(cFrames,:,:) ...
-                                  + pathArray(cFrames,pDrop,:).*sg2(cFrames,:,:)) ...
-                                  ./ (sg1(cFrames,:,:) + sg2(cFrames,:,:));
-    % update error info
-    newSigma(cFrames,:,:) = sqrt(1 ./ (sg1(cFrames,:,:) + sg2(cFrames,:,:)));
-    % determine which indices to use from each parent
-    kFrames = [];
-    dFrames = [];
-    for f = 1:length(smGapFlags)
-      % extract relevant frames
-      frameIndices = activeFrames(smGapFlags(f))+1:activeFrames(smGapFlags(f)+1)-1;      
-      if cbIDVec(smGapFlags(f)) == 1
-        kFrames = [kFrames frameIndices];
-      else
-        dFrames = [dFrames frameIndices];
-      end      
-    end
-    
-    %%% update 
-    newPath(kFrames,:,:) = pathArray(kFrames,pKeep,:);
-    newPath(dFrames,:,:) = pathArray(dFrames,pDrop,:);
-    newSigma(kFrames,:,:) = sigmaArray(kFrames,pKeep,:);
-    newSigma(dFrames,:,:) = sigmaArray(dFrames,pDrop,:);   
-    
-    tVec = [afKeep afDrop kFrames dFrames cFrames];
-    if length(unique(tVec))~=length(frameIndex) || length(unique(tVec))~=length(tVec)
-      error('inconsistent update indices')
-    end
-    % update variance and path arrays
-    sigmaArray(:,pKeep,:) = newSigma;
-    pathArray(:,pKeep,:) = newPath;
-
+    mDistanceMat = mDistanceMat(~ismember(index_vec,pDrop),~ismember(index_vec,pDrop));   
+        
+    % call path update function
+    [pathArray(:,pKeep,:), sigmaArray(:,pKeep,:)] = updatePaths(...
+      pathArray(:,[pKeep pDrop],:),sigmaArray(:,[pKeep pDrop],:),extantFrameArray(:,[pKeep pDrop]));        
+            
     % condense path arrays
     sigmaArray = sigmaArray(:,[1:pDrop-1 pDrop+1:end],:);
     pathArray = pathArray(:,[1:pDrop-1 pDrop+1:end],:);
+    
+    % update active frame info
+    extantFrameArray(:,pKeep) = extantFrameArray(:,pKeep) | extantFrameArray(:,pDrop);
+    extantFrameArray = extantFrameArray(:,[1:pDrop-1 pDrop+1:end]);
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % update cost matrix 
