@@ -1,5 +1,6 @@
 function [embryoMask]=getMultithreshEmbryoMask(FrameInfo, names, diameters)
 %%
+close all
 lastframe = length(names);
 nucleusDiameter = diameters(end);
 I = imread(names{lastframe});
