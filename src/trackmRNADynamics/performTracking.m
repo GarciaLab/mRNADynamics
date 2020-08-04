@@ -47,7 +47,7 @@ toc
 tic
 matchCostVec = determineMatchOptions(Prefix,useHistone,matchCostMax);
 for Channel = 1:NCh
-  Particles = dynamicStitchBeta(FullParticles,SimParticles,ParticleStitchInfo,Prefix,3,Channel);
+  Particles = dynamicStitchBeta(FullParticles,SimParticles,ParticleStitchInfo,Prefix,matchCostVec,Channel);
 end
 toc
 
@@ -64,7 +64,7 @@ PixelSize = FrameInfo(1).PixelSize;
 zSize = FrameInfo(1).ZStep;
 %%% flag unlikely linkages 
 if useHistone
-  costThresh = repelem(matchCostMax,NCh);
+  costThresh = repelem(0.9*matchCostMax,NCh);
 else  
   costThresh = 0.95*matchCostVec;
 end
@@ -93,7 +93,7 @@ for Channel = 1:NCh
     dt = diff(Time(Particles{Channel}(p).Frame)) > timeThresh;
     Particles{Channel}(p).timeShiftFlags = [false dt] |  [dt false];
     % flag unlikely linkages
-%     Particles{Channel}(p).linkFlags = Particles{Channel}(p).linkCosts>matchCostMax;    
+    Particles{Channel}(p).linkCostFlags = Particles{Channel}(p).linkCostCell>costThresh;    
   end    
 end
 
@@ -194,6 +194,6 @@ end
 
 % If we only have one channel, then convert SpotFilter and Particles to a standard structure.
 
-save([resultsFolder, filesep, 'ParticlesFull.mat'],'RawParticles','HMMParticles', 'SimParticles','Particles')
+save([resultsFolder, filesep, 'ParticlesFull.mat'],'RawParticles','HMMParticles', 'SimParticles','FullParticles','ParticleStitchInfo')
 
 end

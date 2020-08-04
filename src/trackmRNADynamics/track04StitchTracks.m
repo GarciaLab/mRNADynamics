@@ -136,7 +136,7 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
           % record info vectors
           tempParticles(nIter).idVec = NaN(1,size(particleIDArray,1));
           tempParticles(nIter).idVec(tempParticles(nIter).Frame) = rmVec(p);   
-          tempParticles(nIter).linkCostCell = {0};
+          tempParticles(nIter).linkCostCell = [0];
           tempParticles(nIter).linkFrameCell = {unique([SimParticles{Channel}(rmVec(p)).Frame(1) SimParticles{Channel}(rmVec(p)).Frame(end)])};
           tempParticles(nIter).linkParticleCell = {rmVec(p)};
           tempParticles(nIter).NucleusID = NaN;
