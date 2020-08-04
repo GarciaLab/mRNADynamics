@@ -1,7 +1,8 @@
 
 function zoom_angle = getZoomAngle(Prefix, rawPrefixPath)
 
-if isfolder([rawPrefixPath, 'MetaData'])
+if isfolder([rawPrefixPath, 'MetaData']) &&...
+        ~isempty(dir([rawPrefixPath,'MetaData', filesep, '*.xml'])) % if the MetaData is not empty
     
     xml_file_dir = dir([rawPrefixPath,'MetaData', filesep, '*.xml']);
     xml_file = xml_file_dir(1).name;
