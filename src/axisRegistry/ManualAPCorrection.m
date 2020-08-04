@@ -170,7 +170,7 @@ while (cc~=13)
     elseif (ct~=0)&(cc=='-')
         OldXLim=xlim(axesCorrelation);
         OldYLim=ylim(axesCorrelation);
-        xlim(axesCorrelation,[OldXLim-CorrX]*2+CorrX)
+        xlim(axesCoxrrelation,[OldXLim-CorrX]*2+CorrX)
         ylim(axesCorrelation,[OldYLim-CorrY]*2+CorrY)
        
         

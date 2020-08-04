@@ -1,7 +1,7 @@
 function [Particles, SpotFilter] = AddParticlePositionTile(Prefix, varargin)
 %% author: Gabriella Martini
 % date created: 1/29/20
-% date last modified: 7/30/20
+% date last modified: 8/3/20
 %Default set of variables to save
 
 % DESCRIPTION
@@ -46,23 +46,33 @@ ImposeManualBounds = false;
 
 close all
 %% 
-
-for i=1:length(varargin)
+i = 1;
+while i <= length(varargin)
     switch varargin{i}
         case {'NoAP'}
             NoAP=1;
+            i = i + 1;
         case {'SelectChannel'}
             SelectChannel=1;
+            i = i + 1;
         case {'optionalResults'}
             optionalResults = varargin{i+1};
+            i = i + 2;
         case {'UseFullEmbryoBoundaries'}
             UseFullEmbryoBoundaries = true;
+            i = i + 1;
         case {'ImposeEmbryoMask'}
             ImposeEmbryoMask = true;
+            i = i + 1;
         case {'ImposeManualBounds'}
             ImposeManualBounds = true;
+            i = i + 1;
         case {'embryo_mask_tolerance'}
             embryo_mask_tolerance = varargin{i+1};
+            i = i + 2;
+        otherwise
+            error(['"',varargin{i}, '" not a known flag.']);
+            
     end
 end
 %% 
@@ -350,31 +360,46 @@ if ~NoAP
         NucMaskZoomOut = false(size(SurfImage));
         
         
-        if ZoomRatio <= 1
-            ZoomImageResized = imresize(ZoomImage, 1/ZoomRatio);
-            im1 = ZoomImageResized;
-            im2 = SurfImage;
+        if ZoomRatio > 24
+            warning('Not able to do the cross correlation. Assuming no shift between surface-level and movie-level images.')
+        else
+            if ZoomRatio <= 1
+                ZoomImageResized = imresize(ZoomImage, 1/ZoomRatio);
+                im1 = ZoomImageResized;
+                im2 = SurfImage;
+                % Here "Resized" refers to the shared coordinate system 
+                [RowsSurfResized,ColumnsSurfResized]=size(SurfImage);
+                [RowsZoomResized,ColumnsZoomResized]=size(ZoomImageResized);
+            else
+                %Enlarge the zoomed out image so we can do the cross-correlation
+                SurfImageResized=imresize(SurfImage, ZoomRatio);
+
+                %Calculate the correlation matrix and find the maximum
+                im1 = ZoomImage;
+                im2 = SurfImageResized;
+
+                % Here "Resized" refers to the shared coordinate system 
+                [RowsSurfResized,ColumnsSurfResized]=size(SurfImageResized);
+                [RowsZoomResized,ColumnsZoomResized]=size(ZoomImage);
+            end
+
             C = normxcorr2(im1, im2);
             [CRows,CColumns]=size(C);
-            [RowsSurf,ColumnsSurf]=size(SurfImage);
-            [RowsZoomResized,ColumnsZoomResized]=size(ZoomImageResized);
-            %             end
+
             if UseFullEmbryoBoundaries
                 row_subset = RowsZoomResized:(CRows-RowsZoomResized);
                 col_subset = ColumnsZoomResized:(CColumns-ColumnsZoomResized);
-                Csub = C(row_subset, col_subset);
-                [Max2sub,MaxRowsSub]=max(Csub);
-                [~,MaxColumnSub]=max(Max2sub);
-                MaxRowSub=MaxRowsSub(MaxColumnSub);
-            end
-            if ImposeEmbryoMask
+                CMask = zeros(size(C));
+                CMask(row_subset, col_subset) = 1;
+                C(CMask == 0) = min(min(C));
+            elseif ImposeEmbryoMask
                 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo')
                 % change to be flexible nucleus diameter 
                 nucleusDiameter = getDefaultParameters(FrameInfo,['d14']);
-                im2_padded = zeros(SurfRows+10-rem(SurfRows, 10), SurfColumns+10-rem(SurfColumns, 10), 'uint16');
-                im2_padded(1:SurfRows, 1:SurfColumns) = im2;
+                im2_padded = zeros(RowsSurfResized+10-rem(RowsSurfResized, 10), ColumnsSurfResized+10-rem(ColumnsSurfResized, 10), 'uint16');
+                im2_padded(1:RowsSurfResized, 1:ColumnsSurfResized) = im2;
                 I_resize = imresize(im2_padded, .1);
-                f_sigma_resize = round(nucleusDiameter /( PixelSizeFullEmbryoSurf*10));
+                f_sigma_resize = round(nucleusDiameter /( min([PixelSizeFullEmbryoSurf, PixelSizeZoom])*10));
                 I_blurred_resize = imfilter(I_resize,...
                      fspecial('gaussian',2*f_sigma_resize,f_sigma_resize),'symmetric','conv');
                 embryoMask_resized = imbinarize(I_blurred_resize);
@@ -400,63 +425,84 @@ if ~NoAP
                 CMask = zeros(size(C));
                 CMask(RowsZoomResized:(RowsZoomResized+size(CMask_sub_ch, 1)-1),ColumnsZoomResized:(ColumnsZoomResized+size(CMask_sub_ch, 2)-1))=CMask_sub_ch;
                 C(CMask == 0) = min(min(C));
+            elseif ImposeManualBounds
+                [minRow, maxRow, minColumn, maxColumn] = RestrictOverlapWindow(C);
+                CMask = zeros(size(C));
+                CMask(minRow:maxRow, minColumn:maxColumn) = 1;
+                C(CMask == 0) = min(min(C));
             end
-            
-            
+
             [Max2,MaxRows]=max(C);
             [~,MaxColumn]=max(Max2);
             MaxRow=MaxRows(MaxColumn);
-            
-            
-            %This shift kept in the zoom in coordinates (full embryo image coordinates).
-            %If we want to translate to the zoomed out coordinates we need to
-            %divide (I think!) again by ZoomRatio.
-            ShiftRow=round((MaxRow-(CRows-1)/2));
-            ShiftColumn=round((MaxColumn-(CColumns-1)/2));
-            
+
+            if ZoomRatio < 1
+                %This shift kept in the zoom in coordinates (full embryo image coordinates).
+                %If we want to translate to the zoomed out coordinates we need to
+                %divide (I think!) again by ZoomRatio.
+                ShiftRow=round((MaxRow-(CRows-1)/2));
+                ShiftColumn=round((MaxColumn-(CColumns-1)/2));
+            else
+                ShiftRow=round((MaxRow-(CRows-1)/2)/ZoomRatio);
+                ShiftColumn=round((MaxColumn-(CColumns-1)/2)/ZoomRatio);
+            end
+
             %How well did we do with the alignment?
-            
-            
-            
+
+
+
             %If we can, we'll crop the surface image to center the overlay
             %on the area of acquisition. If not, we'll just show both images
             %without cropping.
-            
-            if ((round(RowsSurf/2-RowsZoomResized/2+ShiftRow))>0)&...
-                    (round(RowsSurf/2+RowsZoomResized/2-1+ShiftRow)<=RowsSurf)&...
-                    (round(ColumnsSurf/2-ColumnsZoomResized/2+ShiftColumn)>0)&...
-                    (round(ColumnsSurf/2+ColumnsZoomResized/2-1+ShiftColumn)<=ColumnsSurf)
+
+            if ((round(RowsSurfResized/2-RowsZoomResized/2+ShiftRow))>0)&...
+                    (round(RowsSurfResized/2+RowsZoomResized/2-1+ShiftRow)<=RowsSurfResized)&...
+                    (round(ColumnsSurfResized/2-ColumnsZoomResized/2+ShiftColumn)>0)&...
+                    (round(ColumnsSurfResized/2+ColumnsZoomResized/2-1+ShiftColumn)<=ColumnsSurfResized)
                 RowsSurfRange=...
-                    round(RowsSurf/2-RowsZoomResized/2+ShiftRow):...
-                    round(RowsSurf/2+RowsZoomResized/2-1+ShiftRow);
+                    round(RowsSurfResized/2-RowsZoomResized/2+ShiftRow):...
+                    round(RowsSurfResized/2+RowsZoomResized/2-1+ShiftRow);
                 ColumnsSurfRange=...
-                    round(ColumnsSurf/2-ColumnsZoomResized/2+ShiftColumn):...
-                    round(ColumnsSurf/2+ColumnsZoomResized/2-1+ShiftColumn);
+                    round(ColumnsSurfResized/2-ColumnsZoomResized/2+ShiftColumn):...
+                    round(ColumnsSurfResized/2+ColumnsZoomResized/2-1+ShiftColumn);
             else
-                RowsSurfRange=1:RowsSurf;
-                ColumnsSurfRange=1:ColumnsSurf;
+                RowsSurfRange=1:RowsSurfResized;
+                ColumnsSurfRange=1:ColumnsSurfResized;
             end
-            
+
+
             
             %Make an overlay of the zoomed in and zoomed out real
             %images as well as of a quickly segmented nuclear mask. 
             
+            if ZoomRatio < 1
+                SurfImageCrop=...
+                    SurfImage(RowsSurfRange,ColumnsSurfRange);
+            else 
+                SurfImageCrop=...
+                    SurfImageResized(RowsSurfRange,ColumnsSurfRange);
+            end
+
             try
                 %Real image overlay
                 %Crop the zoomed out image to match the zoomed in one
+                %im1 = ZoomImageResized or ZoomImage;
+                %im2 = SurfImageResized or SurfImage;
                 SurfImageCrop=...
-                    SurfImage(RowsSurfRange,ColumnsSurfRange);
+                    im2(RowsSurfRange,ColumnsSurfRange);
+                
+                
                 ImOverlay=cat(3,mat2gray(SurfImageCrop),...
-                    +mat2gray(ZoomImageResized),zeros(size(SurfImageCrop)));
+                    +mat2gray(im1),zeros(size(SurfImageCrop)));
                 
                 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo')
                 nucleusDiameter = getDefaultParameters(FrameInfo,['d14']);
-                NucMaskPixelSize = min([PixelSizeFullEmbryoMid, PixelSizeZoom]);
+                NucMaskPixelSize = min([PixelSizeFullEmbryoSurf, PixelSizeZoom]);
                 %Nuclear mask overlay
                 NucMaskSurf= GetNuclearMaskTile(SurfImageCrop,nucleusDiameter,NucMaskPixelSize, ImposeEmbryoMask);
-                NucMaskZoomResized=GetNuclearMaskTile(ZoomImageResized,nucleusDiameter, NucMaskPixelSize,ImposeEmbryoMask);
+                NucMaskZoom=GetNuclearMaskTile(im1,nucleusDiameter, NucMaskPixelSize,ImposeEmbryoMask);
                 ImOverlayMask=cat(3,mat2gray(NucMaskSurf),...
-                    +mat2gray(NucMaskZoomResized),zeros(size(NucMaskSurf)));
+                    +mat2gray(NucMaskZoom),zeros(size(NucMaskSurf)));
 
                 alOvFig = figure(1);
                 imOv = subplot(2,1,1);
@@ -467,7 +513,7 @@ if ~NoAP
                 
                 
                 
-                
+       
                 %Show the correlation image, but crop it a little bit
                 contFig = figure(2);
                 contAxes = axes(contFig);
@@ -483,120 +529,13 @@ if ~NoAP
             catch
                 warning('Could not generate correlation image.')
             end
-        elseif ZoomRatio < 24  %ZoomRatio > 1 && ZoomRatio < 24. AR 12/4/17- where did this number come from
-            
-            %Enlarge the zoomed out image so we can do the cross-correlation
-            SurfImageResized=imresize(SurfImage, ZoomRatio);
-            
-            %Calculate the correlation matrix and find the maximum
-            im1 = ZoomImage;
-            im2 = SurfImageResized;
-            
-%             if InvertHis
-%                 im1 = imcomplement(im1);
-%                 im2 = imcomplement(im2);
-%             end
-            
-            %             try
-            %                 C = gather(normxcorr2(gpuArray(im1), gpuArray(im2)));
-            %             catch
-            
-            % Smaller image is first variable
-            C = normxcorr2(im1, im2);
-            %             end
-            
-            [Max2,MaxRows]=max(C);
-            [~,MaxColumn]=max(Max2);
-            MaxRow=MaxRows(MaxColumn);
-            [CRows,CColumns]=size(C);
-            
-            
-            %This shift is now converted to the zoom out distances. If we
-            %want to translate to the zoomed in coordinates we need to
-            %multiply again by ZoomRatio.
-            ShiftRow=round((MaxRow-(CRows-1)/2)/ZoomRatio);
-            ShiftColumn=round((MaxColumn-(CColumns-1)/2)/ZoomRatio);
-            
-            %How well did we do with the alignment?
-            [RowsResized,ColumnsResized]=size(SurfImageResized);
-            [RowsZoom,ColumnsZoom]=size(ZoomImage);
-            
-   
-            %If we can, we'll crop the surface image to center the overlay
-            %on the area of acquisition. If not, we'll just show both images
-            %without cropping.
-            
-            if ((round(RowsResized/2-RowsZoom/2+ShiftRow*ZoomRatio))>0)&...
-                    (round(RowsResized/2+RowsZoom/2-1+ShiftRow*ZoomRatio)<=RowsResized)&...
-                    (round(ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ZoomRatio)>0)&...
-                    (round(ColumnsResized/2+ColumnsZoom/2-1+ShiftColumn*ZoomRatio)<=ColumnsResized)
-                RowsResizedRange=...
-                    round(RowsResized/2-RowsZoom/2+ShiftRow*ZoomRatio):...
-                    round(RowsResized/2+RowsZoom/2-1+ShiftRow*ZoomRatio);
-                ColumnsResizedRange=...
-                    round(ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ZoomRatio):...
-                    round(ColumnsResized/2+ColumnsZoom/2-1+ShiftColumn*ZoomRatio);
-            else
-                RowsResizedRange=1:RowsResized;
-                ColumnsResizedRange=1:ColumnsResized;
-            end
-            
-            
-            %Make an overlay of the zoomed in and zoomed out real
-            %images as well as of a quickly segmented nuclear mask. If this
-            %fails, we'll swtich to ManualAlignment.
-            
-            try
-                %Real image overlay
-                %Crop the zoomed out image to match the zoomed in one
-                SurfImageResizeCrop=...
-                    SurfImageResized(RowsResizedRange,ColumnsResizedRange);
-                ImOverlay=cat(3,mat2gray(SurfImageResizeZoom),...
-                    +mat2gray(ZoomImage),zeros(size(SurfImageResizeZoom)));
-                load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat'], 'FrameInfo')
-                nucleusDiameter = getDefaultParameters(FrameInfo,['d14']);
-                NucMaskPixelSize = min([PixelSizeFullEmbryoMid, PixelSizeZoom]);
-                %Nuclear mask overlay
-                NucMaskSurfResized= GetNuclearMaskTile(SurfImageResizeCrop,nucleusDiameter,NucMaskPixelSize, ImposeEmbryoMask);
-                NucMaskZoom=GetNuclearMaskTile(ZoomImage,nucleusDiameter, NucMaskPixelSize,ImposeEmbryoMask);
-                ImOverlayMask=cat(3,mat2gray(NucMaskZoomOutResizedCropped),...
-                    +mat2gray(NucMaskZoomIn),zeros(size(NucMaskZoomOutResizedCropped)));
-
-                alOvFig = figure(1);
-                imOv = subplot(2,1,1);
-                imshow(ImOverlay, 'Parent', imOv)
-                imOvMask = subplot(2,1,2);
-                imshow(ImOverlayMask, 'Parent', imOvMask)
-                saveas(alOvFig, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentOverlay.tif']);
-                
-                
-                
-                
-                %Show the correlation image, but crop it a little bit
-                contFig = figure(2);
-                contAxes = axes(contFig);
-                %HG: Note that I changed the ranges here by two pixels at
-                %least.
-                lX = uint16((CRows+1)/2-RowsZoom+1);
-                uX = uint16((CRows-1)/2+RowsZoom);
-                lY = uint16((CColumns+1)/2-ColumnsZoom+1);
-                uY = uint16((CColumns-1)/2+ColumnsZoom);
-                
-                contourf(contAxes,imresize(abs(C(lX:uX,lY:uY)),.5));
-                saveas(contFig, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentCorrelation.tif']);
-            catch
-                warning('Could not generate correlation image.')
-            end
-            
-        else
-            warning('Not able to do the cross correlation.')     
+       
+    
         end
         
         
 
-        
-    else
-        warning('Not able to do the cross correlation. Assuming no shift between surface-level and movie-level images.')
+       
     end
     
     % Need to figure out unit conversion here 
@@ -740,4 +679,93 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
 end
 
 
+end
+%% 
 
+
+
+% RestrictOverlapWindow.m
+% author: Gabriella Martini
+% date created: 7/30/20
+% date last modified: 7/30/20
+
+
+function [coordT, coordB, coordL, coordR] = RestrictOverlapWindow(C)
+close all
+coordL = 1;
+coordR = size(C, 2);
+coordT = 1;
+coordB = size(C, 1);
+APImageFig=figure;
+apAx = axes(APImageFig);
+%Now, do the correction
+cc=1;
+
+while (cc~='x')
+    
+    
+    imagesc(C, 'Parent', apAx)
+    %imshow(APImage,DisplayRange)
+    
+    axis image
+    axis off
+    title({'left boundary (green), right boundary (red),', 'top boundary (blue), bottom boundary (yellow); original'})
+    hold on
+    
+    if exist('coordL', 'var')
+        xline(coordL,'g')
+    end
+    
+    if exist('coordR', 'var')
+        xline(coordR,'r')
+    end
+    
+    if exist('coordT', 'var')
+        yline(coordT,'b')
+    end
+    
+    if exist('coordB', 'var')
+        yline(coordB,'y')
+    end
+%     
+%     try
+%         plot(coordA(1),coordA(2),'g.','MarkerSize',20);
+%     catch
+%         %not sure what happened here.
+%     end
+%     
+%     try
+%         plot(coordP(1),coordP(2),'r.','MarkerSize',20);
+%     catch
+%         %not sure what happened here.
+%     end
+    
+
+    
+    hold off
+    
+    figure(APImageFig)
+    ct=waitforbuttonpress;
+    cc=get(APImageFig,'currentcharacter');
+    cm=get(gca,'CurrentPoint');
+    
+    
+    if (ct~=0)&(cc=='c')        %Clear all AP information
+        leftboundary=[];
+        rightboundary=[];
+        topboundary=[];
+        bottomboundary=[];
+    elseif (ct~=0)&(cc=='l')	%Select anterior end
+        [coordL,coordLy]=ginputc(1,'Color',[1,1,1]);
+    elseif (ct~=0)&(cc=='r')    %Select posterior end
+        [coordR,coordRy]=ginputc(1,'Color',[1,1,1]);
+    elseif (ct~=0)&(cc=='t')    %Select posterior end
+        [coordTx,coordT]=ginputc(1,'Color',[1,1,1]);
+    elseif (ct~=0)&(cc=='b')    %Select posterior end
+        [coordBx,coordB]=ginputc(1,'Color',[1,1,1]);
+    end
+end
+
+close all
+
+end
