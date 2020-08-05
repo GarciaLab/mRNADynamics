@@ -1,12 +1,12 @@
-function [Spots, dogs]...
+function Spots...
     ...
     = segmentTranscriptionalLoci(...
     ...
-    ~, ~, channelIndex, initialFrame, lastFrame,...
+    ch_quantify, initialFrame, lastFrame,...
     zSize, ~, Prefix, ~, shouldDisplayFigures,doFF, ffim,...
     Threshold, neighborhood, snippet_size, ~, microscope,...
     ~,filterMovieFlag, resultsFolder, gpu, saveAsMat, ~, shouldMaskNuclei,...
-    autoThresh)
+    autoThresh, ch_segment)
 
 
 cleanupObj = onCleanup(@myCleanupFun);
@@ -21,7 +21,7 @@ dogs = [];
 
 DogOutputFolder = [liveExperiment.procFolder, 'dogs', filesep];
 
-dogDir = dir([DogOutputFolder, '*_ch0', num2str(channelIndex), '.*']);
+dogDir = dir([DogOutputFolder, '*_ch0', num2str(ch_segment), '.*']);
 
 haveProbs = any(cellfun(@(x) contains(x, 'prob'), {dogDir.name}));
 %stacks won't be indexed by _z
@@ -81,11 +81,9 @@ if filterMovieFlag
     [~, dogs] = filterMovie(Prefix,'optionalResults', resultsFolder, filterOpts{:});
 end
 
-nameSuffix = ['_ch', iIndex(channelIndex, 2)];
-
 movieMat = getMovieMat(liveExperiment);
 
-movieMatCh = double(movieMat(:, :, :, :, channelIndex));
+movieMatCh = double(movieMat(:, :, :, :, ch_quantify));
 
 yDim = liveExperiment.yDim;
 xDim = liveExperiment.xDim;
@@ -102,11 +100,11 @@ end
     if autoThresh
         if ~filterMovieFlag
             Threshold = determineThreshold(Prefix,...
-                channelIndex,  'numFrames', lastFrame, 'firstFrame', initialFrame);
+                ch_segment,  'numFrames', lastFrame, 'firstFrame', initialFrame);
             display(['Threshold: ', num2str(Threshold)])
         else
             Threshold = determineThreshold(Prefix,...
-                channelIndex, 'noSave', 'numFrames', lastFrame);
+                ch_segment, 'noSave', 'numFrames', lastFrame);
         end
     end
     
@@ -120,6 +118,8 @@ p = 1;
 parfor currentFrame = initialFrame:lastFrame
     
     imStack = movieMatCh(:, :, :, currentFrame);
+    
+    
     if shouldMaskNuclei
         ellipseFrame = Ellipses{currentFrame};
     end
@@ -132,7 +132,7 @@ parfor currentFrame = initialFrame:lastFrame
         
         dogStackFile = [DogOutputFolder, dogStr, Prefix, '_',...
             iIndex(currentFrame, 3),...
-            nameSuffix];
+            '_ch', iIndex(ch_segment, 2)];
         
         if exist([dogStackFile, '.mat'], 'file')
             dogStack = load([dogStackFile,'.mat'], 'dogStack');
