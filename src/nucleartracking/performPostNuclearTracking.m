@@ -19,6 +19,7 @@ if postTrackingSettings.fish
     schnitzcells = rmfield(schnitzcells, {'P', 'E', 'D'});
 end
 
+%%
 %Optionally, tighten the nuclear contours and convert the circles to
 %true ellipses
 if postTrackingSettings.doAdjustNuclearContours
@@ -33,8 +34,8 @@ if postTrackingSettings.doAdjustNuclearContours
     disp('Adjusting nuclear contours...');
 
     parfor frame = 1:length(Ellipses)
-        %     for frame = 1:length(Ellipses)
-
+%             for frame = 1:length(Ellipses)
+        
         Ellipses{frame} = adjustNuclearContours(Ellipses{frame},...
             hisMat(:, :, frame), pixelSize_um);
         
@@ -50,7 +51,7 @@ if postTrackingSettings.doAdjustNuclearContours
     return;
     
 end
-
+%%
 
 %we'll make sure cellnos and ellipses correspond well.
 [Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
@@ -91,11 +92,9 @@ schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells);
 
 %Extract the nuclear fluorescence values if we're in the right experiment
 %type
-% if postTrackingSettings.intFlag
 if ~isempty(liveExperiment.inputChannels)
     schnitzcells = integrateSchnitzFluo(Prefix, schnitzcells, FrameInfo);
 end
-% end
 
 
 ellipsesSizeUnchanged(ellipsesOld, Ellipses);

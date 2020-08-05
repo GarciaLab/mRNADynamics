@@ -54,16 +54,4 @@ function [dropboxFolderName, rowIndex] = getDropboxFolderFromMovieDatabaseConten
      rowIndex = rowIndex(1);
   end
      
-%      f = figure();
-%      c = uicontrol(f,'Style','popupmenu');
-%      c.Position = [20 75 60 20];
-%      c.String = {'dummy'};
-%      c.Callback = @selection;
-%      
-%   end
-%   
-%     function selection(src,event)
-%         val = c.Value;
-%         disp(['Selection: ' dropboxFolderNameCell{val}]);
-%     end
 end
