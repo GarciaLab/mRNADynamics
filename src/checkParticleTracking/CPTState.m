@@ -282,7 +282,7 @@ classdef CPTState < handle
                 
                 if ~isempty(maxMat)
                     if nFrames > 1
-                        this.ImageMat = maxMat(:, :, this.CurrentFrame);
+                        this.ImageMat = maxMat(:, :, this.CurrentFrame, this.CurrentChannel);
                     else
                         this.ImageMat = maxMat;
                     end
@@ -291,7 +291,7 @@ classdef CPTState < handle
                     imStack = getMovieFrame(this.liveExperiment,...
                         this.CurrentFrame, this.CurrentChannel);
                     
-                    this.ImageMat = max(imStack, [], 3);
+                    this.ImageMat = squeeze(max(imStack, [], 3));
                     
                 end
                 

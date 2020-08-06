@@ -423,12 +423,12 @@ classdef LiveExperiment
                 FrameInfo_max = tempInfo.FrameInfo;
                 movieMat = getMovieMat(this);
                 if ~isempty(movieMat)
-                    maxMat = max(movieMat(:,:,:,:),[],3);
+                    maxMat = max(movieMat(:,:,:,:,:),[],3);
                 else
                     maxMat = [];
                 end
             end
-            out = maxMat;
+            out = squeeze(maxMat);
             
         end
         
