@@ -280,7 +280,7 @@ classdef CPTState < handle
                 
             elseif strcmpi(this.projectionMode, 'Max Z')
                 
-                if ~isempty(this.maxMat)
+                if ~isempty(maxMat)
                     if nFrames > 1
                         this.ImageMat = maxMat(:, :, this.CurrentFrame);
                     else
