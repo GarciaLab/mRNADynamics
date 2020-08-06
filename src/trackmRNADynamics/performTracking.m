@@ -202,9 +202,7 @@ if displayFigures
   
 end
 
-
-% If we only have one channel, then convert SpotFilter and Particles to a standard structure.
-
+% save
 save([resultsFolder, filesep, 'ParticlesFull.mat'],'RawParticles','HMMParticles', 'SimParticles','FullParticles','ParticleStitchInfo')
 
 end
