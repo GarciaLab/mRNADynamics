@@ -1,13 +1,9 @@
 function [CurrentChannel, PreviousChannel, CurrentParticle,...
     CurrentChannelIndex, PreviousChannelIndex] =...
     switchChannels(CurrentChannel, CurrentParticle, Particles, ...
-    UseHistoneOverlay, NChannels, CurrentChannelIndex, PreviousChannelIndex)
+    UseHistoneOverlay, NChannels, CurrentChannelIndex)
 %SWITCHCHANNELS Summary of this function goes here
 %   Detailed explanation goes here
-
-%NB Armando 3/28/2020-
-%I think this is completely broken. Needs a rewrite using
-%CurrentChannelIndex and CurrentChannel
 
 coatChannel = nan;
 
