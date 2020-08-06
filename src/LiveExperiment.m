@@ -244,7 +244,7 @@ classdef LiveExperiment
             isNewMovie = isempty(FrameInfo_movie) ||...
                 length([tempInfo.FrameInfo.Time]) ~= length([FrameInfo_movie.Time]) || ...
                 any([tempInfo.FrameInfo.Time] ~= [FrameInfo_movie.Time]) ||...
-                size(movieMat, 5) ~= this.nFrames;
+                size(movieMat, 4) ~= this.nFrames;
             
             persistent preTifDir;
             if isempty(preTifDir) || isNewMovie
@@ -414,15 +414,15 @@ classdef LiveExperiment
 
             tempInfo = load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
             
-            isNewMovie = isempty(FrameInfo_movie) ||...
+            isNewMovie = isempty(FrameInfo_max) ||...
                 length([tempInfo.FrameInfo.Time]) ~= length([FrameInfo_max.Time]) || ...
                 any([tempInfo.FrameInfo.Time] ~= [FrameInfo_max.Time]) ||...
-                size(maxeMat, 4) ~= this.nFrames;
+                size(maxMat, 3) ~= this.nFrames;
             
             if isNewMovie
-                FrameInfo_max = tempInfo;
+                FrameInfo_max = tempInfo.FrameInfo;
                 movieMat = getMovieMat(this);
-                if ~isempty(movie)
+                if ~isempty(movieMat)
                     maxMat = max(movieMat(:,:,:,:),[],3);
                 else
                     maxMat = [];

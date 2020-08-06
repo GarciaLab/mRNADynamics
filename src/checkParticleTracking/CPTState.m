@@ -34,7 +34,7 @@ classdef CPTState < handle
         CurrentChannelIndex {mustBeEmptyOrScalar(CurrentChannelIndex)}
         PreviousChannel {mustBeEmptyOrScalar(PreviousChannel)}
         PreviousChannelIndex {mustBeEmptyOrScalar(PreviousChannelIndex)}
-        coatChannel {mustBeEmptyOrScalar(coatChannel)}
+        coatChannel
         
         FrameIndicesToFit
         Coefficients
@@ -330,7 +330,7 @@ end
 function mustBeEmptyOrScalar(in)
 
 if numel(in) > 1
-    error(['Value assigned to property is not'...
+    error(['Value assigned to property is not '...
         'scalar or empty']);
 end
 
