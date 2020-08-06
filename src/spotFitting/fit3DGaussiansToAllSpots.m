@@ -74,7 +74,11 @@ for ch = spotChannels
         SpotsCh = Spots;
     end
     
-    movieMatCh = double(movieMat(:, :, :, :, ch));
+    if ~isempty(movieMat)
+        movieMatCh = double(movieMat(:, :, :, :, ch));
+    else
+        movieMatCh = [];
+    end
     
     numFrames = length(SpotsCh);
     
@@ -84,7 +88,11 @@ for ch = spotChannels
         
         SpotsFr = SpotsCh(frame);
         
-        imStack = movieMatCh(:, :, :, frame); 
+        if ~isempty(movieMatCh)
+            imStack = movieMatCh(:, :, :, frame);
+        else
+            imStack = getMovieFrame(liveexperiment, frame, ch);
+        end
         
         nSpotsPerFrame = length(SpotsFr.Fits);
        for spot = 1:nSpotsPerFrame
@@ -95,13 +103,13 @@ for ch = spotChannels
         send(q, frame); %update the waitbar
     end
     
-    if iscell(Spots) & length(Spots) > 1
+    if iscell(Spots) && length(Spots) > 1
         Spots{ch} = SpotsCh;
     else Spots = SpotsCh; end
     
 end
 
-if iscell(Spots) & length(Spots) < 2
+if iscell(Spots) && length(Spots) < 2
     Spots = Spots{1};
 end
 

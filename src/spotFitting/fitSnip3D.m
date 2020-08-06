@@ -14,7 +14,11 @@ preFolder = liveExperiment.preFolder;
 
 if nargin < 9
     movieMat = getMovieMat(liveExperiment);
-    imStack = movieMat(:, :, :, frame, spotChannel);
+    if ~isempty(movieMat)
+        imStack = movieMat(:, :, :, frame, spotChannel);
+    else
+        imStack = getMovieFrame(liveExperiment, frame, spotChannel);
+    end
 end
 
 % extract basic fit parameters
