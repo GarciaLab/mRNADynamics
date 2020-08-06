@@ -10,15 +10,7 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
   ncVec = [FrameInfo.nc];
   frameIndex = 1:length(ncVec);
   NCh = length(SimParticles);
-%   matchCostMaxDefault = 3; % maximum number of sigmas away (this is reset to Inf if we have nuclei)
-%   matchCostMax = matchCostMaxDefault * ones(1,NCh); % can be different between channels
-  
-  % simplify the logic a bit
-%   traceCost = matchCostMaxDefault;
-%   if useHistone
-%     traceCost = realmax;
-%   end
-  
+
   % Set max spots per nucleus per frame, can be different between channels
   matchCostMax = repelem(realmax,NCh);
   if ismember(ExperimentType,{'1spot'}) 
@@ -144,6 +136,7 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
           tempParticles(nIter).linkStateString = num2str(rmVec(p));          
           tempParticles(nIter).assignmentFlags = assignmentFlags;
           tempParticles(nIter).NucleusDist = SimParticles{Channel}(rmVec(p)).NucleusDist;
+          tempParticles(nIter).Index = SimParticles{Channel}(rmVec(p)).Index;
           % increment
           nIter = nIter + 1;
         end 
@@ -185,12 +178,15 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
         particleVec = unique(tempParticles(nIter).idVec(~isnan(tempParticles(nIter).idVec)));
         ncDist = [];
         zOrig = [];
+        indexVec = [];
         for o = particleVec
           ncDist = [ncDist SimParticles{Channel}(o).NucleusDist];
           zOrig = [zOrig SimParticles{Channel}(o).zPos];
+          indexVec = [indexVec SimParticles{Channel}(o).Index];
         end
         tempParticles(nIter).NucleusDist = ncDist;
         tempParticles(nIter).zPos = zOrig;
+        tempParticles(nIter).Index = indexVec;
         % increment
         nIter = nIter + 1;
       end   

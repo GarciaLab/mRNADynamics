@@ -31,7 +31,10 @@ if exist([DataFolder, filesep, 'SpotsMinimal.mat'], 'file')
 else
     load([DataFolder, filesep, 'Spots.mat'], 'Spots')
 end
-
+% NL: added for backwards compatibility
+if ~iscell(Spots)
+  Spots = {Spots};
+end
 if exist([DataFolder, filesep, 'Spots3D.mat'], 'file')
     load([DataFolder, filesep, 'Spots3D.mat'], 'Spots3D');
 end

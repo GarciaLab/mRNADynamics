@@ -1,4 +1,4 @@
-function Particles = performTracking(Prefix,useHistone,varargin)
+function [Particles, SpotFilter] = performTracking(Prefix,useHistone,varargin)
 close all force
 % Process user options
 % searchRadiusMicrons = 5; by default
@@ -13,10 +13,21 @@ pixelSize = liveExperiment.pixelSize_um;    %NL: pixel size is in um
 channels = liveExperiment.Channels;
 channelNames = cell(1,NCh);                 %Will fill this in the plotting loop
 FrameInfo = getFrameInfo(liveExperiment);
+
+% load Spots file
+disp('loading Spots mat...')
 Spots = getSpots(liveExperiment);
 if ~iscell(Spots)% NL: added for backwards compatibility
   Spots = {Spots};
 end
+
+% check to see if there's a pre-existing particles structure
+if false%liveExperiment.hasParticlesFile
+  warning('need to build in retracking options')
+else
+  SpotFilter = createSpotFilter(Spots);
+end
+
 schnitzCells = getSchnitzcells(liveExperiment);
 dropboxFolder = liveExperiment.userResultsFolder;
 resultsFolder = liveExperiment.resultsFolder;

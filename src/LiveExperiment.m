@@ -440,7 +440,7 @@ classdef LiveExperiment
                 load(spotsFile, 'Spots');
             end
             
-        end
+        end        
         
         function [Particles, SpotFilter] = getParticles(this)
             
