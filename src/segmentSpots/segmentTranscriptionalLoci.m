@@ -113,7 +113,7 @@ isZPadded = size(movieMat, 3) ~= zSize;
 q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
-for currentFrame = initialFrame:lastFrame
+parfor currentFrame = initialFrame:lastFrame
     
     if ~isempty(movieMat)
         imStack = movieMat(:, :, :, currentFrame, ch_quantify);
@@ -121,14 +121,7 @@ for currentFrame = initialFrame:lastFrame
         imStack = getMovieFrame(liveExperiment, currentFrame, ch_quantify);
     end
     
-    %there's a weird situation where this loop is always entered in a
-    %parfor loop even if shouldMaskNuclei is false.
-    try
-        if shouldMaskNuclei
-            ellipseFrame = Ellipses{currentFrame};
-        end
-    end
-    
+   
     %report progress every tenth frame
     if ~mod(currentFrame, 10), disp(['Segmenting frame ',...
             num2str(currentFrame), '...']); end
@@ -191,7 +184,7 @@ for currentFrame = initialFrame:lastFrame
         % apply nuclear mask if it exists
         if shouldMaskNuclei
     
-            nuclearMask = makeNuclearMask(ellipseFrame, [yDim xDim], radiusScale);
+            nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim xDim], radiusScale);
             im_thresh = im_thresh & nuclearMask;
             
 %             if shouldDisplayFigures

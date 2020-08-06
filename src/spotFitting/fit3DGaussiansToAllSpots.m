@@ -91,7 +91,7 @@ for ch = spotChannels
         if ~isempty(movieMatCh)
             imStack = movieMatCh(:, :, :, frame);
         else
-            imStack = getMovieFrame(liveexperiment, frame, ch);
+            imStack = getMovieFrame(liveExperiment, frame, ch);
         end
         
         nSpotsPerFrame = length(SpotsFr.Fits);
