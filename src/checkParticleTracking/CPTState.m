@@ -256,10 +256,8 @@ classdef CPTState < handle
                     this.ImageMat = movieMat(:, :, this.CurrentZ,...
                         this.CurrentFrame, this.CurrentChannel);
                 else
-                    this.ImageMat = imreadStack(...
-                        [this.liveExperiment.PreFolder, filesep, this.Prefix, '_',...
-                        iIndex(this.CurrentFrame, this.liveExperiment.nDigits),...
-                        '_ch', iIndex(this.CurrentChannel, 2)]);
+                    this.ImageMat = getMovieSlice(this.liveExperiment,...
+                        this.CurrentFrame, this.CurrentChannel, this.CurrentZ);
                 end
                 
                 %to have a 3x3 square of time and z images on the screen. note that this
@@ -289,14 +287,15 @@ classdef CPTState < handle
                         this.ImageMat = maxMat;
                     end
                 else
-                    imStack = imreadStack(...
-                        [this.liveExperiment.PreFolder, filesep, this.Prefix, '_',...
-                        iIndex(this.CurrentFrame, this.liveExperiment.nDigits),...
-                        '_ch', iIndex(this.CurrentChannel, 2)]);
+                    
+                    imStack = getMovieFrame(this.liveExperiment,...
+                        this.CurrentFrame, this.CurrentChannel);
+                    
                     this.ImageMat = max(imStack, [], 3);
+                    
                 end
                 
-            %not currently supported when loading single stacks
+                %not currently supported when loading single stacks
             elseif strcmpi(this.projectionMode, 'Max Z and Time')
                 if isempty(this.maxTimeCell)
                     this.ImageMat = max(max(movieMat(...
@@ -335,5 +334,3 @@ if numel(in) > 1
 end
 
 end
-
-

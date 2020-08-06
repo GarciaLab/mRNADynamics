@@ -83,8 +83,6 @@ end
 
 movieMat = getMovieMat(liveExperiment);
 
-movieMatCh = double(movieMat(:, :, :, :, ch_quantify));
-
 yDim = liveExperiment.yDim;
 xDim = liveExperiment.xDim;
 zDim = liveExperiment.zDim;
@@ -117,11 +115,18 @@ afterEach(q, @nUpdateWaitbar);
 p = 1;
 for currentFrame = initialFrame:lastFrame
     
-    imStack = movieMatCh(:, :, :, currentFrame);
+    if ~isempty(movieMat)
+        imStack = movieMat(:, :, :, currentFrame, ch_quantify);
+    else
+        imStack = getMovieFrame(liveExperiment, currentFrame, ch_quantify);
+    end
     
-   
-    if shouldMaskNuclei
-        ellipseFrame = Ellipses{currentFrame};
+    %there's a weird situation where this loop is always entered in a
+    %parfor loop even if shouldMaskNuclei is false.
+    try
+        if shouldMaskNuclei
+            ellipseFrame = Ellipses{currentFrame};
+        end
     end
     
     %report progress every tenth frame

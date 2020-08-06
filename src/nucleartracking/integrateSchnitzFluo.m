@@ -30,9 +30,8 @@ if isempty(InputChannelIndexes)
     return;
 end
 
-movie = getMovieMat(liveExperiment);
-%assume there's just one input channel
-movie = double(movie(:, :, :, :, InputChannelIndexes));
+movieMat = getMovieMat(liveExperiment);
+
 numFrames = length(FrameInfo);
 
 
@@ -89,8 +88,13 @@ if sum(InputChannelIndexes)
             %                 Image(:,:,CurrentZ)=imread([PreProcPath,filesep,Prefix,filesep,Prefix,'_',iIndex(CurrentFrame,3),'_z',iIndex(CurrentZ,2),nameSuffix,'.tif']);
             %             end
             
+            if ~isempty(movieMat)
+                imStack = movieMat(:,:,:, CurrentFrame, ChN);
+            else
+                imStack = getMovieFrame(liveExperiment, CurrentFrame, ChN);
+            end
             
-            convImage = imfilter(movie(:,:,:, CurrentFrame), Circle, 'same');
+            convImage = imfilter(imStack, Circle, 'same');
             convImage(edgeMask) = NaN;
             
             for j=1:length(tempSchnitz)

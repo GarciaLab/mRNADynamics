@@ -238,7 +238,7 @@ classdef LiveExperiment
             %these should ever be precisely identical in different movies
             persistent FrameInfo_movie;
             persistent movieMat;
-
+            
             tempInfo = load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
             
             isNewMovie = isempty(FrameInfo_movie) ||...
@@ -255,7 +255,8 @@ classdef LiveExperiment
             %just return an empty array if we can't load the movie.
             %leave the handling to the caller, presumably by enabling
             %sequential file loading.
-            if ~haveSufficientMemory(preTifDir)
+            %             if ~haveSufficientMemory(preTifDir)
+            if true
                 out = [];
                 return;
             end
@@ -365,18 +366,18 @@ classdef LiveExperiment
             persistent hisMat;
             persistent FrameInfo_His;
             tempInfo = load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
-
+            
             isNewMovie = isempty(FrameInfo_His) ||...
-            size([tempInfo.FrameInfo.Time],2) ~= size([FrameInfo_His.Time],2) || ...
-            any([tempInfo.FrameInfo.Time] ~= [FrameInfo_His.Time]) ||...
-            size(hisMat, 3) ~= this.nFrames;
-
-
+                size([tempInfo.FrameInfo.Time],2) ~= size([FrameInfo_His.Time],2) || ...
+                any([tempInfo.FrameInfo.Time] ~= [FrameInfo_His.Time]) ||...
+                size(hisMat, 3) ~= this.nFrames;
+            
+            
             %load histone movie only if it hasn't been loaded or if we've switched
             %Prefixes (determined by num frames)
             if isempty(hisMat) || isNewMovie
                 
-                FrameInfo_His = tempInfo.FrameInfo; 
+                FrameInfo_His = tempInfo.FrameInfo;
                 
                 if haveHisTifStack
                     %load in sequential tif stacks
@@ -411,7 +412,7 @@ classdef LiveExperiment
             
             persistent FrameInfo_max;
             persistent maxMat;
-
+            
             tempInfo = load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
             
             isNewMovie = isempty(FrameInfo_max) ||...
@@ -429,6 +430,38 @@ classdef LiveExperiment
                 end
             end
             out = maxMat;
+            
+        end
+        
+        function out = getMovieFrame(this, frame, channel)
+            
+            stackFile = [this.preFolder, filesep, this.Prefix, '_',...
+                iIndex(frame, this.nDigits),...
+                '_ch', iIndex(channel, 2), '.tif'];
+            
+            if exist(stackFile, 'file')
+                out = imreadStack(stackFile);
+            else
+                out = zeros(this.yDim, this.xDim, this.nSlices);
+                for z = 1:this.nSlices
+                    out(:, :, z) = getMovieSlice(this, frame, channel, z);
+                end
+            end
+        end
+        
+        function out = getMovieSlice(this, frame, channel, slice)
+            
+            imFile = [this.preFolder, filesep, this.Prefix, '_',...
+                iIndex(frame, this.nDigits),...
+                '_z', iIndex(slice, 2),...
+                '_ch', iIndex(channel, 2), '.tif'];
+            
+            if exist(imFile, 'file')
+                out = imread(imFile);
+            else
+                imStack = getMovieFrame(this, frame, channel);
+                out = imStack(:, :, slice);
+            end
             
         end
         
