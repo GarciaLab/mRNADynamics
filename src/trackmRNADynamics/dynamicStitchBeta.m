@@ -121,8 +121,8 @@ function NewParticles = dynamicStitchBeta(FullParticles,SimParticles,ParticleSti
       temp.NucleusID = NewParticles{Channel}(oldInd).NucleusID;
       temp.NucleusIDOrig = NewParticles{Channel}(oldInd).NucleusIDOrig;
       temp.NucleusDist = NewParticles{Channel}(oldInd).NucleusDist(ismember(particleVecNN,ptIDs));
-      temp.assignmentFlags = zeros(size(NewParticles{Channel}(oldInd).assignmentFlags));
-      temp.assignmentFlags(ismember(particleVec,ptIDs)) = NewParticles{Channel}(oldInd).assignmentFlags(ismember(particleVec,ptIDs));
+%       temp.assignmentFlags = zeros(size(NewParticles{Channel}(oldInd).assignmentFlags));
+%       temp.assignmentFlags(ismember(particleVec,ptIDs)) = NewParticles{Channel}(oldInd).assignmentFlags(ismember(particleVec,ptIDs));
       temp.Approved = 0;
       
       % incorporate into structure

@@ -74,9 +74,9 @@ function [Particles] = track01ParticleProximity(...
           end
           % assign spots to nearest neighbors
           [NewSpotDistances, minIndices] = min(NucleusDistMat,[],2); % note that I'm not enforcing unique assignment at this stage. Will do this later on in the process
-          NewSpotNucleusIDs = ncIDVec(minIndices); 
+          NewSpotNucleuss = ncIDVec(minIndices); 
         else
-          NewSpotNucleusIDs = ones(size(NewSpotsX)); % if no nucleus info, then we set all ID values to dummy val
+          NewSpotNucleuss = ones(size(NewSpotsX)); % if no nucleus info, then we set all ID values to dummy val
           NewSpotDistances = zeros(size(NewSpotsX));
         end
         %Get a list of the particles that were present in
@@ -91,7 +91,7 @@ function [Particles] = track01ParticleProximity(...
               ExtantParticles = [ExtantParticles, j];            
               PrevSpotsX = [PrevSpotsX, Particles{Channel}(j).xPos(end)];
               PrevSpotsY = [PrevSpotsY, Particles{Channel}(j).yPos(end)];
-              PrevNuclei = [PrevNuclei, Particles{Channel}(j).NucleusID];
+              PrevNuclei = [PrevNuclei, Particles{Channel}(j).Nucleus];
             end
           end
         end
@@ -148,7 +148,7 @@ function [Particles] = track01ParticleProximity(...
           % Adjust for nuclear movements
           DistanceMat = sqrt((NewSpotsX'-SpotBulkDxVec'- PrevSpotsX).^2 + (NewSpotsY'-SpotBulkDyVec' - PrevSpotsY).^2)*PixelSize;
           % enforce consistent nucleus IDs
-          mismatchMat = NewSpotNucleusIDs'~=PrevNuclei;
+          mismatchMat = NewSpotNucleuss'~=PrevNuclei;
           DistanceMat(mismatchMat) = Inf;
           
           % Find existing particles and new spots are close enough to be 
@@ -189,7 +189,7 @@ function [Particles] = track01ParticleProximity(...
           Particles{Channel}(TotalParticles).xPos = NewSpotsX(j);
           Particles{Channel}(TotalParticles).yPos = NewSpotsY(j);
           Particles{Channel}(TotalParticles).zPos = NewSpotsZ(j);          
-          Particles{Channel}(TotalParticles).NucleusID = NewSpotNucleusIDs(j); 
+          Particles{Channel}(TotalParticles).Nucleus = NewSpotNucleuss(j); 
           Particles{Channel}(TotalParticles).NucleusDist = NewSpotDistances(j); 
         end
       end
