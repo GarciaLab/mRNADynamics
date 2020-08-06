@@ -127,6 +127,12 @@ end
 
 nSpotChannels = length(spotChannels);
 
+%make sure the user inputted the right number of thresholds
+if nSpotChannels > 1 && isempty(skipChannel) && length(Threshold) ~= nSpotChannels
+    error('You must input the correct number of thresholds.');
+end
+   
+
 if lastFrame==0
     lastFrame = numel(FrameInfo);
 end

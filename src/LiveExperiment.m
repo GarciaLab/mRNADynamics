@@ -405,6 +405,33 @@ classdef LiveExperiment
             
         end
         
+        %this function retrieves or generates a max projection of the full
+        %movie
+        function out = getMaxMat(this)
+            
+            persistent FrameInfo_max;
+            persistent maxMat;
+
+            tempInfo = load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
+            
+            isNewMovie = isempty(FrameInfo_movie) ||...
+                length([tempInfo.FrameInfo.Time]) ~= length([FrameInfo_max.Time]) || ...
+                any([tempInfo.FrameInfo.Time] ~= [FrameInfo_max.Time]) ||...
+                size(maxeMat, 4) ~= this.nFrames;
+            
+            if isNewMovie
+                FrameInfo_max = tempInfo;
+                movieMat = getMovieMat(this);
+                if ~isempty(movie)
+                    maxMat = max(movieMat(:,:,:,:),[],3);
+                else
+                    maxMat = [];
+                end
+            end
+            out = maxMat;
+            
+        end
+        
         function FrameInfo = getFrameInfo(this)
             
             load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');

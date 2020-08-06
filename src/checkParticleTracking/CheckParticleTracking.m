@@ -245,8 +245,9 @@ ShowThreshold2 = 1; %Whether to show particles below the threshold
 ParticleToFollow = [];
 CurrentFrameWithinParticle = 1;
 
-cptState = CPTState(Spots, Particles, SpotFilter, schnitzcells, Ellipses,...
+cptState = CPTState(liveExperiment, Spots, Particles, SpotFilter, schnitzcells, Ellipses,...
     FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss, projectionMode); %work in progress, 2019-12, JP.
+
 
 try
     spotChannels = liveExperiment.spotChannels; 
@@ -263,13 +264,14 @@ if ~isempty(cptState.Particles{cptState.CurrentChannelIndex})
 else, error('Looks like the Particles structure is empty. There''s nothing to check.'); end
 
 %load the movies
-movieMat = getMovieMat(liveExperiment);
-hisMat = getHisMat(liveExperiment);
-persistent maxMat
-if isempty(maxMat) || size(maxMat, 4) ~= nFrames
-    maxMat = max(movieMat(:,:,:,:), [],3);
-end
+movieMat = getMovieMat(liveExperiment);  
 
+if isempty(movieMat)
+    %this mode isn't supported when loading from single stacks
+    multiView = false;
+end
+hisMat = getHisMat(liveExperiment);
+maxMat = getMaxMat(liveExperiment);
 
 ZoomRange = 50;
 snipImageHandle = [];
