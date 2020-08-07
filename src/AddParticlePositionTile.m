@@ -293,9 +293,7 @@ if ~NoAP
 
     %%
     SurfImage = imrotate(SurfImage, -zoom_angle + full_embryo_angle);
-     
-    maxSurfSavePath = [DropboxFolder,filesep,Prefix, filesep, 'DV', filesep, 'surf_max.tif'];
-    imwrite(SurfImage,maxSurfSavePath);
+
 
     % This is the original z stack full embryo surface image file from bfopen 
     clear ImageTemp

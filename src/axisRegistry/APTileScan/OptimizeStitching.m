@@ -43,7 +43,7 @@ NTiles = length(tile_array.imgs);
 if ~manualStitchOrder
     stitchOrder = getStitchingOrder(tile_array);
 else 
-    stitchOrder = ManualStitchOrder(Prefix, ID)
+    stitchOrder = ManualStitchOrder(Prefix, ID);
 end
 
 for m=2:NTiles
@@ -155,6 +155,20 @@ for m=2:NTiles
     [newr_ind, newc_ind] = find(normed_scores == min(min(normed_scores)));
     newr = tArRange(newr_ind); 
     newc= tAcRange(newc_ind);
+    close all
+    figure(1)
+    imagesc(normed_scores)
+    hold on 
+    scatter(newc_ind, newr_ind, 100, 'r.') 
+    colorbar
+    title(['Moving tile: ', num2str(tA_ind)])
+    hold off
+    figure(2) 
+    imagesc(tileA)
+    title(['Tile A: ', num2str(tA_ind)])
+    figure(3) 
+    imagesc(tileB)
+    title(['Tile B: ', num2str(tB_ind)])
     tile_array.rows{tA_ind} = newr;
     tile_array.cols{tA_ind} = newc;
     rmins = [tile_array.rows{:}];

@@ -91,7 +91,8 @@ function tile_array = NewTileArrayFromMetadata(Prefix, ID)
         tile_array.rows{i} = ri;
         tile_array.cols{i} = ci;
         tile_array.grid_positions{i} = [gri, gci];
-        tile_array.imgs{i} = imgaussfilt(tiles{i}, sigma);
+        tile_array.imgs{i} = imfilter(tiles{i},... 
+            fspecial('gaussian', 2, 1), 'symmetric');
     end
 
     tile_array.prevrows = {};
