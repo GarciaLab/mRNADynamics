@@ -33,7 +33,7 @@ if postTrackingSettings.doAdjustNuclearContours
     
     disp('Adjusting nuclear contours...');
 
-    parfor frame = 1:length(Ellipses)
+    for frame = 1:length(Ellipses)
 %             for frame = 1:length(Ellipses)
         
         Ellipses{frame} = adjustNuclearContours(Ellipses{frame},...

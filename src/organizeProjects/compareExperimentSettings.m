@@ -123,10 +123,14 @@ for i = 1:numExperiments
         continue    
     elseif strcmpi(FileMode, 'LIFEXport')
         %Extract settings for this experiment
-        currSettingsStruct = getSettingsFromLIF(currExperiment);
-        
-        % Add current settings to the master RawSettings structure
-        rawSettings(experimentExistsCount) = currSettingsStruct;  
+        try
+            currSettingsStruct = getSettingsFromLIF(currExperiment);
+
+            % Add current settings to the master RawSettings structure
+            rawSettings(experimentExistsCount) = currSettingsStruct;  
+        catch
+            warning(['Failed to extract settings for experiment ', i]);
+        end
     else
         error('Only Leica datasets currently supported by this script.')
     end

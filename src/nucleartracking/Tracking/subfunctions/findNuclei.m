@@ -9,6 +9,12 @@ nucleusDiameter, embryoMask, varargin )
 
 hisImage = double(hisImage);
 
+%this is an optional argument from tracknuclei. it's specified as global
+%because it's too hard to figure out how to get it from tracknuclei ->
+%findnuclei -AR 8/8/2020
+global mixedPolarity
+
+
 %% Initializing variables
 % Load parameters
 LoGratio = getDefaultParameters(FrameInfo,'LoGratio');
@@ -43,7 +49,9 @@ end
 %% 
 
 if nargin > 5
-    targetNumber = varargin{1}; % coarse estimate of the number of nuclei that should be found.
+    if isnumeric(varargin{1})
+        targetNumber = varargin{1}; % coarse estimate of the number of nuclei that should be found.
+    end   
 end
     
 
@@ -59,7 +67,9 @@ localMaxMask(round(length(localMaxMask)/2),round(length(localMaxMask)/2))  = 0;
 filteredImg = fourierFilterWithSymmetricBoundaryConditions(...
     hisImage,-fspecial('log',round(10*LoGradius),LoGradius));
 
-if false 
+%if this abs is taken, both dark and bright areas will be highlighted in
+%the filtered image. off by default since that's not the expected behavior.
+if mixedPolarity
     filteredImg = abs(filteredImg);
 end
 
