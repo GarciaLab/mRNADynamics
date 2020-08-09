@@ -16,7 +16,7 @@ function [Particles] = track01ParticleProximity(...
   liveExperiment = LiveExperiment(Prefix);
   ExperimentType = liveExperiment.experimentType;
   % Extract Time Vector
-  TimeVec = [FrameInfo.Time];
+%   TimeVec = [FrameInfo.Time];
   % Extract vector indicating nuclear cleavage cycle for each frame
   ncVec = [FrameInfo.nc]; 
   SlidingWindowSize = 2; % size of window used for time averaging of nuclear movements
@@ -197,36 +197,8 @@ function [Particles] = track01ParticleProximity(...
     end
     
     % adjust for z stack shifts
-    if isfield(FrameInfo,'zPosition')      
-      % need to make sure this field is now a permanent feature
-      zPosVec = [FrameInfo.zPosition]*1e6 / FrameInfo(1).ZStep;
-      zPosVec = zPosVec - zPosVec(1);
-      frameIndex = 1:length(zPosVec);
-      % generate new det-trended z variable
-      for p = 1:length(Particles{Channel})
-        fVec = Particles{Channel}(p).Frame;
-        Particles{Channel}(p).zPosDetrended = Particles{Channel}(p).zPos - zPosVec(ismember(frameIndex,fVec));
-      end
-    else
-      % get list of all frames and corresponding z positions
-      frameVec = [Particles{Channel}.Frame];
-      zPosVec = [Particles{Channel}.zPos];
+    Particles{Channel} = detrendZ(Particles{Channel},FrameInfo);
       
-      % get iteratable frame  list
-      frameIndex = unique(frameVec);
-      avgZProfile = NaN(size(frameIndex));
-      
-      for i = 1:length(frameIndex)
-        avgZProfile(i) = nanmean(zPosVec(frameVec==frameIndex(i)));
-      end
-      
-      % generate new det-trended z variable
-      for p = 1:length(Particles{Channel})
-        fVec = Particles{Channel}(p).Frame;
-        Particles{Channel}(p).zPosDetrended = Particles{Channel}(p).zPos - avgZProfile(ismember(frameIndex,fVec));
-      end
-      
-    end
     close(f);
   end
 end

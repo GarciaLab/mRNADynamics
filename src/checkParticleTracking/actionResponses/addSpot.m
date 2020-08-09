@@ -12,7 +12,6 @@ function [ParticleStitchInfo, SpotFilter, Particles, Spots,...
 
 
 liveExperiment = LiveExperiment(Prefix);
-globalMotionModel = getGlobalMotionModel(liveExperiment);
 % 
 % movieMat = getMovieMat(thisExperiment);
 % imStack = movieMat(:, :, :, CurrentFrame, CurrentChannel);
@@ -160,7 +159,7 @@ else
                     [SpotFilter{CurrentChannel},Particles{CurrentChannel}]=...
                         TransferParticle(Spots{CurrentChannel},...
                         SpotFilter{CurrentChannel},Particles{CurrentChannel},...
-                        CurrentFrame,SpotsIndex,globalMotionModel);
+                        CurrentFrame,SpotsIndex,Prefix);
 %                 catch
 %                     warning('failed to add spot for unknown reason.')
 %                     return;

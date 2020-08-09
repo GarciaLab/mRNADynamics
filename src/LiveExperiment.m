@@ -145,7 +145,7 @@ classdef LiveExperiment
             this.isUnhealthy = isUnhealthy;
             
             this.project = '';
-            
+                        
             this.hasCompiledParticlesFile = exist([this.resultsFolder, 'CompiledParticles.mat'] , 'file');
             this.hasSchnitzcellsFile = exist([this.resultsFolder,this.Prefix, '_lin.mat'] , 'file');
             this.hasSpotsFile = exist([this.resultsFolder, 'Spots.mat'] , 'file');
@@ -450,7 +450,7 @@ classdef LiveExperiment
                 load(particlesFile, 'Particles', 'SpotFilter');
             end
             
-        end
+        end               
         
         function FullParticles = getFulParticles(this)
             

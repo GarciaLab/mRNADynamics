@@ -97,6 +97,7 @@ function [RawParticles,globalModelStruct] = track02TrainGHMM(...
         globalModelStruct(v).Mu = [meanDrift-stdDrift meanDrift meanDrift+stdDrift];
         globalModelStruct(v).Sigma = repmat(stdDrift,1,1,3);
         globalModelStruct(v).LL = NaN;
+        globalModelStruct(v).var = varNameCell{v};
       end
     end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
