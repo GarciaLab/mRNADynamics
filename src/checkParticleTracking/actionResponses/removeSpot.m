@@ -1,10 +1,7 @@
 function cptState =...
     removeSpot(cptState, shouldQueryUser)
 %
-%
 %REMOVESPOT removes a spot from the spots and particles structure
-%  removes a spot from the spots and particles structure
-
 
 del = false;
 CurrentFrameWithinParticle = find(cptState.Particles...

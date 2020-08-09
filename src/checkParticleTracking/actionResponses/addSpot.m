@@ -1,9 +1,9 @@
-function [SpotFilter, Particles, Spots,...
+function [ParticleStitchInfo, SpotFilter, Particles, Spots,...
     PreviousParticle, CurrentParticle, ZoomMode, GlobalZoomMode] =...
     ...
     addSpot(...
     ...
-    ZoomMode, GlobalZoomMode, Particles, CurrentChannel, ...
+    ZoomMode, GlobalZoomMode, Particles, ParticleStitchInfo, CurrentChannel, ...
     CurrentParticle, CurrentFrame, CurrentZ, Spots,...
     SpotFilter, cc, Prefix,UseHistoneOverlay,...
     schnitzcells, nWorkers, plot3DGauss, imStack)
@@ -12,6 +12,7 @@ function [SpotFilter, Particles, Spots,...
 
 
 liveExperiment = LiveExperiment(Prefix);
+globalMotionModel = getGlobalMotionModel(liveExperiment);
 % 
 % movieMat = getMovieMat(thisExperiment);
 % imStack = movieMat(:, :, :, CurrentFrame, CurrentChannel);
@@ -155,32 +156,31 @@ else
                 
                 %Turn this spot into a new particle. This is the equivalent of
                 %the 'u' command.
-                try
+%                 try
                     [SpotFilter{CurrentChannel},Particles{CurrentChannel}]=...
                         TransferParticle(Spots{CurrentChannel},...
                         SpotFilter{CurrentChannel},Particles{CurrentChannel},...
-                        CurrentFrame,SpotsIndex);
-                catch
-                    warning('failed to add spot for unknown reason.')
-                    return;
-                end
+                        CurrentFrame,SpotsIndex,globalMotionModel);
+%                 catch
+%                     warning('failed to add spot for unknown reason.')
+%                     return;
+%                 end
                 numParticles = numParticles + 1;
                 
                 %Connect this particle to the CurrentParticle. This is
                 %the equivalent of running the 'c' command.
                 if ~GlobalZoomMode
-                    Particles{CurrentChannel}=...
+                    [Particles{CurrentChannel}, ParticleStitchInfo{CurrentChannel}]=...
                         JoinParticleTraces(CurrentParticle,...
-                        numParticles,Particles{CurrentChannel});
-                else
+                        numParticles,Particles{CurrentChannel},ParticleStitchInfo{CurrentChannel});
+                else %NL: is this "else" option ever realized?
                     CurrentParticle = length(Particles{CurrentChannel});
                     Particles = addNucleusToParticle(Particles, CurrentFrame, ...
                         CurrentChannel, UseHistoneOverlay, schnitzcells, CurrentParticle);
                     GlobalZoomMode = false;
                     ZoomMode = true;
                     disp('Creating new particle trace...');
-                end
-                
+                end                                
                 
                 disp('Spot addded to the current particle.')
             else

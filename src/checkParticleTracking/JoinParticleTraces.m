@@ -1,55 +1,88 @@
-function Particles=JoinParticleTraces(OriginalParticle,ClickedParticle,Particles)
+function [Particles, ParticleStitchInfo] = ...
+  JoinParticleTraces(OriginalParticle,ClickedParticle,Particles,ParticleStitchInfo)
 
 %This function joins two particle traces and renumbers all particles in the
 %Particles structure accordingly
-
+%Check to make sure nucleus IDs are consistent
 %Transfer the information to the original particle
-Particles(OriginalParticle).Frame=[Particles(OriginalParticle).Frame,Particles(ClickedParticle).Frame];
-if isfield(Particles,'xPos')
-    Particles(OriginalParticle).xPos=[Particles(OriginalParticle).xPos,Particles(ClickedParticle).xPos];
-end
-if isfield(Particles,'yPos')
-    Particles(OriginalParticle).yPos=[Particles(OriginalParticle).yPos,Particles(ClickedParticle).yPos];
-end
-if isfield(Particles,'zPos')
-    Particles(OriginalParticle).zPos=[Particles(OriginalParticle).zPos,Particles(ClickedParticle).zPos];
-end
-Particles(OriginalParticle).Index=[Particles(OriginalParticle).Index,Particles(ClickedParticle).Index];
-Particles(OriginalParticle).Approved=0;
-%Particles(OriginalParticle).nc=[Particles(OriginalParticle).nc,Particles(ClickedParticle).nc];
-if isfield(Particles,'FrameApproved')
-    Particles(OriginalParticle).FrameApproved=logical([Particles(OriginalParticle).FrameApproved,Particles(ClickedParticle).FrameApproved]);
-end
 
+if isnan(Particles(ClickedParticle).Nucleus) || Particles(ClickedParticle).Nucleus==Particles(OriginalParticle).Nucleus
+  % initialize temporary structure 
+  temp = Particles(OriginalParticle);  
 
+  varNames = fieldnames(Particles(OriginalParticle))';
+  catIndices = [find(strcmp(varNames,'FrameApproved')) find(strcmp(varNames,'nc')) find(contains(varNames,{'Pos','Dist','Shift'})) find(strcmp(varNames,'Index'))];
+  [temp.Frame, sortIndices] = sort([Particles(OriginalParticle).Frame,Particles(ClickedParticle).Frame]);
 
-%Now, get rid of the clicked particle
-Particles=Particles([1:ClickedParticle-1,ClickedParticle+1:end]);
+  for c = 1:length(catIndices)
+    newVec = [Particles(OriginalParticle).(varNames{catIndices(c)}),Particles(ClickedParticle).(varNames{catIndices(c)})];
+    temp.(varNames{catIndices(c)}) = newVec(sortIndices);
+  end
+  temp.Approved=0;
+  temp.FrameApproved=logical(temp.FrameApproved);
 
-%Deals with the indexing changing because of the removal of
-%the old particle.
- if ClickedParticle<OriginalParticle
-     OriginalParticle=OriginalParticle-1;
- end
+  %Next update projected paths
+  ptIDs = [OriginalParticle ClickedParticle];
+  nParams = size(Particles(OriginalParticle).pathArray,2);
+  nFrames = size(Particles(OriginalParticle).pathArray,1);
+  pathArray = NaN(nFrames,2,nParams);
+  sigmaArray = NaN(nFrames,2,nParams);
+  extantFrameArray = zeros(nFrames,2);  
+  for p = 1:length(ptIDs)
+    frames = Particles(ptIDs(p)).Frame;     
+    extantFrameArray(frames,p) = 1;
+    pathArray(:,p,:) = Particles(ptIDs(p)).pathArray;
+    sigmaArray(:,p,:) = Particles(ptIDs(p)).sigmaArray;
+  end
+  % call path update function
+  [temp.pathArray, temp.sigmaArray] = updatePaths(pathArray,sigmaArray,extantFrameArray);
 
-%Sort the frames within the particle. This is useful if we
-%connected to a particle that came before.
-[SortedFrame,Permutations]=sort(Particles(OriginalParticle).Frame);
-Particles(OriginalParticle).Frame=Particles(OriginalParticle).Frame(Permutations);
-try
-    if isfield(Particles,'xPos')
-        Particles(OriginalParticle).xPos=Particles(OriginalParticle).xPos(Permutations);
-    end
-    if isfield(Particles,'yPos')
-        Particles(OriginalParticle).yPos=Particles(OriginalParticle).yPos(Permutations);
-    end
-end
-Particles(OriginalParticle).Index=Particles(OriginalParticle).Index(Permutations);
-% 9/4 EL: Added the if statement to remove error of the index (Permutations)
-% exceeding matrix dimension. Did this always create an error when the
-% frames of the original particle was not approved before?
-if ~isfield(Particles,'FrameApproved')
-    Particles(OriginalParticle).FrameApproved=Particles(OriginalParticle).FrameApproved(Permutations);
-end
+  %Now update link info 
+  % frames
+  binActVec = max(extantFrameArray,[],2);
+  binActVec(extantFrameArray(:,2)==1)=2;  
+  
+  baseDist = bwdist(binActVec==2);
+  baseDist(~extantFrameArray(:,1)) = Inf;
+  [~,baseFrame] = min(baseDist);
+  
+  linkDist = bwdist(binActVec==1);
+  linkDist(~extantFrameArray(:,2)) = Inf;  
+  [~,linkFrame] = min(linkDist);
+    
+  joinFrames = [baseFrame linkFrame];
+  temp.linkFrameCell = [Particles(OriginalParticle).linkFrameCell Particles(ClickedParticle).linkFrameCell {joinFrames}]; 
 
+  % cost
+  temp.linkCostCell = [Particles(OriginalParticle).linkCostCell Particles(ClickedParticle).linkCostCell -1]; % flag cost with negative val
+
+  % particle vec
+  temp.idVec = NaN(size(Particles(OriginalParticle).idVec));
+  ptIDsOrig = Particles(OriginalParticle).idVec(~isnan(Particles(OriginalParticle).idVec));
+  ptIDsClick = Particles(ClickedParticle).idVec(~isnan(Particles(ClickedParticle).idVec));
+  temp.idVec(~isnan(Particles(OriginalParticle).idVec)) = ptIDsOrig;
+  temp.idVec(~isnan(Particles(ClickedParticle).idVec)) = ptIDsClick;
+
+  % particle cell
+  temp.linkParticleCell = [Particles(OriginalParticle).linkParticleCell Particles(ClickedParticle).linkParticleCell {[unique(ptIDsOrig) unique(ptIDsClick)]}];
+
+  % update link string
+  nKeep = max(diff(find(Particles(OriginalParticle).linkStateString~='|')))-1;
+  nDrop = max(diff(find(Particles(ClickedParticle).linkStateString~='|')))-1;
+  divNum = max([nKeep nDrop]);
+  if isempty(divNum)
+    divNum = 0;
+  end
+  temp.linkStateString = [Particles(OriginalParticle).linkStateString repelem('|',divNum+1) Particles(ClickedParticle).linkStateString];
+
+  %Now, assign temp and get rid of the clicked particle
+  Particles(OriginalParticle) = temp;
+  Particles = Particles([1:ClickedParticle-1,ClickedParticle+1:end]);
+  
+  %Lastly, add assigned link to stitch info struct 
+  joinFilter = ismember(Particles(OriginalParticle).Frame,joinFrames);
+  ParticleStitchInfo(Particles(OriginalParticle).Nucleus).persistentLinkFrames(end+1) = {joinFrames};
+  ParticleStitchInfo(Particles(OriginalParticle).Nucleus).persistentLinkIndices(end+1) = {Particles(OriginalParticle).Index(joinFilter)};
+else
+  warning("Mismatching nucleus IDs. Aborting linkage")
 end

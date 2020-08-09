@@ -10,7 +10,20 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
   ncVec = [FrameInfo.nc];
   frameIndex = 1:length(ncVec);
   NCh = length(SimParticles);
-
+  % if retracking, load current particle sets
+  if ~retrack
+    % initialize data structure
+    StitchedParticles = cell(1,NCh);
+    ParticleStitchInfo = cell(1,NCh);
+    % initialize fields for stitch info 
+    for Channel = 1:NCh
+      ParticleStitchInfo{Channel}(1).persistentLinkFrames = {};
+      ParticleStitchInfo{Channel}(1).persistentLinkIndices = {};
+    end
+  else
+    StitchedParticles = getFullParticles(liveExperiment);
+    ParticleStitchInfo = getParticleStitchInfo(liveExperiment);
+  end
   % Set max spots per nucleus per frame, can be different between channels
   matchCostMax = repelem(realmax,NCh);
   if ismember(ExperimentType,{'1spot'}) 
@@ -39,9 +52,6 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
       error(['''',ExperimentType,''' ExperimentType not supported by track04StitchTracks'])
   end
   
-  % initialize data structure
-  StitchedParticles = cell(1,NCh);
-  ParticleStitchInfo = cell(1,NCh);
   for Channel = 1:NCh
     
     % number of distinct parameters we're using for linking

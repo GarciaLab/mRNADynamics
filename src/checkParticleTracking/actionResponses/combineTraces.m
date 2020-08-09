@@ -13,8 +13,7 @@ currentParticleExistsInCurrentFrame =...
 
 if ~currentParticleExistsInCurrentFrame && particlesExistInFrame
 
-    [ConnectPositionx,ConnectPositiony]=ginput(1);
-    ConnectPosition = [ConnectPositionx,ConnectPositiony];
+    [ConnectPosition(1),ConnectPosition(2)]=ginput(1);    
 
     if ~isempty(ConnectPosition)
         % find index of the particle we want to add (a.k.a output particle) to current

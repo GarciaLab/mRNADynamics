@@ -41,7 +41,7 @@ toc
 
 tic
 disp('Inferring particle motion model...')
-HMMParticles = track02TrainGHMM(RawParticles, FrameInfo, retrack, displayFigures);
+[HMMParticles, globalMotionModel] = track02TrainGHMM(RawParticles, FrameInfo, retrack, displayFigures);
 toc
 
 tic
@@ -203,6 +203,7 @@ if displayFigures
 end
 
 % save
-save([resultsFolder, filesep, 'ParticlesFull.mat'],'RawParticles','HMMParticles', 'SimParticles','FullParticles','ParticleStitchInfo')
-
+save([resultsFolder, filesep, 'ParticlesFull.mat'],'RawParticles','HMMParticles', 'SimParticles','FullParticles')
+save([resultsFolder, filesep, 'ParticleStitchInfo.mat'],'ParticleStitchInfo');
+save([resultsFolder, filesep, 'globalMotionModel.mat'],'globalMotionModel');
 end

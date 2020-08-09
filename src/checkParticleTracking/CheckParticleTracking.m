@@ -152,7 +152,7 @@ DataFolder = [DropboxFolder, filesep, Prefix];
 FilePrefix = [Prefix, '_'];
 
 if isempty(preStructs)
-    [Particles, SpotFilter, Spots, FrameInfo, schnitzcells, Spots3D] =...
+    [ParticleStitchInfo, Particles, SpotFilter, Spots, FrameInfo, schnitzcells, Spots3D] =...
         loadCheckParticleTrackingMats(DataFolder, PreProcPath, FilePrefix);
 else
     Particles = preStructs{1};
@@ -245,7 +245,7 @@ ShowThreshold2 = 1; %Whether to show particles below the threshold
 ParticleToFollow = [];
 CurrentFrameWithinParticle = 1;
 
-cptState = CPTState(Spots, Particles, SpotFilter, schnitzcells, Ellipses,...
+cptState = CPTState(Spots, Particles, ParticleStitchInfo, SpotFilter, schnitzcells, Ellipses,...
     FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss, projectionMode); %work in progress, 2019-12, JP.
 
 try
@@ -260,7 +260,7 @@ if ~isempty(cptState.Particles{cptState.CurrentChannelIndex})
         cptState.Particles{cptState.CurrentChannelIndex}...
         (cptState.CurrentParticle).Frame(CurrentFrameWithinParticle);
 
-else, error('Looks like the Particles structure is empty. There''s nothing to check.'); end
+else, error("Looks like the Particles structure is empty. There's nothing to check."); end
 
 %load the movies
 movieMat = getMovieMat(liveExperiment);

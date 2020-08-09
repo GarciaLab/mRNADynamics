@@ -47,7 +47,7 @@ classdef LiveExperiment
         hasCompiledParticlesFile = false;
         hasSchnitzcellsFile = false;
         hasSpotsFile = false;
-        hasParticlesFile = false;
+        hasParticlesFile = false;        
         hasDoGs = false;
         hasRawStacks = false;
         hasMovieMatFile = false;
@@ -88,7 +88,7 @@ classdef LiveExperiment
         
         MS2CodePath = '';
         
-        
+        rerunParticleTrackingFlag = false;
         
     end
     
@@ -151,8 +151,8 @@ classdef LiveExperiment
             this.hasSpotsFile = exist([this.resultsFolder, 'Spots.mat'] , 'file');
             this.hasParticlesFile = exist([this.resultsFolder, 'Particles.mat'] , 'file');
             this.hasEllipsesFile = exist([this.resultsFolder, 'Ellipses.mat'] , 'file');
-            this.hasChannelsFile =exist([this.resultsFolder, 'Channels.mat'] , 'file');
-            this.hasAnaphaseFile=exist([this.resultsFolder, 'anaphaseFrames.mat'] , 'file');
+            this.hasChannelsFile = exist([this.resultsFolder, 'Channels.mat'] , 'file');
+            this.hasAnaphaseFile = exist([this.resultsFolder, 'anaphaseFrames.mat'] , 'file');
             
             this.hasDoGs = exist([this.procFolder, 'dogs'], 'dir');
             
@@ -193,6 +193,7 @@ classdef LiveExperiment
             
             evalc('[~, this.fileMode] = DetermineFileMode(this.rawFolder)');    %Using evalc to supress displays to the command window from the function DetermineFileMode
             
+            this.rerunParticleTrackingFlag = exist([this.resultsFolder, 'rerunParticleTracking.mat'] , 'file');
             
         end
         
@@ -447,6 +448,33 @@ classdef LiveExperiment
             particlesFile = [this.resultsFolder, 'Particles.mat'];
             if this.hasParticlesFile
                 load(particlesFile, 'Particles', 'SpotFilter');
+            end
+            
+        end
+        
+        function FullParticles = getFulParticles(this)
+            
+            particlesFile = [this.resultsFolder, 'FullParticles.mat'];
+            if this.hasParticlesFile
+                load(particlesFile, 'FullParticles');
+            end
+            
+        end
+        
+        function ParticleStitchInfo = getParticleStitchInfo(this)
+            
+            particleStitchFile = [this.resultsFolder, 'ParticleStitchInfo.mat'];
+            if this.hasParticlesFile
+                load(particleStitchFile, 'ParticleStitchInfo');
+            end
+            
+        end
+        
+        function globalMotionModel = getGlobalMotionModel(this)
+            
+            particleMotionFile = [this.resultsFolder, 'globalMotionModel.mat'];
+            if this.hasParticlesFile
+                load(particleMotionFile, 'globalMotionModel');
             end
             
         end
