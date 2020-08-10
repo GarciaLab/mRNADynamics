@@ -238,13 +238,13 @@ classdef LiveExperiment
             %these should ever be precisely identical in different movies
             persistent FrameInfo_movie;
             persistent movieMat;
-
+            
             tempInfo = load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
             
             isNewMovie = isempty(FrameInfo_movie) ||...
                 length([tempInfo.FrameInfo.Time]) ~= length([FrameInfo_movie.Time]) || ...
                 any([tempInfo.FrameInfo.Time] ~= [FrameInfo_movie.Time]) ||...
-                size(movieMat, 5) ~= this.nFrames;
+                size(movieMat, 4) ~= this.nFrames;
             
             persistent preTifDir;
             if isempty(preTifDir) || isNewMovie
@@ -365,18 +365,18 @@ classdef LiveExperiment
             persistent hisMat;
             persistent FrameInfo_His;
             tempInfo = load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
-
+            
             isNewMovie = isempty(FrameInfo_His) ||...
-            size([tempInfo.FrameInfo.Time],2) ~= size([FrameInfo_His.Time],2) || ...
-            any([tempInfo.FrameInfo.Time] ~= [FrameInfo_His.Time]) ||...
-            size(hisMat, 3) ~= this.nFrames;
-
-
+                size([tempInfo.FrameInfo.Time],2) ~= size([FrameInfo_His.Time],2) || ...
+                any([tempInfo.FrameInfo.Time] ~= [FrameInfo_His.Time]) ||...
+                size(hisMat, 3) ~= this.nFrames;
+            
+            
             %load histone movie only if it hasn't been loaded or if we've switched
             %Prefixes (determined by num frames)
             if isempty(hisMat) || isNewMovie
                 
-                FrameInfo_His = tempInfo.FrameInfo; 
+                FrameInfo_His = tempInfo.FrameInfo;
                 
                 if haveHisTifStack
                     %load in sequential tif stacks
@@ -401,6 +401,65 @@ classdef LiveExperiment
             %let's reduce the memory footprint of the movie if we can
             if max(hisMat(:)) < 255
                 hisMat = uint8(hisMat);
+            end
+            
+        end
+        
+        %this function retrieves or generates a max projection of the full
+        %movie
+        function out = getMaxMat(this)
+            
+            persistent FrameInfo_max;
+            persistent maxMat;
+            
+            tempInfo = load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
+            
+            isNewMovie = isempty(FrameInfo_max) ||...
+                length([tempInfo.FrameInfo.Time]) ~= length([FrameInfo_max.Time]) || ...
+                any([tempInfo.FrameInfo.Time] ~= [FrameInfo_max.Time]) ||...
+                size(maxMat, 3) ~= this.nFrames;
+            
+            if isNewMovie
+                FrameInfo_max = tempInfo.FrameInfo;
+                movieMat = getMovieMat(this);
+                if ~isempty(movieMat)
+                    maxMat = max(movieMat(:,:,:,:,:),[],3);
+                else
+                    maxMat = [];
+                end
+            end
+            out = squeeze(maxMat);
+            
+        end
+        
+        function out = getMovieFrame(this, frame, channel)
+            
+            stackFile = [this.preFolder, filesep, this.Prefix, '_',...
+                iIndex(frame, this.nDigits),...
+                '_ch', iIndex(channel, 2), '.tif'];
+            
+            if exist(stackFile, 'file')
+                out = imreadStack(stackFile);
+            else
+                out = zeros(this.yDim, this.xDim, this.nSlices);
+                for z = 1:this.nSlices
+                    out(:, :, z) = getMovieSlice(this, frame, channel, z);
+                end
+            end
+        end
+        
+        function out = getMovieSlice(this, frame, channel, slice)
+            
+            imFile = [this.preFolder, filesep, this.Prefix, '_',...
+                iIndex(frame, this.nDigits),...
+                '_z', iIndex(slice, 2),...
+                '_ch', iIndex(channel, 2), '.tif'];
+            
+            if exist(imFile, 'file')
+                out = imread(imFile);
+            else
+                imStack = getMovieFrame(this, frame, channel);
+                out = imStack(:, :, slice);
             end
             
         end

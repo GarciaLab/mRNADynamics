@@ -13,7 +13,9 @@ function metadataXML = generateLIFMetaDataXML(in, out, xmlSize)
         out char = '';
         xmlSize double = 100E6;
   end
- 
+  
+  warning('off','MATLAB:MKDIR:DirectoryExists')
+
     disp('Exporting LIF MetaData as XML ...')
     if ~isfile(in)
         [lifFile, metafile] = getFiles(in);
@@ -36,7 +38,7 @@ function metadataXML = generateLIFMetaDataXML(in, out, xmlSize)
         %produced an error. let's try again with a shorter xml. this is nec
         %essary because it's hard to determine the true offset of the 
         %end of the xml within the .lif binary. 
-        shorterXMLSize = xmlSize/10;
+        shorterXMLSize = xmlSize/2;
         metadataXML = generateLIFMetaDataXML(in, out, shorterXMLSize);
         return;
     end
@@ -86,6 +88,7 @@ xmlEnd = min(xmlSize, filesize); %100MB should cover even very large files
 
 fid = fopen(lifFile, 'r');
 [A,count] = fread(fid, xmlEnd, 'uchar');
+fclose(fid);
 
 asc = repmat('.',1, count);
 idx = find(double(A)>=32);

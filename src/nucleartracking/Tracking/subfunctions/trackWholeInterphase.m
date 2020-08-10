@@ -51,10 +51,6 @@ end
 if ~exist('shifts','var') || isempty(shifts)
     shifts = cell(totalNumberOfFrames-1,1);
 end
-%this startingFrame variable appears to be a holdover from an older version of the
-%code. This like invariably returns size(xyInterphase{1},1);
-numberOfNuclei = size(xyInterphase{startingFrame-previousMitosisInd+1},1);
-
 
 ind = true(length(xyInterphase{startingFrame-previousMitosisInd+1}),1);
 nucleiIndices = nan(size(xyInterphase{1},1),1);

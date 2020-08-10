@@ -416,7 +416,6 @@ uiwait(fig);
         Channel2 = projectionChannels{2};
         Channel3 = projectionChannels{3};
         
-        
         hisMat = zeros(yDim, xDim, sum(NFrames), hisPrecision); % y x f
         
         for f = 1:NFrames
@@ -425,7 +424,7 @@ uiwait(fig);
         end
         
         saveNuclearProjection(hisMat, [liveExperiment.preFolder, filesep, Prefix, '-His.tif']);
-        
+        clear LiveExperiment;
         
         
         

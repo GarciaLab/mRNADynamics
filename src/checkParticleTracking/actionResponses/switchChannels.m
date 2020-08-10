@@ -5,10 +5,6 @@ function [CurrentChannel, PreviousChannel, CurrentParticle,...
 %SWITCHCHANNELS Summary of this function goes here
 %   Detailed explanation goes here
 
-%NB Armando 3/28/2020-
-%I think this is completely broken. Needs a rewrite using
-%CurrentChannelIndex and CurrentChannel
-
 coatChannel = nan;
 
 %Update the channel number

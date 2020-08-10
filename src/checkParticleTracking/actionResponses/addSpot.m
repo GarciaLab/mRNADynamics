@@ -15,12 +15,6 @@ liveExperiment = LiveExperiment(Prefix);
 
 
 FrameInfo = getFrameInfo(liveExperiment);
-LinesPerFrame = liveExperiment.yDim;
-PixelsPerLine = liveExperiment.xDim;
-pixelSize_nm = liveExperiment.pixelSize_nm;
-PreProcPath = liveExperiment.preFolder;
-snippetSize_px = liveExperiment.snippetSize_px;
-nSlices = liveExperiment.zDim;
 
 
 numParticles = length(Particles{CurrentChannel});
@@ -48,19 +42,19 @@ else
         
         % check that the clicked particle isn't too close to the
         % edge of the frame
-        if (ConnectPositionx > snippetSize_px/2) && (ConnectPositionx + snippetSize_px/2 < PixelsPerLine)...
-                && (ConnectPositiony > snippetSize_px/2) && (ConnectPositiony + snippetSize_px/2 < LinesPerFrame)
+        if (ConnectPositionx > liveExperiment.snippetSize_px/2) && (ConnectPositionx + liveExperiment.snippetSize_px/2 < liveExperiment.xDim)...
+                && (ConnectPositiony > liveExperiment.snippetSize_px/2) && (ConnectPositiony + liveExperiment.snippetSize_px/2 < liveExperiment.yDim)
             SpotsIndex = length(Spots{CurrentChannel}(CurrentFrame).Fits)+1;
             breakflag = 0; %this catches when the spot addition was unsuccessful and allows checkparticletracking to keep running and not error out
             use_integral_center = 1;
             
-            FitCell = cell(1, nSlices);
+            FitCell = cell(1, liveExperiment.zDim);
             
-            for z = 1:nSlices
+            for z = 1:liveExperiment.zDim
                 spotsIm = imStack(:, :, z);
                 try
                     imAbove= imStack(:, :, z+1);
-                   imBelow= imStack(:, :, z-1);
+                    imBelow= imStack(:, :, z-1);
                 catch
                     imAbove = nan(size(spotsIm,1),size(spotsIm,2));
                     imBelow = nan(size(spotsIm,1),size(spotsIm,2));
@@ -75,15 +69,15 @@ else
                 fig = [];
                 k = 1; %This is supposed to be the index for the particles in an image.
                 %However, this image only contains one particle
-                neighborhood_px = round(1300 / pixelSize_nm); %nm
+                neighborhood_px = round(1300 / liveExperiment.pixelSize_nm); %nm
                 %Get the information about the spot on this z-slice
                 if cc == '['
-                    Fit = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood_px, snippetSize_px, ...
-                        pixelSize_nm, show_status, fig, microscope,...
+                    Fit = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood_px, liveExperiment.snippetSize_px, ...
+                        liveExperiment.pixelSize_nm, show_status, fig, microscope,...
                         [1, ConnectPositionx, ConnectPositiony], [], '', CurrentFrame, [], z);
                 elseif cc == '{'
-                     Fit = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood_px, snippetSize_px, ...
-                        pixelSize_nm, show_status, fig, microscope,...
+                    Fit = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood_px, liveExperiment.snippetSize_px, ...
+                        liveExperiment.pixelSize_nm, show_status, fig, microscope,...
                         [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', CurrentFrame, [], z);
                 end
                 
@@ -93,7 +87,7 @@ else
             end
             Fits = [];
             
-           for z = 1:nSlices
+            for z = 1:liveExperiment.zDim
                 if ~isempty(FitCell{z})
                     fieldnames = fields(FitCell{z});
                     if isempty(Fits)
@@ -137,7 +131,7 @@ else
                         fitSnip3D(...
                         ...
                         Spots{CurrentChannel}(CurrentFrame), CurrentChannel, SpotsIndex, CurrentFrame,...
-                        Prefix, PreProcPath, FrameInfo, nSpots, imStack);
+                        Prefix, liveExperiment.preFolder, getFrameInfo(liveExperiment), nSpots, imStack);
                 end
                 %%
                 %Add this to SpotFilter, which tells the code that this spot is
