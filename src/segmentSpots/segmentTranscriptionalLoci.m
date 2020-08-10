@@ -82,6 +82,11 @@ if filterMovieFlag
 end
 
 movieMat = getMovieMat(liveExperiment);
+if ~isempty(movieMat)
+    movieMat_channel = movieMat(:, :, :, :, ch_quantify);
+else
+    movieMat_channel = [];
+end
 
 yDim = liveExperiment.yDim;
 xDim = liveExperiment.xDim;
@@ -113,10 +118,10 @@ isZPadded = size(movieMat, 3) ~= zSize;
 q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
-parfor currentFrame = initialFrame:lastFrame
+for currentFrame = initialFrame:lastFrame
     
-    if ~isempty(movieMat)
-        imStack = movieMat(:, :, :, currentFrame, ch_quantify);
+    if ~isempty(movieMat_channel)
+        imStack = movieMat_channel(:, :, :, currentFrame);
     else
         imStack = getMovieFrame(liveExperiment, currentFrame, ch_quantify);
     end
