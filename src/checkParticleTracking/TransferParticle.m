@@ -6,7 +6,7 @@ FrameInfo = getFrameInfo(liveExperiment);
 globalMotionModel = getGlobalMotionModel(liveExperiment);
 
 %First, approve the particle
-SpotFilter(CurrentFrame,IndexOutput)=1;
+SpotFilter(CurrentFrame,IndexOutput)=2; % set to 2 to distinguish from original particles
 
 % set all fields to NaN by default 
 varNames = fieldnames(Particles(end));

@@ -40,17 +40,19 @@ if isnan(Particles(ClickedParticle).Nucleus) || Particles(ClickedParticle).Nucle
   %Now update link info 
   % frames
   binActVec = max(extantFrameArray,[],2);
-  binActVec(extantFrameArray(:,2)==1)=2;  
+  binActVec(extantFrameArray(:,2)==1)=2;  % set new frames to 2
   
-  baseDist = bwdist(binActVec==2);
-  baseDist(~extantFrameArray(:,1)) = Inf;
-  [~,baseFrame] = min(baseDist);
+  newDist = bwdist(binActVec==2)';
+  newDist(~extantFrameArray(:,1)) = Inf;
+  [minDist,newFrame] = min(newDist);
+%   newFrames = find(newDist==minDist);
   
-  linkDist = bwdist(binActVec==1);
-  linkDist(~extantFrameArray(:,2)) = Inf;  
-  [~,linkFrame] = min(linkDist);
+  baseDist = bwdist(binActVec==1)';
+  baseDist(~extantFrameArray(:,2)) = Inf;    
+  [minDist,baseFrame] = min(baseDist);
+%   baseFrames = find(baseDist==minDist);
     
-  joinFrames = [baseFrame linkFrame];
+  joinFrames = [baseFrame newFrame];
   temp.linkFrameCell = [Particles(OriginalParticle).linkFrameCell Particles(ClickedParticle).linkFrameCell {joinFrames}]; 
 
   % cost
