@@ -208,6 +208,8 @@ else
         filesep, 'Spots.mat'], 'Spots', '-v7.3', '-nocompression');
 end
 
+if track, TrackmRNADynamics(Prefix, 'noretrack'); end
+
 if fit3D > 0
     disp('Fitting 3D Gaussians...')
     fit3DGaussiansToAllSpots(Prefix, fit3D,...
@@ -222,6 +224,5 @@ if ~keepPool
     end
 end
 
-if track, TrackmRNADynamics(Prefix, 'noretrack'); end
 
 end
