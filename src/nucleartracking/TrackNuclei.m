@@ -16,7 +16,7 @@ function TrackNuclei(Prefix,varargin)
 % shift between frames (greatly reduces runtime).
 % 'retrack': Use existing segmentation for tracking and bypass the prompt.
 % 'integrate': integrate nuclear fluorescence
-% 'noToRetrack': Don't retrack and don't prompt. 
+% 'doNotRetrack': Don't retrack and don't prompt. 
 % 'mixedPolarity': inserts an absolute value into one of the
 % nuclear filters that helps identify nuclei that are both dark and bright
 % in the same image
