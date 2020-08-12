@@ -9,7 +9,9 @@ end
 
 %check for inconsistencies between compiledparticles and schnitzcells
 for ch = 1:nSpotChannels
-    assert( all([CompiledParticles{ch}.schnitz] <= length(schnitzcells)) )
+    if ~isempty(CompiledParticles{ch})
+        assert( all([CompiledParticles{ch}.schnitz] <= length(schnitzcells)) )
+    end
 end
 
 %if this assert fails, you should run these lines (roughly)
