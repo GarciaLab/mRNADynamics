@@ -358,14 +358,7 @@ classdef LiveExperiment
                 haveHisTifStack = false;
             end
             
-            %just return an empty array if we can't load the movie.
-            %leave the handling to the caller, presumably by enabling
-            %sequential file loading.
-            if ~haveSufficientMemory(dir(hisFile))
-                out = [];
-                return;
-            end
-            
+                       
             persistent hisMat;
             persistent FrameInfo_His;
             tempInfo = load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
