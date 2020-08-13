@@ -445,8 +445,8 @@ classdef LiveExperiment
             if exist(stackFile, 'file')
                 out = imreadStack(stackFile);
             else
-                out = zeros(this.yDim, this.xDim, this.nSlices);
-                for z = 1:this.nSlices
+                out = zeros(this.yDim, this.xDim, this.zDim);
+                for z = 1:this.zDim
                     out(:, :, z) = getMovieSlice(this, frame, channel, z);
                 end
             end

@@ -4,6 +4,8 @@ licensed = license('test','Distrib_Computing_Toolbox');
 
 if licensed 
     
+    try
+        
     ps = parallel.Settings;
     ps.Pool.AutoCreate = false;
     distcomp.feature( 'LocalUseMpiexec', false );
@@ -28,6 +30,10 @@ if licensed
                 delete(poolobj);
             end
         end
+    end
+    catch
+        %sometimes this fails if the license is available but the toolbox
+        %isn't installed. 
     end
     
 end
