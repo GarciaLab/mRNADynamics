@@ -442,8 +442,8 @@ classdef LiveExperiment
                 '_z', iIndex(1, 2),...
                 '_ch', iIndex(channel, 2), '.tif'], 'file')
                 
-                out = zeros(this.yDim, this.xDim, this.nSlices);
-                for z = 1:this.nSlices
+                out = zeros(this.yDim, this.xDim, this.zDim);
+                for z = 1:this.zDim
                     out(:, :, z) = getMovieSlice(this, frame, channel, z);
                 end
             end
