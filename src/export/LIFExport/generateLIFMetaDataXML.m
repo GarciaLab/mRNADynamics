@@ -34,13 +34,18 @@ function metadataXML = generateLIFMetaDataXML(in, out, xmlSize)
     try
         metadataXML = writeMetaXML(cleanasc, metafile);
     catch
-        %occasionally, the original xml file length was too long and
-        %produced an error. let's try again with a shorter xml. this is nec
-        %essary because it's hard to determine the true offset of the 
-        %end of the xml within the .lif binary. 
-        shorterXMLSize = xmlSize/2;
-        metadataXML = generateLIFMetaDataXML(in, out, shorterXMLSize);
-        return;
+%         %occasionally, the original xml file length was too long and
+%         %produced an error. let's try again with a longer xml. this is nec
+%         %essary because it's hard to determine the true offset of the 
+%         %end of the xml within the .lif binary. Note that this solution
+%         %doesn't always work. 
+        longerXMLSize = xmlSize*10;
+        if longerXMLSize > 5000E6
+            error('Not able to extract metadata, sorry. Try exporting this file for the metadata, instead.');
+        else
+            metadataXML = generateLIFMetaDataXML(in, out, longerXMLSize);
+            return;
+        end
     end
 
 end
@@ -59,9 +64,10 @@ function wholeXML = writeMetaXML(text, metafile)
         metafile char
     end
   
-xmlStart = min(strfind(text, '<'));
-trueXMLEnd = max(strfind(text, '>'));
-wholeXML = text(xmlStart:trueXMLEnd);
+xmlStart = min(strfind(text, '<LMS'));
+endTag = '</LMSDataContainerHeader>';
+trueXMLEnd = max(strfind(text, endTag));
+wholeXML = text(xmlStart:trueXMLEnd+length(endTag)-1);
 
 if ~isempty(metafile)
     metafid = fopen(metafile, 'w');
@@ -113,7 +119,6 @@ DLIF = dir([rawFolder,filesep,'*.lif']);
 lifFile = [rawFolder, filesep, DLIF(1).name];
 
 metaDataFolder = [rawFolder, filesep, 'MetaData'];
-mkdir(metaDataFolder)
 metafile = [metaDataFolder, filesep, Prefix, '.xml'];
 
 end
