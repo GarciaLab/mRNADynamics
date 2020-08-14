@@ -136,13 +136,17 @@ classdef LiveExperiment
             this.MLFolder = [this.userResultsFolder, filesep, 'training_data_and_classifiers', filesep];
             
             
-            isUnhealthyFile = [this.userResultsFolder,filesep,this.Prefix,filesep, 'isUnhealthy.mat'];
-            if exist(isUnhealthyFile, 'file')
-                load(isUnhealthyFile, 'isUnhealthy');
-            else, isUnhealthy = NaN;
+            try
+                isUnhealthyFile = [this.userResultsFolder,filesep,this.Prefix,filesep, 'isUnhealthy.mat'];
+                if exist(isUnhealthyFile, 'file')
+                    load(isUnhealthyFile, 'isUnhealthy');
+                else, isUnhealthy = NaN;
+                end
+                this.isUnhealthy = isUnhealthy;
+            catch        
+                %not important for most things if this fails. 
             end
             
-            this.isUnhealthy = isUnhealthy;
             
             this.project = '';
             
