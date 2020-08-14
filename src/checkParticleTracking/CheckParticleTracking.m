@@ -266,10 +266,7 @@ else, error('Looks like the Particles structure is empty. There''s nothing to ch
 %load the movies
 movieMat = getMovieMat(liveExperiment);  
 
-if isempty(movieMat)
-    %this mode isn't supported when loading from single stacks
-    multiView = false;
-end
+
 hisMat = getHisMat(liveExperiment);
 maxMat = getMaxMat(liveExperiment);
 

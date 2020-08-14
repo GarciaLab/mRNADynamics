@@ -437,7 +437,11 @@ classdef LiveExperiment
             
             if exist(stackFile, 'file')
                 out = imreadStack(stackFile);
-            else
+            elseif exist([this.preFolder, filesep, this.Prefix, '_',...
+                iIndex(frame, this.nDigits),...
+                '_z', iIndex(1, 2),...
+                '_ch', iIndex(channel, 2), '.tif'], 'file')
+                
                 out = zeros(this.yDim, this.xDim, this.nSlices);
                 for z = 1:this.nSlices
                     out(:, :, z) = getMovieSlice(this, frame, channel, z);
@@ -454,7 +458,10 @@ classdef LiveExperiment
             
             if exist(imFile, 'file')
                 out = imread(imFile);
-            else
+            elseif exist([this.preFolder, filesep, this.Prefix, '_',...
+                iIndex(frame, this.nDigits),...
+                '_ch', iIndex(channel, 2), '.tif'], 'file')
+            
                 imStack = getMovieFrame(this, frame, channel);
                 out = imStack(:, :, slice);
             end

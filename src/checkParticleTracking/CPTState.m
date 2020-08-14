@@ -260,17 +260,22 @@ classdef CPTState < handle
                         this.CurrentFrame, this.CurrentChannel, this.CurrentZ);
                 end
                 
-                %to have a 3x3 square of time and z images on the screen. note that this
-                %currently doesn't work without loading the full movie into
-                %RAM. if that's wanted, it can happen pretty easily.
+                %to have a 3x3 square of time and z images on the screen. 
                 if multiView
                     for z = 1:-1:-1
                         for f = -1:1:1
                             if any( 1:nSlices == this.CurrentZ + z) &&...
                                     any( 1:nFrames == this.CurrentFrame + f)
-                                this.multiImage{z+2, f+2} =...
-                                    movieMat(:, :, this.CurrentZ+z,...
-                                    this.CurrentFrame+f, this.CurrentChannel);
+                                if ~isempty(movieMat)
+                                    this.multiImage{z+2, f+2} =...
+                                        movieMat(:, :, this.CurrentZ+z,...
+                                        this.CurrentFrame+f, this.CurrentChannel);
+                                else
+                                    this.multiImage{z+2, f+2} =...
+                                        getMovieSlice(this.liveExperiment, this.CurrentFrame+f,...
+                                        this.CurrentChannel,...
+                                        this.CurrentZ+z);
+                                end
                             else
                                 this.multiImage{z+2, f+2} = blankImage;
                             end
