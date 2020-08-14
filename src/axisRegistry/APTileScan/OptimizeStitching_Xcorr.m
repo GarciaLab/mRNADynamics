@@ -1,8 +1,8 @@
-function tile_array = OptimizeStitching(Prefix, ID, MaxDeltaR, MaxDeltaC, varargin)
+function tile_array = OptimizeStitching_Xcorr(Prefix, ID, MaxDeltaR, MaxDeltaC, varargin)
 % OptimizeStitching.m 
 % Gabriella Martini
-% 1/21/2020
-% Last Modifed: 7/25/2020
+% 8/4/2020
+% Last Modifed: 8/4/2020
 
  %% Load existing tile array information and relevant folder info 
 
@@ -19,30 +19,24 @@ if exist([stitchingDataFolder, filesep, ID, 'TileArray.mat'], 'file')
 else
      error('No TileArray data stored. Seed a new TileArray using "NewTileArrayFromMetadata".')  
 end
-%% 
 
 
 manualStitchOrder = false;
-selectRegions = false;
-if ~isempty(varargin)
-    x = 1;
-    while x <= length(varargin{1})
-        switch varargin{1}{x}
-            case{'manualStitchOrder'}
-                manualStitchOrder = true;
-            case{'selectStitchingRegions'}
-                selectRegions=true;
-        end
-        x = x +1;
+x = 1;
+while x <= length(varargin)
+    switch varargin{x}
+        case{'manualStitchOrder'}
+            manualStitchOrder = true;
     end
+    x = x +1;
 end
 
 % ERROR: NEED TO IMPLEMENT SOMETHING TO REQUIRE THAT INITIAL SEED
 % DOESN'T VIOLATE MAX OVERLAP CONDITION
 
 %% 
-imm2 = imstitchTile(tile_array);
-imshow(imm2)
+imm2 = imstitchTile(tile_array, 'NoFilter');
+imagesc(imm2)
 %% 
 
 NTiles = length(tile_array.imgs);
@@ -64,7 +58,7 @@ for m=2:NTiles
     tAr = tile_array.rows{tA_ind}; 
     tAc = tile_array.cols{tA_ind};
     [tAr_min, tAr_max, tAc_min, tAc_max ] = ...
-        GetRowColLimits(tile_array, tA_ind, MaxDeltaR, MaxDeltaC, stitchOrder, m);
+        getRowColLimits(tile_array, tA_ind, MaxDeltaR, MaxDeltaC, stitchOrder, m);
     
     rmins = [tile_array.rows{:}];
     rmins(length(rmins)+1) = tAr_min;
@@ -102,74 +96,74 @@ for m=2:NTiles
         end
     end
     scores = zeros(length(tArRange), length(tAcRange), length(tileBs));
-    areas = zeros(length(tArRange), length(tAcRange), length(tileBs));
+    %areas = zeros(length(tArRange), length(tAcRange), length(tileBs));
     counter = 0;
     
-    if ~selectRegions
-        for tB_ind =tileBs
-            Apos = tile_array.grid_positions{tA_ind};
-            Bpos = tile_array.grid_positions{tB_ind};
-            counter = counter + 1;
-            tileB = tile_array.imgs{tB_ind};
-            [hB, wB] = size(tileB);
-            tBr = tile_array.rows{tB_ind};
-            tBc = tile_array.cols{tB_ind};
-            rminB = tBr; 
-            rmaxB = tBr+hB-1;
-            cminB = tBc;
-            cmaxB = tBc+wB-1;
-            for i=1:length(tArRange)
-                r = tArRange(i);
-                rminA = r;
-                rmaxA = r+hA-1;
-                rminAB = max([rminA, rminB]);
-                rmaxAB = min([rmaxA, rmaxB]);
-                for j = 1:length(tAcRange)
-                    c = tAcRange(j);
-                    cminA = c;
-                    cmaxA = c+wA-1;
-                    cminAB = max([cminA, cminB]);
-                    cmaxAB = min([cmaxA, cmaxB]);
-                    windowA = tileA(rminAB-r +1:rmaxAB-r, cminAB-c + 1:cmaxAB-c);
-                    windowB = tileB(rminAB-tBr+1:rmaxAB-tBr, cminAB-tBc+1:cmaxAB-tBc);
-                    diff = abs(windowA-windowB);
-                    area = (rmaxAB-rminAB)*(cmaxAB-cminAB);
-                    scores(i,j, counter) = sum(diff(:));
-                    areas(i,j, counter) = area;
-                end
-            end
-        end
-        summed_scores = sum(scores, 3);
-        summed_areas = sum(areas, 3);
-        normed_scores = summed_scores./summed_areas;
+    for tB_ind =tileBs
+        Apos = tile_array.grid_positions{tA_ind};
+        Bpos = tile_array.grid_positions{tB_ind};
+        counter = counter + 1;
+        tileB = tile_array.imgs{tB_ind};
+        [hB, wB] = size(tileB);
+        tBr = tile_array.rows{tB_ind};
+        tBc = tile_array.cols{tB_ind};
+        %pB = polyshape([tBr, tBr, tBr+ hB, tBr+hB], [tBc, tBc+wB, tBc+wB, tBc]);
+        rminB = tBr; 
+        rmaxB = tBr+hB-1;
+        cminB = tBc;
+        cmaxB = tBc+wB-1;
+        C = normxcorr2(tileA, tileB);
+        deltaR = tAr-tBr;
+        deltaC = tAc-tBc;
+        deltaRmin = deltaR - MaxDeltaR;
+        deltaRmax = deltaR + MaxDeltaR;
+        deltaCmin = deltaC - MaxDeltaC;
+        deltaCmax = deltaC + MaxDeltaC;
+        CMask = zeros(size(C));
+        rowlimits = max([1, deltaRmin+hA]):min([deltaRmax+hA, size(C, 1)]);
+        columnlimits = max([1, deltaCmin+wA]):min([deltaCmax+wA, size(C,2)]);
+        CMask(rowlimits, columnlimits) = 1;
+        C(CMask == 0) = min(min(C));
+        [Max2,MaxRows]=max(C);
+        [~,MaxColumn]=max(Max2);
+        MaxRow=MaxRows(MaxColumn);
+       
 
-
-        [newr_ind, newc_ind] = find(normed_scores == min(min(normed_scores)));
-        newr = tArRange(newr_ind);
-        newc = tAcRange(newc_ind);
-
-        tile_array.rows{tA_ind} = newr;
-        tile_array.cols{tA_ind} = newc;
-        rmins = [tile_array.rows{:}];
-        top_limit = min(rmins);
-        for rr =1:length(tile_array.rows)
-            tile_array.rows{rr} = tile_array.rows{rr} + (1-top_limit);
-        end
-
-        cmins = [tile_array.cols{:}]; 
-        left_limit = min(cmins);
-        for cc =1:length(tile_array.cols)
-            tile_array.cols{cc} = tile_array.cols{cc} + (1-left_limit);
-        end
-    else
-        [tB_inds, skip_tile] = SelectStitchingPartners(tile_array, tA_ind, tileBs);
-        
-        if skip_tile
-            continue
-        end
-        tile_array = ManualTileStitch(tile_array, tA_ind, tB_inds, stitchOrder, MaxDeltaR, MaxDeltaC);
+        scores(:,:, counter) = C(rowlimits, columnlimits);
+                    %areas(i,j, counter) = area;
+                %end
+%             if mod(i, 50) == 0
+%                 fprintf('%d/%d\n', [i, length(tArRange)]);
+%             elseif mod(i, 25) == 0
+%                 fprintf('%d/%d', [i, length(tArRange)]);
+%             else
+%                 fprintf('.');
+%             end
 
     end
+    summed_scores = sum(scores, 3);
+    %summed_areas = sum(areas, 3);
+    %normed_scores = summed_scores./summed_areas;
+    normed_scores = summed_scores;
+    [newr_ind, newc_ind] = find(normed_scores == min(min(normed_scores)));
+    newr = tArRange(newr_ind); 
+    newc= tAcRange(newc_ind);
+    newr =MaxRow-hA+tBr; 
+    newc= MaxColumn-wA+tBc;
+    tile_array.rows{tA_ind} = newr;
+    tile_array.cols{tA_ind} = newc;
+    rmins = [tile_array.rows{:}];
+    top_limit = min(rmins);
+    for rr =1:length(tile_array.rows)
+        tile_array.rows{rr} = tile_array.rows{rr} + (1-top_limit);
+    end
+
+    cmins = [tile_array.cols{:}]; 
+    left_limit = min(cmins);
+    for cc =1:length(tile_array.cols)
+        tile_array.cols{cc} = tile_array.cols{cc} + (1-left_limit);
+    end
+    rmins = rmins;
     
 end
 
@@ -355,6 +349,57 @@ function [stitchOrder] = getStitchingOrder(tile_array)
             cr = cr-1;
         end
     end
+end
+
+
+function [r_min, r_max, c_min, c_max] = getRowColLimits(tile_array, tA_ind,...
+    MaxDeltaR, MaxDeltaC, stitchOrder, m)
+    r_min = tile_array.rows{tA_ind} - MaxDeltaR; 
+    r_max = tile_array.rows{tA_ind} + MaxDeltaR; 
+    c_min = tile_array.cols{tA_ind} - MaxDeltaC; 
+    c_max = tile_array.cols{tA_ind} + MaxDeltaC; 
+    gr = tile_array.grid_positions{tA_ind}(1);
+    gc = tile_array.grid_positions{tA_ind}(2);
+    NTiles = length(tile_array.imgs);
+    for n=stitchOrder(1:(m-1))
+        if isequal(tile_array.grid_positions{n}, [gr, gc+1])
+            [c_min, c_max] = ...
+                     correctColLimitsRightTile(tile_array, tA_ind,...
+                     n, c_min, c_max);
+        elseif isequal(tile_array.grid_positions{n}, [gr,gc-1])
+            [c_min, c_max] = ...
+                 correctColLimitsLeftTile(tile_array, tA_ind,...
+                 n, c_min, c_max);
+        elseif isequal(tile_array.grid_positions{n}, [gr+1,gc])
+            [r_min, r_max] = ...
+                correctRowLimitsLowerTile(tile_array, tA_ind, n,...
+                r_min, r_max);
+        elseif isequal(tile_array.grid_positions{n}, [gr-1,gc])
+            [r_min, r_max] = ...
+                correctRowLimitsUpperTile(tile_array, tA_ind, n,...
+                r_min, r_max);
+        end  
+    end
+end
+
+function [r_min, r_max] = correctRowLimitsLowerTile(tile_array, tA_ind, n, r_min, r_max)
+    hA = size(tile_array.imgs{tA_ind}, 1);
+    r_min = max([r_min, (tile_array.rows{n} - hA +1)]);
+end
+
+function [r_min, r_max] = correctRowLimitsUpperTile(tile_array, tA_ind, n, r_min, r_max)
+    h = size(tile_array.imgs{n}, 1);
+    r_max = min([r_max, (tile_array.rows{n} + h-1)]);
+end
+
+function [c_min, c_max] = correctColLimitsRightTile(tile_array, tA_ind, n, c_min, c_max)
+    wA = size(tile_array.imgs{tA_ind}, 2);
+    c_min = max([c_min, (tile_array.cols{n} - wA +1)]);
+end
+
+function [c_min, c_max] = correctColLimitsLeftTile(tile_array, tA_ind, n, c_min, c_max)
+    w = size(tile_array.imgs{n}, 2);
+    c_max = min([c_max, (tile_array.cols{n} + w-1)]);
 end
 
 

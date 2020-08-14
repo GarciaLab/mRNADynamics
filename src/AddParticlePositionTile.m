@@ -682,12 +682,6 @@ end
 
 
 
-% RestrictOverlapWindow.m
-% author: Gabriella Martini
-% date created: 7/30/20
-% date last modified: 7/30/20
-
-
 function [coordT, coordB, coordL, coordR] = RestrictOverlapWindow(C)
 close all
 coordL = 1;
@@ -706,7 +700,7 @@ while (cc~='x')
     %imshow(APImage,DisplayRange)
     
     axis image
-    axis off
+    %axis off
     title({'left boundary (green), right boundary (red),', 'top boundary (blue), bottom boundary (yellow); original'})
     hold on
     

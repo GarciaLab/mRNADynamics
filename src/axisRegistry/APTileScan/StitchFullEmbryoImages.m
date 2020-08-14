@@ -14,6 +14,7 @@ FullyAutomate = false;
 StitchManually = false;
 keepExistingStitching = false;
 manualStitchOrder = false;
+selectRegions = false;
 x = 1;
 while x <= length(varargin)
     switch varargin{x}
@@ -35,6 +36,8 @@ while x <= length(varargin)
             fprintf('Max change in column overlap to be used in stitching loop: %d\n', MaxDeltaC)
         case{'manualStitchOrder'}
             manualStitchOrder = true;
+        case{'selectStitchingRegions'}
+            selectRegions=true;
     end
     x = x +1;
 end
@@ -52,6 +55,9 @@ if ~keepExistingStitching
     end
     if manualStitchOrder
         varargin2{length(varargin2) + 1} = 'manualStitchOrder';
+    end
+    if selectRegions
+        varargin2{length(varargin2) + 1} = 'selectStitchingRegions';
     end
     if exist('MaxDeltaR', 'var')
         varargin2{length(varargin2) + 1} = 'MaxDeltaR';

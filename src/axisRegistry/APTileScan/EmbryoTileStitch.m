@@ -22,7 +22,8 @@ ID = [upper(ID(1)), ID(2:end)];
 
 FullyAutomate = false;
 StitchManually = false;
-
+selectRegions = false;
+manualStitchOrder = false;
 if ~isempty(varargin)
     x = 1;
     while x <= length(varargin{1})
@@ -43,15 +44,29 @@ if ~isempty(varargin)
                 fprintf('Max change in column overlap to be used in stitching loop: %d\n', MaxDeltaC)
             case{'manualStitchOrder'}
                 manualStitchOrder = true;
+            case{'selectStitchingRegions'}
+                selectRegions=true;
         end
         x = x +1;
     end
 end
 
+
+
 if StitchManually && FullyAutomate
     error(['EmbryoTileStitch cannot be run with both "StitchManually"',...
         'and "FullyAutomate" being true.']);
 end
+
+varargin2 = {};
+if manualStitchOrder
+    varargin2{length(varargin2) + 1} = 'manualStitchOrder';
+end
+if selectRegions
+    varargin2{length(varargin2) + 1} = 'selectStitchingRegions';
+end
+
+
 if ~exist('ID', 'var')
     prompt = ['Enter an "ID" for stitching.',...
         ' The standard inputs "Mid" and "Surf" will stitch the',...
@@ -99,12 +114,12 @@ EmbryoName=Prefix(Dashes(3)+1:end);
 
 % Finalize Tile Array Stitching Positions using FindStitchingPositions
 if ~StitchManually
-    if ~manualStitchOrder
-        tile_array = OptimizeStitching(Prefix, ID, MaxDeltaR, MaxDeltaC);
+    if length(varargin2) > 0
+        tile_array = OptimizeStitching(Prefix, ID, MaxDeltaR, MaxDeltaC, varargin2);
     else
-        tile_array = OptimizeStitching(Prefix, ID, MaxDeltaR, MaxDeltaC, 'manualStitchOrder');
+        tile_array = OptimizeStitching(Prefix, ID, MaxDeltaR, MaxDeltaC);
     end
-    imshow(uint8(imstitchTile(tile_array)))       
+    imagesc(imstitchTile(tile_array))       
 end
 
 end
