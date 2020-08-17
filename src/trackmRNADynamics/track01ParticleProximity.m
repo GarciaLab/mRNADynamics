@@ -64,7 +64,7 @@ function [Particles] = track01ParticleProximity(...
         particlesFlag = ~isempty(Particles{Channel});
         % if we have nucleus info, assign each spot to a nucleus
         [NewSpotNuclei, NewSpotDistances] = getNuclearAssigments(NewSpotsX,NewSpotsY,...
-              schnitzcells,UseHistone);
+              schnitzcells,CurrentFrame,UseHistone);
         %Get a list of the particles that were present in
         %the previous frame and of their positions.
         ExtantParticles = [];
@@ -95,28 +95,27 @@ function [Particles] = track01ParticleProximity(...
           SearchRadius = SearchRadiusMicrons;
           
           % if we have nulceus tracking info, calculate average
-          % frame-over-frame shift
+          % frame-over-frame shift;
+          maxFrame = find(ncVec==ncVec(CurrentFrame),1,'last');
           [SpotBulkDxVec,SpotBulkDyVec] = getNuclearShifts(schnitzcells,...
-                    CurrentFrame,NewSpotsX,NewSpotsY,UseHistone);
+                    CurrentFrame,maxFrame,NewSpotsX,NewSpotsY,SlidingWindowSize,UseHistone);
           
           % Calculate the distances between the spots in this frame
           % and those within the particles in the previous
-          % frame          
-          
-          % Adjust for nuclear movements
+          % frame. Adjust for nuclear movements                       
           DistanceMat = sqrt((NewSpotsX'-SpotBulkDxVec'- PrevSpotsX).^2 + (NewSpotsY'-SpotBulkDyVec' - PrevSpotsY).^2)*PixelSize;
           % enforce consistent nucleus IDs
           mismatchMat = NewSpotNuclei'~=PrevNuclei;
           DistanceMat(mismatchMat) = Inf;
-          % check for user-assigned links
+          
+          % apply user-assigned links that are within a single frame
           [PrevIndices, NewIndices] = findPersistentLinks(ParticleStitchInfo,CurrentFrame);
           persistentIndices = sub2ind(size(DistanceMat),NewIndices,PrevIndices);
           DistanceMat(persistentIndices) = 0;
           
           % Find existing particles and new spots are close enough to be 
           % linked. In cases of degenerate assignemnt, take pairt that
-          % minimizes jump distance
-          
+          % minimizes jump distance          
           [MatchIndices,~,~] = matchpairs(DistanceMat,0.5*SearchRadius);
           NewParticleFlag(MatchIndices(:,1)) = false;         
 

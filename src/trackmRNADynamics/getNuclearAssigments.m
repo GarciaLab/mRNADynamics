@@ -1,5 +1,5 @@
 function [NewSpotNuclei, NewSpotDistances] = getNuclearAssigments(NewSpotsX,NewSpotsY,...
-              schnitzcells,UseHistone)
+              schnitzcells,CurrentFrame,UseHistone)
 if UseHistone     
   ExtantNucleiX = [];
   ExtantNucleiY = [];

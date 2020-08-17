@@ -1,5 +1,5 @@
 function [SpotBulkDxVec,SpotBulkDyVec] = getNuclearShifts(schnitzcells,...
-    CurrentFrame,NewSpotsX,NewSpotsY,UseHistone)
+                    CurrentFrame,maxFrame,NewSpotsX,NewSpotsY,SlidingWindowSize,UseHistone)
 
 if UseHistone            
   % use sliding window to estimate average nucleus movement
@@ -7,7 +7,7 @@ if UseHistone
   NucleiDyVec = []; 
   NucleiPxVec = [];
   NucleiPyVec = []; 
-  StopFrame = min([length(schnitzcells),CurrentFrame+SlidingWindowSize]);
+  StopFrame = min([maxFrame,CurrentFrame+SlidingWindowSize]);
   StartFrame = max([1,CurrentFrame-SlidingWindowSize]);
   for i = 1:length(schnitzcells)             
     FrameFT = ismember(schnitzcells(i).frames,[StartFrame,StopFrame]);
