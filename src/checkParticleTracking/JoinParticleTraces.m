@@ -10,6 +10,7 @@ if isnan(Particles(ClickedParticle).Nucleus) || Particles(ClickedParticle).Nucle
   % initialize temporary structure 
   temp = Particles(OriginalParticle);  
 
+  %Concatentate vector quantities with one entry per frame
   varNames = fieldnames(Particles(OriginalParticle))';
   catIndices = [find(strcmp(varNames,'FrameApproved')) find(strcmp(varNames,'nc')) find(contains(varNames,{'Pos','Dist','Shift'})) find(strcmp(varNames,'Index'))];
   [temp.Frame, sortIndices] = sort([Particles(OriginalParticle).Frame,Particles(ClickedParticle).Frame]);
@@ -34,6 +35,7 @@ if isnan(Particles(ClickedParticle).Nucleus) || Particles(ClickedParticle).Nucle
     pathArray(:,p,:) = Particles(ptIDs(p)).pathArray;
     sigmaArray(:,p,:) = Particles(ptIDs(p)).sigmaArray;
   end
+  
   % call path update function
   [temp.pathArray, temp.sigmaArray] = updatePaths(pathArray,sigmaArray,extantFrameArray);
 

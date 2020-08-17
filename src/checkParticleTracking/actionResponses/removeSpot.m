@@ -1,5 +1,4 @@
-function cptState =...
-    removeSpot(cptState, shouldQueryUser)
+function cptState = removeSpot(cptState, shouldQueryUser)
 %
 %REMOVESPOT removes a spot from the spots and particles structure
 
