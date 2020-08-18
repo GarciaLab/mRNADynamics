@@ -1,30 +1,27 @@
-function [Particles, PreviousParticle, ParticleStitchInfo] = separateTraces(Prefix,Particles, ...
-    CurrentChannel, CurrentFrame, CurrentParticle)
+function cptState = separateTraces(cptState)
+  
+  
 %SEPARATETRACES Summary of this function goes here
 %   Detailed explanation goes here
 
 %The separated particle (the trace following current frame) won't have a nucleus assigned!
-PreviousParticle=0;
+cptState.PreviousParticle = 0;
 
 %Check that the particle does actually exist in this frame
-if ~(Particles{CurrentChannel}(CurrentParticle).Frame(1)==CurrentFrame) && ...
-  any(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame)
+if ~(cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Frame(1)==cptState.CurrentFrame) && ...
+  any(cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Frame==cptState.CurrentFrame)
 
-  % load Particle and Frame information
-  liveExperiment = LiveExperiment(Prefix);
-  SimParticles = getSimParticles(liveExperiment);
-  ParticleStitchInfo = getParticleStitchInfo(liveExperiment);
-  FrameInfo = getFrameInfo(liveExperiment);
-  
   % call splitting function
-  [Particles{CurrentChannel},ParticleStitchInfo{CurrentChannel}]=SeparateParticleTraces(CurrentParticle,CurrentFrame,...
-    Particles{CurrentChannel},SimParticles{CurrentChannel},ParticleStitchInfo{CurrentChannel},FrameInfo); 
+  [cptState.Particles{cptState.CurrentChannelIndex},cptState.ParticleStitchInfo{cptState.CurrentChannelIndex}]=...
+    SeparateParticleTraces(cptState.CurrentParticle,cptState.CurrentFrame,...
+    cptState.Particles{cptState.CurrentChannelIndex},cptState.SimParticles{cptState.CurrentChannelIndex},...
+    cptState.ParticleStitchInfo{cptState.CurrentChannelIndex},cptState.FrameInfo); 
   
   % save
       
-elseif length(Particles{CurrentChannel}(CurrentParticle).Frame)==1
+elseif length(cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Frame)==1
   
-  Particles{CurrentChannel}(CurrentParticle).Nucleus=[];
+  cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Nucleus=[];
   
 else
   

@@ -52,7 +52,7 @@ newParticleTemp.Approved=0;
 currParticleTemp.matchCost = Particles(CurrentParticle).matchCost;
 currParticleTemp.Nucleus = Particles(CurrentParticle).Nucleus;
 currParticleTemp.NucleusOrig = Particles(CurrentParticle).NucleusOrig;
-currParticleTemp.stitchInfoPointer = Particles(CurrentParticle).stichInfoPointer;
+currParticleTemp.stitchInfoPointer = Particles(CurrentParticle).stitchInfoPointer;
 
 newParticleTemp.matchCost = Particles(CurrentParticle).matchCost;
 newParticleTemp.Nucleus = NaN; % Not sure how to handle this yet...
@@ -131,7 +131,7 @@ end
 splitFrames = [max(currParticleTemp.Frame) min(newParticleTemp.Frame)];
 currStitchTemp.forbiddenLinkFrameCell(end+1) = {splitFrames};
 currStitchTemp.forbiddenLinkIndexCell(end+1) = ...
-  {currParticleTemp.Index(currParticleTemp.Frame==splitFrames(1)) newParticleTemp.Index(newParticleTemp.Frame==splitFrames(2))};
+  {[currParticleTemp.Index(currParticleTemp.Frame==splitFrames(1)) newParticleTemp.Index(newParticleTemp.Frame==splitFrames(2))]};
 
 %...and update stitch structure
 ParticleStitchInfo = [ParticleStitchInfo(1:newParticleTemp.stitchInfoPointer-1) currStitchTemp ...

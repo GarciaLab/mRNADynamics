@@ -3,8 +3,9 @@ classdef CPTState < handle
     properties
         Spots
         Particles
-        ParticleStitchInfo
+        SimParticles
         SpotFilter
+        ParticleStitchInfo        
         schnitzcells
         FrameInfo
         ImageMat
@@ -57,14 +58,17 @@ classdef CPTState < handle
         plot3DGauss
  
         projectionMode
+        
+        frameLevelFields
     end
     
     methods
-        function this = CPTState(Spots, Particles, ParticleStitchInfo, SpotFilter, schnitzcells, Ellipses,...
+        function this = CPTState(Spots, Particles, SimParticles, ParticleStitchInfo, SpotFilter, schnitzcells, Ellipses,...
                 FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss, projectionMode)
             
             this.Spots = Spots;
             this.Particles = Particles;
+            this.SimParticles = SimParticles;
             this.ParticleStitchInfo = ParticleStitchInfo;
             this.SpotFilter = SpotFilter;
             this.schnitzcells = schnitzcells;
@@ -117,6 +121,9 @@ classdef CPTState < handle
             this.plot3DGauss = plot3DGauss;
  
             this.projectionMode = projectionMode;
+            
+            this.frameLevelFields = [{'xPos'} {'yPos'} {'zPosDetrended'} {'NucleusDist'} {'zPos'} ...
+              {'ncDistFlags'} {'distShiftFlags'} {'timeShiftFlags'} {'Index'} {'Frame'} {'FrameApproved'}]; % NL adding this for ease of bookKeeping
         end
  
         function numParticles = numParticles(this)

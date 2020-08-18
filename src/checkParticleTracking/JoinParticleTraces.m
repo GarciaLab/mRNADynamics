@@ -1,39 +1,43 @@
-function [Particles, ParticleStitchInfo] = ...
-  JoinParticleTraces(OriginalParticle,ClickedParticle,Particles,ParticleStitchInfo)
+function cptState = JoinParticleTraces(cptState,ClickedParticle)
 
 %This function joins two particle traces and renumbers all particles in the
-%Particles structure accordingly
+%cptState.Particles structure accordingly
 %Check to make sure nucleus IDs are consistent
 %Transfer the information to the original particle
-
-if isnan(Particles(ClickedParticle).Nucleus) || Particles(ClickedParticle).Nucleus==Particles(OriginalParticle).Nucleus
+Channel = cptState.CurrentChannelIndex;
+if isnan(cptState.Particles{Channel}(ClickedParticle).Nucleus) ...
+    || cptState.Particles{Channel}(ClickedParticle).Nucleus==...
+    cptState.Particles{Channel}(cptState.CurrentParticle).Nucleus
+  
   % initialize temporary structure 
-  temp = Particles(OriginalParticle);  
+  temp = cptState.Particles{Channel}(cptState.CurrentParticle);  
 
   %Concatentate vector quantities with one entry per frame
-  varNames = fieldnames(Particles(OriginalParticle))';
-  catIndices = [find(strcmp(varNames,'FrameApproved')) find(strcmp(varNames,'nc')) find(contains(varNames,{'Pos','Dist','Shift'})) find(strcmp(varNames,'Index'))];
-  [temp.Frame, sortIndices] = sort([Particles(OriginalParticle).Frame,Particles(ClickedParticle).Frame]);
+  varNames = fieldnames(cptState.Particles{Channel}(cptState.CurrentParticle))';
+  catIndices = find(ismember(varNames,cptState.frameLevelFields));
+  
+  % get frame ordering
+  [temp.Frame, sortIndices] = sort([cptState.Particles{Channel}(cptState.CurrentParticle).Frame,cptState.Particles{Channel}(ClickedParticle).Frame]);
 
   for c = 1:length(catIndices)
-    newVec = [Particles(OriginalParticle).(varNames{catIndices(c)}),Particles(ClickedParticle).(varNames{catIndices(c)})];
+    newVec = [cptState.Particles{Channel}(cptState.CurrentParticle).(varNames{catIndices(c)}),cptState.Particles{Channel}(ClickedParticle).(varNames{catIndices(c)})];
     temp.(varNames{catIndices(c)}) = newVec(sortIndices);
   end
   temp.Approved=0;
   temp.FrameApproved=logical(temp.FrameApproved);
 
   %Next update projected paths
-  ptIDs = [OriginalParticle ClickedParticle];
-  nParams = size(Particles(OriginalParticle).pathArray,2);
-  nFrames = size(Particles(OriginalParticle).pathArray,1);
+  ptIDs = [cptState.CurrentParticle ClickedParticle];
+  nParams = size(cptState.Particles{Channel}(cptState.CurrentParticle).pathArray,2);
+  nFrames = size(cptState.Particles{Channel}(cptState.CurrentParticle).pathArray,1);
   pathArray = NaN(nFrames,2,nParams);
   sigmaArray = NaN(nFrames,2,nParams);
   extantFrameArray = zeros(nFrames,2);  
   for p = 1:length(ptIDs)
-    frames = Particles(ptIDs(p)).Frame;     
+    frames = cptState.Particles{Channel}(ptIDs(p)).Frame;     
     extantFrameArray(frames,p) = 1;
-    pathArray(:,p,:) = Particles(ptIDs(p)).pathArray;
-    sigmaArray(:,p,:) = Particles(ptIDs(p)).sigmaArray;
+    pathArray(:,p,:) = cptState.Particles{Channel}(ptIDs(p)).pathArray;
+    sigmaArray(:,p,:) = cptState.Particles{Channel}(ptIDs(p)).sigmaArray;
   end
   
   % call path update function
@@ -46,47 +50,47 @@ if isnan(Particles(ClickedParticle).Nucleus) || Particles(ClickedParticle).Nucle
   
   newDist = bwdist(binActVec==2)';
   newDist(~extantFrameArray(:,1)) = Inf;
-  [minDist,newFrame] = min(newDist);
+  [minDist,baseFrame] = min(newDist);
 %   newFrames = find(newDist==minDist);
   
   baseDist = bwdist(binActVec==1)';
   baseDist(~extantFrameArray(:,2)) = Inf;    
-  [minDist,baseFrame] = min(baseDist);
+  [minDist,newFrame] = min(baseDist);
 %   baseFrames = find(baseDist==minDist);
     
   joinFrames = [baseFrame newFrame];
-  temp.linkFrameCell = [Particles(OriginalParticle).linkFrameCell Particles(ClickedParticle).linkFrameCell {joinFrames}]; 
+  temp.linkFrameCell = [cptState.Particles{Channel}(cptState.CurrentParticle).linkFrameCell cptState.Particles{Channel}(ClickedParticle).linkFrameCell {joinFrames}]; 
 
   % cost
-  temp.linkCostCell = [Particles(OriginalParticle).linkCostCell Particles(ClickedParticle).linkCostCell -1]; % flag cost with negative val
+  temp.linkCostCell = [cptState.Particles{Channel}(cptState.CurrentParticle).linkCostCell cptState.Particles{Channel}(ClickedParticle).linkCostCell -1]; % flag cost with negative val
 
   % particle vec
-  temp.idVec = NaN(size(Particles(OriginalParticle).idVec));
-  ptIDsOrig = Particles(OriginalParticle).idVec(~isnan(Particles(OriginalParticle).idVec));
-  ptIDsClick = Particles(ClickedParticle).idVec(~isnan(Particles(ClickedParticle).idVec));
-  temp.idVec(~isnan(Particles(OriginalParticle).idVec)) = ptIDsOrig;
-  temp.idVec(~isnan(Particles(ClickedParticle).idVec)) = ptIDsClick;
+  temp.idVec = NaN(size(cptState.Particles{Channel}(cptState.CurrentParticle).idVec));
+  ptIDsOrig = cptState.Particles{Channel}(cptState.CurrentParticle).idVec(~isnan(cptState.Particles{Channel}(cptState.CurrentParticle).idVec));
+  ptIDsClick = cptState.Particles{Channel}(ClickedParticle).idVec(~isnan(cptState.Particles{Channel}(ClickedParticle).idVec));
+  temp.idVec(~isnan(cptState.Particles{Channel}(cptState.CurrentParticle).idVec)) = ptIDsOrig;
+  temp.idVec(~isnan(cptState.Particles{Channel}(ClickedParticle).idVec)) = ptIDsClick;
 
   % particle cell
-  temp.linkParticleCell = [Particles(OriginalParticle).linkParticleCell Particles(ClickedParticle).linkParticleCell {[unique(ptIDsOrig) unique(ptIDsClick)]}];
+  temp.linkParticleCell = [cptState.Particles{Channel}(cptState.CurrentParticle).linkParticleCell cptState.Particles{Channel}(ClickedParticle).linkParticleCell {[unique(ptIDsOrig) unique(ptIDsClick)]}];
 
   % update link string
-  nKeep = max(diff(find(Particles(OriginalParticle).linkStateString~='|')))-1;
-  nDrop = max(diff(find(Particles(ClickedParticle).linkStateString~='|')))-1;
+  nKeep = max(diff(find(cptState.Particles{Channel}(cptState.CurrentParticle).linkStateString~='|')))-1;
+  nDrop = max(diff(find(cptState.Particles{Channel}(ClickedParticle).linkStateString~='|')))-1;
   divNum = max([nKeep nDrop]);
   if isempty(divNum)
     divNum = 0;
   end
-  temp.linkStateString = [Particles(OriginalParticle).linkStateString repelem('|',divNum+1) Particles(ClickedParticle).linkStateString];
+  temp.linkStateString = [cptState.Particles{Channel}(cptState.CurrentParticle).linkStateString repelem('|',divNum+1) cptState.Particles{Channel}(ClickedParticle).linkStateString];
 
   %Now, assign temp and get rid of the clicked particle
-  Particles(OriginalParticle) = temp;
-  Particles = Particles([1:ClickedParticle-1,ClickedParticle+1:end]);
+  cptState.Particles{Channel}(cptState.CurrentParticle) = temp;
+  cptState.Particles{Channel} = cptState.Particles{Channel}([1:ClickedParticle-1,ClickedParticle+1:end]);
   
   %Lastly, add assigned link to stitch info struct 
-  joinFilter = ismember(Particles(OriginalParticle).Frame,joinFrames);
-  ParticleStitchInfo(Particles(OriginalParticle).stitchInfoPointer).persistentLinkFrameCell(end+1) = {joinFrames};
-  ParticleStitchInfo(Particles(OriginalParticle).stitchInfoPointer).persistentLinkIndexCell(end+1) = {Particles(OriginalParticle).Index(joinFilter)};
+  joinFilter = ismember(cptState.Particles{Channel}(cptState.CurrentParticle).Frame,joinFrames);
+  cptState.ParticleStitchInfo{Channel}(cptState.Particles{Channel}(cptState.CurrentParticle).stitchInfoPointer).persistentLinkFrameCell(end+1) = {joinFrames};
+  cptState.ParticleStitchInfo{Channel}(cptState.Particles{Channel}(cptState.CurrentParticle).stitchInfoPointer).persistentLinkIndexCell(end+1) = {cptState.Particles{Channel}(cptState.CurrentParticle).Index(joinFilter)};
 else
   warning("Mismatching nucleus IDs. Aborting linkage")
 end

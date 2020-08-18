@@ -2,13 +2,14 @@ function keyInputHandler = TracesEventHandler(cptState)
     
     function keyInput(cc)
         if cc == 'c'
+            warning('NL: this feature has not been tested. Proceed with caution')
             [cptState.PreviousParticle, cptState.Particles] = combineTraces(cptState.Spots, ...
             cptState.CurrentChannelIndex, cptState.CurrentFrame, cptState.Particles, cptState.CurrentParticle);
             
         elseif cc == 'd'
             % Separate traces forward at the current frame.
-            [cptState.Particles, cptState.PreviousParticle,cptState.ParticleStitchInfo] = separateTraces(cptState.Particles, ...
-                cptState.CurrentChannelIndex, cptState.CurrentFrame, cptState.CurrentParticle);
+            cptState = separateTraces(cptState);
+              
         elseif cc == 'q'
             % Approve a trace
             aState = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved;

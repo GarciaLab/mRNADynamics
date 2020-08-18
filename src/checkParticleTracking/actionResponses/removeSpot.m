@@ -39,14 +39,12 @@ if del
         cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle) = [];
     else
         particleFields = fieldnames(cptState.Particles{cptState.CurrentChannelIndex});
-        for i = 1:numel(particleFields)
-            if ~strcmpi(particleFields{i},'Nucleus') && ~strcmpi(particleFields{i},'Approved')
-                try
-                    cptState.Particles{cptState.CurrentChannelIndex}...
-                        (cptState.CurrentParticle).(particleFields{i})...
-                        (CurrentFrameWithinParticle) = [];
-                end
-            end
+        for i = 1:numel(particleFields)      
+          if any(strcmpi(particleFields{i},cptState.frameLevelFields))                                    
+              cptState.Particles{cptState.CurrentChannelIndex}...
+                  (cptState.CurrentParticle).(particleFields{i})...
+                  (CurrentFrameWithinParticle) = [];   
+          end
         end
     end
     %and this part changes the the index of other particles

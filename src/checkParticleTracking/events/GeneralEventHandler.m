@@ -2,9 +2,7 @@ function keyInputHandler = GeneralEventHandler(cptState, DataFolder, DropboxFold
  
     function keyInput(cc)
         if cc == 'f'
-            [cptState.Particles, cptState.schnitzcells] = redoTracking(DataFolder, ...
-                cptState.UseHistoneOverlay, cptState.FrameInfo, DropboxFolder, FilePrefix, cptState.schnitzcells, ...
-                cptState.Particles, NChannels, cptState.CurrentChannelIndex, cptState.numParticles());
+            [cptState.Particles, cptState.schnitzcells] = redoTracking(NChannels, cptState, DataFolder, FilePrefix, DropboxFolder);
         elseif cc == 's'
             saveChanges(NChannels, cptState, DataFolder, FilePrefix, DropboxFolder);
         elseif cc == '~'

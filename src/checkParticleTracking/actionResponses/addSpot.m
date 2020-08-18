@@ -1,12 +1,6 @@
-function [ParticleStitchInfo, SpotFilter, Particles, Spots,...
-    PreviousParticle, CurrentParticle, ZoomMode, GlobalZoomMode] =...
+function [cptState, PreviousParticle] =...
     ...
-    addSpot(...
-    ...
-    ZoomMode, GlobalZoomMode, Particles, ParticleStitchInfo, CurrentChannel, ...
-    CurrentParticle, CurrentFrame, CurrentZ, Spots,...
-    SpotFilter, cc, Prefix,UseHistoneOverlay,...
-    schnitzcells, nWorkers, plot3DGauss, imStack)
+    addSpot(cptState, cc,  Prefix, imStack)
 
 %ADDSPOT
 
@@ -14,7 +8,7 @@ function [ParticleStitchInfo, SpotFilter, Particles, Spots,...
 liveExperiment = LiveExperiment(Prefix);
 % 
 % movieMat = getMovieMat(thisExperiment);
-% imStack = movieMat(:, :, :, CurrentFrame, CurrentChannel);
+% imStack = movieMat(:, :, :, cptState.CurrentFrame, cptState.CurrentChannelIndex);
 
 FrameInfo = getFrameInfo(liveExperiment);
 LinesPerFrame = liveExperiment.yDim;
@@ -25,12 +19,12 @@ snippetSize_px = liveExperiment.snippetSize_px;
 nSlices = liveExperiment.zDim;
 
 
-numParticles = length(Particles{CurrentChannel});
-startParallelPool(nWorkers, 0, 1);
+numParticles = length(cptState.Particles{cptState.CurrentChannelIndex});
+startParallelPool(cptState.nWorkers, 0, 1);
 
 %Check that we're in zoom mode. If not, set it up.
-PreviousParticle = 0; % resets particle so trace will refresh
-if ~(ZoomMode || GlobalZoomMode)
+cptState.PreviousParticle = 0; % resets particle so trace will refresh
+if ~(cptState.ZoomMode || cptState.GlobalZoomMode)
     disp('You need to be in Zoom Mode to do this. You can switch using ''o'' or ''+''. Run the ''['' command again.')
 else
     %Click on the region we're going to fit in order to find a new
@@ -38,7 +32,7 @@ else
     
     %Check that this particle doesn't already have a spot assigned
     %in this frame
-    if sum(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame) &&  ~GlobalZoomMode
+    if sum(cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Frame==cptState.CurrentFrame) &&  ~cptState.GlobalZoomMode
         warning('There is a spot assigned to this particle in this frame already.')
     else
         
@@ -52,7 +46,7 @@ else
         % edge of the frame
         if (ConnectPositionx > snippetSize_px/2) && (ConnectPositionx + snippetSize_px/2 < PixelsPerLine)...
                 && (ConnectPositiony > snippetSize_px/2) && (ConnectPositiony + snippetSize_px/2 < LinesPerFrame)
-            SpotsIndex = length(Spots{CurrentChannel}(CurrentFrame).Fits)+1;
+            SpotsIndex = length(cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame).Fits)+1;
             breakflag = 0; %this catches when the spot addition was unsuccessful and allows checkparticletracking to keep running and not error out
             use_integral_center = 1;
             
@@ -82,11 +76,11 @@ else
                 if cc == '['
                     Fit = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood_px, snippetSize_px, ...
                         pixelSize_nm, show_status, fig, microscope,...
-                        [1, ConnectPositionx, ConnectPositiony], [], '', CurrentFrame, [], z);
+                        [1, ConnectPositionx, ConnectPositiony], [], '', cptState.CurrentFrame, [], z);
                 elseif cc == '{'
                      Fit = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood_px, snippetSize_px, ...
                         pixelSize_nm, show_status, fig, microscope,...
-                        [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', CurrentFrame, [], z);
+                        [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', cptState.CurrentFrame, [], z);
                 end
                 
                 FitCell{z} = Fit;
@@ -116,68 +110,63 @@ else
                 if cc == '['
                     force_z = 0;
                 elseif cc == '{'
-                    force_z = CurrentZ;
+                    force_z = cptState.CurrentZ;
                 end
                 [Fits,~, ~] = findBrightestZ(Fits, -1, use_integral_center, force_z, []);
                 
                 
                 
                 if SpotsIndex ~= 1
-                    if ~isempty(setdiff(fields(Spots{CurrentChannel}(CurrentFrame).Fits), fields(Fits)))...
-                            | ~isempty(setdiff(fields(Fits),fields(Spots{CurrentChannel}(CurrentFrame).Fits)))
-                        [Spots{CurrentChannel}(CurrentFrame).Fits, Fits] = addFields(Spots{CurrentChannel}(CurrentFrame).Fits, Fits);
+                    if ~isempty(setdiff(fields(cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame).Fits), fields(Fits)))...
+                            | ~isempty(setdiff(fields(Fits),fields(cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame).Fits)))
+                        [cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame).Fits, Fits] = addFields(cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame).Fits, Fits);
                     end
-                    Spots{CurrentChannel}(CurrentFrame).Fits(SpotsIndex) = Fits;
+                    cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame).Fits(SpotsIndex) = Fits;
                 else
-                    Spots{CurrentChannel}(CurrentFrame).Fits = Fits;
+                    cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame).Fits = Fits;
                 end
                 %%
-                if plot3DGauss
-                    nSpots = 1;
-                    Spots{CurrentChannel}(CurrentFrame) =...
+                if cptState.plot3DGauss
+                    ncptState.Spots = 1;
+                    cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame) =...
                         ...
                         fitSnip3D(...
                         ...
-                        Spots{CurrentChannel}(CurrentFrame), CurrentChannel, SpotsIndex, CurrentFrame,...
-                        Prefix, PreProcPath, FrameInfo, nSpots, imStack);
+                        cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame), cptState.CurrentChannelIndex, SpotsIndex, cptState.CurrentFrame,...
+                        Prefix, PreProcPath, FrameInfo, ncptState.Spots, imStack);
                 end
                 %%
-                %Add this to SpotFilter, which tells the code that this spot is
+                %Add this to cptState.SpotFilter, which tells the code that this spot is
                 %above the threshold. First, check whether the
-                %dimensions of SpotFilter need to be altered. If so, pad it with NaNs
-                if size(SpotFilter{CurrentChannel},2)>SpotsIndex
-                    SpotFilter{CurrentChannel}(CurrentFrame,SpotsIndex)=1;
+                %dimensions of cptState.SpotFilter need to be altered. If so, pad it with NaNs
+                if size(cptState.SpotFilter{cptState.CurrentChannelIndex},2)>SpotsIndex
+                    cptState.SpotFilter{cptState.CurrentChannelIndex}(cptState.CurrentFrame,SpotsIndex)=1;
                 else
                     %Pad with NaNs
-                    SpotFilter{CurrentChannel}(:,end:SpotsIndex)=NaN;
-                    SpotFilter{CurrentChannel}(CurrentFrame,SpotsIndex)=1;
+                    cptState.SpotFilter{cptState.CurrentChannelIndex}(:,end:SpotsIndex)=NaN;
+                    cptState.SpotFilter{cptState.CurrentChannelIndex}(cptState.CurrentFrame,SpotsIndex)=1;
                 end
                 
                 %Turn this spot into a new particle. This is the equivalent of
                 %the 'u' command.
-%                 try
-                    [SpotFilter{CurrentChannel},Particles{CurrentChannel}]=...
-                        TransferParticle(Spots{CurrentChannel},...
-                        SpotFilter{CurrentChannel},Particles{CurrentChannel},...
-                        CurrentFrame,SpotsIndex,Prefix);
-%                 catch
-%                     warning('failed to add spot for unknown reason.')
-%                     return;
-%                 end
+
+                [cptState.SpotFilter{cptState.CurrentChannelIndex},cptState.Particles{cptState.CurrentChannelIndex}]=...
+                    TransferParticle(cptState.Spots{cptState.CurrentChannelIndex},...
+                    cptState.SpotFilter{cptState.CurrentChannelIndex},cptState.Particles{cptState.CurrentChannelIndex},...
+                    cptState.CurrentFrame,SpotsIndex,Prefix);
+
                 numParticles = numParticles + 1;
                 
-                %Connect this particle to the CurrentParticle. This is
+                %Connect this particle to the cptState.CurrentParticle. This is
                 %the equivalent of running the 'c' command.
-                if ~GlobalZoomMode
-                    [Particles{CurrentChannel}, ParticleStitchInfo{CurrentChannel}]=...
-                        JoinParticleTraces(CurrentParticle,...
-                        numParticles,Particles{CurrentChannel},ParticleStitchInfo{CurrentChannel});
+                if ~cptState.GlobalZoomMode
+                    cptState = JoinParticleTraces(cptState,numParticles);
                 else 
-                    CurrentParticle = length(Particles{CurrentChannel});
-                    Particles = addNucleusToParticle(Particles, CurrentFrame, ...
-                        CurrentChannel, UseHistoneOverlay, schnitzcells, CurrentParticle);
-                    GlobalZoomMode = false;
-                    ZoomMode = true;
+                    cptState.CurrentParticle = length(cptState.Particles{cptState.CurrentChannelIndex});
+                    cptState.Particles = addNucleusToParticle(cptState.Particles, cptState.CurrentFrame, ...
+                        cptState.CurrentChannelIndex, cptState.UseHistoneOverlay, cptState.schnitzcells, cptState.CurrentParticle);
+                    cptState.GlobalZoomMode = false;
+                    cptState.ZoomMode = true;
                     disp('Creating new particle trace...');
                 end                                
                 
