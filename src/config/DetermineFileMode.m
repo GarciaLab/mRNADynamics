@@ -1,38 +1,7 @@
+%Determine whether we're dealing with 2-photon data from Princeton or LSM
+%data. 2-photon data uses TIF files. In LSM mode multiple files will be
+%combined into one.
 function [D, FileMode] = DetermineFileMode(rawDataFolder)
-%% 
-% function [coordA,coordP,xShift,yShift] = FindAPAxisFullEmbryo(Prefix, varargin)
-%
-% DESCRIPTION
-% Determine what type of microscopy images we're trying to process. 
-% Currently detects the following file modes:
-%   - 'TIF': 2-photon Princeton, any other microscope that saves as TIF files
-%   - 'LIFExport': Leica confocal, LIF files
-%   - 'LSM': Zeiss confocal, old LSM files OR new CZI files
-%   - 'SPIN': Nikon spinning disk, ND files
-%   - 'ND2': Nikon point scanner, ND2 files
-%   - 'OMETIFF': OME-TIFF files
-%   - 'LAT': the Darzacq Lab's custom built lattice light sheet
-%
-% PARAMETERS
-% rawDataFolder: folder containing the raw microscopy images to be
-%                processed
-%
-% OPTIONS
-% N/A
-%
-% OUTPUT
-% D: directory of the folder containing the raw microscopy images to be
-%    processed
-% FileMode: string indicating the type of microscopy data we're working
-%           with ('TIF', 'LIFExport', 'LSM', 'SPIN', 'ND2', 'OMETIFF', or
-%           'LAT')
-% 
-%
-% Author (contact): unknown
-% Created: XX-XX-XXXX
-% Last Updated: XX-XX-XXXX
-% Documented by: Meghan Turner (meghan_turner@berkeley.edu)
-
 
 DTIF=dir([rawDataFolder,filesep,'*.tif']);
 DLSM=dir([rawDataFolder,filesep,'*.lsm']);     %Zeiss confocal, old LSM format

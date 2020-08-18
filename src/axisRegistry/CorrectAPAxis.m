@@ -1,38 +1,6 @@
 function CorrectAPAxis(varargin)
-%
-% function CorrectAPAxis(varargin)
-%
-% DESCRIPTION
-% This function opens a GUI that allows you to check and manually determine
-% the AP axis of the full embryo
-%
-% PARAMETERS
-% N/A
-%
-% OPTIONS
-% Prefix: Prefix of the dataset being analyzed
-%         If no Prefix is passed, it will open up a dialog window where you
-%         can manually select a folder that contains full embryo files to
-%         use for AP detection
-%
-%
-% OUTPUT
-% AP-EmbryoManual.tif: Full embryo image with the anterior (green) and
-%                       posterior (red) poles plotted on top as colored 
-%                       dots. Saved to the folder
-%                       'DropboxFolder\Prefix\APDetection\'
-% APDetection.mat: MAT file containing the xy coordinates of the anterior 
-%                   posterior poles of the full embryo (variables coordA  
-%                   and coordP). Also contains additional variables, if 
-%                   they exist (xShift, xShift1, coordD, coordV). Saved to
-%                   the folder 'DropboxFolder\Prefix\'
-% 
-%
-% Author (contact): uknown (hggarcia@berkeley.edu)
-% Created: XXXX-XX-XX
-% Documented by: Meghan Turner (meghan_turner@berkeley.edu)
-%
 
+%This function allows you to check and manually determine the AP axis
 
 
 %Manual:
@@ -56,8 +24,7 @@ close all
 [RawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath]=...
     DetermineLocalFolders(varargin{1});
 
-% Either get the Prefix from the input parameter or have the user manually
-% select a folder for the desired Prefix
+
 if ~isempty(varargin)
     Prefix=varargin{1};
 else
@@ -199,13 +166,9 @@ if dv
     plot(coordD(1),coordD(2),'y.','MarkerSize',20);
 end
 hold off
-
 try
     saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'APEmbryo-Manual.tif']);
-catch
-    warning('Unable to save AP-EmbryoManual.tif to DropboxFolder')
 end
-
 close(diagFigure);
 
 end
