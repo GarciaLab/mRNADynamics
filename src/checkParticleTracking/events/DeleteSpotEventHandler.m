@@ -1,4 +1,4 @@
-function keyInputHandler = DeleteSpotEventHandler(cptState)
+function keyInputHandler = DeleteSpotEventHandler(cptState,Prefix)
 
     function switchedParticlesFlag = doDeleteSpot(shouldQueryUser)
         

@@ -7,26 +7,20 @@ function keyInputHandler = TracesEventHandler(cptState)
             
         elseif cc == 'd'
             % Separate traces forward at the current frame.
-            [cptState.Particles, cptState.PreviousParticle] = separateTraces(cptState.Particles, ...
+            [cptState.Particles, cptState.PreviousParticle,cptState.ParticleStitchInfo] = separateTraces(cptState.Particles, ...
                 cptState.CurrentChannelIndex, cptState.CurrentFrame, cptState.CurrentParticle);
         elseif cc == 'q'
             % Approve a trace
-            if cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved == 1
-                cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved = 2;
-            elseif cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved == 0
-                cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved = 1;
-            elseif cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved == 2
-                cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved = 0;
+            aState = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved;
+            if aState>=0
+              cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved = (aState+1)*(aState~=2);                        
             end
-            
         elseif cc == 'w'
             % Disapprove a trace
-            if cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved == -1
-                cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved = 0;
-            else
-                cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved = -1;
-            end
-
+            aState = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved;
+            if aState<=0
+              cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved = (aState-1)*(aState~=-1);                        
+            end   
         elseif cc == 'h'
             if cptState.HideApprovedFlag == 0
                 cptState.HideApprovedFlag = 1; %Show only non-approved traces

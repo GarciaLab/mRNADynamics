@@ -17,8 +17,10 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
     ParticleStitchInfo = cell(1,NCh);
     % initialize fields for stitch info 
     for Channel = 1:NCh
-      ParticleStitchInfo{Channel}(1).persistentLinkFrames = {};
-      ParticleStitchInfo{Channel}(1).persistentLinkIndices = {};
+      ParticleStitchInfo{Channel}(1).persistentLinkFrameCell = {};
+      ParticleStitchInfo{Channel}(1).persistentLinkIndexCell = {};
+      ParticleStitchInfo{Channel}(1).forbiddenLinkFrameCell = {};
+      ParticleStitchInfo{Channel}(1).forbiddenLinkIndexCell = {};
     end
   else
     StitchedParticles = getFullParticles(liveExperiment);
@@ -141,6 +143,7 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
           tempParticles(nIter).linkCostCell = [0];
           tempParticles(nIter).linkFrameCell = {unique([SimParticles{Channel}(rmVec(p)).Frame(1) SimParticles{Channel}(rmVec(p)).Frame(end)])};
           tempParticles(nIter).linkParticleCell = {rmVec(p)};
+          tempParticles(nIter).stichInfoPointer = n;
           tempParticles(nIter).Nucleus = NaN;
           tempParticles(nIter).NucleusOrig = Nucleus;
           tempParticles(nIter).linkStateString = num2str(rmVec(p));          
@@ -181,6 +184,7 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
         tempParticles(nIter).linkFrameCell = linkFrameCell{p};
         tempParticles(nIter).linkParticleCell = linkParticleCell{p};
         tempParticles(nIter).linkStateString = linkIDCell{p};
+        tempParticles(nIter).stichInfoPointer  = n;
         tempParticles(nIter).Nucleus = Nucleus;
         tempParticles(nIter).NucleusOrig = Nucleus;
 %         tempParticles(nIter).assignmentFlags = assignmentFlags;        

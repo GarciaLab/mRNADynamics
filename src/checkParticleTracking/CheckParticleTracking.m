@@ -325,10 +325,10 @@ channelSwitchKeyInput = ChannelSwitchEventHandler(cptState, numSpotChannels, cpt
 zoomParticleToggleKeyInput = ZoomParticleToggleEventHandler(cptState);
 zoomAnywhereKeyInput = ZoomAnywhereEventHandler(cptState);
 histoneContrastKeyInput = HistoneContrastChangeEventHandler(cptState);
-addSpotKeyInput = AddSpotEventHandler(cptState, Prefix);
-deleteSpotKeyInput = DeleteSpotEventHandler(cptState);
+addSpotKeyInput = AddSpotEventHandler(cptState, Prefix); % Done
+deleteSpotKeyInput = DeleteSpotEventHandler(cptState,Prefix); % Done?
 ellipsesKeyInput = EllipsesEventHandler(cptState);
-tracesKeyInput = TracesEventHandler(cptState);
+tracesKeyInput = TracesEventHandler(cptState);  % Done?
 nuclearTrackingKeyInput = NuclearTrackingEventHandler(cptState);
 generalKeyInput = GeneralEventHandler(cptState, DataFolder, DropboxFolder, FilePrefix, numSpotChannels);
 

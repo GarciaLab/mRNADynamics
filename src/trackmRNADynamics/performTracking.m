@@ -105,6 +105,7 @@ for Channel = 1:NCh
     Particles{Channel}(p).timeShiftFlags = [false dt] |  [dt false];
     % flag unlikely linkages
     Particles{Channel}(p).linkCostFlags = Particles{Channel}(p).linkCostCell>costThresh;    
+    Particles{Channel}(p).costThresh = costThresh;
   end    
 end
 

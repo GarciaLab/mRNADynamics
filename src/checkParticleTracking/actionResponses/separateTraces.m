@@ -1,4 +1,4 @@
-function [Particles, PreviousParticle] = separateTraces(Particles, ...
+function [Particles, PreviousParticle, ParticleStitchInfo] = separateTraces(Prefix,Particles, ...
     CurrentChannel, CurrentFrame, CurrentParticle)
 %SEPARATETRACES Summary of this function goes here
 %   Detailed explanation goes here
@@ -10,7 +10,17 @@ PreviousParticle=0;
 if ~(Particles{CurrentChannel}(CurrentParticle).Frame(1)==CurrentFrame) && ...
   any(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame)
 
-      Particles{CurrentChannel}=SeparateParticleTraces(CurrentParticle,CurrentFrame,Particles{CurrentChannel}); 
+  % load Particle and Frame information
+  liveExperiment = LiveExperiment(Prefix);
+  SimParticles = getSimParticles(liveExperiment);
+  ParticleStitchInfo = getParticleStitchInfo(liveExperiment);
+  FrameInfo = getFrameInfo(liveExperiment);
+  
+  % call splitting function
+  [Particles{CurrentChannel},ParticleStitchInfo{CurrentChannel}]=SeparateParticleTraces(CurrentParticle,CurrentFrame,...
+    Particles{CurrentChannel},SimParticles{CurrentChannel},ParticleStitchInfo{CurrentChannel},FrameInfo); 
+  
+  % save
       
 elseif length(Particles{CurrentChannel}(CurrentParticle).Frame)==1
   

@@ -85,8 +85,8 @@ if isnan(Particles(ClickedParticle).Nucleus) || Particles(ClickedParticle).Nucle
   
   %Lastly, add assigned link to stitch info struct 
   joinFilter = ismember(Particles(OriginalParticle).Frame,joinFrames);
-  ParticleStitchInfo(Particles(OriginalParticle).Nucleus).persistentLinkFrames(end+1) = {joinFrames};
-  ParticleStitchInfo(Particles(OriginalParticle).Nucleus).persistentLinkIndices(end+1) = {Particles(OriginalParticle).Index(joinFilter)};
+  ParticleStitchInfo(Particles(OriginalParticle).stitchInfoPointer).persistentLinkFrameCell(end+1) = {joinFrames};
+  ParticleStitchInfo(Particles(OriginalParticle).stitchInfoPointer).persistentLinkIndexCell(end+1) = {Particles(OriginalParticle).Index(joinFilter)};
 else
   warning("Mismatching nucleus IDs. Aborting linkage")
 end

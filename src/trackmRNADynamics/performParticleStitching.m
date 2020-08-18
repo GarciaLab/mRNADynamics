@@ -1,8 +1,8 @@
 function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, ...
               linkCostVec, LinkAdditionCell, linkCostCell, linkFrameCell, linkParticleCell] = performParticleStitching(...
-              NucleusID,nucleusIDVec,frameIndex,RawParticles,Channel,ncVec,matchCostMax)
+              NucleusID,nucleusIDVec,frameIndex,SimParticles,Channel,ncVec,matchCostMax)
   
-  nParams = length(RawParticles{Channel}(1).hmmModel);
+  nParams = length(SimParticles{Channel}(1).hmmModel);
   % see how many fragments match this nucleus
   nucleusFilter = nucleusIDVec==NucleusID;
   nucleusIndices = find(nucleusFilter);
@@ -27,20 +27,21 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
   % add fragment info
   i_pass = 1;
   for p = nucleusIndices      
-    endpointFrameArray([RawParticles{Channel}(p).FirstFrame,RawParticles{Channel}(p).LastFrame],i_pass) = true;
-    extantFrameArray(RawParticles{Channel}(p).FirstFrame:RawParticles{Channel}(p).LastFrame,i_pass) = true;      
-    particleIDArray(RawParticles{Channel}(p).FirstFrame:RawParticles{Channel}(p).LastFrame,i_pass) = p;
+    endpointFrameArray([SimParticles{Channel}(p).FirstFrame,SimParticles{Channel}(p).LastFrame],i_pass) = true;
+    extantFrameArray(SimParticles{Channel}(p).FirstFrame:SimParticles{Channel}(p).LastFrame,i_pass) = true;      
+    particleIDArray(SimParticles{Channel}(p).FirstFrame:SimParticles{Channel}(p).LastFrame,i_pass) = p;
     linkIDCell{i_pass} = num2str(p);
     linkCostCell{i_pass} = [0];
-    linkFrameCell{i_pass} = {unique([RawParticles{Channel}(p).FirstFrame,RawParticles{Channel}(p).LastFrame])};
+    linkFrameCell{i_pass} = {unique([SimParticles{Channel}(p).FirstFrame,SimParticles{Channel}(p).LastFrame])};
     linkParticleCell{i_pass} = {p};
-    nc_ft = ismember(ncVec,ncVec(RawParticles{Channel}(p).FirstFrame));  
+    nc_ft = ismember(ncVec,ncVec(SimParticles{Channel}(p).FirstFrame));  
     for np = 1:nParams
-      pathArray(nc_ft,i_pass,np) = RawParticles{Channel}(p).hmmModel(np).pathVec;
-      sigmaArray(nc_ft,i_pass,np) = RawParticles{Channel}(p).hmmModel(np).sigmaVec;        
+      pathArray(nc_ft,i_pass,np) = SimParticles{Channel}(p).hmmModel(np).pathVec;
+      sigmaArray(nc_ft,i_pass,np) = SimParticles{Channel}(p).hmmModel(np).sigmaVec;        
     end     
     i_pass = i_pass + 1;
   end    
+  
   %%% calculate Mahalanobis Distance between particles in likelihood space
   cumActivityArray = cumsum(extantFrameArray);
   mDistanceMatRaw = Inf(nFragments,nFragments);     
