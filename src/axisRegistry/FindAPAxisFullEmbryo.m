@@ -1,85 +1,98 @@
 function [coordA,coordP,xShift,yShift]=FindAPAxisFullEmbryo(Prefix, varargin)
+
+% function [coordA,coordP,xShift,yShift]=FindAPAxisFullEmbryo(Prefix, varargin)
+%
+% DESCRIPTION
+% Takes an image containing the whole embryo, and correlates the zoomed-in
+% imaging field with the full embryo image to determine the shift and 
+% then find the AP axis.
+%
+% PARAMETERS
+% Prefix: Prefix of the dataset to analyze
+%
+% OPTIONS
+% 'CorrectAxis': Opens to a GUI to allow manual correction of the xy
+%                positions and orientations of the Anterior (A) and
+%                Posterior (P) poles of the embryo following automatic
+%                detection
+% 'optionalResults': ???? Not sure exactly what this does ...
+% 'FlipAP': Allows you to change the default Anterior/Posterior pole 
+%           orientation. This script will look to the name of your MidSag 
+%           image for an indication of the 'PA' orientation.
+%
+%
+% OUTPUT
+% coordA: xy coordinates of the anterior pole of the full embryo
+% coordP: xy coordinates of the posterior pole of the full embryo
+% xShift:
+% yShift:
+% 
+%
+% Author (contact): uknown (hggarcia@berkeley.edu)
+% Created: XXXX-XX-XX
+% Last Updated: 2020-07-27
+% Documented by: Meghan Turner (meghan_turner@berkeley.edu)
+%
 %%
-%When we could fit the whole embryo in one image we don't do stitching.
-%Instead we do a correlation between the imaging field and the full embryo
-%to determine the shift and then find the AP axis.
 
 cleanupObj = onCleanup(@myCleanupFun);
 
-
-%Parameters:
-%First, the prefix.
-%There after:
-%FlipAP- Switches anterior and posterior poles
-%CorrectAxis- Runs a correction script after automatic detection
-
-
-
+% Process user options 
+FlipAP = 0;
 CorrectAxis = true;
 optionalResults = '';
 
 for i=1:length(varargin)
-    if isnumeric(varargin{i})
-        if varargin{i}==1
-            FlipAP=1;
-        end
-    elseif strcmp(varargin{i},'CorrectAxis')
+    if strcmpi(varargin{i},'FlipAP')
+        FlipAP = 1;
+    elseif strcmpi(varargin{i},'CorrectAxis')
         CorrectAxis = true;
-    elseif strcmp(varargin{i},'optionalResults')
+    elseif strcmpi(varargin{i},'optionalResults')
         optionalResults = varargin{i+1};
     end
 end
    
-[SourcePath, ~, DefaultDropboxFolder, DropboxFolder, ~, ~,...
-~, ~] = DetermineAllLocalFolders(Prefix, optionalResults);
-
-%If the AP axis hasn't been specified check if it was specificed in the
-%image names. Otherwise assume AP orientation
+[SourcePath, ~, DefaultDropboxFolder, DropboxFolder, ~, ~, ~, ~] ... 
+    = DetermineAllLocalFolders(Prefix, optionalResults);
 
 %Find out the date it was taken
-Dashes=findstr(Prefix,'-');
-Date=Prefix(1:Dashes(3)-1);
-EmbryoName=Prefix(Dashes(3)+1:end);
+Dashes = strfind(Prefix,'-');
+Date = Prefix(1:Dashes(3)-1);
+EmbryoName = Prefix(Dashes(3)+1:end);
 
-%Figure out what type of experiment we have. Note: we name the var "DateFromDateColumn" to avoid shadowing previously defined "Date" var.
-[DateFromDateColumn, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
-Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3,~,~, ~, ~]...
+%Figure out what channels we have
+[~, ~, ~, ~, ~, ~,Channel1, Channel2, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~,...
+ Channel3,~,~, ~, ~]...
     = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 
-%Determine whether we're dealing with 2-photon data from Princeton, LSM, or
-%LIF data. 2-photon data uses TIF files. In LSM mode multiple files will be
-%combined into one.
-DTIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.tif']);
-DLSM=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.lsm']);
-DCZI=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.czi']);
-DLIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.lif']);
-DSPIN=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.nd']);     %Nikon spinning disk . CS20170911
+% Figure out what type of data we're dealing with
+rawDataPath = [SourcePath,filesep,Date,filesep,EmbryoName,filesep];
+fullEmbryoPath = [rawDataPath,'FullEmbryo',filesep];
+[~, FileMode] = DetermineFileMode(rawDataPath);
 
-if (~isempty(DTIF))&(isempty(DLIF))&(isempty(DSPIN))        %CS20170911
-    disp('2-photon @ Princeton data mode')
-    D=DTIF;
-    FileMode='TIF';
-elseif (~isempty(DLIF))
-    disp('LIF export mode')
-    D=DLIF;
-    FileMode='LIFExport';
-elseif (~isempty(DLSM))|(~isempty(DCZI))
-    disp('LSM mode')
-    D=[DLSM,DCZI];
-    FileMode='LSM';
-elseif (~isempty(DSPIN))        %CS20170911
-    disp('Nikon spinning disk mode with .nd files')
-    D=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo', filesep,'*.nd']);     %spinning disk with .nd output files
-    FileMode='DSPIN';
-else
-    error('File type not recognized')
+switch FileMode
+    case 'TIF'
+        dirFullEmbryo = dir([fullEmbryoPath,'*.tif']);
+    case 'LIFExport' 
+        dirFullEmbryo = dir([fullEmbryoPath,'*.lif']);
+    case 'LSM'
+        dirLSM = dir([fullEmbryoPath,'*.lsm']);
+        dirCZI=dir([fullEmbryoPath,'*.czi']);
+        dirFullEmbryo = [dirLSM, dirCZI];
+    case 'SPIN' 
+        dirFullEmbryo = dir([fullEmbryoPath,'*.nd']); 
+    case 'ND2'
+        %dirFullEmbryo = dir([fullEmbryoFolder,'*.nd2']); 
+        error('Nikon point scanning .nd2 files not supported yet')
+    case 'OMETIFF'
+        error('OME-TIFF files not supported yet')
+    case 'LAT'
+        error('LAT (lattice light sheet) files not supported yet')
 end
 
-
 % Identify the midsagittal image
-MidFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'mid')));
-SurfFileIndex=find(~cellfun('isempty',strfind(lower({D.name}),'surf')));
+MidFileIndex=find(~cellfun('isempty',strfind(lower({dirFullEmbryo.name}),'mid')));
+SurfFileIndex=find(~cellfun('isempty',strfind(lower({dirFullEmbryo.name}),'surf')));
 
 if length(MidFileIndex)>1 && strcmpi(FileMode, ~'DSPIN')
     error('Too many midsagittal files in FullEmbryo folder')
@@ -87,256 +100,56 @@ end
 
 
 
-%See if we don't want the default AP orientation
-if ~exist('FlipAP', 'var')
-    if strcmp(FileMode, 'TIF')||strcmp(FileMode, 'LIFExport')||strcmp(FileMode, 'LSM')
-        if strcmp(D(MidFileIndex).name,'PA')
-            FlipAP=1;
+% See if we don't want the default AP orientation
+% MT 2020-07-27: Doesn't manual correction mode make this option
+%                unnecessary? Maybe it can be removed?
+if FlipAP == 1
+    if strcmp(FileMode, 'TIF') || strcmp(FileMode, 'LIFExport') || strcmp(FileMode, 'LSM')
+        if strcmp(dirFullEmbryo(MidFileIndex).name,'PA')
+            FlipAP = 1;
         else
-            FlipAP=0;
+            FlipAP = 0;
         end
     end
-    if strcmp(FileMode,'DSPIN')     %CS20170912
-        FlipAP=0;
-    end
 end
-     
-    ChannelToLoadTemp =contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
-
-      if sum(ChannelToLoadTemp) && sum(ChannelToLoadTemp)==1
-            HisChannel=find(ChannelToLoadTemp);
-        elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>=2
-            ChannelToLoad=find(ChannelToLoadTemp);
-            HisChannel = ChannelToLoad(1);
-      end
-    if isempty(HisChannel)
-        error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
-    end
 
 
+% Grab the appropriate channel
+ChannelToLoadTemp = contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
+
+if sum(ChannelToLoadTemp) && sum(ChannelToLoadTemp)==1
+    HisChannel = find(ChannelToLoadTemp);
+elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>=2
+    ChannelToLoad = find(ChannelToLoadTemp);
+    HisChannel = ChannelToLoad(1);
+end
+
+if isempty(HisChannel)
+    error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
+end
+
+%% Rotate full embryo image and/or zoomed-in time series to match each other
+% This is done differently for each type of microscopy data
+
+% MT 2020-07-27: Functionalized each data type for more readable code
 if strcmp(FileMode,'TIF')
-    MidImage=imread([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(MidFileIndex).name],2);
+    MidImage = imread([fullEmbryoPath,dirFullEmbryo(MidFileIndex).name],2);
+    
 elseif strcmp(FileMode,'LIFExport')
-       
-   
+    midFile = [fullEmbryoPath,dirFullEmbryo(MidFileIndex).name];
+    surfFile = [fullEmbryoPath,dirFullEmbryo(SurfFileIndex).name];
+    [MidImage,SurfImage] = rotateFullEmbryoLIF(Prefix, rawDataPath, midFile, surfFile, HisChannel);
     
-    %Rotates the full embryo image to match the rotation of the zoomed
-    %time series
-    zoom_angle = 0;
- 
-    mid_angle = 0;
-    
-    midFile = [SourcePath,filesep,Date,filesep,EmbryoName,...
-        filesep,'FullEmbryo',filesep,D(MidFileIndex).name];
-    LIFMid=bfopen(midFile);
-    LIFSurf=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,...
-        filesep,'FullEmbryo',filesep,D(SurfFileIndex).name]);
+elseif strcmp(FileMode,'LSM')    
+    midFile = [fullEmbryoPath,dirFullEmbryo(MidFileIndex).name];
+    surfFile = [fullEmbryoPath,dirFullEmbryo(SurfFileIndex).name];
+    [MidImage,SurfImage] = rotateFullEmbryoLSM(rawDataPath, midFile, surfFile, HisChannel);
 
-    %By looking at the last image we make sure we're avoiding the
-    %individual tiles if we're dealing with tile scan
-    MidImage=LIFMid{end,1}{HisChannel,1};
-    SurfImage=LIFSurf{end,1}{HisChannel,1};
-    if size(MidImage) ~= size(SurfImage)
-            MidImage = imresize(MidImage,length(SurfImage)/length(MidImage));
-    end
-    
-    rawPrefixPath = [SourcePath, filesep, Date, filesep, EmbryoName];
-    zoom_angle = getZoomAngle(Prefix, rawPrefixPath);
-    
-    fullEmbryoPath = [SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo', filesep];
-    mid_angle = getFullEmbryoAngle(fullEmbryoPath, midFile, Prefix);
-    
-    MidImage = imrotate(MidImage, -zoom_angle + mid_angle);
-    
-elseif strcmp(FileMode,'LSM')
-    
-   
-    
-    %Rotates the full embryo image to match the rotation of the zoomed
-    %time series
-    zoom_angle = NaN;        %Set defaults to NaN so we can tell if the 
-    mid_angle = NaN;     %angles were successfully extracted
-    
-    LSMMid=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(MidFileIndex).name]);
-    LSMSurf = bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(SurfFileIndex).name]);
-    LSMMeta=LSMMid{:,4};
-    LSMMeta2=LSMMid{:,2};
-    
-    %Look for the image with the largest size. In this way, we avoid
-    %loading individual tiles in the case of a tile scan.
-    for i=1:size(LSMMid,1)
-        SizesImages(i)=size(LSMMid{i,1}{1,1},1);
-    end
-    [~,ImageCellToUse]=max(SizesImages);
-    
-    %individual tiles if we're dealing with tile scan. Also, in CZI files,
-    %this seems to ensure a high-contrast image as well.
-    MidImage=LSMMid{ImageCellToUse,1}{HisChannel,:};
-    SurfImage = LSMSurf{ImageCellToUse,1}{HisChannel,:};
-    
-    %Figure out the rotation of the full embryo image
-    %This works for LSM files
-    mid_angle = LSMMeta2.get('Recording Rotation #1');
-    %If full_embryo_angle is empty, chances are we have a CZI file
-    if isempty(mid_angle)
-        mid_angle=str2num(LSMMeta2.get('Global HardwareSetting|ParameterCollection|RoiRotation #1'));
-    %Check if angle was successfully extracted
-    elseif isnan(mid_angle)
-        error('Could not extract rotation of FullEmbryo images')
-    end
-    
-    
-    %Figure out the rotation of the zoomed-in image. We need to check for
-    %both LSM and CZI files.
-    DLSMZoom=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.lsm']);
-    DLSMZoom=[DLSMZoom,...
-        dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'*.czi'])];
-    LSMZoom=bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,...
-        DLSMZoom(1).name]);
-    LSMMetaZoom2=LSMZoom{:,2};
-    
-    %This works for LSM files
-    zoom_angle=LSMMetaZoom2.get('Recording Rotation #1');
-    %If full_embryo_angle is empty, chances are we have a CZI file
-    if isempty(zoom_angle)
-        zoom_angle=str2num(LSMMetaZoom2.get('Global HardwareSetting|ParameterCollection|RoiRotation #1'));
-    %Check if angle was successfully extracted
-    elseif isnan(zoom_angle)
-        error('Could not extract rotation of FullEmbryo images')
-    end
+elseif strcmp(FileMode, 'DSPIN')        
+    [MidImage,SurfImage,xShift,yShift] = rotateFullEmbryoSPIN(dirFullEmbryo, fullEmbryoPath, Channel1, Channel2);
 
-    MidImage = imrotate(MidImage, -zoom_angle + mid_angle);
-    SurfImage = imrotate(SurfImage, -zoom_angle + mid_angle);
-
-elseif strcmp(FileMode, 'DSPIN')        %CS20170911 This is really long-winded atm! Need to simplify.
-%%  
-    %Find and open the mid-saggistal .nd files in the FullEmbryo folder
-    if find(~cellfun('isempty',strfind({D.name},'ANT_mid')))>0
-        SurfFileIndexAnt = find(~cellfun('isempty',strfind({D.name},'ANT_mid')));
-        SurfFileIndexPost = find(~cellfun('isempty',strfind({D.name},'POST_mid')));
-        
-        SurfImageAnt = bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(SurfFileIndexAnt).name]);
-        SurfAntMeta = SurfImageAnt{4};
-        
-        SurfImagePost = bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(SurfFileIndexPost).name]);
-        SurfPostMeta = SurfImagePost{4};
-        
-    else
-        error('FullEmbryo images mislabeled? Should be of form ANT_mid, POST_mid, ANT_surf, POST_surf')
-    end
-   
-    %Get some useful parameters
-    try
-        NSlices = SurfAntMeta.getPixelsSizeZ(0).getValue();
-        NChannels = SurfAntMeta.getPixelsSizeC(0).getValue();
-        PizelSize = SurfAntMeta.getPixelsPhysicalSizeX(0).getValue();
-    catch
-        NSlices = str2double(SurfAntMeta.getPixelsSizeZ(0));
-        NChannels = str2double(SurfAntMeta.getPixelsSizeC(0));
-        PizelSize = str2double(SurfAntMeta.getPixelsPhysicalSizeX(0).value);%Size in microns of one pixel. NB for some of the OME metadata you need to add .value on end to get it out
-    end
-    
-    %Figure out which channel to use (His channel)
-    HisChannel=find(~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'mcherry'))|...
-        ~cellfun(@isempty,strfind(lower({Channel1{1},Channel2{1}}),'his')));
-    
-    %Get the stack of images in the histone channel for ANT and POST images and do a maximum projection
-    temp = SurfImageAnt{1}(:,2);
-    IndexAntPost = find(~cellfun('isempty',strfind({temp{1:end}},['C=', num2str(HisChannel), '/', num2str(NChannels)])));
-    AntImStack = SurfImageAnt{1}(IndexAntPost, 1);
-    PostImStack = SurfImagePost{1}(IndexAntPost, 1);
-    
-    %Max Project His channel for ANT and POST images
-    for i = 1:NSlices
-        AntImStack2(:,:,i) = AntImStack{i};
-        PostImStack2(:,:,i) = PostImStack{i};
-    end
-    AntMaxProj = max(AntImStack2, [], 3); 
-    PostMaxProj = max(PostImStack2, [], 3);
-    
-    %Write these to files because EmbryoStitchNoMargin (which will stitch them together) wants it that way
-    imwrite(AntMaxProj, [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'AntMaxProj.tif']); 
-    imwrite(PostMaxProj, [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'PostMaxProj.tif']); 
-    
-    %While at it, EmbryoStitchNoMargin also needs a flatfield. I don't take
-    %one at this magnification, so make it up
-    FFImage = ones(512,672); %make this automatically find the size later
-    imwrite(FFImage, [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'FF20x.tif']);
-    Margin = 0;
-
-    %Define inputs to EmbryoStitchNoMargin, which will stitch the ANT and POST files together and record the xShift and yShift needed to do so
-    FFFile=[SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'FF20x.tif'];  
-    LeftImageFile = [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'AntMaxProj.tif'];
-    RightImageFile = [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'PostMaxProj.tif']; 
-    
-    if FlipAP==0    %If FlipAP not specified in input, assume Anterior image on Left and Posterior on Right. 
-        [APImage,xShift,yShift]=EmbryoStitchNoMargin(LeftImageFile,RightImageFile, FFFile, [], [], Margin);
-    else          %Otherwise assume the opposite. 
-        [APImage,xShift,yShift]=EmbryoStitchNoMargin(RightImageFile, LeftImageFile, FFFile, [], [], Margin);
-    end
-    
-    %Rename for use later in code
-    MidImage = APImage; 
-    %Display image to check it's stitched correctly
-    imshow(imadjust(mat2gray(MidImage,[0 65535])),'DisplayRange',[],'InitialMagnification',100);
-    
-    %While we're at it, AddParticlePosition also needs the surface embryo,
-    %so generate a stiched together max projection of the ANT and POST
-    %surface images as well. 
-    if find(~cellfun('isempty',strfind({D.name},'ANT_surf')))>0
-        SurfFileIndexAnt = find(~cellfun('isempty',strfind({D.name},'ANT_surf.nd')));
-        SurfFileIndexPost = find(~cellfun('isempty',strfind({D.name},'POST_surf.nd')));
-        SurfImageAnt = bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(SurfFileIndexAnt).name]);
-        SurfAntMeta = SurfImageAnt{4};
-        SurfImagePost = bfopen([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,D(SurfFileIndexPost).name]);
-        SurfPostMeta = SurfImagePost{4};   
-    else
-        error('FullEmbryo images mislabeled? Should be of form ANT_mid, POST_mid, ANT_surf, POST_surf')
-    end
-   
-    %Get some useful parameters
-    try
-        NSlices = SurfAntMeta.getPixelsSizeZ(0).getValue();
-        NChannels = SurfAntMeta.getPixelsSizeC(0).getValue();
-        PizelSize = SurfAntMeta.getPixelsPhysicalSizeX(0).getValue();
-    catch
-        NSlices = str2double(SurfAntMeta.getPixelsSizeZ(0));
-        NChannels = str2double(SurfAntMeta.getPixelsSizeC(0));
-        PizelSize = str2double(SurfAntMeta.getPixelsPhysicalSizeX(0).value);%Size in microns of one pixel. NB for some of the OME metadata you need to add .value on end to get it out
-    end
-    
-    %Get the stack of images in the histone channel for ANT and POST images and do a maximum projection
-    temp = SurfImageAnt{1}(:,2);
-    IndexAntPost = find(~cellfun('isempty',strfind({temp{1:end}},['C=', num2str(HisChannel), '/', num2str(NChannels)])));
-    AntImStack = SurfImageAnt{1}(IndexAntPost, 1);
-    PostImStack = SurfImagePost{1}(IndexAntPost, 1);
-    
-    %Max Project His channel for ANT and POST images
-    for i = 1:NSlices
-        AntImStack2(:,:,i) = AntImStack{i};
-        PostImStack2(:,:,i) = PostImStack{i};
-    end
-    AntMaxProj = max(AntImStack2, [], 3); 
-    PostMaxProj = max(PostImStack2, [], 3);
-    
-    %Write these to files because EmbryoStitchNoMargin (which will stitch them together) wants it that way
-    %The FlatField has already been written, above
-    imwrite(AntMaxProj, [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'AntMaxProj.tif']); 
-    imwrite(PostMaxProj, [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'PostMaxProj.tif']); 
-
-    %Define inputs to EmbryoStitchNoMargin, which will stitch the ANT and POST files together and record the xShift and yShift needed to do so
-    LeftImageFile = [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'AntMaxProj.tif'];
-    RightImageFile = [SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'PostMaxProj.tif']; 
-    
-    if FlipAP==0    %If FlipAP not specified in input, assume Anterior image on Left and Posterior on Right. 
-        [APImage,xShift,yShift]=EmbryoStitchNoMargin(LeftImageFile,RightImageFile, FFFile, [], [], Margin);
-    else          %Otherwise assume the opposite. 
-        [APImage,xShift,yShift]=EmbryoStitchNoMargin(RightImageFile, LeftImageFile, FFFile, [], [], Margin);
-    end
-    
-    %Rename for use later in code
-    SurfImage = APImage; 
-    
+else
+    warning('Image rotation correction not supported for this FileMode')
 end
 
 %%
