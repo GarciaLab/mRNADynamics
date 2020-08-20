@@ -1,7 +1,9 @@
 function [stitchOrder]=ManualStitchOrder(Prefix, ID)
 % author: Gabriella Martini
 % date created: 7/26/20
-% date last modified: 7/26/20
+% date last modified: 8/20/20
+
+%Allows user input for stitching order for tiles in full embryo image. 
 
 %m - Choose the tile to move with the mouse
 %t - Choose the tile to move using row and column indices
@@ -11,11 +13,11 @@ function [stitchOrder]=ManualStitchOrder(Prefix, ID)
 %down arrow - Move the selected tile down by one row 
 %> - Move the selected tile to the right by one column
 %< - Move the selected tile to the left by one column
-%enter - Move to next tile
-%q - quit without saving
+%enter - Select tile and move to next selection
+%z - remove most recent selection from stitching order
+%c - clear stitching order and start from the beginning
 
-%Make an overlay of the zoomed in and zoomed out real
-%images as well as of a quickly segmented nuclear mask
+
 
 %Close existing images
 close all

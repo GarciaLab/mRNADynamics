@@ -2,7 +2,9 @@ function tile_array = OptimizeStitching(Prefix, ID, MaxDeltaR, MaxDeltaC, vararg
 % OptimizeStitching.m 
 % Gabriella Martini
 % 1/21/2020
-% Last Modifed: 8/15/2020
+% Last Modifed: 8/20/2020
+
+
 
 
 %% Parse input arguments
@@ -10,7 +12,6 @@ function tile_array = OptimizeStitching(Prefix, ID, MaxDeltaR, MaxDeltaC, vararg
 manualStitchOrder = false;
 selectRegions = false;
 useSurfStitching = false;
-manualSeeding = false;
 if ~isempty(varargin)
     x = 1;
     while x <= length(varargin{1})
@@ -21,8 +22,6 @@ if ~isempty(varargin)
                 selectRegions=true;
             case{'useSurfStitchingInfo'}
                 useSurfStitching=true;
-            case{'manualSeeding'}
-                manualSeeding=true;
             otherwise
                 error('Flag not valid')
         end
@@ -64,10 +63,7 @@ else
      load([stitchingDataFolder, filesep, ID, 'TileArray.mat']);
 end
 
-% if manualSeeding
-%     ManualStitchingCorrection(Prefix, ID)
-%     load([stitchingDataFolder, filesep, ID, 'TileArray.mat']);
-% end
+
 %% 
 outputFolder = [DropboxFolder,filesep,Prefix,filesep,'FullEmbryoStitching'];
 if ~exist(outputFolder, 'dir')

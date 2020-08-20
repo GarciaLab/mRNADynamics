@@ -8,24 +8,12 @@ function FindAPAxisTile(Prefix, varargin)
 
 
 %% Parse Inputs
+% Note that no flags are currently supported! (8/20/20)
 if ~exist('Prefix')
     FolderTemp=uigetdir(DropboxFolder,'Choose folder with files to analyze');
     Dashes=strfind(FolderTemp,filesep);
     Prefix=FolderTemp((Dashes(end)+1):end);
 end 
-
-
-% Parse inputs
-x = 1;
-% while x <= length(varargin)
-%     switch varargin{x}
-%         case{'NIterations'}
-%             NIterations = varargin{x+1};
-%             x = x + 1;
-%             fprintf('Number of Iterations: %d\n', NIterations);
-%     end
-%     x = x +1;
-% end
 
 
 
@@ -46,11 +34,7 @@ Dashes=findstr(Prefix,'-');
 Date=Prefix(1:Dashes(3)-1);
 EmbryoName=Prefix(Dashes(3)+1:end);
 
-%Figure out what type of experiment we have. Note: we name the var "DateFromDateColumn" to avoid shadowing previously defined "Date" var.
-[DateFromDateColumn, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
-Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
-nc9, nc10, nc11, nc12, nc13, nc14, CF, Channel3,~,~, ~, ~]...
-    = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
+
 
 %Datatype is hardcoded in, unlike in FindAPAxisFullEmbryo
 DLIF=dir([SourcePath,filesep,Date,filesep,EmbryoName,filesep,'FullEmbryo',filesep,'*.lif']);
@@ -80,13 +64,12 @@ MIDMeta = LIFMid{:, 4};
 SURFMeta = LIFSurf{:,4};
 %% 
 [SurfNSeries, SurfNFrames, SurfNSlices, SurfNPlanes, SurfNChannels, SurfFrame_Times] = getFrames(SURFMeta);
-SurfNTiles = SurfNSeries;
 [MidNSeries, MidNFrames, MidNSlices, MidNPlanes, MidNChannels, MidFrame_Times] = getFrames(MIDMeta);
-MidNTiles = MidNSeries;
+
 
 
 PixelSize = double(MIDMeta.getPixelsPhysicalSizeX(1).value);% units: microns
-PixelSize_m = double(PixelSize)*10^(-6);
+%PixelSize_m = double(PixelSize)*10^(-6);
 %% 
 
 
@@ -193,19 +176,6 @@ while (cc~='x')
         
     elseif (ct~=0)&(cc=='r')    %Reset the contrast
         DisplayRange=[min(min(APImage)),max(max(APImage))];
-        
-%     elseif (ct==0)&(strcmp(get(APImageFig,'SelectionType'),'alt')) %Delete the point that was clicked on
-%         cc=1;
-%         
-%         [~,MinIndex]=min((cm(1,1)-[coordA(1),coordP(1)]).^2+(cm(1,2)-[coordA(2),coordP(2)]).^2);
-%         
-%         if MinIndex==1
-%             coordA=[];
-%         elseif MinIndex==2
-%             coordP=[];
-%         end
-% %     elseif (ct~=0)&(cc=='m')        %Manual stitching mode
-%         %ManualStitch
     elseif (ct~=0)&(cc=='s')
         coordPTemp=coordA;
         coordA=coordP;

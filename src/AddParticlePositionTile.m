@@ -23,7 +23,7 @@ function [Particles, SpotFilter] = AddParticlePositionTile(Prefix, varargin)
 % 'ImposeEmbryoMask': restruct zoomed in movie to be completely contained
 % within the boundaries of the embryo with some tolerance. 
 % 'embryo_mask_tolerance': number between 0 and 1 which corresponds to the
-% percentage of the movie that must be contained within the embryo when
+% percentage of the zoomed-in movie that must be contained within the embryo when
 % using the 'ImposeEmbryoMask' flag
 
 
@@ -39,6 +39,8 @@ NoAP=false;
 SelectChannel=0;
 InvertHis=false;
 optionalResults = '';
+% New flags to facilitate AddParticlePositionTile when clearly incorrect
+% positions are found by the automated approach. 
 UseFullEmbryoBoundaries = false;
 ImposeEmbryoMask = false; % Note that this won't work if a lot of zoomImage is outside of embryo. Use embryo_mask_tolerance to adjust how rigid this feature is.
 embryo_mask_tolerance = .9; %Change value using varargin
@@ -237,8 +239,6 @@ if ~NoAP
     MetaFullEmbryoMid= ImageTempMid{:, 4};
 
     %This if for BioFormats backwards compatibility
-    % Note 7/27/20: This is returning NaN so the check below doesn't
-    % actually do anything. 
     if ~isempty(str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0)))
         PixelSizeFullEmbryoMid=str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0).value);
     else
@@ -260,8 +260,6 @@ if ~NoAP
     clear MaxTemp
 
 
-
-    %MidImage =imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif']);
     SurfImage = imread([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoSurf.tif']);
 
 
@@ -271,7 +269,7 @@ if ~NoAP
     zoom_angle = 0;
     full_embryo_angle = 0;
 
-
+    % Gets rotation information for both zoomed-in and full embryo images. 
     if isfolder([rawPrefixPath, 'MetaData'])
         xml_file_path = dir([rawPrefixPath,'MetaData', filesep, '*.xml']);
         xml_file = xml_file_path(1).name;
@@ -361,6 +359,9 @@ if ~NoAP
         if ZoomRatio > 24
             warning('Not able to do the cross correlation. Assuming no shift between surface-level and movie-level images.')
         else
+            % Adds flexibility for the movie to be more zoomed out than the
+            % full embryo image as is often the case for the stitched full
+            % embryo images. 
             if ZoomRatio <= 1
                 ZoomImageResized = imresize(ZoomImage, 1/ZoomRatio);
                 im1 = ZoomImageResized;
