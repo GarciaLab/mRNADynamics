@@ -7,8 +7,10 @@
 % channel generation.
 function Projection = generateNuclearChannel(...
     numberOfFrames, movieImages, framesIndex, seriesIndex, NSlices,...
-    NChannels, nuclearChannel, ProjectionType, ExperimentType, Channel1,...
-    Channel2, Channel3, ReferenceHist, OutputFolder, Prefix, lowbit)
+    NChannels,ProjectionType,...
+    Channels, ReferenceHist, OutputFolder, Prefix)
+
+Channel1=Channels{1}; Channel2 = Channels{2}; Channel3 = Channels{3};
 
 % Check how many channels have ":Nuclear" in the MovieDatabase.csv
 NuclearChannels = [contains(Channel1, 'Nuclear', 'IgnoreCase', true),...
@@ -31,20 +33,24 @@ if nNuclearChannels ~= 0
         nuclearChannel = AllNuclearChannels(ChannelIndex);
         
         % For all 'nuclear' channels, generate HisSlices, and do projection
-        HisSlices = generateHisSlices(movieImages, NSlices, NChannels, nuclearChannel, framesIndex, seriesIndex);
+        HisSlices = generateHisSlices(movieImages,...
+            NSlices, NChannels, nuclearChannel, framesIndex, seriesIndex);
         
-        ProjectionTemp(:, :, ChannelIndex) = calculateProjection(ProjectionType, NSlices, HisSlices);
+        ProjectionTemp(:, :, ChannelIndex) =...
+            calculateProjection(ProjectionType, NSlices(seriesIndex), HisSlices);
         
         % Think about "invertedNuclear", for example, MCP-mCherry, then
         % invert the ProjectionTemp using imcomplement
         if InvertedChannels(nuclearChannel) == 1
-            ProjectionTemp(:, :, ChannelIndex) = imcomplement(ProjectionTemp(:, :, ChannelIndex));
+            ProjectionTemp(:, :, ChannelIndex) = imcomplement(...
+                ProjectionTemp(:, :, ChannelIndex));
         end
         
         % Use the reference histogram to scale the Projection (This part
         % might need some more optimization later-YJK)
+
         ProjectionTemp(:, :, ChannelIndex) = histeq(mat2gray(ProjectionTemp(:, :, ChannelIndex)), ReferenceHist);
-        ProjectionTemp(:, :, ChannelIndex) = ProjectionTemp(:, :, ChannelIndex) * 10000;
+        ProjectionTemp(:, :, ChannelIndex) = ProjectionTemp(:, :, ChannelIndex) * 255;
         
         % Check if we are excluding this frame from this nuclear channel
         excludeFrames = 0;
@@ -94,51 +100,11 @@ if nNuclearChannels ~= 0
     elseif nNuclearChannels == 1
         Projection = ProjectionTemp;
     end
-    
-    % In case of old datasets (does not have ":Nuclear")
-else
-    
-    HisSlices = generateHisSlices(movieImages, NSlices, NChannels, nuclearChannel, framesIndex, seriesIndex);
-    
-    Projection = calculateProjection(ProjectionType, NSlices, HisSlices);
-    
-    %YJK : Think about the case when there is no His channel,
-    %and it is inputoutput mode or 1spot mode or 2spot2color.
-    %We can use (MCP-mCherry) either inverted or raw
-    %images to make fake histone images.
-    if (isempty(strfind(Channel1{1}, 'His'))) && (isempty(strfind(Channel2{1}, 'His'))) && (isempty(strfind(Channel3{1}, 'His')))
-        
-        if strcmpi(ExperimentType, 'inputoutput') | strcmpi(ExperimentType, '1spot') | strcmpi(ExperimentType, '2spot2color') | strcmpi(ExperimentType, 'input')
-            
-            if (~ isempty(strfind(Channel1{1}, 'NLS'))) | (~ isempty(strfind(Channel2{1}, 'NLS')))
-                %don't invert with NLS-MCP-mCherry
-            else
-                %We don't want to use all slices. Only the center ones
-                StackCenter = round((min(NSlices) - 1) / 2);
-                StackRange = StackCenter - 1:StackCenter + 1;
-                
-                if strcmp(ProjectionType, 'medianprojection')
-                    Projection = median(HisSlices(:, :, StackRange), [], 3);
-                else
-                    Projection = max(HisSlices(:, :, StackRange), [], 3);
-                end
-                
-                %invert images to make nuclei bright
-                Projection = imcomplement(Projection);
-            end
-            
-            Projection = histeq(mat2gray(Projection), ReferenceHist);
-            Projection = Projection * 10000;
-        end
-        
-    end
-    
-end
 
-Projection = uint16(Projection);
+Projection = uint8(Projection);
 
 
-imwrite(Projection, [OutputFolder, filesep, Prefix, '-His_', iIndex(numberOfFrames, 3), '.tif']);
+% imwrite(Projection, [OutputFolder, filesep, Prefix, '-His_', iIndex(numberOfFrames, 3), '.tif']);
 
 end
 

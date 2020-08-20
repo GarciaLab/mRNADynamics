@@ -10,23 +10,26 @@
 % exportDataForLivemRNA and is only usable with Leica data (and the
 % 'nuclearGUI' option must be entered in exportDataForLivemRNA)
 
-function [Channel1, Channel2, Channel3, ProjectionType] = chooseNuclearChannels(...
-    LIFImages, NSeries, NSlices, NChannels, NFrames, ProjectionType, Channel1, Channel2, ...
-    Channel3, ReferenceHist)
+function [Channels, ProjectionType] = chooseNuclearChannels(...
+    LIFImages, NSeries, NSlices, NChannels, NFrames, ProjectionType, Channels, ReferenceHist, varargin)
+
+warning('off', 'MATLAB:ui:Slider:fixedHeight')
 
 skip_factor = 5; % Only uses 1/skip_factor frames
+
+% default custom projection parameters
+max_custom = 1; % highest histone channel slice used
+min_custom = 5; % lowest histone channel slice used
+
 
 % initializes cell arrays for all the histone projections
 median_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
 max_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
 middle_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
+midsum_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
 custom_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
-mean_proj = cell(NChannels, ceil(sum(NFrames) / skip_factor));
 
-
-% default custom projection parameters
-max_custom = 1; % highest histone channel slice used
-min_custom = 5; % lowest histone channel slice used
+Channel1 = Channels{1}; Channel2 = Channels{2}; Channel3 = Channels{3};
 
 % creates and stores histone slices
 idx = 1;
@@ -37,18 +40,22 @@ for seriesIndex = 1:NSeries
                 HisSlices = generateHisSlices(LIFImages, NSlices, NChannels, ...
                     channelIndex, framesIndex, seriesIndex);
                 median_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
-                    'medianprojection', NSlices, HisSlices);
+                    'medianprojection', NSlices(seriesIndex), HisSlices);
                 max_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
-                    'maxprojection', NSlices, HisSlices);
+                    'maxprojection', NSlices(seriesIndex), HisSlices);
                 middle_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
                     'middleprojection', NSlices, HisSlices);
+                midsum_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
+                    'midsumprojection', NSlices, HisSlices);
+
                 custom_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
-                    'customprojection', NSlices, HisSlices, max_custom, min_custom);
+                    'customprojection', NSlices(seriesIndex), HisSlices, max_custom, min_custom);
             end       
         end
         idx = idx + 1;
     end
 end
+
 numFrames = idx - 1;
 
 % sets up channel dropdown options
@@ -60,6 +67,7 @@ end
 % lays out user interface
 screen_size = get(0, 'screensize');
 dim = [screen_size(3) * 0.6, screen_size(4) * 0.75];
+dimVec = [dim(1), dim(2), dim(1), dim(2)]; %to easily normalize units
 fig = uifigure('Position', [100, 100, dim(1), dim(2)], 'Name', 'Choose Histone Channels');
 img = uiaxes(fig, 'Position', [20, 20, dim(1) - 20, dim(2) * 0.5]);
 
@@ -71,6 +79,26 @@ frame_slider = uislider(fig, 'Limits', [1, numFrames], 'Value', 1, ...
 
 frame_slider.ValueChangedFcn = @updateHisImage;
 
+%% display contrast stuff
+maxPos = dimVec .* [.7, .2, .1, .1];
+maxLabelPos = dimVec .* [.7, .225, .1, .05];
+minPos = dimVec .* [.7, .4, .1, .1];
+minLabelPos = dimVec .* [.7, .425, .1, .05];
+
+max_label = uilabel(fig,  'Text', 'max display value', 'Position', ...
+    maxLabelPos);
+max_slider = uislider(fig, 'Limits', [0, 255], 'Value', 255, ...
+    'Position', maxPos);
+max_slider.ValueChangedFcn = @updateHisImage;
+
+
+min_label = uilabel(fig,  'Text', 'min display value', 'Position', ...
+    minLabelPos);
+min_slider = uislider(fig, 'Limits', [0, 255], 'Value', 0, ...
+    'Position',minPos);
+min_slider.ValueChangedFcn = @updateHisImage;
+
+%%
 channel_label = uilabel(fig, 'Position', [10, dim(2) * 0.93, dim(1) * 0.125, dim(2) * 0.05], ...
     'Text', 'Channels');
 channel_list = uilistbox(fig, 'Position', [10, dim(2) * 0.77, dim(1) * 0.125, dim(2) * 0.15], ...
@@ -94,7 +122,7 @@ proj_type_label = uilabel(fig, 'Position', [dim(1) * 0.4, dim(2) * 0.93, dim(1) 
     'Text', 'Projection Type');
 proj_type_dropdown = uidropdown(fig, 'Position', ...
     [dim(1) * 0.4, dim(2) * 0.85, dim(1) * 0.125, dim(2) * 0.08], ...
-    'Items', {'maxprojection', 'medianprojection', 'middleprojection', 'customprojection'}, ...
+    'Items', {'maxprojection', 'medianprojection', 'middleprojection', 'midsumprojection', 'customprojection'}, ...
     'Value', {'maxprojection'});
 
 proj_type_dropdown.ValueChangedFcn = @updateHisImage;
@@ -123,7 +151,10 @@ uiwait(fig);
         inverted_channels = invert_list.Value;
         projection_type = proj_type_dropdown.Value;
         frame_slider.Value = ((ceil(frame_slider.Value / skip_factor) - 1) * skip_factor) + 1;
+        
         frame = ceil(frame_slider.Value / skip_factor);
+      
+        
         channels = [];
         for i = 1:3
             if any(strcmp(channels_to_use, ['Channel ' num2str(i)])) 
@@ -137,8 +168,8 @@ uiwait(fig);
                 ProjectionTemp(:, :, i) = median_proj{cIndex, frame};
             elseif strcmpi(projection_type, 'middleprojection')
                 ProjectionTemp(:, :, i) = middle_proj{cIndex, frame};
-            elseif strcmpi(projection_type, 'meanprojection')
-                ProjectionTemp(:,:, i) = mean_proj(cIndex,frame);
+              elseif strcmpi(projection_type, 'midsumprojection')
+                ProjectionTemp(:,:, i) = midsum_proj{cIndex,frame};
             elseif strcmpi(projection_type, 'maxprojection')
                 ProjectionTemp(:, :, i) = max_proj{cIndex, frame};
             else
@@ -150,7 +181,7 @@ uiwait(fig);
             % Use the reference histogram to scale the Projection (This part
               % might need some more optimization later-YJK)
               ProjectionTemp(:, :, i) = histeq(mat2gray(ProjectionTemp(:, :, i)), ReferenceHist);
-              ProjectionTemp(:, :, i) = ProjectionTemp(:, :, i) * 10000;
+              ProjectionTemp(:, :, i) = ProjectionTemp(:, :, i) * 255;
         end
 
         % Getting average of all Projections
@@ -159,7 +190,17 @@ uiwait(fig);
         else
           Projection = ProjectionTemp;
         end
-        imshow(uint16(Projection), [], 'Parent', img);
+        
+        Projection = uint8(Projection);
+          
+        maxB = round(max_slider.Value);
+        minB = round(min_slider.Value);
+        
+         if minB >= maxB
+            maxB = max(max(Projection));
+            minB = median(median(Projection));
+        end
+        imshow(Projection, [minB, maxB], 'Parent', img);
     end
     
     % closes UI and returns chosen options
@@ -199,6 +240,7 @@ uiwait(fig);
             end
         end
         
+        Channels = {Channel1, Channel2, Channel3};
         ProjectionType = proj_type_dropdown.Value;
         if strcmpi(ProjectionType, 'customprojection')
             ProjectionType = [ProjectionType ':' num2str(max_custom) ':' num2str(min_custom)];

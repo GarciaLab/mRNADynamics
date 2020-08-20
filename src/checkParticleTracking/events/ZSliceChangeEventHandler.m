@@ -1,13 +1,5 @@
-function [textInputHandler, keyInputHandler] = ZSliceChangeEventHandler(cptState, robot, fake_event)
+function keyInputHandler = ZSliceChangeEventHandler(cptState)
     
-    function textInput(z_num, event)
-        figure(ancestor(z_num, 'figure'));
-        [cptState.CurrentZ, cptState.ManualZFlag] = changeZSlice(str2double(z_num.Value), cptState.ZSlices);
-        robot.keyPress(fake_event);
-        robot.keyRelease(fake_event);
-        disp('ZSlice Changed.');
-    end
-
     function keyInput(cc)
         if (cc == 'a') & (cptState.CurrentZ < cptState.ZSlices) %Move up in Z
             [cptState.CurrentZ, cptState.ManualZFlag] = changeZSlice(cptState.CurrentZ + 1, cptState.ZSlices);
@@ -23,9 +15,10 @@ function [textInputHandler, keyInputHandler] = ZSliceChangeEventHandler(cptState
                 iJump = cptState.CurrentFrame;
             end
             [cptState.CurrentZ, cptState.ManualZFlag] = changeZSlice(iJump, cptState.ZSlices);
+
+            cptState.DisplayRange = [];
        end
     end
 
-    textInputHandler = @textInput;
     keyInputHandler = @keyInput;
 end

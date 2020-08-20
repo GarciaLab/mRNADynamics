@@ -1,4 +1,5 @@
-function [GaussParams1, GaussParams2, offset, GaussIntVec, centroid_mean, GaussSE1, GaussSE2, offsetSE, GaussIntSEVec, centroid_se]...
+function [GaussParams1, GaussParams2, offset, GaussIntegralVector, centroid_mean, GaussSE1, GaussSE2, offsetSE,...
+    GaussIntegralSEVector, centroid_se]...
         = fit3DGaussian2spot(snip3D,PixelSize, varargin)
     % INPUT ARGUMENTS:
     % snip3D: 3D array containing spot to fit. Should contain only one spot
@@ -30,10 +31,10 @@ function [GaussParams1, GaussParams2, offset, GaussIntVec, centroid_mean, GaussS
         ,.1,ceil(yDim/2)+1,ceil(xDim/2)+1, ceil(zDim/2)+1,1,1,prctile(snip3D(:),10)];
     
     % initialize upper and lower parameter bounds
-    ub_vec = [3*max(snip3D(:)),yDim,xDim,zDim,3*sigma_guess,3*sigma_guess,...
+    upperBoundVector = [3*max(snip3D(:)),yDim,xDim,zDim,3*sigma_guess,3*sigma_guess,...
               3*max(snip3D(:)),yDim,xDim,zDim,3*sigma_guess,3*sigma_guess,...
               Inf];
-    lb_vec = [0,1,1,1,.5,.5,0,1,1,1,.1,.1,0];
+    lowerBoundVector = [0,1,1,1,.5,.5,0,1,1,1,.1,.1,0];
     
     % check for additional arguments
     for i = 1:(numel(varargin)-1)  
@@ -43,14 +44,14 @@ function [GaussParams1, GaussParams2, offset, GaussIntVec, centroid_mean, GaussS
     end
        
     % define objective function
-    dim_vec = [yDim, xDim, zDim];        
-    double3DObjective = @(params) simulate3DGaussSymmetric(dim_vec, params(1:6))...
-        + simulate3DGaussSymmetric(dim_vec, params(7:12)) ...
+    dimensionVector = [yDim, xDim, zDim];        
+    double3DObjective = @(params) simulate3DGaussSymmetric(dimensionVector, params(1:6))...
+        + simulate3DGaussSymmetric(dimensionVector, params(7:12)) ...
         + params(end) - double(snip3D);     
     % attempt to fit
     options.Display = 'off';
     [GaussFit, ~, residual, ~, ~, ~, jacobian] = lsqnonlin(double3DObjective,...
-        initial_parameters,lb_vec,ub_vec,options);
+        initial_parameters,lowerBoundVector,upperBoundVector,options);
     % store parameters
     GaussParams1 = GaussFit(1:6);
     GaussParams2 = GaussFit(7:12);        
@@ -63,32 +64,32 @@ function [GaussParams1, GaussParams2, offset, GaussIntVec, centroid_mean, GaussS
     paramValues = normrnd(0,1,size(FitDeltas,1),100).*FitDeltas + GaussFit';
     paramValues(paramValues<0) = realmin;
     
-    cov_mat = @(params) [params(5),    0,    0;
+    covarianceMatrix = @(params) [params(5),    0,    0;
                           0,    params(5),    0;
                           0,    0,     params(6)];    
-    gauss_int = @(params) params(1)*(2*pi)^1.5 *sqrt(det(cov_mat(params)));    
-    gauss_int_vec1 = NaN(1,100);
-    gauss_int_vec2 = NaN(1,100);    
-    centroid_pos_vec = NaN(100,3);    
+    gaussIntegral = @(params) params(1)*(2*pi)^1.5 *sqrt(det(covarianceMatrix(params)));    
+    gaussIntegralVector1 = NaN(1,100);
+    gaussIntegralVector = NaN(1,100);    
+    centroidPositionVector = NaN(100,3); 
     for i = 1:size(paramValues,2)
-        gauss_int_vec1(i) = gauss_int(paramValues(1:6,i));
-        gauss_int_vec2(i) = gauss_int(paramValues(7:12,i));        
-        centroid_pos_vec(i,:) = gauss_int_vec1(i)*paramValues(2:4,i) + ...
-            gauss_int_vec1(i)*paramValues(8:10,i);
+        gaussIntegralVector1(i) = gaussIntegral(paramValues(1:6,i));
+        gaussIntegralVector(i) = gaussIntegral(paramValues(7:12,i));        
+        centroidPositionVector(i,:) = gaussIntegralVector1(i)*paramValues(2:4,i) + ...
+            gaussIntegralVector1(i)*paramValues(8:10,i);
     end
     % extract values to report
-    GaussIntegral1 = nanmean(gauss_int_vec1);
-    GaussIntegralSE1 = nanstd(gauss_int_vec1);
-    GaussIntegral2 = nanmean(gauss_int_vec2);
-    GaussIntegralSE2 = nanstd(gauss_int_vec2);
+    GaussIntegral1 = nanmean(gaussIntegralVector1);
+    GaussIntegralSE1 = nanstd(gaussIntegralVector1);
+    GaussIntegral2 = nanmean(gaussIntegralVector);
+    GaussIntegralSE2 = nanstd(gaussIntegralVector);
     GaussIntegralTot = GaussIntegral1 + GaussIntegral2;
     GaussIntegralSETot = sqrt(GaussIntegralSE1^2 + GaussIntegralSE2^2);
     GaussSE1 = FitDeltas(1:6,:);
     GaussSE2 = FitDeltas(7:12,:);
     offsetSE = FitDeltas(end,:);
-    centroid_mean = nanmean(centroid_pos_vec);
-    centroid_se = nanstd(centroid_pos_vec);
+    centroid_mean = nanmean(centroidPositionVector);
+    centroid_se = nanstd(centroidPositionVector);
     % combine for simplicity
-    GaussIntVec = [GaussIntegral1 GaussIntegral2 GaussIntegralTot];
-    GaussIntSEVec = [GaussIntegralSE1 GaussIntegralSE2 GaussIntegralSETot];
+    GaussIntegralVector = [GaussIntegral1 GaussIntegral2 GaussIntegralTot];
+    GaussIntegralSEVector = [GaussIntegralSE1 GaussIntegralSE2 GaussIntegralSETot];
 end

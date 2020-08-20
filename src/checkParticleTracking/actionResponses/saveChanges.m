@@ -1,31 +1,35 @@
-function saveChanges(NChannels, Particles, Spots, SpotFilter, DataFolder, ...
-    FrameInfo, UseHistoneOverlay, FilePrefix, ...
-    schnitzcells, DropboxFolder)
-%SAVECHANGES Summary of this function goes here
-%   Detailed explanation goes here
+function saveChanges(NChannels, cptState, DataFolder, FilePrefix, DropboxFolder)
+    Particles = cptState.Particles;
+    Spots = cptState.Spots;
+    SpotFilter = cptState.SpotFilter;
+    FrameInfo = cptState.FrameInfo;
+    schnitzcells = cptState.schnitzcells;
 
-%If we only have one channel bring Particles back to the legacy
-%format without any cells
-if NChannels==1
-    Particles=Particles{1};
-    Spots=Spots{1};
-    SpotFilter=SpotFilter{1};
+% If we only have one channel bring Particles back to the legacy format without any cells
+if NChannels == 1
+    Particles = Particles{1};
+    Spots = Spots{1};
+    SpotFilter = SpotFilter{1};
 end
 
-save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo')
-if UseHistoneOverlay
-    save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter', '-v7.3')
-    save([DataFolder,filesep,'Spots.mat'],'Spots', '-v7.3') %CS20170912 necessary for saving Spots.mat if >2GB
-    save([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'],'schnitzcells', '-v7.3')
+save([DataFolder, filesep, 'FrameInfo.mat'], 'FrameInfo', '-v6')
+save([DataFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter', '-v6')
+
+if whos(var2str(Spots)).bytes < 2E9
+    save([DataFolder, filesep, 'Spots.mat'], 'Spots', '-v6')
 else
-    save([DataFolder,filesep,'Particles.mat'],'Particles','SpotFilter', '-v7.3')
-    save([DataFolder,filesep,'Spots.mat'],'Spots','-v7.3') %CS20170912 necessary for saving Spots.mat if >2GB
+    save([DataFolder, filesep, 'Spots.mat'], 'Spots', '-v7.3', '-nocompression')
 end
+
+
+if cptState.UseHistoneOverlay
+    if whos(var2str(schnitzcells)).bytes < 2E9
+        save([DropboxFolder, filesep, FilePrefix(1:end-1), filesep, FilePrefix(1:end-1), '_lin.mat'], 'schnitzcells', '-v6')
+    else
+        save([DropboxFolder, filesep, FilePrefix(1:end-1), filesep, FilePrefix(1:end-1), '_lin.mat'], 'schnitzcells', '-v7.3', '-nocompression')
+    end
+end
+
 disp('Particles saved.')
-if NChannels==1
-    Particles={Particles};
-    Spots = {Spots};
-    SpotFilter = {SpotFilter};
-end
 end
 

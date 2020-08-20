@@ -1,26 +1,47 @@
-function Projection = calculateProjection(ProjectionType, NSlices, HisSlices, varargin)
-% Calculate the projection (either Maximum or Median)
-if strcmpi(ProjectionType, 'medianprojection')
-    Projection = median(HisSlices, 3);
-elseif strcmpi(ProjectionType, 'middleprojection')
-    Projection = max(HisSlices(:, :, round(NSlices * .50):round(NSlices * .75)), [], 3);
-elseif strcmpi(ProjectionType, 'maxprojection')
-    Projection = max(HisSlices, [], 3);
+function projection = calculateProjection(...
+    projectionType, nSlices, imageStack, varargin)
+
+% Calculate projection for a nuclear channel
+lowerSlice = 1;
+upperSlice = nSlices;
+
+if strcmpi(projectionType, 'middleprojection')
+    lowerSlice = round(nSlices * .50);
+    upperSlice =round(nSlices * .75);
+elseif strcmpi(projectionType, 'midsumprojection')
+    lowerSlice = round(nSlices * .33);
+    upperSlice =round(nSlices * .66);
+end
+% 
+% if ~isempty(varargin)
+%     upperSlice = varargin{1};
+%     lowerSlice = varargin{2};
+% end
+
+imageStack = imageStack(:, :, lowerSlice:upperSlice);
+    
+
+if strcmpi(projectionType, 'medianprojection')
+    projection = median(imageStack, 3);
+elseif strcmpi(projectionType, 'maxprojection') || strcmpi(projectionType, 'middleprojection')
+    projection = max(imageStack, [], 3);
+elseif strcmpi(projectionType, 'midsumprojection')
+    projection = sum(imageStack, 3);
 else
-    SortedHisSlices = sort(HisSlices, 3, 'descend');
+    SortedHisSlices = sort(imageStack, 3, 'descend');
     if ~isempty(varargin)
         max_custom = varargin{1};
         min_custom = varargin{2};
         if length(size(SortedHisSlices)) > 2
-            Projection = mean(SortedHisSlices(:, :, max_custom:min_custom), 3);
+            projection = mean(SortedHisSlices(:, :, max_custom:min_custom), 3);
         else
-            Projection = SortedHisSlices;
+            projection = SortedHisSlices;
         end
     else
-        ProjectionBounds = strsplit(ProjectionType, ':');
+        ProjectionBounds = strsplit(projectionType, ':');
         max_custom = str2double(ProjectionBounds{2});
         min_custom = str2double(ProjectionBounds{3});
-        Projection = mean(SortedHisSlices(:, :, max_custom:min_custom), 3);
+        projection = mean(SortedHisSlices(:, :, max_custom:min_custom), 3);
     end
 end
 

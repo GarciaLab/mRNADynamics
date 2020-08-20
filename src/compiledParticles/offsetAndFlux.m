@@ -196,7 +196,7 @@ ch = 1;
         
         if strcmpi(ExperimentAxis,'AP') & ~SkipAll
             figure(8)
-            integration_radius = 6*ceil(sqrt(212/pixelSize));
+            integration_radius = 6*ceil(sqrt(212/pixelSize)); %what in the world is this magic number
             intArea = 3*integration_radius^2 + 1; %109 pixels is the default area when the pixels are assumed to be 212nm x 212 nm AR 9/3/18
             errorbar(1:length(MeanOffsetVector),MeanOffsetVector*intArea,...
                 SDOffsetVector*intArea,'.-r')

@@ -64,5 +64,5 @@ function log = logSegmentSpots(DropboxFolder, Prefix, t, initialFrame, numFrames
     log(end).Classifier = 'no Weka';
   end 
 
-  save(logFile, 'log', '-v7.3');
+  save(logFile, 'log', '-v6');
 end 

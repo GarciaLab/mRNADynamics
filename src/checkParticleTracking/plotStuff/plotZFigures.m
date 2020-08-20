@@ -1,73 +1,105 @@
-function [MaxZProfile, Frames] = plotZFigures(zProfileFigAxes, zTraceAxes, ExperimentType, ...
-    xTrace, Spots, CurrentFrame, CurrentChannel, CurrentParticleIndex, ZSlices, ...
-    CurrentZ, CurrentZIndex, PreviousParticle, CurrentParticle, ...
-    PreviousChannel, Particles, Frames, fish, MaxZProfile)
-%PLOTZFIGURES Summary of this function goes here
-%   Detailed explanation goes here
-
+function MaxZProfile = plotZFigures(zProfileFigAxes, zTraceAxes, ExperimentType, xTrace, cptState, plotTraceSettings, fish, MaxZProfile)
 
 if ~isempty(xTrace)
-    
-    %Get the z-DoG profile
-    % check to see if Spots contains flag indicating type of
-    % integration used
+    % Get the z-DoG profile
+    % check to see if Spots contains flag indicating type of integration used
     
     g = [-1 0 1];
     gaussFilter = exp(-g .^ 2 / (2 ));
-    zprofinit = zeros(1, ZSlices);
-    zprofinit(Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z) = Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).FixedAreaIntensity;
-    ZProfile= conv(gaussFilter,zprofinit);
+    zprofinit = zeros(1, cptState.ZSlices);
+    
+    currentParticleFit = cptState.getCurrentParticleFit();
+    
+    zprofinit(currentParticleFit.z) = currentParticleFit.FixedAreaIntensity;
+    ZProfile = conv(gaussFilter, zprofinit);
     ZProfile = ZProfile(2:end-1);
-    ZProfile = ZProfile(zprofinit~=0);
+    ZProfile = ZProfile(zprofinit ~= 0);
     title_string = '';
     
-    MaxZ=Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).brightestZ;
     
-    plot(zProfileFigAxes, Spots{CurrentChannel}(CurrentFrame).Fits(CurrentParticleIndex).z,...
-        ZProfile,'.-k');
+    if isempty(zProfileFigAxes.Children)
+        plot(zProfileFigAxes, currentParticleFit.z, ZProfile,'.-k');
+    else
+        zProfileFigAxes.Children(1).XData = currentParticleFit.z; 
+        zProfileFigAxes.Children(1).YData = ZProfile;
+        zProfileFigAxes.Children(1).LineStyle= '-';
+        zProfileFigAxes.Children(1).Color= 'k';
+
+    end
     
     hold(zProfileFigAxes,'on')
-    if ~isempty(CurrentZIndex)
-        plot(zProfileFigAxes,CurrentZ,ZProfile(CurrentZIndex),'ob')
+    
+    if ~isempty(cptState.CurrentZIndex)
+        if length(zProfileFigAxes.Children) < 2
+            plot(zProfileFigAxes, cptState.CurrentZ, ZProfile(cptState.CurrentZIndex), 'ob')
+        else
+            zProfileFigAxes.Children(2).XData = cptState.CurrentZ;
+            zProfileFigAxes.Children(2).YData = ZProfile(cptState.CurrentZIndex);
+            zProfileFigAxes.Children(2).MarkerEdgeColor = 'b';
+        end
     else
-        plot(zProfileFigAxes,CurrentZ,CurrentZ,'or')
+        if length(zProfileFigAxes.Children) < 2
+            plot(zProfileFigAxes, cptState.CurrentZ, cptState.CurrentZ, 'or')
+        else
+            zProfileFigAxes.Children(2).XData = cptState.CurrentZ;
+            zProfileFigAxes.Children(2).YData = cptState.CurrentZ;
+            zProfileFigAxes.Children(2).MarkerEdgeColor = 'r';
+        end
     end
-    hold(zProfileFigAxes,'off')
-    ylabel(zProfileFigAxes,'intensity(au)', 'FontSize',12);
-    xlabel(zProfileFigAxes,'z-slice', 'FontSize',12);
-    title(zProfileFigAxes,{'z-profile:';title_string},'FontSize',10)
+    
+    hold(zProfileFigAxes, 'off')
+    
+    set(zProfileFigAxes.Title, 'String', {'z-profile:';title_string});
+    zProfileFigAxes.Title.FontSize = 10;
+    
 end
 
-%%%%%    BRIGHTEST Z-TRACE PLOT   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ~strcmpi(ExperimentType,'inputoutput') & ~fish
+% BRIGHTEST Z-TRACE PLOT %
+if ~strcmpi(ExperimentType, 'inputoutput') && ~fish
     MaxZProfile = [];
-    %Only update the trace information if we have switched particles
-    if (CurrentParticle~=PreviousParticle)||~exist('MaxZProfile', 'var')||CurrentChannel ~= PreviousChannel
-        PreviousParticle=CurrentParticle;
-        Frames=PlotParticleTrace(CurrentParticle,Particles{CurrentChannel},Spots{CurrentChannel}, 'noSpline');
+    
+    CurrentParticle = cptState.CurrentParticle;
+    CurrentSpots = cptState.getCurrentChannelSpots();
+    CurrentParticles = cptState.getCurrentChannelParticles();
+    
+    % Only update the trace information if we have switched particles
+    if (CurrentParticle ~= cptState.PreviousParticle) || ~exist('MaxZProfile', 'var')...
+            || cptState.CurrentChannel ~= cptState.PreviousChannel
+        cptState.PreviousParticle = CurrentParticle;
+        PlotParticleTrace(cptState, plotTraceSettings, true);
     end
-    for  i = 1:length(Frames)
-        MaxZProfile(i)=Spots{CurrentChannel}(Frames(i)).Fits...
-            (Particles{CurrentChannel}(CurrentParticle).Index(i)).brightestZ;
+    
+    for f = 1:length(cptState.Frames)
+        MaxZProfile(f) = CurrentSpots(cptState.Frames(f)).Fits(...
+            CurrentParticles(CurrentParticle).Index(f)).brightestZ;
     end
-    plot(zTraceAxes,Frames(Particles{CurrentChannel}(CurrentParticle).FrameApproved),...
-        MaxZProfile(Particles{CurrentChannel}(CurrentParticle).FrameApproved),'.-k');
+    
+    currentFrameApproved = CurrentParticles(CurrentParticle).FrameApproved;
+    if isempty(zTraceAxes.Children)
+        ztrplot = plot(zTraceAxes, cptState.Frames(currentFrameApproved), MaxZProfile(currentFrameApproved), '.-k');
+    else
+        zTraceAxes(1).XData = cptState.Frames(currentFrameApproved);
+        zTraceAxes(1).YData = MaxZProfile(currentFrameApproved);
+    end
+    
     hold(zTraceAxes, 'on')
-    plot(zTraceAxes,Frames(Frames==CurrentFrame),MaxZProfile(Frames==CurrentFrame),'ob');
+    
+    if length(zTraceAxes.Children) < 2
+        ztrcircle = plot(zTraceAxes, cptState.Frames(cptState.Frames == cptState.CurrentFrame),...
+            MaxZProfile(cptState.Frames == cptState.CurrentFrame), 'ob');
+    else
+        zTraceAxes(2).XData = cptState.Frames(cptState.Frames == cptState.CurrentFrame);
+        zTraceAxes(2).YData = MaxZProfile(cptState.Frames == cptState.CurrentFrame);
+    end
     hold(zTraceAxes, 'off')
     
     try
-        xlim(zTraceAxes,[min(Frames)-1,max(Frames)+1]);
-        ylim(zTraceAxes,[1,ZSlices+1])
+        xlim(zTraceAxes, [min(cptState.Frames) - 1, max(cptState.Frames) + 1]);
+        ylim(zTraceAxes, [1, cptState.ZSlices + 1])
     catch
-        %             error('Not sure what happened here. Problem with trace fig x lim. Talk to AR if you see this, please.');
+        warning('Not sure what happened here. Problem with trace fig x lim. Mention in slack if you see this, please.');
     end
-    xlabel(zTraceAxes,'frame')
-    ylabel(zTraceAxes,'z-slice')
-    title(zTraceAxes,'brightest Z trace')
 else
     MaxZProfile = [];
 end
-
 end
-

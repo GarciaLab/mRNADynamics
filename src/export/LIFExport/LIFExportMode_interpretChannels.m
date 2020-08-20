@@ -22,7 +22,7 @@ disp('Interpreting channels...');
     if length(coatChannel)>1
         error('Two coat proteins found. Should this be in 2spot2color mode?')
     elseif isempty(coatChannel)    
-        error('LIF Mode error: Channel name not recognized. Check MovieDatabase')
+        warning('Could not find spot channel in moviedatabase. No channels exported as spots.')
     end
 
     %Histone channel 

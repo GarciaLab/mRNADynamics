@@ -1,24 +1,30 @@
 function [Particles, CompiledParticles, ncFilter, ncFilterID] =...
+    ...
     compileTraces(NChannels, Particles, HistoneChannel, ...
+    ...
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
-    Spots, SkipTraces, nc9, nc10, nc11, nc12, nc13, nc14, ncFilterID, ncFilter, ...
+    Spots, SkipTraces, ncFilterID, ncFilter, ...
     ElapsedTime, Ellipses, EllipsePos, PreProcPath, ...
-    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits, edgeWidth, pixelSize, coatChannels, fullEmbryo)
+    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits,...
+    edgeWidth, pixelSize_nm, coatChannels, fullEmbryoExists, liveExperiment)
+
 %COMPILETRACES Summary of this function goes here
 %   Detailed explanation goes here
 
-%See how  many frames we have and adjust the index size of the files to
-%load accordingly
-if numFrames<1E3
-    NDigits=3;
-elseif numFrames<1E4
-    NDigits=4;
-else
-    error('No more than 10,000 frames currently supported.')
-end
+liveExperiment = LiveExperiment(Prefix);
 
-pixelSize = pixelSize * 1000; %nm
-SnippetSize = 2 * (floor(1300 / (2 * pixelSize))) + 1; % nm. note that this is forced to be odd
+FrameInfo = getFrameInfo(liveExperiment);
+
+anaphaseFrames = liveExperiment.anaphaseFrames';
+nc9 = anaphaseFrames(1); nc10 = anaphaseFrames(2); nc11 = anaphaseFrames(3);
+nc12 = anaphaseFrames(4); nc13 = anaphaseFrames(5); nc14 = anaphaseFrames(6);
+
+NDigits = liveExperiment.nDigits;
+
+DropboxFolder = liveExperiment.userResultsFolder;
+PreProcPath = liveExperiment.userPreFolder;
+pixelSize_nm = liveExperiment.pixelSize_nm;
+SnippetSize = 2 * (floor(1300 / (2 * pixelSize_nm))) + 1; % nm. note that this is forced to be odd
 
 NChannels = length(coatChannels);
 
@@ -26,7 +32,7 @@ h = waitbar(0,'Compiling traces');
 for ChN=1:NChannels
     k=1;
     for i=1:length(Particles{ChN})
-        waitbar(i/length(Particles{ChN}),h)
+        try waitbar(i/length(Particles{ChN}),h); end
         if (Particles{ChN}(i).Approved==1)
             
             for NCh=1:NChannels
@@ -43,15 +49,7 @@ for ChN=1:NChannels
             %condition?
             FirstFrame=Particles{ChN}(i).Frame(min(find(Particles{ChN}(i).FrameApproved)));
             
-            %Check that for the remaining frames we got a good z-profile
-            %                 for j=1:length(Particles{ChN}(i).Frame)
-            %                     ZProfile=fad(ChN).channels(Particles{ChN}(i).Frame(j)).fits.shadowsDog{Particles{ChN}(i).Index(j)};
-            %                     [Dummy,ZMax]=max(ZProfile);
-            %                     if (ZMax==1)|(ZMax==length(ZProfile))
-            %                         FrameFilter(j)=0;
-            %                     end
-            %                 end
-            
+
             %Should I only keep traces of a certain length? We also just keep
             %the ones that have a real schnitz associated with them
             AnalyzeThisParticle=1;      %Flag to see if this particle should be analyzed.
@@ -81,7 +79,7 @@ for ChN=1:NChannels
             
             %See if this particle is in one of the approved AP bins
             try
-                if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV') && fullEmbryo
+                if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV') && fullEmbryoExists
                     CurrentAPbin=max(find(APbinID<mean(Particles{ChN}(i).APpos(FrameFilter))));
                     if isnan(APbinArea(CurrentAPbin))
                         AnalyzeThisParticle=0;
@@ -111,13 +109,13 @@ for ChN=1:NChannels
                 %CompiledParticles{ChN}(k).DVpos=Particles{ChN}(i).DVpos(FrameFilter);
                 CompiledParticles{ChN}(k).FrameApproved = Particles{ChN}(i).FrameApproved;
                 
-                if strcmpi(ExperimentAxis,'AP') && fullEmbryo
+                if strcmpi(ExperimentAxis,'AP') && fullEmbryoExists
                     CompiledParticles{ChN}(k).APpos=Particles{ChN}(i).APpos(FrameFilter);
                     
                     %Determine the particles average and median AP position
                     CompiledParticles{ChN}(k).MeanAP=mean(Particles{ChN}(i).APpos(FrameFilter));
                     CompiledParticles{ChN}(k).MedianAP=median(Particles{ChN}(i).APpos(FrameFilter));
-                elseif strcmpi(ExperimentAxis,'DV') && fullEmbryo %&isfield(Particles,'APpos')
+                elseif strcmpi(ExperimentAxis,'DV') && fullEmbryoExists %&isfield(Particles,'APpos')
                     %AP information:
                     CompiledParticles{ChN}(k).APpos=Particles{ChN}(i).APpos(FrameFilter);
                     CompiledParticles{ChN}(k).MeanAP=mean(Particles{ChN}(i).APpos(FrameFilter));
@@ -134,7 +132,7 @@ for ChN=1:NChannels
                 %found. If there is no nucleus (like when a particle survives
                 %past the nuclear division) we will still use the actual particle
                 %position.
-                if HistoneChannel&strcmpi(ExperimentAxis,'AP') && fullEmbryo
+                if HistoneChannel&strcmpi(ExperimentAxis,'AP') && fullEmbryoExists
                     %Save the original particle position
                     CompiledParticles{ChN}(k).APposParticle=CompiledParticles{ChN}(k).APpos;
                     
@@ -187,22 +185,23 @@ for ChN=1:NChannels
                     CompiledParticles{ChN}(k).fitParamsGauss3D = g_fits_cell;
                 end
                 %Extract information from Spots about fluorescence and background
-                [Frame,AmpIntegral, AmpIntegral3, AmpGaussian,...
-                    Off, ErrorIntegral,ErrorGauss,optFit1, FitType, ErrorIntegral3,...
-                    backGround3, AmpIntegralGauss3D, ErrorIntegralGauss3D,...
+                plotTraceSettings = PlotTraceSettings();
+
+                [Frame, AmpGaussian, Off, ErrorGauss, optFit1, FitType,...
                     AmpDog, AmpDogMax, ampdog3, ampdog3Max]...
-                    = GetParticleTrace(k,CompiledParticles{ChN},Spots{ChN});
-                CompiledParticles{ChN}(k).Fluo= AmpIntegral;
-                CompiledParticles{ChN}(k).Fluo3= AmpIntegral3;
+                    = GetParticleTrace(k,CompiledParticles{ChN},Spots{ChN}, plotTraceSettings, false);
+                CompiledParticles{ChN}(k).Fluo = plotTraceSettings.AmpIntegral;
+                CompiledParticles{ChN}(k).Fluo3 = plotTraceSettings.AmpIntegral3;
                 CompiledParticles{ChN}(k).FluoGauss= AmpGaussian;
                 CompiledParticles{ChN}(k).Off=Off;
-                CompiledParticles{ChN}(k).FluoError=ErrorIntegral(1); % SEANCHANGED
+                CompiledParticles{ChN}(k).FluoError = plotTraceSettings.ErrorIntegral(1); % SEANCHANGED
                 CompiledParticles{ChN}(k).optFit1=optFit1;
                 CompiledParticles{ChN}(k).FitType=FitType;
                 CompiledParticles{ChN}(k).FluoDog = AmpDog;
                 CompiledParticles{ChN}(k).FluoDogMax = AmpDogMax;
-                CompiledParticles{ChN}(k).FluoGauss3D = AmpIntegralGauss3D';
-                CompiledParticles{ChN}(k).FluoGauss3DError = ErrorIntegralGauss3D;
+                ampIntegralGauss3DAux = plotTraceSettings.AmpIntegralGauss3D;
+                CompiledParticles{ChN}(k).FluoGauss3D = ampIntegralGauss3DAux';
+                CompiledParticles{ChN}(k).FluoGauss3DError = plotTraceSettings.ErrorIntegralGauss3D;
                 CompiledParticles{ChN}(k).ampdog3 = ampdog3;
                 CompiledParticles{ChN}(k).ampdog3Max = ampdog3Max;
                 
@@ -212,15 +211,18 @@ for ChN=1:NChannels
                 %Determine the nc where this particle was born
                 try
                     CompiledParticles{ChN}(k).nc=FrameInfo(CompiledParticles{ChN}(k).Frame(1)).nc;
-                catch
+                    CompiledParticles{ChN}(k).cycle=FrameInfo(CompiledParticles{ChN}(k).Frame(1)).nc;
                 end
                 
                 if HistoneChannel
                     CompiledParticles{ChN}(k).Nucleus=Particles{ChN}(i).Nucleus;
+                    
                     %We have two fields with the same information:
                     %"Nucleus" and "schnitz". In future versions we'll get rid of
                     %"Nucleus"
                     CompiledParticles{ChN}(k).schnitz=Particles{ChN}(i).Nucleus;
+                    
+                    assert(CompiledParticles{ChN}(k).schnitz <= length(schnitzcells));
                     
                     %Save lineage information in terms of particles
                     if isfield(schnitzcells, 'P')
@@ -505,8 +507,8 @@ for ChN=1:NChannels
                                 zTrace=z(CompiledParticles{ChN}(k).Index(j));
                             end
                                 try
-                            Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                                FilePrefix,iIndex(CompiledParticles{ChN}(k).Frame(j),NDigits),'_z',iIndex(zTrace,2),...
+                            Image=imread([PreProcPath,filesep,Prefix,filesep,...
+                                Prefix,'_',iIndex(CompiledParticles{ChN}(k).Frame(j),NDigits),'_z',iIndex(zTrace,2),...
                                 '_ch',iIndex(coatChannels(ChN),2),'.tif']);
                            
                             [ImRows,ImCols]=size(Image);
@@ -557,6 +559,6 @@ for ChN=1:NChannels
         end
     end
 end
-close(h)
+try close(h); end
 end
 

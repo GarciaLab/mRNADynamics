@@ -1,4 +1,6 @@
-function [ xy, mapping, nuclei ] = trackMitosis(FrameInfo, names, firstFrameNumber, lastFrameNumber, shifts, diameter, embryoMask, xy, manualMapping, nuclei, varargin )
+function [ xy, mapping, nuclei ] =...
+    trackMitosis(FrameInfo, hisMat, firstFrameNumber, lastFrameNumber,...
+    shifts, diameter, embryoMask, xy, manualMapping, nuclei, varargin )
 %BACKTRACKMITOSIS This function tracks the nuclei through mitosis. The main
 % difference with respect to the tracking through interphases is that here,
 % nuclei can be mapped to two nuclei on the next frame.
@@ -9,7 +11,7 @@ if numel(varargin) > 0
 end
 
 space_resolution = getDefaultParameters(FrameInfo,'space resolution');
-totalNumberOfFrames = numel(names);
+totalNumberOfFrames = size(hisMat,3);
 maxNucleusStep = 40*0.22/space_resolution;
 maxShiftCorrection = getDefaultParameters(FrameInfo,'max Shift Correction', 'trackToTheNextFrame')*diameter/space_resolution;
 nFrames = (lastFrameNumber-firstFrameNumber+1);
@@ -21,9 +23,9 @@ mapping = {};
 if ~exist('xy','var') || isempty(xy)
     for j = 1:nFrames
         
-        tmp = findNuclei(FrameInfo,names,firstFrameNumber-1+j,diameter,embryoMask);
+        tmp = findNuclei(FrameInfo, hisMat(:, :, firstFrameNumber-1+j),diameter,embryoMask);
         
-        xy{j} = tmp;%+repmat(sum(shifts(firstFrameNumber:firstFrameNumber-1+j,:),1),size(tmp,1),1);
+        xy{j} = tmp;
         
     end
 else
@@ -55,7 +57,7 @@ shifts = max(min(shifts,maxShiftCorrection),-maxShiftCorrection);
 
 alreadyDivided_jm1 = false(size(xy{1},1),1);
 
-for j = 2:nFrames%:-1:2
+for j = 2:nFrames
     
     %
     % 1. Initialize variables
@@ -143,12 +145,9 @@ for j = 2:nFrames%:-1:2
                                     nuclei(indD).indXY(firstFrameNumber+j-1) = mapping_tmp(ind1(k),2);
                                     nuclei(indD).P = nucleiIndices(ind1(k));
                                     indToDelete = [indToDelete ind1(k)];
-                                    try
                                     nucInd(mapping_tmp(ind1(k),1)) = indE;
                                     nucInd(mapping_tmp(ind1(k),2)) = indD;
-                                    catch
-                                        1
-                                    end
+
                                     tmpAlreadyDivided_jm1(ind1(k)) = true;
                                     tmpAlreadyDivided_j(mapping_tmp(ind1(k),1)) = true;
                                     tmpAlreadyDivided_j(mapping_tmp(ind1(k),2)) = true;
@@ -171,11 +170,8 @@ for j = 2:nFrames%:-1:2
         mappedNuc2 = [mappedNuc2; remainingNuclei2(ind2(ind2(:,2) > 0,2),:)];
         
         indMappedTo2Nuclei = all(mapp ~= 0,2);
-try
         remainingNuclei1(indMappedTo2Nuclei | ind0,:) = [];
-catch
-    1
-end
+
         remainingNuclei2(ind2(ind2>0),:) = [];
         shiftedXY1(indMappedTo2Nuclei | ind0,:) = [];
         
@@ -191,9 +187,14 @@ end
     %    the closest matches.
     %
     
+    if isempty(remainingNuclei2) || isempty(shiftedXY1)
+        keep_looping = false;
+    end
+    
     while keep_looping
         
-        [dist, ix] = pdist2(remainingNuclei2,shiftedXY1,'euclidean','Smallest',size(remainingNuclei2,1));
+        [dist, ix] = pdist2(remainingNuclei2,...
+            shiftedXY1,'euclidean','Smallest',size(remainingNuclei2,1));
         % dist is an m x n array where m is the numer of nuclei in
         % remainingNuclei2 (frame j) and n is the number of nuclei in
         % shiftedXY1 (frame j-1).
@@ -230,11 +231,8 @@ end
         ind = find(Mc & Mr);
         [rowInd,colInd] = ind2sub(size(dist),ind);
         [dummy,order] = sort(mr(rowInd),'ascend');
-        try
             rowInd = rowInd(order);
-        catch
-            1
-        end
+
         colInd = colInd(order);
         for jj = 1:numel(colInd)
             

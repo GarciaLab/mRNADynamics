@@ -4,12 +4,18 @@ function [SpotFilter, Particles, Spots,...
     addSpot(...
     ...
     ZoomMode, GlobalZoomMode, Particles, CurrentChannel, ...
-    CurrentParticle, CurrentFrame, CurrentZ, Overlay, snippet_size, PixelsPerLine, ...
-    LinesPerFrame, Spots, ZSlices, PathPart1, PathPart2, Path3, FrameInfo, pixelSize, ...
-    SpotFilter, cc, xSize, ySize, NDigits, ...
-    Prefix, PreProcPath, ProcPath, coatChannel, UseHistoneOverlay, schnitzcells, nWorkers, plot3DGauss)
+    CurrentParticle, CurrentFrame, CurrentZ, Spots,...
+    SpotFilter, cc, Prefix,UseHistoneOverlay,...
+    schnitzcells, nWorkers, plot3DGauss, imStack)
 
 %ADDSPOT
+
+
+liveExperiment = LiveExperiment(Prefix);
+
+
+FrameInfo = getFrameInfo(liveExperiment);
+
 
 numParticles = length(Particles{CurrentChannel});
 startParallelPool(nWorkers, 0, 1);
@@ -36,29 +42,24 @@ else
         
         % check that the clicked particle isn't too close to the
         % edge of the frame
-        if (ConnectPositionx > snippet_size/2) && (ConnectPositionx + snippet_size/2 < PixelsPerLine)...
-                && (ConnectPositiony > snippet_size/2) && (ConnectPositiony + snippet_size/2 < LinesPerFrame)
+        if (ConnectPositionx > liveExperiment.snippetSize_px/2) && (ConnectPositionx + liveExperiment.snippetSize_px/2 < liveExperiment.xDim)...
+                && (ConnectPositiony > liveExperiment.snippetSize_px/2) && (ConnectPositiony + liveExperiment.snippetSize_px/2 < liveExperiment.yDim)
             SpotsIndex = length(Spots{CurrentChannel}(CurrentFrame).Fits)+1;
             breakflag = 0; %this catches when the spot addition was unsuccessful and allows checkparticletracking to keep running and not error out
             use_integral_center = 1;
             
-            FitCell = cell(1, ZSlices);
+            FitCell = cell(1, liveExperiment.zDim);
             
-            for z = 1:ZSlices
-                imAbove = [];
-                imBelow = [];
-                spotsIm = [];
-                spotsIm=imread([PathPart1,iIndex(CurrentFrame,NDigits),...
-                    '_z',iIndex(z,2),PathPart2]);
+            for z = 1:liveExperiment.zDim
+                spotsIm = imStack(:, :, z);
                 try
-                    imAbove = double(imread([PathPart1,iIndex(CurrentFrame,NDigits),...
-                        '_z',iIndex(z-1,2),PathPart2]));
-                    imBelow = double(imread([PathPart1,iIndex(CurrentFrame,NDigits),...
-                        '_z',iIndex(z+1,2),PathPart2]));
+                    imAbove= imStack(:, :, z+1);
+                    imBelow= imStack(:, :, z-1);
                 catch
                     imAbove = nan(size(spotsIm,1),size(spotsIm,2));
                     imBelow = nan(size(spotsIm,1),size(spotsIm,2));
                 end
+                
                 Threshold = min(min(spotsIm));
                 dog = spotsIm;
                 im_thresh = dog >= Threshold;
@@ -66,16 +67,18 @@ else
                 microscope = FrameInfo(1).FileMode;
                 show_status = 0;
                 fig = [];
-                k = 1; %This is supposed to be the index for the partiles in an image.
+                k = 1; %This is supposed to be the index for the particles in an image.
                 %However, this image only contains one particle
-                neighborhood = round(1300 / pixelSize); %nm
+                neighborhood_px = round(1300 / liveExperiment.pixelSize_nm); %nm
                 %Get the information about the spot on this z-slice
                 if cc == '['
-                    [~, Fit] = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood, snippet_size, ...
-                        pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [], '', CurrentFrame, [], z);
+                    Fit = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood_px, liveExperiment.snippetSize_px, ...
+                        liveExperiment.pixelSize_nm, show_status, fig, microscope,...
+                        [1, ConnectPositionx, ConnectPositiony], [], '', CurrentFrame, [], z);
                 elseif cc == '{'
-                    [~, Fit] = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood, snippet_size, ...
-                        pixelSize, show_status, fig, microscope, [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', CurrentFrame, [], z);
+                    Fit = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood_px, liveExperiment.snippetSize_px, ...
+                        liveExperiment.pixelSize_nm, show_status, fig, microscope,...
+                        [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', CurrentFrame, [], z);
                 end
                 
                 FitCell{z} = Fit;
@@ -84,7 +87,7 @@ else
             end
             Fits = [];
             
-            for z = 1:ZSlices
+            for z = 1:liveExperiment.zDim
                 if ~isempty(FitCell{z})
                     fieldnames = fields(FitCell{z});
                     if isempty(Fits)
@@ -121,13 +124,15 @@ else
                     Spots{CurrentChannel}(CurrentFrame).Fits = Fits;
                 end
                 %%
+                if plot3DGauss
                     nSpots = 1;
                     Spots{CurrentChannel}(CurrentFrame) =...
                         ...
                         fitSnip3D(...
                         ...
-                        Spots{CurrentChannel}(CurrentFrame), coatChannel, SpotsIndex, CurrentFrame,...
-                        Prefix, PreProcPath, FrameInfo, nSpots);
+                        Spots{CurrentChannel}(CurrentFrame), CurrentChannel, SpotsIndex, CurrentFrame,...
+                        Prefix, liveExperiment.preFolder, getFrameInfo(liveExperiment), nSpots, imStack);
+                end
                 %%
                 %Add this to SpotFilter, which tells the code that this spot is
                 %above the threshold. First, check whether the
@@ -142,10 +147,15 @@ else
                 
                 %Turn this spot into a new particle. This is the equivalent of
                 %the 'u' command.
-                [SpotFilter{CurrentChannel},Particles{CurrentChannel}]=...
-                    TransferParticle(Spots{CurrentChannel},...
-                    SpotFilter{CurrentChannel},Particles{CurrentChannel},...
-                    CurrentFrame,SpotsIndex);
+                try
+                    [SpotFilter{CurrentChannel},Particles{CurrentChannel}]=...
+                        TransferParticle(Spots{CurrentChannel},...
+                        SpotFilter{CurrentChannel},Particles{CurrentChannel},...
+                        CurrentFrame,SpotsIndex);
+                catch
+                    warning('failed to add spot for unknown reason.')
+                    return;
+                end
                 numParticles = numParticles + 1;
                 
                 %Connect this particle to the CurrentParticle. This is

@@ -1,23 +1,38 @@
-function val = getSchnitz(ellipse, schnitzcells, frame)
+function out = getSchnitz(ellipse, schnitzcells, frame, varargin)
 
 
-val = [];
+tolerance = 1; %2 pixel tolerance for distance
+out = [];
 
-center = [ellipse(1), ellipse(2)];
+if ~isempty(varargin)
+    cellno = varargin{1};
+end
+
+ellipseCentroid = double([ellipse(1), ellipse(2)]);
 foundIt = false;
-len = length(schnitzcells);
-s = 0;
+nSchnitz = length(schnitzcells);
+schnitzIndex = 0;
 
-while ~foundIt && s < len
+while ~foundIt && schnitzIndex < nSchnitz
     
-    s = s+1;
-    schnitzFrameIndex = find(schnitzcells(s).frames == frame);
+    schnitzIndex = schnitzIndex+1;
+    schnitzFrameIndex = find(schnitzcells(schnitzIndex).frames == frame);
+    
+    %check for repeated frames.
+    assert(length(schnitzFrameIndex) == 1 || isempty(schnitzFrameIndex));
+    
     if ~isempty(schnitzFrameIndex)
-        foundIt = schnitzcells(s).ceny(schnitzFrameIndex) == center(2) & schnitzcells(s).cenx(schnitzFrameIndex) == center(1);
+        
+        foundIt = abs(double(schnitzcells(schnitzIndex).ceny(schnitzFrameIndex)) - ellipseCentroid(2)) < tolerance...
+            &...
+            abs(double(schnitzcells(schnitzIndex).cenx(schnitzFrameIndex)) - ellipseCentroid(1)) < tolerance;
+        
+%         foundIt = double(schnitzcells(s).cellno) == double(cellno);
+        
     end
     
     if foundIt
-        val = uint16(s);
+        out = uint16(schnitzIndex);
     end
 
 end

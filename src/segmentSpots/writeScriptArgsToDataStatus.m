@@ -25,6 +25,7 @@ function writeScriptArgsToDataStatus(DropboxFolder, dataType, Prefix, args, func
     functionRow=find(contains(StatusTxt(:,1),functionString1, 'IgnoreCase',true));
     PrefixCol=find(contains(StatusTxt(PrefixRow,:),Prefix));
     
+    newPrefix = false;
     if isempty(PrefixCol)
         newPrefix = true;
         %we can create the moviedatabase entry.

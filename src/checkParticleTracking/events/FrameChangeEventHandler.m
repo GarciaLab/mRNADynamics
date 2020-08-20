@@ -1,16 +1,7 @@
-function [textInputHandler, keyInputHandler] = FrameChangeEventHandler(cptState, robot, fake_event)
+function keyInputHandler = FrameChangeEventHandler(cptState)
  
-    function textInput(frame_num, event)
-        numValidFrames = length({cptState.Spots{1}.Fits}); %check handle of spots is updated when is needed down the road
-        figure(ancestor(frame_num, 'figure'));
-        [cptState.CurrentFrame, cptState.ManualZFlag] = changeFrame(str2double(frame_num.Value), numValidFrames);
-        robot.keyPress(fake_event);
-        robot.keyRelease(fake_event);
-        disp('Frame Changed.');
-    end
-
     function keyInput(cc)
-        numValidFrames = length({cptState.Spots{1}.Fits}); %check handle of spots is updated when is needed down the road
+        numValidFrames = length({cptState.Spots{cptState.CurrentChannelIndex}.Fits}); %check handle of spots is updated when is needed down the road
 
         if cc == '.' %Move forward one frame
             cptState.PreviousFrame = cptState.CurrentFrame;
@@ -39,9 +30,31 @@ function [textInputHandler, keyInputHandler] = FrameChangeEventHandler(cptState,
             end
 
             [cptState.CurrentFrame, cptState.ManualZFlag] = changeFrame(iJump, numValidFrames);
+
+            cptState.DisplayRange = [];
+
+        elseif (cc == '''') & (cptState.CurrentFrame < cptState.numValidFrames())
+            % Move to the next skipped frame within the particle
+            cptState.PreviousFrame = cptState.CurrentFrame;
+            cptState.CurrentFrame = nextSkippedFrame(cptState.Particles, cptState.CurrentChannelIndex, ...
+                cptState.CurrentParticle, cptState.CurrentFrame);
+        
+        elseif (cc == ';') & (cptState.CurrentFrame > 1)
+            % Move to the previous skipped frame within the particle
+            cptState.PreviousFrame = cptState.CurrentFrame;
+            cptState.CurrentFrame = previousSkippedFrame(cptState.Particles, cptState.CurrentChannelIndex, ...
+                cptState.CurrentParticle, cptState.CurrentFrame);
+        
+        elseif cc == 'e'
+            % Approve/Disapprove a frame within a trace
+            cptState.Particles{cptState.CurrentChannel}...
+                (cptState.CurrentParticle).FrameApproved(cptState.Particles{cptState.CurrentChannel}...
+                (cptState.CurrentParticle).Frame == cptState.CurrentFrame) = ...
+                ...
+                ~cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).FrameApproved(...
+                cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Frame == cptState.CurrentFrame);
         end
     end
 
-    textInputHandler = @textInput;
     keyInputHandler = @keyInput;
 end
