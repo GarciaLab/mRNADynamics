@@ -1,8 +1,10 @@
 function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, ...
-              linkCostVec, LinkAdditionCell, linkCostCell, linkFrameCell, linkParticleCell] = performParticleStitching(...
-              NucleusID,nucleusIDVec,frameIndex,SimParticles,Channel,ncVec,matchCostMax)
-  
-  nParams = length(SimParticles{Channel}(1).hmmModel);
+              linkCostVec, LinkAdditionCell, linkCostCell, linkFrameCell, linkParticleCell] = ...
+              performParticleStitching(...
+              NucleusID,nucleusIDVec,frameIndex,SimParticles,ncVec,matchCostMax,...
+              ForceMatchCell,ForceSplitCell)
+
+  nParams = length(SimParticles(1).hmmModel);
   % see how many fragments match this nucleus
   nucleusFilter = nucleusIDVec==NucleusID;
   nucleusIndices = find(nucleusFilter);
@@ -27,17 +29,17 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
   % add fragment info
   i_pass = 1;
   for p = nucleusIndices      
-    endpointFrameArray([SimParticles{Channel}(p).FirstFrame,SimParticles{Channel}(p).LastFrame],i_pass) = true;
-    extantFrameArray(SimParticles{Channel}(p).FirstFrame:SimParticles{Channel}(p).LastFrame,i_pass) = true;      
-    particleIDArray(SimParticles{Channel}(p).FirstFrame:SimParticles{Channel}(p).LastFrame,i_pass) = p;
+    endpointFrameArray([SimParticles(p).FirstFrame,SimParticles(p).LastFrame],i_pass) = true;
+    extantFrameArray(SimParticles(p).FirstFrame:SimParticles(p).LastFrame,i_pass) = true;      
+    particleIDArray(SimParticles(p).FirstFrame:SimParticles(p).LastFrame,i_pass) = p;
     linkIDCell{i_pass} = num2str(p);
     linkCostCell{i_pass} = [0];
-    linkFrameCell{i_pass} = {unique([SimParticles{Channel}(p).FirstFrame,SimParticles{Channel}(p).LastFrame])};
+    linkFrameCell{i_pass} = {unique([SimParticles(p).FirstFrame,SimParticles(p).LastFrame])};
     linkParticleCell{i_pass} = {p};
-    nc_ft = ismember(ncVec,ncVec(SimParticles{Channel}(p).FirstFrame));  
+    nc_ft = ismember(ncVec,ncVec(SimParticles(p).FirstFrame));  
     for np = 1:nParams
-      pathArray(nc_ft,i_pass,np) = SimParticles{Channel}(p).hmmModel(np).pathVec;
-      sigmaArray(nc_ft,i_pass,np) = SimParticles{Channel}(p).hmmModel(np).sigmaVec;        
+      pathArray(nc_ft,i_pass,np) = SimParticles(p).hmmModel(np).pathVec;
+      sigmaArray(nc_ft,i_pass,np) = SimParticles(p).hmmModel(np).sigmaVec;        
     end     
     i_pass = i_pass + 1;
   end    
@@ -70,7 +72,11 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
 
   % calculate cost matrix
   mDistanceMat = tril(sqrt((mDistanceMatRaw+mDistanceMatRaw')/2));
-  mDistanceMat(mDistanceMat==0) = Inf;       
+  mDistanceMat(mDistanceMat==0) = Inf;  
+  
+  % enforce user-assigned matches 
+  [mDistanceMat, ForceMatchCell] = imposeLinkAssigments(mDistanceMat,ForceMatchCell,ForceSplitCell,particleIDArray);                                    
+
   % calculate  current lowest cost
   minCost = min(mDistanceMat(:));  
   % iterate through cost layers
@@ -202,6 +208,8 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     mDistanceMat(:,pKeep) = newDistVec;
     mDistanceMat = tril(mDistanceMat);
     mDistanceMat(mDistanceMat==0) = Inf;
+    % impose user-assigned links/splits
+    [mDistanceMat, ForceMatchCell] = imposeLinkAssigments(mDistanceMat,ForceMatchCell,ForceSplitCell,particleIDArray);
     % calculate  current lowest cost
     minCost = min(mDistanceMat(:));
     % increment

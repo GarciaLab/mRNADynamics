@@ -1,5 +1,5 @@
-function [Particles] = track01ParticleProximity(...
-    FrameInfo, Spots, schnitzcells, Prefix, PixelSize, MaxSearchRadiusMicrons, ...
+function [RawParticles,SpotFilter,ParticleStitchInfo] = track01ParticleProximity(...
+    FrameInfo, Spots, schnitzcells, liveExperiment, PixelSize, MaxSearchRadiusMicrons, ...
     UseHistone, retrack, displayFigures)
   
   %This function is the first stage of tracking performed by the 
@@ -13,17 +13,23 @@ function [Particles] = track01ParticleProximity(...
   % get number of channels
   NCh = length(Spots);
   
-  % get experiment type
-  liveExperiment = LiveExperiment(Prefix);
+  % get experiment type  
   ExperimentType = liveExperiment.experimentType;
   % load particles and link info if we're retracking
+  RawParticles = cell(1,NCh);
   if retrack
     [Particles, SpotFilter] = getParticles(liveExperiment);
+    if ~iscell(SpotFilter)
+      SpotFilter = {SpotFilter};
+    end
+    if ~iscell(Particles)
+      Particles = {Particles};
+    end
     ParticleStitchInfo = getParticleStitchInfo(liveExperiment);
   else
     %Initialize Particles for the number of spot channels we have
-    Particles = cell(1,NCh);
-    ParticleStitchInfo = [];
+    SpotFilter = createSpotFilter(Spots);         
+    ParticleStitchInfo = cell(1,NCh);
   end
   
   % Extract vector indicating nuclear cleavage cycle for each frame
@@ -46,6 +52,28 @@ function [Particles] = track01ParticleProximity(...
     SearchRadiusMicrons = estimateSearchRadius(Spots,ncVec,MaxSearchRadiusMicrons,PixelSize,matchPercent,Channel);
     SearchRadiusMicrons = max([0.5,SearchRadiusMicrons]); % should be at least 0.5um
     
+    % If we're retracking, we need to (a) break up un-approved particles
+    % and (b) make a temporary spotFilter that indicates which Spots are a
+    % part of approved particles
+    SpotFilterTemp = ones(size(SpotFilter{Channel}));
+    if retrack
+      % keep only full particles that were approved. Individual frames that
+      % were linked are taken care of later on
+      Particles{Channel} = Particles{Channel}([Particles{Channel}.Approved]==1);              
+      % Create Temp Spot Filter to indicate which spots are fair game and
+      % which are bound up in approved particles      
+      for p = 1:length(Particles{Channel})
+        appFrames = Particles{Channel}(p).Frame;
+        appIndices = Particles{Channel}(p).Index;
+        appLinIndices = sub2ind(size(SpotFilterTemp),appFrames,appIndices);
+        SpotFilterTemp(appLinIndices) = 0;
+      end      
+    else % initialize stitch info structure
+      ParticleStitchInfo{Channel}.persistentLinkIndexCell = {};
+      ParticleStitchInfo{Channel}.persistentLinkFrameCell= {};
+      ParticleStitchInfo{Channel}.forbiddenLinkIndexCell = {};
+      ParticleStitchInfo{Channel}.forbiddenLinkFrameCell = {};
+    end
     for CurrentFrame = 1:length(Spots{Channel})
       waitbar(CurrentFrame/length(Spots{Channel}),f);
       % Get the positions of ALL spots (approved and disapproved)
@@ -61,7 +89,7 @@ function [Particles] = track01ParticleProximity(...
         %If spots were detected for this frame we need to add them to the
         %Particles structure. Link them to existing particles whenever
         %possible                        
-        particlesFlag = ~isempty(Particles{Channel});
+        particlesFlag = ~isempty(RawParticles{Channel});
         % if we have nucleus info, assign each spot to a nucleus
         [NewSpotNuclei, NewSpotDistances] = getNuclearAssigments(NewSpotsX,NewSpotsY,...
               schnitzcells,CurrentFrame,UseHistone);
@@ -72,12 +100,12 @@ function [Particles] = track01ParticleProximity(...
         PrevSpotsY = [];   
         PrevNuclei = [];
         if particlesFlag
-          for j = 1:length(Particles{Channel})
-            if Particles{Channel}(j).Frame(end) == (CurrentFrame - 1)
+          for j = 1:length(RawParticles{Channel})
+            if RawParticles{Channel}(j).Frame(end) == (CurrentFrame - 1)
               ExtantParticles = [ExtantParticles, j];            
-              PrevSpotsX = [PrevSpotsX, Particles{Channel}(j).xPos(end)];
-              PrevSpotsY = [PrevSpotsY, Particles{Channel}(j).yPos(end)];
-              PrevNuclei = [PrevNuclei, Particles{Channel}(j).Nucleus];
+              PrevSpotsX = [PrevSpotsX, RawParticles{Channel}(j).xPos(end)];
+              PrevSpotsY = [PrevSpotsY, RawParticles{Channel}(j).yPos(end)];
+              PrevNuclei = [PrevNuclei, RawParticles{Channel}(j).Nucleus];
             end
           end
         end
@@ -109,9 +137,20 @@ function [Particles] = track01ParticleProximity(...
           DistanceMat(mismatchMat) = Inf;
           
           % apply user-assigned links that are within a single frame
-          [PrevIndices, NewIndices] = findPersistentLinks(ParticleStitchInfo,CurrentFrame);
-          persistentIndices = sub2ind(size(DistanceMat),NewIndices,PrevIndices);
+          [PrevJoin, NewJoin] = findPersistentLinks(ParticleStitchInfo{Channel},CurrentFrame);
+          persistentIndices = sub2ind(size(DistanceMat),NewJoin,PrevJoin);
           DistanceMat(persistentIndices) = 0;
+          
+          % apply user-assigned splits that are within a single frame
+          [PrevSplit, NewSplit] = findForbiddenLinks(ParticleStitchInfo{Channel},CurrentFrame);
+          forbiddenIndices = sub2ind(size(DistanceMat),NewSplit,PrevSplit);
+          DistanceMat(forbiddenIndices) = Inf;
+          
+          % remove existing spots that are in approved particles 
+          prevAppIndices = SpotFilterTemp(CurrentFrame-1,:)==0;
+          nextAppIndices = SpotFilterTemp(CurrentFrame,:)==0;
+          DistanceMat(:,prevAppIndices) = Inf;
+          DistanceMat(nextAppIndices,:) = Inf;
           
           % Find existing particles and new spots are close enough to be 
           % linked. In cases of degenerate assignemnt, take pairt that
@@ -123,13 +162,13 @@ function [Particles] = track01ParticleProximity(...
           for j = 1:size(MatchIndices)
             ParticleIndex = ExtantParticles(MatchIndices(j,2));
             NewSpotIndex = MatchIndices(j,1);
-            Particles{Channel}(ParticleIndex).Frame(end + 1) = CurrentFrame;
-            Particles{Channel}(ParticleIndex).Index(end + 1) = NewSpotIndex;            
-            Particles{Channel}(ParticleIndex).LastFrame = CurrentFrame; % not sure I'll use these
-            Particles{Channel}(ParticleIndex).xPos(end + 1) = NewSpotsX(NewSpotIndex);
-            Particles{Channel}(ParticleIndex).yPos(end + 1) = NewSpotsY(NewSpotIndex);
-            Particles{Channel}(ParticleIndex).zPos(end + 1) = NewSpotsZ(NewSpotIndex);      
-            Particles{Channel}(ParticleIndex).NucleusDist(end + 1) = NewSpotDistances(NewSpotIndex);
+            RawParticles{Channel}(ParticleIndex).Frame(end + 1) = CurrentFrame;
+            RawParticles{Channel}(ParticleIndex).Index(end + 1) = NewSpotIndex;            
+            RawParticles{Channel}(ParticleIndex).LastFrame = CurrentFrame; % not sure I'll use these
+            RawParticles{Channel}(ParticleIndex).xPos(end + 1) = NewSpotsX(NewSpotIndex);
+            RawParticles{Channel}(ParticleIndex).yPos(end + 1) = NewSpotsY(NewSpotIndex);
+            RawParticles{Channel}(ParticleIndex).zPos(end + 1) = NewSpotsZ(NewSpotIndex);      
+            RawParticles{Channel}(ParticleIndex).NucleusDist(end + 1) = NewSpotDistances(NewSpotIndex);
           end                        
 
         end
@@ -138,27 +177,27 @@ function [Particles] = track01ParticleProximity(...
         NewParticles = find(NewParticleFlag);
         TotalParticles = 0;
         if particlesFlag
-          TotalParticles = length(Particles{Channel});
+          TotalParticles = length(RawParticles{Channel});
         end
         for j = NewParticles    
           TotalParticles = TotalParticles + 1;
-          Particles{Channel}(TotalParticles).Frame = CurrentFrame;
-          Particles{Channel}(TotalParticles).Index = j;
-          Particles{Channel}(TotalParticles).Approved = 0;
-          Particles{Channel}(TotalParticles).FirstFrame = CurrentFrame; % not sure I'll use these
-          Particles{Channel}(TotalParticles).LastFrame = CurrentFrame; % not sure I'll use these
-          Particles{Channel}(TotalParticles).xPos = NewSpotsX(j);
-          Particles{Channel}(TotalParticles).yPos = NewSpotsY(j);
-          Particles{Channel}(TotalParticles).zPos = NewSpotsZ(j);          
-          Particles{Channel}(TotalParticles).Nucleus = NewSpotNuclei(j); 
-          Particles{Channel}(TotalParticles).NucleusDist = NewSpotDistances(j); 
+          RawParticles{Channel}(TotalParticles).Frame = CurrentFrame;
+          RawParticles{Channel}(TotalParticles).Index = j;
+          RawParticles{Channel}(TotalParticles).Approved = 0;
+          RawParticles{Channel}(TotalParticles).FirstFrame = CurrentFrame; % not sure I'll use these
+          RawParticles{Channel}(TotalParticles).LastFrame = CurrentFrame; % not sure I'll use these
+          RawParticles{Channel}(TotalParticles).xPos = NewSpotsX(j);
+          RawParticles{Channel}(TotalParticles).yPos = NewSpotsY(j);
+          RawParticles{Channel}(TotalParticles).zPos = NewSpotsZ(j);          
+          RawParticles{Channel}(TotalParticles).Nucleus = NewSpotNuclei(j); 
+          RawParticles{Channel}(TotalParticles).NucleusDist = NewSpotDistances(j); 
         end
       end
 
     end
     
     % adjust for z stack shifts
-    Particles{Channel} = detrendZ(Particles{Channel},FrameInfo);
+    RawParticles{Channel} = detrendZ(RawParticles{Channel},FrameInfo);
       
     close(f);
   end

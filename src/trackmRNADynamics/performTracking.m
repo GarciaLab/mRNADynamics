@@ -21,11 +21,9 @@ if ~iscell(Spots)% NL: added for backwards compatibility
   Spots = {Spots};
 end
 
-% check to see if there's a pre-existing particles structure
-if false%liveExperiment.hasParticlesFile
-  warning('need to build in retracking options')
-else
-  SpotFilter = createSpotFilter(Spots);
+% create spotFilter if not retracking
+if retrack && ~liveExperiment.hasParticlesFile
+  error('No Particles structure found. Re-run without "retrack" option')  
 end
 
 schnitzCells = getSchnitzcells(liveExperiment);
@@ -34,8 +32,8 @@ resultsFolder = liveExperiment.resultsFolder;
   
 tic
 disp('Performing intitial particle linking...')
-RawParticles = track01ParticleProximity(FrameInfo, Spots, schnitzCells, ...
-                Prefix, pixelSize, maxSearchRadiusMicrons, useHistone, retrack, ...
+[RawParticles, SpotFilter, ParticleStitchInfo] = track01ParticleProximity(FrameInfo, Spots, schnitzCells, ...
+                liveExperiment, pixelSize, maxSearchRadiusMicrons, useHistone, retrack, ...
                 displayFigures);
 toc
 
@@ -51,7 +49,7 @@ toc
 
 tic
 disp('Stitching particle tracks...')
-[FullParticles,ParticleStitchInfo] = track04StitchTracks(SimParticles, Prefix,...
+[FullParticles,ParticleStitchInfo] = track04StitchTracks(SimParticles, SpotFilter, ParticleStitchInfo, Prefix,...
                                 useHistone, retrack, displayFigures);
 toc 
 

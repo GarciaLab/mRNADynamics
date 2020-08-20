@@ -1,5 +1,5 @@
 function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
-                          SimParticles, Prefix, useHistone, retrack, displayFigures)
+                          SimParticles, SpotFilter, ParticleStitchInfo, Prefix, useHistone, retrack, displayFigures)
                         
 %   useHistone = false;
   % grab useful info for experiment
@@ -10,22 +10,10 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
   ncVec = [FrameInfo.nc];
   frameIndex = 1:length(ncVec);
   NCh = length(SimParticles);
-  % if retracking, load current particle sets
-  if ~retrack
-    % initialize data structure
-    StitchedParticles = cell(1,NCh);
-    ParticleStitchInfo = cell(1,NCh);
-    % initialize fields for stitch info 
-    for Channel = 1:NCh
-      ParticleStitchInfo{Channel}(1).persistentLinkFrameCell = {};
-      ParticleStitchInfo{Channel}(1).persistentLinkIndexCell = {};
-      ParticleStitchInfo{Channel}(1).forbiddenLinkFrameCell = {};
-      ParticleStitchInfo{Channel}(1).forbiddenLinkIndexCell = {};
-    end
-  else
-    StitchedParticles = getFullParticles(liveExperiment);
-    ParticleStitchInfo = getParticleStitchInfo(liveExperiment);
-  end
+  
+  % initialize data structure
+  StitchedParticles = cell(1,NCh);
+  
   % Set max spots per nucleus per frame, can be different between channels
   matchCostMax = repelem(realmax,NCh);
   if ismember(ExperimentType,{'1spot'}) 
@@ -55,7 +43,10 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
   end
   
   for Channel = 1:NCh
-    
+    % get full list of pre-assigned links and breaks (will be empty unless
+    % retracking)    
+    linkStruct = generateLinkStructure(ParticleStitchInfo{Channel},SpotFilter{Channel});
+
     % number of distinct parameters we're using for linking
     nParams = length(SimParticles{Channel}(1).hmmModel);
     
@@ -80,12 +71,20 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
       waitbar(n/length(nucleusIDIndex),f);
       Nucleus = nucleusIDIndex(n);
       
+      ncIndices = find(nucleusIDVec==nucleusIDIndex(n));
+      [ForceSplitCell, ForceMatchCell] = ...
+        checkForAssignedLinkInfo(ncIndices,SimParticles{Channel},linkStruct,SpotFilter{Channel});      
+      if ~exist('ForceMatchCell')
+        error('wtf')
+      end
       [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, ...
-              linkCostVec, linkAdditionCell,linkCostCell, linkFrameCell, linkParticleCell] = performParticleStitching(...
-          Nucleus, nucleusIDVec, frameIndex, SimParticles, Channel, ncVec, matchCostMax(Channel));
+              linkCostVec, linkAdditionCell,linkCostCell, linkFrameCell, linkParticleCell] = ...
+              performParticleStitching(...
+              Nucleus, nucleusIDVec, frameIndex, SimParticles{Channel},  ncVec, matchCostMax(Channel),...
+              ForceMatchCell,ForceSplitCell); 
 
       % check for conflicts (cases where there are more detections per frame than ins permitted)    
-      assignmentFlags = useHistone & (sum(extantFrameArray,2)>spotsPerNucleus(Channel))';
+      assignmentFlags = useHistone & (sum(extantFrameArray,2)>(spotsPerNucleus(Channel)+length(ForceSplitCell)))';
       rmVec = [];
       % check for degenerate particle-nucleus assignments
       if any(assignmentFlags)        
@@ -124,6 +123,8 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
           tempParticles(nIter).Approved = false;
           % extant frames
           tempParticles(nIter).Frame = SimParticles{Channel}(rmVec(p)).Frame;
+          tempParticles(nIter).FirstFrame = tempParticles(nIter).Frame(1);
+          tempParticles(nIter).LastFrame = tempParticles(nIter).Frame(end);
           % position info
           tempParticles(nIter).xPos = SimParticles{Channel}(rmVec(p)).xPos;
           tempParticles(nIter).yPos = SimParticles{Channel}(rmVec(p)).yPos;
@@ -157,8 +158,9 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
         % aaaaaaand rerun the assignment steps
         [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, ...
               linkCostVec, linkAdditionCell, linkCostCell, linkFrameCell, linkParticleCell] = performParticleStitching(...
-              Nucleus,nucleusIDVecNew,frameIndex,SimParticles,Channel,ncVec,matchCostMax(Channel));
-         if size(extantFrameArray,2) ~= spotsPerNucleus(Channel)
+              Nucleus, nucleusIDVec, frameIndex, SimParticles{Channel},  ncVec, matchCostMax(Channel),...
+              ForceMatchCell,ForceSplitCell); 
+         if size(extantFrameArray,2) ~= (spotsPerNucleus(Channel) + length(ForceSplitCell))
            error('problem with spot-nucleus reassignment')
          end
       end
@@ -171,6 +173,8 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
         tempParticles(nIter).Approved = false;
         % extant frames
         tempParticles(nIter).Frame = find(extantFrameArray(:,p)');
+        tempParticles(nIter).FirstFrame = tempParticles(nIter).Frame(1);
+        tempParticles(nIter).LastFrame = tempParticles(nIter).Frame(end);
         % position info
         tempParticles(nIter).xPos = pathArray(tempParticles(nIter).Frame,p,1)';
         tempParticles(nIter).yPos = pathArray(tempParticles(nIter).Frame,p,2)';        

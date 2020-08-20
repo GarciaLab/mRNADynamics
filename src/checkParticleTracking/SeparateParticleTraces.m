@@ -1,9 +1,10 @@
-function [Particles,ParticleStitchInfo]=SeparateParticleTraces(CurrentParticle,CurrentFrame,Particles,SimParticles,ParticleStitchInfo,FrameInfo)
+function cptState = SeparateParticleTraces(cptState)
 
 %Separate the particle trace at the specified position
 %%
+Ch = cptState.CurrentChannelIndex;
 %List of stitchInfovariables
-fieldNamesStitch = fieldnames(ParticleStitchInfo)';
+fieldNamesStitch = fieldnames(cptState.ParticleStitchInfo{Ch})';
 
 %Generate temporary particle structures
 for f = 1:length(fieldNamesStitch)
@@ -17,31 +18,29 @@ for f = 1:length(fieldNamesStitch)
 end
 
 
-%List of Particles variables
-fieldNamesParticles = fieldnames(Particles)';
+%List of cptState.Particles{Ch} variables
+fieldNameParticles = fieldnames(cptState.Particles{Ch})';
 
 %Generate temporary particle structures
-for f = 1:length(fieldNamesParticles)
-  if contains(fieldNamesParticles{f},'Cell')
-    currParticleTemp.(fieldNamesParticles{f}) = {};
-    newParticleTemp.(fieldNamesParticles{f}) = {};
+for f = 1:length(fieldNameParticles)
+  if contains(fieldNameParticles{f},'Cell')
+    currParticleTemp.(fieldNameParticles{f}) = {};
+    newParticleTemp.(fieldNameParticles{f}) = {};
   else
-    currParticleTemp.(fieldNamesParticles{f}) = [];
-    newParticleTemp.(fieldNamesParticles{f}) = [];
+    currParticleTemp.(fieldNameParticles{f}) = [];
+    newParticleTemp.(fieldNameParticles{f}) = [];
   end
 end
 
 %identify vector fields to split
-splitIndicesParticles = [find(strcmp(fieldNamesParticles,'nc')) ...
-    find(~contains(fieldNamesParticles,{'Cell'})&contains(fieldNamesParticles,{'Frame','Pos','Dist','Shift'}))...
-    find(strcmp(fieldNamesParticles,'Index'))];
+splitIndicescptState.Particles{Ch} = find(ismember(fieldNameParticles,cptState.frameLevelFields));
   
-frameFilter = Particles(CurrentParticle).Frame < CurrentFrame;
+frameFilter = cptState.Particles{Ch}(cptState.CurrentParticle).Frame < cptState.CurrentFrame;
 
-for c = 1:length(splitIndicesParticles)  
-  origVec = Particles(CurrentParticle).(fieldNamesParticles{splitIndicesParticles(c)});
-  newParticleTemp.(fieldNamesParticles{splitIndicesParticles(c)}) = origVec(~frameFilter);
-  currParticleTemp.(fieldNamesParticles{splitIndicesParticles(c)}) = origVec(frameFilter);
+for c = 1:length(splitIndicescptState.Particles{Ch})  
+  origVec = cptState.Particles{Ch}(cptState.CurrentParticle).(fieldNameParticles{splitIndicescptState.Particles{Ch}(c)});
+  newParticleTemp.(fieldNameParticles{splitIndicescptState.Particles{Ch}(c)}) = origVec(~frameFilter);
+  currParticleTemp.(fieldNameParticles{splitIndicescptState.Particles{Ch}(c)}) = origVec(frameFilter);
 end
 
 %Reset overall trace approval flags
@@ -49,25 +48,25 @@ currParticleTemp.Approved=0;
 newParticleTemp.Approved=0;
 
 %Set Nucleus ID Info
-currParticleTemp.matchCost = Particles(CurrentParticle).matchCost;
-currParticleTemp.Nucleus = Particles(CurrentParticle).Nucleus;
-currParticleTemp.NucleusOrig = Particles(CurrentParticle).NucleusOrig;
-currParticleTemp.stitchInfoPointer = Particles(CurrentParticle).stitchInfoPointer;
+currParticleTemp.matchCost = cptState.Particles{Ch}(cptState.CurrentParticle).matchCost;
+currParticleTemp.Nucleus = cptState.Particles{Ch}(cptState.CurrentParticle).Nucleus;
+currParticleTemp.NucleusOrig = cptState.Particles{Ch}(cptState.CurrentParticle).NucleusOrig;
+currParticleTemp.stitchInfoPointer = cptState.Particles{Ch}(cptState.CurrentParticle).stitchInfoPointer;
 
-newParticleTemp.matchCost = Particles(CurrentParticle).matchCost;
+newParticleTemp.matchCost = cptState.Particles{Ch}(cptState.CurrentParticle).matchCost;
 newParticleTemp.Nucleus = NaN; % Not sure how to handle this yet...
-newParticleTemp.NucleusOrig = Particles(CurrentParticle).NucleusOrig;
+newParticleTemp.NucleusOrig = cptState.Particles{Ch}(cptState.CurrentParticle).NucleusOrig;
 newParticleTemp.stitchInfoPointer = currParticleTemp.stitchInfoPointer+1;
 
 %Next update particle ID info
-ptIDsFull = Particles(CurrentParticle).idVec;
+ptIDsFull = cptState.Particles{Ch}(cptState.CurrentParticle).idVec;
 currParticleTemp.idVec = NaN(size(ptIDsFull));
 newParticleTemp.idVec = NaN(size(ptIDsFull));
-currParticleTemp.idVec(1:CurrentFrame-1) = ptIDsFull(1:CurrentFrame-1);
-newParticleTemp.idVec(CurrentFrame:end) = ptIDsFull(CurrentFrame:end);
+currParticleTemp.idVec(1:cptState.CurrentFrame-1) = ptIDsFull(1:cptState.CurrentFrame-1);
+newParticleTemp.idVec(cptState.CurrentFrame:end) = ptIDsFull(cptState.CurrentFrame:end);
 
 %Assign Stitch info 
-currStitchTemp = ParticleStitchInfo(currParticleTemp.stitchInfoPointer);
+currStitchTemp = cptState.ParticleStitchInfo{Ch}(currParticleTemp.stitchInfoPointer);
 
 
 
@@ -83,10 +82,10 @@ postIDs = unique(newParticleTemp.idVec(~isnan(newParticleTemp.idVec)));
 
 %Generate ID vectors
 frameIndex = 1:length(ptIDsFull);
-ncVec = [FrameInfo.nc];
+ncVec = [cptState.FrameInfo.nc];
 
 %Re-run tracking for particles affiliated with early fragment
-nucleusIDVecPrev = false(1,length(SimParticles));
+nucleusIDVecPrev = false(1,length(cptState.SimParticles{Ch}));
 nucleusIDVecPrev(prevIDs) = 1;
  
 [pathArrayPrev, sigmaArrayPrev, ~,~, currParticleTemp.linkStateString, ...
@@ -94,16 +93,16 @@ nucleusIDVecPrev(prevIDs) = 1;
               currStitchTemp.linkAdditionCell,...
               currParticleTemp.linkCostCell, ...
               currParticleTemp.linkFrameCell, currParticleTemp.linkParticleCell] = performParticleStitching(...
-              1, nucleusIDVecPrev, frameIndex, {SimParticles}, 1, ncVec, Particles(CurrentParticle).matchCost);
+              1, nucleusIDVecPrev, frameIndex, {cptState.SimParticles{Ch}}, 1, ncVec, cptState.Particles{Ch}(cptState.CurrentParticle).matchCost);
         
 %Reshape and assign path info        
 currParticleTemp.pathArray = squeeze(pathArrayPrev);
 currParticleTemp.sigmaArray = squeeze(sigmaArrayPrev);
 currParticleTemp.linkCostCell = currParticleTemp.linkCostCell{1};
-currParticleTemp.linkCostFlags = currParticleTemp.linkCostCell > Particles(CurrentParticle).costThresh;
+currParticleTemp.linkCostFlags = currParticleTemp.linkCostCell > cptState.Particles{Ch}(cptState.CurrentParticle).costThresh;
 
 %Same for second fragment
-nucleusIDVecPost = false(1,length(SimParticles));
+nucleusIDVecPost = false(1,length(cptState.SimParticles{Ch}));
 nucleusIDVecPost(postIDs) = 1;
 
 
@@ -112,19 +111,19 @@ nucleusIDVecPost(postIDs) = 1;
               newStitchTemp.linkAdditionCell,...
               newParticleTemp.linkCostCell, ...
               newParticleTemp.linkFrameCell, newParticleTemp.linkParticleCell] = performParticleStitching(...
-              1, nucleusIDVecPost, frameIndex, {SimParticles}, 1, ncVec, Particles(CurrentParticle).matchCost);
+              1, nucleusIDVecPost, frameIndex, {cptState.SimParticles{Ch}}, 1, ncVec, cptState.Particles{Ch}(cptState.CurrentParticle).matchCost);
 %Reshape and assign path info        
 newParticleTemp.pathArray = squeeze(pathArrayPost);
 newParticleTemp.sigmaArray = squeeze(sigmaArrayPost);
 newParticleTemp.linkCostCell = newParticleTemp.linkCostCell{1};
-newParticleTemp.linkCostFlags = newParticleTemp.linkCostCell > Particles(CurrentParticle).costThresh;
+newParticleTemp.linkCostFlags = newParticleTemp.linkCostCell > cptState.Particles{Ch}(cptState.CurrentParticle).costThresh;
 
 %Now update particles structure
-Particles = [Particles(1:CurrentParticle-1) currParticleTemp newParticleTemp Particles(CurrentParticle+1:end)];
+cptState.Particles{Ch} = [cptState.Particles{Ch}(1:cptState.CurrentParticle-1) currParticleTemp newParticleTemp cptState.Particles{Ch}(cptState.CurrentParticle+1:end)];
 
 %And update pointer variable for later entries
-for c = CurrentParticle+2:length(Particles)
-  Particles(c).stitchInfoPointer = Particles(c).stitchInfoPointer+1;
+for c = cptState.CurrentParticle+2:length(cptState.Particles{Ch})
+  cptState.Particles{Ch}(c).stitchInfoPointer = cptState.Particles{Ch}(c).stitchInfoPointer+1;
 end
 
 %Lastly, add split info...
@@ -134,5 +133,5 @@ currStitchTemp.forbiddenLinkIndexCell(end+1) = ...
   {[currParticleTemp.Index(currParticleTemp.Frame==splitFrames(1)) newParticleTemp.Index(newParticleTemp.Frame==splitFrames(2))]};
 
 %...and update stitch structure
-ParticleStitchInfo = [ParticleStitchInfo(1:newParticleTemp.stitchInfoPointer-1) currStitchTemp ...
-  newStitchTemp ParticleStitchInfo(newParticleTemp.stitchInfoPointer+1:end)];
+cptState.ParticleStitchInfo{Ch} = [cptState.ParticleStitchInfo{Ch}(1:newParticleTemp.stitchInfoPointer-1) currStitchTemp ...
+  newStitchTemp cptState.ParticleStitchInfo{Ch}(newParticleTemp.stitchInfoPointer+1:end)];

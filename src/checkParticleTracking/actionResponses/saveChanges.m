@@ -1,6 +1,6 @@
 function saveChanges(NChannels, cptState, DataFolder, FilePrefix, DropboxFolder)
     Particles = cptState.Particles;
-    ParticleStitchInfo = cptState.Particles;
+    ParticleStitchInfo = cptState.ParticleStitchInfo;
     Spots = cptState.Spots;
     SpotFilter = cptState.SpotFilter;
     FrameInfo = cptState.FrameInfo;

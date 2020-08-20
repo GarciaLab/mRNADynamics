@@ -12,10 +12,7 @@ if ~(cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).
   any(cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Frame==cptState.CurrentFrame)
 
   % call splitting function
-  [cptState.Particles{cptState.CurrentChannelIndex},cptState.ParticleStitchInfo{cptState.CurrentChannelIndex}]=...
-    SeparateParticleTraces(cptState.CurrentParticle,cptState.CurrentFrame,...
-    cptState.Particles{cptState.CurrentChannelIndex},cptState.SimParticles{cptState.CurrentChannelIndex},...
-    cptState.ParticleStitchInfo{cptState.CurrentChannelIndex},cptState.FrameInfo); 
+  cptState = SeparateParticleTraces(cptState); 
   
   % save
       
