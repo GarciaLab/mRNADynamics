@@ -1,8 +1,8 @@
 % StitchSubset.m
 % author: Gabriella Martini
 % date created: 8/13/20
-% date last modified: 8/13/20
-
+% date last modified: 8/18/20
+% Called by ManualTileStitch.m
 
 function [imm2] = StitchSubset(tile_array, tA_idx, tB_idxs, varargin)
 
@@ -57,7 +57,7 @@ for j=2:length(all_indx)
     tileB = tile_array.imgs{all_indx(j)};
     scale_factor = 6*10^4/max(max(tileB));
 
-    if abs(tA_grid_row - tile_grid_rows(j)) == 1
+    if ~((abs(tA_grid_row - tile_grid_rows(j)) == 1)&(abs(tA_grid_column - tile_grid_columns(j)) == 1))
         RGB_tileB = cat(3, tileB, tileB, zeros(size(tileB), 'uint16'));
         scaled_RGB_tileB = RGB_tileB*scale_factor;
     else

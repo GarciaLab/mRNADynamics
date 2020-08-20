@@ -24,6 +24,8 @@ FullyAutomate = false;
 StitchManually = false;
 selectRegions = false;
 manualStitchOrder = false;
+useSurfStitching = false;
+manualSeeding = false;
 if ~isempty(varargin)
     x = 1;
     while x <= length(varargin{1})
@@ -46,6 +48,12 @@ if ~isempty(varargin)
                 manualStitchOrder = true;
             case{'selectStitchingRegions'}
                 selectRegions=true;
+            case{'useSurfStitchingInfo'}
+                useSurfStitching=true;
+            case{'manualSeeding'}
+                manualSeeding=true;
+            otherwise
+                error(['Flag "', varargin{1}{x},'" not valid'])
         end
         x = x +1;
     end
@@ -64,6 +72,9 @@ if manualStitchOrder
 end
 if selectRegions
     varargin2{length(varargin2) + 1} = 'selectStitchingRegions';
+end
+if manualSeeding
+    varargin2{length(varargin2) + 1} = 'manualSeeding';
 end
 
 

@@ -1,30 +1,7 @@
 % ManualTileStitch.m
 % author: Gabriella Martini
 % date created: 8/13/20
-% date last modified: 8/13/20
-% Prefix='2020-08-09-HbJB3-27_5C-Anterior-Embryo1';
-% ID = 'Surf';
-% tA_idx = 2;
-% tB_idxs = [1];
-% stitchOrder = [1, 2, 3, 4, 6, 7, 8, 9, 5, 10];
-% MaxDeltaR = 150;
-% MaxDeltaC = 150;
-% 
-% %% 
-% 
-% NewTileArrayFromMetadata(Prefix, ID);
-% %Get relevant folder information 
-% [SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
-%     DetermineLocalFolders(Prefix);
-% 
-% stitchingDataFolder = [DropboxFolder,filesep,Prefix,filesep,'FullEmbryoStitching'];
-% 
-% % load TileArray with stitching information 
-% if exist([stitchingDataFolder, filesep, ID, 'TileArray.mat'], 'file')
-%      load([stitchingDataFolder, filesep, ID, 'TileArray.mat']);
-% else
-%      error('No TileArray data stored. Seed a new TileArray using "NewTileArrayFromMetadata".')  
-% end
+% date last modified: 8/15/20
 
 
 %% 
@@ -37,8 +14,8 @@ gr = tile_array.grid_positions{tA_idx}(1);
 gc = tile_array.grid_positions{tA_idx}(2);
 tileA = tile_array.imgs{tA_idx};
 [hA, wA] = size(tileA);
-tile_array.prevrows{size(tile_array.prevrows, 2)+1} = tile_array.rows;
-tile_array.prevcols{size(tile_array.prevcols, 2)+1} = tile_array.cols;
+% tile_array.prevrows{size(tile_array.prevrows, 2)+1} = tile_array.rows;
+% tile_array.prevcols{size(tile_array.prevcols, 2)+1} = tile_array.cols;
 tAr = tile_array.rows{tA_idx}; 
 tAc = tile_array.cols{tA_idx};
 [tAr_min, tAr_max, tAc_min, tAc_max ] = ...
@@ -47,24 +24,24 @@ tAc = tile_array.cols{tA_idx};
 rmins = [tile_array.rows{:}];
 rmins(length(rmins)+1) = tAr_min;
 top_limit = min(rmins);
-if top_limit < 1
-    tAr_min = tAr_min + (1-top_limit);
-    tAr_max = tAr_max + (1-top_limit); 
-    for r =1:length(tile_array.rows)
-        tile_array.rows{r} = tile_array.rows{r} + (1-top_limit);
-    end
-end
+% if top_limit < 1
+%     tAr_min = tAr_min + (1-top_limit);
+%     tAr_max = tAr_max + (1-top_limit); 
+%     for r =1:length(tile_array.rows)
+%         tile_array.rows{r} = tile_array.rows{r} + (1-top_limit);
+%     end
+% end
 
 cmins = [tile_array.cols{:}];
 cmins(length(cmins)+1) = tAc_min;
 left_limit = min(cmins);
-if left_limit < 1
-    tAc_min = tAc_min + (1-left_limit);
-    tAc_max = tAc_max + (1-left_limit); 
-    for c =1:length(tile_array.cols)
-        tile_array.cols{c} = tile_array.cols{c} + (1-left_limit);
-    end
-end
+% if left_limit < 1
+%     tAc_min = tAc_min + (1-left_limit);
+%     tAc_max = tAc_max + (1-left_limit); 
+%     for c =1:length(tile_array.cols)
+%         tile_array.cols{c} = tile_array.cols{c} + (1-left_limit);
+%     end
+% end
 tArRange = tAr_min:1:tAr_max;
 tAcRange = tAc_min:1:tAc_max;
 
@@ -136,11 +113,20 @@ MaxRow = size(normed_scores, 1);
 
 CumScoresImage= figure(2);
 scAx = axes(CumScoresImage);
-
-if length(tB_idxs) > 1
-    SubScoresImage = figure(3);
-    subplots(length(tB_idxs), 1)
+new_figure_counter = 3;
+figure(new_figure_counter)
+imagesc(tile_array.imgs{tA_idx})
+new_figure_counter = new_figure_counter + 1;
+for tbi=tB_idxs
+    figure(new_figure_counter) 
+    imagesc(tile_array.imgs{tbi})
+    new_figure_counter = new_figure_counter + 1;
 end
+
+% if length(tB_idxs) > 1
+%     SubScoresImage = figure(3);
+%     subplots(length(tB_idxs), 1)
+% end
 %% 
 if exist('manual_minr', 'var') 
     clear manual_minr
@@ -168,17 +154,6 @@ newr = tArRange(minr);
 newc = tAcRange(minc);
 temp_tile_array.rows{tA_idx} = newr;
 temp_tile_array.cols{tA_idx} = newc;
-rmins = [temp_tile_array.rows{:}];
-top_limit = min(rmins);
-for rr =1:length(temp_tile_array.rows)
-    temp_tile_array.rows{rr} = temp_tile_array.rows{rr} + (1-top_limit);
-end
-
-cmins = [temp_tile_array.cols{:}]; 
-left_limit = min(cmins);
-for cc =1:length(temp_tile_array.cols)
-    temp_tile_array.cols{cc} = temp_tile_array.cols{cc} + (1-left_limit);
-end
 
 while (cc~='x')
     subStitchedImage = StitchSubset(temp_tile_array, tA_idx, tB_idxs);
@@ -248,17 +223,7 @@ while (cc~='x')
         newc = tAcRange(minc);
         temp_tile_array.rows{tA_idx} = newr;
         temp_tile_array.cols{tA_idx} = newc;
-        rmins = [temp_tile_array.rows{:}];
-        top_limit = min(rmins);
-        for rr =1:length(temp_tile_array.rows)
-            temp_tile_array.rows{rr} = temp_tile_array.rows{rr} + (1-top_limit);
-        end
-
-        cmins = [temp_tile_array.cols{:}]; 
-        left_limit = min(cmins);
-        for cx =1:length(temp_tile_array.cols)
-            temp_tile_array.cols{cx} = temp_tile_array.cols{cx} + (1-left_limit);
-        end
+        
     else
        disp('Using stitched image')
        temprows = [temp_tile_array.rows{:}];
@@ -268,7 +233,7 @@ while (cc~='x')
        temprmaxs = temprows+tempheights-1;
        tempcmaxs = tempcols + tempwidths - 1;
        figure(StitchedImage) 
-       
+       hold on 
        ct=waitforbuttonpress;
        cc=get(StitchedImage,'currentcharacter');
        cc_value = double(cc);
@@ -354,6 +319,19 @@ while (cc~='x')
 
 end
 close all
+
+rmins = [temp_tile_array.rows{:}];
+top_limit = min(rmins);
+for rr =1:length(temp_tile_array.rows)
+    temp_tile_array.rows{rr} = temp_tile_array.rows{rr} + (1-top_limit);
+end
+
+cmins = [temp_tile_array.cols{:}]; 
+left_limit = min(cmins);
+for cc =1:length(temp_tile_array.cols)
+    temp_tile_array.cols{cc} = temp_tile_array.cols{cc} + (1-left_limit);
+end
+
 
 %% 
 tile_array = temp_tile_array;

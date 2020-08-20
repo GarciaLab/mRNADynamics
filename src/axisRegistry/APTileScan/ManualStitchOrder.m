@@ -70,9 +70,33 @@ cmaxs = cols+widths-1;
 grid_positions = tile_array.grid_positions;
 
 %% Generate a figure for viewing current stitching information 
-
+order_labels = [];
 TempFigure = figure;
 axesTemp = axes(TempFigure);
+
+plot_title= 'Use arrows to move selected tile. Press enter to choose selected tile.';
+Nrows = max(gridrows);
+Ncolumns = max(gridcolumns);
+TileSelected = 1;
+for i=1:NTiles
+    subplot_idx = (gridrows(i)-1)*Ncolumns+gridcolumns(i);
+    h{i} = subplot(Nrows, Ncolumns, subplot_idx);
+    imagesc(tile_array.imgs{i})
+    order_labels(i) = 0;
+    if i ==TileSelected
+        hold on 
+        selection_rect = rectangle('Position',[1,1,widths(TileSelected)-3,heights(TileSelected)-3],...
+                          'EdgeColor', 'r',...
+                          'LineWidth', 3,...
+                          'LineStyle','-');
+        hold off
+    end
+    
+end
+axesTemp = axes;
+t1 = title(plot_title);
+axesTemp.Visible = 'off'; % set(a,'Visible','off');
+t1.Visible = 'on'; % set(t1,'Visible','on');
 
 
 
@@ -82,41 +106,40 @@ TileSelected = 1;
 gr = gridrows(TileSelected); gc = gridcolumns(TileSelected);
 counter = 0;
 stitchOrder = [];
-plottitle= 'Use arrows to move selected tile. Press enter to choose selected tile.';
-order_labels = [];
+most_recent_tile_changed = 0;
+
 stitchOrderFinished = false;
 %Overlay the zoom in and zoom out images
 while ~stitchOrderFinished
-    hold off
-    rmin = rows(TileSelected);
-    height = rmaxs(TileSelected)-rmin+1;
-    cmin = cols(TileSelected);
-    width = cmaxs(TileSelected)-cmin+1;
-    displayNumbers = [];
-    imm2 = imstitchTile(tile_array);
-
-    %imshow(APImage,DisplayRange)
-    %imshow(imm2, 'Parent', axesTemp)
-    hImage = imagesc( imm2, 'Parent', axesTemp );
-    axis(axesTemp, 'image')
-    set(gca,'xtick',[],'ytick',[],'xlabel',[],'ylabel',[]);
-    hold on
-    curr_rect = rectangle('Position',[cmin,rmin,width,height],...
-      'EdgeColor', 'r',...
-      'LineWidth', 3,...
-      'LineStyle','-');
-    if length(order_labels) > 0
-        for i=1:length(order_labels)
-            label_info = order_labels{i};
-            text(label_info{1}, label_info{2}, label_info{3}, 'Color', 'yellow', 'FontSize', 14)
+    for i=1:NTiles
+        subplot_idx = (gridrows(i)-1)*Ncolumns+gridcolumns(i);
+        h{i} = subplot(Nrows, Ncolumns, subplot_idx);
+        imagesc(tile_array.imgs{i})
+         hold on 
+        if order_labels(i) > 0
+            text(widths(i)*.8, heights(i)*.8, num2str(order_labels(i)), 'Color', 'yellow', 'FontSize', 14)
         end
+       
+        if i ==TileSelected
+            selection_rect = rectangle('Position',[1,1,widths(TileSelected)-3,heights(TileSelected)-3],...
+                              'EdgeColor', 'r','LineWidth', 3,'LineStyle','-');
+        end
+        
+        hold off
     end
+    axesTemp = axes;
+    t1 = title(axesTemp, plot_title, 'Interpreter', 'latex');
+    axesTemp.Visible = 'off'; % set(a,'Visible','off');
+    t1.Visible = 'on'; % set(t1,'Visible','on');
+    
+    figure(TempFigure)
+ 
     
 
     %axis image
     %axis off
     
-    title(axesTemp, plottitle, 'Interpreter', 'latex');
+    
     if counter == NTiles-1
         for m=1:NTiles
             if length(stitchOrder(stitchOrder == m)) == 0
@@ -126,7 +149,7 @@ while ~stitchOrderFinished
                 height = rmaxs(m)-rmin+1;
                 cmin = cols(m);
                 width = cmaxs(m)-cmin+1;
-                order_labels{length(order_labels)+1} ={cmin+width*.8-1,rmin+height*.8-1,num2str(counter)};
+                order_labels(m) = counter+1;
                 break
             end
         end
@@ -200,7 +223,7 @@ while ~stitchOrderFinished
         end
     elseif (ct~=0) && (cc_value == 122)
         stitchOrder = stitchOrder(1:(length(stitchOrder)-1));
-        order_labels = order_labels(1:(length(order_labels)-1));
+        order_labels(most_recent_tile_changed) = 0;
         counter = counter - 1;
     elseif (ct~=0) && (cc_value == 99)
         exit_loop = false;
@@ -228,21 +251,45 @@ while ~stitchOrderFinished
                 if ~CheckTileChoice(TileSelected, stitchOrder, gridrows, gridcolumns)
                     disp('Invalid choice of tile. Choose a tile that is next to a previous selection.');
                 else
-                   stitchOrder(length(stitchOrder)+1) = TileSelected; 
+                    stitchOrder(length(stitchOrder)+1) = TileSelected; 
                     counter = counter + 1;
-                    order_labels{length(order_labels)+1} ={cmin+width*.8-1,rmin+height*.8-1,num2str(counter)};
+                    order_labels(TileSelected) = counter;
                     gr = gridrows(TileSelected); gc = gridcolumns(TileSelected); 
+                    most_recent_tile_changed = TileSelected;
                 end
             else
                 stitchOrder(length(stitchOrder)+1) = TileSelected; 
                 counter = counter + 1;
-                order_labels{length(order_labels)+1} ={cmin+width*.8-1,rmin+height*.8-1,num2str(counter)};
+                order_labels(TileSelected) = counter;
                 gr = gridrows(TileSelected); gc = gridcolumns(TileSelected);
+                most_recent_tile_changed = TileSelected;
             end
         else
             disp('Already selected this tile. Please select a different tile.');
         end
-
+        
+    elseif cc=='x'
+        if length(stitchOrder) < NTiles
+            exit_loop = false;
+            while ~exit_loop
+                prompt = ['Are you sure you want to use the current stitching order, which does not include all tiles (y/n)? '];
+                ID = input(prompt,'s');
+                if ID == 'y' 
+                    stitchOrderFinished = true;
+                    for m = 1:NTiles
+                        if ~ismember(TileSelected, stitchOrder)
+                            tile_array.use_tiles{m} = false;
+                        end
+                    end
+                    exit_loop = true;
+                elseif ID == 'n'
+                    disp('Continue with current stitching order');
+                    exit_loop = true;
+                elseif ID ~= 'n'
+                    disp('Must indicate "y" or "n"')
+                end
+            end
+        end
     end
 
 end

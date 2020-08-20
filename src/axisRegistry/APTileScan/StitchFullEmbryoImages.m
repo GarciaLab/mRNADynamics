@@ -15,6 +15,8 @@ StitchManually = false;
 keepExistingStitching = false;
 manualStitchOrder = false;
 selectRegions = false;
+useSurfStitching = false;
+manualSeeding = false;
 x = 1;
 while x <= length(varargin)
     switch varargin{x}
@@ -38,6 +40,12 @@ while x <= length(varargin)
             manualStitchOrder = true;
         case{'selectStitchingRegions'}
             selectRegions=true;
+        case{'useSurfStitchingInfo'}
+            useSurfStitching=true;
+        case{'manualSeeding'}
+            manualSeeding=true;
+        otherwise
+            error(['Flag "', varargin{1}{x},'" not valid'])
     end
     x = x +1;
 end
@@ -67,6 +75,13 @@ if ~keepExistingStitching
         varargin2{length(varargin2) + 1} = 'MaxDeltaC';
         varargin2{length(varargin2) + 1} = MaxDeltaC;
     end
+    if useSurfStitching
+        varargin2{length(varargin2) + 1} = 'useSurfStitchingInfo';
+    end
+    if manualSeeding
+        varargin2{length(varargin2) + 1} = 'manualSeeding';
+    end
+    
     if length(varargin2) > 0
         EmbryoTileStitch(Prefix, 'Surf', varargin2);
         EmbryoTileStitch(Prefix, 'Mid', varargin2);

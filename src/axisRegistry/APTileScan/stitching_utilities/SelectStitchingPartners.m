@@ -1,12 +1,13 @@
 % SelectStitchingPartners.m
 % author: Gabriella Martini
 % date created: 8/13/20
-% date last modified: 8/13/20
+% date last modified: 8/18/20
+
 
 
 function [tB_idx_return, skip_tile] = SelectStitchingPartners(tile_array, tA_idx, tB_idxs, varargin)
 %% 
-
+ 
 useFilteredImages = true;
 if ~isempty(varargin) > 0
     x = 1;
@@ -51,10 +52,13 @@ im_columns = max(plot_column_bounds);
 %Now, select which tiles to use. 
 cc=1;
 
-neighbor_image = figure;
+neighbor_image = figure(1);
 imAx = axes(neighbor_image);
 tileB_incolor = true(1, length(tB_idxs));
+%iters = 0;
 while (cc~='x')
+    %iters = iters+1;
+    %disp([num2str(iters)])
     imm2 = zeros(im_rows, im_columns, 3, 'uint16');
     imcounts = zeros(im_rows, im_columns, 'uint16');
     im_tileIDs = zeros(im_rows, im_columns, 'uint16');
@@ -87,7 +91,7 @@ while (cc~='x')
         end
         scale_factor = 6*10^4/max(max(tileB));
         if tileB_incolor(j-1)
-            if abs(tA_grid_row - tile_grid_rows(j)) == 1
+            if ~((abs(tA_grid_row - tile_grid_rows(j)) == 1)&(abs(tA_grid_column - tile_grid_columns(j)) == 1))
                 RGB_tileB = cat(3, tileB, tileB, zeros(size(tileB), 'uint16'));
                 scaled_RGB_tileB = RGB_tileB*scale_factor;
             else
@@ -104,18 +108,13 @@ while (cc~='x')
             imcounts(plot_rows(j):plot_row_bounds(j), plot_columns(j):plot_column_bounds(j)) + 1;
         im_tileIDs(plot_rows(j):plot_row_bounds(j), plot_columns(j):plot_column_bounds(j)) = j;
     end
+    %disp('Checkpoint 1')
     imm2(imm2 > 65535) = 65535;
-
-    image(imm2)
+    figure(neighbor_image)
+    image(imAx, imm2)
     title({'Moving tile shown in magenta.', 'Selected neighboring tiles shown in cyan and yellow. Unselected tiles in gray.'})
 
 
-    
-
-    
-    hold off
-
-    
     figure(neighbor_image)
     ct=waitforbuttonpress;
     cc=get(neighbor_image,'currentcharacter');
@@ -123,7 +122,7 @@ while (cc~='x')
     
     
     if (ct~=0) & (cc == 'm')
-        [select_column, select_row]=ginputc(1);
+        [select_column, select_row]=ginputc(1, 'Color',[1,1,1]);
         select_row = uint16(round(select_row));
         select_column = uint16(round(select_column));
         if imcounts(select_row, select_column) == 1
@@ -143,8 +142,8 @@ while (cc~='x')
         else
             skip_tile = true;
         end
-    if (cc == 'x')
-        if length(tB_idxs) == 0 & ~skip_tile
+    elseif (cc == 'x')
+        if (length(tB_idxs) == 0) & ~skip_tile
             cc = 1;
             disp('Invalid choice of tiles. Must select at least one neighboring tile for stitching.')
         end

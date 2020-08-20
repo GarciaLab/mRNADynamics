@@ -82,6 +82,7 @@ function tile_array = NewTileArrayFromMetadata(Prefix, ID)
     tile_array.cols = {};
     tile_array.grid_positions = {};
     tile_array.imgs = {};
+    tile_array.use_tiles = [];
     sigma = .6/PixelSize;
     for i=1:NTiles
         ri = round((xpos(i)-uxpos(1))/PixelSize_m, 0)+1;
@@ -93,6 +94,7 @@ function tile_array = NewTileArrayFromMetadata(Prefix, ID)
         tile_array.grid_positions{i} = [gri, gci];
         tile_array.imgs{i} = imfilter(tiles{i},... 
             fspecial('gaussian', 2, 1), 'symmetric');
+        tile_array.use_tiles{i} = true;
     end
 
     tile_array.prevrows = {};

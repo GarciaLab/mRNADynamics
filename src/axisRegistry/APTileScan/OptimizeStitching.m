@@ -2,28 +2,15 @@ function tile_array = OptimizeStitching(Prefix, ID, MaxDeltaR, MaxDeltaC, vararg
 % OptimizeStitching.m 
 % Gabriella Martini
 % 1/21/2020
-% Last Modifed: 7/25/2020
+% Last Modifed: 8/15/2020
 
- %% Load existing tile array information and relevant folder info 
 
-NewTileArrayFromMetadata(Prefix, ID);
-%Get relevant folder information 
-[SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
-    DetermineLocalFolders(Prefix);
-
-stitchingDataFolder = [DropboxFolder,filesep,Prefix,filesep,'FullEmbryoStitching'];
-
-% load TileArray with stitching information 
-if exist([stitchingDataFolder, filesep, ID, 'TileArray.mat'], 'file')
-     load([stitchingDataFolder, filesep, ID, 'TileArray.mat']);
-else
-     error('No TileArray data stored. Seed a new TileArray using "NewTileArrayFromMetadata".')  
-end
-%% 
-
+%% Parse input arguments
 
 manualStitchOrder = false;
 selectRegions = false;
+useSurfStitching = false;
+manualSeeding = false;
 if ~isempty(varargin)
     x = 1;
     while x <= length(varargin{1})
@@ -32,10 +19,63 @@ if ~isempty(varargin)
                 manualStitchOrder = true;
             case{'selectStitchingRegions'}
                 selectRegions=true;
+            case{'useSurfStitchingInfo'}
+                useSurfStitching=true;
+            case{'manualSeeding'}
+                manualSeeding=true;
+            otherwise
+                error('Flag not valid')
         end
         x = x +1;
     end
 end
+
+
+ %% Load existing tile array information and relevant folder info 
+
+
+%Get relevant folder information 
+[SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
+    DetermineLocalFolders(Prefix);
+
+stitchingDataFolder = [DropboxFolder,filesep,Prefix,filesep,'FullEmbryoStitching'];
+
+% load TileArray with stitching information 
+
+    
+if exist([stitchingDataFolder, filesep, ID, 'TileArray.mat'], 'file') & ~useSurfStitching
+    load([stitchingDataFolder, filesep, ID, 'TileArray.mat']);
+elseif (useSurfStitching) & (lower(ID) == 'mid')
+    if exist([stitchingDataFolder, filesep, 'SurfTileArray.mat'], 'file')
+        load([stitchingDataFolder, filesep, 'Surf', 'TileArray.mat']);
+        surf_tile_array = tile_array;
+        NewTileArrayFromMetadata(Prefix, ID);
+        load([stitchingDataFolder, filesep, ID, 'TileArray.mat']);
+        tile_array.rows = surf_tile_array.rows;
+        tile_array.cols = surf_tile_array.cols; 
+    else
+        disp('No MidTileArray data stored. Seed a new TileArray using "NewTileArrayFromMetadata".')
+        NewTileArrayFromMetadata(Prefix, ID);
+        load([stitchingDataFolder, filesep, ID, 'TileArray.mat']);
+    end
+else
+     disp('No TileArray data stored. Seed a new TileArray using "NewTileArrayFromMetadata".') 
+     NewTileArrayFromMetadata(Prefix, ID);
+     load([stitchingDataFolder, filesep, ID, 'TileArray.mat']);
+end
+
+% if manualSeeding
+%     ManualStitchingCorrection(Prefix, ID)
+%     load([stitchingDataFolder, filesep, ID, 'TileArray.mat']);
+% end
+%% 
+outputFolder = [DropboxFolder,filesep,Prefix,filesep,'FullEmbryoStitching'];
+if ~exist(outputFolder, 'dir')
+    mkdir(outputFolder);
+end
+saveVars = {};
+saveVars = [saveVars, 'tile_array'];
+outputDatafile = [upper(ID(1)), ID(2:end), 'TileArray.mat'];
 
 % ERROR: NEED TO IMPLEMENT SOMETHING TO REQUIRE THAT INITIAL SEED
 % DOESN'T VIOLATE MAX OVERLAP CONDITION
@@ -52,10 +92,9 @@ else
     stitchOrder = ManualStitchOrder(Prefix, ID);
 end
 
-for m=2:NTiles
+for m=2:length(stitchOrder)
     fprintf('Stitching Tile %d of %d\n', [m, NTiles]);
-    tA_ind = stitchOrder(m);
-    gr = tile_array.grid_positions{tA_ind}(1);
+    tA_ind = stitchOrder(m);gr = tile_array.grid_positions{tA_ind}(1);
     gc = tile_array.grid_positions{tA_ind}(2);
     tileA = tile_array.imgs{tA_ind};
     [hA, wA] = size(tileA);
@@ -98,6 +137,14 @@ for m=2:NTiles
         elseif isequal(tile_array.grid_positions{stitchOrder(t)}, [gr, gc+1])
             tileBs(length(tileBs)+1) = stitchOrder(t);
         elseif isequal(tile_array.grid_positions{stitchOrder(t)}, [gr, gc-1])
+            tileBs(length(tileBs)+1) = stitchOrder(t);
+        elseif isequal(tile_array.grid_positions{stitchOrder(t)}, [gr+1, gc+1])
+            tileBs(length(tileBs)+1) = stitchOrder(t);
+        elseif isequal(tile_array.grid_positions{stitchOrder(t)}, [gr+1, gc-1])
+            tileBs(length(tileBs)+1) = stitchOrder(t);
+        elseif isequal(tile_array.grid_positions{stitchOrder(t)}, [gr-1, gc+1])
+            tileBs(length(tileBs)+1) = stitchOrder(t);
+        elseif isequal(tile_array.grid_positions{stitchOrder(t)}, [gr-1, gc-1])
             tileBs(length(tileBs)+1) = stitchOrder(t);
         end
     end
@@ -163,27 +210,67 @@ for m=2:NTiles
         end
     else
         [tB_inds, skip_tile] = SelectStitchingPartners(tile_array, tA_ind, tileBs);
+         
         
         if skip_tile
-            continue
+            rmins = [tile_array.rows{:}];
+            top_limit = min(rmins);
+            for rr =1:length(tile_array.rows)
+                tile_array.rows{rr} = tile_array.rows{rr} + (1-top_limit);
+            end
+
+            cmins = [tile_array.cols{:}]; 
+            left_limit = min(cmins);
+            for cc =1:length(tile_array.cols)
+                tile_array.cols{cc} = tile_array.cols{cc} + (1-left_limit);
+            end
+        else
+            [tile_array, TempMaxDeltaR, TempMaxDeltaC] = ManualSeedCorrection(tile_array, tA_ind, tB_inds);
+            if isempty(TempMaxDeltaR)
+                TempMaxDeltaR = MaxDeltaR;
+            end
+            if isempty(TempMaxDeltaC)
+                TempMaxDeltaC = MaxDeltaC;
+            end
+            tile_array = ManualTileStitch(tile_array, tA_ind, tB_inds, stitchOrder, TempMaxDeltaR, TempMaxDeltaC);
         end
-        tile_array = ManualTileStitch(tile_array, tA_ind, tB_inds, stitchOrder, MaxDeltaR, MaxDeltaC);
+        %disp('Checking')
 
     end
-    
+    save([outputFolder, filesep, outputDatafile],saveVars{:});
 end
 
 
 %% 
-outputFolder = [DropboxFolder,filesep,Prefix,filesep,'FullEmbryoStitching'];
-if ~exist(outputFolder, 'dir')
-    mkdir(outputFolder);
+
+good_rows = [tile_array.rows{stitchOrder}];
+min_good_row = min(good_rows);
+max_good_row = max(good_rows);
+good_columns = [tile_array.cols{stitchOrder}];
+min_good_column = min(good_columns);
+max_good_column = max(good_columns);
+for i=1:NTiles
+    if ~ismember(i, stitchOrder)
+        tile_array.use_tiles{i} = false;
+        if tile_array.rows{i} < min_good_row
+            tile_array.rows{i} = min_good_row;
+        elseif tile_array.rows{i} > max_good_row
+             tile_array.rows{i} = max_good_row;
+        end
+        
+        if tile_array.cols{i} < min_good_column
+            tile_array.cols{i} = min_good_column;
+        elseif tile_array.cols{i} > max_good_column
+             tile_array.cols{i} = max_good_column;
+        end
+        
+    end
+    tile_array.rows{i}= tile_array.rows{i} + (1-min_good_row);
+    tile_array.cols{i}= tile_array.cols{i} + (1-min_good_column);
 end
 
 
-saveVars = {};
-saveVars = [saveVars, 'tile_array'];
-outputDatafile = [upper(ID(1)), ID(2:end), 'TileArray.mat'];
+
 save([outputFolder, filesep, outputDatafile],saveVars{:});
 GenerateStitchedData(Prefix, ID);
 
