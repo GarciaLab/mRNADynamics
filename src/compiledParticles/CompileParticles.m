@@ -576,7 +576,7 @@ try
     end
 catch, warning('Couldn''t run CompileNuclearProtein.'); end
 
-checkSchnitzcellsCompiledParticlesConsistency(schnitzcells, CompiledParticles)
+% checkSchnitzcellsCompiledParticlesConsistency(schnitzcells, CompiledParticles)
 
 %% Save everything
 
