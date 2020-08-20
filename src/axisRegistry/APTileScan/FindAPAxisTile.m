@@ -1,7 +1,7 @@
 function FindAPAxisTile(Prefix, varargin)
 % author: Gabriella Martini
 % date created: 12/28/19
-% date last modified: 8/10/20
+% date last modified: 8/20/20
 
 % These changes restore versions to before the merge with master. SOme of
 % this may need to be rewritten. 
@@ -90,11 +90,11 @@ PixelSize_m = double(PixelSize)*10^(-6);
 %% 
 
 
-MidFilteredImage = imread([stitchingDataFolder, filesep, 'MidTileStitch_MaxFilteredPadded.tif']);
-MidImageStack = imread([stitchingDataFolder, filesep, 'MidTileStitchPadded.tif']);
+%MidFilteredImage = imread([stitchingDataFolder, filesep, 'MidTileStitch_MaxFilteredPadded.tif']);
+%MidImageStack = imread([stitchingDataFolder, filesep, 'MidTileStitchPadded.tif']);
 MidImage =imread([stitchingDataFolder, filesep, 'MidTileStitch_MaxPadded.tif']);
-SurfFilteredImage = imread([stitchingDataFolder, filesep, 'SurfTileStitch_MaxFilteredPadded.tif']);
-SurfImageStack = imread([stitchingDataFolder, filesep, 'SurfTileStitchPadded.tif']);
+%SurfFilteredImage = imread([stitchingDataFolder, filesep, 'SurfTileStitch_MaxFilteredPadded.tif']);
+%SurfImageStack = imread([stitchingDataFolder, filesep, 'SurfTileStitchPadded.tif']);
 SurfImage = imread([stitchingDataFolder, filesep, 'SurfTileStitch_MaxPadded.tif']);
 %% 
 if isfolder([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData'])
@@ -121,10 +121,6 @@ end
 
 MidImage = imrotate(MidImage, -zoom_angle + full_embryo_angle);
 SurfImage = imrotate(SurfImage, -zoom_angle + full_embryo_angle);
-MidImageStack = imrotate(MidImageStack, -zoom_angle + full_embryo_angle);
-SurfImageStack = imrotate(SurfImageStack, -zoom_angle + full_embryo_angle);
-MidFilteredImage = imrotate(MidFilteredImage, -zoom_angle + full_embryo_angle);
-SurfFilteredImage = imrotate(SurfFilteredImage, -zoom_angle + full_embryo_angle);
 
 %Save it to the Dropbox folder
 if ~exist([DropboxFolder,filesep,Prefix,filesep,'APDetection'], 'dir')
@@ -132,16 +128,10 @@ if ~exist([DropboxFolder,filesep,Prefix,filesep,'APDetection'], 'dir')
 end
 imwrite(uint16(MidImage),[DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif'],'compression','none');
 imwrite(uint16(SurfImage),[DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoSurf.tif'],'compression','none');
-
-imwrite(uint16(MidImageStack),[DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoStack.tif'],'compression','none');
-imwrite(uint16(SurfImageStack),[DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoSurfStack.tif'],'compression','none')
-    
-
-
 %%
 
 
-APImage = MidFilteredImage;
+APImage = MidImage;
 
 APImageFig=figure;
 apAx = axes(APImageFig);
@@ -149,7 +139,7 @@ apAx = axes(APImageFig);
 DisplayRange=[min(min(APImage)),max(max(APImage))];
 
 coordA=[1,1];
-coordP=size(MidImage);
+coordP = [size(MidImage, 2), size(MidImage, 1)];
 %Now, do the correction
 cc=1;
 
@@ -176,12 +166,7 @@ while (cc~='x')
         %not sure what happened here.
     end
     
-    if exist('coordV', 'var')
-        plot(coordV(1),coordV(2),'m.','MarkerSize',20);
-    end
-    if exist('coordD', 'var')
-        plot(coordD(1),coordD(2),'y.','MarkerSize',20);  
-    end
+
     
     hold off
     
@@ -209,33 +194,22 @@ while (cc~='x')
     elseif (ct~=0)&(cc=='r')    %Reset the contrast
         DisplayRange=[min(min(APImage)),max(max(APImage))];
         
-    elseif (ct==0)&(strcmp(get(APImageFig,'SelectionType'),'alt')) %Delete the point that was clicked on
-        cc=1;
-        
-        [~,MinIndex]=min((cm(1,1)-[coordA(1),coordP(1)]).^2+(cm(1,2)-[coordA(2),coordP(2)]).^2);
-        
-        if MinIndex==1
-            coordA=[];
-        elseif MinIndex==2
-            coordP=[];
-        end
-    elseif (ct~=0)&(cc=='m')        %Manual stitching mode
-        %ManualStitch
+%     elseif (ct==0)&(strcmp(get(APImageFig,'SelectionType'),'alt')) %Delete the point that was clicked on
+%         cc=1;
+%         
+%         [~,MinIndex]=min((cm(1,1)-[coordA(1),coordP(1)]).^2+(cm(1,2)-[coordA(2),coordP(2)]).^2);
+%         
+%         if MinIndex==1
+%             coordA=[];
+%         elseif MinIndex==2
+%             coordP=[];
+%         end
+% %     elseif (ct~=0)&(cc=='m')        %Manual stitching mode
+%         %ManualStitch
     elseif (ct~=0)&(cc=='s')
         coordPTemp=coordA;
         coordA=coordP;
         coordP=coordPTemp;
-    elseif (ct~=0)&(cc=='v')
-        [coordVx,CoordVy]=ginputc(1,'Color','m');
-        coordV = [coordVx,CoordVy];
-        saveVars = [saveVars, 'coordV'];
-        dv = true;
-    elseif (ct~=0)&(cc=='d')
-        [coordDx,CoordDy]=ginputc(1,'Color','y');
-        coordD = [coordDx,CoordDy];
-        saveVars = [saveVars, 'coordD'];
-        dv = true;
-        
         
     end
 end
