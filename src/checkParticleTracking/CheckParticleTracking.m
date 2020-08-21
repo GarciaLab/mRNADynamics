@@ -151,9 +151,10 @@ PreProcPath = liveExperiment.userPreFolder;
 DataFolder = [DropboxFolder, filesep, Prefix];
 FilePrefix = [Prefix, '_'];
 
-if isempty(preStructs)
-    [ParticleStitchInfo, Particles, SimParticles, SpotFilter, Spots, FrameInfo, schnitzcells, Spots3D] =...
+if true%isempty(preStructs)
+    [ParticleStitchInfo, Particles, SpotFilter, Spots, FrameInfo, schnitzcells, Spots3D] =...
         loadCheckParticleTrackingMats(DataFolder, PreProcPath, FilePrefix);
+    ParticlesFull = getParticlesFull(liveExperiment); % load auxiliary particles structures
 else
     Particles = preStructs{1};
     SpotFilter = preStructs{3};
@@ -245,7 +246,8 @@ ShowThreshold2 = 1; %Whether to show particles below the threshold
 ParticleToFollow = [];
 CurrentFrameWithinParticle = 1;
 
-cptState = CPTState(Spots, Particles, SimParticles, ParticleStitchInfo, SpotFilter, schnitzcells, Ellipses,...
+cptState = CPTState(Spots, Particles, ParticlesFull.SimParticles, ParticlesFull.HMMParticles,ParticlesFull.RawParticles,...
+    ParticleStitchInfo, SpotFilter, schnitzcells, Ellipses,...
     FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss, projectionMode); %work in progress, 2019-12, JP.
 
 try

@@ -1,11 +1,10 @@
 % This function loads Particles.mat, Spots.mat and FrameInfo.mat into
 % the corresponding workspace variables.
-function [ParticleStitchInfo, Particles, SimParticles, SpotFilter, Spots,...
+function [ParticleStitchInfo, Particles, SpotFilter, Spots,...
   FrameInfo, schnitzcells, Spots3D] = loadCheckParticleTrackingMats(DataFolder, PreProcPath, FilePrefix)
 
 disp('Loading Particles.mat...')
 load([DataFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter')
-load([DataFolder, filesep, 'ParticlesFull.mat'], 'SimParticles')
 load([DataFolder, filesep, 'ParticleStitchInfo.mat'], 'ParticleStitchInfo')
 disp('Particles.mat loaded')
 

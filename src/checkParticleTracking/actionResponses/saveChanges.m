@@ -1,5 +1,8 @@
 function saveChanges(NChannels, cptState, DataFolder, FilePrefix, DropboxFolder)
     Particles = cptState.Particles;
+    SimParticles = cptState.SimParticles;
+    HMMParticles = cptState.HMMParticles;
+    RawParticles = cptState.RawParticles;
     ParticleStitchInfo = cptState.ParticleStitchInfo;
     Spots = cptState.Spots;
     SpotFilter = cptState.SpotFilter;
@@ -15,6 +18,7 @@ end
 
 save([DataFolder, filesep, 'FrameInfo.mat'], 'FrameInfo', '-v6')
 save([DataFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter', '-v6')
+save([DataFolder, filesep, 'ParticlesFull.mat'], 'SimParticles', 'HMMParticles', 'RawParticles', '-append', '-v6')
 save([DataFolder, filesep, 'ParticleStitchInfo.mat'], 'ParticleStitchInfo')
 
 if whos(var2str(Spots)).bytes < 2E9

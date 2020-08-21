@@ -32,7 +32,7 @@ resultsFolder = liveExperiment.resultsFolder;
   
 tic
 disp('Performing intitial particle linking...')
-[RawParticles, SpotFilter, ParticleStitchInfo, ApprovedParticles] = track01ParticleProximity(FrameInfo, Spots, schnitzCells, ...
+[RawParticles, SpotFilter, ParticleStitchInfo, ReviewedParticlesFull] = track01ParticleProximity(FrameInfo, Spots, schnitzCells, ...
                 liveExperiment, pixelSize, maxSearchRadiusMicrons, useHistone, retrack, ...
                 displayFigures);
 toc
@@ -49,7 +49,7 @@ toc
 
 tic
 disp('Stitching particle tracks...')
-[FullParticles,ParticleStitchInfo] = track04StitchTracks(SimParticles, SpotFilter, ApprovedParticls, ParticleStitchInfo, Prefix,...
+[FullParticles,ParticleStitchInfo] = track04StitchTracks(SimParticles, SpotFilter, ReviewedParticlesFull, ParticleStitchInfo, Prefix,...
                                 useHistone, retrack, displayFigures);
 toc 
 

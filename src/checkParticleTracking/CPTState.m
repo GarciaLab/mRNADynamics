@@ -4,6 +4,8 @@ classdef CPTState < handle
         Spots
         Particles
         SimParticles
+        HMMParticles
+        RawParticles
         SpotFilter
         ParticleStitchInfo        
         schnitzcells
@@ -63,12 +65,14 @@ classdef CPTState < handle
     end
     
     methods
-        function this = CPTState(Spots, Particles, SimParticles, ParticleStitchInfo, SpotFilter, schnitzcells, Ellipses,...
+        function this = CPTState(Spots, Particles, SimParticles, HMMParticles, RawParticles, ParticleStitchInfo, SpotFilter, schnitzcells, Ellipses,...
                 FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss, projectionMode)
             
             this.Spots = Spots;
             this.Particles = Particles;
             this.SimParticles = SimParticles;
+            this.HMMParticles = HMMParticles;
+            this.RawParticles = RawParticles;
             this.ParticleStitchInfo = ParticleStitchInfo;
             this.SpotFilter = SpotFilter;
             this.schnitzcells = schnitzcells;

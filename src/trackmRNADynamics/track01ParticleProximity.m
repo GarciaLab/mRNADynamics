@@ -1,4 +1,4 @@
-function [RawParticles,SpotFilter,ParticleStitchInfo,ApprovedParticles,] = track01ParticleProximity(...
+function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = track01ParticleProximity(...
     FrameInfo, Spots, schnitzcells, liveExperiment, PixelSize, MaxSearchRadiusMicrons, ...
     UseHistone, retrack, displayFigures)
   
@@ -16,20 +16,23 @@ function [RawParticles,SpotFilter,ParticleStitchInfo,ApprovedParticles,] = track
   % get experiment type  
   ExperimentType = liveExperiment.experimentType;
   % load particles and link info if we're retracking
-  RawParticles = cell(1,NCh);
+  RawParticles = cell(1,NCh);  
   if retrack
+    % get current version of particles
     [Particles, SpotFilter] = getParticles(liveExperiment);
     if ~iscell(SpotFilter)
       SpotFilter = {SpotFilter};
-    end
-    if ~iscell(Particles)
       Particles = {Particles};
     end
+    % stitch info
     ParticleStitchInfo = getParticleStitchInfo(liveExperiment);
+    % get auxiliary particles structures
+    ReviewedParticlesFull = getParticlesFull(liveExperiment);
   else
     %Initialize Particles for the number of spot channels we have
     SpotFilter = createSpotFilter(Spots);         
     ParticleStitchInfo = cell(1,NCh);
+    ReviewedParticlesFull = cell(1,NCh);
   end
   
   % Extract vector indicating nuclear cleavage cycle for each frame
@@ -59,31 +62,56 @@ function [RawParticles,SpotFilter,ParticleStitchInfo,ApprovedParticles,] = track
     if retrack
       % keep only full particles that were approved. Individual frames that
       % were linked are taken care of later on
-      ApprovedParticles{Channel} = Particles{Channel}([Particles{Channel}.Approved]==1);  
+      ptStatusVec = [Particles{Channel}.Approved];
+      ReviewedParticles = Particles{Channel}(ptStatusVec~=0);  
+        
       
       % Create Temp Spot Filter to indicate which spots are fair game and
       % which are bound up in approved particles      
-      for p = 1:length(ApprovedParticles{Channel})
-        appFrames = ApprovedParticles{Channel}(p).Frame;
-        appIndices = ApprovedParticles{Channel}(p).Index;
+      for p = 1:length(ReviewedParticles)
+        appFrames = ReviewedParticles(p).Frame;
+        appIndices = ReviewedParticles(p).Index;
         appLinIndices = sub2ind(size(SpotFilterTemp),appFrames,appIndices);
         SpotFilterTemp(appLinIndices) = 0;
       end      
       
       % reset stitch info fields
-      ApprovedLinks = ParticleStitchInfo{Channel}.linkApprovedVec==1;
-      ParticleStitchInfo{Channel}.linkAdditionCell = ParticleStitchInfo{Channel}.linkAdditionCell(appLinks);
-      ParticleStitchInfo{Channel}.linkAdditionCell = ParticleStitchInfo{Channel}.linkCostVec(appLinks);
-      ParticleStitchInfo{Channel}.linkApprovedVec = ParticleStitchInfo{Channel}.linkApprovedVec(appLinks);
+      ReviewedLinks = ParticleStitchInfo{Channel}.linkApprovedVec~=0;
+      ParticleStitchInfo{Channel}.linkAdditionCell = ParticleStitchInfo{Channel}.linkAdditionCell(ReviewedLinks);
+      ParticleStitchInfo{Channel}.linkAdditionCell = ParticleStitchInfo{Channel}.linkCostVec(ReviewedLinks);
+      ParticleStitchInfo{Channel}.linkApprovedVec = ParticleStitchInfo{Channel}.linkApprovedVec(ReviewedLinks);
       
-    else % initialize stitch info structure
-      ApprovedParticles{Channel} = [];
-      
+      %%%%%%%%%%%%
+      % reset other particles structures
+      rawParticleIDs = [];
+      StatusValues = [];
+      for r = 1:length(ReviewedParticles)
+        newIDs = unique(ReviewedParticles.idVec(~isnan(ReviewedParticles.idVec)));
+        rawParticleIDs = [rawParticleIDs newIDs];
+        StatusValues = [StatusValues repelem(ReviewedParticles.Approved,length(newIDs))];
+      end
+      ReviewedParticlesFull.rawParticleIDs{Channel} = rawParticleIDs; % list of indices
+      % select indices 
+      ReviewedParticlesFull.RawParticles{Channel} = ReviewedParticlesFull.RawParticles{Channel}(ReviewedParticlesFull.rawParticleIDs{Channel});
+      ReviewedParticlesFull.HMMParticles{Channel} = ReviewedParticlesFull.HMMParticles{Channel}(ReviewedParticlesFull.rawParticleIDs{Channel});
+      ReviewedParticlesFull.SimParticles{Channel} = ReviewedParticlesFull.SimParticles{Channel}(ReviewedParticlesFull.rawParticleIDs{Channel});
+      ReviewedParticlesFull.Particles{Channel} = ReviewedParticles;
+      % we don't want to save any info about FullParticles
+      ReviewedParticlesFull = rmfield(ReviewedParticlesFull,'FullParticles');
+      % update Approve flags in auxiliary structures (should probably do
+      % this inside CheckParticleTracking eventually
+      for r = 1:length(rawParticleIDs)
+        ReviewedParticlesFull.RawParticles{Channel}(r).Approved = StatusValues(r);
+        ReviewedParticlesFull.HMMParticles{Channel}(r).Approved = StatusValues(r);
+        ReviewedParticlesFull.SimParticles{Channel}(r).Approved = StatusValues(r);
+      end
+    else       
       % initialize fields in stitch info structure
       ParticleStitchInfo{Channel}.persistentLinkIndexCell = {};
       ParticleStitchInfo{Channel}.persistentLinkFrameCell= {};
       ParticleStitchInfo{Channel}.forbiddenLinkIndexCell = {};
       ParticleStitchInfo{Channel}.forbiddenLinkFrameCell = {};
+      ParticleStitchInfo{Channel}.linkAdditionIDCell = {};
       ParticleStitchInfo{Channel}.linkAdditionCell = {};
       ParticleStitchInfo{Channel}.linkCostVec = [];      
       ParticleStitchInfo{Channel}.linkApprovedVec = [];

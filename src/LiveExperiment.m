@@ -452,7 +452,7 @@ classdef LiveExperiment
             
         end               
         
-        function ParticlesFull = getFullParticles(this)
+        function ParticlesFull = getParticlesFull(this)
             
             particlesFile = [this.resultsFolder, 'ParticlesFull.mat'];
             if this.hasParticlesFile

@@ -14,13 +14,19 @@ function keyInputHandler = TracesEventHandler(cptState)
             % Approve a trace
             aState = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved;
             if aState>=0
-              cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved = (aState+1)*(aState~=2);                        
+              % update Particles structure itself
+              newState = (aState+1)*(aState~=2);
+              cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved = newState;      
+              % update auxiliary particles structures
+              cptState = updateAuxiliaryStatus(cptState,newState);
             end
         elseif cc == 'w'
             % Disapprove a trace
             aState = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved;
             if aState<=0
-              cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved = (aState-1)*(aState~=-1);                        
+              newState = (aState-1)*(aState~=-1);
+              cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved = newState;  
+              cptState = updateAuxiliaryStatus(cptState,newState);
             end   
         elseif cc == 'h'
             if cptState.HideApprovedFlag == 0
