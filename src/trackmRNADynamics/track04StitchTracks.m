@@ -1,5 +1,6 @@
 function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
-                          SimParticles, SpotFilter, ParticleStitchInfo, Prefix, useHistone, retrack, displayFigures)
+                          SimParticles, SpotFilter, ApprovedParticls, ParticleStitchInfo,...
+                          Prefix, useHistone, retrack, displayFigures)
                         
 %   useHistone = false;
   % grab useful info for experiment
@@ -74,9 +75,7 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
       ncIndices = find(nucleusIDVec==nucleusIDIndex(n));
       [ForceSplitCell, ForceMatchCell] = ...
         checkForAssignedLinkInfo(ncIndices,SimParticles{Channel},linkStruct,SpotFilter{Channel});      
-      if ~exist('ForceMatchCell')
-        error('wtf')
-      end
+  
       [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, ...
               linkCostVec, linkAdditionCell,linkCostCell, linkFrameCell, linkParticleCell] = ...
               performParticleStitching(...
@@ -114,8 +113,8 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
           rmVec = rmVec(~isnan(rmVec));
         end
         % reset nucleus ID values for these particles to NaN
-        nucleusIDVecNew = nucleusIDVec;
-        nucleusIDVecNew(rmVec) = NaN;           
+%         nucleusIDVecNew = nucleusIDVec;
+        nucleusIDVec(rmVec) = NaN;           
                 
         % reset values to originals
         for p = 1:length(rmVec)
@@ -164,9 +163,11 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
            error('problem with spot-nucleus reassignment')
          end
       end
+
       % update stitch info
-      ParticleStitchInfo{Channel}(n).linkCostVec = linkCostVec;
-      ParticleStitchInfo{Channel}(n).linkAdditionCell = linkAdditionCell;
+      ParticleStitchInfo{Channel}.linkCostVec = [ParticleStitchInfo{Channel}.linkCostVec linkCostVec];
+      ParticleStitchInfo{Channel}.linkAdditionCell = [ParticleStitchInfo{Channel}.linkAdditionCell linkAdditionCell];
+      ParticleStitchInfo{Channel}.linkApprovedVec = [ParticleStitchInfo{Channel}.linkApprovedVec repelem(0,length(linkAdditionCell))];
       % add particles to structure
       for p = 1:size(extantFrameArray,2)
         % approval 

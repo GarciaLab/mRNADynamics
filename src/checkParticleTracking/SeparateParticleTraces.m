@@ -93,8 +93,9 @@ nucleusIDVecPrev(prevIDs) = 1;
               currStitchTemp.linkAdditionCell,...
               currParticleTemp.linkCostCell, ...
               currParticleTemp.linkFrameCell, currParticleTemp.linkParticleCell] = performParticleStitching(...
-              1, nucleusIDVecPrev, frameIndex, {cptState.SimParticles{Ch}}, 1, ncVec, cptState.Particles{Ch}(cptState.CurrentParticle).matchCost);
-        
+              1, nucleusIDVecPrev, frameIndex, cptState.SimParticles{Ch}, ncVec, ...
+              cptState.Particles{Ch}(cptState.CurrentParticle).matchCost,{},{});
+ 
 %Reshape and assign path info        
 currParticleTemp.pathArray = squeeze(pathArrayPrev);
 currParticleTemp.sigmaArray = squeeze(sigmaArrayPrev);
@@ -111,7 +112,9 @@ nucleusIDVecPost(postIDs) = 1;
               newStitchTemp.linkAdditionCell,...
               newParticleTemp.linkCostCell, ...
               newParticleTemp.linkFrameCell, newParticleTemp.linkParticleCell] = performParticleStitching(...
-              1, nucleusIDVecPost, frameIndex, {cptState.SimParticles{Ch}}, 1, ncVec, cptState.Particles{Ch}(cptState.CurrentParticle).matchCost);
+              1, nucleusIDVecPost, frameIndex, cptState.SimParticles{Ch}, ncVec, ...
+              cptState.Particles{Ch}(cptState.CurrentParticle).matchCost,{},{});
+            
 %Reshape and assign path info        
 newParticleTemp.pathArray = squeeze(pathArrayPost);
 newParticleTemp.sigmaArray = squeeze(sigmaArrayPost);
@@ -126,12 +129,16 @@ for c = cptState.CurrentParticle+2:length(cptState.Particles{Ch})
   cptState.Particles{Ch}(c).stitchInfoPointer = cptState.Particles{Ch}(c).stitchInfoPointer+1;
 end
 
-%Lastly, add split info...
-splitFrames = [max(currParticleTemp.Frame) min(newParticleTemp.Frame)];
-currStitchTemp.forbiddenLinkFrameCell(end+1) = {splitFrames};
-currStitchTemp.forbiddenLinkIndexCell(end+1) = ...
-  {[currParticleTemp.Index(currParticleTemp.Frame==splitFrames(1)) newParticleTemp.Index(newParticleTemp.Frame==splitFrames(2))]};
-
+%Lastly, add split info. This is inelegant, but we need to make sure every
+%pair of points before and after split are forbidden
+for i = 1:length(currParticleTemp.Frame)
+  for j = 1:length(newParticleTemp.Frame)
+    splitFrames = [currParticleTemp.Frame(i) newParticleTemp.Frame(j)];
+    currStitchTemp.forbiddenLinkFrameCell(end+1) = {splitFrames};
+    currStitchTemp.forbiddenLinkIndexCell(end+1) = ...
+      {[currParticleTemp.Index(currParticleTemp.Frame==splitFrames(1)) newParticleTemp.Index(newParticleTemp.Frame==splitFrames(2))]};
+  end
+end
 %...and update stitch structure
 cptState.ParticleStitchInfo{Ch} = [cptState.ParticleStitchInfo{Ch}(1:newParticleTemp.stitchInfoPointer-1) currStitchTemp ...
   newStitchTemp cptState.ParticleStitchInfo{Ch}(newParticleTemp.stitchInfoPointer+1:end)];

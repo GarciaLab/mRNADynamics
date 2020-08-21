@@ -3,8 +3,8 @@ function [PrevIndices, NewIndices] = findForbiddenLinks(ParticleStitchInfo,Curre
 PrevIndices = [];
 NewIndices = [];
 if ~isempty(ParticleStitchInfo)
-  stitchFrameCell = [ParticleStitchInfo.forbiddenLinkFrameCell];
-  stitchIndexCell = [ParticleStitchInfo.forbiddenLinkIndexCell];
+  stitchFrameCell = ParticleStitchInfo.forbiddenLinkFrameCell;
+  stitchIndexCell = ParticleStitchInfo.forbiddenLinkIndexCell;
   
   for s = 1:length(stitchFrameCell)
     splitFrames = stitchFrameCell{s};

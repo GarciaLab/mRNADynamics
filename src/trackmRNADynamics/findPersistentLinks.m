@@ -3,8 +3,8 @@ function [PrevIndices, NewIndices] = findPersistentLinks(ParticleStitchInfo,Curr
 PrevIndices = [];
 NewIndices = [];
 if ~isempty(ParticleStitchInfo)
-  stitchFrameCell = [ParticleStitchInfo.persistentLinkFrameCell];
-  stitchIndexCell = [ParticleStitchInfo.persistentLinkIndexCell];
+  stitchFrameCell = ParticleStitchInfo.persistentLinkFrameCell;
+  stitchIndexCell = ParticleStitchInfo.persistentLinkIndexCell;
   
   for s = 1:length(stitchFrameCell)
     joinFrames = stitchFrameCell{s};

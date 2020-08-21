@@ -1,4 +1,5 @@
-function NewParticles = dynamicStitchBeta(FullParticles,SimParticles,ParticleStitchInfo,Prefix,matchCostMax,Channel)
+function NewParticles = dynamicStitchBeta(FullParticles,SimParticles,...
+                  ParticleStitchInfo,Prefix,matchCostMax,Channel)
   
   NewParticles = FullParticles;
   liveExperiment = LiveExperiment(Prefix);
@@ -7,9 +8,14 @@ function NewParticles = dynamicStitchBeta(FullParticles,SimParticles,ParticleSti
   nFrames = length(ncVec);
  
   % cobine linkage costs across nuclei
-  costVecOrig = [ParticleStitchInfo{Channel}.linkCostVec];
+  costVecOrig = ParticleStitchInfo{Channel}.linkCostVec;
   % this contains the info about order in which links were added
-  additionCellOrig = [ParticleStitchInfo{Channel}.linkAdditionCell];
+  additionCellOrig = ParticleStitchInfo{Channel}.linkAdditionCell;
+  % link approval info
+  approvalVec = ParticleStitchInfo{Channel}.linkApprovedVec;
+  % set all approved links to have negative costs 
+  costVecOrig(approvalVec==1) = -Inf;
+  
   levelVec = NaN(1,length(additionCellOrig));
   for a = 1:length(additionCellOrig)
     levelVec(a) = max(diff(find(additionCellOrig{a}~='|')))-1;

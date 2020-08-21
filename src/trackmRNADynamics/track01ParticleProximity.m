@@ -1,4 +1,4 @@
-function [RawParticles,SpotFilter,ParticleStitchInfo] = track01ParticleProximity(...
+function [RawParticles,SpotFilter,ParticleStitchInfo,ApprovedParticles,] = track01ParticleProximity(...
     FrameInfo, Spots, schnitzcells, liveExperiment, PixelSize, MaxSearchRadiusMicrons, ...
     UseHistone, retrack, displayFigures)
   
@@ -59,20 +59,34 @@ function [RawParticles,SpotFilter,ParticleStitchInfo] = track01ParticleProximity
     if retrack
       % keep only full particles that were approved. Individual frames that
       % were linked are taken care of later on
-      Particles{Channel} = Particles{Channel}([Particles{Channel}.Approved]==1);              
+      ApprovedParticles{Channel} = Particles{Channel}([Particles{Channel}.Approved]==1);  
+      
       % Create Temp Spot Filter to indicate which spots are fair game and
       % which are bound up in approved particles      
-      for p = 1:length(Particles{Channel})
-        appFrames = Particles{Channel}(p).Frame;
-        appIndices = Particles{Channel}(p).Index;
+      for p = 1:length(ApprovedParticles{Channel})
+        appFrames = ApprovedParticles{Channel}(p).Frame;
+        appIndices = ApprovedParticles{Channel}(p).Index;
         appLinIndices = sub2ind(size(SpotFilterTemp),appFrames,appIndices);
         SpotFilterTemp(appLinIndices) = 0;
       end      
+      
+      % reset stitch info fields
+      ApprovedLinks = ParticleStitchInfo{Channel}.linkApprovedVec==1;
+      ParticleStitchInfo{Channel}.linkAdditionCell = ParticleStitchInfo{Channel}.linkAdditionCell(appLinks);
+      ParticleStitchInfo{Channel}.linkAdditionCell = ParticleStitchInfo{Channel}.linkCostVec(appLinks);
+      ParticleStitchInfo{Channel}.linkApprovedVec = ParticleStitchInfo{Channel}.linkApprovedVec(appLinks);
+      
     else % initialize stitch info structure
+      ApprovedParticles{Channel} = [];
+      
+      % initialize fields in stitch info structure
       ParticleStitchInfo{Channel}.persistentLinkIndexCell = {};
       ParticleStitchInfo{Channel}.persistentLinkFrameCell= {};
       ParticleStitchInfo{Channel}.forbiddenLinkIndexCell = {};
       ParticleStitchInfo{Channel}.forbiddenLinkFrameCell = {};
+      ParticleStitchInfo{Channel}.linkAdditionCell = {};
+      ParticleStitchInfo{Channel}.linkCostVec = [];      
+      ParticleStitchInfo{Channel}.linkApprovedVec = [];
     end
     for CurrentFrame = 1:length(Spots{Channel})
       waitbar(CurrentFrame/length(Spots{Channel}),f);
