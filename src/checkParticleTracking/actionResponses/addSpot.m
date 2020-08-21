@@ -150,10 +150,7 @@ else
                 %Turn this spot into a new particle. This is the equivalent of
                 %the 'u' command.
 
-                [cptState.SpotFilter{cptState.CurrentChannelIndex},cptState.Particles{cptState.CurrentChannelIndex}]=...
-                    TransferParticle(cptState.Spots{cptState.CurrentChannelIndex},...
-                    cptState.SpotFilter{cptState.CurrentChannelIndex},cptState.Particles{cptState.CurrentChannelIndex},...
-                    cptState.CurrentFrame,SpotsIndex,Prefix);
+                cptState = TransferParticle(cptState,SpotsIndex,Prefix);
 
                 numParticles = numParticles + 1;
                 

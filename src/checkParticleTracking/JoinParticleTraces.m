@@ -21,6 +21,7 @@ if isnan(cptState.Particles{Ch}(ClickedParticle).Nucleus) ...
   % get frame values at join
   joinFrames = [cptState.Particles{Ch}(cptState.CurrentParticle).Frame(minOrig)...
     cptState.Particles{Ch}(ClickedParticle).Frame(minNew(1))];
+  
   % get fragment ids at join
   joinParticles = [cptState.Particles{Ch}(cptState.CurrentParticle).idVec(joinFrames(1))...
     cptState.Particles{Ch}(ClickedParticle).idVec(joinFrames(2))];
@@ -49,7 +50,7 @@ if isnan(cptState.Particles{Ch}(ClickedParticle).Nucleus) ...
   newParticleTemp.sigmaArray = squeeze(sigmaArray);
   newParticleTemp.linkCostCell = newParticleTemp.linkCostCell{1};
   newParticleTemp.linkCostFlags = newParticleTemp.linkCostCell > cptState.Particles{Ch}(cptState.CurrentParticle).costThresh;
-  newParticleTemp.idVec = particleIDArray(:,p)';
+  newParticleTemp.idVec = particleIDArray(:,1)';
   
   %Concatentate vector quantities with one entry per frame
   varNames = fieldnames(cptState.Particles{Ch}(cptState.CurrentParticle))';

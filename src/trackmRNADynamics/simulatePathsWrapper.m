@@ -60,9 +60,10 @@ function [hmmModel, pathArray, sigmaArray] = simulatePathsWrapper(Particle,hmmMo
     pdBkdSE = fliplr(sqrt(pdBkdSE1 + pdBkdSE2));
 
     % generate aggregate path and helper vectors
-    hmmModel(h).pathVec = [pdBkdMean+varPos(1) varPos pdFwdMean+varPos(end)];
     pathArray(ncFrameFilter,h) = [pdBkdMean+varPos(1) varPos pdFwdMean+varPos(end)];
-    hmmModel(h).sigmaVec = [pdBkdSE zeros(size(varPos)) pdFwdSE];
-    sigmaArray(ncFrameFilter,h) = [abs(bkdFrames-frameVec(1)) zeros(size(varPos)) fwdFrames-frameVec(end)];
-    hmmModel(h).dfVec = [abs(bkdFrames-frameVec(1)) zeros(size(varPos)) fwdFrames-frameVec(end)];
+    hmmModel(h).pathVec = pathArray(:,h); 
+    sigmaArray(ncFrameFilter,h) = [pdBkdSE zeros(size(varPos)) pdFwdSE];
+    hmmModel(h).sigmaVec = sigmaArray(:,h);
+    
+%     hmmModel(h).dfVec = [abs(bkdFrames-frameVec(1)) zeros(size(varPos)) fwdFrames-frameVec(end)];
   end

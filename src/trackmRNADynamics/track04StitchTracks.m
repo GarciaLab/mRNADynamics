@@ -145,10 +145,10 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
           % full projected path and error          
           tempParticles(nIter).pathArray = NaN(length(frameIndex),nParams);
           tempParticles(nIter).sigmaArray = NaN(length(frameIndex),nParams);
-          nc_ft = ismember(ncVec,ncVec(SimParticles{Channel}(ptFilter).FirstFrame));
+%           nc_ft = ismember(ncVec,ncVec(SimParticles{Channel}(ptFilter).FirstFrame));
           for np = 1:nParams
-            tempParticles(nIter).pathArray(nc_ft,np) = SimParticles{Channel}(ptFilter).hmmModel(np).pathVec;
-            tempParticles(nIter).sigmaArray(nc_ft,np) = SimParticles{Channel}(ptFilter).hmmModel(np).sigmaVec;        
+            tempParticles(nIter).pathArray(:,np) = SimParticles{Channel}(ptFilter).hmmModel(np).pathVec;
+            tempParticles(nIter).sigmaArray(:,np) = SimParticles{Channel}(ptFilter).hmmModel(np).sigmaVec;        
           end 
           % record info vectors
           tempParticles(nIter).idVec = NaN(1,size(particleIDArray,1));

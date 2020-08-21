@@ -117,8 +117,8 @@ function NewParticles = dynamicStitchBeta(FullParticles,SimParticles,...
       for p = 1:length(ptIDs)
         frames = SimParticles{Channel}(ptIDs(p)).Frame;     
         extantFrameArray(frames,p) = 1;
-        pathArray(nc_ft,p,:) = cat(1,SimParticles{Channel}(ptIDs(p)).hmmModel.pathVec)';
-        sigmaArray(nc_ft,p,:) = cat(1,SimParticles{Channel}(ptIDs(p)).hmmModel.sigmaVec)';
+        pathArray(:,p,:) = cat(1,SimParticles{Channel}(ptIDs(p)).hmmModel.pathVec)';
+        sigmaArray(:,p,:) = cat(1,SimParticles{Channel}(ptIDs(p)).hmmModel.sigmaVec)';
       end
       % call path update function
       [temp.pathArray, temp.sigmaArray] = updatePaths(pathArray,sigmaArray,extantFrameArray);        

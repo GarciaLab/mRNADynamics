@@ -37,10 +37,10 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     linkCostCell{i_pass} = [0];
     linkFrameCell{i_pass} = {unique([SimParticles(p).FirstFrame,SimParticles(p).LastFrame])};
     linkParticleCell{i_pass} = {fragmentIDs(i_pass)};
-    nc_ft = ismember(ncVec,ncVec(SimParticles(p).FirstFrame));  
+%     nc_ft = ismember(ncVec,ncVec(SimParticles(p).FirstFrame));  
     for np = 1:nParams
-      pathArray(nc_ft,i_pass,np) = SimParticles(p).hmmModel(np).pathVec;
-      sigmaArray(nc_ft,i_pass,np) = SimParticles(p).hmmModel(np).sigmaVec;        
+      pathArray(:,i_pass,np) = SimParticles(p).hmmModel(np).pathVec;
+      sigmaArray(:,i_pass,np) = SimParticles(p).hmmModel(np).sigmaVec;        
     end     
     i_pass = i_pass + 1;
   end    
