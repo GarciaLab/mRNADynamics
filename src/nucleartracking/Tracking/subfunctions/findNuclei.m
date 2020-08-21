@@ -135,13 +135,6 @@ else
     index_vec = 1:numel(xm);
     indNuclei = ~ismember(index_vec,b_points);
 end
-imagesc(img)
-hold on
-ax = gca();
-scatter(ax, ym,xm,80,'r','filled');
-scatter(ax, ym(indNuclei),xm(indNuclei),80,'g','filled');
-hold off
-
 
 %% Check the segmentation if a target number was provided.
 if exist('targetNumber', 'var')
