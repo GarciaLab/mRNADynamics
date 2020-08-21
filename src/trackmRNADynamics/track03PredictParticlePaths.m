@@ -1,5 +1,5 @@
 function SimParticles = track03PredictParticlePaths(...
-                          RawParticles, FrameInfo, retrack, displayFigures)
+                          RawParticles, FrameInfo, displayFigures)
                         
   % This script uses inferred GHMM models to (a) infer "true" motion states
   % for observed particle frames and to predict particles positions before

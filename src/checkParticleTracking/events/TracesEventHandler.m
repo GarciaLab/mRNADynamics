@@ -12,21 +12,21 @@ function keyInputHandler = TracesEventHandler(cptState)
               
         elseif cc == 'q'
             % Approve a trace
-            aState = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved;
-            if aState>=0
+            oldStatus = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved;
+            if oldStatus>=0
               % update Particles structure itself
-              newState = (aState+1)*(aState~=2);
-              cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved = newState;      
+              newStatus = (oldStatus+1)*(oldStatus~=2);
+              cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved = newStatus;      
               % update auxiliary particles structures
-              cptState = updateAuxiliaryStatus(cptState,newState);
+              cptState = updateAuxiliaryStatus(cptState,oldStatus,newStatus);
             end
         elseif cc == 'w'
             % Disapprove a trace
-            aState = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved;
-            if aState<=0
-              newState = (aState-1)*(aState~=-1);
-              cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved = newState;  
-              cptState = updateAuxiliaryStatus(cptState,newState);
+            oldStatus = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved;
+            if oldStatus<=0
+              newStatus = (oldStatus-1)*(oldStatus~=-1);
+              cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved = newStatus;  
+              cptState = updateAuxiliaryStatus(cptState,oldStatus,newStatus);
             end   
         elseif cc == 'h'
             if cptState.HideApprovedFlag == 0

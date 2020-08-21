@@ -2,12 +2,13 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
               linkCostVec, LinkAdditionCell, linkCostCell, linkFrameCell, linkParticleCell] = ...
               performParticleStitching(...
               NucleusID,nucleusIDVec,frameIndex,SimParticles,ncVec,matchCostMax,...
-              ForceMatchCell,ForceSplitCell)
+              ForceMatchCell,ForceSplitCell,FragmentIDVec)
 
   nParams = length(SimParticles(1).hmmModel);
   % see how many fragments match this nucleus
   nucleusFilter = nucleusIDVec==NucleusID;
   nucleusIndices = find(nucleusFilter);
+  fragmentIDs = FragmentIDVec(nucleusIndices);
   nFragments = length(nucleusIndices);
 
   % arrays to track active frames (dynamically updated throughout)
@@ -31,11 +32,11 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
   for p = nucleusIndices      
     endpointFrameArray([SimParticles(p).FirstFrame,SimParticles(p).LastFrame],i_pass) = true;
     extantFrameArray(SimParticles(p).FirstFrame:SimParticles(p).LastFrame,i_pass) = true;      
-    particleIDArray(SimParticles(p).FirstFrame:SimParticles(p).LastFrame,i_pass) = p;
-    linkIDCell{i_pass} = num2str(p);
+    particleIDArray(SimParticles(p).FirstFrame:SimParticles(p).LastFrame,i_pass) = fragmentIDs(i_pass);
+    linkIDCell{i_pass} = num2str(fragmentIDs(i_pass));
     linkCostCell{i_pass} = [0];
     linkFrameCell{i_pass} = {unique([SimParticles(p).FirstFrame,SimParticles(p).LastFrame])};
-    linkParticleCell{i_pass} = {p};
+    linkParticleCell{i_pass} = {fragmentIDs(i_pass)};
     nc_ft = ismember(ncVec,ncVec(SimParticles(p).FirstFrame));  
     for np = 1:nParams
       pathArray(nc_ft,i_pass,np) = SimParticles(p).hmmModel(np).pathVec;

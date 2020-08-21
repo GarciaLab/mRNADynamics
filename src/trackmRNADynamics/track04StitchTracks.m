@@ -2,7 +2,6 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
                           SimParticles, SpotFilter, ApprovedParticlesFull, ParticleStitchInfo,...
                           Prefix, useHistone, retrack, displayFigures)
                         
-%   useHistone = false;
   % grab useful info for experiment
   liveExperiment = LiveExperiment(Prefix);
   ExperimentType = liveExperiment.experimentType;
@@ -45,23 +44,12 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
   
   for Channel = 1:NCh
     %first, reintegrate approved particles (if they exist)
-    idsToExclude = [];
-    if retrack 
-      % make list of IDs to exclude      
-      for r = 1:length(ApprovedParticlesFull.rawParticleIDs{Channel})
-        appID = ApprovedParticlesFull.rawParticleIDs{Channel}(r);
-        if appID <= length(SimParticles{Channel})
-          SimParticles{Channel} = [SimParticles{Channel}(1:appID-1) ...
-            ApprovedParticlesFull.SimParticles{Channel}(r) SimParticles{Channel}(appID+1:end)];
-          idsToExclude(r) = appID;
-        else
-          SimParticles{Channel} = [SimParticles{Channel} ApprovedParticlesFull.SimParticles{Channel}(r)];
-          idsToExclude(r) = length(SimParticles{Channel});
-        end
-      end      
-    end
-      
-      
+%     idsToExclude = [];
+%     if retrack 
+%       % make list of IDs to exclude   
+%       idsToExclude = [ApprovedParticlesFull.rawParticleIDs{Channel}];           
+%     end
+              
     % get full list of pre-assigned links and breaks (will be empty unless
     % retracking)    
     linkStruct = generateLinkStructure(ParticleStitchInfo{Channel},SpotFilter{Channel});
@@ -78,11 +66,13 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
     else
       nucleusIDVec(:) = 1;
     end
-    nucleusIDVec(idsToExclude) = NaN;
-    
+    FragmentIDVec = [SimParticles{Channel}.FragmentID];    
+%     nucleusIDVec(ismember(FragmentIDVec,idsToExclude)) = NaN;
+%     
     % see how many unique nucleus groups we have
     nucleusIDIndex = unique(nucleusIDVec);    
     nucleusIDIndex = nucleusIDIndex(~isnan(nucleusIDIndex));
+    
     % initialize cell structure to temporarily store results for each
     % assignment group
     tempParticles = struct;    
@@ -101,7 +91,7 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
               linkCostVec, linkAdditionCell,linkCostCell, linkFrameCell, linkParticleCell] = ...
               performParticleStitching(...
               Nucleus, nucleusIDVec, frameIndex, SimParticles{Channel},  ncVec, matchCostMax(Channel),...
-              ForceMatchCell,ForceSplitCell); 
+              ForceMatchCell,ForceSplitCell,FragmentIDVec); 
 
       % check for conflicts (cases where there are more detections per frame than ins permitted)    
       assignmentFlags = useHistone & (sum(extantFrameArray,2)>(spotsPerNucleus(Channel)+length(ForceSplitCell)))';
@@ -135,43 +125,43 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
         end
         % reset nucleus ID values for these particles to NaN
 %         nucleusIDVecNew = nucleusIDVec;
-        nucleusIDVec(rmVec) = NaN;           
+        nucleusIDVec(ismember(FragmentIDVec,rmVec)) = NaN;                   
                 
         % reset values to originals
         for p = 1:length(rmVec)          
+          ptFilter = FragmentIDVec==rmVec(p);
           % extant frames
-          tempParticles(nIter).Frame = SimParticles{Channel}(rmVec(p)).Frame;
+          tempParticles(nIter).Frame = SimParticles{Channel}(ptFilter).Frame;
           tempParticles(nIter).FirstFrame = tempParticles(nIter).Frame(1);
           tempParticles(nIter).LastFrame = tempParticles(nIter).Frame(end);
           % approval 
           tempParticles(nIter).Approved = false;
           tempParticles(nIter).FrameApproved = true(size(tempParticles(nIter).Frame));
           % position info
-          tempParticles(nIter).xPos = SimParticles{Channel}(rmVec(p)).xPos;
-          tempParticles(nIter).yPos = SimParticles{Channel}(rmVec(p)).yPos;
-          tempParticles(nIter).zPos = SimParticles{Channel}(rmVec(p)).zPos;
-          tempParticles(nIter).zPosDetrended = SimParticles{Channel}(rmVec(p)).zPosDetrended;
+          tempParticles(nIter).xPos = SimParticles{Channel}(ptFilter).xPos;
+          tempParticles(nIter).yPos = SimParticles{Channel}(ptFilter).yPos;
+          tempParticles(nIter).zPos = SimParticles{Channel}(ptFilter).zPos;
+          tempParticles(nIter).zPosDetrended = SimParticles{Channel}(ptFilter).zPosDetrended;
           % full projected path and error          
           tempParticles(nIter).pathArray = NaN(length(frameIndex),nParams);
           tempParticles(nIter).sigmaArray = NaN(length(frameIndex),nParams);
-          nc_ft = ismember(ncVec,ncVec(SimParticles{Channel}(rmVec(p)).FirstFrame));
+          nc_ft = ismember(ncVec,ncVec(SimParticles{Channel}(ptFilter).FirstFrame));
           for np = 1:nParams
-            tempParticles(nIter).pathArray(nc_ft,np) = SimParticles{Channel}(rmVec(p)).hmmModel(np).pathVec;
-            tempParticles(nIter).sigmaArray(nc_ft,np) = SimParticles{Channel}(rmVec(p)).hmmModel(np).sigmaVec;        
+            tempParticles(nIter).pathArray(nc_ft,np) = SimParticles{Channel}(ptFilter).hmmModel(np).pathVec;
+            tempParticles(nIter).sigmaArray(nc_ft,np) = SimParticles{Channel}(ptFilter).hmmModel(np).sigmaVec;        
           end 
           % record info vectors
           tempParticles(nIter).idVec = NaN(1,size(particleIDArray,1));
           tempParticles(nIter).idVec(tempParticles(nIter).Frame) = rmVec(p);   
           tempParticles(nIter).linkCostCell = [0];
-          tempParticles(nIter).linkFrameCell = {unique([SimParticles{Channel}(rmVec(p)).Frame(1) SimParticles{Channel}(rmVec(p)).Frame(end)])};
-          tempParticles(nIter).linkParticleCell = {rmVec(p)};
-          tempParticles(nIter).stitchInfoPointer = n;
+          tempParticles(nIter).linkFrameCell = {unique([SimParticles{Channel}(ptFilter).Frame(1) SimParticles{Channel}(ptFilter).Frame(end)])};
+          tempParticles(nIter).linkParticleCell = {rmVec(p)};          
           tempParticles(nIter).Nucleus = NaN;
           tempParticles(nIter).NucleusOrig = Nucleus;
           tempParticles(nIter).linkStateString = num2str(rmVec(p));          
 %           tempParticles(nIter).assignmentFlags = assignmentFlags;
-          tempParticles(nIter).NucleusDist = SimParticles{Channel}(rmVec(p)).NucleusDist;
-          tempParticles(nIter).Index = SimParticles{Channel}(rmVec(p)).Index;
+          tempParticles(nIter).NucleusDist = SimParticles{Channel}(ptFilter).NucleusDist;
+          tempParticles(nIter).Index = SimParticles{Channel}(ptFilter).Index;
           % increment
           nIter = nIter + 1;
         end 
@@ -180,7 +170,7 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
         [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, ...
               linkCostVec, linkAdditionCell, linkCostCell, linkFrameCell, linkParticleCell] = performParticleStitching(...
               Nucleus, nucleusIDVec, frameIndex, SimParticles{Channel},  ncVec, matchCostMax(Channel),...
-              ForceMatchCell,ForceSplitCell); 
+              ForceMatchCell,ForceSplitCell,FragmentIDVec); 
          if size(extantFrameArray,2) ~= (spotsPerNucleus(Channel) + length(ForceSplitCell))
            error('problem with spot-nucleus reassignment')
          end
@@ -193,12 +183,16 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
         linkAdditionIDCell{p} = cellfun(@str2num,fragments);
       end
       
+      if length(ParticleStitchInfo{Channel}.linkAdditionIDCell)~=length(ParticleStitchInfo{Channel}.linkAdditionCell)
+        error('goddammit')
+      end
+      
       % update stitch info
       ParticleStitchInfo{Channel}.linkCostVec = [ParticleStitchInfo{Channel}.linkCostVec linkCostVec];
       ParticleStitchInfo{Channel}.linkAdditionCell = [ParticleStitchInfo{Channel}.linkAdditionCell linkAdditionCell];
       ParticleStitchInfo{Channel}.linkAdditionIDCell = [ParticleStitchInfo{Channel}.linkAdditionIDCell linkAdditionIDCell];
       ParticleStitchInfo{Channel}.linkApprovedVec = [ParticleStitchInfo{Channel}.linkApprovedVec repelem(0,length(linkAdditionCell))];
-
+      
       % add particles to structure
       for p = 1:size(extantFrameArray,2)
         % extant frames
@@ -220,17 +214,16 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
         tempParticles(nIter).linkCostCell = linkCostCell{p};
         tempParticles(nIter).linkFrameCell = linkFrameCell{p};
         tempParticles(nIter).linkParticleCell = linkParticleCell{p};
-        tempParticles(nIter).linkStateString = linkIDCell{p};
-        tempParticles(nIter).stitchInfoPointer = n;
+        tempParticles(nIter).linkStateString = linkIDCell{p};        
         tempParticles(nIter).Nucleus = Nucleus;
         tempParticles(nIter).NucleusOrig = Nucleus;
 %         tempParticles(nIter).assignmentFlags = assignmentFlags;        
         % add other info from original particles
-        particleVec = unique(tempParticles(nIter).idVec(~isnan(tempParticles(nIter).idVec)));
+        particleIndexVec = find(ismember(FragmentIDVec,unique(tempParticles(nIter).idVec(~isnan(tempParticles(nIter).idVec)))));
         ncDist = [];
         zOrig = [];
         indexVec = [];
-        for o = particleVec
+        for o = particleIndexVec
           ncDist = [ncDist SimParticles{Channel}(o).NucleusDist];
           zOrig = [zOrig SimParticles{Channel}(o).zPos];
           indexVec = [indexVec SimParticles{Channel}(o).Index];

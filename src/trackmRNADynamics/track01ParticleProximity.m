@@ -78,19 +78,14 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
       % reset stitch info fields
       ReviewedLinks = ParticleStitchInfo{Channel}.linkApprovedVec~=0;
       ParticleStitchInfo{Channel}.linkAdditionCell = ParticleStitchInfo{Channel}.linkAdditionCell(ReviewedLinks);
-      ParticleStitchInfo{Channel}.linkAdditionCell = ParticleStitchInfo{Channel}.linkCostVec(ReviewedLinks);
+      ParticleStitchInfo{Channel}.linkAdditionIDCell = ParticleStitchInfo{Channel}.linkAdditionIDCell(ReviewedLinks);
+      ParticleStitchInfo{Channel}.linkCostVec = ParticleStitchInfo{Channel}.linkCostVec(ReviewedLinks);
       ParticleStitchInfo{Channel}.linkApprovedVec = ParticleStitchInfo{Channel}.linkApprovedVec(ReviewedLinks);
       
       %%%%%%%%%%%%
       % reset other particles structures
-      rawParticleIDs = [];
-      StatusValues = [];
-      for r = 1:length(ReviewedParticles)
-        newIDs = unique(ReviewedParticles.idVec(~isnan(ReviewedParticles.idVec)));
-        rawParticleIDs = [rawParticleIDs newIDs];
-        StatusValues = [StatusValues repelem(ReviewedParticles.Approved,length(newIDs))];
-      end
-      ReviewedParticlesFull.rawParticleIDs{Channel} = rawParticleIDs; % list of indices
+   
+      ReviewedParticlesFull.rawParticleIDs{Channel} = ParticleStitchInfo{Channel}.reservedFragmentIDs; % list of indices
       % select indices 
       ReviewedParticlesFull.RawParticles{Channel} = ReviewedParticlesFull.RawParticles{Channel}(ReviewedParticlesFull.rawParticleIDs{Channel});
       ReviewedParticlesFull.HMMParticles{Channel} = ReviewedParticlesFull.HMMParticles{Channel}(ReviewedParticlesFull.rawParticleIDs{Channel});
@@ -98,13 +93,7 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
       ReviewedParticlesFull.Particles{Channel} = ReviewedParticles;
       % we don't want to save any info about FullParticles
       ReviewedParticlesFull = rmfield(ReviewedParticlesFull,'FullParticles');
-      % update Approve flags in auxiliary structures (should probably do
-      % this inside CheckParticleTracking eventually
-      for r = 1:length(rawParticleIDs)
-        ReviewedParticlesFull.RawParticles{Channel}(r).Approved = StatusValues(r);
-        ReviewedParticlesFull.HMMParticles{Channel}(r).Approved = StatusValues(r);
-        ReviewedParticlesFull.SimParticles{Channel}(r).Approved = StatusValues(r);
-      end
+     
     else       
       % initialize fields in stitch info structure
       ParticleStitchInfo{Channel}.persistentLinkIndexCell = {};
@@ -115,9 +104,14 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
       ParticleStitchInfo{Channel}.linkAdditionCell = {};
       ParticleStitchInfo{Channel}.linkCostVec = [];      
       ParticleStitchInfo{Channel}.linkApprovedVec = [];
+      ParticleStitchInfo{Channel}.reservedFragmentIDs = [];
     end
+    % particle ID counter
+    ptIDCounter = 1;
+    reservedFragmentIDs = ParticleStitchInfo{Channel}.reservedFragmentIDs;
     for CurrentFrame = 1:length(Spots{Channel})
       waitbar(CurrentFrame/length(Spots{Channel}),f);
+      
       % Get the positions of ALL spots (approved and disapproved)
       [NewSpotsX, NewSpotsY, NewSpotsZ] = SpotsXYZ(Spots{Channel}(CurrentFrame));
       
@@ -160,6 +154,9 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
         % particle using the NewParticle array.
         NewParticleFlag = true(size(NewSpotsX));
         
+        % exclude Spots corresponding to existing particle
+        NewParticleFlag(SpotFilterTemp(CurrentFrame,:)==0) = false;
+        
         if ~isempty(ExtantParticles) && ~NewNCFlag
           % Generate maximum allowed jump radius between spots          
           SearchRadius = SearchRadiusMicrons;
@@ -189,9 +186,9 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
           DistanceMat(forbiddenIndices) = Inf;
           
           % remove existing spots that are in approved particles 
-          prevAppIndices = SpotFilterTemp(CurrentFrame-1,:)==0;
+%           prevAppIndices = SpotFilterTemp(CurrentFrame-1,:)==0;
           nextAppIndices = SpotFilterTemp(CurrentFrame,:)==0;
-          DistanceMat(:,prevAppIndices) = Inf;
+%           DistanceMat(:,prevAppIndices) = Inf;
           DistanceMat(nextAppIndices,:) = Inf;
           
           % Find existing particles and new spots are close enough to be 
@@ -226,13 +223,19 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
           RawParticles{Channel}(TotalParticles).Frame = CurrentFrame;
           RawParticles{Channel}(TotalParticles).Index = j;
           RawParticles{Channel}(TotalParticles).Approved = 0;
-          RawParticles{Channel}(TotalParticles).FirstFrame = CurrentFrame; % not sure I'll use these
-          RawParticles{Channel}(TotalParticles).LastFrame = CurrentFrame; % not sure I'll use these
+          RawParticles{Channel}(TotalParticles).FirstFrame = CurrentFrame; 
+          RawParticles{Channel}(TotalParticles).LastFrame = CurrentFrame; 
           RawParticles{Channel}(TotalParticles).xPos = NewSpotsX(j);
           RawParticles{Channel}(TotalParticles).yPos = NewSpotsY(j);
-          RawParticles{Channel}(TotalParticles).zPos = NewSpotsZ(j);          
+          RawParticles{Channel}(TotalParticles).zPos = NewSpotsZ(j);      
           RawParticles{Channel}(TotalParticles).Nucleus = NewSpotNuclei(j); 
-          RawParticles{Channel}(TotalParticles).NucleusDist = NewSpotDistances(j); 
+          RawParticles{Channel}(TotalParticles).NucleusDist = NewSpotDistances(j);
+          % add identifier
+          while ismember(ptIDCounter,reservedFragmentIDs)
+            ptIDCounter = ptIDCounter + 1;
+          end
+          RawParticles{Channel}(TotalParticles).FragmentID = ptIDCounter;
+          ptIDCounter = ptIDCounter + 1;
         end
       end
 

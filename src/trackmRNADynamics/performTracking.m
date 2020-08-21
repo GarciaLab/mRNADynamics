@@ -39,12 +39,12 @@ toc
 
 tic
 disp('Inferring particle motion model...')
-[HMMParticles, globalMotionModel] = track02TrainGHMM(RawParticles, retrack, displayFigures);
+[HMMParticles, globalMotionModel] = track02TrainGHMM(RawParticles, displayFigures);
 toc
 
 tic
 disp('Simulating particle tracks...')
-SimParticles = track03PredictParticlePaths(HMMParticles, FrameInfo, retrack, displayFigures);
+SimParticles = track03PredictParticlePaths(HMMParticles, FrameInfo, displayFigures);
 toc
 
 tic

@@ -27,7 +27,6 @@ function [SpotFilter,Particles]=...
   Particles(addIndex).yPos=y(IndexOutput);
   Particles(addIndex).zPos=z(IndexOutput);
   Particles(addIndex) = detrendZ(Particles(addIndex),FrameInfo);
-  % error('add z detrend function')
 
   %%%%%
   %Next update projected paths

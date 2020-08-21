@@ -6,20 +6,21 @@ function [Particles] = sortParticles(Sort, sortByLength, NChannels, Particles)
     
     for ChN = 1:NChannels
       nParticles = length(Particles{ChN});
-      sortIndex = zeros(1, nParticles);
+      sortIndex1 = zeros(nParticles, 1);
+      sortIndex2 = zeros(nParticles, 1); % let's use xPos as a sub index for stable sorting
 
       for i = 1:length(Particles{ChN})
 
         if sortByLength %sort by most points in particle
-          sortIndex(i) = length(Particles{ChN}(i).Frame);
+          sortIndex1(i) = length(Particles{ChN}(i).Frame);
           direction = 'descend';
         else %Otherwise, sort by first frame as normal
-          sortIndex(i) = Particles{ChN}(i).Frame(1);
+          sortIndex1(i) = Particles{ChN}(i).Frame(1);
         end
-
+        sortIndex2(i) = Particles{ChN}(i).xPos(1);
       end
 
-      [~, Permutations] = sort(sortIndex, direction);
+      [~, Permutations] = sortrows([sortIndex1 sortIndex2], direction);
       Particles{ChN} = Particles{ChN}(Permutations);
     end
 
