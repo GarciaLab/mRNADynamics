@@ -29,7 +29,7 @@ function [ForceSplitCell, ForceMatchCell] = checkForAssignedLinkInfo(...
 
   % find elements that are in the lists      
   ForceMatchCell = {};  
-  for d = 1:length(linkStruct.forbiddenLinIndices)    
+  for d = 1:length(linkStruct.persistentLinIndices)    
     overlaps = ismember(LinVec,linkStruct.persistentLinIndices{d});
     joinIDs = IDVec(overlaps);    
     joinIDs = unique(joinIDs(~isnan(joinIDs)));

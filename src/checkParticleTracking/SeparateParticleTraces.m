@@ -40,12 +40,10 @@ newParticleTemp.Approved=0;
 currParticleTemp.matchCost = cptState.Particles{Ch}(cptState.CurrentParticle).matchCost;
 currParticleTemp.Nucleus = cptState.Particles{Ch}(cptState.CurrentParticle).Nucleus;
 currParticleTemp.NucleusOrig = cptState.Particles{Ch}(cptState.CurrentParticle).NucleusOrig;
-currParticleTemp.stitchInfoPointer = cptState.Particles{Ch}(cptState.CurrentParticle).stitchInfoPointer;
 
 newParticleTemp.matchCost = cptState.Particles{Ch}(cptState.CurrentParticle).matchCost;
-newParticleTemp.Nucleus = NaN; % Not sure how to handle this yet...
+newParticleTemp.Nucleus = cptState.Particles{Ch}(cptState.CurrentParticle).Nucleus; % Not sure how to handle this yet...
 newParticleTemp.NucleusOrig = cptState.Particles{Ch}(cptState.CurrentParticle).NucleusOrig;
-newParticleTemp.stitchInfoPointer = currParticleTemp.stitchInfoPointer+1;
 
 %Next update particle ID info
 ptIDsFull = cptState.Particles{Ch}(cptState.CurrentParticle).idVec;
@@ -109,10 +107,6 @@ newParticleTemp.linkCostFlags = newParticleTemp.linkCostCell > cptState.Particle
 %Now update particles structure
 cptState.Particles{Ch} = [cptState.Particles{Ch}(1:cptState.CurrentParticle-1) currParticleTemp newParticleTemp cptState.Particles{Ch}(cptState.CurrentParticle+1:end)];
 
-%And update pointer variable for later entries
-for c = cptState.CurrentParticle+2:length(cptState.Particles{Ch})
-  cptState.Particles{Ch}(c).stitchInfoPointer = cptState.Particles{Ch}(c).stitchInfoPointer+1;
-end
 
 %Lastly, add split info. This is inelegant, but we need to make sure every
 %pair of points before and after split are forbidden
@@ -151,4 +145,4 @@ linksToRemove = cellfun(@(x) all(ismember(x,ptList)),cptState.ParticleStitchInfo
 cptState.ParticleStitchInfo{Ch}.linkAdditionCell = [cptState.ParticleStitchInfo{Ch}.linkAdditionCell(~linksToRemove) linkAdditionCellOrig linkAdditionCellNew];
 cptState.ParticleStitchInfo{Ch}.linkAdditionIDCell = [cptState.ParticleStitchInfo{Ch}.linkAdditionIDCell(~linksToRemove) linkAdditionIDCellOrig linkAdditionIDCellNew];
 cptState.ParticleStitchInfo{Ch}.linkCostVec = [cptState.ParticleStitchInfo{Ch}.linkCostVec(~linksToRemove) linkCostVecOrig linkCostVecNew];
-cptState.ParticleStitchInfo{Ch}.linkApprovedVec = [cptState.ParticleStitchInfo{Ch}.linkApprovedVec(~linksToRemove) repelem(0,length(linkCostVec))];
+cptState.ParticleStitchInfo{Ch}.linkApprovedVec = [cptState.ParticleStitchInfo{Ch}.linkApprovedVec(~linksToRemove) repelem(0,length([linkCostVecOrig linkCostVecNew]))];
