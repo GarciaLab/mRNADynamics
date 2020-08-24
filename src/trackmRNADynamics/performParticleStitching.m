@@ -210,7 +210,11 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     mDistanceMat = tril(mDistanceMat);
     mDistanceMat(mDistanceMat==0) = Inf;
     % impose user-assigned links/splits
-    [mDistanceMat, ForceMatchCell] = imposeLinkAssigments(mDistanceMat,ForceMatchCell,ForceSplitCell,particleIDArray);
+    try
+      [mDistanceMat, ForceMatchCell] = imposeLinkAssigments(mDistanceMat,ForceMatchCell,ForceSplitCell,particleIDArray);
+    catch
+      error('wtf')
+    end
     % calculate  current lowest cost
     minCost = min(mDistanceMat(:));
     % increment

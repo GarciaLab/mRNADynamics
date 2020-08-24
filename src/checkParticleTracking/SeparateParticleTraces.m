@@ -1,7 +1,6 @@
 function cptState = SeparateParticleTraces(cptState)
 
 %Separate the particle trace at the specified position
-%%
 Ch = cptState.CurrentChannelIndex;
 %get list of particle fragments to exclude
 ptList = cptState.Particles{Ch}(cptState.CurrentParticle).idVec;
@@ -112,19 +111,16 @@ cptState.Particles{Ch} = [cptState.Particles{Ch}(1:cptState.CurrentParticle-1) c
 %pair of points before and after split are forbidden
 forbiddenLinkFrameCell = {};
 forbiddenLinkIndexCell = {};
+forbiddenLinkLinCell = {};
 for i = 1:length(currParticleTemp.Frame)
   for j = 1:length(newParticleTemp.Frame)
     splitFrames = [currParticleTemp.Frame(i) newParticleTemp.Frame(j)];
     forbiddenLinkFrameCell(end+1) = {splitFrames};
-    forbiddenLinkIndexCell(end+1) = ...
-      {[currParticleTemp.Index(currParticleTemp.Frame==splitFrames(1)) newParticleTemp.Index(newParticleTemp.Frame==splitFrames(2))]};
+    splitIndices = [currParticleTemp.Index(currParticleTemp.Frame==splitFrames(1)) newParticleTemp.Index(newParticleTemp.Frame==splitFrames(2))];
+    forbiddenLinkIndexCell(end+1) = {splitIndices};
+    forbiddenLinkLinCell(end+1) = {sub2ind(size(cptState.SpotFilter{Ch}),splitFrames,splitIndices)};
   end
 end
-
-%%%%%%%%%%%%%%%
-%Update Stitch structure
-cptState.ParticleStitchInfo{Ch}.forbiddenLinkFrameCell = [cptState.ParticleStitchInfo{Ch}.forbiddenLinkFrameCell forbiddenLinkFrameCell];
-cptState.ParticleStitchInfo{Ch}.forbiddenLinkIndexCell = [cptState.ParticleStitchInfo{Ch}.forbiddenLinkIndexCell forbiddenLinkIndexCell];
 
 % genernate addition ID cells 
 linkAdditionIDCellOrig = {};
@@ -139,8 +135,30 @@ for p = 1:length(linkAdditionCellNew)
   linkAdditionIDCellNew{p} = cellfun(@str2num,fragments);
 end
 
-%We need to identify and remove info corresponding to old particle and ad
-%new inf
+% check to see if prior user-assigned link info exists for this pair of
+% spots
+% get exisiting index pairs
+linkStruct = generateLinkStructure(cptState.ParticleStitchInfo{Ch},cptState.SpotFilter{Ch});
+
+% check for overlap
+oldPLinks = false(size(linkStruct.persistentLinIndices));
+oldFLinks = false(size(linkStruct.forbiddenLinIndices));
+for f = 1:length(forbiddenLinkLinCell)
+  oldPLinks = cellfun(@(x) all(ismember(x,forbiddenLinkLinCell{f})),linkStruct.persistentLinIndices) | oldPLinks;
+  oldFLinks = cellfun(@(x) all(ismember(x,forbiddenLinkLinCell{f})),linkStruct.forbiddenLinIndices) | oldFLinks;
+end
+
+% override previous spearation if it exists
+cptState.ParticleStitchInfo{Ch}.persistentLinkFrameCell = cptState.ParticleStitchInfo{Ch}.persistentLinkIndexCell(~oldPLinks);
+cptState.ParticleStitchInfo{Ch}.persistentLinkIndexCell = cptState.ParticleStitchInfo{Ch}.persistentLinkIndexCell(~oldPLinks);
+
+%%%%%%%%%%%%%%%
+%Update Stitch structure
+cptState.ParticleStitchInfo{Ch}.forbiddenLinkFrameCell = [cptState.ParticleStitchInfo{Ch}.forbiddenLinkFrameCell(~oldFLinks) forbiddenLinkFrameCell];
+cptState.ParticleStitchInfo{Ch}.forbiddenLinkIndexCell = [cptState.ParticleStitchInfo{Ch}.forbiddenLinkIndexCell(~oldFLinks) forbiddenLinkIndexCell];
+
+%We need to identify and remove info corresponding to old particle and add
+%new info
 linksToRemove = cellfun(@(x) all(ismember(x,ptList)),cptState.ParticleStitchInfo{Ch}.linkAdditionIDCell);
 cptState.ParticleStitchInfo{Ch}.linkAdditionCell = [cptState.ParticleStitchInfo{Ch}.linkAdditionCell(~linksToRemove) linkAdditionCellOrig linkAdditionCellNew];
 cptState.ParticleStitchInfo{Ch}.linkAdditionIDCell = [cptState.ParticleStitchInfo{Ch}.linkAdditionIDCell(~linksToRemove) linkAdditionIDCellOrig linkAdditionIDCellNew];

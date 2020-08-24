@@ -119,7 +119,8 @@ else
                 if SpotsIndex ~= 1
                     if ~isempty(setdiff(fields(cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame).Fits), fields(Fits)))...
                             | ~isempty(setdiff(fields(Fits),fields(cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame).Fits)))
-                        [cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame).Fits, Fits] = addFields(cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame).Fits, Fits);
+                        [cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame).Fits, Fits] = ...
+                          addFields(cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame).Fits, Fits);
                     end
                     cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame).Fits(SpotsIndex) = Fits;
                 else
@@ -140,11 +141,11 @@ else
                 %above the threshold. First, check whether the
                 %dimensions of cptState.SpotFilter need to be altered. If so, pad it with NaNs
                 if size(cptState.SpotFilter{cptState.CurrentChannelIndex},2)>SpotsIndex
-                    cptState.SpotFilter{cptState.CurrentChannelIndex}(cptState.CurrentFrame,SpotsIndex)=1;
+                    cptState.SpotFilter{cptState.CurrentChannelIndex}(cptState.CurrentFrame,SpotsIndex)=2; %NL: note that I'm using "2" to indicate an added spot 
                 else
                     %Pad with NaNs
                     cptState.SpotFilter{cptState.CurrentChannelIndex}(:,end:SpotsIndex)=NaN;
-                    cptState.SpotFilter{cptState.CurrentChannelIndex}(cptState.CurrentFrame,SpotsIndex)=1;
+                    cptState.SpotFilter{cptState.CurrentChannelIndex}(cptState.CurrentFrame,SpotsIndex)=2;
                 end
                 
                 %Turn this spot into a new particle. This is the equivalent of

@@ -55,10 +55,30 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
     SearchRadiusMicrons = estimateSearchRadius(Spots,ncVec,MaxSearchRadiusMicrons,PixelSize,matchPercent,Channel);
     SearchRadiusMicrons = max([0.5,SearchRadiusMicrons]); % should be at least 0.5um
     
+    % In cases where spots have been manually assigned by user, we need to
+    % enforce nucleus ID to guard against edge cases where newly designated
+    % spot is slightly closer to an adjacent nucles
+    SpotFilterNucleus = NaN(size(SpotFilter{Channel}));
+    if retrack
+      [ncFrames, ncIndices] = find(SpotFilter{Channel}==2);
+      FrameVec = [];
+      IndexVec = [];
+      ptIndVec = [];
+      for i = 1:length(Particles{Channel})
+        FrameVec = [FrameVec Particles{Channel}(i).Frame];
+        IndexVec = [IndexVec Particles{Channel}(i).Index];
+        ptIndVec = [ptIndVec repelem(i,length(Particles{Channel}(i).Index))];
+      end
+      for i = 1:length(ncFrames)
+        [~, matchRow] = intersect([FrameVec' IndexVec'],[ncFrames(i), ncIndices(i)],'rows','stable');
+        ptIndices(i) = ptIndVec(matchRow);      
+        SpotFilterNucleus(ncFrames(i),ncIndices(i)) = Particles{Channel}(ptIndices(i)).Nucleus;
+      end
+    end
     % If we're retracking, we need to (a) break up un-approved particles
     % and (b) make a temporary spotFilter that indicates which Spots are a
     % part of approved particles
-    SpotFilterTemp = ones(size(SpotFilter{Channel}));
+    SpotFilterLink = ones(size(SpotFilter{Channel}));    
     if retrack
       % keep only full particles that were approved. Individual frames that
       % were linked are taken care of later on
@@ -71,8 +91,8 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
       for p = 1:length(ReviewedParticles)
         appFrames = ReviewedParticles(p).Frame;
         appIndices = ReviewedParticles(p).Index;
-        appLinIndices = sub2ind(size(SpotFilterTemp),appFrames,appIndices);
-        SpotFilterTemp(appLinIndices) = 0;
+        appLinIndices = sub2ind(size(SpotFilterLink),appFrames,appIndices);
+        SpotFilterLink(appLinIndices) = 0;
       end      
       
       % reset stitch info fields
@@ -128,10 +148,11 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
         particlesFlag = ~isempty(RawParticles{Channel});
         % if we have nucleus info, assign each spot to a nucleus
         [NewSpotNuclei, NewSpotDistances] = getNuclearAssigments(NewSpotsX,NewSpotsY,...
-              schnitzcells,CurrentFrame,UseHistone);
+              schnitzcells,CurrentFrame,UseHistone,SpotFilterNucleus(CurrentFrame,:));
         %Get a list of the particles that were present in
         %the previous frame and of their positions.
         ExtantParticles = [];
+        ExtantParticleIndices = [];
         PrevSpotsX = [];
         PrevSpotsY = [];   
         PrevNuclei = [];
@@ -139,6 +160,7 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
           for j = 1:length(RawParticles{Channel})
             if RawParticles{Channel}(j).Frame(end) == (CurrentFrame - 1)
               ExtantParticles = [ExtantParticles, j];            
+              ExtantParticleIndices = [ExtantParticleIndices, RawParticles{Channel}(j).Index(end)];            
               PrevSpotsX = [PrevSpotsX, RawParticles{Channel}(j).xPos(end)];
               PrevSpotsY = [PrevSpotsY, RawParticles{Channel}(j).yPos(end)];
               PrevNuclei = [PrevNuclei, RawParticles{Channel}(j).Nucleus];
@@ -155,8 +177,8 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
         NewParticleFlag = true(size(NewSpotsX));
         
         % exclude Spots corresponding to existing particle
-        NewParticleFlag(SpotFilterTemp(CurrentFrame,:)==0) = false;
-        
+        NewParticleFlag(SpotFilterLink(CurrentFrame,:)==0) = false;
+          
         if ~isempty(ExtantParticles) && ~NewNCFlag
           % Generate maximum allowed jump radius between spots          
           SearchRadius = SearchRadiusMicrons;
@@ -177,17 +199,23 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
           
           % apply user-assigned links that are within a single frame
           [PrevJoin, NewJoin] = findPersistentLinks(ParticleStitchInfo{Channel},CurrentFrame);
-          persistentIndices = sub2ind(size(DistanceMat),NewJoin,PrevJoin);
-          DistanceMat(persistentIndices) = 0;
+          PrevJoinIndices = find(ismember(ExtantParticleIndices,PrevJoin));
+          if ~isempty(PrevJoinIndices)
+            persistentIndices = sub2ind(size(DistanceMat),NewJoin,PrevJoinIndices);          
+            DistanceMat(persistentIndices) = 0;
+          end
           
           % apply user-assigned splits that are within a single frame
           [PrevSplit, NewSplit] = findForbiddenLinks(ParticleStitchInfo{Channel},CurrentFrame);
-          forbiddenIndices = sub2ind(size(DistanceMat),NewSplit,PrevSplit);
-          DistanceMat(forbiddenIndices) = Inf;
+          PrevSplitIndices = find(ismember(ExtantParticleIndices,PrevSplit));
+          if ~isempty(PrevSplitIndices)
+            forbiddenIndices = sub2ind(size(DistanceMat),NewSplit,PrevSplitIndices);
+            DistanceMat(forbiddenIndices) = Inf;
+          end
           
           % remove existing spots that are in approved particles 
 %           prevAppIndices = SpotFilterTemp(CurrentFrame-1,:)==0;
-          nextAppIndices = SpotFilterTemp(CurrentFrame,:)==0;
+          nextAppIndices = SpotFilterLink(CurrentFrame,:)==0;
 %           DistanceMat(:,prevAppIndices) = Inf;
           DistanceMat(nextAppIndices,:) = Inf;
           

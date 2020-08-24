@@ -44,11 +44,6 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
   
   for Channel = 1:NCh
     %first, reintegrate approved particles (if they exist)
-%     idsToExclude = [];
-%     if retrack 
-%       % make list of IDs to exclude   
-%       idsToExclude = [ApprovedParticlesFull.rawParticleIDs{Channel}];           
-%     end
               
     % get full list of pre-assigned links and breaks (will be empty unless
     % retracking)    

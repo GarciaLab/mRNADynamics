@@ -8,7 +8,7 @@ function cptState = TransferParticle(cptState,NewSpotIndex,Prefix)
   globalMotionModel = getGlobalMotionModel(LiveExperiment(Prefix)); 
   
   %First, approve the particle
-  cptState.SpotFilter{CC}(CF,NewSpotIndex)=1; % set to 2 to distinguish from original particles
+%   cptState.SpotFilter{CC}(CF,NewSpotIndex)=1; % set to 2 to distinguish from original particles
 
   % set all fields to NaN by default 
   varNames = fieldnames(cptState.Particles{CC}(end));

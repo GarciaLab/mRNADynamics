@@ -10,21 +10,24 @@ if isnan(cptState.Particles{Ch}(ClickedParticle).Nucleus) ...
     cptState.Particles{Ch}(cptState.CurrentParticle).Nucleus
   
   % initialize temporary structure 
-  newParticleTemp = cptState.Particles{Ch}(cptState.CurrentParticle);  
+  origParticleTemp = cptState.Particles{Ch}(cptState.CurrentParticle);  
+  addParticleTemp = cptState.Particles{Ch}(ClickedParticle);  
 
-  % find closest frames
-  distMat = abs(cptState.Particles{Ch}(cptState.CurrentParticle).Frame' - ...
-            cptState.Particles{Ch}(ClickedParticle).Frame);
-  [~,minOrig] = min(distMat,[],1);
-  [~,minNew] = min(distMat,[],2);  
-  
-  % get frame values at join
-  joinFrames = [cptState.Particles{Ch}(cptState.CurrentParticle).Frame(minOrig)...
-    cptState.Particles{Ch}(ClickedParticle).Frame(minNew(1))];
-  
-  % get fragment ids at join
-  joinParticles = [cptState.Particles{Ch}(cptState.CurrentParticle).idVec(joinFrames(1))...
-    cptState.Particles{Ch}(ClickedParticle).idVec(joinFrames(2))];
+  % generate list of frames to join
+  joinLinkFrameCell = {};
+  joinLinkIndexCell = {};
+  joinLinkLinCell = {};
+  joinParticles = {};
+  for i = 1:length(addParticleTemp.Frame)
+    for j = 1:length(origParticleTemp.Frame)
+      joinFrames = [addParticleTemp.Frame(i) origParticleTemp.Frame(j)];
+      joinLinkFrameCell(end+1) = {joinFrames};
+      joinIndices = [addParticleTemp.Index(addParticleTemp.Frame==joinFrames(1)) origParticleTemp.Index(origParticleTemp.Frame==joinFrames(2))];
+      joinLinkIndexCell(end+1) = {joinIndices};
+      joinLinkLinCell(end+1) = {sub2ind(size(cptState.SpotFilter{Ch}),joinFrames,joinIndices)};
+      joinParticles(end+1) = {[addParticleTemp.idVec(joinFrames(1)) origParticleTemp.idVec(joinFrames(2))]};
+    end
+  end
   
   % get list of all fragment IDs involved
   allIDs = [cptState.Particles{Ch}(cptState.CurrentParticle).idVec cptState.Particles{Ch}(ClickedParticle).idVec];
@@ -34,65 +37,79 @@ if isnan(cptState.Particles{Ch}(ClickedParticle).Nucleus) ...
   FragmentIDVec = [cptState.SimParticles{Ch}.FragmentID];
   FragmentIDVec = [FragmentIDVec nanmax(FragmentIDVec)+1];
   nucleusIDVec = false(1,length(cptState.SimParticles{Ch}));
-  nucleusIDVec(allIDs) = 1;
+  nucleusIDVec(allIDs) = 1; % using "nucleus" as a dummy grouper variable here
   frameIndex = 1:length(cptState.Particles{Ch}(cptState.CurrentParticle).idVec);
   ncVec = [cptState.FrameInfo.nc];
   
   % Re-run stitching
-  [pathArray, sigmaArray, ~, particleIDArray, newParticleTemp.linkStateString, ...
-              linkCostVec, linkAdditionCell, newParticleTemp.linkCostCell, ...
-              newParticleTemp.linkFrameCell, newParticleTemp.linkParticleCell] = performParticleStitching(...
+  [pathArray, sigmaArray, ~, particleIDArray, origParticleTemp.linkStateString, ...
+              linkCostVec, linkAdditionCell, origParticleTemp.linkCostCell, ...
+              origParticleTemp.linkFrameCell, origParticleTemp.linkParticleCell] = performParticleStitching(...
               1, nucleusIDVec, frameIndex, cptState.SimParticles{Ch}, ncVec, ...
-              cptState.Particles{Ch}(cptState.CurrentParticle).matchCost,{joinParticles},{},FragmentIDVec);
+              cptState.Particles{Ch}(cptState.CurrentParticle).matchCost,joinParticles,{},FragmentIDVec);
             
   % incorporate path and link-related info
-  newParticleTemp.pathArray = squeeze(pathArray);
-  newParticleTemp.sigmaArray = squeeze(sigmaArray);
-  newParticleTemp.linkCostCell = newParticleTemp.linkCostCell{1};
-  newParticleTemp.linkCostFlags = newParticleTemp.linkCostCell > cptState.Particles{Ch}(cptState.CurrentParticle).costThresh;
-  newParticleTemp.idVec = particleIDArray(:,1)';
+  origParticleTemp.pathArray = squeeze(pathArray);
+  origParticleTemp.sigmaArray = squeeze(sigmaArray);
+  origParticleTemp.linkCostCell = origParticleTemp.linkCostCell{1};
+  origParticleTemp.linkCostFlags = origParticleTemp.linkCostCell > cptState.Particles{Ch}(cptState.CurrentParticle).costThresh;
+  origParticleTemp.idVec = particleIDArray(:,1)';
   
   %Concatentate vector quantities with one entry per frame
   varNames = fieldnames(cptState.Particles{Ch}(cptState.CurrentParticle))';
   catIndices = find(ismember(varNames,cptState.frameLevelFields));
   
   % get frame ordering
-  [newParticleTemp.Frame, sortIndices] = sort([cptState.Particles{Ch}(cptState.CurrentParticle).Frame,cptState.Particles{Ch}(ClickedParticle).Frame]);
+  [origParticleTemp.Frame, sortIndices] = sort([cptState.Particles{Ch}(cptState.CurrentParticle).Frame,cptState.Particles{Ch}(ClickedParticle).Frame]);
 
   for c = 1:length(catIndices)
     newVec = [cptState.Particles{Ch}(cptState.CurrentParticle).(varNames{catIndices(c)}),cptState.Particles{Ch}(ClickedParticle).(varNames{catIndices(c)})];
-    newParticleTemp.(varNames{catIndices(c)}) = newVec(sortIndices);
+    origParticleTemp.(varNames{catIndices(c)}) = newVec(sortIndices);
   end
-  newParticleTemp.Approved=0;
-  newParticleTemp.FrameApproved=logical(newParticleTemp.FrameApproved);
-  newParticleTemp.FirstFrame = newParticleTemp.Frame(1);
-  newParticleTemp.LastFrame = newParticleTemp.Frame(end);
+  origParticleTemp.Approved=0;
+  origParticleTemp.FrameApproved=logical(origParticleTemp.FrameApproved);
+  origParticleTemp.FirstFrame = origParticleTemp.Frame(1);
+  origParticleTemp.LastFrame = origParticleTemp.Frame(end);
 
 
   %Now, assign temp and get rid of the clicked particle
-  cptState.Particles{Ch}(cptState.CurrentParticle) = newParticleTemp;
-  cptState.Particles{Ch} = cptState.Particles{Ch}([1:ClickedParticle-1,ClickedParticle+1:end]);
+  cptState.Particles{Ch}(cptState.CurrentParticle) = origParticleTemp;
+  cptState.Particles{Ch} = cptState.Particles{Ch}([1:ClickedParticle-1,ClickedParticle+1:end]);  
   
-  
-  %Lastly, remove outdated stitch info and replace with new 
-  
-  % identify elements in particle array with multiple fragments
+  % generate numeric join tracker structure
   linkAdditionIDCell = {};
   for p = 1:length(linkAdditionCell)
     fragments = strsplit(linkAdditionCell{p},'|');
     linkAdditionIDCell{p} = cellfun(@str2num,fragments);
   end
   
+  % remove old links and replace with new ones
   linksToRemove = cellfun(@(x) all(ismember(x,allIDs)),cptState.ParticleStitchInfo{Ch}.linkAdditionIDCell);
   cptState.ParticleStitchInfo{Ch}.linkAdditionCell = [cptState.ParticleStitchInfo{Ch}.linkAdditionCell(~linksToRemove) linkAdditionCell];
   cptState.ParticleStitchInfo{Ch}.linkAdditionIDCell = [cptState.ParticleStitchInfo{Ch}.linkAdditionIDCell(~linksToRemove) linkAdditionIDCell];
   cptState.ParticleStitchInfo{Ch}.linkCostVec = [cptState.ParticleStitchInfo{Ch}.linkCostVec(~linksToRemove) linkCostVec];
   cptState.ParticleStitchInfo{Ch}.linkApprovedVec = [cptState.ParticleStitchInfo{Ch}.linkApprovedVec(~linksToRemove) repelem(0,length(linkCostVec))];
   
-  % add persistent frames
-  joinFilter = ismember(cptState.Particles{Ch}(cptState.CurrentParticle).Frame,joinFrames);
-  cptState.ParticleStitchInfo{Ch}.persistentLinkFrameCell(end+1) = {joinFrames};
-  cptState.ParticleStitchInfo{Ch}.persistentLinkIndexCell(end+1) = {cptState.Particles{Ch}(cptState.CurrentParticle).Index(joinFilter)};
+  % check to see if prior user-assigned link info exists for this pair of
+  % spots
+  
+  % get exisiting index pairs
+  linkStruct = generateLinkStructure(cptState.ParticleStitchInfo{Ch},cptState.SpotFilter{Ch});
+  % look for overlaps
+  oldPLinks = false(size(linkStruct.persistentLinIndices));
+  oldFLinks = false(size(linkStruct.forbiddenLinIndices));
+  for f = 1:length(joinLinkLinCell)
+    oldPLinks = cellfun(@(x) all(ismember(x,joinLinkLinCell{f})),linkStruct.persistentLinIndices) | oldPLinks;
+    oldFLinks = cellfun(@(x) all(ismember(x,joinLinkLinCell{f})),linkStruct.forbiddenLinIndices) | oldFLinks;
+  end
+
+  % override previous spearation if it exists
+  cptState.ParticleStitchInfo{Ch}.forbiddenLinkFrameCell = cptState.ParticleStitchInfo{Ch}.forbiddenLinkFrameCell(~oldFLinks);
+  cptState.ParticleStitchInfo{Ch}.forbiddenLinkIndexCell = cptState.ParticleStitchInfo{Ch}.forbiddenLinkIndexCell(~oldFLinks);
+  
+  % add persistent info if not already present      
+  cptState.ParticleStitchInfo{Ch}.persistentLinkFrameCell = [cptState.ParticleStitchInfo{Ch}.persistentLinkFrameCell(~oldPLinks) joinLinkFrameCell];
+  cptState.ParticleStitchInfo{Ch}.persistentLinkIndexCell = [cptState.ParticleStitchInfo{Ch}.persistentLinkIndexCell(~oldPLinks) joinLinkIndexCell];  
 else
   warning("Mismatching nucleus IDs. Aborting linkage")
 end
