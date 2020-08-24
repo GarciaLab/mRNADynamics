@@ -24,6 +24,40 @@ end
 % create spotFilter if not retracking
 if retrack && ~liveExperiment.hasParticlesFile
   error('No Particles structure found. Re-run without "retrack" option')  
+% prompt user if old Particles structure exists, but retracking not specified  
+elseif ~retrack && liveExperiment.hasParticlesFile
+  retrack_str = input('Particles structure detected. Do you want to perform retracking? If not, exisitng tracking info will be overwritten  (y/n)','s');
+  if strcmpi(retrack_str,'n') % check to see if spots were added
+    disp('overwriting...')
+    [~, SpotFilter] = getParticles(liveExperiment);
+    if ~iscell(SpotFilter)
+      SpotFilter = {SpotFilter};
+    end
+    newSpotsFlag = 0;
+    for Ch = 1:length(SpotFilter)
+      newSpotsFlag = newSpotsFlag + sum(1*SpotFilter{Ch}(:)==2);
+    end
+    if newSpotsFlag > 0
+      reset_spots_str = input(['Particles will be overwritten. Do you wish to overwrite ' num2str(newSpotsFlag) ' manually added spot(s)? (y/n)'],'s');
+      if strcmpi(reset_spots_str,'y')
+        disp('removing user-added spots...')        
+        for Ch = 1:length(SpotFilter)
+          [delFrames, delIndices] = find(SpotFilter{Ch}==2);
+          for i = 1:length(delFrames)
+            Spots{Ch}(delFrames(i)).Fits = Spots{Ch}(delFrames(i)).Fits([1:delIndices(i)-1 delIndices(i)+1:end]);
+          end
+        end
+        disp('saving Spots structure...')
+        save([liveExperiment.resultsFolder 'Spots.mat'],'Spots')
+      end
+    end
+  elseif strcmpi(retrack_str,'y')    
+    retrack = true;
+  end
+end
+
+if retrack
+  disp('retracking...');
 end
 
 schnitzCells = getSchnitzcells(liveExperiment);
@@ -53,36 +87,36 @@ disp('Stitching particle tracks...')
                                 useHistone, retrack, displayFigures);
 toc 
 
-% % re-combine with previously approved particles that were excluded from
-% % tracking process
-% FullParticles = [ApprovedParticles FullParticles];
-
-tic
 matchCostVec = determineMatchOptions(Prefix,useHistone,matchCostMax);
 for Channel = 1:NCh
   Particles = dynamicStitchBeta(FullParticles,SimParticles,ParticleStitchInfo,Prefix,matchCostVec,Channel);
 end
-toc
 
 disp('Adding QC fields...')
 % Iterate over all channels and generate additional QC flags
 
-%%% flag long time gaps
+%%% flag large jumps
 Time = [FrameInfo.Time];
-% dT = median(diff(Time));
-timeThresh = 5*60;
-%%% flag distance gaps 
-distThresh = 2.5; % um
+dT = median(diff(Time));
+distThresh = 1/20; % um/sec NL: this is pretty generous...consider tightening
 PixelSize = FrameInfo(1).PixelSize;
 zSize = FrameInfo(1).ZStep;
+
 %%% flag unlikely linkages 
-if useHistone
-  costThresh = repelem(0.9*matchCostMax,NCh);
-else  
-  costThresh = 0.95*matchCostVec;
-end
+costThresh = 3;
+
 %%% flag spots that are far from their assigned nuclei
 ncDistPrctile = 99.5;
+
+%%% flag isolated spots
+nFrames = 1+2*ceil(120/dT/2);
+slidingIncrement = floor(nFrames/2);
+mvWindow = ones(1,nFrames);
+frameIndex = 1:length(Time);
+mvThresh = max([1, sum(mvWindow(1:slidingIncrement))-1]);
+
+%%% flag implausible frame-over-frame shifts in fluoresnce
+% NL: not currently supported. Need to implement
 
 for Channel = 1:NCh
   if useHistone
@@ -96,18 +130,29 @@ for Channel = 1:NCh
     else
       Particles{Channel}(p).ncDistFlags = false(size(Particles{Channel}(p).Frame));
     end
-    %%% distance
+    
+    %%% flag big jumps
+    dt = diff(Time(Particles{Channel}(p).Frame));
     dx = diff(Particles{Channel}(p).xPos)*PixelSize;
     dy = diff(Particles{Channel}(p).yPos)*PixelSize;
     dz = diff(Particles{Channel}(p).zPosDetrended)*zSize;
-    dr = sqrt(dx.^2+dy.^2+dz.^2)>distThresh;
-    Particles{Channel}(p).distShiftFlags = [false dr] | [dr false];
-    %%% time 
-    dt = diff(Time(Particles{Channel}(p).Frame)) > timeThresh;
-    Particles{Channel}(p).timeShiftFlags = [false dt] |  [dt false];
-    % flag unlikely linkages
+    dr = sqrt(dx.^2+dy.^2+dz.^2);
+    drdt = dr./dt>distThresh & dt < 120;
+    Particles{Channel}(p).distShiftFlags = [false drdt] | [drdt false];
+    Particles{Channel}(p).distShiftVec = [0 dr];
+
+    %%% flag unlikely linkages
     Particles{Channel}(p).linkCostFlags = Particles{Channel}(p).linkCostCell>costThresh;    
     Particles{Channel}(p).costThresh = costThresh;
+    
+    %%% flag isolated points    
+    FrameVec = Particles{Channel}(p).Frame;    
+    frameFlags = zeros(size(frameIndex));
+    frameFlags(FrameVec) = 1;
+    cvFrames = conv(frameFlags,mvWindow);
+    cvFrames = cvFrames(slidingIncrement+1:end-slidingIncrement);
+    Particles{Channel}(p).fragmentFlags = cvFrames(FrameVec)<=mvThresh;     
+      
   end    
 end
 
@@ -206,6 +251,7 @@ if displayFigures
 end
 
 % save
+disp('saving...')
 save([resultsFolder, filesep, 'ParticlesFull.mat'],'RawParticles','HMMParticles', 'SimParticles','FullParticles')
 save([resultsFolder, filesep, 'ParticleStitchInfo.mat'],'ParticleStitchInfo');
 save([resultsFolder, filesep, 'globalMotionModel.mat'],'globalMotionModel');
