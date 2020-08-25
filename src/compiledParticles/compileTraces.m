@@ -105,6 +105,17 @@ for ChN=1:NChannels
                 if isfield(Particles{ChN}(k),'zPos')
                     CompiledParticles{ChN}(k).zPos=Particles{ChN}(i).zPos(FrameFilter);
                 end
+                if isfield(Particles{ChN}(k),'zPosDetrended')
+                    CompiledParticles{ChN}(k).zPosDetrended=Particles{ChN}(i).zPosDetrended(FrameFilter);
+                end
+                % add QC info
+                CompiledParticles{ChN}(k).ncDistFlags = Particles{ChN}(i).ncDistFlags;
+                CompiledParticles{ChN}(k).distShiftFlags = Particles{ChN}(i).distShiftFlags;
+                CompiledParticles{ChN}(k).distShiftVec = Particles{ChN}(i).distShiftVec;
+                CompiledParticles{ChN}(k).fragmentFlags = Particles{ChN}(i).fragmentFlags;
+                CompiledParticles{ChN}(k).earlyFlags = Particles{ChN}(i).earlyFlags;
+                CompiledParticles{ChN}(k).flagsPerFrame = Particles{ChN}(i).flagsPerFrame;                                
+                
                 %(MT, 2018-02-11) Hacky fix to get lattice to run - FIX LATER
                 %CompiledParticles{ChN}(k).DVpos=Particles{ChN}(i).DVpos(FrameFilter);
                 CompiledParticles{ChN}(k).FrameApproved = Particles{ChN}(i).FrameApproved;
