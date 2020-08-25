@@ -96,7 +96,7 @@ function [rawDataPath, ProcPath, defaultDropboxFolder, MS2CodePath, ...
         movieDatabaseFolder = defaultDropboxFolder;
     end
     
-    movieDatabasePath = [movieDatabaseFolder,'\MovieDatabase.csv'];
+    movieDatabasePath = [movieDatabaseFolder,filesep, 'MovieDatabase.csv'];
     movieDatabase = csv2cell(movieDatabasePath, 'fromfile');
     
     if isempty(varargin) || isempty(varargin{1})
@@ -127,9 +127,9 @@ function [rawDataPath, ProcPath, defaultDropboxFolder, MS2CodePath, ...
             rootFolderName = 'DataRoot';
         end
         DataRoot = getConfigValue(computerFoldersValues, rootFolderName);        
-        rawDataPath = [DataRoot '/RawDynamicsData'];
-        PreProcPath = [DataRoot '/PreProcessedData'];
-        ProcPath = [DataRoot '/ProcessedData'];
+        rawDataPath = [DataRoot , filesep, 'RawDynamicsData'];
+        PreProcPath = [DataRoot, filesep, 'PreProcessedData'];
+        ProcPath = [DataRoot, filesep, 'ProcessedData'];
     end
     %We can use the string "Default" or "DropboxFolder" for the default Dropbox folder
     if strcmpi(dropboxFolderName,'default')

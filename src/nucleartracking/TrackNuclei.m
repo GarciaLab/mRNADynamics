@@ -14,14 +14,14 @@ function TrackNuclei(Prefix,varargin)
 % recommended to set this to 1.5 if you use NoBulkShift.
 % 'bulkShift': Runs the nuclear tracking with accounting for the bulk
 % shift between frames (greatly reduces runtime).
-% 'retrack': retrack
+% 'retrack': Use existing segmentation for tracking and bypass the prompt.
 % 'integrate': integrate nuclear fluorescence
-% 'mixedPolaritySegmentation': different segmentation method that works
-% better when there are nuclei of mixed polarity (some dark, some bright)
-% 'adjustNuclearContours': fit ellipses tightly around nuclei (done by
-% adjusting regular segmentation)
+% 'doNotRetrack': Don't retrack and don't prompt. 
+% 'mixedPolarity': inserts an absolute value into one of the
+% nuclear filters that helps identify nuclei that are both dark and bright
+% in the same image
 %
-% OUTPUT
+% OUTPUT.
 % '*_lin.mat' : Nuclei with lineages
 % 'Ellipses.mat' : Just nuclei
 %
@@ -32,20 +32,26 @@ function TrackNuclei(Prefix,varargin)
 % Documented by: Armando Reimer (areimer@berkeley.edu)
 %
 %
-cleanupObj = onCleanup(@myCleanupFun);
+% cleanupObj = onCleanup(@myCleanupFun);
 
 disp(['Tracking nuclei on ', Prefix, '...']);
 
 postTrackingSettings = struct; 
+
+%this is an optional argument. it's specified as global
+%because it's too hard to figure out how to get it from tracknuclei ->
+%findnuclei -AR 8/8/2020
+global mixedPolarity;
 
 [ExpandedSpaceTolerance, NoBulkShift,...
     retrack, nWorkers, track, postTrackingSettings.noBreak,...
     postTrackingSettings.noStitch,...
     markandfind, postTrackingSettings.fish,...
     postTrackingSettings.intFlag, postTrackingSettings.chooseHis,...
-    mixedPolaritySegmentation, min_rad_um,...
+    mixedPolarity, min_rad_um,...
              max_rad_um, sigmaK_um, mu, nIterSnakes,...
-             postTrackingSettings.doAdjustNuclearContours, radiusScale]...
+             postTrackingSettings.doAdjustNuclearContours, radiusScale,...
+             doNotRetrack]...
     = DetermineTrackNucleiOptions(varargin{:});
 
 
@@ -57,6 +63,8 @@ liveExperiment = LiveExperiment(Prefix);
 
 FrameInfo = getFrameInfo(liveExperiment);
 
+nFrames = length(FrameInfo);
+
 ProcPath = liveExperiment.userProcFolder;
 DropboxFolder = liveExperiment.userResultsFolder;
 PreProcPath = liveExperiment.preFolder;
@@ -67,79 +75,21 @@ schnitzcellsFile = [DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'];
 
 anaphaseFrames = getAnaphaseFrames(liveExperiment); 
 
-if iscolumn(anaphaseFrames)
-    anaphaseFrames = anaphaseFrames';
-end
-
-%This checks whether all ncs have been defined
-if length(anaphaseFrames)~=6
-    error('Check the nc frames in the MovieDatabase entry. Some might be missing')
-end
-
-if length( find(isnan(anaphaseFrames))) ==...
-        length(anaphaseFrames) || length(anaphaseFrames) < 6
-    error('Have the ncs been defined in MovieDatabase or anaphaseFrames.mat?')
-end
-
-%Now do the nuclear segmentation and lineage tracking. This should be put
-%into an independent function.
 
 if postTrackingSettings.chooseHis
-    
     [hisFile, hisPath] = uigetfile([ProcPath, filesep, Prefix,'_',filesep,'*.*']);
     hisMat = imreadStack([hisPath, filesep, hisFile]);
-    
-else
-    
+else    
     hisMat =  getHisMat(liveExperiment);
-    
-end
-
-if mixedPolaritySegmentation
-    if ~retrack
-        resegmentAllFrames(Prefix, 'hisMat', hisMat,...
-            'min_rad_um', min_rad_um,...
-            'max_rad_um', max_rad_um,'sigmaK_um',sigmaK_um,'mu', mu,...
-            'nInterSnakes',nIterSnakes);
-    end
-    retrack = true;
 end
 
 
-%Pull the mitosis information from ncs.
-anaphaseFrames=anaphaseFrames(anaphaseFrames~=0);
-
-%Note that I'm adding a range of two frames frames before and after the
-%determines mitosis
-indMit=[anaphaseFrames'-2,anaphaseFrames'+2];
-
-%Make sure no indices are negative. This could happen is the nuclear cycle
-%started at frame 1, for example.
-indMit(indMit<1)=1;
-
-%Check whether nc14 occurred very close to the end of the movie. For those
-%frames we'll move the boundary for tracking purposes
-nFrames = length(FrameInfo);
-indMit(indMit>=nFrames)=indMit(indMit>=nFrames)-2;
-
-%If indMit is empty this means that we didn't see any mitosis. Deal with
-%this by assigning the first frames to it
-if isempty(indMit)
-    indMit=[1,2];
-    %If we don't have nc14 we'll fool the code into thinking that the last
-    %frame of the movie was nc14
-elseif isnan(indMit(end,1))
-    indMit(end,1)=nFrames-6;
-    indMit(end,2)=nFrames-5;
-end
-
-expandedAnaphaseFrames = [zeros(1,8),liveExperiment.anaphaseFrames'];
+%%
+%Load anaphase timing, validate, and modify it
+indMitosis = generateIndMit(anaphaseFrames, nFrames);
 
 %Embryo mask
-ImageTemp=squeeze(hisMat(:, :, 1));
-embryo_mask=true(size(ImageTemp));
-clear ImageTemp
-
+embryo_mask=true(size(hisMat(:, :, 1)));
 
 
 %Get information about the spatial and temporal resolution
@@ -150,7 +100,7 @@ settingArguments{4}=FrameInfo(1).PixelSize;
 
 schnitzFileExists = exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file');
 
-if schnitzFileExists && ~retrack && track
+if schnitzFileExists && ~retrack && track && ~doNotRetrack
     answer=input('Previous tracking detected. Erase existing segmentation? (y/n):','s');
     if strcmpi(answer,'n')
         retrack = true;
@@ -167,12 +117,12 @@ if ~retrack
     
     if track
         [nuclei, centers, ~, dataStructure] = ...
-            mainTracking(FrameInfo, hisMat,'indMitosis',indMit,'embryoMask', embryo_mask,...
+            mainTracking(FrameInfo, hisMat,'indMitosis',indMitosis,'embryoMask', embryo_mask,...
             settingArguments{:}, 'ExpandedSpaceTolerance', ExpandedSpaceTolerance, ...
             'NoBulkShift', NoBulkShift);
     else
         [nuclei, centers] = ...
-            mainTracking(FrameInfo, hisMat,'indMitosis',indMit,'embryoMask', embryo_mask,...
+            mainTracking(FrameInfo, hisMat,'indMitosis',indMitosis,'embryoMask', embryo_mask,...
             settingArguments{:}, 'ExpandedSpaceTolerance', ExpandedSpaceTolerance, ...
             'NoBulkShift', NoBulkShift, 'segmentationonly', true);
     end
@@ -182,7 +132,7 @@ if ~retrack
     % true(size(an_image_from_the_movie)) can be given as input.
     % Convert the results to compatible structures and save them
     %Put circles on the nuclei
-    [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,nFrames,indMit, radiusScale);
+    [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,nFrames,indMitosis, radiusScale, anaphaseFrames);
     
 else
     %Retrack: Use "MainTracking" for tracking but not segmentation. 
@@ -193,12 +143,12 @@ else
     load([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'],'Ellipses')
     centers = updateCentersFromEllipses(FrameInfo, Ellipses);
     
-    %Load the dataStructure to speed up retracking if it exists
-    if exist([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'], 'file')
-        load([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'])
-    elseif exist([ProcPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'], 'file')
-        load([ProcPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'])
-    end
+%     %Load the dataStructure to speed up retracking if it exists
+%     if exist([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'], 'file')
+%         load([ProcPath,filesep,Prefix,'_',filesep,'dataStructure.mat'])
+%     elseif exist([ProcPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'], 'file')
+%         load([ProcPath,filesep,Prefix,'_',filesep,'TrackingDataStructure.mat'])
+%     end
     
     % look for a settings file in the Raw Data folder.
     if exist([PreProcPath,filesep,Prefix,filesep,Prefix,'-AcquisitionSettings.mat'],'file')
@@ -226,23 +176,25 @@ else
         dataStructure.names='';
         
         [nuclei, centers, ~, dataStructure] = mainTracking(...
-            FrameInfo, hisMat,'indMitosis',indMit,'embryoMask', embryo_mask,...
+            FrameInfo, hisMat,'indMitosis',indMitosis,'embryoMask', embryo_mask,...
             'centers',centers,'dataStructure',dataStructure, settingArguments{:}, ...
             'ExpandedSpaceTolerance', ExpandedSpaceTolerance, ...
             'NoBulkShift', NoBulkShift);
     else
         [nuclei, centers, ~, dataStructure] = mainTracking(...
-            FrameInfo, hisMat,'indMitosis',indMit,'embryoMask', embryo_mask,...
+            FrameInfo, hisMat,'indMitosis',indMitosis,'embryoMask', embryo_mask,...
             'centers',centers, settingArguments{:}, 'ExpandedSpaceTolerance', ...
             ExpandedSpaceTolerance, 'NoBulkShift', NoBulkShift);
     end
     
 end
 
+clear global mixedPolarity;
+
 disp('Finished main tracking.'); 
 
 %Convert nuclei structure into schnitzcell structure
-[schnitzcells] = convertNucleiToSchnitzcells(nuclei);
+schnitzcells = convertNucleiToSchnitzcells(nuclei);
 
 
 
@@ -265,6 +217,8 @@ if exist('dataStructure', 'var')
 end
 
 %perform very important stuff subsequent to tracking proper
+expandedAnaphaseFrames = [zeros(1,8),liveExperiment.anaphaseFrames'];
+
 performPostNuclearTracking(Prefix,...
     expandedAnaphaseFrames, nWorkers, schnitzcellsFile,...
     ellipsesFile, postTrackingSettings)

@@ -210,13 +210,9 @@ if ~skipExtraction
     
     if nuclearGUI && shouldExportNuclearProjections
         
-        if ~exist('movieMat', 'var')
-            movieMat = getMovieMat(LiveExperiment(Prefix));
-        end
-        
         chooseAnaphaseFrames(...
             Prefix, 'ProjectionType', ProjectionType,...
-            'ReferenceHist', ReferenceHist, 'movieMat', movieMat);
+            'ReferenceHist', ReferenceHist);
         
     end
     

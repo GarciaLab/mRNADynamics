@@ -1,12 +1,12 @@
-function [Spots, dogs]...
+function Spots...
     ...
     = segmentTranscriptionalLoci(...
     ...
-    ~, ~, channelIndex, initialFrame, lastFrame,...
+    ch_quantify, initialFrame, lastFrame,...
     zSize, ~, Prefix, ~, shouldDisplayFigures,doFF, ffim,...
     Threshold, neighborhood, snippet_size, ~, microscope,...
     ~,filterMovieFlag, resultsFolder, gpu, saveAsMat, ~, shouldMaskNuclei,...
-    autoThresh)
+    autoThresh, ch_segment)
 
 
 cleanupObj = onCleanup(@myCleanupFun);
@@ -21,7 +21,7 @@ dogs = [];
 
 DogOutputFolder = [liveExperiment.procFolder, 'dogs', filesep];
 
-dogDir = dir([DogOutputFolder, '*_ch0', num2str(channelIndex), '.*']);
+dogDir = dir([DogOutputFolder, '*_ch0', num2str(ch_segment), '.*']);
 
 haveProbs = any(cellfun(@(x) contains(x, 'prob'), {dogDir.name}));
 %stacks won't be indexed by _z
@@ -81,11 +81,12 @@ if filterMovieFlag
     [~, dogs] = filterMovie(Prefix,'optionalResults', resultsFolder, filterOpts{:});
 end
 
-nameSuffix = ['_ch', iIndex(channelIndex, 2)];
-
 movieMat = getMovieMat(liveExperiment);
-
-movieMatCh = double(movieMat(:, :, :, :, channelIndex));
+if ~isempty(movieMat)
+    movieMat_channel = movieMat(:, :, :, :, ch_quantify);
+else
+    movieMat_channel = [];
+end
 
 yDim = liveExperiment.yDim;
 xDim = liveExperiment.xDim;
@@ -102,11 +103,11 @@ end
     if autoThresh
         if ~filterMovieFlag
             Threshold = determineThreshold(Prefix,...
-                channelIndex,  'numFrames', lastFrame, 'firstFrame', initialFrame);
+                ch_segment,  'numFrames', lastFrame, 'firstFrame', initialFrame);
             display(['Threshold: ', num2str(Threshold)])
         else
             Threshold = determineThreshold(Prefix,...
-                channelIndex, 'noSave', 'numFrames', lastFrame);
+                ch_segment, 'noSave', 'numFrames', lastFrame);
         end
     end
     
@@ -117,13 +118,15 @@ isZPadded = size(movieMat, 3) ~= zSize;
 q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
-parfor currentFrame = initialFrame:lastFrame
+for currentFrame = initialFrame:lastFrame
     
-    imStack = movieMatCh(:, :, :, currentFrame);
-    if shouldMaskNuclei
-        ellipseFrame = Ellipses{currentFrame};
+    if ~isempty(movieMat_channel)
+        imStack = movieMat_channel(:, :, :, currentFrame);
+    else
+        imStack = getMovieFrame(liveExperiment, currentFrame, ch_quantify);
     end
     
+   
     %report progress every tenth frame
     if ~mod(currentFrame, 10), disp(['Segmenting frame ',...
             num2str(currentFrame), '...']); end
@@ -132,7 +135,7 @@ parfor currentFrame = initialFrame:lastFrame
         
         dogStackFile = [DogOutputFolder, dogStr, Prefix, '_',...
             iIndex(currentFrame, 3),...
-            nameSuffix];
+            '_ch', iIndex(ch_segment, 2)];
         
         if exist([dogStackFile, '.mat'], 'file')
             dogStack = load([dogStackFile,'.mat'], 'dogStack');
@@ -186,7 +189,7 @@ parfor currentFrame = initialFrame:lastFrame
         % apply nuclear mask if it exists
         if shouldMaskNuclei
     
-            nuclearMask = makeNuclearMask(ellipseFrame, [yDim xDim], radiusScale);
+            nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim xDim], radiusScale);
             im_thresh = im_thresh & nuclearMask;
             
 %             if shouldDisplayFigures

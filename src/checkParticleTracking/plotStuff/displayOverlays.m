@@ -89,6 +89,7 @@ if UseSchnitz
         % Show the daughter nuclei if applicable
         [DaughterE, DaughterD, Mother] = cptState.getMotherDaughters();
 
+        try
         if DaughterE~=0
             SchnitzIndex = find(cptState.schnitzcells(DaughterE).frames == cptState.CurrentFrame);
             NucleusIndex = cptState.schnitzcells(DaughterE).cellno(SchnitzIndex);
@@ -105,6 +106,9 @@ if UseSchnitz
             if ~isempty(NucleusIndex)
                 EllipseHandleWhite = [EllipseHandleWhite,ellipseCellCPT(cptState, NucleusIndex, 'w', 10, overlayAxes)];
             end
+        end
+        catch
+            warning('inconsistency found in schnitzcells. proceeding anyway.');
         end
         
         try

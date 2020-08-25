@@ -1,12 +1,12 @@
 function [ ellipse ] = putCirclesOnNuclei(FrameInfo,centers,...
-    nFrames, indMitosis, radiusScale, varargin )
+    nFrames, indMitosis, radiusScale, anaphaseFrames, varargin )
 %PUTCIRCLESONNUCLEI This function takes up a nuclei structure and the names
 % of the images where they are present in order to store a circle with a
 % predefined diameter in its ellipse field. This is done to save the time 
 % of fitting ellipses by doing it only once all the tracks have been 
 % approved.
 
-if nargin == 6
+if nargin == 7
     diameters = varargin{1};
     if numel(diameters) == 1
         diameters = repmat(diameters,nFrames,1);
@@ -14,8 +14,8 @@ if nargin == 6
     if numel(diameters) ~= nFrames
         error('Invalid diameters argument. The diameters vector has to contain as many elements as there are images.')
     end
-elseif nargin == 5
-    diameters = getDiameters(FrameInfo,nFrames,indMitosis);
+elseif nargin == 6
+    diameters = getDiameters(FrameInfo,nFrames,indMitosis, anaphaseFrames);
 else
     error('not enough input arguments');
 end
