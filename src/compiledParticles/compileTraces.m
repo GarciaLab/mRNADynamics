@@ -58,21 +58,20 @@ for ChN=1:NChannels
                 %3/29/19 JL Bug workaround: if there are any nuclei with
                 %label 0 the following line breaks, due to zero indexing.
                 %For now, just skip.
-                try
-                    if Particles{ChN}(i).Nucleus == 0
-                        AnalyzeThisParticle=0;
-                    elseif ~((sum(FrameFilter)>0)&...
-                            (~isempty(schnitzcells(Particles{ChN}(i).Nucleus).frames)))
-                        AnalyzeThisParticle=0;
-                    end
-                catch
-                    error('Particle possibly not associated with nucleus. May lead to inaccuracies in fraction calcluations.')
-                    
-                end
+       
+            if Particles{ChN}(i).Nucleus == 0 || isnan(Particles{ChN}(i).Nucleus)
+                AnalyzeThisParticle=0;
+                
+            elseif ~((sum(FrameFilter)>0)&...
+                    (~isempty(schnitzcells(Particles{ChN}(i).Nucleus).frames)))
+                AnalyzeThisParticle=0;            
+       
             elseif ~(sum(FrameFilter)>0)
                 AnalyzeThisParticle=0;
+                
             elseif length(Particles{ChN}(i)) <  minTime
                 AnalyzeThisParticle=0;
+                
             end
             
             
