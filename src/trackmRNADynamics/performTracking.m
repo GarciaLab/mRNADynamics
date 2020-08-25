@@ -26,7 +26,7 @@ if retrack && ~liveExperiment.hasParticlesFile
   error('No Particles structure found. Re-run without "retrack" option')  
 % prompt user if old Particles structure exists, but retracking not specified  
 elseif ~retrack && liveExperiment.hasParticlesFile
-  retrack_str = input('Particles structure detected. Do you want to perform retracking? If not, exisitng tracking info will be overwritten  (y/n)','s');
+  retrack_str = input('Particles structure detected. Do you want to perform retracking? (y/n)','s');
   if strcmpi(retrack_str,'n') % check to see if spots were added
     disp('overwriting...')
     [~, SpotFilter] = getParticles(liveExperiment);
@@ -94,16 +94,20 @@ end
 
 disp('Adding QC fields...')
 % Iterate over all channels and generate additional QC flags
+% I'm employing a tiered system. Especially egregious cases will be flagge
+% with 2's and will be excluded absent user in put ("opt-in"). Less severe
+% cases will be flaged with 1's and left in unless user removes ("opt-out")
 
 %%% flag large jumps
 Time = [FrameInfo.Time];
 dT = median(diff(Time));
-distThresh = 1/20; % um/sec NL: this is pretty generous...consider tightening
+distThresh1 = 0.7/20; % um/sec 
+distThresh2 = 1.05/20;
 PixelSize = FrameInfo(1).PixelSize;
-zSize = FrameInfo(1).ZStep;
+% zSize = FrameInfo(1).ZStep;
 
 %%% flag unlikely linkages 
-costThresh = 3;
+% costThresh = 3;
 
 %%% flag spots that are far from their assigned nuclei
 ncDistPrctile = 99.5;
@@ -115,18 +119,24 @@ mvWindow = ones(1,nFrames);
 frameIndex = 1:length(Time);
 mvThresh = max([1, sum(mvWindow(1:slidingIncrement))-1]);
 
+%%% flag spots that occur too early after start of nuclar cycle 
+ncVec = [FrameInfo.nc];
+ncIndex = unique(ncVec);
+hasNCStart = [0 ones(1,length(ncIndex)-1)];
+
 %%% flag implausible frame-over-frame shifts in fluoresnce
 % NL: not currently supported. Need to implement
 
 for Channel = 1:NCh
   if useHistone
     allDistanceVec = [Particles{Channel}.NucleusDist];  
-    threshDist = prctile(allDistanceVec,ncDistPrctile);
+    threshDist1 = prctile(allDistanceVec,ncDistPrctile);
   end
   for p = 1:length(Particles{Channel})
     % flag cases when particle is far away from nearest nucleus
     if useHistone
-      Particles{Channel}(p).ncDistFlags = Particles{Channel}(p).NucleusDist>threshDist;
+      Particles{Channel}(p).ncDistFlags = int8(Particles{Channel}(p).NucleusDist>threshDist1);
+      Particles{Channel}(p).ncDistFlags(Particles{Channel}(p).NucleusDist>1.5*threshDist1) = 2; % this should almost never happen
     else
       Particles{Channel}(p).ncDistFlags = false(size(Particles{Channel}(p).Frame));
     end
@@ -135,25 +145,62 @@ for Channel = 1:NCh
     dt = diff(Time(Particles{Channel}(p).Frame));
     dx = diff(Particles{Channel}(p).xPos)*PixelSize;
     dy = diff(Particles{Channel}(p).yPos)*PixelSize;
-    dz = diff(Particles{Channel}(p).zPosDetrended)*zSize;
-    dr = sqrt(dx.^2+dy.^2+dz.^2);
-    drdt = dr./dt>distThresh & dt < 120;
-    Particles{Channel}(p).distShiftFlags = [false drdt] | [drdt false];
+%     dz = diff(Particles{Channel}(p).zPosDetrended)*zSize; % exclude Z for now
+    dr = sqrt(dx.^2+dy.^2);%+dz.^2);
+    drdt1 = dr./dt>distThresh1 & dt < 120;
+    drdt2 = dr./dt>distThresh2 & dt < 120;
+    Particles{Channel}(p).distShiftFlags = int8([false drdt1] | [drdt1 false]);
+    Particles{Channel}(p).distShiftFlags([false drdt2] | [drdt2 false]) = 2;
     Particles{Channel}(p).distShiftVec = [0 dr];
-
-    %%% flag unlikely linkages
-    Particles{Channel}(p).linkCostFlags = Particles{Channel}(p).linkCostCell>costThresh;    
-    Particles{Channel}(p).costThresh = costThresh;
     
+%     %%% flag unlikely linkages
+%     if length(Particles{Channel}(p).Frame) > 30
+%       error('afsa')
+%     end
+%     Particles{Channel}(p).linkCostFlags = Particles{Channel}(p).linkCostCell>costThresh;    
+%     Particles{Channel}(p).costThresh = costThresh;
+%     
     %%% flag isolated points    
     FrameVec = Particles{Channel}(p).Frame;    
     frameFlags = zeros(size(frameIndex));
     frameFlags(FrameVec) = 1;
     cvFrames = conv(frameFlags,mvWindow);
     cvFrames = cvFrames(slidingIncrement+1:end-slidingIncrement);
-    Particles{Channel}(p).fragmentFlags = cvFrames(FrameVec)<=mvThresh;     
-      
-  end    
+    Particles{Channel}(p).fragmentFlags = int8(cvFrames(FrameVec)<=mvThresh);         
+    Particles{Channel}(p).fragmentFlags(cvFrames(FrameVec)<=1) = 2;
+    
+    %%% flag early points
+    nc = ncVec(Particles{Channel}(p).Frame(1));
+    ncStart = Time(find(ncVec==nc,1));
+    Particles{Channel}(p).earlyFlags = int8(1*(Time(Particles{Channel}(p).Frame)-ncStart)<=240 & hasNCStart(ncIndex==nc));
+    Particles{Channel}(p).earlyFlags = int8(2*(Time(Particles{Channel}(p).Frame)-ncStart)<=120 & hasNCStart(ncIndex==nc));
+    
+    %%% define flags-per-frame metric for use in CheckParticleTracking
+    Particles{Channel}(p).flagsPerFrame = ...mean( Particles{Channel}(p).linkCostFlags) + ...
+      mean(Particles{Channel}(p).distShiftFlags>0) + mean(Particles{Channel}(p).fragmentFlags>0) + ...
+      mean(Particles{Channel}(p).ncDistFlags>0);
+    
+    Particles{Channel}(p).urgentFlagsPerFrame = ...mean( Particles{Channel}(p).linkCostFlags) + ...
+      mean(Particles{Channel}(p).distShiftFlags==2) + mean(Particles{Channel}(p).fragmentFlags==2) + ...
+      mean(Particles{Channel}(p).ncDistFlags==2) + mean(Particles{Channel}(p).earlyFlags==2);
+    
+    %%% automatically disapprove of frames with at least one "2" flag
+    Particles{Channel}(p).FrameApproved = Particles{Channel}(p).FrameApproved & ...
+      Particles{Channel}(p).distShiftFlags~=2 & Particles{Channel}(p).fragmentFlags~=2 & ...
+      Particles{Channel}(p).ncDistFlags~=2 & Particles{Channel}(p).earlyFlags~=2;        
+    
+    %%% automatically disapprove of particles with more than half "2" frames
+    if Particles{Channel}(p).urgentFlagsPerFrame > 0.5
+      Particles{Channel}(p).Approved = -1;
+    end
+    
+    % define static flag vectors to keep track of original states
+    Particles{Channel}(p).distShiftFlagsOrig = Particles{Channel}(p).distShiftFlags;
+    Particles{Channel}(p).ncDistFlagsOrig = Particles{Channel}(p).ncDistFlags;
+    Particles{Channel}(p).fragmentFlagsOrig = Particles{Channel}(p).fragmentFlags;
+    Particles{Channel}(p).earlyFlagsOrig = Particles{Channel}(p).earlyFlags;
+        
+  end      
 end
 
 % make figures if desired
@@ -255,4 +302,6 @@ disp('saving...')
 save([resultsFolder, filesep, 'ParticlesFull.mat'],'RawParticles','HMMParticles', 'SimParticles','FullParticles')
 save([resultsFolder, filesep, 'ParticleStitchInfo.mat'],'ParticleStitchInfo');
 save([resultsFolder, filesep, 'globalMotionModel.mat'],'globalMotionModel');
+
+disp('Done.')
 end

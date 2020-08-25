@@ -62,6 +62,7 @@ classdef CPTState < handle
         projectionMode
         
         frameLevelFields
+        qcFlagFields
     end
     
     methods
@@ -128,6 +129,8 @@ classdef CPTState < handle
             
             this.frameLevelFields = [{'xPos'} {'yPos'} {'zPosDetrended'} {'NucleusDist'} {'zPos'} ...
               {'ncDistFlags'} {'distShiftFlags'} {'timeShiftFlags'} {'Index'} {'Frame'} {'FrameApproved'}]; % NL adding this for ease of bookKeeping
+            
+            this.qcFlagFields = [{'fragmentFlags'},{'distShiftFlags'},{'ncDistFlags'},{'earlyFlags'}]; %,{'linkCostFlags'}];              
         end
  
         function numParticles = numParticles(this)

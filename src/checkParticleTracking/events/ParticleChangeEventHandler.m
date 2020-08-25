@@ -11,8 +11,7 @@ function keyInputHandler = ParticleChangeEventHandler(cptState)
                 ParticleJump = CurrentParticle;
             end
             
-            [cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag] = ...
-                changeParticle(ParticleJump, cptState.Particles, cptState.numParticles, cptState.CurrentChannelIndex);
+            cptState = changeParticle(ParticleJump,cptState);
 
             cptState.DisplayRange = [];
         
@@ -40,12 +39,10 @@ function keyInputHandler = ParticleChangeEventHandler(cptState)
             end
 
         elseif (cc == 'm') & (cptState.CurrentParticle < cptState.numParticles())
-            [cptState.lineFitted, cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag, cptState.DisplayRange] = ...
-                goNextParticle(cptState.CurrentParticle, cptState.CurrentChannelIndex, cptState.HideApprovedFlag, cptState.Particles);
+            cptState = goNextParticle(cptState,0);
         
         elseif (cc == 'n') & (cptState.CurrentParticle > 1)
-            [cptState.lineFitted, cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag, cptState.DisplayRange] = ...
-                goPreviousParticle(cptState.CurrentParticle, cptState.CurrentChannelIndex, cptState.HideApprovedFlag, cptState.Particles);
+            cptState = goNextParticle(cptState,1);
 
         elseif cc == 'i'
             warning(' AR 1/15/18: This is currently deprecated. Talk to HG if you need this function.')

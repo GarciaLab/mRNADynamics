@@ -111,6 +111,21 @@ cPoint1 = plot(traceFigAxes,traceFigTimeAxis(cptState.Frames==cptState.CurrentFr
 dPoint2 = plot(traceFigAxes,traceFigTimeAxis(~approvedParticleFrames),amp2(~approvedParticleFrames),'.r');
 cPoint2 = plot(traceFigAxes,traceFigTimeAxis(cptState.Frames==cptState.CurrentFrame),amp2(cptState.Frames==cptState.CurrentFrame),'ob');
 
+%NL: plot flag circles to indicate flag status
+szVec = linspace(40,100,length(cptState.qcFlagFields));
+colorsUrgent =   brewermap(length(szVec)+1,'Reds');
+colorsNorm=   brewermap(length(szVec)+1,'Blues');
+                 
+
+for s = 1:length(szVec)
+  flagFilter = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).(cptState.qcFlagFields{s})==2;
+  scatter(traceFigAxes,traceFigTimeAxis(flagFilter),amp1(flagFilter),szVec(s),colorsUrgent(s+1,:),'d','LineWidth',1);
+end
+
+for s = 1:length(szVec)
+  flagFilter = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).(cptState.qcFlagFields{s})==1;
+  scatter(traceFigAxes,traceFigTimeAxis(flagFilter),amp1(flagFilter),szVec(s),colorsNorm(s+1,:),'d','LineWidth',1);
+end
 
 %%
 %Change the labels, xlimits, etc. only if the frame changed.
