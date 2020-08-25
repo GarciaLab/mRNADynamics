@@ -16,10 +16,11 @@ function TrackNuclei(Prefix,varargin)
 % shift between frames (greatly reduces runtime).
 % 'retrack': Use existing segmentation for tracking and bypass the prompt.
 % 'integrate': integrate nuclear fluorescence
-% 'doNotRetrack': Don't retrack and don't prompt. 
-% 'mixedPolarity': inserts an absolute value into one of the
-% nuclear filters that helps identify nuclei that are both dark and bright
-% in the same image
+% 'noToRetrack': Don't retrack and don't prompt. 
+% 'mixedPolaritySegmentation': different segmentation method that works
+% better when there are nuclei of mixed polarity (some dark, some bright)
+% 'adjustNuclearContours': fit ellipses tightly around nuclei (done by
+% adjusting regular segmentation)
 %
 % OUTPUT.
 % '*_lin.mat' : Nuclei with lineages
@@ -32,23 +33,18 @@ function TrackNuclei(Prefix,varargin)
 % Documented by: Armando Reimer (areimer@berkeley.edu)
 %
 %
-% cleanupObj = onCleanup(@myCleanupFun);
+cleanupObj = onCleanup(@myCleanupFun);
 
 disp(['Tracking nuclei on ', Prefix, '...']);
 
 postTrackingSettings = struct; 
-
-%this is an optional argument. it's specified as global
-%because it's too hard to figure out how to get it from tracknuclei ->
-%findnuclei -AR 8/8/2020
-global mixedPolarity;
 
 [ExpandedSpaceTolerance, NoBulkShift,...
     retrack, nWorkers, track, postTrackingSettings.noBreak,...
     postTrackingSettings.noStitch,...
     markandfind, postTrackingSettings.fish,...
     postTrackingSettings.intFlag, postTrackingSettings.chooseHis,...
-    mixedPolarity, min_rad_um,...
+    mixedPolaritySegmentation, min_rad_um,...
              max_rad_um, sigmaK_um, mu, nIterSnakes,...
              postTrackingSettings.doAdjustNuclearContours, radiusScale,...
              doNotRetrack]...
@@ -83,6 +79,17 @@ else
     hisMat =  getHisMat(liveExperiment);
 end
 
+
+
+if mixedPolaritySegmentation
+    if ~retrack
+        resegmentAllFrames(Prefix, 'hisMat', hisMat,...
+            'min_rad_um', min_rad_um,...
+            'max_rad_um', max_rad_um,'sigmaK_um',sigmaK_um,'mu', mu,...
+            'nInterSnakes',nIterSnakes);
+    end
+    retrack = true;
+end
 
 %%
 %Load anaphase timing, validate, and modify it
@@ -132,7 +139,7 @@ if ~retrack
     % true(size(an_image_from_the_movie)) can be given as input.
     % Convert the results to compatible structures and save them
     %Put circles on the nuclei
-    [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,nFrames,indMitosis, radiusScale, anaphaseFrames);
+    [Ellipses] = putCirclesOnNuclei(FrameInfo,centers,nFrames,indMitosis, radiusScale);
     
 else
     %Retrack: Use "MainTracking" for tracking but not segmentation. 
@@ -188,8 +195,6 @@ else
     end
     
 end
-
-clear global mixedPolarity;
 
 disp('Finished main tracking.'); 
 
