@@ -78,7 +78,18 @@ NSlices = liveExperiment.zDim;
 yDim = liveExperiment.yDim;
 xDim = liveExperiment.xDim;
 
-NChannels = size(movieMat, 5);
+if ~isempty(movieMat)
+    NChannels = size(movieMat, 5);
+else
+    NChannels = 0;
+    for ch = 0:4
+        pre = dir([liveExperiment.preFolder, filesep, '*_ch', iIndex(ch, 2), '*']);
+        if ~isempty(pre)
+            NChannels = NChannels + 1;
+        end
+    end
+end
+
 
 
 % initializes cell arrays for all the histone projections
@@ -132,7 +143,11 @@ for framesIndex = 1:NFrames
     %         if mod(idx, skip_factor) == 1
     for channelIndex = 1:NChannels
         
-        HisSlices = movieMat(:, :, :, framesIndex,channelIndex); %ch z t y x
+        if ~isempty(movieMat)
+            HisSlices = movieMat(:, :, :, framesIndex,channelIndex); %ch z t y x
+        else
+            HisSlices = getMovieFrame(liveExperiment, framesIndex, channelIndex);
+        end
         %
         %                 median_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
         %                     'medianprojection', NSlices, HisSlices);
@@ -451,7 +466,11 @@ uiwait(fig);
             if mod(idx2, skip_factor) == 1
                 for chanIndex = 1:NChannels
                     
-                    HisSlices = squeeze(movieMat(:, :, :, frameIndex,chanIndex)); %ch z t y x
+                    if ~isempty(movieMat)
+                        HisSlices = squeeze(movieMat(:, :, :, frameIndex,chanIndex)); %ch z t y x
+                    else
+                        HisSlices = getMovieFrame(liveExperiment, frameIndex, chanIndex);
+                    end
                     
                     custom_proj{chanIndex, ceil(idx2 / skip_factor)} = calculateProjection(...
                         'customprojection', NSlices, HisSlices, max_custom, min_custom);
