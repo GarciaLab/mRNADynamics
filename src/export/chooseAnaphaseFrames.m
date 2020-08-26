@@ -15,9 +15,6 @@ function [anaphaseFrames, projectionChannels, ProjectionType, hisMat] =...
 
 cleanupObj = onCleanup(@myCleanupFun);
 warning('off', 'MATLAB:ui:Slider:fixedHeight')
-warning('off', 'MATLAB:audiovideo:audioplayer:noAudioOutputDevice');
-clear getHisMat;
-clear hisMat;
 
 
 skip_factor = 1; % Only uses 1/skip_factor frames
@@ -74,11 +71,6 @@ channelsFile = [DropboxFolder,filesep,Prefix,filesep, 'Channels.mat'];
 isUnhealthyFile = [DropboxFolder,filesep,Prefix,filesep, 'isUnhealthy.mat'];
 if exist(isUnhealthyFile, 'file')
     load(isUnhealthyFile, 'isUnhealthy');
-end
-
-audioFile = 'X:\Armando\LivemRNA\mRNADynamics\lib\audio\embryo_recorded_as_unhealthy.m4a';
-if exist(audioFile, 'file')
-    [y, Fs] = audioread(audioFile);
 end
 
 NFrames = liveExperiment.nFrames;
@@ -549,8 +541,6 @@ uiwait(fig);
         if isUnhealthy
             try
                 disp('Embryo recorded as unhealthy.');
-                nBits = 16;
-                sound(y, Fs, nBits);
             end
         else
             disp('Embryo recorded as healthy.');
