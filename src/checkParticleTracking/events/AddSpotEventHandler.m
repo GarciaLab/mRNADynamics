@@ -5,7 +5,11 @@ function keyInputHandler = AddSpotEventHandler(cptState, Prefix)
         if cc == '[' | cc == '{' %#ok<*OR2>
                
             movieMat = getMovieMat(LiveExperiment(Prefix));
-            imStack = double(movieMat(:, :, :, cptState.CurrentFrame, cptState.CurrentChannel));
+            if ~isempty(movieMat)
+                imStack = double(movieMat(:, :, :, cptState.CurrentFrame, cptState.CurrentChannel));
+            else
+                imStack = getMovieFrame(LiveExperiment(Prefix), cptState.CurrentFrame, cptState.CurrentChannel);
+            end
             
             [cptState.SpotFilter, cptState.Particles, cptState.Spots, cptState.PreviousParticle,...
                 cptState.CurrentParticle, cptState.ZoomMode, cptState.GlobalZoomMode] = ...
