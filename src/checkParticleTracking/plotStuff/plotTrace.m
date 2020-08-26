@@ -59,7 +59,7 @@ end
 
 % plotting the lines and traces
 hold(traceFigAxes, 'on')
-approvedParticleFrames = cptState.getCurrentParticle().FrameApproved;
+approvedParticleFrames = cptState.getCurrentParticle().FrameApproved==1;
 if isempty(plotTraceSettings.ErrorIntegral)
     plotTraceSettings.ErrorIntegral = 0;
     plotTraceSettings.ErrorIntegral3 = 0;

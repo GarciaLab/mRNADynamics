@@ -155,6 +155,7 @@ if true%isempty(preStructs)
     [ParticleStitchInfo, Particles, SpotFilter, Spots, FrameInfo, schnitzcells, Spots3D] =...
         loadCheckParticleTrackingMats(DataFolder, PreProcPath, FilePrefix);
     ParticlesFull = getParticlesFull(liveExperiment); % load auxiliary particles structures
+%     ParticlesFull = ParticlesFull.ParticlesFull;
 else
     Particles = preStructs{1};
     SpotFilter = preStructs{3};
@@ -476,8 +477,8 @@ while (currentCharacter ~= 'x')
     
     for f = 1:length(cptState.qcFlagFields)
       if sum(FrameFilter)==1
-      CheckValue = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle)...
-                   .(cptState.qcFlagFields{f})(FrameFilter) > 0;
+        CheckValue = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle)...
+                     .(cptState.qcFlagFields{f})(FrameFilter) > 0;
       else
         CheckValue = 0;
       end

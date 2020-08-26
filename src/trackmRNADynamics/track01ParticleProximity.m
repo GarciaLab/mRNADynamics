@@ -87,7 +87,7 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull,...
     % If we're retracking, we need to (a) break up un-approved particles
     % and (b) make a temporary spotFilter that indicates which Spots are a
     % part of approved particles
-    SpotFilterLink = ones(size(SpotFilter{Channel}));    
+    SpotFilterLink = SpotFilter{Channel};    
     if retrack
       % keep only full particles that were approved. Individual frames that
       % were linked are taken care of later on
@@ -187,7 +187,8 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull,...
         NewParticleFlag = true(size(NewSpotsX));
         
         % exclude Spots corresponding to existing particle
-        NewParticleFlag(SpotFilterLink(CurrentFrame,:)==0) = false;
+        rmIndices = find(SpotFilterLink(CurrentFrame,:)==0);
+        NewParticleFlag(rmIndices) = false;
           
         if ~isempty(ExtantParticles) && ~NewNCFlag
           % Generate maximum allowed jump radius between spots          
@@ -225,7 +226,7 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull,...
           
           % remove existing spots that are in approved particles 
 %           prevAppIndices = SpotFilterTemp(CurrentFrame-1,:)==0;
-          nextAppIndices = SpotFilterLink(CurrentFrame,:)==0;
+          nextAppIndices = find(SpotFilterLink(CurrentFrame,:)==0);
 %           DistanceMat(:,prevAppIndices) = Inf;
           DistanceMat(nextAppIndices,:) = Inf;
           

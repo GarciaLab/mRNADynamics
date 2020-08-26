@@ -451,13 +451,14 @@ classdef LiveExperiment
                 load(particlesFile, 'Particles', 'SpotFilter');
             end
             
-        end               
+        end                               
         
         function ParticlesFull = getParticlesFull(this)
             
             particlesFile = [this.resultsFolder, 'ParticlesFull.mat'];
             if this.hasParticlesFile
                 ParticlesFull = load(particlesFile);
+                ParticlesFull = ParticlesFull.ParticlesFull;
             end
             
         end
