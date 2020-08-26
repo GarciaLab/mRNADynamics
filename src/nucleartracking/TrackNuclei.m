@@ -107,6 +107,8 @@ settingArguments{4}=FrameInfo(1).PixelSize;
 
 schnitzFileExists = exist([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'file');
 
+doNotRetrack = true;
+retrack = false;
 if schnitzFileExists && ~retrack && track && ~doNotRetrack
     answer=input('Previous tracking detected. Erase existing segmentation? (y/n):','s');
     if strcmpi(answer,'n')

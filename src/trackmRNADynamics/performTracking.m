@@ -21,44 +21,8 @@ if ~iscell(Spots)% NL: added for backwards compatibility
   Spots = {Spots};
 end
 
-% create spotFilter if not retracking
-if retrack && ~liveExperiment.hasParticlesFile
-  error('No Particles structure found. Re-run without "retrack" option')  
-% prompt user if old Particles structure exists, but retracking not specified  
-elseif ~retrack && liveExperiment.hasParticlesFile
-  retrack_str = input('Particles structure detected. Do you want to perform retracking? (y/n)','s');
-  if strcmpi(retrack_str,'n') % check to see if spots were added
-    disp('overwriting...')
-    [~, SpotFilter] = getParticles(liveExperiment);
-    if ~iscell(SpotFilter)
-      SpotFilter = {SpotFilter};
-    end
-    newSpotsFlag = 0;
-    for Ch = 1:length(SpotFilter)
-      newSpotsFlag = newSpotsFlag + sum(1*SpotFilter{Ch}(:)==2);
-    end
-    if newSpotsFlag > 0
-      reset_spots_str = input(['Particles will be overwritten. Do you wish to overwrite ' num2str(newSpotsFlag) ' manually added spot(s)? (y/n)'],'s');
-      if strcmpi(reset_spots_str,'y')
-        disp('removing user-added spots...')        
-        for Ch = 1:length(SpotFilter)
-          [delFrames, delIndices] = find(SpotFilter{Ch}==2);
-          for i = 1:length(delFrames)
-            Spots{Ch}(delFrames(i)).Fits = Spots{Ch}(delFrames(i)).Fits([1:delIndices(i)-1 delIndices(i)+1:end]);
-          end
-        end
-        disp('saving Spots structure...')
-        save([liveExperiment.resultsFolder 'Spots.mat'],'Spots')
-      end
-    end
-  elseif strcmpi(retrack_str,'y')    
-    retrack = true;
-  end
-end
-
-if retrack
-  disp('retracking...');
-end
+% handle tracking/retracking options that require user input
+retrack =  handleTrackingPrompts(liveExperiment,Spots,retrack);
 
 schnitzCells = getSchnitzcells(liveExperiment);
 dropboxFolder = liveExperiment.userResultsFolder;
@@ -66,7 +30,7 @@ resultsFolder = liveExperiment.resultsFolder;
   
 tic
 disp('Performing intitial particle linking...')
-[RawParticles, SpotFilter, ParticleStitchInfo, ReviewedParticlesFull] = track01ParticleProximity(FrameInfo, Spots, schnitzCells, ...
+[RawParticles, SpotFilter, ParticleStitchInfo, ReviewedParticlesFull, FrameInfo] = track01ParticleProximity(FrameInfo, Spots, schnitzCells, ...
                 liveExperiment, pixelSize, maxSearchRadiusMicrons, useHistone, retrack, ...
                 displayFigures);
 toc
@@ -101,8 +65,8 @@ disp('Adding QC fields...')
 %%% flag large jumps
 Time = [FrameInfo.Time];
 dT = median(diff(Time));
-distThresh1 = 0.7/20; % um/sec 
-distThresh2 = 1.05/20;
+distThresh1 = 0.75/20; % um/sec 
+distThresh2 = 1.1/20;
 PixelSize = FrameInfo(1).PixelSize;
 % zSize = FrameInfo(1).ZStep;
 

@@ -87,10 +87,14 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
               performParticleStitching(...
               Nucleus, nucleusIDVec, frameIndex, SimParticles{Channel},  ncVec, matchCostMax(Channel),...
               ForceMatchCell,ForceSplitCell,FragmentIDVec); 
-
+      
       % check for conflicts (cases where there are more detections per frame than ins permitted)    
       assignmentFlags = useHistone & (sum(extantFrameArray,2)>(spotsPerNucleus(Channel)+length(ForceSplitCell)))';
+      if any(assignmentFlags) && all(extantFrameArray(100,:))
+        error('check')
+      end
       rmVec = [];
+      rmFrames = {};
       % check for degenerate particle-nucleus assignments
       if any(assignmentFlags)        
         localKernel = 10; % number of leading and trailing frames to examine
@@ -101,6 +105,7 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
         % iterate through these and guess which spots are anamolous based
         % on local connectivity
         for e = 1:length(clusterIndices)-1
+          
           % get problematic frame list
           cFrames = errorIndices(clusterIndices(e):clusterIndices(e+1)-1); 
 
@@ -110,17 +115,22 @@ function [StitchedParticles,ParticleStitchInfo] = track04StitchTracks(...
           lf = min([length(frameIndex),cFrames(end)+localKernel]);          
           lcVec = ff:lf;
           lcVec = lcVec(~ismember(lcVec,cFrames));
+          
           % get counts of linked particles for each conflicting detection
           localCounts = sum(extantFrameArray(lcVec,:));
           [~,rankVec] = sort(localCounts);
-          % flag lowest ranking particles for removal
+          
+          % flag particles with fewest connections within time window and
+          % remove
           ptList = reshape(unique(particleIDArray(cFrames,rankVec(1:end-spotsPerNucleus(Channel)))),1,[]);          
           rmVec = [rmVec ptList];
+          rmFrames = [rmFrames repelem{cFrames},length(ptList)];
+          rmFrames = rmFrames(~isnan(rmVec));
           rmVec = rmVec(~isnan(rmVec));
         end
         % reset nucleus ID values for these particles to NaN
 %         nucleusIDVecNew = nucleusIDVec;
-        nucleusIDVec(ismember(FragmentIDVec,rmVec)) = NaN;                   
+%         nucleusIDVec(ismember(FragmentIDVec,rmVec)) = NaN;                   
                 
         % reset values to originals
         for p = 1:length(rmVec)          

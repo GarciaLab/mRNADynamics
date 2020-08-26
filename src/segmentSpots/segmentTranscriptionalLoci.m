@@ -91,12 +91,15 @@ yDim = liveExperiment.yDim;
 xDim = liveExperiment.xDim;
 zDim = liveExperiment.zDim;
 
-if shouldMaskNuclei
-    if liveExperiment.hasEllipsesFile
-        Ellipses = getEllipses(liveExperiment); 
-        Ellipses = filterEllipses(Ellipses, [yDim, xDim]);
-    else, shouldMaskNuclei = false; end
+%if shouldMaskNuclei
+if liveExperiment.hasEllipsesFile
+    Ellipses = getEllipses(liveExperiment); 
+    Ellipses = filterEllipses(Ellipses, [yDim, xDim]);
+else
+    shouldMaskNuclei = false; 
+    Ellipses = NaN(1,length(FrameInfo));
 end
+%end
 
    
     if autoThresh

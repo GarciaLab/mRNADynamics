@@ -18,15 +18,20 @@ if UseHistone
       NucleiPyVec = [NucleiPyVec mean(schnitzcells(i).ceny(FrameFT))];
     end
   end
-
-  % calculate distancen to each nucleus 
-  NucleusWeightMat = NaN(length(NewSpotsX),length(NucleiPxVec));
-  for i = 1:length(NewSpotsX)
-    NucleusWeightMat(i,:) = (rand(numel(NucleiPxVec),1)*0.05+vecnorm([NewSpotsX(i) NewSpotsY(i)]  - [NucleiPxVec' NucleiPyVec'], 2, 2)).^-2;              
+  
+  if ~isempty(NucleiPxVec)
+    % calculate distance to each nucleus 
+    NucleusWeightMat = NaN(length(NewSpotsX),length(NucleiPxVec));
+    for i = 1:length(NewSpotsX)
+      NucleusWeightMat(i,:) = (rand(numel(NucleiPxVec),1)*0.05+vecnorm([NewSpotsX(i) NewSpotsY(i)]  - [NucleiPxVec' NucleiPyVec'], 2, 2)).^-2;              
+    end
+    % assign weighted mean bulk displacement to particles
+    SpotBulkDxVec = (sum(repmat(NucleiDxVec,length(NewSpotsX),1).*NucleusWeightMat,2) ./ sum(NucleusWeightMat,2) / (StopFrame-StartFrame+1))';
+    SpotBulkDyVec = (sum(repmat(NucleiDyVec,length(NewSpotsX),1).*NucleusWeightMat,2) ./ sum(NucleusWeightMat,2) / (StopFrame-StartFrame+1))';     
+  else
+    SpotBulkDxVec = zeros(size(NewSpotsX));
+    SpotBulkDyVec = zeros(size(NewSpotsY));
   end
-  % assign weighted mean bulk displacement to particles
-  SpotBulkDxVec = (sum(repmat(NucleiDxVec,length(NewSpotsX),1).*NucleusWeightMat,2) ./ sum(NucleusWeightMat,2) / (StopFrame-StartFrame+1))';
-  SpotBulkDyVec = (sum(repmat(NucleiDyVec,length(NewSpotsX),1).*NucleusWeightMat,2) ./ sum(NucleusWeightMat,2) / (StopFrame-StartFrame+1))';        
 else
   SpotBulkDxVec = zeros(size(NewSpotsX));
   SpotBulkDyVec = zeros(size(NewSpotsY));

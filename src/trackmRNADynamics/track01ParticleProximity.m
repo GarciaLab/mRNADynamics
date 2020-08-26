@@ -1,4 +1,5 @@
-function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = track01ParticleProximity(...
+function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull,...
+    FrameInfo] = track01ParticleProximity(...
     FrameInfo, Spots, schnitzcells, liveExperiment, PixelSize, MaxSearchRadiusMicrons, ...
     UseHistone, retrack, displayFigures)
   
@@ -36,7 +37,15 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
   end
   
   % Extract vector indicating nuclear cleavage cycle for each frame
-  ncVec = [FrameInfo.nc]; 
+  if ~isfield(FrameInfo,'nc')
+    ncRefVec = 9:14;
+    for f = 1:length(FrameInfo)
+      ind = find(f>=liveExperiment.anaphaseFrames,1,'last');
+      FrameInfo(f).nc = ncRefVec(ind);
+    end
+    save([liveExperiment.resultsFolder 'FrameInfo.mat'],'FrameInfo')
+  end
+  ncVec = [FrameInfo.nc];
   SlidingWindowSize = 2; % size of window used for time averaging of nuclear movements
     
   if ismember(ExperimentType,{'inputoutput'}) && NCh == 2    
@@ -149,6 +158,7 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
         % if we have nucleus info, assign each spot to a nucleus
         [NewSpotNuclei, NewSpotDistances] = getNuclearAssigments(NewSpotsX,NewSpotsY,...
               schnitzcells,CurrentFrame,UseHistone,SpotFilterNucleus(CurrentFrame,:));
+            
         %Get a list of the particles that were present in
         %the previous frame and of their positions.
         ExtantParticles = [];
@@ -271,7 +281,7 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
     
     % adjust for z stack shifts
     RawParticles{Channel} = detrendZ(RawParticles{Channel},FrameInfo);
-      
+          
     close(f);
   end
 end

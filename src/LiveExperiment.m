@@ -241,7 +241,8 @@ classdef LiveExperiment
             tempInfo = load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
             
             isNewMovie = isempty(FrameInfo_movie) ||...
-                any([tempInfo.FrameInfo.Time] ~= [FrameInfo_movie.Time]);
+                any(~ismember([tempInfo.FrameInfo.Time],[FrameInfo_movie.Time])); %NL: updated this to work for movies with different frame counts. 
+                                                                                  %Feel like I'm missing something here...
             
             persistent preTifDir;
             if isempty(preTifDir) ||...
