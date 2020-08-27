@@ -138,11 +138,7 @@ if ~skipExtraction
     if shouldExportMovieFiles
         
         topZSlice = min(NSlices);
-        
-        movieMat = zeros(ySize, xSize,...
-            max(NSlices)+nPadding, sum(NFrames),NChannels, moviePrecision);
-        
-        
+            
         for seriesIndex = 1:NSeries
             waitbar(seriesIndex/NSeries, waitbarFigure)
             for framesIndex = 1:NFrames(seriesIndex)
@@ -170,12 +166,10 @@ if ~skipExtraction
                             % if zPadding, it will process all images (because topZSlice would be max(NSlices)
                             % if no zPadding, it will process images rounding down to the series with least
                             % zSlices, because topZSlice would be min(NSlices)
-                            imSlice = cast(LIFImages{seriesIndex}{imageIndex,1},moviePrecision);
-                            movieMat(:, :,slicesCounter + 1,  numberOfFrames,...
-                                channelIndex) = imSlice;
-                            imwrite(imSlice,...uint16(LIFImages{seriesIndex}{imageIndex,1}),...
+                            imwrite(LIFImages{seriesIndex}{imageIndex,1},...
                                 [PreProcFolder, filesep, NewName], 'WriteMode', 'append');
                             slicesCounter = slicesCounter + 1;
+                            
                         end
                     end
                     
@@ -210,13 +204,9 @@ if ~skipExtraction
     
     if nuclearGUI && shouldExportNuclearProjections
         
-        if ~exist('movieMat', 'var')
-            movieMat = getMovieMat(LiveExperiment(Prefix));
-        end
-        
         chooseAnaphaseFrames(...
             Prefix, 'ProjectionType', ProjectionType,...
-            'ReferenceHist', ReferenceHist, 'movieMat', movieMat);
+            'ReferenceHist', ReferenceHist);
         
     end
     

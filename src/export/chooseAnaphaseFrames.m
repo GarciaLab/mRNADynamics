@@ -15,9 +15,6 @@ function [anaphaseFrames, projectionChannels, ProjectionType, hisMat] =...
 
 cleanupObj = onCleanup(@myCleanupFun);
 warning('off', 'MATLAB:ui:Slider:fixedHeight')
-warning('off', 'MATLAB:audiovideo:audioplayer:noAudioOutputDevice');
-clear getHisMat;
-clear hisMat;
 
 
 skip_factor = 1; % Only uses 1/skip_factor frames
@@ -76,17 +73,23 @@ if exist(isUnhealthyFile, 'file')
     load(isUnhealthyFile, 'isUnhealthy');
 end
 
-audioFile = 'X:\Armando\LivemRNA\mRNADynamics\lib\audio\embryo_recorded_as_unhealthy.m4a';
-if exist(audioFile, 'file')
-    [y, Fs] = audioread(audioFile);
-end
-
 NFrames = liveExperiment.nFrames;
 NSlices = liveExperiment.zDim;
 yDim = liveExperiment.yDim;
 xDim = liveExperiment.xDim;
 
-NChannels = size(movieMat, 5);
+if ~isempty(movieMat)
+    NChannels = size(movieMat, 5);
+else
+    NChannels = 0;
+    for ch = 0:4
+        pre = dir([liveExperiment.preFolder, filesep, '*_ch', iIndex(ch, 2), '*']);
+        if ~isempty(pre)
+            NChannels = NChannels + 1;
+        end
+    end
+end
+
 
 
 % initializes cell arrays for all the histone projections
@@ -140,7 +143,11 @@ for framesIndex = 1:NFrames
     %         if mod(idx, skip_factor) == 1
     for channelIndex = 1:NChannels
         
-        HisSlices = movieMat(:, :, :, framesIndex,channelIndex); %ch z t y x
+        if ~isempty(movieMat)
+            HisSlices = movieMat(:, :, :, framesIndex,channelIndex); %ch z t y x
+        else
+            HisSlices = getMovieFrame(liveExperiment, framesIndex, channelIndex);
+        end
         %
         %                 median_proj{channelIndex, ceil(idx / skip_factor)} = calculateProjection(...
         %                     'medianprojection', NSlices, HisSlices);
@@ -345,43 +352,7 @@ uiwait(fig);
             frame = 1;
         end
         
-        channels = [];
-        for i = 1:3
-            if any(strcmp(channels_to_use, ['Channel ' num2str(i)]))
-                channels = [channels i];
-            end
-        end
-        ProjectionTemp = [];
-        for i = 1:length(channels)
-            cIndex = channels(i);
-            if strcmpi(projection_type, 'medianprojection')
-                ProjectionTemp(:, :, i) = median_proj{cIndex, frame};
-            elseif strcmpi(projection_type, 'middleprojection')
-                ProjectionTemp(:, :, i) = middle_proj{cIndex, frame};
-            elseif strcmpi(projection_type, 'midsumprojection')
-                ProjectionTemp(:,:, i) = midsum_proj{cIndex,frame};
-            elseif strcmpi(projection_type, 'maxprojection')
-                ProjectionTemp(:, :, i) = max_proj{cIndex, frame};
-            else
-                ProjectionTemp(:, :, i) = custom_proj{cIndex, frame};
-            end
-            if any(strcmp(inverted_channels, ['Channel ' num2str(cIndex)]))
-                ProjectionTemp(:, :, i) = imcomplement(ProjectionTemp(:, :, i));
-            end
-            % Use the reference histogram to scale the Projection (This part
-            % might need some more optimization later-YJK)
-            ProjectionTemp(:, :, i) = histeq(mat2gray(ProjectionTemp(:, :, i)), ReferenceHist);
-            ProjectionTemp(:, :, i) = ProjectionTemp(:, :, i) *255;
-            
-            
-        end
-        
-        % Getting average of all Projections
-        if length(channels) > 1
-            Projection = nanmean(ProjectionTemp, 3);
-        else
-            Projection = ProjectionTemp;
-        end
+       Projection = getProjection(frame);
         
         maxDisplayIntensity = round(max_slider.Value);
         minDisplayIntensity = round(min_slider.Value);
@@ -416,16 +387,14 @@ uiwait(fig);
         Channel2 = projectionChannels{2};
         Channel3 = projectionChannels{3};
         
-        
-        hisMat = zeros(yDim, xDim, sum(NFrames), hisPrecision); % y x f
+        projections = zeros(yDim, xDim, sum(NFrames), hisPrecision); % y x f
         
         for f = 1:NFrames
-            hisMat(:, :, f) = generateNuclearChannel2(ProjectionType,...
-                projectionChannels, ReferenceHist, movieMat, f);
+            projections(:, :, f) = getProjection(f);
         end
         
-        saveNuclearProjection(hisMat, [liveExperiment.preFolder, filesep, Prefix, '-His.tif']);
-        
+        saveNuclearProjection(projections, [liveExperiment.preFolder, filesep, Prefix, '-His.tif']);
+        clear LiveExperiment;
         
         
         
@@ -460,7 +429,11 @@ uiwait(fig);
             if mod(idx2, skip_factor) == 1
                 for chanIndex = 1:NChannels
                     
-                    HisSlices = squeeze(movieMat(:, :, :, frameIndex,chanIndex)); %ch z t y x
+                    if ~isempty(movieMat)
+                        HisSlices = squeeze(movieMat(:, :, :, frameIndex,chanIndex)); %ch z t y x
+                    else
+                        HisSlices = getMovieFrame(liveExperiment, frameIndex, chanIndex);
+                    end
                     
                     custom_proj{chanIndex, ceil(idx2 / skip_factor)} = calculateProjection(...
                         'customprojection', NSlices, HisSlices, max_custom, min_custom);
@@ -550,8 +523,6 @@ uiwait(fig);
         if isUnhealthy
             try
                 disp('Embryo recorded as unhealthy.');
-                nBits = 16;
-                sound(y, Fs, nBits);
             end
         else
             disp('Embryo recorded as healthy.');
@@ -571,6 +542,53 @@ uiwait(fig);
                 frame_slider.Value = frame_slider.Value - 1;
                 updateHisImage;
             end
+        end
+        
+    end
+
+    function Projection = getProjection(frame)
+        
+        channels_to_use = channel_list.Value;
+        inverted_channels = invert_list.Value;
+        projection_type = proj_type_dropdown.Value;
+               
+        channels = [];
+        for i = 1:3
+            if any(strcmp(channels_to_use, ['Channel ' num2str(i)]))
+                channels = [channels i];
+            end
+        end
+        
+        ProjectionTemp = [];
+        for i = 1:length(channels)
+            cIndex = channels(i);
+            if strcmpi(projection_type, 'medianprojection')
+                ProjectionTemp(:, :, i) = median_proj{cIndex, frame};
+            elseif strcmpi(projection_type, 'middleprojection')
+                ProjectionTemp(:, :, i) = middle_proj{cIndex, frame};
+            elseif strcmpi(projection_type, 'midsumprojection')
+                ProjectionTemp(:,:, i) = midsum_proj{cIndex,frame};
+            elseif strcmpi(projection_type, 'maxprojection')
+                ProjectionTemp(:, :, i) = max_proj{cIndex, frame};
+            else
+                ProjectionTemp(:, :, i) = custom_proj{cIndex, frame};
+            end
+            if any(strcmp(inverted_channels, ['Channel ' num2str(cIndex)]))
+                ProjectionTemp(:, :, i) = imcomplement(ProjectionTemp(:, :, i));
+            end
+            % Use the reference histogram to scale the Projection (This part
+            % might need some more optimization later-YJK)
+            ProjectionTemp(:, :, i) = histeq(mat2gray(ProjectionTemp(:, :, i)), ReferenceHist);
+            ProjectionTemp(:, :, i) = ProjectionTemp(:, :, i) *255;
+            
+            
+        end
+        
+        % Getting average of all Projections
+        if length(channels) > 1
+            Projection = nanmean(ProjectionTemp, 3);
+        else
+            Projection = ProjectionTemp;
         end
         
     end

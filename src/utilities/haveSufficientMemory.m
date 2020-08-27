@@ -1,7 +1,12 @@
 function haveSufficientMemory = haveSufficientMemory(directory)
 
-[~,sys] = memory;
-
+try
+    [~,sys] = memory;
+catch
+    %if this fails, assume there's not enough memory
+    haveSufficientMemory = false;
+    return;
+end
 movieSize = 0;
 for k = 1:length(directory)
     
