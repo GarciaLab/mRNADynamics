@@ -1,8 +1,64 @@
-function maskCytoplasmForWeka(Prefix, radiusScale)
+function maskCytoplasmForWeka(Prefix, varargin)
+%
+% function maskCytoplasmForWeka(Prefix, varagin)
+%
+% DESCRIPTION
+% This function takes the PreProcessed TIFs for the specified experiment 
+% and applies the nuclear mask from the max projected histone channel to
+% them to generate masked TIFs that can be fed into Weka like the normal
+% PreProcessed TIFs.
+% This function is useful if your movies have high levels of cytoplasmic
+% fluorescence, especially very bright aggregates, which might make it
+% difficult to train a classifier without excessive false positives.
+%
+% Note: This function only works with the new 3D TIFF stacks that are
+%       output by the current version of the pipeline
+%       ***IT IS NOT BACKWARDS COMPATIBLE***
+%
+%
+% INPUT ARGUMENTS
+% Prefix: prefix for this experiment
+% 
+%
+% OPTIONS
+% 'radiusScale', radiusScale: Multiplicative scaling factor by which the 
+%                             radius of the nuclear mask is increased to 
+%                             ensure the whole nucleus is captured. 
+%                             Default radiusScale = 1.3
+%
+% 'includeChannels', channelsToMask: Array containing the channel number(s)
+%                                    that you want to mask, e.g. for a
+%                                    dataset with 3 channels channelsToMask
+%                                    = [1,2] will mask the first and second
+%                                    channels.
+%                                    Defaults to all channels with
+%                                    PreProcessed images.
+%
+% 'maskNormalizedImages': Masks previously normalized PreProcessed images, 
+%                         which are stored in a subfolder called
+%                         'PreProcessed\normalizedImages'
+%
+%
+% OUTPUT
+% normalizedFolder: path to the folder where the normalized movie frames
+%                   (saved as 3D, xyz TIFF stacks, same as the input movie)
+%                   are saved
+% TIFF files containing a bleaching corrected movie
+%
+%
+% Author (contact): Meghan Turner (meghan_turner@berkeley.edu)
+% Created: 08/12/2020
+% Last Updated: N/A
+%
 
-% Prefix = '2019-11-26-2xDl_Venus_snaBAC_MCPmCherry_Leica_Zoom45_21uW14uW_01';
-% radiusScale = 1.1;
+% Set user input option defaults
+radiusScale = 1.3;
+channelsToMask = [];
+maskNormIm = false;
+% Determine if user set non-default options
+determineMaskCytoplasmOptions;
 
+% Get needed info for this experiment
 liveExperiment = LiveExperiment(Prefix);
 
 nCh = numel(liveExperiment.spotChannels);
@@ -17,48 +73,61 @@ nFrames = liveExperiment.nFrames;
 dropboxFolder = liveExperiment.userResultsFolder;
 resultsFolder = liveExperiment.resultsFolder;
 preProcFolder = liveExperiment.preFolder;
-maskPreProcFolder = [preProcFolder filesep 'maskedImages\'];
-mkdir(maskPreProcFolder);
+
+% Set folder paths for normalized vs unnormalized starting images
+if maskNormIm
+    preProcFolder = [liveExperiment.preFolder filesep 'normalizedImages'];
+    maskPreProcFolder = [preProcFolder filesep 'normMaskImages'];
+    maskSuffix = '_normMask';
+    mkdir(maskPreProcFolder);
+elseif ~maskNormIm
+    preProcFolder = liveExperiment.preFolder;
+    maskPreProcFolder = [preProcFolder filesep 'maskedImages'];
+    maskSuffix = '_mask';
+    mkdir(maskPreProcFolder);
+end
 
 Ellipses = getEllipses(liveExperiment);
 
-nCh = 1;
-% nFrames = 1;
+% Adjust channels to mask based on user input
+if isempty(channelsToMask)
+    nCh = numel(channels);
+    channelsToMask = 1:nCh;
+else
+    nCh = numel(channelsToMask);
+end
+
+% Loop over all channels that need to be masked
 rawImDir = cell(1,nCh);
-for channel = 1:nCh
-    rawImDir{channel} = dir([preProcFolder filesep '*ch01.tif']);
+for channel = channelsToMask
+    channelSearchString = ['*ch0' num2str(channel) '.tif'];
+    rawImDir{channel} = dir([preProcFolder filesep channelSearchString]);
     
     h = waitbar(1/nFrames, ['Masking raw images for Channel 0' num2str(channel) '...']);
+    % Mask each frame in the movie
     for currFrame = 1:nFrames
         waitbar(currFrame/nFrames,h);
         %Get the raw image
         currImPath = [rawImDir{1,channel}(currFrame).folder, filesep, rawImDir{1,channel}(currFrame).name];
-        %using bfopen is slow, but fits into 2 lines  - figure out a faster
-        %way to do this with the Tiff class
-        evalc('currIm = bfOpen3DVolume(currImPath);');   %using evalc to suppress fprint statement inside bfopen
-        imStack = currIm{1,1}{1,1};     %this is the xDim x yDim x zDim image matrix
+        imStack = loadTiffStack(currImPath); %this is the xDim x yDim x zDim image matrix
 
-        %Make the cytoplasmic mask
+        % Make the cytoplasmic mask using the max-projected His stack
         ellipseFrame = Ellipses{currFrame};
         nuclearMask = makeNuclearMask(ellipseFrame, [yDim xDim], radiusScale);
         nuclearMask = nuclearMask >= 1;  %overlapping nuclei are annotated with a value of 2, but I want a binarized mask   
 %         figure(1)
 %         imshow(nuclearMask,[])
         
-        %Create the new file inside the maskedImages folder
+        % Create the new file inside the maskedImages folder
         nameSuffix = ['_ch',iIndex(channel,2)];
-        imageName = [Prefix, '_', iIndex(currFrame,3), '_mask', nameSuffix, '.tif'];
-        paddedZDim = zDim + 2;
+        imageName = [Prefix, '_', iIndex(currFrame,3), maskSuffix, nameSuffix, '.tif'];
         
+        % Apply the z-projected nuclear mask to each z slice (this might be
+        % a poor mask for the ends of the z stack -- maybe fix later)
+        paddedZDim = zDim + 2;
         for currZSlice = 1:paddedZDim
             imSlice = imStack(:,:,currZSlice);
             maskedSlice = double(imSlice) .* nuclearMask;
-            
-%             %show the masked z slice
-%             figure(2)
-%             imshow(maskedSlice,[])
-%             pause(2)
-            
             %save this masked z slice
             if currZSlice == 1
                 imwrite(uint16(maskedSlice), [maskPreProcFolder, filesep, imageName]);
@@ -70,3 +139,38 @@ for channel = 1:nCh
     close(h)
     
 end
+
+
+%% Nested function to process user input options for the parent function
+function determineMaskCytoplasmOptions
+    for i = 1:numel(varargin)
+        if ischar(varargin{i})
+            % radiusScale option
+            if strcmpi(varargin{i},'radiusScale')
+                if (i+1 <= numel(varargin)) & isnumeric(varargin{i+1})
+                    radiusScale = varargin{i+1};
+                elseif ((i+1 > numel(varargin)) | ~isnumeric(varargin{i+1}))
+                    error(['Input option ''' varargin{i}, ''' must be followed by a numeric variable.'])
+                end
+            % includeChannels option
+            elseif strcmpi(varargin{i},'includeChannels')
+                if (i+1 <= numel(varargin)) & isnumeric(varargin{i+1})
+                    channelsToMask = varargin{i+1};
+                elseif ((i+1 > numel(varargin)) | ~isnumeric(varargin{i+1}))
+                    error(['Input option ''' varargin{i}, ''' must be followed by a numeric array containing the channel(s) to include.'])
+                end
+            % maskNormalizedImages option
+            elseif strcmpi(varargin{i},'maskNormalizedImages')
+                maskNormIm = true;
+            % Notify user of invalid options
+            else
+                error([varargin{i}, ' is not a valid input option.'])
+            end
+        end
+    end
+end
+
+
+end
+
+
