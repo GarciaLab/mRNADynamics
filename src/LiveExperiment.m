@@ -440,8 +440,9 @@ classdef LiveExperiment
             spotsFile = [this.resultsFolder, 'Spots.mat'];
             if this.hasSpotsFile
                 load(spotsFile, 'Spots');
+            else
+              Spots = [];
             end
-            
         end        
         
         function [Particles, SpotFilter] = getParticles(this)
@@ -484,10 +485,11 @@ classdef LiveExperiment
         function globalMotionModel = getGlobalMotionModel(this)
             
             particleMotionFile = [this.resultsFolder, 'globalMotionModel.mat'];
-            if this.hasParticlesFile
+            if exist(particleMotionFile,'file')%this.hasParticlesFile
                 load(particleMotionFile, 'globalMotionModel');
+            else
+              globalMotionModel = [];
             end
-            
         end
         
         function APDetection = getAPDetection(this)

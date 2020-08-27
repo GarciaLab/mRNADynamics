@@ -1,4 +1,4 @@
-function [useHistone,maxSearchRadiusMicrons,retrack,displayFigures] = ...
+function [useHistone,maxSearchRadiusMicrons,retrack,noRetrack,displayFigures] = ...
             determinePerformTrackingOptions(options)
         
 % [useHistone,searchRadiusMicrons,retrack,displayFigures] = ...
@@ -29,14 +29,16 @@ useHistone = false;
 maxSearchRadiusMicrons = 1;
 retrack = false;
 displayFigures = false;
-
+noRetrack = false;
 for i= 1:length(options)
     if strcmpi(options{i}, 'useHistone')
         useHistone = true;
     elseif strcmpi(options{i}, 'searchRadius')
         maxSearchRadiusMicrons = options{i+1};
     elseif strcmpi(options{i}, 'retrack')
-        retrack = true;    
+        retrack = true;
+    elseif strcmpi(options{i}, 'noRetrack')
+        noRetrack = true;
     elseif strcmpi(options{i}, 'displayFigures')
         displayFigures = true;
     end

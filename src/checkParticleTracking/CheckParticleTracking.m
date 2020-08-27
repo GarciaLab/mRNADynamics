@@ -179,14 +179,15 @@ nSlices = nSlices + 2; %due to padding;
 if iscell(Particles)
     numSpotChannels = length(Particles);
 else
-    Particles = {Particles};
-    if ~iscell(Spots)
-        Spots = {Spots};
-    end
-    SpotFilter = {SpotFilter};
+    Particles = {Particles};       
     numSpotChannels = 1;
 end
-
+if ~iscell(Spots)
+  Spots = {Spots};
+end
+if ~iscell(SpotFilter)
+  SpotFilter = {SpotFilter};
+end
 %Add FramesApproved where necessary
 Particles = addFrameApproved(numSpotChannels, Particles);
 

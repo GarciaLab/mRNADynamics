@@ -2,7 +2,7 @@ function [Particles, SpotFilter] = performTracking(Prefix,useHistone,varargin)
 close all force
 % Process user options
 % searchRadiusMicrons = 5; by default
-[~,maxSearchRadiusMicrons,retrack,displayFigures] = ...
+[~,maxSearchRadiusMicrons,retrack,noRetrack,displayFigures] = ...
             determinePerformTrackingOptions(varargin);
 
 % Get all the required data for this Prefix
@@ -17,12 +17,19 @@ FrameInfo = getFrameInfo(liveExperiment);
 % load Spots file
 disp('loading Spots mat...')
 Spots = getSpots(liveExperiment);
+if isempty(Spots)
+  error('No Spots file found. Have you run segmentSpots?')
+end
 if ~iscell(Spots)% NL: added for backwards compatibility
   Spots = {Spots};
 end
 
 % handle tracking/retracking options that require user input
-retrack =  handleTrackingPrompts(liveExperiment,Spots,retrack);
+if noRetrack && retrack
+  error('conflicting retracking options specified')
+elseif ~noRetrack
+  retrack =  handleTrackingPrompts(liveExperiment,Spots,retrack);
+end
 
 schnitzCells = getSchnitzcells(liveExperiment);
 dropboxFolder = liveExperiment.userResultsFolder;
@@ -39,6 +46,9 @@ tic
 disp('Inferring particle motion model...')
 [HMMParticles, globalMotionModel] = track02TrainGHMM(RawParticles, [], displayFigures);
 toc
+
+% save motion model
+save([resultsFolder, filesep, 'globalMotionModel.mat'],'globalMotionModel');
 
 tic
 disp('Simulating particle tracks...')
@@ -162,7 +172,6 @@ end
 disp('saving...')
 save([resultsFolder, filesep, 'ParticlesFull.mat'],'ParticlesFull')
 save([resultsFolder, filesep, 'ParticleStitchInfo.mat'],'ParticleStitchInfo');
-save([resultsFolder, filesep, 'globalMotionModel.mat'],'globalMotionModel');
 
 disp('Done.')
 end

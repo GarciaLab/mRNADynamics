@@ -37,7 +37,7 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull,...
   end
   
   % Extract vector indicating nuclear cleavage cycle for each frame
-  if ~isfield(FrameInfo,'nc')
+  if true%~isfield(FrameInfo,'nc')
     ncRefVec = 9:14;
     for f = 1:length(FrameInfo)
       ind = find(f>=liveExperiment.anaphaseFrames,1,'last');

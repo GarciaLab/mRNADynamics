@@ -10,7 +10,7 @@ function keyInputHandler = DeleteSpotEventHandler(cptState,Prefix)
             ' from particle ' num2str(cptState.CurrentParticle)])
         
         cptState =...            
-            removeSpot(cptState, shouldQueryUser);
+            removeSpot(cptState, shouldQueryUser,Prefix);
         
 
         

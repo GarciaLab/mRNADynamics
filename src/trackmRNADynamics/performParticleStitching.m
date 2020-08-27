@@ -31,8 +31,8 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
   i_pass = 1;
   for p = nucleusIndices      
     endpointFrameArray([SimParticles(p).FirstFrame,SimParticles(p).LastFrame],i_pass) = true;
-    extantFrameArray(SimParticles(p).FirstFrame:SimParticles(p).LastFrame,i_pass) = true;      
-    particleIDArray(SimParticles(p).FirstFrame:SimParticles(p).LastFrame,i_pass) = fragmentIDs(i_pass);
+    extantFrameArray(SimParticles(p).Frame,i_pass) = true;      
+    particleIDArray(SimParticles(p).Frame,i_pass) = fragmentIDs(i_pass);
     linkIDCell{i_pass} = num2str(fragmentIDs(i_pass));
     linkCostCell{i_pass} = [0];
     linkFrameCell{i_pass} = {unique([SimParticles(p).FirstFrame,SimParticles(p).LastFrame])};
@@ -46,7 +46,9 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
   end    
   
   %%% calculate Mahalanobis Distance between particles in likelihood space
-  cumActivityArray = cumsum(extantFrameArray);
+
+  cumActivityArrayDown = cumsum(extantFrameArray);
+  cumActivityArrayUp = flipud(cumsum(flipud(extantFrameArray)));
   mDistanceMatRaw = Inf(nFragments,nFragments);     
   maxFrame = max(frameIndex); 
   for m = 1:nFragments
@@ -59,9 +61,9 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     if any(optionVec)
       % we want to exclude points that are not at an interface with another
       % fragment            
-      includeMat = diff(cumActivityArray(epFrameVec,optionVec))>0;
-      includeMat = repmat(includeMat(1:end-1,:) | includeMat(2:end,:),1,1,nParams);          
-      
+      includeMat = diff(cumActivityArrayUp(epFrameVec,optionVec))<0 | diff(cumActivityArrayDown(epFrameVec,optionVec))>0;
+      includeMat = repmat(includeMat(1:end-1,:) | includeMat(2:end,:),1,1,nParams);  
+
       % calculate distances      
       deltaMat = (pathArray(calcFrames,m,:) - pathArray(calcFrames,optionVec,:)).^2;        
       sigmaMat = sigmaArray(calcFrames,optionVec,:).^2;
@@ -105,11 +107,11 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     % update link info array
     activeFrames = [find(endpointFrameArray(:,pKeep)') find(endpointFrameArray(:,pDrop)')];
     keepFrames = ([1 find(endpointFrameArray(:,pKeep)') maxFrame]);
-    includeVecKeep = diff(cumActivityArray(keepFrames,pDrop)')>0;
+    includeVecKeep = diff(cumActivityArrayUp(keepFrames,pDrop)')<0|diff(cumActivityArrayDown(keepFrames,pDrop)')>0;
     includeVecKeep = includeVecKeep(1:end-1) | includeVecKeep(2:end);
     
     dropFrames = ([1 find(endpointFrameArray(:,pDrop)') maxFrame]);
-    includeVecDrop = diff(cumActivityArray(dropFrames,pDrop)')>0;
+    includeVecDrop = diff(cumActivityArrayUp(dropFrames,pDrop)')<0|diff(cumActivityArrayDown(dropFrames,pDrop)')>0;
     includeVecDrop = includeVecDrop(1:end-1) | includeVecDrop(2:end);
     
     % frames
@@ -159,6 +161,10 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     extantFrameArray(:,pKeep) = extantFrameArray(:,pKeep) | extantFrameArray(:,pDrop);
     extantFrameArray = extantFrameArray(:,[1:pDrop-1 pDrop+1:end]);
     
+    % update cumulative activity arrays
+    cumActivityArrayDown = cumsum(extantFrameArray);
+    cumActivityArrayUp = flipud(cumsum(flipud(extantFrameArray)));
+    
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % update cost matrix 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
@@ -173,7 +179,7 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
       
       % we want to exclude points that are not at an interface with another
       % fragment            
-      includeMat = diff(cumActivityArray(epFrameVec,pKeep))>0;
+      includeMat = diff(cumActivityArrayUp(epFrameVec,pKeep))<0 | diff(cumActivityArrayDown(epFrameVec,pKeep))>0;%diff(cumActivityArray(epFrameVec,pKeep))>0;
       includeMat = repmat(includeMat(1:end-1,:) | includeMat(2:end,:),1,1,nParams);
 
       % calculate distances
@@ -193,7 +199,7 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     if any(optionVec)
       % we want to exclude endpoints that are not at interface with other
       % fragments
-      includeMat = diff(cumActivityArray(epFrameVec,optionVec))>0;
+      includeMat = diff(cumActivityArrayUp(epFrameVec,optionVec))<0 | diff(cumActivityArrayDown(epFrameVec,optionVec))>0;%diff(cumActivityArray(epFrameVec,optionVec))>0;
       includeMat = repmat(includeMat(1:end-1,:) | includeMat(2:end,:),1,1,nParams);
     
       % calculate distances

@@ -115,15 +115,26 @@ function [RawParticles, globalModelStruct] = track02TrainGHMM(...
       end
       % refit transition matrix if particle is long enough
       if ismember(p,longIDVec)
+        
         hmmModel = struct;
-        for v = 1:size(dataCell,2)           
-          % conduct EM inference of HMM parameters
-          [hmmModel(v).LL, hmmModel(v).Prior,hmmModel(v).Transmat, ...
-            hmmModel(v).Mu, hmmModel(v).Sigma, hmmModel(v).Mixmat] = ...
-              ... % initialize using global param values
-              mhmm_em(dataCell{p,v}, globalModelStruct(v).Prior, globalModelStruct(v).Transmat, ...
-              globalModelStruct(v).Mu, globalModelStruct(v).Sigma, globalModelStruct(v).Mixmat, ...
-                'verbose', 0, 'max_iter', maxIter,'adj_mix',0,'adj_mu',0,'adj_sigma',0);                        
+        for v = 1:size(dataCell,2)    
+          try
+            % conduct EM inference of HMM parameters
+            [hmmModel(v).LL, hmmModel(v).Prior,hmmModel(v).Transmat, ...
+              hmmModel(v).Mu, hmmModel(v).Sigma, hmmModel(v).Mixmat] = ...
+                ... % initialize using global param values
+                mhmm_em(dataCell{p,v}, globalModelStruct(v).Prior, globalModelStruct(v).Transmat, ...
+                globalModelStruct(v).Mu, globalModelStruct(v).Sigma, globalModelStruct(v).Mixmat, ...
+                  'verbose', 0, 'max_iter', maxIter,'adj_mix',0,'adj_mu',0,'adj_sigma',0);         
+          catch
+            %NL: need to figure out why this errors occasionally...
+            hmmModel(v).LL = NaN;
+            hmmModel(v).Prior = globalModelStruct(v).Prior;
+            hmmModel(v).Transmat = globalModelStruct(v).Transmat;
+            hmmModel(v).Mu = globalModelStruct(v).Mu;
+            hmmModel(v).Sigma = globalModelStruct(v).Sigma;
+            hmmModel(v).Mixmat = globalModelStruct(v).Mixmat;
+          end
         end
         iter = iter + 1;
         for v = 1:length(varNameCell)

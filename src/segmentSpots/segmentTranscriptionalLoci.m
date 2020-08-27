@@ -120,7 +120,7 @@ isZPadded = size(movieMat, 3) ~= zSize;
 q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
-parfor currentFrame = initialFrame:lastFrame
+for currentFrame = initialFrame:lastFrame
     
     imStack = movieMatCh(:, :, :, currentFrame);
     if shouldMaskNuclei

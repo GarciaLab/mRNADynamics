@@ -128,7 +128,9 @@ classdef CPTState < handle
             this.projectionMode = projectionMode;
             
             this.frameLevelFields = [{'xPos'} {'yPos'} {'zPosDetrended'} {'NucleusDist'} {'zPos'} ...
-              {'ncDistFlags'} {'distShiftFlags'} {'timeShiftFlags'} {'Index'} {'Frame'} {'FrameApproved'}]; % NL adding this for ease of bookKeeping
+              {'ncDistFlags'} {'distShiftFlags'} {'fragmentFlags'} {'earlyFlags'} {'Index'} {'Frame'} {'FrameApproved'}...
+              {'ncDistFlagsOrig'} {'distShiftFlagsOrig'} {'fragmentFlagsOrig'} {'earlyFlagsOrig'} {'numNeighbors'} {'FrameApprovedOrig'}...
+              ]; % NL adding this for ease of bookKeeping
             
             this.qcFlagFields = [{'fragmentFlags'},{'distShiftFlags'},{'ncDistFlags'},{'earlyFlags'}]; %,{'linkCostFlags'}];              
         end

@@ -85,52 +85,63 @@ function [ParticlesFull,ParticleStitchInfo,SpotFilter] = track04StitchTracks(...
               Nucleus, NucleusIDVec, frameIndex, SimParticles{Channel},  ncVec, matchCostMax(Channel),...
               ForceMatchCell,ForceSplitCell,FragmentIDVec); 
       
-      % check for conflicts (cases where there are more detections per frame than ins permitted)       
-      assignmentFlags = useHistone & (sum(extantFrameArray,2)>spotsPerNucleus(Channel))';%+length(ForceSplitCell)))';
-
+      % check for conflicts (cases where there are more detections per frame than ins permitted)     
+      nExtantVec = sum(extantFrameArray,2)';
+      assignmentFlags = useHistone & (nExtantVec>spotsPerNucleus(Channel));%+length(ForceSplitCell)))';
+     
       rmVec = [];
       rmFrameCell = {};
       % check for degenerate particle-nucleus assignments
       if any(assignmentFlags)        
-        localKernel = 10; % number of leading and trailing frames to examine
+        localKernel1 = 5; % number of leading and trailing frames to examine
+        localKernel2 = 15; % number of leading and trailing frames to examine
         % find problematic frames
         errorIndices = find(assignmentFlags);
-        clusterIndices = find([1 diff(errorIndices)>1 1]);
+%         clusterIndices = find([1 diff(errorIndices)>1 1]);
         % initialize vector to track particle IDs to remove        
         % iterate through these and guess which spots are anamolous based
         % on local connectivity
-        for e = 1:length(clusterIndices)-1
+        for e = 1:length(errorIndices)%1:length(clusterIndices)-1
           
           % get problematic frame list
-          cFrames = errorIndices(clusterIndices(e):clusterIndices(e+1)-1); 
-
+          cFrame = errorIndices(e);%errorIndices(clusterIndices(e):clusterIndices(e+1)-1); 
+          activeIndices = find(~isnan(particleIDArray(cFrame,:)));
           % calculate first and last frames over which to conduct
           % comparison on connectivity (i.e. number of detections)
-          ff = max([1,cFrames(1)-localKernel]);
-          lf = min([length(frameIndex),cFrames(end)+localKernel]);          
-          lcVec = ff:lf;
-          lcVec = lcVec(~ismember(lcVec,cFrames));
+          ff1 = max([1,cFrame(1)-localKernel1]);
+          lf1 = min([length(frameIndex),cFrame(end)+localKernel1]);          
+          lcVec1 = ff1:lf1;
+          lcVec1 = lcVec1(~ismember(lcVec1,cFrame));
+          
+          ff2 = max([1,cFrame(1)-localKernel2]);
+          lf2 = min([length(frameIndex),cFrame(end)+localKernel2]);          
+          lcVec2 = ff2:lf2;
+          lcVec2 = lcVec2(~ismember(lcVec2,cFrame));
           
           % get counts of linked particles for each conflicting detection
-          localCounts = sum(extantFrameArray(lcVec,:));
-          [~,rankVec] = sort(localCounts);
+          localCounts1 = sum(extantFrameArray(lcVec1,activeIndices));
+          localCounts2 = sum(extantFrameArray(lcVec2,activeIndices));
+          [~,rankVec] = sortrows([localCounts1' localCounts2']);
           
           % flag particles with fewest connections within time window and
           % remove
-          ptList = reshape(unique(particleIDArray(cFrames,rankVec(1:end-spotsPerNucleus(Channel)))),1,[]);          
+          ptList = particleIDArray(cFrame,activeIndices(rankVec(1:end-spotsPerNucleus(Channel))));          
+%           ptList = reshape(unique(particleIDArray(cFrame,rankVec(1:end-spotsPerNucleus(Channel)))),1,[]);          
           rmVec = [rmVec ptList];
-          rmFrameCell = [rmFrameCell repelem({cFrames},length(ptList))];
-          rmFrameCell = rmFrameCell(~isnan(rmVec));
-          rmVec = rmVec(~isnan(rmVec));
+          rmFrameCell = [rmFrameCell repelem({cFrame},length(ptList))];
+%           rmFrameCell = rmFrameCell(~isnan(rmVec));
+%           rmVec = rmVec(~isnan(rmVec));
+        end             
+        % consolidate rmVec 
+        rmIndex = unique(rmVec);
+        for r = 1:length(rmIndex)
+          rmFrameCellComp(r) = {[rmFrameCell{rmVec==rmIndex(r)}]};
         end
-        % reset nucleus ID values for these particles to NaN
-%         nucleusIDVecNew = nucleusIDVec;
-%         nucleusIDVec(ismember(FragmentIDVec,rmVec)) = NaN;                   
-                
+    
         % adjust SimParticles to account for
-        for p = 1:length(rmVec)          
-          ptIndex = find(FragmentIDVec==rmVec(p));
-          rmFrames = rmFrameCell{p};
+        for p = 1:length(rmIndex)          
+          ptIndex = find(FragmentIDVec==rmIndex(p));
+          rmFrames = rmFrameCellComp{p};
           % first check to see how many fragmetn frames fall inside problem
           % region
           overlapFilter = ismember(SimParticles{Channel}(ptIndex).Frame,rmFrames);
@@ -154,10 +165,10 @@ function [ParticlesFull,ParticleStitchInfo,SpotFilter] = track04StitchTracks(...
 
             % now we need to re-generate motion model and path predictions
             globalMotionModel = getGlobalMotionModel(liveExperiment);
-            [HMMTemp, ~] = ...
-              track02TrainGHMM({ParticlesFull.RawParticles{Channel}(ptIndex)}, globalMotionModel, displayFigures);
+            [HMMTemp, ~] = track02TrainGHMM(...
+              {ParticlesFull.RawParticles{Channel}(ptIndex)}, globalMotionModel, false);
             
-            SimTemp = track03PredictParticlePaths(HMMTemp, FrameInfo, displayFigures);
+            SimTemp = track03PredictParticlePaths(HMMTemp, FrameInfo, false);
             
             % update structures
             ParticlesFull.HMMParticles{Channel}(ptIndex) = HMMTemp{1};
@@ -177,20 +188,22 @@ function [ParticlesFull,ParticleStitchInfo,SpotFilter] = track04StitchTracks(...
                 updateVectorFields(RawOrig,subFilter);
 
               % change fragment ID if necessary
+              ptID = FragmentIDVec(ptIndex);
               if id > 1
-                ptIDCounter = nanmax(FragmentIDVec)+1;
-                while ismember(ptIDCounter,reservedFragmentIDs)
-                  ptIDCounter = ptIDCounter + 1;
+                ptID = nanmax(FragmentIDVec)+1;
+                while ismember(ptID,reservedFragmentIDs)
+                  ptID = ptID + 1;
                 end
-                FragmentIDVec(newIndices(id)) = ptIDCounter;
+                FragmentIDVec(newIndices(id)) = ptID;
                 NucleusIDVec(newIndices(id)) = Nucleus;
               end
+              ParticlesFull.RawParticles{Channel}(newIndices(id)).FragmentID = ptID;
               % then retrain motion model
               globalMotionModel = getGlobalMotionModel(liveExperiment);
               [HMMTemp, ~] = track02TrainGHMM(...
-                {ParticlesFull.RawParticles{Channel}(newIndices(id))}, globalMotionModel, displayFigures);
+                {ParticlesFull.RawParticles{Channel}(newIndices(id))}, globalMotionModel, false);
               % then make path predictions
-              SimTemp = track03PredictParticlePaths(HMMTemp, FrameInfo, displayFigures);
+              SimTemp = track03PredictParticlePaths(HMMTemp, FrameInfo, false);
               % update structures
               ParticlesFull.HMMParticles{Channel}(newIndices(id)) = HMMTemp{1};
               SimParticles{Channel}(newIndices(id)) = SimTemp{1};              
@@ -202,7 +215,7 @@ function [ParticlesFull,ParticleStitchInfo,SpotFilter] = track04StitchTracks(...
             SpotFilter{Channel}(overlapFrames(f),overlapIndices(f)) = 0;
           end  
         end 
-
+  
         % aaaaaaand rerun the assignment steps
         [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, ...
               linkCostVec, linkAdditionCell, linkCostCell, linkFrameCell, linkParticleCell] = performParticleStitching(...
