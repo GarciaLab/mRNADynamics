@@ -493,6 +493,9 @@ classdef LiveExperiment
             ellipsesFile = [this.resultsFolder, 'Ellipses.mat'];
             if this.hasEllipsesFile
                 load(ellipsesFile, 'Ellipses');
+            else
+                warning('No Ellipses structure found for this LiveExperiment.')
+                Ellipses = {};
             end
             
         end
