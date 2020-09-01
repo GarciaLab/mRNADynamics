@@ -138,11 +138,7 @@ if ~skipExtraction
     if shouldExportMovieFiles
         
         topZSlice = min(NSlices);
-        
-        movieMat = zeros(ySize, xSize,...
-            max(NSlices)+nPadding, sum(NFrames),NChannels, moviePrecision);
-        
-        
+            
         for seriesIndex = 1:NSeries
             waitbar(seriesIndex/NSeries, waitbarFigure)
             for framesIndex = 1:NFrames(seriesIndex)
@@ -176,6 +172,7 @@ if ~skipExtraction
                             imwrite(imSlice,...uint16(LIFImages{seriesIndex}{imageIndex,1}),...
                                 [PreProcFolder, filesep, NewName], 'WriteMode', 'append');
                             slicesCounter = slicesCounter + 1;
+                            
                         end
                     end
                     

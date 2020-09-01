@@ -289,6 +289,7 @@ function [ParticlesFull,ParticleStitchInfo,SpotFilter] = track04StitchTracks(...
         nIter = nIter + 1;
       end   
     end
+
     close(wb)       
     % Now, add in approved particles
     if retrack && ~isempty(ReviewedParticlesFull.Particles{Channel})

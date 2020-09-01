@@ -6,7 +6,7 @@ function keyInputHandler = AddSpotEventHandler(cptState, Prefix)
             liveExperiment = LiveExperiment(Prefix);   
             movieMat = getMovieMat(liveExperiment);
             imStack = double(movieMat(:, :, :, cptState.CurrentFrame, cptState.CurrentChannel));
-            
+          
             cptState = addSpot(cptState, cc, Prefix, imStack);
               
             % write file instructing pipeline to re-run tracking

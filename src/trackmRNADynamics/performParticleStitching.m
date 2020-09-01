@@ -103,6 +103,7 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
 
     nucleusIDVec = nucleusIDVec([1:pDrop-1 pDrop+1:end]);
     
+    
     %%%%%%%%%%%%%%%%%%
     % update link info array
     activeFrames = [find(endpointFrameArray(:,pKeep)') find(endpointFrameArray(:,pDrop)')];
@@ -215,6 +216,7 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     mDistanceMat(:,pKeep) = newDistVec;
     mDistanceMat = tril(mDistanceMat);
     mDistanceMat(mDistanceMat==0) = Inf;
+    
     % impose user-assigned links/splits
     try
       [mDistanceMat, ForceMatchCell] = imposeLinkAssigments(mDistanceMat,ForceMatchCell,ForceSplitCell,particleIDArray);

@@ -91,7 +91,6 @@ validateExperimentTypeSupported(ExperimentType);
 mkdir([OutputFolder, filesep]);
 save([OutputFolder, filesep, 'Particles.mat'], 'Particles','SpotFilter');
 
-
 createFieldNCAndSaveFrameInfo(FrameInfo, OutputFolder, nc9, nc10, nc11, nc12, nc13, nc14);
 
 end

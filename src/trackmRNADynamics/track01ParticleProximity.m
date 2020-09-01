@@ -186,10 +186,11 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull,...
         % particle using the NewParticle array.
         NewParticleFlag = true(size(NewSpotsX));
         
+
         % exclude Spots corresponding to existing particle
         rmIndices = find(SpotFilterLink(CurrentFrame,:)==0);
         NewParticleFlag(rmIndices) = false;
-          
+        
         if ~isempty(ExtantParticles) && ~NewNCFlag
           % Generate maximum allowed jump radius between spots          
           SearchRadius = SearchRadiusMicrons;
@@ -248,7 +249,6 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull,...
             RawParticles{Channel}(ParticleIndex).zPos(end + 1) = NewSpotsZ(NewSpotIndex);      
             RawParticles{Channel}(ParticleIndex).NucleusDist(end + 1) = NewSpotDistances(NewSpotIndex);
           end                        
-
         end
    
         % See which spots weren't assigned and add them to the structure as new particles
@@ -282,7 +282,6 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull,...
     
     % adjust for z stack shifts
     RawParticles{Channel} = detrendZ(RawParticles{Channel},FrameInfo);
-          
     close(f);
   end
 end
