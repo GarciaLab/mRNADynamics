@@ -7,7 +7,7 @@
 
 function [tB_idx_return, skip_tile] = SelectStitchingPartners(tile_array, tA_idx, tB_idxs, varargin)
 %% 
- 
+ close all
 useFilteredImages = true;
 if ~isempty(varargin) > 0
     x = 1;
@@ -21,6 +21,7 @@ if ~isempty(varargin) > 0
         x = x +1;
     end
 end
+
 %% 
 
 skip_tile = false;

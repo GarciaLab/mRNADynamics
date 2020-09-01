@@ -33,10 +33,21 @@ end
 %level.
 load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
 
+hisDir=dir([PreProcPath,filesep,Prefix,filesep,'*his*']);
+if ~isempty(hisDir)
+    histoneChannelPresent = true;
+else
+    histoneChannelPresent = false;
+end
+liveExperiment = LiveExperiment(Prefix);
 %Get the surface image in the zoomed case by looking at the last
 %frame of our movie
-DHis=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
-ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis(end-1).name]);
+hisMat = getHisMat(liveExperiment);
+%     if ~isempty(DHis)
+%         try
+%3D stack
+%             hisMat = imreadStack([PreProcPath,filesep,Prefix,filesep,Prefix,'-His.tif']);
+ZoomImage = hisMat(:, :, end-1);
 
 
 %With AP coordinates in hand we can now determine the AP position of

@@ -15,6 +15,19 @@ if ~exist('Prefix')
     Prefix=FolderTemp((Dashes(end)+1):end);
 end 
 
+UseMatchStacks = false;
+if ~isempty(varargin)
+    x = 1;
+    while x <= length(varargin)
+        switch varargin{x}
+            case{'UseMatchStackImages'}
+                UseMatchStacks = true;
+            otherwise
+                error(['Flag "', varargin{x},'" not valid'])
+        end
+        x = x +1;
+    end
+end
 
 
 
@@ -75,6 +88,7 @@ PixelSize = double(MIDMeta.getPixelsPhysicalSizeX(1).value);% units: microns
 
 %MidFilteredImage = imread([stitchingDataFolder, filesep, 'MidTileStitch_MaxFilteredPadded.tif']);
 %MidImageStack = imread([stitchingDataFolder, filesep, 'MidTileStitchPadded.tif']);
+
 MidImage =imread([stitchingDataFolder, filesep, 'MidTileStitch_MaxPadded.tif']);
 %SurfFilteredImage = imread([stitchingDataFolder, filesep, 'SurfTileStitch_MaxFilteredPadded.tif']);
 %SurfImageStack = imread([stitchingDataFolder, filesep, 'SurfTileStitchPadded.tif']);
@@ -83,8 +97,10 @@ SurfImage = imread([stitchingDataFolder, filesep, 'SurfTileStitch_MaxPadded.tif'
 if isfolder([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData'])
     xml_file_path = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, '*.xml']);
     xml_file = xml_file_path(1).name;
-    xDoc = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'MetaData', filesep, xml_file]);
-    zoom_angle = str2double(evalin('base','rot'));
+    xDoc = xmlread([SourcePath, filesep, Date, filesep, EmbryoName, filesep,'MetaData', filesep, xml_file]);
+    xml_struct = xml2struct([SourcePath, filesep, Date, filesep, EmbryoName, filesep,'MetaData', filesep, xml_file]);
+    attach_idx = size(xml_struct.Data.Image.Attachment, 2);
+    zoom_angle = str2double(xml_struct.Data.Image.Attachment{1,attach_idx}.ATLConfocalSettingDefinition.Attributes.RotatorAngle);
 else 
     warning('No time series metadata found.')
 end
@@ -94,16 +110,18 @@ if isfolder([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbry
     xml_file_path2 = dir([SourcePath, filesep, Date, filesep, EmbryoName, filesep, 'FullEmbryo',...
         filesep, 'MetaData', filesep,'*SurfTile*.xml']);
     xml_file2 = xml_file_path2(1).name;
-    evalin('base','clear rot')
-    xDoc2 = searchXML([SourcePath, filesep, Date, filesep, EmbryoName, filesep,'FullEmbryo', filesep,...
-            'MetaData', filesep, xml_file2]);
-     full_embryo_angle = str2double(evalin('base','rot'));
+    xDoc2 = xmlread([SourcePath, filesep, Date, filesep, EmbryoName, filesep,'FullEmbryo', filesep, 'MetaData', filesep, xml_file2]);
+    xml_struct2 = xml2struct([SourcePath, filesep, Date, filesep, EmbryoName, filesep,'FullEmbryo', filesep,'MetaData', filesep, xml_file2]);
+    attach_idx = size(xml_struct2.Data.Image.Attachment, 2);
+    full_embryo_angle = str2double(xml_struct2.Data.Image.Attachment{1,attach_idx}.ATLConfocalSettingDefinition.Attributes.RotatorAngle);
 else 
     warning('No full embryo metadata found.')
 end
 
-MidImage = imrotate(MidImage, -zoom_angle + full_embryo_angle);
-SurfImage = imrotate(SurfImage, -zoom_angle + full_embryo_angle);
+if zoom_angle ~= 0
+    MidImage = imrotate(MidImage, -zoom_angle);
+    SurfImage = imrotate(SurfImage, -zoom_angle);
+end
 
 %Save it to the Dropbox folder
 if ~exist([DropboxFolder,filesep,Prefix,filesep,'APDetection'], 'dir')
@@ -111,10 +129,21 @@ if ~exist([DropboxFolder,filesep,Prefix,filesep,'APDetection'], 'dir')
 end
 imwrite(uint16(MidImage),[DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryo.tif'],'compression','none');
 imwrite(uint16(SurfImage),[DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoSurf.tif'],'compression','none');
+
+if UseMatchStacks
+    MidImageV2 =imread([stitchingDataFolder, filesep, 'MidTileStitch_MaxPaddedV2.tif']); 
+    if zoom_angle ~= 0
+        MidImageV2 = imrotate(MidImageV2, -zoom_angle);
+        imwrite(uint16(MidImageV2),[DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoV2.tif'],'compression','none');
+    end
+end
 %%
 
-
-APImage = MidImage;
+if ~UseMatchStacks
+    APImage = MidImage;
+else
+    APImage = MidImageV2;
+end
 
 APImageFig=figure;
 apAx = axes(APImageFig);

@@ -1,4 +1,4 @@
-function ConvertCompiledNucleiToTableArray(Prefix, varargin)
+function [CompiledNucleiTable] = ConvertCompiledNucleiToTableArray(Prefix, varargin)
 % ConvertCompiledNucleiToTableArray(Prefix, varargin)
 %
 % DESCRIPTION
@@ -36,6 +36,17 @@ nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Pref
 disp('Loading CompiledNuclei.mat...');
 load([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat']);
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']);
+load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat']);
+
+APDivisionTimes = zeros(size(APDivision));
+for i=1:size(APDivision, 1)
+    for j = 1:size(APDivision, 2)
+        if APDivision(i,j) ~= 0
+            APDivisionTimes(i,j) = FrameInfo(APDivision(i,j)).Time;
+        end
+    end
+end
+
 
 % 
 %% 
@@ -63,6 +74,7 @@ CompiledNucleiTable = table('Size', [totalSamples nvars],...
 
 sample = 1;
 n = 1;
+nc_frames = [nc9, nc10, nc11, nc12, nc13, nc14];
 while n <= numNuclei
      FrameCount = size(CompiledNuclei(n).Frames, 1);
      nc = CompiledNuclei(n).nc;
@@ -72,27 +84,21 @@ while n <= numNuclei
      APbin = round(MeanAP/APResolution)*APResolution;
      MeanDV = CompiledNuclei(n).MeanDV;
      MedianDV = CompiledNuclei(n).MedianDV;
-     if nc== 10
-         ncStart =  nc10; 
-         
-     elseif nc == 11
-         ncStart =  nc11;
-     elseif nc == 12
-         ncStart =  nc12;
-     elseif nc == 13
-         ncStart =  nc13;
-     elseif nc == 14
-         ncStart =  nc14;
-     end
+     ncStart = nc_frames(nc-8);
      ncStart = max(ncStart, 1);
      ncOffset = FrameInfo(ncStart).Time/60;
      for f=1:size(CompiledNuclei(n).Frames, 1)
         CompiledNucleiTable.Prefix(sample) = Prefix;
         CompiledNucleiTable.NucleusID(sample) = n; 
+        CompiledNucleiTable.MeanAP(sample) = MeanAP;
+        CompiledNucleiTable.MedianAP(sample) = MedianAP;
+        CompiledNucleiTable.APbin(sample) = APbin;
         CompiledNucleiTable.Frame(sample) = CompiledNuclei(n).Frames(f);
-        CompiledNucleiTable.FrameNC(sample) = CompiledNuclei(n).Frames(f)-ncStart;
+        CompiledNucleiTable.FrameNC(sample) = CompiledNuclei(n).Frames(f)-APDivision(uint16(nc),uint16(APbin/APResolution)+1);
+        
         CompiledNucleiTable.Time(sample) = FrameInfo(CompiledNucleiTable.Frame(sample)).Time/60;
-        CompiledNucleiTable.TimeNC(sample) = CompiledNucleiTable.Time(sample)-ncOffset;
+        %CompiledNucleiTable.TimeNC(sample) = CompiledNucleiTable.Time(sample)-ncOffset;
+        CompiledNucleiTable.TimeNC(sample) = CompiledNucleiTable.Time(sample)-APDivisionTimes(uint16(nc), uint16(APbin/APResolution))/60;
         CompiledNucleiTable.FrameCount(sample) = FrameCount;
         CompiledNucleiTable.xPos(sample) = CompiledNuclei(n).xPos(f);
         CompiledNucleiTable.yPos(sample) = CompiledNuclei(n).yPos(f);
@@ -100,9 +106,7 @@ while n <= numNuclei
         CompiledNucleiTable.cellno(sample) = CompiledNuclei(n).cellno(f);
         CompiledNucleiTable.nc(sample) = nc;
         CompiledNucleiTable.schnitz(sample) = schnitz;
-        CompiledNucleiTable.MeanAP(sample) = MeanAP;
-        CompiledNucleiTable.MedianAP(sample) = MedianAP;
-        CompiledNucleiTable.APbin(sample) = APbin;
+        
         CompiledNucleiTable.MeanDV(sample) = MeanDV;
         CompiledNucleiTable.MedianDV(sample) = MedianDV;
         CompiledNucleiTable.Fluo(sample) = CompiledNuclei(n).FluoTimeTrace(f);

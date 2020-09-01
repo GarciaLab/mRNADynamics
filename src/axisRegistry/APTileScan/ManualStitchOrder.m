@@ -151,7 +151,7 @@ while ~stitchOrderFinished
                 height = rmaxs(m)-rmin+1;
                 cmin = cols(m);
                 width = cmaxs(m)-cmin+1;
-                order_labels(m) = counter+1;
+                order_labels(m) = NTiles;
                 break
             end
         end

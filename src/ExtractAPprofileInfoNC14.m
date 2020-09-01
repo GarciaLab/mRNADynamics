@@ -7,7 +7,7 @@ function ExtractAPprofileInfoNC14(Prefix, varargin)
     DetermineLocalFolders;
 
 
-ConvertCompiledNucleiToTableArray(Prefix);
+CompiledNucleiTable = ConvertCompiledNucleiToTableArray(Prefix);
 %Get the folders, including the default Dropbox one
 [SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
 configValues, movieDatabasePath] = DetermineAllLocalFolders(Prefix);
@@ -21,7 +21,6 @@ Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,..
 nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Prefix, DefaultDropboxFolder);
 DataFolder=[DropboxFolder,filesep,Prefix];
 FilePrefix=[DataFolder(length(DropboxFolder)+2:end),'_'];
-load([DropboxFolder,filesep, Prefix,'\CompiledNucleiTable.mat'])
 cnt14  = CompiledNucleiTable(CompiledNucleiTable.nc == 14, :);
 cnt14  = cnt14(cnt14.Fluo > 0,:);
 %%

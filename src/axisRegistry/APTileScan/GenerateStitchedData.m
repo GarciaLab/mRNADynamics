@@ -124,6 +124,13 @@ ZStacksFileName = [ID, 'TileStitch.tif'];
      
 imwrite(StitchedMaxImm,[outputFolder, filesep,MaxProjFileName],'compression','none');
 imwrite(StitchedGaussImm,[outputFolder, filesep,GaussFileName],'compression','none');
-imwrite(StitchedZStacks,[outputFolder, filesep,ZStacksFileName],'compression','none');
-imwrite(StitchedZStacks,[APDetectionFolder, filesep,ZStacksFileName],'compression','none'); 
+if size(StitchedZStacks, 3) <= 4
+    imwrite(StitchedZStacks,[outputFolder, filesep,ZStacksFileName],'compression','none');
+    imwrite(StitchedZStacks,[APDetectionFolder, filesep,ZStacksFileName],'compression','none'); 
+else
+    saveVars = {};
+    saveVars = [saveVars, 'StitchedZStacks'];
+    
+    save([outputFolder, filesep,ID, 'TileStitch.mat'],saveVars{:});
+    save([APDetectionFolder, filesep,ID, 'TileStitch.mat'],saveVars{:});
 end

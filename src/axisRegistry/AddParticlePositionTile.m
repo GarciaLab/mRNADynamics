@@ -90,6 +90,7 @@ end
     Channel1, Channel2, Objective, Power, DataFolder, DropboxFolderName, Comments,...
     nc9, nc10, nc11, nc12, nc13, nc14, CF,Channel3,prophase,metaphase, anaphase] = getExperimentDataFromMovieDatabase(Prefix, movieDatabase);
 
+liveExperiment = LiveExperiment(Prefix);
 %% 
 
 if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
@@ -131,7 +132,7 @@ end
 %% 
 
 %See if we had any lineage/nuclear information
-hisDir=dir([PreProcPath,filesep,Prefix,filesep,'*-His_*']);
+hisDir=dir([PreProcPath,filesep,Prefix,filesep,'*his*']);
 if ~isempty(hisDir)
     histoneChannelPresent = true;
 else
@@ -266,32 +267,34 @@ if ~NoAP
     %%
     %Rotates the full embryo image to match the rotation of the zoomed
     %time series
-    zoom_angle = 0;
-    full_embryo_angle = 0;
+%     zoom_angle = 0;
+%     full_embryo_angle = 0;
+% 
+%     % Gets rotation information for both zoomed-in and full embryo images. 
+%     if isfolder([rawPrefixPath, 'MetaData'])
+%         xml_file_path = dir([rawPrefixPath,'MetaData', filesep, '*.xml']);
+%         xml_file = xml_file_path(1).name;
+%         xml_struct = xml2struct([rawPrefixPath,'MetaData', filesep, xml_file]);
+%         attach_idx = size(xml_struct.Data.Image.Attachment, 2);
+%         zoom_angle = str2double(xml_struct.Data.Image.Attachment{1,attach_idx}.ATLConfocalSettingDefinition.Attributes.RotatorAngle);
+%     else
+%         warning('No time series metadata found.')
+%     end
+%     if isfolder([fullEmbryoPath,'MetaData'])
+%         xml_file_path2 = dir([fullEmbryoPath,'MetaData', filesep,'*Surf*.xml']);
+%         xml_file2 = xml_file_path2(1).name;
+%         xml_struct2 = xml2struct([fullEmbryoPath,'MetaData', filesep, xml_file2]);
+%         attach_idx = size(xml_struct2.Data.Image.Attachment, 2);
+%         full_embryo_angle = str2double(xml_struct2.Data.Image.Attachment{1,attach_idx}.ATLConfocalSettingDefinition.Attributes.RotatorAngle);
+%     else
+%         warning('No full embryo metadata found.')
+%     end
 
-    % Gets rotation information for both zoomed-in and full embryo images. 
-    if isfolder([rawPrefixPath, 'MetaData'])
-        xml_file_path = dir([rawPrefixPath,'MetaData', filesep, '*.xml']);
-        xml_file = xml_file_path(1).name;
-        xDoc = searchXML([rawPrefixPath,'MetaData', filesep, xml_file]);
-        zoom_angle = str2double(evalin('base','rot'));
-    else
-        warning('No time series metadata found.')
-    end
-    if isfolder([fullEmbryoPath,'MetaData'])
-        xml_file_path2 = dir([fullEmbryoPath,'MetaData', filesep,'*Surf*.xml']);
-        xml_file2 = xml_file_path2(1).name;
-        xDoc2 = searchXML([fullEmbryoPath,'MetaData', filesep, xml_file2]);
-        full_embryo_angle = str2double(evalin('base','rot'));
-    else
-        warning('No full embryo metadata found.')
-    end
-
-    evalin('base','clear rot')
 
     %%
-    SurfImage = imrotate(SurfImage, -zoom_angle + full_embryo_angle);
-
+    % Note: The full embryo images were already rotated into 
+%     SurfImage = imrotate(SurfImage, -zoom_angle);
+% 
 
     % This is the original z stack full embryo surface image file from bfopen 
     clear ImageTemp
@@ -332,12 +335,18 @@ if ~NoAP
     % MovieDatabase after you ran the ExportDataForLivemRNA, then run this
     % script, the code might freak out. I'll put a warning message about
     % that.
-    DHis=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
-    if ~isempty(DHis)
-        ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis(end-1).name]);
-    else
-        error('Did you run ExportDataForLivemRNA again, after editing the MovieDatabase.csv with ":Nuclear" ("invertedNuclear")?')
-    end
+%     DHis=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
+%     if ~isempty(DHis)
+%         ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis(end-1).name]);
+%     else
+%         error('Did you run ExportDataForLivemRNA again, after editing the MovieDatabase.csv with ":Nuclear" ("invertedNuclear")?')
+%     end
+    hisMat = getHisMat(liveExperiment);
+    %     if ~isempty(DHis)
+    %         try
+    %3D stack
+    %             hisMat = imreadStack([PreProcPath,filesep,Prefix,filesep,Prefix,'-His.tif']);
+    ZoomImage = hisMat(:, :, end-1);
     
 
     
@@ -381,8 +390,7 @@ if ~NoAP
                 [RowsSurfResized,ColumnsSurfResized]=size(SurfImageResized);
                 [RowsZoomResized,ColumnsZoomResized]=size(ZoomImage);
             end
-
-            C = normxcorr2(im1, im2);
+            C = gather(normxcorr2(gpuArray(im1), gpuArray(im2)));
             [CRows,CColumns]=size(C);
 
             if UseFullEmbryoBoundaries

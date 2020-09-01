@@ -131,8 +131,8 @@ if ~useMultithresh
     thresh = graythresh(mat2gray(nuc1));
     indNuclei = imbinarize(mat2gray(nuc1),thresh);
 else
-    b_points = boundary(xm,ym);
-    index_vec = 1:numel(xm);
+    b_points = boundary(x_maxima,y_maxima);
+    index_vec = 1:numel(x_maxima);
     indNuclei = ~ismember(index_vec,b_points);
 end
 
