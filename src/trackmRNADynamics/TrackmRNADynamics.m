@@ -1,4 +1,4 @@
-function [Particles, schnitzcells] = TrackmRNADynamics(Prefix, varargin)
+function Particles = TrackmRNADynamics(Prefix, varargin)
 %
 % DESCRIPTION
 % %This function tracks transcription loci over time after
