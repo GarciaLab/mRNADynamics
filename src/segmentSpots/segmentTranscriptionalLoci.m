@@ -126,9 +126,9 @@ p = 1;
 parfor currentFrame = initialFrame:lastFrame
     
     imStack = movieMatCh(:, :, :, currentFrame);
-    if shouldMaskNuclei
-        ellipseFrame = Ellipses{currentFrame};
-    end
+%     if shouldMaskNuclei
+%         ellipseFrame = Ellipses{currentFrame};
+%     end
     
     %report progress every tenth frame
     if ~mod(currentFrame, 10), disp(['Segmenting frame ',...
