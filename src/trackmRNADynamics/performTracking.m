@@ -67,15 +67,25 @@ disp('Stitching particle tracks...')
 toc 
 
 matchCostVec = determineMatchOptions(Prefix,useHistone,matchCostMax);
-for Channel = 1:NCh
-  Particles = dynamicStitchBeta(ParticlesFull.FullParticles,ParticlesFull.SimParticles,ParticleStitchInfo,Prefix,matchCostVec,Channel);
-end
+% for Channel = 1:NCh
+%   Particles = dynamicStitchBeta(ParticlesFull.FullParticles,ParticlesFull.SimParticles,ParticleStitchInfo,Prefix,matchCostVec,Channel);
+% end
+warning('MT: Skipping dynamicsStitchBeta because it''s broken')
+Particles = ParticlesFull.FullParticles;
 
 % Add QC flags
 Particles = addQCFields(Particles,useHistone,FrameInfo,retrack,liveExperiment);
 
+
+% save
+disp('Saving...')
+save([resultsFolder, filesep, 'ParticlesFull.mat'],'ParticlesFull')
+save([resultsFolder, filesep, 'ParticleStitchInfo.mat'],'ParticleStitchInfo');
+
+
 % make figures if desired
 if displayFigures
+    disp('Displaying figures...')
     for Channel = 1:NCh
           %Get names of channels for labeling the plots
           colonPos = strfind(channels{Channel},':');
@@ -106,7 +116,7 @@ if displayFigures
           f1 = figure('Position',[0 0 1024 1024]);
           hold on  
           scatter([ParticlesFull.RawParticles{Channel}.xPos],[ParticlesFull.RawParticles{Channel}.yPos],4,'k','filled','MarkerFaceAlpha',1,'MarkerEdgeAlpha',0);
-          for i = 1:length(RawParticles{Channel})
+          for i = 1:length(ParticlesFull.RawParticles{Channel})
             plot(ParticlesFull.RawParticles{Channel}(i).xPos,ParticlesFull.RawParticles{Channel}(i).yPos,'LineWidth',1.25);
           end
           xlabel('x position (pixels)')
@@ -119,9 +129,9 @@ if displayFigures
 
           % show simulated paths 
           f3 = figure('Position',[0 0 1024 1024]);
-          nPlot = min([length(SimParticles{Channel}), 25]);
+          nPlot = min([length(ParticlesFull.SimParticles{Channel}), 25]);
           rng(123);
-          errIndices = randsample(1:length(SimParticles{Channel}),nPlot,false);  
+          errIndices = randsample(1:length(ParticlesFull.SimParticles{Channel}),nPlot,false);  
           hold on
           scatter([ParticlesFull.RawParticles{Channel}.xPos],[ParticlesFull.RawParticles{Channel}.yPos],4,'k','filled','MarkerFaceAlpha',.3,'MarkerEdgeAlpha',0);
           for i = errIndices 
@@ -129,10 +139,10 @@ if displayFigures
             y = ParticlesFull.SimParticles{Channel}(i).hmmModel(2).pathVec;
             dx = ParticlesFull.SimParticles{Channel}(i).hmmModel(1).sigmaVec;
             dy = ParticlesFull.SimParticles{Channel}(i).hmmModel(2).sigmaVec;
-            r = mean([dx' dy'],2);
-            viscircles([x',y'],r,'Color',[0.3 0.3 0.3 0.05]);
+            r = mean([dx' dy'],2) * ones(numel(x),1);
+            viscircles([x,y],r,'Color',[0.3 0.3 0.3 0.05]);
           end
-          for i = 1:length(RawParticles{Channel})
+          for i = 1:length(ParticlesFull.RawParticles{Channel})
             plot(ParticlesFull.RawParticles{Channel}(i).xPos,ParticlesFull.RawParticles{Channel}(i).yPos,'k');
           end
           for i = errIndices
@@ -149,9 +159,9 @@ if displayFigures
 
           f4 = figure('Position',[0 0 856 856]);
           hold on  
-          for i = 1:length(Particles{Channel})
+          for i = 1:length(ParticlesFull.FullParticles{Channel})
 %             extantFilter = min(Particles{Channel}(i).Frame):max(Particles{Channel}(i).Frame);
-            plot(ParticlesFull.Particles{Channel}(i).xPos,ParticlesFull.Particles{Channel}(i).yPos,'LineWidth',1.25);
+            plot(ParticlesFull.FullParticles{Channel}(i).xPos,ParticlesFull.FullParticles{Channel}(i).yPos,'LineWidth',1.25);
           end
           scatter([ParticlesFull.RawParticles{Channel}.xPos],[ParticlesFull.RawParticles{Channel}.yPos],4,'k','filled','MarkerFaceAlpha',.5,'MarkerEdgeAlpha',0);
           % for i = 1:length(Particles{Channel})
@@ -167,12 +177,6 @@ if displayFigures
     end
   
 end
-
-% save
-disp('saving...')
-save([resultsFolder, filesep, 'ParticlesFull.mat'],'ParticlesFull')
-save([resultsFolder, filesep, 'ParticleStitchInfo.mat'],'ParticleStitchInfo');
-
 
 disp('Done.')
 end
