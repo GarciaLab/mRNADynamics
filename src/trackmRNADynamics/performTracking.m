@@ -67,9 +67,10 @@ disp('Stitching particle tracks...')
 toc 
 
 matchCostVec = determineMatchOptions(Prefix,useHistone,matchCostMax);
-for Channel = 1:NCh
-  Particles = dynamicStitchBeta(ParticlesFull.FullParticles,ParticlesFull.SimParticles,ParticleStitchInfo,Prefix,matchCostVec,Channel);
-end
+% for Channel = 1:NCh
+%   Particles = dynamicStitchBeta(ParticlesFull.FullParticles,ParticlesFull.SimParticles,ParticleStitchInfo,Prefix,matchCostVec,Channel);
+% end
+Particles = ParticlesFull.FullParticles;
 
 % Add QC flags
 Particles = addQCFields(Particles,useHistone,FrameInfo,retrack,liveExperiment);
