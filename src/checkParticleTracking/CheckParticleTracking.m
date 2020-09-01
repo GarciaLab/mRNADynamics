@@ -151,9 +151,11 @@ PreProcPath = liveExperiment.userPreFolder;
 DataFolder = [DropboxFolder, filesep, Prefix];
 FilePrefix = [Prefix, '_'];
 
-if isempty(preStructs)
-    [Particles, SpotFilter, Spots, FrameInfo, schnitzcells, Spots3D] =...
+if true%isempty(preStructs)
+    [ParticleStitchInfo, Particles, SpotFilter, Spots, FrameInfo, schnitzcells, Spots3D] =...
         loadCheckParticleTrackingMats(DataFolder, PreProcPath, FilePrefix);
+    ParticlesFull = getParticlesFull(liveExperiment); % load auxiliary particles structures
+%     ParticlesFull = ParticlesFull.ParticlesFull;
 else
     Particles = preStructs{1};
     SpotFilter = preStructs{3};
@@ -177,14 +179,15 @@ nSlices = nSlices + 2; %due to padding;
 if iscell(Particles)
     numSpotChannels = length(Particles);
 else
-    Particles = {Particles};
-    if ~iscell(Spots)
-        Spots = {Spots};
-    end
-    SpotFilter = {SpotFilter};
+    Particles = {Particles};       
     numSpotChannels = 1;
 end
-
+if ~iscell(Spots)
+  Spots = {Spots};
+end
+if ~iscell(SpotFilter)
+  SpotFilter = {SpotFilter};
+end
 %Add FramesApproved where necessary
 Particles = addFrameApproved(numSpotChannels, Particles);
 
@@ -245,9 +248,9 @@ ShowThreshold2 = 1; %Whether to show particles below the threshold
 ParticleToFollow = [];
 CurrentFrameWithinParticle = 1;
 
-cptState = CPTState(liveExperiment, Spots, Particles, SpotFilter, schnitzcells, Ellipses,...
+cptState = CPTState(Spots, Particles, ParticlesFull.SimParticles, ParticlesFull.HMMParticles,ParticlesFull.RawParticles,...
+    ParticleStitchInfo, SpotFilter, schnitzcells, Ellipses,...
     FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss, projectionMode); %work in progress, 2019-12, JP.
-
 
 try
     spotChannels = liveExperiment.spotChannels; 
@@ -261,14 +264,18 @@ if ~isempty(cptState.Particles{cptState.CurrentChannelIndex})
         cptState.Particles{cptState.CurrentChannelIndex}...
         (cptState.CurrentParticle).Frame(CurrentFrameWithinParticle);
 
-else, error('Looks like the Particles structure is empty. There''s nothing to check.'); end
+else
+  error("Looks like the Particles structure is empty. There's nothing to check."); 
+end
 
 %load the movies
-movieMat = getMovieMat(liveExperiment);  
-
-
+movieMat = getMovieMat(liveExperiment);
 hisMat = getHisMat(liveExperiment);
-maxMat = getMaxMat(liveExperiment);
+persistent maxMat
+if isempty(maxMat) || size(maxMat, 4) ~= nFrames
+    maxMat = max(movieMat(:,:,:,:), [],3);
+end
+
 
 ZoomRange = 50;
 snipImageHandle = [];
@@ -300,12 +307,12 @@ end
 %Define user interface
 [Overlay, overlayAxes, snippetFigAxes,...
     rawDataAxes, gaussianAxes, traceFig, traceFigAxes, zProfileFigAxes,...
-    zTraceAxes,HisOverlayFig,HisOverlayFigAxes, multiFig]...
+    zTraceAxes,HisOverlayFig,HisOverlayFigAxes, multiFig, qcFig]...
     ...
     = checkParticleTracking_drawGUI(...
     ...
     cptState.UseHistoneOverlay, fish,...
-    cptState.plot3DGauss, ExperimentType, multiView, xSize, ySize);
+    cptState.plot3DGauss, ExperimentType, multiView, xSize, ySize,cptState);
 
 if multiView
     blankImage = zeros(cptState.FrameInfo(1).LinesPerFrame,...
@@ -324,12 +331,12 @@ channelSwitchKeyInput = ChannelSwitchEventHandler(cptState, numSpotChannels, cpt
 zoomParticleToggleKeyInput = ZoomParticleToggleEventHandler(cptState);
 zoomAnywhereKeyInput = ZoomAnywhereEventHandler(cptState);
 histoneContrastKeyInput = HistoneContrastChangeEventHandler(cptState);
-addSpotKeyInput = AddSpotEventHandler(cptState, Prefix);
-deleteSpotKeyInput = DeleteSpotEventHandler(cptState);
-ellipsesKeyInput = EllipsesEventHandler(cptState);
-tracesKeyInput = TracesEventHandler(cptState);
-nuclearTrackingKeyInput = NuclearTrackingEventHandler(cptState);
-generalKeyInput = GeneralEventHandler(cptState, DataFolder, DropboxFolder, FilePrefix, numSpotChannels);
+addSpotKeyInput = AddSpotEventHandler(cptState, Prefix); % Done!
+deleteSpotKeyInput = DeleteSpotEventHandler(cptState,Prefix); % Done!
+ellipsesKeyInput = EllipsesEventHandler(cptState); % No Change
+tracesKeyInput = TracesEventHandler(cptState);  % Done!
+nuclearTrackingKeyInput = NuclearTrackingEventHandler(cptState); % Done
+generalKeyInput = GeneralEventHandler(cptState, DataFolder, DropboxFolder, FilePrefix, numSpotChannels); % Done
 
 % Create the approved field if it does not exist
 for k = 1:numSpotChannels
@@ -463,6 +470,24 @@ while (currentCharacter ~= 'x')
             ExperimentType, Channels, PreProcPath, DropboxFolder,...
             plotTraceSettings);
     end
+    
+    % UPDATE QC PANEL
+    set(0, 'CurrentFigure', qcFig);
+    FrameFilter = cptState.CurrentFrame==...
+                 cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Frame;
+    
+    for f = 1:length(cptState.qcFlagFields)
+      if sum(FrameFilter)==1
+        CheckValue = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle)...
+                     .(cptState.qcFlagFields{f})(FrameFilter) > 0;
+      else
+        CheckValue = 0;
+      end
+      uicontrol('Style','checkbox','String',cptState.qcFlagFields(f), ...
+                 'Value',CheckValue,...
+                 'Position',[30 20*f 130 20],...
+                 'Callback',{@qcCheckBoxCallback,f,cptState});
+    end  
     
 %%
 % %AR- disabled until it's fast enough to be useful.

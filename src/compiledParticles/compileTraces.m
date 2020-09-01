@@ -58,21 +58,20 @@ for ChN=1:NChannels
                 %3/29/19 JL Bug workaround: if there are any nuclei with
                 %label 0 the following line breaks, due to zero indexing.
                 %For now, just skip.
-                try
-                    if Particles{ChN}(i).Nucleus == 0
-                        AnalyzeThisParticle=0;
-                    elseif ~((sum(FrameFilter)>0)&...
-                            (~isempty(schnitzcells(Particles{ChN}(i).Nucleus).frames)))
-                        AnalyzeThisParticle=0;
-                    end
-                catch
-                    error('Particle possibly not associated with nucleus. May lead to inaccuracies in fraction calcluations.')
-                    
-                end
+       
+            if Particles{ChN}(i).Nucleus == 0 || isnan(Particles{ChN}(i).Nucleus)
+                AnalyzeThisParticle=0;
+                
+            elseif ~((sum(FrameFilter)>0)&...
+                    (~isempty(schnitzcells(Particles{ChN}(i).Nucleus).frames)))
+                AnalyzeThisParticle=0;            
+       
             elseif ~(sum(FrameFilter)>0)
                 AnalyzeThisParticle=0;
+                
             elseif length(Particles{ChN}(i)) <  minTime
                 AnalyzeThisParticle=0;
+                
             end
             
             
@@ -105,6 +104,19 @@ for ChN=1:NChannels
                 if isfield(Particles{ChN}(k),'zPos')
                     CompiledParticles{ChN}(k).zPos=Particles{ChN}(i).zPos(FrameFilter);
                 end
+                if isfield(Particles{ChN}(k),'zPosDetrended')
+                    CompiledParticles{ChN}(k).zPosDetrended=Particles{ChN}(i).zPosDetrended(FrameFilter);
+                end
+                % add QC info
+                CompiledParticles{ChN}(k).ncDistFlags = Particles{ChN}(i).ncDistFlags(FrameFilter);
+                CompiledParticles{ChN}(k).distShiftFlags = Particles{ChN}(i).distShiftFlags(FrameFilter);
+                CompiledParticles{ChN}(k).distShiftVec = Particles{ChN}(i).distShiftVec(FrameFilter);
+                CompiledParticles{ChN}(k).fragmentFlags = Particles{ChN}(i).fragmentFlags(FrameFilter);
+                CompiledParticles{ChN}(k).earlyFlags = Particles{ChN}(i).earlyFlags(FrameFilter);
+%                 CompiledParticles{ChN}(k).flagsPerFrame = Particles{ChN}(i).flagsPerFrame(FrameFilter); 
+                CompiledParticles{ChN}(k).NucleusDist = Particles{ChN}(i).NucleusDist(FrameFilter);
+                CompiledParticles{ChN}(k).numNeighbors = Particles{ChN}(i).numNeighbors(FrameFilter);
+                
                 %(MT, 2018-02-11) Hacky fix to get lattice to run - FIX LATER
                 %CompiledParticles{ChN}(k).DVpos=Particles{ChN}(i).DVpos(FrameFilter);
                 CompiledParticles{ChN}(k).FrameApproved = Particles{ChN}(i).FrameApproved;

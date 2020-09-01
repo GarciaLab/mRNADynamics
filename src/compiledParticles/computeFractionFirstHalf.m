@@ -28,7 +28,8 @@ if ~isempty(Particles{ChN})
     for i=1:length(Particles{ChN})
         %3/29/19 JL: Also make sure to check that the nucleus label
         %isn't 0.
-        if ~isempty(Particles{ChN}(i).Nucleus) && Particles{ChN}(i).Nucleus ~=0
+        %8/25/20 NL: adding logic for case when Nucleus ID is NaN
+        if ~isempty(Particles{ChN}(i).Nucleus) && Particles{ChN}(i).Nucleus ~=0 && ~isnan(Particles{ChN}(i).Nucleus)
             ParticleNuclei{i}=...
                 schnitzcells(Particles{ChN}(i).Nucleus).cellno(ismember(schnitzcells(Particles{ChN}(i).Nucleus).frames,...
                 Particles{ChN}(i).Frame));

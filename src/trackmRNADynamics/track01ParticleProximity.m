@@ -1,5 +1,7 @@
-function [Particles] = track01ParticleProximity(...
-    FrameInfo, Spots, schnitzcells, Prefix, PixelSize, MaxSearchRadiusMicrons, UseHistone, retrack, displayFigures)
+function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull,...
+    FrameInfo] = track01ParticleProximity(...
+    FrameInfo, Spots, schnitzcells, liveExperiment, PixelSize, MaxSearchRadiusMicrons, ...
+    UseHistone, retrack, displayFigures)
   
   %This function is the first stage of tracking performed by the 
   %performTracking subfunction. It initializes temporary data structures
@@ -12,17 +14,40 @@ function [Particles] = track01ParticleProximity(...
   % get number of channels
   NCh = length(Spots);
   
-  % get experiment type
-  liveExperiment = LiveExperiment(Prefix);
+  % get experiment type  
   ExperimentType = liveExperiment.experimentType;
-  % Extract Time Vector
-  TimeVec = [FrameInfo.Time];
-  % Extract vector indicating nuclear cleavage cycle for each frame
-  ncVec = [FrameInfo.nc]; 
-  SlidingWindowSize = 2; % size of window used for time averaging of nuclear movements
-  %Initialize Particles for the number of spot channels we have
-  Particles = cell(1,NCh);
+  % load particles and link info if we're retracking
+  RawParticles = cell(1,NCh);  
+  if retrack
+    % get current version of particles
+    [Particles, SpotFilter] = getParticles(liveExperiment);
+    if ~iscell(SpotFilter)
+      SpotFilter = {SpotFilter};
+      Particles = {Particles};
+    end
+    % stitch info
+    ParticleStitchInfo = getParticleStitchInfo(liveExperiment);
+    % get auxiliary particles structures
+    ReviewedParticlesFull = getParticlesFull(liveExperiment);
+  else
+    %Initialize Particles for the number of spot channels we have
+    SpotFilter = createSpotFilter(Spots);         
+    ParticleStitchInfo = cell(1,NCh);
+    ReviewedParticlesFull = cell(1,NCh);
+  end
   
+  % Extract vector indicating nuclear cleavage cycle for each frame
+  if true%~isfield(FrameInfo,'nc')
+    ncRefVec = 9:14;
+    for f = 1:length(FrameInfo)
+      ind = find(f>=liveExperiment.anaphaseFrames,1,'last');
+      FrameInfo(f).nc = ncRefVec(ind);
+    end
+    save([liveExperiment.resultsFolder 'FrameInfo.mat'],'FrameInfo')
+  end
+  ncVec = [FrameInfo.nc];
+  SlidingWindowSize = 2; % size of window used for time averaging of nuclear movements
+    
   if ismember(ExperimentType,{'inputoutput'}) && NCh == 2    
     % Figure out which channel is the cluster channel
     spotsChannels = liveExperiment.spotChannels;
@@ -39,8 +64,83 @@ function [Particles] = track01ParticleProximity(...
     SearchRadiusMicrons = estimateSearchRadius(Spots,ncVec,MaxSearchRadiusMicrons,PixelSize,matchPercent,Channel);
     SearchRadiusMicrons = max([0.5,SearchRadiusMicrons]); % should be at least 0.5um
     
+    % In cases where spots have been manually assigned by user, we need to
+    % enforce nucleus ID to guard against edge cases where newly designated
+    % spot is slightly closer to an adjacent nucles
+    SpotFilterNucleus = NaN(size(SpotFilter{Channel}));
+    if retrack
+      [ncFrames, ncIndices] = find(SpotFilter{Channel}==2);
+      FrameVec = [];
+      IndexVec = [];
+      ptIndVec = [];
+      for i = 1:length(Particles{Channel})
+        FrameVec = [FrameVec Particles{Channel}(i).Frame];
+        IndexVec = [IndexVec Particles{Channel}(i).Index];
+        ptIndVec = [ptIndVec repelem(i,length(Particles{Channel}(i).Index))];
+      end
+      for i = 1:length(ncFrames)
+        [~, matchRow] = intersect([FrameVec' IndexVec'],[ncFrames(i), ncIndices(i)],'rows','stable');
+        ptIndices(i) = ptIndVec(matchRow);      
+        SpotFilterNucleus(ncFrames(i),ncIndices(i)) = Particles{Channel}(ptIndices(i)).Nucleus;
+      end
+    end
+    % If we're retracking, we need to (a) break up un-approved particles
+    % and (b) make a temporary spotFilter that indicates which Spots are a
+    % part of approved particles
+    SpotFilterLink = SpotFilter{Channel};    
+    if retrack
+      % keep only full particles that were approved. Individual frames that
+      % were linked are taken care of later on
+      ptStatusVec = [Particles{Channel}.Approved];
+      ReviewedParticles = Particles{Channel}(ptStatusVec~=0);  
+        
+      
+      % Create Temp Spot Filter to indicate which spots are fair game and
+      % which are bound up in approved particles      
+      for p = 1:length(ReviewedParticles)
+        appFrames = ReviewedParticles(p).Frame;
+        appIndices = ReviewedParticles(p).Index;
+        appLinIndices = sub2ind(size(SpotFilterLink),appFrames,appIndices);
+        SpotFilterLink(appLinIndices) = 0;
+      end      
+      
+      % reset stitch info fields
+      ReviewedLinks = ParticleStitchInfo{Channel}.linkApprovedVec~=0;
+      ParticleStitchInfo{Channel}.linkAdditionCell = ParticleStitchInfo{Channel}.linkAdditionCell(ReviewedLinks);
+      ParticleStitchInfo{Channel}.linkAdditionIDCell = ParticleStitchInfo{Channel}.linkAdditionIDCell(ReviewedLinks);
+      ParticleStitchInfo{Channel}.linkCostVec = ParticleStitchInfo{Channel}.linkCostVec(ReviewedLinks);
+      ParticleStitchInfo{Channel}.linkApprovedVec = ParticleStitchInfo{Channel}.linkApprovedVec(ReviewedLinks);
+      
+      %%%%%%%%%%%%
+      % reset other particles structures
+   
+      ReviewedParticlesFull.rawParticleIDs{Channel} = ParticleStitchInfo{Channel}.reservedFragmentIDs; % list of indices
+      % select indices 
+      ReviewedParticlesFull.RawParticles{Channel} = ReviewedParticlesFull.RawParticles{Channel}(ReviewedParticlesFull.rawParticleIDs{Channel});
+      ReviewedParticlesFull.HMMParticles{Channel} = ReviewedParticlesFull.HMMParticles{Channel}(ReviewedParticlesFull.rawParticleIDs{Channel});
+      ReviewedParticlesFull.SimParticles{Channel} = ReviewedParticlesFull.SimParticles{Channel}(ReviewedParticlesFull.rawParticleIDs{Channel});
+      ReviewedParticlesFull.Particles{Channel} = ReviewedParticles;
+      % we don't want to save any info about FullParticles
+      ReviewedParticlesFull = rmfield(ReviewedParticlesFull,'FullParticles');
+     
+    else       
+      % initialize fields in stitch info structure
+      ParticleStitchInfo{Channel}.persistentLinkIndexCell = {};
+      ParticleStitchInfo{Channel}.persistentLinkFrameCell= {};
+      ParticleStitchInfo{Channel}.forbiddenLinkIndexCell = {};
+      ParticleStitchInfo{Channel}.forbiddenLinkFrameCell = {};
+      ParticleStitchInfo{Channel}.linkAdditionIDCell = {};
+      ParticleStitchInfo{Channel}.linkAdditionCell = {};
+      ParticleStitchInfo{Channel}.linkCostVec = [];      
+      ParticleStitchInfo{Channel}.linkApprovedVec = [];
+      ParticleStitchInfo{Channel}.reservedFragmentIDs = [];
+    end
+    % particle ID counter
+    ptIDCounter = 1;
+    reservedFragmentIDs = ParticleStitchInfo{Channel}.reservedFragmentIDs;
     for CurrentFrame = 1:length(Spots{Channel})
       waitbar(CurrentFrame/length(Spots{Channel}),f);
+      
       % Get the positions of ALL spots (approved and disapproved)
       [NewSpotsX, NewSpotsY, NewSpotsZ] = SpotsXYZ(Spots{Channel}(CurrentFrame));
       
@@ -54,44 +154,26 @@ function [Particles] = track01ParticleProximity(...
         %If spots were detected for this frame we need to add them to the
         %Particles structure. Link them to existing particles whenever
         %possible                        
-        particlesFlag = ~isempty(Particles{Channel});
+        particlesFlag = ~isempty(RawParticles{Channel});
         % if we have nucleus info, assign each spot to a nucleus
-        if UseHistone     
-          ExtantNucleiX = [];
-          ExtantNucleiY = [];
-          ncIDVec = [];
-          for i = 1:length(schnitzcells)             
-            CurrFT = ismember(schnitzcells(i).frames,CurrentFrame);
-            if sum(CurrFT) == 1
-              ExtantNucleiX = [ExtantNucleiX schnitzcells(i).cenx(CurrFT)];
-              ExtantNucleiY = [ExtantNucleiY schnitzcells(i).ceny(CurrFT)];
-              ncIDVec = [ncIDVec i];
-            end
-          end
-          NucleusDistMat = NaN(length(NewSpotsX),length(ExtantNucleiX));
-          for i = 1:length(NewSpotsX)            
-            NucleusDistMat(i,:) = vecnorm([NewSpotsX(i) NewSpotsY(i)]  - [ExtantNucleiX' ExtantNucleiY'],2,2);
-          end
-          % assign spots to nearest neighbors
-          [NewSpotDistances, minIndices] = min(NucleusDistMat,[],2); % note that I'm not enforcing unique assignment at this stage. Will do this later on in the process
-          NewSpotNucleusIDs = ncIDVec(minIndices); 
-        else
-          NewSpotNucleusIDs = ones(size(NewSpotsX)); % if no nucleus info, then we set all ID values to dummy val
-          NewSpotDistances = zeros(size(NewSpotsX));
-        end
+        [NewSpotNuclei, NewSpotDistances] = getNuclearAssigments(NewSpotsX,NewSpotsY,...
+              schnitzcells,CurrentFrame,UseHistone,SpotFilterNucleus(CurrentFrame,:));
+            
         %Get a list of the particles that were present in
         %the previous frame and of their positions.
         ExtantParticles = [];
+        ExtantParticleIndices = [];
         PrevSpotsX = [];
         PrevSpotsY = [];   
         PrevNuclei = [];
         if particlesFlag
-          for j = 1:length(Particles{Channel})
-            if Particles{Channel}(j).Frame(end) == (CurrentFrame - 1)
+          for j = 1:length(RawParticles{Channel})
+            if RawParticles{Channel}(j).Frame(end) == (CurrentFrame - 1)
               ExtantParticles = [ExtantParticles, j];            
-              PrevSpotsX = [PrevSpotsX, Particles{Channel}(j).xPos(end)];
-              PrevSpotsY = [PrevSpotsY, Particles{Channel}(j).yPos(end)];
-              PrevNuclei = [PrevNuclei, Particles{Channel}(j).NucleusID];
+              ExtantParticleIndices = [ExtantParticleIndices, RawParticles{Channel}(j).Index(end)];            
+              PrevSpotsX = [PrevSpotsX, RawParticles{Channel}(j).xPos(end)];
+              PrevSpotsY = [PrevSpotsY, RawParticles{Channel}(j).yPos(end)];
+              PrevNuclei = [PrevNuclei, RawParticles{Channel}(j).Nucleus];
             end
           end
         end
@@ -104,57 +186,54 @@ function [Particles] = track01ParticleProximity(...
         % particle using the NewParticle array.
         NewParticleFlag = true(size(NewSpotsX));
         
+
+        % exclude Spots corresponding to existing particle
+        rmIndices = find(SpotFilterLink(CurrentFrame,:)==0);
+        NewParticleFlag(rmIndices) = false;
+        
         if ~isempty(ExtantParticles) && ~NewNCFlag
           % Generate maximum allowed jump radius between spots          
           SearchRadius = SearchRadiusMicrons;
           
           % if we have nulceus tracking info, calculate average
-          % frame-over-frame shift
-          if UseHistone            
-            % use sliding window to estimate average nucleus movement
-            NucleiDxVec = [];
-            NucleiDyVec = []; 
-            NucleiPxVec = [];
-            NucleiPyVec = []; 
-            StopFrame = min([length(Spots{Channel}),CurrentFrame+SlidingWindowSize]);
-            StartFrame = max([1,CurrentFrame-SlidingWindowSize]);
-            for i = 1:length(schnitzcells)             
-              FrameFT = ismember(schnitzcells(i).frames,[StartFrame,StopFrame]);
-              if sum(FrameFT)==2
-                NucleiDxVec = [NucleiDxVec diff(schnitzcells(i).cenx(FrameFT))];
-                NucleiDyVec = [NucleiDyVec diff(schnitzcells(i).ceny(FrameFT))];
-                NucleiPxVec = [NucleiPxVec mean(schnitzcells(i).cenx(FrameFT))];
-                NucleiPyVec = [NucleiPyVec mean(schnitzcells(i).ceny(FrameFT))];
-              end
-            end
-
-            % calculate distancen to each nucleus 
-            NucleusWeightMat = NaN(length(NewSpotsX),length(NucleiPxVec));
-            for i = 1:length(NewSpotsX)
-              NucleusWeightMat(i,:) = (rand(numel(NucleiPxVec),1)*0.05+vecnorm([NewSpotsX(i) NewSpotsY(i)]  - [NucleiPxVec' NucleiPyVec'], 2, 2)).^-2;              
-            end
-            % assign weighted mean bulk displacement to particles
-            SpotBulkDxVec = (sum(repmat(NucleiDxVec,length(NewSpotsX),1).*NucleusWeightMat,2) ./ sum(NucleusWeightMat,2) / (StopFrame-StartFrame+1))';
-            SpotBulkDyVec = (sum(repmat(NucleiDyVec,length(NewSpotsX),1).*NucleusWeightMat,2) ./ sum(NucleusWeightMat,2) / (StopFrame-StartFrame+1))';        
-          else
-            SpotBulkDxVec = zeros(size(NewSpotsX));
-            SpotBulkDyVec = zeros(size(NewSpotsY));
-          end
+          % frame-over-frame shift;
+          maxFrame = find(ncVec==ncVec(CurrentFrame),1,'last');
+          [SpotBulkDxVec,SpotBulkDyVec] = getNuclearShifts(schnitzcells,...
+                    CurrentFrame,maxFrame,NewSpotsX,NewSpotsY,SlidingWindowSize,UseHistone);
           
           % Calculate the distances between the spots in this frame
           % and those within the particles in the previous
-          % frame          
-          
-          % Adjust for nuclear movements
+          % frame. Adjust for nuclear movements                       
           DistanceMat = sqrt((NewSpotsX'-SpotBulkDxVec'- PrevSpotsX).^2 + (NewSpotsY'-SpotBulkDyVec' - PrevSpotsY).^2)*PixelSize;
           % enforce consistent nucleus IDs
-          mismatchMat = NewSpotNucleusIDs'~=PrevNuclei;
+          mismatchMat = NewSpotNuclei'~=PrevNuclei;
           DistanceMat(mismatchMat) = Inf;
+          
+          % apply user-assigned links that are within a single frame
+          [PrevJoin, NewJoin] = findPersistentLinks(ParticleStitchInfo{Channel},CurrentFrame);
+          PrevJoinIndices = find(ismember(ExtantParticleIndices,PrevJoin));
+          if ~isempty(PrevJoinIndices)
+            persistentIndices = sub2ind(size(DistanceMat),NewJoin,PrevJoinIndices);          
+            DistanceMat(persistentIndices) = 0;
+          end
+          
+          % apply user-assigned splits that are within a single frame
+          [PrevSplit, NewSplit] = findForbiddenLinks(ParticleStitchInfo{Channel},CurrentFrame);
+          PrevSplitIndices = find(ismember(ExtantParticleIndices,PrevSplit));
+          if ~isempty(PrevSplitIndices)
+            forbiddenIndices = sub2ind(size(DistanceMat),NewSplit,PrevSplitIndices);
+            DistanceMat(forbiddenIndices) = Inf;
+          end
+          
+          % remove existing spots that are in approved particles 
+%           prevAppIndices = SpotFilterTemp(CurrentFrame-1,:)==0;
+          nextAppIndices = find(SpotFilterLink(CurrentFrame,:)==0);
+%           DistanceMat(:,prevAppIndices) = Inf;
+          DistanceMat(nextAppIndices,:) = Inf;
           
           % Find existing particles and new spots are close enough to be 
           % linked. In cases of degenerate assignemnt, take pairt that
-          % minimizes jump distance
-          
+          % minimizes jump distance          
           [MatchIndices,~,~] = matchpairs(DistanceMat,0.5*SearchRadius);
           NewParticleFlag(MatchIndices(:,1)) = false;         
 
@@ -162,71 +241,47 @@ function [Particles] = track01ParticleProximity(...
           for j = 1:size(MatchIndices)
             ParticleIndex = ExtantParticles(MatchIndices(j,2));
             NewSpotIndex = MatchIndices(j,1);
-            Particles{Channel}(ParticleIndex).Frame(end + 1) = CurrentFrame;
-            Particles{Channel}(ParticleIndex).Index(end + 1) = NewSpotIndex;            
-            Particles{Channel}(ParticleIndex).LastFrame = CurrentFrame; % not sure I'll use these
-            Particles{Channel}(ParticleIndex).xPos(end + 1) = NewSpotsX(NewSpotIndex);
-            Particles{Channel}(ParticleIndex).yPos(end + 1) = NewSpotsY(NewSpotIndex);
-            Particles{Channel}(ParticleIndex).zPos(end + 1) = NewSpotsZ(NewSpotIndex);      
-            Particles{Channel}(ParticleIndex).NucleusDist(end + 1) = NewSpotDistances(NewSpotIndex);
+            RawParticles{Channel}(ParticleIndex).Frame(end + 1) = CurrentFrame;
+            RawParticles{Channel}(ParticleIndex).Index(end + 1) = NewSpotIndex;            
+            RawParticles{Channel}(ParticleIndex).LastFrame = CurrentFrame; % not sure I'll use these
+            RawParticles{Channel}(ParticleIndex).xPos(end + 1) = NewSpotsX(NewSpotIndex);
+            RawParticles{Channel}(ParticleIndex).yPos(end + 1) = NewSpotsY(NewSpotIndex);
+            RawParticles{Channel}(ParticleIndex).zPos(end + 1) = NewSpotsZ(NewSpotIndex);      
+            RawParticles{Channel}(ParticleIndex).NucleusDist(end + 1) = NewSpotDistances(NewSpotIndex);
           end                        
-
         end
    
         % See which spots weren't assigned and add them to the structure as new particles
         NewParticles = find(NewParticleFlag);
         TotalParticles = 0;
         if particlesFlag
-          TotalParticles = length(Particles{Channel});
+          TotalParticles = length(RawParticles{Channel});
         end
         for j = NewParticles    
           TotalParticles = TotalParticles + 1;
-          Particles{Channel}(TotalParticles).Frame = CurrentFrame;
-          Particles{Channel}(TotalParticles).Index = j;
-          Particles{Channel}(TotalParticles).Approved = 0;
-          Particles{Channel}(TotalParticles).FirstFrame = CurrentFrame; % not sure I'll use these
-          Particles{Channel}(TotalParticles).LastFrame = CurrentFrame; % not sure I'll use these
-          Particles{Channel}(TotalParticles).xPos = NewSpotsX(j);
-          Particles{Channel}(TotalParticles).yPos = NewSpotsY(j);
-          Particles{Channel}(TotalParticles).zPos = NewSpotsZ(j);          
-          Particles{Channel}(TotalParticles).NucleusID = NewSpotNucleusIDs(j); 
-          Particles{Channel}(TotalParticles).NucleusDist = NewSpotDistances(j); 
+          RawParticles{Channel}(TotalParticles).Frame = CurrentFrame;
+          RawParticles{Channel}(TotalParticles).Index = j;
+          RawParticles{Channel}(TotalParticles).Approved = 0;
+          RawParticles{Channel}(TotalParticles).FirstFrame = CurrentFrame; 
+          RawParticles{Channel}(TotalParticles).LastFrame = CurrentFrame; 
+          RawParticles{Channel}(TotalParticles).xPos = NewSpotsX(j);
+          RawParticles{Channel}(TotalParticles).yPos = NewSpotsY(j);
+          RawParticles{Channel}(TotalParticles).zPos = NewSpotsZ(j);      
+          RawParticles{Channel}(TotalParticles).Nucleus = NewSpotNuclei(j); 
+          RawParticles{Channel}(TotalParticles).NucleusDist = NewSpotDistances(j);
+          % add identifier
+          while ismember(ptIDCounter,reservedFragmentIDs)
+            ptIDCounter = ptIDCounter + 1;
+          end
+          RawParticles{Channel}(TotalParticles).FragmentID = ptIDCounter;
+          ptIDCounter = ptIDCounter + 1;
         end
       end
 
     end
     
     % adjust for z stack shifts
-    if isfield(FrameInfo,'zPosition')      
-      % need to make sure this field is now a permanent feature
-      zPosVec = [FrameInfo.zPosition]*1e6 / FrameInfo(1).ZStep;
-      zPosVec = zPosVec - zPosVec(1);
-      frameIndex = 1:length(zPosVec);
-      % generate new det-trended z variable
-      for p = 1:length(Particles{Channel})
-        fVec = Particles{Channel}(p).Frame;
-        Particles{Channel}(p).zPosDetrended = Particles{Channel}(p).zPos - zPosVec(ismember(frameIndex,fVec));
-      end
-    else
-      % get list of all frames and corresponding z positions
-      frameVec = [Particles{Channel}.Frame];
-      zPosVec = [Particles{Channel}.zPos];
-      
-      % get iteratable frame  list
-      frameIndex = unique(frameVec);
-      avgZProfile = NaN(size(frameIndex));
-      
-      for i = 1:length(frameIndex)
-        avgZProfile(i) = nanmean(zPosVec(frameVec==frameIndex(i)));
-      end
-      
-      % generate new det-trended z variable
-      for p = 1:length(Particles{Channel})
-        fVec = Particles{Channel}(p).Frame;
-        Particles{Channel}(p).zPosDetrended = Particles{Channel}(p).zPos - avgZProfile(ismember(frameIndex,fVec));
-      end
-      
-    end
+    RawParticles{Channel} = detrendZ(RawParticles{Channel},FrameInfo);
     close(f);
   end
 end

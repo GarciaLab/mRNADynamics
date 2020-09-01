@@ -1,4 +1,4 @@
-function CheckNucleiSegmentation(Prefix, varargin)
+function movieMat = CheckNucleiSegmentation(Prefix, varargin)
 %%
 % DESCRIPTION
 % Opens a user interface that allows for manual curation of nuclear
@@ -443,12 +443,8 @@ while (currentCharacter~='x')
             movieMat, 'ProjectionType', ProjectionType,'Channels',...
             Channels,'ReferenceHist', ReferenceHist);
         
-%         DisplayRange = [mean(mean(Projection(:, :, CurrentFrame))),...
-%             max(max(Projection(:, :, CurrentFrame))) ];
-            DisplayRange = [0,...
+        DisplayRange = [mean(mean(Projection(:, :, CurrentFrame))),...
             max(max(Projection(:, :, CurrentFrame))) ];
-        
-        projFlag = true;
         
         disp('changed projection');
         

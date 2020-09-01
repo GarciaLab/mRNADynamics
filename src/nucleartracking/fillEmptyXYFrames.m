@@ -5,11 +5,6 @@ function Ellipses = fillEmptyXYFrames(Ellipses)
     if sum(cellfun(@(x) size(x,1),Ellipses) < 1)
         %Find the frames where we have issues
         FramesToFix=find(cellfun(@(x) size(x,1),Ellipses) < 1 );
-        
-        if length(FramesToFix) == length(Ellipses)
-            error('Nuclei not detected in any frame. Something''s horribly wrong.');
-        end
-        
         for i=1:length(FramesToFix)
             
             if FramesToFix(i) == 1

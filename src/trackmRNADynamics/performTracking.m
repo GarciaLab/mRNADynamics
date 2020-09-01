@@ -1,79 +1,82 @@
-function Particles = performTracking(Prefix,useHistone,varargin)
+function [Particles, SpotFilter] = performTracking(Prefix,useHistone,varargin)
 close all force
 % Process user options
 % searchRadiusMicrons = 5; by default
-[~,maxSearchRadiusMicrons,retrack,displayFigures] = ...
+[~,maxSearchRadiusMicrons,retrack,noRetrack,displayFigures] = ...
             determinePerformTrackingOptions(varargin);
 
 % Get all the required data for this Prefix
 liveExperiment = LiveExperiment(Prefix);
-
-nCh = numel(liveExperiment.spotChannels);   %Only grabbing the spot channels - might cause issues if spot channels aren't the first n channels
+matchCostMax = 3;
+NCh = numel(liveExperiment.spotChannels);   %Only grabbing the spot channels - might cause issues if spot channels aren't the first n channels
 pixelSize = liveExperiment.pixelSize_um;    %NL: pixel size is in um
-experimentType = liveExperiment.experimentType;
 channels = liveExperiment.Channels;
-channelNames = cell(1,nCh);                 %Will fill this in the plotting loop
+channelNames = cell(1,NCh);                 %Will fill this in the plotting loop
 FrameInfo = getFrameInfo(liveExperiment);
+
+% load Spots file
+disp('loading Spots mat...')
 Spots = getSpots(liveExperiment);
+if isempty(Spots)
+  error('No Spots file found. Have you run segmentSpots?')
+end
 if ~iscell(Spots)% NL: added for backwards compatibility
   Spots = {Spots};
 end
+
+% handle tracking/retracking options that require user input
+if noRetrack && retrack
+  error('conflicting retracking options specified')
+elseif ~noRetrack
+  retrack =  handleTrackingPrompts(liveExperiment,Spots,retrack);
+end
+
 schnitzCells = getSchnitzcells(liveExperiment);
 dropboxFolder = liveExperiment.userResultsFolder;
 resultsFolder = liveExperiment.resultsFolder;
   
 tic
 disp('Performing intitial particle linking...')
-RawParticles = track01ParticleProximity(FrameInfo, Spots, schnitzCells, ...
-                Prefix, pixelSize, maxSearchRadiusMicrons, useHistone, retrack, ...
+[RawParticles, SpotFilter, ParticleStitchInfo, ReviewedParticlesFull, FrameInfo] = track01ParticleProximity(FrameInfo, Spots, schnitzCells, ...
+                liveExperiment, pixelSize, maxSearchRadiusMicrons, useHistone, retrack, ...
                 displayFigures);
 toc
 
 tic
 disp('Inferring particle motion model...')
-HMMParticles = track02TrainGHMM(RawParticles, FrameInfo, retrack, displayFigures);
+[HMMParticles, globalMotionModel] = track02TrainGHMM(RawParticles, [], displayFigures);
 toc
+
+% save motion model
+save([resultsFolder, filesep, 'globalMotionModel.mat'],'globalMotionModel');
 
 tic
 disp('Simulating particle tracks...')
-SimParticles = track03PredictParticlePaths(HMMParticles, FrameInfo, retrack, displayFigures);
+SimParticles = track03PredictParticlePaths(HMMParticles, FrameInfo, displayFigures);
 toc
+
+% generate master particles structure
+ParticlesFull.RawParticles = RawParticles;
+ParticlesFull.HMMParticles = HMMParticles;
+ParticlesFull.SimParticles = SimParticles;
 
 tic
 disp('Stitching particle tracks...')
-Particles = track04StitchTracks(SimParticles, Prefix,...
+[ParticlesFull, ParticleStitchInfo, SpotFilter] = track04StitchTracks(ParticlesFull, SpotFilter, ReviewedParticlesFull, ParticleStitchInfo, Prefix,...
                                 useHistone, retrack, displayFigures);
 toc 
 
-disp('Adding QC fields...')
-% Iterate over all channels and generate additional QC flags
-maxCost = 3;
-ncDistPrctile = 99.5;
-for Channel = 1:nCh
-  allDistanceVec = [Particles{Channel}.NucleusDist];  
-  threshDist = prctile(allDistanceVec,ncDistPrctile);
-  for p = 1:length(Particles{Channel})
-    % flag particles anomalously far from their respective nuclei
-    ncDistVec = Particles{Channel}(p).NucleusDist;
-
-    % flag cases when particle is far away from nearest nucleus
-    Particles{Channel}(p).ncDistFlags = ncDistVec>threshDist;
-    
-    % flag unlikely linkages
-    Particles{Channel}(p).linkFlags = Particles{Channel}(p).linkCosts>maxCost;    
-  end    
+matchCostVec = determineMatchOptions(Prefix,useHistone,matchCostMax);
+for Channel = 1:NCh
+  Particles = dynamicStitchBeta(ParticlesFull.FullParticles,ParticlesFull.SimParticles,ParticleStitchInfo,Prefix,matchCostVec,Channel);
 end
 
+% Add QC flags
+Particles = addQCFields(Particles,useHistone,FrameInfo,retrack,liveExperiment);
 
 % make figures if desired
 if displayFigures
-    makeTrackingFigures = true;
-else
-    makeTrackingFigures = false;
-end
-
-if makeTrackingFigures
-    for Channel = 1:nCh
+    for Channel = 1:NCh
           %Get names of channels for labeling the plots
           colonPos = strfind(channels{Channel},':');
           if isempty(colonPos)
@@ -90,7 +93,7 @@ if makeTrackingFigures
           % figure showing just detection points
           f0 = figure('Position',[0 0 1024 1024]);
           hold on
-          scatter([RawParticles{Channel}.xPos],[RawParticles{Channel}.yPos],4,'k','filled');
+          scatter([ParticlesFull.RawParticles{Channel}.xPos],[ParticlesFull.RawParticles{Channel}.yPos],4,'k','filled');
           xlabel('x position (pixels)')
           ylabel('y position (pixels)')
           title(['Channel ' num2str(Channel) ': ' channelNames{Channel}])
@@ -102,9 +105,9 @@ if makeTrackingFigures
           % figure showing initial linkages
           f1 = figure('Position',[0 0 1024 1024]);
           hold on  
-          scatter([RawParticles{Channel}.xPos],[RawParticles{Channel}.yPos],4,'k','filled','MarkerFaceAlpha',1,'MarkerEdgeAlpha',0);
+          scatter([ParticlesFull.RawParticles{Channel}.xPos],[ParticlesFull.RawParticles{Channel}.yPos],4,'k','filled','MarkerFaceAlpha',1,'MarkerEdgeAlpha',0);
           for i = 1:length(RawParticles{Channel})
-            plot(RawParticles{Channel}(i).xPos,RawParticles{Channel}(i).yPos,'LineWidth',1.25);
+            plot(ParticlesFull.RawParticles{Channel}(i).xPos,ParticlesFull.RawParticles{Channel}(i).yPos,'LineWidth',1.25);
           end
           xlabel('x position (pixels)')
           ylabel('y position (pixels)')
@@ -120,20 +123,20 @@ if makeTrackingFigures
           rng(123);
           errIndices = randsample(1:length(SimParticles{Channel}),nPlot,false);  
           hold on
-          scatter([RawParticles{Channel}.xPos],[RawParticles{Channel}.yPos],4,'k','filled','MarkerFaceAlpha',.3,'MarkerEdgeAlpha',0);
+          scatter([ParticlesFull.RawParticles{Channel}.xPos],[ParticlesFull.RawParticles{Channel}.yPos],4,'k','filled','MarkerFaceAlpha',.3,'MarkerEdgeAlpha',0);
           for i = errIndices 
-            x = SimParticles{Channel}(i).hmmModel(1).pathVec;
-            y = SimParticles{Channel}(i).hmmModel(2).pathVec;
-            dx = SimParticles{Channel}(i).hmmModel(1).sigmaVec;
-            dy = SimParticles{Channel}(i).hmmModel(2).sigmaVec;
+            x = ParticlesFull.SimParticles{Channel}(i).hmmModel(1).pathVec;
+            y = ParticlesFull.SimParticles{Channel}(i).hmmModel(2).pathVec;
+            dx = ParticlesFull.SimParticles{Channel}(i).hmmModel(1).sigmaVec;
+            dy = ParticlesFull.SimParticles{Channel}(i).hmmModel(2).sigmaVec;
             r = mean([dx' dy'],2);
             viscircles([x',y'],r,'Color',[0.3 0.3 0.3 0.05]);
           end
           for i = 1:length(RawParticles{Channel})
-            plot(RawParticles{Channel}(i).xPos,RawParticles{Channel}(i).yPos,'k');
+            plot(ParticlesFull.RawParticles{Channel}(i).xPos,ParticlesFull.RawParticles{Channel}(i).yPos,'k');
           end
           for i = errIndices
-            plot(RawParticles{Channel}(i).xPos,RawParticles{Channel}(i).yPos,'LineWidth',1.5);
+            plot(ParticlesFull.RawParticles{Channel}(i).xPos,ParticlesFull.RawParticles{Channel}(i).yPos,'LineWidth',1.5);
           end
 
           xlabel('x position (pixels)')
@@ -144,13 +147,13 @@ if makeTrackingFigures
           ylim([0 yDim])
           saveas(f3,[trackFigFolder 'projected_paths_ch' num2str(Channel) '.png'])
 
-          f4 = figure('Position',[0 0 1024 1024]);
+          f4 = figure('Position',[0 0 856 856]);
           hold on  
           for i = 1:length(Particles{Channel})
-            extantFilter = min(Particles{Channel}(i).Frame):max(Particles{Channel}(i).Frame);
-            plot(Particles{Channel}(i).pathArray(extantFilter,1),Particles{Channel}(i).pathArray(extantFilter,2),'LineWidth',1.25);
+%             extantFilter = min(Particles{Channel}(i).Frame):max(Particles{Channel}(i).Frame);
+            plot(ParticlesFull.Particles{Channel}(i).xPos,ParticlesFull.Particles{Channel}(i).yPos,'LineWidth',1.25);
           end
-          scatter([RawParticles{Channel}.xPos],[RawParticles{Channel}.yPos],4,'k','filled','MarkerFaceAlpha',.5,'MarkerEdgeAlpha',0);
+          scatter([ParticlesFull.RawParticles{Channel}.xPos],[ParticlesFull.RawParticles{Channel}.yPos],4,'k','filled','MarkerFaceAlpha',.5,'MarkerEdgeAlpha',0);
           % for i = 1:length(Particles{Channel})
           %   plot(Particles{Channel}(i).xPos,Particles{Channel}(i).yPos);
           % end
@@ -165,9 +168,11 @@ if makeTrackingFigures
   
 end
 
+% save
+disp('saving...')
+save([resultsFolder, filesep, 'ParticlesFull.mat'],'ParticlesFull')
+save([resultsFolder, filesep, 'ParticleStitchInfo.mat'],'ParticleStitchInfo');
 
-% If we only have one channel, then convert SpotFilter and Particles to a standard structure.
 
-save([resultsFolder, filesep, 'ParticlesFull.mat'],'RawParticles','HMMParticles', 'SimParticles','Particles')
-
+disp('Done.')
 end

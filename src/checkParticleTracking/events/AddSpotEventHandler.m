@@ -3,22 +3,15 @@ function keyInputHandler = AddSpotEventHandler(cptState, Prefix)
 
     function keyInput(cc)
         if cc == '[' | cc == '{' %#ok<*OR2>
-               
-            movieMat = getMovieMat(LiveExperiment(Prefix));
-            if ~isempty(movieMat)
-                imStack = double(movieMat(:, :, :, cptState.CurrentFrame, cptState.CurrentChannel));
-            else
-                imStack = getMovieFrame(LiveExperiment(Prefix), cptState.CurrentFrame, cptState.CurrentChannel);
-            end
-            
-            [cptState.SpotFilter, cptState.Particles, cptState.Spots, cptState.PreviousParticle,...
-                cptState.CurrentParticle, cptState.ZoomMode, cptState.GlobalZoomMode] = ...
-                ...
-                addSpot(cptState.ZoomMode, cptState.GlobalZoomMode, cptState.Particles, cptState.CurrentChannelIndex, ...
-                ...
-                cptState.CurrentParticle, cptState.CurrentFrame, cptState.CurrentZ, ...
-                cptState.Spots, cptState.SpotFilter, cc, ...
-                Prefix, cptState.UseHistoneOverlay, cptState.schnitzcells, cptState.nWorkers, cptState.plot3DGauss, imStack);
+            liveExperiment = LiveExperiment(Prefix);   
+            movieMat = getMovieMat(liveExperiment);
+            imStack = double(movieMat(:, :, :, cptState.CurrentFrame, cptState.CurrentChannel));
+          
+            cptState = addSpot(cptState, cc, Prefix, imStack);
+              
+            % write file instructing pipeline to re-run tracking
+            rerunParticleTracking = struct;
+            save([liveExperiment.resultsFolder, 'rerunParticleTracking.mat'],'rerunParticleTracking');
         end
     end
 

@@ -40,7 +40,6 @@
 % 'nuclearMask': Use the Ellipses structure to filter out particles
 % detected outside of nuclei. 
 %'track': track after running
-% 'segmentChannel': use the DoGs of one channel to segment another
 %
 % OUTPUT
 % 'Spots':  A structure array with a list of detected transcriptional loci
@@ -74,7 +73,7 @@ end
 [displayFigures, lastFrame, numShadows, keepPool, ...
     autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData,...
     fit3D, skipChannel, optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat,...
-    saveType, nuclearMask, DataType, track, skipSegmentation, frameRange, segmentChannel]...
+    saveType, nuclearMask, DataType, track, skipSegmentation, frameRange]...
     = determineSegmentSpotsOptions(varargin{:});
 
 %validate the Threshold argument
@@ -111,6 +110,7 @@ spotChannels = liveExperiment.spotChannels;
 
 [~, ~, DropboxFolder, ~, ~] = DetermineLocalFolders(Prefix, optionalResults);
 
+PreProcPath = liveExperiment.userPreFolder;
 
 if ~isempty(DataType)
      args = [Prefix, Threshold, varargin];
@@ -119,20 +119,21 @@ end
 
 FrameInfo = getFrameInfo(liveExperiment);
 
-DogOutputFolder=[liveExperiment.procFolder,filesep,'dogs',filesep];
+ProcessedDataFolder = liveExperiment.procFolder;
+DogOutputFolder=[ProcessedDataFolder,filesep,'dogs',filesep];
 
 if length(dir(DogOutputFolder)) <= 2
     error('Filtered movie files not found. Did you run FilterMovie?')
 end
 
-nSpotChannels = length(spotChannels);
+microscope = FrameInfo(1).FileMode;
 
-%make sure the user inputted the right number of thresholds
-if nSpotChannels > 1 && isempty(skipChannel) && length(Threshold) ~= nSpotChannels
-    error('You must input the correct number of thresholds.');
-end
-   
+zSize = FrameInfo(1).NumberSlices;
 
+nCh = length(spotChannels);
+
+% try numFrames = numel(dir([DogOutputFolder, '*_*']));
+% catch numFrames = numel(FrameInfo); end
 if lastFrame==0
     lastFrame = numel(FrameInfo);
 end
@@ -141,15 +142,15 @@ end
 % above the threshold. Then, it finds global maxima within these regions by searching in a region "neighborhood"
 % within the regions.
 
-pixelSize_nm = FrameInfo(1).PixelSize * 1000;
+pixelSize_nm = FrameInfo(1).PixelSize * 1000; %nm
 neighboorhood_nm = 1300;
-neighborhood_px = round(neighboorhood_nm / pixelSize_nm);
-snippetSize_px = 2 * (floor(neighboorhood_nm / (2 * pixelSize_nm))) + 1; % note that this is forced to be odd
+neighborhood_px = round(neighboorhood_nm / pixelSize_nm); %nm
+snippetSize_px = 2 * (floor(neighboorhood_nm / (2 * pixelSize_nm))) + 1; % nm. note that this is forced to be odd
 
 falsePositives = 0;
 if ~skipSegmentation
     disp('Segmenting spots...')
-    Spots = cell(1, nSpotChannels);
+    Spots = cell(1, nCh);
     n = 0;
     for channelIndex = spotChannels
     
@@ -158,26 +159,20 @@ if ~skipSegmentation
         if ismember(channelIndex, skipChannel)
             continue
         end
-                
-        if isempty(segmentChannel)
-            segmentChannel = channelIndex;
-        end
 
         tic;
 
-        [ffim, doFF] = loadSegmentSpotsFlatField(...
-            liveExperiment.userPreFolder, Prefix, spotChannels);
+        [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, spotChannels);
         
-
-        tempSpots = segmentTranscriptionalLoci(channelIndex, initialFrame, lastFrame, FrameInfo(1).NumberSlices, ...
-            liveExperiment.userPreFolder, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(n), neighborhood_px, ...
-            snippetSize_px, pixelSize_nm, FrameInfo(1).FileMode, [],...
-             filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, nuclearMask, autoThresh, segmentChannel);
+        
+        [tempSpots, dogs] = segmentTranscriptionalLoci(nCh, spotChannels, channelIndex, initialFrame, lastFrame, zSize, ...
+            PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(n), neighborhood_px, ...
+            snippetSize_px, pixelSize_nm, microscope, [],...
+             filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, nuclearMask, autoThresh);
 
         tempSpots = segmentSpotsZTracking(pixelSize_nm,tempSpots);
 
-        [~, falsePositives, tempSpots] = findBrightestZ([], numShadows,...
-            useIntegralCenter, 0, tempSpots);
+        [~, falsePositives, tempSpots] = findBrightestZ([], numShadows, useIntegralCenter, 0, tempSpots, 'dogs', dogs);
 
         Spots{n} = tempSpots;
 
@@ -195,7 +190,7 @@ else
 end
 %If we only have one channel, then convert Spots to a
 %standard structure.
-if nSpotChannels == 1 && iscell(Spots)
+if nCh == 1 && iscell(Spots)
     Spots = Spots{1}; 
 end
 
@@ -208,8 +203,8 @@ else
         filesep, 'Spots.mat'], 'Spots', '-v7.3', '-nocompression');
 end
 
-if track, TrackmRNADynamics(Prefix, 'noretrack'); end
-
+fit3D = 0;
+warning('NL:skipping 3D fits for now')
 if fit3D > 0
     disp('Fitting 3D Gaussians...')
     fit3DGaussiansToAllSpots(Prefix, fit3D,...
@@ -224,5 +219,7 @@ if ~keepPool
     end
 end
 
+warning('NL: skippong retracking option')
+% if track, TrackmRNADynamics(Prefix, 'noretrack'); end
 
 end

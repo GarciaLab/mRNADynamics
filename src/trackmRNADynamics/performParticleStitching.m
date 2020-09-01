@@ -1,46 +1,54 @@
 function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, ...
-              linkCostCell, linkLevelCell, mDistanceMat] = performParticleStitching(...
-              NucleusID,nucleusIDVec,frameIndex,RawParticles,Channel,ncVec,matchCostMax)
-  
-  nParams = length(RawParticles{Channel}(1).hmmModel);
+              linkCostVec, LinkAdditionCell, linkCostCell, linkFrameCell, linkParticleCell] = ...
+              performParticleStitching(...
+              NucleusID,nucleusIDVec,frameIndex,SimParticles,ncVec,matchCostMax,...
+              ForceMatchCell,ForceSplitCell,FragmentIDVec)
+
+  nParams = length(SimParticles(1).hmmModel);
   % see how many fragments match this nucleus
   nucleusFilter = nucleusIDVec==NucleusID;
   nucleusIndices = find(nucleusFilter);
+  fragmentIDs = FragmentIDVec(nucleusIndices);
   nFragments = length(nucleusIndices);
 
   % arrays to track active frames (dynamically updated throughout)
   endpointFrameArray = false(length(frameIndex),nFragments);
   extantFrameArray = false(length(frameIndex),nFragments);
-
+  linkCostCell = cell(1,size(extantFrameArray,2));
+  linkFrameCell = cell(1,size(extantFrameArray,2));
+  linkParticleCell = cell(1,size(extantFrameArray,2));
   % arrays to track projected particle positions
-  pathArray = Inf(length(frameIndex),nFragments,nParams);   
-  sigmaArray = Inf(length(frameIndex),nFragments,nParams); 
+  pathArray = NaN(length(frameIndex),nFragments,nParams);   
+  sigmaArray = NaN(length(frameIndex),nFragments,nParams); 
 
   % particle ID tracker
   particleIDArray = NaN(length(frameIndex),nFragments);
   linkIDCell = cell(1,nFragments);
-  linkCostCell = cell(1,nFragments);
-  linkLevelCell = cell(1,nFragments);
+  LinkAdditionCell = {};
+  linkCostVec = [];
   
   % add fragment info
   i_pass = 1;
   for p = nucleusIndices      
-    endpointFrameArray([RawParticles{Channel}(p).FirstFrame,RawParticles{Channel}(p).LastFrame],i_pass) = true;
-    extantFrameArray(RawParticles{Channel}(p).FirstFrame:RawParticles{Channel}(p).LastFrame,i_pass) = true;      
-    particleIDArray(RawParticles{Channel}(p).FirstFrame:RawParticles{Channel}(p).LastFrame,i_pass) = p;
-    linkIDCell{i_pass} = {p};
+    endpointFrameArray([SimParticles(p).FirstFrame,SimParticles(p).LastFrame],i_pass) = true;
+    extantFrameArray(SimParticles(p).Frame,i_pass) = true;      
+    particleIDArray(SimParticles(p).Frame,i_pass) = fragmentIDs(i_pass);
+    linkIDCell{i_pass} = num2str(fragmentIDs(i_pass));
     linkCostCell{i_pass} = [0];
-    linkLevelCell{i_pass} = [0];
-    nc_ft = ismember(ncVec,ncVec(RawParticles{Channel}(p).FirstFrame));
+    linkFrameCell{i_pass} = {unique([SimParticles(p).FirstFrame,SimParticles(p).LastFrame])};
+    linkParticleCell{i_pass} = {fragmentIDs(i_pass)};
+%     nc_ft = ismember(ncVec,ncVec(SimParticles(p).FirstFrame));  
     for np = 1:nParams
-      pathArray(nc_ft,i_pass,np) = RawParticles{Channel}(p).hmmModel(np).pathVec;
-      sigmaArray(nc_ft,i_pass,np) = RawParticles{Channel}(p).hmmModel(np).sigmaVec;        
+      pathArray(:,i_pass,np) = SimParticles(p).hmmModel(np).pathVec;
+      sigmaArray(:,i_pass,np) = SimParticles(p).hmmModel(np).sigmaVec;        
     end     
     i_pass = i_pass + 1;
   end    
-
+  
   %%% calculate Mahalanobis Distance between particles in likelihood space
-  cumActivityArray = cumsum(extantFrameArray);
+
+  cumActivityArrayDown = cumsum(extantFrameArray);
+  cumActivityArrayUp = flipud(cumsum(flipud(extantFrameArray)));
   mDistanceMatRaw = Inf(nFragments,nFragments);     
   maxFrame = max(frameIndex); 
   for m = 1:nFragments
@@ -48,14 +56,14 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     calcFrames = find(endpointFrameArray(:,m)'); 
     epFrameVec = ([1 calcFrames maxFrame]);   
       
-    % flag overlaps
+    % find non-overlapping segments
     optionVec = max(extantFrameArray(extantFrameArray(:,m),:),[],1)==0; 
     if any(optionVec)
       % we want to exclude points that are not at an interface with another
       % fragment            
-      includeMat = diff(cumActivityArray(epFrameVec,optionVec))>0;
-      includeMat = repmat(includeMat(1:end-1,:) | includeMat(2:end,:),1,1,nParams);          
-      
+      includeMat = diff(cumActivityArrayUp(epFrameVec,optionVec))<0 | diff(cumActivityArrayDown(epFrameVec,optionVec))>0;
+      includeMat = repmat(includeMat(1:end-1,:) | includeMat(2:end,:),1,1,nParams);  
+
       % calculate distances      
       deltaMat = (pathArray(calcFrames,m,:) - pathArray(calcFrames,optionVec,:)).^2;        
       sigmaMat = sigmaArray(calcFrames,optionVec,:).^2;
@@ -67,8 +75,11 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
 
   % calculate cost matrix
   mDistanceMat = tril(sqrt((mDistanceMatRaw+mDistanceMatRaw')/2));
-  mDistanceMat(mDistanceMat==0) = Inf;    
-  %       maxStitchNum = size(mDistanceMat,1)-1; % maximum number of stitches possible    
+  mDistanceMat(mDistanceMat==0) = Inf;  
+  
+  % enforce user-assigned matches 
+  [mDistanceMat, ForceMatchCell] = imposeLinkAssigments(mDistanceMat,ForceMatchCell,ForceSplitCell,particleIDArray);                                    
+
   % calculate  current lowest cost
   minCost = min(mDistanceMat(:));  
   % iterate through cost layers
@@ -84,128 +95,92 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
 
     % pull active frames
-    afKeep = find(extantFrameArray(:,pKeep))';
     afDrop = find(extantFrameArray(:,pDrop))';
-
-    % condense active frame trackers
-    endpointFrameArray(:,pKeep) = endpointFrameArray(:,pKeep) | endpointFrameArray(:,pDrop);
-    endpointFrameArray = endpointFrameArray(:,[1:pDrop-1 pDrop+1:end]);
-
-    extantFrameArray(:,pKeep) = extantFrameArray(:,pKeep) | extantFrameArray(:,pDrop);
-    extantFrameArray = extantFrameArray(:,[1:pDrop-1 pDrop+1:end]);
-
+    
     % condense particle and nucleus trackers
     particleIDArray(afDrop,pKeep) = particleIDArray(afDrop,pDrop);
     particleIDArray = particleIDArray(:,[1:pDrop-1 pDrop+1:end]);
 
     nucleusIDVec = nucleusIDVec([1:pDrop-1 pDrop+1:end]);
     
-    % condense link ID tracker
-    newLinkEntry = {[linkIDCell{pKeep}{end} linkIDCell{pDrop}{end}]};   
-    linkIDCell{pKeep} = [linkIDCell{pKeep} linkIDCell{pDrop} newLinkEntry];
-    linkIDCell = linkIDCell(1,[1:pDrop-1 pDrop+1:end]);
     
-    % condense link cost trackers
+    %%%%%%%%%%%%%%%%%%
+    % update link info array
+    activeFrames = [find(endpointFrameArray(:,pKeep)') find(endpointFrameArray(:,pDrop)')];
+    keepFrames = ([1 find(endpointFrameArray(:,pKeep)') maxFrame]);
+    includeVecKeep = diff(cumActivityArrayUp(keepFrames,pDrop)')<0|diff(cumActivityArrayDown(keepFrames,pDrop)')>0;
+    includeVecKeep = includeVecKeep(1:end-1) | includeVecKeep(2:end);
+    
+    dropFrames = ([1 find(endpointFrameArray(:,pDrop)') maxFrame]);
+    includeVecDrop = diff(cumActivityArrayUp(dropFrames,pDrop)')<0|diff(cumActivityArrayDown(dropFrames,pDrop)')>0;
+    includeVecDrop = includeVecDrop(1:end-1) | includeVecDrop(2:end);
+    
+    % frames
+    linkFrameCell{pKeep} = [linkFrameCell{pKeep} linkFrameCell{pDrop} {activeFrames([includeVecKeep includeVecDrop])}]; 
+    linkFrameCell = linkFrameCell (:,[1:pDrop-1 pDrop+1:end]);
+    % cost
     linkCostCell{pKeep} = [linkCostCell{pKeep} linkCostCell{pDrop} minCost];
-    linkCostCell = linkCostCell(1,[1:pDrop-1 pDrop+1:end]);
+    linkCostCell = linkCostCell(:,[1:pDrop-1 pDrop+1:end]);
+    % particles 
+    ptIDs = unique(particleIDArray(~isnan(particleIDArray(:,pKeep)),pKeep))';
+    linkParticleCell{pKeep} = [linkParticleCell{pKeep} linkParticleCell{pDrop} {ptIDs}];
+    linkParticleCell = linkParticleCell(:,[1:pDrop-1 pDrop+1:end]);
+
+    % condense active frame trackers
+    endpointFrameArray(:,pKeep) = endpointFrameArray(:,pKeep) | endpointFrameArray(:,pDrop);
+    endpointFrameArray = endpointFrameArray(:,[1:pDrop-1 pDrop+1:end]);                                  
     
+    % condense link ID tracker
+    index_vec = 1:length(linkIDCell);
+    nKeep = max(diff(find(linkIDCell{pKeep}~='|')))-1;
+    nDrop = max(diff(find(linkIDCell{pDrop}~='|')))-1;
+    divNum = max([nKeep nDrop]);
+    if isempty(divNum)
+      divNum = 0;
+    end
+    linkIDCell{pKeep} = [ linkIDCell{pKeep} repelem('|',divNum+1) linkIDCell{pDrop} ];
+    linkIDCell = linkIDCell(~ismember(index_vec,pDrop));
     
-    % condense node hierarchy tracker
-    newLevel = max([linkLevelCell{pKeep} linkLevelCell{pDrop}])+1;
-    linkLevelCell{pKeep} = [linkLevelCell{pKeep} linkLevelCell{pDrop} newLevel];
-    linkLevelCell = linkLevelCell(1,[1:pDrop-1 pDrop+1:end]);
+    % add link cost
+    linkCostVec = [linkCostVec minCost];    
+    
+    % add new link info
+    LinkAdditionCell{length(linkCostVec)} = linkIDCell{pKeep};
     
     % condense distance array
-    mDistanceMat = mDistanceMat([1:pDrop-1 pDrop+1:end],[1:pDrop-1 pDrop+1:end]);
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % generate updated combined path using variance-weighted average 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    % identify gaps where different fragments meet
-    [activeFrames, si] = sort([afKeep afDrop]);
-    cbIDVec = [ones(size(afKeep)) 2*ones(size(afDrop))];
-    cbIDVec = cbIDVec(si);         
-    
-    activeFrames = [0 activeFrames maxFrame+1];
-    cbIDVec = [cbIDVec(1) cbIDVec cbIDVec(end)];
-    
-    dfGapFlags = find(diff(cbIDVec)~=0);    
-    smGapFlags = find(diff(cbIDVec)==0&diff(activeFrames)>1);
-
-    % calculate variance weights
-    nK = 1;%length(afKeep);
-    nD = 1;%length(afDrop);
-    sg1 = nK*sigmaArray(:,pKeep,:).^-2;
-    sg2 = nD*sigmaArray(:,pDrop,:).^-2;
-
-    % initialize arrays
-    newPath = NaN(size(sigmaArray(:,1,:)));
-    newSigma = NaN(size(sigmaArray(:,1,:)));
-    
-    % assign detected points        
-    newPath(afDrop,:,:) = pathArray(afDrop,pDrop,:);
-    newPath(afKeep,:,:) = pathArray(afKeep,pKeep,:);
-    newSigma(afDrop,:,:) = sigmaArray(afDrop,pDrop,:);
-    newSigma(afKeep,:,:) = sigmaArray(afKeep,pKeep,:);
-    
-    %%% next calculate updated projections for gaps between interfaces of
-    %%% the two joined fragments (use variance-weighted mean) 
-    cFrames = [];
-    for f = 1:length(dfGapFlags)
-      cFrames = [cFrames activeFrames(dfGapFlags(f))+1:activeFrames(dfGapFlags(f)+1)-1]; 
-    end
-    % update path info
-    newPath(cFrames,:,:) = (pathArray(cFrames,pKeep,:).*sg1(cFrames,:,:) ...
-                                  + pathArray(cFrames,pDrop,:).*sg2(cFrames,:,:)) ...
-                                  ./ (sg1(cFrames,:,:) + sg2(cFrames,:,:));
-    % update error info
-    newSigma(cFrames,:,:) = sqrt(1 ./ (sg1(cFrames,:,:) + sg2(cFrames,:,:)));
-    % determine which indices to use from each parent
-    kFrames = [];
-    dFrames = [];
-    for f = 1:length(smGapFlags)
-      % extract relevant frames
-      frameIndices = activeFrames(smGapFlags(f))+1:activeFrames(smGapFlags(f)+1)-1;      
-      if cbIDVec(smGapFlags(f)) == 1
-        kFrames = [kFrames frameIndices];
-      else
-        dFrames = [dFrames frameIndices];
-      end      
-    end
-    
-    %%% update 
-    newPath(kFrames,:,:) = pathArray(kFrames,pKeep,:);
-    newPath(dFrames,:,:) = pathArray(dFrames,pDrop,:);
-    newSigma(kFrames,:,:) = sigmaArray(kFrames,pKeep,:);
-    newSigma(dFrames,:,:) = sigmaArray(dFrames,pDrop,:);   
-    
-    tVec = [afKeep afDrop kFrames dFrames cFrames];
-    if length(unique(tVec))~=length(frameIndex) || length(unique(tVec))~=length(tVec)
-      error('inconsistent update indices')
-    end
-    % update variance and path arrays
-    sigmaArray(:,pKeep,:) = newSigma;
-    pathArray(:,pKeep,:) = newPath;
-
+    mDistanceMat = mDistanceMat(~ismember(index_vec,pDrop),~ismember(index_vec,pDrop));   
+        
+    % call path update function
+    [pathArray(:,pKeep,:), sigmaArray(:,pKeep,:)] = updatePaths(...
+      pathArray(:,[pKeep pDrop],:),sigmaArray(:,[pKeep pDrop],:),extantFrameArray(:,[pKeep pDrop]));        
+            
     % condense path arrays
     sigmaArray = sigmaArray(:,[1:pDrop-1 pDrop+1:end],:);
     pathArray = pathArray(:,[1:pDrop-1 pDrop+1:end],:);
     
+    % update active frame info
+    extantFrameArray(:,pKeep) = extantFrameArray(:,pKeep) | extantFrameArray(:,pDrop);
+    extantFrameArray = extantFrameArray(:,[1:pDrop-1 pDrop+1:end]);
+    
+    % update cumulative activity arrays
+    cumActivityArrayDown = cumsum(extantFrameArray);
+    cumActivityArrayUp = flipud(cumsum(flipud(extantFrameArray)));
+    
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % update cost matrix 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%            
-    validIndices = max(extantFrameArray(extantFrameArray(:,pKeep),:),[],1)==0;% & nucleusIDVec(pKeep)==nucleusIDVec;
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
+    
+    optionVec = max(extantFrameArray(extantFrameArray(:,pKeep),:),[],1)==0;%
     newDistCol = Inf(size(extantFrameArray,2),1);
     %%% paths FROM new particle first
-    for p = find(validIndices)
+    for p = find(optionVec)
       % pull activity indicators
       calcFrames = find(endpointFrameArray(:,p)'); 
       epFrameVec = [1 find(endpointFrameArray(:,p)') maxFrame];      
       
       % we want to exclude points that are not at an interface with another
       % fragment            
-      includeMat = diff(cumActivityArray(epFrameVec,pKeep))>0;
+      includeMat = diff(cumActivityArrayUp(epFrameVec,pKeep))<0 | diff(cumActivityArrayDown(epFrameVec,pKeep))>0;%diff(cumActivityArray(epFrameVec,pKeep))>0;
       includeMat = repmat(includeMat(1:end-1,:) | includeMat(2:end,:),1,1,nParams);
 
       % calculate distances
@@ -217,17 +192,15 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     end       
     
     %%% next paths TO new particle from existing particles      
-    % pull activity indicators
+    % here the endpoint frames are fixed
     calcFrames = find(endpointFrameArray(:,pKeep)');    
     epFrameVec = [1 calcFrames maxFrame];    
     newDistRow = Inf(1,size(extantFrameArray,2));
-    % flag overlaps
-    optionVec = max(extantFrameArray(extantFrameArray(:,pKeep),:),[],1)==0;    
+   
     if any(optionVec)
-      % we want to exclude exterior-most points from intersection of
-      % segments. perform calculations to determine which points to
-      % exclude in each case
-      includeMat = diff(cumActivityArray(epFrameVec,optionVec))>0;
+      % we want to exclude endpoints that are not at interface with other
+      % fragments
+      includeMat = diff(cumActivityArrayUp(epFrameVec,optionVec))<0 | diff(cumActivityArrayDown(epFrameVec,optionVec))>0;%diff(cumActivityArray(epFrameVec,optionVec))>0;
       includeMat = repmat(includeMat(1:end-1,:) | includeMat(2:end,:),1,1,nParams);
     
       % calculate distances
@@ -243,6 +216,13 @@ function [pathArray, sigmaArray, extantFrameArray, particleIDArray, linkIDCell, 
     mDistanceMat(:,pKeep) = newDistVec;
     mDistanceMat = tril(mDistanceMat);
     mDistanceMat(mDistanceMat==0) = Inf;
+    
+    % impose user-assigned links/splits
+    try
+      [mDistanceMat, ForceMatchCell] = imposeLinkAssigments(mDistanceMat,ForceMatchCell,ForceSplitCell,particleIDArray);
+    catch
+      error('wtf')
+    end
     % calculate  current lowest cost
     minCost = min(mDistanceMat(:));
     % increment

@@ -8,13 +8,12 @@ PreviousParticle=0;
 exitConnectFlag = 0;
 
 particlesExistInFrame = length(Spots{CurrentChannelIndex}(CurrentFrame).Fits);
-currentParticleExistsInCurrentFrame =...
+    currentParticleExistsInCurrentFrame =...
     sum(Particles{CurrentChannelIndex}(CurrentParticle).Frame==CurrentFrame);
 
 if ~currentParticleExistsInCurrentFrame && particlesExistInFrame
 
-    [ConnectPositionx,ConnectPositiony]=ginput(1);
-    ConnectPosition = [ConnectPositionx,ConnectPositiony];
+    [ConnectPosition(1),ConnectPosition(2)]=ginput(1);    
 
     if ~isempty(ConnectPosition)
         % find index of the particle we want to add (a.k.a output particle) to current

@@ -89,9 +89,11 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
     if iscell(Particles)
         NChannels=length(Particles);
     else
-        Particles={Particles};
-        Spots={Spots};
+        Particles={Particles};        
         NChannels=1;
+    end
+    if ~iscell(Spots)
+      Spots={Spots};
     end
     
     %Now, get the particle positions (if they're not there already).

@@ -59,7 +59,7 @@ end
 
 % plotting the lines and traces
 hold(traceFigAxes, 'on')
-approvedParticleFrames = cptState.getCurrentParticle().FrameApproved;
+approvedParticleFrames = cptState.getCurrentParticle().FrameApproved==1;
 if isempty(plotTraceSettings.ErrorIntegral)
     plotTraceSettings.ErrorIntegral = 0;
     plotTraceSettings.ErrorIntegral3 = 0;
@@ -111,6 +111,21 @@ cPoint1 = plot(traceFigAxes,traceFigTimeAxis(cptState.Frames==cptState.CurrentFr
 dPoint2 = plot(traceFigAxes,traceFigTimeAxis(~approvedParticleFrames),amp2(~approvedParticleFrames),'.r');
 cPoint2 = plot(traceFigAxes,traceFigTimeAxis(cptState.Frames==cptState.CurrentFrame),amp2(cptState.Frames==cptState.CurrentFrame),'ob');
 
+%NL: plot flag circles to indicate flag status
+szVec = linspace(40,100,length(cptState.qcFlagFields));
+colorsUrgent =   brewermap(length(szVec)+1,'Reds');
+colorsNorm=   brewermap(length(szVec)+1,'Blues');
+                 
+
+for s = 1:length(szVec)
+  flagFilter = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).(cptState.qcFlagFields{s})==2;
+  scatter(traceFigAxes,traceFigTimeAxis(flagFilter),amp1(flagFilter),szVec(s),colorsUrgent(s+1,:),'d','LineWidth',1);
+end
+
+for s = 1:length(szVec)
+  flagFilter = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).(cptState.qcFlagFields{s})==1;
+  scatter(traceFigAxes,traceFigTimeAxis(flagFilter),amp1(flagFilter),szVec(s),colorsNorm(s+1,:),'d','LineWidth',1);
+end
 
 %%
 %Change the labels, xlimits, etc. only if the frame changed.
@@ -184,12 +199,18 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(cptState.Frames==cptState.CurrentFr
                 [cptState.schnitzcells.Fluo] = dummy{:};
         else
             proteinLine = traceFigAxes.Children(end);
-            proteinFluo = cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).Fluo;
-            if ~isempty(proteinFluo)
-                set(proteinLine, 'XData', cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).frames,...
-                    'YData', max(proteinFluo,[],2));
-            else
-                warning('protein fluo empty. maybe rerun integrateschnitzfluo?');
+            if ~isnan(cptState.getCurrentParticle().Nucleus)
+              proteinFluo = cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).Fluo;        
+              
+              if ~isempty(proteinFluo)
+                  set(proteinLine, 'XData', cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).frames,...
+                      'YData', max(proteinFluo,[],2));
+              else
+                  warning('protein fluo empty. maybe rerun integrateschnitzfluo?');
+              end
+            else 
+              set(proteinLine, 'XData', NaN,'YData', NaN);
+              warning('No nucleus data for this particle')
             end
         end
     end

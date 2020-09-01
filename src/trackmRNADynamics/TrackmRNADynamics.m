@@ -36,8 +36,8 @@ Prefix = varargin{1};
 liveExperiment = LiveExperiment(Prefix);
 makeTrackingFigures = true;
 
-[app, retrack, optionalResults, displayFigures] =...
-    parseTrackmRNADynamicsArguments(varargin{:});
+% [app, retrack, optionalResults, displayFigures] =...
+%     parseTrackmRNADynamicsArguments(varargin{:});
 
 
 DropboxFolder = liveExperiment.userResultsFolder;
@@ -46,9 +46,9 @@ PreProcPath = liveExperiment.userPreFolder;
 ExperimentType = liveExperiment.experimentType;
 
 Channels = liveExperiment.Channels;
-Channel1 = Channels{1};
-Channel2 = Channels{2};
-Channel3 = Channels{3};
+% Channel1 = Channels{1};
+% Channel2 = Channels{2};
+% Channel3 = Channels{3};
 
 anaphaseFrames = liveExperiment.anaphaseFrames';
 nc9 = anaphaseFrames(1);
@@ -58,15 +58,8 @@ nc12 = anaphaseFrames(4);
 nc13 = anaphaseFrames(5);
 nc14 = anaphaseFrames(6);
 
-
-spotChannels = getCoatChannel(Channel1, Channel2, Channel3);
-NCh = length(spotChannels);
-
 % Set the destination folder
 OutputFolder = [DropboxFolder, filesep, Prefix];
-
-% Determine the search radius based on the imaging conditions
-SearchRadiusMicrons = 0.75 / sqrt(20); % Search radius in um
 
 % Load the information about this image
 % Check if we have FrameInfo otherwise try to get the information straight
@@ -76,37 +69,27 @@ SearchRadiusMicrons = 0.75 / sqrt(20); % Search radius in um
 % Check if we have tracked the lineages of the nuclei
 if exist([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'file')
     useHistone = true;
-    
-    % Load the nuclei segmentation information
-    load([DropboxFolder, filesep, Prefix, filesep, 'Ellipses.mat'], 'Ellipses')
-    
-    % Load the nuclear tracking information
-    load([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'schnitzcells')
-    
 else
     useHistone = false;
-    schnitzcells = [];
-    Ellipses = [];
     warning('Warning: No nuclei lineage tracking found. Proceeding with tracking particles only.')
 end
 
 validateExperimentTypeSupported(ExperimentType);
 
-Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh, retrack);
+% Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh, retrack);
+% 
+% Spots = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefix, NCh);
 
-Spots = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefix, NCh);
+% if displayFigures
+%     [ParticlesFig, particlesAxes, NucleiFig, nucAxes] = generateTrackingFigures(app, useHistone);
+% else
+%     ParticlesFig = []; particlesAxes = []; NucleiFig = []; nucAxes = [];
+% end
 
-if displayFigures
-    [ParticlesFig, particlesAxes, NucleiFig, nucAxes] = generateTrackingFigures(app, useHistone);
-else
-    ParticlesFig = []; particlesAxes = []; NucleiFig = []; nucAxes = [];
-end
-
-Particles = performTracking(Prefix, useHistone); 
+[Particles, SpotFilter] = performTracking(Prefix, useHistone,varargin{2:end}); 
 
 mkdir([OutputFolder, filesep]);
-save([OutputFolder, filesep, 'Particles.mat'], 'Particles');
-
+save([OutputFolder, filesep, 'Particles.mat'], 'Particles','SpotFilter');
 
 createFieldNCAndSaveFrameInfo(FrameInfo, OutputFolder, nc9, nc10, nc11, nc12, nc13, nc14);
 
