@@ -463,7 +463,7 @@ classdef LiveExperiment
             particlesFile = [this.resultsFolder, 'ParticlesFull.mat'];
             if this.hasParticlesFile
                 ParticlesFull = load(particlesFile);
-                ParticlesFull = ParticlesFull.ParticlesFull;
+%                 ParticlesFull = ParticlesFull;
             end
             
         end

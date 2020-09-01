@@ -67,9 +67,10 @@ disp('Stitching particle tracks...')
 toc 
 
 matchCostVec = determineMatchOptions(Prefix,useHistone,matchCostMax);
-% for Channel = 1:NCh
-%   Particles = dynamicStitchBeta(ParticlesFull.FullParticles,ParticlesFull.SimParticles,ParticleStitchInfo,Prefix,matchCostVec,Channel);
-% end
+for Channel = 1:NCh
+  Particles = dynamicStitchBeta(ParticlesFull.FullParticles{Channel},ParticlesFull.SimParticles{Channel},...
+    ParticleStitchInfo{Channel},Prefix,matchCostVec(Channel));
+end
 warning('MT: Skipping dynamicsStitchBeta because it''s broken')
 Particles = ParticlesFull.FullParticles;
 
