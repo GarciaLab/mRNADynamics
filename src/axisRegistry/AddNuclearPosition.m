@@ -36,7 +36,7 @@ load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
 %Get the surface image in the zoomed case by looking at the last
 %frame of our movie
 DHis=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
-ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis(end-1).name]);
+ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis(end).name]);
 
 
 %With AP coordinates in hand we can now determine the AP position of

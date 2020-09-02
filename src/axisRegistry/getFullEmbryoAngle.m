@@ -6,9 +6,9 @@ function full_embryo_angle = getFullEmbryoAngle(...
 
 if isfolder([fullEmbryoPath, filesep, 'MetaData']) &&...
         ~isempty(dir([fullEmbryoPath, filesep, 'MetaData', filesep, '*.xml']))
-    
+    surfStr = 'Surf';
     xml_file_dir_surf = dir([fullEmbryoPath,...
-        'MetaData', filesep,'*', surfOrMidStr, '*.xml']);
+        'MetaData', filesep,'*', surfStr, '*.xml']);
     xml_file_surf = xml_file_dir_surf(1).name;
     xDoc2 = searchXML([fullEmbryoPath,'MetaData', filesep, xml_file_surf]);
     full_embryo_angle = str2double(evalin('base','rot'));
