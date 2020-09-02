@@ -65,6 +65,9 @@ xROI = false;
 yROI = false;
 NameString_ROI='';
 
+% Added by GM 9/1/20
+ComputeAltFluo = false;
+
 %This function will add fluorescence information to each schnitz.
 
 close all
@@ -87,6 +90,9 @@ for args=1:length(varargin)
             ROI1=varargin{args+2}(1);
             ROI2=varargin{args+2}(2);
         end
+    end
+    if strcmp(lower(varargin{args}), 'computealtfluo')
+        ComputeAltFluo = true;
     end
 end
 
@@ -271,6 +277,26 @@ for i=1:length(schnitzcells)
             
             %Copy and extract the fluorescence information
             CompiledNuclei(k).FluoMax=single(squeeze(max(schnitzcells(i).Fluo(FrameFilter,:,:),[],2)));
+            
+            % Added by GM 9/1/20
+            if ComputeAltFluo
+                Nslices = size(schnitzcells(i).Fluo(1,:), 2);
+                FluoStacks = schnitzcells(i).Fluo(:,2:(Nslices-1));
+                [FluoMax, MaxSlices] = max(FluoStacks, [], 2);
+                FluoTimeTrace2 = ones(1, size(FluoStacks, 1));
+                for l=1:size(FluoStacks, 1)
+                    FluoTimeTrace2(l) = median(FluoStacks(l, max([MaxSlices(l)-5, 1]):min([MaxSlices(l)+5, Nslices-2])));
+                end
+                Flag2 = zeros(1, size(FluoStacks, 1));
+                Flag2((MaxSlices > 1) & (MaxSlices < Nslices-1)) = 0;
+                CompiledNuclei(k).FluoTimeTrace2 = FluoTimeTrace2(FrameFilter);
+                CompiledNuclei(k).MaxSlice2 = MaxSlices(FrameFilter); 
+                CompiledNuclei(k).Flag2 = Flag2(FrameFilter); 
+                 
+            end
+            % Added by GM 9/1/20
+            
+            
             %For DV case, need to calculate more
             if strcmpi(ExperimentAxis,'DV')
                 DV_Fluo = schnitzcells(i).Fluo(FrameFilter,:,:);
