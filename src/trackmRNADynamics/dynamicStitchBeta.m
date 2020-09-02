@@ -71,6 +71,8 @@ function NewParticles = dynamicStitchBeta(FullParticles,SimParticles,...
     particleVec = NewParticles(oldInd).idVec;
     particleVecNN = particleVec(~isnan(particleVec));
     ptIDsFull = unique(particleVecNN);
+    % get indexing vector for SimParticles
+    FragmentIDVec = [SimParticles.FragmentID];
     % get atom ids for each child particle
     for j = 1:length(newTraces)
 
@@ -115,22 +117,25 @@ function NewParticles = dynamicStitchBeta(FullParticles,SimParticles,...
       extantFrameArray = NaN(nFrames,length(ptIDs));
       extantFrameArray(nc_ft,:) = 0;
       for p = 1:length(ptIDs)
-        frames = SimParticles(ptIDs(p)).Frame;     
+        ptFilter = ismember(FragmentIDVec,ptIDs(p));
+        frames = SimParticles(ptFilter).Frame;     
         extantFrameArray(frames,p) = 1;
-        pathArray(:,p,:) = cat(1,SimParticles(ptIDs(p)).hmmModel.pathVec)';
-        sigmaArray(:,p,:) = cat(1,SimParticles(ptIDs(p)).hmmModel.sigmaVec)';
+        pathArray(:,p,:) = cat(3,SimParticles(ptFilter).hmmModel.pathVec);
+        sigmaArray(:,p,:) = cat(3,SimParticles(ptFilter).hmmModel.sigmaVec);
       end
       % call path update function
       [temp.pathArray, temp.sigmaArray] = updatePaths(pathArray,sigmaArray,extantFrameArray);        
 
       % add other info 
-      temp.NucleusID = NewParticles(oldInd).NucleusID;
-      temp.NucleusIDOrig = NewParticles(oldInd).NucleusIDOrig;
+      temp.Nucleus = NewParticles(oldInd).Nucleus;
+      temp.NucleusOrig = NewParticles(oldInd).NucleusOrig;
       temp.NucleusDist = NewParticles(oldInd).NucleusDist(ismember(particleVecNN,ptIDs));
-%       temp.assignmentFlags = zeros(size(NewParticles(oldInd).assignmentFlags));
-%       temp.assignmentFlags(ismember(particleVec,ptIDs)) = NewParticles(oldInd).assignmentFlags(ismember(particleVec,ptIDs));
+      temp.FrameApproved = NewParticles(oldInd).FrameApproved(ismember(particleVecNN,ptIDs));
+      temp.Index = NewParticles(oldInd).Index(ismember(particleVecNN,ptIDs));
+      temp.FirstFrame = temp.Frame(1);
+      temp.LastFrame = temp.Frame(end);
       temp.Approved = 0;
-      
+
       % incorporate into structure
       NewParticles(length(NewParticles)+1) = temp;
     end

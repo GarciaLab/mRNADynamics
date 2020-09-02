@@ -68,11 +68,11 @@ toc
 
 matchCostVec = determineMatchOptions(Prefix,useHistone,matchCostMax);
 for Channel = 1:NCh
-  Particles = dynamicStitchBeta(ParticlesFull.FullParticles{Channel},ParticlesFull.SimParticles{Channel},...
+  Particles{Channel} = dynamicStitchBeta(ParticlesFull.FullParticles{Channel},ParticlesFull.SimParticles{Channel},...
     ParticleStitchInfo{Channel},Prefix,matchCostVec(Channel));
 end
-warning('MT: Skipping dynamicsStitchBeta because it''s broken')
-Particles = ParticlesFull.FullParticles;
+% warning('MT: Skipping dynamicsStitchBeta because it''s broken')
+% Particles = ParticlesFull.FullParticles;
 
 % Add QC flags
 Particles = addQCFields(Particles,useHistone,FrameInfo,retrack,liveExperiment);
@@ -160,9 +160,9 @@ if displayFigures
 
           f4 = figure('Position',[0 0 856 856]);
           hold on  
-          for i = 1:length(ParticlesFull.FullParticles{Channel})
+          for i = 1:length(Particles{Channel})
 %             extantFilter = min(Particles{Channel}(i).Frame):max(Particles{Channel}(i).Frame);
-            plot(ParticlesFull.FullParticles{Channel}(i).xPos,ParticlesFull.FullParticles{Channel}(i).yPos,'LineWidth',1.25);
+            plot(Particles{Channel}(i).xPos,Particles{Channel}(i).yPos,'LineWidth',1.25);
           end
           scatter([ParticlesFull.RawParticles{Channel}.xPos],[ParticlesFull.RawParticles{Channel}.yPos],4,'k','filled','MarkerFaceAlpha',.5,'MarkerEdgeAlpha',0);
           % for i = 1:length(Particles{Channel})

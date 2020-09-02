@@ -35,7 +35,7 @@ function [ParticlesFull,ParticleStitchInfo,SpotFilter] = track04StitchTracks(...
         inputChannels = liveExperiment.inputChannels;     
         % Cluster channel not limited in spotsPerNucleus
         spotsPerNucleus(spotsChannels == intersect(inputChannels, spotsChannels)) = Inf; 
-        matchCostMax(spotsChannels == intersect(inputChannels, spotsChannels)) = 3; % NL: this is a temporary fix for cluster tracking
+%         matchCostMax(spotsChannels == intersect(inputChannels, spotsChannels)) = 3; % NL: this is a temporary fix for cluster tracking
         spotsPerNucleus(spotsChannels ~= intersect(inputChannels, spotsChannels)) = 1;
     else
         error('No spot channels, or too many, detected.')
