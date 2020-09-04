@@ -7,7 +7,7 @@ close all force
 
 % Get all the required data for this Prefix
 liveExperiment = LiveExperiment(Prefix);
-matchCostMax = 3;
+matchCostMax = 1;
 NCh = numel(liveExperiment.spotChannels);   %Only grabbing the spot channels - might cause issues if spot channels aren't the first n channels
 pixelSize = liveExperiment.pixelSize_um;    %NL: pixel size is in um
 channels = liveExperiment.Channels;
