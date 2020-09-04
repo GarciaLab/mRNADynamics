@@ -24,7 +24,7 @@ function matchCostVec = determineMatchOptions(Prefix,useHistone,matchCostMax)
         % Cluster channel should still have a sigma limit on fragment
         % matching
         matchCostVec(spotsChannels == intersect(inputChannels, spotsChannels)) = matchCostMax;
-        matchCostvec(spotsChannels ~= intersect(inputChannels, spotsChannels)) = traceCost;
+        matchCostVec(spotsChannels ~= intersect(inputChannels, spotsChannels)) = traceCost;
     else
         error('No spot channels, or too many, detected.')
     end
