@@ -26,8 +26,7 @@ dropboxFolder = liveExperiment.userResultsFolder;
 resultsFolder = liveExperiment.resultsFolder;
 preProcFolder = liveExperiment.preFolder;
 trackFigFolder = [dropboxFolder filesep Prefix '\TrackingFigures\'];
-
-load([resultsFolder filesep 'ParticlesFull.mat'])
+ParticlesFull = getParticlesFull(liveExperiment);
 
 
 %% Grab and process the raw images

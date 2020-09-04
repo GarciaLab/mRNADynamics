@@ -462,8 +462,13 @@ classdef LiveExperiment
             
             particlesFile = [this.resultsFolder, 'ParticlesFull.mat'];
             if this.hasParticlesFile
-                ParticlesFull = load(particlesFile);
-%                 ParticlesFull = ParticlesFull;
+                ParticlesFullStruct = load(particlesFile);  % a 1x1 struct with 1 value, 'ParticlesFull', which is itself a 1x1 struct with 5 values
+                
+                % ensure that user can directly index into the 5 values
+                % (RawParticles, HMMParticles, SimParticles, 
+                % StitchedParticles, and  FullParticles) contained within 
+                % the value 'ParticlesFull' without doing this extra step
+                ParticlesFull = ParticlesFullStruct.ParticlesFull; 
             end
             
         end
