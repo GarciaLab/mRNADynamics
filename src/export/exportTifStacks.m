@@ -1,14 +1,14 @@
-function exportTifStacks(FrameInfo,AllImages, imagingModality, NChannels, ...
+function exportTifStacks(AllImages, imagingModality, NChannels, NFrames, NSlices,...
   Prefix, moviePrecision, hisPrecision, nuclearGUI, ProjectionType, Channels, ReferenceHist)
 
   % extract metadata from FrameInfo
-  NSlices = FrameInfo(1).NumberSlices;
+%   NSlices = FrameInfo(1).NumberSlices;
   NSeries = length(AllImages);
-  NFrames = length(FrameInfo);
+%   NFrames = length(FrameInfo);
   
   liveExperiment = LiveExperiment(Prefix);
   PreProcFolder = liveExperiment.preFolder;
-% if shouldMakeMovieMat
+
   %Copy the data
   waitbarFigure = waitbar(0, ['Extracting ' imagingModality ' images']);
 
@@ -22,10 +22,6 @@ function exportTifStacks(FrameInfo,AllImages, imagingModality, NChannels, ...
   BlankImage = zeros(ySize, xSize, moviePrecision);
 
   hisMat = zeros(ySize, xSize, sum(NFrames), hisPrecision);
-% end
-
-
-% if shouldExportMovieFiles
         
   topZSlice = min(NSlices);
 
@@ -89,5 +85,4 @@ function exportTifStacks(FrameInfo,AllImages, imagingModality, NChannels, ...
       end
   end
 
-
-% end
+  try close(waitbarFigure); catch; end

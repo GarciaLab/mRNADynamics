@@ -33,7 +33,9 @@ function FrameInfo = processLSMData(Folder, D, FrameInfo,...
       % Figure out the number of slices in each series
       NSlices(LSMIndex) = str2double(LSMMeta.getPixelsSizeZ(0));
       % Number of channels
-      NChannels(LSMIndex) = LSMMeta.getChannelCount(0);
+      if LSMIndex == 1 %NL: assuming all series have same # of channels for consistency with LIF mode
+        NChannels = LSMMeta.getChannelCount(0);
+      end
       % Total number of planes acquired
       NPlanes(LSMIndex) = LSMMeta.getPlaneCount(0);
       % Finally, use this information to determine the number of frames in
@@ -58,6 +60,7 @@ function FrameInfo = processLSMData(Folder, D, FrameInfo,...
           StartingTime(LSMIndex) = obtainZeissStartingTime(Folder, LSMIndex, LSMMeta2, NDigits+1);
       end       
     end
+    
     [ValueField, Frame_Times] = obtainZeissFrameTimes(LSMMeta, NSlices, LSMIndex, NPlanes, NChannels, StartingTime, Frame_Times);
     [~, FrameInfo] = createZeissFrameInfo(LSMIndex, NFrames, NSlices, FrameInfo, LSMMeta, Frame_Times, ValueField);
     
@@ -66,12 +69,10 @@ function FrameInfo = processLSMData(Folder, D, FrameInfo,...
     end
     
     if ~skipExtraction
-                                       
-      exportTifStacks(FrameInfo, AllLSMImages, 'LSM', min(NChannels), Prefix, ...
-          moviePrecision, hisPrecision, nuclearGUI, ProjectionType, Channels, ReferenceHist)
       
-
-      try close(waitbarFigure); catch; end
+      % this function exports tif z stacks
+      exportTifStacks(AllLSMImages, 'LSM', NChannels, NFrames, NSlices, Prefix, ...
+          moviePrecision, hisPrecision, nuclearGUI, ProjectionType, Channels, ReferenceHist)           
 
       [FFPaths, FFToUse, LSMFF] = findFlatFieldInformation(Folder);
       processFlatFieldInformation(Prefix, OutputFolder, FFPaths, FFToUse, LSMFF);
