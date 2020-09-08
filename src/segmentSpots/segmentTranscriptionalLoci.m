@@ -181,7 +181,8 @@ for currentFrame = initialFrame:lastFrame
         
         % Apply flatfield correction
         if doFF && sum(size(im)==size(ffim))
-            im = im.*ffim;
+            im = double(im).*ffim; % GM 9/3/20
+            %im = im.*ffim;
         end
         
         im_thresh = dog >= Threshold;

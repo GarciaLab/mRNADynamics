@@ -84,7 +84,7 @@ if mixedPolarity
 end
 
 % Find local maxima
-maxima = (filteredImg > imdilate(filteredImg,localMaxMask) ) & embryoMask;
+maxima = (filteredImg > imdilate(filteredImg,localMaxMask) );% Commented out GM on 9/3/20 Seems to no longer work after updates & embryoMask; 
 
 % Smooth the image to get more robust maxima values:
 G = imfilter(filteredImg,fspecial('disk',3),'symmetric');

@@ -77,6 +77,10 @@ colors = [0, 0.4470, 0.7410];
 for nc=nuclear_cycles
     cnt  = CompiledNucleiTable(CompiledNucleiTable.nc == nc, :);
     cnt  = cnt(cnt.Fluo > 0,:);
+    cnt  = cnt(cnt.Flag1 == false,:);
+    cnt  = cnt(cnt.Flag2 == false,:);
+    cnt  = cnt(cnt.Flag3 == false,:);
+    cnt  = cnt(cnt.Flag4 == false,:);
     if isempty(cnt)
         continue
     end
@@ -105,10 +109,10 @@ for nc=nuclear_cycles
             APbin = b*APResolution;
             sub_table = cnt((cnt.FrameNC == f) & (abs(cnt.APbin- APbin) < 0.0001), :);
             if size(sub_table, 5) >= 10
-                cutoff = quantile(sub_table.Fluo, quantile_cutoff);
-                fluoVector = sub_table.Fluo(sub_table.Fluo >= cutoff);
+                cutoff = quantile(sub_table.Fluo2, quantile_cutoff);
+                fluoVector = sub_table.Fluo2(sub_table.Fluo2 >= cutoff);
             else
-                fluoVector = sub_table.Fluo;
+                fluoVector = sub_table.Fluo2;
             end
             MeanFluo = mean(fluoVector);
             StdFluo = std(fluoVector);
@@ -135,7 +139,7 @@ for nc=nuclear_cycles
         %histogram(sub_table.Fluo)
         xlabel('Fraction Embryo Length')
         ylabel('Fluo (AU)')
-        ylim([0, (max(cnt.Fluo)-min(cnt.Fluo))*1.1])
+        ylim([0, (max(cnt.Fluo2)-min(cnt.Fluo2))*1.1])
         xlim([0, 0.95])
         %CurrentFrame = sub_table.Frame(1);
 
@@ -180,6 +184,10 @@ end
 for nc=nuclear_cycles
     cnt  = CompiledNucleiTable(CompiledNucleiTable.nc == nc, :);
     cnt  = cnt(cnt.Fluo > 0,:);
+    cnt  = cnt(cnt.Flag1 == false,:);
+    cnt  = cnt(cnt.Flag2 == false,:);
+    cnt  = cnt(cnt.Flag3 == false,:);
+    cnt  = cnt(cnt.Flag4 == false,:);
     if isempty(cnt)
         continue
     end
@@ -206,10 +214,10 @@ for nc=nuclear_cycles
             APbin = b*APResolution;
             sub_table = cnt((cnt.RoundedTimeNC == t) & (abs(cnt.APbin- APbin) < 0.0001), :);
             if size(sub_table, 5) >= 10
-                cutoff = quantile(sub_table.Fluo, quantile_cutoff);
-                fluoVector = sub_table.Fluo(sub_table.Fluo >= cutoff);
+                cutoff = quantile(sub_table.Fluo2, quantile_cutoff);
+                fluoVector = sub_table.Fluo2(sub_table.Fluo2 >= cutoff);
             else
-                fluoVector = sub_table.Fluo;
+                fluoVector = sub_table.Fluo2;
             end
             MeanFluo = mean(fluoVector);
             StdFluo = std(fluoVector);
@@ -252,6 +260,10 @@ end
 %%
 close all
 cnt  = CompiledNucleiTable(CompiledNucleiTable.Fluo > 0,:);
+cnt  = cnt(cnt.Flag1 == false,:);
+cnt  = cnt(cnt.Flag2 == false,:);
+cnt  = cnt(cnt.Flag3 == false,:);
+cnt  = cnt(cnt.Flag4 == false,:);
 numFrames =  length(unique(cnt.Frame));
 numBins = 1/APResolution+1;
 MeanFluoAP = zeros(numFrames, numBins);
@@ -279,12 +291,12 @@ for i = 1:length(AllFrames)
     for b = 0:(numBins-1)
         APbin = b*APResolution;
         sub_table = cnt((cnt.Frame == f) & (abs(cnt.APbin- APbin) < 0.0001), :);
-        cutoff = quantile(sub_table.Fluo, quantile_cutoff);
+        cutoff = quantile(sub_table.Fluo2, quantile_cutoff);
         if size(sub_table, 5) >= 10
-            cutoff = quantile(sub_table.Fluo, quantile_cutoff);
-            fluoVector = sub_table.Fluo(sub_table.Fluo >= cutoff);
+            cutoff = quantile(sub_table.Fluo2, quantile_cutoff);
+            fluoVector = sub_table.Fluo2(sub_table.Fluo2 >= cutoff);
         else
-            fluoVector = sub_table.Fluo;
+            fluoVector = sub_table.Fluo2;
         end
         MeanFluo = mean(fluoVector);
         StdFluo = std(fluoVector);
@@ -419,12 +431,12 @@ for i = 1:length(AllTimes)
     for b = 0:(numBins-1)
         APbin = b*APResolution;
         sub_table = cnt((cnt.RoundedTime == t) & (abs(cnt.APbin- APbin) < 0.0001), :);
-        cutoff = quantile(sub_table.Fluo, quantile_cutoff);
+        cutoff = quantile(sub_table.Fluo2, quantile_cutoff);
         if size(sub_table, 5) >= 10
-            cutoff = quantile(sub_table.Fluo, quantile_cutoff);
-            fluoVector = sub_table.Fluo(sub_table.Fluo >= cutoff);
+            cutoff = quantile(sub_table.Fluo2, quantile_cutoff);
+            fluoVector = sub_table.Fluo2(sub_table.Fluo2 >= cutoff);
         else
-            fluoVector = sub_table.Fluo;
+            fluoVector = sub_table.Fluo2;
         end
         MeanFluo = mean(fluoVector);
         StdFluo = std(fluoVector);
@@ -444,10 +456,10 @@ for i = 1:numTimes
         APbin = b*APResolution;
         sub_table = cnt((cnt.RoundedTime == t) & (abs(cnt.APbin- APbin) < 0.0001), :);
         if size(sub_table, 5) >= 10
-            cutoff = quantile(sub_table.Fluo, quantile_cutoff);
-            fluoVector = sub_table.Fluo(sub_table.Fluo >= cutoff);
+            cutoff = quantile(sub_table.Fluo2, quantile_cutoff);
+            fluoVector = sub_table.Fluo2(sub_table.Fluo2 >= cutoff);
         else
-            fluoVector = sub_table.Fluo;
+            fluoVector = sub_table.Fluo2;
         end
         MeanFluo = mean(fluoVector);
         StdFluo = std(fluoVector);
