@@ -2,9 +2,7 @@ function exportTifStacks(AllImages, imagingModality, NChannels, NFrames, NSlices
   Prefix, moviePrecision, hisPrecision, nuclearGUI, ProjectionType, Channels, ReferenceHist)
 
   % extract metadata from FrameInfo
-%   NSlices = FrameInfo(1).NumberSlices;
   NSeries = length(AllImages);
-%   NFrames = length(FrameInfo);
   
   liveExperiment = LiveExperiment(Prefix);
   PreProcFolder = liveExperiment.preFolder;
@@ -15,7 +13,7 @@ function exportTifStacks(AllImages, imagingModality, NChannels, NFrames, NSlices
 
   %Counter for number of frames
   numberOfFrames = 1;
-
+  totalFrames = sum(NFrames);
 
   ySize = size(AllImages{1}{1,1}, 1);
   xSize = size(AllImages{1}{1,1}, 2);
@@ -23,21 +21,22 @@ function exportTifStacks(AllImages, imagingModality, NChannels, NFrames, NSlices
 
   hisMat = zeros(ySize, xSize, sum(NFrames), hisPrecision);
         
-  topZSlice = min(NSlices);
-
-  for seriesIndex = 1:NSeries
-      waitbar(seriesIndex/NSeries, waitbarFigure)
+  topZSlice = min(NSlices); 
+  
+  % loop through each series
+  for seriesIndex = 1:NSeries      
       for framesIndex = 1:NFrames(seriesIndex)
-
+          waitbar(numberOfFrames/totalFrames, waitbarFigure)
           for channelIndex = 1:NChannels
 
               NameSuffix = ['_ch',iIndex(channelIndex,2)];
 
               NewName = [Prefix, '_', iIndex(numberOfFrames,3),...
                   NameSuffix, '.tif'];
-
+              
+              % write bottom slice (always a blank padding image)
               imwrite(BlankImage, [PreProcFolder, filesep, NewName]);
-              %
+              
               %Copy the rest of the images
               slicesCounter = 1;
               firstImageIndex = (framesIndex-1) * NSlices(seriesIndex) * NChannels +...
@@ -67,8 +66,6 @@ function exportTifStacks(AllImages, imagingModality, NChannels, NFrames, NSlices
               end
           end
 
-
-
           %Now create nuclear projection movies
           if ~nuclearGUI || strcmpi(imagingModality,'LSM')
 
@@ -79,8 +76,7 @@ function exportTifStacks(AllImages, imagingModality, NChannels, NFrames, NSlices
 
               saveNuclearProjection(hisMat, [PreProcFolder, filesep, Prefix, '-His.tif']);
 
-          end
-
+          end          
           numberOfFrames = numberOfFrames + 1;
       end
   end
