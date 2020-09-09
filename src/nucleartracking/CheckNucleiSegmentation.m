@@ -67,7 +67,7 @@ nWorkers = 1;
 fish = false;
 preMovie = false;
 chooseHis = false;
-yToRetrackPrompt = true;
+yToRetrackPrompt = false;
 drawTraces = false;
 
 for k = 1:length(varargin)
