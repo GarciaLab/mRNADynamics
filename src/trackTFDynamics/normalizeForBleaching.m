@@ -35,8 +35,8 @@ channel = 1;
 liveExperiment = LiveExperiment(Prefix);
 preProcFolder = liveExperiment.preFolder;
 
-rawImDir{channel} = dir([preProcFolder filesep Prefix filesep '*ch01.tif']);
-normImWritePath = [preProcFolder filesep Prefix filesep 'normalizedImages'];
+rawImDir{channel} = dir([preProcFolder '*ch01.tif']);
+normImWritePath = [preProcFolder 'normalizedImages\'];
 mkdir(normImWritePath);
 
 %% Get the mean pixel value above background from the first frame of the movie
@@ -54,11 +54,7 @@ end
 meanAboveBackground0 = nanmean(meanAboveBackground(1,:));
 
 % Copy first frame stack, unmodified, to the normalized movie folder
-nameSuffix = ['_ch',iIndex(channel,2)];
-firstFrame = 1;
-imageName = [Prefix, '_', iIndex(firstFrame,3), '_norm', nameSuffix, '.tif'];
-firstImNormPath = [normImWritePath, filesep, imageName];
-copyfile firstImPath firstImNormPath;
+copyfile(firstImPath, normImWritePath);
 
 % Save max projected image for easy comparison of consecutive frames
 firstImZMaxProj = max(firstImStack,[],3);
@@ -66,7 +62,8 @@ firstImZMaxProj = max(firstImStack,[],3);
 % imshow(firstImZSumProj,[])
 nameSuffix = ['_ch',iIndex(channel,2)];
 imageMaxName = [Prefix, '_', iIndex(1,3), '_normMax', nameSuffix, '.tif'];
-imwrite(uint16(firstImZMaxProj), [normImWritePath, filesep, imageMaxName]);
+mkdir([normImWritePath, 'normMaxProj', filesep]);
+imwrite(uint16(firstImZMaxProj), [normImWritePath, 'normMaxProj', filesep, imageMaxName]);
 
 
 %% Normalize the remaining frames in the movie to the first frame
@@ -111,8 +108,8 @@ for currFrame = 2:nFrames
     zMaxProjArray(:,:,currFrame) = imZMaxProj;
     
     % Display and save max projected, normalized frame
-    imshow(imZMaxProj,[])
-    drawnow
+%     imshow(imZMaxProj,[])
+%     drawnow
     imageMaxName = [Prefix, '_', iIndex(currFrame,3), '_normMax', nameSuffix, '.tif'];
-    imwrite(uint16(imZMaxProj),[normImWritePath, filesep, imageMaxName], 'WriteMode', 'append');
+    imwrite(uint16(imZMaxProj),[normImWritePath, 'normMaxProj', filesep, imageMaxName], 'WriteMode', 'append');
 end

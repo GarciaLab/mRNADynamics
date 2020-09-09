@@ -1,7 +1,6 @@
-clear
-close all
+function ms2ClusterDistances = pairwiseDistMS2Clusters(Prefix)
 
-Prefix = '2019-11-26-2xDl_Venus_snaBAC_MCPmCherry_Leica_Zoom45_21uW14uW_01';
+% Prefix = '2019-11-26-2xDl_Venus_snaBAC_MCPmCherry_Leica_Zoom45_21uW14uW_01';
 liveExperiment = LiveExperiment(Prefix);
 
 nCh = numel(liveExperiment.spotChannels);
@@ -20,6 +19,10 @@ end
 
 dropboxFolder = liveExperiment.userResultsFolder;
 resultsFolder = liveExperiment.resultsFolder;
+writeFolder = [resultsFolder filesep 'clusterAnalysis'];
+if ~exist(writeFolder,'dir')
+    mkdir(writeFolder)
+end
 preProcFolder = liveExperiment.preFolder;
 trackFigFolder = [dropboxFolder filesep Prefix '\TrackingFigures\'];
 ParticlesFull = getParticlesFull(liveExperiment);
@@ -128,6 +131,10 @@ for n = 1:numNuclei
         if ~isempty(ms2Coord) && ~isempty(clusterCoords)
             ms2ClusterDist = pdist2(ms2Coord, clusterCoords);
             ms2ClusterDistances(n).frames(f).ms2ClusterDist = ms2ClusterDist;
+        else
+            ms2ClusterDistances(n).frames(f).ms2ClusterDist = [];   % make sure it exists even if there's nothing there
         end
     end
 end
+
+save([writeFolder filesep 'ms2ClusterDistances.mat'],'ms2ClusterDistances');

@@ -76,12 +76,11 @@ preProcFolder = liveExperiment.preFolder;
 
 % Set folder paths for normalized vs unnormalized starting images
 if maskNormIm
-    preProcFolder = [liveExperiment.preFolder filesep 'normalizedImages'];
     maskPreProcFolder = [preProcFolder filesep 'normMaskImages'];
+    preProcFolder = [liveExperiment.preFolder filesep 'normalizedImages'];
     maskSuffix = '_normMask';
     mkdir(maskPreProcFolder);
 elseif ~maskNormIm
-    preProcFolder = liveExperiment.preFolder;
     maskPreProcFolder = [preProcFolder filesep 'maskedImages'];
     maskSuffix = '_mask';
     mkdir(maskPreProcFolder);
