@@ -258,6 +258,15 @@ if ~isfield(cntState.schnitzcells, 'Checked')
     end
 end
 
+minFullNC = find(ncFramesFull > 0, 1);
+for i=1:cntState.numNuclei()
+    if  cntState.schnitzcells(i).cycle < minFullNC
+        cntState.schnitzcells(i).Approved = 0;
+        cntState.schnitzcells(i).Flag = 3;
+        cntState.schnitzcells(i).Checked = 1;
+    end
+end
+
 
 %Pull out the right particle if it exists in this frame
 cntState.updateCurrentNucleusCellNo();
@@ -334,17 +343,15 @@ while (currentCharacter ~= 'x')
         
     end
     
-    %Pull out the right particle if it exists in this frame
+    %Pull out the right nucleus/schnitz cell if it exists in this frame
     cntState.updateCurrentNucleusCellNo();
 
 
     
     cntState.updateTraceInfo();
-    
-    %[PlotNuclearTraceSettings] = GetNuclearTrace(cntState, plotNuclearTraceSettings());
+
     cntState.processImageMatrices(movieMat);
-    disp(cntState.schnitzcells(cntState.CurrentNucleus))
-    %disp(PlotNuclearTraceSettings)
+
     
     
     
