@@ -166,44 +166,45 @@ imSnippet = zeros(2*snippet_size + 1, 2*snippet_size + 1, 'double');
 imMedSnippet = zeros(2*snippet_size + 1, 2*snippet_size + 1, 'double');
 imMidMedSnippet = zeros(2*snippet_size + 1, 2*snippet_size + 1, 'double');
 imHisSnippet = zeros(2*snippet_size + 1, 2*snippet_size + 1, 'double');
-if ySchnitz-snippet_size < 1
-    rmin_idx = snippet_size-ySchnitz+2;
-else
-    rmin_idx = 1;
-end
-if xSchnitz-snippet_size < 1
-    cmin_idx = snippet_size-xSchnitz+2;
-else
-    cmin_idx = 1;
-end
-if ySchnitz+snippet_size > ySize
-    rmax_idx = rmin_idx + 2*snippet_size - (ySchnitz + snippet_size-ySize);
-    %ySchnitz + snippet_size + 1 - ySize;
-else
-    rmax_idx = size(imSnippet, 1);
-end
-if xSchnitz+snippet_size > xSize
-    cmax_idx = cmin_idx + 2*snippet_size - (xSchnitz + snippet_size-xSize);
-else
-    cmax_idx =size(imSnippet, 2);
-end
+if (~isempty(xSchnitz)) & (~isempty(ySchnitz))
+    if ySchnitz-snippet_size < 1
+        rmin_idx = snippet_size-ySchnitz+2;
+    else
+        rmin_idx = 1;
+    end
+    if xSchnitz-snippet_size < 1
+        cmin_idx = snippet_size-xSchnitz+2;
+    else
+        cmin_idx = 1;
+    end
+    if ySchnitz+snippet_size > ySize
+        rmax_idx = rmin_idx + 2*snippet_size - (ySchnitz + snippet_size-ySize);
+        %ySchnitz + snippet_size + 1 - ySize;
+    else
+        rmax_idx = size(imSnippet, 1);
+    end
+    if xSchnitz+snippet_size > xSize
+        cmax_idx = cmin_idx + 2*snippet_size - (xSchnitz + snippet_size-xSize);
+    else
+        cmax_idx =size(imSnippet, 2);
+    end
 
-imMidMedSnippet(rmin_idx:rmax_idx, cmin_idx:cmax_idx) = ...
-    mat2gray( double(cntState.ImageMat(max(1,ySchnitz-snippet_size):min(ySize,ySchnitz+snippet_size),...
-            max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
-        
-imSnippet(rmin_idx:rmax_idx, cmin_idx:cmax_idx) = ...
-    mat2gray( double(cntState.MaxImageMat(max(1,ySchnitz-snippet_size):min(ySize,ySchnitz+snippet_size),...
-            max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
-        
-imMedSnippet(rmin_idx:rmax_idx, cmin_idx:cmax_idx) = ...
-    mat2gray( double(cntState.MedImageMat(max(1,ySchnitz-snippet_size):min(ySize,ySchnitz+snippet_size),...
-            max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
-        
-imHisSnippet(rmin_idx:rmax_idx, cmin_idx:cmax_idx) = ...
-    mat2gray( double(hisImage(max(1,ySchnitz-snippet_size):min(ySize,ySchnitz+snippet_size),...
-            max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
-        
+    imMidMedSnippet(rmin_idx:rmax_idx, cmin_idx:cmax_idx) = ...
+        mat2gray( double(cntState.ImageMat(max(1,ySchnitz-snippet_size):min(ySize,ySchnitz+snippet_size),...
+                max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
+
+    imSnippet(rmin_idx:rmax_idx, cmin_idx:cmax_idx) = ...
+        mat2gray( double(cntState.MaxImageMat(max(1,ySchnitz-snippet_size):min(ySize,ySchnitz+snippet_size),...
+                max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
+
+    imMedSnippet(rmin_idx:rmax_idx, cmin_idx:cmax_idx) = ...
+        mat2gray( double(cntState.MedImageMat(max(1,ySchnitz-snippet_size):min(ySize,ySchnitz+snippet_size),...
+                max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
+
+    imHisSnippet(rmin_idx:rmax_idx, cmin_idx:cmax_idx) = ...
+        mat2gray( double(hisImage(max(1,ySchnitz-snippet_size):min(ySize,ySchnitz+snippet_size),...
+                max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
+end
 IntegrationRadius = 2/pixelSize; % 6*ceil(sqrt(212/pixelSize)); %integrate 109 pixels around the spot with 212nm pixel size
 [xGrid, yGrid] = meshgrid(1:2*snippet_size+1,1:2*snippet_size+1);
 rGrid = sqrt((xGrid-ceil(snippet_size)).^2 + (yGrid-ceil(snippet_size)).^2);
@@ -417,27 +418,42 @@ set(traceFig,'Name',['Current Nucleus Trace'])
 %% Figure 4
 z = 1:cntState.ZSlices;
 fr_idx = find(cntState.Frames == cntState.CurrentFrame);
-ZProfile = cntState.schnitzcells(cntState.CurrentNucleus).Fluo(fr_idx,:);
 zProfileFigAxes = subplot(1, 2, 1, 'Parent', zFig);
 zProfileHandles = {};
-zProfileHandles{1} = plot(zProfileFigAxes, z, ZProfile, 'r.-');
-hold(zProfileFigAxes, 'on')
-zProfileHandles{2} = plot(zProfileFigAxes,z(cntState.MidMedZ(fr_idx)),...
-    ZProfile(cntState.MidMedZ(fr_idx)), 'ko');
-zProfileHandles{3} = plot(zProfileFigAxes,z(cntState.MaxZ(fr_idx)),...
-    ZProfile(cntState.MaxZ(fr_idx)), 'bo');
-zProfileHandles{4} = plot(zProfileFigAxes,z(cntState.MedZ(fr_idx)),...
-    ZProfile(cntState.MedZ(fr_idx)), 'go');
+if ~isempty(fr_idx)
+    ZProfile = cntState.schnitzcells(cntState.CurrentNucleus).Fluo(fr_idx,:);
+
+    zProfileHandles{1} = plot(zProfileFigAxes, z, ZProfile, 'r.-');
+    hold(zProfileFigAxes, 'on')
+    zProfileHandles{2} = plot(zProfileFigAxes,z(cntState.MidMedZ(fr_idx)),...
+        ZProfile(cntState.MidMedZ(fr_idx)), 'ko');
+    zProfileHandles{3} = plot(zProfileFigAxes,z(cntState.MaxZ(fr_idx)),...
+        ZProfile(cntState.MaxZ(fr_idx)), 'bo');
+    zProfileHandles{4} = plot(zProfileFigAxes,z(cntState.MedZ(fr_idx)),...
+        ZProfile(cntState.MedZ(fr_idx)), 'go');
+else
+    zProfileHandles{1} = plot(zProfileFigAxes, [0, 1], [0, 1], 'r.');
+    hold(zProfileFigAxes, 'on')
+    set(zProfileHandles{1},'Visible','off')
+    zProfileHandles{2} = plot(zProfileFigAxes, [0, 1], [0, 1], 'ko');
+    set(zProfileHandles{2},'Visible','off')
+    zProfileHandles{3} = plot(zProfileFigAxes, [0, 1], [0, 1], 'bo');
+    set(zProfileHandles{3},'Visible','off')
+    zProfileHandles{4} = plot(zProfileFigAxes, [0, 1], [0, 1], 'go');
+    set(zProfileHandles{4},'Visible','off')
+end
 
 
 xlabel(zProfileFigAxes,'z-slice', 'FontSize',12)
 ylabel(zProfileFigAxes,'intensity (au)', 'FontSize',12)
 title(zProfileFigAxes, 'z-Profile', 'Interpreter', 'none');
 zProfileFigAxes.Title.FontSize = 10;
-zProfileFigYLimits = [0, max(ZProfile)*1.2];
-try
+if ~isempty(fr_idx)
+    zProfileFigYLimits = [0, max(ZProfile)*1.2];
+end
+if exist('zProfileFigYLimits', 'var')
     setPlotsInvisible(zProfileFigAxes);
-    ylim(zProfileFigAxes, [0, zProfileFigYLimits(2)]);
+    ylim(zProfileFigAxes, [0, max([zProfileFigYLimits(2), 1])]);
     setPlotsVisible(zProfileFigAxes);
 end
 
@@ -451,8 +467,14 @@ zTraceHandles{2} = plot(zTraceAxes, cntState.Frames,...
     cntState.MaxZ,'.-b');
 zTraceHandles{3} = plot(zTraceAxes, cntState.Frames,...
     cntState.MedZ,'.-g');
-zTraceHandles{4} = xline(cntState.Frames(fr_idx),...
-    'Color', 'r', 'LineStyle', '--');
+if ~isempty(fr_idx)
+    zTraceHandles{4} = xline(zTraceAxes, cntState.Frames(fr_idx),...
+        'Color', 'r', 'LineStyle', '--');
+else
+    zTraceHandles{4} = xline(zTraceAxes, 0, 'Color', 'r', 'LineStyle', '--');
+    set(zTraceHandles{4},'Visible','off')
+end
+    
 hold(zTraceAxes, 'off')
 xlabel(zTraceAxes,'frame')
 ylabel(zTraceAxes,'z-slice')

@@ -21,43 +21,44 @@ function [snipFig, snipAxes, snipHandles]  =...
     imMedSnippet = zeros(2*snippet_size + 1, 2*snippet_size + 1, 'double');
     imMidMedSnippet = zeros(2*snippet_size + 1, 2*snippet_size + 1, 'double');
     imHisSnippet = zeros(2*snippet_size + 1, 2*snippet_size + 1, 'double');
-    if ySchnitz-snippet_size < 1
-        rmin_idx = snippet_size-ySchnitz+2;
-    else
-        rmin_idx = 1;
+    if (~isempty(xSchnitz)) & (~isempty(ySchnitz))
+        if ySchnitz-snippet_size < 1
+            rmin_idx = snippet_size-ySchnitz+2;
+        else
+            rmin_idx = 1;
+        end
+        if xSchnitz-snippet_size < 1
+            cmin_idx = snippet_size-xSchnitz+2;
+        else
+            cmin_idx = 1;
+        end
+        if ySchnitz+snippet_size > ySize
+            rmax_idx = rmin_idx + 2*snippet_size - (ySchnitz + snippet_size-ySize);
+        else
+            rmax_idx = size(imSnippet, 1);
+        end
+        if xSchnitz+snippet_size > xSize
+            rmax_idx = cmin_idx + 2*snippet_size - (xSchnitz + snippet_size-xSize);
+        else
+            cmax_idx =size(imSnippet, 2);
+        end
+
+        imMidMedSnippet(rmin_idx:rmax_idx, cmin_idx:cmax_idx) = ...
+            mat2gray( double(cntState.ImageMat(max(1,ySchnitz-snippet_size):min(ySize,ySchnitz+snippet_size),...
+                    max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
+
+        imSnippet(rmin_idx:rmax_idx, cmin_idx:cmax_idx) = ...
+            mat2gray( double(cntState.MaxImageMat(max(1,ySchnitz-snippet_size):min(ySize,ySchnitz+snippet_size),...
+                    max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
+
+        imMedSnippet(rmin_idx:rmax_idx, cmin_idx:cmax_idx) = ...
+            mat2gray( double(cntState.MedImageMat(max(1,ySchnitz-snippet_size):min(ySize,ySchnitz+snippet_size),...
+                    max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
+
+        imHisSnippet(rmin_idx:rmax_idx, cmin_idx:cmax_idx) = ...
+            mat2gray( double(hisImage(max(1,ySchnitz-snippet_size):min(ySize,ySchnitz+snippet_size),...
+                    max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
     end
-    if xSchnitz-snippet_size < 1
-        cmin_idx = snippet_size-xSchnitz+2;
-    else
-        cmin_idx = 1;
-    end
-    if ySchnitz+snippet_size > ySize
-        rmax_idx = rmin_idx + 2*snippet_size - (ySchnitz + snippet_size-ySize);
-    else
-        rmax_idx = size(imSnippet, 1);
-    end
-    if xSchnitz+snippet_size > xSize
-        rmax_idx = cmin_idx + 2*snippet_size - (xSchnitz + snippet_size-xSize);
-    else
-        cmax_idx =size(imSnippet, 2);
-    end
-
-    imMidMedSnippet(rmin_idx:rmax_idx, cmin_idx:cmax_idx) = ...
-        mat2gray( double(cntState.ImageMat(max(1,ySchnitz-snippet_size):min(ySize,ySchnitz+snippet_size),...
-                max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
-
-    imSnippet(rmin_idx:rmax_idx, cmin_idx:cmax_idx) = ...
-        mat2gray( double(cntState.MaxImageMat(max(1,ySchnitz-snippet_size):min(ySize,ySchnitz+snippet_size),...
-                max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
-
-    imMedSnippet(rmin_idx:rmax_idx, cmin_idx:cmax_idx) = ...
-        mat2gray( double(cntState.MedImageMat(max(1,ySchnitz-snippet_size):min(ySize,ySchnitz+snippet_size),...
-                max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
-
-    imHisSnippet(rmin_idx:rmax_idx, cmin_idx:cmax_idx) = ...
-        mat2gray( double(hisImage(max(1,ySchnitz-snippet_size):min(ySize,ySchnitz+snippet_size),...
-                max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
-
     IntegrationRadius = 2/pixelSize; % 6*ceil(sqrt(212/pixelSize)); %integrate 109 pixels around the spot with 212nm pixel size
     [xGrid, yGrid] = meshgrid(1:2*snippet_size+1,1:2*snippet_size+1);
     rGrid = sqrt((xGrid-ceil(snippet_size)).^2 + (yGrid-ceil(snippet_size)).^2);
