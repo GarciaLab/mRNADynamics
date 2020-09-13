@@ -1,5 +1,5 @@
 function [CurrentNucleus, CurrentFrame, ManualZFlag] = toNearestNucleus(schnitzcells, ...
-    CurrentFrame, UseHistoneOverlay, ConnectPosition)
+    CurrentFrame, UseHistoneOverlay, cntState, ConnectPosition)
 %TONEARESTNUCLEUS Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -10,7 +10,7 @@ if exist('ConnectPosition', 'var')
 end
 
 NucleusOutput = identifyNucleus(schnitzcells, CurrentFrame, ...
-    UseHistoneOverlay, opts{:});
+    UseHistoneOverlay, cntState, opts{:});
 
 if (floor(NucleusOutput)>0)&(NucleusOutput<=numNuclei)
     [CurrentNucleus,CurrentFrame, ManualZFlag] = ...

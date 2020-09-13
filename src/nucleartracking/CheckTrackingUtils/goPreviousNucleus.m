@@ -35,7 +35,7 @@ end
 
 
 [CurrentNucleus,CurrentFrame, ManualZFlag] = ...
-    changeNucleus(NucleusNum, schnitzcells, numNuclei);
+    changeNucleus(NextNucleus, schnitzcells, numNuclei);
 
 
 DisplayRange=[];

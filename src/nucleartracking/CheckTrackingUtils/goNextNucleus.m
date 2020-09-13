@@ -28,17 +28,17 @@ end
 
 
 [CurrentNucleus,CurrentFrame, ManualZFlag] = ...
-    changeNucleus(NucleusNum, schnitzcells, numNuclei);
+    changeNucleus(NextNucleus, schnitzcells, numNuclei);
 DisplayRange=[];
 
-msg = schnitzcells(CurrentNucleus).frames(find(diff(schnitzcells(CurrentParticle).Frame)>1));
-
-if ~isempty(msg)
-    %             disp('Missing frames:') %AR 12/3/17- Not sure what this
-    %             message is trying to say, so I am silencing it for now.
-    %             msg
-else
-    %do nothing
-end
+% msg = schnitzcells(CurrentNucleus).frames(find(diff(schnitzcells(CurrentNucleus).Frame)>1));
+% 
+% if ~isempty(msg)
+%     %             disp('Missing frames:') %AR 12/3/17- Not sure what this
+%     %             message is trying to say, so I am silencing it for now.
+%     %             msg
+% else
+%     %do nothing
+% end
 end
 

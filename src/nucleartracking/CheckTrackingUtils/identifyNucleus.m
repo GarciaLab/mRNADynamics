@@ -1,5 +1,5 @@
 function NucleusOutput = identifyNucleus(schnitzcells, CurrentFrame, ...
-    UseHistoneOverlay, ConnectPosition)
+    UseHistoneOverlay, cntState, ConnectPosition)
 %IDENTIFYPARTICLE Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -15,7 +15,7 @@ if ~isempty(ConnectPosition)
     
     %Find the closest particle
     [NucleusOutput,~]=FindClickedNucleus(ConnectPosition,CurrentFrame,...
-        schnitzcells);
+        schnitzcells, cntState);
     
     disp(['Clicked nucleus: ',num2str(NucleusOutput)]);
 

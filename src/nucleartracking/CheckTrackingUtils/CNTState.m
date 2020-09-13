@@ -11,6 +11,8 @@ classdef CNTState < handle
         schnitzcells
         FrameInfo
         ImageMat
+        MaxImageMat
+        MedImageMat
         storedTimeProjection
         multiImage
         maxTimeCell
@@ -22,10 +24,19 @@ classdef CNTState < handle
         CurrentFrame {mustBeEmptyOrScalar(CurrentFrame)}
         PreviousFrame {mustBeEmptyOrScalar(PreviousFrame)}
         
+        CurrentX {mustBeEmptyOrScalar(CurrentX)}
+        CurrentZ {mustBeEmptyOrScalar(CurrentZ)}
         ManualZFlag
         ZSlices
-        CurrentZ {mustBeEmptyOrScalar(CurrentZ)}
-        CurrentZIndex {mustBeEmptyOrScalar(CurrentZIndex)}
+        MaxFluo
+        MedFluo
+        MidMedFluo
+        MaxZ
+        MedZ
+        MidMedZ
+        
+        %CurrentZ {mustBeEmptyOrScalar(CurrentZ)}
+        %CurrentZIndex {mustBeEmptyOrScalar(CurrentZIndex)}
         
         CurrentNucleusCellNo {mustBeEmptyOrScalar(CurrentNucleusCellNo)}
         CurrentNucleus {mustBeEmptyOrScalar(CurrentNucleus)}
@@ -39,15 +50,9 @@ classdef CNTState < handle
         PreviousChannelIndex {mustBeEmptyOrScalar(PreviousChannelIndex)}
         inputChannel % replaces coatChannel in CPTState
         
-        FrameIndicesToFit
-        Coefficients
-        fitApproved
-        lineFitted
-        
-        ZoomMode
-        GlobalZoomMode
-        xForZoom
-        yForZoom
+
+
+
         
         DisplayRange
         DisplayRangeSpot
@@ -84,7 +89,49 @@ classdef CNTState < handle
             this.ManualZFlag = 0;
             numberZSlices = this.FrameInfo(1).NumberSlices;
             this.ZSlices = numberZSlices + 2; %Note that the blank slices are included
-            this.CurrentZ = round(this.ZSlices / 2);
+            
+% First, get the different intensity values corresponding to this particle.
+            this.CurrentX = [];
+            this.CurrentNucleus = 1;
+            this.PreviousNucleus = 1;
+            this.CurrentNucleusCellNo = 1;
+            this.lastNucleus = 0;
+            
+            Frame = [];
+            MaxFluo = [];
+            MaxZ = [];
+            MedFluo = [];
+            MedZ = [];
+            MidMedFluo = [];
+            MidMedZ = [];
+            for i=1:length(schnitzcells(this.CurrentNucleus).frames)
+
+                Frame(i)=schnitzcells(this.CurrentNucleus).frames(i);
+                MaxFluo(i) = max(schnitzcells(this.CurrentNucleus).Fluo(i,:));
+                MaxZ(i) = find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == max(schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
+                MedFluo(i) = median(schnitzcells(this.CurrentNucleus).Fluo(i,2:this.ZSlices-1));
+                MedZ(i) = find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == median(schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
+                MidMedFluo(i) = median(schnitzcells(this.CurrentNucleus).Fluo(i,max(2, MaxZ(i)-5):min(this.ZSlices-1, MaxZ(i)+5)));
+                if ~isempty(find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1))
+                    MidMedZ(i) = find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1);
+                else
+                    SubFluos = schnitzcells(this.CurrentNucleus).Fluo(i,max(2, MaxZ(i)-5):min(this.ZSlices-1, MaxZ(i)+5));
+                    SubFluos = sort(SubFluos(SubFluos > MidMedFluo(i)));
+                    MidMedFluo(i) = SubFluos(1);
+                    MidMedZ(i) = find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1);
+
+                end
+
+            end
+            this.CurrentZ = MidMedZ(find(Frame == this.CurrentFrame, 1));
+            this.Frames = Frame;
+            this.MaxFluo = MaxFluo;
+            this.MedFluo = MedFluo;
+            this.MidMedFluo = MidMedFluo;
+            this.MaxZ = MaxZ;
+            this.MedZ = MedZ;
+            this.MidMedZ = MidMedZ;
+            %this.CurrentZ = round(this.ZSlices / 2);
             
             this.CurrentNucleus = 1;
             this.PreviousNucleus = 1;
@@ -96,16 +143,8 @@ classdef CNTState < handle
             this.PreviousChannel = this.CurrentChannel;
             this.PreviousChannelIndex = this.CurrentChannelIndex;
             
-            
-            this.FrameIndicesToFit = 0; % index of the current particle that were used for fitting
-            this.Coefficients = []; % coefficients of the fitted line
-            this.fitApproved = 0; %JP: I think functions should use this instead of calculating fitApproved on their own
-            this.lineFitted = 0; % equals 1 if a line has been fitted
-            
-            this.ZoomMode = 0;
-            this.GlobalZoomMode = 0;
-            this.xForZoom = 0;
-            this.yForZoom = 0;
+
+          
             
             this.DisplayRange = [];
             this.DisplayRangeSpot = [];
@@ -124,7 +163,7 @@ classdef CNTState < handle
         end
         
         function numValidFrames = numValidFrames(this)
-            numValidFrames = length({this.Ellipses});
+            numValidFrames = length(this.Ellipses);
         end
         
         % 9/7/20 (GM): not sure what the nucleus equivalent would be here 
@@ -161,8 +200,8 @@ classdef CNTState < handle
 %         end
 
           function currentNucleusX = getCurrentX(this)
-              currentFrameIndex = find(this.getCurrentSchnitzCell().frames == this.CurrentFrame);
-              currentNucleusX = getCurrentSchnitzCell().cenx(currentFrameIndex);
+              currentFrameIndex = find(this.schnitzcells(this.CurrentNucleus).frames == this.CurrentFrame, 1);
+              currentNucleusX = this.schnitzcells(this.CurrentNucleus).cenx(currentFrameIndex);
           end
 %         
 %         function currentYDoG = getCurrentYDoG(this)
@@ -170,8 +209,8 @@ classdef CNTState < handle
 %             currentYDoG = double(currentFit.yDoG(this.CurrentZIndex));
 %         end
           function currentNucleusY = getCurrentY(this)
-              currentFrameIndex = find(this.getCurrentSchnitzCell().frames == this.CurrentFrame);
-              currentNucleusY = getCurrentSchnitzCell().ceny(currentFrameIndex);
+              currentFrameIndex = find(this.schnitzcells(this.CurrentNucleus).frames == this.CurrentFrame, 1);
+              currentNucleusY = this.schnitzcells(this.CurrentNucleus).ceny(currentFrameIndex);
           end
         
 %         function currentXFit = getCurrentXFit(this)
@@ -186,14 +225,14 @@ classdef CNTState < handle
         
         % WHAT SHOULD THIS BE?
 %         function updateCurrentZIndex(this)
-%             this.CurrentZIndex = find(this.getCurrentParticleFit().z == this.CurrentZ);
+%             this.CurrentZIndex = this.getMaxZIndex();
 %         end
         
-        function maxZIndex = getMaxZIndex(this)
-            currentFrameIndex = find(this.getCurrentSchnitzCell().frames == this.CurrentFrame);
-            maxZIndex = find(this.getCurrentSchnitzCell().Fluo(currentFrameIndex,:) == max(this.getCurrentSchnitzCell().Fluo(currentFrameIndex,:)));
-        end
-        
+%         function maxZIndex = getMaxZIndex(this)
+%             currentFrameIndex = find(this.getCurrentSchnitzCell().frames == this.CurrentFrame);
+%             maxZIndex = find(this.getCurrentSchnitzCell().Fluo(currentFrameIndex,:) == max(this.getCurrentSchnitzCell().Fluo(currentFrameIndex,:)), 1);
+%         end
+%         
         function currentNucleusCellNo = getCurrentNucleusCellNo(this)
             currentNucleusCellNo = this.getCurrentSchnitzCell().cellno(...
                 this.getCurrentSchnitzCell().frames == this.CurrentFrame);
@@ -202,7 +241,7 @@ classdef CNTState < handle
         function [xApproved, yApproved] = getApprovedSchnitzCells(this, x, y)
             IndexApprovedSchnitzCells = [];
             numNuclei = this.numNuclei();
-            currentSchnitzCells = this.schnitzcells();
+            currentSchnitzCells = this.schnitzcells;
             
             for i = 1:numNuclei
                 if sum(currentSchnitzCells(i).frames == this.CurrentFrame) &&...
@@ -219,7 +258,7 @@ classdef CNTState < handle
         function [xDisapproved, yDisapproved] = getDisapprovedSchnitzCells(this, x, y)
             IndexDisapprovedSchnitzCells=[];
             numNuclei = this.numNuclei();
-            currentSchnitzCells = this.schnitzcells();
+            currentSchnitzCells = this.schnitzcells;
             
             for i = 1:numNuclei
                 if sum(currentSchnitzCells(i).frames == this.CurrentFrame) &&...
@@ -236,7 +275,7 @@ classdef CNTState < handle
         function [xNonFlagged, yNonFlagged] = getNonFlaggedSchnitzCells(this, x, y)
             IndexNonFlaggedSchnitzCells = [];
             numNuclei = this.numNuclei();
-            currentSchnitzCells = this.schnitzcells();
+            currentSchnitzCells = this.schnitzcells;
             
             
             for i = 1:numNuclei
@@ -255,70 +294,32 @@ classdef CNTState < handle
         % not exactly sure what this does (GM 9/7/20)
         % HASN'T BEEN CHANGED AT ALL and neither has anything that comes
         % after it. 
-        function processImageMatrices(this, nFrames,...
-                nSlices, blankImage, currentNC,...
-                ncFramesFull, movieMat, maxMat)
+        function processImageMatrices(this, movieMat)
             
-            if strcmpi(this.projectionMode, 'None')
-                
-                if ~isempty(movieMat)
-                    this.ImageMat = movieMat(:, :, this.CurrentZ,...
-                        this.CurrentFrame, this.CurrentChannel);
-                else
-                    this.ImageMat = getMovieSlice(this.liveExperiment,...
-                        this.CurrentFrame, this.CurrentChannel, this.CurrentZ);
-                end
-                
-                %to have a 3x3 square of time and z images on the screen. 
-%                 if multiView
-%                     for z = 1:-1:-1
-%                         for f = -1:1:1
-%                             if any( 1:nSlices == this.CurrentZ + z) &&...
-%                                     any( 1:nFrames == this.CurrentFrame + f)
-%                                 if ~isempty(movieMat)
-%                                     this.multiImage{z+2, f+2} =...
-%                                         movieMat(:, :, this.CurrentZ+z,...
-%                                         this.CurrentFrame+f, this.CurrentChannel);
-%                                 else
-%                                     this.multiImage{z+2, f+2} =...
-%                                         getMovieSlice(this.liveExperiment, this.CurrentFrame+f,...
-%                                         this.CurrentChannel,...
-%                                         this.CurrentZ+z);
-%                                 end
-%                             else
-%                                 this.multiImage{z+2, f+2} = blankImage;
-%                             end
-%                         end % loop over frames
-%                     end % loop over z slices
-%                 end
-                
-            elseif strcmpi(this.projectionMode, 'Max Z')
-                
-                if ~isempty(maxMat)
-                    if nFrames > 1
-                        this.ImageMat = maxMat(:, :, this.CurrentFrame, this.CurrentChannel);
-                    else
-                        this.ImageMat = maxMat;
-                    end
-                else
-                    
-                    imStack = getMovieFrame(this.liveExperiment,...
-                        this.CurrentFrame, this.CurrentChannel);
-                    
-                    this.ImageMat = squeeze(max(imStack, [], 3));
-                    
-                end
-                
-                %not currently supported when loading single stacks
-            elseif strcmpi(this.projectionMode, 'Max Z and Time')
-                if isempty(this.maxTimeCell)
-                    this.ImageMat = max(max(movieMat(...
-                        :,:,:, ncFramesFull(currentNC):ncFramesFull(currentNC+1),...
-                        this.CurrentChannel), [], 2), [], 3); % ch z t x y
-                end
+            fr_idx = find(this.Frames == this.CurrentFrame);
+            maxz = this.MaxZ(fr_idx);
+            medz = this.MedZ(fr_idx);
+            midmedz = this.MidMedZ(fr_idx);
+            
+
+            if ~isempty(movieMat)
+                this.ImageMat = movieMat(:, :, midmedz,...
+                    this.CurrentFrame, this.CurrentChannel);
+                this.MaxImageMat = movieMat(:, :, maxz,...
+                    this.CurrentFrame, this.CurrentChannel);
+                this.MedImageMat = movieMat(:, :, medz,...
+                    this.CurrentFrame, this.CurrentChannel);
+            else
+                this.ImageMat = getMovieSlice(this.liveExperiment,...
+                    this.CurrentFrame, this.CurrentChannel, midmedz);
+                this.MaxImageMat = getMovieSlice(this.liveExperiment,...
+                    this.CurrentFrame, this.CurrentChannel, maxz);
+                this.MedImageMat = getMovieSlice(this.liveExperiment,...
+                    this.CurrentFrame, this.CurrentChannel, medz);
             end
+            
+
         end
-        
         % NOT SURE WHAT THESE & and y INPUTS ARE
         function [xTrace, yTrace] = getXYTraces(this, x, y)
             xTrace = x(this.CurrentNucleusCellNo);
@@ -326,15 +327,42 @@ classdef CNTState < handle
         end
         
         % NOT SURE WHAT THESE & and y INPUTS ARE
-        function updateZIndex(this, x, y, z)
-            [xTrace, yTrace] = this.getXYTraces(x, y);
-            
-            if (~isempty(xTrace)) && (~this.ManualZFlag)
-                this.CurrentZ = z(this.CurrentNucleusCellNo);
-                this.CurrentZIndex = find(this.schnitzcells(this.CurrentNucleus).Fluo(this.CurrentFrame,:)...
-                    == max(this.schnitzcells(this.CurrentNucleus).Fluo(this.CurrentFrame,:)));
-                this.ManualZFlag = 0;
+        function updateTraceInfo(this)
+            Frame = [];
+            MaxFluo = [];
+            MaxZ = [];
+            MedFluo = [];
+            MedZ = [];
+            MidMedFluo = [];
+            MidMedZ = [];
+            for i=1:length(this.schnitzcells(this.CurrentNucleus).frames)
+
+                Frame(i)=this.schnitzcells(this.CurrentNucleus).frames(i);
+                MaxFluo(i) = max(this.schnitzcells(this.CurrentNucleus).Fluo(i,:));
+                MaxZ(i) = find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == max(this.schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
+                MedFluo(i) = median(this.schnitzcells(this.CurrentNucleus).Fluo(i,2:this.ZSlices-1));
+                MedZ(i) = find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == median(this.schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
+                MidMedFluo(i) = median(this.schnitzcells(this.CurrentNucleus).Fluo(i,max(2, MaxZ(i)-5):min(this.ZSlices-1, MaxZ(i)+5)));
+                if ~isempty(find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1))
+                    MidMedZ(i) = find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1);
+                else
+                    SubFluos = this.schnitzcells(this.CurrentNucleus).Fluo(i,max(2, MaxZ(i)-5):min(this.ZSlices-1, MaxZ(i)+5));
+                    SubFluos = sort(SubFluos(SubFluos > MidMedFluo(i)));
+                    MidMedFluo(i) = SubFluos(1);
+                    MidMedZ(i) = find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1);
+
+                end
+
             end
+            this.CurrentZ = MidMedZ(find(Frame == this.CurrentFrame, 1));
+            this.Frames = Frame;
+            this.MaxFluo = MaxFluo;
+            this.MedFluo = MedFluo;
+            this.MidMedFluo = MidMedFluo;
+            this.MaxZ = MaxZ;
+            this.MedZ = MedZ;
+            this.MidMedZ = MidMedZ;
+            
         end
         
         function updateCurrentNucleusCellNo(this)
