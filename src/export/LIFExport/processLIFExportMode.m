@@ -11,9 +11,6 @@ liveExperiment = LiveExperiment(Prefix);
 
 resultsFolder = liveExperiment.resultsFolder;
 
-if ~shouldExportMovieFiles
-    FrameInfo = [];
-end
 moviePrecision = 'uint16';
 hisPrecision = 'uint16';
 
