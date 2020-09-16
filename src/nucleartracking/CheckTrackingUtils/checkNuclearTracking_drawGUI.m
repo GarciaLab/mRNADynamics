@@ -68,7 +68,7 @@ EllipseHandleGreen = [];
 schnitzCellNo_Unchecked=[];
 
 for i=1:cntState.numNuclei()
-    if (cntState.schnitzcells(i).Approved ==1) & (cntState.schnitzcells(i).Checked ==0) 
+    if (cntState.schnitzcells(i).Checked ==0) 
         frame_idx = find(cntState.schnitzcells(i).frames == cntState.CurrentFrame, 1);
         if ~isempty(frame_idx)
             schnitzCellNo_Unchecked= [schnitzCellNo_Unchecked,cntState.schnitzcells(i).cellno(frame_idx)];
@@ -96,7 +96,7 @@ EllipseHandleBlue = notEllipseCellCNT(cntState, schnitzCellApproved, 'b', 10, ov
 schnitzCellRejected=[];
 
 for i=1:cntState.numNuclei()
-    if (cntState.schnitzcells(i).Approved ~=1) 
+    if (cntState.schnitzcells(i).Approved ~=1)  & (cntState.schnitzcells(i).Checked ==1) 
         frame_idx = find(cntState.schnitzcells(i).frames == cntState.CurrentFrame, 1);
         if ~isempty(frame_idx)
             schnitzCellRejected = [schnitzCellRejected,cntState.schnitzcells(i).cellno(frame_idx)];

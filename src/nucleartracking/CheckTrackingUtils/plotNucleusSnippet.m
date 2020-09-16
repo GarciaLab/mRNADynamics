@@ -38,7 +38,7 @@ function [snipFig, snipAxes, snipHandles]  =...
             rmax_idx = size(imSnippet, 1);
         end
         if xSchnitz+snippet_size > xSize
-            rmax_idx = cmin_idx + 2*snippet_size - (xSchnitz + snippet_size-xSize);
+            cmax_idx = cmin_idx + 2*snippet_size - (xSchnitz + snippet_size-xSize);
         else
             cmax_idx =size(imSnippet, 2);
         end

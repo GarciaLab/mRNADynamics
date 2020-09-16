@@ -5,7 +5,7 @@ function CurrentFrame = previousNuclearUnapprovedFrame(schnitzcells,  ...
 %This is the total frame range possible for this particle. Note
 %that we could still want to add spots at the beginning or end of
 %this range.
-OldFrame = CurrntFrame;
+OldFrame = CurrentFrame;
 FrameRange=schnitzcells(CurrentNucleus).frames(1):...
     schnitzcells(CurrentNucleus).frames(end);
 %Frames in FrameRange that were not in this particle.

@@ -1,20 +1,23 @@
-function keyInputHandler = NuclearTracesEventHandler(cntState)
+function keyInputHandler = NuclearTracesEventHandler(cntState, FrameInfo, ncFrames)
     % NuclearTracesEventHandler.m
     % author: Gabriella Martini
     % date created: 9/7/20
     % date last modified: 9/13/20
     function keyInput(cc)
-%         if cc == 'c'
-%             [cntState.PreviousNucleus, cntState.schnitzcells] = combineNuclearTraces(cntState.CurrentFrame,...
-%                 cntState.schnitzcells, cntState.Ellipses, cntState.CurrentNucleus);
-%             
-%         elseif cc == 'd'
-%             % Separate traces forward at the current frame.
-%             [cntState.schnitzcells, cntState.PreviousNucleus] = separateNuclearTraces(cntState.CurrentNucleus, ...
-%                 cntState.CurrentFrame, cntState.schnitzcells);
-        if cc == 'q'
+        if cc == 'c'
+            [cntState.PreviousNucleus, cntState.schnitzcells] = combineNuclearTraces(cntState.CurrentFrame,...
+                cntState.schnitzcells, cntState.Ellipses, cntState.CurrentNucleus, FrameInfo, ncFrames);
+            
+        elseif cc == 'd'
+            % Separate traces forward at the current frame.
+            if length(cntState.schnitzcells(cntState.CurrentNucleus).frames) > 1
+                cntState.schnitzcells = SeparateNuclearTraces(cntState.CurrentNucleus, ...
+                    cntState.CurrentFrame, cntState.schnitzcells, FrameInfo, ncFrames);
+            end
+        elseif cc == 'q'
             % Approve a trace
-            if cntState.schnitzcells(cntState.CurrentNucleus).Approved == 1
+            
+            if (cntState.schnitzcells(cntState.CurrentNucleus).Approved == 1)
                 cntState.schnitzcells(cntState.CurrentNucleus).Approved = 2;
             elseif cntState.schnitzcells(cntState.CurrentNucleus).Approved <= 0
                 cntState.schnitzcells(cntState.CurrentNucleus).Approved = 1;

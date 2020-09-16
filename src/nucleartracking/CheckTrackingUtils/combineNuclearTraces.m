@@ -1,5 +1,5 @@
 function [PreviousNucleus, schnitzcells] =...
-    combineNuclearTraces(CurrentFrame, schnitzcells, Ellipses, CurrentNucleus)
+    combineNuclearTraces(CurrentFrame, schnitzcells, Ellipses, CurrentNucleus, FrameInfo, ncFrames)
 %COMBINETRACES Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -39,7 +39,7 @@ if ~currentNucleusExistsInCurrentFrame && nucleiExistInFrame
             %Check that there is no overlap. If so, split current particle
             overlap=0;
             for i=1:length(schnitzcells(NucleusOutput).frames)
-                for j=1:length(schnitzcells(NucleusOutput).frames)
+                for j=1:length(schnitzcells(CurrentNucleus).frames)
                     if schnitzcells(NucleusOutput).frames(i)==schnitzcells(CurrentNucleus).frames(j)
                         overlap=1;
                     end
@@ -48,59 +48,54 @@ if ~currentNucleusExistsInCurrentFrame && nucleiExistInFrame
 
             if overlap
                 %Disconnect the clicked particle
-                schnitzcells=SeparateParticleTraces(CurrentParticle,CurrentFrame,Particles{CurrentChannelIndex});
+                schnitzcells=SeparateNucleusTraces(CurrentNucleus,CurrentFrame,schnitzcells,...
+                    FrameInfo, ncFrames);
 
                 %If the clicked particle has an index larger than that
                 %of the current particle we also need to
                 %move the index of the clicked particle by one.
-                if ParticleOutput>CurrentParticle
-                    ParticleOutput=ParticleOutput+1;
+                if NucleusOutput>CurrentNucleus
+                    NucleusOutput=NucleusOutput+1;
                 end
             end
 
 
 
-            Particles{CurrentChannelIndex}=JoinParticleTraces(CurrentParticle,ParticleOutput,Particles{CurrentChannelIndex});
+            schnitzcells=JoinNuclearTraces(CurrentNucleus,NucleusOutput,schnitzcells, FrameInfo, ncFrames);
             %Deals with the indexing changing because of the removal of
             %the old particle.
-            if ParticleOutput<CurrentParticle
-                CurrentParticle=CurrentParticle-1;
+            if NucleusOutput<CurrentNucleus
+                CurrentNucleus=CurrentNucleus-1;
             end
-            %Sort the frames within the particle. This is useful if we
-            %connected to a particle that came before.
-            [SortedFrame,Permutations]=sort(Particles{CurrentChannelIndex}(CurrentParticle).Frame);
-            Particles{CurrentChannelIndex}(CurrentParticle).Frame=Particles{CurrentChannelIndex}(CurrentParticle).Frame(Permutations);
-            Particles{CurrentChannelIndex}(CurrentParticle).Index=Particles{CurrentChannelIndex}(CurrentParticle).Index(Permutations);
-            Particles{CurrentChannelIndex}(CurrentParticle).FrameApproved=Particles{CurrentChannelIndex}(CurrentParticle).FrameApproved(Permutations);
 
         end
     end
 
 else
-
-    [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'b', 'linewidth',1);
-    ConnectPosition = [ConnectPositionx,ConnectPositiony];
-
-    [ParticleOutput,~]=FindClickedParticle(ConnectPosition,CurrentFrame,Spots{CurrentChannelIndex},Particles{CurrentChannelIndex});
-
-    %If it's an independent particle swap it with the frame in the
-    %current particle
-    if (length(Particles{CurrentChannelIndex}(ParticleOutput).Frame)==1)&&...
-            (sum(Particles{CurrentChannelIndex}(ParticleOutput).Frame==CurrentFrame)==1)
-
-        ParticleTemp=Particles{CurrentChannelIndex}(ParticleOutput);
-
-        %Copy the particle out
-        Particles{CurrentChannelIndex}(ParticleOutput).Index=...
-            Particles{CurrentChannelIndex}(CurrentParticle).Index(Particles{CurrentChannelIndex}(CurrentParticle).Frame==CurrentFrame);
-
-        %Copy the new particle in
-        Particles{CurrentChannelIndex}(CurrentParticle).Index(Particles{CurrentChannelIndex}(CurrentParticle).Frame==CurrentFrame)=...
-            ParticleTemp.Index;
-        Particles{CurrentChannelIndex}(CurrentParticle).FrameApproved(Particles{CurrentChannelIndex}(CurrentParticle).Frame==CurrentFrame)=1;
-    else
-        disp('Cannnot connect to two particles!')
-    end
+% 
+%     [ConnectPositionx,ConnectPositiony]=ginputc(1,'color', 'b', 'linewidth',1);
+%     ConnectPosition = [ConnectPositionx,ConnectPositiony];
+% 
+%     [NucleusOutput,~]=FindClickedNucleus(ConnectPosition,CurrentFrame,...
+%             schnitzcells);
+%     %If it's an independent particle swap it with the frame in the
+%     %current particle
+%     if (length(schnitzcells(NucleusOutput).frames)==1)&&...
+%             (sum(schnitzcells(NucleusOutput).frames==CurrentFrame)==1)
+% 
+%         NucleusTemp=schnitzcells(NucleusOutput);
+% 
+%         %Copy the particle out
+%         schnitzcells(NucleusOutput).cellno=...
+%             schnitzcells(CurrentNucleus).cellno(schnitzcells(CurrentNucleus).frames==CurrentFrame);
+% 
+%         %Copy the new particle in
+%         schnitzcells(CurrentNucleus).cellno(schnitzcells(CurrentNucleus).frames==CurrentFrame)=...
+%             NucleusTemp.cellno;
+%         schnitzcells(CurrentNucleus).FrameApproved(schnitzcells(CurrentNucleus).frames==CurrentFrame)=1;
+% %     else
+    disp('Cannnot connect to two schnitz cells!')
+%     end
 
 
 end

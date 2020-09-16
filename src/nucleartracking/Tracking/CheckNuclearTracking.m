@@ -313,7 +313,7 @@ nuclearChangeKeyInput = NuclearChangeEventHandler(cntState);
 %addSpotKeyInput = AddSpotEventHandler(cptState, Prefix);
 %deleteSpotKeyInput = DeleteSpotEventHandler(cptState);
 %ellipsesKeyInput = NuclearEllipsesEventHandler(cntState);
-tracesKeyInput = NuclearTracesEventHandler(cntState);
+tracesKeyInput = NuclearTracesEventHandler(cntState, FrameInfo, ncFrames);
 %nuclearTrackingKeyInput = NuclearTrackingEventHandler(cptState);
 generalKeyInput = GeneralNuclearEventHandler(cntState, DataFolder, DropboxFolder, FilePrefix);
 
@@ -407,9 +407,9 @@ end
 
 % save after exiting the main loop - the user pressed 'x'
 % 
-% saveChanges(numSpotChannels, cptState, DataFolder, FilePrefix, DropboxFolder);
+saveNuclearChanges(cntState, DataFolder, FilePrefix, DropboxFolder);
 % 
-% disp(['(Left off at Particle #', num2str(cptState.CurrentParticle), ')'])
+disp(['(Left off at schnitz cell #', num2str(cntState.CurrentNucleus), ')'])
 % 
 % CheckNucleiModified(cptState, DropboxFolder, Prefix, fish)
 

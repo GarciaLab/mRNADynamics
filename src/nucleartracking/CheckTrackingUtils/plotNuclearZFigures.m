@@ -20,7 +20,8 @@ elseif ~isempty(ZProfile)
     set(zProfileHandles{1}, 'XData',z,...
             'YData',ZProfile, 'Color', 'r', 'LineStyle', '-', 'Marker', '.'); 
 else
-    zProfileHandles{1} = plot(zProfileFigAxes, [0, 1], [0, 1], 'r.');
+    set(zProfileHandles{1}, 'XData',[0, 1],...
+            'YData', [0, 1], 'Color', 'r', 'LineStyle', '-', 'Marker', '.'); 
     set(zProfileHandles{1},'Visible','off') 
 end
 hold(zProfileFigAxes, 'on')
@@ -39,7 +40,8 @@ elseif ~isempty(ZProfile(cntState.MidMedZ(fr_idx)))
             'YData',ZProfile(cntState.MidMedZ(fr_idx)),...
             'Color', 'k', 'Marker', 'o');    
 else
-    zProfileHandles{2} = plot(zProfileFigAxes, [0, 1], [0, 1], 'ko');
+    set(zProfileHandles{2}, 'XData',[0, 1],...
+            'YData', [0, 1], 'Color', 'k', 'Marker', 'o'); 
     set(zProfileHandles{2},'Visible','off')
 end
 if isempty(zProfileHandles{3})
@@ -57,7 +59,8 @@ elseif ~isempty(ZProfile(cntState.MaxZ(fr_idx)))
             'YData',ZProfile(cntState.MaxZ(fr_idx)),...
             'Color', 'b',  'Marker', 'o');    
 else
-    zProfileHandles{3} = plot(zProfileFigAxes, [0, 1], [0, 1], 'bo');
+    set(zProfileHandles{3}, 'XData',[0, 1],...
+            'YData', [0, 1], 'Color', 'b', 'Marker', 'o'); 
     set(zProfileHandles{3},'Visible','off') 
 end
 if isempty(zProfileHandles{4})
@@ -67,6 +70,7 @@ if isempty(zProfileHandles{4})
             ZProfile(cntState.MedZ(fr_idx)), 'go');
     else
         zProfileHandles{4} = plot(zProfileFigAxes, [0, 1], [0, 1], 'go');
+        
         set(zProfileHandles{4},'Visible','off')
     end
 elseif ~isempty(ZProfile(cntState.MedZ(fr_idx)))
@@ -75,10 +79,16 @@ elseif ~isempty(ZProfile(cntState.MedZ(fr_idx)))
             'YData',ZProfile(cntState.MedZ(fr_idx)),...
             'Color', 'g', 'Marker', 'o');   
 else
-    zProfileHandles{4} = plot(zProfileFigAxes, [0, 1], [0, 1], 'go');
+    set(zProfileHandles{4}, 'XData',[0, 1],...
+            'YData', [0, 1], 'Color', 'g', 'Marker', 'o'); 
     set(zProfileHandles{4},'Visible','off')
 
 end
+% if length(zProfileFigAxes.Children) > 4
+%     delete(zProfileFigAxes.Children(1:length(zProfileFigAxes.Children)-4))
+% end
+%disp(num2str(length(zProfileFigAxes.Children)))
+
 if ~isempty(fr_idx)
     zProfileFigYLimits = [0, max(ZProfile)*1.2];
 end
@@ -104,7 +114,9 @@ elseif ~isempty(cntState.Frames)
             'YData',cntState.MidMedZ,...
             'Color', 'k', 'LineStyle', '-', 'Marker', '.'); 
 else
-    zTraceHandles{1} = plot(zTraceAxes, [0, 1], [0, 1], 'k.-');
+    set(zTraceHandles{1}, 'XData',[0, 1],...
+            'YData',[0, 1],...
+            'Color', 'k', 'LineStyle', '-', 'Marker', '.'); 
     set(zTraceHandles{1},'Visible','off')
 end
 hold(zTraceAxes,'on')
@@ -123,7 +135,9 @@ elseif ~isempty(cntState.Frames)
             'YData',cntState.MaxZ,...
             'Color', 'b', 'LineStyle', '-', 'Marker', '.');  
 else
-    zTraceHandles{2} = plot(zTraceAxes, [0, 1], [0, 1], 'b.-');
+    set(zTraceHandles{2}, 'XData',[0, 1],...
+            'YData',[0, 1],...
+            'Color', 'b', 'LineStyle', '-', 'Marker', '.'); 
     set(zTraceHandles{2},'Visible','off')
 end
 if isempty(zTraceHandles{3})
@@ -141,7 +155,9 @@ elseif ~isempty(cntState.Frames)
             'YData',cntState.MedZ,...
             'Color', 'g', 'LineStyle', '-', 'Marker', '.');  
 else
-    zTraceHandles{3} = plot(zTraceAxes, [0, 1], [0, 1], 'g.-');
+    set(zTraceHandles{3}, 'XData',[0, 1],...
+            'YData',[0, 1],...
+            'Color', 'g', 'LineStyle', '-', 'Marker', '.'); 
     set(zTraceHandles{3},'Visible','off')
 end
 
@@ -151,15 +167,16 @@ if isempty(zTraceHandles{4})
         zTraceHandles{4} = xline(cntState.Frames(fr_idx),...
             'Color', 'r', 'LineStyle', '--');
     else
-        zTraceHandles{4} = xline(zTraceAxes, 0, 'Color', 'r', 'LineStyle', '--');
+        zTraceHandles{4} = xline(zTraceAxes, 'Value', 0, 'Color', 'r', 'LineStyle', '--');
         set(zTraceHandles{4},'Visible','off')
     end
 elseif ~isempty(cntState.Frames(fr_idx))
     set(zTraceHandles{4},'Visible','on')
-    set(zTraceHandles{4}, 'value',cntState.Frames(fr_idx),...
+    set(zTraceHandles{4}, 'Value',cntState.Frames(fr_idx),...
             'Color', 'r', 'LineStyle', '--');  
 else
-    zTraceHandles{4} = xline(zTraceAxes, 0, 'Color', 'r', 'LineStyle', '--');
+    set(zTraceHandles{4}, 'Value',0,...
+            'Color', 'r', 'LineStyle', '--'); 
     set(zTraceHandles{4},'Visible','off')
 end
 hold(zTraceAxes, 'off')
@@ -172,6 +189,6 @@ if exist('zTraceFigYLimits', 'var')
 end
 zFigAxes = {zProfileFigAxes, zTraceAxes};
 
-disp('here')
+%disp('here')
 
 end
