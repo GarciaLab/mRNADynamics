@@ -14,6 +14,10 @@ resultsFolder = liveExperiment.resultsFolder;
 moviePrecision = 'uint16';
 hisPrecision = 'uint16';
 
+if skipExtraction
+  FrameInfo = [];
+end
+
 %Load the reference histogram for the fake histone channel
 load('ReferenceHist.mat', 'ReferenceHist');
 
