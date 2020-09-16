@@ -81,7 +81,7 @@ function exportTifStacks(AllImages, imagingModality, NChannels, NFrames, NSlices
       end
   end
   
-  if ~isempty(hisMat)
+  if ~nuclearGUI 
     saveNuclearProjection(hisMat, [PreProcFolder, filesep, Prefix, '-His.tif']);
   end
 
