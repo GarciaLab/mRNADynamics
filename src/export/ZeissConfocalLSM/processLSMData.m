@@ -67,10 +67,6 @@ function FrameInfo = processLSMData(Folder, D, FrameInfo,...
 
       [ValueField, Frame_Times] = obtainZeissFrameTimes(LSMMeta, NSlices, LSMIndex, NPlanes, NChannels, StartingTime, Frame_Times);
       [~, FrameInfo] = createZeissFrameInfo(LSMIndex, NFrames, NSlices, FrameInfo, LSMMeta, Frame_Times, ValueField);
-
-%       if nuclearGUI
-%         warning('NL: GUI option for LSM not implemented. Going with default His export options')
-%       end
               
       % this function exports tif z stacks
       exportTifStacks(AllLSMImages, 'LSM', NChannels, NFrames, NSlices, Prefix, ...
