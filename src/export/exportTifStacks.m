@@ -69,7 +69,7 @@ function exportTifStacks(AllImages, imagingModality, NChannels, NFrames, NSlices
           end
 
           %Now create nuclear projection movies
-          if ~nuclearGUI || strcmpi(imagingModality,'LSM')
+          if ~nuclearGUI 
             
               hisMat(:, :, numberOfFrames) = generateNuclearChannel(...
                   numberOfFrames, AllImages,...
