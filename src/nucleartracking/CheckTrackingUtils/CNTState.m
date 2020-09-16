@@ -291,9 +291,7 @@ classdef CNTState < handle
         end
         
        
-        % not exactly sure what this does (GM 9/7/20)
-        % HASN'T BEEN CHANGED AT ALL and neither has anything that comes
-        % after it. 
+      
         function processImageMatrices(this, movieMat)
             
             fr_idx = find(this.Frames == this.CurrentFrame);
@@ -326,23 +324,29 @@ classdef CNTState < handle
                     this.ImageMat = getMovieSlice(this.liveExperiment,...
                         this.CurrentFrame, this.CurrentChannel, midmedz);
                 else
-                    this.ImageMat = zeros(size(movieMat, 1), size(movieMat, 2), 'uint8');
+                    dummyMat = getMovieSlice(this.liveExperiment,...
+                        this.CurrentFrame, this.CurrentChannel, 1);
+                    this.ImageMat = zeros(size(dummyMat, 1), size(dummyMat, 2), 'uint8');
                 end
                 if ~isempty(maxz)
                     this.MaxImageMat = getMovieSlice(this.liveExperiment,...
                         this.CurrentFrame, this.CurrentChannel, maxz);
                 else
-                    this.MaxImageMat = zeros(size(movieMat, 1), size(movieMat, 2), 'uint8');
+                    dummyMat = getMovieSlice(this.liveExperiment,...
+                        this.CurrentFrame, this.CurrentChannel, 1);
+                    this.MaxImageMat = zeros(size(dummyMat, 1), size(dummyMat, 2), 'uint8');
                 end
                 if ~isempty(medz)
                     this.MedImageMat = getMovieSlice(this.liveExperiment,...
                         this.CurrentFrame, this.CurrentChannel, medz);
                 else
-                    this.MedImageMat = zeros(size(movieMat, 1), size(movieMat, 2), 'uint8');
+                    dummyMat = getMovieSlice(this.liveExperiment,...
+                        this.CurrentFrame, this.CurrentChannel, 1);
+                    this.MedImageMat = zeros(size(dummyMat, 1), size(dummyMat, 2), 'uint8');
                 end
             end
             
-
+        disp('stop here')
         end
         % NOT SURE WHAT THESE & and y INPUTS ARE
         function [xTrace, yTrace] = getXYTraces(this, x, y)

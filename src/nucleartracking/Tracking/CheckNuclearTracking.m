@@ -329,28 +329,14 @@ currentCharacter = 1;
 while (currentCharacter ~= 'x')
    
     
-    inds = find(cntState.CurrentFrame > ncFramesFull);
-    currentNC = inds(end);
+    %inds = find(cntState.CurrentFrame > ncFramesFull);
+    %currentNC = inds(end);
     
 
-    
-    %If the approved field does not exist create it
-    if ~isfield(cntState.schnitzcells, 'Approved')
-        
-        for i = 1:cntState.numNuclei()
-            cntState.schnitzcells(i).Approved = 0;
-        end
-        
-    end
+
     
     %Pull out the right nucleus/schnitz cell if it exists in this frame
-    cntState.updateCurrentNucleusCellNo();
-
-
     
-    cntState.updateTraceInfo();
-
-    cntState.processImageMatrices(movieMat);
 
     
     
@@ -399,6 +385,14 @@ while (currentCharacter ~= 'x')
     %ellipsesKeyInput(currentCharacter);
     tracesKeyInput(currentCharacter);
     generalKeyInput(currentCharacter);
+    
+    cntState.updateCurrentNucleusCellNo();
+
+
+    
+    cntState.updateTraceInfo();
+
+    cntState.processImageMatrices(movieMat);
     
     
     
