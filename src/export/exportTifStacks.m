@@ -2,7 +2,9 @@ function exportTifStacks(AllImages, imagingModality, NChannels, NFrames, NSlices
   Prefix, moviePrecision, hisPrecision, nuclearGUI, ProjectionType, Channels, ReferenceHist)
 
   % extract metadata from FrameInfo
-  NSeries = length(AllImages);
+%   NSeries = length(AllImages);
+  
+  NSeries = length(NFrames);
   
   liveExperiment = LiveExperiment(Prefix);
   PreProcFolder = liveExperiment.preFolder;
