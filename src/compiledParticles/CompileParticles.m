@@ -342,7 +342,7 @@ if shouldConvertToAP
 end
 
 %Divide the AP and DV axes into bins for generating means
-if APExperiment || DVExperiment && fullEmbryoExists
+if (APExperiment || DVExperiment) && fullEmbryoExists
     load(APDetectionFile)
     [APbinID, APbinArea] = binAxis(APResolution, FrameInfo, ...
         coordAZoom, APAngle, APLength, minBinSize, 'AP');

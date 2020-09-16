@@ -42,12 +42,9 @@ end
 liveExperiment = LiveExperiment(Prefix);
 %Get the surface image in the zoomed case by looking at the last
 %frame of our movie
-hisMat = getHisMat(liveExperiment);
-%     if ~isempty(DHis)
-%         try
-%3D stack
-%             hisMat = imreadStack([PreProcPath,filesep,Prefix,filesep,Prefix,'-His.tif']);
-ZoomImage = hisMat(:, :, end-1);
+DHis=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
+ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,DHis(end).name]);
+
 
 
 %With AP coordinates in hand we can now determine the AP position of

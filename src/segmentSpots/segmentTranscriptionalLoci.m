@@ -92,12 +92,18 @@ yDim = liveExperiment.yDim;
 xDim = liveExperiment.xDim;
 zDim = liveExperiment.zDim;
 
-if shouldMaskNuclei
-    if liveExperiment.hasEllipsesFile
-        Ellipses = getEllipses(liveExperiment); 
-        Ellipses = filterEllipses(Ellipses, [yDim, xDim]);
-    else, shouldMaskNuclei = false; end
-end
+% if shouldMaskNuclei
+%     if liveExperiment.hasEllipsesFile
+%         Ellipses = getEllipses(liveExperiment);
+%         if isempty(Ellipses)
+%             disp('Don''t try to do anything to Ellipses')
+%         else
+%             Ellipses = filterEllipses(Ellipses, [yDim, xDim]);
+%         end
+%     else
+%         shouldMaskNuclei = false;
+%     end
+% end
 
    
     if autoThresh
@@ -118,7 +124,7 @@ isZPadded = size(movieMat, 3) ~= zSize;
 q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
-for currentFrame = initialFrame:lastFrame
+parfor currentFrame = initialFrame:lastFrame
     
     if ~isempty(movieMat_channel)
         imStack = movieMat_channel(:, :, :, currentFrame);
@@ -143,6 +149,8 @@ for currentFrame = initialFrame:lastFrame
         elseif exist([dogStackFile, '.tif'], 'file')
             dogStack = imreadStack2([dogStackFile, '.tif'], yDim,...
                 xDim, zDim);
+        else
+            error('Cannot find any dogs in the ProcessedData folder. Are they missing or incorrectly named?')
         end
         
         
@@ -188,17 +196,17 @@ for currentFrame = initialFrame:lastFrame
         im_thresh = dog >= Threshold;
         
         % apply nuclear mask if it exists
-        if shouldMaskNuclei
-    
-            nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim xDim], radiusScale);
-            im_thresh = im_thresh & nuclearMask;
-            
-%             if shouldDisplayFigures
-%                 figure(maskFig);
-%                 imshowpair(nuclearMask, dog, 'montage'); 
-%             end
-            
-        end
+%         if shouldMaskNuclei
+%     
+%             nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim xDim], radiusScale);
+%             im_thresh = im_thresh & nuclearMask;
+%             
+% %             if shouldDisplayFigures
+% %                 figure(maskFig);
+% %                 imshowpair(nuclearMask, dog, 'montage'); 
+% %             end
+%             
+%         end
         
         %probability map regions usually look different from dog regions and
         %require some mophological finesse

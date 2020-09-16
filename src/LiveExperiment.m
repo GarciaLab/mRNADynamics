@@ -259,11 +259,12 @@ classdef LiveExperiment
                 FrameInfo_movie = tempInfo.FrameInfo;
                 preTifDir = dir([this.preFolder, '*_ch0*.tif']);
             end
+            loadFramesIndividually = true;
             
             %just return an empty array if we can't load the movie.
             %leave the handling to the caller, presumably by enabling
             %sequential file loading.
-            if ~haveSufficientMemory(preTifDir)
+            if ~haveSufficientMemory(preTifDir) || loadFramesIndividually
                 out = [];
                 return;
             end
@@ -305,9 +306,10 @@ classdef LiveExperiment
             out = movieMat;
             
             %let's reduce the memory footprint of the movie if we can
-            if max(movieMat(:)) < 255
-                movieMat = uint8(movieMat);
-            end
+%             if max(movieMat(:)) < 255
+%                 movieMat = uint8(movieMat);
+%             end
+            movieMat = double(movieMat);
             
         end
         
@@ -400,9 +402,10 @@ classdef LiveExperiment
             out = hisMat;
             
             %let's reduce the memory footprint of the movie if we can
-            if max(hisMat(:)) < 255
-                hisMat = uint8(hisMat);
-            end
+%             if max(hisMat(:)) < 255
+%                 hisMat = uint8(hisMat);
+%             end
+            hisMat = double(hisMat);
             
         end
         
@@ -430,6 +433,7 @@ classdef LiveExperiment
                 end
             end
             out = squeeze(maxMat);
+            out = double(out);
             
         end
         
@@ -451,6 +455,7 @@ classdef LiveExperiment
                     out(:, :, z) = getMovieSlice(this, frame, channel, z);
                 end
             end
+            out = double(out);
         end
         
         function out = getMovieSlice(this, frame, channel, slice)
@@ -469,6 +474,7 @@ classdef LiveExperiment
                 imStack = getMovieFrame(this, frame, channel);
                 out = imStack(:, :, slice);
             end
+            out = double(out);
             
         end
         
@@ -492,6 +498,9 @@ classdef LiveExperiment
             ellipsesFile = [this.resultsFolder, 'Ellipses.mat'];
             if this.hasEllipsesFile
                 load(ellipsesFile, 'Ellipses');
+            else
+                warning('No Ellipses structure found for this LiveExperiment.')
+                Ellipses = {};
             end
             
         end

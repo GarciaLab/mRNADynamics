@@ -81,9 +81,9 @@ if sum(InputChannelIndexes)
             try waitbar(CurrentFrame/numFrames,h); catch; end
             % GM: added the uint16 conversion 
             if ~isempty(movieMat)
-                imStack = uint16(movieMat(:,:,:, CurrentFrame, ChN));
+                imStack = double(movieMat(:,:,:, CurrentFrame, ChN));
             else
-                imStack = uint16(getMovieFrame(liveExperiment, CurrentFrame, ChN));
+                imStack = double(getMovieFrame(liveExperiment, CurrentFrame, ChN));
             end
             % 
             convImage = imfilter(imStack, Circle, 'same');

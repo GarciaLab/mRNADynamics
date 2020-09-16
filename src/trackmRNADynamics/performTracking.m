@@ -9,12 +9,13 @@ NDigits = thisExperiment.nDigits;
 
 
 % Iterate over all channels
-
+h = waitbar(0, 'Performing tracking ...');
 for Channel = 1:NCh
     
     % Iterate over all frames
+
     for CurrentFrame = 1:length(Spots{Channel})
-        
+        waitbar(CurrentFrame/length(Spots{Channel}),h,'Performing tracking ...');
         if isempty(app) && displayFigures
             figure(ParticlesFig)
             set(ParticlesFig, 'units', 'normalized', 'position', [0.01, .55, .33, .33]);
@@ -81,5 +82,5 @@ if NCh == 1
 end
 
 
-
+close(h)
 end
