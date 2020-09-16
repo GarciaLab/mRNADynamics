@@ -306,9 +306,10 @@ classdef LiveExperiment
             out = movieMat;
             
             %let's reduce the memory footprint of the movie if we can
-            if max(movieMat(:)) < 255
-                movieMat = uint8(movieMat);
-            end
+%             if max(movieMat(:)) < 255
+%                 movieMat = uint8(movieMat);
+%             end
+            movieMat = double(movieMat);
             
         end
         
@@ -401,9 +402,10 @@ classdef LiveExperiment
             out = hisMat;
             
             %let's reduce the memory footprint of the movie if we can
-            if max(hisMat(:)) < 255
-                hisMat = uint8(hisMat);
-            end
+%             if max(hisMat(:)) < 255
+%                 hisMat = uint8(hisMat);
+%             end
+            hisMat = double(hisMat);
             
         end
         
@@ -431,6 +433,7 @@ classdef LiveExperiment
                 end
             end
             out = squeeze(maxMat);
+            out = double(out);
             
         end
         
@@ -452,6 +455,7 @@ classdef LiveExperiment
                     out(:, :, z) = getMovieSlice(this, frame, channel, z);
                 end
             end
+            out = double(out);
         end
         
         function out = getMovieSlice(this, frame, channel, slice)
@@ -470,6 +474,7 @@ classdef LiveExperiment
                 imStack = getMovieFrame(this, frame, channel);
                 out = imStack(:, :, slice);
             end
+            out = double(out);
             
         end
         

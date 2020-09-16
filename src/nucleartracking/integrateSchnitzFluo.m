@@ -81,9 +81,9 @@ if sum(InputChannelIndexes)
             try waitbar(CurrentFrame/numFrames,h); catch; end
             
             if ~isempty(movieMat)
-                imStack = movieMat(:,:,:, CurrentFrame, ChN);
+                imStack = double(movieMat(:,:,:, CurrentFrame, ChN));
             else
-                imStack = getMovieFrame(liveExperiment, CurrentFrame, ChN);
+                imStack = double(getMovieFrame(liveExperiment, CurrentFrame, ChN));
             end
             
             convImage = imfilter(imStack, Circle, 'same');
