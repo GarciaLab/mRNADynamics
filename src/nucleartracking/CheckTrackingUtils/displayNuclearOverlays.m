@@ -17,6 +17,16 @@ if cntState.UseHistoneOverlay
     else
         HisOverlayImageMat=cat(3,mat2gray(hisImage,double(cntState.DisplayRange)),mat2gray(cntState.MaxImageMat),zeros(size(cntState.MaxImageMat)));
     end
+%     for i=1:cntState.numNuclei()
+% 
+%         frame_idx = find(cntState.schnitzcells(i).frames == cntState.CurrentFrame, 1);
+%         if ~isempty(frame_idx)
+%             HisOverlayImageMat = insertText(HisOverlayImageMat,...
+%                 [cntState.schnitzcells(i).cenx(frame_idx),cntState.schnitzcells(i).ceny(frame_idx)],...
+%                 [num2str(i)],'FontSize',14 ,'TextColor','white', 'BoxOpacity', 0);
+%         end
+%         
+%     end
     
     ImageHandle.CData = HisOverlayImageMat;
 else

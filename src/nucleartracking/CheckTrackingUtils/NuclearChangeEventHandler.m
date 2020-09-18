@@ -47,7 +47,25 @@ function keyInputHandler = NuclearChangeEventHandler(cntState)
             cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
             [cntState.CurrentNucleus, cntState.CurrentFrame, cntState.ManualZFlag, cntState.DisplayRange] = ...
                 goPreviousNucleus(cntState.CurrentNucleus, cntState.HideApprovedFlag, cntState.schnitzcells);
-
+        elseif (cc == 'l') 
+            cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
+            [cntState.CurrentNucleus, cntState.CurrentFrame, cntState.ManualZFlag] = ...
+                goEarliestUncheckedNucleus(cntState.CurrentNucleus,cntState.schnitzcells);
+        elseif (cc == 'b') 
+            cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
+            [cntState.CurrentNucleus, cntState.CurrentFrame, cntState.ManualZFlag] = ...
+                goNextUncheckedNucleus(cntState.CurrentNucleus,cntState.schnitzcells);
+        elseif (cc == 'o') 
+            %cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
+            [cntState.CurrentNucleus, cntState.CurrentFrame, cntState.ManualZFlag] = ...
+                goNextNCNucleus(cntState.CurrentNucleus,cntState.schnitzcells);
+        elseif (cc == 'i') 
+            %cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
+            [cntState.CurrentNucleus, cntState.CurrentFrame, cntState.ManualZFlag] = ...
+                goPreviousNCNucleus(cntState.CurrentNucleus,cntState.schnitzcells);
+        elseif cc == ']'
+            [cntState.CurrentNucleus, cntState.CurrentFrame, cntState.schnitzcells] =...
+                flagCurrentNCNuclei(cntState.CurrentNucleus, cntState.schnitzcells);
         end
     end
 

@@ -108,18 +108,33 @@ classdef CNTState < handle
 
                 Frame(i)=schnitzcells(this.CurrentNucleus).frames(i);
                 MaxFluo(i) = max(schnitzcells(this.CurrentNucleus).Fluo(i,:));
-                MaxZ(i) = find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == max(schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
+                if ~isnan(MaxFluo(i))
+                    MaxZ(i) = find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == max(schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
+                else
+                    MaxFluo(i) = 0;
+                    MaxZ(i) = 1;
+                end
                 MedFluo(i) = median(schnitzcells(this.CurrentNucleus).Fluo(i,2:this.ZSlices-1));
-                MedZ(i) = find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == median(schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
+                if ~isnan(MedFluo(i))
+                    MedZ(i) = find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == median(schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
+                else
+                    MaxFluo(i) = 0;
+                    MaxZ(i) = 1;
+                end
+                    
                 MidMedFluo(i) = median(schnitzcells(this.CurrentNucleus).Fluo(i,max(2, MaxZ(i)-5):min(this.ZSlices-1, MaxZ(i)+5)));
                 if ~isempty(find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1))
                     MidMedZ(i) = find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1);
                 else
                     SubFluos = schnitzcells(this.CurrentNucleus).Fluo(i,max(2, MaxZ(i)-5):min(this.ZSlices-1, MaxZ(i)+5));
                     SubFluos = sort(SubFluos(SubFluos > MidMedFluo(i)));
-                    MidMedFluo(i) = SubFluos(1);
-                    MidMedZ(i) = find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1);
-
+                    if ~isempty(SubFluos)
+                        MidMedFluo(i) = SubFluos(1);
+                        MidMedZ(i) = find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1);
+                    else
+                        MidMedFluo(i) = 0;
+                        MidMedZ(i) = 1;
+                    end
                 end
 
             end
@@ -345,8 +360,7 @@ classdef CNTState < handle
                     this.MedImageMat = zeros(size(dummyMat, 1), size(dummyMat, 2), 'uint8');
                 end
             end
-            
-        disp('stop here')
+ 
         end
         % NOT SURE WHAT THESE & and y INPUTS ARE
         function [xTrace, yTrace] = getXYTraces(this, x, y)
@@ -363,22 +377,36 @@ classdef CNTState < handle
             MedZ = [];
             MidMedFluo = [];
             MidMedZ = [];
-            for i=1:length(this.schnitzcells(this.CurrentNucleus).frames)
-
+            for i=1:length(this.schnitzcells(this.CurrentNucleus).frames) 
                 Frame(i)=this.schnitzcells(this.CurrentNucleus).frames(i);
-                MaxFluo(i) = max(this.schnitzcells(this.CurrentNucleus).Fluo(i,:));
-                MaxZ(i) = find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == max(this.schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
+                MaxFluo(i) = max(this.schnitzcells(this.CurrentNucleus).Fluo(i,2:this.ZSlices-1));
+                if ~isnan(MaxFluo(i))
+                    MaxZ(i) = find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == max(this.schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
+                else
+                    MaxFluo(i) = 0;
+                    MaxZ(i) = 1;
+                end
+                
                 MedFluo(i) = median(this.schnitzcells(this.CurrentNucleus).Fluo(i,2:this.ZSlices-1));
-                MedZ(i) = find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == median(this.schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
+                if ~isnan(MedFluo(i))
+                    MedZ(i) = find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == median(this.schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
+                else
+                    MedFluo(i) = 0;
+                    MedZ(i) = 1;
+                end
                 MidMedFluo(i) = median(this.schnitzcells(this.CurrentNucleus).Fluo(i,max(2, MaxZ(i)-5):min(this.ZSlices-1, MaxZ(i)+5)));
                 if ~isempty(find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1))
                     MidMedZ(i) = find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1);
                 else
                     SubFluos = this.schnitzcells(this.CurrentNucleus).Fluo(i,max(2, MaxZ(i)-5):min(this.ZSlices-1, MaxZ(i)+5));
                     SubFluos = sort(SubFluos(SubFluos > MidMedFluo(i)));
-                    MidMedFluo(i) = SubFluos(1);
-                    MidMedZ(i) = find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1);
-
+                    if ~isempty(SubFluos)
+                        MidMedFluo(i) = SubFluos(1);
+                        MidMedZ(i) = find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1);
+                    else
+                       MidMedFluo(i) = 0;
+                       MidMedZ(i) = 1;
+                    end
                 end
 
             end

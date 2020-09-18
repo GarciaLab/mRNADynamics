@@ -3,7 +3,12 @@ function keyInputHandler = GeneralNuclearEventHandler(cntState, DataFolder, Drop
     function keyInput(cc)
 
         if cc == 's'
-            saveNuclearChanges(cntState, DataFolder, FilePrefix, DropboxFolder);
+            broken = checkSchnitzCellErrors(cntState.schnitzcells, cntState.Ellipses);
+            if sum(broken) > 0
+                error('Broke schnitz structures! Do not save!')
+            else
+                saveNuclearChanges(cntState, DataFolder, FilePrefix, DropboxFolder);
+            end
 %         elseif cc == '~'
 %             % Switch projection mode
 %             cntState.projectionMode = chooseProjection;

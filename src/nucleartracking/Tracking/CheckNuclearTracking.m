@@ -160,6 +160,7 @@ ncFramesFull = [zeros(1,8), ncFrames, nFrames]; %more useful for some things
 
 try correspondingNCInfo = [FrameInfo.nc]; end
 
+schnitzcells = correctSchnitzCellErrors(schnitzcells, Ellipses);
 [schnitzcells] = sortNuclei(sortByFrames, sortByLength, schnitzcells);
 
 %Some flags and initial parameters
@@ -170,6 +171,8 @@ CurrentFrameWithinNucleus = 1;
 
 cntState = CNTState(liveExperiment, schnitzcells, Ellipses,...
                 FrameInfo, UseHistoneOverlay, nWorkers, projectionMode);
+            
+
 
 try
     inputChannels = liveExperiment.inputChannels; 
@@ -179,6 +182,12 @@ end
 
 
 if ~isempty(cntState.schnitzcells)
+    checkEllipsesSchnitzMatches = checkSchnitzCellErrors(cntState.schnitzcells, cntState.Ellipses);
+    if sum(checkEllipsesSchnitzMatches) > 0
+        cntState.schnitzcells = correctSchnitzCellErrors(cntState.schnitzcells, cntState.Ellipses);
+        
+    end
+    saveNuclearChanges(cntState, DataFolder, FilePrefix, DropboxFolder);
     cntState.CurrentFrame =...
         cntState.schnitzcells(cntState.CurrentNucleus).frames(CurrentFrameWithinNucleus);
 
@@ -376,7 +385,7 @@ while (currentCharacter ~= 'x')
     set(0, 'CurrentFigure', snipFig);
     
     set(0, 'CurrentFigure', OverlayFig);
-    
+    disableDefaultInteractivity(overlayAxes)
     currentCharacter = getUserKeyInput(OverlayFig);
     
     frameChangeKeyInput(currentCharacter);
@@ -393,7 +402,10 @@ while (currentCharacter ~= 'x')
     cntState.updateTraceInfo();
 
     cntState.processImageMatrices(movieMat);
-    
+    %checkEllipsesSchnitzMatches = checkSchnitzCellErrors(cntState.schnitzcells, cntState.Ellipses);
+%     if sum(checkEllipsesSchnitzMatches) > 0
+%         error('Broken!');
+%     end
     
     
 end

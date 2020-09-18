@@ -13,8 +13,13 @@ if ~isempty(schnitzcells)
         if ismember(CurrentFrame, schnitzcells(sc).frames)
             x(idx)=double(schnitzcells(sc).cenx(schnitzcells(sc).frames == CurrentFrame));
             y(idx)=double(schnitzcells(sc).ceny(schnitzcells(sc).frames == CurrentFrame));
-            z(idx)=find(schnitzcells(sc).Fluo(schnitzcells(sc).frames == CurrentFrame,:) == ...
-                max(schnitzcells(sc).Fluo(schnitzcells(sc).frames == CurrentFrame,:)), 1);
+            if ~isempty(find(schnitzcells(sc).Fluo(schnitzcells(sc).frames == CurrentFrame,:) == ...
+                max(schnitzcells(sc).Fluo(schnitzcells(sc).frames == CurrentFrame,:)), 1))
+                z(idx)=find(schnitzcells(sc).Fluo(schnitzcells(sc).frames == CurrentFrame,:) == ...
+                    max(schnitzcells(sc).Fluo(schnitzcells(sc).frames == CurrentFrame,:)), 1);
+            else
+                z(idx) = 1;
+            end
             cellnos(idx) = schnitzcells(sc).cellno(schnitzcells(sc).frames == CurrentFrame);
             idx = idx + 1;
         end

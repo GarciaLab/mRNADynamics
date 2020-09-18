@@ -14,6 +14,18 @@ function keyInputHandler = NuclearTracesEventHandler(cntState, FrameInfo, ncFram
                 cntState.schnitzcells = SeparateNuclearTraces(cntState.CurrentNucleus, ...
                     cntState.CurrentFrame, cntState.schnitzcells, FrameInfo, ncFrames);
             end
+        elseif cc == 'D'
+            
+            if length(cntState.schnitzcells(cntState.CurrentNucleus).frames) > 1
+                HoldCurrentNucleus = cntState.CurrentNucleus;
+                cntState.schnitzcells=SeparateAllFrameNuclearTraces(cntState.CurrentNucleus,...
+                    cntState.CurrentFrame, cntState.schnitzcells, FrameInfo, ncFrames);
+                [cntState.CurrentNucleus,cntState.CurrentFrame, cntState.ManualZFlag] = ...
+                    changeNucleus(HoldCurrentNucleus, cntState.schnitzcells, cntState.numNuclei())
+            end
+
+            
+            
         elseif cc == 'q'
             % Approve a trace
             
@@ -35,6 +47,7 @@ function keyInputHandler = NuclearTracesEventHandler(cntState, FrameInfo, ncFram
             disp(flag_string)
             cntState.schnitzcells(cntState.CurrentNucleus).Flag = flag;
             cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
+        
 %         elseif cc == 'h'
 %             if cntState.HideApprovedFlag == 0
 %                 cntState.HideApprovedFlag = 1; %Show only non-approved traces
