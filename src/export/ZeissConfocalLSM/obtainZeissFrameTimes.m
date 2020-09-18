@@ -13,7 +13,7 @@ function [ValueField, Frame_Times] = obtainZeissFrameTimes(LSMMeta, NSlices, LSM
 
   % Now get the time for each frame. We start the timer at the first time point
   % of the first data series.
-  for j = 0:(NSlices(LSMIndex) * NChannels(LSMIndex)):(NPlanes(LSMIndex) - 1)
+  for j = 0:(NSlices(LSMIndex) * NChannels):(NPlanes(LSMIndex) - 1)
     if ~isempty(LSMMeta.getPlaneDeltaT(0, j))
       if ValueField                    
         Frame_Times = [Frame_Times, str2num(LSMMeta.getPlaneDeltaT(0, j).value) + StartingTime(LSMIndex) - StartingTime(1)];

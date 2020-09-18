@@ -1,4 +1,5 @@
-function [FrameRange, FrameInfo] = createZeissFrameInfo(LSMIndex, NFrames, NSlices, FrameInfo, LSMMeta, Frame_Times, ValueField)
+function [FrameRange, FrameInfo] = updateZeissFrameInfo(LSMIndex, NFrames,...
+        NSlices, FrameInfo, LSMMeta, Frame_Times, ValueField)
   %Save the information in FrameInfo
   if LSMIndex == 1
     FrameRange = 1:NFrames(LSMIndex);

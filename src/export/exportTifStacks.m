@@ -54,7 +54,7 @@ function exportTifStacks(AllImages, imagingModality, NChannels, NFrames, NSlices
                       % if no zPadding, it will process images rounding down to the series with least
                       % zSlices, because topZSlice would be min(NSlices)
 
-                      imwrite(AllImages{seriesIndex}{imageIndex,1},...
+                      imwrite(AllImages{seriesIndex,1}{imageIndex,1},...
                           [PreProcFolder, filesep, NewName], 'WriteMode', 'append');
                       slicesCounter = slicesCounter + 1;
 
