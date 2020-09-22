@@ -259,7 +259,7 @@ classdef LiveExperiment
                 FrameInfo_movie = tempInfo.FrameInfo;
                 preTifDir = dir([this.preFolder, '*_ch0*.tif']);
             end
-            loadFramesIndividually = false;
+            loadFramesIndividually = true;
             
             %just return an empty array if we can't load the movie.
             %leave the handling to the caller, presumably by enabling
