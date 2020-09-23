@@ -195,8 +195,8 @@ end
 
 
 % %Change the color of the axes
-try ChangeColorPBoC2(AxisHandle,'XColor'); end
-try ChangeColorPBoC2(AxisHandle,'YColor'); end
-
-
-set(AxisHandle,'XColor','k','YColor','k','ZColor','k')
+% try ChangeColorPBoC2(AxisHandle,'XColor'); end
+% try ChangeColorPBoC2(AxisHandle,'YColor'); end
+% 
+% 
+% set(AxisHandle,'XColor','k','YColor','k','ZColor','k')

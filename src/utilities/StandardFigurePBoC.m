@@ -101,10 +101,11 @@ end
 set(gca,'XTickMode','manual')
 set(gca,'YTickMode','manual')
 
-
-set(get(AxisHandle,'XLabel'),'FontSize',15,'FontName','Lucida Sans')
-set(get(AxisHandle,'YLabel'),'FontSize',15,'FontName','Lucida Sans')
-set(get(AxisHandle,'ZLabel'),'FontSize',15,'FontName','Lucida Sans')
-set(AxisHandle,'FontSize',15,'FontName','Lucida Sans')
+% font
+font = 'Arial'
+set(get(AxisHandle,'XLabel'),'FontSize',15,'FontName',font)
+set(get(AxisHandle,'YLabel'),'FontSize',15,'FontName',font)
+set(get(AxisHandle,'ZLabel'),'FontSize',15,'FontName',font)
+set(AxisHandle,'FontSize',12,'FontName',font)
 
 box on

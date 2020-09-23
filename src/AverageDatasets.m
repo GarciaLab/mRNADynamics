@@ -56,6 +56,14 @@ for i = 1:length(varargin)
    end
 end
 
+% Competent nuclei (MeanVectorAP recalculation)
+compNuclei = false; % Default
+for i = 1:length(varargin)
+   if strcmpi(varargin{i}, 'competent')
+        compNuclei = true;  
+   end
+end
+
 % instantaneous fraction on
 % whether to use the Number of nuclei or the area of APbin
 % The idea is that when this option is ON, we will use the area of APbins
