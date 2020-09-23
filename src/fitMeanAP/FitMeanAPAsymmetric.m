@@ -252,10 +252,6 @@ while (cc~=13)
             FluoData=MeanVectorAP(FrameWindow,i);
             SDFluoData=SDVectorAP(FrameWindow,i);
             NData=NParticlesAP(FrameWindow,i);
-            
-            FluoData = FluoData.*NData/max(NData);
-            SDFluoData = SDFluoData.*NData/max(NData);
-            
             TimeData=ElapsedTime(FrameWindow);
             OnRatioData=OnRatioAP(FrameWindow,i);
 
@@ -285,11 +281,8 @@ while (cc~=13)
             MaxOnRatioForFit=max(OnRatioData);
             OnRatioDataForFit=OnRatioDataForFit/MaxOnRatioForFit;
 
-%             FluoDataForFit=FluoData(FitFrameFilter).*OnRatioDataForFit;
-            FluoDataForFit = FluoData(FitFrameFilter);
-%             SDFluoDataForFit=SDFluoData(FitFrameFilter).*OnRatioDataForFit;
-            SDFluoDataForFit = SDFluoData(FitFrameFilter);
-            
+            FluoDataForFit=FluoData(FitFrameFilter).*OnRatioDataForFit;
+            SDFluoDataForFit=SDFluoData(FitFrameFilter).*OnRatioDataForFit;
             NDataForFit=NData(FitFrameFilter);
             TimeDataForFit=TimeData(FitFrameFilter);
             
@@ -353,7 +346,7 @@ while (cc~=13)
                     PlotHandle(end+1)=plot(ElapsedTime(FrameWindow(FrameFilter))-ElapsedTime(FrameWindow(1)),...
                         FluoData,'or');
                     %Plot the data that was actually used for the fit
-                    PlotHandle(end+1)=plot(ElapsedTime(ismember(FrameWindow(FrameFilter),FitFrameRange))-ElapsedTime(FrameWindow(1)),...
+                    PlotHandle(end+1)=plot(ElapsedTime(FitFrameRange)-ElapsedTime(FrameWindow(1)),...
                         FluoData(ismember(FrameWindow(FrameFilter),FitFrameRange)),'or','MarkerFaceColor','r');
                     
                     %Plot the fit
@@ -418,9 +411,9 @@ while (cc~=13)
                         xFit(1),1000,xFit(2),Delay);
                     %Plot all the data
                     PlotHandle=errorbar(ElapsedTime(FrameWindow)-ElapsedTime(FrameWindow(1)),...
-                        MeanVectorAP(FrameWindow,i).*NParticlesAP(FrameWindow,i)/max(NParticlesAP(FrameWindow,i)),...
+                        MeanVectorAP(FrameWindow,i).*OnRatioAP(FrameWindow,i)/MaxOnRatio,...
                         SDVectorAP(FrameWindow,i)./...
-                        sqrt(NParticlesAP(FrameWindow,i)/max(NParticlesAP(FrameWindow,i))),'.-k');
+                        sqrt(NParticlesAP(FrameWindow,i)).*OnRatioAP(FrameWindow,i)/MaxOnRatio,'.-k');
                     hold on
                     %Plot the data that could be used for the fit
                     PlotHandle(end+1)=plot(ElapsedTime(FrameWindow(FrameFilter))-ElapsedTime(FrameWindow(1)),...
@@ -428,8 +421,6 @@ while (cc~=13)
                     %Plot the data that was actually used for the fit
                     PlotHandle(end+1)=plot(ElapsedTime(FitFrameRange)-ElapsedTime(FrameWindow(1)),...
                         FluoData(ismember(FrameWindow(FrameFilter),FitFrameRange)),'or','MarkerFaceColor','r');
-%                     PlotHandle(end+1)=plot(ElapsedTime(ismember(FrameWindow(FrameFilter),FitFrameRange)),...
-%                         FluoData(ismember(FrameWindow(FrameFilter),FitFrameRange)),'or','MarkerFaceColor','r');
                     
                     %Plot the fit
                     PlotHandle(end+1)=plot(TimeFit,FluoFit,'-r');
