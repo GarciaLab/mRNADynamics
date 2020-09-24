@@ -1,4 +1,5 @@
-function [FrameRange, FrameInfo] = createZeissFrameInfo(LSMIndex, NFrames, NSlices, FrameInfo, LSMMeta, Frame_Times, ValueField)
+function [FrameRange, FrameInfo] = updateZeissFrameInfo(LSMIndex, NFrames,...
+        NSlices, FrameInfo, LSMMeta, Frame_Times, ValueField)
   %Save the information in FrameInfo
   if LSMIndex == 1
     FrameRange = 1:NFrames(LSMIndex);
@@ -9,7 +10,7 @@ function [FrameRange, FrameInfo] = createZeissFrameInfo(LSMIndex, NFrames, NSlic
   for i = FrameRange
     FrameInfo(i).LinesPerFrame = str2double(LSMMeta.getPixelsSizeY(0));
     FrameInfo(i).PixelsPerLine = str2double(LSMMeta.getPixelsSizeX(0));
-    % FrameInfo(i).NumberSlices = min(NSlices); % JP: because of z-padding
+    FrameInfo(i).NumberSlices = min(NSlices); % JP: because of z-padding, NL: added this back in, What was the issue?
     % feature, we need to set NumberSlices after we've processed all series
     FrameInfo(i).FileMode = 'LSMExport';
 

@@ -250,11 +250,14 @@ classdef LiveExperiment
                 FrameInfo_movie = tempInfo.FrameInfo;
                 preTifDir = dir([this.preFolder, '*_ch0*.tif']);
             end
+            loadFramesIndividually = true;
             
             %just return an empty array if we can't load the movie.
             %leave the handling to the caller, presumably by enabling
             %sequential file loading.
-            if false%~haveSufficientMemory(preTifDir)
+
+            if ~haveSufficientMemory(preTifDir) || loadFramesIndividually
+
                 out = [];
                 return;
             end
@@ -298,9 +301,8 @@ classdef LiveExperiment
             end
             out = movieMat;
             
-            if max(movieMat(:)) < 255
-                movieMat = uint8(movieMat);
-            end
+            movieMat = double(movieMat);
+
             
         end
         
@@ -395,9 +397,81 @@ classdef LiveExperiment
             end
             out = hisMat;
             
-            if max(hisMat(:)) < 255
-                hisMat = uint8(hisMat);
+
+            %let's reduce the memory footprint of the movie if we can
+%             if max(hisMat(:)) < 255
+%                 hisMat = uint8(hisMat);
+%             end
+            hisMat = double(hisMat);
+            
+        end
+        
+        %this function retrieves or generates a max projection of the full
+        %movie
+        function out = getMaxMat(this)
+            
+            persistent FrameInfo_max;
+            persistent maxMat;
+            
+            tempInfo = load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
+            
+            isNewMovie = isempty(FrameInfo_max) ||...
+                length([tempInfo.FrameInfo.Time]) ~= length([FrameInfo_max.Time]) || ...
+                any([tempInfo.FrameInfo.Time] ~= [FrameInfo_max.Time]) ||...
+                size(maxMat, 3) ~= this.nFrames;
+            
+            if isNewMovie
+                FrameInfo_max = tempInfo.FrameInfo;
+                movieMat = getMovieMat(this);
+                if ~isempty(movieMat)
+                    maxMat = max(movieMat(:,:,:,:,:),[],3);
+                else
+                    maxMat = [];
+                end
             end
+            out = squeeze(maxMat);
+            out = double(out);
+            
+        end
+        
+        function out = getMovieFrame(this, frame, channel)
+            
+            stackFile = [this.preFolder, filesep, this.Prefix, '_',...
+                iIndex(frame, this.nDigits),...
+                '_ch', iIndex(channel, 2), '.tif'];
+            
+            if exist(stackFile, 'file')
+                out = imreadStack(stackFile);
+            elseif exist([this.preFolder, filesep, this.Prefix, '_',...
+                iIndex(frame, this.nDigits),...
+                '_z', iIndex(1, 2),...
+                '_ch', iIndex(channel, 2), '.tif'], 'file')
+                
+                out = zeros(this.yDim, this.xDim, this.zDim);
+                for z = 1:this.zDim
+                    out(:, :, z) = getMovieSlice(this, frame, channel, z);
+                end
+            end
+            out = double(out);
+        end
+        
+        function out = getMovieSlice(this, frame, channel, slice)
+            
+            imFile = [this.preFolder, filesep, this.Prefix, '_',...
+                iIndex(frame, this.nDigits),...
+                '_z', iIndex(slice, 2),...
+                '_ch', iIndex(channel, 2), '.tif'];
+            
+            if exist(imFile, 'file')
+                out = imread(imFile);
+            elseif exist([this.preFolder, filesep, this.Prefix, '_',...
+                iIndex(frame, this.nDigits),...
+                '_ch', iIndex(channel, 2), '.tif'], 'file')
+            
+                imStack = getMovieFrame(this, frame, channel);
+                out = imStack(:, :, slice);
+            end
+            out = double(out);
             
         end
         
@@ -421,6 +495,9 @@ classdef LiveExperiment
             ellipsesFile = [this.resultsFolder, 'Ellipses.mat'];
             if this.hasEllipsesFile
                 load(ellipsesFile, 'Ellipses');
+            else
+                warning('No Ellipses structure found for this LiveExperiment.')
+                Ellipses = {};
             end
             
         end

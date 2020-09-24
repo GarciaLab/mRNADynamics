@@ -458,7 +458,7 @@ if ~NoAP
             %multiply again by ZoomRatio.
             ShiftRow=round((MaxRow-(CRows/2+1))/ZoomRatio);
             ShiftColumn=round((MaxColumn-(CColumns/2+1))/ZoomRatio);
-            
+           
             %How well did we do with the alignment?
             [RowsResized,ColumnsResized]=size(SurfImageResized);
             [RowsZoom,ColumnsZoom]=size(ZoomImage);
@@ -507,7 +507,7 @@ if ~NoAP
             
             %Make an overlay of the zoomed in and zoomed out real
             %images as well as of a quickly segmented nuclear mask. If this
-            %fails, we'll swtich to ManualAlignment.
+            %fails, we'll switch to ManualAlignment.
             
             try
                 %Real image overlay
@@ -517,22 +517,22 @@ if ~NoAP
                 ImOverlay=cat(3,mat2gray(SurfImageResizeZoom),...
                     +mat2gray(ZoomImage),zeros(size(SurfImageResizeZoom)));
                 
-                %Nuclear mask overlay
-                NucMaskZoomOut= GetNuclearMask(SurfImage,2.5,0);
-                NucMaskZoomOutResized=imresize(NucMaskZoomOut, ZoomRatio);
-                NucMaskZoomOutResizedCropped=...
-                    NucMaskZoomOutResized(RowsResizedRange,ColumnsResizedRange);
-                NucMaskZoomIn=GetNuclearMask(ZoomImage,8,2);
-                ImOverlayMask=cat(3,mat2gray(NucMaskZoomOutResizedCropped),...
-                    +mat2gray(NucMaskZoomIn),zeros(size(NucMaskZoomOutResizedCropped)));
-                
-                alOvFig = figure(1);
-                imOv = subplot(2,1,1);
-                imshow(ImOverlay, 'Parent', imOv)
-                imOvMask = subplot(2,1,2);
-                imshow(ImOverlayMask, 'Parent', imOvMask)
-                saveas(alOvFig, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentOverlay.tif']);
-                
+%                 %Nuclear mask overlay
+%                 NucMaskZoomOut= GetNuclearMask(SurfImage,2.5,0);
+%                 NucMaskZoomOutResized=imresize(NucMaskZoomOut, ZoomRatio);
+%                 NucMaskZoomOutResizedCropped=...
+%                     NucMaskZoomOutResized(RowsResizedRange,ColumnsResizedRange);
+%                 NucMaskZoomIn=GetNuclearMask(ZoomImage,8,2);
+%                 ImOverlayMask=cat(3,mat2gray(NucMaskZoomOutResizedCropped),...
+%                     +mat2gray(NucMaskZoomIn),zeros(size(NucMaskZoomOutResizedCropped)));
+%                 
+%                 alOvFig = figure(1);
+%                 imOv = subplot(2,1,1);
+%                 imshow(ImOverlay, 'Parent', imOv)
+%                 imOvMask = subplot(2,1,2);
+%                 imshow(ImOverlayMask, 'Parent', imOvMask)
+%                 saveas(alOvFig, [DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'AlignmentOverlay.tif']);
+%                 
                 
                 
                 

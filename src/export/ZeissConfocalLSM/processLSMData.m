@@ -1,97 +1,51 @@
-function FrameInfo = processLSMData(Folder, D, FrameInfo, ExperimentType, ...
-    Channels, ProjectionType,Prefix, OutputFolder,nuclearGUI, zslicesPadding)
-  % What type of experiment do we have?
+% NL: Updated this drawing heavily from processLIFExportMode
+% Last updated: 2020-09-03
 
-    NSeries = length(D);
-    Frame_Times = []; % Store the frame information
-    AllLSMImages = cell(1, NSeries);
+function FrameInfo = processLSMData(Folder, RawDataFiles, FrameInfo,...
+    Channels, ProjectionType, Prefix, OutputFolder,nuclearGUI,...
+    skipExtraction)
     
-    % preprocess data
-    waitbarFigure = waitbar(0, 'Extracting LSM images');
-    load('ReferenceHist.mat')
-    for LSMIndex = 1:NSeries
-      waitbar(LSMIndex / NSeries, waitbarFigure);
+    disp('Exporting movie file...');
+    
+    cleanupObj = onCleanup(@myCleanupFun);
+
+    moviePrecision = 'uint16';
+    hisPrecision = 'uint16';
+    
+    %Load the reference histogram for the fake histone channel
+    load('ReferenceHist.mat', 'ReferenceHist');    
+    
+    % initialize FrameInfo
+    FrameInfo = [];
+        
+    % get basic info
+    NSeries = length(RawDataFiles);      
+    
+    if ~skipExtraction
+      % This chunk makes FrameInfo                     
+      [FrameInfo,AllLSMImages,NSlices, ~, NFrames,~,NChannels] ...
+        = getZeissFrameInfo(RawDataFiles,NSeries,FrameInfo);
       
-      %Load the file using BioFormats
-      LSMImages = bfopen([Folder, filesep, D(LSMIndex).name]);
-      % Extract the metadata for each series
-      LSMMeta = LSMImages{:, 4}; % OME Metadata
-      LSMMeta2 = LSMImages{:, 2}; % Original Metadata
-      AllLSMImages{LSMIndex} = LSMImages{1};
+      % save FrameInfo
+      liveExperiment = LiveExperiment(Prefix);
+      save([liveExperiment.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo')
+      
+      % this function exports tif z stacks
+      exportTifStacks(AllLSMImages, 'LSM', NChannels, NFrames, NSlices, Prefix, ...
+          moviePrecision, hisPrecision, nuclearGUI, ProjectionType, Channels, ReferenceHist)           
+      
+      % Look for flat field images
+      [FFPaths, FFToUse, LSMFF] = findFlatFieldInformation(Folder);
+      % Proceed accordingly
+      processFlatFieldInformation(Prefix, OutputFolder, FFPaths, FFToUse, LSMFF);
+      
+      if nuclearGUI
 
-      % Figure out the number of slices in each series
-      NSlices(LSMIndex) = str2double(LSMMeta.getPixelsSizeZ(0));
-      % Number of channels
-      NChannels(LSMIndex) = LSMMeta.getChannelCount(0);
-      % Total number of planes acquired
-      NPlanes(LSMIndex) = LSMMeta.getPlaneCount(0);
-      % Finally, use this information to determine the number of frames in
-      % each series
-      NFrames(LSMIndex) = NPlanes(LSMIndex) / NSlices(LSMIndex) / NChannels(LSMIndex);
+        chooseAnaphaseFrames(...
+            Prefix, 'ProjectionType', ProjectionType,...
+            'ReferenceHist', ReferenceHist);
 
-      % Check that the acquisition wasn't stopped before the end of a
-      % cycle. If that is the case, some images in the last frame will
-      % be blank and we need to remove them.
-      if sum(sum(LSMImages{1}{end,1})) == 0
-        % Reduce the number of frames by one
-        NFrames(LSMIndex) = NFrames(LSMIndex) - 1;
-        % Reduce the number of planes by NChannels*NSlices
-        NPlanes(LSMIndex) = NPlanes(LSMIndex) - NChannels(LSMIndex) * NSlices(LSMIndex);
       end
-
-      NDigits = getNDigits(NFrames, LSMIndex);
-
-      try
-          StartingTime(LSMIndex) = obtainZeissStartingTime(Folder, LSMIndex, LSMMeta2, NDigits);
-      catch
-          StartingTime(LSMIndex) = obtainZeissStartingTime(Folder, LSMIndex, LSMMeta2, NDigits+1);
-      end
-      [ValueField, Frame_Times] = obtainZeissFrameTimes(LSMMeta, NSlices, LSMIndex, NPlanes, NChannels, StartingTime, Frame_Times);
-      [~, FrameInfo] = createZeissFrameInfo(LSMIndex, NFrames, NSlices, FrameInfo, LSMMeta, Frame_Times, ValueField);
     end
-    
-    
-    % We need a second pass to set the correct slices count after having
-    % processed all the series so we know the max(NSlices) number
-    % if zPadding was indicated in the arguments, we round up to the series
-    % with more z-slices (because we'll pad with blank images the other series)
-    if (zslicesPadding)
-      topZSlice = max(NSlices);
-    else
-      % if no zPadding, we round down to the series with less z-slices
-      topZSlice = min(NSlices);
-    end
-    
-    for frameInfoIndex = 1:size(FrameInfo, 2)
-      FrameInfo(frameInfoIndex).NumberSlices = topZSlice;
-    end
-  
-    try close(waitbarFigure); catch; end
-    
-    [coatChannel, histoneChannel, fiducialChannel, inputProteinChannel, FrameInfo] =...
-    LIFExportMode_interpretChannels(ExperimentType, Channels{1}, Channels{2}, Channels{3}, FrameInfo);
-
-    numberOfFrames = 1;
-    %at the moment, this doesn't work. it would be nice to correctly
-    %implement it in the future. -AR 6/25/2020
-%     if nuclearGUI
-%         [~, ProjectionType] = chooseNuclearChannels(...
-%         AllLSMImages, NSeries, NSlices, NChannels(1), NFrames, ProjectionType, Channel1, Channel2, ...
-%         Channel3, ReferenceHist);
-%     end
-    for seriesIndex = 1:NSeries
-        for framesIndex = 1:NFrames(seriesIndex) 
-
-          processMovieFrame(numberOfFrames, Prefix, OutputFolder,...
-              AllLSMImages, framesIndex, seriesIndex, NChannels(1), NSlices, ...
-              Channels, ProjectionType, ReferenceHist, zslicesPadding, 0);
-          
-          numberOfFrames = numberOfFrames + 1;
-        end
-    end
-
-    [FFPaths, FFToUse, LSMFF] = findFlatFieldInformation(Folder);
-    processFlatFieldInformation(Prefix, OutputFolder, FFPaths, FFToUse, LSMFF);
-
 end
 

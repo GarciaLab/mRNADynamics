@@ -95,7 +95,7 @@ try
     end
     
     set(ax, 'TickLength',[.01 .01],...
-        'FontSize', fontSize, 'FontName', 'Lucida Sans OT', 'FontWeight', 'bold');
+        'FontSize', fontSize, 'FontName', 'Arial');
     ax.TickDir = 'in';
     ax.LineWidth = axesLineWidth;
     faceColor = 'none'; %yellow axis face.
