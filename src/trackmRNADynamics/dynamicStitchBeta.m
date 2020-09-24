@@ -1,5 +1,5 @@
 function NewParticles = dynamicStitchBeta(FullParticles,SimParticles,...
-                  ParticleStitchInfo,Prefix,matchCostMax,Channel)
+                  ParticleStitchInfo,Prefix,matchCostMax)
   
   NewParticles = FullParticles;
   liveExperiment = LiveExperiment(Prefix);
@@ -8,11 +8,11 @@ function NewParticles = dynamicStitchBeta(FullParticles,SimParticles,...
   nFrames = length(ncVec);
  
   % cobine linkage costs across nuclei
-  costVecOrig = ParticleStitchInfo{Channel}.linkCostVec;
+  costVecOrig = ParticleStitchInfo.linkCostVec;
   % this contains the info about order in which links were added
-  additionCellOrig = ParticleStitchInfo{Channel}.linkAdditionCell;
+  additionCellOrig = ParticleStitchInfo.linkAdditionCell;
   % link approval info
-  approvalVec = ParticleStitchInfo{Channel}.linkApprovedVec;
+  approvalVec = ParticleStitchInfo.linkApprovedVec;
   % set all approved links to have negative costs 
   costVecOrig(approvalVec==1) = -Inf;
   
@@ -27,6 +27,7 @@ function NewParticles = dynamicStitchBeta(FullParticles,SimParticles,...
   % identify links that are above desired threshold
   linkFlags = costVecOrig>matchCostMax;
   linksToBreak = find(linkFlags);
+  
   % check for cases where smaller child is costlier than parent. If this
   % happens, we must also break the parent
   refVec = 1:length(additionCellOrig);
@@ -35,6 +36,7 @@ function NewParticles = dynamicStitchBeta(FullParticles,SimParticles,...
     addFlags = contains(additionCellOrig,linkedTrace) & ~linkFlags & refVec<i;
     linkFlags(addFlags) = true;
   end
+  
   % update ID list
   linksToBreak = find(linkFlags);
   
@@ -43,16 +45,14 @@ function NewParticles = dynamicStitchBeta(FullParticles,SimParticles,...
     % find max number of dividers
     maxDivFrag = max(diff(find(linkedTrace~='|')))-1;    
     % find old entry in particles and update
-    currStateCell = {NewParticles{Channel}.linkStateString};
+    currStateCell = {NewParticles.linkStateString};
     oldInd = find(contains(currStateCell,linkedTrace)); 
     if length(oldInd) ~= 1
       error('uh oh')
     end
     % split
-    fullTrace = NewParticles{Channel}(oldInd).linkStateString;
-    if ~strcmp(fullTrace,linkedTrace)
-      error('wtf')
-    end
+    fullTrace = NewParticles(oldInd).linkStateString;
+ 
     maxDivFull = max(diff(find(fullTrace~='|')))-1;  
     newTraces = {fullTrace};
     for m = maxDivFull:-1:maxDivFrag
@@ -64,13 +64,15 @@ function NewParticles = dynamicStitchBeta(FullParticles,SimParticles,...
     end
 %     newTraces = strsplit(fullTrace,repelem('|',min(maxDivFull,maxDivFrag)));
     % extract linkage info cells
-    linkFrameCell = NewParticles{Channel}(oldInd).linkFrameCell;
-    linkCostCell = NewParticles{Channel}(oldInd).linkCostCell;
-    linkParticleCell = NewParticles{Channel}(oldInd).linkParticleCell;
+    linkFrameCell = NewParticles(oldInd).linkFrameCell;
+    linkCostCell = NewParticles(oldInd).linkCostCell;
+    linkParticleCell = NewParticles(oldInd).linkParticleCell;
     % extract particle vec
-    particleVec = NewParticles{Channel}(oldInd).idVec;
+    particleVec = NewParticles(oldInd).idVec;
     particleVecNN = particleVec(~isnan(particleVec));
     ptIDsFull = unique(particleVecNN);
+    % get indexing vector for SimParticles
+    FragmentIDVec = [SimParticles.FragmentID];
     % get atom ids for each child particle
     for j = 1:length(newTraces)
 
@@ -95,10 +97,10 @@ function NewParticles = dynamicStitchBeta(FullParticles,SimParticles,...
       temp.Frame = find(~isnan(temp.idVec));
 
       % add position info 
-      temp.xPos = NewParticles{Channel}(oldInd).xPos(ismember(particleVecNN,ptIDs));
-      temp.yPos = NewParticles{Channel}(oldInd).yPos(ismember(particleVecNN,ptIDs));
-      temp.zPos = NewParticles{Channel}(oldInd).zPos(ismember(particleVecNN,ptIDs));
-      temp.zPosDetrended = NewParticles{Channel}(oldInd).zPosDetrended(ismember(particleVecNN,ptIDs));
+      temp.xPos = NewParticles(oldInd).xPos(ismember(particleVecNN,ptIDs));
+      temp.yPos = NewParticles(oldInd).yPos(ismember(particleVecNN,ptIDs));
+      temp.zPos = NewParticles(oldInd).zPos(ismember(particleVecNN,ptIDs));
+      temp.zPosDetrended = NewParticles(oldInd).zPosDetrended(ismember(particleVecNN,ptIDs));
       % add link info
       temp.linkStateString = newTraces{j};
 
@@ -109,34 +111,37 @@ function NewParticles = dynamicStitchBeta(FullParticles,SimParticles,...
       % generate useful arrays 
       nc_ft = ismember(ncVec,ncVec(temp.Frame(1))); 
       % initialize 
-      nParams = length(SimParticles{Channel}(1).hmmModel);
+      nParams = length(SimParticles(1).hmmModel);
       pathArray = NaN(nFrames,length(ptIDs),nParams);
       sigmaArray = NaN(nFrames,length(ptIDs),nParams);
       extantFrameArray = NaN(nFrames,length(ptIDs));
       extantFrameArray(nc_ft,:) = 0;
       for p = 1:length(ptIDs)
-        frames = SimParticles{Channel}(ptIDs(p)).Frame;     
+        ptFilter = ismember(FragmentIDVec,ptIDs(p));
+        frames = SimParticles(ptFilter).Frame;     
         extantFrameArray(frames,p) = 1;
-        pathArray(:,p,:) = cat(1,SimParticles{Channel}(ptIDs(p)).hmmModel.pathVec)';
-        sigmaArray(:,p,:) = cat(1,SimParticles{Channel}(ptIDs(p)).hmmModel.sigmaVec)';
+        pathArray(:,p,:) = cat(3,SimParticles(ptFilter).hmmModel.pathVec);
+        sigmaArray(:,p,:) = cat(3,SimParticles(ptFilter).hmmModel.sigmaVec);
       end
       % call path update function
       [temp.pathArray, temp.sigmaArray] = updatePaths(pathArray,sigmaArray,extantFrameArray);        
 
       % add other info 
-      temp.NucleusID = NewParticles{Channel}(oldInd).NucleusID;
-      temp.NucleusIDOrig = NewParticles{Channel}(oldInd).NucleusIDOrig;
-      temp.NucleusDist = NewParticles{Channel}(oldInd).NucleusDist(ismember(particleVecNN,ptIDs));
-%       temp.assignmentFlags = zeros(size(NewParticles{Channel}(oldInd).assignmentFlags));
-%       temp.assignmentFlags(ismember(particleVec,ptIDs)) = NewParticles{Channel}(oldInd).assignmentFlags(ismember(particleVec,ptIDs));
+      temp.Nucleus = NewParticles(oldInd).Nucleus;
+      temp.NucleusOrig = NewParticles(oldInd).NucleusOrig;
+      temp.NucleusDist = NewParticles(oldInd).NucleusDist(ismember(particleVecNN,ptIDs));
+      temp.FrameApproved = NewParticles(oldInd).FrameApproved(ismember(particleVecNN,ptIDs));
+      temp.Index = NewParticles(oldInd).Index(ismember(particleVecNN,ptIDs));
+      temp.FirstFrame = temp.Frame(1);
+      temp.LastFrame = temp.Frame(end);
       temp.Approved = 0;
-      
+
       % incorporate into structure
-      NewParticles{Channel}(length(NewParticles{Channel})+1) = temp;
+      NewParticles(length(NewParticles)+1) = temp;
     end
-    NewParticles{Channel} = NewParticles{Channel}([1:oldInd-1 oldInd+1:end]);   
+    NewParticles = NewParticles([1:oldInd-1 oldInd+1:end]);   
   end
-  for i = 1:length(NewParticles{Channel})
-    NewParticles{Channel}(i).matchCost = matchCostMax;
+  for i = 1:length(NewParticles)
+    NewParticles(i).matchCost = matchCostMax;
   end
   

@@ -35,9 +35,9 @@ if isnan(cptState.Particles{Ch}(ClickedParticle).Nucleus) ...
   
   % generate other info needed to re-run stitching
   FragmentIDVec = [cptState.SimParticles{Ch}.FragmentID];
-  FragmentIDVec = [FragmentIDVec nanmax(FragmentIDVec)+1];
+%   FragmentIDVec = [FragmentIDVec nanmax(FragmentIDVec)+1];
   nucleusIDVec = false(1,length(cptState.SimParticles{Ch}));
-  nucleusIDVec(allIDs) = 1; % using "nucleus" as a dummy grouper variable here
+  nucleusIDVec(ismember(FragmentIDVec,allIDs)) = 1; % using "nucleus" as a dummy grouper variable here
   frameIndex = 1:length(cptState.Particles{Ch}(cptState.CurrentParticle).idVec);
   ncVec = [cptState.FrameInfo.nc];
   
@@ -52,7 +52,7 @@ if isnan(cptState.Particles{Ch}(ClickedParticle).Nucleus) ...
   origParticleTemp.pathArray = squeeze(pathArray);
   origParticleTemp.sigmaArray = squeeze(sigmaArray);
   origParticleTemp.linkCostCell = origParticleTemp.linkCostCell{1};
-  origParticleTemp.linkCostFlags = origParticleTemp.linkCostCell > cptState.Particles{Ch}(cptState.CurrentParticle).costThresh;
+%   origParticleTemp.linkCostFlags = origParticleTemp.linkCostCell > cptState.Particles{Ch}(cptState.CurrentParticle).costThresh;
   origParticleTemp.idVec = particleIDArray(:,1)';
   
   %Concatentate vector quantities with one entry per frame

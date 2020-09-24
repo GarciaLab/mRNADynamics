@@ -11,13 +11,14 @@ Particles = cptState.Particles;
 cptState.lineFitted = 0; % the initial rise was not fitted!
 % fitApproved = 0; % the initial rise fit was not approved!
 numParticles = length(Particles{CurrentChannelIndex});
-NextParticle=CurrentParticle+1;
 
-if NextParticle>numParticles
-    NextParticle=numParticles;
-end
 
 if ~prevFlag
+  NextParticle=CurrentParticle+1;
+
+  if NextParticle>numParticles
+      NextParticle=numParticles;
+  end
   %Mode 1 - skip approved or flagged traces
   while (HideApprovedFlag)==1&&(NextParticle<numParticles)&&...
           ((Particles{CurrentChannelIndex}(NextParticle).Approved==1)||(Particles{CurrentChannelIndex}(NextParticle).Approved==-1)||...
@@ -32,7 +33,11 @@ if ~prevFlag
   end
   
 else % if moving to previous particle
-  
+  NextParticle=CurrentParticle-1;
+
+  if NextParticle<1
+      NextParticle=1;
+  end
   %Mode 1 - show non-flagged traces
   while (HideApprovedFlag)==1 && (NextParticle>1) &&...
           ((Particles{CurrentChannel}(NextParticle).Approved==1) || (Particles{CurrentChannel}(NextParticle).Approved==-1) ||...

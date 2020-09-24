@@ -42,8 +42,8 @@ kMask = imfill(kMask, 'holes');
 kMask = bwareafilt(kMask, areaFilter); 
 
 kMaskRefined= gather( chenvese( ...
-    imgaussfilt( gpuArrayWrapper(image), sigmaK_px),...
-    gpuArrayWrapper(kMask), nIterSnakes, mu, 'chan') );
+    imgaussfilt( gpuArrayMaybe(image), sigmaK_px),...
+    gpuArrayMaybe(kMask), nIterSnakes, mu, 'chan') );
 
 %same issue here. sometimes the watershed is inverted. hard to pick
 %whether it should be or not automatically

@@ -1,4 +1,5 @@
-function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = track01ParticleProximity(...
+function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull,...
+    FrameInfo] = track01ParticleProximity(...
     FrameInfo, Spots, schnitzcells, liveExperiment, PixelSize, MaxSearchRadiusMicrons, ...
     UseHistone, retrack, displayFigures)
   
@@ -36,7 +37,15 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
   end
   
   % Extract vector indicating nuclear cleavage cycle for each frame
-  ncVec = [FrameInfo.nc]; 
+  if true%~isfield(FrameInfo,'nc')
+    ncRefVec = 9:14;
+    for f = 1:length(FrameInfo)
+      ind = find(f>=liveExperiment.anaphaseFrames,1,'last');
+      FrameInfo(f).nc = ncRefVec(ind);
+    end
+    save([liveExperiment.resultsFolder 'FrameInfo.mat'],'FrameInfo')
+  end
+  ncVec = [FrameInfo.nc];
   SlidingWindowSize = 2; % size of window used for time averaging of nuclear movements
     
   if ismember(ExperimentType,{'inputoutput'}) && NCh == 2    
@@ -78,7 +87,7 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
     % If we're retracking, we need to (a) break up un-approved particles
     % and (b) make a temporary spotFilter that indicates which Spots are a
     % part of approved particles
-    SpotFilterLink = ones(size(SpotFilter{Channel}));    
+    SpotFilterLink = SpotFilter{Channel};    
     if retrack
       % keep only full particles that were approved. Individual frames that
       % were linked are taken care of later on
@@ -149,6 +158,7 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
         % if we have nucleus info, assign each spot to a nucleus
         [NewSpotNuclei, NewSpotDistances] = getNuclearAssigments(NewSpotsX,NewSpotsY,...
               schnitzcells,CurrentFrame,UseHistone,SpotFilterNucleus(CurrentFrame,:));
+            
         %Get a list of the particles that were present in
         %the previous frame and of their positions.
         ExtantParticles = [];
@@ -176,9 +186,11 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
         % particle using the NewParticle array.
         NewParticleFlag = true(size(NewSpotsX));
         
+
         % exclude Spots corresponding to existing particle
-        NewParticleFlag(SpotFilterLink(CurrentFrame,:)==0) = false;
-          
+        rmIndices = find(SpotFilterLink(CurrentFrame,:)==0);
+        NewParticleFlag(rmIndices) = false;
+        
         if ~isempty(ExtantParticles) && ~NewNCFlag
           % Generate maximum allowed jump radius between spots          
           SearchRadius = SearchRadiusMicrons;
@@ -215,7 +227,7 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
           
           % remove existing spots that are in approved particles 
 %           prevAppIndices = SpotFilterTemp(CurrentFrame-1,:)==0;
-          nextAppIndices = SpotFilterLink(CurrentFrame,:)==0;
+          nextAppIndices = find(SpotFilterLink(CurrentFrame,:)==0);
 %           DistanceMat(:,prevAppIndices) = Inf;
           DistanceMat(nextAppIndices,:) = Inf;
           
@@ -237,7 +249,6 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
             RawParticles{Channel}(ParticleIndex).zPos(end + 1) = NewSpotsZ(NewSpotIndex);      
             RawParticles{Channel}(ParticleIndex).NucleusDist(end + 1) = NewSpotDistances(NewSpotIndex);
           end                        
-
         end
    
         % See which spots weren't assigned and add them to the structure as new particles
@@ -271,7 +282,6 @@ function [RawParticles,SpotFilter,ParticleStitchInfo, ReviewedParticlesFull] = t
     
     % adjust for z stack shifts
     RawParticles{Channel} = detrendZ(RawParticles{Channel},FrameInfo);
-      
     close(f);
   end
 end

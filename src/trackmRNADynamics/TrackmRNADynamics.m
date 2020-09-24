@@ -1,4 +1,4 @@
-function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
+function Particles = TrackmRNADynamics(Prefix, varargin)
 %
 % DESCRIPTION
 % %This function tracks transcription loci over time after
@@ -30,9 +30,8 @@ function [Particles, schnitzcells] = TrackmRNADynamics(varargin)
 %
 % Documented by: Armando Reimer (areimer@berkeley.edu)
 
-disp(['Running TrackmRNADynamics on ', varargin{1}, '...']);
+disp(['Running TrackmRNADynamics on ', Prefix, '...']);
 
-Prefix = varargin{1};
 liveExperiment = LiveExperiment(Prefix);
 makeTrackingFigures = true;
 
@@ -86,11 +85,10 @@ validateExperimentTypeSupported(ExperimentType);
 %     ParticlesFig = []; particlesAxes = []; NucleiFig = []; nucAxes = [];
 % end
 
-[Particles, SpotFilter] = performTracking(Prefix, useHistone,varargin{2:end}); 
+[Particles, SpotFilter] = performTracking(Prefix, useHistone,varargin{1:end}); 
 
 mkdir([OutputFolder, filesep]);
 save([OutputFolder, filesep, 'Particles.mat'], 'Particles','SpotFilter');
-
 
 createFieldNCAndSaveFrameInfo(FrameInfo, OutputFolder, nc9, nc10, nc11, nc12, nc13, nc14);
 
