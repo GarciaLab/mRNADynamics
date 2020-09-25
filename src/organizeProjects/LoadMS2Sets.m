@@ -371,8 +371,14 @@ if ~justPrefixes
             if exist('MeanFitsAsymmetric','var')
                 if i<=length(MeanFitsAsymmetric)
                     Data(i).MeanFitsAsymmetric=MeanFitsAsymmetric(i).FitResults;
+                    % NC14 decay fit (exponential)
                     try
                         Data(i).NC14DecayRegime=MeanFitsAsymmetric(i).NC14DecayRegimeFitResults;
+                    catch
+                    end
+                    % NC14 decay fit (numerical)
+                    try
+                        Data(i).NC14DecayRegimeNumerical = MeanFitsAsymmetric(i).NC14DecayRegimeNumericalResults;
                     catch
                     end
                 end
