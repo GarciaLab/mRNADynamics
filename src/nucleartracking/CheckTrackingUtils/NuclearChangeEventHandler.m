@@ -36,6 +36,13 @@ function keyInputHandler = NuclearChangeEventHandler(cntState)
             [cntState.CurrentNucleus, cntState.CurrentFrame, cntState.ManualZFlag] =...
                 toNearestNucleus(cntState.schnitzcells, ...
                 cntState.CurrentFrame, cntState.UseHistoneOverlay, cntState);
+         elseif cc == '|'
+            % Moves to clicked nucleus.
+
+            cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
+            [cntState.CurrentNucleus, ~, cntState.ManualZFlag] =...
+                toNearestNucleus(cntState.schnitzcells, ...
+                cntState.CurrentFrame, cntState.UseHistoneOverlay, cntState);
         
 
         elseif (cc == 'm') & (cntState.CurrentNucleus < cntState.numNuclei())
@@ -47,7 +54,7 @@ function keyInputHandler = NuclearChangeEventHandler(cntState)
             cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
             [cntState.CurrentNucleus, cntState.CurrentFrame, cntState.ManualZFlag, cntState.DisplayRange] = ...
                 goPreviousNucleus(cntState.CurrentNucleus, cntState.HideApprovedFlag, cntState.schnitzcells);
-        elseif (cc == 'l') 
+        elseif (cc == 'l')
             cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
             [cntState.CurrentNucleus, cntState.CurrentFrame, cntState.ManualZFlag] = ...
                 goEarliestUncheckedNucleus(cntState.CurrentNucleus,cntState.schnitzcells);
@@ -63,9 +70,9 @@ function keyInputHandler = NuclearChangeEventHandler(cntState)
             %cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
             [cntState.CurrentNucleus, cntState.CurrentFrame, cntState.ManualZFlag] = ...
                 goPreviousNCNucleus(cntState.CurrentNucleus,cntState.schnitzcells);
-        elseif cc == ']'
-            [cntState.CurrentNucleus, cntState.CurrentFrame, cntState.schnitzcells] =...
-                flagCurrentNCNuclei(cntState.CurrentNucleus, cntState.schnitzcells);
+%         elseif cc == ']'
+%             [cntState.CurrentNucleus, cntState.CurrentFrame, cntState.schnitzcells] =...
+%                 flagCurrentNCNuclei(cntState.CurrentNucleus, cntState.schnitzcells);
         end
     end
 

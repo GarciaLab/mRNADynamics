@@ -162,7 +162,7 @@ try correspondingNCInfo = [FrameInfo.nc]; end
 
 schnitzcells = correctSchnitzCellErrors(schnitzcells, Ellipses);
 [schnitzcells] = sortNuclei(sortByFrames, sortByLength, schnitzcells);
-
+%schnitzcells = flexIntegrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, [1,2]);
 %Some flags and initial parameters
 NucleusToFollow = [];
 CurrentFrameWithinNucleus = 1;
@@ -192,7 +192,9 @@ if ~isempty(cntState.schnitzcells)
         cntState.schnitzcells(cntState.CurrentNucleus).frames(CurrentFrameWithinNucleus);
 
 else, error('Looks like the schnitz cells structure is empty. There''s nothing to check.'); end
+%% 
 
+%cntState.schnitzcells = rejectBoundaryFrames(cntState.schnitzcells, 1);
 %load the movies
 movieMat = getMovieMat(liveExperiment);  
 
@@ -249,6 +251,12 @@ if ~isfield(cntState.schnitzcells, 'Approved')
         for i = 1:cntState.numNuclei()
             cntState.schnitzcells(i).Flag = 0;
         end
+    else
+        for i =1:cntState.numNuclei()
+            if isempty(cntState.schnitzcells(i).Flag) 
+                cntState.schnitzcells(i).F = 0;
+            end
+        end  
     end
 elseif ~isfield(cntState.schnitzcells, 'Flag') 
     for i = 1:cntState.numNuclei()
@@ -263,9 +271,25 @@ end
 
 if ~isfield(cntState.schnitzcells, 'Checked')
     for i =1:cntState.numNuclei()
-        cntState.schnitzcells(i).Checked = 0;
+        if cntState.schnitzcells(i).Approved == 1
+            cntState.schnitzcells(i).Checked = 0;
+        else
+            cntState.schnitzcells(i).Checked = 1;
+        end
     end
 end
+
+for i =1:cntState.numNuclei()
+    if isempty(cntState.schnitzcells(i).Flag) 
+        cntState.schnitzcells(i).Flag = 0;
+    end
+    if isempty(cntState.schnitzcells(i).Checked) 
+        cntState.schnitzcells(i).Checked = 0;
+    end
+    if isempty(cntState.schnitzcells(i).Approved) 
+        cntState.schnitzcells(i).Approved = 0;
+    end
+end  
 
 minFullNC = find(ncFramesFull > 0, 1);
 for i=1:cntState.numNuclei()
@@ -406,13 +430,12 @@ while (currentCharacter ~= 'x')
 %     if sum(checkEllipsesSchnitzMatches) > 0
 %         error('Broken!');
 %     end
-    
+
     
 end
 %% Main loop - end
 
 % save after exiting the main loop - the user pressed 'x'
-% 
 saveNuclearChanges(cntState, DataFolder, FilePrefix, DropboxFolder);
 % 
 disp(['(Left off at schnitz cell #', num2str(cntState.CurrentNucleus), ')'])

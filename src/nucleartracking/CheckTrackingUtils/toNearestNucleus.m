@@ -11,11 +11,11 @@ end
 
 NucleusOutput = identifyNucleus(schnitzcells, CurrentFrame, ...
     UseHistoneOverlay, cntState, opts{:});
-
 if (floor(NucleusOutput)>0)&(NucleusOutput<=numNuclei)
     [CurrentNucleus,CurrentFrame, ManualZFlag] = ...
     changeNucleus(NucleusOutput, schnitzcells, numNuclei);
 end
+
 
 end
 

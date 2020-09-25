@@ -3,6 +3,9 @@ function [CurrentNucleus,CurrentFrame, ManualZFlag] = ...
 
     CurrentNucleus = min(max(NucleusNum, 1), numNuclei);
     ManualZFlag = 0;
+    
     CurrentFrame = schnitzcells(CurrentNucleus).frames(1);
+
+
 end
 

@@ -6,11 +6,13 @@ function [CurrentNucleus, CurrentFrame, schnitzcells] =...
 %lineFit = 0; % the initial rise was not fitted!
 %fitApproved = 0; % the initial rise fit was not approved!
 numNuclei = length(schnitzcells);
+
 nuclei_idx = 1:numNuclei;
 current_nc = schnitzcells(CurrentNucleus).cycle;
-
+CheckedStatus = [schnitzcells(:).Checked];
 nuclear_cycles = [schnitzcells.cycle];
-this_cycle_idx = nuclei_idx(nuclear_cycles == current_nc);
+this_cycle_idx = nuclei_idx((nuclear_cycles == current_nc) & ~Checked);
+
 for i=1:length(this_cycle_idx)
     idx = this_cycle_idx(i);
     schnitzcells(idx).Checked = 1;

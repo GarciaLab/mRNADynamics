@@ -6,14 +6,22 @@ function [CurrentNucleus, CurrentFrame, ManualZFlag] =...
 %lineFit = 0; % the initial rise was not fitted!
 %fitApproved = 0; % the initial rise fit was not approved!
 numNuclei = length(schnitzcells);
+Current_cycle = schnitzcells(CurrentNucleus).cycle;
 ApprovedNuclei = [schnitzcells.Approved];
 CheckedNuclei = [schnitzcells.Checked];
+CurrentCycleNuclei = ([schnitzcells(:).cycle] == Current_cycle);
 nuclei_idx = 1:numNuclei;
-idx_to_check = nuclei_idx(~CheckedNuclei);
+idx_to_check = nuclei_idx(~CheckedNuclei&ApprovedNuclei & CurrentCycleNuclei);
 NextNucleus_idx=find(idx_to_check ~= CurrentNucleus, 1);
 NextNucleus = idx_to_check(NextNucleus_idx);
 if isempty(NextNucleus)
-    NextNucleus=numNuclei;
+    LaterCycleNuclei = ([schnitzcells(:).cycle] > Current_cycle);
+    idx_to_check = nuclei_idx(~CheckedNuclei&ApprovedNuclei & LaterCycleNuclei);
+    NextNucleus_idx=find(idx_to_check ~= CurrentNucleus, 1);
+    NextNucleus = idx_to_check(NextNucleus_idx);
+    if isempty(NextNucleus)
+        NextNucleus=numNuclei;
+    end
 end
 
 

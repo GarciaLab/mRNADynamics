@@ -5,14 +5,17 @@ function keyInputHandler = NuclearTracesEventHandler(cntState, FrameInfo, ncFram
     % date last modified: 9/13/20
     function keyInput(cc)
         if cc == 'c'
-            [cntState.PreviousNucleus, cntState.schnitzcells] = combineNuclearTraces(cntState.CurrentFrame,...
+            [cntState.CurrentNucleus, cntState.schnitzcells] = combineNuclearTraces(cntState.CurrentFrame,...
                 cntState.schnitzcells, cntState.Ellipses, cntState.CurrentNucleus, FrameInfo, ncFrames);
             
         elseif cc == 'd'
             % Separate traces forward at the current frame.
-            if length(cntState.schnitzcells(cntState.CurrentNucleus).frames) > 1
-                cntState.schnitzcells = SeparateNuclearTraces(cntState.CurrentNucleus, ...
-                    cntState.CurrentFrame, cntState.schnitzcells, FrameInfo, ncFrames);
+            frame_idx = find(cntState.schnitzcells(cntState.CurrentNucleus).frames == cntState.CurrentFrame);
+            if ~isempty(frame_idx)
+                if frame_idx(1) > 1 
+                    cntState.schnitzcells = SeparateNuclearTraces(cntState.CurrentNucleus, ...
+                        cntState.CurrentFrame, cntState.schnitzcells, FrameInfo, ncFrames);
+                end
             end
         elseif cc == 'D'
             
@@ -43,10 +46,54 @@ function keyInputHandler = NuclearTracesEventHandler(cntState, FrameInfo, ncFram
             cntState.schnitzcells(cntState.CurrentNucleus).Approved = 0;
             cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
         elseif cc == 'f'
-            [flag, flag_string]  = chooseFlag;
-            disp(flag_string)
-            cntState.schnitzcells(cntState.CurrentNucleus).Flag = flag;
-            cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
+            try
+                [flag, flag_string]  = chooseFlag;
+                disp(flag_string)
+                cntState.schnitzcells(cntState.CurrentNucleus).Flag = flag;
+                cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
+            catch
+                disp('No Flag Selected')
+            end
+        elseif cc == 'a'
+            % Indicate anaphase frame for nucleus 
+            CurrentNucleusInFrame = sum(find(cntState.schnitzcells(cntState.CurrentNucleus).frames == cntState.CurrentFrame, 1));
+            if CurrentNucleusInFrame
+                if ~isfield(cntState.schnitzcells, 'anaphaseFrame')
+                   for i=1:cntState.numNuclei()
+                       cntState.schnitzcells(i).anaphaseFrame = [];
+                   end
+                end
+                if ~isfield(cntState.schnitzcells, 'inferredAnaphaseFrame')
+                   for i=1:cntState.numNuclei()
+                       cntState.schnitzcells(i).anaphaseFrame = false;
+                   end
+                end
+                CurrentNucleusInAnyPreviousFrame  = sum(find(cntState.schnitzcells(cntState.CurrentNucleus).frames < cntState.CurrentFrame, 1));
+                if CurrentNucleusInAnyPreviousFrame
+                    cntState.schnitzcells = SeparateNuclearTraces(cntState.CurrentNucleus, ...
+                        cntState.CurrentFrame, cntState.schnitzcells, FrameInfo, ncFrames);
+                    
+                    cntState.schnitzcells(cntState.CurrentNucleus).anaphaseFrame = [];
+                    cntState.schnitzcells(cntState.CurrentNucleus).inferredAnaphaseFrame = false;
+                    
+                    cntState.CurrentNucleus = cntState.CurrentNucleus+1;
+                end
+                
+                cntState.schnitzcells(cntState.CurrentNucleus).anaphaseFrame = cntState.CurrentFrame;
+                
+                cntState.schnitzcells(cntState.CurrentNucleus).inferredAnaphaseFrame = false;
+                
+                
+                if isfield(cntState.schnitzcells,'timeSinceAnaphase')
+                    disp('Updating anaphase frame information')
+                    ncFrames(ncFrames==0) = 1;
+                    ind = find(isnan(ncFrames));
+                    ncFrames(ind) = ncFrames(ind-1);
+                    time = [FrameInfo.Time]/60; %frame times in minutes 
+                    cntState.schnitzcells(cntState.CurrentNucleus).timeSinceAnaphase = time(cntState.schnitzcells(cntState.CurrentNucleus).frames) - time(cntState.schnitzcells(cntState.CurrentNucleus).anaphaseFrame);
+                end
+            end
+           
         
 %         elseif cc == 'h'
 %             if cntState.HideApprovedFlag == 0

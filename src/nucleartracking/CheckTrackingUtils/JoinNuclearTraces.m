@@ -3,7 +3,7 @@
 % date created: 9/13/20
 % date last modified: 9/13/20
 function schnitzcells=JoinNuclearTraces(OriginalNucleus,ClickedNucleus,schnitzcells,FrameInfo,ncFrames)
-
+fieldNames = fields(schnitzcells);
 %This function joins two nuclear traces and renumbers all nuclei in the
 %schnitzcells structure accordingly
 
@@ -38,21 +38,34 @@ if length(unique([schnitzcells(OriginalNucleus).frames;schnitzcells(ClickedNucle
         schnitzcells(OriginalNucleus).StitchedFrom=[schnitzcells(OriginalNucleus).StitchedFrom,...
             schnitzcells(ClickedNucleus).StitchedFrom];
     end
-    if isfield(schnitzcells,'Fluo')
-        schnitzcells(OriginalNucleus).Fluo=[schnitzcells(OriginalNucleus).Fluo;...
-            schnitzcells(ClickedNucleus).Fluo];
+    FluoVars = fieldNames(contains(fieldNames, 'Fluo'));
+    for i = 1:length(FluoVars)
+        FluoVar = FluoVars{i};
+        schnitzcells(OriginalNucleus).(FluoVar)=[schnitzcells(OriginalNucleus).(FluoVar);...
+            schnitzcells(ClickedNucleus).(FluoVar)];
     end
     schnitzcells(OriginalNucleus).cycle=max([schnitzcells(OriginalNucleus).cycle, schnitzcells(ClickedNucleus).cycle]);
-
+    if isfield(schnitzcells, 'anaphaseFrame')
+        schnitzcells(OriginalNucleus).anaphaseFrame = schnitzcells(OriginalNucleus).anaphaseFrame;
+    end
+    if isfield(schnitzcells, 'inferredAnaphaseFrame')
+        schnitzcells(OriginalNucleus).inferredAnaphaseFrame = schnitzcells(OriginalNucleus).inferredAnaphaseFrame;
+    end
     if isfield(schnitzcells,'timeSinceAnaphase')
         ncFrames(ncFrames==0) = 1;
         ind = find(isnan(ncFrames));
         ncFrames(ind) = ncFrames(ind-1);
         time = [FrameInfo.Time]/60; %frame times in minutes 
         ncTimes = time(ncFrames);
-
-        schnitzcells(OriginalNucleus).timeSinceAnaphase = time(schnitzcells(OriginalNucleus).frames) - ncTimes(schnitzcells(OriginalNucleus).cycle-8);
-
+        if isfield(schnitzcells, 'anaphaseFrame')
+            if ~isempty(schnitzcells(OriginalNucleus).anaphaseFrame)
+                schnitzcells(OriginalNucleus).timeSinceAnaphase = time(schnitzcells(OriginalNucleus).frames) - time(schnitzcells(OriginalNucleus).anaphaseFrame);
+            else
+                 schnitzcells(OriginalNucleus).timeSinceAnaphase = time(schnitzcells(OriginalNucleus).frames) - ncTimes(schnitzcells(OriginalNucleus).cycle-8);
+            end
+        else
+            schnitzcells(OriginalNucleus).timeSinceAnaphase = time(schnitzcells(OriginalNucleus).frames) - ncTimes(schnitzcells(OriginalNucleus).cycle-8);
+        end
     end
 
     % Remaining fields: 
@@ -70,11 +83,16 @@ if length(unique([schnitzcells(OriginalNucleus).frames;schnitzcells(ClickedNucle
         schnitzcells(OriginalNucleus).DVpos=[schnitzcells(OriginalNucleus).DVpos,...
             schnitzcells(ClickedNucleus).DVpos];
     end
-
-    schnitzcells(OriginalNucleus).Approved=0;
-    schnitzcells(OriginalNucleus).Checked=0;
-    schnitzcells(OriginalNucleus).Flag=0;
-
+    
+    if isfield(schnitzcells,'Approved')
+        schnitzcells(OriginalNucleus).Approved=schnitzcells(OriginalNucleus).Approved;
+    end
+    if isfield(schnitzcells,'Checked')
+        schnitzcells(OriginalNucleus).Checked=0;
+    end
+    if isfield(schnitzcells,'Flag')
+        schnitzcells(OriginalNucleus).Flag=0;
+    end
 
 
     %Now, get rid of the clicked particle
@@ -103,8 +121,9 @@ if length(unique([schnitzcells(OriginalNucleus).frames;schnitzcells(ClickedNucle
     if isfield(schnitzcells,'cellno')
         schnitzcells(OriginalNucleus).cellno=schnitzcells(OriginalNucleus).cellno(Permutations);
     end
-    if isfield(schnitzcells,'Fluo')
-        schnitzcells(OriginalNucleus).Fluo=schnitzcells(OriginalNucleus).Fluo(Permutations,:);
+    for i = 1:length(FluoVars)
+        FluoVar = FluoVars{i};
+        schnitzcells(OriginalNucleus).(FluoVar)=schnitzcells(OriginalNucleus).(FluoVar)(Permutations,:);
     end
     if isfield(schnitzcells,'timeSinceAnaphase')
         schnitzcells(OriginalNucleus).timeSinceAnaphase=schnitzcells(OriginalNucleus).timeSinceAnaphase(Permutations);
